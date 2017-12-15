@@ -1,0 +1,142 @@
+!##############################################################################
+!
+!     Adjust_DT
+!
+!     This subroutine is used for calculating the maximal time step allowed
+!     given the velocities, cell sizes, CFL number, and the numerical 
+!     scheme.
+!     This subroutine is called twice from Ash3d.F90; once prior to the time
+!     loop to anticipate the total number of number of steps the simulation
+!     might need, and once within the time loop after new velocities are 
+!     determinined.
+!
+!##############################################################################
+
+      subroutine Adjust_DT
+
+      use precis_param
+
+      use io_units
+
+      use global_param,  only : &
+         DEG2RAD,RAD_EARTH,PI,EPS_SMALL,                 &
+         CFL,DT_MAX,DT_MIN,                              &
+         useDiffusion,useCN
+
+      use Tephra,        only : &
+         ns_aloft
+         
+      use mesh,          only : &
+         nxmax,nymax,nzmax,nsmax,dx,dy,dz_vec_pd,IsLatLon
+
+      use solution,      only : &
+         vx_pd,vy_pd,vz_pd,vf_pd
+         
+      use time_data,     only : &
+         time,dt,                                        &
+         dtodx,dtodxdx,dtody,dtodydy,dtodz,dtodzdz,      &
+         Simtime_in_hours
+         
+      use io_data,       only : &
+         NextWriteTime
+
+      use Diffusion,     only : &
+         kx,ky,kz
+
+      implicit none
+
+      integer       :: i,j,k
+      real(kind=ip) :: tmp
+      real(kind=ip) :: time_diffuse, time_advect
+      real(kind=ip) :: dx2,dy2,dz2,tmp_sum
+      real(kind=ip) :: vxmax,vxmax_dx
+      real(kind=ip) :: vymax,vymax_dy
+      real(kind=ip) :: khmax,kvmax
+      integer       :: fac
+      real(kind=ip) :: vzmax_dz
+
+      time_diffuse   = 0.0_ip
+
+      dx2 = 2.0_ip/(dx*dx)
+      dy2 = 2.0_ip/(dy*dy)
+      dz2 = 2.0_ip/(minval(dz_vec_pd(1:nzmax)**2.0_ip))
+
+      ! Get the constraining velocities relative to the grid size
+      vxmax = maxval(abs(vx_pd(1:nxmax,1:nymax,1:nzmax)))
+      vxmax_dx = vxmax/dx
+      vymax = maxval(abs(vy_pd(1:nxmax,1:nymax,1:nzmax)))
+      vymax_dy = vymax/dy
+      vzmax_dz = 0.0_ip
+      ! This branch looks at conditions cell-by-cell
+      do i=1,nxmax
+        do j=1,nymax
+          do k=1,nzmax
+            tmp =        abs(vz_pd(i,j,k)) + &
+                  maxval(abs(vf_pd(i,j,k,1:nsmax)))
+            if(tmp/dz_vec_pd(k).gt.vzmax_dz)then
+              vzmax_dz = tmp/dz_vec_pd(k)
+            endif
+          enddo
+        enddo
+      enddo
+      if(ns_aloft.eq.0)vzmax_dz = 0.0_ip
+
+      ! Get the constraining diffusivities
+      khmax = max( maxval(abs(kx)), maxval(abs(ky)) )
+      kvmax = maxval(abs(kz))
+
+      if (useDiffusion.and..not.useCN) then
+          !  This is the case where diffusion limits as kx/dx*dx
+          !    Note: Crank-Nicolson doesn't have this limitation
+        time_diffuse = khmax*(dx2+dy2) + kvmax*dz2
+      else
+          ! Running case where advection limits CFL
+          !  i.e. no diffusion or CN diffusion
+        time_diffuse = 0.0_ip
+      endif
+      time_advect = max(vxmax/dx,vymax/dy,vzmax_dz)
+      tmp_sum =  time_advect + time_diffuse
+
+      if(tmp_sum.gt.1.0_ip/DT_MIN)then
+        write(global_info,*)"WARNING: Setting to dt_min = ",DT_MIN
+        write(global_info,*)"         CFL condition probably violated."
+        write(global_info,*)"         Check for high or NaN velocities."
+        dt = DT_MIN
+      elseif(tmp_sum.lt.1.0_ip/DT_MAX)then
+        write(global_info,*)"WARNING: Setting to dt_max = ",DT_MAX
+        write(global_info,*)"         CFL condition probably violated."
+        write(global_info,*)"         Check for zero or NaN velocities."
+        dt = DT_MAX
+      else
+        dt = min(1.0_ip,CFL)/tmp_sum
+      endif
+      
+      ! Hardwire these dt values for test cases
+      !dt = 1.0e-2_ip
+
+      ! Reset dt to be an integer multiple of DT_MIN
+      fac = int(dt/DT_MIN)
+      dt = DT_MIN*fac
+
+      if(.not.IsLatLon) then
+          ! Precalculate some terms used for diffusion
+          !   The LatLon branch requires cell-specific values
+        dtodx = dt/dx
+        dtody = dt/dy
+        dtodz = dt/minval(dz_vec_pd(:))
+
+        dtodxdx = dtodx/dx
+        dtodydy = dtody/dy
+        dtodzdz = dtodz/minval(dz_vec_pd(:))
+      endif !IsLatLon
+
+      if (((NextWriteTime-time).gt.EPS_SMALL).and.(NextWriteTime-time.lt.dt)) then
+          dt = NextWritetime-time
+      endif
+
+      if(time+dt.gt.Simtime_in_hours)then
+        ! Don't let time advance past the requested stop time
+        dt = Simtime_in_hours-time
+      endif
+
+      end subroutine Adjust_DT

@@ -1,0 +1,23 @@
+#!/bin/bash
+rm 3d_tephra_fall.nc
+rm Ash3d.lst
+rm caption.txt
+rm contourfile_0.1_0_i.xyz
+rm deposit.gif
+rm dep_out_t16_g0.grd
+rm dep_tot_out.grd
+rm dep_tot_out_t16.grd
+rm dp_0.1.lev
+rm dp_0.8.lev
+rm dp_100.lev
+rm dp_25.lev
+rm dp_6.lev
+rm map_range.txt
+rm progress.txt
+rm temp.epsi
+rm temp.gif
+rm temp.pdf
+rm temp.ps
+rm var.txt
+rm volc.txt
+rm world_cities.txt
