@@ -32,12 +32,12 @@
 *******************************************************************************
 Spurr                          #Volcano name (character*30) (61.299,152.251)
 1 4 -107.0 50.0 50.0 50.0 6367.470    #Proj flags and params
--160 55                #x, y of LL corner of grid (km, or deg. if latlongflag=1)
-20.0 10.0                #grid width and height (km, or deg. if latlonflag=1)
+-154 58                #x, y of LL corner of grid (km, or deg. if latlongflag=1)
+20.0 6.0                #grid width and height (km, or deg. if latlonflag=1)
 -152.251 61.299 2.309              #vent location         (km, or deg. if latlonflag=1)
 0.25       0.25                  #DX, DY of grid cells  (km, or deg.)
 0.5                          #DZ of grid cells      (always km)
-0.      8.                   #diffusion coefficient (m2/s), Suzuki constant
+0.      4.                   #diffusion coefficient (m2/s), Suzuki constant
 1                              #neruptions, number of eruptions or pulses
 *******************************************************************************
 #ERUPTION LINES (number = neruptions)

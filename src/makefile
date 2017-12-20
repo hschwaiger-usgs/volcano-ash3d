@@ -295,9 +295,19 @@ ifeq ($(USENETCDF), T)
   DATAOBJ = write_NETCDF.o
 endif
 
+UTIL_SRC=utils/citywriter.f90             \
+         utils/legend_placer_ac.f90       \
+         utils/legend_placer_dp.f90       \
+         utils/legend_placer_dp_mm.f90
+UTIL_BINS=../bin/citywriter               \
+          ../bin/legend_placer_ac         \
+          ../bin/legend_placer_dp         \
+          ../bin/legend_placer_dp_mm
+
 Ash3d:  $(OBJECTS) $(DATAOBJ) Ash3d.F90 makefile
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c Ash3d.F90 
 	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d.o $(LIBS) -o Ash3d
+	mkdir -p ../bin
 	mv Ash3d ../bin/$(ASH3DEXEC)
 
 # Objects/Modules for initilization and model set-up
@@ -361,8 +371,13 @@ endif
 write_KML.o: $(ASH3dCCSRC)/write_KML.f90 makefile Ash3d_VariableModules.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_KML.f90
 
+utils:  ${UTILS_SRC} makefile
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) utils/citywriter.f90          -o ../bin/citywriter
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) utils/legend_placer_ac.f90    -o ../bin/legend_placer_ac
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) utils/legend_placer_dp.f90    -o ../bin/legend_placer_dp
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) utils/legend_placer_dp_mm.f90 -o ../bin/legend_placer_dp_mm
 
-all: Ash3d
+all: Ash3d utils
 
 clean:
 	rm -rf $(OBJECTS) Ash3d.o $(DATAOBJ) $(OPTMODS_OBJ) ../bin/Ash3d* \

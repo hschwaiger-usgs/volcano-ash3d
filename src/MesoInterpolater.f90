@@ -25,8 +25,7 @@
          SimStartHour
 
       use mesh,            only : &
-         nxmax,nymax,nzmax,&
-         lon_cc_pd
+         nxmax,nymax,nzmax
 
       use Source,          only : &
          uvx_pd,uvy_pd,ibase,itop,SourceType,e_EndTime
@@ -41,7 +40,7 @@
          MR_dum3d_compH,MR_dum3d_compH_2,MR_ForecastInterval,MR_iMetStep_Now,&
          MR_MetSteps_Total,Have_Vz,isGridRelative,Map_Case,&
          MR_MetStep_Hour_since_baseyear,MR_MetStep_Interval,&
-         MR_dum3d_metH,MR_dum3d_metP,x_submet_sp,y_submet_sp,MR_dum3d_compH,x_comp_sp,y_comp_sp,&
+         MR_dum3d_compH,&
            MR_Read_HGT_arrays,&
            MR_Read_3d_Met_Variable_to_CompGrid,&
            MR_Rotate_UV_GR2ER_Met,&

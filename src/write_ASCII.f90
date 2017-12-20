@@ -326,7 +326,7 @@
          n_gs_max,Tephra_gsdiam,Tephra_rho_m,Tephra_v_s
 
       use mesh,          only : &
-         nsmax,IsLatLon
+         nsmax
 
       use Source,        only : &
          neruptions,e_Duration,e_Volume,PlumeHeight

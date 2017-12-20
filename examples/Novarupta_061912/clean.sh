@@ -1,23 +1,24 @@
 #!/bin/bash
-rm 3d_tephra_fall.nc
-rm Ash3d.lst
-rm caption.txt
-rm contourfile_0.1_0_i.xyz
-rm deposit.gif
-rm dep_out_t16_g0.grd
-rm dep_tot_out.grd
-rm dep_tot_out_t16.grd
-rm dp_0.1.lev
-rm dp_0.8.lev
-rm dp_100.lev
-rm dp_25.lev
-rm dp_6.lev
-rm map_range.txt
-rm progress.txt
-rm temp.epsi
-rm temp.gif
-rm temp.pdf
-rm temp.ps
-rm var.txt
-rm volc.txt
-rm world_cities.txt
+rm -f 3d_tephra_fall.nc
+rm -f Ash3d.lst
+rm -f caption.txt
+rm -f contourfile_0.1_0_i.xyz
+rm -f deposit.gif
+rm -f dep_out_t16_g0.grd
+rm -f dep_tot_out.grd
+rm -f dep_tot_out_t16.grd
+rm -f dp_0.1.lev
+rm -f dp_0.8.lev
+rm -f dp_100.lev
+rm -f dp_25.lev
+rm -f dp_6.lev
+rm -f map_range.txt
+rm -f progress.txt
+rm -f temp.epsi
+rm -f temp.gif
+rm -f temp.pdf
+rm -f temp.ps
+rm -f var.txt
+rm -f volc.txt
+rm -f world_cities.txt
+rm -f *kml

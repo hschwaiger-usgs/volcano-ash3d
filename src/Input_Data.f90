@@ -19,7 +19,7 @@
          cdf_b4l14,cdf_b4l15,cdf_b4l16,cdf_b4l17,cdf_b4l18,cdf_b6l1,cdf_b6l2,cdf_b6l3,cdf_b6l4,&
          cdf_b6l5,cdf_comment,cdf_title,outfile,VolcanoName,WriteTimes,nWriteTimes,&
          lon_vprofile,lat_vprofile,x_vprofile,y_vprofile,i_vprofile,j_vprofile,io,&
-         concenfile,infile,ioutputFormat,iolog,LoadConcen,log_step,NextWriteTime,&
+         concenfile,infile,ioutputFormat,LoadConcen,log_step,NextWriteTime,&
          AppendExtAirportFile,WriteInterval,WriteGSD,WriteDepositTS_KML,WriteDepositTS_ASCII,&
          WriteDepositTime_KML,WriteDepositTime_ASCII,WriteDepositFinal_KML,&
          WriteDepositFinal_ASCII,WriteCloudTime_KML,WriteCloudTime_ASCII,&

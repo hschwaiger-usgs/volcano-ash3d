@@ -1933,9 +1933,6 @@
       use io_data,           only : &
          concenfile,init_tstep
 
-      use Tephra,            only : &
-         DepositDensity
-
       use mesh,              only : &
          nxmax,nymax,nzmax,nsmax,dz_vec_pd,ts0,ts1
 

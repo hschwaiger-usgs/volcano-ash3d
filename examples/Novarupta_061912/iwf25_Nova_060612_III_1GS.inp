@@ -33,7 +33,7 @@
 Novarupta                      #Volcano name (character*30) (61.299,152.251)
 1 4 -107.0 50.0 50.0 50.0 6367.470    #Proj flags and params
 0.0 0.0                #x, y of LL corner of grid (km, or deg. if latlongflag=1) -165 40
-359.0  80.0               #grid width and height (km, or deg. if latlonflag=1)
+360.0  80.0               #grid width and height (km, or deg. if latlonflag=1)
 -155.1591 58.2624 1.0              #vent location         (km, or deg. if latlonflag=1) 52.177N 175.508W
 1.0      1.0                  #DX, DY of grid cells  (km, or deg.)
 1.0                          #DZ of grid cells      (always km)

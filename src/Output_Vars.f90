@@ -639,9 +639,6 @@
       
 !     Subroutine that determines whether the ash has yet hit any airports
 
-      use mesh,          only : &
-         IsLatLon
- 
       use Airports,      only : &
          Airport_CloudHere,Airport_thickness,Airport_depRate,Airport_AshDuration,&
          Airport_thicknessLast,Airport_depRateLast,Airport_CloudHereLast,&

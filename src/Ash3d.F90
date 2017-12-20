@@ -12,8 +12,7 @@
          ivent,jvent,nxmax,nymax,nzmax,nsmax,ts0,ts1
 
       use solution,      only : &
-         concen_pd,dep_vol,tot_vol,DepositGranularity,StopValue,&
-         vx_pd,vy_pd,vz_pd
+         concen_pd,dep_vol,tot_vol,DepositGranularity,StopValue
 
       use Output_Vars,   only : &
          AreaCovered,DepositThickness,LoadVal,CloudLoadArea,&
