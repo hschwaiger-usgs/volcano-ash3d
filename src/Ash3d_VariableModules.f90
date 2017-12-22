@@ -64,6 +64,15 @@
 #ifdef LIM_NONE
       character(len=10)        :: limiter = 'No'
 #endif
+#ifdef LIM_LAXWEN
+      character(len=10)        :: limiter = 'LaxWendrof'
+#endif
+#ifdef LIM_BW
+      character(len=10)        :: limiter = 'BeamWarm'
+#endif
+#ifdef LIM_FROMM
+      character(len=10)        :: limiter = 'Fromm'
+#endif
 #ifdef LIM_MINMOD
       character(len=10)        :: limiter = 'Minmod'
 #endif

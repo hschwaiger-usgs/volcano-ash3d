@@ -392,7 +392,7 @@
             endif
 #endif
 
-#ifdef LIM_UP
+#ifdef LIM_BW
               ! Beam-Warming (linear)
             ldq = dqu
 #endif

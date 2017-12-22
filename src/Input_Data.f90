@@ -813,8 +813,8 @@
       CompGrid_height = max(1.0_ip,ZPADDING*maxval(PlumeHeight(1:neruptions)))
       nzmax = 0
       do k = 1,nz_init-1
-        if(z_vec_init(k+1).ge.CompGrid_height.and. &
-           z_vec_init(k).lt.CompGrid_height)then
+        if(z_vec_init(k+1).gt.CompGrid_height.and. &
+           z_vec_init(k).le.CompGrid_height)then
           nzmax = k
         endif
       enddo

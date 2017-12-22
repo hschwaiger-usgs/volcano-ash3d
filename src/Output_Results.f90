@@ -107,7 +107,6 @@
         else
          NextWriteTime = 1.0e10_ip
       endif
-
       !construct text string for timespan written to KML files
       if (nTimeNext.gt.0) then
          !timenow = SimStartHour+time
