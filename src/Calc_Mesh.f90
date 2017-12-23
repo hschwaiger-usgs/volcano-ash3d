@@ -36,7 +36,7 @@
       real(kind=ip) :: r_1,r_2,rr_2,drr,drrr
       real(kind=ip) :: phi_1,phi_2,del_phi,del_cphi
       real(kind=ip) :: del_lam
-      real(kind=ip) :: phi
+      real(kind=ip) :: phi_bot,phi_top,phi
 
       write(global_production,*)"--------------------------------------------------"
       write(global_production,*)"---------- CALC_MESH_PARAMS ----------------------"
@@ -121,7 +121,10 @@
        !*********************************************************************************
         ! For lon/lat cases, we will need the dx,dy that is most restrictive on
         ! dt calculations
-        phi = maxval(abs(lat_cc_pd(1:nymax)))
+        phi_bot = lat_cc_pd(    1) - dn*0.5_ip
+        phi_top = lat_cc_pd(nymax) + dn*0.5_ip
+        phi = max(abs(phi_bot),abs(phi_top))
+        !phi = maxval(abs(lat_cc_pd(1:nymax)))
         dx = RAD_EARTH*cos(DEG2RAD*phi)*de*DEG2RAD
         dy = RAD_EARTH*dn*PI/180.0_ip
       else

@@ -231,7 +231,7 @@
             ! leftward fluctuation-----|             |             |              |
             !    at right boundary     |             |             |              |
             !                          V             V             V              V
-            update = -dt_vol_cc(l)*(LFluct_Rbound+RFluct_Lbound-LimFlux_Rbound+LimFlux_Lbound)
+            update = -dt_vol_cc(l)*(LFluct_Rbound+RFluct_Lbound+LimFlux_Rbound-LimFlux_Lbound)
 
             !update = -dt_vol_cc(k)*(fs_I(k+1,fluc_l)+fs_I(k,fluc_r)-fss_I(k+1)+fss_I(k))
             concen_pd(i,j,l,n,ts1) = concen_pd(i,j,l,n,ts0) + update
@@ -243,7 +243,7 @@
               outflow_xy2_pd(i,j,n) = outflow_xy2_pd(i,j,n) + update
             endif
           enddo ! loop over l (cell centers)
-        
+
         enddo
       enddo ! loop over idx_dum
       !$OMP END PARALLEL do

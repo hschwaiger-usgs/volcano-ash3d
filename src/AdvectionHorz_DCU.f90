@@ -244,7 +244,7 @@
             ! leftward fluctuation-----|             |             |              |
             !    at right boundary     |             |             |              |
             !                          V             V             V              V
-            update = -dt_vol_cc(l)*(LFluct_Rbound+RFluct_Lbound-LimFlux_Rbound+LimFlux_Lbound)
+            update = -dt_vol_cc(l)*(LFluct_Rbound+RFluct_Lbound+LimFlux_Rbound-LimFlux_Lbound)
             concen_pd(l,j,k,n,ts1) = concen_pd(l,j,k,n,ts0) + update
             if(.not.IsPeriodic)then
               if(l.eq.0)then
@@ -430,12 +430,12 @@
             if (l.eq.1)then
               divu_p   = max(0.0_ip,usig_I(l  ))
             else
-              divu_p   = max(0.0_ip,usig_I(l  )) - max(0.0_ip,usig_I(l-1))
+              divu_p   = max(0.0_ip,usig_I(l  ))  - max(0.0_ip,usig_I(l-1))
             endif
             if (l.eq.ncells+1)then
-              divu_m   = -min(0.0_ip,usig_I(l  ))
+              divu_m   =                          - min(0.0_ip,usig_I(l))
             else
-              divu_m   =  min(0.0_ip,usig_I(l+1)) - min(0.0_ip,usig_I(l  ))
+              divu_m   =  min(0.0_ip,usig_I(l+1)) - min(0.0_ip,usig_I(l))
             endif
             fs_I(l,fluc_r) = fs_I(l,fluc_r) + q_cc(l  ) * divu_m
             fs_I(l,fluc_l) = fs_I(l,fluc_l) + q_cc(l-1) * divu_p
@@ -475,7 +475,7 @@
             ! leftward fluctuation-----|             |             |              |
             !    at right boundary     |             |             |              |
             !                          V             V             V              V
-            update = -dt_vol_cc(l)*(LFluct_Rbound+RFluct_Lbound-LimFlux_Rbound+LimFlux_Lbound)
+            update = -dt_vol_cc(l)*(LFluct_Rbound+RFluct_Lbound+LimFlux_Rbound-LimFlux_Lbound)
             concen_pd(i,l,k,n,ts1) = concen_pd(i,l,k,n,ts0) + update
             if(l.eq.0)then
               ! Flux out the - side of advection row  (N)
