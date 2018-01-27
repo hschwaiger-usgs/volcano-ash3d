@@ -18,7 +18,7 @@
          cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,cdf_b4l11,cdf_b4l12,cdf_b4l13,&
          cdf_b4l14,cdf_b4l15,cdf_b4l16,cdf_b4l17,cdf_b4l18,cdf_b6l1,cdf_b6l2,cdf_b6l3,cdf_b6l4,&
          cdf_b6l5,cdf_comment,cdf_title,outfile,VolcanoName,WriteTimes,nWriteTimes,&
-         lon_vprofile,lat_vprofile,x_vprofile,y_vprofile,i_vprofile,j_vprofile,io,&
+         x_vprofile,y_vprofile,i_vprofile,j_vprofile,io,&
          concenfile,infile,ioutputFormat,LoadConcen,log_step,NextWriteTime,&
          AppendExtAirportFile,WriteInterval,WriteGSD,WriteDepositTS_KML,WriteDepositTS_ASCII,&
          WriteDepositTime_KML,WriteDepositTime_ASCII,WriteDepositFinal_KML,&
@@ -1679,13 +1679,13 @@
 
       if (nvprofiles.gt.0) then
         write(global_info,*)"Allocating profile arrays:",nvprofiles
-        if (IsLatLon) then
-          allocate(lon_vprofile(nvprofiles))
-          allocate(lat_vprofile(nvprofiles))
-        else
+        !if (IsLatLon) then
+        !  allocate(lon_vprofile(nvprofiles))
+        !  allocate(lat_vprofile(nvprofiles))
+        !else
           allocate(x_vprofile(nvprofiles))
           allocate(y_vprofile(nvprofiles))
-        endif
+        !endif
         allocate(i_vprofile(nvprofiles))
         allocate(j_vprofile(nvprofiles))
         write(global_info,46)
@@ -1694,8 +1694,13 @@
                   '          #         x         y     i     j')
         do i=1,nvprofiles
           read(10,'(a80)') linebuffer
-          read(linebuffer,*,err=2001) x_vprofile(i), y_vprofile(i)
-          write(global_info,*)i,x_vprofile(i), y_vprofile(i)
+          !if (IsLatLon) then
+          !  read(linebuffer,*,err=2001) lon_vprofile(i), lat_vprofile(i)
+          !  write(global_info,*)i,lon_vprofile(i), lat_vprofile(i)
+          !else
+            read(linebuffer,*,err=2001) x_vprofile(i), y_vprofile(i)
+            write(global_info,*)i,x_vprofile(i), y_vprofile(i)
+          !endif
           call vprofchecker(i)
         enddo
       endif
@@ -2585,20 +2590,21 @@
         dx,dy,xLL,yLL,gridwidth_x,gridwidth_y
 
       use io_data,           only : &
-        lon_vprofile,lat_vprofile,x_vprofile,y_vprofile,i_vprofile,j_vprofile
+        x_vprofile,y_vprofile,i_vprofile,j_vprofile
 
       implicit none
 
       integer, intent(in) :: iprof
+      real(kind=ip) :: lon_vprof, lat_vprof
+
 
 !     FIND THE I AND J VALUES OF THE NODE WHERE THE VOLCANO LIES
       if (IsLatLon) then
-        lon_vprofile(iprof) = x_vprofile(iprof)
-        lat_vprofile(iprof) = y_vprofile(iprof)
-        if ((lonLL+gridwidth_e-lon_vprofile(iprof)).gt.360.0_ip) &
-          lon_vprofile(iprof)=lon_vprofile(iprof)+360.0_ip
-        i_vprofile(iprof) = int((lon_vprofile(iprof)-lonLL)/de) + 1
-        j_vprofile(iprof) = int((lat_vprofile(iprof)-latLL)/dn) + 1
+        lon_vprof = x_vprofile(iprof)
+        lat_vprof = y_vprofile(iprof)
+        if ((lonLL+gridwidth_e-lon_vprof).gt.360.0_ip) lon_vprof = lon_vprof+360.0_ip
+        i_vprofile(iprof) = int((lon_vprof-lonLL)/de) + 1
+        j_vprofile(iprof) = int((lat_vprof-latLL)/dn) + 1
       else
         i_vprofile(iprof) = int((x_vprofile(iprof)-xLL)/dx) + 1
         j_vprofile(iprof) = int((y_vprofile(iprof)-yLL)/dy) + 1
@@ -2609,8 +2615,8 @@
 
            !MAKE SURE THE POINT IS WITHIN THE MODEL REGION
       if (islatlon) then
-        if (((lon_vprofile(iprof).lt.lonLL).or.(lon_vprofile(iprof).gt.(lonLL+gridwidth_e))).or. &
-            ((lat_vprofile(iprof).lt.latLL).or.(lat_vprofile(iprof).gt.(latLL+gridwidth_n)))) then
+        if (((lon_vprof.lt.lonLL).or.(lon_vprof.gt.(lonLL+gridwidth_e))).or. &
+            ((lat_vprof.lt.latLL).or.(lat_vprof.gt.(latLL+gridwidth_n)))) then
           write(global_info,*) 'ERROR: this location is not within the model region'
           write(global_log ,*) 'ERROR: this location is not within the model region'
           stop 1

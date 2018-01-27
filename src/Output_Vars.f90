@@ -687,6 +687,13 @@
         if ((Airport_AshArrived(i).eqv..false.).and.(Airport_thickness(i).gt.THICKNESS_THRESH)) then
           Airport_AshArrived(i) = .true.
           Airport_AshArrivalTime(i) = time
+          ! Some cases with high eruptive volume might have a deposit that
+          ! arrived before the 'cloud' is triggered.  Force the cloud to be
+          ! marked
+          if (Airport_CloudArrived(i).eqv..false.) then
+            Airport_CloudArrived(i) = .true.
+            Airport_CloudArrivalTime(i) = time
+          endif
         endif
       enddo
 

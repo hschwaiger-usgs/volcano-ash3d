@@ -385,8 +385,7 @@
         temp_a = Tephra_gsF_fac(j,:)
         do i=j-1,1,-1
             ! sort on grain-size
-          !if (vf_now(i).le.tmp1) goto 101
-          if (vf_now(i).le.tmp1) exit
+          if (vf_now(i).le.tmp1) goto 101
           vf_now(i+1)           = vf_now(i)
           Tephra_gsdiam(i+1)    = Tephra_gsdiam(i)
           Tephra_bin_mass(i+1)  = Tephra_bin_mass(i)
@@ -396,8 +395,7 @@
           Tephra_gsF_fac(i+1,:) = Tephra_gsF_fac(i,:)
         enddo
         i=0
-! 101    vf_now(i+1)          = tmp1
-        vf_now(i+1)          = tmp1
+ 101    vf_now(i+1)          = tmp1
         Tephra_gsdiam(i+1)   = tmp2
         Tephra_bin_mass(i+1) = tmp3
         Tephra_rho_m(i+1)    = tmp4

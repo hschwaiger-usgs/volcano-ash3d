@@ -229,7 +229,7 @@
       integer           :: nvprofiles                                        !number of vertical profiles to write out
       integer,       dimension(:), allocatable :: i_vprofile, j_vprofile     !i and j values of vertical profiles
       real(kind=ip), dimension(:), allocatable :: x_vprofile, y_vprofile     !x and y of vertical profiles
-      real(kind=ip), dimension(:), allocatable :: lon_vprofile, lat_vprofile !lat & lon of vertical profiles
+      !real(kind=ip), dimension(:), allocatable :: lon_vprofile, lat_vprofile !lat & lon of vertical profiles
 !
       integer            :: nvar_User2d_static_XY  = 0
       integer            :: nvar_User2d_XY         = 0
@@ -253,8 +253,8 @@
       if(allocated(j_vprofile))   deallocate(j_vprofile)
       if(allocated(x_vprofile))   deallocate(x_vprofile)
       if(allocated(y_vprofile))   deallocate(y_vprofile)
-      if(allocated(lon_vprofile)) deallocate(lon_vprofile)
-      if(allocated(lat_vprofile)) deallocate(lat_vprofile)
+      !if(allocated(lon_vprofile)) deallocate(lon_vprofile)
+      !if(allocated(lat_vprofile)) deallocate(lat_vprofile)
 
       end subroutine Deallocate_io_data
       !------------------------------------------------------------------------
