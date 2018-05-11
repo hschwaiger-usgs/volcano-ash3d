@@ -30,15 +30,15 @@
       logical, parameter :: USE_OUTPROD_VARS  = .true.
 
         ! Set this parameter if you want to include velocities in the output file
-      logical, parameter :: USE_WIND_VARS  = .false.
+      logical, parameter :: USE_WIND_VARS  = .true.
 
         ! Set this parameter to false if you do not want raw concentration values
         ! exported (only derived products and deposits)
-      logical, parameter :: USE_RESTART_VARS  = .false.
+      logical, parameter :: USE_RESTART_VARS  = .true.
 
         ! Set this to true if you want the extra output variables defined in the
         ! optional modules
-      logical, parameter :: USE_OPTMOD_VARS  = .false.
+      logical, parameter :: USE_OPTMOD_VARS  = .true.
 
         ! Set this parameter if you want to export additional variables
         ! to the netcdf file
@@ -281,21 +281,23 @@
       AreaCovered               = 0.0_ip
       dvol = dx*dy*dz_vec_pd(1)
 
-      do i=1,nxmax
-        do j=1,nymax
-          DepositThickness(i,j) = sum(DepositGranularity(i,j,1:n_gs_max)) * &  ! in kg/km^3
-                                  dz_vec_pd(1)                            / &  ! convert to kg/km^2
-                                  KM2_2_M2                                / &  ! from kg/km^2 to kg/m^2
-                                  DepositDensity                          * &  ! from kg/m^2 to m
-                                  M_2_MM                                       ! from m to mm
-          if(IsLatLon)then
-            dvol = kappa_pd(i,j,0)
-          endif
-          if (DepositThickness(i,j).gt.DEPO_THRESH)then
-            AreaCovered = AreaCovered + dvol/dz_vec_pd(1)
-          endif
+      if(n_gs_max.gt.0)then
+        do i=1,nxmax
+          do j=1,nymax
+            DepositThickness(i,j) = sum(DepositGranularity(i,j,1:n_gs_max)) * &  ! in kg/km^3
+                                    dz_vec_pd(1)                            / &  ! convert to kg/km^2
+                                    KM2_2_M2                                / &  ! from kg/km^2 to kg/m^2
+                                    DepositDensity                          * &  ! from kg/m^2 to m
+                                    M_2_MM                                       ! from m to mm
+            if(IsLatLon)then
+              dvol = kappa_pd(i,j,0)
+            endif
+            if (DepositThickness(i,j).gt.DEPO_THRESH)then
+              AreaCovered = AreaCovered + dvol/dz_vec_pd(1)
+            endif
+          enddo
         enddo
-      enddo
+      endif
 
       end subroutine AshThicknessCalculator
       
@@ -326,26 +328,28 @@
       !calculate particle collision rate between two particle sizes
       !note: this requires that only two particle sizes be used as input
 
-      do i=1,nxmax
-        do j=1,nymax
-          !if (CloudLoad(i,j).lt.CLOUDLOAD_THRESH) cycle
-          do k=1,nzmax
-            zcol = 0.0_ip
-            do l=1,n_gs_max
-              !convert concentration (kg/km3) to number density (#/m3)
-              NumDens = concen_pd(i,j,k,l,ts1)/(Tephra_rho_m(l)*PI* &
-                            Tephra_gsdiam(l)**3.0_ip/6.0_ip)/KM3_2_M3     !particles/m3
-              zcol    = zcol + NumDens*(1000.0_ip*Tephra_gsdiam(l))**6.0_ip
+      if(n_gs_max.gt.0)then
+        do i=1,nxmax
+          do j=1,nymax
+            !if (CloudLoad(i,j).lt.CLOUDLOAD_THRESH) cycle
+            do k=1,nzmax
+              zcol = 0.0_ip
+              do l=1,n_gs_max
+                !convert concentration (kg/km3) to number density (#/m3)
+                NumDens = concen_pd(i,j,k,l,ts1)/(Tephra_rho_m(l)*PI* &
+                              Tephra_gsdiam(l)**3.0_ip/6.0_ip)/KM3_2_M3     !particles/m3
+                zcol    = zcol + NumDens*(1000.0_ip*Tephra_gsdiam(l))**6.0_ip
+              enddo
+              if(zcol.gt.EPS_SMALL)then
+                dbZ(i,j,k) = 10.0_ip*log10(zcol)
+              else
+                dbZ(i,j,k) = dbZCol_FillValue
+              endif
             enddo
-            if(zcol.gt.EPS_SMALL)then
-              dbZ(i,j,k) = 10.0_ip*log10(zcol)
-            else
-              dbZ(i,j,k) = dbZCol_FillValue
-            endif
+            dbZCol(i,j) = maxval(dbZ(i,j,1:nzmax))
           enddo
-          dbZCol(i,j) = maxval(dbZ(i,j,1:nzmax))
         enddo
-      enddo
+      endif
 
 !      if (WriteKMLreflectivity) then
 !        write(306,2) time, maxval(dbZ)
@@ -381,45 +385,47 @@
       MaxHeight(1:nxmax,1:nymax)        = MaxHeight_FillValue
       MinHeight(1:nxmax,1:nymax)        = MinHeight_FillValue
 
-      do i=1,nxmax
-        do j=1,nymax
-          TotalConcentration = 0.0_ip
-          do k=1,nzmax
-            TotalConcentration(k) = sum(concen_pd(i,j,k,1:n_gs_max,ts1))
-            if (TotalConcentration(k)>TOTCON_THRESH) then 
-              if(IsLatLon)then
-                !dvol = kappa(i,j,1)
-                dvol = kappa_pd(i,j,k)
-              else
-                dvol = dx*dy*dz_vec_pd(k)
-              endif
-              !set height only if load>CLOUDLOAD_THRESH
-              if (CloudLoad(i,j).gt.CLOUDLOAD_THRESH) &
-                !MaxHeight(i,j)=z_cc_pd(k)+0.5_ip*dz
-                MaxHeight(i,j)=z_cc_pd(k)+0.5_ip*dz_vec_pd(k)
-              CloudArea = CloudArea + dvol/dz_vec_pd(k)
-            endif
-          enddo
-
-          ! Now get cloud bottom
-          if(MaxHeight(i,j).gt.MaxHeight_FillValue)then
-            !kk = floor(MaxHeight(i,j)/dz)+1
-            kk = nzmax
-            do k=kk,1,-1
-              if(TotalConcentration(k)>TOTCON_THRESH)then
-                MinHeight(i,j)=z_cc_pd(k)-0.5_ip*dz_vec_pd(k)
+      if(n_gs_max.gt.0)then
+        do i=1,nxmax
+          do j=1,nymax
+            TotalConcentration = 0.0_ip
+            do k=1,nzmax
+              TotalConcentration(k) = sum(concen_pd(i,j,k,1:n_gs_max,ts1))
+              if (TotalConcentration(k)>TOTCON_THRESH) then 
+                if(IsLatLon)then
+                  !dvol = kappa(i,j,1)
+                  dvol = kappa_pd(i,j,k)
+                else
+                  dvol = dx*dy*dz_vec_pd(k)
+                endif
+                !set height only if load>CLOUDLOAD_THRESH
+                if (CloudLoad(i,j).gt.CLOUDLOAD_THRESH) &
+                  !MaxHeight(i,j)=z_cc_pd(k)+0.5_ip*dz
+                  MaxHeight(i,j)=z_cc_pd(k)+0.5_ip*dz_vec_pd(k)
+                CloudArea = CloudArea + dvol/dz_vec_pd(k)
               endif
             enddo
-            !if cloud goes all the way to the ground, set min to 0.0
-            if(MinHeight(i,j).lt.0.0_ip.and.MaxHeight(i,j).gt.0.0_ip)MinHeight(i,j)=0.0_ip
-            ! Double-check that min doesn't exceed max
-            MinHeight(i,j)=min(MaxHeight(i,j),MinHeight(i,j))
-
-          endif
-
-          MaxConcentration(i,j) = maxval(TotalConcentration)          !concentration in kg/km3
+  
+            ! Now get cloud bottom
+            if(MaxHeight(i,j).gt.MaxHeight_FillValue)then
+              !kk = floor(MaxHeight(i,j)/dz)+1
+              kk = nzmax
+              do k=kk,1,-1
+                if(TotalConcentration(k)>TOTCON_THRESH)then
+                  MinHeight(i,j)=z_cc_pd(k)-0.5_ip*dz_vec_pd(k)
+                endif
+              enddo
+              !if cloud goes all the way to the ground, set min to 0.0
+              if(MinHeight(i,j).lt.0.0_ip.and.MaxHeight(i,j).gt.0.0_ip)MinHeight(i,j)=0.0_ip
+              ! Double-check that min doesn't exceed max
+              MinHeight(i,j)=min(MaxHeight(i,j),MinHeight(i,j))
+  
+            endif
+  
+            MaxConcentration(i,j) = maxval(TotalConcentration)          !concentration in kg/km3
+          enddo
         enddo
-      enddo
+      endif
             
       end subroutine ConcentrationCalculator      
 
@@ -453,21 +459,23 @@
       CloudLoad = 0.0_ip
 
       CellArea = dx*dy
-      do i=1,nxmax
-        do j=1,nymax
-          if (IsLatlon) CellArea=kappa_pd(i,j,1)/dz_vec_pd(1)
-          do k=1,nzmax
-            ! Increment the cloud load for this cell
-            CloudLoad(i,j) = CloudLoad(i,j) + &
-                              sum(concen_pd(i,j,k,1:n_gs_max,ts1)) * & ! in kg/km^3
-                                 dz_vec_pd(k)                      / & ! convert to kg/km^2
-                               1.0e3_ip                            ! tonnes/km2
-          enddo
-          do k=1,5
-            if (CloudLoad(i,j).gt.LoadVal(k))     CloudLoadArea(k) = CloudLoadArea(k) + CellArea
+      if(n_gs_max.gt.0)then
+        do i=1,nxmax
+          do j=1,nymax
+            if (IsLatlon) CellArea=kappa_pd(i,j,1)/dz_vec_pd(1)
+            do k=1,nzmax
+              ! Increment the cloud load for this cell
+              CloudLoad(i,j) = CloudLoad(i,j) + &
+                                sum(concen_pd(i,j,k,1:n_gs_max,ts1)) * & ! in kg/km^3
+                                   dz_vec_pd(k)                      / & ! convert to kg/km^2
+                                 1.0e3_ip                            ! tonnes/km2
+            enddo
+            do k=1,5
+              if (CloudLoad(i,j).gt.LoadVal(k))     CloudLoadArea(k) = CloudLoadArea(k) + CellArea
+            enddo
           enddo
         enddo
-      enddo
+      endif
             
       end subroutine AshLoadCalculator      
 
@@ -544,12 +552,14 @@
       enddo
 
       ! Now loop over the tephra bins and calculate volume
-      do isize=1,n_gs_max
-          ! Increment total ash in air
-        vol = vol + mass_aloft(isize)               /   & ! in kg
-                    MagmaDensity                    /   & ! convert to m3
-                    KM3_2_M3                              ! convert to km3
-      enddo
+      if(n_gs_max.gt.0)then
+        do isize=1,n_gs_max
+            ! Increment total ash in air
+          vol = vol + mass_aloft(isize)               /   & ! in kg
+                      MagmaDensity                    /   & ! convert to m3
+                      KM3_2_M3                              ! convert to km3
+        enddo
+      endif
 
       end subroutine Calc_AshVol_Aloft
 
@@ -573,12 +583,15 @@
 
       vol = 0.0_ip
 
-      do isize=1,n_gs_max
-        vol = vol + sum(DepositGranularity(1:nxmax,1:nymax,isize) *   & ! in kg/km^3
-                         kappa_pd(1:nxmax,1:nymax,0))          /   & ! convert to kg
-                    MagmaDensity                      /   & ! convert to m3
-                    KM3_2_M3                                ! convert to km3
-      enddo
+      if(n_gs_max.gt.0)then
+        do isize=1,n_gs_max
+          vol = vol + sum(DepositGranularity(1:nxmax,1:nymax,isize) *   & ! in kg/km^3
+                           kappa_pd(1:nxmax,1:nymax,0))          /   & ! convert to kg
+                      MagmaDensity                      /   & ! convert to m3
+                      KM3_2_M3                                ! convert to km3
+        enddo
+      endif
+
       end subroutine Calc_AshVol_Deposit
 
 !******************************************************************************
@@ -601,34 +614,36 @@
       integer :: isize
 
       vol = 0.0_ip
-
-      do isize=1,n_gs_max
-        if(IsLatLon)then
-          vol = vol + (                                &
-                        sum(outflow_yz1_pd(        1:nymax,1:nzmax,isize)*   &
-                                  kappa_pd(      1,1:nymax,1:nzmax)) +       &
-                        sum(outflow_yz2_pd(        1:nymax,1:nzmax,isize)*   &
-                                  kappa_pd(  nxmax,1:nymax,1:nzmax)) +       &
-                        sum(outflow_xz1_pd(1:nxmax,        1:nzmax,isize)   *   &
-                                  kappa_pd(1:nxmax,      1,1:nzmax)) +          &
-                        sum(outflow_xz2_pd(1:nxmax,        1:nzmax,isize)  *   &
-                                  kappa_pd(1:nxmax,  nymax,1:nzmax)) +         &
-                        sum(outflow_xy2_pd(1:nxmax,1:nymax        ,isize)   *   &
-                                  kappa_pd(1:nxmax,1:nymax,  nzmax)) )     /   & ! convert to kg
-                        MagmaDensity                            /   & ! convert to m3
-                        KM3_2_M3                                      ! convert to km3
-        else
-          vol = vol +     (                              &
-                        sum(outflow_xz1_pd(1:nxmax,1:nzmax,isize))  +   &
-                        sum(outflow_xz2_pd(1:nxmax,1:nzmax,isize))  +   &
-                        sum(outflow_yz1_pd(1:nymax,1:nzmax,isize))  +   &
-                        sum(outflow_yz2_pd(1:nymax,1:nzmax,isize))  +   &
-                        sum(outflow_xy2_pd(1:nxmax,1:nymax,isize)) )/   & ! convert to kg
-                        MagmaDensity                       /   & ! convert to m3
-                        KM3_2_M3                                 ! convert to km3
-
-        endif
-      enddo
+  
+      if(n_gs_max.gt.0)then
+        do isize=1,n_gs_max
+          if(IsLatLon)then
+            vol = vol + (                                &
+                          sum(outflow_yz1_pd(        1:nymax,1:nzmax,isize)*   &
+                                    kappa_pd(      1,1:nymax,1:nzmax)) +       &
+                          sum(outflow_yz2_pd(        1:nymax,1:nzmax,isize)*   &
+                                    kappa_pd(  nxmax,1:nymax,1:nzmax)) +       &
+                          sum(outflow_xz1_pd(1:nxmax,        1:nzmax,isize)   *   &
+                                    kappa_pd(1:nxmax,      1,1:nzmax)) +          &
+                          sum(outflow_xz2_pd(1:nxmax,        1:nzmax,isize)  *   &
+                                    kappa_pd(1:nxmax,  nymax,1:nzmax)) +         &
+                          sum(outflow_xy2_pd(1:nxmax,1:nymax        ,isize)   *   &
+                                    kappa_pd(1:nxmax,1:nymax,  nzmax)) )     /   & ! convert to kg
+                          MagmaDensity                            /   & ! convert to m3
+                          KM3_2_M3                                      ! convert to km3
+          else
+            vol = vol +     (                              &
+                          sum(outflow_xz1_pd(1:nxmax,1:nzmax,isize))  +   &
+                          sum(outflow_xz2_pd(1:nxmax,1:nzmax,isize))  +   &
+                          sum(outflow_yz1_pd(1:nymax,1:nzmax,isize))  +   &
+                          sum(outflow_yz2_pd(1:nymax,1:nzmax,isize))  +   &
+                          sum(outflow_xy2_pd(1:nxmax,1:nymax,isize)) )/   & ! convert to kg
+                          MagmaDensity                       /   & ! convert to m3
+                          KM3_2_M3                                 ! convert to km3
+  
+          endif
+        enddo
+      endif
 
       end subroutine Calc_AshVol_Outflow
 

@@ -75,7 +75,7 @@ VERB = 1
 
 # MEMORY
 # If you need pointer arrays instead of allocatable arrays, set this to 'T'
-USEPOINTERS = T
+USEPOINTERS = F
 
 ###############################################################################
 #  NOTE:  The following flags can either be set or commented out.  If they are

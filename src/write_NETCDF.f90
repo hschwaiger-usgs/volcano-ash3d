@@ -1,4 +1,4 @@
-!e##############################################################################
+!##############################################################################
 !
 !    create_netcdf_file
 !
@@ -45,7 +45,7 @@
          sigma_nz_pd,dx,dy,dz_vec_pd,IsLatLon,ts1
 
       use solution,      only : &
-          vx_pd,vy_pd,vz_pd,vf_pd,concen_pd,DepositGranularity
+          vx_pd,vy_pd,vz_pd,vf_pd,concen_pd,DepositGranularity,SpeciesID,SpeciesSubID
 
       use time_data,     only : &
           BaseYear,useLeap,cdf_time_log,time,SimStartHour,xmlSimStartTime
@@ -54,7 +54,7 @@
          neruptions,e_Volume,e_Duration,e_StartTime,PlumeHeight
 
       use MetReader,     only : &
-         MR_iwindfiles,MR_MetStep_Hour_since_baseyear
+         MR_iwindfiles,MR_windfiles,MR_MetStep_Hour_since_baseyear
 
       use netcdf
 
@@ -66,7 +66,10 @@
       integer :: x_dim_id     = 0 ! X
       integer :: y_dim_id     = 0 ! Y
       integer :: z_dim_id     = 0 ! Z
-      integer :: gs_dim_id    = 0 ! grain size bin
+      integer :: bin_dim_id   = 0 ! Full generalized species class ID       1:nsmax    (replaces gs_dim_id)
+      !integer :: gs_dim_id    = 0 ! index just for grain size bins          1:n_gs_max
+      !integer :: Xspec_dim_id = 0 ! Index for extra (non-ash) species bins  1:ns_extra
+
       integer :: er_dim_id    = 0 ! eruption number
       integer :: wf_dim_id    = 0 ! windfile number
       integer :: sl_dim_id    = 0 ! string length
@@ -76,7 +79,10 @@
       integer :: x_var_id              = 0 ! X-distance
       integer :: y_var_id              = 0 ! Y-distance
       integer :: z_var_id              = 0 ! Z-distance
-      integer :: gs_var_id             = 0 ! grain size
+      integer :: bin_var_id            = 0 ! Species class ID
+      !integer :: gs_var_id             = 0 ! grain size
+      integer :: spec_var_id           = 0 ! Species class ID
+      integer :: subspec_var_id        = 0 ! Species sub-class ID
       integer :: er_var_id             = 0 ! eruption index
       integer :: wf_var_id             = 0 ! wind file index
       integer :: vx_var_id             = 0 ! Vx
@@ -85,6 +91,7 @@
       integer :: vf_var_id             = 0 ! Vf
       integer :: ashcon_var_id         = 0 ! Ash concentration
       integer :: depocon_var_id        = 0 ! Deposit mass/area
+      !integer :: gencon_var_id         = 0 ! General concentration for any slices of concen above the # of GS
       integer :: ashconMax_var_id      = 0 ! Max Ash concentration in column
       integer :: ashheight_var_id      = 0 ! Height of top of ash cloud
       integer :: ashload_var_id        = 0 ! Vert. integrated load of ash cloud
@@ -107,6 +114,7 @@
       integer :: temp1_2d_var_id !,temp2_2d_var_id,temp3_2d_var_id,temp4_2d_var_id
       integer :: temp1_3d_var_id !,temp2_3d_var_id,temp3_3d_var_id,temp4_3d_var_id
       integer :: temp1_4d_var_id !,temp2_4d_var_id!,temp3_4d_var_id!,temp4_4d_var_id
+      integer :: ns_extra
 
 !      character(len=30),dimension(5) :: temp_2d_name
 !      character(len=30),dimension(5) :: temp_2d_unit
@@ -134,11 +142,13 @@
 
       real(kind=op), dimension(:,:,:,:),allocatable :: ashcon
       real(kind=op), dimension(:,:,:)  ,allocatable :: depocon
+      !real(kind=op), dimension(:,:,:,:),allocatable :: gencon
 
-      character(len=3),dimension(9) :: dim_names
-      character(len=30),dimension(36) :: var_lnames
+      character(len=3) ,dimension(10) :: dim_names
+      character(len=30),dimension(40) :: var_lnames
       character (len=13)         :: reftimestr
       character (len=13)         ::  HS_yyyymmddhhmm_since
+      character(len=130):: lllinebuffer
 
       integer :: i,j,k,n
       integer :: ivar
@@ -151,6 +161,13 @@
       ! This space is also used for other 4-d variables
       allocate(ashcon(nxmax,nymax,nzmax,nsmax))
       allocate(depocon(nxmax,nymax,nsmax))
+      if(nsmax.gt.n_gs_max)then
+        ! These are some non-ash species
+        ns_extra = nsmax-n_gs_max
+      !  allocate(gencon(nxmax,nymax,nzmax,ns_extra))
+      else
+        ns_extra = 0
+      endif
 
       ! COARDS dimension definition standard
       !  see http://ferret.wrc.noaa.gov/noaa_coop/coop_cdf_profile.html
@@ -168,11 +185,12 @@
         dim_names(3) = "y"
         dim_names(4) = "x"
       endif
-      dim_names(5) = "gs"
-      dim_names(6) = "er"
-      dim_names(7) = "wf"
-      dim_names(8) = "sl"
-!      dim_names(9) = "pj"
+      dim_names(5) = "bn" ! grainsize bin for 1:n_gs_max, then generalized bin up to nsmax
+      dim_names(6) = "er" ! eruption index
+      dim_names(7) = "wf" ! windfile index
+      dim_names(8) = "sl" ! string length
+      !dim_names(9) = "sc" ! full species class ID
+      !dim_names(10)= "xs" ! index for extra species bins
 
       var_lnames(1) = "Time"
       var_lnames(2) = "Elevation"
@@ -183,14 +201,14 @@
         var_lnames(3) = "Y (North)"
         var_lnames(4) = "X (East)"
       endif
-      var_lnames(5) = "Grain size"
+      var_lnames(5) = "Bin index; Grainsize,spec. ID"
       var_lnames(6) = "Eruption number"
       var_lnames(7) = "Wind file number"
 
       var_lnames(8) = "Wind velocity (x)"
       var_lnames(9) = "Wind velocity (y)"
       var_lnames(10) = "Wind velocity (z)"
-      var_lnames(11) = "Ash Concentration"
+      var_lnames(11) = "Ash/species Concentration"
       var_lnames(12) = "Mass/area of ash deposit"
       var_lnames(13) = "grain diameter"
       var_lnames(14) = "Mass fraction"
@@ -212,10 +230,12 @@
       var_lnames(35) = "Radar Reflectivity"
       var_lnames(36) = "Cloud Bottom Height"
 
+      var_lnames(38) = "Species class ID"
+      var_lnames(39) = "Species sub-class ID"
+
       ! Declare header info
       call GetLog(cdf_user)
       call Hostnm(cdf_host)
-      !cdf_host = "localhost"
       call getcwd(cdf_cwd)
       cdf_cwd = trim(cdf_cwd)
 
@@ -227,6 +247,7 @@
       if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: create outfile: ', &
                               nf90_strerror(nSTAT)
+
       ! Fill in header info
       if(VERB.gt.1)write(global_info,*)"Filling in header info"
       nSTAT = nf90_put_att(ncid,nf90_global,"Title",cdf_title)
@@ -347,6 +368,8 @@
         !  or time, elev, lon, lat
         !  or record, level, y, x
         ! and gs (grain size)
+        ! sc (full species class indes)
+        ! xs (extra species index)
         ! er (eruption index)
         ! wf (wind file index)
         ! sl (string length for storing windfile names)
@@ -363,10 +386,10 @@
       nSTAT = nf90_def_dim(ncid,dim_names(4),nxmax,x_dim_id)
       if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: ',nf90_strerror(nSTAT)
-      nSTAT = nf90_def_dim(ncid,dim_names(5),nsmax,gs_dim_id)
+      ! Note we specify the full nxmax, not just n_gs_max
+      nSTAT = nf90_def_dim(ncid,dim_names(5),nsmax,bin_dim_id)
       if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: ',nf90_strerror(nSTAT)
-
       nSTAT = nf90_def_dim(ncid,dim_names(6),neruptions,er_dim_id)
       if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: ',nf90_strerror(nSTAT)
@@ -394,14 +417,16 @@
         nSTAT = nf90_def_var(ncid,dim_names(1),nf90_float,(/t_dim_id/), &
                              t_var_id)
       endif
-      !write(global_info,*)"t_var_id : ",t_var_id
-      if(nSTAT.ne.0)write(global_log ,*)'ERROR: def_var: ',nf90_strerror(nSTAT)
+      if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: def_var: ',nf90_strerror(nSTAT)
       nSTAT = nf90_put_att(ncid,t_var_id,"long_name",var_lnames(1))
-      if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
+      if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
       write(time_units,4313) xmlSimStartTime
 4313  format('hours since ',a20)
       nSTAT = nf90_put_att(ncid,t_var_id,"units",time_units)
-      if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
+      if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
       !if(runAsForecast)then
       !  call get_start_time_nc(1,itstart_year,itstart_month, &
       !                           itstart_day,filestart_hour)
@@ -414,7 +439,8 @@
       reftimestr = HS_yyyymmddhhmm_since(SimStartHour,BaseYear,useLeap)
 
       nSTAT = nf90_put_att(ncid,t_var_id,"ReferenceTime",reftimestr)
-      if(nSTAT.ne.0)write(global_log ,*)'ERROR: ReferenceTime: ',nf90_strerror(nSTAT)
+      if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: ReferenceTime: ',nf90_strerror(nSTAT)
 
          ! Z
       if(VERB.gt.1)write(global_info,*)"     Z",dim_names(2)
@@ -472,23 +498,17 @@
       endif
       if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
 
-         ! GS (Grain size)
-      if(VERB.gt.1)write(global_info,*)"     GS",dim_names(5)
-      if(op.eq.8)then
-        nSTAT = nf90_def_var(ncid,dim_names(5),nf90_double,(/gs_dim_id/),&
-                             gs_var_id)
-      else
-        nSTAT = nf90_def_var(ncid,dim_names(5),nf90_float,(/gs_dim_id/), &
-                             gs_var_id)
-      endif
-      !write(global_info,*)"gs_var_id : ",gs_var_id
+         ! BN (Grain size bin ID)
+      if(VERB.gt.1)write(global_info,*)"    Bin",dim_names(5)
+      nSTAT = nf90_def_var(ncid,dim_names(5),nf90_int,(/bin_dim_id/), &
+                           bin_var_id)
       if(nSTAT.ne.0)write(global_log ,*)'ERROR: def_var: ',nf90_strerror(nSTAT)
-      nSTAT = nf90_put_att(ncid,gs_var_id,"long_name",var_lnames(5))
+      nSTAT = nf90_put_att(ncid,bin_var_id,"long_name",var_lnames(5))
       if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
-      nSTAT = nf90_put_att(ncid,gs_var_id,"units","mm")
+      nSTAT = nf90_put_att(ncid,bin_var_id,"units","mm")
       if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
-      nSTAT = nf90_put_att(ncid,gs_var_id,"Comment",&
-       "Grain diameter")
+      nSTAT = nf90_put_att(ncid,bin_var_id,"Comment",&
+       "This is just an index")
       if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
 
          ! ER (Eruption index)
@@ -511,442 +531,56 @@
       nSTAT = nf90_put_att(ncid,wf_var_id,"units","index")
       if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
 
-      if(VERB.gt.1)write(global_info,*)"Defining variables"
-      if(USE_WIND_VARS)then
-         ! Now define the time-dependent variables
-         ! Vx
-        if(VERB.gt.1)write(global_info,*)"     vx",var_lnames(8)
-        if(op.eq.8)then
-          nSTAT = nf90_def_var(ncid,"vx",nf90_double,  &
-              (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/), &
-                vx_var_id)
-        else
-          nSTAT = nf90_def_var(ncid,"vx",nf90_float,   &
-              (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/), &
-                vx_var_id)
-        endif
-        if(nSTAT.ne.0)write(global_log ,*)'ERROR: def_var vx: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,vx_var_id,"long_name",var_lnames(8))
-        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,vx_var_id,"units","km/hr")
-        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att vx: ',nf90_strerror(nSTAT)
-           ! Vy
-        if(VERB.gt.1)write(global_info,*)"     vy",var_lnames(9)
-        if(op.eq.8)then
-          nSTAT = nf90_def_var(ncid,"vy",nf90_double,  &
-              (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/), &
-                vy_var_id)
-        else
-          nSTAT = nf90_def_var(ncid,"vy",nf90_float,   &
-              (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/), &
-                vy_var_id)
-        endif
-        !write(global_info,*)"vy_var_id : ",vy_var_id
-        if(nSTAT.ne.0)write(global_log ,*)'ERROR: def_var vy: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,vy_var_id,"long_name",var_lnames(9))
-        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,vy_var_id,"units","km/hr")
-        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att vy: ',nf90_strerror(nSTAT)
-           ! Vz
-        if(VERB.gt.1)write(global_info,*)"     vz",var_lnames(10)
-        if(op.eq.8)then
-          nSTAT = nf90_def_var(ncid,"vz",nf90_double,  &
-              (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/), &
-                vz_var_id)
-        else
-          nSTAT = nf90_def_var(ncid,"vz",nf90_float,   &
-              (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/), &
-                vz_var_id)
-        endif
-        !write(global_info,*)"vz_var_id : ",vz_var_id
-        if(nSTAT.ne.0)write(global_log ,*)'ERROR: def_var vz: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,vz_var_id,"long_name","Wind velocity (z)")
-        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,vz_var_id,"units","km/hr")
-        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att vz: ',nf90_strerror(nSTAT)
-
-           ! Vf
-        if(VERB.gt.1)write(global_info,*)"     vf","Fall Velocity"
-        if(op.eq.8)then
-          nSTAT = nf90_def_var(ncid,"vf",nf90_double,  &
-              (/x_dim_id,y_dim_id,z_dim_id,gs_dim_id,t_dim_id/), &
-                vf_var_id)
-        else
-          nSTAT = nf90_def_var(ncid,"vf",nf90_float,   &
-              (/x_dim_id,y_dim_id,z_dim_id,gs_dim_id,t_dim_id/), &
-                vf_var_id)
-        endif
-        if(nSTAT.ne.0)write(global_log ,*)'ERROR: def_var vf: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,vf_var_id,"long_name","Fall Velocity")
-        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,vf_var_id,"units","km/hr")
-        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att vf: ',nf90_strerror(nSTAT)
-
-      endif
-
-      if(USE_RESTART_VARS)then
-           ! Full Ash Concentration
-        if(VERB.gt.1)write(global_info,*)"     ashcon",var_lnames(11)
-        if(op.eq.8)then
-          nSTAT = nf90_def_var(ncid,"ashcon",nf90_double, &
-              (/x_dim_id,y_dim_id,z_dim_id,gs_dim_id,t_dim_id/),    &
-                ashcon_var_id)
-        else
-          nSTAT = nf90_def_var(ncid,"ashcon",nf90_float,  &
-              (/x_dim_id,y_dim_id,z_dim_id,gs_dim_id,t_dim_id/),    &
-                ashcon_var_id)
-        endif
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: def_var ashcon: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,ashcon_var_id,"long_name",var_lnames(11))
-        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,ashcon_var_id,"units","kg/km^3")
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: put_att ashcon: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,ashcon_var_id,&
-                 "missing_value", -9999.0)
-        nSTAT = nf90_put_att(ncid,ashcon_var_id,"_FillValue",-9999.0_op)
-      endif
-
+      !   End of dimension variables
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      if(USE_OPTMOD_VARS)then
-        if(VERB.gt.1)write(global_info,*)"     USE_OPTMOD_VARS"
+      !   Now a few other variables that are a function of BN
+         ! Species class ID
+      if(VERB.gt.1)write(global_info,*)"     SC : Species Class"
+      nSTAT = nf90_def_var(ncid,"spec_class",nf90_int,(/bin_dim_id/), &
+                           spec_var_id)
+      if(nSTAT.ne.0)write(global_log ,*)'ERROR: def_var: ',nf90_strerror(nSTAT)
+      nSTAT = nf90_put_att(ncid,spec_var_id,"long_name",var_lnames(38))
+      if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
+      nSTAT = nf90_put_att(ncid,spec_var_id,"units","index")
+      if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
+      nSTAT = nf90_put_att(ncid,spec_var_id,"Comment",&
+       "1=ash")
+      if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
 
-          ! Define User-specified 2-d static variables
-          if(nvar_User2d_static_XY.gt.0)then
-            do ivar=1,nvar_User2d_static_XY
-              if(op.eq.8)then
-                nSTAT = nf90_def_var(ncid,var_User2d_static_XY_name(ivar),nf90_double,  &
-                    (/x_dim_id,y_dim_id/), temp1_2d_var_id)
-              else
-                nSTAT = nf90_def_var(ncid,var_User2d_static_XY_name(ivar),nf90_float,  &
-                    (/x_dim_id,y_dim_id/), temp1_2d_var_id)
-              endif
-              nSTAT = nf90_put_att(ncid,temp1_2d_var_id,"long_name",&
-                                   var_User2d_static_XY_lname(ivar))
-              nSTAT = nf90_put_att(ncid,temp1_2d_var_id,"units",&
-                                   var_User2d_static_XY_unit(ivar))
-              nSTAT = nf90_put_att(ncid,temp1_2d_var_id,"missing_value",&
-                                   var_User2d_static_XY_MissVal(ivar))
-              nSTAT = nf90_put_att(ncid,temp1_2d_var_id,"_FillValue",&
-                                   var_User2d_static_XY_FillVal(ivar))
-            enddo
-          endif
+         ! Species sub-class ID
+      if(VERB.gt.1)write(global_info,*)"     SSC : Species Sub-class"
+      nSTAT = nf90_def_var(ncid,"spec_subclass",nf90_int,(/bin_dim_id/), &
+                           subspec_var_id)
+      if(nSTAT.ne.0)write(global_log ,*)'ERROR: def_var: ',nf90_strerror(nSTAT)
+      nSTAT = nf90_put_att(ncid,subspec_var_id,"long_name",var_lnames(39))
+      if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
+      nSTAT = nf90_put_att(ncid,subspec_var_id,"units","ID")
+      if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
+      nSTAT = nf90_put_att(ncid,subspec_var_id,"Comment",&
+       "Non-ash species code")
+      if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
 
-          ! Define User-specified 2-d transient variables
-          if(nvar_User2d_XY.gt.0)then
-            do ivar=1,nvar_User2d_XY
-              if(op.eq.8)then        
-                nSTAT = nf90_def_var(ncid,var_User2d_XY_name(ivar),nf90_double,  &
-                    (/x_dim_id,y_dim_id,t_dim_id/), temp1_2d_var_id)
-              else
-                nSTAT = nf90_def_var(ncid,var_User2d_XY_name(ivar),nf90_float,  &
-                    (/x_dim_id,y_dim_id,t_dim_id/), temp1_2d_var_id)
-              endif
-              nSTAT = nf90_put_att(ncid,temp1_2d_var_id,"long_name",&
-                                   var_User2d_XY_lname(ivar))
-              nSTAT = nf90_put_att(ncid,temp1_2d_var_id,'units',&
-                                   var_User2d_XY_unit(ivar))
-              nSTAT = nf90_put_att(ncid,temp1_2d_var_id,"missing_value",&
-                                   var_User2d_XY_MissVal(ivar))
-              nSTAT = nf90_put_att(ncid,temp1_2d_var_id,"_FillValue",&
-                                   var_User2d_XY_FillVal(ivar))
-            enddo
-          endif
-
-          !! Define User-specified 3-d transient variables in x,y,gs
-          if(nvar_User3d_XYGs.gt.0)then
-            do ivar=1,nvar_User3d_XYGs
-              if(op.eq.8)then
-                nSTAT = nf90_def_var(ncid,var_User3d_XYGs_name(ivar),nf90_double,  &
-                    (/x_dim_id,y_dim_id,gs_dim_id,t_dim_id/), temp1_3d_var_id)
-              else
-                nSTAT = nf90_def_var(ncid,var_User3d_XYGs_name(ivar),nf90_float,  &
-                    (/x_dim_id,y_dim_id,gs_dim_id,t_dim_id/), temp1_3d_var_id)
-              endif
-              nSTAT = nf90_put_att(ncid,temp1_3d_var_id,"long_name",&
-                                   var_User3d_XYGs_lname(ivar))
-              nSTAT = nf90_put_att(ncid,temp1_3d_var_id,'units',&
-                                   var_User3d_XYGs_unit(ivar))
-              nSTAT = nf90_put_att(ncid,temp1_3d_var_id,"missing_value",&
-                                   var_User3d_XYGs_MissVal(ivar))
-              nSTAT = nf90_put_att(ncid,temp1_3d_var_id,"_FillValue",&
-                                   var_User3d_XYGs_FillVal(ivar))
-            enddo
-          endif
-
-          !! Define User-specified 3-d transient variables in x,y,z
-          if(nvar_User3d_XYZ.gt.0)then
-            do ivar=1,nvar_User3d_XYZ
-              if(op.eq.8)then        
-                nSTAT = nf90_def_var(ncid,var_User3d_XYZ_name(ivar),nf90_double,  &
-                    (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/), temp1_3d_var_id)
-              else
-                nSTAT = nf90_def_var(ncid,var_User3d_XYZ_name(ivar),nf90_float,  &
-                    (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/), temp1_3d_var_id)
-              endif
-              nSTAT = nf90_put_att(ncid,temp1_3d_var_id,"long_name",&
-                                   var_User3d_XYZ_lname(ivar))
-              nSTAT = nf90_put_att(ncid,temp1_3d_var_id,'units',&
-                                   var_User3d_XYZ_unit(ivar))
-              nSTAT = nf90_put_att(ncid,temp1_3d_var_id,"missing_value",&
-                                   var_User3d_XYZ_MissVal(ivar))
-              nSTAT = nf90_put_att(ncid,temp1_3d_var_id,"_FillValue",&
-                                   var_User3d_XYZ_FillVal(ivar))
-            enddo
-          endif
-
-          ! Define User-specified 4-d transient variables in x,y,z,gs
-          if(nvar_User4d_XYZGs.gt.0)then
-            do ivar=1,nvar_User4d_XYZGs
-              if(op.eq.8)then        
-                nSTAT = nf90_def_var(ncid,var_User4d_XYZGs_name(ivar),nf90_double,  &
-                    (/x_dim_id,y_dim_id,z_dim_id,gs_dim_id,t_dim_id/), temp1_4d_var_id)
-              else
-                nSTAT = nf90_def_var(ncid,var_User4d_XYZGs_name(ivar),nf90_float, &
-                    (/x_dim_id,y_dim_id,z_dim_id,gs_dim_id,t_dim_id/), temp1_4d_var_id)
-              endif
-              nSTAT = nf90_put_att(ncid,temp1_4d_var_id,"long_name",&
-                                   var_User4d_XYZGs_lname(ivar))
-              nSTAT = nf90_put_att(ncid,temp1_4d_var_id,'units',&
-                                   var_User4d_XYZGs_unit(ivar))
-              nSTAT = nf90_put_att(ncid,temp1_4d_var_id,"missing_value",&
-                                   var_User4d_XYZGs_MissVal(ivar))
-              nSTAT = nf90_put_att(ncid,temp1_4d_var_id,"_FillValue",&
-                                   var_User4d_XYZGs_FillVal(ivar))
-            enddo
-          endif
-
-      endif
-
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!      ! Derived variables
-      if(USE_OUTPROD_VARS)then
-        ! DEPOSIT (as function of grainsmax)
-           ! Concentration of deposit by grain size(z=0 plane of tot_ashcon)
-        if(VERB.gt.1)write(global_info,*)"     depocon",var_lnames(12)
-        if(op.eq.8)then
-          nSTAT = nf90_def_var(ncid,"depocon",nf90_double, &
-              (/x_dim_id,y_dim_id,gs_dim_id,t_dim_id/),                &
-                depocon_var_id)
-        else
-          nSTAT = nf90_def_var(ncid,"depocon",nf90_float,  &
-              (/x_dim_id,y_dim_id,gs_dim_id,t_dim_id/),                &
-                depocon_var_id)
-        endif
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: def_var depocon: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,depocon_var_id,"long_name",var_lnames(12))
-        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,depocon_var_id,"units","kg/m2")
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: put_att depocon: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,depocon_var_id,&
-                 "missing_value", -9999.0)
-        nSTAT = nf90_put_att(ncid,depocon_var_id,"_FillValue",-9999.0_op)
-  
-  
-        ! DEPOSIT thickness
-        if(VERB.gt.1)write(global_info,*)"     depothick",var_lnames(30)
-        if(op.eq.8)then
-          nSTAT = nf90_def_var(ncid,"depothick",nf90_double, &
-              (/x_dim_id,y_dim_id,t_dim_id/),                &
-                depothick_var_id)
-        else
-          nSTAT = nf90_def_var(ncid,"depothick",nf90_float,  &
-              (/x_dim_id,y_dim_id,t_dim_id/),                &
-                depothick_var_id)
-        endif
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: def_var depothick: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,depothick_var_id,"long_name",var_lnames(30))
-        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,depothick_var_id,"units","mm")
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: put_att depothick: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,depothick_var_id,&
-                 "missing_value", -9999.0)
-        nSTAT = nf90_put_att(ncid,depothick_var_id,"_FillValue", -9999.0_op)
-  
-           ! Arrival time of deposit
-        if(VERB.gt.1)write(global_info,*)"     depotime",var_lnames(21)
-        if(op.eq.8)then
-          nSTAT = nf90_def_var(ncid,"depotime",nf90_double, &
-              (/x_dim_id,y_dim_id/),                &
-                depotime_var_id)
-        else
-          nSTAT = nf90_def_var(ncid,"depotime",nf90_float,  &
-              (/x_dim_id,y_dim_id/),                &
-                depotime_var_id)
-        endif
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: def_var depotime: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,depotime_var_id,"long_name",var_lnames(21))
-        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,depotime_var_id,"units","hr")
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: put_att depotime: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,depotime_var_id,&
-                   "missing_value", -9999.0)
-        nSTAT = nf90_put_att(ncid,depotime_var_id,"_FillValue",-9999.0_op)
-  
-           ! Arrival time of airborne ash cloud
-        if(VERB.gt.1)write(global_info,*)"     ash_arrival_time",var_lnames(31)
-        if(op.eq.8)then
-          nSTAT = nf90_def_var(ncid,"ash_arrival_time",nf90_double, &
-              (/x_dim_id,y_dim_id/),                &
-                ashcloudtime_var_id)
-        else
-          nSTAT = nf90_def_var(ncid,"ash_arrival_time",nf90_float,  &
-              (/x_dim_id,y_dim_id/),                &
-                ashcloudtime_var_id)
-        endif
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: def_var ash_arrival_time: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,ashcloudtime_var_id,"long_name",var_lnames(31))
-        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,ashcloudtime_var_id,"units","hr")
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: put_att ash_arrival_time: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,ashcloudtime_var_id,&
-                 "missing_value", -9999.0)
-        nSTAT = nf90_put_att(ncid,ashcloudtime_var_id,"_FillValue",-9999.0_op)
-  
-           ! 2d ash concentration (MaxConcentration)
-        if(VERB.gt.1)write(global_info,*)"     ashcon_max",var_lnames(32)
-        if(op.eq.8)then
-          nSTAT = nf90_def_var(ncid,"ashcon_max",nf90_double, &
-              (/x_dim_id,y_dim_id,t_dim_id/),                &
-                ashconMax_var_id)
-        else
-          nSTAT = nf90_def_var(ncid,"ashcon_max",nf90_float,  &
-              (/x_dim_id,y_dim_id,t_dim_id/),                &
-                ashconMax_var_id)
-        endif
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: def_var ashcon_max: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,ashconMax_var_id,"long_name",var_lnames(32))
-        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,ashconMax_var_id,"units","mg/m3")
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: put_att ashcon_max: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,ashconMax_var_id,&
-                 "missing_value", -9999.0)
-        nSTAT = nf90_put_att(ncid,ashconMax_var_id,"_FillValue",-9999.0_op)
-  
-           ! 2d ash cloud height (MaxHeight)
-        if(VERB.gt.1)write(global_info,*)"     cloud_height",var_lnames(33)
-        if(op.eq.8)then
-          nSTAT = nf90_def_var(ncid,"cloud_height",nf90_double, &
-              (/x_dim_id,y_dim_id,t_dim_id/),                &
-                ashheight_var_id)
-        else
-          nSTAT = nf90_def_var(ncid,"cloud_height",nf90_float,  &
-              (/x_dim_id,y_dim_id,t_dim_id/),                &
-                ashheight_var_id)
-        endif
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: def_var cloud_height: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,ashheight_var_id,"long_name",var_lnames(33))
-        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,ashheight_var_id,"units","km")
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: put_att cloud_height: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,ashheight_var_id,&
-                 "missing_value", -9999.0)
-        nSTAT = nf90_put_att(ncid,ashheight_var_id,"_FillValue",-9999.0_op)
-  
-           ! 2d ash cloud load (CloudLoad)
-        if(VERB.gt.1)write(global_info,*)"     cloud_load",var_lnames(34)
-        if(op.eq.8)then
-          nSTAT = nf90_def_var(ncid,"cloud_load",nf90_double, &
-              (/x_dim_id,y_dim_id,t_dim_id/),                &
-                ashload_var_id)
-        else
-          nSTAT = nf90_def_var(ncid,"cloud_load",nf90_float,  &
-              (/x_dim_id,y_dim_id,t_dim_id/),                &
-                ashload_var_id)
-        endif
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: def_var cloud_load: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,ashload_var_id,"long_name",var_lnames(34))
-        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,ashload_var_id,"units","T/km2")
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: put_att cloud_load: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,ashload_var_id,&
-                 "missing_value", -9999.0)
-        nSTAT = nf90_put_att(ncid,ashload_var_id,"_FillValue",-9999.0_op)
-  
-           ! 3d radar reflectivity
-        if(VERB.gt.1)write(global_info,*)"     radar_reflectivity",var_lnames(35)
-        if(op.eq.8)then
-          nSTAT = nf90_def_var(ncid,"radar_reflectivity",nf90_double, &
-              (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/),                &
-                radrefl_var_id)
-        else
-          nSTAT = nf90_def_var(ncid,"radar_reflectivity",nf90_float,  &
-              (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/),                &
-                radrefl_var_id)
-        endif
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: def_var radar_reflectivity: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,radrefl_var_id,"long_name",var_lnames(35))
-        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,radrefl_var_id,"units","dbZ")
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: put_att radar_reflectivity: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,radrefl_var_id,&
-                 "missing_value", -9999.0)
-        nSTAT = nf90_put_att(ncid,radrefl_var_id,"_FillValue",-9999.0_op)
-  
-           ! 2d ash cloud bottom 
-        if(VERB.gt.1)write(global_info,*)"     cloud_bottom",var_lnames(36)
-        if(op.eq.8)then
-          nSTAT = nf90_def_var(ncid,"cloud_bottom",nf90_double, &
-              (/x_dim_id,y_dim_id,t_dim_id/),                &
-                ashcloudBot_var_id)
-        else
-          nSTAT = nf90_def_var(ncid,"cloud_bottom",nf90_float,  &
-              (/x_dim_id,y_dim_id,t_dim_id/),                &
-                ashcloudBot_var_id)
-        endif
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: def_var cloud_bottom: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,ashcloudBot_var_id,"long_name",var_lnames(36))
-        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,ashcloudBot_var_id,"units","km")
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: put_att cloud_bottom: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,ashcloudBot_var_id,&
-                 "missing_value", -9999.0)
-        nSTAT = nf90_put_att(ncid,ashcloudBot_var_id,"_FillValue",-9999.0_op)
-
-      endif ! USE_OUTPROD_VARS
-
-         ! Now define the other (non-time-dependent) variables
-         ! gs_setvel (Settling velocity of grain size)
+         ! Grain-size diameter
+      if(VERB.gt.1)write(global_info,*)"     GS, grain-diameter"
       if(op.eq.8)then
-        nSTAT = nf90_def_var(ncid,"gs_setvel",nf90_double,(/gs_dim_id/),&
+        nSTAT = nf90_def_var(ncid,"gs_diameter",nf90_double,(/bin_dim_id/),&
                              gssd_var_id)
       else
-        nSTAT = nf90_def_var(ncid,"gs_setvel",nf90_float,(/gs_dim_id/), &
+        nSTAT = nf90_def_var(ncid,"gs_diameter",nf90_float,(/bin_dim_id/), &
                              gssd_var_id)
       endif
       if(nSTAT.ne.0)write(global_log ,*)'ERROR: def_var: ',nf90_strerror(nSTAT)
       nSTAT = nf90_put_att(ncid,gssd_var_id,"long_name",var_lnames(13))
       if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
-      nSTAT = nf90_put_att(ncid,gssd_var_id,"units","m/s")
+      nSTAT = nf90_put_att(ncid,gssd_var_id,"units","mm")
       if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
 
          ! gs_massfrac (Mass fraction of grain size)
       if(op.eq.8)then
-        nSTAT = nf90_def_var(ncid,"gs_massfrac",nf90_double,(/gs_dim_id/),&
+        nSTAT = nf90_def_var(ncid,"gs_massfrac",nf90_double,(/bin_dim_id/),&
                              gsmf_var_id)
       else
-        nSTAT = nf90_def_var(ncid,"gs_massfrac",nf90_float,(/gs_dim_id/), &
+        nSTAT = nf90_def_var(ncid,"gs_massfrac",nf90_float,(/bin_dim_id/), &
                              gsmf_var_id)
       endif
       if(nSTAT.ne.0)write(global_log ,*)'ERROR: def_var: ',nf90_strerror(nSTAT)
@@ -955,6 +589,21 @@
       nSTAT = nf90_put_att(ncid,gsmf_var_id,"units","fraction")
       if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
 
+         ! gs_dens (Density of grain)
+      if(op.eq.8)then
+        nSTAT = nf90_def_var(ncid,"gs_dens",nf90_double,(/bin_dim_id/),&
+                             gsdens_var_id)
+      else
+        nSTAT = nf90_def_var(ncid,"gs_dens",nf90_float,(/bin_dim_id/), &
+                             gsdens_var_id)
+      endif
+      if(nSTAT.ne.0)write(global_log ,*)'ERROR: def_var: ',nf90_strerror(nSTAT)
+      nSTAT = nf90_put_att(ncid,gsdens_var_id,"long_name",var_lnames(20))
+      if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
+      nSTAT = nf90_put_att(ncid,gsdens_var_id,"units","kg/m3")
+      if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
+
+      !   Now a few other variables that are a function of ER
          ! er_stime (Start time of eruption)
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,"er_stime",nf90_double,(/er_dim_id/),&
@@ -1014,29 +663,15 @@
                            "km3")
       if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
 
+         ! Now define the other (non-time-dependent) variables
          ! wf_name (Name of windfile)
       nSTAT = nf90_def_var(ncid,"wf_name",nf90_char, &
-                           (/wf_dim_id,sl_dim_id/),wf_name_var_id)
-!                           (/sl_dim_id,wf_dim_id/),wf_name_var_id)
+                           (/sl_dim_id,wf_dim_id/),wf_name_var_id)
       if(nSTAT.ne.0)write(global_log ,*)'ERROR: def_var: ',nf90_strerror(nSTAT)
       nSTAT = nf90_put_att(ncid,wf_name_var_id,"long_name",var_lnames(19))
       if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
       nSTAT = nf90_put_att(ncid,wf_name_var_id,"units", &
                            "string")
-      if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
-
-         ! gs_dens (Density of grain)
-      if(op.eq.8)then
-        nSTAT = nf90_def_var(ncid,"gs_dens",nf90_double,(/gs_dim_id/),&
-                             gsdens_var_id)
-      else
-        nSTAT = nf90_def_var(ncid,"gs_dens",nf90_float,(/gs_dim_id/), &
-                             gsdens_var_id)
-      endif
-      if(nSTAT.ne.0)write(global_log ,*)'ERROR: def_var: ',nf90_strerror(nSTAT)
-      nSTAT = nf90_put_att(ncid,gsdens_var_id,"long_name",var_lnames(20))
-      if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
-      nSTAT = nf90_put_att(ncid,gsdens_var_id,"units","kg/m3")
       if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
 
          ! Cell area
@@ -1058,9 +693,532 @@
       if(nSTAT.ne.0) &
         write(global_log ,*)'ERROR: put_att cell area: ',nf90_strerror(nSTAT)
 
-        ! Leaving define mode.
+      if(VERB.gt.1)write(global_info,*)"Defining variables"
+
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      if(USE_WIND_VARS)then
+         ! Now define the time-dependent variables
+         ! Vx
+        if(VERB.gt.1)write(global_info,*)"     vx",var_lnames(8)
+        if(op.eq.8)then
+          nSTAT = nf90_def_var(ncid,"vx",nf90_double,  &
+              (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/), &
+                vx_var_id)
+        else
+          nSTAT = nf90_def_var(ncid,"vx",nf90_float,   &
+              (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/), &
+                vx_var_id)
+        endif
+        if(nSTAT.ne.0)write(global_log ,*)'ERROR: def_var vx: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,vx_var_id,"long_name",var_lnames(8))
+        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,vx_var_id,"units","km/hr")
+        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att vx: ',nf90_strerror(nSTAT)
+           ! Vy
+        if(VERB.gt.1)write(global_info,*)"     vy",var_lnames(9)
+        if(op.eq.8)then
+          nSTAT = nf90_def_var(ncid,"vy",nf90_double,  &
+              (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/), &
+                vy_var_id)
+        else
+          nSTAT = nf90_def_var(ncid,"vy",nf90_float,   &
+              (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/), &
+                vy_var_id)
+        endif
+        if(nSTAT.ne.0)write(global_log ,*)'ERROR: def_var vy: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,vy_var_id,"long_name",var_lnames(9))
+        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,vy_var_id,"units","km/hr")
+        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att vy: ',nf90_strerror(nSTAT)
+           ! Vz
+        if(VERB.gt.1)write(global_info,*)"     vz",var_lnames(10)
+        if(op.eq.8)then
+          nSTAT = nf90_def_var(ncid,"vz",nf90_double,  &
+              (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/), &
+                vz_var_id)
+        else
+          nSTAT = nf90_def_var(ncid,"vz",nf90_float,   &
+              (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/), &
+                vz_var_id)
+        endif
+        if(nSTAT.ne.0)write(global_log ,*)'ERROR: def_var vz: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,vz_var_id,"long_name","Wind velocity (z)")
+        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,vz_var_id,"units","km/hr")
+        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att vz: ',nf90_strerror(nSTAT)
+
+           ! Vf
+        if(VERB.gt.1)write(global_info,*)"     vf","Fall Velocity"
+        if(op.eq.8)then
+          nSTAT = nf90_def_var(ncid,"vf",nf90_double,  &
+              (/x_dim_id,y_dim_id,z_dim_id,bin_dim_id,t_dim_id/), &
+                vf_var_id)
+        else
+          nSTAT = nf90_def_var(ncid,"vf",nf90_float,   &
+              (/x_dim_id,y_dim_id,z_dim_id,bin_dim_id,t_dim_id/), &
+                vf_var_id)
+        endif
+        if(nSTAT.ne.0)write(global_log ,*)'ERROR: def_var vf: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,vf_var_id,"long_name","Fall Velocity")
+        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,vf_var_id,"units","km/hr")
+        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att vf: ',nf90_strerror(nSTAT)
+      endif  ! USE_WIND_VARS
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      if(USE_RESTART_VARS)then
+         ! Full Ash Concentration
+        if(VERB.gt.1)write(global_info,*)"     ashcon",var_lnames(11)
+        if(op.eq.8)then
+          nSTAT = nf90_def_var(ncid,"ashcon",nf90_double, &
+              (/x_dim_id,y_dim_id,z_dim_id,bin_dim_id,t_dim_id/),    &
+                ashcon_var_id)
+        else
+          nSTAT = nf90_def_var(ncid,"ashcon",nf90_float,  &
+              (/x_dim_id,y_dim_id,z_dim_id,bin_dim_id,t_dim_id/),    &
+                ashcon_var_id)
+        endif
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: def_var ashcon: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,ashcon_var_id,"long_name",var_lnames(11))
+        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,ashcon_var_id,"units","kg/km^3")
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att ashcon: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,ashcon_var_id,&
+                 "missing_value", -9999.0)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att ashcon: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,ashcon_var_id,"_FillValue",-9999.0_op)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att ashcon: ',nf90_strerror(nSTAT)
+      endif ! USE_RESTART_VARS
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      ! Derived variables
+      if(USE_OUTPROD_VARS)then
+        ! DEPOSIT (as function of grainsmax)
+           ! Concentration of deposit by grain size(z=0 plane of tot_ashcon)
+        if(VERB.gt.1)write(global_info,*)"     depocon",var_lnames(12)
+        if(op.eq.8)then
+          nSTAT = nf90_def_var(ncid,"depocon",nf90_double, &
+              (/x_dim_id,y_dim_id,bin_dim_id,t_dim_id/),                &
+                depocon_var_id)
+        else
+          nSTAT = nf90_def_var(ncid,"depocon",nf90_float,  &
+              (/x_dim_id,y_dim_id,bin_dim_id,t_dim_id/),                &
+                depocon_var_id)
+        endif
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: def_var depocon: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,depocon_var_id,"long_name",var_lnames(12))
+        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,depocon_var_id,"units","kg/m2")
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att depocon: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,depocon_var_id,&
+                 "missing_value", -9999.0)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att depocon: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,depocon_var_id,"_FillValue",-9999.0_op)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att depocon: ',nf90_strerror(nSTAT)  
+  
+        ! DEPOSIT thickness
+        if(VERB.gt.1)write(global_info,*)"     depothick",var_lnames(30)
+        if(op.eq.8)then
+          nSTAT = nf90_def_var(ncid,"depothick",nf90_double, &
+              (/x_dim_id,y_dim_id,t_dim_id/),                &
+                depothick_var_id)
+        else
+          nSTAT = nf90_def_var(ncid,"depothick",nf90_float,  &
+              (/x_dim_id,y_dim_id,t_dim_id/),                &
+                depothick_var_id)
+        endif
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: def_var depothick: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,depothick_var_id,"long_name",var_lnames(30))
+        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,depothick_var_id,"units","mm")
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att depothick: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,depothick_var_id,&
+                 "missing_value", -9999.0)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att depothick: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,depothick_var_id,"_FillValue", -9999.0_op)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att depothick: ',nf90_strerror(nSTAT)
+ 
+           ! Arrival time of deposit
+        if(VERB.gt.1)write(global_info,*)"     depotime",var_lnames(21)
+        if(op.eq.8)then
+          nSTAT = nf90_def_var(ncid,"depotime",nf90_double, &
+              (/x_dim_id,y_dim_id/),                &
+                depotime_var_id)
+        else
+          nSTAT = nf90_def_var(ncid,"depotime",nf90_float,  &
+              (/x_dim_id,y_dim_id/),                &
+                depotime_var_id)
+        endif
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: def_var depotime: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,depotime_var_id,"long_name",var_lnames(21))
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att: depotime',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,depotime_var_id,"units","hr")
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att depotime: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,depotime_var_id,&
+                   "missing_value", -9999.0)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att depotime: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,depotime_var_id,"_FillValue",-9999.0_op)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att depotime: ',nf90_strerror(nSTAT)
+ 
+           ! Arrival time of airborne ash cloud
+        if(VERB.gt.1)write(global_info,*)"     ash_arrival_time",var_lnames(31)
+        if(op.eq.8)then
+          nSTAT = nf90_def_var(ncid,"ash_arrival_time",nf90_double, &
+              (/x_dim_id,y_dim_id/),                &
+                ashcloudtime_var_id)
+        else
+          nSTAT = nf90_def_var(ncid,"ash_arrival_time",nf90_float,  &
+              (/x_dim_id,y_dim_id/),                &
+                ashcloudtime_var_id)
+        endif
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: def_var ash_arrival_time: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,ashcloudtime_var_id,"long_name",var_lnames(31))
+        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,ashcloudtime_var_id,"units","hr")
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att ash_arrival_time: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,ashcloudtime_var_id,&
+                 "missing_value", -9999.0)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att ash_arrival_time: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,ashcloudtime_var_id,"_FillValue",-9999.0_op)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att ash_arrival_time: ',nf90_strerror(nSTAT)
+  
+           ! 2d ash concentration (MaxConcentration)
+        if(VERB.gt.1)write(global_info,*)"     ashcon_max",var_lnames(32)
+        if(op.eq.8)then
+          nSTAT = nf90_def_var(ncid,"ashcon_max",nf90_double, &
+              (/x_dim_id,y_dim_id,t_dim_id/),                &
+                ashconMax_var_id)
+        else
+          nSTAT = nf90_def_var(ncid,"ashcon_max",nf90_float,  &
+              (/x_dim_id,y_dim_id,t_dim_id/),                &
+                ashconMax_var_id)
+        endif
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: def_var ashcon_max: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,ashconMax_var_id,"long_name",var_lnames(32))
+        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,ashconMax_var_id,"units","mg/m3")
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att ashcon_max: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,ashconMax_var_id,&
+                 "missing_value", -9999.0)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att ashcon_max: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,ashconMax_var_id,"_FillValue",-9999.0_op)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att ashcon_max: ',nf90_strerror(nSTAT)
+  
+           ! 2d ash cloud height (MaxHeight)
+        if(VERB.gt.1)write(global_info,*)"     cloud_height",var_lnames(33)
+        if(op.eq.8)then
+          nSTAT = nf90_def_var(ncid,"cloud_height",nf90_double, &
+              (/x_dim_id,y_dim_id,t_dim_id/),                &
+                ashheight_var_id)
+        else
+          nSTAT = nf90_def_var(ncid,"cloud_height",nf90_float,  &
+              (/x_dim_id,y_dim_id,t_dim_id/),                &
+                ashheight_var_id)
+        endif
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: def_var cloud_height: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,ashheight_var_id,"long_name",var_lnames(33))
+        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,ashheight_var_id,"units","km")
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att cloud_height: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,ashheight_var_id,&
+                 "missing_value", -9999.0)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att cloud_height: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,ashheight_var_id,"_FillValue",-9999.0_op)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att cloud_height: ',nf90_strerror(nSTAT)
+  
+           ! 2d ash cloud load (CloudLoad)
+        if(VERB.gt.1)write(global_info,*)"     cloud_load",var_lnames(34)
+        if(op.eq.8)then
+          nSTAT = nf90_def_var(ncid,"cloud_load",nf90_double, &
+              (/x_dim_id,y_dim_id,t_dim_id/),                &
+                ashload_var_id)
+        else
+          nSTAT = nf90_def_var(ncid,"cloud_load",nf90_float,  &
+              (/x_dim_id,y_dim_id,t_dim_id/),                &
+                ashload_var_id)
+        endif
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: def_var cloud_load: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,ashload_var_id,"long_name",var_lnames(34))
+        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,ashload_var_id,"units","T/km2")
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att cloud_load: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,ashload_var_id,&
+                 "missing_value", -9999.0)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att cloud_load: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,ashload_var_id,"_FillValue",-9999.0_op)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att cloud_load: ',nf90_strerror(nSTAT)
+  
+           ! 3d radar reflectivity
+        if(VERB.gt.1)write(global_info,*)"     radar_reflectivity",var_lnames(35)
+        if(op.eq.8)then
+          nSTAT = nf90_def_var(ncid,"radar_reflectivity",nf90_double, &
+              (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/),                &
+                radrefl_var_id)
+        else
+          nSTAT = nf90_def_var(ncid,"radar_reflectivity",nf90_float,  &
+              (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/),                &
+                radrefl_var_id)
+        endif
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: def_var radar_reflectivity: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,radrefl_var_id,"long_name",var_lnames(35))
+        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,radrefl_var_id,"units","dbZ")
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att radar_reflectivity: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,radrefl_var_id,&
+                 "missing_value", -9999.0)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att radar_reflectivity: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,radrefl_var_id,"_FillValue",-9999.0_op)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att radar_reflectivity: ',nf90_strerror(nSTAT)
+  
+           ! 2d ash cloud bottom 
+        if(VERB.gt.1)write(global_info,*)"     cloud_bottom",var_lnames(36)
+        if(op.eq.8)then
+          nSTAT = nf90_def_var(ncid,"cloud_bottom",nf90_double, &
+              (/x_dim_id,y_dim_id,t_dim_id/),                &
+                ashcloudBot_var_id)
+        else
+          nSTAT = nf90_def_var(ncid,"cloud_bottom",nf90_float,  &
+              (/x_dim_id,y_dim_id,t_dim_id/),                &
+                ashcloudBot_var_id)
+        endif
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: def_var cloud_bottom: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,ashcloudBot_var_id,"long_name",var_lnames(36))
+        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,ashcloudBot_var_id,"units","km")
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att cloud_bottom: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,ashcloudBot_var_id,&
+                 "missing_value", -9999.0)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att cloud_bottom: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,ashcloudBot_var_id,"_FillValue",-9999.0_op)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att cloud_bottom: ',nf90_strerror(nSTAT)
+
+      endif ! USE_OUTPROD_VARS
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      if(USE_OPTMOD_VARS)then
+        if(VERB.gt.1)write(global_info,*)"     USE_OPTMOD_VARS"
+        ! Define User-specified 2-d static variables
+        if(nvar_User2d_static_XY.gt.0)then
+          do ivar=1,nvar_User2d_static_XY
+            if(op.eq.8)then
+              nSTAT = nf90_def_var(ncid,var_User2d_static_XY_name(ivar),nf90_double,  &
+                  (/x_dim_id,y_dim_id/), temp1_2d_var_id)
+            else
+              nSTAT = nf90_def_var(ncid,var_User2d_static_XY_name(ivar),nf90_float,  &
+                  (/x_dim_id,y_dim_id/), temp1_2d_var_id)
+            endif
+            if(nSTAT.ne.0) &
+                write(global_log ,*)'ERROR: def_var XYs: ',nf90_strerror(nSTAT)
+            nSTAT = nf90_put_att(ncid,temp1_2d_var_id,"long_name",&
+                                 var_User2d_static_XY_lname(ivar))
+            if(nSTAT.ne.0) &
+                write(global_log ,*)'ERROR: put_att XYs: ',nf90_strerror(nSTAT)
+            nSTAT = nf90_put_att(ncid,temp1_2d_var_id,"units",&
+                                 var_User2d_static_XY_unit(ivar))
+            if(nSTAT.ne.0) &
+                write(global_log ,*)'ERROR: put_att XYs: ',nf90_strerror(nSTAT)
+            nSTAT = nf90_put_att(ncid,temp1_2d_var_id,"missing_value",&
+                                 var_User2d_static_XY_MissVal(ivar))
+            if(nSTAT.ne.0) &
+                write(global_log ,*)'ERROR: put_att XYs: ',nf90_strerror(nSTAT)
+            nSTAT = nf90_put_att(ncid,temp1_2d_var_id,"_FillValue",&
+                                 var_User2d_static_XY_FillVal(ivar))
+            if(nSTAT.ne.0) &
+                write(global_log ,*)'ERROR: put_att XYs: ',nf90_strerror(nSTAT)
+          enddo
+        endif
+
+        ! Define User-specified 2-d transient variables
+        if(nvar_User2d_XY.gt.0)then
+          do ivar=1,nvar_User2d_XY
+            if(op.eq.8)then
+              nSTAT = nf90_def_var(ncid,var_User2d_XY_name(ivar),nf90_double,  &
+                  (/x_dim_id,y_dim_id,t_dim_id/), temp1_2d_var_id)
+            else
+              nSTAT = nf90_def_var(ncid,var_User2d_XY_name(ivar),nf90_float,  &
+                  (/x_dim_id,y_dim_id,t_dim_id/), temp1_2d_var_id)
+            endif
+            if(nSTAT.ne.0) &
+                write(global_log ,*)'ERROR: def_var XY: ',nf90_strerror(nSTAT)
+            nSTAT = nf90_put_att(ncid,temp1_2d_var_id,"long_name",&
+                                 var_User2d_XY_lname(ivar))
+            if(nSTAT.ne.0) &
+                write(global_log ,*)'ERROR: put_att XY: ',nf90_strerror(nSTAT)
+            nSTAT = nf90_put_att(ncid,temp1_2d_var_id,'units',&
+                                 var_User2d_XY_unit(ivar))
+            if(nSTAT.ne.0) &
+                write(global_log ,*)'ERROR: put_att XY: ',nf90_strerror(nSTAT)
+            nSTAT = nf90_put_att(ncid,temp1_2d_var_id,"missing_value",&
+                                 var_User2d_XY_MissVal(ivar))
+            if(nSTAT.ne.0) &
+                write(global_log ,*)'ERROR: put_att XY: ',nf90_strerror(nSTAT)
+            nSTAT = nf90_put_att(ncid,temp1_2d_var_id,"_FillValue",&
+                                 var_User2d_XY_FillVal(ivar))
+            if(nSTAT.ne.0) &
+                write(global_log ,*)'ERROR: put_att XY: ',nf90_strerror(nSTAT)
+          enddo
+        endif
+
+        !! Define User-specified 3-d transient variables in x,y,gs
+        if(nvar_User3d_XYGs.gt.0)then
+          do ivar=1,nvar_User3d_XYGs
+            if(op.eq.8)then
+              nSTAT = nf90_def_var(ncid,var_User3d_XYGs_name(ivar),nf90_double,  &
+                  (/x_dim_id,y_dim_id,bin_dim_id,t_dim_id/), temp1_3d_var_id)
+            else
+              nSTAT = nf90_def_var(ncid,var_User3d_XYGs_name(ivar),nf90_float,  &
+                  (/x_dim_id,y_dim_id,bin_dim_id,t_dim_id/), temp1_3d_var_id)
+            endif
+            if(nSTAT.ne.0) &
+                write(global_log ,*)'ERROR: def_var XYGs: ',nf90_strerror(nSTAT)
+            nSTAT = nf90_put_att(ncid,temp1_3d_var_id,"long_name",&
+                                 var_User3d_XYGs_lname(ivar))
+            if(nSTAT.ne.0) &
+                write(global_log ,*)'ERROR: put_att XYGs: ',nf90_strerror(nSTAT)
+            nSTAT = nf90_put_att(ncid,temp1_3d_var_id,'units',&
+                                 var_User3d_XYGs_unit(ivar))
+            if(nSTAT.ne.0) &
+                write(global_log ,*)'ERROR: put_att XYGs: ',nf90_strerror(nSTAT)
+            nSTAT = nf90_put_att(ncid,temp1_3d_var_id,"missing_value",&
+                                 var_User3d_XYGs_MissVal(ivar))
+            if(nSTAT.ne.0) &
+                write(global_log ,*)'ERROR: put_att XYGs: ',nf90_strerror(nSTAT)
+            nSTAT = nf90_put_att(ncid,temp1_3d_var_id,"_FillValue",&
+                                 var_User3d_XYGs_FillVal(ivar))
+            if(nSTAT.ne.0) &
+                write(global_log ,*)'ERROR: put_att XYGs: ',nf90_strerror(nSTAT)
+          enddo
+        endif
+
+        !! Define User-specified 3-d transient variables in x,y,z
+        if(nvar_User3d_XYZ.gt.0)then
+          do ivar=1,nvar_User3d_XYZ
+            if(op.eq.8)then
+              nSTAT = nf90_def_var(ncid,var_User3d_XYZ_name(ivar),nf90_double,  &
+                  (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/), temp1_3d_var_id)
+            else
+              nSTAT = nf90_def_var(ncid,var_User3d_XYZ_name(ivar),nf90_float,  &
+                  (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/), temp1_3d_var_id)
+            endif
+            if(nSTAT.ne.0) &
+                write(global_log ,*)'ERROR: def_var XYZ: ',nf90_strerror(nSTAT)
+            nSTAT = nf90_put_att(ncid,temp1_3d_var_id,"long_name",&
+                                 var_User3d_XYZ_lname(ivar))
+            if(nSTAT.ne.0) &
+                write(global_log ,*)'ERROR: put_att XYZ: ',nf90_strerror(nSTAT)
+            nSTAT = nf90_put_att(ncid,temp1_3d_var_id,'units',&
+                                 var_User3d_XYZ_unit(ivar))
+            if(nSTAT.ne.0) &
+                write(global_log ,*)'ERROR: put_att XYZ: ',nf90_strerror(nSTAT)
+            nSTAT = nf90_put_att(ncid,temp1_3d_var_id,"missing_value",&
+                                 var_User3d_XYZ_MissVal(ivar))
+            if(nSTAT.ne.0) &
+                write(global_log ,*)'ERROR: put_att XYZ: ',nf90_strerror(nSTAT)
+            nSTAT = nf90_put_att(ncid,temp1_3d_var_id,"_FillValue",&
+                                 var_User3d_XYZ_FillVal(ivar))
+            if(nSTAT.ne.0) &
+                write(global_log ,*)'ERROR: put_att XYZ: ',nf90_strerror(nSTAT)
+          enddo
+        endif
+
+        ! Define User-specified 4-d transient variables in x,y,z,gs
+        if(nvar_User4d_XYZGs.gt.0)then
+          do ivar=1,nvar_User4d_XYZGs
+            if(op.eq.8)then
+              nSTAT = nf90_def_var(ncid,var_User4d_XYZGs_name(ivar),nf90_double,  &
+                  (/x_dim_id,y_dim_id,z_dim_id,bin_dim_id,t_dim_id/), temp1_4d_var_id)
+            else
+              nSTAT = nf90_def_var(ncid,var_User4d_XYZGs_name(ivar),nf90_float, &
+                  (/x_dim_id,y_dim_id,z_dim_id,bin_dim_id,t_dim_id/), temp1_4d_var_id)
+            endif
+            if(nSTAT.ne.0) &
+                write(global_log ,*)'ERROR: def_var XYZGs: ',nf90_strerror(nSTAT)
+            nSTAT = nf90_put_att(ncid,temp1_4d_var_id,"long_name",&
+                                 var_User4d_XYZGs_lname(ivar))
+            if(nSTAT.ne.0) &
+                write(global_log ,*)'ERROR: put_att XYZGs: ',nf90_strerror(nSTAT)
+            nSTAT = nf90_put_att(ncid,temp1_4d_var_id,'units',&
+                                 var_User4d_XYZGs_unit(ivar))
+            if(nSTAT.ne.0) &
+                write(global_log ,*)'ERROR: put_att XYZGs: ',nf90_strerror(nSTAT)
+            nSTAT = nf90_put_att(ncid,temp1_4d_var_id,"missing_value",&
+                                 var_User4d_XYZGs_MissVal(ivar))
+            if(nSTAT.ne.0) &
+                write(global_log ,*)'ERROR: put_att XYZGs: ',nf90_strerror(nSTAT)
+            nSTAT = nf90_put_att(ncid,temp1_4d_var_id,"_FillValue",&
+                                 var_User4d_XYZGs_FillVal(ivar))
+            if(nSTAT.ne.0) &
+                write(global_log ,*)'ERROR: put_att XYZGs: ',nf90_strerror(nSTAT)
+          enddo
+        endif
+
+      endif  ! USE_OPTMOD_VARS`
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !                    Leaving define mode.                               !
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       nSTAT = nf90_enddef(ncid)
+      if(nSTAT.ne.0) &
+        write(global_log ,*)'ERROR: nf90_enddef: ',nf90_strerror(nSTAT)
       if(VERB.gt.1)write(*,*)"Leaving define mode"
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       ! Fill variables with initial values
@@ -1110,22 +1268,15 @@
       if(nSTAT.ne.0) &
         write(global_log ,*)'ERROR: put_var x: ',nf90_strerror(nSTAT)
       deallocate(dum1d_out)
-        ! GS
+        ! BN (Grain size bin ID)
       if(VERB.gt.1)write(global_info,*)"     Fill GS"
-      if(n_gs_max.gt.0)then
-        allocate(dum1d_out(n_gs_max))
-        if(useCalcFallVel)then
-          dum1d_out(1:n_gs_max) = real(Tephra_gsdiam(1:n_gs_max),kind=op)
-        else
-          do i=1,n_gs_max
-            dum1d_out(i) = real(i,kind=op)
-          enddo
-        endif
-        nSTAT=nf90_put_var(ncid,gs_var_id,dum1d_out,(/1/))
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: put_var gs: ',nf90_strerror(nSTAT)
-        deallocate(dum1d_out)
-      endif
+      allocate(dum1dint_out(nsmax))
+      do i=1,nsmax
+        dum1dint_out(i) = i
+      enddo
+      if(nSTAT.ne.0) &
+        write(global_log ,*)'ERROR: put_var gs: ',nf90_strerror(nSTAT)
+      deallocate(dum1dint_out)
 
         ! ER
       if(VERB.gt.1)write(global_info,*)"     Fill ER"
@@ -1152,7 +1303,103 @@
       if(nSTAT.ne.0) &
         write(global_log ,*)'ERROR: put_var wd: ',nf90_strerror(nSTAT)
       deallocate(dum1dint_out)
+      !   End of filling dimension variables
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !   Now fill a few other variables that are a function of BN
+         ! Species class ID
+      if(VERB.gt.1)write(global_info,*)"     Fill Species class ID"
+      allocate(dum1dint_out(ns_extra))
+      dum1dint_out(1:nsmax) = SpeciesID(1:nsmax)
+      nSTAT=nf90_put_var(ncid,spec_var_id,dum1dint_out,(/1/))
+      if(nSTAT.ne.0) &
+        write(global_log ,*)'ERROR: put_var sp: ',nf90_strerror(nSTAT)
+      deallocate(dum1dint_out)
+         ! Species sub-class ID
+      if(VERB.gt.1)write(global_info,*)"     Fill Species sub-class ID"
+      allocate(dum1dint_out(ns_extra))
+      dum1dint_out(1:nsmax) = SpeciesSubID(1:nsmax)
+      nSTAT=nf90_put_var(ncid,subspec_var_id,dum1dint_out,(/1/))
+      if(nSTAT.ne.0) &
+        write(global_log ,*)'ERROR: put_var sp: ',nf90_strerror(nSTAT)
+      deallocate(dum1dint_out)
+         ! Grain-size diameter
+      if(VERB.gt.1)write(global_info,*)"     Fill GS Diameter"
+      allocate(dum1d_out(nsmax))
+      dum1d_out = 0.0_op
+      if(useCalcFallVel)then
+        dum1d_out(1:n_gs_max) = real(Tephra_gsdiam(1:n_gs_max),kind=op)
+      else
+        do i=1,n_gs_max
+          dum1d_out(i) = real(i,kind=op)
+        enddo
+      endif
+      nSTAT=nf90_put_var(ncid,gssd_var_id,dum1d_out,(/1/))
+         ! gs_massfrac (Mass fraction of grain size)
+      if(VERB.gt.1)write(global_info,*)"     Fill GS MassFrac"
+      dum1d_out = 0.0_op
+      dum1d_out(1:n_gs_max) = real(Tephra_bin_mass(1:n_gs_max),kind=op)
+      nSTAT=nf90_put_var(ncid,gsmf_var_id,dum1d_out,(/1/))
+      if(nSTAT.ne.0) &
+        write(global_log ,*)'ERROR: put_var gs_massfrac: ',nf90_strerror(nSTAT)
+       ! gs_dens (Density of grain)
+      if(useCalcFallVel)then
+        dum1d_out(1:n_gs_max) = real(Tephra_rho_m(1:n_gs_max),kind=op)
+      else
+        dum1d_out = 0.0_op
+      endif
+      nSTAT=nf90_put_var(ncid,gsdens_var_id,dum1d_out,(/1/))
+      if(nSTAT.ne.0) &
+        write(global_log ,*)'ERROR: put_var gs_dens: ',nf90_strerror(nSTAT)
+      deallocate(dum1d_out)
 
+      !   Now fill a few other variables that are a function of ER
+        ! er_stime (Start time of eruption)
+      allocate(dum1d_out(neruptions))
+      dum1d_out = real(e_StartTime + SimStartHour,kind=op)
+      nSTAT=nf90_put_var(ncid,er_stime_var_id,dum1d_out,(/1/))
+      if(nSTAT.ne.0) &
+        write(global_log ,*)'ERROR: put_var er_stime: ',nf90_strerror(nSTAT)
+        ! er_duration (Duration of eruption)
+      dum1d_out = real(e_Duration,kind=op)
+      nSTAT=nf90_put_var(ncid,er_duration_var_id,dum1d_out,(/1/))
+      if(nSTAT.ne.0) &
+        write(global_log ,*)'ERROR: put_var er_stime: ',nf90_strerror(nSTAT)
+        ! er_plumeheight (Plume height of eruption)
+      dum1d_out = real(PlumeHeight,kind=op)
+      nSTAT=nf90_put_var(ncid,er_plumeheight_var_id,dum1d_out,(/1/))
+      if(nSTAT.ne.0) &
+        write(global_log ,*)'ERROR: put_var er_stime: ',nf90_strerror(nSTAT)
+        ! er_volume (Volume of eruption)
+      dum1d_out = real(e_Volume,kind=op)
+      nSTAT=nf90_put_var(ncid,er_volume_var_id,dum1d_out,(/1/))
+      if(nSTAT.ne.0) &
+        write(global_log ,*)'ERROR: put_var er_stime: ',nf90_strerror(nSTAT)
+      deallocate(dum1d_out)
+
+         ! Now fill the other (non-time-dependent) variables
+         ! wf_name (Name of windfile)
+      do i=1,MR_iwindfiles
+        write(lllinebuffer,'(130a)')MR_windfiles(i)
+        do j=1,130
+          nSTAT=nf90_put_var(ncid,wf_name_var_id,lllinebuffer(j:j),(/j,i/))
+          if(nSTAT.ne.0) &
+            write(global_log ,*)'ERROR: put_var wf_name: ',nf90_strerror(nSTAT)
+        enddo
+      enddo
+
+         ! Cell area
+      if(VERB.gt.1)write(global_info,*)"     Fill area"
+      if (IsLatLon) then
+        dum2d_out(1:nxmax,1:nymax) = real(sigma_nz_pd(1:nxmax,1:nymax,0),kind=op)
+      else
+        dum2d_out(1:nxmax,1:nymax) = real(dx*dy,kind=op)
+      endif
+      nSTAT=nf90_put_var(ncid,area_var_id,dum2d_out)
+      if(nSTAT.ne.0) &
+        write(global_info,*)'ERROR: put_var cell area: ',nf90_strerror(nSTAT)
+
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if(USE_WIND_VARS)then
           ! Vz
         if(VERB.gt.1)write(global_info,*)"     Fill Vz"
@@ -1174,10 +1421,17 @@
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_var Vx: ',nf90_strerror(nSTAT)
           ! Vf
-        ashcon(1:nxmax,1:nymax,1:nzmax,1:nsmax) = real(vf_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax),kind=op)
+        ashcon(1:nxmax,1:nymax,1:nzmax,1:nsmax) = &
+             real(vf_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax),kind=op)
         nSTAT=nf90_put_var(ncid,vf_var_id,ashcon,(/1,1,1,1,1/))
-      endif
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_var Vf: ',nf90_strerror(nSTAT)
+      endif  ! USE_WIND_VARS
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if(USE_RESTART_VARS)then
         if(VERB.gt.1)write(global_info,*)"     Fill ashcon"
           ! ashcon
@@ -1190,61 +1444,13 @@
         nSTAT=nf90_put_var(ncid,ashcon_var_id,ashcon,(/1,1,1,1,1/))
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_var ashcon: ',nf90_strerror(nSTAT)
-      endif
 
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      if(USE_OPTMOD_VARS)then
-        if(VERB.gt.1)write(global_info,*)"     Fill OPTMOD_VARS"
+      endif  ! USE_RESTART_VARS
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-          ! Fill User-specified 2-d static variables
-          if(nvar_User2d_static_XY.gt.0)then
-            do ivar=1,nvar_User2d_static_XY
-              dum2d_out(1:nxmax,1:nymax) = real(var_User2d_static_XY(1:nxmax,1:nymax,ivar),kind=op)
-              nSTAT = nf90_inq_varid(ncid,var_User2d_static_XY_name(ivar),temp1_2d_var_id)
-              nSTAT = nf90_put_var(ncid,temp1_2d_var_id,dum2d_out,(/1,1/))
-            enddo
-          endif
-
-          ! Fill User-specified 2-d transient variables
-          if(nvar_User2d_XY.gt.0)then
-            do ivar=1,nvar_User2d_XY
-              dum2d_out(:,:) = real(var_User2d_XY(:,:,ivar),kind=op)
-              nSTAT = nf90_inq_varid(ncid,var_User2d_XY_name(ivar),temp1_2d_var_id)
-              nSTAT = nf90_put_var(ncid,temp1_2d_var_id,dum2d_out,(/1,1,1/))
-            enddo
-          endif
-
-          ! Fill User-specified 3-d transient variables in x,y,gs
-          if(nvar_User3d_XYGs.gt.0)then
-            do ivar=1,nvar_User3d_XYGs
-              depocon(:,:,:) = real(var_User3d_XYGs(:,:,:,ivar),kind=op)
-              nSTAT = nf90_inq_varid(ncid,var_User3d_XYGs_name(ivar),temp1_3d_var_id)
-              nSTAT = nf90_put_var(ncid,temp1_3d_var_id,depocon,(/1,1,1,1/))
-            enddo
-          endif
-
-          ! Fill User-specified 3-d transient variables in x,y,z
-          if(nvar_User3d_XYZ.gt.0)then
-            do ivar=1,nvar_User3d_XYZ
-              dum3d_out(:,:,:) = real(var_User3d_XYZ(:,:,:,ivar),kind=op)
-              nSTAT = nf90_inq_varid(ncid,var_User3d_XYZ_name(ivar),temp1_3d_var_id)
-              nSTAT = nf90_put_var(ncid,temp1_3d_var_id,dum3d_out,(/1,1,1,1/))
-            enddo
-          endif
-
-          ! Fill User-specified 4-d transient variables in x,y,z,gs
-          if(nvar_User4d_XYZGs.gt.0)then
-            do ivar=1,nvar_User4d_XYZGs
-              ashcon(:,:,:,:) = real(var_User4d_XYZGs(1:nxmax,1:nymax,1:nzmax,1:nsmax,ivar),kind=op)
-              nSTAT = nf90_inq_varid(ncid,var_User4d_XYZGs_name(ivar),temp1_4d_var_id)
-              nSTAT = nf90_put_var(ncid,temp1_4d_var_id,ashcon,(/1,1,1,1,1/))
-            enddo
-          endif
-
-      endif
-
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if(USE_OUTPROD_VARS)then
           ! depocon
         if(VERB.gt.1)write(global_info,*)"     Fill depocon"
@@ -1252,14 +1458,14 @@
           ! netCDF standard requires that the unlimited dimension (time)
           ! be the most slowly varying, so dum3d_out unfortunately has a
           ! different shape than depocon
-        do i = 1,nsmax
+        do i = 1,n_gs_max
             ! Here's the previous calculation for depth in meters
           !depocon(:,:,i)=concen_pd(1:nxmax,1:nymax,0,i,ts1)*dz*1.0e-6_op/DepositDensity
             ! Here's the conversion to kg/m^2 from kg/km^2
           depocon(1:nxmax,1:nymax,i) = real(DepositGranularity(1:nxmax,1:nymax,i) * &
                                          dz_vec_pd(0)/KM2_2_M2,kind=op)
         enddo
-        do n=1,nsmax
+        do n=1,n_gs_max
           do i=1,nxmax
             do j=1,nymax
               if(depocon(i,j,n).le.EPS_SMALL)depocon(i,j,n)=0.0_op
@@ -1283,7 +1489,9 @@
           enddo
         enddo
         nSTAT=nf90_put_var(ncid,depothick_var_id,dum2d_out,(/1,1,1/))
-  
+        if(nSTAT.ne.0) &
+           write(global_info,*)'ERROR: put_var depothick: ',nf90_strerror(nSTAT)
+ 
           ! depotime
         if(VERB.gt.1)write(global_info,*)"     Fill depotime"
         dum2d_out(:,:) = -9999.0_op
@@ -1293,10 +1501,11 @@
                 dum2d_out(i,j)=real(DepArrivalTime(i,j),kind=op)
           enddo
         enddo
+
         nSTAT=nf90_put_var(ncid,depotime_var_id,dum2d_out,(/1,1/))
         if(nSTAT.ne.0) &
           write(global_info,*)'ERROR: put_var depotime: ',nf90_strerror(nSTAT)
-  
+
           ! ashtime
         if(VERB.gt.1)write(global_info,*)"     Fill ashtime"
         dum2d_out(:,:) = -9999.0_op
@@ -1324,6 +1533,8 @@
           enddo
         enddo
         nSTAT=nf90_put_var(ncid,ashconMax_var_id,dum2d_out,(/1,1,1/))
+        if(nSTAT.ne.0) &
+          write(global_info,*)'ERROR: put_var ashconMax: ',nf90_strerror(nSTAT)
   
         ! ash cloud_height (top)
         if(VERB.gt.1)write(global_info,*)"     Fill ash_height"
@@ -1337,7 +1548,9 @@
           enddo
         enddo
         nSTAT=nf90_put_var(ncid,ashheight_var_id,dum2d_out,(/1,1,1/))
-  
+        if(nSTAT.ne.0) &
+          write(global_info,*)'ERROR: put_var ashheight: ',nf90_strerror(nSTAT)
+
         ! ash-load
         if(VERB.gt.1)write(global_info,*)"     Fill ash-load"
         dum2d_out(:,:) = 0.0_op
@@ -1351,7 +1564,9 @@
           enddo
         enddo
         nSTAT=nf90_put_var(ncid,ashload_var_id,dum2d_out,(/1,1,1/))
-  
+        if(nSTAT.ne.0) &
+          write(global_info,*)'ERROR: put_var ashload: ',nf90_strerror(nSTAT)
+
         ! radar-reflectivity
         if(VERB.gt.1)write(global_info,*)"     Fill dbZ"
         dum3d_out(:,:,:) = 0.0_op
@@ -1366,7 +1581,9 @@
           enddo
         enddo
         nSTAT=nf90_put_var(ncid,radrefl_var_id,dum3d_out,(/1,1,1,1/))
-  
+        if(nSTAT.ne.0) &
+          write(global_info,*)'ERROR: put_var reflectivity: ',nf90_strerror(nSTAT)
+
         ! ash cloud_bottom
         if(VERB.gt.1)write(global_info,*)"     Fill ash height min"
         dum2d_out(:,:) = -9999.0_op
@@ -1379,75 +1596,86 @@
           enddo
         enddo
         nSTAT=nf90_put_var(ncid,ashcloudBot_var_id,dum2d_out,(/1,1,1/))
-
-       endif ! USE_OUTPROD_VARS
-
-      if(VERB.gt.1)write(global_info,*)"     Fill area"
-      if (IsLatLon) then
-        dum2d_out(1:nxmax,1:nymax) = real(sigma_nz_pd(1:nxmax,1:nymax,0),kind=op)
-      else
-        dum2d_out(1:nxmax,1:nymax) = real(dx*dy,kind=op)
-      endif
-      nSTAT=nf90_put_var(ncid,area_var_id,dum2d_out)
-      if(nSTAT.ne.0) &
-        write(global_info,*)'ERROR: put_var cell area: ',nf90_strerror(nSTAT)
-
-        ! GS settling velocity
-      if(VERB.gt.1)write(global_info,*)"     Fill GS SetVel"
-      if(n_gs_max.gt.0)then
-        allocate(dum1d_out(n_gs_max))
-        if(useCalcFallVel)then
-          dum1d_out = 0.0_op
-        else
-          dum1d_out = real(Tephra_v_s(1:n_gs_max),kind=op)*1000.0_op
-        endif 
-        nSTAT=nf90_put_var(ncid,gssd_var_id,dum1d_out,(/1/))
         if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: put_var gs_setvel: ',nf90_strerror(nSTAT)
-          ! GS mass fraction
-        dum1d_out = real(Tephra_bin_mass(1:n_gs_max),kind=op)
-        nSTAT=nf90_put_var(ncid,gsmf_var_id,dum1d_out,(/1/))
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: put_var gs_massfrac: ',nf90_strerror(nSTAT)
-        deallocate(dum1d_out)
-      endif
+          write(global_info,*)'ERROR: put_var cloud bottom: ',nf90_strerror(nSTAT)
 
-        ! ER start time
-      allocate(dum1d_out(neruptions))
-      dum1d_out = real(e_StartTime + SimStartHour,kind=op)
-      nSTAT=nf90_put_var(ncid,er_stime_var_id,dum1d_out,(/1/))
-      if(nSTAT.ne.0) &
-        write(global_log ,*)'ERROR: put_var er_stime: ',nf90_strerror(nSTAT)
-        ! ER duration
-      dum1d_out = real(e_Duration,kind=op)
-      nSTAT=nf90_put_var(ncid,er_duration_var_id,dum1d_out,(/1/))
-      if(nSTAT.ne.0) &
-        write(global_log ,*)'ERROR: put_var er_stime: ',nf90_strerror(nSTAT)
-        ! ER plume height
-      dum1d_out = real(PlumeHeight,kind=op)
-      nSTAT=nf90_put_var(ncid,er_plumeheight_var_id,dum1d_out,(/1/))
-      if(nSTAT.ne.0) &
-        write(global_log ,*)'ERROR: put_var er_stime: ',nf90_strerror(nSTAT)
-        ! ER volume
-      dum1d_out = real(e_Volume,kind=op)
-      nSTAT=nf90_put_var(ncid,er_volume_var_id,dum1d_out,(/1/))
-      if(nSTAT.ne.0) &
-        write(global_log ,*)'ERROR: put_var er_stime: ',nf90_strerror(nSTAT)
-      deallocate(dum1d_out)
+      endif ! USE_OUTPROD_VARS
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        ! GS density
-      if(n_gs_max.gt.0)then
-        allocate(dum1d_out(n_gs_max))
-        if(useCalcFallVel)then
-          dum1d_out(1:n_gs_max) = real(Tephra_rho_m(1:n_gs_max),kind=op)
-        else
-          dum1d_out = 0.0_op
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      if(USE_OPTMOD_VARS)then
+        if(VERB.gt.1)write(global_info,*)"     Fill OPTMOD_VARS"
+
+        ! Fill User-specified 2-d static variables
+        if(nvar_User2d_static_XY.gt.0)then
+          do ivar=1,nvar_User2d_static_XY
+            dum2d_out(1:nxmax,1:nymax) = real(var_User2d_static_XY(1:nxmax,1:nymax,ivar),kind=op)
+            nSTAT = nf90_inq_varid(ncid,var_User2d_static_XY_name(ivar),temp1_2d_var_id)
+            if(nSTAT.ne.0) &
+               write(global_info,*)'ERROR: put_inq_varid static_XY: ',ivar,nf90_strerror(nSTAT)
+            nSTAT = nf90_put_var(ncid,temp1_2d_var_id,dum2d_out,(/1,1/))
+            if(nSTAT.ne.0) &
+               write(global_info,*)'ERROR: put_var static_XY: ',ivar,nf90_strerror(nSTAT)
+          enddo
         endif
-        nSTAT=nf90_put_var(ncid,gsdens_var_id,dum1d_out,(/1/))
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: put_var gs_dens: ',nf90_strerror(nSTAT)
-        deallocate(dum1d_out)
-      endif
+
+        ! Fill User-specified 2-d transient variables
+        if(nvar_User2d_XY.gt.0)then
+          do ivar=1,nvar_User2d_XY
+            dum2d_out(:,:) = real(var_User2d_XY(:,:,ivar),kind=op)
+            nSTAT = nf90_inq_varid(ncid,var_User2d_XY_name(ivar),temp1_2d_var_id)
+            if(nSTAT.ne.0) &
+               write(global_info,*)'ERROR: inq_var XY: ',ivar,nf90_strerror(nSTAT)
+            nSTAT = nf90_put_var(ncid,temp1_2d_var_id,dum2d_out,(/1,1,1/))
+            if(nSTAT.ne.0) &
+               write(global_info,*)'ERROR: put_var XY: ',ivar,nf90_strerror(nSTAT)
+          enddo
+        endif
+
+        ! Fill User-specified 3-d transient variables in x,y,gs
+        if(nvar_User3d_XYGs.gt.0)then
+          do ivar=1,nvar_User3d_XYGs
+            depocon(:,:,:) = real(var_User3d_XYGs(:,:,:,ivar),kind=op)
+            nSTAT = nf90_inq_varid(ncid,var_User3d_XYGs_name(ivar),temp1_3d_var_id)
+            if(nSTAT.ne.0) &
+               write(global_info,*)'ERROR: inq_var XYGs: ',ivar,nf90_strerror(nSTAT)
+            nSTAT = nf90_put_var(ncid,temp1_3d_var_id,depocon,(/1,1,1,1/))
+            if(nSTAT.ne.0) &
+               write(global_info,*)'ERROR: put_var XYGs: ',ivar,nf90_strerror(nSTAT)
+          enddo
+        endif
+
+        ! Fill User-specified 3-d transient variables in x,y,z
+        if(nvar_User3d_XYZ.gt.0)then
+          do ivar=1,nvar_User3d_XYZ
+            dum3d_out(:,:,:) = real(var_User3d_XYZ(:,:,:,ivar),kind=op)
+            nSTAT = nf90_inq_varid(ncid,var_User3d_XYZ_name(ivar),temp1_3d_var_id)
+            if(nSTAT.ne.0) &
+               write(global_info,*)'ERROR: inq_var XYZ: ',ivar,nf90_strerror(nSTAT)
+            nSTAT = nf90_put_var(ncid,temp1_3d_var_id,dum3d_out,(/1,1,1,1/))
+            if(nSTAT.ne.0) &
+               write(global_info,*)'ERROR: put_var XYZ: ',ivar,nf90_strerror(nSTAT)
+          enddo
+        endif
+
+        ! Fill User-specified 4-d transient variables in x,y,z,gs
+        if(nvar_User4d_XYZGs.gt.0)then
+          do ivar=1,nvar_User4d_XYZGs
+            ashcon(:,:,:,:) = real(var_User4d_XYZGs(1:nxmax,1:nymax,1:nzmax,1:nsmax,ivar),kind=op)
+            nSTAT = nf90_inq_varid(ncid,var_User4d_XYZGs_name(ivar),temp1_4d_var_id)
+            if(nSTAT.ne.0) &
+               write(global_info,*)'ERROR: inq_var XYZGs: ',ivar,nf90_strerror(nSTAT)
+            nSTAT = nf90_put_var(ncid,temp1_4d_var_id,ashcon,(/1,1,1,1,1/))
+            if(nSTAT.ne.0) &
+               write(global_info,*)'ERROR: put_var XYZGs: ',ivar,nf90_strerror(nSTAT)
+          enddo
+        endif
+
+      endif  ! USE_OPTMOD_VARS
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       ! Close file
       nSTAT = nf90_close(ncid)
@@ -1490,6 +1718,9 @@
          MaxConcentration,MaxHeight,CloudLoad,dbZ,MinHeight,&
            dbZCalculator
 
+      use Tephra,        only : &
+         n_gs_max
+
       use mesh,          only : &
          nxmax,nymax,nzmax,ts1,dz_vec_pd,nsmax
 
@@ -1528,6 +1759,7 @@
       integer :: temp1_2d_var_id !,temp2_2d_var_id,temp3_2d_var_id,temp4_2d_var_id
       integer :: temp1_3d_var_id !,temp2_3d_var_id,temp3_3d_var_id,temp4_3d_var_id
       integer :: temp1_4d_var_id !,temp2_4d_var_id!,temp3_4d_var_id!,temp4_4d_var_id
+      integer :: ns_extra
 
       real(kind=op)                                 :: dumscal_out
       real(kind=op), dimension(:,:)    ,allocatable :: dum2d_out
@@ -1542,6 +1774,12 @@
 
       allocate(ashcon(nxmax,nymax,nzmax,nsmax))
       allocate(depocon(nxmax,nymax,nsmax))
+      if(nsmax.gt.n_gs_max)then
+        ! These are some non-ash species
+        ns_extra = nsmax-n_gs_max
+      else
+        ns_extra = 0
+      endif
 
       ! Open netcdf file for writing
       if(VERB.gt.2)write(global_info,*)"opening netcdf file"
@@ -1554,98 +1792,6 @@
       if(nSTAT.ne.0) &
         write(global_log ,*)'ERROR: inq_varid t: ',nf90_strerror(nSTAT)
 
-      if(USE_WIND_VARS)then
-        nSTAT = nf90_inq_varid(ncid,"vx",vx_var_id)
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: inq_varid vx: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_inq_varid(ncid,"vy",vy_var_id)
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: inq_varid vy: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_inq_varid(ncid,"vz",vz_var_id)
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: inq_varid vz: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_inq_varid(ncid,"vf",vf_var_id)
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: inq_varid vf: ',nf90_strerror(nSTAT)
-      endif
-
-      if(USE_RESTART_VARS)then
-        nSTAT = nf90_inq_varid(ncid,"ashcon",ashcon_var_id)
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: inq_varid ashcon: ',nf90_strerror(nSTAT)
-      endif
-      nSTAT = nf90_inq_varid(ncid,"depocon",depocon_var_id)
-      if(nSTAT.ne.0) &
-        write(global_log ,*)'ERROR: inq_varid depocon: ',nf90_strerror(nSTAT)
-      nSTAT = nf90_inq_varid(ncid,"depotime",depotime_var_id)
-      if(nSTAT.ne.0) &
-        write(global_log ,*)'ERROR: inq_varid depotime: ',nf90_strerror(nSTAT)
-
-      nSTAT = nf90_inq_varid(ncid,"depothick",depothick_var_id)
-      if(nSTAT.ne.0) &
-        write(global_log ,*)'ERROR: inq_varid depothick: ',nf90_strerror(nSTAT)
-      nSTAT = nf90_inq_varid(ncid,"ash_arrival_time",ashcloudtime_var_id)
-      if(nSTAT.ne.0) &
-        write(global_log ,*)'ERROR: inq_varid ash_arrival_time : ',nf90_strerror(nSTAT)
-      nSTAT = nf90_inq_varid(ncid,"ashcon_max",ashconMax_var_id)
-      if(nSTAT.ne.0) &
-        write(global_log ,*)'ERROR: inq_varid ashcon_max : ',nf90_strerror(nSTAT)
-      nSTAT = nf90_inq_varid(ncid,"cloud_height",ashheight_var_id)
-      if(nSTAT.ne.0) &
-        write(global_log ,*)'ERROR: inq_varid cloud_height : ',nf90_strerror(nSTAT)
-      nSTAT = nf90_inq_varid(ncid,"cloud_load",ashload_var_id)
-      if(nSTAT.ne.0) &
-        write(global_log ,*)'ERROR: inq_varid cloud_load : ',nf90_strerror(nSTAT)
-      nSTAT = nf90_inq_varid(ncid,"radar_reflectivity",radrefl_var_id)
-      if(nSTAT.ne.0) &
-        write(global_log ,*)'ERROR: inq_varid radar_reflectivity : ',nf90_strerror(nSTAT)
-      nSTAT = nf90_inq_varid(ncid,"cloud_bottom",ashcloudBot_var_id)
-      if(nSTAT.ne.0) &
-        write(global_log ,*)'ERROR: inq_varid cloud_bottom : ',nf90_strerror(nSTAT)
-
-      if(USE_OPTMOD_VARS)then
-
-          ! User-specified 2-d static variables were filled in the
-          ! create_nentcdf subroutine
-
-          ! Fill User-specified 2-d transient variables
-          if(nvar_User2d_XY.gt.0)then
-            do ivar=1,nvar_User2d_XY
-              dum2d_out(:,:) = real(var_User2d_XY(:,:,ivar),kind=op)
-              nSTAT = nf90_inq_varid(ncid,var_User2d_XY_name(ivar),temp1_2d_var_id)
-              nSTAT = nf90_put_var(ncid,temp1_2d_var_id,dum2d_out,(/1,1,io/))
-            enddo
-          endif
-
-          ! Fill User-specified 3-d transient variables in x,y,gs
-          if(nvar_User3d_XYGs.gt.0)then
-            do ivar=1,nvar_User3d_XYGs
-              depocon(:,:,:) = real(var_User3d_XYGs(:,:,:,ivar),kind=op)
-              nSTAT = nf90_inq_varid(ncid,var_User3d_XYGs_name(ivar),temp1_3d_var_id)
-              nSTAT = nf90_put_var(ncid,temp1_3d_var_id,depocon,(/1,1,1,io/))
-            enddo
-          endif
-
-          ! Fill User-specified 3-d transient variables in x,y,z
-          if(nvar_User3d_XYZ.gt.0)then
-            do ivar=1,nvar_User3d_XYZ
-              dum3d_out(:,:,:) = real(var_User3d_XYZ(:,:,:,ivar),kind=op)
-              nSTAT = nf90_inq_varid(ncid,var_User3d_XYZ_name(ivar),temp1_3d_var_id)
-              nSTAT = nf90_put_var(ncid,temp1_3d_var_id,dum3d_out,(/1,1,1,io/))
-            enddo
-          endif
-
-          ! Fill User-specified 4-d transient variables in x,y,z,gs
-          if(nvar_User4d_XYZGs.gt.0)then
-            do ivar=1,nvar_User4d_XYZGs
-              ashcon(:,:,:,:) = real(var_User4d_XYZGs(1:nxmax,1:nymax,1:nzmax,1:nsmax,ivar),kind=op)
-              nSTAT = nf90_inq_varid(ncid,var_User4d_XYZGs_name(ivar),temp1_4d_var_id)
-              nSTAT = nf90_put_var(ncid,temp1_4d_var_id,ashcon,(/1,1,1,1,io/))
-            enddo
-          endif
-
-      endif
-
       if(VERB.gt.2)write(global_info,*)"Got var IDs, now writing data"
       ! Write data
       ! Time
@@ -1655,35 +1801,56 @@
       if(nSTAT.ne.0) &
         write(global_log ,*)'ERROR: put_var t: ',nf90_strerror(nSTAT)
 
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if(USE_WIND_VARS)then
           ! Vz
+        nSTAT = nf90_inq_varid(ncid,"vz",vz_var_id)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: inq_varid vz: ',nf90_strerror(nSTAT)
         if(VERB.gt.2)write(global_info,*)"  Writing Vz"
         dum3d_out(1:nxmax,1:nymax,1:nzmax) = real(vz_pd(1:nxmax,1:nymax,1:nzmax),kind=op)
         nSTAT=nf90_put_var(ncid,vz_var_id,dum3d_out,(/1,1,1,io/))
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_var Vz: ',nf90_strerror(nSTAT)
           ! Vy
+        nSTAT = nf90_inq_varid(ncid,"vy",vy_var_id)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: inq_varid vy: ',nf90_strerror(nSTAT)
         if(VERB.gt.2)write(global_info,*)"  Writing Vy"
         dum3d_out(1:nxmax,1:nymax,1:nzmax) = real(vy_pd(1:nxmax,1:nymax,1:nzmax),kind=op)
         nSTAT=nf90_put_var(ncid,vy_var_id,dum3d_out,(/1,1,1,io/))
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_var Vy: ',nf90_strerror(nSTAT)
           ! Vx
+        nSTAT = nf90_inq_varid(ncid,"vx",vx_var_id)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: inq_varid vx: ',nf90_strerror(nSTAT)
         if(VERB.gt.2)write(global_info,*)"  Writing Vx"
         dum3d_out(1:nxmax,1:nymax,1:nzmax) = real(vx_pd(1:nxmax,1:nymax,1:nzmax),kind=op)
         nSTAT=nf90_put_var(ncid,vx_var_id,dum3d_out,(/1,1,1,io/))
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_var Vz: ',nf90_strerror(nSTAT)
           ! Vf
-         ashcon(1:nxmax,1:nymax,1:nzmax,1:nsmax) = real(vf_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax),kind=op)
+        nSTAT = nf90_inq_varid(ncid,"vf",vf_var_id)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: inq_varid vf: ',nf90_strerror(nSTAT)
+        ashcon(1:nxmax,1:nymax,1:nzmax,1:nsmax) = real(vf_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax),kind=op)
         nSTAT=nf90_put_var(ncid,vf_var_id,ashcon,(/1,1,1,1,io/))
       endif
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if(USE_RESTART_VARS)then
           ! ashcon
           ! netCDF standard requires that the unlimited dimension (time)
           ! be the most slowly varying, so ashcon unfortunately has a
           ! different shape than concen
+        nSTAT = nf90_inq_varid(ncid,"ashcon",ashcon_var_id)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: inq_varid ashcon: ',nf90_strerror(nSTAT)
         if(VERB.gt.2)write(global_info,*)"  Writing ashcon"
         ashcon = 0.0_op
         ashcon(1:nxmax,1:nymax,1:nzmax,1:nsmax) = real(concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1),kind=op)
@@ -1691,24 +1858,28 @@
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_var ashcon: ',nf90_strerror(nSTAT)
       endif
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if(USE_OUTPROD_VARS)then
+
           ! depocon
         if(VERB.gt.1)write(global_info,*)"     Fill depocon"
+        nSTAT = nf90_inq_varid(ncid,"depocon",depocon_var_id)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: inq_varid depocon: ',nf90_strerror(nSTAT)
         depocon = 0.0_op
           ! netCDF standard requires that the unlimited dimension (time)
           ! be the most slowly varying, so dum3d_out unfortunately has a
           ! different shape than depocon
-        do i = 1,nsmax
+        do i = 1,n_gs_max
             ! Here's the conversion to kg/m^2 from kg/km^2
           depocon(1:nxmax,1:nymax,i) = real(DepositGranularity(1:nxmax,1:nymax,i) * &
                                          dz_vec_pd(0)/KM2_2_M2,kind=op)
         enddo
-        do n=1,nsmax
+        do n=1,n_gs_max
           do i=1,nxmax
             do j=1,nymax
               if(depocon(i,j,n).le.EPS_SMALL)depocon(i,j,n)=0.0_op
@@ -1723,6 +1894,9 @@
         call dbZCalculator            ! get radar reflectivity
   
         ! depothick
+        nSTAT = nf90_inq_varid(ncid,"depothick",depothick_var_id)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: inq_varid depothick: ',nf90_strerror(nSTAT)
         if(VERB.gt.2)write(global_info,*)"  Writing depothick"
         dum2d_out(:,:) = 0.0_op
         do i=1,nxmax
@@ -1734,6 +1908,9 @@
         nSTAT=nf90_put_var(ncid,depothick_var_id,dum2d_out,(/1,1,io/))
   
           ! depotime
+        nSTAT = nf90_inq_varid(ncid,"depotime",depotime_var_id)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: inq_varid depotime: ',nf90_strerror(nSTAT)
         if(VERB.gt.2)write(global_info,*)"  Writing depotime"
         dum2d_out(:,:) = -9999.0_op
         do i=1,nxmax
@@ -1747,6 +1924,9 @@
           write(global_info,*)'ERROR: put_var depotime: ',nf90_strerror(nSTAT)
   
           ! ashtime
+        nSTAT = nf90_inq_varid(ncid,"ash_arrival_time",ashcloudtime_var_id)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: inq_varid ash_arrival_time : ',nf90_strerror(nSTAT)
         if(VERB.gt.2)write(global_info,*)"  Writing ashtime"
         dum2d_out(:,:) = -9999.0_op
         do i=1,nxmax
@@ -1760,6 +1940,9 @@
           write(global_info,*)'ERROR: put_var ashcloudtime_: ',nf90_strerror(nSTAT)
   
         ! ashconMax
+        nSTAT = nf90_inq_varid(ncid,"ashcon_max",ashconMax_var_id)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: inq_varid ashcon_max : ',nf90_strerror(nSTAT)
         if(VERB.gt.2)write(global_info,*)"  Writing ashconMax"
         dum2d_out(:,:) = 0.0_op
         do i=1,nxmax
@@ -1773,6 +1956,9 @@
         nSTAT=nf90_put_var(ncid,ashconMax_var_id,dum2d_out,(/1,1,io/))
   
         ! ash cloud_height
+        nSTAT = nf90_inq_varid(ncid,"cloud_height",ashheight_var_id)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: inq_varid cloud_height : ',nf90_strerror(nSTAT)
         if(VERB.gt.2)write(global_info,*)"  Writing ash height"
         dum2d_out(:,:) = -9999.0_op
         do i=1,nxmax
@@ -1786,6 +1972,9 @@
         nSTAT=nf90_put_var(ncid,ashheight_var_id,dum2d_out,(/1,1,io/))
   
         ! ash-load
+        nSTAT = nf90_inq_varid(ncid,"cloud_load",ashload_var_id)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: inq_varid cloud_load : ',nf90_strerror(nSTAT)
         if(VERB.gt.2)write(global_info,*)"  Writing ash-load"
         dum2d_out(:,:) = -9999.0_op
         do i=1,nxmax
@@ -1799,6 +1988,9 @@
         nSTAT=nf90_put_var(ncid,ashload_var_id,dum2d_out,(/1,1,io/))
   
         ! radar reflectivity
+        nSTAT = nf90_inq_varid(ncid,"radar_reflectivity",radrefl_var_id)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: inq_varid radar_reflectivity : ',nf90_strerror(nSTAT)
         if(VERB.gt.2)write(global_info,*)"  Writing radar reflectivity"
         dum3d_out(:,:,:) = 0.0_op
         do i=1,nxmax
@@ -1814,6 +2006,9 @@
         nSTAT=nf90_put_var(ncid,radrefl_var_id,dum3d_out,(/1,1,1,io/))
   
         ! ash cloud_bottom
+        nSTAT = nf90_inq_varid(ncid,"cloud_bottom",ashcloudBot_var_id)
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: inq_varid cloud_bottom : ',nf90_strerror(nSTAT)
         if(VERB.gt.2)write(global_info,*)"  Writing ash-height (bottom)"
         dum2d_out(:,:) = -9999.0_op
         do i=1,nxmax
@@ -1827,6 +2022,54 @@
         nSTAT=nf90_put_var(ncid,ashcloudBot_var_id,dum2d_out,(/1,1,io/))
 
       endif ! USE_OUTPROD_VARS
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      if(USE_OPTMOD_VARS)then
+        ! User-specified 2-d static variables were filled in the
+        ! create_netcdf subroutine
+
+        ! Fill User-specified 2-d transient variables
+        if(nvar_User2d_XY.gt.0)then
+          do ivar=1,nvar_User2d_XY
+            dum2d_out(:,:) = real(var_User2d_XY(:,:,ivar),kind=op)
+            nSTAT = nf90_inq_varid(ncid,var_User2d_XY_name(ivar),temp1_2d_var_id)
+            nSTAT = nf90_put_var(ncid,temp1_2d_var_id,dum2d_out,(/1,1,io/))
+          enddo
+        endif
+
+        ! Fill User-specified 3-d transient variables in x,y,gs
+        if(nvar_User3d_XYGs.gt.0)then
+          do ivar=1,nvar_User3d_XYGs
+            depocon(:,:,:) = real(var_User3d_XYGs(:,:,:,ivar),kind=op)
+            nSTAT = nf90_inq_varid(ncid,var_User3d_XYGs_name(ivar),temp1_3d_var_id)
+            nSTAT = nf90_put_var(ncid,temp1_3d_var_id,depocon,(/1,1,1,io/))
+          enddo
+        endif
+
+        ! Fill User-specified 3-d transient variables in x,y,z
+        if(nvar_User3d_XYZ.gt.0)then
+          do ivar=1,nvar_User3d_XYZ
+            dum3d_out(:,:,:) = real(var_User3d_XYZ(:,:,:,ivar),kind=op)
+            nSTAT = nf90_inq_varid(ncid,var_User3d_XYZ_name(ivar),temp1_3d_var_id)
+            nSTAT = nf90_put_var(ncid,temp1_3d_var_id,dum3d_out,(/1,1,1,io/))
+          enddo
+        endif
+
+        ! Fill User-specified 4-d transient variables in x,y,z,gs
+        if(nvar_User4d_XYZGs.gt.0)then
+          do ivar=1,nvar_User4d_XYZGs
+            ashcon(:,:,:,:) = real(var_User4d_XYZGs(1:nxmax,1:nymax,1:nzmax,1:nsmax,ivar),kind=op)
+            nSTAT = nf90_inq_varid(ncid,var_User4d_XYZGs_name(ivar),temp1_4d_var_id)
+            nSTAT = nf90_put_var(ncid,temp1_4d_var_id,ashcon,(/1,1,1,1,io/))
+          enddo
+        endif
+
+      endif
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       ! Close file
       if(VERB.gt.2)write(global_info,*)"closing file"
@@ -1933,6 +2176,9 @@
       use io_data,           only : &
          concenfile,init_tstep
 
+      use Tephra,        only : &
+         n_gs_max
+
       use mesh,              only : &
          nxmax,nymax,nzmax,nsmax,dz_vec_pd,ts0,ts1
 
@@ -1963,8 +2209,8 @@
 
       allocate(dum2d_out(nxmax,nymax))
       allocate(dum3d_out(nxmax,nymax,nzmax))
-      allocate(ashcon(nxmax,nymax,nzmax,nsmax))
-      allocate(depocon(nxmax,nymax,nsmax))
+      allocate(ashcon(nxmax,nymax,nzmax,n_gs_max))
+      allocate(depocon(nxmax,nymax,n_gs_max))
 
       write(global_info,*)"WARNING "
       write(global_info,*)"Input file is not currently verified "
@@ -2015,22 +2261,22 @@
 
       nSTAT=nf90_get_var(ncid,ashcon_var_id,ashcon,  &
                start = (/1,1,1,1,init_tstep/),       &
-               count = (/nxmax,nymax,nzmax,nsmax,1/))
+               count = (/nxmax,nymax,nzmax,n_gs_max,1/))
 
       if(nSTAT.ne.0) &
         write(global_log ,*)'ERROR: get_var ashcon: ',nf90_strerror(nSTAT)
 
-      do i = 1,nsmax
+      do i = 1,n_gs_max
         concen_pd(1:nxmax,1:nymax,1:nzmax,i,ts1) = real(ashcon(:,:,:,i),kind=ip)
       enddo
 
       nSTAT=nf90_get_var(ncid,depocon_var_id,depocon,&
                start = (/1,1,1,init_tstep/),       &
-               count = (/nxmax,nymax,nsmax,1/))
+               count = (/nxmax,nymax,n_gs_max,1/))
       if(nSTAT.ne.0) &
         write(global_log ,*)'ERROR: put_var depocon: ',nf90_strerror(nSTAT)
 
-      do i = 1,nsmax
+      do i = 1,n_gs_max
           ! Here's the conversion from kg/m^2
         concen_pd(1:nxmax,1:nymax,0,i,ts1) = real(depocon(:,:,i),kind=ip)/(dz_vec_pd(0)/KM2_2_M2)
       enddo
@@ -2050,4 +2296,4 @@
 
       end subroutine NC_RestartFile_LoadConcen
 
-!##############################################################################
+

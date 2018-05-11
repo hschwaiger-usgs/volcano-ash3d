@@ -22,3 +22,6 @@ rm -f var.txt
 rm -f volc.txt
 rm -f world_cities.txt
 rm -f *kml
+rm -f Ash3d
+rm -f GFSVolc_to_gif_dp.sh
+rm -f NCEP

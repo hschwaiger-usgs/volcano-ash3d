@@ -306,6 +306,7 @@
       integer :: nzmax      ! number of nodes in z
       integer :: nsmax      ! total number of species tracked in concen
                             !  i.e. all ash bins + anything else (aggs, water, chem)
+      integer :: insmax     ! placeholder for species max
 
       ! Variables that are allocated based on the computational grid
       ! (nxmax,nymax)
@@ -446,6 +447,8 @@
       integer, dimension(:) ,allocatable :: SpeciesID  ! 1 = ash gs bin
                                                        ! 2 = aggregate
                                                        ! 3 = chem species
+      integer, dimension(:) ,allocatable :: SpeciesSubID ! categorization within the class
+
       real(kind=ip), dimension(:)  ,allocatable  :: v_s         ! Settling vel 
       real(kind=ip), dimension(:)  ,allocatable  :: gsdiam      ! diameter (m)
       real(kind=ip), dimension(:)  ,allocatable  :: bin_mass    ! mass
@@ -459,7 +462,7 @@
       subroutine Allocate_solution!(nsmax)
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,nsmax,ts0,ts1
+         nxmax,nymax,nzmax,nsmax,insmax,ts0,ts1
 
       allocate(vx_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));         vx_pd = 0.0_ip 
       allocate(vy_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));         vy_pd = 0.0_ip
@@ -480,6 +483,7 @@
                                                     ! If nsmax>n_gs_max, then the
                                                     ! extra bins will need to be
                                                     ! flagged in the custom source modules
+      allocate(SpeciesSubID(1:nsmax));  SpeciesSubID = 0
       allocate(     v_s(1:nsmax)); v_s      = 0.0_ip
       allocate(  gsdiam(1:nsmax)); gsdiam   = 0.0_ip
       allocate(bin_mass(1:nsmax)); bin_mass = 0.0_ip

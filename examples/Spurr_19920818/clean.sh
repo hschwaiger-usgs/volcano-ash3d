@@ -22,3 +22,9 @@ rm -f var.txt
 rm -f volc.txt
 rm -f world_cities.txt
 rm -f contourfile*xyz
+rm -f .gmtdefaults4
+rm -f .gmtcommands4
+rm -f GFSVolc_to_gif_dp.sh
+rm -f GFSVolc_to_gif_dp_mm.sh
+rm -f NCEP
+rm -f Ash3d

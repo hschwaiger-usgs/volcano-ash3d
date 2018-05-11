@@ -45,7 +45,7 @@
 
       use mesh,          only : &
          de,dn,dx,dy,z_vec_init,dz_const,nxmax,nymax,nzmax,nsmax,VarDzType,ivent,jvent,&
-         gridwidth_e,gridwidth_n,gridwidth_x,gridwidth_y,&
+         gridwidth_e,gridwidth_n,gridwidth_x,gridwidth_y,insmax,&
          lonLL,latLL,lonUR,latUR,xLL,yLL,xUR,yUR,&
          A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
          A3d_phi2,A3d_radius_earth,IsLatLon,IsPeriodic,ZPADDING
@@ -1423,11 +1423,26 @@
         read(linebuffer,*)testkey
       enddo
       
-      !READ GRAIN-SIZE BINS
+      ! READ GRAIN-SIZE BINS
+      ! First, get the number of tephra bins to read
+      ! Note: This might be one greater than what is calculated if the last bin
+      !       has a negative diameter.  In this case, the remaining mass fraction
+      !       neglecting the last bin is distributed over the previous bins with
+      !       a gaussian distribution given by a phi_mean and phi_stdev
+      !    e.g.  -1 4 2
+      !       Also note that the number of tephra bins can be zero if the species
+      !       will be defined in optional modules such as gas, aggregates, etc.
       read(linebuffer,*,iostat=ioerr) ivalue1
       init_n_gs_max = ivalue1
       read(linebuffer,*,iostat=ioerr) ivalue1, ivalue2
-      ! Assume we can read at least read one value, try for two
+      ! Assume we can read at least read one value, try for two with the second being
+      ! the fall model:
+      !  FV_ID = 0 -> No fall (just tracer)
+      !          1 -> Wilson and Huang
+      !          2 -> Wilson and Huang + Cunningham slip
+      !          3 -> Wilson and Huang + Mod by Pfeiffer Et al.
+      !          4 -> Ganser
+      !          5 -> Stokes flow for spherical particles + slip
       if (ioerr.eq.0)then
         FV_ID = ivalue2
       else
@@ -1439,88 +1454,92 @@
       allocate(temp_rho_m(init_n_gs_max))
       allocate(temp_gsF(init_n_gs_max))
 
-      do i=1,init_n_gs_max
-        value1 = -1.99_ip
-        value2 = -1.99_ip
-        value3 = -1.99_ip
-        read(10,'(a80)')linebuffer
-        if ((linebuffer(1:1).eq.'*').or.(linebuffer(1:1).eq.'#')) then
-          write(global_info,*) 'Error in specifying grain sizes.  You specified ',init_n_gs_max,', sizes,'
-          write(global_info,*) 'but only ',i-1,' size classes were listed in the input file.'
-          write(global_info,*) 'Program stopped'
-          write(global_log ,*) 'Error in specifying grain sizes.  You specified ',init_n_gs_max,', sizes,'
-          write(global_log ,*) 'but only ',i-1,' size classes were listed in the input file.'
-          write(global_log ,*) 'Program stopped'
-          stop 1
-        endif
-        read(linebuffer,*,iostat=ioerr) value1, value2
-        ! Assume we can read at least read two values, try for three
-        if (ioerr.eq.0)then
-          read(linebuffer,*,iostat=ioerr) value1, value2, value3
-          if (ioerr.eq.0)then
-            ! Three values were successfully read, interpret as:
-            ! grain-size, mass fraction, density
-            ! W&H suggest 800 kg/m3 for d>300um and 2000 for d<88um for pumice
-            ! fragments
-            useCalcFallVel = .true.
-            useTemperature = .true.
-            temp_gsdiam(i) = value1
-            temp_bin_mass(i) = value2
-            temp_rho_m(i) = value3
-            ! Try for a forth value
-            read(linebuffer,*,iostat=ioerr) value1, value2, value3, value4
-            if (ioerr.eq.0)then
-              ! Fourth value was successfully read, interpret as shape
-              ! parameter
-              temp_gsF(i) = value4
-            else
-              !temp_gsF(i) = 0.7_ip
-              temp_gsF(i) = 0.44_ip
-            endif
-              ! Initialize this to zero
-            temp_v_s(i) = 0.0_ip
-            if(temp_gsdiam(i).lt.0.0_ip)then
-              if(i.lt.init_n_gs_max)then
-                write(global_info,*)"ERROR: diameter must be positive"
-                stop 1
-              else
-                phi_mean   = value2
-                phi_stddev = value3
-                write(global_info,*) &
-         "Last grain-size bin will be partitioned across all previous."
-                write(global_info,*)"Volume fraction partitioned = ",&
-                           1.0_ip-sum(temp_bin_mass(1:init_n_gs_max-1))
-                write(global_info,*)"  Assuming remainder is Gaussian in phi"
-                write(global_info,*)"    phi_mean   = ", phi_mean
-                write(global_info,*)"    phi_stddev = ", phi_stddev
-                useVariableGSbins = .true.
-              endif
-            endif
-          else
-            ! Only two values were successfully read, interpret with
-            ! old format as:
-            ! FallVel, mass fraction
-            useCalcFallVel = .false.
-            temp_v_s(i)     = value1
-            temp_bin_mass(i)= value2
-              ! Initialize these
-            temp_gsdiam(i)  = 0.1_ip
-            temp_rho_m(i)   = 2000.0_ip
-            temp_gsF(i)     = 0.7_ip
+      if(init_n_gs_max.gt.0)then
+        do i=1,init_n_gs_max
+          value1 = -1.99_ip
+          value2 = -1.99_ip
+          value3 = -1.99_ip
+          read(10,'(a80)')linebuffer
+          if ((linebuffer(1:1).eq.'*').or.(linebuffer(1:1).eq.'#')) then
+            write(global_info,*) 'Error in specifying grain sizes.  You specified ',init_n_gs_max,', sizes,'
+            write(global_info,*) 'but only ',i-1,' size classes were listed in the input file.'
+            write(global_info,*) 'Program stopped'
+            write(global_log ,*) 'Error in specifying grain sizes.  You specified ',init_n_gs_max,', sizes,'
+            write(global_log ,*) 'but only ',i-1,' size classes were listed in the input file.'
+            write(global_log ,*) 'Program stopped'
+            stop 1
           endif
+          read(linebuffer,*,iostat=ioerr) value1, value2
+          ! Assume we can read at least read two values, try for three
+          if (ioerr.eq.0)then
+            read(linebuffer,*,iostat=ioerr) value1, value2, value3
+            if (ioerr.eq.0)then
+              ! Three values were successfully read, interpret as:
+              ! grain-size, mass fraction, density
+              ! W&H suggest 800 kg/m3 for d>300um and 2000 for d<88um for pumice
+              ! fragments
+              useCalcFallVel = .true.
+              useTemperature = .true.
+              temp_gsdiam(i) = value1
+              temp_bin_mass(i) = value2
+              temp_rho_m(i) = value3
+              ! Try for a forth value
+              read(linebuffer,*,iostat=ioerr) value1, value2, value3, value4
+              if (ioerr.eq.0)then
+                ! Fourth value was successfully read, interpret as shape
+                ! parameter
+                temp_gsF(i) = value4
+              else
+                !temp_gsF(i) = 0.7_ip
+                temp_gsF(i) = 0.44_ip
+              endif
+                ! Initialize this to zero
+              temp_v_s(i) = 0.0_ip
+              if(temp_gsdiam(i).lt.0.0_ip)then
+                if(i.lt.init_n_gs_max)then
+                  write(global_info,*)"ERROR: diameter must be positive"
+                  stop 1
+                else
+                  phi_mean   = value2
+                  phi_stddev = value3
+                  write(global_info,*) &
+           "Last grain-size bin will be partitioned across all previous."
+                  write(global_info,*)"Volume fraction partitioned = ",&
+                             1.0_ip-sum(temp_bin_mass(1:init_n_gs_max-1))
+                  write(global_info,*)"  Assuming remainder is Gaussian in phi"
+                  write(global_info,*)"    phi_mean   = ", phi_mean
+                  write(global_info,*)"    phi_stddev = ", phi_stddev
+                  useVariableGSbins = .true.
+                endif
+              endif
+            else
+              ! Only two values were successfully read, interpret with
+              ! old format as:
+              ! FallVel, mass fraction
+              useCalcFallVel = .false.
+              temp_v_s(i)     = value1
+              temp_bin_mass(i)= value2
+                ! Initialize these
+              temp_gsdiam(i)  = 0.1_ip
+              temp_rho_m(i)   = 2000.0_ip
+              temp_gsF(i)     = 0.7_ip
+            endif
+          endif
+        enddo
+        ! Set the number of grain-size bins
+        if (useVariableGSbins)then
+          ! In this case, the last bin is the remainder to be distributed over the
+          ! previous bins.  So we need to decrement the tephra bins by 1
+          n_gs_max = init_n_gs_max-1
+        else
+          n_gs_max = init_n_gs_max
         endif
-      enddo
-      ! Set the number of grain-size bins
-      if (useVariableGSbins)then
-        ! In this case, the last bin is the remainder to be distributed over the
-        ! previous bins.  So we need to decrement the tephra bins by 1
-        n_gs_max = init_n_gs_max-1
-      else
-        n_gs_max = init_n_gs_max
-      endif
+      endif ! if init_n_gs_max > 0
+
       ! Since this subroutine is called before any optional modules, we can
       ! initialize nsmax to the number of tephra bins
-      nsmax = n_gs_max
+      nsmax    = n_gs_max
+      insmax   = n_gs_max
       ns_aloft = n_gs_max
 
       call Allocate_Tephra

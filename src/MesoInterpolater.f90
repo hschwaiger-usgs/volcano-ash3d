@@ -37,7 +37,7 @@
            Set_Atmosphere_Meso
 
       use MetReader,       only : &
-         MR_dum3d_compH,MR_dum3d_compH_2,MR_ForecastInterval,MR_iMetStep_Now,&
+         MR_dum3d_compH,MR_dum3d_compH_2,MR_iMetStep_Now,&
          MR_MetSteps_Total,Have_Vz,isGridRelative,Map_Case,&
          MR_MetStep_Hour_since_baseyear,MR_MetStep_Interval,&
          MR_dum3d_compH,&
@@ -68,7 +68,7 @@
       TimeNow_fromRefTime = SimStartHour+TimeNow  ! hours since reference time (1-1-1900)
 
       ! MesoInterpolater is called once before the time loop in order to
-      ! initilize velocities on the computational grid and to determin the
+      ! initilize velocities on the computational grid and to determine the
       ! start time relative to the MetSteps
       if(first_time)then
         Meso_toggle = 0
@@ -145,7 +145,6 @@
           write(global_info,*)"MR_iMetStep_Now = ",MR_iMetStep_Now, &
                       TimeNow_fromRefTime, &
                       MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now)
-
         endif
       endif !first_time
 
@@ -238,8 +237,7 @@
       ! Now we have the bracketing wind data for vx,vy,vz
       ! Set up to do the interpolation to the current time
       HoursIntoInterval   = TimeNow_fromRefTime - MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now)
-      MR_ForecastInterval = MR_MetStep_Interval(MR_iMetStep_Now)
-      Interval_Frac = HoursIntoInterval / MR_ForecastInterval
+      Interval_Frac = HoursIntoInterval /  MR_MetStep_Interval(MR_iMetStep_Now)
 
       if(useTemperature)then
         call Set_Atmosphere_Meso(Load_MesoSteps,Interval_Frac,first_time)
@@ -290,7 +288,8 @@
       !are so high.
       if (abs(maxval(vx_pd(1:nxmax,1:nymax,1:nzmax))).gt.5.0e3_ip) then
         write(global_info,1041) nxmax, nymax, nzmax, SimStartHour, &
-                      MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now), MR_ForecastInterval
+                      MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now), &
+                      MR_MetStep_Interval(MR_iMetStep_Now)
 1041    format(4x,'Warning: max(vx) in Mesointerpolater is > 5.0e3.',&
                   '  Writing out locations of all ',/, &
                   'values greater than 5e3',/,4x,' nxmax=',i4,&
@@ -318,7 +317,8 @@
 
       if (abs(maxval(vy_pd(1:nxmax,1:nymax,1:nzmax))).gt.5.0e3_ip) then
         write(global_info,1043) nxmax, nymax, nzmax, SimStartHour, &
-                      MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now), MR_ForecastInterval
+                      MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now), &
+                      MR_MetStep_Interval(MR_iMetStep_Now)
 1043    format(4x,'Warning: max(vy) in Mesointerpolater is > 5e3.',&
                   '  Writing out locations of all ',/, &
                   'values greater than 5e3',/,4x,' nxmax=',i4,&
