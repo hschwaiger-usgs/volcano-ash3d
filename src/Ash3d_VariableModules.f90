@@ -106,8 +106,8 @@
       logical                  :: useMoistureVars    = .false.
 
       real(kind=ip), parameter :: CFL = 0.98_ip       ! courant number
-      real(kind=ip), parameter :: DT_MIN = 1.0e-5_ip  ! Minimum DT in hours
-      real(kind=ip), parameter :: DT_MAX = 1.0_ip   ! Maximum DT in hours
+      real(kind=ip)            :: DT_MIN = 1.0e-5_ip  ! Minimum DT in hours
+      real(kind=ip)            :: DT_MAX = 1.0e0_ip   ! Maximum DT in hours
 
         ! These paramters set how verbose the logging is to stdout.
         ! VERB = 1 is the standard

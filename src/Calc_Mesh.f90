@@ -201,7 +201,7 @@
       use mesh,              only : &
          nxmax,nymax,x_cc_pd,y_cc_pd,xy2ll_xlon,xy2ll_ylat,&
          A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_phi1,&
-         A3d_phi2,A3d_radius_earth
+         A3d_phi2,A3d_radius_earth,IsLatLon
 
       use projection,        only : &
            PJ_proj_inv
