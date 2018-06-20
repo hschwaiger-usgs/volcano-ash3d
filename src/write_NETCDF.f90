@@ -1308,7 +1308,7 @@
       !   Now fill a few other variables that are a function of BN
          ! Species class ID
       if(VERB.gt.1)write(global_info,*)"     Fill Species class ID"
-      allocate(dum1dint_out(ns_extra))
+      allocate(dum1dint_out(nsmax))
       dum1dint_out(1:nsmax) = SpeciesID(1:nsmax)
       nSTAT=nf90_put_var(ncid,spec_var_id,dum1dint_out,(/1/))
       if(nSTAT.ne.0) &
@@ -1316,7 +1316,7 @@
       deallocate(dum1dint_out)
          ! Species sub-class ID
       if(VERB.gt.1)write(global_info,*)"     Fill Species sub-class ID"
-      allocate(dum1dint_out(ns_extra))
+      allocate(dum1dint_out(nsmax))
       dum1dint_out(1:nsmax) = SpeciesSubID(1:nsmax)
       nSTAT=nf90_put_var(ncid,subspec_var_id,dum1dint_out,(/1/))
       if(nSTAT.ne.0) &

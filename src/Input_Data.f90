@@ -78,7 +78,7 @@
          MR_iwindfiles,MR_windfiles,MR_BaseYear,MR_useLeap,MR_Comp_StartHour,&
          MR_windfiles_GRIB_index,MR_windfiles_Have_GRIB_index,&
          MR_windfile_starthour,MR_windfile_stephour,MR_iHeightHandler,&
-         MR_FC_Offset,MR_iwf_template,MR_runAsForecast,MR_iwindformat,&
+         MR_iwf_template,MR_iwindformat,&
          MR_global_essential,MR_global_production,MR_global_debug,&
          MR_global_info,MR_global_log,MR_global_error, &
            MR_Allocate_FullMetFileList, &
@@ -96,8 +96,8 @@
                                                          !  hour (UT)
       character(len=13)  :: HS_yyyymmddhhmm_since    ! function that calculates date
                                                      !  string given hours since 1900
-      real(kind=dp)      :: HS_hours_since_baseyear          ! function that calculates hours
-                                                     !  since 1900
+      real(kind=dp)      :: HS_hours_since_baseyear  ! function that calculates hours
+                                                     !  since base year
 
       character(len=80) :: linebuffer
       character(len=120):: llinebuffer
@@ -142,6 +142,9 @@
       character(len=5)  :: zone
       integer           :: values(8)
       integer           :: timezone
+      logical           :: runAsForecast
+      real(kind=ip)     :: FC_Offset
+
 
       write(global_production,*)"--------------------------------------------------"
       write(global_production,*)"---------- READ_CONTROL_FILE ---------------------"
@@ -601,7 +604,7 @@
           endif
           if(iyear(i).eq.0)then  !HFS: KLUDGE-- This should be changed to test for FC or something
                                  !              Start time should also be calculated by Ash3d, not MetReader
-            MR_runAsForecast = .true.
+            runAsForecast = .true.
             write(global_info,*)"Running as forecast."
           endif
         endif
@@ -653,11 +656,11 @@
         ! temporarily set year and month to Jan, 1900.  If iday is
         ! considered 'days after start of wind file', then we need to
         ! add 1 so that the hours are calculated properly.
-        if(MR_runAsForecast)then
+        if(runAsForecast)then
           iyear(i) = BaseYear
           imonth(i) = 1
           iday(i) = iday(i) + 1
-          MR_FC_Offset = real(hour(1),sp)
+          FC_Offset = real(hour(1),sp)
         endif
         if(e_Duration(i).lt.0.0_ip)  e_Duration(i)  = ESP_duration
         if(PlumeHeight(i).lt.0.0_ip) PlumeHeight(i) = ESP_height
@@ -718,7 +721,7 @@
         write(global_info,*)"ERROR: could not read iwind, iwindformat"
         stop 1
       endif
-      igrid = 0
+
       if(iwf.eq.0)then
         ! If iwindformat = 0, then the input file is a not a known format
         ! Read an extra line given the name of a template file.
@@ -1316,8 +1319,8 @@
       call MR_Read_Met_DimVars(iyear(1))
         ! Now that we have the actual times available from the Met files, we can reset
         ! the Simulation Start times for forecast runs
-      if(MR_runAsForecast)then
-        MR_Comp_StartHour = MR_windfile_starthour(1) + MR_windfile_stephour(1,1) + MR_FC_Offset
+      if(runAsForecast)then
+        MR_Comp_StartHour = MR_windfile_starthour(1) + MR_windfile_stephour(1,1) + FC_Offset
         SimStartHour      = MR_Comp_StartHour
         xmlSimStartTime   = HS_xmltime(SimStartHour,BaseYear,useLeap)
       endif
