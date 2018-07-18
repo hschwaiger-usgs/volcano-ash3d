@@ -110,7 +110,7 @@
       write(global_info,1)'#               21: ECMWF 0.25deg for Hekla intermodel comparison                                      '
       write(global_info,1)'#               22: NCEP GFS 2.5 degree files                                                          '
       write(global_info,1)'#               23: NCEP DOE Reanalysis 2.5 degree files (http://dss.ucar.edu/pub/reanalysis2)         '
-      write(global_info,1)'#               24: NASA MERRA 1.25 degree reanalysis                                                  '
+      write(global_info,1)'#               24: NASA MERRA-2 0.625/0.5 degree reanalysis                                           '
       write(global_info,1)'#               25: NCEP1 2.5 global reanlysis (1948-pres)                                             '
       write(global_info,1)'#                     Note: use nWindFiles=1 for iwindformat=25                                        '
       write(global_info,1)'#               26: GFS (same as iwf20, but with 5 more pres levels to 100Pa)                          '

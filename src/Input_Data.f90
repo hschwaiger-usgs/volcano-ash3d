@@ -78,7 +78,7 @@
          MR_iwindfiles,MR_windfiles,MR_BaseYear,MR_useLeap,MR_Comp_StartHour,&
          MR_windfiles_GRIB_index,MR_windfiles_Have_GRIB_index,&
          MR_windfile_starthour,MR_windfile_stephour,MR_iHeightHandler,&
-         MR_FC_Offset,MR_iwf_template,MR_runAsForecast,MR_iwindformat,&
+         MR_iwf_template,MR_iwindformat,&
          MR_global_essential,MR_global_production,MR_global_debug,&
          MR_global_info,MR_global_log,MR_global_error, &
            MR_Allocate_FullMetFileList, &
@@ -135,6 +135,8 @@
       logical           :: IsThere
       character(len=8)  :: version             =  ' 1.0  '
       logical           :: StopWhenDeposited                       !if true, StopValue=0.99, else StopValue=1e5.
+      logical           :: runAsForecast
+      real(kind=dp)     :: FC_Offset = 0.0_dp
 
         ! variables to hold results of date_and_time
       character(len=8)  :: date
@@ -601,7 +603,7 @@
           endif
           if(iyear(i).eq.0)then  !HFS: KLUDGE-- This should be changed to test for FC or something
                                  !              Start time should also be calculated by Ash3d, not MetReader
-            MR_runAsForecast = .true.
+            runAsForecast = .true.
             write(global_info,*)"Running as forecast."
           endif
         endif
@@ -653,11 +655,11 @@
         ! temporarily set year and month to Jan, 1900.  If iday is
         ! considered 'days after start of wind file', then we need to
         ! add 1 so that the hours are calculated properly.
-        if(MR_runAsForecast)then
+        if(runAsForecast)then
           iyear(i) = BaseYear
           imonth(i) = 1
           iday(i) = iday(i) + 1
-          MR_FC_Offset = real(hour(1),sp)
+          FC_Offset = real(hour(1),sp)
         endif
         if(e_Duration(i).lt.0.0_ip)  e_Duration(i)  = ESP_duration
         if(PlumeHeight(i).lt.0.0_ip) PlumeHeight(i) = ESP_height
@@ -698,7 +700,7 @@
           igrid = ivalue3
           read(linebuffer,*,iostat=ioerr) iw, iwf, ivalue3, ivalue4
           if (ioerr.eq.0)then
-            ! Success!, set data format (ascii, netcdf, hdf, grib)
+            ! Success!, set data format (ascii, netcdf, grib2, grib1, hdf)
             idf = ivalue4
           endif
         else
@@ -1298,7 +1300,7 @@
                 ! Grib index file is not there, Try to generate it.
                 ! Note, we might have some permission problems here and we should
                 ! set up a fail-safe to the cwd or something.
-                call MR_Set_Gen_Index_GRIB(MR_windfiles(i))
+                call MR_Set_Gen_Index_GRIB2(MR_windfiles(i))
               endif
 #endif
             endif
@@ -1316,8 +1318,8 @@
       call MR_Read_Met_DimVars(iyear(1))
         ! Now that we have the actual times available from the Met files, we can reset
         ! the Simulation Start times for forecast runs
-      if(MR_runAsForecast)then
-        MR_Comp_StartHour = MR_windfile_starthour(1) + MR_windfile_stephour(1,1) + MR_FC_Offset
+      if(runAsForecast)then
+        MR_Comp_StartHour = MR_windfile_starthour(1) + MR_windfile_stephour(1,1) + FC_Offset
         SimStartHour      = MR_Comp_StartHour
         xmlSimStartTime   = HS_xmltime(SimStartHour,BaseYear,useLeap)
       endif
