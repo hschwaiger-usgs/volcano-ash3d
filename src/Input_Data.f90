@@ -96,8 +96,8 @@
                                                          !  hour (UT)
       character(len=13)  :: HS_yyyymmddhhmm_since    ! function that calculates date
                                                      !  string given hours since 1900
-      real(kind=dp)      :: HS_hours_since_baseyear          ! function that calculates hours
-                                                     !  since 1900
+      real(kind=dp)      :: HS_hours_since_baseyear  ! function that calculates hours
+                                                     !  since base year
 
       character(len=80) :: linebuffer
       character(len=120):: llinebuffer
@@ -144,6 +144,9 @@
       character(len=5)  :: zone
       integer           :: values(8)
       integer           :: timezone
+      logical           :: runAsForecast
+      real(kind=ip)     :: FC_Offset
+
 
       write(global_production,*)"--------------------------------------------------"
       write(global_production,*)"---------- READ_CONTROL_FILE ---------------------"
@@ -720,7 +723,7 @@
         write(global_info,*)"ERROR: could not read iwind, iwindformat"
         stop 1
       endif
-      igrid = 0
+
       if(iwf.eq.0)then
         ! If iwindformat = 0, then the input file is a not a known format
         ! Read an extra line given the name of a template file.
