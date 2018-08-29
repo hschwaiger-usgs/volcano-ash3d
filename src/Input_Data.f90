@@ -134,8 +134,8 @@
       integer           :: substr_pos
       logical           :: IsThere
       character(len=8)  :: version             =  ' 1.0  '
-      logical           :: StopWhenDeposited                       !if true, StopValue=0.99, else StopValue=1e5.
-      logical           :: runAsForecast
+      logical           :: StopWhenDeposited                       ! If true, StopValue=0.99, else StopValue=1e5.
+      logical           :: runAsForecast       = .false.           ! This will be changed if year=0
       real(kind=dp)     :: FC_Offset = 0.0_dp
 
         ! variables to hold results of date_and_time
@@ -700,7 +700,7 @@
           igrid = ivalue3
           read(linebuffer,*,iostat=ioerr) iw, iwf, ivalue3, ivalue4
           if (ioerr.eq.0)then
-            ! Success!, set data format (ascii, netcdf, grib2, grib1, hdf)
+            ! Success!, set data format (ascii, netcdf, grib)
             idf = ivalue4
           endif
         else
@@ -1286,11 +1286,11 @@
             if(idf.eq.3)then
               ! If we are reading grib files, check that the index file has been
               ! generated
-#ifndef USEGRIB2
+#ifndef USEGRIB
               write(global_info,*)"ERROR: This input file specifies that the Met files are"
-              write(global_info,*)"       in grib2 format, but Ash3d has not been compiled"
-              write(global_info,*)"       with grib2 support.  Please recompile with grib2"
-              write(global_info,*)"       enabled.  MetReader must also support grib2."
+              write(global_info,*)"       in grib format, but Ash3d has not been compiled"
+              write(global_info,*)"       with grib support.  Please recompile with grib"
+              write(global_info,*)"       enabled.  MetReader must also support grib."
               stop 1
 #else
               MR_windfiles_GRIB_index(i) = adjustl(trim(MR_windfiles(i))) // ".index"
@@ -1300,7 +1300,8 @@
                 ! Grib index file is not there, Try to generate it.
                 ! Note, we might have some permission problems here and we should
                 ! set up a fail-safe to the cwd or something.
-                call MR_Set_Gen_Index_GRIB2(MR_windfiles(i))
+                write(global_info,*)" Grib index file not found; attempting to create it."
+                call MR_Set_Gen_Index_GRIB(MR_windfiles(i))
               endif
 #endif
             endif
@@ -1558,7 +1559,7 @@
       if(n_gs_max.gt.0)then
         call Calculate_Tephra_Shape
 
-        call Sort_Tephra_Size
+        !call Sort_Tephra_Size
 
         temp_phi = -log(Tephra_gsdiam)/log(2.0)
 

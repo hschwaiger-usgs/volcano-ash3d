@@ -101,11 +101,17 @@
         write(global_info,*)"WARNING: Setting to dt_min = ",DT_MIN
         write(global_info,*)"         CFL condition probably violated."
         write(global_info,*)"         Check for high or NaN velocities."
+        write(global_info,*)"     time_advect = ",time_advect
+        write(global_info,*)"    time_diffuse = ",time_diffuse
+        write(global_info,*)"    max vel.s/dx = ",vxmax_dx,vymax_dy,vzmax_dz
         dt = DT_MIN
       elseif(tmp_sum.lt.1.0_ip/DT_MAX)then
         write(global_info,*)"WARNING: Setting to dt_max = ",DT_MAX
         write(global_info,*)"         CFL condition probably violated."
         write(global_info,*)"         Check for zero or NaN velocities."
+        write(global_info,*)"     time_advect = ",time_advect
+        write(global_info,*)"    time_diffuse = ",time_diffuse
+        write(global_info,*)"    max vel.s/dx = ",vxmax_dx,vymax_dy,vzmax_dz
         dt = DT_MAX
       else
         dt = min(1.0_ip,CFL)/tmp_sum

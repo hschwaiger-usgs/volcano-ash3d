@@ -549,8 +549,10 @@
       ! modify the max index of the grain-size loop (ns_aloft)
       ! The threshold for collapsing GS array is if there is less than a gram in
       ! that size bin aloft
-      do n = 1,ns_aloft
-        if(mass_aloft(n).lt.AIRBORNE_THRESH)then
+      !do n = 1,ns_aloft
+      do n = 1,n_gs_max
+        if(IsAloft(n).and. &                     ! if bin is currently flagged as aloft
+           mass_aloft(n).lt.AIRBORNE_THRESH)then ! but the mass is less than the thresh
           IsAloft(n) = .false.
           ns_aloft = ns_aloft-1
           write(global_info,*)"Grainsmax bin ",ns_aloft+1," has fully deposited."

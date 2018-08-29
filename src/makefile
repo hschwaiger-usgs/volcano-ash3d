@@ -61,8 +61,7 @@ INSTALLDIR=/opt/USGS/Ash3d
 #  For each data format you want to include in the library, set the corresponding
 #  variable below to 'T'.  Set to 'F' any you do not want compiled or any unavailable
 USENETCDF = T
-USEGRIB2 = T
-USEHDF = F
+USEGRIB = T
 
 #  VERB specifies the verbosity level for debugging purposes
 #    Current available options are:
@@ -163,17 +162,17 @@ ifeq ($(USENETCDF), T)
  ncFPPFLAG = -DUSENETCDF
  ncLIBS = -lnetcdf -lnetcdff
 endif
-ifeq ($(USEGRIB2), T)
- grb2FPPFLAG = -DUSEGRIB2
- grb2LIBS = -lgrib_api_f90 -lgrib_api
-endif
-ifeq ($(USEHDF), T)
- hdfFPPFLAG = -DUSEHDF
- hdfLIBS =
+ifeq ($(USEGRIB), T)
+ grbFPPFLAG = -DUSEGRIB
+ # These are the libraries for grib_api
+ grbIBS = -lgrib_api_f90 -lgrib_api
+ # These are the libraries for ecCodes
+ #grbLIBS = -leccodes -leccodes_f90
+
 endif
 
-DATAFPPFLAGS = $(ncFPPFLAG) $(grb2FPPFLAG) $(hdfFPPFLAG)
-DATALIBS = $(ncLIBS) $(grb2LIBS) $(hdfLIBS)
+DATAFPPFLAGS = $(ncFPPFLAG) $(grbFPPFLAG)
+DATALIBS = $(ncLIBS) $(grbLIBS)
 
 ifeq ($(USEPOINTERS), T)
  memFPPFLAG = -DUSEPOINTERS
@@ -191,8 +190,11 @@ ifeq ($(SYSTEM), gfortran)
     FCHOME=/usr
     FC=/usr/bin/gfortran
 
+    #COMPINC = -I$(FCHOME)/local/include -I$(FCHOME)/include -I$(FCHOME)/lib64/gfortran/modules
+    #COMPLIBS = -L$(FCHOME)/local/lib -L$(FCHOME)/lib64 -L$(FCHOME)/lib
+
     COMPINC = -I$(FCHOME)/include -I$(FCHOME)/lib64/gfortran/modules
-    COMPLIBS = -L$(FCHOME)/lib -L$(FCHOME)/lib64
+    COMPLIBS = -L$(FCHOME)/lib64 -L$(FCHOME)/lib
 
     LIBS = $(COMPLIBS) $(USGSLIBDIR) $(USGSINC) $(COMPINC) -llapack -lblas $(USGSLIB) $(DATALIBS)
 

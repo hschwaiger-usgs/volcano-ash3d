@@ -88,10 +88,12 @@
         ! which will be used in the QC checking
         call MR_Read_HGT_arrays(MR_iMetStep_Now,first_time)
 
-        if(isGridRelative)then
-           ! In most cases, velocities are GridRelative, so we just read them
-           ! in as normal
-           !
+        if(Map_case.eq.1.or.Map_case.eq.2)then
+          ! Either both the comp and met1 grids are LL (Map_case = 1)
+          ! or they are both the same projection (Map_case = 2) so
+          ! we can read the velocity components individually and interpolate onto
+          ! the computational grid
+
            ! Fill array from the step prior/equal to current time
           ivar = 2 ! U winds
           call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now,.true.)
@@ -103,17 +105,32 @@
             vy_meso_1_sp = MR_dum3d_compH
             vy_meso_next_step_sp => vy_meso_1_sp
         else
-          ! In some cases (NARR reanalysis (iwf 3 or 4)), velocities are
-          ! EarthRelative, so we need to first read both U and V on met grid,
-          ! rotate, then resample onto computational grid
-          ! This is all done in one subroutine call
-
-          if(Map_Case.eq.5)then
-            ! In this case, we first need to rotate the projected Met data to
-            ! Earth-relative on the MetP grid
+          ! Grids are different, we will need to rotate vectors
+          ! In all these cases, we need:
+          !    MR_dum3d_compH   holding U
+          !    MR_dum3d_compH_2 holding V
+          if(Map_case.eq.3)then
+              ! Met grid is natively LL and Comp grid is projected
+            call MR_Rotate_UV_ER2GR_Comp(MR_iMetStep_Now)
+          elseif(Map_case.eq.4)then
+              ! Met grid is projected and comp grid is LL
+            if(isGridRelative)then
+              call MR_Rotate_UV_GR2ER_Met(MR_iMetStep_Now,.true.) ! optional argument returns data on compH
+            else
+              ! if the projected data is already Earth-relative (NARR), then just read it
+              ivar = 3 ! Vy
+              call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now)
+              MR_dum3d_compH_2 = MR_dum3d_compH
+              ivar = 2 ! Vx
+              call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now)
+            endif
+          elseif(Map_Case.eq.5)then
+            ! Both comp and met grids are projected, but with different projections
+            ! First, rotate winds from met grid to earth-relative on the met nodes
             call MR_Rotate_UV_GR2ER_Met(MR_iMetStep_Now)
+            ! Now rotate and interpolate those earth-relative values to the projected comp grid.
+            call MR_Rotate_UV_ER2GR_Comp(MR_iMetStep_Now)
           endif
-          call MR_Rotate_UV_ER2GR_Comp(MR_iMetStep_Now)
 
           vx_meso_1_sp = MR_dum3d_compH
           vx_meso_next_step_sp => vx_meso_1_sp
@@ -168,10 +185,12 @@
         ! MR_iMetStep_Now
         call MR_Read_HGT_arrays(MR_iMetStep_Now)
 
-        if(isGridRelative)then
-           ! In most cases, velocities are GridRelative, so we just read them
-           ! in as normal
-           !
+        if(Map_case.eq.1.or.Map_case.eq.2)then
+          ! Either both the comp and met1 grids are LL (Map_case = 1)
+          ! or they are both the same projection (Map_case = 2) so
+          ! we can read the velocity components individually and interpolate onto
+          ! the computational grid
+
            ! Fill array from the step prior/equal to current time
           ivar = 2 ! U winds
           call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now+1,.true.)
@@ -193,18 +212,32 @@
             vy_meso_next_step_sp => vy_meso_2_sp
           endif
         else
-          ! In some cases (NARR reanalysis (iwf 3 or 4)), velocities are
-          ! EarthRelative, so we need to first read both U and V on met grid,
-          ! rotate, then resample onto computational grid
-          ! This is all done in one subroutine call
-
-          !call MR_Read_UV_MetGridRelative(MR_iMetStep_Now+1)
-          if(Map_Case.eq.5)then
-            ! In this case, we first need to rotate the projected Met data to
-            ! Earth-relative on the MetP grid
-            call MR_Rotate_UV_GR2ER_Met(MR_iMetStep_Now)
+          ! Grids are different, we will need to rotate vectors
+          ! In all these cases, we need:
+          !    MR_dum3d_compH   holding U
+          !    MR_dum3d_compH_2 holding V
+          if(Map_case.eq.3)then
+              ! Met grid is natively LL and Comp grid is projected
+            call MR_Rotate_UV_ER2GR_Comp(MR_iMetStep_Now+1)
+          elseif(Map_case.eq.4)then
+              ! Met grid is projected and comp grid is LL
+            if(isGridRelative)then
+              call MR_Rotate_UV_GR2ER_Met(MR_iMetStep_Now+1,.true.) ! optional argument returns data on compH
+            else
+              ! if the projected data is already Earth-relative (NARR), then just read it
+              ivar = 3 ! Vy
+              call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now+1)
+              MR_dum3d_compH_2 = MR_dum3d_compH
+              ivar = 2 ! Vx
+              call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now+1)
+            endif
+          elseif(Map_Case.eq.5)then
+            ! Both comp and met grids are projected, but with different projections
+            ! First, rotate winds from met grid to earth-relative on the met nodes
+            call MR_Rotate_UV_GR2ER_Met(MR_iMetStep_Now+1)
+            ! Now rotate and interpolate those earth-relative values to the projected comp grid.
+            call MR_Rotate_UV_ER2GR_Comp(MR_iMetStep_Now+1)
           endif
-          call MR_Rotate_UV_ER2GR_Comp(MR_iMetStep_Now)
 
           if(Meso_toggle.eq.0)then
             vx_meso_1_sp = MR_dum3d_compH

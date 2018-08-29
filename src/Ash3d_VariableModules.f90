@@ -489,7 +489,7 @@
       allocate(bin_mass(1:nsmax)); bin_mass = 0.0_ip
       allocate(   rho_m(1:nsmax)); rho_m    = 0.0_ip
 
-      allocate(IsAloft(1:nsmax));   IsAloft   = .true.
+      allocate(IsAloft(1:nsmax));   IsAloft = .true.
 
       end subroutine Allocate_solution
       !------------------------------------------------------------------------
