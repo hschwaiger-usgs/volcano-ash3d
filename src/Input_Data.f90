@@ -144,9 +144,6 @@
       character(len=5)  :: zone
       integer           :: values(8)
       integer           :: timezone
-      logical           :: runAsForecast
-      real(kind=ip)     :: FC_Offset
-
 
       write(global_production,*)"--------------------------------------------------"
       write(global_production,*)"---------- READ_CONTROL_FILE ---------------------"
@@ -394,7 +391,7 @@
 
         write(global_info,4) lonLL, latLL, gridwidth_e, gridwidth_n, &
                    lon_volcano, lat_volcano
-        write(global_info,*) "z_volcano = ",z_volcano," km"
+        write(global_info,*) "z_volcano = ",real(z_volcano,kind=sp)," km"
         write(global_log ,4) lonLL, latLL, gridwidth_e, gridwidth_n, &
                    lon_volcano, lat_volcano
         write(global_log ,*) "z_volcano = ",z_volcano," km"
@@ -807,10 +804,12 @@
                    iday(i), hour(i), e_Duration(i), e_Volume(i)
         write(global_log ,8) i, PlumeHeight(i), iyear(i), imonth(i),      &
                    iday(i), hour(i), e_Duration(i), e_Volume(i)
-        write(global_info,*)"  e_StartTime = ",1,BaseYear,useLeap,SimStartHour,e_StartTime(i)
+        write(global_info,*)"  e_StartTime = ",1,BaseYear,useLeap,          &
+                                                 real(SimStartHour,kind=4), &
+                                                 real(e_StartTime(i),kind=4)
 
       enddo
-      write(global_info,*)"Total volume of eruptions = ",sum(e_volume)
+      write(global_info,*)"Total volume of eruptions = ",real(sum(e_volume),kind=sp)
 
 
       ! Now that we know the requested dz profile and the plume heights, we can
@@ -1160,9 +1159,9 @@
 
               ! Redefine nWriteTimes since it was read in as -1
             nWriteTimes = int(Simtime_in_hours/WriteInterval)+1
-            write(global_info,*)"WriteInterval",WriteInterval
-            write(global_info,*)"Simtime_in_hours",Simtime_in_hours
-            write(global_info,*)"nWriteTimes",nWriteTimes
+            write(global_info,*)"  WriteInterval    = ",real(WriteInterval,kind=sp)
+            write(global_info,*)"  Simtime_in_hours = ",real(Simtime_in_hours,kind=sp)
+            write(global_info,*)"  nWriteTimes      = ",nWriteTimes
             allocate(WriteTimes(nWriteTimes))
 
             forall (i=1:nWriteTimes)  WriteTimes(i) = (i-1)*WriteInterval
@@ -1651,8 +1650,8 @@
         write(global_info,*)
         write(global_log ,*)
 
-        write(global_info,*)"Using a mass-fraction of fines (< 63um) of : ",fracfine
-        write(global_log ,*)"Using a mass-fraction of fines (< 63um) of : ",fracfine
+        write(global_info,*)"Using a mass-fraction of fines (< 63um) of : ",real(fracfine,kind=sp)
+        write(global_log ,*)"Using a mass-fraction of fines (< 63um) of : ",real(fracfine,kind=sp)
         !if bin masses sum up close to 1, adjust automatically      
         if ((abs(sum(Tephra_bin_mass)-1.0_ip).gt.1.0e-5_ip).and. &  
             (abs(sum(Tephra_bin_mass)-1.0_ip).le.1.0e-02_ip)) then

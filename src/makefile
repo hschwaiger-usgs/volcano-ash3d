@@ -43,7 +43,7 @@ SYSTEM = gfortran
 #      OMPOPT: includes optimizations flags for fastest runtime and OpenMP directives
 #              To run, enter: env OMP_NUM_THREADS=4 Ash3d input_file.inp
 #    This variable cannot be left blank
-RUN = DEBUG
+RUN = OPT
 
 # This is the location of the USGS libraries and include files
 # This might be different from the INSTALLDIR path if you want to link to special MetReader
@@ -165,7 +165,7 @@ endif
 ifeq ($(USEGRIB), T)
  grbFPPFLAG = -DUSEGRIB
  # These are the libraries for grib_api
- grbIBS = -lgrib_api_f90 -lgrib_api
+ grbLIBS = -lgrib_api_f90 -lgrib_api
  # These are the libraries for ecCodes
  #grbLIBS = -leccodes -leccodes_f90
 

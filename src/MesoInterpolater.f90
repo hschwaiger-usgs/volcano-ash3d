@@ -88,9 +88,9 @@
         ! which will be used in the QC checking
         call MR_Read_HGT_arrays(MR_iMetStep_Now,first_time)
 
-        if(Map_case.eq.1.or.Map_case.eq.2)then
-          ! Either both the comp and met1 grids are LL (Map_case = 1)
-          ! or they are both the same projection (Map_case = 2) so
+        if(Map_Case.eq.1.or.Map_Case.eq.2)then
+          ! Either both the comp and met1 grids are LL (Map_Case = 1)
+          ! or they are both the same projection (Map_Case = 2) so
           ! we can read the velocity components individually and interpolate onto
           ! the computational grid
 
@@ -109,10 +109,10 @@
           ! In all these cases, we need:
           !    MR_dum3d_compH   holding U
           !    MR_dum3d_compH_2 holding V
-          if(Map_case.eq.3)then
+          if(Map_Case.eq.3)then
               ! Met grid is natively LL and Comp grid is projected
             call MR_Rotate_UV_ER2GR_Comp(MR_iMetStep_Now)
-          elseif(Map_case.eq.4)then
+          elseif(Map_Case.eq.4)then
               ! Met grid is projected and comp grid is LL
             if(isGridRelative)then
               call MR_Rotate_UV_GR2ER_Met(MR_iMetStep_Now,.true.) ! optional argument returns data on compH
@@ -185,9 +185,9 @@
         ! MR_iMetStep_Now
         call MR_Read_HGT_arrays(MR_iMetStep_Now)
 
-        if(Map_case.eq.1.or.Map_case.eq.2)then
-          ! Either both the comp and met1 grids are LL (Map_case = 1)
-          ! or they are both the same projection (Map_case = 2) so
+        if(Map_Case.eq.1.or.Map_Case.eq.2)then
+          ! Either both the comp and met1 grids are LL (Map_Case = 1)
+          ! or they are both the same projection (Map_Case = 2) so
           ! we can read the velocity components individually and interpolate onto
           ! the computational grid
 
@@ -216,10 +216,10 @@
           ! In all these cases, we need:
           !    MR_dum3d_compH   holding U
           !    MR_dum3d_compH_2 holding V
-          if(Map_case.eq.3)then
+          if(Map_Case.eq.3)then
               ! Met grid is natively LL and Comp grid is projected
             call MR_Rotate_UV_ER2GR_Comp(MR_iMetStep_Now+1)
-          elseif(Map_case.eq.4)then
+          elseif(Map_Case.eq.4)then
               ! Met grid is projected and comp grid is LL
             if(isGridRelative)then
               call MR_Rotate_UV_GR2ER_Met(MR_iMetStep_Now+1,.true.) ! optional argument returns data on compH
