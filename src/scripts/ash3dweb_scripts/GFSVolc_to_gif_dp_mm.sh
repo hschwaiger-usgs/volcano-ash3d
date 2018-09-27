@@ -111,7 +111,7 @@ infilell="3d_tephra_fall.nc"
 if test 1 -eq 1
    then
 
-   gsbins=`ncdump -h $infilell | grep "gs =" | cut -c6-8`      # # of grain-size bins
+   gsbins=`ncdump -h $infilell | grep "bn =" | cut -c6-8`      # # of grain-size bins
    zbins=`ncdump -h $infilell | grep "z =" | cut -c6-7`        # # of elevation levels
    tmax=`ncdump -h $infilell | grep "UNLIMITED" | cut -c22-23` # maximum time
 

@@ -60,7 +60,7 @@
          useMoistureVars
 
       use MetReader,     only : &
-         nx_submet,ny_submet,np_fullmet,np_fullmet_RH
+         nx_submet,ny_submet,np_fullmet
 
       implicit none
       
@@ -68,6 +68,10 @@
       write(global_production,*)"---------- ALLOCATE_ATMOSPHERE_MET ---------------"
       write(global_production,*)"--------------------------------------------------"
 
+      ! Note: all these arrays are allocated on np_fullmet levels even though
+      !       np_fullmet_T or np_fullmet_RH might be less.  These will contain
+      !       the full MR_dum3d_MetP array and MetReader will populate the missing
+      !       values as best it can (SH,RH = 0 above levels given, T interpolated)
 #ifdef USEPOINTERS
       if(.not.associated(AirTemp_meso_last_step_MetP_sp))&
         allocate(AirTemp_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
@@ -94,9 +98,9 @@
         allocate(AirLamb_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
       if(useMoistureVars)THEN
         if(.not.associated(AirRelH_meso_next_step_MetP_sp))&
-          allocate(AirRelH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet_RH))
+          allocate(AirRelH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
         if(.not.associated(AirSH_meso_next_step_MetP_sp))&
-          allocate(AirSH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet_RH))
+          allocate(AirSH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
       endif
 #else
       if(.not.allocated(AirTemp_meso_last_step_MetP_sp))&
@@ -124,9 +128,9 @@
         allocate(AirLamb_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
       if(useMoistureVars)THEN
         if(.not.allocated(AirRelH_meso_next_step_MetP_sp))&
-          allocate(AirRelH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet_RH))
+          allocate(AirRelH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
         if(.not.allocated(AirSH_meso_next_step_MetP_sp))&
-          allocate(AirSH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet_RH))
+          allocate(AirSH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
       endif
 #endif
 

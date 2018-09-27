@@ -367,7 +367,7 @@
         ! t,z,y,x
         !  or time, elev, lon, lat
         !  or record, level, y, x
-        ! and gs (grain size)
+        ! and bn (particle bin)
         ! sc (full species class indes)
         ! xs (extra species index)
         ! er (eruption index)
@@ -505,7 +505,7 @@
       if(nSTAT.ne.0)write(global_log ,*)'ERROR: def_var: ',nf90_strerror(nSTAT)
       nSTAT = nf90_put_att(ncid,bin_var_id,"long_name",var_lnames(5))
       if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
-      nSTAT = nf90_put_att(ncid,bin_var_id,"units","mm")
+      nSTAT = nf90_put_att(ncid,bin_var_id,"units","index")
       if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
       nSTAT = nf90_put_att(ncid,bin_var_id,"Comment",&
        "This is just an index")
@@ -1274,6 +1274,7 @@
       do i=1,nsmax
         dum1dint_out(i) = i
       enddo
+      nSTAT=nf90_put_var(ncid,bin_var_id,dum1dint_out,(/1/))
       if(nSTAT.ne.0) &
         write(global_log ,*)'ERROR: put_var gs: ',nf90_strerror(nSTAT)
       deallocate(dum1dint_out)
