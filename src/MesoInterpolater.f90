@@ -38,7 +38,7 @@
 
       use MetReader,       only : &
          MR_dum3d_compH,MR_dum3d_compH_2,MR_iMetStep_Now,&
-         MR_MetSteps_Total,Have_Vz,isGridRelative,Map_Case,&
+         MR_MetSteps_Total,Met_var_IsAvailable,isGridRelative,Map_Case,&
          MR_MetStep_Hour_since_baseyear,MR_MetStep_Interval,&
          MR_dum3d_compH,&
            MR_Read_HGT_arrays,&
@@ -139,7 +139,7 @@
         endif
 
         ivar = 4 ! W winds
-        if(Have_Vz)then
+        if(Met_var_IsAvailable(ivar))then
           call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now)
         else
           MR_dum3d_compH = 0.0_sp
@@ -253,7 +253,7 @@
         endif
 
         ivar = 4 ! W winds
-        if(Have_Vz)then
+        if(Met_var_IsAvailable(ivar))then
           call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now+1)
         else
           MR_dum3d_compH = 0.0_sp

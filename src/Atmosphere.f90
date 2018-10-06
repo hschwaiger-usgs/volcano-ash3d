@@ -240,7 +240,6 @@
           ! Fclaw  : delete this line
           !first_time = .false.
         endif ! first_time
-
         AirTemp_meso_last_step_MetP_sp = AirTemp_meso_next_step_MetP_sp
         if(useMoistureVars)THEN
           AirRelH_meso_last_step_MetP_sp = AirRelH_meso_next_step_MetP_sp
@@ -268,7 +267,6 @@
             stop 1
           endif
         endif
-
         do k=1,np_fullmet
           ! Note: this needs to be fixed for WRF data
           pres = p_fullmet_sp(k)

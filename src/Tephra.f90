@@ -161,7 +161,6 @@
                    visc   = AirVisc_meso_next_step_MetP_sp(i,j,k)
                    lambda = AirLamb_meso_next_step_MetP_sp(i,j,k)
                  endif
-
                  select case (FV_ID)
                    ! Get settling velocity in m/s (will be converted to
                    ! km/hr and negated later)
@@ -241,7 +240,6 @@
           call MR_Regrid_MetP_to_CompGrid(MR_iMetStep_Now+1)
           vf_meso_next_step_sp(:,:,:,l) = MR_dum3d_compH(:,:,:)*real(MPS_2_KMPHR,kind=sp)*(-1.0_sp)
         enddo
-
       endif
 
       vf_pd = 0.0_ip
@@ -256,6 +254,7 @@
       vf_pd(-1:nxmax+2,-1:nymax+2,       0,:) = vf_pd(-1:nxmax+2,-1:nymax+2,    1,:)
       vf_pd(-1:nxmax+2,-1:nymax+2, nzmax+1,:) = vf_pd(-1:nxmax+2,-1:nymax+2,nzmax,:)
       vf_pd(-1:nxmax+2,-1:nymax+2, nzmax+2,:) = vf_pd(-1:nxmax+2,-1:nymax+2,nzmax,:)
+
 
       end subroutine Set_Vf_Meso
 

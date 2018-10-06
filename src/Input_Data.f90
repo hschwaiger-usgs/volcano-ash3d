@@ -78,7 +78,7 @@
          MR_iwindfiles,MR_windfiles,MR_BaseYear,MR_useLeap,MR_Comp_StartHour,&
          MR_windfiles_GRIB_index,MR_windfiles_Have_GRIB_index,&
          MR_windfile_starthour,MR_windfile_stephour,MR_iHeightHandler,&
-         MR_iwf_template,MR_iwindformat,&
+         MR_iwf_template,MR_iwindformat,MR_iwind,&
          MR_global_essential,MR_global_production,MR_global_debug,&
          MR_global_info,MR_global_log,MR_global_error, &
            MR_Allocate_FullMetFileList, &
@@ -1275,8 +1275,9 @@
         write(global_info,13)
         write(global_log ,13)
           ! Read list of windfiles.
-        if(MR_iwindformat.eq.25.or.MR_iwindformat.eq.27)then
-          ! For NCEP 2.5 degree or NOAA products, just read the path to the files
+        if(MR_iwind.eq.5)then
+          ! For NCEP 2.5 degree (25), NOAA product (27), ERA5 (29), or ERA-20C (30)
+          ! just read the path to the files
           read(lllinebuffer,'(a130)',err=1970) MR_windfiles(1)
           write(global_info,1034) 1,trim(adjustl(MR_windfiles(1)))
           read(10,'(a130)')lllinebuffer
