@@ -115,6 +115,7 @@
       character         :: testkey,testkey2
       integer           :: iendstr,ios,ioerr,init_n_gs_max
       real(kind=ip)     :: value1, value2, value3, value4
+      real(kind=dp)     :: tmp_dp
       real(kind=dp)     :: StartHour
       real(kind=dp)     :: RunStartHour    ! Start time of model run, in hours since BaseYear
       real(kind=ip)     :: sum_bins
@@ -599,6 +600,7 @@
           if(iyear(i).ne.0.and.iyear(i).lt.BaseYear.or.iyear(i)-BaseYear.gt.200)then
             ! Reset BaseYear to the start of the century containing the eruption year
             BaseYear = iyear(i) - mod(iyear(i),100)
+            BaseYear = 1
             write(global_info,*)"WARNING: Resetting BaseYear to ",BaseYear
           endif
           if(iyear(i).eq.0)then  !HFS: KLUDGE-- This should be changed to test for FC or something
@@ -864,6 +866,17 @@
       MR_global_log        = global_log
       MR_global_error      = global_error
       call MR_Allocate_FullMetFileList(iw,iwf,igrid,idf,iwfiles)
+      if(MR_useLeap.neqv.useLeap)then
+        useLeap  = MR_useLeap
+        BaseYear = MR_BaseYear
+        write(global_info,*)"Change in calandar; resetting e_StartTime"
+
+          tmp_dp = HS_hours_since_baseyear(iyear(1),imonth(1),  &
+                           iday(1),hour(1),BaseYear,useLeap)
+          tmp_dp = tmp_dp - SimStartHour   ! Recast tmp_dp as the difference in calandars
+          SimStartHour = SimStartHour + tmp_dp
+          xmlSimStartTime = HS_xmltime(SimStartHour,BaseYear,useLeap)
+      endif
       if (SourceType.eq.'suzuki') then
          write(global_info,6) diffusivity_horz, Suzuki_A, StopWhenDeposited, Simtime_in_hours
          write(global_log ,6) diffusivity_horz, Suzuki_A, StopWhenDeposited, Simtime_in_hours
