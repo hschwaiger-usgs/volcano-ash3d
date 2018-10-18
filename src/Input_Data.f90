@@ -76,7 +76,7 @@
 
       use MetReader,     only : &
          MR_iwindfiles,MR_windfiles,MR_BaseYear,MR_useLeap,MR_Comp_StartHour,&
-         MR_windfiles_GRIB_index,MR_windfiles_Have_GRIB_index,&
+         MR_windfiles_GRIB_index,MR_windfiles_Have_GRIB_index,MR_Comp_Time_in_hours,&
          MR_windfile_starthour,MR_windfile_stephour,MR_iHeightHandler,&
          MR_iwf_template,MR_iwindformat,MR_iwind,&
          MR_global_essential,MR_global_production,MR_global_debug,&
@@ -784,6 +784,9 @@
           SimStartHour = HS_hours_since_baseyear(iyear(i),imonth(i),  &
                         iday(i),hour(i),BaseYear,useLeap)
           xmlSimStartTime = HS_xmltime(SimStartHour,BaseYear,useLeap)
+          MR_Comp_StartHour     = SimStartHour
+          MR_Comp_Time_in_hours = Simtime_in_hours
+
         endif
         e_StartTime(i) = HS_hours_since_baseyear(iyear(i),imonth(i),  &
                                 iday(i),hour(i),BaseYear,useLeap) - SimStartHour
