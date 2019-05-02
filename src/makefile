@@ -165,9 +165,9 @@ endif
 ifeq ($(USEGRIB), T)
  grbFPPFLAG = -DUSEGRIB
  # These are the libraries for grib_api
- grbLIBS = -lgrib_api_f90 -lgrib_api
+ #grbLIBS = -lgrib_api_f90 -lgrib_api
  # These are the libraries for ecCodes
- #grbLIBS = -leccodes -leccodes_f90
+ grbLIBS = -leccodes -leccodes_f90
 
 endif
 
@@ -297,15 +297,6 @@ ifeq ($(USENETCDF), T)
   DATAOBJ = write_NETCDF.o
 endif
 
-UTIL_SRC=utils/citywriter.f90             \
-         utils/legend_placer_ac.f90       \
-         utils/legend_placer_dp.f90       \
-         utils/legend_placer_dp_mm.f90
-UTIL_BINS=../bin/citywriter               \
-          ../bin/legend_placer_ac         \
-          ../bin/legend_placer_dp         \
-          ../bin/legend_placer_dp_mm
-
 Ash3d:  $(OBJECTS) $(DATAOBJ) Ash3d.F90 makefile
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c Ash3d.F90 
 	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d.o $(LIBS) -o Ash3d
@@ -373,13 +364,7 @@ endif
 write_KML.o: $(ASH3dCCSRC)/write_KML.f90 makefile Ash3d_VariableModules.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_KML.f90
 
-utils:  ${UTILS_SRC} makefile
-	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) utils/citywriter.f90          -o ../bin/citywriter
-	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) utils/legend_placer_ac.f90    -o ../bin/legend_placer_ac
-	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) utils/legend_placer_dp.f90    -o ../bin/legend_placer_dp
-	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) utils/legend_placer_dp_mm.f90 -o ../bin/legend_placer_dp_mm
-
-all: Ash3d utils
+all: Ash3d
 
 clean:
 	rm -rf $(OBJECTS) Ash3d.o $(DATAOBJ) $(OPTMODS_OBJ) ../bin/Ash3d* \
@@ -388,9 +373,5 @@ clean:
 install:
 	install -d $(INSTALLDIR)/bin $(INSTALLDIR)/share/post_proc
 	install -m 755 ../bin/* $(INSTALLDIR)/bin
-	install -m 644 ../share/post_proc/*cpt $(INSTALLDIR)/share/post_proc/
-	install -m 644 ../share/post_proc/*gif $(INSTALLDIR)/share/post_proc/
 	install -m 644 ../share/post_proc/*png $(INSTALLDIR)/share/post_proc/
-	install -m 644 ../share/post_proc/*jpg $(INSTALLDIR)/share/post_proc/
-	install -m 644 ../share/post_proc/world_cities.txt $(INSTALLDIR)/share/post_proc/
 
