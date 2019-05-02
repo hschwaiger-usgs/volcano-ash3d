@@ -25,6 +25,7 @@ echo "running GFSVolc_to_gif_dp_mm.sh"
 echo `date`
 echo "------------------------------------------------------------"
 CLEANFILES="T"
+RUNDATE=`date -u "+%D %T"`
 
 # We need to know if we must prefix all gmt commands with 'gmt', as required by version 5
 GMTv=5
@@ -34,9 +35,11 @@ GMTelp=("-" "-" "-" "-" "ELLIPSOID" "PROJ_ELLIPSOID")
 GMTnan=("-" "-" "-" "-" "-Ts" "-Q")
 GMTrgr=("-" "-" "-" "-" "grdreformat" "grdconvert")
 
-ASH3DROOT="/opt/USGS/Ash3d"
+USGSROOT="/opt/USGS"
+ASH3DROOT="${USGSROOT}/Ash3d"
 
 ASH3DBINDIR="${ASH3DROOT}/bin"
+ASH3DSCRIPTDIR="${ASH3DROOT}/bin/ash3dweb_scripts"
 ASH3DSHARE="$ASH3DROOT/share"
 ASH3DSHARE_PP="${ASH3DSHARE}/post_proc"
 
@@ -272,6 +275,11 @@ cp ${ASH3DSHARE_PP}/world_cities.txt .
 ${ASH3DBINDIR}/citywriter ${lonmin} ${lonmax} ${latmin} ${latmax}
 if test -r cities.xy
 then
+    # Add a condition to plot roads if you'd like
+    #tstvolc=`ncdump -h ${infile} | grep b1l1 | cut -d\" -f2 | cut -c1-7`
+    #if [ "${tstvolc}" = "Kilauea" ] ; then
+    #  ${GMTpre[GMTv]} psxy $AREA $PROJ -m ${ASH3DSHARE_PP}/roadtrl020.gmt -W0.25p,red -O -K >> temp.ps
+    #fi
     ${GMTpre[GMTv]} psxy cities.xy $AREA $PROJ -Sc0.05i -Gblack -Wthinnest -V -O -K >> temp.ps  
     ${GMTpre[GMTv]} pstext cities.xy $AREA $PROJ -D0.1/0.1 -V -O -K >> temp.ps      #Plot names of all airports
 fi
@@ -289,6 +297,8 @@ echo "writing caption.txt"
 cat << EOF > caption.txt
 > $captionx_UL $captiony_UL 12 0 0 TL 14p 3.0i l
    @%1%Volcano: @%0%$volc
+
+   @%1%Run date: @%0%$RUNDATE UTC
 
    @%1%Eruption start: @%0%${year} ${month} ${day} ${hour}:${minute} UTC
 
@@ -324,10 +334,10 @@ vidy_UL=$(($height*85/100))
 convert temp.gif deposit_thickness_mm.gif
 if test -r official.txt; then
     convert -append -background white deposit_thickness_mm.gif \
-              ${ASH3DSHARE_PP}/caveats.gif deposit_thickness_mm.gif
+              ${ASH3DSHARE_PP}/caveats_official.png deposit_thickness_mm.gif
 else
     convert -append -background white deposit_thickness_mm.gif \
-              ${ASH3DSHARE_PP}/caveats_notofficial.gif deposit_thickness_mm.gif
+              ${ASH3DSHARE_PP}/caveats_notofficial.png deposit_thickness_mm.gif
 fi
 composite -geometry +${vidx_UL}+${vidy_UL} ${ASH3DSHARE_PP}/USGSvid.gif \
       deposit_thickness_mm.gif  deposit_thickness_mm.gif
@@ -339,6 +349,13 @@ if [ "$CLEANFILES" == "T" ]; then
    rm *.grd *.lev caption.txt map_range.txt cities.xy
    rm temp.* legend_positions_dp_mm.txt
 fi
+
+#Make shapefile
+#echo "Generating shapefile"
+#python ${ASH3DSCRIPTDIR}/xyz2shp.py
+#if [ "$CLEANFILES" == "T" ]; then
+#    rm contour*.xyz volc.txt var.txt
+#fi
 
 width=`identify deposit_thickness_mm.gif | cut -f3 -d' ' | cut -f1 -d'x'`
 height=`identify deposit_thickness_mm.gif | cut -f3 -d' ' | cut -f2 -d'x'`

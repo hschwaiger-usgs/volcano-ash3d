@@ -25,6 +25,7 @@ echo "running GFSVolc_to_gif_tvar.sh"
 echo `date`
 echo "------------------------------------------------------------"
 CLEANFILES="T"
+RUNDATE=`date -u "+%D %T"`
 
 # We need to know if we must prefix all gmt commands with 'gmt', as required by version 5
 GMTv=5
@@ -36,11 +37,11 @@ GMTrgr=("-" "-" "-" "-" "grdreformat" "grdconvert")
 GMTpen=("-" "-" "-" "-" "/" ",")
 echo "GMT version = ${GMTv}"
 
-ASH3DROOT="/opt/USGS/Ash3d"
+USGSROOT="/opt/USGS"
+ASH3DROOT="${USGSROOT}/Ash3d"
 
 ASH3DBINDIR="${ASH3DROOT}/bin"
-ASH3DSCRIPTDIR="${ASH3DROOT}/bin/autorun_scripts"
-ASH3DWEBSCRIPTDIR="${ASH3DROOT}/bin/ash3dweb_scripts"
+ASH3DSCRIPTDIR="${ASH3DROOT}/bin/ash3dweb_scripts"
 ASH3DSHARE="$ASH3DROOT/share"
 ASH3DSHARE_PP="${ASH3DSHARE}/post_proc"
 cp ${ASH3DSHARE_PP}/world_cities.txt .
@@ -258,8 +259,8 @@ EOF
    curtimex_UR=`echo "$LLLON + 0.98 * $DLON" | bc -l`
    curtimey_UR=`echo "$LLLAT + 0.97 * $DLAT" | bc -l`
    hours_now=`echo "$hours_real + $time" | bc -l`
-   hours_since=`${ASH3DBINDIR}/HoursSince1900 $year $month $day $hours_now`
-   current_time=`${ASH3DBINDIR}/yyyymmddhh_since_1900 $hours_since`
+   hours_since=`${USGSROOT}/bin/HoursSince1900 $year $month $day $hours_now`
+   current_time=`${USGSROOT}/bin/yyyymmddhh_since_1900 $hours_since`
    cat << EOF > current_time.txt
    $curtimex_UR  $curtimey_UR  16  0  0  TR @%1%Model valid on: @%0%$current_time
 EOF
@@ -270,6 +271,8 @@ EOF
    cat << EOF > caption.txt
 > $captionx_UL $captiony_UL 12 0 0 TL 14p 3.0i l
    @%1%Volcano: @%0%$volc
+
+   @%1%Run date: @%0%$RUNDATE UTC
 
    @%1%Eruption start: @%0%${year} ${month} ${day} ${hour}:${minute} UTC
 
@@ -309,12 +312,12 @@ EOF
 
    convert temp.gif output_t${time}.gif
    if test -r official.txt; then
-       convert -append -background white output_t${time}.gif ${ASH3DSHARE_PP}/caveats.gif output_t${time}.gif
+       convert -append -background white output_t${time}.gif ${ASH3DSHARE_PP}/caveats_official.png output_t${time}.gif
     else
-       convert -append -background white output_t${time}.gif ${ASH3DSHARE_PP}/caveats_notofficial.gif \
+       convert -append -background white output_t${time}.gif ${ASH3DSHARE_PP}/caveats_notofficial.png \
                    output_t${time}.gif
    fi
-   composite -geometry +${vidx_UL}+${vidy_UL} ${ASH3DSHARE_PP}/USGSvid.gif output_t${time}.gif \
+   composite -geometry +${vidx_UL}+${vidy_UL} ${ASH3DSHARE_PP}/USGSvid.png output_t${time}.gif \
              output_t${time}.gif
 done
 
@@ -337,8 +340,8 @@ while [ "$t" -le $(($tmax-1)) ]
 do
     time=`echo "${t0} + ${t} * ${time_interval}" | bc -l`
     hours_now=`echo "$hours_real + $time" | bc -l`
-    hours_since=`${ASH3DBINDIR}/HoursSince1900 $year $month $day $hours_now`
-    filename=`${ASH3DBINDIR}/yyyymmddhh_since_1900 $hours_since`
+    hours_since=`${USGSROOT}/bin/HoursSince1900 $year $month $day $hours_now`
+    filename=`${USGSROOT}/bin/yyyymmddhh_since_1900 $hours_since`
     echo "moving file output_t${time}.gif to ${filename}_${var}.gif"
     mv output_t${time}.gif ${filename}_${var}.gif
     if [ $time_interval = "1" ]; then
