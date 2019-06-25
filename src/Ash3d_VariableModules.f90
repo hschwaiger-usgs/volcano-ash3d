@@ -378,6 +378,12 @@
       subroutine Deallocate_mesh
 
 #ifdef USEPOINTERS
+      if(associated(dz_vec_pd))     deallocate(dz_vec_pd)
+      if(associated(x_cc_pd))       deallocate(x_cc_pd)
+      if(associated(y_cc_pd))       deallocate(y_cc_pd)
+      if(associated(z_cc_pd))       deallocate(z_cc_pd)
+      if(associated(z_lb_pd))       deallocate(z_lb_pd)
+      if(associated(kappa_pd))      deallocate(kappa_pd)
       if(associated(lon_cc_pd))     deallocate(lon_cc_pd)
       if(associated(lat_cc_pd))     deallocate(lat_cc_pd)
       if(associated(rdphi_pd))      deallocate(rdphi_pd)
@@ -386,6 +392,12 @@
       if(associated(sigma_ny_pd))   deallocate(sigma_ny_pd)
       if(associated(sigma_nz_pd))   deallocate(sigma_nz_pd)
 #else
+      if(allocated(dz_vec_pd))     deallocate(dz_vec_pd)
+      if(allocated(x_cc_pd))       deallocate(x_cc_pd)
+      if(allocated(y_cc_pd))       deallocate(y_cc_pd)
+      if(allocated(z_cc_pd))       deallocate(z_cc_pd)
+      if(allocated(z_lb_pd))       deallocate(z_lb_pd)
+      if(allocated(kappa_pd))      deallocate(kappa_pd)
       if(allocated(sigma_nx_pd))   deallocate(sigma_nx_pd)
       if(allocated(sigma_ny_pd))   deallocate(sigma_ny_pd)
       if(allocated(sigma_nz_pd))   deallocate(sigma_nz_pd)
@@ -395,12 +407,6 @@
       if(allocated(rdlambda_pd))   deallocate(rdlambda_pd)
 #endif
       if(allocated(z_vec_init))    deallocate(z_vec_init)
-      if(allocated(x_cc_pd))       deallocate(x_cc_pd)
-      if(allocated(y_cc_pd))       deallocate(y_cc_pd)
-      if(allocated(kappa_pd))      deallocate(kappa_pd)
-      if(allocated(dz_vec_pd))     deallocate(dz_vec_pd)
-      if(allocated(z_cc_pd))       deallocate(z_cc_pd)
-      if(allocated(z_lb_pd))       deallocate(z_lb_pd)
 
       end subroutine Deallocate_mesh
       !------------------------------------------------------------------------
