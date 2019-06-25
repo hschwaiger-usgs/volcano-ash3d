@@ -7,7 +7,6 @@
 
         ! These single and double precision parameters must not be changed from
         ! 4 and 8 or the reading of the windfiles will fail.
-
       integer,       parameter :: sp         = 4 ! single precision
       integer,       parameter :: dp         = 8 ! double precision
 
@@ -294,12 +293,6 @@
       real(kind=ip)      :: gridwidth_x, gridwidth_y            ! Dimensions (in km) of the grid
       real(kind=ip)      :: xLL,xUR,yLL,yUR           ! lower-left,upper-right points of grid
       real(kind=ip)      :: dx, dy                    ! horizontal & vertical cell size (km)
-      real(kind=ip),dimension(:)    ,allocatable :: dz_vec_pd ! used for variable dz cases
-      real(kind=ip),dimension(:)    ,allocatable :: x_cc_pd ! x_component of cell centers
-      real(kind=ip),dimension(:)    ,allocatable :: y_cc_pd ! y_component of cell centers
-      real(kind=ip),dimension(:)    ,allocatable :: z_cc_pd ! z_component of cell centers
-      real(kind=ip),dimension(:)    ,allocatable :: z_lb_pd ! z_component of cell lower-boundary
-      real(kind=ip),dimension(:,:,:),allocatable :: kappa_pd !volume of each node in km3
 
       integer :: nxmax      ! number of nodes in x
       integer :: nymax      ! number of nodes in y
@@ -321,6 +314,13 @@
       real(kind=ip)      :: de, dn                    !nodal spacing east & north, degrees
       real(kind=ip)      :: de_km, dn_km              !nodal spacing, km, at volcano
 #ifdef USEPOINTERS
+      real(kind=ip),dimension(:)    ,pointer :: dz_vec_pd ! used for variable dz cases
+      real(kind=ip),dimension(:)    ,pointer :: x_cc_pd ! x_component of cell centers
+      real(kind=ip),dimension(:)    ,pointer :: y_cc_pd ! y_component of cell centers
+      real(kind=ip),dimension(:)    ,pointer :: z_cc_pd ! z_component of cell centers
+      real(kind=ip),dimension(:)    ,pointer :: z_lb_pd ! z_component of cell lower-boundary
+      real(kind=ip),dimension(:,:,:),pointer :: kappa_pd !volume of each node in km3
+
       real(kind=ip),dimension(:)    ,pointer :: lat_cc_pd   => null() ! lat of i,j cell centers
       real(kind=ip),dimension(:)    ,pointer :: lon_cc_pd   => null() ! lon of i,j cell centers
       real(kind=ip),dimension(:)    ,pointer :: rdphi_pd    => null() 
@@ -329,6 +329,12 @@
       real(kind=ip),dimension(:,:,:),pointer :: sigma_ny_pd => null() ! area of y face at i,j-1/2,k
       real(kind=ip),dimension(:,:,:),pointer :: sigma_nz_pd => null() ! area of z face at i,j,k-1/2
 #else
+      real(kind=ip),dimension(:)    ,allocatable :: dz_vec_pd ! used for variable dz cases
+      real(kind=ip),dimension(:)    ,allocatable :: x_cc_pd ! x_component of cell centers
+      real(kind=ip),dimension(:)    ,allocatable :: y_cc_pd ! y_component of cell centers
+      real(kind=ip),dimension(:)    ,allocatable :: z_cc_pd ! z_component of cell centers
+      real(kind=ip),dimension(:)    ,allocatable :: z_lb_pd ! z_component of cell lower-boundary
+      real(kind=ip),dimension(:,:,:),allocatable :: kappa_pd !volume of each node in km3
       real(kind=ip),dimension(:)    ,allocatable :: lat_cc_pd ! lat of i,j cell centers
       real(kind=ip),dimension(:)    ,allocatable :: lon_cc_pd ! lon of i,j cell centers
       real(kind=ip),dimension(:)    ,allocatable :: rdphi_pd
