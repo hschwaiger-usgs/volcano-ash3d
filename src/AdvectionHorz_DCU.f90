@@ -87,8 +87,8 @@
         do j=1,nymax
             ! Initialize cell-centered values for this x-row
           vel_cc(-1:ncells+2) =     vx_pd(-1:ncells+2,j,k)
-          q_cc(:) = 0.0_ip
-          q_cc(  1:ncells) = concen_pd(1:ncells,j,k,n,ts0)
+          !!q_cc(:) = 0.0_ip
+          q_cc(-1:ncells+2) = concen_pd(-1:ncells+2,j,k,n,ts0)
           if(IsPeriodic)then
             q_cc(-1:0)   = q_cc(ncells-1:ncells)
             vel_cc(-1:0) = vel_cc(ncells-1:ncells)
@@ -332,8 +332,8 @@
         do i=1,nxmax
             ! Initialize cell-centered values for this y-row
           vel_cc(-1:ncells+2) =     vy_pd(i,-1:ncells+2,k)
-          q_cc(:) = 0.0_ip
-          q_cc(  1:ncells) = concen_pd(i,1:ncells,k,n,ts0)
+          !!q_cc(:) = 0.0_ip
+          q_cc(-1:ncells+2) = concen_pd(i,-1:ncells+2,k,n,ts0)
           if(IsLatLon)then
             dt_vol_cc(-1:ncells+2) = dt/kappa_pd(i,-1:ncells+2,k)
           else
