@@ -490,18 +490,22 @@
       allocate(outflow_xy2_pd(-1:nxmax+2,-1:nymax+2,1:nsmax)); outflow_xy2_pd = 0.0_ip
       allocate(DepositGranularity(nxmax,nymax,nsmax)); DepositGranularity = 0.0_ip
 
-      allocate(mass_aloft(1:nsmax)); mass_aloft = 0.0_ip
-      allocate(SpeciesID(1:nsmax));  SpeciesID = 1  ! Initialize everything to ash
+      if (.not. allocated(mass_aloft)) then
+        allocate(mass_aloft(1:nsmax)); 
+        mass_aloft = 0.0_ip
+        allocate(SpeciesID(1:nsmax));  SpeciesID = 1  ! Initialize everything to ash
                                                     ! If nsmax>n_gs_max, then the
                                                     ! extra bins will need to be
                                                     ! flagged in the custom source modules
-      allocate(SpeciesSubID(1:nsmax));  SpeciesSubID = 0
-      allocate(     v_s(1:nsmax)); v_s      = 0.0_ip
-      allocate(  gsdiam(1:nsmax)); gsdiam   = 0.0_ip
-      allocate(bin_mass(1:nsmax)); bin_mass = 0.0_ip
-      allocate(   rho_m(1:nsmax)); rho_m    = 0.0_ip
 
-      allocate(IsAloft(1:nsmax));   IsAloft = .true.
+        allocate(SpeciesSubID(1:nsmax));  SpeciesSubID = 0
+        allocate(     v_s(1:nsmax)); v_s      = 0.0_ip
+        allocate(  gsdiam(1:nsmax)); gsdiam   = 0.0_ip
+        allocate(bin_mass(1:nsmax)); bin_mass = 0.0_ip
+        allocate(   rho_m(1:nsmax)); rho_m    = 0.0_ip
+
+        allocate(IsAloft(1:nsmax));   IsAloft = .true.
+      endif
 
       end subroutine Allocate_solution
       !------------------------------------------------------------------------
@@ -607,16 +611,16 @@
           ! These exist on the computational (Ash3d) grid.
       real(kind=sp),dimension(:,:,:),pointer            :: vx_meso_last_step_sp => null()
       real(kind=sp),dimension(:,:,:),pointer            :: vx_meso_next_step_sp => null()
-      real(kind=sp),dimension(:,:,:),allocatable,target :: vx_meso_1_sp
-      real(kind=sp),dimension(:,:,:),allocatable,target :: vx_meso_2_sp
+      real(kind=sp),dimension(:,:,:),pointer            :: vx_meso_1_sp
+      real(kind=sp),dimension(:,:,:),pointer            :: vx_meso_2_sp
       real(kind=sp),dimension(:,:,:),pointer            :: vy_meso_last_step_sp => null()
       real(kind=sp),dimension(:,:,:),pointer            :: vy_meso_next_step_sp => null()
-      real(kind=sp),dimension(:,:,:),allocatable,target :: vy_meso_1_sp
-      real(kind=sp),dimension(:,:,:),allocatable,target :: vy_meso_2_sp
+      real(kind=sp),dimension(:,:,:),pointer            :: vy_meso_1_sp
+      real(kind=sp),dimension(:,:,:),pointer            :: vy_meso_2_sp
       real(kind=sp),dimension(:,:,:),pointer            :: vz_meso_last_step_sp => null()
       real(kind=sp),dimension(:,:,:),pointer            :: vz_meso_next_step_sp => null()
-      real(kind=sp),dimension(:,:,:),allocatable,target :: vz_meso_1_sp
-      real(kind=sp),dimension(:,:,:),allocatable,target :: vz_meso_2_sp
+      real(kind=sp),dimension(:,:,:),pointer            :: vz_meso_1_sp
+      real(kind=sp),dimension(:,:,:),pointer            :: vz_meso_2_sp
           ! For the fall velocity, we use named arrays (not pointers)
 #ifdef USEPOINTERS
       real(kind=sp),dimension(:,:,:,:),pointer          :: vf_meso_last_step_sp => null()
@@ -652,16 +656,25 @@
 
       subroutine Deallocate_wind_grid
 
+
+#ifdef USEPOINTERS
+      if(associated(vx_meso_1_sp))   deallocate(vx_meso_1_sp)
+      if(associated(vx_meso_2_sp))   deallocate(vx_meso_2_sp)
+      if(associated(vy_meso_1_sp))   deallocate(vy_meso_1_sp)
+      if(associated(vy_meso_2_sp))   deallocate(vy_meso_2_sp)
+      if(associated(vz_meso_1_sp))   deallocate(vz_meso_1_sp)
+      if(associated(vz_meso_2_sp))   deallocate(vz_meso_2_sp)
+
+      if(associated(vf_meso_last_step_sp)) deallocate(vf_meso_last_step_sp)
+      if(associated(vf_meso_next_step_sp)) deallocate(vf_meso_next_step_sp)
+#else
       if(allocated(vx_meso_1_sp))   deallocate(vx_meso_1_sp)
       if(allocated(vx_meso_2_sp))   deallocate(vx_meso_2_sp)
       if(allocated(vy_meso_1_sp))   deallocate(vy_meso_1_sp)
       if(allocated(vy_meso_2_sp))   deallocate(vy_meso_2_sp)
       if(allocated(vz_meso_1_sp))   deallocate(vz_meso_1_sp)
       if(allocated(vz_meso_2_sp))   deallocate(vz_meso_2_sp)
-#ifdef USEPOINTERS
-      if(associated(vf_meso_last_step_sp)) deallocate(vf_meso_last_step_sp)
-      if(associated(vf_meso_next_step_sp)) deallocate(vf_meso_next_step_sp)
-#else
+
       if(allocated(vf_meso_last_step_sp)) deallocate(vf_meso_last_step_sp)
       if(allocated(vf_meso_next_step_sp)) deallocate(vf_meso_next_step_sp)
 #endif
