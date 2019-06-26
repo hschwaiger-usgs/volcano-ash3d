@@ -12,9 +12,15 @@
       real(kind=ip) :: diffusivity_horz    ! horizontal diffusion coefficient (m2/s)
       real(kind=ip) :: diffusivity_vert    ! vertical diffusion coefficient (m2/s)
 
+#ifdef USEPOINTERS
+      real(kind=ip),dimension(:,:,:),pointer :: kx
+      real(kind=ip),dimension(:,:,:),pointer :: ky
+      real(kind=ip),dimension(:,:,:),pointer :: kz
+#else
       real(kind=ip),dimension(:,:,:),allocatable:: kx
       real(kind=ip),dimension(:,:,:),allocatable:: ky
       real(kind=ip),dimension(:,:,:),allocatable:: kz
+#endif      
 
       contains
 
