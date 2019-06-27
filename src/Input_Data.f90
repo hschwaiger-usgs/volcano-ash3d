@@ -1,8 +1,8 @@
 
-      subroutine Read_Control_File
+      subroutine Read_Control_File(fc_inputfile)
 
       ! Subroutine that reads ASCII input file and contains error traps for input
-
+      use iso_c_binding
       use precis_param
 
       use io_units
@@ -146,6 +146,9 @@
       integer           :: values(8)
       integer           :: timezone
 
+      integer len
+      character(kind=c_char), dimension(1:130) :: fc_inputfile
+
       write(global_production,*)"--------------------------------------------------"
       write(global_production,*)"---------- READ_CONTROL_FILE ---------------------"
       write(global_production,*)"--------------------------------------------------"
@@ -190,6 +193,7 @@
 
       ! TEST READ COMMAND LINE ARGUMENTS
       nargs = iargc()
+      write(6,*) 'nargs = ', nargs
       if (nargs.eq.0) then
           ! If no command-line arguments are given, then prompt user
           ! interactively for the command file name and possible a 
@@ -267,7 +271,15 @@
           ! assume it is the input file name
           read(lllinebuffer,*)infile
         endif
+      elseif (nargs < 0) then
+        len = 0
+        do
+          if (fc_inputfile(len+1) == C_NULL_CHAR) exit
+          infile(len+1:len+1) = fc_inputfile(len+1)
+          len = len + 1
+        end do
       endif
+
 
       !OPEN AND READ ESP FILE
       write(global_info,3) infile
@@ -786,6 +798,8 @@
           xmlSimStartTime = HS_xmltime(SimStartHour,BaseYear,useLeap)
           MR_Comp_StartHour     = SimStartHour
           MR_Comp_Time_in_hours = Simtime_in_hours
+
+          write(6,*) SimStartHour, Simtime_in_hours
 
         endif
         e_StartTime(i) = HS_hours_since_baseyear(iyear(i),imonth(i),  &
