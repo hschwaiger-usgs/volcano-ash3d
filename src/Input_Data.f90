@@ -1,8 +1,8 @@
 
-      subroutine Read_Control_File
+      subroutine Read_Control_File(fc_inputfile)
 
       ! Subroutine that reads ASCII input file and contains error traps for input
-
+      use iso_c_binding
       use precis_param
 
       use io_units
@@ -146,6 +146,10 @@
       integer           :: values(8)
       integer           :: timezone
 
+      !! Size matches length of infile (specified in module io_data)
+      integer fc_len
+      character(kind=c_char), dimension(1:130) :: fc_inputfile
+
       write(global_production,*)"--------------------------------------------------"
       write(global_production,*)"---------- READ_CONTROL_FILE ---------------------"
       write(global_production,*)"--------------------------------------------------"
@@ -267,7 +271,17 @@
           ! assume it is the input file name
           read(lllinebuffer,*)infile
         endif
+      elseif (nargs < 0) then
+        !! When code called from ForestClaw, nargs is -1
+        fc_len = 0
+        do
+          if (fc_inputfile(fc_len+1) == C_NULL_CHAR) exit
+          fc_len = fc_len + 1
+          infile(fc_len:fc_len) = fc_inputfile(fc_len)
+        end do
+        write(global_info,*) 'Reading input file ''',infile,''' from ForestClaw'
       endif
+
 
       !OPEN AND READ ESP FILE
       write(global_info,3) infile
@@ -786,6 +800,8 @@
           xmlSimStartTime = HS_xmltime(SimStartHour,BaseYear,useLeap)
           MR_Comp_StartHour     = SimStartHour
           MR_Comp_Time_in_hours = Simtime_in_hours
+
+          write(6,*) SimStartHour, Simtime_in_hours
 
         endif
         e_StartTime(i) = HS_hours_since_baseyear(iyear(i),imonth(i),  &
