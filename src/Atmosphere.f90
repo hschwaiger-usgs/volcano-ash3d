@@ -56,8 +56,6 @@
 
       subroutine Allocate_Atmosphere_Met
 
-        use forestclaw_mod, only : blockno, patchno
-
       use global_param,  only : &
          useMoistureVars
 
