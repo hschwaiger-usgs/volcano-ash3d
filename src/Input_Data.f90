@@ -146,7 +146,8 @@
       integer           :: values(8)
       integer           :: timezone
 
-      integer len
+      !! Size matches length of infile (specified in module io_data)
+      integer fc_len
       character(kind=c_char), dimension(1:130) :: fc_inputfile
 
       write(global_production,*)"--------------------------------------------------"
@@ -272,12 +273,14 @@
           read(lllinebuffer,*)infile
         endif
       elseif (nargs < 0) then
-        len = 0
+        !! When code called from ForestClaw, nargs is -1
+        fc_len = 0
         do
-          if (fc_inputfile(len+1) == C_NULL_CHAR) exit
-          infile(len+1:len+1) = fc_inputfile(len+1)
-          len = len + 1
+          if (fc_inputfile(fc_len+1) == C_NULL_CHAR) exit
+          fc_len = fc_len + 1
+          infile(fc_len:fc_len) = fc_inputfile(fc_len)
         end do
+        write(global_info,*) 'Reading input file ''',infile,''' from ForestClaw'
       endif
 
 

@@ -56,6 +56,8 @@
 
       subroutine Allocate_Atmosphere_Met
 
+        use forestclaw_mod, only : blockno, patchno
+
       use global_param,  only : &
          useMoistureVars
 
@@ -72,36 +74,59 @@
       !       np_fullmet_T or np_fullmet_RH might be less.  These will contain
       !       the full MR_dum3d_MetP array and MetReader will populate the missing
       !       values as best it can (SH,RH = 0 above levels given, T interpolated)
-#ifdef USEPOINTERS
-      if(.not.associated(AirTemp_meso_last_step_MetP_sp))&
-        allocate(AirTemp_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.associated(AirDens_meso_last_step_MetP_sp))&
-        allocate(AirDens_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.associated(AirVisc_meso_last_step_MetP_sp))&
-        allocate(AirVisc_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.associated(AirLamb_meso_last_step_MetP_sp))&
-        allocate(AirLamb_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(useMoistureVars)THEN
-        if(.not.associated(AirRelH_meso_last_step_MetP_sp))&
-          allocate(AirRelH_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-        if(.not.associated(AirSH_meso_last_step_MetP_sp))&
-          allocate(AirSH_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      endif
 
-      if(.not.associated(AirTemp_meso_next_step_MetP_sp))&
+#ifdef USEPOINTERS
+       allocate(AirTemp_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+       allocate(AirDens_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+       allocate(AirVisc_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+       allocate(AirLamb_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+
+       if(useMoistureVars)THEN
+            allocate(AirRelH_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+            allocate(AirSH_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        endif
+
         allocate(AirTemp_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.associated(AirDens_meso_next_step_MetP_sp))&
         allocate(AirDens_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.associated(AirVisc_meso_next_step_MetP_sp))&
         allocate(AirVisc_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.associated(AirLamb_meso_next_step_MetP_sp))&
         allocate(AirLamb_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(useMoistureVars)THEN
-        if(.not.associated(AirRelH_meso_next_step_MetP_sp))&
-          allocate(AirRelH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-        if(.not.associated(AirSH_meso_next_step_MetP_sp))&
-          allocate(AirSH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      endif
+        if (useMoistureVars) THEN
+            allocate(AirRelH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+            allocate(AirSH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        endif
+
+
+!!      if (.not.associated(AirTemp_meso_last_step_MetP_sp)) then
+!!        allocate(AirTemp_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+!!    endif
+
+!!      if(.not.associated(AirDens_meso_last_step_MetP_sp))&
+!!        allocate(AirDens_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+!!      if(.not.associated(AirVisc_meso_last_step_MetP_sp))&
+!!        allocate(AirVisc_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+!!      if(.not.associated(AirLamb_meso_last_step_MetP_sp))&
+!!        allocate(AirLamb_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+!!      if(useMoistureVars)THEN
+!!        if(.not.associated(AirRelH_meso_last_step_MetP_sp))&
+!!          allocate(AirRelH_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+!!        if(.not.associated(AirSH_meso_last_step_MetP_sp))&
+!!          allocate(AirSH_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+!!      endif
+
+!!      if(.not.associated(AirTemp_meso_next_step_MetP_sp))&
+!!        allocate(AirTemp_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+!!      if(.not.associated(AirDens_meso_next_step_MetP_sp))&
+!!        allocate(AirDens_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+!!      if(.not.associated(AirVisc_meso_next_step_MetP_sp))&
+!!        allocate(AirVisc_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+!!      if(.not.associated(AirLamb_meso_next_step_MetP_sp))&
+!!        allocate(AirLamb_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+!!      if(useMoistureVars)THEN
+!!        if(.not.associated(AirRelH_meso_next_step_MetP_sp))&
+!!          allocate(AirRelH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+!!        if(.not.associated(AirSH_meso_next_step_MetP_sp))&
+!!          allocate(AirSH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+!!      endif
 #else
       if(.not.allocated(AirTemp_meso_last_step_MetP_sp))&
         allocate(AirTemp_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
@@ -146,23 +171,23 @@
       implicit none
 
 #ifdef USEPOINTERS
-      if(associated(AirTemp_meso_last_step_MetP_sp))deallocate(AirTemp_meso_last_step_MetP_sp)
-      if(associated(AirDens_meso_last_step_MetP_sp))deallocate(AirDens_meso_last_step_MetP_sp)
-      if(associated(AirVisc_meso_last_step_MetP_sp))deallocate(AirVisc_meso_last_step_MetP_sp)
-      if(associated(AirLamb_meso_last_step_MetP_sp))deallocate(AirLamb_meso_last_step_MetP_sp)
-      if(useMoistureVars)THEN
-        if(associated(AirRelH_meso_last_step_MetP_sp))deallocate(AirRelH_meso_last_step_MetP_sp)
-        if(associated(AirSH_meso_last_step_MetP_sp))deallocate(AirSH_meso_last_step_MetP_sp)
-      endif
-
-      if(associated(AirTemp_meso_next_step_MetP_sp))deallocate(AirTemp_meso_next_step_MetP_sp)
-      if(associated(AirDens_meso_next_step_MetP_sp))deallocate(AirDens_meso_next_step_MetP_sp)
-      if(associated(AirVisc_meso_next_step_MetP_sp))deallocate(AirVisc_meso_next_step_MetP_sp)
-      if(associated(AirLamb_meso_next_step_MetP_sp))deallocate(AirLamb_meso_next_step_MetP_sp)
-      if(useMoistureVars)THEN
-        if(associated(AirRelH_meso_next_step_MetP_sp))deallocate(AirRelH_meso_next_step_MetP_sp)
-        if(associated(AirSH_meso_next_step_MetP_sp))deallocate(AirSH_meso_next_step_MetP_sp)
-      endif
+!!      if(associated(AirTemp_meso_last_step_MetP_sp))deallocate(AirTemp_meso_last_step_MetP_sp)
+!!      if(associated(AirDens_meso_last_step_MetP_sp))deallocate(AirDens_meso_last_step_MetP_sp)
+!!      if(associated(AirVisc_meso_last_step_MetP_sp))deallocate(AirVisc_meso_last_step_MetP_sp)
+!!      if(associated(AirLamb_meso_last_step_MetP_sp))deallocate(AirLamb_meso_last_step_MetP_sp)
+!!      if(useMoistureVars)THEN
+!!        if(associated(AirRelH_meso_last_step_MetP_sp))deallocate(AirRelH_meso_last_step_MetP_sp)
+!!        if(associated(AirSH_meso_last_step_MetP_sp))deallocate(AirSH_meso_last_step_MetP_sp)
+!!      endif
+!!
+!!      if(associated(AirTemp_meso_next_step_MetP_sp))deallocate(AirTemp_meso_next_step_MetP_sp)
+!!      if(associated(AirDens_meso_next_step_MetP_sp))deallocate(AirDens_meso_next_step_MetP_sp)
+!!      if(associated(AirVisc_meso_next_step_MetP_sp))deallocate(AirVisc_meso_next_step_MetP_sp)
+!!      if(associated(AirLamb_meso_next_step_MetP_sp))deallocate(AirLamb_meso_next_step_MetP_sp)
+!!      if(useMoistureVars)THEN
+!!        if(associated(AirRelH_meso_next_step_MetP_sp))deallocate(AirRelH_meso_next_step_MetP_sp)
+!!        if(associated(AirSH_meso_next_step_MetP_sp))deallocate(AirSH_meso_next_step_MetP_sp)
+!!      endif
 #else
       if(allocated(AirTemp_meso_last_step_MetP_sp))deallocate(AirTemp_meso_last_step_MetP_sp)
       if(allocated(AirDens_meso_last_step_MetP_sp))deallocate(AirDens_meso_last_step_MetP_sp)
