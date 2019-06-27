@@ -11,7 +11,7 @@
          useTemperature,useCalcFallVel,MPS_2_KMPHR
 
       use solution,        only : &
-         vx_pd,vy_pd,vz_pd, vf_pd
+         vx_pd,vy_pd,vz_pd
 
       use wind_grid,       only : &
           vx_meso_last_step_sp,vx_meso_next_step_sp,&
@@ -302,20 +302,15 @@
                  vz_meso_last_step_sp(1:nxmax,1:nymax,1:nzmax)),kind=ip) * &
                                      Interval_Frac
 
-      vx_pd = 20
-      vy_pd = 0
-      vz_pd = 0
-      vf_pd = 0
-
       !if we're calculating an umbrella cloud, add the winds in the cloud
-!!      if ((SourceType.eq.'umbrella').and.  &   !(TimeNow.gt.0.0_ip).and. &
-!!          (TimeNow.lt.e_EndTime(1))) then
-!!          call umbrella_winds
-!!          vx_pd(1:nxmax,1:nymax,ibase:itop) = vx_pd(1:nxmax,1:nymax,ibase:itop) + &
-!!                                           uvx_pd(1:nxmax,1:nymax,ibase:itop)
-!!          vy_pd(1:nxmax,1:nymax,ibase:itop) = vy_pd(1:nxmax,1:nymax,ibase:itop) + &
-!!                                           uvy_pd(1:nxmax,1:nymax,ibase:itop)
-!!      endif
+      if ((SourceType.eq.'umbrella').and.  &   !(TimeNow.gt.0.0_ip).and. &
+          (TimeNow.lt.e_EndTime(1))) then
+          call umbrella_winds
+          vx_pd(1:nxmax,1:nymax,ibase:itop) = vx_pd(1:nxmax,1:nymax,ibase:itop) + &
+                                           uvx_pd(1:nxmax,1:nymax,ibase:itop)
+          vy_pd(1:nxmax,1:nymax,ibase:itop) = vy_pd(1:nxmax,1:nymax,ibase:itop) + &
+                                           uvy_pd(1:nxmax,1:nymax,ibase:itop)
+      endif
 
 !     CONVERT FROM M/S TO KM/HR.  
       vx_pd = vx_pd*MPS_2_KMPHR
