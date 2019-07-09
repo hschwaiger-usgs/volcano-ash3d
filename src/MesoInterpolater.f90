@@ -98,12 +98,12 @@
           ivar = 2 ! U winds
           call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now,.true.)
             vx_meso_1_sp = MR_dum3d_compH
-            vx_meso_next_step_sp => vx_meso_1_sp
+            vx_meso_next_step_sp = vx_meso_1_sp
 
           ivar = 3 ! V winds 
           call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now,.true.)
             vy_meso_1_sp = MR_dum3d_compH
-            vy_meso_next_step_sp => vy_meso_1_sp
+            vy_meso_next_step_sp = vy_meso_1_sp
         else
           ! Grids are different, we will need to rotate vectors
           ! In all these cases, we need:
@@ -133,9 +133,9 @@
           endif
 
           vx_meso_1_sp = MR_dum3d_compH
-          vx_meso_next_step_sp => vx_meso_1_sp
+          vx_meso_next_step_sp = vx_meso_1_sp
           vy_meso_1_sp = MR_dum3d_compH_2
-          vy_meso_next_step_sp => vy_meso_1_sp
+          vy_meso_next_step_sp = vy_meso_1_sp
         endif
 
         ivar = 4 ! W winds
@@ -145,7 +145,7 @@
           MR_dum3d_compH = 0.0_sp
         endif
         vz_meso_1_sp = MR_dum3d_compH
-        vz_meso_next_step_sp => vz_meso_1_sp
+        vz_meso_next_step_sp = vz_meso_1_sp
 
         ! We only loaded one step so set load flag to True
         Load_MesoSteps = .true.
@@ -171,14 +171,14 @@
           ! Set pointer toggle
         if(Meso_toggle.eq.0)then
           Meso_toggle = 1
-          vx_meso_last_step_sp => vx_meso_1_sp
-          vy_meso_last_step_sp => vy_meso_1_sp
-          vz_meso_last_step_sp => vz_meso_1_sp
+          vx_meso_last_step_sp = vx_meso_1_sp
+          vy_meso_last_step_sp = vy_meso_1_sp
+          vz_meso_last_step_sp = vz_meso_1_sp
         else
           Meso_toggle = 0
-          vx_meso_last_step_sp => vx_meso_2_sp
-          vy_meso_last_step_sp => vy_meso_2_sp
-          vz_meso_last_step_sp => vz_meso_2_sp
+          vx_meso_last_step_sp = vx_meso_2_sp
+          vy_meso_last_step_sp = vy_meso_2_sp
+          vz_meso_last_step_sp = vz_meso_2_sp
         endif
 
         ! This subroutine sets both last and next geoH arrays so call with
@@ -196,20 +196,20 @@
           call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now+1,.true.)
           if(Meso_toggle.eq.0)then
             vx_meso_1_sp = MR_dum3d_compH
-            vx_meso_next_step_sp => vx_meso_1_sp
+            vx_meso_next_step_sp = vx_meso_1_sp
           else
             vx_meso_2_sp = MR_dum3d_compH
-            vx_meso_next_step_sp => vx_meso_2_sp
+            vx_meso_next_step_sp = vx_meso_2_sp
           endif
 
           ivar = 3 ! V winds 
           call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now+1,.true.)
           if(Meso_toggle.eq.0)then
             vy_meso_1_sp = MR_dum3d_compH
-            vy_meso_next_step_sp => vy_meso_1_sp
+            vy_meso_next_step_sp = vy_meso_1_sp
           else
             vy_meso_2_sp = MR_dum3d_compH
-            vy_meso_next_step_sp => vy_meso_2_sp
+            vy_meso_next_step_sp = vy_meso_2_sp
           endif
         else
           ! Grids are different, we will need to rotate vectors
@@ -241,14 +241,14 @@
 
           if(Meso_toggle.eq.0)then
             vx_meso_1_sp = MR_dum3d_compH
-            vx_meso_next_step_sp => vx_meso_1_sp
+            vx_meso_next_step_sp = vx_meso_1_sp
             vy_meso_1_sp = MR_dum3d_compH_2
-            vy_meso_next_step_sp => vy_meso_1_sp
+            vy_meso_next_step_sp = vy_meso_1_sp
           else
             vx_meso_2_sp = MR_dum3d_compH
-            vx_meso_next_step_sp => vx_meso_2_sp
+            vx_meso_next_step_sp = vx_meso_2_sp
             vy_meso_2_sp = MR_dum3d_compH_2
-            vy_meso_next_step_sp => vy_meso_2_sp
+            vy_meso_next_step_sp = vy_meso_2_sp
           endif
         endif
 
@@ -260,10 +260,10 @@
         endif
         if(Meso_toggle.eq.0)then
           vz_meso_1_sp = MR_dum3d_compH
-          vz_meso_next_step_sp => vz_meso_1_sp
+          vz_meso_next_step_sp = vz_meso_1_sp
         else
           vz_meso_2_sp = MR_dum3d_compH
-          vz_meso_next_step_sp => vz_meso_2_sp
+          vz_meso_next_step_sp = vz_meso_2_sp
         endif
       endif   ! Load_MesoSteps
 
@@ -271,7 +271,6 @@
       ! Set up to do the interpolation to the current time
       HoursIntoInterval   = TimeNow_fromRefTime - MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now)
       Interval_Frac = HoursIntoInterval /  MR_MetStep_Interval(MR_iMetStep_Now)
-
       if(useTemperature)then
         call Set_Atmosphere_Meso(Load_MesoSteps,Interval_Frac,first_time)
       endif

@@ -422,10 +422,10 @@
       implicit none
 
 #ifdef USEPOINTERS
-      real(kind=ip),dimension(:,:,:)  ,pointer :: vx_pd => null() ! u (E) component of wind
-      real(kind=ip),dimension(:,:,:)  ,pointer :: vy_pd => null() ! v (N) component of wind
-      real(kind=ip),dimension(:,:,:)  ,pointer :: vz_pd => null() ! w (up) component of wind
-      real(kind=ip),dimension(:,:,:,:),pointer :: vf_pd => null() ! fall velocity (x,y,z,gs) (positive upward)
+      real(kind=ip),dimension(:,:,:)    ,pointer :: vx_pd => null() ! u (E) component of wind
+      real(kind=ip),dimension(:,:,:)    ,pointer :: vy_pd => null() ! v (N) component of wind
+      real(kind=ip),dimension(:,:,:)    ,pointer :: vz_pd => null() ! w (up) component of wind
+      real(kind=ip),dimension(:,:,:,:)  ,pointer :: vf_pd => null() ! fall velocity (x,y,z,gs) (positive upward)
 
       real(kind=ip),dimension(:,:,:,:,:),pointer :: concen_pd      => null() !ash concentration in x,y,z,gs_bin,time
       real(kind=ip),dimension(:,:,:)    ,pointer :: outflow_xz1_pd => null()
@@ -436,19 +436,19 @@
       real(kind=ip),dimension(:,:,:)    ,pointer :: outflow_xy2_pd => null()
       real(kind=ip),dimension(:,:,:)    ,pointer :: DepositGranularity => null() ! accumulated ash mass on ground
 #else
-      real(kind=ip),dimension(:,:,:)  ,allocatable :: vx_pd ! u (E) component of wind
-      real(kind=ip),dimension(:,:,:)  ,allocatable :: vy_pd ! v (N) component of wind
-      real(kind=ip),dimension(:,:,:)  ,allocatable :: vz_pd ! w (up) component of wind
-      real(kind=ip),dimension(:,:,:,:),allocatable :: vf_pd ! fall velocity (x,y,z,gs) (positive upward)
+      real(kind=ip),dimension(:,:,:)    ,allocatable :: vx_pd ! u (E) component of wind
+      real(kind=ip),dimension(:,:,:)    ,allocatable :: vy_pd ! v (N) component of wind
+      real(kind=ip),dimension(:,:,:)    ,allocatable :: vz_pd ! w (up) component of wind
+      real(kind=ip),dimension(:,:,:,:)  ,allocatable :: vf_pd ! fall velocity (x,y,z,gs) (positive upward)
 
       real(kind=ip),dimension(:,:,:,:,:),allocatable :: concen_pd       !ash concentration in x,y,z,gs_bin,time
-      real(kind=ip),dimension(:,:,:),allocatable :: outflow_xz1_pd
-      real(kind=ip),dimension(:,:,:),allocatable :: outflow_xz2_pd
-      real(kind=ip),dimension(:,:,:),allocatable :: outflow_yz1_pd
-      real(kind=ip),dimension(:,:,:),allocatable :: outflow_yz2_pd
-      real(kind=ip),dimension(:,:,:),allocatable :: outflow_xy1_pd
-      real(kind=ip),dimension(:,:,:),allocatable :: outflow_xy2_pd
-      real(kind=ip),dimension(:,:,:),allocatable :: DepositGranularity ! accumulated ash mass on ground 
+      real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_xz1_pd
+      real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_xz2_pd
+      real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_yz1_pd
+      real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_yz2_pd
+      real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_xy1_pd
+      real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_xy2_pd
+      real(kind=ip),dimension(:,:,:)    ,allocatable :: DepositGranularity ! accumulated ash mass on ground 
 #endif
       real(kind=ip)      :: StopValue    !program stops when percent_accumulated>StopValue
 
@@ -609,23 +609,41 @@
           ! wind file time steps.  The *_meso_[last,next]_sp are pointers that
           ! point to the correct memory locations.
           ! These exist on the computational (Ash3d) grid.
-      real(kind=sp),dimension(:,:,:),pointer            :: vx_meso_last_step_sp => null()
-      real(kind=sp),dimension(:,:,:),pointer            :: vx_meso_next_step_sp => null()
-      real(kind=sp),dimension(:,:,:),pointer            :: vx_meso_1_sp
-      real(kind=sp),dimension(:,:,:),pointer            :: vx_meso_2_sp
-      real(kind=sp),dimension(:,:,:),pointer            :: vy_meso_last_step_sp => null()
-      real(kind=sp),dimension(:,:,:),pointer            :: vy_meso_next_step_sp => null()
-      real(kind=sp),dimension(:,:,:),pointer            :: vy_meso_1_sp
-      real(kind=sp),dimension(:,:,:),pointer            :: vy_meso_2_sp
-      real(kind=sp),dimension(:,:,:),pointer            :: vz_meso_last_step_sp => null()
-      real(kind=sp),dimension(:,:,:),pointer            :: vz_meso_next_step_sp => null()
-      real(kind=sp),dimension(:,:,:),pointer            :: vz_meso_1_sp
-      real(kind=sp),dimension(:,:,:),pointer            :: vz_meso_2_sp
+      !real(kind=sp),dimension(:,:,:),pointer            :: vx_meso_last_step_sp => null()
+      !real(kind=sp),dimension(:,:,:),pointer            :: vx_meso_next_step_sp => null()
+      !real(kind=sp),dimension(:,:,:),pointer            :: vy_meso_last_step_sp => null()
+      !real(kind=sp),dimension(:,:,:),pointer            :: vy_meso_next_step_sp => null()
+      !real(kind=sp),dimension(:,:,:),pointer            :: vz_meso_last_step_sp => null()
+      !real(kind=sp),dimension(:,:,:),pointer            :: vz_meso_next_step_sp => null()
           ! For the fall velocity, we use named arrays (not pointers)
 #ifdef USEPOINTERS
+      real(kind=sp),dimension(:,:,:)  ,pointer          :: vx_meso_last_step_sp => null()
+      real(kind=sp),dimension(:,:,:)  ,pointer          :: vx_meso_next_step_sp => null()
+      real(kind=sp),dimension(:,:,:)  ,pointer          :: vy_meso_last_step_sp => null()
+      real(kind=sp),dimension(:,:,:)  ,pointer          :: vy_meso_next_step_sp => null()
+      real(kind=sp),dimension(:,:,:)  ,pointer          :: vz_meso_last_step_sp => null()
+      real(kind=sp),dimension(:,:,:)  ,pointer          :: vz_meso_next_step_sp => null()
+      real(kind=sp),dimension(:,:,:)  ,pointer          :: vx_meso_1_sp => null()
+      real(kind=sp),dimension(:,:,:)  ,pointer          :: vx_meso_2_sp => null()
+      real(kind=sp),dimension(:,:,:)  ,pointer          :: vy_meso_1_sp => null()
+      real(kind=sp),dimension(:,:,:)  ,pointer          :: vy_meso_2_sp => null()
+      real(kind=sp),dimension(:,:,:)  ,pointer          :: vz_meso_1_sp => null()
+      real(kind=sp),dimension(:,:,:)  ,pointer          :: vz_meso_2_sp => null()
       real(kind=sp),dimension(:,:,:,:),pointer          :: vf_meso_last_step_sp => null()
       real(kind=sp),dimension(:,:,:,:),pointer          :: vf_meso_next_step_sp => null()
 #else
+      real(kind=sp),dimension(:,:,:)  ,allocatable      :: vx_meso_last_step_sp
+      real(kind=sp),dimension(:,:,:)  ,allocatable      :: vx_meso_next_step_sp
+      real(kind=sp),dimension(:,:,:)  ,allocatable      :: vy_meso_last_step_sp
+      real(kind=sp),dimension(:,:,:)  ,allocatable      :: vy_meso_next_step_sp
+      real(kind=sp),dimension(:,:,:)  ,allocatable      :: vz_meso_last_step_sp
+      real(kind=sp),dimension(:,:,:)  ,allocatable      :: vz_meso_next_step_sp
+      real(kind=sp),dimension(:,:,:)  ,allocatable      :: vx_meso_1_sp
+      real(kind=sp),dimension(:,:,:)  ,allocatable      :: vx_meso_2_sp
+      real(kind=sp),dimension(:,:,:)  ,allocatable      :: vy_meso_1_sp
+      real(kind=sp),dimension(:,:,:)  ,allocatable      :: vy_meso_2_sp
+      real(kind=sp),dimension(:,:,:)  ,allocatable      :: vz_meso_1_sp
+      real(kind=sp),dimension(:,:,:)  ,allocatable      :: vz_meso_2_sp
       real(kind=sp),dimension(:,:,:,:),allocatable      :: vf_meso_last_step_sp 
       real(kind=sp),dimension(:,:,:,:),allocatable      :: vf_meso_next_step_sp
 #endif
@@ -639,6 +657,13 @@
          nxmax,nymax,nzmax,nsmax
 
       !integer, intent(in) :: nsmax
+
+      allocate(vx_meso_last_step_sp(nxmax,nymax,nzmax))
+      allocate(vx_meso_next_step_sp(nxmax,nymax,nzmax))
+      allocate(vy_meso_last_step_sp(nxmax,nymax,nzmax))
+      allocate(vy_meso_next_step_sp(nxmax,nymax,nzmax))
+      allocate(vz_meso_last_step_sp(nxmax,nymax,nzmax))
+      allocate(vz_meso_next_step_sp(nxmax,nymax,nzmax))
 
       allocate(vx_meso_1_sp(nxmax,nymax,nzmax))
       allocate(vx_meso_2_sp(nxmax,nymax,nzmax))
