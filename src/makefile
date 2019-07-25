@@ -52,7 +52,7 @@ USGSROOT=/opt/USGS
 
 # This is the location of the Ash3d core code source files that we will build this
 # research branch with.
-ASH3dCCSRC=~/work/USGS/Software_repos/GIT/Ash3d/src
+ASH3dCCSRC=/home/ash3d/Programs/Software_repos/GIT/Ash3d/src
 
 INSTALLDIR=/opt/USGS/Ash3d
 #INSTALLDIR=~/gcc

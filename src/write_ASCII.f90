@@ -547,8 +547,8 @@
              '     severe        >100     >4"',//, &
              'NOTE: This table is the estimate at time of issuance: changing conditions at the volcano may require ', &
                          'updating the forecast.')
-2     format(a35,2f10.4,' |',2x,a20,f7.2,3x,a1,f5.2,'   |',2x,a20,f9.2,3x,a1,f5.2,f8.2,2x,a13,'|')
-20    format(a35,2f10.4,' |',2x,a20,f7.2,3x,a1,f5.2,'   |',2x,a20,f9.2,3x,a1,f5.2,f8.2,2x,a13,'|',30e12.8)
+2     format(a35,2f10.4,' |',2x,a20,f7.2,3x,a1,f6.2,'  |',2x,a20,f9.2,2x,a1,f6.2,f8.2,2x,a13,'|')
+20    format(a35,2f10.4,' |',2x,a20,f7.2,3x,a1,f6.2,'  |',2x,a20,f9.2,2x,a1,f6.2,f8.2,2x,a13,'|',30e12.8)
 3     format(/,'No airports affected by ash')
 
       end subroutine Write_PointData_Airports_ASCII

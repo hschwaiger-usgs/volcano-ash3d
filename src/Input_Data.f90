@@ -100,7 +100,7 @@
                                                      !  since base year
 
       character(len=80) :: linebuffer
-      character(len=120):: llinebuffer
+      character(len=130):: llinebuffer
       character(len=130):: lllinebuffer
       character(len=3)  :: answer
       character(len=8)  :: testname
@@ -681,7 +681,7 @@
         if(e_Duration(i).lt.0.0_ip)  e_Duration(i)  = ESP_duration
         if(PlumeHeight(i).lt.0.0_ip) PlumeHeight(i) = ESP_height
         if(e_Volume(i).lt.0.0_ip)    e_Volume(i)    = ESP_Vol
-        read(10,'(a120)')llinebuffer
+        read(10,'(a130)')llinebuffer
       enddo
 
       !Error trap if more pulses are entered than are specified
@@ -1167,7 +1167,7 @@
 !     Read number of files to write out
       read(10,'(a80)') linebuffer
       cdf_b4l17 = linebuffer
-      read(10,'(a120)') llinebuffer
+      read(10,'(a130)') llinebuffer
       cdf_b4l18 = llinebuffer(1:80)
       if (WriteDepositFinal_ASCII.or.WriteDepositFinal_KML.or. &
           WriteDepositTS_ASCII.or.WriteDepositTS_KML.or. &

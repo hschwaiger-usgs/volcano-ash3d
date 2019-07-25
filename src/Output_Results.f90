@@ -155,7 +155,7 @@
         !if (WriteDepositTS_KML.or.WriteDepositFinal_KML)  then
         if (WriteDepositTS_KML)  then
              call Write_2D_KML(7,DepositThickness,0,1) ! Deposit
-             call Write_2D_KML(8,DepositThickness,0,1) ! Deposit (NWS)
+             call Write_2D_KML(8,DepositThickness/2.54_ip,0,1) ! Deposit (NWS)
         endif
 
       endif
@@ -211,7 +211,7 @@
         endif
         if (WriteDepositFinal_KML) then
           call Write_2D_KML(7,DepositThickness,0,0) ! Deposit
-          call Write_2D_KML(8,DepositThickness,0,0) ! Deposit (NWS)
+          call Write_2D_KML(8,DepositThickness/2.54_ip,0,0) ! Deposit (NWS)
         endif
 
         ! Close KML files

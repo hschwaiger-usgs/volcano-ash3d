@@ -166,13 +166,13 @@
       KML_Styles(ivar,8) = '24-36_hrs';  KML_Colors(ivar,8) = '0000ff'
       KML_Styles(ivar,9) = '>>>36_hrs';  KML_Colors(ivar,9) = '000080'
       KML_description(ivar)   = 'shades for cloud arrival time'
-      KML_legend(ivar)        = 'CloudLoad_hsv.jpg            '
+      KML_legend(ivar)        = 'cloud_arrival_time.png       '
       KML_overlayX(ivar)      = '1.0'
       KML_overlayY(ivar)      = '0.0'
       KML_screenX(ivar)       = '1.0'
       KML_screenY(ivar)       = '0.3'
       KML_sizeX(ivar)         = '150'
-      KML_sizeY(ivar)         = '305'
+      KML_sizeY(ivar)         = '347'
       KML_AltMode(ivar)       = 'clampToGround'
 
       ivar = 6 ! cloud reflectivity
@@ -229,7 +229,7 @@
 
       ivar = 8 ! deposit (NWS)
       KML_filename(ivar)      = 'Deposit_NWS.kml              '
-      KML_units(ivar)         = '  mm '
+      KML_units(ivar)         = '  in '
       KML_fid(ivar)           = 550
       KML_n_clrmp(ivar)       = 3
       KML_color_map(ivar,:) = (/ 0.1_ip, 0.8_ip, 6.0_ip, 0.0_ip, 0.0_ip,&
@@ -244,7 +244,7 @@
       KML_Styles(ivar,8) = '         ';  KML_Colors(ivar,8) = '      '
       KML_Styles(ivar,9) = '         ';  KML_Colors(ivar,9) = '      '
       KML_description(ivar)   = 'Ash thickness shades         '
-      KML_legend(ivar)        = 'GE_legend_dep_nws.gif        '
+      KML_legend(ivar)        = 'GE_legend_dep_nws.png        '
       KML_overlayX(ivar)      = '1.0'
       KML_overlayY(ivar)      = '0.0'
       KML_screenX(ivar)       = '1.0'

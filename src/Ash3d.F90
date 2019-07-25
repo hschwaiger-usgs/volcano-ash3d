@@ -80,6 +80,7 @@
       logical, dimension(5) :: StopConditions = .false.
       logical               :: StopTimeLoop   = .false.
       logical               :: first_time     = .true.
+      character(len=1)      :: answer
 
       percent_accumulated = 0.0_ip
 
