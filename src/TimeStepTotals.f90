@@ -59,7 +59,7 @@
       !          sum(outflow_xy2(1:nx,1:ny,     1)*kappa(1:nx  ,1:ny  ,  nz+1))/MagmaDensity/KM3_2_M3
 
       open(unit=19,file='progress.txt',status='replace')
-      write(19,*)time/Simtime_in_hours
+      write(19,*)real(time/Simtime_in_hours,kind=4)
       close(19)
 
 !      write(global_info,*)"Total Mass Aloft = ",real(aloft_vol*MagmaDensity*KM3_2_M3*1.0e-9,kind=sp),&

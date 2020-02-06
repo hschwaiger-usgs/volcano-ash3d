@@ -38,7 +38,7 @@
       real(kind=ip) :: SourceNodeWidth_km, SourceNodeHeight_km 
 
         !The following arrays are of length neruptions
-      real(kind=ip), dimension(:)        ,allocatable :: PlumeHeight
+      real(kind=ip), dimension(:)        ,allocatable :: e_PlumeHeight
       real(kind=ip), dimension(:)        ,allocatable :: e_Volume
       real(kind=ip), dimension(:)        ,allocatable :: e_Duration
       real(kind=ip), dimension(:)        ,allocatable :: e_StartTime
@@ -74,12 +74,12 @@
 
       implicit none
 
-      allocate (e_StartTime(neruptions));            e_StartTime = 0.0_ip
-      allocate (e_Duration(neruptions));             e_Duration  = 0.0_ip
-      allocate (PlumeHeight(neruptions));            PlumeHeight = 0.0_ip
-      allocate (e_Volume(neruptions));               e_Volume    = 0.0_ip
-      allocate (MassFlux(neruptions));               MassFlux    = 0.0_ip
-      allocate (e_EndTime(neruptions));              e_EndTime   = 0.0_ip
+      allocate (e_StartTime(neruptions));            e_StartTime   = 0.0_ip
+      allocate (e_Duration(neruptions));             e_Duration    = 0.0_ip
+      allocate (e_PlumeHeight(neruptions));          e_PlumeHeight = 0.0_ip
+      allocate (e_Volume(neruptions));               e_Volume      = 0.0_ip
+      allocate (MassFlux(neruptions));               MassFlux      = 0.0_ip
+      allocate (e_EndTime(neruptions));              e_EndTime     = 0.0_ip
 
       if(SourceType.eq.'profile')then
         allocate (e_prof_dz(neruptions));             e_prof_dz      = 0.0_ip
@@ -133,7 +133,7 @@
 
       deallocate (e_StartTime)
       deallocate (e_Duration)
-      deallocate (PlumeHeight)
+      deallocate (e_PlumeHeight)
       deallocate (e_Volume)
       deallocate (MassFlux)
       deallocate (e_EndTime)
@@ -244,7 +244,7 @@
           endif
         elseif (SourceType.eq.'profile') then
           do kk=1,e_prof_zpoints(ieruption)
-            ez = PlumeHeight(ieruption) - &
+            ez = e_PlumeHeight(ieruption) - &
                     e_prof_dz(ieruption)*e_prof_zpoints(ieruption) + &
                     (kk-1)*e_prof_dz(ieruption)
             if ((z_cell_top.ge.ez).and. & 
@@ -305,6 +305,12 @@
       if (abs(SumSourceNodeFlux-1.0_ip).gt.1.0e-4_ip) then
          write(global_info,2) SumSourceNodeFlux-1.0_ip
          write(global_log ,2) SumSourceNodeFlux-1.0_ip
+         write(*,*)"SourceType = ",SourceType
+         write(*,*)"Height_now =",Height_now
+         write(*,*)"z_cell_top,z_cell_bot = ",z_cell_top,z_cell_bot
+         write(*,*)"MassFluxRate_now = ",MassFluxRate_now
+         write(*,*)"n_gs_max = ",n_gs_max
+         write(*,*)SourceNodeFlux(:,1)
          stop 1
       endif
 
@@ -354,7 +360,7 @@
           if (tend.le.e_EndTime(ieruption))then
             ! . . . and ends before the eruption ends, MassFluxRate=avg.
             MassFluxRate_now = MassFlux(ieruption)
-            Height_now       = PlumeHeight(ieruption)
+            Height_now       = e_PlumeHeight(ieruption)
           else
             ! . . . and ends after the eruption ends, do some more checking.
             if (ieruption.lt.neruptions) then
@@ -372,14 +378,14 @@
                 ! construct weighted average of the two eruptions
                 MassFluxRate_now    = MassFlux(ieruption)*(e_EndTime(ieruption)-tstart)  /dt + &
                                       MassFlux(ieruption+1)*(tend-e_StartTime(ieruption+1))/dt
-                Height_now          = (PlumeHeight(ieruption) + PlumeHeight(ieruption+1))/2.0_ip
+                Height_now          = (e_PlumeHeight(ieruption) + e_PlumeHeight(ieruption+1))/2.0_ip
                 ieruption = ieruption+1
               else
                 ! If it ends BEFORE the START of the NEXT eruption,
                 ! distribute the fraction of the time-step that is
                 ! erupting over the whole dt
                 MassFluxRate_now = MassFlux(ieruption)*(e_EndTime(ieruption)-tstart)/dt
-                Height_now       = PlumeHeight(ieruption)
+                Height_now       = e_PlumeHeight(ieruption)
                 ieruption = ieruption+1
               endif
             else
@@ -388,7 +394,7 @@
               !whole dt
   
               MassFluxRate_now = MassFlux(ieruption)*(e_EndTime(ieruption)-tstart)/dt
-              Height_now       = PlumeHeight(ieruption)
+              Height_now       = e_PlumeHeight(ieruption)
               ieruption = ieruption+1
             endif
           endif  ! end of check on 
@@ -399,20 +405,20 @@
               ! . . . and ends during the eruption, interpolate
   
               MassFluxRate_now = MassFlux(ieruption)*(tend-e_StartTime(ieruption))/dt
-              Height_now       = PlumeHeight(ieruption)
+              Height_now       = e_PlumeHeight(ieruption)
             else
               !If it ends after the erupt ends, do some more checking
               if (ieruption.lt.neruptions) then
                 !If it ends before the next eruption starts, interpolate
                 if (tend.lt.e_StartTime(ieruption+1)) then
                   MassFluxRate_now = MassFlux(ieruption)*(e_Duration(ieruption)/dt)
-                  Height_now       = PlumeHeight(ieruption)
+                  Height_now       = e_PlumeHeight(ieruption)
                   ieruption=ieruption+1
                   !If it ends during the next eruption do another interpolation
                 elseif (tend.le.e_EndTime(ieruption+1)) then
                   MassFluxRate_now = MassFlux(ieruption)*((e_EndTime(ieruption)-tstart)/dt) + &
                                      MassFlux(ieruption+1)*((tend-e_StartTime(ieruption))/dt)
-                  Height_now       = (PlumeHeight(ieruption)+PlumeHeight(ieruption+1))/2.0_ip
+                  Height_now       = (e_PlumeHeight(ieruption)+e_PlumeHeight(ieruption+1))/2.0_ip
 
                   ieruption=ieruption+1
                   !If it ends after the next eruption ends, stop the program
@@ -423,7 +429,7 @@
                 endif
                 !If if ends after the last eruption ends, interpolate and exit
               else
-                Height_now       = PlumeHeight(ieruption)
+                Height_now       = e_PlumeHeight(ieruption)
                 MassFluxRate_now = MassFlux(ieruption)*(e_Duration(ieruption)/dt)
                 ieruption = ieruption + 1
               endif
@@ -436,14 +442,14 @@
         return
 
       elseif(SourceType.eq.'profile')then
-        Height_now       = PlumeHeight(ieruption)
+        Height_now       = e_PlumeHeight(ieruption)
         MassFluxRate_now = sum(e_prof_MassFlux(ieruption,:))
         return
 
       else
         ! For all non-standard sources, assign the height given on the source
         ! line of the input file and assign a zero mass flux rate.
-        Height_now       = PlumeHeight(ieruption)
+        Height_now       = e_PlumeHeight(ieruption)
         MassFluxRate_now = 0.0_ip
         return
       endif

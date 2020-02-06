@@ -49,10 +49,10 @@
 
       do k=1,nzmax
         ! Note: z_vec_init is the array (0:nz_init) for the initial input z profile.
-        !       This could be much larger than PlumeHeight since it could describe
+        !       This could be much larger than e_PlumeHeight since it could describe
         !       a bunch of linear segments up to 50 km or something.  We will use
         !       the cell-centered value and the lower boundary value for all subsequent
-        !       calculations, limited to just the height needed (PlumeHeight*ZPADDING)
+        !       calculations, limited to just the height needed (e_PlumeHeight*ZPADDING)
         dz_vec_pd(k) = z_vec_init(k) - z_vec_init(k-1)
         z_cc_pd(k)   = z_vec_init(k) - 0.5_ip*dz_vec_pd(k)
         z_lb_pd(k)   = z_cc_pd(k) - 0.5_ip*dz_vec_pd(k)  ! This is essentially just z_vec_init(k-1)

@@ -30,7 +30,8 @@
       logical, parameter :: USE_OUTPROD_VARS  = .true.
 
         ! Set this parameter if you want to include velocities in the output file
-      logical, parameter :: USE_WIND_VARS  = .true.
+      logical, parameter :: USE_WIND_VARS  = .false.
+      !logical, parameter :: USE_WIND_VARS  = .true.
 
         ! Set this parameter to false if you do not want raw concentration values
         ! exported (only derived products and deposits)
@@ -224,16 +225,16 @@
       implicit none
 
 #ifndef USEPOINTERS
-      deallocate(DepositThickness)
-      deallocate(MaxConcentration)
-      deallocate(DepArrivalTime)
-      deallocate(CloudArrivalTime)
-      deallocate(CloudLoad)
-      deallocate(CloudLoadLast)
-      deallocate(MaxHeight)
-      deallocate(MinHeight)
-      deallocate(dbZCol)
-      deallocate(dbZ)
+      if(allocated(DepositThickness)) deallocate(DepositThickness)
+      if(allocated(MaxConcentration)) deallocate(MaxConcentration)
+      if(allocated(DepArrivalTime))   deallocate(DepArrivalTime)
+      if(allocated(CloudArrivalTime)) deallocate(CloudArrivalTime)
+      if(allocated(CloudLoad))        deallocate(CloudLoad)
+      if(allocated(CloudLoadLast))    deallocate(CloudLoadLast)
+      if(allocated(MaxHeight))        deallocate(MaxHeight)
+      if(allocated(MinHeight))        deallocate(MinHeight)
+      if(allocated(dbZCol))           deallocate(dbZCol)
+      if(allocated(dbZ))              deallocate(dbZ)
 #endif
 
       end subroutine Deallocate_Output_Vars
@@ -245,16 +246,36 @@
 
       implicit none
 
-      deallocate(var_User2d_static_XY_name)
-      deallocate(var_User2d_static_XY)
-      deallocate(var_User2d_XY_name)
-      deallocate(var_User2d_XY)
-      deallocate(var_User3d_XYGs_name)
-      deallocate(var_User3d_XYGs)
-      deallocate(var_User3d_XYZ_name)
-      deallocate(var_User3d_XYZ)
-      deallocate(var_User4d_XYZGs_name)
-      deallocate(var_User4d_XYZGs)
+      if(allocated(var_User2d_static_XY_name))    deallocate(var_User2d_static_XY_name)
+      if(allocated(var_User2d_static_XY_unit))    deallocate(var_User2d_static_XY_unit)
+      if(allocated(var_User2d_static_XY_lname))   deallocate(var_User2d_static_XY_lname)
+      if(allocated(var_User2d_static_XY_MissVal)) deallocate(var_User2d_static_XY_MissVal)
+      if(allocated(var_User2d_static_XY_FillVal)) deallocate(var_User2d_static_XY_FillVal)
+      if(allocated(var_User2d_static_XY))         deallocate(var_User2d_static_XY)
+      if(allocated(var_User2d_XY_name))           deallocate(var_User2d_XY_name)
+      if(allocated(var_User2d_XY_unit))           deallocate(var_User2d_XY_unit)
+      if(allocated(var_User2d_XY_lname))          deallocate(var_User2d_XY_lname)
+      if(allocated(var_User2d_XY_MissVal))        deallocate(var_User2d_XY_MissVal)
+      if(allocated(var_User2d_XY_FillVal))        deallocate(var_User2d_XY_FillVal)
+      if(allocated(var_User2d_XY))                deallocate(var_User2d_XY)
+      if(allocated(var_User3d_XYGs_name))         deallocate(var_User3d_XYGs_name)
+      if(allocated(var_User3d_XYGs_unit))         deallocate(var_User3d_XYGs_unit)
+      if(allocated(var_User3d_XYGs_lname))        deallocate(var_User3d_XYGs_lname)
+      if(allocated(var_User3d_XYGs_MissVal))      deallocate(var_User3d_XYGs_MissVal)
+      if(allocated(var_User3d_XYGs_FillVal))      deallocate(var_User3d_XYGs_FillVal)
+      if(allocated(var_User3d_XYGs))              deallocate(var_User3d_XYGs)
+      if(allocated(var_User3d_XYZ_name))          deallocate(var_User3d_XYZ_name)
+      if(allocated(var_User3d_XYZ_unit))          deallocate(var_User3d_XYZ_unit)
+      if(allocated(var_User3d_XYZ_lname))         deallocate(var_User3d_XYZ_lname)
+      if(allocated(var_User3d_XYZ_MissVal))       deallocate(var_User3d_XYZ_MissVal)
+      if(allocated(var_User3d_XYZ_FillVal))       deallocate(var_User3d_XYZ_FillVal)
+      if(allocated(var_User3d_XYZ))               deallocate(var_User3d_XYZ)
+      if(allocated(var_User4d_XYZGs_name))        deallocate(var_User4d_XYZGs_name)
+      if(allocated(var_User4d_XYZGs_unit))        deallocate(var_User4d_XYZGs_unit)
+      if(allocated(var_User4d_XYZGs_lname))       deallocate(var_User4d_XYZGs_lname)
+      if(allocated(var_User4d_XYZGs_MissVal))     deallocate(var_User4d_XYZGs_MissVal)
+      if(allocated(var_User4d_XYZGs_FillVal))     deallocate(var_User4d_XYZGs_FillVal)
+      if(allocated(var_User4d_XYZGs))             deallocate(var_User4d_XYZGs)
 
       end subroutine Deallocate_Output_UserVars
 

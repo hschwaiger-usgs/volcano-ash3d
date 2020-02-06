@@ -329,7 +329,7 @@
          nsmax
 
       use Source,        only : &
-         neruptions,e_Duration,e_Volume,PlumeHeight
+         neruptions,e_Duration,e_Volume,e_PlumeHeight
 
       implicit none
 
@@ -356,7 +356,7 @@
                               RunStartMinute, VolcanoName  !write infile, simulation time
         do i=1,neruptions  !write source parameters
           write(out_unit,99) i, HS_xmltime(SimStartHour,BaseYear,useLeap), &
-                           e_Duration(i), PlumeHeight(i), PlumeHeight(i)*3280.8_ip, e_Volume(i)
+                           e_Duration(i), e_PlumeHeight(i), e_PlumeHeight(i)*3280.8_ip, e_Volume(i)
         enddo
         write(out_unit,995)
         if (WriteGSD) then                 !If we're writing out grain sizes.
@@ -547,8 +547,8 @@
              '     severe        >100     >4"',//, &
              'NOTE: This table is the estimate at time of issuance: changing conditions at the volcano may require ', &
                          'updating the forecast.')
-2     format(a35,2f10.4,' |',2x,a20,f7.2,3x,a1,f6.2,'  |',2x,a20,f9.2,2x,a1,f6.2,f8.2,2x,a13,'|')
-20    format(a35,2f10.4,' |',2x,a20,f7.2,3x,a1,f6.2,'  |',2x,a20,f9.2,2x,a1,f6.2,f8.2,2x,a13,'|',30e12.8)
+2     format(a35,2f10.4,' |',2x,a20,f7.2,3x,a1,f5.2,'   |',2x,a20,f9.2,3x,a1,f5.2,f8.2,2x,a13,'|')
+20    format(a35,2f10.4,' |',2x,a20,f7.2,3x,a1,f5.2,'   |',2x,a20,f9.2,3x,a1,f5.2,f8.2,2x,a13,'|',30e12.8)
 3     format(/,'No airports affected by ash')
 
       end subroutine Write_PointData_Airports_ASCII

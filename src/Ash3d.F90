@@ -12,7 +12,8 @@
          ivent,jvent,nxmax,nymax,nzmax,nsmax,ts0,ts1
 
       use solution,      only : &
-         concen_pd,dep_vol,tot_vol,DepositGranularity,StopValue
+         concen_pd,dep_vol,tot_vol,DepositGranularity,StopValue, &
+         dep_percent_accumulated
 
       use Output_Vars,   only : &
          AreaCovered,DepositThickness,LoadVal,CloudLoadArea,&
@@ -68,21 +69,18 @@
 
       implicit none
 
-
       integer               :: itime
       integer               :: j,k
       integer               :: ii,jj,iz,isize
       real(kind=ip)         :: avgcon        ! avg concen of cells in umbrella
-      real(kind=ip)         :: percent_accumulated
       real(kind=ip)         :: Interval_Frac
       logical               :: Load_MesoSteps
       integer               :: ntmax
       logical, dimension(5) :: StopConditions = .false.
       logical               :: StopTimeLoop   = .false.
       logical               :: first_time     = .true.
-      character(len=1)      :: answer
 
-      percent_accumulated = 0.0_ip
+      dep_percent_accumulated = 0.0_ip
 
       call cpu_time(t0) !time is a scaler real
 
@@ -389,14 +387,14 @@
         endif
 
         if(tot_vol.gt.EPS_TINY)then
-          percent_accumulated = dep_vol/tot_vol
+          dep_percent_accumulated = dep_vol/tot_vol
         else
-          percent_accumulated = 0.0_ip
+          dep_percent_accumulated = 0.0_ip
         endif
 
         ! Check stop conditions
         !  If any of these is true, then the time loop will stop
-        StopConditions(1) = (percent_accumulated.gt.StopValue)
+        StopConditions(1) = (dep_percent_accumulated.gt.StopValue)
         StopConditions(2) = (time.ge.Simtime_in_hours)
         StopConditions(3) = (ns_aloft.eq.0)
         StopConditions(4) = .false.  !tot_vol.le.(1.05_ip*sum(e_Volume))
@@ -417,12 +415,12 @@
         endif
 
       enddo  !loop over itime
-              !  ((percent_accumulated.le.StopValue).and. &
+              !  ((dep_percent_accumulated.le.StopValue).and. &
               !    (time.lt.Simtime_in_hours)        .and. &
               !    (ns_aloft.gt.0))
 
       write(global_info,*)"Time integration completed for the following reason:"
-      if(.not.percent_accumulated.le.StopValue)then
+      if(.not.dep_percent_accumulated.le.StopValue)then
         write(global_info,*)"Percent accumulated exceeds ",StopValue
       endif
       if(.not.time.lt.Simtime_in_hours)then

@@ -166,13 +166,13 @@
       KML_Styles(ivar,8) = '24-36_hrs';  KML_Colors(ivar,8) = '0000ff'
       KML_Styles(ivar,9) = '>>>36_hrs';  KML_Colors(ivar,9) = '000080'
       KML_description(ivar)   = 'shades for cloud arrival time'
-      KML_legend(ivar)        = 'cloud_arrival_time.png       '
+      KML_legend(ivar)        = 'CloudLoad_hsv.jpg            '
       KML_overlayX(ivar)      = '1.0'
       KML_overlayY(ivar)      = '0.0'
       KML_screenX(ivar)       = '1.0'
       KML_screenY(ivar)       = '0.3'
       KML_sizeX(ivar)         = '150'
-      KML_sizeY(ivar)         = '347'
+      KML_sizeY(ivar)         = '305'
       KML_AltMode(ivar)       = 'clampToGround'
 
       ivar = 6 ! cloud reflectivity
@@ -229,7 +229,7 @@
 
       ivar = 8 ! deposit (NWS)
       KML_filename(ivar)      = 'Deposit_NWS.kml              '
-      KML_units(ivar)         = '  in '
+      KML_units(ivar)         = '  mm '
       KML_fid(ivar)           = 550
       KML_n_clrmp(ivar)       = 3
       KML_color_map(ivar,:) = (/ 0.1_ip, 0.8_ip, 6.0_ip, 0.0_ip, 0.0_ip,&
@@ -244,7 +244,7 @@
       KML_Styles(ivar,8) = '         ';  KML_Colors(ivar,8) = '      '
       KML_Styles(ivar,9) = '         ';  KML_Colors(ivar,9) = '      '
       KML_description(ivar)   = 'Ash thickness shades         '
-      KML_legend(ivar)        = 'GE_legend_dep_nws.png        '
+      KML_legend(ivar)        = 'GE_legend_dep_nws.gif        '
       KML_overlayX(ivar)      = '1.0'
       KML_overlayY(ivar)      = '0.0'
       KML_screenX(ivar)       = '1.0'
@@ -325,7 +325,7 @@
          VolcanoName,WriteDepositTS_KML
 
       use Source,        only : &
-         neruptions, e_StartTime,e_Duration,e_Volume,PlumeHeight, &
+         neruptions, e_StartTime,e_Duration,e_Volume,e_PlumeHeight, &
          lon_volcano,lat_volcano,x_volcano,y_volcano
 
       use projection,    only : &
@@ -430,7 +430,7 @@
                              StartHour(ierup)
         write(fid,8) ierup,iyear(ierup),imonth(ierup),iday(ierup), &
                              StartHour(ierup), &
-                             PlumeHeight(ierup),e_Duration(ierup),e_Volume(ierup)
+                             e_PlumeHeight(ierup),e_Duration(ierup),e_Volume(ierup)
 100     format(i4,i2,i2,f5.2)
 
       enddo
@@ -928,7 +928,7 @@
          nsmax
 
       use Source,        only : &
-         neruptions,e_StartTime,e_Duration,PlumeHeight,e_Volume,&
+         neruptions,e_StartTime,e_Duration,e_PlumeHeight,e_Volume,&
          lat_volcano,lon_volcano,x_volcano,y_volcano
 
       use projection,    only : &
@@ -1089,7 +1089,7 @@
                       StartHour(ierup)
         write(60,9) ierup,iyear(ierup),imonth(ierup),iday(ierup), &
                       StartHour(ierup), &
-                      PlumeHeight(ierup),e_Duration(ierup),e_Volume(ierup)
+                      e_PlumeHeight(ierup),e_Duration(ierup),e_Volume(ierup)
 200     format(i4,i2,i2,f5.2)
       enddo
       if (nWrittenOut.gt.0) then              !If one or more airports were affected
