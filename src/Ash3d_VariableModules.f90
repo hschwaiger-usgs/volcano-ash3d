@@ -104,7 +104,7 @@
         ! This must be turned on in optional modules if needed
       logical                  :: useMoistureVars    = .false.
 
-      real(kind=ip), parameter :: CFL = 0.98_ip       ! courant number
+      real(kind=ip)            :: CFL = 0.80_ip       ! courant number
       real(kind=ip)            :: DT_MIN = 1.0e-5_ip  ! Minimum DT in hours
       real(kind=ip)            :: DT_MAX = 1.0e0_ip   ! Maximum DT in hours
 
@@ -450,8 +450,8 @@
       real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_xy2_pd
       real(kind=ip),dimension(:,:,:)    ,allocatable :: DepositGranularity ! accumulated ash mass on ground 
 #endif
+      real(kind=ip)      :: dep_percent_accumulated
       real(kind=ip)      :: StopValue    !program stops when percent_accumulated>StopValue
-
       real(kind=ip)      :: dep_vol,aloft_vol,outflow_vol,tot_vol
 
       real(kind=ip), dimension(:)  ,allocatable  :: mass_aloft
@@ -539,9 +539,10 @@
       if(allocated(outflow_xy2_pd))     deallocate(outflow_xy2_pd)
       if(allocated(DepositGranularity)) deallocate(DepositGranularity)
 #endif
-      if(allocated(mass_aloft))deallocate(mass_aloft)
-      if(allocated(SpeciesID)) deallocate(SpeciesID)
-      if(allocated(v_s))       deallocate(v_s)
+      if(allocated(mass_aloft))   deallocate(mass_aloft)
+      if(allocated(SpeciesID))    deallocate(SpeciesID)
+      if(allocated(SpeciesSubID)) deallocate(SpeciesSubID)
+      if(allocated(v_s))          deallocate(v_s)
       if(allocated(gsdiam))    deallocate(gsdiam)
       if(allocated(bin_mass))  deallocate(bin_mass)
       if(allocated(rho_m))     deallocate(rho_m)
@@ -683,6 +684,13 @@
 
 
 #ifdef USEPOINTERS
+      if(associated(vx_meso_last_step_sp)) deallocate(vx_meso_last_step_sp)
+      if(associated(vx_meso_next_step_sp)) deallocate(vx_meso_next_step_sp)
+      if(associated(vy_meso_last_step_sp)) deallocate(vy_meso_last_step_sp)
+      if(associated(vy_meso_next_step_sp)) deallocate(vy_meso_next_step_sp)
+      if(associated(vz_meso_last_step_sp)) deallocate(vz_meso_last_step_sp)
+      if(associated(vz_meso_next_step_sp)) deallocate(vz_meso_next_step_sp)
+
       if(associated(vx_meso_1_sp))   deallocate(vx_meso_1_sp)
       if(associated(vx_meso_2_sp))   deallocate(vx_meso_2_sp)
       if(associated(vy_meso_1_sp))   deallocate(vy_meso_1_sp)
@@ -693,6 +701,13 @@
       if(associated(vf_meso_last_step_sp)) deallocate(vf_meso_last_step_sp)
       if(associated(vf_meso_next_step_sp)) deallocate(vf_meso_next_step_sp)
 #else
+      if(allocated(vx_meso_last_step_sp)) deallocate(vx_meso_last_step_sp)
+      if(allocated(vx_meso_next_step_sp)) deallocate(vx_meso_next_step_sp)
+      if(allocated(vy_meso_last_step_sp)) deallocate(vy_meso_last_step_sp)
+      if(allocated(vy_meso_next_step_sp)) deallocate(vy_meso_next_step_sp)
+      if(allocated(vz_meso_last_step_sp)) deallocate(vz_meso_last_step_sp)
+      if(allocated(vz_meso_next_step_sp)) deallocate(vz_meso_next_step_sp)
+
       if(allocated(vx_meso_1_sp))   deallocate(vx_meso_1_sp)
       if(allocated(vx_meso_2_sp))   deallocate(vx_meso_2_sp)
       if(allocated(vy_meso_1_sp))   deallocate(vy_meso_1_sp)

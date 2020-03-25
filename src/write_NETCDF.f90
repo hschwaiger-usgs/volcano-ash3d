@@ -51,7 +51,7 @@
           BaseYear,useLeap,cdf_time_log,time,SimStartHour,xmlSimStartTime
 
       use Source,        only : &
-         neruptions,e_Volume,e_Duration,e_StartTime,PlumeHeight
+         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
 
       use MetReader,     only : &
          MR_iwindfiles,MR_windfiles,MR_MetStep_Hour_since_baseyear
@@ -1366,7 +1366,7 @@
       if(nSTAT.ne.0) &
         write(global_log ,*)'ERROR: put_var er_stime: ',nf90_strerror(nSTAT)
         ! er_plumeheight (Plume height of eruption)
-      dum1d_out = real(PlumeHeight,kind=op)
+      dum1d_out = real(e_PlumeHeight,kind=op)
       nSTAT=nf90_put_var(ncid,er_plumeheight_var_id,dum1d_out,(/1/))
       if(nSTAT.ne.0) &
         write(global_log ,*)'ERROR: put_var er_stime: ',nf90_strerror(nSTAT)

@@ -15,7 +15,7 @@
       !ifile = i*5+1
       1        format(a103)
       write(global_info,1)'#The following is an input file to the model Ash3d, v.1.0                                              '
-      write(global_info,1)'#Created by L.G. Mastin and R. P. Denlinger, U.S. Geological Survey, 2009.                             '
+      write(global_info,1)'#Created by L.G. Mastin, R.P. Denlinger and H.F. Schwaiger, U.S. Geological Survey, 2009.              '
       write(global_info,1)'#                                                                                                      '
       write(global_info,1)'#GENERAL SOURCE PARAMETERS. DO NOT DELETE ANY LINES                                                    '
       write(global_info,1)'#  The first line of this block identifies the volcano by name.                                        '

@@ -58,7 +58,7 @@
            Deallocate_wind_grid
 
       use Tephra,        only : &
-           Deallocate_Tephra
+           Deallocate_Tephra, Deallocate_Tephra_Met
 
       use Source,        only : &
            Deallocate_Source
@@ -67,10 +67,13 @@
            Deallocate_Diff
 
       use Output_Vars,   only : &
-           Deallocate_Output_Vars
+           Deallocate_Output_Vars, Deallocate_Output_UserVars
 
       use Airports,      only : &
            Deallocate_Airports
+
+      use MetReader,     only : &
+           MR_Reset_Memory
 
       implicit none
 
@@ -79,10 +82,14 @@
       call Deallocate_solution
       call Deallocate_wind_grid
       call Deallocate_Tephra
+      call Deallocate_Tephra_Met
       call Deallocate_Source
       call Deallocate_Diff
       call Deallocate_Output_Vars
+      call Deallocate_Output_UserVars
       call Deallocate_Airports
+
+      call MR_Reset_Memory
 
       end subroutine dealloc_arrays
 
