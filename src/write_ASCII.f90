@@ -197,7 +197,7 @@
 3001  format('NROWS ',i5)
 3002  format('XLLCORNER ',f10.3)
 3003  format('YLLCORNER ',f10.3)
-3004  format('CELLSIZE ',f10.3)
+3004  format('CELLSIZE ',2f10.3)
 3005  format('NODATA_VALUE ',a6)
 3006  format(10f10.3)
       return
