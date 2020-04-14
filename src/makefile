@@ -61,7 +61,7 @@ INSTALLDIR=/opt/USGS/Ash3d
 #  For each data format you want to include in the library, set the corresponding
 #  variable below to 'T'.  Set to 'F' any you do not want compiled or any unavailable
 USENETCDF = T
-USEGRIB = T
+USEGRIB   = T
 
 #  VERB specifies the verbosity level for debugging purposes
 #    Current available options are:
@@ -168,7 +168,6 @@ ifeq ($(USEGRIB), T)
  #grbLIBS = -lgrib_api_f90 -lgrib_api
  # These are the libraries for ecCodes
  grbLIBS = -leccodes -leccodes_f90
-
 endif
 
 DATAFPPFLAGS = $(ncFPPFLAG) $(grbFPPFLAG)
@@ -372,6 +371,20 @@ clean:
 
 install:
 	install -d $(INSTALLDIR)/bin $(INSTALLDIR)/share/post_proc
-	install -m 755 ../bin/* $(INSTALLDIR)/bin
+	install -m 755 ../bin/$(ASH3DEXEC) $(INSTALLDIR)/bin
+	install -m 644 ../share/GlobalAirports_ewert.txt $(INSTALLDIR)/share/
+	install -m 644 ../share/VotW_ESP_v12_csv.txt  $(INSTALLDIR)/share/
 	install -m 644 ../share/post_proc/*png $(INSTALLDIR)/share/post_proc/
+
+uninstall:
+	rm -f $(INSTALLDIR)/bin/$(ASH3DEXEC)
+	rm -r $(INSTALLDIR)/share/GlobalAirports_ewert.txt
+	rm -f $(INSTALLDIR)/share/VotW_ESP_v12_csv.txt
+	rm -f $(INSTALLDIR)/share/post_proc/CloudLoad_hsv.png
+	rm -f $(INSTALLDIR)/share/post_proc/USGS_warning3.png
+	rmdir $(INSTALLDIR)/share/post_proc
+	rmdir $(INSTALLDIR)/share
+	rmdir $(INSTALLDIR)/bin
+	rmdir $(INSTALLDIR)
+
 
