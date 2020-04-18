@@ -75,9 +75,16 @@
 
       integer :: i,k
       integer   :: ionumber
-      character(len=13)  :: HS_yyyymmddhh_since
       character(len=13)  :: cio
       real(kind=ip)      :: totalash(1:nzmax)
+
+      INTERFACE
+        character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
+          real(kind=8)               ::  HoursSince
+          integer                    ::  byear
+          logical                    ::  useLeaps
+        end function HS_yyyymmddhh_since
+      END INTERFACE
 
       do i=1,nvprofiles
         ! don't write if there's no ash
@@ -119,7 +126,7 @@
 
 !******************************************************************************
 
-      subroutine write_2D_ASCII(OutVar,Fill_Value,filename_root)
+      subroutine write_2D_ASCII(nx,ny,OutVar,Fill_Value,filename_root)
 
 !     Subroutine that writes out 2-D arrays in ESRI ASCII raster format
 
@@ -128,7 +135,7 @@
       use io_units
 
       use mesh,          only : &
-         nxmax,nymax,dx,dy,de,dn,IsLatLon,latLL,lonLL,xLL,yLL
+         dx,dy,de,dn,IsLatLon,latLL,lonLL,xLL,yLL
 
       use time_data,     only : &
          time
@@ -138,9 +145,10 @@
 
       implicit none
 
-      real(kind=ip)      :: OutVar(nxmax,nymax)
-      character(len=6)   :: Fill_Value
-      character(len=20)  :: filename_root
+      integer          ,intent(in) :: nx,ny
+      real(kind=ip)    ,intent(in) :: OutVar(nx,ny)
+      character(len=6) ,intent(in) :: Fill_Value
+      character(len=20),intent(in) :: filename_root
 
       integer :: fid
       integer :: i,j
@@ -171,8 +179,8 @@
 
       open(unit=fid,file=trim(adjustl(filename_out)), status='unknown',err=2500)
 
-      write(fid,3000) nxmax        ! write header values
-      write(fid,3001) nymax
+      write(fid,3000) nx        ! write header values
+      write(fid,3001) ny
       if (IsLatLon) then
         write(fid,3002) lonLL    
         write(fid,3003) latLL    
@@ -185,8 +193,8 @@
       write(fid,3005)Fill_Value
 
       !Write out arrays of maximum concentration and maximum height
-      do j=nymax,1,-1
-        write(fid,3006) (OutVar(i,j), i=1,nxmax)
+      do j=ny,1,-1
+        write(fid,3006) (OutVar(i,j), i=1,nx)
         write(fid,*)                                         !make a blank line between rows
       enddo
       
@@ -229,14 +237,17 @@
 
       implicit none
 
-      character(len=13) :: cio
+      character(len=13) ,intent(in) :: cio
+
       integer :: i,j,k
       real(kind=ip)     :: depth,rhom
-
-        logical,save :: first_time = .true.
+      character(len=32) :: DepOutfileName
+      logical,save :: first_time = .true.
 
       ! Output data in ASCII format
-      open(100,file='3d_tephra_fall_'//cio//'.dat',status='replace')
+
+      DepOutfileName='3d_tephra_fall_'//cio//'.dat'
+      open(unit=100,file=DepOutfileName,status='replace')
       write(100,*)&
       'VARIABLES = "X","Y","Z","VX","VY","VZ","AshConc","DepDepth" '
       !if(itime.le.1) then
@@ -337,12 +348,19 @@
       integer             :: nWrittenOut
       character (len=20)  :: yyyymmddhh_ash, yyyymmddhh_cloud
       character (len=1)   :: cloud_morethan, deposit_morethan      !equals ">" if cloud is still overhead or ash is still falling
-      character (len=20)  :: HS_xmltime
       character (len=13)  :: nwsthickness                !nwp ashfall  terms (trace, minor, substantial, heavy, severe)
       integer             :: isize
       real(kind=ip)       :: longitude_now
 
       integer             :: out_unit
+
+      INTERFACE
+        character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
+          real(kind=8)              :: HoursSince
+          integer                   :: byear
+          logical                   :: useLeaps
+        end function HS_xmltime
+      END INTERFACE
 
       out_unit = 18
 
@@ -423,8 +441,8 @@
                        yyyymmddhh_ash, Airport_AshArrivalTime(i), deposit_morethan, Airport_AshDuration(i), &
                        Airport_thickness(i), nwsthickness, &
                        ((DepositGranularity(Airport_i(i),Airport_j(i),isize)/ &
-                         sum(DepositGranularity(Airport_i(i),Airport_j(i),:))),isize=1,nsmax)                              !mass fraction of size i
-                      !(DepositGranularity(Airport_i(i),Airport_j(i),isize)*dz_vec_pd(0)/1.0e6_ip,isize=1,nsmax)          !mpua, kg/m2 of size i
+                         sum(DepositGranularity(Airport_i(i),Airport_j(i),:))),isize=1,nsmax)  !mass fraction of size i
+                      !(DepositGranularity(Airport_i(i),Airport_j(i),isize)*dz_vec_pd(0)/1.0e6_ip,isize=1,nsmax) !mpua, kg/m2 of size i
             else
               write(out_unit,2) Airport_Name(i), Airport_Latitude(i), longitude_now, &
                        yyyymmddhh_cloud, Airport_CloudArrivalTime(i), cloud_morethan, Airport_CloudDuration(i), &

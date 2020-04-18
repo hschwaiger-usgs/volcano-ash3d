@@ -48,6 +48,8 @@
       use io_data,       only : &
            Deallocate_io_data
 
+      use io_units
+
       use mesh,          only : &
            Deallocate_mesh
 
@@ -72,10 +74,15 @@
       use Airports,      only : &
            Deallocate_Airports
 
+      use Atmosphere,    only : &
+           Deallocate_Atmosphere_Met
+
       use MetReader,     only : &
            MR_Reset_Memory
 
       implicit none
+
+      write(global_info,*)"Cleaning up allocated memory"
 
       call Deallocate_io_data
       call Deallocate_mesh
@@ -88,6 +95,7 @@
       call Deallocate_Output_Vars
       call Deallocate_Output_UserVars
       call Deallocate_Airports
+      call Deallocate_Atmosphere_Met
 
       call MR_Reset_Memory
 

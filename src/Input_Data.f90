@@ -1,5 +1,6 @@
 
-      subroutine Read_Control_File(fc_inputfile)
+      !subroutine Read_Control_File(fc_inputfile)
+      subroutine Read_Control_File
 
       ! Subroutine that reads ASCII input file and contains error traps for input
       use iso_c_binding
@@ -78,7 +79,7 @@
          MR_iwindfiles,MR_windfiles,MR_BaseYear,MR_useLeap,MR_Comp_StartHour,&
          MR_windfiles_GRIB_index,MR_windfiles_Have_GRIB_index,MR_Comp_Time_in_hours,&
          MR_windfile_starthour,MR_windfile_stephour,MR_iHeightHandler,&
-         MR_iwf_template,MR_iwindformat,MR_iwind,&
+         MR_iwf_template,MR_iwind,&
          MR_global_essential,MR_global_production,MR_global_debug,&
          MR_global_info,MR_global_log,MR_global_error, &
            MR_Allocate_FullMetFileList, &
@@ -86,29 +87,28 @@
 
       implicit none
 
+      !character(kind=c_char), dimension(1:130) :: fc_inputfile
+      character, dimension(1:130) :: fc_inputfile
+
       integer           :: i,k,ii
-      integer           :: iargc, nargs          ! number of command-line arguments
+      !integer           :: iargc
+      integer           :: nargs          ! number of command-line arguments
 
       integer, allocatable, dimension(:)       :: iyear  ! time data read from files
       integer, allocatable, dimension(:)       :: imonth
       integer, allocatable, dimension(:)       :: iday
       real(kind=dp), allocatable, dimension(:) :: hour   ! Start time of eruption in
                                                          !  hour (UT)
-      character(len=13)  :: HS_yyyymmddhhmm_since    ! function that calculates date
-                                                     !  string given hours since 1900
-      real(kind=dp)      :: HS_hours_since_baseyear  ! function that calculates hours
-                                                     !  since base year
-
       character(len=80) :: linebuffer
       character(len=120):: llinebuffer
       character(len=130):: lllinebuffer
       character(len=3)  :: answer
-      character(len=8)  :: testname
       character(len=6)  :: formatanswer
       character(len=20) :: mod_name
 
       integer           :: iw,iwf,igrid,idf,iwfiles
       integer           :: ivalue1, ivalue2, ivalue3, ivalue4
+      integer           ::  status
 
       character(len=80) :: Comp_projection_line
       integer           :: ilatlonflag
@@ -120,7 +120,6 @@
       real(kind=dp)     :: RunStartHour    ! Start time of model run, in hours since BaseYear
       real(kind=ip)     :: sum_bins
       character(len=8)  :: volc_code
-      character(len=20) :: HS_xmltime
       real(kind=ip),allocatable,dimension(:) :: dum_prof
 
       real(kind=ip),allocatable,dimension(:) :: temp_v_s,temp_gsdiam
@@ -148,11 +147,57 @@
 
       !! Size matches length of infile (specified in module io_data)
       integer fc_len
-      character(kind=c_char), dimension(1:130) :: fc_inputfile
 
-      write(global_production,*)"--------------------------------------------------"
-      write(global_production,*)"---------- READ_CONTROL_FILE ---------------------"
-      write(global_production,*)"--------------------------------------------------"
+      INTERFACE
+        subroutine help_input(blockID)
+          integer,intent(in) :: blockID
+        end subroutine help_input
+        subroutine LatLonChecker(latLL,lonLL,lat_volcano,lon_volcano,gridwidth_e,gridwidth_n)
+          integer,parameter  :: ip         = 8 ! Internal precision
+          real(kind=ip), intent(in)    :: latLL
+          real(kind=ip), intent(in)    :: lonLL
+          real(kind=ip), intent(in)    :: lat_volcano
+          real(kind=ip), intent(inout) :: lon_volcano ! we might need to remap this value
+          real(kind=ip), intent(in)    :: gridwidth_e
+          real(kind=ip), intent(in)    :: gridwidth_n
+        end subroutine LatLonChecker
+        subroutine xyChecker(xLL,yLL,dx,dy,x_volcano,y_volcano,gridwidth_x,gridwidth_y)
+          integer,parameter  :: ip         = 8 ! Internal precision
+          real(kind=ip), intent(in) :: xLL,yLL
+          real(kind=ip), intent(in) :: dx,dy
+          real(kind=ip), intent(in) :: x_volcano,y_volcano
+          real(kind=ip), intent(in) :: gridwidth_x,gridwidth_y
+        end subroutine xyChecker
+        subroutine vprofchecker(iprof)
+          integer, intent(in) :: iprof
+        end subroutine vprofchecker
+        real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
+          integer            :: iyear
+          integer            :: imonth
+          integer            :: iday
+          real(kind=8)       :: hours
+          integer            :: byear
+          logical            :: useLeaps
+        end function HS_hours_since_baseyear
+        character (len=13) function HS_yyyymmddhhmm_since(HoursSince,byear,useLeaps)
+          real(kind=8)               ::  HoursSince
+          integer                    ::  byear
+          logical                    ::  useLeaps
+        end function HS_yyyymmddhhmm_since
+        character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
+          real(kind=8)              :: HoursSince
+          integer                   :: byear
+          logical                   :: useLeaps
+        end function HS_xmltime
+      END INTERFACE
+
+
+      write(global_production,*)&
+       "--------------------------------------------------"
+      write(global_production,*)&
+       "---------- READ_CONTROL_FILE ---------------------"
+      write(global_production,*)&
+       "--------------------------------------------------"
 
       !initialize output
       io = 0
@@ -168,7 +213,7 @@
       read(zone,'(i3)') timezone
 
       ! FIND TIME IN UTC
-      StartHour = float(values(5)-timezone) + float(values(6))/60    !add offset to UTC
+      StartHour = real(values(5)-timezone,kind=ip) + real(values(6)/60.0,kind=ip)    !add offset to UTC
         ! find time in HoursSinceBaseYear
         !  Note: This will be relative to the BaseYear in time_data (default is 1900). 
         !        That BaseYear might be changed if the eruption start time is before BaseYear
@@ -193,7 +238,8 @@
       write(global_log ,*)
 
       ! TEST READ COMMAND LINE ARGUMENTS
-      nargs = iargc()
+      !nargs = iargc()
+      nargs = command_argument_count()
       if (nargs.eq.0) then
           ! If no command-line arguments are given, then prompt user
           ! interactively for the command file name and possible a 
@@ -216,22 +262,30 @@
 #ifdef USENETCDF
           call NC_RestartFile_ReadTimes
 #else
-          write(global_info,*)"ERROR: Loading concentration files requires previous netcdf"
-          write(global_info,*)"       output.  This Ash3d executable was not compiled with"
-          write(global_info,*)"       netcdf support.  Please recompile Ash3d with"
-          write(global_info,*)"       USENETCDF=T, or select another source."
+          write(global_error,*)"ERROR: ",&
+           "Loading concentration files requires previous netcdf"
+          write(global_error,*)&
+           "       output.  This Ash3d executable was not compiled with"
+          write(global_error,*)&
+           "       netcdf support.  Please recompile Ash3d with"
+          write(global_error,*)&
+           "       USENETCDF=T, or select another source."
           stop 1
 #endif
         endif
       elseif (nargs.ge.1) then
         if (nargs.gt.1) then
-          write(global_info,*)"Only one command-line argument is expected."
-          write(global_info,*)"Reading first arguement as the control files and disregarding"
-          write(global_info,*)"all other arguements."
+          write(global_info,*)&
+           "Only one command-line argument is expected."
+          write(global_info,*)&
+           "Reading first arguement as the control files and"
+          write(global_info,*)&
+           "disregarding all other arguements."
         endif
           ! If only one argument is given, first test for the '-h' indicating a help
           ! request.
-        call getarg(1,lllinebuffer)
+        !call getarg(1,lllinebuffer)
+        call get_command_argument(1, lllinebuffer, status)
         testkey  = lllinebuffer(1:1)
         testkey2 = lllinebuffer(2:2)
         if(testkey.eq.'-')then
@@ -279,7 +333,8 @@
           fc_len = fc_len + 1
           infile(fc_len:fc_len) = fc_inputfile(fc_len)
         end do
-        write(global_info,*) 'Reading input file ''',infile,''' from ForestClaw'
+        write(global_info,*) 'Reading input file ''',&
+                             infile,''' from ForestClaw'
       endif
 
 
@@ -293,9 +348,9 @@
       ! BLOCK 1: GRID INFO
       ! Start reading the input file assuming there is a variable length
       ! header with each header line flagged by a '#' or '*'
-      write(global_info,*) '  *******************************************'
-      write(global_info,*) '  Reading Block 1: Volcano/grid specification'
-      write(global_info,*) '  *******************************************'
+      write(global_info,*)' *******************************************'
+      write(global_info,*)' Reading Block 1: Volcano/grid specification'
+      write(global_info,*)' *******************************************'
       read(10,'(a80)')linebuffer
       read(linebuffer,*)testkey
       do while(testkey.eq.'#'.or.testkey.eq.'*')
@@ -308,11 +363,11 @@
       cdf_b1l1 = linebuffer
       iendstr = SCAN(linebuffer, "#")
       if (iendstr.eq.1)then
-        write(global_error,*)'ERROR: Volcano name cannot start with #'
+        write(global_error,*)"ERROR: ",&
+         "Volcano name cannot start with #"
         stop 1
       endif
       VolcanoName = adjustl(trim(linebuffer(1:iendstr-1)))
-      read(linebuffer,'(a8)',err=1953) testname
       ! Check if the volcano name is a text name or a Smithsonian
       ! database ID
       read(VolcanoName,*)testkey
@@ -382,15 +437,19 @@
         
         !Make sure longitudes are between 0 and 360 degrees
         if (lonLL.lt.-360.0_ip) then
-          write(global_info,*)"Please give longitude values between -360 and 360."
-          write(global_log ,*)"Please give longitude values between -360 and 360."
+          write(global_info,*)&
+           "Please give longitude values between -360 and 360."
+          write(global_log ,*)&
+           "Please give longitude values between -360 and 360."
           stop 1
         endif
         if (lonLL.lt.  0.0_ip) lonLL=lonLL+360.0_ip
         if (lonLL.ge.360.0_ip) lonLL=mod(lonLL,360.0_ip)
         if (lon_volcano.lt.-360.0) then
-          write(global_info,*)"Please give longitude values between -360 and 360."
-          write(global_log ,*)"Please give longitude values between -360 and 360."
+          write(global_info,*)&
+           "Please give longitude values between -360 and 360."
+          write(global_log ,*)&
+           "Please give longitude values between -360 and 360."
           stop 1
         endif
         if (lon_volcano.lt.  0.0_ip) lon_volcano = lon_volcano+360.0_ip
@@ -468,18 +527,22 @@
       enddo
       goto 5220
 
-5215  write(global_info,*)"Could not read dz. Trying to reinterpret as alternate z-spacing"
+5215  write(global_info,*)&
+       "Could not read dz. Trying to reinterpret as alternate z-spacing"
       write(global_info,*)cdf_b1l7
       read(cdf_b1l7,*,err=1905) VarDzType
       if (VarDzType.eq.'dz_plin')then
         ! Piece-wise linear
         !  Read another line with n-segments, nz1, dz1, nz2, dz2, ...
-        write(global_info,*)"z is piecewise linear:  Now reading the segments."
+        write(global_info,*)&
+         "z is piecewise linear:  Now reading the segments."
         read(10,'(a80)')cdf_b1l7
         read(cdf_b1l7,*,err=1905) nsegments
         if(nsegments.lt.1)then
-          write(global_info,*)"ERROR: nsegments must be positive integer"
-          write(global_info,*)"       nsegments = ",nsegments
+          write(global_info,*)"ERROR: ",&
+           "nsegments must be positive integer"
+          write(global_info,*)&
+           "       nsegments = ",nsegments
           stop 1
         endif
         allocate(nz_plin_segments(nsegments))
@@ -510,10 +573,14 @@
         dz_const = 0.25_ip
         
       else
-        write(global_info,*)"dz type must be either a number (in km) for constant dz, or"
-        write(global_info,*)"dz_plin, dz_clog, or dz_cust for variable dz"
-        write(global_info,*)"You entered: ",cdf_b1l7
-        write(global_info,*)"Interpreted as: ",VarDzType
+        write(global_info,*)&
+         "dz type must be either a number (in km) for constant dz, or"
+        write(global_info,*)&
+         "dz_plin, dz_clog, or dz_cust for variable dz"
+        write(global_info,*)&
+         "You entered: ",cdf_b1l7
+        write(global_info,*)&
+         "Interpreted as: ",VarDzType
         stop 1
       endif
 
@@ -525,7 +592,8 @@
       !write(global_info,*)"eruption type = suzuki with coefficient of ",Suzuki_A
       goto 5230
       !if the second item is not a number, read SourceType
-5225  write(global_info,*)"Source type is not suzuki. Trying to read another standard type"
+5225  write(global_info,*)&
+       "Source type is not suzuki. Trying to read another standard type"
       read(cdf_b1l8,*) diffusivity_horz, SourceType
       if ((SourceType.eq.'point').or. &
           (SourceType.eq.'Point').or. &
@@ -545,9 +613,12 @@
           SourceType='umbrella'
           Suzuki_A = 12.0_ip
       else
-        write(global_info,*)"SourceType is not point, line, profile, or umbrella."
-        write(global_info,*)"Assuming this is a custom source type."
-        write(global_info,*)"For now, just read eruptions start time, duration, and height."
+        write(global_info,*)&
+         "SourceType is not point, line, profile, or umbrella."
+        write(global_info,*)&
+         "Assuming this is a custom source type."
+        write(global_info,*)&
+        "For now, just read eruptions start time, duration, and height."
          IsCustom_SourceType = .true.
       endif
       write(global_info,*)"  SourceType = ",SourceType
@@ -560,26 +631,35 @@
         write(global_info,*)"Not using turbulent diffusivity."
         write(global_log ,*)"Not using turbulent diffusivity."
       elseif(diffusivity_horz.lt.0.0)then
-        write(global_info,*)"ERROR: Diffusivity must be non-negative."
-        write(global_log ,*)"ERROR: Diffusivity must be non-negative."
+        write(global_error,*)"ERROR: ",&
+         "Diffusivity must be non-negative."
+        write(global_log,*)"ERROR: ",&
+         "Diffusivity must be non-negative."
         stop 1
       else
-        write(global_info,*)"Using constant turbulent diffusivity:  ",diffusivity_horz/3.6e-3_ip,&
-                  " m2/s"
-        write(global_log ,*)"Using constant turbulent diffusivity:  ",diffusivity_horz/3.6e-3_ip,&
-                  " m2/s"
+        write(global_info,*)"Using constant turbulent diffusivity:  ",&
+                  diffusivity_horz/3.6e-3_ip," m2/s"
+        write(global_log ,*)"Using constant turbulent diffusivity:  ",&
+                  diffusivity_horz/3.6e-3_ip," m2/s"
         useDiffusion = .true.
       endif
       read(10,'(a80)')cdf_b1l9
       read(cdf_b1l9,*,err=1907) neruptions              ! read in number of eruptions or pulses
-      write(global_info,*) 'Expecting to read ',neruptions, ' eruptions lines in Block 2.'
+      write(global_info,*) 'Expecting to read ',neruptions,&
+                           ' eruptions lines in Block 2.'
       if ((SourceType.eq.'umbrella').and.(neruptions.gt.1)) then
-        write(global_info,*) 'ERROR: when SourceType=umbrella, neruptions must equal 1'
-        write(global_info,*) 'You gave neruptions=',neruptions
-        write(global_info,*) 'Program stopped'
-        write(global_log ,*) 'ERROR: when SourceType=umbrella, neruptions must equal 1'
-        write(global_log ,*) 'You gave neruptions=',neruptions
-        write(global_log ,*) 'Program stopped'
+        write(global_error,*)"ERROR: ",&
+         'when SourceType=umbrella, neruptions must equal 1'
+        write(global_error,*)&
+         'You gave neruptions=',neruptions
+        write(global_error,*)&
+         'Program stopped'
+        write(global_log,*)"ERROR: ",&
+         'when SourceType=umbrella, neruptions must equal 1'
+        write(global_log ,*)&
+         'You gave neruptions=',neruptions
+        write(global_log ,*)&
+         'Program stopped'
         stop 1
       endif
       !if(dz_const.le.0.0)then
@@ -587,11 +667,13 @@
       !  stop 1
       !endif
       if(SourceType.eq.'suzuki'.and.(Suzuki_A.le.0.0_ip))then
-        write(global_info,*)"ERROR: Suzuki_A must be positive, not ",Suzuki_A
+        write(global_error,*)"ERROR: ",&
+         "Suzuki_A must be positive, not ",Suzuki_A
         stop 1
       endif
       if(neruptions.le.0)then
-        write(global_info,*)"ERROR: neruptions must be positive, not ",neruptions
+        write(global_error,*)"ERROR: ",&
+         "neruptions must be positive, not ",neruptions
         stop 1
       endif
       ! END OF BLOCK 1
@@ -611,8 +693,10 @@
       read(10,'(a80)')linebuffer
       read(linebuffer,*)testkey
       if (testkey.ne.'#'.and.testkey.ne.'*')then
-        write(global_error,*)'ERROR: Expecting a comment line separating blocks.'
-        write(global_error,*)'       Check that Block 1 is correct.'
+        write(global_error,*)"ERROR: ",&
+         'Expecting a comment line separating blocks.'
+        write(global_error,*)&
+         '       Check that Block 1 is correct.'
         stop 1
       endif
       do while(testkey.eq.'#'.or.testkey.eq.'*')
@@ -620,20 +704,26 @@
         read(10,'(a120)')llinebuffer
         read(llinebuffer,*)testkey
       enddo
-      write(global_info,*) '  *******************************************'
-      write(global_info,*) '  Reading Block 2: Eruption parameters'
-      write(global_info,*) '  *******************************************'
+      write(global_info,*)' *******************************************'
+      write(global_info,*)' Reading Block 2: Eruption parameters'
+      write(global_info,*)' *******************************************'
       ! BEGIN READING TIMES OF ERUPTIVE PULSES      
       do i=1,neruptions  
         ! Always check if we have overshot the block
         read(llinebuffer,*)testkey
         if (testkey.eq.'#'.or.testkey.eq.'*') then
-          write(global_log,*)  'ERROR: Trying to read Block 2 and detecting comment line'
-          write(global_log,*)  '  Eruption ',i,'of',neruptions
-          write(global_log,*)  '  Offending line: ',llinebuffer
-          write(global_error,*)'ERROR: Trying to read Block 2 and detecting comment line'
-          write(global_error,*)'  Eruption ',i,'of',neruptions
-          write(global_error,*)'  Offending line: ',llinebuffer
+          write(global_log,*)"ERROR: ",&
+           'Trying to read Block 2 and detecting comment line'
+          write(global_log,*)&
+           '  Eruption ',i,'of',neruptions
+          write(global_log,*)&
+           '  Offending line: ',llinebuffer
+          write(global_error,*)"ERROR: ",&
+           'Trying to read Block 2 and detecting comment line'
+          write(global_error,*)&
+           '  Eruption ',i,'of',neruptions
+          write(global_error,*)&
+           '  Offending line: ',llinebuffer
           stop 1
         endif
         if(i.eq.1)then
@@ -712,10 +802,12 @@
 
       !Error trap if more pulses are entered than are specified
       if (llinebuffer(1:5).ne.'*****') then
-        write(global_info,*) 'The beginning of the line following the list of', &
-                   ' eruptive pulses did not'
-        write(global_info,*) 'start with ''*****''.  Did you enter the correct', &
-                   '  number of eruptive pulses?'
+        write(global_info,*)&
+         'The beginning of the line following the list of', &
+         ' eruptive pulses did not'
+        write(global_info,*)&
+         'start with ''*****''.  Did you enter the correct', &
+         '  number of eruptive pulses?'
         write(global_info,*) 'Program stopped.'
         stop 1
       endif
@@ -727,8 +819,10 @@
       read(10,'(a80)')linebuffer
       read(linebuffer,*)testkey
       if (testkey.ne.'#'.and.testkey.ne.'*')then
-        write(global_error,*)'ERROR: Expecting a comment line separating blocks.'
-        write(global_error,*)'       Check that Block 2 is correct.'
+        write(global_error,*)"ERROR: ",&
+         'Expecting a comment line separating blocks.'
+        write(global_error,*)&
+         '       Check that Block 2 is correct.'
         stop 1
       endif
       do while(testkey.eq.'#'.or.testkey.eq.'*')
@@ -736,9 +830,9 @@
         read(10,'(a80)')linebuffer
         read(linebuffer,*)testkey
       enddo
-      write(global_info,*) '  *******************************************'
-      write(global_info,*) '  Reading Block 3: Windfile parameters'
-      write(global_info,*) '  *******************************************'
+      write(global_info,*)' *******************************************'
+      write(global_info,*)' Reading Block 3: Windfile parameters'
+      write(global_info,*)' *******************************************'
       cdf_b3l1 = linebuffer
       read(linebuffer,*,iostat=ioerr) iw,iwf
       idf = 0
@@ -767,7 +861,8 @@
 
       else
         ! We need at least two values
-        write(global_info,*)"ERROR: could not read iwind, iwindformat"
+        write(global_error,*)"ERROR: ",&
+         "could not read iwind, iwindformat"
         stop 1
       endif
 
@@ -775,13 +870,16 @@
         ! If iwindformat = 0, then the input file is a not a known format
         ! Read an extra line given the name of a template file.
         if(idf.ne.2)then
-          write(global_info,*)" Currently only netcdf reader implemented, resetting idf to 2"
+          write(global_info,*)&
+           "Currently only netcdf reader implemented for templates.",&
+           "  Resetting idf to 2"
           idf = 2
         endif
         read(10,'(a80)')linebuffer
         read(linebuffer,*)testkey
         if (testkey.eq.'#'.or.testkey.eq.'*') then
-          write(global_error,*)  'ERROR: Trying to template name and detecting comment line'
+          write(global_error,*)"ERROR: ",&
+           "Trying to template name and detecting comment line"
           stop 1
         endif
         read(linebuffer,'(a80)',err=1970) MR_iwf_template
@@ -798,7 +896,8 @@
 
       read(10,'(a80)')linebuffer
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)  'ERROR: Trying to read MR_iHeightHandler and detecting comment line'
+        write(global_error,*)"ERROR: ",&
+         "Trying to read MR_iHeightHandler and detecting comment line"
         stop 1
       endif
       cdf_b3l2 = linebuffer
@@ -807,7 +906,8 @@
 
       read(10,'(a80)')linebuffer
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)  'ERROR: Trying to read Simtime_in_hours and detecting comment line'
+        write(global_error,*)"ERROR: ",&
+         "Trying to read Simtime_in_hours and detecting comment line"
         stop 1
       endif
       cdf_b3l3 = linebuffer
@@ -817,7 +917,8 @@
 !     Read whether to stop calculation when percent_accumulated>0.99
       read(10,'(a80)') linebuffer
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)  'ERROR: Trying to read StopWhenDeposited and detecting comment line'
+        write(global_error,*)"ERROR: ",&
+         "Trying to read StopWhenDeposited and detecting comment line"
         stop 1
       endif
       cdf_b3l4 = linebuffer
@@ -834,7 +935,8 @@
 
       read(10,'(a80)')linebuffer
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)  'ERROR: Trying to read nWindFiles and detecting comment line'
+        write(global_error,*)"ERROR: ",&
+         "Trying to read nWindFiles and detecting comment line"
         stop 1
       endif
       cdf_b3l5 = linebuffer
@@ -890,26 +992,33 @@
       write(global_info,7) neruptions
       write(global_log ,7) neruptions
       do i=1,neruptions
-        write(global_info,8) i, e_PlumeHeight(i), iyear(i), imonth(i),      &
+        write(global_info,8) i, e_PlumeHeight(i), iyear(i), imonth(i), &
                    iday(i), hour(i), e_Duration(i), e_Volume(i)
-        write(global_log ,8) i, e_PlumeHeight(i), iyear(i), imonth(i),      &
+        write(global_log ,8) i, e_PlumeHeight(i), iyear(i), imonth(i), &
                    iday(i), hour(i), e_Duration(i), e_Volume(i)
-        write(global_info,*)"  e_StartTime = ",1,BaseYear,useLeap,          &
-                                                 real(SimStartHour,kind=4), &
-                                                 real(e_StartTime(i),kind=4)
+        write(global_info,*)"  e_StartTime = ",1,&
+                            BaseYear,useLeap,          &
+                            real(SimStartHour,kind=4), &
+                            real(e_StartTime(i),kind=4)
 
       enddo
-      write(global_info,*)"Total volume of eruptions = ",real(sum(e_volume),kind=sp)
+      write(global_info,*)"Total volume of eruptions = ",&
+                          real(sum(e_volume),kind=sp)
 
       ! Now that we know the requested dz profile and the plume heights, we can
       ! set up the z-grid for computation
       CompGrid_height = ZPADDING*maxval(e_PlumeHeight(1:neruptions))
       if(CompGrid_height.lt.10.0_ip*dz_const)then
-        write(global_info,*)"  Highest source = ", maxval(e_PlumeHeight(1:neruptions))
-        write(global_info,*)"        ZPADDING = ",ZPADDING
-        write(global_info,*)" CompGrid_height = ",CompGrid_height
-        write(global_info,*)"This height for the grid is less than 10 * dz"
-        write(global_info,*)"Resetting grid height to ",10.0_ip*dz_const
+        write(global_info,*)&
+         "  Highest source = ", maxval(e_PlumeHeight(1:neruptions))
+        write(global_info,*)&
+         "        ZPADDING = ",ZPADDING
+        write(global_info,*)&
+         " CompGrid_height = ",CompGrid_height
+        write(global_info,*)&
+         "This height for the grid is less than 10 * dz"
+        write(global_info,*)&
+         "Resetting grid height to ",10.0_ip*dz_const
         CompGrid_height = max(10.0_ip*dz_const,CompGrid_height)
       endif
       nzmax = 0
@@ -920,7 +1029,8 @@
         endif
       enddo
       if(nzmax.eq.0)then
-        write(global_info,*)"ERROR:  Specified z-grid does not extend high enough"
+        write(global_error,*)"ERROR: ",&
+         "Specified z-grid does not extend high enough"
         write(global_info,*)"        for given plume heights."
         write(global_info,*)"    e_PlumeHeight = ",e_PlumeHeight(1:neruptions)
         write(global_info,*)"         ZPADDING = ",ZPADDING
@@ -937,7 +1047,8 @@
         !itop  = int(e_PlumeHeight(1)/dz)+1           !node at top of plume
         !ibase = int(0.75*e_PlumeHeight(1)/dz)        !node at base
         do k = 1,nzmax
-          if(z_vec_init(k).ge.e_PlumeHeight(1).and.z_vec_init(k-1).lt.e_PlumeHeight(1))then
+          if(z_vec_init(k)  .ge.e_PlumeHeight(1).and.&
+             z_vec_init(k-1).lt.e_PlumeHeight(1))then
             itop = k
           endif
           if(z_vec_init(k)  .ge.0.75_ip*e_PlumeHeight(1).and. &
@@ -973,11 +1084,15 @@
           xmlSimStartTime = HS_xmltime(SimStartHour,BaseYear,useLeap)
       endif
       if (SourceType.eq.'suzuki') then
-         write(global_info,6) diffusivity_horz, Suzuki_A, StopWhenDeposited, Simtime_in_hours
-         write(global_log ,6) diffusivity_horz, Suzuki_A, StopWhenDeposited, Simtime_in_hours
+         write(global_info,6) diffusivity_horz, Suzuki_A, &
+                              StopWhenDeposited, Simtime_in_hours
+         write(global_log ,6) diffusivity_horz, Suzuki_A, &
+                              StopWhenDeposited, Simtime_in_hours
        else
-         write(global_info,1438) diffusivity_horz, StopWhenDeposited, Simtime_in_hours
-         write(global_log ,1438) diffusivity_horz, StopWhenDeposited, Simtime_in_hours
+         write(global_info,1438) diffusivity_horz, &
+                                 StopWhenDeposited, Simtime_in_hours
+         write(global_log ,1438) diffusivity_horz, &
+                                 StopWhenDeposited, Simtime_in_hours
       endif
       write(global_info,1439) SourceType
       write(global_log ,1439) SourceType
@@ -1025,7 +1140,8 @@
       read(10,'(a80)')linebuffer
       read(linebuffer,*)testkey
       if (testkey.ne.'#'.and.testkey.ne.'*')then
-        write(global_error,*)'ERROR: Expecting a comment line separating blocks.'
+        write(global_error,*)"ERROR: ",&
+         "Expecting a comment line separating blocks."
         write(global_error,*)'       Check that Block 3 is correct.'
         stop 1
       endif
@@ -1034,14 +1150,16 @@
         read(10,'(a80)')linebuffer
         read(linebuffer,*)testkey
       enddo
-      write(global_info,*) '  *******************************************'
-      write(global_info,*) '  Reading Block 4: Output options '
-      write(global_info,*) '  *******************************************'
+      write(global_info,*)' *******************************************'
+      write(global_info,*)' Reading Block 4: Output options '
+      write(global_info,*)' *******************************************'
       cdf_b4l1 = linebuffer
       ! Read whether to write out final ESRI ASCII deposit file
       read(linebuffer,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)'ERROR: Trying to read WriteDepositFinal_ASCII and detecting comment line'
+        write(global_error,*)"ERROR: ",&
+         "Trying to read WriteDepositFinal_ASCII and detecting",& 
+         " comment line"
         stop 1
       endif
       read(linebuffer,'(a3)',err=1953) answer
@@ -1057,7 +1175,9 @@
       read(10,'(a80)')linebuffer
       read(linebuffer,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)'ERROR: Trying to read WriteDepositFinal_KML and detecting comment line'
+        write(global_error,*)"ERROR: ",&
+         "Trying to read WriteDepositFinal_KML and detecting", &
+         " comment line"
         stop 1
       endif
       read(linebuffer,'(a3)',err=1954) answer
@@ -1074,7 +1194,9 @@
       read(10,'(a80)')linebuffer
       read(linebuffer,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)'ERROR: Trying to read WriteDepositTS_ASCII and detecting comment line'
+        write(global_error,*)"ERROR: ",&
+         "Trying to read WriteDepositTS_ASCII and detecting",&
+         " comment line"
         stop 1
       endif
       cdf_b4l3 = linebuffer
@@ -1092,7 +1214,8 @@
       read(10,'(a80)')linebuffer
       read(linebuffer,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)'ERROR: Trying to read WriteDepositTS_KML and detecting comment line'
+        write(global_error,*)"ERROR: ",&
+         "Trying to read WriteDepositTS_KML and detecting comment line"
         stop 1
       endif
       cdf_b4l4 = linebuffer
@@ -1109,7 +1232,9 @@
       read(10,'(a80)')linebuffer
       read(linebuffer,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)'ERROR: Trying to read WriteCloudConcentration_ASCII and detecting comment line'
+        write(global_error,*)"ERROR: ",&
+         "Trying to read WriteCloudConcentration_ASCII and detecting",&
+         " comment line"
         stop 1
       endif
       cdf_b4l5 = linebuffer
@@ -1126,7 +1251,9 @@
       read(10,'(a80)')linebuffer
       read(linebuffer,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)'ERROR: Trying to read WriteCloudConcentration_KML and detecting comment line'
+        write(global_error,*)"ERROR: ",&
+         "Trying to read WriteCloudConcentration_KML and detecting",&
+         " comment line"
         stop 1
       endif
       cdf_b4l6 = linebuffer
@@ -1143,7 +1270,9 @@
       read(10,'(a80)')linebuffer
       read(linebuffer,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)'ERROR: Trying to read WriteCloudHeight_ASCII and detecting comment line'
+        write(global_error,*)"ERROR: ",&
+         "Trying to read WriteCloudHeight_ASCII and detecting",&
+         " comment line"
         stop 1
       endif
       cdf_b4l7 = linebuffer
@@ -1160,7 +1289,9 @@
       read(10,'(a80)')linebuffer
       read(linebuffer,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)'ERROR: Trying to read WriteCloudHeight_KML and detecting comment line'
+        write(global_error,*)"ERROR: ",&
+         "Trying to read WriteCloudHeight_KML and detecting",&
+         " comment line"
         stop 1
       endif
       cdf_b4l8 = linebuffer
@@ -1177,7 +1308,9 @@
       read(10,'(a80)')linebuffer
       read(linebuffer,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)'ERROR: Trying to read WriteCloudLoad_ASCII and detecting comment line'
+        write(global_error,*)"ERROR: ",&
+         "Trying to read WriteCloudLoad_ASCII and detecting",&
+         " comment line"
         stop 1
       endif
       cdf_b4l9 = linebuffer
@@ -1194,7 +1327,8 @@
       read(10,'(a80)')linebuffer
       read(linebuffer,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)'ERROR: Trying to read WriteCloudLoad_KML and detecting comment line'
+        write(global_error,*)"ERROR: ",&
+         "Trying to read WriteCloudLoad_KML and detecting comment line"
         stop 1
       endif
       cdf_b4l10 = linebuffer
@@ -1211,7 +1345,9 @@
       read(10,'(a80)')linebuffer
       read(linebuffer,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)'ERROR: Trying to read WriteDepositTime_ASCII and detecting comment line'
+        write(global_error,*)"ERROR: ",&
+         "Trying to read WriteDepositTime_ASCII and detecting",&
+         " comment line"
         stop 1
       endif
       cdf_b4l11 = linebuffer
@@ -1228,7 +1364,9 @@
       read(10,'(a80)')linebuffer
       read(linebuffer,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)'ERROR: Trying to read WriteDepositTime_KML and detecting comment line'
+        write(global_error,*)"ERROR: ",&
+         "Trying to read WriteDepositTime_KML and detecting",&
+         " comment line"
         stop 1
       endif
       cdf_b4l12 = linebuffer
@@ -1245,7 +1383,9 @@
       read(10,'(a80)')linebuffer
       read(linebuffer,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)'ERROR: Trying to read WriteCloudTime_ASCII and detecting comment line'
+        write(global_error,*)"ERROR: ",&
+         "Trying to read WriteCloudTime_ASCII and detecting",&
+         " comment line"
         stop 1
       endif
       cdf_b4l13 = linebuffer
@@ -1262,7 +1402,8 @@
       read(10,'(a80)')linebuffer
       read(linebuffer,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)'ERROR: Trying to read WriteCloudTime_KML and detecting comment line'
+        write(global_error,*)"ERROR: ",&
+         "Trying to read WriteCloudTime_KML and detecting comment line"
         stop 1
       endif
       cdf_b4l14 = linebuffer
@@ -1292,7 +1433,8 @@
       read(10,'(a80)')linebuffer
       read(linebuffer,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)'ERROR: Trying to read Write3dFiles and detecting comment line'
+        write(global_error,*)"ERROR: ",&
+         "Trying to read Write3dFiles and detecting comment line"
         stop 1
       endif
       cdf_b4l15 = linebuffer
@@ -1309,7 +1451,8 @@
       read(10,'(a80)')linebuffer
       read(linebuffer,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)'ERROR: Trying to read output format and detecting comment line'
+        write(global_error,*)"ERROR: ",&
+         "Trying to read output format and detecting comment line"
         stop 1
       endif
       cdf_b4l16 = linebuffer
@@ -1330,21 +1473,30 @@
       read(10,'(a80)') linebuffer
       read(linebuffer,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)'ERROR: Trying to read nWriteTimes and detecting comment line'
+        write(global_error,*)"ERROR: ",&
+         "Trying to read nWriteTimes and detecting comment line"
         stop 1
       endif
       cdf_b4l17 = linebuffer
       read(10,'(a120)') llinebuffer
       read(llinebuffer,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)'ERROR: Trying to read WriteTimes or WriteInterval and detecting comment line'
+        write(global_error,*)"ERROR: ",&
+         "Trying to read WriteTimes or WriteInterval and detecting",&
+         " comment line"
         stop 1
       endif
       cdf_b4l18 = llinebuffer(1:80)
-      if (WriteDepositFinal_ASCII.or.WriteDepositFinal_KML.or. &
-          WriteDepositTS_ASCII.or.WriteDepositTS_KML.or. &
-          WriteCloudConcentration_ASCII.or.WriteCloudConcentration_KML.or.Write3dFiles &
-          .or.WriteCloudHeight_ASCII.or.WriteCloudHeight_KML.or.WriteCloudLoad_KML) then
+      if (WriteDepositFinal_ASCII      .or. &
+          WriteDepositFinal_KML        .or. &
+          WriteDepositTS_ASCII         .or. &
+          WriteDepositTS_KML           .or. &
+          WriteCloudConcentration_ASCII.or. &
+          WriteCloudConcentration_KML  .or. &
+          Write3dFiles                 .or. &
+          WriteCloudHeight_ASCII       .or. &
+          WriteCloudHeight_KML         .or. &
+          WriteCloudLoad_KML) then
           read(cdf_b4l17,*,err=1966) nWriteTimes
             ! Check how to interpret nWriteTimes
           if (nWriteTimes.gt.0) then
@@ -1352,7 +1504,8 @@
             allocate(WriteTimes(nWriteTimes))
             read(llinebuffer,*,err=1965) WriteTimes(1:nWriteTimes)
           elseif (nWriteTimes.eq.0) then
-            write(global_info,*) "nWriteTimes = 0: Running without output"
+            write(global_info,*)&
+             "nWriteTimes = 0: Running without output"
           elseif (nWriteTimes.ne.-1) then
             ! If not a positive number, then it should be -1
             ! Report error otherwise
@@ -1368,6 +1521,9 @@
             allocate(WriteTimes(nWriteTimes))
 
             forall (i=1:nWriteTimes)  WriteTimes(i) = (i-1)*WriteInterval
+            do i=1,nWriteTimes
+              WriteTimes(i) = (i-1)*WriteInterval
+            enddo
             do i=1,nWriteTimes     !check writetimes for errors
               if (WriteTimes(i).lt.0.0_ip) then  !if the time <0
                   ! Abort the program
@@ -1468,7 +1624,8 @@
         read(10,'(a130)')lllinebuffer
         read(lllinebuffer,*)testkey
         if (testkey.ne.'#'.and.testkey.ne.'*')then
-          write(global_error,*)'ERROR: Expecting a comment line separating blocks.'
+          write(global_error,*)"ERROR: ",&
+           "Expecting a comment line separating blocks."
           write(global_error,*)'       Check that Block 4 is correct.'
           stop 1
         endif      
@@ -1480,9 +1637,9 @@
           !read(lllinebuffer,*)testkey
           testkey=lllinebuffer(1:1)
         enddo
-        write(global_info,*) '  *******************************************'
-        write(global_info,*) '  Reading Block 5: Windfile names'
-        write(global_info,*) '  *******************************************'
+        write(global_info,*)' *****************************************'
+        write(global_info,*)' Reading Block 5: Windfile names'
+        write(global_info,*)' *****************************************'
         write(global_info,13)
         write(global_log ,13)
           ! Read list of windfiles.
@@ -1493,15 +1650,17 @@
           write(global_info,1034) 1,trim(adjustl(MR_windfiles(1)))
           read(10,'(a130)')lllinebuffer
         else
-          ! For all other MR_iwindformats, read the full list
+          ! For all other iwf (MR_iwindformats), read the full list
           do i=1,iwfiles
             ! Always check if we have overshot the block
             testkey=lllinebuffer(1:1)
             if (testkey.eq.'#'.or.testkey.eq.'*') then
-              write(global_log,*)  'ERROR: Trying to read Block 5 and detecting comment line'
+              write(global_log,*)"ERROR: ",&
+               "Trying to read Block 5 and detecting comment line"
               write(global_log,*)  '  Windfile ',i,'of',iwfiles
               write(global_log,*)  '  Offending line:',lllinebuffer
-              write(global_error,*)'ERROR: Trying to read Block 5 and detecting comment line'
+              write(global_error,*)"ERROR: ",&
+               "Trying to read Block 5 and detecting comment line"
               write(global_error,*)'  Windfile ',i,'of',iwfiles
               write(global_error,*)'  Offending line:',lllinebuffer
               stop 1
@@ -1512,10 +1671,14 @@
               ! If we are reading grib files, check that the index file has been
               ! generated
 #ifndef USEGRIB
-              write(global_info,*)"ERROR: This input file specifies that the Met files are"
-              write(global_info,*)"       in grib format, but Ash3d has not been compiled"
-              write(global_info,*)"       with grib support.  Please recompile with grib"
-              write(global_info,*)"       enabled.  MetReader must also support grib."
+              write(global_error,*)"ERROR: ",&
+               "This input file specifies that the Met files are"
+              write(global_error,*)&
+               "       in grib format, but Ash3d has not been compiled"
+              write(global_error,*)&
+               "       with grib support.  Please recompile with grib"
+              write(global_error,*)&
+               "       enabled.  MetReader must also support grib."
               stop 1
 #else
               MR_windfiles_GRIB_index(i) = adjustl(trim(MR_windfiles(i))) // ".index"
@@ -1525,7 +1688,8 @@
                 ! Grib index file is not there, Try to generate it.
                 ! Note, we might have some permission problems here and we should
                 ! set up a fail-safe to the cwd or something.
-                write(global_info,*)" Grib index file not found; attempting to create it."
+                write(global_info,*)&
+                 " Grib index file not found; attempting to create it."
                 call MR_Set_Gen_Index_GRIB(MR_windfiles(i))
               endif
 #endif
@@ -1535,18 +1699,23 @@
         endif
 1034    format(' i=',i3,'  MR_windfiles(i) = ',a)
       else
-        write(global_info,*)"ERROR: MR_iwindfiles = 0"
-        write(global_info,*)"       Either the number of windfiles specified = 0, or"
-        write(global_info,*)"       MR_Allocate_FullMetFileList has not been called."
+        write(global_error,*)"ERROR: ",&
+         "MR_iwindfiles = 0"
+        write(global_error,*)&
+         "       Either the number of windfiles specified = 0, or"
+        write(global_error,*)&
+         "       MR_Allocate_FullMetFileList has not been called."
         stop 1
       endif
 
       !Error trap if more windfiles are entered than are specified
       if (lllinebuffer(1:5).ne.'*****') then
-        write(global_info,*) 'The beginning of the line following the list of', &
-                   ' windfiles did not'
-        write(global_info,*) 'start with ''*****''.  Did you enter the correct', &
-                   '  number of windfiles?'
+        write(global_info,*)&
+         'The beginning of the line following the list of', &
+         ' windfiles did not'
+        write(global_info,*)&
+         'start with ''*****''.  Did you enter the correct', &
+         '  number of windfiles?'
         write(global_info,*) 'Program stopped.'
         stop 1
       endif
@@ -1568,7 +1737,8 @@
       read(10,'(a80)')linebuffer
       read(linebuffer,*)testkey
       if (testkey.ne.'#'.and.testkey.ne.'*')then
-        write(global_error,*)'ERROR: Expecting a comment line separating blocks.'
+        write(global_error,*)"ERROR: ",&
+         "Expecting a comment line separating blocks."
         write(global_error,*)'       Check that Block 5 is correct.'
         stop 1
       endif
@@ -1577,9 +1747,9 @@
         read(10,'(a80)')linebuffer
         read(linebuffer,*)testkey
       enddo
-      write(global_info,*) '  *******************************************'
-      write(global_info,*) '  Reading Block 6: Airport location output'
-      write(global_info,*) '  *******************************************'
+      write(global_info,*)' *******************************************'
+      write(global_info,*)' Reading Block 6: Airport location output'
+      write(global_info,*)' *******************************************'
       !Read whether to write out ASCII airport file
       cdf_b6l1 = linebuffer
       read(linebuffer,'(a3)',err=1980) answer
@@ -1620,23 +1790,25 @@
       AirportInFile = cdf_b6l4(1:scan(cdf_b6l4,' ')-1)     !Read to the first blank space      
 
       !See if we need to read an external airport file
-      if ((AirportInFile.ne.'internal').and.(AirportInFile.ne.'')) then
-         ReadExtAirportFile=.true.              !read external data, do not append
-         if (AirportInFile(1:1).eq.'+') then
-            AppendExtAirportFile=.true.       !read and append external data
-            AirportInFile = AirportInFile(2:)      !strip off the "plus" at the beginning
-           else
-            AppendExtAirportFile=.false.       !read and append external data
-         endif
-         !Make sure the external file exists and can be opened.
-         write(global_info,*) 'Making sure the external airport file exists and can be opened'
-         open(unit=17,file=AirportInFile,status='old',err=19825) !try opening the external file
-         close(17)                              !if it opens, close it back up.
-       else
-         ReadExtAirportFile=.false.              !read external data, do not append
+      if ((AirportInFile.ne.'internal').and. &
+          (AirportInFile.ne.'')) then
+        ReadExtAirportFile=.true.              !read external data, do not append
+        if (AirportInFile(1:1).eq.'+') then
+          AppendExtAirportFile=.true.       !read and append external data
+          AirportInFile = AirportInFile(2:)      !strip off the "plus" at the beginning
+        else
+          AppendExtAirportFile=.false.       !read and append external data
+        endif
+        !Make sure the external file exists and can be opened.
+        write(global_info,*)&
+        'Making sure the external airport file exists and can be opened'
+        open(unit=17,file=AirportInFile,status='old',err=19825) !try opening the external file
+        close(17)                              !if it opens, close it back up.
+      else
+         ReadExtAirportFile = .false.              !read external data, do not append
       endif
-      
-      !Read whether to project airport coordinates using proj4
+
+      !Read whether to project airport coordinates
 19828 continue
       read(10,'(a80)') cdf_b6l5
       read(cdf_b6l5,'(a3)',err=1983) answer
@@ -1663,7 +1835,8 @@
       read(10,'(a80)')linebuffer
       read(linebuffer,*)testkey
       if (testkey.ne.'#'.and.testkey.ne.'*')then
-        write(global_error,*)'ERROR: Expecting a comment line separating blocks.'
+        write(global_error,*)"ERROR: ",&
+         "Expecting a comment line separating blocks."
         write(global_error,*)'       Check that Block 6 is correct.'
         stop 1
       endif
@@ -1672,9 +1845,9 @@
         read(10,'(a80)')linebuffer
         read(linebuffer,*)testkey
       enddo
-      write(global_info,*) '  *******************************************'
-      write(global_info,*) '  Reading Block 7: Grain Size Groups'
-      write(global_info,*) '  *******************************************'
+      write(global_info,*)' *******************************************'
+      write(global_info,*)' Reading Block 7: Grain Size Groups'
+      write(global_info,*)' *******************************************'
       ! READ GRAIN-SIZE BINS
       ! First, get the number of tephra bins to read
       ! Note: This might be one greater than what is calculated if the last bin
@@ -1715,12 +1888,18 @@
           ! Always check if we have overshot the block
           testkey = linebuffer(1:1)
           if ((testkey.eq.'*').or.(testkey.eq.'#')) then
-            write(global_error,*) 'Error in specifying grain sizes.  You specified ',init_n_gs_max,', sizes,'
-            write(global_error,*) 'but only ',i-1,' size classes were listed in the input file.'
+            write(global_error,*)"ERROR: ",&
+             "Error in specifying grain sizes.  You specified ",&
+             init_n_gs_max,', sizes,'
+            write(global_error,*) 'but only ',i-1,&
+             ' size classes were listed in the input file.'
             write(global_error,*)' Offending line: ',llinebuffer
             write(global_error,*) 'Program stopped'
-            write(global_log ,*) 'Error in specifying grain sizes.  You specified ',init_n_gs_max,', sizes,'
-            write(global_log ,*) 'but only ',i-1,' size classes were listed in the input file.'
+            write(global_error,*)"ERROR: ",&
+             "Error in specifying grain sizes.  You specified ",&
+             init_n_gs_max,', sizes,'
+            write(global_log ,*) 'but only ',i-1,&
+             ' size classes were listed in the input file.'
             write(global_log ,*) 'Program stopped'
             stop 1
           endif
@@ -1752,18 +1931,22 @@
               temp_v_s(i) = 0.0_ip
               if(temp_gsdiam(i).lt.0.0_ip)then
                 if(i.lt.init_n_gs_max)then
-                  write(global_info,*)"ERROR: diameter must be positive"
+                  write(global_error,*)"ERROR: ",&
+                   "diameter must be positive"
                   stop 1
                 else
                   phi_mean   = value2
                   phi_stddev = value3
                   write(global_info,*) &
-           "Last grain-size bin will be partitioned across all previous."
+          "Last grain-size bin will be partitioned across all previous."
                   write(global_info,*)"Volume fraction partitioned = ",&
-                             1.0_ip-sum(temp_bin_mass(1:init_n_gs_max-1))
-                  write(global_info,*)"  Assuming remainder is Gaussian in phi"
-                  write(global_info,*)"    phi_mean   = ", phi_mean
-                  write(global_info,*)"    phi_stddev = ", phi_stddev
+          1.0_ip-sum(temp_bin_mass(1:init_n_gs_max-1))
+                  write(global_info,*)&
+          "  Assuming remainder is Gaussian in phi"
+                  write(global_info,*)&
+          "    phi_mean   = ", phi_mean
+                  write(global_info,*)&
+          "    phi_stddev = ", phi_stddev
                   useVariableGSbins = .true.
                 endif
               endif
@@ -1939,7 +2122,8 @@
       read(10,'(a80)')linebuffer
       read(linebuffer,*)testkey
       if (testkey.ne.'#'.and.testkey.ne.'*')then
-        write(global_error,*)'ERROR: Expecting a comment line separating blocks.'
+        write(global_error,*)"ERROR: ",&
+         "Expecting a comment line separating blocks."
         write(global_error,*)'       Check that Block 7 is correct.'
         stop 1
       endif
@@ -1948,9 +2132,9 @@
         read(10,'(a80)')linebuffer
         read(linebuffer,*)testkey
       enddo
-      write(global_info,*) '  *******************************************'
-      write(global_info,*) '  Reading Block 8: Vertical profile output'
-      write(global_info,*) '  *******************************************'
+      write(global_info,*)' *******************************************'
+      write(global_info,*)' Reading Block 8: Vertical profile output'
+      write(global_info,*)' *******************************************'
 
       !READ NUMBER OF VERTICAL PROFILES
       write(global_info,*) 'Reading vertical profile information'
@@ -1978,10 +2162,12 @@
           ! Always check if we have overshot the block
           testkey=linebuffer(1:1)
           if (testkey.eq.'#'.or.testkey.eq.'*') then
-            write(global_log,*)  'ERROR: Trying to read Block 8 and detecting comment line'
+            write(global_log,*)"ERROR: ",&
+             "Trying to read Block 8 and detecting comment line"
             write(global_log,*)  '  Vert Prof',i,'of',nvprofiles
             write(global_log,*)  '  Offending line:',lllinebuffer
-            write(global_error,*)'ERROR: Trying to read Block 8 and detecting comment line'
+            write(global_error,*)"ERROR: ",&
+             "Trying to read Block 8 and detecting comment line"
             write(global_error,*)'  Vert Prof ',i,'of',nvprofiles
             write(global_error,*)'  Offending line:',lllinebuffer
             stop 1
@@ -2006,7 +2192,8 @@
       read(10,'(a80)',iostat=ios)linebuffer
       read(linebuffer,*)testkey
       if (testkey.ne.'#'.and.testkey.ne.'*')then
-        write(global_error,*)'ERROR: Expecting a comment line separating blocks.'
+        write(global_error,*)"ERROR: ",&
+         "Expecting a comment line separating blocks."
         write(global_error,*)'       Check that Block 8 is correct.'
         stop 1
       endif      
@@ -2025,9 +2212,9 @@
         write(global_info,*)'  Setting Title to ',infile
         write(global_info,*)'  Setting comment to None'
       else
-        write(global_info,*) '  *******************************************'
-        write(global_info,*) '  Reading Block 9: Output file / comments'
-        write(global_info,*) '  *******************************************'
+        write(global_info,*)' *****************************************'
+        write(global_info,*)' Reading Block 9: Output file / comments'
+        write(global_info,*)' *****************************************'
               !Start reading annotation info
         ! First line is the output file name
         read(linebuffer,*) outfile
@@ -2068,7 +2255,8 @@
           !  Parse for the keyword
           read(linebuffer,1104)mod_name
           OPTMOD_names(nmods) = adjustl(trim(mod_name))
-          write(global_info,*)"     Found optional module : ",OPTMOD_names(nmods),nmods
+          write(global_info,*)"     Found optional module : ",&
+           OPTMOD_names(nmods),nmods
         endif
 1104    format(7x,a20)
       enddo
@@ -2089,8 +2277,10 @@
       write(global_info,*)limiter," limiter is used."
       write(global_log ,*)limiter," limiter is used."
       if (useCN) then
-        write(global_info,*)"Diffusion is calculated via Crank-Nicolson."
-        write(global_log ,*)"Diffusion is calculated via Crank-Nicolson."
+        write(global_info,*)&
+         "Diffusion is calculated via Crank-Nicolson."
+        write(global_log ,*)&
+         "Diffusion is calculated via Crank-Nicolson."
       else
         write(global_info,*)"Diffusion is calculated explicitly."
         write(global_log ,*)"Diffusion is calculated explicitly."
@@ -2693,7 +2883,7 @@
 32     format(/,4x,'Warning:  some write times exceed the model',&
                    ' simulation time.',/, &
                 4x,'These times will be ignored.')
-33    format   (4x,'Chosen output:',/, &
+33     format   (4x,'Chosen output:',/, &
                 4x,'                        Output final ASCII deposit',&
                    ' file (T/F) = ',L1,/, &
                 4x,'                          Output final KML deposit',&

@@ -65,6 +65,11 @@
       !logical, intent(in) :: first_time
       !integer, intent(inout) :: Meso_toggle
 
+      INTERFACE
+        subroutine umbrella_winds
+        end subroutine umbrella_winds
+      END INTERFACE
+
       TimeNow_fromRefTime = SimStartHour+TimeNow  ! hours since reference time (1-1-1900)
 
       ! MesoInterpolater is called once before the time loop in order to

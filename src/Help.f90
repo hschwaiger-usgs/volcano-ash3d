@@ -4,7 +4,7 @@
 
       implicit none
 
-      integer blockID
+      integer,intent(in) :: blockID
       
       ! The idea with the blockID is that help for only a particular block could be
       ! called if there is an error reading something in the input file.  For now, all

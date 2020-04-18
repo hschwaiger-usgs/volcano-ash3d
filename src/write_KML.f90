@@ -334,7 +334,7 @@
       implicit none
 
       integer             :: ivar
-      character (len=13)  :: HS_yyyymmddhh_since
+      !character (len=13)  :: HS_yyyymmddhh_since
       character (len=13)  :: yyyymmddhh
       character (len=2)   :: opacity
       real(kind=ip)       :: xleft, xright, ybottom, ytop
@@ -348,7 +348,7 @@
       character(len=30)   :: filename
       integer             :: fid
       integer             :: n_clrmp,icmp
-      real(kind=ip)   ,dimension(9)   :: color_map
+      !real(kind=ip)   ,dimension(9)   :: color_map
       character(len=9),dimension(9)   :: Styles
       character(len=6),dimension(9)   :: Colors
       character(len=30)   :: description
@@ -360,10 +360,18 @@
       character(len=3)    :: sizeX
       character(len=3)    :: sizeY
 
+      INTERFACE
+        character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
+          real(kind=8)               ::  HoursSince
+          integer                    ::  byear
+          logical                    ::  useLeaps
+        end function HS_yyyymmddhh_since
+      END INTERFACE
+
       filename    = KML_filename(ivar)
       fid         = KML_fid(ivar)
       n_clrmp     = KML_n_clrmp(ivar)
-      color_map   = KML_color_map(ivar,:)
+      !color_map   = KML_color_map(ivar,:)
       Styles(:)   = KML_Styles(ivar,:)
       Colors(:)   = KML_Colors(ivar,:)
       description = KML_description(ivar)
@@ -647,7 +655,7 @@
       real(kind=ip)       :: lattLL1,lattUL1,lattLR1,lattUR1    !for polygons that cross the
       real(kind=ip)       :: lattLL2,lattUL2,lattLR2,lattUR2    !antimeridian
       real(kind=ip)       :: longLR3,longUR3
-      character (len=20)  :: HS_xmlTime, xmlArrivalTime
+      character (len=20)  :: xmlArrivalTime
       integer             :: height
       integer             :: fid
       integer             :: n_clrmp,icmp
@@ -655,14 +663,23 @@
       character(len=13)   :: AltMode
       real(kind=ip)   ,dimension(9)   :: color_map
       character(len=9),dimension(9)   :: Styles
-      character(len=6),dimension(9)   :: Colors
+      !character(len=6),dimension(9)   :: Colors
       logical             :: CrossAntiMeridian     !if the polygon crosses the antimeridian
+
+      INTERFACE
+        character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
+          real(kind=8)              :: HoursSince
+          integer                   :: byear
+          logical                   :: useLeaps
+        end function HS_xmltime
+      END INTERFACE
+
 
       fid       = KML_fid(ivar)
       n_clrmp   = KML_n_clrmp(ivar)
       color_map = KML_color_map(ivar,:)
       Styles(:) = KML_Styles(ivar,:)
-      Colors(:) = KML_Colors(ivar,:)
+      !Colors(:) = KML_Colors(ivar,:)
       units     = KML_units(ivar)
       AltMode   = KML_AltMode(ivar)
 
@@ -778,22 +795,28 @@
           !write out polygon to  kml file
           if (.not.CrossAntiMeridian) then
             write(fid,2) OutVar(i,j),units,StyleNow3, &
-                         longCC,lattCC,float(height),  &
+                         longCC,lattCC,real(height,kind=4),  &
                          AltMode,                      &
-                         longLL,lattLL,float(height),   longLR,lattLR,float(height), &
-                         longUR,lattUR,float(height),   longUL,lattUL,float(height), &
-                         longLL,lattLL,float(height)
+                         longLL,lattLL,real(height,kind=4), &
+                         longLR,lattLR,real(height,kind=4), &
+                         longUR,lattUR,real(height,kind=4), &
+                         longUL,lattUL,real(height,kind=4), &
+                         longLL,lattLL,real(height,kind=4)
           else
              !This fixes the antimeridian problem
             write(fid,25) OutVar(i,j),units,StyleNow3, &
-                         longCC,lattCC,float(height),  &
+                         longCC,lattCC,real(height,kind=4),  &
                          AltMode,                      &
-                         longLL1,lattLL1,float(height),   longLR1,lattLR1,float(height), &
-                         longUR1,lattUR1,float(height),   longUL1,lattUL1,float(height), &
-                         longLL1,lattLL1,float(height), &
-                         longLL2,lattLL2,float(height),   longLR2,lattLR2,float(height), &
-                         longUR2,lattUR2,float(height),   longUL2,lattUL2,float(height), &
-                         longLL2,lattLL2,float(height)
+                         longLL1,lattLL1,real(height,kind=4), &
+                         longLR1,lattLR1,real(height,kind=4), &
+                         longUR1,lattUR1,real(height,kind=4), &
+                         longUL1,lattUL1,real(height,kind=4), &
+                         longLL1,lattLL1,real(height,kind=4), &
+                         longLL2,lattLL2,real(height,kind=4), &
+                         longLR2,lattLR2,real(height,kind=4), &
+                         longUR2,lattUR2,real(height,kind=4), &
+                         longUL2,lattUL2,real(height,kind=4), &
+                         longLL2,lattLL2,real(height,kind=4)
           endif
 !100       continue
         enddo
@@ -938,12 +961,11 @@
 
       integer             :: i
       integer             :: nWrittenOut
-      character (len=13)  :: HS_yyyymmddhh_since
       character (len=13)  :: yyyymmddhh
       character (len=1)   :: cloud_morethan, deposit_morethan      !equals ">" if cloud is still overhead or ash is still falling
       real(kind=ip)       :: CloudTime
-      character (len=20)  :: HS_xmltime, xmlTimeStart, xmlTimeEnd
-      real(kind=ip)        :: airlon,airlat
+      character (len=20)  :: xmlTimeStart, xmlTimeEnd
+      real(kind=ip)       :: airlon,airlat
 
       integer,       dimension(:), allocatable :: iyear, imonth, iday
       real(kind=ip), dimension(:), allocatable :: StartHour
@@ -954,6 +976,19 @@
       character(len=14) :: dp_gnufile
       character(len=14) :: dp_pngfile
       real(kind=ip) :: ymaxpl
+
+      INTERFACE
+        character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
+          real(kind=8)               ::  HoursSince
+          integer                    ::  byear
+          logical                    ::  useLeaps
+        end function HS_yyyymmddhh_since
+        character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
+          real(kind=8)              :: HoursSince
+          integer                   :: byear
+          logical                   :: useLeaps
+        end function HS_xmltime
+      END INTERFACE
 
       plt_indx = 0
       Airport_TS_plotindex = 0

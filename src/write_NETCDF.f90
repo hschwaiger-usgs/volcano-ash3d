@@ -129,8 +129,6 @@
       character (len=50)  :: cdf_host
       character (len=255) :: cdf_cwd
       character (len=20)  :: cdf_WindStartTime
-      character (len=20)  :: HS_xmltime
-
 
       ! Since output precision might be different from input precision,
       ! we need to allocate to correct memory space
@@ -147,11 +145,23 @@
       character(len=3) ,dimension(10) :: dim_names
       character(len=30),dimension(40) :: var_lnames
       character (len=13)         :: reftimestr
-      character (len=13)         ::  HS_yyyymmddhhmm_since
       character(len=130):: lllinebuffer
 
       integer :: i,j,k,n
       integer :: ivar
+
+      INTERFACE
+        character (len=13) function HS_yyyymmddhhmm_since(HoursSince,byear,useLeaps)
+          real(kind=8)               ::  HoursSince
+          integer                    ::  byear
+          logical                    ::  useLeaps
+        end function HS_yyyymmddhhmm_since
+        character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
+          real(kind=8)              :: HoursSince
+          integer                   :: byear
+          logical                   :: useLeaps
+        end function HS_xmltime
+      END INTERFACE
 
       if(VERB.gt.1)write(global_info,*)"Inside create_netcdf_file"
 

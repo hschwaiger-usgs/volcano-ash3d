@@ -142,6 +142,7 @@
       integer            :: io
       integer            :: ioutputFormat   ! determines the format of the output
                                  ! (1=ASCII, 2=raw binary, 3=NetCDF)
+      character (len=130):: Ash3dHome                    ! path to Ash3d installation
       character (len=130):: infile                       !input file name
       character (len=50) :: outfile
       logical            :: LoadConcen
