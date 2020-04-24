@@ -316,6 +316,10 @@
       integer :: nlineq,nrhs,ldb,info
       real(kind=ip) :: sm1,sp1
 
+#ifdef CRANKNIC
+      ! Note: The only reason not to use Crank-Nicolson is if you
+      !       don't have blas and lapack installed.  This pre-proc.
+      !       directive allows this section to be turnes off.
       INTERFACE
         subroutine sgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
           integer                         ,intent(in)    :: N
@@ -356,7 +360,7 @@
           integer                         ,intent(out)   :: INFO
         end subroutine
       END INTERFACE
-
+#endif
       concen_pd(:,:,:,:,ts1) = 0.0_ip
 
       if(nxmax.gt.1)then
@@ -437,7 +441,10 @@
               endif
  
             enddo
-
+#ifdef CRANKNIC
+      ! Note: The only reason not to use Crank-Nicolson is if you
+      !       don't have blas and lapack installed.  This pre-proc.
+      !       directive allows this section to be turnes off.
             if(useVarDiffH.or.IsLatLon)then
               ! This is the call for solving single or double
               ! precision general tridiagonal Ax=b
@@ -496,7 +503,7 @@
                       info)      !o
               endif
             endif
-
+#endif
             concen_pd(1:nxmax,j,k,n,ts1) = B_d
 
           enddo ! loop over j
@@ -541,6 +548,10 @@
       integer :: nlineq,nrhs,ldb,info
       real(kind=ip) :: sm1,sp1
 
+#ifdef CRANKNIC
+      ! Note: The only reason not to use Crank-Nicolson is if you
+      !       don't have blas and lapack installed.  This pre-proc.
+      !       directive allows this section to be turnes off.
       INTERFACE
         subroutine sgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
           integer                         ,intent(in)    :: N
@@ -581,7 +592,7 @@
           integer                         ,intent(out)   :: INFO
         end subroutine
       END INTERFACE
-
+#endif
       concen_pd(:,:,:,:,ts1) = 0.0_ip
 
       if(nymax.gt.1)then
@@ -662,7 +673,10 @@
               endif
  
             enddo
-
+#ifdef CRANKNIC
+      ! Note: The only reason not to use Crank-Nicolson is if you
+      !       don't have blas and lapack installed.  This pre-proc.
+      !       directive allows this section to be turnes off.
             if(useVarDiffH.or.IsLatLon)then
               ! This is the call for solving single or double
               ! precision general tridiagonal Ax=b
@@ -721,7 +735,7 @@
                       info)      !o
               endif
             endif
-
+#endif
             concen_pd(i,1:nymax,k,n,ts1) = B_d
 
           enddo ! loop over i
@@ -765,6 +779,10 @@
       integer :: nlineq,nrhs,ldb,info
       real(kind=ip) :: sm1,sp1
 
+#ifdef CRANKNIC
+      ! Note: The only reason not to use Crank-Nicolson is if you
+      !       don't have blas and lapack installed.  This pre-proc.
+      !       directive allows this section to be turnes off.
       INTERFACE
         subroutine sgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
           integer                         ,intent(in)    :: N
@@ -805,6 +823,7 @@
           integer                         ,intent(out)   :: INFO
         end subroutine
       END INTERFACE
+#endif
 
       concen_pd(:,:,:,:,ts1) = 0.0_ip
 
@@ -886,7 +905,10 @@
               endif
  
             enddo
-
+#ifdef CRANKNIC
+      ! Note: The only reason not to use Crank-Nicolson is if you
+      !       don't have blas and lapack installed.  This pre-proc.
+      !       directive allows this section to be turnes off.
             if(useVarDiffV.or.IsLatLon)then
               ! This is the call for solving single or double
               ! precision general tridiagonal Ax=b
@@ -945,7 +967,7 @@
                       info)      !o
               endif
             endif
-
+#endif
             concen_pd(i,j,1:nzmax,n,ts1) = B_d
 
           enddo ! loop over j

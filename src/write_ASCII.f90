@@ -137,11 +137,11 @@
       use mesh,          only : &
          dx,dy,de,dn,IsLatLon,latLL,lonLL,xLL,yLL
 
-      use time_data,     only : &
-         time
+      !use time_data,     only : &
+      !   time
 
       use io_data,       only : &
-         isFinal_TS
+         isFinal_TS,iout3d,WriteTimes
 
       implicit none
 
@@ -157,14 +157,14 @@
 
       fid = 30
 
-      if (time.lt.10) then
-        write(cio,1) time
+      if (WriteTimes(iout3d).lt.10.0_ip) then
+        write(cio,1) WriteTimes(iout3d)
 1       format('00',f4.2,'hrs')
-      elseif (time.lt.100.0_ip) then
-        write(cio,2) time
+      elseif (WriteTimes(iout3d).lt.100.0_ip) then
+        write(cio,2) WriteTimes(iout3d)
 2       format('0',f5.2,'hrs')
       else
-        write(cio,3) time
+        write(cio,3) WriteTimes(iout3d)
 3       format(f6.2,'hrs')
       endif
       if(isFinal_TS) cio='____final'
@@ -257,7 +257,7 @@
       else
         write(100,*) 'ZONE '
       endif
-      !write(100,*) 'SOLUTIONTIME = ',time
+      !write(100,*) 'SOLUTIONTIME = ',WriteTimes(iout3d)
 
       do k=1,nzmax
         do j=1,nymax
@@ -273,7 +273,7 @@
                   vx_pd(i,j,k), vy_pd(i,j,k), vz_pd(i,j,k),rhom,depth
               else
                 write(100,'(6(4x,f20.3),g20.5,5x,g20.5)') &
-                  x_cc_pd(i)     , y_cc_pd(j)     , z_cc_pd(k),               &
+                  x_cc_pd(i)     , y_cc_pd(j)     , z_cc_pd(k),        &
                   vx_pd(i,j,k), vy_pd(i,j,k), vz_pd(i,j,k),rhom,depth
               endif
             !else

@@ -31,7 +31,7 @@
 #
 #  SYSTEM specifies which compiler to use
 #    Current available options are:
-#      gfortran , ifort
+#      gfortran , ifort, g95
 #    This variable cannot be left blank
 SYSTEM = gfortran
 #
@@ -43,7 +43,7 @@ SYSTEM = gfortran
 #      OMPOPT: includes optimizations flags for fastest runtime and OpenMP directives
 #              To run, enter: env OMP_NUM_THREADS=4 Ash3d input_file.inp
 #    This variable cannot be left blank
-RUN = OPT
+RUN = DEBUG
 
 # This is the location of the USGS libraries and include files
 # This might be different from the INSTALLDIR path if you want to link to special MetReader
@@ -73,11 +73,11 @@ VERB = 1
 
 # MEMORY
 # If you need pointer arrays instead of allocatable arrays, set this to 'T'
-USEPOINTERS = F
+USEPOINTERS = T
 
 # EXTERNAL DATA FILES
 #
-USEEXTDATA = T
+USEEXTDATA = F
 
 ###############################################################################
 #  NOTE:  The following flags can either be set or commented out.  If they are
@@ -100,7 +100,7 @@ LIMITER = LIM_SUPERBEE
 # Explicit calculation of diffusion term
 #DIFFMETH=EXPLDIFF
 # Implicit calculation of diffusion using Crank-Nicolson
-#DIFFMETH=CRANKNIC
+DIFFMETH=CRANKNIC
 #
 OPTMODS_FPP= 
 OPTMODS_OBJ=

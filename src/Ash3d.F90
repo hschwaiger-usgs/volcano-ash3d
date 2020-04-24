@@ -6,7 +6,7 @@
 
       use global_param,  only : &
          EPS_TINY,useCalcFallVel,useDiffusion,useHorzAdvect,useVertAdvect,VERB,&
-         HR_2_S,useTemperature
+         HR_2_S,useTemperature,DT_MIN
 
       use mesh,          only : &
          ivent,jvent,nxmax,nymax,nzmax,nsmax,ts0,ts1
@@ -25,7 +25,7 @@
       use io_data,       only : &
          Called_Gen_Output_Vars,isFinal_TS,LoadConcen,log_step, Ash3dHome,&
          Output_at_logsteps,Output_at_WriteTimes,Output_every_TS,&
-         NextWriteTime,nTimeNext,nvprofiles,nWriteTimes,&
+         NextWriteTime,iTimeNext,nvprofiles,nWriteTimes,&
          WriteAirportFile_ASCII,WriteAirportFile_KML
 
       use time_data,     only : &
@@ -326,7 +326,7 @@
 !
 !------------------------------------------------------------------------------
           endif
-        endif
+        endif !MassFluxRate_now.gt.0.0_ip
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         ! Set Boundary Conditions
@@ -381,8 +381,12 @@
           if (nvprofiles.gt.0) call vprofilewriter     !write out vertical profiles
         endif
 
-        !GO TO OUTPUT RESULTS IF WE'RE AT THE NEXT OUTPUT STAGE
-        if(Output_at_WriteTimes.and.(NextWriteTime-time.lt.1.0e-4_ip))then
+        ! GO TO OUTPUT RESULTS IF WE'RE AT THE NEXT OUTPUT STAGE
+        ! Note that dt was set in Adjust_DT so that it is no larger than
+        ! DT_MIN, but may be adjusted down so as to land on the next
+        ! output time.  time has already been integrated forward so
+        ! NextWriteTime-time should be near zero for output steps.
+        if(Output_at_WriteTimes.and.(NextWriteTime-time.lt.DT_MIN))then
             ! Generate output variables if we haven't already
           if(.not.Called_Gen_Output_Vars)then
             call Gen_Output_Vars
@@ -394,8 +398,8 @@
 !------------------------------------------------------------------------------
           call output_results
           if ((WriteAirportFile_ASCII.or.WriteAirportFile_KML).and. &
-              (nTimeNext.lt.nWriteTimes)) then
-            do j=nTimeNext,nWriteTimes
+              (iTimeNext.lt.nWriteTimes)) then
+            do j=iTimeNext,nWriteTimes
               Airport_Thickness_TS(1:nairports,j) = Airport_Thickness(1:nairports)
             enddo
           endif
