@@ -5,7 +5,7 @@
       use io_units
 
       use global_param,  only : &
-         EPS_SMALL
+         EPS_SMALL,MM_2_IN
 
       use io_data,       only : &
          iout3d,ioutputFormat,WriteTimes,nWriteTimes,isFinal_TS,&
