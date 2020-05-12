@@ -129,8 +129,6 @@
       character (len=50)  :: cdf_host
       character (len=255) :: cdf_cwd
       character (len=20)  :: cdf_WindStartTime
-      character (len=20)  :: HS_xmltime
-
 
       ! Since output precision might be different from input precision,
       ! we need to allocate to correct memory space
@@ -147,11 +145,23 @@
       character(len=3) ,dimension(10) :: dim_names
       character(len=30),dimension(40) :: var_lnames
       character (len=13)         :: reftimestr
-      character (len=13)         ::  HS_yyyymmddhhmm_since
       character(len=130):: lllinebuffer
 
       integer :: i,j,k,n
       integer :: ivar
+
+      INTERFACE
+        character (len=13) function HS_yyyymmddhhmm_since(HoursSince,byear,useLeaps)
+          real(kind=8)               ::  HoursSince
+          integer                    ::  byear
+          logical                    ::  useLeaps
+        end function HS_yyyymmddhhmm_since
+        character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
+          real(kind=8)              :: HoursSince
+          integer                   :: byear
+          logical                   :: useLeaps
+        end function HS_xmltime
+      END INTERFACE
 
       if(VERB.gt.1)write(global_info,*)"Inside create_netcdf_file"
 
@@ -1708,7 +1718,7 @@
          EPS_SMALL,EPS_TINY,VERB,KM2_2_M2
 
       use io_data,       only : &
-         io,nvar_User2d_XY,nvar_User3d_XYGs,nvar_User3d_XYZ,nvar_User4d_XYZGs,&
+         iout3d,nvar_User2d_XY,nvar_User3d_XYGs,nvar_User3d_XYZ,nvar_User4d_XYZGs,&
          outfile
 
       use Output_Vars,   only : &
@@ -1798,7 +1808,7 @@
       ! Time
       if(VERB.gt.2)write(global_info,*)"  Writing Time"
       dumscal_out = real(time,kind=op)
-      nSTAT=nf90_put_var(ncid,t_var_id,dumscal_out,(/io/))
+      nSTAT=nf90_put_var(ncid,t_var_id,dumscal_out,(/iout3d/))
       if(nSTAT.ne.0) &
         write(global_log ,*)'ERROR: put_var t: ',nf90_strerror(nSTAT)
 
@@ -1811,7 +1821,7 @@
           write(global_log ,*)'ERROR: inq_varid vz: ',nf90_strerror(nSTAT)
         if(VERB.gt.2)write(global_info,*)"  Writing Vz"
         dum3d_out(1:nxmax,1:nymax,1:nzmax) = real(vz_pd(1:nxmax,1:nymax,1:nzmax),kind=op)
-        nSTAT=nf90_put_var(ncid,vz_var_id,dum3d_out,(/1,1,1,io/))
+        nSTAT=nf90_put_var(ncid,vz_var_id,dum3d_out,(/1,1,1,iout3d/))
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_var Vz: ',nf90_strerror(nSTAT)
           ! Vy
@@ -1820,7 +1830,7 @@
           write(global_log ,*)'ERROR: inq_varid vy: ',nf90_strerror(nSTAT)
         if(VERB.gt.2)write(global_info,*)"  Writing Vy"
         dum3d_out(1:nxmax,1:nymax,1:nzmax) = real(vy_pd(1:nxmax,1:nymax,1:nzmax),kind=op)
-        nSTAT=nf90_put_var(ncid,vy_var_id,dum3d_out,(/1,1,1,io/))
+        nSTAT=nf90_put_var(ncid,vy_var_id,dum3d_out,(/1,1,1,iout3d/))
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_var Vy: ',nf90_strerror(nSTAT)
           ! Vx
@@ -1829,7 +1839,7 @@
           write(global_log ,*)'ERROR: inq_varid vx: ',nf90_strerror(nSTAT)
         if(VERB.gt.2)write(global_info,*)"  Writing Vx"
         dum3d_out(1:nxmax,1:nymax,1:nzmax) = real(vx_pd(1:nxmax,1:nymax,1:nzmax),kind=op)
-        nSTAT=nf90_put_var(ncid,vx_var_id,dum3d_out,(/1,1,1,io/))
+        nSTAT=nf90_put_var(ncid,vx_var_id,dum3d_out,(/1,1,1,iout3d/))
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_var Vz: ',nf90_strerror(nSTAT)
           ! Vf
@@ -1837,7 +1847,7 @@
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: inq_varid vf: ',nf90_strerror(nSTAT)
         ashcon(1:nxmax,1:nymax,1:nzmax,1:nsmax) = real(vf_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax),kind=op)
-        nSTAT=nf90_put_var(ncid,vf_var_id,ashcon,(/1,1,1,1,io/))
+        nSTAT=nf90_put_var(ncid,vf_var_id,ashcon,(/1,1,1,1,iout3d/))
       endif
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1855,7 +1865,7 @@
         if(VERB.gt.2)write(global_info,*)"  Writing ashcon"
         ashcon = 0.0_op
         ashcon(1:nxmax,1:nymax,1:nzmax,1:nsmax) = real(concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1),kind=op)
-        nSTAT=nf90_put_var(ncid,ashcon_var_id,ashcon,(/1,1,1,1,io/))
+        nSTAT=nf90_put_var(ncid,ashcon_var_id,ashcon,(/1,1,1,1,iout3d/))
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_var ashcon: ',nf90_strerror(nSTAT)
       endif
@@ -1887,7 +1897,7 @@
             enddo
           enddo
         enddo
-        nSTAT=nf90_put_var(ncid,depocon_var_id,depocon,(/1,1,1,io/))
+        nSTAT=nf90_put_var(ncid,depocon_var_id,depocon,(/1,1,1,iout3d/))
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_var depocon: ',nf90_strerror(nSTAT)
   
@@ -1906,7 +1916,7 @@
                 dum2d_out(i,j)=real(DepositThickness(i,j),kind=op)
           enddo
         enddo
-        nSTAT=nf90_put_var(ncid,depothick_var_id,dum2d_out,(/1,1,io/))
+        nSTAT=nf90_put_var(ncid,depothick_var_id,dum2d_out,(/1,1,iout3d/))
   
           ! depotime
         nSTAT = nf90_inq_varid(ncid,"depotime",depotime_var_id)
@@ -1954,7 +1964,7 @@
             endif
           enddo
         enddo
-        nSTAT=nf90_put_var(ncid,ashconMax_var_id,dum2d_out,(/1,1,io/))
+        nSTAT=nf90_put_var(ncid,ashconMax_var_id,dum2d_out,(/1,1,iout3d/))
   
         ! ash cloud_height
         nSTAT = nf90_inq_varid(ncid,"cloud_height",ashheight_var_id)
@@ -1970,7 +1980,7 @@
             endif
           enddo
         enddo
-        nSTAT=nf90_put_var(ncid,ashheight_var_id,dum2d_out,(/1,1,io/))
+        nSTAT=nf90_put_var(ncid,ashheight_var_id,dum2d_out,(/1,1,iout3d/))
   
         ! ash-load
         nSTAT = nf90_inq_varid(ncid,"cloud_load",ashload_var_id)
@@ -1986,7 +1996,7 @@
             endif
           enddo
         enddo
-        nSTAT=nf90_put_var(ncid,ashload_var_id,dum2d_out,(/1,1,io/))
+        nSTAT=nf90_put_var(ncid,ashload_var_id,dum2d_out,(/1,1,iout3d/))
   
         ! radar reflectivity
         nSTAT = nf90_inq_varid(ncid,"radar_reflectivity",radrefl_var_id)
@@ -2004,7 +2014,7 @@
             enddo
           enddo
         enddo
-        nSTAT=nf90_put_var(ncid,radrefl_var_id,dum3d_out,(/1,1,1,io/))
+        nSTAT=nf90_put_var(ncid,radrefl_var_id,dum3d_out,(/1,1,1,iout3d/))
   
         ! ash cloud_bottom
         nSTAT = nf90_inq_varid(ncid,"cloud_bottom",ashcloudBot_var_id)
@@ -2020,7 +2030,7 @@
             endif
           enddo
         enddo
-        nSTAT=nf90_put_var(ncid,ashcloudBot_var_id,dum2d_out,(/1,1,io/))
+        nSTAT=nf90_put_var(ncid,ashcloudBot_var_id,dum2d_out,(/1,1,iout3d/))
 
       endif ! USE_OUTPROD_VARS
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2037,7 +2047,7 @@
           do ivar=1,nvar_User2d_XY
             dum2d_out(:,:) = real(var_User2d_XY(:,:,ivar),kind=op)
             nSTAT = nf90_inq_varid(ncid,var_User2d_XY_name(ivar),temp1_2d_var_id)
-            nSTAT = nf90_put_var(ncid,temp1_2d_var_id,dum2d_out,(/1,1,io/))
+            nSTAT = nf90_put_var(ncid,temp1_2d_var_id,dum2d_out,(/1,1,iout3d/))
           enddo
         endif
 
@@ -2046,7 +2056,7 @@
           do ivar=1,nvar_User3d_XYGs
             depocon(:,:,:) = real(var_User3d_XYGs(:,:,:,ivar),kind=op)
             nSTAT = nf90_inq_varid(ncid,var_User3d_XYGs_name(ivar),temp1_3d_var_id)
-            nSTAT = nf90_put_var(ncid,temp1_3d_var_id,depocon,(/1,1,1,io/))
+            nSTAT = nf90_put_var(ncid,temp1_3d_var_id,depocon,(/1,1,1,iout3d/))
           enddo
         endif
 
@@ -2055,7 +2065,7 @@
           do ivar=1,nvar_User3d_XYZ
             dum3d_out(:,:,:) = real(var_User3d_XYZ(:,:,:,ivar),kind=op)
             nSTAT = nf90_inq_varid(ncid,var_User3d_XYZ_name(ivar),temp1_3d_var_id)
-            nSTAT = nf90_put_var(ncid,temp1_3d_var_id,dum3d_out,(/1,1,1,io/))
+            nSTAT = nf90_put_var(ncid,temp1_3d_var_id,dum3d_out,(/1,1,1,iout3d/))
           enddo
         endif
 
@@ -2064,7 +2074,7 @@
           do ivar=1,nvar_User4d_XYZGs
             ashcon(:,:,:,:) = real(var_User4d_XYZGs(1:nxmax,1:nymax,1:nzmax,1:nsmax,ivar),kind=op)
             nSTAT = nf90_inq_varid(ncid,var_User4d_XYZGs_name(ivar),temp1_4d_var_id)
-            nSTAT = nf90_put_var(ncid,temp1_4d_var_id,ashcon,(/1,1,1,1,io/))
+            nSTAT = nf90_put_var(ncid,temp1_4d_var_id,ashcon,(/1,1,1,1,iout3d/))
           enddo
         endif
 

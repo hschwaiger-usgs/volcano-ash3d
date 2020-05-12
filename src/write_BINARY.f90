@@ -14,8 +14,9 @@
 
       implicit none
 
-      character(len=13) :: cio
-      integer :: ns
+      character(len=13) ,intent(in) :: cio
+      integer           ,intent(in) :: ns
+
       integer :: i,j,k,n
       real(kind=op), dimension(:,:,:),allocatable :: ashcon
       real(kind=op), dimension(:,:)  ,allocatable :: depocon

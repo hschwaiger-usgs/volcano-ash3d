@@ -6,7 +6,7 @@
 
       use global_param,  only : &
          EPS_TINY,useCalcFallVel,useDiffusion,useHorzAdvect,useVertAdvect,VERB,&
-         HR_2_S,useTemperature
+         HR_2_S,useTemperature,DT_MIN
 
       use mesh,          only : &
          ivent,jvent,nxmax,nymax,nzmax,nsmax,ts0,ts1
@@ -23,9 +23,9 @@
            FirstAsh
 
       use io_data,       only : &
-         Called_Gen_Output_Vars,isFinal_TS,LoadConcen,log_step, &
+         Called_Gen_Output_Vars,isFinal_TS,LoadConcen,log_step, Ash3dHome,&
          Output_at_logsteps,Output_at_WriteTimes,Output_every_TS,&
-         NextWriteTime,nTimeNext,nvprofiles,nWriteTimes,&
+         NextWriteTime,iTimeNext,nvprofiles,nWriteTimes,&
          WriteAirportFile_ASCII,WriteAirportFile_KML
 
       use time_data,     only : &
@@ -69,6 +69,7 @@
 
       implicit none
 
+      integer               :: iostatus
       integer               :: itime
       integer               :: j,k
       integer               :: ii,jj,iz,isize
@@ -79,6 +80,48 @@
       logical, dimension(5) :: StopConditions = .false.
       logical               :: StopTimeLoop   = .false.
       logical               :: first_time     = .true.
+      character(len=130)    :: tmp_str
+
+      INTERFACE
+        subroutine Read_Control_File
+        end subroutine
+        subroutine alloc_arrays
+        end subroutine
+        subroutine calc_mesh_params
+        end subroutine
+        subroutine MesoInterpolater(TimeNow,Load_MesoSteps,Interval_Frac,first_time)
+          integer,parameter  :: dp         = 8 ! Double precision
+          real(kind=dp),intent(in)  :: TimeNow
+          real(kind=dp),intent(out) :: Interval_Frac
+          logical      ,intent(out) :: Load_MesoSteps
+          logical      ,intent(in)  :: first_time
+        end subroutine
+        subroutine Adjust_DT
+        end subroutine
+        subroutine output_results
+        end subroutine
+        subroutine Set_BC
+        end subroutine
+        subroutine vprofilewriter
+        end subroutine
+        subroutine TimeStepTotals(itime)
+          integer, intent(in) :: itime
+        end subroutine
+        subroutine dealloc_arrays
+        end subroutine
+      END INTERFACE
+
+      ! Set the default installation path
+      ! This is only needed if shared data files with fixed paths are read
+      ! in such as the global airport and volcano ESP files.
+      Ash3dHome = '/opt/USGS/Ash3d'
+      ! Here it is over-written by compile-time path, if available
+#include "installpath.h"
+      ! This can be over-written if an environment variable is set
+      call GET_ENVIRONMENT_VARIABLE(NAME="ASH3DHOME",VALUE=tmp_str,STATUS=iostatus)
+      if(iostatus.eq.0)then
+        Ash3dHome = tmp_str
+      endif
 
       dep_percent_accumulated = 0.0_ip
 
@@ -86,6 +129,7 @@
 
         ! input data for ash transport
       call Read_Control_File
+
 !------------------------------------------------------------------------------
 !       OPTIONAL MODULES
 !         Insert calls to custom input blocks here
@@ -282,7 +326,7 @@
 !
 !------------------------------------------------------------------------------
           endif
-        endif
+        endif !MassFluxRate_now.gt.0.0_ip
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         ! Set Boundary Conditions
@@ -337,8 +381,12 @@
           if (nvprofiles.gt.0) call vprofilewriter     !write out vertical profiles
         endif
 
-        !GO TO OUTPUT RESULTS IF WE'RE AT THE NEXT OUTPUT STAGE
-        if(Output_at_WriteTimes.and.(NextWriteTime-time.lt.1.0e-4_ip))then
+        ! GO TO OUTPUT RESULTS IF WE'RE AT THE NEXT OUTPUT STAGE
+        ! Note that dt was set in Adjust_DT so that it is no larger than
+        ! DT_MIN, but may be adjusted down so as to land on the next
+        ! output time.  time has already been integrated forward so
+        ! NextWriteTime-time should be near zero for output steps.
+        if(Output_at_WriteTimes.and.(NextWriteTime-time.lt.DT_MIN))then
             ! Generate output variables if we haven't already
           if(.not.Called_Gen_Output_Vars)then
             call Gen_Output_Vars
@@ -350,8 +398,8 @@
 !------------------------------------------------------------------------------
           call output_results
           if ((WriteAirportFile_ASCII.or.WriteAirportFile_KML).and. &
-              (nTimeNext.lt.nWriteTimes)) then
-            do j=nTimeNext,nWriteTimes
+              (iTimeNext.lt.nWriteTimes)) then
+            do j=iTimeNext,nWriteTimes
               Airport_Thickness_TS(1:nairports,j) = Airport_Thickness(1:nairports)
             enddo
           endif
@@ -463,7 +511,7 @@
       write(global_log ,3) t1-t0, time*HR_2_S
       write(global_info,4) time*HR_2_S/(t1-t0)
       write(global_log ,4) time*HR_2_S/(t1-t0)
-      call TimeStepTotals
+      call TimeStepTotals(itime)
       write(global_info,5) dep_vol
       write(global_log ,5) dep_vol
       write(global_info,6) tot_vol

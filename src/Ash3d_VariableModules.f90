@@ -39,7 +39,7 @@
       real(kind=ip), parameter :: DEG2RAD    = 1.7453292519943295e-2_ip
       real(kind=ip), parameter :: DEG2KMLAT  = 111.0_ip     ! km/degree latitude 
       real(kind=ip), parameter :: DEG2KMLON  = 111.321_ip   ! km/degree longitude at equator
-      real(kind=ip), parameter :: EPS_THRESH = 1.0e-10_ip ! Threshhold for Riemann solver
+      real(kind=ip), parameter :: EPS_THRESH = 1.0e-10_ip ! Threshold for Riemann solver
                                                            ! 1 kg/km3=0.001 mg/m3
       real(kind=ip), parameter :: GRAV       = 9.81_ip      ! Gravitational acceleration m/s^2
       real(kind=ip), parameter :: RAD_EARTH  = 6371.229_ip ! Radius of Earth in km (used for cell
@@ -49,6 +49,7 @@
 
       real(kind=ip), parameter :: KM_2_M     = 1.0e3_ip     ! km to m conversion
       real(kind=ip), parameter :: M_2_MM     = 1.0e3_ip
+      real(kind=ip), parameter :: MM_2_IN    = 3.937e-2_ip
       real(kind=ip), parameter :: KM2_2_M2   = 1.0e6_ip
       real(kind=ip), parameter :: KM3_2_M3   = 1.0e9_ip     
       real(kind=ip), parameter :: MPS_2_KMPHR= 3.6_ip       ! m/s to km/hr
@@ -139,9 +140,10 @@
       integer            :: log_step = 1
 
       integer            :: iolog      ! dummy value for output file identifier
-      integer            :: io
+      integer            :: iout3d          ! index for output timestep of 3d/2d data
       integer            :: ioutputFormat   ! determines the format of the output
                                  ! (1=ASCII, 2=raw binary, 3=NetCDF)
+      character (len=130):: Ash3dHome                    ! path to Ash3d installation
       character (len=130):: infile                       !input file name
       character (len=50) :: outfile
       logical            :: LoadConcen
@@ -218,7 +220,7 @@
       logical            :: Called_Gen_Output_Vars
 !
       character (len=30):: VolcanoName       !name of the volcano, from the ESP input file
-      integer           :: nTimeNext         !index value of next time step to write
+      integer           :: iTimeNext         !index value of next time step to write
       real(kind=ip)     :: WriteInterval     !time between file writing, used only if nWriteTimes=-1
       real(kind=ip)     :: NextWriteTime     !time to write the next file
       character (len=1) :: OutputStep_Marker !=* if data were written out since the last log_step

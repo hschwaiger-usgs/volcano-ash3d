@@ -31,7 +31,7 @@
 #
 #  SYSTEM specifies which compiler to use
 #    Current available options are:
-#      gfortran , ifort
+#      gfortran , ifort, g95
 #    This variable cannot be left blank
 SYSTEM = gfortran
 #
@@ -43,7 +43,7 @@ SYSTEM = gfortran
 #      OMPOPT: includes optimizations flags for fastest runtime and OpenMP directives
 #              To run, enter: env OMP_NUM_THREADS=4 Ash3d input_file.inp
 #    This variable cannot be left blank
-RUN = OPT
+RUN = DEBUG
 
 # This is the location of the USGS libraries and include files
 # This might be different from the INSTALLDIR path if you want to link to special MetReader
@@ -55,13 +55,12 @@ USGSROOT=/opt/USGS
 ASH3dCCSRC=./
 
 INSTALLDIR=/opt/USGS/Ash3d
-#INSTALLDIR=~/gcc
 
 # DATA FORMATS
 #  For each data format you want to include in the library, set the corresponding
 #  variable below to 'T'.  Set to 'F' any you do not want compiled or any unavailable
 USENETCDF = T
-USEGRIB = T
+USEGRIB   = T
 
 #  VERB specifies the verbosity level for debugging purposes
 #    Current available options are:
@@ -74,7 +73,11 @@ VERB = 1
 
 # MEMORY
 # If you need pointer arrays instead of allocatable arrays, set this to 'T'
-USEPOINTERS = F
+USEPOINTERS = T
+
+# EXTERNAL DATA FILES
+#
+USEEXTDATA = F
 
 ###############################################################################
 #  NOTE:  The following flags can either be set or commented out.  If they are
@@ -97,7 +100,7 @@ LIMITER = LIM_SUPERBEE
 # Explicit calculation of diffusion term
 #DIFFMETH=EXPLDIFF
 # Implicit calculation of diffusion using Crank-Nicolson
-#DIFFMETH=CRANKNIC
+DIFFMETH=CRANKNIC
 #
 OPTMODS_FPP= 
 OPTMODS_OBJ=
@@ -168,7 +171,6 @@ ifeq ($(USEGRIB), T)
  #grbLIBS = -lgrib_api_f90 -lgrib_api
  # These are the libraries for ecCodes
  grbLIBS = -leccodes -leccodes_f90
-
 endif
 
 DATAFPPFLAGS = $(ncFPPFLAG) $(grbFPPFLAG)
@@ -176,6 +178,10 @@ DATALIBS = $(ncLIBS) $(grbLIBS)
 
 ifeq ($(USEPOINTERS), T)
  memFPPFLAG = -DUSEPOINTERS
+endif
+
+ifeq ($(USEEXTDATA), T)
+ extdatFPPFLAG = -DUSEEXTDATA
 endif
 
 # location of MetReader, HoursSince and projection
@@ -186,18 +192,11 @@ USGSINC = -I$(USGSROOT)/include
 ###############################################################################
 ##########  GNU Fortran Compiler  #############################################
 ifeq ($(SYSTEM), gfortran)
-
     FCHOME=/usr
     FC=/usr/bin/gfortran
-
-    #COMPINC = -I$(FCHOME)/local/include -I$(FCHOME)/include -I$(FCHOME)/lib64/gfortran/modules
-    #COMPLIBS = -L$(FCHOME)/local/lib -L$(FCHOME)/lib64 -L$(FCHOME)/lib
-
     COMPINC = -I$(FCHOME)/include -I$(FCHOME)/lib64/gfortran/modules
     COMPLIBS = -L$(FCHOME)/lib64 -L$(FCHOME)/lib
-
     LIBS = $(COMPLIBS) $(USGSLIBDIR) $(USGSINC) $(COMPINC) -llapack -lblas $(USGSLIB) $(DATALIBS)
-
 # Debugging flags
 ifeq ($(RUN), DEBUG)
     FFLAGS =  -O0 -g3 -Wall -fbounds-check -pedantic -fbacktrace -fimplicit-none -Wunderflow -Wuninitialized -ffpe-trap=invalid,zero,overflow -fdefault-real-8
@@ -221,48 +220,10 @@ ifeq ($(RUN), OMPOPT)
     FFLAGS = -O3 -w -ffast-math -fdefault-real-8 -fopenmp -lgomp
     ASH3DEXEC=Ash3d_omp
 endif
-
       # Preprocessing flags
-    FPPFLAGS =  -x f95-cpp-input $(DATAFPPFLAGS) $(VERBFPPFLAG) $(LIMFPPFLAG) $(DIFFFPPFLAG) $(memFPPFLAG)
+    FPPFLAGS =  -x f95-cpp-input $(DATAFPPFLAGS) $(VERBFPPFLAG) $(LIMFPPFLAG) $(DIFFFPPFLAG) $(memFPPFLAG) $(extdatFPPFLAG)
       # Extra flags
     #EXFLAGS = -xf95
-    EXFLAGS =
-endif
-###############################################################################
-##########  Intel Fortran Compiler  #############################################
-ifeq ($(SYSTEM), ifort)
-    FCHOME = $(HOME)/intel
-    FC = $(FCHOME)/bin/ifort
-    COMPLIBS = -L$(FCHOME)/lib
-    COMPINC = -I$(FCHOME)/include
-    LIBS = $(COMPLIBS) $(DATALIBS) $(PROJLIBS) $(COMPINC) -llapack -lblas -lirc -limf
-# Debugging flags
-ifeq ($(RUN), DEBUG)
-    FFLAGS = -g2 -pg -warn all -check all -real-size 64 -check uninit -traceback
-    ASH3DEXEC=Ash3d_debug
-endif
-ifeq ($(RUN), DEBUGOMP)
-    FFLAGS = -g2 -pg -warn all -check all -real-size 64 -check uninit -openmp
-    ASH3DEXEC=Ash3d_debugOMP
-endif
-# Profiling flags
-ifeq ($(RUN), PROF)
-    FFLAGS = -g2 -pg
-    ASH3DEXEC=Ash3d_prof
-endif
-# Production run flags
-ifeq ($(RUN), OPT)
-    FFLAGS = -O3 -ftz -w -ipo
-    ASH3DEXEC=Ash3d
-endif
-ifeq ($(RUN), OMPOPT)
-    FFLAGS = -O3 -ftz -w -ipo -openmp
-    ASH3DEXEC=Ash3d_omp
-endif
-
-      # Preprocessing flags
-    FPPFLAGS =  -fpp -Qoption,fpp,$(DATAFPPFLAGS) $(PROJFPPFLAGS) $(VERBFPPFLAG) $(LIMFPPFLAG) $(DIFFFPPFLAG) $(memFPPFLAG)
-      # Extra flags
     EXFLAGS =
 endif
 ###############################################################################
@@ -311,8 +272,10 @@ Input_Data.o: $(ASH3dCCSRC)/Input_Data.f90 makefile Ash3d_VariableModules.o Teph
 Help.o: $(ASH3dCCSRC)/Help.f90 makefile Ash3d_VariableModules.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3dCCSRC)/Help.f90
 VotW.o: $(ASH3dCCSRC)/VotW.f90 makefile Ash3d_VariableModules.o Source.o
+	echo "        Ash3dHome = '$(INSTALLDIR)'" > installpath.h
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/VotW.f90
 Airports.o: $(ASH3dCCSRC)/Airports.f90 makefile Ash3d_VariableModules.o
+	echo "        Ash3dHome = '$(INSTALLDIR)'" > installpath.h
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Airports.f90
 Calc_Mesh.o: $(ASH3dCCSRC)/Calc_Mesh.f90 makefile Ash3d_VariableModules.o Tephra.o Atmosphere.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Calc_Mesh.f90
@@ -372,6 +335,20 @@ clean:
 
 install:
 	install -d $(INSTALLDIR)/bin $(INSTALLDIR)/share/post_proc
-	install -m 755 ../bin/* $(INSTALLDIR)/bin
+	install -m 755 ../bin/$(ASH3DEXEC) $(INSTALLDIR)/bin
+	install -m 644 ../share/GlobalAirports_ewert.txt $(INSTALLDIR)/share/
+	install -m 644 ../share/VotW_ESP_v12_csv.txt  $(INSTALLDIR)/share/
 	install -m 644 ../share/post_proc/*png $(INSTALLDIR)/share/post_proc/
+
+uninstall:
+	rm -f $(INSTALLDIR)/bin/$(ASH3DEXEC)
+	rm -r $(INSTALLDIR)/share/GlobalAirports_ewert.txt
+	rm -f $(INSTALLDIR)/share/VotW_ESP_v12_csv.txt
+	rm -f $(INSTALLDIR)/share/post_proc/CloudLoad_hsv.png
+	rm -f $(INSTALLDIR)/share/post_proc/USGS_warning3.png
+	rmdir $(INSTALLDIR)/share/post_proc
+	rmdir $(INSTALLDIR)/share
+	rmdir $(INSTALLDIR)/bin
+	rmdir $(INSTALLDIR)
+
 

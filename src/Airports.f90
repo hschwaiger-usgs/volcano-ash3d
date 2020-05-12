@@ -4,6 +4,9 @@
 
       use io_units
 
+      use io_data,       only : &
+         Ash3dHome
+
       integer, parameter             :: MAXAIRPORTS     = 10000
 
       integer                        :: NAIRPORTS_EWERT     ! number of airports in the global list in Read_GlobalAirports
@@ -42,6 +45,7 @@
       real(kind=ip),     allocatable :: Airport_Thickness_TS(:,:)   !deposit thickness for all output times
       integer,           allocatable :: Airport_TS_plotindex(:)
 
+      character(len=130)             :: AirportMasterFile           !Only needed if USEEXTDATA=T
       character(len=130)             :: AirportInFile
       character(len=35), allocatable :: Airport_Name(:)
       logical, allocatable           :: Airport_AshArrived(:)
@@ -158,6 +162,12 @@
         n_airports_total = NAIRPORTS_EWERT                     !if not reading external file
       elseif (AppendExtAirportFile.eqv..true.) then
         n_airports_total = NAIRPORTS_EWERT + n_ext_airports    !if appending external to internal
+        if(n_airports_total.gt.MAXAIRPORTS)then
+          write(global_error,*)"ERROR: ",&
+           "Too many airports are requested."
+          write(global_error,*)&
+            "       Increase MAXAIRPORTS and recompile"
+        endif 
         do i=NAIRPORTS_EWERT+1,n_airports_total
           AirportFullLat(i)  = ExtAirportLat(i-NAIRPORTS_EWERT)
           AirportFullLon(i)  = ExtAirportLon(i-NAIRPORTS_EWERT)
@@ -245,12 +255,14 @@
             Airport_i(ind) = int((Airport_Longitude(ind)-lonLL)/de) +1
             Airport_j(ind) = int((Airport_Latitude(ind)-latLL)/dn) +1
             !find inext(i), jnext(i) for bilinear interpolation
-            if ((Airport_Longitude(ind)-(lonLL+float(Airport_i(ind)-1)*de)).lt.(de/2.0_ip)) then
+            if ((Airport_Longitude(ind)-&
+                 (lonLL+real(Airport_i(ind)-1,kind=ip)*de)).lt.(de/2.0_ip)) then
               inext(ind)=Airport_i(ind)
             else
               inext(ind)=Airport_i(ind)+1
             endif
-            if ((Airport_Latitude(ind)-(latLL+float(Airport_j(ind)-1)*dn)).lt.(dn/2.0_ip)) then
+            if ((Airport_Latitude(ind)-&
+                 (latLL+real(Airport_j(ind)-1,kind=ip)*dn)).lt.(dn/2.0_ip)) then
               jnext(ind)=Airport_j(ind)
             else
               jnext(ind)=Airport_j(ind)+1
@@ -288,12 +300,12 @@
             Airport_i(ind) = int((Airport_x(ind)-xLL)/dx) +1
             Airport_j(ind) = int((Airport_y(ind)-yLL)/dy) +1
             !find inext(i), jnext(i) for bilinear interpolation
-            if ((Airport_x(ind)-(xLL+float(Airport_i(ind)-1)*dx)).lt.(dx/2.0_ip)) then
+            if ((Airport_x(ind)-(xLL+real(Airport_i(ind)-1,kind=ip)*dx)).lt.(dx/2.0_ip)) then
               inext(ind)=Airport_i(ind)
             else
               inext(ind)=Airport_i(ind)+1
             endif
-            if ((Airport_y(ind)-(yLL+float(Airport_j(ind)-1)*dy)).lt.(dy/2.0_ip)) then
+            if ((Airport_y(ind)-(yLL+real(Airport_j(ind)-1,kind=ip)*dy)).lt.(dy/2.0_ip)) then
               jnext(ind)=Airport_j(ind)
             else
               jnext(ind)=Airport_j(ind)+1
@@ -305,6 +317,11 @@
 !     WRITE OUT AIRPORT NAMES TO LOG FILE
       write(global_info,3) nairports
       write(global_log ,3) nairports
+
+      deallocate(AirportFullLat)
+      deallocate(AirportFullLon)
+      deallocate(AirportFullCode)
+      deallocate(AirportFullName)
 
       return       
 
@@ -401,7 +418,7 @@
 
       implicit none
 
-      integer           :: i,inow,iostatus,j
+      integer           :: inow,iostatus
       character(len=80) :: inputline
 
       inow = 0
@@ -409,9 +426,6 @@
 !     OPEN THE AIRPORT LOCATION FILE
       open(unit=17,file=AirportInFile,status='old')
       read(17,'(a80)',iostat=Iostatus) inputline
-
-      i = 0
-      j = 0
 
 !      READ AIRPORT LOCATIONS AND ASSIGN AIRPORTS IN THE MODELED AREA TO A
 !      TEMPORARY ARRAY      
@@ -441,6 +455,74 @@
 
 !******************************************************************************
 
+#ifdef USEEXTDATA
+      subroutine Read_GlobalAirports(num_GlobAirports)
+
+      implicit none
+
+      integer, intent(out) :: num_GlobAirports
+
+      integer                 :: i
+      integer                 :: Iostatus    = 1
+      real(kind=ip)           :: inx, iny
+      real(kind=ip)           :: inlat, inlon
+      character(len=120)      :: inputline
+      character(len=35)       :: inName
+      character(len=3)        :: inCode
+      logical                 :: IsThere
+
+      allocate(AirportFullLat(MAXAIRPORTS))
+      allocate(AirportFullLon(MAXAIRPORTS))
+      allocate(AirportFullCode(MAXAIRPORTS))
+      allocate(AirportFullName(MAXAIRPORTS))
+
+      AirportMasterFile = trim(Ash3dHome) // &
+                          '/share/GlobalAirports_ewert.txt'
+      ! Test for existance of the airport file
+      inquire( file=adjustl(trim(AirportMasterFile)), exist=IsThere )
+      write(global_info,*)"     ",adjustl(trim(AirportMasterFile)),IsThere
+      if(.not.IsThere)then
+        write(global_error,*)"ERROR: Could not find airport file."
+        write(global_error,*)"       Please copy file to this location:"
+        write(global_error,*)AirportMasterFile
+        stop 1
+      endif
+
+!     OPEN THE AIRPORT LOCATION FILE
+      open(unit=17,file=AirportMasterFile,status='old',err=2000)
+      ! Read first header line
+      read(17,'(a120)',IOSTAT=Iostatus) inputline
+!      READ AIRPORT LOCATIONS AND ASSIGN AIPORTS IN THE MODELED AREA TO A TEMPORARY ARRAY      
+      i = 0
+      do while (Iostatus.ge.0)
+        read(17,'(a120)',IOSTAT=Iostatus) inputline
+        read(inputline,*) inlat, inlon, inx, iny
+        read(inputline,2) inCode,inName
+        i = i+1
+        if(i.gt.MAXAIRPORTS)then
+          write(global_error,*)"ERROR: ",&
+           "Airport file contains too many entries"
+          stop 1
+        endif
+        AirportFullCode(i) = inCode
+        AirportFullName(i) = inName
+        AirportFullLat(i)  = inlat
+        AirportFullLon(i)  = inlon
+      end do
+
+      ! return the number of airports in this global list.
+      num_GlobAirports = i
+
+      !FORMAT STATEMENTS
+2     format(50x,a3,2x,a35)
+5     format(5x,'Error.  Can''t find input file ',a130,/,5x,'Program stopped')   
+2000  write(6,5) AirportInFile
+
+      end subroutine Read_GlobalAirports
+!******************************************************************************
+
+#else
+      ! This branch is compiled if the list should be built in
       subroutine Read_GlobalAirports(num_GlobAirports) !(NAIRPORTS,AirportFullLat,AirportFullLon, nAirportFullCode, AirportFullName)
 
       implicit none
@@ -12729,6 +12811,7 @@
       num_GlobAirports = i
       
       end subroutine Read_GlobalAirports
+#endif
 
       end module Airports
 

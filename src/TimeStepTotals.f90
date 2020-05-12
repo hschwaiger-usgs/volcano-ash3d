@@ -25,8 +25,15 @@
 
       integer, intent(in) :: itime
 
-      character(len=13) :: HS_yyyymmddhhmm_since
       character(len=13) :: DateTime  !function that calculates date string given hours since base year (1900)
+
+      INTERFACE
+        character (len=13) function HS_yyyymmddhhmm_since(HoursSince,byear,useLeaps)
+          real(kind=8)               ::  HoursSince
+          integer                    ::  byear
+          logical                    ::  useLeaps
+        end function HS_yyyymmddhhmm_since
+      END INTERFACE
 
       !integer            :: isize !, ix, iy, iz
 

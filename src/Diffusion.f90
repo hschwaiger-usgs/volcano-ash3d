@@ -31,9 +31,9 @@
       implicit none
 
       integer :: nx,ny,nz
-      integer :: ngridnode
+      !integer :: ngridnode
 
-      ngridnode = (nx+2)*(ny+2)*(nz+2)
+      !ngridnode = (nx+2)*(ny+2)*(nz+2)
 
       ! Initialize diffusivity arrays with diffusivity_horz and diffusivity_vert
       ! These will change if useVarDiff = .true.
@@ -311,16 +311,68 @@
       real(kind=ip) :: k0,k1,k2,km1,km0
       real(kind=ip) :: km12,r,BC_left,BC_right
         ! It would probably be better to have these on a stack
-      real(kind=ip),allocatable,dimension(:) :: DL_d,D_d,DU_d,B_d
+      real(kind=sp),allocatable,dimension(:) :: DL_s,D_s,DU_s,B_s
+      real(kind=dp),allocatable,dimension(:) :: DL_d,D_d,DU_d,B_d
       integer :: nlineq,nrhs,ldb,info
       real(kind=ip) :: sm1,sp1
 
+#ifdef CRANKNIC
+      ! Note: The only reason not to use Crank-Nicolson is if you
+      !       don't have blas and lapack installed.  This pre-proc.
+      !       directive allows this section to be turnes off.
+      INTERFACE
+        subroutine sgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
+          integer                         ,intent(in)    :: N
+          integer                         ,intent(in)    :: NRHS
+          real(kind=4),dimension(N-1)     ,intent(inout) :: DL
+          real(kind=4),dimension(N)       ,intent(inout) :: D
+          real(kind=4),dimension(N-1)     ,intent(inout) :: DU
+          integer                         ,intent(in)    :: LDB
+          real(kind=4),dimension(ldb,NRHS),intent(inout) :: B
+          integer                         ,intent(out)   :: INFO
+        end subroutine
+        subroutine dgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
+          integer                         ,intent(in)    :: N
+          integer                         ,intent(in)    :: NRHS
+          real(kind=8),dimension(N-1)     ,intent(inout) :: DL
+          real(kind=8),dimension(N)       ,intent(inout) :: D
+          real(kind=8),dimension(N-1)     ,intent(inout) :: DU
+          integer                         ,intent(in)    :: LDB
+          real(kind=8),dimension(ldb,NRHS),intent(inout) :: B
+          integer                         ,intent(out)   :: INFO
+        end subroutine
+        subroutine sptsv(N,NRHS,D,E,B,LDB,INFO)
+          integer                         ,intent(in)    :: N
+          integer                         ,intent(in)    :: NRHS
+          real(kind=4),dimension(N)       ,intent(inout) :: D
+          real(kind=4),dimension(N-1)     ,intent(inout) :: E
+          integer                         ,intent(in)    :: LDB
+          real(kind=4),dimension(ldb,NRHS),intent(inout) :: B
+          integer                         ,intent(out)   :: INFO
+        end subroutine
+        subroutine dptsv(N,NRHS,D,E,B,LDB,INFO)
+          integer                         ,intent(in)    :: N
+          integer                         ,intent(in)    :: NRHS
+          real(kind=8),dimension(N)       ,intent(inout) :: D
+          real(kind=8),dimension(N-1)     ,intent(inout) :: E
+          integer                         ,intent(in)    :: LDB
+          real(kind=8),dimension(ldb,NRHS),intent(inout) :: B
+          integer                         ,intent(out)   :: INFO
+        end subroutine
+      END INTERFACE
+#endif
       concen_pd(:,:,:,:,ts1) = 0.0_ip
 
       if(nxmax.gt.1)then
 
       nlineq = nxmax
       ldb = nlineq  ! leading dimension of b is num of equations
+      if (ip.eq.4)then
+        allocate(DL_s(nlineq-1));
+        allocate(D_s(nlineq));
+        allocate(DU_s(nlineq-1));
+        allocate(B_s(nlineq));
+      endif
       allocate(DL_d(nlineq-1));
       allocate(D_d(nlineq));
       allocate(DU_d(nlineq-1));
@@ -389,20 +441,27 @@
               endif
  
             enddo
-
+#ifdef CRANKNIC
+      ! Note: The only reason not to use Crank-Nicolson is if you
+      !       don't have blas and lapack installed.  This pre-proc.
+      !       directive allows this section to be turnes off.
             if(useVarDiffH.or.IsLatLon)then
               ! This is the call for solving single or double
               ! precision general tridiagonal Ax=b
               ! Note: This is the function to call if kx is spatially
               ! variable
               if(ip.eq.4)then
+                DL_s = real(DL_d,kind=4)
+                D_s  = real(D_d ,kind=4)
+                DU_s = real(DU_d,kind=4)
+                B_s  = real(B_d ,kind=4)
                 call sgtsv(     &
                       nlineq, &  !i The order of the matrix A.  N >= 0.
                       nrhs,   &  !i The number of right hand sides
-                      DL_d,   &  !b array, dimension (N-1) sub-diagonal
-                      D_d,    &  !b dimension (N) diagonal
-                      DU_d,   &  !b array, dimension (N-1) super-diagonal
-                      B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
+                      DL_s,   &  !b array, dimension (N-1) sub-diagonal
+                      D_s,    &  !b dimension (N) diagonal
+                      DU_s,   &  !b array, dimension (N-1) super-diagonal
+                      B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                       ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                       info)      !o
               elseif(ip.eq.8)then
@@ -422,12 +481,15 @@
               ! Note: A will only be symmetric if kx is homogeneous
               !       This is really not much faster than dgtsv
               if(ip.eq.4)then
+                D_s  = real(D_d ,kind=4)
+                DU_s = real(DU_d,kind=4)
+                B_s  = real(B_d ,kind=4)
                 call sptsv(     &
                       nlineq, &  !i The order of the matrix A.  N >= 0.
                       nrhs,   &  !i The number of right hand sides
-                      D_d,    &  !b dimension (N) diagonal
-                      DU_d,   &  !b array, dimension (N-1) sub or super-diagonal
-                      B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
+                      D_s,    &  !b dimension (N) diagonal
+                      DU_s,   &  !b array, dimension (N-1) sub or super-diagonal
+                      B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                       ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                       info)      !o
               elseif(ip.eq.8)then
@@ -441,13 +503,16 @@
                       info)      !o
               endif
             endif
-
+#endif
             concen_pd(1:nxmax,j,k,n,ts1) = B_d
 
           enddo ! loop over j
         enddo ! loop over k
       enddo ! loop over n
 
+      if (ip.eq.4)then
+        deallocate(DL_s,D_s,DU_s,B_s)
+      endif
       deallocate(DL_d,D_d,DU_d,B_d)
 
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
@@ -478,16 +543,68 @@
       integer :: i,j,k,n
       real(kind=ip) :: k0,k1,k2,km1,km0
       real(kind=ip) :: km12,r,BC_left,BC_right
-      real(kind=ip),allocatable,dimension(:) :: DL_d,D_d,DU_d,B_d
+      real(kind=sp),allocatable,dimension(:) :: DL_s,D_s,DU_s,B_s
+      real(kind=dp),allocatable,dimension(:) :: DL_d,D_d,DU_d,B_d
       integer :: nlineq,nrhs,ldb,info
       real(kind=ip) :: sm1,sp1
 
+#ifdef CRANKNIC
+      ! Note: The only reason not to use Crank-Nicolson is if you
+      !       don't have blas and lapack installed.  This pre-proc.
+      !       directive allows this section to be turnes off.
+      INTERFACE
+        subroutine sgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
+          integer                         ,intent(in)    :: N
+          integer                         ,intent(in)    :: NRHS
+          real(kind=4),dimension(N-1)     ,intent(inout) :: DL
+          real(kind=4),dimension(N)       ,intent(inout) :: D
+          real(kind=4),dimension(N-1)     ,intent(inout) :: DU
+          integer                         ,intent(in)    :: LDB
+          real(kind=4),dimension(ldb,NRHS),intent(inout) :: B
+          integer                         ,intent(out)   :: INFO
+        end subroutine
+        subroutine dgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
+          integer                         ,intent(in)    :: N
+          integer                         ,intent(in)    :: NRHS
+          real(kind=8),dimension(N-1)     ,intent(inout) :: DL
+          real(kind=8),dimension(N)       ,intent(inout) :: D
+          real(kind=8),dimension(N-1)     ,intent(inout) :: DU
+          integer                         ,intent(in)    :: LDB
+          real(kind=8),dimension(ldb,NRHS),intent(inout) :: B
+          integer                         ,intent(out)   :: INFO
+        end subroutine
+        subroutine sptsv(N,NRHS,D,E,B,LDB,INFO)
+          integer                         ,intent(in)    :: N
+          integer                         ,intent(in)    :: NRHS
+          real(kind=4),dimension(N)       ,intent(inout) :: D
+          real(kind=4),dimension(N-1)     ,intent(inout) :: E
+          integer                         ,intent(in)    :: LDB
+          real(kind=4),dimension(ldb,NRHS),intent(inout) :: B
+          integer                         ,intent(out)   :: INFO
+        end subroutine
+        subroutine dptsv(N,NRHS,D,E,B,LDB,INFO)
+          integer                         ,intent(in)    :: N
+          integer                         ,intent(in)    :: NRHS
+          real(kind=8),dimension(N)       ,intent(inout) :: D
+          real(kind=8),dimension(N-1)     ,intent(inout) :: E
+          integer                         ,intent(in)    :: LDB
+          real(kind=8),dimension(ldb,NRHS),intent(inout) :: B
+          integer                         ,intent(out)   :: INFO
+        end subroutine
+      END INTERFACE
+#endif
       concen_pd(:,:,:,:,ts1) = 0.0_ip
 
       if(nymax.gt.1)then
 
       nlineq = nymax
       ldb = nlineq  ! leading dimension of b is num of equations
+      if (ip.eq.4)then
+        allocate(DL_s(nlineq-1));
+        allocate(D_s(nlineq));
+        allocate(DU_s(nlineq-1));
+        allocate(B_s(nlineq));
+      endif
       allocate(DL_d(nlineq-1));
       allocate(D_d(nlineq));
       allocate(DU_d(nlineq-1));
@@ -556,20 +673,27 @@
               endif
  
             enddo
-
+#ifdef CRANKNIC
+      ! Note: The only reason not to use Crank-Nicolson is if you
+      !       don't have blas and lapack installed.  This pre-proc.
+      !       directive allows this section to be turnes off.
             if(useVarDiffH.or.IsLatLon)then
               ! This is the call for solving single or double
               ! precision general tridiagonal Ax=b
               ! Note: This is the function to call if ky is spatially
               ! variable
               if(ip.eq.4)then
+                DL_s = real(DL_d,kind=4)
+                D_s  = real(D_d ,kind=4)
+                DU_s = real(DU_d,kind=4)
+                B_s  = real(B_d ,kind=4)
                 call sgtsv(     &
                       nlineq, &  !i The order of the matrix A.  N >= 0.
                       nrhs,   &  !i The number of right hand sides
-                      DL_d,   &  !b array, dimension (N-1) sub-diagonal
-                      D_d,    &  !b dimension (N) diagonal
-                      DU_d,   &  !b array, dimension (N-1) super-diagonal
-                      B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
+                      DL_s,   &  !b array, dimension (N-1) sub-diagonal
+                      D_s,    &  !b dimension (N) diagonal
+                      DU_s,   &  !b array, dimension (N-1) super-diagonal
+                      B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                       ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                       info)      !o
               elseif(ip.eq.8)then
@@ -589,12 +713,15 @@
               ! Note: A will only be symmetric if ky is homogeneous
               !       This is really not much faster than dgtsv
               if(ip.eq.4)then
+                D_s  = real(D_d ,kind=4)
+                DU_s = real(DU_d,kind=4)
+                B_s  = real(B_d ,kind=4)
                 call sptsv(     &
                       nlineq, &  !i The order of the matrix A.  N >= 0.
                       nrhs,   &  !i The number of right hand sides
-                      D_d,    &  !b dimension (N) diagonal
-                      DU_d,   &  !b array, dimension (N-1) sub or super-diagonal
-                      B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
+                      D_s,    &  !b dimension (N) diagonal
+                      DU_s,   &  !b array, dimension (N-1) sub or super-diagonal
+                      B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                       ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                       info)      !o
               elseif(ip.eq.8)then
@@ -608,13 +735,15 @@
                       info)      !o
               endif
             endif
-
+#endif
             concen_pd(i,1:nymax,k,n,ts1) = B_d
 
           enddo ! loop over i
         enddo ! loop over k
       enddo ! loop over n
-
+      if (ip.eq.4)then
+        deallocate(DL_s,D_s,DU_s,B_s)
+      endif
       deallocate(DL_d,D_d,DU_d,B_d)
 
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
@@ -645,9 +774,56 @@
       integer :: i,j,k,n
       real(kind=ip) :: k0,k1,k2,km1,km0
       real(kind=ip) :: km12,r,BC_left,BC_right
+      real(kind=sp),allocatable,dimension(:) :: DL_s,D_s,DU_s,B_s
       real(kind=ip),allocatable,dimension(:) :: DL_d,D_d,DU_d,B_d
       integer :: nlineq,nrhs,ldb,info
       real(kind=ip) :: sm1,sp1
+
+#ifdef CRANKNIC
+      ! Note: The only reason not to use Crank-Nicolson is if you
+      !       don't have blas and lapack installed.  This pre-proc.
+      !       directive allows this section to be turnes off.
+      INTERFACE
+        subroutine sgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
+          integer                         ,intent(in)    :: N
+          integer                         ,intent(in)    :: NRHS
+          real(kind=4),dimension(N-1)     ,intent(inout) :: DL
+          real(kind=4),dimension(N)       ,intent(inout) :: D
+          real(kind=4),dimension(N-1)     ,intent(inout) :: DU
+          integer                         ,intent(in)    :: LDB
+          real(kind=4),dimension(ldb,NRHS),intent(inout) :: B
+          integer                         ,intent(out)   :: INFO
+        end subroutine
+        subroutine dgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
+          integer                         ,intent(in)    :: N
+          integer                         ,intent(in)    :: NRHS
+          real(kind=8),dimension(N-1)     ,intent(inout) :: DL
+          real(kind=8),dimension(N)       ,intent(inout) :: D
+          real(kind=8),dimension(N-1)     ,intent(inout) :: DU
+          integer                         ,intent(in)    :: LDB
+          real(kind=8),dimension(ldb,NRHS),intent(inout) :: B
+          integer                         ,intent(out)   :: INFO
+        end subroutine
+        subroutine sptsv(N,NRHS,D,E,B,LDB,INFO)
+          integer                         ,intent(in)    :: N
+          integer                         ,intent(in)    :: NRHS
+          real(kind=4),dimension(N)       ,intent(inout) :: D
+          real(kind=4),dimension(N-1)     ,intent(inout) :: E
+          integer                         ,intent(in)    :: LDB
+          real(kind=4),dimension(ldb,NRHS),intent(inout) :: B
+          integer                         ,intent(out)   :: INFO
+        end subroutine
+        subroutine dptsv(N,NRHS,D,E,B,LDB,INFO)
+          integer                         ,intent(in)    :: N
+          integer                         ,intent(in)    :: NRHS
+          real(kind=8),dimension(N)       ,intent(inout) :: D
+          real(kind=8),dimension(N-1)     ,intent(inout) :: E
+          integer                         ,intent(in)    :: LDB
+          real(kind=8),dimension(ldb,NRHS),intent(inout) :: B
+          integer                         ,intent(out)   :: INFO
+        end subroutine
+      END INTERFACE
+#endif
 
       concen_pd(:,:,:,:,ts1) = 0.0_ip
 
@@ -655,6 +831,12 @@
 
       nlineq = nzmax
       ldb = nlineq  ! leading dimension of b is num of equations
+      if (ip.eq.4)then
+        allocate(DL_s(nlineq-1));
+        allocate(D_s(nlineq));
+        allocate(DU_s(nlineq-1));
+        allocate(B_s(nlineq));
+      endif
       allocate(DL_d(nlineq-1));
       allocate(D_d(nlineq));
       allocate(DU_d(nlineq-1));
@@ -723,20 +905,27 @@
               endif
  
             enddo
-
+#ifdef CRANKNIC
+      ! Note: The only reason not to use Crank-Nicolson is if you
+      !       don't have blas and lapack installed.  This pre-proc.
+      !       directive allows this section to be turnes off.
             if(useVarDiffV.or.IsLatLon)then
               ! This is the call for solving single or double
               ! precision general tridiagonal Ax=b
               ! Note: This is the function to call if kz is spatially
               ! variable
               if(ip.eq.4)then
+                DL_s = real(DL_d,kind=4)
+                D_s  = real(D_d ,kind=4)
+                DU_s = real(DU_d,kind=4)
+                B_s  = real(B_d ,kind=4)
                 call sgtsv(     &
                       nlineq, &  !i The order of the matrix A.  N >= 0.
                       nrhs,   &  !i The number of right hand sides
-                      DL_d,   &  !b array, dimension (N-1) sub-diagonal
-                      D_d,    &  !b dimension (N) diagonal
-                      DU_d,   &  !b array, dimension (N-1) super-diagonal
-                      B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
+                      DL_s,   &  !b array, dimension (N-1) sub-diagonal
+                      D_s,    &  !b dimension (N) diagonal
+                      DU_s,   &  !b array, dimension (N-1) super-diagonal
+                      B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                       ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                       info)      !o
               elseif(ip.eq.8)then
@@ -756,12 +945,15 @@
               ! Note: A will only be symmetric if kz is homogeneous
               !       This is really not much faster than dgtsv
               if(ip.eq.4)then
+                D_s  = real(D_d ,kind=4)
+                DU_s = real(DU_d,kind=4)
+                B_s  = real(B_d ,kind=4)
                 call sptsv(     &
                       nlineq, &  !i The order of the matrix A.  N >= 0.
                       nrhs,   &  !i The number of right hand sides
-                      D_d,    &  !b dimension (N) diagonal
-                      DU_d,   &  !b array, dimension (N-1) sub or super-diagonal
-                      B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
+                      D_s,    &  !b dimension (N) diagonal
+                      DU_s,   &  !b array, dimension (N-1) sub or super-diagonal
+                      B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                       ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                       info)      !o
               elseif(ip.eq.8)then
@@ -775,13 +967,16 @@
                       info)      !o
               endif
             endif
-
+#endif
             concen_pd(i,j,1:nzmax,n,ts1) = B_d
 
           enddo ! loop over j
         enddo ! loop over i
       enddo ! loop over n
 
+      if (ip.eq.4)then
+        deallocate(DL_s,D_s,DU_s,B_s)
+      endif
       deallocate(DL_d,D_d,DU_d,B_d)
 
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &

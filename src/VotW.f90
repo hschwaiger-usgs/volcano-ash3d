@@ -4,7 +4,12 @@
 
       use io_units
 
+      use io_data,       only : &
+         Ash3dHome
+
       implicit none
+
+      character(len=130)  :: VotWMasterFile  !Only needed if USEEXTDATA=T
 
       contains
 
@@ -218,7 +223,95 @@
       end subroutine get_ESP
 
 !******************************************************************************
+#ifdef USEEXTDATA
+      subroutine VotW_v12(MAXVOLCS,volcLat,volcLon,volcElev,volcLoc,volcESP_Code,volcID,volcName)
 
+      implicit none
+
+      integer           ,intent(in)    :: MAXVOLCS
+      real(kind=ip)     ,intent(inout) :: volcLat(MAXVOLCS)
+      real(kind=ip)     ,intent(inout) :: volcLon(MAXVOLCS)
+      integer           ,intent(inout) :: volcElev(MAXVOLCS)
+      character(len=30) ,intent(inout) :: volcLoc(MAXVOLCS)
+      character(len=2 ) ,intent(inout) :: volcESP_Code(MAXVOLCS)
+      character(len=8 ) ,intent(inout) :: volcID(MAXVOLCS)
+      character(len=42) ,intent(inout) :: volcName(MAXVOLCS)
+      logical              :: IsThere
+      integer              :: Iostatus    = 1
+      character(len=20)    ::  temp1
+      character(len=20)    ::  temp2
+      character(len=20)    ::  temp3
+      character(len=30)    ::  volcElev_c(MAXVOLCS)
+      character            ::  volcNS(MAXVOLCS)
+      character            ::  volcWE(MAXVOLCS)
+
+      character(len=195) :: linebuffer
+      integer         :: nvolcs
+      !integer         :: i,Volcano_ID
+      character       :: testkey
+
+      VotWMasterFile = trim(Ash3dHome) // &
+                          '/share/VotW_ESP_v12_csv.txt'
+      ! Test for existance of the VotW file
+      inquire( file=adjustl(trim(VotWMasterFile)), exist=IsThere )
+      write(global_info,*)"     ",adjustl(trim(VotWMasterFile)),IsThere
+      if(.not.IsThere)then
+        write(global_error,*)"ERROR: Could not find VotW file."
+        write(global_error,*)"       Please copy file to this location:"
+        write(global_error,*)VotWMasterFile
+        stop 1 
+      endif
+
+      !"http://www.volcano.si.edu/world/volcano.cfm?vnum="
+      open(unit=20,file=VotWMasterFile,status='old',err=3000)
+      read(20,'(a195)')linebuffer
+      nvolcs = 0
+      read(20,'(a195)',IOSTAT=Iostatus) linebuffer
+      do while (Iostatus.ge.0)
+        nvolcs = nvolcs + 1
+        read(linebuffer,50)volcID(nvolcs),     &
+                           volcName(nvolcs),   &
+                           volcLoc(nvolcs),    &
+                           volcLat(nvolcs),    &
+                           temp1,              &
+                           volcLon(nvolcs),    &
+                           temp2,              &
+                           volcElev_c(nvolcs), &
+                           temp3
+        volcName(nvolcs) = adjustl(volcName(nvolcs))
+        volcLoc(nvolcs)  = adjustl(volcLoc(nvolcs))
+        volcElev_c(nvolcs) = adjustl(volcElev_c(nvolcs))
+        volcNS(nvolcs)     = adjustl(temp1)
+        volcWE(nvolcs)     = adjustl(temp2)
+        volcESP_Code(nvolcs) = adjustl(temp3)
+
+        read(volcElev_c(nvolcs),*)testkey
+        if(testkey.eq.'U'.or.testkey.eq.'v')then
+          volcElev(nvolcs) = 0
+        else
+          read(volcElev_c(nvolcs),*)volcElev(nvolcs)
+        endif
+        if(volcNS(nvolcs).eq.'S') volcLat(nvolcs) = -volcLat(nvolcs)
+        if(volcWE(nvolcs).eq.'W') volcLon(nvolcs) = -volcLon(nvolcs) + 360.0_ip
+        write(*,*)volcID(nvolcs),volcName(nvolcs),volcLoc(nvolcs),volcLat(nvolcs),volcLon(nvolcs)
+        read(20,'(a195)',IOSTAT=Iostatus) linebuffer
+      enddo
+
+      close(20)
+
+      return
+
+50    format(a8,a42,a31,f21.3,a18,f19.3,a18,a15,a18)
+5     format(5x,'Error.  cannot find input file ',a130,/,5x,&
+                'Program stopped')
+
+!     ERROR TRAPS
+3000  write(6,5) "VotW_ESP_v12.esp"
+      write(9,5) "VotW_ESP_v12.esp"
+      stop 1
+
+      end subroutine VotW_v12
+#else
       subroutine VotW_v12(MAXVOLCS,volcLat,volcLon,volcElev,volcLoc,volcESP_Code,volcID,volcName)
 
       implicit none
@@ -3307,6 +3400,7 @@
              volcESP_Code(i)="S0"; volcID(i)="1900-14-"; volcName(i)="Protector Shoal                "; 
 
       end subroutine VotW_v12
+#endif
 
       end module VotW_ESP
 

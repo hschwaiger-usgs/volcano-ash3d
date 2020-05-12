@@ -5,11 +5,11 @@
       use io_units
 
       use global_param,  only : &
-         EPS_SMALL
+         EPS_SMALL,MM_2_IN
 
       use io_data,       only : &
-         io,ioutputFormat,WriteTimes,nWriteTimes,isFinal_TS,&
-         NextWriteTime,nTimeNext,nvprofiles,OutputStep_Marker,&
+         iout3d,ioutputFormat,WriteTimes,nWriteTimes,isFinal_TS,&
+         NextWriteTime,iTimeNext,nvprofiles,OutputStep_Marker,&
          Write3dFiles,WriteAirportFile_ASCII,&
          WriteCloudConcentration_ASCII,WriteAirportFile_KML,&
          WriteCloudConcentration_KML,WriteCloudHeight_ASCII,&
@@ -40,11 +40,42 @@
       implicit none
 
       character(len=13) :: cio
-      character(len=13) :: HS_yyyymmddhh_since
-      character(len=20) :: HS_xmltime
       real(kind=ip)     :: timestart
       real(kind=ip)     :: timeend
       logical,save      :: first_time = .true.
+
+      INTERFACE
+        subroutine vprofileopener
+        end subroutine
+        subroutine vprofilecloser
+        end subroutine
+        subroutine Write_PointData_Airports_ASCII
+        end subroutine
+        subroutine write_2D_ASCII(nx,ny,OutVar,Fill_Value,filename_root)
+          integer,parameter  :: ip         = 8 ! Internal precision
+          integer          ,intent(in) :: nx,ny
+          real(kind=ip)    ,intent(in) :: OutVar(nx,ny)
+          character(len=6) ,intent(in) :: Fill_Value
+          character(len=20),intent(in) :: filename_root
+        end subroutine
+        subroutine write_3D_ASCII(cio)
+          character(len=13) ,intent(in) :: cio
+        end subroutine
+        subroutine write_3D_Binary(cio,ns)
+          character(len=13) ,intent(in) :: cio
+          integer           ,intent(in) :: ns
+        end subroutine
+        character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
+          real(kind=8)               ::  HoursSince
+          integer                    ::  byear
+          logical                    ::  useLeaps
+        end function HS_yyyymmddhh_since
+        character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
+          real(kind=8)              :: HoursSince
+          integer                   :: byear
+          logical                   :: useLeaps
+        end function HS_xmltime
+      END INTERFACE
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ! Open/Create output files
@@ -57,6 +88,7 @@
         !       as are Airport/POI files and cloud/deposit arrival times.
         !       Profiles, KML time-series, and netcdf files need to be created
         !       and left opened throughout the run.
+        iout3d = 0
 
         ! Open vertical profiles files
         if (nvprofiles.gt.0) call vprofileopener
@@ -91,29 +123,32 @@
 
         first_time = .false.
 
-        !if(time+dt.lt.NextWriteTime)then
         if(NextWriteTime.gt.EPS_SMALL)then
           ! If the first output timestep is essentially t=0, then continue in
           !  this subroutine, else return to Ash3d.F90
           return
         endif
 
-      endif
+      endif  ! first_time
+      ! Finished opening all the netcdf and kml output files.
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      io = io+1
-      if (nTimeNext.lt.nWriteTimes) then   !adjust next write time
-         nTimeNext = nTimeNext + 1
-         NextWriteTime = WriteTimes(nTimeNext)
+
+      ! 
+      iout3d = iout3d + 1    ! increment the counter for the output step
+      if (iTimeNext.lt.nWriteTimes) then   !adjust next write time
+         iTimeNext = iTimeNext + 1
+         NextWriteTime = WriteTimes(iTimeNext)
         else
-         NextWriteTime = 1.0e10_ip
+          ! Otherwise, set the next time to very large number
+         NextWriteTime = 1.0_ip/EPS_SMALL
       endif
       !construct text string for timespan written to KML files
-      if (nTimeNext.gt.0) then
+      if (iTimeNext.gt.0) then
          !timenow = SimStartHour+time
          !xmlTimeNow = HS_xmltime(timenow,BaseYear,useLeap)
-         timestart = SimStartHour + (WriteTimes(nTimeNext-1)+WriteTimes(nTimeNext))/2.0_ip
-         if (nTimeNext.lt.nWriteTimes) then
-             timeend = SimStartHour + (WriteTimes(nTimeNext+1)+WriteTimes(nTimeNext))/2.0_ip
+         timestart = SimStartHour + (WriteTimes(iTimeNext-1)+WriteTimes(iTimeNext))/2.0_ip
+         if (iTimeNext.lt.nWriteTimes) then
+             timeend = SimStartHour + (WriteTimes(iTimeNext+1)+WriteTimes(iTimeNext))/2.0_ip
            else
              timeend = SimStartHour + Simtime_in_hours
          endif
@@ -131,19 +166,19 @@
       if (.not.isFinal_TS) then
           ! First ascii files
         if (WriteDepositTS_ASCII)            &
-          call write_2D_ASCII(DepositThickness(1:nxmax,1:nymax), &
+          call write_2D_ASCII(nxmax,nymax,DepositThickness(1:nxmax,1:nymax), &
                               ' 0.000','DepositFile_        ')
         if (WriteCloudConcentration_ASCII)  &
-          call write_2D_ASCII(MaxConcentration(1:nxmax,1:nymax)/1.0e3_ip, &
+          call write_2D_ASCII(nxmax,nymax,MaxConcentration(1:nxmax,1:nymax)/1.0e3_ip, &
                               ' 0.000','CloudConcentration_ ')
         if (WriteCloudHeight_ASCII)         &
-          call write_2D_ASCII(MaxHeight(1:nxmax,1:nymax), &
+          call write_2D_ASCII(nxmax,nymax,MaxHeight(1:nxmax,1:nymax), &
                               '-9999.','CloudHeight_        ')
         if (WriteCloudHeight_ASCII)         &
-          call write_2D_ASCII(MinHeight(1:nxmax,1:nymax), &
+          call write_2D_ASCII(nxmax,nymax,MinHeight(1:nxmax,1:nymax), &
                               '-9999.','CloudHeightBot_     ')
         if (WriteCloudLoad_ASCII)           &
-          call write_2D_ASCII(CloudLoad(1:nxmax,1:nymax), &
+          call write_2D_ASCII(nxmax,nymax,CloudLoad(1:nxmax,1:nymax), &
                               ' 0.000','CloudLoad_          ')
 
           ! Now KML files
@@ -155,7 +190,7 @@
         !if (WriteDepositTS_KML.or.WriteDepositFinal_KML)  then
         if (WriteDepositTS_KML)  then
              call Write_2D_KML(7,DepositThickness,0,1) ! Deposit
-             call Write_2D_KML(8,DepositThickness/2.54_ip,0,1) ! Deposit (NWS)
+             call Write_2D_KML(8,DepositThickness*MM_2_IN,0,1) ! Deposit (NWS)
         endif
 
       endif
@@ -192,7 +227,7 @@
           call Close_KML(9,0)
         endif
         if (WriteDepositTime_ASCII)     &
-          call write_2D_ASCII(DepArrivalTime(1:nxmax,1:nymax), &
+          call write_2D_ASCII(nxmax,nymax,DepArrivalTime(1:nxmax,1:nymax), &
                                 '-1.000','DepositArrivalTime  ')
         if (WriteCloudTime_KML) then
           call OpenFile_KML(5) ! Cloud Arrival Time
@@ -200,18 +235,18 @@
           call Close_KML(5,0)
         endif
         if (WriteCloudTime_ASCII)       &
-          call write_2D_ASCII(CloudArrivalTime(1:nxmax,1:nymax), &
+          call write_2D_ASCII(nxmax,nymax,CloudArrivalTime(1:nxmax,1:nymax), &
                                 '-1.000','CloudArrivalTime    ')
         ! Write Final deposit file
         if ((WriteDepositFinal_ASCII).and.                       &
             (((nWriteTimes.gt.0).and.(abs(time-dt-WriteTimes(nWriteTimes)).gt.1.0e-4_ip)).or. &
             (nWriteTimes.eq.0))) then
-                 call write_2D_ASCII(DepositThickness(1:nxmax,1:nymax), &
+                 call write_2D_ASCII(nxmax,nymax,DepositThickness(1:nxmax,1:nymax), &
                                 ' 0.000','DepositFile_        ')
         endif
         if (WriteDepositFinal_KML) then
           call Write_2D_KML(7,DepositThickness,0,0) ! Deposit
-          call Write_2D_KML(8,DepositThickness/2.54_ip,0,0) ! Deposit (NWS)
+          call Write_2D_KML(8,DepositThickness*MM_2_IN,0,0) ! Deposit (NWS)
         endif
 
         ! Close KML files
