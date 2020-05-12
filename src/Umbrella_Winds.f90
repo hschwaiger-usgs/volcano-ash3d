@@ -13,13 +13,16 @@
          time,Simtime_in_hours
 
       use mesh,          only : &
-         nxmax,nymax,dn_km,de_km,IsLatLon,ivent,jvent,&
+         nxmax,nymax,dn,dn_km,de,de_km,IsLatLon,ivent,jvent,&
          lat_cc_pd,lon_cc_pd
 
       use Source,        only : &
          uvx_pd,uvy_pd,ibase,itop,lat_volcano,lon_volcano,&
          MassFlux,SourceNodeWidth_km, SourceNodeHeight_km,&
          e_EndTime
+
+      use Tephra,        only : &
+         n_gs_max
 
       implicit none
       real(kind=ip):: avg_lat          !avg latitude between vent & point
@@ -43,7 +46,7 @@
       integer      :: ew_nodes,ns_nodes!radius of clouds in nodes
       integer      :: west_node,east_node
       integer      :: south_node,north_node
-      !character    :: answer*1
+      character    :: answer*1
 
       !Set standard values
       lambda                        = 0.2_ip
@@ -61,24 +64,59 @@
       !call MassFluxCalculator
       massfluxnow = MassFlux(1)/3600.0_ip        !mass flux rate, kg/s
 
+      !If there is only one size class, assume it's an airborne run and
+      !multiply the mass flux by 20
+      if (n_gs_max.eq.1) then
+             massfluxnow = 20.0_ip*massfluxnow
+      end if
+
       !set value of C based on latitude
       if (abs(lat_volcano).lt.23.0_ip) then
           !m3 kg^(-3/4) s^(-7/8) for tropical eruptions
-        C_Costa = 0.5e4_ip
+        C_Costa = 0.43e3_ip
       else
           !m3 kg^(-3/4) s^(-7/8) for non-tropical eruptions
-        C_Costa = 1.0e4_ip 
+        C_Costa = 0.87e3_ip 
       endif
 
       qnow  = C_Costa*sqrt(k_entrainment)*massfluxnow**(3.0_ip/4.0_ip) / &
-              N_BV**(5.0_ip/8.0_ip)
+              N_BV**(5.0_ip/4.0_ip)
+
+      if (time.eq.0.0_ip)  then
+          write(6,*) 
+          write(6,*) 'in Umbrella_winds'
+          write(6,*) '  massfluxnow = ',massfluxnow
+          write(6,*) '      C_Costa = ',C_Costa
+          write(6,*) '         N_BV = ',N_BV
+          write(6,*) 'k_entrainment = ',k_entrainment
+          write(6,*) '     Q (m3/s) = ',qnow
+          write(6,*)
+          write(9,*) 
+          write(9,*) 'in Umbrella_winds'
+          write(9,*) '  massfluxnow = ',massfluxnow
+          write(9,*) '      C_Costa = ',C_Costa
+          write(9,*) '         N_BV = ',N_BV
+          write(9,*) 'k_entrainment = ',k_entrainment
+          write(9,*) '     Q (m3/s) = ',qnow
+          write(9,*)
+          if (n_gs_max.eq.1) then
+              write(6,*) 'n_gs_max=1, so we are assuming an airborne run'
+              write(6,*) 'massflux has been multiplied by 20'
+              write(9,*) 'n_gs_max=1, so we are assuming an airborne run'
+              write(9,*) 'massflux has been multiplied by 20'
+          end if
+          !write(6,*) 'Continue?'
+          !read(5,'(a1)') answer
+          !if (answer.eq.'n') stop
+       end if
+
       !convert from  hours to seconds
 !      if (itime.gt.0) then
         if (time.gt.0.0_ip) then
           etime_s      = 3600.0_ip*time
         else
           etime_s      = min(3600.0_ip*Simtime_in_hours,3600.0_ip*e_EndTime(1))
-          return                      !return to Mesointerpolator if time=0
+          !return                      !return to Mesointerpolator if time=0
         endif
 !      else
          !if this is the first call to mesointerpolator before the beginning 
@@ -90,7 +128,7 @@
          !meaning that dt should decrease.  Thus we want to estimate dt using radial 
          !wind speeds at the end of the eruption, as below.  These wind speeds are 
          !not actually used in the calculation of advecting ash.
-        etime_s      = min(3600.0_ip*Simtime_in_hours,3600.0_ip*e_EndTime(1))
+!        etime_s      = min(3600.0_ip*Simtime_in_hours,3600.0_ip*e_EndTime(1))
 !      endif
 
       !cloud radius, km
@@ -114,6 +152,14 @@
           east_node = min(nxmax,ivent+ew_nodes)
           south_node = max(1,jvent-ns_nodes)
           north_node = min(nymax,jvent+ns_nodes)
+          !if (time.gt.2.0_ip) then
+          !    write(global_info,*) 'cloud_radius=',cloud_radius
+          !    write(6,*) 'time=',time,', C_Costa=',C_Costa
+          !    write(6,*) 'massfluxnow = ',massfluxnow/1.0e06
+          !    write(6,*) 'Continue?'
+          !    read(5,'(a1)') answer
+          !    if (answer.eq.'n') stop
+          !end if
           !write(global_info,*) 'cloud_radius=',cloud_radius
           !write(global_info,*) 'de_km=',de_km,', dn_km=',dn_km
           !write(global_info,*) 'ew_nodes=',ew_nodes,', ns_nodes=',ns_nodes
@@ -129,9 +175,16 @@
               if ((ii.eq.ivent).and.(jj.eq.jvent)) cycle
               !Calculate radial distance to the vent (km)
               avg_lat=(lat_cc_pd(jj)+lat_volcano)/2.
+              !These formulas ensure that winds are added if the cell center is
+              !within the umbrella radius
               ns_km  =(lat_cc_pd(jj)-lat_volcano)*DEG2KMLAT
               ew_km  =(lon_cc_pd(ii)-lon_volcano)* &
                         cos(avg_lat*DEG2RAD)*DEG2KMLON
+              !These formulas ensure that winds are added if the all of the cell is
+              !within the umbrella radius
+              !ns_km  =(abs(lat_cc_pd(jj)-lat_volcano)+dn/2.0_ip)*DEG2KMLAT
+              !ew_km  =(abs(lon_cc_pd(ii)-lon_volcano)+de/2.0_ip)* &
+              !          cos(avg_lat*DEG2RAD)*DEG2KMLON
               radnow = sqrt(ns_km**2.0_ip+ew_km**2.0_ip)  !distance, km
               !make sure we're within the umbrella cloud
               if (radnow.lt.cloud_radius) then
