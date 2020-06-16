@@ -5,7 +5,7 @@
       use io_units
 
       integer, parameter :: nvars      = 10  ! Number of output variables with style profiles
-      integer, parameter :: max_nclrmp = 9   ! Max number of colormap points
+      integer, parameter :: max_nclrmp = 11   ! Max number of colormap points
 
       !ivar = 1 :: cloud concentration
       !ivar = 2 :: cloud height (top)
@@ -51,7 +51,7 @@
       KML_fid(ivar)           = 40
       KML_n_clrmp(ivar)       = 8
       KML_color_map(ivar,:) = (/ 0.1_ip,   0.3_ip,   1.0_ip, 2.0_ip, 10.0_ip, &
-                             30.0_ip, 100.0_ip, 300.0_ip, 0.0_ip/)
+                             30.0_ip, 100.0_ip, 300.0_ip, 0.0_ip, 0.0_ip, 0.0_ip/)
       KML_Styles(ivar,1) = 'pale_blue';  KML_Colors(ivar,1) = 'ffe5e5'
       KML_Styles(ivar,2) = 'lite_blue';  KML_Colors(ivar,2) = 'ffcccc'
       KML_Styles(ivar,3) = 'med__blue';  KML_Colors(ivar,3) = 'ffb2b2'
@@ -61,6 +61,8 @@
       KML_Styles(ivar,7) = 'strg_pink';  KML_Colors(ivar,7) = 'ff4cff'
       KML_Styles(ivar,8) = 'dark_pink';  KML_Colors(ivar,8) = 'ff33ff'
       KML_Styles(ivar,9) = '         ';  KML_Colors(ivar,9) = '      '
+      KML_Styles(ivar,10) = '         ';  KML_Colors(ivar,10) = '      '
+      KML_Styles(ivar,11) = '         ';  KML_Colors(ivar,11) = '      '
       KML_description(ivar)   = 'cloud concentration shading  '
       KML_legend(ivar)        = 'concentration_legend.png     '
       KML_overlayX(ivar)      = '0.0'
@@ -77,7 +79,7 @@
       KML_fid(ivar)           = 170
       KML_n_clrmp(ivar)       = 9
       KML_color_map(ivar,:) = (/0.24_ip,  3.0_ip,  6.0_ip, 10.0_ip, 13.0_ip, &
-                             16.0_ip, 20.0_ip, 25.0_ip, 30.0_ip/)
+                             16.0_ip, 20.0_ip, 25.0_ip, 30.0_ip, 0.0_ip, 0.0_ip/)
       KML_Styles(ivar,1) = '00.-03.km';  KML_Colors(ivar,1) = '800080'
       KML_Styles(ivar,2) = '03.-06.km';  KML_Colors(ivar,2) = 'ff0000'
       KML_Styles(ivar,3) = '06.-10.km';  KML_Colors(ivar,3) = 'ff8000'
@@ -87,6 +89,8 @@
       KML_Styles(ivar,7) = '20.-25.km';  KML_Colors(ivar,7) = '0080ff'
       KML_Styles(ivar,8) = '25.-30.km';  KML_Colors(ivar,8) = '0000ff'
       KML_Styles(ivar,9) = '>>>30.0km';  KML_Colors(ivar,9) = '000080'
+      KML_Styles(ivar,10)= '         ';  KML_Colors(ivar,10)= '      '
+      KML_Styles(ivar,11)= '         ';  KML_Colors(ivar,11)= '      '
       KML_description(ivar)   = 'cloud height shading         '
       KML_legend(ivar)        = 'CloudHeight_hsv.jpg          '
       KML_overlayX(ivar)      = '1.0'
@@ -103,7 +107,7 @@
       KML_fid(ivar)           = 171
       KML_n_clrmp(ivar)       = 9
       KML_color_map(ivar,:) = (/0.24_ip,  3.0_ip,  6.0_ip, 10.0_ip, 13.0_ip, &
-                             16.0_ip, 20.0_ip, 25.0_ip, 30.0_ip/)
+                             16.0_ip, 20.0_ip, 25.0_ip, 30.0_ip, 0.0_ip, 0.0_ip/)
       KML_Styles(ivar,1) = '00.-03.km';  KML_Colors(ivar,1) = '800080'
       KML_Styles(ivar,2) = '03.-06.km';  KML_Colors(ivar,2) = 'ff0000'
       KML_Styles(ivar,3) = '06.-10.km';  KML_Colors(ivar,3) = 'ff8000'
@@ -113,6 +117,8 @@
       KML_Styles(ivar,7) = '20.-25.km';  KML_Colors(ivar,7) = '0080ff'
       KML_Styles(ivar,8) = '25.-30.km';  KML_Colors(ivar,8) = '0000ff'
       KML_Styles(ivar,9) = '>>>30.0km';  KML_Colors(ivar,9) = '000080'
+      KML_Styles(ivar,10)= '         ';  KML_Colors(ivar,10)= '      '
+      KML_Styles(ivar,11)= '         ';  KML_Colors(ivar,11)= '      '
       KML_description(ivar)   = 'cloud height shading         '
       KML_legend(ivar)        = 'CloudHeight_hsv.jpg          '
       KML_overlayX(ivar)      = '1.0'
@@ -129,7 +135,7 @@
       KML_fid(ivar)           = 160
       KML_n_clrmp(ivar)       = 9
       KML_color_map(ivar,:) = (/ 0.2_ip,   1.0_ip,   2.0_ip,    5.0_ip, 10.0_ip, &
-                             30.0_ip, 100.0_ip, 300.0_ip, 1000.0_ip/)
+                             30.0_ip, 100.0_ip, 300.0_ip, 1000.0_ip, 0.0_ip, 0.0_ip/)
       KML_Styles(ivar,1) = '0.20-1.00';  KML_Colors(ivar,1) = '800080'
       KML_Styles(ivar,2) = '1.00-2.00';  KML_Colors(ivar,2) = 'ff0000'
       KML_Styles(ivar,3) = '2.00-5.00';  KML_Colors(ivar,3) = 'ff8000'
@@ -139,6 +145,8 @@
       KML_Styles(ivar,7) = '100.-300.';  KML_Colors(ivar,7) = '0080ff'
       KML_Styles(ivar,8) = '300.0--1k';  KML_Colors(ivar,8) = '0000ff'
       KML_Styles(ivar,9) = '>>>1000.0';  KML_Colors(ivar,9) = '000080'
+      KML_Styles(ivar,10)= '         ';  KML_Colors(ivar,10)= '      '
+      KML_Styles(ivar,11)= '         ';  KML_Colors(ivar,11)= '      '
       KML_description(ivar)   = 'cloud load shading           '
       KML_legend(ivar)        = 'CloudLoad_hsv.jpg            '
       KML_overlayX(ivar)      = '1.0'
@@ -155,7 +163,7 @@
       KML_fid(ivar)           = 390
       KML_n_clrmp(ivar)       = 9
       KML_color_map(ivar,:) = (/ 0.0_ip,  3.0_ip,  6.0_ip,  9.0_ip, 12.0_ip, &
-                             15.0_ip, 18.0_ip, 24.0_ip, 36.0_ip/)
+                             15.0_ip, 18.0_ip, 24.0_ip, 36.0_ip, 0.0_ip, 0.0_ip/)
       KML_Styles(ivar,1) = '00-03_hrs';  KML_Colors(ivar,1) = '800080'
       KML_Styles(ivar,2) = '03-06_hrs';  KML_Colors(ivar,2) = 'ff0000'
       KML_Styles(ivar,3) = '06-09_hrs';  KML_Colors(ivar,3) = 'ff8000'
@@ -165,6 +173,8 @@
       KML_Styles(ivar,7) = '18-24_hrs';  KML_Colors(ivar,7) = '0080ff'
       KML_Styles(ivar,8) = '24-36_hrs';  KML_Colors(ivar,8) = '0000ff'
       KML_Styles(ivar,9) = '>>>36_hrs';  KML_Colors(ivar,9) = '000080'
+      KML_Styles(ivar,10)= '         ';  KML_Colors(ivar,10)= '      '
+      KML_Styles(ivar,11)= '         ';  KML_Colors(ivar,11)= '      '
       KML_description(ivar)   = 'shades for cloud arrival time'
       KML_legend(ivar)        = 'CloudLoad_hsv.jpg            '
       KML_overlayX(ivar)      = '1.0'
@@ -181,7 +191,7 @@
       KML_fid(ivar)           = 206
       KML_n_clrmp(ivar)       = 9
       KML_color_map(ivar,:) = (/-20.0_ip, -10.0_ip,  0.0_ip, 10.0_ip, 20.0_ip, &
-                           30.0_ip,  40.0_ip, 50.0_ip, 60.0_ip/)
+                           30.0_ip,  40.0_ip, 50.0_ip, 60.0_ip, 0.0_ip, 0.0_ip/)
       KML_Styles(ivar,1) = '-20_to-10';  KML_Colors(ivar,1) = '800080'
       KML_Styles(ivar,2) = '-10_to000';  KML_Colors(ivar,2) = 'ff0000'
       KML_Styles(ivar,3) = '000_to+10';  KML_Colors(ivar,3) = 'ff8000'
@@ -191,6 +201,8 @@
       KML_Styles(ivar,7) = '+40_to+50';  KML_Colors(ivar,7) = '0080ff'
       KML_Styles(ivar,8) = '+50_to+60';  KML_Colors(ivar,8) = '0000ff'
       KML_Styles(ivar,9) = '>>>>>>+60';  KML_Colors(ivar,9) = '000080'
+      KML_Styles(ivar,10)= '         ';  KML_Colors(ivar,10)= '      '
+      KML_Styles(ivar,11)= '         ';  KML_Colors(ivar,11)= '      '
       KML_description(ivar)   = 'radar reflectivity shading   '
       KML_legend(ivar)        = 'cloud_dbZ_hsv.jpg            '
       KML_overlayX(ivar)      = '1.0'
@@ -205,18 +217,20 @@
       KML_filename(ivar)      = 'Deposit.kml                  '
       KML_units(ivar)         = '  mm '
       KML_fid(ivar)           = 50
-      KML_n_clrmp(ivar)       = 9
-      KML_color_map(ivar,:) = (/ 0.1_ip,   0.3_ip,   1.0_ip,    3.0_ip, 10.0_ip,&
+      KML_n_clrmp(ivar)       = 11
+      KML_color_map(ivar,:) = (/ 0.01_ip, 0.03_ip, 0.1_ip,   0.3_ip,   1.0_ip,    3.0_ip, 10.0_ip,&
                              30.0_ip, 100.0_ip, 300.0_ip, 1000.0_ip/)
-      KML_Styles(ivar,1) = '0.1-0.3mm';  KML_Colors(ivar,1) = '800080'
-      KML_Styles(ivar,2) = '0.3-1.0mm';  KML_Colors(ivar,2) = 'ff0000'
-      KML_Styles(ivar,3) = '1.0-3.0mm';  KML_Colors(ivar,3) = 'ff8000'
-      KML_Styles(ivar,4) = '3.0-10.mm';  KML_Colors(ivar,4) = 'ffff00'
-      KML_Styles(ivar,5) = '10.-30.mm';  KML_Colors(ivar,5) = '80ff80'
-      KML_Styles(ivar,6) = '30.-100mm';  KML_Colors(ivar,6) = '00ffff'
-      KML_Styles(ivar,7) = '100-300mm';  KML_Colors(ivar,7) = '0080ff'
-      KML_Styles(ivar,8) = '300-1k_mm';  KML_Colors(ivar,8) = '0000ff'
-      KML_Styles(ivar,9) = '>>>>1k_mm';  KML_Colors(ivar,9) = '000080'
+      KML_Styles(ivar,1) = '.01-.03mm';  KML_Colors(ivar,1) = '69ded6'
+      KML_Styles(ivar,2) = '.03-0.1mm';  KML_Colors(ivar,2) = '71a7f9'
+      KML_Styles(ivar,3) = '0.1-0.3mm';  KML_Colors(ivar,3) = '800080'
+      KML_Styles(ivar,4) = '0.3-1.0mm';  KML_Colors(ivar,4) = 'ff0000'
+      KML_Styles(ivar,5) = '1.0-3.0mm';  KML_Colors(ivar,5) = 'ff8000'
+      KML_Styles(ivar,6) = '3.0-10.mm';  KML_Colors(ivar,6) = 'ffff00'
+      KML_Styles(ivar,7) = '10.-30.mm';  KML_Colors(ivar,7) = '80ff80'
+      KML_Styles(ivar,8) = '30.-100mm';  KML_Colors(ivar,8) = '00ffff'
+      KML_Styles(ivar,9) = '100-300mm';  KML_Colors(ivar,9) = '0080ff'
+      KML_Styles(ivar,10) = '300-1k_mm';  KML_Colors(ivar,10) = '0000ff'
+      KML_Styles(ivar,11) = '>>>>1k_mm';  KML_Colors(ivar,11) = '000080'
       KML_description(ivar)   = 'Ash thickness shades         '
       KML_legend(ivar)        = 'deposit_thickness_hsv.jpg    '
       KML_overlayX(ivar)      = '1.0'
@@ -224,7 +238,7 @@
       KML_screenX(ivar)       = '1.0'
       KML_screenY(ivar)       = '0.1'
       KML_sizeX(ivar)         = '150'
-      KML_sizeY(ivar)         = '305'
+      KML_sizeY(ivar)         = '357'
       KML_AltMode(ivar)       = 'clampToGround'
 
       ivar = 8 ! deposit (NWS)
@@ -233,7 +247,7 @@
       KML_fid(ivar)           = 550
       KML_n_clrmp(ivar)       = 3
       KML_color_map(ivar,:) = (/ 0.1_ip, 0.8_ip, 6.0_ip, 0.0_ip, 0.0_ip,&
-                              0.0_ip, 0.0_ip, 0.0_ip, 0.0_ip/)
+                              0.0_ip, 0.0_ip, 0.0_ip, 0.0_ip, 0.0_ip, 0.0_ip/)
       KML_Styles(ivar,1) = '0.1-0.8mm';  KML_Colors(ivar,1) = 'ffff00'
       KML_Styles(ivar,2) = '0.8-6.0mm';  KML_Colors(ivar,2) = '00ffff'
       KML_Styles(ivar,3) = '>>>>6.0mm';  KML_Colors(ivar,3) = '0000ff'
@@ -243,6 +257,8 @@
       KML_Styles(ivar,7) = '         ';  KML_Colors(ivar,7) = '      '
       KML_Styles(ivar,8) = '         ';  KML_Colors(ivar,8) = '      '
       KML_Styles(ivar,9) = '         ';  KML_Colors(ivar,9) = '      '
+      KML_Styles(ivar,10)= '         ';  KML_Colors(ivar,10)= '      '
+      KML_Styles(ivar,11)= '         ';  KML_Colors(ivar,11)= '      '
       KML_description(ivar)   = 'Ash thickness shades         '
       KML_legend(ivar)        = 'GE_legend_dep_nws.gif        '
       KML_overlayX(ivar)      = '1.0'
@@ -259,7 +275,7 @@
       KML_fid(ivar)           = 290
       KML_n_clrmp(ivar)       = 9
       KML_color_map(ivar,:) = (/ 0.0_ip,  3.0_ip,  6.0_ip,  9.0_ip, 12.0_ip, &
-                             15.0_ip, 18.0_ip, 24.0_ip, 36.0_ip/)
+                             15.0_ip, 18.0_ip, 24.0_ip, 36.0_ip, 0.0_ip, 0.0_ip/)
       KML_Styles(ivar,1) = '00-03_hrs';  KML_Colors(ivar,1) = '800080'
       KML_Styles(ivar,2) = '03-06_hrs';  KML_Colors(ivar,2) = 'ff0000'
       KML_Styles(ivar,3) = '06-09_hrs';  KML_Colors(ivar,3) = 'ff8000'
@@ -269,6 +285,8 @@
       KML_Styles(ivar,7) = '18-24_hrs';  KML_Colors(ivar,7) = '0080ff'
       KML_Styles(ivar,8) = '24-36_hrs';  KML_Colors(ivar,8) = '0000ff'
       KML_Styles(ivar,9) = '>>>36_hrs';  KML_Colors(ivar,9) = '000080'
+      KML_Styles(ivar,10)= '         ';  KML_Colors(ivar,10)= '      '
+      KML_Styles(ivar,11)= '         ';  KML_Colors(ivar,11)= '      '
       KML_description(ivar)   = 'shades for dep arrival time  '
       KML_legend(ivar)        = 'deposit_arrival_time.png     '
       KML_overlayX(ivar)      = '1.0'
@@ -285,7 +303,7 @@
       KML_fid(ivar)           = 540
       KML_n_clrmp(ivar)       = 8
       KML_color_map(ivar,:) = (/ 1.0_ip,   2.0_ip,   3.0_ip,    4.0_ip, 5.0_ip,&
-                                 6.0_ip, 7.0_ip, 8.0_ip, 0.0_ip/)
+                                 6.0_ip, 7.0_ip, 8.0_ip, 0.0_ip, 0.0_ip, 0.0_ip/)
       KML_Styles(ivar,1) = 'pale_blue';  KML_Colors(ivar,1) = 'ffe5e5'
       KML_Styles(ivar,2) = 'lite_blue';  KML_Colors(ivar,2) = 'ffcccc'
       KML_Styles(ivar,3) = 'med__blue';  KML_Colors(ivar,3) = 'ffb2b2'
@@ -295,6 +313,8 @@
       KML_Styles(ivar,7) = 'strg_pink';  KML_Colors(ivar,7) = 'ff4cff'
       KML_Styles(ivar,8) = 'dark_pink';  KML_Colors(ivar,8) = 'ff33ff'
       KML_Styles(ivar,9) = '         ';  KML_Colors(ivar,9) = '      '
+      KML_Styles(ivar,10)= '         ';  KML_Colors(ivar,10)= '      '
+      KML_Styles(ivar,11)= '         ';  KML_Colors(ivar,11)= '      '
       KML_description(ivar)   = 'Topography shades         '
       KML_legend(ivar)        = 'deposit_thickness_hsv.jpg    '
       KML_overlayX(ivar)      = '1.0'
@@ -349,8 +369,8 @@
       integer             :: fid
       integer             :: n_clrmp,icmp
       !real(kind=ip)   ,dimension(9)   :: color_map
-      character(len=9),dimension(9)   :: Styles
-      character(len=6),dimension(9)   :: Colors
+      character(len=9),dimension(11)   :: Styles
+      character(len=6),dimension(11)   :: Colors
       character(len=30)   :: description
       character(len=30)   :: legend
       character(len=3)    :: overlayX
@@ -661,8 +681,8 @@
       integer             :: n_clrmp,icmp
       character(len=5)    :: units
       character(len=13)   :: AltMode
-      real(kind=ip)   ,dimension(9)   :: color_map
-      character(len=9),dimension(9)   :: Styles
+      real(kind=ip)   ,dimension(11)   :: color_map
+      character(len=9),dimension(11)   :: Styles
       !character(len=6),dimension(9)   :: Colors
       logical             :: CrossAntiMeridian     !if the polygon crosses the antimeridian
 
@@ -852,7 +872,7 @@
              '             </ListStyle>',/, &
              '        </Style>')
 2    format('         <Placemark>',/, &
-            '         <name>',f9.1,a5,'</name>',/, &
+            '         <name>',f9.2,a5,'</name>',/, &
             '         <styleUrl>#',a9,'</styleUrl>',/, &
             '           <MultiGeometry>',/, &
             '             <Point>',/, &
