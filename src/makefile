@@ -43,7 +43,7 @@ SYSTEM = gfortran
 #      OMPOPT: includes optimizations flags for fastest runtime and OpenMP directives
 #              To run, enter: env OMP_NUM_THREADS=4 Ash3d input_file.inp
 #    This variable cannot be left blank
-RUN = DEBUG
+RUN = OPT
 
 # This is the location of the USGS libraries and include files
 # This might be different from the INSTALLDIR path if you want to link to special MetReader
@@ -77,7 +77,7 @@ USEPOINTERS = T
 
 # EXTERNAL DATA FILES
 #
-USEEXTDATA = F
+USEEXTDATA = T
 
 ###############################################################################
 #  NOTE:  The following flags can either be set or commented out.  If they are
