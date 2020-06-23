@@ -513,6 +513,8 @@
       ! return the number of airports in this global list.
       num_GlobAirports = i
 
+      return
+
       !FORMAT STATEMENTS
 2     format(50x,a3,2x,a35)
 5     format(5x,'Error.  Can''t find input file ',a130,/,5x,'Program stopped')   
