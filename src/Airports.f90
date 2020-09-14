@@ -153,7 +153,7 @@
       real(kind=dp)       :: lat_in,lon_in,xout,yout
 
       call Read_GlobalAirports(NAIRPORTS_EWERT)
-      
+
       !If we are reading an external airport file
       if (ReadExtAirportFile) then
         call ReadExtAirports
@@ -172,6 +172,9 @@
           AirportFullLat(i)  = ExtAirportLat(i-NAIRPORTS_EWERT)
           AirportFullLon(i)  = ExtAirportLon(i-NAIRPORTS_EWERT)
           AirportFullName(i) = ExtAirportName(i-NAIRPORTS_EWERT)
+          !make sure longitude is between 0
+          if (AirportFullLon(i).lt.0.0_ip) &
+            AirportFullLon(i) = AirportFullLon(i)+360.0_ip
         enddo
         write(global_info,*) 'Appending airports below to the internal list.'
         write(global_info,*) 'Airport name       lon      lat'
@@ -196,8 +199,12 @@
       ! Loop through n_airports_total twice:
       !   first to determine how many airports are in the domain
       !   next to populate external variables
+
       nairports = 0
       do i = 1, n_airports_total
+        !make sure longitude is between 0
+        if (AirportFullLon(i).lt.0.0_ip) &
+          AirportFullLon(i) = AirportFullLon(i)+360.0_ip
         latitude  = AirportFullLat(i)
         longitude = AirportFullLon(i)
 
@@ -238,6 +245,7 @@
         longitude = AirportFullLon(i)
         NameNow   = AirportFullName(i)(1:35) ! Copy to a temp variable and
                                              !truncate to 35 chars
+
         xnow = 0.0_ip
         ynow = 0.0_ip
         if (IsLatLon) then

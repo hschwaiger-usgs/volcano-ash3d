@@ -2932,7 +2932,7 @@
                    ' airports file (T/F) = ',L1,/, &
                 4x,'     Write KML file of ash arrival times at',&
                    ' airports (T/F) = ',L1,/, &
-                4x,'     Calculate pojected airport locations using',&
+                4x,'     Calculate projected airport locations using',&
                    ' Ash3d (T/F) = ',L1,//, &
                 4x,' Name of file containing airport locations: ',a130)
 !45    format (/,4x,'Error reading whether to stop calculation when 99%',&
