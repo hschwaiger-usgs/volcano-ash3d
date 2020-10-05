@@ -800,15 +800,25 @@
       enddo
 
       !Error trap if more pulses are entered than are specified
-      if (linebuffer130(1:5).ne.'*****') then
+      if(IsCustom_SourceType)then
+        ! If we are using custom sources, suppress the error-checking
+        ! since we don't know the number of lines of input we need and
+        ! we will need to loop through here again anyway.
         write(global_info,*)&
-         'The beginning of the line following the list of', &
-         ' eruptive pulses did not'
+          'Skipping error-checking of eruption source lines since '
         write(global_info,*)&
-         'start with ''*****''.  Did you enter the correct', &
-         '  number of eruptive pulses?'
-        write(global_info,*) 'Program stopped.'
-        stop 1
+          'the source is a custom type'
+      else
+        if (linebuffer130(1:5).ne.'*****') then
+          write(global_info,*)&
+           'The beginning of the line following the list of', &
+           ' eruptive pulses did not'
+          write(global_info,*)&
+           'start with ''*****''.  Did you enter the correct', &
+           '  number of eruptive pulses?'
+          write(global_info,*) 'Program stopped.'
+          stop 1
+        endif
       endif
       ! END OF BLOCK 2
       !************************************************************************
@@ -2143,13 +2153,8 @@
 
       if (nvprofiles.gt.0) then
         write(global_info,*)"Allocating profile arrays:",nvprofiles
-        !if (IsLatLon) then
-        !  allocate(lon_vprofile(nvprofiles))
-        !  allocate(lat_vprofile(nvprofiles))
-        !else
-          allocate(x_vprofile(nvprofiles))
-          allocate(y_vprofile(nvprofiles))
-        !endif
+        allocate(x_vprofile(nvprofiles))
+        allocate(y_vprofile(nvprofiles))
         allocate(i_vprofile(nvprofiles))
         allocate(j_vprofile(nvprofiles))
         write(global_info,46)
@@ -2171,13 +2176,7 @@
             write(global_error,*)'  Offending line:',linebuffer080
             stop 1
           endif
-          !if (IsLatLon) then
-          !  read(linebuffer080,*,err=2001) lon_vprofile(i), lat_vprofile(i)
-          !  write(global_info,*)i,lon_vprofile(i), lat_vprofile(i)
-          !else
-            read(linebuffer080,*,err=2001) x_vprofile(i), y_vprofile(i)
-            write(global_info,*)i,x_vprofile(i), y_vprofile(i)
-          !endif
+          read(linebuffer080,*,err=2001) x_vprofile(i), y_vprofile(i)
           call vprofchecker(i)
         enddo
       else
@@ -2242,11 +2241,14 @@
 
       !************************************************************************
       ! Searching for optional blocks labled by OPTMOD
-      write(global_info,*)"Searching for optional modules"
+      write(global_info,*)' *****************************************'
+      write(global_info,*)' Reading Post-Block 9: optional modules   '
+      write(global_info,*)' *****************************************'
+
+      write(global_info,*)"Searching for blocks with OPTMOD"
       nmods = 0
+      read(10,'(a80)',iostat=ios)linebuffer080
       do while(ios.eq.0)
-        read(10,'(a80)',iostat=ios)linebuffer080
-        !read(linebuffer080,*)testkey
         substr_pos = index(linebuffer080,'OPTMOD')
         if(substr_pos.eq.1)then
           ! found an optional module
@@ -2257,11 +2259,23 @@
           write(global_info,*)"     Found optional module : ",&
            OPTMOD_names(nmods),nmods
         endif
+        read(10,'(a80)',iostat=ios)linebuffer080
 1104    format(7x,a20)
       enddo
 
+!     CLOSE Ash3d_ESP.inp
+      write(global_info,25) infile
+      write(global_log ,25) infile
+      close(10)
+
       ! Here is the end of the file
 2010  continue
+      write(global_info,*)' *****************************************'
+      write(global_info,*)' Finished reading/parsing input file      '
+      write(global_info,*)' Custom blocks for optional modules will  '
+      write(global_info,*)' be read in corresponding input_data_OPTMOD'
+      write(global_info,*)' subroutines provided by the modules.     '
+      write(global_info,*)' *****************************************'
 
       ! Write out computational scheme used
       if(useDS)then
@@ -2287,11 +2301,6 @@
  
       ! assign initial values
       !total_time = Simtime_in_hours ! total simulated time in seconds
-
-!     CLOSE Ash3d_ESP.inp
-      write(global_info,25) infile
-      write(global_log ,25) infile
-      close(10)
 
 !     CALCULATE SIZE OF GRID (cell-centered)
       if(IsLatLon) then
@@ -3034,7 +3043,8 @@
       
       !MAKE SURE THAT gridwidth_x AND gridwidth_y ARE POSITIVE
       if((gridwidth_x.lt.0.0_ip).or.(gridwidth_y.lt.0.0_ip))then
-        write(global_info,*)"ERROR: gridwidth_x and gridwidth_y must be positive."
+        write(global_info,*) &
+          "ERROR: gridwidth_x and gridwidth_y must be positive."
         stop 1
       endif
       
@@ -3047,8 +3057,9 @@
       !MAKE SURE THE VOLCANO IS WITHIN THE MODEL REGION
       if (((x_volcano.lt.xLL).or.(x_volcano.gt.(xLL+gridwidth_x))).or. &
           ((y_volcano.lt.yLL).or.(y_volcano.gt.(yLL+gridwidth_y)))) then
-          write(global_info,*) 'ERROR: the volcano is not within the model region'
-          stop 1
+        write(global_info,*) &
+          'ERROR: the volcano is not within the model region'
+        stop 1
       endif
       
       !PRINT OUT WARNING MESSAGE if DX != DY
@@ -3073,7 +3084,7 @@
 
       subroutine vprofchecker(iprof)
 
-!     SUBROUTINE THAT CHECKS THE LOCATIONS OF VERTICAL PROFILES SPECifIED
+!     SUBROUTINE THAT CHECKS THE LOCATIONS OF VERTICAL PROFILES SPECIFIED
 
       use precis_param
 
@@ -3091,35 +3102,48 @@
       integer, intent(in) :: iprof
       real(kind=ip) :: lon_vprof, lat_vprof
 
+!     FIND THE I AND J VALUES OF THE NODE CONTAINING THE VERTICAL PROFILE
 
-!     FIND THE I AND J VALUES OF THE NODE WHERE THE VOLCANO LIES
       if (IsLatLon) then
         lon_vprof = x_vprofile(iprof)
         lat_vprof = y_vprofile(iprof)
-        if ((lonLL+gridwidth_e-lon_vprof).gt.360.0_ip) lon_vprof = lon_vprof+360.0_ip
+        if ((lonLL+gridwidth_e-lon_vprof).gt.360.0_ip) &
+          lon_vprof = lon_vprof+360.0_ip
         i_vprofile(iprof) = int((lon_vprof-lonLL)/de) + 1
         j_vprofile(iprof) = int((lat_vprof-latLL)/dn) + 1
       else
         i_vprofile(iprof) = int((x_vprofile(iprof)-xLL)/dx) + 1
         j_vprofile(iprof) = int((y_vprofile(iprof)-yLL)/dy) + 1
       endif
-      write(global_info,47) iprof, x_vprofile(iprof), y_vprofile(iprof), i_vprofile(iprof), j_vprofile(iprof)
-      write(global_log ,47) iprof, x_vprofile(iprof), y_vprofile(iprof), i_vprofile(iprof), j_vprofile(iprof)
-47    format(i11,2f10.3,2i6)           
+      write(global_info,47) iprof, real(x_vprofile(iprof),kind=4),&
+                                   real(y_vprofile(iprof),kind=4),&
+                            i_vprofile(iprof), j_vprofile(iprof)
+      write(global_log ,47) iprof, real(x_vprofile(iprof),kind=4),&
+                                   real(y_vprofile(iprof),kind=4),&
+                            i_vprofile(iprof), j_vprofile(iprof)
+47    format(i11,2f10.3,2i6)
 
            !MAKE SURE THE POINT IS WITHIN THE MODEL REGION
-      if (islatlon) then
-        if (((lon_vprof.lt.lonLL).or.(lon_vprof.gt.(lonLL+gridwidth_e))).or. &
-            ((lat_vprof.lt.latLL).or.(lat_vprof.gt.(latLL+gridwidth_n)))) then
-          write(global_info,*) 'ERROR: this location is not within the model region'
-          write(global_log ,*) 'ERROR: this location is not within the model region'
+      if (IsLatLon) then
+        if (((lon_vprof.lt.lonLL)               .or. &
+             (lon_vprof.gt.(lonLL+gridwidth_e))).or. &
+            ((lat_vprof.lt.latLL)               .or. &
+             (lat_vprof.gt.(latLL+gridwidth_n)))) then
+          write(global_info,*) &
+            'ERROR: this location is not within the model region'
+          write(global_log ,*) &
+            'ERROR: this location is not within the model region'
           stop 1
         endif
       else
-        if (((x_vprofile(iprof).lt.xLL).or.(x_vprofile(iprof).gt.(xLL+gridwidth_x))).or. &
-            ((y_vprofile(iprof).lt.yLL).or.(y_vprofile(iprof).gt.(yLL+gridwidth_y)))) then
-            write(global_info,*) 'ERROR: this location is not within the model region'
-            write(global_log ,*) 'ERROR: this location is not within the model region'
+        if (((x_vprofile(iprof).lt.xLL)               .or.&
+             (x_vprofile(iprof).gt.(xLL+gridwidth_x))).or.&
+            ((y_vprofile(iprof).lt.yLL)               .or.&
+            (y_vprofile(iprof).gt.(yLL+gridwidth_y)))) then
+            write(global_info,*)&
+              'ERROR: this location is not within the model region'
+            write(global_log ,*)&
+              'ERROR: this location is not within the model region'
             stop 1
         endif
       endif

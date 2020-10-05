@@ -147,10 +147,10 @@
       implicit none
 
       integer :: i,ind
-      real(kind=ip)      ::  xnow, ynow
-      character(len=35)  ::  NameNow
-      real(kind=ip)      ::  latitude, longitude
-      real(kind=dp)       :: lat_in,lon_in,xout,yout
+      real(kind=ip)      :: xnow, ynow
+      character(len=35)  :: NameNow
+      real(kind=ip)      :: latitude, longitude
+      real(kind=dp)      :: lat_in,lon_in,xout,yout
 
       call Read_GlobalAirports(NAIRPORTS_EWERT)
 
@@ -189,11 +189,11 @@
           AirportFullLon(i)  = ExtAirportLon(i)
           AirportFullName(i) = ExtAirportName(i)
         enddo
-        write(global_info,*) 'Replacing internal airports with the points below'
-        write(global_info,*) 'Airport name       lon      lat'
-        do i=1,n_airports_total
-          write(global_info,2563) AirportFullName(i),AirportFullLon(i),AirportFullLat(i)
-        enddo
+        !write(global_info,*) 'Replacing internal airports with the points below'
+        !write(global_info,*) 'Airport name       lon      lat'
+        !do i=1,n_airports_total
+        !  write(global_info,2563) AirportFullName(i),AirportFullLon(i),AirportFullLat(i)
+        !enddo
       endif
 
       ! Loop through n_airports_total twice:
@@ -488,7 +488,10 @@
                           '/share/GlobalAirports_ewert.txt'
       ! Test for existance of the airport file
       inquire( file=adjustl(trim(AirportMasterFile)), exist=IsThere )
-      write(global_info,*)"     ",adjustl(trim(AirportMasterFile)),IsThere
+      write(global_info,*)&
+        "Trying to read external global airport file in home=",Ash3dHome
+      write(global_info,*)"Full file name = ",adjustl(trim(AirportMasterFile))
+      write(global_info,*)"  Exists = ",IsThere
       if(.not.IsThere)then
         write(global_error,*)"ERROR: Could not find airport file."
         write(global_error,*)"       Please copy file to this location:"

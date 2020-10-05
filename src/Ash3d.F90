@@ -137,12 +137,12 @@
 !------------------------------------------------------------------------------
 
         ! Read airports/POI and allocate/initilize arrays
-      if (WriteAirportFile_ASCII.or.WriteAirportFile_KML)  call ReadAirports
+      if (WriteAirportFile_ASCII.or.WriteAirportFile_KML) &
+        call ReadAirports
 
       call alloc_arrays
         ! Set up grids for solution and Met data
       call calc_mesh_params
-
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !   Initialize concen and any special source terms here

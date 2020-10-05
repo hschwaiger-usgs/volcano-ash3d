@@ -458,7 +458,7 @@
          n_gs_max
 
       use mesh,          only : &
-         IsLatlon,nxmax,nymax,nzmax,dx,dy,dz_vec_pd,kappa_pd,ts1
+         IsLatLon,nxmax,nymax,nzmax,dx,dy,dz_vec_pd,kappa_pd,ts1
 
       use solution,      only : &
          concen_pd
@@ -483,7 +483,7 @@
       if(n_gs_max.gt.0)then
         do i=1,nxmax
           do j=1,nymax
-            if (IsLatlon) CellArea=kappa_pd(i,j,1)/dz_vec_pd(1)
+            if (IsLatLon) CellArea=kappa_pd(i,j,1)/dz_vec_pd(1)
             do k=1,nzmax
               ! Increment the cloud load for this cell
               CloudLoad(i,j) = CloudLoad(i,j) + &

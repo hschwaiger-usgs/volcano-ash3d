@@ -442,7 +442,7 @@
         ybottom = yLL - dy/2.0_ip
         ytop    = yUR + dy/2.0_ip
         call PlotModelBoundary(xleft,xright,ybottom,ytop,fid)
-      endif !IsLatlon
+      endif ! IsLatLon
 
       allocate(iyear(neruptions))
       allocate(imonth(neruptions))
@@ -645,7 +645,7 @@
       
       use mesh,          only : &
          nxmax,nymax,A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,&
-         A3d_k0_scale,A3d_radius_earth,de,dn,dx,dy,IsLatlon,&
+         A3d_k0_scale,A3d_radius_earth,de,dn,dx,dy,IsLatLon,&
          lon_cc_pd,lat_cc_pd,x_cc_pd,y_cc_pd
 
       use time_data,     only : &
@@ -732,7 +732,7 @@
             if (OutVar(i,j).gt.color_map(icmp).and.&
                 OutVar(i,j).le.color_map(icmp+1)) StyleNow3 = Styles(icmp)
           enddo
-          if (IsLatlon) then
+          if (IsLatLon) then
             longLL  = lon_cc_pd(i) - de/2.0_ip
             lattLL  = lat_cc_pd(j) - dn/2.0_ip
             longUL  = longLL
@@ -768,7 +768,7 @@
                         A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
                         A3d_k0_scale,A3d_radius_earth, &
                            longCC,lattCC)
-          endif !IsLatlon
+          endif ! IsLatLon
           if (longLL>180.0_ip) longLL = longLL-360.0_ip
           if (longUL>180.0_ip) longUL = longUL-360.0_ip
           if (longLR>180.0_ip) longLR = longLR-360.0_ip
