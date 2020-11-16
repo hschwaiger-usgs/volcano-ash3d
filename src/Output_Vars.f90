@@ -9,6 +9,7 @@
 
       real(kind=ip)                :: DEPO_THRESH      = 1.0e-1_ip  !threshold deposit thickness (mm)
       real(kind=ip)                :: DEPRATE_THRESH   = 1.0e-2_ip  !threshold deposition rate (mm/hr)
+      real(kind=ip)                :: CLOUDCON_THRESH  = 2.0e-1_ip  !threshold cloud load (t/km2)
       real(kind=ip)                :: CLOUDLOAD_THRESH = 2.0e-1_ip  !threshold cloud load (t/km2)
       real(kind=ip)                :: THICKNESS_THRESH = 1.0e-2_ip  !threshold thickness for start of deposition (mm)
       real(kind=ip)                :: TOTCON_THRESH    = 1.0e-3_ip  !threshold concentration (kg/km3)
@@ -16,7 +17,7 @@
 
         ! These are the initialized values
       real(kind=ip)                :: DepositThickness_FillValue   =  0.0_ip
-      real(kind=ip)                :: MaxConcentration_FillValue   =  0.0_ip
+      real(kind=ip)                :: MaxConcentration_FillValue   = -9999.0_ip
       real(kind=ip)                :: DepArrivalTime_FillValue     = -9999.0_ip
       real(kind=ip)                :: CloudArrivalTime_FillValue   = -9999.0_ip
       real(kind=ip)                :: CloudLoad_FillValue          = -9999.0_ip
@@ -398,6 +399,7 @@
       integer :: i,j,k,kk
       real(kind=ip),dimension(nz)  :: TotalConcentration
       real(kind=ip) :: dvol
+      real(kind=ip) :: dum_ip
  
       !calculate cloud concentration and cloud height
 
@@ -443,7 +445,8 @@
   
             endif
   
-            MaxConcentration(i,j) = maxval(TotalConcentration)          !concentration in kg/km3
+            dum_ip = maxval(TotalConcentration)
+            if(dum_ip.gt.CLOUDCON_THRESH) MaxConcentration(i,j) = dum_ip          !concentration in kg/km3
           enddo
         enddo
       endif
