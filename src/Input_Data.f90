@@ -2019,6 +2019,18 @@
           endif
         enddo
 
+!       Make sure that Tephra_bin_mass>0 for  each size class
+        write(global_info,2531)
+        write(global_log,2531)
+2531    format('Checking to make sure Tephra_bin_mass>0 for all size classes')
+        do i=1,n_gs_max
+           if (Tephra_bin_mass(i).lt.0.0_ip) then
+             write(global_info,25311) i
+             write(global_log,25311) i
+25311        format('Error: mass of bin ',i2,' is less than zero.  Program stopped')
+             stop 1
+           end if
+        end do
 !       Send error message if sum(bin_mass(1:n_gs_max)) does not equal 1
         sum_bins=sum(Tephra_bin_mass(1:n_gs_max))
         if(abs(sum_bins-1.0_ip).gt.0.02_ip) then
