@@ -12,7 +12,7 @@
       real(kind=ip) :: z_volcano                 ! vent elevation
 
       integer :: neruptions                  ! number of eruptions or eruptive pulses
-      character(len=9) :: SourceType          !may be 'point', 'line', or 'Suzuki' 
+      character(len=12) :: SourceType          !may be 'point', 'line', or 'Suzuki' 
       real(kind=ip) :: Suzuki_A
       real(kind=ip) :: rate_height           !for plume calculations
       logical       :: IsCustom_SourceType = .false.
@@ -104,7 +104,7 @@
 
       allocate(SourceNodeFlux(0:nz+1,1:nsmax));      SourceNodeFlux = 0.0_ip
 
-      if (SourceType.eq.'umbrella') then
+      if ((SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')) then
         allocate(uvx_pd(-1:nx+2,-1:ny+2,ibase:itop));     uvx_pd = 0.0_ip
         allocate(uvy_pd(-1:nx+2,-1:ny+2,ibase:itop));     uvy_pd = 0.0_ip
       endif
@@ -146,7 +146,7 @@
       endif
 
       deallocate(SourceNodeFlux)
-      if (SourceType.eq.'umbrella') then
+      if ((SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')) then
         deallocate(uvx_pd,uvy_pd)
       endif
 
@@ -197,7 +197,7 @@
       zground = z_cc_pd(kground) - 0.5_ip*dz_vec_pd(kground)
 
       if ((SourceType.eq.'suzuki').or.     &
-          (SourceType.eq.'umbrella')) then
+          (SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')) then
         Suzuki_k = Suzuki_A/((Height_now-zground)* &
                   ((1.0_ip/Suzuki_A)-((Suzuki_A+1.0_ip)/Suzuki_A)* &
                   exp(-Suzuki_A)))
@@ -212,7 +212,7 @@
         z_cell_bot = z_cc_pd(k)-0.5_ip*dz_vec_pd(k)
 
         PlumeHeight_above_ground = Height_now-zground
-        if ((SourceType.eq.'suzuki').or.(SourceType.eq.'umbrella')) then
+        if ((SourceType.eq.'suzuki').or.(SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')) then
           !For Suzuki plumes and umbrella clouds
           ! The equation below calculates the tephra volume flux 
           ! (m3 DRE/s) in the height interval.  
@@ -267,7 +267,7 @@
         if (IsLatLon) then
           !calculate source node flux.  kappa is the volume of each cell in km3.
           !Flux in source nodes (kg hr-1 km-3)
-          if ((SourceType.ne.'umbrella').or.(k.lt.ibase)) then
+          if (((SourceType.ne.'umbrella').and.(SourceType.ne.'umbrella_air')).or.(k.lt.ibase)) then
             SourceNodeFlux(k,1:n_gs_max) = Tephra_bin_mass(1:n_gs_max)* &
                                          TephraFluxRate/kappa_pd(ivent,jvent,k)
             SumSourceNodeFlux = SumSourceNodeFlux +        &
@@ -284,7 +284,7 @@
           endif
         else
           !Flux in source nodes (kg hr-1 km-3)
-          if ((SourceType.ne.'umbrella').or.(k.lt.ibase)) then
+          if (((SourceType.ne.'umbrella').and.(SourceType.ne.'umbrella_air')).or.(k.lt.ibase)) then
             SourceNodeFlux(k,1:n_gs_max) = &
                     Tephra_bin_mass(1:n_gs_max)*TephraFluxRate/(dx*dy*dz_vec_pd(k))
             SumSourceNodeFlux = SumSourceNodeflux +        &
@@ -345,6 +345,7 @@
       if((SourceType.eq.'point')  .or. &
          (SourceType.eq.'line')   .or. &
          (SourceType.eq.'suzuki') .or. &
+         (SourceType.eq.'umbrella_air') .or. &
          (SourceType.eq.'umbrella'))then
 
         !COMPARE THE TIME WITH THE START & END TIMES OF THE DIFFERENT ERUPTIONS

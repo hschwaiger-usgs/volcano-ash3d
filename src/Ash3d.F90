@@ -272,16 +272,17 @@
         if(MassFluxRate_now.gt.0.0_ip) then
 
           ! Check if the source type is one of the standard types
-          if ((SourceType.eq.'point')  .or. &
-              (SourceType.eq.'line')   .or. &
-              (SourceType.eq.'profile').or. &
-              (SourceType.eq.'suzuki') .or. &
-              (SourceType.eq.'umbrella'))then
+          if ((SourceType.eq.'point')   .or. &
+              (SourceType.eq.'line')    .or. &
+              (SourceType.eq.'profile') .or. &
+              (SourceType.eq.'suzuki')  .or. &
+              (SourceType.eq.'umbrella').or. &
+              (SourceType.eq.'umbrella_air'))then
             ! Calculating the flux at the source nodes
             call TephraSourceNodes
 
             ! Now integrate the ash concentration with the SourceNodeFlux
-            if (SourceType.eq.'umbrella') then
+            if ((SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')) then
               ! Umbrella clouds have a special integration
               !  Below the umbrella cloud, add ash to vent nodes as above
               concen_pd(ivent,jvent,1:ibase-1,1:n_gs_max,ts0) =                        &
@@ -326,6 +327,7 @@
 !
 !------------------------------------------------------------------------------
           endif
+
         endif !MassFluxRate_now.gt.0.0_ip
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -468,21 +470,30 @@
               !    (ns_aloft.gt.0))
 
       write(global_info,*)"Time integration completed for the following reason:"
+      write(global_log,*)"Time integration completed for the following reason:"
       if(.not.dep_percent_accumulated.le.StopValue)then
         write(global_info,*)"Percent accumulated exceeds ",StopValue
+        write(global_log,*)"Percent accumulated exceeds ",StopValue
       endif
       if(.not.time.lt.Simtime_in_hours)then
         write(global_info,*)"time.le.Simtime_in_hours"
         write(global_info,*)"              Time = ",time
         write(global_info,*)"  Simtime_in_hours = ",Simtime_in_hours
+        write(global_log,*)"time.le.Simtime_in_hours"
+        write(global_log,*)"              Time = ",time
+        write(global_log,*)"  Simtime_in_hours = ",Simtime_in_hours
       endif
       if(ns_aloft.eq.0)then
         write(global_info,*)"ns_aloft = 0"
+        write(global_log,*)"ns_aloft = 0"
       endif
       if(tot_vol.gt.(1.05_ip*sum(e_Volume)))then
         write(global_info,*) "tot_vol>1.05*e_volume"
         write(global_info,*) " tot_vol = ",tot_vol
         write(global_info,*) "e_Volume = ",e_Volume
+        write(global_log,*) "tot_vol>1.05*e_volume"
+        write(global_log,*) " tot_vol = ",tot_vol
+        write(global_log,*) "e_Volume = ",e_Volume
       endif
       ! ************************************************************************
       ! ****** end time simulation *********************************************
@@ -490,8 +501,10 @@
 
       isFinal_TS = .true.
       write(global_info,12)   !put footnotes below output table
+      write(global_log,12)   !put footnotes below output table
       write(global_log ,12)
       write(global_info,*) 'time=',time,', dt=',dt
+      write(global_log,*) 'time=',time,', dt=',dt
 
         ! Make sure we have the latest output variables and go to write routines
       call Gen_Output_Vars

@@ -243,7 +243,7 @@
 
       ivar = 8 ! deposit (NWS)
       KML_filename(ivar)      = 'Deposit_NWS.kml              '
-      KML_units(ivar)         = '  mm '
+      KML_units(ivar)         = '  in.'
       KML_fid(ivar)           = 550
       KML_n_clrmp(ivar)       = 3
       KML_color_map(ivar,:) = (/ 0.1_ip, 0.8_ip, 6.0_ip, 0.0_ip, 0.0_ip,&
@@ -1033,7 +1033,7 @@
  53     format('depTS_',i4.4,a4)
 
         open(55,file=dp_gnufile,status='replace')
-        write(55,*)"set terminal png size 400,300 xffffff x000000"
+        write(55,*)"set terminal png size 400,300"
         write(55,*)"set key bmargin left horizontal Right noreverse enhanced ",&
                    "autotitles box linetype -1 linewidth 1.000"
         write(55,*)"set border 31 lw 2.0 lc rgb '#000000'"

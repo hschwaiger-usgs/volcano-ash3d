@@ -74,7 +74,7 @@
         !find width and height of a node (km) at the volcano's location
         de_km = de*cos(lat_volcano*DEG2RAD)*DEG2KMLON
         dn_km = dn*DEG2KMLAT
-        if (SourceType.eq.'umbrella') then
+        if ((SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')) then
            !calculate radius of umbrella cloud source nodes
            SourceNodeWidth_km  = (3./2.)*de_km
            SourceNodeHeight_km = (3./2.)*dn_km

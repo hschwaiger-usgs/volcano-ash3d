@@ -554,7 +554,7 @@
       subroutine Calc_AshVol_Aloft(vol)
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,nsmax,kappa_pd,ts1
+         nxmax,nymax,nzmax,nsmax,kappa_pd,ts1,ivent,jvent
 
       use solution,      only : &
          concen_pd,mass_aloft
@@ -582,6 +582,7 @@
           vol = vol + mass_aloft(isize)               /   & ! in kg
                       MagmaDensity                    /   & ! convert to m3
                       KM3_2_M3                              ! convert to km3
+
         enddo
       endif
 
@@ -638,7 +639,7 @@
       integer :: isize
 
       vol = 0.0_ip
-  
+
       if(n_gs_max.gt.0)then
         do isize=1,n_gs_max
           if(IsLatLon)then
@@ -655,6 +656,7 @@
                                     kappa_pd(1:nxmax,1:nymax,  nzmax)) )     /   & ! convert to kg
                           MagmaDensity                            /   & ! convert to m3
                           KM3_2_M3                                      ! convert to km3
+
           else
             vol = vol +     (                              &
                           sum(outflow_xz1_pd(1:nxmax,1:nzmax,isize))  +   &

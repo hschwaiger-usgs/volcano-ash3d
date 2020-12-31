@@ -611,7 +611,10 @@
                  (SourceType.eq.'UMBRELLA')) then
           SourceType='umbrella'
           Suzuki_A = 12.0_ip
-      else
+      elseif ((SourceType.eq.'umbrella_air')) then   !umbrella_air is the same as 'umbrella'
+          SourceType='umbrella_air'                  !but it is assumed to be an airborne run.
+          Suzuki_A = 12.0_ip                         !Thus if gsbins=1, the MER is multiplied by 20
+      else                                           !to obtain the right rate of umbrella growth.
         write(global_info,*)&
          "SourceType is not point, line, profile, or umbrella."
         write(global_info,*)&
@@ -646,15 +649,15 @@
       read(cdf_b1l9,*,err=1907) neruptions              ! read in number of eruptions or pulses
       write(global_info,*) 'Expecting to read ',neruptions,&
                            ' eruptions lines in Block 2.'
-      if ((SourceType.eq.'umbrella').and.(neruptions.gt.1)) then
+      if (((SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')).and.(neruptions.gt.1)) then
         write(global_error,*)"ERROR: ",&
-         'when SourceType=umbrella, neruptions must equal 1'
+         'when SourceType=umbrella or umbrella_air, neruptions must equal 1'
         write(global_error,*)&
          'You gave neruptions=',neruptions
         write(global_error,*)&
          'Program stopped'
         write(global_log,*)"ERROR: ",&
-         'when SourceType=umbrella, neruptions must equal 1'
+         'when SourceType=umbrella or umbrella_air, neruptions must equal 1'
         write(global_log ,*)&
          'You gave neruptions=',neruptions
         write(global_log ,*)&
@@ -743,6 +746,7 @@
         if(SourceType.eq.'suzuki'.or.&
            SourceType.eq.'point'.or.&
            SourceType.eq.'line'.or.&
+           SourceType.eq.'umbrella_air'.or.&
            SourceType.eq.'umbrella')then
          !read start time, duration, plume height, volume of each pulse
           read(linebuffer130,*,err=1910) iyear(i),imonth(i),iday(i),hour(i), &
@@ -1051,7 +1055,7 @@
       !for umbrella clouds, 
       itop  = 0
       ibase = 0
-      if (SourceType.eq.'umbrella') then
+      if ((SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')) then
         !set nodes at base and top  of cloud
         !itop  = int(e_PlumeHeight(1)/dz)+1           !node at top of plume
         !ibase = int(0.75*e_PlumeHeight(1)/dz)        !node at base
@@ -1112,9 +1116,19 @@
         if(SourceType.eq.'suzuki'.or.&
            SourceType.eq.'point'.or.&
            SourceType.eq.'line'.or.&
+           SourceType.eq.'umbrella_air'.or.&
            SourceType.eq.'umbrella')then
           MassFlux(i)  = MagmaDensity*e_Volume(i)*1.0e9_ip/e_Duration(i)
           e_EndTime(i) = e_StartTime(i) + e_Duration(i)
+
+          !for debugging >>>>>
+          !write(6,1023) MagmaDensity, e_Duration(i), MassFlux(i), e_Volume(i)
+!1023      format('   Magma density (kg/m3) = ',f6.1,', e_Duration(1) (hrs) = ',f6.3,/, &
+          !       '   Mass flux (kg/s) = ',e12.4,', Total volume (km3)=',f8.4,/,'Continue?')
+          !read(5,'(a1)') answer
+          !if (answer.eq.'n') stop
+          !for debugging <<<<
+
         elseif(SourceType.eq.'profile')then
           e_prof_MassFlux(i,1:e_prof_zpoints(i))  = MagmaDensity*&
                   e_prof_Volume(i,1:e_prof_zpoints(i))*1.0e9_ip/e_Duration(i)
@@ -2413,13 +2427,13 @@
 !1906  write(global_info,*)  'error reading diffusion coefficient or Suzuki constant or plume type.'
 !      write(global_info,*)  'The first value should be a number.  The second value should be either'
 !      write(global_info,*)  'a number (the Suzuki constant), or the word "line", "point",'
-!      write(global_info,*)  '"profile" or "umbrella"'
+!      write(global_info,*)  '"profile", "umbrella", or "umbrella_air"'
 !      write(global_info,*)  'You entered: ',cdf_b1l8
 !      write(global_info,*)  'Program stopped'
 !      write(global_log ,*)  'error reading diffusion coefficient or Suzuki constant or plume type.'
 !      write(global_log ,*)  'The first value should be a number.  The second value should be either'
 !      write(global_log ,*)  'a number (the Suzuki constant), or the word "line", "point"'
-!      write(global_info,*)  '"profile" or "umbrella"'
+!      write(global_info,*)  '"profile", "umbrella", or "umbrella_air"'
 !      write(global_log ,*)  'You entered: ',cdf_b1l8
 !      write(global_log ,*)  'Program stopped'
 !      stop 1

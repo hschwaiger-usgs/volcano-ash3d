@@ -19,7 +19,7 @@
       use Source,        only : &
          uvx_pd,uvy_pd,ibase,itop,lat_volcano,lon_volcano,&
          MassFlux,SourceNodeWidth_km, SourceNodeHeight_km,&
-         e_EndTime
+         e_EndTime, SourceType
 
       use Tephra,        only : &
          n_gs_max
@@ -46,7 +46,7 @@
       integer      :: ew_nodes,ns_nodes!radius of clouds in nodes
       integer      :: west_node,east_node
       integer      :: south_node,north_node
-      character    :: answer*1
+      !character    :: answer*1          !for debugging
 
       !Set standard values
       lambda                        = 0.2_ip
@@ -66,7 +66,7 @@
 
       !If there is only one size class, assume it's an airborne run and
       !multiply the mass flux by 20
-      if (n_gs_max.eq.1) then
+      if ((SourceType.eq.'umbrella_air').and.(n_gs_max.eq.1)) then
              massfluxnow = 20.0_ip*massfluxnow
       end if
 
@@ -83,31 +83,31 @@
               N_BV**(5.0_ip/4.0_ip)
 
       if (time.eq.0.0_ip)  then
-          write(6,*) 
-          write(6,*) 'in Umbrella_winds'
-          write(6,*) '  massfluxnow = ',massfluxnow
-          write(6,*) '      C_Costa = ',C_Costa
-          write(6,*) '         N_BV = ',N_BV
-          write(6,*) 'k_entrainment = ',k_entrainment
-          write(6,*) '     Q (m3/s) = ',qnow
-          write(6,*)
-          write(9,*) 
-          write(9,*) 'in Umbrella_winds'
-          write(9,*) '  massfluxnow = ',massfluxnow
-          write(9,*) '      C_Costa = ',C_Costa
-          write(9,*) '         N_BV = ',N_BV
-          write(9,*) 'k_entrainment = ',k_entrainment
-          write(9,*) '     Q (m3/s) = ',qnow
-          write(9,*)
-          if (n_gs_max.eq.1) then
-              write(6,*) 'n_gs_max=1, so we are assuming an airborne run'
-              write(6,*) 'massflux has been multiplied by 20'
-              write(9,*) 'n_gs_max=1, so we are assuming an airborne run'
-              write(9,*) 'massflux has been multiplied by 20'
+          write(global_info,*) 
+          write(global_info,*) 'in Umbrella_winds'
+          write(global_info,*) '  massfluxnow = ',massfluxnow
+          write(global_info,*) '      C_Costa = ',C_Costa
+          write(global_info,*) '         N_BV = ',N_BV
+          write(global_info,*) 'k_entrainment = ',k_entrainment
+          write(global_info,*) '     Q (m3/s) = ',qnow
+          write(global_info,*)
+          write(global_log,*) 
+          write(global_log,*) 'in Umbrella_winds'
+          write(global_log,*) '  massfluxnow = ',massfluxnow
+          write(global_log,*) '      C_Costa = ',C_Costa
+          write(global_log,*) '         N_BV = ',N_BV
+          write(global_log,*) 'k_entrainment = ',k_entrainment
+          write(global_log,*) '     Q (m3/s) = ',qnow
+          write(global_log,*)
+          !If we're doing an airborne run and using only 1 grain size,
+          !multiply the MER by 20 to make sure we're getting the right umbrella
+          !growth rate
+          if ((SourceType.eq.'umbrella_air').and.(n_gs_max.eq.1)) then
+              write(global_info,*) 'n_gs_max=1, so we are assuming an airborne run'
+              write(global_info,*) 'massflux has been multiplied by 20'
+              write(global_log,*) 'n_gs_max=1, so we are assuming an airborne run'
+              write(global_log,*) 'massflux has been multiplied by 20'
           end if
-          !write(6,*) 'Continue?'
-          !read(5,'(a1)') answer
-          !if (answer.eq.'n') stop
        end if
 
       !convert from  hours to seconds

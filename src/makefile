@@ -93,7 +93,7 @@ USEEXTDATA = T
 #      LIM_MINMOD
 #      LIM_SUPERBEE
 #      LIM_MC
-LIMITER = LIM_SUPERBEE
+LIMITER = LIM_NONE
 #
 #  DIFFMETH specifies whether or not to use Crank-Nicolson
 #
