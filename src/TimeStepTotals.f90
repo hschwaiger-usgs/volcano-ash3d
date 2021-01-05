@@ -7,7 +7,7 @@
       use io_units
 
       use solution,      only : &
-         aloft_vol,dep_vol,outflow_vol,tot_vol
+         aloft_vol,dep_vol,outflow_vol,tot_vol,SourceCumulativeVol
 
       use Output_Vars,   only : &
          CloudLoadArea,&
@@ -53,9 +53,16 @@
 
       DateTime = HS_yyyymmddhhmm_since(time+SimStartHour,BaseYear,useLeap)
 
-      write(global_info,2) itime,OutputStep_Marker,time,DateTime,dep_vol,aloft_vol,&
+      !write(global_info,2) itime,OutputStep_Marker,time,DateTime,dep_vol,aloft_vol,&
+      !                 outflow_vol,tot_vol,CloudLoadArea(1)
+      !write(global_log ,2) itime,OutputStep_Marker,time,DateTime,dep_vol,aloft_vol,&
+      !                 outflow_vol,tot_vol,CloudLoadArea(1)
+
+      write(global_info,2) itime,OutputStep_Marker,time,DateTime,&
+                       SourceCumulativeVol,dep_vol,aloft_vol,&
                        outflow_vol,tot_vol,CloudLoadArea(1)
-      write(global_log ,2) itime,OutputStep_Marker,time,DateTime,dep_vol,aloft_vol,&
+      write(global_log ,2) itime,OutputStep_Marker,time,DateTime,&
+                       SourceCumulativeVol,dep_vol,aloft_vol,&
                        outflow_vol,tot_vol,CloudLoadArea(1)
 
       !write(global_info,*)sum(outflow_yz1(     1:ny,1:nz,1)*kappa(0     ,1:ny  ,1:nz  ))/MagmaDensity/KM3_2_M3,&
@@ -73,7 +80,8 @@
 !                " Tg"
       OutputStep_Marker = ' ' 
 
-2     format(6x,i6,a1,f11.3,3x,a,4f12.5,f13.1)
+!2     format(6x,i6,a1,f11.3,3x,a,4f12.5,f13.1)
+2     format(6x,i6,a1,f11.3,3x,a,5f12.5,f13.1)
 
       return
 

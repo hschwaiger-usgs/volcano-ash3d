@@ -21,7 +21,7 @@
 
       real(kind=ip), dimension(:)  ,allocatable  :: Tephra_v_s         ! Settling vel
       real(kind=ip), dimension(:)  ,allocatable  :: Tephra_gsdiam      ! Grain-size diameter (read in mmm, stored in m)
-      real(kind=ip), dimension(:)  ,allocatable  :: Tephra_bin_mass    ! mass
+      real(kind=ip), dimension(:)  ,allocatable  :: Tephra_bin_mass    ! mass    (kg)
       real(kind=ip), dimension(:)  ,allocatable  :: Tephra_rho_m       ! density (kg/m3)
       real(kind=ip), dimension(:)  ,allocatable  :: Tephra_gsF         ! Grain-size shape (b+c)/2a
       real(kind=ip), dimension(:,:),allocatable  :: Tephra_gsF_fac     ! Precalculated shape factors

@@ -150,7 +150,12 @@
       character (len=50) :: concenfile
       integer            :: init_tstep
       character (len=130):: cdf_title
+      character (len=80) :: cdf_institution
+      character (len=80) :: cdf_source
+      character (len=80) :: cdf_history
+      character (len=80) :: cdf_references
       character (len=80) :: cdf_comment
+      character (len=80) :: cdf_conventions
       character (len=80) :: cdf_b1l1 !character strings containing parameters for netcdf file
       character (len=80) :: cdf_b1l2
       character (len=80) :: cdf_b1l3
@@ -455,6 +460,7 @@
       real(kind=ip)      :: dep_percent_accumulated
       real(kind=ip)      :: StopValue    !program stops when percent_accumulated>StopValue
       real(kind=ip)      :: dep_vol,aloft_vol,outflow_vol,tot_vol
+      real(kind=ip)      :: SourceCumulativeVol
 
       real(kind=ip), dimension(:)  ,allocatable  :: mass_aloft
 

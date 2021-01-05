@@ -4,6 +4,8 @@
 
       use io_units
 
+      use global_param
+
       integer, parameter :: MAXCustSrc = 10  ! The maximum number of custom
                                                !source types that we will check for
 
@@ -168,8 +170,8 @@
       integer :: k
       real(kind=ip) :: Suzuki_k     ! k factor in the Suzuki equation (see Hurst's Ashfall manual)
       real(kind=ip) :: z_cell_bot, z_cell_top
-      real(kind=ip) :: SumSourceNodeFlux      !checking terms
-      real(kind=ip) :: TephraFluxRate
+      real(kind=ip) :: SumSourceNodeFlux      ! checking terms
+      real(kind=ip) :: TephraFluxRate          ! kg/hr
       real(kind=ip) :: zground, PlumeHeight_above_ground
       integer       :: kground
       real(kind=ip) :: ez
@@ -196,8 +198,9 @@
       enddo
       zground = z_cc_pd(kground) - 0.5_ip*dz_vec_pd(kground)
 
-      if ((SourceType.eq.'suzuki').or.     &
-          (SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')) then
+      if ((SourceType.eq.'suzuki')      .or. &
+          (SourceType.eq.'umbrella')    .or. &
+          (SourceType.eq.'umbrella_air')) then
         Suzuki_k = Suzuki_A/((Height_now-zground)* &
                   ((1.0_ip/Suzuki_A)-((Suzuki_A+1.0_ip)/Suzuki_A)* &
                   exp(-Suzuki_A)))
@@ -211,8 +214,11 @@
         ! height at the bottom
         z_cell_bot = z_cc_pd(k)-0.5_ip*dz_vec_pd(k)
 
+        ! First get the TephraFluxRate in kg/hr
         PlumeHeight_above_ground = Height_now-zground
-        if ((SourceType.eq.'suzuki').or.(SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')) then
+        if ((SourceType.eq.'suzuki')      .or. &
+            (SourceType.eq.'umbrella')    .or. &
+            (SourceType.eq.'umbrella_air')) then
           !For Suzuki plumes and umbrella clouds
           ! The equation below calculates the tephra volume flux 
           ! (m3 DRE/s) in the height interval.  
@@ -263,16 +269,24 @@
         endif
 
         ! Now that we have the TephraFluxRate for this k, convert it to mass
-        ! over the grainsmax bins
+        ! over the grainsmax bins stored in SourceNodeFlux (kg/km3/hr)
+        ! SumSourceNodeFlux is used for check the sum of all source nodes
+        ! against the total MassFlux (i.e. should equal 1.0)
         if (IsLatLon) then
           !calculate source node flux.  kappa is the volume of each cell in km3.
           !Flux in source nodes (kg hr-1 km-3)
-          if (((SourceType.ne.'umbrella').and.(SourceType.ne.'umbrella_air')).or.(k.lt.ibase)) then
-            SourceNodeFlux(k,1:n_gs_max) = Tephra_bin_mass(1:n_gs_max)* &
-                                         TephraFluxRate/kappa_pd(ivent,jvent,k)
-            SumSourceNodeFlux = SumSourceNodeFlux +        &
-                                 sum(SourceNodeFlux(k,1:n_gs_max) * &
-                                  kappa_pd(ivent,jvent,k))/MassFluxRate_now
+          if(((SourceType.ne.'umbrella')    .and. &
+              (SourceType.ne.'umbrella_air')).or. &
+             (k.lt.ibase)) then
+            SourceNodeFlux(k,1:n_gs_max) = &  ! final units are kg/km3 hr
+                Tephra_bin_mass(1:n_gs_max) * & ! fraction of total in bin
+                TephraFluxRate              / & ! kg/hr
+                kappa_pd(ivent,jvent,k)         ! km3
+            SumSourceNodeFlux = &
+                SumSourceNodeFlux +        &         ! dimensionless
+                sum(SourceNodeFlux(k,1:n_gs_max) * & ! kg/km3 hr
+                kappa_pd(ivent,jvent,k)) / &         ! km3
+                MassFluxRate_now                     ! kg/hr
           else
             ! For the umbrella case, we need the extra factor 1/9 to account for
             ! the 9-node box around the vent
@@ -284,7 +298,9 @@
           endif
         else
           !Flux in source nodes (kg hr-1 km-3)
-          if (((SourceType.ne.'umbrella').and.(SourceType.ne.'umbrella_air')).or.(k.lt.ibase)) then
+          if (((SourceType.ne.'umbrella')      .and. &
+               (SourceType.ne.'umbrella_air')) .or.  &
+               (k.lt.ibase))then
             SourceNodeFlux(k,1:n_gs_max) = &
                     Tephra_bin_mass(1:n_gs_max)*TephraFluxRate/(dx*dy*dz_vec_pd(k))
             SumSourceNodeFlux = SumSourceNodeflux +        &
@@ -302,7 +318,8 @@
       enddo
 
       ! Make sure the sum of the fluxes in all the cells equals the total flux
-      if (abs(SumSourceNodeFlux-1.0_ip).gt.1.0e-4_ip) then
+      !if (abs(SumSourceNodeFlux-1.0_ip).gt.1.0e-4_ip) then
+      if (abs(SumSourceNodeFlux-1.0_ip).gt.EPS_SMALL) then
          write(global_info,2) SumSourceNodeFlux-1.0_ip
          write(global_log ,2) SumSourceNodeFlux-1.0_ip
          write(*,*)"SourceType = ",SourceType
@@ -342,11 +359,11 @@
 
       !if (itime.eq.0) return     !exit the subroutine if itime=0
 
-      if((SourceType.eq.'point')  .or. &
-         (SourceType.eq.'line')   .or. &
-         (SourceType.eq.'suzuki') .or. &
-         (SourceType.eq.'umbrella_air') .or. &
-         (SourceType.eq.'umbrella'))then
+      if((SourceType.eq.'point')       .or. &
+         (SourceType.eq.'line')        .or. &
+         (SourceType.eq.'suzuki')      .or. &
+         (SourceType.eq.'umbrella')    .or. &
+         (SourceType.eq.'umbrella_air'))then
 
         !COMPARE THE TIME WITH THE START & END TIMES OF THE DIFFERENT ERUPTIONS
         !exit the subroutine if we're past the last eruption

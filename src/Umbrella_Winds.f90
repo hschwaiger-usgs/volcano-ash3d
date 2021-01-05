@@ -46,7 +46,7 @@
       integer      :: ew_nodes,ns_nodes!radius of clouds in nodes
       integer      :: west_node,east_node
       integer      :: south_node,north_node
-      !character    :: answer*1          !for debugging
+      character    :: answer*1
 
       !Set standard values
       lambda                        = 0.2_ip

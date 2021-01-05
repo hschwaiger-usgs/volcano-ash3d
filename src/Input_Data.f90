@@ -11,14 +11,15 @@
       use global_param,  only : &
          EPS_SMALL,EPS_TINY,nmods,OPTMOD_names,VERB,limiter,&
          useDS,useTemperature,useCalcFallVel,useVariableGSbins,&
-         useDiffusion,useCN
+         useDiffusion,useCN,KM3_2_M3
 
       use io_data,       only : &
          cdf_b1l1,cdf_b1l2,cdf_b1l3,cdf_b1l4,cdf_b1l5,cdf_b1l6,cdf_b1l7,cdf_b1l8,cdf_b1l9,&
          cdf_b3l1,cdf_b3l2,cdf_b3l3,cdf_b3l4,cdf_b3l5,cdf_b4l1,cdf_b4l2,cdf_b4l3,cdf_b4l4,&
          cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,cdf_b4l11,cdf_b4l12,cdf_b4l13,&
          cdf_b4l14,cdf_b4l15,cdf_b4l16,cdf_b4l17,cdf_b4l18,cdf_b6l1,cdf_b6l2,cdf_b6l3,cdf_b6l4,&
-         cdf_b6l5,cdf_comment,cdf_title,outfile,VolcanoName,WriteTimes,nWriteTimes,&
+         cdf_b6l5,cdf_comment,cdf_title,cdf_institution,cdf_source,cdf_history,cdf_references,&
+         outfile,VolcanoName,WriteTimes,nWriteTimes,cdf_conventions,&
          x_vprofile,y_vprofile,i_vprofile,j_vprofile,&
          concenfile,infile,ioutputFormat,LoadConcen,log_step,NextWriteTime,&
          AppendExtAirportFile,WriteInterval,WriteGSD,WriteDepositTS_KML,WriteDepositTS_ASCII,&
@@ -341,6 +342,11 @@
       write(global_info,3) infile
       write(global_log ,3) infile
 
+      inquire( file=infile, exist=IsThere )
+      if(.not.IsThere)then
+        write(global_error,*)"ERROR: Cannot file input file"
+        stop 1
+      endif
       open(unit=10,file=infile,status='old',err=1900)
 
       !************************************************************************
@@ -611,12 +617,18 @@
                  (SourceType.eq.'UMBRELLA')) then
           SourceType='umbrella'
           Suzuki_A = 12.0_ip
-      elseif ((SourceType.eq.'umbrella_air')) then   !umbrella_air is the same as 'umbrella'
-          SourceType='umbrella_air'                  !but it is assumed to be an airborne run.
-          Suzuki_A = 12.0_ip                         !Thus if gsbins=1, the MER is multiplied by 20
-      else                                           !to obtain the right rate of umbrella growth.
+      elseif ((SourceType.eq.'umbrella_air').or. &
+                 (SourceType.eq.'Umbrella_air').or. &
+                 (SourceType.eq.'UMBRELLA_AIR')) then
+          !umbrella_air is the same as 'umbrella'
+          !but it is assumed to be an airborne run.
+          !Thus if gsbins=1, the MER is multiplied by 20
+          !to obtain the right rate of umbrella growth.
+          SourceType='umbrella_air'
+          Suzuki_A = 12.0_ip
+      else
         write(global_info,*)&
-         "SourceType is not point, line, profile, or umbrella."
+         "SourceType is not point, line, profile, umbrella or umbrella_air."
         write(global_info,*)&
          "Assuming this is a custom source type."
         write(global_info,*)&
@@ -649,15 +661,16 @@
       read(cdf_b1l9,*,err=1907) neruptions              ! read in number of eruptions or pulses
       write(global_info,*) 'Expecting to read ',neruptions,&
                            ' eruptions lines in Block 2.'
-      if (((SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')).and.(neruptions.gt.1)) then
+      if ((SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air') &
+           .and.(neruptions.gt.1)) then
         write(global_error,*)"ERROR: ",&
-         'when SourceType=umbrella or umbrella_air, neruptions must equal 1'
+         'when SourceType=umbrella, neruptions must equal 1'
         write(global_error,*)&
          'You gave neruptions=',neruptions
         write(global_error,*)&
          'Program stopped'
         write(global_log,*)"ERROR: ",&
-         'when SourceType=umbrella or umbrella_air, neruptions must equal 1'
+         'when SourceType=umbrella, neruptions must equal 1'
         write(global_log ,*)&
          'You gave neruptions=',neruptions
         write(global_log ,*)&
@@ -743,11 +756,11 @@
           endif
         endif
 
-        if(SourceType.eq.'suzuki'.or.&
-           SourceType.eq.'point'.or.&
-           SourceType.eq.'line'.or.&
-           SourceType.eq.'umbrella_air'.or.&
-           SourceType.eq.'umbrella')then
+        if(SourceType.eq.'suzuki'      .or. &
+           SourceType.eq.'point'       .or. &
+           SourceType.eq.'line'        .or. &
+           SourceType.eq.'umbrella'    .or. &
+           SourceType.eq.'umbrella_air')then
          !read start time, duration, plume height, volume of each pulse
           read(linebuffer130,*,err=1910) iyear(i),imonth(i),iday(i),hour(i), &
                                 e_Duration(i), e_PlumeHeight(i), e_Volume(i)
@@ -1021,19 +1034,19 @@
       ! Now that we know the requested dz profile and the plume heights, we can
       ! set up the z-grid for computation
       CompGrid_height = ZPADDING*maxval(e_PlumeHeight(1:neruptions))
-      if(CompGrid_height.lt.10.0_ip*dz_const)then
-        write(global_info,*)&
-         "  Highest source = ", maxval(e_PlumeHeight(1:neruptions))
-        write(global_info,*)&
-         "        ZPADDING = ",ZPADDING
-        write(global_info,*)&
-         " CompGrid_height = ",CompGrid_height
-        write(global_info,*)&
-         "This height for the grid is less than 10 * dz"
-        write(global_info,*)&
-         "Resetting grid height to ",10.0_ip*dz_const
-        CompGrid_height = max(10.0_ip*dz_const,CompGrid_height)
-      endif
+!      if(CompGrid_height.lt.10.0_ip*dz_const)then
+!        write(global_info,*)&
+!         "  Highest source = ", maxval(e_PlumeHeight(1:neruptions))
+!        write(global_info,*)&
+!         "        ZPADDING = ",ZPADDING
+!        write(global_info,*)&
+!         " CompGrid_height = ",CompGrid_height
+!        write(global_info,*)&
+!         "This height for the grid is less than 10 * dz"
+!        write(global_info,*)&
+!         "Resetting grid height to ",10.0_ip*dz_const
+!        CompGrid_height = max(10.0_ip*dz_const,CompGrid_height)
+!      endif
       nzmax = 0
       do k = 1,nz_init-1
         if(z_vec_init(k+1).gt.CompGrid_height.and. &
@@ -1055,7 +1068,8 @@
       !for umbrella clouds, 
       itop  = 0
       ibase = 0
-      if ((SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')) then
+      if ((SourceType.eq.'umbrella')    .or. &
+          (SourceType.eq.'umbrella_air')) then
         !set nodes at base and top  of cloud
         !itop  = int(e_PlumeHeight(1)/dz)+1           !node at top of plume
         !ibase = int(0.75*e_PlumeHeight(1)/dz)        !node at base
@@ -1113,12 +1127,15 @@
 !     CALCULATE MASS FLUX AND END TIMES OF EACH ERUPTIVE PULSE      
       do i=1,neruptions                            
              !mass flux in kg/hr
-        if(SourceType.eq.'suzuki'.or.&
-           SourceType.eq.'point'.or.&
-           SourceType.eq.'line'.or.&
-           SourceType.eq.'umbrella_air'.or.&
-           SourceType.eq.'umbrella')then
-          MassFlux(i)  = MagmaDensity*e_Volume(i)*1.0e9_ip/e_Duration(i)
+        if(SourceType.eq.'suzuki'      .or. &
+           SourceType.eq.'point'       .or. &
+           SourceType.eq.'line'        .or. &
+           SourceType.eq.'umbrella'    .or. &
+           SourceType.eq.'umbrella_air')then
+          MassFlux(i)  = MagmaDensity * & ! kg/m3
+                         e_Volume(i)  * & ! km3
+                         KM3_2_M3     / & ! m3/km3
+                         e_Duration(i)    ! hours  = kg/hr
           e_EndTime(i) = e_StartTime(i) + e_Duration(i)
 
           !for debugging >>>>>
@@ -1130,8 +1147,11 @@
           !for debugging <<<<
 
         elseif(SourceType.eq.'profile')then
-          e_prof_MassFlux(i,1:e_prof_zpoints(i))  = MagmaDensity*&
-                  e_prof_Volume(i,1:e_prof_zpoints(i))*1.0e9_ip/e_Duration(i)
+          e_prof_MassFlux(i,1:e_prof_zpoints(i)) = &
+                         MagmaDensity  * &                        ! kg/m3
+                         e_prof_Volume(i,1:e_prof_zpoints(i)) * & ! km3
+                         KM3_2_M3 / &                             ! m3/km3
+                         e_Duration(i)                            ! hours = kg/hr
           MassFlux(i) = sum(e_prof_MassFlux(i,1:e_prof_zpoints(i)))
         else
           ! Custom source, initializing MassFlux and end time
@@ -2231,6 +2251,11 @@
       outfile = "3d_tephra_fall.nc"
       cdf_title = infile
       cdf_comment = "None"
+      cdf_institution="USGS"
+      cdf_source="ash3d v1.0b"
+      cdf_history=""
+      cdf_references="https://vsc-ash.wr.usgs.gov/ash3d-gui"
+      cdf_conventions='CF-1.5'
       if(ios.ne.0)then
         write(global_info,*)'  Setting outfile to 3d_tephra_fall.nc'
         write(global_info,*)'  Setting Title to ',infile
@@ -2427,13 +2452,13 @@
 !1906  write(global_info,*)  'error reading diffusion coefficient or Suzuki constant or plume type.'
 !      write(global_info,*)  'The first value should be a number.  The second value should be either'
 !      write(global_info,*)  'a number (the Suzuki constant), or the word "line", "point",'
-!      write(global_info,*)  '"profile", "umbrella", or "umbrella_air"'
+!      write(global_info,*)  '"profile" or "umbrella" or "umbrella_air"'
 !      write(global_info,*)  'You entered: ',cdf_b1l8
 !      write(global_info,*)  'Program stopped'
 !      write(global_log ,*)  'error reading diffusion coefficient or Suzuki constant or plume type.'
 !      write(global_log ,*)  'The first value should be a number.  The second value should be either'
 !      write(global_log ,*)  'a number (the Suzuki constant), or the word "line", "point"'
-!      write(global_info,*)  '"profile", "umbrella", or "umbrella_air"'
+!      write(global_info,*)  '"profile" or "umbrella" or "umbrella_air"'
 !      write(global_log ,*)  'You entered: ',cdf_b1l8
 !      write(global_log ,*)  'Program stopped'
 !      stop 1

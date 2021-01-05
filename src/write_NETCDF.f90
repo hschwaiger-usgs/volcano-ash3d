@@ -17,7 +17,8 @@
          cdf_b1l1,cdf_b1l2,cdf_b1l3,cdf_b1l4,cdf_b1l5,cdf_b1l6,cdf_b1l7,cdf_b1l8,cdf_b1l9,&
          cdf_b3l1,cdf_b3l2,cdf_b3l3,cdf_b3l4,cdf_b3l5,cdf_b4l1,cdf_b4l2,cdf_b4l3,cdf_b4l4,&
          cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,cdf_b4l11,cdf_b6l1,cdf_b6l2,&
-         cdf_b6l3,cdf_b6l4,cdf_comment,cdf_title,outfile,&
+         cdf_b6l3,cdf_b6l4,cdf_conventions,&
+         cdf_comment,cdf_title,cdf_institution,cdf_source,cdf_history,cdf_references,outfile,&
          nvar_User2d_static_XY,nvar_User2d_XY,nvar_User3d_XYGs,nvar_User3d_XYZ,&
          nvar_User4d_XYZGs
 
@@ -42,7 +43,9 @@
 
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,x_cc_pd,y_cc_pd,z_cc_pd,lon_cc_pd,lat_cc_pd,&
-         sigma_nz_pd,dx,dy,dz_vec_pd,IsLatLon,ts1
+         sigma_nz_pd,dx,dy,dz_vec_pd,IsLatLon,ts1,&
+         A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
+         A3d_phi2,A3d_radius_earth
 
       use solution,      only : &
           vx_pd,vy_pd,vz_pd,vf_pd,concen_pd,DepositGranularity,SpeciesID,SpeciesSubID
@@ -80,6 +83,7 @@
       integer :: y_var_id              = 0 ! Y-distance
       integer :: z_var_id              = 0 ! Z-distance
       integer :: bin_var_id            = 0 ! Species class ID
+      integer :: proj_var_id           = 0 ! Projection
       !integer :: gs_var_id             = 0 ! grain size
       integer :: spec_var_id           = 0 ! Species class ID
       integer :: subspec_var_id        = 0 ! Species sub-class ID
@@ -260,27 +264,49 @@
 
       ! Fill in header info
       if(VERB.gt.1)write(global_info,*)"Filling in header info"
-      nSTAT = nf90_put_att(ncid,nf90_global,"Title",cdf_title)
+      nSTAT = nf90_put_att(ncid,nf90_global,"title",cdf_title)
       if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att title: ',nf90_strerror(nSTAT)
-      nSTAT = nf90_put_att(ncid,nf90_global,"User",cdf_user)
+
+      nSTAT = nf90_put_att(ncid,nf90_global,"institution",cdf_institution)
       if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: put_att User: ',nf90_strerror(nSTAT)
-      nSTAT = nf90_put_att(ncid,nf90_global,"Date",cdf_time_log)
+          write(global_log ,*)'ERROR: put_att institution: ',nf90_strerror(nSTAT)
+
+      nSTAT = nf90_put_att(ncid,nf90_global,"source",cdf_source)
       if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: put_att Date: ',nf90_strerror(nSTAT)
+          write(global_log ,*)'ERROR: put_att source: ',nf90_strerror(nSTAT)
+
+      nSTAT = nf90_put_att(ncid,nf90_global,"history",cdf_time_log)
+      if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att history: ',nf90_strerror(nSTAT)
+
+      nSTAT = nf90_put_att(ncid,nf90_global,"references",cdf_references)
+      if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att references: ',nf90_strerror(nSTAT)
+
+      nSTAT = nf90_put_att(ncid,nf90_global,"Conventions",cdf_conventions)
+      if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att Conventions: ',nf90_strerror(nSTAT)
+
+
+      nSTAT = nf90_put_att(ncid,nf90_global,"user",cdf_user)
+      if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att user: ',nf90_strerror(nSTAT)
+      nSTAT = nf90_put_att(ncid,nf90_global,"date",cdf_time_log)
+      if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att date: ',nf90_strerror(nSTAT)
       nSTAT = nf90_put_att(ncid,nf90_global,"NWPStartTime",cdf_WindStartTime)
       if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att NWPStartTime: ',nf90_strerror(nSTAT)
-      nSTAT = nf90_put_att(ncid,nf90_global,"Host",cdf_host)
+      nSTAT = nf90_put_att(ncid,nf90_global,"host",cdf_host)
       if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: put_att Host: ',nf90_strerror(nSTAT)
+          write(global_log ,*)'ERROR: put_att host: ',nf90_strerror(nSTAT)
       nSTAT = nf90_put_att(ncid,nf90_global,"CWD",cdf_cwd)
       if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att CWD: ',nf90_strerror(nSTAT)
-      nSTAT = nf90_put_att(ncid,nf90_global,"Comment",cdf_comment)
+      nSTAT = nf90_put_att(ncid,nf90_global,"comment",cdf_comment)
       if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: put_att Comment: ',nf90_strerror(nSTAT)
+          write(global_log ,*)'ERROR: put_att comment: ',nf90_strerror(nSTAT)
         ! Add lines copied from the input file
       nSTAT = nf90_put_att(ncid,nf90_global,"b1l1",cdf_b1l1)
       if(nSTAT.ne.0) &
@@ -435,6 +461,7 @@
       write(time_units,4313) xmlSimStartTime
 4313  format('hours since ',a20)
       nSTAT = nf90_put_att(ncid,t_var_id,"units",time_units)
+      nSTAT = nf90_put_att(ncid,t_var_id,"standard_name","time")
       if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
       !if(runAsForecast)then
@@ -467,6 +494,10 @@
       if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
       nSTAT = nf90_put_att(ncid,z_var_id,"units","km")
       if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
+      nSTAT = nf90_put_att(ncid,z_var_id,"standard_name","altitude")
+      if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
+      nSTAT = nf90_put_att(ncid,z_var_id,"positive","up")
+      if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
 
          ! Y
       if(VERB.gt.1)write(global_info,*)"     Y",dim_names(3)
@@ -482,9 +513,11 @@
       nSTAT = nf90_put_att(ncid,y_var_id,"long_name",var_lnames(3))
       if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
       if (IsLatLon) then
-        nSTAT = nf90_put_att(ncid,y_var_id,"units","degrees")
+        nSTAT = nf90_put_att(ncid,y_var_id,"units","degrees_north")
+        nSTAT = nf90_put_att(ncid,y_var_id,"standard_name","latitude")
       else
         nSTAT = nf90_put_att(ncid,y_var_id,"units","km")
+        nSTAT = nf90_put_att(ncid,y_var_id,"standard_name","projection_y_coordinate")
       endif
       if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
 
@@ -502,9 +535,11 @@
       nSTAT = nf90_put_att(ncid,x_var_id,"long_name",var_lnames(4))
       if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
       if (IsLatLon) then
-        nSTAT = nf90_put_att(ncid,x_var_id,"units","degrees")
+        nSTAT = nf90_put_att(ncid,x_var_id,"units","degrees_east")
+        nSTAT = nf90_put_att(ncid,x_var_id,"standard_name","longitude")
       else
         nSTAT = nf90_put_att(ncid,x_var_id,"units","km")
+        nSTAT = nf90_put_att(ncid,x_var_id,"standard_name","projection_x_coordinate")
       endif
       if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
 
@@ -542,6 +577,93 @@
       if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
 
       !   End of dimension variables
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      ! write projection as a variable
+      if (IsLatLon) then
+        if(VERB.gt.1)write(*,*)"     LatLon_Projection"
+        nSTAT = nf90_def_var(ncid,"LatLon_Projection",nf90_int,proj_var_id)
+        if(nSTAT.ne.0)write(global_log ,*)'ERROR: def_var: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,proj_var_id,"grid_mapping_name","latitude_longitude")
+        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,proj_var_id,"semi_major_axis",A3d_radius_earth*1000.0_ip)
+        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,proj_var_id,"inverse_flattening","0")
+        if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
+      else
+        select case (A3d_iprojflag)
+        case(1)
+          ! Polar stereographic
+          if(VERB.gt.1)write(*,*)"     Polar_Stereographic"
+          nSTAT = nf90_def_var(ncid,"Polar_Stereographic",nf90_int,proj_var_id)
+          if(nSTAT.ne.0)write(global_log ,*)'ERROR: def_var: ',nf90_strerror(nSTAT)
+          nSTAT = nf90_put_att(ncid,proj_var_id,&
+                               "grid_mapping_name", &
+                               "polar_stereographic")
+          if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att:',nf90_strerror(nSTAT)
+          nSTAT = nf90_put_att(ncid,proj_var_id,&
+                              "longitude_of_projection_origin",A3d_lam0)
+          if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att:',nf90_strerror(nSTAT)
+          nSTAT = nf90_put_att(ncid,proj_var_id,&
+                              "straight_vertical_longitude_from_pole",A3d_lam1)
+          if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att:',nf90_strerror(nSTAT)
+          nSTAT = nf90_put_att(ncid,proj_var_id,&
+                              "scale_factor_at_projection_origin",A3d_k0_scale)
+          if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att:',nf90_strerror(nSTAT)
+          nSTAT = nf90_put_att(ncid,proj_var_id,&
+                              "latitude_of_projection_origin",A3d_phi0)
+          if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att:',nf90_strerror(nSTAT)
+          nSTAT = nf90_put_att(ncid,proj_var_id,&
+                              "earth_radius",A3d_radius_earth*1000.0_ip)
+          if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att:',nf90_strerror(nSTAT)
+        case(2)
+          ! Albers Equal Area
+
+        case(3)
+          ! UTM
+
+        case(4)
+          ! Lambert conformal conic 
+          if(VERB.gt.1)write(*,*)"     Lambert_Conformal"
+          nSTAT = nf90_def_var(ncid,"Lambert_Conformal",nf90_int,proj_var_id)
+          if(nSTAT.ne.0)write(global_log ,*)'ERROR: def_var: ',nf90_strerror(nSTAT)
+          nSTAT = nf90_put_att(ncid,proj_var_id,&
+                               "grid_mapping_name", &
+                               "lambert_conformal_conic")
+          if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att:',nf90_strerror(nSTAT)
+          nSTAT = nf90_put_att(ncid,proj_var_id,&
+                               "standard_parallel",A3d_phi0)
+          if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att:',nf90_strerror(nSTAT)
+          nSTAT = nf90_put_att(ncid,proj_var_id,&
+                               "longitude_of_central_meridian",A3d_lam0)
+          if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att:',nf90_strerror(nSTAT)
+          nSTAT = nf90_put_att(ncid,proj_var_id,&
+                              "latitude_of_projection_origin",A3d_phi1)
+          if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att:',nf90_strerror(nSTAT)
+          nSTAT = nf90_put_att(ncid,proj_var_id,&
+                              "earth_radius",A3d_radius_earth*1000.0_ip)
+          if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att:',nf90_strerror(nSTAT)
+        case(5)
+          ! Mercator
+        !        Mercator:grid_mapping_name = "mercator" ;
+        !        Mercator:standard_parallel = 20. ;
+        !        Mercator:longitude_of_projection_origin = 198.475006103516 ;
+          if(VERB.gt.1)write(*,*)"     Mercator"
+          nSTAT = nf90_def_var(ncid,"Mercator",nf90_int,proj_var_id)
+          if(nSTAT.ne.0)write(global_log ,*)'ERROR: def_var: ',nf90_strerror(nSTAT)
+          nSTAT = nf90_put_att(ncid,proj_var_id,&
+                               "grid_mapping_name", &
+                               "mercator")
+          if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att:',nf90_strerror(nSTAT)
+          nSTAT = nf90_put_att(ncid,proj_var_id,&
+                              "standard_parallel",A3d_phi0)
+          if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att:',nf90_strerror(nSTAT)
+          nSTAT = nf90_put_att(ncid,proj_var_id,&
+                              "longitude_of_projection_origin",A3d_lam0)
+          if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att:',nf90_strerror(nSTAT)
+
+        end select
+      endif
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !   Now a few other variables that are a function of BN
          ! Species class ID
@@ -962,7 +1084,12 @@
           write(global_log ,*)'ERROR: def_var cloud_height: ',nf90_strerror(nSTAT)
         nSTAT = nf90_put_att(ncid,ashheight_var_id,"long_name",var_lnames(33))
         if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,ashheight_var_id,"units","km")
+        nSTAT = nf90_put_att(ncid,ashheight_var_id,"units","km") ! Note the canonical_units are m
+        nSTAT = nf90_put_att(ncid,ashheight_var_id,"standard_name",&
+                             "geopotential_height_at_volcanic_ash_cloud_top")
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att cloud_height: ',nf90_strerror(nSTAT)
+
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att cloud_height: ',nf90_strerror(nSTAT)
         nSTAT = nf90_put_att(ncid,ashheight_var_id,&
@@ -988,9 +1115,14 @@
           write(global_log ,*)'ERROR: def_var cloud_load: ',nf90_strerror(nSTAT)
         nSTAT = nf90_put_att(ncid,ashload_var_id,"long_name",var_lnames(34))
         if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,ashload_var_id,"units","T/km2")
+        nSTAT = nf90_put_att(ncid,ashload_var_id,"units","T/km2") ! Note the canonical_units are kg m-2
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att cloud_load: ',nf90_strerror(nSTAT)
+        nSTAT = nf90_put_att(ncid,ashload_var_id,"standard_name",&
+                             "atmosphere_mass_content_of_volcanic_ash")
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_att cloud_load: ',nf90_strerror(nSTAT)
+
         nSTAT = nf90_put_att(ncid,ashload_var_id,&
                  "missing_value", -9999.0)
         if(nSTAT.ne.0) &

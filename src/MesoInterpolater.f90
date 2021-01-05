@@ -307,7 +307,8 @@
                                      Interval_Frac
 
       !if we're calculating an umbrella cloud, add the winds in the cloud
-      if (((SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')).and.  &   !(TimeNow.gt.0.0_ip).and. &
+      if (((SourceType.eq.'umbrella')     .or.   &
+           (SourceType.eq.'umbrella_air')).and.  &   !(TimeNow.gt.0.0_ip).and. &
           (TimeNow.lt.e_EndTime(1))) then
           call umbrella_winds
           vx_pd(1:nxmax,1:nymax,ibase:itop) = vx_pd(1:nxmax,1:nymax,ibase:itop) + &

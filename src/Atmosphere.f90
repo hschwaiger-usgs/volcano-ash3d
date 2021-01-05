@@ -74,24 +74,24 @@
       !       values as best it can (SH,RH = 0 above levels given, T interpolated)
 
 #ifdef USEPOINTERS
-       allocate(AirTemp_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-       allocate(AirDens_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-       allocate(AirVisc_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-       allocate(AirLamb_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      allocate(AirTemp_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      allocate(AirDens_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      allocate(AirVisc_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      allocate(AirLamb_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
 
-       if(useMoistureVars)THEN
-            allocate(AirRelH_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-            allocate(AirSH_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-        endif
+      if(useMoistureVars)THEN
+        allocate(AirRelH_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        allocate(AirSH_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      endif
 
-        allocate(AirTemp_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-        allocate(AirDens_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-        allocate(AirVisc_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-        allocate(AirLamb_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-        if (useMoistureVars) THEN
-            allocate(AirRelH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-            allocate(AirSH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-        endif
+      allocate(AirTemp_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      allocate(AirDens_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      allocate(AirVisc_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      allocate(AirLamb_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if (useMoistureVars) THEN
+        allocate(AirRelH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        allocate(AirSH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      endif
 
 
 !!      if (.not.associated(AirTemp_meso_last_step_MetP_sp)) then
