@@ -36,7 +36,9 @@
       integer       :: l        ! This is the index along the particular advection direction
       integer       :: ncells
       integer       :: idx_dum
-      real(kind=ip) :: au
+      real(kind=ip) :: ubar     ! u at interface
+      !real(kind=ip) :: au       ! absolute value of u at interface
+      real(kind=ip) :: aus      ! absolute value of usig at interface
       real(kind=ip) :: rm2,rm1,rp1,rp2
       real(kind=ip) :: ldq,dqu,theta
       real(kind=ip) :: update
@@ -51,9 +53,10 @@
        ! arrays that live on cell interfaces
        !  Note: interface I for cell i is at (i-1/2); i.e. the left or negative side of i
        !        We only need the interfaces up to the boundary of the domain (not the ghost cells)
+      !real(kind=ip),dimension( 1:nxmax+1)               :: ubar_I   ! vel at interface
       real(kind=ip),dimension( 1:nxmax+1)               :: usig_I   ! vel*(interface area)
       real(kind=ip),dimension( 1:nxmax+1)               :: fss_I    ! fluctuations (A delQ)+-
-      real(kind=ip),dimension( 1:nxmax+1)               :: dqi_I    ! delta q
+      real(kind=ip),dimension( 1:nxmax+1)               :: dq_I     ! delta q
       real(kind=ip),dimension( 1:nxmax+1,fluc_l:fluc_r) :: fs_I     ! second-order term of Taylor S.(~F)
 
       !integer OMP_GET_MAX_THREADS
@@ -74,8 +77,8 @@
       !$OMP  SHARED(ncells,nzmax,nymax,IsLatLon,dx,dy,dz,dt,concen_pd,kappa_pd, &
       !$OMP         vx_pd,sigma_nx_pd,outflow_yz1_pd,outflow_yz2_pd,IsPeriodic) &
       !$OMP  PRIVATE(k,n,fs_I,fss_I,usig_I, &
-      !$OMP          rm2,rm1,rp1,rp2,dqi,divu_p,divu_m, &
-      !$OMP          dqu,theta,ldq,au,order1,order2,bflux_w,bflux_e) &
+      !$OMP          rm2,rm1,rp1,rp2,dq,divu_p,divu_m, &
+      !$OMP          dqu,theta,ldq,au,aus,update) &
       !$OMP  FIRSTPRIVATE(vol,dt_vol,sig_p32,sig_p12,sig_m12)
       do idx_dum=1,nsmax*nzmax
       !  do k=1,nzmax
@@ -87,8 +90,8 @@
         do j=1,nymax
             ! Initialize cell-centered values for this x-row
           vel_cc(-1:ncells+2) =     vx_pd(-1:ncells+2,j,k)
-          !!q_cc(:) = 0.0_ip
-          q_cc(-1:ncells+2) = concen_pd(-1:ncells+2,j,k,n,ts0)
+          q_cc(:) = 0.0_ip
+          q_cc(1:ncells)   = concen_pd(1:ncells,j,k,n,ts0)
           if(IsPeriodic)then
             q_cc(-1:0)   = q_cc(ncells-1:ncells)
             vel_cc(-1:0) = vel_cc(ncells-1:ncells)
@@ -102,17 +105,18 @@
           endif
             ! Next, initialize interface values
           usig_I(1:ncells+1)     = 0.0_ip
-          dqi_I( 1:ncells+1)     = 0.0_ip
+          dq_I( 1:ncells+1)      = 0.0_ip
           fss_I( 1:ncells+1)     = 0.0_ip
           fs_I(  1:ncells+1,1:2) = 0.0_ip
 
           ! First loop over all interfaces and set usig_I and fss_I
           ! Interface l is on the left (negative) side of cell l
           do l=1,ncells+1
+            ubar = 0.5_ip*(vel_cc(l-1)+vel_cc(l))
             if(IsLatLon)then
-              usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sigma_nx_pd(l,j,k)
+              usig_I(l) = ubar*sigma_nx_pd(l,j,k)
             else
-              usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*dz_vec_pd(k)*dy
+              usig_I(l) = ubar*dz_vec_pd(k)*dy
             endif
 
             ! Now find the limited delta-q at this interface
@@ -126,7 +130,7 @@
 #ifndef NOCYCLE
             if (rp1.le.EPS_THRESH.and.rm1.le.EPS_THRESH) cycle
 #endif
-            dqi_I(l) = rp1-rm1
+            dq_I(l) = rp1-rm1
 
              ! Apply a limiter to the flux at interface l (Eq 6.39b)
 #ifdef LIM_NONE
@@ -134,7 +138,7 @@
             ldq = 0.0_ip
 #elif LIM_LAXWEN
               ! Lax-Wendrof (linear)
-            ldq = dqi_I(l)  
+            ldq = dq_I(l)
 #else
               ! Only calculate dqu and theta if the limiter is being used
               ! requires it.
@@ -146,10 +150,10 @@
             endif
 
               ! Make sure that theta is not singular
-            if(abs(dqu).gt.3.0_ip*abs(dqi_I(l)).or.abs(dqi_I(l)).lt.EPS_THRESH)then
-              theta = sign(3.0_ip,dqu*dqi_I(l))
+            if(abs(dqu).gt.3.0_ip*abs(dq_I(l)).or.abs(dq_I(l)).lt.EPS_THRESH)then
+              theta = sign(3.0_ip,dqu*dq_I(l))
             else
-              theta = dqu/dqi_I(l)
+              theta = dqu/dq_I(l)
             endif
 #endif
 
@@ -159,24 +163,30 @@
 #endif
 #ifdef LIM_FROMM
               ! Fromm (linear)
-            ldq = dqi_I(l)*(0.5_ip*(1.0_ip+theta))
+            ldq = dq_I(l)*(0.5_ip*(1.0_ip+theta))
 #endif
 #ifdef LIM_MINMOD
               ! minmod (non-linear)
-            ldq = dqi_I(l)*max(0.0_ip,min(1.0_ip,theta))
+            ldq = dq_I(l)*max(0.0_ip,min(1.0_ip,theta))
 #endif
 #ifdef LIM_SUPERBEE
               ! superbee (non-linear)
-            ldq = dqi_I(l)*max(0.0_ip,min(1.0_ip,2.0_ip*theta),min(2.0_ip,theta))
+            ldq = dq_I(l)*max(0.0_ip,min(1.0_ip,2.0_ip*theta),min(2.0_ip,theta))
 #endif
 #ifdef LIM_MC
               ! MC (non-linear)
-            ldq = dqi_I(l)*max(0.0_ip,min((1.0_ip+theta)/2.0_ip,2.0_ip,2.0_ip*theta))
+            ldq = dq_I(l)*max(0.0_ip,min((1.0_ip+theta)/2.0_ip,2.0_ip,2.0_ip*theta))
 #endif
-            au = abs(usig_I(l))
-            fss_I(l) = 0.5_ip*au*(1.0_ip-dt_vol_cc(l)*au)*ldq  ! might want to consider an average 'interface' dt_vol
 
-          enddo  ! loop over l
+#ifdef LIM_NONE
+            ! With no limiter, ldq=0 and this whole term evaporates.
+            fss_I(l) = 0.0_ip
+#else
+            !au  = abs(ubar_I(l))
+            aus = abs(usig_I(l))
+            fss_I(l) = 0.5_ip*aus*(1.0_ip-dt_vol_cc(l)*aus)*ldq  ! might want to consider an average 'interface' dt_vol
+#endif
+          enddo  ! loop over l (interfaces)
 
           ! Next, loop over interfaces of the main grid and set the
           ! left and right fs_I.  Fluctuations between ghost cells remains initialized at 0
@@ -184,27 +194,27 @@
           do l=1,ncells+1
               ! Set flux based on upwind velocity for color equation
               !  (equals conservative form if div.v=0)
-            fs_I(l,fluc_r) = max(0.0_ip,usig_I(l))*dqi_I(l) ! flux OUT OF l-1 cell to l cell
-            fs_I(l,fluc_l) = min(0.0_ip,usig_I(l))*dqi_I(l) ! flux OUT OF l cell to l-1 cell
+            fs_I(l,fluc_r) = max(0.0_ip,usig_I(l))*dq_I(l) ! flux OUT OF l-1 cell to l cell
+            fs_I(l,fluc_l) = min(0.0_ip,usig_I(l))*dq_I(l) ! flux OUT OF l cell to l-1 cell
               ! Modification for conservative form in
               ! divergent/convergent velocities
             if (l.eq.1)then
               if(IsPeriodic)then
                 divu_p = max(0.0_ip,usig_I(l  )) - max(0.0_ip,usig_I(ncells+1))
               else
-                divu_p   = max(0.0_ip,usig_I(l  ))
+                divu_p = max(0.0_ip,usig_I(l  ))
               endif
             else
-              divu_p   = max(0.0_ip,usig_I(l  )) - max(0.0_ip,usig_I(l-1))
+              divu_p = max(0.0_ip,usig_I(l  )) - max(0.0_ip,usig_I(l-1))
             endif
             if (l.eq.ncells+1)then
               if(IsPeriodic)then
-                divu_m   =  min(0.0_ip,usig_I(1)) - min(0.0_ip,usig_I(l  ))
+                divu_m =  min(0.0_ip,usig_I(1)) - min(0.0_ip,usig_I(l  ))
               else
-                divu_m   = -min(0.0_ip,usig_I(l  ))
+                divu_m = -min(0.0_ip,usig_I(l  ))
               endif
             else
-              divu_m   =  min(0.0_ip,usig_I(l+1)) - min(0.0_ip,usig_I(l  ))
+              divu_m =  min(0.0_ip,usig_I(l+1)) - min(0.0_ip,usig_I(l  ))
             endif
             fs_I(l,fluc_r) = fs_I(l,fluc_r) + q_cc(l  ) * divu_m
             fs_I(l,fluc_l) = fs_I(l,fluc_l) + q_cc(l-1) * divu_p
@@ -216,6 +226,7 @@
 
             if (l.eq.0)then
               ! Interface fluctuation/limited-q at left boundary
+              !  i.e. nothing is coming in from the left
               RFluct_Lbound  = 0.0_ip
               LimFlux_Lbound = 0.0_ip
             else
@@ -225,6 +236,7 @@
             endif
             if (l.eq.ncells+1)then
               ! Interface fluctuation/limited-q at right boundary
+              !  i.e. nothing is coming in from the right
               LFluct_Rbound  = 0.0_ip
               LimFlux_Rbound = 0.0_ip
             else
@@ -281,7 +293,9 @@
       integer       :: l        ! This is the index along the particular advection direction
       integer       :: ncells
       integer       :: idx_dum
-      real(kind=ip) :: au
+      real(kind=ip) :: ubar     ! u at interface
+      !real(kind=ip) :: au       ! absolute value of u at interface
+      real(kind=ip) :: aus      ! absolute value of usig at interface
       real(kind=ip) :: rm2,rm1,rp1,rp2
       real(kind=ip) :: ldq,dqu,theta
       real(kind=ip) :: update
@@ -296,9 +310,10 @@
        ! arrays that live on cell interfaces
        !  Note: interface I for cell i is at (i-1/2); i.e. the left or negative side of i
        !        We only need the interfaces up to the boundary of the domain (not the ghost cells)
+      !real(kind=ip),dimension( 1:nymax+1)               :: ubar_I   ! vel at interface
       real(kind=ip),dimension( 1:nymax+1)               :: usig_I   ! vel*(interface area)
       real(kind=ip),dimension( 1:nymax+1)               :: fss_I    ! fluctuations (A delQ)+-
-      real(kind=ip),dimension( 1:nymax+1)               :: dqi_I    ! delta q
+      real(kind=ip),dimension( 1:nymax+1)               :: dq_I     ! delta q
       real(kind=ip),dimension( 1:nymax+1,fluc_l:fluc_r) :: fs_I     ! second-order term of Taylor S.(~F)
 
       !integer OMP_GET_MAX_THREADS
@@ -319,9 +334,9 @@
       !$OMP  SHARED(ncells,nzmax,nxmax,IsLatLon,dx,dy,dz,dt,concen_pd,kappa_pd, &
       !$OMP         vy_pd,sigma_ny_pd,outflow_xz1_pd,outflow_xz2_pd) &
       !$OMP  PRIVATE(k,n,fs_I,fss_I,usig_I, &
-      !$OMP          rm2,rm1,rp1,rp2,dqi_I,divu_p,divu_m, &
-      !$OMP          dqu,theta,ldq,au,order1,order2,bflux_s,bflux_n) &
-      !$OMP  FIRSTPRIVATE(vol,dt_vol,sig_p32,sig_p12,sig_m12)
+      !$OMP          rm2,rm1,rp1,rp2,dq_I,divu_p,divu_m, &
+      !$OMP          dqu,theta,ldq,au,aus,update) &
+      !$OMP  FIRSTPRIVATE(vol,dt_vol)
       do idx_dum=1,nsmax*nzmax
       !  do k=1,nzmax
       ! Now recover n and k
@@ -332,26 +347,29 @@
         do i=1,nxmax
             ! Initialize cell-centered values for this y-row
           vel_cc(-1:ncells+2) =     vy_pd(i,-1:ncells+2,k)
-          !!q_cc(:) = 0.0_ip
-          q_cc(-1:ncells+2) = concen_pd(i,-1:ncells+2,k,n,ts0)
+          q_cc(:) = 0.0_ip
+          q_cc(1:ncells)   = concen_pd(i,1:ncells,k,n,ts0)
+
           if(IsLatLon)then
             dt_vol_cc(-1:ncells+2) = dt/kappa_pd(i,-1:ncells+2,k)
           else
             dt_vol_cc(-1:ncells+2) = dt/(dx*dy*dz_vec_pd(k))
           endif
             ! Next, initialize interface values
+          !ubar_I(1:ncells+1)     = 0.0_ip
           usig_I(1:ncells+1)     = 0.0_ip
-          dqi_I( 1:ncells+1)     = 0.0_ip
+          dq_I( 1:ncells+1)      = 0.0_ip
           fss_I( 1:ncells+1)     = 0.0_ip
           fs_I(  1:ncells+1,1:2) = 0.0_ip
 
           ! First loop over all interfaces and set usig_I and fss_I
           ! Interface l is on the left (negative) side of cell l
           do l=1,ncells+1
+            ubar = 0.5_ip*(vel_cc(l-1)+vel_cc(l))
             if(IsLatLon)then
-              usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sigma_ny_pd(i,l,k)
+              usig_I(l) = ubar*sigma_ny_pd(i,l,k)
             else
-              usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*dz_vec_pd(k)*dx
+              usig_I(l) = ubar*dz_vec_pd(k)*dx
             endif
 
             ! Now find the limited delta-q at this interface
@@ -365,7 +383,7 @@
 #ifndef NOCYCLE
             if (rp1.le.EPS_THRESH.and.rm1.le.EPS_THRESH) cycle
 #endif
-            dqi_I(l) = rp1-rm1
+            dq_I(l) = rp1-rm1
 
              ! Apply a limiter to the flux at interface l (Eq 6.39b)
 #ifdef LIM_NONE
@@ -373,22 +391,22 @@
             ldq = 0.0_ip
 #elif LIM_LAXWEN
               ! Lax-Wendrof (linear)
-            ldq = dqi_I(l)
+            ldq = dq_I(l)
 #else
               ! Only calculate dqu and theta if the limiter is being used
               ! requires it.
               ! Get delta Q at upwind interface relative to interface l
             if(usig_I(l).gt.0.0_ip)then
-              dqu = rm1-rm2 ! upwind is interface l
+              dqu = rm1-rm2 ! upwind is interface l-1
             else
               dqu = rp2-rp1 ! upwind is interface l+1
             endif
 
               ! Make sure that theta is not singular
-            if(abs(dqu).gt.3.0_ip*abs(dqi_I(l)).or.abs(dqi_I(l)).lt.EPS_THRESH)then
-              theta = sign(3.0_ip,dqu*dqi_I(l))
+            if(abs(dqu).gt.3.0_ip*abs(dq_I(l)).or.abs(dq_I(l)).lt.EPS_THRESH)then
+              theta = sign(3.0_ip,dqu*dq_I(l))
             else
-              theta = dqu/dqi_I(l)
+              theta = dqu/dq_I(l)
             endif
 #endif
 
@@ -398,23 +416,29 @@
 #endif
 #ifdef LIM_FROMM
               ! Fromm (linear)
-            ldq = dqi_I(l)*(0.5_ip*(1.0_ip+theta))
+            ldq = dq_I(l)*(0.5_ip*(1.0_ip+theta))
 #endif
 #ifdef LIM_MINMOD
               ! minmod (non-linear)
-            ldq = dqi_I(l)*max(0.0_ip,min(1.0_ip,theta))
+            ldq = dq_I(l)*max(0.0_ip,min(1.0_ip,theta))
 #endif
 #ifdef LIM_SUPERBEE
               ! superbee (non-linear)
-            ldq = dqi_I(l)*max(0.0_ip,min(1.0_ip,2.0_ip*theta),min(2.0_ip,theta))
+            ldq = dq_I(l)*max(0.0_ip,min(1.0_ip,2.0_ip*theta),min(2.0_ip,theta))
 #endif
 #ifdef LIM_MC
               ! MC (non-linear)
-            ldq = dqi_I(l)*max(0.0_ip,min((1.0_ip+theta)/2.0_ip,2.0_ip,2.0_ip*theta))
+            ldq = dq_I(l)*max(0.0_ip,min((1.0_ip+theta)/2.0_ip,2.0_ip,2.0_ip*theta))
 #endif
-            au = abs(usig_I(l))
-            fss_I(l) = 0.5_ip*au*(1.0_ip-dt_vol_cc(l)*au)*ldq  ! might want to consider an average 'interface' dt_vol
 
+#ifdef LIM_NONE
+            ! With no limiter, ldq=0 and this whole term evaporates.
+            fss_I(l) = 0.0_ip
+#else
+            !au  = abs(ubar_I(l))
+            aus = abs(usig_I(l))
+            fss_I(l) = 0.5_ip*aus*(1.0_ip-dt_vol_cc(l)*aus)*ldq  ! might want to consider an average 'interface' dt_vol
+#endif
           enddo  ! loop over l (interfaces)
 
           ! Next, loop over interfaces of the main grid and set the
@@ -423,8 +447,8 @@
           do l=1,ncells+1
               ! Set flux based on upwind velocity for color equation
               !  (equals conservative form if div.v=0)
-            fs_I(l,fluc_r) = max(0.0_ip,usig_I(l))*dqi_I(l) ! flux OUT OF l-1 cell to l cell
-            fs_I(l,fluc_l) = min(0.0_ip,usig_I(l))*dqi_I(l) ! flux OUT OF l cell to l-1 cell
+            fs_I(l,fluc_r) = max(0.0_ip,usig_I(l))*dq_I(l) ! flux OUT OF l-1 cell to l cell
+            fs_I(l,fluc_l) = min(0.0_ip,usig_I(l))*dq_I(l) ! flux OUT OF l cell to l-1 cell
               ! Modification for conservative form in
               ! divergent/convergent velocities
             if (l.eq.1)then
@@ -447,6 +471,7 @@
 
             if (l.eq.0)then
               ! Interface fluctuation/limited-q at left boundary
+              !  i.e. nothing is coming in from the left
               RFluct_Lbound  = 0.0_ip
               LimFlux_Lbound = 0.0_ip
             else
@@ -456,6 +481,7 @@
             endif
             if (l.eq.ncells+1)then
               ! Interface fluctuation/limited-q at right boundary
+              !  i.e. nothing is coming in from the right
               LFluct_Rbound  = 0.0_ip
               LimFlux_Rbound = 0.0_ip
             else
