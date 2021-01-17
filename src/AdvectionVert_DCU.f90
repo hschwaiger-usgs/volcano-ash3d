@@ -91,9 +91,45 @@
 
         do i=1,nxmax
             ! Initialize cell-centered values for this z-column
+            ! Note: ghost cells should contain q_cc=0 and vel_cc=edge
           vel_cc(-1:ncells+2) =     vz_pd(i,j,-1:ncells+2) + vf_pd(i,j,-1:ncells+2,n)
-          q_cc(:) = 0.0_ip
-          q_cc(  1:ncells) = concen_pd(i,j,1:ncells,n,ts0)
+          q_cc(  -1:ncells+2) = concen_pd(i,j,-1:ncells+2,n,ts0)
+
+          ! Ghost cells were set in Set_BC.f90, but could be reset here
+          ! if desired or for testing.  Tests showed that velocities
+          ! should either have a constant or a linear extrapolation, but
+          ! concentrations should be set to zero.
+          !if(IsPeriodic)then
+          !  q_cc(        -1:0       ) =   q_cc(ncells-1:ncells)
+          !  q_cc(  ncells+1:ncells+2) =   q_cc(       1:2)
+          !  vel_cc(      -1:0       ) = vel_cc(ncells-1:ncells)
+          !  vel_cc(ncells+1:ncells+2) = vel_cc(       1:2)
+          !else
+              ! No extrapolation, just zeros
+            !q_cc(        -1:0       ) = 0.0_ip
+            !q_cc(  ncells+1:ncells+2) = 0.0_ip
+            !vel_cc(      -1:0       ) = 0.0_ip
+            !vel_cc(ncells+1:ncells+2) = 0.0_ip
+              ! zero order extrapolation (constant from edge)
+            !q_cc(        -1) =   q_cc(1     )
+            !q_cc(         0) =   q_cc(1     )
+            !q_cc(  ncells+1) =   q_cc(ncells)
+            !q_cc(  ncells+2) =   q_cc(ncells)
+            !vel_cc(      -1) = vel_cc(1     )
+            !vel_cc(       0) = vel_cc(1     )
+            !vel_cc(ncells+1) = vel_cc(ncells)
+            !vel_cc(ncells+2) = vel_cc(ncells)
+              ! first order extrapolation (linear from edge)
+            !q_cc(       0) = 2.0_ip*q_cc(       1)-q_cc(2)
+            !q_cc(       1) = 2.0_ip*q_cc(       0)-q_cc(1)
+            !q_cc(ncells+1) = 2.0_ip*q_cc(ncells  )-q_cc(ncells-1)
+            !q_cc(ncells+2) = 2.0_ip*q_cc(ncells+1)-q_cc(ncells  )
+            !vel_cc(       0) = 2.0_ip*vel_cc(       1)-vel_cc(2)
+            !vel_cc(       1) = 2.0_ip*vel_cc(       0)-vel_cc(1)
+            !vel_cc(ncells+1) = 2.0_ip*vel_cc(ncells  )-vel_cc(ncells-1)
+            !vel_cc(ncells+2) = 2.0_ip*vel_cc(ncells+1)-vel_cc(ncells  )
+          !endif
+
           if(IsLatLon)then
             dt_vol_cc(-1:ncells+2) = dt/kappa_pd(i,j,-1:ncells+2)
           else

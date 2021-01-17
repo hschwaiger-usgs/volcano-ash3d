@@ -80,7 +80,8 @@
       logical               :: StopTimeLoop   = .false.
       logical               :: first_time     = .true.
       character(len=130)    :: tmp_str
-      real(kind=8)         :: tmp_flt
+      real(kind=8)          :: tmp_flt
+      real(kind=ip)         :: MassConsErr
 
       INTERFACE
         subroutine Read_Control_File
@@ -471,8 +472,11 @@
         StopConditions(2) = (time.ge.Simtime_in_hours)
            ! Normal stop conditionn when nothing is left to advect
         StopConditions(3) = (ns_aloft.eq.0)
+        if(SourceCumulativeVol.gt.EPS_TINY)then
+          MassConsErr = abs(SourceCumulativeVol-tot_vol)/SourceCumulativeVol
+        endif
            ! Error stop condition if the concen and outflow do not match the source
-        StopConditions(4) = (abs(SourceCumulativeVol-tot_vol).gt.1.0e-3_ip)
+        StopConditions(4) = (MassConsErr.gt.1.0e-3_ip)
            ! Error stop condition if any volume measure is negative
         StopConditions(5) = (dep_vol.lt.-1.0_ip*EPS_SMALL).or.&
                             (aloft_vol.lt.-1.0_ip*EPS_SMALL).or.&
@@ -506,11 +510,11 @@
       if(StopConditions(2).eqv..true.)then
         ! Normal stop condition if simulation exceeds alloted time
         write(global_info,*)"time.le.Simtime_in_hours"
-        write(global_info,*)"              Time = ",time
-        write(global_info,*)"  Simtime_in_hours = ",Simtime_in_hours
+        write(global_info,*)"              Time = ",real(time,kind=4)
+        write(global_info,*)"  Simtime_in_hours = ",real(Simtime_in_hours,kind=4)
         write(global_log,*)"time.le.Simtime_in_hours"
-        write(global_log,*)"              Time = ",time
-        write(global_log,*)"  Simtime_in_hours = ",Simtime_in_hours
+        write(global_log,*)"              Time = ",real(time,kind=4)
+        write(global_log,*)"  Simtime_in_hours = ",real(Simtime_in_hours,kind=4)
       endif
       if(StopConditions(3).eqv..true.)then
         ! Normal stop conditionn when nothing is left to advect
@@ -545,8 +549,10 @@
       write(global_info,12)   !put footnotes below output table
       write(global_log,12)   !put footnotes below output table
       write(global_log ,12)
-      write(global_info,*) 'time=',time,', dt=',dt
-      write(global_log,*) 'time=',time,', dt=',dt
+      write(global_info,*) 'time=',real(time,kind=4),',dt=',real(dt,kind=4)
+      write(global_log,*) 'time=',real(time,kind=4),',dt=',real(dt,kind=4)
+      write(global_info,*)"Mass Conservation Error = ",MassConsErr
+      write(global_log,*)"Mass Conservation Error = ",MassConsErr
 
         ! Make sure we have the latest output variables and go to write routines
       call Gen_Output_Vars
