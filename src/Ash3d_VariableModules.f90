@@ -330,8 +330,8 @@
 
       real(kind=ip),dimension(:)    ,pointer :: lat_cc_pd   => null() ! lat of i,j cell centers
       real(kind=ip),dimension(:)    ,pointer :: lon_cc_pd   => null() ! lon of i,j cell centers
-      real(kind=ip),dimension(:)    ,pointer :: rdphi_pd    => null() 
-      real(kind=ip),dimension(:,:)  ,pointer :: rdlambda_pd => null() 
+!      real(kind=ip),dimension(:)    ,pointer :: rdphi_pd    => null() 
+!      real(kind=ip),dimension(:,:)  ,pointer :: rdlambda_pd => null() 
       real(kind=ip),dimension(:,:,:),pointer :: sigma_nx_pd => null() ! area of x face at i-1/2,j,k
       real(kind=ip),dimension(:,:,:),pointer :: sigma_ny_pd => null() ! area of y face at i,j-1/2,k
       real(kind=ip),dimension(:,:,:),pointer :: sigma_nz_pd => null() ! area of z face at i,j,k-1/2
@@ -344,8 +344,8 @@
       real(kind=ip),dimension(:,:,:),allocatable :: kappa_pd !volume of each node in km3
       real(kind=ip),dimension(:)    ,allocatable :: lat_cc_pd ! lat of i,j cell centers
       real(kind=ip),dimension(:)    ,allocatable :: lon_cc_pd ! lon of i,j cell centers
-      real(kind=ip),dimension(:)    ,allocatable :: rdphi_pd
-      real(kind=ip),dimension(:,:)  ,allocatable :: rdlambda_pd
+!      real(kind=ip),dimension(:)    ,allocatable :: rdphi_pd
+!      real(kind=ip),dimension(:,:)  ,allocatable :: rdlambda_pd
       real(kind=ip),dimension(:,:,:),allocatable :: sigma_nx_pd ! area of x face at i-1/2,j,k
       real(kind=ip),dimension(:,:,:),allocatable :: sigma_ny_pd ! area of y face at i,j-1/2,k
       real(kind=ip),dimension(:,:,:),allocatable :: sigma_nz_pd ! area of z face at i,j,k-1/2
@@ -363,8 +363,8 @@
       if (IsLatLon) then
         allocate(lon_cc_pd(-1:nxmax+2));                   lon_cc_pd   = 0.0_ip
         allocate(lat_cc_pd(-1:nymax+2));                   lat_cc_pd   = 0.0_ip
-        allocate(rdphi_pd(-1:nzmax+2));                    rdphi_pd    = 0.0_ip
-        allocate(rdlambda_pd(-1:nymax+2,-1:nzmax+2));      rdlambda_pd = 0.0_ip
+!        allocate(rdphi_pd(-1:nzmax+2));                    rdphi_pd    = 0.0_ip
+!        allocate(rdlambda_pd(-1:nymax+2,-1:nzmax+2));      rdlambda_pd = 0.0_ip
       else
         allocate(x_cc_pd(-1:nxmax+2));                         x_cc_pd = 0.0_ip
         allocate(y_cc_pd(-1:nymax+2));                         y_cc_pd = 0.0_ip
@@ -393,8 +393,8 @@
       if(associated(kappa_pd))      deallocate(kappa_pd)
       if(associated(lon_cc_pd))     deallocate(lon_cc_pd)
       if(associated(lat_cc_pd))     deallocate(lat_cc_pd)
-      if(associated(rdphi_pd))      deallocate(rdphi_pd)
-      if(associated(rdlambda_pd))   deallocate(rdlambda_pd)
+!      if(associated(rdphi_pd))      deallocate(rdphi_pd)
+!      if(associated(rdlambda_pd))   deallocate(rdlambda_pd)
       if(associated(sigma_nx_pd))   deallocate(sigma_nx_pd)
       if(associated(sigma_ny_pd))   deallocate(sigma_ny_pd)
       if(associated(sigma_nz_pd))   deallocate(sigma_nz_pd)
@@ -410,8 +410,8 @@
       if(allocated(sigma_nz_pd))   deallocate(sigma_nz_pd)
       if(allocated(lon_cc_pd))     deallocate(lon_cc_pd)
       if(allocated(lat_cc_pd))     deallocate(lat_cc_pd)
-      if(allocated(rdphi_pd))      deallocate(rdphi_pd)
-      if(allocated(rdlambda_pd))   deallocate(rdlambda_pd)
+!      if(allocated(rdphi_pd))      deallocate(rdphi_pd)
+!      if(allocated(rdlambda_pd))   deallocate(rdlambda_pd)
 #endif
       if(allocated(z_vec_init))    deallocate(z_vec_init)
 

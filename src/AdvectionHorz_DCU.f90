@@ -53,17 +53,23 @@
        ! arrays that live on cell interfaces
        !  Note: interface I for cell i is at (i-1/2); i.e. the left or negative side of i
        !        We only need the interfaces up to the boundary of the domain (not the ghost cells)
-      !real(kind=ip),dimension( 1:nxmax+1)               :: ubar_I   ! vel at interface
-      real(kind=ip),dimension( 1:nxmax+1)               :: usig_I   ! vel*(interface area)
-      real(kind=ip),dimension( 1:nxmax+1)               :: fss_I    ! fluctuations (A delQ)+-
-      real(kind=ip),dimension( 1:nxmax+1)               :: dq_I     ! delta q
-      real(kind=ip),dimension( 1:nxmax+1,fluc_l:fluc_r) :: fs_I     ! second-order term of Taylor S.(~F)
+      real(kind=ip),dimension(-1:nxmax+2)               :: usig_I   ! vel*(interface area)
+      real(kind=ip),dimension( 0:nxmax+2)               :: fss_I    ! fluctuations (A delQ)+-
+      real(kind=ip),dimension( 0:nxmax+2)               :: dq_I     ! delta q
+      real(kind=ip),dimension( 0:nxmax+2,fluc_l:fluc_r) :: fs_I     ! second-order term of Taylor S.(~F)
 
       !integer OMP_GET_MAX_THREADS
       !integer OMP_GET_NUM_THREADS
       !integer OMP_GET_THREAD_NUM
       !integer :: nthreads,thread_num
       !logical :: OMP_get_nested
+
+      INTERFACE
+        subroutine Set_BC
+        end subroutine
+      END INTERFACE
+
+      call Set_BC
 
       ! We are advecting in x so set the length of the cell list accordingly
       ncells = nxmax
@@ -79,7 +85,7 @@
       !$OMP  PRIVATE(k,n,fs_I,fss_I,usig_I, &
       !$OMP          rm2,rm1,rp1,rp2,dq,divu_p,divu_m, &
       !$OMP          dqu,theta,ldq,au,aus,update) &
-      !$OMP  FIRSTPRIVATE(vol,dt_vol,sig_p32,sig_p12,sig_m12)
+      !$OMP  FIRSTPRIVATE(vol,dt_vol)
       do idx_dum=1,nsmax*nzmax
       !  do k=1,nzmax
       ! Now recover n and k
@@ -128,16 +134,18 @@
             !vel_cc(ncells+2) = 2.0_ip*vel_cc(ncells+1)-vel_cc(ncells  )
           !endif
 
+           ! Calculate \Delta t / \kappa
+              ! using kappa of cell
           if(IsLatLon)then
             dt_vol_cc(-1:ncells+2) = dt/kappa_pd(-1:ncells+2,j,k)
           else
             dt_vol_cc(-1:ncells+2) = dt/(dx*dy*dz_vec_pd(k))
           endif
             ! Next, initialize interface values
-          usig_I(1:ncells+1)     = 0.0_ip
-          dq_I( 1:ncells+1)      = 0.0_ip
-          fss_I( 1:ncells+1)     = 0.0_ip
-          fs_I(  1:ncells+1,1:2) = 0.0_ip
+          usig_I(-1:ncells+2)     = 0.0_ip
+          dq_I(   0:ncells+2)     = 0.0_ip
+          fss_I(  0:ncells+2)     = 0.0_ip
+          fs_I(   0:ncells+2,1:2) = 0.0_ip
 
           ! First loop over all interfaces and set usig_I and fss_I
           ! Interface l is on the left (negative) side of cell l
@@ -212,40 +220,40 @@
             ! With no limiter, ldq=0 and this whole term evaporates.
             fss_I(l) = 0.0_ip
 #else
-            !au  = abs(ubar_I(l))
             aus = abs(usig_I(l))
-            fss_I(l) = 0.5_ip*aus*(1.0_ip-dt_vol_cc(l)*aus)*ldq  ! might want to consider an average 'interface' dt_vol
+              ! Using cell-centered volume (average over interface performs more poorly)
+            fss_I(l) = 0.5_ip*aus*(1.0_ip-dt_vol_cc(l)*aus)*ldq
 #endif
           enddo  ! loop over l (interfaces)
 
           ! Next, loop over interfaces of the main grid and set the
           ! left and right fs_I.  Fluctuations between ghost cells remains initialized at 0
           ! Interface l is on the left (negative) side of cell l
-          do l=1,ncells+1
+          do l=0,ncells+1
               ! Set flux based on upwind velocity for color equation
               !  (equals conservative form if div.v=0)
             fs_I(l,fluc_r) = max(0.0_ip,usig_I(l))*dq_I(l) ! flux OUT OF l-1 cell to l cell
             fs_I(l,fluc_l) = min(0.0_ip,usig_I(l))*dq_I(l) ! flux OUT OF l cell to l-1 cell
               ! Modification for conservative form in
               ! divergent/convergent velocities
-            if (l.eq.1)then
-              if(IsPeriodic)then
-                divu_p = max(0.0_ip,usig_I(l  )) - max(0.0_ip,usig_I(ncells+1))
-              else
-                divu_p = max(0.0_ip,usig_I(l  ))
-              endif
-            else
+            !if (l.eq.1)then
+            !  if(IsPeriodic)then
+            !    divu_p = max(0.0_ip,usig_I(l  )) - max(0.0_ip,usig_I(ncells+1))
+            !  else
+            !    divu_p = max(0.0_ip,usig_I(l  ))
+            !  endif
+            !else
               divu_p = max(0.0_ip,usig_I(l  )) - max(0.0_ip,usig_I(l-1))
-            endif
-            if (l.eq.ncells+1)then
-              if(IsPeriodic)then
-                divu_m =  min(0.0_ip,usig_I(1)) - min(0.0_ip,usig_I(l  ))
-              else
+            !endif
+            !if (l.eq.ncells+1)then
+            !  if(IsPeriodic)then
+            !    divu_m =  min(0.0_ip,usig_I(1)) - min(0.0_ip,usig_I(l  ))
+            !  else
                 divu_m = -min(0.0_ip,usig_I(l  ))
-              endif
-            else
+            !  endif
+            !else
               divu_m =  min(0.0_ip,usig_I(l+1)) - min(0.0_ip,usig_I(l  ))
-            endif
+            !endif
             fs_I(l,fluc_r) = fs_I(l,fluc_r) + q_cc(l  ) * divu_m
             fs_I(l,fluc_l) = fs_I(l,fluc_l) + q_cc(l-1) * divu_p
           enddo  ! loop over l (interfaces)
@@ -254,39 +262,33 @@
           ! Now loop over the cell indicies and apply these fluxes to volume l
           do l=0,ncells+1  ! Note: we loop on 1 ghost too to get outflow boundary fluxes
 
-            if (l.eq.0)then
-              ! Interface fluctuation/limited-q at left boundary
-              !  i.e. nothing is coming in from the left
-              RFluct_Lbound  = 0.0_ip
-              LimFlux_Lbound = 0.0_ip
-            else
-              ! Interface fluctuation/limited-q at left cell interface
+            !if (l.eq.0)then
+            !  ! Interface fluctuation/limited-q at left boundary
+            !  !  i.e. nothing is coming in from the left
+            !  RFluct_Lbound  = 0.0_ip
+            !  LimFlux_Lbound = 0.0_ip
+            !else
+            !  ! Interface fluctuation/limited-q at left cell interface
               RFluct_Lbound  =  fs_I(l  ,fluc_r)
               LimFlux_Lbound = fss_I(l)
-            endif
-            if (l.eq.ncells+1)then
-              ! Interface fluctuation/limited-q at right boundary
-              !  i.e. nothing is coming in from the right
-              LFluct_Rbound  = 0.0_ip
-              LimFlux_Rbound = 0.0_ip
-            else
+            !endif
+            !if (l.eq.ncells+1)then
+            !  ! Interface fluctuation/limited-q at right boundary
+            !  !  i.e. nothing is coming in from the right
+            !  LFluct_Rbound  = 0.0_ip
+            !  LimFlux_Rbound = 0.0_ip
+            !else
               ! Interface fluctuation/limited-q at right cell interface
               LFluct_Rbound  =  fs_I(l+1,fluc_l)
               LimFlux_Rbound = fss_I(l+1)
-            endif
+            !endif
             ! Building Eq 6.59 of LeVeque
             !   Apply the first- and second-order term of Taylor series
-            !                                    limited flux function -----------|
-            !                                         at left boundary            |
-            !                     limited flux function------------|              |
-            !                         at right boundary            |              |
-            !                                                      |              |
-            !          rightward fluctuation --------|             |              |
-            !                 at left boundary       |             |              |
-            ! leftward fluctuation-----|             |             |              |
-            !    at right boundary     |             |             |              |
-            !                          V             V             V              V
-            update = -dt_vol_cc(l)*(LFluct_Rbound+RFluct_Lbound+LimFlux_Rbound-LimFlux_Lbound)
+            update = -dt_vol_cc(l)*( &
+                        LFluct_Rbound + & ! leftward fluctuation at right boundary
+                        RFluct_Lbound + & ! rightward fluctuation at left boundary
+                        LimFlux_Rbound- & ! limited flux function at right boundary
+                        LimFlux_Lbound)   ! limited flux function at left boundary
             concen_pd(l,j,k,n,ts1) = concen_pd(l,j,k,n,ts0) + update
             if(.not.IsPeriodic)then
               if(l.eq.0)then
@@ -340,17 +342,22 @@
        ! arrays that live on cell interfaces
        !  Note: interface I for cell i is at (i-1/2); i.e. the left or negative side of i
        !        We only need the interfaces up to the boundary of the domain (not the ghost cells)
-      !real(kind=ip),dimension( 1:nymax+1)               :: ubar_I   ! vel at interface
-      real(kind=ip),dimension( 1:nymax+1)               :: usig_I   ! vel*(interface area)
-      real(kind=ip),dimension( 1:nymax+1)               :: fss_I    ! fluctuations (A delQ)+-
-      real(kind=ip),dimension( 1:nymax+1)               :: dq_I     ! delta q
-      real(kind=ip),dimension( 1:nymax+1,fluc_l:fluc_r) :: fs_I     ! second-order term of Taylor S.(~F)
-
+      real(kind=ip),dimension(-1:nymax+2)               :: usig_I   ! vel*(interface area)
+      real(kind=ip),dimension( 0:nymax+2)               :: fss_I    ! fluctuations (A delQ)+-
+      real(kind=ip),dimension( 0:nymax+2)               :: dq_I     ! delta q
+      real(kind=ip),dimension( 0:nymax+2,fluc_l:fluc_r) :: fs_I     ! second-order term of Taylor S.(~F)
       !integer OMP_GET_MAX_THREADS
       !integer OMP_GET_NUM_THREADS
       !integer OMP_GET_THREAD_NUM
       !integer :: nthreads,thread_num
       !logical :: OMP_get_nested
+
+      INTERFACE
+        subroutine Set_BC
+        end subroutine
+      END INTERFACE
+
+      call Set_BC
 
       ! We are advecting in y so set the length of the cell list accordingly
       ncells = nymax
@@ -377,8 +384,8 @@
         do i=1,nxmax
             ! Initialize cell-centered values for this y-row
             ! Note: ghost cells should contain q_cc=0 and vel_cc=edge
-          vel_cc(-1:ncells+2) =     vy_pd(i,-1:ncells+2,k)
           q_cc(  -1:ncells+2) = concen_pd(i,-1:ncells+2,k,n,ts0)
+          vel_cc(-1:ncells+2) =     vy_pd(i,-1:ncells+2,k)
 
           ! Ghost cells were set in Set_BC.f90, but could be reset here
           ! if desired or for testing.  Tests showed that velocities
@@ -413,19 +420,24 @@
             !vel_cc(       1) = 2.0_ip*vel_cc(       0)-vel_cc(1)
             !vel_cc(ncells+1) = 2.0_ip*vel_cc(ncells  )-vel_cc(ncells-1)
             !vel_cc(ncells+2) = 2.0_ip*vel_cc(ncells+1)-vel_cc(ncells  )
+
+            !write(*,*)q_cc(-1:0),q_cc(ncells+1:ncells+2)
+            !write(*,*)vel_cc(-1:1),vel_cc(ncells:ncells+2)
+
           !endif
 
           if(IsLatLon)then
+            ! Calculate \Delta t / \kappa
+              ! using kappa of cell
             dt_vol_cc(-1:ncells+2) = dt/kappa_pd(i,-1:ncells+2,k)
           else
             dt_vol_cc(-1:ncells+2) = dt/(dx*dy*dz_vec_pd(k))
           endif
             ! Next, initialize interface values
-          !ubar_I(1:ncells+1)     = 0.0_ip
-          usig_I(1:ncells+1)     = 0.0_ip
-          dq_I( 1:ncells+1)      = 0.0_ip
-          fss_I( 1:ncells+1)     = 0.0_ip
-          fs_I(  1:ncells+1,1:2) = 0.0_ip
+          usig_I(-1:ncells+2)     = 0.0_ip
+          dq_I(   0:ncells+2)     = 0.0_ip
+          fss_I(  0:ncells+2)     = 0.0_ip
+          fs_I(   0:ncells+2,1:2) = 0.0_ip
 
           ! First loop over all interfaces and set usig_I and fss_I
           ! Interface l is on the left (negative) side of cell l
@@ -500,32 +512,25 @@
             ! With no limiter, ldq=0 and this whole term evaporates.
             fss_I(l) = 0.0_ip
 #else
-            !au  = abs(ubar_I(l))
             aus = abs(usig_I(l))
-            fss_I(l) = 0.5_ip*aus*(1.0_ip-dt_vol_cc(l)*aus)*ldq  ! might want to consider an average 'interface' dt_vol
+              ! Using cell volume
+            fss_I(l) = 0.5_ip*aus*(1.0_ip-dt_vol_cc(l)*aus)*ldq
 #endif
           enddo  ! loop over l (interfaces)
 
           ! Next, loop over interfaces of the main grid and set the
           ! left and right fs_I.  Fluctuations between ghost cells remains initialized at 0
           ! Interface l is on the left (negative) side of cell l
-          do l=1,ncells+1
+          do l=0,ncells+1
               ! Set flux based on upwind velocity for color equation
               !  (equals conservative form if div.v=0)
             fs_I(l,fluc_r) = max(0.0_ip,usig_I(l))*dq_I(l) ! flux OUT OF l-1 cell to l cell
             fs_I(l,fluc_l) = min(0.0_ip,usig_I(l))*dq_I(l) ! flux OUT OF l cell to l-1 cell
               ! Modification for conservative form in
               ! divergent/convergent velocities
-            if (l.eq.1)then
-              divu_p   = max(0.0_ip,usig_I(l  ))
-            else
-              divu_p   = max(0.0_ip,usig_I(l  ))  - max(0.0_ip,usig_I(l-1))
-            endif
-            if (l.eq.ncells+1)then
-              divu_m   =                          - min(0.0_ip,usig_I(l))
-            else
-              divu_m   =  min(0.0_ip,usig_I(l+1)) - min(0.0_ip,usig_I(l))
-            endif
+            divu_p   = max(0.0_ip,usig_I(l  ))  - max(0.0_ip,usig_I(l-1))
+            divu_m   =  min(0.0_ip,usig_I(l+1)) - min(0.0_ip,usig_I(l))
+
             fs_I(l,fluc_r) = fs_I(l,fluc_r) + q_cc(l  ) * divu_m
             fs_I(l,fluc_l) = fs_I(l,fluc_l) + q_cc(l-1) * divu_p
           enddo  ! loop over l (interfaces)
@@ -534,39 +539,20 @@
           ! Now loop over the cell indicies and apply these fluxes to volume l
           do l=0,ncells+1  ! Note: we loop on 1 ghost too to get outflow boundary fluxes
 
-            if (l.eq.0)then
-              ! Interface fluctuation/limited-q at left boundary
-              !  i.e. nothing is coming in from the left
-              RFluct_Lbound  = 0.0_ip
-              LimFlux_Lbound = 0.0_ip
-            else
-              ! Interface fluctuation/limited-q at left cell interface
-              RFluct_Lbound  =  fs_I(l  ,fluc_r)
-              LimFlux_Lbound = fss_I(l)
-            endif
-            if (l.eq.ncells+1)then
-              ! Interface fluctuation/limited-q at right boundary
-              !  i.e. nothing is coming in from the right
-              LFluct_Rbound  = 0.0_ip
-              LimFlux_Rbound = 0.0_ip
-            else
-              ! Interface fluctuation/limited-q at right cell interface
-              LFluct_Rbound  =  fs_I(l+1,fluc_l)
-              LimFlux_Rbound = fss_I(l+1)
-            endif
+            ! Interface fluctuation/limited-q at left cell interface
+            RFluct_Lbound  =  fs_I(l  ,fluc_r)
+            LimFlux_Lbound = fss_I(l)
+            ! Interface fluctuation/limited-q at right cell interface
+            LFluct_Rbound  =  fs_I(l+1,fluc_l)
+            LimFlux_Rbound = fss_I(l+1)
+
             ! Building Eq 6.59 of LeVeque
             !   Apply the first- and second-order term of Taylor series
-            !                                    limited flux function -----------|
-            !                                         at left boundary            |
-            !                     limited flux function------------|              |
-            !                         at right boundary            |              |
-            !                                                      |              |
-            !          rightward fluctuation --------|             |              |
-            !                 at left boundary       |             |              |
-            ! leftward fluctuation-----|             |             |              |
-            !    at right boundary     |             |             |              |
-            !                          V             V             V              V
-            update = -dt_vol_cc(l)*(LFluct_Rbound+RFluct_Lbound+LimFlux_Rbound-LimFlux_Lbound)
+            update = -dt_vol_cc(l)*( &
+                        LFluct_Rbound + & ! leftward fluctuation at right boundary
+                        RFluct_Lbound + & ! rightward fluctuation at left boundary
+                        LimFlux_Rbound- & ! limited flux function at right boundary
+                        LimFlux_Lbound)   ! limited flux function at left boundary
             concen_pd(i,l,k,n,ts1) = concen_pd(i,l,k,n,ts0) + update
             if(l.eq.0)then
               ! Flux out the - side of advection row  (N)

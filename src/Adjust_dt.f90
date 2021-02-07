@@ -27,7 +27,8 @@
          ns_aloft
          
       use mesh,          only : &
-         nxmax,nymax,nzmax,nsmax,dx,dy,dz_vec_pd,IsLatLon
+         nxmax,nymax,nzmax,nsmax,dx,dy,dz_vec_pd,IsLatLon,&
+         kappa_pd,sigma_nx_pd,sigma_ny_pd
 
       use solution,      only : &
          vx_pd,vy_pd,vz_pd,vf_pd
@@ -54,6 +55,7 @@
       real(kind=ip) :: khmax,kvmax
       integer       :: fac
       real(kind=ip) :: vzmax_dz
+      real(kind=ip) :: minsig
 
       time_diffuse   = 0.0_ip
 
@@ -62,19 +64,37 @@
       dz2 = 2.0_ip/(minval(dz_vec_pd(1:nzmax)**2.0_ip))
 
       ! Get the constraining velocities relative to the grid size
-      vxmax = maxval(abs(vx_pd(1:nxmax,1:nymax,1:nzmax)))
-      vxmax_dx = vxmax/dx
-      vymax = maxval(abs(vy_pd(1:nxmax,1:nymax,1:nzmax)))
-      vymax_dy = vymax/dy
+      ! The bigger v[x,y,z]max_d[x,y,z] are, the smaller the time step required
+      if(.not.IsLatLon) then
+        vxmax = maxval(abs(vx_pd(1:nxmax,1:nymax,1:nzmax)))
+        vxmax_dx = vxmax/dx
+        vymax = maxval(abs(vy_pd(1:nxmax,1:nymax,1:nzmax)))
+        vymax_dy = vymax/dy
+      else
+        vxmax_dx = 0.0_ip
+        vymax_dy = 0.0_ip
+      endif
       vzmax_dz = 0.0_ip
       ! This branch looks at conditions cell-by-cell
       do i=1,nxmax
         do j=1,nymax
           do k=1,nzmax
+            ! Note: for this to work, you really need to set vf_pd=0 for all
+            !       species that are flushed out of the system, otherwise, this
+            !       will always be dominated by the large grain sizes with the
+            !       highest fall velocities
             tmp =        abs(vz_pd(i,j,k)) + &
                   maxval(abs(vf_pd(i,j,k,1:nsmax)))
             if(tmp/dz_vec_pd(k).gt.vzmax_dz)then
               vzmax_dz = tmp/dz_vec_pd(k)
+            endif
+            if(IsLatLon)then
+              minsig = minval(sigma_nx_pd(i:i+1,j,k))
+              tmp = abs(vx_pd(i,j,k))*minsig/kappa_pd(i,j,k)
+              if(tmp.gt.vxmax_dx)vxmax_dx=tmp
+              minsig = minval(sigma_ny_pd(i,j:j+1,k))
+              tmp = abs(vy_pd(i,j,k))*minsig/kappa_pd(i,j,k)
+              if(tmp.gt.vymax_dy)vymax_dy=tmp
             endif
           enddo
         enddo
@@ -94,24 +114,31 @@
           !  i.e. no diffusion or CN diffusion
         time_diffuse = 0.0_ip
       endif
-      time_advect = max(vxmax/dx,vymax/dy,vzmax_dz)
+      !time_advect = max(vxmax/dx,vymax/dy,vzmax_dz)
+      time_advect = max(vxmax_dx,vymax_dy,vzmax_dz)
       tmp_sum =  time_advect + time_diffuse
 
       if(tmp_sum.gt.1.0_ip/DT_MIN)then
-        write(global_info,*)"WARNING: Setting to dt_min = ",DT_MIN
+        write(global_info,*)"WARNING: Calculated DT is too low"
+        write(global_info,*)"         Setting DT to dt_min = ",DT_MIN
         write(global_info,*)"         CFL condition probably violated."
         write(global_info,*)"         Check for high or NaN velocities."
         write(global_info,*)"     time_advect = ",time_advect
         write(global_info,*)"    time_diffuse = ",time_diffuse
         write(global_info,*)"    max vel.s/dx = ",vxmax_dx,vymax_dy,vzmax_dz
+        write(global_info,*)"             CFL = ",CFL
+        write(global_info,*)"   calculated dt = ",min(1.0_ip,CFL)/tmp_sum
         dt = DT_MIN
       elseif(tmp_sum.lt.1.0_ip/DT_MAX)then
-        write(global_info,*)"WARNING: Setting to dt_max = ",DT_MAX
+        write(global_info,*)"WARNING: Calculated DT is too high"
+        write(global_info,*)"         Setting DT to dt_max = ",DT_MAX
         write(global_info,*)"         CFL condition probably violated."
         write(global_info,*)"         Check for zero or NaN velocities."
         write(global_info,*)"     time_advect = ",time_advect
         write(global_info,*)"    time_diffuse = ",time_diffuse
         write(global_info,*)"    max vel.s/dx = ",vxmax_dx,vymax_dy,vzmax_dz
+        write(global_info,*)"             CFL = ",CFL
+        write(global_info,*)"   calculated dt = ",min(1.0_ip,CFL)/tmp_sum
         dt = DT_MAX
       else
         dt = min(1.0_ip,CFL)/tmp_sum

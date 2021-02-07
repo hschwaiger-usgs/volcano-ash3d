@@ -14,7 +14,7 @@
          lon_cc_pd,lat_cc_pd,de,dn,de_km,dn_km, &
          z_lb_pd,z_vec_init,z_cc_pd,dz_vec_pd, &
          sigma_nx_pd,sigma_ny_pd,sigma_nz_pd,kappa_pd,&
-         xLL,yLL,latLL,lonLL,rdphi_pd,rdlambda_pd, &
+         xLL,yLL,latLL,lonLL, &
          A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_phi1,&
          A3d_phi2,A3d_radius_earth,IsLatLon,IsPeriodic
 
@@ -34,13 +34,14 @@
       integer :: i,j,k
 
       real(kind=ip) :: r_1,r_2,rr_2,drr,drrr
-      real(kind=ip) :: phi_1,phi_2,del_phi,del_cphi
+      real(kind=ip) :: phi_1,phi_2,del_phi
+      real(kind=ip) :: theta_1,theta_2,del_theta,del_costheta
       real(kind=ip) :: del_lam
       real(kind=ip) :: phi_bot,phi_top,phi
 
-      write(global_production,*)"--------------------------------------------------"
-      write(global_production,*)"---------- CALC_MESH_PARAMS ----------------------"
-      write(global_production,*)"--------------------------------------------------"
+      !write(global_production,*)"--------------------------------------------------"
+      !write(global_production,*)"---------- CALC_MESH_PARAMS ----------------------"
+      !write(global_production,*)"--------------------------------------------------"
 
 !     SET UP CONCENTRATION GRID.
 !     THE CONCENTRATION IS CALCULATED AT CELL CENTERS
@@ -93,41 +94,46 @@
 
         !*********************************************************************************
         do k=-1,nzmax+2
-          rdphi_pd(k) = dn*DEG2RAD * (RAD_EARTH + z_cc_pd(k))
+          !rdphi_pd(k) = dn*DEG2RAD * (RAD_EARTH + z_cc_pd(k))
           r_1  = RAD_EARTH+z_cc_pd(k)               ! r at bottom of cell
           r_2  = RAD_EARTH+z_cc_pd(k)+dz_vec_pd(k)  ! r at top of cell
 
-          rr_2 = r_2*r_2
+          rr_2 =      r_2*r_2
           drr  = (    r_2*r_2 -     r_1*r_1)  ! difference of squares
           drrr = (r_2*r_2*r_2 - r_1*r_1*r_1)  ! difference of cubes
           do j=-1,nymax+2
-            !rdlambda(j,k) = (RAD_EARTH+k*dz-0.5_ip*dz)*cos(DEG2RAD*(gridlat(j)-0.5_ip*dn))*de*DEG2RAD
-            rdlambda_pd(j,k) = (RAD_EARTH+z_cc_pd(k))*cos(DEG2RAD*(lat_cc_pd(j)-0.5_ip*dn))*de*DEG2RAD
-            phi_1 = DEG2RAD*(lat_cc_pd(j)-0.5_ip*dn)
-            phi_2 = DEG2RAD*(lat_cc_pd(j)+0.5_ip*dn)
-            del_phi  = dn*DEG2RAD
-            del_cphi = cos(0.5_ip*PI-phi_2)-cos(0.5_ip*PI-phi_1)
-            ! No need to loop over lambda since each slice is identical
+!            rdlambda_pd(j,k) = (RAD_EARTH+z_cc_pd(k)) * &
+!                      cos(DEG2RAD*(lat_cc_pd(j)-0.5_ip*dn))*de*DEG2RAD
+            
+            phi_1 = DEG2RAD*(lat_cc_pd(j)-0.5_ip*dn) ! phi at lower y of cell
+            phi_2 = DEG2RAD*(lat_cc_pd(j)+0.5_ip*dn) ! phi at upper y of cell
+            theta_1 = 0.5_ip*PI-phi_1
+            theta_2 = 0.5_ip*PI-phi_2
+            del_theta  = dn*DEG2RAD
+            del_costheta = cos(theta_2)-cos(theta_1)
+            ! No need to loop over lambda (longitude) since each slice is identical
             del_lam = de*DEG2RAD
+
               ! Area of face at i-1/2,j,k
-            sigma_nx_pd(-1:nxmax+2,j,k) = 0.5_ip*del_phi*drr
+            sigma_nx_pd(-1:nxmax+2,j,k) = 0.5_ip*del_theta*drr
               ! Area of face at i,j-1/2,k
-            sigma_ny_pd(-1:nxmax+2,j,k) = 0.5_ip*sin(0.5_ip*PI-phi_2)*del_lam*drr
+            !sigma_ny_pd(-1:nxmax+2,j,k) = 0.5_ip*sin(0.5_ip*PI-phi_2)*del_lam*drr
+            sigma_ny_pd(-1:nxmax+2,j,k) = 0.5_ip*sin(theta_1)*del_lam*drr
               ! Area of face at i,j,k-1/2
-            sigma_nz_pd(-1:nxmax+2,j,k) = rr_2*del_lam*del_cphi
+            sigma_nz_pd(-1:nxmax+2,j,k) = rr_2*del_lam*del_costheta
               ! Volume of cell
-            kappa_pd(-1:nxmax+2,j,k)=del_lam*drrr*del_cphi/3.0_ip
+            kappa_pd(-1:nxmax+2,j,k)=del_lam*drrr*del_costheta/3.0_ip
           enddo
         enddo
        !*********************************************************************************
         ! For lon/lat cases, we will need the dx,dy that is most restrictive on
         ! dt calculations
-        phi_bot = lat_cc_pd(    1) - dn*0.5_ip
-        phi_top = lat_cc_pd(nymax) + dn*0.5_ip
+        phi_bot = DEG2RAD*(lat_cc_pd(      1) - dn*0.5_ip)
+        phi_top = DEG2RAD*(lat_cc_pd(nymax+1) + dn*0.5_ip)
         phi = max(abs(phi_bot),abs(phi_top))
         !phi = maxval(abs(lat_cc_pd(1:nymax)))
-        dx = RAD_EARTH*cos(DEG2RAD*phi)*de*DEG2RAD
-        dy = RAD_EARTH*dn*PI/180.0_ip
+        dx = RAD_EARTH*de*DEG2RAD*cos(phi)
+        dy = RAD_EARTH*dn*DEG2RAD
       else
           ! Set up cell-centered coordinates
         do i=-1,nxmax+2

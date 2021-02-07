@@ -1999,6 +1999,10 @@
               ! FallVel, mass fraction
               useCalcFallVel = .false.
               temp_v_s(i)     = value1
+              if (temp_v_s(i).lt.0.0_ip)then
+                write(global_info,*)&
+                 "WARNING: fall velocity is negative.  Grains will 'fall' upward"
+              endif
               temp_bin_mass(i)= value2
                 ! Initialize these
               temp_gsdiam(i)  = 0.1_ip
@@ -2028,7 +2032,8 @@
       call Allocate_Tephra
       allocate(temp_phi(n_gs_max))
 
-      Tephra_v_s(1:n_gs_max)      = temp_v_s(1:n_gs_max)
+      Tephra_v_s(1:n_gs_max)      = -1.0_ip * temp_v_s(1:n_gs_max) ! make sure 'fall velocity'
+                                                                   ! is in the -z direction
       Tephra_gsdiam(1:n_gs_max)   = temp_gsdiam(1:n_gs_max)
       Tephra_bin_mass(1:n_gs_max) = temp_bin_mass(1:n_gs_max)
       Tephra_rho_m(1:n_gs_max)    = temp_rho_m(1:n_gs_max)

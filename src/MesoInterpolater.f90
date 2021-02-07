@@ -11,7 +11,7 @@
          useTemperature,useCalcFallVel,MPS_2_KMPHR
 
       use solution,        only : &
-         vx_pd,vy_pd,vz_pd
+         vx_pd,vy_pd,vz_pd,vf_pd
 
       use wind_grid,       only : &
           vx_meso_last_step_sp,vx_meso_next_step_sp,&
@@ -31,7 +31,8 @@
          uvx_pd,uvy_pd,ibase,itop,SourceType,e_EndTime
 
       use Tephra,          only : &
-         Set_Vf_Meso
+         n_gs_max,Tephra_v_s,   &
+           Set_Vf_Meso
 
       use Atmosphere,      only : &
            Set_Atmosphere_Meso
@@ -281,6 +282,11 @@
       endif
       if(useCalcFallVel)then
         call Set_Vf_Meso(Load_MesoSteps,Interval_Frac)
+      else
+        ! This is the case where the fall velocity is assigned in the input file
+        do i=1,n_gs_max
+          vf_pd(:,:,:,i) = Tephra_v_s(i)
+        enddo
       endif
 
       ! INTERPOLATE TO GET CURRENT WIND FIELDS VX, VY 

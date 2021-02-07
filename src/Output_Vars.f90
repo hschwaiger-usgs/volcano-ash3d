@@ -645,15 +645,15 @@
           if(IsLatLon)then
             vol = vol + (                                &
                           sum(outflow_yz1_pd(        1:nymax,1:nzmax,isize)*   &
-                                    kappa_pd(      1,1:nymax,1:nzmax)) +       &
+                                    kappa_pd(      0,1:nymax,1:nzmax)) +       &
                           sum(outflow_yz2_pd(        1:nymax,1:nzmax,isize)*   &
-                                    kappa_pd(  nxmax,1:nymax,1:nzmax)) +       &
+                                    kappa_pd(nxmax+1,1:nymax,1:nzmax)) +       &
                           sum(outflow_xz1_pd(1:nxmax,        1:nzmax,isize)   *   &
-                                    kappa_pd(1:nxmax,      1,1:nzmax)) +          &
+                                    kappa_pd(1:nxmax,        0,1:nzmax)) +          &
                           sum(outflow_xz2_pd(1:nxmax,        1:nzmax,isize)  *   &
-                                    kappa_pd(1:nxmax,  nymax,1:nzmax)) +         &
-                          sum(outflow_xy2_pd(1:nxmax,1:nymax        ,isize)   *   &
-                                    kappa_pd(1:nxmax,1:nymax,  nzmax)) )     /   & ! convert to kg
+                                    kappa_pd(1:nxmax,nymax+1,1:nzmax)) +         &
+                          sum(outflow_xy2_pd(1:nxmax,1:nymax          ,isize)   *   &
+                                    kappa_pd(1:nxmax,1:nymax,  nzmax+1)) )     /   & ! convert to kg
                           MagmaDensity                            /   & ! convert to m3
                           KM3_2_M3                                      ! convert to km3
 
