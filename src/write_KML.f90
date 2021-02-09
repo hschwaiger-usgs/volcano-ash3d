@@ -158,7 +158,8 @@
       KML_AltMode(ivar)       = 'absolute'
 
       ivar = 5 ! cloud arrival time
-      KML_filename(ivar)      = 'CloudArrivalTime.kml         '
+      !KML_filename(ivar)      = 'CloudArrivalTime.kml         '
+      KML_filename(ivar)      = 'cloud_arrrivaltimes_hours.kml'
       KML_units(ivar)         = ' hrs '
       KML_fid(ivar)           = 390
       KML_n_clrmp(ivar)       = 9
@@ -214,7 +215,8 @@
       KML_AltMode(ivar)       = 'absolute'
 
       ivar = 7 ! deposit
-      KML_filename(ivar)      = 'Deposit.kml                  '
+      !KML_filename(ivar)      = 'Deposit.kml                  '
+      KML_filename(ivar)      = 'deposit_thickness_mm.kml     '
       KML_units(ivar)         = '  mm '
       KML_fid(ivar)           = 50
       KML_n_clrmp(ivar)       = 11
@@ -242,7 +244,8 @@
       KML_AltMode(ivar)       = 'clampToGround'
 
       ivar = 8 ! deposit (NWS)
-      KML_filename(ivar)      = 'Deposit_NWS.kml              '
+      !KML_filename(ivar)      = 'Deposit_NWS.kml              '
+      KML_filename(ivar)      = 'deposit_thickness_inches.kml   '
       KML_units(ivar)         = '  in.'
       KML_fid(ivar)           = 550
       KML_n_clrmp(ivar)       = 3
@@ -270,7 +273,8 @@
       KML_AltMode(ivar)       = 'clampToGround'
 
       ivar = 9 ! deposit time
-      KML_filename(ivar)      = 'DepositArrivalTime.kml       '
+      !KML_filename(ivar)      = 'DepositArrivalTime.kml       '
+      KML_filename(ivar)      = 'ashfall_arrivaltimes_hours.kml'
       KML_units(ivar)         = ' hrs '
       KML_fid(ivar)           = 290
       KML_n_clrmp(ivar)       = 9
