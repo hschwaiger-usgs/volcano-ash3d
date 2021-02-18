@@ -13,7 +13,7 @@
          time,Simtime_in_hours
 
       use mesh,          only : &
-         nxmax,nymax,dn,dn_km,de,de_km,IsLatLon,ivent,jvent,&
+         nxmax,nymax,dn_km,de_km,IsLatLon,ivent,jvent,&
          lat_cc_pd,lon_cc_pd
 
       use Source,        only : &
@@ -46,7 +46,7 @@
       integer      :: ew_nodes,ns_nodes!radius of clouds in nodes
       integer      :: west_node,east_node
       integer      :: south_node,north_node
-      character    :: answer*1
+      !character    :: answer*1
 
       !Set standard values
       lambda                        = 0.2_ip

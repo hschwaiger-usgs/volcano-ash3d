@@ -554,7 +554,7 @@
       subroutine Calc_AshVol_Aloft(vol)
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,nsmax,kappa_pd,ts1,ivent,jvent
+         nxmax,nymax,nzmax,nsmax,kappa_pd,ts1
 
       use solution,      only : &
          concen_pd,mass_aloft
@@ -575,7 +575,8 @@
                                  kappa_pd(1:nxmax,1:nymax,1:nzmax))                ! convert to kg
       enddo
 
-      ! Now loop over the tephra bins and calculate volume
+      ! Now loop over just the tephra bins (first n_gs_max bins) and
+      ! calculate volume
       if(n_gs_max.gt.0)then
         do isize=1,n_gs_max
             ! Increment total ash in air

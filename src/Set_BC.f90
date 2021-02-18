@@ -5,14 +5,13 @@
       use precis_param
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,nsmax,ts0,IsPeriodic
+         nxmax,nymax,nzmax,ts0,IsPeriodic
 
       use solution,      only : &
          vx_pd,vy_pd,vz_pd,vf_pd,concen_pd
 
       implicit none
 
-      integer :: i,j,k,n
 
       !------------------------------------------------------------------------
       !   VELOCITIES

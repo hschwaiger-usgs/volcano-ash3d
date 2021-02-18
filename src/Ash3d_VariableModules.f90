@@ -482,7 +482,7 @@
       subroutine Allocate_solution!(nsmax)
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,nsmax,insmax,ts0,ts1
+         nxmax,nymax,nzmax,nsmax,ts0,ts1
 
       allocate(vx_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));         vx_pd = 0.0_ip 
       allocate(vy_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));         vy_pd = 0.0_ip
@@ -496,6 +496,9 @@
       allocate(outflow_yz2_pd(-1:nymax+2,-1:nzmax+2,1:nsmax)); outflow_yz2_pd = 0.0_ip
       allocate(outflow_xy1_pd(-1:nxmax+2,-1:nymax+2,1:nsmax)); outflow_xy1_pd = 0.0_ip
       allocate(outflow_xy2_pd(-1:nxmax+2,-1:nymax+2,1:nsmax)); outflow_xy2_pd = 0.0_ip
+
+      ! DepositGranularity should probably be a part of the Tephra
+      ! module with trailing dimension of n_gs_max
       allocate(DepositGranularity(nxmax,nymax,nsmax)); DepositGranularity = 0.0_ip
 
       if (.not. allocated(mass_aloft)) then

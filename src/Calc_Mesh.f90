@@ -34,7 +34,7 @@
       integer :: i,j,k
 
       real(kind=ip) :: r_1,r_2,rr_2,drr,drrr
-      real(kind=ip) :: phi_1,phi_2,del_phi
+      real(kind=ip) :: phi_1,phi_2
       real(kind=ip) :: theta_1,theta_2,del_theta,del_costheta
       real(kind=ip) :: del_lam
       real(kind=ip) :: phi_bot,phi_top,phi

@@ -24,7 +24,7 @@
          useDiffusion,useCN
 
       use Tephra,        only : &
-         ns_aloft
+         n_gs_aloft
          
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,dx,dy,dz_vec_pd,IsLatLon,&
@@ -99,7 +99,7 @@
           enddo
         enddo
       enddo
-      if(ns_aloft.eq.0)vzmax_dz = 0.0_ip
+      if(n_gs_aloft.eq.0)vzmax_dz = 0.0_ip
 
       ! Get the constraining diffusivities
       khmax = max( maxval(abs(kx)), maxval(abs(ky)) )

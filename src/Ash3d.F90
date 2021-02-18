@@ -39,10 +39,10 @@
            TephraSourceNodes
 
       use Tephra,        only : &
-         n_gs_max,ns_aloft,MagmaDensity,&
+         n_gs_max,n_gs_aloft,MagmaDensity,&
            Allocate_Tephra,&
            Allocate_Tephra_Met,&
-           Collapse_GS
+           Prune_GS
       use Atmosphere,    only : &
            Allocate_Atmosphere_Met
 
@@ -80,7 +80,6 @@
       logical               :: StopTimeLoop   = .false.
       logical               :: first_time     = .true.
       character(len=130)    :: tmp_str
-      real(kind=8)          :: tmp_flt
       real(kind=ip)         :: MassConsErr
 
       INTERFACE
@@ -130,8 +129,10 @@
         read(tmp_str,*)CFL
         write(global_info,*)&
           "CFL condition reset by environment variable to: ",CFL
+      else
+        write(global_info,*)&
+          "CFL condition : ",CFL
       endif
-
 
       dep_percent_accumulated = 0.0_ip
       SourceCumulativeVol     = 0.0_ip
@@ -450,6 +451,7 @@
               call Gen_Output_Vars
             endif
             !call Collapse_GS
+            call Prune_GS
           endif
         else
             ! If we are not monitoring deposits through logsteps, then set
@@ -471,7 +473,7 @@
            ! Normal stop condition if simulation exceeds alloted time
         StopConditions(2) = (time.ge.Simtime_in_hours)
            ! Normal stop conditionn when nothing is left to advect
-        StopConditions(3) = (ns_aloft.eq.0)
+        StopConditions(3) = (n_gs_aloft.eq.0)
         if(SourceCumulativeVol.gt.EPS_TINY)then
           MassConsErr = abs(SourceCumulativeVol-tot_vol)/SourceCumulativeVol
         endif
@@ -500,7 +502,7 @@
       enddo  !loop over itime
               !  ((dep_percent_accumulated.le.StopValue).and. &
               !    (time.lt.Simtime_in_hours)        .and. &
-              !    (ns_aloft.gt.0))
+              !    (n_gs_aloft.gt.0))
 
       write(global_info,*)"Time integration completed for the following reason:"
       if(StopConditions(1).eqv..true.)then
@@ -518,8 +520,8 @@
       endif
       if(StopConditions(3).eqv..true.)then
         ! Normal stop conditionn when nothing is left to advect
-        write(global_info,*)"ns_aloft = 0"
-        write(global_log,*)"ns_aloft = 0"
+        write(global_info,*)"n_gs_aloft = 0"
+        write(global_log,*)"n_gs_aloft = 0"
       endif
       if(StopConditions(4).eqv..true.)then
         ! Error stop condition if the concen and outflow do not match the source
@@ -549,11 +551,10 @@
       write(global_info,12)   !put footnotes below output table
       write(global_log,12)   !put footnotes below output table
       write(global_log ,12)
-      write(global_info,*) 'time=',real(time,kind=4),',dt=',real(dt,kind=4)
-      write(global_log,*) 'time=',real(time,kind=4),',dt=',real(dt,kind=4)
+      write(global_info,*)'time=',real(time,kind=4),',dt=',real(dt,kind=4)
+      write(global_log,*)'time=',real(time,kind=4),',dt=',real(dt,kind=4)
       write(global_info,*)"Mass Conservation Error = ",MassConsErr
       write(global_log,*)"Mass Conservation Error = ",MassConsErr
-
         ! Make sure we have the latest output variables and go to write routines
       call Gen_Output_Vars
 !------------------------------------------------------------------------------

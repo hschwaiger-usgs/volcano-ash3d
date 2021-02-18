@@ -245,7 +245,7 @@
 
       ivar = 8 ! deposit (NWS)
       !KML_filename(ivar)      = 'Deposit_NWS.kml              '
-      KML_filename(ivar)      = 'deposit_thickness_inches.kml   '
+      KML_filename(ivar)      = 'deposit_thickness_inches.kml  '
       KML_units(ivar)         = '  in.'
       KML_fid(ivar)           = 550
       KML_n_clrmp(ivar)       = 3

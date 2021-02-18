@@ -17,7 +17,7 @@
       real(kind=ip) :: AIRBORNE_THRESH = 1.0e-3_ip ! Mass threshold for flagging bin as empty (1 gram)
 
       integer :: n_gs_max                    ! # size classes of particles 
-      integer :: ns_aloft                    ! max gs bin still aloft
+      integer :: n_gs_aloft                    ! max gs bin still aloft
 
       real(kind=ip), dimension(:)  ,allocatable  :: Tephra_v_s         ! Settling vel
       real(kind=ip), dimension(:)  ,allocatable  :: Tephra_gsdiam      ! Grain-size diameter (read in mmm, stored in m)
@@ -120,7 +120,7 @@
       subroutine Set_Vf_Meso(Load_MesoSteps,Interval_Frac)
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,nsmax
+         nxmax,nymax,nzmax
 
       use solution,      only : &
          vf_pd,IsAloft
@@ -161,20 +161,24 @@
                    visc   = AirVisc_meso_next_step_MetP_sp(i,j,k)
                    lambda = AirLamb_meso_next_step_MetP_sp(i,j,k)
                  endif
+                   ! Initialize fall velocities to because we will be
+                   ! skipping over some slots
+                 vf_sp(:) = 0.0_ip
                  select case (FV_ID)
                    ! Get settling velocity in m/s (will be converted to
                    ! km/hr and negated later)
                  case (0)  ! No fall
                    vf_sp(:) = 0.0_ip
                  case (1)  ! Wilson and Huang
-                   do l=1,nsmax
+                   do l=1,n_gs_max
                      if(.not.IsAloft(l)) cycle
                      v_grav_set = vset_WH(dens,Tephra_rho_m(l),visc, &
-                                   Tephra_gsdiam(l),Tephra_gsF_fac(l,1),Tephra_gsF_fac(l,2))
+                                   Tephra_gsdiam(l),Tephra_gsF_fac(l,1),&
+                                   Tephra_gsF_fac(l,2))
                      vf_sp(l) = real(v_grav_set,kind=sp)
                    enddo
                  case (2)  ! Wilson and Huang + Cunningham slip
-                   do l=1,nsmax
+                   do l=1,n_gs_max
                      if(.not.IsAloft(l)) cycle
                      Kna = 2.0_ip*lambda/(Tephra_gsdiam(l)*Tephra_gsF_fac(l,5))
                      ! The non-continuum effect are > 1% when
@@ -190,14 +194,14 @@
                      vf_sp(l) = real(v_grav_set,kind=sp)
                    enddo
                  case (3)  ! Wilson and Huang + Mod by Pfeiffer Et al.
-                   do l=1,nsmax
+                   do l=1,n_gs_max
                      if(.not.IsAloft(l)) cycle
                      v_grav_set = vset_WH_PCM(dens,Tephra_rho_m(l),visc, &
                                    Tephra_gsdiam(l),Tephra_gsF_fac(l,1),Tephra_gsF_fac(l,2))
                      vf_sp(l) = real(v_grav_set,kind=sp)
                    enddo
                  case (4)  ! Ganser
-                   do l=1,nsmax
+                   do l=1,n_gs_max
                      if(.not.IsAloft(l)) cycle
                      v_grav_set = vset_Gans(dens,Tephra_rho_m(l),&
                                             visc,Tephra_gsdiam(l), &
@@ -205,14 +209,14 @@
                      vf_sp(l) = real(v_grav_set,kind=sp)
                    enddo
                  case (5)  ! Stokes flow for spherical particles + slip
-                   do l=1,nsmax
+                   do l=1,n_gs_max
                      if(.not.IsAloft(l)) cycle
                      Kna = 2.0_ip*lambda/(Tephra_gsdiam(l))
                      v_grav_set = vset_Stokesslip(Tephra_rho_m(l),visc,Tephra_gsdiam(l),Kna)
                      vf_sp(l) = real(v_grav_set,kind=sp)
                    enddo
                  case default ! Wilson and Huang
-                   do l=1,nsmax
+                   do l=1,n_gs_max
                      if(.not.IsAloft(l)) cycle
                      v_grav_set = vset_WH(dens,Tephra_rho_m(l),visc, &
                                    Tephra_gsdiam(l),Tephra_gsF_fac(l,1),Tephra_gsF_fac(l,2))
@@ -230,7 +234,7 @@
         enddo !i
 
         ! Now need to interpolate vs_meso_last_step_MetP_sp onto vf_meso_1_sp
-        do l=1,nsmax
+        do l=1,n_gs_max
           if(.not.IsAloft(l)) cycle
           MR_dum3d_metP(:,:,:) = vf_meso_last_step_MetP_sp(:,:,:,l)
           call MR_Regrid_MetP_to_CompGrid(MR_iMetStep_Now)
@@ -342,70 +346,70 @@
       end subroutine Calculate_Tephra_Shape
 
 !******************************************************************************
-
-      subroutine Sort_Tephra_Size
-
-      implicit none
-
-      integer :: i,j,l
-      real(kind=ip) :: tmp1,tmp2,tmp3,tmp4,tmp5,tmp6
-      real(kind=ip) :: temp_a(5)
-      real(kind=ip) :: viscnow, densnow, vfnow
-      real(kind=ip), dimension(:), allocatable      :: vf_now
-
-      densnow = 1.2_ip           !air density at STP (approximate)
-      viscnow = 1.0e-05_ip       !air viscosity at STP (approximate)
-
-      !Calculate fall velocity at 1 atmosphere and assume the relative values
-      !are the same at higher elevation
-      allocate(vf_now(n_gs_max))
-      write(global_info,*) 'GSD before sorting:'
-      do l=1,n_gs_max
-         if (useCalcFallVel) then
-            vfnow = vset_WH(densnow,Tephra_rho_m(l),viscnow, &
-                                Tephra_gsdiam(l),Tephra_gsF_fac(l,1),Tephra_gsF_fac(l,2))
-            vf_now(l) = vfnow
-            write(global_info,*) 'l = ',l,', gsdiam = ',real(Tephra_gsdiam(l),kind=sp),&
-                       ', rho_m = ',real(Tephra_rho_m(l),kind=sp),&
-                       ', vf_now(l) = ',real(vf_now(l),kind=sp)
-         else
-            vf_now(l) = Tephra_v_s(l)
-         endif
-      enddo
-
-        ! Using insertion sort on p321 of Numerical Recipes
-      do j=2,n_gs_max
-        tmp1   = vf_now(j)
-        tmp2   = Tephra_gsdiam(j)
-        tmp3   = Tephra_bin_mass(j)
-        tmp4   = Tephra_rho_m(j)
-        tmp5   = Tephra_v_s(j)
-        tmp6   = Tephra_gsF(j)
-        temp_a = Tephra_gsF_fac(j,:)
-        do i=j-1,1,-1
-            ! sort on grain-size
-          if (vf_now(i).le.tmp1) goto 101
-          vf_now(i+1)           = vf_now(i)
-          Tephra_gsdiam(i+1)    = Tephra_gsdiam(i)
-          Tephra_bin_mass(i+1)  = Tephra_bin_mass(i)
-          Tephra_rho_m(i+1)     = Tephra_rho_m(i)
-          Tephra_v_s(i+1)       = Tephra_v_s(i)
-          Tephra_gsF(i+1)       = Tephra_gsF(i)
-          Tephra_gsF_fac(i+1,:) = Tephra_gsF_fac(i,:)
-        enddo
-        i=0
- 101    vf_now(i+1)          = tmp1
-        Tephra_gsdiam(i+1)   = tmp2
-        Tephra_bin_mass(i+1) = tmp3
-        Tephra_rho_m(i+1)    = tmp4
-        Tephra_v_s(i+1)      = tmp5
-        Tephra_gsF(i+1)      = tmp6
-        Tephra_gsF_fac(i+1,:)= temp_a
-      enddo
-
-      if (useVariableGSbins) call partition_gsbins(phi_mean,phi_stddev)
-
-      end subroutine Sort_Tephra_Size
+!
+!      subroutine Sort_Tephra_Size
+!
+!      implicit none
+!
+!      integer :: i,j,l
+!      real(kind=ip) :: tmp1,tmp2,tmp3,tmp4,tmp5,tmp6
+!      real(kind=ip) :: temp_a(5)
+!      real(kind=ip) :: viscnow, densnow, vfnow
+!      real(kind=ip), dimension(:), allocatable      :: vf_now
+!
+!      densnow = 1.2_ip           !air density at STP (approximate)
+!      viscnow = 1.0e-05_ip       !air viscosity at STP (approximate)
+!
+!      !Calculate fall velocity at 1 atmosphere and assume the relative values
+!      !are the same at higher elevation
+!      allocate(vf_now(n_gs_max))
+!      write(global_info,*) 'GSD before sorting:'
+!      do l=1,n_gs_max
+!         if (useCalcFallVel) then
+!            vfnow = vset_WH(densnow,Tephra_rho_m(l),viscnow, &
+!                                Tephra_gsdiam(l),Tephra_gsF_fac(l,1),Tephra_gsF_fac(l,2))
+!            vf_now(l) = vfnow
+!            write(global_info,*) 'l = ',l,', gsdiam = ',real(Tephra_gsdiam(l),kind=sp),&
+!                       ', rho_m = ',real(Tephra_rho_m(l),kind=sp),&
+!                       ', vf_now(l) = ',real(vf_now(l),kind=sp)
+!         else
+!            vf_now(l) = Tephra_v_s(l)
+!         endif
+!      enddo
+!
+!        ! Using insertion sort on p321 of Numerical Recipes
+!      do j=2,n_gs_max
+!        tmp1   = vf_now(j)
+!        tmp2   = Tephra_gsdiam(j)
+!        tmp3   = Tephra_bin_mass(j)
+!        tmp4   = Tephra_rho_m(j)
+!        tmp5   = Tephra_v_s(j)
+!        tmp6   = Tephra_gsF(j)
+!        temp_a = Tephra_gsF_fac(j,:)
+!        do i=j-1,1,-1
+!            ! sort on grain-size
+!          if (vf_now(i).le.tmp1) goto 101
+!          vf_now(i+1)           = vf_now(i)
+!          Tephra_gsdiam(i+1)    = Tephra_gsdiam(i)
+!          Tephra_bin_mass(i+1)  = Tephra_bin_mass(i)
+!          Tephra_rho_m(i+1)     = Tephra_rho_m(i)
+!          Tephra_v_s(i+1)       = Tephra_v_s(i)
+!          Tephra_gsF(i+1)       = Tephra_gsF(i)
+!          Tephra_gsF_fac(i+1,:) = Tephra_gsF_fac(i,:)
+!        enddo
+!        i=0
+! 101    vf_now(i+1)          = tmp1
+!        Tephra_gsdiam(i+1)   = tmp2
+!        Tephra_bin_mass(i+1) = tmp3
+!        Tephra_rho_m(i+1)    = tmp4
+!        Tephra_v_s(i+1)      = tmp5
+!        Tephra_gsF(i+1)      = tmp6
+!        Tephra_gsF_fac(i+1,:)= temp_a
+!      enddo
+!
+!      if (useVariableGSbins) call partition_gsbins(phi_mean,phi_stddev)
+!
+!      end subroutine Sort_Tephra_Size
 
 !******************************************************************************
 
@@ -534,7 +538,36 @@
 
 !******************************************************************************
 
-      subroutine Collapse_GS
+!      subroutine Collapse_GS
+!
+!      use solution,      only : &
+!           mass_aloft,IsAloft
+!
+!      implicit none
+!
+!      integer :: n
+!
+!      ! Loop through the grain sizes starting with the largest (fastest falling)
+!      ! and check if any have completely flushed out.  If so, then
+!      ! modify the max index of the grain-size loop (n_gs_aloft)
+!      ! The threshold for collapsing GS array is if there is less than a gram in
+!      ! that size bin aloft
+!      !do n = 1,n_gs_aloft
+!      do n = 1,n_gs_max
+!        if(IsAloft(n).and. &                     ! if bin is currently flagged as aloft
+!           mass_aloft(n).lt.AIRBORNE_THRESH)then ! but the mass is less than the thresh
+!          IsAloft(n) = .false.
+!          n_gs_aloft = n_gs_aloft-1
+!          write(global_info,*)"Grainsmax bin ",n_gs_aloft+1," has fully deposited."
+!          write(global_log ,*)"Grainsmax bin ",n_gs_aloft+1," has fully deposited."
+!        endif
+!      enddo
+!
+!      end subroutine Collapse_GS
+
+!******************************************************************************
+
+      subroutine Prune_GS
 
       use solution,      only : &
            mass_aloft,IsAloft
@@ -543,23 +576,25 @@
 
       integer :: n
 
-      ! Loop through the grain sizes starting with the largest (fastest falling)
-      ! and check if any have completely flushed out.  If so, then
-      ! modify the max index of the grain-size loop (ns_aloft)
+      ! Loop through all the grain sizes and check if any have completely
+      ! flushed out.  If so, then 
+      ! modify the max index of the grain-size loop (n_gs_aloft)
       ! The threshold for collapsing GS array is if there is less than a gram in
       ! that size bin aloft
-      !do n = 1,ns_aloft
+      ! Note: mass_aloft is calculated for all species in Output_Vars:Calc_AshVol_Aloft
+      n_gs_aloft = 0
       do n = 1,n_gs_max
         if(IsAloft(n).and. &                     ! if bin is currently flagged as aloft
            mass_aloft(n).lt.AIRBORNE_THRESH)then ! but the mass is less than the thresh
           IsAloft(n) = .false.
-          ns_aloft = ns_aloft-1
-          write(global_info,*)"Grainsmax bin ",ns_aloft+1," has fully deposited."
-          write(global_log ,*)"Grainsmax bin ",ns_aloft+1," has fully deposited."
+          write(global_info,*)"Grainsmax bin ",n," has fully deposited."
+          write(global_log ,*)"Grainsmax bin ",n," has fully deposited."
+        else
+          n_gs_aloft = n_gs_aloft + 1
         endif
       enddo
 
-      end subroutine Collapse_GS
+      end subroutine Prune_GS
 
 !******************************************************************************
 

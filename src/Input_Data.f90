@@ -40,8 +40,7 @@
 
       use Tephra,        only : &
          MagmaDensity,Tephra_v_s,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,&
-         Tephra_gsF,FV_ID,phi_mean,phi_stddev,n_gs_max,ns_aloft,&
-           Sort_Tephra_Size,&
+         Tephra_gsF,FV_ID,phi_mean,phi_stddev,n_gs_max,n_gs_aloft,&
            Calculate_Tephra_Shape,&
            Allocate_Tephra
 
@@ -2025,9 +2024,9 @@
 
       ! Since this subroutine is called before any optional modules, we can
       ! initialize nsmax to the number of tephra bins
-      nsmax    = n_gs_max
-      insmax   = n_gs_max
-      ns_aloft = n_gs_max
+      nsmax      = n_gs_max
+      insmax     = n_gs_max
+      n_gs_aloft = n_gs_max
 
       call Allocate_Tephra
       allocate(temp_phi(n_gs_max))
