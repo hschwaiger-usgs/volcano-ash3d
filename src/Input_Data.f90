@@ -660,7 +660,7 @@
       read(cdf_b1l9,*,err=1907) neruptions              ! read in number of eruptions or pulses
       write(global_info,*) 'Expecting to read ',neruptions,&
                            ' eruptions lines in Block 2.'
-      if ((SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air') &
+      if (((SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')) &
            .and.(neruptions.gt.1)) then
         write(global_error,*)"ERROR: ",&
          'when SourceType=umbrella, neruptions must equal 1'
