@@ -146,6 +146,12 @@
         enddo
         !ymin = minval(y_cc_pd)
         !ymax = maxval(y_cc_pd)
+          ! Area of face at i-1/2,j,k
+        sigma_nx_pd(-1:nxmax+2,j,k) = dz_vec_pd(k)*dy
+          ! Area of face at i,j-1/2,k
+        sigma_ny_pd(-1:nxmax+2,j,k) = dz_vec_pd(k)*dx
+          ! Area of face at i,j,k-1/2
+        sigma_nz_pd(-1:nxmax+2,j,k) = dy*dx
         do k=-1,nzmax+2
           kappa_pd(-1:nxmax+2,-1:nymax+2,k)=dx*dy*dz_vec_pd(k)
         enddo

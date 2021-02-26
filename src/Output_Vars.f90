@@ -594,7 +594,7 @@
       subroutine Calc_AshVol_Deposit(vol)
 
       use mesh,          only : &
-         nxmax,nymax,kappa_pd,ts1
+         nxmax,nymax,kappa_pd
 
       use solution,      only : &
          DepositGranularity
@@ -625,7 +625,7 @@
       subroutine Calc_AshVol_Outflow(vol)
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,IsLatLon,kappa_pd,ts1
+         nxmax,nymax,nzmax,IsLatLon,kappa_pd
 
       use solution,      only : &
          outflow_xz1_pd,outflow_xz2_pd,outflow_yz1_pd,outflow_yz2_pd,outflow_xy2_pd

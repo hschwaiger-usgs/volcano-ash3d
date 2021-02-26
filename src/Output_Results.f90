@@ -97,7 +97,7 @@
         call Set_OutVar_Specs          ! Initialize variables local to the Output_KLM module
         if (WriteCloudConcentration_KML)  call OpenFile_KML(1) ! Cloud Concentration
         if (WriteCloudHeight_KML)         call OpenFile_KML(2) ! Cloud Top Height
-        if (WriteCloudHeight_KML)         call OpenFile_KML(3) ! Cloud Bottom Height
+        !if (WriteCloudHeight_KML)         call OpenFile_KML(3) ! Cloud Bottom Height
         if (WriteCloudLoad_KML)           call OpenFile_KML(4) ! Cloud Load
         if (Writereflectivity_KML)        call OpenFile_KML(6) ! Reflectivity
         if (WriteDepositTS_KML.or.WriteDepositFinal_KML)  then
@@ -241,7 +241,7 @@
         if ((WriteDepositFinal_ASCII).and.                       &
             (((nWriteTimes.gt.0).and.(abs(time-dt-WriteTimes(nWriteTimes)).gt.1.0e-4_ip)).or. &
             (nWriteTimes.eq.0))) then
-                 call write_2D_ASCII(nxmax,nymax,DepositThickness(1:nxmax,1:nymax), &
+          call write_2D_ASCII(nxmax,nymax,DepositThickness(1:nxmax,1:nymax), &
                                 ' 0.000','DepositFile_        ')
         endif
         if (WriteDepositFinal_KML) then

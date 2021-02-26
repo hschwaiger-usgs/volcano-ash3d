@@ -1058,7 +1058,7 @@
         close(54)
       enddo
 
-      open(unit=60,file='AshArrivalTimes.kml',err=2001)
+      open(unit=60,file='ash_arrivaltimes_airports.kml',err=2001)
       write(60,5)                           !write out file header info
       nWrittenOut = 0
       do i=1,nairports                      !write out the airports that are hit.
@@ -1173,8 +1173,8 @@
       return
 
 !     Error traps
-2001  write(global_info,*)  'Error opening AshArrivalTimes.kml.  Program stopped.'
-      write(global_info,*)  'Error opening AshArrivalTimes.kml.  Program stopped.'
+2001  write(global_info,*)  'Error opening ash_arrivaltimes_airports.kml.  Program stopped.'
+      write(global_info,*)  'Error opening ash_arrivaltimes_airports.kml.  Program stopped.'
       stop 1
 
 

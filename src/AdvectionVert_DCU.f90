@@ -6,7 +6,7 @@
 
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,dx,dy,dz_vec_pd,ts0,ts1,&
-         IsLatLon,sigma_nz_pd,kappa_pd 
+         sigma_nz_pd,kappa_pd 
 
       use solution,      only : &
          concen_pd,vz_pd,vf_pd, &
@@ -28,15 +28,14 @@
       ! Explicit advection routine, 2nd order upwind with limiter.
       ! RP Denlinger and HF Schwaiger
 
-      !!!$ USE omp_lib
+      !$ use omp_lib
 
       implicit none
 
       integer       :: i,j,n  ! These are the indeces mapping to the global arrays
-      integer       :: l        ! This is the index along the particular advection direction
+      !integer       :: l        ! This is the index along the particular advection direction
       integer       :: ncells
       integer       :: idx_dum
-      real(kind=ip) :: ubar     ! u at interface
 
        ! arrays that live on cell-centers: Note that we have 2 ghost cells
       real(kind=ip),dimension(-1:nzmax+2)               :: update_cc
@@ -88,28 +87,48 @@
 
       concen_pd(:,:,:,:,ts1) = 0.0_ip
 
-      ! Here we bundle the n and j loops into one do loop to more
-      ! efficiently enable parallelization 
-      !$OMP PARALLEL do &
-      !$OMP  DEFAULT(NONE) &
-      !$OMP  SHARED(nzmax,nymax,nxmax,IsLatLon,dx,dy,dz,dt,concen_pd,kappa_pd, &
-      !$OMP         vz_pd,sigma_nz_pd,outflow_xy1_pd,outflow_xy2_pd,                          &
-      !$OMP         vf)                                                           &
-      !$OMP  PRIVATE(j,n,fs,fss_I,usig_I, &
-      !$OMP          rm2,rm1,rp1,rp2,dq_I,divu_p,divu_m, &
-      !$OMP          dqu,theta,ldq,aus,update) &
-      !$OMP  FIRSTPRIVATE(vel_cc,dt_vol_cc)
-      do idx_dum=1,nsmax*nymax
-      !  do j=1,nymax
-      ! Now recover n and j
-        j = mod(idx_dum-1,nymax) +1
-        n = floor(real((idx_dum-1)/nymax,kind=ip))+1
+! There are a few strategies here: loop over a combinned index for n and
+! j, loop over a combined index for n, j and i, or loop first over n,
+! then launch opm threads over nested i,j with a collapse flag
+!
+!      ! Here we bundle the n and j loops into one do loop to more
+!      ! efficiently enable parallelization 
+!      do idx_dum=1,nsmax*nymax
+!      ! Now recover n and j
+!        j = mod(idx_dum-1,nymax) +1
+!        n = floor(real((idx_dum-1)/nymax,kind=ip))+1
+!        if(.not.IsAloft(n)) cycle
+!        do i=1,nxmax
+
+!  OR
+
+!      do idx_dum=1,nsmax*nymax*nxmax
+!         ! Now recover i,j and n
+!         ! Note: we can recover these indecies in any order we choose,
+!         ! as long as all are accounted for.  So recover in optimal
+!         ! (column-major) order
+!         i = (idx_dum-1)/(nymax*nsmax)+1
+!         j = (idx_dum - (i-1)*nymax*nsmax-1)/nsmax+1
+!         n = idx_dum - (j-1) * nsmax - (i-1)*nymax*nsmax
+
+      do n=1,nsmax
         if(.not.IsAloft(n)) cycle
 
-        do i=1,nxmax
+      !$OMP PARALLEL DO &
+      !$OMP DEFAULT(NONE) &
+      !$OMP SHARED(n,nxmax,nymax,ncells,nsmax,dt,concen_pd,kappa_pd,&
+      !$OMP vz_pd,sigma_nz_pd,outflow_xy1_pd,outflow_xy2_pd,vf_pd),&
+      !$OMP PRIVATE(i,j,q_cc,vel_cc,dt_vol_cc,usig_I,update_cc,&
+      !$OMP dq_I,fs_I,fss_I,ldq_I,dqu_I,i_I,i_cc,&
+      !$OMP aus,theta,divu_p,divu_m,&
+      !$OMP LFluct_Rbound,RFluct_Lbound,&
+      !$OMP LimFlux_Rbound,LimFlux_Lbound),&
+      !$OMP collapse(2)
+        do j=1,nymax
+          do i=1,nxmax
             ! Initialize cell-centered values for this z-column
             ! Note: ghost cells should contain q_cc=0 and vel_cc=edge
-          vel_cc(-1:ncells+2) =     vz_pd(i,j,-1:ncells+2) + vf_pd(i,j,-1:ncells+2,n)
+          vel_cc(-1:ncells+2) =      vz_pd(i,j,-1:ncells+2) + vf_pd(i,j,-1:ncells+2,n)
           q_cc(  -1:ncells+2) = concen_pd(i,j,-1:ncells+2,n,ts0)
 
           ! Ghost cells were set in Set_BC.f90, but could be reset here
@@ -119,19 +138,11 @@
 
            ! Calculate \Delta t / \kappa
               ! using kappa of cell
-          if(IsLatLon)then
-            dt_vol_cc(-1:ncells+2) = dt/kappa_pd(i,j,-1:ncells+2)
-          else
-            dt_vol_cc(-1:ncells+2) = dt/(dx*dy*dz_vec_pd(-1:ncells+2))
-          endif
+          dt_vol_cc(-1:ncells+2) = dt/kappa_pd(i,j,-1:ncells+2)
 
-          do l=1,ncells+1
-            ubar = 0.5_ip*(vel_cc(l-1)+vel_cc(l))
-            if(IsLatLon)then
-              usig_I(l) = ubar*sigma_nz_pd(i,j,l)
-            else
-              usig_I(l) = ubar*dy*dx
-            endif
+          do i_cc=1,ncells+1
+            usig_I(i_cc) = 0.5_ip*(vel_cc(i_cc-1)+vel_cc(i_cc)) * &
+                                   sigma_nz_pd(i,j,i_cc)
           enddo
 
           ! This calculates the update in a row in one function call
@@ -256,9 +267,10 @@
           ! Flux out the + side of advection row  (top of domain)
           outflow_xy2_pd(i,j,n) = outflow_xy2_pd(i,j,n) + update_cc(ncells+1)
 
+          enddo
         enddo
+        !$OMP END PARALLEL DO
       enddo ! loop over idx_dum
-      !$OMP END PARALLEL do
 
       concen_pd(  1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)

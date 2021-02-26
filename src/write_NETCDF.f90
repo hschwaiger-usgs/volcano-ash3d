@@ -1582,7 +1582,8 @@
           ! be the most slowly varying, so dum4d_out unfortunately has a
           ! different shape than concen
         do i = 1,nsmax
-          ashcon(1:nxmax,1:nymax,1:nzmax,i) = real(concen_pd(1:nxmax,1:nymax,1:nzmax,i,ts1),kind=op)
+          ashcon(1:nxmax,1:nymax,1:nzmax,i) = &
+             real(concen_pd(1:nxmax,1:nymax,1:nzmax,i,ts1),kind=op)
         enddo
         nSTAT=nf90_put_var(ncid,ashcon_var_id,ashcon,(/1,1,1,1,1/))
         if(nSTAT.ne.0) &
@@ -1865,7 +1866,7 @@
          n_gs_max
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,ts1,dz_vec_pd,nsmax
+         nxmax,nymax,nzmax,nsmax,ts1,dz_vec_pd
 
       use solution,      only : &
          vx_pd,vy_pd,vz_pd,vf_pd,concen_pd,DepositGranularity

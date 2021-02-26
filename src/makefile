@@ -40,11 +40,14 @@ SYSTEM = gfortran
 #      DEBUG : includes debugging info and issues warnings
 #      PROF  : includes profiling flags with some optimization
 #      OPT   : includes optimizations flags for fastest runtime
-#      OMPOPT: includes optimizations flags for fastest runtime and OpenMP directives
-#              To run, enter: env OMP_NUM_THREADS=4 Ash3d input_file.inp
+#      DEBUGOMP : includes debugging info and issues warnings and OpenMP directives
+#      OMPOPT   : includes optimizations flags for fastest runtime and OpenMP directives
+#                 To run, enter: env OMP_NUM_THREADS=4 Ash3d input_file.inp
 #    This variable cannot be left blank
+#RUN = DEBUG
+#RUN = PROF
 RUN = OPT
-
+#RUN = OMPOPT
 # This is the location of the USGS libraries and include files
 # This might be different from the INSTALLDIR path if you want to link to special MetReader
 # projection and HoursSince packages.
@@ -73,7 +76,7 @@ VERB = 1
 
 # MEMORY
 # If you need pointer arrays instead of allocatable arrays, set this to 'T'
-USEPOINTERS = T
+USEPOINTERS = F
 
 # EXTERNAL DATA FILES
 #
@@ -94,6 +97,7 @@ USEEXTDATA = T
 #      LIM_SUPERBEE
 #      LIM_MC
 LIMITER = LIM_SUPERBEE
+#LIMITER = LIM_NONE
 #
 #  DIFFMETH specifies whether or not to use Crank-Nicolson
 #
@@ -204,7 +208,7 @@ ifeq ($(RUN), DEBUG)
 endif
 ifeq ($(RUN), DEBUGOMP)
     FFLAGS =  -g3 -pg -Wall -fbounds-check -pedantic -fimplicit-none -Wunderflow -Wuninitialized -Wmaybe-uninitialized -ffpe-trap=invalid,zero,overflow -fdefault-real-8 -fopenmp -lgomp
-    ASH3DEXEC=Ash3d_debugOMP
+    ASH3DEXEC=Ash3d_debugomp
 endif
 # Profiling flags
 ifeq ($(RUN), PROF)
@@ -217,7 +221,7 @@ ifeq ($(RUN), OPT)
     ASH3DEXEC=Ash3d
 endif
 ifeq ($(RUN), OMPOPT)
-    FFLAGS = -O3 -w -ffast-math -fdefault-real-8 -fopenmp -lgomp
+    FFLAGS = -O3 -w -fno-math-errno -funsafe-math-optimizations -fno-trapping-math -fno-signaling-nans -fcx-limited-range -fno-rounding-math -fdefault-real-8 -fopenmp -lgomp
     ASH3DEXEC=Ash3d_omp
 endif
       # Preprocessing flags
@@ -330,7 +334,7 @@ write_KML.o: $(ASH3dCCSRC)/write_KML.f90 makefile Ash3d_VariableModules.o
 all: Ash3d
 
 clean:
-	rm -rf $(OBJECTS) Ash3d.o $(DATAOBJ) $(OPTMODS_OBJ) ../bin/Ash3d* \
+	rm -rf $(OBJECTS) Ash3d.o $(DATAOBJ) $(OPTMODS_OBJ) ../bin/$(ASH3DEXEC) \
         *.mod *__genmod.f90
 
 install:

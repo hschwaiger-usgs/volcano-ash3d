@@ -157,18 +157,20 @@
 
       fid = 30
 
-      if (WriteTimes(iout3d).lt.10.0_ip) then
-        write(cio,1) WriteTimes(iout3d)
-1       format('00',f4.2,'hrs')
-      elseif (WriteTimes(iout3d).lt.100.0_ip) then
-        write(cio,2) WriteTimes(iout3d)
-2       format('0',f5.2,'hrs')
+      if(isFinal_TS)then
+        cio='____final'
       else
-        write(cio,3) WriteTimes(iout3d)
-3       format(f6.2,'hrs')
+        if (WriteTimes(iout3d).lt.10.0_ip) then
+          write(cio,1) WriteTimes(iout3d)
+1         format('00',f4.2,'hrs')
+        elseif (WriteTimes(iout3d).lt.100.0_ip) then
+          write(cio,2) WriteTimes(iout3d)
+2         format('0',f5.2,'hrs')
+        else
+          write(cio,3) WriteTimes(iout3d)
+3         format(f6.2,'hrs')
+        endif
       endif
-      if(isFinal_TS) cio='____final'
-
       if(INDEX(filename_root,'ArrivalTime').gt.0)then
           ! For the special cases of DepositArrivalTime.dat and
           ! CloudArrivalTime.dat
@@ -226,8 +228,8 @@
       use precis_param
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,lon_cc_pd,lat_cc_pd,IsLatLon,ts1,&
-         x_cc_pd,y_cc_pd,z_cc_pd
+         nxmax,nymax,nzmax,lon_cc_pd,lat_cc_pd,IsLatLon,&
+         x_cc_pd,y_cc_pd,z_cc_pd,ts1
 
       use Output_Vars,   only : &
          DepositThickness
@@ -369,7 +371,7 @@
 !        open(unit=28,file='dep_thick.txt',err=2000)
 !
 !        !WRITE OUT SOURCE PARAMETERS FOR AIRPORTS FILE
-        open(unit=out_unit,file='AshArrivalTimes.txt',err=2000)
+        open(unit=out_unit,file='ash_arrivaltimes_airports.txt',err=2000)
         write(out_unit,98)  infile, RunStartYear,RunStartMonth,RunStartDay,RunStartHr, &
                               RunStartMinute, VolcanoName  !write infile, simulation time
         do i=1,neruptions  !write source parameters
@@ -460,8 +462,8 @@
       return
 
 !     Error traps
-2000   write(global_info,*)  'Error opening AshArrivalTimes.txt.  Program stopped.'
-       write(global_info,*)  'Error opening AshArrivalTimes.txt.  Program stopped.'
+2000   write(global_info,*)  'Error opening ash_arrivaltimes_airports.txt.  Program stopped.'
+       write(global_info,*)  'Error opening ash_arrivaltimes_airports.txt.  Program stopped.'
        stop 1
 
 !     Format statements
