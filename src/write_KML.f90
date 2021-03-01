@@ -159,7 +159,7 @@
 
       ivar = 5 ! cloud arrival time
       !KML_filename(ivar)      = 'CloudArrivalTime.kml         '
-      KML_filename(ivar)      = 'cloud_arrrivaltimes_hours.kml'
+      KML_filename(ivar)      = 'cloud_arrivaltimes_hours.kml'
       KML_units(ivar)         = ' hrs '
       KML_fid(ivar)           = 390
       KML_n_clrmp(ivar)       = 9
@@ -178,6 +178,7 @@
       KML_Styles(ivar,11)= '         ';  KML_Colors(ivar,11)= '      '
       KML_description(ivar)   = 'shades for cloud arrival time'
       KML_legend(ivar)        = 'CloudLoad_hsv.png            '
+      KML_legend(ivar)        = 'cloud_arrival_time.png       '
       KML_overlayX(ivar)      = '1.0'
       KML_overlayY(ivar)      = '0.0'
       KML_screenX(ivar)       = '1.0'

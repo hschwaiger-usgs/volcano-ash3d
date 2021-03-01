@@ -174,9 +174,9 @@
         if (WriteCloudHeight_ASCII)         &
           call write_2D_ASCII(nxmax,nymax,MaxHeight(1:nxmax,1:nymax), &
                               '-9999.','CloudHeight_        ')
-        if (WriteCloudHeight_ASCII)         &
-          call write_2D_ASCII(nxmax,nymax,MinHeight(1:nxmax,1:nymax), &
-                              '-9999.','CloudHeightBot_     ')
+        !if (WriteCloudHeight_ASCII)         &
+        !  call write_2D_ASCII(nxmax,nymax,MinHeight(1:nxmax,1:nymax), &
+        !                      '-9999.','CloudHeightBot_     ')
         if (WriteCloudLoad_ASCII)           &
           call write_2D_ASCII(nxmax,nymax,CloudLoad(1:nxmax,1:nymax), &
                               ' 0.000','CloudLoad_          ')
@@ -184,7 +184,7 @@
           ! Now KML files
         if (WriteCloudConcentration_KML)   call Write_2D_KML(1,MaxConcentration/1.0e3_ip,1,1) ! Cloud Concentration
         if (WriteCloudHeight_KML)          call Write_2D_KML(2,MaxHeight, 1,1) ! Cloud Top Height
-        if (WriteCloudHeight_KML)          call Write_2D_KML(3,MinHeight,-1,1) ! Cloud Bottom Height
+        !if (WriteCloudHeight_KML)          call Write_2D_KML(3,MinHeight,-1,1) ! Cloud Bottom Height
         if (WriteCloudLoad_KML)            call Write_2D_KML(4,CloudLoad, 1,1) ! Cloud Load
         if (Writereflectivity_KML)         call Write_2D_KML(6,dbZCol, 1,1) ! Reflectivity
         !if (WriteDepositTS_KML.or.WriteDepositFinal_KML)  then
@@ -252,7 +252,7 @@
         ! Close KML files
         if (WriteCloudConcentration_KML) call Close_KML(1,1)
         if (WriteCloudHeight_KML)        call Close_KML(2,1)
-        if (WriteCloudHeight_KML)        call Close_KML(3,1)
+        !if (WriteCloudHeight_KML)        call Close_KML(3,1)
         if (WriteCloudLoad_KML)          call Close_KML(4,1)
         if (Writereflectivity_KML)       call Close_KML(6,1)
         if (WriteDepositTS_KML) then
