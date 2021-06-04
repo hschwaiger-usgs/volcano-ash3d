@@ -377,7 +377,7 @@
         if(useVertAdvect) call advect_z
 
         if(useDiffusion)then
-          call DiffuseVert
+          !call DiffuseVert                 commented out because it is causing mass consservation errors.
           call DiffuseHorz(itime)
         endif
 
