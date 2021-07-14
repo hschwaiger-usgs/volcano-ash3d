@@ -40,9 +40,10 @@
 
       use Tephra,        only : &
          MagmaDensity,Tephra_v_s,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,&
-         Tephra_gsF,FV_ID,phi_mean,phi_stddev,n_gs_max,n_gs_aloft,&
+         Tephra_gsF,Tephra_gsG,FV_ID,phi_mean,phi_stddev,n_gs_max,n_gs_aloft,&
            Calculate_Tephra_Shape,&
-           Allocate_Tephra
+           Allocate_Tephra, &
+           Sort_Tephra_Size
 
       use mesh,          only : &
          de,dn,dx,dy,z_vec_init,dz_const,nxmax,nymax,nzmax,nsmax,VarDzType,ivent,jvent,&
@@ -53,6 +54,9 @@
 
       use solution,      only : &
          StopValue
+
+      use Output_Vars,   only : &
+         USE_OUTPROD_VARS, USE_RESTART_VARS
 
       use time_data,     only : &
          BaseYear,useLeap,time,SimStartHour,Simtime_in_hours,cdf_time_log,&
@@ -105,16 +109,19 @@
       character(len=3)  :: answer
       character(len=6)  :: formatanswer
       character(len=20) :: mod_name
+      character(len=20) :: dumstr20
 
       integer           :: iw,iwf,igrid,idf,iwfiles
       integer           :: ivalue1, ivalue2, ivalue3, ivalue4
-      integer           ::  status
+      integer           :: status
+      integer           :: loc
+      integer           :: iform
 
       character(len=80) :: Comp_projection_line
       integer           :: ilatlonflag
       character         :: testkey,testkey2
       integer           :: iendstr,ios,ioerr,init_n_gs_max
-      real(kind=ip)     :: value1, value2, value3, value4
+      real(kind=ip)     :: value1, value2, value3, value4, value5
       real(kind=dp)     :: tmp_dp
       real(kind=dp)     :: StartHour
       real(kind=dp)     :: RunStartHour    ! Start time of model run, in hours since BaseYear
@@ -124,7 +131,7 @@
 
       real(kind=ip),allocatable,dimension(:) :: temp_v_s,temp_gsdiam
       real(kind=ip),allocatable,dimension(:) :: temp_bin_mass,temp_rho_m
-      real(kind=ip),allocatable,dimension(:) :: temp_gsF,temp_phi
+      real(kind=ip),allocatable,dimension(:) :: temp_gsF,temp_gsG,temp_phi
       real(kind=ip)     :: fracfine = 0.0_ip
       real(kind=ip)     :: CompGrid_height
       real(kind=ip)     :: last_z
@@ -363,7 +370,8 @@
         read(linebuffer080,*)testkey
       enddo
 
-      !Read volcano name
+      ! Block 1 Line 1
+      ! Read volcano name
       cdf_b1l1 = linebuffer080
       iendstr = SCAN(linebuffer080, "#")
       if (iendstr.eq.1)then
@@ -376,7 +384,7 @@
       ! database ID
       read(VolcanoName,*)testkey
       if(testkey.eq.'0'.or.testkey.eq.'1')then
-        ! the 'name' is the Smithsonian ID
+        ! the 'name' is the CAVW Smithsonian ID
         ! get the source parameters for this volcano
         if(VERB.gt.1)write(global_info,*)"Calling get_ESP"
         volc_code = VolcanoName(1:8)
@@ -388,7 +396,8 @@
       write(global_info,37) VolcanoName
       write(global_log ,37) VolcanoName
 
-      !READ PROJECTION PARAMETERS
+      ! Block 1 Line 2
+      ! Read projection parameters
       read(10,'(a80)') linebuffer080
       cdf_b1l2 = linebuffer080
       Comp_projection_line = linebuffer080
@@ -402,8 +411,7 @@
        IsLatLon          = .true.
       endif
 
-      !SET PROJECTION PARAMETERS
-      
+      ! Set Projection Parameters
       if (IsLatLon.eqv..false.)then
         call PJ_Set_Proj_Params(Comp_projection_line)
         A3d_iprojflag    = PJ_iprojflag
@@ -417,13 +425,16 @@
         A3d_phi2         = PJ_phi2
       endif
 
-      !READ BOUNDARIES OF MODEL DOMAIN
+      ! READ BOUNDARIES OF MODEL DOMAIN
       if(IsLatLon)then
         ! If input coordinates are in lat/lon, interpret lines as follows
+        ! Block 1 Line 3
         read(10,'(a80)')cdf_b1l3
         read(cdf_b1l3,*,err=1901) lonLL, latLL            ! lat/lon of LL corner
+        ! Block 1 Line 4
         read(10,'(a80)')cdf_b1l4
         read(cdf_b1l4,*,err=1902) gridwidth_e, gridwidth_n          ! Dimensions (in degrees) of the grid
+        ! Block 1 Line 5
         read(10,'(a80)') cdf_b1l5
         read(cdf_b1l5,*,iostat=ioerr) value1, value2, value3
         if (ioerr.eq.0)then
@@ -435,7 +446,7 @@
           lat_volcano = value2
           z_volcano   = 0.0_ip
         endif
-        !read(cdf_b1l5,*,err=1903) lon_volcano, lat_volcano ! position of volcano in lat/lon
+        ! Block 1 Line 6
         read(10,'(a80)')cdf_b1l6
         read(cdf_b1l6,*,err=1904) de, dn                 ! cell size in degrees 
         
@@ -459,7 +470,9 @@
         if (lon_volcano.lt.  0.0_ip) lon_volcano = lon_volcano+360.0_ip
         if (lon_volcano.ge.360.0_ip) lon_volcano = mod(lon_volcano,360.0_ip)
 
-        If(IsLatLon.and.(gridwidth_e.ge.360.0_ip.or.abs(gridwidth_e-360.0_ip).lt.EPS_TINY))then
+        If(IsLatLon.and.&
+           (gridwidth_e.ge.360.0_ip.or.&
+            abs(gridwidth_e-360.0_ip).lt.EPS_TINY))then
           IsPeriodic  = .true.
           lonLL       = 0.0_ip
           gridwidth_e = 360.0_ip
@@ -486,12 +499,15 @@
        !check for errors in input
         call LatLonChecker(latLL,lonLL,lat_volcano,lon_volcano,gridwidth_e,gridwidth_n)
       else
+        ! Block 1 Line 3
         read(10,'(a80)')cdf_b1l3
         read(cdf_b1l3,*,err=1901) xLL, yLL                ! LL corner in km 
+        ! Block 1 Line 4
         read(10,'(a80)')cdf_b1l4
         read(cdf_b1l4,*,err=1902) gridwidth_x, gridwidth_y         ! width and height of simulation area in km
         xUR = xLL + gridwidth_x
         yUR = yLL + gridwidth_y
+        ! Block 1 Line 5
         read(10,'(a80)')cdf_b1l5
         read(cdf_b1l5,*,iostat=ioerr) value1, value2, value3
         if (ioerr.eq.0)then
@@ -503,7 +519,7 @@
           y_volcano = value2
           z_volcano = 0.0_ip
         endif
-        !read(cdf_b1l5,*,err=1906) x_volcano, y_volcano    ! position of volcano in grid coordinates, in km
+        ! Block 1 Line 6
         read(10,'(a80)')cdf_b1l6
         read(cdf_b1l6,*,err=1904) dx, dy                 ! cell size in horizontal, vertical, in km
         write(global_info,4) xLL, yLL, gridwidth_x, gridwidth_y, x_volcano,y_volcano  !write out input data
@@ -515,8 +531,9 @@
         call xyChecker(xLL,yLL,dx,dy,x_volcano,y_volcano,gridwidth_x,gridwidth_y)
       endif
 
+      ! Block 1 Line 7
       read(10,'(a80)')cdf_b1l7
-      read(cdf_b1l7,*,err=5215) dz_const                      ! nodal spacing in z (always km)
+      read(cdf_b1l7,*,err=5215) dz_const    ! nodal spacing in z (always km)
       VarDzType = "dz_cons"
       write(global_info,43) dz_const
       write(global_log ,43) dz_const
@@ -588,8 +605,9 @@
         stop 1
       endif
 
+      ! Block 1 Line 8
       !Read this line looking for diffusion coefficient and either a Suzuki constant, 
-      !or a plume type ('line' or 'point')
+      !or a plume type ('line', 'point', 'profile', 'umbrella', or 'umbrella_air')
 5220  read(10,'(a80)')cdf_b1l8
       read(cdf_b1l8,*,err=5225) diffusivity_horz, Suzuki_A       ! First, try Suzuki coefficient
       SourceType='suzuki'
@@ -743,7 +761,7 @@
         if(i.eq.1)then
           read(linebuffer130,*,err=1910) iyear(i)
           if(iyear(i).ne.0.and.iyear(i).lt.BaseYear.or.iyear(i)-BaseYear.gt.200)then
-            ! Reset BaseYear to t,*he start of the century containing the eruption year
+            ! Reset BaseYear to the start of the century containing the eruption year
             BaseYear = iyear(i) - mod(iyear(i),100)
             BaseYear = 1
             write(global_info,*)"WARNING: Resetting BaseYear to ",BaseYear
@@ -858,6 +876,7 @@
       write(global_info,*)' *******************************************'
       write(global_info,*)' Reading Block 3: Windfile parameters'
       write(global_info,*)' *******************************************'
+      ! Block 3 Line 1
       cdf_b3l1 = linebuffer080
       read(linebuffer080,*,iostat=ioerr) iw,iwf
       idf = 0
@@ -925,6 +944,7 @@
          "Trying to read MR_iHeightHandler and detecting comment line"
         stop 1
       endif
+      ! Block 3 Line 2
       cdf_b3l2 = linebuffer080
       read(linebuffer080,*,err=1932) MR_iHeightHandler ! parameter that determines what to do if the
                                         ! plume height exceeds the wind sounding max. height
@@ -935,6 +955,7 @@
          "Trying to read Simtime_in_hours and detecting comment line"
         stop 1
       endif
+      ! Block 3 Line 3
       cdf_b3l3 = linebuffer080
       read(linebuffer080,*,err=1921) Simtime_in_hours        ! simulated transport time
                                                           ! for ash cloud, in hours
@@ -946,6 +967,7 @@
          "Trying to read StopWhenDeposited and detecting comment line"
         stop 1
       endif
+      ! Block 3 Line 4
       cdf_b3l4 = linebuffer080
       read(linebuffer080,'(a3)',err=1922) answer
       if (answer.eq.'yes') then
@@ -964,6 +986,7 @@
          "Trying to read nWindFiles and detecting comment line"
         stop 1
       endif
+      ! Block 3 Line 5
       cdf_b3l5 = linebuffer080
       read(linebuffer080,*,err=1923) iwfiles              ! number of wind files to read
 
@@ -1192,6 +1215,7 @@
         read(10,'(a80)')linebuffer080
         read(linebuffer080,*)testkey
       enddo
+      ! Block 4 Line 1
       write(global_info,*)' *******************************************'
       write(global_info,*)' Reading Block 4: Output options '
       write(global_info,*)' *******************************************'
@@ -1213,6 +1237,7 @@
         goto 1953
       endif
 
+      ! Block 4 Line 2
 !     Read whether to write out final KML deposit file
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
@@ -1232,6 +1257,7 @@
         goto 1954
       endif
 
+      ! Block 4 Line 3
 !     Read whether to write out ESRI ASCII deposit files at specified times
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
@@ -1252,6 +1278,7 @@
         goto 1955
       endif
 
+      ! Block 4 Line 4
 !     Read whether to write out KML deposit files at specified times
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
@@ -1270,6 +1297,7 @@
         goto 1956
       endif
 
+      ! Block 4 Line 5
 !     Read whether to write out ESRI ASCII files of cloud concentration
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
@@ -1289,6 +1317,7 @@
         goto 1957
       endif
 
+      ! Block 4 Line 6
 !     Read whether to write out KML files of cloud concentration
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
@@ -1308,6 +1337,7 @@
         goto 1958
       endif
 
+      ! Block 4 Line 7
 !     Read whether to write out ASCII files of cloud height
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
@@ -1327,6 +1357,7 @@
         goto 1959
       endif
 
+      ! Block 4 Line 8
 !     Read whether to write out KML files of cloud height
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
@@ -1346,6 +1377,7 @@
         goto 1960
       endif
 
+      ! Block 4 Line 9
 !     Read whether to write out ASCII files of ashcloud load
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
@@ -1365,6 +1397,7 @@
         goto 19601
       endif
 
+      ! Block 4 Line 10
 !     Read whether to write out KML files of ashcloud load
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
@@ -1383,6 +1416,7 @@
         goto 1961
       endif
 
+      ! Block 4 Line 11
 !     Read whether to write out ASCII file of deposit arrival time
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
@@ -1402,6 +1436,7 @@
         goto 1962
       endif
 
+      ! Block 4 Line 12
 !     Read whether to write out KML files of deposit arrival time
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
@@ -1421,6 +1456,7 @@
         goto 1963
       endif
 
+      ! Block 4 Line 13
 !     Read whether to write out ASCII file of cloud arrival time
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
@@ -1440,6 +1476,7 @@
         goto 19621
       endif
 
+      ! Block 4 Line 14
 !     Read whether to write out KML files of cloud arrival time
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
@@ -1471,6 +1508,7 @@
       !  WriteDepositTS_KML   = .false.
       !endif
       
+      ! Block 4 Line 15
 !     Read whether to write out 3D files of ash concentration
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
@@ -1483,12 +1521,43 @@
       read(linebuffer080,'(a3)',err=1964) answer
       if (answer.eq.'yes') then
         Write3dFiles = .true.
+        ! if a consolodate output file will be written, assume both standard
+        ! variables and the 3d ash concentrations will be written
+        USE_OUTPROD_VARS = .true.
+        USE_RESTART_VARS = .true.
+
+        ! Try to read an output code
+        loc = index(linebuffer080,'yes')
+        dumstr20 = linebuffer080(loc+4:loc+24)
+        read(dumstr20,*,iostat=ioerr) iform
+        if (ioerr.eq.0)then
+          ! Succeeded in reading the format code
+          if(iform.eq.1)then
+            write(global_info,*)" Successfully read format code=1"
+            write(global_info,*)"  Both output products and ash concentrations will be written"
+            USE_OUTPROD_VARS = .true.
+            USE_RESTART_VARS = .true.
+          elseif(iform.eq.2)then
+            write(global_info,*)" Successfully read format code=2"
+            write(global_info,*)"  Only output products will be written"
+            USE_OUTPROD_VARS = .true.
+            USE_RESTART_VARS = .false.
+          else
+            write(global_info,*)" Could not read format code"
+            write(global_info,*)"  Assuming both output products and ash concentration will be written"
+            USE_OUTPROD_VARS = .true.
+            USE_RESTART_VARS = .true.
+          endif
+        else
+
+        endif
        else if (answer(1:2).eq.'no') then
         Write3dFiles = .false.
        else
         goto 1964
       endif
 
+      ! Block 4 Line 16
 !     Read output file format
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
@@ -1511,6 +1580,7 @@
          endif
       endif
       
+      ! Block 4 Line 17
 !     Read number of files to write out
       read(10,'(a80)') linebuffer080
       read(linebuffer080,*)testkey
@@ -1520,6 +1590,8 @@
         stop 1
       endif
       cdf_b4l17 = linebuffer080
+
+      ! Block 4 Line 18
       read(10,'(a130)')linebuffer130
       read(linebuffer130,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
@@ -1793,6 +1865,7 @@
       write(global_info,*)' Reading Block 6: Airport location output'
       write(global_info,*)' *******************************************'
       !Read whether to write out ASCII airport file
+      ! Block 6 Line 1
       cdf_b6l1 = linebuffer080
       read(linebuffer080,'(a3)',err=1980) answer
       if (answer.eq.'yes') then
@@ -1805,6 +1878,7 @@
       
       !Read whether to write out grain-size distribution to airport file
       read(10,'(a80)') linebuffer080
+      ! Block 6 Line 2
       cdf_b6l2 = linebuffer080
       read(linebuffer080,'(a3)',err=1981) answer
       if (answer.eq.'yes') then
@@ -1817,6 +1891,7 @@
 
       !Read whether to write out kml airport file
       read(10,'(a80)') linebuffer080
+      ! Block 6 Line 3
       cdf_b6l3 = linebuffer080
       read(linebuffer080,'(a3)',err=1982) answer
       if (answer.eq.'yes') then
@@ -1828,6 +1903,7 @@
       endif
             
       !Read name of input file containing airport locations
+      ! Block 6 Line 4
       read(10,'(a80)') cdf_b6l4
       AirportInFile = cdf_b6l4(1:scan(cdf_b6l4,' ')-1)     !Read to the first blank space      
 
@@ -1852,6 +1928,7 @@
 
       !Read whether to project airport coordinates
 19828 continue
+      ! Block 6 Line 5
       read(10,'(a80)') cdf_b6l5
       read(cdf_b6l5,'(a3)',err=1983) answer
       if (answer.eq.'yes') then
@@ -1899,6 +1976,7 @@
       !    e.g.  -1 4 2
       !       Also note that the number of tephra bins can be zero if the species
       !       will be defined in optional modules such as gas, aggregates, etc.
+      ! Block 6 Line 1
       read(linebuffer080,*,iostat=ioerr) ivalue1
       init_n_gs_max = ivalue1
       read(linebuffer080,*,iostat=ioerr) ivalue1, ivalue2
@@ -1920,6 +1998,7 @@
       allocate(temp_bin_mass(init_n_gs_max))
       allocate(temp_rho_m(init_n_gs_max))
       allocate(temp_gsF(init_n_gs_max))
+      allocate(temp_gsG(init_n_gs_max))
 
       if(init_n_gs_max.gt.0)then
         do i=1,init_n_gs_max
@@ -1959,14 +2038,23 @@
               temp_gsdiam(i) = value1
               temp_bin_mass(i) = value2
               temp_rho_m(i) = value3
-              ! Try for a forth value
+              ! Try for a forth value for shape
               read(linebuffer080,*,iostat=ioerr) value1, value2, value3, value4
               if (ioerr.eq.0)then
-                ! Fourth value was successfully read, interpret as shape
+                ! Fourth value was successfully read, interpret as W/H shape
                 ! parameter
                 temp_gsF(i) = value4
+                ! Try for a fifth value for second shape parameter for Ganser
+                ! model
+                read(linebuffer080,*,iostat=ioerr) value1, value2, value3, value4, value5
+                if (ioerr.eq.0)then
+                  ! Fourth value was successfully read, interpret as Ganser 2nd
+                  ! shape parameter
+                  temp_gsG(i) = value5
+                else
+                  temp_gsG(i) = 1.0_ip
+                endif
               else
-                !temp_gsF(i) = 0.7_ip
                 temp_gsF(i) = 0.44_ip
               endif
                 ! Initialize this to zero
@@ -2006,7 +2094,7 @@
                 ! Initialize these
               temp_gsdiam(i)  = 0.1_ip
               temp_rho_m(i)   = 2000.0_ip
-              temp_gsF(i)     = 0.7_ip
+              temp_gsF(i)     = 0.44_ip
             endif
           endif
         enddo
@@ -2037,13 +2125,16 @@
       Tephra_bin_mass(1:n_gs_max) = temp_bin_mass(1:n_gs_max)
       Tephra_rho_m(1:n_gs_max)    = temp_rho_m(1:n_gs_max)
       Tephra_gsF(1:n_gs_max)      = temp_gsF(1:n_gs_max)
+      Tephra_gsG(1:n_gs_max)      = temp_gsG(1:n_gs_max)
 
       deallocate(temp_v_s,temp_gsdiam,temp_bin_mass,temp_rho_m,temp_gsF)
 
       if(n_gs_max.gt.0)then
         call Calculate_Tephra_Shape
 
-        !call Sort_Tephra_Size
+        ! If a log-normal distribution is to be added, make sure the grainsize
+        ! bins are sorted by fall velocity (slowest first)
+        if (useVariableGSbins) call Sort_Tephra_Size
 
         temp_phi = -log(Tephra_gsdiam)/log(2.0)
 
@@ -2129,9 +2220,9 @@
           do i=1,n_gs_max
               !write out diameter in mm, not m
             write(global_info,11) Tephra_bin_mass(i), Tephra_gsdiam(i)*1000.0_ip, Tephra_rho_m(i),&
-                          Tephra_gsF(i), temp_phi(i)
+                          Tephra_gsF(i), Tephra_gsG(i), temp_phi(i)
             write(global_log ,11) Tephra_bin_mass(i), Tephra_gsdiam(i)*1000.0_ip, Tephra_rho_m(i),&
-                          Tephra_gsF(i), temp_phi(i)
+                          Tephra_gsF(i), Tephra_gsG(i), temp_phi(i)
           enddo
         else
           write(global_info,2110)
@@ -2906,8 +2997,8 @@
 9     format(/,4x,'Number of grain-size bins:     ',i2, &
              /,4x,'               Fall Model:     ',i2)
 10    format(4x,'Bins:',/,4x,&
-        'mass fraction      diameter (mm)     density (kg/m3)      F            phi')
-11    format(8x,f10.5,4x,f11.6,10x,f10.4,5x,f8.2,5x,f8.2)
+        'mass fraction      diameter (mm)     density (kg/m3)      F     G         phi')
+11    format(8x,f10.5,4x,f11.6,10x,f10.4,5x,f8.2,2x,f4.2,5x,f5.2)
 2110  format(4x,'Bins:',/,4x,&
              'mass fraction      v_s (m/s)')
 2111  format(8x,f5.3,4x,f11.6)

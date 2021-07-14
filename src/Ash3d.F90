@@ -6,10 +6,11 @@
 
       use global_param,  only : &
          useCalcFallVel,useDiffusion,useHorzAdvect,useVertAdvect,VERB,&
-         HR_2_S,useTemperature,DT_MIN,CFL,KM3_2_M3,EPS_TINY,EPS_SMALL
+         HR_2_S,useTemperature,DT_MIN,CFL,KM3_2_M3,EPS_TINY,EPS_SMALL,&
+         nmods,OPTMOD_names
 
       use mesh,          only : &
-         ivent,jvent,nxmax,nymax,nzmax,nsmax,ts0,ts1,kappa_pd
+         ivent,jvent,nxmax,nymax,nzmax,nsmax,ts0,ts1,kappa_pd,z_cc_pd
 
       use solution,      only : &
          concen_pd,DepositGranularity,StopValue,dep_percent_accumulated, &
@@ -100,7 +101,8 @@
         end subroutine
         subroutine output_results
         end subroutine
-        subroutine Set_BC
+        subroutine Set_BC(bc_code)
+          integer,intent(in) :: bc_code ! 1 for advection, 2 for diffusion
         end subroutine
         subroutine vprofilewriter
         end subroutine
@@ -145,6 +147,15 @@
 !------------------------------------------------------------------------------
 !       OPTIONAL MODULES
 !         Insert calls to custom input blocks here
+      write(global_info,*)&
+        "Now looping through optional modules found in input file"
+      do j=1,nmods
+        write(global_info,*)"Testing for ",OPTMOD_names(j),j
+        if(OPTMOD_names(j).eq.'RESETPARAMS')then
+          write(global_info,*)"  Reading input block for RESETPARAMS"
+          call input_data_ResetParams
+        endif
+      enddo
 !
 !------------------------------------------------------------------------------
 
@@ -313,9 +324,9 @@
               do ii=ivent-1,ivent+1
                 do jj=jvent-1,jvent+1
                   do iz=ibase,itop
-                    concen_pd(ii,jj,iz,1:nsmax,ts0) =                &
+                    concen_pd(ii,jj,iz,1:n_gs_max,ts0) =                &
                               concen_pd(ii,jj,iz,1:n_gs_max,ts0)        &
-                                 + dt*SourceNodeFlux(iz,1:nsmax)
+                                 + dt*SourceNodeFlux(iz,1:n_gs_max)
                   enddo
                 enddo
               enddo
@@ -361,7 +372,7 @@
 !         Insert calls to optional boundary conditions here
 !
 !------------------------------------------------------------------------------
-        call Set_BC
+        call Set_BC(1)
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         ! Advection / Diffusion / Deposition
@@ -377,7 +388,8 @@
         if(useVertAdvect) call advect_z
 
         if(useDiffusion)then
-          !call DiffuseVert                 commented out because it is causing mass consservation errors.
+          call Set_BC(2)
+          call DiffuseVert
           call DiffuseHorz(itime)
         endif
 

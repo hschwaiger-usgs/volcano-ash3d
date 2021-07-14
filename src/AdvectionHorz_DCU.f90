@@ -70,7 +70,8 @@
       !logical :: OMP_get_nested
 
       INTERFACE
-        subroutine Set_BC
+        subroutine Set_BC(bc_code)
+          integer,intent(in) :: bc_code ! 1 for advection, 2 for diffusion
         end subroutine
         !function AdvectUpdate_1d(ncells,q_cc,dt_vol_cc,usig_I)
         !  integer :: ncells
@@ -81,7 +82,7 @@
         !end function AdvectUpdate_1d
       END INTERFACE
 
-      call Set_BC
+      call Set_BC(1)
 
       ! We are advecting in x so set the length of the cell list accordingly
       ncells = nxmax
@@ -95,7 +96,7 @@
       !$OMP SHARED(n,nymax,nzmax,ncells,nsmax,dt,concen_pd,kappa_pd,&
       !$OMP vx_pd,sigma_nx_pd,outflow_yz1_pd,outflow_yz2_pd,&
       !$OMP IsPeriodic),&
-      !$OMP PRIVATE(j,k,q_cc,vel_cc,dt_vol_cc,usig_I,update_cc,&
+      !$OMP PRIVATE(l,j,k,q_cc,vel_cc,dt_vol_cc,usig_I,update_cc,&
       !$OMP dq_I,fs_I,fss_I,ldq_I,dqu_I,i_I,i_cc,&
       !$OMP aus,theta,divu_p,divu_m,&
       !$OMP LFluct_Rbound,RFluct_Lbound,&
@@ -305,7 +306,8 @@
       !logical :: OMP_get_nested
 
       INTERFACE
-        subroutine Set_BC
+        subroutine Set_BC(bc_code)
+          integer,intent(in) :: bc_code ! 1 for advection, 2 for diffusion
         end subroutine
         !function AdvectUpdate_1d(ncells,q_cc,dt_vol_cc,usig_I)
         !  integer :: ncells
@@ -316,7 +318,7 @@
         !end function AdvectUpdate_1d
       END INTERFACE
 
-      call Set_BC
+      call Set_BC(1)
 
       ! We are advecting in y so set the length of the cell list accordingly
       ncells = nymax
@@ -329,7 +331,7 @@
       !$OMP DEFAULT(NONE) &
       !$OMP SHARED(n,nxmax,nzmax,ncells,nsmax,dt,concen_pd,kappa_pd,&
       !$OMP vy_pd,sigma_ny_pd,outflow_xz1_pd,outflow_xz2_pd),&
-      !$OMP PRIVATE(i,k,q_cc,vel_cc,dt_vol_cc,usig_I,update_cc,&
+      !$OMP PRIVATE(l,i,k,q_cc,vel_cc,dt_vol_cc,usig_I,update_cc,&
       !$OMP dq_I,fs_I,fss_I,ldq_I,dqu_I,i_I,i_cc,&
       !$OMP aus,theta,divu_p,divu_m,&
       !$OMP LFluct_Rbound,RFluct_Lbound,&

@@ -24,6 +24,7 @@
       real(kind=ip), dimension(:)  ,allocatable  :: Tephra_bin_mass    ! mass    (kg)
       real(kind=ip), dimension(:)  ,allocatable  :: Tephra_rho_m       ! density (kg/m3)
       real(kind=ip), dimension(:)  ,allocatable  :: Tephra_gsF         ! Grain-size shape (b+c)/2a
+      real(kind=ip), dimension(:)  ,allocatable  :: Tephra_gsG         ! Grain-size shape c/b
       real(kind=ip), dimension(:,:),allocatable  :: Tephra_gsF_fac     ! Precalculated shape factors
                                                                 !  i=1 WH Stokes fac
                                                                 !  i=2 WH Newton fac
@@ -62,6 +63,7 @@
       allocate(Tephra_bin_mass(n_gs_max))
       allocate(Tephra_rho_m(n_gs_max))
       allocate(Tephra_gsF(n_gs_max))
+      allocate(Tephra_gsG(n_gs_max))
       allocate(Tephra_gsF_fac(n_gs_max,5))
 
       end subroutine Allocate_Tephra
@@ -95,6 +97,7 @@
       if(allocated(Tephra_bin_mass))   deallocate(Tephra_bin_mass)
       if(allocated(Tephra_rho_m))      deallocate(Tephra_rho_m)
       if(allocated(Tephra_gsF))        deallocate(Tephra_gsF)
+      if(allocated(Tephra_gsG))        deallocate(Tephra_gsG)
       if(allocated(Tephra_gsF_fac))    deallocate(Tephra_gsF_fac)
 
       end subroutine Deallocate_Tephra
@@ -272,9 +275,13 @@
 
       integer :: i,j
       real(kind=ip) :: ellipse_area,ellipse_vol,equiv_rad
+      real(kind=ip) :: diamN ! diamter of sphere with equivalent projected area
+      real(kind=ip) :: diamS ! diamter of sphere with equivalent surface area
+      real(kind=ip) :: diamV ! diamter of sphere with equivalent volume
       real(kind=ip) :: p_exp,sphere_area,phi_sphere
 
       real(kind=ip) :: Dahneke_LD(13), Dahneke_RL(13),onF
+      real(kind=ip) :: tmp_b, tmp_c
       integer       :: Dahni
 
 !     Calculating terms for Cunningham slip coefficients for non-spherical
@@ -315,14 +322,23 @@
         ! Note: sphericity is the ratio of the surface area of a sphere with
         !       equivalent volume to the actual surface area of the particle
         ! following http://en.wikipedia.org/wiki/Ellipsoid
-        ellipse_vol  = 4.0_ip*PI*Tephra_gsF(i)*Tephra_gsF(i)/3.0_ip
-        equiv_rad    = (ellipse_vol*3.0_ip/(4.0_ip*PI))**(1.0_ip/3.0_ip)
-        sphere_area  = 4.0_ip*PI*equiv_rad*equiv_rad
         p_exp = 1.6075_ip
-        ellipse_area = 4.0_ip*PI*(((Tephra_gsF(i)*Tephra_gsF(i))**p_exp + &
-                            2.0_ip*(Tephra_gsF(i))**p_exp)/3.0_ip)**(1.0_ip/p_exp)
-        phi_sphere = sphere_area/ellipse_area
+        tmp_b = 2*Tephra_gsF(i)/(1+Tephra_gsG(i))
+        tmp_c = 2*Tephra_gsF(i)*Tephra_gsG(i)/(1+Tephra_gsG(i))
+        phi_sphere = (tmp_b*tmp_c)**(2.0/3.0) * &
+                      ((tmp_b**p_exp + &
+                        tmp_c**p_exp + &
+                       (tmp_b*tmp_c)**p_exp)/3.0)**(-1.0_ip/p_exp)
+
+        !ellipse_vol  = 4.0_ip*PI*Tephra_gsF(i)*Tephra_gsF(i)/3.0_ip
+        !equiv_rad    = (ellipse_vol*3.0_ip/(4.0_ip*PI))**(1.0_ip/3.0_ip)
+        !sphere_area  = 4.0_ip*PI*equiv_rad*equiv_rad
+        !ellipse_area = 4.0_ip*PI*(((Tephra_gsF(i)*Tephra_gsF(i))**p_exp + &
+        !                    2.0_ip*(Tephra_gsF(i))**p_exp)/3.0_ip)**(1.0_ip/p_exp)
+        !phi_sphere = sphere_area/ellipse_area
+          ! Calculate K1 for Ganser model (Table 7 Isometric)
         Tephra_gsF_fac(i,3) = 3.0_ip/(1.0_ip+2.0_ip*phi_sphere**(-0.5_ip))
+          ! Calculate K2 for Ganser model (Table 7 Isometric)
         Tephra_gsF_fac(i,4) = 1.84148_ip*(-log10(phi_sphere))**0.5743_ip
         Tephra_gsF_fac(i,4) = 10.0_ip**Tephra_gsF_fac(i,4);
           ! Now calculate the aspherical correction to the Cunningham
@@ -346,70 +362,75 @@
       end subroutine Calculate_Tephra_Shape
 
 !******************************************************************************
-!
-!      subroutine Sort_Tephra_Size
-!
-!      implicit none
-!
-!      integer :: i,j,l
-!      real(kind=ip) :: tmp1,tmp2,tmp3,tmp4,tmp5,tmp6
-!      real(kind=ip) :: temp_a(5)
-!      real(kind=ip) :: viscnow, densnow, vfnow
-!      real(kind=ip), dimension(:), allocatable      :: vf_now
-!
-!      densnow = 1.2_ip           !air density at STP (approximate)
-!      viscnow = 1.0e-05_ip       !air viscosity at STP (approximate)
-!
-!      !Calculate fall velocity at 1 atmosphere and assume the relative values
-!      !are the same at higher elevation
-!      allocate(vf_now(n_gs_max))
-!      write(global_info,*) 'GSD before sorting:'
-!      do l=1,n_gs_max
-!         if (useCalcFallVel) then
-!            vfnow = vset_WH(densnow,Tephra_rho_m(l),viscnow, &
-!                                Tephra_gsdiam(l),Tephra_gsF_fac(l,1),Tephra_gsF_fac(l,2))
-!            vf_now(l) = vfnow
-!            write(global_info,*) 'l = ',l,', gsdiam = ',real(Tephra_gsdiam(l),kind=sp),&
-!                       ', rho_m = ',real(Tephra_rho_m(l),kind=sp),&
-!                       ', vf_now(l) = ',real(vf_now(l),kind=sp)
-!         else
-!            vf_now(l) = Tephra_v_s(l)
-!         endif
-!      enddo
-!
-!        ! Using insertion sort on p321 of Numerical Recipes
-!      do j=2,n_gs_max
-!        tmp1   = vf_now(j)
-!        tmp2   = Tephra_gsdiam(j)
-!        tmp3   = Tephra_bin_mass(j)
-!        tmp4   = Tephra_rho_m(j)
-!        tmp5   = Tephra_v_s(j)
-!        tmp6   = Tephra_gsF(j)
-!        temp_a = Tephra_gsF_fac(j,:)
-!        do i=j-1,1,-1
-!            ! sort on grain-size
-!          if (vf_now(i).le.tmp1) goto 101
-!          vf_now(i+1)           = vf_now(i)
-!          Tephra_gsdiam(i+1)    = Tephra_gsdiam(i)
-!          Tephra_bin_mass(i+1)  = Tephra_bin_mass(i)
-!          Tephra_rho_m(i+1)     = Tephra_rho_m(i)
-!          Tephra_v_s(i+1)       = Tephra_v_s(i)
-!          Tephra_gsF(i+1)       = Tephra_gsF(i)
-!          Tephra_gsF_fac(i+1,:) = Tephra_gsF_fac(i,:)
-!        enddo
-!        i=0
-! 101    vf_now(i+1)          = tmp1
-!        Tephra_gsdiam(i+1)   = tmp2
-!        Tephra_bin_mass(i+1) = tmp3
-!        Tephra_rho_m(i+1)    = tmp4
-!        Tephra_v_s(i+1)      = tmp5
-!        Tephra_gsF(i+1)      = tmp6
-!        Tephra_gsF_fac(i+1,:)= temp_a
-!      enddo
-!
-!      if (useVariableGSbins) call partition_gsbins(phi_mean,phi_stddev)
-!
-!      end subroutine Sort_Tephra_Size
+
+      subroutine Sort_Tephra_Size
+
+      implicit none
+
+      integer :: i,j,l
+      real(kind=ip) :: tmp1,tmp2,tmp3,tmp4,tmp5,tmp6,tmp7
+      real(kind=ip) :: temp_a(5)
+      real(kind=ip) :: viscnow, densnow, vfnow
+      real(kind=ip), dimension(:), allocatable      :: vf_now
+
+      densnow = 1.2_ip           !air density at STP (approximate)
+      viscnow = 1.0e-05_ip       !air viscosity at STP (approximate)
+
+      write(global_info,*) 'WARNING: Sorting grain-size bins by vf'
+
+      !Calculate fall velocity at 1 atmosphere and assume the relative values
+      !are the same at higher elevation
+      allocate(vf_now(n_gs_max))
+      write(global_info,*) 'GSD before sorting:'
+      do l=1,n_gs_max
+         if (useCalcFallVel) then
+            vfnow = vset_WH(densnow,Tephra_rho_m(l),viscnow, &
+                                Tephra_gsdiam(l),Tephra_gsF_fac(l,1),Tephra_gsF_fac(l,2))
+            vf_now(l) = vfnow
+            write(global_info,*) 'l = ',l,', gsdiam = ',real(Tephra_gsdiam(l),kind=sp),&
+                       ', rho_m = ',real(Tephra_rho_m(l),kind=sp),&
+                       ', vf_now(l) = ',real(vf_now(l),kind=sp)
+         else
+            vf_now(l) = Tephra_v_s(l)
+         endif
+      enddo
+
+        ! Using insertion sort on p321 of Numerical Recipes
+      do j=2,n_gs_max
+        tmp1   = vf_now(j)
+        tmp2   = Tephra_gsdiam(j)
+        tmp3   = Tephra_bin_mass(j)
+        tmp4   = Tephra_rho_m(j)
+        tmp5   = Tephra_v_s(j)
+        tmp6   = Tephra_gsF(j)
+        tmp7   = Tephra_gsG(j)
+        temp_a = Tephra_gsF_fac(j,:)
+        do i=j-1,1,-1
+            ! sort on grain-size
+          if (vf_now(i).le.tmp1) goto 101
+          vf_now(i+1)           = vf_now(i)
+          Tephra_gsdiam(i+1)    = Tephra_gsdiam(i)
+          Tephra_bin_mass(i+1)  = Tephra_bin_mass(i)
+          Tephra_rho_m(i+1)     = Tephra_rho_m(i)
+          Tephra_v_s(i+1)       = Tephra_v_s(i)
+          Tephra_gsF(i+1)       = Tephra_gsF(i)
+          Tephra_gsG(i+1)       = Tephra_gsG(i)
+          Tephra_gsF_fac(i+1,:) = Tephra_gsF_fac(i,:)
+        enddo
+        i=0
+ 101    vf_now(i+1)          = tmp1
+        Tephra_gsdiam(i+1)   = tmp2
+        Tephra_bin_mass(i+1) = tmp3
+        Tephra_rho_m(i+1)    = tmp4
+        Tephra_v_s(i+1)      = tmp5
+        Tephra_gsF(i+1)      = tmp6
+        Tephra_gsG(i+1)      = tmp7
+        Tephra_gsF_fac(i+1,:)= temp_a
+      enddo
+
+      if (useVariableGSbins) call partition_gsbins(phi_mean,phi_stddev)
+
+      end subroutine Sort_Tephra_Size
 
 !******************************************************************************
 
@@ -587,8 +608,8 @@
         if(IsAloft(n).and. &                     ! if bin is currently flagged as aloft
            mass_aloft(n).lt.AIRBORNE_THRESH)then ! but the mass is less than the thresh
           IsAloft(n) = .false.
-          write(global_info,*)"Grainsmax bin ",n," has fully deposited."
-          write(global_log ,*)"Grainsmax bin ",n," has fully deposited."
+          write(global_info,*)"Grainsize bin ",n," has fully deposited."
+          write(global_log ,*)"Grainsize bin ",n," has fully deposited."
         else
           n_gs_aloft = n_gs_aloft + 1
         endif

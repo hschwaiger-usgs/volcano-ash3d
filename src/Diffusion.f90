@@ -113,8 +113,11 @@
 
       subroutine diff_x
 
-      ! Explicit diffusion routine. author RP Denlinger
-      
+      ! Explicit diffusion routine.
+      ! RP Denlinger and HF Schwaiger
+
+      !!!$ USE omp_lib
+
       use mesh,          only : &
          IsLatLon,nxmax,nymax,nzmax,nsmax,ts0,ts1,kappa_pd,sigma_nx_pd
 
@@ -122,45 +125,72 @@
          concen_pd,IsAloft
 
       use time_data,     only : &
-         dt,dtodxdx
+         dt
 
       implicit none
 
-      integer :: i,j,k,n
-      real(kind=ip) :: k0,k1,k2,km1,km0,dq0,dq1
-      real(kind=ip) :: kap2,sm1,sp1
+      integer       :: j,k,n  ! These are the indeces mapping to the global arrays
+      integer       :: l        ! This is the index along the particular diffusion direction
+      integer       :: i_cc
+      integer       :: ncells
+      integer       :: idx_dum
 
+       ! arrays that live on cell-centers: Note that we have 2 ghost cells
+      real(kind=ip),dimension(-1:nxmax+2)               :: update_cc
+      real(kind=ip),dimension(-1:nxmax+2)               :: q_cc      ! concen
+
+      real(kind=ip),dimension( 0:nxmax+2)     :: dq_I
+      real(kind=ip),dimension( 0:nxmax+2)     :: k_ds2_I
+      real(kind=ip) :: ds
+
+      !integer OMP_GET_MAX_THREADS
+      !integer OMP_GET_NUM_THREADS
+      !integer OMP_GET_THREAD_NUM
+      !integer :: nthreads,thread_num
+      !logical :: OMP_get_nested
+
+      ! We are diffusing in x so set the length of the cell list accordingly
+      ncells = nxmax
       concen_pd(:,:,:,:,ts1) = 0.0_ip
-
       do n=1,nsmax
         if(.not.IsAloft(n)) cycle
-
+      !!!$OMP PARALLEL DO &
+      !!!$OMP DEFAULT(NONE) &
+      !!!$OMP SHARED(n,nymax,nzmax,ncells,nsmax,dt,concen_pd,kappa_pd,&
+      !!!$OMP sigma_nx_pd,kx,&
+      !!!$OMP IsPeriodic),&
+      !!!$OMP PRIVATE(l,j,k,q_cc,update_cc,ds,k_ds2_I,&
+      !!!$OMP dq_I,i_cc,k_ds2_I)&
+      !!!$OMP collapse(2)
         do k=1,nzmax
           do j=1,nymax
-            do i=1,nxmax
-              k2 = kx(i+1,j,k)
-              k1 = kx(i  ,j,k)
-              k0 = kx(i-1,j,k)
-              km1 = 0.5_ip*(k1+k2)
-              km0 = 0.5_ip*(k1+k0)
-              dq0 = concen_pd(i  ,j,k,n,ts0)-concen_pd(i-1,j,k,n,ts0)
-              dq1 = concen_pd(i+1,j,k,n,ts0)-concen_pd(i  ,j,k,n,ts0)
+            ! Initialize cell-centered values for this x-row
+            ! Note: ghost cells should contain q_cc values at edge (Neumann)
+            q_cc(-1:ncells+2) = concen_pd(-1:ncells+2,j,k,n,ts0)
+            dq_I( 0:ncells+2) = q_cc(0:ncells+2) - q_cc(-1:ncells+1)
+              ! Loop over interfaces and get geometry term
+            do l=1,ncells+1
+                ! ds is the 1/dx for this cell along x
+              ds=sigma_nx_pd(l,j,k)/kappa_pd(l,j,k)
+              k_ds2_I(l) = 0.5_ip*(kx(l-1,j,k)+kx(l,j,k)) * ds * ds
+            enddo
+              ! Loop over cells and update
+            do i_cc=1,ncells
                 ! Eq 4.11 LeVeque02
-              if(IsLatLon) then
-                !concen(i,j,k,n,ts1) = concen(i,j,k,n,ts0) + dtode2(i,j,k)*(dq1*km1-dq0*km0)
-                kap2 = kappa_pd(i,j,k)*kappa_pd(i,j,k)
-                sm1  = sigma_nx_pd(i-1,j,k)
-                sp1  = sigma_nx_pd(i  ,j,k)
-                concen_pd(i,j,k,n,ts1) = concen_pd(i,j,k,n,ts0) + dt/kap2 * &
-                                          (sp1*sp1*dq1*km1 - sm1*sm1*dq0*km0)
-              else
-                concen_pd(i,j,k,n,ts1) = concen_pd(i,j,k,n,ts0) + dtodxdx*(dq1*km1-dq0*km0)
-              endif
-            enddo ! loop over i
-          enddo ! loop over j
-        enddo ! loop over k
+              update_cc(i_cc) = dt*(k_ds2_I(i_cc+1)*dq_I(i_cc+1) - &
+                                    k_ds2_I(i_cc  )*dq_I(i_cc  ))
+            enddo ! loop over l (cell centers)
 
-      enddo ! loop over n
+            concen_pd(1:ncells,j,k,n,ts1) = concen_pd(1:ncells,j,k,n,ts0) + &
+               update_cc(1:ncells)
+
+          enddo ! 
+        enddo ! loop over j=1,nymax
+     !!!! !$OMP END PARALLEL do
+
+      enddo ! loop over idx_dum
+
+      ! Note: need to fix diffusion for periodic grids
 
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
@@ -180,45 +210,70 @@
          concen_pd,IsAloft
 
       use time_data,     only : &
-         dt,dtodydy
+         dt
 
       implicit none
 
-      integer :: i,j,k,n
-      real(kind=ip) :: k0,k1,k2,km1,km0,dq0,dq1
-      real(kind=ip) :: kap2,sm1,sp1
+      integer       :: i,k,n  ! These are the indeces mapping to the global arrays
+      integer       :: l        ! This is the index along the particular diffusion direction
+      integer       :: i_cc
+      integer       :: ncells
+      integer       :: idx_dum
 
+       ! arrays that live on cell-centers: Note that we have 2 ghost cells
+      real(kind=ip),dimension(-1:nymax+2)               :: update_cc
+      real(kind=ip),dimension(-1:nymax+2)               :: q_cc      ! concen
+
+      real(kind=ip),dimension( 0:nymax+2)     :: dq_I
+      real(kind=ip),dimension( 0:nymax+2)     :: k_ds2_I
+      real(kind=ip) :: ds
+
+      !integer OMP_GET_MAX_THREADS
+      !integer OMP_GET_NUM_THREADS
+      !integer OMP_GET_THREAD_NUM
+      !integer :: nthreads,thread_num
+      !logical :: OMP_get_nested
+
+      ! We are diffusing in x so set the length of the cell list accordingly
+      ncells = nymax
       concen_pd(:,:,:,:,ts1) = 0.0_ip
-
       do n=1,nsmax
         if(.not.IsAloft(n)) cycle
-
-        do i=1,nxmax
-          do k=1,nzmax
-            do j=1,nymax
-              k2 = ky(i,j+1,k)
-              k1 = ky(i,j  ,k)
-              k0 = ky(i,j-1,k)
-              km1 = 0.5_ip*(k1+k2)
-              km0 = 0.5_ip*(k1+k0)
-              dq0 = concen_pd(i,j  ,k,n,ts0)-concen_pd(i,j-1,k,n,ts0)
-              dq1 = concen_pd(i,j+1,k,n,ts0)-concen_pd(i,j  ,k,n,ts0)
+      !!!$OMP PARALLEL DO &
+      !!!$OMP DEFAULT(NONE) &
+      !!!$OMP SHARED(n,nxmax,nzmax,ncells,nsmax,dt,concen_pd,kappa_pd,&
+      !!!$OMP sigma_ny_pd,ky,&
+      !!!$OMP IsPeriodic),&
+      !!!$OMP PRIVATE(l,j,k,q_cc,update_cc,ds,k_ds2_I,&
+      !!!$OMP dq_I,i_cc,k_ds2_I)&
+      !!!$OMP collapse(2)
+        do k=1,nzmax
+          do i=1,nxmax
+            ! Initialize cell-centered values for this y-row
+            ! Note: ghost cells should contain q_cc values at edge (Neumann)
+            q_cc(-1:ncells+2) = concen_pd(i,-1:ncells+2,k,n,ts0)
+            dq_I( 0:ncells+2) = q_cc(0:ncells+2) - q_cc(-1:ncells+1)
+              ! Loop over interfaces and get geometry term
+            do l=1,ncells+1
+                ! ds is the 1/dx for this cell along x
+              ds=sigma_ny_pd(i,l,k)/kappa_pd(i,l,k)
+              k_ds2_I(l) = 0.5_ip*(ky(i,l-1,k)+ky(i,l,k)) * ds * ds
+            enddo
+              ! Loop over cells and update
+            do i_cc=1,ncells
                 ! Eq 4.11 LeVeque02
-              if(IsLatLon) then
-                !concen(i,j,k,n,ts1) = concen(i,j,k,n,ts0) + dtodn2(i,j,k)*(dq1*km1-dq0*km0)
-                kap2 = kappa_pd(i,j,k)*kappa_pd(i,j,k)
-                sm1  = sigma_ny_pd(i,j-1,k)
-                sp1  = sigma_ny_pd(i,j  ,k)
-                concen_pd(i,j,k,n,ts1) = concen_pd(i,j,k,n,ts0) + dt/kap2 * &
-                                       (sp1*sp1*dq1*km1 - sm1*sm1*dq0*km0)
-              else
-                concen_pd(i,j,k,n,ts1) = concen_pd(i,j,k,n,ts0) + dtodydy*(dq1*km1-dq0*km0)
-              endif
-            enddo ! loop over j
-          enddo ! loop over k
-        enddo ! loop over i
+              update_cc(i_cc) = dt*(k_ds2_I(i_cc+1)*dq_I(i_cc+1) - &
+                                    k_ds2_I(i_cc  )*dq_I(i_cc  ))
+            enddo ! loop over l (cell centers)
 
-      enddo ! loop over n
+            concen_pd(i,1:ncells,k,n,ts1) = concen_pd(i,1:ncells,k,n,ts0) + &
+               update_cc(1:ncells)
+
+          enddo ! 
+        enddo ! loop over j=1,nymax
+     !!!! !$OMP END PARALLEL do
+
+      enddo ! loop over idx_dum
 
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
@@ -238,51 +293,114 @@
          concen_pd,IsAloft
 
       use time_data,     only : &
-         dt,dtodzdz
+         dt
 
       implicit none
 
-      integer :: i,j,k,n
-      real(kind=ip) :: k0,k1,k2,km1,km0,dq0,dq1
-      real(kind=ip) :: kap2,sm1,sp1
+      integer       :: i,j,n  ! These are the indeces mapping to the global arrays
+      integer       :: l        ! This is the index along the particular diffusion direction
+      integer       :: i_cc
+      integer       :: ncells
+      integer       :: idx_dum
 
+       ! arrays that live on cell-centers: Note that we have 2 ghost cells
+      real(kind=ip),dimension(-1:nzmax+2)               :: update_cc
+      real(kind=ip),dimension(-1:nzmax+2)               :: q_cc      ! concen
+
+      real(kind=ip),dimension( 0:nzmax+2)     :: dq_I
+      real(kind=ip),dimension( 0:nzmax+2)     :: k_ds2_I
+      real(kind=ip) :: ds
+
+      !integer OMP_GET_MAX_THREADS
+      !integer OMP_GET_NUM_THREADS
+      !integer OMP_GET_THREAD_NUM
+      !integer :: nthreads,thread_num
+      !logical :: OMP_get_nested
+
+      ! We are diffusing in x so set the length of the cell list accordingly
+      ncells = nzmax
       concen_pd(:,:,:,:,ts1) = 0.0_ip
-
       do n=1,nsmax
         if(.not.IsAloft(n)) cycle
-
+      !!!$OMP PARALLEL DO &
+      !!!$OMP DEFAULT(NONE) &
+      !!!$OMP SHARED(n,nymax,nzmax,ncells,nsmax,dt,concen_pd,kappa_pd,&
+      !!!$OMP sigma_nz_pd,kz,&
+      !!!$OMP IsPeriodic),&
+      !!!$OMP PRIVATE(l,j,k,q_cc,update_cc,ds,k_ds2_I,&
+      !!!$OMP dq_I,i_cc,k_ds2_I)&
+      !!!$OMP collapse(2)
         do j=1,nymax
           do i=1,nxmax
-            do k=1,nzmax
-              k2 = kz(i,j,k+1)
-              k1 = kz(i,j,k  )
-              k0 = kz(i,j,k-1)
-              km1 = 0.5_ip*(k1+k2)
-              km0 = 0.5_ip*(k1+k0)
-              if (k.eq.1) then
-                ! Homogeneous Neumann conditions at bottom for zero
-                ! diffusive flux
-                dq0 = 0.0_ip
-              else
-                dq0 = concen_pd(i,j,k  ,n,ts0)-concen_pd(i,j,k-1,n,ts0)
-              endif
-              dq1 = concen_pd(i,j,k+1,n,ts0)-concen_pd(i,j,k  ,n,ts0)
-                ! Eq 4.11 LeVeque02
-              if(IsLatLon) then
-                !concen(i,j,k,n,ts1) = concen(i,j,k,n,ts0) + dt_dz2(k)*(dq1*km1-dq0*km0)
-                kap2 = kappa_pd(i,j,k)*kappa_pd(i,j,k)
-                sm1  = sigma_nz_pd(i,j,k-1)
-                sp1  = sigma_nz_pd(i,j,k  )
-                concen_pd(i,j,k,n,ts1) = concen_pd(i,j,k,n,ts0) + dt/kap2 * &
-                                       (sp1*sp1*dq1*km1 - sm1*sm1*dq0*km0)
-              else
-                concen_pd(i,j,k,n,ts1) = concen_pd(i,j,k,n,ts0) + dtodzdz*(dq1*km1-dq0*km0)
-              endif
+            ! Initialize cell-centered values for this z-row
+            ! Note: ghost cells should contain q_cc values at edge (Neumann)
+            q_cc(-1:ncells+2) = concen_pd(i,j,-1:ncells+2,n,ts0)
+            dq_I( 0:ncells+2) = q_cc(0:ncells+2) - q_cc(-1:ncells+1)
+              ! Loop over interfaces and get geometry term
+            do l=1,ncells+1
+                ! ds is the 1/dx for this cell along x
+              ds=sigma_nz_pd(i,j,l)/kappa_pd(i,j,l)
+              k_ds2_I(l) = 0.5_ip*(kz(i,j,l-1)+kz(i,j,l)) * ds * ds
             enddo
-          enddo ! loop over i
-        enddo ! loop over j
+              ! Loop over cells and update
+            do i_cc=1,ncells
+                ! Eq 4.11 LeVeque02
+              update_cc(i_cc) = dt*(k_ds2_I(i_cc+1)*dq_I(i_cc+1) - &
+                                    k_ds2_I(i_cc  )*dq_I(i_cc  ))
+            enddo ! loop over l (cell centers)
 
-      enddo ! loop over n
+            concen_pd(i,j,1:ncells,n,ts1) = concen_pd(i,j,1:ncells,n,ts0) + &
+               update_cc(1:ncells)
+
+          enddo ! 
+        enddo ! loop over j=1,nymax
+     !!!! !$OMP END PARALLEL do
+
+      enddo ! loop over idx_dum
+
+
+
+!      integer :: i,j,k,n
+!      real(kind=ip) :: k0,k1,k2,km1,km0,dq0,dq1
+!      real(kind=ip) :: kap2,sm1,sp1
+!
+!      concen_pd(:,:,:,:,ts1) = 0.0_ip
+!
+!      do n=1,nsmax
+!        if(.not.IsAloft(n)) cycle
+!
+!        do j=1,nymax
+!          do i=1,nxmax
+!            do k=1,nzmax
+!              k2 = kz(i,j,k+1)
+!              k1 = kz(i,j,k  )
+!              k0 = kz(i,j,k-1)
+!              km1 = 0.5_ip*(k1+k2)
+!              km0 = 0.5_ip*(k1+k0)
+!              if (k.eq.1) then
+!                ! Homogeneous Neumann conditions at bottom for zero
+!                ! diffusive flux
+!                dq0 = 0.0_ip
+!              else
+!                dq0 = concen_pd(i,j,k  ,n,ts0)-concen_pd(i,j,k-1,n,ts0)
+!              endif
+!              dq1 = concen_pd(i,j,k+1,n,ts0)-concen_pd(i,j,k  ,n,ts0)
+!                ! Eq 4.11 LeVeque02
+!              if(IsLatLon) then
+!                !concen(i,j,k,n,ts1) = concen(i,j,k,n,ts0) + dt_dz2(k)*(dq1*km1-dq0*km0)
+!                kap2 = kappa_pd(i,j,k)*kappa_pd(i,j,k)
+!                sm1  = sigma_nz_pd(i,j,k-1)
+!                sp1  = sigma_nz_pd(i,j,k  )
+!                concen_pd(i,j,k,n,ts1) = concen_pd(i,j,k,n,ts0) + dt/kap2 * &
+!                                       (sp1*sp1*dq1*km1 - sm1*sm1*dq0*km0)
+!              else
+!                concen_pd(i,j,k,n,ts1) = concen_pd(i,j,k,n,ts0) + dtodzdz*(dq1*km1-dq0*km0)
+!              endif
+!            enddo
+!          enddo ! loop over i
+!        enddo ! loop over j
+!
+!      enddo ! loop over n
 
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
@@ -444,7 +562,7 @@
 #ifdef CRANKNIC
       ! Note: The only reason not to use Crank-Nicolson is if you
       !       don't have blas and lapack installed.  This pre-proc.
-      !       directive allows this section to be turnes off.
+      !       directive allows this section to be turned off.
             if(useVarDiffH.or.IsLatLon)then
               ! This is the call for solving single or double
               ! precision general tridiagonal Ax=b
@@ -676,7 +794,7 @@
 #ifdef CRANKNIC
       ! Note: The only reason not to use Crank-Nicolson is if you
       !       don't have blas and lapack installed.  This pre-proc.
-      !       directive allows this section to be turnes off.
+      !       directive allows this section to be turned off.
             if(useVarDiffH.or.IsLatLon)then
               ! This is the call for solving single or double
               ! precision general tridiagonal Ax=b
@@ -782,7 +900,7 @@
 #ifdef CRANKNIC
       ! Note: The only reason not to use Crank-Nicolson is if you
       !       don't have blas and lapack installed.  This pre-proc.
-      !       directive allows this section to be turnes off.
+      !       directive allows this section to be turned off.
       INTERFACE
         subroutine sgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
           integer                         ,intent(in)    :: N

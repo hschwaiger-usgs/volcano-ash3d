@@ -145,7 +145,7 @@
       endif
       
       ! Hardwire these dt values for test cases
-      !dt = 1.0e-2_ip
+      !dt = 1.0e-5_ip
 
       ! Reset dt to be an integer multiple of DT_MIN
       fac = int(dt/DT_MIN)

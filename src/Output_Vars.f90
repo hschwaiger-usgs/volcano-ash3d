@@ -25,18 +25,9 @@
       real(kind=ip)                :: MinHeight_FillValue          = -9999.0_ip
       real(kind=ip)                :: dbZCol_FillValue             = -100.0_ip
 
-        ! Set this parameter if you want to include the standard derived variables
-        ! in the output file (this should nearly always be true, downstream
-        ! products rely on these variables)
-      logical, parameter :: USE_OUTPROD_VARS  = .true.
-
         ! Set this parameter if you want to include velocities in the output file
       logical, parameter :: USE_WIND_VARS  = .false.
       !logical, parameter :: USE_WIND_VARS  = .true.
-
-        ! Set this parameter to false if you do not want raw concentration values
-        ! exported (only derived products and deposits)
-      logical, parameter :: USE_RESTART_VARS  = .true.
 
         ! Set this to true if you want the extra output variables defined in the
         ! optional modules
@@ -49,6 +40,15 @@
       !logical, parameter :: log_3d1_tmp          = .false.
       !logical, parameter :: log_4d1_tmp          = .false.
 
+        ! This variable should be set to true if you want to include
+        ! the standard derived variables
+        ! in the output file (this should nearly always be true, downstream
+        ! products rely on these variables)
+      logical :: USE_OUTPROD_VARS  = .true.
+
+        ! Set this variable to false if you do not want raw concentration
+        ! values exported (only derived products and deposits)
+      logical :: USE_RESTART_VARS  = .true.
 
       real(kind=ip) :: CloudArea                               ! area of ash cloud at a given time
       real(kind=ip) :: LoadVal(5), CloudLoadArea(5)            ! CloudLoadArea(i)=area of ash cloud exceeding LoadVal(i)

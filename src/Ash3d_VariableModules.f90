@@ -41,12 +41,6 @@
       real(kind=ip), parameter :: DEG2KMLON  = 111.321_ip   ! km/degree longitude at equator
       real(kind=ip), parameter :: EPS_THRESH = 1.0e-10_ip ! Threshold for Riemann solver
                                                            ! 1 kg/km3=0.001 mg/m3
-      real(kind=ip), parameter :: GRAV       = 9.81_ip      ! Gravitational acceleration m/s^2
-      real(kind=ip), parameter :: RAD_EARTH  = 6371.229_ip ! Radius of Earth in km (used for cell
-                                                            ! geometry calculations: area, volume)
-                                                            ! Note: a particular projection might
-                                                            !       use a different radius
-
       real(kind=ip), parameter :: KM_2_M     = 1.0e3_ip     ! km to m conversion
       real(kind=ip), parameter :: M_2_MM     = 1.0e3_ip
       real(kind=ip), parameter :: MM_2_IN    = 3.937e-2_ip
@@ -54,6 +48,12 @@
       real(kind=ip), parameter :: KM3_2_M3   = 1.0e9_ip     
       real(kind=ip), parameter :: MPS_2_KMPHR= 3.6_ip       ! m/s to km/hr
       real(kind=ip), parameter :: HR_2_S     = 3600.0_ip
+
+      real(kind=ip) :: GRAV       = 9.81_ip     ! Gravitational acceleration m/s^2
+      real(kind=ip) :: RAD_EARTH  = 6371.229_ip ! Radius of Earth in km (used for cell
+                                                ! geometry calculations: area, volume)
+                                                !  Note: a particular projection might
+                                                !        use a different radius
 
       integer,       parameter :: MAXNUM_OPTMODs   = 10   ! used just to preallocate block array
       character(len=20),dimension(MAXNUM_OPTMODs) :: OPTMOD_names
@@ -108,6 +108,7 @@
       real(kind=ip)            :: CFL = 0.80_ip       ! courant number
       real(kind=ip)            :: DT_MIN = 1.0e-5_ip  ! Minimum DT in hours
       real(kind=ip)            :: DT_MAX = 1.0e0_ip   ! Maximum DT in hours
+
 
         ! These paramters set how verbose the logging is to stdout.
         ! VERB = 1 is the standard

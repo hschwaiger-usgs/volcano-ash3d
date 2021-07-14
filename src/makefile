@@ -104,6 +104,7 @@ LIMITER = LIM_SUPERBEE
 # Explicit calculation of diffusion term
 #DIFFMETH=EXPLDIFF
 # Implicit calculation of diffusion using Crank-Nicolson
+#DIFFMETH=EXPLDIFF
 DIFFMETH=CRANKNIC
 #
 OPTMODS_FPP= 
@@ -256,7 +257,8 @@ Output_Vars.o            \
 Output_Results.o         \
 write_ASCII.o            \
 write_BINARY.o           \
-write_KML.o
+write_KML.o              \
+ResetParams.o
 
 ifeq ($(USENETCDF), T)
   DATAOBJ = write_NETCDF.o
@@ -271,8 +273,10 @@ Ash3d:  $(OBJECTS) $(DATAOBJ) Ash3d.F90 makefile
 # Objects/Modules for initilization and model set-up
 Ash3d_VariableModules.o: $(ASH3dCCSRC)/Ash3d_VariableModules.f90 makefile
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Ash3d_VariableModules.f90
-Input_Data.o: $(ASH3dCCSRC)/Input_Data.f90 makefile Ash3d_VariableModules.o Tephra.o Help.o VotW.o Diffusion.o Airports.o $(DATAOBJ)
+Input_Data.o: $(ASH3dCCSRC)/Input_Data.f90 makefile Ash3d_VariableModules.o Tephra.o Help.o VotW.o Diffusion.o Airports.o $(DATAOBJ) Output_Vars.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Input_Data.f90
+ResetParams.o: $(ASH3dCCSRC)/ResetParams.f90 makefile Ash3d_VariableModules.o Tephra.o Output_Vars.o
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/ResetParams.f90
 Help.o: $(ASH3dCCSRC)/Help.f90 makefile Ash3d_VariableModules.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3dCCSRC)/Help.f90
 VotW.o: $(ASH3dCCSRC)/VotW.f90 makefile Ash3d_VariableModules.o Source.o
@@ -320,9 +324,9 @@ Output_Vars.o: $(ASH3dCCSRC)/Output_Vars.f90 makefile Ash3d_VariableModules.o Te
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Output_Vars.f90
 Output_Results.o: $(ASH3dCCSRC)/Output_Results.f90 makefile Ash3d_VariableModules.o Output_Vars.o Tephra.o write_ASCII.o write_KML.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Output_Results.f90
-write_ASCII.o: $(ASH3dCCSRC)/write_ASCII.f90 makefile Ash3d_VariableModules.o Airports.o
+write_ASCII.o: $(ASH3dCCSRC)/write_ASCII.f90 makefile Ash3d_VariableModules.o Airports.o Output_Vars.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_ASCII.f90
-write_BINARY.o: $(ASH3dCCSRC)/write_BINARY.f90 makefile Ash3d_VariableModules.o Airports.o
+write_BINARY.o: $(ASH3dCCSRC)/write_BINARY.f90 makefile Ash3d_VariableModules.o Airports.o Output_Vars.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_BINARY.f90
 ifeq ($(USENETCDF), T)
 write_NETCDF.o: $(ASH3dCCSRC)/write_NETCDF.f90 makefile Ash3d_VariableModules.o Output_Vars.o Tephra.o Source.o

@@ -231,9 +231,6 @@
          nxmax,nymax,nzmax,lon_cc_pd,lat_cc_pd,IsLatLon,&
          x_cc_pd,y_cc_pd,z_cc_pd,ts1
 
-      use Output_Vars,   only : &
-         DepositThickness
-
       use solution,      only : &
          concen_pd, vx_pd, vy_pd, vz_pd
 
@@ -242,7 +239,7 @@
       character(len=13) ,intent(in) :: cio
 
       integer :: i,j,k
-      real(kind=ip)     :: depth,rhom
+      real(kind=ip)     :: rhom
       character(len=32) :: DepOutfileName
       logical,save :: first_time = .true.
 
@@ -251,48 +248,25 @@
       DepOutfileName='3d_tephra_fall_'//cio//'.dat'
       open(unit=100,file=DepOutfileName,status='replace')
       write(100,*)&
-      'VARIABLES = "X","Y","Z","VX","VY","VZ","AshConc","DepDepth" '
-      !if(itime.le.1) then
+      'VARIABLES = "X","Y","Z","AshConc"'
       if(first_time)then
         write(100,*) 'ZONE I = ',nxmax,' J = ',nymax,' K = ',nzmax
         first_time = .false.
       else
         write(100,*) 'ZONE '
       endif
-      !write(100,*) 'SOLUTIONTIME = ',WriteTimes(iout3d)
 
       do k=1,nzmax
         do j=1,nymax
           do i=1,nxmax
             rhom = sum(concen_pd(i,j,k,:,ts1)) !kg/km3
-            !if(fullASCIIOutput)then
-              !depth =sum(concen_pd(i,j,0,:,ts1))*dz*1.0e-6_ip/DepositDensity
-              !!m
-              depth = DepositThickness(i,j) ! mm
-              if (IsLatLon) then
-                write(100,'(6(4x,f20.3),g20.5,5x,g20.5)') &
-                  lon_cc_pd(i)     , lat_cc_pd(j)     , z_cc_pd(k), &
-                  vx_pd(i,j,k), vy_pd(i,j,k), vz_pd(i,j,k),rhom,depth
-              else
-                write(100,'(6(4x,f20.3),g20.5,5x,g20.5)') &
-                  x_cc_pd(i)     , y_cc_pd(j)     , z_cc_pd(k),        &
-                  vx_pd(i,j,k), vy_pd(i,j,k), vz_pd(i,j,k),rhom,depth
-              endif
-            !else
-            !  if(itime.lt.1 .or. rhom.gt.10.0_ip) then
-            !    !depth = sum(concen_pd(i,j,0,:,ts1))*dz*1.0e-6_ip/DepositDensity !m
-            !    depth = DepositThickness(i,j) ! mm
-            !    if (IsLatLon) then
-            !      write(100,'(6(4x,f20.3),g20.5,5x,g20.5)') &
-            !        gridlon(i)     , gridlat(j)     , z_cc(k), &
-            !        vx(i,j,k), vy(i,j,k), vz(i,j,k),rhom,depth
-            !    else
-            !      write(100,'(6(4x,f20.3),g20.5,5x,g20.5)') &
-            !        x_cc(i)     , y_cc(j)     , z_cc(k),               &
-            !        vx(i,j,k), vy(i,j,k), vz(i,j,k),rhom,depth
-            !    endif
-            !  endif
-            !endif
+            if (IsLatLon) then
+              write(100,'(3(4x,f20.3),g20.5)') &
+                lon_cc_pd(i), lat_cc_pd(j), z_cc_pd(k), rhom
+            else
+              write(100,'(3(4x,f20.3),g20.5)') &
+                x_cc_pd(i), y_cc_pd(j), z_cc_pd(k), rhom
+            endif
           enddo
         enddo
       enddo

@@ -33,7 +33,7 @@
       implicit none
 
       integer       :: i,j,n  ! These are the indeces mapping to the global arrays
-      !integer       :: l        ! This is the index along the particular advection direction
+      integer       :: l        ! This is the index along the particular advection direction
       integer       :: ncells
       integer       :: idx_dum
 
@@ -69,7 +69,8 @@
       !logical :: OMP_get_nested
 
       INTERFACE
-        subroutine Set_BC
+        subroutine Set_BC(bc_code)
+          integer,intent(in) :: bc_code ! 1 for advection, 2 for diffusion
         end subroutine
         !function AdvectUpdate_1d(ncells,q_cc,dt_vol_cc,usig_I)
         !  integer :: ncells
@@ -80,7 +81,7 @@
         !end function AdvectUpdate_1d
       END INTERFACE
 
-      call Set_BC
+      call Set_BC(1)
 
       ! We are advecting in z so set the length of the cell list accordingly
       ncells = nzmax
@@ -118,7 +119,7 @@
       !$OMP DEFAULT(NONE) &
       !$OMP SHARED(n,nxmax,nymax,ncells,nsmax,dt,concen_pd,kappa_pd,&
       !$OMP vz_pd,sigma_nz_pd,outflow_xy1_pd,outflow_xy2_pd,vf_pd),&
-      !$OMP PRIVATE(i,j,q_cc,vel_cc,dt_vol_cc,usig_I,update_cc,&
+      !$OMP PRIVATE(l,i,j,q_cc,vel_cc,dt_vol_cc,usig_I,update_cc,&
       !$OMP dq_I,fs_I,fss_I,ldq_I,dqu_I,i_I,i_cc,&
       !$OMP aus,theta,divu_p,divu_m,&
       !$OMP LFluct_Rbound,RFluct_Lbound,&
@@ -140,9 +141,9 @@
               ! using kappa of cell
           dt_vol_cc(-1:ncells+2) = dt/kappa_pd(i,j,-1:ncells+2)
 
-          do i_cc=1,ncells+1
-            usig_I(i_cc) = 0.5_ip*(vel_cc(i_cc-1)+vel_cc(i_cc)) * &
-                                   sigma_nz_pd(i,j,i_cc)
+          do l=1,ncells+1
+            usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l)) * &
+                                   sigma_nz_pd(i,j,l)
           enddo
 
           ! This calculates the update in a row in one function call

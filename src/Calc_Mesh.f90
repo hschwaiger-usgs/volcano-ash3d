@@ -125,7 +125,7 @@
             kappa_pd(-1:nxmax+2,j,k)=del_lam*drrr*del_costheta/3.0_ip
           enddo
         enddo
-       !*********************************************************************************
+        !*********************************************************************************
         ! For lon/lat cases, we will need the dx,dy that is most restrictive on
         ! dt calculations
         phi_bot = DEG2RAD*(lat_cc_pd(      1) - dn*0.5_ip)
@@ -134,7 +134,7 @@
         !phi = maxval(abs(lat_cc_pd(1:nymax)))
         dx = RAD_EARTH*de*DEG2RAD*cos(phi)
         dy = RAD_EARTH*dn*DEG2RAD
-      else
+      else ! This is the .not.IsLatLon case
           ! Set up cell-centered coordinates
         do i=-1,nxmax+2
           x_cc_pd(i) = xLL + dx*real(i,kind=ip) - dx*0.5_ip
@@ -146,17 +146,19 @@
         enddo
         !ymin = minval(y_cc_pd)
         !ymax = maxval(y_cc_pd)
-          ! Area of face at i-1/2,j,k
-        sigma_nx_pd(-1:nxmax+2,j,k) = dz_vec_pd(k)*dy
-          ! Area of face at i,j-1/2,k
-        sigma_ny_pd(-1:nxmax+2,j,k) = dz_vec_pd(k)*dx
+
           ! Area of face at i,j,k-1/2
-        sigma_nz_pd(-1:nxmax+2,j,k) = dy*dx
+        sigma_nz_pd(:,:,:) = dy*dx
         do k=-1,nzmax+2
+            ! Area of face at i-1/2,j,k
+          sigma_nx_pd(:,:,k) = dz_vec_pd(k)*dy
+            ! Area of face at i,j-1/2,k
+          sigma_ny_pd(:,:,k) = dz_vec_pd(k)*dx
+            ! Volume of cell
           kappa_pd(-1:nxmax+2,-1:nymax+2,k)=dx*dy*dz_vec_pd(k)
         enddo
 
-      endif
+      endif !IsLatLon
 
       write(global_info,*)"    Cell-centered computational grid extends from:"
       if (IsLatLon) then

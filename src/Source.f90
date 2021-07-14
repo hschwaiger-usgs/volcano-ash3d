@@ -249,18 +249,23 @@
             TephraFluxRate = 0.0_ip
           endif
         elseif (SourceType.eq.'profile') then
+          ! loop over the points describing the eruption profile
           do kk=1,e_prof_zpoints(ieruption)
+            ! Find the top node in the eruption profile
             ez = e_PlumeHeight(ieruption) - &
                     e_prof_dz(ieruption)*e_prof_zpoints(ieruption) + &
                     (kk-1)*e_prof_dz(ieruption)
             if ((z_cell_top.ge.ez).and. & 
                 (z_cell_bot.lt.ez)) then
-              ! This assumes that the timestep is fully withing the
+              ! This assumes that the timestep is fully within the
               ! eruption
               TephraFluxRate = TephraFluxRate + e_prof_MassFlux(ieruption,kk)
             else
               TephraFluxRate = 0.0_ip
             endif
+            !write(*,*)k,kk,ez,z_cell_bot,z_cell_top
+            write(*,*)"profile source is currently in need of repair"
+            stop 6
           enddo
         else
           TephraFluxRate = 0.0_ip
