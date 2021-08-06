@@ -180,7 +180,7 @@
         write(global_info,*) 'Airport name       lon      lat'
         do i=NAIRPORTS_EWERT+1,n_airports_total
           write(global_info,*) AirportFullName(i),AirportFullLon(i),AirportFullLat(i)
-2563      format(a42,2f12.4)
+!2563      format(a42,2f12.4)
         enddo
       else
         n_airports_total = n_ext_airports                      !if only reading external

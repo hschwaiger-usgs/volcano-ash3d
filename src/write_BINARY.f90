@@ -7,7 +7,7 @@
       use precis_param
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,ts1,dz_vec_pd
+         nxmax,nymax,nzmax,ts1
 
       use solution,      only : &
          concen_pd

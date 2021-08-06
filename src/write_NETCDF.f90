@@ -23,6 +23,10 @@
          nvar_User4d_XYZGs
 
       use Output_Vars,   only : &
+         DepositThickness_FillValue,MaxConcentration_FillValue,DepArrivalTime_FillValue,&
+         CloudArrivalTime_FillValue,CloudLoad_FillValue,MaxHeight_FillValue,&
+         MinHeight_FillValue,dbZCol_FillValue,DepositThickness_FillValue,&
+         CloudArrivalTime_FillValue, &
          var_User2d_static_XY_name,var_User2d_static_XY_unit,var_User2d_static_XY_lname,&
          var_User2d_static_XY_MissVal,var_User2d_static_XY_FillVal,var_User2d_static_XY,&
          var_User2d_XY_name,var_User2d_XY_unit,var_User2d_XY_lname,&
@@ -35,7 +39,7 @@
          var_User4d_XYZGs_MissVal,var_User4d_XYZGs_FillVal,var_User4d_XYZGs,&
          CLOUDLOAD_THRESH,DBZ_THRESH,USE_OPTMOD_VARS,USE_RESTART_VARS,&
          USE_OUTPROD_VARS,USE_WIND_VARS,DepositThickness,DepArrivalTime,CloudArrivalTime,&
-         MaxConcentration,MaxHeight,CloudLoad,dbZ,MinHeight,&
+         MaxConcentration,MaxHeight,CloudLoad,dbZ,MinHeight,Mask_Cloud,Mask_Deposit,&
            dbZCalculator
 
       use Tephra,        only : &
@@ -926,7 +930,8 @@
                  "missing_value", -9999.0)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att ashcon: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,ashcon_var_id,"_FillValue",-9999.0_op)
+        !nSTAT = nf90_put_att(ncid,ashcon_var_id,"_FillValue",-9999.0_op)
+        nSTAT = nf90_put_att(ncid,ashcon_var_id,"_FillValue",MaxConcentration_FillValue)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att ashcon: ',nf90_strerror(nSTAT)
       endif ! USE_RESTART_VARS
@@ -986,7 +991,8 @@
                  "missing_value", -9999.0)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att depothick: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,depothick_var_id,"_FillValue", -9999.0_op)
+        !nSTAT = nf90_put_att(ncid,depothick_var_id,"_FillValue", -9999.0_op)
+        nSTAT = nf90_put_att(ncid,depothick_var_id,"_FillValue",DepositThickness_FillValue)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att depothick: ',nf90_strerror(nSTAT)
  
@@ -1013,7 +1019,8 @@
                    "missing_value", -9999.0)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att depotime: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,depotime_var_id,"_FillValue",-9999.0_op)
+        !nSTAT = nf90_put_att(ncid,depotime_var_id,"_FillValue",-9999.0_op)
+        nSTAT = nf90_put_att(ncid,depotime_var_id,"_FillValue",DepArrivalTime_FillValue)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att depotime: ',nf90_strerror(nSTAT)
  
@@ -1039,7 +1046,8 @@
                  "missing_value", -9999.0)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att ash_arrival_time: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,ashcloudtime_var_id,"_FillValue",-9999.0_op)
+        !nSTAT = nf90_put_att(ncid,ashcloudtime_var_id,"_FillValue",-9999.0_op)
+        nSTAT = nf90_put_att(ncid,ashcloudtime_var_id,"_FillValue",CloudArrivalTime_FillValue)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att ash_arrival_time: ',nf90_strerror(nSTAT)
   
@@ -1065,7 +1073,8 @@
                  "missing_value", -9999.0)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att ashcon_max: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,ashconMax_var_id,"_FillValue",-9999.0_op)
+        !nSTAT = nf90_put_att(ncid,ashconMax_var_id,"_FillValue",-9999.0_op)
+        nSTAT = nf90_put_att(ncid,ashconMax_var_id,"_FillValue",MaxConcentration_FillValue)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att ashcon_max: ',nf90_strerror(nSTAT)
   
@@ -1096,7 +1105,8 @@
                  "missing_value", -9999.0)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att cloud_height: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,ashheight_var_id,"_FillValue",-9999.0_op)
+        !nSTAT = nf90_put_att(ncid,ashheight_var_id,"_FillValue",-9999.0_op)
+        nSTAT = nf90_put_att(ncid,ashheight_var_id,"_FillValue",MaxHeight_FillValue)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att cloud_height: ',nf90_strerror(nSTAT)
   
@@ -1127,7 +1137,8 @@
                  "missing_value", -9999.0)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att cloud_load: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,ashload_var_id,"_FillValue",-9999.0_op)
+        !nSTAT = nf90_put_att(ncid,ashload_var_id,"_FillValue",-9999.0_op)
+        nSTAT = nf90_put_att(ncid,ashload_var_id,"_FillValue",CloudLoad_FillValue)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att cloud_load: ',nf90_strerror(nSTAT)
   
@@ -1153,7 +1164,8 @@
                  "missing_value", -9999.0)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att radar_reflectivity: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,radrefl_var_id,"_FillValue",-9999.0_op)
+        !nSTAT = nf90_put_att(ncid,radrefl_var_id,"_FillValue",-9999.0_op)
+        nSTAT = nf90_put_att(ncid,radrefl_var_id,"_FillValue",dbZCol_FillValue)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att radar_reflectivity: ',nf90_strerror(nSTAT)
   
@@ -1179,7 +1191,8 @@
                  "missing_value", -9999.0)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att cloud_bottom: ',nf90_strerror(nSTAT)
-        nSTAT = nf90_put_att(ncid,ashcloudBot_var_id,"_FillValue",-9999.0_op)
+        !nSTAT = nf90_put_att(ncid,ashcloudBot_var_id,"_FillValue",-9999.0_op)
+        nSTAT = nf90_put_att(ncid,ashcloudBot_var_id,"_FillValue",MinHeight_FillValue)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att cloud_bottom: ',nf90_strerror(nSTAT)
 
@@ -1563,7 +1576,7 @@
         nSTAT=nf90_put_var(ncid,vx_var_id,dum3d_out,(/1,1,1,1/))
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_var Vx: ',nf90_strerror(nSTAT)
-          ! Vf
+          ! Vf (Note, using ashcon as a dummy variable for this 4-d output)
         ashcon(1:nxmax,1:nymax,1:nzmax,1:nsmax) = &
              real(vf_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax),kind=op)
         nSTAT=nf90_put_var(ncid,vf_var_id,ashcon,(/1,1,1,1,1/))
@@ -1625,10 +1638,11 @@
   
         ! depothick
         if(VERB.gt.1)write(global_info,*)"     Fill depothick"
-        dum2d_out(:,:) = 0.0_op
+        dum2d_out(:,:) = DepositThickness_FillValue
         do i=1,nxmax
           do j=1,nymax
-            if(DepositThickness(i,j).ge.0.0_ip)&
+            !if(DepositThickness(i,j).ge.0.0_ip)&
+            if(Mask_Deposit(i,j))&
                 dum2d_out(i,j) = real(DepositThickness(i,j),kind=op)
           enddo
         enddo
@@ -1638,7 +1652,7 @@
  
           ! depotime
         if(VERB.gt.1)write(global_info,*)"     Fill depotime"
-        dum2d_out(:,:) = -9999.0_op
+        dum2d_out(:,:) = DepArrivalTime_FillValue
         do i=1,nxmax
           do j=1,nymax
             if(DepArrivalTime(i,j).ge.0.0_ip)&
@@ -1652,7 +1666,7 @@
 
           ! ashtime
         if(VERB.gt.1)write(global_info,*)"     Fill ashtime"
-        dum2d_out(:,:) = -9999.0_op
+        dum2d_out(:,:) = CloudArrivalTime_FillValue
         do i=1,nxmax
           do j=1,nymax
             if(CloudArrivalTime(i,j).ge.0.0)&
@@ -1665,12 +1679,10 @@
   
         ! ashconMax
         if(VERB.gt.1)write(global_info,*)"     Fill ashconMax"
-        dum2d_out(:,:) = 0.0_op
+        dum2d_out(:,:) = real(MaxConcentration_FillValue,kind=op)
         do i=1,nxmax
           do j=1,nymax
-            !if(MaxConcentration(i,j).gt.0.0_ip)write(*,*)MaxConcentration(i,j)
-            !if(MaxConcentration(i,j).ge.100.0_ip)then
-            if(MaxConcentration(i,j).ge.EPS_TINY)then
+            if(Mask_Cloud(i,j))then
               dumscal_out=real(MaxConcentration(i,j)/1.0e3_ip,kind=op)
               dum2d_out(i,j)=dumscal_out
             endif
@@ -1682,10 +1694,12 @@
   
         ! ash cloud_height (top)
         if(VERB.gt.1)write(global_info,*)"     Fill ash_height"
-        dum2d_out(:,:) = -9999.0_op
+        !dum2d_out(:,:) = -9999.0_op
+        dum2d_out(:,:) = real(MaxHeight_FillValue,kind=op)
         do i=1,nxmax
           do j=1,nymax
-            if(MaxHeight(i,j).gt.0.0_ip)then
+            !if(MaxHeight(i,j).gt.0.0_ip)then
+            if(Mask_Cloud(i,j))then
               dumscal_out=real(MaxHeight(i,j),kind=op)
               dum2d_out(i,j) = dumscal_out
             endif
@@ -1697,11 +1711,14 @@
 
         ! ash-load
         if(VERB.gt.1)write(global_info,*)"     Fill ash-load"
-        dum2d_out(:,:) = 0.0_op
+        !dum2d_out(:,:) = 0.0_op
+        !dum2d_out(:,:) = -9999.0_op
+        dum2d_out(:,:) = real(CloudLoad_FillValue,kind=op)
         do i=1,nxmax
           do j=1,nymax
-            if(CloudLoad(i,j).ge.CLOUDLOAD_THRESH)then
+            !if(CloudLoad(i,j).ge.CLOUDLOAD_THRESH)then
             !if(CloudLoad(i,j).ge.0.0_ip)then
+            if(Mask_Cloud(i,j))then
               dumscal_out=real(CloudLoad(i,j),kind=op)
               dum2d_out(i,j)=dumscal_out
             endif
@@ -1713,7 +1730,8 @@
 
         ! radar-reflectivity
         if(VERB.gt.1)write(global_info,*)"     Fill dbZ"
-        dum3d_out(:,:,:) = 0.0_op
+        !dum3d_out(:,:,:) = 0.0_op
+        dum3d_out(:,:,:) = real(DBZ_THRESH,kind=op)
         do i=1,nxmax
           do j=1,nymax
             do k=1,nzmax
@@ -1730,10 +1748,12 @@
 
         ! ash cloud_bottom
         if(VERB.gt.1)write(global_info,*)"     Fill ash height min"
-        dum2d_out(:,:) = -9999.0_op
+        !dum2d_out(:,:) = -9999.0_op
+        dum2d_out(:,:) = real(MinHeight_FillValue,kind=op)
         do i=1,nxmax
           do j=1,nymax
-            if(MinHeight(i,j).ge.0.0_ip)then
+            !if(MinHeight(i,j).ge.0.0_ip)then
+            if(Mask_Cloud(i,j))then
               dumscal_out=real(MinHeight(i,j),kind=op)
               dum2d_out(i,j) = dumscal_out
             endif
@@ -1852,9 +1872,12 @@
 
       use io_data,       only : &
          iout3d,nvar_User2d_XY,nvar_User3d_XYGs,nvar_User3d_XYZ,nvar_User4d_XYZGs,&
-         outfile
+         outfile,isFinal_TS
 
       use Output_Vars,   only : &
+         CloudLoad_FillValue,dbZCol_FillValue,MaxConcentration_FillValue,&
+         MaxHeight_FillValue,MinHeight_FillValue,Mask_Cloud,Mask_Deposit,&
+         DepositThickness_FillValue,CloudArrivalTime_FillValue,DepArrivalTime_FillValue,&
          var_User2d_XY_name,var_User2d_XY,var_User3d_XYGs_name,var_User3d_XYGs,&
          var_User3d_XYZ_name,var_User3d_XYZ,var_User4d_XYZGs_name,var_User4d_XYZGs,&
          CLOUDLOAD_THRESH,DBZ_THRESH,USE_OPTMOD_VARS,USE_RESTART_VARS,&
@@ -1931,132 +1954,13 @@
       if(nSTAT.ne.0) &
         write(global_log ,*)'ERROR: open outfile: ',nf90_strerror(nSTAT)
 
-      ! Get variable ids
-      nSTAT = nf90_inq_varid(ncid,"t",t_var_id)
-      if(nSTAT.ne.0) &
-        write(global_log ,*)'ERROR: inq_varid t: ',nf90_strerror(nSTAT)
-
-      if(VERB.gt.2)write(global_info,*)"Got var IDs, now writing data"
-      ! Write data
-      ! Time
-      if(VERB.gt.2)write(global_info,*)"  Writing Time"
-      dumscal_out = real(time,kind=op)
-      nSTAT=nf90_put_var(ncid,t_var_id,dumscal_out,(/iout3d/))
-      if(nSTAT.ne.0) &
-        write(global_log ,*)'ERROR: put_var t: ',nf90_strerror(nSTAT)
-
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      if(USE_WIND_VARS)then
-          ! Vz
-        nSTAT = nf90_inq_varid(ncid,"vz",vz_var_id)
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: inq_varid vz: ',nf90_strerror(nSTAT)
-        if(VERB.gt.2)write(global_info,*)"  Writing Vz"
-        dum3d_out(1:nxmax,1:nymax,1:nzmax) = real(vz_pd(1:nxmax,1:nymax,1:nzmax),kind=op)
-        nSTAT=nf90_put_var(ncid,vz_var_id,dum3d_out,(/1,1,1,iout3d/))
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: put_var Vz: ',nf90_strerror(nSTAT)
-          ! Vy
-        nSTAT = nf90_inq_varid(ncid,"vy",vy_var_id)
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: inq_varid vy: ',nf90_strerror(nSTAT)
-        if(VERB.gt.2)write(global_info,*)"  Writing Vy"
-        dum3d_out(1:nxmax,1:nymax,1:nzmax) = real(vy_pd(1:nxmax,1:nymax,1:nzmax),kind=op)
-        nSTAT=nf90_put_var(ncid,vy_var_id,dum3d_out,(/1,1,1,iout3d/))
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: put_var Vy: ',nf90_strerror(nSTAT)
-          ! Vx
-        nSTAT = nf90_inq_varid(ncid,"vx",vx_var_id)
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: inq_varid vx: ',nf90_strerror(nSTAT)
-        if(VERB.gt.2)write(global_info,*)"  Writing Vx"
-        dum3d_out(1:nxmax,1:nymax,1:nzmax) = real(vx_pd(1:nxmax,1:nymax,1:nzmax),kind=op)
-        nSTAT=nf90_put_var(ncid,vx_var_id,dum3d_out,(/1,1,1,iout3d/))
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: put_var Vz: ',nf90_strerror(nSTAT)
-          ! Vf
-        nSTAT = nf90_inq_varid(ncid,"vf",vf_var_id)
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: inq_varid vf: ',nf90_strerror(nSTAT)
-        ashcon(1:nxmax,1:nymax,1:nzmax,1:nsmax) = real(vf_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax),kind=op)
-        nSTAT=nf90_put_var(ncid,vf_var_id,ashcon,(/1,1,1,1,iout3d/))
-      endif
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      if(USE_RESTART_VARS)then
-          ! ashcon
-          ! netCDF standard requires that the unlimited dimension (time)
-          ! be the most slowly varying, so ashcon unfortunately has a
-          ! different shape than concen
-        nSTAT = nf90_inq_varid(ncid,"ashcon",ashcon_var_id)
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: inq_varid ashcon: ',nf90_strerror(nSTAT)
-        if(VERB.gt.2)write(global_info,*)"  Writing ashcon"
-        ashcon = 0.0_op
-        ashcon(1:nxmax,1:nymax,1:nzmax,1:nsmax) = real(concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1),kind=op)
-        nSTAT=nf90_put_var(ncid,ashcon_var_id,ashcon,(/1,1,1,1,iout3d/))
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: put_var ashcon: ',nf90_strerror(nSTAT)
-      endif
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      if(USE_OUTPROD_VARS)then
-
-          ! depocon
-        if(VERB.gt.1)write(global_info,*)"     Fill depocon"
-        nSTAT = nf90_inq_varid(ncid,"depocon",depocon_var_id)
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: inq_varid depocon: ',nf90_strerror(nSTAT)
-        depocon = 0.0_op
-          ! netCDF standard requires that the unlimited dimension (time)
-          ! be the most slowly varying, so dum3d_out unfortunately has a
-          ! different shape than depocon
-        do i = 1,n_gs_max
-            ! Here's the conversion to kg/m^2 from kg/km^2
-          depocon(1:nxmax,1:nymax,i) = real(DepositGranularity(1:nxmax,1:nymax,i) * &
-                                         dz_vec_pd(0)/KM2_2_M2,kind=op)
-        enddo
-        do n=1,n_gs_max
-          do i=1,nxmax
-            do j=1,nymax
-              if(depocon(i,j,n).le.EPS_SMALL)depocon(i,j,n)=0.0_op
-            enddo
-          enddo
-        enddo
-        nSTAT=nf90_put_var(ncid,depocon_var_id,depocon,(/1,1,1,iout3d/))
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: put_var depocon: ',nf90_strerror(nSTAT)
-  
-        if(VERB.gt.2)write(global_info,*)"Calling dbZCalculator"
-        call dbZCalculator            ! get radar reflectivity
-  
-        ! depothick
-        nSTAT = nf90_inq_varid(ncid,"depothick",depothick_var_id)
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: inq_varid depothick: ',nf90_strerror(nSTAT)
-        if(VERB.gt.2)write(global_info,*)"  Writing depothick"
-        dum2d_out(:,:) = 0.0_op
-        do i=1,nxmax
-          do j=1,nymax
-            if(DepositThickness(i,j).ge.0.0_ip)&
-                dum2d_out(i,j)=real(DepositThickness(i,j),kind=op)
-          enddo
-        enddo
-        nSTAT=nf90_put_var(ncid,depothick_var_id,dum2d_out,(/1,1,iout3d/))
-  
+      if(isFinal_TS)then
           ! depotime
         nSTAT = nf90_inq_varid(ncid,"depotime",depotime_var_id)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: inq_varid depotime: ',nf90_strerror(nSTAT)
         if(VERB.gt.2)write(global_info,*)"  Writing depotime"
-        dum2d_out(:,:) = -9999.0_op
+        dum2d_out(:,:) = DepArrivalTime_FillValue
         do i=1,nxmax
           do j=1,nymax
             if(DepArrivalTime(i,j).ge.0.0_ip)&
@@ -2066,13 +1970,13 @@
         nSTAT=nf90_put_var(ncid,depotime_var_id,dum2d_out,(/1,1/))
         if(nSTAT.ne.0) &
           write(global_info,*)'ERROR: put_var depotime: ',nf90_strerror(nSTAT)
-  
+
           ! ashtime
         nSTAT = nf90_inq_varid(ncid,"ash_arrival_time",ashcloudtime_var_id)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: inq_varid ash_arrival_time : ',nf90_strerror(nSTAT)
         if(VERB.gt.2)write(global_info,*)"  Writing ashtime"
-        dum2d_out(:,:) = -9999.0_op
+        dum2d_out(:,:) = CloudArrivalTime_FillValue
         do i=1,nxmax
           do j=1,nymax
             if(CloudArrivalTime(i,j).ge.0.0_ip)&
@@ -2082,135 +1986,269 @@
         nSTAT=nf90_put_var(ncid,ashcloudtime_var_id,dum2d_out,(/1,1/))
         if(nSTAT.ne.0) &
           write(global_info,*)'ERROR: put_var ashcloudtime_: ',nf90_strerror(nSTAT)
-  
-        ! ashconMax
-        nSTAT = nf90_inq_varid(ncid,"ashcon_max",ashconMax_var_id)
+      endif
+
+      if(.not.isFinal_TS)then
+        ! Get variable ids
+        nSTAT = nf90_inq_varid(ncid,"t",t_var_id)
         if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: inq_varid ashcon_max : ',nf90_strerror(nSTAT)
-        if(VERB.gt.2)write(global_info,*)"  Writing ashconMax"
-        dum2d_out(:,:) = 0.0_op
-        do i=1,nxmax
-          do j=1,nymax
-            if(MaxConcentration(i,j).ge.EPS_TINY)then
-              dumscal_out=real(MaxConcentration(i,j)/1.0e03_ip,kind=op)
-              dum2d_out(i,j)=dumscal_out
-            endif
+          write(global_log ,*)'ERROR: inq_varid t: ',nf90_strerror(nSTAT)
+  
+        if(VERB.gt.2)write(global_info,*)"Got var IDs, now writing data"
+        ! Write data
+        ! Time
+        if(VERB.gt.2)write(global_info,*)"  Writing Time"
+        dumscal_out = real(time,kind=op)
+        nSTAT=nf90_put_var(ncid,t_var_id,dumscal_out,(/iout3d/))
+        if(nSTAT.ne.0) &
+          write(global_log ,*)'ERROR: put_var t: ',nf90_strerror(nSTAT)
+  
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        if(USE_WIND_VARS)then
+            ! Vz
+          nSTAT = nf90_inq_varid(ncid,"vz",vz_var_id)
+          if(nSTAT.ne.0) &
+            write(global_log ,*)'ERROR: inq_varid vz: ',nf90_strerror(nSTAT)
+          if(VERB.gt.2)write(global_info,*)"  Writing Vz"
+          dum3d_out(1:nxmax,1:nymax,1:nzmax) = real(vz_pd(1:nxmax,1:nymax,1:nzmax),kind=op)
+          nSTAT=nf90_put_var(ncid,vz_var_id,dum3d_out,(/1,1,1,iout3d/))
+          if(nSTAT.ne.0) &
+            write(global_log ,*)'ERROR: put_var Vz: ',nf90_strerror(nSTAT)
+            ! Vy
+          nSTAT = nf90_inq_varid(ncid,"vy",vy_var_id)
+          if(nSTAT.ne.0) &
+            write(global_log ,*)'ERROR: inq_varid vy: ',nf90_strerror(nSTAT)
+          if(VERB.gt.2)write(global_info,*)"  Writing Vy"
+          dum3d_out(1:nxmax,1:nymax,1:nzmax) = real(vy_pd(1:nxmax,1:nymax,1:nzmax),kind=op)
+          nSTAT=nf90_put_var(ncid,vy_var_id,dum3d_out,(/1,1,1,iout3d/))
+          if(nSTAT.ne.0) &
+            write(global_log ,*)'ERROR: put_var Vy: ',nf90_strerror(nSTAT)
+            ! Vx
+          nSTAT = nf90_inq_varid(ncid,"vx",vx_var_id)
+          if(nSTAT.ne.0) &
+            write(global_log ,*)'ERROR: inq_varid vx: ',nf90_strerror(nSTAT)
+          if(VERB.gt.2)write(global_info,*)"  Writing Vx"
+          dum3d_out(1:nxmax,1:nymax,1:nzmax) = real(vx_pd(1:nxmax,1:nymax,1:nzmax),kind=op)
+          nSTAT=nf90_put_var(ncid,vx_var_id,dum3d_out,(/1,1,1,iout3d/))
+          if(nSTAT.ne.0) &
+            write(global_log ,*)'ERROR: put_var Vz: ',nf90_strerror(nSTAT)
+            ! Vf
+          nSTAT = nf90_inq_varid(ncid,"vf",vf_var_id)
+          if(nSTAT.ne.0) &
+            write(global_log ,*)'ERROR: inq_varid vf: ',nf90_strerror(nSTAT)
+          ashcon(1:nxmax,1:nymax,1:nzmax,1:nsmax) = real(vf_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax),kind=op)
+          nSTAT=nf90_put_var(ncid,vf_var_id,ashcon,(/1,1,1,1,iout3d/))
+        endif
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        if(USE_RESTART_VARS)then
+            ! ashcon
+            ! netCDF standard requires that the unlimited dimension (time)
+            ! be the most slowly varying, so ashcon unfortunately has a
+            ! different shape than concen
+          nSTAT = nf90_inq_varid(ncid,"ashcon",ashcon_var_id)
+          if(nSTAT.ne.0) &
+            write(global_log ,*)'ERROR: inq_varid ashcon: ',nf90_strerror(nSTAT)
+          if(VERB.gt.2)write(global_info,*)"  Writing ashcon"
+          ashcon = 0.0_op
+          ashcon(1:nxmax,1:nymax,1:nzmax,1:nsmax) = real(concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1),kind=op)
+          nSTAT=nf90_put_var(ncid,ashcon_var_id,ashcon,(/1,1,1,1,iout3d/))
+          if(nSTAT.ne.0) &
+            write(global_log ,*)'ERROR: put_var ashcon: ',nf90_strerror(nSTAT)
+        endif
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        if(USE_OUTPROD_VARS)then
+  
+            ! depocon
+          if(VERB.gt.1)write(global_info,*)"     Fill depocon"
+          nSTAT = nf90_inq_varid(ncid,"depocon",depocon_var_id)
+          if(nSTAT.ne.0) &
+            write(global_log ,*)'ERROR: inq_varid depocon: ',nf90_strerror(nSTAT)
+          depocon = 0.0_op
+            ! netCDF standard requires that the unlimited dimension (time)
+            ! be the most slowly varying, so dum3d_out unfortunately has a
+            ! different shape than depocon
+          do i = 1,n_gs_max
+              ! Here's the conversion to kg/m^2 from kg/km^2
+            depocon(1:nxmax,1:nymax,i) = real(DepositGranularity(1:nxmax,1:nymax,i) * &
+                                           dz_vec_pd(0)/KM2_2_M2,kind=op)
           enddo
-        enddo
-        nSTAT=nf90_put_var(ncid,ashconMax_var_id,dum2d_out,(/1,1,iout3d/))
-  
-        ! ash cloud_height
-        nSTAT = nf90_inq_varid(ncid,"cloud_height",ashheight_var_id)
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: inq_varid cloud_height : ',nf90_strerror(nSTAT)
-        if(VERB.gt.2)write(global_info,*)"  Writing ash height"
-        dum2d_out(:,:) = -9999.0_op
-        do i=1,nxmax
-          do j=1,nymax
-            if(MaxHeight(i,j).gt.0.0_ip)then
-              dumscal_out=real(MaxHeight(i,j),kind=op)
-              dum2d_out(i,j) = dumscal_out
-            endif
+          do n=1,n_gs_max
+            do i=1,nxmax
+              do j=1,nymax
+                if(depocon(i,j,n).le.EPS_SMALL)depocon(i,j,n)=0.0_op
+              enddo
+            enddo
           enddo
-        enddo
-        nSTAT=nf90_put_var(ncid,ashheight_var_id,dum2d_out,(/1,1,iout3d/))
-  
-        ! ash-load
-        nSTAT = nf90_inq_varid(ncid,"cloud_load",ashload_var_id)
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: inq_varid cloud_load : ',nf90_strerror(nSTAT)
-        if(VERB.gt.2)write(global_info,*)"  Writing ash-load"
-        dum2d_out(:,:) = -9999.0_op
-        do i=1,nxmax
-          do j=1,nymax
-            if(CloudLoad(i,j).ge.CLOUDLOAD_THRESH)then
-              dumscal_out=real(CloudLoad(i,j),kind=op)
-              dum2d_out(i,j) = dumscal_out
-            endif
+          nSTAT=nf90_put_var(ncid,depocon_var_id,depocon,(/1,1,1,iout3d/))
+          if(nSTAT.ne.0) &
+            write(global_log ,*)'ERROR: put_var depocon: ',nf90_strerror(nSTAT)
+    
+          if(VERB.gt.2)write(global_info,*)"Calling dbZCalculator"
+          call dbZCalculator            ! get radar reflectivity
+    
+          ! depothick
+          nSTAT = nf90_inq_varid(ncid,"depothick",depothick_var_id)
+          if(nSTAT.ne.0) &
+            write(global_log ,*)'ERROR: inq_varid depothick: ',nf90_strerror(nSTAT)
+          if(VERB.gt.2)write(global_info,*)"  Writing depothick"
+          dum2d_out(:,:) = DepositThickness_FillValue
+          do i=1,nxmax
+            do j=1,nymax
+              if(DepositThickness(i,j).ge.0.0_ip)&
+                  dum2d_out(i,j)=real(DepositThickness(i,j),kind=op)
+            enddo
           enddo
-        enddo
-        nSTAT=nf90_put_var(ncid,ashload_var_id,dum2d_out,(/1,1,iout3d/))
-  
-        ! radar reflectivity
-        nSTAT = nf90_inq_varid(ncid,"radar_reflectivity",radrefl_var_id)
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: inq_varid radar_reflectivity : ',nf90_strerror(nSTAT)
-        if(VERB.gt.2)write(global_info,*)"  Writing radar reflectivity"
-        dum3d_out(:,:,:) = 0.0_op
-        do i=1,nxmax
-          do j=1,nymax
-            do k=1,nzmax
-              if(dbZ(i,j,k).ge.DBZ_THRESH)then
-                dumscal_out=real(dbZ(i,j,k),kind=op)
-                dum3d_out(i,j,k)=dumscal_out
+          nSTAT=nf90_put_var(ncid,depothick_var_id,dum2d_out,(/1,1,iout3d/))
+    
+          ! ashconMax
+          nSTAT = nf90_inq_varid(ncid,"ashcon_max",ashconMax_var_id)
+          if(nSTAT.ne.0) &
+            write(global_log ,*)'ERROR: inq_varid ashcon_max : ',nf90_strerror(nSTAT)
+          if(VERB.gt.2)write(global_info,*)"  Writing ashconMax"
+          dum2d_out(:,:) = real(MaxConcentration,kind=op)
+          do i=1,nxmax
+            do j=1,nymax
+              if(Mask_Cloud(i,j))then
+                dumscal_out=real(MaxConcentration(i,j)/1.0e3_ip,kind=op)
+                dum2d_out(i,j)=dumscal_out
               endif
             enddo
           enddo
-        enddo
-        nSTAT=nf90_put_var(ncid,radrefl_var_id,dum3d_out,(/1,1,1,iout3d/))
-  
-        ! ash cloud_bottom
-        nSTAT = nf90_inq_varid(ncid,"cloud_bottom",ashcloudBot_var_id)
-        if(nSTAT.ne.0) &
-          write(global_log ,*)'ERROR: inq_varid cloud_bottom : ',nf90_strerror(nSTAT)
-        if(VERB.gt.2)write(global_info,*)"  Writing ash-height (bottom)"
-        dum2d_out(:,:) = -9999.0_op
-        do i=1,nxmax
-          do j=1,nymax
-            if(MinHeight(i,j).ge.0.0_ip)then
-              dumscal_out=real(MinHeight(i,j),kind=op)
-              dum2d_out(i,j) = dumscal_out
-            endif
+          nSTAT=nf90_put_var(ncid,ashconMax_var_id,dum2d_out,(/1,1,iout3d/))
+    
+          ! ash cloud_height
+          nSTAT = nf90_inq_varid(ncid,"cloud_height",ashheight_var_id)
+          if(nSTAT.ne.0) &
+            write(global_log ,*)'ERROR: inq_varid cloud_height : ',nf90_strerror(nSTAT)
+          if(VERB.gt.2)write(global_info,*)"  Writing ash height"
+          !dum2d_out(:,:) = -9999.0_op
+          dum2d_out(:,:) = real(MaxHeight_FillValue,kind=op)
+          do i=1,nxmax
+            do j=1,nymax
+              !if(MaxHeight(i,j).gt.0.0_ip)then
+              if(Mask_Cloud(i,j))then
+                dumscal_out=real(MaxHeight(i,j),kind=op)
+                dum2d_out(i,j) = dumscal_out
+              endif
+            enddo
           enddo
-        enddo
-        nSTAT=nf90_put_var(ncid,ashcloudBot_var_id,dum2d_out,(/1,1,iout3d/))
-
-      endif ! USE_OUTPROD_VARS
+          nSTAT=nf90_put_var(ncid,ashheight_var_id,dum2d_out,(/1,1,iout3d/))
+    
+          ! ash-load
+          nSTAT = nf90_inq_varid(ncid,"cloud_load",ashload_var_id)
+          if(nSTAT.ne.0) &
+            write(global_log ,*)'ERROR: inq_varid cloud_load : ',nf90_strerror(nSTAT)
+          if(VERB.gt.2)write(global_info,*)"  Writing ash-load"
+          !dum2d_out(:,:) = -9999.0_op
+          dum2d_out(:,:) = real(CloudLoad_FillValue,kind=op)
+          do i=1,nxmax
+            do j=1,nymax
+              !if(CloudLoad(i,j).ge.CLOUDLOAD_THRESH)then
+              if(Mask_Cloud(i,j))then
+                dumscal_out=real(CloudLoad(i,j),kind=op)
+                dum2d_out(i,j) = dumscal_out
+              endif
+            enddo
+          enddo
+          nSTAT=nf90_put_var(ncid,ashload_var_id,dum2d_out,(/1,1,iout3d/))
+    
+          ! radar reflectivity
+          nSTAT = nf90_inq_varid(ncid,"radar_reflectivity",radrefl_var_id)
+          if(nSTAT.ne.0) &
+            write(global_log ,*)'ERROR: inq_varid radar_reflectivity : ',nf90_strerror(nSTAT)
+          if(VERB.gt.2)write(global_info,*)"  Writing radar reflectivity"
+          !dum3d_out(:,:,:) = 0.0_op
+          dum3d_out(:,:,:) = real(dbZCol_FillValue,kind=op)
+          do i=1,nxmax
+            do j=1,nymax
+              do k=1,nzmax
+                if(dbZ(i,j,k).ge.DBZ_THRESH)then
+                  dumscal_out=real(dbZ(i,j,k),kind=op)
+                  dum3d_out(i,j,k)=dumscal_out
+                endif
+              enddo
+            enddo
+          enddo
+          nSTAT=nf90_put_var(ncid,radrefl_var_id,dum3d_out,(/1,1,1,iout3d/))
+    
+          ! ash cloud_bottom
+          nSTAT = nf90_inq_varid(ncid,"cloud_bottom",ashcloudBot_var_id)
+          if(nSTAT.ne.0) &
+            write(global_log ,*)'ERROR: inq_varid cloud_bottom : ',nf90_strerror(nSTAT)
+          if(VERB.gt.2)write(global_info,*)"  Writing ash-height (bottom)"
+          !dum2d_out(:,:) = -9999.0_op
+          dum2d_out(:,:) = real(MinHeight_FillValue,kind=op)
+          do i=1,nxmax
+            do j=1,nymax
+              !if(MinHeight(i,j).ge.0.0_ip)then
+              if(Mask_Cloud(i,j))then
+                dumscal_out=real(MinHeight(i,j),kind=op)
+                dum2d_out(i,j) = dumscal_out
+              endif
+            enddo
+          enddo
+          nSTAT=nf90_put_var(ncid,ashcloudBot_var_id,dum2d_out,(/1,1,iout3d/))
+  
+        endif ! USE_OUTPROD_VARS
+      endif ! .not.isFinal_TS
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if(USE_OPTMOD_VARS)then
-        ! User-specified 2-d static variables were filled in the
-        ! create_netcdf subroutine
-
-        ! Fill User-specified 2-d transient variables
-        if(nvar_User2d_XY.gt.0)then
-          do ivar=1,nvar_User2d_XY
-            dum2d_out(:,:) = real(var_User2d_XY(:,:,ivar),kind=op)
-            nSTAT = nf90_inq_varid(ncid,var_User2d_XY_name(ivar),temp1_2d_var_id)
-            nSTAT = nf90_put_var(ncid,temp1_2d_var_id,dum2d_out,(/1,1,iout3d/))
-          enddo
+        if(isFinal_TS)then
+          ! User-specified 2-d static variables were filled in the
+          ! create_netcdf subroutine
+          write(*,*)"No final variables for optional moduals"
         endif
 
-        ! Fill User-specified 3-d transient variables in x,y,gs
-        if(nvar_User3d_XYGs.gt.0)then
-          do ivar=1,nvar_User3d_XYGs
-            depocon(:,:,:) = real(var_User3d_XYGs(:,:,:,ivar),kind=op)
-            nSTAT = nf90_inq_varid(ncid,var_User3d_XYGs_name(ivar),temp1_3d_var_id)
-            nSTAT = nf90_put_var(ncid,temp1_3d_var_id,depocon,(/1,1,1,iout3d/))
-          enddo
-        endif
+        if(.not.isFinal_TS)then
+          ! Fill User-specified 2-d transient variables
+          if(nvar_User2d_XY.gt.0)then
+            do ivar=1,nvar_User2d_XY
+              dum2d_out(:,:) = real(var_User2d_XY(:,:,ivar),kind=op)
+              nSTAT = nf90_inq_varid(ncid,var_User2d_XY_name(ivar),temp1_2d_var_id)
+              nSTAT = nf90_put_var(ncid,temp1_2d_var_id,dum2d_out,(/1,1,iout3d/))
+            enddo
+          endif
 
-        ! Fill User-specified 3-d transient variables in x,y,z
-        if(nvar_User3d_XYZ.gt.0)then
-          do ivar=1,nvar_User3d_XYZ
-            dum3d_out(:,:,:) = real(var_User3d_XYZ(:,:,:,ivar),kind=op)
-            nSTAT = nf90_inq_varid(ncid,var_User3d_XYZ_name(ivar),temp1_3d_var_id)
-            nSTAT = nf90_put_var(ncid,temp1_3d_var_id,dum3d_out,(/1,1,1,iout3d/))
-          enddo
-        endif
+          ! Fill User-specified 3-d transient variables in x,y,gs
+          if(nvar_User3d_XYGs.gt.0)then
+            do ivar=1,nvar_User3d_XYGs
+              depocon(:,:,:) = real(var_User3d_XYGs(:,:,:,ivar),kind=op)
+              nSTAT = nf90_inq_varid(ncid,var_User3d_XYGs_name(ivar),temp1_3d_var_id)
+              nSTAT = nf90_put_var(ncid,temp1_3d_var_id,depocon,(/1,1,1,iout3d/))
+            enddo
+          endif
 
-        ! Fill User-specified 4-d transient variables in x,y,z,gs
-        if(nvar_User4d_XYZGs.gt.0)then
-          do ivar=1,nvar_User4d_XYZGs
-            ashcon(:,:,:,:) = real(var_User4d_XYZGs(1:nxmax,1:nymax,1:nzmax,1:nsmax,ivar),kind=op)
-            nSTAT = nf90_inq_varid(ncid,var_User4d_XYZGs_name(ivar),temp1_4d_var_id)
-            nSTAT = nf90_put_var(ncid,temp1_4d_var_id,ashcon,(/1,1,1,1,iout3d/))
-          enddo
-        endif
+          ! Fill User-specified 3-d transient variables in x,y,z
+          if(nvar_User3d_XYZ.gt.0)then
+            do ivar=1,nvar_User3d_XYZ
+              dum3d_out(:,:,:) = real(var_User3d_XYZ(:,:,:,ivar),kind=op)
+              nSTAT = nf90_inq_varid(ncid,var_User3d_XYZ_name(ivar),temp1_3d_var_id)
+              nSTAT = nf90_put_var(ncid,temp1_3d_var_id,dum3d_out,(/1,1,1,iout3d/))
+            enddo
+          endif
 
+          ! Fill User-specified 4-d transient variables in x,y,z,gs
+          if(nvar_User4d_XYZGs.gt.0)then
+            do ivar=1,nvar_User4d_XYZGs
+              ashcon(:,:,:,:) = real(var_User4d_XYZGs(1:nxmax,1:nymax,1:nzmax,1:nsmax,ivar),kind=op)
+              nSTAT = nf90_inq_varid(ncid,var_User4d_XYZGs_name(ivar),temp1_4d_var_id)
+              nSTAT = nf90_put_var(ncid,temp1_4d_var_id,ashcon,(/1,1,1,1,iout3d/))
+            enddo
+          endif
+        endif
       endif
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

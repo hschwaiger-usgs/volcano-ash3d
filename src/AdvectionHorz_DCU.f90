@@ -35,7 +35,7 @@
       integer       :: j,k,n  ! These are the indeces mapping to the global arrays
       integer       :: l        ! This is the index along the particular advection direction
       integer       :: ncells
-      integer       :: idx_dum
+      !integer       :: idx_dum
 
        ! arrays that live on cell-centers: Note that we have 2 ghost cells
       real(kind=ip),dimension(-1:nxmax+2)               :: update_cc
@@ -271,7 +271,7 @@
       integer       :: i,k,n  ! These are the indeces mapping to the global arrays
       integer       :: l        ! This is the index along the particular advection direction
       integer       :: ncells
-      integer       :: idx_dum
+      !integer       :: idx_dum
 
        ! arrays that live on cell-centers: Note that we have 2 ghost cells
       real(kind=ip),dimension(-1:nymax+2)               :: update_cc

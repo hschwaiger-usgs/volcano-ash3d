@@ -83,6 +83,13 @@
         concen_pd(      0,:,:,:,ts0) = concen_pd(    1,:,:,:,ts0)
         concen_pd(nxmax+1,:,:,:,ts0) = concen_pd(nxmax,:,:,:,ts0)
         concen_pd(nxmax+2,:,:,:,ts0) = concen_pd(nxmax,:,:,:,ts0)
+        if(IsPeriodic)then
+          concen_pd(-1     ,:,:,:,ts0) = concen_pd(nxmax-1,:,:,:,ts0)
+          concen_pd( 0     ,:,:,:,ts0) = concen_pd(nxmax  ,:,:,:,ts0)
+          concen_pd(nxmax+1,:,:,:,ts0) = concen_pd(1      ,:,:,:,ts0)
+          concen_pd(nxmax+2,:,:,:,ts0) = concen_pd(2      ,:,:,:,ts0)
+        endif
+
         !***  Up/Down (Y)
         concen_pd(:,     -1,:,:,ts0) = concen_pd(:,    1,:,:,ts0)
         concen_pd(:,      0,:,:,ts0) = concen_pd(:,    1,:,:,ts0)
@@ -93,13 +100,6 @@
         concen_pd(:,:,      0,:,ts0) = concen_pd(:,:,    1,:,ts0)
         concen_pd(:,:,nzmax+1,:,ts0) = concen_pd(:,:,nzmax,:,ts0)
         concen_pd(:,:,nzmax+2,:,ts0) = concen_pd(:,:,nzmax,:,ts0)
-
-        if(IsPeriodic)then
-          concen_pd(-1     ,:,:,:,ts0) = concen_pd(nxmax-1,:,:,:,ts0)
-          concen_pd( 0     ,:,:,:,ts0) = concen_pd(nxmax  ,:,:,:,ts0)
-          concen_pd(nxmax+1,:,:,:,ts0) = concen_pd(1      ,:,:,:,ts0)
-          concen_pd(nxmax+2,:,:,:,ts0) = concen_pd(2      ,:,:,:,ts0)
-        endif
       else
         write(global_error,*)" BC code not recognized"
         stop 1

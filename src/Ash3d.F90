@@ -17,7 +17,8 @@
          SourceCumulativeVol,dep_vol,aloft_vol,outflow_vol,tot_vol
 
       use Output_Vars,   only : &
-         AreaCovered,DepositThickness,LoadVal,CloudLoadArea,&
+         DepositAreaCovered,DepositThickness,LoadVal,CloudLoadArea,CloudArea,&
+         Calculated_Cloud_Load,Calculated_AshThickness, &
            Allocate_Output_Vars, &
            Allocate_Output_UserVars, &
            Gen_Output_Vars,&
@@ -259,7 +260,9 @@
           ! re-initialize slice (1)
         concen_pd(:,:,:,1:nsmax,ts1) = 0.0_ip
 
-        Called_Gen_Output_Vars = .false.
+        Called_Gen_Output_Vars  = .false.
+        Calculated_Cloud_Load   = .false.
+        Calculated_AshThickness = .false.
 
         itime = itime + 1
         if(itime.gt.3*ntmax)then
@@ -576,7 +579,7 @@
 !------------------------------------------------------------------------------
 
       call output_results
-                
+
       !WRITE RESULTS TO LOG AND STANDARD OUTPUT
       !TotalTime_sp = etime(elapsed_sp)
       !write(global_info,*) elapsed_sp(2), time*3600.0_ip
@@ -590,8 +593,8 @@
       write(global_log ,5) dep_vol
       write(global_info,6) tot_vol
       write(global_log ,6) tot_vol
-      write(global_info,9) maxval(DepositThickness), AreaCovered
-      write(global_log ,9) maxval(DepositThickness), AreaCovered
+      write(global_info,9) maxval(DepositThickness), DepositAreaCovered
+      write(global_log ,9) maxval(DepositThickness), DepositAreaCovered
 
       write(global_info,34)       !write out area of cloud at different thresholds
       write(global_log ,34)

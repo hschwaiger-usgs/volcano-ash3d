@@ -19,8 +19,7 @@
       use io_units
 
       use global_param,  only : &
-         DEG2RAD,RAD_EARTH,PI,EPS_SMALL,                 &
-         CFL,DT_MAX,DT_MIN,                              &
+         DEG2RAD,PI,EPS_SMALL,CFL,DT_MAX,DT_MIN,         &
          useDiffusion,useCN
 
       use Tephra,        only : &
@@ -52,7 +51,7 @@
       real(kind=ip) :: dx2,dy2,dz2,tmp_sum
       real(kind=ip) :: vxmax,vxmax_dx
       real(kind=ip) :: vymax,vymax_dy
-      real(kind=ip) :: khmax,kvmax
+      !real(kind=ip) :: khmax,kvmax
       integer       :: fac
       real(kind=ip) :: vzmax_dz
       real(kind=ip) :: minsig
@@ -102,13 +101,16 @@
       if(n_gs_aloft.eq.0)vzmax_dz = 0.0_ip
 
       ! Get the constraining diffusivities
-      khmax = max( maxval(abs(kx)), maxval(abs(ky)) )
-      kvmax = maxval(abs(kz))
+      !khmax = max( maxval(abs(kx)), maxval(abs(ky)) )
+      !kvmax = maxval(abs(kz))
 
       if (useDiffusion.and..not.useCN) then
           !  This is the case where diffusion limits as kx/dx*dx
           !    Note: Crank-Nicolson doesn't have this limitation
-        time_diffuse = khmax*(dx2+dy2) + kvmax*dz2
+        !time_diffuse = khmax*(dx2+dy2) + kvmax*dz2
+        time_diffuse = maxval(abs(kx))*dx2 + &
+                       maxval(abs(ky))*dy2 + &
+                       maxval(abs(kz))*dz2
       else
           ! Running case where advection limits CFL
           !  i.e. no diffusion or CN diffusion

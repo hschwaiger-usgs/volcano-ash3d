@@ -101,8 +101,8 @@
         if (WriteCloudLoad_KML)           call OpenFile_KML(4) ! Cloud Load
         if (Writereflectivity_KML)        call OpenFile_KML(6) ! Reflectivity
         if (WriteDepositTS_KML.or.WriteDepositFinal_KML)  then
-             call OpenFile_KML(7) ! Deposit
-             call OpenFile_KML(8) ! Deposit (NWS)
+          call OpenFile_KML(7) ! Deposit
+          call OpenFile_KML(8) ! Deposit (NWS)
         endif
 
         if(Write3dFiles)then

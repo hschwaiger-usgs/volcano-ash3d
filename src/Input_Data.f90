@@ -1083,7 +1083,10 @@
         write(global_info,*)"    e_PlumeHeight = ",e_PlumeHeight(1:neruptions)
         write(global_info,*)"         ZPADDING = ",ZPADDING
         write(global_info,*)"  CompGrid_height = ",CompGrid_height
-        write(global_info,*)"       z_vec_init = ",z_vec_init
+        write(global_info,*)"       z_vec_init = "
+        do k = 1,nz_init-1
+          write(global_info,*)"                ",k,real(z_vec_init(k),kind=4)
+        enddo
         stop 1
       endif
 

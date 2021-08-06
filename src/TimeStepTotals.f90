@@ -10,7 +10,7 @@
          aloft_vol,dep_vol,outflow_vol,tot_vol,SourceCumulativeVol
 
       use Output_Vars,   only : &
-         CloudLoadArea,&
+         CloudArea,&
          Calc_AshVol_Aloft,&
          Calc_AshVol_Deposit,&
          Calc_AshVol_Outflow
@@ -60,10 +60,10 @@
 
       write(global_info,2) itime,OutputStep_Marker,time,DateTime,&
                        SourceCumulativeVol,dep_vol,aloft_vol,&
-                       outflow_vol,tot_vol,CloudLoadArea(1)
+                       outflow_vol,tot_vol,CloudArea
       write(global_log ,2) itime,OutputStep_Marker,time,DateTime,&
                        SourceCumulativeVol,dep_vol,aloft_vol,&
-                       outflow_vol,tot_vol,CloudLoadArea(1)
+                       outflow_vol,tot_vol,CloudArea
 
       !write(global_info,*)sum(outflow_yz1(     1:ny,1:nz,1)*kappa(0     ,1:ny  ,1:nz  ))/MagmaDensity/KM3_2_M3,&
       !          sum(outflow_yz2(     1:ny,1:nz,1)*kappa(  nx+1,1:ny  ,1:nz  ))/MagmaDensity/KM3_2_M3,&

@@ -9,22 +9,26 @@
 
       real(kind=ip)                :: DEPO_THRESH      = 1.0e-1_ip  !threshold deposit thickness (mm)
       real(kind=ip)                :: DEPRATE_THRESH   = 1.0e-2_ip  !threshold deposition rate (mm/hr)
-      real(kind=ip)                :: CLOUDCON_THRESH  = 2.0e-1_ip  !threshold cloud load (t/km2)
+      real(kind=ip)                :: CLOUDCON_THRESH  = 1.0e-3_ip  !threshold cloud concentration (kg/km3)
       real(kind=ip)                :: CLOUDLOAD_THRESH = 2.0e-1_ip  !threshold cloud load (t/km2)
+                                       ! 0.2 T/km2 is roughly the detection
+                                       ! limit of Pavolonis's SEVIRI satellite retrievals
+
       real(kind=ip)                :: THICKNESS_THRESH = 1.0e-2_ip  !threshold thickness for start of deposition (mm)
-      real(kind=ip)                :: TOTCON_THRESH    = 1.0e-3_ip  !threshold concentration (kg/km3)
       real(kind=ip)                :: DBZ_THRESH       =-2.0e+1_ip  !threshold dbZ
 
         ! These are the initialized values
-      real(kind=ip)                :: DepositThickness_FillValue   =  0.0_ip
-      real(kind=ip)                :: MaxConcentration_FillValue   = -9999.0_ip
-      real(kind=ip)                :: DepArrivalTime_FillValue     = -9999.0_ip
-      real(kind=ip)                :: CloudArrivalTime_FillValue   = -9999.0_ip
-      real(kind=ip)                :: CloudLoad_FillValue          = -9999.0_ip
-      real(kind=ip)                :: MaxHeight_FillValue          = -9999.0_ip
-      real(kind=ip)                :: MinHeight_FillValue          = -9999.0_ip
-      real(kind=ip)                :: dbZCol_FillValue             = -100.0_ip
+      real(kind=op)                :: DepositThickness_FillValue   =     0.0_op
+      real(kind=op)                :: MaxConcentration_FillValue   = -9999.0_op
+      real(kind=op)                :: DepArrivalTime_FillValue     = -9999.0_op
+      real(kind=op)                :: CloudArrivalTime_FillValue   = -9999.0_op
+      real(kind=op)                :: CloudLoad_FillValue          = -9999.0_op
+      real(kind=op)                :: MaxHeight_FillValue          = -9999.0_op
+      real(kind=op)                :: MinHeight_FillValue          = -9999.0_op
+      real(kind=op)                :: dbZCol_FillValue             =  -100.0_op
 
+      logical            :: Calculated_Cloud_Load
+      logical            :: Calculated_AshThickness
         ! Set this parameter if you want to include velocities in the output file
       logical, parameter :: USE_WIND_VARS  = .false.
       !logical, parameter :: USE_WIND_VARS  = .true.
@@ -50,15 +54,18 @@
         ! values exported (only derived products and deposits)
       logical :: USE_RESTART_VARS  = .true.
 
-      real(kind=ip) :: CloudArea                               ! area of ash cloud at a given time
-      real(kind=ip) :: LoadVal(5), CloudLoadArea(5)            ! CloudLoadArea(i)=area of ash cloud exceeding LoadVal(i)
-      real(kind=ip) :: AreaCovered                             ! area covered by ash deposit
+      real(kind=ip) :: CloudArea                ! area of ash cloud at a given time
+      real(kind=ip) :: LoadVal(5)               ! 5 threshold values for area calculations
+      real(kind=ip) :: CloudLoadArea(5)         ! Corresponding areas where ash cloud exceeds LoadVal(i)
+      real(kind=ip) :: DepositAreaCovered              ! area covered by ash deposit
 
         ! 1-D variables (in z)
       !real(kind=ip), dimension(:),allocatable   :: TotalConcentration ! concentration from all grain sizes in a vertical column
 
 #ifdef USEPOINTERS
         ! 2-D variables (in x,y)
+      logical, dimension(:,:),pointer :: Mask_Cloud
+      logical, dimension(:,:),pointer :: Mask_Deposit
       real(kind=ip), dimension(:,:),pointer :: DepositThickness => null() ! accumulated ash thickness on ground in mm (x,y)
       real(kind=ip), dimension(:,:),pointer :: MaxConcentration => null() ! max concentration in the cloud at any i,j node
       real(kind=ip), dimension(:,:),pointer :: DepArrivalTime   => null() 
@@ -74,6 +81,8 @@
       real(kind=ip), dimension(:,:,:),pointer :: dbZ => null()               ! radar reflectivty at time t (dbZ)
 #else
         ! 2-D variables (in x,y)
+      logical, dimension(:,:),allocatable :: Mask_Cloud
+      logical, dimension(:,:),allocatable :: Mask_Deposit
       real(kind=ip), dimension(:,:),allocatable :: DepositThickness   ! accumulated ash thickness on ground in mm (x,y)
       real(kind=ip), dimension(:,:),allocatable :: MaxConcentration   ! max concentration in the cloud at any i,j node
       real(kind=ip), dimension(:,:),allocatable :: DepArrivalTime
@@ -137,6 +146,10 @@
 
       integer :: nx,ny,nz
 
+      allocate(Mask_Cloud(nx,ny))
+      Mask_Cloud = .false.
+      allocate(Mask_Deposit(nx,ny))
+      Mask_Deposit = .false.
       allocate(DepositThickness(nx,ny))
       DepositThickness = DepositThickness_FillValue
       allocate(MaxConcentration(nx,ny))
@@ -226,6 +239,8 @@
       implicit none
 
 #ifndef USEPOINTERS
+      if(allocated(Mask_Cloud))       deallocate(Mask_Cloud)
+      if(allocated(Mask_Deposit))     deallocate(Mask_Deposit)
       if(allocated(DepositThickness)) deallocate(DepositThickness)
       if(allocated(MaxConcentration)) deallocate(MaxConcentration)
       if(allocated(DepArrivalTime))   deallocate(DepArrivalTime)
@@ -288,7 +303,7 @@
          DepositDensity,n_gs_max
 
       use mesh,          only : &
-         IsLatLon,nxmax,nymax,dx,dy,dz_vec_pd,kappa_pd
+         IsLatLon,nxmax,nymax,dz_vec_pd,sigma_nz_pd
 
       use solution,      only : &
          DepositGranularity
@@ -296,12 +311,11 @@
       implicit none
       
       integer :: i,j
-      real(kind=ip) :: dvol
 
       !calculate deposit thickness in mm, and area covered
+      Mask_Deposit(:,:)         = .false.
       DepositThickness(:,:)     = DepositThickness_FillValue
-      AreaCovered               = 0.0_ip
-      dvol = dx*dy*dz_vec_pd(1)
+      DepositAreaCovered        = 0.0_ip
 
       if(n_gs_max.gt.0)then
         do i=1,nxmax
@@ -311,15 +325,15 @@
                                     KM2_2_M2                                / &  ! from kg/km^2 to kg/m^2
                                     DepositDensity                          * &  ! from kg/m^2 to m
                                     M_2_MM                                       ! from m to mm
-            if(IsLatLon)then
-              dvol = kappa_pd(i,j,0)
-            endif
             if (DepositThickness(i,j).gt.DEPO_THRESH)then
-              AreaCovered = AreaCovered + dvol/dz_vec_pd(1)
+              Mask_Deposit(i,j) = .true.
+              DepositAreaCovered = DepositAreaCovered + sigma_nz_pd(i,j,1)
             endif
           enddo
         enddo
       endif
+
+      Calculated_AshThickness = .true.
 
       end subroutine AshThicknessCalculator
       
@@ -342,7 +356,11 @@
       real(kind=ip) :: NumDens          !number densities (#/m3) of particles
       real(kind=ip) :: zcol             !z value of cell
 
-      call AshLoadCalculator         !calculate cloud load, T/km2
+      !if(.not.Calculated_Cloud_Load)then
+      !  ! Need to calculate cloud load since this is a proxy for
+      !  ! where the cloud is located and where FillValues should used
+      !  call AshLoadCalculator
+      !endif
 
       dbZCol(:,:) = dbZCol_FillValue
       dbZ(:,:,:)  = dbZCol_FillValue
@@ -382,10 +400,10 @@
 
 !******************************************************************************
 
-      subroutine ConcentrationCalculator(nz)
+      subroutine ConcentrationCalculator
       
       use mesh,          only : &
-         IsLatLon,nxmax,nymax,nzmax,dx,dy,dz_vec_pd,kappa_pd,z_cc_pd,ts1
+         IsLatLon,nxmax,nymax,nzmax,dx,dy,dz_vec_pd,z_cc_pd,ts1,sigma_nz_pd
 
       use solution,      only : &
          concen_pd
@@ -396,61 +414,91 @@
       implicit none
 
       integer :: nz
-      integer :: i,j,k,kk
-      real(kind=ip),dimension(nz)  :: TotalConcentration
-      real(kind=ip) :: dvol
-      real(kind=ip) :: dum_ip
+      integer :: i,j,k
+      real(kind=ip),dimension(nzmax)  :: TotalConcentration
+      real(kind=ip) :: MaxTotalConcentration
+      real(kind=ip) :: CellArea
  
-      !calculate cloud concentration and cloud height
+      ! calculate cloud concentration,
+      ! cloud height, and cloud bottom
 
-      CloudArea             = 0.0_ip
-      MaxConcentration(1:nxmax,1:nymax) = MaxConcentration_FillValue
-      MaxHeight(1:nxmax,1:nymax)        = MaxHeight_FillValue
-      MinHeight(1:nxmax,1:nymax)        = MinHeight_FillValue
+      !if(.not.Calculated_Cloud_Load)then
+      !  ! Need to calculate cloud load since this is a proxy for
+      !  ! where the cloud is located and where FillValues should used
+      !  call AshLoadCalculator         
+      !endif
+
+      CloudArea                         = 0.0_ip
+      CloudLoad(1:nxmax,1:nymax)        = 0.0_ip
+      MaxConcentration(1:nxmax,1:nymax) = 0.0_ip
+      MaxHeight(1:nxmax,1:nymax)        = 0.0_ip
+      MinHeight(1:nxmax,1:nymax)        = 100.0_ip
+
+      Mask_Cloud(:,:) = .false.
 
       if(n_gs_max.gt.0)then
         do i=1,nxmax
           do j=1,nymax
+            CellArea = sigma_nz_pd(i,j,1)
             TotalConcentration = 0.0_ip
             do k=1,nzmax
+               ! Increment the cloud load for this column
+              CloudLoad(i,j) = CloudLoad(i,j) + &
+                                sum(concen_pd(i,j,k,1:n_gs_max,ts1)) * & ! in kg/km^3
+                                   dz_vec_pd(k)                      / & ! convert to kg/km^2
+                                 1.0e3_ip                            ! tonnes/km2
+               ! Pull out column total concentration
               TotalConcentration(k) = sum(concen_pd(i,j,k,1:n_gs_max,ts1))
-              if (TotalConcentration(k)>TOTCON_THRESH) then 
-                if(IsLatLon)then
-                  !dvol = kappa(i,j,1)
-                  dvol = kappa_pd(i,j,k)
-                else
-                  dvol = dx*dy*dz_vec_pd(k)
-                endif
-                !set height only if load>CLOUDLOAD_THRESH
-                if (CloudLoad(i,j).gt.CLOUDLOAD_THRESH) &
-                  !MaxHeight(i,j)=z_cc_pd(k)+0.5_ip*dz
-                  MaxHeight(i,j)=z_cc_pd(k)+0.5_ip*dz_vec_pd(k)
-                CloudArea = CloudArea + dvol/dz_vec_pd(k)
+
+               ! Note max height
+              if(TotalConcentration(k).ge.CLOUDCON_THRESH)then
+                ! this is overwritten if the k+1 is also identified as an ash
+                ! cloud
+                MaxHeight(i,j)=z_cc_pd(k)+0.5_ip*dz_vec_pd(k)
               endif
             enddo
-  
-            ! Now get cloud bottom
-            if(MaxHeight(i,j).gt.MaxHeight_FillValue)then
-              !kk = floor(MaxHeight(i,j)/dz)+1
-              kk = nzmax
-              do k=kk,1,-1
-                if(TotalConcentration(k)>TOTCON_THRESH)then
-                  MinHeight(i,j)=z_cc_pd(k)-0.5_ip*dz_vec_pd(k)
-                endif
-              enddo
-              !if cloud goes all the way to the ground, set min to 0.0
-              if(MinHeight(i,j).lt.0.0_ip.and.MaxHeight(i,j).gt.0.0_ip)MinHeight(i,j)=0.0_ip
+             ! Now go from the top down and find the bottom
+            do k=nzmax,1,-1
+             if(TotalConcentration(k).le.CLOUDCON_THRESH)then
+                MinHeight(i,j)=z_cc_pd(k)-0.5_ip*dz_vec_pd(k)
+              endif
+            enddo
+
+            MaxTotalConcentration = maxval(TotalConcentration(:))
+
+            ! Generate the cloud mask base on integrated cloud load
+            if(CloudLoad(i,j).ge.CLOUDLOAD_THRESH)then
+              Mask_Cloud(i,j) = .true.
+              !write(*,*)i,j,CloudLoad(i,j),CLOUDLOAD_THRESH
+            else
+              Mask_Cloud(i,j) = .false.
+            endif
+
+            ! Finally, modify the output variables based on the mask
+            if (Mask_Cloud(i,j))then
+              ! This is a cloud, accumulate area and error-check heights
+              if(MinHeight(i,j).lt.0.0_ip.and. &
+                 MaxHeight(i,j).gt.0.0_ip) &
+                   MinHeight(i,j) = 0.0_ip
               ! Double-check that min doesn't exceed max
               MinHeight(i,j)=min(MaxHeight(i,j),MinHeight(i,j))
-  
+
+              CloudArea = CloudArea + sigma_nz_pd(i,j,1)
+              MaxConcentration(i,j) = MaxTotalConcentration
+            else
+              ! Not an ash cloud column so write FillValue
+              CloudLoad(i,j)        = CloudLoad_FillValue
+              MaxConcentration(i,j) = MaxConcentration_FillValue
+              MaxHeight(i,j)        = MaxHeight_FillValue
+              MinHeight(i,j)        = MinHeight_FillValue
             endif
-  
-            dum_ip = maxval(TotalConcentration)
-            if(dum_ip.gt.CLOUDCON_THRESH) MaxConcentration(i,j) = dum_ip          !concentration in kg/km3
+
           enddo
         enddo
       endif
-            
+
+      Calculated_Cloud_Load = .true.
+
       end subroutine ConcentrationCalculator      
 
 !******************************************************************************
@@ -461,7 +509,7 @@
          n_gs_max
 
       use mesh,          only : &
-         IsLatLon,nxmax,nymax,nzmax,dx,dy,dz_vec_pd,kappa_pd,ts1
+         IsLatLon,nxmax,nymax,nzmax,dx,dy,dz_vec_pd,sigma_nz_pd,ts1
 
       use solution,      only : &
          concen_pd
@@ -472,21 +520,18 @@
 
       real(kind=ip) :: CellArea
  
-      !calculate cloud concentration and cloud height
-      LoadVal(1)    = 0.24_ip
-      LoadVal(2)    = 1.0_ip
-      LoadVal(3)    = 2.0_ip
-      LoadVal(4)    = 4.0_ip
-      LoadVal(5)    = 6.0_ip
-      CloudLoadArea = 0.0_ip
+      !calculate cloud concentration
+      LoadVal(1)         = 0.24_ip
+      LoadVal(2)         = 1.0_ip
+      LoadVal(3)         = 2.0_ip
+      LoadVal(4)         = 4.0_ip
+      LoadVal(5)         = 6.0_ip
+      CloudLoadArea(1:5) = 0.0_ip
 
-      CloudLoad = 0.0_ip
-
-      CellArea = dx*dy
       if(n_gs_max.gt.0)then
         do i=1,nxmax
           do j=1,nymax
-            if (IsLatLon) CellArea=kappa_pd(i,j,1)/dz_vec_pd(1)
+            CellArea = sigma_nz_pd(i,j,1)
             do k=1,nzmax
               ! Increment the cloud load for this cell
               CloudLoad(i,j) = CloudLoad(i,j) + &
@@ -495,12 +540,13 @@
                                  1.0e3_ip                            ! tonnes/km2
             enddo
             do k=1,5
-              if (CloudLoad(i,j).gt.LoadVal(k))     CloudLoadArea(k) = CloudLoadArea(k) + CellArea
+              if (CloudLoad(i,j).gt.LoadVal(k)) &
+                CloudLoadArea(k) = CloudLoadArea(k) + CellArea
             enddo
           enddo
         enddo
       endif
-            
+
       end subroutine AshLoadCalculator      
 
 !******************************************************************************
@@ -520,26 +566,36 @@
 
       integer :: i,j
 
-      real(kind=ip) :: thickness
-      real(kind=ip) :: CloudLoadHere
+      !real(kind=ip) :: thickness
+      !real(kind=ip) :: CloudLoadHere
 
-      call AshThicknessCalculator
+      Mask_Cloud   = .false.
+      Mask_Deposit = .false.
+
+      if(.not.Calculated_AshThickness)then
+        ! Need to calculate deposit thickness since this is a proxy for
+        ! where the deposit is located and where FillValues should used
+        call AshThicknessCalculator
+      endif
+
+      if(.not.Calculated_Cloud_Load)then
+        ! Need to calculate cloud load since this is a proxy for
+        ! where the cloud is located and where FillValues should used
+        !call AshLoadCalculator
+        call ConcentrationCalculator
+      endif
 
       call AshLoadCalculator
-
-      call ConcentrationCalculator(nzmax)
 
       ! Mark the arrival time of any new deposit
       do i=1,nxmax
         do j=1,nymax
-          thickness = DepositThickness(i,j)
-          if(thickness.gt.DEPO_THRESH.and.DepArrivalTime(i,j).lt.0.0_ip)then
+          !thickness = DepositThickness(i,j)
+          if(Mask_Deposit(i,j).and.DepArrivalTime(i,j).lt.0.0_ip)then
             DepArrivalTime(i,j)=time
           endif
-          CloudLoadHere = CloudLoad(i,j)
-          !0.2 T/km2 is roughly the detection limit of Pavolonis's SEVIRI
-          !satellite retrievals
-          if((CloudLoadHere.gt.CLOUDLOAD_THRESH).and.(CloudArrivalTime(i,j).lt.0.0_ip))then
+          !CloudLoadHere = CloudLoad(i,j)
+          if((Mask_Cloud(i,j)).and.(CloudArrivalTime(i,j).lt.0.0_ip))then
             CloudArrivalTime(i,j)=time
           endif
         enddo
@@ -693,7 +749,18 @@
       
       integer :: i
 
-      ! Requires that AshThicknessCalculator and AshLoadCalculator were called
+      ! Requires that AshThicknessCalculator and ConcentrationCalculator were called
+      if(.not.Calculated_Cloud_Load)then
+        ! Need to calculate cloud load since this is a proxy for
+        ! where the cloud is located and where FillValues should used
+        !call AshLoadCalculator
+        call ConcentrationCalculator
+      endif
+      if(.not.Calculated_AshThickness)then
+        ! Need to calculate deposit thickness since this is a proxy for
+        ! where the deposit is located and where FillValues should used
+        call AshThicknessCalculator
+      endif
 
         !record thickness & cloud concentration in last time step      
       Airport_CloudHereLast  = Airport_CloudHere
@@ -714,18 +781,20 @@
 
         !mark cloud duration is cloud has passed
         if (Airport_CloudArrived(i).eqv..true.) then
-          if ((Airport_CloudHere(i).le.CLOUDLOAD_THRESH).and.(Airport_CloudHereLast(i).gt.CLOUDLOAD_THRESH)) then
+          if ((Airport_CloudHere(i).le.CLOUDLOAD_THRESH).and.&
+              (Airport_CloudHereLast(i).gt.CLOUDLOAD_THRESH)) then
             Airport_CloudDuration(i) = time-Airport_CloudArrivalTime(i)
           endif
         endif
 
         !For airports where ash has not yet arrived . . .
-        !if ash load>0.1 T/km2 , call it "arrived"
-        if ((Airport_CloudArrived(i).eqv..false.).and.(Airport_CloudHere(i).gt.CLOUDLOAD_THRESH)) then
+        !if ash load>CLOUDLOAD_THRESH T/km2 , call it "arrived"
+        if ((Airport_CloudArrived(i).eqv..false.).and.&
+            (Airport_CloudHere(i).gt.CLOUDLOAD_THRESH)) then
           Airport_CloudArrived(i) = .true.
           Airport_CloudArrivalTime(i) = time
         endif
-        !if ash thickness>0.1 mm, call it "arrived"
+        !if ash thickness>THICKNESS_THRESH mm, call it "arrived"
         if ((Airport_AshArrived(i).eqv..false.).and.(Airport_thickness(i).gt.THICKNESS_THRESH)) then
           Airport_AshArrived(i) = .true.
           Airport_AshArrivalTime(i) = time

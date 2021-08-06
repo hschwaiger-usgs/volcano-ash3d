@@ -232,7 +232,7 @@
          x_cc_pd,y_cc_pd,z_cc_pd,ts1
 
       use solution,      only : &
-         concen_pd, vx_pd, vy_pd, vz_pd
+         concen_pd
 
       implicit none
 

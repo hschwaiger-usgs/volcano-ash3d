@@ -7,7 +7,7 @@
       use io_units
 
       use global_param,  only : &
-         nmods,GRAV,CFL,DT_MIN,DT_MAX
+         nmods,GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH
 
       use mesh,          only : &
          ZPADDING
@@ -20,7 +20,7 @@
 
       use Output_Vars,   only : &
          DEPO_THRESH,DEPRATE_THRESH,CLOUDCON_THRESH,CLOUDLOAD_THRESH,&
-         THICKNESS_THRESH,TOTCON_THRESH,DBZ_THRESH
+         THICKNESS_THRESH,DBZ_THRESH
 
       integer, parameter :: MAXPARAMS = 50
 
@@ -32,7 +32,7 @@
       integer :: iparam
       character(len=20),dimension(MAXPARAMS) :: pname
       real(kind=ip),dimension(MAXPARAMS)     :: pvalue
-
+      integer :: i
 
       write(global_info,*)"    Searching for OPTMOD=RESETPARAMS"
       nmods = 0
@@ -264,19 +264,6 @@
                               "to ",pvalue(i)
           THICKNESS_THRESH = pvalue(i)
 
-        elseif (pname(i).eq.'TOTCON_THRESH') then
-          ! error-checking
-          if (pvalue(i).le.0.0_ip)then
-            write(global_error,*)"ERROR: TOTCON_THRESH must be > 0"
-            stop 0
-          elseif (pvalue(i).gt.5.0_ip)then
-            write(global_error,*)"WARNING: TOTCON_THRESH seems high."
-            write(global_error,*)&
-              "         This is the threshold to track concentration (kg/km3)"
-          endif
-          write(global_info,*)"  Resetting TOTCON_THRESH from ",TOTCON_THRESH,&
-                              "to ",pvalue(i)
-          TOTCON_THRESH = pvalue(i)
         elseif (pname(i).eq.'DBZ_THRESH') then
           ! error-checking
           if (pvalue(i).ge.0.0_ip)then

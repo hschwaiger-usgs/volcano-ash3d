@@ -274,11 +274,13 @@
       !integer :: ngs
 
       integer :: i,j
-      real(kind=ip) :: ellipse_area,ellipse_vol,equiv_rad
-      real(kind=ip) :: diamN ! diamter of sphere with equivalent projected area
-      real(kind=ip) :: diamS ! diamter of sphere with equivalent surface area
-      real(kind=ip) :: diamV ! diamter of sphere with equivalent volume
-      real(kind=ip) :: p_exp,sphere_area,phi_sphere
+      !real(kind=ip) :: ellipse_area,ellipse_vol,equiv_rad
+      !real(kind=ip) :: diamN ! diamter of sphere with equivalent projected area
+      !real(kind=ip) :: diamS ! diamter of sphere with equivalent surface area
+      !real(kind=ip) :: diamV ! diamter of sphere with equivalent volume
+      real(kind=ip) :: p_exp
+      !real(kind=ip) :: sphere_area
+      real(kind=ip) :: phi_sphere
 
       real(kind=ip) :: Dahneke_LD(13), Dahneke_RL(13),onF
       real(kind=ip) :: tmp_b, tmp_c
