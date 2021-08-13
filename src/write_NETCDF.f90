@@ -37,13 +37,13 @@
          var_User3d_XYZ_MissVal,var_User3d_XYZ_FillVal,var_User3d_XYZ,&
          var_User4d_XYZGs_name,var_User4d_XYZGs_unit,var_User4d_XYZGs_lname,&
          var_User4d_XYZGs_MissVal,var_User4d_XYZGs_FillVal,var_User4d_XYZGs,&
-         CLOUDLOAD_THRESH,DBZ_THRESH,USE_OPTMOD_VARS,USE_RESTART_VARS,&
+         DBZ_THRESH,USE_OPTMOD_VARS,USE_RESTART_VARS,&
          USE_OUTPROD_VARS,USE_WIND_VARS,DepositThickness,DepArrivalTime,CloudArrivalTime,&
          MaxConcentration,MaxHeight,CloudLoad,dbZ,MinHeight,Mask_Cloud,Mask_Deposit,&
            dbZCalculator
 
       use Tephra,        only : &
-         n_gs_max,Tephra_gsdiam,Tephra_v_s,Tephra_bin_mass,Tephra_rho_m
+         n_gs_max,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m
 
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,x_cc_pd,y_cc_pd,z_cc_pd,lon_cc_pd,lat_cc_pd,&
@@ -55,7 +55,7 @@
           vx_pd,vy_pd,vz_pd,vf_pd,concen_pd,DepositGranularity,SpeciesID,SpeciesSubID
 
       use time_data,     only : &
-          BaseYear,useLeap,cdf_time_log,time,SimStartHour,xmlSimStartTime
+          BaseYear,useLeap,cdf_time_log,time,SimStartHour,xmlSimStartTime,OutputOffset
 
       use Source,        only : &
          neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
@@ -280,7 +280,8 @@
       if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att source: ',nf90_strerror(nSTAT)
 
-      nSTAT = nf90_put_att(ncid,nf90_global,"history",cdf_time_log)
+      cdf_history=cdf_time_log
+      nSTAT = nf90_put_att(ncid,nf90_global,"history",cdf_history)
       if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att history: ',nf90_strerror(nSTAT)
 
@@ -477,7 +478,8 @@
       !else
       !  reftimestr = yyyymmddhhmm_since_1900(e_StartTime(1))
       !endif
-      reftimestr = HS_yyyymmddhhmm_since(SimStartHour,BaseYear,useLeap)
+      reftimestr = HS_yyyymmddhhmm_since(SimStartHour+OutputOffset,&
+                                         BaseYear,useLeap)
 
       nSTAT = nf90_put_att(ncid,t_var_id,"ReferenceTime",reftimestr)
       if(nSTAT.ne.0) &
@@ -596,6 +598,14 @@
         if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att: ',nf90_strerror(nSTAT)
       else
         select case (A3d_iprojflag)
+        case(0)
+          ! Non-geographic projection, (x,y) only
+          if(VERB.gt.1)write(*,*)"     Non-geographic"
+          nSTAT = nf90_def_var(ncid,"Non-geographic",nf90_int,proj_var_id)
+          if(nSTAT.ne.0)write(global_log ,*)'ERROR: def_var: ',nf90_strerror(nSTAT)
+          nSTAT = nf90_put_att(ncid,proj_var_id,&
+                               "grid_mapping_name", &
+                               "Non-geographic")
         case(1)
           ! Polar stereographic
           if(VERB.gt.1)write(*,*)"     Polar_Stereographic"
@@ -622,7 +632,27 @@
           if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att:',nf90_strerror(nSTAT)
         case(2)
           ! Albers Equal Area
+          if(VERB.gt.1)write(*,*)"     Albers Equal Area"
+          nSTAT = nf90_def_var(ncid,"Albers_Equal_Area",nf90_int,proj_var_id)
+          if(nSTAT.ne.0)write(global_log ,*)'ERROR: def_var: ',nf90_strerror(nSTAT)
+          nSTAT = nf90_put_att(ncid,proj_var_id,&
+                               "grid_mapping_name", &
+                               "albers_conical_equal_area")
+          ! standard_parallel - There may be 1 or 2 values.
+          nSTAT = nf90_put_att(ncid,proj_var_id,&
+                               "standard_parallel",A3d_phi0)
+          if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att:',nf90_strerror(nSTAT)
+          ! longitude_of_central_meridian
+          nSTAT = nf90_put_att(ncid,proj_var_id,&
+                               "longitude_of_central_meridian",A3d_lam0)
+          if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att:',nf90_strerror(nSTAT)
+          ! false_easting
 
+          ! false_northing 
+
+          nSTAT = nf90_put_att(ncid,proj_var_id,&
+                              "earth_radius",A3d_radius_earth*1000.0_ip)
+          if(nSTAT.ne.0)write(global_log ,*)'ERROR: put_att:',nf90_strerror(nSTAT)
         case(3)
           ! UTM
 
@@ -927,10 +957,9 @@
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att ashcon: ',nf90_strerror(nSTAT)
         nSTAT = nf90_put_att(ncid,ashcon_var_id,&
-                 "missing_value", -9999.0)
+                 "missing_value", MaxConcentration_FillValue)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att ashcon: ',nf90_strerror(nSTAT)
-        !nSTAT = nf90_put_att(ncid,ashcon_var_id,"_FillValue",-9999.0_op)
         nSTAT = nf90_put_att(ncid,ashcon_var_id,"_FillValue",MaxConcentration_FillValue)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att ashcon: ',nf90_strerror(nSTAT)
@@ -988,10 +1017,9 @@
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att depothick: ',nf90_strerror(nSTAT)
         nSTAT = nf90_put_att(ncid,depothick_var_id,&
-                 "missing_value", -9999.0)
+                 "missing_value", DepositThickness_FillValue)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att depothick: ',nf90_strerror(nSTAT)
-        !nSTAT = nf90_put_att(ncid,depothick_var_id,"_FillValue", -9999.0_op)
         nSTAT = nf90_put_att(ncid,depothick_var_id,"_FillValue",DepositThickness_FillValue)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att depothick: ',nf90_strerror(nSTAT)
@@ -1016,10 +1044,9 @@
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att depotime: ',nf90_strerror(nSTAT)
         nSTAT = nf90_put_att(ncid,depotime_var_id,&
-                   "missing_value", -9999.0)
+                   "missing_value", DepArrivalTime_FillValue)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att depotime: ',nf90_strerror(nSTAT)
-        !nSTAT = nf90_put_att(ncid,depotime_var_id,"_FillValue",-9999.0_op)
         nSTAT = nf90_put_att(ncid,depotime_var_id,"_FillValue",DepArrivalTime_FillValue)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att depotime: ',nf90_strerror(nSTAT)
@@ -1043,10 +1070,9 @@
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att ash_arrival_time: ',nf90_strerror(nSTAT)
         nSTAT = nf90_put_att(ncid,ashcloudtime_var_id,&
-                 "missing_value", -9999.0)
+                 "missing_value", CloudArrivalTime_FillValue)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att ash_arrival_time: ',nf90_strerror(nSTAT)
-        !nSTAT = nf90_put_att(ncid,ashcloudtime_var_id,"_FillValue",-9999.0_op)
         nSTAT = nf90_put_att(ncid,ashcloudtime_var_id,"_FillValue",CloudArrivalTime_FillValue)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att ash_arrival_time: ',nf90_strerror(nSTAT)
@@ -1070,10 +1096,9 @@
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att ashcon_max: ',nf90_strerror(nSTAT)
         nSTAT = nf90_put_att(ncid,ashconMax_var_id,&
-                 "missing_value", -9999.0)
+                 "missing_value", MaxConcentration_FillValue)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att ashcon_max: ',nf90_strerror(nSTAT)
-        !nSTAT = nf90_put_att(ncid,ashconMax_var_id,"_FillValue",-9999.0_op)
         nSTAT = nf90_put_att(ncid,ashconMax_var_id,"_FillValue",MaxConcentration_FillValue)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att ashcon_max: ',nf90_strerror(nSTAT)
@@ -1102,10 +1127,9 @@
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att cloud_height: ',nf90_strerror(nSTAT)
         nSTAT = nf90_put_att(ncid,ashheight_var_id,&
-                 "missing_value", -9999.0)
+                 "missing_value", MaxHeight_FillValue)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att cloud_height: ',nf90_strerror(nSTAT)
-        !nSTAT = nf90_put_att(ncid,ashheight_var_id,"_FillValue",-9999.0_op)
         nSTAT = nf90_put_att(ncid,ashheight_var_id,"_FillValue",MaxHeight_FillValue)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att cloud_height: ',nf90_strerror(nSTAT)
@@ -1134,10 +1158,9 @@
           write(global_log ,*)'ERROR: put_att cloud_load: ',nf90_strerror(nSTAT)
 
         nSTAT = nf90_put_att(ncid,ashload_var_id,&
-                 "missing_value", -9999.0)
+                 "missing_value", CloudLoad_FillValue)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att cloud_load: ',nf90_strerror(nSTAT)
-        !nSTAT = nf90_put_att(ncid,ashload_var_id,"_FillValue",-9999.0_op)
         nSTAT = nf90_put_att(ncid,ashload_var_id,"_FillValue",CloudLoad_FillValue)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att cloud_load: ',nf90_strerror(nSTAT)
@@ -1161,10 +1184,9 @@
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att radar_reflectivity: ',nf90_strerror(nSTAT)
         nSTAT = nf90_put_att(ncid,radrefl_var_id,&
-                 "missing_value", -9999.0)
+                 "missing_value", dbZCol_FillValue)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att radar_reflectivity: ',nf90_strerror(nSTAT)
-        !nSTAT = nf90_put_att(ncid,radrefl_var_id,"_FillValue",-9999.0_op)
         nSTAT = nf90_put_att(ncid,radrefl_var_id,"_FillValue",dbZCol_FillValue)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att radar_reflectivity: ',nf90_strerror(nSTAT)
@@ -1188,10 +1210,9 @@
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att cloud_bottom: ',nf90_strerror(nSTAT)
         nSTAT = nf90_put_att(ncid,ashcloudBot_var_id,&
-                 "missing_value", -9999.0)
+                 "missing_value", MinHeight_FillValue)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att cloud_bottom: ',nf90_strerror(nSTAT)
-        !nSTAT = nf90_put_att(ncid,ashcloudBot_var_id,"_FillValue",-9999.0_op)
         nSTAT = nf90_put_att(ncid,ashcloudBot_var_id,"_FillValue",MinHeight_FillValue)
         if(nSTAT.ne.0) &
           write(global_log ,*)'ERROR: put_att cloud_bottom: ',nf90_strerror(nSTAT)
@@ -1694,7 +1715,6 @@
   
         ! ash cloud_height (top)
         if(VERB.gt.1)write(global_info,*)"     Fill ash_height"
-        !dum2d_out(:,:) = -9999.0_op
         dum2d_out(:,:) = real(MaxHeight_FillValue,kind=op)
         do i=1,nxmax
           do j=1,nymax
@@ -1711,13 +1731,9 @@
 
         ! ash-load
         if(VERB.gt.1)write(global_info,*)"     Fill ash-load"
-        !dum2d_out(:,:) = 0.0_op
-        !dum2d_out(:,:) = -9999.0_op
         dum2d_out(:,:) = real(CloudLoad_FillValue,kind=op)
         do i=1,nxmax
           do j=1,nymax
-            !if(CloudLoad(i,j).ge.CLOUDLOAD_THRESH)then
-            !if(CloudLoad(i,j).ge.0.0_ip)then
             if(Mask_Cloud(i,j))then
               dumscal_out=real(CloudLoad(i,j),kind=op)
               dum2d_out(i,j)=dumscal_out
@@ -1730,7 +1746,6 @@
 
         ! radar-reflectivity
         if(VERB.gt.1)write(global_info,*)"     Fill dbZ"
-        !dum3d_out(:,:,:) = 0.0_op
         dum3d_out(:,:,:) = real(DBZ_THRESH,kind=op)
         do i=1,nxmax
           do j=1,nymax
@@ -1748,11 +1763,9 @@
 
         ! ash cloud_bottom
         if(VERB.gt.1)write(global_info,*)"     Fill ash height min"
-        !dum2d_out(:,:) = -9999.0_op
         dum2d_out(:,:) = real(MinHeight_FillValue,kind=op)
         do i=1,nxmax
           do j=1,nymax
-            !if(MinHeight(i,j).ge.0.0_ip)then
             if(Mask_Cloud(i,j))then
               dumscal_out=real(MinHeight(i,j),kind=op)
               dum2d_out(i,j) = dumscal_out
@@ -1880,7 +1893,7 @@
          DepositThickness_FillValue,CloudArrivalTime_FillValue,DepArrivalTime_FillValue,&
          var_User2d_XY_name,var_User2d_XY,var_User3d_XYGs_name,var_User3d_XYGs,&
          var_User3d_XYZ_name,var_User3d_XYZ,var_User4d_XYZGs_name,var_User4d_XYZGs,&
-         CLOUDLOAD_THRESH,DBZ_THRESH,USE_OPTMOD_VARS,USE_RESTART_VARS,&
+         DBZ_THRESH,USE_OPTMOD_VARS,USE_RESTART_VARS,&
          USE_OUTPROD_VARS,USE_WIND_VARS,DepositThickness,DepArrivalTime,CloudArrivalTime,&
          MaxConcentration,MaxHeight,CloudLoad,dbZ,MinHeight,&
            dbZCalculator
@@ -2103,13 +2116,15 @@
           dum2d_out(:,:) = DepositThickness_FillValue
           do i=1,nxmax
             do j=1,nymax
-              if(DepositThickness(i,j).ge.0.0_ip)&
+              if(Mask_Deposit(i,j))&
+              !if(DepositThickness(i,j).ge.0.0_ip)&
                   dum2d_out(i,j)=real(DepositThickness(i,j),kind=op)
             enddo
           enddo
           nSTAT=nf90_put_var(ncid,depothick_var_id,dum2d_out,(/1,1,iout3d/))
     
           ! ashconMax
+          dum2d_out(:,:) = MaxConcentration_FillValue
           nSTAT = nf90_inq_varid(ncid,"ashcon_max",ashconMax_var_id)
           if(nSTAT.ne.0) &
             write(global_log ,*)'ERROR: inq_varid ashcon_max : ',nf90_strerror(nSTAT)
@@ -2130,7 +2145,6 @@
           if(nSTAT.ne.0) &
             write(global_log ,*)'ERROR: inq_varid cloud_height : ',nf90_strerror(nSTAT)
           if(VERB.gt.2)write(global_info,*)"  Writing ash height"
-          !dum2d_out(:,:) = -9999.0_op
           dum2d_out(:,:) = real(MaxHeight_FillValue,kind=op)
           do i=1,nxmax
             do j=1,nymax
@@ -2148,11 +2162,9 @@
           if(nSTAT.ne.0) &
             write(global_log ,*)'ERROR: inq_varid cloud_load : ',nf90_strerror(nSTAT)
           if(VERB.gt.2)write(global_info,*)"  Writing ash-load"
-          !dum2d_out(:,:) = -9999.0_op
           dum2d_out(:,:) = real(CloudLoad_FillValue,kind=op)
           do i=1,nxmax
             do j=1,nymax
-              !if(CloudLoad(i,j).ge.CLOUDLOAD_THRESH)then
               if(Mask_Cloud(i,j))then
                 dumscal_out=real(CloudLoad(i,j),kind=op)
                 dum2d_out(i,j) = dumscal_out
@@ -2166,7 +2178,6 @@
           if(nSTAT.ne.0) &
             write(global_log ,*)'ERROR: inq_varid radar_reflectivity : ',nf90_strerror(nSTAT)
           if(VERB.gt.2)write(global_info,*)"  Writing radar reflectivity"
-          !dum3d_out(:,:,:) = 0.0_op
           dum3d_out(:,:,:) = real(dbZCol_FillValue,kind=op)
           do i=1,nxmax
             do j=1,nymax
@@ -2185,11 +2196,9 @@
           if(nSTAT.ne.0) &
             write(global_log ,*)'ERROR: inq_varid cloud_bottom : ',nf90_strerror(nSTAT)
           if(VERB.gt.2)write(global_info,*)"  Writing ash-height (bottom)"
-          !dum2d_out(:,:) = -9999.0_op
           dum2d_out(:,:) = real(MinHeight_FillValue,kind=op)
           do i=1,nxmax
             do j=1,nymax
-              !if(MinHeight(i,j).ge.0.0_ip)then
               if(Mask_Cloud(i,j))then
                 dumscal_out=real(MinHeight(i,j),kind=op)
                 dum2d_out(i,j) = dumscal_out
@@ -2358,8 +2367,8 @@
       use io_data,           only : &
          concenfile,init_tstep
 
-      use Tephra,        only : &
-         n_gs_max
+      !use Tephra,        only : &
+      !   n_gs_max
 
       use mesh,              only : &
          nxmax,nymax,nzmax,nsmax,dz_vec_pd,ts0,ts1
@@ -2391,8 +2400,8 @@
 
       allocate(dum2d_out(nxmax,nymax))
       allocate(dum3d_out(nxmax,nymax,nzmax))
-      allocate(ashcon(nxmax,nymax,nzmax,n_gs_max))
-      allocate(depocon(nxmax,nymax,n_gs_max))
+      allocate(ashcon(nxmax,nymax,nzmax,nsmax))
+      allocate(depocon(nxmax,nymax,nsmax))
 
       write(global_info,*)"WARNING "
       write(global_info,*)"Input file is not currently verified "
@@ -2443,22 +2452,22 @@
 
       nSTAT=nf90_get_var(ncid,ashcon_var_id,ashcon,  &
                start = (/1,1,1,1,init_tstep/),       &
-               count = (/nxmax,nymax,nzmax,n_gs_max,1/))
+               count = (/nxmax,nymax,nzmax,nsmax,1/))
 
       if(nSTAT.ne.0) &
         write(global_log ,*)'ERROR: get_var ashcon: ',nf90_strerror(nSTAT)
 
-      do i = 1,n_gs_max
+      do i = 1,nsmax
         concen_pd(1:nxmax,1:nymax,1:nzmax,i,ts1) = real(ashcon(:,:,:,i),kind=ip)
       enddo
 
       nSTAT=nf90_get_var(ncid,depocon_var_id,depocon,&
                start = (/1,1,1,init_tstep/),       &
-               count = (/nxmax,nymax,n_gs_max,1/))
+               count = (/nxmax,nymax,nsmax,1/))
       if(nSTAT.ne.0) &
         write(global_log ,*)'ERROR: put_var depocon: ',nf90_strerror(nSTAT)
 
-      do i = 1,n_gs_max
+      do i = 1,nsmax
           ! Here's the conversion from kg/m^2
         concen_pd(1:nxmax,1:nymax,0,i,ts1) = real(depocon(:,:,i),kind=ip)/(dz_vec_pd(0)/KM2_2_M2)
       enddo

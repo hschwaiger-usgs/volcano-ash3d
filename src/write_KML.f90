@@ -339,7 +339,7 @@
       !Subroutine that opens and initializes the KML file
 
       use time_data,     only : &
-         BaseYear,useLeap,SimStartHour
+         BaseYear,useLeap,SimStartHour,OutputOffset
 
       use mesh,          only : &
          A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
@@ -458,7 +458,8 @@
 
 !     WRITE TABLE OF ESP'S TO THE VOLCANO PLACEMARK
       do ierup=1,neruptions
-        yyyymmddhh = HS_yyyymmddhh_since(e_StartTime(ierup)+SimStartHour,BaseYear,useLeap)
+        yyyymmddhh = HS_yyyymmddhh_since(e_StartTime(ierup)+SimStartHour+OutputOffset,&
+                                         BaseYear,useLeap)
         read(yyyymmddhh,100) iyear(ierup),imonth(ierup),iday(ierup), &
                              StartHour(ierup)
         write(fid,8) ierup,iyear(ierup),imonth(ierup),iday(ierup), &
@@ -654,7 +655,7 @@
          lon_cc_pd,lat_cc_pd,x_cc_pd,y_cc_pd
 
       use time_data,     only : &
-         time,BaseYear,useLeap,SimStartHour, &
+         time,BaseYear,useLeap,SimStartHour,OutputOffset, &
          xmlTimeSpanStart,xmlTimeSpanEnd
 
       use Output_Vars,   only : &
@@ -708,7 +709,8 @@
       units     = KML_units(ivar)
       AltMode   = KML_AltMode(ivar)
 
-      xmlArrivalTime = HS_xmltime(SimStartHour + time,BaseYear,useLeap)
+      xmlArrivalTime = HS_xmltime(SimStartHour + time + OutputOffset,&
+                                  BaseYear,useLeap)
 
       StyleNow3 = 'PureWhite'
 
@@ -963,7 +965,7 @@
          Airport_i,Airport_j,Airport_Thickness,Airport_CloudArrived
 
       use time_data,     only : &
-         time,BaseYear,useLeap,SimStartHour,Simtime_in_hours
+         time,BaseYear,useLeap,SimStartHour,Simtime_in_hours,OutputOffset
 
       use mesh,          only : &
          A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,&
@@ -1071,7 +1073,8 @@
           cloud_morethan   = ' '
           airlon = Airport_Longitude(i)
           airlat = Airport_Latitude(i)
-          xmlTimeStart = HS_xmltime(SimStartHour+Airport_AshArrivalTime(i),BaseYear,useLeap)
+          xmlTimeStart = HS_xmltime(SimStartHour+Airport_AshArrivalTime(i)+OutputOffset,&
+                                    BaseYear,useLeap)
           !See whether cloud is still overhead, or whether ash is still
           !falling
           if ((Airport_AshArrived(i)).and.(Airport_deprate(i).gt.DEPRATE_THRESH)) then
@@ -1112,7 +1115,8 @@
           airlon = Airport_Longitude(i)
           airlat = Airport_Latitude(i)
           CloudTime = SimStartHour+Airport_CloudArrivalTime(i)
-          xmlTimeStart = HS_xmltime(CloudTime,BaseYear,useLeap)
+          xmlTimeStart = HS_xmltime(CloudTime+OutputOffset,&
+                                    BaseYear,useLeap)
           !See whether cloud is still overhead, or whether ash is still
           !falling
           if (CloudLoad(Airport_i(i),Airport_j(i)).gt.CLOUDLOAD_THRESH) then
@@ -1121,7 +1125,8 @@
           else
             cloud_morethan = ' '
           endif
-          xmlTimeEnd   = HS_xmltime(CloudTime+Airport_CloudDuration(i),BaseYear,useLeap)
+          xmlTimeEnd   = HS_xmltime(CloudTime+Airport_CloudDuration(i)+OutputOffset,&
+                                    BaseYear,useLeap)
           if (Airport_Longitude(i).gt.180.0_ip) airlon=airlon-360.0_ip
           write(60,7) Airport_Name(i), &
                       Airport_CloudArrivalTime(i), &
@@ -1144,7 +1149,8 @@
       write(60,8) VolcanoName, VolcanoName
       !  Write table of ESP's
       do ierup=1,neruptions
-        yyyymmddhh = HS_yyyymmddhh_since(e_StartTime(ierup)+SimStartHour,BaseYear,useLeap)
+        yyyymmddhh = HS_yyyymmddhh_since(e_StartTime(ierup)+SimStartHour+OutputOffset,&
+                                         BaseYear,useLeap)
         read(yyyymmddhh,200) iyear(ierup),imonth(ierup),iday(ierup), &
                       StartHour(ierup)
         write(60,9) ierup,iyear(ierup),imonth(ierup),iday(ierup), &

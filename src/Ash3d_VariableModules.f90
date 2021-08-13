@@ -573,6 +573,11 @@
 
       use precis_param
 
+        ! If Ash3d needs to be run with wind data from a different time than the
+        ! output (e.g. using a 1992 Spurr case for a present-day excercise) set
+        ! this parameter for the output products
+      real(kind=dp),parameter :: OutputOffset    = 0.0_dp
+
       integer            :: BaseYear = 1900
       logical            :: useLeap  = .true.
 

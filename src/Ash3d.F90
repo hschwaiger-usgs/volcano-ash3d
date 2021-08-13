@@ -10,14 +10,14 @@
          nmods,OPTMOD_names
 
       use mesh,          only : &
-         ivent,jvent,nxmax,nymax,nzmax,nsmax,ts0,ts1,kappa_pd,z_cc_pd
+         ivent,jvent,nxmax,nymax,nzmax,nsmax,ts0,ts1,kappa_pd
 
       use solution,      only : &
          concen_pd,DepositGranularity,StopValue,dep_percent_accumulated, &
          SourceCumulativeVol,dep_vol,aloft_vol,outflow_vol,tot_vol
 
       use Output_Vars,   only : &
-         DepositAreaCovered,DepositThickness,LoadVal,CloudLoadArea,CloudArea,&
+         DepositAreaCovered,DepositThickness,LoadVal,CloudLoadArea,&
          Calculated_Cloud_Load,Calculated_AshThickness, &
            Allocate_Output_Vars, &
            Allocate_Output_UserVars, &

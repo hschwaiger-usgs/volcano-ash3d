@@ -69,7 +69,7 @@
          concen_pd
 
       use time_data,     only : &
-         SimStartHour,time,BaseYear,useLeap
+         SimStartHour,time,BaseYear,useLeap,OutputOffset
 
       implicit none
 
@@ -90,7 +90,8 @@
         ! don't write if there's no ash
         if(sum(concen_pd(i_vprofile(i),j_vprofile(i),:,:,ts1)).lt.EPS_THRESH) cycle
         ionumber = 200+i
-        cio = HS_yyyymmddhh_since(SimStartHour+time,BaseYear,useLeap)
+        cio = HS_yyyymmddhh_since(SimStartHour+time+OutputOffset,&
+                                  BaseYear,useLeap)
         do k=1,nzmax
           totalash(k) = sum(concen_pd(i_vprofile(i),j_vprofile(i),k,:,ts1))
           totalash(k) = totalash(k)/1000.0_ip     !convert from kg/km3 to mg/m3
@@ -306,7 +307,7 @@
          infile,WriteGSD,WriteAirportFile_ASCII,VolcanoName
 
       use time_data,     only : &
-         time,SimStartHour,BaseYear,useLeap,RunStartMinute,&
+         time,SimStartHour,OutputOffset,BaseYear,useLeap,RunStartMinute,&
          RunStartYear,RunStartMonth,RunStartDay,RunStartHr
 
       use Tephra,        only : &
@@ -349,7 +350,8 @@
         write(out_unit,98)  infile, RunStartYear,RunStartMonth,RunStartDay,RunStartHr, &
                               RunStartMinute, VolcanoName  !write infile, simulation time
         do i=1,neruptions  !write source parameters
-          write(out_unit,99) i, HS_xmltime(SimStartHour,BaseYear,useLeap), &
+          write(out_unit,99) i, HS_xmltime(SimStartHour+OutputOffset,&
+                                           BaseYear,useLeap), &
                            e_Duration(i), e_PlumeHeight(i), e_PlumeHeight(i)*3280.8_ip, e_Volume(i)
         enddo
         write(out_unit,995)
@@ -384,9 +386,11 @@
             endif
 
             !get yyyymmddhh of arrival
-            yyyymmddhh_cloud = HS_xmltime(Airport_CloudArrivalTime(i)+SimStartHour,BaseYear,useLeap)
+            yyyymmddhh_cloud = HS_xmltime(Airport_CloudArrivalTime(i)+SimStartHour+OutputOffset,&
+                                          BaseYear,useLeap)
             if (Airport_AshArrived(i)) then
-              yyyymmddhh_ash = HS_xmltime(Airport_AshArrivaltime(i)+SimStartHour,BaseYear,useLeap)
+              yyyymmddhh_ash = HS_xmltime(Airport_AshArrivaltime(i)+SimStartHour+OutputOffset,&
+                                          BaseYear,useLeap)
             else
               yyyymmddhh_ash = '0000-00-00T00:00:00Z'
             endif

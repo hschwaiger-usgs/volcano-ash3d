@@ -303,7 +303,7 @@
          DepositDensity,n_gs_max
 
       use mesh,          only : &
-         IsLatLon,nxmax,nymax,dz_vec_pd,sigma_nz_pd
+         nxmax,nymax,dz_vec_pd,sigma_nz_pd
 
       use solution,      only : &
          DepositGranularity
@@ -403,7 +403,7 @@
       subroutine ConcentrationCalculator
       
       use mesh,          only : &
-         IsLatLon,nxmax,nymax,nzmax,dx,dy,dz_vec_pd,z_cc_pd,ts1,sigma_nz_pd
+         nxmax,nymax,nzmax,dz_vec_pd,z_cc_pd,ts1,sigma_nz_pd
 
       use solution,      only : &
          concen_pd
@@ -413,7 +413,6 @@
 
       implicit none
 
-      integer :: nz
       integer :: i,j,k
       real(kind=ip),dimension(nzmax)  :: TotalConcentration
       real(kind=ip) :: MaxTotalConcentration
@@ -509,7 +508,7 @@
          n_gs_max
 
       use mesh,          only : &
-         IsLatLon,nxmax,nymax,nzmax,dx,dy,dz_vec_pd,sigma_nz_pd,ts1
+         nxmax,nymax,nzmax,dz_vec_pd,sigma_nz_pd,ts1
 
       use solution,      only : &
          concen_pd
@@ -554,7 +553,7 @@
       subroutine Gen_Output_Vars
 
       use mesh,          only : &
-         nxmax, nymax, nzmax
+         nxmax, nymax
 
       use time_data,     only : &
          time
