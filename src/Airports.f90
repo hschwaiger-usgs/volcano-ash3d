@@ -25,7 +25,8 @@
 
       real(kind=ip)                  :: ExtAirportLat(MAXAIRPORTS)
       real(kind=ip)                  :: ExtAirportLon(MAXAIRPORTS)
-      character(len=42)              :: ExtAirportName(MAXAIRPORTS)
+      character(len=3)               :: ExtAirportCode(MAXAIRPORTS)
+      character(len=38)              :: ExtAirportName(MAXAIRPORTS)
 
       real(kind=ip),     allocatable :: Airport_x(:)
       real(kind=ip),     allocatable :: Airport_y(:)
@@ -48,6 +49,7 @@
       character(len=130)             :: AirportMasterFile           !Only needed if USEEXTDATA=T
       character(len=130)             :: AirportInFile
       character(len=35), allocatable :: Airport_Name(:)
+      character(len=3),  allocatable :: Airport_Code(:)
       logical, allocatable           :: Airport_AshArrived(:)
       logical, allocatable           :: Airport_CloudArrived(:)       
 
@@ -67,6 +69,7 @@
 
 !     ALLOCATE ARRAY OF AIRPORTS TO BE USED IN THE MAIN PROGRAM
       allocate(Airport_Name(nair))             ;             Airport_Name = ' '
+      allocate(Airport_Code(nair))             ;             Airport_Code = ' '
       allocate(Airport_x(nair))                ;                Airport_x = 0.0_ip
       allocate(Airport_y(nair))                ;                Airport_y = 0.0_ip
       allocate(Airport_i(nair))                ;                Airport_i = 0
@@ -102,6 +105,7 @@
 
 !     ALLOCATE ARRAY OF AIRPORTS TO BE USED IN THE MAIN PROGRAM
       if(allocated(Airport_Name))              deallocate(Airport_Name)
+      if(allocated(Airport_Code))              deallocate(Airport_Code)
       if(allocated(Airport_x))                 deallocate(Airport_x)
       if(allocated(Airport_y))                 deallocate(Airport_y)
       if(allocated(Airport_i))                 deallocate(Airport_i)
@@ -149,6 +153,7 @@
       integer :: i,ind
       real(kind=ip)      :: xnow, ynow
       character(len=35)  :: NameNow
+      character(len=3)   :: CodeNow
       real(kind=ip)      :: latitude, longitude
       real(kind=dp)      :: lat_in,lon_in,xout,yout
 
@@ -171,6 +176,7 @@
         do i=NAIRPORTS_EWERT+1,n_airports_total
           AirportFullLat(i)  = ExtAirportLat(i-NAIRPORTS_EWERT)
           AirportFullLon(i)  = ExtAirportLon(i-NAIRPORTS_EWERT)
+          AirportFullCode(i) = ExtAirportCode(i-NAIRPORTS_EWERT)
           AirportFullName(i) = ExtAirportName(i-NAIRPORTS_EWERT)
           !make sure longitude is between 0
           if (AirportFullLon(i).lt.0.0_ip) &
@@ -187,6 +193,7 @@
         do i=1,n_airports_total
           AirportFullLat(i)  = ExtAirportLat(i)
           AirportFullLon(i)  = ExtAirportLon(i)
+          AirportFullCode(i) = ExtAirportCode(i)
           AirportFullName(i) = ExtAirportName(i)
         enddo
         !write(global_info,*) 'Replacing internal airports with the points below'
@@ -243,9 +250,9 @@
       do i = 1, n_airports_total
         latitude  = AirportFullLat(i)
         longitude = AirportFullLon(i)
+        CodeNow   = AirportFullCode(i)(1:3)
         NameNow   = AirportFullName(i)(1:35) ! Copy to a temp variable and
-                                             !truncate to 35 chars
-
+                                             ! truncate to 35 chars
         xnow = 0.0_ip
         ynow = 0.0_ip
         if (IsLatLon) then
@@ -254,6 +261,7 @@
               (latitude.ge.latLL+dn)  .and. &
               (latitude.le.latUR-dn)) then
             ind = ind + 1
+            Airport_Code(ind) = CodeNow
             Airport_Name(ind) = NameNow
             Airport_x(ind) = xnow
             Airport_y(ind) = ynow
@@ -441,8 +449,8 @@
         inow = inow+1
         read(17,'(a80)',IOSTAT=Iostatus) inputline
         read(inputline,*,err=2010) ExtAirportLat(inow), ExtAirportLon(inow)
-        read(inputline,2) ExtAirportName(inow)
-2       format(49x,a35)
+        read(inputline,2) ExtAirportCode(inow), ExtAirportName(inow)
+2       format(50x,a3,1x,a35)
         !make sure longitude is between 0
         if (ExtAirportLon(inow).lt.0.0_ip) &
           ExtAirportLon(inow) = ExtAirportLon(inow)+360.0_ip
@@ -515,8 +523,8 @@
            "Airport file contains too many entries"
           stop 1
         endif
-        AirportFullCode(i) = inCode
-        AirportFullName(i) = inName
+        AirportFullCode(i) = adjustl(trim(inCode))
+        AirportFullName(i) = adjustl(trim(inName))
         AirportFullLat(i)  = inlat
         AirportFullLon(i)  = inlon
       end do

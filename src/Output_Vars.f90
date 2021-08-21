@@ -26,6 +26,7 @@
       real(kind=op)                :: MaxHeight_FillValue          = -9999.0_op
       real(kind=op)                :: MinHeight_FillValue          = -9999.0_op
       real(kind=op)                :: dbZCol_FillValue             =  -100.0_op
+      real(kind=op)                :: pr_ash_FillValue             = -9999.0_op
 
       logical            :: Calculated_Cloud_Load
       logical            :: Calculated_AshThickness
@@ -76,6 +77,8 @@
       real(kind=ip), dimension(:,:),pointer :: MinHeight        => null() ! cloud bottom height
       real(kind=ip), dimension(:,:),pointer :: dbZCol           => null() ! max reflectivity in a vertical column
 
+      real(kind=ip), dimension(:,:,:),pointer :: pr_ash           => null() ! concentration profile
+
         ! 3-D variables
         !   (in x,y,z)
       real(kind=ip), dimension(:,:,:),pointer :: dbZ => null()               ! radar reflectivty at time t (dbZ)
@@ -92,6 +95,8 @@
       real(kind=ip), dimension(:,:),allocatable :: MaxHeight          ! maximum cloud height
       real(kind=ip), dimension(:,:),allocatable :: MinHeight          ! cloud bottom height
       real(kind=ip), dimension(:,:),allocatable :: dbZCol             ! max reflectivity in a vertical column
+
+      real(kind=ip), dimension(:,:,:),allocatable :: pr_ash             ! concentration profile
 
         ! 3-D variables
         !   (in x,y,z)
@@ -178,6 +183,21 @@
 
 !******************************************************************************
 
+      subroutine Allocate_Profile(nz,nt,nv)
+
+      implicit none
+
+      integer :: nz,nt,nv
+
+      if(nv.gt.0)then
+        allocate(pr_ash(nv,nz,3*nt))                       ! vertical ash profile
+        pr_ash = pr_ash_FillValue
+      endif
+
+      end subroutine Allocate_Profile
+
+!******************************************************************************
+
       subroutine Allocate_Output_UserVars(nx,ny,nz,ns)
 
       use io_data,       only : &
@@ -251,6 +271,9 @@
       if(allocated(MinHeight))        deallocate(MinHeight)
       if(allocated(dbZCol))           deallocate(dbZCol)
       if(allocated(dbZ))              deallocate(dbZ)
+
+      if(allocated(pr_ash))           deallocate(pr_ash)
+
 #endif
 
       end subroutine Deallocate_Output_Vars
@@ -646,6 +669,48 @@
 
 !******************************************************************************
 
+      subroutine Calc_vprofile(itime)
+
+      use global_param,  only : &
+         EPS_THRESH
+
+      use io_data,       only : &
+         nvprofiles,i_vprofile,j_vprofile
+
+      use mesh,          only : &
+         nzmax,ts1
+
+      use solution,      only : &
+         concen_pd
+
+      use time_data,     only : &
+         SimStartHour,time,BaseYear,useLeap,OutputOffset
+
+      use Tephra,         only : &
+         n_gs_max
+
+      implicit none
+
+      integer, intent(in) :: itime
+
+      integer :: i,k
+      real(kind=ip) :: totalash
+
+!      do i=1,nvprofiles
+!        ! don't write if there's no ash
+!        if(sum(concen_pd(i_vprofile(i),j_vprofile(i),1:nzmax,1:n_gs_max,ts1)).lt.EPS_THRESH) cycle
+!        do k=1,nzmax
+!          totalash = sum(concen_pd(i_vprofile(i),j_vprofile(i),k,1:n_gs_max,ts1))
+!          pr_ash(i,k,itime) = totalash/1000.0_ip     !convert from kg/km3 to mg/m3
+!        enddo
+!      enddo
+!
+!      return
+!
+      end subroutine Calc_vprofile
+
+!******************************************************************************
+
       subroutine Calc_AshVol_Deposit(vol)
 
       use mesh,          only : &
@@ -778,7 +843,7 @@
           endif
         endif
 
-        !mark cloud duration is cloud has passed
+        !mark cloud duration if cloud has passed
         if (Airport_CloudArrived(i).eqv..true.) then
           if ((Airport_CloudHere(i).le.CLOUDLOAD_THRESH).and.&
               (Airport_CloudHereLast(i).gt.CLOUDLOAD_THRESH)) then

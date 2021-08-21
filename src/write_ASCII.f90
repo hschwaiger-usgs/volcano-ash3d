@@ -50,7 +50,7 @@
 
 !******************************************************************************
 
-      subroutine vprofilewriter
+      subroutine vprofilewriter(itime)
 
 !     subroutine that writes data on vertical profiles
 
@@ -71,7 +71,15 @@
       use time_data,     only : &
          SimStartHour,time,BaseYear,useLeap,OutputOffset
 
+      use Tephra,         only : &
+         n_gs_max
+
+      use Output_Vars,    only : &
+         pr_ash
+
       implicit none
+
+      integer, intent(in) :: itime
 
       integer :: i,k
       integer   :: ionumber
@@ -88,15 +96,17 @@
 
       do i=1,nvprofiles
         ! don't write if there's no ash
-        if(sum(concen_pd(i_vprofile(i),j_vprofile(i),:,:,ts1)).lt.EPS_THRESH) cycle
+        if(sum(concen_pd(i_vprofile(i),j_vprofile(i),1:nzmax,1:n_gs_max,ts1)).lt.EPS_THRESH) cycle
         ionumber = 200+i
         cio = HS_yyyymmddhh_since(SimStartHour+time+OutputOffset,&
                                   BaseYear,useLeap)
         do k=1,nzmax
-          totalash(k) = sum(concen_pd(i_vprofile(i),j_vprofile(i),k,:,ts1))
+          totalash(k) = sum(concen_pd(i_vprofile(i),j_vprofile(i),k,1:n_gs_max,ts1))
           totalash(k) = totalash(k)/1000.0_ip     !convert from kg/km3 to mg/m3
         enddo
         write(ionumber,1) cio, time, (totalash(k), k=1,nzmax)
+!        write(ionumber,1) cio, time, (pr_ash(i,k,itime), k=1,nzmax)
+
 1       format(a13,',',f10.3,',',50(e15.3,','))
       enddo
 

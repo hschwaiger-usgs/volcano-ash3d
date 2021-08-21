@@ -608,6 +608,7 @@
       character(len=20)  :: xmlTimeSpanStart
       character(len=20)  :: xmlTimeSpanEnd    !time periods written to kml files
 
+      integer :: ntmax ! The maximum anticipated number of steps
       ! No allocatable arrays to allocate or deallocate
 
       end module time_data

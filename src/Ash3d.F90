@@ -18,9 +18,9 @@
 
       use Output_Vars,   only : &
          DepositAreaCovered,DepositThickness,LoadVal,CloudLoadArea,&
-         Calculated_Cloud_Load,Calculated_AshThickness, &
-           Allocate_Output_Vars, &
+         Calculated_Cloud_Load,Calculated_AshThickness,Calc_vprofile, &
            Allocate_Output_UserVars, &
+           Allocate_Profile, &
            Gen_Output_Vars,&
            FirstAsh
 
@@ -31,7 +31,7 @@
          WriteAirportFile_ASCII,WriteAirportFile_KML
 
       use time_data,     only : &
-         time,dt,Simtime_in_hours,t0,t1
+         time,dt,Simtime_in_hours,t0,t1,ntmax
 
       use Source,        only : &
          ibase,itop,SourceNodeFlux,e_EndTime_final,e_Volume,MassFluxRate_now,&
@@ -77,7 +77,6 @@
       real(kind=ip)         :: avgcon        ! avg concen of cells in umbrella
       real(kind=ip)         :: Interval_Frac
       logical               :: Load_MesoSteps
-      integer               :: ntmax
       logical, dimension(5) :: StopConditions = .false.
       logical               :: StopTimeLoop   = .false.
       logical               :: first_time     = .true.
@@ -105,7 +104,8 @@
         subroutine Set_BC(bc_code)
           integer,intent(in) :: bc_code ! 1 for advection, 2 for diffusion
         end subroutine
-        subroutine vprofilewriter
+        subroutine vprofilewriter(itime)
+          integer, intent(in) :: itime
         end subroutine
         subroutine TimeStepTotals(itime)
           integer, intent(in) :: itime
@@ -235,6 +235,9 @@
       call output_results
 
       ntmax = max(1,int(Simtime_in_hours/dt))
+      if (nvprofiles.gt.0)then
+        call Allocate_Profile(nzmax,ntmax,nvprofiles)
+      endif
 
       write(global_info,7)            !write "Building time array of plume height & eruption rate"
       write(global_log ,7)
@@ -418,7 +421,10 @@
             ! SEE WHETHER THE ASH HAS HIT ANY AIRPORTS
           call FirstAsh
             ! Track ash on vertical profiles
-          if (nvprofiles.gt.0) call vprofilewriter     !write out vertical profiles
+          if (nvprofiles.gt.0)then
+            !call Calc_vprofile(itime)
+            call vprofilewriter(itime)     !write out vertical profiles
+          endif
         endif
 
         ! GO TO OUTPUT RESULTS IF WE'RE AT THE NEXT OUTPUT STAGE
