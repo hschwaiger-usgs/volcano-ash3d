@@ -7,6 +7,9 @@
       use global_param,  only : &
          PI, M_2_MM, KM2_2_M2, KM3_2_M3, EPS_SMALL
 
+      use time_data,     only : &
+         time_native
+
       real(kind=ip)                :: DEPO_THRESH      = 1.0e-1_ip  !threshold deposit thickness (mm)
       real(kind=ip)                :: DEPRATE_THRESH   = 1.0e-2_ip  !threshold deposition rate (mm/hr)
       real(kind=ip)                :: CLOUDCON_THRESH  = 1.0e-3_ip  !threshold cloud concentration (kg/km3)
@@ -190,7 +193,8 @@
       integer :: nz,nt,nv
 
       if(nv.gt.0)then
-        allocate(pr_ash(nv,nz,3*nt))                       ! vertical ash profile
+        allocate(time_native(nt))
+        allocate(pr_ash(nz,nt,nv))                       ! vertical ash profile
         pr_ash = pr_ash_FillValue
       endif
 
@@ -684,10 +688,13 @@
          concen_pd
 
       use time_data,     only : &
-         SimStartHour,time,BaseYear,useLeap,OutputOffset
+         time
 
       use Tephra,         only : &
          n_gs_max
+
+      use time_data,      only : &
+         ntmax
 
       implicit none
 
@@ -696,17 +703,26 @@
       integer :: i,k
       real(kind=ip) :: totalash
 
-!      do i=1,nvprofiles
-!        ! don't write if there's no ash
-!        if(sum(concen_pd(i_vprofile(i),j_vprofile(i),1:nzmax,1:n_gs_max,ts1)).lt.EPS_THRESH) cycle
-!        do k=1,nzmax
-!          totalash = sum(concen_pd(i_vprofile(i),j_vprofile(i),k,1:n_gs_max,ts1))
-!          pr_ash(i,k,itime) = totalash/1000.0_ip     !convert from kg/km3 to mg/m3
-!        enddo
-!      enddo
-!
-!      return
-!
+      if(itime.gt.ntmax)then
+        write(global_error)"ERROR: itime is greater than ntmax"
+        write(global_error)"       cannot write to profile"
+        return
+      else
+        time_native(itime) = time
+      endif
+
+
+      do i=1,nvprofiles
+        ! don't write if there's no ash
+        if(sum(concen_pd(i_vprofile(i),j_vprofile(i),1:nzmax,1:n_gs_max,ts1)).lt.EPS_THRESH) cycle
+        do k=1,nzmax
+          totalash = sum(concen_pd(i_vprofile(i),j_vprofile(i),k,1:n_gs_max,ts1))
+          pr_ash(k,itime,i) = totalash/1000.0_ip     !convert from kg/km3 to mg/m3
+        enddo
+      enddo
+
+      return
+
       end subroutine Calc_vprofile
 
 !******************************************************************************

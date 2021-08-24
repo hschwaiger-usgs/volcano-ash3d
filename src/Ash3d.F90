@@ -234,7 +234,7 @@
         ! Call output_results before time loop to create output files
       call output_results
 
-      ntmax = max(1,int(Simtime_in_hours/dt))
+      ntmax = max(1,3*int(Simtime_in_hours/dt))
       if (nvprofiles.gt.0)then
         call Allocate_Profile(nzmax,ntmax,nvprofiles)
       endif
@@ -268,7 +268,7 @@
         Calculated_AshThickness = .false.
 
         itime = itime + 1
-        if(itime.gt.3*ntmax)then
+        if(itime.gt.ntmax)then
           write(global_info,*)"WARNING: The number of time steps attempted exceeds 3x that anticipated."
           write(global_info,*)"         Check that the winds are stable"
           write(global_info,*)"        Simtime_in_hours = ",Simtime_in_hours
@@ -422,7 +422,7 @@
           call FirstAsh
             ! Track ash on vertical profiles
           if (nvprofiles.gt.0)then
-            !call Calc_vprofile(itime)
+            call Calc_vprofile(itime)
             call vprofilewriter(itime)     !write out vertical profiles
           endif
         endif
@@ -524,6 +524,9 @@
               !  ((dep_percent_accumulated.le.StopValue).and. &
               !    (time.lt.Simtime_in_hours)        .and. &
               !    (n_gs_aloft.gt.0))
+
+      ! Reset ntmax to the actual number of time steps
+      ntmax = itime
 
       write(global_info,*)"Time integration completed for the following reason:"
       if(StopConditions(1).eqv..true.)then

@@ -84,7 +84,7 @@
       integer :: i,k
       integer   :: ionumber
       character(len=13)  :: cio
-      real(kind=ip)      :: totalash(1:nzmax)
+      !real(kind=ip)      :: totalash(1:nzmax)
 
       INTERFACE
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
@@ -100,12 +100,12 @@
         ionumber = 200+i
         cio = HS_yyyymmddhh_since(SimStartHour+time+OutputOffset,&
                                   BaseYear,useLeap)
-        do k=1,nzmax
-          totalash(k) = sum(concen_pd(i_vprofile(i),j_vprofile(i),k,1:n_gs_max,ts1))
-          totalash(k) = totalash(k)/1000.0_ip     !convert from kg/km3 to mg/m3
-        enddo
-        write(ionumber,1) cio, time, (totalash(k), k=1,nzmax)
-!        write(ionumber,1) cio, time, (pr_ash(i,k,itime), k=1,nzmax)
+!        do k=1,nzmax
+!          totalash(k) = sum(concen_pd(i_vprofile(i),j_vprofile(i),k,1:n_gs_max,ts1))
+!          totalash(k) = totalash(k)/1000.0_ip     !convert from kg/km3 to mg/m3
+!        enddo
+!        write(ionumber,1) cio, time, (totalash(k), k=1,nzmax)
+        write(ionumber,1) cio, time, (pr_ash(k,itime,i), k=1,nzmax)
 
 1       format(a13,',',f10.3,',',50(e15.3,','))
       enddo

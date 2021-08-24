@@ -140,6 +140,9 @@
       integer :: pt_cloudduration_var_id = 0 ! Duration of ash cloud
       integer :: pt_ashthickness_var_id  = 0 ! TS of ash accumulation
 
+      ! Vertical profile variable
+      integer :: pr_ash_var_id           = 0 ! concentration profile
+
       integer :: temp1_2d_var_id !,temp2_2d_var_id,temp3_2d_var_id,temp4_2d_var_id
       integer :: temp1_3d_var_id !,temp2_3d_var_id,temp3_3d_var_id,temp4_3d_var_id
       integer :: temp1_4d_var_id !,temp2_4d_var_id!,temp3_4d_var_id!,temp4_4d_var_id
@@ -620,7 +623,7 @@
       endif
 
         ! pr (profile output index)
-      if (NCversion.eq.4.and.nvprofiles.gt.0)then
+      if (nvprofiles.gt.0)then
         if(VERB.gt.1)write(*,*)"     PR",dim_names(10)
         nSTAT = nf90_def_var(ncid,dim_names(10),&
                              nf90_int,&
@@ -1453,9 +1456,6 @@
         nSTAT = nf90_put_att(ncid,pt_ashduration_var_id,"_FillValue",DepArrivalTime_FillValue)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var pt_ashduration_var_id _FillValue")
 
-
-
-
         ! Point/Airport ash cloud arrival time
         if(VERB.gt.1)write(global_info,*)"     pt_cloud_arrival"
         if(op.eq.8)then
@@ -1529,6 +1529,32 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var pt_ashthickness_var_id _FillValue")
 
       endif
+
+      if(NCversion.eq.4.and.nvprofiles.gt.0)then
+        ! PR
+        if(op.eq.8)then
+          nSTAT = nf90_def_var(ncid,"pr_ash",&
+                               nf90_double, &
+                               (/z_dim_id,tn_dim_id,pr_dim_id/),                &
+                               pr_ash_var_id)
+        else
+          nSTAT = nf90_def_var(ncid,"pr_ash",&
+                               nf90_float,  &
+                               (/z_dim_id,tn_dim_id,pr_dim_id/),                &
+                               pr_ash_var_id)
+        endif
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var pr_ash")
+        nSTAT = nf90_put_att(ncid,pr_ash_var_id,"long_name",var_lnames(32))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_ash long_name")
+        nSTAT = nf90_put_att(ncid,pr_ash_var_id,"units","mg/m3")
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_ash units")
+        nSTAT = nf90_put_att(ncid,pr_ash_var_id,&
+                 "missing_value", MaxConcentration_FillValue)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_ash missing_value")
+        nSTAT = nf90_put_att(ncid,pr_ash_var_id,"_FillValue",MaxConcentration_FillValue)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_ash _FillValue")
+      endif
+
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2215,7 +2241,7 @@
 
       use io_data,       only : &
          iout3d,nvar_User2d_XY,nvar_User3d_XYGs,nvar_User3d_XYZ,nvar_User4d_XYZGs,&
-         outfile,isFinal_TS
+         outfile,isFinal_TS,nvprofiles
 
       use Output_Vars,   only : &
          CloudLoad_FillValue,dbZCol_FillValue,MaxConcentration_FillValue,&
@@ -2225,7 +2251,7 @@
          var_User3d_XYZ_name,var_User3d_XYZ,var_User4d_XYZGs_name,var_User4d_XYZGs,&
          DBZ_THRESH,USE_OPTMOD_VARS,USE_RESTART_VARS,&
          USE_OUTPROD_VARS,USE_WIND_VARS,DepositThickness,DepArrivalTime,CloudArrivalTime,&
-         MaxConcentration,MaxHeight,CloudLoad,dbZ,MinHeight,&
+         MaxConcentration,MaxHeight,CloudLoad,dbZ,MinHeight,pr_ash,&
            dbZCalculator
 
       use Tephra,        only : &
@@ -2242,7 +2268,8 @@
          vx_pd,vy_pd,vz_pd,vf_pd,concen_pd,DepositGranularity
 
       use time_data,     only : &
-         time
+         time,ntmax,time_native
+
 
       use netcdf
 
@@ -2254,6 +2281,7 @@
       integer :: ncid
       integer :: ivar
       integer :: t_var_id          = 0
+      integer :: tn_var_id         = 0
       integer :: vx_var_id         = 0
       integer :: vy_var_id         = 0
       integer :: vz_var_id         = 0
@@ -2270,10 +2298,11 @@
       integer :: ashcloudtime_var_id   = 0 ! Cloud arrival time
       integer :: ashcloudBot_var_id    = 0 ! Height of bottom of ash cloud
       integer :: pt_ashthickness_var_id = 0 ! TS of ashfall
-      integer :: pt_cloudarrival_var_id
-      integer :: pt_cloudduration_var_id
-      integer :: pt_asharrival_var_id
-      integer :: pt_ashduration_var_id
+      integer :: pt_cloudarrival_var_id = 0
+      integer :: pt_cloudduration_var_id= 0
+      integer :: pt_asharrival_var_id   = 0
+      integer :: pt_ashduration_var_id  = 0
+      integer :: pr_ash_var_id          = 0
 
       integer :: temp1_2d_var_id !,temp2_2d_var_id,temp3_2d_var_id,temp4_2d_var_id
       integer :: temp1_3d_var_id !,temp2_3d_var_id,temp3_3d_var_id,temp4_3d_var_id
@@ -2289,8 +2318,8 @@
       real(kind=op), dimension(:,:,:)  ,allocatable :: depocon
 
       if(VERB.gt.2)write(global_info,*)"Allocating output vars"
-      allocate(dum2d_out(nxmax,nymax))
-      allocate(dum3d_out(nxmax,nymax,nzmax))
+      !allocate(dum2d_out(nxmax,nymax))
+      !allocate(dum3d_out(nxmax,nymax,nzmax))
 
       allocate(ashcon(nxmax,nymax,nzmax,nsmax))
       allocate(depocon(nxmax,nymax,nsmax))
@@ -2308,6 +2337,7 @@
 
       if(isFinal_TS)then
           ! depotime
+        allocate(dum2d_out(nxmax,nymax))
         nSTAT = nf90_inq_varid(ncid,"depotime",depotime_var_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid depotime")
         if(VERB.gt.2)write(global_info,*)"  Writing depotime"
@@ -2320,8 +2350,10 @@
         enddo
         nSTAT=nf90_put_var(ncid,depotime_var_id,dum2d_out,(/1,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depotime")
+        deallocate(dum2d_out)
 
           ! ashtime
+        allocate(dum2d_out(nxmax,nymax))
         nSTAT = nf90_inq_varid(ncid,"ash_arrival_time",ashcloudtime_var_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid ash_arrival_time")
         if(VERB.gt.2)write(global_info,*)"  Writing ashtime"
@@ -2334,12 +2366,9 @@
         enddo
         nSTAT=nf90_put_var(ncid,ashcloudtime_var_id,dum2d_out,(/1,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var ash_arrival_time")
+        deallocate(dum2d_out)
 
         if (nairports.gt.0)then
-       !pt_asharrival_var_id    = 0 ! Arrival time of ashfall   pt_depotime
-       !pt_ashduration_var_id   = 0 ! Duration of ashfall       pt_depodur
-       !pt_cloudarrival_var_id  = 0 ! Arrival time of ash cloud pt_cloud_arrival
-       !pt_cloudduration_var_id = 0 ! Duration of ash cloud     pt_cloud_dur
 
           ! Arrival time of ashfall
           nSTAT = nf90_inq_varid(ncid,"pt_depotime",pt_asharrival_var_id)
@@ -2377,7 +2406,29 @@
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var pt_cloud_dur")
           deallocate(dum1d_out)
 
+        endif
 
+        if(nvprofiles.gt.0)then
+          ! PR
+          ! write out native time
+          nSTAT = nf90_inq_varid(ncid,"tn",tn_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid tn")
+          allocate(dum1d_out(ntmax))
+          dum1d_out(1:ntmax) = real(time_native(1:ntmax),kind=op)
+          nSTAT=nf90_put_var(ncid,tn_var_id,dum1d_out,(/1/))
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var tn")
+          deallocate(dum1d_out)
+
+          ! write out profiles
+          nSTAT = nf90_inq_varid(ncid,"pr_ash",pr_ash_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid pr_ash")
+          allocate(dum3d_out(nzmax,ntmax,nvprofiles))
+          dum3d_out(1:nzmax,1:ntmax,1:nvprofiles) = &
+                    real(pr_ash(1:nzmax,1:ntmax,1:nvprofiles),kind=op)
+          nSTAT=nf90_put_var(ncid,pr_ash_var_id,dum3d_out,(/1,1,1/))
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var pr_ash")
+          deallocate(dum3d_out)
+          write(*,*)"WROTE :",nvprofiles,nzmax,ntmax
         endif
 
       endif
@@ -2398,6 +2449,7 @@
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         if(USE_WIND_VARS)then
+          allocate(dum3d_out(nxmax,nymax,nzmax))
             ! Vz
           nSTAT = nf90_inq_varid(ncid,"vz",vz_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid vz")
@@ -2419,6 +2471,7 @@
           dum3d_out(1:nxmax,1:nymax,1:nzmax) = real(vx_pd(1:nxmax,1:nymax,1:nzmax),kind=op)
           nSTAT=nf90_put_var(ncid,vx_var_id,dum3d_out,(/1,1,1,iout3d/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var vx")
+          deallocate(dum3d_out)
             ! Vf
           nSTAT = nf90_inq_varid(ncid,"vf",vf_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid vf")
@@ -2478,6 +2531,7 @@
           call dbZCalculator            ! get radar reflectivity
     
           ! depothick
+          allocate(dum2d_out(nxmax,nymax))
           nSTAT = nf90_inq_varid(ncid,"depothick",depothick_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid depothick")
           if(VERB.gt.2)write(global_info,*)"  Writing depothick"
@@ -2490,8 +2544,10 @@
           enddo
           nSTAT=nf90_put_var(ncid,depothick_var_id,dum2d_out,(/1,1,iout3d/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depothick")
-    
+          deallocate(dum2d_out)
+
           ! ashconMax
+          allocate(dum2d_out(nxmax,nymax))
           dum2d_out(:,:) = MaxConcentration_FillValue
           nSTAT = nf90_inq_varid(ncid,"ashcon_max",ashconMax_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid ashcon_max")
@@ -2507,8 +2563,10 @@
           enddo
           nSTAT=nf90_put_var(ncid,ashconMax_var_id,dum2d_out,(/1,1,iout3d/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var ashcon_max")
+          deallocate(dum2d_out)
    
           ! ash cloud_height
+          allocate(dum2d_out(nxmax,nymax))
           nSTAT = nf90_inq_varid(ncid,"cloud_height",ashheight_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid cloud_height")
           if(VERB.gt.2)write(global_info,*)"  Writing ash height"
@@ -2523,8 +2581,10 @@
           enddo
           nSTAT=nf90_put_var(ncid,ashheight_var_id,dum2d_out,(/1,1,iout3d/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var cloud_height")
+          deallocate(dum2d_out)
 
           ! ash-load
+          allocate(dum2d_out(nxmax,nymax))
           nSTAT = nf90_inq_varid(ncid,"cloud_load",ashload_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid cloud_load")
           if(VERB.gt.2)write(global_info,*)"  Writing ash-load"
@@ -2539,8 +2599,10 @@
           enddo
           nSTAT=nf90_put_var(ncid,ashload_var_id,dum2d_out,(/1,1,iout3d/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var cloud_load")
+          deallocate(dum2d_out)
 
           ! radar reflectivity
+          allocate(dum3d_out(nxmax,nymax,nzmax))
           nSTAT = nf90_inq_varid(ncid,"radar_reflectivity",radrefl_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid radar_reflectivity")
           if(VERB.gt.2)write(global_info,*)"  Writing radar reflectivity"
@@ -2557,8 +2619,10 @@
           enddo
           nSTAT=nf90_put_var(ncid,radrefl_var_id,dum3d_out,(/1,1,1,iout3d/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var radar_reflectivity")
+          deallocate(dum3d_out)
 
           ! ash cloud_bottom
+          allocate(dum2d_out(nxmax,nymax))
           nSTAT = nf90_inq_varid(ncid,"cloud_bottom",ashcloudBot_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid cloud_bottom")
           if(VERB.gt.2)write(global_info,*)"  Writing ash-height (bottom)"
@@ -2573,6 +2637,7 @@
           enddo
           nSTAT=nf90_put_var(ncid,ashcloudBot_var_id,dum2d_out,(/1,1,iout3d/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var cloud_bottom")
+          deallocate(dum2d_out)
 
         endif ! USE_OUTPROD_VARS
 
@@ -2603,6 +2668,7 @@
         if(.not.isFinal_TS)then
           ! Fill User-specified 2-d transient variables
           if(nvar_User2d_XY.gt.0)then
+            allocate(dum2d_out(nxmax,nymax))
             do ivar=1,nvar_User2d_XY
               dum2d_out(:,:) = real(var_User2d_XY(:,:,ivar),kind=op)
               nSTAT = nf90_inq_varid(ncid,var_User2d_XY_name(ivar),temp1_2d_var_id)
@@ -2610,6 +2676,7 @@
               nSTAT = nf90_put_var(ncid,temp1_2d_var_id,dum2d_out,(/1,1,iout3d/))
               if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var XY")
             enddo
+            deallocate(dum2d_out)
           endif
 
           ! Fill User-specified 3-d transient variables in x,y,gs
@@ -2625,6 +2692,7 @@
 
           ! Fill User-specified 3-d transient variables in x,y,z
           if(nvar_User3d_XYZ.gt.0)then
+            allocate(dum3d_out(nxmax,nymax,nzmax))
             do ivar=1,nvar_User3d_XYZ
               dum3d_out(:,:,:) = real(var_User3d_XYZ(:,:,:,ivar),kind=op)
               nSTAT = nf90_inq_varid(ncid,var_User3d_XYZ_name(ivar),temp1_3d_var_id)
@@ -2632,6 +2700,7 @@
               nSTAT = nf90_put_var(ncid,temp1_3d_var_id,dum3d_out,(/1,1,1,iout3d/))
               if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var XYZ")
             enddo
+            deallocate(dum3d_out)
           endif
 
           ! Fill User-specified 4-d transient variables in x,y,z,gs
@@ -2655,7 +2724,6 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"nf90_close")
 
       if(VERB.gt.2)write(global_info,*)"Deallocating"
-      deallocate(dum2d_out,dum3d_out)
       deallocate(ashcon)
       deallocate(depocon)
 
@@ -2856,9 +2924,9 @@
       character(len=*), intent(in) :: operation
 
       if (nSTAT == nf90_noerr) return
-      write(global_essential ,*)"ERROR: ",operation,nf90_strerror(nSTAT)
-      write(global_log ,*)"ERROR: ",operation,nf90_strerror(nSTAT)
-      write(global_error ,*)"ERROR: ",operation,nf90_strerror(nSTAT)
+      write(global_essential ,*)"ERROR: ",errcode,operation,nf90_strerror(nSTAT)
+      write(global_log ,*)"ERROR: ",errcode,operation,nf90_strerror(nSTAT)
+      write(global_error ,*)"ERROR: ",errcode,operation,nf90_strerror(nSTAT)
 
       stop 
 
