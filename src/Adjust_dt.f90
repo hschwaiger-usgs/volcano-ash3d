@@ -12,14 +12,15 @@
 !
 !##############################################################################
 
-      subroutine Adjust_DT
+      subroutine Adjust_DT(mesostep)
+!      subroutine Adjust_DT
 
       use precis_param
 
       use io_units
 
       use global_param,  only : &
-         DEG2RAD,PI,EPS_SMALL,CFL,DT_MAX,DT_MIN,         &
+         DEG2RAD,PI,EPS_SMALL,CFL,DT_MAX,DT_MIN,MPS_2_KMPHR, &
          useDiffusion,useCN
 
       use Tephra,        only : &
@@ -31,9 +32,12 @@
 
       use solution,      only : &
          vx_pd,vy_pd,vz_pd,vf_pd
+
+      use wind_grid,     only : &
+         vx_meso_next_step_sp,vy_meso_next_step_sp,vz_meso_next_step_sp
          
       use time_data,     only : &
-         time,dt,                                        &
+         time,dt,dt_meso_next,                                    &
          dtodx,dtodxdx,dtody,dtodydy,dtodz,dtodzdz,      &
          Simtime_in_hours
          
@@ -45,6 +49,8 @@
 
       implicit none
 
+      logical, intent(in), optional :: mesostep
+
       integer       :: i,j,k
       real(kind=ip) :: tmp
       real(kind=ip) :: time_diffuse, time_advect
@@ -55,6 +61,7 @@
       integer       :: fac
       real(kind=ip) :: vzmax_dz
       real(kind=ip) :: minsig
+      logical       :: CheckMesoVel
 
       time_diffuse   = 0.0_ip
 
@@ -64,40 +71,92 @@
 
       ! Get the constraining velocities relative to the grid size
       ! The bigger v[x,y,z]max_d[x,y,z] are, the smaller the time step required
-      if(.not.IsLatLon) then
-        vxmax = maxval(abs(vx_pd(1:nxmax,1:nymax,1:nzmax)))
-        vxmax_dx = vxmax/dx
-        vymax = maxval(abs(vy_pd(1:nxmax,1:nymax,1:nzmax)))
-        vymax_dy = vymax/dy
+      if(present(mesostep))then
+        CheckMesoVel = mesostep
       else
-        vxmax_dx = 0.0_ip
-        vymax_dy = 0.0_ip
+        CheckMesoVel = .false.
       endif
-      vzmax_dz = 0.0_ip
-      ! This branch looks at conditions cell-by-cell
-      do i=1,nxmax
-        do j=1,nymax
-          do k=1,nzmax
-            ! Note: for this to work, you really need to set vf_pd=0 for all
-            !       species that are flushed out of the system, otherwise, this
-            !       will always be dominated by the large grain sizes with the
-            !       highest fall velocities
-            tmp =        abs(vz_pd(i,j,k)) + &
-                  maxval(abs(vf_pd(i,j,k,1:nsmax)))
-            if(tmp/dz_vec_pd(k).gt.vzmax_dz)then
-              vzmax_dz = tmp/dz_vec_pd(k)
-            endif
-            if(IsLatLon)then
-              minsig = minval(sigma_nx_pd(i:i+1,j,k))
-              tmp = abs(vx_pd(i,j,k))*minsig/kappa_pd(i,j,k)
-              if(tmp.gt.vxmax_dx)vxmax_dx=tmp
-              minsig = minval(sigma_ny_pd(i,j:j+1,k))
-              tmp = abs(vy_pd(i,j,k))*minsig/kappa_pd(i,j,k)
-              if(tmp.gt.vymax_dy)vymax_dy=tmp
-            endif
+
+      if(CheckMesoVel)then
+        ! In this block, we find the conditions based on velocities at the next
+        ! meso time step
+        if(.not.IsLatLon) then
+          vxmax = real(maxval(abs(vx_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax))),kind=ip)
+          vxmax = vxmax*MPS_2_KMPHR
+          vxmax_dx = vxmax/dx
+          vymax = real(maxval(abs(vy_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax))),kind=ip)
+          vymax = vymax*MPS_2_KMPHR
+          vymax_dy = vymax/dy
+        else
+          vxmax_dx = 0.0_ip
+          vymax_dy = 0.0_ip
+        endif
+        vzmax_dz = 0.0_ip
+        ! This branch looks at conditions cell-by-cell
+        ! Use vx_meso_1_sp and vx_meso_2_sp
+        do i=1,nxmax
+          do j=1,nymax
+            do k=1,nzmax
+              ! Note: for this to work, you really need to set vf_pd=0 for all
+              !       species that are flushed out of the system, otherwise,
+              !       this
+              !       will always be dominated by the large grain sizes with the
+              !       highest fall velocities
+              tmp =   real(abs(vz_meso_next_step_sp(i,j,k)),kind=ip)*MPS_2_KMPHR + &
+                    maxval(abs(vf_pd(i,j,k,1:nsmax)))
+              if(tmp/dz_vec_pd(k).gt.vzmax_dz)then
+                vzmax_dz = tmp/dz_vec_pd(k)
+              endif
+              if(IsLatLon)then
+                minsig = minval(sigma_nx_pd(i:i+1,j,k))
+                tmp = real(abs(vx_meso_next_step_sp(i,j,k)),kind=ip)*MPS_2_KMPHR*minsig/kappa_pd(i,j,k)
+                if(tmp.gt.vxmax_dx)vxmax_dx=tmp
+                minsig = minval(sigma_ny_pd(i,j:j+1,k))
+                tmp = real(abs(vy_meso_next_step_sp(i,j,k)),kind=ip)*MPS_2_KMPHR*minsig/kappa_pd(i,j,k)
+                if(tmp.gt.vymax_dy)vymax_dy=tmp
+              endif
+            enddo
           enddo
         enddo
-      enddo
+      else
+        ! This is the normal block which looks over all cells using the
+        ! velocities for this time step
+        if(.not.IsLatLon) then
+          vxmax = maxval(abs(vx_pd(1:nxmax,1:nymax,1:nzmax)))
+          vxmax_dx = vxmax/dx
+          vymax = maxval(abs(vy_pd(1:nxmax,1:nymax,1:nzmax)))
+          vymax_dy = vymax/dy
+        else
+          vxmax_dx = 0.0_ip
+          vymax_dy = 0.0_ip
+        endif
+        vzmax_dz = 0.0_ip
+        ! This branch looks at conditions cell-by-cell
+        ! Use vx_meso_1_sp and vx_meso_2_sp
+        do i=1,nxmax
+          do j=1,nymax
+            do k=1,nzmax
+              ! Note: for this to work, you really need to set vf_pd=0 for all
+              !       species that are flushed out of the system, otherwise, this
+              !       will always be dominated by the large grain sizes with the
+              !       highest fall velocities
+              tmp =        abs(vz_pd(i,j,k)) + &
+                    maxval(abs(vf_pd(i,j,k,1:nsmax)))
+              if(tmp/dz_vec_pd(k).gt.vzmax_dz)then
+                vzmax_dz = tmp/dz_vec_pd(k)
+              endif
+              if(IsLatLon)then
+                minsig = minval(sigma_nx_pd(i:i+1,j,k))
+                tmp = abs(vx_pd(i,j,k))*minsig/kappa_pd(i,j,k)
+                if(tmp.gt.vxmax_dx)vxmax_dx=tmp
+                minsig = minval(sigma_ny_pd(i,j:j+1,k))
+                tmp = abs(vy_pd(i,j,k))*minsig/kappa_pd(i,j,k)
+                if(tmp.gt.vymax_dy)vymax_dy=tmp
+              endif
+            enddo
+          enddo
+        enddo
+      endif
       if(n_gs_aloft.eq.0)vzmax_dz = 0.0_ip
 
       ! Get the constraining diffusivities
@@ -172,6 +231,10 @@
       if(time+dt.gt.Simtime_in_hours)then
         ! Don't let time advance past the requested stop time
         dt = Simtime_in_hours-time
+      endif
+
+      if(CheckMesoVel)then
+        dt_meso_next = dt
       endif
 
       end subroutine Adjust_DT

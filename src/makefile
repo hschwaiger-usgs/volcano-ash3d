@@ -45,8 +45,8 @@ SYSTEM = gfortran
 #                 To run, enter: env OMP_NUM_THREADS=4 Ash3d input_file.inp
 #    This variable cannot be left blank
 #RUN = DEBUG
-#RUN = PROF
-RUN = OPT
+RUN = PROF
+#RUN = OPT
 #RUN = OMPOPT
 # This is the location of the USGS libraries and include files
 # This might be different from the INSTALLDIR path if you want to link to special MetReader
@@ -81,6 +81,14 @@ USEPOINTERS = F
 # EXTERNAL DATA FILES
 #
 USEEXTDATA = T
+
+# SPEED-UP ALGORITHMS
+#  FAST_DT
+#  FAST_SUBGRID
+#FASTFPPFLAG = 
+#FASTFPPFLAG = -DFAST_DT
+#FASTFPPFLAG = -DFAST_SUBGRID
+FASTFPPFLAG = -DFAST_DT -DFAST_SUBGRID
 
 ###############################################################################
 #  NOTE:  The following flags can either be set or commented out.  If they are
@@ -194,6 +202,9 @@ USGSLIBDIR = -L$(USGSROOT)/lib
 USGSLIB = -lMetReader -lhourssince -lprojection
 USGSINC = -I$(USGSROOT)/include
 
+PLOTLIBS=-lplplotf95cd -lplplotf95d -L/usr/local/dislin -ldislin
+PLOTINC=-I/usr/local/dislin/gf
+
 ###############################################################################
 ##########  GNU Fortran Compiler  #############################################
 ifeq ($(SYSTEM), gfortran)
@@ -201,7 +212,7 @@ ifeq ($(SYSTEM), gfortran)
     FC=/usr/bin/gfortran
     COMPINC = -I$(FCHOME)/include -I$(FCHOME)/lib64/gfortran/modules
     COMPLIBS = -L$(FCHOME)/lib64 -L$(FCHOME)/lib
-    LIBS = $(COMPLIBS) $(USGSLIBDIR) $(USGSINC) $(COMPINC) -llapack -lblas $(USGSLIB) $(DATALIBS)
+    LIBS = $(COMPLIBS) $(USGSLIBDIR) $(USGSINC) $(COMPINC) $(PLOTINC) -llapack -lblas $(USGSLIB) $(DATALIBS) $(PLOTLIBS)
 # Debugging flags
 ifeq ($(RUN), DEBUG)
     FFLAGS =  -O0 -g3 -Wall -fbounds-check -pedantic -fbacktrace -fimplicit-none -Wunderflow -Wuninitialized -ffpe-trap=invalid,zero,overflow -fdefault-real-8
@@ -226,7 +237,7 @@ ifeq ($(RUN), OMPOPT)
     ASH3DEXEC=Ash3d_omp
 endif
       # Preprocessing flags
-    FPPFLAGS =  -x f95-cpp-input $(DATAFPPFLAGS) $(VERBFPPFLAG) $(LIMFPPFLAG) $(DIFFFPPFLAG) $(memFPPFLAG) $(extdatFPPFLAG)
+    FPPFLAGS =  -x f95-cpp-input $(DATAFPPFLAGS) $(VERBFPPFLAG) $(LIMFPPFLAG) $(DIFFFPPFLAG) $(memFPPFLAG) $(extdatFPPFLAG) $(FASTFPPFLAG)
       # Extra flags
     #EXFLAGS = -xf95
     EXFLAGS =
@@ -259,6 +270,8 @@ write_ASCII.o            \
 write_BINARY.o           \
 write_KML.o              \
 ResetParams.o
+
+PPOBJS = Ash3d_VariableModules.o Output_Vars.o Tephra.o Source.o Airports.o Atmosphere.o
 
 ifeq ($(USENETCDF), T)
   DATAOBJ = write_NETCDF.o
@@ -324,18 +337,22 @@ Output_Vars.o: $(ASH3dCCSRC)/Output_Vars.f90 makefile Ash3d_VariableModules.o Te
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Output_Vars.f90
 Output_Results.o: $(ASH3dCCSRC)/Output_Results.f90 makefile Ash3d_VariableModules.o Output_Vars.o Tephra.o write_ASCII.o write_KML.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Output_Results.f90
-write_ASCII.o: $(ASH3dCCSRC)/write_ASCII.f90 makefile Ash3d_VariableModules.o Airports.o Output_Vars.o
+write_ASCII.o: $(ASH3dCCSRC)/write_ASCII.f90 makefile Ash3d_VariableModules.o Airports.o Output_Vars.o Tephra.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_ASCII.f90
 write_BINARY.o: $(ASH3dCCSRC)/write_BINARY.f90 makefile Ash3d_VariableModules.o Airports.o Output_Vars.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_BINARY.f90
 ifeq ($(USENETCDF), T)
-write_NETCDF.o: $(ASH3dCCSRC)/write_NETCDF.f90 makefile Ash3d_VariableModules.o Output_Vars.o Tephra.o Source.o
+write_NETCDF.o: $(ASH3dCCSRC)/write_NETCDF.f90 makefile Ash3d_VariableModules.o Output_Vars.o Tephra.o Source.o Airports.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_NETCDF.f90
 endif
 write_KML.o: $(ASH3dCCSRC)/write_KML.f90 makefile Ash3d_VariableModules.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_KML.f90
 
-all: Ash3d
+all: Ash3d postproc
+
+postproc: $(ASH3dCCSRC)/Ash3d_PostProc.f90 Ash3d_VariableModules.o $(DATAOBJ) Output_Vars.o Tephra.o Source.o Atmosphere.o
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) $(PPOBJS) $(DATAOBJ) Ash3d_PostProc.o $(LIBS) -o Ash3d_PostProc
 
 clean:
 	rm -rf $(OBJECTS) Ash3d.o $(DATAOBJ) $(OPTMODS_OBJ) ../bin/$(ASH3DEXEC) \

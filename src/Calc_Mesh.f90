@@ -264,5 +264,93 @@
 
       end subroutine get_minmax_lonlat
 
+
+!##############################################################################
+
+      subroutine get_minmax_index
+
+      use precis_param
+
+      use io_units
+
+      use Output_Vars,  only : &
+         CLOUDCON_GRID_THRESH
+ 
+      use mesh,          only : &
+         nxmax,nymax,nzmax,nsmax,ts0,ivent,jvent
+
+      use solution,      only : &
+         concen_pd,imin,imax,jmin,jmax,kmin,kmax
+
+      implicit none
+
+      integer :: isize,i,j,k
+      real(kind=ip) :: tmp_flt
+
+      ! Find extent of ash cloud making sure to include the vent
+      !  First in x
+      imin = 1
+      imax = nxmax
+      do i=2,ivent
+        tmp_flt=maxval(concen_pd(i,1:nymax,1:nzmax,1:nsmax,ts0))
+        if(tmp_flt.lt.CLOUDCON_GRID_THRESH)then
+          imin = i
+        else
+          exit
+        endif
+      enddo
+      do i=nxmax,imin,-1
+        tmp_flt=maxval(concen_pd(i,1:nymax,1:nzmax,1:nsmax,ts0))
+        if(tmp_flt.lt.CLOUDCON_GRID_THRESH)then
+          imax = i
+        else
+          exit
+        endif
+      enddo
+      !  Now in y
+      jmin = 1
+      jmax = nymax
+      do j=2,jvent
+        tmp_flt=maxval(concen_pd(1:nxmax,j,1:nzmax,1:nsmax,ts0))
+        if(tmp_flt.lt.CLOUDCON_GRID_THRESH)then
+          jmin = j
+        else
+          exit
+        endif
+      enddo
+      do j=nymax,jmin,-1
+        tmp_flt=maxval(concen_pd(1:nxmax,j,1:nzmax,1:nsmax,ts0))
+        if(tmp_flt.lt.CLOUDCON_GRID_THRESH)then
+          jmax = j
+        else
+          exit
+        endif
+      enddo
+      !  Now in z
+      kmin = 1
+      kmax = nzmax
+      do k=2,nzmax
+        tmp_flt=maxval(concen_pd(1:nxmax,1:nymax,k,1:nsmax,ts0))
+        if(tmp_flt.lt.CLOUDCON_GRID_THRESH)then
+          kmin = k
+        else
+          exit
+        endif
+      enddo
+      do k=nzmax,kmin,-1
+        tmp_flt=maxval(concen_pd(1:nxmax,1:nymax,k,1:nsmax,ts0))
+        if(tmp_flt.lt.CLOUDCON_GRID_THRESH)then
+          kmax = k
+        else
+          exit
+        endif
+      enddo
+      if(kmax.lt.kmin)then
+        write(global_info,*)"WARNING: kmax<kmin"
+        stop 5
+      endif
+
+      end subroutine get_minmax_index
+
 !##############################################################################
 

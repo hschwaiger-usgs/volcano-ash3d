@@ -10,10 +10,11 @@
       use time_data,     only : &
          time_native
 
-      real(kind=ip)                :: DEPO_THRESH      = 1.0e-1_ip  !threshold deposit thickness (mm)
-      real(kind=ip)                :: DEPRATE_THRESH   = 1.0e-2_ip  !threshold deposition rate (mm/hr)
-      real(kind=ip)                :: CLOUDCON_THRESH  = 1.0e-3_ip  !threshold cloud concentration (kg/km3)
-      real(kind=ip)                :: CLOUDLOAD_THRESH = 2.0e-1_ip  !threshold cloud load (t/km2)
+      real(kind=ip)                :: DEPO_THRESH           = 1.0e-1_ip  !threshold deposit thickness (mm)
+      real(kind=ip)                :: DEPRATE_THRESH        = 1.0e-2_ip  !threshold deposition rate (mm/hr)
+      real(kind=ip)                :: CLOUDCON_THRESH       = 1.0e-3_ip  !threshold cloud concentration (kg/km3) for output
+      real(kind=ip)                :: CLOUDCON_GRID_THRESH  = 1.0e-7_ip  !threshold cloud concentration (kg/km3) for subgrid
+      real(kind=ip)                :: CLOUDLOAD_THRESH      = 2.0e-1_ip  !threshold cloud load (t/km2)
                                        ! 0.2 T/km2 is roughly the detection
                                        ! limit of Pavolonis's SEVIRI satellite retrievals
 
@@ -375,7 +376,7 @@
          nxmax,nymax,nzmax,ts1
 
       use solution,      only : &
-         concen_pd
+         concen_pd,imin,imax,jmin,jmax,kmin,kmax
 
       implicit none
 
@@ -396,10 +397,10 @@
       !note: this requires that only two particle sizes be used as input
 
       if(n_gs_max.gt.0)then
-        do i=1,nxmax
-          do j=1,nymax
+        do i=imin,imax
+          do j=jmin,jmax
             !if (CloudLoad(i,j).lt.CLOUDLOAD_THRESH) cycle
-            do k=1,nzmax
+            do k=kmin,kmax
               zcol = 0.0_ip
               do l=1,n_gs_max
                 !convert concentration (kg/km3) to number density (#/m3)
@@ -433,7 +434,7 @@
          nxmax,nymax,nzmax,dz_vec_pd,z_cc_pd,ts1,sigma_nz_pd
 
       use solution,      only : &
-         concen_pd
+         concen_pd,imin,imax,jmin,jmax,kmin,kmax
 
       use Tephra,        only : &
          n_gs_max
@@ -463,8 +464,8 @@
       Mask_Cloud(:,:) = .false.
 
       if(n_gs_max.gt.0)then
-        do i=1,nxmax
-          do j=1,nymax
+        do i=imin,imax
+          do j=jmin,jmax
             CellArea = sigma_nz_pd(i,j,1)
             TotalConcentration = 0.0_ip
             do k=1,nzmax
@@ -538,7 +539,7 @@
          nxmax,nymax,nzmax,dz_vec_pd,sigma_nz_pd,ts1
 
       use solution,      only : &
-         concen_pd
+         concen_pd,imin,imax,jmin,jmax,kmin,kmax
 
       implicit none
 
@@ -555,10 +556,10 @@
       CloudLoadArea(1:5) = 0.0_ip
 
       if(n_gs_max.gt.0)then
-        do i=1,nxmax
-          do j=1,nymax
+        do i=imin,imax
+          do j=jmin,jmax
             CellArea = sigma_nz_pd(i,j,1)
-            do k=1,nzmax
+            do k=kmin,kmax
               ! Increment the cloud load for this cell
               CloudLoad(i,j) = CloudLoad(i,j) + &
                                 sum(concen_pd(i,j,k,1:n_gs_max,ts1)) * & ! in kg/km^3
@@ -636,10 +637,10 @@
       subroutine Calc_AshVol_Aloft(vol)
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,nsmax,kappa_pd,ts1
+         nxmax,nymax,nzmax,nsmax,kappa_pd,ts0,ivent,jvent
 
       use solution,      only : &
-         concen_pd,mass_aloft
+         concen_pd,mass_aloft,imin,imax,jmin,jmax,kmin,kmax
 
       use Tephra,        only : &
          MagmaDensity,n_gs_max
@@ -647,13 +648,13 @@
       implicit none
 
       real(kind=ip),intent(out) :: vol ! Total volume of ash still airborne
-      integer :: isize
+      integer :: isize,i,j,k
 
       vol = 0.0_ip
 
       ! First calculate mass of all species
       do isize=1,nsmax
-        mass_aloft(isize) = sum(concen_pd(1:nxmax,1:nymax,1:nzmax,isize,ts1) *   & ! in kg/km^3
+        mass_aloft(isize) = sum(concen_pd(1:nxmax,1:nymax,1:nzmax,isize,ts0) *   & ! in kg/km^3
                                  kappa_pd(1:nxmax,1:nymax,1:nzmax))                ! convert to kg
       enddo
 

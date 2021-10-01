@@ -8,7 +8,8 @@
       use io_units
 
       use global_param,    only : &
-         useTemperature,useCalcFallVel,MPS_2_KMPHR
+         EPS_SMALL,MPS_2_KMPHR, &
+         useTemperature,useCalcFallVel
 
       use solution,        only : &
          vx_pd,vy_pd,vz_pd,vf_pd
@@ -22,7 +23,10 @@
           Meso_toggle
 
       use time_data,       only : &
-         SimStartHour
+         SimStartHour,dt,dt_meso_last,dt_meso_next,Simtime_in_hours,time
+
+      use io_data,       only : &
+         NextWriteTime
 
       use mesh,            only : &
          nxmax,nymax,nzmax
@@ -69,6 +73,9 @@
       INTERFACE
         subroutine umbrella_winds
         end subroutine umbrella_winds
+        subroutine Adjust_DT(mesostep)
+          logical, intent(in), optional :: mesostep
+        end subroutine
       END INTERFACE
 
       TimeNow_fromRefTime = SimStartHour+TimeNow  ! hours since reference time (1-1-1900)
@@ -156,6 +163,11 @@
         ! We only loaded one step so set load flag to True
         Load_MesoSteps = .true.
         !first_time = .false.
+#ifdef FAST_DT
+        call Adjust_DT(Load_MesoSteps)
+        ! Since this is the first time, copy the output dt_meso_next to dt_meso_last
+        dt_meso_last = dt_meso_next
+#endif
       else
         ! If this is NOT the first time MesoInterpolater is called, then check
         ! if we need to load the next step
@@ -186,6 +198,8 @@
           vy_meso_last_step_sp = vy_meso_2_sp
           vz_meso_last_step_sp = vz_meso_2_sp
         endif
+        ! Copy the timestep from next to last
+        dt_meso_last = dt_meso_next
 
         ! This subroutine sets both last and next geoH arrays so call with
         ! MR_iMetStep_Now
@@ -271,12 +285,19 @@
           vz_meso_2_sp = MR_dum3d_compH
           vz_meso_next_step_sp = vz_meso_2_sp
         endif
+
+#ifdef FAST_DT
+        ! Now calculate the dt at the next timestep
+        call Adjust_DT(Load_MesoSteps)
+        !dt = min(dt_meso_last,dt_meso_next)
+#endif
       endif   ! Load_MesoSteps
 
       ! Now we have the bracketing wind data for vx,vy,vz
       ! Set up to do the interpolation to the current time
       HoursIntoInterval   = TimeNow_fromRefTime - MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now)
       Interval_Frac = HoursIntoInterval /  MR_MetStep_Interval(MR_iMetStep_Now)
+
       if(useTemperature)then
         call Set_Atmosphere_Meso(Load_MesoSteps,Interval_Frac,first_time)
       endif
@@ -327,6 +348,20 @@
       vx_pd = vx_pd*MPS_2_KMPHR
       vy_pd = vy_pd*MPS_2_KMPHR
       vz_pd = vz_pd*MPS_2_KMPHR
+
+#ifdef FAST_DT
+      dt = dt_meso_last + (dt_meso_next-dt_meso_last)*Interval_Frac
+      if (((NextWriteTime-time).gt.EPS_SMALL).and.(NextWriteTime-time.lt.dt))then
+        ! Don't let time advance past the next output time step
+          dt = NextWritetime-time
+      endif
+      if(time+dt.gt.Simtime_in_hours)then
+        ! Don't let time advance past the requested stop time
+        dt = Simtime_in_hours-time
+      endif
+#else
+      call Adjust_DT(.false.)
+#endif
 
       !If vxmax or vymax > 2000 km/hr, send a warning and see which values of vx and vy
       !are so high.

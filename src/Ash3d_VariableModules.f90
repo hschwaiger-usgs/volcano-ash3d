@@ -476,6 +476,9 @@
       real(kind=ip), dimension(:)  ,allocatable  :: rho_m       ! density (kg/m3)
 
       logical, dimension(:) ,allocatable :: IsAloft    ! T/F indicator remaining airborn concentration
+      integer :: imin,imax
+      integer :: jmin,jmax
+      integer :: kmin,kmax
 
       contains
 
@@ -598,7 +601,9 @@
       real(kind=dp)       :: time            ! physical time simulated by this model
 
       real(kind=ip)      :: t0,t1           ! CPU time indicators
-      real(kind=ip)      :: dt
+      real(kind=ip)      :: dt              ! dt used for actual integration
+      real(kind=ip)      :: dt_meso_last    ! dt as calculated from meso_last
+      real(kind=ip)      :: dt_meso_next    ! dt as calculated from meso_next
       real(kind=ip)      :: dtodx   , dtody   , dtodz
       real(kind=ip)      :: dtodxdx , dtodydy , dtodzdz
 

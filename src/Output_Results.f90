@@ -37,6 +37,10 @@
            Write_PointData_Airports_KML,&
            Set_OutVar_Specs
 
+#ifdef USENETCDF
+      use Ash3d_Netcdf
+#endif
+
       implicit none
 
       character(len=13) :: cio

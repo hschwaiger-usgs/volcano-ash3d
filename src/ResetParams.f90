@@ -237,6 +237,19 @@
           write(global_info,*)"  Resetting CLOUDCON_THRESH from ",CLOUDCON_THRESH,&
                               "to ",pvalue(i)
           CLOUDCON_THRESH = pvalue(i)
+        elseif (pname(i).eq.'CLOUDCON_GRID_THRESH') then
+          ! error-checking
+          if (pvalue(i).le.0.0_ip)then
+            write(global_error,*)"ERROR: CLOUDCON_GRID_THRESH must be > 0"
+            stop 0
+          elseif (pvalue(i).gt.1.0e-1_ip)then
+            write(global_error,*)"WARNING: CLOUDCON_GRID_THRESH seems high."
+            write(global_error,*)&
+              "         This is the concentration threshold to identify regions to calculate (t/km3)"
+          endif
+          write(global_info,*)"  Resetting CLOUDCON_GRID_THRESH from ",CLOUDCON_GRID_THRESH,&
+                              "to ",pvalue(i)
+          CLOUDCON_GRID_THRESH = pvalue(i)
         elseif (pname(i).eq.'CLOUDLOAD_THRESH') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then

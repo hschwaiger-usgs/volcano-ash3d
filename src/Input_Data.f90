@@ -53,7 +53,7 @@
          A3d_phi2,A3d_radius_earth,IsLatLon,IsPeriodic,ZPADDING
 
       use solution,      only : &
-         StopValue
+         StopValue,imin,imax,jmin,jmax,kmin,kmax
 
       use Output_Vars,   only : &
          USE_OUTPROD_VARS, USE_RESTART_VARS
@@ -88,6 +88,10 @@
          MR_global_info,MR_global_log,MR_global_error, &
            MR_Allocate_FullMetFileList, &
            MR_Read_Met_DimVars
+
+#ifdef USENETCDF
+      use Ash3d_Netcdf
+#endif
 
       implicit none
 
@@ -2459,6 +2463,13 @@
         nxmax = ceiling((xUR-xLL)/dx)         !number of x nodes
         nymax = ceiling((yUR-yLL)/dy)         !number of y nodes
       endif
+      ! initialize active grid domain to the full grid
+      imin = 1
+      imax = nxmax
+      jmin = 1
+      jmax = nymax
+      kmin = 1
+      kmax = nzmax
 
       write(global_info,16) nxmax, nymax, nzmax
       write(global_log ,16) nxmax, nymax, nzmax

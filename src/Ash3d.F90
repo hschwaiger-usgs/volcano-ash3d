@@ -97,8 +97,6 @@
           logical      ,intent(out) :: Load_MesoSteps
           logical      ,intent(in)  :: first_time
         end subroutine
-        subroutine Adjust_DT
-        end subroutine
         subroutine output_results
         end subroutine
         subroutine Set_BC(bc_code)
@@ -223,8 +221,6 @@
 !
 !------------------------------------------------------------------------------
 
-      call Adjust_DT
-
 !------------------------------------------------------------------------------
 !       OPTIONAL MODULES
 !         Insert calls to prep user-specified output
@@ -284,8 +280,6 @@
 !         Insert calls to special MesoInterpolaters subroutines here
 !
 !------------------------------------------------------------------------------
-
-        call Adjust_DT
 
         if(VERB.gt.1)write(global_info,*)"Ash3d: Calling MassFluxCalculator"
         call MassFluxCalculator         ! call subroutine that determines mass flux & plume height
@@ -471,7 +465,6 @@
             if(.not.Called_Gen_Output_Vars)then
               call Gen_Output_Vars
             endif
-            !call Collapse_GS
             call Prune_GS
           endif
         else
