@@ -5,7 +5,7 @@
       use io_units
 
       use global_param,  only : &
-         useCalcFallVel,useVariableGSbins,PI,MPS_2_KMPHR,GRAV
+         useCalcFallVel,useVariableGSbins,PI,GRAV
 
       implicit none
 
@@ -19,8 +19,8 @@
       integer :: n_gs_max                    ! # size classes of particles 
       integer :: n_gs_aloft                    ! max gs bin still aloft
 
-      real(kind=ip), dimension(:)  ,allocatable  :: Tephra_v_s         ! Settling vel
-      real(kind=ip), dimension(:)  ,allocatable  :: Tephra_gsdiam      ! Grain-size diameter (read in mmm, stored in m)
+      real(kind=ip), dimension(:)  ,allocatable  :: Tephra_v_s         ! Settling vel (m/s)
+      real(kind=ip), dimension(:)  ,allocatable  :: Tephra_gsdiam      ! Grain-size diameter (read in mm, stored in m)
       real(kind=ip), dimension(:)  ,allocatable  :: Tephra_bin_mass    ! mass    (kg)
       real(kind=ip), dimension(:)  ,allocatable  :: Tephra_rho_m       ! density (kg/m3)
       real(kind=ip), dimension(:)  ,allocatable  :: Tephra_gsF         ! Grain-size shape (b+c)/2a
@@ -120,7 +120,8 @@
 
 !******************************************************************************
 
-      subroutine Set_Vf_Meso(Load_MesoSteps,Interval_Frac)
+!      subroutine Set_Vf_Meso(Load_MesoSteps,Interval_Frac)
+      subroutine Set_Vf_Meso(Load_MesoSteps)
 
       use mesh,          only : &
          nxmax,nymax,nzmax
@@ -143,7 +144,7 @@
       implicit none
 
       logical      ,intent(in) :: Load_MesoSteps
-      real(kind=ip),intent(in) :: Interval_Frac
+      !real(kind=ip),intent(in) :: Interval_Frac
 
       real(kind=sp) :: vf_sp(n_gs_max)
       integer :: i,j,k,is,l
@@ -154,7 +155,11 @@
         do i=1,nx_submet
          do j=1,ny_submet
             do k=1,np_fullmet
-               do is = 1,2  ! loop over the two braketing meso steps
+              ! Note: we solve for the fall velocities on the p-levels since
+              ! that is where the atmospheric variables live, then we
+              ! interpolate onto the compH grid
+               !do is = 1,2  ! loop over the two braketing meso steps
+                 is = 2
                  if(is.eq.1)then
                    dens   = AirDens_meso_last_step_MetP_sp(i,j,k)
                    visc   = AirVisc_meso_last_step_MetP_sp(i,j,k)
@@ -226,12 +231,12 @@
                      vf_sp(l) = real(v_grav_set,kind=sp)
                    enddo
                  end select
-                 if(is.eq.1)then
-                   vf_meso_last_step_MetP_sp(i,j,k,:) = vf_sp
-                 else
-                   vf_meso_next_step_MetP_sp(i,j,k,:) = vf_sp
-                 endif
-              enddo !is
+                 !if(is.eq.1)then
+                 !  vf_meso_last_step_MetP_sp(i,j,k,:) = vf_sp(1,n_gs_max)
+                 !else
+                   vf_meso_next_step_MetP_sp(i,j,k,:) = vf_sp(1:n_gs_max)
+                 !endif
+              !enddo !is
             enddo !k
           enddo !j
         enddo !i
@@ -239,28 +244,28 @@
         ! Now need to interpolate vs_meso_last_step_MetP_sp onto vf_meso_1_sp
         do l=1,n_gs_max
           if(.not.IsAloft(l)) cycle
-          MR_dum3d_metP(:,:,:) = vf_meso_last_step_MetP_sp(:,:,:,l)
-          call MR_Regrid_MetP_to_CompGrid(MR_iMetStep_Now)
-          vf_meso_last_step_sp(:,:,:,l) = MR_dum3d_compH(:,:,:)*real(MPS_2_KMPHR,kind=sp)*(-1.0_sp)
+          !MR_dum3d_metP(:,:,:) = vf_meso_last_step_MetP_sp(:,:,:,l)
+          !call MR_Regrid_MetP_to_CompGrid(MR_iMetStep_Now)
+          !vf_meso_last_step_sp(:,:,:,l) = MR_dum3d_compH(:,:,:)*real(MPS_2_KMPHR,kind=sp)*(-1.0_sp)
 
           MR_dum3d_metP(:,:,:) = vf_meso_next_step_MetP_sp(:,:,:,l)
           call MR_Regrid_MetP_to_CompGrid(MR_iMetStep_Now+1)
-          vf_meso_next_step_sp(:,:,:,l) = MR_dum3d_compH(:,:,:)*real(MPS_2_KMPHR,kind=sp)*(-1.0_sp)
+          vf_meso_next_step_sp(:,:,:,l) = MR_dum3d_compH(:,:,:)*(-1.0_sp)
         enddo
       endif
 
-      vf_pd = 0.0_ip
-      ! Now interpolate onto current time
-      vf_pd(1:nxmax,1:nymax,1:nzmax,:) = real( vf_meso_last_step_sp(:,:,:,:),kind=ip) + &
-                                         real((vf_meso_next_step_sp(:,:,:,:) - &
-                                               vf_meso_last_step_sp(:,:,:,:)),kind=ip) * &
-                                              Interval_Frac
-
-      ! We only need actual fall velocity values in ghosts cells on the top and bottom
-      vf_pd(-1:nxmax+2,-1:nymax+2,      -1,:) = vf_pd(-1:nxmax+2,-1:nymax+2,    1,:)
-      vf_pd(-1:nxmax+2,-1:nymax+2,       0,:) = vf_pd(-1:nxmax+2,-1:nymax+2,    1,:)
-      vf_pd(-1:nxmax+2,-1:nymax+2, nzmax+1,:) = vf_pd(-1:nxmax+2,-1:nymax+2,nzmax,:)
-      vf_pd(-1:nxmax+2,-1:nymax+2, nzmax+2,:) = vf_pd(-1:nxmax+2,-1:nymax+2,nzmax,:)
+!      vf_pd = 0.0_ip
+!      ! Now interpolate onto current time
+!      vf_pd(1:nxmax,1:nymax,1:nzmax,:) = real( vf_meso_last_step_sp(:,:,:,:),kind=ip) + &
+!                                         real((vf_meso_next_step_sp(:,:,:,:) - &
+!                                               vf_meso_last_step_sp(:,:,:,:)),kind=ip) * &
+!                                              Interval_Frac
+!
+!      ! We only need actual fall velocity values in ghosts cells on the top and bottom
+!      vf_pd(-1:nxmax+2,-1:nymax+2,      -1,:) = vf_pd(-1:nxmax+2,-1:nymax+2,    1,:)
+!      vf_pd(-1:nxmax+2,-1:nymax+2,       0,:) = vf_pd(-1:nxmax+2,-1:nymax+2,    1,:)
+!      vf_pd(-1:nxmax+2,-1:nymax+2, nzmax+1,:) = vf_pd(-1:nxmax+2,-1:nymax+2,nzmax,:)
+!      vf_pd(-1:nxmax+2,-1:nymax+2, nzmax+2,:) = vf_pd(-1:nxmax+2,-1:nymax+2,nzmax,:)
 
 
       end subroutine Set_Vf_Meso

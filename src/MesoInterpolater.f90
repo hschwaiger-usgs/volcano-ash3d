@@ -18,6 +18,7 @@
           vx_meso_last_step_sp,vx_meso_next_step_sp,&
           vy_meso_last_step_sp,vy_meso_next_step_sp,&
           vz_meso_last_step_sp,vz_meso_next_step_sp,&
+          vf_meso_last_step_sp,vf_meso_next_step_sp,&
           vx_meso_1_sp,vy_meso_1_sp,vz_meso_1_sp, &
           vx_meso_2_sp,vy_meso_2_sp,vz_meso_2_sp, &
           Meso_toggle
@@ -160,6 +161,21 @@
         vz_meso_1_sp = MR_dum3d_compH
         vz_meso_next_step_sp = vz_meso_1_sp
 
+        if(useTemperature)then
+          call Set_Atmosphere_Meso(Load_MesoSteps,1.0_ip,first_time)
+        endif
+
+        if(useCalcFallVel)then
+          ! Populate the fall velocities for the next meso step
+          call Set_Vf_Meso(.true.)
+        else
+          ! This is the case where the fall velocity is assigned in the input file
+          do i=1,n_gs_max
+            vf_meso_next_step_sp(:,:,:,i) = Tephra_v_s(i)
+            vf_pd(:,:,:,i)                = Tephra_v_s(i)*MPS_2_KMPHR
+          enddo
+        endif
+
         ! We only loaded one step so set load flag to True
         Load_MesoSteps = .true.
         !first_time = .false.
@@ -286,10 +302,18 @@
           vz_meso_next_step_sp = vz_meso_2_sp
         endif
 
+        vf_meso_last_step_sp = vf_meso_next_step_sp
+        if(useTemperature)then
+          call Set_Atmosphere_Meso(Load_MesoSteps,1.0_ip,first_time)
+        endif
+        if(useCalcFallVel)then
+          ! Populate the fall velocities for the next meso step
+          call Set_Vf_Meso(.true.)
+        endif
+
 #ifdef FAST_DT
         ! Now calculate the dt at the next timestep
         call Adjust_DT(Load_MesoSteps)
-        !dt = min(dt_meso_last,dt_meso_next)
 #endif
       endif   ! Load_MesoSteps
 
@@ -298,40 +322,49 @@
       HoursIntoInterval   = TimeNow_fromRefTime - MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now)
       Interval_Frac = HoursIntoInterval /  MR_MetStep_Interval(MR_iMetStep_Now)
 
-      if(useTemperature)then
-        call Set_Atmosphere_Meso(Load_MesoSteps,Interval_Frac,first_time)
-      endif
-      if(useCalcFallVel)then
-        call Set_Vf_Meso(Load_MesoSteps,Interval_Frac)
-      else
-        ! This is the case where the fall velocity is assigned in the input file
-        do i=1,n_gs_max
-          vf_pd(:,:,:,i) = Tephra_v_s(i)
-        enddo
-      endif
+      !if(useTemperature)then
+      !  call Set_Atmosphere_Meso(Load_MesoSteps,Interval_Frac,first_time)
+      !endif
+      !if(useCalcFallVel)then
+      !  call Set_Vf_Meso(Load_MesoSteps)
+      !else
+      !  ! This is the case where the fall velocity is assigned in the input file
+      !  do i=1,n_gs_max
+      !    vf_pd(:,:,:,i) = Tephra_v_s(i)
+      !  enddo
+      !endif
 
-      ! INTERPOLATE TO GET CURRENT WIND FIELDS VX, VY 
+      ! Interpolate to get wind fields at current time and in km/hr
+      ! Note: v[x,y,z,f]_pd are all in km/hr and
+      !       v[x,y,z,f]_meso_[last,next]step_sp are in m/s
       vx_pd = 0.0_ip
       vy_pd = 0.0_ip
       vz_pd = 0.0_ip
       vx_pd(1:nxmax,1:nymax,1:nzmax) = &
-            real(vx_meso_last_step_sp(1:nxmax,1:nymax,1:nzmax),kind=ip) + &
+            (real(vx_meso_last_step_sp(1:nxmax,1:nymax,1:nzmax),kind=ip) + &
            real((vx_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax) - &
                  vx_meso_last_step_sp(1:nxmax,1:nymax,1:nzmax)),kind=ip) * &
-                                     Interval_Frac
+                                     Interval_Frac)*MPS_2_KMPHR
 
       vy_pd(1:nxmax,1:nymax,1:nzmax) = &
-            real(vy_meso_last_step_sp(1:nxmax,1:nymax,1:nzmax),kind=ip) + &
+            (real(vy_meso_last_step_sp(1:nxmax,1:nymax,1:nzmax),kind=ip) + &
            real((vy_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax) - &
                  vy_meso_last_step_sp(1:nxmax,1:nymax,1:nzmax)),kind=ip) * &
-                                     Interval_Frac
+                                     Interval_Frac)*MPS_2_KMPHR
 
 
       vz_pd(1:nxmax,1:nymax,1:nzmax) = &
-            real(vz_meso_last_step_sp(1:nxmax,1:nymax,1:nzmax),kind=ip) + &
+            (real(vz_meso_last_step_sp(1:nxmax,1:nymax,1:nzmax),kind=ip) + &
            real((vz_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax) - &
                  vz_meso_last_step_sp(1:nxmax,1:nymax,1:nzmax)),kind=ip) * &
-                                     Interval_Frac
+                                     Interval_Frac)*MPS_2_KMPHR
+      ! Now interpolate onto current time
+      if(useCalcFallVel)then
+        vf_pd(1:nxmax,1:nymax,1:nzmax,:) = (real(vf_meso_last_step_sp(:,:,:,:),kind=ip) + &
+                                          real((vf_meso_next_step_sp(:,:,:,:) - &
+                                                vf_meso_last_step_sp(:,:,:,:)),kind=ip) * &
+                                                Interval_Frac)*MPS_2_KMPHR
+      endif
 
       !if we're calculating an umbrella cloud, add the winds in the cloud
       if (((SourceType.eq.'umbrella')     .or.   &
@@ -343,11 +376,6 @@
           vy_pd(1:nxmax,1:nymax,ibase:itop) = vy_pd(1:nxmax,1:nymax,ibase:itop) + &
                                            uvy_pd(1:nxmax,1:nymax,ibase:itop)
       endif
-
-!     CONVERT FROM M/S TO KM/HR.  
-      vx_pd = vx_pd*MPS_2_KMPHR
-      vy_pd = vy_pd*MPS_2_KMPHR
-      vz_pd = vz_pd*MPS_2_KMPHR
 
 #ifdef FAST_DT
       dt = dt_meso_last + (dt_meso_next-dt_meso_last)*Interval_Frac

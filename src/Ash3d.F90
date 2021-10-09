@@ -235,7 +235,8 @@
         call Allocate_Profile(nzmax,ntmax,nvprofiles)
       endif
 
-      write(global_info,7)            !write "Building time array of plume height & eruption rate"
+      ! write "Building time array of plume height & eruption rate"
+      write(global_info,7)
       write(global_log ,7)
 
       call Allocate_Source_time
@@ -251,6 +252,7 @@
       ! ************************************************************************
       itime = 0
       write(global_info,*)"Starting time loop."
+
       do while (StopTimeLoop.eqv..false.)
         ! Note: stop conditions are evaluated at the end of the time loop
 
@@ -611,14 +613,6 @@
       close(9)       !close log file 
 
       ! Format statements
-!1     format(/,5x,'Starting volume (km3 DRE)    = ',f11.4,       &
-!             /,5x,'maximum number of time steps = ',i8,          &
-!             //,21x,'Time',19x,                                  &
-!                '|--------------Volume (km3 DRE)-------------|', &
-!                3x,'Cloud Area',                                 &
-!              /,7x,'step',8x,'(hrs)',2x,'yyyymmddhh:mm',         &
-!                5x,'Deposit',7x,'Aloft',5x,'Outflow',7x,          &
-!                   'Total',10x,'km2')
 1     format(/,5x,'Starting volume (km3 DRE)    = ',f11.4,       &
              /,5x,'maximum number of time steps = ',i8,          &
              //,21x,'Time',19x,                                  &

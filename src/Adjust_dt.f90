@@ -34,7 +34,8 @@
          vx_pd,vy_pd,vz_pd,vf_pd
 
       use wind_grid,     only : &
-         vx_meso_next_step_sp,vy_meso_next_step_sp,vz_meso_next_step_sp
+         vx_meso_next_step_sp,vy_meso_next_step_sp,vz_meso_next_step_sp, &
+         vf_meso_next_step_sp
          
       use time_data,     only : &
          time,dt,dt_meso_next,                                    &
@@ -77,6 +78,8 @@
         CheckMesoVel = .false.
       endif
 
+      vy_meso_next_step_sp = 0.0
+      vz_pd = 0.0
       if(CheckMesoVel)then
         ! In this block, we find the conditions based on velocities at the next
         ! meso time step
@@ -98,15 +101,13 @@
           do j=1,nymax
             do k=1,nzmax
               ! Note: for this to work, you really need to set vf_pd=0 for all
-              !       species that are flushed out of the system, otherwise,
-              !       this
+              !       species that are flushed out of the system, otherwise, this
               !       will always be dominated by the large grain sizes with the
               !       highest fall velocities
-              tmp =   real(abs(vz_meso_next_step_sp(i,j,k)),kind=ip)*MPS_2_KMPHR + &
-                    maxval(abs(vf_pd(i,j,k,1:nsmax)))
-              if(tmp/dz_vec_pd(k).gt.vzmax_dz)then
-                vzmax_dz = tmp/dz_vec_pd(k)
-              endif
+              tmp =   (real(abs(vz_meso_next_step_sp(i,j,k)) + &
+                     maxval(abs(vf_meso_next_step_sp(i,j,k,1:nsmax))),kind=ip)) &
+                       *MPS_2_KMPHR / dz_vec_pd(k)
+              if(tmp.gt.vzmax_dz) vzmax_dz = tmp
               if(IsLatLon)then
                 minsig = minval(sigma_nx_pd(i:i+1,j,k))
                 tmp = real(abs(vx_meso_next_step_sp(i,j,k)),kind=ip)*MPS_2_KMPHR*minsig/kappa_pd(i,j,k)
@@ -141,10 +142,8 @@
               !       will always be dominated by the large grain sizes with the
               !       highest fall velocities
               tmp =        abs(vz_pd(i,j,k)) + &
-                    maxval(abs(vf_pd(i,j,k,1:nsmax)))
-              if(tmp/dz_vec_pd(k).gt.vzmax_dz)then
-                vzmax_dz = tmp/dz_vec_pd(k)
-              endif
+                    maxval(abs(vf_pd(i,j,k,1:nsmax)))/dz_vec_pd(k)
+              if(tmp.gt.vzmax_dz)vzmax_dz = tmp
               if(IsLatLon)then
                 minsig = minval(sigma_nx_pd(i:i+1,j,k))
                 tmp = abs(vx_pd(i,j,k))*minsig/kappa_pd(i,j,k)
@@ -177,6 +176,7 @@
       endif
       !time_advect = max(vxmax/dx,vymax/dy,vzmax_dz)
       time_advect = max(vxmax_dx,vymax_dy,vzmax_dz)
+
       tmp_sum =  time_advect + time_diffuse
 
       if(tmp_sum.gt.1.0_ip/DT_MIN)then

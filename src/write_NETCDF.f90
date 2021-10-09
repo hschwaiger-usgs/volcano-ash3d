@@ -2992,6 +2992,13 @@
 !##############################################################################
 !
 !    NC_check_status
+!
+!    nSTAT   = error code returned from netcdf call
+!    errcode = user-supplied return value on stopping of code
+!    operation = string descriptor of function call causing error
+!
+!    Error-checking routine for NetCDF function calls.
+!    Modeled after a subroutine posted at:
 !    https://climate-cms.org/2018/10/12/create-netcdf.html
 !
 !##############################################################################
