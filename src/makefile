@@ -85,10 +85,10 @@ USEEXTDATA = T
 # SPEED-UP ALGORITHMS
 #  FAST_DT
 #  FAST_SUBGRID
-FASTFPPFLAG = 
+#FASTFPPFLAG = 
 #FASTFPPFLAG = -DFAST_DT
 #FASTFPPFLAG = -DFAST_SUBGRID
-#FASTFPPFLAG = -DFAST_DT -DFAST_SUBGRID
+FASTFPPFLAG = -DFAST_DT -DFAST_SUBGRID
 
 ###############################################################################
 #  NOTE:  The following flags can either be set or commented out.  If they are
@@ -360,7 +360,7 @@ clean:
 
 install:
 	install -d $(INSTALLDIR)/bin $(INSTALLDIR)/share/post_proc
-	install -m 755 ../bin/$(ASH3DEXEC) $(INSTALLDIR)/bin
+	install -m 755 ../bin/$(ASH3DEXEC) $(INSTALLDIR)/bin/$(ASH3DEXEC)
 	install -m 644 ../share/GlobalAirports_ewert.txt $(INSTALLDIR)/share/
 	install -m 644 ../share/VotW_ESP_v12_csv.txt  $(INSTALLDIR)/share/
 	install -m 644 ../share/post_proc/*png $(INSTALLDIR)/share/post_proc/

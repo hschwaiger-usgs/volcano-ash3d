@@ -384,7 +384,7 @@
               if (abs(dq_I(i_I)).le.EPS_THRESH) cycle
 #endif
 
-#if LIM_LAXWEN
+#ifdef LIM_LAXWEN
               ! Lax-Wendrof (linear)
               ldq_I = dq_I(i_I)
 #else
