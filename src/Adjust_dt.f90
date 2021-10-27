@@ -79,7 +79,6 @@
       endif
 
       vy_meso_next_step_sp = 0.0
-      vz_pd = 0.0
       if(CheckMesoVel)then
         ! In this block, we find the conditions based on velocities at the next
         ! meso time step
@@ -141,8 +140,8 @@
               !       species that are flushed out of the system, otherwise, this
               !       will always be dominated by the large grain sizes with the
               !       highest fall velocities
-              tmp =        abs(vz_pd(i,j,k)) + &
-                    maxval(abs(vf_pd(i,j,k,1:nsmax)))/dz_vec_pd(k)
+              tmp =       (abs(vz_pd(i,j,k)) + &
+                    maxval(abs(vf_pd(i,j,k,1:nsmax))))/dz_vec_pd(k)
               if(tmp.gt.vzmax_dz)vzmax_dz = tmp
               if(IsLatLon)then
                 minsig = minval(sigma_nx_pd(i:i+1,j,k))

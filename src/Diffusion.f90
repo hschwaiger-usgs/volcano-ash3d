@@ -218,7 +218,10 @@
 
       subroutine diff_y
 
-      ! Explicit diffusion routine. author RP Denlinger
+      ! Explicit diffusion routine.
+      ! RP Denlinger and HF Schwaiger
+
+      !!!$ USE omp_lib
 
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,ts0,ts1,kappa_pd,sigma_ny_pd
@@ -251,7 +254,7 @@
       !integer :: nthreads,thread_num
       !logical :: OMP_get_nested
 
-      ! We are diffusing in x so set the length of the cell list accordingly
+      ! We are diffusing in y so set the length of the cell list accordingly
       ncells = nymax
       concen_pd(:,:,:,:,ts1) = 0.0_ip
       ! Neuman boundary conditions in y
@@ -260,7 +263,6 @@
       concen_pd(:,      0,:,:,ts0) = concen_pd(:,    1,:,:,ts0)
       concen_pd(:,nymax+1,:,:,ts0) = concen_pd(:,nymax,:,:,ts0)
       concen_pd(:,nymax+2,:,:,ts0) = concen_pd(:,nymax,:,:,ts0)
-
 
       do n=1,nsmax
         if(.not.IsAloft(n)) cycle
@@ -312,7 +314,10 @@
 
       subroutine diff_z
 
-      ! Explicit diffusion routine. author RP Denlinger
+      ! Explicit diffusion routine.
+      ! RP Denlinger and HF Schwaiger
+
+      !!!$ USE omp_lib
 
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,ts0,ts1,kappa_pd,sigma_nz_pd
@@ -345,7 +350,7 @@
       !integer :: nthreads,thread_num
       !logical :: OMP_get_nested
 
-      ! We are diffusing in x so set the length of the cell list accordingly
+      ! We are diffusing in z so set the length of the cell list accordingly
       ncells = nzmax
       concen_pd(:,:,:,:,ts1) = 0.0_ip
       ! Neuman boundary conditions in z
@@ -450,7 +455,7 @@
 #ifdef CRANKNIC
       ! Note: The only reason not to use Crank-Nicolson is if you
       !       don't have blas and lapack installed.  This pre-proc.
-      !       directive allows this section to be turnes off.
+      !       directive allows this section to be turned off.
       INTERFACE
         subroutine sgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
           integer                         ,intent(in)    :: N
@@ -712,7 +717,7 @@
 #ifdef CRANKNIC
       ! Note: The only reason not to use Crank-Nicolson is if you
       !       don't have blas and lapack installed.  This pre-proc.
-      !       directive allows this section to be turnes off.
+      !       directive allows this section to be turned off.
       INTERFACE
         subroutine sgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
           integer                         ,intent(in)    :: N
@@ -1069,7 +1074,7 @@
 #ifdef CRANKNIC
       ! Note: The only reason not to use Crank-Nicolson is if you
       !       don't have blas and lapack installed.  This pre-proc.
-      !       directive allows this section to be turnes off.
+      !       directive allows this section to be turned off.
             if(useVarDiffV.or.IsLatLon)then
               ! This is the call for solving single or double
               ! precision general tridiagonal Ax=b
