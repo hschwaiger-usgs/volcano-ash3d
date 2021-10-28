@@ -250,7 +250,7 @@
       KML_units(ivar)         = '  in.'
       KML_fid(ivar)           = 550
       KML_n_clrmp(ivar)       = 3
-      KML_color_map(ivar,:) = (/ 0.1_ip, 0.8_ip, 6.0_ip, 0.0_ip, 0.0_ip,&
+      KML_color_map(ivar,:) = (/ 0.003937_ip, 0.0315_ip, 0.2362_ip, 0.0_ip, 0.0_ip,&
                               0.0_ip, 0.0_ip, 0.0_ip, 0.0_ip, 0.0_ip, 0.0_ip/)
       KML_Styles(ivar,1) = '0.1-0.8mm';  KML_Colors(ivar,1) = 'ffff00'
       KML_Styles(ivar,2) = '0.8-6.0mm';  KML_Colors(ivar,2) = '00ffff'
