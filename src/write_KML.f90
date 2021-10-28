@@ -270,7 +270,7 @@
       KML_screenX(ivar)       = '1.0'
       KML_screenY(ivar)       = '0.1'
       KML_sizeX(ivar)         = '150'
-      KML_sizeY(ivar)         = '316'
+      KML_sizeY(ivar)         = '319'
       KML_AltMode(ivar)       = 'clampToGround'
 
       ivar = 9 ! deposit time
