@@ -202,8 +202,11 @@ USGSLIBDIR = -L$(USGSROOT)/lib
 USGSLIB = -lMetReader -lhourssince -lprojection
 USGSINC = -I$(USGSROOT)/include
 
-PLOTLIBS=-lplplotf95cd -lplplotf95d -L/usr/local/dislin -ldislin
-PLOTINC=-I/usr/local/dislin/gf
+#PLOTLIBS=-lplplotf95cd -lplplotf95d -L/usr/local/dislin -ldislin
+#PLOTINC=-I/usr/local/dislin/gf
+
+PLOTLIBS=
+PLOTINC=
 
 ###############################################################################
 ##########  GNU Fortran Compiler  #############################################
@@ -348,7 +351,7 @@ endif
 write_KML.o: $(ASH3dCCSRC)/write_KML.f90 makefile Ash3d_VariableModules.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_KML.f90
 
-all: Ash3d postproc
+all: Ash3d
 
 postproc: $(ASH3dCCSRC)/Ash3d_PostProc.f90 Ash3d_VariableModules.o $(DATAOBJ) Output_Vars.o Tephra.o Source.o Atmosphere.o
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc.f90

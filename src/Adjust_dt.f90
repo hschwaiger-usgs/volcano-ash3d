@@ -78,7 +78,6 @@
         CheckMesoVel = .false.
       endif
 
-      vy_meso_next_step_sp = 0.0
       if(CheckMesoVel)then
         ! In this block, we find the conditions based on velocities at the next
         ! meso time step
