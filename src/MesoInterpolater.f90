@@ -214,6 +214,7 @@
           vy_meso_last_step_sp = vy_meso_2_sp
           vz_meso_last_step_sp = vz_meso_2_sp
         endif
+
         ! Copy the timestep from next to last
         dt_meso_last = dt_meso_next
 
@@ -315,6 +316,7 @@
         ! Now calculate the dt at the next timestep
         call Adjust_DT(Load_MesoSteps)
 #endif
+
       endif   ! Load_MesoSteps
 
       ! Now we have the bracketing wind data for vx,vy,vz
@@ -351,7 +353,6 @@
            real((vy_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax) - &
                  vy_meso_last_step_sp(1:nxmax,1:nymax,1:nzmax)),kind=ip) * &
                                      Interval_Frac)*MPS_2_KMPHR
-
 
       vz_pd(1:nxmax,1:nymax,1:nzmax) = &
             (real(vz_meso_last_step_sp(1:nxmax,1:nymax,1:nzmax),kind=ip) + &

@@ -21,7 +21,7 @@
       real(kind=ip)                :: THICKNESS_THRESH = 1.0e-2_ip  !threshold thickness for start of deposition (mm)
       real(kind=ip)                :: DBZ_THRESH       =-2.0e+1_ip  !threshold dbZ
 
-        ! These are the initialized values
+      ! These are the initialized values
       real(kind=op)                :: DepositThickness_FillValue   =     0.0_op
       real(kind=op)                :: MaxConcentration_FillValue   = -9999.0_op
       real(kind=op)                :: DepArrivalTime_FillValue     = -9999.0_op
@@ -456,9 +456,9 @@
       !endif
 
       CloudArea                         = 0.0_ip
-      CloudLoad(1:nxmax,1:nymax)        = 0.0_ip
-      MaxConcentration(1:nxmax,1:nymax) = 0.0_ip
-      MaxHeight(1:nxmax,1:nymax)        = 0.0_ip
+      CloudLoad(1:nxmax,1:nymax)        = CloudLoad_FillValue
+      MaxConcentration(1:nxmax,1:nymax) = MaxConcentration_FillValue
+      MaxHeight(1:nxmax,1:nymax)        = 0.0_inp
       MinHeight(1:nxmax,1:nymax)        = 100.0_ip
 
       Mask_Cloud(:,:) = .false.
