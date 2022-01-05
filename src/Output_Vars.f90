@@ -458,7 +458,7 @@
       CloudArea                         = 0.0_ip
       CloudLoad(1:nxmax,1:nymax)        = CloudLoad_FillValue
       MaxConcentration(1:nxmax,1:nymax) = MaxConcentration_FillValue
-      MaxHeight(1:nxmax,1:nymax)        = 0.0_inp
+      MaxHeight(1:nxmax,1:nymax)        = 0.0_ip
       MinHeight(1:nxmax,1:nymax)        = 100.0_ip
 
       Mask_Cloud(:,:) = .false.
