@@ -188,6 +188,7 @@ I used recently to install Ash3d and all the necessary dependent software on an 
 		mv ${SOURCELOC}/Ash3d.zip ~/Ash3d/git
 		cd ~/Ash3d/git
 		unzip Ash3d.zip
+		cd ~/Ash3d/git/Ash3d/src
                 make
                 sudo make install                    --> copies the executable to /opt/USGS/Ash3d/bin
 6)  compile makencml fortran codes:
