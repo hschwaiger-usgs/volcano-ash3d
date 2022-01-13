@@ -160,15 +160,36 @@ I used recently to install Ash3d and all the necessary dependent software on an 
 		note: if you place it in a directory other than ~/ncj,
 		you will need to modify the command lines in  the autorun script
 		that begin with "java -Xmx2048m -classpath ~/ncj"
-5)  install Ash3d:     
+5)  install Ash3d.  Ash3d comes in four components: volcano-ash3d-metreader,
+         volcano-ash3d-projection, and volcano-ash3d-hourssince.  Each of these must
+	 be installed and compiled separately.  Libraries from these are created in /opt/USGS/lib
+	 which you will have to create if it doesn't already exist.  If you don't have 
+	 administrative privileges and can't create directories in /opt, you will have to
+	 create a local directory that can hold the libraries, and modify the makefiles
+	 to the metreader, projection, and hourssince components so that the "INSTALLDIR="
+	 line points to the new directory, not to /opt/USGS.  You must also make this modification
+	 in the makefile to Ash3d.
                 mkdir ~/Ash3d
-		cd ~/Ash3d"; "mkdir wd2", 
-		cd  wd2
-                svn://ramp.wr.usgs.gov/Software/ash3drepository"
-                cd ash3d/repsository/branches/vsc-ash/src
+		mkdir ~/Ash3d/git
+		cd ~/Ash3d/git"
+		git clone https://github.com/hschwaiger-usgss/volcano-ash3d-metreader
+		git clone https://github.com/hschwaiger-usgss/volcano-ash3d-projection
+		git clone https://github.com/hschwaiger-usgss/volcano-ash3d-hourssince
+		cd ~/Ash3d/git/volcano-ash3d-metreader
+		make
+		sudo make install                    --> copies the library file to /opt/USGS/lib
+		cd ~/Ash3d/git/volcano-ash3d-projection
+		make
+		sudo make install                    --> copies the library file to /opt/USGS/lib
+		cd ~/Ash3d/git/volcano-ash3d-hourssince
+		make
+		sudo make install                    --> copies the library file to /opt/USGS/lib
+	--The following assumes you have a zipped copy of the Ash3d source code, located at ${SOURCELOC}
+		mv ${SOURCELOC}/Ash3d.zip ~/Ash3d/git
+		cd ~/Ash3d/git
+		unzip Ash3d.zip
                 make
-                make utils
-                make PostProc
+                sudo make install                    --> copies the executable to /opt/USGS/Ash3d/bin
 6)  compile makencml fortran codes:
         ncml is a language developed by Unidata (http://www.unidata.ucar.edu) to create
         "wrappers" of grib2 or netcdf files.  I create an ncml wrapper of the downloaded
