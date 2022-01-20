@@ -85,10 +85,10 @@ USEEXTDATA = T
 # SPEED-UP ALGORITHMS
 #  FAST_DT
 #  FAST_SUBGRID
-#FASTFPPFLAG = 
+FASTFPPFLAG = 
 #FASTFPPFLAG = -DFAST_DT
 #FASTFPPFLAG = -DFAST_SUBGRID
-FASTFPPFLAG = -DFAST_DT -DFAST_SUBGRID
+#FASTFPPFLAG = -DFAST_DT -DFAST_SUBGRID
 
 ###############################################################################
 #  NOTE:  The following flags can either be set or commented out.  If they are
