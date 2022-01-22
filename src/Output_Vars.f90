@@ -456,8 +456,8 @@
       !endif
 
       CloudArea                         = 0.0_ip
-      CloudLoad(1:nxmax,1:nymax)        = CloudLoad_FillValue
-      MaxConcentration(1:nxmax,1:nymax) = MaxConcentration_FillValue
+      CloudLoad(1:nxmax,1:nymax)        = 0.0_ip
+      MaxConcentration(1:nxmax,1:nymax) = 0.0_ip
       MaxHeight(1:nxmax,1:nymax)        = 0.0_ip
       MinHeight(1:nxmax,1:nymax)        = 100.0_ip
 
@@ -484,6 +484,7 @@
                 MaxHeight(i,j)=z_cc_pd(k)+0.5_ip*dz_vec_pd(k)
               endif
             enddo
+
              ! Now go from the top down and find the bottom
             do k=nzmax,1,-1
              if(TotalConcentration(k).le.CLOUDCON_THRESH)then
@@ -498,6 +499,7 @@
               Mask_Cloud(i,j) = .true.
               !write(*,*)i,j,CloudLoad(i,j),CLOUDLOAD_THRESH
             else
+              CloudLoad(i,j) = CloudLoad_FillValue
               Mask_Cloud(i,j) = .false.
             endif
 
