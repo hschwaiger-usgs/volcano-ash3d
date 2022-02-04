@@ -10,7 +10,7 @@
       use time_data,     only : &
          time_native
 
-      real(kind=ip)                :: DEPO_THRESH           = 1.0e-1_ip  !threshold deposit thickness (mm)
+      real(kind=ip)                :: DEPO_THRESH           = 1.0e-2_ip  !threshold deposit thickness (mm)
       real(kind=ip)                :: DEPRATE_THRESH        = 1.0e-2_ip  !threshold deposition rate (mm/hr)
       real(kind=ip)                :: CLOUDCON_THRESH       = 1.0e-3_ip  !threshold cloud concentration (kg/km3) for output
       real(kind=ip)                :: CLOUDCON_GRID_THRESH  = 1.0e-7_ip  !threshold cloud concentration (kg/km3) for subgrid
@@ -160,26 +160,26 @@
       allocate(Mask_Deposit(nx,ny))
       Mask_Deposit = .false.
       allocate(DepositThickness(nx,ny))
-      DepositThickness = DepositThickness_FillValue
+      DepositThickness = 0.0_ip
       allocate(MaxConcentration(nx,ny))
-      MaxConcentration = MaxConcentration_FillValue
+      MaxConcentration = 0.0_ip
       allocate(DepArrivalTime(nx,ny))
-      DepArrivalTime = DepArrivalTime_FillValue
+      DepArrivalTime = 0.0_ip
       allocate(CloudArrivalTime(nx,ny))                    ! time of arrival of ash cloud
-      CloudArrivalTime = CloudArrivalTime_FillValue
+      CloudArrivalTime = 0.0_ip
       allocate(CloudLoad(nx,ny))
-      CloudLoad    = CloudLoad_FillValue
+      CloudLoad    = 0.0_ip
       allocate(CloudLoadLast(nx,ny))
-      CloudLoadLast = CloudLoad_FillValue
+      CloudLoadLast = 0.0_ip
       allocate(MaxHeight(nx,ny))                           ! maximum height (top) of ash cloud
-      MaxHeight = MaxHeight_FillValue
+      MaxHeight = 0.0_ip
       allocate(MinHeight(nx,ny))                           ! minimum height (bottom) of ash cloud
-      MinHeight = MinHeight_FillValue
+      MinHeight = 0.0_ip
       allocate(dbZCol(nx,ny))                              ! reflectivity in a column of nodes
-      dbZCol = dbZCol_FillValue
+      dbZCol = 0.0_ip
 
       allocate(dbZ(nx,ny,nz))                              ! radar reflectivity (dbZ)
-      dbZ = dbZCol_FillValue
+      dbZ = 0.0_ip
 
       end subroutine Allocate_Output_Vars
 
@@ -196,7 +196,7 @@
       if(nv.gt.0)then
         allocate(time_native(nt))
         allocate(pr_ash(nz,nt,nv))                       ! vertical ash profile
-        pr_ash = pr_ash_FillValue
+        pr_ash = 0.0_ip
       endif
 
       end subroutine Allocate_Profile
@@ -342,7 +342,7 @@
 
       !calculate deposit thickness in mm, and area covered
       Mask_Deposit(:,:)         = .false.
-      DepositThickness(:,:)     = DepositThickness_FillValue
+      DepositThickness(:,:)     = 0.0_ip
       DepositAreaCovered        = 0.0_ip
 
       if(n_gs_max.gt.0)then
@@ -384,14 +384,8 @@
       real(kind=ip) :: NumDens          !number densities (#/m3) of particles
       real(kind=ip) :: zcol             !z value of cell
 
-      !if(.not.Calculated_Cloud_Load)then
-      !  ! Need to calculate cloud load since this is a proxy for
-      !  ! where the cloud is located and where FillValues should used
-      !  call AshLoadCalculator
-      !endif
-
-      dbZCol(:,:) = dbZCol_FillValue
-      dbZ(:,:,:)  = dbZCol_FillValue
+      dbZCol(:,:) = 0.0_op
+      dbZ(:,:,:)  = 0.0_op
 
       !calculate particle collision rate between two particle sizes
       !note: this requires that only two particle sizes be used as input
@@ -411,7 +405,7 @@
               if(zcol.gt.EPS_SMALL)then
                 dbZ(i,j,k) = 10.0_ip*log10(zcol)
               else
-                dbZ(i,j,k) = dbZCol_FillValue
+                dbZ(i,j,k) = 0.0_op
               endif
             enddo
             dbZCol(i,j) = maxval(dbZ(i,j,1:nzmax))
@@ -448,12 +442,6 @@
  
       ! calculate cloud concentration,
       ! cloud height, and cloud bottom
-
-      !if(.not.Calculated_Cloud_Load)then
-      !  ! Need to calculate cloud load since this is a proxy for
-      !  ! where the cloud is located and where FillValues should used
-      !  call AshLoadCalculator         
-      !endif
 
       CloudArea                         = 0.0_ip
       CloudLoad(1:nxmax,1:nymax)        = 0.0_ip
@@ -497,9 +485,7 @@
             ! Generate the cloud mask base on integrated cloud load
             if(CloudLoad(i,j).ge.CLOUDLOAD_THRESH)then
               Mask_Cloud(i,j) = .true.
-              !write(*,*)i,j,CloudLoad(i,j),CLOUDLOAD_THRESH
             else
-              CloudLoad(i,j) = CloudLoad_FillValue
               Mask_Cloud(i,j) = .false.
             endif
 
@@ -515,11 +501,12 @@
               CloudArea = CloudArea + sigma_nz_pd(i,j,1)
               MaxConcentration(i,j) = MaxTotalConcentration
             else
-              ! Not an ash cloud column so write FillValue
-              CloudLoad(i,j)        = CloudLoad_FillValue
-              MaxConcentration(i,j) = MaxConcentration_FillValue
-              MaxHeight(i,j)        = MaxHeight_FillValue
-              MinHeight(i,j)        = MinHeight_FillValue
+              ! Not an ash cloud column so write 0.0
+              ! This will be set to FillValue in netcdf when writing out
+              CloudLoad(i,j)        = 0.0_ip
+              MaxConcentration(i,j) = 0.0_ip
+              MaxHeight(i,j)        = 0.0_ip
+              MinHeight(i,j)        = 0.0_ip
             endif
 
           enddo
@@ -532,7 +519,7 @@
 
 !******************************************************************************
 
-      subroutine AshLoadCalculator
+      subroutine CloudAreaCalculator
       
       use Tephra,        only : &
          n_gs_max
@@ -561,13 +548,6 @@
         do i=imin,imax
           do j=jmin,jmax
             CellArea = sigma_nz_pd(i,j,1)
-            do k=kmin,kmax
-              ! Increment the cloud load for this cell
-              CloudLoad(i,j) = CloudLoad(i,j) + &
-                                sum(concen_pd(i,j,k,1:n_gs_max,ts1)) * & ! in kg/km^3
-                                   dz_vec_pd(k)                      / & ! convert to kg/km^2
-                                 1.0e3_ip                            ! tonnes/km2
-            enddo
             do k=1,5
               if (CloudLoad(i,j).gt.LoadVal(k)) &
                 CloudLoadArea(k) = CloudLoadArea(k) + CellArea
@@ -576,7 +556,7 @@
         enddo
       endif
 
-      end subroutine AshLoadCalculator      
+      end subroutine CloudAreaCalculator      
 
 !******************************************************************************
 
@@ -610,11 +590,10 @@
       if(.not.Calculated_Cloud_Load)then
         ! Need to calculate cloud load since this is a proxy for
         ! where the cloud is located and where FillValues should used
-        !call AshLoadCalculator
         call ConcentrationCalculator
       endif
 
-      call AshLoadCalculator
+      call CloudAreaCalculator
 
       ! Mark the arrival time of any new deposit
       do i=1,nxmax
@@ -836,7 +815,6 @@
       if(.not.Calculated_Cloud_Load)then
         ! Need to calculate cloud load since this is a proxy for
         ! where the cloud is located and where FillValues should used
-        !call AshLoadCalculator
         call ConcentrationCalculator
       endif
       if(.not.Calculated_AshThickness)then

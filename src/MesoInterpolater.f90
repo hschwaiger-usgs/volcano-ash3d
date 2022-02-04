@@ -359,6 +359,7 @@
            real((vz_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax) - &
                  vz_meso_last_step_sp(1:nxmax,1:nymax,1:nzmax)),kind=ip) * &
                                      Interval_Frac)*MPS_2_KMPHR
+      vz_pd = 0.0_ip
       ! Now interpolate onto current time
       if(useCalcFallVel)then
         vf_pd(1:nxmax,1:nymax,1:nzmax,:) = (real(vf_meso_last_step_sp(:,:,:,:),kind=ip) + &
@@ -371,6 +372,16 @@
       if (((SourceType.eq.'umbrella')     .or.   &
            (SourceType.eq.'umbrella_air')).and.  &   !(TimeNow.gt.0.0_ip).and. &
           (TimeNow.lt.e_EndTime(1))) then
+#ifdef FAST_DT
+          write(*,*)"ERROR: Ash3d was compiled with the preproccesor flag -DFAST_DT"
+          write(*,*)"       Umbrella cloud source terms cannot be used when this"
+          write(*,*)"       flag is set because the velocity components added to"
+          write(*,*)"       the background wind velocities would not be accounted"
+          write(*,*)"       for in the dt calculation.  Please edit FASTFPPFLAG in"
+          write(*,*)"       the makefile and recompile Ash3d"
+          write(*,*)"       Exiting."
+          stop 1
+#endif
           call umbrella_winds
           vx_pd(1:nxmax,1:nymax,ibase:itop) = vx_pd(1:nxmax,1:nymax,ibase:itop) + &
                                            uvx_pd(1:nxmax,1:nymax,ibase:itop)
