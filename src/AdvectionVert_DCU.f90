@@ -262,6 +262,7 @@
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+            ! Now update concentration for all interior cells
             concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = &
                concen_pd(i,j,rmin:rmin-1+ncells,n,ts0) + &
                update_cc(rmin:rmin-1+ncells)

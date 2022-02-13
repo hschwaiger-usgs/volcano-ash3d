@@ -485,7 +485,11 @@
         ! Check stop conditions
         !  If any of these is true, then the time loop will stop
            ! Normal stop condition set by user tracking the deposit
-        StopConditions(1) = (dep_percent_accumulated.gt.StopValue)
+        !StopConditions(1) = (dep_percent_accumulated.gt.StopValue)
+         ! It is better to stop based on remaining ash aloft than amount
+         ! deposited since if more than 1% blows out of the domain, this
+         ! criterion would never be invoked.
+        StopConditions(1) = (aloft_vol/tot_vol.lt.(1.0_ip-StopValue))
            ! Normal stop condition if simulation exceeds alloted time
         StopConditions(2) = (time.ge.Simtime_in_hours)
            ! Normal stop conditionn when nothing is left to advect
@@ -526,7 +530,7 @@
       write(global_info,*)"Time integration completed for the following reason:"
       if(StopConditions(1).eqv..true.)then
         ! Normal stop condition set by user tracking the deposit
-        write(global_info,*)"Percent accumulated exceeds ",StopValue
+        write(global_info,*)"Percent accumulated/exited exceeds ",StopValue
       endif
       if(StopConditions(2).eqv..true.)then
         ! Normal stop condition if simulation exceeds alloted time
@@ -539,8 +543,8 @@
       endif
       if(StopConditions(3).eqv..true.)then
         ! Normal stop conditionn when nothing is left to advect
-        write(global_info,*)"n_gs_aloft = 0"
-        write(global_log,*)"n_gs_aloft = 0"
+        write(global_info,*)"No ash species remain aloft."
+        write(global_log,*)"No ash species remain aloft."
       endif
       if(StopConditions(4).eqv..true.)then
         ! Error stop condition if the concen and outflow do not match the source

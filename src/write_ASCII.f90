@@ -229,7 +229,73 @@
       stop 1
       
       end subroutine write_2D_ASCII
-   
+
+!******************************************************************************
+
+      subroutine read_2D_ASCII(filename)
+
+!     Subroutine that reads in 2-D arrays in ESRI ASCII raster format
+
+      use precis_param
+
+      use io_units
+
+      use Output_Vars
+
+      implicit none
+
+      character(len=50),intent(in) :: filename
+
+      integer :: fid
+      integer :: i,j
+
+      fid = 40
+
+      open(unit=fid,file=trim(adjustl(filename)), status='old',err=2500)
+
+      read(fid,3000) R_nx        ! write header values
+      read(fid,3001) R_ny
+      allocate(R_XY(R_nx,R_ny))
+      read(fid,3002) R_xll
+      read(fid,3003) R_yll
+      read(fid,3004) R_dx,R_dy
+      read(fid,3005) R_Fill
+
+      !Write out arrays of maximum concentration and maximum height
+      do j=R_ny,1,-1
+        read(fid,3006) (R_XY(i,j), i=1,R_nx)
+        read(fid,*)                         !make a blank line between rows
+      enddo
+
+      !write(*,*)R_nx,R_ny
+      !write(*,*)R_xll,R_yll
+      !write(*,*)R_dx,R_dy
+      !write(*,*)R_Fill
+      !do j=1,R_ny
+      !  do i=1,R_nx
+      !    if (R_XY(i,j).gt.0.0_ip)write(*,*)R_XY(i,j)
+      !  enddo
+      !enddo
+
+      close(fid)
+
+!     format statements
+3000  format(6x,i5)
+3001  format(6x,i5)
+3002  format(10x,f10.3)
+3003  format(10x,f10.3)
+3004  format(10x,2f10.3)
+3005  format(13x,a6)
+3006  format(10f10.3)
+      return
+
+!     Error traps
+2500  write(global_info,*) 'Error opening output file. Program stopped'
+      write(global_log ,*) 'Error opening output file. Program stopped'
+      stop 1
+
+      end subroutine read_2D_ASCII
+
 !******************************************************************************
  
       subroutine write_3D_ASCII(cio)

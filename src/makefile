@@ -353,12 +353,20 @@ write_KML.o: $(ASH3dCCSRC)/write_KML.f90 makefile Ash3d_VariableModules.o
 
 all: Ash3d
 
-postproc: $(ASH3dCCSRC)/Ash3d_PostProc.f90 Ash3d_VariableModules.o $(DATAOBJ) Output_Vars.o Tephra.o Source.o Atmosphere.o
+postproc: $(ASH3dCCSRC)/Ash3d_PostProc.f90 Ash3d_VariableModules.o $(DATAOBJ) Output_Vars.o Tephra.o Source.o Atmosphere.o makefile
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc.f90
 	$(FC) $(FFLAGS) $(EXFLAGS) $(PPOBJS) $(DATAOBJ) Ash3d_PostProc.o $(LIBS) -o Ash3d_PostProc
 
+tools: ascii_check
+
+ascii_check: $(ASH3dCCSRC)/tools/Ash3d_ASCII_check.f90 Ash3d_VariableModules.o write_ASCII.o makefile
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/tools/Ash3d_ASCII_check.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) $(PPOBJS) write_ASCII.o Ash3d_ASCII_check.o $(LIBS) -o Ash3d_ASCII_check
+	mkdir -p ../bin/tools
+	mv Ash3d_ASCII_check ../bin/tools/Ash3d_ASCII_check
+
 clean:
-	rm -rf $(OBJECTS) Ash3d.o $(DATAOBJ) $(OPTMODS_OBJ) ../bin/$(ASH3DEXEC) \
+	rm -rf $(OBJECTS) Ash3d.o $(DATAOBJ) $(OPTMODS_OBJ) ../bin/$(ASH3DEXEC) ../bin/tools/Ash3d_ASCII_check \
         *.mod *__genmod.f90
 
 install:

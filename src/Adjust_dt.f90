@@ -64,6 +64,13 @@
       real(kind=ip) :: minsig
       logical       :: CheckMesoVel
 
+      ! Advection time restriction follows Eq. 4.16 of LeVeque
+      !   nu = abs( u dt/dx) < 1  where nu is the CFL number
+      ! We impose the CFL number (~0.8 or so, but < 1.0) so we have
+      !   dt = CFL / abs(u/dx)
+      ! We need to find the largest u/dx quotient across the grid and
+      ! similarly for v/dy and w/dz to get the most restrictive dt
+
       time_diffuse   = 0.0_ip
 
       dx2 = 2.0_ip/(dx*dx)
@@ -129,9 +136,10 @@
           vxmax_dx = 0.0_ip
           vymax_dy = 0.0_ip
         endif
-        vzmax_dz = 0.0_ip
         ! This branch looks at conditions cell-by-cell
         ! Use vx_meso_1_sp and vx_meso_2_sp
+        ! First initialize vzmax_dz to 0.0 so we can test for the largest
+        vzmax_dz = 0.0_ip
         do i=1,nxmax
           do j=1,nymax
             do k=1,nzmax

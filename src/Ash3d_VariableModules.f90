@@ -449,13 +449,13 @@
       real(kind=ip),dimension(:,:,:)    ,allocatable :: vz_pd ! w (up) component of wind
       real(kind=ip),dimension(:,:,:,:)  ,allocatable :: vf_pd ! fall velocity (x,y,z,gs) (positive upward)
 
-      real(kind=ip),dimension(:,:,:,:,:),allocatable :: concen_pd       !ash concentration in x,y,z,gs_bin,time
-      real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_xz1_pd
-      real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_xz2_pd
-      real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_yz1_pd
-      real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_yz2_pd
-      real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_xy1_pd
-      real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_xy2_pd
+      real(kind=ip),dimension(:,:,:,:,:),allocatable :: concen_pd       ! ash concentration in x,y,z,gs_bin,time
+      real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_xz1_pd  ! outflow concentration in x,z,gs
+      real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_xz2_pd  ! outflow concentration in x,z,gs
+      real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_yz1_pd  ! outflow concentration in y,z,gs
+      real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_yz2_pd  ! outflow concentration in y,z,gs
+      real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_xy1_pd  ! outflow concentration in x,y,gs
+      real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_xy2_pd  ! outflow concentration in x,y,gs
       real(kind=ip),dimension(:,:,:)    ,allocatable :: DepositGranularity ! accumulated ash mass on ground 
 #endif
       real(kind=ip)      :: dep_percent_accumulated

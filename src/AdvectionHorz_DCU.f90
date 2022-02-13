@@ -86,6 +86,7 @@
       ! We are advecting in x so set the length of the cell list accordingly
       rmin = imin
       rmax = imax
+
       ncells = rmax - rmin + 1
 
       concen_pd(:,:,:,:,ts1) = 0.0_ip
@@ -237,6 +238,7 @@
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+            ! Now update concentration for all interior cells
             concen_pd(rmin:rmin-1+ncells,j,k,n,ts1) = &
                concen_pd(rmin:rmin-1+ncells,j,k,n,ts0) + &
                update_cc(rmin:rmin-1+ncells)
@@ -474,6 +476,7 @@
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+            ! Now update concentration for all interior cells
             concen_pd(i,rmin:rmin-1+ncells,k,n,ts1) = &
                concen_pd(i,rmin:rmin-1+ncells,k,n,ts0) + &
                update_cc(rmin:rmin-1+ncells)

@@ -615,8 +615,8 @@
         if(IsAloft(n).and. &                     ! if bin is currently flagged as aloft
            mass_aloft(n).lt.AIRBORNE_THRESH)then ! but the mass is less than the thresh
           IsAloft(n) = .false.
-          write(global_info,*)"Grainsize bin ",n," has fully deposited."
-          write(global_log ,*)"Grainsize bin ",n," has fully deposited."
+          write(global_info,*)"Grainsize bin ",n," has fully deposited or left the domain."
+          write(global_log ,*)"Grainsize bin ",n," has fully deposited or left the domain."
         else
           n_gs_aloft = n_gs_aloft + 1
         endif

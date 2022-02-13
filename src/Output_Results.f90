@@ -177,7 +177,7 @@
                               ' 0.000','CloudConcentration_ ')
         if (WriteCloudHeight_ASCII)         &
           call write_2D_ASCII(nxmax,nymax,MaxHeight(1:nxmax,1:nymax), &
-                              '-9999.','CloudHeight_        ')
+                              ' 0.000','CloudHeight_        ')
         !if (WriteCloudHeight_ASCII)         &
         !  call write_2D_ASCII(nxmax,nymax,MinHeight(1:nxmax,1:nymax), &
         !                      '-9999.','CloudHeightBot_     ')

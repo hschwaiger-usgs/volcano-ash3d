@@ -102,6 +102,13 @@
 
       real(kind=ip), dimension(:,:,:),allocatable :: pr_ash             ! concentration profile
 
+        ! These arrays are only used when reading an output file of unknow size
+      real(kind=ip), dimension(:,:),allocatable :: R_XY
+      integer       :: R_nx,R_ny
+      real(kind=ip) :: R_xll,R_yll
+      real(kind=ip) :: R_dx,R_dy
+      real(kind=ip) :: R_Fill
+
         ! 3-D variables
         !   (in x,y,z)
       real(kind=ip), dimension(:,:,:),allocatable :: dbZ                ! radar reflectivty at time t (dbZ)
@@ -761,32 +768,20 @@
 
       if(n_gs_max.gt.0)then
         do isize=1,n_gs_max
-          if(IsLatLon)then
-            vol = vol + (                                &
-                          sum(outflow_yz1_pd(        1:nymax,1:nzmax,isize)*   &
-                                    kappa_pd(      0,1:nymax,1:nzmax)) +       &
-                          sum(outflow_yz2_pd(        1:nymax,1:nzmax,isize)*   &
-                                    kappa_pd(nxmax+1,1:nymax,1:nzmax)) +       &
-                          sum(outflow_xz1_pd(1:nxmax,        1:nzmax,isize)   *   &
-                                    kappa_pd(1:nxmax,        0,1:nzmax)) +          &
-                          sum(outflow_xz2_pd(1:nxmax,        1:nzmax,isize)  *   &
-                                    kappa_pd(1:nxmax,nymax+1,1:nzmax)) +         &
-                          sum(outflow_xy2_pd(1:nxmax,1:nymax          ,isize)   *   &
-                                    kappa_pd(1:nxmax,1:nymax,  nzmax+1)) )     /   & ! convert to kg
-                          MagmaDensity                            /   & ! convert to m3
-                          KM3_2_M3                                      ! convert to km3
+          vol = vol + (                                &
+                        sum(outflow_yz1_pd(        1:nymax,1:nzmax,isize)*   &
+                                  kappa_pd(      0,1:nymax,1:nzmax)) +       &
+                        sum(outflow_yz2_pd(        1:nymax,1:nzmax,isize)*   &
+                                  kappa_pd(nxmax+1,1:nymax,1:nzmax)) +       &
+                        sum(outflow_xz1_pd(1:nxmax,        1:nzmax,isize)   *   &
+                                  kappa_pd(1:nxmax,        0,1:nzmax)) +          &
+                        sum(outflow_xz2_pd(1:nxmax,        1:nzmax,isize)  *   &
+                                  kappa_pd(1:nxmax,nymax+1,1:nzmax)) +         &
+                        sum(outflow_xy2_pd(1:nxmax,1:nymax          ,isize)   *   &
+                                  kappa_pd(1:nxmax,1:nymax,  nzmax+1)) )     /   & ! convert to kg
+                        MagmaDensity                            /   & ! convert to m3
+                        KM3_2_M3                                      ! convert to km3
 
-          else
-            vol = vol +     (                              &
-                          sum(outflow_xz1_pd(1:nxmax,1:nzmax,isize))  +   &
-                          sum(outflow_xz2_pd(1:nxmax,1:nzmax,isize))  +   &
-                          sum(outflow_yz1_pd(1:nymax,1:nzmax,isize))  +   &
-                          sum(outflow_yz2_pd(1:nymax,1:nzmax,isize))  +   &
-                          sum(outflow_xy2_pd(1:nxmax,1:nymax,isize)) )/   & ! convert to kg
-                          MagmaDensity                       /   & ! convert to m3
-                          KM3_2_M3                                 ! convert to km3
-  
-          endif
         enddo
       endif
 
