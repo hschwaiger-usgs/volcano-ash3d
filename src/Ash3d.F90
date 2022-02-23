@@ -159,7 +159,9 @@
 !------------------------------------------------------------------------------
 
         ! Read airports/POI and allocate/initilize arrays
-      if (WriteAirportFile_ASCII.or.WriteAirportFile_KML) &
+        ! We only need to do this if an output variable demands it since this is
+        ! a burden every time step
+      if(Output_every_TS) &
         call ReadAirports
 
       call alloc_arrays
@@ -283,7 +285,6 @@
 !
 !------------------------------------------------------------------------------
 
-        if(VERB.gt.1)write(global_info,*)"Ash3d: Calling MassFluxCalculator"
         call MassFluxCalculator         ! call subroutine that determines mass flux & plume height
 
 !------------------------------------------------------------------------------
@@ -295,7 +296,6 @@
         ! Add source term
         ! erupt ash into column
         if(MassFluxRate_now.gt.0.0_ip) then
-
           ! Check if the source type is one of the standard types
           if ((SourceType.eq.'point')  .or. &
               (SourceType.eq.'line')   .or. &
@@ -304,7 +304,9 @@
               (SourceType.eq.'umbrella') .or. &
               (SourceType.eq.'umbrella_air'))then
             ! Calculating the flux at the source nodes
+!            write(*,*)"Calling TephraSourceNodes"
             call TephraSourceNodes
+!            write(*,*)"Called TephraSourceNodes"
             ! Now integrate the ash concentration with the SourceNodeFlux
             if (SourceType.eq.'umbrella'.or. &
                (SourceType.eq.'umbrella_air')) then
@@ -332,7 +334,7 @@
                   enddo
                 enddo
               enddo
-            else
+            else ! (SourceType.eq.'umbrella')
               ! All other standard source types (point,line,profile, suzuki) are
               ! integrated as follows.
               concen_pd(ivent,jvent,1:nzmax+1,1:n_gs_max,ts0) =  &
@@ -408,6 +410,7 @@
         ! time-step, then extract output variables from concen here
         if(Output_every_TS)then
           call Gen_Output_Vars
+
 !------------------------------------------------------------------------------
 !       OPTIONAL MODULES
 !         Insert calls output routines (every timestep) here
@@ -416,6 +419,7 @@
 
             ! SEE WHETHER THE ASH HAS HIT ANY AIRPORTS
           call FirstAsh
+
             ! Track ash on vertical profiles
           if (nvprofiles.gt.0)then
             call Calc_vprofile(itime)

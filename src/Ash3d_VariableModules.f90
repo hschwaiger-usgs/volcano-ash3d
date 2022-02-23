@@ -33,6 +33,8 @@
 
       implicit none
 
+#include "version.h"
+
       real(kind=ip), parameter :: EPS_SMALL  = 1.0e-7_ip  ! Small number
       real(kind=ip), parameter :: EPS_TINY   = 1.0e-12_ip ! Very small number
       real(kind=ip), parameter :: PI         = 3.141592653589793_ip

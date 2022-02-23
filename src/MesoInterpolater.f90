@@ -48,7 +48,7 @@
          MR_dum3d_compH,MR_dum3d_compH_2,MR_iMetStep_Now,&
          MR_MetSteps_Total,Met_var_IsAvailable,isGridRelative,Map_Case,&
          MR_MetStep_Hour_since_baseyear,MR_MetStep_Interval,&
-         MR_dum3d_compH,MR_dum3d_metP,Met_var_NC_names,&
+         MR_dum3d_compH,MR_dum3d_metP,Met_var_GRIB_names,&
            MR_Read_HGT_arrays,&
            MR_Read_3d_Met_Variable_to_CompGrid,&
            MR_Rotate_UV_GR2ER_Met,&
@@ -162,13 +162,13 @@
           ivar = 7 ! Pressure Vertical Velocity
           if(Met_var_IsAvailable(ivar))then
             call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now)
+            MR_dum3d_MetP = MR_dum3d_MetP/(-AirDens_meso_next_step_MetP_sp*GRAV)
+            call MR_Regrid_MetP_to_CompGrid(MR_iMetStep_Now)
           else
             write(*,*)"Tried to read variable, but its not available: ",&
-                      Met_var_NC_names(ivar)
-            MR_dum3d_MetP = 0.0_sp
+                      Met_var_GRIB_names(ivar)
+            MR_dum3d_compH = 0.0_sp
           endif
-          MR_dum3d_MetP = MR_dum3d_MetP/(-AirDens_meso_next_step_MetP_sp*GRAV)
-          call MR_Regrid_MetP_to_CompGrid(MR_iMetStep_Now)
           vz_meso_1_sp = MR_dum3d_compH
           vz_meso_next_step_sp = vz_meso_1_sp
         else
@@ -177,7 +177,7 @@
             call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now)
           else
             write(*,*)"Tried to read variable, but its not available: ",&
-                      Met_var_NC_names(ivar)
+                      Met_var_GRIB_names(ivar)
             MR_dum3d_compH = 0.0_sp
           endif
           vz_meso_1_sp = MR_dum3d_compH
@@ -316,13 +316,13 @@
           ivar = 7 ! Pressure Vertical Velocity
           if(Met_var_IsAvailable(ivar))then
             call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now+1)
+            MR_dum3d_MetP = MR_dum3d_MetP/(-AirDens_meso_next_step_MetP_sp*GRAV)
+            call MR_Regrid_MetP_to_CompGrid(MR_iMetStep_Now+1)
           else
             write(*,*)"Tried to read variable, but its not available: ",&
-                      Met_var_NC_names(ivar)
-            MR_dum3d_MetP = 0.0_sp
+                      Met_var_GRIB_names(ivar)
+            MR_dum3d_compH = 0.0_sp
           endif
-          MR_dum3d_MetP = MR_dum3d_MetP/(-AirDens_meso_next_step_MetP_sp*GRAV)
-          call MR_Regrid_MetP_to_CompGrid(MR_iMetStep_Now+1)
 
           if(Meso_toggle.eq.0)then
             vz_meso_1_sp = MR_dum3d_compH
@@ -337,7 +337,7 @@
             call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now+1)
           else
             write(*,*)"Tried to read variable, but its not available: ",&
-                      Met_var_NC_names(ivar)
+                      Met_var_GRIB_names(ivar)
             MR_dum3d_compH = 0.0_sp
           endif
           if(Meso_toggle.eq.0)then

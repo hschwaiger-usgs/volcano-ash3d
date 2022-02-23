@@ -215,6 +215,7 @@
         z_cell_bot = z_cc_pd(k)-0.5_ip*dz_vec_pd(k)
 
         ! First get the TephraFluxRate in kg/hr
+        TephraFluxRate = 0.0_ip
         PlumeHeight_above_ground = Height_now-zground
         if ((SourceType.eq.'suzuki')      .or. &
             (SourceType.eq.'umbrella')    .or. &
@@ -260,12 +261,12 @@
               ! This assumes that the timestep is fully within the
               ! eruption
               TephraFluxRate = TephraFluxRate + e_prof_MassFlux(ieruption,kk)
-            else
-              TephraFluxRate = 0.0_ip
+            !else
+            !  TephraFluxRate = 0.0_ip
             endif
-            !write(*,*)k,kk,ez,z_cell_bot,z_cell_top
-            write(*,*)"profile source is currently in need of repair"
-            stop 6
+            !write(*,*)k,kk,ez,z_cell_bot,z_cell_top,TephraFluxRate
+            !write(*,*)"profile source is currently in need of repair"
+            !stop 6
           enddo
         else
           TephraFluxRate = 0.0_ip

@@ -30,7 +30,7 @@
       real(kind=op)                :: MaxHeight_FillValue          = -9999.0_op
       real(kind=op)                :: MinHeight_FillValue          = -9999.0_op
       real(kind=op)                :: dbZCol_FillValue             =  -100.0_op
-      real(kind=op)                :: pr_ash_FillValue             = -9999.0_op
+      real(kind=op)                :: pr_ash_FillValue             =     0.0_op
 
       logical            :: Calculated_Cloud_Load
       logical            :: Calculated_AshThickness
@@ -120,21 +120,21 @@
       character(len=30), dimension(:),    allocatable :: var_User2d_static_XY_lname
       real(kind=op),     dimension(:),    allocatable :: var_User2d_static_XY_MissVal
       real(kind=op),     dimension(:),    allocatable :: var_User2d_static_XY_FillVal
-      real(kind=ip), dimension(:,:,:),    allocatable :: var_User2d_static_XY
+      real(kind=op), dimension(:,:,:),    allocatable :: var_User2d_static_XY
         ! User-defined 2-D variables (in x,y)
       character(len=30), dimension(:),    allocatable :: var_User2d_XY_name
       character(len=30), dimension(:),    allocatable :: var_User2d_XY_unit
       character(len=30), dimension(:),    allocatable :: var_User2d_XY_lname
       real(kind=op),     dimension(:),    allocatable :: var_User2d_XY_MissVal
       real(kind=op),     dimension(:),    allocatable :: var_User2d_XY_FillVal
-      real(kind=ip), dimension(:,:,:),    allocatable :: var_User2d_XY
+      real(kind=op), dimension(:,:,:),    allocatable :: var_User2d_XY
         ! User-defined 3-D variables (in x,y,gs)
       character(len=30), dimension(:),    allocatable :: var_User3d_XYGs_name
       character(len=30), dimension(:),    allocatable :: var_User3d_XYGs_unit
       character(len=30), dimension(:),    allocatable :: var_User3d_XYGs_lname
       real(kind=op),     dimension(:),    allocatable :: var_User3d_XYGs_MissVal
       real(kind=op),     dimension(:),    allocatable :: var_User3d_XYGs_FillVal
-      real(kind=ip), dimension(:,:,:,:),  allocatable :: var_User3d_XYGs
+      real(kind=op), dimension(:,:,:,:),  allocatable :: var_User3d_XYGs
         ! User-defined 3-D variables (in x,y,z)
       character(len=30), dimension(:),    allocatable :: var_User3d_XYZ_name
       character(len=30), dimension(:),    allocatable :: var_User3d_XYZ_unit
@@ -148,7 +148,7 @@
       character(len=30), dimension(:),    allocatable :: var_User4d_XYZGs_lname
       real(kind=op),     dimension(:),    allocatable :: var_User4d_XYZGs_MissVal
       real(kind=op),     dimension(:),    allocatable :: var_User4d_XYZGs_FillVal
-      real(kind=ip), dimension(:,:,:,:,:),allocatable :: var_User4d_XYZGs
+      real(kind=op), dimension(:,:,:,:,:),allocatable :: var_User4d_XYZGs
 
       contains
 
@@ -203,7 +203,7 @@
       if(nv.gt.0)then
         allocate(time_native(nt))
         allocate(pr_ash(nz,nt,nv))                       ! vertical ash profile
-        pr_ash = 0.0_ip
+        pr_ash = 0.0_op
       endif
 
       end subroutine Allocate_Profile
@@ -702,11 +702,14 @@
 
 
       do i=1,nvprofiles
+        ! Get the total ash aloft in the coloumn at this point in kg/km3
+        totalash = sum(concen_pd(i_vprofile(i),j_vprofile(i),1:nzmax,1:n_gs_max,ts1))
         ! don't write if there's no ash
-        if(sum(concen_pd(i_vprofile(i),j_vprofile(i),1:nzmax,1:n_gs_max,ts1)).lt.EPS_THRESH) cycle
+        !if(totalash.lt.EPS_THRESH) cycle
+        if(totalash.lt.CLOUDCON_THRESH) cycle
         do k=1,nzmax
-          totalash = sum(concen_pd(i_vprofile(i),j_vprofile(i),k,1:n_gs_max,ts1))
-          pr_ash(k,itime,i) = totalash/1000.0_ip     !convert from kg/km3 to mg/m3
+          pr_ash(k,itime,i) = sum(concen_pd(i_vprofile(i),j_vprofile(i),k,1:n_gs_max,ts1))&
+                              /1000.0_ip     !convert from kg/km3 to mg/m3
         enddo
       enddo
 

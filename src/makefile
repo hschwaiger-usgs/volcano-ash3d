@@ -44,9 +44,9 @@ SYSTEM = gfortran
 #      OMPOPT   : includes optimizations flags for fastest runtime and OpenMP directives
 #                 To run, enter: env OMP_NUM_THREADS=4 Ash3d input_file.inp
 #    This variable cannot be left blank
-#RUN = DEBUG
+RUN = DEBUG
 #RUN = PROF
-RUN = OPT
+#RUN = OPT
 #RUN = OMPOPT
 # This is the location of the USGS libraries and include files
 # This might be different from the INSTALLDIR path if you want to link to special MetReader
@@ -216,6 +216,7 @@ ifeq ($(SYSTEM), gfortran)
     COMPINC = -I$(FCHOME)/include -I$(FCHOME)/lib64/gfortran/modules
     COMPLIBS = -L$(FCHOME)/lib64 -L$(FCHOME)/lib
     LIBS = $(COMPLIBS) $(USGSLIBDIR) $(USGSINC) $(COMPINC) $(PLOTINC) -llapack -lblas $(USGSLIB) $(DATALIBS) $(PLOTLIBS)
+    # -lefence
 # Debugging flags
 ifeq ($(RUN), DEBUG)
     FFLAGS =  -O0 -g3 -Wall -fbounds-check -pedantic -fbacktrace -fimplicit-none -Wunderflow -Wuninitialized -ffpe-trap=invalid,zero,overflow -fdefault-real-8
@@ -233,7 +234,7 @@ endif
 # Production run flags
 ifeq ($(RUN), OPT)
     FFLAGS = -O3 -w -fno-math-errno -funsafe-math-optimizations -fno-trapping-math -fno-signaling-nans -fcx-limited-range -fno-rounding-math -fdefault-real-8
-    ASH3DEXEC=Ash3d
+    ASH3DEXEC=Ash3d_opt
 endif
 ifeq ($(RUN), OMPOPT)
     FFLAGS = -O3 -w -fno-math-errno -funsafe-math-optimizations -fno-trapping-math -fno-signaling-nans -fcx-limited-range -fno-rounding-math -fdefault-real-8 -fopenmp -lgomp
@@ -282,12 +283,15 @@ endif
 
 Ash3d:  $(OBJECTS) $(DATAOBJ) Ash3d.F90 makefile
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c Ash3d.F90 
-	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d.o $(LIBS) -o Ash3d
+	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d.o $(LIBS) -o $(ASH3DEXEC)
 	mkdir -p ../bin
-	mv Ash3d ../bin/$(ASH3DEXEC)
+	cp $(ASH3DEXEC) ../bin/Ash3d
+	mv $(ASH3DEXEC) ../bin/$(ASH3DEXEC)
+
 
 # Objects/Modules for initilization and model set-up
 Ash3d_VariableModules.o: $(ASH3dCCSRC)/Ash3d_VariableModules.f90 makefile
+	./get_version.sh
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Ash3d_VariableModules.f90
 Input_Data.o: $(ASH3dCCSRC)/Input_Data.f90 makefile Ash3d_VariableModules.o Tephra.o Help.o VotW.o Diffusion.o Airports.o $(DATAOBJ) Output_Vars.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Input_Data.f90

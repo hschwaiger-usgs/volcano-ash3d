@@ -115,14 +115,15 @@
       subroutine create_netcdf_file
 
       use global_param,  only : &
-         EPS_SMALL,EPS_TINY,KM2_2_M2,useCalcFallVel,VERB
+         EPS_SMALL,EPS_TINY,KM2_2_M2,useCalcFallVel,VERB,&
+         GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH,Ash3d_GitComID
 
       use io_data,       only : &
          nvprofiles, &
          cdf_b1l1,cdf_b1l2,cdf_b1l3,cdf_b1l4,cdf_b1l5,cdf_b1l6,cdf_b1l7,cdf_b1l8,cdf_b1l9,&
          cdf_b3l1,cdf_b3l2,cdf_b3l3,cdf_b3l4,cdf_b3l5,cdf_b4l1,cdf_b4l2,cdf_b4l3,cdf_b4l4,&
          cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,cdf_b4l11,cdf_b6l1,cdf_b6l2,&
-         cdf_b6l3,cdf_b6l4,cdf_conventions,&
+         cdf_b6l3,cdf_b6l4,cdf_b6l5,cdf_conventions,&
          cdf_comment,cdf_title,cdf_institution,cdf_source,cdf_history,cdf_references,outfile,&
          nvar_User2d_static_XY,nvar_User2d_XY,nvar_User3d_XYGs,nvar_User3d_XYZ,&
          nvar_User4d_XYZGs
@@ -142,6 +143,8 @@
          var_User3d_XYZ_MissVal,var_User3d_XYZ_FillVal,var_User3d_XYZ,&
          var_User4d_XYZGs_name,var_User4d_XYZGs_unit,var_User4d_XYZGs_lname,&
          var_User4d_XYZGs_MissVal,var_User4d_XYZGs_FillVal,var_User4d_XYZGs,&
+         DEPO_THRESH,DEPRATE_THRESH,CLOUDCON_THRESH,CLOUDLOAD_THRESH,&
+         THICKNESS_THRESH,DBZ_THRESH,CLOUDCON_GRID_THRESH,&
          DBZ_THRESH,USE_OPTMOD_VARS,USE_RESTART_VARS,&
          USE_OUTPROD_VARS,USE_WIND_VARS,DepositThickness,DepArrivalTime,CloudArrivalTime,&
          MaxConcentration,MaxHeight,CloudLoad,dbZ,MinHeight,Mask_Cloud,Mask_Deposit,&
@@ -152,13 +155,14 @@
          Airport_Latitude,Airport_Longitude,Airport_Thickness_TS
 
       use Tephra,        only : &
-         n_gs_max,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m
+         n_gs_max,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,&
+         MagmaDensity,DepositDensity,LAM_GS_THRESH,AIRBORNE_THRESH
 
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,x_cc_pd,y_cc_pd,z_cc_pd,lon_cc_pd,lat_cc_pd,&
          sigma_nz_pd,dx,dy,dz_vec_pd,IsLatLon,ts1,&
          A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
-         A3d_phi2,A3d_radius_earth
+         A3d_phi2,A3d_radius_earth,ZPADDING
 
       use solution,      only : &
           vx_pd,vy_pd,vz_pd,vf_pd,concen_pd,DepositGranularity,SpeciesID,SpeciesSubID
@@ -168,9 +172,11 @@
 
       use Source,        only : &
          neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
+         ! These are umbrella parameters I'd like to change, but are not yet in a modual
+         !    lambda,N_BV,k_entrainment
 
       use MetReader,     only : &
-         MR_iwindfiles,MR_windfiles,MR_MetStep_Hour_since_baseyear
+         MR_iwindfiles,MR_windfiles,MR_MetStep_Hour_since_baseyear,MR_GitComID
 
       implicit none
 
@@ -441,6 +447,12 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att CWD:")
       nSTAT = nf90_put_att(ncid,nf90_global,"comment",cdf_comment)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att comment:")
+
+      nSTAT = nf90_put_att(ncid,nf90_global,"MetReader_Git_Commit_ID",MR_GitComID)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att MR_GitComID:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"Ash3d_Git_Commit_ID",Ash3d_GitComID)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Ash3d_GitComID:")
+
         ! Add lines copied from the input file
       nSTAT = nf90_put_att(ncid,nf90_global,"b1l1",cdf_b1l1)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment b1l1:")
@@ -503,6 +515,50 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment b6l3:")
       nSTAT = nf90_put_att(ncid,nf90_global,"b6l4",cdf_b6l4)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment b6l4:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"b6l5",cdf_b6l4)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment b6l5:")
+
+      ! Now writing out all the resettable parameters
+      nSTAT = nf90_put_att(ncid,nf90_global,"MagmaDensity",MagmaDensity)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment MagmaDensity:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"DepositDensity",DepositDensity)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment DepositDensity:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"LAM_GS_THRESH",LAM_GS_THRESH)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment LAM_GS_THRESH:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"AIRBORNE_THRESH",AIRBORNE_THRESH)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment AIRBORNE_THRESH:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"GRAV",GRAV)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment GRAV:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"RAD_EARTH",RAD_EARTH)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment RAD_EARTH:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"CFL",CFL)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment CFL:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"DT_MIN",DT_MIN)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment DT_MIN:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"DT_MAX",DT_MAX)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment DT_MAX:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"ZPADDING",ZPADDING)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment ZPADDING:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"DEPO_THRESH",DEPO_THRESH)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment DEPO_THRESH:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"DEPRATE_THRESH",DEPRATE_THRESH)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment DEPRATE_THRESH:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"CLOUDCON_THRESH",CLOUDCON_THRESH)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment CLOUDCON_THRESH:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"CLOUDCON_GRID_THRESH",CLOUDCON_GRID_THRESH)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment CLOUDCON_GRID_THRESH:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"CLOUDLOAD_THRESH",CLOUDLOAD_THRESH)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment CLOUDLOAD_THRESH:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"THICKNESS_THRESH",THICKNESS_THRESH)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment THICKNESS_THRESH:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"DBZ_THRESH",DBZ_THRESH)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment DBZ_THRESH:")
+      !nSTAT = nf90_put_att(ncid,nf90_global,"lambda",lambda)
+      !if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment lambda:")
+      !nSTAT = nf90_put_att(ncid,nf90_global,"N_BV",N_BV)
+      !if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment N_BV:")
+      !nSTAT = nf90_put_att(ncid,nf90_global,"k_entrainment",k_entrainment)
+      !if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment k_entrainment:")
 
       ! Define dimensions
         ! t,z,y,x
@@ -568,7 +624,7 @@
         ! gs_setvel, gs_massfrac, gs_dens
          ! Time
       if(VERB.gt.1)write(global_info,*)"Defining coordinate variables"
-      if(VERB.gt.1)write(global_info,*)"     Time",dim_names(1)
+      if(VERB.gt.1)write(global_info,*)"     Time: ",dim_names(1)
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,dim_names(1),&
                              nf90_double,& 
@@ -596,7 +652,7 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att t ReferenceTime:")
 
          ! Z
-      if(VERB.gt.1)write(global_info,*)"     Z",dim_names(2)
+      if(VERB.gt.1)write(global_info,*)"     Z: ",dim_names(2)
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,dim_names(2),&
                              nf90_double,&
@@ -619,7 +675,7 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att z positive")
 
          ! Y
-      if(VERB.gt.1)write(global_info,*)"     Y",dim_names(3)
+      if(VERB.gt.1)write(global_info,*)"     Y: ",dim_names(3)
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,dim_names(3),&
                              nf90_double,&
@@ -644,7 +700,7 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att y units standard_name")
 
          ! X
-      if(VERB.gt.1)write(global_info,*)"     X",dim_names(4)
+      if(VERB.gt.1)write(global_info,*)"     X: ",dim_names(4)
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,dim_names(4),&
                              nf90_double,&
@@ -669,7 +725,7 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att x units standard_name")
 
          ! BN (Grain size bin ID)
-      if(VERB.gt.1)write(global_info,*)"    Bin",dim_names(5)
+      if(VERB.gt.1)write(global_info,*)"     Bin: ",dim_names(5)
       nSTAT = nf90_def_var(ncid,dim_names(5),&
                            nf90_int,&
                            (/bn_dim_id/), &
@@ -684,7 +740,7 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att bn Comment")
 
          ! ER (Eruption index)
-      if(VERB.gt.1)write(*,*)"     ER",dim_names(6)
+      if(VERB.gt.1)write(*,*)"     ER: ",dim_names(6)
       nSTAT = nf90_def_var(ncid,dim_names(6),&
                            nf90_int,&
                            (/er_dim_id/),&
@@ -696,7 +752,7 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er units")
 
          ! WF (Wind file index)
-      if(VERB.gt.1)write(*,*)"     WF",dim_names(7)
+      if(VERB.gt.1)write(*,*)"     WF: ",dim_names(7)
       nSTAT = nf90_def_var(ncid,dim_names(7),&
                            nf90_int,&
                            (/wf_dim_id/),&
@@ -712,7 +768,7 @@
 
         ! pt (point airport/POI index)
       if (nairports.gt.0)then
-        if(VERB.gt.1)write(*,*)"     PT",dim_names(9)
+        if(VERB.gt.1)write(*,*)"     PT: ",dim_names(9)
         nSTAT = nf90_def_var(ncid,dim_names(9),&
                              nf90_int,&
                              (/pt_dim_id/),&
@@ -726,7 +782,7 @@
 
         ! pr (profile output index)
       if (nvprofiles.gt.0)then
-        if(VERB.gt.1)write(*,*)"     PR",dim_names(10)
+        if(VERB.gt.1)write(*,*)"     PR: ",dim_names(10)
         nSTAT = nf90_def_var(ncid,dim_names(10),&
                              nf90_int,&
                              (/pr_dim_id/),&
@@ -739,7 +795,7 @@
 
         ! tn (time native)
         ! we can only have a second unlimited dimension with NC version 4
-        if(VERB.gt.1)write(*,*)"     TN",dim_names(11)
+        if(VERB.gt.1)write(*,*)"     TN: ",dim_names(11)
         nSTAT = nf90_def_var(ncid,dim_names(11),&
                              nf90_int,&
                              (/tn_dim_id/),&
@@ -752,6 +808,10 @@
       endif
       !   End of dimension variables
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      if(VERB.gt.1)write(global_info,*)"Defining variables"
 
       ! write projection as a variable
       if (IsLatLon) then
@@ -770,7 +830,7 @@
         select case (A3d_iprojflag)
         case(0)
           ! Non-geographic projection, (x,y) only
-          if(VERB.gt.1)write(*,*)"     Non-geographic"
+          if(VERB.gt.1)write(*,*)"     Projection : Non-geographic"
           nSTAT = nf90_def_var(ncid,"Non-geographic",&
                                nf90_int,&
                                proj_var_id)
@@ -780,7 +840,7 @@
                                "Non-geographic")
         case(1)
           ! Polar stereographic
-          if(VERB.gt.1)write(*,*)"     Polar_Stereographic"
+          if(VERB.gt.1)write(*,*)"     Projection : Polar_Stereographic"
           nSTAT = nf90_def_var(ncid,"Polar_Stereographic",&
                                nf90_int,&
                                proj_var_id)
@@ -812,7 +872,7 @@
                               "put_att Polar_Stereographic earth_radius")
         case(2)
           ! Albers Equal Area
-          if(VERB.gt.1)write(*,*)"     Albers Equal Area"
+          if(VERB.gt.1)write(*,*)"     Projection : Albers Equal Area"
           nSTAT = nf90_def_var(ncid,"Albers_Equal_Area",&
                                nf90_int,&
                                proj_var_id)
@@ -841,7 +901,7 @@
 
         case(4)
           ! Lambert conformal conic 
-          if(VERB.gt.1)write(*,*)"     Lambert_Conformal"
+          if(VERB.gt.1)write(*,*)"     Projection : Lambert_Conformal"
           nSTAT = nf90_def_var(ncid,"Lambert_Conformal",&
                                nf90_int,&
                                proj_var_id)
@@ -872,7 +932,7 @@
         !        Mercator:grid_mapping_name = "mercator" ;
         !        Mercator:standard_parallel = 20. ;
         !        Mercator:longitude_of_projection_origin = 198.475006103516 ;
-          if(VERB.gt.1)write(*,*)"     Mercator"
+          if(VERB.gt.1)write(*,*)"     Projection : Mercator"
           nSTAT = nf90_def_var(ncid,"Mercator",&
                                nf90_int,&
                                proj_var_id)
@@ -896,7 +956,7 @@
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !   Now a few other variables that are a function of BN
          ! Species class ID
-      if(VERB.gt.1)write(global_info,*)"     SC : Species Class"
+      if(VERB.gt.1)write(global_info,*)"     SC: Species Class"
       nSTAT = nf90_def_var(ncid,"spec_class",&
                            nf90_int,&
                            (/bn_dim_id/), &
@@ -910,7 +970,7 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att spec_class Comment")
 
          ! Species sub-class ID
-      if(VERB.gt.1)write(global_info,*)"     SSC : Species Sub-class"
+      if(VERB.gt.1)write(global_info,*)"     SSC: Species Sub-class"
       nSTAT = nf90_def_var(ncid,"spec_subclass",&
                            nf90_int,&
                            (/bn_dim_id/), &
@@ -925,7 +985,7 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att spec_subclass Comment")
 
          ! Grain-size diameter
-      if(VERB.gt.1)write(global_info,*)"     GS, grain-diameter"
+      if(VERB.gt.1)write(global_info,*)"     GS: grain-diameter"
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,"gs_diameter",&
                              nf90_double,&
@@ -1085,14 +1145,13 @@
       nSTAT = nf90_put_att(ncid,area_var_id,"units","km2")
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att area units")
 
-      if(VERB.gt.1)write(global_info,*)"Defining variables"
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if(USE_WIND_VARS)then
          ! Now define the time-dependent variables
          ! Vx
-        if(VERB.gt.1)write(global_info,*)"     vx",var_lnames(8)
+        if(VERB.gt.1)write(global_info,*)"     vx: ",var_lnames(8)
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"vx",&
                                nf90_double,  &
@@ -1110,7 +1169,7 @@
         nSTAT = nf90_put_att(ncid,vx_var_id,"units","km/hr")
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att vx units")
            ! Vy
-        if(VERB.gt.1)write(global_info,*)"     vy",var_lnames(9)
+        if(VERB.gt.1)write(global_info,*)"     vy: ",var_lnames(9)
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"vy",&
                                nf90_double,  &
@@ -1128,7 +1187,7 @@
         nSTAT = nf90_put_att(ncid,vy_var_id,"units","km/hr")
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att vy units")
            ! Vz
-        if(VERB.gt.1)write(global_info,*)"     vz",var_lnames(10)
+        if(VERB.gt.1)write(global_info,*)"     vz: ",var_lnames(10)
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"vz",&
                                nf90_double,  &
@@ -1147,7 +1206,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att vz units")
 
            ! Vf
-        if(VERB.gt.1)write(global_info,*)"     vf","Fall Velocity"
+        if(VERB.gt.1)write(global_info,*)"     vf: ","Fall Velocity"
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"vf",&
                                nf90_double,  &
@@ -1172,7 +1231,7 @@
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if(USE_RESTART_VARS)then
          ! Full Ash Concentration
-        if(VERB.gt.1)write(global_info,*)"     ashcon",var_lnames(11)
+        if(VERB.gt.1)write(global_info,*)"     ashcon :",var_lnames(11)
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"ashcon",&
                                nf90_double, &
@@ -1214,7 +1273,7 @@
       if(USE_OUTPROD_VARS)then
         ! DEPOSIT (as function of grainsmax)
            ! Concentration of deposit by grain size(z=0 plane of tot_ashcon)
-        if(VERB.gt.1)write(global_info,*)"     depocon",var_lnames(12)
+        if(VERB.gt.1)write(global_info,*)"     depocon: ",var_lnames(12)
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"depocon",&
                                nf90_double, &
@@ -1238,7 +1297,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att depocon _FillValue")
   
         ! DEPOSIT thickness
-        if(VERB.gt.1)write(global_info,*)"     depothick",var_lnames(30)
+        if(VERB.gt.1)write(global_info,*)"     depothick: ",var_lnames(30)
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"depothick",&
                                nf90_double, &
@@ -1262,7 +1321,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att depothick _FillValue")
  
            ! Arrival time of deposit
-        if(VERB.gt.1)write(global_info,*)"     depotime",var_lnames(21)
+        if(VERB.gt.1)write(global_info,*)"     depotime: ",var_lnames(21)
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"depotime",&
                                nf90_double, &
@@ -1286,7 +1345,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var depotime _FillValue")
  
            ! Arrival time of airborne ash cloud
-        if(VERB.gt.1)write(global_info,*)"     ash_arrival_time",var_lnames(31)
+        if(VERB.gt.1)write(global_info,*)"     ash_arrival_time: ",var_lnames(31)
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"ash_arrival_time",&
                                nf90_double, &
@@ -1310,7 +1369,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att ash_arrival_time _FillValue")
   
            ! 2d ash concentration (MaxConcentration)
-        if(VERB.gt.1)write(global_info,*)"     ashcon_max",var_lnames(32)
+        if(VERB.gt.1)write(global_info,*)"     ashcon_max: ",var_lnames(32)
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"ashcon_max",&
                                nf90_double, &
@@ -1334,7 +1393,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att ashcon_max _FillValue")
   
            ! 2d ash cloud height (MaxHeight)
-        if(VERB.gt.1)write(global_info,*)"     cloud_height",var_lnames(33)
+        if(VERB.gt.1)write(global_info,*)"     cloud_height: ",var_lnames(33)
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"cloud_height",&
                                nf90_double, &
@@ -1361,7 +1420,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att cloud_height _FillValue")
   
            ! 2d ash cloud load (CloudLoad)
-        if(VERB.gt.1)write(global_info,*)"     cloud_load",var_lnames(34)
+        if(VERB.gt.1)write(global_info,*)"     cloud_load: ",var_lnames(34)
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"cloud_load",&
                                nf90_double, &
@@ -1388,7 +1447,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att cloud_load _FillValue")
   
            ! 3d radar reflectivity
-        if(VERB.gt.1)write(global_info,*)"     radar_reflectivity",var_lnames(35)
+        if(VERB.gt.1)write(global_info,*)"     radar_reflectivity: ",var_lnames(35)
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"radar_reflectivity",&
                                nf90_double, &
@@ -1412,7 +1471,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att radar_reflectivity _FillValue")
   
            ! 2d ash cloud bottom 
-        if(VERB.gt.1)write(global_info,*)"     cloud_bottom",var_lnames(36)
+        if(VERB.gt.1)write(global_info,*)"     cloud_bottom: ",var_lnames(36)
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"cloud_bottom",&
                                nf90_double, &

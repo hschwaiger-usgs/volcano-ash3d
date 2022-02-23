@@ -201,7 +201,7 @@
       else
         write(fid,3002) xLL*1.0e3_ip    ! convert xLL from km to meters so ArcMap can read it
         write(fid,3003) yLL*1.0e3_ip    ! same with yLL
-        write(fid,3004) dx*1.0e3_ip,dy*1.0e3_ip    ! and with dxy
+        write(fid,3004) dx*1.0e3_ip,dy*1.0e3_ip    ! and with dx and dy
       endif
       write(fid,3005)Fill_Value
 
@@ -216,11 +216,11 @@
 !     format statements
 3000  format('NCOLS ',i5)      
 3001  format('NROWS ',i5)
-3002  format('XLLCORNER ',f10.3)
-3003  format('YLLCORNER ',f10.3)
-3004  format('CELLSIZE ',2f10.3)
+3002  format('XLLCORNER ',f15.3)
+3003  format('YLLCORNER ',f15.3)
+3004  format('CELLSIZE ',2f15.3)
 3005  format('NODATA_VALUE ',a6)
-3006  format(10f10.3)
+3006  format(10f15.3)
       return
 
 !     Error traps
@@ -282,11 +282,11 @@
 !     format statements
 3000  format(6x,i5)
 3001  format(6x,i5)
-3002  format(10x,f10.3)
-3003  format(10x,f10.3)
-3004  format(10x,2f10.3)
+3002  format(10x,f15.3)
+3003  format(10x,f15.3)
+3004  format(10x,2f15.3)
 3005  format(13x,a6)
-3006  format(10f10.3)
+3006  format(10f15.3)
       return
 
 !     Error traps

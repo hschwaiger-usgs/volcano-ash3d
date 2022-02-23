@@ -776,7 +776,6 @@
             write(global_info,*)"Running as forecast."
           endif
         endif
-
         if(SourceType.eq.'suzuki'      .or. &
            SourceType.eq.'point'       .or. &
            SourceType.eq.'line'        .or. &
@@ -804,7 +803,7 @@
           e_Volume(i)    = 0.0_ip
           if(neruptions.gt.1)then
             ! For more than one custom source, the next iteration might cause problems
-            ! since custom source might require multiple input lines per source.
+            ! since a custom source might require multiple input lines per source.
             ! For now, copy slot 1 to all the others and break out of the do loop.
             ! The full source list must be populated by the user-provided custom source
             ! readers.
@@ -834,6 +833,8 @@
         if(e_Duration(i).lt.0.0_ip)    e_Duration(i)    = ESP_duration
         if(e_PlumeHeight(i).lt.0.0_ip) e_PlumeHeight(i) = ESP_height
         if(e_Volume(i).lt.0.0_ip)      e_Volume(i)      = ESP_Vol
+
+        ! read next line of input file
         read(10,'(a130)')linebuffer130
       enddo
 
@@ -1052,11 +1053,17 @@
                             BaseYear,useLeap,          &
                             real(SimStartHour,kind=4), &
                             real(e_StartTime(i),kind=4)
-
+      if(SourceType.eq.'profile')then
+        do ii=1,e_prof_zpoints(i)
+          write(global_info,*)"         ",ii,real((ii-1)*e_prof_dz(i),kind=4),&
+                                             real(e_prof_Volume(i,ii),kind=4)
+        enddo
+        write(global_info,*)"         Total Volume for this pulse = ",&
+                            real(sum(e_prof_Volume(i,:)),kind=4),"km3 DRE"
+      endif
       enddo
-      write(global_info,*)"Total volume of eruptions = ",&
+      write(global_info,*)"Total volume of all eruptions = ",&
                           real(sum(e_volume),kind=sp)
-
       ! Now that we know the requested dz profile and the plume heights, we can
       ! set up the z-grid for computation
       CompGrid_height = ZPADDING*maxval(e_PlumeHeight(1:neruptions))
@@ -1190,7 +1197,7 @@
 
       enddo
       e_EndTime_final = maxval(e_EndTime)  ! this marks the end of all eruptions
-      
+
 !     FIND THE I AND J VALUES OF THE NODE WHERE THE VOLCANO LIES
       if (IsLatLon) then
         ivent = int((lon_volcano-lonLL)/de) + 1
@@ -2483,7 +2490,8 @@
 
       ! Set up logging logical values
         ! First check for output requests that require evaluating every time step
-      if (WriteAirportFile_ASCII.or.WriteAirportFile_KML)then
+      if (WriteAirportFile_ASCII.or.WriteAirportFile_KML.or.&
+          nvprofiles.gt.0)then
         Output_every_TS = .true.
       else
         Output_every_TS = .false.
