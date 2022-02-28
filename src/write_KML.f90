@@ -475,11 +475,7 @@
                    A3d_k0_scale,A3d_radius_earth, &
                    lon_volcano,lat_volcano)
       endif
-      if (lon_volcano.gt.180.0_ip) then
-        write(fid,9) lon_volcano-360.0_ip, lat_volcano
-      else
-        write(fid,9) lon_volcano, lat_volcano
-      endif
+      write(fid,9) lon_volcano, lat_volcano
 
       !CREATE FORECAST FOLDER ONLY FOR THE FILES THAT HAVE TIME STEPS
       if ((ivar.eq.5).or. &                                       !cloud arrival time
@@ -776,11 +772,6 @@
                         A3d_k0_scale,A3d_radius_earth, &
                            longCC,lattCC)
           endif ! IsLatLon
-          if (longLL>180.0_ip) longLL = longLL-360.0_ip
-          if (longUL>180.0_ip) longUL = longUL-360.0_ip
-          if (longLR>180.0_ip) longLR = longLR-360.0_ip
-          if (longUR>180.0_ip) longUR = longUR-360.0_ip
-          if (longCC>180.0_ip) longCC = longCC-360.0_ip
           if(height_flag>0)then
             height = int(MaxHeight(i,j)*1000.0_ip)
           elseif(height_flag.lt.0)then
@@ -1089,7 +1080,6 @@
           else
             cloud_morethan = ' '
           endif
-          if (Airport_Longitude(i).gt.180.0_ip) airlon=airlon-360.0_ip
           if(ai.gt.0)then
             ! A cumulative deposit plot exists for this point
             write(60,16)Airport_Name(i), &
@@ -1127,7 +1117,6 @@
           endif
           xmlTimeEnd   = HS_xmltime(CloudTime+Airport_CloudDuration(i)+OutputOffset,&
                                     BaseYear,useLeap)
-          if (Airport_Longitude(i).gt.180.0_ip) airlon=airlon-360.0_ip
           write(60,7) Airport_Name(i), &
                       Airport_CloudArrivalTime(i), &
                       cloud_morethan, Airport_CloudDuration(i), &
@@ -1159,17 +1148,9 @@
 200     format(i4,i2,i2,f5.2)
       enddo
       if (nWrittenOut.gt.0) then              !If one or more airports were affected
-        if (lon_volcano.gt.180.0_ip) then
-          write(60,10) lon_volcano-360.0_ip, lat_volcano
-        else
-          write(60,10) lon_volcano, lat_volcano
-        endif
+        write(60,10) lon_volcano, lat_volcano
       else                                   !If no airports were affected
-        if (lon_volcano.gt.180.0_ip) then
-          write(60,11) lon_volcano-360.0_ip, lat_volcano
-        else
-          write(60,11) lon_volcano, lat_volcano
-        endif
+        write(60,11) lon_volcano, lat_volcano
       endif
       write(60,12)                           !write final lines of file
       close(60)                             !close file
@@ -1440,6 +1421,9 @@
       use projection,    only : &
            PJ_proj_inv
 
+      use Source,        only : &
+           lon_volcano
+
       implicit none
 
       real(kind=ip)  :: xplot(0:40),yplot(0:40),lonplot(0:40),latplot(0:40)
@@ -1479,10 +1463,11 @@
         enddo
       endif
 
-      !Make sure the longitude is between -180 and 180
+      !Make sure the longitude is within 180 degrees of lon_volcano
       do ict=0,40
-        if (lonplot(ict).gt.180.0_ip)  lonplot(ict) = lonplot(ict)-360.0_ip
-        if (lonplot(ict).lt.-180.0_ip) lonplot(ict) = lonplot(ict)+360.0_ip
+        if ((lon_volcano-lonplot(ict)).gt.180.0_ip)  lonplot(ict) = lonplot(ict)-360.0_ip
+        if ((lon_volcano-lonplot(ict)).lt.-180.0_ip)  lonplot(ict) = lonplot(ict)+360.0_ip
+        !write(6,*) 'ict=',ict,', lonplot(ict)=',lonplot(ict)
       enddo
 
       !write out the polygon
