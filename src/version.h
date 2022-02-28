@@ -1,1 +1,1 @@
-      version ='exported'
+      character(len=40),parameter,public :: Ash3d_GitComID ='f4be829fb0564b5ae8ef33965ef837d7d4cfbd2c'

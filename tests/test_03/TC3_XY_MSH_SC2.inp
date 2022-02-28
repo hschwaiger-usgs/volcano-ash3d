@@ -1,0 +1,78 @@
+#The following is an input file to the model Ash3d, v.1.0
+#Created by L.G. Mastin, R.P. Denlinger and H.F. Schwaiger, U.S. Geological Survey, 2009.
+#
+#GENERAL SOURCE PARAMETERS. DO NOT DELETE ANY LINES
+*******************************************************************************
+TC1_MSH                       # Volcano name (character*30)
+0 4 265.0 25.0 25.0 25.0 6371.229 # (-120.0   46.20) in LCC grid 212 coords
+-2289.77 2591.27                  # x, y of LL corner of grid (km, or deg. if latlongflag=1)
+ 100.0    100.0                   # grid width and height (km, or deg. if latlonflag=1)
+-2239.77 2641.27                   # vent location         (km, or deg. if latlonflag=1)
+ 2.0  2.0                 # DX, DY of grid cells  (km, or deg.)
+1.0                          # DZ of grid cells      (always km)
+0.0    point                     # diffusion coefficient (m2/s), Suzuki constant
+1                             # neruptions, number of eruptions or pulses
+*******************************************************************************
+#ERUPTION LINES (number = neruptions)
+#In the following line, each line represents one eruptive pulse.  
+#Parameters are (1) start time (yyyy mm dd h.hh (UT)); (2) duration (hrs); 
+#               (3) plume height;                      (4) eruped volume (km3)
+*******************************************************************************
+2010 04 14   0.00   1.0     18.0  0.16
+*******************************************************************************
+#WIND OPTIONS
+*******************************************************************************
+1  1                          # iwind, iwindFormat
+2                             # iHeightHandler
+20.0                           # Simulation time in hours
+no                            # stop computation when 99% of erupted mass has deposited?
+1                             # nWindFiles, number of gridded wind files (used if iwind>1)
+*******************************************************************************
+#OUTPUT OPTIONS:
+*******************************************************************************
+yes            # Print out ESRI ASCII file of final deposit thickness?              (WriteASCIIDepFile)
+no             # Write out KML file of final deposit thickness?                     (WriteKMLDepFile)
+yes            # Print out ESRI ASCII deposit files at specified times?             (WriteASCIIDepFiles)
+no             # Write out KML deposit files at specified times?                    (WriteKMLDepFiles)
+yes            # Print out ASCII files of ash-cloud concentration?                  (WriteASCIICloudConcentration)
+no             # Write out KML files of ash-cloud concentration ?                   (WriteKMLCloudConcentration)
+yes            # Write out ASCII files of ash-cloud height?                         (WriteASCIICloudHeight)
+no             # Write out KML files of ash-cloud height?                           (WriteKMLCloudHeight)
+yes            # Write out ASCII files of ash-cloud load (T/km2) at specified times?
+no             # Write out KML files of ash-cloud load (T/km2) at specified times?  (WriteKMLCloudLoad)
+yes            # Write ASCII file of deposit arrival times?
+no             # Write KML file of deposit arrival times?
+yes            # write ASCII file of cloud arrival times?
+no             # Write KML file of cloud arrival times?
+yes            # Print out 3-D ash concentration at specified times?                (Write3dFiles) 
+netcdf         # format of ash concentration files                              ('ascii', 'binary', or 'netcdf')
+2              # nWriteTimes
+5.0 10.0
+*******************************************************************************
+#WIND INPUT FILES
+*******************************************************************************
+Hanford_Ncol.txt
+*******************************************************************************
+#AIRPORT LOCATION FILE
+*******************************************************************************
+no                           # Write out ash arrival times at airports to ASCII FILE?
+no                           # Write out grain-size distribution to ASCII airport file?
+no                           # Write out ash arrival times to kml file?
+internal                     # Name of file containing aiport locations
+yes                          # Have Proj4 calculate projected coordinates?
+*******************************************************************************
+#GRAIN SIZE GROUPS
+*******************************************************************************
+1 0                            # Number of settling velocity groups
+0.25     1.0000 1520    0.44
+*******************************************************************************
+#Options for writing vertical profiles
+*******************************************************************************
+1                            # number of locations for vertical profiles (nlocs)
+-2239.77 2641.27
+*******************************************************************************
+#netCDF output options
+*******************************************************************************
+3d_tephra_fall.nc            # Name of output file
+Test                         # Title of simulation
+no comment                   # Comment

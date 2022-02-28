@@ -1,3 +1,5 @@
+! Ash3d_ASCII_check calculates the difference between two ascii grid files
+
       program Ash3d_ASCII_check
 
       use precis_param
@@ -9,28 +11,13 @@
 
       use Output_Vars
 
-!      use mesh,          only : &
-!         nxmax,nymax,nzmax,nsmax,lon_cc_pd,lat_cc_pd
-!
-!      use io_data,       only : &
-!         concenfile
-!
-!      use Output_Vars,   only : &
-!         DepositThickness,DepArrivalTime,CloudArrivalTime,&
-!         MaxConcentration,MaxHeight,CloudLoad,dbZ,MinHeight,Mask_Cloud,Mask_Deposit
-!
-!      use Ash3d_Netcdf
-!
-!      use plplot
-!      use dislin
-
       implicit none
 
       integer             :: nargs
       integer             :: stat
-      character(len=50):: linebuffer50
+      character(len=80):: linebuffer50
 
-      character(len=50) :: file1,file2
+      character(len=80) :: file1,file2
       logical :: IsThere1, IsThere2
 
       integer :: nx_1,nx_2
@@ -45,7 +32,7 @@
 
       real(kind=ip) :: tmp_ip
       real(kind=ip) :: L2_toterror
-      real(kind=ip) :: L2_tol = 1.0e-7
+      real(kind=ip) :: L2_tol = 1.0e-3
 
       INTERFACE
         subroutine read_2D_ASCII(filename)
@@ -74,7 +61,7 @@
           stop 1
         elseif (stat.lt.0)then
           write(global_error,*)'ERROR: Argument 1 has been truncated.'
-          write(global_error,*)'       File name length is limited to 50 char.'
+          write(global_error,*)'       File name length is limited to 80 char.'
           stop 1
         endif
         file1=trim(adjustl(linebuffer50))
@@ -86,7 +73,7 @@
           stop 1
         elseif (stat.lt.0)then
           write(global_error,*)'ERROR: Argument 2 has been truncated.'
-          write(global_error,*)'       File name length is limited to 50 char.'
+          write(global_error,*)'       File name length is limited to 80 char.'
           stop 1
         endif
         file2=trim(adjustl(linebuffer50))
@@ -167,7 +154,7 @@
       do i=1,nx_1
         do j=1,ny_1
           err=abs(XY_1(i,j)-XY_2(i,j))
-          L2_toterror = L2_toterror + err*err*dx_1*dy_1
+          L2_toterror = L2_toterror + err*err
         enddo
       enddo
       L2_toterror = sqrt(L2_toterror)
