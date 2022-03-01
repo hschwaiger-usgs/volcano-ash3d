@@ -176,7 +176,9 @@
          !    lambda,N_BV,k_entrainment
 
       use MetReader,     only : &
-         MR_iwindfiles,MR_windfiles,MR_MetStep_Hour_since_baseyear,MR_GitComID
+         MR_iwindfiles,MR_windfiles,MR_MetStep_Hour_since_baseyear,MR_GitComID,&
+         MR_MetStep_findex, &
+         MR_windfile_stephour,MR_windfile_starthour
 
       implicit none
 
@@ -396,8 +398,20 @@
       call getcwd(cdf_cwd)
       cdf_cwd = trim(cdf_cwd)
 
-      !get date and time of start of first wind file
-      cdf_WindStartTime = HS_xmltime(MR_MetStep_Hour_since_baseyear(1),BaseYear,useLeap)
+      ! get date and time of start of first wind file
+      !cdf_WindStartTime = HS_xmltime(MR_MetStep_Hour_since_baseyear(1),BaseYear,useLeap)
+      ! Here we assign the start time of the forecast package
+      cdf_WindStartTime = HS_xmltime(MR_windfile_starthour(MR_MetStep_findex(1)),BaseYear,useLeap)
+
+      !write(*,*)BaseYear,useLeap
+      !do i=1,MR_iwindfiles
+      !  write(*,*)trim(adjustl(MR_windfiles(i))),&
+      !      real(MR_windfile_starthour(i),kind=4),&
+      !      real(MR_windfile_stephour(i,1),kind=4),&
+      !      real(MR_MetStep_Hour_since_baseyear(i),kind=4),&
+      !      HS_xmltime(MR_MetStep_Hour_since_baseyear(i),BaseYear,useLeap)
+      !enddo
+      !stop 6
       ! Create and open netcdf file
       if(VERB.gt.1)write(global_info,*)"Creating netcdf file"
       lllinebuffer = trim(nf90_inq_libvers())

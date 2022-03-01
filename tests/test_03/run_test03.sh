@@ -10,9 +10,14 @@ ascii2Doutfiles=("CloudHeight_005.00hrs.dat" "CloudHeight_010.00hrs.dat" "CloudL
 nSubCases=8   # 0            1       2                3           4                5                6         7
 SubCaseLabels=("Suzuki (4)" "line" "point (tracer)" "point (WH)" "point (Ganser)" "point (Stokes)" "profile" "line (topo)")
 
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+
 ./clean.sh
 for (( s=0;s<nSubCases;s++))
 do
+  echo     "-----------------------------------------------------------"
   echo "   Sub-case ${s} : ${SubCaseLabels[s]}"
   outdir="output${s}"
 
@@ -20,7 +25,14 @@ do
   for (( i=0;i<n2Dfiles;i++))
   do
     echo Checking 2d ASCII file "${ascii2Doutfiles[i]}"
-    ${Ash3d_ASCII_check} ${ascii2Doutfiles[i]} ${outdir}/${ascii2Doutfiles[i]}
+    stat=`${Ash3d_ASCII_check} ${ascii2Doutfiles[i]} ${outdir}/${ascii2Doutfiles[i]} | cut -f1 -d':'`\
+
+    if [[ $stat == *PASS* ]];
+    then
+      printf " ---> ${GREEN}${stat}${NC}\n"
+    else
+      printf " ---> ${RED}${stat}${NC}\n"
+    fi
   done
   ./clean.sh
 done

@@ -44,9 +44,9 @@ SYSTEM = gfortran
 #      OMPOPT   : includes optimizations flags for fastest runtime and OpenMP directives
 #                 To run, enter: env OMP_NUM_THREADS=4 Ash3d input_file.inp
 #    This variable cannot be left blank
-RUN = DEBUG
+#RUN = DEBUG
 #RUN = PROF
-#RUN = OPT
+RUN = OPT
 #RUN = OMPOPT
 # This is the location of the USGS libraries and include files
 # This might be different from the INSTALLDIR path if you want to link to special MetReader
@@ -369,6 +369,9 @@ ascii_check: $(ASH3dCCSRC)/tools/Ash3d_ASCII_check.f90 Ash3d_VariableModules.o w
 	mkdir -p ../bin/tools
 	mv Ash3d_ASCII_check ../bin/tools/Ash3d_ASCII_check
 
+check: ascii_check Ash3d makefile
+	./run_tests.sh
+
 clean:
 	rm -rf $(OBJECTS) Ash3d.o $(DATAOBJ) $(OPTMODS_OBJ) ../bin/$(ASH3DEXEC) ../bin/tools/Ash3d_ASCII_check \
         *.mod *__genmod.f90
@@ -376,6 +379,7 @@ clean:
 install:
 	install -d $(INSTALLDIR)/bin $(INSTALLDIR)/share/post_proc
 	install -m 755 ../bin/$(ASH3DEXEC) $(INSTALLDIR)/bin/$(ASH3DEXEC)
+	install -m 755 ../bin/Ash3d $(INSTALLDIR)/bin/Ash3d
 	install -m 644 ../share/GlobalAirports_ewert.txt $(INSTALLDIR)/share/
 	install -m 644 ../share/VotW_ESP_v12_csv.txt  $(INSTALLDIR)/share/
 	install -m 644 ../share/post_proc/*png $(INSTALLDIR)/share/post_proc/

@@ -347,7 +347,7 @@
       enddo
       if(kmax.lt.kmin)then
         write(global_info,*)"WARNING: kmax<kmin"
-        stop 5
+        stop 1
       endif
 
       end subroutine get_minmax_index
