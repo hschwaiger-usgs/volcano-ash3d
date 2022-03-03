@@ -47,6 +47,7 @@
       real(kind=ip)     :: timestart
       real(kind=ip)     :: timeend
       logical,save      :: first_time = .true.
+      !character(len=1)  :: answer              !for debugging
 
       INTERFACE
         subroutine vprofileopener
@@ -98,7 +99,7 @@
         if (nvprofiles.gt.0) call vprofileopener
 
         ! Open KML files
-        call Set_OutVar_Specs          ! Initialize variables local to the Output_KLM module
+        call Set_OutVar_Specs          ! Initialize variables local to the Output_KML module
         if (WriteCloudConcentration_KML)  call OpenFile_KML(1) ! Cloud Concentration
         if (WriteCloudHeight_KML)         call OpenFile_KML(2) ! Cloud Top Height
         !if (WriteCloudHeight_KML)         call OpenFile_KML(3) ! Cloud Bottom Height
@@ -137,7 +138,40 @@
       ! Finished opening all the netcdf and kml output files.
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      ! 
+      !construct text string for timespan written to KML files
+      if (iTimeNext.gt.0) then
+         !timenow = SimStartHour+time
+         !xmlTimeNow = HS_xmltime(timenow,BaseYear,useLeap)
+         if (iTimeNext.eq.1) then
+             !if this is the first first time, set timestart equal to the eruption time
+             timestart = SimStartHour
+           else
+             !otherwise, set it equal to the midpoint between now and the last write time
+             timestart = SimStartHour + (WriteTimes(iTimeNext-1)+WriteTimes(iTimeNext))/2.0_ip
+         end if
+         if (iTimeNext.lt.nWriteTimes) then
+             !Set timeend to the midpoint between now and the next write time
+             timeend = SimStartHour + (WriteTimes(iTimeNext)+WriteTimes(iTimeNext+1))/2.0_ip
+           else
+             !If this is the last write time, set timeend to the end of the simulation
+             timeend = SimStartHour + Simtime_in_hours
+         endif
+         xmlTimeSpanStart = HS_xmltime(timestart,BaseYear,useLeap)
+         xmlTimeSpanEnd   = HS_xmltime(timeend,BaseYear,useLeap)
+      endif
+      !>>> for debugging
+        !write(6,*) 'In write_KML.  iTimeNext=',iTimeNext
+        !write(6,*) 'Eruption start time = ',HS_xmltime(SimStartHour,BaseYear,useLeap)
+        !write(6,*) 'Simulation end time = ',HS_xmltime(SimStartHour+Simtime_in_hours,BaseYear,useLeap)
+        !write(6,*) 'current time = ',HS_xmltime(SimStartHour+time,BaseYear,useLeap)
+        !write(6,*) 'timestart    = ',xmlTimeSpanStart
+        !write(6,*) 'timeend      = ',xmlTimeSpanEnd
+        !write(6,*) 'Continue?'
+        !read(5,'(a1)') answer
+        !if (answer.eq.'n') stop
+      !<<<<
+
+      !increment iTimeNext
       iout3d = iout3d + 1    ! increment the counter for the output step
       if (iTimeNext.lt.nWriteTimes) then   !adjust next write time
          iTimeNext = iTimeNext + 1
@@ -145,19 +179,6 @@
         else
           ! Otherwise, set the next time to very large number
          NextWriteTime = 1.0_ip/EPS_SMALL
-      endif
-      !construct text string for timespan written to KML files
-      if (iTimeNext.gt.0) then
-         !timenow = SimStartHour+time
-         !xmlTimeNow = HS_xmltime(timenow,BaseYear,useLeap)
-         timestart = SimStartHour + (WriteTimes(iTimeNext-1)+WriteTimes(iTimeNext))/2.0_ip
-         if (iTimeNext.lt.nWriteTimes) then
-             timeend = SimStartHour + (WriteTimes(iTimeNext+1)+WriteTimes(iTimeNext))/2.0_ip
-           else
-             timeend = SimStartHour + Simtime_in_hours
-         endif
-         xmlTimeSpanStart = HS_xmltime(timestart,BaseYear,useLeap)
-         xmlTimeSpanEnd   = HS_xmltime(timeend,BaseYear,useLeap)
       endif
 
       !get data string of current date & time

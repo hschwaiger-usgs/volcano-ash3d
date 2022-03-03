@@ -687,6 +687,7 @@
       character(len=9),dimension(11)   :: Styles
       !character(len=6),dimension(9)   :: Colors
       logical             :: CrossAntiMeridian     !if the polygon crosses the antimeridian
+      !character(len=1)    :: answer                !for debugging
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
@@ -711,6 +712,17 @@
       StyleNow3 = 'PureWhite'
 
       if(TS_flag.ne.0)then
+        !<<<< for debugging
+        !if (ivar.eq.4) then
+        !   write(6,*) 'in write_KML'
+        !   write(6,*) 'time=',time
+        !   write(6,*) 'eruption start time=',HS_xmltime(SimStartHour,BaseYear,useLeap)
+        !   write(6,1) xmlArrivalTime, xmlArrivalTime,  &
+        !         xmlTimeSpanStart, xmlTimeSpanEnd
+        !   write(6,*) 'Continue?'
+        !   read(5,'(a1)') answer
+        !   if (answer.eq.'n') stop
+        !end if
         write(fid,1) xmlArrivalTime, xmlArrivalTime,  &
                  xmlTimeSpanStart, xmlTimeSpanEnd
         !close forecast folder for deposit files on the last time step
@@ -787,6 +799,17 @@
             longLR1=179.9999
             longUR1=179.9999
             lattLL1=lattLL
+            lattUL1=lattUL
+            !The second polygon is right of the AM
+            longLL2=-179.9999
+            longUL2=-179.9999
+            longLR2=longLR
+            longUR2=longUR
+            lattLR2=lattLR
+            lattUR2=lattUR
+            !interpolate to find lattLR1,lattUR1,lattLL2,lattUL2
+            longUR3=longUR+360.0_ip
+            longLR3=longLR+360.0_ip
             lattUL1=lattUL
             !The second polygon is right of the AM
             longLL2=-179.9999
@@ -1429,6 +1452,7 @@
       real(kind=ip)  :: xplot(0:40),yplot(0:40),lonplot(0:40),latplot(0:40)
       real(kind=ip)  :: xleft,xright,ybottom,ytop
       integer        :: ict, ifile
+      !character(len=1) :: answer                     !for debugging
 
       write(ifile,3) ! write style for model boundary
 
@@ -1472,6 +1496,11 @@
 
       !write out the polygon
       write(ifile,5) (lonplot(ict),latplot(ict), ict=0,40)
+      !>>>> for debugging
+      !write(6,*) 'Plotting model boundary.  Continue?'
+      !read(5,'(a1)') answer
+      !if (answer.eq.'n') stop
+      !<<<<<<
 
       !Format statements
 3     format('	  <Style id="boundary_style">',/, &             !style for model boundary
