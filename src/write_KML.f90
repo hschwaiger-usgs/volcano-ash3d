@@ -250,7 +250,7 @@
       KML_units(ivar)         = '  in.'
       KML_fid(ivar)           = 550
       KML_n_clrmp(ivar)       = 3
-      KML_color_map(ivar,:) = (/ 0.003937_ip, 0.0315_ip, 0.2362_ip, 0.0_ip, 0.0_ip,&
+      KML_color_map(ivar,:) = (/ 0.1_ip, 0.8_ip, 6.0_ip, 0.0_ip, 0.0_ip,&
                               0.0_ip, 0.0_ip, 0.0_ip, 0.0_ip, 0.0_ip, 0.0_ip/)
       KML_Styles(ivar,1) = '0.1-0.8mm';  KML_Colors(ivar,1) = 'ffff00'
       KML_Styles(ivar,2) = '0.8-6.0mm';  KML_Colors(ivar,2) = '00ffff'
@@ -270,7 +270,7 @@
       KML_screenX(ivar)       = '1.0'
       KML_screenY(ivar)       = '0.1'
       KML_sizeX(ivar)         = '150'
-      KML_sizeY(ivar)         = '319'
+      KML_sizeY(ivar)         = '316'
       KML_AltMode(ivar)       = 'clampToGround'
 
       ivar = 9 ! deposit time
@@ -475,7 +475,11 @@
                    A3d_k0_scale,A3d_radius_earth, &
                    lon_volcano,lat_volcano)
       endif
-      write(fid,9) lon_volcano, lat_volcano
+      if (lon_volcano.gt.180.0_ip) then
+        write(fid,9) lon_volcano-360.0_ip, lat_volcano
+      else
+        write(fid,9) lon_volcano, lat_volcano
+      endif
 
       !CREATE FORECAST FOLDER ONLY FOR THE FILES THAT HAVE TIME STEPS
       if ((ivar.eq.5).or. &                                       !cloud arrival time
@@ -687,7 +691,6 @@
       character(len=9),dimension(11)   :: Styles
       !character(len=6),dimension(9)   :: Colors
       logical             :: CrossAntiMeridian     !if the polygon crosses the antimeridian
-      !character(len=1)    :: answer                !for debugging
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
@@ -712,17 +715,6 @@
       StyleNow3 = 'PureWhite'
 
       if(TS_flag.ne.0)then
-        !<<<< for debugging
-        !if (ivar.eq.4) then
-        !   write(6,*) 'in write_KML'
-        !   write(6,*) 'time=',time
-        !   write(6,*) 'eruption start time=',HS_xmltime(SimStartHour,BaseYear,useLeap)
-        !   write(6,1) xmlArrivalTime, xmlArrivalTime,  &
-        !         xmlTimeSpanStart, xmlTimeSpanEnd
-        !   write(6,*) 'Continue?'
-        !   read(5,'(a1)') answer
-        !   if (answer.eq.'n') stop
-        !end if
         write(fid,1) xmlArrivalTime, xmlArrivalTime,  &
                  xmlTimeSpanStart, xmlTimeSpanEnd
         !close forecast folder for deposit files on the last time step
@@ -784,6 +776,11 @@
                         A3d_k0_scale,A3d_radius_earth, &
                            longCC,lattCC)
           endif ! IsLatLon
+          if (longLL>180.0_ip) longLL = longLL-360.0_ip
+          if (longUL>180.0_ip) longUL = longUL-360.0_ip
+          if (longLR>180.0_ip) longLR = longLR-360.0_ip
+          if (longUR>180.0_ip) longUR = longUR-360.0_ip
+          if (longCC>180.0_ip) longCC = longCC-360.0_ip
           if(height_flag>0)then
             height = int(MaxHeight(i,j)*1000.0_ip)
           elseif(height_flag.lt.0)then
@@ -799,17 +796,6 @@
             longLR1=179.9999
             longUR1=179.9999
             lattLL1=lattLL
-            lattUL1=lattUL
-            !The second polygon is right of the AM
-            longLL2=-179.9999
-            longUL2=-179.9999
-            longLR2=longLR
-            longUR2=longUR
-            lattLR2=lattLR
-            lattUR2=lattUR
-            !interpolate to find lattLR1,lattUR1,lattLL2,lattUL2
-            longUR3=longUR+360.0_ip
-            longLR3=longLR+360.0_ip
             lattUL1=lattUL
             !The second polygon is right of the AM
             longLL2=-179.9999
@@ -1103,6 +1089,7 @@
           else
             cloud_morethan = ' '
           endif
+          if (Airport_Longitude(i).gt.180.0_ip) airlon=airlon-360.0_ip
           if(ai.gt.0)then
             ! A cumulative deposit plot exists for this point
             write(60,16)Airport_Name(i), &
@@ -1140,6 +1127,7 @@
           endif
           xmlTimeEnd   = HS_xmltime(CloudTime+Airport_CloudDuration(i)+OutputOffset,&
                                     BaseYear,useLeap)
+          if (Airport_Longitude(i).gt.180.0_ip) airlon=airlon-360.0_ip
           write(60,7) Airport_Name(i), &
                       Airport_CloudArrivalTime(i), &
                       cloud_morethan, Airport_CloudDuration(i), &
@@ -1171,9 +1159,17 @@
 200     format(i4,i2,i2,f5.2)
       enddo
       if (nWrittenOut.gt.0) then              !If one or more airports were affected
-        write(60,10) lon_volcano, lat_volcano
+        if (lon_volcano.gt.180.0_ip) then
+          write(60,10) lon_volcano-360.0_ip, lat_volcano
+        else
+          write(60,10) lon_volcano, lat_volcano
+        endif
       else                                   !If no airports were affected
-        write(60,11) lon_volcano, lat_volcano
+        if (lon_volcano.gt.180.0_ip) then
+          write(60,11) lon_volcano-360.0_ip, lat_volcano
+        else
+          write(60,11) lon_volcano, lat_volcano
+        endif
       endif
       write(60,12)                           !write final lines of file
       close(60)                             !close file
@@ -1444,15 +1440,11 @@
       use projection,    only : &
            PJ_proj_inv
 
-      use Source,        only : &
-           lon_volcano
-
       implicit none
 
       real(kind=ip)  :: xplot(0:40),yplot(0:40),lonplot(0:40),latplot(0:40)
       real(kind=ip)  :: xleft,xright,ybottom,ytop
       integer        :: ict, ifile
-      !character(len=1) :: answer                     !for debugging
 
       write(ifile,3) ! write style for model boundary
 
@@ -1487,20 +1479,14 @@
         enddo
       endif
 
-      !Make sure the longitude is within 180 degrees of lon_volcano
+      !Make sure the longitude is between -180 and +180 degrees
       do ict=0,40
-        if ((lon_volcano-lonplot(ict)).gt.180.0_ip)  lonplot(ict) = lonplot(ict)-360.0_ip
-        if ((lon_volcano-lonplot(ict)).lt.-180.0_ip)  lonplot(ict) = lonplot(ict)+360.0_ip
-        !write(6,*) 'ict=',ict,', lonplot(ict)=',lonplot(ict)
+        if (lonplot(ict).gt.180.0_ip)  lonplot(ict) = lonplot(ict)-360.0_ip
+        if (lonplot(ict).lt.-180.0_ip) lonplot(ict) = lonplot(ict)+360.0_ip
       enddo
 
       !write out the polygon
       write(ifile,5) (lonplot(ict),latplot(ict), ict=0,40)
-      !>>>> for debugging
-      !write(6,*) 'Plotting model boundary.  Continue?'
-      !read(5,'(a1)') answer
-      !if (answer.eq.'n') stop
-      !<<<<<<
 
       !Format statements
 3     format('	  <Style id="boundary_style">',/, &             !style for model boundary
