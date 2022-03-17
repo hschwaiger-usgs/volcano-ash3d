@@ -678,6 +678,7 @@
                   diffusivity_horz/3.6e-3_ip," m2/s"
         useDiffusion = .true.
       endif
+
       read(10,'(a80)')cdf_b1l9
       read(cdf_b1l9,*,err=1907) neruptions              ! read in number of eruptions or pulses
       write(global_info,*) 'Expecting to read ',neruptions,&

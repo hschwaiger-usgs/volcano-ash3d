@@ -108,6 +108,8 @@
       logical                  :: useMoistureVars    = .false.
 
       real(kind=ip)            :: CFL = 0.80_ip       ! courant number
+                                                      ! Note: CFL can be reset via environment
+                                                      !       variables or via the input file
       real(kind=ip)            :: DT_MIN = 1.0e-5_ip  ! Minimum DT in hours
       real(kind=ip)            :: DT_MAX = 1.0e0_ip   ! Maximum DT in hours
 

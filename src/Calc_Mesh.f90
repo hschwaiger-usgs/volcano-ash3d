@@ -33,7 +33,7 @@
 
       integer :: i,j,k
 
-      real(kind=ip) :: r_1,r_2,rr_2,drr,drrr
+      real(kind=ip) :: r_1,r_2,rr_2,rr_1,drr,drrr
       real(kind=ip) :: phi_1,phi_2
       real(kind=ip) :: theta_1,theta_2,del_theta,del_costheta
       real(kind=ip) :: del_lam
@@ -95,9 +95,12 @@
         !*********************************************************************************
         do k=-1,nzmax+2
           !rdphi_pd(k) = dn*DEG2RAD * (RAD_EARTH + z_cc_pd(k))
-          r_1  = RAD_EARTH+z_cc_pd(k)               ! r at bottom of cell
-          r_2  = RAD_EARTH+z_cc_pd(k)+dz_vec_pd(k)  ! r at top of cell
+          !r_1  = RAD_EARTH+z_cc_pd(k)               ! r at bottom of cell
+          !r_2  = RAD_EARTH+z_cc_pd(k)+dz_vec_pd(k)  ! r at top of cell
+          r_1  = RAD_EARTH+z_cc_pd(k)-0.5_ip*dz_vec_pd(k)              ! r at bottom of cell
+          r_2  = RAD_EARTH+z_cc_pd(k)+0.5_ip*dz_vec_pd(k)  ! r at top of cell
 
+          rr_1 =      r_1*r_1
           rr_2 =      r_2*r_2
           drr  = (    r_2*r_2 -     r_1*r_1)  ! difference of squares
           drrr = (r_2*r_2*r_2 - r_1*r_1*r_1)  ! difference of cubes
@@ -120,7 +123,7 @@
             !sigma_ny_pd(-1:nxmax+2,j,k) = 0.5_ip*sin(0.5_ip*PI-phi_2)*del_lam*drr
             sigma_ny_pd(-1:nxmax+2,j,k) = 0.5_ip*sin(theta_1)*del_lam*drr
               ! Area of face at i,j,k-1/2
-            sigma_nz_pd(-1:nxmax+2,j,k) = rr_2*del_lam*del_costheta
+            sigma_nz_pd(-1:nxmax+2,j,k) = rr_1*del_lam*del_costheta
               ! Volume of cell
             kappa_pd(-1:nxmax+2,j,k)=del_lam*drrr*del_costheta/3.0_ip
           enddo
@@ -131,7 +134,6 @@
         phi_bot = DEG2RAD*(lat_cc_pd(      1) - dn*0.5_ip)
         phi_top = DEG2RAD*(lat_cc_pd(nymax+1) + dn*0.5_ip)
         phi = max(abs(phi_bot),abs(phi_top))
-        !phi = maxval(abs(lat_cc_pd(1:nymax)))
         dx = RAD_EARTH*de*DEG2RAD*cos(phi)
         dy = RAD_EARTH*dn*DEG2RAD
       else ! This is the .not.IsLatLon case

@@ -12,6 +12,21 @@
       real(kind=ip) :: diffusivity_horz    ! horizontal diffusion coefficient (m2/s)
       real(kind=ip) :: diffusivity_vert    ! vertical diffusion coefficient (m2/s)
 
+         ! Factor that controls how much of the
+         ! n+1 time step is used in the solution
+         !  0.0 = Forward-Euler
+         !  0.5 = Crank-Nicolson
+         !  1.0 = Backward-Euler
+         ! Note: if 0.0 is used, the method is numerically equivalant to EXPLDIFF,
+         !       but solved with the lapack solvers with A being the identity
+         !       matrix, not as efficient, but useful for checking.  In this
+         !       case, Imp_DT_fac would need to be 0.5 as required by the
+         !       explicit solver.  If either Imp_fac = 0.5 or 1.0, then the
+         !       method is unconditionally stable, but accuracy requires a
+         !       Imp_DT_fac to be around 2.0
+      real(kind=ip) :: Imp_fac = 0.5_ip    
+      real(kind=ip) :: Imp_DT_fac  = 4.0_ip
+
 #ifdef USEPOINTERS
       real(kind=ip),dimension(:,:,:),pointer :: kx
       real(kind=ip),dimension(:,:,:),pointer :: ky
@@ -122,26 +137,35 @@
          nxmax,nymax,nzmax,nsmax,ts0,ts1,kappa_pd,sigma_nx_pd,IsPeriodic
 
       use solution,      only : &
-         concen_pd,IsAloft
+         concen_pd,IsAloft,imin,imax,jmin,jmax,kmin,kmax
 
       use time_data,     only : &
          dt
 
       implicit none
 
-      integer :: j,k,n  ! These are the indeces mapping to the global arrays
+      integer :: j,k,n  ! These are the indices mapping to the global arrays
       integer :: l_I    ! This is the interface index along the particular diffusion direction
       integer :: l_cc   ! This is the cell-centered index along the particular diffusion direction
       integer :: ncells
 
-       ! arrays that live on cell-centers: Note that we have 2 ghost cells
-      real(kind=ip),dimension(-1:nxmax+2)     :: update_cc
-      real(kind=ip),dimension(-1:nxmax+2)     :: q_cc      ! concen
+       ! arrays that live on cell-centers: Note that we only have 1 ghost cell
+      real(kind=ip),dimension(0:nxmax+1)     :: update_cc
+      real(kind=ip),dimension(0:nxmax+1)     :: q_cc      ! concen
+      real(kind=ip),dimension(0:nxmax+1)     :: vol_cc    ! volume of cell
 
-      real(kind=ip),dimension( 0:nxmax+2)     :: dq_I
-      real(kind=ip),dimension( 0:nxmax+2)     :: k_ds2_I
-      real(kind=ip) :: ds
+       ! arrays that live on cell interfaces
+       !  Note: interface I for cell i is at (i-1/2); i.e. the left or negative side of i
+       !        We only need the interfaces up to the boundary of the domain
+       !        (not the ghost cells)
+           ! These should be only from 1 to ncells + 1
+      real(kind=ip),dimension( 1:nxmax+1)     :: sig_I   ! area of interface
+      real(kind=ip),dimension( 1:nxmax+1)     :: ds_I    ! length measure used at interface
+      real(kind=ip),dimension( 1:nxmax+1)     :: dq_I    ! step in concentration
+      real(kind=ip),dimension( 1:nxmax+1)     :: k_ds_I  ! k/ds
+
       real(kind=ip) :: LFluct_Rbound,RFluct_Lbound
+      integer :: rmin, rmax     ! min and max indices of the row
 
       !integer OMP_GET_MAX_THREADS
       !integer OMP_GET_NUM_THREADS
@@ -150,7 +174,13 @@
       !logical :: OMP_get_nested
 
       ! We are diffusing in x so set the length of the cell list accordingly
-      ncells = nxmax
+      !rmin = imin
+      !rmax = imax
+      ! Since sub-grid for diffusion has not been tested, use the full length
+      rmin = 1
+      rmax = nxmax
+      ncells = rmax - rmin + 1
+
       concen_pd(:,:,:,:,ts1) = 0.0_ip
       ! Neuman boundary conditions in x
         !***  Left/Right (X)
@@ -176,30 +206,46 @@
       !!!$OMP PRIVATE(l,j,k,q_cc,update_cc,ds,k_ds2_I,&
       !!!$OMP dq_I,l_cc,k_ds2_I)&
       !!!$OMP collapse(2)
-        do k=1,nzmax
-          do j=1,nymax
+        do k=kmin,kmax
+          do j=jmin,jmax
             ! Initialize cell-centered values for this x-row
             ! Note: ghost cells should contain q_cc values at edge (Neumann)
-            q_cc(-1:ncells+2) = concen_pd(-1:ncells+2,j,k,n,ts0)
-            dq_I( 0:ncells+2) = q_cc(0:ncells+2) - q_cc(-1:ncells+1)
+            update_cc(0:ncells+1) = 0.0_ip
+            vol_cc(rmin-1:rmin-1+ncells+1) = kappa_pd(   rmin-1:rmin-1+ncells+1,j,k)
+            q_cc(  rmin-1:rmin-1+ncells+1) = concen_pd(  rmin-1:rmin-1+ncells+1,j,k,n,ts0)
+            sig_I( rmin  :rmin-1+ncells+1) = sigma_nx_pd(rmin  :rmin-1+ncells+1,j,k)
+            dq_I(  rmin  :rmin-1+ncells+1) = q_cc(       rmin  :rmin-1+ncells+1) - &
+                                             q_cc(       rmin-1:rmin-1+ncells)
+
               ! Loop over interfaces and get geometry term
-            do l_I=1,ncells+1
+            do l_I = rmin,rmin-1+ncells+1
               l_cc = l_I
                 ! ds is the 1/dx for this cell along x
-              ds=sigma_nx_pd(l_I,j,k)/kappa_pd(l_cc,j,k)
-              k_ds2_I(l_I) = 0.5_ip*(kx(l_cc-1,j,k)+kx(l_cc,j,k)) * ds * ds
+                ! For approximating the dx with respect to the gradient of k, we
+                ! use a symmetric ds with the area of the interface and the
+                ! average of the volumes across the interface
+              ds_I(l_I) = 2.0_ip*sig_I(l_I)/(vol_cc(l_cc-1)+vol_cc(l_cc))
+                ! get an average diffusivity using the arithmetic average
+              k_ds_I(l_I) = 0.5_ip*(kx(l_cc-1,j,k)+kx(l_cc,j,k))*ds_I(l_I)
             enddo
               ! Loop over cells and update
-            do l_cc=1,ncells
+            do l_cc=rmin,rmin-1+ncells
               l_I = l_cc
                 ! Eq 4.11 LeVeque02
-              LFluct_Rbound =  dt*k_ds2_I(l_I+1)*dq_I(l_I+1)
-              RFluct_Lbound = -dt*k_ds2_I(l_I  )*dq_I(l_I  )
+                ! Note that the ds used for the diffusive flux uses the
+                ! interface of the flux, but the kappa of the updated cell
+              LFluct_Rbound = dt*k_ds_I(l_I+1)*dq_I(l_I+1)* &
+                               (sig_I(l_I+1)/vol_cc(l_cc))
+              RFluct_Lbound = -dt*k_ds_I(l_I  )*dq_I(l_I  )* &
+                               (sig_I(l_I)/vol_cc(l_cc))
+
               update_cc(l_cc) = LFluct_Rbound + RFluct_Lbound
+
             enddo ! loop over l (cell centers)
 
-            concen_pd(1:ncells,j,k,n,ts1) = concen_pd(1:ncells,j,k,n,ts0) + &
-               update_cc(1:ncells)
+            concen_pd(   rmin:rmin-1+ncells,j,k,n,ts1) = &
+               concen_pd(rmin:rmin-1+ncells,j,k,n,ts0) + &
+               update_cc(rmin:rmin-1+ncells)
 
           enddo ! 
         enddo ! loop over j=1,nymax
@@ -227,26 +273,35 @@
          nxmax,nymax,nzmax,nsmax,ts0,ts1,kappa_pd,sigma_ny_pd
 
       use solution,      only : &
-         concen_pd,IsAloft
+         concen_pd,IsAloft,imin,imax,jmin,jmax,kmin,kmax
 
       use time_data,     only : &
          dt
 
       implicit none
 
-      integer :: i,k,n  ! These are the indeces mapping to the global arrays
+      integer :: i,k,n  ! These are the indices mapping to the global arrays
       integer :: l_I    ! This is the interface index along the particular diffusion direction
       integer :: l_cc   ! This is the cell-centered index along the particular diffusion direction
       integer :: ncells
 
-       ! arrays that live on cell-centers: Note that we have 2 ghost cells
-      real(kind=ip),dimension(-1:nymax+2)     :: update_cc
-      real(kind=ip),dimension(-1:nymax+2)     :: q_cc      ! concen
+       ! arrays that live on cell-centers: Note that we only have 1 ghost cell
+      real(kind=ip),dimension(0:nymax+1)     :: update_cc
+      real(kind=ip),dimension(0:nymax+1)     :: q_cc      ! concen
+      real(kind=ip),dimension(0:nymax+1)     :: vol_cc    ! volume of cell
 
-      real(kind=ip),dimension( 0:nymax+2)     :: dq_I
-      real(kind=ip),dimension( 0:nymax+2)     :: k_ds2_I
-      real(kind=ip) :: ds
+       ! arrays that live on cell interfaces
+       !  Note: interface I for cell i is at (i-1/2); i.e. the left or negative side of i
+       !        We only need the interfaces up to the boundary of the domain
+       !        (not the ghost cells)
+           ! These should be only from 1 to ncells + 1
+      real(kind=ip),dimension( 1:nymax+1)     :: sig_I   ! area of interface
+      real(kind=ip),dimension( 1:nymax+1)     :: ds_I    ! length measure usedbat interface
+      real(kind=ip),dimension( 1:nymax+1)     :: dq_I    ! step in concentration
+      real(kind=ip),dimension( 1:nymax+1)     :: k_ds_I  ! k/ds
+
       real(kind=ip) :: LFluct_Rbound,RFluct_Lbound
+      integer :: rmin, rmax     ! min and max indices of the row
 
       !integer OMP_GET_MAX_THREADS
       !integer OMP_GET_NUM_THREADS
@@ -255,7 +310,13 @@
       !logical :: OMP_get_nested
 
       ! We are diffusing in y so set the length of the cell list accordingly
-      ncells = nymax
+      !rmin = jmin
+      !rmax = jmax
+      ! Since sub-grid for diffusion has not been tested, use the full length
+      rmin = 1
+      rmax = nymax
+      ncells = rmax - rmin + 1
+
       concen_pd(:,:,:,:,ts1) = 0.0_ip
       ! Neuman boundary conditions in y
         !***  Up/Down (Y)
@@ -274,30 +335,45 @@
       !!!$OMP PRIVATE(l,j,k,q_cc,update_cc,ds,k_ds2_I,&
       !!!$OMP dq_I,l_cc,k_ds2_I)&
       !!!$OMP collapse(2)
-        do k=1,nzmax
-          do i=1,nxmax
+        do k=kmin,kmax
+          do i=imin,imax
             ! Initialize cell-centered values for this y-row
             ! Note: ghost cells should contain q_cc values at edge (Neumann)
-            q_cc(-1:ncells+2) = concen_pd(i,-1:ncells+2,k,n,ts0)
-            dq_I( 0:ncells+2) = q_cc(0:ncells+2) - q_cc(-1:ncells+1)
+            update_cc(0:ncells+1) = 0.0_ip
+            vol_cc(rmin-1:rmin-1+ncells+1) = kappa_pd(   i,rmin-1:rmin-1+ncells+1,k)
+            q_cc(  rmin-1:rmin-1+ncells+1) = concen_pd(  i,rmin-1:rmin-1+ncells+1,k,n,ts0)
+            sig_I(rmin:rmin-1+ncells+1)    = sigma_ny_pd(i,rmin  :rmin-1+ncells+1,k)
+            dq_I(rmin:rmin-1+ncells+1)     = q_cc(         rmin  :rmin-1+ncells+1) - &
+                                             q_cc(         rmin-1:rmin-1+ncells)
+
               ! Loop over interfaces and get geometry term
-            do l_I=1,ncells+1
+            do l_I = rmin,rmin-1+ncells+1
               l_cc = l_I
                 ! ds is the 1/dy for this cell along y
-              ds=sigma_ny_pd(i,l_I,k)/kappa_pd(i,l_cc,k)
-              k_ds2_I(l_I) = 0.5_ip*(ky(i,l_cc-1,k)+ky(i,l_cc,k)) * ds * ds
+                ! For approximating the dy with respect to the gradient of k, we
+                ! use a symmetric ds with the area of the interface and the
+                ! average of the volumes across the interface
+              ds_I(l_I) = 2.0_ip*sig_I(l_I)/(vol_cc(l_cc-1)+vol_cc(l_cc))
+                ! get an average diffusivity using the arithmetic average
+              k_ds_I(l_I) = 0.5_ip*(ky(i,l_cc-1,k)+ky(i,l_cc,k))*ds_I(l_I)
             enddo
               ! Loop over cells and update
-            do l_cc=1,ncells
+            do l_cc=rmin,rmin-1+ncells
               l_I = l_cc
                 ! Eq 4.11 LeVeque02
-              LFluct_Rbound =  dt*k_ds2_I(l_I+1)*dq_I(l_I+1)
-              RFluct_Lbound = -dt*k_ds2_I(l_I  )*dq_I(l_I  )
+                ! Note that the ds used for the diffusive flux uses the
+                ! interface of the flux, but the kappa of the updated cell
+              LFluct_Rbound = dt*k_ds_I(l_I+1)*dq_I(l_I+1)* &
+                               (sig_I(l_I+1)/vol_cc(l_cc))
+              RFluct_Lbound = -dt*k_ds_I(l_I  )*dq_I(l_I  )* &
+                               (sig_I(l_I)/vol_cc(l_cc))
+
               update_cc(l_cc) = LFluct_Rbound + RFluct_Lbound
             enddo ! loop over l (cell centers)
 
-            concen_pd(i,1:ncells,k,n,ts1) = concen_pd(i,1:ncells,k,n,ts0) + &
-               update_cc(1:ncells)
+            concen_pd(   i,rmin:rmin-1+ncells,k,n,ts1) = &
+               concen_pd(i,rmin:rmin-1+ncells,k,n,ts0) + &
+               update_cc(  rmin:rmin-1+ncells)
 
           enddo ! 
         enddo ! loop over j=1,nymax
@@ -323,26 +399,35 @@
          nxmax,nymax,nzmax,nsmax,ts0,ts1,kappa_pd,sigma_nz_pd
 
       use solution,      only : &
-         concen_pd,IsAloft
+         concen_pd,IsAloft,imin,imax,jmin,jmax,kmin,kmax
 
       use time_data,     only : &
          dt
 
       implicit none
 
-      integer :: i,j,n  ! These are the indeces mapping to the global arrays
+      integer :: i,j,n  ! These are the indices mapping to the global arrays
       integer :: l_I    ! This is the interface index along the particular diffusion direction
       integer :: l_cc   ! This is the cell-centered index along the particular diffusion direction
       integer :: ncells
 
-       ! arrays that live on cell-centers: Note that we have 2 ghost cells
-      real(kind=ip),dimension(-1:nzmax+2)     :: update_cc
-      real(kind=ip),dimension(-1:nzmax+2)     :: q_cc      ! concen
+       ! arrays that live on cell-centers: Note that we only have 1 ghost cell
+      real(kind=ip),dimension(0:nzmax+1)     :: update_cc
+      real(kind=ip),dimension(0:nzmax+1)     :: q_cc      ! concen
+      real(kind=ip),dimension(0:nzmax+1)     :: vol_cc    ! volume of cell
 
-      real(kind=ip),dimension( 0:nzmax+2)     :: dq_I
-      real(kind=ip),dimension( 0:nzmax+2)     :: k_ds2_I
-      real(kind=ip) :: ds
+       ! arrays that live on cell interfaces
+       !  Note: interface I for cell i is at (i-1/2); i.e. the left or negative side of i
+       !        We only need the interfaces up to the boundary of the domain
+       !        (not the ghost cells)
+           ! These should be only from 1 to ncells + 1
+      real(kind=ip),dimension( 1:nzmax+1)     :: sig_I   ! area of interface
+      real(kind=ip),dimension( 1:nzmax+1)     :: ds_I    ! length measure used at interface
+      real(kind=ip),dimension( 1:nzmax+1)     :: dq_I    ! step in concentration
+      real(kind=ip),dimension( 1:nzmax+1)     :: k_ds_I  ! k/ds
+
       real(kind=ip) :: LFluct_Rbound,RFluct_Lbound
+      integer :: rmin, rmax     ! min and max indices of the row
 
       !integer OMP_GET_MAX_THREADS
       !integer OMP_GET_NUM_THREADS
@@ -351,7 +436,13 @@
       !logical :: OMP_get_nested
 
       ! We are diffusing in z so set the length of the cell list accordingly
-      ncells = nzmax
+      !rmin = kmin
+      !rmax = kmax
+      ! Since sub-grid for diffusion has not been tested, use the full length
+      rmin = 1
+      rmax = nzmax
+      ncells = rmax - rmin + 1
+
       concen_pd(:,:,:,:,ts1) = 0.0_ip
       ! Neuman boundary conditions in z
         !***  Bottom/Top (Z)
@@ -370,34 +461,47 @@
       !!!$OMP PRIVATE(l,j,k,q_cc,update_cc,ds,k_ds2_I,&
       !!!$OMP dq_I,l_cc,k_ds2_I)&
       !!!$OMP collapse(2)
-        do j=1,nymax
-          do i=1,nxmax
+        do j=jmin,jmax
+          do i=imin,imax
             ! Initialize cell-centered values for this z-row
             ! Note: ghost cells should contain q_cc values at edge (Neumann)
-            q_cc(-1:ncells+2) = concen_pd(i,j,-1:ncells+2,n,ts0)
-            dq_I( 0:ncells+2) = q_cc(0:ncells+2) - q_cc(-1:ncells+1)
+            update_cc(0:ncells+1) = 0.0_ip
+            vol_cc(rmin-1:rmin-1+ncells+1) = kappa_pd(   i,j,rmin-1:rmin-1+ncells+1)
+            q_cc(  rmin-1:rmin-1+ncells+1) = concen_pd(  i,j,rmin-1:rmin-1+ncells+1,n,ts0)
+            sig_I( rmin  :rmin-1+ncells+1) = sigma_nz_pd(i,j,rmin  :rmin-1+ncells+1)
+            dq_I(  rmin  :rmin-1+ncells+1) = q_cc(           rmin  :rmin-1+ncells+1) - &
+                                             q_cc(           rmin-1:rmin-1+ncells)
+
               ! Loop over interfaces and get geometry term
-            do l_I=1,ncells+1
+            do l_I = rmin,rmin-1+ncells+1
               l_cc = l_I
                 ! ds is the 1/dz for this cell along z
-              ds=sigma_nz_pd(i,j,l_I)/kappa_pd(i,j,l_cc)
-              k_ds2_I(l_I) = 0.5_ip*(kz(i,j,l_cc-1)+kz(i,j,l_cc)) * ds * ds
+                ! For approximating the dz with respect to the gradient of k, we
+                ! use a symmetric ds with the area of the interface and the
+                ! average of the volumes across the interface
+              ds_I(l_I) = 2.0_ip*sig_I(l_I)/(vol_cc(l_cc-1)+vol_cc(l_cc))
+                ! get an average diffusivity using the arithmetic average
+              k_ds_I(l_I) = 0.5_ip*(kz(i,j,l_cc-1)+kz(i,j,l_cc))*ds_I(l_I)
             enddo
+
               ! Loop over cells and update
-            do l_cc=1,ncells
-              !  ! Eq 4.11 LeVeque02
-              !update_cc(l_cc) = dt*(k_ds2_I(l_cc+1)*dq_I(l_cc+1) - &
-              !                      k_ds2_I(l_cc  )*dq_I(l_cc  ))
+            do l_cc=rmin,rmin-1+ncells
               l_I = l_cc
                 ! Eq 4.11 LeVeque02
-              LFluct_Rbound =  dt*k_ds2_I(l_I+1)*dq_I(l_I+1)
-              RFluct_Lbound = -dt*k_ds2_I(l_I  )*dq_I(l_I  )
+                ! Note that the ds used for the diffusive flux uses the
+                ! interface of the flux, but the kappa of the updated cell
+              LFluct_Rbound = dt*k_ds_I(l_I+1)*dq_I(l_I+1)* &
+                               (sig_I(l_I+1)/vol_cc(l_cc))
+              RFluct_Lbound = -dt*k_ds_I(l_I  )*dq_I(l_I  )* &
+                               (sig_I(l_I)/vol_cc(l_cc))
+
               update_cc(l_cc) = LFluct_Rbound + RFluct_Lbound
 
             enddo ! loop over l (cell centers)
 
-            concen_pd(i,j,1:ncells,n,ts1) = concen_pd(i,j,1:ncells,n,ts0) + &
-               update_cc(1:ncells)
+            concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = &
+               concen_pd(i,j,rmin:rmin-1+ncells,n,ts0) + &
+               update_cc(rmin:rmin-1+ncells)
 
           enddo ! 
         enddo ! loop over j=1,nymax
@@ -421,36 +525,43 @@
          IsLatLon,nxmax,nymax,nzmax,nsmax,ts0,ts1,kappa_pd,sigma_nx_pd,IsPeriodic
 
       use solution,      only : &
-         concen_pd,IsAloft
+         concen_pd,IsAloft,imin,imax,jmin,jmax,kmin,kmax
 
       use time_data,     only : &
-         dt,dtodxdx
+         dt
 
       implicit none
 
-      integer :: i,j,k,n
-      real(kind=ip) :: k0,k1,k2,km1,km0
-      real(kind=ip) :: km12,r
-      real(kind=ip) :: BC_left,BC_right
-        ! It would probably be better to have these on a stack
+      integer :: j,k,n  ! These are the indices mapping to the global arrays
+      integer :: l_I    ! This is the interface index along the particular diffusion direction
+      integer :: l_cc   ! This is the cell-centered index along the particular diffusion direction
+      integer :: ncells
+
+      real(kind=ip) :: BC_left_t0,BC_left_t1
+      real(kind=ip) :: BC_right_t0,BC_right_t1
       real(kind=sp),allocatable,dimension(:) :: DL_s,D_s,DU_s,B_s
       real(kind=dp),allocatable,dimension(:) :: DL_d,D_d,DU_d,B_d
       integer :: nlineq,nrhs,ldb,info
-      real(kind=ip) :: sm1,sp1
+      real(kind=ip) :: LeftFac,CenterFac,RightFac
 
-      !integer :: j,k,n  ! These are the indeces mapping to the global arrays
-      !integer :: l_I    ! This is the interface index along the particular diffusion direction
-      !integer :: l_cc   ! This is the cell-centered index along the particular diffusion direction
-      integer :: ncells
+       ! arrays that live on cell-centers: Note that we only have 1 ghost cell
+      real(kind=ip),dimension(0:nxmax+1)     :: q_cc      ! concen
+      real(kind=ip),dimension(0:nxmax+1)     :: vol_cc    ! volume of cell
 
-      ! ! arrays that live on cell-centers: Note that we have 2 ghost cells
-      !real(kind=ip),dimension(-1:nxmax+2)     :: update_cc
-      real(kind=ip),dimension(-1:nxmax+2)     :: q_cc      ! concen
+       ! arrays that live on cell interfaces
+       !  Note: interface I for cell i is at (i-1/2); i.e. the left or negative
+       !  side of i
+       !        We only need the interfaces up to the boundary of the domain
+       !        (not the ghost cells)
+           ! These should be only from 1 to ncells + 1
+      real(kind=ip),dimension( 1:nxmax+1)     :: sig_I   ! area of interface
+      real(kind=ip),dimension( 1:nxmax+1)     :: ds_I    ! length measure used at interface
+      real(kind=ip),dimension( 1:nxmax+1)     :: vavg_I
+      real(kind=ip),dimension( 1:nxmax+1)     :: kavg_I
+      real(kind=ip),dimension( 1:nxmax+1)     :: k_ds_I  ! k/ds
+!      real(kind=ip),dimension( 1:nxmax+1)     :: ksig2_vol_I  ! k*sig*sig/volavg 
 
-      !real(kind=ip),dimension( 0:nxmax+2)     :: k_ds2_I
-      !real(kind=ip) :: ds
-      !real(kind=ip) :: LFluct_Rbound,RFluct_Lbound
-
+      integer :: rmin, rmax     ! min and max indices of the row
 
 #ifdef CRANKNIC
       ! Note: The only reason not to use Crank-Nicolson is if you
@@ -497,11 +608,16 @@
         end subroutine
       END INTERFACE
 #endif
-      ncells = nxmax
+
+      ! We are diffusing in x so set the length of the cell list accordingly
+      !rmin = imin
+      !rmax = imax
+      ! Since sub-grid for diffusion has not been tested, use the full length
+      rmin = 1
+      rmax = nxmax
+      ncells = rmax - rmin + 1
+
       concen_pd(:,:,:,:,ts1) = 0.0_ip
-
-      if(ncells.gt.1)then
-
       ! Neuman boundary conditions in x
         !***  Left/Right (X)
       concen_pd(     -1,:,:,:,ts0) = concen_pd(    1,:,:,:,ts0)
@@ -516,6 +632,8 @@
         concen_pd(nxmax+2,:,:,:,ts0) = concen_pd(2      ,:,:,:,ts0)
       endif
 
+      if(ncells.gt.1)then
+
       nlineq = ncells
       ldb = nlineq  ! leading dimension of b is num of equations
       if (ip.eq.4)then
@@ -529,81 +647,72 @@
       allocate(DU_d(nlineq-1));
       allocate(B_d(nlineq));
 
-      r = 0.5_ip*dtodxdx
       do n=1,nsmax
         if(.not.IsAloft(n)) cycle
 
-        do k=1,nzmax
-          do j=1,nymax
+        do k=kmin,kmax
+          do j=jmin,jmax
             ! solve the problem in x for each y
+            vol_cc(rmin-1:rmin-1+ncells+1) = kappa_pd(      rmin-1:rmin-1+ncells+1,j,k)
+            q_cc(  rmin-1:rmin-1+ncells+1) = concen_pd(     rmin-1:rmin-1+ncells+1,j,k,n,ts0)
+            sig_I( rmin  :rmin-1+ncells+1) = sigma_nx_pd(   rmin  :rmin-1+ncells+1,j,k)
+            vavg_I(rmin  :rmin-1+ncells+1) = 0.5_ip*(vol_cc(rmin-1:rmin-1+ncells ) + &
+                                                     vol_cc(rmin  :rmin-1+ncells+1))
+            kavg_I(rmin  :rmin-1+ncells+1) = 0.5_ip*(kx(    rmin-1:rmin-1+ncells  ,j,k) + &
+                                                     kx(    rmin  :rmin-1+ncells+1,j,k))
+            ds_I(  rmin  :rmin-1+ncells+1) = sig_I(         rmin  :rmin-1+ncells+1) / &
+                                            vavg_I(         rmin  :rmin-1+ncells+1)
+            k_ds_I(rmin  :rmin-1+ncells+1) = kavg_I(        rmin  :rmin-1+ncells+1)* &
+                                                    ds_I(   rmin  :rmin-1+ncells+1)
+
             ! Note:  nrhs will be 1 in this case, but we can apply this
             ! to all rows at once using nrhs = j*k*n
             nrhs = 1
-            do i=1,ncells
-            ! Initialize cell-centered values for this x-row
-            ! Note: ghost cells should contain q_cc values at edge (Neumann)
-            q_cc(-1:ncells+2) = concen_pd(-1:ncells+2,j,k,n,ts0)
-              ! Loop over interfaces and get geometry term
-            !do l_I=1,ncells+1
-            !  l_cc = l_I
-            !    ! ds is the 1/dx for this cell along x
-            !  ds=sigma_nx_pd(l_I,j,k)/kappa_pd(l_cc,j,k)
-            !  k_ds2_I(l_I) = 0.5_ip*(kx(l_cc-1,j,k)+kx(l_cc,j,k)) * ds * ds
-            !enddo
+            ! Loop over all cells in this x-row
+            do l_cc=rmin,rmin-1+ncells
+              l_I = l_cc  ! Interface ID refers to the Left side of the cell (k-1/2)
+              LeftFac    = dt*k_ds_I(l_I  )*sig_I(l_I  )/vol_cc(l_cc)
+              RightFac   = dt*k_ds_I(l_I+1)*sig_I(l_I+1)/vol_cc(l_cc)
+              CenterFac = LeftFac + RightFac
 
-              k2 = kx(i+1,j,k)
-              k1 = kx(i  ,j,k)
-              k0 = kx(i-1,j,k)
-              if(IsLatLon)then
-                !r = 0.5_ip*dtode2(i,j,k)
-                ! for LatLon, r is time/vol2 with the km's containing a surface
-                ! area term * diffusivity
-                r = 0.5_ip*dt/(kappa_pd(i,j,k)*kappa_pd(i,j,k))
-                sm1  = sigma_nx_pd(i-1,j,k)
-                sp1  = sigma_nx_pd(i  ,j,k)
-                km1 = 0.5_ip*(k1+k2)*sp1*sp1
-                km0 = 0.5_ip*(k1+k0)*sm1*sm1
-                km12= km0 + km1
-              else
-                ! for cartesian, r is time/length2 and the km's just are
-                ! diffusivities
-                km1 = 0.5_ip*(k1+k2)
-                km0 = 0.5_ip*(k1+k0)
-                km12= km0 + km1
-              endif
+              if(l_cc.eq.1) then
+                !DL_d = nothing     :: No lower diagonal for first row
+                D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac & ! This is part of the normal stencil
+                                     -(Imp_fac)*LeftFac     ! This line is the BC that ensures
+                                                            ! that q(ncell)=q(ncell+1) at t1
+                                                            ! i.e. no outward flux
+                DU_d(l_cc) =        - (Imp_fac)*RightFac
 
-              D_d(i)  = (1.0_ip + r * km12)
-              If(i.eq.1) then
-            !!! Old
-                  ! No lower diagonal for first row
-                D_d(i)  = (1.0_ip + r * km12)
-                DU_d(i) =         - r * km1
                   ! RHS contains left boundary term
-                BC_left = concen_pd(0,j,k,n,ts0)
-                B_d(i)  =           r * km0   * 2.0_ip * BC_left    + &
-                          (1.0_ip - r * km12) * concen_pd(i  ,j,k,n,ts0) +  &
-                                    r * km1   * concen_pd(i+1,j,k,n,ts0)
-            !!! New
-            !    D_d(i)  = (1.0_ip + k_ds2_I(i))
+                BC_left_t0 = q_cc(1)   ! This sets a Neuman condition at t0
+                !BC_left_t1 ~= q_cc(1) ! This condition is baked into the matrix
+                                       ! stencil so that BC_left_t1=q_cc(1) at t1
+                B_d(l_cc)  =        (1.0_ip-Imp_fac)*LeftFac    * BC_left_t0 + &
+                          (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(l_cc) + &
+                                    (1.0_ip-Imp_fac)*RightFac   * q_cc(l_cc+1)
+              elseif(l_cc.lt.ncells)then
+                DL_d(l_cc-1) =         - (Imp_fac)*LeftFac
+                D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac
+                DU_d(l_cc)   =         - (Imp_fac)*RightFac
 
-              elseif(i.lt.nxmax)then
-                DL_d(i-1) =         - r * km0
-                D_d(i)    = (1.0_ip + r * km12)
-                DU_d(i)   =         - r * km1
-                B_d(i)    =           r * km0   * concen_pd(i-1,j,k,n,ts0) + &
-                            (1.0_ip - r * km12) * concen_pd(i  ,j,k,n,ts0) + &
-                                      r * km1   * concen_pd(i+1,j,k,n,ts0)
+                B_d(l_cc)    =           (1.0_ip-Imp_fac)*LeftFac    * q_cc(l_cc-1) + &
+                               (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(l_cc  ) + &
+                                         (1.0_ip-Imp_fac)*RightFac   * q_cc(l_cc+1)
+              elseif(l_cc.eq.ncells)then
+                DL_d(l_cc-1) =         - (Imp_fac)*LeftFac
+                D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac  & ! This is part of the normal stencil
+                                     -(Imp_fac)*RightFac     ! This line is the BC that ensures
+                                                             ! that q(ncell)=q(ncell+1) at t1
+                                                             ! i.e. no outward flux
+                !DU_d = nothing   :: No upper diagonal for last row
 
-              elseif(i.eq.nxmax)then
-                DL_d(i-1) = -r * km0
-                D_d(i)  = (1.0_ip + r*km12)
-                  ! No upper diagonal for last row
                   ! RHS contains right boundary term
-                BC_right = concen_pd(nxmax+1,j,k,n,ts0)
-                B_d(i)    =           r * km0   * concen_pd(i-1,j,k,n,ts0) + &
-                            (1.0_ip - r * km12) * concen_pd(i  ,j,k,n,ts0) + &
-                                      r * km1   * 2.0_ip * BC_right
-
+                BC_right_t0 = q_cc(ncells)    ! This sets a Neuman condition at t0
+                !BC_right_t1 ~= q_cc(ncells)  ! This condition is baked into the matrix
+                                              ! stencil so that BC_right_t1=q_cc(ncells) at t1
+                B_d(l_cc)    =           (1.0_ip-Imp_fac)*LeftFac    * q_cc(l_cc-1) + &
+                               (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(l_cc ) + &
+                                         (1.0_ip-Imp_fac)*RightFac   * BC_right_t0
               endif
  
             enddo
@@ -614,7 +723,7 @@
             if(useVarDiffH.or.IsLatLon)then
               ! This is the call for solving single or double
               ! precision general tridiagonal Ax=b
-              ! Note: This is the function to call if kx is spatially
+              ! Note: This is the function to call if kx or vol is spatially
               ! variable
               if(ip.eq.4)then
                 DL_s = real(DL_d,kind=4)
@@ -644,7 +753,7 @@
             else
               ! This is the call for solving single or double
               ! precision symmetric positive definite tridiagonal Ax=b
-              ! Note: A will only be symmetric if kx is homogeneous
+              ! Note: A will only be symmetric if kx and vol are homogeneous
               !       This is really not much faster than dgtsv
               if(ip.eq.4)then
                 D_s  = real(D_d ,kind=4)
@@ -699,20 +808,42 @@
          IsLatLon,nxmax,nymax,nzmax,nsmax,ts0,ts1,kappa_pd,sigma_ny_pd
 
       use solution,      only : &
-         concen_pd,IsAloft
+         concen_pd,IsAloft,imin,imax,jmin,jmax,kmin,kmax
 
       use time_data,     only : &
-         dt,dtodydy
+         dt
 
       implicit none
 
-      integer :: i,j,k,n
-      real(kind=ip) :: k0,k1,k2,km1,km0
-      real(kind=ip) :: km12,r,BC_left,BC_right
+      integer :: i,k,n  ! These are the indices mapping to the global arrays
+      integer :: l_I    ! This is the interface index along the particular diffusion direction
+      integer :: l_cc   ! This is the cell-centered index along the particular diffusion direction
+      integer :: ncells
+
+      real(kind=ip) :: BC_left_t0,BC_left_t1
+      real(kind=ip) :: BC_right_t0,BC_right_t1
       real(kind=sp),allocatable,dimension(:) :: DL_s,D_s,DU_s,B_s
       real(kind=dp),allocatable,dimension(:) :: DL_d,D_d,DU_d,B_d
       integer :: nlineq,nrhs,ldb,info
-      real(kind=ip) :: sm1,sp1
+      real(kind=ip) :: LeftFac,CenterFac,RightFac
+
+       ! arrays that live on cell-centers: Note that we only have 1 ghost cell
+      real(kind=ip),dimension(0:nymax+1)     :: q_cc      ! concen
+      real(kind=ip),dimension(0:nymax+1)     :: vol_cc    ! volume of cell
+
+       ! arrays that live on cell interfaces
+       !  Note: interface I for cell i is at (i-1/2); i.e. the left or negative
+       !  side of i
+       !        We only need the interfaces up to the boundary of the domain
+       !        (not the ghost cells)
+           ! These should be only from 1 to ncells + 1
+      real(kind=ip),dimension( 1:nymax+1)     :: sig_I   ! area of interface
+      real(kind=ip),dimension( 1:nymax+1)     :: ds_I    ! length measure used at interface
+      real(kind=ip),dimension( 1:nymax+1)     :: vavg_I
+      real(kind=ip),dimension( 1:nymax+1)     :: kavg_I
+      real(kind=ip),dimension( 1:nymax+1)     :: k_ds_I  ! k/ds
+
+      integer :: rmin, rmax     ! min and max indices of the row
 
 #ifdef CRANKNIC
       ! Note: The only reason not to use Crank-Nicolson is if you
@@ -759,9 +890,24 @@
         end subroutine
       END INTERFACE
 #endif
-      concen_pd(:,:,:,:,ts1) = 0.0_ip
 
-      if(nymax.gt.1)then
+      ! We are diffusing in y so set the length of the cell list accordingly
+      !rmin = jmin
+      !rmax = jmax
+      ! Since sub-grid for diffusion has not been tested, use the full length
+      rmin = 1
+      rmax = nymax
+      ncells = rmax - rmin + 1
+
+      concen_pd(:,:,:,:,ts1) = 0.0_ip
+      ! Neuman boundary conditions in y
+        !***  Left/Right (Y)
+      concen_pd(:,     -1,:,:,ts0) = concen_pd(:,    1,:,:,ts0)
+      concen_pd(:,      0,:,:,ts0) = concen_pd(:,    1,:,:,ts0)
+      concen_pd(:,nymax+1,:,:,ts0) = concen_pd(:,nymax,:,:,ts0)
+      concen_pd(:,nymax+2,:,:,ts0) = concen_pd(:,nymax,:,:,ts0)
+
+      if(ncells.gt.1)then
 
       nlineq = nymax
       ldb = nlineq  ! leading dimension of b is num of equations
@@ -776,69 +922,76 @@
       allocate(DU_d(nlineq-1));
       allocate(B_d(nlineq));
 
-      r = 0.5_ip*dtodydy
       do n=1,nsmax
         if(.not.IsAloft(n)) cycle
 
-        do k=1,nzmax
-          do i=1,nxmax
+        do k=kmin,kmax
+          do i=imin,imax
             ! solve the problem in y for each x
+            vol_cc(rmin-1:rmin-1+ncells+1) = kappa_pd(    i,rmin-1:rmin-1+ncells+1,k)
+            q_cc(  rmin-1:rmin-1+ncells+1) = concen_pd(   i,rmin-1:rmin-1+ncells+1,k,n,ts0)
+            sig_I( rmin  :rmin-1+ncells+1) = sigma_ny_pd( i,rmin  :rmin-1+ncells+1,k)
+            vavg_I(rmin  :rmin-1+ncells+1) = 0.5_ip*(vol_cc(rmin-1:rmin-1+ncells  ) + &
+                                                     vol_cc(rmin  :rmin-1+ncells+1))
+            kavg_I(rmin  :rmin-1+ncells+1) = 0.5_ip*(ky(  i,rmin-1:rmin-1+ncells  ,k) + &
+                                                     ky(  i,rmin  :rmin-1+ncells+1,k))
+            ds_I(  rmin  :rmin-1+ncells+1) = sig_I(         rmin  :rmin-1+ncells+1) / &
+                                            vavg_I(         rmin  :rmin-1+ncells+1)
+            k_ds_I(rmin  :rmin-1+ncells+1) = kavg_I(        rmin  :rmin-1+ncells+1)* &
+                                                    ds_I(   rmin  :rmin-1+ncells+1)
+
             ! Note:  nrhs will be 1 in this case, but we can apply this
             ! to all rows at once using nrhs = i*k*n
             nrhs = 1
-            do j=1,nymax
-              k2 = ky(i,j+1,k)
-              k1 = ky(i,j  ,k)
-              k0 = ky(i,j-1,k)
-              if(IsLatLon)then
-                !r = 0.5_ip*dtodn2(i,j,k)
-                ! for LatLon, r is time/vol2 with the km's containing a surface
-                ! area term * diffusivity
-                r = 0.5_ip*dt/(kappa_pd(i,j,k)*kappa_pd(i,j,k))
-                sm1  = sigma_ny_pd(i,j-1,k)
-                sp1  = sigma_ny_pd(i,j  ,k)
-                km1 = 0.5_ip*(k1+k2)*sp1*sp1
-                km0 = 0.5_ip*(k1+k0)*sm1*sm1
-                km12= km0 + km1
-              else
-                ! for cartesian, r is time/length2 and the km's just are
-                ! diffusivities
-                km1 = 0.5_ip*(k1+k2)
-                km0 = 0.5_ip*(k1+k0)
-                km12= km0 + km1
-              endif
+            ! Loop over all cells in this y-row
+            do l_cc=rmin,rmin-1+ncells
+              l_I = l_cc  ! Interface ID refers to the Left side of the cell (k-1/2)
+              LeftFac    = dt*k_ds_I(l_I  )*sig_I(l_I  )/vol_cc(l_cc)
+              RightFac   = dt*k_ds_I(l_I+1)*sig_I(l_I+1)/vol_cc(l_cc)
+              CenterFac = LeftFac + RightFac
 
-              D_d(j)  = (1.0_ip + r * km12)
-              If(j.eq.1) then
-                  ! No lower diagonal for first row
-                D_d(j)  = (1.0_ip + r * km12)
-                DU_d(j) =         - r * km1
+              if(l_cc.eq.1) then
+                !DL_d = nothing     :: No lower diagonal for first row
+                D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac & ! This is part of the normal stencil
+                                     -(Imp_fac)*LeftFac     ! This line is the BC that ensures
+                                                            ! that q(ncell)=q(ncell+1) at t1
+                                                            ! i.e. no outward flux
+
+                DU_d(l_cc) =        - (Imp_fac)*RightFac
+
                   ! RHS contains left boundary term
-                BC_left = concen_pd(i,0,k,n,ts0)
-                B_d(j) =            r * km0   * 2.0_ip * BC_left    + &
-                          (1.0_ip - r * km12) * concen_pd(i,j  ,k,n,ts0) +  &
-                                    r * km1   * concen_pd(i,j+1,k,n,ts0)
-              elseif(j.lt.nymax)then
-                DL_d(j-1) =         - r * km0
-                D_d(j)    = (1.0_ip + r * km12)
-                DU_d(j)   =         - r * km1
-                B_d(j)    =           r * km0   * concen_pd(i,j-1,k,n,ts0) + &
-                            (1.0_ip - r * km12) * concen_pd(i,j  ,k,n,ts0) + &
-                                      r * km1   * concen_pd(i,j+1,k,n,ts0)
+                BC_left_t0 = q_cc(1)   ! This sets a Neuman condition at t0
+                !BC_left_t1 ~= q_cc(1) ! This condition is baked into the matrix
+                B_d(l_cc)  =   (1.0_ip-Imp_fac)*LeftFac    * BC_left_t0 + &
+                     (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(l_cc) + &
+                               (1.0_ip-Imp_fac)*RightFac   * q_cc(l_cc+1)
 
-              elseif(j.eq.nymax)then
-                DL_d(j-1) = -r * km0
-                D_d(j)  = (1.0_ip + r*km12)
-                  ! No upper diagonal for last row
+
+              elseif(l_cc.lt.ncells)then
+                DL_d(l_cc-1) =      - (Imp_fac)*LeftFac
+                D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac
+                DU_d(l_cc)   =      - (Imp_fac)*RightFac
+
+                B_d(l_cc)    = (1.0_ip-Imp_fac)*LeftFac    * q_cc(l_cc-1) + &
+                     (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(l_cc  ) + &
+                               (1.0_ip-Imp_fac)*RightFac   * q_cc(l_cc+1)
+              elseif(l_cc.eq.ncells)then
+                DL_d(l_cc-1) =      - (Imp_fac)*LeftFac
+                D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac  & ! This is part of the normal stencil
+                                     -(Imp_fac)*RightFac     ! This line is the BC that ensures
+                                                             ! that q(ncell)=q(ncell+1) at t1
+                                                             ! i.e. no outward flux
+                !DU_d = nothing   :: No upper diagonal for last row
+
                   ! RHS contains right boundary term
-                BC_right = concen_pd(i,nymax+1,k,n,ts0)
-                B_d(j)    =           r * km0   * concen_pd(i,j-1,k,n,ts0) + &
-                            (1.0_ip - r * km12) * concen_pd(i,j  ,k,n,ts0) + &
-                                      r * km1   * 2.0_ip * BC_right
-
+                BC_right_t0 = q_cc(ncells)    ! This sets a Neuman condition at t0
+                !BC_right_t1 ~= q_cc(ncells)  ! This condition is baked into the matrix
+                B_d(l_cc)    = (1.0_ip-Imp_fac)*LeftFac    * q_cc(l_cc-1) + &
+                     (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(l_cc  ) + &
+                               (1.0_ip-Imp_fac)*RightFac   * BC_right_t0
               endif
- 
             enddo
+
 #ifdef CRANKNIC
       ! Note: The only reason not to use Crank-Nicolson is if you
       !       don't have blas and lapack installed.  This pre-proc.
@@ -930,20 +1083,43 @@
          IsLatLon,nxmax,nymax,nzmax,nsmax,ts0,ts1,kappa_pd,sigma_nz_pd
 
       use solution,      only : &
-         concen_pd,IsAloft
+         concen_pd,IsAloft,imin,imax,jmin,jmax,kmin,kmax
 
       use time_data,     only : &
-         dt,dtodzdz
+         dt
 
       implicit none
 
-      integer :: i,j,k,n
-      real(kind=ip) :: k0,k1,k2,km1,km0
-      real(kind=ip) :: km12,r,BC_left,BC_right
+      integer :: i,j,n
+      integer :: l_I    ! This is the interface index along the particular diffusion direction
+      integer :: l_cc   ! This is the cell-centered index along the particular diffusion direction
+      integer :: ncells
+
+      real(kind=ip) :: BC_left_t0,BC_left_t1
+      real(kind=ip) :: BC_right_t0,BC_right_t1
       real(kind=sp),allocatable,dimension(:) :: DL_s,D_s,DU_s,B_s
       real(kind=ip),allocatable,dimension(:) :: DL_d,D_d,DU_d,B_d
       integer :: nlineq,nrhs,ldb,info
-      real(kind=ip) :: sm1,sp1
+      real(kind=ip) :: LeftFac,CenterFac,RightFac
+
+       ! arrays that live on cell-centers: Note that we only have 1 ghost cell
+      real(kind=ip),dimension(0:nzmax+1)     :: q_cc      ! concen
+      real(kind=ip),dimension(0:nzmax+1)     :: vol_cc    ! volume of cell
+
+       ! arrays that live on cell interfaces
+       !  Note: interface I for cell i is at (i-1/2); i.e. the left or negative
+       !  side of i
+       !        We only need the interfaces up to the boundary of the domain
+       !        (not the ghost cells)
+           ! These should be only from 1 to ncells + 1
+      real(kind=ip),dimension( 1:nzmax+1)     :: sig_I        ! area of interface
+      real(kind=ip),dimension( 1:nzmax+1)     :: ds_I    ! length measure used at interface
+      real(kind=ip),dimension( 1:nzmax+1)     :: vavg_I
+      real(kind=ip),dimension( 1:nzmax+1)     :: kavg_I
+      real(kind=ip),dimension( 1:nzmax+1)     :: k_ds_I  ! k/ds
+      !real(kind=ip),dimension( 1:nzmax+1)     :: ksig2_vol_I  ! k*sig*sig/volavg 
+
+      integer :: rmin, rmax     ! min and max indices of the row
 
 #ifdef CRANKNIC
       ! Note: The only reason not to use Crank-Nicolson is if you
@@ -991,11 +1167,25 @@
       END INTERFACE
 #endif
 
+      ! We are diffusing in z so set the length of the cell list accordingly
+      !rmin = kmin
+      !rmax = kmax
+      ! Since sub-grid for diffusion has not been tested, use the full length
+      rmin = 1
+      rmax = nzmax
+      ncells = rmax - rmin + 1
+
       concen_pd(:,:,:,:,ts1) = 0.0_ip
+      ! Neuman boundary conditions in z
+        !***  Bottom/Top (Z)
+      concen_pd(:,:,     -1,:,ts0) = concen_pd(:,:,    1,:,ts0)
+      concen_pd(:,:,      0,:,ts0) = concen_pd(:,:,    1,:,ts0)
+      concen_pd(:,:,nzmax+1,:,ts0) = concen_pd(:,:,nzmax,:,ts0)
+      concen_pd(:,:,nzmax+2,:,ts0) = concen_pd(:,:,nzmax,:,ts0)
 
-      if(nzmax.gt.1)then
+      if(ncells.gt.1)then
 
-      nlineq = nzmax
+      nlineq = ncells
       ldb = nlineq  ! leading dimension of b is num of equations
       if (ip.eq.4)then
         allocate(DL_s(nlineq-1));
@@ -1008,68 +1198,77 @@
       allocate(DU_d(nlineq-1));
       allocate(B_d(nlineq));
 
-      r = 0.5_ip*dtodzdz
       do n=1,nsmax
         if(.not.IsAloft(n)) cycle
 
-        do i=1,nxmax
-          do j=1,nymax
+        do j=jmin,jmax
+          do i=imin,imax
+
             ! solve the problem in z for each y
+            vol_cc(rmin-1:rmin-1+ncells+1) = kappa_pd(    i,j,rmin-1:rmin-1+ncells+1)
+            q_cc(  rmin-1:rmin-1+ncells+1) = concen_pd(   i,j,rmin-1:rmin-1+ncells+1,n,ts0)
+            sig_I( rmin  :rmin-1+ncells+1) = sigma_nz_pd( i,j,rmin  :rmin-1+ncells+1)
+            vavg_I(rmin  :rmin-1+ncells+1) = 0.5_ip*(vol_cc(  rmin-1:rmin-1+ncells  ) + &
+                                                     vol_cc(  rmin  :rmin-1+ncells+1))
+            kavg_I(rmin  :rmin-1+ncells+1) = 0.5_ip*(kz(i,j,  rmin-1:rmin-1+ncells  ) + &
+                                                     kz(i,j,  rmin  :rmin-1+ncells+1))
+            ds_I(  rmin  :rmin-1+ncells+1) = sig_I(           rmin  :rmin-1+ncells+1) / &
+                                            vavg_I(           rmin  :rmin-1+ncells+1)
+            k_ds_I(rmin  :rmin-1+ncells+1) = kavg_I(          rmin  :rmin-1+ncells+1)* &
+                                                    ds_I(     rmin  :rmin-1+ncells+1)
+
             ! Note:  nrhs will be 1 in this case, but we can apply this
             ! to all rows at once using nrhs = i*j*n
             nrhs = 1
-            do k=1,nzmax
-              k2 = kz(i,j,k+1)
-              k1 = kz(i,j,k  )
-              k0 = kz(i,j,k-1)
-              if(IsLatLon)then
-                !r = 0.5_ip*dt_dz2(k)
-                ! for LatLon, r is time/vol2 with the km's containing a surface
-                ! area term * diffusivity
-                r = 0.5_ip*dt/(kappa_pd(i,j,k)*kappa_pd(i,j,k))
-                sm1  = sigma_nz_pd(i,j,k-1)
-                sp1  = sigma_nz_pd(i,j,k  )
-                km1 = 0.5_ip*(k1+k2)*sp1*sp1
-                km0 = 0.5_ip*(k1+k0)*sm1*sm1
-                km12= km0 + km1
-              else
-                ! for cartesian, r is time/length2 and the km's just are
-                ! diffusivities
-                km1 = 0.5_ip*(k1+k2)
-                km0 = 0.5_ip*(k1+k0)
-                km12= km0 + km1
-              endif
+            ! Loop over all cells in this z-row
+            do l_cc=1,ncells
+              l_I = l_cc  ! Interface ID refers to the Left side of the cell (k-1/2)
+              LeftFac    = dt*k_ds_I(l_I  )*sig_I(l_I  )/vol_cc(l_cc)
+              RightFac   = dt*k_ds_I(l_I+1)*sig_I(l_I+1)/vol_cc(l_cc)
+              CenterFac = LeftFac + RightFac
 
-              D_d(k)  = (1.0_ip + r * km12)
-              If(k.eq.1) then
-                  ! No lower diagonal for first row
-                D_d(k)  = (1.0_ip + r * km12)
-                DU_d(k) =         - r * km1
+              D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac
+              if(l_cc.eq.1) then
+                !DL_d = nothing     :: No lower diagonal for first row
+                D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac & ! This is part of the normal stencil
+                                     -(Imp_fac)*LeftFac     ! This line is the BC that ensures
+                                                            ! that q(ncell)=q(ncell+1) at t1
+                                                            ! i.e. no outward flux
+
+                DU_d(l_cc) =        - (Imp_fac)*RightFac
+
                   ! RHS contains left boundary term
-                BC_left = concen_pd(i,j,k,n,ts0)
-                B_d(k)  =           r * km0   * 2.0_ip * BC_left    + &
-                          (1.0_ip - r * km12) * concen_pd(i,j,k  ,n,ts0) +  &
-                                    r * km1   * concen_pd(i,j,k+1,n,ts0)
-              elseif(k.lt.nzmax)then
-                DL_d(k-1) =         - r * km0
-                D_d(k)    = (1.0_ip + r * km12)
-                DU_d(k)   =         - r * km1
-                B_d(k)    =           r * km0   * concen_pd(i,j,k-1,n,ts0) + &
-                            (1.0_ip - r * km12) * concen_pd(i,j,k  ,n,ts0) + &
-                                      r * km1   * concen_pd(i,j,k+1,n,ts0)
+                BC_left_t0 = q_cc(1)   ! This sets a Neuman condition at t0
+                !BC_left_t1 ~= q_cc(1) ! This condition is baked into the matrix
 
-              elseif(k.eq.nzmax)then
-                DL_d(k-1) = -r * km0
-                D_d(k)  = (1.0_ip + r*km12)
-                  ! No upper diagonal for last row
+                B_d(l_cc)  =        (1.0_ip-Imp_fac)*LeftFac    * BC_left_t0 + &
+                          (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(l_cc) + &
+                                    (1.0_ip-Imp_fac)*RightFac   * q_cc(l_cc+1)
+
+
+              elseif(l_cc.lt.ncells)then
+                DL_d(l_cc-1) =        - (Imp_fac)*LeftFac
+                D_d(l_cc)    = 1.0_ip + (Imp_fac)*CenterFac
+                DU_d(l_cc)   =        - (Imp_fac)*RightFac
+
+                B_d(l_cc)    =           (1.0_ip-Imp_fac)*LeftFac    * q_cc(l_cc-1) + &
+                               (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(l_cc  ) + &
+                                         (1.0_ip-Imp_fac)*RightFac   * q_cc(l_cc+1)
+              elseif(l_cc.eq.ncells)then
+                DL_d(l_cc-1) =         - (Imp_fac)*LeftFac
+                D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac  & ! This is part of the normal stencil
+                                     -(Imp_fac)*RightFac     ! This line is the BC that ensures
+                                                             ! that q(ncell)=q(ncell+1) at t1
+                                                             ! i.e. no outward flux
+                !DU_d = nothing   :: No upper diagonal for last row
+
                   ! RHS contains right boundary term
-                BC_right = concen_pd(i,j,nzmax+1,n,ts0)
-                B_d(k)    =           r * km0   * concen_pd(i,j,k-1,n,ts0) + &
-                            (1.0_ip - r * km12) * concen_pd(i,j,k  ,n,ts0) + &
-                                      r * km1   * 2.0_ip * BC_right
-
+                BC_right_t0 = q_cc(ncells)    ! This sets a Neuman condition at t0
+                !BC_right_t1 ~= q_cc(ncells)  ! This condition is baked into the matrix
+                B_d(l_cc)    =           (1.0_ip-Imp_fac)*LeftFac    * q_cc(l_cc-1) + &
+                               (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(l_cc  ) + &
+                                         (1.0_ip-Imp_fac)*RightFac   * BC_right_t0
               endif
- 
             enddo
 #ifdef CRANKNIC
       ! Note: The only reason not to use Crank-Nicolson is if you
@@ -1134,7 +1333,15 @@
               endif
             endif
 #endif
-            concen_pd(i,j,1:nzmax,n,ts1) = B_d
+            concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = B_d
+
+!            if(i.eq.179.and.j.eq.102)then
+!            if(i.eq.5.and.j.eq.5)then
+!              do l_cc=rmin,rmin-1+ncells
+!                write(*,*)l_cc,q_cc(l_cc),concen_pd(i,j,l_cc,n,ts1)
+!              enddo
+!              stop 5
+!            endif
 
           enddo ! loop over j
         enddo ! loop over i

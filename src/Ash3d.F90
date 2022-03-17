@@ -393,7 +393,7 @@
 
         if(useDiffusion)then
           call Set_BC(2)
-          !call DiffuseVert
+          call DiffuseVert
           call DiffuseHorz(itime)
         endif
 
