@@ -12,18 +12,17 @@
       real(kind=ip) :: diffusivity_horz    ! horizontal diffusion coefficient (m2/s)
       real(kind=ip) :: diffusivity_vert    ! vertical diffusion coefficient (m2/s)
 
-         ! Factor that controls how much of the
-         ! n+1 time step is used in the solution
+         ! Factor that controls how much of the n+1 time step is used in the solution
          !  0.0 = Forward-Euler
          !  0.5 = Crank-Nicolson
          !  1.0 = Backward-Euler
          ! Note: if 0.0 is used, the method is numerically equivalant to EXPLDIFF,
          !       but solved with the lapack solvers with A being the identity
-         !       matrix, not as efficient, but useful for checking.  In this
+         !       matrix; not as efficient, but useful for checking.  In this
          !       case, Imp_DT_fac would need to be 0.5 as required by the
          !       explicit solver.  If either Imp_fac = 0.5 or 1.0, then the
          !       method is unconditionally stable, but accuracy requires a
-         !       Imp_DT_fac to be around 2.0
+         !       Imp_DT_fac to be around 1.0 - 4.0
       real(kind=ip) :: Imp_fac = 0.5_ip    
       real(kind=ip) :: Imp_DT_fac  = 4.0_ip
 
@@ -436,11 +435,11 @@
       !logical :: OMP_get_nested
 
       ! We are diffusing in z so set the length of the cell list accordingly
-      !rmin = kmin
-      !rmax = kmax
+      rmin = kmin
+      rmax = kmax
       ! Since sub-grid for diffusion has not been tested, use the full length
-      rmin = 1
-      rmax = nzmax
+      !rmin = 1
+      !rmax = nzmax
       ncells = rmax - rmin + 1
 
       concen_pd(:,:,:,:,ts1) = 0.0_ip
@@ -610,11 +609,11 @@
 #endif
 
       ! We are diffusing in x so set the length of the cell list accordingly
-      !rmin = imin
-      !rmax = imax
+      rmin = imin
+      rmax = imax
       ! Since sub-grid for diffusion has not been tested, use the full length
-      rmin = 1
-      rmax = nxmax
+      !rmin = 1
+      !rmax = nxmax
       ncells = rmax - rmin + 1
 
       concen_pd(:,:,:,:,ts1) = 0.0_ip
@@ -669,10 +668,10 @@
             ! to all rows at once using nrhs = j*k*n
             nrhs = 1
             ! Loop over all cells in this x-row
-            do l_cc=rmin,rmin-1+ncells
+            do l_cc=1,ncells
               l_I = l_cc  ! Interface ID refers to the Left side of the cell (k-1/2)
-              LeftFac    = dt*k_ds_I(l_I  )*sig_I(l_I  )/vol_cc(l_cc)
-              RightFac   = dt*k_ds_I(l_I+1)*sig_I(l_I+1)/vol_cc(l_cc)
+              LeftFac    = dt*k_ds_I(rmin-1+l_I  )*sig_I(rmin-1+l_I  )/vol_cc(rmin-1+l_cc)
+              RightFac   = dt*k_ds_I(rmin-1+l_I+1)*sig_I(rmin-1+l_I+1)/vol_cc(rmin-1+l_cc)
               CenterFac = LeftFac + RightFac
 
               if(l_cc.eq.1) then
@@ -684,22 +683,22 @@
                 DU_d(l_cc) =        - (Imp_fac)*RightFac
 
                   ! RHS contains left boundary term
-                BC_left_t0 = q_cc(1)   ! This sets a Neuman condition at t0
-                !BC_left_t1 ~= q_cc(1) ! This condition is baked into the matrix
+                BC_left_t0 = q_cc(rmin)   ! This sets a Neuman condition at t0
+                !BC_left_t1 ~= q_cc(rmin) ! This condition is baked into the matrix
                                        ! stencil so that BC_left_t1=q_cc(1) at t1
                 B_d(l_cc)  =        (1.0_ip-Imp_fac)*LeftFac    * BC_left_t0 + &
-                          (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(l_cc) + &
-                                    (1.0_ip-Imp_fac)*RightFac   * q_cc(l_cc+1)
+                          (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(rmin-1+l_cc) + &
+                                    (1.0_ip-Imp_fac)*RightFac   * q_cc(rmin-1+l_cc+1)
               elseif(l_cc.lt.ncells)then
                 DL_d(l_cc-1) =         - (Imp_fac)*LeftFac
                 D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac
                 DU_d(l_cc)   =         - (Imp_fac)*RightFac
 
-                B_d(l_cc)    =           (1.0_ip-Imp_fac)*LeftFac    * q_cc(l_cc-1) + &
-                               (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(l_cc  ) + &
-                                         (1.0_ip-Imp_fac)*RightFac   * q_cc(l_cc+1)
+                B_d(l_cc)    =           (1.0_ip-Imp_fac)*LeftFac    * q_cc(rmin-1+l_cc-1) + &
+                               (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(rmin-1+l_cc  ) + &
+                                         (1.0_ip-Imp_fac)*RightFac   * q_cc(rmin-1+l_cc+1)
               elseif(l_cc.eq.ncells)then
-                DL_d(l_cc-1) =         - (Imp_fac)*LeftFac
+                DL_d(l_cc-1) =      - (Imp_fac)*LeftFac
                 D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac  & ! This is part of the normal stencil
                                      -(Imp_fac)*RightFac     ! This line is the BC that ensures
                                                              ! that q(ncell)=q(ncell+1) at t1
@@ -707,11 +706,11 @@
                 !DU_d = nothing   :: No upper diagonal for last row
 
                   ! RHS contains right boundary term
-                BC_right_t0 = q_cc(ncells)    ! This sets a Neuman condition at t0
+                BC_right_t0 = q_cc(rmin-1+ncells)    ! This sets a Neuman condition at t0
                 !BC_right_t1 ~= q_cc(ncells)  ! This condition is baked into the matrix
                                               ! stencil so that BC_right_t1=q_cc(ncells) at t1
-                B_d(l_cc)    =           (1.0_ip-Imp_fac)*LeftFac    * q_cc(l_cc-1) + &
-                               (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(l_cc ) + &
+                B_d(l_cc)    =           (1.0_ip-Imp_fac)*LeftFac    * q_cc(rmin-1+l_cc-1) + &
+                               (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(rmin-1+l_cc ) + &
                                          (1.0_ip-Imp_fac)*RightFac   * BC_right_t0
               endif
  
@@ -720,7 +719,7 @@
       ! Note: The only reason not to use Crank-Nicolson is if you
       !       don't have blas and lapack installed.  This pre-proc.
       !       directive allows this section to be turned off.
-            if(useVarDiffH.or.IsLatLon)then
+!            if(useVarDiffH.or.IsLatLon)then
               ! This is the call for solving single or double
               ! precision general tridiagonal Ax=b
               ! Note: This is the function to call if kx or vol is spatially
@@ -750,36 +749,36 @@
                       ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                       info)      !o
               endif
-            else
-              ! This is the call for solving single or double
-              ! precision symmetric positive definite tridiagonal Ax=b
-              ! Note: A will only be symmetric if kx and vol are homogeneous
-              !       This is really not much faster than dgtsv
-              if(ip.eq.4)then
-                D_s  = real(D_d ,kind=4)
-                DU_s = real(DU_d,kind=4)
-                B_s  = real(B_d ,kind=4)
-                call sptsv(     &
-                      nlineq, &  !i The order of the matrix A.  N >= 0.
-                      nrhs,   &  !i The number of right hand sides
-                      D_s,    &  !b dimension (N) diagonal
-                      DU_s,   &  !b array, dimension (N-1) sub or super-diagonal
-                      B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
-                      ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
-                      info)      !o
-              elseif(ip.eq.8)then
-                call dptsv(     &
-                      nlineq, &  !i The order of the matrix A.  N >= 0.
-                      nrhs,   &  !i The number of right hand sides
-                      D_d,    &  !b dimension (N) diagonal
-                      DU_d,   &  !b array, dimension (N-1) sub or super-diagonal
-                      B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
-                      ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
-                      info)      !o
-              endif
-            endif
+!            else
+!              ! This is the call for solving single or double
+!              ! precision symmetric positive definite tridiagonal Ax=b
+!              ! Note: A will only be symmetric if kx is homogeneous and vol=const
+!              !       This is really not much faster than dgtsv
+!              if(ip.eq.4)then
+!                D_s  = real(D_d ,kind=4)
+!                DU_s = real(DU_d,kind=4)
+!                B_s  = real(B_d ,kind=4)
+!                call sptsv(     &
+!                      nlineq, &  !i The order of the matrix A.  N >= 0.
+!                      nrhs,   &  !i The number of right hand sides
+!                      D_s,    &  !b dimension (N) diagonal
+!                      DU_s,   &  !b array, dimension (N-1) sub or super-diagonal
+!                      B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
+!                      ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
+!                      info)      !o
+!              elseif(ip.eq.8)then
+!                call dptsv(     &
+!                      nlineq, &  !i The order of the matrix A.  N >= 0.
+!                      nrhs,   &  !i The number of right hand sides
+!                      D_d,    &  !b dimension (N) diagonal
+!                      DU_d,   &  !b array, dimension (N-1) sub or super-diagonal
+!                      B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
+!                      ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
+!                      info)      !o
+!              endif
+!            endif
 #endif
-            concen_pd(1:nxmax,j,k,n,ts1) = B_d
+            concen_pd(rmin:rmin-1+ncells,j,k,n,ts1) = B_d
 
           enddo ! loop over j
         enddo ! loop over k
@@ -892,11 +891,11 @@
 #endif
 
       ! We are diffusing in y so set the length of the cell list accordingly
-      !rmin = jmin
-      !rmax = jmax
+      rmin = jmin
+      rmax = jmax
       ! Since sub-grid for diffusion has not been tested, use the full length
-      rmin = 1
-      rmax = nymax
+      !rmin = 1
+      !rmax = nymax
       ncells = rmax - rmin + 1
 
       concen_pd(:,:,:,:,ts1) = 0.0_ip
@@ -909,7 +908,7 @@
 
       if(ncells.gt.1)then
 
-      nlineq = nymax
+      nlineq = ncells
       ldb = nlineq  ! leading dimension of b is num of equations
       if (ip.eq.4)then
         allocate(DL_s(nlineq-1));
@@ -944,10 +943,10 @@
             ! to all rows at once using nrhs = i*k*n
             nrhs = 1
             ! Loop over all cells in this y-row
-            do l_cc=rmin,rmin-1+ncells
+            do l_cc=1,ncells
               l_I = l_cc  ! Interface ID refers to the Left side of the cell (k-1/2)
-              LeftFac    = dt*k_ds_I(l_I  )*sig_I(l_I  )/vol_cc(l_cc)
-              RightFac   = dt*k_ds_I(l_I+1)*sig_I(l_I+1)/vol_cc(l_cc)
+              LeftFac    = dt*k_ds_I(rmin-1+l_I  )*sig_I(rmin-1+l_I  )/vol_cc(rmin-1+l_cc)
+              RightFac   = dt*k_ds_I(rmin-1+l_I+1)*sig_I(rmin-1+l_I+1)/vol_cc(rmin-1+l_cc)
               CenterFac = LeftFac + RightFac
 
               if(l_cc.eq.1) then
@@ -956,15 +955,15 @@
                                      -(Imp_fac)*LeftFac     ! This line is the BC that ensures
                                                             ! that q(ncell)=q(ncell+1) at t1
                                                             ! i.e. no outward flux
-
                 DU_d(l_cc) =        - (Imp_fac)*RightFac
 
                   ! RHS contains left boundary term
-                BC_left_t0 = q_cc(1)   ! This sets a Neuman condition at t0
-                !BC_left_t1 ~= q_cc(1) ! This condition is baked into the matrix
+                BC_left_t0 = q_cc(rmin)   ! This sets a Neuman condition at t0
+                !BC_left_t1 ~= q_cc(rmin) ! This condition is baked into the matrix
+                                          ! stencil so that BC_left_t1=q_cc(1) at t1
                 B_d(l_cc)  =   (1.0_ip-Imp_fac)*LeftFac    * BC_left_t0 + &
-                     (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(l_cc) + &
-                               (1.0_ip-Imp_fac)*RightFac   * q_cc(l_cc+1)
+                     (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(rmin-1+l_cc) + &
+                               (1.0_ip-Imp_fac)*RightFac   * q_cc(rmin-1+l_cc+1)
 
 
               elseif(l_cc.lt.ncells)then
@@ -972,9 +971,9 @@
                 D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac
                 DU_d(l_cc)   =      - (Imp_fac)*RightFac
 
-                B_d(l_cc)    = (1.0_ip-Imp_fac)*LeftFac    * q_cc(l_cc-1) + &
-                     (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(l_cc  ) + &
-                               (1.0_ip-Imp_fac)*RightFac   * q_cc(l_cc+1)
+                B_d(l_cc)    = (1.0_ip-Imp_fac)*LeftFac    * q_cc(rmin-1+l_cc-1) + &
+                     (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(rmin-1+l_cc  ) + &
+                               (1.0_ip-Imp_fac)*RightFac   * q_cc(rmin-1+l_cc+1)
               elseif(l_cc.eq.ncells)then
                 DL_d(l_cc-1) =      - (Imp_fac)*LeftFac
                 D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac  & ! This is part of the normal stencil
@@ -984,10 +983,11 @@
                 !DU_d = nothing   :: No upper diagonal for last row
 
                   ! RHS contains right boundary term
-                BC_right_t0 = q_cc(ncells)    ! This sets a Neuman condition at t0
+                BC_right_t0 = q_cc(rmin-1+ncells)    ! This sets a Neuman condition at t0
                 !BC_right_t1 ~= q_cc(ncells)  ! This condition is baked into the matrix
-                B_d(l_cc)    = (1.0_ip-Imp_fac)*LeftFac    * q_cc(l_cc-1) + &
-                     (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(l_cc  ) + &
+                                              ! stencil so that BC_right_t1=q_cc(ncells) at t1
+                B_d(l_cc)    = (1.0_ip-Imp_fac)*LeftFac    * q_cc(rmin-1+l_cc-1) + &
+                     (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(rmin-1+l_cc  ) + &
                                (1.0_ip-Imp_fac)*RightFac   * BC_right_t0
               endif
             enddo
@@ -996,10 +996,10 @@
       ! Note: The only reason not to use Crank-Nicolson is if you
       !       don't have blas and lapack installed.  This pre-proc.
       !       directive allows this section to be turned off.
-            if(useVarDiffH.or.IsLatLon)then
+!            if(useVarDiffH.or.IsLatLon)then
               ! This is the call for solving single or double
               ! precision general tridiagonal Ax=b
-              ! Note: This is the function to call if ky is spatially
+              ! Note: This is the function to call if ky or vol is spatially
               ! variable
               if(ip.eq.4)then
                 DL_s = real(DL_d,kind=4)
@@ -1026,36 +1026,36 @@
                       ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                       info)      !o
               endif
-            else
-              ! This is the call for solving single or double
-              ! precision symmetric positive definite tridiagonal Ax=b
-              ! Note: A will only be symmetric if ky is homogeneous
-              !       This is really not much faster than dgtsv
-              if(ip.eq.4)then
-                D_s  = real(D_d ,kind=4)
-                DU_s = real(DU_d,kind=4)
-                B_s  = real(B_d ,kind=4)
-                call sptsv(     &
-                      nlineq, &  !i The order of the matrix A.  N >= 0.
-                      nrhs,   &  !i The number of right hand sides
-                      D_s,    &  !b dimension (N) diagonal
-                      DU_s,   &  !b array, dimension (N-1) sub or super-diagonal
-                      B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
-                      ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
-                      info)      !o
-              elseif(ip.eq.8)then
-                call dptsv(     &
-                      nlineq, &  !i The order of the matrix A.  N >= 0.
-                      nrhs,   &  !i The number of right hand sides
-                      D_d,    &  !b dimension (N) diagonal
-                      DU_d,   &  !b array, dimension (N-1) sub or super-diagonal
-                      B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
-                      ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
-                      info)      !o
-              endif
-            endif
+!            else
+!              ! This is the call for solving single or double
+!              ! precision symmetric positive definite tridiagonal Ax=b
+!              ! Note: A will only be symmetric if ky is homogeneous
+!              !       This is really not much faster than dgtsv
+!              if(ip.eq.4)then
+!                D_s  = real(D_d ,kind=4)
+!                DU_s = real(DU_d,kind=4)
+!                B_s  = real(B_d ,kind=4)
+!                call sptsv(     &
+!                      nlineq, &  !i The order of the matrix A.  N >= 0.
+!                      nrhs,   &  !i The number of right hand sides
+!                      D_s,    &  !b dimension (N) diagonal
+!                      DU_s,   &  !b array, dimension (N-1) sub or super-diagonal
+!                      B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
+!                      ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
+!                      info)      !o
+!              elseif(ip.eq.8)then
+!                call dptsv(     &
+!                      nlineq, &  !i The order of the matrix A.  N >= 0.
+!                      nrhs,   &  !i The number of right hand sides
+!                      D_d,    &  !b dimension (N) diagonal
+!                      DU_d,   &  !b array, dimension (N-1) sub or super-diagonal
+!                      B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
+!                      ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
+!                      info)      !o
+!              endif
+!            endif
 #endif
-            concen_pd(i,1:nymax,k,n,ts1) = B_d
+            concen_pd(i,rmin:rmin-1+ncells,k,n,ts1) = B_d
 
           enddo ! loop over i
         enddo ! loop over k
@@ -1090,7 +1090,7 @@
 
       implicit none
 
-      integer :: i,j,n
+      integer :: i,j,n  ! These are the indices mapping to the global arrays
       integer :: l_I    ! This is the interface index along the particular diffusion direction
       integer :: l_cc   ! This is the cell-centered index along the particular diffusion direction
       integer :: ncells
@@ -1098,7 +1098,7 @@
       real(kind=ip) :: BC_left_t0,BC_left_t1
       real(kind=ip) :: BC_right_t0,BC_right_t1
       real(kind=sp),allocatable,dimension(:) :: DL_s,D_s,DU_s,B_s
-      real(kind=ip),allocatable,dimension(:) :: DL_d,D_d,DU_d,B_d
+      real(kind=dp),allocatable,dimension(:) :: DL_d,D_d,DU_d,B_d
       integer :: nlineq,nrhs,ldb,info
       real(kind=ip) :: LeftFac,CenterFac,RightFac
 
@@ -1168,11 +1168,11 @@
 #endif
 
       ! We are diffusing in z so set the length of the cell list accordingly
-      !rmin = kmin
-      !rmax = kmax
+      rmin = kmin
+      rmax = kmax
       ! Since sub-grid for diffusion has not been tested, use the full length
-      rmin = 1
-      rmax = nzmax
+      !rmin = 1
+      !rmax = nzmax
       ncells = rmax - rmin + 1
 
       concen_pd(:,:,:,:,ts1) = 0.0_ip
@@ -1223,27 +1223,25 @@
             ! Loop over all cells in this z-row
             do l_cc=1,ncells
               l_I = l_cc  ! Interface ID refers to the Left side of the cell (k-1/2)
-              LeftFac    = dt*k_ds_I(l_I  )*sig_I(l_I  )/vol_cc(l_cc)
-              RightFac   = dt*k_ds_I(l_I+1)*sig_I(l_I+1)/vol_cc(l_cc)
+              LeftFac    = dt*k_ds_I(rmin-1+l_I  )*sig_I(rmin-1+l_I  )/vol_cc(rmin-1+l_cc)
+              RightFac   = dt*k_ds_I(rmin-1+l_I+1)*sig_I(rmin-1+l_I+1)/vol_cc(rmin-1+l_cc)
               CenterFac = LeftFac + RightFac
 
-              D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac
               if(l_cc.eq.1) then
                 !DL_d = nothing     :: No lower diagonal for first row
                 D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac & ! This is part of the normal stencil
                                      -(Imp_fac)*LeftFac     ! This line is the BC that ensures
                                                             ! that q(ncell)=q(ncell+1) at t1
                                                             ! i.e. no outward flux
-
                 DU_d(l_cc) =        - (Imp_fac)*RightFac
 
                   ! RHS contains left boundary term
-                BC_left_t0 = q_cc(1)   ! This sets a Neuman condition at t0
-                !BC_left_t1 ~= q_cc(1) ! This condition is baked into the matrix
-
+                BC_left_t0 = q_cc(rmin)   ! This sets a Neuman condition at t0
+                !BC_left_t1 ~= q_cc(rmin) ! This condition is baked into the matrix
+                                          ! stencil so that BC_left_t1=q_cc(1) at t1
                 B_d(l_cc)  =        (1.0_ip-Imp_fac)*LeftFac    * BC_left_t0 + &
-                          (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(l_cc) + &
-                                    (1.0_ip-Imp_fac)*RightFac   * q_cc(l_cc+1)
+                          (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(rmin-1+l_cc) + &
+                                    (1.0_ip-Imp_fac)*RightFac   * q_cc(rmin-1+l_cc+1)
 
 
               elseif(l_cc.lt.ncells)then
@@ -1251,22 +1249,23 @@
                 D_d(l_cc)    = 1.0_ip + (Imp_fac)*CenterFac
                 DU_d(l_cc)   =        - (Imp_fac)*RightFac
 
-                B_d(l_cc)    =           (1.0_ip-Imp_fac)*LeftFac    * q_cc(l_cc-1) + &
-                               (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(l_cc  ) + &
-                                         (1.0_ip-Imp_fac)*RightFac   * q_cc(l_cc+1)
+                B_d(l_cc)    =           (1.0_ip-Imp_fac)*LeftFac    * q_cc(rmin-1+l_cc-1) + &
+                               (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(rmin-1+l_cc  ) + &
+                                         (1.0_ip-Imp_fac)*RightFac   * q_cc(rmin-1+l_cc+1)
               elseif(l_cc.eq.ncells)then
-                DL_d(l_cc-1) =         - (Imp_fac)*LeftFac
-                D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac  & ! This is part of the normal stencil
-                                     -(Imp_fac)*RightFac     ! This line is the BC that ensures
-                                                             ! that q(ncell)=q(ncell+1) at t1
-                                                             ! i.e. no outward flux
+                DL_d(l_cc-1) =        - (Imp_fac)*LeftFac
+                D_d(l_cc)    = 1.0_ip + (Imp_fac)*CenterFac  & ! This is part of the normal stencil
+                                       -(Imp_fac)*RightFac     ! This line is the BC that ensures
+                                                               ! that q(ncell)=q(ncell+1) at t1
+                                                               ! i.e. no outward flux
                 !DU_d = nothing   :: No upper diagonal for last row
 
                   ! RHS contains right boundary term
-                BC_right_t0 = q_cc(ncells)    ! This sets a Neuman condition at t0
+                BC_right_t0 = q_cc(rmin-1+ncells)    ! This sets a Neuman condition at t0
                 !BC_right_t1 ~= q_cc(ncells)  ! This condition is baked into the matrix
-                B_d(l_cc)    =           (1.0_ip-Imp_fac)*LeftFac    * q_cc(l_cc-1) + &
-                               (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(l_cc  ) + &
+                                              ! stencil so that BC_left_t1=q_cc(1) at t1
+                B_d(l_cc)    =           (1.0_ip-Imp_fac)*LeftFac    * q_cc(rmin-1+l_cc-1) + &
+                               (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(rmin-1+l_cc  ) + &
                                          (1.0_ip-Imp_fac)*RightFac   * BC_right_t0
               endif
             enddo
@@ -1274,10 +1273,10 @@
       ! Note: The only reason not to use Crank-Nicolson is if you
       !       don't have blas and lapack installed.  This pre-proc.
       !       directive allows this section to be turned off.
-            if(useVarDiffV.or.IsLatLon)then
+!            if(useVarDiffV.or.IsLatLon)then
               ! This is the call for solving single or double
               ! precision general tridiagonal Ax=b
-              ! Note: This is the function to call if kz is spatially
+              ! Note: This is the function to call if kz or vol is spatially
               ! variable
               if(ip.eq.4)then
                 DL_s = real(DL_d,kind=4)
@@ -1304,34 +1303,34 @@
                       ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                       info)      !o
               endif
-            else
-              ! This is the call for solving single or double
-              ! precision symmetric positive definite tridiagonal Ax=b
-              ! Note: A will only be symmetric if kz is homogeneous
-              !       This is really not much faster than dgtsv
-              if(ip.eq.4)then
-                D_s  = real(D_d ,kind=4)
-                DU_s = real(DU_d,kind=4)
-                B_s  = real(B_d ,kind=4)
-                call sptsv(     &
-                      nlineq, &  !i The order of the matrix A.  N >= 0.
-                      nrhs,   &  !i The number of right hand sides
-                      D_s,    &  !b dimension (N) diagonal
-                      DU_s,   &  !b array, dimension (N-1) sub or super-diagonal
-                      B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
-                      ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
-                      info)      !o
-              elseif(ip.eq.8)then
-                call dptsv(     &
-                      nlineq, &  !i The order of the matrix A.  N >= 0.
-                      nrhs,   &  !i The number of right hand sides
-                      D_d,    &  !b dimension (N) diagonal
-                      DU_d,   &  !b array, dimension (N-1) sub or super-diagonal
-                      B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
-                      ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
-                      info)      !o
-              endif
-            endif
+!            else
+!              ! This is the call for solving single or double
+!              ! precision symmetric positive definite tridiagonal Ax=b
+!              ! Note: A will only be symmetric if kz is homogeneous and vol=const
+!              !       This is really not much faster than dgtsv
+!              if(ip.eq.4)then
+!                D_s  = real(D_d ,kind=4)
+!                DU_s = real(DU_d,kind=4)
+!                B_s  = real(B_d ,kind=4)
+!                call sptsv(     &
+!                      nlineq, &  !i The order of the matrix A.  N >= 0.
+!                      nrhs,   &  !i The number of right hand sides
+!                      D_s,    &  !b dimension (N) diagonal
+!                      DU_s,   &  !b array, dimension (N-1) sub or super-diagonal
+!                      B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
+!                      ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
+!                      info)      !o
+!              elseif(ip.eq.8)then
+!                call dptsv(     &
+!                      nlineq, &  !i The order of the matrix A.  N >= 0.
+!                      nrhs,   &  !i The number of right hand sides
+!                      D_d,    &  !b dimension (N) diagonal
+!                      DU_d,   &  !b array, dimension (N-1) sub or super-diagonal
+!                      B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
+!                      ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
+!                      info)      !o
+!              endif
+!            endif
 #endif
             concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = B_d
 

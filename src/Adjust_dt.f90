@@ -3,7 +3,7 @@
 !     Adjust_DT
 !
 !     This subroutine is used for calculating the maximal time step allowed
-!     given the velocities, cell sizes, CFL number, and the numerical 
+!     given the velocities, cell sizes, CFL number, diffusivity and the numerical 
 !     scheme.
 !     This subroutine is called twice from Ash3d.F90; once prior to the time
 !     loop to anticipate the total number of number of steps the simulation
@@ -59,11 +59,11 @@
       real(kind=ip) :: dx2,dy2,dz2,tmp_sum,dt_tmp
       real(kind=ip) :: vxmax,vxmax_dx
       real(kind=ip) :: vymax,vymax_dy
-      !real(kind=ip) :: khmax,kvmax
       integer       :: fac
       real(kind=ip) :: vzmax_dz
       real(kind=ip) :: diffx_dx,diffy_dy,diffz_dz
       real(kind=ip) :: minsig
+      real(kind=ip) :: maxdiffus
       logical       :: CheckMesoVel
       logical,save  :: have_DT_diffus = .false.
 
@@ -77,7 +77,7 @@
       ! We need to find the largest u/dx quotient across the grid and
       ! similarly for v/dy and w/dz to get the most restrictive dt
 
-      ! Get the constraining velocities relative to the grid size
+      ! Get the constraining velocities relative to the grid size.
       ! The bigger v[x,y,z]max_d[x,y,z] are, the smaller the time step required
       if(present(mesostep))then
         CheckMesoVel = mesostep
@@ -117,8 +117,8 @@
                 if(tmp2.gt.vymax_dy)vymax_dy=tmp2
 
               ! Advect in z
-              ! Note: for this to work, you really need to set vf_pd=0 for all
-              !       species that are flushed out of the system, otherwise, this
+              ! Note: for this to work, we really need to set vf_pd=0 for all
+              !       species that are flushed out of the system.  Otherwise, this
               !       will always be dominated by the large grain sizes with the
               !       highest fall velocities
               tmp3 =   (real(abs(vz_meso_next_step_sp(i,j,k)) + &
@@ -161,8 +161,8 @@
                 if(tmp2.gt.vymax_dy) vymax_dy=tmp2
               endif
               ! Advect in y
-              ! Note: for this to work, you really need to set vf_pd=0 for all
-              !       species that are flushed out of the system, otherwise, this
+              ! Note: for this to work, we really need to set vf_pd=0 for all
+              !       species that are flushed out of the system. Otherwise, this
               !       will always be dominated by the large grain sizes with the
               !       highest fall velocities
               tmp3 =       (abs(vz_pd(i,j,k)) + &
@@ -174,23 +174,25 @@
         enddo
       endif
       if(n_gs_aloft.eq.0)vzmax_dz = 0.0_ip
-      !time_advect = max(vxmax/dx,vymax/dy,vzmax_dz)
       time_advect = 1.0_ip/max(vxmax_dx,vymax_dy,vzmax_dz)
-      !write(*,*)"time_advect = ",vxmax_dx,vymax_dy,vzmax_dz,time_advect
 
       !-------------------------------------------------------
       !  DIFFUSION
       !-------------------------------------------------------
-
+      ! 
       if (useDiffusion)then
         if (useVarDiffH.or.useVarDiffV)then
-          ! if we are using variable diffusivity based on current wind velocities,
-          ! then we always need to calculate DT (at least on each met step
+          ! If we are using variable diffusivity based on current wind velocities,
+          ! then we always need to calculate DT (at least on each met step).  If
+          ! neither the grid nor the diffusivities change, then we only need to
+          ! do this once.
           have_DT_diffus = .false.
         endif
   
         if (.not.have_DT_diffus)then
           ! Recall that dx and dy are set in Calc_Mesh to be the most restrictive
+          !   -- it is better to test cell-by-cell with the same ds measure as
+          !      the diffusion routines
           dx2 = dx*dx
           dy2 = dy*dy
           dz2 = minval(dz_vec_pd(1:nzmax))**2.0_ip
@@ -201,39 +203,21 @@
           do i=1,nxmax
             do j=1,nymax
               do k=1,nzmax
-
-                !if(IsLatLon)then
-                  ! Diffusion in x
-                  minsig = minval(sigma_nx_pd(i:i+1,j,k))
-                  tmp1 = ((kappa_pd(i,j,k)/minsig)**2.0_ip)/kx(i,j,k)
-                  if(tmp1.lt.diffx_dx) diffx_dx=tmp1
-                  ! Diffusion in y
-                  minsig = minval(sigma_ny_pd(i,j:j+1,k))
-                  tmp2 = ((kappa_pd(i,j,k)/minsig)**2.0_ip)/ky(i,j,k)
-                  if(tmp2.lt.diffy_dy) diffy_dy=tmp2
-                  ! Diffusion in z
-                  minsig = minval(sigma_nz_pd(i,j,k:k+1))
-                  tmp3 = ((kappa_pd(i,j,k)/minsig)**2.0_ip)/kz(i,j,k)
-                  if(tmp3.lt.diffz_dz) diffz_dz=tmp3
-                !else
+                ! Diffusion in x
+                minsig = minval(sigma_nx_pd(i:i+1,j,k))
+                tmp1 = ((kappa_pd(i,j,k)/minsig)**2.0_ip)/kx(i,j,k)
+                if(tmp1.lt.diffx_dx) diffx_dx=tmp1
+                ! Diffusion in y
+                minsig = minval(sigma_ny_pd(i,j:j+1,k))
+                tmp2 = ((kappa_pd(i,j,k)/minsig)**2.0_ip)/ky(i,j,k)
+                if(tmp2.lt.diffy_dy) diffy_dy=tmp2
+                ! Diffusion in z
+                minsig = minval(sigma_nz_pd(i,j,k:k+1))
+                tmp3 = ((kappa_pd(i,j,k)/minsig)**2.0_ip)/kz(i,j,k)
+                if(tmp3.lt.diffz_dz) diffz_dz=tmp3
               enddo
             enddo
           enddo
-          !if (useVarDiffH)then
-          !  ! Here is where we should actually loop over all cells
-          !  tmp1 = dx2/maxval(kx)
-          !  tmp2 = dy2/maxval(ky)
-          !else
-          !  tmp1 = dx2/maxval(kx)
-          !  tmp2 = dy2/maxval(ky)
-          !endif
-  
-          !if(useVarDiffV)then
-          !  ! Here is where we should actually loop over all cells
-          !  tmp3 = dz2/maxval(kz)
-          !else
-          !  tmp3 = dz2/maxval(kz)
-          !endif
           time_diffuse = min(tmp1,tmp2,tmp3)
 
           ! Now set the time step restriction
@@ -242,12 +226,11 @@
             ! but accuracy considerations require dt ~ fac * dx2/k where fac is 1 to 4 or so
             ! This also applies if Backward Euler is used instead of C-N
             time_diffuse = time_diffuse * Imp_DT_fac
-            !write(*,*)"Appling time factor of ",Imp_DT_fac
           else
             ! Forward Euler requires dt < 0.5 * dx2/k
-            !write(*,*)"Appling time factor of 0.5"
             time_diffuse = time_diffuse * 0.5_ip
           endif
+          maxdiffus    = min(dx2,dy2,dz2)/time_advect
 
           if(VERB.gt.-1)then
             if(time_diffuse.gt.time_advect)then
@@ -271,6 +254,7 @@
                 write(global_info,*)"   Restriction set by dz2/kz"
               endif
             endif
+            !write(global_info,*)"   Velocities allow up a diffusivity up to",maxdiffus
           endif
 
             ! Now set logical flag so we don't need to calculate this again
@@ -282,8 +266,6 @@
         time_diffuse   = DT_MAX
       endif ! useDiffusion
       !-------------------------------------------------------
-
-      !tmp_sum =  time_advect + time_diffuse
 
       dt_tmp = min(time_advect,time_diffuse)
 !      if(tmp_sum.gt.1.0_ip/DT_MIN)then
@@ -311,28 +293,24 @@
         write(global_info,*)"   calculated dt = ",min(1.0_ip,CFL)*tmp_sum
         dt = DT_MAX
       else
-!        dt = min(1.0_ip,CFL)/tmp_sum
         dt = min(1.0_ip,CFL) * dt_tmp
       endif
       
-      ! Hardwire these dt values for test cases
-      !dt = 1.0e-5_ip
-
       ! Reset dt to be an integer multiple of DT_MIN
       fac = int(dt/DT_MIN)
       dt = DT_MIN*fac
 
-      if(.not.IsLatLon) then
-          ! Precalculate some terms used for diffusion
-          !   The LatLon branch requires cell-specific values
-        dtodx = dt/dx
-        dtody = dt/dy
-        dtodz = dt/minval(dz_vec_pd(:))
-
-        dtodxdx = dtodx/dx
-        dtodydy = dtody/dy
-        dtodzdz = dtodz/minval(dz_vec_pd(:))
-      endif !IsLatLon
+!      if(.not.IsLatLon) then
+!          ! Precalculate some terms used for diffusion
+!          !   The LatLon branch requires cell-specific values
+!        dtodx = dt/dx
+!        dtody = dt/dy
+!        dtodz = dt/minval(dz_vec_pd(:))
+!
+!        dtodxdx = dtodx/dx
+!        dtodydy = dtody/dy
+!        dtodzdz = dtodz/minval(dz_vec_pd(:))
+!      endif !IsLatLon
 
       if (((NextWriteTime-time).gt.EPS_SMALL).and.(NextWriteTime-time.lt.dt)) then
           dt = NextWritetime-time

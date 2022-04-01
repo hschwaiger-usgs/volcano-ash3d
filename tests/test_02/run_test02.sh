@@ -17,7 +17,7 @@ ${Ash3d} TC2_XY_MSH.inp > /dev/null 2>&1
 for (( i=0;i<n2Dfiles;i++))
 do
   echo Checking 2d ASCII file "${ascii2Doutfiles[i]}"
-  stat=`${Ash3d_ASCII_check} ${ascii2Doutfiles[i]} ${outdir}/${ascii2Doutfiles[i]} | cut -f1 -d':'`\
+  stat=`${Ash3d_ASCII_check} ${ascii2Doutfiles[i]} ${outdir}/${ascii2Doutfiles[i]} 0.1 | cut -f1 -d':'`\
 
   if [[ $stat == *PASS* ]];
   then
