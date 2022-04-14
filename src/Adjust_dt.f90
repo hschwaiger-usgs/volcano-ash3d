@@ -38,10 +38,8 @@
          vf_meso_next_step_sp
          
       use time_data,     only : &
-         time,dt,dt_meso_next,                                    &
-         dtodx,dtodxdx,dtody,dtodydy,dtodz,dtodzdz,      &
-         Simtime_in_hours
-         
+         time,dt,dt_meso_next,Simtime_in_hours
+
       use io_data,       only : &
          NextWriteTime
 
@@ -56,7 +54,7 @@
       real(kind=ip) :: tmp1,tmp2,tmp3
       real(kind=ip),save :: time_diffuse
       real(kind=ip) :: time_advect
-      real(kind=ip) :: dx2,dy2,dz2,tmp_sum,dt_tmp
+      real(kind=ip) :: dx2,dy2,dz2,dt_tmp !,tmp_sum
       real(kind=ip) :: vxmax,vxmax_dx
       real(kind=ip) :: vymax,vymax_dy
       integer       :: fac
@@ -278,7 +276,7 @@
         write(global_info,*)"    time_diffuse = ",time_diffuse
         write(global_info,*)"    max vel.s/dx = ",vxmax_dx,vymax_dy,vzmax_dz
         write(global_info,*)"             CFL = ",CFL
-        write(global_info,*)"   calculated dt = ",min(1.0_ip,CFL)*tmp_sum
+        write(global_info,*)"   calculated dt = ",min(1.0_ip,CFL)*dt_tmp
         dt = DT_MIN
 !      elseif(tmp_sum.lt.1.0_ip/DT_MAX)then
       elseif(dt_tmp.gt.DT_MAX)then
@@ -290,7 +288,7 @@
         write(global_info,*)"    time_diffuse = ",time_diffuse
         write(global_info,*)"    max vel.s/dx = ",vxmax_dx,vymax_dy,vzmax_dz
         write(global_info,*)"             CFL = ",CFL
-        write(global_info,*)"   calculated dt = ",min(1.0_ip,CFL)*tmp_sum
+        write(global_info,*)"   calculated dt = ",min(1.0_ip,CFL)*dt_tmp
         dt = DT_MAX
       else
         dt = min(1.0_ip,CFL) * dt_tmp
@@ -299,18 +297,6 @@
       ! Reset dt to be an integer multiple of DT_MIN
       fac = int(dt/DT_MIN)
       dt = DT_MIN*fac
-
-!      if(.not.IsLatLon) then
-!          ! Precalculate some terms used for diffusion
-!          !   The LatLon branch requires cell-specific values
-!        dtodx = dt/dx
-!        dtody = dt/dy
-!        dtodz = dt/minval(dz_vec_pd(:))
-!
-!        dtodxdx = dtodx/dx
-!        dtodydy = dtody/dy
-!        dtodzdz = dtodz/minval(dz_vec_pd(:))
-!      endif !IsLatLon
 
       if (((NextWriteTime-time).gt.EPS_SMALL).and.(NextWriteTime-time.lt.dt)) then
           dt = NextWritetime-time

@@ -286,7 +286,7 @@
 
       implicit none
 
-      integer :: isize,i,j,k
+      integer :: i,j,k
       real(kind=ip) :: tmp_flt
 
       ! Find extent of ash cloud making sure to include the vent

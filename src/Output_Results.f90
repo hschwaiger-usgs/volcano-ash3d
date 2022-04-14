@@ -23,7 +23,8 @@
          nxmax,nymax,nsmax
 
       use Output_Vars,   only : &
-         DepositThickness,MaxConcentration,MaxHeight,MinHeight,&
+         DepositThickness,MaxConcentration,MaxHeight,&
+         ! MinHeight, &
          CloudLoad,DepArrivalTime,CloudArrivalTime,dbZCol
 
       use time_data,     only : &

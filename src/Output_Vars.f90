@@ -380,7 +380,7 @@
          n_gs_max,Tephra_gsdiam,Tephra_rho_m
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,ts1
+         nzmax,ts1
 
       use solution,      only : &
          concen_pd,imin,imax,jmin,jmax,kmin,kmax
@@ -435,7 +435,7 @@
          nxmax,nymax,nzmax,dz_vec_pd,z_cc_pd,ts1,sigma_nz_pd
 
       use solution,      only : &
-         concen_pd,imin,imax,jmin,jmax,kmin,kmax
+         concen_pd,imin,imax,jmin,jmax
 
       use Tephra,        only : &
          n_gs_max
@@ -532,10 +532,10 @@
          n_gs_max
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,dz_vec_pd,sigma_nz_pd,ts1
+         sigma_nz_pd,ts1
 
       use solution,      only : &
-         concen_pd,imin,imax,jmin,jmax,kmin,kmax
+         imin,imax,jmin,jmax
 
       implicit none
 
@@ -625,10 +625,10 @@
       subroutine Calc_AshVol_Aloft(vol)
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,nsmax,kappa_pd,ts0,ivent,jvent
+         nxmax,nymax,nzmax,nsmax,kappa_pd,ts0
 
       use solution,      only : &
-         concen_pd,mass_aloft,imin,imax,jmin,jmax,kmin,kmax
+         concen_pd,mass_aloft
 
       use Tephra,        only : &
          MagmaDensity,n_gs_max
@@ -636,7 +636,7 @@
       implicit none
 
       real(kind=ip),intent(out) :: vol ! Total volume of ash still airborne
-      integer :: isize,i,j,k
+      integer :: isize
 
       vol = 0.0_ip
 
@@ -753,7 +753,7 @@
       subroutine Calc_AshVol_Outflow(vol)
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,IsLatLon,kappa_pd
+         nxmax,nymax,nzmax,kappa_pd
 
       use solution,      only : &
          outflow_xz1_pd,outflow_xz2_pd,outflow_yz1_pd,outflow_yz2_pd,outflow_xy2_pd

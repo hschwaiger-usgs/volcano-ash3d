@@ -24,14 +24,18 @@
           Meso_toggle
 
       use time_data,       only : &
-         SimStartHour,dt,dt_meso_last,dt_meso_next,Simtime_in_hours,time
+#ifdef FAST_DT
+         Simtime_in_hours,time, &
+#endif
+         SimStartHour,dt_meso_last,dt_meso_next
 
+#ifdef FAST_DT
       use io_data,       only : &
          NextWriteTime
+#endif
 
       use mesh,            only : &
-         nxmax,nymax,nzmax, &
-         z_cc_pd
+         nxmax,nymax,nzmax
 
       use Source,          only : &
          uvx_pd,uvy_pd,ibase,itop,SourceType,e_EndTime
@@ -162,7 +166,8 @@
           ivar = 7 ! Pressure Vertical Velocity
           if(Met_var_IsAvailable(ivar))then
             call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now)
-            MR_dum3d_MetP = MR_dum3d_MetP/(-AirDens_meso_next_step_MetP_sp*GRAV)
+            MR_dum3d_MetP = MR_dum3d_MetP/      &
+             real((-AirDens_meso_next_step_MetP_sp*GRAV),kind=sp)
             call MR_Regrid_MetP_to_CompGrid(MR_iMetStep_Now)
           else
             write(*,*)"Tried to read variable, but its not available: ",&
@@ -190,7 +195,7 @@
         else
           ! This is the case where the fall velocity is assigned in the input file
           do i=1,n_gs_max
-            vf_meso_next_step_sp(:,:,:,i) = Tephra_v_s(i)
+            vf_meso_next_step_sp(:,:,:,i) = real(Tephra_v_s(i),kind=sp)
             vf_pd(:,:,:,i)                = Tephra_v_s(i)*MPS_2_KMPHR
           enddo
         endif
@@ -311,12 +316,12 @@
         vf_meso_last_step_sp = vf_meso_next_step_sp
         if(useTemperature)then
           call Set_Atmosphere_Meso(Load_MesoSteps,1.0_ip,first_time)
-
           ! Again, now that we have temperature and density, we can get a better Vz
           ivar = 7 ! Pressure Vertical Velocity
           if(Met_var_IsAvailable(ivar))then
             call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now+1)
-            MR_dum3d_MetP = MR_dum3d_MetP/(-AirDens_meso_next_step_MetP_sp*GRAV)
+            MR_dum3d_MetP = MR_dum3d_MetP/                   &
+              real((-AirDens_meso_next_step_MetP_sp*GRAV),kind=sp)
             call MR_Regrid_MetP_to_CompGrid(MR_iMetStep_Now+1)
           else
             write(*,*)"Tried to read variable, but its not available: ",&
@@ -364,18 +369,6 @@
       ! Set up to do the interpolation to the current time
       HoursIntoInterval   = TimeNow_fromRefTime - MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now)
       Interval_Frac = HoursIntoInterval /  MR_MetStep_Interval(MR_iMetStep_Now)
-
-      !if(useTemperature)then
-      !  call Set_Atmosphere_Meso(Load_MesoSteps,Interval_Frac,first_time)
-      !endif
-      !if(useCalcFallVel)then
-      !  call Set_Vf_Meso(Load_MesoSteps)
-      !else
-      !  ! This is the case where the fall velocity is assigned in the input file
-      !  do i=1,n_gs_max
-      !    vf_pd(:,:,:,i) = Tephra_v_s(i)
-      !  enddo
-      !endif
 
       ! Interpolate to get wind fields at current time and in km/hr
       ! Note: v[x,y,z,f]_pd are all in km/hr and

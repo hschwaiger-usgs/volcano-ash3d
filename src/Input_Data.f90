@@ -2048,8 +2048,8 @@
               ! grain-size, mass fraction, density
               ! W&H suggest 800 kg/m3 for d>300um and 2000 for d<88um for pumice
               ! fragments
-              useCalcFallVel = .true.
-              useTemperature = .true.
+              useCalcFallVel = .true. 
+              useTemperature = .true. ! When calculating Fall Vel. we need T
               temp_gsdiam(i) = value1
               temp_bin_mass(i) = value2
               temp_rho_m(i) = value3

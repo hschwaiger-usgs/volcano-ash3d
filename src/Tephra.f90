@@ -120,17 +120,13 @@
 
 !******************************************************************************
 
-!      subroutine Set_Vf_Meso(Load_MesoSteps,Interval_Frac)
       subroutine Set_Vf_Meso(Load_MesoSteps)
 
-      use mesh,          only : &
-         nxmax,nymax,nzmax
-
       use solution,      only : &
-         vf_pd,IsAloft
+         IsAloft
 
       use wind_grid,     only : &
-         vf_meso_last_step_sp,vf_meso_next_step_sp
+         vf_meso_next_step_sp
 
       use atmosphere,    only : &
          AirDens_meso_last_step_MetP_sp,AirDens_meso_next_step_MetP_sp,&
@@ -144,7 +140,6 @@
       implicit none
 
       logical      ,intent(in) :: Load_MesoSteps
-      !real(kind=ip),intent(in) :: Interval_Frac
 
       real(kind=sp) :: vf_sp(n_gs_max)
       integer :: i,j,k,is,l
@@ -158,85 +153,79 @@
               ! Note: we solve for the fall velocities on the p-levels since
               ! that is where the atmospheric variables live, then we
               ! interpolate onto the compH grid
-               !do is = 1,2  ! loop over the two braketing meso steps
-                 is = 2
-                 if(is.eq.1)then
-                   dens   = AirDens_meso_last_step_MetP_sp(i,j,k)
-                   visc   = AirVisc_meso_last_step_MetP_sp(i,j,k)
-                   lambda = AirLamb_meso_last_step_MetP_sp(i,j,k)
-                 else
-                   dens   = AirDens_meso_next_step_MetP_sp(i,j,k)
-                   visc   = AirVisc_meso_next_step_MetP_sp(i,j,k)
-                   lambda = AirLamb_meso_next_step_MetP_sp(i,j,k)
-                 endif
-                   ! Initialize fall velocities to because we will be
-                   ! skipping over some slots
+               is = 2
+               if(is.eq.1)then
+                 dens   = AirDens_meso_last_step_MetP_sp(i,j,k)
+                 visc   = AirVisc_meso_last_step_MetP_sp(i,j,k)
+                 lambda = AirLamb_meso_last_step_MetP_sp(i,j,k)
+               else
+                 dens   = AirDens_meso_next_step_MetP_sp(i,j,k)
+                 visc   = AirVisc_meso_next_step_MetP_sp(i,j,k)
+                 lambda = AirLamb_meso_next_step_MetP_sp(i,j,k)
+               endif
+                 ! Initialize fall velocities to because we will be
+                 ! skipping over some slots
+               vf_sp(:) = 0.0_ip
+               select case (FV_ID)
+                 ! Get settling velocity in m/s (will be converted to
+                 ! km/hr and negated later)
+               case (0)  ! No fall
                  vf_sp(:) = 0.0_ip
-                 select case (FV_ID)
-                   ! Get settling velocity in m/s (will be converted to
-                   ! km/hr and negated later)
-                 case (0)  ! No fall
-                   vf_sp(:) = 0.0_ip
-                 case (1)  ! Wilson and Huang
-                   do l=1,n_gs_max
-                     if(.not.IsAloft(l)) cycle
-                     v_grav_set = vset_WH(dens,Tephra_rho_m(l),visc, &
-                                   Tephra_gsdiam(l),Tephra_gsF_fac(l,1),&
-                                   Tephra_gsF_fac(l,2))
-                     vf_sp(l) = real(v_grav_set,kind=sp)
-                   enddo
-                 case (2)  ! Wilson and Huang + Cunningham slip
-                   do l=1,n_gs_max
-                     if(.not.IsAloft(l)) cycle
-                     Kna = 2.0_ip*lambda/(Tephra_gsdiam(l)*Tephra_gsF_fac(l,5))
-                     ! The non-continuum effect are > 1% when
-                     ! gs<250*lam_col_windp(k)
-                     if(Tephra_gsdiam(l).gt.LAM_GS_THRESH*lambda)then
-                       v_grav_set = vset_WH(dens,Tephra_rho_m(l),visc, &
-                                     Tephra_gsdiam(l),Tephra_gsF_fac(l,1),Tephra_gsF_fac(l,2))
-                     else
-                       v_grav_set = vset_WH_slip(dens,Tephra_rho_m(l),visc, &
-                                     Tephra_gsdiam(l),Tephra_gsF_fac(l,1),Tephra_gsF_fac(l,2), &
-                                     Kna)
-                     endif
-                     vf_sp(l) = real(v_grav_set,kind=sp)
-                   enddo
-                 case (3)  ! Wilson and Huang + Mod by Pfeiffer Et al.
-                   do l=1,n_gs_max
-                     if(.not.IsAloft(l)) cycle
-                     v_grav_set = vset_WH_PCM(dens,Tephra_rho_m(l),visc, &
-                                   Tephra_gsdiam(l),Tephra_gsF_fac(l,1),Tephra_gsF_fac(l,2))
-                     vf_sp(l) = real(v_grav_set,kind=sp)
-                   enddo
-                 case (4)  ! Ganser
-                   do l=1,n_gs_max
-                     if(.not.IsAloft(l)) cycle
-                     v_grav_set = vset_Gans(dens,Tephra_rho_m(l),&
-                                            visc,Tephra_gsdiam(l), &
-                                            Tephra_gsF_fac(l,3),Tephra_gsF_fac(l,4))
-                     vf_sp(l) = real(v_grav_set,kind=sp)
-                   enddo
-                 case (5)  ! Stokes flow for spherical particles + slip
-                   do l=1,n_gs_max
-                     if(.not.IsAloft(l)) cycle
-                     Kna = 2.0_ip*lambda/(Tephra_gsdiam(l))
-                     v_grav_set = vset_Stokesslip(Tephra_rho_m(l),visc,Tephra_gsdiam(l),Kna)
-                     vf_sp(l) = real(v_grav_set,kind=sp)
-                   enddo
-                 case default ! Wilson and Huang
-                   do l=1,n_gs_max
-                     if(.not.IsAloft(l)) cycle
+               case (1)  ! Wilson and Huang
+                 do l=1,n_gs_max
+                   if(.not.IsAloft(l)) cycle
+                   v_grav_set = vset_WH(dens,Tephra_rho_m(l),visc, &
+                                 Tephra_gsdiam(l),Tephra_gsF_fac(l,1),&
+                                 Tephra_gsF_fac(l,2))
+                   vf_sp(l) = real(v_grav_set,kind=sp)
+                 enddo
+               case (2)  ! Wilson and Huang + Cunningham slip
+                 do l=1,n_gs_max
+                   if(.not.IsAloft(l)) cycle
+                   Kna = 2.0_ip*lambda/(Tephra_gsdiam(l)*Tephra_gsF_fac(l,5))
+                   ! The non-continuum effect are > 1% when
+                   ! gs<250*lam_col_windp(k)
+                   if(Tephra_gsdiam(l).gt.LAM_GS_THRESH*lambda)then
                      v_grav_set = vset_WH(dens,Tephra_rho_m(l),visc, &
                                    Tephra_gsdiam(l),Tephra_gsF_fac(l,1),Tephra_gsF_fac(l,2))
-                     vf_sp(l) = real(v_grav_set,kind=sp)
-                   enddo
-                 end select
-                 !if(is.eq.1)then
-                 !  vf_meso_last_step_MetP_sp(i,j,k,:) = vf_sp(1,n_gs_max)
-                 !else
-                   vf_meso_next_step_MetP_sp(i,j,k,:) = vf_sp(1:n_gs_max)
-                 !endif
-              !enddo !is
+                   else
+                     v_grav_set = vset_WH_slip(dens,Tephra_rho_m(l),visc, &
+                                   Tephra_gsdiam(l),Tephra_gsF_fac(l,1),Tephra_gsF_fac(l,2), &
+                                   Kna)
+                   endif
+                   vf_sp(l) = real(v_grav_set,kind=sp)
+                 enddo
+               case (3)  ! Wilson and Huang + Mod by Pfeiffer Et al.
+                 do l=1,n_gs_max
+                   if(.not.IsAloft(l)) cycle
+                   v_grav_set = vset_WH_PCM(dens,Tephra_rho_m(l),visc, &
+                                 Tephra_gsdiam(l),Tephra_gsF_fac(l,1),Tephra_gsF_fac(l,2))
+                   vf_sp(l) = real(v_grav_set,kind=sp)
+                 enddo
+               case (4)  ! Ganser
+                 do l=1,n_gs_max
+                   if(.not.IsAloft(l)) cycle
+                   v_grav_set = vset_Gans(dens,Tephra_rho_m(l),&
+                                          visc,Tephra_gsdiam(l), &
+                                          Tephra_gsF_fac(l,3),Tephra_gsF_fac(l,4))
+                   vf_sp(l) = real(v_grav_set,kind=sp)
+                 enddo
+               case (5)  ! Stokes flow for spherical particles + slip
+                 do l=1,n_gs_max
+                   if(.not.IsAloft(l)) cycle
+                   Kna = 2.0_ip*lambda/(Tephra_gsdiam(l))
+                   v_grav_set = vset_Stokesslip(Tephra_rho_m(l),visc,Tephra_gsdiam(l),Kna)
+                   vf_sp(l) = real(v_grav_set,kind=sp)
+                 enddo
+               case default ! Wilson and Huang
+                 do l=1,n_gs_max
+                   if(.not.IsAloft(l)) cycle
+                   v_grav_set = vset_WH(dens,Tephra_rho_m(l),visc, &
+                                 Tephra_gsdiam(l),Tephra_gsF_fac(l,1),Tephra_gsF_fac(l,2))
+                   vf_sp(l) = real(v_grav_set,kind=sp)
+                 enddo
+               end select
+               vf_meso_next_step_MetP_sp(i,j,k,:) = vf_sp(1:n_gs_max)
             enddo !k
           enddo !j
         enddo !i
@@ -244,29 +233,11 @@
         ! Now need to interpolate vs_meso_last_step_MetP_sp onto vf_meso_1_sp
         do l=1,n_gs_max
           if(.not.IsAloft(l)) cycle
-          !MR_dum3d_metP(:,:,:) = vf_meso_last_step_MetP_sp(:,:,:,l)
-          !call MR_Regrid_MetP_to_CompGrid(MR_iMetStep_Now)
-          !vf_meso_last_step_sp(:,:,:,l) = MR_dum3d_compH(:,:,:)*real(MPS_2_KMPHR,kind=sp)*(-1.0_sp)
-
           MR_dum3d_metP(:,:,:) = vf_meso_next_step_MetP_sp(:,:,:,l)
           call MR_Regrid_MetP_to_CompGrid(MR_iMetStep_Now+1)
           vf_meso_next_step_sp(:,:,:,l) = MR_dum3d_compH(:,:,:)*(-1.0_sp)
         enddo
       endif
-
-!      vf_pd = 0.0_ip
-!      ! Now interpolate onto current time
-!      vf_pd(1:nxmax,1:nymax,1:nzmax,:) = real( vf_meso_last_step_sp(:,:,:,:),kind=ip) + &
-!                                         real((vf_meso_next_step_sp(:,:,:,:) - &
-!                                               vf_meso_last_step_sp(:,:,:,:)),kind=ip) * &
-!                                              Interval_Frac
-!
-!      ! We only need actual fall velocity values in ghosts cells on the top and bottom
-!      vf_pd(-1:nxmax+2,-1:nymax+2,      -1,:) = vf_pd(-1:nxmax+2,-1:nymax+2,    1,:)
-!      vf_pd(-1:nxmax+2,-1:nymax+2,       0,:) = vf_pd(-1:nxmax+2,-1:nymax+2,    1,:)
-!      vf_pd(-1:nxmax+2,-1:nymax+2, nzmax+1,:) = vf_pd(-1:nxmax+2,-1:nymax+2,nzmax,:)
-!      vf_pd(-1:nxmax+2,-1:nymax+2, nzmax+2,:) = vf_pd(-1:nxmax+2,-1:nymax+2,nzmax,:)
-
 
       end subroutine Set_Vf_Meso
 

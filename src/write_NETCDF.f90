@@ -151,8 +151,9 @@
            dbZCalculator
 
       use Airports,      only : &
-         nairports,Airport_Code,Airport_Name,Airport_x,Airport_y,&
+         nairports,Airport_Code,Airport_Name,                   &
          Airport_Latitude,Airport_Longitude,Airport_Thickness_TS
+         !Airport_x,Airport_y
 
       use Tephra,        only : &
          n_gs_max,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,&
@@ -176,9 +177,8 @@
          !    lambda,N_BV,k_entrainment
 
       use MetReader,     only : &
-         MR_iwindfiles,MR_windfiles,MR_MetStep_Hour_since_baseyear,MR_GitComID,&
-         MR_MetStep_findex, &
-         MR_windfile_stephour,MR_windfile_starthour
+         MR_iwindfiles,MR_windfiles,MR_GitComID,&
+         MR_MetStep_findex,MR_windfile_starthour
 
       implicit none
 
@@ -403,15 +403,6 @@
       ! Here we assign the start time of the forecast package
       cdf_WindStartTime = HS_xmltime(MR_windfile_starthour(MR_MetStep_findex(1)),BaseYear,useLeap)
 
-      !write(*,*)BaseYear,useLeap
-      !do i=1,MR_iwindfiles
-      !  write(*,*)trim(adjustl(MR_windfiles(i))),&
-      !      real(MR_windfile_starthour(i),kind=4),&
-      !      real(MR_windfile_stephour(i,1),kind=4),&
-      !      real(MR_MetStep_Hour_since_baseyear(i),kind=4),&
-      !      HS_xmltime(MR_MetStep_Hour_since_baseyear(i),BaseYear,useLeap)
-      !enddo
-      !stop 6
       ! Create and open netcdf file
       if(VERB.gt.1)write(global_info,*)"Creating netcdf file"
       lllinebuffer = trim(nf90_inq_libvers())
@@ -529,7 +520,7 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment b6l3:")
       nSTAT = nf90_put_att(ncid,nf90_global,"b6l4",cdf_b6l4)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment b6l4:")
-      nSTAT = nf90_put_att(ncid,nf90_global,"b6l5",cdf_b6l4)
+      nSTAT = nf90_put_att(ncid,nf90_global,"b6l5",cdf_b6l5)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment b6l5:")
 
       ! Now writing out all the resettable parameters
@@ -964,7 +955,28 @@
                               "longitude_of_projection_origin",A3d_lam0)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1, &
                              "put_att Mercator longitude_of_projection_origin")
-
+        case default ! Just write all projection parameters to file
+          if(VERB.gt.1)write(*,*)"     Projection : Not specified"
+          nSTAT = nf90_def_var(ncid,"Projection",&
+                               nf90_int,&
+                               proj_var_id)
+          !nSTAT = nf90_put_att(ncid,proj_var_id,&
+          !                     "grid_mapping_name", &
+          !                     "lambert_conformal_conic")
+          nSTAT = nf90_put_att(ncid,proj_var_id,&
+                               "parallel0",A3d_phi0)
+          nSTAT = nf90_put_att(ncid,proj_var_id,&
+                               "parallel1",A3d_phi1)
+          nSTAT = nf90_put_att(ncid,proj_var_id,&
+                               "parallel2",A3d_phi2)
+          nSTAT = nf90_put_att(ncid,proj_var_id,&
+                               "meridian0",A3d_lam0)
+          nSTAT = nf90_put_att(ncid,proj_var_id,&
+                               "meridian1",A3d_lam1)
+          nSTAT = nf90_put_att(ncid,proj_var_id,&
+                               "meridian2",A3d_lam2)
+          nSTAT = nf90_put_att(ncid,proj_var_id,&
+                              "earth_radius",A3d_radius_earth*1000.0_ip)
         end select
       endif
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -3120,16 +3132,17 @@
          time
 
       use Output_Vars,   only : &
-         DepositThickness,DepArrivalTime,CloudArrivalTime,&
-         MaxConcentration,MaxHeight,CloudLoad,dbZ,MinHeight,Mask_Cloud,Mask_Deposit
+         DepositThickness !&
+         !,DepArrivalTime,CloudArrivalTime,&
+         !MaxConcentration,MaxHeight,CloudLoad,dbZ,MinHeight,Mask_Cloud,Mask_Deposit
 
-      use Airports,      only : &
-         nairports,Airport_Code,Airport_Name,Airport_x,Airport_y,&
-         Airport_Latitude,Airport_Longitude,Airport_Thickness_TS
+!      use Airports,      only : &
+!         nairports,Airport_Code,Airport_Name,Airport_x,Airport_y,&
+!         Airport_Latitude,Airport_Longitude,Airport_Thickness_TS
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,nsmax,x_cc_pd,y_cc_pd,z_cc_pd,lon_cc_pd,lat_cc_pd,&
-         dx,dy,dz_vec_pd,IsLatLon
+         nxmax,nymax,x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd, &
+         IsLatLon !,dx,dy,dz_vec_pd,nzmax,nsmax,z_cc_pd
 
       implicit none
 

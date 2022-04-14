@@ -173,11 +173,11 @@
       !logical :: OMP_get_nested
 
       ! We are diffusing in x so set the length of the cell list accordingly
-      !rmin = imin
-      !rmax = imax
-      ! Since sub-grid for diffusion has not been tested, use the full length
-      rmin = 1
-      rmax = nxmax
+      rmin = imin
+      rmax = imax
+      ! Reset to full range here if desired
+      !rmin = 1
+      !rmax = nxmax
       ncells = rmax - rmin + 1
 
       concen_pd(:,:,:,:,ts1) = 0.0_ip
@@ -309,11 +309,11 @@
       !logical :: OMP_get_nested
 
       ! We are diffusing in y so set the length of the cell list accordingly
-      !rmin = jmin
-      !rmax = jmax
-      ! Since sub-grid for diffusion has not been tested, use the full length
-      rmin = 1
-      rmax = nymax
+      rmin = jmin
+      rmax = jmax
+      ! Reset to full range here if desired
+      !rmin = 1
+      !rmax = nymax
       ncells = rmax - rmin + 1
 
       concen_pd(:,:,:,:,ts1) = 0.0_ip
@@ -437,7 +437,7 @@
       ! We are diffusing in z so set the length of the cell list accordingly
       rmin = kmin
       rmax = kmax
-      ! Since sub-grid for diffusion has not been tested, use the full length
+      ! Reset to full range here if desired
       !rmin = 1
       !rmax = nzmax
       ncells = rmax - rmin + 1
@@ -521,7 +521,7 @@
       ! Implements Eq 4.13 of LeVeque02
 
       use mesh,          only : &
-         IsLatLon,nxmax,nymax,nzmax,nsmax,ts0,ts1,kappa_pd,sigma_nx_pd,IsPeriodic
+         nxmax,nymax,nzmax,nsmax,ts0,ts1,kappa_pd,sigma_nx_pd,IsPeriodic
 
       use solution,      only : &
          concen_pd,IsAloft,imin,imax,jmin,jmax,kmin,kmax
@@ -536,8 +536,8 @@
       integer :: l_cc   ! This is the cell-centered index along the particular diffusion direction
       integer :: ncells
 
-      real(kind=ip) :: BC_left_t0,BC_left_t1
-      real(kind=ip) :: BC_right_t0,BC_right_t1
+      real(kind=ip) :: BC_left_t0,BC_right_t0
+      !real(kind=ip) :: BC_left_t1,BC_right_t1
       real(kind=sp),allocatable,dimension(:) :: DL_s,D_s,DU_s,B_s
       real(kind=dp),allocatable,dimension(:) :: DL_d,D_d,DU_d,B_d
       integer :: nlineq,nrhs,ldb,info
@@ -611,7 +611,7 @@
       ! We are diffusing in x so set the length of the cell list accordingly
       rmin = imin
       rmax = imax
-      ! Since sub-grid for diffusion has not been tested, use the full length
+      ! Reset to full range here if desired
       !rmin = 1
       !rmax = nxmax
       ncells = rmax - rmin + 1
@@ -719,64 +719,38 @@
       ! Note: The only reason not to use Crank-Nicolson is if you
       !       don't have blas and lapack installed.  This pre-proc.
       !       directive allows this section to be turned off.
-!            if(useVarDiffH.or.IsLatLon)then
-              ! This is the call for solving single or double
-              ! precision general tridiagonal Ax=b
-              ! Note: This is the function to call if kx or vol is spatially
-              ! variable
-              if(ip.eq.4)then
-                DL_s = real(DL_d,kind=4)
-                D_s  = real(D_d ,kind=4)
-                DU_s = real(DU_d,kind=4)
-                B_s  = real(B_d ,kind=4)
-                call sgtsv(     &
-                      nlineq, &  !i The order of the matrix A.  N >= 0.
-                      nrhs,   &  !i The number of right hand sides
-                      DL_s,   &  !b array, dimension (N-1) sub-diagonal
-                      D_s,    &  !b dimension (N) diagonal
-                      DU_s,   &  !b array, dimension (N-1) super-diagonal
-                      B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
-                      ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
-                      info)      !o
-              elseif(ip.eq.8)then
-                call dgtsv(     &
-                      nlineq, &  !i The order of the matrix A.  N >= 0.
-                      nrhs,   &  !i The number of right hand sides
-                      DL_d,   &  !b array, dimension (N-1) sub-diagonal
-                      D_d,    &  !b dimension (N) diagonal
-                      DU_d,   &  !b array, dimension (N-1) super-diagonal
-                      B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
-                      ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
-                      info)      !o
-              endif
-!            else
-!              ! This is the call for solving single or double
-!              ! precision symmetric positive definite tridiagonal Ax=b
-!              ! Note: A will only be symmetric if kx is homogeneous and vol=const
-!              !       This is really not much faster than dgtsv
-!              if(ip.eq.4)then
-!                D_s  = real(D_d ,kind=4)
-!                DU_s = real(DU_d,kind=4)
-!                B_s  = real(B_d ,kind=4)
-!                call sptsv(     &
-!                      nlineq, &  !i The order of the matrix A.  N >= 0.
-!                      nrhs,   &  !i The number of right hand sides
-!                      D_s,    &  !b dimension (N) diagonal
-!                      DU_s,   &  !b array, dimension (N-1) sub or super-diagonal
-!                      B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
-!                      ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
-!                      info)      !o
-!              elseif(ip.eq.8)then
-!                call dptsv(     &
-!                      nlineq, &  !i The order of the matrix A.  N >= 0.
-!                      nrhs,   &  !i The number of right hand sides
-!                      D_d,    &  !b dimension (N) diagonal
-!                      DU_d,   &  !b array, dimension (N-1) sub or super-diagonal
-!                      B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
-!                      ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
-!                      info)      !o
-!              endif
-!            endif
+            ! If every cell had the same geometry and kx were homogeneous, we
+            ! could use the specialized routines for a symmetric matrix (sptsv
+            ! dptsv), but this is both not really useful, nor faster.
+            ! This is the call for solving single or double
+            ! precision general tridiagonal Ax=b
+            ! Note: This is the function to call if kx or vol is spatially
+            ! variable
+            if(ip.eq.4)then
+              DL_s = real(DL_d,kind=4)
+              D_s  = real(D_d ,kind=4)
+              DU_s = real(DU_d,kind=4)
+              B_s  = real(B_d ,kind=4)
+              call sgtsv(     &
+                    nlineq, &  !i The order of the matrix A.  N >= 0.
+                    nrhs,   &  !i The number of right hand sides
+                    DL_s,   &  !b array, dimension (N-1) sub-diagonal
+                    D_s,    &  !b dimension (N) diagonal
+                    DU_s,   &  !b array, dimension (N-1) super-diagonal
+                    B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
+                    ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
+                    info)      !o
+            elseif(ip.eq.8)then
+              call dgtsv(     &
+                    nlineq, &  !i The order of the matrix A.  N >= 0.
+                    nrhs,   &  !i The number of right hand sides
+                    DL_d,   &  !b array, dimension (N-1) sub-diagonal
+                    D_d,    &  !b dimension (N) diagonal
+                    DU_d,   &  !b array, dimension (N-1) super-diagonal
+                    B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
+                    ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
+                    info)      !o
+            endif
 #endif
             concen_pd(rmin:rmin-1+ncells,j,k,n,ts1) = B_d
 
@@ -804,7 +778,7 @@
       ! Implements Eq 4.13 of LeVeque02
 
       use mesh,          only : &
-         IsLatLon,nxmax,nymax,nzmax,nsmax,ts0,ts1,kappa_pd,sigma_ny_pd
+         nxmax,nymax,nzmax,nsmax,ts0,ts1,kappa_pd,sigma_ny_pd
 
       use solution,      only : &
          concen_pd,IsAloft,imin,imax,jmin,jmax,kmin,kmax
@@ -819,8 +793,8 @@
       integer :: l_cc   ! This is the cell-centered index along the particular diffusion direction
       integer :: ncells
 
-      real(kind=ip) :: BC_left_t0,BC_left_t1
-      real(kind=ip) :: BC_right_t0,BC_right_t1
+      real(kind=ip) :: BC_left_t0,BC_right_t0
+      !real(kind=ip) :: BC_left_t1,BC_right_t1
       real(kind=sp),allocatable,dimension(:) :: DL_s,D_s,DU_s,B_s
       real(kind=dp),allocatable,dimension(:) :: DL_d,D_d,DU_d,B_d
       integer :: nlineq,nrhs,ldb,info
@@ -893,7 +867,7 @@
       ! We are diffusing in y so set the length of the cell list accordingly
       rmin = jmin
       rmax = jmax
-      ! Since sub-grid for diffusion has not been tested, use the full length
+      ! Reset to full range here if desired
       !rmin = 1
       !rmax = nymax
       ncells = rmax - rmin + 1
@@ -996,64 +970,38 @@
       ! Note: The only reason not to use Crank-Nicolson is if you
       !       don't have blas and lapack installed.  This pre-proc.
       !       directive allows this section to be turned off.
-!            if(useVarDiffH.or.IsLatLon)then
-              ! This is the call for solving single or double
-              ! precision general tridiagonal Ax=b
-              ! Note: This is the function to call if ky or vol is spatially
-              ! variable
-              if(ip.eq.4)then
-                DL_s = real(DL_d,kind=4)
-                D_s  = real(D_d ,kind=4)
-                DU_s = real(DU_d,kind=4)
-                B_s  = real(B_d ,kind=4)
-                call sgtsv(     &
-                      nlineq, &  !i The order of the matrix A.  N >= 0.
-                      nrhs,   &  !i The number of right hand sides
-                      DL_s,   &  !b array, dimension (N-1) sub-diagonal
-                      D_s,    &  !b dimension (N) diagonal
-                      DU_s,   &  !b array, dimension (N-1) super-diagonal
-                      B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
-                      ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
-                      info)      !o
-              elseif(ip.eq.8)then
-                call dgtsv(     &
-                      nlineq, &  !i The order of the matrix A.  N >= 0.
-                      nrhs,   &  !i The number of right hand sides
-                      DL_d,   &  !b array, dimension (N-1) sub-diagonal
-                      D_d,    &  !b dimension (N) diagonal
-                      DU_d,   &  !b array, dimension (N-1) super-diagonal
-                      B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
-                      ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
-                      info)      !o
-              endif
-!            else
-!              ! This is the call for solving single or double
-!              ! precision symmetric positive definite tridiagonal Ax=b
-!              ! Note: A will only be symmetric if ky is homogeneous
-!              !       This is really not much faster than dgtsv
-!              if(ip.eq.4)then
-!                D_s  = real(D_d ,kind=4)
-!                DU_s = real(DU_d,kind=4)
-!                B_s  = real(B_d ,kind=4)
-!                call sptsv(     &
-!                      nlineq, &  !i The order of the matrix A.  N >= 0.
-!                      nrhs,   &  !i The number of right hand sides
-!                      D_s,    &  !b dimension (N) diagonal
-!                      DU_s,   &  !b array, dimension (N-1) sub or super-diagonal
-!                      B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
-!                      ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
-!                      info)      !o
-!              elseif(ip.eq.8)then
-!                call dptsv(     &
-!                      nlineq, &  !i The order of the matrix A.  N >= 0.
-!                      nrhs,   &  !i The number of right hand sides
-!                      D_d,    &  !b dimension (N) diagonal
-!                      DU_d,   &  !b array, dimension (N-1) sub or super-diagonal
-!                      B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
-!                      ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
-!                      info)      !o
-!              endif
-!            endif
+            ! If every cell had the same geometry and ky were homogeneous, we
+            ! could use the specialized routines for a symmetric matrix (sptsv
+            ! dptsv), but this is both not really useful, nor faster.
+            ! This is the call for solving single or double
+            ! precision general tridiagonal Ax=b
+            ! Note: This is the function to call if ky or vol is spatially
+            ! variable
+            if(ip.eq.4)then
+              DL_s = real(DL_d,kind=4)
+              D_s  = real(D_d ,kind=4)
+              DU_s = real(DU_d,kind=4)
+              B_s  = real(B_d ,kind=4)
+              call sgtsv(     &
+                    nlineq, &  !i The order of the matrix A.  N >= 0.
+                    nrhs,   &  !i The number of right hand sides
+                    DL_s,   &  !b array, dimension (N-1) sub-diagonal
+                    D_s,    &  !b dimension (N) diagonal
+                    DU_s,   &  !b array, dimension (N-1) super-diagonal
+                    B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
+                    ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
+                    info)      !o
+            elseif(ip.eq.8)then
+              call dgtsv(     &
+                    nlineq, &  !i The order of the matrix A.  N >= 0.
+                    nrhs,   &  !i The number of right hand sides
+                    DL_d,   &  !b array, dimension (N-1) sub-diagonal
+                    D_d,    &  !b dimension (N) diagonal
+                    DU_d,   &  !b array, dimension (N-1) super-diagonal
+                    B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
+                    ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
+                    info)      !o
+            endif
 #endif
             concen_pd(i,rmin:rmin-1+ncells,k,n,ts1) = B_d
 
@@ -1080,7 +1028,7 @@
       ! Implements Eq 4.13 of LeVeque02
 
       use mesh,          only : &
-         IsLatLon,nxmax,nymax,nzmax,nsmax,ts0,ts1,kappa_pd,sigma_nz_pd
+         nxmax,nymax,nzmax,nsmax,ts0,ts1,kappa_pd,sigma_nz_pd
 
       use solution,      only : &
          concen_pd,IsAloft,imin,imax,jmin,jmax,kmin,kmax
@@ -1095,8 +1043,8 @@
       integer :: l_cc   ! This is the cell-centered index along the particular diffusion direction
       integer :: ncells
 
-      real(kind=ip) :: BC_left_t0,BC_left_t1
-      real(kind=ip) :: BC_right_t0,BC_right_t1
+      real(kind=ip) :: BC_left_t0,BC_right_t0
+      !real(kind=ip) :: BC_left_t1,BC_right_t1
       real(kind=sp),allocatable,dimension(:) :: DL_s,D_s,DU_s,B_s
       real(kind=dp),allocatable,dimension(:) :: DL_d,D_d,DU_d,B_d
       integer :: nlineq,nrhs,ldb,info
@@ -1170,7 +1118,7 @@
       ! We are diffusing in z so set the length of the cell list accordingly
       rmin = kmin
       rmax = kmax
-      ! Since sub-grid for diffusion has not been tested, use the full length
+      ! Reset to full range here if desired
       !rmin = 1
       !rmax = nzmax
       ncells = rmax - rmin + 1
@@ -1273,74 +1221,40 @@
       ! Note: The only reason not to use Crank-Nicolson is if you
       !       don't have blas and lapack installed.  This pre-proc.
       !       directive allows this section to be turned off.
-!            if(useVarDiffV.or.IsLatLon)then
-              ! This is the call for solving single or double
-              ! precision general tridiagonal Ax=b
-              ! Note: This is the function to call if kz or vol is spatially
-              ! variable
-              if(ip.eq.4)then
-                DL_s = real(DL_d,kind=4)
-                D_s  = real(D_d ,kind=4)
-                DU_s = real(DU_d,kind=4)
-                B_s  = real(B_d ,kind=4)
-                call sgtsv(     &
-                      nlineq, &  !i The order of the matrix A.  N >= 0.
-                      nrhs,   &  !i The number of right hand sides
-                      DL_s,   &  !b array, dimension (N-1) sub-diagonal
-                      D_s,    &  !b dimension (N) diagonal
-                      DU_s,   &  !b array, dimension (N-1) super-diagonal
-                      B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
-                      ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
-                      info)      !o
-              elseif(ip.eq.8)then
-                call dgtsv(     &
-                      nlineq, &  !i The order of the matrix A.  N >= 0.
-                      nrhs,   &  !i The number of right hand sides
-                      DL_d,   &  !b array, dimension (N-1) sub-diagonal
-                      D_d,    &  !b dimension (N) diagonal
-                      DU_d,   &  !b array, dimension (N-1) super-diagonal
-                      B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
-                      ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
-                      info)      !o
-              endif
-!            else
-!              ! This is the call for solving single or double
-!              ! precision symmetric positive definite tridiagonal Ax=b
-!              ! Note: A will only be symmetric if kz is homogeneous and vol=const
-!              !       This is really not much faster than dgtsv
-!              if(ip.eq.4)then
-!                D_s  = real(D_d ,kind=4)
-!                DU_s = real(DU_d,kind=4)
-!                B_s  = real(B_d ,kind=4)
-!                call sptsv(     &
-!                      nlineq, &  !i The order of the matrix A.  N >= 0.
-!                      nrhs,   &  !i The number of right hand sides
-!                      D_s,    &  !b dimension (N) diagonal
-!                      DU_s,   &  !b array, dimension (N-1) sub or super-diagonal
-!                      B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
-!                      ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
-!                      info)      !o
-!              elseif(ip.eq.8)then
-!                call dptsv(     &
-!                      nlineq, &  !i The order of the matrix A.  N >= 0.
-!                      nrhs,   &  !i The number of right hand sides
-!                      D_d,    &  !b dimension (N) diagonal
-!                      DU_d,   &  !b array, dimension (N-1) sub or super-diagonal
-!                      B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
-!                      ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
-!                      info)      !o
-!              endif
-!            endif
+            ! This is the call for solving single or double
+            ! precision general tridiagonal Ax=b.
+            ! If every cell had the same geometry and kz were homogeneous, we
+            ! could use the specialized routines for a symmetric matrix (sptsv
+            ! dptsv), but this is both not really useful, nor faster.
+            ! Note: This is the function to call if kz or vol is spatially
+            ! variable
+            if(ip.eq.4)then
+              DL_s = real(DL_d,kind=4)
+              D_s  = real(D_d ,kind=4)
+              DU_s = real(DU_d,kind=4)
+              B_s  = real(B_d ,kind=4)
+              call sgtsv(     &
+                    nlineq, &  !i The order of the matrix A.  N >= 0.
+                    nrhs,   &  !i The number of right hand sides
+                    DL_s,   &  !b array, dimension (N-1) sub-diagonal
+                    D_s,    &  !b dimension (N) diagonal
+                    DU_s,   &  !b array, dimension (N-1) super-diagonal
+                    B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
+                    ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
+                    info)      !o
+            elseif(ip.eq.8)then
+              call dgtsv(     &
+                    nlineq, &  !i The order of the matrix A.  N >= 0.
+                    nrhs,   &  !i The number of right hand sides
+                    DL_d,   &  !b array, dimension (N-1) sub-diagonal
+                    D_d,    &  !b dimension (N) diagonal
+                    DU_d,   &  !b array, dimension (N-1) super-diagonal
+                    B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
+                    ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
+                    info)      !o
+            endif
 #endif
             concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = B_d
-
-!            if(i.eq.179.and.j.eq.102)then
-!            if(i.eq.5.and.j.eq.5)then
-!              do l_cc=rmin,rmin-1+ncells
-!                write(*,*)l_cc,q_cc(l_cc),concen_pd(i,j,l_cc,n,ts1)
-!              enddo
-!              stop 5
-!            endif
 
           enddo ! loop over j
         enddo ! loop over i

@@ -304,9 +304,8 @@
               (SourceType.eq.'umbrella') .or. &
               (SourceType.eq.'umbrella_air'))then
             ! Calculating the flux at the source nodes
-!            write(*,*)"Calling TephraSourceNodes"
             call TephraSourceNodes
-!            write(*,*)"Called TephraSourceNodes"
+
             ! Now integrate the ash concentration with the SourceNodeFlux
             if (SourceType.eq.'umbrella'.or. &
                (SourceType.eq.'umbrella_air')) then
@@ -334,7 +333,7 @@
                   enddo
                 enddo
               enddo
-            else ! (SourceType.eq.'umbrella')
+            else ! (SourceType.eq.'umbrella' or 'umbrella_air')
               ! All other standard source types (point,line,profile, suzuki) are
               ! integrated as follows.
               concen_pd(ivent,jvent,1:nzmax+1,1:n_gs_max,ts0) =  &
@@ -546,7 +545,7 @@
         write(global_log,*)"  Simtime_in_hours = ",real(Simtime_in_hours,kind=4)
       endif
       if(StopConditions(3).eqv..true.)then
-        ! Normal stop conditionn when nothing is left to advect
+        ! Normal stop condition when nothing is left to advect
         write(global_info,*)"No ash species remain aloft."
         write(global_log,*)"No ash species remain aloft."
       endif
