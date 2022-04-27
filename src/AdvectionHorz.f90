@@ -21,6 +21,7 @@
 
       integer,intent(in) :: itoggle
 
+
 #ifdef FAST_SUBGRID
       call get_minmax_index
 #else

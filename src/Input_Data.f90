@@ -47,7 +47,7 @@
 
       use mesh,          only : &
          de,dn,dx,dy,z_vec_init,dz_const,nxmax,nymax,nzmax,nsmax,VarDzType,ivent,jvent,&
-         gridwidth_e,gridwidth_n,gridwidth_x,gridwidth_y,insmax,&
+         gridwidth_e,gridwidth_n,gridwidth_x,gridwidth_y,&
          lonLL,latLL,lonUR,latUR,xLL,yLL,xUR,yUR,&
          A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
          A3d_phi2,A3d_radius_earth,IsLatLon,IsPeriodic,ZPADDING
@@ -848,6 +848,13 @@
           'Skipping error-checking of eruption source lines since '
         write(global_info,*)&
           'the source is a custom type'
+         ! For the custom source, we will need to read to the end of block 2
+         do while(testkey.ne.'#'.and.testkey.ne.'*')
+            ! Line is a comment, read next line
+           read(10,'(a80)')linebuffer080
+           read(linebuffer080,*)testkey
+         enddo
+
       else
         if (linebuffer130(1:5).ne.'*****') then
           write(global_info,*)&
@@ -867,7 +874,8 @@
       ! BLOCK 3: WIND PARAMETERS
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
-      if (testkey.ne.'#'.and.testkey.ne.'*')then
+      if (.not.IsCustom_SourceType.and.&  ! only perform this check for standard src
+          testkey.ne.'#'.and.testkey.ne.'*')then
         write(global_error,*)"ERROR: ",&
          'Expecting a comment line separating blocks.'
         write(global_error,*)&
@@ -943,6 +951,8 @@
           useLeap=.true.
         endif
       endif
+
+      write(*,*)"Read ",iw, iwf, ivalue3, ivalue4
 
       read(10,'(a80)')linebuffer080
       if (testkey.eq.'#'.or.testkey.eq.'*') then
@@ -2127,9 +2137,8 @@
 
       ! Since this subroutine is called before any optional modules, we can
       ! initialize nsmax to the number of tephra bins
-      nsmax      = n_gs_max
-      insmax     = n_gs_max
-      n_gs_aloft = n_gs_max
+      nsmax      = n_gs_max  ! Total tracked bins
+      n_gs_aloft = n_gs_max  ! Number of tephra species aloft
 
       call Allocate_Tephra
       allocate(temp_phi(n_gs_max))

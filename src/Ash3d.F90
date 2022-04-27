@@ -7,13 +7,13 @@
       use global_param,  only : &
          useCalcFallVel,useDiffusion,useHorzAdvect,useVertAdvect,VERB,&
          HR_2_S,useTemperature,DT_MIN,CFL,KM3_2_M3,EPS_TINY,EPS_SMALL,&
-         nmods,OPTMOD_names
+         nmods,OPTMOD_names,StopConditions,CheckConditions
 
       use mesh,          only : &
          ivent,jvent,nxmax,nymax,nzmax,nsmax,ts0,ts1,kappa_pd
 
       use solution,      only : &
-         concen_pd,DepositGranularity,StopValue,dep_percent_accumulated, &
+         concen_pd,DepositGranularity,StopValue,aloft_percent_remaining, &
          SourceCumulativeVol,dep_vol,aloft_vol,outflow_vol,tot_vol
 
       use Output_Vars,   only : &
@@ -77,7 +77,6 @@
       real(kind=ip)         :: avgcon        ! avg concen of cells in umbrella
       real(kind=ip)         :: Interval_Frac
       logical               :: Load_MesoSteps
-      logical, dimension(5) :: StopConditions = .false.
       logical               :: StopTimeLoop   = .false.
       logical               :: first_time     = .true.
       character(len=130)    :: tmp_str
@@ -135,7 +134,7 @@
           "CFL condition : ",CFL
       endif
 
-      dep_percent_accumulated = 0.0_ip
+      aloft_percent_remaining = 1.0_ip
       SourceCumulativeVol     = 0.0_ip
 
       call cpu_time(t0) !time is a scaler real
@@ -480,9 +479,11 @@
         endif
 
         if(tot_vol.gt.EPS_SMALL)then
-          dep_percent_accumulated = dep_vol/tot_vol
+          !dep_percent_accumulated = dep_vol/tot_vol
+          aloft_percent_remaining = aloft_vol/tot_vol
         else
-          dep_percent_accumulated = 0.0_ip
+          !dep_percent_accumulated = 0.0_ip
+          aloft_percent_remaining = 1.0_ip
         endif
 
         ! Check stop conditions
@@ -492,7 +493,7 @@
          ! It is better to stop based on remaining ash aloft than amount
          ! deposited since if more than 1% blows out of the domain, this
          ! criterion would never be invoked.
-        StopConditions(1) = (aloft_vol/tot_vol.lt.(1.0_ip-StopValue))
+        StopConditions(1) = (aloft_percent_remaining.lt.(1.0_ip-StopValue))
            ! Normal stop condition if simulation exceeds alloted time
         StopConditions(2) = (time.ge.Simtime_in_hours)
            ! Normal stop conditionn when nothing is left to advect
@@ -508,15 +509,20 @@
                             (outflow_vol.lt.-1.0_ip*EPS_SMALL).or.&
                             (SourceCumulativeVol.lt.-1.0_ip*EPS_SMALL)
 
-        if(StopConditions(1).eqv..true.)then
+        if((CheckConditions(1).eqv..true.).and.&
+           (StopConditions(1).eqv..true.))then
           StopTimeLoop = .true.
-        elseif(StopConditions(2).eqv..true.)then
+        elseif((CheckConditions(2).eqv..true.).and.&
+               (StopConditions(2).eqv..true.))then
           StopTimeLoop = .true.
-        elseif(StopConditions(3).eqv..true.)then
+        elseif((CheckConditions(3).eqv..true.).and.&
+               (StopConditions(3).eqv..true.))then
           StopTimeLoop = .true.
-        elseif(StopConditions(4).eqv..true.)then
+        elseif((CheckConditions(4).eqv..true.).and.&
+               (StopConditions(4).eqv..true.))then
           StopTimeLoop = .true.
-        elseif(StopConditions(5).eqv..true.)then
+        elseif((CheckConditions(5).eqv..true.).and.&
+               (StopConditions(5).eqv..true.))then
           StopTimeLoop = .true.
         else
           StopTimeLoop = .false.
@@ -531,11 +537,13 @@
       ntmax = itime
 
       write(global_info,*)"Time integration completed for the following reason:"
-      if(StopConditions(1).eqv..true.)then
+      if((CheckConditions(1).eqv..true.).and.&
+         (StopConditions(1).eqv..true.))then
         ! Normal stop condition set by user tracking the deposit
         write(global_info,*)"Percent accumulated/exited exceeds ",StopValue
       endif
-      if(StopConditions(2).eqv..true.)then
+      if((CheckConditions(2).eqv..true.).and.&
+         (StopConditions(2).eqv..true.))then
         ! Normal stop condition if simulation exceeds alloted time
         write(global_info,*)"time.le.Simtime_in_hours"
         write(global_info,*)"              Time = ",real(time,kind=4)
@@ -544,12 +552,14 @@
         write(global_log,*)"              Time = ",real(time,kind=4)
         write(global_log,*)"  Simtime_in_hours = ",real(Simtime_in_hours,kind=4)
       endif
-      if(StopConditions(3).eqv..true.)then
+      if((CheckConditions(3).eqv..true.).and.&
+         (StopConditions(3).eqv..true.))then
         ! Normal stop condition when nothing is left to advect
         write(global_info,*)"No ash species remain aloft."
         write(global_log,*)"No ash species remain aloft."
       endif
-      if(StopConditions(4).eqv..true.)then
+      if((CheckConditions(4).eqv..true.).and.&
+         (StopConditions(4).eqv..true.))then
         ! Error stop condition if the concen and outflow do not match the source
         write(global_info,*)"Cummulative source volume does not match aloft + outflow"
         write(global_info,*)" tot_vol = ",tot_vol
@@ -559,7 +569,8 @@
         write(global_info,*)" e_Volume = ",e_Volume
         stop 1
       endif
-      if(StopConditions(5).eqv..true.)then
+      if((CheckConditions(5).eqv..true.).and.&
+         (StopConditions(5).eqv..true.))then
         ! Error stop condition if any volume measure is negative
         write(global_info,*)"One of the volume measures is negative."
         write(global_info,*)"        dep_vol = ",dep_vol

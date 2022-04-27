@@ -199,7 +199,6 @@
             vf_pd(:,:,:,i)                = Tephra_v_s(i)*MPS_2_KMPHR
           enddo
         endif
-
         ! We only loaded one step so set load flag to True
         Load_MesoSteps = .true.
         !first_time = .false.

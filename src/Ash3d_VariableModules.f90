@@ -113,6 +113,24 @@
       real(kind=ip)            :: DT_MIN = 1.0e-5_ip  ! Minimum DT in hours
       real(kind=ip)            :: DT_MAX = 1.0e0_ip   ! Maximum DT in hours
 
+      ! Stop conditions
+      !  1 = check if amount aloft is too little
+      !        aloft_vol/tot_vol.lt.(1.0_ip-StopValue)
+      !  2 = check if time is past sim end
+      !        time.ge.Simtime_in_hours
+      !  3 = check if there is ash aloft
+      !        n_gs_aloft.eq.0
+      !  4 = check on mass balance
+      !        MassConsErr.gt.1.0e-3_ip
+      !  5 = check on negative volumes
+      !        (dep_vol.lt.-1.0_ip*EPS_SMALL).or.&
+      !        (aloft_vol.lt.-1.0_ip*EPS_SMALL).or.&
+      !        (outflow_vol.lt.-1.0_ip*EPS_SMALL).or.&
+      !        (SourceCumulativeVol.lt.-1.0_ip*EPS_SMALL)
+
+      logical, dimension(5) :: StopConditions  = .false.  ! Various conditions that force the run to stop
+      logical, dimension(5) :: CheckConditions = .true.   ! Which conditions to check
+
 
         ! These paramters set how verbose the logging is to stdout.
         ! VERB = 1 is the standard
@@ -311,7 +329,7 @@
       integer :: nzmax      ! number of nodes in z
       integer :: nsmax      ! total number of species tracked in concen
                             !  i.e. all ash bins + anything else (aggs, water, chem)
-      integer :: insmax     ! placeholder for species max
+      !integer :: insmax     ! placeholder for species max
 
       ! Variables that are allocated based on the computational grid
       ! (nxmax,nymax)
@@ -463,6 +481,7 @@
       real(kind=ip),dimension(:,:,:)    ,allocatable :: DepositGranularity ! accumulated ash mass on ground 
 #endif
       real(kind=ip)      :: dep_percent_accumulated
+      real(kind=ip)      :: aloft_percent_remaining
       real(kind=ip)      :: StopValue    !program stops when percent_accumulated>StopValue
       real(kind=ip)      :: dep_vol,aloft_vol,outflow_vol,tot_vol
       real(kind=ip)      :: SourceCumulativeVol
