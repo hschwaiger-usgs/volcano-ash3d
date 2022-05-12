@@ -45,6 +45,7 @@
            Allocate_Tephra,&
            Allocate_Tephra_Met,&
            Prune_GS
+   
       use Atmosphere,    only : &
            Allocate_Atmosphere_Met
 
@@ -473,26 +474,20 @@
           endif
         else
             ! If we are not monitoring deposits through logsteps, then set
-            ! tot-vol to 0 and rely on the simulation ending through input
+            ! tot_vol to 0 and rely on the simulation ending through input
             ! duration values
           tot_vol = 0.0_ip
         endif
 
         if(tot_vol.gt.EPS_SMALL)then
-          !dep_percent_accumulated = dep_vol/tot_vol
           aloft_percent_remaining = aloft_vol/tot_vol
         else
-          !dep_percent_accumulated = 0.0_ip
           aloft_percent_remaining = 1.0_ip
         endif
 
         ! Check stop conditions
         !  If any of these is true, then the time loop will stop
-           ! Normal stop condition set by user tracking the deposit
-        !StopConditions(1) = (dep_percent_accumulated.gt.StopValue)
-         ! It is better to stop based on remaining ash aloft than amount
-         ! deposited since if more than 1% blows out of the domain, this
-         ! criterion would never be invoked.
+           ! Stops if there is less than 1% of ash aloft in the domain
         StopConditions(1) = (aloft_percent_remaining.lt.(1.0_ip-StopValue))
            ! Normal stop condition if simulation exceeds alloted time
         StopConditions(2) = (time.ge.Simtime_in_hours)

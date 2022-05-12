@@ -5,9 +5,10 @@
 !     This subroutine is used for calculating the maximal time step allowed
 !     given the velocities, cell sizes, CFL number, diffusivity and the numerical 
 !     scheme.
-!     This subroutine is called twice from Ash3d.F90; once prior to the time
+!     This subroutine is called at the end of MesoInterpolator.  The first
+!     call to MesoInterpolator (and therefore Adjust_DT) is before the time
 !     loop to anticipate the total number of number of steps the simulation
-!     might need, and once within the time loop after new velocities are 
+!     might need, and then onece within the time loop after new velocities are 
 !     determinined.
 !
 !##############################################################################
@@ -230,7 +231,19 @@
           endif
           maxdiffus    = min(dx2,dy2,dz2)/time_advect
 
-          if(VERB.gt.-1)then
+          ! Write to output streams a comment about which of advection or
+          ! diffusion is the dominant constraint on the time-step.
+          ! Note: we don't want to do this for the variable diffusivity cases
+          ! since this will write out this comment every time-step.
+          if(VERB.gt.-1.and.&
+             .not.useVarDiffH.and.&
+             .not.useVarDiffV)then
+            if (useCN) then
+              write(*,*)"Appling time factor of ",Imp_DT_fac
+            else
+              write(*,*)"Appling time factor of 0.5"
+            endif
+
             if(time_diffuse.gt.time_advect)then
               ! Diffusion conditions allow a larger time step than advection
               write(global_info,*)"Time step limited by advection"
@@ -252,7 +265,7 @@
                 write(global_info,*)"   Restriction set by dz2/kz"
               endif
             endif
-            !write(global_info,*)"   Velocities allow up a diffusivity up to",maxdiffus
+            write(global_info,*)"   Velocities allow up a diffusivity up to",maxdiffus
           endif
 
             ! Now set logical flag so we don't need to calculate this again
@@ -266,7 +279,6 @@
       !-------------------------------------------------------
 
       dt_tmp = min(time_advect,time_diffuse)
-!      if(tmp_sum.gt.1.0_ip/DT_MIN)then
       if(dt_tmp.lt.DT_MIN)then
         write(global_info,*)"WARNING: Calculated DT is too low"
         write(global_info,*)"         Setting DT to dt_min = ",DT_MIN
@@ -278,7 +290,6 @@
         write(global_info,*)"             CFL = ",CFL
         write(global_info,*)"   calculated dt = ",min(1.0_ip,CFL)*dt_tmp
         dt = DT_MIN
-!      elseif(tmp_sum.lt.1.0_ip/DT_MAX)then
       elseif(dt_tmp.gt.DT_MAX)then
         write(global_info,*)"WARNING: Calculated DT is too high"
         write(global_info,*)"         Setting DT to dt_max = ",DT_MAX
