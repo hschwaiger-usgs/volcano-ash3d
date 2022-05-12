@@ -1,1 +1,0 @@
-      character(len=40),parameter,public :: Ash3d_GitComID ='918789f5e86bb615b177817eca72bd10f95500c1'

@@ -1,3 +1,4 @@
 src/*.o
 src/*.mod
 bin/*
+src/version.h
