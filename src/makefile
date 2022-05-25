@@ -102,7 +102,7 @@ MFILE=makefile
 #      LIM_NONE
 #      LIM_LAXWEN
 #      LIM_BW
-#      LIN_FROMM
+#      LIM_FROMM
 #      LIM_MINMOD
 #      LIM_SUPERBEE
 #      LIM_MC

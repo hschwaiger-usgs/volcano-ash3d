@@ -609,7 +609,7 @@
 
       ! Variables for the wall time this simulation is launched
       !  relative to BaseYear in module time_data
-      character(len=13)  :: RunStartHour_ch  !start hour of model run
+      character(len=13)  :: RunStartHour_ch  ! start hour of model run
       integer            :: RunStartYear
       integer            :: RunStartMonth
       integer            :: RunStartDay
