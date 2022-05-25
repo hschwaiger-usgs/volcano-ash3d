@@ -39,7 +39,7 @@
            Allocate_Source_eruption
 
       use Tephra,        only : &
-         MagmaDensity,Tephra_v_s,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,&
+         DepositDensity,MagmaDensity,Tephra_v_s,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,&
          Tephra_gsF,Tephra_gsG,FV_ID,phi_mean,phi_stddev,n_gs_max,n_gs_aloft,&
            Calculate_Tephra_Shape,&
            Allocate_Tephra, &
@@ -2258,6 +2258,12 @@
         endif
         write(global_info,*)
         write(global_log ,*)
+        
+        write(global_info,*)"Using deposit density (kg/m3) of: ",DepositDensity
+        write(global_log,*)"Using deposit density (kg/m3) of: ",DepositDensity
+
+        write(global_info,*)
+        write(global_log ,*)        
 
         write(global_info,*)"Using a mass-fraction of fines (< 63um) of : ",real(fracfine,kind=sp)
         write(global_log ,*)"Using a mass-fraction of fines (< 63um) of : ",real(fracfine,kind=sp)
