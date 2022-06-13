@@ -2979,7 +2979,7 @@
 
       use io_data,           only : &
          concenfile,init_tstep,nWriteTimes,WriteTimes,cdf_b1l1,cdf_b3l1, &
-         cdf_b3l3,VolcanoName
+         cdf_b3l3,VolcanoName,Write_PT_Data,Write_PR_Data
 
       use Source,        only : &
          neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
@@ -3020,6 +3020,8 @@
       integer :: itstart_year,itstart_month,itstart_day
       integer :: itstart_hour,itstart_min,itstart_sec
       real(kind=ip) :: filestart_hour
+
+      logical :: hasAirportTSData
 
       INTERFACE
         real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
@@ -3180,36 +3182,53 @@
       !!!!!!  PT  !!!!!!!!!!!
       ! Identify dimension for pt (and note size)
       nSTAT = nf90_inq_dimid(ncid,"pt",pt_dim_id)
-      call NC_check_status(nSTAT,1,"inq_dimid bn")
-      nSTAT = nf90_Inquire_Dimension(ncid,pt_dim_id,len=pt_len)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"Inquire_Dimension pt")
-      ! Get variable id for this dimension
-      nSTAT = nf90_inq_varid(ncid,"pt",pt_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid pt")
-      write(*,*)"pt",pt_len
-      nairports = pt_len
+      if(nSTAT.ne.0)then
+        Write_PT_Data = .false.
+        write(*,*)"Did not find dim pt: Output file has no point data"
+        nairports = 0
+      else
+        Write_PT_Data = .true.
+        nSTAT = nf90_Inquire_Dimension(ncid,pt_dim_id,len=pt_len)
+        call NC_check_status(nSTAT,1,"Inquire_Dimension pt")
+        ! Get variable id for this dimension
+        nSTAT = nf90_inq_varid(ncid,"pt",pt_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid pt")
+        write(*,*)"pt",pt_len
+        nairports = pt_len
+      endif
 
       !!!!!!  PR  !!!!!!!!!!!
       ! Identify dimension for pr (and note size)
       nSTAT = nf90_inq_dimid(ncid,"pr",pr_dim_id)
-      call NC_check_status(nSTAT,1,"inq_dimid pr")
-      nSTAT = nf90_Inquire_Dimension(ncid,pr_dim_id,len=pr_len)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"Inquire_Dimension pr")
-      ! Get variable id for this dimension
-      nSTAT = nf90_inq_varid(ncid,"pr",pr_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid pr")
-      write(*,*)"pr",pr_len
+      if(nSTAT.ne.0)then
+        Write_PR_Data = .false.
+        write(*,*)"Did not find dim pr: Output file has no profile data"
+      else
+        Write_PR_Data = .true.
+        nSTAT = nf90_Inquire_Dimension(ncid,pr_dim_id,len=pr_len)
+        call NC_check_status(nSTAT,0,"Inquire_Dimension pr")
+        ! Get variable id for this dimension
+        nSTAT = nf90_inq_varid(ncid,"pr",pr_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid pr")
+        write(*,*)"pr",pr_len
+      endif
 
       !!!!!!  TN !!!!!!!!!!!
       ! Identify dimension for tn (and note size)
       nSTAT = nf90_inq_dimid(ncid,"tn",tn_dim_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_dimid tn")
-      nSTAT = nf90_Inquire_Dimension(ncid,tn_dim_id,len=tn_len)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"Inquire_Dimension tn")
-      ! Get variable id for this dimension
-      nSTAT = nf90_inq_varid(ncid,"tn",tn_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid tn")
-      write(*,*)"tn",tn_len
+      if(nSTAT.ne.0)then
+        call NC_check_status(nSTAT,0,"inq_dimid tn")
+        write(*,*)"Did not find dim tn: Output file has no native time data (for profiles)"
+        !hasAirportTSData = .false.
+      else
+        !hasAirportTSData = .true.
+        nSTAT = nf90_Inquire_Dimension(ncid,tn_dim_id,len=tn_len)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"Inquire_Dimension tn")
+        ! Get variable id for this dimension
+        nSTAT = nf90_inq_varid(ncid,"tn",tn_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid tn")
+        write(*,*)"tn",tn_len
+      endif
 
       !!!!!!  ER !!!!!!!!!!!
       ! Identify dimension for er (and note size)
@@ -3256,33 +3275,35 @@
       nSTAT = nf90_inq_varid(ncid,"radar_reflectivity",radrefl_var_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid radar_reflectivity")
 
-      ! pt_x
-      nSTAT = nf90_inq_varid(ncid,"pt_x",pt_x_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_x")
-      ! pt_y
-      nSTAT = nf90_inq_varid(ncid,"pt_y",pt_y_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_y")
-      ! pt_code
-      nSTAT = nf90_inq_varid(ncid,"pt_code",pt_code_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_code")
-      ! pt_name
-      nSTAT = nf90_inq_varid(ncid,"pt_name",pt_name_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_name")
-      ! pt_depotime
-      nSTAT = nf90_inq_varid(ncid,"pt_depotime",pt_asharrival_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_depotime")
-      ! pt_depodur
-      nSTAT = nf90_inq_varid(ncid,"pt_depodur",pt_ashduration_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_depod")
-      ! pt_cloud_arrival
-      nSTAT = nf90_inq_varid(ncid,"pt_cloud_arrival",pt_cloudarrival_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_cloud_arrival")
-      ! pt_cloud_dur
-      nSTAT = nf90_inq_varid(ncid,"pt_cloud_dur",pt_cloudduration_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_cloud_dur")
-      ! pt_depothick
-      nSTAT = nf90_inq_varid(ncid,"pt_depothick",pt_ashthickness_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_depothick")
+      if(Write_PT_Data)then
+        ! pt_x
+        nSTAT = nf90_inq_varid(ncid,"pt_x",pt_x_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_x")
+        ! pt_y
+        nSTAT = nf90_inq_varid(ncid,"pt_y",pt_y_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_y")
+        ! pt_code
+        nSTAT = nf90_inq_varid(ncid,"pt_code",pt_code_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_code")
+        ! pt_name
+        nSTAT = nf90_inq_varid(ncid,"pt_name",pt_name_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_name")
+        ! pt_depotime
+        nSTAT = nf90_inq_varid(ncid,"pt_depotime",pt_asharrival_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_depotime")
+        ! pt_depodur
+        nSTAT = nf90_inq_varid(ncid,"pt_depodur",pt_ashduration_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_depod")
+        ! pt_cloud_arrival
+        nSTAT = nf90_inq_varid(ncid,"pt_cloud_arrival",pt_cloudarrival_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_cloud_arrival")
+        ! pt_cloud_dur
+        nSTAT = nf90_inq_varid(ncid,"pt_cloud_dur",pt_cloudduration_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_cloud_dur")
+        ! pt_depothick
+        nSTAT = nf90_inq_varid(ncid,"pt_depothick",pt_ashthickness_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_depothick")
+      endif
 
       nWriteTimes = t_len
       allocate(WriteTimes(nWriteTimes))
@@ -3302,12 +3323,14 @@
                              itstart_day,real(filestart_hour,kind=8),&
                              BaseYear,useLeap),kind=4)
 
-      allocate(Airport_Thickness_TS(nairports,nWriteTimes))
-      allocate(Airport_Name(nairports))
-      nSTAT = nf90_get_var(ncid,pt_ashthickness_var_id,Airport_Thickness_TS)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_ashthickness_var_id:")
-      nSTAT = nf90_get_var(ncid,pt_name_var_id,Airport_Name)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_name_var_id:")
+      if(Write_PT_Data)then
+        allocate(Airport_Thickness_TS(nairports,nWriteTimes))
+        allocate(Airport_Name(nairports))
+        nSTAT = nf90_get_var(ncid,pt_ashthickness_var_id,Airport_Thickness_TS)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_ashthickness_var_id:")
+        nSTAT = nf90_get_var(ncid,pt_name_var_id,Airport_Name)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_name_var_id:")
+      endif
 
       if (.not.present(timestep))then
         write(*,*)"Found the following time steps in file:"
@@ -3392,7 +3415,7 @@
       nSTAT=nf90_get_var(ncid,radrefl_var_id,dum2d_out,  &
                start = (/1,1,init_tstep/),       &
                count = (/x_len,y_len,1/))
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var radar_reflectivity")
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"get_var radar_reflectivity")
       allocate(dbZCol(x_len,y_len))
       dbZCol = real(dum2d_out,kind=ip)
 

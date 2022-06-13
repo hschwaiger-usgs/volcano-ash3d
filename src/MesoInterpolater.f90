@@ -74,13 +74,13 @@
 
       real(kind=dp):: HoursIntoInterval ! hours since the last windfile timestep
       real(kind=ip) :: TimeNow_fromRefTime
-      !logical,save :: first_time = .true.
       ! Fclaw
       !logical, intent(in) :: first_time
       !integer, intent(inout) :: Meso_toggle
 
       INTERFACE
-        subroutine umbrella_winds
+        subroutine umbrella_winds(first_time)
+          logical, intent(in)  :: first_time
         end subroutine umbrella_winds
         subroutine Adjust_DT(mesostep)
           logical, intent(in), optional :: mesostep
@@ -201,7 +201,6 @@
         endif
         ! We only loaded one step so set load flag to True
         Load_MesoSteps = .true.
-        !first_time = .false.
 #ifdef FAST_DT
         call Adjust_DT(Load_MesoSteps)
         ! Since this is the first time, copy the output dt_meso_next to dt_meso_last
@@ -318,14 +317,16 @@
           ! Again, now that we have temperature and density, we can get a better Vz
           ivar = 7 ! Pressure Vertical Velocity
           if(Met_var_IsAvailable(ivar))then
+            write(global_log,*)"Vz is calculated by PressVertVel/(rho g)"
             call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now+1)
             MR_dum3d_MetP = MR_dum3d_MetP/                   &
               real((-AirDens_meso_next_step_MetP_sp*GRAV),kind=sp)
             call MR_Regrid_MetP_to_CompGrid(MR_iMetStep_Now+1)
           else
-            write(*,*)"Tried to read variable, but its not available: ",&
+            write(global_error,*)"Tried to read variable, but its not available: ",&
                       Met_var_GRIB_names(ivar)
             MR_dum3d_compH = 0.0_sp
+            stop 1 
           endif
 
           if(Meso_toggle.eq.0)then
@@ -338,11 +339,13 @@
         else
           ivar = 4 ! W winds
           if(Met_var_IsAvailable(ivar))then
+            write(global_log,*)"Vz is calculated by PressVertVel/(dp/dz)"
             call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now+1)
           else
-            write(*,*)"Tried to read variable, but its not available: ",&
+            write(global_error,*)"Tried to read variable, but its not available: ",&
                       Met_var_GRIB_names(ivar)
             MR_dum3d_compH = 0.0_sp
+            stop 1
           endif
           if(Meso_toggle.eq.0)then
             vz_meso_1_sp = MR_dum3d_compH
@@ -352,6 +355,7 @@
             vz_meso_next_step_sp = vz_meso_2_sp
           endif
         endif
+
         if(useCalcFallVel)then
           ! Populate the fall velocities for the next meso step
           call Set_Vf_Meso(.true.)
@@ -392,7 +396,12 @@
            real((vz_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax) - &
                  vz_meso_last_step_sp(1:nxmax,1:nymax,1:nzmax)),kind=ip) * &
                                      Interval_Frac)*MPS_2_KMPHR
-      vz_pd = 0.0_ip
+
+!      write(global_debug,*)"Zero-ing velocities in Mesointerpolator"
+!      vx_pd = 0.0_ip
+!      vy_pd = 0.0_ip
+!      vz_pd = 0.0_ip
+
       ! Now interpolate onto current time
       if(useCalcFallVel)then
         vf_pd(1:nxmax,1:nymax,1:nzmax,:) = (real(vf_meso_last_step_sp(:,:,:,:),kind=ip) + &
@@ -415,7 +424,7 @@
           write(*,*)"       Exiting."
           stop 1
 #endif
-          call umbrella_winds
+          call umbrella_winds(first_time)
           vx_pd(1:nxmax,1:nymax,ibase:itop) = vx_pd(1:nxmax,1:nymax,ibase:itop) + &
                                            uvx_pd(1:nxmax,1:nymax,ibase:itop)
           vy_pd(1:nxmax,1:nymax,ibase:itop) = vy_pd(1:nxmax,1:nymax,ibase:itop) + &

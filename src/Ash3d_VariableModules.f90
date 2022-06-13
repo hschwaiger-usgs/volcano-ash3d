@@ -229,18 +229,20 @@
       logical            :: WriteReflectivity_KML
       logical            :: WriteDepositFinal_ASCII       ! .true. if final deposit file is to be written out
       logical            :: WriteDepositFinal_KML
-      logical            :: WriteDepositTS_ASCII          ! .true if time series of deposit files is to be written
+      logical            :: WriteDepositTS_ASCII          ! .true. if time series of deposit files is to be written
       logical            :: WriteDepositTS_KML
       logical            :: WriteDepositTime_ASCII        ! .true. if time of first ash is to be written out
       logical            :: WriteDepositTime_KML
-      logical            :: WriteAirportFile_ASCII        ! .true if ash arrival times at airports is to be written out
-      logical            :: WriteAirportFile_KML
-      logical            :: ReadExtAirportFile            !.true. if external airport file is to be read 
-      logical            :: AppendExtAirportFile          !.true. if external airports in external file are appended
+      logical            :: WriteAirportFile_ASCII        ! .true. if ash arrival times at airports is to be written out to ASCII
+      logical            :: WriteAirportFile_KML          ! .true. if ash arrival times at airports is to be written out to KML
+      logical            :: Write_PT_Data                 ! .true. if either of the above is true (writes to netcdf)
+      logical            :: Write_PR_Data                 ! .true. if writting profile data
+      logical            :: ReadExtAirportFile            ! .true. if external airport file is to be read 
+      logical            :: AppendExtAirportFile          ! .true. if external airports in external file are appended
 
-      logical            :: Write3dFiles            !.true if 3d files are to be written
-      logical            :: WriteGSD                !.true. if grain-size distribution is to be written to airport file
-      logical            :: isFinal_TS              !.true. if we're writing out the final deposit file
+      logical            :: Write3dFiles            ! .true. if 3d files are to be written
+      logical            :: WriteGSD                ! .true. if grain-size distribution is to be written to airport file
+      logical            :: isFinal_TS              ! .true. if we're writing out the final deposit file
       
       logical            :: Output_every_TS
       logical            :: Output_at_WriteTimes

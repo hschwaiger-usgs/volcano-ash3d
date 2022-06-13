@@ -204,11 +204,11 @@ USGSLIBDIR = -L$(USGSROOT)/lib
 USGSLIB = -lMetReader -lhourssince -lprojection
 USGSINC = -I$(USGSROOT)/include
 
-#PLOTLIBS=-lplplotf95cd -lplplotf95d -L/usr/local/dislin -ldislin
-#PLOTINC=-I/usr/local/dislin/gf
+PLOTLIBS=-lplplotf95cd -lplplotf95d -L/usr/local/dislin -ldislin
+PLOTINC=-I/usr/local/dislin/gf
 
-PLOTLIBS=
-PLOTINC=
+#PLOTLIBS=
+#PLOTINC=
 
 ###############################################################################
 ##########  GNU Fortran Compiler  #############################################
@@ -217,7 +217,7 @@ ifeq ($(SYSTEM), gfortran)
     FC=/usr/bin/gfortran
     COMPINC = -I$(FCHOME)/include -I$(FCHOME)/lib64/gfortran/modules
     COMPLIBS = -L$(FCHOME)/lib64 -L$(FCHOME)/lib
-    LIBS = $(COMPLIBS) $(USGSLIBDIR) $(USGSINC) $(COMPINC) $(PLOTINC) -llapack -lblas $(USGSLIB) $(DATALIBS) $(PLOTLIBS)
+    LIBS = $(COMPLIBS) $(USGSLIBDIR) $(USGSINC) $(COMPINC) -llapack -lblas $(USGSLIB) $(DATALIBS)
     # -lefence
 # Debugging flags
 ifeq ($(RUN), DEBUG)
@@ -360,8 +360,8 @@ write_KML.o: $(ASH3dCCSRC)/write_KML.f90 $(MFILE) Ash3d_VariableModules.o
 all: Ash3d
 
 postproc: $(ASH3dCCSRC)/Ash3d_PostProc.f90 Ash3d_VariableModules.o $(DATAOBJ) Output_Vars.o Tephra.o Source.o Atmosphere.o $(MFILE)
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc.f90
-	$(FC) $(FFLAGS) $(EXFLAGS) $(PPOBJS) $(DATAOBJ) Ash3d_PostProc.o $(LIBS) -o Ash3d_PostProc
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) $(PPOBJS) $(DATAOBJ) Ash3d_PostProc.o $(LIBS) $(PLOTINC) $(PLOTLIBS) -o Ash3d_PostProc
 
 tools: ascii_check
 

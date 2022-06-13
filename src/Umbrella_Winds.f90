@@ -1,4 +1,4 @@
-      subroutine umbrella_winds
+      subroutine umbrella_winds(first_time)
 
       !subroutine that calculates radial winds from the center of an umbrella cloud
 
@@ -7,10 +7,10 @@
       use io_units
 
       use global_param,  only : &
-         DEG2KMLAT,DEG2KMLON,DEG2RAD,KM_2_M,PI
+         DEG2KMLAT,DEG2KMLON,DEG2RAD,KM_2_M,PI,HR_2_S,MPS_2_KMPHR
 
       use time_data,     only : &
-         time,Simtime_in_hours
+         time,Simtime_in_hours,dt
 
       use mesh,          only : &
          nxmax,nymax,dn_km,de_km,IsLatLon,ivent,jvent,&
@@ -25,6 +25,9 @@
          n_gs_max
 
       implicit none
+
+      logical, intent(in)  :: first_time
+
       real(kind=ip):: avg_lat          !avg latitude between vent & point
       real(kind=ip):: C_Costa          !C constant used in Costa et al., 2013
       real(kind=ip):: cloud_radius     !cloud radius, km
@@ -62,8 +65,10 @@
       endif
 
       !call MassFluxCalculator
-      massfluxnow = MassFlux(1)/3600.0_ip        !mass flux rate, kg/s
+      ! Convert MassFlux from kg/hr to a local variable in kg/s
+      massfluxnow = MassFlux(1)/HR_2_S        !mass flux rate, kg/s
 
+      !write(*,*)"MassFlux(1)=",real(MassFlux(1),kind=4)," kg/hr"
       !If there is only one size class, assume it's an airborne run and
       !multiply the mass flux by 20
       if ((SourceType.eq.'umbrella_air').and.(n_gs_max.eq.1)) then
@@ -79,25 +84,26 @@
         C_Costa = 0.87e3_ip 
       endif
 
+      ! Here is Eq. 2 of Mastin and Van Eaton, 2020 (m3/s)
       qnow  = C_Costa*sqrt(k_entrainment)*massfluxnow**(3.0_ip/4.0_ip) / &
               N_BV**(5.0_ip/4.0_ip)
 
       if (time.eq.0.0_ip)  then
           write(global_info,*) 
           write(global_info,*) 'in Umbrella_winds'
-          write(global_info,*) '  massfluxnow = ',massfluxnow
-          write(global_info,*) '      C_Costa = ',C_Costa
-          write(global_info,*) '         N_BV = ',N_BV
-          write(global_info,*) 'k_entrainment = ',k_entrainment
-          write(global_info,*) '     Q (m3/s) = ',qnow
+          write(global_info,*) '  massfluxnow (kg/s) = ',real(massfluxnow,kind=sp)
+          write(global_info,*) '             C_Costa = ',real(C_Costa,kind=sp)
+          write(global_info,*) '                N_BV = ',real(N_BV,kind=sp)
+          write(global_info,*) '       k_entrainment = ',real(k_entrainment,kind=sp)
+          write(global_info,*) '            Q (m3/s) = ',real(qnow,kind=sp)
           write(global_info,*)
           write(global_log,*) 
-          write(global_log,*) 'in Umbrella_winds'
-          write(global_log,*) '  massfluxnow = ',massfluxnow
-          write(global_log,*) '      C_Costa = ',C_Costa
-          write(global_log,*) '         N_BV = ',N_BV
-          write(global_log,*) 'k_entrainment = ',k_entrainment
-          write(global_log,*) '     Q (m3/s) = ',qnow
+          write(global_log,*)  'in Umbrella_winds'
+          write(global_log,*)  '  massfluxnow (kg/s) = ',real(massfluxnow,kind=sp)
+          write(global_log,*)  '             C_Costa = ',real(C_Costa,kind=sp)
+          write(global_log,*)  '                N_BV = ',real(N_BV,kind=sp)
+          write(global_log,*)  '       k_entrainment = ',real(k_entrainment,kind=sp)
+          write(global_log,*)  '            Q (m3/s) = ',real(qnow,kind=sp)
           write(global_log,*)
           !If we're doing an airborne run and using only 1 grain size,
           !multiply the MER by 20 to make sure we're getting the right umbrella
@@ -108,14 +114,17 @@
               write(global_log,*) 'n_gs_max=1, so we are assuming an airborne run'
               write(global_log,*) 'massflux has been multiplied by 20'
           end if
-       end if
+       end if ! time.eq.0.0_ip
 
       !convert from  hours to seconds
 !      if (itime.gt.0) then
-        if (time.gt.0.0_ip) then
-          etime_s      = 3600.0_ip*time
+!        if (time.gt.0.0_ip) then
+        if(.not.first_time)then
+          ! For the first time step, time=0 -> cloudrad=0 and uR=Inf
+          ! so just use dt to get values at the end of step 1
+          etime_s      = max(time,dt)*HR_2_S
         else
-          etime_s      = min(3600.0_ip*Simtime_in_hours,3600.0_ip*e_EndTime(1))
+          etime_s      = min(Simtime_in_hours,e_EndTime(1))*HR_2_S
           !return                      !return to Mesointerpolator if time=0
         endif
 !      else
@@ -131,17 +140,21 @@
 !        etime_s      = min(3600.0_ip*Simtime_in_hours,3600.0_ip*e_EndTime(1))
 !      endif
 
+      ! Here is Eq. 1 of Mastin and Van Eaton, 2020
       !cloud radius, km
       cloudrad_raw = (3.0_ip*lambda*N_BV*qnow/(2.0_ip*PI))**(1.0_ip/3.0_ip) * &
                      etime_s**(2.0_ip/3.0_ip) / KM_2_M
       !Make sure cloud radius extends beyond the source nodes
       !cloud_radius = max(cloudrad_raw,max(SourceNodeWidth_km,SourceNodeHeight_km))
       cloud_radius = cloudrad_raw            !for debugging
+
+      ! This is the time derivitive of Eq. 1 of Mastin and Van Eaton, 2020
       !cloud expansion rate, m/s
       edge_speed   = (2.0_ip/3.0_ip)*(3.0_ip*lambda*N_BV*qnow/(2.0_ip*PI))**(1.0_ip/3.0_ip) * &
                     etime_s**(-1.0_ip/3.0_ip)  
 
       if (cloud_radius.le.max(SourceNodeWidth_km,SourceNodeHeight_km)) then
+        !write(*,*)"Umbrella : ",etime_s,cloud_radius,edge_speed,SourceNodeWidth_km,SourceNodeHeight_km
         return
       else
         if (IsLatLon) then
@@ -152,6 +165,8 @@
           east_node = min(nxmax,ivent+ew_nodes)
           south_node = max(1,jvent-ns_nodes)
           north_node = min(nymax,jvent+ns_nodes)
+!          write(*,*)"Umbrella : ",etime_s,cloud_radius,edge_speed,ew_nodes,ns_nodes
+
           !if (time.gt.2.0_ip) then
           !    write(global_info,*) 'cloud_radius=',cloud_radius
           !    write(6,*) 'time=',time,', C_Costa=',C_Costa
@@ -188,11 +203,22 @@
               radnow = sqrt(ns_km**2.0_ip+ew_km**2.0_ip)  !distance, km
               !make sure we're within the umbrella cloud
               if (radnow.lt.cloud_radius) then
-                windspeedhere = (3.0_ip/4.0_ip)*edge_speed* &          !m/s
-                    (cloud_radius/radnow)* &
-                    (1.0_ip+(1.0_ip/3.0_ip)*(radnow**3.0_ip/cloud_radius**3.0_ip))
+                ! This is Eq. 3 except the second term here has an extra r/R
+                ! Note that the radial windspeed function is just a non-dimensional radial
+                ! function scaling the of leading edge speed where the edge speed is from the
+                ! time derivitive of the edge position function.
+                windspeedhere = edge_speed  *                          &  ! m/s
+                                MPS_2_KMPHR *                          &  ! km/hr
+                                (3.0_ip/4.0_ip)*(cloud_radius/radnow)* &  ! Start of scaling term
+                                (1.0_ip                              + &  ! Cons. of Vol term
+                                 (1.0_ip/3.0_ip)*(radnow/cloud_radius)**3.0_ip) ! outward spreading,time flattening
+
+!                windspeedhere = (3.0_ip/4.0_ip)*edge_speed* &          !m/s
+!                    (cloud_radius/radnow)* &
+!                    (1.0_ip+(1.0_ip/3.0_ip)*(radnow**3.0_ip/cloud_radius**3.0_ip))
                 thetanow = atan2(ns_km,ew_km)     !angle CW from E
                 do iz=ibase,itop
+                  ! These velocities are in km/hr
                   uvx_pd(ii,jj,iz)=windspeedhere*cos(thetanow)
                   uvy_pd(ii,jj,iz)=windspeedhere*sin(thetanow)
                 enddo
@@ -206,6 +232,7 @@
               !   read(5,'(a1)') answer
               !   if (answer.eq.'n') stop 1
               !endif
+!              if (jj.eq.jvent)write(*,*)"UMBR",ii,ew_km,thetanow,uvx_pd(ii,jj,ibase)
             enddo
           enddo
         endif

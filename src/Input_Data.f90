@@ -28,7 +28,8 @@
          WriteCloudLoad_KML,WriteReflectivity_KML,WriteCloudLoad_ASCII,WriteCloudHeight_KML,&
          WriteCloudHeight_ASCII,WriteCloudConcentration_KML,WriteCloudConcentration_ASCII,&
          WriteAirportFile_KML,WriteAirportFile_ASCII,Write3dFiles,ReadExtAirportFile,&
-         Output_every_TS,Output_at_WriteTimes,Output_at_logsteps,nvprofiles,iTimeNext
+         Output_every_TS,Output_at_WriteTimes,Output_at_logsteps,nvprofiles,iTimeNext,&
+         Write_PT_Data,Write_PR_Data
 
       use Source,        only : &
          neruptions,e_Duration,e_Volume,e_PlumeHeight,e_prof_Volume,e_prof_dz,&
@@ -502,7 +503,7 @@
         
        !check for errors in input
         call LatLonChecker(latLL,lonLL,lat_volcano,lon_volcano,gridwidth_e,gridwidth_n)
-      else
+      else  ! IsLatLon
         ! Block 1 Line 3
         read(10,'(a80)')cdf_b1l3
         read(cdf_b1l3,*,err=1901) xLL, yLL                ! LL corner in km 
@@ -593,10 +594,13 @@
         enddo
         !dz_const = 0.25
       elseif (VarDzType.eq.'dz_clog')then
+        write(global_info,*)&
+         "Logrithmic dz not yet implemented.  Setting to constant dz=0.25"
         dz_const = 0.25_ip
       elseif (VarDzType.eq.'dz_cust')then
+        write(global_info,*)&
+         "Custom dz not yet implemented.  Setting to constant dz=0.25"
         dz_const = 0.25_ip
-        
       else
         write(global_info,*)&
          "dz type must be either a number (in km) for constant dz, or"
@@ -952,8 +956,6 @@
         endif
       endif
 
-      write(*,*)"Read ",iw, iwf, ivalue3, ivalue4
-
       read(10,'(a80)')linebuffer080
       if (testkey.eq.'#'.or.testkey.eq.'*') then
         write(global_error,*)"ERROR: ",&
@@ -1074,7 +1076,7 @@
       endif
       enddo
       write(global_info,*)"Total volume of all eruptions = ",&
-                          real(sum(e_volume),kind=sp)
+                          real(sum(e_volume),kind=sp),"km3 DRE"
       ! Now that we know the requested dz profile and the plume heights, we can
       ! set up the z-grid for computation
       CompGrid_height = ZPADDING*maxval(e_PlumeHeight(1:neruptions))
@@ -1125,6 +1127,9 @@
              z_vec_init(k-1).lt.e_PlumeHeight(1))then
             itop = k
           endif
+          ! The Suzuki distribution for umbrella clouds is hardwired to k=12
+          ! The 0.75 for the plume bottom just ensures that the significant part
+          ! of the Suzuki mass loading profile will be within the ibase to itop nodes
           if(z_vec_init(k)  .ge.0.75_ip*e_PlumeHeight(1).and. &
              z_vec_init(k-1).lt.0.75_ip*e_PlumeHeight(1))then
             ibase = k
@@ -1182,17 +1187,16 @@
           MassFlux(i)  = MagmaDensity * & ! kg/m3
                          e_Volume(i)  * & ! km3
                          KM3_2_M3     / & ! m3/km3
-                         e_Duration(i)    ! hours  = kg/hr
+                         e_Duration(i)    ! hours  => kg/hr
           e_EndTime(i) = e_StartTime(i) + e_Duration(i)
 
           !for debugging >>>>>
-          !write(6,1023) MagmaDensity, e_Duration(i), MassFlux(i), e_Volume(i)
-!1023      format('   Magma density (kg/m3) = ',f6.1,', e_Duration(1) (hrs) = ',f6.3,/, &
-          !       '   Mass flux (kg/s) = ',e12.4,', Total volume (km3)=',f8.4,/,'Continue?')
+          write(6,1023) MagmaDensity, e_Duration(i), MassFlux(i), e_Volume(i)
+1023      format('   Magma density (kg/m3) = ',f6.1,', e_Duration(1) (hrs) = ',f6.3,/, &
+                 '   Mass flux (kg/hr) = ',e12.4,', Total volume (km3 DRE)=',f8.4,/,'Continue?')
           !read(5,'(a1)') answer
           !if (answer.eq.'n') stop
           !for debugging <<<<
-
         elseif(SourceType.eq.'profile')then
           e_prof_MassFlux(i,1:e_prof_zpoints(i)) = &
                          MagmaDensity  * &                        ! kg/m3
@@ -1244,6 +1248,24 @@
       write(global_info,*)' *******************************************'
       write(global_info,*)' Reading Block 4: Output options '
       write(global_info,*)' *******************************************'
+      WriteDepositFinal_ASCII       = .false.
+      WriteDepositFinal_KML         = .false.
+      WriteDepositTS_ASCII          = .false.
+      WriteDepositTS_KML            = .false.
+      WriteCloudConcentration_ASCII = .false.
+      WriteCloudConcentration_KML   = .false.
+      WriteCloudHeight_ASCII        = .false.
+      WriteCloudHeight_KML          = .false.
+      WriteCloudLoad_ASCII          = .false.
+      WriteCloudLoad_KML            = .false.
+      WriteDepositTime_ASCII        = .false.
+      WriteDepositTime_KML          = .false.
+      WriteCloudTime_ASCII          = .false.
+      WriteCloudTime_KML            = .false.
+      WriteAirportFile_ASCII        = .false.
+      WriteAirportFile_KML          = .false.
+      Write_PT_Data                 = .false.
+      Write_PR_Data                 = .false.
       cdf_b4l1 = linebuffer080
       ! Read whether to write out final ESRI ASCII deposit file
       read(linebuffer080,*)testkey
@@ -1299,7 +1321,6 @@
        else if (answer(1:2).eq.'no') then
         WriteDepositTS_ASCII = .false.
        else
-
         goto 1955
       endif
 
@@ -1895,6 +1916,7 @@
       read(linebuffer080,'(a3)',err=1980) answer
       if (answer.eq.'yes') then
         WriteAirportFile_ASCII = .true.
+        Write_PT_Data          = .true.
        else if (answer(1:2).eq.'no') then
         WriteAirportFile_ASCII = .false.
        else
@@ -1921,6 +1943,7 @@
       read(linebuffer080,'(a3)',err=1982) answer
       if (answer.eq.'yes') then
         WriteAirportFile_KML = .true.
+        Write_PT_Data        = .true.
        else if (answer(1:2).eq.'no') then
         WriteAirportFile_KML = .false.
        else
@@ -2323,6 +2346,7 @@
       write(global_log ,*) 'number of vertical profiles=',nvprofiles
 
       if (nvprofiles.gt.0) then
+        Write_PR_Data = .true.
         write(global_info,*)"Allocating profile arrays:",nvprofiles
         allocate(x_vprofile(nvprofiles))
         allocate(y_vprofile(nvprofiles))
@@ -2506,8 +2530,9 @@
 
       ! Set up logging logical values
         ! First check for output requests that require evaluating every time step
-      if (WriteAirportFile_ASCII.or.WriteAirportFile_KML.or.&
-          nvprofiles.gt.0)then
+      !if (WriteAirportFile_ASCII.or.WriteAirportFile_KML.or.&
+      !    nvprofiles.gt.0)then
+      if(Write_PT_Data.or.Write_PR_Data)then
         Output_every_TS = .true.
       else
         Output_every_TS = .false.
@@ -3030,7 +3055,7 @@
              4x,&
              '          plume        start time      duration   volume',/, &
              4x,&
-             'number  height (km)  (yyyymmdd hh.hh)    (hrs)    (km3)')
+             'number  height (km)  (yyyymmdd hh.hh)    (hrs)    (km3 DRE)')
 8     format(4x,i6,f13.2,3x,i4,i2.2,i2.2,f6.2,2f10.4)
 9     format(/,4x,'Number of grain-size bins:     ',i2, &
              /,4x,'               Fall Model:     ',i2)

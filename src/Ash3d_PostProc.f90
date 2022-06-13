@@ -8,7 +8,7 @@
          nxmax,nymax,nzmax,nsmax,lon_cc_pd,lat_cc_pd
 
       use io_data,       only : &
-         concenfile,nWriteTimes,WriteTimes,cdf_b3l1
+         concenfile,nWriteTimes,WriteTimes,cdf_b3l1,Write_PT_Data,Write_PR_Data
 
       use Output_Vars,   only : &
          DepositThickness,DepArrivalTime,CloudArrivalTime,&
@@ -336,9 +336,9 @@
 
       !allocate(Airport_Thickness_TS(nWriteTimes))
 
-      do plt_indx = 1,nWriteTimes
-        call write_DepPOI_TS_PNG_gnuplot(plt_indx)
-      enddo
+!      do plt_indx = 1,nWriteTimes
+!        call write_DepPOI_TS_PNG_gnuplot(plt_indx)
+!      enddo
 
 
 !      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

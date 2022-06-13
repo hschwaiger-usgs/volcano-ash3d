@@ -28,7 +28,7 @@
          Called_Gen_Output_Vars,isFinal_TS,LoadConcen,log_step, Ash3dHome,&
          Output_at_logsteps,Output_at_WriteTimes,Output_every_TS,&
          NextWriteTime,iTimeNext,nvprofiles,nWriteTimes,&
-         WriteAirportFile_ASCII,WriteAirportFile_KML
+         Write_PT_Data,Write_PR_Data
 
       use time_data,     only : &
          time,dt,Simtime_in_hours,t0,t1,ntmax
@@ -129,10 +129,10 @@
       if(iostatus.eq.0)then
         read(tmp_str,*)CFL
         write(global_info,*)&
-          "CFL condition reset by environment variable to: ",CFL
+          "CFL condition reset by environment variable to: ",real(CFL,kind=4)
       else
         write(global_info,*)&
-          "CFL condition : ",CFL
+          "CFL condition : ",real(CFL,kind=4)
       endif
 
       aloft_percent_remaining = 1.0_ip
@@ -233,7 +233,7 @@
       call output_results
 
       ntmax = max(1,3*int(Simtime_in_hours/dt))
-      if (nvprofiles.gt.0)then
+      if (Write_PR_Data)then
         call Allocate_Profile(nzmax,ntmax,nvprofiles)
       endif
 
@@ -279,6 +279,7 @@
           ! find the wind field at the current time
         first_time     = .false.
         call MesoInterpolater(time , Load_MesoSteps , Interval_Frac, first_time)
+
 !------------------------------------------------------------------------------
 !       OPTIONAL MODULES
 !         Insert calls to special MesoInterpolaters subroutines here
@@ -315,6 +316,16 @@
                        concen_pd(ivent,jvent,1:ibase-1,1:n_gs_max,ts0) + & ! kg/km3
                        dt                                              * & ! hr
                        SourceNodeFlux(1:ibase-1,1:n_gs_max)                ! kg/km3 hr
+              do isize=1,n_gs_max
+                do k=1,ibase-1
+                  SourceCumulativeVol = SourceCumulativeVol + & ! final units is km3
+                    dt                              * & ! hr
+                    SourceNodeFlux(k,isize)         * & ! kg/km3 hr
+                    kappa_pd(ivent,jvent,k)         / & ! km3
+                    MagmaDensity                    / & ! kg/m3
+                    KM3_2_M3                            ! m3/km3
+                enddo
+              enddo
               do iz=ibase,itop
                 !Within the cloud: first, average the concentration that curently
                 !exists in the 9 cells surrounding the vent
@@ -324,15 +335,37 @@
                 enddo
               enddo
               !Then, add tephra to the 9 nodes surrounding the vent
+              ! TephraSourceNodes has a special line to reduce SourceNodeFlux by a factor 9
+              ! because it is applied 9 times here.  We need to be careful about mixing mass
+              ! and concentration since cell volume differ in lat, but this should be minor
               do ii=ivent-1,ivent+1
                 do jj=jvent-1,jvent+1
                   do iz=ibase,itop
                     concen_pd(ii,jj,iz,1:n_gs_max,ts0) =                &
                               concen_pd(ii,jj,iz,1:n_gs_max,ts0)        &
                                  + dt*SourceNodeFlux(iz,1:n_gs_max)
+                    do isize=1,n_gs_max
+                      SourceCumulativeVol = SourceCumulativeVol + & ! final units is km3
+                        dt                              * & ! hr
+                        SourceNodeFlux(iz,isize)         * & ! kg/km3 hr
+                        kappa_pd(ivent,jvent,iz)         / & ! km3
+                        MagmaDensity                    / & ! kg/m3
+                        KM3_2_M3                            ! m3/km3
+                    enddo
                   enddo
                 enddo
               enddo
+              !! this part is just for book-keeping and error checking
+              !do isize=1,n_gs_max
+              !  do k=1,nzmax+1
+              !    SourceCumulativeVol = SourceCumulativeVol + & ! final units is km3
+              !      dt                              * & ! hr
+              !      SourceNodeFlux(k,isize)         * & ! kg/km3 hr
+              !      kappa_pd(ivent,jvent,k)         / & ! km3
+              !      MagmaDensity                    / & ! kg/m3
+              !      KM3_2_M3                            ! m3/km3
+              !  enddo
+              !enddo
             else ! (SourceType.eq.'umbrella' or 'umbrella_air')
               ! All other standard source types (point,line,profile, suzuki) are
               ! integrated as follows.
@@ -340,11 +373,11 @@
               concen_pd(ivent,jvent,1:nzmax+1,1:n_gs_max,ts0)    &
                 + dt*SourceNodeFlux(1:nzmax+1,1:n_gs_max)
               ! this part is just for book-keeping and error checking
-              do ii=1,n_gs_max
+              do isize=1,n_gs_max
                 do k=1,nzmax+1
                   SourceCumulativeVol = SourceCumulativeVol + & ! final units is km3
                     dt                              * & ! hr
-                    SourceNodeFlux(k,ii)            * & ! kg/km3 hr
+                    SourceNodeFlux(k,isize)         * & ! kg/km3 hr
                     kappa_pd(ivent,jvent,k)         / & ! km3
                     MagmaDensity                    / & ! kg/m3
                     KM3_2_M3                            ! m3/km3
@@ -420,7 +453,7 @@
           call FirstAsh
 
             ! Track ash on vertical profiles
-          if (nvprofiles.gt.0)then
+          if (Write_PR_Data)then
             call Calc_vprofile(itime)
             call vprofilewriter(itime)     !write out vertical profiles
           endif
@@ -442,7 +475,8 @@
 !
 !------------------------------------------------------------------------------
           call output_results
-          if ((WriteAirportFile_ASCII.or.WriteAirportFile_KML).and. &
+          !if ((WriteAirportFile_ASCII.or.WriteAirportFile_KML).and. &
+          if (Write_PT_Data.and. &
               (iTimeNext.lt.nWriteTimes)) then
             do j=iTimeNext,nWriteTimes
               Airport_Thickness_TS(1:nairports,j) = Airport_Thickness(1:nairports)
@@ -491,13 +525,14 @@
         StopConditions(1) = (aloft_percent_remaining.lt.(1.0_ip-StopValue))
            ! Normal stop condition if simulation exceeds alloted time
         StopConditions(2) = (time.ge.Simtime_in_hours)
-           ! Normal stop conditionn when nothing is left to advect
+           ! Normal stop condition when nothing is left to advect
         StopConditions(3) = (n_gs_aloft.eq.0)
         if(SourceCumulativeVol.gt.EPS_TINY)then
           MassConsErr = abs(SourceCumulativeVol-tot_vol)/SourceCumulativeVol
         endif
            ! Error stop condition if the concen and outflow do not match the source
         StopConditions(4) = (MassConsErr.gt.1.0e-3_ip)
+        StopConditions(4) = .false.
            ! Error stop condition if any volume measure is negative
         StopConditions(5) = (dep_vol.lt.-1.0_ip*EPS_SMALL).or.&
                             (aloft_vol.lt.-1.0_ip*EPS_SMALL).or.&
@@ -540,10 +575,10 @@
       if((CheckConditions(2).eqv..true.).and.&
          (StopConditions(2).eqv..true.))then
         ! Normal stop condition if simulation exceeds alloted time
-        write(global_info,*)"time.le.Simtime_in_hours"
+        write(global_info,*)"time.ge.Simtime_in_hours"
         write(global_info,*)"              Time = ",real(time,kind=4)
         write(global_info,*)"  Simtime_in_hours = ",real(Simtime_in_hours,kind=4)
-        write(global_log,*)"time.le.Simtime_in_hours"
+        write(global_log,*)"time.ge.Simtime_in_hours"
         write(global_log,*)"              Time = ",real(time,kind=4)
         write(global_log,*)"  Simtime_in_hours = ",real(Simtime_in_hours,kind=4)
       endif
