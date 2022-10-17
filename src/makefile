@@ -204,11 +204,11 @@ USGSLIBDIR = -L$(USGSROOT)/lib
 USGSLIB = -lMetReader -lhourssince -lprojection
 USGSINC = -I$(USGSROOT)/include
 
-PLOTLIBS=-lplplotf95cd -lplplotf95d -L/usr/local/dislin -ldislin
-PLOTINC=-I/usr/local/dislin/gf
+#PLOTLIBS=-lplplotf95cd -lplplotf95d -L/usr/local/dislin -ldislin
+#PLOTINC=-I/usr/local/dislin/gf
 
-#PLOTLIBS=
-#PLOTINC=
+PLOTLIBS=
+PLOTINC=
 
 ###############################################################################
 ##########  GNU Fortran Compiler  #############################################
