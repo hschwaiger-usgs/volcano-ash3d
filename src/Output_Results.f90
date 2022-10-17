@@ -9,7 +9,7 @@
 
       use io_data,       only : &
          iout3d,ioutputFormat,WriteTimes,nWriteTimes,isFinal_TS,&
-         NextWriteTime,iTimeNext,nvprofiles,OutputStep_Marker,&
+         NextWriteTime,iTimeNext,OutputStep_Marker,&
          Write3dFiles,WriteAirportFile_ASCII,&
          WriteCloudConcentration_ASCII,WriteAirportFile_KML,&
          WriteCloudConcentration_KML,WriteCloudHeight_ASCII,&
@@ -17,7 +17,7 @@
          WriteCloudTime_ASCII,WriteCloudTime_KML,&
          WriteDepositFinal_ASCII,WriteDepositTS_KML,WriteDepositFinal_KML,&
          WriteDepositTime_ASCII,WriteDepositTime_KML,WriteDepositTS_ASCII,&
-         Writereflectivity_KML
+         WriteReflectivity_KML,Write_PR_Data
 
       use mesh,          only : &
          nxmax,nymax,nsmax
@@ -97,7 +97,7 @@
         iout3d = 0
 
         ! Open vertical profiles files
-        if (nvprofiles.gt.0) call vprofileopener
+        if (Write_PR_Data) call vprofileopener
 
         ! Open KML files
         call Set_OutVar_Specs          ! Initialize variables local to the Output_KML module
@@ -105,7 +105,7 @@
         if (WriteCloudHeight_KML)         call OpenFile_KML(2) ! Cloud Top Height
         !if (WriteCloudHeight_KML)         call OpenFile_KML(3) ! Cloud Bottom Height
         if (WriteCloudLoad_KML)           call OpenFile_KML(4) ! Cloud Load
-        if (Writereflectivity_KML)        call OpenFile_KML(6) ! Reflectivity
+        if (WriteReflectivity_KML)        call OpenFile_KML(6) ! Reflectivity
         if (WriteDepositTS_KML.or.WriteDepositFinal_KML)  then
           call OpenFile_KML(7) ! Deposit
           call OpenFile_KML(8) ! Deposit (NWS)
@@ -141,10 +141,8 @@
 
       !construct text string for timespan written to KML files
       if (iTimeNext.gt.0) then
-         !timenow = SimStartHour+time
-         !xmlTimeNow = HS_xmltime(timenow,BaseYear,useLeap)
          if (iTimeNext.eq.1) then
-             !if this is the first first time, set timestart equal to the eruption time
+             !if this is the first time, set timestart equal to the eruption time
              timestart = SimStartHour
            else
              !otherwise, set it equal to the midpoint between now and the last write time
@@ -195,7 +193,7 @@
           call write_2D_ASCII(nxmax,nymax,DepositThickness(1:nxmax,1:nymax), &
                               ' 0.000','DepositFile_        ')
         if (WriteCloudConcentration_ASCII)  &
-          call write_2D_ASCII(nxmax,nymax,MaxConcentration(1:nxmax,1:nymax)/1.0e3_ip, &
+          call write_2D_ASCII(nxmax,nymax,MaxConcentration(1:nxmax,1:nymax), &
                               ' 0.000','CloudConcentration_ ')
         if (WriteCloudHeight_ASCII)         &
           call write_2D_ASCII(nxmax,nymax,MaxHeight(1:nxmax,1:nymax), &
@@ -208,18 +206,18 @@
                               ' 0.000','CloudLoad_          ')
 
           ! Now KML files
-        if (WriteCloudConcentration_KML)   call Write_2D_KML(1,MaxConcentration/1.0e3_ip,1,1) ! Cloud Concentration
+        if (WriteCloudConcentration_KML)   call Write_2D_KML(1,MaxConcentration,1,1) ! Cloud Concentration
         if (WriteCloudHeight_KML)          call Write_2D_KML(2,MaxHeight, 1,1) ! Cloud Top Height
         !if (WriteCloudHeight_KML)          call Write_2D_KML(3,MinHeight,-1,1) ! Cloud Bottom Height
         if (WriteCloudLoad_KML)            call Write_2D_KML(4,CloudLoad, 1,1) ! Cloud Load
-        if (Writereflectivity_KML)         call Write_2D_KML(6,dbZCol, 1,1) ! Reflectivity
-        !if (WriteDepositTS_KML.or.WriteDepositFinal_KML)  then
-        if (WriteDepositTS_KML)  then
-             call Write_2D_KML(7,DepositThickness,0,1) ! Deposit
-             call Write_2D_KML(8,DepositThickness*MM_2_IN,0,1) ! Deposit (NWS)
+        if (WriteReflectivity_KML)         call Write_2D_KML(6,dbZCol, 1,1) ! Reflectivity
+        if (WriteDepositTS_KML.or.WriteDepositFinal_KML)  then
+        !if (WriteDepositTS_KML)  then
+          call Write_2D_KML(7,DepositThickness,0,1) ! Deposit
+          call Write_2D_KML(8,DepositThickness*MM_2_IN,0,1) ! Deposit (NWS)
         endif
 
-      endif
+      endif !.not.isFinal_TS
 
       !************************************************************************
       !  WRITE OUT 3D CONCENTRATION FILES      
@@ -244,7 +242,7 @@
       if (isFinal_TS) then
 
         ! close output files for vertical profiles
-        if (nvprofiles.gt.0) call vprofilecloser
+        if (Write_PR_Data) call vprofilecloser
 
         !if files of deposit arrival time are to be written out
         if (WriteDepositTime_KML) then
@@ -280,7 +278,7 @@
         if (WriteCloudHeight_KML)        call Close_KML(2,1)
         !if (WriteCloudHeight_KML)        call Close_KML(3,1)
         if (WriteCloudLoad_KML)          call Close_KML(4,1)
-        if (Writereflectivity_KML)       call Close_KML(6,1)
+        if (WriteReflectivity_KML)       call Close_KML(6,1)
         if (WriteDepositTS_KML) then
             call Close_KML(7,1)
             call Close_KML(8,1)

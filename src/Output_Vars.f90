@@ -5,16 +5,37 @@
       use io_units
 
       use global_param,  only : &
-         PI, M_2_MM, KM2_2_M2, KM3_2_M3, EPS_SMALL
+         PI, M_2_MM, KM2_2_M2, KG_2_MG, KM3_2_M3, EPS_SMALL
 
       use time_data,     only : &
          time_native
 
-      real(kind=ip)                :: DEPO_THRESH           = 1.0e-2_ip  !threshold deposit thickness (mm)
-      real(kind=ip)                :: DEPRATE_THRESH        = 1.0e-2_ip  !threshold deposition rate (mm/hr)
-      real(kind=ip)                :: CLOUDCON_THRESH       = 1.0e-3_ip  !threshold cloud concentration (kg/km3) for output
-      real(kind=ip)                :: CLOUDCON_GRID_THRESH  = 1.0e-7_ip  !threshold cloud concentration (kg/km3) for subgrid
-      real(kind=ip)                :: CLOUDLOAD_THRESH      = 2.0e-1_ip  !threshold cloud load (t/km2)
+        ! PRODUCT ID: KML var ID:: variable                     : units  : dims        : Output kml file name
+        !----------------------------------------------------------------------------------------------------------
+        ! iprod =  1:ivar =     :: full concentration array     : kg/km3 : (x,y,z,t,g) :
+        ! iprod =  2:ivar =     :: deposit granularity          : kg/m2  : (x,y,t,g)   :
+        ! iprod =  3:ivar =   7 :: deposit                      : mm     : (x,y,t)     : deposit_thickness_mm.kml
+        ! iprod =  4:ivar =   8 :: deposit (NWS)                : inches : (x,y,t)     : deposit_thickness_inches.kml
+        ! iprod =  5:ivar =  *7 :: deposit final                : mm     : (x,y)       :
+        ! iprod =  6:ivar =  *8 :: deposit final (NWS)          : inches : (x,y)       :
+        ! iprod =  7:ivar =   9 :: ashfall arrival time         : hours  : (x,y)       : ashfall_arrivaltimes_hours.kml
+        ! iprod =  8:ivar =     :: ashfall at airports          : mm     : (pt,tn)     : ash_arrivaltimes_airports.kml
+
+        ! iprod =  9:ivar =   1 :: ash-cloud concentration      : mg/m3  : (x,y,t)     : CloudConcentration.kml
+        ! iprod = 10:ivar =   2 :: ash-cloud height (top)       : km     : (x,y,t)     : CloudHeight.kml
+        ! iprod = 11:ivar =   3 :: ash-cloud height (bot)       : km     : (x,y,t)     : CloudBottom.kml
+        ! iprod = 12:ivar =   4 :: ash-cloud load               : T/km2  : (x,y,t)     : CloudLoad.kml
+        ! iprod = 13:ivar =   6 :: ash-cloud radar reflectivity : dBz    : (x,y,t)     : reflectivity.kml
+        ! iprod = 14:ivar =   5 :: ash-cloud arrival time       : hours  : (x,y)       : cloud_arrivaltimes_hours.kml
+
+        ! iprod = 15:ivar =  10 :: topography                   : km     : (x,y)       : Topography.kml
+        ! iprod = 16:ivar =     :: profiles concentration?      :
+
+      real(kind=ip)                :: DEPO_THRESH           = 1.0e-2_ip  ! threshold deposit thickness (mm)
+      real(kind=ip)                :: DEPRATE_THRESH        = 1.0e-2_ip  ! threshold deposition rate (mm/hr)
+      real(kind=ip)                :: CLOUDCON_THRESH       = 1.0e-3_ip  ! threshold cloud concentration (kg/km3) for output
+      real(kind=ip)                :: CLOUDCON_GRID_THRESH  = 1.0e-7_ip  ! threshold cloud concentration (kg/km3) for subgrid
+      real(kind=ip)                :: CLOUDLOAD_THRESH      = 2.0e-1_ip  ! threshold cloud load (t/km2)
                                        ! 0.2 T/km2 is roughly the detection
                                        ! limit of Pavolonis's SEVIRI satellite retrievals
 
@@ -62,26 +83,23 @@
       real(kind=ip) :: CloudArea                ! area of ash cloud at a given time
       real(kind=ip) :: LoadVal(5)               ! 5 threshold values for area calculations
       real(kind=ip) :: CloudLoadArea(5)         ! Corresponding areas where ash cloud exceeds LoadVal(i)
-      real(kind=ip) :: DepositAreaCovered              ! area covered by ash deposit
-
-        ! 1-D variables (in z)
-      !real(kind=ip), dimension(:),allocatable   :: TotalConcentration ! concentration from all grain sizes in a vertical column
+      real(kind=ip) :: DepositAreaCovered       ! area covered by ash deposit
 
 #ifdef USEPOINTERS
         ! 2-D variables (in x,y)
       logical, dimension(:,:),pointer :: Mask_Cloud
       logical, dimension(:,:),pointer :: Mask_Deposit
-      real(kind=ip), dimension(:,:),pointer :: DepositThickness => null() ! accumulated ash thickness on ground in mm (x,y)
-      real(kind=ip), dimension(:,:),pointer :: MaxConcentration => null() ! max concentration in the cloud at any i,j node
-      real(kind=ip), dimension(:,:),pointer :: DepArrivalTime   => null() 
-      real(kind=ip), dimension(:,:),pointer :: CloudArrivalTime => null() 
-      real(kind=ip), dimension(:,:),pointer :: CloudLoad        => null() ! Ash load in cloud, tonnes/km2
-      real(kind=ip), dimension(:,:),pointer :: CloudLoadLast    => null() ! Ash load at last time step, tonnes/km2
-      real(kind=ip), dimension(:,:),pointer :: MaxHeight        => null() ! maximum cloud height
-      real(kind=ip), dimension(:,:),pointer :: MinHeight        => null() ! cloud bottom height
-      real(kind=ip), dimension(:,:),pointer :: dbZCol           => null() ! max reflectivity in a vertical column
+      real(kind=ip), dimension(:,:),pointer :: DepositThickness => null() ! accumulated ash thickness on ground (mm)
+      real(kind=ip), dimension(:,:),pointer :: MaxConcentration => null() ! max concentration in the cloud at any i,j node (mg/m3)
+      real(kind=ip), dimension(:,:),pointer :: DepArrivalTime   => null() ! (hours)
+      real(kind=ip), dimension(:,:),pointer :: CloudArrivalTime => null() ! (hours)
+      real(kind=ip), dimension(:,:),pointer :: CloudLoad        => null() ! Ash load in cloud, (tonnes/km2)
+      real(kind=ip), dimension(:,:),pointer :: CloudLoadLast    => null() ! Ash load at last time step, (tonnes/km2)
+      real(kind=ip), dimension(:,:),pointer :: MaxHeight        => null() ! maximum cloud height (km)
+      real(kind=ip), dimension(:,:),pointer :: MinHeight        => null() ! cloud bottom height (km)
+      real(kind=ip), dimension(:,:),pointer :: dbZCol           => null() ! max reflectivity in a vertical column (dB)
 
-      real(kind=ip), dimension(:,:,:),pointer :: pr_ash           => null() ! concentration profile
+      real(kind=ip), dimension(:,:,:),pointer :: pr_ash         => null() ! concentration profile
 
         ! 3-D variables
         !   (in x,y,z)
@@ -91,18 +109,18 @@
       logical, dimension(:,:),allocatable :: Mask_Cloud
       logical, dimension(:,:),allocatable :: Mask_Deposit
       real(kind=ip), dimension(:,:),allocatable :: DepositThickness   ! accumulated ash thickness on ground in mm (x,y)
-      real(kind=ip), dimension(:,:),allocatable :: MaxConcentration   ! max concentration in the cloud at any i,j node
-      real(kind=ip), dimension(:,:),allocatable :: DepArrivalTime
-      real(kind=ip), dimension(:,:),allocatable :: CloudArrivalTime
+      real(kind=ip), dimension(:,:),allocatable :: MaxConcentration   ! max concentration in the cloud at any i,j node (mg/m3)
+      real(kind=ip), dimension(:,:),allocatable :: DepArrivalTime     ! (hours)
+      real(kind=ip), dimension(:,:),allocatable :: CloudArrivalTime   ! (hours)
       real(kind=ip), dimension(:,:),allocatable :: CloudLoad          ! Ash load in cloud, tonnes/km2
       real(kind=ip), dimension(:,:),allocatable :: CloudLoadLast      ! Ash load at last time step, tonnes/km2
       real(kind=ip), dimension(:,:),allocatable :: MaxHeight          ! maximum cloud height
       real(kind=ip), dimension(:,:),allocatable :: MinHeight          ! cloud bottom height
       real(kind=ip), dimension(:,:),allocatable :: dbZCol             ! max reflectivity in a vertical column
 
-      real(kind=ip), dimension(:,:,:),allocatable :: pr_ash             ! concentration profile
+      real(kind=ip), dimension(:,:,:),allocatable :: pr_ash           ! concentration profile
 
-        ! These arrays are only used when reading an output file of unknow size
+        ! These arrays are only used when reading an output file of unknown size
       real(kind=ip), dimension(:,:),allocatable :: R_XY
       integer       :: R_nx,R_ny
       real(kind=ip) :: R_xll,R_yll
@@ -171,9 +189,9 @@
       allocate(MaxConcentration(nx,ny))
       MaxConcentration = 0.0_ip
       allocate(DepArrivalTime(nx,ny))
-      DepArrivalTime = 0.0_ip
+      DepArrivalTime = DepArrivalTime_FillValue
       allocate(CloudArrivalTime(nx,ny))                    ! time of arrival of ash cloud
-      CloudArrivalTime = 0.0_ip
+      CloudArrivalTime = CloudArrivalTime_FillValue
       allocate(CloudLoad(nx,ny))
       CloudLoad    = 0.0_ip
       allocate(CloudLoadLast(nx,ny))
@@ -285,7 +303,6 @@
       if(allocated(dbZ))              deallocate(dbZ)
 
       if(allocated(pr_ash))           deallocate(pr_ash)
-
 #endif
 
       end subroutine Deallocate_Output_Vars
@@ -405,8 +422,9 @@
               zcol = 0.0_ip
               do l=1,n_gs_max
                 !convert concentration (kg/km3) to number density (#/m3)
-                NumDens = concen_pd(i,j,k,l,ts1)/(Tephra_rho_m(l)*PI* &
-                              Tephra_gsdiam(l)**3.0_ip/6.0_ip)/KM3_2_M3     !particles/m3
+                NumDens = concen_pd(i,j,k,l,ts1) / &
+                            (Tephra_rho_m(l)*PI*Tephra_gsdiam(l)**3.0_ip/6.0_ip) / &
+                            KM3_2_M3                                  !particles/m3
                 zcol    = zcol + NumDens*(1000.0_ip*Tephra_gsdiam(l))**6.0_ip
               enddo
               if(zcol.gt.EPS_SMALL)then
@@ -420,17 +438,12 @@
         enddo
       endif
 
-!      if (WriteKMLreflectivity) then
-!        write(306,2) time, maxval(dbZ)
-!2       format(f8.3,e14.4)
-!      endif
-    
       end subroutine dbZCalculator      
 
 !******************************************************************************
 
       subroutine ConcentrationCalculator
-      
+
       use mesh,          only : &
          nxmax,nymax,nzmax,dz_vec_pd,z_cc_pd,ts1,sigma_nz_pd
 
@@ -443,9 +456,11 @@
       implicit none
 
       integer :: i,j,k
-      real(kind=ip),dimension(nzmax)  :: TotalConcentration
-      real(kind=ip) :: MaxTotalConcentration
       real(kind=ip) :: CellArea
+
+      ! Both these concentration variables are in the 'natural' units of kg/km3
+      real(kind=ip),dimension(nzmax) :: TotalConcentration ! concentration from all grain sizes as a vertical column
+      real(kind=ip)                  :: MaxTotalConcentration
  
       ! calculate cloud concentration,
       ! cloud height, and cloud bottom
@@ -468,14 +483,13 @@
               CloudLoad(i,j) = CloudLoad(i,j) + &
                                 sum(concen_pd(i,j,k,1:n_gs_max,ts1)) * & ! in kg/km^3
                                    dz_vec_pd(k)                      / & ! convert to kg/km^2
-                                 1.0e3_ip                            ! tonnes/km2
+                                1.0e3_ip                                 ! tonnes/km2
                ! Pull out column total concentration
               TotalConcentration(k) = sum(concen_pd(i,j,k,1:n_gs_max,ts1))
 
                ! Note max height
               if(TotalConcentration(k).ge.CLOUDCON_THRESH)then
-                ! this is overwritten if the k+1 is also identified as an ash
-                ! cloud
+                ! this is overwritten if the k+1 is also identified as an ash cloud
                 MaxHeight(i,j)=z_cc_pd(k)+0.5_ip*dz_vec_pd(k)
               endif
             enddo
@@ -506,7 +520,8 @@
               MinHeight(i,j)=min(MaxHeight(i,j),MinHeight(i,j))
 
               CloudArea = CloudArea + sigma_nz_pd(i,j,1)
-              MaxConcentration(i,j) = MaxTotalConcentration
+                ! Set the output variable for max concentration in mg/m3
+              MaxConcentration(i,j) = MaxTotalConcentration * KG_2_MG/KM3_2_M3
             else
               ! Not an ash cloud column so write 0.0
               ! This will be set to FillValue in netcdf when writing out
@@ -527,7 +542,7 @@
 !******************************************************************************
 
       subroutine CloudAreaCalculator
-      
+
       use Tephra,        only : &
          n_gs_max
 
@@ -606,6 +621,7 @@
       do i=1,nxmax
         do j=1,nymax
           !thickness = DepositThickness(i,j)
+          ! Note: this check below requires that the fill value be < 0
           if(Mask_Deposit(i,j).and.DepArrivalTime(i,j).lt.0.0_ip)then
             DepArrivalTime(i,j)=time
           endif
@@ -794,7 +810,7 @@
 !******************************************************************************
 
       subroutine FirstAsh
-      
+
 !     Subroutine that determines whether the ash has yet hit any airports
 
       use Airports,      only : &
@@ -806,7 +822,7 @@
 
       use time_data,     only : &
          time, dt
-      
+
       integer :: i
 
       ! Requires that AshThicknessCalculator and ConcentrationCalculator were called
@@ -833,7 +849,8 @@
         !For airports where ash has arrived . . .
         !mark fall duration if ash has stopped falling
         if (Airport_AshArrived(i).eqv..true.) then
-          if ((Airport_depRate(i).lt.DEPRATE_THRESH).and.(Airport_depRateLast(i).ge.DEPRATE_THRESH)) then
+          if ((Airport_depRate(i).lt.DEPRATE_THRESH).and.&
+              (Airport_depRateLast(i).ge.DEPRATE_THRESH)) then
             Airport_AshDuration(i) = time-Airport_AshArrivalTime(i)
           endif
         endif
@@ -854,7 +871,8 @@
           Airport_CloudArrivalTime(i) = time
         endif
         !if ash thickness>THICKNESS_THRESH mm, call it "arrived"
-        if ((Airport_AshArrived(i).eqv..false.).and.(Airport_thickness(i).gt.THICKNESS_THRESH)) then
+        if ((Airport_AshArrived(i).eqv..false.).and.&
+            (Airport_thickness(i).gt.THICKNESS_THRESH)) then
           Airport_AshArrived(i) = .true.
           Airport_AshArrivalTime(i) = time
           ! Some cases with high eruptive volume might have a deposit that
@@ -872,4 +890,3 @@
       end subroutine FirstAsh
 
       end module Output_Vars
-

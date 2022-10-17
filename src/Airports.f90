@@ -7,10 +7,13 @@
       use io_data,       only : &
          Ash3dHome
 
+      !use Output_Vars,    only : &
+      !   DepArrivalTime_FillValue,CloudArrivalTime_FillValue
+
       integer, parameter             :: MAXAIRPORTS     = 10000
 
       integer                        :: NAIRPORTS_EWERT     ! number of airports in the global list in Read_GlobalAirports
-      integer                        :: nairports           ! number of nearby airports
+      integer                        :: nairports           ! number of nearby airports in domain
       integer                        :: n_ext_airports      ! number of nearby airports in external file
       integer                        :: n_airports_total    ! number of airports in external file
 
@@ -82,6 +85,8 @@
       allocate(Airport_CloudArrived(nair))     ;     Airport_CloudArrived = .false.
       allocate(Airport_AshArrivalTime(nair))   ;   Airport_AshArrivalTime = -9999.0_ip
       allocate(Airport_CloudArrivalTime(nair)) ; Airport_CloudArrivalTime = -9999.0_ip
+      !allocate(Airport_AshArrivalTime(nair))   ;   Airport_AshArrivalTime = DepArrivalTime_FillValue
+      !allocate(Airport_CloudArrivalTime(nair)) ; Airport_CloudArrivalTime = CloudArrivalTime_FillValue
       allocate(Airport_AshDuration(nair))      ;      Airport_AshDuration = 0.0_ip
       allocate(Airport_CloudDuration(nair))    ;    Airport_CloudDuration = 0.0_ip
       allocate(Airport_CloudHere(nair))        ;    Airport_CloudHere     = 0.0_ip       !cloud load overhead

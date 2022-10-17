@@ -9,7 +9,7 @@
 
       use global_param,    only : &
          EPS_SMALL,MPS_2_KMPHR,GRAV, &
-         useTemperature,useCalcFallVel
+         useTemperature,useCalcFallVel,useVz_rhoG
 
       use solution,        only : &
          vx_pd,vy_pd,vz_pd,vf_pd
@@ -160,33 +160,40 @@
           vy_meso_next_step_sp = vy_meso_1_sp
         endif
 
+        ! Only bother getting Vz if it is available in the wind files
         if(useTemperature)then
           call Set_Atmosphere_Meso(Load_MesoSteps,1.0_ip,first_time)
-          ! Now that we have temperature and density, we can get a better Vz
-          ivar = 7 ! Pressure Vertical Velocity
-          if(Met_var_IsAvailable(ivar))then
-            call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now)
-            MR_dum3d_MetP = MR_dum3d_MetP/      &
-             real((-AirDens_meso_next_step_MetP_sp*GRAV),kind=sp)
-            call MR_Regrid_MetP_to_CompGrid(MR_iMetStep_Now)
+        endif
+        if(Met_var_IsAvailable(4))then
+          if(useTemperature.and.useVz_rhoG)then
+            ! Now that we have temperature and density, we can get a better Vz
+            ivar = 7 ! Pressure Vertical Velocity
+            if(Met_var_IsAvailable(ivar))then
+              call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now)
+              MR_dum3d_MetP = MR_dum3d_MetP/      &
+               real((-AirDens_meso_next_step_MetP_sp*GRAV),kind=sp)
+              call MR_Regrid_MetP_to_CompGrid(MR_iMetStep_Now)
+            else
+              write(*,*)"Tried to read variable, but its not available: ",&
+                        Met_var_GRIB_names(ivar)
+              MR_dum3d_compH = 0.0_sp
+            endif
+            vz_meso_1_sp = MR_dum3d_compH
+            vz_meso_next_step_sp = vz_meso_1_sp
           else
-            write(*,*)"Tried to read variable, but its not available: ",&
-                      Met_var_GRIB_names(ivar)
-            MR_dum3d_compH = 0.0_sp
+            ivar = 4 ! W winds
+            if(Met_var_IsAvailable(ivar))then
+              call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now)
+            else
+              write(*,*)"Tried to read variable, but its not available: ",&
+                        Met_var_GRIB_names(ivar)
+              MR_dum3d_compH = 0.0_sp
+            endif
+            vz_meso_1_sp = MR_dum3d_compH
+            vz_meso_next_step_sp = vz_meso_1_sp
           endif
-          vz_meso_1_sp = MR_dum3d_compH
-          vz_meso_next_step_sp = vz_meso_1_sp
         else
-          ivar = 4 ! W winds
-          if(Met_var_IsAvailable(ivar))then
-            call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now)
-          else
-            write(*,*)"Tried to read variable, but its not available: ",&
-                      Met_var_GRIB_names(ivar)
-            MR_dum3d_compH = 0.0_sp
-          endif
-          vz_meso_1_sp = MR_dum3d_compH
-          vz_meso_next_step_sp = vz_meso_1_sp
+          vz_meso_next_step_sp = 0.0_sp
         endif
 
         if(useCalcFallVel)then
@@ -312,48 +319,53 @@
         endif
 
         vf_meso_last_step_sp = vf_meso_next_step_sp
-        if(useTemperature)then
-          call Set_Atmosphere_Meso(Load_MesoSteps,1.0_ip,first_time)
-          ! Again, now that we have temperature and density, we can get a better Vz
-          ivar = 7 ! Pressure Vertical Velocity
-          if(Met_var_IsAvailable(ivar))then
-            write(global_log,*)"Vz is calculated by PressVertVel/(rho g)"
-            call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now+1)
-            MR_dum3d_MetP = MR_dum3d_MetP/                   &
-              real((-AirDens_meso_next_step_MetP_sp*GRAV),kind=sp)
-            call MR_Regrid_MetP_to_CompGrid(MR_iMetStep_Now+1)
+        ! Only bother getting Vz if it is available in the wind files
+        if(Met_var_IsAvailable(4))then
+          if(useTemperature.and.useVz_rhoG)then
+            call Set_Atmosphere_Meso(Load_MesoSteps,1.0_ip,first_time)
+            ! Again, now that we have temperature and density, we can get a better Vz
+            ivar = 7 ! Pressure Vertical Velocity
+            if(Met_var_IsAvailable(ivar))then
+              write(global_log,*)"Vz is calculated by PressVertVel/(rho g)"
+              call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now+1)
+              MR_dum3d_MetP = MR_dum3d_MetP/                   &
+                real((-AirDens_meso_next_step_MetP_sp*GRAV),kind=sp)
+              call MR_Regrid_MetP_to_CompGrid(MR_iMetStep_Now+1)
+            else
+              write(global_error,*)"Tried to read variable, but its not available: ",&
+                        Met_var_GRIB_names(ivar)
+              MR_dum3d_compH = 0.0_sp
+              stop 1 
+            endif
+  
+            if(Meso_toggle.eq.0)then
+              vz_meso_1_sp = MR_dum3d_compH
+              vz_meso_next_step_sp = vz_meso_1_sp
+            else
+              vz_meso_2_sp = MR_dum3d_compH
+              vz_meso_next_step_sp = vz_meso_2_sp
+            endif
           else
-            write(global_error,*)"Tried to read variable, but its not available: ",&
-                      Met_var_GRIB_names(ivar)
-            MR_dum3d_compH = 0.0_sp
-            stop 1 
-          endif
-
-          if(Meso_toggle.eq.0)then
-            vz_meso_1_sp = MR_dum3d_compH
-            vz_meso_next_step_sp = vz_meso_1_sp
-          else
-            vz_meso_2_sp = MR_dum3d_compH
-            vz_meso_next_step_sp = vz_meso_2_sp
+            ivar = 4 ! W winds
+            if(Met_var_IsAvailable(ivar))then
+              write(global_log,*)"Vz is calculated by PressVertVel/(dp/dz)"
+              call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now+1)
+            else
+              write(global_error,*)"Tried to read variable, but its not available: ",&
+                        Met_var_GRIB_names(ivar)
+              MR_dum3d_compH = 0.0_sp
+              stop 1
+            endif
+            if(Meso_toggle.eq.0)then
+              vz_meso_1_sp = MR_dum3d_compH
+              vz_meso_next_step_sp = vz_meso_1_sp
+            else
+              vz_meso_2_sp = MR_dum3d_compH
+              vz_meso_next_step_sp = vz_meso_2_sp
+            endif
           endif
         else
-          ivar = 4 ! W winds
-          if(Met_var_IsAvailable(ivar))then
-            write(global_log,*)"Vz is calculated by PressVertVel/(dp/dz)"
-            call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now+1)
-          else
-            write(global_error,*)"Tried to read variable, but its not available: ",&
-                      Met_var_GRIB_names(ivar)
-            MR_dum3d_compH = 0.0_sp
-            stop 1
-          endif
-          if(Meso_toggle.eq.0)then
-            vz_meso_1_sp = MR_dum3d_compH
-            vz_meso_next_step_sp = vz_meso_1_sp
-          else
-            vz_meso_2_sp = MR_dum3d_compH
-            vz_meso_next_step_sp = vz_meso_2_sp
-          endif
+          vz_meso_next_step_sp = 0.0_sp
         endif
 
         if(useCalcFallVel)then
@@ -397,10 +409,10 @@
                  vz_meso_last_step_sp(1:nxmax,1:nymax,1:nzmax)),kind=ip) * &
                                      Interval_Frac)*MPS_2_KMPHR
 
-!      write(global_debug,*)"Zero-ing velocities in Mesointerpolator"
-!      vx_pd = 0.0_ip
-!      vy_pd = 0.0_ip
-!      vz_pd = 0.0_ip
+      !write(global_debug,*)"Zero-ing velocities in Mesointerpolator"
+      !vx_pd = 0.0_ip
+      !vy_pd = 0.0_ip
+      !vz_pd = 0.0_ip
 
       ! Now interpolate onto current time
       if(useCalcFallVel)then

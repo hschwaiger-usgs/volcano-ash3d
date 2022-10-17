@@ -47,7 +47,8 @@
       real(kind=ip), parameter :: M_2_MM     = 1.0e3_ip
       real(kind=ip), parameter :: MM_2_IN    = 3.937e-2_ip
       real(kind=ip), parameter :: KM2_2_M2   = 1.0e6_ip
-      real(kind=ip), parameter :: KM3_2_M3   = 1.0e9_ip     
+      real(kind=ip), parameter :: KM3_2_M3   = 1.0e9_ip
+      real(kind=ip), parameter :: KG_2_MG    = 1.0e6_ip
       real(kind=ip), parameter :: MPS_2_KMPHR= 3.6_ip       ! m/s to km/hr
       real(kind=ip), parameter :: HR_2_S     = 3600.0_ip
 
@@ -101,6 +102,8 @@
       logical                  :: useVarDiffV     = .false.
 
       logical                  :: useTemperature  = .false.
+      logical                  :: useVz_rhoG      = .false.
+      !logical                  :: useVz_rhoG      = .true.
       logical                  :: useCalcFallVel  = .false.
       logical                  :: useVariableGSbins  = .false.
         ! Only load temperature and water content data if needed
@@ -225,7 +228,7 @@
       logical            :: WriteCloudLoad_KML
       logical            :: WriteCloudTime_ASCII          ! .true. if time of cloud arrival is to be written out
       logical            :: WriteCloudTime_KML
-!      logical            :: WriteReflectivity_ASCII       ! .true. if radar dbZ is to be calculated
+      logical            :: WriteReflectivity_ASCII       ! .true. if radar dbZ is to be calculated
       logical            :: WriteReflectivity_KML
       logical            :: WriteDepositFinal_ASCII       ! .true. if final deposit file is to be written out
       logical            :: WriteDepositFinal_KML
@@ -606,7 +609,7 @@
         ! this parameter for the output products
       real(kind=dp),parameter :: OutputOffset    = 0.0_dp
 
-      integer            :: BaseYear = 1900
+      integer            :: BaseYear = 1800
       logical            :: useLeap  = .true.
 
       ! Variables for the wall time this simulation is launched

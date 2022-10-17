@@ -4,11 +4,24 @@
 
       use io_units
 
+      use global_param,  only : &
+         MM_2_IN
+
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,lon_cc_pd,lat_cc_pd
 
+      use time_data,     only : &
+         time
+
       use io_data,       only : &
-         concenfile,nWriteTimes,WriteTimes,cdf_b3l1,Write_PT_Data,Write_PR_Data
+         iTimeNext, &
+         concenfile,nWriteTimes,WriteTimes,cdf_b3l1,Write_PT_Data,Write_PR_Data,&
+         iout3d,isFinal_TS,WriteInterval,WriteGSD,WriteDepositTS_KML,WriteDepositTS_ASCII,&
+         WriteDepositTime_KML,WriteDepositTime_ASCII,WriteDepositFinal_KML,&
+         WriteDepositFinal_ASCII,WriteCloudTime_KML,WriteCloudTime_ASCII,WriteReflectivity_ASCII,&
+         WriteCloudLoad_KML,WriteReflectivity_KML,WriteCloudLoad_ASCII,WriteCloudHeight_KML,&
+         WriteCloudHeight_ASCII,WriteCloudConcentration_KML,WriteCloudConcentration_ASCII,&
+         WriteAirportFile_KML,WriteAirportFile_ASCII,Write3dFiles,Write_PR_Data
 
       use Output_Vars,   only : &
          DepositThickness,DepArrivalTime,CloudArrivalTime,&
@@ -17,10 +30,9 @@
       use Airports,      only : &
          Airport_Thickness_TS,Airport_Name
 
-      use Ash3d_Netcdf
+      use Output_KML
 
-      use plplot
-      use dislin
+      use Ash3d_Netcdf
 
       implicit none
 
@@ -29,36 +41,45 @@
       character (len=100) :: arg
       integer             :: iformat
       integer             :: iprod
+      integer             :: ivar,TS_Flag,height_flag
       integer             :: itime = -1      ! initialize time step to the last step
+      integer             :: i,j
       real(kind=ip),dimension(:,:),allocatable :: OutVar
+      real(kind=ip)       :: OutFillValue
       logical             :: IsThere
+      character(len=6)    :: Fill_Value
+      character(len=20)   :: filename_root
+      character(len=70)   :: comd
 
+      integer :: pt_indx
 
-!      character(len=14) :: dp_outfile
-!      character(len=14) :: dp_gnufile
-!      character(len=14) :: dp_pngfile1
-!      character(len=14) :: dp_pngfile2
-!
-      integer :: plt_indx
-!      character(len=12) :: Airport_Name
-!      real(kind=8) :: ymaxpl
-!
-!
-!      ! PLPLOT stuff
-!      !  http://plplot.sourceforge.net/
-!      real(kind=plflt) :: xmin
-!      real(kind=plflt) :: xmax
-!      real(kind=plflt) :: ymin
-!      real(kind=plflt) :: ymax
-!      real(kind=plflt), dimension(:), allocatable :: x, y, x0, y0
-!      integer(kind=4) :: r1 = 0
-!      integer(kind=4) :: g1 = 0
-!      integer(kind=4) :: b1 = 0
-!      integer(kind=4) :: r2 = 136
-!      integer(kind=4) :: g2 = 136
-!      integer(kind=4) :: b2 = 136
-!
-!
+      ! Initialize all output logicals to false
+      Write_PR_Data                 = .false.
+      Write_PT_Data                 = .false.
+      Write3dFiles                  = .false.
+      WriteGSD                      = .false.
+      WriteDepositTS_KML            = .false.
+      WriteDepositTS_ASCII          = .false.
+      WriteDepositTime_KML          = .false.
+      WriteDepositTime_ASCII        = .false.
+      WriteDepositFinal_KML         = .false.
+      WriteDepositFinal_ASCII       = .false.
+      WriteCloudTime_KML            = .false.
+      WriteCloudTime_ASCII          = .false.
+      WriteCloudLoad_KML            = .false.
+      WriteReflectivity_ASCII       = .false.
+      WriteReflectivity_KML         = .false.
+      WriteCloudLoad_ASCII          = .false.
+      WriteCloudHeight_KML          = .false.
+      WriteCloudHeight_ASCII        = .false.
+      WriteCloudConcentration_KML   = .false.
+      WriteCloudConcentration_ASCII = .false.
+      WriteAirportFile_KML          = .false.
+      WriteAirportFile_ASCII        = .false.
+      Write3dFiles                  = .false.
+
+      open(unit=global_log,file='Ash3d_pp.log',status='unknown')
+
       ! TEST READ COMMAND LINE ARGUMENTS
       nargs = command_argument_count()
       if (nargs.eq.0) then
@@ -72,26 +93,30 @@
         write(global_info,*)'  where: infile   = the netcdf file written by Ash3d'
         write(global_info,*)'   output_product = 1 full concentration array'
         write(global_info,*)'                    2 deposit granularity'
-        write(global_info,*)'                    3 final deposit thickness'
-        write(global_info,*)'                    4 deposit at specified times'
-        write(global_info,*)'                    5 ash-cloud concentration'
-        write(global_info,*)'                    6 ash-cloud height'
-        write(global_info,*)'                    7 ash-cloud bottom'
-        write(global_info,*)'                    8 ash-cloud load'
-        write(global_info,*)'                    9 deposit arrival time'
-        write(global_info,*)'                   10 ashfall arrival time'
-        write(global_info,*)'                   11 ash-cloud arrival time'
-        write(global_info,*)'                   12 radar reflectivity'
-        write(global_info,*)'                   13 ash arrival at airports/POI'
-        write(global_info,*)'                   14 profile plots'
+        write(global_info,*)'                    3 deposit thickness (mm time-series)'
+        write(global_info,*)'                    4 deposit thickness (inches time-series)'
+        write(global_info,*)'                    5 deposit thickness (mm final)'
+        write(global_info,*)'                    6 deposit thickness (inches final)'
+        write(global_info,*)'                    7 ashfall arrival time (hours)'
+        write(global_info,*)'                    8 ashfall arrival at airports/POI (mm)'
+        write(global_info,*)'                    9 ash-cloud concentration (mg/m3)'
+        write(global_info,*)'                   10 ash-cloud height (km)'
+        write(global_info,*)'                   11 ash-cloud bottom (km)'
+        write(global_info,*)'                   12 ash-cloud load (T/km2 or )'
+        write(global_info,*)'                   13 ash-cloud radar reflectivity (dBz)'
+        write(global_info,*)'                   14 ash-cloud arrival time (hours)'
+        write(global_info,*)'                   15 topography'
+        write(global_info,*)'                   16 profile plots'
         write(global_info,*)'           format = 1 ASCII/ArcGIS'
-        write(global_info,*)'                    2 KMZ'
+        write(global_info,*)'                    2 KML/KMZ'
         write(global_info,*)'                    3 image/png'
         write(global_info,*)'                    4 binary'
         write(global_info,*)'                    5 shape file'
         write(global_info,*)'                    6 grib2'
         write(global_info,*)'                    7 tecplot'
-        write(global_info,*)'         [t_index] = index of time slice to plot (optional)'
+        write(global_info,*)'                    8 vtk'
+
+        write(global_info,*)'         [t_index] = index of time slice to plot; -1 for final (optional)'
         write(global_info,*)'  '
 
         write(global_info,*)'Enter name of ESP input file:'
@@ -137,8 +162,8 @@
         write(global_info,*)"Ash3d Output file: ",concenfile
       endif
       !  Arg #2
-      if(iprod.lt.1.or.iprod.gt.14)then
-        write(global_error,*)"ERROR: output product requested is not in range 1-14."
+      if(iprod.lt.1.or.iprod.gt.16)then
+        write(global_error,*)"ERROR: output product requested is not in range 1-16."
         write(global_error,*)"       Run Ash3d_PostProc with no command-line"
         write(global_error,*)"       arguments to set usage information"
         stop 1
@@ -152,30 +177,73 @@
           write(global_info,*)' Currently, no output formats available for iprod=2'
           stop 1
         elseif(iprod.eq.3)then
-          write(global_info,*)'output variable = 3 final deposit thickness'
+          write(global_info,*)'output variable = 3 deposit thickness; TS or step (mm)'
+          ivar = 7  ! Note that kml writes out all netcdf time steps followed by the final
+          TS_flag = 1      ! 1 = time series
+          height_flag = 0  ! All the cells should be pinned to z=0
         elseif(iprod.eq.4)then
-          write(global_info,*)'output variable = 4 deposit at specified times'
+          write(global_info,*)'output variable = 4 deposit thickness: TS or step (inches)'
+          ivar = 8  ! Note that kml writes out all netcdf time steps followed by the final
+          TS_flag = 1      ! 1 = time series
+          height_flag = 0  ! All the cells should be pinned to z=0
         elseif(iprod.eq.5)then
-          write(global_info,*)'output variable = 5 ash-cloud concentration'
+          write(global_info,*)'output variable = 5 deposit thickness: final (mm)'
+          ivar = 7  ! Note that kml writes out all netcdf time steps followed by the final
+          TS_flag = 1      ! 1 = time series (really, this final value is not a time series, but the kml writer requires this)
+          height_flag = 0  ! All the cells should be pinned to z=0
         elseif(iprod.eq.6)then
-          write(global_info,*)'output variable = 6 ash-cloud height'
+          write(global_info,*)'output variable = 6 deposit thickness: final (inches)'
+          ivar = 8  ! Note that kml writes out all netcdf time steps followed by the final
+          TS_flag = 1      ! 1 = time series (really, this final value is not a time series, but the kml writer requires this)
+          height_flag = 0  ! All the cells should be pinned to z=0
         elseif(iprod.eq.7)then
-          write(global_info,*)'output variable = 7 ash-cloud bottom'
+          write(global_info,*)'output variable = 7 ashfall arrival time (hours)'
+          ivar = 9
+          TS_flag = 0      ! 1 = not a time series
+          height_flag = 0  ! All the cells should be pinned to z=0
         elseif(iprod.eq.8)then
-          write(global_info,*)'output variable = 8 ash-cloud load'
+          write(global_info,*)'output variable = 8 ashfall arrival at airports/POI (mm)'
+          !ivar = NaN There is a special KML writer for this variable
         elseif(iprod.eq.9)then
-          write(global_info,*)'output variable = 9 deposit arrival time'
+          write(global_info,*)'output variable = 9 ash-cloud concentration (mg/m3)'
+          ivar = 1
+          TS_flag = 1      ! 1 = time series
+          height_flag = 1  ! All the cells should be at cloud height
         elseif(iprod.eq.10)then
-          write(global_info,*)'output variable =10 ashfall arrival time'
+          write(global_info,*)'output variable =10 ash-cloud height (km)'
+          ivar = 2
+          TS_flag = 1      ! 1 = time series
+          height_flag = 1  ! All the cells should be at cloud height
         elseif(iprod.eq.11)then
-          write(global_info,*)'output variable =11 ash-cloud arrival time'
+          write(global_info,*)'output variable =11 ash-cloud bottom (km)'
+          ivar = 3
+          TS_flag = 1      ! 1 = time series
+          height_flag = 1  ! All the cells should be at cloud height
         elseif(iprod.eq.12)then
-          write(global_info,*)'output variable =12 radar reflectivity'
+          write(global_info,*)'output variable =12 ash-cloud load (T/km2)'
+          ivar = 4
+          TS_flag = 1      ! 1 = time series
+          height_flag = 1  ! All the cells should be at cloud height
         elseif(iprod.eq.13)then
-          write(global_info,*)'output variable =13 ash arrival at airports/POI'
+          write(global_info,*)'output variable =13 ash-cloud radar reflectivity (dBz)'
+          ivar = 6
+          TS_flag = 1      ! 1 = time series
+          height_flag = 1  ! All the cells should be at cloud height
         elseif(iprod.eq.14)then
-          write(global_info,*)'output variable =14 profile plots'
-          write(global_info,*)' Currently, no output formats available for iprod=14'
+          write(global_info,*)'output variable =14 ash-cloud arrival time (hours)'
+          ivar = 5
+          TS_flag = 0      ! 1 = not a time series
+          height_flag = 0  ! All the cells should be pinned to z=0
+        elseif(iprod.eq.15)then
+          write(global_info,*)'output variable =15 Topography (km)'
+          write(global_info,*)' Currently, no output formats available for iprod=15'
+          stop 1
+          ivar = 10
+          TS_flag = 0      ! 1 = not a time series
+          height_flag = 0  ! All the cells should be pinned to z=0
+        elseif(iprod.eq.16)then
+          write(global_info,*)'output variable =16 profile plots'
+          write(global_info,*)' Currently, no output formats available for iprod=16'
           stop 1
         endif
       endif
@@ -222,65 +290,185 @@
       endif
 
       ! Before we do anything, call routine to read the netcdf file, populate
-      ! the dimentions so we can see what we are dealing with.
+      ! the dimensions so we can see what we are dealing with.
       ! This call reads the 2d output products for the specified time
       ! If itime=-1 (for the final step), then
       call NC_Read_Output_Products(itime)
 
-      if (itime.eq.-1)itime = nWriteTimes
+      if (itime.eq.-1) then
+        iout3d = nWriteTimes
+        iTimeNext = nWriteTimes
+        isFinal_TS = .true.
+      else
+        iout3d = itime
+        iTimeNext = 0
+        isFinal_TS = .false.
+      endif
+
+      if(    iprod.eq.1 )then ! full concentration array
+        Write3dFiles = .true.
+      elseif(iprod.eq.2 )then ! deposit granularity
+        if(    iformat.eq.1)then
+          WriteGSD                      = .true.
+        elseif(iformat.eq.2)then
+          WriteGSD                      = .true.
+        endif
+      elseif(iprod.eq.3 )then ! deposit at specified times (mm)
+        if(    iformat.eq.1)then
+          WriteDepositTS_ASCII          = .true.
+        elseif(iformat.eq.2)then
+          WriteDepositTS_KML            = .true.
+        endif
+      elseif(iprod.eq.4 )then ! deposit at final time (mm)
+        if(    iformat.eq.1)then
+          WriteDepositFinal_ASCII       = .true.
+        elseif(iformat.eq.2)then
+          WriteDepositFinal_KML         = .true.
+            ! Double-check this
+          WriteDepositTS_KML            = .true.
+        endif
+      elseif(iprod.eq.5 )then ! deposit at specified times (inches)
+        if(    iformat.eq.1)then
+          WriteDepositTS_ASCII          = .true.
+        elseif(iformat.eq.2)then
+          WriteDepositTS_KML            = .true.
+        endif
+      elseif(iprod.eq.6 )then ! deposit at final time (inches)
+        if(    iformat.eq.1)then
+          WriteDepositFinal_ASCII       = .true.
+        elseif(iformat.eq.2)then
+          WriteDepositFinal_KML         = .true.
+            ! Double-check this
+          WriteDepositTS_KML            = .true.
+        endif
+      elseif(iprod.eq.7 )then ! ashfall arrival time
+        if(    iformat.eq.1)then
+          WriteDepositTime_ASCII        = .true.
+        elseif(iformat.eq.2)then
+          WriteDepositTime_KML          = .true.
+        endif
+      elseif(iprod.eq.8 )then ! ashfall at airports/POI
+        Write_PR_Data                   = .true.
+        if(    iformat.eq.1)then
+          WriteAirportFile_ASCII        = .true.
+        elseif(iformat.eq.2)then
+          WriteAirportFile_KML          = .true.
+        endif
+      elseif(iprod.eq.9 )then ! ash-cloud concentration
+        if(    iformat.eq.1)then
+          WriteCloudConcentration_ASCII = .true.
+        elseif(iformat.eq.2)then
+          WriteCloudConcentration_KML   = .true.
+        endif
+      elseif(iprod.eq.10)then ! ash-cloud height
+        if(    iformat.eq.1)then
+          WriteCloudHeight_ASCII        = .true.
+        elseif(iformat.eq.2)then
+          WriteCloudHeight_KML          = .true.
+        endif
+      elseif(iprod.eq.11)then ! ash-cloud bottom
+        if(    iformat.eq.1)then
+          WriteCloudHeight_ASCII        = .true.
+        elseif(iformat.eq.2)then
+          WriteCloudHeight_KML          = .true.
+        endif
+      elseif(iprod.eq.12)then ! ash-cloud load
+        if(    iformat.eq.1)then
+          WriteCloudLoad_ASCII          = .true.
+        elseif(iformat.eq.2)then
+          WriteCloudLoad_KML            = .true.
+        endif
+      elseif(iprod.eq.13)then ! ash-cloud radar reflectivity
+        if(    iformat.eq.1)then
+          WriteReflectivity_ASCII       = .true.
+        elseif(iformat.eq.2)then
+          WriteReflectivity_KML         = .true.
+        endif
+      elseif(iprod.eq.14)then ! ash-cloud arrival time
+        if(    iformat.eq.1)then
+          WriteCloudTime_ASCII          = .true.
+        elseif(iformat.eq.2)then
+          WriteCloudTime_KML            = .true.
+        endif
+      !elseif(iprod.eq.15)then ! topography
+      !  if(    iformat.eq.1)then
+      !  elseif(iformat.eq.2)then
+      !  endif
+      elseif(iprod.eq.16)then ! vertical profiles of concentration
+        if(    iformat.eq.1)then
+          Write_PR_Data                 = .true.
+        elseif(iformat.eq.2)then
+          Write_PR_Data                 = .true.
+        endif
+      endif
+
       allocate(OutVar(nxmax,nymax))
 
-      ! The main differences in output products with be time-series, vs
+      ! The main differences in output products will be time-series, vs
       ! time-step output.  Currently, the time-series output will only be for
-      ! the KML/KMZ files.  
+      ! the KML/KMZ files.
       if(iformat.eq.2)then
         ! KML output, separate into static vs time-series options
-        ! Note: for KML, the following variable ID's are used:
-        !        ivar = 1 :: cloud concentration
-        !        ivar = 2 :: cloud height (top)
-        !        ivar = 3 :: cloud height (bot)
-        !        ivar = 4 :: cloud load
-        !        ivar = 5 :: cloud arrival time
-        !        ivar = 6 :: cloud reflectivity
-        !        ivar = 7 :: deposit
-        !        ivar = 8 :: deposit (NWS)
-        !        ivar = 9 :: deposit time
-        !        ivar =10 :: topography
-        if(iprod.eq.3.or.  &  ! Final Deposit Thickness
-           iprod.eq.9.or.  &  ! Deposit arrival time
-           iprod.eq.10.or. &  ! Ashfall arrival time
-           iprod.eq.11)then   ! Ash-cloud arrival time
+        !  First the static options
+        if(iprod.eq.7.or.  &  ! Ashfall arrival time
+           iprod.eq.14.or. &  ! Ash-cloud arrival time
+           iprod.eq.15)then   ! Topography
+          !  We really should have the final deposit output be in this catagory
           ! Static output
           ! We have already called the netcdf reader so we just need to write
           ! the KML output.
           ! Set up KML output files and prelim variables
-          !call Set_OutVar_Specs
-          !call OpenFile_KML(ivar)
-          !call Write_2D_KML(ivar,OutVar,height_flag,TS_flag)
-          !call Close_KML(ivar,TS_flag)
-
-        elseif(iprod.eq.4.or. &  ! deposit at specified times
-               iprod.eq.5.or. &  ! ash-cloud concentration
-               iprod.eq.6.or. &  ! ash-cloud height
-               iprod.eq.7.or. &  ! ash-cloud bottom
-               iprod.eq.8.or. &  ! ash-cloud load
-               iprod.eq.12.or.&  ! radar reflectivity
-               iprod.eq.13)then  ! ash arrival at airports/POI
+          call Set_OutVar_Specs
+          call OpenFile_KML(ivar)
+          if(iprod.eq.7)then
+            OutVar = DepArrivalTime(1:nxmax,1:nymax)
+          elseif(iprod.eq.14)then
+            OutVar = CloudArrivalTime(1:nxmax,1:nymax)
+          !elseif(iprod.eq.15)then
+          !  OutVar = Topography(1:nxmax,1:nymax)
+          endif
+          call Write_2D_KML(ivar,OutVar,height_flag,TS_flag)
+          call Close_KML(ivar,TS_flag)
+          write(*,*)"Zipping KML file."
+          write(comd,*)"zip ",adjustl(trim(KMZ_filename(ivar))),' ',&
+                              adjustl(trim(KML_filename(ivar)))
+          call execute_command_line (comd, exitstat=status)
+        elseif(iprod.eq.3.or.iprod.eq.5.or. &  ! Deposit thickness mm (kml versions is TS + final)
+               iprod.eq.4.or.iprod.eq.6.or. &  ! Deposit thickness inches (kml versions is TS + final)
+               iprod.eq.9.or.               &  ! ash-cloud concentration
+               iprod.eq.10.or.              &  ! ash-cloud height
+               iprod.eq.11.or.              &  ! ash-cloud bottom
+               iprod.eq.12.or.              &  ! ash-cloud load
+               iprod.eq.13)then                ! radar reflectivity
           ! Time-series output
           ! Set up KML output files and prelim variables
-!          call Set_OutVar_Specs
-!          call OpenFile_KML(ivar)
-!          ! We need to loop over all times
-!          do i = 1,nWriteTimes
-!            call NC_Read_Output_Products(itime)
-!            call Write_2D_KML(ivar,OutVar,height_flag,TS_flag)
-!          enddo
-!          if(iprod.eq.13)then
-!            call Write_PointData_Airports_KML
-!          endif
-!          call Close_KML(ivar,TS_flag)
 
-        elseif(iprod.eq.14)then  ! vertical profile plots
+          ! Currently deposit and other kml files include all of the TS so reset
+          ! this flag
+          isFinal_TS = .false.
+          iTimeNext = 1
+          time = WriteTimes(1)
+
+          ! We need to loop over all times
+          do i = 1,nWriteTimes
+            call NC_Read_Output_Products(i)
+            time = WriteTimes(i)
+            write(*,*)"time = ",time
+            call output_results
+          enddo
+          isFinal_TS = .true.
+          ! For deposit output, load the final deposit variable and write to file
+!          if(iprod.eq.3.or.iprod.eq.5)then
+            call NC_Read_Output_Products(-1)
+            call output_results
+!          elseif(iprod.eq.4.or.iprod.eq.6)then
+!            call NC_Read_Output_Products(-1)
+            !OutVar = DepositThickness(1:nxmax,1:nymax)*MM_2_IN
+            !call Write_2D_KML(ivar,OutVar,height_flag,TS_flag)
+!          endif
+        elseif(iprod.eq.8)then  ! ashfall at airports
+          call Write_PointData_Airports_KML
+        elseif(iprod.eq.16)then  ! vertical profile plots
           write(global_error,*)"ERROR: KML versions of vertical profiles not implemented."
           stop 1
         else
@@ -289,44 +477,92 @@
         endif
       endif ! iformat.eq.2 (KML)
 
-      ! 
-      if(iprod.eq.3.or. &  ! deposit at final time
-         iprod.eq.4.or. &  ! deposit at specified times
-         iprod.eq.5.or. &  ! ash-cloud concentration
-         iprod.eq.6.or. &  ! ash-cloud height
-         iprod.eq.7.or. &  ! ash-cloud bottom
-         iprod.eq.8.or. &  ! ash-cloud load
-         iprod.eq.12)then   ! radar reflectivity
+      ! This is the non-KML section
+      OutFillValue = 0.0_ip
+      if(iprod.eq.3.or.iprod.eq.4)then
+        OutVar = DepositThickness
+        Fill_Value = ' 0.000'
+        OutFillValue = 0.0_ip
+        filename_root = 'DepositFile_        '
+      elseif(iprod.eq.5.or.iprod.eq.6)then
+        OutVar = DepositThickness*MM_2_IN
+        Fill_Value = ' 0.000'
+        OutFillValue = 0.0_ip
+        filename_root = 'DepositFile_        '
+      elseif(iprod.eq.7)then
+        OutVar = DepArrivalTime
+        Fill_Value = '-1.000'
+        OutFillValue = -1.0_ip
+        filename_root = 'DepositArrivalTime  '
+      elseif(iprod.eq.8)then
+         ! ashfall at airports/POI
+         ! call Write_PointData_Airports_ASCII
+      elseif(iprod.eq.9)then
+        OutVar = MaxConcentration
+        Fill_Value = ' 0.000'
+        OutFillValue = 0.0_ip
+        filename_root = 'CloudConcentration_ '
+      elseif(iprod.eq.10)then
+        OutVar = MaxHeight
+        Fill_Value = ' 0.000'
+        OutFillValue = 0.0_ip
+        filename_root = 'CloudHeight_        '
+      elseif(iprod.eq.11)then
+        OutVar = MinHeight
+        Fill_Value = ' 0.000'
+        OutFillValue = 0.0_ip
+        filename_root = 'CloudHeightBot_     '
+      elseif(iprod.eq.12)then
+        OutVar = CloudLoad
+        Fill_Value = ' 0.000'
+        OutFillValue = 0.0_ip
+        filename_root = 'CloudLoad_          '
+      elseif(iprod.eq.13)then
+        OutVar = dbZCol
+        Fill_Value = ' 0.000'
+        OutFillValue = 0.0_ip
+        filename_root = 'ClouddbZC_          '
+      elseif(iprod.eq.14)then
+        OutVar = CloudArrivalTime
+        Fill_Value = '-1.000'
+        OutFillValue = -1.0_ip
+        filename_root = 'CloudArrivalTime    '
+      endif
+      if(iprod.eq.9 .or.&
+         iprod.eq.10.or.&
+         iprod.eq.11.or.&
+         iprod.eq.12.or.&
+         iprod.eq.13.or.&
+         iprod.eq.14)then
+        do i=1,nxmax
+          do j=1,nymax
+            if(.not.Mask_Cloud(i,j))&
+                OutVar(i,j) = OutFillValue
+          enddo
+        enddo
+      endif
 
-        if(iprod.eq.3.or.iprod.eq.4)then
-          OutVar = DepositThickness
-         elseif(iprod.eq.5)then
-          OutVar = MaxConcentration
-         elseif(iprod.eq.6)then
-          OutVar = MaxHeight
-         elseif(iprod.eq.7)then
-          OutVar = MinHeight
-         elseif(iprod.eq.8)then
-          OutVar = CloudLoad
-         elseif(iprod.eq.12)then
-          OutVar = dbZCol
-         endif
-
-        if(iformat.eq.1)then
-          !call write_2D_ASCII(nx,ny,OutVar,Fill_Value,filename_root)
-        elseif(iformat.eq.2)then
-          !call Write_2D_KML(ivar,OutVar,height_flag,TS_flag)
-        elseif(iformat.eq.3)then
-          call write_2D_PNG_dislin(iprod,itime,OutVar)
-        elseif(iformat.eq.4)then
-          !call write_2D_Binary
-        elseif(iformat.eq.5)then
-          !call write_2D_ShapeFile
-        elseif(iformat.eq.6)then
-          !call write_2D_grib2
-        elseif(iformat.eq.7)then
-          !call write_2D_tecplot
+      if(iformat.eq.1)then
+        if(iprod.eq.8)then
+          write(*,*)"Calling Write_PointData_Airports_ASCII"
+          call Write_PointData_Airports_ASCII
+        elseif(iprod.eq.16)then
+          !call vprofile....
+        else
+          call write_2D_ASCII(nxmax,nymax,OutVar,Fill_Value,filename_root)
         endif
+      elseif(iformat.eq.2)then
+        !call Write_2D_KML(ivar,OutVar,height_flag,TS_flag)
+      elseif(iformat.eq.3)then ! image/png
+        call write_2D_PNG_dislin(iprod,iout3d,OutVar)
+      elseif(iformat.eq.4)then
+        !call write_2D_Binary
+      elseif(iformat.eq.5)then
+        !call write_2D_ShapeFile
+      elseif(iformat.eq.6)then
+        !call write_2D_grib2
+      elseif(iformat.eq.7)then
+        !call write_2D_tecplot
       endif
 
 
@@ -334,565 +570,13 @@
        !  Pretend we have the airport data loaded and set up to call the
        !  different plotting routines.
 
-      !allocate(Airport_Thickness_TS(nWriteTimes))
-
-!      do plt_indx = 1,nWriteTimes
-!        call write_DepPOI_TS_PNG_gnuplot(plt_indx)
+!      do pt_indx = 1,pt_len
+!        call write_DepPOI_TS_PNG_gnuplot(pt_indx)
+!        call write_DepPOI_TS_PNG_plplot(pt_indx)
+!        call write_DepPOI_TS_PNG_dislin(pt_indx)
 !      enddo
 
-
-!      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!      ! PLPLOT block
-!      write(dp_pngfile2,55) plt_indx,".png"
-! 55   format('plplt_',i4.4,a4)
-!
-!      xmin=real(0,kind=plflt)
-!      xmax=real(ceiling(Simtime_in_hours),kind=plflt)
-!      ymin=real(0,kind=plflt)
-!      ymax=real(ymaxpl,kind=plflt)
-!
-!      allocate(x(nWriteTimes))
-!      allocate(y(nWriteTimes))
-!      allocate(x0(nWriteTimes+1))
-!      allocate(y0(nWriteTimes+1))
-!
-!      x = real(WriteTimes,kind=plflt)
-!      y = real(Airport_Thickness_TS,kind=plflt)
-!      x0(1:nWriteTimes)=x(1:nWriteTimes)
-!      x0(nWriteTimes+1)=x(nWriteTimes)
-!      y0(1:nWriteTimes)=y(1:nWriteTimes)
-!      y0(nWriteTimes+1)=0.0_plflt
-!
-!      ! Set up for plplot
-!      call plsdev("pngcairo")      ! Set output device (png, pdf, etc.)
-!      call plsfnam ( dp_pngfile2 ) ! Set output filename
-!
-!      call plsetopt("geometry","400x300, 400x300")  ! Set image size
-!      call plsetopt("bg","FFFFFF")                  ! Set background color to white
-!      ! Initialize plplot
-!      call plinit()
-!
-!      ! Create a labelled box to hold the plot.
-!      call plscolbg(r1,g1,b1) ! Set color back to black
-!      call plcol0(0)
-!      call plschr(0.0_plflt,1.7_plflt)  ! Chage font scale
-!      call plenv( xmin, xmax, ymin, ymax, 0, 0 )
-!      call pllab( "Time (hours after eruption)", "Deposit Thickeness (mm)", Airport_Name )
-!
-!      call plscolbg(r2,g2,b2) ! Set pen color to grey
-!      call plcol0(0)
-!      call plline( x , y ) ! Simple line plot
-!      call plfill( x0(1:nWriteTimes+1), y0(1:nWriteTimes+1) )
-!
-!      ! Close PLplot library
-!      call plend
-!      ! end PLPLOT block
-!      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!      ! DISLIN block
-!      ! https://www.dislin.de/
-!      ! wget https://ftp.gwdg.de/pub/grafik/dislin/linux/i586_64/dislin-11.4.linux.i586_64.tar.gz
-!      !  Dislin Level 0:  before initialization or after termination
-!      call metafl(CFMT)   ! set output driver/file-format (PNG); this is a 4-char string
-!      call setpag('USAL') ! Set pagesize to US A Landscape (2790 x 2160)
-!      call setfil('temp.png') ! Set output filename
-!      call scrmod('REVERSE')  ! Default background is black; reverse to white
-!
-!      !  Dislin Level 1:  after initialization or a call to ENDGRF
-!      call disini()       ! initialize plot (set to level 1)
-!        ! setting of plot parameters
-!      call pagera()       ! plot a border around the page
-!      call triplx()  ! set font to triple stroke
-!      call axspos(450,1800)  ! determine the position of the axis system
-!      call axslen(2200,1200) ! defines the size of the axis system
-!      call name('Time (hours after eruption)','X') ! Set x-axis title
-!      call name('Deposit Thickeness (mm)','Y') ! Set y-axis title
-!      call labdig(-1,'X') ! set number of decimal places for x label (-1 means no decimal)
-!      call ticks(10,'XY') ! set number of ticks between labels
-!      call titlin(Airport_Name,4)  ! Set the title to the airport name (4 is the bottom line)
-!
-!      !  Dislin Level 2: after a call to GRAF, GRAFP or GRAFMP
-!        ! Now create graph and set to level 2
-!      call graf(real(xmin,kind=4), real(xmax,kind=4), 0.0_4, 5.0_4, &
-!                real(ymin,kind=4), real(ymax,kind=4), 0.0_4, 1.0_4)
-!      call title() ! Actually write the title to the file
-!      call setrgb(0.5_4, 0.5_4, 0.5_4)
-!      !call curve(real(x,kind=4),real(y,kind=4),nWriteTimes)  ! This draws the line
-!      call shdpat(16)  ! set shading pattern 
-!      call shdcrv(real(x,kind=4),real(y,kind=4),nWriteTimes,& ! This fills below curve
-!                  real(x,kind=4),real(0.0*y,kind=4),nWriteTimes)
-!      call color('FORE') ! Reset color to defaul foreground color
-!
-!      !  Dislin Level 0:  before initialization or after termination
-!      call disfin()
-!      endif
-
-!     (1)    setting of page format, file format and filename
-!     (2)    initialization
-!     (3)    setting of plot parameters
-!     (4)    plotting of the axis system
-!     (5)    plotting the title
-!     (6)    plotting data points
-!     (7)    termination.
-
       end program Ash3d_PostProc
-
-!##############################################################################
-!
-!    write_2D_PNG_dislin
-!
-!    if timestep = -1, then use the last step in file
-!##############################################################################
-
-      subroutine write_2D_PNG_dislin(iprod,itime,OutVar)
-
-      use precis_param
-
-      use mesh,          only : &
-         nxmax,nymax,x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd, &
-         IsLatLon !,dx,dy,dz_vec_pd,nzmax,nsmax,z_cc_pd
-
-      use Output_Vars,   only : &
-         DepositThickness,DepArrivalTime,CloudArrivalTime,&
-         MaxConcentration,MaxHeight,CloudLoad,dbZ,MinHeight,Mask_Cloud,Mask_Deposit
-
-      use io_data,       only : &
-         nWriteTimes,WriteTimes,cdf_b3l1,VolcanoName
-
-      use Source,        only : &
-         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
-
-      use time_data,     only : &
-         cdf_time_log,BaseYear,useLeap
-
-      use dislin
-
-      implicit none
-
-      integer :: iprod
-      integer :: itime
-      real(kind=ip) :: OutVar(nxmax,nymax)
-
-      integer :: i
-
-      ! dislin stuff
-      ! https://www.dislin.de/
-      CHARACTER (LEN=4) :: CFMT = "PNG "
-      character(len=40) :: outfile_name
-      character (len=9) :: cio
-      character (len=4) :: outfile_ext = '.png'
-
-      INTEGER, PARAMETER :: N=3
-      INTEGER, PARAMETER :: MAXPTS=1000
-      INTEGER, PARAMETER :: MAXCRV=10
-      REAL(kind=4), DIMENSION (N) :: &
-         XC = (/-122.3167_4,-122.6417_4,-122.96310_4/), &
-         YC = (/  47.5886_4,  45.4421_4,  49.2743_4/)
-      CHARACTER (LEN=12), DIMENSION (N) :: &
-         CSTR = (/'Seattle     ', 'Portland    ', 'Vancouver   '/)
-      CHARACTER(len=80) :: CBUF
-      integer :: NMAXLN
-      character(len=7) :: zlevlab
-      real(kind=4) :: XPTS(MAXPTS),YPTS(MAXPTS)
-      INTEGER :: IRAY(MAXCRV)
-      INTEGER :: NXP,NYP,NCLR,NCURVS
-      REAL(kind=4)    :: XP,YP
-      real(kind=4) :: xminDIS, xmaxDIS, yminDIS, ymaxDIS
-      real(kind=4) :: dx_map, dy_map, xgrid_1, ygrid_1
-      real(kind=4), dimension(11) :: depthic_zlev = &
-         (/0.01_4, 0.03_4, 0.1_4, 0.3_4, 1.0_4, 3.0_4, &
-           10.0_4, 30.0_4, 100.0_4, 300.0_4, 1000.0_4/)
-
-      integer :: nzlev
-      real(kind=4), dimension(:),allocatable :: zlev 
-
-      character(len=40) :: title_plot
-      character(len=15) :: title_legend
-
-      character(len=30) :: cstr_volcname
-      character(len=30) :: cstr_run_date
-      character(len=30) :: cstr_windfile
-      character(len=40) :: cstr_ErStartT
-      character(len=27) :: cstr_ErHeight
-      character(len=30) :: cstr_ErDuratn
-      character(len=38) :: cstr_ErVomune
-      character(len=45) :: cstr_note
-      integer :: y_footer
-      integer :: ioerr,iw,iwf
-
-      INTERFACE
-        character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8)              :: HoursSince
-          integer                   :: byear
-          logical                   :: useLeaps
-        end function HS_xmltime
-      END INTERFACE
-
-      if(iprod.eq.3)then
-        cio='____final'
-      else
-        if (WriteTimes(itime).lt.10.0_ip) then
-          write(cio,1) WriteTimes(itime)
-1         format('00',f4.2,'hrs')
-        elseif (WriteTimes(itime).lt.100.0_ip) then
-          write(cio,2) WriteTimes(itime)
-2         format('0',f5.2,'hrs')
-        else
-          write(cio,3) WriteTimes(itime)
-3         format(f6.2,'hrs')
-        endif
-      endif
-
-      if(iprod.eq.3)then       ! deposit at final time
-        write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
-        title_plot = 'Final Deposit Thickness'
-        title_legend = 'Dep.Thick.(mm)'
-        nzlev = 11
-        allocate(zlev(nzlev))
-        zlev = (/0.01_4, 0.03_4, 0.1_4, 0.3_4, 1.0_4, 3.0_4, &
-                10.0_4, 30.0_4, 100.0_4, 300.0_4, 1000.0_4/)
-      elseif(iprod.eq.4)then   ! deposit at specified times
-        write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
-        write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
-        title_legend = 'Dep.Thick.(mm)'
-        nzlev = 11
-        allocate(zlev(nzlev))
-        zlev = (/0.01_4, 0.03_4, 0.1_4, 0.3_4, 1.0_4, 3.0_4, &
-                10.0_4, 30.0_4, 100.0_4, 300.0_4, 1000.0_4/)
-      elseif(iprod.eq.5)then   ! ash-cloud concentration
-        write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
-        write(title_plot,'(a26,f5.2,a6)')'Ash-cloud concentration t=',WriteTimes(itime),' hours'
-        title_legend = 'Max.Con.(mg/m3)'
-        nzlev = 8
-        allocate(zlev(nzlev))
-        zlev = (/0.1_4, 0.3_4, 1.0_4, 3.0_4, &
-                10.0_4, 30.0_4, 100.0_4, 300.0_4/)
-      elseif(iprod.eq.6)then   ! ash-cloud height
-        write(outfile_name,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
-        write(title_plot,'(a19,f5.2,a6)')'Ash-cloud height t=',WriteTimes(itime),' hours'
-        title_legend = 'Cld.Height(km)'
-        nzlev = 9
-        allocate(zlev(nzlev))
-        zlev = (/0.24_4, 3.0_4, 6.0_4, 10.0_4, 13.0_4, 16.0_4, &
-                20.0_4, 25.0_4, 30.0_4/)
-      elseif(iprod.eq.7)then   ! ash-cloud bottom
-        write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
-        write(title_plot,'(a19,f5.2,a6)')'Ash-cloud bottom t=',WriteTimes(itime),' hours'
-        title_legend = 'Cld.Bot.(km)'
-        nzlev = 9
-        allocate(zlev(nzlev))
-        zlev = (/0.24_4, 3.0_4, 6.0_4, 10.0_4, 13.0_4, 16.0_4, &
-                20.0_4, 25.0_4, 30.0_4/)
-      elseif(iprod.eq.8)then   ! ash-cloud load
-        write(outfile_name,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
-        write(title_plot,'(a17,f5.2,a6)')'Ash-cloud load t=',WriteTimes(itime),' hours'
-        title_legend = 'Cld.Load(T/km2)'
-        nzlev = 9
-        allocate(zlev(nzlev))
-        zlev = (/0.2_4, 1.0_4, 2.0_4, 5.0_4, 10.0_4, 30.0_4, &
-                100.0_4, 300.0_4, 1000.0_4/)
-      elseif(iprod.eq.12)then  ! radar reflectivity
-        write(outfile_name,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
-        write(title_plot,'(a24,f5.2,a6)')'Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
-        title_legend = 'Cld.Refl.(dBz)'
-        nzlev = 9
-        allocate(zlev(nzlev))
-        zlev = (/-20._4, -10.0_4, 0.0_4, 10.0_4, 20.0_4, 30.0_4, &
-                40.0_4, 50.0_4, 60.0_4/)
-      endif
-
-      ! Now map plots
-      dx_map = 10.0_4
-      dy_map = 5.0_4
-      lon_cc_pd = lon_cc_pd -360.0_8
-      xminDIS = real(minval(lon_cc_pd(1:nxmax)),kind=4)
-      xmaxDIS = real(maxval(lon_cc_pd(1:nxmax)),kind=4)
-      yminDIS = real(minval(lat_cc_pd(1:nymax)),kind=4)
-      ymaxDIS = real(maxval(lat_cc_pd(1:nymax)),kind=4)
-      xgrid_1 = real(ceiling(xminDIS/dx_map) * dx_map,kind=4)
-      ygrid_1 = real(ceiling(yminDIS/dy_map) * dy_map,kind=4)
-
-      !!!!!!!!!!!!!!!!!!!!!!!
-      !  Dislin Level 0:  before initialization or after termination
-      call metafl(CFMT)   ! set output driver/file-format (PNG); this is a 4-char string
-      call setpag('USAL') ! Set pagesize to US A Landscape (2790 x 2160)
-      call setfil(adjustl(trim(outfile_name))) ! Set output filename
-      !call setvlt('SPEC')
-      call scrmod('REVERSE')  ! Default background is black; reverse to white
-
-      !  Dislin Level 1:  after initialization or a call to ENDGRF
-      call disini()       ! initialize plot (set to level 1)
-      call paghdr('Ash3d Simulation plotted on ','---',4,0)
-      y_footer = 1900
-      call filbox(2250,y_footer,130,49)
-      call incfil('/opt/USGS/Ash3d/share/post_proc/USGSvid.png')
-        ! setting of plot parameters
-      call pagera()       ! plot a border around the page
-      call triplx()  ! set font to triple stroke
-      call axspos(500,1650)  ! determine the position of the axis system
-      call axslen(2200,1400) ! defines the size of the axis system
-      call name('Longitude','X') ! Set x-axis title
-      call name('Latitude','Y') ! Set y-axis title
-      call labdig(-1,'X') ! set number of decimal places for x label (-1 means no decimal)
-      call ticks(1,'xy')  ! set number of ticks between labels
-      call titlin(title_plot,4)  ! Set the title
-      call incmrk(-1) ! selects line or symbol mode for CURVE
-
-      !CALL LABELS('MAP','xy')
-      !call projct('STER') ! defines projection
-      call projct('LAMB') ! defines projection
-      !call projct('MERC') ! defines projection
-      call frame(3) ! bump up frame line thickness
-       !  The routine GRAFMP plots a geographical axis system.
-      call grafmp(xminDIS,xmaxDIS,xgrid_1,dx_map, &
-                  yminDIS,ymaxDIS,ygrid_1,dy_map)
-
-       ! set color of coastlines
-      !call color('GREEN')
-       ! plots coastlines and lakes or political borders
-      call world()
-
-      ! Add cities
-      CALL CURVMP(XC,YC,N)
-      DO I=1,N
-      !    These are the points
-        CALL POS2PT(XC(I),YC(I),XP,YP)
-      !    These are the city lables, offset in x
-        NXP=NINT(XP+30)
-        NYP=NINT(YP)
-        CALL MESSAG(CSTR(I),NXP,NYP)
-      END DO
-
-     !call myvlt(xr,xg,xb,nrgb)
-     call shdmod('UPPER', 'CELL') ! This suppresses colors in regions above/below the zlevels pro
-     call conshd(real(lon_cc_pd,kind=4),nxmax,&
-                 real(lat_cc_pd,kind=4),nymax,&
-                 real(OutVar,kind=4),zlev,nzlev)
-
-       ! set color of grid lines
-!      call setrgb(0.5_4, 0.5_4, 0.5_4)
-       ! overlays an axis system with a longitude and latitude grid
-      call gridmp(1,1)
-      call height(50) ! Set character height for title
-      call title() ! Actually write the title to the file
-
-      ! Now write the legend
-      call height(25) ! Reset character height to something smaller
-      nmaxln = 6 ! number of characters in the longest line of text
-      call legini(cbuf,nzlev,nmaxln) ! Initialize legend
-      call legtit(title_legend)      ! Set legend title
-      call legbgd(0)                 ! sets background color
-      do i=1,nzlev
-        if(zlev(i).lt.1.0_ip)then
-          write(zlevlab,'(f6.2)')zlev(i)
-        else
-          write(zlevlab,'(f6.1)')zlev(i)
-        endif
-        call leglin(cbuf,zlevlab,i)
-      enddo
-      call legend(cbuf,6)  ! write buffer to legend and give position (6=LR)
-
-      ! Add box below plot with run info
-      ! Volcano:     Erup.start:
-      ! Run date:    Plm Height:
-      ! Windfile:    Duration:
-      !              Volume:
-
-      write(cstr_volcname,'(a10,a20)')'Volcano:  ' ,VolcanoName
-      write(cstr_run_date,'(a10,a20)')'Run Date: ',cdf_time_log
-      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
-      write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
-
-      !e_StartTime,e_PlumeHeight,e_Duration,e_Volume
-      write(cstr_ErStartT,'(a20,a20)')'Erup. Start Time:   ',HS_xmltime(e_StartTime(1),BaseYear,useLeap)
-      write(cstr_ErHeight,'(a20,f4.1,a3)')'Erup. Plume Height: ',e_PlumeHeight(1),' km'
-      write(cstr_ErDuratn,'(a20,f4.1,a6)')'Erup. Duration:     ',e_Duration(1),' hours'
-      write(cstr_ErVomune,'(a20,f8.5,a10)')'Erup. Volume:       ',e_Volume(1),' km3 (DRE)'
-
-      call messag(cstr_volcname,400 ,y_footer)
-      call messag(cstr_run_date,400 ,y_footer+40)
-      call messag(cstr_windfile,400 ,y_footer+80)
-      if(neruptions.gt.1)then
-        write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'
-      call messag(cstr_note,400 ,y_footer+120)
-      endif
-      call messag(cstr_ErStartT,1200,y_footer)
-      call messag(cstr_ErHeight,1200,y_footer+40)
-      call messag(cstr_ErDuratn,1200,y_footer+80)
-      call messag(cstr_ErVomune,1200,y_footer+120)
-
-      !  Dislin Level 0:  before initialization or after termination
-      call disfin()
-
-
-      end subroutine write_2D_PNG_dislin
-
-!##############################################################################
-!
-!    write_DepPOI_TS_PNG_gnuplot
-!
-!    if timestep = -1, then use the last step in file
-!##############################################################################
-
-      subroutine write_DepPOI_TS_PNG_gnuplot(plt_indx)
-
-      use precis_param
-
-      use Airports,      only : &
-         nairports,Airport_Code,Airport_Name,Airport_x,Airport_y,&
-         Airport_Latitude,Airport_Longitude,Airport_Thickness_TS
-
-      use io_data,       only : &
-         nWriteTimes,WriteTimes,VolcanoName
-
-      use time_data,     only : &
-         Simtime_in_hours
-
-      implicit none
-
-      integer :: plt_indx,i
-
-      real(kind=8) :: ymaxpl
-      character(len=14) :: dp_gnufile
-      character(len=14) :: dp_outfile
-      character(len=14) :: dp_pngfile
-      character(len=25) :: gnucom
-
-      write(dp_outfile,53) plt_indx,".dat"
-      write(dp_gnufile,53) plt_indx,".gnu"
-      write(dp_pngfile,54) plt_indx,".png"
- 53   format('depTS_',i4.4,a4)
- 54   format('gnupl_',i4.4,a4)
-
-      open(54,file=dp_outfile,status='replace')
-      do i = 1,nWriteTimes
-        write(54,*)WriteTimes(i),Airport_Thickness_TS(plt_indx,i)
-      enddo
-      close(54)
-
-      if(Airport_Thickness_TS(plt_indx,nWriteTimes).lt.0.01)then
-        ymaxpl = 1.0
-      elseif(Airport_Thickness_TS(plt_indx,nWriteTimes).lt.1.0)then
-        ymaxpl = 1.0
-      elseif(Airport_Thickness_TS(plt_indx,nWriteTimes).lt.5.0)then
-        ymaxpl = 5.0
-      elseif(Airport_Thickness_TS(plt_indx,nWriteTimes).lt.25.0)then
-        ymaxpl = 25.0
-      else
-        ymaxpl = 100.0
-      endif
-
-      ! Set up to plot via gnuplot script
-      open(55,file=dp_gnufile,status='replace')
-      write(55,*)"set terminal png size 400,300"
-      write(55,*)"set key bmargin left horizontal Right noreverse enhanced ",&
-                 "autotitles box linetype -1 linewidth 1.000"
-      write(55,*)"set border 31 lw 2.0 lc rgb '#000000'"
-      write(55,*)"set style line 1 linecolor rgbcolor '#888888' linewidth 2.0 pt 7"
-      write(55,*)"set ylabel 'Deposit Thickeness (mm)'"
-      write(55,*)"set xlabel 'Time (hours after eruption)'"
-      write(55,*)"set nokey"
-      write(55,*)"set output '",dp_pngfile,"'"
-      write(55,*)"set title '",Airport_Name,"'"
-      write(55,*)"plot [0:",ceiling(Simtime_in_hours),"][0:",&
-                 nint(ymaxpl),"] '",dp_outfile,"' with filledcurve x1 ls 1"
-      close(55)
-
-      write(gnucom,'(a11,a14)')'gnuplot -p ',dp_gnufile
-      call execute_command_line(gnucom)
-
-      end subroutine write_DepPOI_TS_PNG_gnuplot
-
-
-!      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!      ! PLPLOT block
-!      write(dp_pngfile2,55) plt_indx,".png"
-! 55   format('plplt_',i4.4,a4)
-!
-!      xmin=real(0,kind=plflt)
-!      xmax=real(ceiling(Simtime_in_hours),kind=plflt)
-!      ymin=real(0,kind=plflt)
-!      ymax=real(ymaxpl,kind=plflt)
-!
-!      allocate(x(nWriteTimes))
-!      allocate(y(nWriteTimes))
-!      allocate(x0(nWriteTimes+1))
-!      allocate(y0(nWriteTimes+1))
-!
-!      x = real(WriteTimes,kind=plflt)
-!      y = real(Airport_Thickness_TS,kind=plflt)
-!      x0(1:nWriteTimes)=x(1:nWriteTimes)
-!      x0(nWriteTimes+1)=x(nWriteTimes)
-!      y0(1:nWriteTimes)=y(1:nWriteTimes)
-!      y0(nWriteTimes+1)=0.0_plflt
-!
-!      ! Set up for plplot
-!      call plsdev("pngcairo")      ! Set output device (png, pdf, etc.)
-!      call plsfnam ( dp_pngfile2 ) ! Set output filename
-!
-!      call plsetopt("geometry","400x300, 400x300")  ! Set image size
-!      call plsetopt("bg","FFFFFF")                  ! Set background color to white
-!      ! Initialize plplot
-!      call plinit()
-!
-!      ! Create a labelled box to hold the plot.
-!      call plscolbg(r1,g1,b1) ! Set color back to black
-!      call plcol0(0)
-!      call plschr(0.0_plflt,1.7_plflt)  ! Chage font scale
-!      call plenv( xmin, xmax, ymin, ymax, 0, 0 )
-!      call pllab( "Time (hours after eruption)", "Deposit Thickeness (mm)", Airport_Name )
-!
-!      call plscolbg(r2,g2,b2) ! Set pen color to grey
-!      call plcol0(0)
-!      call plline( x , y ) ! Simple line plot
-!      call plfill( x0(1:nWriteTimes+1), y0(1:nWriteTimes+1) )
-!
-!      ! Close PLplot library
-!      call plend
-!      ! end PLPLOT block
-!      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!
-!      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!      ! DISLIN block
-!      ! https://www.dislin.de/
-!      ! wget
-!      ! https://ftp.gwdg.de/pub/grafik/dislin/linux/i586_64/dislin-11.4.linux.i586_64.tar.gz
-!      !  Dislin Level 0:  before initialization or after termination
-!      call metafl(CFMT)   ! set output driver/file-format (PNG); this is a 4-char string
-!      call setpag('USAL') ! Set pagesize to US A Landscape (2790 x 2160)
-!      call setfil('temp.png') ! Set output filename
-!      call scrmod('REVERSE')  ! Default background is black; reverse to white
-!
-!      !  Dislin Level 1:  after initialization or a call to ENDGRF
-!      call disini()       ! initialize plot (set to level 1)
-!        ! setting of plot parameters
-!      call pagera()       ! plot a border around the page
-!      call triplx()  ! set font to triple stroke
-!      call axspos(450,1800)  ! determine the position of the axis system
-!      call axslen(2200,1200) ! defines the size of the axis system
-!      call name('Time (hours after eruption)','X') ! Set x-axis title
-!      call name('Deposit Thickeness (mm)','Y') ! Set y-axis title
-!      call labdig(-1,'X') ! set number of decimal places for x label (-1 means no decimal)
-!      call ticks(10,'XY') ! set number of ticks between labels
-!      call titlin(Airport_Name,4)  ! Set the title to the airport name (4 is the bottom line)
-!
-!      !  Dislin Level 2: after a call to GRAF, GRAFP or GRAFMP
-!        ! Now create graph and set to level 2
-!      call graf(real(xmin,kind=4), real(xmax,kind=4), 0.0_4, 5.0_4, &
-!                real(ymin,kind=4), real(ymax,kind=4), 0.0_4, 1.0_4)
-!      call title() ! Actually write the title to the file
-!      call setrgb(0.5_4, 0.5_4, 0.5_4)
-!      !call curve(real(x,kind=4),real(y,kind=4),nWriteTimes)  ! This draws the line
-!      call shdpat(16)  ! set shading pattern 
-!      call shdcrv(real(x,kind=4),real(y,kind=4),nWriteTimes,& ! This fills below curve
-!                  real(x,kind=4),real(0.0*y,kind=4),nWriteTimes)
-!      call color('FORE') ! Reset color to defaul foreground color
-!
-!      !  Dislin Level 0:  before initialization or after termination
-!      call disfin()
-
-
-!      end subroutine write_DepPOI_TS_PNG
 
 !##############################################################################
 !

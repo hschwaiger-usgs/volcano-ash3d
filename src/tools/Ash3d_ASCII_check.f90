@@ -9,7 +9,8 @@
       use global_param,   only : &
         EPS_SMALL,EPS_TINY
 
-      use Output_Vars
+      use Output_Vars,    only : &
+        R_XY,R_nx,R_ny,R_xll,R_yll,R_dx,R_dy,R_Fill
 
       implicit none
 

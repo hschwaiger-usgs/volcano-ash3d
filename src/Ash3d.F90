@@ -557,7 +557,6 @@
         else
           StopTimeLoop = .false.
         endif
-
       enddo  !loop over itime
               !  ((dep_percent_accumulated.le.StopValue).and. &
               !    (time.lt.Simtime_in_hours)        .and. &
@@ -615,6 +614,10 @@
       ! ************************************************************************
 
       isFinal_TS = .true.
+      Called_Gen_Output_Vars  = .false.
+      Calculated_Cloud_Load   = .false.
+      Calculated_AshThickness = .false.
+
       write(global_info,12)   !put footnotes below output table
       write(global_log,12)   !put footnotes below output table
       write(global_log ,12)

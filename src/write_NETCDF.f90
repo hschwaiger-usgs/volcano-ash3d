@@ -53,13 +53,14 @@
       integer :: vf_var_id             = 0 ! Vf
       integer :: ashcon_var_id         = 0 ! Ash concentration
       integer :: depocon_var_id        = 0 ! Deposit mass/area
-      !integer :: gencon_var_id         = 0 ! General concentration for any
-      !slices of concen abov
+      !integer :: gencon_var_id         = 0 ! General concentration for any slices of concen abov
+      integer :: cloudmask_var_id      = 0
       integer :: ashconMax_var_id      = 0 ! Max Ash concentration in column
       integer :: ashheight_var_id      = 0 ! Height of top of ash cloud
       integer :: ashload_var_id        = 0 ! Vert. integrated load of ash cloud
       integer :: radrefl_var_id        = 0 ! Radar reflectivity in dbZ
       integer :: depothick_var_id      = 0 ! Total deposit thickness
+      integer :: depothickFin_var_id   = 0 ! Final total deposit thickness at simulation end
       integer :: depotime_var_id       = 0 ! Deposit arrival time
       integer :: ashcloudtime_var_id   = 0 ! Cloud arrival time
       integer :: ashcloudBot_var_id    = 0 ! Height of bottom of ash cloud
@@ -84,6 +85,7 @@
       integer :: pt_cloudarrival_var_id  = 0 ! Arrival time of ash cloud
       integer :: pt_cloudduration_var_id = 0 ! Duration of ash cloud
       integer :: pt_ashthickness_var_id  = 0 ! TS of ash accumulation
+      integer :: pt_ashthicknessFin_var_id  = 0 ! Final ash thickness at point
 
       ! Vertical profile variable
       integer :: pr_ash_var_id           = 0 ! concentration profile
@@ -96,10 +98,12 @@
       ! work spaces
       real(kind=op)                                 :: dumscal_out
       integer,       dimension(:)      ,allocatable :: dum1dint_out
+      integer,       dimension(:,:)    ,allocatable :: dum2dint_out
       real(kind=op), dimension(:)      ,allocatable :: dum1d_out
       real(kind=op), dimension(:,:)    ,allocatable :: dum2d_out
       real(kind=op), dimension(:,:,:)  ,allocatable :: dum3d_out
       character                                     :: dumchar
+      real(kind=op), dimension(:,:)    ,allocatable :: dum2dPOI_out
 
       real(kind=op), dimension(:,:,:,:),allocatable :: ashcon
       real(kind=op), dimension(:,:,:)  ,allocatable :: depocon
@@ -126,7 +130,7 @@
          cdf_b6l3,cdf_b6l4,cdf_b6l5,cdf_conventions,&
          cdf_comment,cdf_title,cdf_institution,cdf_source,cdf_history,cdf_references,outfile,&
          nvar_User2d_static_XY,nvar_User2d_XY,nvar_User3d_XYGs,nvar_User3d_XYZ,&
-         nvar_User4d_XYZGs
+         nvar_User4d_XYZGs,Write_PT_Data,Write_PR_Data
 
       use Output_Vars,   only : &
          DepositThickness_FillValue,MaxConcentration_FillValue,DepArrivalTime_FillValue,&
@@ -152,8 +156,7 @@
 
       use Airports,      only : &
          nairports,Airport_Code,Airport_Name,                   &
-         Airport_Latitude,Airport_Longitude,Airport_Thickness_TS
-         !Airport_x,Airport_y
+         Airport_Latitude,Airport_Longitude,Airport_Thickness_TS,Airport_thickness
 
       use Tephra,        only : &
          n_gs_max,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,&
@@ -195,8 +198,8 @@
       character(len=30),dimension(11) :: dim_lnames
       character(len=30),dimension(40) :: var_lnames
       character (len=13)         :: reftimestr
+      character (len=16)         :: outstring
       character(len=130):: lllinebuffer
-
       integer :: NCversion
       integer :: NCsubversion
       integer :: i,j,k,n
@@ -218,6 +221,7 @@
 
       if(VERB.gt.1)write(global_info,*)"Inside create_netcdf_file"
 
+      allocate(dum2dint_out(nxmax,nymax))
       allocate(dum2d_out(nxmax,nymax))
       allocate(dum3d_out(nxmax,nymax,nzmax))
 
@@ -294,9 +298,11 @@
       var_lnames(34) = "Cloud Load"
       var_lnames(35) = "Radar Reflectivity"
       var_lnames(36) = "Cloud Bottom Height"
+      var_lnames(37) = "Deposit thickness (Final)"
 
       var_lnames(38) = "Species class ID"
       var_lnames(39) = "Species sub-class ID"
+      var_lnames(40) = "Cloud presence flag"
 
       ! Declare header info
       call GetLog(cdf_user)
@@ -516,7 +522,7 @@
 
       if(NCversion.eq.4)then
         ! pr
-        if (nvprofiles.gt.0)then
+        if (Write_PR_Data)then
           nSTAT = nf90_def_dim(ncid,dim_names(10),nvprofiles,pr_dim_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_dim pr:")
         endif
@@ -536,17 +542,18 @@
          ! Time
       if(VERB.gt.1)write(global_info,*)"Defining coordinate variables"
       if(VERB.gt.1)write(global_info,*)"     Time: ",dim_names(1)
-      if(op.eq.8)then
+      !if(op.eq.8)then
+        ! Time variables should always be doubles to match with libhourssince
         nSTAT = nf90_def_var(ncid,dim_names(1),&
                              nf90_double,& 
                              (/t_dim_id/),&
                              t_var_id)
-      else
-        nSTAT = nf90_def_var(ncid,dim_names(1),&
-                             nf90_float,&
-                             (/t_dim_id/), &
-                             t_var_id)
-      endif
+      !else
+      !  nSTAT = nf90_def_var(ncid,dim_names(1),&
+      !                       nf90_float,&
+      !                       (/t_dim_id/), &
+      !                       t_var_id)
+      !endif
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var t:")
       nSTAT = nf90_put_att(ncid,t_var_id,"long_name",dim_lnames(1))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att t long_name:")
@@ -692,7 +699,7 @@
       endif
 
         ! pr (profile output index)
-      if (nvprofiles.gt.0)then
+      if (Write_PR_Data)then
         if(VERB.gt.1)write(*,*)"     PR: ",dim_names(10)
         nSTAT = nf90_def_var(ncid,dim_names(10),&
                              nf90_int,&
@@ -708,13 +715,15 @@
         ! we can only have a second unlimited dimension with NC version 4
         if(VERB.gt.1)write(*,*)"     TN: ",dim_names(11)
         nSTAT = nf90_def_var(ncid,dim_names(11),&
-                             nf90_int,&
+                             nf90_double,&
                              (/tn_dim_id/),&
                              tn_var_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var tn")
         nSTAT = nf90_put_att(ncid,tn_var_id,"long_name",dim_lnames(11))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att tn long_name")
-        nSTAT = nf90_put_att(ncid,tn_var_id,"units","index")
+        write(outstring,4501)BaseYear
+ 4501   format('hours since ',i4)
+        nSTAT = nf90_put_att(ncid,tn_var_id,"units",outstring)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att tn units")
       endif
       !   End of dimension variables
@@ -973,36 +982,39 @@
 
       !   Now a few other variables that are a function of ER
          ! er_stime (Start time of eruption)
-      if(op.eq.8)then
+      !if(op.eq.8)then
+        ! Time variables should always be doubles to match with libhourssince
         nSTAT = nf90_def_var(ncid,"er_stime",&
                              nf90_double,&
                              (/er_dim_id/),&
                              er_stime_var_id)
-      else
-        nSTAT = nf90_def_var(ncid,"er_stime",&
-                             nf90_float,&
-                             (/er_dim_id/), &
-                             er_stime_var_id)
-      endif
+      !else
+      !  nSTAT = nf90_def_var(ncid,"er_stime",&
+      !                       nf90_float,&
+      !                       (/er_dim_id/), &
+      !                       er_stime_var_id)
+      !endif
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var er_stime")
       nSTAT = nf90_put_att(ncid,er_stime_var_id,"long_name",var_lnames(15))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er_stime long_name")
-      nSTAT = nf90_put_att(ncid,er_stime_var_id,"units", &
-                           "hours since 1900")
+      write(outstring,4502)BaseYear
+ 4502 format('hours since ',i4)
+      nSTAT = nf90_put_att(ncid,er_stime_var_id,"units",outstring)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er_stime units")
 
          ! er_duration (Duration of eruption)
-      if(op.eq.8)then
+      !if(op.eq.8)then
+        ! Time variables should always be doubles to match with libhourssince
         nSTAT = nf90_def_var(ncid,"er_duration",&
                              nf90_double,&
                              (/er_dim_id/),&
                              er_duration_var_id)
-      else
-        nSTAT = nf90_def_var(ncid,"er_duration",&
-                             nf90_float,&
-                             (/er_dim_id/), &
-                             er_duration_var_id)
-      endif
+      !else
+      !  nSTAT = nf90_def_var(ncid,"er_duration",&
+      !                       nf90_float,&
+      !                       (/er_dim_id/), &
+      !                       er_duration_var_id)
+      !endif
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var er_duration")
       nSTAT = nf90_put_att(ncid,er_duration_var_id,"long_name",var_lnames(16))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er_duration long_name")
@@ -1227,7 +1239,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att depocon missing_value")
         nSTAT = nf90_put_att(ncid,depocon_var_id,"_FillValue",-9999.0_op)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att depocon _FillValue")
-  
+
         ! DEPOSIT thickness
         if(VERB.gt.1)write(global_info,*)"     depothick: ",var_lnames(30)
         if(op.eq.8)then
@@ -1251,7 +1263,31 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att depothick missing_value")
         nSTAT = nf90_put_att(ncid,depothick_var_id,"_FillValue",DepositThickness_FillValue)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att depothick _FillValue")
- 
+
+        ! DEPOSIT thickness (Final)
+        if(VERB.gt.1)write(global_info,*)"     depothickFin: ",var_lnames(37)
+        if(op.eq.8)then
+          nSTAT = nf90_def_var(ncid,"depothickFin",&
+                               nf90_double, &
+                               (/x_dim_id,y_dim_id/),                &
+                               depothickFin_var_id)
+        else
+          nSTAT = nf90_def_var(ncid,"depothickFin",&
+                               nf90_float,  &
+                               (/x_dim_id,y_dim_id/),                &
+                               depothickFin_var_id)
+        endif
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var depothickFin")
+        nSTAT = nf90_put_att(ncid,depothickFin_var_id,"long_name",var_lnames(30))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att depothickFin long_name")
+        nSTAT = nf90_put_att(ncid,depothickFin_var_id,"units","mm")
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att depothickFin units")
+        nSTAT = nf90_put_att(ncid,depothickFin_var_id,&
+                 "missing_value", DepositThickness_FillValue)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att depothickFin missing_value")
+        nSTAT = nf90_put_att(ncid,depothickFin_var_id,"_FillValue",DepositThickness_FillValue)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att depothickFin _FillValue")
+
            ! Arrival time of deposit
         if(VERB.gt.1)write(global_info,*)"     depotime: ",var_lnames(21)
         if(op.eq.8)then
@@ -1275,7 +1311,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var depotime missing_value")
         nSTAT = nf90_put_att(ncid,depotime_var_id,"_FillValue",DepArrivalTime_FillValue)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var depotime _FillValue")
- 
+
            ! Arrival time of airborne ash cloud
         if(VERB.gt.1)write(global_info,*)"     ash_arrival_time: ",var_lnames(31)
         if(op.eq.8)then
@@ -1299,7 +1335,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att ash_arrival_time missing_value")
         nSTAT = nf90_put_att(ncid,ashcloudtime_var_id,"_FillValue",CloudArrivalTime_FillValue)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att ash_arrival_time _FillValue")
-  
+
            ! 2d ash concentration (MaxConcentration)
         if(VERB.gt.1)write(global_info,*)"     ashcon_max: ",var_lnames(32)
         if(op.eq.8)then
@@ -1323,7 +1359,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att ashcon_max missing_value")
         nSTAT = nf90_put_att(ncid,ashconMax_var_id,"_FillValue",MaxConcentration_FillValue)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att ashcon_max _FillValue")
-  
+
            ! 2d ash cloud height (MaxHeight)
         if(VERB.gt.1)write(global_info,*)"     cloud_height: ",var_lnames(33)
         if(op.eq.8)then
@@ -1350,7 +1386,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att cloud_height missing_value")
         nSTAT = nf90_put_att(ncid,ashheight_var_id,"_FillValue",MaxHeight_FillValue)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att cloud_height _FillValue")
-  
+
            ! 2d ash cloud load (CloudLoad)
         if(VERB.gt.1)write(global_info,*)"     cloud_load: ",var_lnames(34)
         if(op.eq.8)then
@@ -1377,7 +1413,19 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att cloud_load missing_value")
         nSTAT = nf90_put_att(ncid,ashload_var_id,"_FillValue",CloudLoad_FillValue)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att cloud_load _FillValue")
-  
+
+           ! Cloud Mask (this is an interger array flagging where the CloudLoad is non-zero
+        if(VERB.gt.1)write(global_info,*)"     cloud_mask: "
+        nSTAT = nf90_def_var(ncid,"cloud_mask",&
+                             nf90_int,  &
+                             (/x_dim_id,y_dim_id,t_dim_id/),                &
+                             cloudmask_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var cloud_mask")
+        nSTAT = nf90_put_att(ncid,cloudmask_var_id,"long_name",var_lnames(40))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att cloud_mask long_name")
+        nSTAT = nf90_put_att(ncid,cloudmask_var_id,"units","0 or 1") !
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att cloud_mask units")
+
            ! 3d radar reflectivity
         if(VERB.gt.1)write(global_info,*)"     radar_reflectivity: ",var_lnames(35)
         if(op.eq.8)then
@@ -1401,7 +1449,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att radar_reflectivity missing_value")
         nSTAT = nf90_put_att(ncid,radrefl_var_id,"_FillValue",dbZCol_FillValue)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att radar_reflectivity _FillValue")
-  
+
            ! 2d ash cloud bottom 
         if(VERB.gt.1)write(global_info,*)"     cloud_bottom: ",var_lnames(36)
         if(op.eq.8)then
@@ -1621,9 +1669,33 @@
         nSTAT = nf90_put_att(ncid,pt_ashthickness_var_id,"_FillValue",DepArrivalTime_FillValue)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var pt_ashthickness_var_id _FillValue")
 
+        ! Point/Airport ashfall thickness
+        if(VERB.gt.1)write(global_info,*)"     pt_depothickFin"
+        if(op.eq.8)then
+          nSTAT = nf90_def_var(ncid,"pt_depothickFin",&
+                               nf90_double, &
+                               (/pt_dim_id/),                &
+                               pt_ashthicknessFin_var_id)
+        else
+          nSTAT = nf90_def_var(ncid,"pt_depothickFin",&
+                               nf90_float,  &
+                               (/pt_dim_id/),                &
+                               pt_ashthicknessFin_var_id)
+        endif
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var pt_depothickFin")
+        nSTAT = nf90_put_att(ncid,pt_ashthicknessFin_var_id,"long_name","Final ash fall thickness")
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var pt_ashthicknessFin_var_id long_name")
+        nSTAT = nf90_put_att(ncid,pt_ashthicknessFin_var_id,"units","mm")
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var pt_ashthicknessFin_var_id units")
+        nSTAT = nf90_put_att(ncid,pt_ashthicknessFin_var_id,&
+                   "missing_value", DepArrivalTime_FillValue)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var pt_ashthicknessFin_var_id missing_value")
+        nSTAT = nf90_put_att(ncid,pt_ashthicknessFin_var_id,"_FillValue",DepArrivalTime_FillValue)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var pt_ashthicknessFin_var_id _FillValue")
+
       endif
 
-      if(NCversion.eq.4.and.nvprofiles.gt.0)then
+      if(NCversion.eq.4.and.Write_PR_Data)then
         ! PR
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"pr_ash",&
@@ -1647,7 +1719,6 @@
         nSTAT = nf90_put_att(ncid,pr_ash_var_id,"_FillValue",MaxConcentration_FillValue)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_ash _FillValue")
       endif
-
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1822,8 +1893,8 @@
       ! Fill variables with initial values
         ! Time
       if(VERB.gt.1)write(global_info,*)"     Fill time"
-      dumscal_out = real(time,kind=op)
-      nSTAT=nf90_put_var(ncid,t_var_id,dumscal_out,(/1/))
+      !dumscal_out = real(time,kind=op)
+      nSTAT=nf90_put_var(ncid,t_var_id,real(time,kind=dp),(/1/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var time")
         ! Z
       if(VERB.gt.1)write(global_info,*)"     Fill Z"
@@ -1890,7 +1961,7 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var wf")
       deallocate(dum1dint_out)
         ! PT
-      if (nairports.gt.0)then
+      if (Write_PT_Data)then
         if(VERB.gt.1)write(global_info,*)"     Fill PT"
         allocate(dum1dint_out(nairports))
         ! This is variable associated with the dimension for point output (airport/POI)
@@ -1903,7 +1974,7 @@
         deallocate(dum1dint_out)
       endif
 
-      if(NCversion.eq.4.and.nvprofiles.gt.0)then
+      if(NCversion.eq.4.and.Write_PR_Data)then
           ! PR
         if(VERB.gt.1)write(global_info,*)"     Fill PR"
         allocate(dum1dint_out(nvprofiles))
@@ -1971,12 +2042,13 @@
       !   Now fill a few other variables that are a function of ER
         ! er_stime (Start time of eruption)
       allocate(dum1d_out(neruptions))
-      dum1d_out = real(e_StartTime + SimStartHour,kind=op)
-      nSTAT=nf90_put_var(ncid,er_stime_var_id,dum1d_out,(/1/))
+      !dum1d_out = real(e_StartTime + SimStartHour,kind=op)
+      nSTAT=nf90_put_var(ncid,er_stime_var_id,&
+                         real(e_StartTime + SimStartHour,kind=dp) ,(/1/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var er_stime")
         ! er_duration (Duration of eruption)
-      dum1d_out = real(e_Duration,kind=op)
-      nSTAT=nf90_put_var(ncid,er_duration_var_id,dum1d_out,(/1/))
+      !dum1d_out = real(e_Duration,kind=op)
+      nSTAT=nf90_put_var(ncid,er_duration_var_id,real(e_Duration,kind=dp),(/1/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var er_duration")
         ! er_plumeheight (Plume height of eruption)
       dum1d_out = real(e_PlumeHeight,kind=op)
@@ -2076,10 +2148,10 @@
         enddo
         nSTAT=nf90_put_var(ncid,depocon_var_id,depocon,(/1,1,1,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depocon")
-  
+
         if(VERB.gt.1)write(global_info,*)"     Calling dbZCalculator"
         call dbZCalculator            ! get radar reflectivity
-  
+
         ! depothick
         if(VERB.gt.1)write(global_info,*)"     Fill depothick"
         dum2d_out(:,:) = DepositThickness_FillValue
@@ -2091,45 +2163,21 @@
         enddo
         nSTAT=nf90_put_var(ncid,depothick_var_id,dum2d_out,(/1,1,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depothick")
- 
-          ! depotime
-        if(VERB.gt.1)write(global_info,*)"     Fill depotime"
-        dum2d_out(:,:) = DepArrivalTime_FillValue
-        do i=1,nxmax
-          do j=1,nymax
-            if(DepArrivalTime(i,j).ge.0.0_ip)&
-                dum2d_out(i,j)=real(DepArrivalTime(i,j),kind=op)
-          enddo
-        enddo
-        nSTAT=nf90_put_var(ncid,depotime_var_id,dum2d_out,(/1,1/))
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depotime")
 
-          ! ashtime
-        if(VERB.gt.1)write(global_info,*)"     Fill ashtime"
-        dum2d_out(:,:) = CloudArrivalTime_FillValue
-        do i=1,nxmax
-          do j=1,nymax
-            if(CloudArrivalTime(i,j).ge.0.0)&
-                dum2d_out(i,j)=real(CloudArrivalTime(i,j),kind=op)
-          enddo
-        enddo
-        nSTAT=nf90_put_var(ncid,ashcloudtime_var_id,dum2d_out,(/1,1/))
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var ashcloudtime_")
-  
         ! ashconMax
         if(VERB.gt.1)write(global_info,*)"     Fill ashconMax"
         dum2d_out(:,:) = real(MaxConcentration_FillValue,kind=op)
         do i=1,nxmax
           do j=1,nymax
             if(Mask_Cloud(i,j))then
-              dumscal_out=real(MaxConcentration(i,j)/1.0e3_ip,kind=op)
+              dumscal_out=real(MaxConcentration(i,j),kind=op)
               dum2d_out(i,j)=dumscal_out
             endif
           enddo
         enddo
         nSTAT=nf90_put_var(ncid,ashconMax_var_id,dum2d_out,(/1,1,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var ashconMax")
-  
+
         ! ash cloud_height (top)
         if(VERB.gt.1)write(global_info,*)"     Fill ash_height"
         dum2d_out(:,:) = real(MaxHeight_FillValue,kind=op)
@@ -2158,6 +2206,20 @@
         enddo
         nSTAT=nf90_put_var(ncid,ashload_var_id,dum2d_out,(/1,1,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var ashload")
+
+        ! cloud-mask
+        if(VERB.gt.1)write(global_info,*)"     Fill cloud mask"
+        do i=1,nxmax
+          do j=1,nymax
+            if(Mask_Cloud(i,j))then
+              dum2dint_out(i,j) = 1
+            else
+              dum2dint_out(i,j) = 0
+            endif
+          enddo
+        enddo
+        nSTAT=nf90_put_var(ncid,cloudmask_var_id,dum2dint_out,(/1,1,1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var cloud_mask")
 
         ! radar-reflectivity
         if(VERB.gt.1)write(global_info,*)"     Fill dbZ"
@@ -2189,9 +2251,48 @@
         nSTAT=nf90_put_var(ncid,ashcloudBot_var_id,dum2d_out,(/1,1,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var cloud-bottom")
 
+        ! Final time outputs 
+        !  Note: this may not align with the last output time step since it is
+        !  the values at the end of the simulation, not on the last output step
+        ! depothickFin
+        if(VERB.gt.1)write(global_info,*)"     Fill depothickFin"
+        dum2d_out(:,:) = DepositThickness_FillValue
+        do i=1,nxmax
+          do j=1,nymax
+            if(Mask_Deposit(i,j))&
+                dum2d_out(i,j) = real(DepositThickness(i,j),kind=op)
+          enddo
+        enddo
+        nSTAT=nf90_put_var(ncid,depothickFin_var_id,dum2d_out,(/1,1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depothickFin")
+
+          ! depotime
+        if(VERB.gt.1)write(global_info,*)"     Fill depotime"
+        dum2d_out(:,:) = DepArrivalTime_FillValue
+        do i=1,nxmax
+          do j=1,nymax
+            if(DepArrivalTime(i,j).ge.0.0_ip)&
+                dum2d_out(i,j)=real(DepArrivalTime(i,j),kind=op)
+          enddo
+        enddo
+        nSTAT=nf90_put_var(ncid,depotime_var_id,dum2d_out,(/1,1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depotime")
+
+          ! ashtime
+        if(VERB.gt.1)write(global_info,*)"     Fill ashtime"
+        dum2d_out(:,:) = CloudArrivalTime_FillValue
+        do i=1,nxmax
+          do j=1,nymax
+            if(CloudArrivalTime(i,j).ge.0.0)&
+                dum2d_out(i,j)=real(CloudArrivalTime(i,j),kind=op)
+          enddo
+        enddo
+        nSTAT=nf90_put_var(ncid,ashcloudtime_var_id,dum2d_out,(/1,1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var ashcloudtime_")
+
       endif ! USE_OUTPROD_VARS
 
-      if (nairports.gt.0)then
+      if (Write_PT_Data)then
         ! These are variable associated with the dimension for point output
         ! (airport/POI)
         if(VERB.gt.1)write(global_info,*)"     Fill PT variables"
@@ -2229,14 +2330,16 @@
         enddo
 
         ! Time-series of ash accumulation at points
-        allocate(dum1d_out(nairports))
-        dum1d_out(1:nairports) = real(Airport_Thickness_TS(1:nairports,1),kind=op)
-        nSTAT=nf90_put_var(ncid,pt_ashthickness_var_id,dum1d_out,(/1,1/))
+        ! Since we are creating a new file, we will use step 1 of Airport_Thickness_TS
+        allocate(dum2dPOI_out(nairports,1))
+        dum2dPOI_out(1:nairports,1) = real(Airport_Thickness_TS(1:nairports,1),kind=op)
+        nSTAT=nf90_put_var(ncid,pt_ashthickness_var_id,dum2dPOI_out,(/1,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var pt_depothick")
-        deallocate(dum1d_out)
+        deallocate(dum2dPOI_out)
+        ! And copy this step (the first) to the variable for the final deposit
+        nSTAT=nf90_put_var(ncid,pt_ashthicknessFin_var_id,dum2dPOI_out(:,1),(/1/))
 
-      endif
-
+      endif ! Write_PT_Data
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2309,9 +2412,10 @@
       nSTAT = nf90_close(ncid)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"nf90_close")
 
-      deallocate(dum2d_out,dum3d_out)
+      deallocate(dum2dint_out,dum2d_out,dum3d_out)
       deallocate(ashcon)
       deallocate(depocon)
+
       if(VERB.gt.1)write(global_info,*)"Created netcdf file"
 
       end subroutine create_netcdf_file
@@ -2330,7 +2434,7 @@
 
       use io_data,       only : &
          iout3d,nvar_User2d_XY,nvar_User3d_XYGs,nvar_User3d_XYZ,nvar_User4d_XYZGs,&
-         outfile,isFinal_TS,nvprofiles
+         outfile,isFinal_TS,nvprofiles,Write_PT_Data,Write_PR_Data
 
       use Output_Vars,   only : &
          CloudLoad_FillValue,dbZCol_FillValue,MaxConcentration_FillValue,&
@@ -2348,7 +2452,7 @@
 
       use Airports,      only : &
          nairports,Airport_Thickness_TS,Airport_AshDuration,Airport_CloudArrivalTime,&
-         Airport_CloudDuration,Airport_AshArrivalTime
+         Airport_CloudDuration,Airport_AshArrivalTime,Airport_thickness
 
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,ts1,dz_vec_pd
@@ -2383,6 +2487,24 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"nf90_open")
 
       if(isFinal_TS)then
+
+        ! depothickFin
+        allocate(dum2d_out(nxmax,nymax))
+        nSTAT = nf90_inq_varid(ncid,"depothickFin",depothickFin_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid depothickFin")
+        !if(VERB.gt.2)
+        write(global_info,*)"  Writing depothickFin"
+        dum2d_out(:,:) = DepositThickness_FillValue
+        do i=1,nxmax
+          do j=1,nymax
+            if(Mask_Deposit(i,j))&
+                dum2d_out(i,j)=real(DepositThickness(i,j),kind=op)
+          enddo
+        enddo
+        nSTAT=nf90_put_var(ncid,depothickFin_var_id,dum2d_out,(/1,1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depothickFin")
+        deallocate(dum2d_out)
+
           ! depotime
         allocate(dum2d_out(nxmax,nymax))
         nSTAT = nf90_inq_varid(ncid,"depotime",depotime_var_id)
@@ -2415,7 +2537,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var ash_arrival_time")
         deallocate(dum2d_out)
 
-        if (nairports.gt.0)then
+        if (Write_PT_Data)then
 
           ! Arrival time of ashfall
           nSTAT = nf90_inq_varid(ncid,"pt_depotime",pt_asharrival_var_id)
@@ -2453,18 +2575,28 @@
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var pt_cloud_dur")
           deallocate(dum1d_out)
 
+          ! Final deposit thickness
+          write(*,*)"Trying to find pt_depothickFin"
+          nSTAT = nf90_inq_varid(ncid,"pt_depothickFin",pt_ashthicknessFin_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid pt_depothickFin")
+          allocate(dum1d_out(nairports))
+          dum1d_out(1:nairports) = real(Airport_thickness(1:nairports),kind=op)
+          nSTAT=nf90_put_var(ncid,pt_ashthicknessFin_var_id,dum1d_out,(/1/))
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var pt_depothickFin")
+          deallocate(dum1d_out)
+
         endif
 
-        if(nvprofiles.gt.0)then
+        if(Write_PR_Data)then
           ! PR
           ! write out native time
           nSTAT = nf90_inq_varid(ncid,"tn",tn_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid tn")
-          allocate(dum1d_out(ntmax))
-          dum1d_out(1:ntmax) = real(time_native(1:ntmax),kind=op)
-          nSTAT=nf90_put_var(ncid,tn_var_id,dum1d_out,(/1/))
+          !allocate(dum1d_out(ntmax))
+          !dum1d_out(1:ntmax) = real(time_native(1:ntmax),kind=op)
+          nSTAT=nf90_put_var(ncid,tn_var_id,real(time_native(1:ntmax),kind=dp),(/1/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var tn")
-          deallocate(dum1d_out)
+          !deallocate(dum1d_out)
 
           ! write out profiles
           nSTAT = nf90_inq_varid(ncid,"pr_ash",pr_ash_var_id)
@@ -2492,7 +2624,7 @@
         dumscal_out = real(time,kind=op)
         nSTAT=nf90_put_var(ncid,t_var_id,dumscal_out,(/iout3d/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var t")
-  
+
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         if(USE_WIND_VARS)then
@@ -2528,7 +2660,7 @@
         endif
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  
+
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         if(USE_RESTART_VARS)then
@@ -2546,11 +2678,11 @@
         endif
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  
+
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         if(USE_OUTPROD_VARS)then
-  
+
             ! depocon
           if(VERB.gt.1)write(global_info,*)"     Fill depocon"
           nSTAT = nf90_inq_varid(ncid,"depocon",depocon_var_id)
@@ -2573,10 +2705,10 @@
           enddo
           nSTAT=nf90_put_var(ncid,depocon_var_id,depocon,(/1,1,1,iout3d/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depocon")
-    
+
           if(VERB.gt.2)write(global_info,*)"Calling dbZCalculator"
           call dbZCalculator            ! get radar reflectivity
-    
+
           ! depothick
           allocate(dum2d_out(nxmax,nymax))
           nSTAT = nf90_inq_varid(ncid,"depothick",depothick_var_id)
@@ -2603,7 +2735,7 @@
           do i=1,nxmax
             do j=1,nymax
               if(Mask_Cloud(i,j))then
-                dumscal_out=real(MaxConcentration(i,j)/1.0e3_ip,kind=op)
+                dumscal_out=real(MaxConcentration(i,j),kind=op)
                 dum2d_out(i,j)=dumscal_out
               endif
             enddo
@@ -2611,7 +2743,7 @@
           nSTAT=nf90_put_var(ncid,ashconMax_var_id,dum2d_out,(/1,1,iout3d/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var ashcon_max")
           deallocate(dum2d_out)
-   
+
           ! ash cloud_height
           allocate(dum2d_out(nxmax,nymax))
           nSTAT = nf90_inq_varid(ncid,"cloud_height",ashheight_var_id)
@@ -2647,6 +2779,22 @@
           nSTAT=nf90_put_var(ncid,ashload_var_id,dum2d_out,(/1,1,iout3d/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var cloud_load")
           deallocate(dum2d_out)
+
+          ! cloud-mask
+          allocate(dum2dint_out(nxmax,nymax))
+          if(VERB.gt.1)write(global_info,*)"     Fill cloud mask"
+          do i=1,nxmax
+            do j=1,nymax
+              if(Mask_Cloud(i,j))then
+                dum2dint_out(i,j) = 1
+              else
+                dum2dint_out(i,j) = 0
+              endif
+            enddo
+          enddo
+          nSTAT=nf90_put_var(ncid,cloudmask_var_id,dum2dint_out,(/1,1,iout3d/))
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var cloud_mask")
+          deallocate(dum2dint_out)
 
           ! radar reflectivity
           allocate(dum3d_out(nxmax,nymax,nzmax))
@@ -2688,80 +2836,82 @@
 
         endif ! USE_OUTPROD_VARS
 
-        if (nairports.gt.0)then
+        if (Write_PT_Data)then
           ! Time-series of ash accumulation at points
           nSTAT = nf90_inq_varid(ncid,"pt_depothick",pt_ashthickness_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid pt_depothick")
           if(VERB.gt.2)write(global_info,*)"  Writing time-series of ashfall at points"
-          allocate(dum1d_out(nairports))
-          dum1d_out(1:nairports) = real(Airport_Thickness_TS(1:nairports,iout3d),kind=op)
-          nSTAT=nf90_put_var(ncid,pt_ashthickness_var_id,dum1d_out,(/1,iout3d/))
+          allocate(dum2d_out(nairports,1))
+          dum2d_out(1:nairports,1) = real(Airport_Thickness_TS(1:nairports,iout3d),kind=op)
+          nSTAT=nf90_put_var(ncid,pt_ashthickness_var_id,dum2d_out,(/1,iout3d/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var pt_depothick")
+          deallocate(dum2d_out)
+
+          ! Final deposit thickness
+          nSTAT = nf90_inq_varid(ncid,"pt_depothickFin",pt_ashthickness_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid pt_depothickFin")
+          allocate(dum1d_out(nairports))
+          dum1d_out(1:nairports) = real(Airport_thickness(1:nairports),kind=op)
+          nSTAT=nf90_put_var(ncid,pt_ashthickness_var_id,dum1d_out,(/1/))
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var pt_depothickFin")
           deallocate(dum1d_out)
+
         endif
-      endif ! .not.isFinal_TS
+      endif ! Write_PT_Data
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if(USE_OPTMOD_VARS)then
-        if(isFinal_TS)then
-          ! User-specified 2-d static variables were filled in the
-          ! create_netcdf subroutine
-          write(*,*)"No final variables for optional moduals"
+        ! Fill User-specified 2-d transient variables
+        if(nvar_User2d_XY.gt.0)then
+          allocate(dum2d_out(nxmax,nymax))
+          do ivar=1,nvar_User2d_XY
+            dum2d_out(:,:) = real(var_User2d_XY(:,:,ivar),kind=op)
+            nSTAT = nf90_inq_varid(ncid,var_User2d_XY_name(ivar),temp1_2d_var_id)
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid XY")
+            nSTAT = nf90_put_var(ncid,temp1_2d_var_id,dum2d_out,(/1,1,iout3d/))
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var XY")
+          enddo
+          deallocate(dum2d_out)
         endif
 
-        if(.not.isFinal_TS)then
-          ! Fill User-specified 2-d transient variables
-          if(nvar_User2d_XY.gt.0)then
-            allocate(dum2d_out(nxmax,nymax))
-            do ivar=1,nvar_User2d_XY
-              dum2d_out(:,:) = real(var_User2d_XY(:,:,ivar),kind=op)
-              nSTAT = nf90_inq_varid(ncid,var_User2d_XY_name(ivar),temp1_2d_var_id)
-              if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid XY")
-              nSTAT = nf90_put_var(ncid,temp1_2d_var_id,dum2d_out,(/1,1,iout3d/))
-              if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var XY")
-            enddo
-            deallocate(dum2d_out)
-          endif
-
-          ! Fill User-specified 3-d transient variables in x,y,gs
-          if(nvar_User3d_XYGs.gt.0)then
-            do ivar=1,nvar_User3d_XYGs
-              depocon(:,:,:) = real(var_User3d_XYGs(:,:,:,ivar),kind=op)
-              nSTAT = nf90_inq_varid(ncid,var_User3d_XYGs_name(ivar),temp1_3d_var_id)
-              if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid XYGs")
-              nSTAT = nf90_put_var(ncid,temp1_3d_var_id,depocon,(/1,1,1,iout3d/))
-              if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var XYGs")
-            enddo
-          endif
-
-          ! Fill User-specified 3-d transient variables in x,y,z
-          if(nvar_User3d_XYZ.gt.0)then
-            allocate(dum3d_out(nxmax,nymax,nzmax))
-            do ivar=1,nvar_User3d_XYZ
-              dum3d_out(:,:,:) = real(var_User3d_XYZ(:,:,:,ivar),kind=op)
-              nSTAT = nf90_inq_varid(ncid,var_User3d_XYZ_name(ivar),temp1_3d_var_id)
-              if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid XYZ")
-              nSTAT = nf90_put_var(ncid,temp1_3d_var_id,dum3d_out,(/1,1,1,iout3d/))
-              if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var XYZ")
-            enddo
-            deallocate(dum3d_out)
-          endif
-
-          ! Fill User-specified 4-d transient variables in x,y,z,gs
-          if(nvar_User4d_XYZGs.gt.0)then
-            do ivar=1,nvar_User4d_XYZGs
-              ashcon(:,:,:,:) = real(var_User4d_XYZGs(1:nxmax,1:nymax,1:nzmax,1:nsmax,ivar),kind=op)
-              nSTAT = nf90_inq_varid(ncid,var_User4d_XYZGs_name(ivar),temp1_4d_var_id)
-              if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid XYZGs")
-              nSTAT = nf90_put_var(ncid,temp1_4d_var_id,ashcon,(/1,1,1,1,iout3d/))
-              if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var XYZGs")
-            enddo
-          endif
+        ! Fill User-specified 3-d transient variables in x,y,gs
+        if(nvar_User3d_XYGs.gt.0)then
+          do ivar=1,nvar_User3d_XYGs
+            depocon(:,:,:) = real(var_User3d_XYGs(:,:,:,ivar),kind=op)
+            nSTAT = nf90_inq_varid(ncid,var_User3d_XYGs_name(ivar),temp1_3d_var_id)
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid XYGs")
+            nSTAT = nf90_put_var(ncid,temp1_3d_var_id,depocon,(/1,1,1,iout3d/))
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var XYGs")
+          enddo
         endif
-      endif
+
+        ! Fill User-specified 3-d transient variables in x,y,z
+        if(nvar_User3d_XYZ.gt.0)then
+          allocate(dum3d_out(nxmax,nymax,nzmax))
+          do ivar=1,nvar_User3d_XYZ
+            dum3d_out(:,:,:) = real(var_User3d_XYZ(:,:,:,ivar),kind=op)
+            nSTAT = nf90_inq_varid(ncid,var_User3d_XYZ_name(ivar),temp1_3d_var_id)
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid XYZ")
+            nSTAT = nf90_put_var(ncid,temp1_3d_var_id,dum3d_out,(/1,1,1,iout3d/))
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var XYZ")
+          enddo
+          deallocate(dum3d_out)
+        endif
+
+        ! Fill User-specified 4-d transient variables in x,y,z,gs
+        if(nvar_User4d_XYZGs.gt.0)then
+          do ivar=1,nvar_User4d_XYZGs
+            ashcon(:,:,:,:) = real(var_User4d_XYZGs(1:nxmax,1:nymax,1:nzmax,1:nsmax,ivar),kind=op)
+            nSTAT = nf90_inq_varid(ncid,var_User4d_XYZGs_name(ivar),temp1_4d_var_id)
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid XYZGs")
+            nSTAT = nf90_put_var(ncid,temp1_4d_var_id,ashcon,(/1,1,1,1,iout3d/))
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var XYZGs")
+          enddo
+        endif
+      endif ! .not.isFinal_TS
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -2978,42 +3128,47 @@
       subroutine NC_Read_Output_Products(timestep)
 
       use io_data,           only : &
-         concenfile,init_tstep,nWriteTimes,WriteTimes,cdf_b1l1,cdf_b3l1, &
-         cdf_b3l3,VolcanoName,Write_PT_Data,Write_PR_Data
+         concenfile,init_tstep,nWriteTimes,WriteTimes,cdf_b1l1,cdf_b1l5,cdf_b3l1, &
+         cdf_b3l3,VolcanoName,Write_PT_Data,Write_PR_Data,isFinal_TS
 
       use Source,        only : &
-         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
+         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight, &
+         lat_volcano,lon_volcano,x_volcano,y_volcano
 
       use time_data,     only : &
           BaseYear,useLeap,cdf_time_log,time,SimStartHour,xmlSimStartTime, &
           OutputOffset,Simtime_in_hours
 
       use Output_Vars,   only : &
-         DepositThickness,DepArrivalTime,CloudArrivalTime,&
+         DepositThickness,DepArrivalTime,CloudArrivalTime,THICKNESS_THRESH,&
          MaxConcentration,MaxHeight,CloudLoad,dbZCol,MinHeight,Mask_Cloud,Mask_Deposit,&
            dbZCalculator
 
-         !,DepArrivalTime,CloudArrivalTime,&
-         !MaxConcentration,MaxHeight,CloudLoad,dbZ,MinHeight,Mask_Cloud,Mask_Deposit
-
       use Airports,      only : &
          nairports,Airport_Code,Airport_Name,Airport_x,Airport_y,&
-         Airport_Latitude,Airport_Longitude,Airport_Thickness_TS
+         Airport_Latitude,Airport_Longitude,Airport_Thickness_TS,Airport_thickness,&
+         Airport_TS_plotindex,Airport_AshArrived,Airport_CloudArrivalTime,&
+         Airport_CloudDuration,Airport_AshArrivalTime,Airport_AshDuration,&
+         Airport_Thickness,Airport_CloudArrived,Airport_i,Airport_j,&
+           Allocate_Airports
 
       use mesh,          only : &
-         nxmax,nymax,x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd, &
-         IsLatLon !,dx,dy,dz_vec_pd,nzmax,nsmax,z_cc_pd
+         nxmax,nymax,nsmax,nzmax,x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd, &
+         dx,dy,de,dn,IsLatLon,latLL,lonLL,latUR,lonUR,xLL,yLL,xUR,yUR
+
+      use Tephra,        only : &
+         n_gs_max
 
       implicit none
 
       integer, intent(in), optional :: timestep
 
+      logical,save :: first_time = .true.
       integer :: nSTAT
-
-      integer :: it
+      integer :: it,i,j
+      integer, dimension(:),allocatable :: dum1d_int
       real(kind=op) :: dumscal_out
-      !real(kind=op), allocatable, dimension(:) :: t_list
-      real(kind=op), dimension(:,:)    ,allocatable :: dum2d_out
+      real(kind=dp), dimension(:),allocatable :: dum1d_dp
       character(len=32)              :: time_units
       integer           :: iendstr
 
@@ -3034,437 +3189,655 @@
         end function HS_hours_since_baseyear
       END INTERFACE
 
-      write(global_info,*)"Reading NetCDF file ",concenfile
-      write(global_info,*)"Found the following dimensions and sizes"
+      if(first_time)then
+        write(global_info,*)"Reading NetCDF file ",concenfile
+        write(global_info,*)"Found the following dimensions and sizes"
 
-      ! Open netcdf file for writing
-      nSTAT=nf90_open(concenfile,nf90_nowrite,ncid)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"nSTAT=nf90_open")
+        ! Open netcdf file for writing
+        nSTAT=nf90_open(concenfile,nf90_nowrite,ncid)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"nSTAT=nf90_open")
 
-      !!!!!!  TIME  !!!!!!!!!!!
-      ! Identify dimension for time (and note size)
-      nSTAT = nf90_inq_dimid(ncid,"t",t_dim_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_dimid time")
-      nSTAT = nf90_Inquire_Dimension(ncid,t_dim_id,len=t_len)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"Inquire_Dimension time")
-      ! Get variable id for this dimension
-      nSTAT = nf90_inq_varid(ncid,"t",t_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid t")
-      write(*,*)"t",t_len
-
-      !!!!!!  X  !!!!!!!!!!!
-      ! Identify dimension for x (and note size)
-      nSTAT = nf90_inq_dimid(ncid,"x",x_dim_id)
-      !call NC_check_status(nSTAT,0,"inq_dimid x")
-      if(nSTAT.ne.0)then
-        ! dimension x not found, trying for lon
-        !write(*,*)"Could not find dimension x"
-        !write(*,*)"Trying for lon"
-        nSTAT = nf90_inq_dimid(ncid,"lon",x_dim_id)
-        call NC_check_status(nSTAT,1,"inq_dimid x")
-        if (nSTAT.eq.0)then
-          IsLatLon = .true.
-        endif
-       else
-        IsLatLon = .false.
-      endif
-      ! continue reading x or lon
-      nSTAT = nf90_Inquire_Dimension(ncid,x_dim_id,len=x_len)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"Inquire_Dimension x")
-      if(IsLatLon)then
+        !!!!!!  TIME  !!!!!!!!!!!
+        ! Identify dimension for time (and note size)
+        nSTAT = nf90_inq_dimid(ncid,"t",t_dim_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_dimid time")
+        nSTAT = nf90_Inquire_Dimension(ncid,t_dim_id,len=t_len)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"Inquire_Dimension time")
         ! Get variable id for this dimension
-        nSTAT = nf90_inq_varid(ncid,"lon",x_var_id)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid x")
-        if(.not.allocated(lon_cc_pd))then
-          nxmax = x_len
-          allocate(lon_cc_pd(-1:nxmax+2))
-          allocate(dum1d_out(1:nxmax))
-          nSTAT=nf90_get_var(ncid,x_var_id,dum1d_out,  &
-                   start = (/1/),       &
-                   count = (/x_len/))
-          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var x")
-          lon_cc_pd(1:nxmax) = real(dum1d_out(1:nxmax),kind=ip)
-          deallocate(dum1d_out)
+        nSTAT = nf90_inq_varid(ncid,"t",t_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid t")
+        write(global_info,2501)"  t",t_len
+ 2501 format(6x,a3,5x,i5) 
+
+        !!!!!!  X  !!!!!!!!!!!
+        ! Identify dimension for x (and note size)
+        nSTAT = nf90_inq_dimid(ncid,"x",x_dim_id)
+        !call NC_check_status(nSTAT,0,"inq_dimid x")
+        if(nSTAT.ne.0)then
+          ! dimension x not found, trying for lon
+          nSTAT = nf90_inq_dimid(ncid,"lon",x_dim_id)
+          call NC_check_status(nSTAT,1,"inq_dimid x")
+          if (nSTAT.eq.0)then
+            IsLatLon = .true.
+          endif
+         else
+          IsLatLon = .false.
+        endif
+        ! continue reading x or lon
+        nSTAT = nf90_Inquire_Dimension(ncid,x_dim_id,len=x_len)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"Inquire_Dimension x")
+        if(IsLatLon)then
+          ! Get variable id for this dimension
+          nSTAT = nf90_inq_varid(ncid,"lon",x_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid x")
+          if(.not.allocated(lon_cc_pd))then
+            nxmax = x_len
+            allocate(lon_cc_pd(-1:nxmax+2))
+            allocate(dum1d_out(1:nxmax))
+            nSTAT=nf90_get_var(ncid,x_var_id,dum1d_out,  &
+                     start = (/1/),       &
+                     count = (/x_len/))
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var x")
+            lon_cc_pd(1:nxmax) = real(dum1d_out(1:nxmax),kind=ip)
+            deallocate(dum1d_out)
+          else
+            write(*,*)"ERROR: lon_cc_pd already allocated"
+          endif
+          write(global_info,2501)"lon",x_len
         else
-          write(*,*)"ERROR: lon_cc_pd already allocated"
+          ! Get variable id for this dimension
+          nSTAT = nf90_inq_varid(ncid,"x",x_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid x")
+          if(.not.allocated(x_cc_pd))then
+            nxmax = x_len
+            allocate(x_cc_pd(-1:nxmax+2))
+            allocate(dum1d_out(1:nxmax))
+            nSTAT=nf90_get_var(ncid,x_var_id,dum1d_out,  &
+                     start = (/1/),       &
+                     count = (/x_len/))
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var x")
+            x_cc_pd(1:nxmax) = real(dum1d_out(1:nxmax),kind=ip)
+            deallocate(dum1d_out)
+          else
+            write(*,*)"ERROR: x_cc_pd already allocated"
+          endif
+          write(global_info,2501)"  x",x_len
         endif
-        write(*,*)"lon",x_len
-      else
-        ! Get variable id for this dimension
-        nSTAT = nf90_inq_varid(ncid,"x",x_var_id)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid x")
-        if(.not.allocated(x_cc_pd))then
-          nxmax = x_len
-          allocate(x_cc_pd(-1:nxmax+2))
-          allocate(dum1d_out(1:nxmax))
-          nSTAT=nf90_get_var(ncid,x_var_id,dum1d_out,  &
-                   start = (/1/),       &
-                   count = (/x_len/))
-          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var x")
-          x_cc_pd(1:nxmax) = real(dum1d_out(1:nxmax),kind=ip)
-          deallocate(dum1d_out)
+
+        !!!!!!  Y  !!!!!!!!!!!
+        ! Identify dimension for y (and note size)
+        if(IsLatLon)then
+          nSTAT = nf90_inq_dimid(ncid,"lat",y_dim_id)
+          call NC_check_status(nSTAT,1,"inq_dimid x")
+          nSTAT = nf90_Inquire_Dimension(ncid,y_dim_id,len=y_len)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"Inquire_Dimension y")
+          ! Get variable id for this dimension
+          nSTAT = nf90_inq_varid(ncid,"lat",y_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid y")
+          if(.not.allocated(lat_cc_pd))then
+            nymax = y_len
+            allocate(lat_cc_pd(-1:nymax+2))
+            allocate(dum1d_out(1:nymax))
+            nSTAT=nf90_get_var(ncid,y_var_id,dum1d_out,  &
+                     start = (/1/),       &
+                     count = (/y_len/))
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var y")
+            lat_cc_pd(1:nymax) = real(dum1d_out(1:nymax),kind=ip)
+            deallocate(dum1d_out)
+          else
+            write(*,*)"ERROR: lat_cc_pd already allocated"
+          endif
+          write(global_info,2501)"lat",y_len
         else
-          write(*,*)"ERROR: x_cc_pd already allocated"
+          nSTAT = nf90_inq_dimid(ncid,"y",y_dim_id)
+          call NC_check_status(nSTAT,1,"inq_dimid x")
+          nSTAT = nf90_Inquire_Dimension(ncid,y_dim_id,len=y_len)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"Inquire_Dimension y")
+          ! Get variable id for this dimension
+          nSTAT = nf90_inq_varid(ncid,"y",y_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid y")
+          if(.not.allocated(y_cc_pd))then
+            nymax = y_len
+            allocate(y_cc_pd(-1:nymax+2))
+            allocate(dum1d_out(1:nymax))
+            nSTAT=nf90_get_var(ncid,y_var_id,dum1d_out,  &
+                     start = (/1/),       &
+                     count = (/y_len/))
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var y")
+            y_cc_pd(1:nymax) = real(dum1d_out(1:nymax),kind=ip)
+            deallocate(dum1d_out)
+          else
+            write(*,*)"ERROR: lat_cc_pd already allocated"
+          endif
+          write(global_info,2501)"  y",y_len
         endif
-        write(*,*)"x",x_len
-      endif
 
-      !!!!!!  Y  !!!!!!!!!!!
-      ! Identify dimension for y (and note size)
-      if(IsLatLon)then
-        nSTAT = nf90_inq_dimid(ncid,"lat",y_dim_id)
-        call NC_check_status(nSTAT,1,"inq_dimid x")
-        nSTAT = nf90_Inquire_Dimension(ncid,y_dim_id,len=y_len)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"Inquire_Dimension y")
-        ! Get variable id for this dimension
-        nSTAT = nf90_inq_varid(ncid,"lat",y_var_id)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid y")
-        if(.not.allocated(lat_cc_pd))then
-          nymax = y_len
-          allocate(lat_cc_pd(-1:nymax+2))
-          allocate(dum1d_out(1:nymax))
-          nSTAT=nf90_get_var(ncid,y_var_id,dum1d_out,  &
-                   start = (/1/),       &
-                   count = (/y_len/))
-          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var y")
-          lat_cc_pd(1:nymax) = real(dum1d_out(1:nymax),kind=ip)
-          deallocate(dum1d_out)
+        if(IsLatLon)then
+          de = lon_cc_pd(2)-lon_cc_pd(1)
+          dn = lat_cc_pd(2)-lat_cc_pd(1)
+          lon_cc_pd(0)  = lon_cc_pd(1) - de
+          lon_cc_pd(-1) = lon_cc_pd(0) - de
+          lon_cc_pd(nxmax+1) = lon_cc_pd(nxmax  ) + de
+          lon_cc_pd(nxmax+2) = lon_cc_pd(nxmax+1) + de
+          lat_cc_pd(0)  = lat_cc_pd(1) - dn
+          lat_cc_pd(-1) = lat_cc_pd(0) - dn
+          lat_cc_pd(nymax+1) = lat_cc_pd(nymax  ) + dn
+          lat_cc_pd(nymax+2) = lat_cc_pd(nymax+1) + dn
+          lonLL = lon_cc_pd(1)-0.5_ip*de
+          latLL = lat_cc_pd(1)-0.5_ip*dn
+          lonUR = lon_cc_pd(nxmax)+0.5_ip*de
+          latUR = lat_cc_pd(nymax)+0.5_ip*dn
         else
-          write(*,*)"ERROR: lat_cc_pd already allocated"
+          dx  = x_cc_pd(2)-x_cc_pd(1)
+          dy  = y_cc_pd(2)-y_cc_pd(1)
+          x_cc_pd(0)  = x_cc_pd(1) - dx
+          x_cc_pd(-1) = x_cc_pd(0) - dx
+          x_cc_pd(nxmax+1) = x_cc_pd(nxmax  ) + dx
+          x_cc_pd(nxmax+2) = x_cc_pd(nxmax+1) + dx
+          y_cc_pd(0)  = y_cc_pd(1) - dy
+          y_cc_pd(-1) = y_cc_pd(0) - dy
+          y_cc_pd(nymax+1) = y_cc_pd(nymax  ) + dy
+          y_cc_pd(nymax+2) = y_cc_pd(nymax+1) + dy
+          xLL = x_cc_pd(1)-0.5_ip*dx
+          yLL = y_cc_pd(1)-0.5_ip*dy
+          xUR = x_cc_pd(nxmax)+0.5_ip*dx
+          yUR = y_cc_pd(nymax)+0.5_ip*dy
         endif
-        write(*,*)"lat",y_len
-      else
-        nSTAT = nf90_inq_dimid(ncid,"y",y_dim_id)
-        call NC_check_status(nSTAT,1,"inq_dimid x")
-        nSTAT = nf90_Inquire_Dimension(ncid,y_dim_id,len=y_len)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"Inquire_Dimension y")
+
+        !!!!!!  Z  !!!!!!!!!!!
+        ! Identify dimension for z (and note size)
+        nSTAT = nf90_inq_dimid(ncid,"z",z_dim_id)
+        call NC_check_status(nSTAT,1,"inq_dimid z")
+        nSTAT = nf90_Inquire_Dimension(ncid,z_dim_id,len=z_len)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"Inquire_Dimension z")
         ! Get variable id for this dimension
-        nSTAT = nf90_inq_varid(ncid,"y",y_var_id)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid y")
-        if(.not.allocated(y_cc_pd))then
-          nymax = y_len
-          allocate(y_cc_pd(-1:nymax+2))
-          allocate(dum1d_out(1:nymax))
-          nSTAT=nf90_get_var(ncid,y_var_id,dum1d_out,  &
-                   start = (/1/),       &
-                   count = (/y_len/))
-          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var y")
-          y_cc_pd(1:nymax) = real(dum1d_out(1:nymax),kind=ip)
-          deallocate(dum1d_out)
+        nSTAT = nf90_inq_varid(ncid,"z",z_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid z")
+        write(global_info,2501)"  z",z_len
+        nzmax = z_len 
+
+        !!!!!!  BN  !!!!!!!!!!!
+        ! Identify dimension for bn (and note size)
+        nSTAT = nf90_inq_dimid(ncid,"bn",bn_dim_id)
+        call NC_check_status(nSTAT,1,"inq_dimid bn")
+        nSTAT = nf90_Inquire_Dimension(ncid,bn_dim_id,len=bn_len)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"Inquire_Dimension bn")
+        ! Get variable id for this dimension
+        nSTAT = nf90_inq_varid(ncid,"bn",bn_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid bn")
+        write(global_info,2501) "bn",bn_len
+        write(*,*)"KLUDGE: Setting n_gs_max = nsmax = bn_len"
+        n_gs_max = bn_len
+        nsmax = bn_len
+
+        !!!!!!  PT  !!!!!!!!!!!
+        ! Identify dimension for pt (and note size)
+        nSTAT = nf90_inq_dimid(ncid,"pt",pt_dim_id)
+        if(nSTAT.ne.0)then
+          Write_PT_Data = .false.
+          write(*,*)"Did not find dim pt: Output file has no point data"
+          nairports = 0
         else
-          write(*,*)"ERROR: lat_cc_pd already allocated"
+          Write_PT_Data = .true.
+          nSTAT = nf90_Inquire_Dimension(ncid,pt_dim_id,len=pt_len)
+          call NC_check_status(nSTAT,1,"Inquire_Dimension pt")
+          ! Get variable id for this dimension
+          nSTAT = nf90_inq_varid(ncid,"pt",pt_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid pt")
+          write(global_info,2501)" pt",pt_len
+          nairports = pt_len
         endif
-        write(*,*)"y",y_len
-      endif
 
-      !!!!!!  Z  !!!!!!!!!!!
-      ! Identify dimension for z (and note size)
-      nSTAT = nf90_inq_dimid(ncid,"z",z_dim_id)
-      call NC_check_status(nSTAT,1,"inq_dimid z")
-      nSTAT = nf90_Inquire_Dimension(ncid,z_dim_id,len=z_len)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"Inquire_Dimension z")
-      ! Get variable id for this dimension
-      nSTAT = nf90_inq_varid(ncid,"z",z_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid z")
-      write(*,*)"z",z_len
+        !!!!!!  PR  !!!!!!!!!!!
+        ! Identify dimension for pr (and note size)
+        nSTAT = nf90_inq_dimid(ncid,"pr",pr_dim_id)
+        if(nSTAT.ne.0)then
+          Write_PR_Data = .false.
+          write(*,*)"Did not find dim pr: Output file has no profile data"
+        else
+          Write_PR_Data = .true.
+          nSTAT = nf90_Inquire_Dimension(ncid,pr_dim_id,len=pr_len)
+          call NC_check_status(nSTAT,0,"Inquire_Dimension pr")
+          ! Get variable id for this dimension
+          nSTAT = nf90_inq_varid(ncid,"pr",pr_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid pr")
+          write(global_info,2501)" pr",pr_len
+        endif
 
-      !!!!!!  BN  !!!!!!!!!!!
-      ! Identify dimension for bn (and note size)
-      nSTAT = nf90_inq_dimid(ncid,"bn",bn_dim_id)
-      call NC_check_status(nSTAT,1,"inq_dimid bn")
-      nSTAT = nf90_Inquire_Dimension(ncid,bn_dim_id,len=bn_len)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"Inquire_Dimension bn")
-      ! Get variable id for this dimension
-      nSTAT = nf90_inq_varid(ncid,"bn",bn_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid bn")
-      write(*,*)"bn",bn_len
+        !!!!!!  TN !!!!!!!!!!!
+        ! Identify dimension for tn (and note size)
+        nSTAT = nf90_inq_dimid(ncid,"tn",tn_dim_id)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"inq_dimid tn")
+          write(*,*)"Did not find dim tn: Output file has no native time data (for profiles)"
+          !hasAirportTSData = .false.
+        else
+          !hasAirportTSData = .true.
+          nSTAT = nf90_Inquire_Dimension(ncid,tn_dim_id,len=tn_len)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"Inquire_Dimension tn")
+          ! Get variable id for this dimension
+          nSTAT = nf90_inq_varid(ncid,"tn",tn_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid tn")
+          write(global_info,2501)" tn",tn_len
+        endif
 
-      !!!!!!  PT  !!!!!!!!!!!
-      ! Identify dimension for pt (and note size)
-      nSTAT = nf90_inq_dimid(ncid,"pt",pt_dim_id)
-      if(nSTAT.ne.0)then
-        Write_PT_Data = .false.
-        write(*,*)"Did not find dim pt: Output file has no point data"
-        nairports = 0
-      else
-        Write_PT_Data = .true.
-        nSTAT = nf90_Inquire_Dimension(ncid,pt_dim_id,len=pt_len)
-        call NC_check_status(nSTAT,1,"Inquire_Dimension pt")
+        !!!!!!  ER !!!!!!!!!!!
+        ! Identify dimension for er (and note size)
+        nSTAT = nf90_inq_dimid(ncid,"er",er_dim_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_dimid er")
+        nSTAT = nf90_Inquire_Dimension(ncid,er_dim_id,len=neruptions)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"Inquire_Dimension er")
         ! Get variable id for this dimension
-        nSTAT = nf90_inq_varid(ncid,"pt",pt_var_id)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid pt")
-        write(*,*)"pt",pt_len
-        nairports = pt_len
-      endif
+        nSTAT = nf90_inq_varid(ncid,"er",er_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid er")
+        write(global_info,2501)" er",neruptions
 
-      !!!!!!  PR  !!!!!!!!!!!
-      ! Identify dimension for pr (and note size)
-      nSTAT = nf90_inq_dimid(ncid,"pr",pr_dim_id)
-      if(nSTAT.ne.0)then
-        Write_PR_Data = .false.
-        write(*,*)"Did not find dim pr: Output file has no profile data"
-      else
-        Write_PR_Data = .true.
-        nSTAT = nf90_Inquire_Dimension(ncid,pr_dim_id,len=pr_len)
-        call NC_check_status(nSTAT,0,"Inquire_Dimension pr")
-        ! Get variable id for this dimension
-        nSTAT = nf90_inq_varid(ncid,"pr",pr_var_id)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid pr")
-        write(*,*)"pr",pr_len
-      endif
+        ! Now get all the other variable info:
+        !!!! Time-series vars
+        ! Vx
+        nSTAT = nf90_inq_varid(ncid,"vx",vx_var_id)
+        !if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid vx")
+        ! Vy
+        nSTAT = nf90_inq_varid(ncid,"vy",vy_var_id)
+        !if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid vy")
+        ! Vz
+        nSTAT = nf90_inq_varid(ncid,"vz",vz_var_id)
+        !if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid vz")
+        ! ashcon
+        nSTAT = nf90_inq_varid(ncid,"ashcon",ashcon_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid ashcon")
+        ! depocon
+        nSTAT = nf90_inq_varid(ncid,"depocon",depocon_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid depocon")
+        ! ashcon_max
+        nSTAT = nf90_inq_varid(ncid,"ashcon_max",ashconMax_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid ashconMax")
+        ! cloud_height
+        nSTAT = nf90_inq_varid(ncid,"cloud_height",ashheight_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid cloud_height")
+        ! cloud_load
+        nSTAT = nf90_inq_varid(ncid,"cloud_load",ashload_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid cloud_load")
+        ! cloud_maks
+        nSTAT = nf90_inq_varid(ncid,"cloud_mask",cloudmask_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid cloud_mask")
+        ! cloud_bottom
+        nSTAT = nf90_inq_varid(ncid,"cloud_bottom",ashcloudBot_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid cloud_bottom")
+        ! depothick
+        nSTAT = nf90_inq_varid(ncid,"depothick",depothick_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid depothick")
+        ! radar_reflectivity
+        nSTAT = nf90_inq_varid(ncid,"radar_reflectivity",radrefl_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid radar_reflectivity")
 
-      !!!!!!  TN !!!!!!!!!!!
-      ! Identify dimension for tn (and note size)
-      nSTAT = nf90_inq_dimid(ncid,"tn",tn_dim_id)
-      if(nSTAT.ne.0)then
-        call NC_check_status(nSTAT,0,"inq_dimid tn")
-        write(*,*)"Did not find dim tn: Output file has no native time data (for profiles)"
-        !hasAirportTSData = .false.
-      else
-        !hasAirportTSData = .true.
-        nSTAT = nf90_Inquire_Dimension(ncid,tn_dim_id,len=tn_len)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"Inquire_Dimension tn")
-        ! Get variable id for this dimension
-        nSTAT = nf90_inq_varid(ncid,"tn",tn_var_id)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid tn")
-        write(*,*)"tn",tn_len
-      endif
+        !!!! Final vars (at simulation end)
+        ! depothickFin
+        nSTAT = nf90_inq_varid(ncid,"depothickFin",depothickFin_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid depothickFin") 
+        ! depotime
+        nSTAT = nf90_inq_varid(ncid,"depotime",depotime_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid depotime")
+        ! ash_arrival_time
+        nSTAT = nf90_inq_varid(ncid,"ash_arrival_time",ashcloudtime_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid ash_arrival_time")
 
-      !!!!!!  ER !!!!!!!!!!!
-      ! Identify dimension for er (and note size)
-      nSTAT = nf90_inq_dimid(ncid,"er",er_dim_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_dimid er")
-      nSTAT = nf90_Inquire_Dimension(ncid,er_dim_id,len=neruptions)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"Inquire_Dimension er")
-      ! Get variable id for this dimension
-      nSTAT = nf90_inq_varid(ncid,"er",er_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid er")
-      write(*,*)"er",neruptions
+        if(Write_PT_Data)then
+          ! pt_x
+          nSTAT = nf90_inq_varid(ncid,"pt_x",pt_x_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_x")
+          ! pt_y
+          nSTAT = nf90_inq_varid(ncid,"pt_y",pt_y_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_y")
+          ! pt_code
+          nSTAT = nf90_inq_varid(ncid,"pt_code",pt_code_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_code")
+          ! pt_name
+          nSTAT = nf90_inq_varid(ncid,"pt_name",pt_name_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_name")
+          ! pt_depotime
+          nSTAT = nf90_inq_varid(ncid,"pt_depotime",pt_asharrival_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_depotime")
+          ! pt_depodur
+          nSTAT = nf90_inq_varid(ncid,"pt_depodur",pt_ashduration_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_depod")
+          ! pt_cloud_arrival
+          nSTAT = nf90_inq_varid(ncid,"pt_cloud_arrival",pt_cloudarrival_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_cloud_arrival")
+          ! pt_cloud_dur
+          nSTAT = nf90_inq_varid(ncid,"pt_cloud_dur",pt_cloudduration_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_cloud_dur")
+          ! pt_depothick
+          nSTAT = nf90_inq_varid(ncid,"pt_depothick",pt_ashthickness_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_depothick")
+          ! pt_depothickFin
+          nSTAT = nf90_inq_varid(ncid,"pt_depothickFin",pt_ashthicknessFin_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_depothickFin")
+        endif
 
-      ! Now get all the other variable info:
-      ! Vx
-      nSTAT = nf90_inq_varid(ncid,"vx",vx_var_id)
-      !if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid vx")
-      ! Vy
-      nSTAT = nf90_inq_varid(ncid,"vy",vy_var_id)
-      !if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid vy")
-      ! Vz
-      nSTAT = nf90_inq_varid(ncid,"vz",vz_var_id)
-      !if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid vz")
-      ! ashcon
-      nSTAT = nf90_inq_varid(ncid,"ashcon",ashcon_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid ashcon")
-      ! depocon
-      nSTAT = nf90_inq_varid(ncid,"depocon",depocon_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid depocon")
-      ! ashcon_max
-      nSTAT = nf90_inq_varid(ncid,"ashcon_max",ashconMax_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid ashconMax")
-      ! cloud_height
-      nSTAT = nf90_inq_varid(ncid,"cloud_height",ashheight_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid cloud_height")
-      ! cloud_load
-      nSTAT = nf90_inq_varid(ncid,"cloud_load",ashload_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid cloud_load")
-      ! cloud_bottom
-      nSTAT = nf90_inq_varid(ncid,"cloud_bottom",ashcloudBot_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid cloud_bottom")
-      ! depothick
-      nSTAT = nf90_inq_varid(ncid,"depothick",depothick_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid depothick")
-      nSTAT = nf90_inq_varid(ncid,"radar_reflectivity",radrefl_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid radar_reflectivity")
+        nWriteTimes = t_len
+        if(.not.allocated(WriteTimes)) allocate(WriteTimes(nWriteTimes))
+        allocate(dum1d_dp(1:nWriteTimes))
+        nSTAT = nf90_get_var(ncid,t_var_id,dum1d_dp)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var t")
+        WriteTimes(1:nWriteTimes) = real(dum1d_dp(1:nWriteTimes),kind=ip)
+        deallocate(dum1d_dp)
+        nSTAT = nf90_get_att(ncid,t_var_id,"units",time_units)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_att units t:")
+        read(time_units,4313) xmlSimStartTime
+  4313  format(12x,a20)
+        read(xmlSimStartTime,4314)itstart_year,itstart_month,itstart_day, &
+                             itstart_hour,itstart_min,itstart_sec
+        filestart_hour = real(itstart_hour,kind=sp) + &
+                             real(itstart_min,kind=sp)/60.0_sp      + &
+                             real(itstart_sec,kind=sp)/3600.0_sp
+  4314  format(i4,1x,i2,1x,i2,1x,i2,1x,i2,1x,i2,1x)
+        SimStartHour = real(HS_hours_since_baseyear(itstart_year,itstart_month, &
+                               itstart_day,real(filestart_hour,kind=8),&
+                               BaseYear,useLeap),kind=4)
 
-      if(Write_PT_Data)then
-        ! pt_x
-        nSTAT = nf90_inq_varid(ncid,"pt_x",pt_x_var_id)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_x")
-        ! pt_y
-        nSTAT = nf90_inq_varid(ncid,"pt_y",pt_y_var_id)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_y")
-        ! pt_code
-        nSTAT = nf90_inq_varid(ncid,"pt_code",pt_code_var_id)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_code")
-        ! pt_name
-        nSTAT = nf90_inq_varid(ncid,"pt_name",pt_name_var_id)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_name")
-        ! pt_depotime
-        nSTAT = nf90_inq_varid(ncid,"pt_depotime",pt_asharrival_var_id)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_depotime")
-        ! pt_depodur
-        nSTAT = nf90_inq_varid(ncid,"pt_depodur",pt_ashduration_var_id)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_depod")
-        ! pt_cloud_arrival
-        nSTAT = nf90_inq_varid(ncid,"pt_cloud_arrival",pt_cloudarrival_var_id)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_cloud_arrival")
-        ! pt_cloud_dur
-        nSTAT = nf90_inq_varid(ncid,"pt_cloud_dur",pt_cloudduration_var_id)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_cloud_dur")
-        ! pt_depothick
-        nSTAT = nf90_inq_varid(ncid,"pt_depothick",pt_ashthickness_var_id)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_depothick")
-      endif
+        if(Write_PT_Data)then
+          ! Allocate and fill Airport variables
+          call Allocate_Airports(nairports,nWriteTimes)
 
-      nWriteTimes = t_len
-      allocate(WriteTimes(nWriteTimes))
-      nSTAT = nf90_get_var(ncid,t_var_id,WriteTimes)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var t")
-      nSTAT = nf90_get_att(ncid,t_var_id,"units",time_units)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_att units t:")
-      read(time_units,4313) xmlSimStartTime
-4313  format(12x,a20)
-      read(xmlSimStartTime,4314)itstart_year,itstart_month,itstart_day, &
-                           itstart_hour,itstart_min,itstart_sec
-      filestart_hour = real(itstart_hour,kind=sp) + &
-                           real(itstart_min,kind=sp)/60.0_sp      + &
-                           real(itstart_sec,kind=sp)/3600.0_sp
-4314  format(i4,1x,i2,1x,i2,1x,i2,1x,i2,1x,i2,1x)
-      SimStartHour = real(HS_hours_since_baseyear(itstart_year,itstart_month, &
-                             itstart_day,real(filestart_hour,kind=8),&
-                             BaseYear,useLeap),kind=4)
+          ! Read TS of deposit thickness at point locations
+          allocate(dum2d_out(1:nairports,1:nWriteTimes))
+          nSTAT = nf90_get_var(ncid,pt_ashthickness_var_id,dum2d_out)
+          Airport_Thickness_TS(:,:) = real(dum2d_out(:,:),kind=ip)
+          deallocate(dum2d_out)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_ashthickness:")
 
-      if(Write_PT_Data)then
-        allocate(Airport_Thickness_TS(nairports,nWriteTimes))
-        allocate(Airport_Name(nairports))
-        nSTAT = nf90_get_var(ncid,pt_ashthickness_var_id,Airport_Thickness_TS)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_ashthickness_var_id:")
-        nSTAT = nf90_get_var(ncid,pt_name_var_id,Airport_Name)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_name_var_id:")
-      endif
+          ! Read final deposit thickness at point locations
+          allocate(dum1d_out(1:nairports))
+          nSTAT = nf90_get_var(ncid,pt_ashthicknessFin_var_id,dum1d_out)
+          Airport_Thickness(:) = real(dum1d_out(:),kind=ip)
+          deallocate(dum1d_out)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_depothickFin:")
+
+          ! Read Airport names
+          nSTAT = nf90_get_var(ncid,pt_name_var_id,Airport_Name)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_name:")
+
+          allocate(dum1d_dp(1:nairports))
+          nSTAT = nf90_get_var(ncid,pt_x_var_id,dum1d_dp)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_x:")
+          Airport_Longitude(:) = real(dum1d_dp(1:nairports),kind=ip)
+
+          nSTAT = nf90_get_var(ncid,pt_y_var_id,dum1d_dp)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_y:")
+          Airport_Latitude(:) = real(dum1d_dp(1:nairports),kind=ip)
+
+          nSTAT = nf90_get_var(ncid,pt_asharrival_var_id,dum1d_dp)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_asharrival:")
+          Airport_AshArrivalTime(:) = real(dum1d_dp(1:nairports),kind=ip)
+
+          nSTAT = nf90_get_var(ncid,pt_ashduration_var_id,dum1d_dp)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_depodur:")
+          Airport_AshDuration(:) = real(dum1d_dp(1:nairports),kind=ip)
+
+          nSTAT = nf90_get_var(ncid,pt_cloudarrival_var_id,dum1d_dp)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_cloudarrival:")
+          Airport_CloudArrivalTime(:) = real(dum1d_dp(1:nairports),kind=ip)
+
+          nSTAT = nf90_get_var(ncid,pt_cloudduration_var_id,dum1d_dp)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_cloud_dur:")
+          Airport_CloudDuration(:) = real(dum1d_dp(1:nairports),kind=ip)
+          deallocate(dum1d_dp)
+
+          ! To test the airport status, we need the final deposit
+          allocate(dum2d_out(x_len,y_len))
+          nSTAT=nf90_get_var(ncid,depothickFin_var_id,dum2d_out,  &
+                   start = (/1,1/),       &
+                   count = (/x_len,y_len,1/))
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var depothickFin")
+          do i=1,nairports
+            Airport_i(i) = int((Airport_Longitude(i)-lonLL)/de) +1
+            Airport_j(i) = int((Airport_Latitude(i)-latLL)/dn) +1
+            ! final deposit thickness is in the temporary var dum2d_out
+            if(Airport_AshArrivalTime(i).gt.0.0_ip)then
+              Airport_AshArrived(i) = .true.
+            endif
+            if(Airport_CloudArrivalTime(i).gt.0.0_ip)then
+              Airport_CloudArrived(i) = .true.
+            endif
+          enddo
+          deallocate(dum2d_out)
+
+        endif
+
+        ! Now populate a few of the header values needed for
+        ! post-processing/annotation
+        ! Get volcano name
+        nSTAT = nf90_get_att(ncid,nf90_global,"b1l1",cdf_b1l1)
+        iendstr = SCAN(cdf_b1l1, "#")
+        if (iendstr.eq.1)then
+          write(global_error,*)"ERROR: ",&
+           "Volcano name cannot start with #"
+          stop 1
+        endif
+        VolcanoName = adjustl(trim(cdf_b1l1(1:iendstr-1)))
+
+        ! Get date of run
+        nSTAT = nf90_get_att(ncid,nf90_global,"date",cdf_time_log)
+        ! Get windfile info
+        nSTAT = nf90_get_att(ncid,nf90_global,"b3l1",cdf_b3l1)
+        ! Get Simulation time info
+        nSTAT = nf90_get_att(ncid,nf90_global,"b3l3",cdf_b3l3)
+        read(cdf_b3l3,*) Simtime_in_hours        ! simulated transport time
+        ! Get vent location
+        nSTAT = nf90_get_att(ncid,nf90_global,"b1l5",cdf_b1l5)
+        if (IsLatLon) then                        !get lon_volcano and lat_volcano
+          read(cdf_b1l5,*)lon_volcano, lat_volcano
+        else
+          read(cdf_b1l5,*)x_volcano, y_volcano
+        endif
+
+        ! Get eruptions ESPs
+        if(.not.allocated(e_StartTime))then
+          allocate(e_StartTime(neruptions))
+          e_StartTime(:) = 0.0_ip
+        endif
+        if(.not.allocated(e_Duration))then
+          allocate(e_Duration(neruptions))
+          e_Duration(:) = 0.0_ip
+        endif
+        if(.not.allocated(e_PlumeHeight))then
+          allocate(e_PlumeHeight(neruptions))
+          e_PlumeHeight(:) = 0.0_ip
+        endif
+        if(.not.allocated(e_Volume))then
+          allocate(e_Volume(neruptions))
+          e_Volume(:) = 0.0_ip
+        endif
+        nSTAT = nf90_inq_varid(ncid,"er_stime",er_stime_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid er_stime")
+        allocate(dum1d_dp(1:neruptions))
+        nSTAT=nf90_get_var(ncid,er_stime_var_id,dum1d_dp,(/1/))
+        e_StartTime = real(dum1d_dp,kind=ip)
+        SimStartHour = e_StartTime(1)
+        e_StartTime(:) = e_StartTime(:) - SimStartHour
+
+        nSTAT = nf90_inq_varid(ncid,"er_duration",er_duration_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid er_duration")
+        nSTAT=nf90_get_var(ncid,er_duration_var_id,dum1d_dp,(/1/))
+        e_Duration = real(dum1d_dp,kind=ip)
+        deallocate(dum1d_dp)
+
+        allocate(dum1d_out(1:neruptions))
+        nSTAT = nf90_inq_varid(ncid,"er_plumeheight",er_plumeheight_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid er_plumeheight")
+        nSTAT=nf90_get_var(ncid,er_plumeheight_var_id,dum1d_out,(/1/))
+        e_PlumeHeight = real(dum1d_out,kind=ip)
+
+        nSTAT = nf90_inq_varid(ncid,"er_volume",er_volume_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid er_volume")
+        nSTAT=nf90_get_var(ncid,er_volume_var_id,dum1d_out,(/1/))
+        e_Volume = real(dum1d_out,kind=ip)
+        deallocate(dum1d_out)
+
+        first_time = .false.
+
+      endif ! first_time
 
       if (.not.present(timestep))then
-        write(*,*)"Found the following time steps in file:"
-        write(*,*)"  Step :  time"
+        write(global_info,*)"Found the following time steps in file:"
+        write(global_info,*)"  Step :  time"
         do it = 1,nWriteTimes
-          write(*,*)it,WriteTimes(it)
+          write(global_info,*)it,WriteTimes(it)
         enddo
         write(global_info,*)'Enter timestep for initialization'
         read(5,*) init_tstep
       else
         if (timestep.eq.-1)then
+          isFinal_TS = .true.
           init_tstep = t_len
         else
           init_tstep = timestep
         endif
       endif
       if(init_tstep.gt.t_len)then
-        write(*,*)"ERROR: Requested time step index is greater than available."
+        write(global_info,*)"ERROR: Requested time step index is greater than available."
+        write(global_error,*)"ERROR: Requested time step index is greater than available."
         stop 1
       elseif(init_tstep.lt.0)then
-        write(*,*)"ERROR: Requested time step index is invalid."
+        write(global_info,*)"ERROR: Requested time step index is invalid."
+        write(global_error,*)"ERROR: Requested time step index is invalid."
         stop 1
       endif
-      write(*,*)"Requested timestep = ",init_tstep,WriteTimes(init_tstep)
+      write(global_info,*)"Requested timestep = ",init_tstep,real(WriteTimes(init_tstep),kind=sp)
 
       nSTAT=nf90_get_var(ncid,t_var_id,dumscal_out,(/init_tstep/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var t")
       time = real(dumscal_out,kind=ip)
 
-!        write(global_info,*)'   output_product = 1 final deposit thickness'
-!        write(global_info,*)'                    2 deposit at specified times'
-!        write(global_info,*)'                    3 ash-cloud concentration'
-!        write(global_info,*)'                    4 ash-cloud height'
-!        write(global_info,*)'                    5 ash-cloud bottom'
-!        write(global_info,*)'                    6 ash-cloud load'
-!        write(global_info,*)'                    7 deposit arrival time'
-!        write(global_info,*)'                    8 ashfall arrival time'
-!        write(global_info,*)'                    9 ash-cloud arrival time'
-!        write(global_info,*)'                   10 radar reflectivity'
-!        write(global_info,*)'                   11 ash arrival at airports/POI'
-!        write(global_info,*)'                   12 profile plots'
+      ! Now that we have all the header/dim/var info, we can read the data
+      ! for the time step in question
 
       ! Load all 2-d variables for this time step
       allocate(dum2d_out(x_len,y_len))
+      allocate(dum2dint_out(x_len,y_len))
+
       ! Deposit Thickness
-      nSTAT=nf90_get_var(ncid,depothick_var_id,dum2d_out,  &
-               start = (/1,1,init_tstep/),       &
-               count = (/x_len,y_len,1/))
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var depothick")
-      allocate(DepositThickness(x_len,y_len))
-      DepositThickness = real(dum2d_out,kind=ip)
+      if(isFinal_TS)then
+        ! Deposit Thickness (Final)
+        nSTAT=nf90_get_var(ncid,depothickFin_var_id,dum2d_out,  &
+                 start = (/1,1/),       &
+                 count = (/x_len,y_len,1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var depothickFin")
+        if(.not.allocated(DepositThickness))then
+          allocate(DepositThickness(x_len,y_len))
+          DepositThickness(:,:) = 0.0_ip
+        endif
+        DepositThickness = real(dum2d_out,kind=ip)
+      else
+        ! Deposit Thickness (Time-series) 
+        nSTAT=nf90_get_var(ncid,depothick_var_id,dum2d_out,  &
+                 start = (/1,1,init_tstep/),       &
+                 count = (/x_len,y_len,1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var depothick")
+        if(.not.allocated(DepositThickness))then
+          allocate(DepositThickness(x_len,y_len))
+          DepositThickness(:,:) = 0.0_ip
+        endif
+        DepositThickness = real(dum2d_out,kind=ip)
+      endif
+
+      ! Deposit Arrival Time
+      nSTAT=nf90_get_var(ncid,depotime_var_id,dum2d_out,  &
+               start = (/1,1/),       &
+               count = (/x_len,y_len/))
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var depotime")
+      if(.not.allocated(DepArrivalTime))then
+        allocate(DepArrivalTime(x_len,y_len))
+        DepArrivalTime(:,:) = 0.0_ip
+      endif
+      DepArrivalTime = real(dum2d_out,kind=ip)
+
+      ! Ash Cloud Arrival Time
+      nSTAT=nf90_get_var(ncid,ashcloudtime_var_id,dum2d_out,  &
+               start = (/1,1/),       &
+               count = (/x_len,y_len/))
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var ashcloudtime")
+      if(.not.allocated(CloudArrivalTime))then
+        allocate(CloudArrivalTime(x_len,y_len))
+        CloudArrivalTime(:,:) = 0.0_ip
+      endif
+      CloudArrivalTime = real(dum2d_out,kind=ip)
+
       ! Ash-cloud concentration
       nSTAT=nf90_get_var(ncid,ashconMax_var_id,dum2d_out,  &
                start = (/1,1,init_tstep/),       &
                count = (/x_len,y_len,1/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var ashconMax_var")
-      allocate(MaxConcentration(x_len,y_len))
+      if(.not.allocated(MaxConcentration))then
+        allocate(MaxConcentration(x_len,y_len))
+        MaxConcentration(:,:) = 0.0_ip
+      endif
       MaxConcentration = real(dum2d_out,kind=ip)
       ! Ash-cloud max height
       nSTAT=nf90_get_var(ncid,ashheight_var_id,dum2d_out,  &
                start = (/1,1,init_tstep/),       &
                count = (/x_len,y_len,1/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var cloud_height")
-      allocate(MaxHeight(x_len,y_len))
+      if(.not.allocated(MaxHeight))then
+        allocate(MaxHeight(x_len,y_len))
+        MaxHeight(:,:) = 0.0_ip
+      endif
       MaxHeight = real(dum2d_out,kind=ip)
       ! Ash-cloud bottom
       nSTAT=nf90_get_var(ncid,ashcloudBot_var_id,dum2d_out,  &
                start = (/1,1,init_tstep/),       &
                count = (/x_len,y_len,1/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var cloud_bottom")
-      allocate(MinHeight(x_len,y_len))
+      if(.not.allocated(MinHeight))then
+        allocate(MinHeight(x_len,y_len))
+        MinHeight(:,:) = 0.0_ip
+      endif
       MinHeight = real(dum2d_out,kind=ip)
       ! Cloud-load
       nSTAT=nf90_get_var(ncid,ashload_var_id,dum2d_out,  &
                start = (/1,1,init_tstep/),       &
                count = (/x_len,y_len,1/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var cloud_load")
-      allocate(CloudLoad(x_len,y_len))
+      if(.not.allocated(CloudLoad))then
+        allocate(CloudLoad(x_len,y_len))
+        CloudLoad(:,:) = 0.0_ip
+      endif
       CloudLoad = real(dum2d_out,kind=ip)
+
+      ! Cloud-mask
+      nSTAT=nf90_get_var(ncid,cloudmask_var_id,dum2dint_out,  &
+               start = (/1,1,init_tstep/),       &
+               count = (/x_len,y_len,1/))
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var cloud_mask")
+      if(.not.allocated(Mask_Cloud))then
+        allocate(Mask_Cloud(x_len,y_len))
+        Mask_Cloud(:,:) = .false.
+      endif
+      do i=1,x_len
+        do j=1,y_len
+          if(dum2dint_out(i,j).eq.1)then
+            Mask_Cloud(i,j) = .true.
+          else
+            Mask_Cloud(i,j) = .false.
+          endif
+        enddo
+      enddo
 
       ! Radar_Reflec
       nSTAT=nf90_get_var(ncid,radrefl_var_id,dum2d_out,  &
                start = (/1,1,init_tstep/),       &
                count = (/x_len,y_len,1/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"get_var radar_reflectivity")
-      allocate(dbZCol(x_len,y_len))
+      if(.not.allocated(dbZCol))then
+        allocate(dbZCol(x_len,y_len))
+        dbZCol(:,:) = 0.0_ip
+      endif
       dbZCol = real(dum2d_out,kind=ip)
 
       ! Cleaning up
       deallocate(dum2d_out)
-
-      ! Now populate a few of the header values needed for
-      ! post-processing/annotation
-      ! Get volcano name
-      nSTAT = nf90_get_att(ncid,nf90_global,"b1l1",cdf_b1l1)
-      iendstr = SCAN(cdf_b1l1, "#")
-      if (iendstr.eq.1)then
-        write(global_error,*)"ERROR: ",&
-         "Volcano name cannot start with #"
-        stop 1
-      endif
-      VolcanoName = adjustl(trim(cdf_b1l1(1:iendstr-1)))
-
-      ! Get date of run
-      nSTAT = nf90_get_att(ncid,nf90_global,"date",cdf_time_log)
-
-      ! Get windfile info
-      nSTAT = nf90_get_att(ncid,nf90_global,"b3l1",cdf_b3l1)
-      ! Get Simulation time info
-      nSTAT = nf90_get_att(ncid,nf90_global,"b3l3",cdf_b3l3)
-      read(cdf_b3l3,*) Simtime_in_hours        ! simulated transport time
-
-      ! Get eruptions ESPs
-
-      allocate(e_StartTime(neruptions))
-      allocate(e_Duration(neruptions))
-      allocate(e_PlumeHeight(neruptions))
-      allocate(e_Volume(neruptions))
-
-      nSTAT = nf90_inq_varid(ncid,"er_stime",er_stime_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid er_stime")
-      nSTAT=nf90_get_var(ncid,er_stime_var_id,e_StartTime,(/1/))
-
-      nSTAT = nf90_inq_varid(ncid,"er_duration",er_duration_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid er_duration")
-      nSTAT=nf90_get_var(ncid,er_duration_var_id,e_Duration,(/1/))
-
-      nSTAT = nf90_inq_varid(ncid,"er_plumeheight",er_plumeheight_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid er_plumeheight")
-      nSTAT=nf90_get_var(ncid,er_plumeheight_var_id,e_PlumeHeight,(/1/))
-
-      nSTAT = nf90_inq_varid(ncid,"er_volume",er_volume_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid er_volume")
-      nSTAT=nf90_get_var(ncid,er_volume_var_id,e_Volume,(/1/))
+      deallocate(dum2dint_out)
 
       end subroutine NC_Read_Output_Products
 

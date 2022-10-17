@@ -1,3 +1,20 @@
+!      module Ash3d_ASCII_IO
+!
+!      use precis_param
+!
+!      use io_units
+!
+!      implicit none
+!
+!        ! These arrays are only used when reading an output file of unknown size
+!      real(kind=ip), dimension(:,:),allocatable :: R_XY
+!      integer       :: R_nx,R_ny
+!      real(kind=ip) :: R_xll,R_yll
+!      real(kind=ip) :: R_dx,R_dy
+!      real(kind=ip) :: R_Fill
+!
+!      contains
+
 !******************************************************************************
 
       subroutine vprofileopener
@@ -145,11 +162,11 @@
 
       use io_units
 
+      use global_param,  only  : &
+         KM_2_M
+
       use mesh,          only : &
          dx,dy,de,dn,IsLatLon,latLL,lonLL,xLL,yLL
-
-      !use time_data,     only : &
-      !   time
 
       use io_data,       only : &
          isFinal_TS,iout3d,WriteTimes
@@ -199,9 +216,9 @@
         write(fid,3003) latLL    
         write(fid,3004) de,dn
       else
-        write(fid,3002) xLL*1.0e3_ip    ! convert xLL from km to meters so ArcMap can read it
-        write(fid,3003) yLL*1.0e3_ip    ! same with yLL
-        write(fid,3004) dx*1.0e3_ip,dy*1.0e3_ip    ! and with dx and dy
+        write(fid,3002) xLL*KM_2_M    ! convert xLL from km to meters so ArcMap can read it
+        write(fid,3003) yLL*KM_2_M    ! same with yLL
+        write(fid,3004) dx*KM_2_M,dy*KM_2_M    ! and with dx and dy
       endif
       write(fid,3005)Fill_Value
 
@@ -253,7 +270,7 @@
 
       open(unit=fid,file=trim(adjustl(filename)), status='old',err=2500)
 
-      read(fid,3000) R_nx        ! write header values
+      read(fid,3000) R_nx        ! read header values
       read(fid,3001) R_ny
       allocate(R_XY(R_nx,R_ny))
       read(fid,3002) R_xll
@@ -261,21 +278,10 @@
       read(fid,3004) R_dx,R_dy
       read(fid,3005) R_Fill
 
-      !Write out arrays of maximum concentration and maximum height
       do j=R_ny,1,-1
         read(fid,3006) (R_XY(i,j), i=1,R_nx)
-        read(fid,*)                         !make a blank line between rows
+        read(fid,*)
       enddo
-
-      !write(*,*)R_nx,R_ny
-      !write(*,*)R_xll,R_yll
-      !write(*,*)R_dx,R_dy
-      !write(*,*)R_Fill
-      !do j=1,R_ny
-      !  do i=1,R_nx
-      !    if (R_XY(i,j).gt.0.0_ip)write(*,*)R_XY(i,j)
-      !  enddo
-      !enddo
 
       close(fid)
 
@@ -290,8 +296,8 @@
       return
 
 !     Error traps
-2500  write(global_info,*) 'Error opening output file. Program stopped'
-      write(global_log ,*) 'Error opening output file. Program stopped'
+2500  write(global_info,*) 'Error opening ASCII file. Program stopped'
+      write(global_log ,*) 'Error opening ASCII file. Program stopped'
       stop 1
 
       end subroutine read_2D_ASCII
@@ -362,7 +368,7 @@
       use io_units
 
       use global_param,  only : &
-         UseCalcFallVel
+         M_2_MM,UseCalcFallVel
 
       use Airports,      only : &
          Airport_AshArrivalTime,Airport_CloudArrivalTime, &
@@ -433,7 +439,7 @@
         write(out_unit,995)
         if (WriteGSD) then                 !If we're writing out grain sizes.
           if (UseCalcFallVel) then              !if fall velocity is calculated
-            write(out_unit,100) (Tephra_gsdiam(isize)*1000.0_ip, isize=1,n_gs_max)
+            write(out_unit,100) (Tephra_gsdiam(isize)*M_2_MM, isize=1,n_gs_max)
             write(out_unit,101)
             write(out_unit,102) (Tephra_rho_m(isize), isize=1,n_gs_max)
             write(out_unit,103)
@@ -626,4 +632,6 @@
 3     format(/,'No airports affected by ash')
 
       end subroutine Write_PointData_Airports_ASCII
+
+!      end module Ash3d_ASCII_IO
 

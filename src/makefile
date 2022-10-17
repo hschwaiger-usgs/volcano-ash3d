@@ -277,7 +277,8 @@ write_BINARY.o           \
 write_KML.o              \
 ResetParams.o
 
-PPOBJS = Ash3d_VariableModules.o Output_Vars.o Tephra.o Source.o Airports.o Atmosphere.o
+PPOBJS = Ash3d_VariableModules.o Output_Vars.o Output_Results.o Tephra.o Source.o Airports.o Atmosphere.o write_KML.o write_ASCII.o write_BINARY.o
+GRAFOBJ = Ash3d_PostProc_gnuplot.o Ash3d_PostProc_plplot.o Ash3d_PostProc_dislin.o
 
 ifeq ($(USENETCDF), T)
   DATAOBJ = write_NETCDF.o
@@ -304,7 +305,7 @@ Help.o: $(ASH3dCCSRC)/Help.f90 $(MFILE) Ash3d_VariableModules.o
 VotW.o: $(ASH3dCCSRC)/VotW.f90 $(MFILE) Ash3d_VariableModules.o Source.o
 	echo "        Ash3dHome = '$(INSTALLDIR)'" > installpath.h
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/VotW.f90
-Airports.o: $(ASH3dCCSRC)/Airports.f90 $(MFILE) Ash3d_VariableModules.o
+Airports.o: $(ASH3dCCSRC)/Airports.f90 $(MFILE) Ash3d_VariableModules.o 
 	echo "        Ash3dHome = '$(INSTALLDIR)'" > installpath.h
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Airports.f90
 Calc_Mesh.o: $(ASH3dCCSRC)/Calc_Mesh.f90 $(MFILE) Ash3d_VariableModules.o Tephra.o Atmosphere.o
@@ -357,17 +358,23 @@ endif
 write_KML.o: $(ASH3dCCSRC)/write_KML.f90 $(MFILE) Ash3d_VariableModules.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_KML.f90
 
-all: Ash3d
+all: Ash3d tools
 
-postproc: $(ASH3dCCSRC)/Ash3d_PostProc.f90 Ash3d_VariableModules.o $(DATAOBJ) Output_Vars.o Tephra.o Source.o Atmosphere.o $(MFILE)
+postproc: $(ASH3dCCSRC)/Ash3d_PostProc.f90 $(PPOBJS) $(GRAFOBJ) $(DATAOBJ) $(MFILE)
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc.f90
-	$(FC) $(FFLAGS) $(EXFLAGS) $(PPOBJS) $(DATAOBJ) Ash3d_PostProc.o $(LIBS) $(PLOTINC) $(PLOTLIBS) -o Ash3d_PostProc
+	$(FC) $(FFLAGS) $(EXFLAGS) Ash3d_PostProc.o $(PPOBJS) $(GRAFOBJ) $(DATAOBJ) $(LIBS) $(PLOTINC) $(PLOTLIBS) -o Ash3d_PostProc
+Ash3d_PostProc_gnuplot.o: Ash3d_PostProc_gnuplot.f90 $(MFILE)
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_gnuplot.f90
+Ash3d_PostProc_plplot.o: Ash3d_PostProc_plplot.f90 $(MFILE)
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_plplot.f90
+Ash3d_PostProc_dislin.o: Ash3d_PostProc_dislin.f90 $(MFILE)
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_dislin.f90
 
 tools: ascii_check
 
 ascii_check: $(ASH3dCCSRC)/tools/Ash3d_ASCII_check.f90 Ash3d_VariableModules.o write_ASCII.o $(MFILE)
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/tools/Ash3d_ASCII_check.f90
-	$(FC) $(FFLAGS) $(EXFLAGS) $(PPOBJS) write_ASCII.o Ash3d_ASCII_check.o $(LIBS) -o Ash3d_ASCII_check
+	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d_ASCII_check.o $(LIBS) -o Ash3d_ASCII_check
 	mkdir -p ../bin/tools
 	mv Ash3d_ASCII_check ../bin/tools/Ash3d_ASCII_check
 

@@ -218,7 +218,7 @@
 
       ! Before we even parse the command line,
       !   (1) start a log file
-      open(unit=9,file='Ash3d.lst',status='unknown')
+      open(unit=global_log,file='Ash3d.lst',status='unknown')
       !   (2) Get the date and time of the the current run from the system clock
       call date_and_time(date,time2,zone,values)
       read(zone,'(i3)') timezone
@@ -772,7 +772,7 @@
           if(iyear(i).ne.0.and.iyear(i).lt.BaseYear.or.iyear(i)-BaseYear.gt.200)then
             ! Reset BaseYear to the start of the century containing the eruption year
             BaseYear = iyear(i) - mod(iyear(i),100)
-            BaseYear = 1
+            !BaseYear = 1
             write(global_info,*)"WARNING: Resetting BaseYear to ",BaseYear
           endif
           if(iyear(i).eq.0)then  !HFS: KLUDGE-- This should be changed to test for FC or something
@@ -2530,8 +2530,6 @@
 
       ! Set up logging logical values
         ! First check for output requests that require evaluating every time step
-      !if (WriteAirportFile_ASCII.or.WriteAirportFile_KML.or.&
-      !    nvprofiles.gt.0)then
       if(Write_PT_Data.or.Write_PR_Data)then
         Output_every_TS = .true.
       else
