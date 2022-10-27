@@ -60,9 +60,7 @@
          USE_OUTPROD_VARS, USE_RESTART_VARS
 
       use time_data,     only : &
-         BaseYear,useLeap,time,SimStartHour,Simtime_in_hours,cdf_time_log,&
-         RunStartDay,RunStartHr,RunStartMinute,RunStartMonth,RunStartYear,&
-         RunStartHour_ch,xmlSimStartTime
+         BaseYear,useLeap,time,SimStartHour,Simtime_in_hours,xmlSimStartTime
 
       use Airports,      only : &
          AirportInFile,&
@@ -109,7 +107,6 @@
       real(kind=dp), allocatable, dimension(:) :: hour   ! Start time of eruption in
                                                          !  hour (UT)
       character(len=80) :: linebuffer080
-      !character(len=120):: linebuffer120
       character(len=130):: linebuffer130
       character(len=3)  :: answer
       character(len=6)  :: formatanswer
@@ -128,8 +125,8 @@
       integer           :: iendstr,ios,ioerr,init_n_gs_max
       real(kind=ip)     :: value1, value2, value3, value4, value5
       real(kind=dp)     :: tmp_dp
-      real(kind=dp)     :: StartHour
-      real(kind=dp)     :: RunStartHour    ! Start time of model run, in hours since BaseYear
+      !real(kind=dp)     :: StartHour
+      !real(kind=dp)     :: RunStartHour    ! Start time of model run, in hours since BaseYear
       real(kind=ip)     :: sum_bins
       character(len=8)  :: volc_code
       real(kind=ip),allocatable,dimension(:) :: dum_prof
@@ -145,17 +142,17 @@
       real(kind=ip),allocatable,dimension(:) :: dz_plin_segments
       integer           :: substr_pos
       logical           :: IsThere
-      character(len=8)  :: version             =  ' 1.0  '
+      !character(len=8)  :: version             =  ' 1.0  '
       logical           :: StopWhenDeposited                       ! If true, StopValue=0.99, else StopValue=1e5.
       logical           :: runAsForecast       = .false.           ! This will be changed if year=0
       real(kind=dp)     :: FC_Offset = 0.0_dp
 
         ! variables to hold results of date_and_time
-      character(len=8)  :: date
-      character(len=10) :: time2
-      character(len=5)  :: zone
-      integer           :: values(8)
-      integer           :: timezone
+      !character(len=8)  :: date
+      !character(len=10) :: time2
+      !character(len=5)  :: zone
+      !integer           :: values(8)
+      !integer           :: timezone
 
       !! Size matches length of infile (specified in module io_data)
       integer fc_len
@@ -216,40 +213,7 @@
       nWriteTimes  = 0                  !number of output files to write (default=0)
       NextWriteTime = 1.0_ip/EPS_TINY   !Time to write the next file (default = never)
 
-      ! Before we even parse the command line,
-      !   (1) start a log file
-      open(unit=global_log,file='Ash3d.lst',status='unknown')
-      !   (2) Get the date and time of the the current run from the system clock
-      call date_and_time(date,time2,zone,values)
-      read(zone,'(i3)') timezone
-
-      ! FIND TIME IN UTC
-      StartHour = real(values(5)-timezone,kind=ip) + real(values(6)/60.0,kind=ip)    !add offset to UTC
-        ! find time in HoursSinceBaseYear
-        !  Note: This will be relative to the BaseYear in time_data (default is 1900). 
-        !        That BaseYear might be changed if the eruption start time is before BaseYear
-      RunStartHour    = HS_hours_since_baseyear(values(1),values(2),values(3), &
-                                                StartHour,BaseYear,useLeap)
-      RunStartHour_ch = HS_yyyymmddhhmm_since(RunStartHour,BaseYear,useLeap)
-      read(RunStartHour_ch,'(i4)') RunStartYear
-      read(RunStartHour_ch,'(4x,i2)') RunStartMonth
-      read(RunStartHour_ch,'(6x,i2)') RunStartDay
-      read(RunStartHour_ch,'(8x,i2)') RunStartHr
-      read(RunStartHour_ch,'(11x,i2)') RunStartMinute
-
-      ! WRITE OUT START TIME IN UTC
-      write(global_info,*)
-      write(global_log ,*)
-      write(global_info,2) version,RunStartYear,RunStartMonth,RunStartDay,RunStartHr,RunStartMinute
-      write(global_log ,2) version,RunStartYear,RunStartMonth,RunStartDay,RunStartHr,RunStartMinute
-        ! Prepare a note to include in the netcdf output file
-      write(linebuffer080,102) RunStartYear,RunstartMonth,RunStartDay,RunStartHr,RunStartMinute
-      cdf_time_log = linebuffer080(1:17)
-      write(global_info,*)
-      write(global_log ,*)
-
       ! TEST READ COMMAND LINE ARGUMENTS
-      !nargs = iargc()
       nargs = command_argument_count()
       if (nargs.eq.0) then
           ! If no command-line arguments are given, then prompt user
@@ -3024,9 +2988,9 @@
 !***********************************************************************
 !     format STATEMENT
 
-2     format(4x,'Ash3d (Rev ',a5,') run ',&
-             i4,'.',i2.2,'.',i2.2,i4,':',i2.2,' UTC')
-102   format(i4,'.',i2.2,'.',i2.2,i4,':',i2.2)
+!2     format(4x,'Ash3d (Rev ',a5,') run ',&
+!             i4,'.',i2.2,'.',i2.2,i4,':',i2.2,' UTC')
+!102   format(i4,'.',i2.2,'.',i2.2,i4,':',i2.2)
 3     format(4x,'opening input file ',a130)
 37    format(4x,'Volcano name:',a30,/)
 4     format(4x,'MAP & GRID SETUP:',/,&

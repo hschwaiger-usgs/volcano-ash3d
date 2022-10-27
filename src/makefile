@@ -44,10 +44,16 @@ SYSTEM = gfortran
 #      OMPOPT   : includes optimizations flags for fastest runtime and OpenMP directives
 #                 To run, enter: env OMP_NUM_THREADS=4 Ash3d input_file.inp
 #    This variable cannot be left blank
-#RUN = DEBUG
+RUN = DEBUG
 #RUN = PROF
-RUN = OPT
+#RUN = OPT
 #RUN = OMPOPT
+
+#    This variable cannot be left blank
+OS = LINUX
+#OS = MACOS
+#OS = WINDOWS
+
 # This is the location of the USGS libraries and include files
 # This might be different from the INSTALLDIR path if you want to link to special MetReader
 # projection and HoursSince packages.
@@ -129,6 +135,18 @@ OPTMODS_OBJ=
 ###############################################################################
 ###############################################################################
 
+OSFPPFLAG = -DLINUX
+ifeq ($(OS), LINUX)
+    OSFPPFLAG = -DLINUX
+endif
+ifeq ($(OS), MACOS)
+    OSFPPFLAG = -DMACOS
+endif
+ifeq ($(OS), WINDOWS)
+    OSFPPFLAG = -DWINDOWS
+endif
+
+
 LIMFPPFLAG = -DLIM_SUPERBEE
 ifeq ($(LIMITER), LIM_NONE)
     LIMFPPFLAG = -DLIM_NONE
@@ -159,7 +177,6 @@ endif
 ifeq ($(DIFFMETH), CRANKNIC)
     DIFFFPPFLAG = -DCRANKNIC
 endif
-
 
 VERBFPPFLAG = -DVERBOSE_L1
 ifeq ($(VERB), 0)
@@ -243,7 +260,7 @@ ifeq ($(RUN), OMPOPT)
     ASH3DEXEC=Ash3d_omp
 endif
       # Preprocessing flags
-    FPPFLAGS =  -x f95-cpp-input $(DATAFPPFLAGS) $(VERBFPPFLAG) $(LIMFPPFLAG) $(DIFFFPPFLAG) $(memFPPFLAG) $(extdatFPPFLAG) $(FASTFPPFLAG)
+    FPPFLAGS =  -x f95-cpp-input $(OSFPPFLAG) $(DATAFPPFLAGS) $(VERBFPPFLAG) $(LIMFPPFLAG) $(DIFFFPPFLAG) $(memFPPFLAG) $(extdatFPPFLAG) $(FASTFPPFLAG)
       # Extra flags
     #EXFLAGS = -xf95
     EXFLAGS =
@@ -252,6 +269,7 @@ endif
 
 OBJECTS = \
 Ash3d_VariableModules.o  \
+Ash3d_OS_info.o          \
 Input_Data.o             \
 Help.o                   \
 VotW.o                   \
@@ -296,6 +314,8 @@ Ash3d:  $(OBJECTS) $(DATAOBJ) Ash3d.F90 $(MFILE)
 Ash3d_VariableModules.o: $(ASH3dCCSRC)/Ash3d_VariableModules.f90 $(MFILE)
 	./get_version.sh
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Ash3d_VariableModules.f90
+Ash3d_OS_info.o: $(ASH3dCCSRC)/Ash3d_OS_info.F90 $(MFILE) $(ASH3dCCSRC)/Ash3d_VariableModules.f90
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Ash3d_OS_info.F90
 Input_Data.o: $(ASH3dCCSRC)/Input_Data.f90 $(MFILE) Ash3d_VariableModules.o Tephra.o Help.o VotW.o Diffusion.o Airports.o $(DATAOBJ) Output_Vars.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Input_Data.f90
 ResetParams.o: $(ASH3dCCSRC)/ResetParams.f90 $(MFILE) Ash3d_VariableModules.o Tephra.o Output_Vars.o

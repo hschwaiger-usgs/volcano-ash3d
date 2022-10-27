@@ -52,6 +52,7 @@
       real(kind=ip), parameter :: MPS_2_KMPHR= 3.6_ip       ! m/s to km/hr
       real(kind=ip), parameter :: HR_2_S     = 3600.0_ip
 
+
       real(kind=ip) :: GRAV       = 9.81_ip     ! Gravitational acceleration m/s^2
       real(kind=ip) :: RAD_EARTH  = 6371.229_ip ! Radius of Earth in km (used for cell
                                                 ! geometry calculations: area, volume)
@@ -151,6 +152,18 @@
 #ifdef VERBOSE_L3
       integer, parameter       :: VERB = 3
 #endif
+
+      integer   :: OS_TYPE                        ! 1=linux, 2=apple, 3=windows
+      logical   :: IsLinux    = .true.
+      logical   :: IsWindows  = .false.
+      logical   :: IsMacOS    = .false.
+      character (len=7)    :: OS_Flavor
+      character (len=2)    :: DirPrefix  = 'c:'
+      character (len=1)    :: DirDelim   = '/'
+      character (len=255)  :: os_full_command_line
+      character (len=20)   :: os_user
+      character (len=50)   :: os_host
+      character (len=255)  :: os_cwd
 
       end module global_param
 !##############################################################################
@@ -636,7 +649,7 @@
       real(kind=ip)      :: dtodxdx , dtodydy , dtodzdz
 
       ! Some stings that hold time data used in output files
-      character(len=17)  :: cdf_time_log
+      character(len=17)  :: os_time_log
       character(len=20)  :: xmlSimStartTime                     !start time of simulation in xml format
       character(len=20)  :: xmlTimeSpanStart
       character(len=20)  :: xmlTimeSpanEnd    !time periods written to kml files

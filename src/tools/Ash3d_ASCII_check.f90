@@ -10,13 +10,13 @@
         EPS_SMALL,EPS_TINY
 
       use Output_Vars,    only : &
-        R_XY,R_nx,R_ny,R_xll,R_yll,R_dx,R_dy,R_Fill
+        R_XY,R_nx,R_ny,R_xll,R_yll,R_dx,R_dy
 
       implicit none
 
-      integer             :: nargs
-      integer             :: stat
-      character(len=80):: linebuffer50
+      integer           :: nargs
+      integer           :: stat
+      character(len=80) :: linebuffer080
 
       character(len=80) :: file1,file2
       logical :: IsThere1, IsThere2
@@ -56,7 +56,7 @@
         write(global_error,*)'  Usage: Ash3d_ASCII_check file1 file2 (tol.)'
         stop 1
       else
-        call get_command_argument(1, linebuffer50, status=stat)
+        call get_command_argument(1, linebuffer080, status=stat)
         if(stat.gt.0)then
           write(global_error,*)'ERROR: Could not parse argument 1'
           stop 1
@@ -65,10 +65,10 @@
           write(global_error,*)'       File name length is limited to 80 char.'
           stop 1
         endif
-        file1=trim(adjustl(linebuffer50))
+        file1=trim(adjustl(linebuffer080))
         inquire( file=adjustl(trim(file1)), exist=IsThere1 )
 
-        call get_command_argument(2, linebuffer50, status=stat)
+        call get_command_argument(2, linebuffer080, status=stat)
         if(stat.gt.0)then
           write(global_error,*)'ERROR: Could not parse argument 2'
           stop 1
@@ -77,7 +77,7 @@
           write(global_error,*)'       File name length is limited to 80 char.'
           stop 1
         endif
-        file2=trim(adjustl(linebuffer50))
+        file2=trim(adjustl(linebuffer080))
         inquire( file=adjustl(trim(file1)), exist=IsThere2 )
 
         if (.not.IsThere1.and..not.IsThere2)then
@@ -92,8 +92,8 @@
         endif
 
         if (nargs.eq.3)then
-          call get_command_argument(3, linebuffer50, status=stat)
-          read(linebuffer50,*)tmp_ip
+          call get_command_argument(3, linebuffer080, status=stat)
+          read(linebuffer080,*)tmp_ip
           if(stat.eq.0)then
             L2_tol = tmp_ip
           else

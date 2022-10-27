@@ -74,25 +74,19 @@
       use precis_param
 
       use global_param,  only : &
-         EPS_THRESH
+         KG_2_MG,KM3_2_M3
 
       use io_data,       only : &
-         nvprofiles,i_vprofile,j_vprofile
+         nvprofiles
 
       use mesh,          only : &
          nzmax,ts1
 
-      use solution,      only : &
-         concen_pd
-
       use time_data,     only : &
          SimStartHour,time,BaseYear,useLeap,OutputOffset
 
-      use Tephra,         only : &
-         n_gs_max
-
       use Output_Vars,    only : &
-         pr_ash
+         CLOUDCON_THRESH,pr_ash
 
       implicit none
 
@@ -101,7 +95,6 @@
       integer :: i,k
       integer   :: ionumber
       character(len=13)  :: cio
-      !real(kind=ip)      :: totalash(1:nzmax)
 
       INTERFACE
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
@@ -113,15 +106,10 @@
 
       do i=1,nvprofiles
         ! don't write if there's no ash
-        if(sum(concen_pd(i_vprofile(i),j_vprofile(i),1:nzmax,1:n_gs_max,ts1)).lt.EPS_THRESH) cycle
+        if(maxval(pr_ash(1:nzmax,itime,i)).lt.CLOUDCON_THRESH*KG_2_MG/KM3_2_M3) cycle
         ionumber = 200+i
         cio = HS_yyyymmddhh_since(SimStartHour+time+OutputOffset,&
                                   BaseYear,useLeap)
-!        do k=1,nzmax
-!          totalash(k) = sum(concen_pd(i_vprofile(i),j_vprofile(i),k,1:n_gs_max,ts1))
-!          totalash(k) = totalash(k)/1000.0_ip     !convert from kg/km3 to mg/m3
-!        enddo
-!        write(ionumber,1) cio, time, (totalash(k), k=1,nzmax)
         write(ionumber,1) cio, time, (pr_ash(k,itime,i), k=1,nzmax)
 
 1       format(a13,',',f10.3,',',50(e15.3,','))
@@ -154,7 +142,7 @@
 
 !******************************************************************************
 
-      subroutine write_2D_ASCII(nx,ny,OutVar,Fill_Value,filename_root)
+      subroutine write_2D_ASCII(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
 
 !     Subroutine that writes out 2-D arrays in ESRI ASCII raster format
 
@@ -175,13 +163,18 @@
 
       integer          ,intent(in) :: nx,ny
       real(kind=ip)    ,intent(in) :: OutVar(nx,ny)
+      logical          ,intent(in) :: VarMask(nx,ny)
       character(len=6) ,intent(in) :: Fill_Value
       character(len=20),intent(in) :: filename_root
 
+      real(kind=op)  :: OVar(nx,ny)
+      real(kind=op)  :: FValue
       integer :: fid
       integer :: i,j
       character (len=9)  :: cio
       character(len=50)  :: filename_out
+
+      read(Fill_Value,*)FValue
 
       fid = 30
 
@@ -222,9 +215,20 @@
       endif
       write(fid,3005)Fill_Value
 
+      ! Apply threshold mask to output variable
+      do i=1,nx
+        do j=1,ny
+          if(VarMask(i,j))then
+            OVar(i,j) = real(OutVar(i,j),kind=op)
+          else
+            OVar(i,j) = FValue
+          endif
+        enddo
+      enddo
+
       !Write out arrays of maximum concentration and maximum height
       do j=ny,1,-1
-        write(fid,3006) (OutVar(i,j), i=1,nx)
+        write(fid,3006) (OVar(i,j), i=1,nx)
         write(fid,*)                                         !make a blank line between rows
       enddo
       

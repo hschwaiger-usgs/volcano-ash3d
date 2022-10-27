@@ -88,6 +88,8 @@
       integer :: pt_ashthicknessFin_var_id  = 0 ! Final ash thickness at point
 
       ! Vertical profile variable
+      integer :: pr_x_var_id             = 0 ! x coordinate of point
+      integer :: pr_y_var_id             = 0 ! y coordinate of point
       integer :: pr_ash_var_id           = 0 ! concentration profile
 
       integer :: temp1_2d_var_id !,temp2_2d_var_id,temp3_2d_var_id,temp4_2d_var_id
@@ -120,7 +122,7 @@
 
       use global_param,  only : &
          EPS_SMALL,EPS_TINY,KM2_2_M2,useCalcFallVel,VERB,&
-         GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH,Ash3d_GitComID
+         GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH,Ash3d_GitComID,os_cwd,os_host,os_user
 
       use io_data,       only : &
          nvprofiles, &
@@ -172,7 +174,7 @@
           vx_pd,vy_pd,vz_pd,vf_pd,concen_pd,DepositGranularity,SpeciesID,SpeciesSubID
 
       use time_data,     only : &
-          BaseYear,useLeap,cdf_time_log,time,SimStartHour,xmlSimStartTime,OutputOffset
+          BaseYear,useLeap,os_time_log,time,SimStartHour,xmlSimStartTime,OutputOffset
 
       use Source,        only : &
          neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
@@ -189,9 +191,6 @@
 
       character(len=32)              :: time_units
 
-      character (len=20)  :: cdf_user
-      character (len=50)  :: cdf_host
-      character (len=255) :: cdf_cwd
       character (len=20)  :: cdf_WindStartTime
 
       character(len=3) ,dimension(11) :: dim_names
@@ -199,7 +198,7 @@
       character(len=30),dimension(40) :: var_lnames
       character (len=13)         :: reftimestr
       character (len=16)         :: outstring
-      character(len=130):: lllinebuffer
+      character(len=130):: linebuffer130
       integer :: NCversion
       integer :: NCsubversion
       integer :: i,j,k,n
@@ -305,10 +304,10 @@
       var_lnames(40) = "Cloud presence flag"
 
       ! Declare header info
-      call GetLog(cdf_user)
-      call Hostnm(cdf_host)
-      call getcwd(cdf_cwd)
-      cdf_cwd = trim(cdf_cwd)
+      !call GetLog(cdf_user)
+      !call Hostnm(cdf_host)
+      !call getcwd(cdf_cwd)
+      !cdf_cwd = trim(cdf_cwd)
 
       ! get date and time of start of first wind file
       !cdf_WindStartTime = HS_xmltime(MR_MetStep_Hour_since_baseyear(1),BaseYear,useLeap)
@@ -317,8 +316,8 @@
 
       ! Create and open netcdf file
       if(VERB.gt.1)write(global_info,*)"Creating netcdf file"
-      lllinebuffer = trim(nf90_inq_libvers())
-      read(lllinebuffer,'(i1,a1,i1)')NCversion,dumchar,NCsubversion
+      linebuffer130 = trim(nf90_inq_libvers())
+      read(linebuffer130,'(i1,a1,i1)')NCversion,dumchar,NCsubversion
       write(global_info,*)"Netcdf library version = ",NCversion
       !NCversion = 3
       if(NCversion.eq.4)then
@@ -342,7 +341,7 @@
       nSTAT = nf90_put_att(ncid,nf90_global,"source",cdf_source)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att source:")
 
-      cdf_history=cdf_time_log
+      cdf_history=os_time_log
       nSTAT = nf90_put_att(ncid,nf90_global,"history",cdf_history)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att history:")
 
@@ -352,15 +351,15 @@
       nSTAT = nf90_put_att(ncid,nf90_global,"Conventions",cdf_conventions)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Conventions:")
 
-      nSTAT = nf90_put_att(ncid,nf90_global,"user",cdf_user)
+      nSTAT = nf90_put_att(ncid,nf90_global,"user",os_user)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att user:")
-      nSTAT = nf90_put_att(ncid,nf90_global,"date",cdf_time_log)
+      nSTAT = nf90_put_att(ncid,nf90_global,"date",os_time_log)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att date:")
       nSTAT = nf90_put_att(ncid,nf90_global,"NWPStartTime",cdf_WindStartTime)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att NWPStartTime:")
-      nSTAT = nf90_put_att(ncid,nf90_global,"host",cdf_host)
+      nSTAT = nf90_put_att(ncid,nf90_global,"host",os_host)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att host:")
-      nSTAT = nf90_put_att(ncid,nf90_global,"CWD",cdf_cwd)
+      nSTAT = nf90_put_att(ncid,nf90_global,"CWD",os_cwd)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att CWD:")
       nSTAT = nf90_put_att(ncid,nf90_global,"comment",cdf_comment)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att comment:")
@@ -1414,7 +1413,7 @@
         nSTAT = nf90_put_att(ncid,ashload_var_id,"_FillValue",CloudLoad_FillValue)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att cloud_load _FillValue")
 
-           ! Cloud Mask (this is an interger array flagging where the CloudLoad is non-zero
+           ! Cloud Mask (this is an integer array flagging where the CloudLoad is non-zero
         if(VERB.gt.1)write(global_info,*)"     cloud_mask: "
         nSTAT = nf90_def_var(ncid,"cloud_mask",&
                              nf90_int,  &
@@ -1696,7 +1695,53 @@
       endif
 
       if(NCversion.eq.4.and.Write_PR_Data)then
-        ! PR
+        ! x coordinate of point
+        if(VERB.gt.1)write(global_info,*)"     pr_x"
+        if(op.eq.8)then
+          nSTAT = nf90_def_var(ncid,"pr_x",&
+                               nf90_double,   &
+                               (/pr_dim_id/), &
+                               pr_x_var_id)
+        else
+          nSTAT = nf90_def_var(ncid,"pr_x",&
+                               nf90_float,  &
+                               (/pr_dim_id/),                &
+                               pr_x_var_id)
+        endif
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var pr_x")
+        nSTAT = nf90_put_att(ncid,pr_x_var_id,"long_name","x coordinate of prof point")
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_x long_name")
+        if(IsLatLon)then
+           nSTAT = nf90_put_att(ncid,pr_x_var_id,"units","degrees_east")
+        else
+          nSTAT = nf90_put_att(ncid,pr_x_var_id,"units","km")
+        endif
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_x units")
+
+        ! y coordinate of point
+        if(VERB.gt.1)write(global_info,*)"     pr_y"
+        if(op.eq.8)then
+          nSTAT = nf90_def_var(ncid,"pr_y",&
+                               nf90_double,   &
+                               (/pr_dim_id/), &
+                               pr_y_var_id)
+        else
+          nSTAT = nf90_def_var(ncid,"pr_y",&
+                               nf90_float,  &
+                               (/pr_dim_id/),                &
+                               pr_y_var_id)
+        endif
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var pr_y")
+        nSTAT = nf90_put_att(ncid,pr_y_var_id,"long_name","y coordinate of prof point")
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_y long_name")
+        if(IsLatLon)then
+           nSTAT = nf90_put_att(ncid,pr_y_var_id,"units","degrees_north")
+        else
+          nSTAT = nf90_put_att(ncid,pr_y_var_id,"units","km")
+        endif
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_y units")
+
+        ! Profile data
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"pr_ash",&
                                nf90_double, &
@@ -2063,9 +2108,9 @@
          ! Now fill the other (non-time-dependent) variables
          ! wf_name (Name of windfile)
       do i=1,MR_iwindfiles
-        write(lllinebuffer,'(130a)')MR_windfiles(i)
+        write(linebuffer130,'(130a)')MR_windfiles(i)
         do j=1,130
-          nSTAT=nf90_put_var(ncid,wf_name_var_id,lllinebuffer(j:j),(/j,i/))
+          nSTAT=nf90_put_var(ncid,wf_name_var_id,linebuffer130(j:j),(/j,i/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var wf_name")
         enddo
       enddo
@@ -2313,18 +2358,18 @@
 
         ! Point/Airport code (3-char label)
         do i=1,nairports
-          write(lllinebuffer,'(130a)')Airport_Code(i)
+          write(linebuffer130,'(130a)')Airport_Code(i)
           do j=1,130
-            nSTAT=nf90_put_var(ncid,pt_code_var_id,lllinebuffer(j:j),(/j,i/))
+            nSTAT=nf90_put_var(ncid,pt_code_var_id,linebuffer130(j:j),(/j,i/))
             if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var pt_code")
           enddo
         enddo
 
         ! Point/Airport name
         do i=1,nairports
-          write(lllinebuffer,'(130a)')Airport_Name(i)
+          write(linebuffer130,'(130a)')Airport_Name(i)
           do j=1,130
-            nSTAT=nf90_put_var(ncid,pt_name_var_id,lllinebuffer(j:j),(/j,i/))
+            nSTAT=nf90_put_var(ncid,pt_name_var_id,linebuffer130(j:j),(/j,i/))
             if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var pt_name")
           enddo
         enddo
@@ -2434,7 +2479,7 @@
 
       use io_data,       only : &
          iout3d,nvar_User2d_XY,nvar_User3d_XYGs,nvar_User3d_XYZ,nvar_User4d_XYZGs,&
-         outfile,isFinal_TS,nvprofiles,Write_PT_Data,Write_PR_Data
+         outfile,isFinal_TS,nvprofiles,Write_PT_Data,Write_PR_Data,x_vprofile,y_vprofile
 
       use Output_Vars,   only : &
          CloudLoad_FillValue,dbZCol_FillValue,MaxConcentration_FillValue,&
@@ -2588,7 +2633,22 @@
         endif
 
         if(Write_PR_Data)then
-          ! PR
+          ! Profile data
+
+          ! x coordinate of point
+          allocate(dum1d_out(nvprofiles))
+          dum1d_out(1:nvprofiles) = real(x_vprofile(1:nvprofiles),kind=op)
+          nSTAT=nf90_put_var(ncid,pr_x_var_id,dum1d_out,(/1/))
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var pr_x")
+          deallocate(dum1d_out)
+
+          ! y coordinate of point
+          allocate(dum1d_out(nvprofiles))
+          dum1d_out(1:nvprofiles) = real(y_vprofile(1:nvprofiles),kind=op)
+          nSTAT=nf90_put_var(ncid,pr_y_var_id,dum1d_out,(/1/))
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var pr_y")
+          deallocate(dum1d_out)
+
           ! write out native time
           nSTAT = nf90_inq_varid(ncid,"tn",tn_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid tn")
@@ -3129,32 +3189,35 @@
 
       use io_data,           only : &
          concenfile,init_tstep,nWriteTimes,WriteTimes,cdf_b1l1,cdf_b1l5,cdf_b3l1, &
-         cdf_b3l3,VolcanoName,Write_PT_Data,Write_PR_Data,isFinal_TS
+         cdf_b3l3,VolcanoName,Write_PT_Data,isFinal_TS,&
+         Write_PR_Data,nvprofiles,x_vprofile,y_vprofile
 
       use Source,        only : &
          neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight, &
          lat_volcano,lon_volcano,x_volcano,y_volcano
 
       use time_data,     only : &
-          BaseYear,useLeap,cdf_time_log,time,SimStartHour,xmlSimStartTime, &
+          BaseYear,useLeap,os_time_log,time,time_native,SimStartHour,xmlSimStartTime, &
           OutputOffset,Simtime_in_hours
 
       use Output_Vars,   only : &
          DepositThickness,DepArrivalTime,CloudArrivalTime,THICKNESS_THRESH,&
-         MaxConcentration,MaxHeight,CloudLoad,dbZCol,MinHeight,Mask_Cloud,Mask_Deposit,&
-           dbZCalculator
+         MaxConcentration,MaxHeight,CloudLoad,dbZCol,MinHeight,Mask_Cloud,&
+         pr_ash, &
+           dbZCalculator, &
+           Allocate_Profile
 
       use Airports,      only : &
-         nairports,Airport_Code,Airport_Name,Airport_x,Airport_y,&
+         nairports,Airport_Code,Airport_Name,&
          Airport_Latitude,Airport_Longitude,Airport_Thickness_TS,Airport_thickness,&
-         Airport_TS_plotindex,Airport_AshArrived,Airport_CloudArrivalTime,&
+         Airport_AshArrived,Airport_CloudArrivalTime,&
          Airport_CloudDuration,Airport_AshArrivalTime,Airport_AshDuration,&
          Airport_Thickness,Airport_CloudArrived,Airport_i,Airport_j,&
            Allocate_Airports
 
       use mesh,          only : &
-         nxmax,nymax,nsmax,nzmax,x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd, &
-         dx,dy,de,dn,IsLatLon,latLL,lonLL,latUR,lonUR,xLL,yLL,xUR,yUR
+         nxmax,nymax,nsmax,nzmax,x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd,z_cc_pd, &
+         dx,dy,de,dn,dz_const,IsLatLon,latLL,lonLL,latUR,lonUR,xLL,yLL,xUR,yUR
 
       use Tephra,        only : &
          n_gs_max
@@ -3166,7 +3229,7 @@
       logical,save :: first_time = .true.
       integer :: nSTAT
       integer :: it,i,j
-      integer, dimension(:),allocatable :: dum1d_int
+      !integer, dimension(:),allocatable :: dum1d_int
       real(kind=op) :: dumscal_out
       real(kind=dp), dimension(:),allocatable :: dum1d_dp
       character(len=32)              :: time_units
@@ -3176,7 +3239,7 @@
       integer :: itstart_hour,itstart_min,itstart_sec
       real(kind=ip) :: filestart_hour
 
-      logical :: hasAirportTSData
+      !logical :: hasAirportTSData
 
       INTERFACE
         real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
@@ -3355,6 +3418,19 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid z")
         write(global_info,2501)"  z",z_len
         nzmax = z_len 
+        allocate(z_cc_pd(-1:nzmax+2))
+        allocate(dum1d_out(1:nzmax))
+        nSTAT=nf90_get_var(ncid,z_var_id,dum1d_out,  &
+                     start = (/1/),       &
+                     count = (/z_len/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var z")
+        z_cc_pd(1:nzmax) = real(dum1d_out(1:nzmax),kind=ip)
+        deallocate(dum1d_out)
+        dz_const  = z_cc_pd(2)-z_cc_pd(1)
+        z_cc_pd(0)  = z_cc_pd(1) - dz_const
+        z_cc_pd(-1) = z_cc_pd(0) - dz_const
+        z_cc_pd(nzmax+1) = z_cc_pd(nzmax  ) + dz_const
+        z_cc_pd(nzmax+2) = z_cc_pd(nzmax+1) + dz_const
 
         !!!!!!  BN  !!!!!!!!!!!
         ! Identify dimension for bn (and note size)
@@ -3398,10 +3474,11 @@
           Write_PR_Data = .true.
           nSTAT = nf90_Inquire_Dimension(ncid,pr_dim_id,len=pr_len)
           call NC_check_status(nSTAT,0,"Inquire_Dimension pr")
+          nvprofiles = pr_len
           ! Get variable id for this dimension
           nSTAT = nf90_inq_varid(ncid,"pr",pr_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid pr")
-          write(global_info,2501)" pr",pr_len
+          write(global_info,2501)" pr",nvprofiles
         endif
 
         !!!!!!  TN !!!!!!!!!!!
@@ -3554,6 +3631,10 @@
           deallocate(dum1d_out)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_depothickFin:")
 
+          ! Read Airport code
+          nSTAT = nf90_get_var(ncid,pt_code_var_id,Airport_Code)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_code:")
+
           ! Read Airport names
           nSTAT = nf90_get_var(ncid,pt_name_var_id,Airport_Name)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_name:")
@@ -3605,6 +3686,46 @@
 
         endif
 
+        if(Write_PR_Data)then
+          ! pr_x
+          nSTAT = nf90_inq_varid(ncid,"pr_x",pr_x_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pr_x")
+          ! pr_y
+          nSTAT = nf90_inq_varid(ncid,"pr_y",pr_y_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pr_y")
+          ! pr_ash
+          nSTAT = nf90_inq_varid(ncid,"pr_ash",pr_ash_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pr_ash")
+
+          ! Allocate profile variables
+          call Allocate_Profile(nzmax,tn_len,nvprofiles)
+          allocate(x_vprofile(nvprofiles))
+          allocate(y_vprofile(nvprofiles))
+
+          allocate(dum1d_dp(1:tn_len))
+          nSTAT = nf90_get_var(ncid,tn_var_id,dum1d_dp)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var tn")
+          time_native(1:tn_len) = real(dum1d_dp(1:tn_len),kind=ip)
+          deallocate(dum1d_dp)
+
+          ! Read TS of ash concentration at profile point locations
+          allocate(dum3d_out(1:nzmax,1:tn_len,1:nvprofiles))
+          nSTAT = nf90_get_var(ncid,pr_ash_var_id,dum3d_out)
+          pr_ash(:,:,:) = real(dum3d_out(:,:,:),kind=ip)
+          deallocate(dum3d_out)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pr_ashthickness:")
+
+          allocate(dum1d_dp(1:nvprofiles))
+          nSTAT = nf90_get_var(ncid,pr_x_var_id,dum1d_dp)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pr_x:")
+          x_vprofile(:) = real(dum1d_dp(1:nvprofiles),kind=ip)
+
+          nSTAT = nf90_get_var(ncid,pr_y_var_id,dum1d_dp)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pr_y:")
+          y_vprofile(:) = real(dum1d_dp(1:nvprofiles),kind=ip)
+          deallocate(dum1d_dp)
+        endif
+
         ! Now populate a few of the header values needed for
         ! post-processing/annotation
         ! Get volcano name
@@ -3618,7 +3739,7 @@
         VolcanoName = adjustl(trim(cdf_b1l1(1:iendstr-1)))
 
         ! Get date of run
-        nSTAT = nf90_get_att(ncid,nf90_global,"date",cdf_time_log)
+        nSTAT = nf90_get_att(ncid,nf90_global,"date",os_time_log)
         ! Get windfile info
         nSTAT = nf90_get_att(ncid,nf90_global,"b3l1",cdf_b3l1)
         ! Get Simulation time info

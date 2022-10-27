@@ -245,7 +245,7 @@
       character            ::  volcNS(MAXVOLCS)
       character            ::  volcWE(MAXVOLCS)
 
-      character(len=195) :: linebuffer
+      character(len=195) :: linebuffer195
       integer         :: nvolcs
       !integer         :: i,Volcano_ID
       character       :: testkey
@@ -264,20 +264,20 @@
 
       !"http://www.volcano.si.edu/world/volcano.cfm?vnum="
       open(unit=20,file=VotWMasterFile,status='old',err=3000)
-      read(20,'(a195)')linebuffer
+      read(20,'(a195)')linebuffer195
       nvolcs = 0
-      read(20,'(a195)',IOSTAT=Iostatus) linebuffer
+      read(20,'(a195)',IOSTAT=Iostatus) linebuffer195
       do while (Iostatus.ge.0)
         nvolcs = nvolcs + 1
-        read(linebuffer,50)volcID(nvolcs),     &
-                           volcName(nvolcs),   &
-                           volcLoc(nvolcs),    &
-                           volcLat(nvolcs),    &
-                           temp1,              &
-                           volcLon(nvolcs),    &
-                           temp2,              &
-                           volcElev_c(nvolcs), &
-                           temp3
+        read(linebuffer195,50)volcID(nvolcs),     &
+                              volcName(nvolcs),   &
+                              volcLoc(nvolcs),    &
+                              volcLat(nvolcs),    &
+                              temp1,              &
+                              volcLon(nvolcs),    &
+                              temp2,              &
+                              volcElev_c(nvolcs), &
+                              temp3
         volcName(nvolcs) = adjustl(volcName(nvolcs))
         volcLoc(nvolcs)  = adjustl(volcLoc(nvolcs))
         volcElev_c(nvolcs) = adjustl(volcElev_c(nvolcs))
@@ -294,7 +294,7 @@
         if(volcNS(nvolcs).eq.'S') volcLat(nvolcs) = -volcLat(nvolcs)
         if(volcWE(nvolcs).eq.'W') volcLon(nvolcs) = -volcLon(nvolcs) + 360.0_ip
         write(*,*)volcID(nvolcs),volcName(nvolcs),volcLoc(nvolcs),volcLat(nvolcs),volcLon(nvolcs)
-        read(20,'(a195)',IOSTAT=Iostatus) linebuffer
+        read(20,'(a195)',IOSTAT=Iostatus) linebuffer195
       enddo
 
       close(20)

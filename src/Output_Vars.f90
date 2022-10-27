@@ -218,8 +218,8 @@
 
       integer :: nz,nt,nv
 
+      allocate(time_native(nt))
       if(nv.gt.0)then
-        allocate(time_native(nt))
         allocate(pr_ash(nz,nt,nv))                       ! vertical ash profile
         pr_ash = 0.0_op
       endif
@@ -681,7 +681,7 @@
       subroutine Calc_vprofile(itime)
 
       use global_param,  only : &
-         EPS_THRESH
+         KG_2_MG,KM3_2_M3
 
       use io_data,       only : &
          nvprofiles,i_vprofile,j_vprofile
@@ -721,11 +721,10 @@
         ! Get the total ash aloft in the coloumn at this point in kg/km3
         totalash = sum(concen_pd(i_vprofile(i),j_vprofile(i),1:nzmax,1:n_gs_max,ts1))
         ! don't write if there's no ash
-        !if(totalash.lt.EPS_THRESH) cycle
         if(totalash.lt.CLOUDCON_THRESH) cycle
         do k=1,nzmax
-          pr_ash(k,itime,i) = sum(concen_pd(i_vprofile(i),j_vprofile(i),k,1:n_gs_max,ts1))&
-                              /1000.0_ip     !convert from kg/km3 to mg/m3
+          pr_ash(k,itime,i) = sum(concen_pd(i_vprofile(i),j_vprofile(i),k,1:n_gs_max,ts1)) &
+                              * KG_2_MG / KM3_2_M3 !convert from kg/km3 to mg/m3
         enddo
       enddo
 

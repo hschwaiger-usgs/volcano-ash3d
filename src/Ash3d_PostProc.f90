@@ -11,7 +11,7 @@
          nxmax,nymax,nzmax,nsmax,lon_cc_pd,lat_cc_pd
 
       use time_data,     only : &
-         time
+         time,time_native
 
       use io_data,       only : &
          iTimeNext, &
@@ -21,11 +21,13 @@
          WriteDepositFinal_ASCII,WriteCloudTime_KML,WriteCloudTime_ASCII,WriteReflectivity_ASCII,&
          WriteCloudLoad_KML,WriteReflectivity_KML,WriteCloudLoad_ASCII,WriteCloudHeight_KML,&
          WriteCloudHeight_ASCII,WriteCloudConcentration_KML,WriteCloudConcentration_ASCII,&
-         WriteAirportFile_KML,WriteAirportFile_ASCII,Write3dFiles,Write_PR_Data
+         WriteAirportFile_KML,WriteAirportFile_ASCII,Write3dFiles,&
+         nvprofiles,x_vprofile,y_vprofile
 
       use Output_Vars,   only : &
          DepositThickness,DepArrivalTime,CloudArrivalTime,&
-         MaxConcentration,MaxHeight,CloudLoad,dbZCol,MinHeight,Mask_Cloud,Mask_Deposit
+         MaxConcentration,MaxHeight,CloudLoad,dbZCol,MinHeight,Mask_Cloud,Mask_Deposit,&
+         pr_ash
 
       use Airports,      only : &
          Airport_Thickness_TS,Airport_Name
@@ -45,6 +47,7 @@
       integer             :: itime = -1      ! initialize time step to the last step
       integer             :: i,j
       real(kind=ip),dimension(:,:),allocatable :: OutVar
+      logical      ,dimension(:,:),allocatable :: mask
       real(kind=ip)       :: OutFillValue
       logical             :: IsThere
       character(len=6)    :: Fill_Value
@@ -242,9 +245,8 @@
           TS_flag = 0      ! 1 = not a time series
           height_flag = 0  ! All the cells should be pinned to z=0
         elseif(iprod.eq.16)then
-          write(global_info,*)'output variable =16 profile plots'
-          write(global_info,*)' Currently, no output formats available for iprod=16'
-          stop 1
+          write(global_info,*)'output variable =16 vertical concentration profile'
+          
         endif
       endif
       !  Arg #3
@@ -288,6 +290,7 @@
         write(global_info,*)'This is probably where we would implement binary, vtk, or tecplot'
         stop 1
       endif
+      write(global_info,*)'Finished reading command-line'
 
       ! Before we do anything, call routine to read the netcdf file, populate
       ! the dimensions so we can see what we are dealing with.
@@ -395,14 +398,19 @@
       !  elseif(iformat.eq.2)then
       !  endif
       elseif(iprod.eq.16)then ! vertical profiles of concentration
-        if(    iformat.eq.1)then
+        if(    iformat.eq.1.or.iformat.eq.3)then
+          ! ASCII or png
           Write_PR_Data                 = .true.
-        elseif(iformat.eq.2)then
-          Write_PR_Data                 = .true.
+        else
+          write(*,*)"Vertical ash concentration profiles can only be exported",&
+                    " as ASCII files or png images"
+          stop 1
         endif
       endif
 
       allocate(OutVar(nxmax,nymax))
+      allocate(mask(nxmax,nymax))
+      mask = .true.
 
       ! The main differences in output products will be time-series, vs
       ! time-step output.  Currently, the time-series output will only be for
@@ -476,8 +484,10 @@
           stop 1
         endif
       endif ! iformat.eq.2 (KML)
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       ! This is the non-KML section
+      ! Set some variable parameters for an ASCII output file
       OutFillValue = 0.0_ip
       if(iprod.eq.3.or.iprod.eq.4)then
         OutVar = DepositThickness
@@ -528,33 +538,56 @@
         OutFillValue = -1.0_ip
         filename_root = 'CloudArrivalTime    '
       endif
+      ! Now mask out non-cloud values
       if(iprod.eq.9 .or.&
          iprod.eq.10.or.&
          iprod.eq.11.or.&
          iprod.eq.12.or.&
          iprod.eq.13.or.&
          iprod.eq.14)then
-        do i=1,nxmax
-          do j=1,nymax
-            if(.not.Mask_Cloud(i,j))&
-                OutVar(i,j) = OutFillValue
-          enddo
-        enddo
+        mask = Mask_Cloud
+        !do i=1,nxmax
+        !  do j=1,nymax
+        !    if(.not.Mask_Cloud(i,j))&
+        !        OutVar(i,j) = OutFillValue
+        !  enddo
+        !enddo
       endif
 
+      ! This is the ASCII section
       if(iformat.eq.1)then
+        ! First check for the special cases
         if(iprod.eq.8)then
-          write(*,*)"Calling Write_PointData_Airports_ASCII"
+          ! Point data
+          write(global_info,*)"Calling Write_PointData_Airports_ASCII"
           call Write_PointData_Airports_ASCII
         elseif(iprod.eq.16)then
-          !call vprofile....
+          ! Vertical profile data
+          call vprofileopener
+          do itime=1,tn_len
+            time = time_native(itime)
+            call vprofilewriter(itime)
+          enddo
+          call vprofilecloser
         else
-          call write_2D_ASCII(nxmax,nymax,OutVar,Fill_Value,filename_root)
+          ! All other ESRI/ASCII 2d grids
+          call write_2D_ASCII(nxmax,nymax,OutVar,mask,Fill_Value,filename_root)
         endif
       elseif(iformat.eq.2)then
-        !call Write_2D_KML(ivar,OutVar,height_flag,TS_flag)
+        ! All the KML routines were called above
       elseif(iformat.eq.3)then ! image/png
-        call write_2D_PNG_dislin(iprod,iout3d,OutVar)
+        if(iprod.eq.8)then
+          ! Point data
+          write(global_info,*)"No PNG output for point data output"
+        elseif(iprod.eq.16)then
+          ! Vertical profile data
+          !do i=1,nvprofiles
+            i = 1
+            call write_2Dprof_PNG_dislin(i)
+          !enddo
+        else
+          call write_2Dmap_PNG_dislin(iprod,iout3d,OutVar)
+        endif
       elseif(iformat.eq.4)then
         !call write_2D_Binary
       elseif(iformat.eq.5)then

@@ -24,6 +24,7 @@
 
       use Output_Vars,   only : &
          DepositThickness,MaxConcentration,MaxHeight,&
+         Mask_Cloud,Mask_Deposit,&
          ! MinHeight, &
          CloudLoad,DepArrivalTime,CloudArrivalTime,dbZCol
 
@@ -57,10 +58,11 @@
         end subroutine
         subroutine Write_PointData_Airports_ASCII
         end subroutine
-        subroutine write_2D_ASCII(nx,ny,OutVar,Fill_Value,filename_root)
+        subroutine write_2D_ASCII(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
           integer,parameter  :: ip         = 8 ! Internal precision
           integer          ,intent(in) :: nx,ny
           real(kind=ip)    ,intent(in) :: OutVar(nx,ny)
+          logical          ,intent(in) :: VarMask(nx,ny)
           character(len=6) ,intent(in) :: Fill_Value
           character(len=20),intent(in) :: filename_root
         end subroutine
@@ -190,19 +192,29 @@
       if (.not.isFinal_TS) then
           ! First ascii files
         if (WriteDepositTS_ASCII)            &
-          call write_2D_ASCII(nxmax,nymax,DepositThickness(1:nxmax,1:nymax), &
+          call write_2D_ASCII(nxmax,nymax,&
+                              DepositThickness(1:nxmax,1:nymax), &
+                              Mask_Deposit(1:nxmax,1:nymax),&
                               ' 0.000','DepositFile_        ')
         if (WriteCloudConcentration_ASCII)  &
-          call write_2D_ASCII(nxmax,nymax,MaxConcentration(1:nxmax,1:nymax), &
+          call write_2D_ASCII(nxmax,nymax,&
+                              MaxConcentration(1:nxmax,1:nymax), &
+                              Mask_Cloud(1:nxmax,1:nymax),&
                               ' 0.000','CloudConcentration_ ')
         if (WriteCloudHeight_ASCII)         &
-          call write_2D_ASCII(nxmax,nymax,MaxHeight(1:nxmax,1:nymax), &
+          call write_2D_ASCII(nxmax,nymax,&
+                              MaxHeight(1:nxmax,1:nymax), &
+                              Mask_Cloud(1:nxmax,1:nymax),&
                               ' 0.000','CloudHeight_        ')
         !if (WriteCloudHeight_ASCII)         &
-        !  call write_2D_ASCII(nxmax,nymax,MinHeight(1:nxmax,1:nymax), &
+        !  call write_2D_ASCII(nxmax,nymax,&
+        !                      MinHeight(1:nxmax,1:nymax), &
+        !                      Mask_Cloud(1:nxmax,1:nymax),&
         !                      '-9999.','CloudHeightBot_     ')
         if (WriteCloudLoad_ASCII)           &
-          call write_2D_ASCII(nxmax,nymax,CloudLoad(1:nxmax,1:nymax), &
+          call write_2D_ASCII(nxmax,nymax,&
+                              CloudLoad(1:nxmax,1:nymax), &
+                              Mask_Cloud(1:nxmax,1:nymax),&
                               ' 0.000','CloudLoad_          ')
 
           ! Now KML files
@@ -251,22 +263,28 @@
           call Close_KML(9,0)
         endif
         if (WriteDepositTime_ASCII)     &
-          call write_2D_ASCII(nxmax,nymax,DepArrivalTime(1:nxmax,1:nymax), &
-                                '-1.000','DepositArrivalTime  ')
+          call write_2D_ASCII(nxmax,nymax,&
+                              DepArrivalTime(1:nxmax,1:nymax), &
+                              Mask_Deposit(1:nxmax,1:nymax),&
+                              '-1.000','DepositArrivalTime  ')
         if (WriteCloudTime_KML) then
           call OpenFile_KML(5) ! Cloud Arrival Time
           call Write_2D_KML(5,CloudArrivalTime,0,0) ! Deposit
           call Close_KML(5,0)
         endif
         if (WriteCloudTime_ASCII)       &
-          call write_2D_ASCII(nxmax,nymax,CloudArrivalTime(1:nxmax,1:nymax), &
-                                '-1.000','CloudArrivalTime    ')
+          call write_2D_ASCII(nxmax,nymax,&
+                              CloudArrivalTime(1:nxmax,1:nymax), &
+                              Mask_Cloud(1:nxmax,1:nymax),&
+                              '-1.000','CloudArrivalTime    ')
         ! Write Final deposit file
         if ((WriteDepositFinal_ASCII).and.                       &
             (((nWriteTimes.gt.0).and.(abs(time-dt-WriteTimes(nWriteTimes)).gt.1.0e-4_ip)).or. &
             (nWriteTimes.eq.0))) then
-          call write_2D_ASCII(nxmax,nymax,DepositThickness(1:nxmax,1:nymax), &
-                                ' 0.000','DepositFile_        ')
+          call write_2D_ASCII(nxmax,nymax,&
+                              DepositThickness(1:nxmax,1:nymax), &
+                              Mask_Deposit(1:nxmax,1:nymax),&
+                              ' 0.000','DepositFile_        ')
         endif
         if (WriteDepositFinal_KML) then
           call Write_2D_KML(7,DepositThickness,0,0) ! Deposit

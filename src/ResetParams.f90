@@ -24,7 +24,7 @@
 
       integer, parameter :: MAXPARAMS = 50
 
-      character(len=80)  :: linebuffer
+      character(len=80) :: linebuffer080
       character :: testkey
       integer :: ios
       character(len=20) :: mod_name
@@ -38,15 +38,15 @@
       nmods = 0
       open(unit=10,file=infile,status='old',err=1900)
 
-      read(10,'(a80)',iostat=ios)linebuffer
+      read(10,'(a80)',iostat=ios)linebuffer080
       do while(ios.eq.0)
-        read(10,'(a80)',iostat=ios)linebuffer
-        substr_pos = index(linebuffer,'OPTMOD')
+        read(10,'(a80)',iostat=ios)linebuffer080
+        substr_pos = index(linebuffer080,'OPTMOD')
         if(substr_pos.eq.1)then
           ! found an optional module
           !  Parse for the keyword
             write(*,*)"Found optmod"
-          read(linebuffer,1104)mod_name
+          read(linebuffer080,1104)mod_name
           if(adjustl(trim(mod_name)).eq.'RESETPARAMS')then
             exit
           endif
@@ -56,17 +56,17 @@
 
       write(*,*)"Now parsing RESETPARAMS block"
       
-      read(10,'(a80)',iostat=ios)linebuffer
-      read(linebuffer,*)testkey
+      read(10,'(a80)',iostat=ios)linebuffer080
+      read(linebuffer080,*)testkey
       iparam = 0
       do while(ios.eq.0.and. &
                testkey.ne.'#'.and.testkey.ne.'*')
         iparam = iparam + 1
-        substr_pos = index(linebuffer,'=')
-        pname(iparam)=adjustl(trim(linebuffer(1:substr_pos-1)))
-        read(linebuffer(substr_pos+1:80),*)pvalue(iparam)
-        read(10,'(a80)',iostat=ios)linebuffer
-        read(linebuffer,*)testkey
+        substr_pos = index(linebuffer080,'=')
+        pname(iparam)=adjustl(trim(linebuffer080(1:substr_pos-1)))
+        read(linebuffer080(substr_pos+1:80),*)pvalue(iparam)
+        read(10,'(a80)',iostat=ios)linebuffer080
+        read(linebuffer080,*)testkey
       enddo
 
       ! We've read all the parameters to reset, now loop through the list

@@ -479,6 +479,9 @@
 #ifdef USEEXTDATA
       subroutine Read_GlobalAirports(num_GlobAirports)
 
+      use global_param,  only : &
+        DirDelim
+
       implicit none
 
       integer, intent(out) :: num_GlobAirports
@@ -498,7 +501,8 @@
       allocate(AirportFullName(MAXAIRPORTS))
 
       AirportMasterFile = trim(Ash3dHome) // &
-                          '/share/GlobalAirports_ewert.txt'
+                          DirDelim // 'share' // &
+                          DirDelim // 'GlobalAirports_ewert.txt'
       ! Test for existance of the airport file
       inquire( file=adjustl(trim(AirportMasterFile)), exist=IsThere )
       write(global_info,*)&

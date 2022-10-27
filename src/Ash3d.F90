@@ -6,7 +6,7 @@
 
       use global_param,  only : &
          useCalcFallVel,useDiffusion,useHorzAdvect,useVertAdvect,VERB,&
-         HR_2_S,useTemperature,DT_MIN,CFL,KM3_2_M3,EPS_TINY,EPS_SMALL,&
+         HR_2_S,useTemperature,DT_MIN,KM3_2_M3,EPS_TINY,EPS_SMALL,&
          nmods,OPTMOD_names,StopConditions,CheckConditions
 
       use mesh,          only : &
@@ -25,7 +25,7 @@
            FirstAsh
 
       use io_data,       only : &
-         Called_Gen_Output_Vars,isFinal_TS,LoadConcen,log_step, Ash3dHome,&
+         Called_Gen_Output_Vars,isFinal_TS,LoadConcen,log_step,&
          Output_at_logsteps,Output_at_WriteTimes,Output_every_TS,&
          NextWriteTime,iTimeNext,nvprofiles,nWriteTimes,&
          Write_PT_Data,Write_PR_Data
@@ -71,7 +71,7 @@
 
       implicit none
 
-      integer               :: iostatus
+!      integer               :: iostatus
       integer               :: itime
       integer               :: j,k
       integer               :: ii,jj,iz,isize
@@ -80,7 +80,7 @@
       logical               :: Load_MesoSteps
       logical               :: StopTimeLoop   = .false.
       logical               :: first_time     = .true.
-      character(len=130)    :: tmp_str
+!      character(len=130)    :: tmp_str
       real(kind=ip)         :: MassConsErr
 
       INTERFACE
@@ -112,28 +112,10 @@
         end subroutine
       END INTERFACE
 
-      ! Set the default installation path
-      ! This is only needed if shared data files with fixed paths are read
-      ! in such as the global airport and volcano ESP files.
-      Ash3dHome = '/opt/USGS/Ash3d'
-      ! Here it is over-written by compile-time path, if available
-#include "installpath.h"
-      ! This can be over-written if an environment variable is set
-      call GET_ENVIRONMENT_VARIABLE(NAME="ASH3DHOME",VALUE=tmp_str,STATUS=iostatus)
-      if(iostatus.eq.0)then
-        Ash3dHome = tmp_str
-        write(global_info,*)&
-          "Install path reset by environment variable to: ",Ash3dHome
-      endif
-      call GET_ENVIRONMENT_VARIABLE(NAME="ASH3DCFL",VALUE=tmp_str,STATUS=iostatus)
-      if(iostatus.eq.0)then
-        read(tmp_str,*)CFL
-        write(global_info,*)&
-          "CFL condition reset by environment variable to: ",real(CFL,kind=4)
-      else
-        write(global_info,*)&
-          "CFL condition : ",real(CFL,kind=4)
-      endif
+      ! Before we do anything, start a log file
+      open(unit=global_log,file='Ash3d.lst',status='unknown')
+
+      call Set_OS_Env
 
       aloft_percent_remaining = 1.0_ip
       SourceCumulativeVol     = 0.0_ip
@@ -233,6 +215,7 @@
       call output_results
 
       ntmax = max(1,3*int(Simtime_in_hours/dt))
+      !allocate(time_native(ntmax))
       if (Write_PR_Data)then
         call Allocate_Profile(nzmax,ntmax,nvprofiles)
       endif

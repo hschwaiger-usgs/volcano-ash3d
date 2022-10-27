@@ -1,11 +1,11 @@
 !##############################################################################
 !
-!    write_2D_PNG_dislin
+!    write_2Dmap_PNG_dislin
 !
 !    if timestep = -1, then use the last step in file
 !##############################################################################
 
-      subroutine write_2D_PNG_dislin(iprod,itime,OutVar)
+      subroutine write_2Dmap_PNG_dislin(iprod,itime,OutVar)
 
       use precis_param
 
@@ -24,7 +24,7 @@
          neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
 
       use time_data,     only : &
-         cdf_time_log,BaseYear,useLeap
+         os_time_log,BaseYear,useLeap
 
       use dislin
 
@@ -42,7 +42,6 @@
       character(len=40) :: outfile_name
       character (len=9) :: cio
       character (len=4) :: outfile_ext = '.png'
-
       INTEGER, PARAMETER :: N=3
       INTEGER, PARAMETER :: MAXPTS=1000
       INTEGER, PARAMETER :: MAXCRV=10
@@ -260,7 +259,7 @@
       !              Volume:
 
       write(cstr_volcname,'(a10,a20)')'Volcano:  ' ,VolcanoName
-      write(cstr_run_date,'(a10,a20)')'Run Date: ',cdf_time_log
+      write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
       read(cdf_b3l1,*,iostat=ioerr) iw,iwf
       write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
 
@@ -285,8 +284,44 @@
       !  Dislin Level 0:  before initialization or after termination
       call disfin()
 
+      end subroutine write_2Dmap_PNG_dislin
 
-      end subroutine write_2D_PNG_dislin
+!##############################################################################
+!
+!    write_2Dprof_PNG_dislin
+!
+!##############################################################################
+
+      subroutine write_2Dprof_PNG_dislin(iv)
+
+      use precis_param
+
+      use mesh,          only : &
+         nxmax,nymax,x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd, &
+         IsLatLon !,dx,dy,dz_vec_pd,nzmax,nsmax,z_cc_pd
+
+      use Output_Vars,   only : &
+         DepositThickness,DepArrivalTime,CloudArrivalTime,&
+         MaxConcentration,MaxHeight,CloudLoad,dbZ,MinHeight,Mask_Cloud,Mask_Deposit
+
+      use io_data,       only : &
+         nWriteTimes,WriteTimes,cdf_b3l1,VolcanoName
+
+      use Source,        only : &
+         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
+
+      use time_data,     only : &
+         os_time_log,BaseYear,useLeap
+
+      use dislin
+
+      implicit none
+
+      pr_x
+      pr_y
+      pr_ash
+
+      end subroutine write_2Dprof_PNG_dislin
 
 !##############################################################################
 !

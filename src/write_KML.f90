@@ -983,6 +983,9 @@
 
       subroutine Write_PointData_Airports_KML
 
+      use global_param,  only : &
+         IsLinux,IsWindows,IsMacOS,DirPrefix,DirDelim
+
       use Output_Vars,   only : &
          CloudLoad,CLOUDLOAD_THRESH,DEPRATE_THRESH,THICKNESS_THRESH
 
@@ -1035,6 +1038,8 @@
       character(len=14) :: dp_pngfile
       character(len=35) :: gnucom
       character(len=77) :: zipcom
+      character(len=80) :: execpath
+
       real(kind=ip) :: ymaxpl
       logical                 :: IsThere
       integer             :: status
@@ -1101,7 +1106,16 @@
         enddo
         close(54)
         ! Test if gnuplot is installed
-        inquire( file=adjustl(trim('/usr/bin/gnuplot')), exist=IsThere)
+        if(IsLinux.or.IsMacOS)then
+          execpath = adjustl(trim(DirPrefix)) // DirDelim // &
+                  "usr" // DirDelim // "bin" // DirDelim // "gnuplot"
+          inquire( file=adjustl(trim(execpath)), exist=IsThere)
+        elseif(IsWindows)then
+          ! this is a placeholder for now
+          IsThere = .false.
+        else
+          IsThere = .false.
+        endif
         if(IsThere)then
           ! if we have gnuplot installed, just create the plots now
           write(gnucom,'(a21,a14)')'/usr/bin/gnuplot -p ',dp_gnufile
@@ -1236,7 +1250,14 @@
       write(global_log ,4) nWrittenOut
 
       ! Test if zip is installed
-      inquire( file=adjustl(trim('/usr/bin/zip')), exist=IsThere)
+      if(IsLinux.or.IsMacOS)then
+        inquire( file=adjustl(trim('/usr/bin/zip')), exist=IsThere)
+      elseif(IsWindows)then
+        ! this is a placeholder for now
+        IsThere = .false.
+      else
+        IsThere = .false.
+      endif
       if(IsThere)then
         write(zipcom,'(a77)')&
           'zip -r ash_arrivaltimes_airports.kmz ash_arrivaltimes_airports.kml depTS*.png'
