@@ -6,9 +6,9 @@
 !     given the velocities, cell sizes, CFL number, diffusivity and the numerical 
 !     scheme.
 !     This subroutine is called at the end of MesoInterpolator.  The first
-!     call to MesoInterpolator (and therefore Adjust_DT) is before the time
-!     loop to anticipate the total number of number of steps the simulation
-!     might need, and then onece within the time loop after new velocities are 
+!     call to MesoInterpolator (and therefore to Adjust_DT) is before the time
+!     loop to anticipate the total number of steps the simulation
+!     might need, and then once within the time loop after new velocities are 
 !     determinined.
 !
 !##############################################################################
