@@ -1,10 +1,21 @@
-      module AdvectionHorz
+ !****************************************************************************
+ 
+ !This file contains the module AdvectionHorz and subroutine AdvectHorz.
+ !  The subroutine calls other subroutines, advect_x and advect_y, that
+ !  calculate horizontal advection in the x and y directions.  
+ !  AdvectHorz is called during the time loop in the main program
+ !  Ash3d.F90, after setting boundary conditions and before calculating
+ !  vertical advection.
+ 
+ !***************************************************************************
+ 
+ module AdvectionHorz
 
       use precis_param
 
       contains
 
-!******************************************************************************
+!****************************************************************************
 
       subroutine AdvectHorz(itoggle)
 
