@@ -20,7 +20,7 @@
          cdf_b4l14,cdf_b4l15,cdf_b4l16,cdf_b4l17,cdf_b4l18,cdf_b6l1,cdf_b6l2,cdf_b6l3,cdf_b6l4,&
          cdf_b6l5,cdf_comment,cdf_title,cdf_institution,cdf_source,cdf_history,cdf_references,&
          outfile,VolcanoName,WriteTimes,nWriteTimes,cdf_conventions,&
-         x_vprofile,y_vprofile,i_vprofile,j_vprofile,&
+         x_vprofile,y_vprofile,i_vprofile,j_vprofile,Site_vprofile,&
          concenfile,infile,ioutputFormat,LoadConcen,log_step,NextWriteTime,&
          AppendExtAirportFile,WriteInterval,WriteGSD,WriteDepositTS_KML,WriteDepositTS_ASCII,&
          WriteDepositTime_KML,WriteDepositTime_ASCII,WriteDepositFinal_KML,&
@@ -140,19 +140,13 @@
       integer           :: nz_init,nsegments
       integer      ,allocatable,dimension(:) :: nz_plin_segments
       real(kind=ip),allocatable,dimension(:) :: dz_plin_segments
-      integer           :: substr_pos
+      integer           :: substr_pos1
+      integer           :: substr_pos2
       logical           :: IsThere
       !character(len=8)  :: version             =  ' 1.0  '
       logical           :: StopWhenDeposited                       ! If true, StopValue=0.99, else StopValue=1e5.
       logical           :: runAsForecast       = .false.           ! This will be changed if year=0
       real(kind=dp)     :: FC_Offset = 0.0_dp
-
-        ! variables to hold results of date_and_time
-      !character(len=8)  :: date
-      !character(len=10) :: time2
-      !character(len=5)  :: zone
-      !integer           :: values(8)
-      !integer           :: timezone
 
       !! Size matches length of infile (specified in module io_data)
       integer fc_len
@@ -348,7 +342,7 @@
          "Volcano name cannot start with #"
         stop 1
       endif
-      VolcanoName = adjustl(trim(linebuffer080(1:iendstr-1)))
+      VolcanoName = trim(adjustl(linebuffer080(1:iendstr-1)))
       ! Check if the volcano name is a text name or a Smithsonian
       ! database ID
       read(VolcanoName,*)testkey
@@ -1805,7 +1799,7 @@
                "       enabled.  MetReader must also support grib."
               stop 1
 #else
-              MR_windfiles_GRIB_index(i) = adjustl(trim(MR_windfiles(i))) // ".index"
+              MR_windfiles_GRIB_index(i) = trim(adjustl(MR_windfiles(i))) // ".index"
               inquire( file=MR_windfiles_GRIB_index(i), exist=IsThere )
               MR_windfiles_Have_GRIB_index(i) = IsThere
               if(.not.IsThere)then
@@ -2316,6 +2310,7 @@
         allocate(y_vprofile(nvprofiles))
         allocate(i_vprofile(nvprofiles))
         allocate(j_vprofile(nvprofiles))
+        allocate(Site_vprofile(nvprofiles))
         write(global_info,46)
         write(global_log ,46)
 46      format(/,'     vertical profile locations',/, &
@@ -2335,7 +2330,37 @@
             write(global_error,*)'  Offending line:',linebuffer080
             stop 1
           endif
-          read(linebuffer080,*,err=2001) x_vprofile(i), y_vprofile(i)
+
+          read(linebuffer080,*,iostat=ioerr) value1, value2
+          x_vprofile(i) = value1
+          y_vprofile(i) = value2
+          write(Site_vprofile(i),'(a14,1x,i3)')"Vertical Prof ",i
+          ! Assume we can read at least read two values, try for three
+          if (ioerr.eq.0)then
+            read(linebuffer080,*,iostat=ioerr) value1, value2, Site_vprofile(i)
+            if (ioerr.eq.0)then
+              ! HFS do some logic here to check if this is just a comment
+              substr_pos1 = index(linebuffer080,trim(adjustl(Site_vprofile(i))))
+              substr_pos2 = index(linebuffer080,'#')
+              if(substr_pos2.eq.0)then
+                ! comment indicator '#' not found, set end of string to length
+                substr_pos2 = min(len(linebuffer080),substr_pos1+50)
+              endif
+              Site_vprofile(i) = trim(adjustl(linebuffer080(substr_pos1:substr_pos2)))
+              !write(*,*)"Trying to interpret label:",Site_vprofile(i)
+              !Site_vprofile(i) = trim(adjustl(Site_vprofile(i)))
+            endif
+          else
+            write(global_info,*) 'Error in x or y location of a vertical profile.'
+            write(global_info,*) 'Answer should be two real numbers.'
+            write(global_info,*) 'You gave: ',linebuffer080
+            write(global_info,*) 'Program stopped.'
+            write(global_log ,*) 'Error in x or y location of a vertical profile.'
+            write(global_log ,*) 'Answer should be two real numbers.'
+            write(global_log ,*) 'You gave: ',linebuffer080
+            write(global_log ,*) 'Program stopped.'
+            stop 1
+          endif
           call vprofchecker(i)
         enddo
       else
@@ -2413,13 +2438,13 @@
       nmods = 0
       read(10,'(a80)',iostat=ios)linebuffer080
       do while(ios.eq.0)
-        substr_pos = index(linebuffer080,'OPTMOD')
-        if(substr_pos.eq.1)then
+        substr_pos1 = index(linebuffer080,'OPTMOD')
+        if(substr_pos1.eq.1)then
           ! found an optional module
           nmods = nmods + 1
           !  Parse for the keyword
           read(linebuffer080,1104)mod_name
-          OPTMOD_names(nmods) = adjustl(trim(mod_name))
+          OPTMOD_names(nmods) = trim(adjustl(mod_name))
           write(global_info,*)"     Found optional module : ",&
            OPTMOD_names(nmods),nmods
         endif
@@ -2951,39 +2976,17 @@
       write(global_log ,*) 'You gave: ',linebuffer080
       write(global_log ,*) 'Program stopped.'
       stop 1
-2001  write(global_info,*) 'Error in x or y location of a vertical profile.'
-      write(global_info,*) 'Answer should be two real numbers.'
-      write(global_info,*) 'You gave: ',linebuffer080
-      write(global_info,*) 'Program stopped.'
-      write(global_log ,*) 'Error in x or y location of a vertical profile.'
-      write(global_log ,*) 'Answer should be two real numbers.'
-      write(global_log ,*) 'You gave: ',linebuffer080
-      write(global_log ,*) 'Program stopped.'
-      stop 1
+!2001  write(global_info,*) 'Error in x or y location of a vertical profile.'
+!      write(global_info,*) 'Answer should be two real numbers.'
+!      write(global_info,*) 'You gave: ',linebuffer080
+!      write(global_info,*) 'Program stopped.'
+!      write(global_log ,*) 'Error in x or y location of a vertical profile.'
+!      write(global_log ,*) 'Answer should be two real numbers.'
+!      write(global_log ,*) 'You gave: ',linebuffer080
+!      write(global_log ,*) 'Program stopped.'
+!      stop 1
 
       !BLOCK 9: NETCDF ANNOTATIONS
-
-      !BLOCK 10: Land Cover
-!2012  write(global_info,*) 'Error reading whether to use land cover data.'
-!      write(global_info,*) 'Answer must be yes or no.'
-!      write(global_info,*) 'You gave:',linebuffer080
-!      write(global_info,*) 'Program stopped'
-!      write(global_log ,*) 'Error reading whether to use land cover data.'
-!      write(global_log ,*) 'Answer must be yes or no.'
-!      write(global_log ,*) 'You gave:',linebuffer080
-!      write(global_log ,*) 'Program stopped'
-!      stop 1
-
-      !BLOCK 11: Oscar surface volocities
-!2013  write(global_info,*) 'Error reading whether to use Oscar.'
-!      write(global_info,*) 'Answer must be yes or no.'
-!      write(global_info,*) 'You gave:',linebuffer080
-!      write(global_info,*) 'Program stopped'
-!      write(global_log ,*) 'Error reading whether to use Oscar.'
-!      write(global_log ,*) 'Answer must be yes or no.'
-!      write(global_log ,*) 'You gave:',linebuffer080
-!      write(global_log ,*) 'Program stopped'
-!      stop 1
 
 !***********************************************************************
 !     format STATEMENT

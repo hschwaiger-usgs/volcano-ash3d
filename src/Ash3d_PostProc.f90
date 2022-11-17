@@ -8,29 +8,28 @@
          MM_2_IN
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,nsmax,lon_cc_pd,lat_cc_pd
+         nxmax,nymax
 
       use time_data,     only : &
          time,time_native
 
       use io_data,       only : &
          iTimeNext, &
-         concenfile,nWriteTimes,WriteTimes,cdf_b3l1,Write_PT_Data,Write_PR_Data,&
-         iout3d,isFinal_TS,WriteInterval,WriteGSD,WriteDepositTS_KML,WriteDepositTS_ASCII,&
+         concenfile,nWriteTimes,WriteTimes,Write_PT_Data,Write_PR_Data,&
+         iout3d,isFinal_TS,WriteGSD,WriteDepositTS_KML,WriteDepositTS_ASCII,&
          WriteDepositTime_KML,WriteDepositTime_ASCII,WriteDepositFinal_KML,&
          WriteDepositFinal_ASCII,WriteCloudTime_KML,WriteCloudTime_ASCII,WriteReflectivity_ASCII,&
          WriteCloudLoad_KML,WriteReflectivity_KML,WriteCloudLoad_ASCII,WriteCloudHeight_KML,&
          WriteCloudHeight_ASCII,WriteCloudConcentration_KML,WriteCloudConcentration_ASCII,&
          WriteAirportFile_KML,WriteAirportFile_ASCII,Write3dFiles,&
-         nvprofiles,x_vprofile,y_vprofile
+         nvprofiles
 
       use Output_Vars,   only : &
          DepositThickness,DepArrivalTime,CloudArrivalTime,&
-         MaxConcentration,MaxHeight,CloudLoad,dbZCol,MinHeight,Mask_Cloud,Mask_Deposit,&
-         pr_ash
+         MaxConcentration,MaxHeight,CloudLoad,dbZCol,MinHeight,Mask_Cloud
 
-      use Airports,      only : &
-         Airport_Thickness_TS,Airport_Name
+!      use Airports,      only : &
+!         Airport_Thickness_TS !,Airport_Name
 
       use Output_KML
 
@@ -45,7 +44,7 @@
       integer             :: iprod
       integer             :: ivar,TS_Flag,height_flag
       integer             :: itime = -1      ! initialize time step to the last step
-      integer             :: i,j
+      integer             :: i
       real(kind=ip),dimension(:,:),allocatable :: OutVar
       logical      ,dimension(:,:),allocatable :: mask
       real(kind=ip)       :: OutFillValue
@@ -53,8 +52,6 @@
       character(len=6)    :: Fill_Value
       character(len=20)   :: filename_root
       character(len=70)   :: comd
-
-      integer :: pt_indx
 
       ! Initialize all output logicals to false
       Write_PR_Data                 = .false.
@@ -438,8 +435,8 @@
           call Write_2D_KML(ivar,OutVar,height_flag,TS_flag)
           call Close_KML(ivar,TS_flag)
           write(*,*)"Zipping KML file."
-          write(comd,*)"zip ",adjustl(trim(KMZ_filename(ivar))),' ',&
-                              adjustl(trim(KML_filename(ivar)))
+          write(comd,*)"zip ",trim(adjustl(KMZ_filename(ivar))),' ',&
+                              trim(adjustl(KML_filename(ivar)))
           call execute_command_line (comd, exitstat=status)
         elseif(iprod.eq.3.or.iprod.eq.5.or. &  ! Deposit thickness mm (kml versions is TS + final)
                iprod.eq.4.or.iprod.eq.6.or. &  ! Deposit thickness inches (kml versions is TS + final)
@@ -489,12 +486,12 @@
       ! This is the non-KML section
       ! Set some variable parameters for an ASCII output file
       OutFillValue = 0.0_ip
-      if(iprod.eq.3.or.iprod.eq.4)then
+      if(iprod.eq.3.or.iprod.eq.5)then
         OutVar = DepositThickness
         Fill_Value = ' 0.000'
         OutFillValue = 0.0_ip
         filename_root = 'DepositFile_        '
-      elseif(iprod.eq.5.or.iprod.eq.6)then
+      elseif(iprod.eq.4.or.iprod.eq.6)then
         OutVar = DepositThickness*MM_2_IN
         Fill_Value = ' 0.000'
         OutFillValue = 0.0_ip
@@ -546,12 +543,6 @@
          iprod.eq.13.or.&
          iprod.eq.14)then
         mask = Mask_Cloud
-        !do i=1,nxmax
-        !  do j=1,nymax
-        !    if(.not.Mask_Cloud(i,j))&
-        !        OutVar(i,j) = OutFillValue
-        !  enddo
-        !enddo
       endif
 
       ! This is the ASCII section
@@ -581,10 +572,11 @@
           write(global_info,*)"No PNG output for point data output"
         elseif(iprod.eq.16)then
           ! Vertical profile data
-          !do i=1,nvprofiles
-            i = 1
+          do i=1,nvprofiles
+            !call write_2Dprof_PNG_gnuplot(i)
+            !call write_2Dprof_PNG_plplot(i)
             call write_2Dprof_PNG_dislin(i)
-          !enddo
+          enddo
         else
           call write_2Dmap_PNG_dislin(iprod,iout3d,OutVar)
         endif
@@ -598,16 +590,6 @@
         !call write_2D_tecplot
       endif
 
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-       !  Pretend we have the airport data loaded and set up to call the
-       !  different plotting routines.
-
-!      do pt_indx = 1,pt_len
-!        call write_DepPOI_TS_PNG_gnuplot(pt_indx)
-!        call write_DepPOI_TS_PNG_plplot(pt_indx)
-!        call write_DepPOI_TS_PNG_dislin(pt_indx)
-!      enddo
 
       end program Ash3d_PostProc
 

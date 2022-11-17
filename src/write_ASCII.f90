@@ -24,7 +24,7 @@
       use io_units
 
       use io_data,       only : &
-         nvprofiles,x_vprofile, y_vprofile
+         nvprofiles,Site_vprofile,x_vprofile, y_vprofile
 
       use mesh,          only : &
          nzmax,z_cc_pd
@@ -50,8 +50,9 @@
           stop 1
         endif
         open(unit=ionumber,file=cio)
-        write(ionumber,3) x_vprofile(i), y_vprofile(i)
-3       format('Vertical profile data for location',/, &
+        write(ionumber,*)'Vertical profile data for location: ',trim(adjustl(Site_vprofile(i)))
+        write(ionumber,3)x_vprofile(i), y_vprofile(i)
+3       format( &
        'x:',f10.3,/, &
        'y:',f10.3,/, &
        '                          Output is ash concentration in mg/m3',/, &

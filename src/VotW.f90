@@ -253,8 +253,8 @@
       VotWMasterFile = trim(Ash3dHome) // &
                           '/share/VotW_ESP_v12_csv.txt'
       ! Test for existance of the VotW file
-      inquire( file=adjustl(trim(VotWMasterFile)), exist=IsThere )
-      write(global_info,*)"     ",adjustl(trim(VotWMasterFile)),IsThere
+      inquire( file=trim(adjustl(VotWMasterFile)), exist=IsThere )
+      write(global_info,*)"     ",trim(adjustl(VotWMasterFile)),IsThere
       if(.not.IsThere)then
         write(global_error,*)"ERROR: Could not find VotW file."
         write(global_error,*)"       Please copy file to this location:"

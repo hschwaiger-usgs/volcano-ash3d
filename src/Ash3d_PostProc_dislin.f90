@@ -11,11 +11,20 @@
 
       use mesh,          only : &
          nxmax,nymax,x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd, &
-         IsLatLon !,dx,dy,dz_vec_pd,nzmax,nsmax,z_cc_pd
+         IsLatLon
 
       use Output_Vars,   only : &
          DepositThickness,DepArrivalTime,CloudArrivalTime,&
-         MaxConcentration,MaxHeight,CloudLoad,dbZ,MinHeight,Mask_Cloud,Mask_Deposit
+         MaxConcentration,MaxHeight,CloudLoad,dbZ,MinHeight,Mask_Cloud,Mask_Deposit,&
+         Con_DepThick_mm_N,Con_DepThick_mm_Lev,Con_DepThick_mm_RGB, &
+         Con_DepThick_in_N,Con_DepThick_in_Lev,Con_DepThick_in_RGB, &
+         Con_DepTime_N,Con_DepTime_Lev,Con_DepTime_RGB, &
+         Con_CloudCon_N,Con_CloudCon_Lev,Con_CloudCon_RGB, &
+         Con_CloudTop_N,Con_CloudTop_RGB,Con_CloudTop_Lev, &
+         Con_CloudBot_N,Con_CloudBot_RGB,Con_CloudBot_Lev, &
+         Con_CloudLoad_N,Con_CloudLoad_RGB,Con_CloudLoad_Lev, &
+         Con_CloudRef_N,Con_CloudRef_RGB,Con_CloudRef_Lev, &
+         Con_CloudTime_N,Con_CloudTime_RGB,Con_CloudTime_Lev
 
       use io_data,       only : &
          nWriteTimes,WriteTimes,cdf_b3l1,VolcanoName
@@ -34,7 +43,7 @@
       integer :: itime
       real(kind=ip) :: OutVar(nxmax,nymax)
 
-      integer :: i
+      integer :: i,j
 
       ! dislin stuff
       ! https://www.dislin.de/
@@ -42,29 +51,35 @@
       character(len=40) :: outfile_name
       character (len=9) :: cio
       character (len=4) :: outfile_ext = '.png'
-      INTEGER, PARAMETER :: N=3
+      INTEGER, PARAMETER :: Ncities=3
+      INTEGER, PARAMETER :: N=100
       INTEGER, PARAMETER :: MAXPTS=1000
       INTEGER, PARAMETER :: MAXCRV=10
-      REAL(kind=4), DIMENSION (N) :: &
+      REAL(kind=4), DIMENSION (Ncities) :: &
          XC = (/-122.3167_4,-122.6417_4,-122.96310_4/), &
          YC = (/  47.5886_4,  45.4421_4,  49.2743_4/)
-      CHARACTER (LEN=12), DIMENSION (N) :: &
+      CHARACTER (LEN=12), DIMENSION (Ncities) :: &
          CSTR = (/'Seattle     ', 'Portland    ', 'Vancouver   '/)
       CHARACTER(len=80) :: CBUF
       integer :: NMAXLN
       character(len=7) :: zlevlab
       real(kind=4) :: XPTS(MAXPTS),YPTS(MAXPTS)
       INTEGER :: IRAY(MAXCRV)
-      INTEGER :: NXP,NYP,NCLR,NCURVS
+      INTEGER :: NXP,NYP,nclr,NCURVS
+
       REAL(kind=4)    :: XP,YP
       real(kind=4) :: xminDIS, xmaxDIS, yminDIS, ymaxDIS
       real(kind=4) :: dx_map, dy_map, xgrid_1, ygrid_1
-      real(kind=4), dimension(11) :: depthic_zlev = &
-         (/0.01_4, 0.03_4, 0.1_4, 0.3_4, 1.0_4, 3.0_4, &
-           10.0_4, 30.0_4, 100.0_4, 300.0_4, 1000.0_4/)
+      ! Hot colormap RGB's and breakpoints
+      real(kind=4), dimension(4) :: cpt_break_hot = (/ 0.0_4, 0.38_4, 0.76_4, 1.0_4 /)
+      real(kind=4), dimension(4) :: cpt_r_hot     = (/ 0.0_4, 1.0_4, 1.0_4, 1.0_4 /)
+      real(kind=4), dimension(4) :: cpt_g_hot     = (/ 0.0_4, 0.0_4, 1.0_4, 1.0_4 /)
+      real(kind=4), dimension(4) :: cpt_b_hot     = (/ 0.0_4, 0.0_4, 0.0_4, 0.9_4 /) ! hot actually ends in 1.0
+      real(kind=4) :: i_flt,idel,cdel,xr,xg,xb
 
       integer :: nzlev
-      real(kind=4), dimension(:),allocatable :: zlev 
+      real(kind=4), dimension(:)  ,allocatable :: zlev 
+      integer     , dimension(:,:),allocatable :: zrgb
 
       character(len=40) :: title_plot
       character(len=15) :: title_legend
@@ -75,10 +90,11 @@
       character(len=40) :: cstr_ErStartT
       character(len=27) :: cstr_ErHeight
       character(len=30) :: cstr_ErDuratn
-      character(len=38) :: cstr_ErVomune
+      character(len=38) :: cstr_ErVolume
       character(len=45) :: cstr_note
       integer :: y_footer
       integer :: ioerr,iw,iwf
+      logical :: UseShadedContours
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
@@ -88,7 +104,11 @@
         end function HS_xmltime
       END INTERFACE
 
-      if(iprod.eq.3)then
+      ! logical switch to change from contour lines to shaded contours
+      UseShadedContours = .false.
+      !UseShadedContours = .true.
+
+      if(iprod.eq.5.or.iprod.eq.6)then
         cio='____final'
       else
         if (WriteTimes(itime).lt.10.0_ip) then
@@ -103,62 +123,126 @@
         endif
       endif
 
-      if(iprod.eq.3)then       ! deposit at final time
-        write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
-        title_plot = 'Final Deposit Thickness'
-        title_legend = 'Dep.Thick.(mm)'
-        nzlev = 11
-        allocate(zlev(nzlev))
-        zlev = (/0.01_4, 0.03_4, 0.1_4, 0.3_4, 1.0_4, 3.0_4, &
-                10.0_4, 30.0_4, 100.0_4, 300.0_4, 1000.0_4/)
-      elseif(iprod.eq.4)then   ! deposit at specified times
+      if(iprod.eq.3)then       ! deposit at specified times (mm)
         write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
         title_legend = 'Dep.Thick.(mm)'
-        nzlev = 11
+        nzlev = Con_DepThick_mm_N
         allocate(zlev(nzlev))
-        zlev = (/0.01_4, 0.03_4, 0.1_4, 0.3_4, 1.0_4, 3.0_4, &
-                10.0_4, 30.0_4, 100.0_4, 300.0_4, 1000.0_4/)
-      elseif(iprod.eq.5)then   ! ash-cloud concentration
+        allocate(zrgb(nzlev,3))
+        zlev(1:nzlev) = real(Con_DepThick_mm_Lev(1:nzlev),kind=4)
+        zrgb(1:nzlev,1:3) = Con_DepThick_mm_RGB(1:nzlev,1:3)
+      elseif(iprod.eq.4)then   ! deposit at specified times (inches)
+        write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
+        write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
+        title_legend = 'Dep.Thick.(inches)'
+        nzlev = Con_DepThick_in_N
+        allocate(zlev(nzlev))
+        allocate(zrgb(nzlev,3))
+        zlev(1:nzlev) = real(Con_DepThick_in_Lev(1:nzlev),kind=4)
+        zrgb(1:nzlev,1:3) = Con_DepThick_in_RGB(1:nzlev,1:3)
+      elseif(iprod.eq.5)then       ! deposit at final time (mm)
+        write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
+        title_plot = 'Final Deposit Thickness'
+        title_legend = 'Dep.Thick.(mm)'
+        nzlev = Con_DepThick_mm_N
+        allocate(zlev(nzlev))
+        allocate(zrgb(nzlev,3))
+        zlev(1:nzlev) = real(Con_DepThick_mm_Lev(1:nzlev),kind=4)
+        zrgb(1:nzlev,1:3) = Con_DepThick_mm_RGB(1:nzlev,1:3)
+      elseif(iprod.eq.6)then   ! deposit at final time (inches)
+        write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
+        title_plot = 'Final Deposit Thickness'
+        title_legend = 'Dep.Thick.(inches)'
+        nzlev = Con_DepThick_in_N
+        allocate(zlev(nzlev))
+        allocate(zrgb(nzlev,3))
+        zlev(1:nzlev) = real(Con_DepThick_in_Lev(1:nzlev),kind=4)
+        zrgb(1:nzlev,1:3) = Con_DepThick_in_RGB(1:nzlev,1:3)
+      elseif(iprod.eq.7)then   ! ashfall arrival time (hours)
+        write(outfile_name,'(a22)')'DepositArrivalTime.png'
+        write(title_plot,'(a20)')'Ashfall arrival time'
+        title_legend = 'Time (hours)'
+        nzlev = Con_DepTime_N
+        allocate(zlev(nzlev))
+        allocate(zrgb(nzlev,3))
+        zlev(1:nzlev) = real(Con_DepTime_Lev(1:nzlev),kind=4)
+        zrgb(1:nzlev,1:3) = Con_DepTime_RGB(1:nzlev,1:3)
+      elseif(iprod.eq.8)then   ! ashfall arrival at airports/POI (mm)
+        write(*,*)"ERROR: No map PNG output option for airport arrival time data."
+        write(*,*)"       Should not be in write_2Dmap_PNG_dislin"
+        stop 1
+      elseif(iprod.eq.9)then   ! ash-cloud concentration
         write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
         write(title_plot,'(a26,f5.2,a6)')'Ash-cloud concentration t=',WriteTimes(itime),' hours'
         title_legend = 'Max.Con.(mg/m3)'
-        nzlev = 8
-        allocate(zlev(nzlev))
-        zlev = (/0.1_4, 0.3_4, 1.0_4, 3.0_4, &
-                10.0_4, 30.0_4, 100.0_4, 300.0_4/)
-      elseif(iprod.eq.6)then   ! ash-cloud height
+        nzlev = Con_CloudCon_N
+        allocate(zlev(nzlev))  
+        allocate(zrgb(nzlev,3))
+        zlev(1:nzlev) = real(Con_CloudCon_Lev(1:nzlev),kind=4)
+        zrgb(1:nzlev,1:3) = Con_CloudCon_RGB(1:nzlev,1:3)
+      elseif(iprod.eq.10)then   ! ash-cloud height
         write(outfile_name,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud height t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Height(km)'
-        nzlev = 9
+        nzlev = Con_CloudTop_N
         allocate(zlev(nzlev))
-        zlev = (/0.24_4, 3.0_4, 6.0_4, 10.0_4, 13.0_4, 16.0_4, &
-                20.0_4, 25.0_4, 30.0_4/)
-      elseif(iprod.eq.7)then   ! ash-cloud bottom
+        allocate(zrgb(nzlev,3))
+        zlev(1:nzlev) = real(Con_CloudTop_Lev(1:nzlev),kind=4)
+        zrgb(1:nzlev,1:3) = Con_CloudTop_RGB(1:nzlev,1:3)
+      elseif(iprod.eq.11)then   ! ash-cloud bottom
         write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud bottom t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Bot.(km)'
-        nzlev = 9
+        nzlev = Con_CloudBot_N
         allocate(zlev(nzlev))
-        zlev = (/0.24_4, 3.0_4, 6.0_4, 10.0_4, 13.0_4, 16.0_4, &
-                20.0_4, 25.0_4, 30.0_4/)
-      elseif(iprod.eq.8)then   ! ash-cloud load
+        allocate(zrgb(nzlev,3))
+        zlev(1:nzlev) = real(Con_CloudBot_Lev(1:nzlev),kind=4)
+        zrgb(1:nzlev,1:3) = Con_CloudBot_RGB(1:nzlev,1:3)
+      elseif(iprod.eq.12)then   ! ash-cloud load
         write(outfile_name,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
         write(title_plot,'(a17,f5.2,a6)')'Ash-cloud load t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Load(T/km2)'
-        nzlev = 9
+        nzlev = Con_CloudLoad_N
         allocate(zlev(nzlev))
-        zlev = (/0.2_4, 1.0_4, 2.0_4, 5.0_4, 10.0_4, 30.0_4, &
-                100.0_4, 300.0_4, 1000.0_4/)
-      elseif(iprod.eq.12)then  ! radar reflectivity
+        allocate(zrgb(nzlev,3))
+        zlev(1:nzlev) = real(Con_CloudLoad_Lev(1:nzlev),kind=4)
+        zrgb(1:nzlev,1:3) = Con_CloudLoad_RGB(1:nzlev,1:3)
+      elseif(iprod.eq.13)then  ! radar reflectivity
         write(outfile_name,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
         write(title_plot,'(a24,f5.2,a6)')'Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Refl.(dBz)'
-        nzlev = 9
+        nzlev = Con_CloudRef_N
         allocate(zlev(nzlev))
-        zlev = (/-20._4, -10.0_4, 0.0_4, 10.0_4, 20.0_4, 30.0_4, &
-                40.0_4, 50.0_4, 60.0_4/)
+        allocate(zrgb(nzlev,3))
+        zlev(1:nzlev) = real(Con_CloudRef_Lev(1:nzlev),kind=4)
+        zrgb(1:nzlev,1:3) = Con_CloudRef_RGB(1:nzlev,1:3)
+      elseif(iprod.eq.14)then   ! ashcloud arrival time (hours)
+        write(outfile_name,'(a20)')'CloudArrivalTime.png'
+        write(title_plot,'(a22)')'Ash-cloud arrival time'
+        title_legend = 'Time (hours)'
+        nzlev = Con_CloudTime_N
+        allocate(zlev(nzlev))
+        allocate(zrgb(nzlev,3))
+        zlev(1:nzlev) = real(Con_CloudTime_Lev(1:nzlev),kind=4)
+        zrgb(1:nzlev,1:3) = Con_CloudTime_RGB(1:nzlev,1:3)
+      elseif(iprod.eq.15)then   ! topography
+        write(outfile_name,'(a14)')'Topography.png'
+        write(title_plot,'(a10)')'Topography'
+        title_legend = 'Elevation (km)'
+
+
+
+        nzlev = 8
+        zlev = (/0.1_4, 0.3_4, 1.0_4, 3.0_4, &
+                10.0_4, 30.0_4, 100.0_4, 300.0_4/)
+      elseif(iprod.eq.16)then   ! profile plots
+        write(*,*)"ERROR: No map PNG output option for vertical profile data."
+        write(*,*)"       Should not be in write_2Dmap_PNG_dislin"
+        stop 1
+      else
+        write(*,*)"ERROR: unexpected variable"
+        stop 1
       endif
 
       ! Now map plots
@@ -176,18 +260,43 @@
       !  Dislin Level 0:  before initialization or after termination
       call metafl(CFMT)   ! set output driver/file-format (PNG); this is a 4-char string
       call setpag('USAL') ! Set pagesize to US A Landscape (2790 x 2160)
-      call setfil(adjustl(trim(outfile_name))) ! Set output filename
-      !call setvlt('SPEC')
+      call setfil(trim(adjustl(outfile_name))) ! Set output filename
       call scrmod('REVERSE')  ! Default background is black; reverse to white
 
       !  Dislin Level 1:  after initialization or a call to ENDGRF
       call disini()       ! initialize plot (set to level 1)
+
+
+        ! Set the color table
+      !call setvlt('SPEC')
+      call setvlt('RAIN')
+      !call setvlt('GREY')
+      !call setvlt('TEMP')
+      !call vltfil('defcoltab.cpt','SAVE')
+      !   or use setind to write our own color table (reverse-hot in this case)
+!      do i=255,1,-1
+!        i_flt = real(i,kind=4)/real(255,kind=4)
+!        do j=2,4
+!          if(i_flt.le.cpt_break_hot(j))then
+!            idel = cpt_break_hot(j)-cpt_break_hot(j-1)
+!            cdel =     cpt_r_hot(j)-    cpt_r_hot(j-1)
+!            xr   =     cpt_r_hot(j-1) + (i_flt-cpt_break_hot(j-1))*(cdel/idel)
+!            cdel =     cpt_g_hot(j)-    cpt_g_hot(j-1)
+!            xg   =     cpt_g_hot(j-1) + (i_flt-cpt_break_hot(j-1))*(cdel/idel)
+!            cdel =     cpt_b_hot(j)-    cpt_b_hot(j-1)
+!            xb   =     cpt_b_hot(j-1) + (i_flt-cpt_break_hot(j-1))*(cdel/idel)
+!            exit
+!          endif
+!        enddo
+!        call setind(256-i,xr,xg,xb)
+!      enddo
+
       call paghdr('Ash3d Simulation plotted on ','---',4,0)
       y_footer = 1900
       call filbox(2250,y_footer,130,49)
       call incfil('/opt/USGS/Ash3d/share/post_proc/USGSvid.png')
         ! setting of plot parameters
-      call pagera()       ! plot a border around the page
+      !call pagera()       ! plot a border around the page
       call triplx()  ! set font to triple stroke
       call axspos(500,1650)  ! determine the position of the axis system
       call axslen(2200,1400) ! defines the size of the axis system
@@ -198,7 +307,7 @@
       call titlin(title_plot,4)  ! Set the title
       call incmrk(-1) ! selects line or symbol mode for CURVE
 
-      !CALL LABELS('MAP','xy')
+      !call LABELS('MAP','xy')
       !call projct('STER') ! defines projection
       call projct('LAMB') ! defines projection
       !call projct('MERC') ! defines projection
@@ -213,24 +322,48 @@
       call world()
 
       ! Add cities
-      CALL CURVMP(XC,YC,N)
-      DO I=1,N
+      call curvmp(XC,YC,Ncities)
+      DO I=1,Ncities
       !    These are the points
-        CALL POS2PT(XC(I),YC(I),XP,YP)
+        call pos2pt(XC(I),YC(I),XP,YP)
       !    These are the city lables, offset in x
         NXP=NINT(XP+30)
         NYP=NINT(YP)
-        CALL MESSAG(CSTR(I),NXP,NYP)
+        call messag(CSTR(I),NXP,NYP)
       END DO
 
-     !call myvlt(xr,xg,xb,nrgb)
-     call shdmod('UPPER', 'CELL') ! This suppresses colors in regions above/below the zlevels pro
-     call conshd(real(lon_cc_pd,kind=4),nxmax,&
-                 real(lat_cc_pd,kind=4),nymax,&
-                 real(OutVar,kind=4),zlev,nzlev)
+      if(UseShadedContours)then
+        !call myvlt(xr,xg,xb,nrgb)
+        call shdmod('UPPER', 'CELL') ! This suppresses colors in regions above/below the zlevels pro
+        call conshd(real(lon_cc_pd,kind=4),nxmax,&
+                    real(lat_cc_pd,kind=4),nymax,&
+                    real(OutVar,kind=4),zlev,nzlev)
+      else
+        do i=1,nzlev
+          xr   = real(zrgb(i,1),kind=4)/real(255,kind=4)
+          xg   = real(zrgb(i,2),kind=4)/real(255,kind=4)
+          xb   = real(zrgb(i,3),kind=4)/real(255,kind=4)
+          nclr = intrgb(xr,xg,xb)
+          write(*,*)"writing contour: ",i,zrgb(i,:),zlev(i),nclr
+
+          call setclr(nclr)
+          call contur(real(lon_cc_pd,kind=4),nxmax,&
+                      real(lat_cc_pd,kind=4),nymax,&
+                      real(OutVar,kind=4),zlev(i))
+
+          ! This part calculated the contours
+          !XPTS(:) = 0.0_4
+          !YPTS(:) = 0.0_4
+          !IRAY(:) = 0
+          !call conpts(real(lon_cc_pd,kind=4),nxmax,&
+          !            real(lat_cc_pd,kind=4),nymax,&
+          !            real(OutVar,kind=4),zlev(i), &
+          !            XPTS, YPTS, MAXPTS, IRAY, MAXCRV, NCURVS)
+        enddo
+      endif
 
        ! set color of grid lines
-!      call setrgb(0.5_4, 0.5_4, 0.5_4)
+      call setrgb(0.0_4, 0.0_4, 0.0_4)
        ! overlays an axis system with a longitude and latitude grid
       call gridmp(1,1)
       call height(50) ! Set character height for title
@@ -252,7 +385,7 @@
       enddo
       call legend(cbuf,6)  ! write buffer to legend and give position (6=LR)
 
-      ! Add box below plot with run info
+      ! Add boxes below plot with run info
       ! Volcano:     Erup.start:
       ! Run date:    Plm Height:
       ! Windfile:    Duration:
@@ -267,7 +400,7 @@
       write(cstr_ErStartT,'(a20,a20)')'Erup. Start Time:   ',HS_xmltime(e_StartTime(1),BaseYear,useLeap)
       write(cstr_ErHeight,'(a20,f4.1,a3)')'Erup. Plume Height: ',e_PlumeHeight(1),' km'
       write(cstr_ErDuratn,'(a20,f4.1,a6)')'Erup. Duration:     ',e_Duration(1),' hours'
-      write(cstr_ErVomune,'(a20,f8.5,a10)')'Erup. Volume:       ',e_Volume(1),' km3 (DRE)'
+      write(cstr_ErVolume,'(a20,f8.5,a10)')'Erup. Volume:       ',e_Volume(1),' km3 (DRE)'
 
       call messag(cstr_volcname,400 ,y_footer)
       call messag(cstr_run_date,400 ,y_footer+40)
@@ -279,7 +412,7 @@
       call messag(cstr_ErStartT,1200,y_footer)
       call messag(cstr_ErHeight,1200,y_footer+40)
       call messag(cstr_ErDuratn,1200,y_footer+80)
-      call messag(cstr_ErVomune,1200,y_footer+120)
+      call messag(cstr_ErVolume,1200,y_footer+120)
 
       !  Dislin Level 0:  before initialization or after termination
       call disfin()
@@ -292,20 +425,21 @@
 !
 !##############################################################################
 
-      subroutine write_2Dprof_PNG_dislin(iv)
+      subroutine write_2Dprof_PNG_dislin(vprof_ID)
 
       use precis_param
 
       use mesh,          only : &
-         nxmax,nymax,x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd, &
-         IsLatLon !,dx,dy,dz_vec_pd,nzmax,nsmax,z_cc_pd
+         nzmax,z_cc_pd
 
       use Output_Vars,   only : &
-         DepositThickness,DepArrivalTime,CloudArrivalTime,&
-         MaxConcentration,MaxHeight,CloudLoad,dbZ,MinHeight,Mask_Cloud,Mask_Deposit
+         pr_ash
+
+      use time_data,     only : &
+         ntmax,time_native
 
       use io_data,       only : &
-         nWriteTimes,WriteTimes,cdf_b3l1,VolcanoName
+         Site_vprofile,x_vprofile,y_vprofile,cdf_b3l1,VolcanoName
 
       use Source,        only : &
          neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
@@ -317,9 +451,199 @@
 
       implicit none
 
-      pr_x
-      pr_y
-      pr_ash
+      integer, intent (in) :: vprof_ID
+
+      character(len=14) :: dp_pngfile
+      character(len=26) :: coord_str
+      character(len=76) :: title_str
+      character(len=80) :: outstring
+      integer :: k,i
+      integer :: ioerr,iw,iwf
+
+      real(kind=4) :: tmin
+      real(kind=4) :: tmax
+      real(kind=4) :: tlab1
+      real(kind=4) :: tlabstep
+      real(kind=4) :: zmin
+      real(kind=4) :: zmax
+      real(kind=4) :: zlab1
+      real(kind=4) :: zlabstep
+      real(kind=4) :: cmin
+      real(kind=4) :: cmax
+      real(kind=4) :: clab1
+      real(kind=4) :: clabstep
+      real(kind=4), dimension(:),   allocatable :: t, z
+      real(kind=4), dimension(:,:), allocatable :: conc
+
+      ! dislin stuff
+      ! https://www.dislin.de/
+      CHARACTER (LEN=4) :: CFMT = "PNG "
+      character(len=30) :: cstr_volcname
+      character(len=30) :: cstr_run_date
+      character(len=30) :: cstr_windfile
+      character(len=40) :: cstr_ErStartT
+      character(len=27) :: cstr_ErHeight
+      character(len=30) :: cstr_ErDuratn
+      character(len=38) :: cstr_ErVolume
+      character(len=45) :: cstr_note
+      integer :: y_footer
+
+      INTERFACE
+        character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
+          real(kind=8)              :: HoursSince
+          integer                   :: byear
+          logical                   :: useLeaps
+        end function HS_xmltime
+      END INTERFACE
+
+      write(dp_pngfile,54) vprof_ID,".png"
+ 54   format('dslin_',i4.4,a4)
+
+      ! Get min/max and label interval for all three axies.
+      tmin=real(0,kind=4)
+      tmax=real(ceiling(time_native(ntmax)),kind=4)
+      tlab1    = 0.0_4
+      if(tmax.gt.240.0_4)then
+        tlabstep = 48.0_4
+      elseif(tmax.gt.120.0_4)then
+        tlabstep = 24.0_4
+      elseif(tmax.gt.30.0_4)then
+        tlabstep = 10.0_4
+      elseif(tmax.gt.15.0_4)then
+        tlabstep = 5.0_4
+      elseif(tmax.gt.6.0_4)then
+        tlabstep = 2.0_4
+      else
+        tlabstep = 1.0_4
+      endif
+
+      zmin=real(0,kind=4)
+      zmax=real(z_cc_pd(nzmax),kind=4)
+      zlab1    = 0.0_4
+      if(zmax.gt.30.0_4)then
+        zlabstep = 10.0_4
+      elseif(zmax.gt.15.0_4)then
+        zlabstep = 5.0_4
+      elseif(zmax.gt.6.0_4)then
+        zlabstep = 2.0_4
+      else
+        zlabstep = 1.0_4
+      endif
+
+      cmin=real(0,kind=4)
+      cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=4)
+      if    (cmax.gt.4.0e4_4)then
+          clabstep = 5.0e3_4
+      elseif(cmax.gt.1.0e4_4)then
+          clabstep = 2.0e3_4
+      elseif(cmax.gt.4.0e3_4)then
+          clabstep = 5.0e2_4
+      elseif(cmax.gt.1.0e3_4)then
+          clabstep = 2.0e2_4
+      elseif(cmax.gt.4.0e2_4)then
+          clabstep = 5.0e1_4
+      elseif(cmax.gt.1.0e2_4)then
+          clabstep = 2.0e1_4
+      elseif(cmax.gt.4.0e1_4)then
+          clabstep = 5.0e0_4
+      elseif(cmax.gt.1.0e1_4)then
+          clabstep = 2.0e0_4
+      else
+          clabstep = 1.0e-1_4
+      endif
+      clab1    = clabstep
+
+      allocate(t(ntmax))
+      allocate(z(nzmax))
+      allocate(conc(ntmax,nzmax))
+      t = real(time_native(1:ntmax),kind=4)
+      z = real(z_cc_pd(1:nzmax),kind=4)
+      do i=1,ntmax
+        do k=1,nzmax
+          conc(i,k) = real(pr_ash(k,i,vprof_ID),kind=4)
+        enddo
+      enddo
+
+      write(coord_str,101)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
+ 101  format(' (lon=',f7.2,', lat=',f6.2,')')
+      write(title_str,*)trim(adjustl(Site_vprofile(vprof_ID))),coord_str
+
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      ! DISLIN block
+      ! https://www.dislin.de/
+      ! wget
+      ! https://ftp.gwdg.de/pub/grafik/dislin/linux/i586_64/dislin-11.4.linux.i586_64.tar.gz
+!     (1)    setting of page format, file format and filename
+!     (2)    initialization
+!     (3)    setting of plot parameters
+!     (4)    plotting of the axis system
+!     (5)    plotting the title
+!     (6)    plotting data points
+!     (7)    termination.
+
+      !  Dislin Level 0:  before initialization or after termination
+      call metafl(CFMT)   ! set output driver/file-format (PNG); this is a 4-char string
+      call setpag('USAL') ! Set pagesize to US A Landscape (2790 x 2160)
+      call setfil(trim(adjustl(dp_pngfile))) ! Set output filename
+      call scrmod('REVERSE')  ! Default background is black; reverse to white
+
+      !  Dislin Level 1:  after initialization or a call to ENDGRF
+      call disini()       ! initialize plot (set to level 1)
+      y_footer = 1900
+      call filbox(2250,y_footer,130,49)
+      call incfil('/opt/USGS/Ash3d/share/post_proc/USGSvid.png')
+
+        ! setting of plot parameters
+      !call pagera()       ! plot a border around the page
+
+      call helves()
+
+      call titlin(title_str,2)
+
+      call name('Time (hours after eruption)','X')
+      call name('Height (km)','Y')
+      call name('Ash conc. mg/m3','Z')
+      call rvynam() ! reverse the axis labels
+
+      call intax() ! With the routine INTAX, all axes will be labeled with integers.
+      call autres(ntmax,nzmax) !The size of coloured rectangles will be automatically calculated by GRAF3 or CRVMAT
+      call axspos(500,1650)  ! determine the position of the axis system
+      call ax3len(1800,1200,1200) ! defines the size of the axis system : NXL, NYL, NZL
+
+      call graf3(tmin,tmax,tlab1,tlabstep,& !plots a 3-D axis system where the Z-axis
+                 zmin,zmax,zlab1,zlabstep,& ! is plotted as a colour bar.
+                 cmin,cmax,clab1,clabstep)
+      call crvmat(conc,ntmax,nzmax,1,1) ! Interpolated data onto grid with spec. interp. points
+
+      call height(50) ! Set character height for title
+      call title() ! Actually write the title to the file
+
+      call height(30) ! Reset character height to something smaller
+      write(cstr_volcname,'(a10,a20)')'Volcano:  ' ,VolcanoName
+      write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
+      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
+      write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
+
+      !e_StartTime,e_PlumeHeight,e_Duration,e_Volume
+      write(cstr_ErStartT,'(a20,a20)')'Erup. Start Time:   ',HS_xmltime(e_StartTime(1),BaseYear,useLeap)
+      write(cstr_ErHeight,'(a20,f4.1,a3)')'Erup. Plume Height: ',e_PlumeHeight(1),' km'
+      write(cstr_ErDuratn,'(a20,f4.1,a6)')'Erup. Duration:     ',e_Duration(1),' hours'
+      write(cstr_ErVolume,'(a20,f8.5,a10)')'Erup. Volume:       ',e_Volume(1),' km3 (DRE)'
+
+      call messag(cstr_volcname,400 ,y_footer)
+      call messag(cstr_run_date,400 ,y_footer+40)
+      call messag(cstr_windfile,400 ,y_footer+80)
+      if(neruptions.gt.1)then
+        write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'
+      call messag(cstr_note,400 ,y_footer+120)
+      endif
+      call messag(cstr_ErStartT,1200,y_footer)
+      call messag(cstr_ErHeight,1200,y_footer+40)
+      call messag(cstr_ErDuratn,1200,y_footer+80)
+      call messag(cstr_ErVolume,1200,y_footer+120)
+
+      !  Dislin Level 0:  before initialization or after termination
+      call disfin()
 
       end subroutine write_2Dprof_PNG_dislin
 
@@ -349,7 +673,7 @@
 
       integer :: pt_indx,i
 
-      real(kind=8) :: ymaxpl
+      real(kind=4) :: ymaxpl
       character(len=14) :: dp_pngfile
       character(len=25) :: gnucom
       integer,save      :: plot_index = 0
@@ -375,16 +699,16 @@
       write(dp_pngfile,55) plot_index,".png"
  55   format('dslin_',i4.4,a4)
 
-      if(Airport_Thickness_TS(plot_index,nWriteTimes).lt.0.01)then
-        ymaxpl = 1.0
-      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.1.0)then
-        ymaxpl = 1.0
-      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.5.0)then
-        ymaxpl = 5.0
-      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.25.0)then
-        ymaxpl = 25.0
+      if(Airport_Thickness_TS(plot_index,nWriteTimes).lt.0.01_4)then
+        ymaxpl = 1.0_4
+      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.1.0_4)then
+        ymaxpl = 1.0_4
+      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.5.0_4)then
+        ymaxpl = 5.0_4
+      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.25.0_4)then
+        ymaxpl = 25.0_4
       else
-        ymaxpl = 100.0
+        ymaxpl = 100.0_4
       endif
 
       xmin=0.0_4
@@ -413,7 +737,7 @@
       !  Dislin Level 0:  before initialization or after termination
       call metafl(CFMT)   ! set output driver/file-format (PNG); this is a 4-char string
       call setpag('USAL') ! Set pagesize to US A Landscape (2790 x 2160)
-      call setfil(adjustl(trim(dp_pngfile))) ! Set output filename
+      call setfil(trim(adjustl(dp_pngfile))) ! Set output filename
       call scrmod('REVERSE')  ! Default background is black; reverse to white
 
       !  Dislin Level 1:  after initialization or a call to ENDGRF

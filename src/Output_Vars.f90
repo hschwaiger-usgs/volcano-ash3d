@@ -85,6 +85,35 @@
       real(kind=ip) :: CloudLoadArea(5)         ! Corresponding areas where ash cloud exceeds LoadVal(i)
       real(kind=ip) :: DepositAreaCovered       ! area covered by ash deposit
 
+      ! Contour colors and levels
+      integer,parameter                          :: Con_DepThick_mm_N   = 10
+      integer,dimension(Con_DepThick_mm_N,3)     :: Con_DepThick_mm_RGB
+      real(kind=ip),dimension(Con_DepThick_mm_N) :: Con_DepThick_mm_Lev
+      integer,parameter                          :: Con_DepThick_in_N   = 5
+      integer,dimension(Con_DepThick_in_N,3)     :: Con_DepThick_in_RGB
+      real(kind=ip),dimension(Con_DepThick_in_N) :: Con_DepThick_in_Lev
+      integer,parameter                          :: Con_DepTime_N   = 9
+      integer,dimension(Con_DepTime_N,3)         :: Con_DepTime_RGB
+      real(kind=ip),dimension(Con_DepTime_N)     :: Con_DepTime_Lev
+      integer,parameter                          :: Con_CloudCon_N   = 9
+      integer,dimension(Con_CloudCon_N,3)        :: Con_CloudCon_RGB
+      real(kind=ip),dimension(Con_CloudCon_N)    :: Con_CloudCon_Lev
+      integer,parameter                          :: Con_CloudTop_N   = 9
+      integer,dimension(Con_CloudTop_N,3)        :: Con_CloudTop_RGB
+      real(kind=ip),dimension(Con_CloudTop_N)    :: Con_CloudTop_Lev
+      integer,parameter                          :: Con_CloudBot_N   = 9
+      integer,dimension(Con_CloudBot_N,3)        :: Con_CloudBot_RGB
+      real(kind=ip),dimension(Con_CloudBot_N)    :: Con_CloudBot_Lev
+      integer,parameter                          :: Con_CloudLoad_N   = 9
+      integer,dimension(Con_CloudLoad_N,3)       :: Con_CloudLoad_RGB
+      real(kind=ip),dimension(Con_CloudLoad_N)   :: Con_CloudLoad_Lev
+      integer,parameter                          :: Con_CloudRef_N   = 9
+      integer,dimension(Con_CloudRef_N,3)        :: Con_CloudRef_RGB
+      real(kind=ip),dimension(Con_CloudRef_N)    :: Con_CloudRef_Lev
+      integer,parameter                          :: Con_CloudTime_N   = 9
+      integer,dimension(Con_CloudTime_N,3)       :: Con_CloudTime_RGB
+      real(kind=ip),dimension(Con_CloudTime_N)   :: Con_CloudTime_Lev
+
 #ifdef USEPOINTERS
         ! 2-D variables (in x,y)
       logical, dimension(:,:),pointer :: Mask_Cloud
@@ -349,6 +378,107 @@
 
 !******************************************************************************
 
+      subroutine Set_OutVar_ContourLevel
+
+      implicit none
+
+      ! Set contour levels and colors
+      !  Deposit Thickness (mm)
+      ! Recall that Con_DepThick_mm_N   = 10
+      Con_DepThick_mm_Lev = (/0.01_ip, 0.03_ip, 0.1_ip, 0.3_ip, 1.0_ip, &
+                             3.0_ip, 10.0_ip, 30.0_ip, 100.0_ip, 300.0_ip /)
+      Con_DepThick_mm_RGB( 1,1:3) = (/ 214,222,105 /)
+      Con_DepThick_mm_RGB( 2,1:3) = (/ 249,167,113 /)
+      Con_DepThick_mm_RGB( 3,1:3) = (/ 128,  0,128 /)
+      Con_DepThick_mm_RGB( 4,1:3) = (/   0,  0,255 /)
+      Con_DepThick_mm_RGB( 5,1:3) = (/   0,128,255 /)
+      Con_DepThick_mm_RGB( 6,1:3) = (/   0,255,128 /)
+      Con_DepThick_mm_RGB( 7,1:3) = (/ 195,195,  0 /)
+      Con_DepThick_mm_RGB( 8,1:3) = (/ 255,128,  0 /)
+      Con_DepThick_mm_RGB( 9,1:3) = (/ 255,  0,  0 /)
+      Con_DepThick_mm_RGB(10,1:3) = (/ 128,  0,  0 /)
+
+      !  Deposit Thickness (in)
+      ! Recall that Con_DepThick_in_N   = 5
+      Con_DepThick_in_Lev = (/0.1_ip, 0.8_ip, 6.0_ip, 25.0_ip, 100.0_ip /)
+      Con_DepThick_in_RGB( 1,1:3) = (/ 255,  0,  0 /)
+      Con_DepThick_in_RGB( 2,1:3) = (/   0,  0,255 /)
+      Con_DepThick_in_RGB( 3,1:3) = (/   0,183,255 /)
+      Con_DepThick_in_RGB( 4,1:3) = (/ 255,  0,255 /)
+      Con_DepThick_in_RGB( 5,1:3) = (/   0, 51, 51 /)
+
+      !  Deposit (ashfall) arrival time (hours)
+      ! Recall that Con_DepTime_N   = 9
+      Con_DepTime_Lev = (/0.0_ip, 3.0_ip, 6.0_ip, 9.0_ip, 12.0_ip, 15.0_ip, &
+                         18.0_ip, 24.0_ip, 36.0_ip  /)
+      Con_DepTime_RGB( 1,1:3) = (/ 255,  0,  0 /)  ! ff0000
+      Con_DepTime_RGB( 2,1:3) = (/ 255,128,255 /)  ! ff8000
+      Con_DepTime_RGB( 3,1:3) = (/ 255,255,  0 /)  ! ffff00
+      Con_DepTime_RGB( 4,1:3) = (/ 128,255,128 /)  ! 80ff80
+      Con_DepTime_RGB( 5,1:3) = (/   0,255,255 /)  ! 00ffff
+      Con_DepTime_RGB( 6,1:3) = (/   0,128,255 /)  ! 0080ff
+      Con_DepTime_RGB( 7,1:3) = (/   0,  0,255 /)  ! 0000ff
+      Con_DepTime_RGB( 8,1:3) = (/   0,  0,128 /)  ! 000080
+      Con_DepTime_RGB( 9,1:3) = (/   0,  0,  0 /)  ! 000000
+
+
+      !  Maximum ash concentration (mg/m3)
+      ! Recall that Con_CloudCon_N   = 9
+      Con_CloudCon_Lev = (/0.1_ip, 0.3_ip, 1.0_ip, 3.0_ip, 10.0_ip, 30.0_ip,&
+                         100.0_ip, 300.0_ip, 1000.0_ip /)
+        ! This is what is in the KML file, but it is too light for a white background
+      Con_CloudCon_RGB( 1,1:3) = (/ 204,204,255 /)  ! ffe5e5
+      Con_CloudCon_RGB( 2,1:3) = (/ 178,178,255 /)  ! ffcccc
+      Con_CloudCon_RGB( 3,1:3) = (/ 153,153,255 /)  ! ffb2b2
+      Con_CloudCon_RGB( 4,1:3) = (/ 255,153,255 /)  ! ff99ff
+      Con_CloudCon_RGB( 5,1:3) = (/ 255,126,255 /)  ! ff7fff
+      Con_CloudCon_RGB( 6,1:3) = (/ 255,102,255 /)  ! ff66ff
+      Con_CloudCon_RGB( 7,1:3) = (/ 255, 76,255 /)  ! ff4cff
+      Con_CloudCon_RGB( 8,1:3) = (/ 255, 51,255 /)  ! ff33ff
+      Con_CloudCon_RGB( 9,1:3) = (/ 255, 51,255 /)  ! ff33ff
+        ! Using the same colors as depotime
+      Con_CloudCon_RGB( 1:9,1:3) = Con_DepTime_RGB( 1:9,1:3)
+
+      ! Cloud Height Top (km)
+      ! Recall that Con_CloudTop_N   = 9
+      Con_CloudTop_Lev = (/ 0.24_ip, 3.0_ip, 6.0_ip, 10.0_ip, 13.0_ip, 16.0_ip,&
+                         20.0_ip, 25.0_ip, 30.0_ip /)
+      Con_CloudTop_RGB( 1,1:3) = (/ 128,  0,128 /)  ! 800080
+      Con_CloudTop_RGB( 2,1:3) = (/ 255,  0,  0 /)  ! ff0000
+      Con_CloudTop_RGB( 3,1:3) = (/ 255,128,255 /)  ! ff8000
+      Con_CloudTop_RGB( 4,1:3) = (/ 255,255,  0 /)  ! ffff00
+      Con_CloudTop_RGB( 5,1:3) = (/ 128,255,128 /)  ! 80ff80
+      Con_CloudTop_RGB( 6,1:3) = (/   0,255,255 /)  ! 00ffff
+      Con_CloudTop_RGB( 7,1:3) = (/   0,128,255 /)  ! 0080ff
+      Con_CloudTop_RGB( 8,1:3) = (/   0,  0,255 /)  ! 0000ff
+      Con_CloudTop_RGB( 9,1:3) = (/   0,  0,128 /)  ! 000080
+
+      ! Cloud Height Bot (km)
+      ! Recall that Con_CloudBot_N   = 9
+      Con_CloudBot_Lev(1:Con_CloudBot_N) = Con_CloudTop_Lev(1:Con_CloudBot_N)
+      Con_CloudBot_RGB( 1:9,1:3) = Con_CloudTop_RGB( 1:9,1:3)
+
+      ! Cloud Load (T/km2)
+      ! Recall that Con_CloudLoad_N   = 9
+      Con_CloudLoad_Lev = (/ 0.2_ip, 1.0_ip, 2.0_ip, 5.0_ip, 10.0_ip, 30.0_ip,&
+                         100.0_ip, 300.0_ip, 1000.0_ip /)
+      Con_CloudLoad_RGB( 1:9,1:3) = Con_CloudTop_RGB( 1:9,1:3)
+
+      ! Cloud Reflectivity (dBz)
+      ! Recall that Con_CloudRef_N   = 9
+      Con_CloudRef_Lev = (/-20.0_ip, -10.0_ip, 0.0_ip, 10.0_ip, 20.0_ip, 30.0_ip,&
+                         40.0_ip, 50.0_ip, 60.0_ip /)
+      Con_CloudRef_RGB( 1:9,1:3) = Con_CloudTop_RGB( 1:9,1:3)
+
+      ! Cloud Arrival Time (hours)
+      ! Recall that Con_CloudTime_N   = 9
+      Con_CloudTime_Lev(1:Con_CloudTime_N) = Con_DepTime_Lev(1:Con_CloudTime_N)
+      Con_CloudTime_RGB( 1:9,1:3) = Con_CloudTop_RGB( 1:9,1:3)
+
+      end subroutine Set_OutVar_ContourLevel
+
+!******************************************************************************
+
       subroutine AshThicknessCalculator
 
       use Tephra,        only : &
@@ -407,9 +537,10 @@
       integer :: i,j,k,l
       real(kind=ip) :: NumDens          !number densities (#/m3) of particles
       real(kind=ip) :: zcol             !z value of cell
+      real(kind=ip) :: tmp
 
-      dbZCol(:,:) = 0.0_op
-      dbZ(:,:,:)  = 0.0_op
+      dbZCol(:,:) = dbZCol_FillValue
+      dbZ(:,:,:)  = dbZCol_FillValue
 
       !calculate particle collision rate between two particle sizes
       !note: this requires that only two particle sizes be used as input
@@ -427,10 +558,11 @@
                             KM3_2_M3                                  !particles/m3
                 zcol    = zcol + NumDens*(1000.0_ip*Tephra_gsdiam(l))**6.0_ip
               enddo
-              if(zcol.gt.EPS_SMALL)then
-                dbZ(i,j,k) = 10.0_ip*log10(zcol)
+              tmp = 10.0_ip*log10(zcol)
+              if(tmp.gt.DBZ_THRESH)then
+                dbZ(i,j,k) = tmp
               else
-                dbZ(i,j,k) = 0.0_op
+                dbZ(i,j,k) = dbZCol_FillValue
               endif
             enddo
             dbZCol(i,j) = maxval(dbZ(i,j,1:nzmax))

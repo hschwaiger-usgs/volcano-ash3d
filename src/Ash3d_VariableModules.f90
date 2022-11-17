@@ -273,11 +273,11 @@
       integer           :: nWriteTimes       !number of deposit files to write
       real(kind=ip), dimension(:), allocatable :: WriteTimes      !times (hrs after first eruption start) to write out files
 
-      integer           :: nvprofiles                                        !number of vertical profiles to write out
-      integer,       dimension(:), allocatable :: i_vprofile, j_vprofile     !i and j values of vertical profiles
-      real(kind=ip), dimension(:), allocatable :: x_vprofile, y_vprofile     !x and y of vertical profiles
-      !real(kind=ip), dimension(:), allocatable :: lon_vprofile, lat_vprofile !lat & lon of vertical profiles
-!
+      integer           :: nvprofiles                                        ! number of vertical profiles to write out
+      integer,          dimension(:), allocatable :: i_vprofile, j_vprofile  ! i and j values of vertical profiles
+      real(kind=ip),    dimension(:), allocatable :: x_vprofile, y_vprofile  ! x and y of vertical profiles
+      character(len=50),dimension(:), allocatable :: Site_vprofile           ! name of profile location
+
       integer            :: nvar_User2d_static_XY  = 0
       integer            :: nvar_User2d_XY         = 0
       integer            :: nvar_User3d_XYGs       = 0

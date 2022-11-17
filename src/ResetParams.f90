@@ -47,7 +47,7 @@
           !  Parse for the keyword
             write(*,*)"Found optmod"
           read(linebuffer080,1104)mod_name
-          if(adjustl(trim(mod_name)).eq.'RESETPARAMS')then
+          if(trim(adjustl(mod_name)).eq.'RESETPARAMS')then
             exit
           endif
         endif
@@ -63,7 +63,7 @@
                testkey.ne.'#'.and.testkey.ne.'*')
         iparam = iparam + 1
         substr_pos = index(linebuffer080,'=')
-        pname(iparam)=adjustl(trim(linebuffer080(1:substr_pos-1)))
+        pname(iparam)=trim(adjustl(linebuffer080(1:substr_pos-1)))
         read(linebuffer080(substr_pos+1:80),*)pvalue(iparam)
         read(10,'(a80)',iostat=ios)linebuffer080
         read(linebuffer080,*)testkey

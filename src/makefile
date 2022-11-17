@@ -222,8 +222,7 @@ USGSLIB = -lMetReader -lhourssince -lprojection
 USGSINC = -I$(USGSROOT)/include
 
 #PLOTLIBS=-lplplotf95cd -lplplotf95d -L/usr/local/dislin -ldislin
-#PLOTINC=-I/usr/local/dislin/gf
-
+#PLOTINC=-I/usr/include/plplot -I/usr/local/dislin/gf
 PLOTLIBS=
 PLOTINC=
 

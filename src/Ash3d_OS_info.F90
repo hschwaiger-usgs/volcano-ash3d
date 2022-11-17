@@ -94,14 +94,14 @@
         ! VALUE(8) = The milliseconds of the second
 
       write(global_info,*)" "
-      write(global_info,*)"Running Ash3d with command-line: ",adjustl(trim(os_full_command_line))
+      write(global_info,*)"Running Ash3d with command-line: ",trim(adjustl(os_full_command_line))
 
       ! Check for environment variables ASH3DHOME and ASH3DCFL
 
       ! Set the default installation path
       ! This is only needed if shared data files with fixed paths are read
       ! in such as the global airport and volcano ESP files.
-      Ash3dHome = adjustl(trim(DirPrefix)) // DirDelim // &
+      Ash3dHome = trim(adjustl(DirPrefix)) // DirDelim // &
                   "opt" // DirDelim // "USGS" // DirDelim // "Ash3d"
 
       ! Here it is over-written by compile-time path, if available
@@ -113,10 +113,10 @@
       if(iostatus.eq.0)then
         Ash3dHome = tmp_str
         write(global_info,*)&
-          "  Install path reset by environment variable to: ",adjustl(trim(Ash3dHome))
+          "  Install path reset by environment variable to: ",trim(adjustl(Ash3dHome))
       else
         write(global_info,*)&
-          "  ASH3DHOME not found. Install path set to: ",adjustl(trim(Ash3dHome))
+          "  ASH3DHOME not found. Install path set to: ",trim(adjustl(Ash3dHome))
       endif
       write(global_info,*)"Checking for run-time environment variable: ASH3DCFL"
       call GET_ENVIRONMENT_VARIABLE(NAME="ASH3DCFL",VALUE=tmp_str,STATUS=iostatus)
@@ -147,9 +147,9 @@
       read(RunStartHour_ch,'(11x,i2)') RunStartMinute
 
       write(global_info,*)" System Information"
-      write(global_info,*)"   host: ",adjustl(trim(os_host)),' (',adjustl(trim(OS_Flavor)),')'
-      write(global_info,*)"    cwd: ",adjustl(trim(os_cwd))
-      write(global_info,*)"   user: ",adjustl(trim(os_user))
+      write(global_info,*)"   host: ",trim(adjustl(os_host)),' (',trim(adjustl(OS_Flavor)),')'
+      write(global_info,*)"    cwd: ",trim(adjustl(os_cwd))
+      write(global_info,*)"   user: ",trim(adjustl(os_user))
 
       write(global_info,*)"  "
       write(global_info,*)"This executable was compiled with the following pre-proc flags:"

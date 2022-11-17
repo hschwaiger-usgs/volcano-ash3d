@@ -1107,9 +1107,9 @@
         close(54)
         ! Test if gnuplot is installed
         if(IsLinux.or.IsMacOS)then
-          execpath = adjustl(trim(DirPrefix)) // DirDelim // &
+          execpath = trim(adjustl(DirPrefix)) // DirDelim // &
                   "usr" // DirDelim // "bin" // DirDelim // "gnuplot"
-          inquire( file=adjustl(trim(execpath)), exist=IsThere)
+          inquire( file=trim(adjustl(execpath)), exist=IsThere)
         elseif(IsWindows)then
           ! this is a placeholder for now
           IsThere = .false.
@@ -1251,7 +1251,7 @@
 
       ! Test if zip is installed
       if(IsLinux.or.IsMacOS)then
-        inquire( file=adjustl(trim('/usr/bin/zip')), exist=IsThere)
+        inquire( file=trim(adjustl('/usr/bin/zip')), exist=IsThere)
       elseif(IsWindows)then
         ! this is a placeholder for now
         IsThere = .false.

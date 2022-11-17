@@ -504,10 +504,10 @@
                           DirDelim // 'share' // &
                           DirDelim // 'GlobalAirports_ewert.txt'
       ! Test for existance of the airport file
-      inquire( file=adjustl(trim(AirportMasterFile)), exist=IsThere )
+      inquire( file=trim(adjustl(AirportMasterFile)), exist=IsThere )
       write(global_info,*)&
         "Trying to read external global airport file in home=",Ash3dHome
-      write(global_info,*)"Full file name = ",adjustl(trim(AirportMasterFile))
+      write(global_info,*)"Full file name = ",trim(adjustl(AirportMasterFile))
       write(global_info,*)"  Exists = ",IsThere
       if(.not.IsThere)then
         write(global_error,*)"ERROR: Could not find airport file."
@@ -532,8 +532,8 @@
            "Airport file contains too many entries"
           stop 1
         endif
-        AirportFullCode(i) = adjustl(trim(inCode))
-        AirportFullName(i) = adjustl(trim(inName))
+        AirportFullCode(i) = trim(adjustl(inCode))
+        AirportFullName(i) = trim(adjustl(inName))
         AirportFullLat(i)  = inlat
         AirportFullLon(i)  = inlon
       end do
