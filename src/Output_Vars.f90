@@ -127,6 +127,7 @@
       real(kind=ip), dimension(:,:),pointer :: MaxHeight        => null() ! maximum cloud height (km)
       real(kind=ip), dimension(:,:),pointer :: MinHeight        => null() ! cloud bottom height (km)
       real(kind=ip), dimension(:,:),pointer :: dbZCol           => null() ! max reflectivity in a vertical column (dB)
+      real(kind=op), dimension(:,:,:),pointer :: ashcon_tot     => null() ! Total ash concentration (3d)
 
       real(kind=ip), dimension(:,:,:),pointer :: pr_ash         => null() ! concentration profile
 
@@ -146,6 +147,7 @@
       real(kind=ip), dimension(:,:),allocatable :: MaxHeight          ! maximum cloud height
       real(kind=ip), dimension(:,:),allocatable :: MinHeight          ! cloud bottom height
       real(kind=ip), dimension(:,:),allocatable :: dbZCol             ! max reflectivity in a vertical column
+      real(kind=op), dimension(:,:,:),allocatable :: ashcon_tot       ! Total ash concentration (3d)
 
       real(kind=ip), dimension(:,:,:),allocatable :: pr_ash           ! concentration profile
 
@@ -231,7 +233,7 @@
       MinHeight = 0.0_ip
       allocate(dbZCol(nx,ny))                              ! reflectivity in a column of nodes
       dbZCol = 0.0_ip
-
+      ! ashcon_tot is allocated/deallocated as needed since it can be a bit big
       allocate(dbZ(nx,ny,nz))                              ! radar reflectivity (dbZ)
       dbZ = 0.0_ip
 
@@ -518,11 +520,47 @@
       Calculated_AshThickness = .true.
 
       end subroutine AshThicknessCalculator
+
+
+
+
+
+!******************************************************************************
+
+      subroutine AshTotalCalculator
+
+      use Tephra,        only : &
+         n_gs_max
+
+      use mesh,          only : &
+         nxmax,nymax,nzmax,ts1
+
+      use solution,      only : &
+         concen_pd
+
+      implicit none
+
+      integer :: n
+
+      if(n_gs_max.gt.0)then
+        ashcon_tot = 0.0_op
+        do n=1,n_gs_max
+          ashcon_tot(1:nxmax,1:nymax,1:nzmax) =  &
+           ashcon_tot(1:nxmax,1:nymax,1:nzmax) + &
+           real(concen_pd(1:nxmax,1:nymax,1:nzmax,n,ts1),kind=op)
+        enddo
+      endif
+
+      end subroutine AshTotalCalculator
+
       
 !******************************************************************************
 
       subroutine dbZCalculator
-      
+
+      use global_param,  only : &
+          EPS_TINY
+
       use Tephra,        only : &
          n_gs_max,Tephra_gsdiam,Tephra_rho_m
 
@@ -548,7 +586,7 @@
       if(n_gs_max.gt.0)then
         do i=imin,imax
           do j=jmin,jmax
-            !if (CloudLoad(i,j).lt.CLOUDLOAD_THRESH) cycle
+            if (CloudLoad(i,j).lt.CLOUDLOAD_THRESH) cycle
             do k=kmin,kmax
               zcol = 0.0_ip
               do l=1,n_gs_max
@@ -558,11 +596,15 @@
                             KM3_2_M3                                  !particles/m3
                 zcol    = zcol + NumDens*(1000.0_ip*Tephra_gsdiam(l))**6.0_ip
               enddo
-              tmp = 10.0_ip*log10(zcol)
-              if(tmp.gt.DBZ_THRESH)then
-                dbZ(i,j,k) = tmp
-              else
+              if(zcol.lt.EPS_TINY)then
                 dbZ(i,j,k) = dbZCol_FillValue
+              else
+                tmp = 10.0_ip*log10(zcol)
+                if(tmp.gt.DBZ_THRESH)then
+                  dbZ(i,j,k) = tmp
+                else
+                  dbZ(i,j,k) = dbZCol_FillValue
+                endif
               endif
             enddo
             dbZCol(i,j) = maxval(dbZ(i,j,1:nzmax))

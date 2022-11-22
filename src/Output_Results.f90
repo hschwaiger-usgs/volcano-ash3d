@@ -20,13 +20,14 @@
          WriteReflectivity_KML,Write_PR_Data
 
       use mesh,          only : &
-         nxmax,nymax,nsmax
+         nxmax,nymax,nzmax
 
       use Output_Vars,   only : &
          DepositThickness,MaxConcentration,MaxHeight,&
-         Mask_Cloud,Mask_Deposit,&
+         Mask_Cloud,Mask_Deposit,ashcon_tot, &
          ! MinHeight, &
-         CloudLoad,DepArrivalTime,CloudArrivalTime,dbZCol
+         CloudLoad,DepArrivalTime,CloudArrivalTime,dbZCol,&
+         AshTotalCalculator
 
       use time_data,     only : &
          BaseYear,useLeap,dt,time,SimStartHour,Simtime_in_hours,&
@@ -69,9 +70,19 @@
         subroutine write_3D_ASCII(cio)
           character(len=13) ,intent(in) :: cio
         end subroutine
-        subroutine write_3D_Binary(cio,ns)
+        subroutine write_3D_Binary(cio,nx,ny,nz,ashcon_tot)
+          integer,parameter  :: op         = 4 ! Output precision
           character(len=13) ,intent(in) :: cio
-          integer           ,intent(in) :: ns
+          integer           ,intent(in) :: nx,ny,nz
+          real(kind=op)     ,intent(in) :: ashcon_tot(nx,ny,nz)
+        end subroutine
+        subroutine write_2D_Binary(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
+          integer,parameter  :: ip         = 8 ! Internal precision
+          integer          ,intent(in) :: nx,ny
+          real(kind=ip)    ,intent(in) :: OutVar(nx,ny)
+          logical          ,intent(in) :: VarMask(nx,ny)
+          character(len=6) ,intent(in) :: Fill_Value
+          character(len=20),intent(in) :: filename_root
         end subroutine
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
           real(kind=8)               ::  HoursSince
@@ -160,17 +171,6 @@
          xmlTimeSpanStart = HS_xmltime(timestart,BaseYear,useLeap)
          xmlTimeSpanEnd   = HS_xmltime(timeend,BaseYear,useLeap)
       endif
-      !>>> for debugging
-        !write(6,*) 'In write_KML.  iTimeNext=',iTimeNext
-        !write(6,*) 'Eruption start time = ',HS_xmltime(SimStartHour,BaseYear,useLeap)
-        !write(6,*) 'Simulation end time = ',HS_xmltime(SimStartHour+Simtime_in_hours,BaseYear,useLeap)
-        !write(6,*) 'current time = ',HS_xmltime(SimStartHour+time,BaseYear,useLeap)
-        !write(6,*) 'timestart    = ',xmlTimeSpanStart
-        !write(6,*) 'timeend      = ',xmlTimeSpanEnd
-        !write(6,*) 'Continue?'
-        !read(5,'(a1)') answer
-        !if (answer.eq.'n') stop
-      !<<<<
 
       !increment iTimeNext
       iout3d = iout3d + 1    ! increment the counter for the output step
@@ -237,7 +237,15 @@
         if(ioutputFormat.eq.1)then
           call write_3D_ASCII(cio)
         elseif(ioutputFormat.eq.2)then
-          call write_3D_Binary(cio,nsmax)
+          allocate(ashcon_tot(nxmax,nymax,nzmax))
+          ashcon_tot = 0.0_op
+          call AshTotalCalculator
+          call write_3D_Binary(cio,nxmax,nymax,nzmax,ashcon_tot)
+          deallocate(ashcon_tot)
+          call write_2D_Binary(nxmax,nymax,&
+                              DepositThickness(1:nxmax,1:nymax), &
+                              Mask_Deposit(1:nxmax,1:nymax),&
+                              ' 0.000','DepositFile_        ')
         elseif(ioutputFormat.eq.3)then
 #ifdef USENETCDF
           call append_to_netcdf

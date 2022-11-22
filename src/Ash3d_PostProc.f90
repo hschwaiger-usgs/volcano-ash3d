@@ -8,10 +8,10 @@
          MM_2_IN
 
       use mesh,          only : &
-         nxmax,nymax
+         nxmax,nymax,nzmax
 
       use time_data,     only : &
-         time,time_native
+         time,time_native,BaseYear,useLeap,SimStartHour
 
       use io_data,       only : &
          iTimeNext, &
@@ -25,11 +25,8 @@
          nvprofiles
 
       use Output_Vars,   only : &
-         DepositThickness,DepArrivalTime,CloudArrivalTime,&
+         DepositThickness,DepArrivalTime,CloudArrivalTime,ashcon_tot,&
          MaxConcentration,MaxHeight,CloudLoad,dbZCol,MinHeight,Mask_Cloud
-
-!      use Airports,      only : &
-!         Airport_Thickness_TS !,Airport_Name
 
       use Output_KML
 
@@ -52,6 +49,15 @@
       character(len=6)    :: Fill_Value
       character(len=20)   :: filename_root
       character(len=70)   :: comd
+      character(len=13)   :: cio
+
+      INTERFACE
+        character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
+          real(kind=8)               ::  HoursSince
+          integer                    ::  byear
+          logical                    ::  useLeaps
+        end function HS_yyyymmddhh_since
+      END INTERFACE
 
       ! Initialize all output logicals to false
       Write_PR_Data                 = .false.
@@ -170,11 +176,13 @@
       else
         if(iprod.eq.1)then
           write(global_info,*)'output variable = 1 full concentration array'
-          write(global_info,*)' Currently, no output formats available for iprod=1'
-          stop 1
+          write(global_info,*)' Currently, no output formats available for full'
+          write(global_info,*)' granularity.  Binary output will give total ash'
+          write(global_info,*)' concentration.'
         elseif(iprod.eq.2)then
           write(global_info,*)'output variable = 2 deposit granularity'
           write(global_info,*)' Currently, no output formats available for iprod=2'
+          write(global_info,*)' '
           stop 1
         elseif(iprod.eq.3)then
           write(global_info,*)'output variable = 3 deposit thickness; TS or step (mm)'
@@ -281,10 +289,9 @@
         write(global_info,*)'  We do not yet know the maximum number of steps available.'
       endif
 
-      if(iprod.eq.1.or. &  ! full concentration array
-         iprod.eq.2)then   ! deposit granularity
-        write(global_info,*)'We do not yet have a plan for processing ashcon or depocon'
-        write(global_info,*)'This is probably where we would implement binary, vtk, or tecplot'
+      if(iprod.eq.2)then   ! deposit granularity
+        write(global_info,*)'We do not yet have a plan for processing depocon'
+        write(global_info,*)'This is probably where we would implement vtk, or tecplot'
         stop 1
       endif
       write(global_info,*)'Finished reading command-line'
@@ -304,6 +311,8 @@
         iTimeNext = 0
         isFinal_TS = .false.
       endif
+
+      cio = HS_yyyymmddhh_since(SimStartHour+time,BaseYear,useLeap)
 
       if(    iprod.eq.1 )then ! full concentration array
         Write3dFiles = .true.
@@ -581,7 +590,24 @@
           call write_2Dmap_PNG_dislin(iprod,iout3d,OutVar)
         endif
       elseif(iformat.eq.4)then
-        !call write_2D_Binary
+        if(iprod.eq.1)then
+          ! full concentration array but here we only output the total
+          call write_3D_Binary(cio,nxmax,nymax,nzmax,ashcon_tot)
+        elseif(iprod.eq.2)then
+          ! deposit granularity
+          write(*,*)'ERROR: No binary output products for deposit granularity'
+          stop 1
+        elseif(iprod.eq.8)then
+          ! ashfall arrival at airports/POI (mm)
+          write(*,*)'ERROR: No binary output products for POI ashfall arrival'
+          stop 1
+        elseif(iprod.eq.16)then
+          ! profile plots
+          write(*,*)'ERROR: No binary output products for vertical profile plots'
+          stop 1
+        else
+          call write_2D_Binary(nxmax,nymax,OutVar,mask,Fill_Value,filename_root)
+        endif
       elseif(iformat.eq.5)then
         !call write_2D_ShapeFile
       elseif(iformat.eq.6)then
