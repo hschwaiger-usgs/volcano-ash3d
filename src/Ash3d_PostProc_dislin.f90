@@ -30,7 +30,7 @@
          nWriteTimes,WriteTimes,cdf_b3l1,VolcanoName
 
       use Source,        only : &
-         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
+         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight,lon_volcano,lat_volcano
 
       use time_data,     only : &
          os_time_log,BaseYear,useLeap
@@ -43,27 +43,34 @@
       integer :: itime
       real(kind=ip) :: OutVar(nxmax,nymax)
 
-      integer :: i,j
+      integer :: i,j,k
+      integer :: nzlev
+      real(kind=4), dimension(:)  ,allocatable :: zlev
+      integer     , dimension(:,:),allocatable :: zrgb
+      character(len=40) :: title_plot
+      character(len=15) :: title_legend
+      character(len=40) :: outfile_name
+      character (len=9) :: cio
+      character (len=4) :: outfile_ext = '.png'
+      integer :: ioerr,iw,iwf
+
+      real(kind=8)  :: xmin
+      real(kind=8)  :: xmax
+      real(kind=8)  :: ymin
+      real(kind=8)  :: ymax
 
       ! dislin stuff
       ! https://www.dislin.de/
       CHARACTER (LEN=4) :: CFMT = "PNG "
-      character(len=40) :: outfile_name
-      character (len=9) :: cio
-      character (len=4) :: outfile_ext = '.png'
-      INTEGER, PARAMETER :: Ncities=3
       INTEGER, PARAMETER :: N=100
       INTEGER, PARAMETER :: MAXPTS=1000
       INTEGER, PARAMETER :: MAXCRV=10
-      REAL(kind=4), DIMENSION (Ncities) :: &
-         XC = (/-122.3167_4,-122.6417_4,-122.96310_4/), &
-         YC = (/  47.5886_4,  45.4421_4,  49.2743_4/)
-      CHARACTER (LEN=12), DIMENSION (Ncities) :: &
-         CSTR = (/'Seattle     ', 'Portland    ', 'Vancouver   '/)
       CHARACTER(len=80) :: CBUF
       integer :: NMAXLN
       character(len=7) :: zlevlab
       real(kind=4) :: XPTS(MAXPTS),YPTS(MAXPTS)
+      real(kind=4) :: xmp(MAXPTS),ymp(MAXPTS)
+
       INTEGER :: IRAY(MAXCRV)
       INTEGER :: NXP,NYP,nclr,NCURVS
 
@@ -77,13 +84,6 @@
       real(kind=4), dimension(4) :: cpt_b_hot     = (/ 0.0_4, 0.0_4, 0.0_4, 0.9_4 /) ! hot actually ends in 1.0
       real(kind=4) :: i_flt,idel,cdel,xr,xg,xb
 
-      integer :: nzlev
-      real(kind=4), dimension(:)  ,allocatable :: zlev 
-      integer     , dimension(:,:),allocatable :: zrgb
-
-      character(len=40) :: title_plot
-      character(len=15) :: title_legend
-
       character(len=30) :: cstr_volcname
       character(len=30) :: cstr_run_date
       character(len=30) :: cstr_windfile
@@ -93,8 +93,12 @@
       character(len=38) :: cstr_ErVolume
       character(len=45) :: cstr_note
       integer :: y_footer
-      integer :: ioerr,iw,iwf
       logical :: UseShadedContours
+
+      integer :: ncities
+      real(kind=8),dimension(:),allocatable     :: lon_cities
+      real(kind=8),dimension(:),allocatable     :: lat_cities
+      character(len=26),dimension(:),allocatable :: name_cities
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
@@ -102,7 +106,25 @@
           integer                   :: byear
           logical                   :: useLeaps
         end function HS_xmltime
+        subroutine citylist(outCode,lonLL,lonUR,latLL,latUR,ncities, &
+                            CityLon_out,CityLat_out,CityName_out)
+          integer      :: outCode
+          real(kind=8) :: lonLL
+          real(kind=8) :: lonUR
+          real(kind=8) :: latLL
+          real(kind=8) :: latUR
+          integer      :: ncities
+
+          real(kind=8),dimension(ncities) :: CityLon_out
+          real(kind=8),dimension(ncities) :: CityLat_out
+          character(len=26),dimension(ncities) :: CityName_out
+        end subroutine citylist
       END INTERFACE
+
+      ncities = 20
+      allocate(lon_cities(ncities))
+      allocate(lat_cities(ncities))
+      allocate(name_cities(ncities))
 
       ! logical switch to change from contour lines to shaded contours
       UseShadedContours = .false.
@@ -135,7 +157,7 @@
       elseif(iprod.eq.4)then   ! deposit at specified times (inches)
         write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
-        title_legend = 'Dep.Thick.(inches)'
+        title_legend = 'Dep.Thick.(in)'
         nzlev = Con_DepThick_in_N
         allocate(zlev(nzlev))
         allocate(zrgb(nzlev,3))
@@ -153,7 +175,7 @@
       elseif(iprod.eq.6)then   ! deposit at final time (inches)
         write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
-        title_legend = 'Dep.Thick.(inches)'
+        title_legend = 'Dep.Thick.(in)'
         nzlev = Con_DepThick_in_N
         allocate(zlev(nzlev))
         allocate(zrgb(nzlev,3))
@@ -230,9 +252,6 @@
         write(outfile_name,'(a14)')'Topography.png'
         write(title_plot,'(a10)')'Topography'
         title_legend = 'Elevation (km)'
-
-
-
         nzlev = 8
         zlev = (/0.1_4, 0.3_4, 1.0_4, 3.0_4, &
                 10.0_4, 30.0_4, 100.0_4, 300.0_4/)
@@ -246,15 +265,25 @@
       endif
 
       ! Now map plots
+      xmin = real(minval(lon_cc_pd(1:nxmax)),kind=8)
+      xmax = real(maxval(lon_cc_pd(1:nxmax)),kind=8)
+      ymin = real(minval(lat_cc_pd(1:nymax)),kind=8)
+      ymax = real(maxval(lat_cc_pd(1:nymax)),kind=8)
+
       dx_map = 10.0_4
       dy_map = 5.0_4
-      lon_cc_pd = lon_cc_pd -360.0_8
+      lon_cc_pd(:) = lon_cc_pd(:) - 360.0_8
       xminDIS = real(minval(lon_cc_pd(1:nxmax)),kind=4)
       xmaxDIS = real(maxval(lon_cc_pd(1:nxmax)),kind=4)
       yminDIS = real(minval(lat_cc_pd(1:nymax)),kind=4)
       ymaxDIS = real(maxval(lat_cc_pd(1:nymax)),kind=4)
       xgrid_1 = real(ceiling(xminDIS/dx_map) * dx_map,kind=4)
       ygrid_1 = real(ceiling(yminDIS/dy_map) * dy_map,kind=4)
+
+      call citylist(0,xmin,xmax,ymin,ymax, &
+                    ncities,                        &
+                    lon_cities,lat_cities,          &
+                    name_cities)
 
       !!!!!!!!!!!!!!!!!!!!!!!
       !  Dislin Level 0:  before initialization or after termination
@@ -302,14 +331,16 @@
       call axslen(2200,1400) ! defines the size of the axis system
       call name('Longitude','X') ! Set x-axis title
       call name('Latitude','Y') ! Set y-axis title
-      call labdig(-1,'X') ! set number of decimal places for x label (-1 means no decimal)
+      call labdig(1,'X') ! set number of decimal places for x label (-1 means no decimal)
+      call labdig(1,'y') 
       call ticks(1,'xy')  ! set number of ticks between labels
       call titlin(title_plot,4)  ! Set the title
-      call incmrk(-1) ! selects line or symbol mode for CURVE
+      call incmrk(0) ! selects line (0) or symbol (-1) mode for CURVE
 
       !call LABELS('MAP','xy')
       !call projct('STER') ! defines projection
-      call projct('LAMB') ! defines projection
+      !call projct('LAMB') ! defines projection
+      call projct('CYLI') ! defines projection
       !call projct('MERC') ! defines projection
       call frame(3) ! bump up frame line thickness
        !  The routine GRAFMP plots a geographical axis system.
@@ -320,45 +351,69 @@
       !call color('GREEN')
        ! plots coastlines and lakes or political borders
       call world()
+      !call shdmap('GSHH')
 
       ! Add cities
-      call curvmp(XC,YC,Ncities)
-      DO I=1,Ncities
+      do i=1,ncities
       !    These are the points
-        call pos2pt(XC(I),YC(I),XP,YP)
-      !    These are the city lables, offset in x
-        NXP=NINT(XP+30)
+        call pos2pt(real(lon_cities(i),kind=4),real(lat_cities(i),kind=4),&
+                    XP,YP)
+        NXP=NINT(XP)
         NYP=NINT(YP)
-        call messag(CSTR(I),NXP,NYP)
-      END DO
+        call symbol(21,NXP,NYP)
+      !    These are the city labels, offset in x
+        call messag(adjustl(trim(name_cities(i))),NXP+30,NYP)
+      enddo
+
+      ! Add volcano
+      call pos2pt(real(lon_volcano,kind=4),real(lat_volcano,kind=4),&
+                  XP,YP)
+      NXP=NINT(XP)
+      NYP=NINT(YP)
+      call symbol(18,NXP,NYP)
 
       if(UseShadedContours)then
         !call myvlt(xr,xg,xb,nrgb)
         call shdmod('UPPER', 'CELL') ! This suppresses colors in regions above/below the zlevels pro
-        call conshd(real(lon_cc_pd,kind=4),nxmax,&
-                    real(lat_cc_pd,kind=4),nymax,&
+        call conshd(real(lon_cc_pd(1:nxmax),kind=4),nxmax,&
+                    real(lat_cc_pd(1:nymax),kind=4),nymax,&
                     real(OutVar,kind=4),zlev,nzlev)
       else
         do i=1,nzlev
+        !do i=1,1
           xr   = real(zrgb(i,1),kind=4)/real(255,kind=4)
           xg   = real(zrgb(i,2),kind=4)/real(255,kind=4)
           xb   = real(zrgb(i,3),kind=4)/real(255,kind=4)
           nclr = intrgb(xr,xg,xb)
-          write(*,*)"writing contour: ",i,zrgb(i,:),zlev(i),nclr
 
           call setclr(nclr)
-          call contur(real(lon_cc_pd,kind=4),nxmax,&
-                      real(lat_cc_pd,kind=4),nymax,&
-                      real(OutVar,kind=4),zlev(i))
-
+          if(1==1)then
+          call contur(real(lon_cc_pd(1:nxmax),kind=4),nxmax,&
+                      real(lat_cc_pd(1:nymax),kind=4),nymax,&
+                      real(OutVar(1:nxmax,1:nymax),kind=4),zlev(i))
+          else
           ! This part calculated the contours
-          !XPTS(:) = 0.0_4
-          !YPTS(:) = 0.0_4
-          !IRAY(:) = 0
-          !call conpts(real(lon_cc_pd,kind=4),nxmax,&
-          !            real(lat_cc_pd,kind=4),nymax,&
-          !            real(OutVar,kind=4),zlev(i), &
-          !            XPTS, YPTS, MAXPTS, IRAY, MAXCRV, NCURVS)
+          XPTS(:) = 0.0_4
+          YPTS(:) = 0.0_4
+          IRAY(:) = 0
+          call conpts(real(lon_cc_pd(1:nxmax),kind=4),nxmax,&  ! x coord and size
+                      real(lat_cc_pd(1:nymax),kind=4),nymax,&  ! y coord and size
+                      real(OutVar(1:nxmax,1:nymax),kind=4),&   ! matrix with function values
+                      zlev(i),            &           ! level to contour
+                      XPTS,YPTS,          &           ! x,y of contour (may have mul. curves)
+                      MAXPTS,             &           ! max # of points for contour arrays
+                      IRAY,               &           ! num of points for each contour
+                      MAXCRV,             &           ! max number of curves
+                      NCURVS)                         ! number of curves
+          do j=1,NCURVS
+            do k=1,IRAY(j)
+              call pos2pt(XPTS(k),YPTS(k),xmp(k),ymp(k))
+              write(*,*)XPTS(k),YPTS(k),xmp(k),ymp(k)
+            enddo
+            call curvmp(XPTS,YPTS,IRAY(j))
+            !call curvmp(xmp,ymp,IRAY(j))
+          enddo
+          endif
         enddo
       endif
 

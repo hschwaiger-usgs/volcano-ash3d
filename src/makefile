@@ -96,6 +96,16 @@ FASTFPPFLAG =
 #FASTFPPFLAG = -DFAST_SUBGRID
 #FASTFPPFLAG = -DFAST_DT -DFAST_SUBGRID
 
+# PLOTTING LIBRARIES
+#  The default plotting utility for Ash3d_PostProc is gnuplot with plots generated
+#  through system calls to that external program.  Alternatively, you can use either
+#  the plplot or dislin plotting packages.  Currently, shapefile require contour to
+#  be generated either with gnuplot or dislin.  Set the corresponding variable
+#  below to 'T' if you want to build with these libraries.  Set to 'F' any you want
+#  to use the default gnuplot.  
+USEPLPLOT = F
+USEDISLIN = F
+
 MFILE=makefile
 
 ###############################################################################
@@ -216,15 +226,30 @@ ifeq ($(USEEXTDATA), T)
  extdatFPPFLAG = -DUSEEXTDATA
 endif
 
+PLOTFPPFLAGS =
+ifeq ($(USEPLPLOT), T)
+ plplotFPPFLAG = -DUSEPLPLOT
+ plplotLIBS = -lplplotf95cd -lplplotf95d
+ plplotINC  = -I/usr/include/plplot
+ plplotOBJ  = Ash3d_PostProc_plplot.o
+endif
+ifeq ($(USEDISLIN), T)
+ dislinFPPFLAG = -DUSEDISLIN
+ dislinLIBS = -L/usr/local/dislin -ldislin
+ dislinINC  = -I/usr/local/dislin/gf
+ dislinOBJ  = Ash3d_PostProc_dislin.o
+endif
+
 # location of MetReader, HoursSince and projection
 USGSLIBDIR = -L$(USGSROOT)/lib
 USGSLIB = -lMetReader -lhourssince -lprojection
 USGSINC = -I$(USGSROOT)/include
 
-#PLOTLIBS=-lplplotf95cd -lplplotf95d -L/usr/local/dislin -ldislin
-#PLOTINC=-I/usr/include/plplot -I/usr/local/dislin/gf
-PLOTLIBS=
-PLOTINC=
+PLOTFPPFLAGS = $(plplotFPPFLAG) $(dislinFPPFLAG)
+PLOTLIBS= $(plplotLIBS) $(dislinLIBS)
+PLOTINC=$(plplotINC) $(dislinINC)
+#PLOTLIBS=
+#PLOTINC=
 
 ###############################################################################
 ##########  GNU Fortran Compiler  #############################################
@@ -238,6 +263,7 @@ ifeq ($(SYSTEM), gfortran)
 # Debugging flags
 ifeq ($(RUN), DEBUG)
     FFLAGS =  -O0 -g3 -Wall -fbounds-check -pedantic -fbacktrace -fimplicit-none -Wunderflow -Wuninitialized -ffpe-trap=invalid,zero,overflow -fdefault-real-8
+
     ASH3DEXEC=Ash3d_debug
 endif
 ifeq ($(RUN), DEBUGOMP)
@@ -259,7 +285,7 @@ ifeq ($(RUN), OMPOPT)
     ASH3DEXEC=Ash3d_omp
 endif
       # Preprocessing flags
-    FPPFLAGS =  -x f95-cpp-input $(OSFPPFLAG) $(DATAFPPFLAGS) $(VERBFPPFLAG) $(LIMFPPFLAG) $(DIFFFPPFLAG) $(memFPPFLAG) $(extdatFPPFLAG) $(FASTFPPFLAG)
+    FPPFLAGS =  -x f95-cpp-input $(OSFPPFLAG) $(DATAFPPFLAGS) $(VERBFPPFLAG) $(LIMFPPFLAG) $(DIFFFPPFLAG) $(memFPPFLAG) $(extdatFPPFLAG) $(FASTFPPFLAG) $(PLOTFPPFLAGS)
       # Extra flags
     #EXFLAGS = -xf95
     EXFLAGS =
@@ -294,8 +320,19 @@ write_BINARY.o           \
 write_KML.o              \
 ResetParams.o
 
-PPOBJS = Ash3d_VariableModules.o Output_Vars.o Output_Results.o Tephra.o Source.o Airports.o Atmosphere.o write_KML.o write_ASCII.o write_BINARY.o
-GRAFOBJ = Ash3d_PostProc_gnuplot.o Ash3d_PostProc_plplot.o Ash3d_PostProc_dislin.o
+PPOBJS = Ash3d_VariableModules.o        \
+         Output_Vars.o Output_Results.o \
+         Tephra.o                       \
+         Source.o                       \
+         Airports.o                     \
+         Atmosphere.o                   \
+         write_KML.o                    \
+         write_ASCII.o                  \
+         write_BINARY.o                 \
+         Ash3d_PostProc_cities.o        \
+         Ash3d_OS_info.o
+
+GRAFOBJ = Ash3d_PostProc_gnuplot.o $(plplotOBJ) $(dislinOBJ)
 
 ifeq ($(USENETCDF), T)
   DATAOBJ = write_NETCDF.o
@@ -374,20 +411,33 @@ ifeq ($(USENETCDF), T)
 write_NETCDF.o: $(ASH3dCCSRC)/write_NETCDF.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Tephra.o Source.o Airports.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_NETCDF.f90
 endif
+#ifeq ($(USEGRIB), T)
+#write_GRIB.o: $(ASH3dCCSRC)/write_GRIB.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Tephra.o Source.o Airports.o
+#	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_GRIB.f90
+#endif
 write_KML.o: $(ASH3dCCSRC)/write_KML.f90 $(MFILE) Ash3d_VariableModules.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_KML.f90
 
 all: Ash3d tools
 
+
+# Post-Processing tool
 postproc: $(ASH3dCCSRC)/Ash3d_PostProc.f90 $(PPOBJS) $(GRAFOBJ) $(DATAOBJ) $(MFILE)
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc.f90
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc.f90
 	$(FC) $(FFLAGS) $(EXFLAGS) Ash3d_PostProc.o $(PPOBJS) $(GRAFOBJ) $(DATAOBJ) $(LIBS) $(PLOTINC) $(PLOTLIBS) -o Ash3d_PostProc
-Ash3d_PostProc_gnuplot.o: Ash3d_PostProc_gnuplot.f90 $(MFILE)
+# We always compile the gnuplot subroutine since these will just throw an error if gnuplot is not installed
+Ash3d_PostProc_gnuplot.o: Ash3d_PostProc_gnuplot.f90 $(MFILE) Ash3d_PostProc_cities.o
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_gnuplot.f90
-Ash3d_PostProc_plplot.o: Ash3d_PostProc_plplot.f90 $(MFILE)
+ifeq ($(USEPLPLOT), T)
+Ash3d_PostProc_plplot.o: Ash3d_PostProc_plplot.f90 $(MFILE) Ash3d_PostProc_cities.o
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_plplot.f90
-Ash3d_PostProc_dislin.o: Ash3d_PostProc_dislin.f90 $(MFILE)
+endif
+ifeq ($(USEDISLIN), T)
+Ash3d_PostProc_dislin.o: Ash3d_PostProc_dislin.f90 $(MFILE) Ash3d_PostProc_cities.o
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_dislin.f90
+endif
+Ash3d_PostProc_cities.o: Ash3d_PostProc_cities.f90 $(MFILE) Ash3d_VariableModules.o
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_cities.f90
 
 tools: ascii_check
 
@@ -401,7 +451,7 @@ check: ascii_check Ash3d $(MFILE)
 	./run_tests.sh
 
 clean:
-	rm -rf $(OBJECTS) Ash3d.o $(DATAOBJ) $(OPTMODS_OBJ) ../bin/$(ASH3DEXEC) ../bin/tools/Ash3d_ASCII_check \
+	rm -rf $(OBJECTS) $(PPOBJS) $(GRAFOBJ) Ash3d.o $(DATAOBJ) $(OPTMODS_OBJ) ../bin/$(ASH3DEXEC) ../bin/tools/Ash3d_ASCII_check \
         *.mod *__genmod.f90
 
 install:

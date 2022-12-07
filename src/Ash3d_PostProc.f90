@@ -36,6 +36,7 @@
 
       integer             :: nargs
       integer             :: status
+      integer             :: istat
       character (len=100) :: arg
       integer             :: iformat
       integer             :: iprod
@@ -50,6 +51,7 @@
       character(len=20)   :: filename_root
       character(len=70)   :: comd
       character(len=13)   :: cio
+      logical             :: Dislin_avail, Plplot_avail, Gnuplot_avail
 
       INTERFACE
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
@@ -58,6 +60,30 @@
           logical                    ::  useLeaps
         end function HS_yyyymmddhh_since
       END INTERFACE
+
+      open(unit=global_log,file='Ash3d_pp.log',status='unknown')
+      call Set_OS_Env
+
+      ! Checking to see which plotting packages we have
+#ifdef USEDISLIN
+      Dislin_avail = .true.
+#else
+      Dislin_avail = .false.
+#endif
+#ifdef USEPLPLOT
+      Plplot_avail = .true.
+#else
+      Plplot_avail = .false.
+#endif
+      call execute_command_line("echo 'exit' | gnuplot",exitstat=istat)
+      if (istat.eq.0)then
+        Gnuplot_avail = .true.
+      else
+        Gnuplot_avail = .false.
+      endif
+      write(*,*)"Gnuplot ",Gnuplot_avail
+      write(*,*)"Plplot  ",Plplot_avail
+      write(*,*)"Dislin  ",Dislin_avail
 
       ! Initialize all output logicals to false
       Write_PR_Data                 = .false.
@@ -83,8 +109,6 @@
       WriteAirportFile_KML          = .false.
       WriteAirportFile_ASCII        = .false.
       Write3dFiles                  = .false.
-
-      open(unit=global_log,file='Ash3d_pp.log',status='unknown')
 
       ! TEST READ COMMAND LINE ARGUMENTS
       nargs = command_argument_count()
@@ -582,12 +606,38 @@
         elseif(iprod.eq.16)then
           ! Vertical profile data
           do i=1,nvprofiles
-            !call write_2Dprof_PNG_gnuplot(i)
-            !call write_2Dprof_PNG_plplot(i)
-            call write_2Dprof_PNG_dislin(i)
+            if(Dislin_avail)then
+#ifdef USEDISLIN
+              call write_2Dprof_PNG_dislin(i)
+#endif
+            elseif(Plplot_avail)then
+#ifdef USEPLPLOT
+              call write_2Dprof_PNG_plplot(i)
+#endif
+            elseif(Gnuplot_avail)then
+              call write_2Dprof_PNG_gnuplot(i)
+            else
+              write(*,*)"ERROR: Plots requested but no plotting package is installed"
+              stop 1
+            endif
           enddo
         else
-          call write_2Dmap_PNG_dislin(iprod,iout3d,OutVar)
+          if(Dislin_avail)then
+#ifdef USEDISLIN
+            call write_2Dmap_PNG_dislin(iprod,iout3d,OutVar)
+#endif
+          elseif(Plplot_avail)then
+#ifdef USEPLPLOT
+            call write_2Dmap_PNG_plplot(iprod,iout3d,OutVar)
+#endif
+          elseif(Gnuplot_avail)then
+            call write_2Dmap_PNG_gnuplot(iprod,iout3d,OutVar)
+          else
+            ! This is a place-holder for the gmt api branch
+            !call write_2Dmap_PNG_gmt(iprod,iout3d,OutVar)
+            write(*,*)"ERROR: Plots requested but no plotting package is installed"
+            stop 1
+          endif
         endif
       elseif(iformat.eq.4)then
         if(iprod.eq.1)then
