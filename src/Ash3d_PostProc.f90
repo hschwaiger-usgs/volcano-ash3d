@@ -51,6 +51,7 @@
       character(len=20)   :: filename_root
       character(len=70)   :: comd
       character(len=13)   :: cio
+      logical             :: writeContours = .false.
       logical             :: Dislin_avail, Plplot_avail, Gnuplot_avail
 
       INTERFACE
@@ -624,14 +625,14 @@
         else
           if(Dislin_avail)then
 #ifdef USEDISLIN
-            call write_2Dmap_PNG_dislin(iprod,iout3d,OutVar)
+            call write_2Dmap_PNG_dislin(iprod,iout3d,OutVar,writeContours)
 #endif
           elseif(Plplot_avail)then
 #ifdef USEPLPLOT
-            call write_2Dmap_PNG_plplot(iprod,iout3d,OutVar)
+            call write_2Dmap_PNG_plplot(iprod,iout3d,OutVar,writeContours)
 #endif
           elseif(Gnuplot_avail)then
-            call write_2Dmap_PNG_gnuplot(iprod,iout3d,OutVar)
+            call write_2Dmap_PNG_gnuplot(iprod,iout3d,OutVar,writeContours)
           else
             ! This is a place-holder for the gmt api branch
             !call write_2Dmap_PNG_gmt(iprod,iout3d,OutVar)
@@ -659,7 +660,31 @@
           call write_2D_Binary(nxmax,nymax,OutVar,mask,Fill_Value,filename_root)
         endif
       elseif(iformat.eq.5)then
-        !call write_2D_ShapeFile
+        ! For 2d contours exported from dislin, gnuplot, gmt
+        ! First call plotting routine, but only get the contours
+        writeContours = .true.
+        if(Dislin_avail)then
+#ifdef USEDISLIN
+          call write_2Dmap_PNG_dislin(iprod,iout3d,OutVar,writeContours)
+#endif
+        elseif(Plplot_avail)then
+#ifdef USEPLPLOT
+          write(*,*)"Currently cannot extract contours from plplot"
+          stop 1
+          call write_2Dmap_PNG_plplot(iprod,iout3d,OutVar,writeContours)
+#endif
+        elseif(Gnuplot_avail)then
+          call write_2Dmap_PNG_gnuplot(iprod,iout3d,OutVar,writeContours)
+        else
+          ! This is a place-holder for the gmt api branch
+          !call write_2Dmap_PNG_gmt(iprod,iout3d,OutVar)
+          write(*,*)"ERROR: Plots requested but no plotting package is installed"
+          stop 1
+        endif
+
+        call write_ShapeFile_Polyline
+        !  For contours that follow topography, use
+        !call write_ShapeFile_PolylineZ
       elseif(iformat.eq.6)then
         !call write_2D_grib2
       elseif(iformat.eq.7)then

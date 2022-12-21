@@ -5,7 +5,7 @@
 !    if timestep = -1, then use the last step in file
 !##############################################################################
 
-      subroutine write_2Dmap_PNG_plplot(iprod,itime,OutVar)
+      subroutine write_2Dmap_PNG_plplot(iprod,itime,OutVar,writeContours)
 
       use precis_param
 
@@ -24,7 +24,9 @@
          Con_CloudBot_N,Con_CloudBot_RGB,Con_CloudBot_Lev, &
          Con_CloudLoad_N,Con_CloudLoad_RGB,Con_CloudLoad_Lev, &
          Con_CloudRef_N,Con_CloudRef_RGB,Con_CloudRef_Lev, &
-         Con_CloudTime_N,Con_CloudTime_RGB,Con_CloudTime_Lev
+         Con_CloudTime_N,Con_CloudTime_RGB,Con_CloudTime_Lev, &
+         ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
+         Contour_MaxCurves,Contour_MaxPoints
 
       use io_data,       only : &
          nWriteTimes,WriteTimes,cdf_b3l1,VolcanoName
@@ -43,6 +45,7 @@
       integer :: iprod
       integer :: itime
       real(kind=ip) :: OutVar(nxmax,nymax)
+      logical :: writeContours
 
       integer :: i,j
       integer :: nzlev

@@ -5,7 +5,7 @@
 !    if timestep = -1, then use the last step in file
 !##############################################################################
 
-      subroutine write_2Dmap_PNG_dislin(iprod,itime,OutVar)
+      subroutine write_2Dmap_PNG_dislin(iprod,itime,OutVar,writeContours)
 
       use precis_param
 
@@ -24,7 +24,9 @@
          Con_CloudBot_N,Con_CloudBot_RGB,Con_CloudBot_Lev, &
          Con_CloudLoad_N,Con_CloudLoad_RGB,Con_CloudLoad_Lev, &
          Con_CloudRef_N,Con_CloudRef_RGB,Con_CloudRef_Lev, &
-         Con_CloudTime_N,Con_CloudTime_RGB,Con_CloudTime_Lev
+         Con_CloudTime_N,Con_CloudTime_RGB,Con_CloudTime_Lev,&
+         ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
+         Contour_MaxCurves,Contour_MaxPoints,ContourLev
 
       use io_data,       only : &
          nWriteTimes,WriteTimes,cdf_b3l1,VolcanoName
@@ -42,6 +44,7 @@
       integer :: iprod
       integer :: itime
       real(kind=ip) :: OutVar(nxmax,nymax)
+      logical :: writeContours
 
       integer :: i,j,k
       integer :: nzlev
@@ -62,19 +65,15 @@
       ! dislin stuff
       ! https://www.dislin.de/
       CHARACTER (LEN=4) :: CFMT = "PNG "
-      INTEGER, PARAMETER :: N=100
-      INTEGER, PARAMETER :: MAXPTS=1000
-      INTEGER, PARAMETER :: MAXCRV=10
       CHARACTER(len=80) :: CBUF
-      integer :: NMAXLN
+      integer :: nmaxln  ! number of characters in the longest line of text
       character(len=7) :: zlevlab
-      real(kind=4) :: XPTS(MAXPTS),YPTS(MAXPTS)
-      real(kind=4) :: xmp(MAXPTS),ymp(MAXPTS)
+      real(kind=4) :: XPTS(Contour_MaxPoints),YPTS(Contour_MaxPoints)
 
-      INTEGER :: IRAY(MAXCRV)
+      INTEGER :: IRAY(Contour_MaxCurves)
       INTEGER :: NXP,NYP,nclr,NCURVS
 
-      REAL(kind=4)    :: XP,YP
+      REAL(kind=4) :: XP,YP
       real(kind=4) :: xminDIS, xmaxDIS, yminDIS, ymaxDIS
       real(kind=4) :: dx_map, dy_map, xgrid_1, ygrid_1
       ! Hot colormap RGB's and breakpoints
@@ -145,6 +144,7 @@
         endif
       endif
 
+      allocate(ContourLev(Contour_MaxCurves))
       if(iprod.eq.3)then       ! deposit at specified times (mm)
         write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
@@ -152,6 +152,7 @@
         nzlev = Con_DepThick_mm_N
         allocate(zlev(nzlev))
         allocate(zrgb(nzlev,3))
+        ContourLev(1:nzlev) = Con_DepThick_mm_Lev(1:nzlev)
         zlev(1:nzlev) = real(Con_DepThick_mm_Lev(1:nzlev),kind=4)
         zrgb(1:nzlev,1:3) = Con_DepThick_mm_RGB(1:nzlev,1:3)
       elseif(iprod.eq.4)then   ! deposit at specified times (inches)
@@ -161,6 +162,7 @@
         nzlev = Con_DepThick_in_N
         allocate(zlev(nzlev))
         allocate(zrgb(nzlev,3))
+        ContourLev(1:nzlev) = Con_DepThick_in_Lev(1:nzlev)
         zlev(1:nzlev) = real(Con_DepThick_in_Lev(1:nzlev),kind=4)
         zrgb(1:nzlev,1:3) = Con_DepThick_in_RGB(1:nzlev,1:3)
       elseif(iprod.eq.5)then       ! deposit at final time (mm)
@@ -170,6 +172,7 @@
         nzlev = Con_DepThick_mm_N
         allocate(zlev(nzlev))
         allocate(zrgb(nzlev,3))
+        ContourLev(1:nzlev) = Con_DepThick_mm_Lev(1:nzlev)
         zlev(1:nzlev) = real(Con_DepThick_mm_Lev(1:nzlev),kind=4)
         zrgb(1:nzlev,1:3) = Con_DepThick_mm_RGB(1:nzlev,1:3)
       elseif(iprod.eq.6)then   ! deposit at final time (inches)
@@ -179,6 +182,7 @@
         nzlev = Con_DepThick_in_N
         allocate(zlev(nzlev))
         allocate(zrgb(nzlev,3))
+        ContourLev(1:nzlev) = Con_DepThick_in_Lev(1:nzlev)
         zlev(1:nzlev) = real(Con_DepThick_in_Lev(1:nzlev),kind=4)
         zrgb(1:nzlev,1:3) = Con_DepThick_in_RGB(1:nzlev,1:3)
       elseif(iprod.eq.7)then   ! ashfall arrival time (hours)
@@ -188,6 +192,7 @@
         nzlev = Con_DepTime_N
         allocate(zlev(nzlev))
         allocate(zrgb(nzlev,3))
+        ContourLev(1:nzlev) = Con_DepTime_Lev(1:nzlev)
         zlev(1:nzlev) = real(Con_DepTime_Lev(1:nzlev),kind=4)
         zrgb(1:nzlev,1:3) = Con_DepTime_RGB(1:nzlev,1:3)
       elseif(iprod.eq.8)then   ! ashfall arrival at airports/POI (mm)
@@ -201,6 +206,7 @@
         nzlev = Con_CloudCon_N
         allocate(zlev(nzlev))  
         allocate(zrgb(nzlev,3))
+        ContourLev(1:nzlev) = Con_CloudCon_Lev(1:nzlev)
         zlev(1:nzlev) = real(Con_CloudCon_Lev(1:nzlev),kind=4)
         zrgb(1:nzlev,1:3) = Con_CloudCon_RGB(1:nzlev,1:3)
       elseif(iprod.eq.10)then   ! ash-cloud height
@@ -210,6 +216,7 @@
         nzlev = Con_CloudTop_N
         allocate(zlev(nzlev))
         allocate(zrgb(nzlev,3))
+        ContourLev(1:nzlev) = Con_CloudTop_Lev(1:nzlev)
         zlev(1:nzlev) = real(Con_CloudTop_Lev(1:nzlev),kind=4)
         zrgb(1:nzlev,1:3) = Con_CloudTop_RGB(1:nzlev,1:3)
       elseif(iprod.eq.11)then   ! ash-cloud bottom
@@ -219,6 +226,7 @@
         nzlev = Con_CloudBot_N
         allocate(zlev(nzlev))
         allocate(zrgb(nzlev,3))
+        ContourLev(1:nzlev) = Con_CloudBot_Lev(1:nzlev)
         zlev(1:nzlev) = real(Con_CloudBot_Lev(1:nzlev),kind=4)
         zrgb(1:nzlev,1:3) = Con_CloudBot_RGB(1:nzlev,1:3)
       elseif(iprod.eq.12)then   ! ash-cloud load
@@ -228,6 +236,7 @@
         nzlev = Con_CloudLoad_N
         allocate(zlev(nzlev))
         allocate(zrgb(nzlev,3))
+        ContourLev(1:nzlev) = Con_CloudLoad_Lev(1:nzlev)
         zlev(1:nzlev) = real(Con_CloudLoad_Lev(1:nzlev),kind=4)
         zrgb(1:nzlev,1:3) = Con_CloudLoad_RGB(1:nzlev,1:3)
       elseif(iprod.eq.13)then  ! radar reflectivity
@@ -237,6 +246,7 @@
         nzlev = Con_CloudRef_N
         allocate(zlev(nzlev))
         allocate(zrgb(nzlev,3))
+        ContourLev(1:nzlev) = Con_CloudRef_Lev(1:nzlev)
         zlev(1:nzlev) = real(Con_CloudRef_Lev(1:nzlev),kind=4)
         zrgb(1:nzlev,1:3) = Con_CloudRef_RGB(1:nzlev,1:3)
       elseif(iprod.eq.14)then   ! ashcloud arrival time (hours)
@@ -246,6 +256,7 @@
         nzlev = Con_CloudTime_N
         allocate(zlev(nzlev))
         allocate(zrgb(nzlev,3))
+        ContourLev(1:nzlev) = Con_CloudTime_Lev(1:nzlev)
         zlev(1:nzlev) = real(Con_CloudTime_Lev(1:nzlev),kind=4)
         zrgb(1:nzlev,1:3) = Con_CloudTime_RGB(1:nzlev,1:3)
       elseif(iprod.eq.15)then   ! topography
@@ -262,6 +273,44 @@
       else
         write(*,*)"ERROR: unexpected variable"
         stop 1
+      endif
+
+      if(writeContours)then
+        allocate(ContourDataNcurves(Contour_MaxCurves))
+        allocate(ContourDataNpoints(Contour_MaxCurves,Contour_MaxPoints))
+        allocate(ContourDataX(nzlev,Contour_MaxCurves,Contour_MaxPoints))
+        allocate(ContourDataY(nzlev,Contour_MaxCurves,Contour_MaxPoints))
+        ContourDataNcurves(:)   = 0
+        ContourDataNpoints(:,:) = 0
+        ContourDataX(:,:,:)     = 0.0_8
+        ContourDataY(:,:,:)     = 0.0_8
+        do i=1,nzlev
+          ! This part calculated the contours
+          XPTS(:) = 0.0_4
+          YPTS(:) = 0.0_4
+          IRAY(:) = 0
+          call conpts(real(lon_cc_pd(1:nxmax),kind=4),nxmax,&  ! x coord and size
+                      real(lat_cc_pd(1:nymax),kind=4),nymax,&  ! y coord and size
+                      real(OutVar(1:nxmax,1:nymax),kind=4),&   ! matrix with function values
+                      zlev(i),            &           ! level to contour
+                      XPTS,YPTS,          &           ! x,y of contour (may have mul. curves)
+                      Contour_MaxPoints,  &           ! max # of points for contour arrays
+                      IRAY,               &           ! num of points for each contour
+                      Contour_MaxCurves,  &           ! max number of curves
+                      NCURVS)                         ! actual number of curves
+          ContourDataNcurves(i)=NCURVS
+          do j=1,NCURVS
+            ContourDataNpoints(i,j)=IRAY(j)
+            do k=1,IRAY(j)
+              ContourDataX(i,j,k) = real(XPTS(k),kind=8)
+              ContourDataY(i,j,k) = real(YPTS(k),kind=8)
+              !write(*,*) i,j,k,XPTS(k),YPTS(k),zlev(i)
+            enddo
+
+            !call curvmp(XPTS,YPTS,IRAY(j))
+          enddo
+        enddo
+        return
       endif
 
       ! Now map plots
@@ -301,24 +350,6 @@
       call setvlt('RAIN')
       !call setvlt('GREY')
       !call setvlt('TEMP')
-      !call vltfil('defcoltab.cpt','SAVE')
-      !   or use setind to write our own color table (reverse-hot in this case)
-!      do i=255,1,-1
-!        i_flt = real(i,kind=4)/real(255,kind=4)
-!        do j=2,4
-!          if(i_flt.le.cpt_break_hot(j))then
-!            idel = cpt_break_hot(j)-cpt_break_hot(j-1)
-!            cdel =     cpt_r_hot(j)-    cpt_r_hot(j-1)
-!            xr   =     cpt_r_hot(j-1) + (i_flt-cpt_break_hot(j-1))*(cdel/idel)
-!            cdel =     cpt_g_hot(j)-    cpt_g_hot(j-1)
-!            xg   =     cpt_g_hot(j-1) + (i_flt-cpt_break_hot(j-1))*(cdel/idel)
-!            cdel =     cpt_b_hot(j)-    cpt_b_hot(j-1)
-!            xb   =     cpt_b_hot(j-1) + (i_flt-cpt_break_hot(j-1))*(cdel/idel)
-!            exit
-!          endif
-!        enddo
-!        call setind(256-i,xr,xg,xb)
-!      enddo
 
       call paghdr('Ash3d Simulation plotted on ','---',4,0)
       y_footer = 1900
@@ -387,33 +418,37 @@
           nclr = intrgb(xr,xg,xb)
 
           call setclr(nclr)
-          if(1==1)then
-          call contur(real(lon_cc_pd(1:nxmax),kind=4),nxmax,&
-                      real(lat_cc_pd(1:nymax),kind=4),nymax,&
-                      real(OutVar(1:nxmax,1:nymax),kind=4),zlev(i))
-          else
-          ! This part calculated the contours
-          XPTS(:) = 0.0_4
-          YPTS(:) = 0.0_4
-          IRAY(:) = 0
-          call conpts(real(lon_cc_pd(1:nxmax),kind=4),nxmax,&  ! x coord and size
-                      real(lat_cc_pd(1:nymax),kind=4),nymax,&  ! y coord and size
-                      real(OutVar(1:nxmax,1:nymax),kind=4),&   ! matrix with function values
-                      zlev(i),            &           ! level to contour
-                      XPTS,YPTS,          &           ! x,y of contour (may have mul. curves)
-                      MAXPTS,             &           ! max # of points for contour arrays
-                      IRAY,               &           ! num of points for each contour
-                      MAXCRV,             &           ! max number of curves
-                      NCURVS)                         ! number of curves
-          do j=1,NCURVS
-            do k=1,IRAY(j)
-              call pos2pt(XPTS(k),YPTS(k),xmp(k),ymp(k))
-              write(*,*)XPTS(k),YPTS(k),xmp(k),ymp(k)
-            enddo
-            call curvmp(XPTS,YPTS,IRAY(j))
-            !call curvmp(xmp,ymp,IRAY(j))
-          enddo
-          endif
+          !if(writeContours)then
+          !  ! This part calculated the contours
+          !  XPTS(:) = 0.0_4
+          !  YPTS(:) = 0.0_4
+          !  IRAY(:) = 0
+          !  call conpts(real(lon_cc_pd(1:nxmax),kind=4),nxmax,&  ! x coord and size
+          !              real(lat_cc_pd(1:nymax),kind=4),nymax,&  ! y coord and size
+          !              real(OutVar(1:nxmax,1:nymax),kind=4),&   ! matrix with function values
+          !              zlev(i),            &           ! level to contour
+          !              XPTS,YPTS,          &           ! x,y of contour (may have mul. curves)
+          !              Contour_MaxPoints,  &           ! max # of points for contour arrays
+          !              IRAY,               &           ! num of points for each contour
+          !              Contour_MaxCurves,  &           ! max number of curves
+          !              NCURVS)                         ! actual number of curves
+          !  ContourDataNcurves(i)=NCURVS
+          !  do j=1,NCURVS
+          !    ContourDataNpoints(i,j)=IRAY(j)
+          !    do k=1,IRAY(j)
+          !      ContourDataX(i,j,k) = XPTS(k)
+          !      ContourDataY(i,j,k) = YPTS(k)
+          !      write(*,*) i,j,k,XPTS(k),YPTS(k),zlev(i)
+          !    enddo
+
+          !    !call curvmp(XPTS,YPTS,IRAY(j))
+          !  enddo
+          !else
+            ! If no contour data are needed, just call contur
+            call contur(real(lon_cc_pd(1:nxmax),kind=4),nxmax,&
+                        real(lat_cc_pd(1:nymax),kind=4),nymax,&
+                        real(OutVar(1:nxmax,1:nymax),kind=4),zlev(i))
+          !endif
         enddo
       endif
 

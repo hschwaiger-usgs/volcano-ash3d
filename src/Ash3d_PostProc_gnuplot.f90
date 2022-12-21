@@ -5,7 +5,7 @@
 !    if timestep = -1, then use the last step in file
 !##############################################################################
 
-      subroutine write_2Dmap_PNG_gnuplot(iprod,itime,OutVar)
+      subroutine write_2Dmap_PNG_gnuplot(iprod,itime,OutVar,writeContours)
 
       use precis_param
 
@@ -24,7 +24,9 @@
          Con_CloudBot_N,Con_CloudBot_RGB,Con_CloudBot_Lev, &
          Con_CloudLoad_N,Con_CloudLoad_RGB,Con_CloudLoad_Lev, &
          Con_CloudRef_N,Con_CloudRef_RGB,Con_CloudRef_Lev, &
-         Con_CloudTime_N,Con_CloudTime_RGB,Con_CloudTime_Lev
+         Con_CloudTime_N,Con_CloudTime_RGB,Con_CloudTime_Lev, &
+         ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
+         Contour_MaxCurves,Contour_MaxPoints
 
       use time_data,     only : &
          os_time_log,BaseYear,useLeap
@@ -40,6 +42,7 @@
       integer :: iprod
       integer :: itime
       real(kind=ip) :: OutVar(nxmax,nymax)
+      logical :: writeContours
 
       integer :: i,j,k
       integer :: nzlev
@@ -237,6 +240,13 @@
       else
         write(*,*)"ERROR: unexpected variable"
         stop 1
+      endif
+
+      if(writeContours)then
+        allocate(ContourDataNcurves(Contour_MaxCurves))
+        allocate(ContourDataNpoints(Contour_MaxCurves,Contour_MaxPoints))
+        allocate(ContourDataX(nzlev,Contour_MaxCurves,Contour_MaxPoints))
+        allocate(ContourDataY(nzlev,Contour_MaxCurves,Contour_MaxPoints))
       endif
 
       write(dp_outfile,53) "outvar.dat"

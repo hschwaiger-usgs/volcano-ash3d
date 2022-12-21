@@ -5,7 +5,7 @@
       use io_units
 
       use global_param,  only : &
-        DirPrefix,DirDelim,IsLinux,IsWindows,IsMacOS, &
+        DirPrefix,DirDelim,IsLitEnd,IsLinux,IsWindows,IsMacOS, &
         CFL,OS_TYPE,OS_Flavor,os_full_command_line,os_cwd,os_host,os_user
 
       use io_data,       only : &
@@ -74,12 +74,20 @@
       IsWindows = .true.
       IsMacOS   = .false.
 #endif
+      ! Find out if we are running on a little-endian or big-endian system
+      call check_endian(IsLitEnd)
 
       ! Get some run-specific and system-specific information
       call get_command(os_full_command_line)
+#ifdef USEPII
       call getlog(os_user)
       call hostnm(os_host)
       call getcwd(os_cwd)
+#else
+      os_user = 'N/A'
+      os_host = 'N/A'
+      os_cwd  = 'N/A'
+#endif
       call date_and_time(date,time2,zone,values)
         ! date  = ccyymmdd
         ! time2 = hhmmss.sss
@@ -147,7 +155,13 @@
       read(RunStartHour_ch,'(11x,i2)') RunStartMinute
 
       write(global_info,*)" System Information"
-      write(global_info,*)"   host: ",trim(adjustl(os_host)),' (',trim(adjustl(OS_Flavor)),')'
+      if(IsLitEnd)then
+        write(global_info,*)"   host: ",trim(adjustl(os_host)), &
+                            ' (',trim(adjustl(OS_Flavor)),' little-endian)'
+      else
+        write(global_info,*)"   host: ",trim(adjustl(os_host)), &
+                            ' (',trim(adjustl(OS_Flavor)),' little-endian)'
+      endif
       write(global_info,*)"    cwd: ",trim(adjustl(os_cwd))
       write(global_info,*)"   user: ",trim(adjustl(os_user))
 
@@ -243,4 +257,41 @@
 102   format(i4,'.',i2.2,'.',i2.2,i4,':',i2.2)
 
       end subroutine Set_OS_Env
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Subroutine CHECK_ENDIAN checks if the local system uses Big-Endian
+!  or Little-Endian byte ordering.  Returns the logical value
+!  IsLitEnd = .true. if the system is Little-Endian, .false. otherwise.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine check_endian(IsLitEnd)
+
+      implicit none
+
+      logical          :: IsLitEnd
+      integer(kind=1)  :: ii(2)
+      integer(kind=2)  :: s
+
+      equivalence (s,ii)
+
+!      dumint = transfer(xmin,dumint)
+!      write(12,rec=10) dumint(1)
+!      write(12,rec=11) dumint(2)
+
+      s = 1
+      IF (ii(1).eq.1)THEN
+        !write(*,*)'System is Little-Endian'
+        IsLitEnd = .true.
+      ELSEIF(ii(2).eq.1)THEN
+        !write(*,*)'System is Big-Endian'
+        IsLitEnd = .false.
+      ELSE
+        write(*,*)'ERROR: cannot figure out endian-ness!'
+        stop
+      ENDIF
+
+      end subroutine check_endian
 

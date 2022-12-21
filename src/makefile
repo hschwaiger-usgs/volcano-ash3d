@@ -136,6 +136,14 @@ DIFFMETH=CRANKNIC
 OPTMODS_FPP= 
 OPTMODS_OBJ=
 
+# Ash3d can log some useful information about a run such as the username of 
+# account that ran the case, then hostname of the system and run directory
+# (or current working directory).  Although this is useful for record-keeping,
+# this can be considered sensitive information.  To disable this logging,
+# set PII=OFF
+PII=ON
+#PII=OFF
+
 ###############################################################################
 #####  END OF USER SPECIFIED FLAGS  ###########################################
 ###############################################################################
@@ -202,7 +210,7 @@ ifeq ($(VERB), 3)
     VERBFPPFLAG = -DVERBOSE_L3
 endif
 
-DATAFPPFLAGS =
+DATAFPPFLAG =
 ifeq ($(USENETCDF), T)
  ncFPPFLAG = -DUSENETCDF
  ncLIBS = -lnetcdf -lnetcdff
@@ -215,7 +223,7 @@ ifeq ($(USEGRIB), T)
  grbLIBS = -leccodes -leccodes_f90
 endif
 
-DATAFPPFLAGS = $(ncFPPFLAG) $(grbFPPFLAG)
+DATAFPPFLAG = $(ncFPPFLAG) $(grbFPPFLAG)
 DATALIBS = $(ncLIBS) $(grbLIBS)
 
 ifeq ($(USEPOINTERS), T)
@@ -226,7 +234,7 @@ ifeq ($(USEEXTDATA), T)
  extdatFPPFLAG = -DUSEEXTDATA
 endif
 
-PLOTFPPFLAGS =
+PLOTFPPFLAG =
 ifeq ($(USEPLPLOT), T)
  plplotFPPFLAG = -DUSEPLPLOT
  plplotLIBS = -lplplotf95cd -lplplotf95d
@@ -245,12 +253,14 @@ USGSLIBDIR = -L$(USGSROOT)/lib
 USGSLIB = -lMetReader -lhourssince -lprojection
 USGSINC = -I$(USGSROOT)/include
 
-PLOTFPPFLAGS = $(plplotFPPFLAG) $(dislinFPPFLAG)
+PLOTFPPFLAG = $(plplotFPPFLAG) $(dislinFPPFLAG)
 PLOTLIBS= $(plplotLIBS) $(dislinLIBS)
 PLOTINC=$(plplotINC) $(dislinINC)
-#PLOTLIBS=
-#PLOTINC=
 
+PIIFPP =
+ifeq ($(PII), ON)
+ PIIFPPFLAG = -DUSEPII
+endif
 ###############################################################################
 ##########  GNU Fortran Compiler  #############################################
 ifeq ($(SYSTEM), gfortran)
@@ -285,7 +295,7 @@ ifeq ($(RUN), OMPOPT)
     ASH3DEXEC=Ash3d_omp
 endif
       # Preprocessing flags
-    FPPFLAGS =  -x f95-cpp-input $(OSFPPFLAG) $(DATAFPPFLAGS) $(VERBFPPFLAG) $(LIMFPPFLAG) $(DIFFFPPFLAG) $(memFPPFLAG) $(extdatFPPFLAG) $(FASTFPPFLAG) $(PLOTFPPFLAGS)
+    FPPFLAGS =  -x f95-cpp-input $(OSFPPFLAG) $(DATAFPPFLAG) $(VERBFPPFLAG) $(LIMFPPFLAG) $(DIFFFPPFLAG) $(memFPPFLAG) $(extdatFPPFLAG) $(FASTFPPFLAG) $(PLOTFPPFLAG) $(PIIFPPFLAG)
       # Extra flags
     #EXFLAGS = -xf95
     EXFLAGS =
@@ -329,6 +339,7 @@ PPOBJS = Ash3d_VariableModules.o        \
          write_KML.o                    \
          write_ASCII.o                  \
          write_BINARY.o                 \
+         write_Shapefile.o              \
          Ash3d_PostProc_cities.o        \
          Ash3d_OS_info.o
 
@@ -438,6 +449,8 @@ Ash3d_PostProc_dislin.o: Ash3d_PostProc_dislin.f90 $(MFILE) Ash3d_PostProc_citie
 endif
 Ash3d_PostProc_cities.o: Ash3d_PostProc_cities.f90 $(MFILE) Ash3d_VariableModules.o
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_cities.f90
+write_Shapefile.o: write_Shapefile.f90 $(MFILE) Ash3d_VariableModules.o
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_Shapefile.f90
 
 tools: ascii_check
 

@@ -86,6 +86,13 @@
       real(kind=ip) :: DepositAreaCovered       ! area covered by ash deposit
 
       ! Contour colors and levels
+      real(kind=8),dimension(:),allocatable      :: ContourLev
+      integer,parameter                          :: Contour_MaxCurves  = 10
+      integer,parameter                          :: Contour_MaxPoints  = 1000
+      real(kind=8),dimension(:,:,:),allocatable  :: ContourDataX        ! x curve data with dims: ilev, icurve, ipnt
+      real(kind=8),dimension(:,:,:),allocatable  :: ContourDataY        ! x curve data with dims: ilev, icurve, ipnt
+      integer,dimension(:),allocatable           :: ContourDataNcurves  ! num of curves for each level (some = 0)
+      integer,dimension(:,:),allocatable         :: ContourDataNpoints  ! num of pts for ilev and icurve
       integer,parameter                          :: Con_DepThick_mm_N   = 10
       integer,dimension(Con_DepThick_mm_N,3)     :: Con_DepThick_mm_RGB
       real(kind=ip),dimension(Con_DepThick_mm_N) :: Con_DepThick_mm_Lev

@@ -154,6 +154,7 @@
 #endif
 
       integer   :: OS_TYPE                        ! 1=linux, 2=apple, 3=windows
+      logical   :: IsLitEnd                       ! little-ndian-ness; set in Set_OS_Env
       logical   :: IsLinux    = .true.
       logical   :: IsWindows  = .false.
       logical   :: IsMacOS    = .false.
