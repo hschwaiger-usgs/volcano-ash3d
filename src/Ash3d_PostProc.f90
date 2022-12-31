@@ -42,7 +42,8 @@
       integer             :: iprod
       integer             :: ivar,TS_Flag,height_flag
       integer             :: itime = -1      ! initialize time step to the last step
-      integer             :: i
+      integer             :: i,ii
+      integer             :: icase
       real(kind=ip),dimension(:,:),allocatable :: OutVar
       logical      ,dimension(:,:),allocatable :: mask
       real(kind=ip)       :: OutFillValue
@@ -52,7 +53,17 @@
       character(len=70)   :: comd
       character(len=13)   :: cio
       logical             :: writeContours = .false.
-      logical             :: Dislin_avail, Plplot_avail, Gnuplot_avail
+        ! plotting library availibility and preferences
+        !  1 = dislin
+        !  2 = plplot
+        !  3 = gnuplot
+        !  4 = GMT
+      integer, parameter  :: Nplot_libs = 4
+      logical,dimension(Nplot_libs) :: plotlib_avail
+      integer,dimension(Nplot_libs) :: plot_pref_map = (/1,2,3,4/) ! plot preference for maps
+      integer,dimension(Nplot_libs) :: plot_pref_shp = (/3,1,2,4/) ! plot preference for contours
+      integer,dimension(Nplot_libs) :: plot_pref_vpr = (/2,1,3,4/) ! plot preference for vert profs.
+      integer,dimension(Nplot_libs) :: plot_pref_aTS = (/2,3,1,4/) ! plot preference for Airport TS
 
       INTERFACE
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
@@ -67,24 +78,28 @@
 
       ! Checking to see which plotting packages we have
 #ifdef USEDISLIN
-      Dislin_avail = .true.
+      plotlib_avail(1) = .true.
 #else
-      Dislin_avail = .false.
+      plotlib_avail(1) = .false.
 #endif
 #ifdef USEPLPLOT
-      Plplot_avail = .true.
+      plotlib_avail(2) = .true.
 #else
-      Plplot_avail = .false.
+      plotlib_avail(2) = .false.
 #endif
+      ! Test for gnuplot
       call execute_command_line("echo 'exit' | gnuplot",exitstat=istat)
       if (istat.eq.0)then
-        Gnuplot_avail = .true.
+        plotlib_avail(3) = .true.
       else
-        Gnuplot_avail = .false.
+        plotlib_avail(3) = .false.
       endif
-      write(*,*)"Gnuplot ",Gnuplot_avail
-      write(*,*)"Plplot  ",Plplot_avail
-      write(*,*)"Dislin  ",Dislin_avail
+      ! Test for GMT
+      plotlib_avail(4) = .false.
+      write(*,*)"Gnuplot ",plotlib_avail(1)
+      write(*,*)"Plplot  ",plotlib_avail(2)
+      write(*,*)"Dislin  ",plotlib_avail(3)
+      write(*,*)"GMT     ",plotlib_avail(4)
 
       ! Initialize all output logicals to false
       Write_PR_Data                 = .false.
@@ -607,38 +622,62 @@
         elseif(iprod.eq.16)then
           ! Vertical profile data
           do i=1,nvprofiles
-            if(Dislin_avail)then
+            icase = 0
+            do ii=1,Nplot_libs
+              ! Check each preference in series and see if the library is available
+              if(plotlib_avail(plot_pref_vpr(ii)))then
+                icase = plot_pref_vpr(ii)
+                exit
+              endif
+            enddo
+
+            select case (icase)
+            case(1)
 #ifdef USEDISLIN
               call write_2Dprof_PNG_dislin(i)
 #endif
-            elseif(Plplot_avail)then
+            case(2)
 #ifdef USEPLPLOT
               call write_2Dprof_PNG_plplot(i)
 #endif
-            elseif(Gnuplot_avail)then
+            case(3)
               call write_2Dprof_PNG_gnuplot(i)
-            else
+            !case(4)
+              !call write_2Dprof_PNG_GMT(i)
+            case default
               write(*,*)"ERROR: Plots requested but no plotting package is installed"
               stop 1
-            endif
+            end select
           enddo
         else
-          if(Dislin_avail)then
-#ifdef USEDISLIN
-            call write_2Dmap_PNG_dislin(iprod,iout3d,OutVar,writeContours)
-#endif
-          elseif(Plplot_avail)then
-#ifdef USEPLPLOT
-            call write_2Dmap_PNG_plplot(iprod,iout3d,OutVar,writeContours)
-#endif
-          elseif(Gnuplot_avail)then
-            call write_2Dmap_PNG_gnuplot(iprod,iout3d,OutVar,writeContours)
-          else
-            ! This is a place-holder for the gmt api branch
-            !call write_2Dmap_PNG_gmt(iprod,iout3d,OutVar)
-            write(*,*)"ERROR: Plots requested but no plotting package is installed"
-            stop 1
+          ! If not point data (8) or vertical profiles (16), then do a map plot
+
+        icase = 0
+        do ii=1,Nplot_libs
+          ! Check each preference in series and see if the library is available
+          if(plotlib_avail(plot_pref_map(ii)))then
+            icase = plot_pref_map(ii)
+            exit
           endif
+        enddo
+        select case (icase)
+        case(1)
+#ifdef USEDISLIN
+          call write_2Dmap_PNG_dislin(iprod,iout3d,OutVar,writeContours)
+#endif
+        case(2)
+#ifdef USEPLPLOT
+          call write_2Dmap_PNG_plplot(iprod,iout3d,OutVar,writeContours)
+#endif
+        case(3)
+          call write_2Dmap_PNG_gnuplot(iprod,iout3d,OutVar,writeContours)
+        !case(4)
+          !call write_2Dmap_PNG_GMT(iprod,iout3d,OutVar)
+        case default
+          write(*,*)"ERROR: Plots requested but no plotting package is installed"
+          stop 1
+        end select
+
         endif
       elseif(iformat.eq.4)then
         if(iprod.eq.1)then
@@ -663,26 +702,35 @@
         ! For 2d contours exported from dislin, gnuplot, gmt
         ! First call plotting routine, but only get the contours
         writeContours = .true.
-        if(Dislin_avail)then
+
+        icase = 0
+        do ii=1,Nplot_libs
+          ! Check each preference in series and see if the library is available
+          if(plotlib_avail(plot_pref_shp(ii)))then
+            icase = plot_pref_shp(ii)
+            exit
+          endif
+        enddo
+
+        select case (icase)
+        case(1)
 #ifdef USEDISLIN
           call write_2Dmap_PNG_dislin(iprod,iout3d,OutVar,writeContours)
 #endif
-        elseif(Plplot_avail)then
+        case(2)
 #ifdef USEPLPLOT
-          write(*,*)"Currently cannot extract contours from plplot"
-          stop 1
           call write_2Dmap_PNG_plplot(iprod,iout3d,OutVar,writeContours)
 #endif
-        elseif(Gnuplot_avail)then
+        case(3)
           call write_2Dmap_PNG_gnuplot(iprod,iout3d,OutVar,writeContours)
-        else
-          ! This is a place-holder for the gmt api branch
-          !call write_2Dmap_PNG_gmt(iprod,iout3d,OutVar)
+        !case(4)
+          !call write_2Dmap_PNG_GMT(iprod,iout3d,OutVar)
+        case default
           write(*,*)"ERROR: Plots requested but no plotting package is installed"
           stop 1
-        endif
+        end select
 
-        call write_ShapeFile_Polyline
+        call write_ShapeFile_Polyline(iprod,iout3d)
         !  For contours that follow topography, use
         !call write_ShapeFile_PolylineZ
       elseif(iformat.eq.6)then
@@ -693,46 +741,4 @@
 
 
       end program Ash3d_PostProc
-
-!##############################################################################
-!
-!    write_2D_ShapeFile
-!
-!    if timestep = -1, then use the last step in file
-!##############################################################################
-
-!      subroutine write_2D_ShapeFile
-
-       !The call is:    CALL CONPTS (XRAY, N, YRAY, M, ZMAT, ZLEV, XPTRAY, YPTRAY,
-       !MAXPTS, IRAY, MAXCRV, NCURVS)   level 0, 1, 2, 3
-       !or:     void conpts (const float *xray, int n, const float *yray, int m, const
-       !float *zmat, float zlev, float *xptray, float *yptray, int maxpts, int *iray,
-       !int maxcrv, int *ncurvs);
-       !
-       !XRAY    is an array containing X-coordinates.
-       !N       is the dimension of XRAY.
-       !YRAY    is an array containing Y-coordinates.
-       !M       is the dimension of YRAY.
-       !ZMAT    is a matrix of the dimension (N, M) containing function values.
-       !ZLEV    is a function value that defines the contour line to be calculated.
-       !XPTRAY, YPTRAY  are returned arrays containing the calculated contour. The
-       !arrays can contain several curves.
-       !MAXPTS  is the maximal number of points that can be passed to XPTRAY and
-       !YPTRAY.
-       !IRAY    is a returned integer array that contains the number of points for each
-       !generated contour curve.
-       !MAXCRV  is the maximal number of entries that can be passed to IRAY.
-       !NCURVS  is the returned number of generated curves.
-
-!       call conpts(real(lon_cc_pd,kind=4),nxmax,&
-!                 real(lat_cc_pd,kind=4),nymax,&
-!                 real(DepositThickness,kind=4),0.1_4,&
-!                 XPTS,YPTS,MAXPTS, &
-!                 IRAY,MAXCRV,NCURVS)
-       !do i=1,IRAY(1)
-       !  write(*,*)XPTS(i),YPTS(i)
-       !enddo
-
-!      end subroutine write_2D_ShapeFile
-
 

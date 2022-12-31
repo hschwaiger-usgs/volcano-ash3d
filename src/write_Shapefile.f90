@@ -1,5 +1,5 @@
 
-      subroutine write_ShapeFile_Polyline
+      subroutine write_ShapeFile_Polyline(iprod,itime)
 
       ! input should be the contours, the output product, and the time step
 
@@ -10,12 +10,15 @@
 
       use Output_Vars,   only : &
          ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
-         Contour_MaxCurves,Contour_MaxPoints,ContourLev
+         Contour_MaxCurves,Contour_MaxPoints,ContourLev,Con_N
 
       use io_data,       only : &
-         VolcanoName
+         nWriteTimes,WriteTimes,VolcanoName
 
       implicit none
+
+      integer,intent(in) :: iprod
+      integer,intent(in) :: itime
 
       character(len=8)  :: ov_fileroot = "testfile"
       character(len=22) :: ov_mainfile
@@ -31,15 +34,21 @@
       integer           :: ov_dbasID  = 24
       integer           :: ov_projID  = 25
 
+      character(len=40) :: title_plot
+      character(len=15) :: title_units
+
+      logical           :: debugmode = .false.
+
       character(len=60) :: linebuffer60
       integer                                  :: nrec      ! num of records (e.g. contour levels)
-      integer(kind=4),dimension(:),allocatable :: NumParts  ! num parts/record (e.g. num of line segments)
       integer(kind=4),dimension(:),allocatable :: NumPoints ! total points
+      integer(kind=4) :: NumParts_irec  ! number of parts in level
+      integer(kind=4) :: NumPoints_irec ! sum total points of all curves (parts) in level
       real(kind=8),dimension(:,:,:),allocatable :: contx
       real(kind=8),dimension(:,:,:),allocatable :: conty
       real(kind=8),dimension(:,:,:),allocatable :: contz
       integer :: Iostatus
-      integer :: i,j,ipart,irec
+      integer :: i,j,irec,ipart,ipt
       integer,dimension(:),allocatable :: reclen
       integer :: offset
 
@@ -109,110 +118,119 @@
         end function LitEnd_8real
       END INTERFACE
 
+      if(iprod.eq.3)then       ! deposit at specified times (mm)
+        write(title_plot,'(a22,f5.2,a6)')': Deposit Thickness t=',WriteTimes(itime),' hours'
+        ov_fileroot = 'depothik'
+        title_units = '(mm)'
+      elseif(iprod.eq.4)then   ! deposit at specified times (inches)
+        write(title_plot,'(a22,f5.2,a6)')': Deposit Thickness t=',WriteTimes(itime),' hours'
+        ov_fileroot = 'depothik'
+        title_units  = '(in)'
+      elseif(iprod.eq.5)then       ! deposit at final time (mm)
+        title_plot = ': Final Deposit Thickness'
+        ov_fileroot = 'depothik'
+        title_units = '(mm)'
+      elseif(iprod.eq.6)then   ! deposit at final time (inches)
+        title_plot = ': Final Deposit Thickness'
+        ov_fileroot = 'depothik'
+        title_units = '(in)'
+      elseif(iprod.eq.7)then   ! ashfall arrival time (hours)
+        write(title_plot,'(a22)')': Ashfall arrival time'
+        ov_fileroot = 'DepAvlTm'
+        title_units = '(hours)'
+      elseif(iprod.eq.8)then   ! ashfall arrival at airports/POI (mm)
+        write(*,*)"ERROR: No map PNG output option for airport arrival time data."
+        write(*,*)"       Should not be in write_2Dmap_PNG_dislin"
+        stop 1
+      elseif(iprod.eq.9)then   ! ash-cloud concentration
+        write(title_plot,'(a28,f5.2,a6)')': Ash-cloud concentration t=',WriteTimes(itime),' hours'
+        ov_fileroot = 'AshCdCon'
+        title_units = '(mg/m3)'
+      elseif(iprod.eq.10)then   ! ash-cloud height
+        write(title_plot,'(a21,f5.2,a6)')': Ash-cloud height t=',WriteTimes(itime),' hours'
+        ov_fileroot = 'AshCdHgt'
+        title_units = '(km)'
+      elseif(iprod.eq.11)then   ! ash-cloud bottom
+        write(title_plot,'(a21,f5.2,a6)')': Ash-cloud bottom t=',WriteTimes(itime),' hours'
+        ov_fileroot = 'AshCdBot'
+        title_units = '(km)'
+      elseif(iprod.eq.12)then   ! ash-cloud load
+        write(title_plot,'(a19,f5.2,a6)')': Ash-cloud load t=',WriteTimes(itime),' hours'
+        ov_fileroot = 'AshCdLod'
+        title_units = '(T/km2)'
+      elseif(iprod.eq.13)then  ! radar reflectivity
+        write(title_plot,'(a26,f5.2,a6)')': Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
+        ov_fileroot = 'AshClRad'
+        title_units = '(dBz)'
+      elseif(iprod.eq.14)then   ! ashcloud arrival time (hours)
+        write(title_plot,'(a24)')': Ash-cloud arrival time'
+        ov_fileroot = 'AshAvlTm'
+        title_units = '(hours)'
+      elseif(iprod.eq.15)then   ! topography
+        write(title_plot,'(a12)')': Topography'
+        ov_fileroot = 'Topogrph'
+        title_units = '(km)'
+      elseif(iprod.eq.16)then   ! profile plots
+        write(*,*)"ERROR: No map PNG output option for vertical profile data."
+        write(*,*)"       Should not be in write_2Dmap_PNG_dislin"
+        stop 1
+      else
+        write(*,*)"ERROR: unexpected variable"
+        stop 1
+      endif
+
+
       ! Get number of records; number of actual contour levels used
       nrec=0
-      do i = 1,Contour_MaxCurves
+      do i = 1,Con_N
         if(ContourDataNcurves(i).gt.0)nrec=nrec+1
       enddo
 
-      ! Here is just a temporary bit for loading some test contour data
-!      nrec = 1
       ! We allocate variables here to hold the contour data mainly so ensure that
       ! the variables we write to the shapefile have exactly the kind values expected.
-      allocate(NumParts(nrec))
       allocate(NumPoints(nrec))
       allocate(reclen(nrec))
-      allocate(xmin(nrec))
-      allocate(xmax(nrec))
-      allocate(ymin(nrec))
-      allocate(ymax(nrec))
+      allocate(xmin(nrec)); xmin(:) =  1.0e8_8
+      allocate(xmax(nrec)); xmax(:) = -1.0e8_8
+      allocate(ymin(nrec)); ymin(:) =  1.0e8_8
+      allocate(ymax(nrec)); ymax(:) = -1.0e8_8
 
-      ! Here is just a temporary bit for loading some test contour data
-      !if (2==1)then
-      !  irec =1
-      !  NumParts(irec)=1
-      !  open(unit=20,file='contourfile_0.01_0_i.xyz')
-      !  read(20,'(a60)',IOSTAT=Iostatus) linebuffer60
-      !  NumPoints(irec) = 0
-      !  do while (Iostatus.ge.0)
-      !    NumPoints(irec)=NumPoints(irec)+1
-      !    read(20,'(a60)',IOSTAT=Iostatus) linebuffer60
-      !  enddo
-      !  rewind(20)
-      !  allocate(contx(nrec,1,NumPoints(irec)))
-      !  allocate(conty(nrec,1,NumPoints(irec)))
-      !  allocate(contz(nrec,1,NumPoints(irec)))
-      !  read(20,'(a60)',IOSTAT=Iostatus) linebuffer60
-      !  i = 0
-      !  do while (Iostatus.ge.0)
-      !    i=i+1
-      !    read(linebuffer60,*)contx(irec,1,i),conty(irec,1,i),contz(irec,1,i)
-      !    read(20,'(a60)',IOSTAT=Iostatus) linebuffer60
-      !  enddo
-      !  close(20)
-
-      !  irec =2
-      !  NumParts(irec)=1
-      !  open(unit=20,file='contourfile_0.03_0_i.xyz')
-      !  read(20,'(a60)',IOSTAT=Iostatus) linebuffer60
-      !  NumPoints(irec) = 0
-      !  do while (Iostatus.ge.0)
-      !    NumPoints(irec)=NumPoints(irec)+1
-      !    read(20,'(a60)',IOSTAT=Iostatus) linebuffer60
-      !  enddo
-      !  rewind(20)
-      !  read(20,'(a60)',IOSTAT=Iostatus) linebuffer60
-      !  i = 0
-      !  do while (Iostatus.ge.0)
-      !    i=i+1
-      !    read(linebuffer60,*)contx(irec,1,i),conty(irec,1,i),contz(irec,1,i)
-      !    read(20,'(a60)',IOSTAT=Iostatus) linebuffer60
-      !  enddo
-      !  close(20)
-      !  do irec=1,nrec
-      !    xmin(irec) = minval(contx(irec,1,1:NumPoints(irec)))
-      !    xmax(irec) = maxval(contx(irec,1,1:NumPoints(irec)))
-      !    ymin(irec) = minval(conty(irec,1,1:NumPoints(irec)))
-      !    ymax(irec) = maxval(conty(irec,1,1:NumPoints(irec)))
-      !    ! Calculate the lengths of each record
-      !    ! Polyline content header length
-      !    reclen(irec) = 1*4 + & ! Shape Type : 1-Integer : Little
-      !                   4*8 + & ! Box        : 4-Double  : Little
-      !                   1*4 + & ! NumParts   : 1-Integer : Little
-      !                   1*4 + & ! NumPoints  : 1-Integer : Little
-      !                   NumParts(irec)*4 + & ! Parts      : NumParts-Integers : Little
-      !                   NumPoints(irec)*2*8  ! Points     : 2-Double          : Little
-      !    reclen(irec) = reclen(irec) / 2     ! total record length in 16-bit words
-      !  enddo
-      !  !!!!!!!!!!!! End of temporary bit
-      !else
-        NumParts(1:nrec) = ContourDataNcurves(1:nrec)
-        do irec = 1,nrec  ! This is the loop of the layers (records)
-          !write(*,*)'Rec,nparts = ',irec,NumParts(irec)
-          NumPoints(irec) = 0  ! Initialize the number of points for this record
-          ! Loop through all the parts (individual curves) for this level and sum points
-          do ipart = 1,ContourDataNcurves(irec)
-            NumPoints(irec) = NumPoints(irec) + ContourDataNpoints(irec,ipart)
-            !write(*,*)'     tot points=',NumPoints(irec)
-          enddo
-          ! Set the min/max for each record, as well as the global min/max and
-          ! the length of each polyline record
-          xmin(irec) = minval(ContourDataX(irec,1:NumParts(irec),1:NumPoints(irec)))
-          xmax(irec) = maxval(ContourDataX(irec,1:NumParts(irec),1:NumPoints(irec)))
-          ymin(irec) = minval(ContourDataY(irec,1:NumParts(irec),1:NumPoints(irec)))
-          ymax(irec) = maxval(ContourDataY(irec,1:NumParts(irec),1:NumPoints(irec)))
-  
-          ! Calculate the lengths of each record
-          ! Polyline content header length
-          reclen(irec) = 1*4 + & ! Shape Type : 1-Integer : Little
-                         4*8 + & ! Box        : 4-Double  : Little
-                         1*4 + & ! NumParts   : 1-Integer : Little
-                         1*4 + & ! NumPoints  : 1-Integer : Little
-                         NumParts(irec)*4 + & ! Parts      : NumParts-Integers : Little
-                         NumPoints(irec)*2*8  ! Points     : 2-Double          : Little
-          reclen(irec) = reclen(irec) / 2     ! total record length in 16-bit words
+      do irec = 1,nrec  ! This is the loop of the layers (records)
+        NumParts_irec = ContourDataNcurves(irec)
+        NumPoints(irec) = 0  ! Initialize the number of points for this record
+        ! Loop through all the parts (individual curves) for this level and sum points
+        do ipart = 1,ContourDataNcurves(irec)
+          NumPoints(irec) = NumPoints(irec) + ContourDataNpoints(irec,ipart)
         enddo
-      !endif
+        ! Set the min/max for each record, as well as the global min/max and
+        ! the length of each polyline record
+        do ipart = 1,ContourDataNcurves(irec)
+          do ipt = 1,ContourDataNpoints(irec,ipart)
+            if(ContourDataX(irec,ipart,ipt).lt.xmin(irec))then
+              xmin(irec) = ContourDataX(irec,ipart,ipt)
+            endif
+            if(ContourDataX(irec,ipart,ipt).gt.xmax(irec))then
+              xmax(irec) = ContourDataX(irec,ipart,ipt)
+            endif
+            if(ContourDataY(irec,ipart,ipt).lt.ymin(irec))then
+              ymin(irec) = ContourDataY(irec,ipart,ipt)
+            endif
+            if(ContourDataY(irec,ipart,ipt).gt.ymax(irec))then
+              ymax(irec) = ContourDataY(irec,ipart,ipt)
+            endif
+          enddo
+        enddo
+
+        ! Calculate the lengths of each record
+        ! Polyline content header length
+        reclen(irec) = 1*4 + & ! Shape Type : 1-Integer : Little
+                       4*8 + & ! Box        : 4-Double  : Little
+                       1*4 + & ! NumParts   : 1-Integer : Little
+                       1*4 + & ! NumPoints  : 1-Integer : Little
+                       NumParts_irec*4 + &  ! Parts      : NumParts-Integers : Little
+                       NumPoints(irec)*2*8  ! Points     : 2-Double          : Little
+        reclen(irec) = reclen(irec) / 2     ! total record length in 16-bit words
+      enddo
       zmin = 0.0_8
       zmax = 0.0_8
       mmin = 0.0_8
@@ -227,7 +245,6 @@
       ov_projfile = trim(adjustl(ov_fileroot)) // ov_projext
 
       write(*,*)"Writing shapefile"
-      !write(*,*)"system is little endian=",IsLitEnd
 
       ! First, writing the main .shp file which contains the contour (polyline) data.
       ! The specification has a mess of little-endian and big-endian writes with non-integer
@@ -236,10 +253,10 @@
       ! bits.  For all the details, see
       ! https://www.esri.com/content/dam/esrisites/sitecore-archive/Files/Pdfs/library/whitepapers/pdfs/shapefile.pdf
       !  All writes of real*8 will use transfer() to write the correct bits in 4-byte packets
-      open(ov_mainID, file=trim(adjustl(ov_mainfile)), access='stream', form='unformatted', status='new')
+      open(ov_mainID, file=trim(adjustl(ov_mainfile)), access='stream', form='unformatted', status='replace')
       ! Note: The index file (.shx) has the same head as the .shp file (except the file length field)
       !       So duplicate all the writes
-      open(ov_indxID, file=trim(adjustl(ov_indxfile)), access='stream', form='unformatted', status='new')
+      open(ov_indxID, file=trim(adjustl(ov_indxfile)), access='stream', form='unformatted', status='replace')
 
       ! File header is 100 bytes
       file_code = 9994_4
@@ -259,12 +276,22 @@
       write(ov_indxID)BigEnd_4int(IsLitEnd,tmp4)
       write(ov_indxID)BigEnd_4int(IsLitEnd,tmp4)
 
+      if(debugmode)then
+        write(*,*)file_code,   " 1-  4 : FH Byte 0 File Code 9994 Integer Big"
+        write(*,*)tmp4,        " 5-  8 : FH Byte 4 Unused 0 Integer Big"
+        write(*,*)tmp4,        " 9- 12 : FH Byte 8 Unused 0 Integer Big"
+        write(*,*)tmp4,        "13- 16 : FH Byte 12 Unused 0 Integer Big"
+        write(*,*)tmp4,        "17- 20 : FH Byte 16 Unused 0 Integer Big"
+        write(*,*)tmp4,        "21- 24 : FH Byte 20 Unused 0 Integer Big"
+      endif
+
       !              -- File Header length
       !              |     -- Record header length for all records
       !              |     |        -- Sum of all length of polyline record contents
       !              |     |        |    
       file_length = 50 + (4*nrec) + sum(reclen(1:nrec))  ! total file length in 16-bit words
       write(ov_mainID)BigEnd_4int(IsLitEnd,file_length)          ! 25-28 : FH Byte 24 File Length Integer Big
+      if(debugmode)write(*,*)file_length,"25-28 : FH Byte 24 File Length Integer Big"
       ! Recalculating length for the index file
       file_length = 50 + (4*nrec)
       write(ov_indxID)BigEnd_4int(IsLitEnd,file_length)
@@ -272,9 +299,11 @@
       ! Here's where we start writing as little-endian
       version = 1000
       write(ov_mainID)LitEnd_4int(IsLitEnd,version)             ! 29-32 : FH Byte 28 Version 1000 Integer Little
+      if(debugmode)write(*,*)version,"29-32 : FH Byte 28 Version 1000 Integer Little"
       write(ov_indxID)LitEnd_4int(IsLitEnd,version)
       shape_type = 3
       write(ov_mainID)LitEnd_4int(IsLitEnd,shape_type)          ! 33-36 : FH Shape Type Integer Little
+      if(debugmode)write(*,*)shape_type,"33-36 : FH Shape Type Integer Little"
       write(ov_indxID)LitEnd_4int(IsLitEnd,shape_type)          !         (use code 3 for polyline)
 
       ! Start of real values
@@ -286,15 +315,28 @@
       write(ov_indxID)LitEnd_8real(IsLitEnd,minval(ymin(1:nrec)))
       write(ov_indxID)LitEnd_8real(IsLitEnd,maxval(xmax(1:nrec)))
       write(ov_indxID)LitEnd_8real(IsLitEnd,maxval(ymax(1:nrec)))
+      if(debugmode)then
+        write(*,*)minval(xmin(1:nrec)),"37- 44 : FH Bounding Box Xmin Double Little"
+        write(*,*)minval(ymin(1:nrec)),"45- 52 : FH Bounding Box Ymin Double Little"
+        write(*,*)maxval(xmax(1:nrec)),"53- 60 : FH Bounding Box Xmax Double Little"
+        write(*,*)maxval(ymax(1:nrec)),"61- 68 : FH Bounding Box Ymax Double Little"
+      endif
 
-      write(ov_mainID)LitEnd_8real(IsLitEnd,zmin)    ! 69- 76 : FH Bounding Box Xmin Double Little
-      write(ov_mainID)LitEnd_8real(IsLitEnd,zmax)    ! 77- 84 : FH Bounding Box Ymin Double Little
-      write(ov_mainID)LitEnd_8real(IsLitEnd,mmin)    ! 85- 92 : FH Bounding Box Xmax Double Little
-      write(ov_mainID)LitEnd_8real(IsLitEnd,mmax)    ! 94-100 : FH Bounding Box Ymax Double Little
+      write(ov_mainID)LitEnd_8real(IsLitEnd,zmin)    ! 69- 76 : FH Bounding Box Zmin Double Little
+      write(ov_mainID)LitEnd_8real(IsLitEnd,zmax)    ! 77- 84 : FH Bounding Box Zmax Double Little
+      write(ov_mainID)LitEnd_8real(IsLitEnd,mmin)    ! 85- 92 : FH Bounding Box Mmin Double Little
+      write(ov_mainID)LitEnd_8real(IsLitEnd,mmax)    ! 94-100 : FH Bounding Box Mmax Double Little
       write(ov_indxID)LitEnd_8real(IsLitEnd,zmin)
       write(ov_indxID)LitEnd_8real(IsLitEnd,zmax)
       write(ov_indxID)LitEnd_8real(IsLitEnd,mmin)
       write(ov_indxID)LitEnd_8real(IsLitEnd,mmax)
+
+      if(debugmode)then
+        write(*,*)zmin,"69- 76 : FH Bounding Box Zmin Double Little"
+        write(*,*)zmax,"77- 84 : FH Bounding Box Zmax Double Little"
+        write(*,*)mmin,"85- 92 : FH Bounding Box Mmin Double Little"
+        write(*,*)mmax,"94-100 : FH Bounding Box Mmax Double Little"
+      endif
       ! End of Main File Header
 
       ! Loop through all the records
@@ -305,8 +347,11 @@
         !  Byte 4 Content Length Content Length Integer Big
         !   Note: content length is the number of 16-bit words
         write(ov_mainID)BigEnd_4int(IsLitEnd,irec)
+        if(debugmode)write(*,*)irec,"Byte 0 Record Number Record Number Integer Big"
         write(ov_mainID)BigEnd_4int(IsLitEnd,reclen(irec))
+        if(debugmode)write(*,*)reclen(irec),"Byte 4 Content Length Content Length Integer Big"
 
+        NumParts_irec = ContourDataNcurves(irec)
         !  PolyLine Record Contents
         !  Byte 0 Shape Type 3 Integer 1 Little
         !  Byte 4 Box Box Double 4 Little
@@ -319,13 +364,28 @@
         write(ov_mainID)LitEnd_8real(IsLitEnd,ymin(irec))
         write(ov_mainID)LitEnd_8real(IsLitEnd,xmax(irec))
         write(ov_mainID)LitEnd_8real(IsLitEnd,ymax(irec))
-        write(ov_mainID)LitEnd_4int(IsLitEnd,NumParts(irec))
+        write(ov_mainID)LitEnd_4int(IsLitEnd,NumParts_irec)
         write(ov_mainID)LitEnd_4int(IsLitEnd,NumPoints(irec))
 
+        if(debugmode)then
+          write(*,*)shape_type,"Byte 0 Shape Type 3 Integer 1 Little"
+          write(*,*)xmin(irec),"Byte 4 xmin Double Little"
+          write(*,*)ymin(irec),"Byte 12 ymin Double Little"
+          write(*,*)xmax(irec),"Byte 20 xmax Double Little"
+          write(*,*)ymax(irec),"Byte 28 ymax Double Little"
+          write(*,*)NumParts_irec,"Byte 36 NumParts NumParts Integer 1 Little"
+          write(*,*)NumPoints(irec),"Byte 40 NumPoints NumPoints Integer 1 Little"
+        endif
+        ! Address of the start of the first part is 0
         write(ov_mainID)LitEnd_4int(IsLitEnd,0_4) ! An array of length NumParts with each value
                                                   ! the address (zero-offset) of the start of the part
-        do ipart=1,NumParts(irec)
-          do i=1,NumPoints(irec)
+        do i=1,NumParts_irec-1
+          tmp4 = sum(ContourDataNpoints(irec,1:i)) !-1
+          write(ov_mainID)LitEnd_4int(IsLitEnd,tmp4)
+        enddo
+
+        do ipart=1,ContourDataNcurves(irec)
+          do i=1,ContourDataNpoints(irec,ipart)
             !if(2==1)then
             !  write(ov_mainID)LitEnd_8real(IsLitEnd,contx(irec,ipart,i))
             !  write(ov_mainID)LitEnd_8real(IsLitEnd,conty(irec,ipart,i))
@@ -357,10 +417,9 @@
       !  3. The record order must be the same as the order of shape features in the main file
       !  4. The year value in the dBASE header must be the year since 1900.
       ! Note: We will write dBASE V – MS-Windows (Level 5) format since we know that works.
-      open(ov_dbasID, file=trim(adjustl(ov_dbasfile)), access='stream', form='unformatted', status='new')
+      open(ov_dbasID, file=trim(adjustl(ov_dbasfile)), access='stream', form='unformatted', status='replace')
 
-      !DBASE_TableRecDataName  =  "Mazama_Deposit_mm                                                              "
-      write(DBASE_TableRecDataName,*)trim(adjustl(VolcanoName)),' Deposit mm'
+      write(DBASE_TableRecDataName,*)trim(adjustl(VolcanoName)),title_plot,title_units
       DBASE_TableRecDataValue =  "       0.000000000000000 "
       DBASE_TableRecDataIndex =  "         0"
 
@@ -557,7 +616,7 @@
 
       close(ov_dbasID)
 
-      open(ov_projID, file=trim(adjustl(ov_projfile)), access='stream', form='unformatted', status='new')
+      open(ov_projID, file=trim(adjustl(ov_projfile)), access='stream', form='unformatted', status='replace')
       write(ov_projID)'GEOGCS["GCS_WGS_1984",'
       write(ov_projID)'DATUM["D_WGS_1984",'
       write(ov_projID)'SPHEROID["WGS_1984",'

@@ -105,6 +105,7 @@ FASTFPPFLAG =
 #  to use the default gnuplot.  
 USEPLPLOT = F
 USEDISLIN = F
+USEGMT    = T
 
 MFILE=makefile
 
@@ -247,15 +248,23 @@ ifeq ($(USEDISLIN), T)
  dislinINC  = -I/usr/local/dislin/gf
  dislinOBJ  = Ash3d_PostProc_dislin.o
 endif
+ifeq ($(USEGMT), T)
+ gmtFPPFLAG = -DUSEGMT
+ gmtLIBS = -L/usr/lib64 -lgmt -lpsl
+ gmtINC  = -I/usr/include/gmt
+ gmtOBJ  = gmt.o Ash3d_PostProc_GMT.o
+ gmtfortloc = /home/hschwaiger/Programs/GIT/gmt-fortran
+endif
+
 
 # location of MetReader, HoursSince and projection
 USGSLIBDIR = -L$(USGSROOT)/lib
 USGSLIB = -lMetReader -lhourssince -lprojection
 USGSINC = -I$(USGSROOT)/include
 
-PLOTFPPFLAG = $(plplotFPPFLAG) $(dislinFPPFLAG)
-PLOTLIBS= $(plplotLIBS) $(dislinLIBS)
-PLOTINC=$(plplotINC) $(dislinINC)
+PLOTFPPFLAG = $(plplotFPPFLAG) $(dislinFPPFLAG) $(gmtFPPFLAG)
+PLOTLIBS= $(plplotLIBS) $(dislinLIBS) $(gmtLIBS)
+PLOTINC=$(plplotINC) $(dislinINC) $(gmtINC)
 
 PIIFPP =
 ifeq ($(PII), ON)
@@ -343,7 +352,7 @@ PPOBJS = Ash3d_VariableModules.o        \
          Ash3d_PostProc_cities.o        \
          Ash3d_OS_info.o
 
-GRAFOBJ = Ash3d_PostProc_gnuplot.o $(plplotOBJ) $(dislinOBJ)
+GRAFOBJ = Ash3d_PostProc_gnuplot.o $(plplotOBJ) $(dislinOBJ) $(gmtOBJ)
 
 ifeq ($(USENETCDF), T)
   DATAOBJ = write_NETCDF.o
@@ -446,6 +455,12 @@ endif
 ifeq ($(USEDISLIN), T)
 Ash3d_PostProc_dislin.o: Ash3d_PostProc_dislin.f90 $(MFILE) Ash3d_PostProc_cities.o
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_dislin.f90
+endif
+ifeq ($(USEGMT), T)
+Ash3d_PostProc_GMT.o: Ash3d_PostProc_GMT.f90 $(MFILE) Ash3d_PostProc_cities.o gmt.o
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_GMT.f90
+gmt.o: $(gmtfortloc)/src/gmt.f90 $(MFILE)
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(gmtfortloc)/src/gmt.f90
 endif
 Ash3d_PostProc_cities.o: Ash3d_PostProc_cities.f90 $(MFILE) Ash3d_VariableModules.o
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_cities.f90

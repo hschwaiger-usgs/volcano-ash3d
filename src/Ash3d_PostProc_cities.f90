@@ -46,9 +46,18 @@
       CityLat_out  = 0.0_8
       resolution   = 100          !number of cells in width & height
 
-      ! make sure everything between -180 and 180 degrees.
-      if (inlonLL.gt.180.0_8) lonLL=inlonLL-360.0_8
-      if (inlonUR.gt.180.0_8) lonUR=inlonUR-360.0_8
+      ! All city longitudes are between -180 and 180 degrees.
+      ! Make sure the requested computational domain is in the same range.
+      if (inlonLL.gt.180.0_8)then
+        lonLL = inlonLL-360.0_8
+      else
+        lonLL = inlonLL
+      endif
+      if (inlonUR.gt.180.0_8)then
+        lonUR = inlonUR-360.0_8
+      else
+        lonUR = inlonUR
+      endif
       ! if the model domain wraps across the prime meridian add 360 to longitude
       if (inlonLL.gt.inlonUR)lonUR = inlonUR + 360.0_8
       latLL = inlatLL
@@ -68,7 +77,7 @@
       inquire( file=trim(adjustl(CityMasterFile)), exist=IsThere )
       if(.not.IsThere)then
         write(6,*)"WARNING: Could not find file: ",trim(adjustl(CityMasterFile)),&
-                  "in CWD."
+                  " in CWD."
         write(6,*)"         Trying in default install path: ",trim(Ash3dHome)
         CityMasterFile = trim(Ash3dHome) // &
                           DirDelim // 'share' // &
@@ -80,6 +89,8 @@
           write(6,*)"       Skipping cities"
           ncities = 0
           return
+        else
+          write(6,*)"Found file."
         endif
       endif
       open(unit=12,file=trim(adjustl(CityMasterFile)))
@@ -120,7 +131,6 @@
         nread=nread+1
       enddo
       close(12)
-
       if(outCode.gt.0)then
         if(ncities.gt.0) then
           open(unit=13,file='cities.xy')

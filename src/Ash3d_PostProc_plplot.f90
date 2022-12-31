@@ -26,7 +26,7 @@
          Con_CloudRef_N,Con_CloudRef_RGB,Con_CloudRef_Lev, &
          Con_CloudTime_N,Con_CloudTime_RGB,Con_CloudTime_Lev, &
          ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
-         Contour_MaxCurves,Contour_MaxPoints
+         Contour_MaxCurves,Contour_MaxPoints,ContourLev,Con_N
 
       use io_data,       only : &
          nWriteTimes,WriteTimes,cdf_b3l1,VolcanoName
@@ -126,6 +126,13 @@
           character(len=26),dimension(ncities) :: CityName_out
         end subroutine citylist
       END INTERFACE
+
+      if(writeContours)then
+        write(*,*)"Running plplot to calculate contours lines"
+        write(*,*)"Not sure yet how to save contout data"
+      else
+        write(*,*)"Running plplot to generate contour plot"
+      endif
 
       ncities = 20
       allocate(lon_cities(ncities))
@@ -265,6 +272,7 @@
         write(*,*)"ERROR: unexpected variable"
         stop 1
       endif
+      Con_N = nzlev
 
       xmin = real(minval(lon_cc_pd(1:nxmax)),kind=plflt)
       xmax = real(maxval(lon_cc_pd(1:nxmax)),kind=plflt)

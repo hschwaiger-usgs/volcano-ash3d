@@ -26,7 +26,7 @@
          Con_CloudRef_N,Con_CloudRef_RGB,Con_CloudRef_Lev, &
          Con_CloudTime_N,Con_CloudTime_RGB,Con_CloudTime_Lev,&
          ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
-         Contour_MaxCurves,Contour_MaxPoints,ContourLev
+         Contour_MaxCurves,Contour_MaxPoints,ContourLev,Con_N
 
       use io_data,       only : &
          nWriteTimes,WriteTimes,cdf_b3l1,VolcanoName
@@ -77,10 +77,10 @@
       real(kind=4) :: xminDIS, xmaxDIS, yminDIS, ymaxDIS
       real(kind=4) :: dx_map, dy_map, xgrid_1, ygrid_1
       ! Hot colormap RGB's and breakpoints
-      real(kind=4), dimension(4) :: cpt_break_hot = (/ 0.0_4, 0.38_4, 0.76_4, 1.0_4 /)
-      real(kind=4), dimension(4) :: cpt_r_hot     = (/ 0.0_4, 1.0_4, 1.0_4, 1.0_4 /)
-      real(kind=4), dimension(4) :: cpt_g_hot     = (/ 0.0_4, 0.0_4, 1.0_4, 1.0_4 /)
-      real(kind=4), dimension(4) :: cpt_b_hot     = (/ 0.0_4, 0.0_4, 0.0_4, 0.9_4 /) ! hot actually ends in 1.0
+      !real(kind=4), dimension(4) :: cpt_break_hot = (/ 0.0_4, 0.38_4, 0.76_4, 1.0_4 /)
+      !real(kind=4), dimension(4) :: cpt_r_hot     = (/ 0.0_4, 1.0_4, 1.0_4, 1.0_4 /)
+      !real(kind=4), dimension(4) :: cpt_g_hot     = (/ 0.0_4, 0.0_4, 1.0_4, 1.0_4 /)
+      !real(kind=4), dimension(4) :: cpt_b_hot     = (/ 0.0_4, 0.0_4, 0.0_4, 0.9_4 /) ! hot actually ends in 1.0
       real(kind=4) :: i_flt,idel,cdel,xr,xg,xb
 
       character(len=30) :: cstr_volcname
@@ -144,7 +144,7 @@
         endif
       endif
 
-      allocate(ContourLev(Contour_MaxCurves))
+      allocate(ContourLev(nzlev))
       if(iprod.eq.3)then       ! deposit at specified times (mm)
         write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
@@ -274,10 +274,12 @@
         write(*,*)"ERROR: unexpected variable"
         stop 1
       endif
+      Con_N = nzlev
 
       if(writeContours)then
-        allocate(ContourDataNcurves(Contour_MaxCurves))
-        allocate(ContourDataNpoints(Contour_MaxCurves,Contour_MaxPoints))
+        write(*,*)"Running Dislin to calculate contours lines"
+        allocate(ContourDataNcurves(nzlev))
+        allocate(ContourDataNpoints(nzlev,Contour_MaxCurves))
         allocate(ContourDataX(nzlev,Contour_MaxCurves,Contour_MaxPoints))
         allocate(ContourDataY(nzlev,Contour_MaxCurves,Contour_MaxPoints))
         ContourDataNcurves(:)   = 0
@@ -304,16 +306,18 @@
             do k=1,IRAY(j)
               ContourDataX(i,j,k) = real(XPTS(k),kind=8)
               ContourDataY(i,j,k) = real(YPTS(k),kind=8)
-              !write(*,*) i,j,k,XPTS(k),YPTS(k),zlev(i)
             enddo
-
+            ! These data could be plotted to produce the same plot as from contur
             !call curvmp(XPTS,YPTS,IRAY(j))
           enddo
         enddo
+        ! Once we've loaded contours, we are all done here
         return
       endif
 
-      ! Now map plots
+      ! This is the section where we actually start plotting the map
+      write(*,*)"Running Dislin to generate contour plot"
+
       xmin = real(minval(lon_cc_pd(1:nxmax)),kind=8)
       xmax = real(maxval(lon_cc_pd(1:nxmax)),kind=8)
       ymin = real(minval(lat_cc_pd(1:nymax)),kind=8)
@@ -411,44 +415,16 @@
                     real(OutVar,kind=4),zlev,nzlev)
       else
         do i=1,nzlev
-        !do i=1,1
           xr   = real(zrgb(i,1),kind=4)/real(255,kind=4)
           xg   = real(zrgb(i,2),kind=4)/real(255,kind=4)
           xb   = real(zrgb(i,3),kind=4)/real(255,kind=4)
           nclr = intrgb(xr,xg,xb)
 
           call setclr(nclr)
-          !if(writeContours)then
-          !  ! This part calculated the contours
-          !  XPTS(:) = 0.0_4
-          !  YPTS(:) = 0.0_4
-          !  IRAY(:) = 0
-          !  call conpts(real(lon_cc_pd(1:nxmax),kind=4),nxmax,&  ! x coord and size
-          !              real(lat_cc_pd(1:nymax),kind=4),nymax,&  ! y coord and size
-          !              real(OutVar(1:nxmax,1:nymax),kind=4),&   ! matrix with function values
-          !              zlev(i),            &           ! level to contour
-          !              XPTS,YPTS,          &           ! x,y of contour (may have mul. curves)
-          !              Contour_MaxPoints,  &           ! max # of points for contour arrays
-          !              IRAY,               &           ! num of points for each contour
-          !              Contour_MaxCurves,  &           ! max number of curves
-          !              NCURVS)                         ! actual number of curves
-          !  ContourDataNcurves(i)=NCURVS
-          !  do j=1,NCURVS
-          !    ContourDataNpoints(i,j)=IRAY(j)
-          !    do k=1,IRAY(j)
-          !      ContourDataX(i,j,k) = XPTS(k)
-          !      ContourDataY(i,j,k) = YPTS(k)
-          !      write(*,*) i,j,k,XPTS(k),YPTS(k),zlev(i)
-          !    enddo
 
-          !    !call curvmp(XPTS,YPTS,IRAY(j))
-          !  enddo
-          !else
-            ! If no contour data are needed, just call contur
-            call contur(real(lon_cc_pd(1:nxmax),kind=4),nxmax,&
-                        real(lat_cc_pd(1:nymax),kind=4),nymax,&
-                        real(OutVar(1:nxmax,1:nymax),kind=4),zlev(i))
-          !endif
+          call contur(real(lon_cc_pd(1:nxmax),kind=4),nxmax,&
+                      real(lat_cc_pd(1:nymax),kind=4),nymax,&
+                      real(OutVar(1:nxmax,1:nymax),kind=4),zlev(i))
         enddo
       endif
 

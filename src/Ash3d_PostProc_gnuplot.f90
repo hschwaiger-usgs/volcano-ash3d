@@ -9,6 +9,9 @@
 
       use precis_param
 
+      use global_param,  only : &
+         EPS_SMALL
+
       use mesh,          only : &
          nxmax,nymax,x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd, &
          IsLatLon
@@ -26,7 +29,7 @@
          Con_CloudRef_N,Con_CloudRef_RGB,Con_CloudRef_Lev, &
          Con_CloudTime_N,Con_CloudTime_RGB,Con_CloudTime_Lev, &
          ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
-         Contour_MaxCurves,Contour_MaxPoints
+         Contour_MaxCurves,Contour_MaxPoints,ContourLev,Con_N
 
       use time_data,     only : &
          os_time_log,BaseYear,useLeap
@@ -44,7 +47,7 @@
       real(kind=ip) :: OutVar(nxmax,nymax)
       logical :: writeContours
 
-      integer :: i,j,k
+      integer :: i,j,k,ii
       integer :: nzlev
       real(kind=4), dimension(:)  ,allocatable :: zlev
       integer     , dimension(:,:),allocatable :: zrgb
@@ -64,13 +67,19 @@
       character(len=10) :: dp_confile
       character(len=26) :: coord_str
       character(len=25) :: gnucom
-      integer :: ioerr,iw,iwf,istat
+      integer :: ioerr,ioerr2,iw,iwf,istat
 
       integer :: ncities
       real(kind=8),dimension(:),allocatable     :: lon_cities
       real(kind=8),dimension(:),allocatable     :: lat_cities
       character(len=26),dimension(:),allocatable :: name_cities
-      logical            :: IsThere1,IsThere2
+      logical           :: IsThere1,IsThere2
+      character(len=80) :: linebuffer080
+      character         :: testkey
+      integer           :: ilev,ignulev
+      integer           :: lev_i,substr_pos1,substr_pos2,substr_pos3
+      real(kind=4)      :: lev_r4
+      integer           :: icurve,ipt
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
@@ -100,6 +109,8 @@
           write(*,*)"Could not find required file world_50m.txt"
           write(*,*)"This file is available at:"
           write(*,*)"  http://www.gnuplotting.org_data_world_50m.txt"
+          write(*,*)"Please download this file to the current working directory or"
+          write(*,*)"copy to /opt/USGS/Ash3d/share/post_proc/"
         endif
       endif
 
@@ -123,6 +134,7 @@
         endif
       endif
 
+      allocate(ContourLev(nzlev))
       if(iprod.eq.3)then       ! deposit at specified times (mm)
         write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
@@ -130,6 +142,7 @@
         nzlev = Con_DepThick_mm_N
         allocate(zlev(nzlev))
         allocate(zrgb(nzlev,3))
+        ContourLev(1:nzlev) = Con_DepThick_mm_Lev(1:nzlev)
         zlev(1:nzlev) = real(Con_DepThick_mm_Lev(1:nzlev),kind=4)
         zrgb(1:nzlev,1:3) = Con_DepThick_mm_RGB(1:nzlev,1:3)
       elseif(iprod.eq.4)then   ! deposit at specified times (inches)
@@ -139,6 +152,7 @@
         nzlev = Con_DepThick_in_N
         allocate(zlev(nzlev))
         allocate(zrgb(nzlev,3))
+        ContourLev(1:nzlev) = Con_DepThick_in_Lev(1:nzlev)
         zlev(1:nzlev) = real(Con_DepThick_in_Lev(1:nzlev),kind=4)
         zrgb(1:nzlev,1:3) = Con_DepThick_in_RGB(1:nzlev,1:3)
       elseif(iprod.eq.5)then       ! deposit at final time (mm)
@@ -148,6 +162,7 @@
         nzlev = Con_DepThick_mm_N
         allocate(zlev(nzlev))
         allocate(zrgb(nzlev,3))
+        ContourLev(1:nzlev) = Con_DepThick_mm_Lev(1:nzlev)
         zlev(1:nzlev) = real(Con_DepThick_mm_Lev(1:nzlev),kind=4)
         zrgb(1:nzlev,1:3) = Con_DepThick_mm_RGB(1:nzlev,1:3)
       elseif(iprod.eq.6)then   ! deposit at final time (inches)
@@ -157,6 +172,7 @@
         nzlev = Con_DepThick_in_N
         allocate(zlev(nzlev))
         allocate(zrgb(nzlev,3))
+        ContourLev(1:nzlev) = Con_DepThick_in_Lev(1:nzlev)
         zlev(1:nzlev) = real(Con_DepThick_in_Lev(1:nzlev),kind=4)
         zrgb(1:nzlev,1:3) = Con_DepThick_in_RGB(1:nzlev,1:3)
       elseif(iprod.eq.7)then   ! ashfall arrival time (hours)
@@ -166,6 +182,7 @@
         nzlev = Con_DepTime_N
         allocate(zlev(nzlev))
         allocate(zrgb(nzlev,3))
+        ContourLev(1:nzlev) = Con_DepTime_Lev(1:nzlev)
         zlev(1:nzlev) = real(Con_DepTime_Lev(1:nzlev),kind=4)
         zrgb(1:nzlev,1:3) = Con_DepTime_RGB(1:nzlev,1:3)
       elseif(iprod.eq.8)then   ! ashfall arrival at airports/POI (mm)
@@ -179,6 +196,7 @@
         nzlev = Con_CloudCon_N
         allocate(zlev(nzlev))
         allocate(zrgb(nzlev,3))
+        ContourLev(1:nzlev) = Con_CloudCon_Lev(1:nzlev)
         zlev(1:nzlev) = real(Con_CloudCon_Lev(1:nzlev),kind=4)
         zrgb(1:nzlev,1:3) = Con_CloudCon_RGB(1:nzlev,1:3)
       elseif(iprod.eq.10)then   ! ash-cloud height
@@ -188,6 +206,7 @@
         nzlev = Con_CloudTop_N
         allocate(zlev(nzlev))
         allocate(zrgb(nzlev,3))
+        ContourLev(1:nzlev) = Con_CloudTop_Lev(1:nzlev)
         zlev(1:nzlev) = real(Con_CloudTop_Lev(1:nzlev),kind=4)
         zrgb(1:nzlev,1:3) = Con_CloudTop_RGB(1:nzlev,1:3)
       elseif(iprod.eq.11)then   ! ash-cloud bottom
@@ -197,6 +216,7 @@
         nzlev = Con_CloudBot_N
         allocate(zlev(nzlev))
         allocate(zrgb(nzlev,3))
+        ContourLev(1:nzlev) = Con_CloudBot_Lev(1:nzlev)
         zlev(1:nzlev) = real(Con_CloudBot_Lev(1:nzlev),kind=4)
         zrgb(1:nzlev,1:3) = Con_CloudBot_RGB(1:nzlev,1:3)
       elseif(iprod.eq.12)then   ! ash-cloud load
@@ -206,6 +226,7 @@
         nzlev = Con_CloudLoad_N
         allocate(zlev(nzlev))
         allocate(zrgb(nzlev,3))
+        ContourLev(1:nzlev) = Con_CloudLoad_Lev(1:nzlev)
         zlev(1:nzlev) = real(Con_CloudLoad_Lev(1:nzlev),kind=4)
         zrgb(1:nzlev,1:3) = Con_CloudLoad_RGB(1:nzlev,1:3)
       elseif(iprod.eq.13)then  ! radar reflectivity
@@ -215,6 +236,7 @@
         nzlev = Con_CloudRef_N
         allocate(zlev(nzlev))
         allocate(zrgb(nzlev,3))
+        ContourLev(1:nzlev) = Con_CloudRef_Lev(1:nzlev)
         zlev(1:nzlev) = real(Con_CloudRef_Lev(1:nzlev),kind=4)
         zrgb(1:nzlev,1:3) = Con_CloudRef_RGB(1:nzlev,1:3)
       elseif(iprod.eq.14)then   ! ashcloud arrival time (hours)
@@ -224,6 +246,7 @@
         nzlev = Con_CloudTime_N
         allocate(zlev(nzlev))
         allocate(zrgb(nzlev,3))
+        ContourLev(1:nzlev) = Con_CloudTime_Lev(1:nzlev)
         zlev(1:nzlev) = real(Con_CloudTime_Lev(1:nzlev),kind=4)
         zrgb(1:nzlev,1:3) = Con_CloudTime_RGB(1:nzlev,1:3)
       elseif(iprod.eq.15)then   ! topography
@@ -241,12 +264,20 @@
         write(*,*)"ERROR: unexpected variable"
         stop 1
       endif
+      Con_N = nzlev
 
       if(writeContours)then
-        allocate(ContourDataNcurves(Contour_MaxCurves))
-        allocate(ContourDataNpoints(Contour_MaxCurves,Contour_MaxPoints))
+        write(*,*)"Running Gnuplot to calculate contours lines"
+        allocate(ContourDataNcurves(nzlev))
+        allocate(ContourDataNpoints(nzlev,Contour_MaxCurves))
         allocate(ContourDataX(nzlev,Contour_MaxCurves,Contour_MaxPoints))
         allocate(ContourDataY(nzlev,Contour_MaxCurves,Contour_MaxPoints))
+        ContourDataNcurves(:)   = 0
+        ContourDataNpoints(:,:) = 0
+        ContourDataX(:,:,:)     = 0.0_8
+        ContourDataY(:,:,:)     = 0.0_8
+      else
+        write(*,*)"Running Gnuplot to generate contour plot"
       endif
 
       write(dp_outfile,53) "outvar.dat"
@@ -254,8 +285,14 @@
       write(dp_gnufile,53) "outvar.gpi"
  53   format(a10)
 
-      xmin = real(minval(lon_cc_pd(1:nxmax)),kind=8)-360.0
-      xmax = real(maxval(lon_cc_pd(1:nxmax)),kind=8)-360.0
+      xmin = real(minval(lon_cc_pd(1:nxmax)),kind=8)
+      ! Make sure xmin is in the range -180->180
+      if (xmin.gt.180.0_8)then
+        xmin = real(minval(lon_cc_pd(1:nxmax)),kind=8)-360.0
+        xmax = real(maxval(lon_cc_pd(1:nxmax)),kind=8)-360.0
+      else
+        xmax = real(maxval(lon_cc_pd(1:nxmax)),kind=8)
+      endif
       ymin = real(minval(lat_cc_pd(1:nymax)),kind=8)
       ymax = real(maxval(lat_cc_pd(1:nymax)),kind=8)
 
@@ -302,7 +339,6 @@
         write(55,*)zlev(i),', \'
       enddo
       write(55,*)zlev(nzlev)
-      !write(55,*)"0.01, 0.03, 0.1, 0.3, 1.0, 3.0,10.0, 30.0, 100.0, 300.0"
       write(55,*)"unset surface"
       ! Now write out the contours to a datafile
       write(55,*)"set table 'outvar.con'"
@@ -333,18 +369,116 @@
       write(55,*)"set label 'Erup. Volume: ",real(e_Volume(1),kind=4),&
                   " km3 (DRE)' at XVAL, YVAL font 'sans,9' offset character 0,-3"
 
-     write(55,*)" plot 'world_50m.txt' with filledcurves linetype rgb '#dddddd' , \"
-     write(55,*)"   'outvar.con' using 1:2 with l lc rgb '#888888' , \"
-     write(55,*)"   '' every 1000 with labels font ',6' , \"
-     write(55,*)"   'cities.xy' using 1:2 , \"
-     write(55,*)"   '' using 1:2:3 with labels font ',10' point pointtype 7 offset char 1,1, \"
-     write(55,*)"   'volc.dat' using 1:2 , \"
-     write(55,*)"   '' using 1:2:3 with labels point pointtype 22 pointsize 2 lt rgb 'red'"
+      write(55,*)" plot 'world_50m.txt' with filledcurves linetype rgb '#dddddd' , \"
+      write(55,*)"   'outvar.con' using 1:2 with l lc rgb '#888888' , \"
+      write(55,*)"   '' every 1000 with labels font ',6' , \"
+      write(55,*)"   'cities.xy' using 1:2 , \"
+      write(55,*)"   '' using 1:2:3 with labels font ',10' point pointtype 7 offset char 1,1, \"
+      write(55,*)"   'volc.dat' using 1:2 , \"
+      write(55,*)"   '' using 1:2:3 with labels point pointtype 22 pointsize 2 lt rgb 'red'"
 
       close(55)
 
       write(gnucom,'(a11,a14)')'gnuplot -p ',dp_gnufile
       call execute_command_line(gnucom,exitstat=istat)
+
+      if(writeContours)then
+
+        ! Read outvar.con
+        write(*,*)"Now reading outvar.con and loading contour data."
+        open(54,file=dp_confile,status='old')
+        ! In the gnuplot contour file, all contours of a certain level have a header
+        ! in the following format:
+        !# Contour 0, label:      300
+        ! Each curve for that level is separated by a blank line
+        ! Gnuplot writes the contour data to file starting with the highest level
+        ! so we will need to check with zlev(:) to make sure we populate ContourDat
+        ! correctly.
+        ilev = -1
+        ignulev = -1
+        read(54,'(a80)',iostat=ioerr)linebuffer080
+        do while(ioerr.ge.0)
+          ! Check if this is a header line
+          read(linebuffer080,*,iostat=ioerr2)testkey
+          if(ioerr2.lt.0)then
+            ! if there was an error trying to read a character, then this is a blank
+            ! line; check if we are in a contour block or still in the file header
+            if(ignulev.eq.-1)then
+              ! Still in file header
+              ! Read the next line and cycle
+              read(54,'(a80)',iostat=ioerr)linebuffer080
+              cycle
+            else
+              ! Blank line in a contour block means we are starting another curve
+              ! Increment the number of curves for this level
+              ContourDataNcurves(ilev) = ContourDataNcurves(ilev) + 1
+              ! This is an easier index to used
+              icurve = ContourDataNcurves(ilev)
+            endif
+          elseif(testkey.eq.'#')then
+            ! This is a header line
+            ! There are two possibilities:
+            !  (1) a line of the file header
+            !  (2) the start of a contour block
+            !   if (2), then it will have this format:# Contour 0, label:      300
+            substr_pos1 = index(linebuffer080,'Contour')
+
+            if(substr_pos1.eq.0)then
+              ! This is a file header line
+              read(54,'(a80)',iostat=ioerr)linebuffer080
+              cycle
+            else
+              read(linebuffer080,4,iostat=ioerr2)ignulev
+4             format(9x,i2)
+              ! Now read the level. Look for the ':' to isolate the last bit
+              substr_pos1 = index(linebuffer080,':')
+              ! Also look for a '.' or an 'e' to see if the level value is written as a real or int
+              substr_pos2 = index(linebuffer080,'.')
+              substr_pos3 = index(linebuffer080(20:),'e')
+              if(substr_pos2.gt.0.or.substr_pos3.gt.0)then
+                ! level is written as real
+                read(linebuffer080(substr_pos1+1:28),*)lev_r4
+              else
+                read(linebuffer080(substr_pos1+1:28),*)lev_i
+                lev_r4 = real(lev_i,kind=4)
+              endif
+              ! The value for this new level ignulev is lev_r4, but we need to find which
+              ! zlev this corresponds to
+              do ii = 1,nzlev
+                if(abs(lev_r4-zlev(ii)).lt.EPS_SMALL)then
+                  ilev=ii
+                endif
+              enddo
+              ! When we have a new level, initialize the curve index for this level to 1
+              ContourDataNcurves(ilev) = 1
+              icurve = ContourDataNcurves(ilev)
+            endif
+          else
+            ! This is the data section
+            ! Increment the number of points
+            ContourDataNpoints(ilev,icurve) = ContourDataNpoints(ilev,icurve) + 1
+            ipt = ContourDataNpoints(ilev,icurve) 
+            read(linebuffer080,*)ContourDataX(ilev,icurve,ipt),ContourDataY(ilev,icurve,ipt)
+          endif
+
+          ! Try to read the next line
+          read(54,'(a80)',iostat=ioerr)linebuffer080
+        enddo
+        close(54)
+
+        ! Loop through all the levels and curves and trim any curves with zero length
+        do i=1,nzlev
+          icurve = Contour_MaxCurves + 1
+          do ii=Contour_MaxCurves,1,-1
+            if(ContourDataNpoints(i,ii).le.0)then
+              ! log each curve number with no points
+              icurve = ii
+            endif
+          enddo
+          ContourDataNcurves(i) = max(0,icurve-1)
+        enddo
+
+      endif
 
       end subroutine write_2Dmap_PNG_gnuplot
 
