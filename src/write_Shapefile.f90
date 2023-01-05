@@ -10,7 +10,7 @@
 
       use Output_Vars,   only : &
          ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
-         Contour_MaxCurves,Contour_MaxPoints,ContourLev,Con_N
+         Contour_MaxCurves,Contour_MaxPoints,ContourLev,nConLev
 
       use io_data,       only : &
          nWriteTimes,WriteTimes,VolcanoName
@@ -182,7 +182,7 @@
 
       ! Get number of records; number of actual contour levels used
       nrec=0
-      do i = 1,Con_N
+      do i = 1,nConLev
         if(ContourDataNcurves(i).gt.0)nrec=nrec+1
       enddo
 

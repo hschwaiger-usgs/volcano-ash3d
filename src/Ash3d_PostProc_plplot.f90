@@ -26,7 +26,7 @@
          Con_CloudRef_N,Con_CloudRef_RGB,Con_CloudRef_Lev, &
          Con_CloudTime_N,Con_CloudTime_RGB,Con_CloudTime_Lev, &
          ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
-         Contour_MaxCurves,Contour_MaxPoints,ContourLev,Con_N
+         Contour_MaxCurves,Contour_MaxPoints,ContourLev,nConLev
 
       use io_data,       only : &
          nWriteTimes,WriteTimes,cdf_b3l1,VolcanoName
@@ -48,8 +48,6 @@
       logical :: writeContours
 
       integer :: i,j
-      integer :: nzlev
-      real(kind=op),dimension(:)  ,allocatable :: zlev
       integer      ,dimension(:,:),allocatable :: zrgb
       character(len=40) :: title_plot
       character(len=15) :: title_legend
@@ -158,47 +156,47 @@
         write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
         title_legend = 'Dep.Thick.(mm)'
-        nzlev = Con_DepThick_mm_N
-        allocate(zlev(nzlev))
-        allocate(zrgb(nzlev,3))
-        zlev(1:nzlev) = real(Con_DepThick_mm_Lev(1:nzlev),kind=4)
-        zrgb(1:nzlev,1:3) = Con_DepThick_mm_RGB(1:nzlev,1:3)
+        nConLev = Con_DepThick_mm_N
+        allocate(zrgb(nConLev,3))
+        allocate(ContourLev(nConLev))
+        ContourLev(1:nConLev) = Con_DepThick_mm_Lev(1:nConLev)
+        zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
       elseif(iprod.eq.4)then   ! deposit at specified times (inches)
         write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
         title_legend = 'Dep.Thick.(in)'
-        nzlev = Con_DepThick_in_N
-        allocate(zlev(nzlev))
-        allocate(zrgb(nzlev,3))
-        zlev(1:nzlev) = real(Con_DepThick_in_Lev(1:nzlev),kind=4)
-        zrgb(1:nzlev,1:3) = Con_DepThick_in_RGB(1:nzlev,1:3)
+        nConLev = Con_DepThick_in_N
+        allocate(zrgb(nConLev,3))
+        allocate(ContourLev(nConLev))
+        ContourLev(1:nConLev) = Con_DepThick_in_Lev(1:nConLev)
+        zrgb(1:nConLev,1:3) = Con_DepThick_in_RGB(1:nConLev,1:3)
       elseif(iprod.eq.5)then       ! deposit at final time (mm)
         write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
         title_legend = 'Dep.Thick.(mm)'
-        nzlev = Con_DepThick_mm_N
-        allocate(zlev(nzlev))
-        allocate(zrgb(nzlev,3))
-        zlev(1:nzlev) = real(Con_DepThick_mm_Lev(1:nzlev),kind=4)
-        zrgb(1:nzlev,1:3) = Con_DepThick_mm_RGB(1:nzlev,1:3)
+        nConLev = Con_DepThick_mm_N
+        allocate(zrgb(nConLev,3))
+        allocate(ContourLev(nConLev))
+        ContourLev(1:nConLev) = Con_DepThick_mm_Lev(1:nConLev)
+        zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
       elseif(iprod.eq.6)then   ! deposit at final time (inches)
         write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
         title_legend = 'Dep.Thick.(in)'
-        nzlev = Con_DepThick_in_N
-        allocate(zlev(nzlev))
-        allocate(zrgb(nzlev,3))
-        zlev(1:nzlev) = real(Con_DepThick_in_Lev(1:nzlev),kind=4)
-        zrgb(1:nzlev,1:3) = Con_DepThick_in_RGB(1:nzlev,1:3)
+        nConLev = Con_DepThick_in_N
+        allocate(zrgb(nConLev,3))
+        allocate(ContourLev(nConLev))
+        ContourLev(1:nConLev) = Con_DepThick_in_Lev(1:nConLev)
+        zrgb(1:nConLev,1:3) = Con_DepThick_in_RGB(1:nConLev,1:3)
       elseif(iprod.eq.7)then   ! ashfall arrival time (hours)
         write(outfile_name,'(a22)')'DepositArrivalTime.png'
         write(title_plot,'(a20)')'Ashfall arrival time'
         title_legend = 'Time (hours)'
-        nzlev = Con_DepTime_N
-        allocate(zlev(nzlev))
-        allocate(zrgb(nzlev,3))
-        zlev(1:nzlev) = real(Con_DepTime_Lev(1:nzlev),kind=4)
-        zrgb(1:nzlev,1:3) = Con_DepTime_RGB(1:nzlev,1:3)
+        nConLev = Con_DepTime_N
+        allocate(zrgb(nConLev,3))
+        allocate(ContourLev(nConLev))
+        ContourLev(1:nConLev) = Con_DepTime_Lev(1:nConLev)
+        zrgb(1:nConLev,1:3) = Con_DepTime_RGB(1:nConLev,1:3)
       elseif(iprod.eq.8)then   ! ashfall arrival at airports/POI (mm)
         write(*,*)"ERROR: No map PNG output option for airport arrival time data."
         write(*,*)"       Should not be in write_2Dmap_PNG_dislin"
@@ -207,63 +205,65 @@
         write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
         write(title_plot,'(a26,f5.2,a6)')'Ash-cloud concentration t=',WriteTimes(itime),' hours'
         title_legend = 'Max.Con.(mg/m3)'
-        nzlev = Con_CloudCon_N
-        allocate(zlev(nzlev))
-        allocate(zrgb(nzlev,3))
-        zlev(1:nzlev) = real(Con_CloudCon_Lev(1:nzlev),kind=4)
-        zrgb(1:nzlev,1:3) = Con_CloudCon_RGB(1:nzlev,1:3)
+        nConLev = Con_CloudCon_N
+        allocate(zrgb(nConLev,3))
+        allocate(ContourLev(nConLev))
+        ContourLev(1:nConLev) = Con_CloudCon_Lev(1:nConLev)
+        zrgb(1:nConLev,1:3) = Con_CloudCon_RGB(1:nConLev,1:3)
       elseif(iprod.eq.10)then   ! ash-cloud height
         write(outfile_name,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud height t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Height(km)'
-        nzlev = Con_CloudTop_N
-        allocate(zlev(nzlev))
-        allocate(zrgb(nzlev,3))
-        zlev(1:nzlev) = real(Con_CloudTop_Lev(1:nzlev),kind=4)
-        zrgb(1:nzlev,1:3) = Con_CloudTop_RGB(1:nzlev,1:3)
+        nConLev = Con_CloudTop_N
+        !allocate(zlev(nConLev))
+        allocate(zrgb(nConLev,3))
+        allocate(ContourLev(nConLev))
+        ContourLev(1:nConLev) = Con_CloudTop_Lev(1:nConLev)
+        zrgb(1:nConLev,1:3) = Con_CloudTop_RGB(1:nConLev,1:3)
       elseif(iprod.eq.11)then   ! ash-cloud bottom
         write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud bottom t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Bot.(km)'
-        nzlev = Con_CloudBot_N
-        allocate(zlev(nzlev))
-        allocate(zrgb(nzlev,3))
-        zlev(1:nzlev) = real(Con_CloudBot_Lev(1:nzlev),kind=4)
-        zrgb(1:nzlev,1:3) = Con_CloudBot_RGB(1:nzlev,1:3)
+        nConLev = Con_CloudBot_N
+        allocate(zrgb(nConLev,3))
+        allocate(ContourLev(nConLev))
+        ContourLev(1:nConLev) = Con_CloudBot_Lev(1:nConLev)
+        zrgb(1:nConLev,1:3) = Con_CloudBot_RGB(1:nConLev,1:3)
       elseif(iprod.eq.12)then   ! ash-cloud load
         write(outfile_name,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
         write(title_plot,'(a17,f5.2,a6)')'Ash-cloud load t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Load(T/km2)'
-        nzlev = Con_CloudLoad_N
-        allocate(zlev(nzlev))
-        allocate(zrgb(nzlev,3))
-        zlev(1:nzlev) = real(Con_CloudLoad_Lev(1:nzlev),kind=4)
-        zrgb(1:nzlev,1:3) = Con_CloudLoad_RGB(1:nzlev,1:3)
+        nConLev = Con_CloudLoad_N
+        allocate(zrgb(nConLev,3))
+        allocate(ContourLev(nConLev))
+        ContourLev(1:nConLev) = Con_CloudLoad_Lev(1:nConLev)
+        zrgb(1:nConLev,1:3) = Con_CloudLoad_RGB(1:nConLev,1:3)
       elseif(iprod.eq.13)then  ! radar reflectivity
         write(outfile_name,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
         write(title_plot,'(a24,f5.2,a6)')'Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Refl.(dBz)'
-        nzlev = Con_CloudRef_N
-        allocate(zlev(nzlev))
-        allocate(zrgb(nzlev,3))
-        zlev(1:nzlev) = real(Con_CloudRef_Lev(1:nzlev),kind=4)
-        zrgb(1:nzlev,1:3) = Con_CloudRef_RGB(1:nzlev,1:3)
+        nConLev = Con_CloudRef_N
+        allocate(zrgb(nConLev,3))
+        allocate(ContourLev(nConLev))
+        ContourLev(1:nConLev) = Con_CloudRef_Lev(1:nConLev)
+        zrgb(1:nConLev,1:3) = Con_CloudRef_RGB(1:nConLev,1:3)
       elseif(iprod.eq.14)then   ! ashcloud arrival time (hours)
         write(outfile_name,'(a20)')'CloudArrivalTime.png'
         write(title_plot,'(a22)')'Ash-cloud arrival time'
         title_legend = 'Time (hours)'
-        nzlev = Con_CloudTime_N
-        allocate(zlev(nzlev))
-        allocate(zrgb(nzlev,3))
-        zlev(1:nzlev) = real(Con_CloudTime_Lev(1:nzlev),kind=4)
-        zrgb(1:nzlev,1:3) = Con_CloudTime_RGB(1:nzlev,1:3)
+        nConLev = Con_CloudTime_N
+        allocate(zrgb(nConLev,3))
+        allocate(ContourLev(nConLev))
+        ContourLev(1:nConLev) = Con_CloudTime_Lev(1:nConLev)
+        zrgb(1:nConLev,1:3) = Con_CloudTime_RGB(1:nConLev,1:3)
       elseif(iprod.eq.15)then   ! topography
         write(outfile_name,'(a14)')'Topography.png'
         write(title_plot,'(a10)')'Topography'
         title_legend = 'Elevation (km)'
-        nzlev = 8
-        zlev = (/0.1_op, 0.3_op, 1.0_op, 3.0_op, &
-                10.0_op, 30.0_op, 100.0_op, 300.0_op/)
+        nConLev = 8
+        allocate(ContourLev(nConLev))
+        ContourLev = (/0.1_8, 0.3_8, 1.0_8, 3.0_8, &
+                10.0_8, 30.0_8, 100.0_8, 300.0_8/)
       elseif(iprod.eq.16)then   ! profile plots
         write(*,*)"ERROR: No map PNG output option for vertical profile data."
         write(*,*)"       Should not be in write_2Dmap_PNG_dislin"
@@ -272,7 +272,6 @@
         write(*,*)"ERROR: unexpected variable"
         stop 1
       endif
-      Con_N = nzlev
 
       xmin = real(minval(lon_cc_pd(1:nxmax)),kind=plflt)
       xmax = real(maxval(lon_cc_pd(1:nxmax)),kind=plflt)
@@ -355,11 +354,11 @@
                        ! (https://plplot.sourceforge.net/examples.php?demo=06&lbind=Fortran)
 
       !call plcol1(1)
-      !plcont(var,1,nxmax,1,nymax,real(zlev(1:nzlev),kind=plflt), tr)
-      do i=1,nzlev
-        call plcol1(real(dble(i)/dble(nzlev),kind=plflt))
+      !plcont(var,1,nxmax,1,nymax,real(zlev(1:nConLev),kind=plflt), tr)
+      do i=1,nConLev
+        call plcol1(real(dble(i)/dble(nConLev),kind=plflt))
         !call plscol0a(i,zrgb(i,1),zrgb(i,2),zrgb(i,3),1.0_plflt)
-        clevel(1) = real(zlev(i),kind=plflt)
+        clevel(1) = real(ContourLev(i),kind=plflt)
         call plcont(var,1,nxmax,1,nymax,clevel, tr)
       enddo
       call pllab("Longitude", "Latitude", title_plot)
@@ -368,23 +367,23 @@
       !call plcol0(2)
       ! Set the color we will use for the legend background (index 15)
       call plscol0a( 15, 255, 255, 255, 1.0_plflt )
-      do i=1,nzlev
+      do i=1,nConLev
         pos_opt = PL_POSITION_RIGHT + PL_POSITION_OUTSIDE
         opt = PL_LEGEND_BACKGROUND + PL_LEGEND_BOUNDING_BOX
-        text_colors(i)   = 1 + mod( i-1, nzlev )
-        line_colors(i)   = 1 + mod( i-1, nzlev )
+        text_colors(i)   = 1 + mod( i-1, nConLev )
+        line_colors(i)   = 1 + mod( i-1, nConLev )
 
         line_styles(i)   = 1
         line_widths(i)   = 1
-        symbol_colors(i) = 1 + mod( i-1, nzlev )
+        symbol_colors(i) = 1 + mod( i-1, nConLev )
         box_colors(i)     = 2
         box_patterns(i)   = 3
         box_scales(i)     = 0.8_plflt
         box_line_widths(i)= 1
-        if(abs(zlev(i)).lt.0.01_ip.or.abs(zlev(i)).ge.1000.0_ip)then
-          write( text(i), '(e7.2)' ) zlev(i)
+        if(abs(ContourLev(i)).lt.0.01_8.or.abs(ContourLev(i)).ge.1000.0_8)then
+          write( text(i), '(e7.2)' ) real(ContourLev(i),kind=4)
         else
-          write( text(i), '(f7.2)' ) zlev(i)
+          write( text(i), '(f7.2)' ) real(ContourLev(i),kind=4)
         endif
         x_offset       = 0.05_plflt
         y_offset       = 0.0_plflt
@@ -392,7 +391,7 @@
         bg_color       = 15
         bb_color       = 1
         bb_style       = 1
-        nrow           = nzlev
+        nrow           = nConLev
         ncolumn        = 1    ! Note: nlegend=nrow * ncolumn
         opt_array(i)   = PL_LEGEND_LINE
         text_offset        = 1.0_plflt
@@ -411,23 +410,23 @@
           bb_color,    & ! int: bounding box color from cmap0
           bb_style,    & ! int: bounding box line style
           nrow,ncolumn,& ! int: rows and columns of legeng
-          opt_array(1:nzlev), & ! int vec: 
+          opt_array(1:nConLev), & ! int vec: 
           text_offset, & ! flt: Offset of the text area from the plot
           text_scale,  & ! flt: Character height scale
           text_spacing, &!  flt: Vertical spacing in units of the character height
           text_justification, & ! flt: 0., 0.5, or 1.  for L, C, R
-          text_colors(1:nzlev), &
-          text(1:nzlev),                           &
-          box_colors(1:nzlev), &
-          box_patterns(1:nzlev), &
-          box_scales(1:nzlev), &
-          box_line_widths(1:nzlev), &
-          line_colors(1:nzlev), &
-          line_styles(1:nzlev), &
-          line_widths(1:nzlev),                 &
-          symbol_colors(1:nzlev), &
-          symbol_scales(1:nzlev), &
-          symbol_numbers(1:nzlev),& 
+          text_colors(1:nConLev), &
+          text(1:nConLev),                           &
+          box_colors(1:nConLev), &
+          box_patterns(1:nConLev), &
+          box_scales(1:nConLev), &
+          box_line_widths(1:nConLev), &
+          line_colors(1:nConLev), &
+          line_styles(1:nConLev), &
+          line_widths(1:nConLev),                 &
+          symbol_colors(1:nConLev), &
+          symbol_scales(1:nConLev), &
+          symbol_numbers(1:nConLev),& 
           symbols  )
 
       ! Now add the annotation box

@@ -87,7 +87,7 @@
 
       ! Contour colors and levels
       real(kind=8),dimension(:),allocatable      :: ContourLev
-      integer                                    :: Con_N
+      integer                                    :: nConLev
       integer,parameter                          :: Contour_MaxCurves  = 20
       integer,parameter                          :: Contour_MaxPoints  = 1000
       real(kind=8),dimension(:,:,:),allocatable  :: ContourDataX        ! x curve data with dims: ilev, icurve, ipnt

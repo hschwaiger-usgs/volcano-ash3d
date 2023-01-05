@@ -15,6 +15,9 @@
         BaseYear,useLeap,os_time_log, &
         RunStartDay,RunStartHour_ch,RunStartHr,RunStartMinute,RunStartMonth,RunStartYear
 
+      use MetReader,     only : &
+         MR_OS_TYPE,MR_DirPrefix,MR_DirDelim
+
       implicit none
 
       integer              :: iostatus
@@ -74,6 +77,10 @@
       IsWindows = .true.
       IsMacOS   = .false.
 #endif
+      MR_OS_TYPE   = OS_TYPE
+      MR_DirPrefix = DirPrefix
+      MR_DirDelim  = DirDelim
+
       ! Find out if we are running on a little-endian or big-endian system
       call check_endian(IsLitEnd)
 

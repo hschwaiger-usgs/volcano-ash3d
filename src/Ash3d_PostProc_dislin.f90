@@ -26,7 +26,7 @@
          Con_CloudRef_N,Con_CloudRef_RGB,Con_CloudRef_Lev, &
          Con_CloudTime_N,Con_CloudTime_RGB,Con_CloudTime_Lev,&
          ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
-         Contour_MaxCurves,Contour_MaxPoints,ContourLev,Con_N
+         Contour_MaxCurves,Contour_MaxPoints,ContourLev,nConLev
 
       use io_data,       only : &
          nWriteTimes,WriteTimes,cdf_b3l1,VolcanoName
@@ -47,8 +47,6 @@
       logical :: writeContours
 
       integer :: i,j,k
-      integer :: nzlev
-      real(kind=4), dimension(:)  ,allocatable :: zlev
       integer     , dimension(:,:),allocatable :: zrgb
       character(len=40) :: title_plot
       character(len=15) :: title_legend
@@ -144,57 +142,51 @@
         endif
       endif
 
-      allocate(ContourLev(nzlev))
       if(iprod.eq.3)then       ! deposit at specified times (mm)
         write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
         title_legend = 'Dep.Thick.(mm)'
-        nzlev = Con_DepThick_mm_N
-        allocate(zlev(nzlev))
-        allocate(zrgb(nzlev,3))
-        ContourLev(1:nzlev) = Con_DepThick_mm_Lev(1:nzlev)
-        zlev(1:nzlev) = real(Con_DepThick_mm_Lev(1:nzlev),kind=4)
-        zrgb(1:nzlev,1:3) = Con_DepThick_mm_RGB(1:nzlev,1:3)
+        nConLev = Con_DepThick_mm_N
+        allocate(zrgb(nConLev,3))
+        allocate(ContourLev(nConLev))
+        ContourLev(1:nConLev) = Con_DepThick_mm_Lev(1:nConLev)
+        zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
       elseif(iprod.eq.4)then   ! deposit at specified times (inches)
         write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
         title_legend = 'Dep.Thick.(in)'
-        nzlev = Con_DepThick_in_N
-        allocate(zlev(nzlev))
-        allocate(zrgb(nzlev,3))
-        ContourLev(1:nzlev) = Con_DepThick_in_Lev(1:nzlev)
-        zlev(1:nzlev) = real(Con_DepThick_in_Lev(1:nzlev),kind=4)
-        zrgb(1:nzlev,1:3) = Con_DepThick_in_RGB(1:nzlev,1:3)
+        nConLev = Con_DepThick_in_N
+        allocate(zrgb(nConLev,3))
+        allocate(ContourLev(nConLev))
+        ContourLev(1:nConLev) = Con_DepThick_in_Lev(1:nConLev)
+        zrgb(1:nConLev,1:3) = Con_DepThick_in_RGB(1:nConLev,1:3)
       elseif(iprod.eq.5)then       ! deposit at final time (mm)
         write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
         title_legend = 'Dep.Thick.(mm)'
-        nzlev = Con_DepThick_mm_N
-        allocate(zlev(nzlev))
-        allocate(zrgb(nzlev,3))
-        ContourLev(1:nzlev) = Con_DepThick_mm_Lev(1:nzlev)
-        zlev(1:nzlev) = real(Con_DepThick_mm_Lev(1:nzlev),kind=4)
-        zrgb(1:nzlev,1:3) = Con_DepThick_mm_RGB(1:nzlev,1:3)
+        nConLev = Con_DepThick_mm_N
+        allocate(zrgb(nConLev,3))
+        allocate(ContourLev(nConLev))
+        ContourLev(1:nConLev) = Con_DepThick_mm_Lev(1:nConLev)
+        zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
       elseif(iprod.eq.6)then   ! deposit at final time (inches)
         write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
         title_legend = 'Dep.Thick.(in)'
-        nzlev = Con_DepThick_in_N
-        allocate(zlev(nzlev))
-        allocate(zrgb(nzlev,3))
-        ContourLev(1:nzlev) = Con_DepThick_in_Lev(1:nzlev)
-        zlev(1:nzlev) = real(Con_DepThick_in_Lev(1:nzlev),kind=4)
-        zrgb(1:nzlev,1:3) = Con_DepThick_in_RGB(1:nzlev,1:3)
+        nConLev = Con_DepThick_in_N
+        allocate(zrgb(nConLev,3))
+        allocate(ContourLev(nConLev))
+        ContourLev(1:nConLev) = Con_DepThick_in_Lev(1:nConLev)
+        zrgb(1:nConLev,1:3) = Con_DepThick_in_RGB(1:nConLev,1:3)
       elseif(iprod.eq.7)then   ! ashfall arrival time (hours)
         write(outfile_name,'(a22)')'DepositArrivalTime.png'
         write(title_plot,'(a20)')'Ashfall arrival time'
         title_legend = 'Time (hours)'
-        nzlev = Con_DepTime_N
-        allocate(zlev(nzlev))
-        allocate(zrgb(nzlev,3))
-        ContourLev(1:nzlev) = Con_DepTime_Lev(1:nzlev)
-        zlev(1:nzlev) = real(Con_DepTime_Lev(1:nzlev),kind=4)
-        zrgb(1:nzlev,1:3) = Con_DepTime_RGB(1:nzlev,1:3)
+        nConLev = Con_DepTime_N
+        allocate(zrgb(nConLev,3))
+        allocate(ContourLev(nConLev))
+        ContourLev(1:nConLev) = Con_DepTime_Lev(1:nConLev)
+        zrgb(1:nConLev,1:3) = Con_DepTime_RGB(1:nConLev,1:3)
       elseif(iprod.eq.8)then   ! ashfall arrival at airports/POI (mm)
         write(*,*)"ERROR: No map PNG output option for airport arrival time data."
         write(*,*)"       Should not be in write_2Dmap_PNG_dislin"
@@ -203,69 +195,65 @@
         write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
         write(title_plot,'(a26,f5.2,a6)')'Ash-cloud concentration t=',WriteTimes(itime),' hours'
         title_legend = 'Max.Con.(mg/m3)'
-        nzlev = Con_CloudCon_N
-        allocate(zlev(nzlev))  
-        allocate(zrgb(nzlev,3))
-        ContourLev(1:nzlev) = Con_CloudCon_Lev(1:nzlev)
-        zlev(1:nzlev) = real(Con_CloudCon_Lev(1:nzlev),kind=4)
-        zrgb(1:nzlev,1:3) = Con_CloudCon_RGB(1:nzlev,1:3)
+        nConLev = Con_CloudCon_N
+        allocate(zrgb(nConLev,3))
+        allocate(ContourLev(nConLev))
+        ContourLev(1:nConLev) = Con_CloudCon_Lev(1:nConLev)
+        zrgb(1:nConLev,1:3) = Con_CloudCon_RGB(1:nConLev,1:3)
       elseif(iprod.eq.10)then   ! ash-cloud height
         write(outfile_name,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud height t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Height(km)'
-        nzlev = Con_CloudTop_N
-        allocate(zlev(nzlev))
-        allocate(zrgb(nzlev,3))
-        ContourLev(1:nzlev) = Con_CloudTop_Lev(1:nzlev)
-        zlev(1:nzlev) = real(Con_CloudTop_Lev(1:nzlev),kind=4)
-        zrgb(1:nzlev,1:3) = Con_CloudTop_RGB(1:nzlev,1:3)
+        nConLev = Con_CloudTop_N
+        allocate(zrgb(nConLev,3))
+        allocate(ContourLev(nConLev))
+        ContourLev(1:nConLev) = Con_CloudTop_Lev(1:nConLev)
+        zrgb(1:nConLev,1:3) = Con_CloudTop_RGB(1:nConLev,1:3)
       elseif(iprod.eq.11)then   ! ash-cloud bottom
         write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud bottom t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Bot.(km)'
-        nzlev = Con_CloudBot_N
-        allocate(zlev(nzlev))
-        allocate(zrgb(nzlev,3))
-        ContourLev(1:nzlev) = Con_CloudBot_Lev(1:nzlev)
-        zlev(1:nzlev) = real(Con_CloudBot_Lev(1:nzlev),kind=4)
-        zrgb(1:nzlev,1:3) = Con_CloudBot_RGB(1:nzlev,1:3)
+        nConLev = Con_CloudBot_N
+        allocate(zrgb(nConLev,3))
+        allocate(ContourLev(nConLev))
+        ContourLev(1:nConLev) = Con_CloudBot_Lev(1:nConLev)
+        zrgb(1:nConLev,1:3) = Con_CloudBot_RGB(1:nConLev,1:3)
       elseif(iprod.eq.12)then   ! ash-cloud load
         write(outfile_name,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
         write(title_plot,'(a17,f5.2,a6)')'Ash-cloud load t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Load(T/km2)'
-        nzlev = Con_CloudLoad_N
-        allocate(zlev(nzlev))
-        allocate(zrgb(nzlev,3))
-        ContourLev(1:nzlev) = Con_CloudLoad_Lev(1:nzlev)
-        zlev(1:nzlev) = real(Con_CloudLoad_Lev(1:nzlev),kind=4)
-        zrgb(1:nzlev,1:3) = Con_CloudLoad_RGB(1:nzlev,1:3)
+        nConLev = Con_CloudLoad_N
+        allocate(zrgb(nConLev,3))
+        allocate(ContourLev(nConLev))
+        ContourLev(1:nConLev) = Con_CloudLoad_Lev(1:nConLev)
+        zrgb(1:nConLev,1:3) = Con_CloudLoad_RGB(1:nConLev,1:3)
       elseif(iprod.eq.13)then  ! radar reflectivity
         write(outfile_name,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
         write(title_plot,'(a24,f5.2,a6)')'Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Refl.(dBz)'
-        nzlev = Con_CloudRef_N
-        allocate(zlev(nzlev))
-        allocate(zrgb(nzlev,3))
-        ContourLev(1:nzlev) = Con_CloudRef_Lev(1:nzlev)
-        zlev(1:nzlev) = real(Con_CloudRef_Lev(1:nzlev),kind=4)
-        zrgb(1:nzlev,1:3) = Con_CloudRef_RGB(1:nzlev,1:3)
+        nConLev = Con_CloudRef_N
+        allocate(zrgb(nConLev,3))
+        allocate(ContourLev(nConLev))
+        ContourLev(1:nConLev) = Con_CloudRef_Lev(1:nConLev)
+        zrgb(1:nConLev,1:3) = Con_CloudRef_RGB(1:nConLev,1:3)
       elseif(iprod.eq.14)then   ! ashcloud arrival time (hours)
         write(outfile_name,'(a20)')'CloudArrivalTime.png'
         write(title_plot,'(a22)')'Ash-cloud arrival time'
         title_legend = 'Time (hours)'
-        nzlev = Con_CloudTime_N
-        allocate(zlev(nzlev))
-        allocate(zrgb(nzlev,3))
-        ContourLev(1:nzlev) = Con_CloudTime_Lev(1:nzlev)
-        zlev(1:nzlev) = real(Con_CloudTime_Lev(1:nzlev),kind=4)
-        zrgb(1:nzlev,1:3) = Con_CloudTime_RGB(1:nzlev,1:3)
+        nConLev = Con_CloudTime_N
+        allocate(zrgb(nConLev,3))
+        allocate(ContourLev(nConLev))
+        ContourLev(1:nConLev) = Con_CloudTime_Lev(1:nConLev)
+        zrgb(1:nConLev,1:3) = Con_CloudTime_RGB(1:nConLev,1:3)
       elseif(iprod.eq.15)then   ! topography
         write(outfile_name,'(a14)')'Topography.png'
         write(title_plot,'(a10)')'Topography'
         title_legend = 'Elevation (km)'
-        nzlev = 8
-        zlev = (/0.1_4, 0.3_4, 1.0_4, 3.0_4, &
-                10.0_4, 30.0_4, 100.0_4, 300.0_4/)
+        nConLev = 8
+        allocate(zrgb(nConLev,3))
+        allocate(ContourLev(nConLev))
+        ContourLev = (/0.1_8, 0.3_8, 1.0_8, 3.0_8, &
+                10.0_8, 30.0_8, 100.0_8, 300.0_8/)
       elseif(iprod.eq.16)then   ! profile plots
         write(*,*)"ERROR: No map PNG output option for vertical profile data."
         write(*,*)"       Should not be in write_2Dmap_PNG_dislin"
@@ -274,27 +262,26 @@
         write(*,*)"ERROR: unexpected variable"
         stop 1
       endif
-      Con_N = nzlev
 
       if(writeContours)then
         write(*,*)"Running Dislin to calculate contours lines"
-        allocate(ContourDataNcurves(nzlev))
-        allocate(ContourDataNpoints(nzlev,Contour_MaxCurves))
-        allocate(ContourDataX(nzlev,Contour_MaxCurves,Contour_MaxPoints))
-        allocate(ContourDataY(nzlev,Contour_MaxCurves,Contour_MaxPoints))
+        allocate(ContourDataNcurves(nConLev))
+        allocate(ContourDataNpoints(nConLev,Contour_MaxCurves))
+        allocate(ContourDataX(nConLev,Contour_MaxCurves,Contour_MaxPoints))
+        allocate(ContourDataY(nConLev,Contour_MaxCurves,Contour_MaxPoints))
         ContourDataNcurves(:)   = 0
         ContourDataNpoints(:,:) = 0
         ContourDataX(:,:,:)     = 0.0_8
         ContourDataY(:,:,:)     = 0.0_8
-        do i=1,nzlev
-          ! This part calculated the contours
+        do i=1,nConLev
+          ! This part calculates the contours
           XPTS(:) = 0.0_4
           YPTS(:) = 0.0_4
           IRAY(:) = 0
           call conpts(real(lon_cc_pd(1:nxmax),kind=4),nxmax,&  ! x coord and size
                       real(lat_cc_pd(1:nymax),kind=4),nymax,&  ! y coord and size
-                      real(OutVar(1:nxmax,1:nymax),kind=4),&   ! matrix with function values
-                      zlev(i),            &           ! level to contour
+                      real(OutVar(1:nxmax,1:nymax),kind=4), &  ! matrix with function values
+                      real(ContourLev(i),kind=4),           &  ! level to contour
                       XPTS,YPTS,          &           ! x,y of contour (may have mul. curves)
                       Contour_MaxPoints,  &           ! max # of points for contour arrays
                       IRAY,               &           ! num of points for each contour
@@ -412,9 +399,9 @@
         call shdmod('UPPER', 'CELL') ! This suppresses colors in regions above/below the zlevels pro
         call conshd(real(lon_cc_pd(1:nxmax),kind=4),nxmax,&
                     real(lat_cc_pd(1:nymax),kind=4),nymax,&
-                    real(OutVar,kind=4),zlev,nzlev)
+                    real(OutVar,kind=4),real(ContourLev(i:nConLev),kind=4),nConLev)
       else
-        do i=1,nzlev
+        do i=1,nConLev
           xr   = real(zrgb(i,1),kind=4)/real(255,kind=4)
           xg   = real(zrgb(i,2),kind=4)/real(255,kind=4)
           xb   = real(zrgb(i,3),kind=4)/real(255,kind=4)
@@ -424,7 +411,8 @@
 
           call contur(real(lon_cc_pd(1:nxmax),kind=4),nxmax,&
                       real(lat_cc_pd(1:nymax),kind=4),nymax,&
-                      real(OutVar(1:nxmax,1:nymax),kind=4),zlev(i))
+                      real(OutVar(1:nxmax,1:nymax),kind=4), &
+                      real(ContourLev(i),kind=4))
         enddo
       endif
 
@@ -438,14 +426,14 @@
       ! Now write the legend
       call height(25) ! Reset character height to something smaller
       nmaxln = 6 ! number of characters in the longest line of text
-      call legini(cbuf,nzlev,nmaxln) ! Initialize legend
+      call legini(cbuf,nConLev,nmaxln) ! Initialize legend
       call legtit(title_legend)      ! Set legend title
       call legbgd(0)                 ! sets background color
-      do i=1,nzlev
-        if(zlev(i).lt.1.0_ip)then
-          write(zlevlab,'(f6.2)')zlev(i)
+      do i=1,nConLev
+        if(ContourLev(i).lt.1.0_8)then
+          write(zlevlab,'(f6.2)')real(ContourLev(i),kind=4)
         else
-          write(zlevlab,'(f6.1)')zlev(i)
+          write(zlevlab,'(f6.1)')real(ContourLev(i),kind=4)
         endif
         call leglin(cbuf,zlevlab,i)
       enddo
