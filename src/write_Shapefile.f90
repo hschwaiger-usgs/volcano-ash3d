@@ -10,10 +10,10 @@
 
       use Output_Vars,   only : &
          ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
-         Contour_MaxCurves,Contour_MaxPoints,ContourLev,nConLev
+         ContourLev,nConLev
 
       use io_data,       only : &
-         nWriteTimes,WriteTimes,VolcanoName
+         WriteTimes,VolcanoName
 
       implicit none
 
@@ -39,16 +39,10 @@
 
       logical           :: debugmode = .false.
 
-      character(len=60) :: linebuffer60
       integer                                  :: nrec      ! num of records (e.g. contour levels)
+      integer(kind=4),dimension(:),allocatable :: NumParts
       integer(kind=4),dimension(:),allocatable :: NumPoints ! total points
-      integer(kind=4) :: NumParts_irec  ! number of parts in level
-      integer(kind=4) :: NumPoints_irec ! sum total points of all curves (parts) in level
-      real(kind=8),dimension(:,:,:),allocatable :: contx
-      real(kind=8),dimension(:,:,:),allocatable :: conty
-      real(kind=8),dimension(:,:,:),allocatable :: contz
-      integer :: Iostatus
-      integer :: i,j,irec,ipart,ipt
+      integer :: i,irec,ipart,ipt
       integer,dimension(:),allocatable :: reclen
       integer :: offset
 
@@ -65,7 +59,6 @@
       real(kind=8)    :: zmax
       real(kind=8)    :: mmin
       real(kind=8)    :: mmax
-      integer(kind=4) :: dumint(2)
 
       ! Variables needed for the dBASE file
       integer(kind=1)  :: DBASE_zero     = 0
@@ -188,6 +181,7 @@
 
       ! We allocate variables here to hold the contour data mainly so ensure that
       ! the variables we write to the shapefile have exactly the kind values expected.
+      allocate(NumParts(nrec))
       allocate(NumPoints(nrec))
       allocate(reclen(nrec))
       allocate(xmin(nrec)); xmin(:) =  1.0e8_8
@@ -196,7 +190,7 @@
       allocate(ymax(nrec)); ymax(:) = -1.0e8_8
 
       do irec = 1,nrec  ! This is the loop of the layers (records)
-        NumParts_irec = ContourDataNcurves(irec)
+        NumParts(irec) = ContourDataNcurves(irec)
         NumPoints(irec) = 0  ! Initialize the number of points for this record
         ! Loop through all the parts (individual curves) for this level and sum points
         do ipart = 1,ContourDataNcurves(irec)
@@ -227,7 +221,7 @@
                        4*8 + & ! Box        : 4-Double  : Little
                        1*4 + & ! NumParts   : 1-Integer : Little
                        1*4 + & ! NumPoints  : 1-Integer : Little
-                       NumParts_irec*4 + &  ! Parts      : NumParts-Integers : Little
+                       NumParts(irec)*4 + &  ! Parts      : NumParts-Integers : Little
                        NumPoints(irec)*2*8  ! Points     : 2-Double          : Little
         reclen(irec) = reclen(irec) / 2     ! total record length in 16-bit words
       enddo
@@ -351,7 +345,6 @@
         write(ov_mainID)BigEnd_4int(IsLitEnd,reclen(irec))
         if(debugmode)write(*,*)reclen(irec),"Byte 4 Content Length Content Length Integer Big"
 
-        NumParts_irec = ContourDataNcurves(irec)
         !  PolyLine Record Contents
         !  Byte 0 Shape Type 3 Integer 1 Little
         !  Byte 4 Box Box Double 4 Little
@@ -364,7 +357,7 @@
         write(ov_mainID)LitEnd_8real(IsLitEnd,ymin(irec))
         write(ov_mainID)LitEnd_8real(IsLitEnd,xmax(irec))
         write(ov_mainID)LitEnd_8real(IsLitEnd,ymax(irec))
-        write(ov_mainID)LitEnd_4int(IsLitEnd,NumParts_irec)
+        write(ov_mainID)LitEnd_4int(IsLitEnd,NumParts(irec))
         write(ov_mainID)LitEnd_4int(IsLitEnd,NumPoints(irec))
 
         if(debugmode)then
@@ -373,26 +366,21 @@
           write(*,*)ymin(irec),"Byte 12 ymin Double Little"
           write(*,*)xmax(irec),"Byte 20 xmax Double Little"
           write(*,*)ymax(irec),"Byte 28 ymax Double Little"
-          write(*,*)NumParts_irec,"Byte 36 NumParts NumParts Integer 1 Little"
+          write(*,*)NumParts(irec),"Byte 36 NumParts NumParts Integer 1 Little"
           write(*,*)NumPoints(irec),"Byte 40 NumPoints NumPoints Integer 1 Little"
         endif
         ! Address of the start of the first part is 0
         write(ov_mainID)LitEnd_4int(IsLitEnd,0_4) ! An array of length NumParts with each value
                                                   ! the address (zero-offset) of the start of the part
-        do i=1,NumParts_irec-1
+        do i=1,NumParts(irec)-1
           tmp4 = sum(ContourDataNpoints(irec,1:i)) !-1
           write(ov_mainID)LitEnd_4int(IsLitEnd,tmp4)
         enddo
 
         do ipart=1,ContourDataNcurves(irec)
           do i=1,ContourDataNpoints(irec,ipart)
-            !if(2==1)then
-            !  write(ov_mainID)LitEnd_8real(IsLitEnd,contx(irec,ipart,i))
-            !  write(ov_mainID)LitEnd_8real(IsLitEnd,conty(irec,ipart,i))
-            !else
-              write(ov_mainID)LitEnd_8real(IsLitEnd,ContourDataX(irec,ipart,i))
-              write(ov_mainID)LitEnd_8real(IsLitEnd,ContourDataY(irec,ipart,i))
-            !endif
+            write(ov_mainID)LitEnd_8real(IsLitEnd,ContourDataX(irec,ipart,i))
+            write(ov_mainID)LitEnd_8real(IsLitEnd,ContourDataY(irec,ipart,i))
           enddo ! points in part
         enddo ! ipart
 
@@ -420,7 +408,7 @@
       open(ov_dbasID, file=trim(adjustl(ov_dbasfile)), access='stream', form='unformatted', status='replace')
 
       write(DBASE_TableRecDataName,*)trim(adjustl(VolcanoName)),title_plot,title_units
-      DBASE_TableRecDataValue =  "       0.000000000000000 "
+      DBASE_TableRecDataValue =  "       0.000000000000000"
       DBASE_TableRecDataIndex =  "         0"
 
       DBASE_zero = 0
@@ -751,19 +739,34 @@
       logical         :: isLit
       integer(kind=2) :: r
 
-      integer(kind=2) :: ii(2), jj(2)
       integer(kind=2) :: s, t
+      integer         :: bl = 8  ! bit length of the move
 
-      equivalence (s,ii)
-      equivalence (t,jj)
+      !integer(kind=2) :: ii(2), jj(2)
+
+      !equivalence (s,ii)
+      !equivalence (t,jj)
+      !if(isLit)then
+      !  ! We need r to be big-endian, but the system is little-endian
+      !  ! swap the bytes
+      !  s = r
+      !  jj(1) = ii(2)
+      !  jj(2) = ii(1)
+      !  BigEnd_2int = t
+      !else
+      !  BigEnd_2int = r
+      !endif
 
       if(isLit)then
         ! We need r to be big-endian, but the system is little-endian
         ! swap the bytes
-        s = r
-        jj(1) = ii(2)
-        jj(2) = ii(1)
-        BigEnd_2int = t
+        !  map r onto the 2-byte dummy integer
+        s = transfer(r,s)
+        ! move 8-bit packets to the reverse positions
+        call mvbits(s,0*bl,bl,t,1*bl)
+        call mvbits(s,1*bl,bl,t,0*bl)
+        ! map t onto the desired output
+        BigEnd_2int = transfer (t,BigEnd_2int)
       else
         BigEnd_2int = r
       endif
@@ -771,6 +774,7 @@
       end function BigEnd_2int
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
       function BigEnd_4int(isLit,r)
 
       implicit none
@@ -779,24 +783,41 @@
       logical         :: isLit
       integer(kind=4) :: r
 
-      integer(kind=1) :: ii(4), jj(4)
       integer(kind=4) :: s, t
-
-      equivalence (s,ii)
-      equivalence (t,jj)
+      integer         :: bl = 8  ! bit length of the move
 
       if(isLit)then
         ! We need r to be big-endian, but the system is little-endian
         ! swap the bytes
-        s = r
-        jj(1) = ii(4)
-        jj(2) = ii(3)
-        jj(3) = ii(2)
-        jj(4) = ii(1)
-        BigEnd_4int = t
+        !  map r onto the 2-byte dummy integer
+        s = transfer(r,s)
+        ! move 8-bit packets to the reverse positions
+        call mvbits(s,0*bl,bl,t,3*bl)
+        call mvbits(s,1*bl,bl,t,2*bl)
+        call mvbits(s,2*bl,bl,t,1*bl)
+        call mvbits(s,3*bl,bl,t,0*bl)
+        ! map t onto the desired output
+        BigEnd_4int = transfer (t,BigEnd_4int)
       else
         BigEnd_4int = r
       endif
+
+!      integer(kind=1) :: ii(4), jj(4)
+!      equivalence (s,ii)
+!      equivalence (t,jj)
+
+!      if(isLit)then
+!        ! We need r to be big-endian, but the system is little-endian
+!        ! swap the bytes
+!        s = r
+!        jj(1) = ii(4)
+!        jj(2) = ii(3)
+!        jj(3) = ii(2)
+!        jj(4) = ii(1)
+!        BigEnd_4int = t
+!      else
+!        BigEnd_4int = r
+!      endif
 
       end function BigEnd_4int
 
@@ -809,22 +830,38 @@
       logical         :: isLit
       integer(kind=2) :: r
 
-      integer(kind=1) :: ii(2), jj(2)
       integer(kind=2) :: s, t
+      integer         :: bl = 8  ! bit length of the move
 
-      equivalence (s,ii)
-      equivalence (t,jj)
+!      integer(kind=1) :: ii(2), jj(2)
+
+!      equivalence (s,ii)
+!      equivalence (t,jj)
 
       if(isLit)then
         LitEnd_2int = r
       else
         ! We need r to be little-endian, but the system is big-endian
         ! swap the bytes
-        s = r
-        jj(1) = ii(2)
-        jj(2) = ii(1)
-        LitEnd_2int = t
+        !  map r onto the 2-byte dummy integer
+        s = transfer(r,s)
+        ! move 8-bit packets to the reverse positions
+        call mvbits(s,0*bl,bl,t,1*bl)
+        call mvbits(s,1*bl,bl,t,0*bl)
+        ! map t onto the desired output
+        LitEnd_2int = transfer (t,LitEnd_2int)
       endif
+
+!      if(isLit)then
+!        LitEnd_2int = r
+!      else
+!        ! We need r to be little-endian, but the system is big-endian
+!        ! swap the bytes
+!        s = r
+!        jj(1) = ii(2)
+!        jj(2) = ii(1)
+!        LitEnd_2int = t
+!      endif
 
       end function LitEnd_2int
 
@@ -837,24 +874,41 @@
       logical         :: isLit
       integer(kind=4) :: r
 
-      integer(kind=1) :: ii(4), jj(4)
       integer(kind=4) :: s, t
+      integer         :: bl = 8  ! bit length of the move
 
-      equivalence (s,ii)
-      equivalence (t,jj)
+!      integer(kind=1) :: ii(4), jj(4)
+
+!      equivalence (s,ii)
+!      equivalence (t,jj)
 
       if(isLit)then
         LitEnd_4int = r
       else
         ! We need r to be little-endian, but the system is big-endian
         ! swap the bytes
-        s = r
-        jj(1) = ii(4)
-        jj(2) = ii(3)
-        jj(3) = ii(2)
-        jj(4) = ii(1)
-        LitEnd_4int = t
+        s = transfer(r,s)
+        ! move 8-bit packets to the reverse positions
+        call mvbits(s,0*bl,bl,t,3*bl)
+        call mvbits(s,1*bl,bl,t,2*bl)
+        call mvbits(s,2*bl,bl,t,1*bl)
+        call mvbits(s,3*bl,bl,t,0*bl)
+        ! map t onto the desired output
+        LitEnd_4int = transfer (t,LitEnd_4int)
       endif
+
+!      if(isLit)then
+!        LitEnd_4int = r
+!      else
+!        ! We need r to be little-endian, but the system is big-endian
+!        ! swap the bytes
+!        s = r
+!        jj(1) = ii(4)
+!        jj(2) = ii(3)
+!        jj(3) = ii(2)
+!        jj(4) = ii(1)
+!        LitEnd_4int = t
+!      endif
 
       end function LitEnd_4int
 
@@ -901,28 +955,49 @@
       logical         :: isLit
       real(kind=8)    :: r
 
-      integer(kind=1) :: ii(8), jj(8)
-      real(kind=8)    :: s, t
+      integer(kind=8) :: s, t
+      integer         :: bl = 8  ! bit length of the move
 
-      equivalence (s,ii)
-      equivalence (t,jj)
+!      integer(kind=1) :: ii(8), jj(8)
+!
+!      equivalence (s,ii)
+!      equivalence (t,jj)
 
       if(isLit)then
         LitEnd_8real = r
       else
         ! We need r to be little-endian, but the system is big-endian
         ! swap the bytes
-        s = r
-        jj(1) = ii(8)
-        jj(2) = ii(7)
-        jj(3) = ii(6)
-        jj(4) = ii(5)
-        jj(5) = ii(4)
-        jj(6) = ii(3)
-        jj(7) = ii(2)
-        jj(8) = ii(1)
-        LitEnd_8real = t
+        s = transfer(r,s)
+        ! move 8-bit packets to the reverse positions
+        call mvbits(s,0*bl,bl,t,7*bl)
+        call mvbits(s,1*bl,bl,t,6*bl)
+        call mvbits(s,2*bl,bl,t,5*bl)
+        call mvbits(s,3*bl,bl,t,4*bl)
+        call mvbits(s,4*bl,bl,t,3*bl)
+        call mvbits(s,5*bl,bl,t,2*bl)
+        call mvbits(s,6*bl,bl,t,1*bl)
+        call mvbits(s,7*bl,bl,t,0*bl)
+        ! map t onto the desired output
+        LitEnd_8real = transfer (t,LitEnd_8real)
       endif
+
+!      if(isLit)then
+!        LitEnd_8real = r
+!      else
+!        ! We need r to be little-endian, but the system is big-endian
+!        ! swap the bytes
+!        s = r
+!        jj(1) = ii(8)
+!        jj(2) = ii(7)
+!        jj(3) = ii(6)
+!        jj(4) = ii(5)
+!        jj(5) = ii(4)
+!        jj(6) = ii(3)
+!        jj(7) = ii(2)
+!        jj(8) = ii(1)
+!        LitEnd_8real = t
+!      endif
 
       end function LitEnd_8real
 

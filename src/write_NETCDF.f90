@@ -122,7 +122,7 @@
       subroutine create_netcdf_file
 
       use global_param,  only : &
-         EPS_SMALL,EPS_TINY,KM2_2_M2,useCalcFallVel,VERB,&
+         EPS_SMALL,KM2_2_M2,useCalcFallVel,VERB,&
          GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH,Ash3d_GitComID,os_cwd,os_host,os_user
 
       use io_data,       only : &
@@ -2518,7 +2518,7 @@
       subroutine append_to_netcdf
 
       use global_param,  only : &
-         EPS_SMALL,EPS_TINY,VERB,KM2_2_M2
+         EPS_SMALL,VERB,KM2_2_M2
 
       use io_data,       only : &
          iout3d,nvar_User2d_XY,nvar_User3d_XYGs,nvar_User3d_XYZ,nvar_User4d_XYZGs,&
@@ -3228,7 +3228,7 @@
 
       use time_data,     only : &
           BaseYear,useLeap,os_time_log,time,time_native,SimStartHour,xmlSimStartTime, &
-          OutputOffset,Simtime_in_hours,ntmax
+          Simtime_in_hours,ntmax
 
       use Output_Vars,   only : &
          DepositThickness,DepArrivalTime,CloudArrivalTime,pr_ash,&

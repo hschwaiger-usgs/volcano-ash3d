@@ -7,7 +7,7 @@
       use io_units
 
       use global_param,  only : &
-         DEG2KMLAT,DEG2KMLON,DEG2RAD,KM_2_M,PI,HR_2_S,MPS_2_KMPHR
+         DEG2KMLAT,DEG2KMLON,DEG2RAD,KM_2_M,PI,HR_2_S,MPS_2_KMPHR,EPS_SMALL
 
       use time_data,     only : &
          time,Simtime_in_hours,dt
@@ -88,7 +88,7 @@
       qnow  = C_Costa*sqrt(k_entrainment)*massfluxnow**(3.0_ip/4.0_ip) / &
               N_BV**(5.0_ip/4.0_ip)
 
-      if (time.eq.0.0_ip)  then
+      if (time.lt.EPS_SMALL)  then
           write(global_info,*) 
           write(global_info,*) 'in Umbrella_winds'
           write(global_info,*) '  massfluxnow (kg/s) = ',real(massfluxnow,kind=sp)

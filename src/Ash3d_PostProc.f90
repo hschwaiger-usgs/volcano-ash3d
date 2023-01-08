@@ -66,6 +66,27 @@
       integer,dimension(Nplot_libs) :: plot_pref_aTS = (/2,3,1,4/) ! plot preference for Airport TS
 
       INTERFACE
+        subroutine Set_OS_Env
+        end subroutine Set_OS_Env
+        subroutine output_results
+        end subroutine output_results
+        subroutine Write_PointData_Airports_ASCII
+        end subroutine Write_PointData_Airports_ASCII
+        subroutine vprofileopener
+        end subroutine vprofileopener
+        subroutine vprofilewriter(itime)
+          integer, intent(in) :: itime
+        end subroutine vprofilewriter
+        subroutine vprofilecloser
+        end subroutine vprofilecloser
+        subroutine write_2D_ASCII(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
+          integer,parameter  :: ip         = 8
+          integer          ,intent(in) :: nx,ny
+          real(kind=ip)    ,intent(in) :: OutVar(nx,ny)
+          logical          ,intent(in) :: VarMask(nx,ny)
+          character(len=6) ,intent(in) :: Fill_Value
+          character(len=20),intent(in) :: filename_root
+        end subroutine write_2D_ASCII
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
           real(kind=8)               ::  HoursSince
           integer                    ::  byear

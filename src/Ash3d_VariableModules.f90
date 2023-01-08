@@ -33,7 +33,7 @@
 
       implicit none
 
-#include "version.h"
+#include "Ash3d_version.h"
 
       real(kind=ip), parameter :: EPS_SMALL  = 1.0e-7_ip  ! Small number
       real(kind=ip), parameter :: EPS_TINY   = 1.0e-12_ip ! Very small number

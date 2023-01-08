@@ -192,6 +192,9 @@
           integer                   :: byear
           logical                   :: useLeaps
         end function HS_xmltime
+        subroutine MR_Set_Gen_Index_GRIB(grib_file)
+          character(len=130),intent(in)  :: grib_file
+        end subroutine MR_Set_Gen_Index_GRIB
       END INTERFACE
 
 
@@ -2416,7 +2419,7 @@
         read(10,'(a80)',iostat=ios,err=2010)linebuffer080
         if(ios.ne.0)goto 2010
         iendstr = SCAN(linebuffer080, "#")
-        if (iendstr.eq.0.)then
+        if (iendstr.eq.0)then
              ! '#' not found, just copy linebuffer080 to comment
           cdf_comment = linebuffer080
         else
@@ -3130,7 +3133,7 @@
 
       subroutine LatLonChecker(latLL,lonLL,lat_volcano,lon_volcano,gridwidth_e,gridwidth_n)
       
-      !subroutine that checks the domain for errors if IsLatLon=.true
+      !subroutine that checks the domain for errors if IsLatLon=.true.
       
       use precis_param
 
@@ -3202,11 +3205,14 @@
 
       subroutine xyChecker(xLL,yLL,dx,dy,x_volcano,y_volcano,gridwidth_x,gridwidth_y)
 
-      !subroutine that checks the domain for errors if IsLatLon=.true
+      !subroutine that checks the domain for errors if IsLatLon=.false.
       
       use precis_param
 
       use io_units
+
+      use global_param,    only : &
+        EPS_SMALL
 
       implicit none
 
@@ -3237,7 +3243,7 @@
       endif
       
       !PRINT OUT WARNING MESSAGE if DX != DY
-      if (dx.ne.dy) then
+      if (abs(dx-dy).lt.EPS_SMALL) then
           write(global_info,1)              !print out a warning message about the deposit file
           write(global_log ,1)              !if dx and dy aren't the same
       endif

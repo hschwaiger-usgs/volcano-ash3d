@@ -41,9 +41,6 @@
 
       use io_units
 
-     use global_param,  only  : &
-         KM_2_M
-
       use io_data,       only : &
          isFinal_TS,iout3d,WriteTimes
 

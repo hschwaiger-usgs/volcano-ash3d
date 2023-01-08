@@ -21,7 +21,7 @@
       use io_units
 
       use global_param,  only : &
-         DEG2RAD,PI,EPS_SMALL,CFL,DT_MAX,DT_MIN,MPS_2_KMPHR, &
+         EPS_SMALL,CFL,DT_MAX,DT_MIN,MPS_2_KMPHR, &
          useDiffusion,useVarDiffH,useVarDiffV,useCN,VERB
 
       use Tephra,        only : &

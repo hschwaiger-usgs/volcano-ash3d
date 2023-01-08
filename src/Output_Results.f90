@@ -54,11 +54,11 @@
 
       INTERFACE
         subroutine vprofileopener
-        end subroutine
+        end subroutine vprofileopener
         subroutine vprofilecloser
-        end subroutine
+        end subroutine vprofilecloser
         subroutine Write_PointData_Airports_ASCII
-        end subroutine
+        end subroutine Write_PointData_Airports_ASCII
         subroutine write_2D_ASCII(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
           integer,parameter  :: ip         = 8 ! Internal precision
           integer          ,intent(in) :: nx,ny
@@ -66,16 +66,16 @@
           logical          ,intent(in) :: VarMask(nx,ny)
           character(len=6) ,intent(in) :: Fill_Value
           character(len=20),intent(in) :: filename_root
-        end subroutine
+        end subroutine write_2D_ASCII
         subroutine write_3D_ASCII(cio)
           character(len=13) ,intent(in) :: cio
-        end subroutine
+        end subroutine write_3D_ASCII
         subroutine write_3D_Binary(cio,nx,ny,nz,ashcon_tot)
           integer,parameter  :: op         = 4 ! Output precision
           character(len=13) ,intent(in) :: cio
           integer           ,intent(in) :: nx,ny,nz
           real(kind=op)     ,intent(in) :: ashcon_tot(nx,ny,nz)
-        end subroutine
+        end subroutine write_3D_Binary
         subroutine write_2D_Binary(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
           integer,parameter  :: ip         = 8 ! Internal precision
           integer          ,intent(in) :: nx,ny
@@ -83,7 +83,7 @@
           logical          ,intent(in) :: VarMask(nx,ny)
           character(len=6) ,intent(in) :: Fill_Value
           character(len=20),intent(in) :: filename_root
-        end subroutine
+        end subroutine write_2D_Binary
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
           real(kind=8)               ::  HoursSince
           integer                    ::  byear

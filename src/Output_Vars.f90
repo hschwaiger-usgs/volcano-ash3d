@@ -729,7 +729,7 @@
          n_gs_max
 
       use mesh,          only : &
-         sigma_nz_pd,ts1
+         sigma_nz_pd
 
       use solution,      only : &
          imin,imax,jmin,jmax

@@ -84,32 +84,36 @@
       real(kind=ip)         :: MassConsErr
 
       INTERFACE
+        subroutine Set_OS_Env
+        end subroutine Set_OS_Env
         subroutine Read_Control_File
-        end subroutine
+        end subroutine Read_Control_File
+        subroutine input_data_ResetParams
+        end subroutine input_data_ResetParams
         subroutine alloc_arrays
-        end subroutine
+        end subroutine alloc_arrays
         subroutine calc_mesh_params
-        end subroutine
+        end subroutine calc_mesh_params
         subroutine MesoInterpolater(TimeNow,Load_MesoSteps,Interval_Frac,first_time)
           integer,parameter  :: dp         = 8 ! Double precision
           real(kind=dp),intent(in)  :: TimeNow
           real(kind=dp),intent(out) :: Interval_Frac
           logical      ,intent(out) :: Load_MesoSteps
           logical      ,intent(in)  :: first_time
-        end subroutine
+        end subroutine MesoInterpolater
         subroutine output_results
-        end subroutine
+        end subroutine output_results
         subroutine Set_BC(bc_code)
           integer,intent(in) :: bc_code ! 1 for advection, 2 for diffusion
-        end subroutine
+        end subroutine Set_BC
         subroutine vprofilewriter(itime)
           integer, intent(in) :: itime
-        end subroutine
+        end subroutine vprofilewriter
         subroutine TimeStepTotals(itime)
           integer, intent(in) :: itime
-        end subroutine
+        end subroutine TimeStepTotals
         subroutine dealloc_arrays
-        end subroutine
+        end subroutine dealloc_arrays
       END INTERFACE
 
       ! Before we do anything, start a log file
@@ -128,12 +132,12 @@
 !------------------------------------------------------------------------------
 !       OPTIONAL MODULES
 !         Insert calls to custom input blocks here
-      write(global_info,*)&
+      if(VERB.gt.0)write(global_info,*)&
         "Now looping through optional modules found in input file"
       do j=1,nmods
-        write(global_info,*)"Testing for ",OPTMOD_names(j),j
+        if(VERB.gt.0)write(global_info,*)"Testing for ",OPTMOD_names(j),j
         if(OPTMOD_names(j).eq.'RESETPARAMS')then
-          write(global_info,*)"  Reading input block for RESETPARAMS"
+          if(VERB.gt.0)write(global_info,*)"  Reading input block for RESETPARAMS"
           call input_data_ResetParams
         endif
       enddo

@@ -81,7 +81,7 @@
          nvprofiles
 
       use mesh,          only : &
-         nzmax,ts1
+         nzmax
 
       use time_data,     only : &
          SimStartHour,time,BaseYear,useLeap,OutputOffset

@@ -18,6 +18,8 @@
       use MetReader,     only : &
          MR_OS_TYPE,MR_DirPrefix,MR_DirDelim
 
+      use iso_fortran_env
+
       implicit none
 
       integer              :: iostatus
@@ -32,6 +34,8 @@
       real(kind=dp)     :: RunStartHour    ! Start time of model run, in hours since BaseYear
       character(len=80) :: linebuffer080
       character(len=8)  :: version             =  ' 1.0  '
+      character(len=100):: CompVer
+      character(len=500):: CompOpt
 
       INTERFACE
         real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
@@ -42,12 +46,14 @@
           integer            :: byear
           logical            :: useLeaps
         end function HS_hours_since_baseyear
-
         character (len=13) function HS_yyyymmddhhmm_since(HoursSince,byear,useLeaps)
           real(kind=8)               ::  HoursSince
           integer                    ::  byear
           logical                    ::  useLeaps
         end function HS_yyyymmddhhmm_since
+        subroutine check_endian(IsLitEnd)
+          logical,intent(inout)  :: IsLitEnd
+        end subroutine check_endian
       END INTERFACE
 
 #ifdef LINUX
@@ -84,17 +90,22 @@
       ! Find out if we are running on a little-endian or big-endian system
       call check_endian(IsLitEnd)
 
+      ! Get info on the compiler version and options
+      CompVer = compiler_version()
+      CompOpt = compiler_options()
+
       ! Get some run-specific and system-specific information
       call get_command(os_full_command_line)
-#ifdef USEPII
-      call getlog(os_user)
-      call hostnm(os_host)
-      call getcwd(os_cwd)
-#else
+
+!#ifdef USEPII
+!      call getlog(os_user)
+!      call hostnm(os_host)
+!      call getcwd(os_cwd)
+!#else
       os_user = 'N/A'
       os_host = 'N/A'
       os_cwd  = 'N/A'
-#endif
+!#endif
       call date_and_time(date,time2,zone,values)
         ! date  = ccyymmdd
         ! time2 = hhmmss.sss
@@ -173,7 +184,10 @@
       write(global_info,*)"   user: ",trim(adjustl(os_user))
 
       write(global_info,*)"  "
-      write(global_info,*)"This executable was compiled with the following pre-proc flags:"
+      write(global_info,*)"This executable was compiled with the following compiler and options:"
+      write(global_info,*)"    ",trim(adjustl(CompVer))
+      write(global_info,*)"    ",trim(adjustl(CompOpt))
+      write(global_info,*)"and with the following pre-proc flags:"
 #ifdef LINUX
       write(global_info,*)"         LINUX: System specified as linux"
 #endif
@@ -263,6 +277,8 @@
              i4,'.',i2.2,'.',i2.2,i4,':',i2.2,' UTC')
 102   format(i4,'.',i2.2,'.',i2.2,i4,':',i2.2)
 
+      stop 8
+
       end subroutine Set_OS_Env
 
 
@@ -271,34 +287,39 @@
 !  Subroutine CHECK_ENDIAN checks if the local system uses Big-Endian
 !  or Little-Endian byte ordering.  Returns the logical value
 !  IsLitEnd = .true. if the system is Little-Endian, .false. otherwise.
-!
+! 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine check_endian(IsLitEnd)
 
       implicit none
 
-      logical          :: IsLitEnd
-      integer(kind=1)  :: ii(2)
-      integer(kind=2)  :: s
+      logical,intent(inout)  :: IsLitEnd
 
-      equivalence (s,ii)
+      integer(kind=2)  :: s = 1
 
-!      dumint = transfer(xmin,dumint)
-!      write(12,rec=10) dumint(1)
-!      write(12,rec=11) dumint(2)
+      !integer(kind=1)  :: ii(2)
 
-      s = 1
-      IF (ii(1).eq.1)THEN
-        !write(*,*)'System is Little-Endian'
+      !equivalence (s,ii)
+
+      !IF (ii(1).eq.1)THEN
+      !  ! System is Little-Endian
+      !  IsLitEnd = .true.
+      !ELSEIF(ii(2).eq.1)THEN
+      !  ! System is Big-Endian
+      !  IsLitEnd = .false.
+      !ELSE
+      !  write(*,*)'ERROR: cannot figure out endian-ness!'
+      !  stop
+      !ENDIF
+
+      if(btest(transfer(int((/1,0/),kind=1),s),0)) then
+        ! System is Little-Endian
         IsLitEnd = .true.
-      ELSEIF(ii(2).eq.1)THEN
-        !write(*,*)'System is Big-Endian'
+      else
+        ! System is Big-Endian
         IsLitEnd = .false.
-      ELSE
-        write(*,*)'ERROR: cannot figure out endian-ness!'
-        stop
-      ENDIF
+      endif 
 
       end subroutine check_endian
 
