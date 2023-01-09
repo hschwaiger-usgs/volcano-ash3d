@@ -79,14 +79,75 @@
         end subroutine vprofilewriter
         subroutine vprofilecloser
         end subroutine vprofilecloser
+        subroutine write_2Dprof_PNG_dislin(vprof_ID)
+          integer, intent (in) :: vprof_ID
+        end subroutine write_2Dprof_PNG_dislin
+        subroutine write_2Dmap_PNG_dislin(nx,ny,iprod,itime,OutVar,writeContours)
+          integer,parameter  :: ip         = 8
+          integer      ,intent(in) :: nx
+          integer      ,intent(in) :: ny
+          integer      ,intent(in) :: iprod
+          integer      ,intent(in) :: itime
+          real(kind=ip),intent(in) :: OutVar(nx,ny)
+          logical      ,intent(in) :: writeContours
+        end subroutine write_2Dmap_PNG_dislin
+
+        subroutine write_2Dprof_PNG_plplot(vprof_ID)
+          integer, intent (in) :: vprof_ID
+        end subroutine write_2Dprof_PNG_plplot
+        subroutine write_2Dmap_PNG_plplot(nx,ny,iprod,itime,OutVar,writeContours)
+          integer,parameter  :: ip         = 8
+          integer      ,intent(in) :: nx
+          integer      ,intent(in) :: ny
+          integer      ,intent(in) :: iprod
+          integer      ,intent(in) :: itime
+          real(kind=ip),intent(in) :: OutVar(nx,ny)
+          logical      ,intent(in) :: writeContours
+        end subroutine write_2Dmap_PNG_plplot
+
+        subroutine write_2Dprof_PNG_gnuplot(vprof_ID)
+          integer, intent (in) :: vprof_ID
+        end subroutine write_2Dprof_PNG_gnuplot
+        subroutine write_2Dmap_PNG_gnuplot(nx,ny,iprod,itime,OutVar,writeContours)
+          integer,parameter  :: ip         = 8
+          integer      ,intent(in) :: nx
+          integer      ,intent(in) :: ny
+          integer      ,intent(in) :: iprod
+          integer      ,intent(in) :: itime
+          real(kind=ip),intent(in) :: OutVar(nx,ny)
+          logical      ,intent(in) :: writeContours
+        end subroutine write_2Dmap_PNG_gnuplot
         subroutine write_2D_ASCII(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
           integer,parameter  :: ip         = 8
-          integer          ,intent(in) :: nx,ny
+          integer          ,intent(in) :: nx
+          integer          ,intent(in) :: ny
           real(kind=ip)    ,intent(in) :: OutVar(nx,ny)
           logical          ,intent(in) :: VarMask(nx,ny)
           character(len=6) ,intent(in) :: Fill_Value
           character(len=20),intent(in) :: filename_root
         end subroutine write_2D_ASCII
+        subroutine write_2D_Binary(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
+          integer,parameter  :: ip         = 8
+          integer          ,intent(in) :: nx
+          integer          ,intent(in) :: ny
+          real(kind=ip)    ,intent(in) :: OutVar(nx,ny)
+          logical          ,intent(in) :: VarMask(nx,ny)
+          character(len=6) ,intent(in) :: Fill_Value
+          character(len=20),intent(in) :: filename_root
+        end subroutine write_2D_Binary
+        subroutine write_3D_Binary(cio,nx,ny,nz,ashcon_tot)
+          integer,parameter  :: op         = 4
+          character(len=13) ,intent(in) :: cio
+          integer           ,intent(in) :: nx
+          integer           ,intent(in) :: ny
+          integer           ,intent(in) :: nz
+          real(kind=op)     ,intent(in) :: ashcon_tot(nx,ny,nz)
+        end subroutine write_3D_Binary
+        subroutine write_ShapeFile_Polyline(iprod,itime)
+          integer,intent(in) :: iprod
+          integer,intent(in) :: itime
+        end subroutine write_ShapeFile_Polyline
+
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
           real(kind=8)               ::  HoursSince
           integer                    ::  byear
@@ -684,16 +745,16 @@
         select case (icase)
         case(1)
 #ifdef USEDISLIN
-          call write_2Dmap_PNG_dislin(iprod,iout3d,OutVar,writeContours)
+          call write_2Dmap_PNG_dislin(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
 #endif
         case(2)
 #ifdef USEPLPLOT
-          call write_2Dmap_PNG_plplot(iprod,iout3d,OutVar,writeContours)
+          call write_2Dmap_PNG_plplot(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
 #endif
         case(3)
-          call write_2Dmap_PNG_gnuplot(iprod,iout3d,OutVar,writeContours)
+          call write_2Dmap_PNG_gnuplot(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
         !case(4)
-          !call write_2Dmap_PNG_GMT(iprod,iout3d,OutVar)
+          !call write_2Dmap_PNG_GMT(nxmax,nymax,iprod,iout3d,OutVar)
         case default
           write(*,*)"ERROR: Plots requested but no plotting package is installed"
           stop 1
@@ -736,16 +797,16 @@
         select case (icase)
         case(1)
 #ifdef USEDISLIN
-          call write_2Dmap_PNG_dislin(iprod,iout3d,OutVar,writeContours)
+          call write_2Dmap_PNG_dislin(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
 #endif
         case(2)
 #ifdef USEPLPLOT
-          call write_2Dmap_PNG_plplot(iprod,iout3d,OutVar,writeContours)
+          call write_2Dmap_PNG_plplot(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
 #endif
         case(3)
-          call write_2Dmap_PNG_gnuplot(iprod,iout3d,OutVar,writeContours)
+          call write_2Dmap_PNG_gnuplot(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
         !case(4)
-          !call write_2Dmap_PNG_GMT(iprod,iout3d,OutVar)
+          !call write_2Dmap_PNG_GMT(nxmax,nymax,iprod,iout3d,OutVar)
         case default
           write(*,*)"ERROR: Plots requested but no plotting package is installed"
           stop 1

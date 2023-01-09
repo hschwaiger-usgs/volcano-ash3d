@@ -5,7 +5,7 @@
 !    if timestep = -1, then use the last step in file
 !##############################################################################
 
-      subroutine write_2Dmap_PNG_gnuplot(iprod,itime,OutVar,writeContours)
+      subroutine write_2Dmap_PNG_gnuplot(nx,ny,iprod,itime,OutVar,writeContours)
 
       use precis_param
 
@@ -13,12 +13,10 @@
          EPS_SMALL
 
       use mesh,          only : &
-         nxmax,nymax,x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd, &
+         x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd, &
          IsLatLon
 
       use Output_Vars,   only : &
-         DepositThickness,DepArrivalTime,CloudArrivalTime,&
-         MaxConcentration,MaxHeight,CloudLoad,dbZ,MinHeight,Mask_Cloud,Mask_Deposit,&
          Con_DepThick_mm_N,Con_DepThick_mm_Lev,Con_DepThick_mm_RGB, &
          Con_DepThick_in_N,Con_DepThick_in_Lev,Con_DepThick_in_RGB, &
          Con_DepTime_N,Con_DepTime_Lev,Con_DepTime_RGB, &
@@ -35,19 +33,21 @@
          os_time_log,BaseYear,useLeap
 
       use io_data,       only : &
-         nWriteTimes,WriteTimes,cdf_b3l1,VolcanoName
+         WriteTimes,cdf_b3l1,VolcanoName
 
       use Source,        only : &
-         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight,lon_volcano,lat_volcano
+         e_Volume,e_Duration,e_StartTime,e_PlumeHeight,lon_volcano,lat_volcano
 
       implicit none
 
-      integer :: iprod
-      integer :: itime
-      real(kind=ip) :: OutVar(nxmax,nymax)
-      logical :: writeContours
+      integer      ,intent(in) :: nx
+      integer      ,intent(in) :: ny
+      integer      ,intent(in) :: iprod
+      integer      ,intent(in) :: itime
+      real(kind=ip),intent(in) :: OutVar(nx,ny)
+      logical      ,intent(in) :: writeContours
 
-      integer :: i,j,k,ii
+      integer :: i,j,ii
       integer     , dimension(:,:),allocatable :: zrgb
       character(len=40) :: title_plot
       character(len=15) :: title_legend
@@ -63,7 +63,7 @@
       character(len=10) :: dp_gnufile
       character(len=10) :: dp_outfile
       character(len=10) :: dp_confile
-      character(len=26) :: coord_str
+      !character(len=26) :: coord_str
       character(len=25) :: gnucom
       integer :: ioerr,ioerr2,iw,iwf,istat
 
@@ -273,17 +273,24 @@
       write(dp_gnufile,53) "outvar.gpi"
  53   format(a10)
 
-      xmin = real(minval(lon_cc_pd(1:nxmax)),kind=8)
-      ! Make sure xmin is in the range -180->180
-      if (xmin.gt.180.0_8)then
-        xmin = real(minval(lon_cc_pd(1:nxmax)),kind=8)-360.0
-        xmax = real(maxval(lon_cc_pd(1:nxmax)),kind=8)-360.0
+      if(IsLatLon)then
+        xmin = real(minval(lon_cc_pd(1:nx)),kind=8)
+        ! Make sure xmin is in the range -180->180
+        if (xmin.gt.180.0_8)then
+          xmin = real(minval(lon_cc_pd(1:nx)),kind=8)-360.0
+          xmax = real(maxval(lon_cc_pd(1:nx)),kind=8)-360.0
+        else
+          xmax = real(maxval(lon_cc_pd(1:nx)),kind=8)
+        endif
+        ymin = real(minval(lat_cc_pd(1:ny)),kind=8)
+        ymax = real(maxval(lat_cc_pd(1:ny)),kind=8)
       else
-        xmax = real(maxval(lon_cc_pd(1:nxmax)),kind=8)
+        xmin = real(minval(x_cc_pd(1:nx)),kind=8)
+        xmax = real(maxval(x_cc_pd(1:nx)),kind=8)
+        ymin = real(minval(y_cc_pd(1:ny)),kind=8)
+        ymax = real(maxval(y_cc_pd(1:ny)),kind=8)
+        stop 5
       endif
-      ymin = real(minval(lat_cc_pd(1:nymax)),kind=8)
-      ymax = real(maxval(lat_cc_pd(1:nymax)),kind=8)
-
       call citylist(2,xmin,xmax,ymin,ymax, &
                     ncities,                        &
                     lon_cities,lat_cities,          &
@@ -293,8 +300,8 @@
 
       ! write out the data in a form that gnuplot can read
       open(54,file=dp_outfile,status='replace')
-      do i = 1,nxmax
-        do j = 1,nymax
+      do i = 1,nx
+        do j = 1,ny
           write(54,*)lon_cc_pd(i)-360.0_8,lat_cc_pd(j),OutVar(i,j)
         enddo
         write(54,*)" "
@@ -491,7 +498,7 @@
          Site_vprofile,x_vprofile,y_vprofile,cdf_b3l1,VolcanoName
 
       use Source,        only : &
-         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
+         e_Volume,e_Duration,e_StartTime,e_PlumeHeight
 
       use time_data,     only : &
          os_time_log,BaseYear,useLeap,ntmax,time_native
@@ -602,11 +609,10 @@
          THICKNESS_THRESH
 
       use Airports,      only : &
-         nairports,Airport_Code,Airport_Name,Airport_x,Airport_y,&
-         Airport_Latitude,Airport_Longitude,Airport_Thickness_TS
+         Airport_Name,Airport_Thickness_TS
 
       use io_data,       only : &
-         nWriteTimes,WriteTimes,VolcanoName
+         nWriteTimes,WriteTimes
 
       use time_data,     only : &
          Simtime_in_hours

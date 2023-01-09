@@ -277,8 +277,6 @@
              i4,'.',i2.2,'.',i2.2,i4,':',i2.2,' UTC')
 102   format(i4,'.',i2.2,'.',i2.2,i4,':',i2.2)
 
-      stop 8
-
       end subroutine Set_OS_Env
 
 

@@ -9,8 +9,10 @@
       implicit none
 
       character(len=13) ,intent(in) :: cio
-      integer          ,intent(in) :: nx,ny,nz
-      real(kind=op)    ,intent(in) :: ashcon_tot(nx,ny,nz)
+      integer           ,intent(in) :: nx
+      integer           ,intent(in) :: ny
+      integer           ,intent(in) :: nz
+      real(kind=op)     ,intent(in) :: ashcon_tot(nx,ny,nz)
 
       integer :: i,j,k
 
@@ -46,7 +48,8 @@
 
       implicit none
 
-      integer          ,intent(in) :: nx,ny
+      integer          ,intent(in) :: nx
+      integer          ,intent(in) :: ny
       real(kind=ip)    ,intent(in) :: OutVar(nx,ny)
       logical          ,intent(in) :: VarMask(nx,ny)
       character(len=6) ,intent(in) :: Fill_Value

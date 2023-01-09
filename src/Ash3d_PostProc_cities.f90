@@ -26,12 +26,11 @@
       character(len=26),dimension(maxcities),intent(out) :: CityName_out
 
       integer            :: iostatus = 1
-      integer            :: i, nargs, ncities, nmax, nread
-      integer            :: status
+      integer            :: i, ncities, nread
+      !integer            :: status
       integer            :: resolution                              !# of cells in x and y
       character(len=26)  :: CityName
       character(len=133) :: inputline
-      character(len=9)   :: lonLL_char, lonUR_char, latLL_char, latUR_char
       real(kind=8)       :: lonLL,lonUR,latLL,latUR
       real(kind=8)       :: CityLat, CityLon
       real(kind=8)       :: dlat, dlon, cell_width, cell_height
@@ -40,6 +39,22 @@
       logical            :: IsThere,IsThere2
 
       character(len=130)             :: CityMasterFile
+
+      INTERFACE
+        subroutine space_checker(maxcities,CityLon_out,CityLat_out,ncities, &
+                                    CityLon,CityLat, &
+                                    minspace_x,minspace_y,IsOkay)
+          integer     ,intent(in)    :: maxcities
+          real(kind=8),intent(in)    :: CityLon_out(maxcities)
+          real(kind=8),intent(in)    :: CityLat_out(maxcities)
+          integer     ,intent(in)    :: ncities
+          real(kind=8),intent(in)    :: CityLon
+          real(kind=8),intent(in)    :: CityLat
+          real(kind=8),intent(in)    :: minspace_x
+          real(kind=8),intent(in)    :: minspace_y
+          logical     ,intent(inout) :: IsOkay
+        end subroutine space_checker
+      END INTERFACE
 
       CityName_out = ''           !set default values
       CityLon_out  = 0.0_8
@@ -104,7 +119,7 @@
             (CityLat.gt.latLL).and.(CityLat.lt.latUR)) then
           ! Make sure this city is not near any others
           IsOkay=.true.
-          call space_checker(maxcities,CityLon_out,CityLat_out,CityName_out,ncities, & 
+          call space_checker(maxcities,CityLon_out,CityLat_out,ncities, & 
                              CityLon,CityLat, &
                              minspace_x,minspace_y,IsOkay)
           if (IsOkay) then
@@ -118,7 +133,7 @@
                 (CityLat.gt.latLL).and.(CityLat.lt.latUR)) then
           ! Make sure this city is not near any others
           IsOkay=.true.
-          call space_checker(maxcities,CityLon_out,CityLat_out,CityName_out,ncities, & 
+          call space_checker(maxcities,CityLon_out,CityLat_out,ncities, & 
                              CityLon,CityLat, &
                              minspace_x,minspace_y,IsOkay)
           if (IsOkay) then
@@ -163,34 +178,30 @@
          
 !***************************************************************************************
 
-      subroutine space_checker(maxcities,CityLon_out,CityLat_out,CityName_out,ncities, & 
+      subroutine space_checker(maxcities,CityLon_out,CityLat_out,ncities, & 
                                   CityLon,CityLat, &
                                   minspace_x,minspace_y,IsOkay)
       implicit none
 
-      integer ,intent(in) :: maxcities
-      integer            :: icity, ncities
-      real(kind=8)       :: CityLat, CityLat_out(maxcities), CityLon, CityLon_out(maxcities)
-      character(len=26)  :: CityName_out(maxcities)
-      !character(len=1)   :: answer
-      real(kind=8)       :: minspace_x, minspace_y
-      logical            :: IsOkay                 !true if city is not near any others
+      integer     ,intent(in)    :: maxcities
+      real(kind=8),intent(in)    :: CityLon_out(maxcities)
+      real(kind=8),intent(in)    :: CityLat_out(maxcities)
+      integer     ,intent(in)    :: ncities
+      real(kind=8),intent(in)    :: CityLon
+      real(kind=8),intent(in)    :: CityLat
+      real(kind=8),intent(in)    :: minspace_x
+      real(kind=8),intent(in)    :: minspace_y
+      logical     ,intent(inout) :: IsOkay                 !true if city is not near any others
 
-!      write(6,*) 'compare with:'
+      integer            :: icity
+
       do icity=1,ncities
-!        write(6,6) CityName_out(icity), CityLon_out(icity), CityLat_out(icity)
-!6       format(a26,2f10.4)
         if ((abs(CityLon_out(icity)-CityLon).lt.minspace_x).and. &
             (abs(CityLat_out(icity)-CityLat).lt.minspace_y)) then
-!          write(6,*) 'too close'
           IsOkay=.false.
           exit
         endif
       enddo
-
-      !write(6,*) 'continue?'
-      !read(5,'(a1)') answer
-      !if (answer.eq.'n') stop
 
       return
 

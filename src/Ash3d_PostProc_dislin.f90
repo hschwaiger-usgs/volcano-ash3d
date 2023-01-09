@@ -5,17 +5,15 @@
 !    if timestep = -1, then use the last step in file
 !##############################################################################
 
-      subroutine write_2Dmap_PNG_dislin(iprod,itime,OutVar,writeContours)
+      subroutine write_2Dmap_PNG_dislin(nx,ny,iprod,itime,OutVar,writeContours)
 
       use precis_param
 
       use mesh,          only : &
-         nxmax,nymax,x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd, &
+         x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd, &
          IsLatLon
 
       use Output_Vars,   only : &
-         DepositThickness,DepArrivalTime,CloudArrivalTime,&
-         MaxConcentration,MaxHeight,CloudLoad,dbZ,MinHeight,Mask_Cloud,Mask_Deposit,&
          Con_DepThick_mm_N,Con_DepThick_mm_Lev,Con_DepThick_mm_RGB, &
          Con_DepThick_in_N,Con_DepThick_in_Lev,Con_DepThick_in_RGB, &
          Con_DepTime_N,Con_DepTime_Lev,Con_DepTime_RGB, &
@@ -29,7 +27,7 @@
          Contour_MaxCurves,Contour_MaxPoints,ContourLev,nConLev
 
       use io_data,       only : &
-         nWriteTimes,WriteTimes,cdf_b3l1,VolcanoName
+         WriteTimes,cdf_b3l1,VolcanoName
 
       use Source,        only : &
          neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight,lon_volcano,lat_volcano
@@ -41,10 +39,12 @@
 
       implicit none
 
-      integer :: iprod
-      integer :: itime
-      real(kind=ip) :: OutVar(nxmax,nymax)
-      logical :: writeContours
+      integer      ,intent(in) :: nx
+      integer      ,intent(in) :: ny
+      integer      ,intent(in) :: iprod
+      integer      ,intent(in) :: itime
+      real(kind=ip),intent(in) :: OutVar(nx,ny)
+      logical      ,intent(in) :: writeContours
 
       integer :: i,j,k
       integer     , dimension(:,:),allocatable :: zrgb
@@ -79,7 +79,7 @@
       !real(kind=4), dimension(4) :: cpt_r_hot     = (/ 0.0_4, 1.0_4, 1.0_4, 1.0_4 /)
       !real(kind=4), dimension(4) :: cpt_g_hot     = (/ 0.0_4, 0.0_4, 1.0_4, 1.0_4 /)
       !real(kind=4), dimension(4) :: cpt_b_hot     = (/ 0.0_4, 0.0_4, 0.0_4, 0.9_4 /) ! hot actually ends in 1.0
-      real(kind=4) :: i_flt,idel,cdel,xr,xg,xb
+      real(kind=4) :: xr,xg,xb
 
       character(len=30) :: cstr_volcname
       character(len=30) :: cstr_run_date
@@ -278,9 +278,9 @@
           XPTS(:) = 0.0_4
           YPTS(:) = 0.0_4
           IRAY(:) = 0
-          call conpts(real(lon_cc_pd(1:nxmax),kind=4),nxmax,&  ! x coord and size
-                      real(lat_cc_pd(1:nymax),kind=4),nymax,&  ! y coord and size
-                      real(OutVar(1:nxmax,1:nymax),kind=4), &  ! matrix with function values
+          call conpts(real(lon_cc_pd(1:nx),kind=4),nx,&  ! x coord and size
+                      real(lat_cc_pd(1:ny),kind=4),ny,&  ! y coord and size
+                      real(OutVar(1:nx,1:ny),kind=4), &  ! matrix with function values
                       real(ContourLev(i),kind=4),           &  ! level to contour
                       XPTS,YPTS,          &           ! x,y of contour (may have mul. curves)
                       Contour_MaxPoints,  &           ! max # of points for contour arrays
@@ -305,18 +305,26 @@
       ! This is the section where we actually start plotting the map
       write(*,*)"Running Dislin to generate contour plot"
 
-      xmin = real(minval(lon_cc_pd(1:nxmax)),kind=8)
-      xmax = real(maxval(lon_cc_pd(1:nxmax)),kind=8)
-      ymin = real(minval(lat_cc_pd(1:nymax)),kind=8)
-      ymax = real(maxval(lat_cc_pd(1:nymax)),kind=8)
+      if(IsLatLon)then
+        xmin = real(minval(lon_cc_pd(1:nx)),kind=8)
+        xmax = real(maxval(lon_cc_pd(1:nx)),kind=8)
+        ymin = real(minval(lat_cc_pd(1:ny)),kind=8)
+        ymax = real(maxval(lat_cc_pd(1:ny)),kind=8)
+      else
+        xmin = real(minval(x_cc_pd(1:nx)),kind=8)
+        xmax = real(maxval(x_cc_pd(1:nx)),kind=8)
+        ymin = real(minval(y_cc_pd(1:ny)),kind=8)
+        ymax = real(maxval(y_cc_pd(1:ny)),kind=8)
+        stop 5
+      endif
 
       dx_map = 10.0_4
       dy_map = 5.0_4
       lon_cc_pd(:) = lon_cc_pd(:) - 360.0_8
-      xminDIS = real(minval(lon_cc_pd(1:nxmax)),kind=4)
-      xmaxDIS = real(maxval(lon_cc_pd(1:nxmax)),kind=4)
-      yminDIS = real(minval(lat_cc_pd(1:nymax)),kind=4)
-      ymaxDIS = real(maxval(lat_cc_pd(1:nymax)),kind=4)
+      xminDIS = real(minval(lon_cc_pd(1:nx)),kind=4)
+      xmaxDIS = real(maxval(lon_cc_pd(1:nx)),kind=4)
+      yminDIS = real(minval(lat_cc_pd(1:ny)),kind=4)
+      ymaxDIS = real(maxval(lat_cc_pd(1:ny)),kind=4)
       xgrid_1 = real(ceiling(xminDIS/dx_map) * dx_map,kind=4)
       ygrid_1 = real(ceiling(yminDIS/dy_map) * dy_map,kind=4)
 
@@ -397,8 +405,8 @@
       if(UseShadedContours)then
         !call myvlt(xr,xg,xb,nrgb)
         call shdmod('UPPER', 'CELL') ! This suppresses colors in regions above/below the zlevels pro
-        call conshd(real(lon_cc_pd(1:nxmax),kind=4),nxmax,&
-                    real(lat_cc_pd(1:nymax),kind=4),nymax,&
+        call conshd(real(lon_cc_pd(1:nx),kind=4),nx,&
+                    real(lat_cc_pd(1:ny),kind=4),ny,&
                     real(OutVar,kind=4),real(ContourLev(i:nConLev),kind=4),nConLev)
       else
         do i=1,nConLev
@@ -409,9 +417,9 @@
 
           call setclr(nclr)
 
-          call contur(real(lon_cc_pd(1:nxmax),kind=4),nxmax,&
-                      real(lat_cc_pd(1:nymax),kind=4),nymax,&
-                      real(OutVar(1:nxmax,1:nymax),kind=4), &
+          call contur(real(lon_cc_pd(1:nx),kind=4),nx,&
+                      real(lat_cc_pd(1:ny),kind=4),ny,&
+                      real(OutVar(1:nx,1:ny),kind=4), &
                       real(ContourLev(i),kind=4))
         enddo
       endif
@@ -510,7 +518,7 @@
       character(len=14) :: dp_pngfile
       character(len=26) :: coord_str
       character(len=76) :: title_str
-      character(len=80) :: outstring
+      !character(len=80) :: outstring
       integer :: k,i
       integer :: ioerr,iw,iwf
 
@@ -712,11 +720,10 @@
       use precis_param
 
       use Airports,      only : &
-         nairports,Airport_Code,Airport_Name,Airport_x,Airport_y,&
-         Airport_Latitude,Airport_Longitude,Airport_Thickness_TS
+         Airport_Name,Airport_Thickness_TS
 
       use io_data,       only : &
-         nWriteTimes,WriteTimes,VolcanoName
+         nWriteTimes,WriteTimes
 
       use time_data,     only : &
          Simtime_in_hours
@@ -725,11 +732,10 @@
 
       implicit none
 
-      integer :: pt_indx,i
+      integer,intent(in) :: pt_indx
 
       real(kind=4) :: ymaxpl
       character(len=14) :: dp_pngfile
-      character(len=25) :: gnucom
       integer,save      :: plot_index = 0
 
       real(kind=4) :: xmin
