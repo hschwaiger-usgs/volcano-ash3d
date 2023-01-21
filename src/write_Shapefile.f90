@@ -15,6 +15,9 @@
       use io_data,       only : &
          WriteTimes,VolcanoName
 
+      use io_data,       only : &
+         cdf_institution,cdf_run_class,cdf_url
+
       implicit none
 
       integer,intent(in) :: iprod
@@ -35,7 +38,8 @@
       integer           :: ov_projID  = 25
 
       character(len=40) :: title_plot
-      character(len=15) :: title_units
+      character(len=40) :: plot_variable
+      character(len=15) :: plot_units
 
       logical           :: debugmode = .false.
 
@@ -77,18 +81,37 @@
       character(len=11):: DBASE_FieldName ! 'name   '
       character(len=1) :: DBASE_FieldTyp
       integer(kind=1)  :: DBASE_FieldLen
-      integer(kind=1)  :: DBASE_FieldDecCount
-      integer(kind=1)  :: DBASE_FieldWrkArID
       integer(kind=1)  :: DBASE_FieldDesTerm
-      integer(kind=1)  :: DBASE_FieldSetFieldFlag
       integer          :: fldlen
       character(len=1) :: DBASE_RecStart = ' '
       integer(kind=1)  :: DBASE_EOF      = 26
-      character(len=80):: DBASE_TableRecDataName
-      character(len=24):: DBASE_TableRecDataValue
-      character(len=10):: DBASE_TableRecDataIndex
+
+      integer          :: nattr          = 15
+      character(len=10):: DBASE_TableRecData01  ! Organizaion
+      character(len=42):: DBASE_TableRecData02  ! Volcano
+      character(len=20):: DBASE_TableRecData03  ! Run date
+      character(len= 5):: DBASE_TableRecData04  ! iwindformat
+      character(len=20):: DBASE_TableRecData05  ! Run class
+      character(len=20):: DBASE_TableRecData06  ! Erup. Start Time
+      character(len=20):: DBASE_TableRecData07  ! Erup. Plume Height
+      character(len=20):: DBASE_TableRecData08  ! Erup. Duration
+      character(len=20):: DBASE_TableRecData09  ! Erup. Vol
+      character(len=80):: DBASE_TableRecData10  ! URL
+      character(len=24):: DBASE_TableRecData11  ! Variable
+      character(len=24):: DBASE_TableRecData12  ! Value of contour level
+      character(len=10):: DBASE_TableRecData13  ! unit for level
+      character(len=10):: DBASE_TableRecData14  ! index
+      character(len=20):: DBASE_TableRecData15  ! Time of data
 
       INTERFACE
+        subroutine writeShapFileFieldDesArr(ov_dbasID,fldlen,DBASE_FieldName,&
+                                            DBASE_FieldTyp,DBASE_FieldLen)
+          integer,intent(in)               :: ov_dbasID
+          integer,intent(in)               :: fldlen
+          character(len=fldlen),intent(in) :: DBASE_FieldName
+          character(len=1),intent(in)      :: DBASE_FieldTyp
+          integer(kind=1),intent(in)       :: DBASE_FieldLen
+        end subroutine writeShapFileFieldDesArr
         integer(kind=2) function BigEnd_2int(isLit,r)
           logical         :: isLit
           integer(kind=2) :: r
@@ -113,56 +136,68 @@
 
       if(iprod.eq.3)then       ! deposit at specified times (mm)
         write(title_plot,'(a22,f5.2,a6)')': Deposit Thickness t=',WriteTimes(itime),' hours'
+        plot_variable = 'Deposit Thickness'
         ov_fileroot = 'depothik'
-        title_units = '(mm)'
+        plot_units = 'mm'
       elseif(iprod.eq.4)then   ! deposit at specified times (inches)
         write(title_plot,'(a22,f5.2,a6)')': Deposit Thickness t=',WriteTimes(itime),' hours'
+        plot_variable = 'Deposit Thickness'
         ov_fileroot = 'depothik'
-        title_units  = '(in)'
+        plot_units  = 'in'
       elseif(iprod.eq.5)then       ! deposit at final time (mm)
         title_plot = ': Final Deposit Thickness'
+        plot_variable = 'Final Deposit Thickness'
         ov_fileroot = 'depothik'
-        title_units = '(mm)'
+        plot_units = 'mm'
       elseif(iprod.eq.6)then   ! deposit at final time (inches)
         title_plot = ': Final Deposit Thickness'
+        plot_variable = 'Final Deposit Thickness'
         ov_fileroot = 'depothik'
-        title_units = '(in)'
+        plot_units = 'in'
       elseif(iprod.eq.7)then   ! ashfall arrival time (hours)
         write(title_plot,'(a22)')': Ashfall arrival time'
+        plot_variable = 'Ashfall arrival time'
         ov_fileroot = 'DepAvlTm'
-        title_units = '(hours)'
+        plot_units = 'hours'
       elseif(iprod.eq.8)then   ! ashfall arrival at airports/POI (mm)
         write(*,*)"ERROR: No map PNG output option for airport arrival time data."
         write(*,*)"       Should not be in write_2Dmap_PNG_dislin"
         stop 1
       elseif(iprod.eq.9)then   ! ash-cloud concentration
         write(title_plot,'(a28,f5.2,a6)')': Ash-cloud concentration t=',WriteTimes(itime),' hours'
+        plot_variable ='Ash-cloud concentration'
         ov_fileroot = 'AshCdCon'
-        title_units = '(mg/m3)'
+        plot_units = 'mg/m3'
       elseif(iprod.eq.10)then   ! ash-cloud height
         write(title_plot,'(a21,f5.2,a6)')': Ash-cloud height t=',WriteTimes(itime),' hours'
+        plot_variable ='Ash-cloud height'
         ov_fileroot = 'AshCdHgt'
-        title_units = '(km)'
+        plot_units = 'km'
       elseif(iprod.eq.11)then   ! ash-cloud bottom
         write(title_plot,'(a21,f5.2,a6)')': Ash-cloud bottom t=',WriteTimes(itime),' hours'
+        plot_variable ='Ash-cloud bottom'
         ov_fileroot = 'AshCdBot'
-        title_units = '(km)'
+        plot_units = 'km'
       elseif(iprod.eq.12)then   ! ash-cloud load
         write(title_plot,'(a19,f5.2,a6)')': Ash-cloud load t=',WriteTimes(itime),' hours'
+        plot_variable ='Ash-cloud load'
         ov_fileroot = 'AshCdLod'
-        title_units = '(T/km2)'
+        plot_units = 'T/km2'
       elseif(iprod.eq.13)then  ! radar reflectivity
         write(title_plot,'(a26,f5.2,a6)')': Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
+        plot_variable ='Ash-cloud radar refl.'
         ov_fileroot = 'AshClRad'
-        title_units = '(dBz)'
+        plot_units = 'dBz'
       elseif(iprod.eq.14)then   ! ashcloud arrival time (hours)
         write(title_plot,'(a24)')': Ash-cloud arrival time'
+        plot_variable ='Ash-cloud arrival time'
         ov_fileroot = 'AshAvlTm'
-        title_units = '(hours)'
+        plot_units = 'hours'
       elseif(iprod.eq.15)then   ! topography
         write(title_plot,'(a12)')': Topography'
+        plot_variable ='Topography'
         ov_fileroot = 'Topogrph'
-        title_units = '(km)'
+        plot_units = 'km'
       elseif(iprod.eq.16)then   ! profile plots
         write(*,*)"ERROR: No map PNG output option for vertical profile data."
         write(*,*)"       Should not be in write_2Dmap_PNG_dislin"
@@ -171,7 +206,6 @@
         write(*,*)"ERROR: unexpected variable"
         stop 1
       endif
-
 
       ! Get number of records; number of actual contour levels used
       nrec=0
@@ -396,9 +430,10 @@
       close(ov_indxID)
 
       ! Now write the dbase file
-      ! Full specifications at
+      ! Full for dbase 7 specifications at
       ! https://www.dbase.com/Knowledgebase/INT/db7_file_fmt.htm
-      ! For dbase 5 see https://www.oocities.org/geoff_wass/dBASE/GaryWhite/dBASE/FAQ/qformt.htm
+      ! For dbase 5 see
+      ! https://www.oocities.org/geoff_wass/dBASE/GaryWhite/dBASE/FAQ/qformt.htm Sec. D
       ! Shapefile additional requirements:
       !  1. name consistent with shp, but with dbf extension
       !  2. table must contain one record per shape feature
@@ -407,9 +442,28 @@
       ! Note: We will write dBASE V – MS-Windows (Level 5) format since we know that works.
       open(ov_dbasID, file=trim(adjustl(ov_dbasfile)), access='stream', form='unformatted', status='replace')
 
-      write(DBASE_TableRecDataName,*)trim(adjustl(VolcanoName)),title_plot,title_units
-      DBASE_TableRecDataValue =  "       0.000000000000000"
-      DBASE_TableRecDataIndex =  "         0"
+      ! Populate each of the TableRecData fields with dummy values so we can get lengths to put
+      ! in the header
+      ! HFS KLUDGE
+      cdf_institution="USGS"
+      cdf_run_class="Analysis"
+      cdf_url="https://vsc-ash.wr.usgs.gov/ash3d-gui"
+
+      write(DBASE_TableRecData01,*)trim(adjustl(cdf_institution))
+      write(DBASE_TableRecData02,*)trim(adjustl(VolcanoName))
+      write(DBASE_TableRecData03,'(a20)')'1800-01-01T00:00:00Z'
+      write(DBASE_TableRecData04,'(i2)')25
+      write(DBASE_TableRecData05,*)trim(adjustl(cdf_run_class))
+      write(DBASE_TableRecData06,'(a20)')'1800-01-01T00:00:00Z'  ! start time
+      write(DBASE_TableRecData07,'(f10.3)')40.0 ! plume height
+      write(DBASE_TableRecData08,'(f10.3)')24.0 ! duration
+      write(DBASE_TableRecData09,'(e10.3)')40.0 ! erup.vol
+      write(DBASE_TableRecData10,*)trim(adjustl(cdf_url))
+      write(DBASE_TableRecData11,*)trim(adjustl(plot_variable))
+      write(DBASE_TableRecData12,'(a24)')"       0.000000000000000"
+      write(DBASE_TableRecData13,*)trim(adjustl(plot_units))
+      write(DBASE_TableRecData14,'(a10)')"         0"
+      write(DBASE_TableRecData15,'(a20)')'1800-01-01T00:00:00Z'
 
       DBASE_zero = 0
       DBASE_v  = 3
@@ -418,10 +472,26 @@
       DBASE_dd =26
 
       DBASE_nrec      = nrec
-      DBASE_headlen   = 32 + (32 + 32 + 32) + 1
-      DBASE_reclen    = (len(DBASE_TableRecDataName) + &
-                         len(DBASE_TableRecDataValue)+ &
-                         len(DBASE_TableRecDataIndex)) +1
+      !                 -- Table File Header length
+      !                 |           -- length of field descriptor (attributes)
+      !                 V           V
+      DBASE_headlen   = 32 + nattr*32 + 1
+      DBASE_reclen    = len(DBASE_TableRecData01) + &
+                        len(DBASE_TableRecData02) + &
+                        len(DBASE_TableRecData03) + &
+                        len(DBASE_TableRecData04) + &
+                        len(DBASE_TableRecData05) + &
+                        len(DBASE_TableRecData06) + &
+                        len(DBASE_TableRecData07) + &
+                        len(DBASE_TableRecData08) + &
+                        len(DBASE_TableRecData09) + &
+                        len(DBASE_TableRecData10) + &
+                        len(DBASE_TableRecData11) + &
+                        len(DBASE_TableRecData12) + &
+                        len(DBASE_TableRecData13) + &
+                        len(DBASE_TableRecData14) + &
+                        len(DBASE_TableRecData15) + &
+                         +1
       DBASE_transflag = 0
       DBASE_cryptflag = 0
       DBASE_mdxflag   = 0
@@ -464,126 +534,99 @@
       !  FIELDS
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      !  Now the fields followed by the field terminator
-      !32-n : 32 bytes: Field descriptor array
-      !  0-10  : 11 bytes : Field name in ASCII (zero-filled). 
-      DBASE_FieldName ='name'
+      DBASE_FieldName ='ORG'
       fldlen=len(trim(adjustl(DBASE_FieldName)))
-      write(ov_dbasID)trim(adjustl(DBASE_FieldName))
-      do i=fldlen+1,11
-        write(ov_dbasID)DBASE_zero
-      enddo
-      !  11    : 1 byte   : Field type in ASCII (C, D, L, M, or N).
       DBASE_FieldTyp = 'C'
-      write(ov_dbasID)DBASE_FieldTyp
-      ! 12-15 : 4 bytes  : Field data address (address is set in memory; not useful on disk). 
-      do i=1,4
-        write(ov_dbasID)DBASE_zero
-      enddo
-      ! 16    : 1 byte   : Field length in binary.
-      DBASE_FieldLen=len(DBASE_TableRecDataName)   ! Should be 80
-      write(ov_dbasID)DBASE_FieldLen
-      ! 17    : 1 byte   : Field decimal count in binary. 
-      DBASE_FieldDecCount = 0
-      write(ov_dbasID)DBASE_FieldDecCount
-      ! 18-19 : 2 bytes  : Reserved for dBASE III PLUS on a LAN. 
-      do i=1,2
-        write(ov_dbasID)DBASE_zero
-      enddo
-      ! 20    : 1 byte   : Work area ID.
-      DBASE_FieldWrkArID = 0
-      write(ov_dbasID)DBASE_FieldWrkArID
-      ! 21-22 : 2 bytes  : Reserved for dBASE III PLUS on a LAN. 
-      do i=1,2
-        write(ov_dbasID)DBASE_zero
-      enddo
-      ! 23    : 1 byte   : SET FIELDS flag.
-      DBASE_FieldSetFieldFlag = 0
-      write(ov_dbasID)DBASE_FieldSetFieldFlag
-      ! 24-32 : 8 bytes  : Reserved bytes
-      do i=1,8
-        write(ov_dbasID)DBASE_zero
-      enddo
-  
-      ! Next field for the value of the first record
-      !  0-10  : 11 bytes : Field name in ASCII (zero-filled). 
-      DBASE_FieldName ='value'
+      DBASE_FieldLen=len(DBASE_TableRecData01)
+      call writeShapFileFieldDesArr(ov_dbasID,fldlen,DBASE_FieldName,&
+                                    DBASE_FieldTyp,DBASE_FieldLen)
+      DBASE_FieldName ='VOLC'
       fldlen=len(trim(adjustl(DBASE_FieldName)))
-      write(ov_dbasID)trim(adjustl(DBASE_FieldName))
-      do i=fldlen+1,11
-        write(ov_dbasID)DBASE_zero
-      enddo
-      !  11    : 1 byte   : Field type in ASCII (C, D, L, M, or N).
-      DBASE_FieldTyp = 'N'
-      write(ov_dbasID)DBASE_FieldTyp
-      ! 12-15 : 4 bytes  : Field data address (address is set in memory; not useful on disk). 
-      do i=1,4
-        write(ov_dbasID)DBASE_zero
-      enddo
-      ! 16    : 1 byte   : Field length in binary.
-      DBASE_FieldLen=len(DBASE_TableRecDataValue)  ! Should be 24
-      write(ov_dbasID)DBASE_FieldLen
-      ! 17    : 1 byte   : Field decimal count in binary. 
-      DBASE_FieldDecCount = 15  ! number of digits past decimal??
-      write(ov_dbasID)DBASE_FieldDecCount
-      ! 18-19 : 2 bytes  : Reserved for dBASE III PLUS on a LAN. 
-      do i=1,2
-        write(ov_dbasID)DBASE_zero
-      enddo
-      ! 20    : 1 byte   : Work area ID.
-      DBASE_FieldWrkArID = 0
-      write(ov_dbasID)DBASE_FieldWrkArID
-      ! 21-22 : 2 bytes  : Reserved for dBASE III PLUS on a LAN. 
-      do i=1,2
-        write(ov_dbasID)DBASE_zero
-      enddo
-      ! 23    : 1 byte   : SET FIELDS flag.
-      DBASE_FieldSetFieldFlag = 0
-      write(ov_dbasID)DBASE_FieldSetFieldFlag
-      ! 24-32 : 8 bytes  : Reserved bytes
-      do i=1,8
-        write(ov_dbasID)DBASE_zero
-      enddo
-  
-      ! Next field for the index of the first record
-      !  0-10  : 11 bytes : Field name in ASCII (zero-filled). 
-      DBASE_FieldName  ='index'
+      DBASE_FieldTyp = 'C'
+      DBASE_FieldLen=len(DBASE_TableRecData02)
+      call writeShapFileFieldDesArr(ov_dbasID,fldlen,DBASE_FieldName,&
+                                    DBASE_FieldTyp,DBASE_FieldLen)
+      DBASE_FieldName ='RUN DATE'
       fldlen=len(trim(adjustl(DBASE_FieldName)))
-      write(ov_dbasID)trim(adjustl(DBASE_FieldName))
-      do i=fldlen+1,11
-        write(ov_dbasID)DBASE_zero
-      enddo
-      !  11    : 1 byte   : Field type in ASCII (C, D, L, M, or N).
+      DBASE_FieldTyp = 'C'
+      DBASE_FieldLen=len(DBASE_TableRecData03)
+      call writeShapFileFieldDesArr(ov_dbasID,fldlen,DBASE_FieldName,&
+                                    DBASE_FieldTyp,DBASE_FieldLen)
+      DBASE_FieldName ='WINDFRMT'
+      fldlen=len(trim(adjustl(DBASE_FieldName)))
+      DBASE_FieldTyp = 'C'
+      DBASE_FieldLen=len(DBASE_TableRecData04)
+      call writeShapFileFieldDesArr(ov_dbasID,fldlen,DBASE_FieldName,&
+                                    DBASE_FieldTyp,DBASE_FieldLen)
+      DBASE_FieldName ='RUN CLASS'
+      fldlen=len(trim(adjustl(DBASE_FieldName)))
+      DBASE_FieldTyp = 'C'
+      DBASE_FieldLen=len(DBASE_TableRecData05)
+      call writeShapFileFieldDesArr(ov_dbasID,fldlen,DBASE_FieldName,&
+                                    DBASE_FieldTyp,DBASE_FieldLen)
+      DBASE_FieldName ='E_STIME'  ! 1800-01-01T00:00:00Z
+      fldlen=len(trim(adjustl(DBASE_FieldName)))
+      DBASE_FieldTyp = 'C'
+      DBASE_FieldLen=len(DBASE_TableRecData06)
+      call writeShapFileFieldDesArr(ov_dbasID,fldlen,DBASE_FieldName,&
+                                    DBASE_FieldTyp,DBASE_FieldLen)
+      DBASE_FieldName ='E_PLMH'   ! 40.0 km
+      fldlen=len(trim(adjustl(DBASE_FieldName)))
+      DBASE_FieldTyp = 'C'
+      DBASE_FieldLen=len(DBASE_TableRecData07)
+      call writeShapFileFieldDesArr(ov_dbasID,fldlen,DBASE_FieldName,&
+                                    DBASE_FieldTyp,DBASE_FieldLen)
+      DBASE_FieldName ='E_DUR'     ! 24.0 hours
+      fldlen=len(trim(adjustl(DBASE_FieldName)))
+      DBASE_FieldTyp = 'C'
+      DBASE_FieldLen=len(DBASE_TableRecData08)
+      call writeShapFileFieldDesArr(ov_dbasID,fldlen,DBASE_FieldName,&
+                                    DBASE_FieldTyp,DBASE_FieldLen)
+      DBASE_FieldName ='E_VOL'
+      fldlen=len(trim(adjustl(DBASE_FieldName)))
+      DBASE_FieldTyp = 'C'
+      DBASE_FieldLen=len(DBASE_TableRecData09)
+      call writeShapFileFieldDesArr(ov_dbasID,fldlen,DBASE_FieldName,&
+                                    DBASE_FieldTyp,DBASE_FieldLen)
+      DBASE_FieldName ='URL'
+      fldlen=len(trim(adjustl(DBASE_FieldName)))
+      DBASE_FieldTyp = 'C'
+      DBASE_FieldLen=len(DBASE_TableRecData10)
+      call writeShapFileFieldDesArr(ov_dbasID,fldlen,DBASE_FieldName,&
+                                    DBASE_FieldTyp,DBASE_FieldLen)
+      DBASE_FieldName ='VAR'      ! variable
+      fldlen=len(trim(adjustl(DBASE_FieldName)))
+      DBASE_FieldTyp = 'C'
+      DBASE_FieldLen=len(DBASE_TableRecData11)
+      call writeShapFileFieldDesArr(ov_dbasID,fldlen,DBASE_FieldName,&
+                                    DBASE_FieldTyp,DBASE_FieldLen)
+      DBASE_FieldName ='VALUE'    ! contour level
+      fldlen=len(trim(adjustl(DBASE_FieldName)))
       DBASE_FieldTyp = 'N'
-      write(ov_dbasID)DBASE_FieldTyp
-      ! 12-15 : 4 bytes  : Field data address (address is set in memory; not useful on disk). 
-      do i=1,4
-        write(ov_dbasID)DBASE_zero
-      enddo
-      ! 16    : 1 byte   : Field length in binary.
-      DBASE_FieldLen=len(DBASE_TableRecDataIndex)  ! Should be 10
-      write(ov_dbasID)DBASE_FieldLen
-      ! 17    : 1 byte   : Field decimal count in binary. 
-      DBASE_FieldDecCount = 0
-      write(ov_dbasID)DBASE_FieldDecCount
-      ! 18-19 : 2 bytes  : Reserved for dBASE III PLUS on a LAN. 
-      do i=1,2
-        write(ov_dbasID)DBASE_zero
-      enddo
-      ! 20    : 1 byte   : Work area ID.
-      DBASE_FieldWrkArID = 0
-      write(ov_dbasID)DBASE_FieldWrkArID
-      ! 21-22 : 2 bytes  : Reserved for dBASE III PLUS on a LAN. 
-      do i=1,2
-        write(ov_dbasID)DBASE_zero
-      enddo
-      ! 23    : 1 byte   : SET FIELDS flag.
-      DBASE_FieldSetFieldFlag = 0
-      write(ov_dbasID)DBASE_FieldSetFieldFlag
-      ! 24-32 : 8 bytes  : Reserved bytes
-      do i=1,8
-        write(ov_dbasID)DBASE_zero
-      enddo
+      DBASE_FieldLen=len(DBASE_TableRecData12)
+      call writeShapFileFieldDesArr(ov_dbasID,fldlen,DBASE_FieldName,&
+                                    DBASE_FieldTyp,DBASE_FieldLen)
+      DBASE_FieldName ='UNITS'    ! units for level
+      fldlen=len(trim(adjustl(DBASE_FieldName)))
+      DBASE_FieldTyp = 'C'
+      DBASE_FieldLen=len(DBASE_TableRecData13)
+      call writeShapFileFieldDesArr(ov_dbasID,fldlen,DBASE_FieldName,&
+                                    DBASE_FieldTyp,DBASE_FieldLen)
+      DBASE_FieldName ='INDEX'    ! index of contour level
+      fldlen=len(trim(adjustl(DBASE_FieldName)))
+      DBASE_FieldTyp = 'N'
+      DBASE_FieldLen=len(DBASE_TableRecData14)
+      call writeShapFileFieldDesArr(ov_dbasID,fldlen,DBASE_FieldName,&
+                                    DBASE_FieldTyp,DBASE_FieldLen)
+      DBASE_FieldName ='TIME'
+      fldlen=len(trim(adjustl(DBASE_FieldName)))
+      DBASE_FieldTyp = 'C'
+      DBASE_FieldLen=len(DBASE_TableRecData15)
+      call writeShapFileFieldDesArr(ov_dbasID,fldlen,DBASE_FieldName,&
+                                    DBASE_FieldTyp,DBASE_FieldLen)
+
+
+      DBASE_FieldTyp = 'N'
 
       write(ov_dbasID)DBASE_FieldDesTerm
 
@@ -591,14 +634,26 @@
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !  FIELDS
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        write(DBASE_TableRecDataValue,'(2x,f22.15)')ContourLev(irec)
-        write(DBASE_TableRecDataIndex,'(i10)')irec-1
+        write(DBASE_TableRecData12,'(2x,f22.15)')ContourLev(irec)
+        write(DBASE_TableRecData14,'(i10)')irec-1
 
         ! Start of records
         write(ov_dbasID)DBASE_RecStart
-        write(ov_dbasID)adjustl(DBASE_TableRecDataName)
-        write(ov_dbasID)DBASE_TableRecDataValue
-        write(ov_dbasID)DBASE_TableRecDataIndex
+        write(ov_dbasID)adjustl(DBASE_TableRecData01)
+        write(ov_dbasID)DBASE_TableRecData02
+        write(ov_dbasID)DBASE_TableRecData03
+        write(ov_dbasID)DBASE_TableRecData04
+        write(ov_dbasID)DBASE_TableRecData05
+        write(ov_dbasID)DBASE_TableRecData06
+        write(ov_dbasID)DBASE_TableRecData07
+        write(ov_dbasID)DBASE_TableRecData08
+        write(ov_dbasID)DBASE_TableRecData09
+        write(ov_dbasID)DBASE_TableRecData10
+        write(ov_dbasID)DBASE_TableRecData11
+        write(ov_dbasID)DBASE_TableRecData12
+        write(ov_dbasID)DBASE_TableRecData13
+        write(ov_dbasID)DBASE_TableRecData14
+        write(ov_dbasID)DBASE_TableRecData15
       enddo
       write(ov_dbasID)DBASE_EOF
 
@@ -614,6 +669,73 @@
       close(ov_projID)
 
       end subroutine write_ShapeFile_Polyline
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Subroutine writeShapFileFieldDesArr writes the Field Description to the
+!  Field Descriptor Array
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine writeShapFileFieldDesArr(ov_dbasID,fldlen,DBASE_FieldName,&
+                                   DBASE_FieldTyp,DBASE_FieldLen)
+
+      implicit none
+
+      integer,intent(in)               :: ov_dbasID
+      integer,intent(in)               :: fldlen
+      character(len=fldlen),intent(in) :: DBASE_FieldName
+      character(len=1),intent(in)      :: DBASE_FieldTyp
+      integer(kind=1),intent(in)       :: DBASE_FieldLen
+
+      integer(kind=1)  :: DBASE_FieldDecCount
+      integer(kind=1)  :: DBASE_FieldSetFieldFlag
+      integer(kind=1)  :: DBASE_FieldWrkArID
+      integer(kind=1)  :: DBASE_zero     = 0
+      integer          :: i
+
+      !  Now the fields followed by the field terminator
+      !32-n : 32 bytes: Field descriptor array
+      !  0-10  : 11 bytes : Field name in ASCII (zero-filled). 
+      !DBASE_FieldName ='name'
+      !fldlen=len(trim(adjustl(DBASE_FieldName)))
+      write(ov_dbasID)trim(adjustl(DBASE_FieldName))
+      do i=fldlen+1,11
+        write(ov_dbasID)DBASE_zero
+      enddo
+      !  11    : 1 byte   : Field type in ASCII (C, D, L, M, or N).
+      !DBASE_FieldTyp = 'C'
+      write(ov_dbasID)DBASE_FieldTyp
+      ! 12-15 : 4 bytes  : Field data address (address is set in memory; not useful on disk). 
+      do i=1,4
+        write(ov_dbasID)DBASE_zero
+      enddo
+      ! 16    : 1 byte   : Field length in binary.
+      !DBASE_FieldLen=len(DBASE_TableRecData01)   ! Should be 80
+      write(ov_dbasID)DBASE_FieldLen
+      ! 17    : 1 byte   : Field decimal count in binary. 
+      DBASE_FieldDecCount = 0
+      write(ov_dbasID)DBASE_FieldDecCount
+      ! 18-19 : 2 bytes  : Reserved for dBASE III PLUS on a LAN. 
+      do i=1,2
+        write(ov_dbasID)DBASE_zero
+      enddo
+      ! 20    : 1 byte   : Work area ID.
+      DBASE_FieldWrkArID = 0
+      write(ov_dbasID)DBASE_FieldWrkArID
+      ! 21-22 : 2 bytes  : Reserved for dBASE III PLUS on a LAN. 
+      do i=1,2
+        write(ov_dbasID)DBASE_zero
+      enddo
+      ! 23    : 1 byte   : SET FIELDS flag.
+      DBASE_FieldSetFieldFlag = 0
+      write(ov_dbasID)DBASE_FieldSetFieldFlag
+      ! 24-32 : 8 bytes  : Reserved bytes
+      do i=1,8
+        write(ov_dbasID)DBASE_zero
+      enddo
+
+      end subroutine writeShapFileFieldDesArr
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !

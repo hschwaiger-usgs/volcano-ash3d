@@ -8,6 +8,8 @@
 
       implicit none
 
+      integer :: NCversion
+      integer :: NCsubversion
       integer :: ncid
       integer :: t_dim_id     = 0 ! Time
       integer :: x_dim_id     = 0 ! X
@@ -131,7 +133,8 @@
          cdf_b3l1,cdf_b3l2,cdf_b3l3,cdf_b3l4,cdf_b3l5,cdf_b4l1,cdf_b4l2,cdf_b4l3,cdf_b4l4,&
          cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,cdf_b4l11,cdf_b6l1,cdf_b6l2,&
          cdf_b6l3,cdf_b6l4,cdf_b6l5,cdf_conventions,&
-         cdf_comment,cdf_title,cdf_institution,cdf_source,cdf_history,cdf_references,outfile,&
+         cdf_comment,cdf_title,cdf_institution,cdf_source,cdf_history,cdf_references,&
+         cdf_run_class,cdf_url,outfile,&
          nvar_User2d_static_XY,nvar_User2d_XY,nvar_User3d_XYGs,nvar_User3d_XYZ,&
          nvar_User4d_XYZGs,Write_PT_Data,Write_PR_Data
 
@@ -202,8 +205,6 @@
       character(len=050):: linebuffer050
       character(len=130):: linebuffer130
       integer :: strlen
-      integer :: NCversion
-      integer :: NCsubversion
       integer :: i,j,k,n
       integer :: ivar
       integer,dimension(5) :: chunksizes5
@@ -324,10 +325,12 @@
       write(global_info,*)"Netcdf library version = ",NCversion
       !NCversion = 3
       if(NCversion.eq.4)then
+#ifndef NC3
         nSTAT = nf90_create(outfile,nf90_netcdf4,ncid,           &
                             cache_nelems = 1000, &
                             cache_size = 32000000)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"create outfile v4:")
+#endif
       else
         nSTAT = nf90_create(outfile,nf90_clobber, ncid)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"create outfile classic:")
@@ -337,7 +340,10 @@
       if(VERB.gt.1)write(global_info,*)"Filling in header info"
       nSTAT = nf90_put_att(ncid,nf90_global,"title",cdf_title)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att title:")
-
+      nSTAT = nf90_put_att(ncid,nf90_global,"comment",cdf_comment)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att comment:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"comment",cdf_run_class)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att run_class:")
       nSTAT = nf90_put_att(ncid,nf90_global,"institution",cdf_institution)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"tt institution:")
 
@@ -364,8 +370,6 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att host:")
       nSTAT = nf90_put_att(ncid,nf90_global,"CWD",os_cwd)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att CWD:")
-      nSTAT = nf90_put_att(ncid,nf90_global,"comment",cdf_comment)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att comment:")
 
       nSTAT = nf90_put_att(ncid,nf90_global,"MetReader_Git_Commit_ID",MR_GitComID)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att MR_GitComID:")
@@ -522,16 +526,16 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_dim pt:")
       endif
 
-      if(NCversion.eq.4)then
-        ! pr
+!      !if(NCversion.eq.4)then
+!        ! pr
         if (Write_PR_Data)then
           nSTAT = nf90_def_dim(ncid,dim_names(10),nvprofiles,pr_dim_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_dim pr:")
         endif
-        ! tn
-        nSTAT = nf90_def_dim(ncid,dim_names(11),nf90_unlimited,tn_dim_id)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_dim tn:")
-      endif
+!        ! tn
+!        nSTAT = nf90_def_dim(ncid,dim_names(11),nf90_unlimited,tn_dim_id)
+!        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_dim tn:")
+!      !endif
 
       ! Define coordinate variables
         ! X,Y,Z,time,bn,er,wf,sl,pt
@@ -544,18 +548,11 @@
          ! Time
       if(VERB.gt.1)write(global_info,*)"Defining coordinate variables"
       if(VERB.gt.1)write(global_info,*)"     Time: ",dim_names(1)
-      !if(op.eq.8)then
-        ! Time variables should always be doubles to match with libhourssince
-        nSTAT = nf90_def_var(ncid,dim_names(1),&
-                             nf90_double,& 
-                             (/t_dim_id/),&
-                             t_var_id)
-      !else
-      !  nSTAT = nf90_def_var(ncid,dim_names(1),&
-      !                       nf90_float,&
-      !                       (/t_dim_id/), &
-      !                       t_var_id)
-      !endif
+      ! Time variables should always be doubles to match with libhourssince
+      nSTAT = nf90_def_var(ncid,dim_names(1),&
+                           nf90_double,& 
+                           (/t_dim_id/),&
+                           t_var_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var t:")
       nSTAT = nf90_put_att(ncid,t_var_id,"long_name",dim_lnames(1))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att t long_name:")
@@ -700,7 +697,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pt units")
       endif
 
-        ! pr (profile output index)
+!        ! pr (profile output index)
       if (Write_PR_Data)then
         if(VERB.gt.1)write(*,*)"     PR: ",dim_names(10)
         nSTAT = nf90_def_var(ncid,dim_names(10),&
@@ -713,20 +710,20 @@
         nSTAT = nf90_put_att(ncid,pr_var_id,"units","index")
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr units")
 
-        ! tn (time native)
-        ! we can only have a second unlimited dimension with NC version 4
-        if(VERB.gt.1)write(*,*)"     TN: ",dim_names(11)
-        nSTAT = nf90_def_var(ncid,dim_names(11),&
-                             nf90_double,&
-                             (/tn_dim_id/),&
-                             tn_var_id)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var tn")
-        nSTAT = nf90_put_att(ncid,tn_var_id,"long_name",dim_lnames(11))
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att tn long_name")
-        write(outstring,4501)BaseYear
- 4501   format('hours since ',i4)
-        nSTAT = nf90_put_att(ncid,tn_var_id,"units",outstring)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att tn units")
+!        ! tn (time native)
+!        ! we can only have a second unlimited dimension with NC version 4
+!        if(VERB.gt.1)write(*,*)"     TN: ",dim_names(11)
+!        nSTAT = nf90_def_var(ncid,dim_names(11),&
+!                             nf90_double,&
+!                             (/tn_dim_id/),&
+!                             tn_var_id)
+!        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var tn")
+!        nSTAT = nf90_put_att(ncid,tn_var_id,"long_name",dim_lnames(11))
+!        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att tn long_name")
+!        write(outstring,4501)BaseYear
+! 4501   format('hours since ',i4)
+!        nSTAT = nf90_put_att(ncid,tn_var_id,"units",outstring)
+!        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att tn units")
       endif
       !   End of dimension variables
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -984,18 +981,11 @@
 
       !   Now a few other variables that are a function of ER
          ! er_stime (Start time of eruption)
-      !if(op.eq.8)then
-        ! Time variables should always be doubles to match with libhourssince
-        nSTAT = nf90_def_var(ncid,"er_stime",&
-                             nf90_double,&
-                             (/er_dim_id/),&
-                             er_stime_var_id)
-      !else
-      !  nSTAT = nf90_def_var(ncid,"er_stime",&
-      !                       nf90_float,&
-      !                       (/er_dim_id/), &
-      !                       er_stime_var_id)
-      !endif
+      ! Time variables should always be doubles to match with libhourssince
+      nSTAT = nf90_def_var(ncid,"er_stime",&
+                           nf90_double,&
+                           (/er_dim_id/),&
+                           er_stime_var_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var er_stime")
       nSTAT = nf90_put_att(ncid,er_stime_var_id,"long_name",var_lnames(15))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er_stime long_name")
@@ -1005,18 +995,11 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er_stime units")
 
          ! er_duration (Duration of eruption)
-      !if(op.eq.8)then
-        ! Time variables should always be doubles to match with libhourssince
-        nSTAT = nf90_def_var(ncid,"er_duration",&
-                             nf90_double,&
-                             (/er_dim_id/),&
-                             er_duration_var_id)
-      !else
-      !  nSTAT = nf90_def_var(ncid,"er_duration",&
-      !                       nf90_float,&
-      !                       (/er_dim_id/), &
-      !                       er_duration_var_id)
-      !endif
+      ! Time variables should always be doubles to match with libhourssince
+      nSTAT = nf90_def_var(ncid,"er_duration",&
+                           nf90_double,&
+                           (/er_dim_id/),&
+                           er_duration_var_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var er_duration")
       nSTAT = nf90_put_att(ncid,er_duration_var_id,"long_name",var_lnames(16))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er_duration long_name")
@@ -1697,7 +1680,7 @@
 
       endif
 
-      if(NCversion.eq.4.and.Write_PR_Data)then
+      if(Write_PR_Data)then
         ! x coordinate of point
         if(VERB.gt.1)write(global_info,*)"     pr_x"
         if(op.eq.8)then
@@ -1756,28 +1739,28 @@
         nSTAT = nf90_put_att(ncid,pr_name_var_id,"units","text")
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_name units")
 
-        ! Profile data
-        if(op.eq.8)then
-          nSTAT = nf90_def_var(ncid,"pr_ash",&
-                               nf90_double, &
-                               (/z_dim_id,tn_dim_id,pr_dim_id/),                &
-                               pr_ash_var_id)
-        else
-          nSTAT = nf90_def_var(ncid,"pr_ash",&
-                               nf90_float,  &
-                               (/z_dim_id,tn_dim_id,pr_dim_id/),                &
-                               pr_ash_var_id)
-        endif
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var pr_ash")
-        nSTAT = nf90_put_att(ncid,pr_ash_var_id,"long_name",var_lnames(32))
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_ash long_name")
-        nSTAT = nf90_put_att(ncid,pr_ash_var_id,"units","mg/m3")
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_ash units")
-        nSTAT = nf90_put_att(ncid,pr_ash_var_id,&
-                 "missing_value", MaxConcentration_FillValue)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_ash missing_value")
-        nSTAT = nf90_put_att(ncid,pr_ash_var_id,"_FillValue",MaxConcentration_FillValue)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_ash _FillValue")
+!        ! Profile data
+!        if(op.eq.8)then
+!          nSTAT = nf90_def_var(ncid,"pr_ash",&
+!                               nf90_double, &
+!                               (/z_dim_id,tn_dim_id,pr_dim_id/),                &
+!                               pr_ash_var_id)
+!        else
+!          nSTAT = nf90_def_var(ncid,"pr_ash",&
+!                               nf90_float,  &
+!                               (/z_dim_id,tn_dim_id,pr_dim_id/),                &
+!                               pr_ash_var_id)
+!        endif
+!        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var pr_ash")
+!        nSTAT = nf90_put_att(ncid,pr_ash_var_id,"long_name",var_lnames(32))
+!        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_ash long_name")
+!        nSTAT = nf90_put_att(ncid,pr_ash_var_id,"units","mg/m3")
+!        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_ash units")
+!        nSTAT = nf90_put_att(ncid,pr_ash_var_id,&
+!                 "missing_value", MaxConcentration_FillValue)
+!        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_ash missing_value")
+!        nSTAT = nf90_put_att(ncid,pr_ash_var_id,"_FillValue",MaxConcentration_FillValue)
+!        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_ash _FillValue")
       endif
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2033,7 +2016,8 @@
         deallocate(dum1dint_out)
       endif
 
-      if(NCversion.eq.4.and.Write_PR_Data)then
+!      if(NCversion.eq.4.and.Write_PR_Data)then
+      if(Write_PR_Data)then
           ! PR
         if(VERB.gt.1)write(global_info,*)"     Fill PR"
         allocate(dum1dint_out(nvprofiles))
@@ -2045,11 +2029,11 @@
         nSTAT=nf90_put_var(ncid,pr_var_id,dum1dint_out,(/1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var pr")
         deallocate(dum1dint_out)
-          ! TN
-        !if(VERB.gt.1)write(global_info,*)"     Fill TN"
-        !dumscal_out = real(time,kind=op)
-        !nSTAT=nf90_put_var(ncid,tn_var_id,dumscal_out,(/1/))
-        !if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var tn")
+!          ! TN
+!        if(VERB.gt.1)write(global_info,*)"     Fill TN"
+!        dumscal_out = real(time,kind=op)
+!        nSTAT=nf90_put_var(ncid,tn_var_id,dumscal_out,(/1/))
+!        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var tn")
       endif
 
       !   End of filling dimension variables
@@ -2549,7 +2533,7 @@
          vx_pd,vy_pd,vz_pd,vf_pd,concen_pd,DepositGranularity
 
       use time_data,     only : &
-         time,ntmax,time_native
+         time,ntmax,time_native,BaseYear
 
       implicit none
 
@@ -2557,6 +2541,7 @@
 
       integer :: nSTAT
       integer :: ivar
+      character (len=16)         :: outstring
 
       if(VERB.gt.2)write(global_info,*)"Allocating output vars"
 
@@ -2575,6 +2560,65 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"nf90_open")
 
       if(isFinal_TS)then
+
+        ! If this is the final time-step, then enter define mode and add the
+        ! native time dimension and associated variables
+        nSTAT = nf90_redef(ncid)
+        ! tn (time native)
+        if(NCversion.eq.4)then
+#ifndef NC3
+          nSTAT = nf90_def_dim(ncid,"tn",nf90_unlimited,tn_dim_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_dim tn:")
+#endif
+        else
+          nSTAT = nf90_def_dim(ncid,"tn",ntmax,tn_dim_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_dim tn:")
+        endif
+        if(VERB.gt.1)write(*,*)"     TN: ","tn"
+        nSTAT = nf90_def_var(ncid,"tn",&
+                             nf90_double,&
+                             (/tn_dim_id/),&
+                             tn_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var tn")
+        nSTAT = nf90_put_att(ncid,tn_var_id,"long_name","Time native")
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att tn long_name")
+        write(outstring,4501)BaseYear
+ 4501   format('hours since ',i4)
+        nSTAT = nf90_put_att(ncid,tn_var_id,"units",outstring)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att tn units")
+
+        if (Write_PR_Data)then
+          ! Profile data
+          if(op.eq.8)then
+            nSTAT = nf90_def_var(ncid,"pr_ash",&
+                                 nf90_double, &
+                                 (/z_dim_id,tn_dim_id,pr_dim_id/),                &
+                                 pr_ash_var_id)
+          else
+            nSTAT = nf90_def_var(ncid,"pr_ash",&
+                                 nf90_float,  &
+                                 (/z_dim_id,tn_dim_id,pr_dim_id/),                &
+                                 pr_ash_var_id)
+          endif
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var pr_ash")
+          nSTAT = nf90_put_att(ncid,pr_ash_var_id,"long_name","Ash Concentration (Max)")
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_ash long_name")
+          nSTAT = nf90_put_att(ncid,pr_ash_var_id,"units","mg/m3")
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_ash units")
+          nSTAT = nf90_put_att(ncid,pr_ash_var_id,&
+                   "missing_value", MaxConcentration_FillValue)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_ash missing_value")
+          nSTAT = nf90_put_att(ncid,pr_ash_var_id,"_FillValue",MaxConcentration_FillValue)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_ash _FillValue")
+
+        endif
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !                    Leaving define mode.                               !
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        nSTAT = nf90_enddef(ncid)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"enddef")
+        if(VERB.gt.1)write(*,*)"Leaving define mode"
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         ! depothickFin
         allocate(dum2d_out(nxmax,nymax))
@@ -2677,14 +2721,14 @@
 
         endif
 
+        ! write out native time
+        nSTAT = nf90_inq_varid(ncid,"tn",tn_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid tn")
+        nSTAT=nf90_put_var(ncid,tn_var_id,real(time_native(1:ntmax),kind=dp),(/1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var tn")
+
         if(Write_PR_Data)then
           ! Profile data
-          ! write out native time
-          nSTAT = nf90_inq_varid(ncid,"tn",tn_var_id)
-          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid tn")
-          nSTAT=nf90_put_var(ncid,tn_var_id,real(time_native(1:ntmax),kind=dp),(/1/))
-          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var tn")
-
           ! write out profiles
           nSTAT = nf90_inq_varid(ncid,"pr_ash",pr_ash_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid pr_ash")

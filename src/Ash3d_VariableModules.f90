@@ -194,6 +194,8 @@
       character (len=80) :: cdf_source
       character (len=80) :: cdf_history
       character (len=80) :: cdf_references
+      character (len=80) :: cdf_run_class
+      character (len=80) :: cdf_url
       character (len=80) :: cdf_comment
       character (len=80) :: cdf_conventions
       character (len=80) :: cdf_b1l1 !character strings containing parameters for netcdf file

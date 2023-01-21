@@ -214,6 +214,8 @@ endif
 DATAFPPFLAG =
 ifeq ($(USENETCDF), T)
  ncFPPFLAG = -DUSENETCDF
+  # if you only have netcdf3, then add this flag to block out references to nc4 subroutines
+ #ncFPPFLAG = -DUSENETCDF -DNC3
  ncLIBS = -lnetcdf -lnetcdff
 endif
 ifeq ($(USEGRIB), T)

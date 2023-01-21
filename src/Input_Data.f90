@@ -19,7 +19,7 @@
          cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,cdf_b4l11,cdf_b4l12,cdf_b4l13,&
          cdf_b4l14,cdf_b4l15,cdf_b4l16,cdf_b4l17,cdf_b4l18,cdf_b6l1,cdf_b6l2,cdf_b6l3,cdf_b6l4,&
          cdf_b6l5,cdf_comment,cdf_title,cdf_institution,cdf_source,cdf_history,cdf_references,&
-         outfile,VolcanoName,WriteTimes,nWriteTimes,cdf_conventions,&
+         outfile,VolcanoName,WriteTimes,nWriteTimes,cdf_conventions,cdf_run_class,cdf_url,&
          x_vprofile,y_vprofile,i_vprofile,j_vprofile,Site_vprofile,&
          concenfile,infile,ioutputFormat,LoadConcen,log_step,NextWriteTime,&
          AppendExtAirportFile,WriteInterval,WriteGSD,WriteDepositTS_KML,WriteDepositTS_ASCII,&
@@ -2394,38 +2394,76 @@
       cdf_comment = "None"
       cdf_institution="USGS"
       cdf_source="ash3d v1.0b"
+      cdf_run_class="Analysis"
+      cdf_url="https://vsc-ash.wr.usgs.gov/ash3d-gui"
       cdf_history=""
       cdf_references="https://vsc-ash.wr.usgs.gov/ash3d-gui"
       cdf_conventions='CF-1.5'
       if(ios.ne.0)then
-        write(global_info,*)'  Setting outfile to 3d_tephra_fall.nc'
-        write(global_info,*)'  Setting Title to ',infile
-        write(global_info,*)'  Setting comment to None'
+        write(global_info,*)'  Setting outfile to: 3d_tephra_fall.nc'
+        write(global_info,*)'  Setting Title to: ',infile
+        write(global_info,*)'  Setting comment to: None'
+        write(global_info,*)'  Setting run class to: Analysis'
+        write(global_info,*)'  Setting institution to: USGS'
       else
         write(global_info,*)' *****************************************'
         write(global_info,*)' Reading Block 9: Output file / comments'
         write(global_info,*)' *****************************************'
-              !Start reading annotation info
+        !Start reading annotation info
+
         ! First line is the output file name
         read(linebuffer080,*) outfile
-        outfile = trim(outfile)
-          ! Next line is the title of the job
+        outfile = trim(adjustl(outfile))
+
+        ! Next line is the title of the job
+          ! Read title line up until the first '#', then truncate
         read(10,'(a80)',iostat=ios,err=2010)linebuffer080
-        if(ios.ne.0)goto 2010
-        read(linebuffer080,*) cdf_title
-        cdf_title = trim(cdf_title)
+        iendstr = SCAN(linebuffer080, "#")
+        if (iendstr.eq.0)then
+             ! '#' not found, just copy linebuffer080 to title
+          cdf_title = trim(adjustl(linebuffer080))
+        else
+            ! clip title at key
+          cdf_title = trim(linebuffer080(1:iendstr-1))
+        endif
+
           ! Read comment line up until the first '#', then truncate
-!        read(10,'(a80)',iostat=ios,err=1977)linebuffer080
         read(10,'(a80)',iostat=ios,err=2010)linebuffer080
         if(ios.ne.0)goto 2010
         iendstr = SCAN(linebuffer080, "#")
         if (iendstr.eq.0)then
              ! '#' not found, just copy linebuffer080 to comment
-          cdf_comment = linebuffer080
+          cdf_comment = trim(adjustl(linebuffer080))
         else
             ! clip comment at key
           cdf_comment = trim(linebuffer080(1:iendstr-1))
         endif
+
+          ! Read run_class line up until the first '#', then truncate
+        read(10,'(a80)',iostat=ios,err=2010)linebuffer080
+        if(ios.ne.0)goto 2010
+        iendstr = SCAN(linebuffer080, "#")
+        if (iendstr.eq.0)then
+             ! '#' not found, just copy linebuffer080 to run_class
+          cdf_run_class = trim(adjustl(linebuffer080))
+        else
+            ! clip run class at key
+          cdf_run_class = trim(linebuffer080(1:iendstr-1))
+        endif
+
+          ! Read institution line up until the first '#', then truncate
+        read(10,'(a80)',iostat=ios,err=2010)linebuffer080
+        if(ios.ne.0)goto 2010
+        iendstr = SCAN(linebuffer080, "#")
+        if (iendstr.eq.0)then
+             ! '#' not found, just copy linebuffer080 to institution
+          cdf_institution = trim(adjustl(linebuffer080))
+        else
+            ! clip institution at key
+          cdf_institution = trim(linebuffer080(1:iendstr-1))
+        endif
+
+
         ! This is the end of the standard blocks
       endif
       ! END OF BLOCK 9

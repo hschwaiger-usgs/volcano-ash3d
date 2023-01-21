@@ -84,6 +84,10 @@
       real(kind=ip)         :: MassConsErr
 
       INTERFACE
+#ifdef USENETCDF
+        subroutine NC_RestartFile_LoadConcen
+        end subroutine NC_RestartFile_LoadConcen
+#endif
         subroutine Set_OS_Env
         end subroutine Set_OS_Env
         subroutine Read_Control_File
