@@ -35,7 +35,7 @@
       character(len=80) :: linebuffer080
       character(len=8)  :: version             =  ' 1.0  '
       character(len=100):: CompVer
-      character(len=500):: CompOpt
+      character(len=508):: CompOpt
 
       INTERFACE
         real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
@@ -131,7 +131,7 @@
                   "opt" // DirDelim // "USGS" // DirDelim // "Ash3d"
 
       ! Here it is over-written by compile-time path, if available
-#include "installpath.h"
+!#include "installpath.h"
       ! This can be over-written if an environment variable is set
       write(global_info,*)" "
       write(global_info,*)"Checking for run-time environment variable: ASH3DHOME"

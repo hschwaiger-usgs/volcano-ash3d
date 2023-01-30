@@ -38,6 +38,8 @@
       use Source,        only : &
          e_Volume,e_Duration,e_StartTime,e_PlumeHeight,lon_volcano,lat_volcano
 
+      use citywriter
+
       implicit none
 
       integer      ,intent(in) :: nx
@@ -85,19 +87,19 @@
           integer                   :: byear
           logical                   :: useLeaps
         end function HS_xmltime
-        subroutine citylist(outCode,lonLL,lonUR,latLL,latUR,ncities, &
-                            CityLon_out,CityLat_out,CityName_out)
-          integer      :: outCode
-          real(kind=8) :: lonLL
-          real(kind=8) :: lonUR
-          real(kind=8) :: latLL
-          real(kind=8) :: latUR
-          integer      :: ncities
-
-          real(kind=8),dimension(ncities) :: CityLon_out
-          real(kind=8),dimension(ncities) :: CityLat_out
-          character(len=26),dimension(ncities) :: CityName_out
-        end subroutine citylist
+!        subroutine citylist(outCode,lonLL,lonUR,latLL,latUR,ncities, &
+!                            CityLon_out,CityLat_out,CityName_out)
+!          integer      :: outCode
+!          real(kind=8) :: lonLL
+!          real(kind=8) :: lonUR
+!          real(kind=8) :: latLL
+!          real(kind=8) :: latUR
+!          integer      :: ncities
+!
+!          real(kind=8),dimension(ncities) :: CityLon_out
+!          real(kind=8),dimension(ncities) :: CityLat_out
+!          character(len=26),dimension(ncities) :: CityName_out
+!        end subroutine citylist
       END INTERFACE
 
       inquire(file="world_50m.txt",exist=IsThere1)
@@ -106,7 +108,7 @@
         if(.not.IsThere2)then
           write(*,*)"Could not find required file world_50m.txt"
           write(*,*)"This file is available at:"
-          write(*,*)"  http://www.gnuplotting.org_data_world_50m.txt"
+          write(*,*)"  http://www.gnuplotting.org/data/world_50m.txt"
           write(*,*)"Please download this file to the current working directory or"
           write(*,*)"copy to /opt/USGS/Ash3d/share/post_proc/"
         endif

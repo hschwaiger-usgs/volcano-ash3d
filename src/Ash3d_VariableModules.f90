@@ -2,13 +2,13 @@
 !##############################################################################
       module precis_param
         ! The first two precision parameters can be changed to meet your needs
-      integer,       parameter :: op         = 4 ! Output precision
-      integer,       parameter :: ip         = 8 ! Internal precision
+      integer,       parameter,public :: op         = 4 ! Output precision
+      integer,       parameter,public :: ip         = 8 ! Internal precision
 
         ! These single and double precision parameters must not be changed from
         ! 4 and 8 or the reading of the windfiles will fail.
-      integer,       parameter :: sp         = 4 ! single precision
-      integer,       parameter :: dp         = 8 ! double precision
+      integer,       parameter,public :: sp         = 4 ! single precision
+      integer,       parameter,public :: dp         = 8 ! double precision
 
       end module precis_param
 !##############################################################################
@@ -638,11 +638,11 @@
       integer            :: RunStartMinute
 
       ! Note: Hours should must be stored at kind=8 since forecast runs to work with HoursSince
-      !       If kind=4 were used, the current year (2017) with a BaseYear=0 will cause
+      !       If kind=4 were used, the current year with a BaseYear=0 will cause
       !       overflows and tricky failures
-      real(kind=dp)       :: Simtime_in_hours ! simulated time for ash cloud transport      
-      real(kind=dp)       :: SimStartHour    ! Simulation start time, in hours since 1900
-      real(kind=dp)       :: time            ! physical time simulated by this model
+      real(kind=dp)      :: Simtime_in_hours ! simulated time for ash cloud transport      
+      real(kind=dp)      :: SimStartHour     ! Simulation start time, in hours since 1900
+      real(kind=dp)      :: time             ! physical time simulated by this model
 
       real(kind=ip)      :: t0,t1           ! CPU time indicators
       real(kind=ip)      :: dt              ! dt used for actual integration

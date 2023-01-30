@@ -356,6 +356,8 @@
 
       nSTAT = nf90_put_att(ncid,nf90_global,"references",cdf_references)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att references:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"url",cdf_url)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att url:")
 
       nSTAT = nf90_put_att(ncid,nf90_global,"Conventions",cdf_conventions)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Conventions:")
@@ -1173,6 +1175,7 @@
                                 ashcon_var_id)
         endif
         if(NCversion.eq.4)then
+#ifndef NC3
           chunksizes5 = (/nxmax, nymax, nzmax, nsmax, 1/)
           nSTAT = nf90_def_var_chunking(ncid, ashcon_var_id, &
                                         0, &
@@ -1181,6 +1184,7 @@
                                   shuffle = 1,                &
                                   deflate = 5,                &
                                   deflate_level = 5  )
+#endif
         endif
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var ashcon")
         nSTAT = nf90_put_att(ncid,ashcon_var_id,"long_name",var_lnames(11))

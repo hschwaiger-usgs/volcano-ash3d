@@ -281,9 +281,12 @@
         volcName(nvolcs) = adjustl(volcName(nvolcs))
         volcLoc(nvolcs)  = adjustl(volcLoc(nvolcs))
         volcElev_c(nvolcs) = adjustl(volcElev_c(nvolcs))
-        volcNS(nvolcs)     = adjustl(temp1)
-        volcWE(nvolcs)     = adjustl(temp2)
-        volcESP_Code(nvolcs) = adjustl(temp3)
+        temp1              = adjustl(temp1)
+        volcNS(nvolcs)     = temp1(1:1)
+        temp2              = adjustl(temp2)
+        volcWE(nvolcs)     = temp2(1:1)
+        temp3              = adjustl(temp3)
+        volcESP_Code(nvolcs) = temp3(1:1)
 
         read(volcElev_c(nvolcs),*)testkey
         if(testkey.eq.'U'.or.testkey.eq.'v')then

@@ -20,6 +20,7 @@
          DepositAreaCovered,DepositThickness,LoadVal,CloudLoadArea,&
          Calculated_Cloud_Load,Calculated_AshThickness,Calc_vprofile, &
            Allocate_Output_UserVars, &
+           Allocate_NTime,   &
            Allocate_Profile, &
            Gen_Output_Vars,&
            FirstAsh
@@ -85,8 +86,8 @@
 
       INTERFACE
 #ifdef USENETCDF
-        subroutine NC_RestartFile_LoadConcen
-        end subroutine NC_RestartFile_LoadConcen
+        !subroutine NC_RestartFile_LoadConcen
+        !end subroutine NC_RestartFile_LoadConcen
 #endif
         subroutine Set_OS_Env
         end subroutine Set_OS_Env
@@ -166,7 +167,7 @@
         ! Currently, Ash3d assumes the concentration file is compatible with
         ! the computational grid and grainsize distribution
 #ifdef USENETCDF
-        call NC_RestartFile_LoadConcen
+        !call NC_RestartFile_LoadConcen
 #else
         write(global_info,*)"ERROR: Loading concentration files requires previous netcdf"
         write(global_info,*)"       output.  This Ash3d executable was not compiled with"
@@ -223,7 +224,7 @@
       call output_results
 
       ntmax = max(1,3*int(Simtime_in_hours/dt))
-      !allocate(time_native(ntmax))
+      call Allocate_NTime(ntmax)
       if (Write_PR_Data)then
         call Allocate_Profile(nzmax,ntmax,nvprofiles)
       endif
@@ -625,7 +626,6 @@
 !------------------------------------------------------------------------------
 
       call output_results
-
       !WRITE RESULTS TO LOG AND STANDARD OUTPUT
       !TotalTime_sp = etime(elapsed_sp)
       !write(global_info,*) elapsed_sp(2), time*3600.0_ip

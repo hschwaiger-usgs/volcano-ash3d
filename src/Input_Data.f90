@@ -2397,7 +2397,7 @@
       cdf_run_class="Analysis"
       cdf_url="https://vsc-ash.wr.usgs.gov/ash3d-gui"
       cdf_history=""
-      cdf_references="https://vsc-ash.wr.usgs.gov/ash3d-gui"
+      cdf_references="https://pubs.usgs.gov/of/2013/1122/ofr20131122.pdf"
       cdf_conventions='CF-1.5'
       if(ios.ne.0)then
         write(global_info,*)'  Setting outfile to: 3d_tephra_fall.nc'

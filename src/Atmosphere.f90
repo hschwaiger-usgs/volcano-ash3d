@@ -315,13 +315,19 @@
             enddo
           enddo
         enddo
-
+      else
+        ! Currently, this subroutine is only called if Load_MesoSteps=.true.
+        ! so we shouldn't be here
+        write(*,*)"Calling Set_Atmosphere_Meso outside of a Load_MesoSteps=.true."
+        write(*,*)"case for Interval_Frac = ",Interval_Frac
+        write(*,*)"This is a place-holder for interpolating tempertures to the"
+        write(*,*)"current time.  Not yet implemented."
+        stop 1
+        !Temperature(:,:,:) = real( Temp_meso_last_step_sp(:,:,:),kind=ip) + &
+        !                     real((Temp_meso_next_step_sp(:,:,:) - &
+        !                           Temp_meso_last_step_sp(:,:,:)),kind=ip) * &
+        !                     Interval_Frac
       endif
-
-      !Temperature(:,:,:) = real( Temp_meso_last_step_sp(:,:,:),kind=ip) + &
-      !                     real((Temp_meso_next_step_sp(:,:,:) - &
-      !                           Temp_meso_last_step_sp(:,:,:)),kind=ip) * &
-      !                     Interval_Frac
 
       end subroutine Set_Atmosphere_Meso
 

@@ -37,6 +37,8 @@
       use time_data,     only : &
          os_time_log,BaseYear,useLeap
 
+      use citywriter
+
       use plplot
       use iso_c_binding, only: c_ptr, c_loc, c_f_pointer
 
@@ -100,6 +102,7 @@
       !character(len=3)   :: special_symbols(5)
 
       real(kind=plflt)  :: dy_newline
+      integer :: plsetopt_rc
 
       integer :: ncities
       real(kind=8),dimension(:),allocatable     :: lon_cities
@@ -112,19 +115,19 @@
           integer                   :: byear
           logical                   :: useLeaps
         end function HS_xmltime
-        subroutine citylist(outCode,lonLL,lonUR,latLL,latUR,ncities, &
-                            CityLon_out,CityLat_out,CityName_out)
-          integer      :: outCode
-          real(kind=8) :: lonLL
-          real(kind=8) :: lonUR
-          real(kind=8) :: latLL
-          real(kind=8) :: latUR
-          integer      :: ncities
-
-          real(kind=8),dimension(ncities) :: CityLon_out
-          real(kind=8),dimension(ncities) :: CityLat_out
-          character(len=26),dimension(ncities) :: CityName_out
-        end subroutine citylist
+!        subroutine citylist(outCode,lonLL,lonUR,latLL,latUR,ncities, &
+!                            CityLon_out,CityLat_out,CityName_out)
+!          integer      :: outCode
+!          real(kind=8) :: lonLL
+!          real(kind=8) :: lonUR
+!          real(kind=8) :: latLL
+!          real(kind=8) :: latUR
+!          integer      :: ncities
+!
+!          real(kind=8),dimension(ncities) :: CityLon_out
+!          real(kind=8),dimension(ncities) :: CityLat_out
+!          character(len=26),dimension(ncities) :: CityName_out
+!        end subroutine citylist
       END INTERFACE
 
       if(writeContours)then
@@ -308,10 +311,17 @@
       call plsdev("pngcairo")      ! Set output device (png, pdf, etc.)
       call plsfnam (outfile_name)  ! Set output filename
 
-      call plsetopt("geometry","854x603, 854x603")  ! Set image size
+!! 5.10
+      !call  plsetopt("geometry","854x603, 854x603")  ! Set image size
+!! 5.15
+      plsetopt_rc = plsetopt("geometry","854x603, 854x603")  ! Set image size
       !-----------------------------------
       call plspal0('cmap0_black_on_white.pal') ! sets cmap0 palette via pal file
-      call plspal1('cmap1_blue_yellow.pal',1)  ! sets cmap1 palette via pal file
+!! 5.10
+      !call plspal1('cmap1_blue_yellow.pal',1)
+!! 5.15
+      call plspal1('cmap1_blue_yellow.pal',.true.)
+
       call plscmap0n(16)                         ! sets number of colors in cmap0
 
       ! Initialize plplot
@@ -371,7 +381,10 @@
         call plcont(var,1,nx,1,ny,clevel, tr)
       enddo
       call pllab("Longitude", "Latitude", title_plot)
-      call plstransform( 0 )
+!! 5.10
+      !call plstransform( 0 )
+!! 5.15
+      call plstransform
 
       !call plcol0(2)
       ! Set the color we will use for the legend background (index 15)
@@ -570,6 +583,7 @@
       integer           :: label_opts(NUM_LABELS)
       character(len=1)  :: defined
       real(kind=plflt)  :: cloudcon_thresh_mgm3
+      integer :: plsetopt_rc
 
       real(kind=plflt)   :: tr(6)
       real(kind=plflt)   :: clevel(1)
@@ -637,7 +651,11 @@
       call plsdev("pngcairo")      ! Set output device (png, pdf, etc.)
       call plsfnam ( dp_pngfile )  ! Set output filename
 
-      call plsetopt("geometry","854x603, 854x603")  ! Set image size
+!! 5.10
+      !call plsetopt("geometry","854x603, 854x603")
+!! 5.15
+      plsetopt_rc = plsetopt("geometry","854x603, 854x603")  ! Set image size
+
       !call plsetopt("bg","FFFFFF")                  ! Set background color to white
       !-----------------------------------
       !call plspal0('cmap0_black_on_white.pal')
@@ -649,7 +667,11 @@
       !call plscmap1l
       !-----------------------------------
       call plspal0('cmap0_black_on_white.pal')
-      call plspal1('cmap1_blue_yellow.pal',1)
+!! 5.15
+      !plspal1_rc = plspal1('cmap1_blue_yellow.pal',1)
+      !call plspal1('cmap1_blue_yellow.pal',1)
+      call plspal1('cmap1_blue_yellow.pal', .true.)
+
       call plscmap0n(3)
 
       ! Initialize plplot
@@ -665,11 +687,16 @@
       call plpsty(0)
 
       ! Now plot the data
-      ! Call used with plplot5.10.0
-      call plshades(conc(:ntmax,:nzmax), defined, &
+!! 5.10
+      !call plshades(conc(:ntmax,:nzmax), defined, &
+      !  tmin,tmax,zmin,zmax, &
+      !  shedge, fill_width, &
+      !  cont_color, cont_width )
+!! 5.15
+      call plshades(conc(:ntmax,:nzmax), &
         tmin,tmax,zmin,zmax, &
         shedge, fill_width, &
-        cont_color, cont_width )
+        cont_color, cont_width , .true.)
 
       ! Smaller text, scale by second argument
       call plschr( 0.0_plflt, 0.5_plflt )
@@ -786,6 +813,7 @@
       real(kind=8) :: ymaxpl
       character(len=14) :: dp_pngfile
       integer,save      :: plot_index = 0
+      integer :: plsetopt_rc
 
       real(kind=plflt) :: xmin
       real(kind=plflt) :: xmax
@@ -843,8 +871,13 @@
       call plsdev("pngcairo")      ! Set output device (png, pdf, etc.)
       call plsfnam ( dp_pngfile )  ! Set output filename
 
-      call plsetopt("geometry","400x300, 400x300")  ! Set image size
-      call plsetopt("bg","FFFFFF")                  ! Set background color to white
+!! 5.10
+      !call plsetopt("geometry","400x300, 400x300")
+      !call plsetopt("bg","FFFFFF")
+!! 5.15
+      plsetopt_rc = plsetopt("geometry","400x300, 400x300")  ! Set image size
+      plsetopt_rc = plsetopt("bg","FFFFFF")                  ! Set background color to white
+
       ! Initialize plplot
       call plinit()
 

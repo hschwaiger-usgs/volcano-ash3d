@@ -472,10 +472,9 @@
       DBASE_dd =26
 
       DBASE_nrec      = nrec
-      !                 -- Table File Header length
-      !                 |           -- length of field descriptor (attributes)
-      !                 V           V
-      DBASE_headlen   = 32 + nattr*32 + 1
+      DBASE_headlen   = int(32,kind=2) +     &   ! Table File Header length
+                        int(nattr*32,kind=2) &   ! length of field descriptor (attributes)
+                        + int(1,kind=2)
       DBASE_reclen    = len(DBASE_TableRecData01) + &
                         len(DBASE_TableRecData02) + &
                         len(DBASE_TableRecData03) + &
@@ -490,8 +489,8 @@
                         len(DBASE_TableRecData12) + &
                         len(DBASE_TableRecData13) + &
                         len(DBASE_TableRecData14) + &
-                        len(DBASE_TableRecData15) + &
-                         +1
+                        len(DBASE_TableRecData15) &
+                        + int(1,kind=2)
       DBASE_transflag = 0
       DBASE_cryptflag = 0
       DBASE_mdxflag   = 0
@@ -861,7 +860,8 @@
       logical         :: isLit
       integer(kind=2) :: r
 
-      integer(kind=2) :: s, t
+      integer(kind=2) :: s  = 0
+      integer(kind=2) :: t  = 0
       integer         :: bl = 8  ! bit length of the move
 
       !integer(kind=2) :: ii(2), jj(2)
@@ -905,7 +905,8 @@
       logical         :: isLit
       integer(kind=4) :: r
 
-      integer(kind=4) :: s, t
+      integer(kind=4) :: s  = 0
+      integer(kind=4) :: t  = 0
       integer         :: bl = 8  ! bit length of the move
 
       if(isLit)then
@@ -952,7 +953,8 @@
       logical         :: isLit
       integer(kind=2) :: r
 
-      integer(kind=2) :: s, t
+      integer(kind=2) :: s  = 0
+      integer(kind=2) :: t  = 0
       integer         :: bl = 8  ! bit length of the move
 
 !      integer(kind=1) :: ii(2), jj(2)
@@ -996,7 +998,8 @@
       logical         :: isLit
       integer(kind=4) :: r
 
-      integer(kind=4) :: s, t
+      integer(kind=4) :: s  = 0
+      integer(kind=4) :: t  = 0
       integer         :: bl = 8  ! bit length of the move
 
 !      integer(kind=1) :: ii(4), jj(4)
@@ -1077,7 +1080,8 @@
       logical         :: isLit
       real(kind=8)    :: r
 
-      integer(kind=8) :: s, t
+      integer(kind=8) :: s  = 0
+      integer(kind=8) :: t  = 0
       integer         :: bl = 8  ! bit length of the move
 
 !      integer(kind=1) :: ii(8), jj(8)

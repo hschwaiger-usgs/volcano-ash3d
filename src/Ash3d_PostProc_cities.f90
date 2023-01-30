@@ -1,7 +1,19 @@
+!##############################################################################
+      module citywriter
+
+      use precis_param,  only : &
+        ip,op,sp,dp
+
+      implicit none
+
+      !private
+
+      contains
+
+!##############################################################################
+
       subroutine citylist(outCode,inlonLL,inlonUR,inlatLL,inlatUR,maxcities, &
                           CityLon_out,CityLat_out,CityName_out)
-
-      use precis_param
 
       use global_param,  only : &
         DirDelim
@@ -15,14 +27,14 @@
       implicit none
 
       integer     ,intent(in) :: outCode ! 0 for list only, 1 for GMT, 2 for gnuplot
-      real(kind=8),intent(in) :: inlonLL
-      real(kind=8),intent(in) :: inlonUR
-      real(kind=8),intent(in) :: inlatLL
-      real(kind=8),intent(in) :: inlatUR
+      real(kind=ip),intent(in) :: inlonLL
+      real(kind=ip),intent(in) :: inlonUR
+      real(kind=ip),intent(in) :: inlatLL
+      real(kind=ip),intent(in) :: inlatUR
       integer     ,intent(in) :: maxcities
 
-      real(kind=8),dimension(maxcities),intent(out) :: CityLon_out
-      real(kind=8),dimension(maxcities),intent(out) :: CityLat_out
+      real(kind=ip),dimension(maxcities),intent(out) :: CityLon_out
+      real(kind=ip),dimension(maxcities),intent(out) :: CityLat_out
       character(len=26),dimension(maxcities),intent(out) :: CityName_out
 
       integer            :: iostatus = 1
@@ -31,50 +43,50 @@
       integer            :: resolution                              !# of cells in x and y
       character(len=26)  :: CityName
       character(len=133) :: inputline
-      real(kind=8)       :: lonLL,lonUR,latLL,latUR
-      real(kind=8)       :: CityLat, CityLon
-      real(kind=8)       :: dlat, dlon, cell_width, cell_height
-      real(kind=8)       :: minspace_x, minspace_y
+      real(kind=ip)       :: lonLL,lonUR,latLL,latUR
+      real(kind=ip)       :: CityLat, CityLon
+      real(kind=ip)       :: dlat, dlon, cell_width, cell_height
+      real(kind=ip)       :: minspace_x, minspace_y
       logical            :: IsOkay                 !true if city is not near any others
       logical            :: IsThere,IsThere2
 
       character(len=130)             :: CityMasterFile
 
-      INTERFACE
-        subroutine space_checker(maxcities,CityLon_out,CityLat_out,ncities, &
-                                    CityLon,CityLat, &
-                                    minspace_x,minspace_y,IsOkay)
-          integer     ,intent(in)    :: maxcities
-          real(kind=8),intent(in)    :: CityLon_out(maxcities)
-          real(kind=8),intent(in)    :: CityLat_out(maxcities)
-          integer     ,intent(in)    :: ncities
-          real(kind=8),intent(in)    :: CityLon
-          real(kind=8),intent(in)    :: CityLat
-          real(kind=8),intent(in)    :: minspace_x
-          real(kind=8),intent(in)    :: minspace_y
-          logical     ,intent(inout) :: IsOkay
-        end subroutine space_checker
-      END INTERFACE
+!      INTERFACE
+!        subroutine space_checker(maxcities,CityLon_out,CityLat_out,ncities, &
+!                                    CityLon,CityLat, &
+!                                    minspace_x,minspace_y,IsOkay)
+!          integer     ,intent(in)    :: maxcities
+!          real(kind=ip),intent(in)    :: CityLon_out(maxcities)
+!          real(kind=ip),intent(in)    :: CityLat_out(maxcities)
+!          integer     ,intent(in)    :: ncities
+!          real(kind=ip),intent(in)    :: CityLon
+!          real(kind=ip),intent(in)    :: CityLat
+!          real(kind=ip),intent(in)    :: minspace_x
+!          real(kind=ip),intent(in)    :: minspace_y
+!          logical     ,intent(inout) :: IsOkay
+!        end subroutine space_checker
+!      END INTERFACE
 
       CityName_out = ''           !set default values
-      CityLon_out  = 0.0_8
-      CityLat_out  = 0.0_8
+      CityLon_out  = 0.0_ip
+      CityLat_out  = 0.0_ip
       resolution   = 100          !number of cells in width & height
 
       ! All city longitudes are between -180 and 180 degrees.
       ! Make sure the requested computational domain is in the same range.
-      if (inlonLL.gt.180.0_8)then
-        lonLL = inlonLL-360.0_8
+      if (inlonLL.gt.180.0_ip)then
+        lonLL = inlonLL-360.0_ip
       else
         lonLL = inlonLL
       endif
-      if (inlonUR.gt.180.0_8)then
-        lonUR = inlonUR-360.0_8
+      if (inlonUR.gt.180.0_ip)then
+        lonUR = inlonUR-360.0_ip
       else
         lonUR = inlonUR
       endif
       ! if the model domain wraps across the prime meridian add 360 to longitude
-      if (inlonLL.gt.inlonUR)lonUR = inlonUR + 360.0_8
+      if (inlonLL.gt.inlonUR)lonUR = inlonUR + 360.0_ip
       latLL = inlatLL
       latUR = inlatUR
 
@@ -82,8 +94,8 @@
       dlon = lonUR - lonLL
       cell_width = dlon/resolution
       cell_height = dlat/resolution
-      minspace_x  = 3.0_8*cell_width
-      minspace_y  = 3.0_8*cell_height
+      minspace_x  = 3.0_ip*cell_width
+      minspace_y  = 3.0_ip*cell_height
 
       nread   = 0
       ncities = 0
@@ -129,7 +141,7 @@
             CityLat_out(ncities)  = CityLat
           endif
           ! if the model domain crosses over the prime meridian
-        elseif ((CityLon+360.0_8.gt.lonLL).and.(CityLon+360.0_8.lt.lonUR).and. &
+        elseif ((CityLon+360.0_ip.gt.lonLL).and.(CityLon+360.0_ip.lt.lonUR).and. &
                 (CityLat.gt.latLL).and.(CityLat.lt.latUR)) then
           ! Make sure this city is not near any others
           IsOkay=.true.
@@ -181,16 +193,17 @@
       subroutine space_checker(maxcities,CityLon_out,CityLat_out,ncities, & 
                                   CityLon,CityLat, &
                                   minspace_x,minspace_y,IsOkay)
+
       implicit none
 
       integer     ,intent(in)    :: maxcities
-      real(kind=8),intent(in)    :: CityLon_out(maxcities)
-      real(kind=8),intent(in)    :: CityLat_out(maxcities)
+      real(kind=ip),intent(in)    :: CityLon_out(maxcities)
+      real(kind=ip),intent(in)    :: CityLat_out(maxcities)
       integer     ,intent(in)    :: ncities
-      real(kind=8),intent(in)    :: CityLon
-      real(kind=8),intent(in)    :: CityLat
-      real(kind=8),intent(in)    :: minspace_x
-      real(kind=8),intent(in)    :: minspace_y
+      real(kind=ip),intent(in)    :: CityLon
+      real(kind=ip),intent(in)    :: CityLat
+      real(kind=ip),intent(in)    :: minspace_x
+      real(kind=ip),intent(in)    :: minspace_y
       logical     ,intent(inout) :: IsOkay                 !true if city is not near any others
 
       integer            :: icity
@@ -206,3 +219,7 @@
       return
 
       end subroutine
+
+      end module
+!##############################################################################
+

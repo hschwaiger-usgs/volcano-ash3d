@@ -35,6 +35,8 @@
       use time_data,     only : &
          os_time_log,BaseYear,useLeap
 
+      use citywriter
+
       use dislin
 
       implicit none
@@ -46,6 +48,8 @@
       real(kind=ip),intent(in) :: OutVar(nx,ny)
       logical      ,intent(in) :: writeContours
 
+      integer,parameter :: DS = 8
+      
       integer :: i,j,k
       integer     , dimension(:,:),allocatable :: zrgb
       character(len=40) :: title_plot
@@ -55,10 +59,10 @@
       character (len=4) :: outfile_ext = '.png'
       integer :: ioerr,iw,iwf
 
-      real(kind=8)  :: xmin
-      real(kind=8)  :: xmax
-      real(kind=8)  :: ymin
-      real(kind=8)  :: ymax
+      real(kind=ip)  :: xmin
+      real(kind=ip)  :: xmax
+      real(kind=ip)  :: ymin
+      real(kind=ip)  :: ymax
 
       ! dislin stuff
       ! https://www.dislin.de/
@@ -66,20 +70,21 @@
       CHARACTER(len=80) :: CBUF
       integer :: nmaxln  ! number of characters in the longest line of text
       character(len=7) :: zlevlab
-      real(kind=4) :: XPTS(Contour_MaxPoints),YPTS(Contour_MaxPoints)
+      real(kind=DS) :: XPTS(Contour_MaxPoints)
+      real(kind=DS) :: YPTS(Contour_MaxPoints)
 
       INTEGER :: IRAY(Contour_MaxCurves)
       INTEGER :: NXP,NYP,nclr,NCURVS
 
-      REAL(kind=4) :: XP,YP
-      real(kind=4) :: xminDIS, xmaxDIS, yminDIS, ymaxDIS
-      real(kind=4) :: dx_map, dy_map, xgrid_1, ygrid_1
+      REAL(kind=DS) :: XP,YP
+      real(kind=DS) :: xminDIS, xmaxDIS, yminDIS, ymaxDIS
+      real(kind=DS) :: dx_map, dy_map, xgrid_1, ygrid_1
       ! Hot colormap RGB's and breakpoints
       !real(kind=4), dimension(4) :: cpt_break_hot = (/ 0.0_4, 0.38_4, 0.76_4, 1.0_4 /)
       !real(kind=4), dimension(4) :: cpt_r_hot     = (/ 0.0_4, 1.0_4, 1.0_4, 1.0_4 /)
       !real(kind=4), dimension(4) :: cpt_g_hot     = (/ 0.0_4, 0.0_4, 1.0_4, 1.0_4 /)
       !real(kind=4), dimension(4) :: cpt_b_hot     = (/ 0.0_4, 0.0_4, 0.0_4, 0.9_4 /) ! hot actually ends in 1.0
-      real(kind=4) :: xr,xg,xb
+      real(kind=DS) :: xr,xg,xb
 
       character(len=30) :: cstr_volcname
       character(len=30) :: cstr_run_date
@@ -93,8 +98,8 @@
       logical :: UseShadedContours
 
       integer :: ncities
-      real(kind=8),dimension(:),allocatable     :: lon_cities
-      real(kind=8),dimension(:),allocatable     :: lat_cities
+      real(kind=DS),dimension(:),allocatable     :: lon_cities
+      real(kind=DS),dimension(:),allocatable     :: lat_cities
       character(len=26),dimension(:),allocatable :: name_cities
 
       INTERFACE
@@ -103,19 +108,6 @@
           integer                   :: byear
           logical                   :: useLeaps
         end function HS_xmltime
-        subroutine citylist(outCode,lonLL,lonUR,latLL,latUR,ncities, &
-                            CityLon_out,CityLat_out,CityName_out)
-          integer      :: outCode
-          real(kind=8) :: lonLL
-          real(kind=8) :: lonUR
-          real(kind=8) :: latLL
-          real(kind=8) :: latUR
-          integer      :: ncities
-
-          real(kind=8),dimension(ncities) :: CityLon_out
-          real(kind=8),dimension(ncities) :: CityLat_out
-          character(len=26),dimension(ncities) :: CityName_out
-        end subroutine citylist
       END INTERFACE
 
       ncities = 20
@@ -252,8 +244,8 @@
         nConLev = 8
         allocate(zrgb(nConLev,3))
         allocate(ContourLev(nConLev))
-        ContourLev = (/0.1_8, 0.3_8, 1.0_8, 3.0_8, &
-                10.0_8, 30.0_8, 100.0_8, 300.0_8/)
+        ContourLev = (/0.1_ip, 0.3_ip, 1.0_ip, 3.0_ip, &
+                10.0_ip, 30.0_ip, 100.0_ip, 300.0_ip/)
       elseif(iprod.eq.16)then   ! profile plots
         write(*,*)"ERROR: No map PNG output option for vertical profile data."
         write(*,*)"       Should not be in write_2Dmap_PNG_dislin"
@@ -271,28 +263,30 @@
         allocate(ContourDataY(nConLev,Contour_MaxCurves,Contour_MaxPoints))
         ContourDataNcurves(:)   = 0
         ContourDataNpoints(:,:) = 0
-        ContourDataX(:,:,:)     = 0.0_8
-        ContourDataY(:,:,:)     = 0.0_8
+        ContourDataX(:,:,:)     = 0.0_ip
+        ContourDataY(:,:,:)     = 0.0_ip
         do i=1,nConLev
           ! This part calculates the contours
-          XPTS(:) = 0.0_4
-          YPTS(:) = 0.0_4
-          IRAY(:) = 0
-          call conpts(real(lon_cc_pd(1:nx),kind=4),nx,&  ! x coord and size
-                      real(lat_cc_pd(1:ny),kind=4),ny,&  ! y coord and size
-                      real(OutVar(1:nx,1:ny),kind=4), &  ! matrix with function values
-                      real(ContourLev(i),kind=4),           &  ! level to contour
-                      XPTS,YPTS,          &           ! x,y of contour (may have mul. curves)
-                      Contour_MaxPoints,  &           ! max # of points for contour arrays
-                      IRAY,               &           ! num of points for each contour
-                      Contour_MaxCurves,  &           ! max number of curves
+          XPTS(1:Contour_MaxPoints) = 0.0_DS
+          YPTS(1:Contour_MaxPoints) = 0.0_DS
+          IRAY(1:Contour_MaxCurves) = 0
+          call conpts(real(lon_cc_pd(1:nx),kind=DS),nx,&  ! x coord and size
+                      real(lat_cc_pd(1:ny),kind=DS),ny,&  ! y coord and size
+                      real(OutVar(1:nx,1:ny),kind=DS), &  ! matrix with function values
+                      real(ContourLev(i),kind=DS),     &  ! level to contour
+                      XPTS(1:Contour_MaxPoints),   &  ! x of contour (may have mul. curvex)
+                      YPTS(1:Contour_MaxPoints),   &  ! y of contour (may have mul. curves)
+                      Contour_MaxPoints,           &  ! max # of points for contour arrays
+                      IRAY(1:Contour_MaxCurves),   &  ! num of points for each contour
+                      Contour_MaxCurves,           &  ! max number of curves
                       NCURVS)                         ! actual number of curves
+
           ContourDataNcurves(i)=NCURVS
           do j=1,NCURVS
             ContourDataNpoints(i,j)=IRAY(j)
             do k=1,IRAY(j)
-              ContourDataX(i,j,k) = real(XPTS(k),kind=8)
-              ContourDataY(i,j,k) = real(YPTS(k),kind=8)
+              ContourDataX(i,j,k) = real(XPTS(k),kind=ip)
+              ContourDataY(i,j,k) = real(YPTS(k),kind=ip)
             enddo
             ! These data could be plotted to produce the same plot as from contur
             !call curvmp(XPTS,YPTS,IRAY(j))
@@ -306,55 +300,54 @@
       write(*,*)"Running Dislin to generate contour plot"
 
       if(IsLatLon)then
-        xmin = real(minval(lon_cc_pd(1:nx)),kind=8)
-        xmax = real(maxval(lon_cc_pd(1:nx)),kind=8)
-        ymin = real(minval(lat_cc_pd(1:ny)),kind=8)
-        ymax = real(maxval(lat_cc_pd(1:ny)),kind=8)
+        xmin = minval(lon_cc_pd(1:nx))
+        xmax = maxval(lon_cc_pd(1:nx))
+        ymin = minval(lat_cc_pd(1:ny))
+        ymax = maxval(lat_cc_pd(1:ny))
       else
-        xmin = real(minval(x_cc_pd(1:nx)),kind=8)
-        xmax = real(maxval(x_cc_pd(1:nx)),kind=8)
-        ymin = real(minval(y_cc_pd(1:ny)),kind=8)
-        ymax = real(maxval(y_cc_pd(1:ny)),kind=8)
+        xmin = minval(x_cc_pd(1:nx))
+        xmax = maxval(x_cc_pd(1:nx))
+        ymin = minval(y_cc_pd(1:ny))
+        ymax = maxval(y_cc_pd(1:ny))
         stop 5
       endif
-
-      dx_map = 10.0_4
-      dy_map = 5.0_4
-      lon_cc_pd(:) = lon_cc_pd(:) - 360.0_8
-      xminDIS = real(minval(lon_cc_pd(1:nx)),kind=4)
-      xmaxDIS = real(maxval(lon_cc_pd(1:nx)),kind=4)
-      yminDIS = real(minval(lat_cc_pd(1:ny)),kind=4)
-      ymaxDIS = real(maxval(lat_cc_pd(1:ny)),kind=4)
-      xgrid_1 = real(ceiling(xminDIS/dx_map) * dx_map,kind=4)
-      ygrid_1 = real(ceiling(yminDIS/dy_map) * dy_map,kind=4)
-
       call citylist(0,xmin,xmax,ymin,ymax, &
                     ncities,                        &
                     lon_cities,lat_cities,          &
                     name_cities)
 
+      dx_map = 10.0_DS
+      dy_map = 5.0_DS
+      lon_cc_pd(:) = lon_cc_pd(:) - 360.0_ip
+      
+      xminDIS = real(xmin- 360.0_ip,kind=DS)
+      xmaxDIS = real(xmax- 360.0_ip,kind=DS)
+      yminDIS = real(ymin,kind=DS)
+      ymaxDIS = real(ymax,kind=DS)
+      xgrid_1 = real(ceiling(xminDIS/dx_map) * dx_map,kind=DS)
+      ygrid_1 = real(ceiling(yminDIS/dy_map) * dy_map,kind=DS)
+
       !!!!!!!!!!!!!!!!!!!!!!!
       !  Dislin Level 0:  before initialization or after termination
+      write(*,*)"Dislin Level 0"
       call metafl(CFMT)   ! set output driver/file-format (PNG); this is a 4-char string
       call setpag('USAL') ! Set pagesize to US A Landscape (2790 x 2160)
       call setfil(trim(adjustl(outfile_name))) ! Set output filename
       call scrmod('REVERSE')  ! Default background is black; reverse to white
 
       !  Dislin Level 1:  after initialization or a call to ENDGRF
+      write(*,*)"Dislin Level 1"
       call disini()       ! initialize plot (set to level 1)
 
-
-        ! Set the color table
-      !call setvlt('SPEC')
+        ! Set the color table : SPEC,RAIN,GREY,TEMP
       call setvlt('RAIN')
-      !call setvlt('GREY')
-      !call setvlt('TEMP')
 
       call paghdr('Ash3d Simulation plotted on ','---',4,0)
       y_footer = 1900
       call filbox(2250,y_footer,130,49)
       call incfil('/opt/USGS/Ash3d/share/post_proc/USGSvid.png')
-        ! setting of plot parameters
+
+       ! setting of plot parameters
       !call pagera()       ! plot a border around the page
       call triplx()  ! set font to triple stroke
       call axspos(500,1650)  ! determine the position of the axis system
@@ -368,12 +361,14 @@
       call incmrk(0) ! selects line (0) or symbol (-1) mode for CURVE
 
       !call LABELS('MAP','xy')
-      !call projct('STER') ! defines projection
-      !call projct('LAMB') ! defines projection
+      ! set projection : STER,LAMB,CYLI,MERC
       call projct('CYLI') ! defines projection
-      !call projct('MERC') ! defines projection
       call frame(3) ! bump up frame line thickness
+
+      !  Dislin Level 2: after a call to GRAF, GRAFP or GRAFMP
+        ! Now create graph and set to level 2
        !  The routine GRAFMP plots a geographical axis system.
+      write(*,*)"Dislin Level 2"
       call grafmp(xminDIS,xmaxDIS,xgrid_1,dx_map, &
                   yminDIS,ymaxDIS,ygrid_1,dy_map)
 
@@ -382,21 +377,23 @@
        ! plots coastlines and lakes or political borders
       call world()
       !call shdmap('GSHH')
-
+      write(*,*)"Dislin post world"
       ! Add cities
       do i=1,ncities
       !    These are the points
-        call pos2pt(real(lon_cities(i),kind=4),real(lat_cities(i),kind=4),&
+        call pos2pt(real(lon_cities(i),kind=DS),real(lat_cities(i),kind=DS),&
                     XP,YP)
         NXP=NINT(XP)
         NYP=NINT(YP)
         call symbol(21,NXP,NYP)
       !    These are the city labels, offset in x
+        write(*,*)"Dislin city # ",i,ncities
         call messag(adjustl(trim(name_cities(i))),NXP+30,NYP)
       enddo
+      write(*,*)"Dislin post cities"
 
       ! Add volcano
-      call pos2pt(real(lon_volcano,kind=4),real(lat_volcano,kind=4),&
+      call pos2pt(real(lon_volcano,kind=DS),real(lat_volcano,kind=DS),&
                   XP,YP)
       NXP=NINT(XP)
       NYP=NINT(YP)
@@ -405,40 +402,42 @@
       if(UseShadedContours)then
         !call myvlt(xr,xg,xb,nrgb)
         call shdmod('UPPER', 'CELL') ! This suppresses colors in regions above/below the zlevels pro
-        call conshd(real(lon_cc_pd(1:nx),kind=4),nx,&
-                    real(lat_cc_pd(1:ny),kind=4),ny,&
-                    real(OutVar,kind=4),real(ContourLev(i:nConLev),kind=4),nConLev)
+        call conshd(real(lon_cc_pd(1:nx),kind=DS),nx,&
+                    real(lat_cc_pd(1:ny),kind=DS),ny,&
+                    real(OutVar,kind=DS),real(ContourLev(i:nConLev),kind=DS),nConLev)
       else
         do i=1,nConLev
-          xr   = real(zrgb(i,1),kind=4)/real(255,kind=4)
-          xg   = real(zrgb(i,2),kind=4)/real(255,kind=4)
-          xb   = real(zrgb(i,3),kind=4)/real(255,kind=4)
+          xr   = real(zrgb(i,1),kind=DS)/real(255,kind=DS)
+          xg   = real(zrgb(i,2),kind=DS)/real(255,kind=DS)
+          xb   = real(zrgb(i,3),kind=DS)/real(255,kind=DS)
           nclr = intrgb(xr,xg,xb)
 
           call setclr(nclr)
 
-          call contur(real(lon_cc_pd(1:nx),kind=4),nx,&
-                      real(lat_cc_pd(1:ny),kind=4),ny,&
-                      real(OutVar(1:nx,1:ny),kind=4), &
-                      real(ContourLev(i),kind=4))
+          call contur(real(lon_cc_pd(1:nx),kind=DS),nx,&
+                      real(lat_cc_pd(1:ny),kind=DS),ny,&
+                      real(OutVar(1:nx,1:ny),kind=DS), &
+                      real(ContourLev(i),kind=DS))
         enddo
       endif
 
+      write(*,*)"Dislin annotation"
        ! set color of grid lines
-      call setrgb(0.0_4, 0.0_4, 0.0_4)
+      call setrgb(0.0_DS, 0.0_DS, 0.0_DS)
        ! overlays an axis system with a longitude and latitude grid
       call gridmp(1,1)
       call height(50) ! Set character height for title
       call title() ! Actually write the title to the file
 
       ! Now write the legend
+      write(*,*)"Dislin Legend"
       call height(25) ! Reset character height to something smaller
       nmaxln = 6 ! number of characters in the longest line of text
       call legini(cbuf,nConLev,nmaxln) ! Initialize legend
       call legtit(title_legend)      ! Set legend title
       call legbgd(0)                 ! sets background color
       do i=1,nConLev
-        if(ContourLev(i).lt.1.0_8)then
+        if(ContourLev(i).lt.1.0_ip)then
           write(zlevlab,'(f6.2)')real(ContourLev(i),kind=4)
         else
           write(zlevlab,'(f6.1)')real(ContourLev(i),kind=4)
@@ -464,6 +463,7 @@
       write(cstr_ErDuratn,'(a20,f4.1,a6)')'Erup. Duration:     ',e_Duration(1),' hours'
       write(cstr_ErVolume,'(a20,f8.5,a10)')'Erup. Volume:       ',e_Volume(1),' km3 (DRE)'
 
+      write(*,*)"Dislin text box"
       call messag(cstr_volcname,400 ,y_footer)
       call messag(cstr_run_date,400 ,y_footer+40)
       call messag(cstr_windfile,400 ,y_footer+80)
@@ -515,6 +515,8 @@
 
       integer, intent (in) :: vprof_ID
 
+      integer,parameter :: DS = 8
+
       character(len=14) :: dp_pngfile
       character(len=26) :: coord_str
       character(len=76) :: title_str
@@ -522,20 +524,20 @@
       integer :: k,i
       integer :: ioerr,iw,iwf
 
-      real(kind=4) :: tmin
-      real(kind=4) :: tmax
-      real(kind=4) :: tlab1
-      real(kind=4) :: tlabstep
-      real(kind=4) :: zmin
-      real(kind=4) :: zmax
-      real(kind=4) :: zlab1
-      real(kind=4) :: zlabstep
-      real(kind=4) :: cmin
-      real(kind=4) :: cmax
-      real(kind=4) :: clab1
-      real(kind=4) :: clabstep
-      real(kind=4), dimension(:),   allocatable :: t, z
-      real(kind=4), dimension(:,:), allocatable :: conc
+      real(kind=DS) :: tmin
+      real(kind=DS) :: tmax
+      real(kind=DS) :: tlab1
+      real(kind=DS) :: tlabstep
+      real(kind=DS) :: zmin
+      real(kind=DS) :: zmax
+      real(kind=DS) :: zlab1
+      real(kind=DS) :: zlabstep
+      real(kind=DS) :: cmin
+      real(kind=DS) :: cmax
+      real(kind=DS) :: clab1
+      real(kind=DS) :: clabstep
+      real(kind=DS), dimension(:),   allocatable :: t, z
+      real(kind=DS), dimension(:,:), allocatable :: conc
 
       ! dislin stuff
       ! https://www.dislin.de/
@@ -564,65 +566,65 @@
       ! Get min/max and label interval for all three axies.
       tmin=real(0,kind=4)
       tmax=real(ceiling(time_native(ntmax)),kind=4)
-      tlab1    = 0.0_4
-      if(tmax.gt.240.0_4)then
-        tlabstep = 48.0_4
-      elseif(tmax.gt.120.0_4)then
-        tlabstep = 24.0_4
-      elseif(tmax.gt.30.0_4)then
-        tlabstep = 10.0_4
-      elseif(tmax.gt.15.0_4)then
-        tlabstep = 5.0_4
-      elseif(tmax.gt.6.0_4)then
-        tlabstep = 2.0_4
+      tlab1    = 0.0_DS
+      if(tmax.gt.240.0_DS)then
+        tlabstep = 48.0_DS
+      elseif(tmax.gt.120.0_DS)then
+        tlabstep = 24.0_DS
+      elseif(tmax.gt.30.0_DS)then
+        tlabstep = 10.0_DS
+      elseif(tmax.gt.15.0_DS)then
+        tlabstep = 5.0_DS
+      elseif(tmax.gt.6.0_DS)then
+        tlabstep = 2.0_DS
       else
-        tlabstep = 1.0_4
+        tlabstep = 1.0_DS
       endif
 
-      zmin=real(0,kind=4)
-      zmax=real(z_cc_pd(nzmax),kind=4)
-      zlab1    = 0.0_4
-      if(zmax.gt.30.0_4)then
-        zlabstep = 10.0_4
-      elseif(zmax.gt.15.0_4)then
-        zlabstep = 5.0_4
-      elseif(zmax.gt.6.0_4)then
-        zlabstep = 2.0_4
+      zmin=real(0,kind=DS)
+      zmax=real(z_cc_pd(nzmax),kind=DS)
+      zlab1    = 0.0_DS
+      if(zmax.gt.30.0_DS)then
+        zlabstep = 10.0_DS
+      elseif(zmax.gt.15.0_DS)then
+        zlabstep = 5.0_DS
+      elseif(zmax.gt.6.0_DS)then
+        zlabstep = 2.0_DS
       else
-        zlabstep = 1.0_4
+        zlabstep = 1.0_DS
       endif
 
-      cmin=real(0,kind=4)
-      cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=4)
-      if    (cmax.gt.4.0e4_4)then
-          clabstep = 5.0e3_4
-      elseif(cmax.gt.1.0e4_4)then
-          clabstep = 2.0e3_4
-      elseif(cmax.gt.4.0e3_4)then
-          clabstep = 5.0e2_4
-      elseif(cmax.gt.1.0e3_4)then
-          clabstep = 2.0e2_4
-      elseif(cmax.gt.4.0e2_4)then
-          clabstep = 5.0e1_4
-      elseif(cmax.gt.1.0e2_4)then
-          clabstep = 2.0e1_4
-      elseif(cmax.gt.4.0e1_4)then
-          clabstep = 5.0e0_4
-      elseif(cmax.gt.1.0e1_4)then
-          clabstep = 2.0e0_4
+      cmin=real(0,kind=DS)
+      cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=DS)
+      if    (cmax.gt.4.0e4_DS)then
+          clabstep = 5.0e3_DS
+      elseif(cmax.gt.1.0e4_DS)then
+          clabstep = 2.0e3_DS
+      elseif(cmax.gt.4.0e3_DS)then
+          clabstep = 5.0e2_DS
+      elseif(cmax.gt.1.0e3_DS)then
+          clabstep = 2.0e2_DS
+      elseif(cmax.gt.4.0e2_DS)then
+          clabstep = 5.0e1_DS
+      elseif(cmax.gt.1.0e2_DS)then
+          clabstep = 2.0e1_DS
+      elseif(cmax.gt.4.0e1_DS)then
+          clabstep = 5.0e0_DS
+      elseif(cmax.gt.1.0e1_DS)then
+          clabstep = 2.0e0_DS
       else
-          clabstep = 1.0e-1_4
+          clabstep = 1.0e-1_DS
       endif
       clab1    = clabstep
 
       allocate(t(ntmax))
       allocate(z(nzmax))
       allocate(conc(ntmax,nzmax))
-      t = real(time_native(1:ntmax),kind=4)
-      z = real(z_cc_pd(1:nzmax),kind=4)
+      t = real(time_native(1:ntmax),kind=DS)
+      z = real(z_cc_pd(1:nzmax),kind=DS)
       do i=1,ntmax
         do k=1,nzmax
-          conc(i,k) = real(pr_ash(k,i,vprof_ID),kind=4)
+          conc(i,k) = real(pr_ash(k,i,vprof_ID),kind=DS)
         enddo
       enddo
 
@@ -657,11 +659,8 @@
 
         ! setting of plot parameters
       !call pagera()       ! plot a border around the page
-
       call helves()
-
       call titlin(title_str,2)
-
       call name('Time (hours after eruption)','X')
       call name('Height (km)','Y')
       call name('Ash conc. mg/m3','Z')
@@ -734,15 +733,17 @@
 
       integer,intent(in) :: pt_indx
 
-      real(kind=4) :: ymaxpl
+      integer,parameter :: DS = 8
+
+      real(kind=DS) :: ymaxpl
       character(len=14) :: dp_pngfile
       integer,save      :: plot_index = 0
 
-      real(kind=4) :: xmin
-      real(kind=4) :: xmax
-      real(kind=4) :: ymin
-      real(kind=4) :: ymax
-      real(kind=4), dimension(:), allocatable :: x, y
+      real(kind=DS) :: xmin
+      real(kind=DS) :: xmax
+      real(kind=DS) :: ymin
+      real(kind=DS) :: ymax
+      real(kind=DS), dimension(:), allocatable :: x, y
 
       ! dislin stuff
       ! https://www.dislin.de/
@@ -759,27 +760,26 @@
       write(dp_pngfile,55) plot_index,".png"
  55   format('dslin_',i4.4,a4)
 
-      if(Airport_Thickness_TS(plot_index,nWriteTimes).lt.0.01_4)then
-        ymaxpl = 1.0_4
-      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.1.0_4)then
-        ymaxpl = 1.0_4
-      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.5.0_4)then
-        ymaxpl = 5.0_4
-      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.25.0_4)then
-        ymaxpl = 25.0_4
+      if(Airport_Thickness_TS(plot_index,nWriteTimes).lt.0.01_ip)then
+        ymax = 1.0_DS
+      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.1.0_ip)then
+        ymax = 1.0_DS
+      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.5.0_ip)then
+        ymax = 5.0_DS
+      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.25.0_ip)then
+        ymax = 25.0_DS
       else
-        ymaxpl = 100.0_4
+        ymax = 100.0_DS
       endif
 
-      xmin=0.0_4
-      xmax=real(ceiling(Simtime_in_hours),kind=4)
-      ymin=0.0_4
-      ymax=ymaxpl
+      xmin=0.0_DS
+      xmax=real(ceiling(Simtime_in_hours),kind=DS)
+      ymin=0.0_DS
 
       allocate(x(nWriteTimes))
       allocate(y(nWriteTimes))
-      x = real(WriteTimes,kind=4)
-      y = real(Airport_Thickness_TS(pt_indx,1:nWriteTimes),kind=4)
+      x = real(WriteTimes,kind=DS)
+      y = real(Airport_Thickness_TS(pt_indx,1:nWriteTimes),kind=DS)
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ! DISLIN block
@@ -815,13 +815,13 @@
 
       !  Dislin Level 2: after a call to GRAF, GRAFP or GRAFMP
         ! Now create graph and set to level 2
-      call graf(real(xmin,kind=4), real(xmax,kind=4), 0.0_4, 5.0_4, &
-                real(ymin,kind=4), real(ymax,kind=4), 0.0_4, 1.0_4)
+      call graf(xmin, xmax, 0.0_DS, 5.0_DS, &
+                ymin, ymax, 0.0_DS, 1.0_DS)
       call title() ! Actually write the title to the file
-      call setrgb(0.5_4, 0.5_4, 0.5_4)
+      call setrgb(0.5_DS, 0.5_DS, 0.5_DS)
       !call curve(real(x,kind=4),real(y,kind=4),nWriteTimes)  ! This draws the line
       call shdpat(16)  ! set shading pattern 
-      call shdcrv(x,y,nWriteTimes,x,0.0_4*y,nWriteTimes) ! This fills below curve
+      call shdcrv(x,y,nWriteTimes,x,0.0_DS*y,nWriteTimes) ! This fills below curve
       call color('FORE') ! Reset color to defaul foreground color
 
       !  Dislin Level 0:  before initialization or after termination

@@ -240,13 +240,16 @@ endif
 PLOTFPPFLAG =
 ifeq ($(USEPLPLOT), T)
  plplotFPPFLAG = -DUSEPLPLOT
- plplotLIBS = -lplplotf95cd -lplplotf95d
- plplotINC  = -I/usr/include/plplot
+ #plplotLIBS = -lplplotf95cd -lplplotf95d
+ #plplotINC  = -I/usr/include/plplot
+ plplotLIBS = -L/usr/local/plplot/lib -lplplot -lplplotfortran
+ plplotINC  = -I/usr/local/plplot/lib/fortran/modules/plplot
  plplotOBJ  = Ash3d_PostProc_plplot.o
 endif
 ifeq ($(USEDISLIN), T)
  dislinFPPFLAG = -DUSEDISLIN
- dislinLIBS = -L/usr/local/dislin -ldislin
+ # Note that -ldislin if for single and -ldislin_d is double precision
+ dislinLIBS = -L/usr/local/dislin -ldislin_d
  dislinINC  = -I/usr/local/dislin/gf
  dislinOBJ  = Ash3d_PostProc_dislin.o
 endif
@@ -491,6 +494,7 @@ install:
 	install -m 644 ../share/GlobalAirports_ewert.txt $(INSTALLDIR)/share/
 	install -m 644 ../share/VotW_ESP_v12_csv.txt  $(INSTALLDIR)/share/
 	install -m 644 ../share/post_proc/*png $(INSTALLDIR)/share/post_proc/
+	install -m 644 ../share/post_proc/world_cities.txt $(INSTALLDIR)/share/post_proc/
 
 uninstall:
 	rm -f $(INSTALLDIR)/bin/$(ASH3DEXEC)
