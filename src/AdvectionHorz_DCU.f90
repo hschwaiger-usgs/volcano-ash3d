@@ -71,7 +71,7 @@
       INTERFACE
         subroutine Set_BC(bc_code)
           integer,intent(in) :: bc_code ! 1 for advection, 2 for diffusion
-        end subroutine
+        end subroutine Set_BC
         !function AdvectUpdate_1d(ncells,q_cc,dt_vol_cc,usig_I)
         !  integer :: ncells
         !  real(kind=8),dimension(-1:ncells+2) :: AdvectUpdate_1d
@@ -119,6 +119,8 @@
               ! using kappa of cell
             dt_vol_cc(rmin-2:rmin-1+ncells+2) = dt/kappa_pd(rmin-2:rmin-1+ncells+2,j,k)
 
+            ! Make sure to initialize this since we are only setting it where is matters
+            usig_I = 0.0_ip
             do l=rmin,rmin-1+ncells+1
               usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sigma_nx_pd(l,j,k)
             enddo
@@ -311,7 +313,7 @@
       INTERFACE
         subroutine Set_BC(bc_code)
           integer,intent(in) :: bc_code ! 1 for advection, 2 for diffusion
-        end subroutine
+        end subroutine Set_BC
         !function AdvectUpdate_1d(ncells,q_cc,dt_vol_cc,usig_I)
         !  integer :: ncells
         !  real(kind=8),dimension(-1:ncells+2) :: AdvectUpdate_1d
@@ -358,6 +360,8 @@
               ! using kappa of cell
             dt_vol_cc(rmin-2:rmin-1+ncells+2) = dt/kappa_pd(i,rmin-2:rmin-1+ncells+2,k)
 
+            ! Make sure to initialize this since we are only setting it where is matters
+            usig_I = 0.0_ip
             do l=rmin,rmin-1+ncells+1
               usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sigma_ny_pd(i,l,k)
             enddo

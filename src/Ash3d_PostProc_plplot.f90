@@ -1,3 +1,12 @@
+      module Ash3d_PostProc_plplot
+
+      use precis_param
+
+      use plplot
+      use iso_c_binding, only: c_ptr, c_loc, c_f_pointer
+
+      contains
+
 !##############################################################################
 !
 !    write_2Dmap_PNG_plplot
@@ -6,8 +15,6 @@
 !##############################################################################
 
       subroutine write_2Dmap_PNG_plplot(nx,ny,iprod,itime,OutVar,writeContours)
-
-      use precis_param
 
       use mesh,          only : &
          x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd, &
@@ -39,9 +46,6 @@
 
       use citywriter
 
-      use plplot
-      use iso_c_binding, only: c_ptr, c_loc, c_f_pointer
-
       implicit none
 
       integer      ,intent(in) :: nx
@@ -72,18 +76,18 @@
       real(kind=plflt), dimension(:,:), allocatable :: var
       real(kind=plflt)   :: tr(6)
       real(kind=plflt)   :: clevel(1)
-      integer            :: opt
+      integer(kind=4):: opt
       integer, parameter :: MAX_NLEGEND = 11       ! max number of legend entries
-      integer            :: opt_array(MAX_NLEGEND)
-      integer            :: text_colors(MAX_NLEGEND)
-      integer            :: box_colors(MAX_NLEGEND)
-      integer            :: box_patterns(MAX_NLEGEND)
+      integer(kind=4):: opt_array(MAX_NLEGEND)
+      integer(kind=4):: text_colors(MAX_NLEGEND)
+      integer(kind=4):: box_colors(MAX_NLEGEND)
+      integer(kind=4):: box_patterns(MAX_NLEGEND)
       real(kind=plflt)   :: box_scales(MAX_NLEGEND)
       real(kind=plflt)   :: box_line_widths(MAX_NLEGEND)
-      integer            :: line_colors(MAX_NLEGEND)
-      integer            :: line_styles(MAX_NLEGEND)
+      integer(kind=4):: line_colors(MAX_NLEGEND)
+      integer(kind=4):: line_styles(MAX_NLEGEND)
       real(kind=plflt)   :: line_widths(MAX_NLEGEND)
-      integer            :: symbol_numbers(MAX_NLEGEND), symbol_colors(MAX_NLEGEND)
+      integer(kind=4):: symbol_numbers(MAX_NLEGEND), symbol_colors(MAX_NLEGEND)
       real(kind=plflt)   :: symbol_scales(MAX_NLEGEND)
       character(len=200) :: text(MAX_NLEGEND)
       character(len=3)   :: symbols(MAX_NLEGEND)
@@ -95,11 +99,9 @@
       real(kind=plflt)   :: text_spacing
       real(kind=plflt)   :: text_justification
 
-      integer            :: nrow, ncolumn
-      integer            :: bg_color,bb_color,bb_style
-      !integer            :: low_cap_color, high_cap_color
-      integer            :: pos_opt
-      !character(len=3)   :: special_symbols(5)
+      integer(kind=4):: nrow, ncolumn
+      integer(kind=4):: bg_color,bb_color,bb_style
+      integer(kind=4):: pos_opt
 
       real(kind=plflt)  :: dy_newline
       integer :: plsetopt_rc
@@ -115,19 +117,6 @@
           integer                   :: byear
           logical                   :: useLeaps
         end function HS_xmltime
-!        subroutine citylist(outCode,lonLL,lonUR,latLL,latUR,ncities, &
-!                            CityLon_out,CityLat_out,CityName_out)
-!          integer      :: outCode
-!          real(kind=8) :: lonLL
-!          real(kind=8) :: lonUR
-!          real(kind=8) :: latLL
-!          real(kind=8) :: latUR
-!          integer      :: ncities
-!
-!          real(kind=8),dimension(ncities) :: CityLon_out
-!          real(kind=8),dimension(ncities) :: CityLat_out
-!          character(len=26),dimension(ncities) :: CityName_out
-!        end subroutine citylist
       END INTERFACE
 
       if(writeContours)then
@@ -267,8 +256,8 @@
         title_legend = 'Elevation (km)'
         nConLev = 8
         allocate(ContourLev(nConLev))
-        ContourLev = (/0.1_8, 0.3_8, 1.0_8, 3.0_8, &
-                10.0_8, 30.0_8, 100.0_8, 300.0_8/)
+        ContourLev = (/0.1_ip, 0.3_ip, 1.0_ip, 3.0_ip, &
+                10.0_ip, 30.0_ip, 100.0_ip, 300.0_ip/)
       elseif(iprod.eq.16)then   ! profile plots
         write(*,*)"ERROR: No map PNG output option for vertical profile data."
         write(*,*)"       Should not be in write_2Dmap_PNG_dislin"
@@ -290,11 +279,11 @@
         ymax = real(maxval(y_cc_pd(1:ny)),kind=plflt)
         stop 5
       endif
-      call citylist(0,real(xmin,kind=8),real(xmax,kind=8),&
-                    real(ymin,kind=8),real(ymax,kind=8),&
-                    ncities,                            &
-                    lon_cities,lat_cities,&
-                    name_cities)
+      call citylist(0,real(xmin,kind=ip),real(xmax,kind=ip),&
+                      real(ymin,kind=ip),real(ymax,kind=ip),&
+                      ncities,                            &
+                      lon_cities,lat_cities,&
+                      name_cities)
       allocate(x(nx))
       allocate(y(ny))
       allocate(var(nx,ny))
@@ -402,7 +391,7 @@
         box_patterns(i)   = 3
         box_scales(i)     = 0.8_plflt
         box_line_widths(i)= 1
-        if(abs(ContourLev(i)).lt.0.01_8.or.abs(ContourLev(i)).ge.1000.0_8)then
+        if(abs(ContourLev(i)).lt.0.01_ip.or.abs(ContourLev(i)).ge.1000.0_ip)then
           write( text(i), '(e7.2)' ) real(ContourLev(i),kind=4)
         else
           write( text(i), '(f7.2)' ) real(ContourLev(i),kind=4)
@@ -422,7 +411,9 @@
         text_justification = 0.0_plflt
         symbols(i)        = '*'
       enddo
-      call pllegend( legend_width, legend_height, &  ! there are output vars
+      call pllegend(    &
+          legend_width, &  ! these are output vars
+          legend_height,&  ! these are output vars
           opt,         & ! int: controls overall legend
           pos_opt,     & ! int: controls legend position
           x_offset,    & ! flt: legend offset
@@ -431,7 +422,8 @@
           bg_color,    & ! int: background color from cmap0
           bb_color,    & ! int: bounding box color from cmap0
           bb_style,    & ! int: bounding box line style
-          nrow,ncolumn,& ! int: rows and columns of legeng
+          nrow,ncolumn,& ! int: rows and columns of legend
+          !nConLev     ,&
           opt_array(1:nConLev), & ! int vec: 
           text_offset, & ! flt: Offset of the text area from the plot
           text_scale,  & ! flt: Character height scale
@@ -516,8 +508,6 @@
 
       subroutine write_2Dprof_PNG_plplot(vprof_ID)
 
-      use precis_param
-
       use global_param,  only : &
          KG_2_MG,KM3_2_M3
 
@@ -538,9 +528,6 @@
 
       use time_data,     only : &
          os_time_log,BaseYear,useLeap
-
-      use plplot
-      use iso_c_binding, only: c_ptr, c_loc, c_f_pointer
 
       implicit none
 
@@ -793,8 +780,6 @@
 
       subroutine write_DepPOI_TS_PNG_plplot(pt_indx)
 
-      use precis_param
-
       use Airports,      only : &
          Airport_Name,Airport_Thickness_TS
 
@@ -803,8 +788,6 @@
 
       use time_data,     only : &
          Simtime_in_hours
-
-      use plplot
 
       implicit none
 
@@ -897,3 +880,8 @@
       call plend
 
       end subroutine write_DepPOI_TS_PNG_plplot
+
+!##############################################################################
+
+      end module Ash3d_PostProc_plplot
+

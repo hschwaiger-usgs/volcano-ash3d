@@ -142,16 +142,18 @@
         ! VERB = 0 is for silent runs
 #ifdef VERBOSE_L0
       integer, parameter       :: VERB = 0
-#endif
-#ifdef VERBOSE_L1
+#elif VERBOSE_L1
+      integer, parameter       :: VERB = 1
+#elif VERBOSE_L2
+      integer, parameter       :: VERB = 2
+#elif VERBOSE_L3
+      integer, parameter       :: VERB = 3
+#else
+      ! default verbosity is 1
       integer, parameter       :: VERB = 1
 #endif
-#ifdef VERBOSE_L2
-      integer, parameter       :: VERB = 2
-#endif
-#ifdef VERBOSE_L3
-      integer, parameter       :: VERB = 3
-#endif
+
+
 
       integer   :: OS_TYPE                        ! 1=linux, 2=apple, 3=windows
       logical   :: IsLitEnd                       ! little-ndian-ness; set in Set_OS_Env

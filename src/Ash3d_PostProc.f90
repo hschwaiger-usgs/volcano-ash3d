@@ -32,6 +32,12 @@
 
       use Ash3d_Netcdf
 
+      use Ash3d_PostProc_plplot
+
+      use Ash3d_PostProc_dislin
+
+      use Ash3d_PostProc_gnuplot
+
       implicit none
 
       integer             :: nargs
@@ -60,7 +66,12 @@
         !  4 = GMT
       integer, parameter  :: Nplot_libs = 4
       logical,dimension(Nplot_libs) :: plotlib_avail
-      integer,dimension(Nplot_libs) :: plot_pref_map = (/1,2,3,4/) ! plot preference for maps
+                                                     !   -- First preference code 
+                                                     !   | - Second
+                                                     !   | | - Third
+                                                     !   | | | - Fourth
+                                                     !   V V V V
+      integer,dimension(Nplot_libs) :: plot_pref_map = (/2,2,3,4/) ! plot preference for maps
       integer,dimension(Nplot_libs) :: plot_pref_shp = (/3,1,2,4/) ! plot preference for contours
       integer,dimension(Nplot_libs) :: plot_pref_vpr = (/2,1,3,4/) ! plot preference for vert profs.
       integer,dimension(Nplot_libs) :: plot_pref_aTS = (/2,3,1,4/) ! plot preference for Airport TS
@@ -79,53 +90,6 @@
         end subroutine vprofilewriter
         subroutine vprofilecloser
         end subroutine vprofilecloser
-        subroutine write_2Dprof_PNG_dislin(vprof_ID)
-          integer, intent (in) :: vprof_ID
-        end subroutine write_2Dprof_PNG_dislin
-        subroutine write_2Dmap_PNG_dislin(nx,ny,iprod,itime,OutVar,writeContours)
-          integer,parameter  :: ip         = 8
-          integer      ,intent(in) :: nx
-          integer      ,intent(in) :: ny
-          integer      ,intent(in) :: iprod
-          integer      ,intent(in) :: itime
-          real(kind=ip),intent(in) :: OutVar(nx,ny)
-          logical      ,intent(in) :: writeContours
-        end subroutine write_2Dmap_PNG_dislin
-
-        subroutine write_2Dprof_PNG_plplot(vprof_ID)
-          integer, intent (in) :: vprof_ID
-        end subroutine write_2Dprof_PNG_plplot
-        subroutine write_2Dmap_PNG_plplot(nx,ny,iprod,itime,OutVar,writeContours)
-          integer,parameter  :: ip         = 8
-          integer      ,intent(in) :: nx
-          integer      ,intent(in) :: ny
-          integer      ,intent(in) :: iprod
-          integer      ,intent(in) :: itime
-          real(kind=ip),intent(in) :: OutVar(nx,ny)
-          logical      ,intent(in) :: writeContours
-        end subroutine write_2Dmap_PNG_plplot
-
-        subroutine write_2Dprof_PNG_gnuplot(vprof_ID)
-          integer, intent (in) :: vprof_ID
-        end subroutine write_2Dprof_PNG_gnuplot
-        subroutine write_2Dmap_PNG_gnuplot(nx,ny,iprod,itime,OutVar,writeContours)
-          integer,parameter  :: ip         = 8
-          integer      ,intent(in) :: nx
-          integer      ,intent(in) :: ny
-          integer      ,intent(in) :: iprod
-          integer      ,intent(in) :: itime
-          real(kind=ip),intent(in) :: OutVar(nx,ny)
-          logical      ,intent(in) :: writeContours
-        end subroutine write_2Dmap_PNG_gnuplot
-        subroutine write_2D_ASCII(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
-          integer,parameter  :: ip         = 8
-          integer          ,intent(in) :: nx
-          integer          ,intent(in) :: ny
-          real(kind=ip)    ,intent(in) :: OutVar(nx,ny)
-          logical          ,intent(in) :: VarMask(nx,ny)
-          character(len=6) ,intent(in) :: Fill_Value
-          character(len=20),intent(in) :: filename_root
-        end subroutine write_2D_ASCII
         subroutine write_2D_Binary(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
           integer,parameter  :: ip         = 8
           integer          ,intent(in) :: nx
@@ -737,6 +701,9 @@
         icase = 0
         do ii=1,Nplot_libs
           ! Check each preference in series and see if the library is available
+
+          write(*,*)"HFS Double-check this!!!!"
+
           if(plotlib_avail(plot_pref_map(ii)))then
             icase = plot_pref_map(ii)
             exit

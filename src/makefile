@@ -31,9 +31,11 @@
 #
 #  SYSTEM specifies which compiler to use
 #    Current available options are:
-#      gfortran , ifort, g95
+#      gfortran , ifort
 #    This variable cannot be left blank
+#
 SYSTEM = gfortran
+#SYSTEM = ifort
 #
 #  RUN specifies which collection of compilation flags that should be run
 #    Current available options are:
@@ -426,9 +428,9 @@ Set_BC.o: $(ASH3dCCSRC)/Set_BC.f90 $(MFILE) Ash3d_VariableModules.o Tephra.o
 # Output
 Output_Vars.o: $(ASH3dCCSRC)/Output_Vars.f90 $(MFILE) Ash3d_VariableModules.o Tephra.o Airports.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Output_Vars.f90
-Output_Results.o: $(ASH3dCCSRC)/Output_Results.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Tephra.o write_ASCII.o write_KML.o
+Output_Results.o: $(ASH3dCCSRC)/Output_Results.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Tephra.o write_ASCII.o write_KML.o write_NETCDF.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Output_Results.f90
-write_ASCII.o: $(ASH3dCCSRC)/write_ASCII.f90 $(MFILE) Ash3d_VariableModules.o Airports.o Output_Vars.o Tephra.o
+write_ASCII.o: $(ASH3dCCSRC)/write_ASCII.f90 $(MFILE) Ash3d_VariableModules.o Airports.o Output_Vars.o Tephra.o Source.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_ASCII.f90
 write_BINARY.o: $(ASH3dCCSRC)/write_BINARY.f90 $(MFILE) Ash3d_VariableModules.o Airports.o Output_Vars.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_BINARY.f90

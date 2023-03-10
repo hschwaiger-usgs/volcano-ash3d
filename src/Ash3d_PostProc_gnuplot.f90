@@ -1,3 +1,9 @@
+      module Ash3d_PostProc_gnuplot
+
+      use precis_param
+
+      contains
+
 !##############################################################################
 !
 !    write_2Dmap_PNG_gnuplot
@@ -6,8 +12,6 @@
 !##############################################################################
 
       subroutine write_2Dmap_PNG_gnuplot(nx,ny,iprod,itime,OutVar,writeContours)
-
-      use precis_param
 
       use global_param,  only : &
          EPS_SMALL
@@ -57,10 +61,10 @@
       character (len=9) :: cio
       character (len=4) :: outfile_ext = '.png'
 
-      real(kind=8)  :: xmin
-      real(kind=8)  :: xmax
-      real(kind=8)  :: ymin
-      real(kind=8)  :: ymax
+      real(kind=ip)  :: xmin
+      real(kind=ip)  :: xmax
+      real(kind=ip)  :: ymin
+      real(kind=ip)  :: ymax
 
       character(len=10) :: dp_gnufile
       character(len=10) :: dp_outfile
@@ -70,8 +74,8 @@
       integer :: ioerr,ioerr2,iw,iwf,istat
 
       integer :: ncities
-      real(kind=8),dimension(:),allocatable     :: lon_cities
-      real(kind=8),dimension(:),allocatable     :: lat_cities
+      real(kind=ip),dimension(:),allocatable     :: lon_cities
+      real(kind=ip),dimension(:),allocatable     :: lat_cities
       character(len=26),dimension(:),allocatable :: name_cities
       logical           :: IsThere1,IsThere2
       character(len=80) :: linebuffer080
@@ -87,19 +91,6 @@
           integer                   :: byear
           logical                   :: useLeaps
         end function HS_xmltime
-!        subroutine citylist(outCode,lonLL,lonUR,latLL,latUR,ncities, &
-!                            CityLon_out,CityLat_out,CityName_out)
-!          integer      :: outCode
-!          real(kind=8) :: lonLL
-!          real(kind=8) :: lonUR
-!          real(kind=8) :: latLL
-!          real(kind=8) :: latUR
-!          integer      :: ncities
-!
-!          real(kind=8),dimension(ncities) :: CityLon_out
-!          real(kind=8),dimension(ncities) :: CityLat_out
-!          character(len=26),dimension(ncities) :: CityName_out
-!        end subroutine citylist
       END INTERFACE
 
       inquire(file="world_50m.txt",exist=IsThere1)
@@ -244,8 +235,8 @@
         nConLev = 8
         allocate(zrgb(nConLev,3))
         allocate(ContourLev(nConLev))
-        ContourLev = (/0.1_8, 0.3_8, 1.0_8, 3.0_8, &
-                10.0_8, 30.0_8, 100.0_8, 300.0_8/)
+        ContourLev = (/0.1_ip, 0.3_ip, 1.0_ip, 3.0_ip, &
+                10.0_ip, 30.0_ip, 100.0_ip, 300.0_ip/)
       elseif(iprod.eq.16)then   ! profile plots
         write(*,*)"ERROR: No map PNG output option for vertical profile data."
         write(*,*)"       Should not be in write_2Dmap_PNG_dislin"
@@ -264,8 +255,8 @@
         allocate(ContourDataY(nConLev,Contour_MaxCurves,Contour_MaxPoints))
         ContourDataNcurves(:)   = 0
         ContourDataNpoints(:,:) = 0
-        ContourDataX(:,:,:)     = 0.0_8
-        ContourDataY(:,:,:)     = 0.0_8
+        ContourDataX(:,:,:)     = 0.0_ip
+        ContourDataY(:,:,:)     = 0.0_ip
       else
         write(*,*)"Running Gnuplot to generate contour plot"
       endif
@@ -276,35 +267,35 @@
  53   format(a10)
 
       if(IsLatLon)then
-        xmin = real(minval(lon_cc_pd(1:nx)),kind=8)
+        xmin = minval(lon_cc_pd(1:nx))
         ! Make sure xmin is in the range -180->180
-        if (xmin.gt.180.0_8)then
-          xmin = real(minval(lon_cc_pd(1:nx)),kind=8)-360.0
-          xmax = real(maxval(lon_cc_pd(1:nx)),kind=8)-360.0
+        if (xmin.gt.180.0_ip)then
+          xmin = minval(lon_cc_pd(1:nx))-360.0_ip
+          xmax = maxval(lon_cc_pd(1:nx))-360.0_ip
         else
-          xmax = real(maxval(lon_cc_pd(1:nx)),kind=8)
+          xmax = maxval(lon_cc_pd(1:nx))
         endif
-        ymin = real(minval(lat_cc_pd(1:ny)),kind=8)
-        ymax = real(maxval(lat_cc_pd(1:ny)),kind=8)
+        ymin = minval(lat_cc_pd(1:ny))
+        ymax = maxval(lat_cc_pd(1:ny))
       else
-        xmin = real(minval(x_cc_pd(1:nx)),kind=8)
-        xmax = real(maxval(x_cc_pd(1:nx)),kind=8)
-        ymin = real(minval(y_cc_pd(1:ny)),kind=8)
-        ymax = real(maxval(y_cc_pd(1:ny)),kind=8)
+        xmin = minval(x_cc_pd(1:nx))
+        xmax = maxval(x_cc_pd(1:nx))
+        ymin = minval(y_cc_pd(1:ny))
+        ymax = maxval(y_cc_pd(1:ny))
         stop 5
       endif
       call citylist(2,xmin,xmax,ymin,ymax, &
-                    ncities,                        &
-                    lon_cities,lat_cities,          &
-                    name_cities)
+                      ncities,                        &
+                      lon_cities,lat_cities,          &
+                      name_cities)
 
-      if(lon_volcano.gt.xmax)lon_volcano=lon_volcano-360.0 
+      if(lon_volcano.gt.xmax)lon_volcano=lon_volcano-360.0_ip
 
       ! write out the data in a form that gnuplot can read
       open(54,file=dp_outfile,status='replace')
       do i = 1,nx
         do j = 1,ny
-          write(54,*)lon_cc_pd(i)-360.0_8,lat_cc_pd(j),OutVar(i,j)
+          write(54,*)lon_cc_pd(i)-360.0_ip,lat_cc_pd(j),OutVar(i,j)
         enddo
         write(54,*)" "
       enddo
@@ -488,8 +479,6 @@
 
       subroutine write_2Dprof_PNG_gnuplot(vprof_ID)
 
-      use precis_param
-
       use mesh,          only : &
          nzmax,z_cc_pd
 
@@ -605,8 +594,6 @@
 
       subroutine write_DepPOI_TS_PNG_gnuplot(pt_indx)
 
-      use precis_param
-
       use Output_Vars,   only : &
          THICKNESS_THRESH
 
@@ -623,7 +610,7 @@
 
       integer :: pt_indx,i
 
-      real(kind=8) :: ymaxpl
+      real(kind=dp) :: ymaxpl
       character(len=14) :: dp_gnufile
       character(len=14) :: dp_outfile
       character(len=14) :: dp_pngfile
@@ -649,15 +636,15 @@
       close(54)
 
       if(Airport_Thickness_TS(plot_index,nWriteTimes).lt.THICKNESS_THRESH)then
-        ymaxpl = 1.0
-      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.1.0)then
-        ymaxpl = 1.0
-      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.5.0)then
-        ymaxpl = 5.0
-      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.25.0)then
-        ymaxpl = 25.0
+        ymaxpl = 1.0_dp
+      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.1.0_dp)then
+        ymaxpl = 1.0_dp
+      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.5.0_dp)then
+        ymaxpl = 5.0_dp
+      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.25.0_dp)then
+        ymaxpl = 25.0_dp
       else
-        ymaxpl = 100.0
+        ymaxpl = 100.0_dp
       endif
 
       ! Set up to plot via gnuplot script
@@ -680,3 +667,8 @@
       call execute_command_line(gnucom)
 
       end subroutine write_DepPOI_TS_PNG_gnuplot
+
+!##############################################################################
+
+      end module Ash3d_PostProc_gnuplot
+

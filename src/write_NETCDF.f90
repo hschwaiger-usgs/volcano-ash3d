@@ -276,7 +276,6 @@
       dim_names(11) = "tn" ! time (native)
       dim_lnames(11)= "Time native"
 
-      
       var_lnames(8) = "Wind velocity (x)"
       var_lnames(9) = "Wind velocity (y)"
       var_lnames(10) = "Wind velocity (z)"
@@ -323,7 +322,9 @@
       linebuffer130 = trim(nf90_inq_libvers())
       read(linebuffer130,'(i1,a1,i1)')NCversion,dumchar,NCsubversion
       write(global_info,*)"Netcdf library version = ",NCversion
-      !NCversion = 3
+#ifdef NC3
+      NCversion = 3
+#endif
       if(NCversion.eq.4)then
 #ifndef NC3
         nSTAT = nf90_create(outfile,nf90_netcdf4,ncid,           &
@@ -528,16 +529,11 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_dim pt:")
       endif
 
-!      !if(NCversion.eq.4)then
-!        ! pr
-        if (Write_PR_Data)then
-          nSTAT = nf90_def_dim(ncid,dim_names(10),nvprofiles,pr_dim_id)
-          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_dim pr:")
-        endif
-!        ! tn
-!        nSTAT = nf90_def_dim(ncid,dim_names(11),nf90_unlimited,tn_dim_id)
-!        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_dim tn:")
-!      !endif
+       ! pr
+      if (Write_PR_Data)then
+        nSTAT = nf90_def_dim(ncid,dim_names(10),nvprofiles,pr_dim_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_dim pr:")
+      endif
 
       ! Define coordinate variables
         ! X,Y,Z,time,bn,er,wf,sl,pt
@@ -2020,7 +2016,6 @@
         deallocate(dum1dint_out)
       endif
 
-!      if(NCversion.eq.4.and.Write_PR_Data)then
       if(Write_PR_Data)then
           ! PR
         if(VERB.gt.1)write(global_info,*)"     Fill PR"
@@ -2033,11 +2028,6 @@
         nSTAT=nf90_put_var(ncid,pr_var_id,dum1dint_out,(/1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var pr")
         deallocate(dum1dint_out)
-!          ! TN
-!        if(VERB.gt.1)write(global_info,*)"     Fill TN"
-!        dumscal_out = real(time,kind=op)
-!        nSTAT=nf90_put_var(ncid,tn_var_id,dumscal_out,(/1/))
-!        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var tn")
       endif
 
       !   End of filling dimension variables
@@ -3284,6 +3274,7 @@
          CLOUDCON_GRID_THRESH,CLOUDCON_THRESH,THICKNESS_THRESH, &
          CLOUDLOAD_THRESH,DBZ_THRESH,DEPO_THRESH,DEPRATE_THRESH,ashcon_tot, &
            dbZCalculator, &
+           Allocate_NTime, &
            Allocate_Profile, &
            Set_OutVar_ContourLevel
 
@@ -3310,7 +3301,11 @@
       logical,save :: first_time = .true.
       integer :: nSTAT
       integer :: it,i,j,n
+      integer :: var_xtype
+      integer :: fop  ! output precision used for Ash3d output file being read in (4 or 8)
+      character(len=NF90_MAX_NAME)  :: invar
       real(kind=op) :: dumscal_out
+      real(kind=sp), dimension(:),allocatable :: dum1d_sp
       real(kind=dp), dimension(:),allocatable :: dum1d_dp
       character(len=32)              :: time_units
       integer           :: iendstr
@@ -3371,16 +3366,37 @@
           ! Get variable id for this dimension
           nSTAT = nf90_inq_varid(ncid,"lon",x_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid x")
+          nSTAT = nf90_inquire_variable(ncid, x_var_id, invar, xtype = var_xtype)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inquire_variable x")
+          if(var_xtype.eq.NF90_FLOAT)then
+            fop = 4
+          elseif(var_xtype.eq.NF90_DOUBLE)then
+            fop = 8
+          else
+            write(*,*)"var type for x is: ",var_xtype
+            write(*,*)"Expecting either NF90_FLOAT or NF90_DOUBLE"
+            stop 1
+          endif
           if(.not.allocated(lon_cc_pd))then
             nxmax = x_len
             allocate(lon_cc_pd(-1:nxmax+2))
-            allocate(dum1d_out(1:nxmax))
-            nSTAT=nf90_get_var(ncid,x_var_id,dum1d_out,  &
-                     start = (/1/),       &
-                     count = (/x_len/))
-            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var x")
-            lon_cc_pd(1:nxmax) = real(dum1d_out(1:nxmax),kind=ip)
-            deallocate(dum1d_out)
+            if(fop.eq.4)then
+              allocate(dum1d_sp(1:nxmax))
+              nSTAT=nf90_get_var(ncid,x_var_id,dum1d_sp,  &
+                       start = (/1/),       &
+                       count = (/x_len/))
+              if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var x")
+              lon_cc_pd(1:nxmax) = real(dum1d_sp(1:nxmax),kind=ip)
+              deallocate(dum1d_sp)
+            else
+              allocate(dum1d_dp(1:nxmax))
+              nSTAT=nf90_get_var(ncid,x_var_id,dum1d_dp,  &
+                       start = (/1/),       &
+                       count = (/x_len/))
+              if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var x")
+              lon_cc_pd(1:nxmax) = real(dum1d_dp(1:nxmax),kind=ip)
+              deallocate(dum1d_dp)
+            endif
           else
             write(*,*)"ERROR: lon_cc_pd already allocated"
           endif
@@ -3389,16 +3405,45 @@
           ! Get variable id for this dimension
           nSTAT = nf90_inq_varid(ncid,"x",x_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid x")
+          nSTAT = nf90_inquire_variable(ncid, x_var_id, invar, xtype = var_xtype)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inquire_variable x")
+          if(var_xtype.eq.NF90_FLOAT)then
+            fop = 4
+          elseif(var_xtype.eq.NF90_DOUBLE)then
+            fop = 8
+          else
+            write(*,*)"var type for x is: ",var_xtype
+            write(*,*)"Expecting either NF90_FLOAT or NF90_DOUBLE"
+            stop 1
+          endif
+          if(fop.ne.op)then
+            ! Until we check all input variables, force a hard stop if we have
+            ! a mis-match in precision
+            write(*,*)"ERROR: The default real for this file is NF90_DOUBLE"
+            write(*,*)"       but this post-processing program expects op=NF90_FLOAT"
+            write(*,*)"       Please recompile with op=8"
+            stop 1
+          endif
           if(.not.allocated(x_cc_pd))then
             nxmax = x_len
             allocate(x_cc_pd(-1:nxmax+2))
-            allocate(dum1d_out(1:nxmax))
-            nSTAT=nf90_get_var(ncid,x_var_id,dum1d_out,  &
-                     start = (/1/),       &
-                     count = (/x_len/))
-            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var x")
-            x_cc_pd(1:nxmax) = real(dum1d_out(1:nxmax),kind=ip)
-            deallocate(dum1d_out)
+            if(fop.eq.4)then
+              allocate(dum1d_sp(1:nxmax))
+              nSTAT=nf90_get_var(ncid,x_var_id,dum1d_sp,  &
+                       start = (/1/),       &
+                       count = (/x_len/))
+              if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var x")
+              x_cc_pd(1:nxmax) = real(dum1d_sp(1:nxmax),kind=ip)
+              deallocate(dum1d_sp)
+            else
+              allocate(dum1d_dp(1:nxmax))
+              nSTAT=nf90_get_var(ncid,x_var_id,dum1d_dp,  &
+                       start = (/1/),       &
+                       count = (/x_len/))
+              if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var x")
+              x_cc_pd(1:nxmax) = real(dum1d_dp(1:nxmax),kind=ip)
+              deallocate(dum1d_dp)
+            endif
           else
             write(*,*)"ERROR: x_cc_pd already allocated"
           endif
@@ -3418,13 +3463,24 @@
           if(.not.allocated(lat_cc_pd))then
             nymax = y_len
             allocate(lat_cc_pd(-1:nymax+2))
-            allocate(dum1d_out(1:nymax))
-            nSTAT=nf90_get_var(ncid,y_var_id,dum1d_out,  &
-                     start = (/1/),       &
-                     count = (/y_len/))
-            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var y")
-            lat_cc_pd(1:nymax) = real(dum1d_out(1:nymax),kind=ip)
-            deallocate(dum1d_out)
+            ! Assume we know fop already from x above
+            if(fop.eq.4)then
+              allocate(dum1d_sp(1:nymax))
+              nSTAT=nf90_get_var(ncid,y_var_id,dum1d_sp,  &
+                       start = (/1/),       &
+                       count = (/y_len/))
+              if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var y")
+              lat_cc_pd(1:nymax) = real(dum1d_sp(1:nymax),kind=ip)
+              deallocate(dum1d_sp)
+            else
+              allocate(dum1d_dp(1:nymax))
+              nSTAT=nf90_get_var(ncid,y_var_id,dum1d_dp,  &
+                       start = (/1/),       &
+                       count = (/y_len/))
+              if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var y")
+              lat_cc_pd(1:nymax) = real(dum1d_dp(1:nymax),kind=ip)
+              deallocate(dum1d_dp)
+            endif
           else
             write(*,*)"ERROR: lat_cc_pd already allocated"
           endif
@@ -3440,13 +3496,24 @@
           if(.not.allocated(y_cc_pd))then
             nymax = y_len
             allocate(y_cc_pd(-1:nymax+2))
-            allocate(dum1d_out(1:nymax))
-            nSTAT=nf90_get_var(ncid,y_var_id,dum1d_out,  &
-                     start = (/1/),       &
-                     count = (/y_len/))
-            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var y")
-            y_cc_pd(1:nymax) = real(dum1d_out(1:nymax),kind=ip)
-            deallocate(dum1d_out)
+            ! Assume we know fop already from x above
+            if(fop.eq.4)then
+              allocate(dum1d_sp(1:nymax))
+              nSTAT=nf90_get_var(ncid,y_var_id,dum1d_sp,  &
+                       start = (/1/),       &
+                       count = (/y_len/))
+              if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var y")
+              y_cc_pd(1:nymax) = real(dum1d_sp(1:nymax),kind=ip)
+              deallocate(dum1d_sp)
+            else
+              allocate(dum1d_dp(1:nymax))
+              nSTAT=nf90_get_var(ncid,y_var_id,dum1d_dp,  &
+                       start = (/1/),       &
+                       count = (/y_len/))
+              if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var y")
+              y_cc_pd(1:nymax) = real(dum1d_dp(1:nymax),kind=ip)
+              deallocate(dum1d_dp)
+            endif
           else
             write(*,*)"ERROR: lat_cc_pd already allocated"
           endif
@@ -3497,13 +3564,24 @@
         write(global_info,2501)"  z",z_len
         nzmax = z_len 
         allocate(z_cc_pd(-1:nzmax+2))
-        allocate(dum1d_out(1:nzmax))
-        nSTAT=nf90_get_var(ncid,z_var_id,dum1d_out,  &
-                     start = (/1/),       &
-                     count = (/z_len/))
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var z")
-        z_cc_pd(1:nzmax) = real(dum1d_out(1:nzmax),kind=ip)
-        deallocate(dum1d_out)
+        ! Assume we know fop already from x above
+        if(fop.eq.4)then
+          allocate(dum1d_sp(1:nzmax))
+          nSTAT=nf90_get_var(ncid,z_var_id,dum1d_sp,  &
+                   start = (/1/),       &
+                   count = (/z_len/))
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var z")
+          z_cc_pd(1:nzmax) = real(dum1d_sp(1:nzmax),kind=ip)
+          deallocate(dum1d_sp)
+        else
+          allocate(dum1d_dp(1:nzmax))
+          nSTAT=nf90_get_var(ncid,z_var_id,dum1d_dp,  &
+                   start = (/1/),       &
+                   count = (/z_len/))
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var z")
+          z_cc_pd(1:nzmax) = real(dum1d_dp(1:nzmax),kind=ip)
+          deallocate(dum1d_dp)
+        endif
         dz_const  = z_cc_pd(2)-z_cc_pd(1)
         z_cc_pd(0)  = z_cc_pd(1) - dz_const
         z_cc_pd(-1) = z_cc_pd(0) - dz_const
@@ -3575,6 +3653,7 @@
           if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid tn")
           write(global_info,2501)" tn",tn_len
           ntmax = tn_len
+          call Allocate_NTime(ntmax)
         endif
 
         !!!!!!  ER !!!!!!!!!!!
@@ -3709,6 +3788,7 @@
 
         nWriteTimes = t_len
         if(.not.allocated(WriteTimes)) allocate(WriteTimes(nWriteTimes))
+        ! Time is always writen with dp
         allocate(dum1d_dp(1:nWriteTimes))
         nSTAT = nf90_get_var(ncid,t_var_id,dum1d_dp)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var t")
@@ -3727,7 +3807,6 @@
         SimStartHour = real(HS_hours_since_baseyear(itstart_year,itstart_month, &
                                itstart_day,real(filestart_hour,kind=8),&
                                BaseYear,useLeap),kind=4)
-
         if(Write_PT_Data)then
           ! Allocate and fill Airport variables
           call Allocate_Airports(nairports,nWriteTimes)
@@ -3753,32 +3832,49 @@
           ! Read Airport names
           nSTAT = nf90_get_var(ncid,pt_name_var_id,Airport_Name)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_name:")
-
-          allocate(dum1d_dp(1:nairports))
-          nSTAT = nf90_get_var(ncid,pt_x_var_id,dum1d_dp)
-          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_x:")
-          Airport_Longitude(:) = real(dum1d_dp(1:nairports),kind=ip)
-
-          nSTAT = nf90_get_var(ncid,pt_y_var_id,dum1d_dp)
-          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_y:")
-          Airport_Latitude(:) = real(dum1d_dp(1:nairports),kind=ip)
-
-          nSTAT = nf90_get_var(ncid,pt_asharrival_var_id,dum1d_dp)
-          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_asharrival:")
-          Airport_AshArrivalTime(:) = real(dum1d_dp(1:nairports),kind=ip)
-
-          nSTAT = nf90_get_var(ncid,pt_ashduration_var_id,dum1d_dp)
-          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_depodur:")
-          Airport_AshDuration(:) = real(dum1d_dp(1:nairports),kind=ip)
-
-          nSTAT = nf90_get_var(ncid,pt_cloudarrival_var_id,dum1d_dp)
-          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_cloudarrival:")
-          Airport_CloudArrivalTime(:) = real(dum1d_dp(1:nairports),kind=ip)
-
-          nSTAT = nf90_get_var(ncid,pt_cloudduration_var_id,dum1d_dp)
-          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_cloud_dur:")
-          Airport_CloudDuration(:) = real(dum1d_dp(1:nairports),kind=ip)
-          deallocate(dum1d_dp)
+          if(fop.eq.4)then
+            allocate(dum1d_sp(1:nairports))
+            nSTAT = nf90_get_var(ncid,pt_x_var_id,dum1d_sp)
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_x:")
+            Airport_Longitude(:) = real(dum1d_sp(1:nairports),kind=ip)
+            nSTAT = nf90_get_var(ncid,pt_y_var_id,dum1d_sp)
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_y:")
+            Airport_Latitude(:) = real(dum1d_sp(1:nairports),kind=ip)
+            nSTAT = nf90_get_var(ncid,pt_asharrival_var_id,dum1d_sp)
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_asharrival:")
+            Airport_AshArrivalTime(:) = real(dum1d_sp(1:nairports),kind=ip)
+            nSTAT = nf90_get_var(ncid,pt_ashduration_var_id,dum1d_sp)
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_depodur:")
+            Airport_AshDuration(:) = real(dum1d_sp(1:nairports),kind=ip)
+            nSTAT = nf90_get_var(ncid,pt_cloudarrival_var_id,dum1d_sp)
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_cloudarrival:")
+            Airport_CloudArrivalTime(:) = real(dum1d_sp(1:nairports),kind=ip)
+            nSTAT = nf90_get_var(ncid,pt_cloudduration_var_id,dum1d_sp)
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_cloud_dur:")
+            Airport_CloudDuration(:) = real(dum1d_sp(1:nairports),kind=ip)
+            deallocate(dum1d_sp)
+          else
+            allocate(dum1d_dp(1:nairports))
+            nSTAT = nf90_get_var(ncid,pt_x_var_id,dum1d_dp)
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_x:")
+            Airport_Longitude(:) = real(dum1d_dp(1:nairports),kind=ip)
+            nSTAT = nf90_get_var(ncid,pt_y_var_id,dum1d_dp)
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_y:")
+            Airport_Latitude(:) = real(dum1d_dp(1:nairports),kind=ip)
+            nSTAT = nf90_get_var(ncid,pt_asharrival_var_id,dum1d_dp)
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_asharrival:")
+            Airport_AshArrivalTime(:) = real(dum1d_dp(1:nairports),kind=ip)
+            nSTAT = nf90_get_var(ncid,pt_ashduration_var_id,dum1d_dp)
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_depodur:")
+            Airport_AshDuration(:) = real(dum1d_dp(1:nairports),kind=ip)
+            nSTAT = nf90_get_var(ncid,pt_cloudarrival_var_id,dum1d_dp)
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_cloudarrival:")
+            Airport_CloudArrivalTime(:) = real(dum1d_dp(1:nairports),kind=ip)
+            nSTAT = nf90_get_var(ncid,pt_cloudduration_var_id,dum1d_dp)
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pt_cloud_dur:")
+            Airport_CloudDuration(:) = real(dum1d_dp(1:nairports),kind=ip)
+            deallocate(dum1d_dp)
+          endif
 
           do i=1,nairports
             Airport_i(i) = int((Airport_Longitude(i)-lonLL)/de) +1
@@ -3793,6 +3889,13 @@
           enddo
 
         endif
+
+        ! Time is always dp
+        allocate(dum1d_dp(1:tn_len))
+        nSTAT = nf90_get_var(ncid,tn_var_id,dum1d_dp)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var tn")
+        time_native(1:tn_len) = real(dum1d_dp(1:tn_len),kind=ip)
+        deallocate(dum1d_dp)
 
         if(Write_PR_Data)then
           ! pr_x
@@ -3814,22 +3917,27 @@
           allocate(y_vprofile(nvprofiles))
           allocate(Site_vprofile(nvprofiles))
 
-          allocate(dum1d_dp(1:tn_len))
-          nSTAT = nf90_get_var(ncid,tn_var_id,dum1d_dp)
-          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var tn")
-          time_native(1:tn_len) = real(dum1d_dp(1:tn_len),kind=ip)
-          deallocate(dum1d_dp)
-
-          ! Read x,y at profile point locations
-          allocate(dum1d_dp(1:nvprofiles))
-          nSTAT = nf90_get_var(ncid,pr_x_var_id,dum1d_dp)
-          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pr_x:")
-          x_vprofile(:) = real(dum1d_dp(1:nvprofiles),kind=ip)
-
-          nSTAT = nf90_get_var(ncid,pr_y_var_id,dum1d_dp)
-          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pr_y:")
-          y_vprofile(:) = real(dum1d_dp(1:nvprofiles),kind=ip)
-          deallocate(dum1d_dp)
+          if(fop.eq.4)then
+            ! Read x,y at profile point locations
+            allocate(dum1d_sp(1:nvprofiles))
+            nSTAT = nf90_get_var(ncid,pr_x_var_id,dum1d_sp)
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pr_x:")
+            x_vprofile(:) = real(dum1d_sp(1:nvprofiles),kind=ip)
+            nSTAT = nf90_get_var(ncid,pr_y_var_id,dum1d_sp)
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pr_y:")
+            y_vprofile(:) = real(dum1d_sp(1:nvprofiles),kind=ip)
+            deallocate(dum1d_sp)
+          else
+            ! Read x,y at profile point locations
+            allocate(dum1d_dp(1:nvprofiles))
+            nSTAT = nf90_get_var(ncid,pr_x_var_id,dum1d_dp)
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pr_x:")
+            x_vprofile(:) = real(dum1d_dp(1:nvprofiles),kind=ip)
+            nSTAT = nf90_get_var(ncid,pr_y_var_id,dum1d_dp)
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pr_y:")
+            y_vprofile(:) = real(dum1d_dp(1:nvprofiles),kind=ip)
+            deallocate(dum1d_dp)
+          endif
 
           ! Read vprofile names
           nSTAT = nf90_get_var(ncid,pr_name_var_id,Site_vprofile)
@@ -3841,7 +3949,6 @@
           pr_ash(:,:,:) = real(dum3d_out(:,:,:),kind=ip)
           deallocate(dum3d_out)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pr_ash:")
-
         endif
 
         ! Now populate a few of the header values needed for
@@ -3890,17 +3997,27 @@
         endif
         nSTAT = nf90_inq_varid(ncid,"er_stime",er_stime_var_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid er_stime")
-        allocate(dum1d_dp(1:neruptions))
-        nSTAT=nf90_get_var(ncid,er_stime_var_id,dum1d_dp,(/1/))
-        e_StartTime = real(dum1d_dp,kind=ip)
+        if(fop.eq.4)then
+          allocate(dum1d_sp(1:neruptions))
+          nSTAT=nf90_get_var(ncid,er_stime_var_id,dum1d_sp,(/1/))
+          e_StartTime = real(dum1d_sp,kind=ip)
+          nSTAT = nf90_inq_varid(ncid,"er_duration",er_duration_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid er_duration")
+          nSTAT=nf90_get_var(ncid,er_duration_var_id,dum1d_sp,(/1/))
+          e_Duration = real(dum1d_sp,kind=ip)
+          deallocate(dum1d_sp)
+        else
+          allocate(dum1d_dp(1:neruptions))
+          nSTAT=nf90_get_var(ncid,er_stime_var_id,dum1d_dp,(/1/))
+          e_StartTime = real(dum1d_dp,kind=ip)
+          nSTAT = nf90_inq_varid(ncid,"er_duration",er_duration_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid er_duration")
+          nSTAT=nf90_get_var(ncid,er_duration_var_id,dum1d_dp,(/1/))
+          e_Duration = real(dum1d_dp,kind=ip)
+          deallocate(dum1d_dp)
+        endif
         SimStartHour = e_StartTime(1)
         e_StartTime(:) = e_StartTime(:) - SimStartHour
-
-        nSTAT = nf90_inq_varid(ncid,"er_duration",er_duration_var_id)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid er_duration")
-        nSTAT=nf90_get_var(ncid,er_duration_var_id,dum1d_dp,(/1/))
-        e_Duration = real(dum1d_dp,kind=ip)
-        deallocate(dum1d_dp)
 
         allocate(dum1d_out(1:neruptions))
         nSTAT = nf90_inq_varid(ncid,"er_plumeheight",er_plumeheight_var_id)

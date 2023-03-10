@@ -25,7 +25,7 @@
 
       use time_data,       only : &
 #ifdef FAST_DT
-         Simtime_in_hours,time, &
+         Simtime_in_hours,time,dt, &
 #endif
          SimStartHour,dt_meso_last,dt_meso_next
 
@@ -54,10 +54,10 @@
          MR_MetStep_Hour_since_baseyear,MR_MetStep_Interval,&
          MR_dum3d_compH,MR_dum3d_metP,Met_var_GRIB_names,&
            MR_Read_HGT_arrays,&
-           MR_Read_3d_Met_Variable_to_CompGrid,&
+           MR_Read_3d_Met_Variable_to_CompH,&
            MR_Rotate_UV_GR2ER_Met,&
            MR_Rotate_UV_ER2GR_Comp,&
-           MR_Regrid_MetP_to_CompGrid,&
+           MR_Regrid_MetP_to_CompH,&
            MR_Read_3d_MetP_Variable
  
       implicit none
@@ -75,7 +75,6 @@
       real(kind=dp):: HoursIntoInterval ! hours since the last windfile timestep
       real(kind=ip) :: TimeNow_fromRefTime
       ! Fclaw
-      !logical, intent(in) :: first_time
       !integer, intent(inout) :: Meso_toggle
 
       INTERFACE
@@ -84,7 +83,7 @@
         end subroutine umbrella_winds
         subroutine Adjust_DT(mesostep)
           logical, intent(in), optional :: mesostep
-        end subroutine
+        end subroutine Adjust_DT
       END INTERFACE
 
       TimeNow_fromRefTime = SimStartHour+TimeNow  ! hours since reference time (1-1-1900)
@@ -93,6 +92,9 @@
       ! initilize velocities on the computational grid and to determine the
       ! start time relative to the MetSteps
       if(first_time)then
+        vx_meso_last_step_sp = 0.0_sp
+        vy_meso_last_step_sp = 0.0_sp
+        vz_meso_last_step_sp = 0.0_sp
         Meso_toggle = 0
         ! Find the first MetStep that we need
         do i = 1,MR_MetSteps_Total-1
@@ -118,12 +120,12 @@
 
            ! Fill array from the step prior/equal to current time
           ivar = 2 ! U winds
-          call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now,.true.)
+          call MR_Read_3d_Met_Variable_to_CompH(ivar,MR_iMetStep_Now,.true.)
             vx_meso_1_sp = MR_dum3d_compH
             vx_meso_next_step_sp = vx_meso_1_sp
 
           ivar = 3 ! V winds 
-          call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now,.true.)
+          call MR_Read_3d_Met_Variable_to_CompH(ivar,MR_iMetStep_Now,.true.)
             vy_meso_1_sp = MR_dum3d_compH
             vy_meso_next_step_sp = vy_meso_1_sp
         else
@@ -141,10 +143,10 @@
             else
               ! if the projected data is already Earth-relative (NARR), then just read it
               ivar = 3 ! Vy
-              call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now)
+              call MR_Read_3d_Met_Variable_to_CompH(ivar,MR_iMetStep_Now)
               MR_dum3d_compH_2 = MR_dum3d_compH
               ivar = 2 ! Vx
-              call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now)
+              call MR_Read_3d_Met_Variable_to_CompH(ivar,MR_iMetStep_Now)
             endif
           elseif(Map_Case.eq.5)then
             ! Both comp and met grids are projected, but with different projections
@@ -172,7 +174,7 @@
               call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now)
               MR_dum3d_MetP = MR_dum3d_MetP/      &
                real((-AirDens_meso_next_step_MetP_sp*GRAV),kind=sp)
-              call MR_Regrid_MetP_to_CompGrid(MR_iMetStep_Now)
+              call MR_Regrid_MetP_to_CompH(MR_iMetStep_Now)
             else
               write(*,*)"Tried to read variable, but its not available: ",&
                         Met_var_GRIB_names(ivar)
@@ -183,7 +185,7 @@
           else
             ivar = 4 ! W winds
             if(Met_var_IsAvailable(ivar))then
-              call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now)
+              call MR_Read_3d_Met_Variable_to_CompH(ivar,MR_iMetStep_Now)
             else
               write(*,*)"Tried to read variable, but its not available: ",&
                         Met_var_GRIB_names(ivar)
@@ -193,7 +195,8 @@
             vz_meso_next_step_sp = vz_meso_1_sp
           endif
         else
-          vz_meso_next_step_sp = 0.0_sp
+          vz_meso_1_sp = 0.0_sp
+          vz_meso_next_step_sp = vz_meso_1_sp
         endif
 
         if(useCalcFallVel)then
@@ -259,7 +262,7 @@
 
            ! Fill array from the step prior/equal to current time
           ivar = 2 ! U winds
-          call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now+1,.true.)
+          call MR_Read_3d_Met_Variable_to_CompH(ivar,MR_iMetStep_Now+1,.true.)
           if(Meso_toggle.eq.0)then
             vx_meso_1_sp = MR_dum3d_compH
             vx_meso_next_step_sp = vx_meso_1_sp
@@ -269,7 +272,7 @@
           endif
 
           ivar = 3 ! V winds 
-          call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now+1,.true.)
+          call MR_Read_3d_Met_Variable_to_CompH(ivar,MR_iMetStep_Now+1,.true.)
           if(Meso_toggle.eq.0)then
             vy_meso_1_sp = MR_dum3d_compH
             vy_meso_next_step_sp = vy_meso_1_sp
@@ -292,10 +295,10 @@
             else
               ! if the projected data is already Earth-relative (NARR), then just read it
               ivar = 3 ! Vy
-              call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now+1)
+              call MR_Read_3d_Met_Variable_to_CompH(ivar,MR_iMetStep_Now+1)
               MR_dum3d_compH_2 = MR_dum3d_compH
               ivar = 2 ! Vx
-              call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now+1)
+              call MR_Read_3d_Met_Variable_to_CompH(ivar,MR_iMetStep_Now+1)
             endif
           elseif(Map_Case.eq.5)then
             ! Both comp and met grids are projected, but with different projections
@@ -330,7 +333,7 @@
               call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now+1)
               MR_dum3d_MetP = MR_dum3d_MetP/                   &
                 real((-AirDens_meso_next_step_MetP_sp*GRAV),kind=sp)
-              call MR_Regrid_MetP_to_CompGrid(MR_iMetStep_Now+1)
+              call MR_Regrid_MetP_to_CompH(MR_iMetStep_Now+1)
             else
               write(global_error,*)"Tried to read variable, but its not available: ",&
                         Met_var_GRIB_names(ivar)
@@ -349,7 +352,7 @@
             ivar = 4 ! W winds
             if(Met_var_IsAvailable(ivar))then
               write(global_log,*)"Vz is calculated by PressVertVel/(dp/dz)"
-              call MR_Read_3d_Met_Variable_to_CompGrid(ivar,MR_iMetStep_Now+1)
+              call MR_Read_3d_Met_Variable_to_CompH(ivar,MR_iMetStep_Now+1)
             else
               write(global_error,*)"Tried to read variable, but its not available: ",&
                         Met_var_GRIB_names(ivar)

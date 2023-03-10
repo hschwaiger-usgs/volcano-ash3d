@@ -1,3 +1,13 @@
+      module Ash3d_PostProc_dislin
+
+      use precis_param
+
+      use dislin
+
+      integer,parameter :: DS = 8
+
+      contains
+
 !##############################################################################
 !
 !    write_2Dmap_PNG_dislin
@@ -6,8 +16,6 @@
 !##############################################################################
 
       subroutine write_2Dmap_PNG_dislin(nx,ny,iprod,itime,OutVar,writeContours)
-
-      use precis_param
 
       use mesh,          only : &
          x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd, &
@@ -37,8 +45,6 @@
 
       use citywriter
 
-      use dislin
-
       implicit none
 
       integer      ,intent(in) :: nx
@@ -48,15 +54,15 @@
       real(kind=ip),intent(in) :: OutVar(nx,ny)
       logical      ,intent(in) :: writeContours
 
-      integer,parameter :: DS = 8
+      !integer,parameter :: DS = 8
       
       integer :: i,j,k
       integer     , dimension(:,:),allocatable :: zrgb
       character(len=40) :: title_plot
       character(len=15) :: title_legend
       character(len=40) :: outfile_name
-      character (len=9) :: cio
-      character (len=4) :: outfile_ext = '.png'
+      character(len= 9) :: cio
+      character(len= 4) :: outfile_ext = '.png'
       integer :: ioerr,iw,iwf
 
       real(kind=ip)  :: xmin
@@ -66,24 +72,19 @@
 
       ! dislin stuff
       ! https://www.dislin.de/
-      CHARACTER (LEN=4) :: CFMT = "PNG "
-      CHARACTER(len=80) :: CBUF
+      character(len= 4) :: cfmt = "PNG "
+      character(len=80) :: cbuf
       integer :: nmaxln  ! number of characters in the longest line of text
       character(len=7) :: zlevlab
-      real(kind=DS) :: XPTS(Contour_MaxPoints)
-      real(kind=DS) :: YPTS(Contour_MaxPoints)
+      real(kind=DS) :: xpts(Contour_MaxPoints)
+      real(kind=DS) :: ypts(Contour_MaxPoints)
 
-      INTEGER :: IRAY(Contour_MaxCurves)
-      INTEGER :: NXP,NYP,nclr,NCURVS
+      integer :: iray(Contour_MaxCurves)
+      integer :: nxp,nyp,nclr,NCURVS
 
-      REAL(kind=DS) :: XP,YP
+      real(kind=DS) :: xp,yp
       real(kind=DS) :: xminDIS, xmaxDIS, yminDIS, ymaxDIS
       real(kind=DS) :: dx_map, dy_map, xgrid_1, ygrid_1
-      ! Hot colormap RGB's and breakpoints
-      !real(kind=4), dimension(4) :: cpt_break_hot = (/ 0.0_4, 0.38_4, 0.76_4, 1.0_4 /)
-      !real(kind=4), dimension(4) :: cpt_r_hot     = (/ 0.0_4, 1.0_4, 1.0_4, 1.0_4 /)
-      !real(kind=4), dimension(4) :: cpt_g_hot     = (/ 0.0_4, 0.0_4, 1.0_4, 1.0_4 /)
-      !real(kind=4), dimension(4) :: cpt_b_hot     = (/ 0.0_4, 0.0_4, 0.0_4, 0.9_4 /) ! hot actually ends in 1.0
       real(kind=DS) :: xr,xg,xb
 
       character(len=30) :: cstr_volcname
@@ -98,8 +99,8 @@
       logical :: UseShadedContours
 
       integer :: ncities
-      real(kind=DS),dimension(:),allocatable     :: lon_cities
-      real(kind=DS),dimension(:),allocatable     :: lat_cities
+      real(kind=ip),dimension(:),allocatable     :: lon_cities
+      real(kind=ip),dimension(:),allocatable     :: lat_cities
       character(len=26),dimension(:),allocatable :: name_cities
 
       INTERFACE
@@ -256,7 +257,7 @@
       endif
 
       if(writeContours)then
-        write(*,*)"Running Dislin to calculate contours lines"
+        !write(*,*)"Running Dislin to calculate contours lines"
         allocate(ContourDataNcurves(nConLev))
         allocate(ContourDataNpoints(nConLev,Contour_MaxCurves))
         allocate(ContourDataX(nConLev,Contour_MaxCurves,Contour_MaxPoints))
@@ -267,29 +268,29 @@
         ContourDataY(:,:,:)     = 0.0_ip
         do i=1,nConLev
           ! This part calculates the contours
-          XPTS(1:Contour_MaxPoints) = 0.0_DS
-          YPTS(1:Contour_MaxPoints) = 0.0_DS
-          IRAY(1:Contour_MaxCurves) = 0
+          xpts(1:Contour_MaxPoints) = 0.0_DS
+          ypts(1:Contour_MaxPoints) = 0.0_DS
+          iray(1:Contour_MaxCurves) = 0
           call conpts(real(lon_cc_pd(1:nx),kind=DS),nx,&  ! x coord and size
                       real(lat_cc_pd(1:ny),kind=DS),ny,&  ! y coord and size
                       real(OutVar(1:nx,1:ny),kind=DS), &  ! matrix with function values
                       real(ContourLev(i),kind=DS),     &  ! level to contour
-                      XPTS(1:Contour_MaxPoints),   &  ! x of contour (may have mul. curvex)
-                      YPTS(1:Contour_MaxPoints),   &  ! y of contour (may have mul. curves)
+                      xpts(1:Contour_MaxPoints),   &  ! x of contour (may have mul. curvex)
+                      ypts(1:Contour_MaxPoints),   &  ! y of contour (may have mul. curves)
                       Contour_MaxPoints,           &  ! max # of points for contour arrays
-                      IRAY(1:Contour_MaxCurves),   &  ! num of points for each contour
+                      iray(1:Contour_MaxCurves),   &  ! num of points for each contour
                       Contour_MaxCurves,           &  ! max number of curves
                       NCURVS)                         ! actual number of curves
 
           ContourDataNcurves(i)=NCURVS
           do j=1,NCURVS
-            ContourDataNpoints(i,j)=IRAY(j)
-            do k=1,IRAY(j)
-              ContourDataX(i,j,k) = real(XPTS(k),kind=ip)
-              ContourDataY(i,j,k) = real(YPTS(k),kind=ip)
+            ContourDataNpoints(i,j)=iray(j)
+            do k=1,iray(j)
+              ContourDataX(i,j,k) = real(xpts(k),kind=ip)
+              ContourDataY(i,j,k) = real(ypts(k),kind=ip)
             enddo
             ! These data could be plotted to produce the same plot as from contur
-            !call curvmp(XPTS,YPTS,IRAY(j))
+            !call curvmp(xpts,ypts,iray(j))
           enddo
         enddo
         ! Once we've loaded contours, we are all done here
@@ -297,8 +298,6 @@
       endif
 
       ! This is the section where we actually start plotting the map
-      write(*,*)"Running Dislin to generate contour plot"
-
       if(IsLatLon)then
         xmin = minval(lon_cc_pd(1:nx))
         xmax = maxval(lon_cc_pd(1:nx))
@@ -311,9 +310,10 @@
         ymax = maxval(y_cc_pd(1:ny))
         stop 5
       endif
-      call citylist(0,xmin,xmax,ymin,ymax, &
-                    ncities,                        &
-                    lon_cities,lat_cities,          &
+      call citylist(0,xmin,xmax,ymin,ymax,    &
+                    ncities,                  &
+                    lon_cities, &
+                    lat_cities, &
                     name_cities)
 
       dx_map = 10.0_DS
@@ -329,14 +329,12 @@
 
       !!!!!!!!!!!!!!!!!!!!!!!
       !  Dislin Level 0:  before initialization or after termination
-      write(*,*)"Dislin Level 0"
-      call metafl(CFMT)   ! set output driver/file-format (PNG); this is a 4-char string
+      call metafl(cfmt)   ! set output driver/file-format (PNG); this is a 4-char string
       call setpag('USAL') ! Set pagesize to US A Landscape (2790 x 2160)
       call setfil(trim(adjustl(outfile_name))) ! Set output filename
       call scrmod('REVERSE')  ! Default background is black; reverse to white
 
       !  Dislin Level 1:  after initialization or a call to ENDGRF
-      write(*,*)"Dislin Level 1"
       call disini()       ! initialize plot (set to level 1)
 
         ! Set the color table : SPEC,RAIN,GREY,TEMP
@@ -348,7 +346,6 @@
       call incfil('/opt/USGS/Ash3d/share/post_proc/USGSvid.png')
 
        ! setting of plot parameters
-      !call pagera()       ! plot a border around the page
       call triplx()  ! set font to triple stroke
       call axspos(500,1650)  ! determine the position of the axis system
       call axslen(2200,1400) ! defines the size of the axis system
@@ -368,39 +365,32 @@
       !  Dislin Level 2: after a call to GRAF, GRAFP or GRAFMP
         ! Now create graph and set to level 2
        !  The routine GRAFMP plots a geographical axis system.
-      write(*,*)"Dislin Level 2"
       call grafmp(xminDIS,xmaxDIS,xgrid_1,dx_map, &
                   yminDIS,ymaxDIS,ygrid_1,dy_map)
 
        ! set color of coastlines
-      !call color('GREEN')
        ! plots coastlines and lakes or political borders
       call world()
-      !call shdmap('GSHH')
-      write(*,*)"Dislin post world"
       ! Add cities
       do i=1,ncities
       !    These are the points
         call pos2pt(real(lon_cities(i),kind=DS),real(lat_cities(i),kind=DS),&
-                    XP,YP)
-        NXP=NINT(XP)
-        NYP=NINT(YP)
-        call symbol(21,NXP,NYP)
-      !    These are the city labels, offset in x
-        write(*,*)"Dislin city # ",i,ncities
-        call messag(adjustl(trim(name_cities(i))),NXP+30,NYP)
+                    xp,yp)
+        nxp=nint(xp)
+        nyp=nint(yp)
+        call symbol(21,nxp,nyp)
+        !    These are the city labels, offset in x
+        call messag(adjustl(trim(name_cities(i))),nxp+30,nyp)
       enddo
-      write(*,*)"Dislin post cities"
 
       ! Add volcano
       call pos2pt(real(lon_volcano,kind=DS),real(lat_volcano,kind=DS),&
-                  XP,YP)
-      NXP=NINT(XP)
-      NYP=NINT(YP)
-      call symbol(18,NXP,NYP)
+                  xp,yp)
+      nxp=nint(xp)
+      nyp=nint(yp)
+      call symbol(18,nxp,nyp)
 
       if(UseShadedContours)then
-        !call myvlt(xr,xg,xb,nrgb)
         call shdmod('UPPER', 'CELL') ! This suppresses colors in regions above/below the zlevels pro
         call conshd(real(lon_cc_pd(1:nx),kind=DS),nx,&
                     real(lat_cc_pd(1:ny),kind=DS),ny,&
@@ -413,7 +403,6 @@
           nclr = intrgb(xr,xg,xb)
 
           call setclr(nclr)
-
           call contur(real(lon_cc_pd(1:nx),kind=DS),nx,&
                       real(lat_cc_pd(1:ny),kind=DS),ny,&
                       real(OutVar(1:nx,1:ny),kind=DS), &
@@ -421,7 +410,6 @@
         enddo
       endif
 
-      write(*,*)"Dislin annotation"
        ! set color of grid lines
       call setrgb(0.0_DS, 0.0_DS, 0.0_DS)
        ! overlays an axis system with a longitude and latitude grid
@@ -430,7 +418,6 @@
       call title() ! Actually write the title to the file
 
       ! Now write the legend
-      write(*,*)"Dislin Legend"
       call height(25) ! Reset character height to something smaller
       nmaxln = 6 ! number of characters in the longest line of text
       call legini(cbuf,nConLev,nmaxln) ! Initialize legend
@@ -489,8 +476,6 @@
 
       subroutine write_2Dprof_PNG_dislin(vprof_ID)
 
-      use precis_param
-
       use mesh,          only : &
          nzmax,z_cc_pd
 
@@ -509,18 +494,15 @@
       use time_data,     only : &
          os_time_log,BaseYear,useLeap
 
-      use dislin
-
       implicit none
 
       integer, intent (in) :: vprof_ID
 
-      integer,parameter :: DS = 8
+      !integer,parameter :: DS = 8
 
       character(len=14) :: dp_pngfile
       character(len=26) :: coord_str
       character(len=76) :: title_str
-      !character(len=80) :: outstring
       integer :: k,i
       integer :: ioerr,iw,iwf
 
@@ -541,7 +523,7 @@
 
       ! dislin stuff
       ! https://www.dislin.de/
-      CHARACTER (LEN=4) :: CFMT = "PNG "
+      character(len=4)  :: cfmt = "PNG "
       character(len=30) :: cstr_volcname
       character(len=30) :: cstr_run_date
       character(len=30) :: cstr_windfile
@@ -564,8 +546,8 @@
  54   format('dslin_',i4.4,a4)
 
       ! Get min/max and label interval for all three axies.
-      tmin=real(0,kind=4)
-      tmax=real(ceiling(time_native(ntmax)),kind=4)
+      tmin=real(0,kind=DS)
+      tmax=real(ceiling(time_native(ntmax)),kind=DS)
       tlab1    = 0.0_DS
       if(tmax.gt.240.0_DS)then
         tlabstep = 48.0_DS
@@ -646,7 +628,7 @@
 !     (7)    termination.
 
       !  Dislin Level 0:  before initialization or after termination
-      call metafl(CFMT)   ! set output driver/file-format (PNG); this is a 4-char string
+      call metafl(cfmt)   ! set output driver/file-format (PNG); this is a 4-char string
       call setpag('USAL') ! Set pagesize to US A Landscape (2790 x 2160)
       call setfil(trim(adjustl(dp_pngfile))) ! Set output filename
       call scrmod('REVERSE')  ! Default background is black; reverse to white
@@ -716,8 +698,6 @@
 
       subroutine write_DepPOI_TS_PNG_dislin(pt_indx)
 
-      use precis_param
-
       use Airports,      only : &
          Airport_Name,Airport_Thickness_TS
 
@@ -727,13 +707,11 @@
       use time_data,     only : &
          Simtime_in_hours
 
-      use dislin
-
       implicit none
 
       integer,intent(in) :: pt_indx
 
-      integer,parameter :: DS = 8
+      !integer,parameter :: DS = 8
 
       real(kind=DS) :: ymaxpl
       character(len=14) :: dp_pngfile
@@ -747,14 +725,12 @@
 
       ! dislin stuff
       ! https://www.dislin.de/
-      CHARACTER (LEN=4) :: CFMT = "PNG "
+      character(len=4) :: cfmt = "PNG "
 
       if(Airport_Thickness_TS(pt_indx,nWriteTimes).lt.0.01_ip)then
-        !write(*,*)"No deposit at ",pt_indx,Airport_Name(pt_indx)
         return
       else
         plot_index = plot_index + 1
-        !write(*,*)"Processing ",pt_indx,plot_index,Airport_Name(pt_indx),'--'
       endif
 
       write(dp_pngfile,55) plot_index,".png"
@@ -795,7 +771,7 @@
 !     (7)    termination.
 
       !  Dislin Level 0:  before initialization or after termination
-      call metafl(CFMT)   ! set output driver/file-format (PNG); this is a 4-char string
+      call metafl(cfmt)   ! set output driver/file-format (PNG); this is a 4-char string
       call setpag('USAL') ! Set pagesize to US A Landscape (2790 x 2160)
       call setfil(trim(adjustl(dp_pngfile))) ! Set output filename
       call scrmod('REVERSE')  ! Default background is black; reverse to white
@@ -828,3 +804,8 @@
       call disfin()
 
       end subroutine write_DepPOI_TS_PNG_dislin
+
+!##############################################################################
+
+      end module Ash3d_PostProc_dislin
+

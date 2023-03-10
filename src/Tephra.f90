@@ -135,7 +135,7 @@
 
       use MetReader,     only : &
          nx_submet,ny_submet,np_fullmet,MR_dum3d_metP,MR_dum3d_compH,MR_iMetStep_Now,&
-           MR_Regrid_MetP_to_CompGrid
+           MR_Regrid_MetP_to_CompH
 
       implicit none
 
@@ -234,7 +234,7 @@
         do l=1,n_gs_max
           if(.not.IsAloft(l)) cycle
           MR_dum3d_metP(:,:,:) = vf_meso_next_step_MetP_sp(:,:,:,l)
-          call MR_Regrid_MetP_to_CompGrid(MR_iMetStep_Now+1)
+          call MR_Regrid_MetP_to_CompH(MR_iMetStep_Now+1)
           vf_meso_next_step_sp(:,:,:,l) = MR_dum3d_compH(:,:,:)*(-1.0_sp)
         enddo
       endif

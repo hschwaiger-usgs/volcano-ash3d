@@ -218,7 +218,7 @@
 
       return
 
-      end subroutine
+      end subroutine space_checker
 
       end module
 !##############################################################################

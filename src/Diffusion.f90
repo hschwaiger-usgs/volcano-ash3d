@@ -576,7 +576,7 @@
           integer                         ,intent(in)    :: LDB
           real(kind=4),dimension(ldb,NRHS),intent(inout) :: B
           integer                         ,intent(out)   :: INFO
-        end subroutine
+        end subroutine sgtsv
         subroutine dgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
           integer                         ,intent(in)    :: N
           integer                         ,intent(in)    :: NRHS
@@ -586,7 +586,7 @@
           integer                         ,intent(in)    :: LDB
           real(kind=8),dimension(ldb,NRHS),intent(inout) :: B
           integer                         ,intent(out)   :: INFO
-        end subroutine
+        end subroutine dgtsv
         subroutine sptsv(N,NRHS,D,E,B,LDB,INFO)
           integer                         ,intent(in)    :: N
           integer                         ,intent(in)    :: NRHS
@@ -595,7 +595,7 @@
           integer                         ,intent(in)    :: LDB
           real(kind=4),dimension(ldb,NRHS),intent(inout) :: B
           integer                         ,intent(out)   :: INFO
-        end subroutine
+        end subroutine sptsv
         subroutine dptsv(N,NRHS,D,E,B,LDB,INFO)
           integer                         ,intent(in)    :: N
           integer                         ,intent(in)    :: NRHS
@@ -604,7 +604,7 @@
           integer                         ,intent(in)    :: LDB
           real(kind=8),dimension(ldb,NRHS),intent(inout) :: B
           integer                         ,intent(out)   :: INFO
-        end subroutine
+        end subroutine dptsv
       END INTERFACE
 #endif
 
@@ -832,7 +832,7 @@
           integer                         ,intent(in)    :: LDB
           real(kind=4),dimension(ldb,NRHS),intent(inout) :: B
           integer                         ,intent(out)   :: INFO
-        end subroutine
+        end subroutine sgtsv
         subroutine dgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
           integer                         ,intent(in)    :: N
           integer                         ,intent(in)    :: NRHS
@@ -842,7 +842,7 @@
           integer                         ,intent(in)    :: LDB
           real(kind=8),dimension(ldb,NRHS),intent(inout) :: B
           integer                         ,intent(out)   :: INFO
-        end subroutine
+        end subroutine dgtsv
         subroutine sptsv(N,NRHS,D,E,B,LDB,INFO)
           integer                         ,intent(in)    :: N
           integer                         ,intent(in)    :: NRHS
@@ -851,7 +851,7 @@
           integer                         ,intent(in)    :: LDB
           real(kind=4),dimension(ldb,NRHS),intent(inout) :: B
           integer                         ,intent(out)   :: INFO
-        end subroutine
+        end subroutine sptsv
         subroutine dptsv(N,NRHS,D,E,B,LDB,INFO)
           integer                         ,intent(in)    :: N
           integer                         ,intent(in)    :: NRHS
@@ -860,7 +860,7 @@
           integer                         ,intent(in)    :: LDB
           real(kind=8),dimension(ldb,NRHS),intent(inout) :: B
           integer                         ,intent(out)   :: INFO
-        end subroutine
+        end subroutine dptsv
       END INTERFACE
 #endif
 
@@ -1083,7 +1083,7 @@
           integer                         ,intent(in)    :: LDB
           real(kind=4),dimension(ldb,NRHS),intent(inout) :: B
           integer                         ,intent(out)   :: INFO
-        end subroutine
+        end subroutine sgtsv
         subroutine dgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
           integer                         ,intent(in)    :: N
           integer                         ,intent(in)    :: NRHS
@@ -1093,7 +1093,7 @@
           integer                         ,intent(in)    :: LDB
           real(kind=8),dimension(ldb,NRHS),intent(inout) :: B
           integer                         ,intent(out)   :: INFO
-        end subroutine
+        end subroutine dgtsv
         subroutine sptsv(N,NRHS,D,E,B,LDB,INFO)
           integer                         ,intent(in)    :: N
           integer                         ,intent(in)    :: NRHS
@@ -1102,7 +1102,7 @@
           integer                         ,intent(in)    :: LDB
           real(kind=4),dimension(ldb,NRHS),intent(inout) :: B
           integer                         ,intent(out)   :: INFO
-        end subroutine
+        end subroutine sptsv
         subroutine dptsv(N,NRHS,D,E,B,LDB,INFO)
           integer                         ,intent(in)    :: N
           integer                         ,intent(in)    :: NRHS
@@ -1111,7 +1111,7 @@
           integer                         ,intent(in)    :: LDB
           real(kind=8),dimension(ldb,NRHS),intent(inout) :: B
           integer                         ,intent(out)   :: INFO
-        end subroutine
+        end subroutine dptsv
       END INTERFACE
 #endif
 

@@ -1528,7 +1528,7 @@
       read(linebuffer080,'(a3)',err=1964) answer
       if (answer.eq.'yes') then
         Write3dFiles = .true.
-        ! if a consolodate output file will be written, assume both standard
+        ! if a consolidated output file will be written, assume both standard
         ! variables and the 3d ash concentrations will be written
         USE_OUTPROD_VARS = .true.
         USE_RESTART_VARS = .true.
@@ -1883,7 +1883,7 @@
        else
         goto 1980
       endif
-      
+
       !Read whether to write out grain-size distribution to airport file
       read(10,'(a80)') linebuffer080
       ! Block 6 Line 2
