@@ -101,10 +101,10 @@
         end subroutine calc_mesh_params
         subroutine MesoInterpolater(TimeNow,Load_MesoSteps,Interval_Frac,first_time)
           integer,parameter  :: dp         = 8 ! Double precision
-          real(kind=dp),intent(in)  :: TimeNow
-          real(kind=dp),intent(out) :: Interval_Frac
-          logical      ,intent(out) :: Load_MesoSteps
-          logical      ,intent(in)  :: first_time
+          real(kind=dp),intent(in)    :: TimeNow
+          real(kind=dp),intent(out)   :: Interval_Frac
+          logical      ,intent(inout) :: Load_MesoSteps
+          logical      ,intent(in)    :: first_time
         end subroutine MesoInterpolater
         subroutine output_results
         end subroutine output_results
@@ -208,6 +208,7 @@
       Interval_Frac  = 0.0_ip
       first_time     = .true.
       call MesoInterpolater(time , Load_MesoSteps , Interval_Frac, first_time)
+
 !------------------------------------------------------------------------------
 !       OPTIONAL MODULES
 !         Insert calls to special MesoInterpolaters subroutines here

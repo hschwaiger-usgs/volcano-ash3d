@@ -62,10 +62,10 @@
  
       implicit none
 
-      real(kind=dp),intent(in)  :: TimeNow                !current time, in hours since start of simulation
-      real(kind=dp),intent(out) :: Interval_Frac
-      logical      ,intent(out) :: Load_MesoSteps
-      logical      ,intent(in)  :: first_time
+      real(kind=dp),intent(in)    :: TimeNow                !current time, in hours since start of simulation
+      real(kind=dp),intent(out)   :: Interval_Frac
+      logical      ,intent(inout) :: Load_MesoSteps
+      logical      ,intent(in)    :: first_time
 
       integer           :: i
       integer           :: ivar
