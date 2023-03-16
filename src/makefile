@@ -46,9 +46,9 @@ SYSTEM = gfortran
 #      OMPOPT   : includes optimizations flags for fastest runtime and OpenMP directives
 #                 To run, enter: env OMP_NUM_THREADS=4 Ash3d input_file.inp
 #    This variable cannot be left blank
-RUN = DEBUG
+#RUN = DEBUG
 #RUN = PROF
-#RUN = OPT
+RUN = OPT
 #RUN = OMPOPT
 
 #    This variable cannot be left blank
