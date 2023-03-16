@@ -46,8 +46,8 @@ yes                 # write ESRI ASCII file of cloud arrival times?
 no                  # Write        KML file of cloud arrival times?
 yes                 # Write 3-D ash concentration at specified times?
 netcdf              # format of ash concentration files
--1                  # nWriteTimes  
-24.0
+2                   # nWriteTimes  
+120.0 240.0
 *******************************************************************************
 # WIND INPUT FILES
 ******************* BLOCK 5 ***************************************************

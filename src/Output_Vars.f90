@@ -78,7 +78,7 @@
 
         ! Set this variable to false if you do not want raw concentration
         ! values exported (only derived products and deposits)
-      logical :: USE_RESTART_VARS  = .true.
+      logical :: USE_RESTART_VARS  = .false.
 
       real(kind=ip) :: CloudArea                ! area of ash cloud at a given time
       real(kind=ip) :: LoadVal(5)               ! 5 threshold values for area calculations

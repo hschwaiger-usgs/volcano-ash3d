@@ -131,7 +131,7 @@
                   "opt" // DirDelim // "USGS" // DirDelim // "Ash3d"
 
       ! Here it is over-written by compile-time path, if available
-!#include "installpath.h"
+#include "installpath.h"
       ! This can be over-written if an environment variable is set
       write(global_info,*)" "
       write(global_info,*)"Checking for run-time environment variable: ASH3DHOME"

@@ -11,7 +11,7 @@
       use global_param,  only : &
          EPS_SMALL,EPS_TINY,nmods,OPTMOD_names,VERB,limiter,&
          useDS,useTemperature,useCalcFallVel,useVariableGSbins,&
-         useDiffusion,useCN,KM3_2_M3
+         useDiffusion,useCN,KM3_2_M3,useVz_rhoG
 
       use io_data,       only : &
          cdf_b1l1,cdf_b1l2,cdf_b1l3,cdf_b1l4,cdf_b1l5,cdf_b1l6,cdf_b1l7,cdf_b1l8,cdf_b1l9,&
@@ -2529,6 +2529,15 @@
         write(global_log ,*)"Diffusion is calculated explicitly."
       endif
  
+      ! Write out Vz calculation scheme used
+      if(useVz_rhoG)then
+        write(global_info,*)"useVz_rhoG=.true. : Vz calculated PVV (if avail.) and density"
+        write(global_log ,*)"useVz_rhoG=.true. : Vz calculated PVV (if avail.) and density"
+      else
+        write(global_info,*)"Vz calculated via PVV and finite-differencing dp/dz"
+        write(global_log ,*)"Vz calculated via PVV and finite-differencing dp/dz"
+      endif
+
       ! assign initial values
       !total_time = Simtime_in_hours ! total simulated time in seconds
 

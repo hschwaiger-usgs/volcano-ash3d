@@ -5,3 +5,4 @@ rm -f 3d_tephra_fall.nc
 rm -f CloudArrivalTime.dat
 rm -f CloudLoad*dat
 rm -f progress.txt
+rm -f CloudConcentration_*.dat

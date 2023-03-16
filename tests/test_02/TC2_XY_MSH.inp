@@ -34,7 +34,7 @@ no                  # Write ESRI ASCII file of final deposit thickness?
 no                  # Write        KML file of final deposit thickness?
 no                  # Write ESRI ASCII deposit files at specified times?
 no                  # Write        KML deposit files at specified times?
-no                  # Write ESRI ASCII files of ash-cloud concentration?
+yes                 # Write ESRI ASCII files of ash-cloud concentration?
 no                  # Write        KML files of ash-cloud concentration?
 yes                 # Write ESRI ASCII files of ash-cloud height?
 no                  # Write        KML files of ash-cloud height?

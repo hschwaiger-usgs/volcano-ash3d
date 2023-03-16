@@ -16,6 +16,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
+rc=0
 ./clean.sh
 for (( s=0;s<nSubCases;s++))
 do
@@ -24,6 +25,19 @@ do
   outdir="output${s}"
 
   ${Ash3d} TC4_LL_MSH_SC${s}.inp > /dev/null 2>&1
+  rc=$((rc + $?))
+  if [[ "$rc" -gt 0 ]] ; then
+    echo "Error: Ash3d returned error code"
+    exit 1
+  fi
+  grep "useVz_rhoG=.true." Ash3d.lst
+  rc=$((rc + $?))
+  if [[ "$rc" -gt 0 ]] ; then
+    echo "Error: Ash3d was not compiled with useVz_rhoG=.true."
+    echo "       Vz is calculated via finite-differncing dp/dz."
+    echo "       Results may still be valid, but this script with report failues."
+    exit 1
+  fi
   for (( i=0;i<n2Dfiles;i++))
   do
     echo Checking 2d ASCII file "${ascii2Doutfiles[i]}"

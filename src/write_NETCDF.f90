@@ -125,7 +125,8 @@
 
       use global_param,  only : &
          EPS_SMALL,KM2_2_M2,useCalcFallVel,VERB,&
-         GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH,Ash3d_GitComID,os_cwd,os_host,os_user
+         GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH,Ash3d_GitComID,os_cwd,os_host,os_user,&
+         useVz_rhoG
 
       use io_data,       only : &
          nvprofiles,Site_vprofile,x_vprofile,y_vprofile, &
@@ -465,6 +466,12 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment DT_MAX:")
       nSTAT = nf90_put_att(ncid,nf90_global,"ZPADDING",ZPADDING)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment ZPADDING:")
+      if(useVz_rhoG)then
+        nSTAT = nf90_put_att(ncid,nf90_global,"useVz_rhoG","true")
+      else
+        nSTAT = nf90_put_att(ncid,nf90_global,"useVz_rhoG","false")
+      endif
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment useVz_rhoG:")
       nSTAT = nf90_put_att(ncid,nf90_global,"DEPO_THRESH",DEPO_THRESH)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment DEPO_THRESH:")
       nSTAT = nf90_put_att(ncid,nf90_global,"DEPRATE_THRESH",DEPRATE_THRESH)
