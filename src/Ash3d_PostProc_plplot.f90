@@ -5,6 +5,9 @@
       use plplot
       use iso_c_binding, only: c_ptr, c_loc, c_f_pointer
 
+      integer :: lib_ver_major = 5
+      integer :: lib_ver_minor = 14
+
       contains
 
 !##############################################################################
@@ -42,7 +45,7 @@
          e_Volume,e_Duration,e_StartTime,e_PlumeHeight,lon_volcano,lat_volcano
 
       use time_data,     only : &
-         os_time_log,BaseYear,useLeap
+         os_time_log,SimStartHour,BaseYear,useLeap
 
       use citywriter
 
@@ -77,23 +80,44 @@
       real(kind=plflt)   :: tr(6)
       real(kind=plflt)   :: clevel(1)
       integer(kind=4):: opt
+
       integer, parameter :: MAX_NLEGEND = 11       ! max number of legend entries
-      integer(kind=4):: opt_array(MAX_NLEGEND)
-      integer(kind=4):: text_colors(MAX_NLEGEND)
-      integer(kind=4):: box_colors(MAX_NLEGEND)
-      integer(kind=4):: box_patterns(MAX_NLEGEND)
-      real(kind=plflt)   :: box_scales(MAX_NLEGEND)
-      real(kind=plflt)   :: box_line_widths(MAX_NLEGEND)
-      integer(kind=4):: line_colors(MAX_NLEGEND)
-      integer(kind=4):: line_styles(MAX_NLEGEND)
-      real(kind=plflt)   :: line_widths(MAX_NLEGEND)
-      integer(kind=4):: symbol_numbers(MAX_NLEGEND), symbol_colors(MAX_NLEGEND)
-      real(kind=plflt)   :: symbol_scales(MAX_NLEGEND)
-      character(len=200) :: text(MAX_NLEGEND)
-      character(len=3)   :: symbols(MAX_NLEGEND)
+      !integer(kind=4)    :: opt_array(MAX_NLEGEND)
+      !integer(kind=4)    :: text_colors(MAX_NLEGEND)
+      !integer(kind=4)    :: box_colors(MAX_NLEGEND)
+      !integer(kind=4)    :: box_patterns(MAX_NLEGEND)
+      !real(kind=plflt)   :: box_scales(MAX_NLEGEND)
+      !real(kind=plflt)   :: box_line_widths(MAX_NLEGEND)
+      !integer(kind=4)    :: line_colors(MAX_NLEGEND)
+      !integer(kind=4)    :: line_styles(MAX_NLEGEND)
+      !real(kind=plflt)   :: line_widths(MAX_NLEGEND)
+      !integer(kind=4)    :: symbol_numbers(MAX_NLEGEND)
+      !integer(kind=4)    :: symbol_colors(MAX_NLEGEND)
+      !real(kind=plflt)   :: symbol_scales(MAX_NLEGEND)
+      !character(len=200) :: text(MAX_NLEGEND)
+      !character(len=3)   :: symbols(MAX_NLEGEND)
+
+      integer(kind=4)   ,dimension(:),allocatable :: opt_array
+      integer(kind=4)   ,dimension(:),allocatable :: text_colors
+      integer(kind=4)   ,dimension(:),allocatable :: box_colors
+      integer(kind=4)   ,dimension(:),allocatable :: box_patterns
+      integer(kind=4)   ,dimension(:),allocatable :: line_colors
+      integer(kind=4)   ,dimension(:),allocatable :: line_styles
+      integer(kind=4)   ,dimension(:),allocatable :: symbol_numbers
+      integer(kind=4)   ,dimension(:),allocatable :: symbol_colors
+      integer(kind=4)   ,dimension(:),allocatable :: red
+      integer(kind=4)   ,dimension(:),allocatable :: green
+      integer(kind=4)   ,dimension(:),allocatable :: blue
+      character(len=200),dimension(:),allocatable :: text
+      character(len=3)  ,dimension(:),allocatable :: symbols
+      real(kind=plflt)  ,dimension(:),allocatable :: box_scales
+      real(kind=plflt)  ,dimension(:),allocatable :: box_line_widths
+      real(kind=plflt)  ,dimension(:),allocatable :: line_widths
+      real(kind=plflt)  ,dimension(:),allocatable :: symbol_scales
+      real(kind=plflt)  ,dimension(:),allocatable :: alpha
+
       real(kind=plflt)   :: legend_width, legend_height
       real(kind=plflt)   :: x_offset,y_offset,plot_width
-      !real(kind=plflt)   :: max_height
       real(kind=plflt)   :: text_offset
       real(kind=plflt)   :: text_scale
       real(kind=plflt)   :: text_spacing
@@ -300,18 +324,28 @@
       call plsdev("pngcairo")      ! Set output device (png, pdf, etc.)
       call plsfnam (outfile_name)  ! Set output filename
 
-!! 5.10
-      !call  plsetopt("geometry","854x603, 854x603")  ! Set image size
-!! 5.15
-      plsetopt_rc = plsetopt("geometry","854x603, 854x603")  ! Set image size
-      !-----------------------------------
-      call plspal0('cmap0_black_on_white.pal') ! sets cmap0 palette via pal file
-!! 5.10
-      !call plspal1('cmap1_blue_yellow.pal',1)
-!! 5.15
-      call plspal1('cmap1_blue_yellow.pal',.true.)
+      ! set image size via command-line options tool plsetopt
+      if(lib_ver_minor.lt.12)then
+        ! prior to v5.12, this was a subroutine call
+!        call plsetopt("geometry","854x603, 854x603")
+      else
+        ! after v5.12, this is a function call returing an error code plsetopt_rc
+        plsetopt_rc = plsetopt("geometry","854x603, 854x603")
+      endif
 
-      call plscmap0n(16)                         ! sets number of colors in cmap0
+      !-----------------------------------
+      ! sets cmap0 palette via pal file for discrete elements
+      call plspal0('cmap0_black_on_white.pal')
+      ! sets cmap1 palette via pal file for continuous elements
+      if(lib_ver_minor.lt.12)then
+        ! prior to v5.12, the second argument was an integer
+!        call plspal1('cmap1_blue_yellow.pal',1)
+      else
+        ! after v5.12, this needs to be a logical
+        call plspal1('cmap1_blue_yellow.pal',.true.)
+      endif
+
+      call plscmap0n(16)           ! sets number of colors in cmap0
 
       ! Initialize plplot
       call plinit()
@@ -361,28 +395,53 @@
                     7) ! code 7 is a triangle
                        ! (https://plplot.sourceforge.net/examples.php?demo=06&lbind=Fortran)
 
-      !call plcol1(1)
-      !plcont(var,1,nx,1,ny,real(zlev(1:nConLev),kind=plflt), tr)
       do i=1,nConLev
         call plcol1(real(dble(i)/dble(nConLev),kind=plflt))
-        !call plscol0a(i,zrgb(i,1),zrgb(i,2),zrgb(i,3),1.0_plflt)
         clevel(1) = real(ContourLev(i),kind=plflt)
         call plcont(var,1,nx,1,ny,clevel, tr)
       enddo
       call pllab("Longitude", "Latitude", title_plot)
-!! 5.10
-      !call plstransform( 0 )
-!! 5.15
-      call plstransform
+      if(lib_ver_minor.lt.12)then
+        ! prior to v5.12, the second argument was an integer
+        !call plstransform( 0 )
+      else
+        call plstransform
+      endif
+
+      !---------------------------------------------------------
 
       !call plcol0(2)
       ! Set the color we will use for the legend background (index 15)
       call plscol0a( 15, 255, 255, 255, 1.0_plflt )
+      allocate(opt_array(nConLev))
+      allocate(text_colors(nConLev))
+      allocate(box_colors(nConLev))
+      allocate(box_patterns(nConLev))
+      allocate(line_colors(nConLev))
+      allocate(line_styles(nConLev))
+      allocate(symbol_numbers(nConLev))
+      allocate(symbol_colors(nConLev))
+      allocate(text(nConLev))
+      allocate(symbols(nConLev))
+      allocate(box_scales(nConLev))
+      allocate(box_line_widths(nConLev))
+      allocate(line_widths(nConLev))
+      allocate(symbol_scales(nConLev))
+      allocate(red(nConLev))
+      allocate(green(nConLev))
+      allocate(blue(nConLev))
+      allocate(alpha(nConLev))
       do i=1,nConLev
         pos_opt = PL_POSITION_RIGHT + PL_POSITION_OUTSIDE
         opt = PL_LEGEND_BACKGROUND + PL_LEGEND_BOUNDING_BOX
         text_colors(i)   = 1 + mod( i-1, nConLev )
         line_colors(i)   = 1 + mod( i-1, nConLev )
+        !call plcol1(real(dble(i)/dble(nConLev),kind=plflt))
+        red(i)   = i
+        green(i) = i
+        blue(i)  = i
+        alpha(i) = 1.0_pl_test_flt
+        !write(*,*)i,line_colors(i)
 
         line_styles(i)   = 1
         line_widths(i)   = 1
@@ -411,6 +470,16 @@
         text_justification = 0.0_plflt
         symbols(i)        = '*'
       enddo
+      ! Now set the RGB values from above tothe cmap0
+      !call plscmap0a(red, green, blue, alpha)
+        ! pladv: Advance the (sub-)page
+!      call pladv(1)
+!        ! plvpor: Specify viewport using normalized subpage coordinates
+!      call plvpor(0.75_plflt, 1.0_plflt, 0.6_plflt, 0.7_plflt)
+!        ! plwind: Specify window 
+!      call plwind(0.0_plflt, 1.0_plflt, 0.0_plflt, 1.0_plflt )
+!      call plschr( 0.0_plflt, 0.7_plflt )
+
       call pllegend(    &
           legend_width, &  ! these are output vars
           legend_height,&  ! these are output vars
@@ -423,7 +492,6 @@
           bb_color,    & ! int: bounding box color from cmap0
           bb_style,    & ! int: bounding box line style
           nrow,ncolumn,& ! int: rows and columns of legend
-          !nConLev     ,&
           opt_array(1:nConLev), & ! int vec: 
           text_offset, & ! flt: Offset of the text area from the plot
           text_scale,  & ! flt: Character height scale
@@ -444,6 +512,18 @@
           symbols  )
 
       ! Now add the annotation box
+        ! First the title of the legend
+        ! plvpor: Specify viewport using normalized subpage coordinates
+      call plvpor(0.8_plflt, 1.0_plflt, 0.7_plflt, 0.8_plflt)
+        ! plwind: Specify window 
+      call plwind(0.0_plflt, 1.0_plflt, 0.0_plflt, 1.0_plflt )
+      write(outstring,*)trim(adjustl(title_legend))
+      call plschr( 0.0_plflt, 0.8_plflt )
+      call plptex(0.1_plflt, 0.5_plflt,& ! x,y
+                  1.0_plflt, 0.0_plflt, & ! dx,dy
+                  0.0_plflt,            & ! just
+                  outstring )             ! text
+      ! And the boxes below
         ! pladv: Advance the (sub-)page
       call pladv(1)
         ! plvpor: Specify viewport using normalized subpage coordinates
@@ -479,7 +559,7 @@
         !       (xopt, xtick, nxsub, yopt, ytick, nysub)
       !call plbox('bc', 0.0_plflt, 0, 'bc', 0.0_plflt, 0 )
 
-      write(outstring,*)"Erup. Start Time: ",HS_xmltime(e_StartTime(1),BaseYear,useLeap)
+      write(outstring,*)"Erup. Start Time: ",HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap)
       call plptex(0.02_plflt, 1.0_plflt-1.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, &
                   0.0_plflt, outstring )
       write(outstring,111)e_PlumeHeight(1)
@@ -494,7 +574,6 @@
  131  format(' Erup. Volume: ',f10.5,' km3 (DRE)')
       call plptex(0.02_plflt, 1.0_plflt-4.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, &
                   0.0_plflt, outstring )
-
 
       call plend()
 
@@ -527,7 +606,7 @@
          e_Volume,e_Duration,e_StartTime,e_PlumeHeight
 
       use time_data,     only : &
-         os_time_log,BaseYear,useLeap
+         os_time_log,SimStartHour,BaseYear,useLeap
 
       implicit none
 
@@ -638,28 +717,29 @@
       call plsdev("pngcairo")      ! Set output device (png, pdf, etc.)
       call plsfnam ( dp_pngfile )  ! Set output filename
 
-!! 5.10
-      !call plsetopt("geometry","854x603, 854x603")
-!! 5.15
-      plsetopt_rc = plsetopt("geometry","854x603, 854x603")  ! Set image size
+      ! set image size and background color via command-line options tool plsetopt
+      if(lib_ver_minor.lt.12)then
+        ! prior to v5.12, this was a subroutine call
+!        call plsetopt("geometry","854x603, 854x603")
+!        call plsetopt("bg","FFFFFF")                  ! Set background color to white
+      else
+        ! after v5.12, this is a function call returing an error code plsetopt_rc
+        plsetopt_rc = plsetopt("geometry","854x603, 854x603")
+        plsetopt_rc = plsetopt("bg","FFFFFF")
+      endif
 
-      !call plsetopt("bg","FFFFFF")                  ! Set background color to white
-      !-----------------------------------
-      !call plspal0('cmap0_black_on_white.pal')
-      !call plspal1('cmap1_gray.pal',1)
-      !-----------------------------------
-      !call plspal0('cmap0_black_on_white.pal')
-      !call plspal1('cmap1_blue_red.pal',1)
-      !call plscmap0n(3)
-      !call plscmap1l
-      !-----------------------------------
+      ! sets cmap0 palette via pal file for discrete elements
       call plspal0('cmap0_black_on_white.pal')
-!! 5.15
-      !plspal1_rc = plspal1('cmap1_blue_yellow.pal',1)
-      !call plspal1('cmap1_blue_yellow.pal',1)
-      call plspal1('cmap1_blue_yellow.pal', .true.)
+      ! sets cmap1 palette via pal file for continuous elements
+      if(lib_ver_minor.lt.12)then
+        ! prior to v5.12, the second argument was an integer
+!        call plspal1('cmap1_blue_yellow.pal',1)
+      else
+        ! after v5.12, this needs to be a logical
+        call plspal1('cmap1_blue_yellow.pal',.true.)
+      endif
 
-      call plscmap0n(3)
+      call plscmap0n(3)  ! Set number of colors in cmap0
 
       ! Initialize plplot
       call plinit()
@@ -674,16 +754,20 @@
       call plpsty(0)
 
       ! Now plot the data
-!! 5.10
-      !call plshades(conc(:ntmax,:nzmax), defined, &
-      !  tmin,tmax,zmin,zmax, &
-      !  shedge, fill_width, &
-      !  cont_color, cont_width )
-!! 5.15
-      call plshades(conc(:ntmax,:nzmax), &
-        tmin,tmax,zmin,zmax, &
-        shedge, fill_width, &
-        cont_color, cont_width , .true.)
+      if(lib_ver_minor.lt.12)then
+        ! prior to v5.12, plshades assumed coordinate trans. would deform
+        ! rectangles
+!        call plshades(conc(:ntmax,:nzmax), defined, &
+!          tmin,tmax,zmin,zmax, &
+!          shedge, fill_width, &
+!          cont_color, cont_width )
+      else
+        ! after v5.12, a rectangular boolean is required
+        call plshades(conc(:ntmax,:nzmax), &
+          tmin,tmax,zmin,zmax, &
+          shedge, fill_width, &
+          cont_color, cont_width , .true.)
+      endif
 
       ! Smaller text, scale by second argument
       call plschr( 0.0_plflt, 0.5_plflt )
@@ -750,7 +834,7 @@
         !       (xopt, xtick, nxsub, yopt, ytick, nysub)
       !call plbox('bc', 0.0_plflt, 0, 'bc', 0.0_plflt, 0 )
 
-      write(outstring,*)"Erup. Start Time: ",HS_xmltime(e_StartTime(1),BaseYear,useLeap)
+      write(outstring,*)"Erup. Start Time: ",HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap)
       call plptex(0.02_plflt, 1.0_plflt-1.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, &
                   0.0_plflt, outstring )
       write(outstring,111)e_PlumeHeight(1)
@@ -854,12 +938,17 @@
       call plsdev("pngcairo")      ! Set output device (png, pdf, etc.)
       call plsfnam ( dp_pngfile )  ! Set output filename
 
-!! 5.10
-      !call plsetopt("geometry","400x300, 400x300")
-      !call plsetopt("bg","FFFFFF")
-!! 5.15
-      plsetopt_rc = plsetopt("geometry","400x300, 400x300")  ! Set image size
-      plsetopt_rc = plsetopt("bg","FFFFFF")                  ! Set background color to white
+      ! set image size and background colog via command-line options tool plsetopt
+      if(lib_ver_minor.lt.12)then
+        ! prior to v5.12, this was a subroutine call
+!        call plsetopt("geometry","400x300, 400x300")
+!        call plsetopt("bg","FFFFFF")
+      elseif(lib_ver_major.le.5.and.lib_ver_minor.eq.15)then
+        ! after v5.12, this is a function call returing an error code plsetopt_rc
+        plsetopt_rc = plsetopt("geometry","400x300, 400x300")  ! Set image size
+        plsetopt_rc = plsetopt("bg","FFFFFF")                  ! Set background color to white
+      endif
+
 
       ! Initialize plplot
       call plinit()

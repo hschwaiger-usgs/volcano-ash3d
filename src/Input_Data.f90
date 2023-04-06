@@ -730,7 +730,7 @@
         endif
         if(i.eq.1)then
           read(linebuffer130,*,err=1910) iyear(i)
-          if(iyear(i).ne.0.and.iyear(i).lt.BaseYear.or.iyear(i)-BaseYear.gt.200)then
+          if(iyear(i).ne.0.and.iyear(i).lt.BaseYear.or.iyear(i)-BaseYear.gt.100)then
             ! Reset BaseYear to the start of the century containing the eruption year
             BaseYear = iyear(i) - mod(iyear(i),100)
             !BaseYear = 1

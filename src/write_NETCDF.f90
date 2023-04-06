@@ -308,10 +308,6 @@
       var_lnames(40) = "Cloud presence flag"
 
       ! Declare header info
-      !call GetLog(cdf_user)
-      !call Hostnm(cdf_host)
-      !call getcwd(cdf_cwd)
-      !cdf_cwd = trim(cdf_cwd)
 
       ! get date and time of start of first wind file
       !cdf_WindStartTime = HS_xmltime(MR_MetStep_Hour_since_baseyear(1),BaseYear,useLeap)
@@ -338,7 +334,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"create outfile classic:")
       endif
 
-      ! Fill in header info
+      ! Fill in header info with global attributes
       if(VERB.gt.1)write(global_info,*)"Filling in header info"
       nSTAT = nf90_put_att(ncid,nf90_global,"title",cdf_title)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att title:")
@@ -374,6 +370,14 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att host:")
       nSTAT = nf90_put_att(ncid,nf90_global,"CWD",os_cwd)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att CWD:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"BaseYear",BaseYear)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att BaseYear:")
+      if(useLeap)then
+        nSTAT = nf90_put_att(ncid,nf90_global,"useLeap",1)
+      else
+        nSTAT = nf90_put_att(ncid,nf90_global,"useLeap",0)
+      endif
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att useLeap:")
 
       nSTAT = nf90_put_att(ncid,nf90_global,"MetReader_Git_Commit_ID",MR_GitComID)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att MR_GitComID:")
@@ -3320,6 +3324,7 @@
       integer :: itstart_year,itstart_month,itstart_day
       integer :: itstart_hour,itstart_min,itstart_sec
       real(kind=ip) :: filestart_hour
+      integer :: tmp_int
 
       INTERFACE
         real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
@@ -3675,6 +3680,15 @@
         write(global_info,2501)" er",neruptions
 
         ! Now get the expected global attributes
+        nSTAT = nf90_get_att(ncid,nf90_global,"BaseYear",BaseYear)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_att BaseYear:")
+        nSTAT = nf90_get_att(ncid,nf90_global,"useLeap",tmp_int)
+        if(tmp_int.eq.1)then
+          useLeap = .true.
+        else
+          useLeap = .false.
+        endif
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_att useLeap:")
         nSTAT = nf90_get_att(ncid,nf90_global,"MagmaDensity",MagmaDensity)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_att Comment MagmaDensity:")
         nSTAT = nf90_get_att(ncid,nf90_global,"DepositDensity",DepositDensity)
@@ -4004,28 +4018,18 @@
         endif
         nSTAT = nf90_inq_varid(ncid,"er_stime",er_stime_var_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid er_stime")
-        if(fop.eq.4)then
-          allocate(dum1d_sp(1:neruptions))
-          nSTAT=nf90_get_var(ncid,er_stime_var_id,dum1d_sp,(/1/))
-          e_StartTime = real(dum1d_sp,kind=ip)
-          nSTAT = nf90_inq_varid(ncid,"er_duration",er_duration_var_id)
-          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid er_duration")
-          nSTAT=nf90_get_var(ncid,er_duration_var_id,dum1d_sp,(/1/))
-          e_Duration = real(dum1d_sp,kind=ip)
-          deallocate(dum1d_sp)
-        else
-          allocate(dum1d_dp(1:neruptions))
-          nSTAT=nf90_get_var(ncid,er_stime_var_id,dum1d_dp,(/1/))
-          e_StartTime = real(dum1d_dp,kind=ip)
-          nSTAT = nf90_inq_varid(ncid,"er_duration",er_duration_var_id)
-          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid er_duration")
-          nSTAT=nf90_get_var(ncid,er_duration_var_id,dum1d_dp,(/1/))
-          e_Duration = real(dum1d_dp,kind=ip)
-          deallocate(dum1d_dp)
-        endif
+        allocate(dum1d_dp(1:neruptions))
+        nSTAT=nf90_get_var(ncid,er_stime_var_id,dum1d_dp,(/1/))
+        e_StartTime = real(dum1d_dp,kind=ip)
+        nSTAT = nf90_inq_varid(ncid,"er_duration",er_duration_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid er_duration")
+        nSTAT=nf90_get_var(ncid,er_duration_var_id,dum1d_dp,(/1/))
+        e_Duration = real(dum1d_dp,kind=ip)
+        deallocate(dum1d_dp)
+        ! Eruption start time from file is in hours since BaseYear
+        ! We need to reset e_StartTime to be the offset from the SimStartHour
         SimStartHour = e_StartTime(1)
         e_StartTime(:) = e_StartTime(:) - SimStartHour
-
         allocate(dum1d_out(1:neruptions))
         nSTAT = nf90_inq_varid(ncid,"er_plumeheight",er_plumeheight_var_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid er_plumeheight")

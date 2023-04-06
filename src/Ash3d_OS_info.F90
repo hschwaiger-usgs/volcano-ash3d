@@ -54,6 +54,18 @@
         subroutine check_endian(IsLitEnd)
           logical,intent(inout)  :: IsLitEnd
         end subroutine check_endian
+!#ifdef USEPII
+!        ! These are included in gfortran, but are not standard
+!        subroutine getlog(os_user)
+!          character(len=32) :: os_user
+!        end subroutine getlog
+!        subroutine hostnm(os_host)
+!          character(*) :: os_host
+!        end subroutine hostnm
+!        subroutine getcwd(os_cwd)
+!          character(len=255) :: os_cwd
+!        end subroutine getcwd
+!#endif
       END INTERFACE
 
 #ifdef LINUX
@@ -97,15 +109,15 @@
       ! Get some run-specific and system-specific information
       call get_command(os_full_command_line)
 
-!#ifdef USEPII
-!      call getlog(os_user)
-!      call hostnm(os_host)
-!      call getcwd(os_cwd)
-!#else
+#ifdef USEPII
+      call getlog(os_user)
+      call hostnm(os_host)
+      call getcwd(os_cwd)
+#else
       os_user = 'N/A'
       os_host = 'N/A'
       os_cwd  = 'N/A'
-!#endif
+#endif
       call date_and_time(date,time2,zone,values)
         ! date  = ccyymmdd
         ! time2 = hhmmss.sss

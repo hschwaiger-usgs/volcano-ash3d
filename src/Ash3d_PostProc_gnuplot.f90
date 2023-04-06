@@ -34,7 +34,7 @@
          Contour_MaxCurves,Contour_MaxPoints,ContourLev,nConLev
 
       use time_data,     only : &
-         os_time_log,BaseYear,useLeap
+         os_time_log,SimStartHour,BaseYear,useLeap
 
       use io_data,       only : &
          WriteTimes,cdf_b3l1,VolcanoName
@@ -60,6 +60,7 @@
       character(len=40) :: outfile_name
       character (len=9) :: cio
       character (len=4) :: outfile_ext = '.png'
+      character(len=10) :: units
 
       real(kind=ip)  :: xmin
       real(kind=ip)  :: xmax
@@ -129,6 +130,7 @@
         write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
         title_legend = 'Dep.Thick.(mm)'
+        units = " (mm)"
         nConLev = Con_DepThick_mm_N
         allocate(zrgb(nConLev,3))
         allocate(ContourLev(nConLev))
@@ -138,6 +140,7 @@
         write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
         title_legend = 'Dep.Thick.(in)'
+        units = " (in)"
         nConLev = Con_DepThick_in_N
         allocate(zrgb(nConLev,3))
         allocate(ContourLev(nConLev))
@@ -147,6 +150,7 @@
         write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
         title_legend = 'Dep.Thick.(mm)'
+        units = " (mm)"
         nConLev = Con_DepThick_mm_N
         allocate(zrgb(nConLev,3))
         allocate(ContourLev(nConLev))
@@ -156,6 +160,7 @@
         write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
         title_legend = 'Dep.Thick.(in)'
+        units = " (in)"
         nConLev = Con_DepThick_in_N
         allocate(zrgb(nConLev,3))
         allocate(ContourLev(nConLev))
@@ -165,6 +170,7 @@
         write(outfile_name,'(a22)')'DepositArrivalTime.png'
         write(title_plot,'(a20)')'Ashfall arrival time'
         title_legend = 'Time (hours)'
+        units = " (hours)"
         nConLev = Con_DepTime_N
         allocate(zrgb(nConLev,3))
         allocate(ContourLev(nConLev))
@@ -178,6 +184,7 @@
         write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
         write(title_plot,'(a26,f5.2,a6)')'Ash-cloud concentration t=',WriteTimes(itime),' hours'
         title_legend = 'Max.Con.(mg/m3)'
+        units = " (mg/m3)"
         nConLev = Con_CloudCon_N
         allocate(zrgb(nConLev,3))
         allocate(ContourLev(nConLev))
@@ -187,6 +194,7 @@
         write(outfile_name,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud height t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Height(km)'
+        units = " (km)"
         nConLev = Con_CloudTop_N
         allocate(zrgb(nConLev,3))
         allocate(ContourLev(nConLev))
@@ -196,6 +204,7 @@
         write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud bottom t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Bot.(km)'
+        units = " (km)"
         nConLev = Con_CloudBot_N
         allocate(zrgb(nConLev,3))
         allocate(ContourLev(nConLev))
@@ -205,6 +214,7 @@
         write(outfile_name,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
         write(title_plot,'(a17,f5.2,a6)')'Ash-cloud load t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Load(T/km2)'
+        units = " (T/km2)"
         nConLev = Con_CloudLoad_N
         allocate(zrgb(nConLev,3))
         allocate(ContourLev(nConLev))
@@ -214,6 +224,7 @@
         write(outfile_name,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
         write(title_plot,'(a24,f5.2,a6)')'Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Refl.(dBz)'
+        units = " (dBz)"
         nConLev = Con_CloudRef_N
         allocate(zrgb(nConLev,3))
         allocate(ContourLev(nConLev))
@@ -223,6 +234,7 @@
         write(outfile_name,'(a20)')'CloudArrivalTime.png'
         write(title_plot,'(a22)')'Ash-cloud arrival time'
         title_legend = 'Time (hours)'
+        units = " (hours)"
         nConLev = Con_CloudTime_N
         allocate(zrgb(nConLev,3))
         allocate(ContourLev(nConLev))
@@ -232,6 +244,7 @@
         write(outfile_name,'(a14)')'Topography.png'
         write(title_plot,'(a10)')'Topography'
         title_legend = 'Elevation (km)'
+        units = " (hours)"
         nConLev = 8
         allocate(zrgb(nConLev,3))
         allocate(ContourLev(nConLev))
@@ -312,7 +325,7 @@
       write(55,*)"set ylabel 'Latitude'"
       write(55,*)"set xlabel 'Longitude'"
       write(55,*)"set output '",trim(adjustl(outfile_name)),"'"
-      write(55,*)"set title '",title_plot,"'"
+      write(55,*)"set title '",trim(adjustl(title_plot)),units,"'"
       write(55,*)"XMIN = ",real(xmin,kind=4)
       write(55,*)"YMIN = ",real(ymin,kind=4)
       write(55,*)"XMAX = ",real(xmax,kind=4)
@@ -348,7 +361,7 @@
                   "' at XVAL, YVAL font 'sans,9' offset character 0,-2"
 
       write(55,*)"XVAL = XMIN+(XMAX-XMIN)*0.4"
-      write(55,*)"set label 'Erup. Start Time: ",HS_xmltime(e_StartTime(1),BaseYear,useLeap),&
+      write(55,*)"set label 'Erup. Start Time: ",HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap),&
                   "' at XVAL, YVAL font 'sans,9'"
       write(55,*)"set label 'Erup. Plume Height: ",real(e_PlumeHeight(1),kind=4),&
                   " km' at XVAL, YVAL font 'sans,9' offset character 0,-1"
@@ -492,7 +505,7 @@
          e_Volume,e_Duration,e_StartTime,e_PlumeHeight
 
       use time_data,     only : &
-         os_time_log,BaseYear,useLeap,ntmax,time_native
+         os_time_log,SimStartHour,BaseYear,useLeap,ntmax,time_native
 
       implicit none
 
@@ -565,7 +578,7 @@
                   "' at XVAL, YVAL font 'sans,9' offset character 0,-2"
 
       write(55,*)"XVAL = XMAX*0.4"
-      write(55,*)"set label 'Erup. Start Time: ",HS_xmltime(e_StartTime(1),BaseYear,useLeap),&
+      write(55,*)"set label 'Erup. Start Time: ",HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap),&
                   "' at XVAL, YVAL font 'sans,9'"
       write(55,*)"set label 'Erup. Plume Height: ",real(e_PlumeHeight(1),kind=4),&
                   " km' at XVAL, YVAL font 'sans,9' offset character 0,-1"

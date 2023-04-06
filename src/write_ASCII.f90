@@ -270,21 +270,29 @@
 
       integer :: fid
       integer :: i,j
+      integer :: io
 
       fid = 40
 
       open(unit=fid,file=trim(adjustl(filename)), status='old',err=2500)
 
-      read(fid,3000) R_nx        ! read header values
-      read(fid,3001) R_ny
+      read(fid,3000,iostat=io,err=2600) R_nx        ! read header values
+      if(io.gt.0)then
+        ! We might have an empty file
+        ! Issue warning and return
+        write(global_info,*) 'Error reading file ',trim(adjustl(filename))
+        write(global_info,*) 'Check for zero-length file.'
+        return
+      endif
+      read(fid,3001,err=2600) R_ny
       allocate(R_XY(R_nx,R_ny))
-      read(fid,3002) R_xll
-      read(fid,3003) R_yll
-      read(fid,3004) R_dx,R_dy
-      read(fid,3005) R_Fill
+      read(fid,3002,err=2600) R_xll
+      read(fid,3003,err=2600) R_yll
+      read(fid,3004,err=2600) R_dx,R_dy
+      read(fid,3005,err=2600) R_Fill
 
       do j=R_ny,1,-1
-        read(fid,3006) (R_XY(i,j), i=1,R_nx)
+        read(fid,3006,err=2600) (R_XY(i,j), i=1,R_nx)
         read(fid,*)
       enddo
 
@@ -304,6 +312,8 @@
 2500  write(global_info,*) 'Error opening ASCII file. Program stopped'
       write(global_log ,*) 'Error opening ASCII file. Program stopped'
       stop 1
+2600  write(global_info,*) 'Error reading from ASCII file.'
+      write(global_log ,*) 'Error reading from ASCII file.'
 
       end subroutine read_2D_ASCII
 

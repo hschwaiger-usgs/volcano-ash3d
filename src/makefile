@@ -144,8 +144,8 @@ OPTMODS_OBJ=
 # (or current working directory).  Although this is useful for record-keeping,
 # this can be considered sensitive information.  To disable this logging,
 # set PII=OFF
-PII=ON
-#PII=OFF
+#PII=ON
+PII=OFF
 
 ###############################################################################
 #####  END OF USER SPECIFIED FLAGS  ###########################################
@@ -288,8 +288,8 @@ ifeq ($(SYSTEM), gfortran)
     # -lefence
 # Debugging flags
 ifeq ($(RUN), DEBUG)
-    FFLAGS = -O0 -g3 -Wall -Wextra -fimplicit-none  -Wall  -Wline-truncation  -Wcharacter-truncation  -Wsurprising  -Waliasing  -Wimplicit-interface  -Wunused-parameter  -fwhole-file  -fcheck=all  -std=f2008  -pedantic  -fbacktrace -Wunderflow -ffpe-trap=invalid,zero,overflow 
-#-fdefault-real-8
+    FFLAGS = -O0 -g3 -Wall -Wextra -fimplicit-none  -Wall  -Wline-truncation  -Wcharacter-truncation  -Wsurprising  -Waliasing  -Wimplicit-interface  -Wunused-parameter  -fwhole-file  -fcheck=all -pedantic  -fbacktrace -Wunderflow -ffpe-trap=invalid,zero,overflow 
+#-fdefault-real-8 -std=f2008 
     ASH3DEXEC=Ash3d_debug
 endif
 ifeq ($(RUN), DEBUGOMP)
@@ -481,6 +481,12 @@ ascii_check: $(ASH3dCCSRC)/tools/Ash3d_ASCII_check.f90 Ash3d_VariableModules.o w
 	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d_ASCII_check.o $(LIBS) -o Ash3d_ASCII_check
 	mkdir -p ../bin/tools
 	mv Ash3d_ASCII_check ../bin/tools/Ash3d_ASCII_check
+
+ascii_stats: $(ASH3dCCSRC)/tools/Ash3d_ASCII_stats.f90 Ash3d_VariableModules.o write_ASCII.o $(MFILE)
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/tools/Ash3d_ASCII_stats.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d_ASCII_stats.o $(LIBS) -o Ash3d_ASCII_stats
+	mkdir -p ../bin/tools
+	mv Ash3d_ASCII_stats ../bin/tools/Ash3d_ASCII_stats
 
 check: ascii_check Ash3d $(MFILE)
 	./run_tests.sh

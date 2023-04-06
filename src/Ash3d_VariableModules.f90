@@ -163,7 +163,7 @@
       character (len=2)    :: DirPrefix  = 'c:'
       character (len=1)    :: DirDelim   = '/'
       character (len=255)  :: os_full_command_line
-      character (len=20)   :: os_user
+      character (len=32)   :: os_user
       character (len=50)   :: os_host
       character (len=255)  :: os_cwd
 

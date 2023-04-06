@@ -31,11 +31,12 @@
       use Output_KML
 
       use Ash3d_Netcdf
-
+#ifdef USEPLPLOT
       use Ash3d_PostProc_plplot
-
+#endif
+#ifdef USEDISLIN
       use Ash3d_PostProc_dislin
-
+#endif
       use Ash3d_PostProc_gnuplot
 
       implicit none
@@ -71,7 +72,7 @@
                                                      !   | | - Third
                                                      !   | | | - Fourth
                                                      !   V V V V
-      integer,dimension(Nplot_libs) :: plot_pref_map = (/2,2,3,4/) ! plot preference for maps
+      integer,dimension(Nplot_libs) :: plot_pref_map = (/1,2,3,4/) ! plot preference for maps
       integer,dimension(Nplot_libs) :: plot_pref_shp = (/3,1,2,4/) ! plot preference for contours
       integer,dimension(Nplot_libs) :: plot_pref_vpr = (/2,1,3,4/) ! plot preference for vert profs.
       integer,dimension(Nplot_libs) :: plot_pref_aTS = (/2,3,1,4/) ! plot preference for Airport TS

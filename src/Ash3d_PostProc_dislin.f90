@@ -4,7 +4,7 @@
 
       use dislin
 
-      integer,parameter :: DS = 8
+      integer,parameter :: DS = 4
 
       contains
 
@@ -41,7 +41,7 @@
          neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight,lon_volcano,lat_volcano
 
       use time_data,     only : &
-         os_time_log,BaseYear,useLeap
+         os_time_log,SimStartHour,BaseYear,useLeap
 
       use citywriter
 
@@ -54,8 +54,6 @@
       real(kind=ip),intent(in) :: OutVar(nx,ny)
       logical      ,intent(in) :: writeContours
 
-      !integer,parameter :: DS = 8
-      
       integer :: i,j,k
       integer     , dimension(:,:),allocatable :: zrgb
       character(len=40) :: title_plot
@@ -64,11 +62,13 @@
       character(len= 9) :: cio
       character(len= 4) :: outfile_ext = '.png'
       integer :: ioerr,iw,iwf
+      integer :: tmp_int
 
       real(kind=ip)  :: xmin
       real(kind=ip)  :: xmax
       real(kind=ip)  :: ymin
       real(kind=ip)  :: ymax
+      real(kind=ip)  :: dx,dy
 
       ! dislin stuff
       ! https://www.dislin.de/
@@ -303,11 +303,15 @@
         xmax = maxval(lon_cc_pd(1:nx))
         ymin = minval(lat_cc_pd(1:ny))
         ymax = maxval(lat_cc_pd(1:ny))
+        dx = lon_cc_pd(2) - lon_cc_pd(1)
+        dy = lat_cc_pd(2) - lat_cc_pd(1)
       else
         xmin = minval(x_cc_pd(1:nx))
         xmax = maxval(x_cc_pd(1:nx))
         ymin = minval(y_cc_pd(1:ny))
         ymax = maxval(y_cc_pd(1:ny))
+        dx = x_cc_pd(2) - x_cc_pd(1)
+        dy = y_cc_pd(2) - y_cc_pd(1)
         stop 5
       endif
       call citylist(0,xmin,xmax,ymin,ymax,    &
@@ -319,11 +323,10 @@
       dx_map = 10.0_DS
       dy_map = 5.0_DS
       lon_cc_pd(:) = lon_cc_pd(:) - 360.0_ip
-      
-      xminDIS = real(xmin- 360.0_ip,kind=DS)
-      xmaxDIS = real(xmax- 360.0_ip,kind=DS)
-      yminDIS = real(ymin,kind=DS)
-      ymaxDIS = real(ymax,kind=DS)
+      xminDIS = real(xmin- 360.0_ip-0.5_ip*dx,kind=DS)
+      xmaxDIS = real(xmax- 360.0_ip+0.5_ip*dx,kind=DS)
+      yminDIS = real(ymin-0.5_ip*dy,kind=DS)
+      ymaxDIS = real(ymax+0.5_ip*dy,kind=DS)
       xgrid_1 = real(ceiling(xminDIS/dx_map) * dx_map,kind=DS)
       ygrid_1 = real(ceiling(yminDIS/dy_map) * dy_map,kind=DS)
 
@@ -367,7 +370,12 @@
        !  The routine GRAFMP plots a geographical axis system.
       call grafmp(xminDIS,xmaxDIS,xgrid_1,dx_map, &
                   yminDIS,ymaxDIS,ygrid_1,dy_map)
-
+      call getlev(tmp_int)
+      if(tmp_int.ne.2)then
+        write(*,*)"grafmp is supposed to return plot level 2, but we have ",tmp_int
+        write(*,*)"Exiting"
+        stop 1
+      endif
        ! set color of coastlines
        ! plots coastlines and lakes or political borders
       call world()
@@ -445,7 +453,7 @@
       write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
 
       !e_StartTime,e_PlumeHeight,e_Duration,e_Volume
-      write(cstr_ErStartT,'(a20,a20)')'Erup. Start Time:   ',HS_xmltime(e_StartTime(1),BaseYear,useLeap)
+      write(cstr_ErStartT,'(a20,a20)')'Erup. Start Time:   ',HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap)
       write(cstr_ErHeight,'(a20,f4.1,a3)')'Erup. Plume Height: ',e_PlumeHeight(1),' km'
       write(cstr_ErDuratn,'(a20,f4.1,a6)')'Erup. Duration:     ',e_Duration(1),' hours'
       write(cstr_ErVolume,'(a20,f8.5,a10)')'Erup. Volume:       ',e_Volume(1),' km3 (DRE)'
@@ -492,7 +500,7 @@
          neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
 
       use time_data,     only : &
-         os_time_log,BaseYear,useLeap
+         os_time_log,SimStartHour,BaseYear,useLeap
 
       implicit none
 
@@ -668,7 +676,7 @@
       write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
 
       !e_StartTime,e_PlumeHeight,e_Duration,e_Volume
-      write(cstr_ErStartT,'(a20,a20)')'Erup. Start Time:   ',HS_xmltime(e_StartTime(1),BaseYear,useLeap)
+      write(cstr_ErStartT,'(a20,a20)')'Erup. Start Time:   ',HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap)
       write(cstr_ErHeight,'(a20,f4.1,a3)')'Erup. Plume Height: ',e_PlumeHeight(1),' km'
       write(cstr_ErDuratn,'(a20,f4.1,a6)')'Erup. Duration:     ',e_Duration(1),' hours'
       write(cstr_ErVolume,'(a20,f8.5,a10)')'Erup. Volume:       ',e_Volume(1),' km3 (DRE)'
