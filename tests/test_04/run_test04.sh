@@ -30,7 +30,7 @@ do
     echo "Error: Ash3d returned error code"
     exit 1
   fi
-  grep "useVz_rhoG=.true." Ash3d.lst
+  grep "useVz_rhoG=.true." Ash3d.lst > /dev/null
   rc=$((rc + $?))
   if [[ "$rc" -gt 0 ]] ; then
     echo "Error: Ash3d was not compiled with useVz_rhoG=.true."

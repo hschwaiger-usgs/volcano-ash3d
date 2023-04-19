@@ -4,7 +4,7 @@
 
       use dislin
 
-      integer,parameter :: DS = 4
+      integer,parameter :: DS = 8
 
       contains
 
@@ -506,8 +506,6 @@
 
       integer, intent (in) :: vprof_ID
 
-      !integer,parameter :: DS = 8
-
       character(len=14) :: dp_pngfile
       character(len=26) :: coord_str
       character(len=76) :: title_str
@@ -719,8 +717,6 @@
 
       integer,intent(in) :: pt_indx
 
-      !integer,parameter :: DS = 8
-
       real(kind=DS) :: ymaxpl
       character(len=14) :: dp_pngfile
       integer,save      :: plot_index = 0
@@ -816,4 +812,3 @@
 !##############################################################################
 
       end module Ash3d_PostProc_dislin
-
