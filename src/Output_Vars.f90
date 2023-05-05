@@ -226,7 +226,7 @@
       allocate(DepositThickness(nx,ny))
       DepositThickness = 0.0_ip
       allocate(MaxConcentration(nx,ny))
-      MaxConcentration = 0.0_ip
+      MaxConcentration = MaxConcentration_FillValue
       allocate(DepArrivalTime(nx,ny))
       DepArrivalTime = DepArrivalTime_FillValue
       allocate(CloudArrivalTime(nx,ny))                    ! time of arrival of ash cloud

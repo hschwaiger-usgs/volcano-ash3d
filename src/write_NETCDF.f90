@@ -535,7 +535,8 @@
       nSTAT = nf90_def_dim(ncid,dim_names(8),130,sl_dim_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_dim sl:")
       ! pt
-      if (nairports.gt.0)then
+      !if (nairports.gt.0)then
+      if (Write_PT_Data)then
         nSTAT = nf90_def_dim(ncid,dim_names(9),nairports,pt_dim_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_dim pt:")
       endif
@@ -693,7 +694,8 @@
       ! We don't really need to explicitly have a variable for this one
 
         ! pt (point airport/POI index)
-      if (nairports.gt.0)then
+      !if (nairports.gt.0)then
+      if (Write_PT_Data)then
         if(VERB.gt.1)write(*,*)"     PT: ",dim_names(9)
         nSTAT = nf90_def_var(ncid,dim_names(9),&
                              nf90_int,&
@@ -1474,7 +1476,8 @@
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       ! Point output (Airport/POI)
-      if (nairports.gt.0)then
+      !if (nairports.gt.0)then
+      if (Write_PT_Data)then
         ! x coordinate of point
         if(VERB.gt.1)write(global_info,*)"     pt_x"
         if(op.eq.8)then
@@ -2220,7 +2223,7 @@
           do j=1,nymax
             if(Mask_Cloud(i,j))then
               dumscal_out=real(MaxConcentration(i,j),kind=op)
-              dum2d_out(i,j)=dumscal_out
+              dum2d_out(i,j) = dumscal_out
             endif
           enddo
         enddo
@@ -2249,7 +2252,7 @@
           do j=1,nymax
             if(Mask_Cloud(i,j))then
               dumscal_out=real(CloudLoad(i,j),kind=op)
-              dum2d_out(i,j)=dumscal_out
+              dum2d_out(i,j) = dumscal_out
             endif
           enddo
         enddo
@@ -2863,11 +2866,10 @@
 
           ! ashconMax
           allocate(dum2d_out(nxmax,nymax))
-          dum2d_out(:,:) = MaxConcentration_FillValue
           nSTAT = nf90_inq_varid(ncid,"ashcon_max",ashconMax_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid ashcon_max")
           if(VERB.gt.2)write(global_info,*)"  Writing ashconMax"
-          dum2d_out(:,:) = real(MaxConcentration,kind=op)
+          dum2d_out(:,:) = MaxConcentration_FillValue
           do i=1,nxmax
             do j=1,nymax
               if(Mask_Cloud(i,j))then
@@ -3245,8 +3247,8 @@
 
       if (nSTAT == nf90_noerr) return
       !write(global_essential ,*)severity,errcode,operation,nf90_strerror(nSTAT)
-      write(global_log ,*)severity,errcode,operation,nf90_strerror(nSTAT)
-      write(global_error ,*)severity,errcode,operation,nf90_strerror(nSTAT)
+      write(global_log ,*)severity,errcode,operation,":",nf90_strerror(nSTAT)
+      write(global_error ,*)severity,errcode,operation,":",nf90_strerror(nSTAT)
 
       ! If user-supplied error code is 0, then consider this a warning,
       ! otherwise do a hard stop
