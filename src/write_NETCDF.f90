@@ -38,7 +38,7 @@
       integer :: x_var_id              = 0 ! X-distance
       integer :: y_var_id              = 0 ! Y-distance
       integer :: z_var_id              = 0 ! Z-distance
-      integer :: bn_var_id             = 0 ! Species class ID
+      integer :: bn_var_id             = 0 ! index for species (grain-size bin, gas, water, etc.)
       integer :: er_var_id             = 0 ! eruption index
       integer :: wf_var_id             = 0 ! wind file index
       integer :: pt_var_id             = 0 ! point (airport/POI) index
@@ -263,7 +263,7 @@
         dim_lnames(4) = "X (East)"
       endif
       dim_names(5)  = "bn" ! grainsize bin for 1:n_gs_max, then generalized bin up to nsmax
-      dim_lnames(5) = "Bin index; Grainsize,spec. ID"
+      dim_lnames(5) = "Bin index"
       dim_names(6)  = "er" ! eruption index
       dim_lnames(6) = "Eruption number"
       dim_names(7)  = "wf" ! windfile index
@@ -663,7 +663,7 @@
       nSTAT = nf90_put_att(ncid,bn_var_id,"units","index")
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att bn units")
       nSTAT = nf90_put_att(ncid,bn_var_id,"Comment",&
-                                          "This is just an index")
+                                          "index for grainsizes, gas, water, etc.")
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att bn Comment")
 
          ! ER (Eruption index)
@@ -3307,6 +3307,9 @@
       use Tephra,        only : &
          n_gs_max,MagmaDensity,DepositDensity,LAM_GS_THRESH,AIRBORNE_THRESH
 
+      use solution,      only : &
+         SpeciesID
+
       implicit none
 
       integer, intent(in), optional :: timestep
@@ -3612,8 +3615,6 @@
         nSTAT = nf90_inq_varid(ncid,"bn",bn_var_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid bn")
         write(global_info,2501) "bn",bn_len
-        write(*,*)"KLUDGE: Setting n_gs_max = nsmax = bn_len"
-        n_gs_max = bn_len
         nsmax = bn_len
 
         !!!!!!  PT  !!!!!!!!!!!
@@ -3727,6 +3728,9 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_att Comment DBZ_THRESH:")
 
         ! Now get all the other variable info:
+        ! Species class variable is needed to verify that nsmax = n_gs_max
+        nSTAT = nf90_inq_varid(ncid,"spec_class",spec_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid spec_class")
         !!!! Time-series vars
         ! Vx
         nSTAT = nf90_inq_varid(ncid,"vx",vx_var_id)
@@ -3809,6 +3813,15 @@
           if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid pt_depothickFin")
         endif
 
+        ! Load and check species class so we can set n_gs_max
+        if(.not.allocated(SpeciesID)) allocate(SpeciesID(nsmax))
+        nSTAT = nf90_get_var(ncid,spec_var_id,SpeciesID)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var SpeciesID")
+        n_gs_max = 0
+        do i = 1,nsmax
+          if(SpeciesID(i).eq.1) n_gs_max = n_gs_max + 1
+        enddo
+
         nWriteTimes = t_len
         if(.not.allocated(WriteTimes)) allocate(WriteTimes(nWriteTimes))
         ! Time is always writen with dp
@@ -3830,7 +3843,8 @@
         SimStartHour = real(HS_hours_since_baseyear(itstart_year,itstart_month, &
                                itstart_day,real(filestart_hour,kind=8),&
                                BaseYear,useLeap),kind=4)
-        if(Write_PT_Data)then
+        if(Write_PT_Data.and.&
+           nairports.gt.0)then
           ! Allocate and fill Airport variables
           call Allocate_Airports(nairports,nWriteTimes)
 

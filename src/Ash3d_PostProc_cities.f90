@@ -52,22 +52,6 @@
 
       character(len=130)             :: CityMasterFile
 
-!      INTERFACE
-!        subroutine space_checker(maxcities,CityLon_out,CityLat_out,ncities, &
-!                                    CityLon,CityLat, &
-!                                    minspace_x,minspace_y,IsOkay)
-!          integer     ,intent(in)    :: maxcities
-!          real(kind=ip),intent(in)    :: CityLon_out(maxcities)
-!          real(kind=ip),intent(in)    :: CityLat_out(maxcities)
-!          integer     ,intent(in)    :: ncities
-!          real(kind=ip),intent(in)    :: CityLon
-!          real(kind=ip),intent(in)    :: CityLat
-!          real(kind=ip),intent(in)    :: minspace_x
-!          real(kind=ip),intent(in)    :: minspace_y
-!          logical     ,intent(inout) :: IsOkay
-!        end subroutine space_checker
-!      END INTERFACE
-
       CityName_out = ''           !set default values
       CityLon_out  = 0.0_ip
       CityLat_out  = 0.0_ip
@@ -103,9 +87,6 @@
       CityMasterFile = 'world_cities.txt'
       inquire( file=trim(adjustl(CityMasterFile)), exist=IsThere )
       if(.not.IsThere)then
-        write(6,*)"WARNING: Could not find file: ",trim(adjustl(CityMasterFile)),&
-                  " in CWD."
-        write(6,*)"         Trying in default install path: ",trim(Ash3dHome)
         CityMasterFile = trim(Ash3dHome) // &
                           DirDelim // 'share' // &
                           DirDelim // 'post_proc' // &
@@ -116,13 +97,12 @@
           write(6,*)"       Skipping cities"
           ncities = 0
           return
-        else
-          write(6,*)"Found file."
         endif
       endif
       open(unit=12,file=trim(adjustl(CityMasterFile)))
 
       read(12,*)                                     !skip the first line
+
       do while ((ncities.lt.maxcities).and.(iostatus.ge.0))
         read(12,'(a133)',IOSTAT=iostatus) inputline
         read(inputline,2) CityLon, CityLat, CityName
@@ -170,7 +150,6 @@
           elseif(outCode.eq.2)then
             do i=1,ncities
               ! for gnuplot
-              write(13,3) CityLon_out(i),CityLat_out(i),CityName_out(i)
               write(13,*) real(CityLon_out(i),kind=4),real(CityLat_out(i),kind=4),&
                           '"',trim(adjustl(CityName_out(i))),'"'
 3             format(2f10.4,1x,a26)
@@ -181,10 +160,6 @@
           close(13)
         endif
       endif
-
-!      write(6,*) 'wrote ',ncities,' to cities.xy'
-!
-!      close(13)
 
       end subroutine citylist
          

@@ -702,9 +702,6 @@
         icase = 0
         do ii=1,Nplot_libs
           ! Check each preference in series and see if the library is available
-
-          write(*,*)"HFS Double-check this!!!!"
-
           if(plotlib_avail(plot_pref_map(ii)))then
             icase = plot_pref_map(ii)
             exit

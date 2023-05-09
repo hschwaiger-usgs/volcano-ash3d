@@ -46,9 +46,9 @@ SYSTEM = gfortran
 #      OMPOPT   : includes optimizations flags for fastest runtime and OpenMP directives
 #                 To run, enter: env OMP_NUM_THREADS=4 Ash3d input_file.inp
 #    This variable cannot be left blank
-#RUN = DEBUG
+RUN = DEBUG
 #RUN = PROF
-RUN = OPT
+#RUN = OPT
 #RUN = OMPOPT
 
 #    This variable cannot be left blank
@@ -80,7 +80,7 @@ USEGRIB   = T
 #      VERB=2 : normal output to screen (VERB=1) with additional write statements
 #      VERB=3 : 
 #       -     : same as VERB=1
-VERB = 1
+VERB = 2
 
 # MEMORY
 # If you need pointer arrays instead of allocatable arrays, set this to 'T'
@@ -105,8 +105,8 @@ FASTFPPFLAG =
 #  be generated either with gnuplot or dislin.  Set the corresponding variable
 #  below to 'T' if you want to build with these libraries.  Set to 'F' any you want
 #  to use the default gnuplot.  
-USEPLPLOT = F
-USEDISLIN = F
+USEPLPLOT = T
+USEDISLIN = T
 USEGMT    = F
 
 MFILE=makefile
@@ -451,7 +451,7 @@ all: Ash3d tools
 # Post-Processing tool
 postproc: $(ASH3dCCSRC)/Ash3d_PostProc.f90 $(PPOBJS) $(GRAFOBJ) $(DATAOBJ) $(MFILE)
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc.f90
-	$(FC) $(FFLAGS) $(EXFLAGS) Ash3d_PostProc.o $(PPOBJS) $(GRAFOBJ) $(DATAOBJ) $(LIBS) $(PLOTINC) $(PLOTLIBS) -o Ash3d_PostProc
+	$(FC) $(FFLAGS) $(EXFLAGS) Ash3d_PostProc.o $(PPOBJS) $(GRAFOBJ) $(DATAOBJ) $(LIBS) $(PLOTINC) $(PLOTLIBS) -o ../bin/Ash3d_PostProc
 # We always compile the gnuplot subroutine since these will just throw an error if gnuplot is not installed
 Ash3d_PostProc_gnuplot.o: Ash3d_PostProc_gnuplot.f90 $(MFILE) Ash3d_PostProc_cities.o
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_gnuplot.f90
@@ -499,6 +499,7 @@ install:
 	install -d $(INSTALLDIR)/bin $(INSTALLDIR)/share/post_proc
 	install -m 755 ../bin/$(ASH3DEXEC) $(INSTALLDIR)/bin/$(ASH3DEXEC)
 	install -m 755 ../bin/Ash3d $(INSTALLDIR)/bin/Ash3d
+	install -m 755 ../bin/Ash3d_PostProc $(INSTALLDIR)/bin/Ash3d_PostProc
 	install -m 644 ../share/GlobalAirports_ewert.txt $(INSTALLDIR)/share/
 	install -m 644 ../share/VotW_ESP_v12_csv.txt  $(INSTALLDIR)/share/
 	install -m 644 ../share/post_proc/*png $(INSTALLDIR)/share/post_proc/

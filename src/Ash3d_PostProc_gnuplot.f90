@@ -295,7 +295,6 @@
         xmax = maxval(x_cc_pd(1:nx))
         ymin = minval(y_cc_pd(1:ny))
         ymax = maxval(y_cc_pd(1:ny))
-        stop 5
       endif
       call citylist(2,xmin,xmax,ymin,ymax, &
                       ncities,                        &
