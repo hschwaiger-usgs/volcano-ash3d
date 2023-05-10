@@ -72,6 +72,7 @@
       character(len=10) :: dp_confile
       !character(len=26) :: coord_str
       character(len=25) :: gnucom
+      character(len=80) :: gnucoastfile
       integer :: ioerr,ioerr2,iw,iwf,istat
 
       integer :: ncities
@@ -94,9 +95,11 @@
         end function HS_xmltime
       END INTERFACE
 
-      inquire(file="world_50m.txt",exist=IsThere1)
+      write(gnucoastfile,'(a13)')"world_50m.txt"
+      inquire(file=gnucoastfile,exist=IsThere1)
       if(.not.IsThere1)then
-        inquire(file="/opt/USGS/Ash3d/share/post_proc/world_50m.txt",exist=IsThere2)
+        write(gnucoastfile,'(a45)')"/opt/USGS/Ash3d/share/post_proc/world_50m.txt"
+        inquire(file=gnucoastfile,exist=IsThere2)
         if(.not.IsThere2)then
           write(*,*)"Could not find required file world_50m.txt"
           write(*,*)"This file is available at:"
@@ -369,7 +372,7 @@
       write(55,*)"set label 'Erup. Volume: ",real(e_Volume(1),kind=4),&
                   " km3 (DRE)' at XVAL, YVAL font 'sans,9' offset character 0,-3"
 
-      write(55,*)" plot 'world_50m.txt' with filledcurves linetype rgb '#dddddd' , \"
+      write(55,*)" plot '",trim(adjustl(gnucoastfile)),"' with filledcurves linetype rgb '#dddddd' , \"
       write(55,*)"   'outvar.con' using 1:2 with l lc rgb '#888888' , \"
       write(55,*)"   '' every 1000 with labels font ',6' , \"
       write(55,*)"   'cities.xy' using 1:2 , \"

@@ -6,7 +6,10 @@
       use precis_param
 
       use global_param,  only : &
-        IsLitEnd
+         IsLitEnd,IsLinux,IsWindows,IsMacOS
+
+!      use global_param,  only : &
+!         IsLinux,IsWindows,IsMacOS,DirPrefix,DirDelim
 
       use Output_Vars,   only : &
          ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
@@ -24,14 +27,16 @@
       integer,intent(in) :: itime
 
       character(len=8)  :: ov_fileroot = "testfile"
-      character(len=22) :: ov_mainfile
-      character(len=22) :: ov_indxfile
-      character(len=22) :: ov_dbasfile
-      character(len=22) :: ov_projfile
+      character(len=12) :: ov_mainfile
+      character(len=12) :: ov_indxfile
+      character(len=12) :: ov_dbasfile
+      character(len=12) :: ov_projfile
+      character(len=12) :: ov_zipfile
       character(len=4)  :: ov_mainext = ".shp"
       character(len=4)  :: ov_indxext = ".shx"
       character(len=4)  :: ov_dbasext = ".dbf"
       character(len=4)  :: ov_projext = ".prj"
+      character(len=4)  :: ov_zipext  = ".zip"
       integer           :: ov_mainID  = 22
       integer           :: ov_indxID  = 23
       integer           :: ov_dbasID  = 24
@@ -102,6 +107,9 @@
       character(len=10):: DBASE_TableRecData13  ! unit for level
       character(len=10):: DBASE_TableRecData14  ! index
       character(len=20):: DBASE_TableRecData15  ! Time of data
+
+      logical                 :: IsThere
+      character(len=71):: zipcom
 
       INTERFACE
         subroutine writeShapFileFieldDesArr(ov_dbasID,fldlen,DBASE_FieldName,&
@@ -271,6 +279,7 @@
       ov_indxfile = trim(adjustl(ov_fileroot)) // ov_indxext
       ov_dbasfile = trim(adjustl(ov_fileroot)) // ov_dbasext
       ov_projfile = trim(adjustl(ov_fileroot)) // ov_projext
+      ov_zipfile  = trim(adjustl(ov_fileroot)) // ov_zipext
 
       write(*,*)"Writing shapefile"
 
@@ -666,6 +675,28 @@
       write(ov_projID)'PRIMEM["Greenwich",0],'
       write(ov_projID)'UNIT["Degree",0.017453292519943295]]'
       close(ov_projID)
+
+      ! Now zip it up if we can
+      ! Test if zip is installed
+      if(IsLinux.or.IsMacOS)then
+        inquire( file=trim(adjustl('/usr/bin/zip')), exist=IsThere)
+      elseif(IsWindows)then
+        ! this is a placeholder for now
+        IsThere = .false.
+      else
+        IsThere = .false.
+      endif
+      if(IsThere)then
+        write(*,*)ov_zipfile
+        write(*,*)ov_projfile
+        write(*,*)ov_indxfile
+        write(*,*)ov_mainfile
+        write(*,*)ov_dbasfile
+        write(zipcom,212)'zip -r',ov_zipfile,ov_projfile,&
+                                  ov_indxfile,ov_mainfile,ov_dbasfile
+ 212    format(a6,1x,a12,1x,a12,1x,a12,1x,a12,1x,a12)
+        call execute_command_line(zipcom)
+      endif
 
       end subroutine write_ShapeFile_Polyline
 

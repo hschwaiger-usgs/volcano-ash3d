@@ -188,7 +188,7 @@
       character (len=130):: infile                       !input file name
       character (len=50) :: outfile
       logical            :: LoadConcen
-      character (len=50) :: concenfile
+      character (len=80) :: concenfile
       integer            :: init_tstep
       character (len=130):: cdf_title
       character (len=80) :: cdf_institution

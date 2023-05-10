@@ -72,7 +72,7 @@
                                                      !   | | - Third
                                                      !   | | | - Fourth
                                                      !   V V V V
-      integer,dimension(Nplot_libs) :: plot_pref_map = (/3,2,1,4/) ! plot preference for maps
+      integer,dimension(Nplot_libs) :: plot_pref_map = (/3,1,2,4/) ! plot preference for maps
       integer,dimension(Nplot_libs) :: plot_pref_shp = (/3,1,2,4/) ! plot preference for contours
       integer,dimension(Nplot_libs) :: plot_pref_vpr = (/2,1,3,4/) ! plot preference for vert profs.
       integer,dimension(Nplot_libs) :: plot_pref_aTS = (/2,3,1,4/) ! plot preference for Airport TS
@@ -249,7 +249,8 @@
       !  Arg #1
       inquire( file=concenfile, exist=IsThere )
       if(.not.IsThere)then
-        write(global_error,*)"ERROR: Cannot file input file"
+        write(global_error,*)"ERROR: Cannot find input file"
+        write(global_error,*)"     ",concenfile
         stop 1
       else
         write(global_info,*)"Ash3d Output file: ",concenfile
