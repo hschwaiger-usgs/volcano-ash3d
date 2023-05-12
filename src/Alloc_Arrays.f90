@@ -2,6 +2,9 @@
 
       use precis_param
 
+      use global_param,  only : &
+         VERB
+
       use io_units
 
       use mesh,          only : &
@@ -25,9 +28,11 @@
 
       implicit none
 
-      write(global_production,*)"--------------------------------------------------"
-      write(global_production,*)"---------- ALLOC_ARRAYS --------------------------"
-      write(global_production,*)"--------------------------------------------------"
+      if(VERB.gt.0)then
+        write(global_production,*)"--------------------------------------------------"
+        write(global_production,*)"---------- ALLOC_ARRAYS --------------------------"
+        write(global_production,*)"--------------------------------------------------"
+      endif
 
       ! io_data is allocated in Read_Control_File
 
@@ -44,6 +49,9 @@
 
 !###############################################################################
       subroutine dealloc_arrays
+
+      use global_param,  only : &
+         VERB
 
       use io_data,       only : &
            Deallocate_io_data
@@ -82,7 +90,7 @@
 
       implicit none
 
-      write(global_info,*)"Cleaning up allocated memory"
+      if(VERB.gt.0)write(global_info,*)"Cleaning up allocated memory"
 
       call Deallocate_io_data
       call Deallocate_mesh

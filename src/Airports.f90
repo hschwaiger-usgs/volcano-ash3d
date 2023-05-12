@@ -2,6 +2,9 @@
 
       use precis_param
 
+      use global_param,  only : &
+         VERB
+
       use io_units
 
       use io_data,       only : &
@@ -173,11 +176,13 @@
       elseif (AppendExtAirportFile.eqv..true.) then
         n_airports_total = NAIRPORTS_EWERT + n_ext_airports    !if appending external to internal
         if(n_airports_total.gt.MAXAIRPORTS)then
-          write(global_error,*)"ERROR: ",&
-           "Too many airports are requested."
-          write(global_error,*)&
-            "       Increase MAXAIRPORTS and recompile"
-        endif 
+          if(VERB.gt.0)then
+            write(global_error,*)"ERROR: ",&
+                 "Too many airports are requested."
+            write(global_error,*)&
+                  "       Increase MAXAIRPORTS and recompile"
+          endif
+        endif
         do i=NAIRPORTS_EWERT+1,n_airports_total
           AirportFullLat(i)  = ExtAirportLat(i-NAIRPORTS_EWERT)
           AirportFullLon(i)  = ExtAirportLon(i-NAIRPORTS_EWERT)
@@ -187,12 +192,14 @@
           if (AirportFullLon(i).lt.0.0_ip) &
             AirportFullLon(i) = AirportFullLon(i)+360.0_ip
         enddo
-        write(global_info,*) 'Appending airports below to the internal list.'
-        write(global_info,*) 'Airport name       lon      lat'
-        do i=NAIRPORTS_EWERT+1,n_airports_total
-          write(global_info,*) AirportFullName(i),AirportFullLon(i),AirportFullLat(i)
+        if(VERB.gt.0)then
+          write(global_info,*) 'Appending airports below to the internal list.'
+          write(global_info,*) 'Airport name       lon      lat'
+          do i=NAIRPORTS_EWERT+1,n_airports_total
+            write(global_info,*) AirportFullName(i),AirportFullLon(i),AirportFullLat(i)
 !2563      format(a42,2f12.4)
-        enddo
+          enddo
+        endif
       else
         n_airports_total = n_ext_airports                      !if only reading external
         do i=1,n_airports_total
@@ -211,7 +218,6 @@
       ! Loop through n_airports_total twice:
       !   first to determine how many airports are in the domain
       !   next to populate external variables
-
       nairports = 0
       do i = 1, n_airports_total
         !make sure longitude is between 0
@@ -336,8 +342,8 @@
       enddo
 
 !     WRITE OUT AIRPORT NAMES TO LOG FILE
-      write(global_info,3) nairports
-      write(global_log ,3) nairports
+      if(VERB.gt.0)write(global_info,3) nairports
+      if(VERB.gt.0)write(global_log ,3) nairports
 
       deallocate(AirportFullLat)
       deallocate(AirportFullLon)
@@ -466,8 +472,8 @@
       return
 
 !     ERROR TRAP
-2010  write(global_info,6) inputline
-      write(global_log ,6) inputline
+2010  if(VERB.gt.0)write(global_info,6) inputline
+      if(VERB.gt.0)write(global_log ,6) inputline
 6     format('Error reading from airport list.  Read statement was expecting',/, &
              'latitude longitude x y  (all real numbers).  The input line gave:',/, &
              a80,/,'program stopped')
@@ -505,14 +511,18 @@
                           DirDelim // 'GlobalAirports_ewert.txt'
       ! Test for existance of the airport file
       inquire( file=trim(adjustl(AirportMasterFile)), exist=IsThere )
-      write(global_info,*)&
-        "Trying to read external global airport file in home=",Ash3dHome
-      write(global_info,*)"Full file name = ",trim(adjustl(AirportMasterFile))
-      write(global_info,*)"  Exists = ",IsThere
+      if(VERB.gt.0)then
+        write(global_info,*)&
+          "Trying to read external global airport file in home=",Ash3dHome
+        write(global_info,*)"Full file name = ",trim(adjustl(AirportMasterFile))
+        write(global_info,*)"  Exists = ",IsThere
+      endif
       if(.not.IsThere)then
-        write(global_error,*)"ERROR: Could not find airport file."
-        write(global_error,*)"       Please copy file to this location:"
-        write(global_error,*)AirportMasterFile
+        if(VERB.gt.0)then
+          write(global_error,*)"ERROR: Could not find airport file."
+          write(global_error,*)"       Please copy file to this location:"
+          write(global_error,*)AirportMasterFile
+        endif
         stop 1
       endif
 
@@ -528,7 +538,7 @@
         read(inputline,2) inCode,inName
         i = i+1
         if(i.gt.MAXAIRPORTS)then
-          write(global_error,*)"ERROR: ",&
+          if(VERB.gt.0)write(global_error,*)"ERROR: ",&
            "Airport file contains too many entries"
           stop 1
         endif
@@ -546,14 +556,15 @@
       !FORMAT STATEMENTS
 2     format(50x,a3,2x,a35)
 5     format(5x,'Error.  Can''t find input file ',a130,/,5x,'Program stopped')   
-2000  write(6,5) AirportInFile
+2000  if(VERB.gt.0)write(global_error,5) AirportInFile
 
       end subroutine Read_GlobalAirports
 !******************************************************************************
 
 #else
-      ! This branch is compiled if the list should be built in
-      subroutine Read_GlobalAirports(num_GlobAirports) !(NAIRPORTS,AirportFullLat,AirportFullLon, nAirportFullCode, AirportFullName)
+      ! This branch is compiled if the list should be builtiin
+      subroutine Read_GlobalAirports(num_GlobAirports)
+         !(NAIRPORTS,AirportFullLat,AirportFullLon, nAirportFullCode, AirportFullName)
 
       implicit none
 

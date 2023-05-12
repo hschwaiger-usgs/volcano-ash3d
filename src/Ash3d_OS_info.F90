@@ -5,7 +5,7 @@
       use io_units
 
       use global_param,  only : &
-        DirPrefix,DirDelim,IsLitEnd,IsLinux,IsWindows,IsMacOS, &
+        DirPrefix,DirDelim,IsLitEnd,IsLinux,IsWindows,IsMacOS,VERB, &
         CFL,OS_TYPE,OS_Flavor,os_full_command_line,os_cwd,os_host,os_user
 
       use io_data,       only : &
@@ -131,8 +131,9 @@
         ! VALUE(7) = The seconds of the minute
         ! VALUE(8) = The milliseconds of the second
 
-      write(global_info,*)" "
-      write(global_info,*)"Running Ash3d with command-line: ",trim(adjustl(os_full_command_line))
+      if(VERB.gt.0)write(global_info,*)" "
+      if(VERB.gt.0)write(global_info,*)"Running Ash3d with command-line: ",&
+                    trim(adjustl(os_full_command_line))
 
       ! Check for environment variables ASH3DHOME and ASH3DCFL
 
@@ -145,25 +146,25 @@
       ! Here it is over-written by compile-time path, if available
 #include "installpath.h"
       ! This can be over-written if an environment variable is set
-      write(global_info,*)" "
-      write(global_info,*)"Checking for run-time environment variable: ASH3DHOME"
+      if(VERB.gt.0)write(global_info,*)" "
+      if(VERB.gt.0)write(global_info,*)"Checking for run-time environment variable: ASH3DHOME"
       call GET_ENVIRONMENT_VARIABLE(NAME="ASH3DHOME",VALUE=tmp_str,STATUS=iostatus)
       if(iostatus.eq.0)then
         Ash3dHome = tmp_str
-        write(global_info,*)&
+        if(VERB.gt.0)write(global_info,*)&
           "  Install path reset by environment variable to: ",trim(adjustl(Ash3dHome))
       else
-        write(global_info,*)&
+        if(VERB.gt.0)write(global_info,*)&
           "  ASH3DHOME not found. Install path set to: ",trim(adjustl(Ash3dHome))
       endif
-      write(global_info,*)"Checking for run-time environment variable: ASH3DCFL"
+      if(VERB.gt.0)write(global_info,*)"Checking for run-time environment variable: ASH3DCFL"
       call GET_ENVIRONMENT_VARIABLE(NAME="ASH3DCFL",VALUE=tmp_str,STATUS=iostatus)
       if(iostatus.eq.0)then
         read(tmp_str,*)CFL
-        write(global_info,*)&
+        if(VERB.gt.0)write(global_info,*)&
           "  CFL condition reset by environment variable to: ",real(CFL,kind=4)
       else
-        write(global_info,*)&
+        if(VERB.gt.0)write(global_info,*)&
           "  ASH3DCFL not found.  CFL condition : ",real(CFL,kind=4)
       endif
 
@@ -184,106 +185,110 @@
       read(RunStartHour_ch,'(8x,i2)') RunStartHr
       read(RunStartHour_ch,'(11x,i2)') RunStartMinute
 
-      write(global_info,*)" System Information"
-      if(IsLitEnd)then
-        write(global_info,*)"   host: ",trim(adjustl(os_host)), &
-                            ' (',trim(adjustl(OS_Flavor)),' little-endian)'
-      else
-        write(global_info,*)"   host: ",trim(adjustl(os_host)), &
-                            ' (',trim(adjustl(OS_Flavor)),' little-endian)'
-      endif
-      write(global_info,*)"    cwd: ",trim(adjustl(os_cwd))
-      write(global_info,*)"   user: ",trim(adjustl(os_user))
-
-      write(global_info,*)"  "
-      write(global_info,*)"This executable was compiled with the following compiler and options:"
-      write(global_info,*)"    ",trim(adjustl(CompVer))
-      write(global_info,*)"    ",trim(adjustl(CompOpt))
-      write(global_info,*)"and with the following pre-proc flags:"
-#ifdef LINUX
-      write(global_info,*)"         LINUX: System specified as linux"
-#endif
-#ifdef MACOS
-      write(global_info,*)"         MACOS: System specified as MacOS"
-#endif
-#ifdef WINDOWS
-      write(global_info,*)"       WINDOWS: System specified as MS Windows"
-#endif
-#ifdef FAST_DT
-      write(global_info,*)"       FAST_DT: dt will only be evaluated on the time steps"
-      write(global_info,*)"                in the wind files.  If there are processes"
-      write(global_info,*)"                that affect the wind speeds (e.g. umbrella"
-      write(global_info,*)"                spreading), this can cause job failure."
-#endif
-#ifdef FAST_SUBGRID
-      write(global_info,*)"  FAST_SUBGRID: Advection and diffusion routines will only"
-      write(global_info,*)"                be calculated in the region where the cloud"
-      write(global_info,*)"                concentration exceeds a threshold"
-#endif
-#ifdef EXPLDIFF
-      write(global_info,*)"      EXPLDIFF: Diffusion will be calculated via the explicit solver."
-#endif
-#ifdef CRANKNIC
-      write(global_info,*)"      CRANKNIC: Diffusion will be calculated via Crank-Nicolson"
-#endif
-#ifdef LIM_NONE
-      write(global_info,*)"      LIM_NONE: Advection routines use no limiters"
-#endif
-#ifdef LIM_LAXWEN
-      write(global_info,*)"    LIM_LAXWEN: Advection routines use a Lax-Wendrof limiter"
-#endif
-#ifdef LIM_BW
-      write(global_info,*)"        LIM_BW: Advection routines use a Beam-Warming limiter"
-#endif
-#ifdef LIM_FROMM
-      write(global_info,*)"     LIM_FROMM: Advection routines use a Fromm limiter"
-#endif
-#ifdef LIM_MINMOD
-      write(global_info,*)"    LIM_MINMOD: Advection routines use a MinMod limiter"
-#endif
-#ifdef LIM_SUPERBEE
-      write(global_info,*)"  LIM_SUPERBEE: Advection routines use a SuperBee limiter"
-#endif
-#ifdef LIM_MC
-      write(global_info,*)"        LIM_MC: Advection routines use a MC limiter"
-#endif
-#ifdef VERBOSE_L0
-      write(global_info,*)"    VERBOSE_L0: Output verbosity = 0 (suppress all output to stdout)"
-#endif
-#ifdef VERBOSE_L1
-      write(global_info,*)"    VERBOSE_L1: Output verbosity = 1"
-#endif
-#ifdef VERBOSE_L2
-      write(global_info,*)"    VERBOSE_L2: Output verbosity = 2"
-#endif
-#ifdef VERBOSE_L3
-      write(global_info,*)"    VERBOSE_L3: Output verbosity = 3"
-#endif
-#ifdef USENETCDF
-      write(global_info,*)"     USENETCDF: NetCDF functionality is included"
-#endif
-#ifdef USEGRIB
-      write(global_info,*)"       USEGRIB: Grib functionality is included"
-#endif
-#ifdef USEPOINTERS
-      write(global_info,*)"   USEPOINTERS: Arrays are defined as pointers"
-      write(global_info,*)"                This helps Ash3d work with ForestClaw"
-#endif
-#ifdef USEEXTDATA
-      write(global_info,*)"    USEEXTDATA: Data files for airports and volcanoes are"
-      write(global_info,*)"                read at run-time"
-#endif
-
-      ! WRITE OUT START TIME IN UTC
-      write(global_info,*)
-      write(global_log ,*)
-      write(global_info,2) version,RunStartYear,RunStartMonth,RunStartDay,RunStartHr,RunStartMinute
-      write(global_log ,2) version,RunStartYear,RunStartMonth,RunStartDay,RunStartHr,RunStartMinute
         ! Prepare a note to include in the netcdf output file
       write(linebuffer080,102) RunStartYear,RunstartMonth,RunStartDay,RunStartHr,RunStartMinute
       os_time_log = linebuffer080(1:17)
-      write(global_info,*)
-      write(global_log ,*)
+
+      if(VERB.gt.0)then
+        write(global_info,*)" System Information"
+        if(IsLitEnd)then
+          write(global_info,*)"   host: ",trim(adjustl(os_host)), &
+                              ' (',trim(adjustl(OS_Flavor)),' little-endian)'
+        else
+          write(global_info,*)"   host: ",trim(adjustl(os_host)), &
+                              ' (',trim(adjustl(OS_Flavor)),' little-endian)'
+        endif
+        write(global_info,*)"    cwd: ",trim(adjustl(os_cwd))
+        write(global_info,*)"   user: ",trim(adjustl(os_user))
+  
+        write(global_info,*)"  "
+        write(global_info,*)"This executable was compiled with the following compiler and options:"
+        write(global_info,*)"    ",trim(adjustl(CompVer))
+        write(global_info,*)"    ",trim(adjustl(CompOpt))
+        write(global_info,*)"and with the following pre-proc flags:"
+#ifdef LINUX
+        write(global_info,*)"         LINUX: System specified as linux"
+#endif
+#ifdef MACOS
+        write(global_info,*)"         MACOS: System specified as MacOS"
+#endif
+#ifdef WINDOWS
+        write(global_info,*)"       WINDOWS: System specified as MS Windows"
+#endif
+#ifdef FAST_DT
+        write(global_info,*)"       FAST_DT: dt will only be evaluated on the time steps"
+        write(global_info,*)"                in the wind files.  If there are processes"
+        write(global_info,*)"                that affect the wind speeds (e.g. umbrella"
+        write(global_info,*)"                spreading), this can cause job failure."
+#endif
+#ifdef FAST_SUBGRID
+        write(global_info,*)"  FAST_SUBGRID: Advection and diffusion routines will only"
+        write(global_info,*)"                be calculated in the region where the cloud"
+        write(global_info,*)"                concentration exceeds a threshold"
+#endif
+#ifdef EXPLDIFF
+        write(global_info,*)"      EXPLDIFF: Diffusion will be calculated via the explicit solver."
+#endif
+#ifdef CRANKNIC
+        write(global_info,*)"      CRANKNIC: Diffusion will be calculated via Crank-Nicolson"
+#endif
+#ifdef LIM_NONE
+        write(global_info,*)"      LIM_NONE: Advection routines use no limiters"
+#endif
+#ifdef LIM_LAXWEN
+        write(global_info,*)"    LIM_LAXWEN: Advection routines use a Lax-Wendrof limiter"
+#endif
+#ifdef LIM_BW
+        write(global_info,*)"        LIM_BW: Advection routines use a Beam-Warming limiter"
+#endif
+#ifdef LIM_FROMM
+        write(global_info,*)"     LIM_FROMM: Advection routines use a Fromm limiter"
+#endif
+#ifdef LIM_MINMOD
+        write(global_info,*)"    LIM_MINMOD: Advection routines use a MinMod limiter"
+#endif
+#ifdef LIM_SUPERBEE
+        write(global_info,*)"  LIM_SUPERBEE: Advection routines use a SuperBee limiter"
+#endif
+#ifdef LIM_MC
+        write(global_info,*)"        LIM_MC: Advection routines use a MC limiter"
+#endif
+#ifdef VERBOSE_L0
+        write(global_info,*)"    VERBOSE_L0: Output verbosity = 0 (suppress all output to stdout)"
+#endif
+#ifdef VERBOSE_L1
+        write(global_info,*)"    VERBOSE_L1: Output verbosity = 1"
+#endif
+#ifdef VERBOSE_L2
+        write(global_info,*)"    VERBOSE_L2: Output verbosity = 2"
+#endif
+#ifdef VERBOSE_L3
+        write(global_info,*)"    VERBOSE_L3: Output verbosity = 3"
+#endif
+#ifdef USENETCDF
+        write(global_info,*)"     USENETCDF: NetCDF functionality is included"
+#endif
+#ifdef USEGRIB
+        write(global_info,*)"       USEGRIB: Grib functionality is included"
+#endif
+#ifdef USEPOINTERS
+        write(global_info,*)"   USEPOINTERS: Arrays are defined as pointers"
+        write(global_info,*)"                This helps Ash3d work with ForestClaw"
+#endif
+#ifdef USEEXTDATA
+        write(global_info,*)"    USEEXTDATA: Data files for airports and volcanoes are"
+        write(global_info,*)"                read at run-time"
+#endif
+  
+        ! WRITE OUT START TIME IN UTC
+        write(global_info,*)
+        write(global_log ,*)
+        write(global_info,2) version,RunStartYear,RunStartMonth,RunStartDay,RunStartHr,RunStartMinute
+        write(global_log ,2) version,RunStartYear,RunStartMonth,RunStartDay,RunStartHr,RunStartMinute
+        write(global_info,*)
+        write(global_log ,*)
+      endif
+
 
 2     format(4x,'Ash3d (Rev ',a5,') run ',&
              i4,'.',i2.2,'.',i2.2,i4,':',i2.2,' UTC')

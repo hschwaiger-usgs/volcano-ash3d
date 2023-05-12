@@ -2,6 +2,9 @@
 
       use precis_param
 
+      use global_param,  only : &
+         VERB
+
       use io_units
 
       real(kind=ip), parameter :: R_GAS_IDEAL  = 8.3144621_ip ! Ideal gas constant (J /(kg K))
@@ -63,10 +66,12 @@
          nx_submet,ny_submet,np_fullmet
 
       implicit none
-      
-      write(global_production,*)"--------------------------------------------------"
-      write(global_production,*)"---------- ALLOCATE_ATMOSPHERE_MET ---------------"
-      write(global_production,*)"--------------------------------------------------"
+
+      if(VERB.gt.0)then
+        write(global_production,*)"--------------------------------------------------"
+        write(global_production,*)"---------- ALLOCATE_ATMOSPHERE_MET ---------------"
+        write(global_production,*)"--------------------------------------------------"
+      endif
 
       ! Note: all these arrays are allocated on np_fullmet levels even though
       !       np_fullmet_T or np_fullmet_RH might be less.  These will contain
@@ -256,7 +261,7 @@
               !AirSH_meso_last_step_MetP_sp = MR_dum3d_MetP
               AirSH_meso_last_step_MetP_sp = 0.0_sp
             else
-              write(global_info,*)"ERROR: Neither SH nor RH are available"
+              if(VERB.gt.0)write(global_info,*)"ERROR: Neither SH nor RH are available"
               stop 1
             endif
           endif
@@ -286,7 +291,7 @@
             !AirSH_meso_next_step_MetP_sp = MR_dum3d_MetP
             AirSH_meso_last_step_MetP_sp = 0.0_sp
           else
-            write(global_info,*)"ERROR: Neither SH nor RH are available"
+            if(VERB.gt.0)write(global_info,*)"ERROR: Neither SH nor RH are available"
             stop 1
           endif
         endif
@@ -318,10 +323,12 @@
       else
         ! Currently, this subroutine is only called if Load_MesoSteps=.true.
         ! so we shouldn't be here
-        write(*,*)"Calling Set_Atmosphere_Meso outside of a Load_MesoSteps=.true."
-        write(*,*)"case for Interval_Frac = ",Interval_Frac
-        write(*,*)"This is a place-holder for interpolating tempertures to the"
-        write(*,*)"current time.  Not yet implemented."
+        if(VERB.gt.0)then
+          write(*,*)"Calling Set_Atmosphere_Meso outside of a Load_MesoSteps=.true."
+          write(*,*)"case for Interval_Frac = ",Interval_Frac
+          write(*,*)"This is a place-holder for interpolating tempertures to the"
+          write(*,*)"current time.  Not yet implemented."
+        endif
         stop 1
         !Temperature(:,:,:) = real( Temp_meso_last_step_sp(:,:,:),kind=ip) + &
         !                     real((Temp_meso_next_step_sp(:,:,:) - &

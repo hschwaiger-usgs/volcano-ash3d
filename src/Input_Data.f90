@@ -197,13 +197,11 @@
         end subroutine MR_Set_Gen_Index_GRIB
       END INTERFACE
 
-
-      write(global_production,*)&
-       "--------------------------------------------------"
-      write(global_production,*)&
-       "---------- READ_CONTROL_FILE ---------------------"
-      write(global_production,*)&
-       "--------------------------------------------------"
+      if(VERB.gt.0)then
+        write(global_production,*)"--------------------------------------------------"
+        write(global_production,*)"---------- READ_CONTROL_FILE ---------------------"
+        write(global_production,*)"--------------------------------------------------"
+      endif
 
       !initialize output
       formatanswer = 'null'
@@ -305,18 +303,17 @@
           fc_len = fc_len + 1
           infile(fc_len:fc_len) = fc_inputfile(fc_len)
         end do
-        write(global_info,*) 'Reading input file ''',&
+        if(VERB.gt.0)write(global_info,*) 'Reading input file ''',&
                              infile,''' from ForestClaw'
       endif
 
-
       !OPEN AND READ ESP FILE
-      write(global_info,3) infile
-      write(global_log ,3) infile
+      if(VERB.gt.0)write(global_info,3) infile
+      if(VERB.gt.0)write(global_log ,3) infile
 
       inquire( file=infile, exist=IsThere )
       if(.not.IsThere)then
-        write(global_error,*)"ERROR: Cannot file input file"
+        if(VERB.gt.0)write(global_error,*)"ERROR: Cannot file input file"
         stop 1
       endif
       open(unit=10,file=infile,status='old',err=1900)
@@ -325,9 +322,11 @@
       ! BLOCK 1: GRID INFO
       ! Start reading the input file assuming there is a variable length
       ! header with each header line flagged by a '#' or '*'
-      write(global_info,*)' *******************************************'
-      write(global_info,*)' Reading Block 1: Volcano/grid specification'
-      write(global_info,*)' *******************************************'
+      if(VERB.gt.0)then
+        write(global_info,*)' *******************************************'
+        write(global_info,*)' Reading Block 1: Volcano/grid specification'
+        write(global_info,*)' *******************************************'
+      endif
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
       do while(testkey.eq.'#'.or.testkey.eq.'*')
@@ -341,7 +340,7 @@
       cdf_b1l1 = linebuffer080
       iendstr = SCAN(linebuffer080, "#")
       if (iendstr.eq.1)then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.gt.0)write(global_error,*)"ERROR: ",&
          "Volcano name cannot start with #"
         stop 1
       endif
@@ -357,10 +356,12 @@
         call get_ESP(volc_code)
       endif
 
-      write(global_info,*)
-      write(global_log ,*)
-      write(global_info,37) VolcanoName
-      write(global_log ,37) VolcanoName
+      if(VERB.gt.0)then
+        write(global_info,*)
+        write(global_log ,*)
+        write(global_info,37) VolcanoName
+        write(global_log ,37) VolcanoName
+      endif
 
       ! Block 1 Line 2
       ! Read projection parameters
@@ -418,18 +419,18 @@
         
         !Make sure longitudes are between 0 and 360 degrees
         if (lonLL.lt.-360.0_ip) then
-          write(global_info,*)&
+          if(VERB.gt.0)write(global_info,*)&
            "Please give longitude values between -360 and 360."
-          write(global_log ,*)&
+          if(VERB.gt.0)write(global_log ,*)&
            "Please give longitude values between -360 and 360."
           stop 1
         endif
         if (lonLL.lt.  0.0_ip) lonLL=lonLL+360.0_ip
         if (lonLL.ge.360.0_ip) lonLL=mod(lonLL,360.0_ip)
         if (lon_volcano.lt.-360.0) then
-          write(global_info,*)&
+          if(VERB.gt.0)write(global_info,*)&
            "Please give longitude values between -360 and 360."
-          write(global_log ,*)&
+          if(VERB.gt.0)write(global_log ,*)&
            "Please give longitude values between -360 and 360."
           stop 1
         endif
@@ -446,22 +447,24 @@
         lonUR = lonLL + gridwidth_e
         latUR = latLL + gridwidth_n
 
-        write(global_info,*)'lonLL=',real(lonLL,kind=sp)
-        write(global_info,*)'lonUR=',real(lonUR,kind=sp)
-        write(global_info,*)'latLL=',real(latLL,kind=sp)
-        write(global_info,*)'latUR=',real(latUR,kind=sp)
-        write(global_info,*)'lon_volcano=',real(lon_volcano,kind=sp)
-        write(global_info,*)'lat_volcano=',real(lat_volcano,kind=sp)
-
-        write(global_info,4) lonLL, latLL, gridwidth_e, gridwidth_n, &
-                   lon_volcano, lat_volcano
-        write(global_info,*) "z_volcano = ",real(z_volcano,kind=sp)," km"
-        write(global_log ,4) lonLL, latLL, gridwidth_e, gridwidth_n, &
-                   lon_volcano, lat_volcano
-        write(global_log ,*) "z_volcano = ",real(z_volcano,kind=sp)," km"
-        write(global_info,5) de, dn
-        write(global_log ,5) de, dn
-        
+        if(VERB.gt.0)then
+          write(global_info,*)'lonLL=',real(lonLL,kind=sp)
+          write(global_info,*)'lonUR=',real(lonUR,kind=sp)
+          write(global_info,*)'latLL=',real(latLL,kind=sp)
+          write(global_info,*)'latUR=',real(latUR,kind=sp)
+          write(global_info,*)'lon_volcano=',real(lon_volcano,kind=sp)
+          write(global_info,*)'lat_volcano=',real(lat_volcano,kind=sp)
+  
+          write(global_info,4) lonLL, latLL, gridwidth_e, gridwidth_n, &
+                     lon_volcano, lat_volcano
+          write(global_info,*) "z_volcano = ",real(z_volcano,kind=sp)," km"
+          write(global_log ,4) lonLL, latLL, gridwidth_e, gridwidth_n, &
+                     lon_volcano, lat_volcano
+          write(global_log ,*) "z_volcano = ",real(z_volcano,kind=sp)," km"
+          write(global_info,5) de, dn
+          write(global_log ,5) de, dn
+       endif
+       
        !check for errors in input
         call LatLonChecker(latLL,lonLL,lat_volcano,lon_volcano,gridwidth_e,gridwidth_n)
       else  ! IsLatLon
@@ -488,12 +491,14 @@
         ! Block 1 Line 6
         read(10,'(a80)')cdf_b1l6
         read(cdf_b1l6,*,err=1904) dx, dy                 ! cell size in horizontal, vertical, in km
-        write(global_info,4) xLL, yLL, gridwidth_x, gridwidth_y, x_volcano,y_volcano  !write out input data
-        write(global_log ,4) xLL, yLL, gridwidth_x, gridwidth_y, x_volcano,y_volcano
-        write(global_info,*) "z_volcano = ",z_volcano," km"
-        write(global_log ,*) "z_volcano = ",z_volcano," km"
-        write(global_info,5) dx, dy
-        write(global_log ,5) dx, dy
+        if(VERB.gt.0)then
+          write(global_info,4) xLL, yLL, gridwidth_x, gridwidth_y, x_volcano,y_volcano  !write out input data
+          write(global_log ,4) xLL, yLL, gridwidth_x, gridwidth_y, x_volcano,y_volcano
+          write(global_info,*) "z_volcano = ",z_volcano," km"
+          write(global_log ,*) "z_volcano = ",z_volcano," km"
+          write(global_info,5) dx, dy
+          write(global_log ,5) dx, dy
+        endif
         call xyChecker(xLL,yLL,dx,dy,x_volcano,y_volcano,gridwidth_x,gridwidth_y)
       endif
 
@@ -501,8 +506,8 @@
       read(10,'(a80)')cdf_b1l7
       read(cdf_b1l7,*,err=5215) dz_const    ! nodal spacing in z (always km)
       VarDzType = "dz_cons"
-      write(global_info,43) dz_const
-      write(global_log ,43) dz_const
+      if(VERB.gt.0)write(global_info,43) dz_const
+      if(VERB.gt.0)write(global_log ,43) dz_const
       ! Set up initial z_vector up to 50km or so.  This is to match the variable
       ! dz cases in which the max height is specified.  The computational grid
       ! height will be truncated below to just that needed to cover the plume
@@ -514,22 +519,22 @@
       enddo
       goto 5220
 
-5215  write(global_info,*)&
-       "Could not read dz. Trying to reinterpret as alternate z-spacing"
-      write(global_info,*)cdf_b1l7
+5215  if(VERB.gt.0)write(global_info,*)&
+                   "Could not read dz. Trying to reinterpret as alternate z-spacing"
+      if(VERB.gt.0)write(global_info,*)cdf_b1l7
       read(cdf_b1l7,*,err=1905) VarDzType
       if (VarDzType.eq.'dz_plin')then
         ! Piece-wise linear
         !  Read another line with n-segments, nz1, dz1, nz2, dz2, ...
-        write(global_info,*)&
+        if(VERB.gt.0)write(global_info,*)&
          "z is piecewise linear:  Now reading the segments."
         read(10,'(a80)')cdf_b1l7
         read(cdf_b1l7,*,err=1905) nsegments
         if(nsegments.lt.1)then
-          write(global_info,*)"ERROR: ",&
-           "nsegments must be positive integer"
-          write(global_info,*)&
-           "       nsegments = ",nsegments
+          if(VERB.gt.0)write(global_info,*)"ERROR: ",&
+                       "nsegments must be positive integer"
+          if(VERB.gt.0)write(global_info,*)&
+                       "       nsegments = ",nsegments
           stop 1
         endif
         allocate(nz_plin_segments(nsegments))
@@ -555,22 +560,24 @@
         enddo
         !dz_const = 0.25
       elseif (VarDzType.eq.'dz_clog')then
-        write(global_info,*)&
-         "Logrithmic dz not yet implemented.  Setting to constant dz=0.25"
+        if(VERB.gt.0)write(global_info,*)&
+                     "Logrithmic dz not yet implemented.  Setting to constant dz=0.25"
         dz_const = 0.25_ip
       elseif (VarDzType.eq.'dz_cust')then
-        write(global_info,*)&
-         "Custom dz not yet implemented.  Setting to constant dz=0.25"
+        if(VERB.gt.0)write(global_info,*)&
+                     "Custom dz not yet implemented.  Setting to constant dz=0.25"
         dz_const = 0.25_ip
       else
-        write(global_info,*)&
-         "dz type must be either a number (in km) for constant dz, or"
-        write(global_info,*)&
-         "dz_plin, dz_clog, or dz_cust for variable dz"
-        write(global_info,*)&
-         "You entered: ",cdf_b1l7
-        write(global_info,*)&
-         "Interpreted as: ",VarDzType
+        if(VERB.gt.0)then
+          write(global_info,*)&
+           "dz type must be either a number (in km) for constant dz, or"
+          write(global_info,*)&
+           "dz_plin, dz_clog, or dz_cust for variable dz"
+          write(global_info,*)&
+           "You entered: ",cdf_b1l7
+          write(global_info,*)&
+           "Interpreted as: ",VarDzType
+        endif
         stop 1
       endif
 
@@ -583,7 +590,7 @@
       !write(global_info,*)"eruption type = suzuki with coefficient of ",Suzuki_A
       goto 5230
       !if the second item is not a number, read SourceType
-5225  write(global_info,*)&
+5225  if(VERB.gt.0)write(global_info,*)&
        "Source type is not suzuki. Trying to read another standard type"
       read(cdf_b1l8,*) diffusivity_horz, SourceType
       if ((SourceType.eq.'point').or. &
@@ -613,55 +620,59 @@
           SourceType='umbrella_air'
           Suzuki_A = 12.0_ip
       else
-        write(global_info,*)&
-         "SourceType is not point, line, profile, umbrella or umbrella_air."
-        write(global_info,*)&
-         "Assuming this is a custom source type."
-        write(global_info,*)&
-        "For now, just read eruptions start time, duration, and height."
-         IsCustom_SourceType = .true.
+        if(VERB.gt.0)then
+          write(global_info,*)&
+           "SourceType is not point, line, profile, umbrella or umbrella_air."
+          write(global_info,*)&
+           "Assuming this is a custom source type."
+          write(global_info,*)&
+          "For now, just read eruptions start time, duration, and height."
+        endif
+        IsCustom_SourceType = .true.
       endif
-      write(global_info,*)"  SourceType = ",SourceType
+      if(VERB.gt.0)write(global_info,*)"  SourceType = ",SourceType
 
 5230  diffusivity_horz = diffusivity_horz*3.6e-3_ip  !convert diffusion coefficient from m2/s to km2/hr
       diffusivity_vert = diffusivity_horz
 
       if(abs(diffusivity_horz).lt.EPS_SMALL)then
         useDiffusion = .false.
-        write(global_info,*)"Not using turbulent diffusivity."
-        write(global_log ,*)"Not using turbulent diffusivity."
+        if(VERB.gt.0)write(global_info,*)"Not using turbulent diffusivity."
+        if(VERB.gt.0)write(global_log ,*)"Not using turbulent diffusivity."
       elseif(diffusivity_horz.lt.0.0)then
-        write(global_error,*)"ERROR: ",&
-         "Diffusivity must be non-negative."
-        write(global_log,*)"ERROR: ",&
-         "Diffusivity must be non-negative."
+        if(VERB.gt.0)write(global_error,*)"ERROR: ",&
+                     "Diffusivity must be non-negative."
+        if(VERB.gt.0)write(global_log,*)"ERROR: ",&
+                     "Diffusivity must be non-negative."
         stop 1
       else
-        write(global_info,*)"Using constant turbulent diffusivity:  ",&
+        if(VERB.gt.0)write(global_info,*)"Using constant turbulent diffusivity:  ",&
                   diffusivity_horz/3.6e-3_ip," m2/s"
-        write(global_log ,*)"Using constant turbulent diffusivity:  ",&
+        if(VERB.gt.0)write(global_log ,*)"Using constant turbulent diffusivity:  ",&
                   diffusivity_horz/3.6e-3_ip," m2/s"
         useDiffusion = .true.
       endif
 
       read(10,'(a80)')cdf_b1l9
       read(cdf_b1l9,*,err=1907) neruptions              ! read in number of eruptions or pulses
-      write(global_info,*) 'Expecting to read ',neruptions,&
+      if(VERB.gt.0)write(global_info,*) 'Expecting to read ',neruptions,&
                            ' eruptions lines in Block 2.'
       if (((SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')) &
            .and.(neruptions.gt.1)) then
-        write(global_error,*)"ERROR: ",&
-         'when SourceType=umbrella, neruptions must equal 1'
-        write(global_error,*)&
-         'You gave neruptions=',neruptions
-        write(global_error,*)&
-         'Program stopped'
-        write(global_log,*)"ERROR: ",&
-         'when SourceType=umbrella, neruptions must equal 1'
-        write(global_log ,*)&
-         'You gave neruptions=',neruptions
-        write(global_log ,*)&
-         'Program stopped'
+        if(VERB.gt.0)then
+          write(global_error,*)"ERROR: ",&
+           'when SourceType=umbrella, neruptions must equal 1'
+          write(global_error,*)&
+           'You gave neruptions=',neruptions
+          write(global_error,*)&
+           'Program stopped'
+          write(global_log,*)"ERROR: ",&
+           'when SourceType=umbrella, neruptions must equal 1'
+          write(global_log ,*)&
+           'You gave neruptions=',neruptions
+          write(global_log ,*)&
+           'Program stopped'
+        endif
         stop 1
       endif
       !if(dz_const.le.0.0)then
@@ -669,12 +680,12 @@
       !  stop 1
       !endif
       if(SourceType.eq.'suzuki'.and.(Suzuki_A.le.0.0_ip))then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.gt.0)write(global_error,*)"ERROR: ",&
          "Suzuki_A must be positive, not ",Suzuki_A
         stop 1
       endif
       if(neruptions.le.0)then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.gt.0)write(global_error,*)"ERROR: ",&
          "neruptions must be positive, not ",neruptions
         stop 1
       endif
@@ -695,9 +706,9 @@
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
       if (testkey.ne.'#'.and.testkey.ne.'*')then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.gt.0)write(global_error,*)"ERROR: ",&
          'Expecting a comment line separating blocks.'
-        write(global_error,*)&
+        if(VERB.gt.0)write(global_error,*)&
          '       Check that Block 1 is correct.'
         stop 1
       endif
@@ -706,9 +717,11 @@
         read(10,'(a130)')linebuffer130
         read(linebuffer130,*)testkey
       enddo
-      write(global_info,*)' *******************************************'
-      write(global_info,*)' Reading Block 2: Eruption parameters'
-      write(global_info,*)' *******************************************'
+      if(VERB.gt.0)then
+        write(global_info,*)' *******************************************'
+        write(global_info,*)' Reading Block 2: Eruption parameters'
+        write(global_info,*)' *******************************************'
+      endif
       ! BEGIN READING TIMES OF ERUPTIVE PULSES      
       do i=1,neruptions  
         ! Always check if we have overshot the block
