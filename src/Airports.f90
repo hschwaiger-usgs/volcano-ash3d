@@ -176,7 +176,7 @@
       elseif (AppendExtAirportFile.eqv..true.) then
         n_airports_total = NAIRPORTS_EWERT + n_ext_airports    !if appending external to internal
         if(n_airports_total.gt.MAXAIRPORTS)then
-          if(VERB.gt.0)then
+          if(VERB.ge.1)then
             write(global_error,*)"ERROR: ",&
                  "Too many airports are requested."
             write(global_error,*)&
@@ -192,7 +192,7 @@
           if (AirportFullLon(i).lt.0.0_ip) &
             AirportFullLon(i) = AirportFullLon(i)+360.0_ip
         enddo
-        if(VERB.gt.0)then
+        if(VERB.ge.1)then
           write(global_info,*) 'Appending airports below to the internal list.'
           write(global_info,*) 'Airport name       lon      lat'
           do i=NAIRPORTS_EWERT+1,n_airports_total
@@ -342,8 +342,8 @@
       enddo
 
 !     WRITE OUT AIRPORT NAMES TO LOG FILE
-      if(VERB.gt.0)write(global_info,3) nairports
-      if(VERB.gt.0)write(global_log ,3) nairports
+      if(VERB.ge.1)write(global_info,3) nairports
+      if(VERB.ge.1)write(global_log ,3) nairports
 
       deallocate(AirportFullLat)
       deallocate(AirportFullLon)
@@ -472,8 +472,8 @@
       return
 
 !     ERROR TRAP
-2010  if(VERB.gt.0)write(global_info,6) inputline
-      if(VERB.gt.0)write(global_log ,6) inputline
+2010  if(VERB.ge.1)write(global_info,6) inputline
+      if(VERB.ge.1)write(global_log ,6) inputline
 6     format('Error reading from airport list.  Read statement was expecting',/, &
              'latitude longitude x y  (all real numbers).  The input line gave:',/, &
              a80,/,'program stopped')
@@ -511,14 +511,14 @@
                           DirDelim // 'GlobalAirports_ewert.txt'
       ! Test for existance of the airport file
       inquire( file=trim(adjustl(AirportMasterFile)), exist=IsThere )
-      if(VERB.gt.0)then
+      if(VERB.ge.1)then
         write(global_info,*)&
           "Trying to read external global airport file in home=",Ash3dHome
         write(global_info,*)"Full file name = ",trim(adjustl(AirportMasterFile))
         write(global_info,*)"  Exists = ",IsThere
       endif
       if(.not.IsThere)then
-        if(VERB.gt.0)then
+        if(VERB.ge.1)then
           write(global_error,*)"ERROR: Could not find airport file."
           write(global_error,*)"       Please copy file to this location:"
           write(global_error,*)AirportMasterFile
@@ -538,7 +538,7 @@
         read(inputline,2) inCode,inName
         i = i+1
         if(i.gt.MAXAIRPORTS)then
-          if(VERB.gt.0)write(global_error,*)"ERROR: ",&
+          if(VERB.ge.1)write(global_error,*)"ERROR: ",&
            "Airport file contains too many entries"
           stop 1
         endif
@@ -556,7 +556,7 @@
       !FORMAT STATEMENTS
 2     format(50x,a3,2x,a35)
 5     format(5x,'Error.  Can''t find input file ',a130,/,5x,'Program stopped')   
-2000  if(VERB.gt.0)write(global_error,5) AirportInFile
+2000  if(VERB.ge.1)write(global_error,5) AirportInFile
 
       end subroutine Read_GlobalAirports
 !******************************************************************************

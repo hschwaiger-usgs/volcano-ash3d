@@ -5,6 +5,9 @@
 !
       use precis_param
 
+      use global_param,  only : &
+         VERB
+
       use io_units
 
       use global_param,    only : &
@@ -104,7 +107,7 @@
             cycle
           endif
         enddo
-        write(global_info,*)"MR_iMetStep_Now = ",MR_iMetStep_Now, &
+        if(VERB.ge.1)write(global_info,*)"MR_iMetStep_Now = ",MR_iMetStep_Now, &
                     TimeNow_fromRefTime, &
                     MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now)
 
@@ -176,7 +179,7 @@
                real((-AirDens_meso_next_step_MetP_sp*GRAV),kind=sp)
               call MR_Regrid_MetP_to_CompH(MR_iMetStep_Now)
             else
-              write(*,*)"Tried to read variable, but its not available: ",&
+              if(VERB.ge.1)write(*,*)"Tried to read variable, but it's not available: ",&
                         Met_var_GRIB_names(ivar)
               MR_dum3d_compH = 0.0_sp
             endif
@@ -187,7 +190,7 @@
             if(Met_var_IsAvailable(ivar))then
               call MR_Read_3d_Met_Variable_to_CompH(ivar,MR_iMetStep_Now)
             else
-              write(*,*)"Tried to read variable, but its not available: ",&
+              if(VERB.ge.1)write(*,*)"Tried to read variable, but it's not available: ",&
                         Met_var_GRIB_names(ivar)
               MR_dum3d_compH = 0.0_sp
             endif
@@ -224,8 +227,8 @@
         if(TimeNow_fromRefTime.gt.MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now+1))then
           Load_MesoSteps = .true.
           MR_iMetStep_Now = MR_iMetStep_Now+1
-          write(global_info,*)"  Need to load next step"
-          write(global_info,*)"MR_iMetStep_Now = ",MR_iMetStep_Now, &
+          if(VERB.ge.1)write(global_info,*)"  Need to load next step"
+          if(VERB.ge.1)write(global_info,*)"MR_iMetStep_Now = ",MR_iMetStep_Now, &
                       TimeNow_fromRefTime, &
                       MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now)
         endif
@@ -329,13 +332,13 @@
             ! Again, now that we have temperature and density, we can get a better Vz
             ivar = 7 ! Pressure Vertical Velocity
             if(Met_var_IsAvailable(ivar))then
-              write(global_log,*)"Vz is calculated by PressVertVel/(rho g)"
+              if(VERB.ge.1)write(global_log,*)"Vz is calculated by PressVertVel/(rho g)"
               call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now+1)
               MR_dum3d_MetP = MR_dum3d_MetP/                   &
                 real((-AirDens_meso_next_step_MetP_sp*GRAV),kind=sp)
               call MR_Regrid_MetP_to_CompH(MR_iMetStep_Now+1)
             else
-              write(global_error,*)"Tried to read variable, but its not available: ",&
+              if(VERB.ge.1)write(global_error,*)"Tried to read variable, but its not available: ",&
                         Met_var_GRIB_names(ivar)
               MR_dum3d_compH = 0.0_sp
               stop 1 
@@ -351,10 +354,10 @@
           else
             ivar = 4 ! W winds
             if(Met_var_IsAvailable(ivar))then
-              write(global_log,*)"Vz is calculated by PressVertVel/(dp/dz)"
+              if(VERB.ge.1)write(global_log,*)"Vz is calculated by PressVertVel/(dp/dz)"
               call MR_Read_3d_Met_Variable_to_CompH(ivar,MR_iMetStep_Now+1)
             else
-              write(global_error,*)"Tried to read variable, but its not available: ",&
+              if(VERB.ge.1)write(global_error,*)"Tried to read variable, but its not available: ",&
                         Met_var_GRIB_names(ivar)
               MR_dum3d_compH = 0.0_sp
               stop 1
@@ -412,11 +415,6 @@
                  vz_meso_last_step_sp(1:nxmax,1:nymax,1:nzmax)),kind=ip) * &
                                      Interval_Frac)*MPS_2_KMPHR
 
-      !write(global_debug,*)"Zero-ing velocities in Mesointerpolator"
-      !vx_pd = 0.0_ip
-      !vy_pd = 0.0_ip
-      !vz_pd = 0.0_ip
-
       ! Now interpolate onto current time
       if(useCalcFallVel)then
         vf_pd(1:nxmax,1:nymax,1:nzmax,:) = (real(vf_meso_last_step_sp(:,:,:,:),kind=ip) + &
@@ -430,13 +428,13 @@
            (SourceType.eq.'umbrella_air')).and.  &   !(TimeNow.gt.0.0_ip).and. &
           (TimeNow.lt.e_EndTime(1))) then
 #ifdef FAST_DT
-          write(*,*)"ERROR: Ash3d was compiled with the preproccesor flag -DFAST_DT"
-          write(*,*)"       Umbrella cloud source terms cannot be used when this"
-          write(*,*)"       flag is set because the velocity components added to"
-          write(*,*)"       the background wind velocities would not be accounted"
-          write(*,*)"       for in the dt calculation.  Please edit FASTFPPFLAG in"
-          write(*,*)"       the makefile and recompile Ash3d"
-          write(*,*)"       Exiting."
+          write(global_error,*)"ERROR: Ash3d was compiled with the preproccesor flag -DFAST_DT"
+          write(global_error,*)"       Umbrella cloud source terms cannot be used when this"
+          write(global_error,*)"       flag is set because the velocity components added to"
+          write(global_error,*)"       the background wind velocities would not be accounted"
+          write(global_error,*)"       for in the dt calculation.  Please edit FASTFPPFLAG in"
+          write(global_error,*)"       the makefile and recompile Ash3d"
+          write(global_error,*)"       Exiting."
           stop 1
 #endif
           call umbrella_winds(first_time)
@@ -463,7 +461,7 @@
       !If vxmax or vymax > 2000 km/hr, send a warning and see which values of vx and vy
       !are so high.
       if (abs(maxval(vx_pd(1:nxmax,1:nymax,1:nzmax))).gt.5.0e3_ip) then
-        write(global_info,1041) nxmax, nymax, nzmax, SimStartHour, &
+        if(VERB.ge.1)write(global_info,1041) nxmax, nymax, nzmax, SimStartHour, &
                       MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now), &
                       MR_MetStep_Interval(MR_iMetStep_Now)
 1041    format(4x,'Warning: max(vx) in Mesointerpolater is > 5.0e3.',&
@@ -476,7 +474,7 @@
           do ix=1,nxmax
             do iy=1,nymax
               if (abs(vx_pd(ix,iy,iz)).gt.5.0e3_ip) then
-                write(global_info,1042) ix, iy, iz, vx_pd(ix,iy,iz), & 
+                if(VERB.ge.1)write(global_info,1042) ix, iy, iz, vx_pd(ix,iy,iz), & 
                               vx_meso_last_step_sp(ix,iy,iz), vx_meso_next_step_sp(ix,iy,iz),&
                               HoursIntoInterval
 1042            format(4x,'ix=',i4,' iy=',i4,' iz=',i4,' vx=',e12.4, &
@@ -486,13 +484,13 @@
             enddo
           enddo
         enddo
-        write(global_info,*) 'Continue (y/n)?'
+        if(VERB.ge.1)write(global_info,*) 'Continue (y/n)?'
         read(5,'(a1)') answer
         if (answer.eq.'n') stop 1
       endif
 
       if (abs(maxval(vy_pd(1:nxmax,1:nymax,1:nzmax))).gt.5.0e3_ip) then
-        write(global_info,1043) nxmax, nymax, nzmax, SimStartHour, &
+        if(VERB.ge.1)write(global_info,1043) nxmax, nymax, nzmax, SimStartHour, &
                       MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now), &
                       MR_MetStep_Interval(MR_iMetStep_Now)
 1043    format(4x,'Warning: max(vy) in Mesointerpolater is > 5e3.',&
@@ -506,7 +504,7 @@
           do ix=1,nxmax
             do iy=1,nymax
               if (vy_pd(ix,iy,iz).gt.5.0e3_ip) then
-                write(global_info,1044) ix, iy, iz, vy_pd(ix,iy,iz),  & 
+                if(VERB.ge.1)write(global_info,1044) ix, iy, iz, vy_pd(ix,iy,iz),  & 
                               vy_meso_last_step_sp(ix,iy,iz), vy_meso_next_step_sp(ix,iy,iz)
 1044            format(4x,'ix=',i4,' iy=',i4,' iz=',i4,' vy=',e12.4,/, &
                           ' vy_regrid(1)=',e12.4,' vy_regrid(2)=',e12.4)
@@ -514,7 +512,7 @@
             enddo
           enddo
         enddo
-        write(global_info,*) 'Continue (y/n)?'
+        if(VERB.ge.1)write(global_info,*) 'Continue (y/n)?'
         read(5,'(a1)') answer
         if (answer.eq.'n') stop 1
       endif

@@ -67,7 +67,7 @@
 
       implicit none
 
-      if(VERB.gt.0)then
+      if(VERB.ge.1)then
         write(global_production,*)"--------------------------------------------------"
         write(global_production,*)"---------- ALLOCATE_ATMOSPHERE_MET ---------------"
         write(global_production,*)"--------------------------------------------------"
@@ -261,7 +261,7 @@
               !AirSH_meso_last_step_MetP_sp = MR_dum3d_MetP
               AirSH_meso_last_step_MetP_sp = 0.0_sp
             else
-              if(VERB.gt.0)write(global_info,*)"ERROR: Neither SH nor RH are available"
+              if(VERB.ge.1)write(global_info,*)"ERROR: Neither SH nor RH are available"
               stop 1
             endif
           endif
@@ -291,7 +291,7 @@
             !AirSH_meso_next_step_MetP_sp = MR_dum3d_MetP
             AirSH_meso_last_step_MetP_sp = 0.0_sp
           else
-            if(VERB.gt.0)write(global_info,*)"ERROR: Neither SH nor RH are available"
+            if(VERB.ge.1)write(global_info,*)"ERROR: Neither SH nor RH are available"
             stop 1
           endif
         endif
@@ -323,7 +323,7 @@
       else
         ! Currently, this subroutine is only called if Load_MesoSteps=.true.
         ! so we shouldn't be here
-        if(VERB.gt.0)then
+        if(VERB.ge.1)then
           write(*,*)"Calling Set_Atmosphere_Meso outside of a Load_MesoSteps=.true."
           write(*,*)"case for Interval_Frac = ",Interval_Frac
           write(*,*)"This is a place-holder for interpolating tempertures to the"

@@ -137,12 +137,12 @@
 !------------------------------------------------------------------------------
 !       OPTIONAL MODULES
 !         Insert calls to custom input blocks here
-      if(VERB.gt.0)write(global_info,*)&
+      if(VERB.ge.1)write(global_info,*)&
         "Now looping through optional modules found in input file"
       do j=1,nmods
-        if(VERB.gt.0)write(global_info,*)"Testing for ",OPTMOD_names(j),j
+        if(VERB.ge.1)write(global_info,*)"Testing for ",OPTMOD_names(j),j
         if(OPTMOD_names(j).eq.'RESETPARAMS')then
-          if(VERB.gt.0)write(global_info,*)"  Reading input block for RESETPARAMS"
+          if(VERB.ge.1)write(global_info,*)"  Reading input block for RESETPARAMS"
           call input_data_ResetParams
         endif
       enddo
@@ -169,10 +169,12 @@
 #ifdef USENETCDF
         !call NC_RestartFile_LoadConcen
 #else
-        write(global_info,*)"ERROR: Loading concentration files requires previous netcdf"
-        write(global_info,*)"       output.  This Ash3d executable was not compiled with"
-        write(global_info,*)"       netcdf support.  Please recompile Ash3d with"
-        write(global_info,*)"       USENETCDF=T, or select another source."
+        if(VERB.ge.1)then
+          write(global_info,*)"ERROR: Loading concentration files requires previous netcdf"
+          write(global_info,*)"       output.  This Ash3d executable was not compiled with"
+          write(global_info,*)"       netcdf support.  Please recompile Ash3d with"
+          write(global_info,*)"       USENETCDF=T, or select another source."
+        endif
         stop 1
 #endif
       else
@@ -231,22 +233,22 @@
       endif
 
       ! write "Building time array of plume height & eruption rate"
-      write(global_info,7)
-      write(global_log ,7)
+      if(VERB.ge.1)write(global_info,7)
+      if(VERB.ge.1)write(global_log ,7)
 
       call Allocate_Source_time
 
       !call MassFluxCalculator          !find current mass flux & plume height
 
       ! Write out starting volume, max time steps, and headers for the table that follows
-      write(global_info,1) tot_vol,ntmax
-      write(global_log ,1) tot_vol,ntmax
+      if(VERB.ge.1)write(global_info,1) tot_vol,ntmax
+      if(VERB.ge.1)write(global_log ,1) tot_vol,ntmax
 
       ! ************************************************************************
       ! ****** begin time simulation *******************************************
       ! ************************************************************************
       itime = 0
-      write(global_info,*)"Starting time loop."
+      if(VERB.ge.1)write(global_info,*)"Starting time loop."
 
       do while (StopTimeLoop.eqv..false.)
         ! Note: stop conditions are evaluated at the end of the time loop
@@ -262,11 +264,13 @@
 
         itime = itime + 1
         if(itime.gt.ntmax)then
-          write(global_info,*)"WARNING: The number of time steps attempted exceeds 3x that anticipated."
-          write(global_info,*)"         Check that the winds are stable"
-          write(global_info,*)"        Simtime_in_hours = ",Simtime_in_hours
-          write(global_info,*)"                   ntmax = ",ntmax
-          write(global_info,*)"            current step = ",itime
+          if(VERB.ge.1)then
+            write(global_info,*)"WARNING: The number of time steps attempted exceeds 3x that anticipated."
+            write(global_info,*)"         Check that the winds are stable"
+            write(global_info,*)"        Simtime_in_hours = ",Simtime_in_hours
+            write(global_info,*)"                   ntmax = ",ntmax
+            write(global_info,*)"            current step = ",itime
+          endif
         endif
 
           ! find the wind field at the current time
@@ -379,7 +383,7 @@
             endif
           else
             ! This is not a standard source.
-            write(global_info,*)"WARNING: source type is non-standard"
+            if(VERB.ge.1)write(global_info,*)"WARNING: source type is non-standard"
             stop 1
 !------------------------------------------------------------------------------
 !       OPTIONAL MODULES
@@ -558,47 +562,55 @@
       ! Reset ntmax to the actual number of time steps
       ntmax = itime
 
-      write(global_info,*)"Time integration completed for the following reason:"
+      if(VERB.ge.1)write(global_info,*)"Time integration completed for the following reason:"
       if((CheckConditions(1).eqv..true.).and.&
          (StopConditions(1).eqv..true.))then
         ! Normal stop condition set by user tracking the deposit
-        write(global_info,*)"Percent accumulated/exited exceeds ",StopValue
+        if(VERB.ge.1)write(global_info,*)"Percent accumulated/exited exceeds ",StopValue
       endif
       if((CheckConditions(2).eqv..true.).and.&
          (StopConditions(2).eqv..true.))then
         ! Normal stop condition if simulation exceeds alloted time
-        write(global_info,*)"time.ge.Simtime_in_hours"
-        write(global_info,*)"              Time = ",real(time,kind=4)
-        write(global_info,*)"  Simtime_in_hours = ",real(Simtime_in_hours,kind=4)
-        write(global_log,*)"time.ge.Simtime_in_hours"
-        write(global_log,*)"              Time = ",real(time,kind=4)
-        write(global_log,*)"  Simtime_in_hours = ",real(Simtime_in_hours,kind=4)
+        if(VERB.ge.1)then
+          write(global_info,*)"time.ge.Simtime_in_hours"
+          write(global_info,*)"              Time = ",real(time,kind=4)
+          write(global_info,*)"  Simtime_in_hours = ",real(Simtime_in_hours,kind=4)
+          write(global_log,*)"time.ge.Simtime_in_hours"
+          write(global_log,*)"              Time = ",real(time,kind=4)
+          write(global_log,*)"  Simtime_in_hours = ",real(Simtime_in_hours,kind=4)
+        endif
       endif
       if((CheckConditions(3).eqv..true.).and.&
          (StopConditions(3).eqv..true.))then
         ! Normal stop condition when nothing is left to advect
-        write(global_info,*)"No ash species remain aloft."
-        write(global_log,*)"No ash species remain aloft."
+        if(VERB.ge.1)then
+          write(global_info,*)"No ash species remain aloft."
+          write(global_log,*)"No ash species remain aloft."
+        endif
       endif
       if((CheckConditions(4).eqv..true.).and.&
          (StopConditions(4).eqv..true.))then
         ! Error stop condition if the concen and outflow do not match the source
-        write(global_info,*)"Cummulative source volume does not match aloft + outflow"
-        write(global_info,*)" tot_vol = ",tot_vol
-        write(global_info,*)" SourceCumulativeVol = ",SourceCumulativeVol
-        write(global_info,*)" Abs. Error = ",&
-                            abs((tot_vol-SourceCumulativeVol)/SourceCumulativeVol)
-        write(global_info,*)" e_Volume = ",e_Volume
+        if(VERB.ge.1)then
+          write(global_info,*)"Cummulative source volume does not match aloft + outflow"
+          write(global_info,*)" tot_vol = ",tot_vol
+          write(global_info,*)" SourceCumulativeVol = ",SourceCumulativeVol
+          write(global_info,*)" Abs. Error = ",&
+                              abs((tot_vol-SourceCumulativeVol)/SourceCumulativeVol)
+          write(global_info,*)" e_Volume = ",e_Volume
+        endif
         stop 1
       endif
       if((CheckConditions(5).eqv..true.).and.&
          (StopConditions(5).eqv..true.))then
         ! Error stop condition if any volume measure is negative
-        write(global_info,*)"One of the volume measures is negative."
-        write(global_info,*)"        dep_vol = ",dep_vol
-        write(global_info,*)"        aloft_vol = ",aloft_vol
-        write(global_info,*)"        outflow_vol = ",outflow_vol
-        write(global_info,*)"        SourceCumulativeVol = ",SourceCumulativeVol
+        if(VERB.ge.1)then
+          write(global_info,*)"One of the volume measures is negative."
+          write(global_info,*)"        dep_vol = ",dep_vol
+          write(global_info,*)"        aloft_vol = ",aloft_vol
+          write(global_info,*)"        outflow_vol = ",outflow_vol
+          write(global_info,*)"        SourceCumulativeVol = ",SourceCumulativeVol
+        endif
         stop 1
       endif
 
@@ -611,13 +623,16 @@
       Calculated_Cloud_Load   = .false.
       Calculated_AshThickness = .false.
 
-      write(global_info,12)   !put footnotes below output table
-      write(global_log,12)   !put footnotes below output table
-      write(global_log ,12)
-      write(global_info,*)'time=',real(time,kind=4),',dt=',real(dt,kind=4)
-      write(global_log,*)'time=',real(time,kind=4),',dt=',real(dt,kind=4)
-      write(global_info,*)"Mass Conservation Error = ",MassConsErr
-      write(global_log,*)"Mass Conservation Error = ",MassConsErr
+      if(VERB.ge.1)then
+        write(global_info,12)   !put footnotes below output table
+        write(global_log,12)   !put footnotes below output table
+        write(global_log ,12)
+        write(global_info,*)'time=',real(time,kind=4),',dt=',real(dt,kind=4)
+        write(global_log,*)'time=',real(time,kind=4),',dt=',real(dt,kind=4)
+        write(global_info,*)"Mass Conservation Error = ",MassConsErr
+        write(global_log,*)"Mass Conservation Error = ",MassConsErr
+      endif
+
         ! Make sure we have the latest output variables and go to write routines
       call Gen_Output_Vars
 !------------------------------------------------------------------------------
@@ -629,30 +644,33 @@
       call output_results
       !WRITE RESULTS TO LOG AND STANDARD OUTPUT
       !TotalTime_sp = etime(elapsed_sp)
-      !write(global_info,*) elapsed_sp(2), time*3600.0_ip
-      call cpu_time(t1) !time is a scalar real 
-      write(global_info,3) t1-t0, time*HR_2_S
-      write(global_log ,3) t1-t0, time*HR_2_S
-      write(global_info,4) time*HR_2_S/(t1-t0)
-      write(global_log ,4) time*HR_2_S/(t1-t0)
+      call cpu_time(t1) !time is a scalar real
+      if(VERB.ge.1)then
+        write(global_info,3) t1-t0, time*HR_2_S
+        write(global_log ,3) t1-t0, time*HR_2_S
+        write(global_info,4) time*HR_2_S/(t1-t0)
+        write(global_log ,4) time*HR_2_S/(t1-t0)
+      endif
       call TimeStepTotals(itime)
-      write(global_info,5) dep_vol
-      write(global_log ,5) dep_vol
-      write(global_info,6) tot_vol
-      write(global_log ,6) tot_vol
-      write(global_info,9) maxval(DepositThickness), DepositAreaCovered
-      write(global_log ,9) maxval(DepositThickness), DepositAreaCovered
+      if(VERB.ge.1)then
+        write(global_info,5) dep_vol
+        write(global_log ,5) dep_vol
+        write(global_info,6) tot_vol
+        write(global_log ,6) tot_vol
+        write(global_info,9) maxval(DepositThickness), DepositAreaCovered
+        write(global_log ,9) maxval(DepositThickness), DepositAreaCovered
 
-      write(global_info,34)       !write out area of cloud at different thresholds
-      write(global_log ,34)
-      do k=1,5
-         write(global_info,35) LoadVal(k), CloudLoadArea(k)
-         write(global_log ,35) LoadVal(k), CloudLoadArea(k)
-      enddo
+        write(global_info,34)       !write out area of cloud at different thresholds
+        write(global_log ,34)
+        do k=1,5
+          write(global_info,35) LoadVal(k), CloudLoadArea(k)
+          write(global_log ,35) LoadVal(k), CloudLoadArea(k)
+        enddo
         
-      write(global_info,33)    !write "normal completion"
-      write(global_log ,33)
-      
+        write(global_info,33)    !write "normal completion"
+        write(global_log ,33)
+      endif
+
       close(9)       !close log file 
 
       ! Format statements

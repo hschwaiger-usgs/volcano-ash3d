@@ -246,8 +246,8 @@
       return
 
 !     Error traps
-2500  write(global_info,*) 'Error opening output file ASCII_output_file.txt.  Program stopped'            
-      write(global_log ,*) 'Error opening output file ASCII_output_file.txt.  Program stopped'
+2500  write(global_error,*) 'Error opening output file ASCII_output_file.txt.  Program stopped'            
+      write(global_log  ,*) 'Error opening output file ASCII_output_file.txt.  Program stopped'
       stop 1
       
       end subroutine write_2D_ASCII
@@ -280,8 +280,8 @@
       if(io.gt.0)then
         ! We might have an empty file
         ! Issue warning and return
-        write(global_info,*) 'Error reading file ',trim(adjustl(filename))
-        write(global_info,*) 'Check for zero-length file.'
+        if(VERB.ge.1)write(global_info,*) 'Error reading file ',trim(adjustl(filename))
+        if(VERB.ge.1)write(global_info,*) 'Check for zero-length file.'
         return
       endif
       read(fid,3001,err=2600) R_ny
@@ -309,11 +309,11 @@
       return
 
 !     Error traps
-2500  write(global_info,*) 'Error opening ASCII file. Program stopped'
-      write(global_log ,*) 'Error opening ASCII file. Program stopped'
+2500  write(global_error,*) 'Error opening ASCII file. Program stopped'
+      write(global_log  ,*) 'Error opening ASCII file. Program stopped'
       stop 1
-2600  write(global_info,*) 'Error reading from ASCII file.'
-      write(global_log ,*) 'Error reading from ASCII file.'
+2600  write(global_error,*) 'Error reading from ASCII file.'
+      write(global_log  ,*) 'Error reading from ASCII file.'
 
       end subroutine read_2D_ASCII
 
@@ -537,8 +537,8 @@
       return
 
 !     Error traps
-2000   write(global_info,*)  'Error opening ash_arrivaltimes_airports.txt.  Program stopped.'
-       write(global_info,*)  'Error opening ash_arrivaltimes_airports.txt.  Program stopped.'
+2000   write(global_error,*)  'Error opening ash_arrivaltimes_airports.txt.  Program stopped.'
+       write(global_log  ,*)  'Error opening ash_arrivaltimes_airports.txt.  Program stopped.'
        stop 1
 
 !     Format statements

@@ -2,6 +2,9 @@
 
       use precis_param
 
+      use global_param,  only : &
+         VERB
+
       use io_units
 
       use io_data,       only : &
@@ -100,15 +103,17 @@
         endif
       enddo
       if (Volcano_ID.gt.0)then
-        write(global_info,*)"Found volcano in database"
-        write(global_info,*)"  Volcano ID    : ",volcID(Volcano_ID)
-        write(global_info,*)"  Name          : ",volcName(Volcano_ID)
-        write(global_info,*)"  Location      : ",volcLoc(Volcano_ID)
-        write(global_info,*)"  Latitude      : ",volcLat(Volcano_ID)
-        write(global_info,*)"  Longitude     : ",volcLon(Volcano_ID)
-        write(global_info,*)"  Elevation     : ",volcElev(Volcano_ID)
-        write(global_info,*)"  Eruption type : ",volcESP_Code(Volcano_ID)
-        write(global_info,*)"  "
+        if(VERB.ge.1)then
+          write(global_info,*)"Found volcano in database"
+          write(global_info,*)"  Volcano ID    : ",volcID(Volcano_ID)
+          write(global_info,*)"  Name          : ",volcName(Volcano_ID)
+          write(global_info,*)"  Location      : ",volcLoc(Volcano_ID)
+          write(global_info,*)"  Latitude      : ",volcLat(Volcano_ID)
+          write(global_info,*)"  Longitude     : ",volcLon(Volcano_ID)
+          write(global_info,*)"  Elevation     : ",volcElev(Volcano_ID)
+          write(global_info,*)"  Eruption type : ",volcESP_Code(Volcano_ID)
+          write(global_info,*)"  "
+        endif
 
         !Change the input name to the EPS database name
         write(VolcanoName,*)trim(volcName(Volcano_ID)),&
@@ -193,21 +198,23 @@
           ESP_MassFluxRate = 0.0_ip
           ESP_Vol          = 0.0_ip
           ESP_massfracfine = 0.0_ip
-          write(global_info,*)"Not set up for submarine ESP"
+          write(global_error,*)"Not set up for submarine ESP"
           stop 1
         else
-          write(global_info,*)"Could not read the eruption style."
+          write(global_error,*)"Could not read the eruption style."
           stop 1
         endif
-        write(global_info,*)"The following ESPs will be used IF variables are not"
-        write(global_info,*)"assigned in the input file:"
-        write(global_info,*)"  Plume Height (km)     : ",ESP_height
-        write(global_info,*)"  Duration (h)          : ",ESP_duration
-        write(global_info,*)"  Mass Flux Rate (kg/s) : ",ESP_MassFluxRate
-        write(global_info,*)"  Volume (km^3)         : ",ESP_Vol
-        write(global_info,*)"  Mass frac of fines    : ",ESP_massfracfine
-      else
-        write(global_info,*)"Did not find volcano in database"
+        if(VERB.ge.1)then
+          write(global_info,*)"The following ESPs will be used IF variables are not"
+          write(global_info,*)"assigned in the input file:"
+          write(global_info,*)"  Plume Height (km)     : ",ESP_height
+          write(global_info,*)"  Duration (h)          : ",ESP_duration
+          write(global_info,*)"  Mass Flux Rate (kg/s) : ",ESP_MassFluxRate
+          write(global_info,*)"  Volume (km^3)         : ",ESP_Vol
+          write(global_info,*)"  Mass frac of fines    : ",ESP_massfracfine
+        endif 
+      else ! if (Volcano_ID.gt.0)
+        if(VERB.ge.1)write(global_info,*)"Did not find volcano in database"
       endif
 
       return
@@ -254,7 +261,7 @@
                           '/share/VotW_ESP_v12_csv.txt'
       ! Test for existance of the VotW file
       inquire( file=trim(adjustl(VotWMasterFile)), exist=IsThere )
-      write(global_info,*)"     ",trim(adjustl(VotWMasterFile)),IsThere
+      if(VERB.ge.1)write(global_info,*)"     ",trim(adjustl(VotWMasterFile)),IsThere
       if(.not.IsThere)then
         write(global_error,*)"ERROR: Could not find VotW file."
         write(global_error,*)"       Please copy file to this location:"
@@ -296,7 +303,8 @@
         endif
         if(volcNS(nvolcs).eq.'S') volcLat(nvolcs) = -volcLat(nvolcs)
         if(volcWE(nvolcs).eq.'W') volcLon(nvolcs) = -volcLon(nvolcs) + 360.0_ip
-        write(*,*)volcID(nvolcs),volcName(nvolcs),volcLoc(nvolcs),volcLat(nvolcs),volcLon(nvolcs)
+        if(VERB.ge.1)write(global_info,*)&
+           volcID(nvolcs),volcName(nvolcs),volcLoc(nvolcs),volcLat(nvolcs),volcLon(nvolcs)
         read(20,'(a195)',IOSTAT=Iostatus) linebuffer195
       enddo
 

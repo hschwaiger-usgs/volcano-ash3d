@@ -75,12 +75,13 @@ USEGRIB   = T
 
 #  VERB specifies the verbosity level for debugging purposes
 #    Current available options are:
-#      VERB=0 : no output to stdout (logfile is still generated)
-#      VERB=1 : standard level of logging to stdout
-#      VERB=2 : normal output to screen (VERB=1) with additional write statements
-#      VERB=3 : 
-#       -     : same as VERB=1
-VERB = 2
+#      VERB=-1 : no output to either stdout or logfile
+#      VERB=0  : no output to stdout; forces stop if interactive input needed
+#      VERB=1  : standard level of logging to stdout and logfile
+#      VERB=2  : normal output to stdout (VERB=1) with additional write statements
+#      VERB=3  : 
+#       -      : same as VERB=1
+VERB = 0
 
 # MEMORY
 # If you need pointer arrays instead of allocatable arrays, set this to 'T'

@@ -16,7 +16,7 @@
         RunStartDay,RunStartHour_ch,RunStartHr,RunStartMinute,RunStartMonth,RunStartYear
 
       use MetReader,     only : &
-         MR_OS_TYPE,MR_DirPrefix,MR_DirDelim
+         MR_OS_TYPE,MR_DirPrefix,MR_DirDelim,MR_VERB
 
       use iso_fortran_env
 
@@ -98,7 +98,7 @@
       MR_OS_TYPE   = OS_TYPE
       MR_DirPrefix = DirPrefix
       MR_DirDelim  = DirDelim
-
+      MR_VERB = VERB
       ! Find out if we are running on a little-endian or big-endian system
       call check_endian(IsLitEnd)
 
@@ -131,8 +131,8 @@
         ! VALUE(7) = The seconds of the minute
         ! VALUE(8) = The milliseconds of the second
 
-      if(VERB.gt.0)write(global_info,*)" "
-      if(VERB.gt.0)write(global_info,*)"Running Ash3d with command-line: ",&
+      if(VERB.ge.1)write(global_info,*)" "
+      if(VERB.ge.1)write(global_info,*)"Running Ash3d with command-line: ",&
                     trim(adjustl(os_full_command_line))
 
       ! Check for environment variables ASH3DHOME and ASH3DCFL
@@ -146,25 +146,25 @@
       ! Here it is over-written by compile-time path, if available
 #include "installpath.h"
       ! This can be over-written if an environment variable is set
-      if(VERB.gt.0)write(global_info,*)" "
-      if(VERB.gt.0)write(global_info,*)"Checking for run-time environment variable: ASH3DHOME"
+      if(VERB.ge.1)write(global_info,*)" "
+      if(VERB.ge.1)write(global_info,*)"Checking for run-time environment variable: ASH3DHOME"
       call GET_ENVIRONMENT_VARIABLE(NAME="ASH3DHOME",VALUE=tmp_str,STATUS=iostatus)
       if(iostatus.eq.0)then
         Ash3dHome = tmp_str
-        if(VERB.gt.0)write(global_info,*)&
+        if(VERB.ge.1)write(global_info,*)&
           "  Install path reset by environment variable to: ",trim(adjustl(Ash3dHome))
       else
-        if(VERB.gt.0)write(global_info,*)&
+        if(VERB.ge.1)write(global_info,*)&
           "  ASH3DHOME not found. Install path set to: ",trim(adjustl(Ash3dHome))
       endif
-      if(VERB.gt.0)write(global_info,*)"Checking for run-time environment variable: ASH3DCFL"
+      if(VERB.ge.1)write(global_info,*)"Checking for run-time environment variable: ASH3DCFL"
       call GET_ENVIRONMENT_VARIABLE(NAME="ASH3DCFL",VALUE=tmp_str,STATUS=iostatus)
       if(iostatus.eq.0)then
         read(tmp_str,*)CFL
-        if(VERB.gt.0)write(global_info,*)&
+        if(VERB.ge.1)write(global_info,*)&
           "  CFL condition reset by environment variable to: ",real(CFL,kind=4)
       else
-        if(VERB.gt.0)write(global_info,*)&
+        if(VERB.ge.1)write(global_info,*)&
           "  ASH3DCFL not found.  CFL condition : ",real(CFL,kind=4)
       endif
 
@@ -189,7 +189,7 @@
       write(linebuffer080,102) RunStartYear,RunstartMonth,RunStartDay,RunStartHr,RunStartMinute
       os_time_log = linebuffer080(1:17)
 
-      if(VERB.gt.0)then
+      if(VERB.ge.1)then
         write(global_info,*)" System Information"
         if(IsLitEnd)then
           write(global_info,*)"   host: ",trim(adjustl(os_host)), &

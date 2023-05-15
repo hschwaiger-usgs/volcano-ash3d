@@ -2,6 +2,9 @@
 
       use precis_param
 
+      use global_param,  only : &
+         VERB
+
       use io_units
 
       integer, parameter :: nvars      = 10  ! Number of output variables with style profiles
@@ -428,8 +431,10 @@
       sizeY       = KML_sizeY(ivar)
 
       opacity = '80'
-      write(global_info,*)"Opening KML file ",trim(adjustl(filename))
-      write(global_log ,*)"Opening KML file ",trim(adjustl(filename))
+      if(VERB.ge.1)then
+        write(global_info,*)"Opening KML file ",trim(adjustl(filename))
+        write(global_log ,*)"Opening KML file ",trim(adjustl(filename))
+      endif
       open(fid,file=trim(adjustl(filename)),status='unknown',err=2500)
 
       write(fid,1)                 ! write file header (35 lines)
@@ -518,8 +523,8 @@
       return
 
       !Error traps
-2500  write(global_info,20)
-      write(global_log,20)
+2500  write(global_error,20)
+      write(global_log  ,20)
       stop 1
 
       !Format statements
@@ -736,12 +741,6 @@
 
       StyleNow3 = 'PureWhite'
 
-      !write(global_info,*)"Writing KML step to fid",fid
-      !write(global_log,*)"Writing KML step to fid",fid
-
-      !write(fid,*)"---------  Start of Write_2D_KML ------------"
-
-
       if(TS_flag.ne.0)then
         write(fid,1) xmlArrivalTime, xmlArrivalTime,  &
                  xmlTimeSpanStart, xmlTimeSpanEnd
@@ -759,7 +758,6 @@
 
       do i=1,nxmax
         do j=1,nymax
-          !write(fid,*)i,j,OutVar(i,j),color_map(1)
           if (OutVar(i,j).lt.color_map(1)) cycle
           StyleNow3 = Styles(n_clrmp)
           do icmp = 1,n_clrmp-1
@@ -838,11 +836,6 @@
             lattUR1=lattUL+(lattUR-lattUL)*(179.9999-longUL)/(longUR3-longUL)
             lattLL2=lattLR1
             lattUL2=lattUR1
-            !write(global_info,*) 'CrossAntiMeridian=',CrossAntiMeridian
-            !write(global_info,*) 'longLL=',longLL,', longUR=',longUR
-            !write(global_info,*) 'Continue?'
-            !read(5,'(a1)') answer
-            !if (answer.eq.'n') stop 1
           else
             CrossAntiMeridian = .false.
           endif
@@ -877,8 +870,6 @@
       enddo
 
       write(fid,3)   !close folder
-
-      !write(fid,*)"---------  End of Write_2D_KML ------------"
 
       return
       
@@ -1246,8 +1237,10 @@
       write(60,12)                           !write final lines of file
       close(60)                             !close file
 
-      write(global_info,4) nWrittenOut               !Write number of airports affected to log file & stdout
-      write(global_log ,4) nWrittenOut
+      if(VERB.ge.1)then
+        write(global_info,4) nWrittenOut               !Write number of airports affected to log file & stdout
+        write(global_log ,4) nWrittenOut
+      endif
 
       ! Test if zip is installed
       if(IsLinux.or.IsMacOS)then
@@ -1267,8 +1260,8 @@
       return
 
 !     Error traps
-2001  write(global_info,*)  'Error opening ash_arrivaltimes_airports.kml.  Program stopped.'
-      write(global_log,*)  'Error opening ash_arrivaltimes_airports.kml.  Program stopped.'
+2001  write(global_error,*)'Error opening ash_arrivaltimes_airports.kml.  Program stopped.'
+      write(global_log  ,*)'Error opening ash_arrivaltimes_airports.kml.  Program stopped.'
       stop 1
 
 
@@ -1498,8 +1491,10 @@
 
       fid = KML_fid(ivar)
 
-      write(global_info,15)KML_filename(ivar)
-      write(global_log ,15)KML_filename(ivar)
+      if(VERB.ge.1)then
+        write(global_info,15)KML_filename(ivar)
+        write(global_log ,15)KML_filename(ivar)
+      endif
 
       if(TS_flag.ne.0)then
         write(fid,11)
@@ -1532,11 +1527,6 @@
       real(kind=ip)  :: xplot(0:40),yplot(0:40),lonplot(0:40),latplot(0:40)
       real(kind=ip)  :: xleft,xright,ybottom,ytop
       integer        :: ict, fid
-
-      !write(global_info,*)"Plotting KML model boundary for fid",fid,xleft,xright,ybottom,ytop,fid
-      !write(global_log,*)"Plotting KML model boundary for fid",fid,xleft,xright,ybottom,ytop,fid
-
-      !write(fid,*)"---------  Start of PlotModelBoundary ------------"
 
       write(fid,3) ! write style for model boundary
 
@@ -1645,8 +1635,6 @@
             '		</Polygon>',/, &
             '	</Placemark>')
 !11    format(' </Document>',/,'</kml>')
-
-      !write(fid,*)"---------  End of PlotModelBoundary ------------"
 
       return
 

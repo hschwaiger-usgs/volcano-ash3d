@@ -197,7 +197,7 @@
         end subroutine MR_Set_Gen_Index_GRIB
       END INTERFACE
 
-      if(VERB.gt.0)then
+      if(VERB.ge.1)then
         write(global_production,*)"--------------------------------------------------"
         write(global_production,*)"---------- READ_CONTROL_FILE ---------------------"
         write(global_production,*)"--------------------------------------------------"
@@ -303,17 +303,17 @@
           fc_len = fc_len + 1
           infile(fc_len:fc_len) = fc_inputfile(fc_len)
         end do
-        if(VERB.gt.0)write(global_info,*) 'Reading input file ''',&
+        if(VERB.ge.1)write(global_info,*) 'Reading input file ''',&
                              infile,''' from ForestClaw'
       endif
 
       !OPEN AND READ ESP FILE
-      if(VERB.gt.0)write(global_info,3) infile
-      if(VERB.gt.0)write(global_log ,3) infile
+      if(VERB.ge.1)write(global_info,3) infile
+      if(VERB.ge.1)write(global_log ,3) infile
 
       inquire( file=infile, exist=IsThere )
       if(.not.IsThere)then
-        if(VERB.gt.0)write(global_error,*)"ERROR: Cannot file input file"
+        if(VERB.ge.1)write(global_error,*)"ERROR: Cannot file input file"
         stop 1
       endif
       open(unit=10,file=infile,status='old',err=1900)
@@ -322,7 +322,7 @@
       ! BLOCK 1: GRID INFO
       ! Start reading the input file assuming there is a variable length
       ! header with each header line flagged by a '#' or '*'
-      if(VERB.gt.0)then
+      if(VERB.ge.1)then
         write(global_info,*)' *******************************************'
         write(global_info,*)' Reading Block 1: Volcano/grid specification'
         write(global_info,*)' *******************************************'
@@ -340,7 +340,7 @@
       cdf_b1l1 = linebuffer080
       iendstr = SCAN(linebuffer080, "#")
       if (iendstr.eq.1)then
-        if(VERB.gt.0)write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Volcano name cannot start with #"
         stop 1
       endif
@@ -356,7 +356,7 @@
         call get_ESP(volc_code)
       endif
 
-      if(VERB.gt.0)then
+      if(VERB.ge.1)then
         write(global_info,*)
         write(global_log ,*)
         write(global_info,37) VolcanoName
@@ -419,18 +419,18 @@
         
         !Make sure longitudes are between 0 and 360 degrees
         if (lonLL.lt.-360.0_ip) then
-          if(VERB.gt.0)write(global_info,*)&
+          if(VERB.ge.1)write(global_info,*)&
            "Please give longitude values between -360 and 360."
-          if(VERB.gt.0)write(global_log ,*)&
+          if(VERB.ge.1)write(global_log ,*)&
            "Please give longitude values between -360 and 360."
           stop 1
         endif
         if (lonLL.lt.  0.0_ip) lonLL=lonLL+360.0_ip
         if (lonLL.ge.360.0_ip) lonLL=mod(lonLL,360.0_ip)
         if (lon_volcano.lt.-360.0) then
-          if(VERB.gt.0)write(global_info,*)&
+          if(VERB.ge.1)write(global_info,*)&
            "Please give longitude values between -360 and 360."
-          if(VERB.gt.0)write(global_log ,*)&
+          if(VERB.ge.1)write(global_log ,*)&
            "Please give longitude values between -360 and 360."
           stop 1
         endif
@@ -447,7 +447,7 @@
         lonUR = lonLL + gridwidth_e
         latUR = latLL + gridwidth_n
 
-        if(VERB.gt.0)then
+        if(VERB.ge.1)then
           write(global_info,*)'lonLL=',real(lonLL,kind=sp)
           write(global_info,*)'lonUR=',real(lonUR,kind=sp)
           write(global_info,*)'latLL=',real(latLL,kind=sp)
@@ -491,7 +491,7 @@
         ! Block 1 Line 6
         read(10,'(a80)')cdf_b1l6
         read(cdf_b1l6,*,err=1904) dx, dy                 ! cell size in horizontal, vertical, in km
-        if(VERB.gt.0)then
+        if(VERB.ge.1)then
           write(global_info,4) xLL, yLL, gridwidth_x, gridwidth_y, x_volcano,y_volcano  !write out input data
           write(global_log ,4) xLL, yLL, gridwidth_x, gridwidth_y, x_volcano,y_volcano
           write(global_info,*) "z_volcano = ",z_volcano," km"
@@ -506,8 +506,8 @@
       read(10,'(a80)')cdf_b1l7
       read(cdf_b1l7,*,err=5215) dz_const    ! nodal spacing in z (always km)
       VarDzType = "dz_cons"
-      if(VERB.gt.0)write(global_info,43) dz_const
-      if(VERB.gt.0)write(global_log ,43) dz_const
+      if(VERB.ge.1)write(global_info,43) dz_const
+      if(VERB.ge.1)write(global_log ,43) dz_const
       ! Set up initial z_vector up to 50km or so.  This is to match the variable
       ! dz cases in which the max height is specified.  The computational grid
       ! height will be truncated below to just that needed to cover the plume
@@ -519,21 +519,21 @@
       enddo
       goto 5220
 
-5215  if(VERB.gt.0)write(global_info,*)&
+5215  if(VERB.ge.1)write(global_info,*)&
                    "Could not read dz. Trying to reinterpret as alternate z-spacing"
-      if(VERB.gt.0)write(global_info,*)cdf_b1l7
+      if(VERB.ge.1)write(global_info,*)cdf_b1l7
       read(cdf_b1l7,*,err=1905) VarDzType
       if (VarDzType.eq.'dz_plin')then
         ! Piece-wise linear
         !  Read another line with n-segments, nz1, dz1, nz2, dz2, ...
-        if(VERB.gt.0)write(global_info,*)&
+        if(VERB.ge.1)write(global_info,*)&
          "z is piecewise linear:  Now reading the segments."
         read(10,'(a80)')cdf_b1l7
         read(cdf_b1l7,*,err=1905) nsegments
         if(nsegments.lt.1)then
-          if(VERB.gt.0)write(global_info,*)"ERROR: ",&
+          if(VERB.ge.1)write(global_info,*)"ERROR: ",&
                        "nsegments must be positive integer"
-          if(VERB.gt.0)write(global_info,*)&
+          if(VERB.ge.1)write(global_info,*)&
                        "       nsegments = ",nsegments
           stop 1
         endif
@@ -560,15 +560,15 @@
         enddo
         !dz_const = 0.25
       elseif (VarDzType.eq.'dz_clog')then
-        if(VERB.gt.0)write(global_info,*)&
+        if(VERB.ge.1)write(global_info,*)&
                      "Logrithmic dz not yet implemented.  Setting to constant dz=0.25"
         dz_const = 0.25_ip
       elseif (VarDzType.eq.'dz_cust')then
-        if(VERB.gt.0)write(global_info,*)&
+        if(VERB.ge.1)write(global_info,*)&
                      "Custom dz not yet implemented.  Setting to constant dz=0.25"
         dz_const = 0.25_ip
       else
-        if(VERB.gt.0)then
+        if(VERB.ge.1)then
           write(global_info,*)&
            "dz type must be either a number (in km) for constant dz, or"
           write(global_info,*)&
@@ -590,7 +590,7 @@
       !write(global_info,*)"eruption type = suzuki with coefficient of ",Suzuki_A
       goto 5230
       !if the second item is not a number, read SourceType
-5225  if(VERB.gt.0)write(global_info,*)&
+5225  if(VERB.ge.1)write(global_info,*)&
        "Source type is not suzuki. Trying to read another standard type"
       read(cdf_b1l8,*) diffusivity_horz, SourceType
       if ((SourceType.eq.'point').or. &
@@ -620,7 +620,7 @@
           SourceType='umbrella_air'
           Suzuki_A = 12.0_ip
       else
-        if(VERB.gt.0)then
+        if(VERB.ge.1)then
           write(global_info,*)&
            "SourceType is not point, line, profile, umbrella or umbrella_air."
           write(global_info,*)&
@@ -630,36 +630,36 @@
         endif
         IsCustom_SourceType = .true.
       endif
-      if(VERB.gt.0)write(global_info,*)"  SourceType = ",SourceType
+      if(VERB.ge.1)write(global_info,*)"  SourceType = ",SourceType
 
 5230  diffusivity_horz = diffusivity_horz*3.6e-3_ip  !convert diffusion coefficient from m2/s to km2/hr
       diffusivity_vert = diffusivity_horz
 
       if(abs(diffusivity_horz).lt.EPS_SMALL)then
         useDiffusion = .false.
-        if(VERB.gt.0)write(global_info,*)"Not using turbulent diffusivity."
-        if(VERB.gt.0)write(global_log ,*)"Not using turbulent diffusivity."
+        if(VERB.ge.1)write(global_info,*)"Not using turbulent diffusivity."
+        if(VERB.ge.1)write(global_log ,*)"Not using turbulent diffusivity."
       elseif(diffusivity_horz.lt.0.0)then
-        if(VERB.gt.0)write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
                      "Diffusivity must be non-negative."
-        if(VERB.gt.0)write(global_log,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_log,*)"ERROR: ",&
                      "Diffusivity must be non-negative."
         stop 1
       else
-        if(VERB.gt.0)write(global_info,*)"Using constant turbulent diffusivity:  ",&
+        if(VERB.ge.1)write(global_info,*)"Using constant turbulent diffusivity:  ",&
                   diffusivity_horz/3.6e-3_ip," m2/s"
-        if(VERB.gt.0)write(global_log ,*)"Using constant turbulent diffusivity:  ",&
+        if(VERB.ge.1)write(global_log ,*)"Using constant turbulent diffusivity:  ",&
                   diffusivity_horz/3.6e-3_ip," m2/s"
         useDiffusion = .true.
       endif
 
       read(10,'(a80)')cdf_b1l9
       read(cdf_b1l9,*,err=1907) neruptions              ! read in number of eruptions or pulses
-      if(VERB.gt.0)write(global_info,*) 'Expecting to read ',neruptions,&
+      if(VERB.ge.1)write(global_info,*) 'Expecting to read ',neruptions,&
                            ' eruptions lines in Block 2.'
       if (((SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')) &
            .and.(neruptions.gt.1)) then
-        if(VERB.gt.0)then
+        if(VERB.ge.1)then
           write(global_error,*)"ERROR: ",&
            'when SourceType=umbrella, neruptions must equal 1'
           write(global_error,*)&
@@ -680,12 +680,12 @@
       !  stop 1
       !endif
       if(SourceType.eq.'suzuki'.and.(Suzuki_A.le.0.0_ip))then
-        if(VERB.gt.0)write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Suzuki_A must be positive, not ",Suzuki_A
         stop 1
       endif
       if(neruptions.le.0)then
-        if(VERB.gt.0)write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "neruptions must be positive, not ",neruptions
         stop 1
       endif
@@ -706,9 +706,9 @@
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
       if (testkey.ne.'#'.and.testkey.ne.'*')then
-        if(VERB.gt.0)write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          'Expecting a comment line separating blocks.'
-        if(VERB.gt.0)write(global_error,*)&
+        if(VERB.ge.1)write(global_error,*)&
          '       Check that Block 1 is correct.'
         stop 1
       endif
@@ -717,7 +717,7 @@
         read(10,'(a130)')linebuffer130
         read(linebuffer130,*)testkey
       enddo
-      if(VERB.gt.0)then
+      if(VERB.ge.1)then
         write(global_info,*)' *******************************************'
         write(global_info,*)' Reading Block 2: Eruption parameters'
         write(global_info,*)' *******************************************'
@@ -727,18 +727,20 @@
         ! Always check if we have overshot the block
         read(linebuffer130,*)testkey
         if (testkey.eq.'#'.or.testkey.eq.'*') then
-          write(global_log,*)"ERROR: ",&
-           'Trying to read Block 2 and detecting comment line'
-          write(global_log,*)&
-           '  Eruption ',i,'of',neruptions
-          write(global_log,*)&
-           '  Offending line: ',linebuffer130
-          write(global_error,*)"ERROR: ",&
-           'Trying to read Block 2 and detecting comment line'
-          write(global_error,*)&
-           '  Eruption ',i,'of',neruptions
-          write(global_error,*)&
-           '  Offending line: ',linebuffer130
+          if(VERB.ge.1)then
+            write(global_log,*)"ERROR: ",&
+             'Trying to read Block 2 and detecting comment line'
+            write(global_log,*)&
+             '  Eruption ',i,'of',neruptions
+            write(global_log,*)&
+             '  Offending line: ',linebuffer130
+            write(global_error,*)"ERROR: ",&
+             'Trying to read Block 2 and detecting comment line'
+            write(global_error,*)&
+             '  Eruption ',i,'of',neruptions
+            write(global_error,*)&
+             '  Offending line: ',linebuffer130
+          endif
           stop 1
         endif
         if(i.eq.1)then
@@ -747,12 +749,12 @@
             ! Reset BaseYear to the start of the century containing the eruption year
             BaseYear = iyear(i) - mod(iyear(i),100)
             !BaseYear = 1
-            write(global_info,*)"WARNING: Resetting BaseYear to ",BaseYear
+            if(VERB.ge.1)write(global_info,*)"WARNING: Resetting BaseYear to ",BaseYear
           endif
           if(iyear(i).eq.0)then  !HFS: KLUDGE-- This should be changed to test for FC or something
                                  !              Start time should also be calculated by Ash3d, not MetReader
             runAsForecast = .true.
-            write(global_info,*)"Running as forecast."
+            if(VERB.ge.1)write(global_info,*)"Running as forecast."
           endif
         endif
         if(SourceType.eq.'suzuki'      .or. &
@@ -764,7 +766,7 @@
           read(linebuffer130,*,err=1910) iyear(i),imonth(i),iday(i),hour(i), &
                                 e_Duration(i), e_PlumeHeight(i), e_Volume(i)
         elseif(SourceType.eq.'profile')then
-          write(global_info,*)"Start reading eruption profiles."
+          if(VERB.ge.1)write(global_info,*)"Start reading eruption profiles."
           !read start time, duration, plume height, volume of each pulse
           read(linebuffer130,*,err=1910) iyear(i),imonth(i),iday(i),hour(i), &
                                 e_Duration(i), e_PlumeHeight(i), e_prof_dz(i),e_prof_zpoints(i)
@@ -822,9 +824,9 @@
         ! If we are using custom sources, suppress the error-checking
         ! since we don't know the number of lines of input we need and
         ! we will need to loop through here again anyway.
-        write(global_info,*)&
+        if(VERB.ge.1)write(global_info,*)&
           'Skipping error-checking of eruption source lines since '
-        write(global_info,*)&
+        if(VERB.ge.1)write(global_info,*)&
           'the source is a custom type'
          ! For the custom source, we will need to read to the end of block 2
          do while(testkey.ne.'#'.and.testkey.ne.'*')
@@ -835,13 +837,15 @@
 
       else
         if (linebuffer130(1:5).ne.'*****') then
-          write(global_info,*)&
-           'The beginning of the line following the list of', &
-           ' eruptive pulses did not'
-          write(global_info,*)&
-           'start with ''*****''.  Did you enter the correct', &
-           '  number of eruptive pulses?'
-          write(global_info,*) 'Program stopped.'
+          if(VERB.ge.1)then
+            write(global_info,*)&
+             'The beginning of the line following the list of', &
+             ' eruptive pulses did not'
+            write(global_info,*)&
+             'start with ''*****''.  Did you enter the correct', &
+             '  number of eruptive pulses?'
+            write(global_info,*) 'Program stopped.'
+          endif
           stop 1
         endif
       endif
@@ -854,10 +858,12 @@
       read(linebuffer080,*)testkey
       if (.not.IsCustom_SourceType.and.&  ! only perform this check for standard src
           testkey.ne.'#'.and.testkey.ne.'*')then
-        write(global_error,*)"ERROR: ",&
-         'Expecting a comment line separating blocks.'
-        write(global_error,*)&
-         '       Check that Block 2 is correct.'
+        if(VERB.ge.1)then
+          write(global_error,*)"ERROR: ",&
+           'Expecting a comment line separating blocks.'
+          write(global_error,*)&
+           '       Check that Block 2 is correct.'
+        endif
         stop 1
       endif
       do while(testkey.eq.'#'.or.testkey.eq.'*')
@@ -865,9 +871,11 @@
         read(10,'(a80)')linebuffer080
         read(linebuffer080,*)testkey
       enddo
-      write(global_info,*)' *******************************************'
-      write(global_info,*)' Reading Block 3: Windfile parameters'
-      write(global_info,*)' *******************************************'
+      if(VERB.ge.1)then
+        write(global_info,*)' *******************************************'
+        write(global_info,*)' Reading Block 3: Windfile parameters'
+        write(global_info,*)' *******************************************'
+      endif
       ! Block 3 Line 1
       cdf_b3l1 = linebuffer080
       read(linebuffer080,*,iostat=ioerr) iw,iwf
@@ -897,7 +905,7 @@
 
       else
         ! We need at least two values
-        write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "could not read iwind, iwindformat"
         stop 1
       endif
@@ -906,7 +914,7 @@
         ! If iwindformat = 0, then the input file is a not a known format
         ! Read an extra line given the name of a template file.
         if(idf.ne.2)then
-          write(global_info,*)&
+          if(VERB.ge.1)write(global_info,*)&
            "Currently only netcdf reader implemented for templates.",&
            "  Resetting idf to 2"
           idf = 2
@@ -914,7 +922,7 @@
         read(10,'(a80)')linebuffer080
         read(linebuffer080,*)testkey
         if (testkey.eq.'#'.or.testkey.eq.'*') then
-          write(global_error,*)"ERROR: ",&
+          if(VERB.ge.1)write(global_error,*)"ERROR: ",&
            "Trying to template name and detecting comment line"
           stop 1
         endif
@@ -932,7 +940,7 @@
 
       read(10,'(a80)')linebuffer080
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Trying to read MR_iHeightHandler and detecting comment line"
         stop 1
       endif
@@ -943,7 +951,7 @@
 
       read(10,'(a80)')linebuffer080
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Trying to read Simtime_in_hours and detecting comment line"
         stop 1
       endif
@@ -955,7 +963,7 @@
 !     Read whether to stop calculation when percent_accumulated>0.99
       read(10,'(a80)') linebuffer080
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Trying to read StopWhenDeposited and detecting comment line"
         stop 1
       endif
@@ -974,7 +982,7 @@
 
       read(10,'(a80)')linebuffer080
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Trying to read nWindFiles and detecting comment line"
         stop 1
       endif
@@ -1029,27 +1037,31 @@
       enddo
 
       ! write out eruption information
-      write(global_info,7) neruptions
-      write(global_log ,7) neruptions
+      if(VERB.ge.1)write(global_info,7) neruptions
+      if(VERB.ge.1)write(global_log ,7) neruptions
       do i=1,neruptions
-        write(global_info,8) i, e_PlumeHeight(i), iyear(i), imonth(i), &
-                   iday(i), hour(i), e_Duration(i), e_Volume(i)
-        write(global_log ,8) i, e_PlumeHeight(i), iyear(i), imonth(i), &
-                   iday(i), hour(i), e_Duration(i), e_Volume(i)
-        write(global_info,*)"  e_StartTime = ",1,&
-                            BaseYear,useLeap,          &
-                            real(SimStartHour,kind=4), &
-                            real(e_StartTime(i),kind=4)
-      if(SourceType.eq.'profile')then
-        do ii=1,e_prof_zpoints(i)
-          write(global_info,*)"         ",ii,real((ii-1)*e_prof_dz(i),kind=4),&
-                                             real(e_prof_Volume(i,ii),kind=4)
-        enddo
-        write(global_info,*)"         Total Volume for this pulse = ",&
-                            real(sum(e_prof_Volume(i,:)),kind=4),"km3 DRE"
-      endif
+        if(VERB.ge.1)then
+          write(global_info,8) i, e_PlumeHeight(i), iyear(i), imonth(i), &
+                     iday(i), hour(i), e_Duration(i), e_Volume(i)
+          write(global_log ,8) i, e_PlumeHeight(i), iyear(i), imonth(i), &
+                     iday(i), hour(i), e_Duration(i), e_Volume(i)
+          write(global_info,*)"  e_StartTime = ",1,&
+                              BaseYear,useLeap,          &
+                              real(SimStartHour,kind=4), &
+                              real(e_StartTime(i),kind=4)
+        endif
+        if(SourceType.eq.'profile')then
+          if(VERB.ge.1)then
+            do ii=1,e_prof_zpoints(i)
+              write(global_info,*)"         ",ii,real((ii-1)*e_prof_dz(i),kind=4),&
+                                                 real(e_prof_Volume(i,ii),kind=4)
+            enddo
+            write(global_info,*)"         Total Volume for this pulse = ",&
+                                real(sum(e_prof_Volume(i,:)),kind=4),"km3 DRE"
+          endif
+        endif
       enddo
-      write(global_info,*)"Total volume of all eruptions = ",&
+      if(VERB.ge.1)write(global_info,*)"Total volume of all eruptions = ",&
                           real(sum(e_volume),kind=sp),"km3 DRE"
       ! Now that we know the requested dz profile and the plume heights, we can
       ! set up the z-grid for computation
@@ -1075,16 +1087,18 @@
         endif
       enddo
       if(nzmax.eq.0)then
-        write(global_error,*)"ERROR: ",&
-         "Specified z-grid does not extend high enough"
-        write(global_info,*)"        for given plume heights."
-        write(global_info,*)"    e_PlumeHeight = ",e_PlumeHeight(1:neruptions)
-        write(global_info,*)"         ZPADDING = ",ZPADDING
-        write(global_info,*)"  CompGrid_height = ",CompGrid_height
-        write(global_info,*)"       z_vec_init = "
-        do k = 1,nz_init-1
-          write(global_info,*)"                ",k,real(z_vec_init(k),kind=4)
-        enddo
+        if(VERB.ge.1)then
+          write(global_error,*)"ERROR: ",&
+           "Specified z-grid does not extend high enough"
+          write(global_info,*)"        for given plume heights."
+          write(global_info,*)"    e_PlumeHeight = ",e_PlumeHeight(1:neruptions)
+          write(global_info,*)"         ZPADDING = ",ZPADDING
+          write(global_info,*)"  CompGrid_height = ",CompGrid_height
+          write(global_info,*)"       z_vec_init = "
+          do k = 1,nz_init-1
+            write(global_info,*)"                ",k,real(z_vec_init(k),kind=4)
+          enddo
+        endif
         stop 1
       endif
 
@@ -1111,8 +1125,8 @@
         enddo
       endif
 
-      write(global_info,*)
-      write(global_log ,*)
+      if(VERB.ge.1)write(global_info,*)
+      if(VERB.ge.1)write(global_log ,*)
 
       ! Error-check initial wind info and allocate windfile arrays
       MR_BaseYear = BaseYear
@@ -1128,27 +1142,29 @@
       if(MR_useLeap.neqv.useLeap)then
         useLeap  = MR_useLeap
         BaseYear = MR_BaseYear
-        write(global_info,*)"Change in calandar; resetting e_StartTime"
+        if(VERB.ge.1)write(global_info,*)"Change in calandar; resetting e_StartTime"
 
-          tmp_dp = HS_hours_since_baseyear(iyear(1),imonth(1),  &
-                           iday(1),hour(1),BaseYear,useLeap)
-          tmp_dp = tmp_dp - SimStartHour   ! Recast tmp_dp as the difference in calandars
-          SimStartHour = SimStartHour + tmp_dp
-          xmlSimStartTime = HS_xmltime(SimStartHour,BaseYear,useLeap)
+        tmp_dp = HS_hours_since_baseyear(iyear(1),imonth(1),  &
+                         iday(1),hour(1),BaseYear,useLeap)
+        tmp_dp = tmp_dp - SimStartHour   ! Recast tmp_dp as the difference in calandars
+        SimStartHour = SimStartHour + tmp_dp
+        xmlSimStartTime = HS_xmltime(SimStartHour,BaseYear,useLeap)
       endif
-      if (SourceType.eq.'suzuki') then
-         write(global_info,6) diffusivity_horz, Suzuki_A, &
-                              StopWhenDeposited, Simtime_in_hours
-         write(global_log ,6) diffusivity_horz, Suzuki_A, &
-                              StopWhenDeposited, Simtime_in_hours
-       else
-         write(global_info,1438) diffusivity_horz, &
-                                 StopWhenDeposited, Simtime_in_hours
-         write(global_log ,1438) diffusivity_horz, &
-                                 StopWhenDeposited, Simtime_in_hours
+      if(VERB.ge.1)then
+        if (SourceType.eq.'suzuki') then
+          write(global_info,6) diffusivity_horz, Suzuki_A, &
+                               StopWhenDeposited, Simtime_in_hours
+          write(global_log ,6) diffusivity_horz, Suzuki_A, &
+                               StopWhenDeposited, Simtime_in_hours
+        else
+          write(global_info,1438) diffusivity_horz, &
+                                  StopWhenDeposited, Simtime_in_hours
+          write(global_log ,1438) diffusivity_horz, &
+                                  StopWhenDeposited, Simtime_in_hours
+        endif
       endif
-      write(global_info,1439) SourceType
-      write(global_log ,1439) SourceType
+      if(VERB.ge.1)write(global_info,1439) SourceType
+      if(VERB.ge.1)write(global_log ,1439) SourceType
 
 !     CALCULATE MASS FLUX AND END TIMES OF EACH ERUPTIVE PULSE      
       do i=1,neruptions                            
@@ -1164,13 +1180,9 @@
                          e_Duration(i)    ! hours  => kg/hr
           e_EndTime(i) = e_StartTime(i) + e_Duration(i)
 
-          !for debugging >>>>>
-          write(6,1023) MagmaDensity, e_Duration(i), MassFlux(i), e_Volume(i)
+          if(VERB.ge.1)write(6,1023) MagmaDensity, e_Duration(i), MassFlux(i), e_Volume(i)
 1023      format('   Magma density (kg/m3) = ',f6.1,', e_Duration(1) (hrs) = ',f6.3,/, &
                  '   Mass flux (kg/hr) = ',e12.4,', Total volume (km3 DRE)=',f8.4,/,'Continue?')
-          !read(5,'(a1)') answer
-          !if (answer.eq.'n') stop
-          !for debugging <<<<
         elseif(SourceType.eq.'profile')then
           e_prof_MassFlux(i,1:e_prof_zpoints(i)) = &
                          MagmaDensity  * &                        ! kg/m3
@@ -1196,8 +1208,8 @@
         jvent = int((y_volcano-yLL)/dy) + 1
       endif
 
-      write(global_info,104) ivent,jvent
-      write(global_log ,104) ivent,jvent
+      if(VERB.ge.1)write(global_info,104) ivent,jvent
+      if(VERB.ge.1)write(global_log ,104) ivent,jvent
 104   format(4x,'i and j coordinates of volcano:',/, &
              4x,'i=',i4,/, &
              4x,'j=',i4,/)
@@ -1208,9 +1220,9 @@
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
       if (testkey.ne.'#'.and.testkey.ne.'*')then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Expecting a comment line separating blocks."
-        write(global_error,*)'       Check that Block 3 is correct.'
+        if(VERB.ge.1)write(global_error,*)'       Check that Block 3 is correct.'
         stop 1
       endif
       do while(testkey.eq.'#'.or.testkey.eq.'*')
@@ -1219,9 +1231,11 @@
         read(linebuffer080,*)testkey
       enddo
       ! Block 4 Line 1
-      write(global_info,*)' *******************************************'
-      write(global_info,*)' Reading Block 4: Output options '
-      write(global_info,*)' *******************************************'
+      if(VERB.ge.1)then
+        write(global_info,*)' *******************************************'
+        write(global_info,*)' Reading Block 4: Output options '
+        write(global_info,*)' *******************************************'
+      endif
       WriteDepositFinal_ASCII       = .false.
       WriteDepositFinal_KML         = .false.
       WriteDepositTS_ASCII          = .false.
@@ -1244,7 +1258,7 @@
       ! Read whether to write out final ESRI ASCII deposit file
       read(linebuffer080,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Trying to read WriteDepositFinal_ASCII and detecting",& 
          " comment line"
         stop 1
@@ -1263,7 +1277,7 @@
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Trying to read WriteDepositFinal_KML and detecting", &
          " comment line"
         stop 1
@@ -1283,7 +1297,7 @@
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Trying to read WriteDepositTS_ASCII and detecting",&
          " comment line"
         stop 1
@@ -1303,7 +1317,7 @@
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Trying to read WriteDepositTS_KML and detecting comment line"
         stop 1
       endif
@@ -1322,7 +1336,7 @@
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Trying to read WriteCloudConcentration_ASCII and detecting",&
          " comment line"
         stop 1
@@ -1342,7 +1356,7 @@
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Trying to read WriteCloudConcentration_KML and detecting",&
          " comment line"
         stop 1
@@ -1362,7 +1376,7 @@
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Trying to read WriteCloudHeight_ASCII and detecting",&
          " comment line"
         stop 1
@@ -1382,7 +1396,7 @@
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Trying to read WriteCloudHeight_KML and detecting",&
          " comment line"
         stop 1
@@ -1402,7 +1416,7 @@
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Trying to read WriteCloudLoad_ASCII and detecting",&
          " comment line"
         stop 1
@@ -1422,7 +1436,7 @@
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Trying to read WriteCloudLoad_KML and detecting comment line"
         stop 1
       endif
@@ -1441,7 +1455,7 @@
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Trying to read WriteDepositTime_ASCII and detecting",&
          " comment line"
         stop 1
@@ -1461,7 +1475,7 @@
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Trying to read WriteDepositTime_KML and detecting",&
          " comment line"
         stop 1
@@ -1481,7 +1495,7 @@
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Trying to read WriteCloudTime_ASCII and detecting",&
          " comment line"
         stop 1
@@ -1501,7 +1515,7 @@
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Trying to read WriteCloudTime_KML and detecting comment line"
         stop 1
       endif
@@ -1533,7 +1547,7 @@
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Trying to read Write3dFiles and detecting comment line"
         stop 1
       endif
@@ -1553,18 +1567,18 @@
         if (ioerr.eq.0)then
           ! Succeeded in reading the format code
           if(iform.eq.1)then
-            write(global_info,*)" Successfully read format code=1"
-            write(global_info,*)"  Both output products and ash concentrations will be written"
+            if(VERB.ge.1)write(global_info,*)" Successfully read format code=1"
+            if(VERB.ge.1)write(global_info,*)"  Both output products and ash concentrations will be written"
             USE_OUTPROD_VARS = .true.
             USE_RESTART_VARS = .true.
           elseif(iform.eq.2)then
-            write(global_info,*)" Successfully read format code=2"
-            write(global_info,*)"  Only output products will be written"
+            if(VERB.ge.1)write(global_info,*)" Successfully read format code=2"
+            if(VERB.ge.1)write(global_info,*)"  Only output products will be written"
             USE_OUTPROD_VARS = .true.
             USE_RESTART_VARS = .false.
           else
-            write(global_info,*)" Could not read format code"
-            write(global_info,*)"  Assuming both output products and ash concentration will be written"
+            if(VERB.ge.1)write(global_info,*)" Could not read format code"
+            if(VERB.ge.1)write(global_info,*)"  Assuming both output products and ash concentration will be written"
             USE_OUTPROD_VARS = .true.
             USE_RESTART_VARS = .true.
           endif
@@ -1582,7 +1596,7 @@
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Trying to read output format and detecting comment line"
         stop 1
       endif
@@ -1605,7 +1619,7 @@
       read(10,'(a80)') linebuffer080
       read(linebuffer080,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Trying to read nWriteTimes and detecting comment line"
         stop 1
       endif
@@ -1615,7 +1629,7 @@
       read(10,'(a130)')linebuffer130
       read(linebuffer130,*)testkey
       if (testkey.eq.'#'.or.testkey.eq.'*') then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Trying to read WriteTimes or WriteInterval and detecting",&
          " comment line"
         stop 1
@@ -1638,7 +1652,7 @@
             allocate(WriteTimes(nWriteTimes))
             read(linebuffer130,*,err=1965) WriteTimes(1:nWriteTimes)
           elseif (nWriteTimes.eq.0) then
-            write(global_info,*)&
+            if(VERB.ge.1)write(global_info,*)&
              "nWriteTimes = 0: Running without output"
           elseif (nWriteTimes.ne.-1) then
             ! If not a positive number, then it should be -1
@@ -1649,9 +1663,11 @@
             read(cdf_b4l18,*,err=1967) WriteInterval
               ! Redefine nWriteTimes since it was read in as -1
             nWriteTimes = int(Simtime_in_hours/WriteInterval)+1
-            write(global_info,*)"  WriteInterval    = ",real(WriteInterval,kind=sp)
-            write(global_info,*)"  Simtime_in_hours = ",real(Simtime_in_hours,kind=sp)
-            write(global_info,*)"  nWriteTimes      = ",nWriteTimes
+            if(VERB.ge.1)then
+              write(global_info,*)"  WriteInterval    = ",real(WriteInterval,kind=sp)
+              write(global_info,*)"  Simtime_in_hours = ",real(Simtime_in_hours,kind=sp)
+              write(global_info,*)"  nWriteTimes      = ",nWriteTimes
+            endif
             allocate(WriteTimes(nWriteTimes))
 
             forall (i=1:nWriteTimes)  WriteTimes(i) = (i-1)*WriteInterval
@@ -1668,8 +1684,8 @@
                   goto 1969
                 endif
               elseif (WriteTimes(i).gt.Simtime_in_hours) then   !if some times exceed the simulation time
-                write(global_info,32)
-                write(global_log ,32)
+                if(VERB.ge.1)write(global_info,32)
+                if(VERB.ge.1)write(global_log ,32)
                 nWriteTimes = i-1
                 exit
               endif
@@ -1696,7 +1712,7 @@
 
        !WRITE OUT THE TYPES OF OUTPUT TO BE WRITTEN
         !output options
-       write(global_info,33) WriteDepositFinal_ASCII,       &
+       if(VERB.ge.1)write(global_info,33) WriteDepositFinal_ASCII,       &
                    WriteDepositFinal_KML,         &
                    WriteDepositTS_ASCII,          &
                    WriteDepositTS_KML,            &
@@ -1713,7 +1729,7 @@
                    Write3dFiles,                  &
                    formatanswer,                  &
                    nWriteTimes
-       write(global_log ,33) WriteDepositFinal_ASCII,       &
+       if(VERB.ge.1)write(global_log ,33) WriteDepositFinal_ASCII,       &
                    WriteDepositFinal_KML,         &
                    WriteDepositTS_ASCII,          &
                    WriteDepositTS_KML,            &
@@ -1742,12 +1758,14 @@
           WriteCloudTime_ASCII          .or. &
           WriteCloudTime_KML            .or. &
           Write3dFiles) then
-          write(global_info,34)                                !write out the types of output specified
-          write(global_log ,34)
-          do i=1,nWriteTimes
-            write(global_info,35) WriteTimes(i)                !write out the times when  files will be written
-            write(global_log ,35) Writetimes(i)
-          enddo
+          if(VERB.ge.1)then
+            write(global_info,34)                                !write out the types of output specified
+            write(global_log ,34)
+            do i=1,nWriteTimes
+              write(global_info,35) WriteTimes(i)                !write out the times when  files will be written
+              write(global_log ,35) Writetimes(i)
+            enddo
+         endif
        endif
       ! END OF BLOCK 4
       !************************************************************************
@@ -1758,9 +1776,9 @@
         read(10,'(a130)')linebuffer130
         read(linebuffer130,*)testkey
         if (testkey.ne.'#'.and.testkey.ne.'*')then
-          write(global_error,*)"ERROR: ",&
+          if(VERB.ge.1)write(global_error,*)"ERROR: ",&
            "Expecting a comment line separating blocks."
-          write(global_error,*)'       Check that Block 4 is correct.'
+          if(VERB.ge.1)write(global_error,*)'       Check that Block 4 is correct.'
           stop 1
         endif      
         do while(testkey.eq.'#'.or.testkey.eq.'*')
@@ -1771,17 +1789,19 @@
           !read(linebuffer130,*)testkey
           testkey=linebuffer130(1:1)
         enddo
-        write(global_info,*)' *****************************************'
-        write(global_info,*)' Reading Block 5: Windfile names'
-        write(global_info,*)' *****************************************'
-        write(global_info,13)
-        write(global_log ,13)
+        if(VERB.ge.1)then
+          write(global_info,*)' *****************************************'
+          write(global_info,*)' Reading Block 5: Windfile names'
+          write(global_info,*)' *****************************************'
+          write(global_info,13)
+          write(global_log ,13)
+        endif
           ! Read list of windfiles.
         if(MR_iwind.eq.5)then
           ! For NCEP 2.5 degree (25), NOAA product (27), ERA5 (29), or ERA-20C (30)
           ! just read the path to the files
           read(linebuffer130,'(a130)',err=1970) MR_windfiles(1)
-          write(global_info,1034) 1,trim(adjustl(MR_windfiles(1)))
+          if(VERB.ge.1)write(global_info,1034) 1,trim(adjustl(MR_windfiles(1)))
           read(10,'(a130)')linebuffer130
         else
           ! For all other iwf (MR_iwindformats), read the full list
@@ -1789,30 +1809,34 @@
             ! Always check if we have overshot the block
             testkey=linebuffer130(1:1)
             if (testkey.eq.'#'.or.testkey.eq.'*') then
-              write(global_log,*)"ERROR: ",&
-               "Trying to read Block 5 and detecting comment line"
-              write(global_log,*)  '  Windfile ',i,'of',iwfiles
-              write(global_log,*)  '  Offending line:',linebuffer130
-              write(global_error,*)"ERROR: ",&
-               "Trying to read Block 5 and detecting comment line"
-              write(global_error,*)'  Windfile ',i,'of',iwfiles
-              write(global_error,*)'  Offending line:',linebuffer130
+              if(VERB.ge.1)then
+                write(global_log,*)"ERROR: ",&
+                 "Trying to read Block 5 and detecting comment line"
+                write(global_log,*)  '  Windfile ',i,'of',iwfiles
+                write(global_log,*)  '  Offending line:',linebuffer130
+                write(global_error,*)"ERROR: ",&
+                 "Trying to read Block 5 and detecting comment line"
+                write(global_error,*)'  Windfile ',i,'of',iwfiles
+                write(global_error,*)'  Offending line:',linebuffer130
+              endif
               stop 1
             endif
             read(linebuffer130,'(a130)',err=1970) MR_windfiles(i)
-            write(global_info,1034) i,trim(adjustl(MR_windfiles(i)))
+            if(VERB.ge.1)write(global_info,1034) i,trim(adjustl(MR_windfiles(i)))
             if(idf.eq.3)then
               ! If we are reading grib files, check that the index file has been
               ! generated
 #ifndef USEGRIB
-              write(global_error,*)"ERROR: ",&
-               "This input file specifies that the Met files are"
-              write(global_error,*)&
-               "       in grib format, but Ash3d has not been compiled"
-              write(global_error,*)&
-               "       with grib support.  Please recompile with grib"
-              write(global_error,*)&
-               "       enabled.  MetReader must also support grib."
+              if(VERB.ge.1)then
+                write(global_error,*)"ERROR: ",&
+                 "This input file specifies that the Met files are"
+                write(global_error,*)&
+                 "       in grib format, but Ash3d has not been compiled"
+                write(global_error,*)&
+                 "       with grib support.  Please recompile with grib"
+                write(global_error,*)&
+                 "       enabled.  MetReader must also support grib."
+                endif
               stop 1
 #else
               MR_windfiles_GRIB_index(i) = trim(adjustl(MR_windfiles(i))) // ".index"
@@ -1822,7 +1846,7 @@
                 ! Grib index file is not there, Try to generate it.
                 ! Note, we might have some permission problems here and we should
                 ! set up a fail-safe to the cwd or something.
-                write(global_info,*)&
+                if(VERB.ge.1)write(global_info,*)&
                  " Grib index file not found; attempting to create it."
                 call MR_Set_Gen_Index_GRIB(MR_windfiles(i))
               endif
@@ -1833,24 +1857,28 @@
         endif
 1034    format(' i=',i3,'  MR_windfiles(i) = ',a)
       else
-        write(global_error,*)"ERROR: ",&
-         "MR_iwindfiles = 0"
-        write(global_error,*)&
-         "       Either the number of windfiles specified = 0, or"
-        write(global_error,*)&
-         "       MR_Allocate_FullMetFileList has not been called."
+        if(VERB.ge.1)then
+          write(global_error,*)"ERROR: ",&
+           "MR_iwindfiles = 0"
+          write(global_error,*)&
+           "       Either the number of windfiles specified = 0, or"
+          write(global_error,*)&
+           "       MR_Allocate_FullMetFileList has not been called."
+        endif
         stop 1
       endif
 
       !Error trap if more windfiles are entered than are specified
       if (linebuffer130(1:5).ne.'*****') then
-        write(global_info,*)&
-         'The beginning of the line following the list of', &
-         ' windfiles did not'
-        write(global_info,*)&
-         'start with ''*****''.  Did you enter the correct', &
-         '  number of windfiles?'
-        write(global_info,*) 'Program stopped.'
+        if(VERB.ge.1)then
+          write(global_info,*)&
+           'The beginning of the line following the list of', &
+           ' windfiles did not'
+          write(global_info,*)&
+           'start with ''*****''.  Did you enter the correct', &
+           '  number of windfiles?'
+          write(global_info,*) 'Program stopped.'
+        endif
         stop 1
       endif
       ! END OF BLOCK 5
@@ -1871,9 +1899,11 @@
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
       if (testkey.ne.'#'.and.testkey.ne.'*')then
-        write(global_error,*)"ERROR: ",&
-         "Expecting a comment line separating blocks."
-        write(global_error,*)'       Check that Block 5 is correct.'
+        if(VERB.ge.1)then
+          write(global_error,*)"ERROR: ",&
+           "Expecting a comment line separating blocks."
+          write(global_error,*)'       Check that Block 5 is correct.'
+        endif
         stop 1
       endif
       do while(testkey.eq.'#'.or.testkey.eq.'*')
@@ -1881,9 +1911,11 @@
         read(10,'(a80)')linebuffer080
         read(linebuffer080,*)testkey
       enddo
-      write(global_info,*)' *******************************************'
-      write(global_info,*)' Reading Block 6: Airport location output'
-      write(global_info,*)' *******************************************'
+      if(VERB.ge.1)then
+        write(global_info,*)' *******************************************'
+        write(global_info,*)' Reading Block 6: Airport location output'
+        write(global_info,*)' *******************************************'
+      endif
       !Read whether to write out ASCII airport file
       ! Block 6 Line 1
       cdf_b6l1 = linebuffer080
@@ -1940,7 +1972,7 @@
           AppendExtAirportFile=.false.       !read and append external data
         endif
         !Make sure the external file exists and can be opened.
-        write(global_info,*)&
+        if(VERB.ge.1)write(global_info,*)&
         'Making sure the external airport file exists and can be opened'
         open(unit=17,file=AirportInFile,status='old',err=19825) !try opening the external file
         close(17)                              !if it opens, close it back up.
@@ -1962,10 +1994,10 @@
       endif
 
       !Write out parameters
-      write(global_info,44) ReadExtAirportFile, AppendExtAirportFile, &
+      if(VERB.ge.1)write(global_info,44) ReadExtAirportFile, AppendExtAirportFile, &
                   WriteAirportFile_ASCII, WriteGSD, WriteAirportFile_KML, &
                   ProjectAirportLocations, AirportInFile
-      write(global_log ,44) ReadExtAirportFile, AppendExtAirportFile, &
+      if(VERB.ge.1)write(global_log ,44) ReadExtAirportFile, AppendExtAirportFile, &
                   WriteAirportFile_ASCII, WriteGSD, WriteAirportFile_KML, &
                   ProjectAirportLocations, AirportInFile
       ! END OF BLOCK 6
@@ -1976,9 +2008,9 @@
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
       if (testkey.ne.'#'.and.testkey.ne.'*')then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Expecting a comment line separating blocks."
-        write(global_error,*)'       Check that Block 6 is correct.'
+        if(VERB.ge.1)write(global_error,*)'       Check that Block 6 is correct.'
         stop 1
       endif
       do while(testkey.eq.'#'.or.testkey.eq.'*')
@@ -1986,9 +2018,11 @@
         read(10,'(a80)')linebuffer080
         read(linebuffer080,*)testkey
       enddo
-      write(global_info,*)' *******************************************'
-      write(global_info,*)' Reading Block 7: Grain Size Groups'
-      write(global_info,*)' *******************************************'
+      if(VERB.ge.1)then
+        write(global_info,*)' *******************************************'
+        write(global_info,*)' Reading Block 7: Grain Size Groups'
+        write(global_info,*)' *******************************************'
+      endif
       ! READ GRAIN-SIZE BINS
       ! First, get the number of tephra bins to read
       ! Note: This might be one greater than what is calculated if the last bin
@@ -2031,19 +2065,21 @@
           ! Always check if we have overshot the block
           testkey = linebuffer080(1:1)
           if ((testkey.eq.'*').or.(testkey.eq.'#')) then
-            write(global_error,*)"ERROR: ",&
-             "Error in specifying grain sizes.  You specified ",&
-             init_n_gs_max,', sizes,'
-            write(global_error,*) 'but only ',i-1,&
-             ' size classes were listed in the input file.'
-            write(global_error,*)' Offending line: ',linebuffer080
-            write(global_error,*) 'Program stopped'
-            write(global_error,*)"ERROR: ",&
-             "Error in specifying grain sizes.  You specified ",&
-             init_n_gs_max,', sizes,'
-            write(global_log ,*) 'but only ',i-1,&
-             ' size classes were listed in the input file.'
-            write(global_log ,*) 'Program stopped'
+            if(VERB.ge.1)then
+              write(global_error,*)"ERROR: ",&
+               "Error in specifying grain sizes.  You specified ",&
+               init_n_gs_max,', sizes,'
+              write(global_error,*) 'but only ',i-1,&
+               ' size classes were listed in the input file.'
+              write(global_error,*)' Offending line: ',linebuffer080
+              write(global_error,*) 'Program stopped'
+              write(global_error,*)"ERROR: ",&
+               "Error in specifying grain sizes.  You specified ",&
+               init_n_gs_max,', sizes,'
+              write(global_log ,*) 'but only ',i-1,&
+               ' size classes were listed in the input file.'
+              write(global_log ,*) 'Program stopped'
+            endif
             stop 1
           endif
           read(linebuffer080,*,iostat=ioerr) value1, value2
@@ -2083,22 +2119,24 @@
               temp_v_s(i) = 0.0_ip
               if(temp_gsdiam(i).lt.0.0_ip)then
                 if(i.lt.init_n_gs_max)then
-                  write(global_error,*)"ERROR: ",&
+                  if(VERB.ge.1)write(global_error,*)"ERROR: ",&
                    "diameter must be positive"
                   stop 1
                 else
                   phi_mean   = value2
                   phi_stddev = value3
-                  write(global_info,*) &
-          "Last grain-size bin will be partitioned across all previous."
-                  write(global_info,*)"Volume fraction partitioned = ",&
-          1.0_ip-sum(temp_bin_mass(1:init_n_gs_max-1))
-                  write(global_info,*)&
-          "  Assuming remainder is Gaussian in phi"
-                  write(global_info,*)&
-          "    phi_mean   = ", phi_mean
-                  write(global_info,*)&
-          "    phi_stddev = ", phi_stddev
+                  if(VERB.ge.1)then
+                    write(global_info,*) &
+                      "Last grain-size bin will be partitioned across all previous."
+                    write(global_info,*)"Volume fraction partitioned = ",&
+                      1.0_ip-sum(temp_bin_mass(1:init_n_gs_max-1))
+                    write(global_info,*)&
+                      "  Assuming remainder is Gaussian in phi"
+                    write(global_info,*)&
+                      "    phi_mean   = ", phi_mean
+                    write(global_info,*)&
+                      "    phi_stddev = ", phi_stddev
+                  endif
                   useVariableGSbins = .true.
                 endif
               endif
@@ -2109,7 +2147,7 @@
               useCalcFallVel = .false.
               temp_v_s(i)     = value1
               if (temp_v_s(i).lt.0.0_ip)then
-                write(global_info,*)&
+                if(VERB.ge.1)write(global_info,*)&
                  "WARNING: fall velocity is negative.  Grains will 'fall' upward"
               endif
               temp_bin_mass(i)= value2
@@ -2170,13 +2208,13 @@
         enddo
 
 !       Make sure that Tephra_bin_mass>0 for  each size class
-        write(global_info,2531)
-        write(global_log,2531)
+        if(VERB.ge.1)write(global_info,2531)
+        if(VERB.ge.1)write(global_log,2531)
 2531    format('Checking to make sure Tephra_bin_mass>0 for all size classes')
         do i=1,n_gs_max
            if (Tephra_bin_mass(i).lt.0.0_ip) then
-             write(global_info,25311) i
-             write(global_log,25311) i
+             if(VERB.ge.1)write(global_info,25311) i
+             if(VERB.ge.1)write(global_log,25311) i
 25311        format('Error: mass of bin ',i2,' is less than zero.  Program stopped')
              stop 1
            end if
@@ -2184,14 +2222,16 @@
 !       Send error message if sum(bin_mass(1:n_gs_max)) does not equal 1
         sum_bins=sum(Tephra_bin_mass(1:n_gs_max))
         if(abs(sum_bins-1.0_ip).gt.0.02_ip) then
-          write(global_info,2532)
-          write(global_log ,2532)
-          do i=1,n_gs_max
-            write(global_info,2533) i, Tephra_bin_mass(i)
-            write(global_log ,2533) i, Tephra_bin_mass(i)
-          enddo
-          write(global_info,2534) sum_bins
-          write(global_log ,2534) sum_bins
+          if(VERB.ge.1)then
+            write(global_info,2532)
+            write(global_log ,2532)
+            do i=1,n_gs_max
+              write(global_info,2533) i, Tephra_bin_mass(i)
+              write(global_log ,2533) i, Tephra_bin_mass(i)
+            enddo
+            write(global_info,2534) sum_bins
+            write(global_log ,2534) sum_bins
+          endif
 2532      format('Error.  Sum of mass fractions of grain-size bins',/, &
                  'does not equal 1.',/, &
                  'bin   mass')
@@ -2200,8 +2240,8 @@
           stop 1
             !If it differs just slightly from 1, adjust automatically
         else if (abs(sum_bins-1.0_ip).gt.0.001_ip) then
-          write(global_info,2535) sum_bins
-          write(global_log ,2535) sum_bins
+          if(VERB.ge.1)write(global_info,2535) sum_bins
+          if(VERB.ge.1)write(global_log ,2535) sum_bins
 2535      format('Warning: sum(bin_mass(1:n_gs_max))=',f10.5,/, &
                  'This differs slightly from 1.0',/, &
                  'adjusting bin masses automatically.')
@@ -2211,83 +2251,96 @@
         endif
 
 !       WRITE OUT GRAIN-SIZE BINS:
-        write(global_info,9) n_gs_max, FV_ID                               ! write out grain size bins
-        write(global_log ,9) n_gs_max, FV_ID
-        if(FV_ID.eq.0)then
-          write(global_info,*)"Fall Model = None (tracer)"
-          write(global_log ,*)"Fall Model = None (tracer)"
-        elseif(FV_ID.eq.1)then
-          write(global_info,*)"Fall Model = Wilson and Huang"
-          write(global_log ,*)"Fall Model = Wilson and Huang"
-        elseif(FV_ID.eq.2)then
-          write(global_info,*)"Fall Model = Wilson and Huang + Cunningham slip"
-          write(global_log ,*)"Fall Model = Wilson and Huang + Cunningham slip"
-        elseif(FV_ID.eq.3)then
-          write(global_info,*)"Fall Model = Wilson and Huang + Mod by PCM"
-          write(global_log ,*)"Fall Model = Wilson and Huang + Mod by PCM"
-        elseif(FV_ID.eq.4)then
-          write(global_info,*)"Fall Model = Ganser"
-          write(global_log ,*)"Fall Model = Ganser"
-        elseif(FV_ID.eq.5)then
-          write(global_info,*)"Fall Model = Stokes flow + slip"
-          write(global_log ,*)"Fall Model = Stokes flow + slip"
-        else
-          write(global_info,*)"Default Fall Model = Wilson and Huang"
-          write(global_log ,*)"Default Fall Model = Wilson and Huang"
+        if(VERB.ge.1)then
+          write(global_info,9) n_gs_max, FV_ID                               ! write out grain size bins
+          write(global_log ,9) n_gs_max, FV_ID
+          if(FV_ID.eq.0)then
+            write(global_info,*)"Fall Model = None (tracer)"
+            write(global_log ,*)"Fall Model = None (tracer)"
+          elseif(FV_ID.eq.1)then
+            write(global_info,*)"Fall Model = Wilson and Huang"
+            write(global_log ,*)"Fall Model = Wilson and Huang"
+          elseif(FV_ID.eq.2)then
+            write(global_info,*)"Fall Model = Wilson and Huang + Cunningham slip"
+            write(global_log ,*)"Fall Model = Wilson and Huang + Cunningham slip"
+          elseif(FV_ID.eq.3)then
+            write(global_info,*)"Fall Model = Wilson and Huang + Mod by PCM"
+            write(global_log ,*)"Fall Model = Wilson and Huang + Mod by PCM"
+          elseif(FV_ID.eq.4)then
+            write(global_info,*)"Fall Model = Ganser"
+            write(global_log ,*)"Fall Model = Ganser"
+          elseif(FV_ID.eq.5)then
+            write(global_info,*)"Fall Model = Stokes flow + slip"
+            write(global_log ,*)"Fall Model = Stokes flow + slip"
+          else
+            write(global_info,*)"Default Fall Model = Wilson and Huang"
+            write(global_log ,*)"Default Fall Model = Wilson and Huang"
+          endif
         endif
         if(useCalcFallVel)then
-          write(global_info,10)
-          write(global_log ,10)
-          do i=1,n_gs_max
-              !write out diameter in mm, not m
-            write(global_info,11) Tephra_bin_mass(i), Tephra_gsdiam(i)*1000.0_ip, Tephra_rho_m(i),&
-                          Tephra_gsF(i), Tephra_gsG(i), temp_phi(i)
-            write(global_log ,11) Tephra_bin_mass(i), Tephra_gsdiam(i)*1000.0_ip, Tephra_rho_m(i),&
-                          Tephra_gsF(i), Tephra_gsG(i), temp_phi(i)
-          enddo
+          if(VERB.ge.1)then
+            write(global_info,10)
+            write(global_log ,10)
+            do i=1,n_gs_max
+                !write out diameter in mm, not m
+              write(global_info,11) Tephra_bin_mass(i), Tephra_gsdiam(i)*1000.0_ip, Tephra_rho_m(i),&
+                            Tephra_gsF(i), Tephra_gsG(i), temp_phi(i)
+              write(global_log ,11) Tephra_bin_mass(i), Tephra_gsdiam(i)*1000.0_ip, Tephra_rho_m(i),&
+                            Tephra_gsF(i), Tephra_gsG(i), temp_phi(i)
+            enddo
+          endif
         else
-          write(global_info,2110)
-          write(global_log ,2110)
-          do i=1,n_gs_max
-            write(global_info,2111) Tephra_bin_mass(i), Tephra_v_s(i)
-            write(global_log ,2111) Tephra_bin_mass(i), Tephra_v_s(i)
-          enddo
+          if(VERB.ge.1)then
+            write(global_info,2110)
+            write(global_log ,2110)
+            do i=1,n_gs_max
+              write(global_info,2111) Tephra_bin_mass(i), Tephra_v_s(i)
+              write(global_log ,2111) Tephra_bin_mass(i), Tephra_v_s(i)
+            enddo
+          endif
         endif
-        write(global_info,*)
-        write(global_log ,*)
+        if(VERB.ge.1)then
+          write(global_info,*)
+          write(global_log ,*)
         
-        write(global_info,*)"Using deposit density (kg/m3) of: ",DepositDensity
-        write(global_log,*)"Using deposit density (kg/m3) of: ",DepositDensity
+          write(global_info,*)"Using deposit density (kg/m3) of: ",DepositDensity
+          write(global_log,*)"Using deposit density (kg/m3) of: ",DepositDensity
 
-        write(global_info,*)
-        write(global_log ,*)        
+          write(global_info,*)
+          write(global_log ,*)        
 
-        write(global_info,*)"Using a mass-fraction of fines (< 63um) of : ",real(fracfine,kind=sp)
-        write(global_log ,*)"Using a mass-fraction of fines (< 63um) of : ",real(fracfine,kind=sp)
+          write(global_info,*)"Using a mass-fraction of fines (< 63um) of : ",real(fracfine,kind=sp)
+          write(global_log ,*)"Using a mass-fraction of fines (< 63um) of : ",real(fracfine,kind=sp)
+        endif
         !if bin masses sum up close to 1, adjust automatically      
         if ((abs(sum(Tephra_bin_mass)-1.0_ip).gt.1.0e-5_ip).and. &  
             (abs(sum(Tephra_bin_mass)-1.0_ip).le.1.0e-02_ip)) then
-          write(global_info,1001) sum(Tephra_bin_mass)
-          write(global_log ,1001) sum(Tephra_bin_mass)
+          if(VERB.ge.1)write(global_info,1001) sum(Tephra_bin_mass)
+          if(VERB.ge.1)write(global_log ,1001) sum(Tephra_bin_mass)
 1001      format(4x,'The sum of the bin masses=',f5.3,&
                  '  Adjusting to equal 1',/, &
                  4x,'New bin masses:')
           Tephra_bin_mass(1:n_gs_max) = Tephra_bin_mass(1:n_gs_max)*1.0_ip/sum(Tephra_bin_mass(1:n_gs_max))
 
           if(useCalcFallVel)then
-            do i=1,n_gs_max
-              write(global_info,11) Tephra_bin_mass(i), Tephra_gsdiam(i)*1000.0_ip, Tephra_rho_m(i)       !write out diameter in mm, not m
-              write(global_log ,11) Tephra_bin_mass(i), Tephra_gsdiam(i)*1000.0_ip, Tephra_rho_m(i)
-            enddo
+            if(VERB.ge.1)then
+              do i=1,n_gs_max
+                ! write out diameter in mm, not m
+                write(global_info,11) Tephra_bin_mass(i), Tephra_gsdiam(i)*1000.0_ip, Tephra_rho_m(i)
+                write(global_log ,11) Tephra_bin_mass(i), Tephra_gsdiam(i)*1000.0_ip, Tephra_rho_m(i)
+              enddo
+            endif
           else
-            do i=1,n_gs_max
-              write(global_info,2111) Tephra_bin_mass(i), Tephra_v_s(i)
-              write(global_log ,2111) Tephra_bin_mass(i), Tephra_v_s(i)
-            enddo
+            if(VERB.ge.1)then
+              do i=1,n_gs_max
+                write(global_info,2111) Tephra_bin_mass(i), Tephra_v_s(i)
+                write(global_log ,2111) Tephra_bin_mass(i), Tephra_v_s(i)
+              enddo
+            endif
           endif
         else if (abs(sum(Tephra_bin_mass)-1.0_ip).gt.1.0e-2_ip) then   !if bin masses are farther off, stop
-          write(global_info,1000)
-          write(global_log ,1000)
+          if(VERB.ge.1)write(global_info,1000)
+          if(VERB.ge.1)write(global_log ,1000)
 1000      format(4x,'Error: Sum of the mass fraction of the grain',&
                  ' size bins differs from 1 by more than 0.01',/, &
                  4x,'Program stopped')
@@ -2299,9 +2352,9 @@
       read(10,'(a80)')linebuffer080
       read(linebuffer080,*)testkey
       if (testkey.ne.'#'.and.testkey.ne.'*')then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Expecting a comment line separating blocks."
-        write(global_error,*)'       Check that Block 7 is correct.'
+        if(VERB.ge.1)write(global_error,*)'       Check that Block 7 is correct.'
         stop 1
       endif
       do while(testkey.eq.'#'.or.testkey.eq.'*')
@@ -2309,26 +2362,28 @@
         read(10,'(a80)')linebuffer080
         read(linebuffer080,*)testkey
       enddo
-      write(global_info,*)' *******************************************'
-      write(global_info,*)' Reading Block 8: Vertical profile output'
-      write(global_info,*)' *******************************************'
+      if(VERB.ge.1)then
+        write(global_info,*)' *******************************************'
+        write(global_info,*)' Reading Block 8: Vertical profile output'
+        write(global_info,*)' *******************************************'
+      endif
 
       !READ NUMBER OF VERTICAL PROFILES
-      write(global_info,*) 'Reading vertical profile information'
+      if(VERB.ge.1)write(global_info,*) 'Reading vertical profile information'
       read(linebuffer080,*,err=2000) nvprofiles
-      write(global_info,*) 'number of vertical profiles=',nvprofiles
-      write(global_log ,*) 'number of vertical profiles=',nvprofiles
+      if(VERB.ge.1)write(global_info,*) 'number of vertical profiles=',nvprofiles
+      if(VERB.ge.1)write(global_log ,*) 'number of vertical profiles=',nvprofiles
 
       if (nvprofiles.gt.0) then
         Write_PR_Data = .true.
-        write(global_info,*)"Allocating profile arrays:",nvprofiles
+        if(VERB.ge.1)write(global_info,*)"Allocating profile arrays:",nvprofiles
         allocate(x_vprofile(nvprofiles))
         allocate(y_vprofile(nvprofiles))
         allocate(i_vprofile(nvprofiles))
         allocate(j_vprofile(nvprofiles))
         allocate(Site_vprofile(nvprofiles))
-        write(global_info,46)
-        write(global_log ,46)
+        if(VERB.ge.1)write(global_info,46)
+        if(VERB.ge.1)write(global_log ,46)
 46      format(/,'     vertical profile locations',/, &
                   '          #         x         y     i     j')
         do i=1,nvprofiles
@@ -2336,21 +2391,23 @@
           ! Always check if we have overshot the block
           testkey=linebuffer080(1:1)
           if (testkey.eq.'#'.or.testkey.eq.'*') then
-            write(global_log,*)"ERROR: ",&
-             "Trying to read Block 8 and detecting comment line"
-            write(global_log,*)  '  Vert Prof',i,'of',nvprofiles
-            write(global_log,*)  '  Offending line:',linebuffer080
-            write(global_error,*)"ERROR: ",&
-             "Trying to read Block 8 and detecting comment line"
-            write(global_error,*)'  Vert Prof ',i,'of',nvprofiles
-            write(global_error,*)'  Offending line:',linebuffer080
+            if(VERB.ge.1)then
+              write(global_log,*)"ERROR: ",&
+               "Trying to read Block 8 and detecting comment line"
+              write(global_log,*)  '  Vert Prof',i,'of',nvprofiles
+              write(global_log,*)  '  Offending line:',linebuffer080
+              write(global_error,*)"ERROR: ",&
+               "Trying to read Block 8 and detecting comment line"
+              write(global_error,*)'  Vert Prof ',i,'of',nvprofiles
+              write(global_error,*)'  Offending line:',linebuffer080
+            endif
             stop 1
           endif
 
           read(linebuffer080,*,iostat=ioerr) value1, value2
           x_vprofile(i) = value1
           y_vprofile(i) = value2
-          write(Site_vprofile(i),'(a14,1x,i3)')"Vertical Prof ",i
+          if(VERB.ge.1)write(Site_vprofile(i),'(a14,1x,i3)')"Vertical Prof ",i
           ! Assume we can read at least read two values, try for three
           if (ioerr.eq.0)then
             read(linebuffer080,*,iostat=ioerr) value1, value2, Site_vprofile(i)
@@ -2363,24 +2420,24 @@
                 substr_pos2 = min(len(linebuffer080),substr_pos1+50)
               endif
               Site_vprofile(i) = trim(adjustl(linebuffer080(substr_pos1:substr_pos2)))
-              !write(*,*)"Trying to interpret label:",Site_vprofile(i)
-              !Site_vprofile(i) = trim(adjustl(Site_vprofile(i)))
             endif
           else
-            write(global_info,*) 'Error in x or y location of a vertical profile.'
-            write(global_info,*) 'Answer should be two real numbers.'
-            write(global_info,*) 'You gave: ',linebuffer080
-            write(global_info,*) 'Program stopped.'
-            write(global_log ,*) 'Error in x or y location of a vertical profile.'
-            write(global_log ,*) 'Answer should be two real numbers.'
-            write(global_log ,*) 'You gave: ',linebuffer080
-            write(global_log ,*) 'Program stopped.'
+            if(VERB.ge.1)then
+              write(global_info,*) 'Error in x or y location of a vertical profile.'
+              write(global_info,*) 'Answer should be two real numbers.'
+              write(global_info,*) 'You gave: ',linebuffer080
+              write(global_info,*) 'Program stopped.'
+              write(global_log ,*) 'Error in x or y location of a vertical profile.'
+              write(global_log ,*) 'Answer should be two real numbers.'
+              write(global_log ,*) 'You gave: ',linebuffer080
+              write(global_log ,*) 'Program stopped.'
+            endif
             stop 1
           endif
           call vprofchecker(i)
         enddo
       else
-        write(global_info,*) 'No vertical profile specified'
+        if(VERB.ge.1)write(global_info,*) 'No vertical profile specified'
       endif
       ! END OF BLOCK 8
       !************************************************************************
@@ -2390,9 +2447,9 @@
       read(10,'(a80)',iostat=ios)linebuffer080
       read(linebuffer080,*)testkey
       if (testkey.ne.'#'.and.testkey.ne.'*')then
-        write(global_error,*)"ERROR: ",&
+        if(VERB.ge.1)write(global_error,*)"ERROR: ",&
          "Expecting a comment line separating blocks."
-        write(global_error,*)'       Check that Block 8 is correct.'
+        if(VERB.ge.1)write(global_error,*)'       Check that Block 8 is correct.'
         stop 1
       endif      
       do while(ios.eq.0.and.(testkey.eq.'#'.or.testkey.eq.'*'))
@@ -2413,16 +2470,20 @@
       cdf_references="https://pubs.usgs.gov/of/2013/1122/ofr20131122.pdf"
       cdf_conventions='CF-1.5'
       if(ios.ne.0)then
-        write(global_info,*)'  Setting outfile to: 3d_tephra_fall.nc'
-        write(global_info,*)'  Setting Title to: ',infile
-        write(global_info,*)'  Setting comment to: None'
-        write(global_info,*)'  Setting run class to: Analysis'
-        write(global_info,*)'  Setting institution to: USGS'
+        if(VERB.ge.1)then
+          write(global_info,*)'  Setting outfile to: 3d_tephra_fall.nc'
+          write(global_info,*)'  Setting Title to: ',infile
+          write(global_info,*)'  Setting comment to: None'
+          write(global_info,*)'  Setting run class to: Analysis'
+          write(global_info,*)'  Setting institution to: USGS'
+        endif
       else
-        write(global_info,*)' *****************************************'
-        write(global_info,*)' Reading Block 9: Output file / comments'
-        write(global_info,*)' *****************************************'
-        !Start reading annotation info
+        if(VERB.ge.1)then
+          write(global_info,*)' *****************************************'
+          write(global_info,*)' Reading Block 9: Output file / comments'
+          write(global_info,*)' *****************************************'
+        endif
+        ! Start reading annotation info
 
         ! First line is the output file name
         read(linebuffer080,*) outfile
@@ -2484,11 +2545,13 @@
 
       !************************************************************************
       ! Searching for optional blocks labled by OPTMOD
-      write(global_info,*)' *****************************************'
-      write(global_info,*)' Reading Post-Block 9: optional modules   '
-      write(global_info,*)' *****************************************'
+      if(VERB.ge.1)then
+        write(global_info,*)' *****************************************'
+        write(global_info,*)' Reading Post-Block 9: optional modules   '
+        write(global_info,*)' *****************************************'
+      endif
 
-      write(global_info,*)"Searching for blocks with OPTMOD"
+      if(VERB.ge.1)write(global_info,*)"Searching for blocks with OPTMOD"
       nmods = 0
       read(10,'(a80)',iostat=ios)linebuffer080
       do while(ios.eq.0)
@@ -2499,56 +2562,60 @@
           !  Parse for the keyword
           read(linebuffer080,1104)mod_name
           OPTMOD_names(nmods) = trim(adjustl(mod_name))
-          write(global_info,*)"     Found optional module : ",&
+          if(VERB.ge.1)write(global_info,*)"     Found optional module : ",&
            OPTMOD_names(nmods),nmods
         endif
         read(10,'(a80)',iostat=ios)linebuffer080
 1104    format(7x,a20)
       enddo
 
-!     CLOSE Ash3d_ESP.inp
-      write(global_info,25) infile
-      write(global_log ,25) infile
+!     CLOSE input file 
+      if(VERB.ge.1)write(global_info,25) infile
+      if(VERB.ge.1)write(global_log ,25) infile
       close(10)
 
       ! Here is the end of the file
 2010  continue
-      write(global_info,*)' *****************************************'
-      write(global_info,*)' Finished reading/parsing input file      '
-      write(global_info,*)' Custom blocks for optional modules will  '
-      write(global_info,*)' be read in corresponding input_data_OPTMOD'
-      write(global_info,*)' subroutines provided by the modules.     '
-      write(global_info,*)' *****************************************'
+      if(VERB.ge.1)then
+        write(global_info,*)' *****************************************'
+        write(global_info,*)' Finished reading/parsing input file      '
+        write(global_info,*)' Custom blocks for optional modules will  '
+        write(global_info,*)' be read in corresponding input_data_OPTMOD'
+        write(global_info,*)' subroutines provided by the modules.     '
+        write(global_info,*)' *****************************************'
+      endif
 
-      ! Write out computational scheme used
-      if(useDS)then
-        write(global_info,*)"Dimension splitting will be used."
-        write(global_log ,*)"Dimension splitting will be used."
-      else
-        ! If something else besides dimension splitting is used (CTU, Semi-Lagr.)
-        !  write out a note about it here.
-        !write(global_info,*)""
-        !write(global_log ,*)""
-      endif
-      write(global_info,*)limiter," limiter is used."
-      write(global_log ,*)limiter," limiter is used."
-      if (useCN) then
-        write(global_info,*)&
-         "Diffusion is calculated via Crank-Nicolson."
-        write(global_log ,*)&
-         "Diffusion is calculated via Crank-Nicolson."
-      else
-        write(global_info,*)"Diffusion is calculated explicitly."
-        write(global_log ,*)"Diffusion is calculated explicitly."
-      endif
- 
-      ! Write out Vz calculation scheme used
-      if(useVz_rhoG)then
-        write(global_info,*)"useVz_rhoG=.true. : Vz calculated PVV (if avail.) and density"
-        write(global_log ,*)"useVz_rhoG=.true. : Vz calculated PVV (if avail.) and density"
-      else
-        write(global_info,*)"Vz calculated via PVV and finite-differencing dp/dz"
-        write(global_log ,*)"Vz calculated via PVV and finite-differencing dp/dz"
+      if(VERB.ge.1)then
+        ! Write out computational scheme used
+        if(useDS)then
+          write(global_info,*)"Dimension splitting will be used."
+          write(global_log ,*)"Dimension splitting will be used."
+        else
+          ! If something else besides dimension splitting is used (CTU, Semi-Lagr.)
+          !  write out a note about it here.
+          !write(global_info,*)""
+          !write(global_log ,*)""
+        endif
+        write(global_info,*)limiter," limiter is used."
+        write(global_log ,*)limiter," limiter is used."
+        if (useCN) then
+          write(global_info,*)&
+           "Diffusion is calculated via Crank-Nicolson."
+          write(global_log ,*)&
+           "Diffusion is calculated via Crank-Nicolson."
+        else
+          write(global_info,*)"Diffusion is calculated explicitly."
+          write(global_log ,*)"Diffusion is calculated explicitly."
+        endif
+   
+        ! Write out Vz calculation scheme used
+        if(useVz_rhoG)then
+          write(global_info,*)"useVz_rhoG=.true. : Vz calculated PVV (if avail.) and density"
+          write(global_log ,*)"useVz_rhoG=.true. : Vz calculated PVV (if avail.) and density"
+        else
+          write(global_info,*)"Vz calculated via PVV and finite-differencing dp/dz"
+          write(global_log ,*)"Vz calculated via PVV and finite-differencing dp/dz"
+        endif
       endif
 
       ! assign initial values
@@ -2570,10 +2637,12 @@
       kmin = 1
       kmax = nzmax
 
-      write(global_info,16) nxmax, nymax, nzmax
-      write(global_log ,16) nxmax, nymax, nzmax
-      write(global_info,*)
-      write(global_log ,*)
+      if(VERB.ge.1)then
+        write(global_info,16) nxmax, nymax, nzmax
+        write(global_log ,16) nxmax, nymax, nzmax
+        write(global_info,*)
+        write(global_log ,*)
+      endif
 
       deallocate(iyear)
       deallocate(imonth)
@@ -3328,6 +3397,9 @@
 
       use precis_param
 
+      use global_param,  only : &
+        VERB
+
       use io_units
 
       use mesh,              only : &
@@ -3355,12 +3427,14 @@
         i_vprofile(iprof) = int((x_vprofile(iprof)-xLL)/dx) + 1
         j_vprofile(iprof) = int((y_vprofile(iprof)-yLL)/dy) + 1
       endif
-      write(global_info,47) iprof, real(x_vprofile(iprof),kind=4),&
-                                   real(y_vprofile(iprof),kind=4),&
-                            i_vprofile(iprof), j_vprofile(iprof)
-      write(global_log ,47) iprof, real(x_vprofile(iprof),kind=4),&
-                                   real(y_vprofile(iprof),kind=4),&
-                            i_vprofile(iprof), j_vprofile(iprof)
+      if(VERB.ge.1)then
+        write(global_info,47) iprof, real(x_vprofile(iprof),kind=4),&
+                                     real(y_vprofile(iprof),kind=4),&
+                              i_vprofile(iprof), j_vprofile(iprof)
+        write(global_log ,47) iprof, real(x_vprofile(iprof),kind=4),&
+                                     real(y_vprofile(iprof),kind=4),&
+                              i_vprofile(iprof), j_vprofile(iprof)
+      endif
 47    format(i11,2f10.3,2i6)
 
            !MAKE SURE THE POINT IS WITHIN THE MODEL REGION

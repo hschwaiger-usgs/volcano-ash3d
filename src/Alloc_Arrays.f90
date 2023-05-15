@@ -28,7 +28,7 @@
 
       implicit none
 
-      if(VERB.gt.0)then
+      if(VERB.ge.1)then
         write(global_production,*)"--------------------------------------------------"
         write(global_production,*)"---------- ALLOC_ARRAYS --------------------------"
         write(global_production,*)"--------------------------------------------------"
@@ -90,7 +90,7 @@
 
       implicit none
 
-      if(VERB.gt.0)write(global_info,*)"Cleaning up allocated memory"
+      if(VERB.ge.1)write(global_info,*)"Cleaning up allocated memory"
 
       call Deallocate_io_data
       call Deallocate_mesh

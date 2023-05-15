@@ -4,6 +4,9 @@
       
       use precis_param
 
+      use global_param,  only : &
+         VERB
+
       use io_units
 
       use solution,      only : &
@@ -58,12 +61,14 @@
       !write(global_log ,2) itime,OutputStep_Marker,time,DateTime,dep_vol,aloft_vol,&
       !                 outflow_vol,tot_vol,CloudLoadArea(1)
 
-      write(global_info,2) itime,OutputStep_Marker,time,DateTime,&
-                       SourceCumulativeVol,dep_vol,aloft_vol,&
-                       outflow_vol,tot_vol,CloudArea
-      write(global_log ,2) itime,OutputStep_Marker,time,DateTime,&
-                       SourceCumulativeVol,dep_vol,aloft_vol,&
-                       outflow_vol,tot_vol,CloudArea
+      if(VERB.ge.1)then
+        write(global_info,2) itime,OutputStep_Marker,time,DateTime,&
+                         SourceCumulativeVol,dep_vol,aloft_vol,&
+                         outflow_vol,tot_vol,CloudArea
+        write(global_log ,2) itime,OutputStep_Marker,time,DateTime,&
+                         SourceCumulativeVol,dep_vol,aloft_vol,&
+                         outflow_vol,tot_vol,CloudArea
+      endif
 
       !write(global_info,*)sum(outflow_yz1(     1:ny,1:nz,1)*kappa(0     ,1:ny  ,1:nz  ))/MagmaDensity/KM3_2_M3,&
       !          sum(outflow_yz2(     1:ny,1:nz,1)*kappa(  nx+1,1:ny  ,1:nz  ))/MagmaDensity/KM3_2_M3,&

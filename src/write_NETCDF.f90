@@ -2,6 +2,9 @@
 
       use precis_param
 
+      use global_param,  only : &
+         VERB
+
       use io_units
 
       use netcdf
@@ -318,7 +321,7 @@
       if(VERB.gt.1)write(global_info,*)"Creating netcdf file"
       linebuffer130 = trim(nf90_inq_libvers())
       read(linebuffer130,'(i1,a1,i1)')NCversion,dumchar,NCsubversion
-      write(global_info,*)"Netcdf library version = ",NCversion
+      if(VERB.ge.1)write(global_info,*)"Netcdf library version = ",NCversion
 #ifdef NC3
       NCversion = 3
 #endif
@@ -566,7 +569,7 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var t:")
       nSTAT = nf90_put_att(ncid,t_var_id,"long_name",dim_lnames(1))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att t long_name:")
-      write(time_units,4313) xmlSimStartTime
+      if(VERB.ge.1)write(time_units,4313) xmlSimStartTime
 4313  format('hours since ',a20)
       nSTAT = nf90_put_att(ncid,t_var_id,"units",time_units)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att units t:")
@@ -667,7 +670,7 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att bn Comment")
 
          ! ER (Eruption index)
-      if(VERB.gt.1)write(*,*)"     ER: ",dim_names(6)
+      if(VERB.gt.1)write(global_info,*)"     ER: ",dim_names(6)
       nSTAT = nf90_def_var(ncid,dim_names(6),&
                            nf90_int,&
                            (/er_dim_id/),&
@@ -679,7 +682,7 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er units")
 
          ! WF (Wind file index)
-      if(VERB.gt.1)write(*,*)"     WF: ",dim_names(7)
+      if(VERB.gt.1)write(global_info,*)"     WF: ",dim_names(7)
       nSTAT = nf90_def_var(ncid,dim_names(7),&
                            nf90_int,&
                            (/wf_dim_id/),&
@@ -696,7 +699,7 @@
         ! pt (point airport/POI index)
       !if (nairports.gt.0)then
       if (Write_PT_Data)then
-        if(VERB.gt.1)write(*,*)"     PT: ",dim_names(9)
+        if(VERB.gt.1)write(global_info,*)"     PT: ",dim_names(9)
         nSTAT = nf90_def_var(ncid,dim_names(9),&
                              nf90_int,&
                              (/pt_dim_id/),&
@@ -710,7 +713,7 @@
 
 !        ! pr (profile output index)
       if (Write_PR_Data)then
-        if(VERB.gt.1)write(*,*)"     PR: ",dim_names(10)
+        if(VERB.gt.1)write(global_info,*)"     PR: ",dim_names(10)
         nSTAT = nf90_def_var(ncid,dim_names(10),&
                              nf90_int,&
                              (/pr_dim_id/),&
@@ -723,7 +726,7 @@
 
 !        ! tn (time native)
 !        ! we can only have a second unlimited dimension with NC version 4
-!        if(VERB.gt.1)write(*,*)"     TN: ",dim_names(11)
+!        if(VERB.gt.1)write(global_info,*)"     TN: ",dim_names(11)
 !        nSTAT = nf90_def_var(ncid,dim_names(11),&
 !                             nf90_double,&
 !                             (/tn_dim_id/),&
@@ -745,7 +748,7 @@
 
       ! write projection as a variable
       if (IsLatLon) then
-        if(VERB.gt.1)write(*,*)"     LatLon_Projection"
+        if(VERB.gt.1)write(global_info,*)"     LatLon_Projection"
         nSTAT = nf90_def_var(ncid,"LatLon_Projection",&
                              nf90_int,&
                              proj_var_id)
@@ -760,7 +763,7 @@
         select case (A3d_iprojflag)
         case(0)
           ! Non-geographic projection, (x,y) only
-          if(VERB.gt.1)write(*,*)"     Projection : Non-geographic"
+          if(VERB.gt.1)write(global_info,*)"     Projection : Non-geographic"
           nSTAT = nf90_def_var(ncid,"Non-geographic",&
                                nf90_int,&
                                proj_var_id)
@@ -770,7 +773,7 @@
                                "Non-geographic")
         case(1)
           ! Polar stereographic
-          if(VERB.gt.1)write(*,*)"     Projection : Polar_Stereographic"
+          if(VERB.gt.1)write(global_info,*)"     Projection : Polar_Stereographic"
           nSTAT = nf90_def_var(ncid,"Polar_Stereographic",&
                                nf90_int,&
                                proj_var_id)
@@ -802,7 +805,7 @@
                               "put_att Polar_Stereographic earth_radius")
         case(2)
           ! Albers Equal Area
-          if(VERB.gt.1)write(*,*)"     Projection : Albers Equal Area"
+          if(VERB.gt.1)write(global_info,*)"     Projection : Albers Equal Area"
           nSTAT = nf90_def_var(ncid,"Albers_Equal_Area",&
                                nf90_int,&
                                proj_var_id)
@@ -831,7 +834,7 @@
 
         case(4)
           ! Lambert conformal conic 
-          if(VERB.gt.1)write(*,*)"     Projection : Lambert_Conformal"
+          if(VERB.gt.1)write(global_info,*)"     Projection : Lambert_Conformal"
           nSTAT = nf90_def_var(ncid,"Lambert_Conformal",&
                                nf90_int,&
                                proj_var_id)
@@ -862,7 +865,7 @@
         !        Mercator:grid_mapping_name = "mercator" ;
         !        Mercator:standard_parallel = 20. ;
         !        Mercator:longitude_of_projection_origin = 198.475006103516 ;
-          if(VERB.gt.1)write(*,*)"     Projection : Mercator"
+          if(VERB.gt.1)write(global_info,*)"     Projection : Mercator"
           nSTAT = nf90_def_var(ncid,"Mercator",&
                                nf90_int,&
                                proj_var_id)
@@ -881,7 +884,7 @@
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1, &
                              "put_att Mercator longitude_of_projection_origin")
         case default ! Just write all projection parameters to file
-          if(VERB.gt.1)write(*,*)"     Projection : Not specified"
+          if(VERB.gt.1)write(global_info,*)"     Projection : Not specified"
           nSTAT = nf90_def_var(ncid,"Projection",&
                                nf90_int,&
                                proj_var_id)
@@ -1942,7 +1945,7 @@
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       nSTAT = nf90_enddef(ncid)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"enddef")
-      if(VERB.gt.1)write(*,*)"Leaving define mode"
+      if(VERB.gt.1)write(global_info,*)"Leaving define mode"
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2582,7 +2585,7 @@
           nSTAT = nf90_def_dim(ncid,"tn",ntmax,tn_dim_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_dim tn:")
         endif
-        if(VERB.gt.1)write(*,*)"     TN: ","tn"
+        if(VERB.gt.1)write(global_info,*)"     TN: ","tn"
         nSTAT = nf90_def_var(ncid,"tn",&
                              nf90_double,&
                              (/tn_dim_id/),&
@@ -2625,7 +2628,7 @@
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         nSTAT = nf90_enddef(ncid)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"enddef")
-        if(VERB.gt.1)write(*,*)"Leaving define mode"
+        if(VERB.gt.1)write(global_info,*)"Leaving define mode"
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         ! depothickFin
@@ -2633,7 +2636,7 @@
         nSTAT = nf90_inq_varid(ncid,"depothickFin",depothickFin_var_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid depothickFin")
         !if(VERB.gt.2)
-        write(global_info,*)"  Writing depothickFin"
+        if(VERB.gt.1)write(global_info,*)"  Writing depothickFin"
         dum2d_out(:,:) = DepositThickness_FillValue
         do i=1,nxmax
           do j=1,nymax
@@ -2718,7 +2721,7 @@
           deallocate(dum1d_out)
 
           ! Final deposit thickness
-          write(*,*)"Trying to find pt_depothickFin"
+          if(VERB.gt.2)write(global_info,*)"Trying to find pt_depothickFin"
           nSTAT = nf90_inq_varid(ncid,"pt_depothickFin",pt_ashthicknessFin_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid pt_depothickFin")
           allocate(dum1d_out(nairports))
@@ -2746,7 +2749,7 @@
           nSTAT=nf90_put_var(ncid,pr_ash_var_id,dum3d_out,(/1,1,1/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var pr_ash")
           deallocate(dum3d_out)
-          write(*,*)"WROTE :",nvprofiles,nzmax,ntmax
+          if(VERB.gt.2)write(global_info,*)"WROTE :",nvprofiles,nzmax,ntmax
         endif
 
       endif
@@ -3108,12 +3111,14 @@
       nSTAT = nf90_get_var(ncid,t_var_id,t_list)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var t")
 
-      write(*,*)"  Step :  time"
-      do it = 1,t_len
-        write(*,*)it,t_list(it)
-      enddo
+      if(VERB.ge.2)then
+        write(global_info,*)"  Step :  time"
+        do it = 1,t_len
+          write(global_info,*)it,t_list(it)
+        enddo
+      endif
 
-      write(global_info,*)'Enter timestep for initialization'
+      if(VERB.ge.1)write(global_info,*)'Enter timestep for initialization'
       read(5,*) init_tstep
 
       nSTAT=nf90_get_var(ncid,t_var_id,dumscal_out,(/init_tstep/))
@@ -3157,9 +3162,11 @@
       allocate(ashcon(nxmax,nymax,nzmax,nsmax))
       allocate(depocon(nxmax,nymax,nsmax))
 
-      write(global_info,*)"WARNING "
-      write(global_info,*)"Input file is not currently verified "
-      write(global_info,*)" with previous run."
+      if(VERB.ge.1)then
+        write(global_info,*)"WARNING "
+        write(global_info,*)"Input file is not currently verified "
+        write(global_info,*)" with previous run."
+      endif
 
       ! Open netcdf file for writing
       nSTAT=nf90_open(concenfile,nf90_nowrite,ncid)
@@ -3343,8 +3350,8 @@
       END INTERFACE
 
       if(first_time)then
-        write(global_info,*)"Reading NetCDF file ",concenfile
-        write(global_info,*)"Found the following dimensions and sizes"
+        if(VERB.ge.1)write(global_info,*)"Reading NetCDF file ",concenfile
+        if(VERB.ge.1)write(global_info,*)"Found the following dimensions and sizes"
 
         ! Open netcdf file for reading
         nSTAT=nf90_open(concenfile,nf90_nowrite,ncid)
@@ -3359,7 +3366,7 @@
         ! Get variable id for this dimension
         nSTAT = nf90_inq_varid(ncid,"t",t_var_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid t")
-        write(global_info,2501)"  t",t_len
+        if(VERB.ge.1)write(global_info,2501)"  t",t_len
  2501 format(6x,a3,5x,i5) 
 
         !!!!!!  X  !!!!!!!!!!!
@@ -3390,8 +3397,8 @@
           elseif(var_xtype.eq.NF90_DOUBLE)then
             fop = 8
           else
-            write(*,*)"var type for x is: ",var_xtype
-            write(*,*)"Expecting either NF90_FLOAT or NF90_DOUBLE"
+            write(global_error,*)"var type for x is: ",var_xtype
+            write(global_error,*)"Expecting either NF90_FLOAT or NF90_DOUBLE"
             stop 1
           endif
           if(.not.allocated(lon_cc_pd))then
@@ -3415,9 +3422,9 @@
               deallocate(dum1d_dp)
             endif
           else
-            write(*,*)"ERROR: lon_cc_pd already allocated"
+            if(VERB.ge.1)write(global_info,*)" lon_cc_pd already allocated"
           endif
-          write(global_info,2501)"lon",x_len
+          if(VERB.ge.1)write(global_info,2501)"lon",x_len
         else
           ! Get variable id for this dimension
           nSTAT = nf90_inq_varid(ncid,"x",x_var_id)
@@ -3429,16 +3436,16 @@
           elseif(var_xtype.eq.NF90_DOUBLE)then
             fop = 8
           else
-            write(*,*)"var type for x is: ",var_xtype
-            write(*,*)"Expecting either NF90_FLOAT or NF90_DOUBLE"
+            write(global_error,*)"var type for x is: ",var_xtype
+            write(global_error,*)"Expecting either NF90_FLOAT or NF90_DOUBLE"
             stop 1
           endif
           if(fop.ne.op)then
             ! Until we check all input variables, force a hard stop if we have
             ! a mis-match in precision
-            write(*,*)"ERROR: The default real for this file is NF90_DOUBLE"
-            write(*,*)"       but this post-processing program expects op=NF90_FLOAT"
-            write(*,*)"       Please recompile with op=8"
+            write(global_error,*)"ERROR: The default real for this file is NF90_DOUBLE"
+            write(global_error,*)"       but this post-processing program expects op=NF90_FLOAT"
+            write(global_error,*)"       Please recompile with op=8"
             stop 1
           endif
           if(.not.allocated(x_cc_pd))then
@@ -3462,9 +3469,9 @@
               deallocate(dum1d_dp)
             endif
           else
-            write(*,*)"ERROR: x_cc_pd already allocated"
+            if(VERB.ge.1)write(global_info,*)"x_cc_pd already allocated"
           endif
-          write(global_info,2501)"  x",x_len
+          if(VERB.ge.1)write(global_info,2501)"  x",x_len
         endif
 
         !!!!!!  Y  !!!!!!!!!!!
@@ -3499,9 +3506,9 @@
               deallocate(dum1d_dp)
             endif
           else
-            write(*,*)"ERROR: lat_cc_pd already allocated"
+            if(VERB.ge.1)write(global_info,*)"lat_cc_pd already allocated"
           endif
-          write(global_info,2501)"lat",y_len
+          if(VERB.ge.1)write(global_info,2501)"lat",y_len
         else
           nSTAT = nf90_inq_dimid(ncid,"y",y_dim_id)
           call NC_check_status(nSTAT,1,"inq_dimid x")
@@ -3532,9 +3539,9 @@
               deallocate(dum1d_dp)
             endif
           else
-            write(*,*)"ERROR: lat_cc_pd already allocated"
+            if(VERB.ge.1)write(global_info,*)"lat_cc_pd already allocated"
           endif
-          write(global_info,2501)"  y",y_len
+          if(VERB.ge.1)write(global_info,2501)"  y",y_len
         endif
 
         if(IsLatLon)then
@@ -3578,7 +3585,7 @@
         ! Get variable id for this dimension
         nSTAT = nf90_inq_varid(ncid,"z",z_var_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid z")
-        write(global_info,2501)"  z",z_len
+        if(VERB.ge.1)write(global_info,2501)"  z",z_len
         nzmax = z_len 
         allocate(z_cc_pd(-1:nzmax+2))
         ! Assume we know fop already from x above
@@ -3614,7 +3621,7 @@
         ! Get variable id for this dimension
         nSTAT = nf90_inq_varid(ncid,"bn",bn_var_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid bn")
-        write(global_info,2501) "bn",bn_len
+        if(VERB.ge.1)write(global_info,2501) "bn",bn_len
         nsmax = bn_len
 
         !!!!!!  PT  !!!!!!!!!!!
@@ -3622,7 +3629,7 @@
         nSTAT = nf90_inq_dimid(ncid,"pt",pt_dim_id)
         if(nSTAT.ne.0)then
           Write_PT_Data = .false.
-          write(*,*)"Did not find dim pt: Output file has no point data"
+          if(VERB.ge.1)write(*,*)"Did not find dim pt: Output file has no point data"
           nairports = 0
         else
           Write_PT_Data = .true.
@@ -3631,7 +3638,7 @@
           ! Get variable id for this dimension
           nSTAT = nf90_inq_varid(ncid,"pt",pt_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid pt")
-          write(global_info,2501)" pt",pt_len
+          if(VERB.ge.1)write(global_info,2501)" pt",pt_len
           nairports = pt_len
         endif
 
@@ -3640,7 +3647,7 @@
         nSTAT = nf90_inq_dimid(ncid,"pr",pr_dim_id)
         if(nSTAT.ne.0)then
           Write_PR_Data = .false.
-          write(*,*)"Did not find dim pr: Output file has no profile data"
+          if(VERB.ge.1)write(global_info,*)"Did not find dim pr: Output file has no profile data"
         else
           Write_PR_Data = .true.
           nSTAT = nf90_Inquire_Dimension(ncid,pr_dim_id,len=pr_len)
@@ -3649,7 +3656,7 @@
           ! Get variable id for this dimension
           nSTAT = nf90_inq_varid(ncid,"pr",pr_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid pr")
-          write(global_info,2501)" pr",nvprofiles
+          if(VERB.ge.1)write(global_info,2501)" pr",nvprofiles
         endif
 
         !!!!!!  TN !!!!!!!!!!!
@@ -3657,7 +3664,7 @@
         nSTAT = nf90_inq_dimid(ncid,"tn",tn_dim_id)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"inq_dimid tn")
-          write(*,*)"Did not find dim tn: Output file has no native time data (for profiles)"
+          if(VERB.ge.1)write(global_info,*)"Did not find dim tn: Output file has no native time data (for profiles)"
           !hasAirportTSData = .false.
         else
           !hasAirportTSData = .true.
@@ -3666,7 +3673,7 @@
           ! Get variable id for this dimension
           nSTAT = nf90_inq_varid(ncid,"tn",tn_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"inq_varid tn")
-          write(global_info,2501)" tn",tn_len
+          if(VERB.ge.1)write(global_info,2501)" tn",tn_len
           ntmax = tn_len
           call Allocate_NTime(ntmax)
         endif
@@ -3680,7 +3687,7 @@
         ! Get variable id for this dimension
         nSTAT = nf90_inq_varid(ncid,"er",er_var_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid er")
-        write(global_info,2501)" er",neruptions
+        if(VERB.ge.1)write(global_info,2501)" er",neruptions
 
         ! Now get the expected global attributes
         nSTAT = nf90_get_att(ncid,nf90_global,"BaseYear",BaseYear)
@@ -4063,12 +4070,15 @@
       endif ! first_time
 
       if (.not.present(timestep))then
-        write(global_info,*)"Found the following time steps in file:"
-        write(global_info,*)"  Step :  time"
-        do it = 1,nWriteTimes
-          write(global_info,*)it,WriteTimes(it)
-        enddo
-        write(global_info,*)'Enter timestep for initialization'
+        if(VERB.ge.1)then
+          write(global_info,*)"Found the following time steps in file:"
+          write(global_info,*)"  Step :  time"
+          do it = 1,nWriteTimes
+            write(global_info,*)it,WriteTimes(it)
+          enddo
+          write(global_info,*)'Enter timestep for initialization'
+        endif
+
         read(5,*) init_tstep
       else
         if (timestep.eq.-1)then
@@ -4079,15 +4089,13 @@
         endif
       endif
       if(init_tstep.gt.t_len)then
-        write(global_info,*)"ERROR: Requested time step index is greater than available."
         write(global_error,*)"ERROR: Requested time step index is greater than available."
         stop 1
       elseif(init_tstep.lt.0)then
-        write(global_info,*)"ERROR: Requested time step index is invalid."
         write(global_error,*)"ERROR: Requested time step index is invalid."
         stop 1
       endif
-      write(global_info,*)"Requested timestep = ",init_tstep,real(WriteTimes(init_tstep),kind=sp)
+      if(VERB.ge.1)write(global_info,*)"Requested timestep = ",init_tstep,real(WriteTimes(init_tstep),kind=sp)
 
       nSTAT=nf90_get_var(ncid,t_var_id,dumscal_out,(/init_tstep/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var t")
