@@ -338,7 +338,7 @@
                 real((-AirDens_meso_next_step_MetP_sp*GRAV),kind=sp)
               call MR_Regrid_MetP_to_CompH(MR_iMetStep_Now+1)
             else
-              if(VERB.ge.1)write(global_error,*)"Tried to read variable, but its not available: ",&
+              write(global_error,*)"Tried to read variable, but its not available: ",&
                         Met_var_GRIB_names(ivar)
               MR_dum3d_compH = 0.0_sp
               stop 1 
@@ -357,7 +357,7 @@
               if(VERB.ge.1)write(global_log,*)"Vz is calculated by PressVertVel/(dp/dz)"
               call MR_Read_3d_Met_Variable_to_CompH(ivar,MR_iMetStep_Now+1)
             else
-              if(VERB.ge.1)write(global_error,*)"Tried to read variable, but its not available: ",&
+              write(global_error,*)"Tried to read variable, but its not available: ",&
                         Met_var_GRIB_names(ivar)
               MR_dum3d_compH = 0.0_sp
               stop 1
@@ -484,9 +484,14 @@
             enddo
           enddo
         enddo
-        if(VERB.ge.1)write(global_info,*) 'Continue (y/n)?'
-        read(5,'(a1)') answer
-        if (answer.eq.'n') stop 1
+        if(VERB.ge.1)then
+          write(global_info,*) 'Continue (y/n)?'
+          read(5,'(a1)') answer
+          if (answer.eq.'n') stop 1
+        else
+          write(global_error,*)"ERROR: velocities seem to be out of expected range."
+          stop 1
+        endif
       endif
 
       if (abs(maxval(vy_pd(1:nxmax,1:nymax,1:nzmax))).gt.5.0e3_ip) then
@@ -512,9 +517,14 @@
             enddo
           enddo
         enddo
-        if(VERB.ge.1)write(global_info,*) 'Continue (y/n)?'
-        read(5,'(a1)') answer
-        if (answer.eq.'n') stop 1
+        if(VERB.ge.1)then
+          write(global_info,*) 'Continue (y/n)?'
+          read(5,'(a1)') answer
+          if (answer.eq.'n') stop 1
+        else
+          write(global_error,*)"ERROR: velocities seem to be out of expected range."
+          stop 1
+        endif
       endif
 
       return

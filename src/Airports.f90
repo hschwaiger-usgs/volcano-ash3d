@@ -471,9 +471,12 @@
       n_ext_airports = inow     !number of external airports read
       return
 
-!     ERROR TRAP
-2010  if(VERB.ge.1)write(global_info,6) inputline
-      if(VERB.ge.1)write(global_log ,6) inputline
+      ! ERROR TRAP
+2010  write(global_error,6) inputline
+      write(global_log  ,6) inputline
+      stop 1
+
+      ! FORMAT STATEMENTS
 6     format('Error reading from airport list.  Read statement was expecting',/, &
              'latitude longitude x y  (all real numbers).  The input line gave:',/, &
              a80,/,'program stopped')
@@ -518,11 +521,9 @@
         write(global_info,*)"  Exists = ",IsThere
       endif
       if(.not.IsThere)then
-        if(VERB.ge.1)then
-          write(global_error,*)"ERROR: Could not find airport file."
-          write(global_error,*)"       Please copy file to this location:"
-          write(global_error,*)AirportMasterFile
-        endif
+        write(global_error,*)"ERROR: Could not find airport file."
+        write(global_error,*)"       Please copy file to this location:"
+        write(global_error,*)AirportMasterFile
         stop 1
       endif
 
@@ -538,8 +539,8 @@
         read(inputline,2) inCode,inName
         i = i+1
         if(i.gt.MAXAIRPORTS)then
-          if(VERB.ge.1)write(global_error,*)"ERROR: ",&
-           "Airport file contains too many entries"
+          write(global_error,*)"ERROR: ",&
+                "Airport file contains too many entries"
           stop 1
         endif
         AirportFullCode(i) = trim(adjustl(inCode))
@@ -553,10 +554,13 @@
 
       return
 
-      !FORMAT STATEMENTS
+      ! ERROR TRAP
+2000  write(global_error,5) AirportInFile
+      stop 1
+
+      ! FORMAT STATEMENTS
 2     format(50x,a3,2x,a35)
-5     format(5x,'Error.  Can''t find input file ',a130,/,5x,'Program stopped')   
-2000  if(VERB.ge.1)write(global_error,5) AirportInFile
+5     format(5x,'Error.  Can''t find input file ',a130,/,5x,'Program stopped')
 
       end subroutine Read_GlobalAirports
 !******************************************************************************

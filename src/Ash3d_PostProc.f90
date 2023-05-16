@@ -5,7 +5,7 @@
       use io_units
 
       use global_param,  only : &
-         MM_2_IN
+         MM_2_IN,VERB
 
       use mesh,          only : &
          nxmax,nymax,nzmax
@@ -143,10 +143,12 @@
       endif
       ! Test for GMT
       plotlib_avail(4) = .false.
-      write(*,*)"Gnuplot ",plotlib_avail(1)
-      write(*,*)"Plplot  ",plotlib_avail(2)
-      write(*,*)"Dislin  ",plotlib_avail(3)
-      write(*,*)"GMT     ",plotlib_avail(4)
+      if(VERB.ge.1)then
+        write(global_info,*)"Gnuplot ",plotlib_avail(1)
+        write(global_info,*)"Plplot  ",plotlib_avail(2)
+        write(global_info,*)"Dislin  ",plotlib_avail(3)
+        write(global_info,*)"GMT     ",plotlib_avail(4)
+      endif
 
       ! Initialize all output logicals to false
       Write_PR_Data                 = .false.
@@ -179,40 +181,48 @@
           ! If no command-line arguments are given, then prompt user
           ! interactively for the command file name and possible a 
           ! restart file
-        write(global_info,*)'No command-line arguments detected'
-        write(global_info,*)'Usage: Ash3d_PostProc control_file [t_index]'
-        write(global_info,*)'           or'
-        write(global_info,*)'       Ash3d_PostProc infile output_product format'
-        write(global_info,*)'  where: infile   = the netcdf file written by Ash3d'
-        write(global_info,*)'   output_product = 1 full concentration array'
-        write(global_info,*)'                    2 deposit granularity'
-        write(global_info,*)'                    3 deposit thickness (mm time-series)'
-        write(global_info,*)'                    4 deposit thickness (inches time-series)'
-        write(global_info,*)'                    5 deposit thickness (mm final)'
-        write(global_info,*)'                    6 deposit thickness (inches final)'
-        write(global_info,*)'                    7 ashfall arrival time (hours)'
-        write(global_info,*)'                    8 ashfall arrival at airports/POI (mm)'
-        write(global_info,*)'                    9 ash-cloud concentration (mg/m3)'
-        write(global_info,*)'                   10 ash-cloud height (km)'
-        write(global_info,*)'                   11 ash-cloud bottom (km)'
-        write(global_info,*)'                   12 ash-cloud load (T/km2 or )'
-        write(global_info,*)'                   13 ash-cloud radar reflectivity (dBz)'
-        write(global_info,*)'                   14 ash-cloud arrival time (hours)'
-        write(global_info,*)'                   15 topography'
-        write(global_info,*)'                   16 profile plots'
-        write(global_info,*)'           format = 1 ASCII/ArcGIS'
-        write(global_info,*)'                    2 KML/KMZ'
-        write(global_info,*)'                    3 image/png'
-        write(global_info,*)'                    4 binary'
-        write(global_info,*)'                    5 shape file'
-        write(global_info,*)'                    6 grib2'
-        write(global_info,*)'                    7 tecplot'
-        write(global_info,*)'                    8 vtk'
+        if(VERB.ge.1)then
+          write(global_info,*)'No command-line arguments detected'
+          write(global_info,*)'Usage: Ash3d_PostProc control_file [t_index]'
+          write(global_info,*)'           or'
+          write(global_info,*)'       Ash3d_PostProc infile output_product format'
+          write(global_info,*)'  where: infile   = the netcdf file written by Ash3d'
+          write(global_info,*)'   output_product = 1 full concentration array'
+          write(global_info,*)'                    2 deposit granularity'
+          write(global_info,*)'                    3 deposit thickness (mm time-series)'
+          write(global_info,*)'                    4 deposit thickness (inches time-series)'
+          write(global_info,*)'                    5 deposit thickness (mm final)'
+          write(global_info,*)'                    6 deposit thickness (inches final)'
+          write(global_info,*)'                    7 ashfall arrival time (hours)'
+          write(global_info,*)'                    8 ashfall arrival at airports/POI (mm)'
+          write(global_info,*)'                    9 ash-cloud concentration (mg/m3)'
+          write(global_info,*)'                   10 ash-cloud height (km)'
+          write(global_info,*)'                   11 ash-cloud bottom (km)'
+          write(global_info,*)'                   12 ash-cloud load (T/km2 or )'
+          write(global_info,*)'                   13 ash-cloud radar reflectivity (dBz)'
+          write(global_info,*)'                   14 ash-cloud arrival time (hours)'
+          write(global_info,*)'                   15 topography'
+          write(global_info,*)'                   16 profile plots'
+          write(global_info,*)'           format = 1 ASCII/ArcGIS'
+          write(global_info,*)'                    2 KML/KMZ'
+          write(global_info,*)'                    3 image/png'
+          write(global_info,*)'                    4 binary'
+          write(global_info,*)'                    5 shape file'
+          write(global_info,*)'                    6 grib2'
+          write(global_info,*)'                    7 tecplot'
+          write(global_info,*)'                    8 vtk'
+  
+          write(global_info,*)'         [t_index] = index of time slice to plot; -1 for final (optional)'
+          write(global_info,*)'  '
+        endif
 
-        write(global_info,*)'         [t_index] = index of time slice to plot; -1 for final (optional)'
-        write(global_info,*)'  '
-
-        write(global_info,*)'Enter name of ESP input file:'
+        if(VERB.lt.1)then
+          write(global_error,*)"Stdout is suppressed via VERB=0, but interactive input is expected."
+          write(global_error,*)"Either recompile with VERB>0 or provide the correct command-line arguments."
+          stop 1
+        else
+          write(global_info,*)'Enter name of ESP input file:'
+        endif
         read(5,*)concenfile
 
         write(global_info,*)'Enter code for output product:'
@@ -226,7 +236,7 @@
 
       elseif (nargs.eq.1) then
         ! Read control file
-        write(*,*)'Reading control file not yet implemented'
+        write(global_error,*)'Reading control file not yet implemented'
         stop 1
       elseif (nargs.ge.3) then
         call get_command_argument(1, arg, status)
@@ -240,7 +250,7 @@
           read(arg,*)itime
         endif
       else
-        write(global_info,*)' Cannot parse command line'
+        write(global_error,*)' Cannot parse command line'
         stop 1
       endif
 
@@ -263,83 +273,84 @@
         stop 1
       else
         if(iprod.eq.1)then
-          write(global_info,*)'output variable = 1 full concentration array'
-          write(global_info,*)' Currently, no output formats available for full'
-          write(global_info,*)' granularity.  Binary output will give total ash'
-          write(global_info,*)' concentration.'
+          if(VERB.ge.1)then
+            write(global_info,*)'output variable = 1 full concentration array'
+            write(global_info,*)' Currently, no output formats available for full'
+            write(global_info,*)' granularity.  Binary output will give total ash'
+            write(global_info,*)' concentration.'
+          endif
         elseif(iprod.eq.2)then
-          write(global_info,*)'output variable = 2 deposit granularity'
-          write(global_info,*)' Currently, no output formats available for iprod=2'
-          write(global_info,*)' '
+          write(global_error,*)'output variable = 2 deposit granularity'
+          write(global_error,*)' Currently, no output formats available for iprod=2'
+          write(global_error,*)' '
           stop 1
         elseif(iprod.eq.3)then
-          write(global_info,*)'output variable = 3 deposit thickness; TS or step (mm)'
+          if(VERB.ge.1)write(global_info,*)'output variable = 3 deposit thickness; TS or step (mm)'
           ivar = 7  ! Note that kml writes out all netcdf time steps followed by the final
           TS_flag = 1      ! 1 = time series
           height_flag = 0  ! All the cells should be pinned to z=0
         elseif(iprod.eq.4)then
-          write(global_info,*)'output variable = 4 deposit thickness: TS or step (inches)'
+          if(VERB.ge.1)write(global_info,*)'output variable = 4 deposit thickness: TS or step (inches)'
           ivar = 8  ! Note that kml writes out all netcdf time steps followed by the final
           TS_flag = 1      ! 1 = time series
           height_flag = 0  ! All the cells should be pinned to z=0
         elseif(iprod.eq.5)then
-          write(global_info,*)'output variable = 5 deposit thickness: final (mm)'
+          if(VERB.ge.1)write(global_info,*)'output variable = 5 deposit thickness: final (mm)'
           ivar = 7  ! Note that kml writes out all netcdf time steps followed by the final
           TS_flag = 1      ! 1 = time series (really, this final value is not a time series, but the kml writer requires this)
           height_flag = 0  ! All the cells should be pinned to z=0
         elseif(iprod.eq.6)then
-          write(global_info,*)'output variable = 6 deposit thickness: final (inches)'
+          if(VERB.ge.1)write(global_info,*)'output variable = 6 deposit thickness: final (inches)'
           ivar = 8  ! Note that kml writes out all netcdf time steps followed by the final
           TS_flag = 1      ! 1 = time series (really, this final value is not a time series, but the kml writer requires this)
           height_flag = 0  ! All the cells should be pinned to z=0
         elseif(iprod.eq.7)then
-          write(global_info,*)'output variable = 7 ashfall arrival time (hours)'
+          if(VERB.ge.1)write(global_info,*)'output variable = 7 ashfall arrival time (hours)'
           ivar = 9
           TS_flag = 0      ! 1 = not a time series
           height_flag = 0  ! All the cells should be pinned to z=0
         elseif(iprod.eq.8)then
-          write(global_info,*)'output variable = 8 ashfall arrival at airports/POI (mm)'
+          if(VERB.ge.1)write(global_info,*)'output variable = 8 ashfall arrival at airports/POI (mm)'
           !ivar = NaN There is a special KML writer for this variable
         elseif(iprod.eq.9)then
-          write(global_info,*)'output variable = 9 ash-cloud concentration (mg/m3)'
+          if(VERB.ge.1)write(global_info,*)'output variable = 9 ash-cloud concentration (mg/m3)'
           ivar = 1
           TS_flag = 1      ! 1 = time series
           height_flag = 1  ! All the cells should be at cloud height
         elseif(iprod.eq.10)then
-          write(global_info,*)'output variable =10 ash-cloud height (km)'
+          if(VERB.ge.1)write(global_info,*)'output variable =10 ash-cloud height (km)'
           ivar = 2
           TS_flag = 1      ! 1 = time series
           height_flag = 1  ! All the cells should be at cloud height
         elseif(iprod.eq.11)then
-          write(global_info,*)'output variable =11 ash-cloud bottom (km)'
+          if(VERB.ge.1)write(global_info,*)'output variable =11 ash-cloud bottom (km)'
           ivar = 3
           TS_flag = 1      ! 1 = time series
           height_flag = 1  ! All the cells should be at cloud height
         elseif(iprod.eq.12)then
-          write(global_info,*)'output variable =12 ash-cloud load (T/km2)'
+          if(VERB.ge.1)write(global_info,*)'output variable =12 ash-cloud load (T/km2)'
           ivar = 4
           TS_flag = 1      ! 1 = time series
           height_flag = 1  ! All the cells should be at cloud height
         elseif(iprod.eq.13)then
-          write(global_info,*)'output variable =13 ash-cloud radar reflectivity (dBz)'
+          if(VERB.ge.1)write(global_info,*)'output variable =13 ash-cloud radar reflectivity (dBz)'
           ivar = 6
           TS_flag = 1      ! 1 = time series
           height_flag = 1  ! All the cells should be at cloud height
         elseif(iprod.eq.14)then
-          write(global_info,*)'output variable =14 ash-cloud arrival time (hours)'
+          if(VERB.ge.1)write(global_info,*)'output variable =14 ash-cloud arrival time (hours)'
           ivar = 5
           TS_flag = 0      ! 1 = not a time series
           height_flag = 0  ! All the cells should be pinned to z=0
         elseif(iprod.eq.15)then
-          write(global_info,*)'output variable =15 Topography (km)'
-          write(global_info,*)' Currently, no output formats available for iprod=15'
+          write(global_error,*)'output variable =15 Topography (km)'
+          write(global_error,*)' Currently, no output formats available for iprod=15'
           stop 1
           ivar = 10
           TS_flag = 0      ! 1 = not a time series
           height_flag = 0  ! All the cells should be pinned to z=0
         elseif(iprod.eq.16)then
-          write(global_info,*)'output variable =16 vertical concentration profile'
-          
+          if(VERB.ge.1)write(global_info,*)'output variable =16 vertical concentration profile'
         endif
       endif
       !  Arg #3
@@ -349,40 +360,44 @@
         write(global_error,*)"       arguments to set usage information"
         stop 1
       else
-        if(iformat.eq.1)then
-          write(global_info,*)'output format = 1 ASCII/ArcGIS'
-        elseif(iformat.eq.2)then
-          write(global_info,*)'output format = 2 KMZ'
-        elseif(iformat.eq.3)then
-          write(global_info,*)'output format = 3 image/png'
-        elseif(iformat.eq.4)then
-          write(global_info,*)'output format = 4 binary'
-        elseif(iformat.eq.5)then
-          write(global_info,*)'output format = 5 shape file'
-        elseif(iformat.eq.6)then
-          write(global_info,*)'output format = 6 grib2'
-        elseif(iformat.eq.7)then
-          write(global_info,*)'output format = 7 tecplot'
+        if(VERB.ge.1)then
+          if(iformat.eq.1)then
+            write(global_info,*)'output format = 1 ASCII/ArcGIS'
+          elseif(iformat.eq.2)then
+            write(global_info,*)'output format = 2 KMZ'
+          elseif(iformat.eq.3)then
+            write(global_info,*)'output format = 3 image/png'
+          elseif(iformat.eq.4)then
+            write(global_info,*)'output format = 4 binary'
+          elseif(iformat.eq.5)then
+            write(global_info,*)'output format = 5 shape file'
+          elseif(iformat.eq.6)then
+            write(global_info,*)'output format = 6 grib2'
+          elseif(iformat.eq.7)then
+            write(global_info,*)'output format = 7 tecplot'
+          endif
         endif
       endif
       !  Arg #4
-      if(itime.eq.-1)then
-        write(global_info,*)'itime = -1 (Final time step)'
-        write(global_info,*)'Either no time step was provided or the last time step is requested.'
-      elseif(itime.eq.0)then
-        write(global_error,*)"ERROR: itime = 0.  Invalid time step."
-        stop 1
-      else
-        write(global_info,*)'itime = ',itime
-        write(global_info,*)'  We do not yet know the maximum number of steps available.'
+      if(VERB.ge.1)then
+        if(itime.eq.-1)then
+          write(global_info,*)'itime = -1 (Final time step)'
+          write(global_info,*)'Either no time step was provided or the last time step is requested.'
+        elseif(itime.eq.0)then
+          write(global_error,*)"ERROR: itime = 0.  Invalid time step."
+          stop 1
+        else
+          write(global_info,*)'itime = ',itime
+          write(global_info,*)'  We do not yet know the maximum number of steps available.'
+        endif
+  
+        if(iprod.eq.2)then   ! deposit granularity
+          write(global_error,*)'We do not yet have a plan for processing depocon'
+          write(global_error,*)'This is probably where we would implement vtk, or tecplot'
+          stop 1
+        endif
+        write(global_info,*)'Finished reading command-line'
       endif
-
-      if(iprod.eq.2)then   ! deposit granularity
-        write(global_info,*)'We do not yet have a plan for processing depocon'
-        write(global_info,*)'This is probably where we would implement vtk, or tecplot'
-        stop 1
-      endif
-      write(global_info,*)'Finished reading command-line'
 
       ! Before we do anything, call routine to read the netcdf file, populate
       ! the dimensions so we can see what we are dealing with.
@@ -496,7 +511,7 @@
           ! ASCII or png
           Write_PR_Data                 = .true.
         else
-          write(*,*)"Vertical ash concentration profiles can only be exported",&
+          write(global_error,*)"Vertical ash concentration profiles can only be exported",&
                     " as ASCII files or png images"
           stop 1
         endif
@@ -531,7 +546,7 @@
           endif
           call Write_2D_KML(ivar,OutVar,height_flag,TS_flag)
           call Close_KML(ivar,TS_flag)
-          write(*,*)"Zipping KML file."
+          if(VERB.ge.1)write(global_info,*)"Zipping KML file."
           write(comd,*)"zip ",trim(adjustl(KMZ_filename(ivar))),' ',&
                               trim(adjustl(KML_filename(ivar)))
           call execute_command_line (comd, exitstat=status)
@@ -647,7 +662,7 @@
         ! First check for the special cases
         if(iprod.eq.8)then
           ! Point data
-          write(global_info,*)"Calling Write_PointData_Airports_ASCII"
+          if(VERB.ge.1)write(global_info,*)"Calling Write_PointData_Airports_ASCII"
           call Write_PointData_Airports_ASCII
         elseif(iprod.eq.16)then
           ! Vertical profile data
@@ -666,7 +681,7 @@
       elseif(iformat.eq.3)then ! image/png
         if(iprod.eq.8)then
           ! Point data
-          write(global_info,*)"No PNG output for point data output"
+          if(VERB.ge.1)write(global_info,*)"No PNG output for point data output"
         elseif(iprod.eq.16)then
           ! Vertical profile data
           do i=1,nvprofiles
@@ -693,7 +708,7 @@
             !case(4)
               !call write_2Dprof_PNG_GMT(i)
             case default
-              write(*,*)"ERROR: Plots requested but no plotting package is installed"
+              write(global_error,*)"ERROR: Plots requested but no plotting package is installed"
               stop 1
             end select
           enddo
@@ -722,7 +737,7 @@
         !case(4)
           !call write_2Dmap_PNG_GMT(nxmax,nymax,iprod,iout3d,OutVar)
         case default
-          write(*,*)"ERROR: Plots requested but no plotting package is installed"
+          write(global_error,*)"ERROR: Plots requested but no plotting package is installed"
           stop 1
         end select
 
@@ -733,15 +748,15 @@
           call write_3D_Binary(cio,nxmax,nymax,nzmax,ashcon_tot)
         elseif(iprod.eq.2)then
           ! deposit granularity
-          write(*,*)'ERROR: No binary output products for deposit granularity'
+          write(global_error,*)'ERROR: No binary output products for deposit granularity'
           stop 1
         elseif(iprod.eq.8)then
           ! ashfall arrival at airports/POI (mm)
-          write(*,*)'ERROR: No binary output products for POI ashfall arrival'
+          write(global_error,*)'ERROR: No binary output products for POI ashfall arrival'
           stop 1
         elseif(iprod.eq.16)then
           ! profile plots
-          write(*,*)'ERROR: No binary output products for vertical profile plots'
+          write(global_error,*)'ERROR: No binary output products for vertical profile plots'
           stop 1
         else
           call write_2D_Binary(nxmax,nymax,OutVar,mask,Fill_Value,filename_root)
@@ -774,7 +789,7 @@
         !case(4)
           !call write_2Dmap_PNG_GMT(nxmax,nymax,iprod,iout3d,OutVar)
         case default
-          write(*,*)"ERROR: Plots requested but no plotting package is installed"
+          write(global_error,*)"ERROR: Plots requested but no plotting package is installed"
           stop 1
         end select
 

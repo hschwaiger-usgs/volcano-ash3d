@@ -77,7 +77,7 @@
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
             write(global_error,*)"ERROR: MagmaDensity must be > 0"
-            stop 0
+            stop 1
           elseif (pvalue(i).gt.10000.0_ip)then
             write(global_error,*)"WARNING: MagmaDensity seems high."
             write(global_error,*)"         Units should be kg/m3"
@@ -89,7 +89,7 @@
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
             write(global_error,*)"ERROR: DepositDensity must be > 0"
-            stop 0
+            stop 1
           elseif (pvalue(i).gt.10000.0_ip)then
             write(global_error,*)"WARNING: DepositDensity seems high."
             write(global_error,*)"         Units should be kg/m2"
@@ -101,7 +101,7 @@
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
             write(global_error,*)"ERROR: LAM_GS_THRESH must be > 0"
-            stop 0
+            stop 1
           elseif (pvalue(i).gt.1000.0_ip)then
             write(global_error,*)"WARNING: LAM_GS_THRESH seems high."
             write(global_error,*)"         Units should be m"
@@ -113,7 +113,7 @@
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
             write(global_error,*)"ERROR: AIRBORNE_THRESH must be > 0"
-            stop 0
+            stop 1
           elseif (pvalue(i).gt.1.0_ip)then
             write(global_error,*)"WARNING: AIRBORNE_THRESH seems high."
             write(global_error,*)"         Units should be kg"
@@ -125,7 +125,7 @@
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
             write(global_error,*)"ERROR: GRAV must be > 0"
-            stop 0
+            stop 1
           elseif (pvalue(i).gt.20.0_ip)then
             write(global_error,*)"WARNING: GRAV seems high."
             write(global_error,*)"         Units should be m/s2"
@@ -137,7 +137,7 @@
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
             write(global_error,*)"ERROR: RAD_EARTH must be > 0"
-            stop 0
+            stop 1
           elseif (pvalue(i).gt.10000.0_ip)then
             write(global_error,*)"WARNING: RAD_EARTH seems high."
             write(global_error,*)"         Units should be km"
@@ -150,10 +150,10 @@
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
             write(global_error,*)"ERROR: CFL must be > 0"
-            stop 0
+            stop 1
           elseif (pvalue(i).ge.1.0_ip)then
             write(global_error,*)"ERROR: CFL must be < 1"
-            stop 0
+            stop 1
           endif
           write(global_info,*)"  Resetting CFL from ",CFL,&
                               "to ",pvalue(i)
@@ -162,7 +162,7 @@
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
             write(global_error,*)"ERROR: DT_MIN must be > 0"
-            stop 0
+            stop 1
           elseif (pvalue(i).gt.1.0_ip)then
             write(global_error,*)"WARNING: DT_MIN seems high."
             write(global_error,*)"         Units should be hours"
@@ -175,10 +175,10 @@
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
             write(global_error,*)"ERROR: DT_MAX must be > 0"
-            stop 0
+            stop 1
           elseif (pvalue(i).le.DT_MIN)then
             write(global_error,*)"ERROR: DT_MAX must be > DT_MIN"
-            stop 0
+            stop 1
           elseif (pvalue(i).gt.10.0_ip)then
             write(global_error,*)"WARNING: DT_MAX seems high."
             write(global_error,*)"         Units should be hours"
@@ -190,7 +190,7 @@
           ! error-checking
           if (pvalue(i).le.1.0_ip)then
             write(global_error,*)"ERROR: ZPADDING must be > 1"
-            stop 0
+            stop 1
           elseif (pvalue(i).gt.5.0_ip)then
             write(global_error,*)"WARNING: ZPADDING seems high."
             write(global_error,*)"         This is the factor times the plume height (~1.3)"
@@ -202,7 +202,7 @@
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
             write(global_error,*)"ERROR: DEPO_THRESH must be > 0"
-            stop 0
+            stop 1
           elseif (pvalue(i).gt.5.0_ip)then
             write(global_error,*)"WARNING: DEPO_THRESH seems high."
             write(global_error,*)&
@@ -215,7 +215,7 @@
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
             write(global_error,*)"ERROR: DEPRATE_THRESH must be > 0"
-            stop 0
+            stop 1
           elseif (pvalue(i).gt.1.0_ip)then
             write(global_error,*)"WARNING: seems high."
             write(global_error,*)&
@@ -228,7 +228,7 @@
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
             write(global_error,*)"ERROR: CLOUDCON_THRESH must be > 0"
-            stop 0
+            stop 1
           elseif (pvalue(i).gt.5.0_ip)then
             write(global_error,*)"WARNING: CLOUDCON_THRESH seems high."
             write(global_error,*)&
@@ -241,7 +241,7 @@
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
             write(global_error,*)"ERROR: CLOUDCON_GRID_THRESH must be > 0"
-            stop 0
+            stop 1
           elseif (pvalue(i).gt.1.0e-1_ip)then
             write(global_error,*)"WARNING: CLOUDCON_GRID_THRESH seems high."
             write(global_error,*)&
@@ -254,7 +254,7 @@
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
             write(global_error,*)"ERROR: CLOUDLOAD_THRESH must be > 0"
-            stop 0
+            stop 1
           elseif (pvalue(i).gt.5.0_ip)then
             write(global_error,*)"WARNING: CLOUDLOAD_THRESH seems high."
             write(global_error,*)&
@@ -267,7 +267,7 @@
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
             write(global_error,*)"ERROR: THICKNESS_THRESH must be > 0"
-            stop 0
+            stop 1
           elseif (pvalue(i).gt.5.0_ip)then
             write(global_error,*)"WARNING: THICKNESS_THRESH seems high."
             write(global_error,*)&
@@ -281,7 +281,7 @@
           ! error-checking
           if (pvalue(i).ge.0.0_ip)then
             write(global_error,*)"ERROR: DBZ_THRESH must be < 0"
-            stop 0
+            stop 1
           elseif (pvalue(i).lt.-1000.0_ip)then
             write(global_error,*)"WARNING: DBZ_THRESH seems low."
             write(global_error,*)&
@@ -294,7 +294,7 @@
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
             write(global_error,*)"ERROR: lambda must be > 0"
-            stop 0
+            stop 1
           elseif (pvalue(i).gt.100.0_ip)then
             write(global_error,*)"WARNING: lambda seems high."
             write(global_error,*)&
@@ -307,7 +307,7 @@
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
             write(global_error,*)"ERROR:  must be > 0"
-            stop 0
+            stop 1
           elseif (pvalue(i).gt.10.0_ip)then
             write(global_error,*)"WARNING: N_BV seems high."
             write(global_error,*)&
@@ -320,7 +320,7 @@
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
             write(global_error,*)"ERROR: k_entrainment must be > 0"
-            stop 0
+            stop 1
           elseif (pvalue(i).gt.5.0_ip)then
             write(global_error,*)"WARNING: k_entrainment seems high."
             write(global_error,*)&

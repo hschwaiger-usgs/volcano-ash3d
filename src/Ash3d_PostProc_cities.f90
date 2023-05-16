@@ -4,6 +4,8 @@
       use precis_param,  only : &
         ip,op,sp,dp
 
+      use io_units
+
       implicit none
 
       !private
@@ -93,8 +95,8 @@
                           DirDelim // 'world_cities.txt'
         inquire( file=trim(adjustl(CityMasterFile)), exist=IsThere2 )
         if(.not.IsThere2)then
-          write(6,*)"ERROR: Could not find file: ",trim(adjustl(CityMasterFile))
-          write(6,*)"       Skipping cities"
+          write(global_info,*)"ERROR: Could not find file: ",trim(adjustl(CityMasterFile))
+          write(global_info,*)"       Skipping cities"
           ncities = 0
           return
         endif
@@ -155,7 +157,7 @@
 3             format(2f10.4,1x,a26)
             enddo
           else
-            write(*,*)"outCode not recognized. No output file written"
+            write(global_info,*)"outCode not recognized. No output file written"
           endif
           close(13)
         endif

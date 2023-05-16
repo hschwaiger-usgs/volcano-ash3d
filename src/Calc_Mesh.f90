@@ -353,7 +353,7 @@
         endif
       enddo
       if(kmax.lt.kmin)then
-        if(VERB.ge.1)write(global_info,*)"WARNING: kmax<kmin"
+        write(global_error,*)"ERROR: kmax<kmin in get_minmax_index"
         stop 1
       endif
 

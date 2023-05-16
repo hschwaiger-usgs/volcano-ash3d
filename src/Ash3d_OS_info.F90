@@ -289,7 +289,7 @@
         write(global_log ,*)
       endif
 
-
+      ! FORMAT STATEMENTS
 2     format(4x,'Ash3d (Rev ',a5,') run ',&
              i4,'.',i2.2,'.',i2.2,i4,':',i2.2,' UTC')
 102   format(i4,'.',i2.2,'.',i2.2,i4,':',i2.2)
@@ -312,21 +312,6 @@
       logical,intent(inout)  :: IsLitEnd
 
       integer(kind=2)  :: s = 1
-
-      !integer(kind=1)  :: ii(2)
-
-      !equivalence (s,ii)
-
-      !IF (ii(1).eq.1)THEN
-      !  ! System is Little-Endian
-      !  IsLitEnd = .true.
-      !ELSEIF(ii(2).eq.1)THEN
-      !  ! System is Big-Endian
-      !  IsLitEnd = .false.
-      !ELSE
-      !  write(*,*)'ERROR: cannot figure out endian-ness!'
-      !  stop
-      !ENDIF
 
       if(btest(transfer(int((/1,0/),kind=1),s),0)) then
         ! System is Little-Endian

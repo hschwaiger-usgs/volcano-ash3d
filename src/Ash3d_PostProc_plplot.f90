@@ -2,6 +2,11 @@
 
       use precis_param
 
+      use io_units
+
+      use global_param,  only : &
+         VERB
+
       use plplot
       use iso_c_binding, only: c_ptr, c_loc, c_f_pointer
 
@@ -144,10 +149,14 @@
       END INTERFACE
 
       if(writeContours)then
-        write(*,*)"Running plplot to calculate contours lines"
-        write(*,*)"Not sure yet how to save contout data"
+        write(global_error,*)"Running plplot to calculate contours lines"
+        write(global_error,*)"Not sure yet how to save contour data with plplot"
+        write(global_error,*)"If you want shapefiles, recompile without plplot or"
+        write(global_error,*)" reset the plot_pref_shp variable."
+        write(global_error,*)"Exiting"
+        stop 1
       else
-        write(*,*)"Running plplot to generate contour plot"
+        if(VERB.ge.1)write(global_info,*)"Running plplot to generate contour plot"
       endif
 
       ncities = 20
@@ -216,8 +225,8 @@
         ContourLev(1:nConLev) = Con_DepTime_Lev(1:nConLev)
         zrgb(1:nConLev,1:3) = Con_DepTime_RGB(1:nConLev,1:3)
       elseif(iprod.eq.8)then   ! ashfall arrival at airports/POI (mm)
-        write(*,*)"ERROR: No map PNG output option for airport arrival time data."
-        write(*,*)"       Should not be in write_2Dmap_PNG_dislin"
+        write(global_error,*)"ERROR: No map PNG output option for airport arrival time data."
+        write(global_error,*)"       Should not be in write_2Dmap_PNG_dislin"
         stop 1
       elseif(iprod.eq.9)then   ! ash-cloud concentration
         write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
@@ -283,11 +292,11 @@
         ContourLev = (/0.1_ip, 0.3_ip, 1.0_ip, 3.0_ip, &
                 10.0_ip, 30.0_ip, 100.0_ip, 300.0_ip/)
       elseif(iprod.eq.16)then   ! profile plots
-        write(*,*)"ERROR: No map PNG output option for vertical profile data."
-        write(*,*)"       Should not be in write_2Dmap_PNG_dislin"
+        write(global_error,*)"ERROR: No map PNG output option for vertical profile data."
+        write(global_error,*)"       Should not be in write_2Dmap_PNG_dislin"
         stop 1
       else
-        write(*,*)"ERROR: unexpected variable"
+        write(global_error,*)"ERROR: unexpected variable"
         stop 1
       endif
 
@@ -301,7 +310,6 @@
         xmax = real(maxval(x_cc_pd(1:nx)),kind=plflt)
         ymin = real(minval(y_cc_pd(1:ny)),kind=plflt)
         ymax = real(maxval(y_cc_pd(1:ny)),kind=plflt)
-        stop 5
       endif
       call citylist(0,real(xmin,kind=ip),real(xmax,kind=ip),&
                       real(ymin,kind=ip),real(ymax,kind=ip),&
@@ -441,7 +449,6 @@
         green(i) = i
         blue(i)  = i
         alpha(i) = 1.0_pl_test_flt
-        !write(*,*)i,line_colors(i)
 
         line_styles(i)   = 1
         line_widths(i)   = 1
@@ -895,11 +902,9 @@
       integer(kind=4) :: b2 = 136
 
       if(Airport_Thickness_TS(pt_indx,nWriteTimes).lt.0.01_ip)then
-        !write(*,*)"No deposit at ",pt_indx,Airport_Name(pt_indx)
         return
       else
         plot_index = plot_index + 1
-        !write(*,*)"Processing ",pt_indx,plot_index,Airport_Name(pt_indx),'--'
       endif
 
       write(dp_pngfile,55) plot_index,".png"

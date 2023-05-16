@@ -169,12 +169,10 @@
 #ifdef USENETCDF
         !call NC_RestartFile_LoadConcen
 #else
-        if(VERB.ge.1)then
-          write(global_info,*)"ERROR: Loading concentration files requires previous netcdf"
-          write(global_info,*)"       output.  This Ash3d executable was not compiled with"
-          write(global_info,*)"       netcdf support.  Please recompile Ash3d with"
-          write(global_info,*)"       USENETCDF=T, or select another source."
-        endif
+        write(global_error,*)"ERROR: Loading concentration files requires previous netcdf"
+        write(global_error,*)"       output.  This Ash3d executable was not compiled with"
+        write(global_error,*)"       netcdf support.  Please recompile Ash3d with"
+        write(global_error,*)"       USENETCDF=T, or select another source."
         stop 1
 #endif
       else
@@ -591,26 +589,22 @@
       if((CheckConditions(4).eqv..true.).and.&
          (StopConditions(4).eqv..true.))then
         ! Error stop condition if the concen and outflow do not match the source
-        if(VERB.ge.1)then
-          write(global_info,*)"Cummulative source volume does not match aloft + outflow"
-          write(global_info,*)" tot_vol = ",tot_vol
-          write(global_info,*)" SourceCumulativeVol = ",SourceCumulativeVol
-          write(global_info,*)" Abs. Error = ",&
-                              abs((tot_vol-SourceCumulativeVol)/SourceCumulativeVol)
-          write(global_info,*)" e_Volume = ",e_Volume
-        endif
+        write(global_error,*)"Cummulative source volume does not match aloft + outflow"
+        write(global_error,*)" tot_vol = ",tot_vol
+        write(global_error,*)" SourceCumulativeVol = ",SourceCumulativeVol
+        write(global_error,*)" Abs. Error = ",&
+                             abs((tot_vol-SourceCumulativeVol)/SourceCumulativeVol)
+        write(global_error,*)" e_Volume = ",e_Volume
         stop 1
       endif
       if((CheckConditions(5).eqv..true.).and.&
          (StopConditions(5).eqv..true.))then
         ! Error stop condition if any volume measure is negative
-        if(VERB.ge.1)then
-          write(global_info,*)"One of the volume measures is negative."
-          write(global_info,*)"        dep_vol = ",dep_vol
-          write(global_info,*)"        aloft_vol = ",aloft_vol
-          write(global_info,*)"        outflow_vol = ",outflow_vol
-          write(global_info,*)"        SourceCumulativeVol = ",SourceCumulativeVol
-        endif
+        write(global_error,*)"One of the volume measures is negative."
+        write(global_error,*)"        dep_vol = ",dep_vol
+        write(global_error,*)"        aloft_vol = ",aloft_vol
+        write(global_error,*)"        outflow_vol = ",outflow_vol
+        write(global_error,*)"        SourceCumulativeVol = ",SourceCumulativeVol
         stop 1
       endif
 

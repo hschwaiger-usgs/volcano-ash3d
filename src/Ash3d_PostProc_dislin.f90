@@ -2,9 +2,11 @@
 
       use precis_param
 
+      use io_units
+
       use dislin
 
-      integer,parameter :: DS = 8
+      integer,parameter :: DS = 4
 
       contains
 
@@ -181,8 +183,8 @@
         ContourLev(1:nConLev) = Con_DepTime_Lev(1:nConLev)
         zrgb(1:nConLev,1:3) = Con_DepTime_RGB(1:nConLev,1:3)
       elseif(iprod.eq.8)then   ! ashfall arrival at airports/POI (mm)
-        write(*,*)"ERROR: No map PNG output option for airport arrival time data."
-        write(*,*)"       Should not be in write_2Dmap_PNG_dislin"
+        write(global_error,*)"ERROR: No map PNG output option for airport arrival time data."
+        write(global_error,*)"       Should not be in write_2Dmap_PNG_dislin"
         stop 1
       elseif(iprod.eq.9)then   ! ash-cloud concentration
         write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
@@ -248,16 +250,15 @@
         ContourLev = (/0.1_ip, 0.3_ip, 1.0_ip, 3.0_ip, &
                 10.0_ip, 30.0_ip, 100.0_ip, 300.0_ip/)
       elseif(iprod.eq.16)then   ! profile plots
-        write(*,*)"ERROR: No map PNG output option for vertical profile data."
-        write(*,*)"       Should not be in write_2Dmap_PNG_dislin"
+        write(global_error,*)"ERROR: No map PNG output option for vertical profile data."
+        write(global_error,*)"       Should not be in write_2Dmap_PNG_dislin"
         stop 1
       else
-        write(*,*)"ERROR: unexpected variable"
+        write(global_error,*)"ERROR: unexpected variable"
         stop 1
       endif
 
       if(writeContours)then
-        !write(*,*)"Running Dislin to calculate contours lines"
         allocate(ContourDataNcurves(nConLev))
         allocate(ContourDataNpoints(nConLev,Contour_MaxCurves))
         allocate(ContourDataX(nConLev,Contour_MaxCurves,Contour_MaxPoints))
@@ -312,7 +313,6 @@
         ymax = maxval(y_cc_pd(1:ny))
         dx = x_cc_pd(2) - x_cc_pd(1)
         dy = y_cc_pd(2) - y_cc_pd(1)
-        stop 5
       endif
       call citylist(0,xmin,xmax,ymin,ymax,    &
                     ncities,                  &
@@ -372,8 +372,8 @@
                   yminDIS,ymaxDIS,ygrid_1,dy_map)
       call getlev(tmp_int)
       if(tmp_int.ne.2)then
-        write(*,*)"grafmp is supposed to return plot level 2, but we have ",tmp_int
-        write(*,*)"Exiting"
+        write(global_error,*)"grafmp is supposed to return plot level 2, but we have ",tmp_int
+        write(global_error,*)"Exiting"
         stop 1
       endif
        ! set color of coastlines
@@ -459,7 +459,6 @@
       write(cstr_ErDuratn,'(a20,f4.1,a6)')'Erup. Duration:     ',e_Duration(1),' hours'
       write(cstr_ErVolume,'(a20,f8.5,a10)')'Erup. Volume:       ',e_Volume(1),' km3 (DRE)'
 
-      write(*,*)"Dislin text box"
       call messag(cstr_volcname,400 ,y_footer)
       call messag(cstr_run_date,400 ,y_footer+40)
       call messag(cstr_windfile,400 ,y_footer+80)

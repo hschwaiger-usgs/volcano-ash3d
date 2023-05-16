@@ -261,7 +261,7 @@
               !AirSH_meso_last_step_MetP_sp = MR_dum3d_MetP
               AirSH_meso_last_step_MetP_sp = 0.0_sp
             else
-              if(VERB.ge.1)write(global_info,*)"ERROR: Neither SH nor RH are available"
+              write(global_error,*)"ERROR: Neither SH nor RH are available"
               stop 1
             endif
           endif
@@ -291,7 +291,7 @@
             !AirSH_meso_next_step_MetP_sp = MR_dum3d_MetP
             AirSH_meso_last_step_MetP_sp = 0.0_sp
           else
-            if(VERB.ge.1)write(global_info,*)"ERROR: Neither SH nor RH are available"
+            write(global_error,*)"ERROR: Neither SH nor RH are available"
             stop 1
           endif
         endif
@@ -323,12 +323,10 @@
       else
         ! Currently, this subroutine is only called if Load_MesoSteps=.true.
         ! so we shouldn't be here
-        if(VERB.ge.1)then
-          write(*,*)"Calling Set_Atmosphere_Meso outside of a Load_MesoSteps=.true."
-          write(*,*)"case for Interval_Frac = ",Interval_Frac
-          write(*,*)"This is a place-holder for interpolating tempertures to the"
-          write(*,*)"current time.  Not yet implemented."
-        endif
+        write(global_error,*)"Calling Set_Atmosphere_Meso outside of a Load_MesoSteps=.true."
+        write(global_error,*)"case for Interval_Frac = ",Interval_Frac
+        write(global_error,*)"This is a place-holder for interpolating tempertures to the"
+        write(global_error,*)"current time.  Not yet implemented."
         stop 1
         !Temperature(:,:,:) = real( Temp_meso_last_step_sp(:,:,:),kind=ip) + &
         !                     real((Temp_meso_next_step_sp(:,:,:) - &
