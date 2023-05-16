@@ -128,27 +128,27 @@
 
       if(nx_1.ne.nx_2)then
         write(*,*)"FAIL : nx differs"
-        stop
+        stop 1
       endif
       if(ny_1.ne.ny_2)then
         write(*,*)"FAIL : ny differs"
-        stop
+        stop 1
       endif
       if(abs(dx_1-dx_2).gt.EPS_TINY)then
         write(*,*)"FAIL : dx differs"
-        stop
+        stop 1
       endif
       if(abs(dy_1-dy_2).gt.EPS_TINY)then
         write(*,*)"FAIL : dy differs"
-        stop
+        stop 1
       endif
       if(abs(xll_1-xll_2).gt.EPS_TINY)then
         write(*,*)"FAIL : xll differs"
-        stop
+        stop 1
       endif
       if(abs(yll_1-yll_2).gt.EPS_TINY)then
         write(*,*)"FAIL : yll differs"
-        stop
+        stop 1
       endif
 
       L2_toterror = 0.0_ip

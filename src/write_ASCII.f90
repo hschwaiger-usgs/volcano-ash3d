@@ -24,7 +24,7 @@
       use io_units
 
       use io_data,       only : &
-         nvprofiles,Site_vprofile,x_vprofile, y_vprofile
+         MAXPROFILES,nvprofiles,Site_vprofile,x_vprofile, y_vprofile
 
       use mesh,          only : &
          nzmax,z_cc_pd
@@ -41,12 +41,12 @@
         if (i.lt.10) then
           write(cio,1) i
 1         format('vprofile0',i1,'.txt')
-        elseif (i.lt.100) then
+        elseif (i.lt.MAXPROFILES) then
           write(cio,2) i
 2         format('vprofile',i2,'.txt')
         else
-          write(global_info,*)"Too many vertical profiles."
-          write(global_info,*)"nvprofiles must be < 100."
+          write(global_error,*)"ERROR: Too many vertical profiles."
+          write(global_error,*)"nvprofiles must be < ",MAXPROFILES
           stop 1
         endif
         open(unit=ionumber,file=cio)
@@ -152,7 +152,7 @@
       use io_units
 
       use global_param,  only  : &
-         KM_2_M
+         KM_2_M,VERB
 
       use mesh,          only : &
          dx,dy,de,dn,IsLatLon,latLL,lonLL,xLL,yLL
@@ -247,7 +247,7 @@
 
 !     Error traps
 2500  write(global_error,*) 'Error opening output file ASCII_output_file.txt.  Program stopped'            
-      write(global_log  ,*) 'Error opening output file ASCII_output_file.txt.  Program stopped'
+      if(VERB.ge.1)write(global_log  ,*) 'Error opening output file ASCII_output_file.txt.  Program stopped'
       stop 1
       
       end subroutine write_2D_ASCII
@@ -259,6 +259,9 @@
 !     Subroutine that reads in 2-D arrays in ESRI ASCII raster format
 
       use precis_param
+
+      use global_param,  only  : &
+         VERB
 
       use io_units
 
@@ -310,10 +313,12 @@
 
 !     Error traps
 2500  write(global_error,*) 'Error opening ASCII file. Program stopped'
-      write(global_log  ,*) 'Error opening ASCII file. Program stopped'
+      if(VERB.ge.1)write(global_log  ,*) 'Error opening ASCII file. Program stopped'
       stop 1
+
 2600  write(global_error,*) 'Error reading from ASCII file.'
-      write(global_log  ,*) 'Error reading from ASCII file.'
+      if(VERB.ge.1)write(global_log  ,*) 'Error reading from ASCII file.'
+      stop 1
 
       end subroutine read_2D_ASCII
 
@@ -383,7 +388,7 @@
       use io_units
 
       use global_param,  only : &
-         M_2_MM,UseCalcFallVel
+         M_2_MM,UseCalcFallVel,VERB
 
       use Airports,      only : &
          Airport_AshArrivalTime,Airport_CloudArrivalTime, &
@@ -538,7 +543,8 @@
 
 !     Error traps
 2000   write(global_error,*)  'Error opening ash_arrivaltimes_airports.txt.  Program stopped.'
-       write(global_log  ,*)  'Error opening ash_arrivaltimes_airports.txt.  Program stopped.'
+       if(VERB.ge.1)write(global_log  ,*)&
+          'Error opening ash_arrivaltimes_airports.txt.  Program stopped.'
        stop 1
 
 !     Format statements

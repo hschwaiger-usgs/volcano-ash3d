@@ -101,7 +101,7 @@
         concen_pd(:,:,nzmax+1,:,ts0) = concen_pd(:,:,nzmax,:,ts0)
         concen_pd(:,:,nzmax+2,:,ts0) = concen_pd(:,:,nzmax,:,ts0)
       else
-        write(global_error,*)" BC code not recognized"
+        write(global_error,*)"ERROR BC code not recognized"
         stop 1
       endif
 

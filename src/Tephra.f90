@@ -541,35 +541,6 @@
 
 !******************************************************************************
 
-!      subroutine Collapse_GS
-!
-!      use solution,      only : &
-!           mass_aloft,IsAloft
-!
-!      implicit none
-!
-!      integer :: n
-!
-!      ! Loop through the grain sizes starting with the largest (fastest falling)
-!      ! and check if any have completely flushed out.  If so, then
-!      ! modify the max index of the grain-size loop (n_gs_aloft)
-!      ! The threshold for collapsing GS array is if there is less than a gram in
-!      ! that size bin aloft
-!      !do n = 1,n_gs_aloft
-!      do n = 1,n_gs_max
-!        if(IsAloft(n).and. &                     ! if bin is currently flagged as aloft
-!           mass_aloft(n).lt.AIRBORNE_THRESH)then ! but the mass is less than the thresh
-!          IsAloft(n) = .false.
-!          n_gs_aloft = n_gs_aloft-1
-!          write(global_info,*)"Grainsmax bin ",n_gs_aloft+1," has fully deposited."
-!          write(global_log ,*)"Grainsmax bin ",n_gs_aloft+1," has fully deposited."
-!        endif
-!      enddo
-!
-!      end subroutine Collapse_GS
-
-!******************************************************************************
-
       subroutine Prune_GS
 
       use solution,      only : &

@@ -312,14 +312,16 @@
 
       return
 
-50    format(a8,a42,a31,f21.3,a18,f19.3,a18,a15,a18)
+!     ERROR TRAPS
+3000  write(global_error,5) "VotW_ESP_v12.esp"
+      if(VERB.ge.1)write(global_log,5) "VotW_ESP_v12.esp"
+      stop 1
+
+      !FORMAT STATEMENTS
 5     format(5x,'Error.  cannot find input file ',a130,/,5x,&
                 'Program stopped')
+50    format(a8,a42,a31,f21.3,a18,f19.3,a18,a15,a18)
 
-!     ERROR TRAPS
-3000  write(6,5) "VotW_ESP_v12.esp"
-      write(9,5) "VotW_ESP_v12.esp"
-      stop 1
 
       end subroutine VotW_v12
 #else

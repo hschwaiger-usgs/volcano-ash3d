@@ -895,8 +895,8 @@
       real(kind=ip) :: totalash
 
       if(itime.gt.ntmax)then
-        write(global_error)"ERROR: itime is greater than ntmax"
-        write(global_error)"       cannot write to profile"
+        write(global_error,*)"ERROR: itime is greater than ntmax"
+        write(global_error,*)"       cannot write to profile"
         return
       else
         time_native(itime) = time

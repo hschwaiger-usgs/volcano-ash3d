@@ -2,6 +2,9 @@
 
       use precis_param
 
+      use global_param,  only : &
+         VERB
+
       use io_units
 
       use global_param
@@ -269,9 +272,10 @@
             !stop 6
           enddo
         else
+          ! Source is none of suzuki,umbrella,umbrella_air,line,point,profile
+          ! This is probably a non-tephra source or some custom source entered
+          ! elsewhere. Set flux to zero for now.
           TephraFluxRate = 0.0_ip
-          !write(global_info,*) 'Error.  No SourceType defined.  Program stopped.'
-          !stop 1
         endif
 
         ! Now that we have the TephraFluxRate for this k, convert it to mass
@@ -326,19 +330,20 @@
       ! Make sure the sum of the fluxes in all the cells equals the total flux
       !if (abs(SumSourceNodeFlux-1.0_ip).gt.1.0e-4_ip) then
       if (abs(SumSourceNodeFlux-1.0_ip).gt.EPS_SMALL) then
-         write(global_info,2) SumSourceNodeFlux-1.0_ip
-         write(global_log ,2) SumSourceNodeFlux-1.0_ip
-         write(*,*)"SourceType = ",SourceType
-         write(*,*)"Height_now =",Height_now
-         write(*,*)"z_cell_top,z_cell_bot = ",z_cell_top,z_cell_bot
-         write(*,*)"MassFluxRate_now = ",MassFluxRate_now
-         write(*,*)"n_gs_max = ",n_gs_max
-         write(*,*)SourceNodeFlux(:,1)
+         write(global_error,2) SumSourceNodeFlux-1.0_ip
+         if(VERB.ge.1)then
+           write(global_log ,2) SumSourceNodeFlux-1.0_ip
+           write(global_info,*)"SourceType = ",SourceType
+           write(global_info,*)"Height_now =",Height_now
+           write(global_info,*)"z_cell_top,z_cell_bot = ",z_cell_top,z_cell_bot
+           write(global_info,*)"MassFluxRate_now = ",MassFluxRate_now
+           write(global_info,*)"n_gs_max = ",n_gs_max
+           write(global_info,*)"SourceNodeFlux(1:nz)=",SourceNodeFlux(:,1)
+         endif
          stop 1
       endif
 
 !     Format statements
-!1     Format(4x,'Tephra flux does not agree with MassFluxRate.  Program stopped')
 2     format(4x,'Source Node Flux does not agree with calculations.',/, &
               4x,'(Sum(SourceNodeFlux)/MassFluxRate)-1=',e12.5,/, &
               4x,'Program stopped')
@@ -394,8 +399,8 @@
                 ! If it ends AFTER the END of the NEXT eruption, stop the
                 ! program.
                 ! This means that the chosen dt is too large.
-                write(global_info,1)  ieruption+1
-                write(global_log ,1)  ieruption+1
+                write(global_error,1)  ieruption+1
+                if(VERB.ge.1)write(global_log ,1)  ieruption+1
                 stop 1
               elseif (tend.gt.e_StartTime(ieruption+1)) then
                 ! If it ends AFTER the START of the NEXT eruption,
@@ -448,7 +453,7 @@
                   !If it ends after the next eruption ends, stop the program
                 else
                   write(global_info,1)  ieruption+1
-                  write(global_log ,1)  ieruption+1
+                  if(VERB.ge.1)write(global_log ,1)  ieruption+1
                   stop 1
                 endif
                 !If if ends after the last eruption ends, interpolate and exit

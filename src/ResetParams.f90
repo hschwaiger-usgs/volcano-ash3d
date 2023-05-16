@@ -7,7 +7,7 @@
       use io_units
 
       use global_param,  only : &
-         nmods,GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH
+         nmods,GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH,VERB
 
       use mesh,          only : &
          ZPADDING
@@ -79,10 +79,12 @@
             write(global_error,*)"ERROR: MagmaDensity must be > 0"
             stop 1
           elseif (pvalue(i).gt.10000.0_ip)then
-            write(global_error,*)"WARNING: MagmaDensity seems high."
-            write(global_error,*)"         Units should be kg/m3"
+            if(VERB.ge.1)then
+              write(global_info,*)"WARNING: MagmaDensity seems high."
+              write(global_info,*)"         Units should be kg/m3"
+            endif
           endif
-          write(global_info,*)"  Resetting MagmaDensity from ",MagmaDensity,&
+          if(VERB.ge.1)write(global_info,*)"  Resetting MagmaDensity from ",MagmaDensity,&
                               "to ",pvalue(i)
           MagmaDensity = pvalue(i)
         elseif (pname(i).eq.'DepositDensity') then
@@ -91,10 +93,12 @@
             write(global_error,*)"ERROR: DepositDensity must be > 0"
             stop 1
           elseif (pvalue(i).gt.10000.0_ip)then
-            write(global_error,*)"WARNING: DepositDensity seems high."
-            write(global_error,*)"         Units should be kg/m2"
+            if(VERB.ge.1)then
+              write(global_info,*)"WARNING: DepositDensity seems high."
+              write(global_info,*)"         Units should be kg/m2"
+            endif
           endif
-          write(global_info,*)"  Resetting DepositDensity from ",DepositDensity,&
+          if(VERB.ge.1)write(global_info,*)"  Resetting DepositDensity from ",DepositDensity,&
                               "to ",pvalue(i)
           DepositDensity = pvalue(i)
         elseif (pname(i).eq.'LAM_GS_THRESH') then
@@ -103,10 +107,12 @@
             write(global_error,*)"ERROR: LAM_GS_THRESH must be > 0"
             stop 1
           elseif (pvalue(i).gt.1000.0_ip)then
-            write(global_error,*)"WARNING: LAM_GS_THRESH seems high."
-            write(global_error,*)"         Units should be m"
+            if(VERB.ge.1)then
+              write(global_info,*)"WARNING: LAM_GS_THRESH seems high."
+              write(global_info,*)"         Units should be m"
+            endif
           endif
-          write(global_info,*)"  Resetting LAM_GS_THRESH from ",LAM_GS_THRESH,&
+          if(VERB.ge.1)write(global_info,*)"  Resetting LAM_GS_THRESH from ",LAM_GS_THRESH,&
                               "to ",pvalue(i)
           LAM_GS_THRESH = pvalue(i)
         elseif (pname(i).eq.'AIRBORNE_THRESH') then
@@ -115,10 +121,12 @@
             write(global_error,*)"ERROR: AIRBORNE_THRESH must be > 0"
             stop 1
           elseif (pvalue(i).gt.1.0_ip)then
-            write(global_error,*)"WARNING: AIRBORNE_THRESH seems high."
-            write(global_error,*)"         Units should be kg"
+            if(VERB.ge.1)then
+              write(global_info,*)"WARNING: AIRBORNE_THRESH seems high."
+              write(global_info,*)"         Units should be kg"
+            endif
           endif
-          write(global_info,*)"  Resetting AIRBORNE_THRESH from ",AIRBORNE_THRESH,&
+          if(VERB.ge.1)write(global_info,*)"  Resetting AIRBORNE_THRESH from ",AIRBORNE_THRESH,&
                               "to ",pvalue(i)
           AIRBORNE_THRESH = pvalue(i)
         elseif (pname(i).eq.'GRAV') then
@@ -127,10 +135,12 @@
             write(global_error,*)"ERROR: GRAV must be > 0"
             stop 1
           elseif (pvalue(i).gt.20.0_ip)then
-            write(global_error,*)"WARNING: GRAV seems high."
-            write(global_error,*)"         Units should be m/s2"
+            if(VERB.ge.1)then
+              write(global_info,*)"WARNING: GRAV seems high."
+              write(global_info,*)"         Units should be m/s2"
+            endif
           endif
-          write(global_info,*)"  Resetting GRAV from ",GRAV,&
+          if(VERB.ge.1)write(global_info,*)"  Resetting GRAV from ",GRAV,&
                               "to ",pvalue(i)
           GRAV = pvalue(i)
         elseif (pname(i).eq.'RAD_EARTH') then
@@ -139,14 +149,15 @@
             write(global_error,*)"ERROR: RAD_EARTH must be > 0"
             stop 1
           elseif (pvalue(i).gt.10000.0_ip)then
-            write(global_error,*)"WARNING: RAD_EARTH seems high."
-            write(global_error,*)"         Units should be km"
+            if(VERB.ge.1)then
+              write(global_info,*)"WARNING: RAD_EARTH seems high."
+              write(global_info,*)"         Units should be km"
+            endif
           endif
-          write(global_info,*)"  Resetting RAD_EARTH from ",RAD_EARTH,&
+          if(VERB.ge.1)write(global_info,*)"  Resetting RAD_EARTH from ",RAD_EARTH,&
                               "to ",pvalue(i)
           RAD_EARTH = pvalue(i)
         elseif (pname(i).eq.'CFL') then
-
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
             write(global_error,*)"ERROR: CFL must be > 0"
@@ -155,7 +166,7 @@
             write(global_error,*)"ERROR: CFL must be < 1"
             stop 1
           endif
-          write(global_info,*)"  Resetting CFL from ",CFL,&
+          if(VERB.ge.1)write(global_info,*)"  Resetting CFL from ",CFL,&
                               "to ",pvalue(i)
           CFL = pvalue(i)
         elseif (pname(i).eq.'DT_MIN') then
@@ -164,10 +175,12 @@
             write(global_error,*)"ERROR: DT_MIN must be > 0"
             stop 1
           elseif (pvalue(i).gt.1.0_ip)then
-            write(global_error,*)"WARNING: DT_MIN seems high."
-            write(global_error,*)"         Units should be hours"
+            if(VERB.ge.1)then
+              write(global_info,*)"WARNING: DT_MIN seems high."
+              write(global_info,*)"         Units should be hours"
+            endif
           endif
-          write(global_info,*)"  Resetting DT_MIN from ",DT_MIN,&
+          if(VERB.ge.1)write(global_info,*)"  Resetting DT_MIN from ",DT_MIN,&
                               "to ",pvalue(i)
           DT_MIN = pvalue(i)
 
@@ -180,10 +193,12 @@
             write(global_error,*)"ERROR: DT_MAX must be > DT_MIN"
             stop 1
           elseif (pvalue(i).gt.10.0_ip)then
-            write(global_error,*)"WARNING: DT_MAX seems high."
-            write(global_error,*)"         Units should be hours"
+            if(VERB.ge.1)then
+              write(global_info,*)"WARNING: DT_MAX seems high."
+              write(global_info,*)"         Units should be hours"
+            endif
           endif
-          write(global_info,*)"  Resetting DT_MAX from ",DT_MAX,&
+          if(VERB.ge.1)write(global_info,*)"  Resetting DT_MAX from ",DT_MAX,&
                               "to ",pvalue(i)
           DT_MAX = pvalue(i)
         elseif (pname(i).eq.'ZPADDING') then
@@ -192,10 +207,12 @@
             write(global_error,*)"ERROR: ZPADDING must be > 1"
             stop 1
           elseif (pvalue(i).gt.5.0_ip)then
-            write(global_error,*)"WARNING: ZPADDING seems high."
-            write(global_error,*)"         This is the factor times the plume height (~1.3)"
+            if(VERB.ge.1)then
+              write(global_info,*)"WARNING: ZPADDING seems high."
+              write(global_info,*)"         This is the factor times the plume height (~1.3)"
+            endif
           endif
-          write(global_info,*)"  Resetting ZPADDING from ",ZPADDING,&
+          if(VERB.ge.1)write(global_info,*)"  Resetting ZPADDING from ",ZPADDING,&
                               "to ",pvalue(i)
           ZPADDING = pvalue(i)
         elseif (pname(i).eq.'DEPO_THRESH') then
@@ -204,11 +221,13 @@
             write(global_error,*)"ERROR: DEPO_THRESH must be > 0"
             stop 1
           elseif (pvalue(i).gt.5.0_ip)then
-            write(global_error,*)"WARNING: DEPO_THRESH seems high."
-            write(global_error,*)&
-              "         This is the threshold to track deposit (mm)"
+            if(VERB.ge.1)then
+              write(global_info,*)"WARNING: DEPO_THRESH seems high."
+              write(global_info,*)&
+                "         This is the threshold to track deposit (mm)"
+            endif
           endif
-          write(global_info,*)"  Resetting DEPO_THRESH from ",DEPO_THRESH,&
+          if(VERB.ge.1)write(global_info,*)"  Resetting DEPO_THRESH from ",DEPO_THRESH,&
                               "to ",pvalue(i)
           DEPO_THRESH = pvalue(i)
         elseif (pname(i).eq.'DEPRATE_THRESH') then
@@ -217,11 +236,13 @@
             write(global_error,*)"ERROR: DEPRATE_THRESH must be > 0"
             stop 1
           elseif (pvalue(i).gt.1.0_ip)then
-            write(global_error,*)"WARNING: seems high."
-            write(global_error,*)&
-              "         This is the threshold to track deposit rate (mm/hr)"
+            if(VERB.ge.1)then
+              write(global_info,*)"WARNING: seems high."
+              write(global_info,*)&
+                "         This is the threshold to track deposit rate (mm/hr)"
+            endif
           endif
-          write(global_info,*)"  Resetting DEPRATE_THRESH from ",DEPRATE_THRESH,&
+          if(VERB.ge.1)write(global_info,*)"  Resetting DEPRATE_THRESH from ",DEPRATE_THRESH,&
                               "to ",pvalue(i)
           DEPRATE_THRESH = pvalue(i)
         elseif (pname(i).eq.'CLOUDCON_THRESH') then
@@ -230,11 +251,13 @@
             write(global_error,*)"ERROR: CLOUDCON_THRESH must be > 0"
             stop 1
           elseif (pvalue(i).gt.5.0_ip)then
-            write(global_error,*)"WARNING: CLOUDCON_THRESH seems high."
-            write(global_error,*)&
-              "         This is the threshold to track cloud concentration (t/km3)"
+            if(VERB.ge.1)then
+              write(global_info,*)"WARNING: CLOUDCON_THRESH seems high."
+              write(global_info,*)&
+                "         This is the threshold to track cloud concentration (t/km3)"
+            endif
           endif
-          write(global_info,*)"  Resetting CLOUDCON_THRESH from ",CLOUDCON_THRESH,&
+          if(VERB.ge.1)write(global_info,*)"  Resetting CLOUDCON_THRESH from ",CLOUDCON_THRESH,&
                               "to ",pvalue(i)
           CLOUDCON_THRESH = pvalue(i)
         elseif (pname(i).eq.'CLOUDCON_GRID_THRESH') then
@@ -243,11 +266,13 @@
             write(global_error,*)"ERROR: CLOUDCON_GRID_THRESH must be > 0"
             stop 1
           elseif (pvalue(i).gt.1.0e-1_ip)then
-            write(global_error,*)"WARNING: CLOUDCON_GRID_THRESH seems high."
-            write(global_error,*)&
-              "         This is the concentration threshold to identify regions to calculate (t/km3)"
+            if(VERB.ge.1)then
+              write(global_info,*)"WARNING: CLOUDCON_GRID_THRESH seems high."
+              write(global_info,*)&
+                "         This is the concentration threshold to identify regions to calculate (t/km3)"
+             endif
           endif
-          write(global_info,*)"  Resetting CLOUDCON_GRID_THRESH from ",CLOUDCON_GRID_THRESH,&
+          if(VERB.ge.1)write(global_info,*)"  Resetting CLOUDCON_GRID_THRESH from ",CLOUDCON_GRID_THRESH,&
                               "to ",pvalue(i)
           CLOUDCON_GRID_THRESH = pvalue(i)
         elseif (pname(i).eq.'CLOUDLOAD_THRESH') then
@@ -256,11 +281,13 @@
             write(global_error,*)"ERROR: CLOUDLOAD_THRESH must be > 0"
             stop 1
           elseif (pvalue(i).gt.5.0_ip)then
-            write(global_error,*)"WARNING: CLOUDLOAD_THRESH seems high."
-            write(global_error,*)&
-              "         This is the threshold to track cloud load (t/km2)"
+            if(VERB.ge.1)then
+              write(global_info,*)"WARNING: CLOUDLOAD_THRESH seems high."
+              write(global_info,*)&
+                "         This is the threshold to track cloud load (t/km2)"
+            endif
           endif
-          write(global_info,*)"  Resetting CLOUDLOAD_THRESH from ",CLOUDLOAD_THRESH,&
+          if(VERB.ge.1)write(global_info,*)"  Resetting CLOUDLOAD_THRESH from ",CLOUDLOAD_THRESH,&
                               "to ",pvalue(i)
           CLOUDLOAD_THRESH = pvalue(i)
         elseif (pname(i).eq.'THICKNESS_THRESH') then
@@ -269,11 +296,13 @@
             write(global_error,*)"ERROR: THICKNESS_THRESH must be > 0"
             stop 1
           elseif (pvalue(i).gt.5.0_ip)then
-            write(global_error,*)"WARNING: THICKNESS_THRESH seems high."
-            write(global_error,*)&
-              "         This is the threshold to track deposit (mm)"
+            if(VERB.ge.1)then
+              write(global_info,*)"WARNING: THICKNESS_THRESH seems high."
+              write(global_info,*)&
+                "         This is the threshold to track deposit (mm)"
+            endif
           endif
-          write(global_info,*)"  Resetting THICKNESS_THRESH from ",THICKNESS_THRESH,&
+          if(VERB.ge.1)write(global_info,*)"  Resetting THICKNESS_THRESH from ",THICKNESS_THRESH,&
                               "to ",pvalue(i)
           THICKNESS_THRESH = pvalue(i)
 
@@ -283,11 +312,13 @@
             write(global_error,*)"ERROR: DBZ_THRESH must be < 0"
             stop 1
           elseif (pvalue(i).lt.-1000.0_ip)then
-            write(global_error,*)"WARNING: DBZ_THRESH seems low."
-            write(global_error,*)&
-              "         This is the threshold to reflectivity (db)"
+            if(VERB.ge.1)then
+              write(global_info,*)"WARNING: DBZ_THRESH seems low."
+              write(global_info,*)&
+                "         This is the threshold to reflectivity (db)"
+            endif
           endif
-          write(global_info,*)"  Resetting DBZ_THRESH from ",DBZ_THRESH,&
+          if(VERB.ge.1)write(global_info,*)"  Resetting DBZ_THRESH from ",DBZ_THRESH,&
                               "to ",pvalue(i)
           DBZ_THRESH = pvalue(i)
         elseif (pname(i).eq.'lambda') then
@@ -296,11 +327,13 @@
             write(global_error,*)"ERROR: lambda must be > 0"
             stop 1
           elseif (pvalue(i).gt.100.0_ip)then
-            write(global_error,*)"WARNING: lambda seems high."
-            write(global_error,*)&
-              "         This is the Suzuki parameter for the umbrella"
+            if(VERB.ge.1)then
+              write(global_info,*)"WARNING: lambda seems high."
+              write(global_info,*)&
+                "         This is the Suzuki parameter for the umbrella"
+            endif
           endif
-          !write(global_info,*)"  Resetting lambda from ",lambda,&
+          !if(VERB.ge.1)write(global_info,*)"  Resetting lambda from ",lambda,&
           !                    "to ",pvalue(i)
           !lambda = pvalue(i)
         elseif (pname(i).eq.'N_BV') then
@@ -309,11 +342,13 @@
             write(global_error,*)"ERROR:  must be > 0"
             stop 1
           elseif (pvalue(i).gt.10.0_ip)then
-            write(global_error,*)"WARNING: N_BV seems high."
-            write(global_error,*)&
-              "         This is the Brunt-Vaisala frequency (1/s)"
+            if(VERB.ge.1)then
+              write(global_info,*)"WARNING: N_BV seems high."
+              write(global_info,*)&
+                "         This is the Brunt-Vaisala frequency (1/s)"
+            endif
           endif
-          !write(global_info,*)"  Resetting N_BV from ",N_BV,&
+          !if(VERB.ge.1)write(global_info,*)"  Resetting N_BV from ",N_BV,&
           !                    "to ",pvalue(i)
           !N_BV = pvalue(i)
         elseif (pname(i).eq.'k_entrainment') then
@@ -322,11 +357,13 @@
             write(global_error,*)"ERROR: k_entrainment must be > 0"
             stop 1
           elseif (pvalue(i).gt.5.0_ip)then
-            write(global_error,*)"WARNING: k_entrainment seems high."
-            write(global_error,*)&
-              "         This is the umbrella entrainment coefficient"
+            if(VERB.ge.1)then
+              write(global_info,*)"WARNING: k_entrainment seems high."
+              write(global_info,*)&
+                "         This is the umbrella entrainment coefficient"
+            endif
           endif
-          !write(global_info,*)"  Resetting k_entrainment from ",k_entrainment,&
+          !if(VERB.ge.1)write(global_info,*)"  Resetting k_entrainment from ",k_entrainment,&
           !                    "to ",pvalue(i)
           !k_entrainment = pvalue(i)
         else
@@ -340,10 +377,12 @@
 
       return
 
-1900  write(global_info,*)  'error: cannot find input file: ',infile
-      write(global_info,*)  'Program stopped'
-      write(global_log,*)  'error: cannot find input file: ',infile
-      write(global_log,*)  'Program stopped'
+1900  write(global_error,*)  'error: cannot find input file: ',infile
+      write(global_error,*)  'Program stopped'
+      if(VERB.ge.1)then
+        write(global_log,*)  'error: cannot find input file: ',infile
+        write(global_log,*)  'Program stopped'
+      endif
       stop 1
 
       end subroutine input_data_ResetParams

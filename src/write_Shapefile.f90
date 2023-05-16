@@ -168,8 +168,8 @@
         ov_fileroot = 'DepAvlTm'
         plot_units = 'hours'
       elseif(iprod.eq.8)then   ! ashfall arrival at airports/POI (mm)
-        write(*,*)"ERROR: No map PNG output option for airport arrival time data."
-        write(*,*)"       Should not be in write_2Dmap_PNG_dislin"
+        write(global_error,*)"ERROR: No map PNG output option for airport arrival time data."
+        write(global_error,*)"       Should not be in write_2Dmap_PNG_dislin"
         stop 1
       elseif(iprod.eq.9)then   ! ash-cloud concentration
         write(title_plot,'(a28,f5.2,a6)')': Ash-cloud concentration t=',WriteTimes(itime),' hours'
@@ -207,11 +207,11 @@
         ov_fileroot = 'Topogrph'
         plot_units = 'km'
       elseif(iprod.eq.16)then   ! profile plots
-        write(*,*)"ERROR: No map PNG output option for vertical profile data."
-        write(*,*)"       Should not be in write_2Dmap_PNG_dislin"
+        write(global_error,*)"ERROR: No map PNG output option for vertical profile data."
+        write(global_error,*)"       Should not be in write_2Dmap_PNG_dislin"
         stop 1
       else
-        write(*,*)"ERROR: unexpected variable"
+        write(global_error,*)"ERROR: unexpected variable"
         stop 1
       endif
 
@@ -281,7 +281,7 @@
       ov_projfile = trim(adjustl(ov_fileroot)) // ov_projext
       ov_zipfile  = trim(adjustl(ov_fileroot)) // ov_zipext
 
-      write(*,*)"Writing shapefile"
+      if(VERB.ge.1)write(global_info,*)"Writing shapefile"
 
       ! First, writing the main .shp file which contains the contour (polyline) data.
       ! The specification has a mess of little-endian and big-endian writes with non-integer
@@ -314,12 +314,12 @@
       write(ov_indxID)BigEnd_4int(IsLitEnd,tmp4)
 
       if(debugmode)then
-        write(*,*)file_code,   " 1-  4 : FH Byte 0 File Code 9994 Integer Big"
-        write(*,*)tmp4,        " 5-  8 : FH Byte 4 Unused 0 Integer Big"
-        write(*,*)tmp4,        " 9- 12 : FH Byte 8 Unused 0 Integer Big"
-        write(*,*)tmp4,        "13- 16 : FH Byte 12 Unused 0 Integer Big"
-        write(*,*)tmp4,        "17- 20 : FH Byte 16 Unused 0 Integer Big"
-        write(*,*)tmp4,        "21- 24 : FH Byte 20 Unused 0 Integer Big"
+        write(global_debug,*)file_code,   " 1-  4 : FH Byte 0 File Code 9994 Integer Big"
+        write(global_debug,*)tmp4,        " 5-  8 : FH Byte 4 Unused 0 Integer Big"
+        write(global_debug,*)tmp4,        " 9- 12 : FH Byte 8 Unused 0 Integer Big"
+        write(global_debug,*)tmp4,        "13- 16 : FH Byte 12 Unused 0 Integer Big"
+        write(global_debug,*)tmp4,        "17- 20 : FH Byte 16 Unused 0 Integer Big"
+        write(global_debug,*)tmp4,        "21- 24 : FH Byte 20 Unused 0 Integer Big"
       endif
 
       !              -- File Header length
@@ -328,7 +328,7 @@
       !              |     |        |    
       file_length = 50 + (4*nrec) + sum(reclen(1:nrec))  ! total file length in 16-bit words
       write(ov_mainID)BigEnd_4int(IsLitEnd,file_length)          ! 25-28 : FH Byte 24 File Length Integer Big
-      if(debugmode)write(*,*)file_length,"25-28 : FH Byte 24 File Length Integer Big"
+      if(debugmode)write(global_debug,*)file_length,"25-28 : FH Byte 24 File Length Integer Big"
       ! Recalculating length for the index file
       file_length = 50 + (4*nrec)
       write(ov_indxID)BigEnd_4int(IsLitEnd,file_length)
@@ -336,11 +336,11 @@
       ! Here's where we start writing as little-endian
       version = 1000
       write(ov_mainID)LitEnd_4int(IsLitEnd,version)             ! 29-32 : FH Byte 28 Version 1000 Integer Little
-      if(debugmode)write(*,*)version,"29-32 : FH Byte 28 Version 1000 Integer Little"
+      if(debugmode)write(global_debug,*)version,"29-32 : FH Byte 28 Version 1000 Integer Little"
       write(ov_indxID)LitEnd_4int(IsLitEnd,version)
       shape_type = 3
       write(ov_mainID)LitEnd_4int(IsLitEnd,shape_type)          ! 33-36 : FH Shape Type Integer Little
-      if(debugmode)write(*,*)shape_type,"33-36 : FH Shape Type Integer Little"
+      if(debugmode)write(global_debug,*)shape_type,"33-36 : FH Shape Type Integer Little"
       write(ov_indxID)LitEnd_4int(IsLitEnd,shape_type)          !         (use code 3 for polyline)
 
       ! Start of real values
@@ -353,10 +353,10 @@
       write(ov_indxID)LitEnd_8real(IsLitEnd,maxval(xmax(1:nrec)))
       write(ov_indxID)LitEnd_8real(IsLitEnd,maxval(ymax(1:nrec)))
       if(debugmode)then
-        write(*,*)minval(xmin(1:nrec)),"37- 44 : FH Bounding Box Xmin Double Little"
-        write(*,*)minval(ymin(1:nrec)),"45- 52 : FH Bounding Box Ymin Double Little"
-        write(*,*)maxval(xmax(1:nrec)),"53- 60 : FH Bounding Box Xmax Double Little"
-        write(*,*)maxval(ymax(1:nrec)),"61- 68 : FH Bounding Box Ymax Double Little"
+        write(global_debug,*)minval(xmin(1:nrec)),"37- 44 : FH Bounding Box Xmin Double Little"
+        write(global_debug,*)minval(ymin(1:nrec)),"45- 52 : FH Bounding Box Ymin Double Little"
+        write(global_debug,*)maxval(xmax(1:nrec)),"53- 60 : FH Bounding Box Xmax Double Little"
+        write(global_debug,*)maxval(ymax(1:nrec)),"61- 68 : FH Bounding Box Ymax Double Little"
       endif
 
       write(ov_mainID)LitEnd_8real(IsLitEnd,zmin)    ! 69- 76 : FH Bounding Box Zmin Double Little
@@ -369,10 +369,10 @@
       write(ov_indxID)LitEnd_8real(IsLitEnd,mmax)
 
       if(debugmode)then
-        write(*,*)zmin,"69- 76 : FH Bounding Box Zmin Double Little"
-        write(*,*)zmax,"77- 84 : FH Bounding Box Zmax Double Little"
-        write(*,*)mmin,"85- 92 : FH Bounding Box Mmin Double Little"
-        write(*,*)mmax,"94-100 : FH Bounding Box Mmax Double Little"
+        write(global_debug,*)zmin,"69- 76 : FH Bounding Box Zmin Double Little"
+        write(global_debug,*)zmax,"77- 84 : FH Bounding Box Zmax Double Little"
+        write(global_debug,*)mmin,"85- 92 : FH Bounding Box Mmin Double Little"
+        write(global_debug,*)mmax,"94-100 : FH Bounding Box Mmax Double Little"
       endif
       ! End of Main File Header
 
@@ -384,9 +384,9 @@
         !  Byte 4 Content Length Content Length Integer Big
         !   Note: content length is the number of 16-bit words
         write(ov_mainID)BigEnd_4int(IsLitEnd,irec)
-        if(debugmode)write(*,*)irec,"Byte 0 Record Number Record Number Integer Big"
+        if(debugmode)write(global_debug,*)irec,"Byte 0 Record Number Record Number Integer Big"
         write(ov_mainID)BigEnd_4int(IsLitEnd,reclen(irec))
-        if(debugmode)write(*,*)reclen(irec),"Byte 4 Content Length Content Length Integer Big"
+        if(debugmode)write(global_debug,*)reclen(irec),"Byte 4 Content Length Content Length Integer Big"
 
         !  PolyLine Record Contents
         !  Byte 0 Shape Type 3 Integer 1 Little
@@ -404,13 +404,13 @@
         write(ov_mainID)LitEnd_4int(IsLitEnd,NumPoints(irec))
 
         if(debugmode)then
-          write(*,*)shape_type,"Byte 0 Shape Type 3 Integer 1 Little"
-          write(*,*)xmin(irec),"Byte 4 xmin Double Little"
-          write(*,*)ymin(irec),"Byte 12 ymin Double Little"
-          write(*,*)xmax(irec),"Byte 20 xmax Double Little"
-          write(*,*)ymax(irec),"Byte 28 ymax Double Little"
-          write(*,*)NumParts(irec),"Byte 36 NumParts NumParts Integer 1 Little"
-          write(*,*)NumPoints(irec),"Byte 40 NumPoints NumPoints Integer 1 Little"
+          write(global_debug,*)shape_type,"Byte 0 Shape Type 3 Integer 1 Little"
+          write(global_debug,*)xmin(irec),"Byte 4 xmin Double Little"
+          write(global_debug,*)ymin(irec),"Byte 12 ymin Double Little"
+          write(global_debug,*)xmax(irec),"Byte 20 xmax Double Little"
+          write(global_debug,*)ymax(irec),"Byte 28 ymax Double Little"
+          write(global_debug,*)NumParts(irec),"Byte 36 NumParts NumParts Integer 1 Little"
+          write(global_debug,*)NumPoints(irec),"Byte 40 NumPoints NumPoints Integer 1 Little"
         endif
         ! Address of the start of the first part is 0
         write(ov_mainID)LitEnd_4int(IsLitEnd,0_4) ! An array of length NumParts with each value
@@ -687,11 +687,6 @@
         IsThere = .false.
       endif
       if(IsThere)then
-        write(*,*)ov_zipfile
-        write(*,*)ov_projfile
-        write(*,*)ov_indxfile
-        write(*,*)ov_mainfile
-        write(*,*)ov_dbasfile
         write(zipcom,212)'zip -r',ov_zipfile,ov_projfile,&
                                   ov_indxfile,ov_mainfile,ov_dbasfile
  212    format(a6,1x,a12,1x,a12,1x,a12,1x,a12,1x,a12)
@@ -766,38 +761,6 @@
       enddo
 
       end subroutine writeShapFileFieldDesArr
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!
-!  Subroutine CHECK_ENDIAN checks if the local system uses Big-Endian
-!  or Little-Endian byte ordering.  Returns the logical value
-!  IsLitEnd = .true. if the system is Little-Endian, .false. otherwise.
-!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!
-!      subroutine check_endian(IsLitEnd)
-!
-!      implicit none
-!
-!      logical          :: IsLitEnd
-!      integer(kind=1)  :: ii(2)
-!      integer(kind=2)  :: s
-!
-!      equivalence (s,ii)
-!
-!      s = 1
-!      IF (ii(1).eq.1)THEN
-!        !write(*,*)'System is Little-Endian'
-!        IsLitEnd = .true.
-!      ELSEIF(ii(2).eq.1)THEN
-!        !write(*,*)'System is Big-Endian'
-!        IsLitEnd = .false.
-!      ELSE
-!        write(*,*)'ERROR: cannot figure out endian-ness!'
-!        stop
-!      ENDIF
-!
-!      end subroutine check_endian
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !

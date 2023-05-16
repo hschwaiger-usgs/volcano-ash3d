@@ -23,6 +23,18 @@
       integer,       parameter :: global_log          = 9
       integer,       parameter :: global_error        = 0
 
+! *     #define SC_LP_DEFAULT   (-1)    this selects the SC default threshold
+! *     #define SC_LP_ALWAYS      0     this will log everything
+! *     #define SC_LP_TRACE       1     this will prefix file and line number
+! *     #define SC_LP_DEBUG       2     any information on the internal state
+! *     #define SC_LP_VERBOSE     3     information on conditions, decisions
+! *     #define SC_LP_INFO        4     the main things a function is doing
+! *     #define SC_LP_STATISTICS  5     important for consistency/performance
+! *     #define SC_LP_PRODUCTION  6     a few lines for a major api function
+! *     #define SC_LP_ESSENTIAL   7     this logs a few lines max per program
+! *     #define SC_LP_ERROR       8     this logs errors only
+! *     #define SC_LP_SILENT      9     this never logs anything
+
       end module io_units
 !##############################################################################
 
@@ -277,6 +289,7 @@
       integer           :: nWriteTimes       !number of deposit files to write
       real(kind=ip), dimension(:), allocatable :: WriteTimes      !times (hrs after first eruption start) to write out files
 
+      integer,parameter :: MAXPROFILES = 100
       integer           :: nvprofiles                                        ! number of vertical profiles to write out
       integer,          dimension(:), allocatable :: i_vprofile, j_vprofile  ! i and j values of vertical profiles
       real(kind=ip),    dimension(:), allocatable :: x_vprofile, y_vprofile  ! x and y of vertical profiles

@@ -56,11 +56,6 @@
 
       DateTime = HS_yyyymmddhhmm_since(time+SimStartHour,BaseYear,useLeap)
 
-      !write(global_info,2) itime,OutputStep_Marker,time,DateTime,dep_vol,aloft_vol,&
-      !                 outflow_vol,tot_vol,CloudLoadArea(1)
-      !write(global_log ,2) itime,OutputStep_Marker,time,DateTime,dep_vol,aloft_vol,&
-      !                 outflow_vol,tot_vol,CloudLoadArea(1)
-
       if(VERB.ge.1)then
         write(global_info,2) itime,OutputStep_Marker,time,DateTime,&
                          SourceCumulativeVol,dep_vol,aloft_vol,&
@@ -83,9 +78,9 @@
 
 !      write(global_info,*)"Total Mass Aloft = ",real(aloft_vol*MagmaDensity*KM3_2_M3*1.0e-9,kind=sp),&
 !                " Tg"
+
       OutputStep_Marker = ' ' 
 
-!2     format(6x,i6,a1,f11.3,3x,a,4f12.5,f13.1)
 2     format(6x,i6,a1,f11.3,3x,a,5f12.5,f13.1)
 
       return

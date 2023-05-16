@@ -59,8 +59,8 @@
       uvy_pd(-1:nxmax+2,-1:nymax+2,ibase:itop) = 0.0_ip    
  
       if (.not.IsLatLon) then
-        write(global_info,*) 'Error: umbrella_winds is not yet set up to handle'
-        write(global_info,*) 'projected coordinates.'
+        write(global_error,*) 'Error: umbrella_winds is not yet set up to handle'
+        write(global_error,*) 'projected coordinates.'
         stop 1
       endif
 
@@ -68,7 +68,6 @@
       ! Convert MassFlux from kg/hr to a local variable in kg/s
       massfluxnow = MassFlux(1)/HR_2_S        !mass flux rate, kg/s
 
-      !write(*,*)"MassFlux(1)=",real(MassFlux(1),kind=4)," kg/hr"
       !If there is only one size class, assume it's an airborne run and
       !multiply the mass flux by 20
       if ((SourceType.eq.'umbrella_air').and.(n_gs_max.eq.1)) then
@@ -128,15 +127,15 @@
           !return                      !return to Mesointerpolator if time=0
         endif
 !      else
-         !if this is the first call to mesointerpolator before the beginning 
-         !of the simulation, the call is made simply to find the first value of 
-         !dt so that ntmax can be assigned using ntmax=int(SimTime_in_hours/dt).  
-         !If the initial value of dt underestimates the average time step used in 
-         !the simulation, it will under-allocate the array size. The radial wind 
-         !speeds in adjacent nodes increase with time during the eruption,
-         !meaning that dt should decrease.  Thus we want to estimate dt using radial 
-         !wind speeds at the end of the eruption, as below.  These wind speeds are 
-         !not actually used in the calculation of advecting ash.
+         ! If this is the first call to mesointerpolator before the beginning 
+         ! of the simulation, the call is made simply to find the first value of 
+         ! dt so that ntmax can be assigned using ntmax=int(SimTime_in_hours/dt).  
+         ! If the initial value of dt underestimates the average time step used in 
+         ! the simulation, it will under-allocate the array size. The radial wind 
+         ! speeds in adjacent nodes increase with time during the eruption,
+         ! meaning that dt should decrease.  Thus we want to estimate dt using radial 
+         ! wind speeds at the end of the eruption, as below.  These wind speeds are 
+         ! not actually used in the calculation of advecting ash.
 !        etime_s      = min(3600.0_ip*Simtime_in_hours,3600.0_ip*e_EndTime(1))
 !      endif
 
@@ -154,7 +153,6 @@
                     etime_s**(-1.0_ip/3.0_ip)  
 
       if (cloud_radius.le.max(SourceNodeWidth_km,SourceNodeHeight_km)) then
-        !write(*,*)"Umbrella : ",etime_s,cloud_radius,edge_speed,SourceNodeWidth_km,SourceNodeHeight_km
         return
       else
         if (IsLatLon) then
@@ -165,25 +163,8 @@
           east_node = min(nxmax,ivent+ew_nodes)
           south_node = max(1,jvent-ns_nodes)
           north_node = min(nymax,jvent+ns_nodes)
-!          write(*,*)"Umbrella : ",etime_s,cloud_radius,edge_speed,ew_nodes,ns_nodes
 
-          !if (time.gt.2.0_ip) then
-          !    write(global_info,*) 'cloud_radius=',cloud_radius
-          !    write(6,*) 'time=',time,', C_Costa=',C_Costa
-          !    write(6,*) 'massfluxnow = ',massfluxnow/1.0e06
-          !    write(6,*) 'Continue?'
-          !    read(5,'(a1)') answer
-          !    if (answer.eq.'n') stop
-          !end if
-          !write(global_info,*) 'cloud_radius=',cloud_radius
-          !write(global_info,*) 'de_km=',de_km,', dn_km=',dn_km
-          !write(global_info,*) 'ew_nodes=',ew_nodes,', ns_nodes=',ns_nodes
-          !write(global_info,*) 'south_node=',south_node,', north_node=',north_node
-          !write(global_info,*) 'west_node=',west_node,', east_node=',east_node
-          !Find distance to volcano from  each node center
-          !write(global_info,12)
-!12        !format('  ii  jj     lat     lon     r/R    uvx    uvy',/, &
-          !       '             deg     deg            m/s    m/s')
+          ! Find distance to volcano from  each node center
           do ii=west_node,east_node
             do jj=south_node,north_node
               !skip the source nodes
@@ -237,9 +218,6 @@
           enddo
         endif
       endif
-      !write(global_info,*) 'Continue?'
-      !read(5,'(a1)') answer
-      !if (answer.eq.'n') stop 1
 
       return
 

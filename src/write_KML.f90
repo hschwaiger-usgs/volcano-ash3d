@@ -524,7 +524,7 @@
 
       !Error traps
 2500  write(global_error,20)
-      write(global_log  ,20)
+      if(VERB.ge.1)write(global_log  ,20)
       stop 1
 
       !Format statements
@@ -1261,7 +1261,7 @@
 
 !     Error traps
 2001  write(global_error,*)'Error opening ash_arrivaltimes_airports.kml.  Program stopped.'
-      write(global_log  ,*)'Error opening ash_arrivaltimes_airports.kml.  Program stopped.'
+      if(VERB.ge.1)write(global_log  ,*)'Error opening ash_arrivaltimes_airports.kml.  Program stopped.'
       stop 1
 
 
