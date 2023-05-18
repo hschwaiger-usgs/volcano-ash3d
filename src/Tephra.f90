@@ -5,7 +5,7 @@
       use io_units
 
       use global_param,  only : &
-         useCalcFallVel,useVariableGSbins,PI,GRAV,VERB
+         useCalcFallVel,useVariableGSbins,PI,GRAV
 
       implicit none
 
@@ -77,11 +77,11 @@
 
       implicit none
 
-      if(VERB.ge.1)then
-        write(global_production,*)"--------------------------------------------------"
-        write(global_production,*)"---------- ALLOCATE_TEPHRA_MET -------------------"
-        write(global_production,*)"--------------------------------------------------"
-      endif
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"--------------------------------------------------"
+        write(outlog(io),*)"---------- ALLOCATE_TEPHRA_MET -------------------"
+        write(outlog(io),*)"--------------------------------------------------"
+      endif;enddo
 
       allocate(vf_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet,n_gs_max))
       allocate(vf_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet,n_gs_max))
@@ -330,8 +330,10 @@
           if(onF.ge.Dahneke_LD(j).and.onF.lt.Dahneke_LD(j+1)) Dahni = j
         enddo
         if(Dahni.eq.0)then
-          if(VERB.ge.1)write(global_info,*)"WARNING: Could not determine slip correction factor."
-          if(VERB.ge.1)write(global_info,*)"         Setting factor to 1.0"
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"WARNING: Could not determine slip correction factor."
+            write(outlog(io),*)"         Setting factor to 1.0"
+          endif;enddo
           Tephra_gsF_fac(i,5) = 1.0_ip
         else
           Tephra_gsF_fac(i,5) = Dahneke_RL(Dahni) + (onF-Dahneke_LD(Dahni))* &
@@ -357,21 +359,27 @@
       densnow = 1.2_ip           !air density at STP (approximate)
       viscnow = 1.0e-05_ip       !air viscosity at STP (approximate)
 
-      if(VERB.ge.1)write(global_info,*) 'WARNING: Sorting grain-size bins by vf'
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*) 'WARNING: Sorting grain-size bins by vf'
+      endif;enddo
 
       !Calculate fall velocity at 1 atmosphere and assume the relative values
       !are the same at higher elevation
       allocate(vf_now(n_gs_max))
-      if(VERB.ge.1)write(global_info,*) 'GSD before sorting:'
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*) 'GSD before sorting:'
+      endif;enddo
       do l=1,n_gs_max
          if (useCalcFallVel) then
             vfnow = vset_WH(densnow,Tephra_rho_m(l),viscnow, &
                                 Tephra_gsdiam(l),Tephra_gsF_fac(l,1),Tephra_gsF_fac(l,2))
             vf_now(l) = vfnow
-            if(VERB.ge.1)write(global_info,*)&
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)&
                        'l = ',l,', gsdiam = ',real(Tephra_gsdiam(l),kind=sp),&
                        ', rho_m = ',real(Tephra_rho_m(l),kind=sp),&
                        ', vf_now(l) = ',real(vf_now(l),kind=sp)
+           endif;enddo
          else
             vf_now(l) = Tephra_v_s(l)
          endif
@@ -447,8 +455,10 @@
       ! distribution in phi.
 
       if(sigma.le.0.0_ip)then
-        write(global_error,*)"ERROR: StdDev <= 0.0 for supplimental GS"
-        write(global_error,*)"       distribution"
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: StdDev <= 0.0 for supplimental GS"
+          write(errlog(io),*)"       distribution"
+        endif;enddo
         stop 1
       endif
 
@@ -463,7 +473,9 @@
       enddo
 
       if (n_gs_max.eq.0)then
-        write(global_error,*)"ERROR: Must have n_gs_max.ge.1"
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: Must have n_gs_max.ge.1"
+        endif;enddo
         stop 1
       else if (n_gs_max.eq.1)then
         suppl_frac(1)=1.0_ip
@@ -474,15 +486,17 @@
           phi_boundaries(i) = (phi_boundaries(i) - mu)/sigma
         enddo
         if(phi_boundaries(1).lt.0.0_ip)then
-          write(global_error,*)"ERROR: Mean is not within GS-distribution."
-          write(global_error,*)&
-             "        Bin    :       gsdiam        :",&
-             "        phi    :       right bin boundary (phi)"
-          do i = 1,n_gs_max
-            write(global_error,*)i,real(Tephra_gsdiam(i),kind=sp),real(phi(i),kind=sp),&
-                        real(phi_boundaries(i),kind=sp)
-          enddo
-          write(global_error,*)"Mean = ",mu
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: Mean is not within GS-distribution."
+            write(errlog(io),*)&
+               "        Bin    :       gsdiam        :",&
+               "        phi    :       right bin boundary (phi)"
+            do i = 1,n_gs_max
+              write(errlog(io),*)i,real(Tephra_gsdiam(i),kind=sp),real(phi(i),kind=sp),&
+                          real(phi_boundaries(i),kind=sp)
+            enddo
+            write(errlog(io),*)"Mean = ",mu
+          endif;enddo
           stop 1
         endif
         if(n_gs_max.eq.2)then
@@ -561,8 +575,9 @@
         if(IsAloft(n).and. &                     ! if bin is currently flagged as aloft
            mass_aloft(n).lt.AIRBORNE_THRESH)then ! but the mass is less than the thresh
           IsAloft(n) = .false.
-          if(VERB.ge.1)write(global_info,*)"Grainsize bin ",n," has fully deposited or left the domain."
-          if(VERB.ge.1)write(global_log ,*)"Grainsize bin ",n," has fully deposited or left the domain."
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Grainsize bin ",n," has fully deposited or left the domain."
+          endif;enddo
         else
           n_gs_aloft = n_gs_aloft + 1
         endif

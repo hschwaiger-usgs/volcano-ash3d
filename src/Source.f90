@@ -2,9 +2,6 @@
 
       use precis_param
 
-      use global_param,  only : &
-         VERB
-
       use io_units
 
       use global_param
@@ -330,16 +327,15 @@
       ! Make sure the sum of the fluxes in all the cells equals the total flux
       !if (abs(SumSourceNodeFlux-1.0_ip).gt.1.0e-4_ip) then
       if (abs(SumSourceNodeFlux-1.0_ip).gt.EPS_SMALL) then
-         write(global_error,2) SumSourceNodeFlux-1.0_ip
-         if(VERB.ge.1)then
-           write(global_log ,2) SumSourceNodeFlux-1.0_ip
-           write(global_info,*)"SourceType = ",SourceType
-           write(global_info,*)"Height_now =",Height_now
-           write(global_info,*)"z_cell_top,z_cell_bot = ",z_cell_top,z_cell_bot
-           write(global_info,*)"MassFluxRate_now = ",MassFluxRate_now
-           write(global_info,*)"n_gs_max = ",n_gs_max
-           write(global_info,*)"SourceNodeFlux(1:nz)=",SourceNodeFlux(:,1)
-         endif
+         do io=1,2;if(VB(io).le.verbosity_error)then
+           write(errlog(io) ,2) SumSourceNodeFlux-1.0_ip
+           write(errlog(io),*)"SourceType = ",SourceType
+           write(errlog(io),*)"Height_now =",Height_now
+           write(errlog(io),*)"z_cell_top,z_cell_bot = ",z_cell_top,z_cell_bot
+           write(errlog(io),*)"MassFluxRate_now = ",MassFluxRate_now
+           write(errlog(io),*)"n_gs_max = ",n_gs_max
+           write(errlog(io),*)"SourceNodeFlux(1:nz)=",SourceNodeFlux(:,1)
+         endif;enddo
          stop 1
       endif
 
@@ -399,8 +395,9 @@
                 ! If it ends AFTER the END of the NEXT eruption, stop the
                 ! program.
                 ! This means that the chosen dt is too large.
-                write(global_error,1)  ieruption+1
-                if(VERB.ge.1)write(global_log ,1)  ieruption+1
+                do io=1,2;if(VB(io).le.verbosity_error)then
+                  write(errlog(io),1)  ieruption+1
+                endif;enddo
                 stop 1
               elseif (tend.gt.e_StartTime(ieruption+1)) then
                 ! If it ends AFTER the START of the NEXT eruption,
@@ -452,8 +449,9 @@
                   ieruption=ieruption+1
                   !If it ends after the next eruption ends, stop the program
                 else
-                  write(global_info,1)  ieruption+1
-                  if(VERB.ge.1)write(global_log ,1)  ieruption+1
+                  do io=1,2;if(VB(io).le.verbosity_error)then
+                    write(errlog(io),1)  ieruption+1
+                  endif;enddo
                   stop 1
                 endif
                 !If if ends after the last eruption ends, interpolate and exit

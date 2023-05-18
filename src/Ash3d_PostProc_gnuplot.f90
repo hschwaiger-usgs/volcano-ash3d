@@ -4,9 +4,6 @@
 
       use io_units
 
-      use global_param,  only : &
-         VERB
-
       contains
 
 !##############################################################################
@@ -106,11 +103,13 @@
         write(gnucoastfile,'(a45)')"/opt/USGS/Ash3d/share/post_proc/world_50m.txt"
         inquire(file=gnucoastfile,exist=IsThere2)
         if(.not.IsThere2)then
-          write(global_error,*)"Could not find required file world_50m.txt"
-          write(global_error,*)"This file is available at:"
-          write(global_error,*)"  http://www.gnuplotting.org/data/world_50m.txt"
-          write(global_error,*)"Please download this file to the current working directory or"
-          write(global_error,*)"copy to /opt/USGS/Ash3d/share/post_proc/"
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"Could not find required file world_50m.txt"
+            write(errlog(io),*)"This file is available at:"
+            write(errlog(io),*)"  http://www.gnuplotting.org/data/world_50m.txt"
+            write(errlog(io),*)"Please download this file to the current working directory or"
+            write(errlog(io),*)"copy to /opt/USGS/Ash3d/share/post_proc/"
+          endif;enddo
           stop 1
         endif
       endif
@@ -186,8 +185,10 @@
         ContourLev(1:nConLev) = Con_DepTime_Lev(1:nConLev)
         zrgb(1:nConLev,1:3) = Con_DepTime_RGB(1:nConLev,1:3)
       elseif(iprod.eq.8)then   ! ashfall arrival at airports/POI (mm)
-        write(global_error,*)"ERROR: No map PNG output option for airport arrival time data."
-        write(global_error,*)"       Should not be in write_2Dmap_PNG_dislin"
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: No map PNG output option for airport arrival time data."
+          write(errlog(io),*)"       Should not be in write_2Dmap_PNG_dislin"
+        endif;enddo
         stop 1
       elseif(iprod.eq.9)then   ! ash-cloud concentration
         write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
@@ -260,16 +261,22 @@
         ContourLev = (/0.1_ip, 0.3_ip, 1.0_ip, 3.0_ip, &
                 10.0_ip, 30.0_ip, 100.0_ip, 300.0_ip/)
       elseif(iprod.eq.16)then   ! profile plots
-        write(global_error,*)"ERROR: No map PNG output option for vertical profile data."
-        write(global_error,*)"       Should not be in write_2Dmap_PNG_dislin"
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: No map PNG output option for vertical profile data."
+          write(errlog(io),*)"       Should not be in write_2Dmap_PNG_dislin"
+        endif;enddo
         stop 1
       else
-        write(global_error,*)"ERROR: unexpected variable"
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: unexpected variable"
+        endif;enddo
         stop 1
       endif
 
       if(writeContours)then
-        if(VERB.ge.1)write(global_info,*)"Running Gnuplot to calculate contours lines"
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(outlog(io),*)"Running Gnuplot to calculate contours lines"
+        endif;enddo
         write(outfile_name,'(a14)')'tmp.png'
         allocate(ContourDataNcurves(nConLev))
         allocate(ContourDataNpoints(nConLev,Contour_MaxCurves))
@@ -280,7 +287,9 @@
         ContourDataX(:,:,:)     = 0.0_ip
         ContourDataY(:,:,:)     = 0.0_ip
       else
-        if(VERB.ge.1)write(global_info,*)"Running Gnuplot to generate contour plot"
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(outlog(io),*)"Running Gnuplot to generate contour plot"
+        endif;enddo
       endif
 
       write(dp_outfile,53) "outvar.dat"
@@ -394,7 +403,9 @@
       if(writeContours)then
 
         ! Read outvar.con
-        if(VERB.ge.1)write(global_info,*)"Now reading outvar.con and loading contour data."
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Now reading outvar.con and loading contour data."
+        endif;enddo
         open(54,file=dp_confile,status='old')
         ! In the gnuplot contour file, all contours of a certain level have a header
         ! in the following format:

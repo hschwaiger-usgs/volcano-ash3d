@@ -2,9 +2,6 @@
 
       use precis_param
 
-      use global_param,  only : &
-         VERB
-
       use io_units
 
       use mesh,          only : &
@@ -28,11 +25,11 @@
 
       implicit none
 
-      if(VERB.ge.1)then
-        write(global_production,*)"--------------------------------------------------"
-        write(global_production,*)"---------- ALLOC_ARRAYS --------------------------"
-        write(global_production,*)"--------------------------------------------------"
-      endif
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"--------------------------------------------------"
+        write(outlog(io),*)"---------- ALLOC_ARRAYS --------------------------"
+        write(outlog(io),*)"--------------------------------------------------"
+      endif;enddo
 
       ! io_data is allocated in Read_Control_File
 
@@ -50,13 +47,10 @@
 !###############################################################################
       subroutine dealloc_arrays
 
-      use global_param,  only : &
-         VERB
+      use io_units
 
       use io_data,       only : &
            Deallocate_io_data
-
-      use io_units
 
       use mesh,          only : &
            Deallocate_mesh
@@ -90,7 +84,9 @@
 
       implicit none
 
-      if(VERB.ge.1)write(global_info,*)"Cleaning up allocated memory"
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"Cleaning up allocated memory"
+      endif;enddo
 
       call Deallocate_io_data
       call Deallocate_mesh

@@ -7,7 +7,7 @@
       use io_units
 
       use global_param,  only : &
-         nmods,GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH,VERB
+         nmods,GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH
 
       use mesh,          only : &
          ZPADDING
@@ -34,7 +34,9 @@
       real(kind=ip),dimension(MAXPARAMS)     :: pvalue
       integer :: i
 
-      write(global_info,*)"    Searching for OPTMOD=RESETPARAMS"
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"    Searching for OPTMOD=RESETPARAMS"
+      endif;enddo
       nmods = 0
       open(unit=10,file=infile,status='old',err=1900)
 
@@ -76,300 +78,341 @@
         if (pname(i).eq.'MagmaDensity') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(global_error,*)"ERROR: MagmaDensity must be > 0"
+            write(errlog(io),*)"ERROR: MagmaDensity must be > 0"
             stop 1
           elseif (pvalue(i).gt.10000.0_ip)then
-            if(VERB.ge.1)then
-              write(global_info,*)"WARNING: MagmaDensity seems high."
-              write(global_info,*)"         Units should be kg/m3"
-            endif
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"WARNING: MagmaDensity seems high."
+              write(outlog(io),*)"         Units should be kg/m3"
+            endif;enddo
           endif
-          if(VERB.ge.1)write(global_info,*)"  Resetting MagmaDensity from ",MagmaDensity,&
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"  Resetting MagmaDensity from ",MagmaDensity,&
                               "to ",pvalue(i)
+          endif;enddo
           MagmaDensity = pvalue(i)
         elseif (pname(i).eq.'DepositDensity') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(global_error,*)"ERROR: DepositDensity must be > 0"
+            write(errlog(io),*)"ERROR: DepositDensity must be > 0"
             stop 1
           elseif (pvalue(i).gt.10000.0_ip)then
-            if(VERB.ge.1)then
-              write(global_info,*)"WARNING: DepositDensity seems high."
-              write(global_info,*)"         Units should be kg/m2"
-            endif
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"WARNING: DepositDensity seems high."
+              write(outlog(io),*)"         Units should be kg/m2"
+            endif;enddo
           endif
-          if(VERB.ge.1)write(global_info,*)"  Resetting DepositDensity from ",DepositDensity,&
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"  Resetting DepositDensity from ",DepositDensity,&
                               "to ",pvalue(i)
+          endif;enddo 
           DepositDensity = pvalue(i)
         elseif (pname(i).eq.'LAM_GS_THRESH') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(global_error,*)"ERROR: LAM_GS_THRESH must be > 0"
+            write(errlog(io),*)"ERROR: LAM_GS_THRESH must be > 0"
             stop 1
           elseif (pvalue(i).gt.1000.0_ip)then
-            if(VERB.ge.1)then
-              write(global_info,*)"WARNING: LAM_GS_THRESH seems high."
-              write(global_info,*)"         Units should be m"
-            endif
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"WARNING: LAM_GS_THRESH seems high."
+              write(outlog(io),*)"         Units should be m"
+            endif;enddo
           endif
-          if(VERB.ge.1)write(global_info,*)"  Resetting LAM_GS_THRESH from ",LAM_GS_THRESH,&
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"  Resetting LAM_GS_THRESH from ",LAM_GS_THRESH,&
                               "to ",pvalue(i)
+          endif;enddo
           LAM_GS_THRESH = pvalue(i)
         elseif (pname(i).eq.'AIRBORNE_THRESH') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(global_error,*)"ERROR: AIRBORNE_THRESH must be > 0"
+            write(errlog(io),*)"ERROR: AIRBORNE_THRESH must be > 0"
             stop 1
           elseif (pvalue(i).gt.1.0_ip)then
-            if(VERB.ge.1)then
-              write(global_info,*)"WARNING: AIRBORNE_THRESH seems high."
-              write(global_info,*)"         Units should be kg"
-            endif
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"WARNING: AIRBORNE_THRESH seems high."
+              write(outlog(io),*)"         Units should be kg"
+            endif;enddo
           endif
-          if(VERB.ge.1)write(global_info,*)"  Resetting AIRBORNE_THRESH from ",AIRBORNE_THRESH,&
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"  Resetting AIRBORNE_THRESH from ",AIRBORNE_THRESH,&
                               "to ",pvalue(i)
+          endif;enddo
           AIRBORNE_THRESH = pvalue(i)
         elseif (pname(i).eq.'GRAV') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(global_error,*)"ERROR: GRAV must be > 0"
+            write(errlog(io),*)"ERROR: GRAV must be > 0"
             stop 1
           elseif (pvalue(i).gt.20.0_ip)then
-            if(VERB.ge.1)then
-              write(global_info,*)"WARNING: GRAV seems high."
-              write(global_info,*)"         Units should be m/s2"
-            endif
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"WARNING: GRAV seems high."
+              write(outlog(io),*)"         Units should be m/s2"
+            endif;enddo
           endif
-          if(VERB.ge.1)write(global_info,*)"  Resetting GRAV from ",GRAV,&
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"  Resetting GRAV from ",GRAV,&
                               "to ",pvalue(i)
+          endif;enddo
           GRAV = pvalue(i)
         elseif (pname(i).eq.'RAD_EARTH') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(global_error,*)"ERROR: RAD_EARTH must be > 0"
+            write(errlog(io),*)"ERROR: RAD_EARTH must be > 0"
             stop 1
           elseif (pvalue(i).gt.10000.0_ip)then
-            if(VERB.ge.1)then
-              write(global_info,*)"WARNING: RAD_EARTH seems high."
-              write(global_info,*)"         Units should be km"
-            endif
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"WARNING: RAD_EARTH seems high."
+              write(outlog(io),*)"         Units should be km"
+            endif;enddo
           endif
-          if(VERB.ge.1)write(global_info,*)"  Resetting RAD_EARTH from ",RAD_EARTH,&
+          do io=1,2;if(VB(io).le.verbosity_info)then          
+            write(outlog(io),*)"  Resetting RAD_EARTH from ",RAD_EARTH,&
                               "to ",pvalue(i)
+          endif;enddo
           RAD_EARTH = pvalue(i)
         elseif (pname(i).eq.'CFL') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(global_error,*)"ERROR: CFL must be > 0"
+            write(errlog(io),*)"ERROR: CFL must be > 0"
             stop 1
           elseif (pvalue(i).ge.1.0_ip)then
-            write(global_error,*)"ERROR: CFL must be < 1"
+            write(errlog(io),*)"ERROR: CFL must be < 1"
             stop 1
           endif
-          if(VERB.ge.1)write(global_info,*)"  Resetting CFL from ",CFL,&
+          do io=1,2;if(VB(io).le.verbosity_info)then            
+            write(outlog(io),*)"  Resetting CFL from ",CFL,&
                               "to ",pvalue(i)
+          endif;enddo 
           CFL = pvalue(i)
         elseif (pname(i).eq.'DT_MIN') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(global_error,*)"ERROR: DT_MIN must be > 0"
+            write(errlog(io),*)"ERROR: DT_MIN must be > 0"
             stop 1
           elseif (pvalue(i).gt.1.0_ip)then
-            if(VERB.ge.1)then
-              write(global_info,*)"WARNING: DT_MIN seems high."
-              write(global_info,*)"         Units should be hours"
-            endif
+            do io=1,2;if(VB(io).le.verbosity_info)then            
+              write(outlog(io),*)"WARNING: DT_MIN seems high."
+              write(outlog(io),*)"         Units should be hours"
+            endif;enddo
           endif
-          if(VERB.ge.1)write(global_info,*)"  Resetting DT_MIN from ",DT_MIN,&
+          do io=1,2;if(VB(io).le.verbosity_info)then         
+            write(outlog(io),*)"  Resetting DT_MIN from ",DT_MIN,&
                               "to ",pvalue(i)
+          endif;enddo 
           DT_MIN = pvalue(i)
 
         elseif (pname(i).eq.'DT_MAX') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(global_error,*)"ERROR: DT_MAX must be > 0"
+            write(errlog(io),*)"ERROR: DT_MAX must be > 0"
             stop 1
           elseif (pvalue(i).le.DT_MIN)then
-            write(global_error,*)"ERROR: DT_MAX must be > DT_MIN"
+            write(errlog(io),*)"ERROR: DT_MAX must be > DT_MIN"
             stop 1
           elseif (pvalue(i).gt.10.0_ip)then
-            if(VERB.ge.1)then
-              write(global_info,*)"WARNING: DT_MAX seems high."
-              write(global_info,*)"         Units should be hours"
-            endif
+            do io=1,2;if(VB(io).le.verbosity_info)then         
+              write(outlog(io),*)"WARNING: DT_MAX seems high."
+              write(outlog(io),*)"         Units should be hours"
+            endif;enddo
           endif
-          if(VERB.ge.1)write(global_info,*)"  Resetting DT_MAX from ",DT_MAX,&
+          do io=1,2;if(VB(io).le.verbosity_info)then         
+            write(outlog(io),*)"  Resetting DT_MAX from ",DT_MAX,&
                               "to ",pvalue(i)
+          endif;enddo
           DT_MAX = pvalue(i)
         elseif (pname(i).eq.'ZPADDING') then
           ! error-checking
           if (pvalue(i).le.1.0_ip)then
-            write(global_error,*)"ERROR: ZPADDING must be > 1"
+            write(errlog(io),*)"ERROR: ZPADDING must be > 1"
             stop 1
           elseif (pvalue(i).gt.5.0_ip)then
-            if(VERB.ge.1)then
-              write(global_info,*)"WARNING: ZPADDING seems high."
-              write(global_info,*)"         This is the factor times the plume height (~1.3)"
-            endif
+            do io=1,2;if(VB(io).le.verbosity_info)then         
+              write(outlog(io),*)"WARNING: ZPADDING seems high."
+              write(outlog(io),*)"         This is the factor times the plume height (~1.3)"
+            endif;enddo
           endif
-          if(VERB.ge.1)write(global_info,*)"  Resetting ZPADDING from ",ZPADDING,&
+          do io=1,2;if(VB(io).le.verbosity_info)then         
+            write(outlog(io),*)"  Resetting ZPADDING from ",ZPADDING,&
                               "to ",pvalue(i)
+          endif;enddo
           ZPADDING = pvalue(i)
         elseif (pname(i).eq.'DEPO_THRESH') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(global_error,*)"ERROR: DEPO_THRESH must be > 0"
+            write(errlog(io),*)"ERROR: DEPO_THRESH must be > 0"
             stop 1
           elseif (pvalue(i).gt.5.0_ip)then
-            if(VERB.ge.1)then
-              write(global_info,*)"WARNING: DEPO_THRESH seems high."
-              write(global_info,*)&
+            do io=1,2;if(VB(io).le.verbosity_info)then         
+              write(outlog(io),*)"WARNING: DEPO_THRESH seems high."
+              write(outlog(io),*)&
                 "         This is the threshold to track deposit (mm)"
-            endif
+            endif;enddo
           endif
-          if(VERB.ge.1)write(global_info,*)"  Resetting DEPO_THRESH from ",DEPO_THRESH,&
+          do io=1,2;if(VB(io).le.verbosity_info)then         
+            write(outlog(io),*)"  Resetting DEPO_THRESH from ",DEPO_THRESH,&
                               "to ",pvalue(i)
+          endif;enddo
           DEPO_THRESH = pvalue(i)
         elseif (pname(i).eq.'DEPRATE_THRESH') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(global_error,*)"ERROR: DEPRATE_THRESH must be > 0"
+            write(errlog(io),*)"ERROR: DEPRATE_THRESH must be > 0"
             stop 1
           elseif (pvalue(i).gt.1.0_ip)then
-            if(VERB.ge.1)then
-              write(global_info,*)"WARNING: seems high."
-              write(global_info,*)&
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"WARNING: seems high."
+              write(outlog(io),*)&
                 "         This is the threshold to track deposit rate (mm/hr)"
-            endif
+            endif;enddo
           endif
-          if(VERB.ge.1)write(global_info,*)"  Resetting DEPRATE_THRESH from ",DEPRATE_THRESH,&
+          do io=1,2;if(VB(io).le.verbosity_info)then         
+            write(outlog(io),*)"  Resetting DEPRATE_THRESH from ",DEPRATE_THRESH,&
                               "to ",pvalue(i)
+          endif;enddo
           DEPRATE_THRESH = pvalue(i)
         elseif (pname(i).eq.'CLOUDCON_THRESH') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(global_error,*)"ERROR: CLOUDCON_THRESH must be > 0"
+            write(errlog(io),*)"ERROR: CLOUDCON_THRESH must be > 0"
             stop 1
           elseif (pvalue(i).gt.5.0_ip)then
-            if(VERB.ge.1)then
-              write(global_info,*)"WARNING: CLOUDCON_THRESH seems high."
-              write(global_info,*)&
+            do io=1,2;if(VB(io).le.verbosity_info)then         
+              write(outlog(io),*)"WARNING: CLOUDCON_THRESH seems high."
+              write(outlog(io),*)&
                 "         This is the threshold to track cloud concentration (t/km3)"
-            endif
+            endif;enddo
           endif
-          if(VERB.ge.1)write(global_info,*)"  Resetting CLOUDCON_THRESH from ",CLOUDCON_THRESH,&
+          do io=1,2;if(VB(io).le.verbosity_info)then         
+            write(outlog(io),*)"  Resetting CLOUDCON_THRESH from ",CLOUDCON_THRESH,&
                               "to ",pvalue(i)
+          endif;enddo
           CLOUDCON_THRESH = pvalue(i)
         elseif (pname(i).eq.'CLOUDCON_GRID_THRESH') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(global_error,*)"ERROR: CLOUDCON_GRID_THRESH must be > 0"
+            write(errlog(io),*)"ERROR: CLOUDCON_GRID_THRESH must be > 0"
             stop 1
           elseif (pvalue(i).gt.1.0e-1_ip)then
-            if(VERB.ge.1)then
-              write(global_info,*)"WARNING: CLOUDCON_GRID_THRESH seems high."
-              write(global_info,*)&
+            do io=1,2;if(VB(io).le.verbosity_info)then         
+              write(outlog(io),*)"WARNING: CLOUDCON_GRID_THRESH seems high."
+              write(outlog(io),*)&
                 "         This is the concentration threshold to identify regions to calculate (t/km3)"
-             endif
+             endif;enddo
           endif
-          if(VERB.ge.1)write(global_info,*)"  Resetting CLOUDCON_GRID_THRESH from ",CLOUDCON_GRID_THRESH,&
+          do io=1,2;if(VB(io).le.verbosity_info)then         
+            write(outlog(io),*)"  Resetting CLOUDCON_GRID_THRESH from ",CLOUDCON_GRID_THRESH,&
                               "to ",pvalue(i)
+          endif;enddo
           CLOUDCON_GRID_THRESH = pvalue(i)
         elseif (pname(i).eq.'CLOUDLOAD_THRESH') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(global_error,*)"ERROR: CLOUDLOAD_THRESH must be > 0"
+            write(errlog(io),*)"ERROR: CLOUDLOAD_THRESH must be > 0"
             stop 1
           elseif (pvalue(i).gt.5.0_ip)then
-            if(VERB.ge.1)then
-              write(global_info,*)"WARNING: CLOUDLOAD_THRESH seems high."
-              write(global_info,*)&
+            do io=1,2;if(VB(io).le.verbosity_info)then         
+              write(outlog(io),*)"WARNING: CLOUDLOAD_THRESH seems high."
+              write(outlog(io),*)&
                 "         This is the threshold to track cloud load (t/km2)"
-            endif
+            endif;enddo
           endif
-          if(VERB.ge.1)write(global_info,*)"  Resetting CLOUDLOAD_THRESH from ",CLOUDLOAD_THRESH,&
+          do io=1,2;if(VB(io).le.verbosity_info)then         
+            write(outlog(io),*)"  Resetting CLOUDLOAD_THRESH from ",CLOUDLOAD_THRESH,&
                               "to ",pvalue(i)
+          endif;enddo
           CLOUDLOAD_THRESH = pvalue(i)
         elseif (pname(i).eq.'THICKNESS_THRESH') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(global_error,*)"ERROR: THICKNESS_THRESH must be > 0"
+            write(errlog(io),*)"ERROR: THICKNESS_THRESH must be > 0"
             stop 1
           elseif (pvalue(i).gt.5.0_ip)then
-            if(VERB.ge.1)then
-              write(global_info,*)"WARNING: THICKNESS_THRESH seems high."
-              write(global_info,*)&
+            do io=1,2;if(VB(io).le.verbosity_info)then         
+              write(outlog(io),*)"WARNING: THICKNESS_THRESH seems high."
+              write(outlog(io),*)&
                 "         This is the threshold to track deposit (mm)"
-            endif
+            endif;enddo
           endif
-          if(VERB.ge.1)write(global_info,*)"  Resetting THICKNESS_THRESH from ",THICKNESS_THRESH,&
+          do io=1,2;if(VB(io).le.verbosity_info)then         
+            write(outlog(io),*)"  Resetting THICKNESS_THRESH from ",THICKNESS_THRESH,&
                               "to ",pvalue(i)
+          endif;enddo
           THICKNESS_THRESH = pvalue(i)
-
         elseif (pname(i).eq.'DBZ_THRESH') then
           ! error-checking
           if (pvalue(i).ge.0.0_ip)then
-            write(global_error,*)"ERROR: DBZ_THRESH must be < 0"
+            write(errlog(io),*)"ERROR: DBZ_THRESH must be < 0"
             stop 1
           elseif (pvalue(i).lt.-1000.0_ip)then
-            if(VERB.ge.1)then
-              write(global_info,*)"WARNING: DBZ_THRESH seems low."
-              write(global_info,*)&
+            do io=1,2;if(VB(io).le.verbosity_info)then         
+              write(outlog(io),*)"WARNING: DBZ_THRESH seems low."
+              write(outlog(io),*)&
                 "         This is the threshold to reflectivity (db)"
-            endif
+            endif;enddo
           endif
-          if(VERB.ge.1)write(global_info,*)"  Resetting DBZ_THRESH from ",DBZ_THRESH,&
+          do io=1,2;if(VB(io).le.verbosity_info)then         
+            write(outlog(io),*)"  Resetting DBZ_THRESH from ",DBZ_THRESH,&
                               "to ",pvalue(i)
+          endif;enddo
           DBZ_THRESH = pvalue(i)
         elseif (pname(i).eq.'lambda') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(global_error,*)"ERROR: lambda must be > 0"
+            write(errlog(io),*)"ERROR: lambda must be > 0"
             stop 1
           elseif (pvalue(i).gt.100.0_ip)then
-            if(VERB.ge.1)then
-              write(global_info,*)"WARNING: lambda seems high."
-              write(global_info,*)&
+            do io=1,2;if(VB(io).le.verbosity_info)then         
+              write(outlog(io),*)"WARNING: lambda seems high."
+              write(outlog(io),*)&
                 "         This is the Suzuki parameter for the umbrella"
-            endif
+            endif;enddo
           endif
-          !if(VERB.ge.1)write(global_info,*)"  Resetting lambda from ",lambda,&
+          !do io=1,2;if(VB(io).le.verbosity_info)then         
+          !  write(outlog(io),*)"  Resetting lambda from ",lambda,&
           !                    "to ",pvalue(i)
+          !endif;enddo
           !lambda = pvalue(i)
         elseif (pname(i).eq.'N_BV') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(global_error,*)"ERROR:  must be > 0"
+            write(errlog(io),*)"ERROR:  must be > 0"
             stop 1
           elseif (pvalue(i).gt.10.0_ip)then
-            if(VERB.ge.1)then
-              write(global_info,*)"WARNING: N_BV seems high."
-              write(global_info,*)&
+            do io=1,2;if(VB(io).le.verbosity_info)then         
+              write(outlog(io),*)"WARNING: N_BV seems high."
+              write(outlog(io),*)&
                 "         This is the Brunt-Vaisala frequency (1/s)"
-            endif
+            endif;enddo
           endif
-          !if(VERB.ge.1)write(global_info,*)"  Resetting N_BV from ",N_BV,&
+          !do io=1,2;if(VB(io).le.verbosity_info)then         
+          !  write(outlog(io),*)"  Resetting N_BV from ",N_BV,&
           !                    "to ",pvalue(i)
+          !endif;enddo
           !N_BV = pvalue(i)
         elseif (pname(i).eq.'k_entrainment') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(global_error,*)"ERROR: k_entrainment must be > 0"
+            write(errlog(io),*)"ERROR: k_entrainment must be > 0"
             stop 1
           elseif (pvalue(i).gt.5.0_ip)then
-            if(VERB.ge.1)then
-              write(global_info,*)"WARNING: k_entrainment seems high."
-              write(global_info,*)&
+            do io=1,2;if(VB(io).le.verbosity_info)then         
+              write(outlog(io),*)"WARNING: k_entrainment seems high."
+              write(outlog(io),*)&
                 "         This is the umbrella entrainment coefficient"
-            endif
+            endif;enddo
           endif
-          !if(VERB.ge.1)write(global_info,*)"  Resetting k_entrainment from ",k_entrainment,&
+          !do io=1,2;if(VB(io).le.verbosity_info)then         
+          !  write(outlog(io),*)"  Resetting k_entrainment from ",k_entrainment,&
           !                    "to ",pvalue(i)
+          !endif;enddo
           !k_entrainment = pvalue(i)
         else
-          write(global_info,*)"Found unknown parameter/value: ", &
-                              pname(i),pvalue(i)
-          write(global_info,*)"No action taken."
+          do io=1,2;if(VB(io).le.verbosity_info)then         
+            write(outlog(io),*)"Found unknown parameter/value: ", &
+                                pname(i),pvalue(i)
+            write(outlog(io),*)"No action taken."
+          endif;enddo
         endif
       enddo
 
@@ -377,12 +420,10 @@
 
       return
 
-1900  write(global_error,*)  'error: cannot find input file: ',infile
-      write(global_error,*)  'Program stopped'
-      if(VERB.ge.1)then
-        write(global_log,*)  'error: cannot find input file: ',infile
-        write(global_log,*)  'Program stopped'
-      endif
+1900  do io=1,2;if(VB(io).le.verbosity_error)then
+        write(errlog(io),*)  'error: cannot find input file: ',infile
+        write(errlog(io),*)  'Program stopped'
+      endif;enddo
       stop 1
 
       end subroutine input_data_ResetParams

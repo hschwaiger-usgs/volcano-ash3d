@@ -58,9 +58,11 @@
       uvx_pd(-1:nxmax+2,-1:nymax+2,ibase:itop) = 0.0_ip               !set umbrella winds to zero
       uvy_pd(-1:nxmax+2,-1:nymax+2,ibase:itop) = 0.0_ip    
  
-      if (.not.IsLatLon) then
-        write(global_error,*) 'Error: umbrella_winds is not yet set up to handle'
-        write(global_error,*) 'projected coordinates.'
+      if(.not.IsLatLon)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*) 'Error: umbrella_winds is not yet set up to handle'
+          write(errlog(io),*) 'projected coordinates.'
+        endif;enddo
         stop 1
       endif
 
@@ -87,33 +89,25 @@
       qnow  = C_Costa*sqrt(k_entrainment)*massfluxnow**(3.0_ip/4.0_ip) / &
               N_BV**(5.0_ip/4.0_ip)
 
-      if (time.lt.EPS_SMALL)  then
-          write(global_info,*) 
-          write(global_info,*) 'in Umbrella_winds'
-          write(global_info,*) '  massfluxnow (kg/s) = ',real(massfluxnow,kind=sp)
-          write(global_info,*) '             C_Costa = ',real(C_Costa,kind=sp)
-          write(global_info,*) '                N_BV = ',real(N_BV,kind=sp)
-          write(global_info,*) '       k_entrainment = ',real(k_entrainment,kind=sp)
-          write(global_info,*) '            Q (m3/s) = ',real(qnow,kind=sp)
-          write(global_info,*)
-          write(global_log,*) 
-          write(global_log,*)  'in Umbrella_winds'
-          write(global_log,*)  '  massfluxnow (kg/s) = ',real(massfluxnow,kind=sp)
-          write(global_log,*)  '             C_Costa = ',real(C_Costa,kind=sp)
-          write(global_log,*)  '                N_BV = ',real(N_BV,kind=sp)
-          write(global_log,*)  '       k_entrainment = ',real(k_entrainment,kind=sp)
-          write(global_log,*)  '            Q (m3/s) = ',real(qnow,kind=sp)
-          write(global_log,*)
+      if(time.lt.EPS_SMALL) then
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*) 
+          write(outlog(io),*) 'in Umbrella_winds'
+          write(outlog(io),*) '  massfluxnow (kg/s) = ',real(massfluxnow,kind=sp)
+          write(outlog(io),*) '             C_Costa = ',real(C_Costa,kind=sp)
+          write(outlog(io),*) '                N_BV = ',real(N_BV,kind=sp)
+          write(outlog(io),*) '       k_entrainment = ',real(k_entrainment,kind=sp)
+          write(outlog(io),*) '            Q (m3/s) = ',real(qnow,kind=sp)
+          write(outlog(io),*)
           !If we're doing an airborne run and using only 1 grain size,
           !multiply the MER by 20 to make sure we're getting the right umbrella
           !growth rate
-          if ((SourceType.eq.'umbrella_air').and.(n_gs_max.eq.1)) then
-              write(global_info,*) 'n_gs_max=1, so we are assuming an airborne run'
-              write(global_info,*) 'massflux has been multiplied by 20'
-              write(global_log,*) 'n_gs_max=1, so we are assuming an airborne run'
-              write(global_log,*) 'massflux has been multiplied by 20'
-          end if
-       end if ! time.eq.0.0_ip
+          if((SourceType.eq.'umbrella_air').and.(n_gs_max.eq.1))then
+            write(outlog(io),*) 'n_gs_max=1, so we are assuming an airborne run'
+            write(outlog(io),*) 'massflux has been multiplied by 20'
+          endif
+        endif;enddo
+      endif ! time.eq.0.0_ip
 
       !convert from  hours to seconds
 !      if (itime.gt.0) then
@@ -204,12 +198,12 @@
                   uvy_pd(ii,jj,iz)=windspeedhere*sin(thetanow)
                 enddo
               endif
-              !write(global_info,13) ii,jj,gridlat(jj),gridlon(ii), &
+              !write(outlog(io),13) ii,jj,gridlat(jj),gridlon(ii), &
               !            radnow/cloud_radius, &
               !            uvx(ii,jj,ibase),uvy(ii,jj,ibase)
 !13            !format(2i4,3f8.3,2f7.1)
               !if (radnow.lt.cloud_radius) then
-              !   write(global_info,*) 'Continue?'
+              !   write(outlog(io),*) 'Continue?'
               !   read(5,'(a1)') answer
               !   if (answer.eq.'n') stop 1
               !endif

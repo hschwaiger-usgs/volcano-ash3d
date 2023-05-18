@@ -101,7 +101,9 @@
         concen_pd(:,:,nzmax+1,:,ts0) = concen_pd(:,:,nzmax,:,ts0)
         concen_pd(:,:,nzmax+2,:,ts0) = concen_pd(:,:,nzmax,:,ts0)
       else
-        write(global_error,*)"ERROR BC code not recognized"
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR BC code not recognized"
+        endif;enddo
         stop 1
       endif
 

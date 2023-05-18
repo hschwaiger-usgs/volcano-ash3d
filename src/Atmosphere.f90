@@ -2,9 +2,6 @@
 
       use precis_param
 
-      use global_param,  only : &
-         VERB
-
       use io_units
 
       real(kind=ip), parameter :: R_GAS_IDEAL  = 8.3144621_ip ! Ideal gas constant (J /(kg K))
@@ -67,11 +64,11 @@
 
       implicit none
 
-      if(VERB.ge.1)then
-        write(global_production,*)"--------------------------------------------------"
-        write(global_production,*)"---------- ALLOCATE_ATMOSPHERE_MET ---------------"
-        write(global_production,*)"--------------------------------------------------"
-      endif
+      do io=1,2;if(VB(io).le.verbosity_production)then
+        write(outlog(io),*)"--------------------------------------------------"
+        write(outlog(io),*)"---------- ALLOCATE_ATMOSPHERE_MET ---------------"
+        write(outlog(io),*)"--------------------------------------------------"
+      endif;enddo
 
       ! Note: all these arrays are allocated on np_fullmet levels even though
       !       np_fullmet_T or np_fullmet_RH might be less.  These will contain
@@ -261,7 +258,9 @@
               !AirSH_meso_last_step_MetP_sp = MR_dum3d_MetP
               AirSH_meso_last_step_MetP_sp = 0.0_sp
             else
-              write(global_error,*)"ERROR: Neither SH nor RH are available"
+              do io=1,2;if(VB(io).le.verbosity_error)then
+                write(errlog(io),*)"ERROR: Neither SH nor RH are available"
+              endif;enddo
               stop 1
             endif
           endif
@@ -291,7 +290,9 @@
             !AirSH_meso_next_step_MetP_sp = MR_dum3d_MetP
             AirSH_meso_last_step_MetP_sp = 0.0_sp
           else
-            write(global_error,*)"ERROR: Neither SH nor RH are available"
+            do io=1,2;if(VB(io).le.verbosity_error)then  
+              write(errlog(io),*)"ERROR: Neither SH nor RH are available"
+            endif;enddo
             stop 1
           endif
         endif
@@ -323,10 +324,12 @@
       else
         ! Currently, this subroutine is only called if Load_MesoSteps=.true.
         ! so we shouldn't be here
-        write(global_error,*)"Calling Set_Atmosphere_Meso outside of a Load_MesoSteps=.true."
-        write(global_error,*)"case for Interval_Frac = ",Interval_Frac
-        write(global_error,*)"This is a place-holder for interpolating tempertures to the"
-        write(global_error,*)"current time.  Not yet implemented."
+        do io=1,2;if(VB(io).le.verbosity_error)then              
+          write(errlog(io),*)"Calling Set_Atmosphere_Meso outside of a Load_MesoSteps=.true."
+          write(errlog(io),*)"case for Interval_Frac = ",Interval_Frac
+          write(errlog(io),*)"This is a place-holder for interpolating tempertures to the"
+          write(errlog(io),*)"current time.  Not yet implemented."
+        endif;enddo
         stop 1
         !Temperature(:,:,:) = real( Temp_meso_last_step_sp(:,:,:),kind=ip) + &
         !                     real((Temp_meso_next_step_sp(:,:,:) - &

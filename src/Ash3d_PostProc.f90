@@ -5,7 +5,7 @@
       use io_units
 
       use global_param,  only : &
-         MM_2_IN,VERB
+         MM_2_IN
 
       use mesh,          only : &
          nxmax,nymax,nzmax
@@ -143,12 +143,12 @@
       endif
       ! Test for GMT
       plotlib_avail(4) = .false.
-      if(VERB.ge.1)then
-        write(global_info,*)"Gnuplot ",plotlib_avail(1)
-        write(global_info,*)"Plplot  ",plotlib_avail(2)
-        write(global_info,*)"Dislin  ",plotlib_avail(3)
-        write(global_info,*)"GMT     ",plotlib_avail(4)
-      endif
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"Gnuplot ",plotlib_avail(1)
+        write(outlog(io),*)"Plplot  ",plotlib_avail(2)
+        write(outlog(io),*)"Dislin  ",plotlib_avail(3)
+        write(outlog(io),*)"GMT     ",plotlib_avail(4)
+      endif;enddo
 
       ! Initialize all output logicals to false
       Write_PR_Data                 = .false.
@@ -181,62 +181,72 @@
           ! If no command-line arguments are given, then prompt user
           ! interactively for the command file name and possible a 
           ! restart file
-        if(VERB.ge.1)then
-          write(global_info,*)'No command-line arguments detected'
-          write(global_info,*)'Usage: Ash3d_PostProc control_file [t_index]'
-          write(global_info,*)'           or'
-          write(global_info,*)'       Ash3d_PostProc infile output_product format'
-          write(global_info,*)'  where: infile   = the netcdf file written by Ash3d'
-          write(global_info,*)'   output_product = 1 full concentration array'
-          write(global_info,*)'                    2 deposit granularity'
-          write(global_info,*)'                    3 deposit thickness (mm time-series)'
-          write(global_info,*)'                    4 deposit thickness (inches time-series)'
-          write(global_info,*)'                    5 deposit thickness (mm final)'
-          write(global_info,*)'                    6 deposit thickness (inches final)'
-          write(global_info,*)'                    7 ashfall arrival time (hours)'
-          write(global_info,*)'                    8 ashfall arrival at airports/POI (mm)'
-          write(global_info,*)'                    9 ash-cloud concentration (mg/m3)'
-          write(global_info,*)'                   10 ash-cloud height (km)'
-          write(global_info,*)'                   11 ash-cloud bottom (km)'
-          write(global_info,*)'                   12 ash-cloud load (T/km2 or )'
-          write(global_info,*)'                   13 ash-cloud radar reflectivity (dBz)'
-          write(global_info,*)'                   14 ash-cloud arrival time (hours)'
-          write(global_info,*)'                   15 topography'
-          write(global_info,*)'                   16 profile plots'
-          write(global_info,*)'           format = 1 ASCII/ArcGIS'
-          write(global_info,*)'                    2 KML/KMZ'
-          write(global_info,*)'                    3 image/png'
-          write(global_info,*)'                    4 binary'
-          write(global_info,*)'                    5 shape file'
-          write(global_info,*)'                    6 grib2'
-          write(global_info,*)'                    7 tecplot'
-          write(global_info,*)'                    8 vtk'
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)'No command-line arguments detected'
+          write(outlog(io),*)'Usage: Ash3d_PostProc control_file [t_index]'
+          write(outlog(io),*)'           or'
+          write(outlog(io),*)'       Ash3d_PostProc infile output_product format'
+          write(outlog(io),*)'  where: infile   = the netcdf file written by Ash3d'
+          write(outlog(io),*)'   output_product = 1 full concentration array'
+          write(outlog(io),*)'                    2 deposit granularity'
+          write(outlog(io),*)'                    3 deposit thickness (mm time-series)'
+          write(outlog(io),*)'                    4 deposit thickness (inches time-series)'
+          write(outlog(io),*)'                    5 deposit thickness (mm final)'
+          write(outlog(io),*)'                    6 deposit thickness (inches final)'
+          write(outlog(io),*)'                    7 ashfall arrival time (hours)'
+          write(outlog(io),*)'                    8 ashfall arrival at airports/POI (mm)'
+          write(outlog(io),*)'                    9 ash-cloud concentration (mg/m3)'
+          write(outlog(io),*)'                   10 ash-cloud height (km)'
+          write(outlog(io),*)'                   11 ash-cloud bottom (km)'
+          write(outlog(io),*)'                   12 ash-cloud load (T/km2 or )'
+          write(outlog(io),*)'                   13 ash-cloud radar reflectivity (dBz)'
+          write(outlog(io),*)'                   14 ash-cloud arrival time (hours)'
+          write(outlog(io),*)'                   15 topography'
+          write(outlog(io),*)'                   16 profile plots'
+          write(outlog(io),*)'           format = 1 ASCII/ArcGIS'
+          write(outlog(io),*)'                    2 KML/KMZ'
+          write(outlog(io),*)'                    3 image/png'
+          write(outlog(io),*)'                    4 binary'
+          write(outlog(io),*)'                    5 shape file'
+          write(outlog(io),*)'                    6 grib2'
+          write(outlog(io),*)'                    7 tecplot'
+          write(outlog(io),*)'                    8 vtk'
   
-          write(global_info,*)'         [t_index] = index of time slice to plot; -1 for final (optional)'
-          write(global_info,*)'  '
-        endif
+          write(outlog(io),*)'         [t_index] = index of time slice to plot; -1 for final (optional)'
+          write(outlog(io),*)'  '
+        endif;enddo
 
-        if(VERB.lt.1)then
-          write(global_error,*)"Stdout is suppressed via VERB=0, but interactive input is expected."
-          write(global_error,*)"Either recompile with VERB>0 or provide the correct command-line arguments."
+        if(VB(1).le.verbosity_silent)then
+          write(errlog(io),*)"Stdout is suppressed via VERB=9,10, but interactive input is expected."
+          write(errlog(io),*)"Either recompile with VERB<9 or provide the correct command-line arguments."
           stop 1
         else
-          write(global_info,*)'Enter name of ESP input file:'
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)'Enter name of ESP input file:'
+          endif;enddo
         endif
         read(5,*)concenfile
 
-        write(global_info,*)'Enter code for output product:'
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)'Enter code for output product:'
+        endif;enddo
         read(5,*)iprod
 
-        write(global_info,*)'Enter code for output format:'
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)'Enter code for output format:'
+        endif;enddo
         read(5,*)iformat
 
-        write(global_info,*)'Enter index for time step:'
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)'Enter index for time step:'
+        endif;enddo
         read(5,*)iformat
 
       elseif (nargs.eq.1) then
         ! Read control file
-        write(global_error,*)'Reading control file not yet implemented'
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)'Reading control file not yet implemented'
+        endif;enddo
         stop 1
       elseif (nargs.ge.3) then
         call get_command_argument(1, arg, status)
@@ -250,7 +260,9 @@
           read(arg,*)itime
         endif
       else
-        write(global_error,*)' Cannot parse command line'
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)' Cannot parse command line'
+        endif;enddo
         stop 1
       endif
 
@@ -259,145 +271,190 @@
       !  Arg #1
       inquire( file=concenfile, exist=IsThere )
       if(.not.IsThere)then
-        write(global_error,*)"ERROR: Cannot find input file"
-        write(global_error,*)"     ",concenfile
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: Cannot find input file"
+          write(errlog(io),*)"     ",concenfile
+        endif;enddo
         stop 1
       else
-        write(global_info,*)"Ash3d Output file: ",concenfile
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Ash3d Output file: ",concenfile
+        endif;enddo
       endif
       !  Arg #2
       if(iprod.lt.1.or.iprod.gt.16)then
-        write(global_error,*)"ERROR: output product requested is not in range 1-16."
-        write(global_error,*)"       Run Ash3d_PostProc with no command-line"
-        write(global_error,*)"       arguments to set usage information"
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: output product requested is not in range 1-16."
+          write(errlog(io),*)"       Run Ash3d_PostProc with no command-line"
+          write(errlog(io),*)"       arguments to set usage information"
+        endif;enddo
         stop 1
       else
         if(iprod.eq.1)then
-          if(VERB.ge.1)then
-            write(global_info,*)'output variable = 1 full concentration array'
-            write(global_info,*)' Currently, no output formats available for full'
-            write(global_info,*)' granularity.  Binary output will give total ash'
-            write(global_info,*)' concentration.'
-          endif
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)'output variable = 1 full concentration array'
+            write(outlog(io),*)' Currently, no output formats available for full'
+            write(outlog(io),*)' granularity.  Binary output will give total ash'
+            write(outlog(io),*)' concentration.'
+          endif;enddo
         elseif(iprod.eq.2)then
-          write(global_error,*)'output variable = 2 deposit granularity'
-          write(global_error,*)' Currently, no output formats available for iprod=2'
-          write(global_error,*)' '
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)'output variable = 2 deposit granularity'
+            write(errlog(io),*)' Currently, no output formats available for iprod=2'
+            write(errlog(io),*)' '
+          endif;enddo
           stop 1
         elseif(iprod.eq.3)then
-          if(VERB.ge.1)write(global_info,*)'output variable = 3 deposit thickness; TS or step (mm)'
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)'output variable = 3 deposit thickness; TS or step (mm)'
+          endif;enddo
           ivar = 7  ! Note that kml writes out all netcdf time steps followed by the final
           TS_flag = 1      ! 1 = time series
           height_flag = 0  ! All the cells should be pinned to z=0
         elseif(iprod.eq.4)then
-          if(VERB.ge.1)write(global_info,*)'output variable = 4 deposit thickness: TS or step (inches)'
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)'output variable = 4 deposit thickness: TS or step (inches)'
+          endif;enddo
           ivar = 8  ! Note that kml writes out all netcdf time steps followed by the final
           TS_flag = 1      ! 1 = time series
           height_flag = 0  ! All the cells should be pinned to z=0
         elseif(iprod.eq.5)then
-          if(VERB.ge.1)write(global_info,*)'output variable = 5 deposit thickness: final (mm)'
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)'output variable = 5 deposit thickness: final (mm)'
+          endif;enddo
           ivar = 7  ! Note that kml writes out all netcdf time steps followed by the final
           TS_flag = 1      ! 1 = time series (really, this final value is not a time series, but the kml writer requires this)
           height_flag = 0  ! All the cells should be pinned to z=0
         elseif(iprod.eq.6)then
-          if(VERB.ge.1)write(global_info,*)'output variable = 6 deposit thickness: final (inches)'
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)'output variable = 6 deposit thickness: final (inches)'
+          endif;enddo
           ivar = 8  ! Note that kml writes out all netcdf time steps followed by the final
           TS_flag = 1      ! 1 = time series (really, this final value is not a time series, but the kml writer requires this)
           height_flag = 0  ! All the cells should be pinned to z=0
         elseif(iprod.eq.7)then
-          if(VERB.ge.1)write(global_info,*)'output variable = 7 ashfall arrival time (hours)'
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)'output variable = 7 ashfall arrival time (hours)'
+          endif;enddo
           ivar = 9
           TS_flag = 0      ! 1 = not a time series
           height_flag = 0  ! All the cells should be pinned to z=0
         elseif(iprod.eq.8)then
-          if(VERB.ge.1)write(global_info,*)'output variable = 8 ashfall arrival at airports/POI (mm)'
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)'output variable = 8 ashfall arrival at airports/POI (mm)'
+          endif;enddo
           !ivar = NaN There is a special KML writer for this variable
         elseif(iprod.eq.9)then
-          if(VERB.ge.1)write(global_info,*)'output variable = 9 ash-cloud concentration (mg/m3)'
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)'output variable = 9 ash-cloud concentration (mg/m3)'
+          endif;enddo
           ivar = 1
           TS_flag = 1      ! 1 = time series
           height_flag = 1  ! All the cells should be at cloud height
         elseif(iprod.eq.10)then
-          if(VERB.ge.1)write(global_info,*)'output variable =10 ash-cloud height (km)'
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)'output variable =10 ash-cloud height (km)'
+          endif;enddo
           ivar = 2
           TS_flag = 1      ! 1 = time series
           height_flag = 1  ! All the cells should be at cloud height
         elseif(iprod.eq.11)then
-          if(VERB.ge.1)write(global_info,*)'output variable =11 ash-cloud bottom (km)'
+          do io=1,2;if(VB(io).le.verbosity_info)then          
+            write(outlog(io),*)'output variable =11 ash-cloud bottom (km)'
+          endif;enddo
           ivar = 3
           TS_flag = 1      ! 1 = time series
           height_flag = 1  ! All the cells should be at cloud height
         elseif(iprod.eq.12)then
-          if(VERB.ge.1)write(global_info,*)'output variable =12 ash-cloud load (T/km2)'
+          do io=1,2;if(VB(io).le.verbosity_info)then          
+            write(outlog(io),*)'output variable =12 ash-cloud load (T/km2)'
+          endif;enddo
           ivar = 4
           TS_flag = 1      ! 1 = time series
           height_flag = 1  ! All the cells should be at cloud height
         elseif(iprod.eq.13)then
-          if(VERB.ge.1)write(global_info,*)'output variable =13 ash-cloud radar reflectivity (dBz)'
+          do io=1,2;if(VB(io).le.verbosity_info)then          
+            write(outlog(io),*)'output variable =13 ash-cloud radar reflectivity (dBz)'
+          endif;enddo
           ivar = 6
           TS_flag = 1      ! 1 = time series
           height_flag = 1  ! All the cells should be at cloud height
         elseif(iprod.eq.14)then
-          if(VERB.ge.1)write(global_info,*)'output variable =14 ash-cloud arrival time (hours)'
+          do io=1,2;if(VB(io).le.verbosity_info)then          
+            write(outlog(io),*)'output variable =14 ash-cloud arrival time (hours)'
+          endif;enddo
           ivar = 5
           TS_flag = 0      ! 1 = not a time series
           height_flag = 0  ! All the cells should be pinned to z=0
         elseif(iprod.eq.15)then
-          write(global_error,*)'output variable =15 Topography (km)'
-          write(global_error,*)' Currently, no output formats available for iprod=15'
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)'output variable =15 Topography (km)'
+            write(errlog(io),*)' Currently, no output formats available for iprod=15'
+          endif;enddo
           stop 1
           ivar = 10
           TS_flag = 0      ! 1 = not a time series
           height_flag = 0  ! All the cells should be pinned to z=0
         elseif(iprod.eq.16)then
-          if(VERB.ge.1)write(global_info,*)'output variable =16 vertical concentration profile'
+          do io=1,2;if(VB(io).le.verbosity_info)then          
+            write(outlog(io),*)'output variable =16 vertical concentration profile'
+          endif;enddo
         endif
       endif
       !  Arg #3
       if(iformat.lt.1.or.iformat.gt.7)then
-        write(global_error,*)"ERROR: output format requested is not in range 1-7."
-        write(global_error,*)"       Run Ash3d_PostProc with no command-line"
-        write(global_error,*)"       arguments to set usage information"
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: output format requested is not in range 1-7."
+          write(errlog(io),*)"       Run Ash3d_PostProc with no command-line"
+          write(errlog(io),*)"       arguments to set usage information"
+        endif;enddo
         stop 1
       else
-        if(VERB.ge.1)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
           if(iformat.eq.1)then
-            write(global_info,*)'output format = 1 ASCII/ArcGIS'
+            write(outlog(io),*)'output format = 1 ASCII/ArcGIS'
           elseif(iformat.eq.2)then
-            write(global_info,*)'output format = 2 KMZ'
+            write(outlog(io),*)'output format = 2 KMZ'
           elseif(iformat.eq.3)then
-            write(global_info,*)'output format = 3 image/png'
+            write(outlog(io),*)'output format = 3 image/png'
           elseif(iformat.eq.4)then
-            write(global_info,*)'output format = 4 binary'
+            write(outlog(io),*)'output format = 4 binary'
           elseif(iformat.eq.5)then
-            write(global_info,*)'output format = 5 shape file'
+            write(outlog(io),*)'output format = 5 shape file'
           elseif(iformat.eq.6)then
-            write(global_info,*)'output format = 6 grib2'
+            write(outlog(io),*)'output format = 6 grib2'
           elseif(iformat.eq.7)then
-            write(global_info,*)'output format = 7 tecplot'
+            write(outlog(io),*)'output format = 7 tecplot'
           endif
-        endif
+        endif;enddo
       endif
       !  Arg #4
-      if(VERB.ge.1)then
-        if(itime.eq.-1)then
-          write(global_info,*)'itime = -1 (Final time step)'
-          write(global_info,*)'Either no time step was provided or the last time step is requested.'
-        elseif(itime.eq.0)then
-          write(global_error,*)"ERROR: itime = 0.  Invalid time step."
-          stop 1
-        else
-          write(global_info,*)'itime = ',itime
-          write(global_info,*)'  We do not yet know the maximum number of steps available.'
-        endif
-  
-        if(iprod.eq.2)then   ! deposit granularity
-          write(global_error,*)'We do not yet have a plan for processing depocon'
-          write(global_error,*)'This is probably where we would implement vtk, or tecplot'
-          stop 1
-        endif
-        write(global_info,*)'Finished reading command-line'
+      if(itime.eq.-1)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)'itime = -1 (Final time step)'
+          write(outlog(io),*)'Either no time step was provided or the last time step is requested.'
+        endif;enddo
+      elseif(itime.eq.0)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: itime = 0.  Invalid time step."
+        endif;enddo
+        stop 1
+      else
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)'itime = ',itime
+          write(outlog(io),*)'  We do not yet know the maximum number of steps available.'
+        endif;enddo
       endif
+      if(iprod.eq.2)then   ! deposit granularity
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)'We do not yet have a plan for processing depocon'
+          write(errlog(io),*)'This is probably where we would implement vtk, or tecplot'
+        endif;enddo
+        stop 1
+      endif
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)'Finished reading command-line'
+      endif;enddo
 
       ! Before we do anything, call routine to read the netcdf file, populate
       ! the dimensions so we can see what we are dealing with.
@@ -511,8 +568,10 @@
           ! ASCII or png
           Write_PR_Data                 = .true.
         else
-          write(global_error,*)"Vertical ash concentration profiles can only be exported",&
-                    " as ASCII files or png images"
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"Vertical ash concentration profiles can only be exported",&
+                      " as ASCII files or png images"
+          endif;enddo
           stop 1
         endif
       endif
@@ -546,7 +605,9 @@
           endif
           call Write_2D_KML(ivar,OutVar,height_flag,TS_flag)
           call Close_KML(ivar,TS_flag)
-          if(VERB.ge.1)write(global_info,*)"Zipping KML file."
+          do io=1,2;if(VB(io).le.verbosity_info)then          
+            write(outlog(io),*)"Zipping KML file."
+          endif;enddo
           write(comd,*)"zip ",trim(adjustl(KMZ_filename(ivar))),' ',&
                               trim(adjustl(KML_filename(ivar)))
           call execute_command_line (comd, exitstat=status)
@@ -570,7 +631,9 @@
           do i = 1,nWriteTimes
             call NC_Read_Output_Products(i)
             time = WriteTimes(i)
-            write(*,*)"time = ",time
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"time = ",time
+            endif;enddo
             call output_results
           enddo
           isFinal_TS = .true.
@@ -586,10 +649,14 @@
         elseif(iprod.eq.8)then  ! ashfall at airports
           call Write_PointData_Airports_KML
         elseif(iprod.eq.16)then  ! vertical profile plots
-          write(global_error,*)"ERROR: KML versions of vertical profiles not implemented."
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: KML versions of vertical profiles not implemented."
+          endif;enddo
           stop 1
         else
-          write(global_error,*)"ERROR: Requested iprod not implemented for KML."
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: Requested iprod not implemented for KML."
+          endif;enddo
           stop 1
         endif
       endif ! iformat.eq.2 (KML)
@@ -662,7 +729,9 @@
         ! First check for the special cases
         if(iprod.eq.8)then
           ! Point data
-          if(VERB.ge.1)write(global_info,*)"Calling Write_PointData_Airports_ASCII"
+          do io=1,2;if(VB(io).le.verbosity_info)then          
+            write(outlog(io),*)"Calling Write_PointData_Airports_ASCII"
+          endif;enddo
           call Write_PointData_Airports_ASCII
         elseif(iprod.eq.16)then
           ! Vertical profile data
@@ -681,7 +750,9 @@
       elseif(iformat.eq.3)then ! image/png
         if(iprod.eq.8)then
           ! Point data
-          if(VERB.ge.1)write(global_info,*)"No PNG output for point data output"
+          do io=1,2;if(VB(io).le.verbosity_info)then          
+            write(outlog(io),*)"No PNG output for point data output"
+          endif;enddo
         elseif(iprod.eq.16)then
           ! Vertical profile data
           do i=1,nvprofiles
@@ -708,7 +779,9 @@
             !case(4)
               !call write_2Dprof_PNG_GMT(i)
             case default
-              write(global_error,*)"ERROR: Plots requested but no plotting package is installed"
+              do io=1,2;if(VB(io).le.verbosity_error)then
+                write(errlog(io),*)"ERROR: Plots requested but no plotting package is installed"
+              endif;enddo
               stop 1
             end select
           enddo
@@ -737,7 +810,9 @@
         !case(4)
           !call write_2Dmap_PNG_GMT(nxmax,nymax,iprod,iout3d,OutVar)
         case default
-          write(global_error,*)"ERROR: Plots requested but no plotting package is installed"
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: Plots requested but no plotting package is installed"
+          endif;enddo
           stop 1
         end select
 
@@ -748,15 +823,21 @@
           call write_3D_Binary(cio,nxmax,nymax,nzmax,ashcon_tot)
         elseif(iprod.eq.2)then
           ! deposit granularity
-          write(global_error,*)'ERROR: No binary output products for deposit granularity'
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)'ERROR: No binary output products for deposit granularity'
+          endif;enddo
           stop 1
         elseif(iprod.eq.8)then
           ! ashfall arrival at airports/POI (mm)
-          write(global_error,*)'ERROR: No binary output products for POI ashfall arrival'
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)'ERROR: No binary output products for POI ashfall arrival'
+          endif;enddo
           stop 1
         elseif(iprod.eq.16)then
           ! profile plots
-          write(global_error,*)'ERROR: No binary output products for vertical profile plots'
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)'ERROR: No binary output products for vertical profile plots'
+          endif;enddo
           stop 1
         else
           call write_2D_Binary(nxmax,nymax,OutVar,mask,Fill_Value,filename_root)
@@ -789,7 +870,9 @@
         !case(4)
           !call write_2Dmap_PNG_GMT(nxmax,nymax,iprod,iout3d,OutVar)
         case default
-          write(global_error,*)"ERROR: Plots requested but no plotting package is installed"
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: Plots requested but no plotting package is installed"
+          endif;enddo
           stop 1
         end select
 

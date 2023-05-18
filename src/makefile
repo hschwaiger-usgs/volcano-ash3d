@@ -73,16 +73,6 @@ INSTALLDIR=/opt/USGS/Ash3d
 USENETCDF = T
 USEGRIB   = T
 
-#  VERB specifies the verbosity level for debugging purposes
-#    Current available options are:
-#      VERB=-1 : no output to either stdout or logfile
-#      VERB=0  : no output to stdout; forces stop if interactive input needed
-#      VERB=1  : standard level of logging to stdout and logfile
-#      VERB=2  : normal output to stdout (VERB=1) with additional write statements
-#      VERB=3  : 
-#       -      : same as VERB=1
-VERB = 0
-
 # MEMORY
 # If you need pointer arrays instead of allocatable arrays, set this to 'T'
 USEPOINTERS = F
@@ -200,20 +190,6 @@ ifeq ($(DIFFMETH), CRANKNIC)
     DIFFFPPFLAG = -DCRANKNIC
 endif
 
-VERBFPPFLAG = -DVERBOSE_L1
-ifeq ($(VERB), 0)
-    VERBFPPFLAG = -DVERBOSE_L0
-endif
-ifeq ($(VERB), 1)
-    VERBFPPFLAG = -DVERBOSE_L1
-endif
-ifeq ($(VERB), 2)
-    VERBFPPFLAG = -DVERBOSE_L2
-endif
-ifeq ($(VERB), 3)
-    VERBFPPFLAG = -DVERBOSE_L3
-endif
-
 DATAFPPFLAG =
 ifeq ($(USENETCDF), T)
  ncFPPFLAG = -DUSENETCDF
@@ -312,7 +288,7 @@ ifeq ($(RUN), OMPOPT)
     ASH3DEXEC=Ash3d_omp
 endif
       # Preprocessing flags
-    FPPFLAGS =  -x f95-cpp-input $(OSFPPFLAG) $(DATAFPPFLAG) $(VERBFPPFLAG) $(LIMFPPFLAG) $(DIFFFPPFLAG) $(memFPPFLAG) $(extdatFPPFLAG) $(FASTFPPFLAG) $(PLOTFPPFLAG) $(PIIFPPFLAG)
+    FPPFLAGS =  -x f95-cpp-input $(OSFPPFLAG) $(DATAFPPFLAG) $(LIMFPPFLAG) $(DIFFFPPFLAG) $(memFPPFLAG) $(extdatFPPFLAG) $(FASTFPPFLAG) $(PLOTFPPFLAG) $(PIIFPPFLAG)
       # Extra flags
     #EXFLAGS = -xf95
     EXFLAGS =

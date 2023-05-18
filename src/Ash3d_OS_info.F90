@@ -5,7 +5,7 @@
       use io_units
 
       use global_param,  only : &
-        DirPrefix,DirDelim,IsLitEnd,IsLinux,IsWindows,IsMacOS,VERB, &
+        DirPrefix,DirDelim,IsLitEnd,IsLinux,IsWindows,IsMacOS, &
         CFL,OS_TYPE,OS_Flavor,os_full_command_line,os_cwd,os_host,os_user
 
       use io_data,       only : &
@@ -16,9 +16,12 @@
         RunStartDay,RunStartHour_ch,RunStartHr,RunStartMinute,RunStartMonth,RunStartYear
 
       use MetReader,     only : &
-         MR_OS_TYPE,MR_DirPrefix,MR_DirDelim,MR_VERB
+         MR_OS_TYPE,MR_DirPrefix,MR_DirDelim,MR_VERB,MR_nio
 
-      use iso_fortran_env
+      use iso_fortran_env, only : &
+         input_unit,output_unit,error_unit,&
+           compiler_version,&
+           compiler_options
 
       implicit none
 
@@ -68,6 +71,89 @@
 !#endif
       END INTERFACE
 
+      ! Make sure our input,output and error units are in agreement with iso_fortran_env,
+      stdin       = input_unit
+      outlog(1:2) = (/output_unit,global_log/)
+      errlog(1:2) = (/ error_unit,global_log/)
+
+      ! ENVIRONMENT VARIABLES
+      ! First order of business is to get the environment variable (if present) for verbosity
+      call get_environment_variable(name="ASH3DVERB",VALUE=tmp_str,STATUS=iostatus)
+      if(iostatus.eq.0)then
+        read(tmp_str,*)VB(1)
+        if(VB(1).le.verbosity_info)then
+          write(outlog(1),*)"Checking for run-time environment variable: ASH3DVERB"
+          write(outlog(1),*)"  VERB reset by environment variable to: ",VB(1)
+        endif
+      else
+        if(VB(1).le.verbosity_info)then
+          write(outlog(1),*)"Checking for run-time environment variable: ASH3DVERB"
+          write(outlog(1),*)"  ASH3DVERB environment variable not found.  verbosity level : ",VB(1)
+        endif
+      endif
+      if(VB(1).eq.verbosity_dark)then
+        ! If the output verbosity is for nothing at all, reset the log verbosity to that too
+        VB(2) = verbosity_dark
+      else
+         ! Before we do anything else, start a log file
+        open(unit=global_log,file=logfile,status='unknown')
+        ! Mirror the above output to the logfile
+        if(iostatus.eq.0)then
+          if(VB(2).le.verbosity_info)then
+            write(outlog(2),*)"Checking for run-time environment variable: ASH3DVERB"
+            write(outlog(2),*)"  VERB reset by environment variable to: ",VB(1)
+          endif
+        else
+          if(VB(2).le.verbosity_info)then
+            write(outlog(2),*)"Checking for run-time environment variable: ASH3DVERB"
+            write(outlog(2),*)"  ASH3DVERB environment variable not found.  verbosity level : ",VB(1)
+          endif
+        endif
+      endif
+      ! Harmonizing verbosity levels with MetReader
+      MR_VERB = VB(1)
+      MR_nio  = 2    ! Ash3d uses a logfile so set the output streams to stdin/stderr + logfile
+
+      ! Next, check for environment variables ASH3DHOME and ASH3DCFL
+
+      ! Set the default installation path
+      ! This is only needed if shared data files with fixed paths are read
+      ! in such as the global airport and volcano ESP files.
+      Ash3dHome = trim(adjustl(DirPrefix)) // DirDelim // &
+                  "opt" // DirDelim // "USGS" // DirDelim // "Ash3d"
+
+      ! Here it is over-written by compile-time path, if available
+#include "installpath.h"
+      ! This can be over-written if an environment variable is set
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"Checking for run-time environment variable: ASH3DHOME"
+      endif;enddo
+      call get_environment_variable(name="ASH3DHOME",VALUE=tmp_str,STATUS=iostatus)
+      if(iostatus.eq.0)then
+        Ash3dHome = tmp_str
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"  Install path reset by environment variable to: ",trim(adjustl(Ash3dHome))
+        endif;enddo
+      else
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"  ASH3DHOME not found. Install path set to: ",trim(adjustl(Ash3dHome))
+        endif;enddo
+      endif
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"Checking for run-time environment variable: ASH3DCFL"
+      endif;enddo
+      call get_environment_variable(name="ASH3DCFL",VALUE=tmp_str,STATUS=iostatus)
+      if(iostatus.eq.0)then
+        read(tmp_str,*)CFL
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"  CFL condition reset by environment variable to: ",real(CFL,kind=4)
+        endif;enddo
+      else
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"  ASH3DCFL not found.  CFL condition : ",real(CFL,kind=4)
+        endif;enddo
+      endif
+
 #ifdef LINUX
       OS_TYPE = 1
       OS_Flavor = 'LINUX'
@@ -81,6 +167,7 @@
       OS_TYPE = 2
       OS_Flavor = 'MACOS'
       DirPrefix = ''
+G_
       DirDelim = '/'
       IsLinux   = .false.
       IsWindows = .false.
@@ -98,7 +185,6 @@
       MR_OS_TYPE   = OS_TYPE
       MR_DirPrefix = DirPrefix
       MR_DirDelim  = DirDelim
-      MR_VERB = VERB
       ! Find out if we are running on a little-endian or big-endian system
       call check_endian(IsLitEnd)
 
@@ -131,42 +217,11 @@
         ! VALUE(7) = The seconds of the minute
         ! VALUE(8) = The milliseconds of the second
 
-      if(VERB.ge.1)write(global_info,*)" "
-      if(VERB.ge.1)write(global_info,*)"Running Ash3d with command-line: ",&
+      do io=1,2;if(VB(io).le.verbosity_essential)then
+        write(outlog(io),*)" "
+        write(outlog(io),*)"Running Ash3d with command-line: ",&
                     trim(adjustl(os_full_command_line))
-
-      ! Check for environment variables ASH3DHOME and ASH3DCFL
-
-      ! Set the default installation path
-      ! This is only needed if shared data files with fixed paths are read
-      ! in such as the global airport and volcano ESP files.
-      Ash3dHome = trim(adjustl(DirPrefix)) // DirDelim // &
-                  "opt" // DirDelim // "USGS" // DirDelim // "Ash3d"
-
-      ! Here it is over-written by compile-time path, if available
-#include "installpath.h"
-      ! This can be over-written if an environment variable is set
-      if(VERB.ge.1)write(global_info,*)" "
-      if(VERB.ge.1)write(global_info,*)"Checking for run-time environment variable: ASH3DHOME"
-      call GET_ENVIRONMENT_VARIABLE(NAME="ASH3DHOME",VALUE=tmp_str,STATUS=iostatus)
-      if(iostatus.eq.0)then
-        Ash3dHome = tmp_str
-        if(VERB.ge.1)write(global_info,*)&
-          "  Install path reset by environment variable to: ",trim(adjustl(Ash3dHome))
-      else
-        if(VERB.ge.1)write(global_info,*)&
-          "  ASH3DHOME not found. Install path set to: ",trim(adjustl(Ash3dHome))
-      endif
-      if(VERB.ge.1)write(global_info,*)"Checking for run-time environment variable: ASH3DCFL"
-      call GET_ENVIRONMENT_VARIABLE(NAME="ASH3DCFL",VALUE=tmp_str,STATUS=iostatus)
-      if(iostatus.eq.0)then
-        read(tmp_str,*)CFL
-        if(VERB.ge.1)write(global_info,*)&
-          "  CFL condition reset by environment variable to: ",real(CFL,kind=4)
-      else
-        if(VERB.ge.1)write(global_info,*)&
-          "  ASH3DCFL not found.  CFL condition : ",real(CFL,kind=4)
-      endif
+      endif;enddo
 
       ! Determining the run start time
       read(zone,'(i3)') timezone
@@ -189,105 +244,102 @@
       write(linebuffer080,102) RunStartYear,RunstartMonth,RunStartDay,RunStartHr,RunStartMinute
       os_time_log = linebuffer080(1:17)
 
-      if(VERB.ge.1)then
-        write(global_info,*)" System Information"
+      do io=1,2;if(VB(io).le.verbosity_production)then
+        write(outlog(io),*)" System Information"
         if(IsLitEnd)then
-          write(global_info,*)"   host: ",trim(adjustl(os_host)), &
+          write(outlog(io),*)"   host: ",trim(adjustl(os_host)), &
                               ' (',trim(adjustl(OS_Flavor)),' little-endian)'
         else
-          write(global_info,*)"   host: ",trim(adjustl(os_host)), &
+          write(outlog(io),*)"   host: ",trim(adjustl(os_host)), &
                               ' (',trim(adjustl(OS_Flavor)),' little-endian)'
         endif
-        write(global_info,*)"    cwd: ",trim(adjustl(os_cwd))
-        write(global_info,*)"   user: ",trim(adjustl(os_user))
+        write(outlog(io),*)"    cwd: ",trim(adjustl(os_cwd))
+        write(outlog(io),*)"   user: ",trim(adjustl(os_user))
   
-        write(global_info,*)"  "
-        write(global_info,*)"This executable was compiled with the following compiler and options:"
-        write(global_info,*)"    ",trim(adjustl(CompVer))
-        write(global_info,*)"    ",trim(adjustl(CompOpt))
-        write(global_info,*)"and with the following pre-proc flags:"
+        write(outlog(io),*)"  "
+        write(outlog(io),*)"This executable was compiled with the following compiler and options:"
+        write(outlog(io),*)"    ",trim(adjustl(CompVer))
+        write(outlog(io),*)"    ",trim(adjustl(CompOpt))
+        write(outlog(io),*)"and with the following pre-proc flags:"
 #ifdef LINUX
-        write(global_info,*)"         LINUX: System specified as linux"
+        write(outlog(io),*)"         LINUX: System specified as linux"
 #endif
 #ifdef MACOS
-        write(global_info,*)"         MACOS: System specified as MacOS"
+        write(outlog(io),*)"         MACOS: System specified as MacOS"
 #endif
 #ifdef WINDOWS
-        write(global_info,*)"       WINDOWS: System specified as MS Windows"
+        write(outlog(io),*)"       WINDOWS: System specified as MS Windows"
 #endif
 #ifdef FAST_DT
-        write(global_info,*)"       FAST_DT: dt will only be evaluated on the time steps"
-        write(global_info,*)"                in the wind files.  If there are processes"
-        write(global_info,*)"                that affect the wind speeds (e.g. umbrella"
-        write(global_info,*)"                spreading), this can cause job failure."
+        write(outlog(io),*)"       FAST_DT: dt will only be evaluated on the time steps"
+        write(outlog(io),*)"                in the wind files.  If there are processes"
+        write(outlog(io),*)"                that affect the wind speeds (e.g. umbrella"
+        write(outlog(io),*)"                spreading), this can cause job failure."
 #endif
 #ifdef FAST_SUBGRID
-        write(global_info,*)"  FAST_SUBGRID: Advection and diffusion routines will only"
-        write(global_info,*)"                be calculated in the region where the cloud"
-        write(global_info,*)"                concentration exceeds a threshold"
+        write(outlog(io),*)"  FAST_SUBGRID: Advection and diffusion routines will only"
+        write(outlog(io),*)"                be calculated in the region where the cloud"
+        write(outlog(io),*)"                concentration exceeds a threshold"
 #endif
 #ifdef EXPLDIFF
-        write(global_info,*)"      EXPLDIFF: Diffusion will be calculated via the explicit solver."
+        write(outlog(io),*)"      EXPLDIFF: Diffusion will be calculated via the explicit solver."
 #endif
 #ifdef CRANKNIC
-        write(global_info,*)"      CRANKNIC: Diffusion will be calculated via Crank-Nicolson"
+        write(outlog(io),*)"      CRANKNIC: Diffusion will be calculated via Crank-Nicolson"
 #endif
 #ifdef LIM_NONE
-        write(global_info,*)"      LIM_NONE: Advection routines use no limiters"
+        write(outlog(io),*)"      LIM_NONE: Advection routines use no limiters"
 #endif
 #ifdef LIM_LAXWEN
-        write(global_info,*)"    LIM_LAXWEN: Advection routines use a Lax-Wendrof limiter"
+        write(outlog(io),*)"    LIM_LAXWEN: Advection routines use a Lax-Wendrof limiter"
 #endif
 #ifdef LIM_BW
-        write(global_info,*)"        LIM_BW: Advection routines use a Beam-Warming limiter"
+        write(outlog(io),*)"        LIM_BW: Advection routines use a Beam-Warming limiter"
 #endif
 #ifdef LIM_FROMM
-        write(global_info,*)"     LIM_FROMM: Advection routines use a Fromm limiter"
+        write(outlog(io),*)"     LIM_FROMM: Advection routines use a Fromm limiter"
 #endif
 #ifdef LIM_MINMOD
-        write(global_info,*)"    LIM_MINMOD: Advection routines use a MinMod limiter"
+        write(outlog(io),*)"    LIM_MINMOD: Advection routines use a MinMod limiter"
 #endif
 #ifdef LIM_SUPERBEE
-        write(global_info,*)"  LIM_SUPERBEE: Advection routines use a SuperBee limiter"
+        write(outlog(io),*)"  LIM_SUPERBEE: Advection routines use a SuperBee limiter"
 #endif
 #ifdef LIM_MC
-        write(global_info,*)"        LIM_MC: Advection routines use a MC limiter"
+        write(outlog(io),*)"        LIM_MC: Advection routines use a MC limiter"
 #endif
 #ifdef VERBOSE_L0
-        write(global_info,*)"    VERBOSE_L0: Output verbosity = 0 (suppress all output to stdout)"
+        write(outlog(io),*)"    VERBOSE_L0: Output verbosity = 0 (suppress all output to stdout)"
 #endif
 #ifdef VERBOSE_L1
-        write(global_info,*)"    VERBOSE_L1: Output verbosity = 1"
+        write(outlog(io),*)"    VERBOSE_L1: Output verbosity = 1"
 #endif
 #ifdef VERBOSE_L2
-        write(global_info,*)"    VERBOSE_L2: Output verbosity = 2"
+        write(outlog(io),*)"    VERBOSE_L2: Output verbosity = 2"
 #endif
 #ifdef VERBOSE_L3
-        write(global_info,*)"    VERBOSE_L3: Output verbosity = 3"
+        write(outlog(io),*)"    VERBOSE_L3: Output verbosity = 3"
 #endif
 #ifdef USENETCDF
-        write(global_info,*)"     USENETCDF: NetCDF functionality is included"
+        write(outlog(io),*)"     USENETCDF: NetCDF functionality is included"
 #endif
 #ifdef USEGRIB
-        write(global_info,*)"       USEGRIB: Grib functionality is included"
+        write(outlog(io),*)"       USEGRIB: Grib functionality is included"
 #endif
 #ifdef USEPOINTERS
-        write(global_info,*)"   USEPOINTERS: Arrays are defined as pointers"
-        write(global_info,*)"                This helps Ash3d work with ForestClaw"
+        write(,outlog(io)*)"   USEPOINTERS: Arrays are defined as pointers"
+        write(outlog(io),*)"                This helps Ash3d work with ForestClaw"
 #endif
 #ifdef USEEXTDATA
-        write(global_info,*)"    USEEXTDATA: Data files for airports and volcanoes are"
-        write(global_info,*)"                read at run-time"
+        write(outlog(io),*)"    USEEXTDATA: Data files for airports and volcanoes are"
+        write(outlog(io),*)"                read at run-time"
 #endif
   
         ! WRITE OUT START TIME IN UTC
-        write(global_info,*)
-        write(global_log ,*)
-        write(global_info,2) version,RunStartYear,RunStartMonth,RunStartDay,RunStartHr,RunStartMinute
-        write(global_log ,2) version,RunStartYear,RunStartMonth,RunStartDay,RunStartHr,RunStartMinute
-        write(global_info,*)
-        write(global_log ,*)
-      endif
+        write(outlog(io),*)
+        write(outlog(io),2) version,RunStartYear,RunStartMonth,RunStartDay,RunStartHr,RunStartMinute
+        write(outlog(io),*)
+      endif;enddo
 
       ! FORMAT STATEMENTS
 2     format(4x,'Ash3d (Rev ',a5,') run ',&

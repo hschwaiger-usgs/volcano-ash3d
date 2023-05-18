@@ -5,7 +5,7 @@
       use io_units
 
       use global_param,  only : &
-         PI, M_2_MM, KM2_2_M2, KG_2_MG, KM3_2_M3, EPS_SMALL,VERB
+         PI, M_2_MM, KM2_2_M2, KG_2_MG, KM3_2_M3, EPS_SMALL
 
       use time_data,     only : &
          time_native
@@ -288,7 +288,9 @@
       integer :: nx,ny,nz,ns
 
         ! User-defined 2-D static variables (in x,y)
-      if(VERB.ge.1)write(global_info,*)"Allocating var_User2d_static_XY: ",nx,ny,nvar_User2d_static_XY
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"Allocating var_User2d_static_XY: ",nx,ny,nvar_User2d_static_XY
+      endif;enddo
       allocate(var_User2d_static_XY_name(nvar_User2d_static_XY))
       allocate(var_User2d_static_XY_unit(nvar_User2d_static_XY))
       allocate(var_User2d_static_XY_lname(nvar_User2d_static_XY))
@@ -296,7 +298,9 @@
       allocate(var_User2d_static_XY_FillVal(nvar_User2d_static_XY))
       allocate(var_User2d_static_XY(nx,ny,nvar_User2d_static_XY))
         ! User-defined 2-D variables (in x,y)
-      if(VERB.ge.1)write(global_info,*)"Allocating var_User2d_XY: ",nx,ny,nvar_User2d_XY
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"Allocating var_User2d_XY: ",nx,ny,nvar_User2d_XY
+      endif;enddo
       allocate(var_User2d_XY_name(nvar_User2d_XY))
       allocate(var_User2d_XY_unit(nvar_User2d_XY))
       allocate(var_User2d_XY_lname(nvar_User2d_XY))
@@ -304,7 +308,9 @@
       allocate(var_User2d_XY_FillVal(nvar_User2d_XY))
       allocate(var_User2d_XY(nx,ny,nvar_User2d_XY))
         ! User-defined 3-D variables (in x,y,gs)
-      if(VERB.ge.1)write(global_info,*)"Allocating var_User3d_XYGs: ",nx,ny,ns,nvar_User3d_XYGs
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"Allocating var_User3d_XYGs: ",nx,ny,ns,nvar_User3d_XYGs
+      endif;enddo
       allocate(var_User3d_XYGs_name(nvar_User3d_XYGs))
       allocate(var_User3d_XYGs_unit(nvar_User3d_XYGs))
       allocate(var_User3d_XYGs_lname(nvar_User3d_XYGs))
@@ -312,7 +318,9 @@
       allocate(var_User3d_XYGs_FillVal(nvar_User3d_XYGs))
       allocate(var_User3d_XYGs(nx,ny,ns,nvar_User3d_XYGs))
         ! User-defined 3-D variables (in x,y,z)
-      if(VERB.ge.1)write(global_info,*)"Allocating var_User3d_XYZ: ",nx,ny,nz,nvar_User3d_XYZ
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"Allocating var_User3d_XYZ: ",nx,ny,nz,nvar_User3d_XYZ
+      endif;enddo
       allocate(var_User3d_XYZ_name(nvar_User3d_XYZ))
       allocate(var_User3d_XYZ_unit(nvar_User3d_XYZ))
       allocate(var_User3d_XYZ_lname(nvar_User3d_XYZ))
@@ -320,7 +328,9 @@
       allocate(var_User3d_XYZ_FillVal(nvar_User3d_XYZ))
       allocate(var_User3d_XYZ(nx,ny,nz,nvar_User3d_XYZ))
         ! User-defined 4-D variables (in x,y,z,gs)
-      if(VERB.ge.1)write(global_info,*)"Allocating var_User4d_XYZGs: ",nx,ny,ns,nvar_User4d_XYZGs
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"Allocating var_User4d_XYZGs: ",nx,ny,ns,nvar_User4d_XYZGs
+      endif;enddo
       allocate(var_User4d_XYZGs_name(nvar_User4d_XYZGs))
       allocate(var_User4d_XYZGs_unit(nvar_User4d_XYZGs))
       allocate(var_User4d_XYZGs_lname(nvar_User4d_XYZGs))
@@ -895,8 +905,10 @@
       real(kind=ip) :: totalash
 
       if(itime.gt.ntmax)then
-        write(global_error,*)"ERROR: itime is greater than ntmax"
-        write(global_error,*)"       cannot write to profile"
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: itime is greater than ntmax"
+          write(errlog(io),*)"       cannot write to profile"
+        endif;enddo
         return
       else
         time_native(itime) = time

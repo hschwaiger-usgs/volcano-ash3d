@@ -22,7 +22,7 @@
 
       use global_param,  only : &
          EPS_SMALL,CFL,DT_MAX,DT_MIN,MPS_2_KMPHR, &
-         useDiffusion,useVarDiffH,useVarDiffV,useCN,VERB
+         useDiffusion,useVarDiffH,useVarDiffV,useCN
 
       use Tephra,        only : &
          n_gs_aloft
@@ -235,37 +235,42 @@
           ! diffusion is the dominant constraint on the time-step.
           ! Note: we don't want to do this for the variable diffusivity cases
           ! since this will write out this comment every time-step.
-          if(VERB.gt.-1.and.&
-             .not.useVarDiffH.and.&
+          if(.not.useVarDiffH.and.&
              .not.useVarDiffV)then
             if (useCN) then
-              write(*,*)"Appling time factor of ",Imp_DT_fac
+              do io=1,2;if(VB(io).le.verbosity_info)then
+                write(outlog(io),*)"Appling time factor of ",Imp_DT_fac
+              endif;enddo
             else
-              write(*,*)"Appling time factor of 0.5"
+              do io=1,2;if(VB(io).le.verbosity_info)then
+                write(outlog(io),*)"Appling time factor of 0.5"
+              endif;enddo
             endif
 
-            if(time_diffuse.gt.time_advect)then
-              ! Diffusion conditions allow a larger time step than advection
-              write(global_info,*)"Time step limited by advection"
-              if(vxmax_dx.gt.vymax_dy.and.vxmax_dx.gt.vzmax_dz)then
-                write(global_info,*)"   Restriction set by dx/vx"
-              elseif(vymax_dy.gt.vxmax_dx.and.vymax_dy.gt.vzmax_dz)then
-                write(global_info,*)"   Restriction set by dy/vy"
-              elseif(vzmax_dz.gt.vxmax_dx.and.vzmax_dz.gt.vymax_dy)then
-                write(global_info,*)"   Restriction set by dz/vz"
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              if(time_diffuse.gt.time_advect)then
+                ! Diffusion conditions allow a larger time step than advection
+                write(outlog(io),*)"Time step limited by advection"
+                if(vxmax_dx.gt.vymax_dy.and.vxmax_dx.gt.vzmax_dz)then
+                  write(outlog(io),*)"   Restriction set by dx/vx"
+                elseif(vymax_dy.gt.vxmax_dx.and.vymax_dy.gt.vzmax_dz)then
+                  write(outlog(io),*)"   Restriction set by dy/vy"
+                elseif(vzmax_dz.gt.vxmax_dx.and.vzmax_dz.gt.vymax_dy)then
+                  write(outlog(io),*)"   Restriction set by dz/vz"
+                endif
+              else
+                ! Advection is the dominant restriction on time steps
+                write(outlog(io),*)"Time step limited by diffusion"
+                if(tmp1.lt.tmp2.and.tmp1.lt.tmp3)then
+                  write(outlog(io),*)"   Restriction set by dx2/kx"
+                elseif(tmp2.lt.tmp1.and.tmp2.lt.tmp3)then
+                  write(outlog(io),*)"   Restriction set by dy2/ky"
+                elseif(tmp3.lt.tmp1.and.tmp3.lt.tmp2)then
+                  write(outlog(io),*)"   Restriction set by dz2/kz"
+                endif
               endif
-            else
-              ! Advection is the dominant restriction on time steps
-              write(global_info,*)"Time step limited by diffusion"
-              if(tmp1.lt.tmp2.and.tmp1.lt.tmp3)then
-                write(global_info,*)"   Restriction set by dx2/kx"
-              elseif(tmp2.lt.tmp1.and.tmp2.lt.tmp3)then
-                write(global_info,*)"   Restriction set by dy2/ky"
-              elseif(tmp3.lt.tmp1.and.tmp3.lt.tmp2)then
-                write(global_info,*)"   Restriction set by dz2/kz"
-              endif
-            endif
-            write(global_info,*)"   Velocities allow up a diffusivity up to",maxdiffus
+              write(outlog(io),*)"   Velocities allow up a diffusivity up to",maxdiffus
+            endif;enddo
           endif
 
             ! Now set logical flag so we don't need to calculate this again
@@ -280,26 +285,30 @@
 
       dt_tmp = min(time_advect,time_diffuse)
       if(dt_tmp.lt.DT_MIN)then
-        write(global_info,*)"WARNING: Calculated DT is too low"
-        write(global_info,*)"         Setting DT to dt_min = ",DT_MIN
-        write(global_info,*)"         CFL condition probably violated."
-        write(global_info,*)"         Check for high or NaN velocities."
-        write(global_info,*)"     time_advect = ",time_advect
-        write(global_info,*)"    time_diffuse = ",time_diffuse
-        write(global_info,*)"    max vel.s/dx = ",vxmax_dx,vymax_dy,vzmax_dz
-        write(global_info,*)"             CFL = ",CFL
-        write(global_info,*)"   calculated dt = ",min(1.0_ip,CFL)*dt_tmp
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"WARNING: Calculated DT is too low"
+          write(outlog(io),*)"         Setting DT to dt_min = ",DT_MIN
+          write(outlog(io),*)"         CFL condition probably violated."
+          write(outlog(io),*)"         Check for high or NaN velocities."
+          write(outlog(io),*)"     time_advect = ",time_advect
+          write(outlog(io),*)"    time_diffuse = ",time_diffuse
+          write(outlog(io),*)"    max vel.s/dx = ",vxmax_dx,vymax_dy,vzmax_dz
+          write(outlog(io),*)"             CFL = ",CFL
+          write(outlog(io),*)"   calculated dt = ",min(1.0_ip,CFL)*dt_tmp
+        endif;enddo
         dt = DT_MIN
       elseif(dt_tmp.gt.DT_MAX)then
-        write(global_info,*)"WARNING: Calculated DT is too high"
-        write(global_info,*)"         Setting DT to dt_max = ",DT_MAX
-        write(global_info,*)"         CFL condition probably violated."
-        write(global_info,*)"         Check for zero or NaN velocities."
-        write(global_info,*)"     time_advect = ",time_advect
-        write(global_info,*)"    time_diffuse = ",time_diffuse
-        write(global_info,*)"    max vel.s/dx = ",vxmax_dx,vymax_dy,vzmax_dz
-        write(global_info,*)"             CFL = ",CFL
-        write(global_info,*)"   calculated dt = ",min(1.0_ip,CFL)*dt_tmp
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"WARNING: Calculated DT is too high"
+          write(outlog(io),*)"         Setting DT to dt_max = ",DT_MAX
+          write(outlog(io),*)"         CFL condition probably violated."
+          write(outlog(io),*)"         Check for zero or NaN velocities."
+          write(outlog(io),*)"     time_advect = ",time_advect
+          write(outlog(io),*)"    time_diffuse = ",time_diffuse
+          write(outlog(io),*)"    max vel.s/dx = ",vxmax_dx,vymax_dy,vzmax_dz
+          write(outlog(io),*)"             CFL = ",CFL
+          write(outlog(io),*)"   calculated dt = ",min(1.0_ip,CFL)*dt_tmp
+        endif;enddo
         dt = DT_MAX
       else
         dt = min(1.0_ip,CFL) * dt_tmp

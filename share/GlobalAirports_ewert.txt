@@ -1,4 +1,4 @@
-#   Latitude   Longitude           x           y  Code Location   
+#   Latitude   Longitude           x           y  Code Location                               
     41.60833   -88.09417     0.00000     0.00000  II2  Lewis University Airport, IL           
     34.68861   -85.29056     0.00000     0.00000  GA1  Barwick Lafayette Airport, GA          
     44.25083   -90.85528     0.00000     0.00000  WI1  Black River Falls Area Airport, WI     
@@ -5009,7 +5009,7 @@
     43.19389   -78.79833     0.00000     0.00000  QAZ  North Buffalo Suburban Airport, NY     
     41.07444   -71.92361     0.00000     0.00000  MTP  Sky Portel, NY                         
     42.59306   -76.21528     0.00000     0.00000  CTX  Cortland County Chase Field, NY        
-    43.35750   -78.84139     0.00000     0.00000  /BF  Buffalo and Niagara Falls, NY              
+    43.35750   -78.84139     0.00000     0.00000  /BF  Buffalo and Niagara Falls, NY          
     40.71028   -73.88500     0.00000     0.00000  NYC  Metropolitan, NY                       
     40.77917   -73.83278     0.00000     0.00000  FLU  Flushing, NY                           
     40.80000   -73.96667     0.00000     0.00000  JRE  East 60th Street Heliport, NY          

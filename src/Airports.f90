@@ -2,9 +2,6 @@
 
       use precis_param
 
-      use global_param,  only : &
-         VERB
-
       use io_units
 
       use io_data,       only : &
@@ -176,12 +173,12 @@
       elseif (AppendExtAirportFile.eqv..true.) then
         n_airports_total = NAIRPORTS_EWERT + n_ext_airports    !if appending external to internal
         if(n_airports_total.gt.MAXAIRPORTS)then
-          if(VERB.ge.1)then
-            write(global_error,*)"ERROR: ",&
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: ",&
                  "Too many airports are requested."
-            write(global_error,*)&
+            write(errlog(io),*)&
                   "       Increase MAXAIRPORTS and recompile"
-          endif
+          endif;enddo
         endif
         do i=NAIRPORTS_EWERT+1,n_airports_total
           AirportFullLat(i)  = ExtAirportLat(i-NAIRPORTS_EWERT)
@@ -192,14 +189,14 @@
           if (AirportFullLon(i).lt.0.0_ip) &
             AirportFullLon(i) = AirportFullLon(i)+360.0_ip
         enddo
-        if(VERB.ge.1)then
-          write(global_info,*) 'Appending airports below to the internal list.'
-          write(global_info,*) 'Airport name       lon      lat'
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*) 'Appending airports below to the internal list.'
+          write(outlog(io),*) 'Airport name       lon      lat'
           do i=NAIRPORTS_EWERT+1,n_airports_total
-            write(global_info,*) AirportFullName(i),AirportFullLon(i),AirportFullLat(i)
+            write(outlog(io),*) AirportFullName(i),AirportFullLon(i),AirportFullLat(i)
 !2563      format(a42,2f12.4)
           enddo
-        endif
+        endif;enddo
       else
         n_airports_total = n_ext_airports                      !if only reading external
         do i=1,n_airports_total
@@ -208,11 +205,6 @@
           AirportFullCode(i) = ExtAirportCode(i)
           AirportFullName(i) = ExtAirportName(i)
         enddo
-        !write(global_info,*) 'Replacing internal airports with the points below'
-        !write(global_info,*) 'Airport name       lon      lat'
-        !do i=1,n_airports_total
-        !  write(global_info,2563) AirportFullName(i),AirportFullLon(i),AirportFullLat(i)
-        !enddo
       endif
 
       ! Loop through n_airports_total twice:
@@ -342,8 +334,9 @@
       enddo
 
 !     WRITE OUT AIRPORT NAMES TO LOG FILE
-      if(VERB.ge.1)write(global_info,3) nairports
-      if(VERB.ge.1)write(global_log ,3) nairports
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),3) nairports
+      endif;enddo
 
       deallocate(AirportFullLat)
       deallocate(AirportFullLon)
@@ -446,19 +439,40 @@
       implicit none
 
       integer           :: inow,iostatus
-      character(len=80) :: inputline
+      character(len=95) :: inputline
+
+      logical           :: ex, op
+      character(len=11) :: nam,acc,seq, frm
+      integer           :: irec, nr
 
       inow = 0
 
 !     OPEN THE AIRPORT LOCATION FILE
-      open(unit=17,file=AirportInFile,status='old')
-      read(17,'(a80)',iostat=Iostatus) inputline
+      write(*,*)"Opening ",AirportInFile
+      open(unit=17,file=AirportInFile,status='old',position='rewind',iostat=Iostatus)
+      write(*,*)"File open status = ",Iostatus
+      inquire(17, exist=ex, opened=op, name=nam,access=acc,sequential=seq, form=frm, recl=irec, nextrec=nr)
+      write(*,*)"File exist  status = ",ex
+      write(*,*)"File open   status = ",op
+      write(*,*)"File name   status = ",nam
+      write(*,*)"File access status = ",acc
+      write(*,*)"File sequen status = ",seq
+      write(*,*)"File form   status = ",frm
+      write(*,*)"File record status = ",irec
+      write(*,*)"File next-r status = ",nr
+
+      ! Read the header line and set Iostatus for the while loop
+      read(unit=17,fmt='(a95)',iostat=Iostatus) inputline
+      write(*,*)"File read status = ",Iostatus
+      write(*,*)inputline
+      stop 8
 
 !      READ AIRPORT LOCATIONS AND ASSIGN AIRPORTS IN THE MODELED AREA TO A
 !      TEMPORARY ARRAY      
       do while (Iostatus.ge.0)
         inow = inow+1
-        read(17,'(a80)',IOSTAT=Iostatus) inputline
+        read(17,'(a95)',IOSTAT=Iostatus) inputline
+        write(*,*)inow,inputline
         read(inputline,*,err=2010) ExtAirportLat(inow), ExtAirportLon(inow)
         read(inputline,2) ExtAirportCode(inow), ExtAirportName(inow)
 2       format(50x,a3,1x,a35)
@@ -472,14 +486,15 @@
       return
 
       ! ERROR TRAP
-2010  write(global_error,6) inputline
-      write(global_log  ,6) inputline
+2010  do io=1,2;if(VB(io).le.verbosity_error)then
+        write(errlog(io),6) inputline
+      endif;enddo
       stop 1
 
       ! FORMAT STATEMENTS
 6     format('Error reading from airport list.  Read statement was expecting',/, &
              'latitude longitude x y  (all real numbers).  The input line gave:',/, &
-             a80,/,'program stopped')
+             a95,/,'program stopped')
 
       end subroutine ReadExtAirports
 
@@ -514,16 +529,18 @@
                           DirDelim // 'GlobalAirports_ewert.txt'
       ! Test for existance of the airport file
       inquire( file=trim(adjustl(AirportMasterFile)), exist=IsThere )
-      if(VERB.ge.1)then
-        write(global_info,*)&
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)&
           "Trying to read external global airport file in home=",Ash3dHome
-        write(global_info,*)"Full file name = ",trim(adjustl(AirportMasterFile))
-        write(global_info,*)"  Exists = ",IsThere
-      endif
+        write(outlog(io),*)"Full file name = ",trim(adjustl(AirportMasterFile))
+        write(outlog(io),*)"  Exists = ",IsThere
+      endif;enddo
       if(.not.IsThere)then
-        write(global_error,*)"ERROR: Could not find airport file."
-        write(global_error,*)"       Please copy file to this location:"
-        write(global_error,*)AirportMasterFile
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: Could not find airport file."
+          write(errlog(io),*)"       Please copy file to this location:"
+          write(errlog(io),*)AirportMasterFile
+        endif;enddo
         stop 1
       endif
 
@@ -539,8 +556,9 @@
         read(inputline,2) inCode,inName
         i = i+1
         if(i.gt.MAXAIRPORTS)then
-          write(global_error,*)"ERROR: ",&
-                "Airport file contains too many entries"
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: ","Airport file contains too many entries"
+          endif;enddo
           stop 1
         endif
         AirportFullCode(i) = trim(adjustl(inCode))
@@ -555,7 +573,9 @@
       return
 
       ! ERROR TRAP
-2000  write(global_error,5) AirportInFile
+2000  do io=1,2;if(VB(io).le.verbosity_error)then
+        write(errlog(io),5) AirportInFile
+      endif;enddo
       stop 1
 
       ! FORMAT STATEMENTS

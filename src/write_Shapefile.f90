@@ -5,21 +5,17 @@
 
       use precis_param
 
+      use io_units
+
       use global_param,  only : &
          IsLitEnd,IsLinux,IsWindows,IsMacOS
-
-!      use global_param,  only : &
-!         IsLinux,IsWindows,IsMacOS,DirPrefix,DirDelim
 
       use Output_Vars,   only : &
          ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
          ContourLev,nConLev
 
       use io_data,       only : &
-         WriteTimes,VolcanoName
-
-      use io_data,       only : &
-         cdf_institution,cdf_run_class,cdf_url
+         WriteTimes,VolcanoName,cdf_institution,cdf_run_class,cdf_url
 
       implicit none
 
@@ -168,8 +164,8 @@
         ov_fileroot = 'DepAvlTm'
         plot_units = 'hours'
       elseif(iprod.eq.8)then   ! ashfall arrival at airports/POI (mm)
-        write(global_error,*)"ERROR: No map PNG output option for airport arrival time data."
-        write(global_error,*)"       Should not be in write_2Dmap_PNG_dislin"
+        write(errlog(io),*)"ERROR: No map PNG output option for airport arrival time data."
+        write(errlog(io),*)"       Should not be in write_2Dmap_PNG_dislin"
         stop 1
       elseif(iprod.eq.9)then   ! ash-cloud concentration
         write(title_plot,'(a28,f5.2,a6)')': Ash-cloud concentration t=',WriteTimes(itime),' hours'
@@ -207,11 +203,11 @@
         ov_fileroot = 'Topogrph'
         plot_units = 'km'
       elseif(iprod.eq.16)then   ! profile plots
-        write(global_error,*)"ERROR: No map PNG output option for vertical profile data."
-        write(global_error,*)"       Should not be in write_2Dmap_PNG_dislin"
+        write(errlog(io),*)"ERROR: No map PNG output option for vertical profile data."
+        write(errlog(io),*)"       Should not be in write_2Dmap_PNG_dislin"
         stop 1
       else
-        write(global_error,*)"ERROR: unexpected variable"
+        write(errlog(io),*)"ERROR: unexpected variable"
         stop 1
       endif
 
@@ -281,7 +277,9 @@
       ov_projfile = trim(adjustl(ov_fileroot)) // ov_projext
       ov_zipfile  = trim(adjustl(ov_fileroot)) // ov_zipext
 
-      if(VERB.ge.1)write(global_info,*)"Writing shapefile"
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"Writing shapefile"
+      endif;enddo
 
       ! First, writing the main .shp file which contains the contour (polyline) data.
       ! The specification has a mess of little-endian and big-endian writes with non-integer
@@ -314,12 +312,14 @@
       write(ov_indxID)BigEnd_4int(IsLitEnd,tmp4)
 
       if(debugmode)then
-        write(global_debug,*)file_code,   " 1-  4 : FH Byte 0 File Code 9994 Integer Big"
-        write(global_debug,*)tmp4,        " 5-  8 : FH Byte 4 Unused 0 Integer Big"
-        write(global_debug,*)tmp4,        " 9- 12 : FH Byte 8 Unused 0 Integer Big"
-        write(global_debug,*)tmp4,        "13- 16 : FH Byte 12 Unused 0 Integer Big"
-        write(global_debug,*)tmp4,        "17- 20 : FH Byte 16 Unused 0 Integer Big"
-        write(global_debug,*)tmp4,        "21- 24 : FH Byte 20 Unused 0 Integer Big"
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
+          write(outlog(io),*)file_code,   " 1-  4 : FH Byte 0 File Code 9994 Integer Big"
+          write(outlog(io),*)tmp4,        " 5-  8 : FH Byte 4 Unused 0 Integer Big"
+          write(outlog(io),*)tmp4,        " 9- 12 : FH Byte 8 Unused 0 Integer Big"
+          write(outlog(io),*)tmp4,        "13- 16 : FH Byte 12 Unused 0 Integer Big"
+          write(outlog(io),*)tmp4,        "17- 20 : FH Byte 16 Unused 0 Integer Big"
+          write(outlog(io),*)tmp4,        "21- 24 : FH Byte 20 Unused 0 Integer Big"
+        endif;enddo
       endif
 
       !              -- File Header length
@@ -328,7 +328,11 @@
       !              |     |        |    
       file_length = 50 + (4*nrec) + sum(reclen(1:nrec))  ! total file length in 16-bit words
       write(ov_mainID)BigEnd_4int(IsLitEnd,file_length)          ! 25-28 : FH Byte 24 File Length Integer Big
-      if(debugmode)write(global_debug,*)file_length,"25-28 : FH Byte 24 File Length Integer Big"
+      if(debugmode)then
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
+          write(outlog(io),*)file_length,"25-28 : FH Byte 24 File Length Integer Big"
+        endif;enddo
+      endif
       ! Recalculating length for the index file
       file_length = 50 + (4*nrec)
       write(ov_indxID)BigEnd_4int(IsLitEnd,file_length)
@@ -336,11 +340,19 @@
       ! Here's where we start writing as little-endian
       version = 1000
       write(ov_mainID)LitEnd_4int(IsLitEnd,version)             ! 29-32 : FH Byte 28 Version 1000 Integer Little
-      if(debugmode)write(global_debug,*)version,"29-32 : FH Byte 28 Version 1000 Integer Little"
+      if(debugmode)then
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
+          write(outlog(io),*)version,"29-32 : FH Byte 28 Version 1000 Integer Little"
+        endif;enddo
+      endif
       write(ov_indxID)LitEnd_4int(IsLitEnd,version)
       shape_type = 3
       write(ov_mainID)LitEnd_4int(IsLitEnd,shape_type)          ! 33-36 : FH Shape Type Integer Little
-      if(debugmode)write(global_debug,*)shape_type,"33-36 : FH Shape Type Integer Little"
+      if(debugmode)then
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
+          write(outlog(io),*)shape_type,"33-36 : FH Shape Type Integer Little"
+        endif;enddo
+      endif
       write(ov_indxID)LitEnd_4int(IsLitEnd,shape_type)          !         (use code 3 for polyline)
 
       ! Start of real values
@@ -353,10 +365,12 @@
       write(ov_indxID)LitEnd_8real(IsLitEnd,maxval(xmax(1:nrec)))
       write(ov_indxID)LitEnd_8real(IsLitEnd,maxval(ymax(1:nrec)))
       if(debugmode)then
-        write(global_debug,*)minval(xmin(1:nrec)),"37- 44 : FH Bounding Box Xmin Double Little"
-        write(global_debug,*)minval(ymin(1:nrec)),"45- 52 : FH Bounding Box Ymin Double Little"
-        write(global_debug,*)maxval(xmax(1:nrec)),"53- 60 : FH Bounding Box Xmax Double Little"
-        write(global_debug,*)maxval(ymax(1:nrec)),"61- 68 : FH Bounding Box Ymax Double Little"
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
+          write(outlog(io),*)minval(xmin(1:nrec)),"37- 44 : FH Bounding Box Xmin Double Little"
+          write(outlog(io),*)minval(ymin(1:nrec)),"45- 52 : FH Bounding Box Ymin Double Little"
+          write(outlog(io),*)maxval(xmax(1:nrec)),"53- 60 : FH Bounding Box Xmax Double Little"
+          write(outlog(io),*)maxval(ymax(1:nrec)),"61- 68 : FH Bounding Box Ymax Double Little"
+        endif;enddo
       endif
 
       write(ov_mainID)LitEnd_8real(IsLitEnd,zmin)    ! 69- 76 : FH Bounding Box Zmin Double Little
@@ -369,10 +383,12 @@
       write(ov_indxID)LitEnd_8real(IsLitEnd,mmax)
 
       if(debugmode)then
-        write(global_debug,*)zmin,"69- 76 : FH Bounding Box Zmin Double Little"
-        write(global_debug,*)zmax,"77- 84 : FH Bounding Box Zmax Double Little"
-        write(global_debug,*)mmin,"85- 92 : FH Bounding Box Mmin Double Little"
-        write(global_debug,*)mmax,"94-100 : FH Bounding Box Mmax Double Little"
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
+          write(outlog(io),*)zmin,"69- 76 : FH Bounding Box Zmin Double Little"
+          write(outlog(io),*)zmax,"77- 84 : FH Bounding Box Zmax Double Little"
+          write(outlog(io),*)mmin,"85- 92 : FH Bounding Box Mmin Double Little"
+          write(outlog(io),*)mmax,"94-100 : FH Bounding Box Mmax Double Little"
+        endif;enddo
       endif
       ! End of Main File Header
 
@@ -384,9 +400,17 @@
         !  Byte 4 Content Length Content Length Integer Big
         !   Note: content length is the number of 16-bit words
         write(ov_mainID)BigEnd_4int(IsLitEnd,irec)
-        if(debugmode)write(global_debug,*)irec,"Byte 0 Record Number Record Number Integer Big"
+        if(debugmode)then
+          do io=1,2;if(VB(io).le.verbosity_debug1)then
+            write(outlog(io),*)irec,"Byte 0 Record Number Record Number Integer Big"
+          endif;enddo
+        endif
         write(ov_mainID)BigEnd_4int(IsLitEnd,reclen(irec))
-        if(debugmode)write(global_debug,*)reclen(irec),"Byte 4 Content Length Content Length Integer Big"
+        if(debugmode)then
+          do io=1,2;if(VB(io).le.verbosity_debug1)then
+            write(outlog(io),*)reclen(irec),"Byte 4 Content Length Content Length Integer Big"
+          endif;enddo
+        endif
 
         !  PolyLine Record Contents
         !  Byte 0 Shape Type 3 Integer 1 Little
@@ -404,13 +428,15 @@
         write(ov_mainID)LitEnd_4int(IsLitEnd,NumPoints(irec))
 
         if(debugmode)then
-          write(global_debug,*)shape_type,"Byte 0 Shape Type 3 Integer 1 Little"
-          write(global_debug,*)xmin(irec),"Byte 4 xmin Double Little"
-          write(global_debug,*)ymin(irec),"Byte 12 ymin Double Little"
-          write(global_debug,*)xmax(irec),"Byte 20 xmax Double Little"
-          write(global_debug,*)ymax(irec),"Byte 28 ymax Double Little"
-          write(global_debug,*)NumParts(irec),"Byte 36 NumParts NumParts Integer 1 Little"
-          write(global_debug,*)NumPoints(irec),"Byte 40 NumPoints NumPoints Integer 1 Little"
+          do io=1,2;if(VB(io).le.verbosity_debug1)then
+            write(outlog(io),*)shape_type,"Byte 0 Shape Type 3 Integer 1 Little"
+            write(outlog(io),*)xmin(irec),"Byte 4 xmin Double Little"
+            write(outlog(io),*)ymin(irec),"Byte 12 ymin Double Little"
+            write(outlog(io),*)xmax(irec),"Byte 20 xmax Double Little"
+            write(outlog(io),*)ymax(irec),"Byte 28 ymax Double Little"
+            write(outlog(io),*)NumParts(irec),"Byte 36 NumParts NumParts Integer 1 Little"
+            write(outlog(io),*)NumPoints(irec),"Byte 40 NumPoints NumPoints Integer 1 Little"
+          endif;enddo
         endif
         ! Address of the start of the first part is 0
         write(ov_mainID)LitEnd_4int(IsLitEnd,0_4) ! An array of length NumParts with each value

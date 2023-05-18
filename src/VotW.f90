@@ -2,9 +2,6 @@
 
       use precis_param
 
-      use global_param,  only : &
-         VERB
-
       use io_units
 
       use io_data,       only : &
@@ -103,17 +100,17 @@
         endif
       enddo
       if (Volcano_ID.gt.0)then
-        if(VERB.ge.1)then
-          write(global_info,*)"Found volcano in database"
-          write(global_info,*)"  Volcano ID    : ",volcID(Volcano_ID)
-          write(global_info,*)"  Name          : ",volcName(Volcano_ID)
-          write(global_info,*)"  Location      : ",volcLoc(Volcano_ID)
-          write(global_info,*)"  Latitude      : ",volcLat(Volcano_ID)
-          write(global_info,*)"  Longitude     : ",volcLon(Volcano_ID)
-          write(global_info,*)"  Elevation     : ",volcElev(Volcano_ID)
-          write(global_info,*)"  Eruption type : ",volcESP_Code(Volcano_ID)
-          write(global_info,*)"  "
-        endif
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Found volcano in database"
+          write(outlog(io),*)"  Volcano ID    : ",volcID(Volcano_ID)
+          write(outlog(io),*)"  Name          : ",volcName(Volcano_ID)
+          write(outlog(io),*)"  Location      : ",volcLoc(Volcano_ID)
+          write(outlog(io),*)"  Latitude      : ",volcLat(Volcano_ID)
+          write(outlog(io),*)"  Longitude     : ",volcLon(Volcano_ID)
+          write(outlog(io),*)"  Elevation     : ",volcElev(Volcano_ID)
+          write(outlog(io),*)"  Eruption type : ",volcESP_Code(Volcano_ID)
+          write(outlog(io),*)"  "
+        endif;enddo
 
         !Change the input name to the EPS database name
         write(VolcanoName,*)trim(volcName(Volcano_ID)),&
@@ -198,23 +195,29 @@
           ESP_MassFluxRate = 0.0_ip
           ESP_Vol          = 0.0_ip
           ESP_massfracfine = 0.0_ip
-          write(global_error,*)"Not set up for submarine ESP"
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"Not set up for submarine ESP"
+          endif;enddo
           stop 1
         else
-          write(global_error,*)"Could not read the eruption style."
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"Could not read the eruption style."
+          endif;enddo
           stop 1
         endif
-        if(VERB.ge.1)then
-          write(global_info,*)"The following ESPs will be used IF variables are not"
-          write(global_info,*)"assigned in the input file:"
-          write(global_info,*)"  Plume Height (km)     : ",ESP_height
-          write(global_info,*)"  Duration (h)          : ",ESP_duration
-          write(global_info,*)"  Mass Flux Rate (kg/s) : ",ESP_MassFluxRate
-          write(global_info,*)"  Volume (km^3)         : ",ESP_Vol
-          write(global_info,*)"  Mass frac of fines    : ",ESP_massfracfine
-        endif 
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"The following ESPs will be used IF variables are not"
+          write(outlog(io),*)"assigned in the input file:"
+          write(outlog(io),*)"  Plume Height (km)     : ",ESP_height
+          write(outlog(io),*)"  Duration (h)          : ",ESP_duration
+          write(outlog(io),*)"  Mass Flux Rate (kg/s) : ",ESP_MassFluxRate
+          write(outlog(io),*)"  Volume (km^3)         : ",ESP_Vol
+          write(outlog(io),*)"  Mass frac of fines    : ",ESP_massfracfine
+        endif;enddo
       else ! if (Volcano_ID.gt.0)
-        if(VERB.ge.1)write(global_info,*)"Did not find volcano in database"
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Did not find volcano in database"
+        endif;enddo
       endif
 
       return
@@ -261,11 +264,15 @@
                           '/share/VotW_ESP_v12_csv.txt'
       ! Test for existance of the VotW file
       inquire( file=trim(adjustl(VotWMasterFile)), exist=IsThere )
-      if(VERB.ge.1)write(global_info,*)"     ",trim(adjustl(VotWMasterFile)),IsThere
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"     ",trim(adjustl(VotWMasterFile)),IsThere
+      endif;enddo
       if(.not.IsThere)then
-        write(global_error,*)"ERROR: Could not find VotW file."
-        write(global_error,*)"       Please copy file to this location:"
-        write(global_error,*)VotWMasterFile
+        do io=1,2;if(VB(io).le.verbosity_error)then          
+          write(errlog(io),*)"ERROR: Could not find VotW file."
+          write(errlog(io),*)"       Please copy file to this location:"
+          write(errlog(io),*)VotWMasterFile
+        endif;enddo
         stop 1 
       endif
 
@@ -303,8 +310,10 @@
         endif
         if(volcNS(nvolcs).eq.'S') volcLat(nvolcs) = -volcLat(nvolcs)
         if(volcWE(nvolcs).eq.'W') volcLon(nvolcs) = -volcLon(nvolcs) + 360.0_ip
-        if(VERB.ge.1)write(global_info,*)&
-           volcID(nvolcs),volcName(nvolcs),volcLoc(nvolcs),volcLat(nvolcs),volcLon(nvolcs)
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)&
+             volcID(nvolcs),volcName(nvolcs),volcLoc(nvolcs),volcLat(nvolcs),volcLon(nvolcs)
+        endif;enddo
         read(20,'(a195)',IOSTAT=Iostatus) linebuffer195
       enddo
 
@@ -313,8 +322,9 @@
       return
 
 !     ERROR TRAPS
-3000  write(global_error,5) "VotW_ESP_v12.esp"
-      if(VERB.ge.1)write(global_log,5) "VotW_ESP_v12.esp"
+3000  do io=1,2;if(VB(io).le.verbosity_error)then          
+        write(errlog(io),5) "VotW_ESP_v12.esp"
+      endif;enddo
       stop 1
 
       !FORMAT STATEMENTS

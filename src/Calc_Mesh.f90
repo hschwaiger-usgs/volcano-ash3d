@@ -7,7 +7,7 @@
       use io_units
 
       use global_param,  only : &
-         DEG2KMLON,DEG2RAD,DEG2KMLAT,RAD_EARTH,PI,VERB
+         DEG2KMLON,DEG2RAD,DEG2KMLAT,RAD_EARTH,PI
 
       use mesh,          only : &
          nxmax,nymax,nzmax,x_cc_pd,y_cc_pd,dx,dy,&
@@ -39,16 +39,17 @@
       real(kind=ip) :: del_lam
       real(kind=ip) :: phi_bot,phi_top,phi
 
-      if(VERB.ge.1)then
-        write(global_production,*)"--------------------------------------------------"
-        write(global_production,*)"---------- CALC_MESH_PARAMS ----------------------"
-        write(global_production,*)"--------------------------------------------------"
-      endif
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"--------------------------------------------------"
+        write(outlog(io),*)"---------- CALC_MESH_PARAMS ----------------------"
+        write(outlog(io),*)"--------------------------------------------------"
+      endif;enddo
 
 !     SET UP CONCENTRATION GRID.
 !     THE CONCENTRATION IS CALCULATED AT CELL CENTERS
-      if(VERB.ge.1)write(global_info,30)
-      if(VERB.ge.1)write(global_log,30)
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),30)
+      endif;enddo
 
       do k=1,nzmax
         ! Note: z_vec_init is the array (0:nz_init) for the initial input z profile.
@@ -82,7 +83,9 @@
            !calculate radius of umbrella cloud source nodes
            SourceNodeWidth_km  = (3.0_ip/2.0_ip)*de_km
            SourceNodeHeight_km = (3.0_ip/2.0_ip)*dn_km
-           if(VERB.ge.1)write(global_info,142) SourceNodeWidth_km, SourceNodeHeight_km
+           do io=1,2;if(VB(io).le.verbosity_info)then
+             write(outlog(io),142) SourceNodeWidth_km, SourceNodeHeight_km
+           endif;enddo
 142        format(/,'Calculating width of source for umbrella.',/, &
                   'SourceNodeWidth_km=',f5.1,/, &
                   'SourceNodeHeight_km=',f5.1)
@@ -164,18 +167,18 @@
 
       endif !IsLatLon
 
-      if(VERB.ge.1)then
-        write(global_info,*)"    Cell-centered computational grid extends from:"
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"    Cell-centered computational grid extends from:"
         if (IsLatLon) then
-          write(global_info,*)"     in lon: ",real(lon_cc_pd(1),kind=sp),real(lon_cc_pd(nxmax),kind=sp)
-          write(global_info,*)"     in lat: ",real(lat_cc_pd(1),kind=sp),real(lat_cc_pd(nymax),kind=sp)
-          write(global_info,*)"     in   z: ",real(   z_cc_pd(1),kind=sp),real(   z_cc_pd(nzmax),kind=sp)
+          write(outlog(io),*)"     in lon: ",real(lon_cc_pd(1),kind=sp),real(lon_cc_pd(nxmax),kind=sp)
+          write(outlog(io),*)"     in lat: ",real(lat_cc_pd(1),kind=sp),real(lat_cc_pd(nymax),kind=sp)
+          write(outlog(io),*)"     in   z: ",real(   z_cc_pd(1),kind=sp),real(   z_cc_pd(nzmax),kind=sp)
         else
-          write(global_info,*)"     in x: ",real(x_cc_pd(1),kind=sp),real(x_cc_pd(nxmax),kind=sp)
-          write(global_info,*)"     in y: ",real(y_cc_pd(1),kind=sp),real(y_cc_pd(nymax),kind=sp)
-          write(global_info,*)"     in z: ",real(z_cc_pd(1),kind=sp),real(z_cc_pd(nzmax),kind=sp)
+          write(outlog(io),*)"     in x: ",real(x_cc_pd(1),kind=sp),real(x_cc_pd(nxmax),kind=sp)
+          write(outlog(io),*)"     in y: ",real(y_cc_pd(1),kind=sp),real(y_cc_pd(nymax),kind=sp)
+          write(outlog(io),*)"     in z: ",real(z_cc_pd(1),kind=sp),real(z_cc_pd(nzmax),kind=sp)
         endif
-      endif
+      endif;enddo
       ! Evaluate wind files for time/space consistency with model requests
         ! Initialize the grids needed for met data
       call MR_Set_CompProjection(IsLatLon,A3d_iprojflag,A3d_lam0, &
@@ -195,8 +198,10 @@
                                 real(z_cc_pd(1:nzmax)    ,kind=sp), &
                                 IsPeriodic)
       endif
-      if(VERB.ge.1)write(global_info,*)"Finished initializing Met Grids"
-      if(VERB.ge.1)write(global_info,*)"Now determining which NWP files and steps needed."
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"Finished initializing Met Grids"
+        write(outlog(io),*)"Now determining which NWP files and steps needed."
+      endif;enddo
       call MR_Set_Met_Times(SimStartHour, Simtime_in_hours)
 
 30    format(/,4x,'Calculating the locations of each cell-centered node in the grid.')
@@ -213,9 +218,6 @@
       use precis_param
 
       use io_units
-
-      use global_param,      only : &
-         VERB
 
       use mesh,              only : &
          nxmax,nymax,x_cc_pd,y_cc_pd,xy2ll_xlon,xy2ll_ylat,&
@@ -236,8 +238,10 @@
       real(kind=ip)      :: olam_ip,ophi_ip ! using internal precision
       real(kind=dp)       :: xout,yout
 
-      if(VERB.gt.1)write(global_info,*)"Inside get_minmax_lonlat"
-      if(VERB.gt.1)write(global_info,*)"Allocating of size: ",nxmax+2,nymax+2
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"Inside get_minmax_lonlat"
+        write(outlog(io),*)"Allocating of size: ",nxmax+2,nymax+2
+      endif;enddo
       if(.not.allocated(xy2ll_ylat))allocate(xy2ll_ylat(0:nxmax+1,0:nymax+1))
       if(.not.allocated(xy2ll_xlon))allocate(xy2ll_xlon(0:nxmax+1,0:nymax+1))
 
@@ -274,9 +278,6 @@
       subroutine get_minmax_index
 
       use precis_param
-
-      use global_param,  only : &
-         VERB
 
       use io_units
 
@@ -353,7 +354,9 @@
         endif
       enddo
       if(kmax.lt.kmin)then
-        write(global_error,*)"ERROR: kmax<kmin in get_minmax_index"
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: kmax<kmin in get_minmax_index"
+        endif;enddo
         stop 1
       endif
 

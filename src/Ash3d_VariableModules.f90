@@ -16,24 +16,35 @@
 !##############################################################################
       module io_units
 
-      integer,       parameter :: global_essential    = 6
-      integer,       parameter :: global_production   = 6
-      integer,       parameter :: global_debug        = 6
-      integer,       parameter :: global_info         = 6
-      integer,       parameter :: global_log          = 9
-      integer,       parameter :: global_error        = 0
+      ! Initilize these with the defaults, but we will reset these in the subroutine
+      ! Set_OS_Env to whatever is in iso_fortran_env
+      integer :: stdin      = 5
+      integer :: global_log = 9
+      integer :: nio
+      integer :: io
+      integer,dimension(2) :: outlog = (/6,9/)
+      integer,dimension(2) :: errlog = (/0,9/)
 
-! *     #define SC_LP_DEFAULT   (-1)    this selects the SC default threshold
-! *     #define SC_LP_ALWAYS      0     this will log everything
-! *     #define SC_LP_TRACE       1     this will prefix file and line number
-! *     #define SC_LP_DEBUG       2     any information on the internal state
-! *     #define SC_LP_VERBOSE     3     information on conditions, decisions
-! *     #define SC_LP_INFO        4     the main things a function is doing
-! *     #define SC_LP_STATISTICS  5     important for consistency/performance
-! *     #define SC_LP_PRODUCTION  6     a few lines for a major api function
-! *     #define SC_LP_ESSENTIAL   7     this logs a few lines max per program
-! *     #define SC_LP_ERROR       8     this logs errors only
-! *     #define SC_LP_SILENT      9     this never logs anything
+      character(9) :: logfile = 'Ash3d.lst'  ! This is the default Ash3d logfile
+
+      ! default verbosity is 3
+      ! This will write everything from verbosity_log to verbosity_error to both stdout and stdlog
+      
+      integer,dimension(2) :: VB = (/3,3/) ! Verbosity level for stdout and logfile, respectively
+      integer :: VERB     = 3 ! stdout verbosity level 
+
+      ! These verbosity levels are for harmonizing with forestclaw
+      ! Only write statements verbosity level >= VERB will be written
+      integer,parameter :: verbosity_debug2       = 1  ! Additional debugging information only written to stdout
+      integer,parameter :: verbosity_debug1       = 2  ! Debugging information only written to stdout
+      integer,parameter :: verbosity_log          = 3  ! Time step information (this is the limit for writing to logfile)
+      integer,parameter :: verbosity_info         = 4  ! Additional information on run set up and shutdown
+      integer,parameter :: verbosity_statistics   = 5  ! Details on health of run (timing, mass conservation)
+      integer,parameter :: verbosity_production   = 6  ! Major program flow info
+      integer,parameter :: verbosity_essential    = 7  ! Only start up and shutdown messages
+      integer,parameter :: verbosity_error        = 8  ! No logging to stdout, only stderr (and logfile)
+      integer,parameter :: verbosity_silent       = 9  ! No logging to stdout,stderr. Logfile written as normal
+      integer,parameter :: verbosity_dark         = 10 ! No logging to stdout,stderr or logfile
 
       end module io_units
 !##############################################################################
@@ -151,18 +162,18 @@
         ! VERB = 1 is the standard
         ! VERB > 1 is for debugging
         ! VERB = 0 is for silent runs
-#ifdef VERBOSE_L0
-      integer, parameter       :: VERB = 0
-#elif VERBOSE_L1
-      integer, parameter       :: VERB = 1
-#elif VERBOSE_L2
-      integer, parameter       :: VERB = 2
-#elif VERBOSE_L3
-      integer, parameter       :: VERB = 3
-#else
-      ! default verbosity is 1
-      integer, parameter       :: VERB = 1
-#endif
+!#ifdef VERBOSE_L0
+!      integer, parameter       :: VERB = 0
+!#elif VERBOSE_L1
+!      integer, parameter       :: VERB = 1
+!#elif VERBOSE_L2
+!      integer, parameter       :: VERB = 2
+!#elif VERBOSE_L3
+!      integer, parameter       :: VERB = 3
+!#else
+!      ! default verbosity is 1
+!      integer, parameter       :: VERB = 1
+!#endif
 
 
 

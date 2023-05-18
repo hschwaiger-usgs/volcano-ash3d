@@ -4,9 +4,6 @@
       
       use precis_param
 
-      use global_param,  only : &
-         VERB
-
       use io_units
 
       use solution,      only : &
@@ -56,28 +53,29 @@
 
       DateTime = HS_yyyymmddhhmm_since(time+SimStartHour,BaseYear,useLeap)
 
-      if(VERB.ge.1)then
-        write(global_info,2) itime,OutputStep_Marker,time,DateTime,&
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),2) itime,OutputStep_Marker,time,DateTime,&
                          SourceCumulativeVol,dep_vol,aloft_vol,&
                          outflow_vol,tot_vol,CloudArea
-        write(global_log ,2) itime,OutputStep_Marker,time,DateTime,&
-                         SourceCumulativeVol,dep_vol,aloft_vol,&
-                         outflow_vol,tot_vol,CloudArea
-      endif
+      endif;enddo
 
-      !write(global_info,*)sum(outflow_yz1(     1:ny,1:nz,1)*kappa(0     ,1:ny  ,1:nz  ))/MagmaDensity/KM3_2_M3,&
-      !          sum(outflow_yz2(     1:ny,1:nz,1)*kappa(  nx+1,1:ny  ,1:nz  ))/MagmaDensity/KM3_2_M3,&
-      !          sum(outflow_xz1(1:nx,     1:nz,1)*kappa(1:nx  ,0     ,1:nz  ))/MagmaDensity/KM3_2_M3,&
-      !          sum(outflow_xz2(1:nx,     1:nz,1)*kappa(1:nx  ,  ny+1,1:nz  ))/MagmaDensity/KM3_2_M3,&
-      !          sum(outflow_xy1(1:nx,1:ny,     1)*kappa(1:nx  ,1:ny  ,0     ))/MagmaDensity/KM3_2_M3,&
-      !          sum(outflow_xy2(1:nx,1:ny,     1)*kappa(1:nx  ,1:ny  ,  nz+1))/MagmaDensity/KM3_2_M3
+      !do io=1,2;if(VB(io).le.verbosity_info)then
+      !  write(outlog(io),*)sum(outflow_yz1(     1:ny,1:nz,1)*kappa(0     ,1:ny  ,1:nz  ))/MagmaDensity/KM3_2_M3,&
+      !            sum(outflow_yz2(     1:ny,1:nz,1)*kappa(  nx+1,1:ny  ,1:nz  ))/MagmaDensity/KM3_2_M3,&
+      !            sum(outflow_xz1(1:nx,     1:nz,1)*kappa(1:nx  ,0     ,1:nz  ))/MagmaDensity/KM3_2_M3,&
+      !            sum(outflow_xz2(1:nx,     1:nz,1)*kappa(1:nx  ,  ny+1,1:nz  ))/MagmaDensity/KM3_2_M3,&
+      !            sum(outflow_xy1(1:nx,1:ny,     1)*kappa(1:nx  ,1:ny  ,0     ))/MagmaDensity/KM3_2_M3,&
+      !            sum(outflow_xy2(1:nx,1:ny,     1)*kappa(1:nx  ,1:ny  ,  nz+1))/MagmaDensity/KM3_2_M3
+      !endif;enddo
 
       open(unit=19,file='progress.txt',status='replace')
       write(19,*)real(time/Simtime_in_hours,kind=4)
       close(19)
 
-!      write(global_info,*)"Total Mass Aloft = ",real(aloft_vol*MagmaDensity*KM3_2_M3*1.0e-9,kind=sp),&
+!      do io=1,2;if(VB(io).le.verbosity_info)then
+!        write(outlog(io),*)"Total Mass Aloft = ",real(aloft_vol*MagmaDensity*KM3_2_M3*1.0e-9,kind=sp),&
 !                " Tg"
+!      endif;enddo
 
       OutputStep_Marker = ' ' 
 

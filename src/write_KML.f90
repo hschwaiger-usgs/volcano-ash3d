@@ -2,9 +2,6 @@
 
       use precis_param
 
-      use global_param,  only : &
-         VERB
-
       use io_units
 
       integer, parameter :: nvars      = 10  ! Number of output variables with style profiles
@@ -431,10 +428,9 @@
       sizeY       = KML_sizeY(ivar)
 
       opacity = '80'
-      if(VERB.ge.1)then
-        write(global_info,*)"Opening KML file ",trim(adjustl(filename))
-        write(global_log ,*)"Opening KML file ",trim(adjustl(filename))
-      endif
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"Opening KML file ",trim(adjustl(filename))
+      endif;enddo
       open(fid,file=trim(adjustl(filename)),status='unknown',err=2500)
 
       write(fid,1)                 ! write file header (35 lines)
@@ -523,8 +519,9 @@
       return
 
       !Error traps
-2500  write(global_error,20)
-      if(VERB.ge.1)write(global_log  ,20)
+2500  do io=1,2;if(VB(io).le.verbosity_error)then
+        write(errlog(io),20)
+      endif;enddo
       stop 1
 
       !Format statements
@@ -1237,10 +1234,9 @@
       write(60,12)                           !write final lines of file
       close(60)                             !close file
 
-      if(VERB.ge.1)then
-        write(global_info,4) nWrittenOut               !Write number of airports affected to log file & stdout
-        write(global_log ,4) nWrittenOut
-      endif
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),4) nWrittenOut               !Write number of airports affected to log file & stdout
+      endif;enddo
 
       ! Test if zip is installed
       if(IsLinux.or.IsMacOS)then
@@ -1260,8 +1256,9 @@
       return
 
 !     Error traps
-2001  write(global_error,*)'Error opening ash_arrivaltimes_airports.kml.  Program stopped.'
-      if(VERB.ge.1)write(global_log  ,*)'Error opening ash_arrivaltimes_airports.kml.  Program stopped.'
+2001  do io=1,2;if(VB(io).le.verbosity_error)then
+        write(errlog(io),*)'Error opening ash_arrivaltimes_airports.kml.  Program stopped.'
+      endif;enddo
       stop 1
 
 
@@ -1491,10 +1488,9 @@
 
       fid = KML_fid(ivar)
 
-      if(VERB.ge.1)then
-        write(global_info,15)KML_filename(ivar)
-        write(global_log ,15)KML_filename(ivar)
-      endif
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),15)KML_filename(ivar)
+      endif;enddo
 
       if(TS_flag.ne.0)then
         write(fid,11)

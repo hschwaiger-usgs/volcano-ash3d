@@ -183,8 +183,10 @@
         ContourLev(1:nConLev) = Con_DepTime_Lev(1:nConLev)
         zrgb(1:nConLev,1:3) = Con_DepTime_RGB(1:nConLev,1:3)
       elseif(iprod.eq.8)then   ! ashfall arrival at airports/POI (mm)
-        write(global_error,*)"ERROR: No map PNG output option for airport arrival time data."
-        write(global_error,*)"       Should not be in write_2Dmap_PNG_dislin"
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: No map PNG output option for airport arrival time data."
+          write(errlog(io),*)"       Should not be in write_2Dmap_PNG_dislin"
+        endif;enddo
         stop 1
       elseif(iprod.eq.9)then   ! ash-cloud concentration
         write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
@@ -250,11 +252,15 @@
         ContourLev = (/0.1_ip, 0.3_ip, 1.0_ip, 3.0_ip, &
                 10.0_ip, 30.0_ip, 100.0_ip, 300.0_ip/)
       elseif(iprod.eq.16)then   ! profile plots
-        write(global_error,*)"ERROR: No map PNG output option for vertical profile data."
-        write(global_error,*)"       Should not be in write_2Dmap_PNG_dislin"
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: No map PNG output option for vertical profile data."
+          write(errlog(io),*)"       Should not be in write_2Dmap_PNG_dislin"
+        endif;enddo
         stop 1
       else
-        write(global_error,*)"ERROR: unexpected variable"
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: unexpected variable"
+        endif;enddo
         stop 1
       endif
 
@@ -372,8 +378,10 @@
                   yminDIS,ymaxDIS,ygrid_1,dy_map)
       call getlev(tmp_int)
       if(tmp_int.ne.2)then
-        write(global_error,*)"grafmp is supposed to return plot level 2, but we have ",tmp_int
-        write(global_error,*)"Exiting"
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"grafmp is supposed to return plot level 2, but we have ",tmp_int
+          write(errlog(io),*)"Exiting"
+        endif;enddo
         stop 1
       endif
        ! set color of coastlines

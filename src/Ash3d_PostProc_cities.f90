@@ -95,8 +95,10 @@
                           DirDelim // 'world_cities.txt'
         inquire( file=trim(adjustl(CityMasterFile)), exist=IsThere2 )
         if(.not.IsThere2)then
-          write(global_info,*)"ERROR: Could not find file: ",trim(adjustl(CityMasterFile))
-          write(global_info,*)"       Skipping cities"
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(outlog(io),*)"ERROR: Could not find file: ",trim(adjustl(CityMasterFile))
+            write(outlog(io),*)"       Skipping cities"
+          endif;enddo
           ncities = 0
           return
         endif
@@ -157,7 +159,9 @@
 3             format(2f10.4,1x,a26)
             enddo
           else
-            write(global_info,*)"outCode not recognized. No output file written"
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"outCode not recognized. No output file written"
+            endif;enddo
           endif
           close(13)
         endif

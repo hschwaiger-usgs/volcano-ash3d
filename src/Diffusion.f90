@@ -74,7 +74,7 @@
       subroutine DiffuseHorz(i)
 
       use global_param,  only : &
-         useCN,VERB
+         useCN
 
       implicit none
 
@@ -82,21 +82,29 @@
 
       if(useCN)then
         if(mod(i,2).eq.0) then
-          if(VERB.gt.1)write(global_info,*)"Ash3d: Calling diffCN_zxy"
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Ash3d: Calling diffCN_zxy"
+          endif;enddo
           call diffCN_x
           call diffCN_y
         else
-          if(VERB.gt.1)write(global_info,*)"Ash3d: Calling diffCN_zyx"
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Ash3d: Calling diffCN_zyx"
+          endif;enddo
           call diffCN_y
           call diffCN_x
         endif
       else
         if(mod(i,2).eq.0) then
-          if(VERB.gt.1)write(global_info,*)"Ash3d: Calling diff_zxy"
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Ash3d: Calling diff_zxy"
+          endif;enddo
           call diff_x
           call diff_y
         else
-          if(VERB.gt.1)write(global_info,*)"Ash3d: Calling diff_zyx"
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Ash3d: Calling diff_zyx"
+          endif;enddo
           call diff_y
           call diff_x
         endif

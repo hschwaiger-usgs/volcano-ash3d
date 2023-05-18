@@ -45,8 +45,10 @@
           write(cio,2) i
 2         format('vprofile',i2,'.txt')
         else
-          write(global_error,*)"ERROR: Too many vertical profiles."
-          write(global_error,*)"nvprofiles must be < ",MAXPROFILES
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: Too many vertical profiles."
+            write(errlog(io),*)"nvprofiles must be < ",MAXPROFILES
+          endif;enddo
           stop 1
         endif
         open(unit=ionumber,file=cio)
@@ -152,7 +154,7 @@
       use io_units
 
       use global_param,  only  : &
-         KM_2_M,VERB
+         KM_2_M
 
       use mesh,          only : &
          dx,dy,de,dn,IsLatLon,latLL,lonLL,xLL,yLL
@@ -246,8 +248,9 @@
       return
 
 !     Error traps
-2500  write(global_error,*) 'Error opening output file ASCII_output_file.txt.  Program stopped'            
-      if(VERB.ge.1)write(global_log  ,*) 'Error opening output file ASCII_output_file.txt.  Program stopped'
+2500  do io=1,2;if(VB(io).le.verbosity_error)then
+        write(errlog(io),*) 'Error opening output file ASCII_output_file.txt.  Program stopped'
+      endif;enddo
       stop 1
       
       end subroutine write_2D_ASCII
@@ -260,9 +263,6 @@
 
       use precis_param
 
-      use global_param,  only  : &
-         VERB
-
       use io_units
 
       use Output_Vars
@@ -273,18 +273,20 @@
 
       integer :: fid
       integer :: i,j
-      integer :: io
+      integer :: iost
 
       fid = 40
 
       open(unit=fid,file=trim(adjustl(filename)), status='old',err=2500)
 
-      read(fid,3000,iostat=io,err=2600) R_nx        ! read header values
-      if(io.gt.0)then
+      read(fid,3000,iostat=iost,err=2600) R_nx        ! read header values
+      if(iost.gt.0)then
         ! We might have an empty file
         ! Issue warning and return
-        if(VERB.ge.1)write(global_info,*) 'Error reading file ',trim(adjustl(filename))
-        if(VERB.ge.1)write(global_info,*) 'Check for zero-length file.'
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*) 'Error reading file ',trim(adjustl(filename))
+          write(errlog(io),*) 'Check for zero-length file.'
+        endif;enddo
         return
       endif
       read(fid,3001,err=2600) R_ny
@@ -312,12 +314,14 @@
       return
 
 !     Error traps
-2500  write(global_error,*) 'Error opening ASCII file. Program stopped'
-      if(VERB.ge.1)write(global_log  ,*) 'Error opening ASCII file. Program stopped'
+2500  do io=1,2;if(VB(io).le.verbosity_error)then
+        write(errlog(io),*) 'Error opening ASCII file. Program stopped'
+      endif;enddo
       stop 1
 
-2600  write(global_error,*) 'Error reading from ASCII file.'
-      if(VERB.ge.1)write(global_log  ,*) 'Error reading from ASCII file.'
+2600  do io=1,2;if(VB(io).le.verbosity_error)then
+        write(errlog(io),*) 'Error reading from ASCII file.'
+      endif;enddo
       stop 1
 
       end subroutine read_2D_ASCII
@@ -388,7 +392,7 @@
       use io_units
 
       use global_param,  only : &
-         M_2_MM,UseCalcFallVel,VERB
+         M_2_MM,UseCalcFallVel
 
       use Airports,      only : &
          Airport_AshArrivalTime,Airport_CloudArrivalTime, &
@@ -542,10 +546,10 @@
       return
 
 !     Error traps
-2000   write(global_error,*)  'Error opening ash_arrivaltimes_airports.txt.  Program stopped.'
-       if(VERB.ge.1)write(global_log  ,*)&
-          'Error opening ash_arrivaltimes_airports.txt.  Program stopped.'
-       stop 1
+2000  do io=1,2;if(VB(io).le.verbosity_error)then
+        write(errlog(io),*)  'Error opening ash_arrivaltimes_airports.txt.  Program stopped.'
+      endif;enddo
+      stop 1
 
 !     Format statements
 1     format('---------------------------------------------------------------------------------------------------', &

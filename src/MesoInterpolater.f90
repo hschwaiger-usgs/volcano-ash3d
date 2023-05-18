@@ -5,9 +5,6 @@
 !
       use precis_param
 
-      use global_param,  only : &
-         VERB
-
       use io_units
 
       use global_param,    only : &
@@ -107,10 +104,11 @@
             cycle
           endif
         enddo
-        if(VERB.ge.1)write(global_info,*)"MR_iMetStep_Now = ",MR_iMetStep_Now, &
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"MR_iMetStep_Now = ",MR_iMetStep_Now, &
                     TimeNow_fromRefTime, &
                     MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now)
-
+        endif;enddo
         ! Before reading state variables, we need to load the height grid
         ! which will be used in the QC checking
         call MR_Read_HGT_arrays(MR_iMetStep_Now,first_time)
@@ -179,8 +177,10 @@
                real((-AirDens_meso_next_step_MetP_sp*GRAV),kind=sp)
               call MR_Regrid_MetP_to_CompH(MR_iMetStep_Now)
             else
-              if(VERB.ge.1)write(*,*)"Tried to read variable, but it's not available: ",&
-                        Met_var_GRIB_names(ivar)
+              do io=1,2;if(VB(io).le.verbosity_info)then
+                write(outlog(io),*)"Tried to read variable, but it's not available: ",&
+                          Met_var_GRIB_names(ivar)
+              endif;enddo
               MR_dum3d_compH = 0.0_sp
             endif
             vz_meso_1_sp = MR_dum3d_compH
@@ -190,8 +190,10 @@
             if(Met_var_IsAvailable(ivar))then
               call MR_Read_3d_Met_Variable_to_CompH(ivar,MR_iMetStep_Now)
             else
-              if(VERB.ge.1)write(*,*)"Tried to read variable, but it's not available: ",&
+              do io=1,2;if(VB(io).le.verbosity_info)then
+                write(outlog(io),*)"Tried to read variable, but it's not available: ",&
                         Met_var_GRIB_names(ivar)
+              endif;enddo
               MR_dum3d_compH = 0.0_sp
             endif
             vz_meso_1_sp = MR_dum3d_compH
@@ -227,10 +229,12 @@
         if(TimeNow_fromRefTime.gt.MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now+1))then
           Load_MesoSteps = .true.
           MR_iMetStep_Now = MR_iMetStep_Now+1
-          if(VERB.ge.1)write(global_info,*)"  Need to load next step"
-          if(VERB.ge.1)write(global_info,*)"MR_iMetStep_Now = ",MR_iMetStep_Now, &
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"  Need to load next step"
+            write(outlog(io),*)"MR_iMetStep_Now = ",MR_iMetStep_Now, &
                       TimeNow_fromRefTime, &
                       MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now)
+          endif;enddo
         endif
       endif !first_time
 
@@ -332,14 +336,18 @@
             ! Again, now that we have temperature and density, we can get a better Vz
             ivar = 7 ! Pressure Vertical Velocity
             if(Met_var_IsAvailable(ivar))then
-              if(VERB.ge.1)write(global_log,*)"Vz is calculated by PressVertVel/(rho g)"
+              do io=1,2;if(VB(io).le.verbosity_info)then
+                write(global_log,*)"Vz is calculated by PressVertVel/(rho g)"
+              endif;enddo
               call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now+1)
               MR_dum3d_MetP = MR_dum3d_MetP/                   &
                 real((-AirDens_meso_next_step_MetP_sp*GRAV),kind=sp)
               call MR_Regrid_MetP_to_CompH(MR_iMetStep_Now+1)
             else
-              write(global_error,*)"Tried to read variable, but its not available: ",&
-                        Met_var_GRIB_names(ivar)
+              do io=1,2;if(VB(io).le.verbosity_error)then
+                write(errlog(io),*)"Tried to read variable, but its not available: ",&
+                          Met_var_GRIB_names(ivar)
+              endif;enddo
               MR_dum3d_compH = 0.0_sp
               stop 1 
             endif
@@ -354,11 +362,15 @@
           else
             ivar = 4 ! W winds
             if(Met_var_IsAvailable(ivar))then
-              if(VERB.ge.1)write(global_log,*)"Vz is calculated by PressVertVel/(dp/dz)"
+              do io=1,2;if(VB(io).le.verbosity_info)then
+                write(global_log,*)"Vz is calculated by PressVertVel/(dp/dz)"
+              endif;enddo
               call MR_Read_3d_Met_Variable_to_CompH(ivar,MR_iMetStep_Now+1)
             else
-              write(global_error,*)"Tried to read variable, but its not available: ",&
+              do io=1,2;if(VB(io).le.verbosity_error)then
+                write(errlog(io),*)"Tried to read variable, but its not available: ",&
                         Met_var_GRIB_names(ivar)
+              endif;enddo
               MR_dum3d_compH = 0.0_sp
               stop 1
             endif
@@ -428,13 +440,15 @@
            (SourceType.eq.'umbrella_air')).and.  &   !(TimeNow.gt.0.0_ip).and. &
           (TimeNow.lt.e_EndTime(1))) then
 #ifdef FAST_DT
-          write(global_error,*)"ERROR: Ash3d was compiled with the preproccesor flag -DFAST_DT"
-          write(global_error,*)"       Umbrella cloud source terms cannot be used when this"
-          write(global_error,*)"       flag is set because the velocity components added to"
-          write(global_error,*)"       the background wind velocities would not be accounted"
-          write(global_error,*)"       for in the dt calculation.  Please edit FASTFPPFLAG in"
-          write(global_error,*)"       the makefile and recompile Ash3d"
-          write(global_error,*)"       Exiting."
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: Ash3d was compiled with the preproccesor flag -DFAST_DT"
+            write(errlog(io),*)"       Umbrella cloud source terms cannot be used when this"
+            write(errlog(io),*)"       flag is set because the velocity components added to"
+            write(errlog(io),*)"       the background wind velocities would not be accounted"
+            write(errlog(io),*)"       for in the dt calculation.  Please edit FASTFPPFLAG in"
+            write(errlog(io),*)"       the makefile and recompile Ash3d"
+            write(errlog(io),*)"       Exiting."
+          endif;enddo
           stop 1
 #endif
           call umbrella_winds(first_time)
@@ -461,9 +475,11 @@
       !If vxmax or vymax > 2000 km/hr, send a warning and see which values of vx and vy
       !are so high.
       if (abs(maxval(vx_pd(1:nxmax,1:nymax,1:nzmax))).gt.5.0e3_ip) then
-        if(VERB.ge.1)write(global_info,1041) nxmax, nymax, nzmax, SimStartHour, &
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),1041) nxmax, nymax, nzmax, SimStartHour, &
                       MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now), &
                       MR_MetStep_Interval(MR_iMetStep_Now)
+        endif;enddo
 1041    format(4x,'Warning: max(vx) in Mesointerpolater is > 5.0e3.',&
                   '  Writing out locations of all ',/, &
                   'values greater than 5e3',/,4x,' nxmax=',i4,&
@@ -474,9 +490,11 @@
           do ix=1,nxmax
             do iy=1,nymax
               if (abs(vx_pd(ix,iy,iz)).gt.5.0e3_ip) then
-                if(VERB.ge.1)write(global_info,1042) ix, iy, iz, vx_pd(ix,iy,iz), & 
+                do io=1,2;if(VB(io).le.verbosity_info)then
+                  write(outlog(io),1042) ix, iy, iz, vx_pd(ix,iy,iz), & 
                               vx_meso_last_step_sp(ix,iy,iz), vx_meso_next_step_sp(ix,iy,iz),&
                               HoursIntoInterval
+                endif;enddo
 1042            format(4x,'ix=',i4,' iy=',i4,' iz=',i4,' vx=',e12.4, &
                           ' vx_regrid(1)=',e12.4,' vx_regrid(2)=',e12.4,e12.4)
                 !stop 1
@@ -484,20 +502,26 @@
             enddo
           enddo
         enddo
-        if(VERB.ge.1)then
-          write(global_info,*) 'Continue (y/n)?'
+        if(VB(1).lt.verbosity_silent)then
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*) 'Continue (y/n)?'
+          endif;enddo
           read(5,'(a1)') answer
           if (answer.eq.'n') stop 1
         else
-          write(global_error,*)"ERROR: velocities seem to be out of expected range."
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: velocities seem to be out of expected range."
+          endif;enddo
           stop 1
         endif
       endif
 
       if (abs(maxval(vy_pd(1:nxmax,1:nymax,1:nzmax))).gt.5.0e3_ip) then
-        if(VERB.ge.1)write(global_info,1043) nxmax, nymax, nzmax, SimStartHour, &
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),1043) nxmax, nymax, nzmax, SimStartHour, &
                       MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now), &
                       MR_MetStep_Interval(MR_iMetStep_Now)
+        endif;enddo
 1043    format(4x,'Warning: max(vy) in Mesointerpolater is > 5e3.',&
                   '  Writing out locations of all ',/, &
                   'values greater than 5e3',/,4x,' nxmax=',i4,&
@@ -509,20 +533,26 @@
           do ix=1,nxmax
             do iy=1,nymax
               if (vy_pd(ix,iy,iz).gt.5.0e3_ip) then
-                if(VERB.ge.1)write(global_info,1044) ix, iy, iz, vy_pd(ix,iy,iz),  & 
+                do io=1,2;if(VB(io).le.verbosity_info)then
+                  write(outlog(io),1044) ix, iy, iz, vy_pd(ix,iy,iz),  & 
                               vy_meso_last_step_sp(ix,iy,iz), vy_meso_next_step_sp(ix,iy,iz)
+                endif;enddo
 1044            format(4x,'ix=',i4,' iy=',i4,' iz=',i4,' vy=',e12.4,/, &
                           ' vy_regrid(1)=',e12.4,' vy_regrid(2)=',e12.4)
               endif
             enddo
           enddo
         enddo
-        if(VERB.ge.1)then
-          write(global_info,*) 'Continue (y/n)?'
+        if(VB(1).lt.verbosity_silent)then
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*) 'Continue (y/n)?'
+          endif;enddo
           read(5,'(a1)') answer
           if (answer.eq.'n') stop 1
         else
-          write(global_error,*)"ERROR: velocities seem to be out of expected range."
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: velocities seem to be out of expected range."
+          endif;enddo
           stop 1
         endif
       endif

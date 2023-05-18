@@ -4,9 +4,6 @@
 
       use io_units
 
-      use global_param,  only : &
-         VERB
-
       use plplot
       use iso_c_binding, only: c_ptr, c_loc, c_f_pointer
 
@@ -149,14 +146,16 @@
       END INTERFACE
 
       if(writeContours)then
-        write(global_error,*)"Running plplot to calculate contours lines"
-        write(global_error,*)"Not sure yet how to save contour data with plplot"
-        write(global_error,*)"If you want shapefiles, recompile without plplot or"
-        write(global_error,*)" reset the plot_pref_shp variable."
-        write(global_error,*)"Exiting"
+        write(errlog(io),*)"Running plplot to calculate contours lines"
+        write(errlog(io),*)"Not sure yet how to save contour data with plplot"
+        write(errlog(io),*)"If you want shapefiles, recompile without plplot or"
+        write(errlog(io),*)" reset the plot_pref_shp variable."
+        write(errlog(io),*)"Exiting"
         stop 1
       else
-        if(VERB.ge.1)write(global_info,*)"Running plplot to generate contour plot"
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Running plplot to generate contour plot"
+        endif;enddo
       endif
 
       ncities = 20
@@ -225,8 +224,8 @@
         ContourLev(1:nConLev) = Con_DepTime_Lev(1:nConLev)
         zrgb(1:nConLev,1:3) = Con_DepTime_RGB(1:nConLev,1:3)
       elseif(iprod.eq.8)then   ! ashfall arrival at airports/POI (mm)
-        write(global_error,*)"ERROR: No map PNG output option for airport arrival time data."
-        write(global_error,*)"       Should not be in write_2Dmap_PNG_dislin"
+        write(errlog(io),*)"ERROR: No map PNG output option for airport arrival time data."
+        write(errlog(io),*)"       Should not be in write_2Dmap_PNG_dislin"
         stop 1
       elseif(iprod.eq.9)then   ! ash-cloud concentration
         write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
@@ -292,11 +291,15 @@
         ContourLev = (/0.1_ip, 0.3_ip, 1.0_ip, 3.0_ip, &
                 10.0_ip, 30.0_ip, 100.0_ip, 300.0_ip/)
       elseif(iprod.eq.16)then   ! profile plots
-        write(global_error,*)"ERROR: No map PNG output option for vertical profile data."
-        write(global_error,*)"       Should not be in write_2Dmap_PNG_dislin"
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: No map PNG output option for vertical profile data."
+          write(errlog(io),*)"       Should not be in write_2Dmap_PNG_dislin"
+        endif;enddo
         stop 1
       else
-        write(global_error,*)"ERROR: unexpected variable"
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: unexpected variable"
+        endif;enddo
         stop 1
       endif
 
