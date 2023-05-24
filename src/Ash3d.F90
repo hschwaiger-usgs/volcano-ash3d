@@ -7,7 +7,7 @@
       use global_param,  only : &
          useCalcFallVel,useDiffusion,useHorzAdvect,useVertAdvect,&
          HR_2_S,useTemperature,DT_MIN,KM3_2_M3,EPS_TINY,EPS_SMALL,&
-         nmods,OPTMOD_names,StopConditions,CheckConditions
+         nmods,OPTMOD_names,StopConditions,CheckConditions      
 
       use mesh,          only : &
          ivent,jvent,nxmax,nymax,nzmax,nsmax,ts0,ts1,kappa_pd
@@ -137,6 +137,14 @@
 !------------------------------------------------------------------------------
 !       OPTIONAL MODULES
 !         Insert calls to custom input blocks here
+!
+!  Loop through all the optional modules compiled and test against the list
+!  from the input file (e.g. OPTMOD=TOPO), then call the special input reader
+!  for that block
+!  Do a sanity check on optional module requested in the input file v.s. those
+!  compiled in this executable and for consistency among modules:
+!  e.g. SRC_RESUSP will require the VARDIFF and LC be set
+!
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Now looping through optional modules found in input file"
       endif;enddo
@@ -167,22 +175,9 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !   Initialize concen and any special source terms here
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      if(LoadConcen)then
-        ! We are initializing the concentration and time from an output file
-        ! Currently, Ash3d assumes the concentration file is compatible with
-        ! the computational grid and grainsize distribution
-#ifdef USENETCDF
-        !call NC_RestartFile_LoadConcen
-#else
-        do io=1,2;if(VB(io).le.verbosity_error)then
-          write(errlog(io),*)"ERROR: Loading concentration files requires previous netcdf"
-          write(errlog(io),*)"       output.  This Ash3d executable was not compiled with"
-          write(errlog(io),*)"       netcdf support.  Please recompile Ash3d with"
-          write(errlog(io),*)"       USENETCDF=T, or select another source."
-        endif;enddo
-        stop 1
-#endif
-      else
+      if(.not.LoadConcen)then
+       ! Initialize arrays if we haven't already loaded the concentration from
+       ! a previous run
        concen_pd = 0.0_ip
        DepositGranularity = 0.0_ip
       endif
@@ -361,17 +356,6 @@
                   enddo
                 enddo
               enddo
-              !! this part is just for book-keeping and error checking
-              !do isize=1,n_gs_max
-              !  do k=1,nzmax+1
-              !    SourceCumulativeVol = SourceCumulativeVol + & ! final units is km3
-              !      dt                              * & ! hr
-              !      SourceNodeFlux(k,isize)         * & ! kg/km3 hr
-              !      kappa_pd(ivent,jvent,k)         / & ! km3
-              !      MagmaDensity                    / & ! kg/m3
-              !      KM3_2_M3                            ! m3/km3
-              !  enddo
-              !enddo
             else ! (SourceType.eq.'umbrella' or 'umbrella_air')
               ! All other standard source types (point,line,profile, suzuki) are
               ! integrated as follows.
@@ -540,7 +524,7 @@
         endif
            ! Error stop condition if the concen and outflow do not match the source
         StopConditions(4) = (MassConsErr.gt.1.0e-3_ip)
-        StopConditions(4) = .false.
+        StopConditions(4) = .false.  ! We override this condition until the umbr. source conserves mass
            ! Error stop condition if any volume measure is negative
         StopConditions(5) = (dep_vol.lt.-1.0_ip*EPS_SMALL).or.&
                             (aloft_vol.lt.-1.0_ip*EPS_SMALL).or.&

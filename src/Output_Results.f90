@@ -130,9 +130,11 @@
             ! Create the netcdf file and define dimensions/variables
             call create_netcdf_file
 #else
-            write(global_error,*)"ERROR: Ash3d was not compiled with netcdf libraries, but netcdf"
-            write(global_error,*)"       output is requested.  Please recompile Ash3d with"
-            write(global_error,*)"       USENETCDF=T, or select another output format."
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: Ash3d was not compiled with netcdf libraries, but netcdf"
+              write(errlog(io),*)"       output is requested.  Please recompile Ash3d with"
+              write(errlog(io),*)"       USENETCDF=T, or select another output format."
+            endif;enddo
             stop 1
 #endif
           endif

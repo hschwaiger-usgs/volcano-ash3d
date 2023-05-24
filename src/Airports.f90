@@ -448,31 +448,26 @@
       inow = 0
 
 !     OPEN THE AIRPORT LOCATION FILE
-      write(*,*)"Opening ",AirportInFile
       open(unit=17,file=AirportInFile,status='old',position='rewind',iostat=Iostatus)
-      write(*,*)"File open status = ",Iostatus
       inquire(17, exist=ex, opened=op, name=nam,access=acc,sequential=seq, form=frm, recl=irec, nextrec=nr)
-      write(*,*)"File exist  status = ",ex
-      write(*,*)"File open   status = ",op
-      write(*,*)"File name   status = ",nam
-      write(*,*)"File access status = ",acc
-      write(*,*)"File sequen status = ",seq
-      write(*,*)"File form   status = ",frm
-      write(*,*)"File record status = ",irec
-      write(*,*)"File next-r status = ",nr
+      !write(*,*)"File exist  status = ",ex
+      !write(*,*)"File open   status = ",op
+      !write(*,*)"File name   status = ",nam
+      !write(*,*)"File access status = ",acc
+      !write(*,*)"File sequen status = ",seq
+      !write(*,*)"File form   status = ",frm
+      !write(*,*)"File record status = ",irec
+      !write(*,*)"File next-r status = ",nr
 
       ! Read the header line and set Iostatus for the while loop
       read(unit=17,fmt='(a95)',iostat=Iostatus) inputline
-      write(*,*)"File read status = ",Iostatus
-      write(*,*)inputline
-      stop 8
+      !write(*,*)"File read status = ",Iostatus
 
 !      READ AIRPORT LOCATIONS AND ASSIGN AIRPORTS IN THE MODELED AREA TO A
 !      TEMPORARY ARRAY      
       do while (Iostatus.ge.0)
         inow = inow+1
         read(17,'(a95)',IOSTAT=Iostatus) inputline
-        write(*,*)inow,inputline
         read(inputline,*,err=2010) ExtAirportLat(inow), ExtAirportLon(inow)
         read(inputline,2) ExtAirportCode(inow), ExtAirportName(inow)
 2       format(50x,a3,1x,a35)

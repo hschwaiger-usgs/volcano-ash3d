@@ -240,6 +240,9 @@
           stop 1
         endif
         if(LoadConcen)then
+          ! We are initializing the concentration and time from an output file
+          ! Currently, Ash3d assumes the concentration file is compatible with
+          ! the computational grid and grainsize distribution
           do io=1,2;if(VB(io).le.verbosity_production)then
             write(outlog(io),*)'Enter name of concentration file'
           endif;enddo

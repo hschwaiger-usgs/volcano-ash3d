@@ -82,13 +82,13 @@
 
       if(useCN)then
         if(mod(i,2).eq.0) then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io).le.verbosity_debug1)then
             write(outlog(io),*)"Ash3d: Calling diffCN_zxy"
           endif;enddo
           call diffCN_x
           call diffCN_y
         else
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io).le.verbosity_debug1)then
             write(outlog(io),*)"Ash3d: Calling diffCN_zyx"
           endif;enddo
           call diffCN_y
@@ -96,13 +96,13 @@
         endif
       else
         if(mod(i,2).eq.0) then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io).le.verbosity_debug1)then
             write(outlog(io),*)"Ash3d: Calling diff_zxy"
           endif;enddo
           call diff_x
           call diff_y
         else
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io).le.verbosity_debug1)then
             write(outlog(io),*)"Ash3d: Calling diff_zyx"
           endif;enddo
           call diff_y
