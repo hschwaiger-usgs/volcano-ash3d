@@ -419,7 +419,7 @@ endif
 #write_GRIB.o: $(ASH3dCCSRC)/write_GRIB.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Tephra.o Source.o Airports.o
 #	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_GRIB.f90
 #endif
-write_KML.o: $(ASH3dCCSRC)/write_KML.f90 $(MFILE) Ash3d_VariableModules.o
+write_KML.o: $(ASH3dCCSRC)/write_KML.f90 $(MFILE) Ash3d_VariableModules.o Airports.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_KML.f90
 
 all: Ash3d tools

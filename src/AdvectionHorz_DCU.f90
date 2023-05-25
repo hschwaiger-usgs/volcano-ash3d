@@ -1,3 +1,6 @@
+!      subroutine advect_x
+!      subroutine advect_y
+
       module AdvectionHorz_DCU
 
       use precis_param
@@ -16,6 +19,14 @@
       use time_data,     only : &
          dt
 
+      implicit none
+
+        ! Set everything to private by default
+      private
+
+        ! Publicly available subroutines/functions
+      public advect_x,advect_y
+
       integer, parameter :: fluc_l = 1
       integer, parameter :: fluc_r = 2
 
@@ -29,8 +40,6 @@
       ! RP Denlinger and HF Schwaiger
 
       !!!$ use omp_lib
-
-      implicit none
 
       integer       :: j,k,n  ! These are the indeces mapping to the global arrays
       integer       :: l        ! This is the index along the particular advection direction
@@ -271,8 +280,6 @@
       ! RP Denlinger and HF Schwaiger
 
       !!!$ use omp_lib
-
-      implicit none
 
       integer       :: i,k,n  ! These are the indeces mapping to the global arrays
       integer       :: l        ! This is the index along the particular advection direction

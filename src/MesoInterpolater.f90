@@ -87,7 +87,6 @@
       END INTERFACE
 
       TimeNow_fromRefTime = SimStartHour+TimeNow  ! hours since reference time (1-1-1900)
-
       ! MesoInterpolater is called once before the time loop in order to
       ! initilize velocities on the computational grid and to determine the
       ! start time relative to the MetSteps
@@ -178,7 +177,7 @@
               call MR_Regrid_MetP_to_CompH(MR_iMetStep_Now)
             else
               do io=1,2;if(VB(io).le.verbosity_info)then
-                write(outlog(io),*)"Tried to read variable, but it's not available: ",&
+                write(outlog(io),*)"Tried to read variable, but it's not available: ",ivar,&
                           Met_var_GRIB_names(ivar)
               endif;enddo
               MR_dum3d_compH = 0.0_sp
@@ -191,7 +190,7 @@
               call MR_Read_3d_Met_Variable_to_CompH(ivar,MR_iMetStep_Now)
             else
               do io=1,2;if(VB(io).le.verbosity_info)then
-                write(outlog(io),*)"Tried to read variable, but it's not available: ",&
+                write(outlog(io),*)"Tried to read variable, but it's not available: ",ivar,&
                         Met_var_GRIB_names(ivar)
               endif;enddo
               MR_dum3d_compH = 0.0_sp
@@ -337,7 +336,7 @@
             ivar = 7 ! Pressure Vertical Velocity
             if(Met_var_IsAvailable(ivar))then
               do io=1,2;if(VB(io).le.verbosity_info)then
-                write(global_log,*)"Vz is calculated by PressVertVel/(rho g)"
+                write(outlog(io),*)"Vz is calculated by PressVertVel/(rho g)"
               endif;enddo
               call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now+1)
               MR_dum3d_MetP = MR_dum3d_MetP/                   &
@@ -345,7 +344,7 @@
               call MR_Regrid_MetP_to_CompH(MR_iMetStep_Now+1)
             else
               do io=1,2;if(VB(io).le.verbosity_error)then
-                write(errlog(io),*)"Tried to read variable, but its not available: ",&
+                write(errlog(io),*)"Tried to read variable, but it's not available: ",ivar,&
                           Met_var_GRIB_names(ivar)
               endif;enddo
               MR_dum3d_compH = 0.0_sp
@@ -368,7 +367,7 @@
               call MR_Read_3d_Met_Variable_to_CompH(ivar,MR_iMetStep_Now+1)
             else
               do io=1,2;if(VB(io).le.verbosity_error)then
-                write(errlog(io),*)"Tried to read variable, but its not available: ",&
+                write(errlog(io),*)"Tried to read variable, but it's not available: ",ivar,&
                         Met_var_GRIB_names(ivar)
               endif;enddo
               MR_dum3d_compH = 0.0_sp

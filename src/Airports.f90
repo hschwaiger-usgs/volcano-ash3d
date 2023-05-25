@@ -1,3 +1,11 @@
+!      subroutine Allocate_Airports(nair,nWT)
+!      subroutine Deallocate_Airports
+!      subroutine ReadAirports
+!      subroutine ReadExtAirports
+!      subroutine Read_GlobalAirports(num_GlobAirports)
+!      function bilinear_thickness(i,OutVar)
+
+
       module Airports
 
       use precis_param
@@ -7,20 +15,44 @@
       use io_data,       only : &
          Ash3dHome
 
-      !use Output_Vars,    only : &
-      !   DepArrivalTime_FillValue,CloudArrivalTime_FillValue
+      implicit none
 
+        ! Set everything to private by default
+      private
+
+        ! Publicly available subroutines/functions
+      public Allocate_Airports,Deallocate_Airports,ReadAirports,bilinear_thickness
+
+        ! Publicly available variables
+      integer,public                        :: nairports           ! number of nearby airports in domain
+      logical,public                        :: ProjectAirportLocations
+      integer,           allocatable,public :: Airport_i(:)
+      integer,           allocatable ,public:: Airport_j(:)
+      real(kind=ip),     allocatable,public :: Airport_AshArrivalTime(:)   !ash arrival time
+      real(kind=ip),     allocatable,public :: Airport_AshDuration(:)      !duration of ashfall
+      real(kind=ip),     allocatable,public :: Airport_CloudArrivalTime(:) !cloud arrival time
+      real(kind=ip),     allocatable,public :: Airport_CloudDuration(:)    !duration of cloud overhead
+      real(kind=ip),     allocatable,public :: Airport_DepRate(:)          !deposit thickness change during this time step
+      real(kind=ip),     allocatable,public :: Airport_DepRateLast(:)      !deposit thickness change during last time step
+      real(kind=ip),     allocatable,public :: Airport_Thickness(:)        !deposit thickness this time step
+      real(kind=ip),     allocatable,public :: Airport_ThicknessLast(:)    !deposit thickness last time step
+      real(kind=ip),     allocatable,public :: Airport_Latitude(:)
+      real(kind=ip),     allocatable,public :: Airport_Longitude(:)
+      real(kind=ip),     allocatable,public :: Airport_CloudHere(:)        !cloud load overhead
+      real(kind=ip),     allocatable,public :: Airport_CloudHereLast(:)    !cloud load overhead in last time step
+      real(kind=ip),     allocatable,public :: Airport_Thickness_TS(:,:)   !deposit thickness for all output times
+      character(len=130),public             :: AirportInFile
+      character(len=35), allocatable,public :: Airport_Name(:)
+      character(len=3),  allocatable,public :: Airport_Code(:)
+      logical,           allocatable,public :: Airport_AshArrived(:)
+      logical,           allocatable,public :: Airport_CloudArrived(:)
+      integer,           allocatable,public :: Airport_TS_plotindex(:)
+
+        ! Variables internal to module, but shared amoung subroutines
       integer, parameter             :: MAXAIRPORTS     = 10000
-
       integer                        :: NAIRPORTS_EWERT     ! number of airports in the global list in Read_GlobalAirports
-      integer                        :: nairports           ! number of nearby airports in domain
       integer                        :: n_ext_airports      ! number of nearby airports in external file
-      integer                        :: n_airports_total    ! number of airports in external file
 
-      logical                        :: ProjectAirportLocations
-      integer,           allocatable :: Airport_i(:)
-      integer,           allocatable :: Airport_j(:)
-         
       real(kind=ip),     allocatable :: AirportFullLat(:)
       real(kind=ip),     allocatable :: AirportFullLon(:)
       character(len=3),  allocatable :: AirportFullCode(:)
@@ -33,28 +65,6 @@
 
       real(kind=ip),     allocatable :: Airport_x(:)
       real(kind=ip),     allocatable :: Airport_y(:)
-      real(kind=ip),     allocatable :: Airport_AshArrivalTime(:)   !ash arrival time
-      real(kind=ip),     allocatable :: Airport_AshDuration(:)      !duration of ashfall
-      real(kind=ip),     allocatable :: Airport_CloudArrivalTime(:) !cloud arrival time
-      real(kind=ip),     allocatable :: Airport_CloudDuration(:)    !duration of cloud overhead
-      real(kind=ip),     allocatable :: Airport_DepRate(:)          !deposit thickness change during this time step
-      real(kind=ip),     allocatable :: Airport_DepRateLast(:)      !deposit thickness change during last time step
-      real(kind=ip),     allocatable :: Airport_Thickness(:)        !deposit thickness this time step
-      real(kind=ip),     allocatable :: Airport_ThicknessLast(:)    !deposit thickness last time step
-      real(kind=ip),     allocatable :: Airport_Latitude(:)
-      real(kind=ip),     allocatable :: Airport_Longitude(:)  
-      real(kind=ip),     allocatable :: Airport_CloudHere(:)        !cloud load overhead
-      real(kind=ip),     allocatable :: Airport_CloudHereLast(:)    !cloud load overhead in last time step
-
-      real(kind=ip),     allocatable :: Airport_Thickness_TS(:,:)   !deposit thickness for all output times
-      integer,           allocatable :: Airport_TS_plotindex(:)
-
-      character(len=130)             :: AirportMasterFile           !Only needed if USEEXTDATA=T
-      character(len=130)             :: AirportInFile
-      character(len=35), allocatable :: Airport_Name(:)
-      character(len=3),  allocatable :: Airport_Code(:)
-      logical, allocatable           :: Airport_AshArrived(:)
-      logical, allocatable           :: Airport_CloudArrived(:)       
 
       integer, allocatable           :: inext(:)    ! i node just east of airport
       integer, allocatable           :: jnext(:)    ! j node just north of airport
@@ -64,8 +74,6 @@
 !##############################################################################
 
       subroutine Allocate_Airports(nair,nWT)
-
-      implicit none
 
       integer :: nair
       integer :: nWT
@@ -105,8 +113,6 @@
 !##############################################################################
 
       subroutine Deallocate_Airports
-
-      implicit none
 
 !     ALLOCATE ARRAY OF AIRPORTS TO BE USED IN THE MAIN PROGRAM
       if(allocated(Airport_Name))              deallocate(Airport_Name)
@@ -153,14 +159,13 @@
       use projection,    only : &
          PJ_proj_for
 
-      implicit none
-
       integer :: i,ind
       real(kind=ip)      :: xnow, ynow
       character(len=35)  :: NameNow
       character(len=3)   :: CodeNow
       real(kind=ip)      :: latitude, longitude
       real(kind=dp)      :: lat_in,lon_in,xout,yout
+      integer                        :: n_airports_total    ! number of airports in external file
 
       call Read_GlobalAirports(NAIRPORTS_EWERT)
 
@@ -361,8 +366,6 @@
       use mesh,          only : &
          IsLatLon,nxmax,nymax,dx,dy,de,dn,yLL,xLL,LatLL,LonLL
 
-      implicit none
-
       integer       :: i
       real(kind=ip) :: OutVar(nxmax,nymax)
 
@@ -436,13 +439,12 @@
 
       subroutine ReadExtAirports
 
-      implicit none
-
       integer           :: inow,iostatus
       character(len=95) :: inputline
 
       logical           :: ex, op
-      character(len=11) :: nam,acc,seq, frm
+      character(len=11) :: acc,seq, frm
+      character(len=80) :: nam
       integer           :: irec, nr
 
       inow = 0
@@ -501,8 +503,6 @@
       use global_param,  only : &
         DirDelim
 
-      implicit none
-
       integer, intent(out) :: num_GlobAirports
 
       integer                 :: i
@@ -513,6 +513,7 @@
       character(len=35)       :: inName
       character(len=3)        :: inCode
       logical                 :: IsThere
+      character(len=130)             :: AirportMasterFile           !Only needed if USEEXTDATA=T
 
       allocate(AirportFullLat(MAXAIRPORTS))
       allocate(AirportFullLon(MAXAIRPORTS))
@@ -584,8 +585,6 @@
       ! This branch is compiled if the list should be builtiin
       subroutine Read_GlobalAirports(num_GlobAirports)
          !(NAIRPORTS,AirportFullLat,AirportFullLon, nAirportFullCode, AirportFullName)
-
-      implicit none
 
       integer, intent(out) :: num_GlobAirports
 

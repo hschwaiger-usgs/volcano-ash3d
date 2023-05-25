@@ -2065,13 +2065,13 @@
 
       ! Fill variables with initial values
         ! Time
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Fill time"
       endif;enddo
       nSTAT=nf90_put_var(ncid,t_var_id,real(time,kind=dp),(/1/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var time")
         ! Z
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Fill Z"
       endif;enddo
       allocate(dum1d_out(nzmax))
@@ -2080,7 +2080,7 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var z")
       deallocate(dum1d_out)
         ! Y
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Fill Y"
       endif;enddo
       allocate(dum1d_out(nymax))
@@ -2093,7 +2093,7 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var y")
       deallocate(dum1d_out)
         ! X
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Fill X"
       endif;enddo
       allocate(dum1d_out(nxmax))
@@ -2110,7 +2110,7 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var x")
       deallocate(dum1d_out)
         ! BN (Grain size bin ID)
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Fill BN"
       endif;enddo
       allocate(dum1dint_out(nsmax))
@@ -2121,7 +2121,7 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var bn")
       deallocate(dum1dint_out)
         ! ER
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Fill ER"
       endif;enddo
       allocate(dum1dint_out(neruptions))
@@ -2134,7 +2134,7 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var er")
       deallocate(dum1dint_out)
         ! WS
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Fill WF"
       endif;enddo
       allocate(dum1dint_out(MR_iwindfiles))
@@ -2148,7 +2148,7 @@
       deallocate(dum1dint_out)
         ! PT
       if (Write_PT_Data)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill PT"
         endif;enddo
         allocate(dum1dint_out(nairports))
@@ -2164,7 +2164,7 @@
 
       if(Write_PR_Data)then
           ! PR
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill PR"
         endif;enddo
         allocate(dum1dint_out(nvprofiles))
@@ -2182,7 +2182,7 @@
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !   Now fill a few other variables that are a function of BN
          ! Species class ID
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Fill Species class ID"
       endif;enddo
       allocate(dum1dint_out(nsmax))
@@ -2191,7 +2191,7 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var spec_class")
       deallocate(dum1dint_out)
          ! Species sub-class ID
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Fill Species sub-class ID"
       endif;enddo
       allocate(dum1dint_out(nsmax))
@@ -2200,7 +2200,7 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var spec_subclass")
       deallocate(dum1dint_out)
          ! Grain-size diameter
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Fill GS Diameter"
       endif;enddo
       allocate(dum1d_out(nsmax))
@@ -2215,7 +2215,7 @@
       nSTAT=nf90_put_var(ncid,gssd_var_id,dum1d_out,(/1/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_diameter")
          ! gs_massfrac (Mass fraction of grain size)
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Fill GS MassFrac"
       endif;enddo
       dum1d_out = 0.0_op
@@ -2265,7 +2265,7 @@
       enddo
 
          ! Cell area
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Fill area"
       endif;enddo
       if (IsLatLon) then
@@ -2280,21 +2280,21 @@
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if(USE_WIND_VARS)then
           ! Vz
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill Vz"
         endif;enddo
         dum3d_out(1:nxmax,1:nymax,1:nzmax) = real(vz_pd(1:nxmax,1:nymax,1:nzmax),kind=op)
         nSTAT=nf90_put_var(ncid,vz_var_id,dum3d_out,(/1,1,1,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var vz")
           ! Vy
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill Vy"
         endif;enddo
         dum3d_out(1:nxmax,1:nymax,1:nzmax) = real(vy_pd(1:nxmax,1:nymax,1:nzmax),kind=op)
         nSTAT=nf90_put_var(ncid,vy_var_id,dum3d_out,(/1,1,1,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var vy")
           ! Vx
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill Vx"
         endif;enddo
         dum3d_out(1:nxmax,1:nymax,1:nzmax) = real(vx_pd(1:nxmax,1:nymax,1:nzmax),kind=op)
@@ -2312,7 +2312,7 @@
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if(USE_RESTART_VARS)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill ashcon"
         endif;enddo
           ! ashcon
@@ -2333,7 +2333,7 @@
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if(USE_OUTPROD_VARS)then
           ! depocon
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill depocon"
         endif;enddo
         depocon = 0.0_op
@@ -2355,13 +2355,13 @@
         nSTAT=nf90_put_var(ncid,depocon_var_id,depocon,(/1,1,1,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depocon")
 
-        do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"     Calling dbZCalculator"
-        endif;enddo
-        call dbZCalculator            ! get radar reflectivity
+        !do io=1,2;if(VB(io).le.verbosity_info)then
+        !  write(outlog(io),*)"     Fill "
+        !endif;enddo
+        !call dbZCalculator            ! get radar reflectivity
 
         ! depothick
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill depothick"
         endif;enddo
         dum2d_out(:,:) = DepositThickness_FillValue
@@ -2375,7 +2375,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depothick")
 
         ! ashconMax
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill ashconMax"
         endif;enddo
         dum2d_out(:,:) = real(MaxConcentration_FillValue,kind=op)
@@ -2391,7 +2391,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var ashconMax")
 
         ! ash cloud_height (top)
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill ash_height"
         endif;enddo
         dum2d_out(:,:) = real(MaxHeight_FillValue,kind=op)
@@ -2408,7 +2408,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var ashheight")
 
         ! ash-load
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill ashload"
         endif;enddo
         dum2d_out(:,:) = real(CloudLoad_FillValue,kind=op)
@@ -2424,7 +2424,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var ashload")
 
         ! cloud-mask
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill cloud mask"
         endif;enddo
         do i=1,nxmax
@@ -2440,7 +2440,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var cloud_mask")
 
         ! radar-reflectivity
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill dbZ"
         endif;enddo
         dum3d_out(:,:,:) = real(DBZ_THRESH,kind=op)
@@ -2458,7 +2458,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var reflectivity")
 
         ! ash cloud_bottom
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill ash height min"
         endif;enddo
         dum2d_out(:,:) = real(MinHeight_FillValue,kind=op)
@@ -2477,7 +2477,7 @@
         !  Note: this may not align with the last output time step since it is
         !  the values at the end of the simulation, not on the last output step
         ! depothickFin
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill depothickFin"
         endif;enddo
         dum2d_out(:,:) = DepositThickness_FillValue
@@ -2491,7 +2491,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depothickFin")
 
           ! depotime
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill depotime"
         endif;enddo
         dum2d_out(:,:) = DepArrivalTime_FillValue
@@ -2505,7 +2505,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depotime")
 
           ! ashtime
-       do io=1,2;if(VB(io).le.verbosity_info)then
+       do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill ashtime"
         endif;enddo
         dum2d_out(:,:) = CloudArrivalTime_FillValue
@@ -2523,7 +2523,7 @@
       if (Write_PT_Data)then
         ! These are variable associated with the dimension for point output
         ! (airport/POI)
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill PT variables"
         endif;enddo
 
@@ -3034,8 +3034,8 @@
         if(USE_OUTPROD_VARS)then
 
             ! depocon
-          do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"     Fill depocon"
+          do io=1,2;if(VB(io).le.verbosity_debug1)then
+            write(outlog(io),*)"     Writing depocon"
           endif;enddo
           nSTAT = nf90_inq_varid(ncid,"depocon",depocon_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid depocon")
@@ -3143,7 +3143,7 @@
 
           ! cloud-mask
           allocate(dum2dint_out(nxmax,nymax))
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io).le.verbosity_debug1)then
             write(outlog(io),*)"     Fill cloud mask"
           endif;enddo
           do i=1,nxmax

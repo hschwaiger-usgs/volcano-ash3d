@@ -9,9 +9,17 @@
  
  !***************************************************************************
  
- module AdvectionHorz
+      module AdvectionHorz
 
       use precis_param
+
+      implicit none
+
+        ! Set everything to private by default
+      private
+
+        ! Publicly available subroutines/functions
+      public AdvectHorz
 
       contains
 
@@ -27,8 +35,6 @@
 
       use mesh,          only : &
          nxmax,nymax,nzmax
-
-      implicit none
 
       integer,intent(in) :: itoggle
 

@@ -2,13 +2,16 @@
 !##############################################################################
       module precis_param
         ! The first two precision parameters can be changed to meet your needs
-      integer,       parameter,public :: op         = 4 ! Output precision
-      integer,       parameter,public :: ip         = 8 ! Internal precision
+      integer, parameter,public :: op         = 4 ! Output precision
+      integer, parameter,public :: ip         = 8 ! Internal precision
 
         ! These single and double precision parameters must not be changed from
         ! 4 and 8 or the reading of the windfiles will fail.
-      integer,       parameter,public :: sp         = 4 ! single precision
-      integer,       parameter,public :: dp         = 8 ! double precision
+      !integer, parameter,public :: sp         = 4 ! single precision
+      !integer, parameter,public :: dp         = 8 ! double precision
+      integer, parameter,public :: sp = selected_real_kind( 6,   37) ! single precision
+      integer, parameter,public :: dp = selected_real_kind(15,  307) ! double precision
+      integer, parameter,public :: qp = selected_real_kind(33, 4931) ! quad precision
 
       end module precis_param
 !##############################################################################

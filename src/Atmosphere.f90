@@ -1,8 +1,43 @@
+!      subroutine Allocate_Atmosphere_Met
+!      subroutine Deallocate_Atmosphere_Met
+!      subroutine Set_Atmosphere_Meso(Load_MesoSteps,Interval_Frac,first_time)
+!      function Dens_IdealGasLaw(pres,temp)
+!      function Visc_Sutherland(temp)
+!      function lambda_MeanFreePath(visc,pres,temp)
+
+
       module Atmosphere
 
       use precis_param
 
       use io_units
+
+      implicit none
+
+        ! Set everything to private by default
+      private
+
+        ! Publicly available subroutines/functions
+      public Allocate_Atmosphere_Met,Deallocate_Atmosphere_Met,Set_Atmosphere_Meso
+
+        ! Publicly available variables
+#ifdef USEPOINTERS
+      real(kind=sp),dimension(:,:,:),pointer,public :: AirDens_meso_last_step_MetP_sp => null()
+      real(kind=sp),dimension(:,:,:),pointer,public :: AirVisc_meso_last_step_MetP_sp => null()
+      real(kind=sp),dimension(:,:,:),pointer,public :: AirLamb_meso_last_step_MetP_sp => null()
+      real(kind=sp),dimension(:,:,:),pointer,public :: AirDens_meso_next_step_MetP_sp => null()
+      real(kind=sp),dimension(:,:,:),pointer,public :: AirVisc_meso_next_step_MetP_sp => null()
+      real(kind=sp),dimension(:,:,:),pointer,public :: AirLamb_meso_next_step_MetP_sp => null()
+#else
+      real(kind=sp),dimension(:,:,:),allocatable,public :: AirDens_meso_last_step_MetP_sp
+      real(kind=sp),dimension(:,:,:),allocatable,public :: AirVisc_meso_last_step_MetP_sp
+      real(kind=sp),dimension(:,:,:),allocatable,public :: AirLamb_meso_last_step_MetP_sp
+      real(kind=sp),dimension(:,:,:),allocatable,public :: AirDens_meso_next_step_MetP_sp
+      real(kind=sp),dimension(:,:,:),allocatable,public :: AirVisc_meso_next_step_MetP_sp
+      real(kind=sp),dimension(:,:,:),allocatable,public :: AirLamb_meso_next_step_MetP_sp
+#endif
+
+
 
       real(kind=ip), parameter :: R_GAS_IDEAL  = 8.3144621_ip ! Ideal gas constant (J /(kg K))
       real(kind=ip), parameter :: R_GAS_DRYAIR = 286.98_ip    ! Specific gas constant of R=286.98 J /(kg K)
@@ -15,28 +50,16 @@
       !  meso means grid of the met. file
 #ifdef USEPOINTERS
       real(kind=sp),dimension(:,:,:),pointer :: AirTemp_meso_last_step_MetP_sp => null()
-      real(kind=sp),dimension(:,:,:),pointer :: AirDens_meso_last_step_MetP_sp => null()
-      real(kind=sp),dimension(:,:,:),pointer :: AirVisc_meso_last_step_MetP_sp => null()
-      real(kind=sp),dimension(:,:,:),pointer :: AirLamb_meso_last_step_MetP_sp => null()
       real(kind=sp),dimension(:,:,:),pointer :: AirRelH_meso_last_step_MetP_sp => null()
       real(kind=sp),dimension(:,:,:),pointer :: AirSH_meso_last_step_MetP_sp   => null()
       real(kind=sp),dimension(:,:,:),pointer :: AirTemp_meso_next_step_MetP_sp => null()
-      real(kind=sp),dimension(:,:,:),pointer :: AirDens_meso_next_step_MetP_sp => null()
-      real(kind=sp),dimension(:,:,:),pointer :: AirVisc_meso_next_step_MetP_sp => null()
-      real(kind=sp),dimension(:,:,:),pointer :: AirLamb_meso_next_step_MetP_sp => null()
       real(kind=sp),dimension(:,:,:),pointer :: AirRelH_meso_next_step_MetP_sp => null()
       real(kind=sp),dimension(:,:,:),pointer :: AirSH_meso_next_step_MetP_sp   => null()
 #else
       real(kind=sp),dimension(:,:,:),allocatable :: AirTemp_meso_last_step_MetP_sp
-      real(kind=sp),dimension(:,:,:),allocatable :: AirDens_meso_last_step_MetP_sp
-      real(kind=sp),dimension(:,:,:),allocatable :: AirVisc_meso_last_step_MetP_sp
-      real(kind=sp),dimension(:,:,:),allocatable :: AirLamb_meso_last_step_MetP_sp
       real(kind=sp),dimension(:,:,:),allocatable :: AirRelH_meso_last_step_MetP_sp
       real(kind=sp),dimension(:,:,:),allocatable :: AirSH_meso_last_step_MetP_sp
       real(kind=sp),dimension(:,:,:),allocatable :: AirTemp_meso_next_step_MetP_sp
-      real(kind=sp),dimension(:,:,:),allocatable :: AirDens_meso_next_step_MetP_sp
-      real(kind=sp),dimension(:,:,:),allocatable :: AirVisc_meso_next_step_MetP_sp
-      real(kind=sp),dimension(:,:,:),allocatable :: AirLamb_meso_next_step_MetP_sp
       real(kind=sp),dimension(:,:,:),allocatable :: AirRelH_meso_next_step_MetP_sp
       real(kind=sp),dimension(:,:,:),allocatable :: AirSH_meso_next_step_MetP_sp
 #endif
@@ -61,8 +84,6 @@
 
       use MetReader,     only : &
          nx_submet,ny_submet,np_fullmet
-
-      implicit none
 
       do io=1,2;if(VB(io).le.verbosity_production)then
         write(outlog(io),*)"--------------------------------------------------"
@@ -168,8 +189,6 @@
       use global_param,  only : &
          useMoistureVars
 
-      implicit none
-
 #ifdef USEPOINTERS
 !!      if(associated(AirTemp_meso_last_step_MetP_sp))deallocate(AirTemp_meso_last_step_MetP_sp)
 !!      if(associated(AirDens_meso_last_step_MetP_sp))deallocate(AirDens_meso_last_step_MetP_sp)
@@ -222,8 +241,6 @@
          nx_submet,ny_submet,np_fullmet,p_fullmet_sp,MR_dum3d_MetP,MR_iMetStep_Now,&
          Met_var_IsAvailable, &
            MR_Read_3d_MetP_Variable
-
-      implicit none
 
       logical      ,intent(in) :: Load_MesoSteps
       real(kind=ip),intent(in) :: Interval_Frac     ! This is a placeholder in cases where
@@ -343,8 +360,6 @@
 
       function Dens_IdealGasLaw(pres,temp)
 
-      implicit none
-
       real(kind=sp) :: Dens_IdealGasLaw
       real(kind=sp) :: pres,temp
 
@@ -359,8 +374,6 @@
 !******************************************************************************
 
       function Visc_Sutherland(temp)
-
-      implicit none
 
       real(kind=sp) :: Visc_Sutherland
       real(kind=sp) :: temp
@@ -379,8 +392,6 @@
 
       use global_param,  only : &
          PI
-
-      implicit none
 
       real(kind=sp) :: lambda_MeanFreePath
       real(kind=sp) :: visc,pres,temp
