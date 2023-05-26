@@ -1,8 +1,26 @@
+!      subroutine Set_OutVar_Specs
+!      subroutine OpenFile_KML
+!      subroutine Write_2D_KML
+!      subroutine Write_PointData_Airports_KML
+!      subroutine Close_KML
+!      subroutine PlotModelBoundary
+!      function month(imonth)
+
       module Output_KML
 
       use precis_param
 
       use io_units
+
+      implicit none
+
+        ! Set everything to private by default
+      private
+
+        ! Publicly available subroutines/functions
+      public OpenFile_KML,Close_KML,Write_2D_KML,Write_PointData_Airports_KML,Set_OutVar_Specs
+
+        ! Publicly available variables
 
       integer, parameter :: nvars      = 10  ! Number of output variables with style profiles
       integer, parameter :: max_nclrmp = 11   ! Max number of colormap points
@@ -26,8 +44,8 @@
       ! Note file ash_arrivaltimes_airports.kml is written by the custom
       ! subroutine Write_PointData_Airports_KML
 
-      character(len=30),dimension(nvars           ) :: KMZ_filename
-      character(len=30),dimension(nvars           ) :: KML_filename
+      character(len=30),dimension(nvars           ),public :: KMZ_filename
+      character(len=30),dimension(nvars           ),public :: KML_filename
       character(len=5) ,dimension(nvars           ) :: KML_units
       integer          ,dimension(nvars           ) :: KML_fid
       integer          ,dimension(nvars           ) :: KML_n_clrmp
@@ -49,8 +67,6 @@
 !******************************************************************************
 
       subroutine Set_OutVar_Specs
-
-      implicit none
 
       integer :: ivar
 
@@ -375,8 +391,6 @@
       use projection,    only : &
            PJ_proj_inv
 
-      implicit none
-
       integer             :: ivar
       !character (len=13)  :: HS_yyyymmddhh_since
       character (len=13)  :: yyyymmddhh
@@ -687,8 +701,6 @@
 
       use projection,    only : &
            PJ_proj_inv
-
-      implicit none       
 
       integer        :: ivar
       real(kind=ip)  :: OutVar(nxmax,nymax)
@@ -1005,8 +1017,6 @@
 
       use projection,    only : &
            PJ_proj_inv
-
-      implicit none
 
       integer             :: i
       integer             :: nWrittenOut
@@ -1479,8 +1489,6 @@
 
       subroutine Close_KML(ivar,TS_flag)
 
-      implicit none
-
       integer :: ivar
       integer :: TS_flag
 
@@ -1517,8 +1525,6 @@
 
       use projection,    only : &
            PJ_proj_inv
-
-      implicit none
 
       real(kind=ip)  :: xplot(0:40),yplot(0:40),lonplot(0:40),latplot(0:40)
       real(kind=ip)  :: xleft,xright,ybottom,ytop
@@ -1641,7 +1647,6 @@
 
 !     function that returns the name of the month given the month number
 
-      implicit none
       character (len=2) :: imonth
       character (len=3) :: month
 

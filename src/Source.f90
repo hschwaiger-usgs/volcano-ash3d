@@ -1,3 +1,10 @@
+!      subroutine Allocate_Source_eruption
+!      subroutine Allocate_Source_grid
+!      subroutine Allocate_Source_time
+!      subroutine Deallocate_Source
+!      subroutine TephraSourceNodes
+!      subroutine MassFluxCalculator
+
       module Source
 
       use precis_param
@@ -6,66 +13,79 @@
 
       use global_param
 
+      implicit none
+
+        ! Set everything to private by default
+      private
+
+        ! Publicly available subroutines/functions
+      public Allocate_Source_eruption, Allocate_Source_grid,Allocate_Source_time,&
+             Deallocate_Source,MassFluxCalculator,TephraSourceNodes
+
+        ! Publicly available variables
+
+
       integer, parameter :: MAXCustSrc = 10  ! The maximum number of custom
                                                !source types that we will check for
 
-      real(kind=ip) :: x_volcano, y_volcano      ! x & y points of volcano (m)
-      real(kind=ip) :: lat_volcano, lon_volcano  !position of volcano in lat/lon
-      real(kind=ip) :: z_volcano                 ! vent elevation
+      real(kind=ip),public :: x_volcano, y_volcano      ! x & y points of volcano (m)
+      real(kind=ip),public :: lat_volcano, lon_volcano  !position of volcano in lat/lon
+      real(kind=ip),public :: z_volcano                 ! vent elevation
 
-      integer :: neruptions                  ! number of eruptions or eruptive pulses
-      character(len=12) :: SourceType          !may be 'point', 'line', or 'Suzuki' 
-      real(kind=ip) :: Suzuki_A
+      integer,public :: neruptions                  ! number of eruptions or eruptive pulses
+      character(len=12),public :: SourceType          !may be 'point', 'line', or 'Suzuki' 
+      real(kind=ip),public :: Suzuki_A
       real(kind=ip) :: rate_height           !for plume calculations
-      logical       :: IsCustom_SourceType = .false.
+      logical,public       :: IsCustom_SourceType = .false.
       character(len=30),dimension(MAXCustSrc) :: SourceType_Custom = ""
 
 #ifdef USEPOINTERS
-      real(kind=ip), dimension(:,:)  ,pointer :: SourceNodeFlux      => null()
+      real(kind=ip), dimension(:,:)  ,pointer,ppublic :: SourceNodeFlux      => null()
       real(kind=ip), dimension(:,:,:),pointer :: SourceNodeFlux_Area => null()
 #else
-      real(kind=ip), dimension(:,:),allocatable       :: SourceNodeFlux
+      real(kind=ip), dimension(:,:)  ,allocatable,public     :: SourceNodeFlux
       real(kind=ip), dimension(:,:,:),allocatable     :: SourceNodeFlux_Area
 #endif
 
         !The following arrays are used by MassFluxCalculator
-      real(kind=ip) :: MassFluxRate_now
+      real(kind=ip),public :: MassFluxRate_now
       real(kind=ip) :: Height_now
       integer :: ieruption !eruption we're currently on
 
       !The following are used by SourceNodes for umbrella clouds
-      integer :: ibase     !z index of lowest node in the umbrella cloud
-      integer :: itop     !z index of highest node in the umbrella cloud
+      integer,public :: ibase     !z index of lowest node in the umbrella cloud
+      integer,public :: itop     !z index of highest node in the umbrella cloud
        !width & height of source nodes in km
-      real(kind=ip) :: SourceNodeWidth_km, SourceNodeHeight_km 
+      real(kind=ip),public :: SourceNodeWidth_km
+      real(kind=ip),public :: SourceNodeHeight_km 
 
         !The following arrays are of length neruptions
-      real(kind=ip), dimension(:)        ,allocatable :: e_PlumeHeight
-      real(kind=ip), dimension(:)        ,allocatable :: e_Volume
-      real(kind=ip), dimension(:)        ,allocatable :: e_Duration
-      real(kind=ip), dimension(:)        ,allocatable :: e_StartTime
-      real(kind=ip), dimension(:)        ,allocatable :: e_EndTime
-      real(kind=ip), dimension(:)        ,allocatable :: MassFlux
+      real(kind=ip), dimension(:)        ,allocatable,public :: e_PlumeHeight
+      real(kind=ip), dimension(:)        ,allocatable,public :: e_Volume
+      real(kind=ip), dimension(:)        ,allocatable,public :: e_Duration
+      real(kind=ip), dimension(:)        ,allocatable,public :: e_StartTime
+      real(kind=ip), dimension(:)        ,allocatable,public :: e_EndTime
+      real(kind=ip), dimension(:)        ,allocatable,public :: MassFlux
       real(kind=ip), dimension(:)        ,allocatable :: Suzuki_param
-      real(kind=ip), dimension(:)        ,allocatable :: e_prof_dz
-      integer      , dimension(:)        ,allocatable :: e_prof_zpoints
-      real(kind=ip), dimension(:,:)      ,allocatable :: e_prof_Volume
-      real(kind=ip), dimension(:,:)      ,allocatable :: e_prof_MassFlux
-      real(kind=ip) :: e_EndTime_final
+      real(kind=ip), dimension(:)        ,allocatable,public :: e_prof_dz
+      integer      , dimension(:)        ,allocatable,public :: e_prof_zpoints
+      real(kind=ip), dimension(:,:)      ,allocatable,public :: e_prof_Volume
+      real(kind=ip), dimension(:,:)      ,allocatable,public :: e_prof_MassFlux
+      real(kind=ip),public :: e_EndTime_final
 
-      real(kind=ip) :: ESP_height        = 0.0_ip
-      real(kind=ip) :: ESP_duration      = 0.0_ip
-      real(kind=ip) :: ESP_MassFluxRate  = 0.0_ip
-      real(kind=ip) :: ESP_Vol           = 0.0_ip
-      real(kind=ip) :: ESP_massfracfine  = 0.0_ip
+      real(kind=ip),public :: ESP_height        = 0.0_ip
+      real(kind=ip),public :: ESP_duration      = 0.0_ip
+      real(kind=ip),public :: ESP_MassFluxRate  = 0.0_ip
+      real(kind=ip),public :: ESP_Vol           = 0.0_ip
+      real(kind=ip),public :: ESP_massfracfine  = 0.0_ip
 
       !components of the wind field used for umbrella clouds
 #ifdef USEPOINTERS
-      real(kind=ip),dimension(:,:,:),pointer :: uvx_pd =>null() ! u (E) component of wind
-      real(kind=ip),dimension(:,:,:),pointer :: uvy_pd =>null() ! v (N) component of wind
+      real(kind=ip),dimension(:,:,:),pointer,public :: uvx_pd =>null() ! u (E) component of wind
+      real(kind=ip),dimension(:,:,:),pointer,public :: uvy_pd =>null() ! v (N) component of wind
 #else
-      real(kind=ip),dimension(:,:,:),allocatable :: uvx_pd ! u (E) component of wind
-      real(kind=ip),dimension(:,:,:),allocatable :: uvy_pd ! v (N) component of wind
+      real(kind=ip),dimension(:,:,:),allocatable,public :: uvx_pd ! u (E) component of wind
+      real(kind=ip),dimension(:,:,:),allocatable,public :: uvy_pd ! v (N) component of wind
 #endif
 
       contains
@@ -73,8 +93,6 @@
 !******************************************************************************
 
       subroutine Allocate_Source_eruption
-
-      implicit none
 
       allocate (e_StartTime(neruptions));            e_StartTime   = 0.0_ip
       allocate (e_Duration(neruptions));             e_Duration    = 0.0_ip
@@ -100,8 +118,6 @@
       use mesh,          only : &
          nsmax
 
-      implicit none
-
       integer,intent(in) :: nx,ny,nz
 
       allocate(SourceNodeFlux(0:nz+1,1:nsmax));      SourceNodeFlux = 0.0_ip
@@ -117,8 +133,6 @@
 
       subroutine Allocate_Source_time
 
-      implicit none
-
       MassFluxRate_now = 0.0_ip
       Height_now = 0.0_ip
 
@@ -130,8 +144,6 @@
 !******************************************************************************
 
       subroutine Deallocate_Source
-
-      implicit none
 
       deallocate (e_StartTime)
       deallocate (e_Duration)
@@ -165,8 +177,6 @@
       use mesh,          only : &
          IsLatLon,nzmax,dx,dy,dz_vec_pd,ivent,jvent,z_lb_pd,z_cc_pd,kappa_pd
  
-      implicit none
-      
       integer :: k
       real(kind=ip) :: Suzuki_k     ! k factor in the Suzuki equation (see Hurst's Ashfall manual)
       real(kind=ip) :: z_cell_bot, z_cell_top
@@ -344,7 +354,7 @@
               4x,'(Sum(SourceNodeFlux)/MassFluxRate)-1=',e12.5,/, &
               4x,'Program stopped')
 
-       end subroutine TephraSourceNodes
+      end subroutine TephraSourceNodes
 
 !******************************************************************************
 
@@ -355,7 +365,6 @@
       use time_data,     only : &
          time, dt
 
-      implicit none
       real(kind=ip)    :: tstart, tend    !start and end times of this time step
 
       tstart = time

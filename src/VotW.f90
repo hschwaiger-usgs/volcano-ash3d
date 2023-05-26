@@ -1,3 +1,6 @@
+!      subroutine get_ESP
+!      subroutine VotW_v12
+
       module VotW_ESP
 
       use precis_param
@@ -8,6 +11,16 @@
          Ash3dHome
 
       implicit none
+
+        ! Set everything to private by default
+      private
+
+        ! Publicly available subroutines/functions
+      public get_ESP
+
+        ! Publicly available variables
+      !-- None --
+
 
       character(len=130)  :: VotWMasterFile  !Only needed if USEEXTDATA=T
 
@@ -21,8 +34,6 @@
          VolcanoName
       use Source,        only : &
          ESP_duration,ESP_height,ESP_MassFluxRate,ESP_massfracfine,ESP_Vol
-
-      implicit none
 
       integer,parameter  :: MAXVOLCS = 1535
       
@@ -236,8 +247,6 @@
 #ifdef USEEXTDATA
       subroutine VotW_v12(MAXVOLCS,volcLat,volcLon,volcElev,volcLoc,volcESP_Code,volcID,volcName)
 
-      implicit none
-
       integer           ,intent(in)    :: MAXVOLCS
       real(kind=ip)     ,intent(inout) :: volcLat(MAXVOLCS)
       real(kind=ip)     ,intent(inout) :: volcLon(MAXVOLCS)
@@ -336,8 +345,6 @@
       end subroutine VotW_v12
 #else
       subroutine VotW_v12(MAXVOLCS,volcLat,volcLon,volcElev,volcLoc,volcESP_Code,volcID,volcName)
-
-      implicit none
 
       integer           ,intent(in)    :: MAXVOLCS
       real(kind=ip)     ,intent(inout) :: volcLat(MAXVOLCS)

@@ -91,6 +91,15 @@
         end subroutine vprofilewriter
         subroutine vprofilecloser
         end subroutine vprofilecloser
+        subroutine write_2D_ASCII(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
+          integer,parameter  :: ip         = 8
+          integer          ,intent(in) :: nx
+          integer          ,intent(in) :: ny
+          real(kind=ip)    ,intent(in) :: OutVar(nx,ny)
+          logical          ,intent(in) :: VarMask(nx,ny)
+          character(len=6) ,intent(in) :: Fill_Value
+          character(len=20),intent(in) :: filename_root
+        end subroutine write_2D_ASCII
         subroutine write_2D_Binary(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
           integer,parameter  :: ip         = 8
           integer          ,intent(in) :: nx

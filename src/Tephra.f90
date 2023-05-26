@@ -1,3 +1,19 @@
+!      subroutine Allocate_Tephra
+!      subroutine Allocate_Tephra_Met
+!      subroutine Deallocate_Tephra
+!      subroutine Deallocate_Tephra_Met
+!      subroutine Set_Vf_Meso
+!      subroutine Calculate_Tephra_Shape
+!      subroutine Sort_Tephra_Size
+!      subroutine partition_gsbins
+!      subroutine Prune_GS
+!      function vset_WH
+!      function vset_WH_slip
+!      function vset_WH_PCM
+!      function vset_Gans
+!      function vset_Stokesslip
+!      function vset_Stokes_Cloud
+
       module Tephra
 
       use precis_param
@@ -9,22 +25,31 @@
 
       implicit none
 
-      real(kind=ip) :: MagmaDensity   = 2500.0_ip  !density of magma, in kg/m3
-      real(kind=ip) :: DepositDensity = 1000.0_ip  !deposit density, in kg/m3
-      real(kind=ip) :: LAM_GS_THRESH  =  250.0_ip  ! Invokes Cslip once effect is 1%
+        ! Set everything to private by default
+      private
+
+        ! Publicly available subroutines/functions
+      public Allocate_Tephra,Deallocate_Tephra,Allocate_Tephra_Met,Deallocate_Tephra_Met,&
+             Calculate_Tephra_Shape,Sort_Tephra_Size,Set_Vf_Meso,Prune_GS
+
+        ! Publicly available variables
+
+      real(kind=ip),public :: MagmaDensity   = 2500.0_ip  !density of magma, in kg/m3
+      real(kind=ip),public :: DepositDensity = 1000.0_ip  !deposit density, in kg/m3
+      real(kind=ip),public :: LAM_GS_THRESH  =  250.0_ip  ! Invokes Cslip once effect is 1%
                                      !=  125.0_ip  ! Invokes Cslip once effect is 2%
                                      !=   50.0_ip  ! Invokes Cslip once effect is 5%
-      real(kind=ip) :: AIRBORNE_THRESH = 1.0e-3_ip ! Mass threshold for flagging bin as empty (1 gram)
+      real(kind=ip),public :: AIRBORNE_THRESH = 1.0e-3_ip ! Mass threshold for flagging bin as empty (1 gram)
 
-      integer :: n_gs_max                    ! # size classes of particles 
-      integer :: n_gs_aloft                    ! max gs bin still aloft
+      integer,public :: n_gs_max                    ! # size classes of particles 
+      integer,public :: n_gs_aloft                    ! max gs bin still aloft
 
-      real(kind=ip), dimension(:)  ,allocatable  :: Tephra_v_s         ! Settling vel (m/s)
-      real(kind=ip), dimension(:)  ,allocatable  :: Tephra_gsdiam      ! Grain-size diameter (read in mm, stored in m)
-      real(kind=ip), dimension(:)  ,allocatable  :: Tephra_bin_mass    ! mass    (kg)
-      real(kind=ip), dimension(:)  ,allocatable  :: Tephra_rho_m       ! density (kg/m3)
-      real(kind=ip), dimension(:)  ,allocatable  :: Tephra_gsF         ! Grain-size shape (b+c)/2a
-      real(kind=ip), dimension(:)  ,allocatable  :: Tephra_gsG         ! Grain-size shape c/b
+      real(kind=ip), dimension(:)  ,allocatable,public  :: Tephra_v_s         ! Settling vel (m/s)
+      real(kind=ip), dimension(:)  ,allocatable,public  :: Tephra_gsdiam      ! Grain-size diameter (read in mm, stored in m)
+      real(kind=ip), dimension(:)  ,allocatable,public  :: Tephra_bin_mass    ! mass    (kg)
+      real(kind=ip), dimension(:)  ,allocatable,public  :: Tephra_rho_m       ! density (kg/m3)
+      real(kind=ip), dimension(:)  ,allocatable,public  :: Tephra_gsF         ! Grain-size shape (b+c)/2a
+      real(kind=ip), dimension(:)  ,allocatable,public  :: Tephra_gsG         ! Grain-size shape c/b
       real(kind=ip), dimension(:,:),allocatable  :: Tephra_gsF_fac     ! Precalculated shape factors
                                                                 !  i=1 WH Stokes fac
                                                                 !  i=2 WH Newton fac
@@ -38,7 +63,7 @@
               !   3 = Wilson and Huang + Mod by Pfeiffer Et al.
               !   4 = Ganser
               !   5 = Stokes flow for spherical particles + slip
-      integer                                    :: FV_ID
+      integer,public                                    :: FV_ID
 
 #ifdef USEPOINTERS
       real(kind=sp),dimension(:,:,:,:),pointer :: vf_meso_last_step_MetP_sp => null()
@@ -48,15 +73,14 @@
       real(kind=sp),dimension(:,:,:,:),allocatable :: vf_meso_next_step_MetP_sp
 #endif
 
-      real(kind=ip) :: phi_mean, phi_stddev
+      real(kind=ip),public :: phi_mean
+      real(kind=ip),public :: phi_stddev
 
       contains
 
 !******************************************************************************
 
       subroutine Allocate_Tephra
-
-      implicit none
 
       allocate(Tephra_v_s(n_gs_max))
       allocate(Tephra_gsdiam(n_gs_max))
@@ -75,8 +99,6 @@
       use MetReader,     only : &
          nx_submet,ny_submet,np_fullmet
 
-      implicit none
-
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"--------------------------------------------------"
         write(outlog(io),*)"---------- ALLOCATE_TEPHRA_MET -------------------"
@@ -92,8 +114,6 @@
 
       subroutine Deallocate_Tephra
 
-      implicit none
-
       if(allocated(Tephra_v_s))        deallocate(Tephra_v_s)
       if(allocated(Tephra_gsdiam))     deallocate(Tephra_gsdiam)
       if(allocated(Tephra_bin_mass))   deallocate(Tephra_bin_mass)
@@ -107,8 +127,6 @@
 !******************************************************************************
 
       subroutine Deallocate_Tephra_Met
-
-      implicit none
 
 #ifdef USEPOINTERS
       if(associated(vf_meso_last_step_MetP_sp)) deallocate(vf_meso_last_step_MetP_sp)
@@ -138,8 +156,6 @@
       use MetReader,     only : &
          nx_submet,ny_submet,np_fullmet,MR_dum3d_metP,MR_dum3d_compH,MR_iMetStep_Now,&
            MR_Regrid_MetP_to_CompH
-
-      implicit none
 
       logical      ,intent(in) :: Load_MesoSteps
 
@@ -247,8 +263,6 @@
 
       subroutine Calculate_Tephra_Shape!(ngs)
 
-      implicit none
-
       !integer :: ngs
 
       integer :: i,j
@@ -348,8 +362,6 @@
 
       subroutine Sort_Tephra_Size
 
-      implicit none
-
       integer :: i,j,l
       real(kind=ip) :: tmp1,tmp2,tmp3,tmp4,tmp5,tmp6,tmp7
       real(kind=ip) :: temp_a(5)
@@ -425,8 +437,6 @@
 !******************************************************************************
 
       subroutine partition_gsbins(mu,sigma)
-
-      implicit none
 
       integer :: i
 
@@ -560,8 +570,6 @@
       use solution,      only : &
            mass_aloft,IsAloft
 
-      implicit none
-
       integer :: n
 
       ! Loop through all the grain sizes and check if any have completely
@@ -588,8 +596,6 @@
 !******************************************************************************
 
       function vset_WH(rho_air,rho_m,eta,diam,Ffac1,Ffac2)
-
-      implicit none
 
       real(kind=ip) :: vset_WH      ! Settling velocity in m/s
       real(kind=ip) :: rho_air   ! density of air in kg/m3
@@ -646,8 +652,6 @@
       function vset_WH_slip(rho_air,rho_m,eta,diam,Ffac1,Ffac2,Kna)
       ! Modification to Wilson and Huang's with Cunningham slip
 
-      implicit none
-
       real(kind=ip) :: vset_WH_slip      ! Settling velocity in m/s
       real(kind=ip) :: rho_air   ! density of air in kg/m3
       real(kind=ip) :: rho_m     ! density of the particle in km/m3
@@ -693,8 +697,6 @@
       ! Modification to Wilson and Huang's model suggested by:
       ! T. Pfeiffer and A. Costa and G. Macedonio, JVGR, v140n4p273 2005
       ! DOI:10.1016/j.jvolgeores.2004.09.001
-
-      implicit none
 
       real(kind=ip) :: vset_WH_PCM      ! Settling velocity in m/s
       real(kind=ip) :: rho_air   ! density of air in kg/m3
@@ -748,8 +750,6 @@
       ! Ganser, Powder Tech., v77,2p143, 1993
       ! DOI:10.1016/0032-5910(93)80051-B
 
-      implicit none
-
       real(kind=ip) :: vset_Gans      ! Settling velocity in m/s
       real(kind=ip) :: rho_air   ! density of air in kg/m3
       real(kind=ip) :: rho_m     ! density of the particle in km/m3
@@ -794,8 +794,6 @@
       ! Fall velocity as calculated from
       ! Stokes flow plus Cunningham slip
 
-      implicit none
-
       real(kind=ip) :: vset_Stokesslip      ! Settling velocity in m/s
       real(kind=ip) :: rho_m     ! density of the particle in km/m3
       real(kind=ip) :: eta       ! dynamic viscosity of air in (kg/(m s))
@@ -819,8 +817,6 @@
       ! Fall velocity as calculated from Stokes flow
       ! for a sub-10 um particle acting as a cloud condensation nucleus
       ! to produce a 10 um ash/water particle
-
-      implicit none
 
       real(kind=ip) vset_Stokes_Cloud  ! Settling velocity in m/s
       real(kind=ip) rho_m              ! density of the particle in kg/m3

@@ -1,3 +1,7 @@
+!      subroutine write_2Dmap_PNG_plplot
+!      subroutine write_2Dprof_PNG_plplot
+!      subroutine write_DepPOI_TS_PNG_plplot
+
       module Ash3d_PostProc_plplot
 
       use precis_param
@@ -6,6 +10,16 @@
 
       use plplot
       use iso_c_binding, only: c_ptr, c_loc, c_f_pointer
+
+      implicit none
+
+        ! Set everything to private by default
+      private
+
+        ! Publicly available subroutines/functions
+      public write_2Dmap_PNG_plplot,write_2Dprof_PNG_plplot
+
+        ! Publicly available variables
 
       integer :: lib_ver_major = 5
       integer :: lib_ver_minor = 14
@@ -50,8 +64,6 @@
          os_time_log,SimStartHour,BaseYear,useLeap
 
       use citywriter
-
-      implicit none
 
       integer      ,intent(in) :: nx
       integer      ,intent(in) :: ny
@@ -618,8 +630,6 @@
       use time_data,     only : &
          os_time_log,SimStartHour,BaseYear,useLeap
 
-      implicit none
-
       integer,intent(in) :: vprof_ID
 
       !integer,parameter :: NLEVEL     = 11
@@ -882,8 +892,6 @@
 
       use time_data,     only : &
          Simtime_in_hours
-
-      implicit none
 
       integer,intent(in) :: pt_indx
 

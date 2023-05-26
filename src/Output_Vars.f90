@@ -1,3 +1,24 @@
+!      subroutine Allocate_Output_Vars
+!      subroutine Allocate_NTime
+!      subroutine Allocate_Profile
+!      subroutine Allocate_Output_UserVars
+!      subroutine Deallocate_Output_Vars
+!      subroutine Deallocate_NTime
+!      subroutine Deallocate_Profile
+!      subroutine Deallocate_Output_UserVars
+!      subroutine Set_OutVar_ContourLevel
+!      subroutine AshThicknessCalculator
+!      subroutine AshTotalCalculator
+!      subroutine dbZCalculator      
+!      subroutine ConcentrationCalculator      
+!      subroutine CloudAreaCalculator      
+!      subroutine Gen_Output_Vars
+!      subroutine Calc_AshVol_Aloft
+!      subroutine Calc_vprofile
+!      subroutine Calc_AshVol_Deposit
+!      subroutine Calc_AshVol_Outflow
+!      subroutine FirstAsh
+
       module Output_Vars
 
       use precis_param
@@ -9,6 +30,17 @@
 
       use time_data,     only : &
          time_native
+
+      implicit none
+
+        ! Set everything to private by default
+      private
+
+        ! Publicly available subroutines/functions
+      public Allocate_Output_Vars,Deallocate_Output_Vars,Allocate_NTime,Deallocate_NTime,&
+             Allocate_Profile,Deallocate_Profile,Allocate_Output_UserVars,Deallocate_Output_UserVars,&
+             Set_OutVar_ContourLevel,AshTotalCalculator,dbZCalculator,Gen_Output_Vars,Calc_AshVol_Aloft,&
+             Calc_vprofile,Calc_AshVol_Deposit,Calc_AshVol_Outflow,FirstAsh
 
         ! PRODUCT ID: KML var ID:: variable                     : units  : dims        : Output kml file name
         !----------------------------------------------------------------------------------------------------------
@@ -31,37 +63,38 @@
         ! iprod = 15:ivar =  10 :: topography                   : km     : (x,y)       : Topography.kml
         ! iprod = 16:ivar =     :: profiles concentration?      :
 
-      real(kind=ip)                :: DEPO_THRESH           = 1.0e-2_ip  ! threshold deposit thickness (mm)
-      real(kind=ip)                :: DEPRATE_THRESH        = 1.0e-2_ip  ! threshold deposition rate (mm/hr)
-      real(kind=ip)                :: CLOUDCON_THRESH       = 1.0e-3_ip  ! threshold cloud concentration (kg/km3) for output
-      real(kind=ip)                :: CLOUDCON_GRID_THRESH  = 1.0e-7_ip  ! threshold cloud concentration (kg/km3) for subgrid
-      real(kind=ip)                :: CLOUDLOAD_THRESH      = 2.0e-1_ip  ! threshold cloud load (t/km2)
+        ! Publicly available variables
+      real(kind=ip),public    :: DEPO_THRESH           = 1.0e-2_ip  ! threshold deposit thickness (mm)
+      real(kind=ip),public    :: DEPRATE_THRESH        = 1.0e-2_ip  ! threshold deposition rate (mm/hr)
+      real(kind=ip),public    :: CLOUDCON_THRESH       = 1.0e-3_ip  ! threshold cloud concentration (kg/km3) for output
+      real(kind=ip),public    :: CLOUDCON_GRID_THRESH  = 1.0e-7_ip  ! threshold cloud concentration (kg/km3) for subgrid
+      real(kind=ip),public    :: CLOUDLOAD_THRESH      = 2.0e-1_ip  ! threshold cloud load (t/km2)
                                        ! 0.2 T/km2 is roughly the detection
                                        ! limit of Pavolonis's SEVIRI satellite retrievals
 
-      real(kind=ip)                :: THICKNESS_THRESH = 1.0e-2_ip  !threshold thickness for start of deposition (mm)
-      real(kind=ip)                :: DBZ_THRESH       =-2.0e+1_ip  !threshold dbZ
+      real(kind=ip),public    :: THICKNESS_THRESH = 1.0e-2_ip  !threshold thickness for start of deposition (mm)
+      real(kind=ip),public    :: DBZ_THRESH       =-2.0e+1_ip  !threshold dbZ
 
       ! These are the initialized values
-      real(kind=op)                :: DepositThickness_FillValue   =     0.0_op
-      real(kind=op)                :: MaxConcentration_FillValue   = -9999.0_op
-      real(kind=op)                :: DepArrivalTime_FillValue     = -9999.0_op
-      real(kind=op)                :: CloudArrivalTime_FillValue   = -9999.0_op
-      real(kind=op)                :: CloudLoad_FillValue          = -9999.0_op
-      real(kind=op)                :: MaxHeight_FillValue          = -9999.0_op
-      real(kind=op)                :: MinHeight_FillValue          = -9999.0_op
-      real(kind=op)                :: dbZCol_FillValue             =  -100.0_op
-      real(kind=op)                :: pr_ash_FillValue             =     0.0_op
+      real(kind=op),public    :: DepositThickness_FillValue   =     0.0_op
+      real(kind=op),public    :: MaxConcentration_FillValue   = -9999.0_op
+      real(kind=op),public    :: DepArrivalTime_FillValue     = -9999.0_op
+      real(kind=op),public    :: CloudArrivalTime_FillValue   = -9999.0_op
+      real(kind=op),public    :: CloudLoad_FillValue          = -9999.0_op
+      real(kind=op),public    :: MaxHeight_FillValue          = -9999.0_op
+      real(kind=op),public    :: MinHeight_FillValue          = -9999.0_op
+      real(kind=op),public    :: dbZCol_FillValue             =  -100.0_op
+      real(kind=op),public    :: pr_ash_FillValue             =     0.0_op
 
-      logical            :: Calculated_Cloud_Load
-      logical            :: Calculated_AshThickness
+      logical,public            :: Calculated_Cloud_Load
+      logical,public            :: Calculated_AshThickness
         ! Set this parameter if you want to include velocities in the output file
-      logical, parameter :: USE_WIND_VARS  = .false.
-      !logical, parameter :: USE_WIND_VARS  = .true.
+      logical, parameter,public :: USE_WIND_VARS  = .false.
+      !logical, parameter,public :: USE_WIND_VARS  = .true.
 
         ! Set this to true if you want the extra output variables defined in the
         ! optional modules
-      logical, parameter :: USE_OPTMOD_VARS  = .true.
+      logical, parameter,public :: USE_OPTMOD_VARS  = .true.
 
         ! Set this parameter if you want to export additional variables
         ! to the netcdf file
@@ -74,66 +107,66 @@
         ! the standard derived variables
         ! in the output file (this should nearly always be true, downstream
         ! products rely on these variables)
-      logical :: USE_OUTPROD_VARS  = .true.
+      logical,public :: USE_OUTPROD_VARS  = .true.
 
         ! Set this variable to false if you do not want raw concentration
         ! values exported (only derived products and deposits)
-      logical :: USE_RESTART_VARS  = .false.
+      logical,public :: USE_RESTART_VARS  = .false.
 
-      real(kind=ip) :: CloudArea                ! area of ash cloud at a given time
-      real(kind=ip) :: LoadVal(5)               ! 5 threshold values for area calculations
-      real(kind=ip) :: CloudLoadArea(5)         ! Corresponding areas where ash cloud exceeds LoadVal(i)
-      real(kind=ip) :: DepositAreaCovered       ! area covered by ash deposit
+      real(kind=ip),public :: CloudArea                ! area of ash cloud at a given time
+      real(kind=ip),public :: LoadVal(5)               ! 5 threshold values for area calculations
+      real(kind=ip),public :: CloudLoadArea(5)         ! Corresponding areas where ash cloud exceeds LoadVal(i)
+      real(kind=ip),public :: DepositAreaCovered       ! area covered by ash deposit
 
       ! Contour colors and levels
-      real(kind=ip),dimension(:),allocatable     :: ContourLev
-      integer                                    :: nConLev
-      integer,parameter                          :: Contour_MaxCurves  = 20
-      integer,parameter                          :: Contour_MaxPoints  = 1000
-      real(kind=ip),dimension(:,:,:),allocatable :: ContourDataX        ! x curve data with dims: ilev, icurve, ipnt
-      real(kind=ip),dimension(:,:,:),allocatable :: ContourDataY        ! x curve data with dims: ilev, icurve, ipnt
-      integer,dimension(:),allocatable           :: ContourDataNcurves  ! num of curves for each level (some = 0)
-      integer,dimension(:,:),allocatable         :: ContourDataNpoints  ! num of pts for ilev and icurve
-      integer,parameter                          :: Con_DepThick_mm_N   = 10
-      integer,dimension(Con_DepThick_mm_N,3)     :: Con_DepThick_mm_RGB
-      real(kind=ip),dimension(Con_DepThick_mm_N) :: Con_DepThick_mm_Lev
-      integer,parameter                          :: Con_DepThick_in_N   = 5
-      integer,dimension(Con_DepThick_in_N,3)     :: Con_DepThick_in_RGB
-      real(kind=ip),dimension(Con_DepThick_in_N) :: Con_DepThick_in_Lev
-      integer,parameter                          :: Con_DepTime_N   = 9
-      integer,dimension(Con_DepTime_N,3)         :: Con_DepTime_RGB
-      real(kind=ip),dimension(Con_DepTime_N)     :: Con_DepTime_Lev
-      integer,parameter                          :: Con_CloudCon_N   = 9
-      integer,dimension(Con_CloudCon_N,3)        :: Con_CloudCon_RGB
-      real(kind=ip),dimension(Con_CloudCon_N)    :: Con_CloudCon_Lev
-      integer,parameter                          :: Con_CloudTop_N   = 9
-      integer,dimension(Con_CloudTop_N,3)        :: Con_CloudTop_RGB
-      real(kind=ip),dimension(Con_CloudTop_N)    :: Con_CloudTop_Lev
-      integer,parameter                          :: Con_CloudBot_N   = 9
-      integer,dimension(Con_CloudBot_N,3)        :: Con_CloudBot_RGB
-      real(kind=ip),dimension(Con_CloudBot_N)    :: Con_CloudBot_Lev
-      integer,parameter                          :: Con_CloudLoad_N   = 9
-      integer,dimension(Con_CloudLoad_N,3)       :: Con_CloudLoad_RGB
-      real(kind=ip),dimension(Con_CloudLoad_N)   :: Con_CloudLoad_Lev
-      integer,parameter                          :: Con_CloudRef_N   = 9
-      integer,dimension(Con_CloudRef_N,3)        :: Con_CloudRef_RGB
-      real(kind=ip),dimension(Con_CloudRef_N)    :: Con_CloudRef_Lev
-      integer,parameter                          :: Con_CloudTime_N   = 9
-      integer,dimension(Con_CloudTime_N,3)       :: Con_CloudTime_RGB
-      real(kind=ip),dimension(Con_CloudTime_N)   :: Con_CloudTime_Lev
+      real(kind=ip),dimension(:),allocatable,public     :: ContourLev
+      integer                               ,public     :: nConLev
+      integer,parameter                         ,public :: Contour_MaxCurves  = 20
+      integer,parameter                         ,public :: Contour_MaxPoints  = 1000
+      real(kind=ip),dimension(:,:,:),allocatable,public :: ContourDataX        ! x curve data with dims: ilev, icurve, ipnt
+      real(kind=ip),dimension(:,:,:),allocatable,public :: ContourDataY        ! x curve data with dims: ilev, icurve, ipnt
+      integer      ,dimension(:)    ,allocatable,public :: ContourDataNcurves  ! num of curves for each level (some = 0)
+      integer      ,dimension(:,:)  ,allocatable,public :: ContourDataNpoints  ! num of pts for ilev and icurve
+      integer,parameter                           ,public:: Con_DepThick_mm_N   = 10
+      integer      ,dimension(Con_DepThick_mm_N,3),public:: Con_DepThick_mm_RGB
+      real(kind=ip),dimension(Con_DepThick_mm_N)  ,public:: Con_DepThick_mm_Lev
+      integer,parameter                           ,public:: Con_DepThick_in_N   = 5
+      integer      ,dimension(Con_DepThick_in_N,3),public:: Con_DepThick_in_RGB
+      real(kind=ip),dimension(Con_DepThick_in_N)  ,public:: Con_DepThick_in_Lev
+      integer,parameter                           ,public:: Con_DepTime_N       = 9
+      integer      ,dimension(Con_DepTime_N,3)    ,public:: Con_DepTime_RGB
+      real(kind=ip),dimension(Con_DepTime_N)      ,public:: Con_DepTime_Lev
+      integer,parameter                           ,public:: Con_CloudCon_N      = 9
+      integer      ,dimension(Con_CloudCon_N,3)   ,public:: Con_CloudCon_RGB
+      real(kind=ip),dimension(Con_CloudCon_N)     ,public:: Con_CloudCon_Lev
+      integer,parameter                           ,public:: Con_CloudTop_N      = 9
+      integer      ,dimension(Con_CloudTop_N,3)   ,public:: Con_CloudTop_RGB
+      real(kind=ip),dimension(Con_CloudTop_N)     ,public:: Con_CloudTop_Lev
+      integer,parameter                           ,public:: Con_CloudBot_N      = 9
+      integer      ,dimension(Con_CloudBot_N,3)   ,public:: Con_CloudBot_RGB
+      real(kind=ip),dimension(Con_CloudBot_N)     ,public:: Con_CloudBot_Lev
+      integer,parameter                           ,public:: Con_CloudLoad_N     = 9
+      integer      ,dimension(Con_CloudLoad_N,3)  ,public:: Con_CloudLoad_RGB
+      real(kind=ip),dimension(Con_CloudLoad_N)    ,public:: Con_CloudLoad_Lev
+      integer,parameter                           ,public:: Con_CloudRef_N      = 9
+      integer      ,dimension(Con_CloudRef_N,3)   ,public:: Con_CloudRef_RGB
+      real(kind=ip),dimension(Con_CloudRef_N)     ,public:: Con_CloudRef_Lev
+      integer,parameter                           ,public:: Con_CloudTime_N     = 9
+      integer      ,dimension(Con_CloudTime_N,3)  ,public:: Con_CloudTime_RGB
+      real(kind=ip),dimension(Con_CloudTime_N)    ,public:: Con_CloudTime_Lev
 
 #ifdef USEPOINTERS
         ! 2-D variables (in x,y)
-      logical, dimension(:,:),pointer :: Mask_Cloud
-      logical, dimension(:,:),pointer :: Mask_Deposit
-      real(kind=ip), dimension(:,:),pointer :: DepositThickness => null() ! accumulated ash thickness on ground (mm)
-      real(kind=ip), dimension(:,:),pointer :: MaxConcentration => null() ! max concentration in the cloud at any i,j node (mg/m3)
-      real(kind=ip), dimension(:,:),pointer :: DepArrivalTime   => null() ! (hours)
-      real(kind=ip), dimension(:,:),pointer :: CloudArrivalTime => null() ! (hours)
-      real(kind=ip), dimension(:,:),pointer :: CloudLoad        => null() ! Ash load in cloud, (tonnes/km2)
+      logical,       dimension(:,:),pointer,public :: Mask_Cloud
+      logical,       dimension(:,:),pointer,public :: Mask_Deposit
+      real(kind=ip), dimension(:,:),pointer,public :: DepositThickness => null() ! accumulated ash thickness on ground (mm)
+      real(kind=ip), dimension(:,:),pointer,public :: MaxConcentration => null() ! max concentration in the cloud at any i,j node (mg/m3)
+      real(kind=ip), dimension(:,:),pointer,public :: DepArrivalTime   => null() ! (hours)
+      real(kind=ip), dimension(:,:),pointer,public :: CloudArrivalTime => null() ! (hours)
+      real(kind=ip), dimension(:,:),pointer,public :: CloudLoad        => null() ! Ash load in cloud, (tonnes/km2)
       real(kind=ip), dimension(:,:),pointer :: CloudLoadLast    => null() ! Ash load at last time step, (tonnes/km2)
-      real(kind=ip), dimension(:,:),pointer :: MaxHeight        => null() ! maximum cloud height (km)
-      real(kind=ip), dimension(:,:),pointer :: MinHeight        => null() ! cloud bottom height (km)
+      real(kind=ip), dimension(:,:),pointer,public :: MaxHeight        => null() ! maximum cloud height (km)
+      real(kind=ip), dimension(:,:),pointer,public :: MinHeight        => null() ! cloud bottom height (km)
       real(kind=ip), dimension(:,:),pointer :: dbZCol           => null() ! max reflectivity in a vertical column (dB)
       real(kind=op), dimension(:,:,:),pointer :: ashcon_tot     => null() ! Total ash concentration (3d)
 
@@ -144,68 +177,71 @@
       real(kind=ip), dimension(:,:,:),pointer :: dbZ => null()               ! radar reflectivty at time t (dbZ)
 #else
         ! 2-D variables (in x,y)
-      logical, dimension(:,:),allocatable :: Mask_Cloud
-      logical, dimension(:,:),allocatable :: Mask_Deposit
-      real(kind=ip), dimension(:,:),allocatable :: DepositThickness   ! accumulated ash thickness on ground in mm (x,y)
-      real(kind=ip), dimension(:,:),allocatable :: MaxConcentration   ! max concentration in the cloud at any i,j node (mg/m3)
-      real(kind=ip), dimension(:,:),allocatable :: DepArrivalTime     ! (hours)
-      real(kind=ip), dimension(:,:),allocatable :: CloudArrivalTime   ! (hours)
-      real(kind=ip), dimension(:,:),allocatable :: CloudLoad          ! Ash load in cloud, tonnes/km2
+      logical,       dimension(:,:),allocatable,public :: Mask_Cloud
+      logical,       dimension(:,:),allocatable,public :: Mask_Deposit
+      real(kind=ip), dimension(:,:),allocatable,public :: DepositThickness   ! accumulated ash thickness on ground in mm (x,y)
+      real(kind=ip), dimension(:,:),allocatable,public :: MaxConcentration   ! max concentration in the cloud at any i,j node (mg/m3)
+      real(kind=ip), dimension(:,:),allocatable,public :: DepArrivalTime     ! (hours)
+      real(kind=ip), dimension(:,:),allocatable,public :: CloudArrivalTime   ! (hours)
+      real(kind=ip), dimension(:,:),allocatable,public :: CloudLoad          ! Ash load in cloud, tonnes/km2
       real(kind=ip), dimension(:,:),allocatable :: CloudLoadLast      ! Ash load at last time step, tonnes/km2
-      real(kind=ip), dimension(:,:),allocatable :: MaxHeight          ! maximum cloud height
-      real(kind=ip), dimension(:,:),allocatable :: MinHeight          ! cloud bottom height
-      real(kind=ip), dimension(:,:),allocatable :: dbZCol             ! max reflectivity in a vertical column
-      real(kind=op), dimension(:,:,:),allocatable :: ashcon_tot       ! Total ash concentration (3d)
+      real(kind=ip), dimension(:,:),allocatable,public :: MaxHeight          ! maximum cloud height
+      real(kind=ip), dimension(:,:),allocatable,public :: MinHeight          ! cloud bottom height
+      real(kind=ip), dimension(:,:),allocatable,public :: dbZCol             ! max reflectivity in a vertical column
+      real(kind=op), dimension(:,:,:),allocatable ,public:: ashcon_tot       ! Total ash concentration (3d)
 
-      real(kind=ip), dimension(:,:,:),allocatable :: pr_ash           ! concentration profile
+      real(kind=ip), dimension(:,:,:),allocatable,public :: pr_ash           ! concentration profile
 
         ! These arrays are only used when reading an output file of unknown size
-      real(kind=ip), dimension(:,:),allocatable :: R_XY
-      integer       :: R_nx,R_ny
-      real(kind=ip) :: R_xll,R_yll
-      real(kind=ip) :: R_dx,R_dy
-      real(kind=ip) :: R_Fill
+      real(kind=ip), dimension(:,:),allocatable,public :: R_XY
+      integer      ,public :: R_nx
+      integer      ,public :: R_ny
+      real(kind=ip),public :: R_xll
+      real(kind=ip),public :: R_yll
+      real(kind=ip),public :: R_dx
+      real(kind=ip),public :: R_dy
+      real(kind=ip),public :: R_Fill
 
         ! 3-D variables
         !   (in x,y,z)
-      real(kind=ip), dimension(:,:,:),allocatable :: dbZ                ! radar reflectivty at time t (dbZ)
+      real(kind=ip), dimension(:,:,:),allocatable,public :: dbZ                ! radar reflectivty at time t (dbZ)
 #endif
 
         ! User-defined 2-D static variables (in x,y)
-      character(len=30), dimension(:),    allocatable :: var_User2d_static_XY_name
-      character(len=30), dimension(:),    allocatable :: var_User2d_static_XY_unit
-      character(len=30), dimension(:),    allocatable :: var_User2d_static_XY_lname
-      real(kind=op),     dimension(:),    allocatable :: var_User2d_static_XY_MissVal
-      real(kind=op),     dimension(:),    allocatable :: var_User2d_static_XY_FillVal
-      real(kind=op), dimension(:,:,:),    allocatable :: var_User2d_static_XY
+      character(len=30), dimension(:),    allocatable,public :: var_User2d_static_XY_name
+      character(len=30), dimension(:),    allocatable,public :: var_User2d_static_XY_unit
+      character(len=30), dimension(:),    allocatable,public :: var_User2d_static_XY_lname
+      real(kind=op),     dimension(:),    allocatable,public :: var_User2d_static_XY_MissVal
+      real(kind=op),     dimension(:),    allocatable,public :: var_User2d_static_XY_FillVal
+      real(kind=op), dimension(:,:,:),    allocatable,public :: var_User2d_static_XY
         ! User-defined 2-D variables (in x,y)
-      character(len=30), dimension(:),    allocatable :: var_User2d_XY_name
-      character(len=30), dimension(:),    allocatable :: var_User2d_XY_unit
-      character(len=30), dimension(:),    allocatable :: var_User2d_XY_lname
-      real(kind=op),     dimension(:),    allocatable :: var_User2d_XY_MissVal
-      real(kind=op),     dimension(:),    allocatable :: var_User2d_XY_FillVal
-      real(kind=op), dimension(:,:,:),    allocatable :: var_User2d_XY
+      character(len=30), dimension(:),    allocatable,public :: var_User2d_XY_name
+      character(len=30), dimension(:),    allocatable,public :: var_User2d_XY_unit
+      character(len=30), dimension(:),    allocatable,public :: var_User2d_XY_lname
+      real(kind=op),     dimension(:),    allocatable,public :: var_User2d_XY_MissVal
+      real(kind=op),     dimension(:),    allocatable,public :: var_User2d_XY_FillVal
+      real(kind=op), dimension(:,:,:),    allocatable,public :: var_User2d_XY
         ! User-defined 3-D variables (in x,y,gs)
-      character(len=30), dimension(:),    allocatable :: var_User3d_XYGs_name
-      character(len=30), dimension(:),    allocatable :: var_User3d_XYGs_unit
-      character(len=30), dimension(:),    allocatable :: var_User3d_XYGs_lname
-      real(kind=op),     dimension(:),    allocatable :: var_User3d_XYGs_MissVal
-      real(kind=op),     dimension(:),    allocatable :: var_User3d_XYGs_FillVal
-      real(kind=op), dimension(:,:,:,:),  allocatable :: var_User3d_XYGs
+      character(len=30), dimension(:),    allocatable,public :: var_User3d_XYGs_name
+      character(len=30), dimension(:),    allocatable,public :: var_User3d_XYGs_unit
+      character(len=30), dimension(:),    allocatable,public :: var_User3d_XYGs_lname
+      real(kind=op),     dimension(:),    allocatable,public :: var_User3d_XYGs_MissVal
+      real(kind=op),     dimension(:),    allocatable,public :: var_User3d_XYGs_FillVal
+      real(kind=op), dimension(:,:,:,:),  allocatable,public :: var_User3d_XYGs
         ! User-defined 3-D variables (in x,y,z)
-      character(len=30), dimension(:),    allocatable :: var_User3d_XYZ_name
-      character(len=30), dimension(:),    allocatable :: var_User3d_XYZ_unit
-      character(len=30), dimension(:),    allocatable :: var_User3d_XYZ_lname
-      real(kind=op),     dimension(:),    allocatable :: var_User3d_XYZ_MissVal
-      real(kind=op),     dimension(:),    allocatable :: var_User3d_XYZ_FillVal
-      real(kind=ip), dimension(:,:,:,:),  allocatable :: var_User3d_XYZ
+      character(len=30), dimension(:),    allocatable,public :: var_User3d_XYZ_name
+      character(len=30), dimension(:),    allocatable,public :: var_User3d_XYZ_unit
+      character(len=30), dimension(:),    allocatable,public :: var_User3d_XYZ_lname
+      real(kind=op),     dimension(:),    allocatable,public :: var_User3d_XYZ_MissVal
+      real(kind=op),     dimension(:),    allocatable,public :: var_User3d_XYZ_FillVal
+      real(kind=ip), dimension(:,:,:,:),  allocatable,public :: var_User3d_XYZ
         ! User-defined 4-D variables (in x,y,z,gs)
-      character(len=30), dimension(:),allocatable     :: var_User4d_XYZGs_name
-      character(len=30), dimension(:),allocatable     :: var_User4d_XYZGs_unit
-      character(len=30), dimension(:),    allocatable :: var_User4d_XYZGs_lname
-      real(kind=op),     dimension(:),    allocatable :: var_User4d_XYZGs_MissVal
-      real(kind=op),     dimension(:),    allocatable :: var_User4d_XYZGs_FillVal
-      real(kind=op), dimension(:,:,:,:,:),allocatable :: var_User4d_XYZGs
+      character(len=30), dimension(:),    allocatable,public :: var_User4d_XYZGs_name
+      character(len=30), dimension(:),    allocatable,public :: var_User4d_XYZGs_unit
+      character(len=30), dimension(:),    allocatable,public :: var_User4d_XYZGs_lname
+      real(kind=op),     dimension(:),    allocatable,public :: var_User4d_XYZGs_MissVal
+      real(kind=op),     dimension(:),    allocatable,public :: var_User4d_XYZGs_FillVal
+      real(kind=op), dimension(:,:,:,:,:),allocatable,public :: var_User4d_XYZGs
 
       contains
 
@@ -215,9 +251,9 @@
 
       subroutine Allocate_Output_Vars(nx,ny,nz)
 
-      implicit none
-
-      integer :: nx,ny,nz
+      integer,intent(in) :: nx
+      integer,intent(in) :: ny
+      integer,intent(in) :: nz
 
       allocate(Mask_Cloud(nx,ny))
       Mask_Cloud = .false.
@@ -251,9 +287,7 @@
 
       subroutine Allocate_NTime(nt)
 
-      implicit none
-
-      integer :: nt
+      integer,intent(in) :: nt
 
       allocate(time_native(nt))
 
@@ -263,9 +297,9 @@
 
       subroutine Allocate_Profile(nz,nt,nv)
 
-      implicit none
-
-      integer :: nz,nt,nv
+      integer,intent(in) :: nz
+      integer,intent(in) :: nt
+      integer,intent(in) :: nv
 
       if(nv.gt.0)then
         allocate(pr_ash(nz,nt,nv))                       ! vertical ash profile
@@ -283,9 +317,10 @@
          nvar_User3d_XYGs,nvar_User3d_XYZ,    &
          nvar_User4d_XYZGs
 
-      implicit none
-
-      integer :: nx,ny,nz,ns
+      integer,intent(in) :: nx
+      integer,intent(in) :: ny
+      integer,intent(in) :: nz
+      integer,intent(in) :: ns
 
         ! User-defined 2-D static variables (in x,y)
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -344,8 +379,6 @@
 
       subroutine Deallocate_Output_Vars()
 
-      implicit none
-
 #ifndef USEPOINTERS
       if(allocated(Mask_Cloud))       deallocate(Mask_Cloud)
       if(allocated(Mask_Deposit))     deallocate(Mask_Deposit)
@@ -368,9 +401,23 @@
 
 !******************************************************************************
 
-      subroutine Deallocate_Output_UserVars()
+      subroutine Deallocate_NTime
 
-      implicit none
+      if(allocated(time_native))deallocate(time_native)
+
+      end subroutine Deallocate_NTime
+
+!******************************************************************************
+
+      subroutine Deallocate_Profile
+
+      if(allocated(pr_ash))deallocate(pr_ash)                       ! vertical ash profile
+
+      end subroutine Deallocate_Profile
+
+!******************************************************************************
+
+      subroutine Deallocate_Output_UserVars()
 
       if(allocated(var_User2d_static_XY_name))    deallocate(var_User2d_static_XY_name)
       if(allocated(var_User2d_static_XY_unit))    deallocate(var_User2d_static_XY_unit)
@@ -408,8 +455,6 @@
 !******************************************************************************
 
       subroutine Set_OutVar_ContourLevel
-
-      implicit none
 
       ! Set contour levels and colors
       !  Deposit Thickness (mm)
@@ -519,8 +564,6 @@
       use solution,      only : &
          DepositGranularity
 
-      implicit none
-      
       integer :: i,j
 
       !calculate deposit thickness in mm, and area covered
@@ -561,8 +604,6 @@
       use solution,      only : &
          concen_pd
 
-      implicit none
-
       integer :: n
 
       if(n_gs_max.gt.0)then
@@ -591,8 +632,6 @@
 
       use solution,      only : &
          concen_pd,imin,imax,jmin,jmax,kmin,kmax
-
-      implicit none
 
       integer :: i,j,k,l
       real(kind=ip) :: NumDens          !number densities (#/m3) of particles
@@ -648,8 +687,6 @@
 
       use Tephra,        only : &
          n_gs_max
-
-      implicit none
 
       integer :: i,j,k
       real(kind=ip) :: CellArea
@@ -748,8 +785,6 @@
       use solution,      only : &
          imin,imax,jmin,jmax
 
-      implicit none
-
       integer :: i,j,k
 
       real(kind=ip) :: CellArea
@@ -788,8 +823,6 @@
 
       use io_data,       only : &
          Called_Gen_Output_Vars
-
-      implicit none
 
       integer :: i,j
 
@@ -845,8 +878,6 @@
       use Tephra,        only : &
          MagmaDensity,n_gs_max
 
-      implicit none
-
       real(kind=ip),intent(out) :: vol ! Total volume of ash still airborne
       integer :: isize
 
@@ -897,8 +928,6 @@
       use time_data,      only : &
          ntmax
 
-      implicit none
-
       integer, intent(in) :: itime
 
       integer :: i,k
@@ -943,8 +972,6 @@
       use Tephra,        only : &
          MagmaDensity,n_gs_max
 
-      implicit none
-
       real(kind=ip),intent(out) :: vol ! Total volume of ash in deposit
       integer :: isize
 
@@ -973,8 +1000,6 @@
 
       use Tephra,        only : &
          MagmaDensity,n_gs_max
-
-      implicit none
 
       real(kind=ip),intent(out) :: vol ! Total volume of ash flowing out of gird
 

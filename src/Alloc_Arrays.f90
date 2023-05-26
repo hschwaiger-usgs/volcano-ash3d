@@ -71,7 +71,7 @@
            Deallocate_Diff
 
       use Output_Vars,   only : &
-           Deallocate_Output_Vars, Deallocate_Output_UserVars
+           Deallocate_Output_Vars, Deallocate_NTime, Deallocate_Profile, Deallocate_Output_UserVars
 
       use Airports,      only : &
            Deallocate_Airports
@@ -97,6 +97,8 @@
       call Deallocate_Source
       call Deallocate_Diff
       call Deallocate_Output_Vars
+      call Deallocate_NTime
+      call Deallocate_Profile
       call Deallocate_Output_UserVars
       call Deallocate_Airports
       call Deallocate_Atmosphere_Met

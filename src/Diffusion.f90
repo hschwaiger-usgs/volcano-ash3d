@@ -1,3 +1,14 @@
+!      subroutine Allocate_Diff
+!      subroutine Deallocate_Diff
+!      subroutine DiffuseHorz
+!      subroutine DiffuseVert
+!      subroutine diff_x
+!      subroutine diff_y
+!      subroutine diff_z
+!      subroutine diffCN_x
+!      subroutine diffCN_y
+!      subroutine diffCN_z
+
       module Diffusion
 
       use precis_param
@@ -9,8 +20,15 @@
 
       implicit none
 
-      real(kind=ip) :: diffusivity_horz    ! horizontal diffusion coefficient (m2/s)
-      real(kind=ip) :: diffusivity_vert    ! vertical diffusion coefficient (m2/s)
+        ! Set everything to private by default
+      private
+
+        ! Publicly available subroutines/functions
+      public Allocate_Diff,Deallocate_Diff,DiffuseHorz,DiffuseVert
+
+        ! Publicly available variables
+      real(kind=ip),public :: diffusivity_horz    ! horizontal diffusion coefficient (m2/s)
+      real(kind=ip),public :: diffusivity_vert    ! vertical diffusion coefficient (m2/s)
 
          ! Factor that controls how much of the n+1 time step is used in the solution
          !  0.0 = Forward-Euler
@@ -23,17 +41,17 @@
          !       explicit solver.  If either Imp_fac = 0.5 or 1.0, then the
          !       method is unconditionally stable, but accuracy requires a
          !       Imp_DT_fac to be around 1.0 - 4.0
-      real(kind=ip) :: Imp_fac = 0.5_ip    
-      real(kind=ip) :: Imp_DT_fac  = 4.0_ip
+      real(kind=ip),parameter :: Imp_fac = 0.5_ip    
+      real(kind=ip),public    :: Imp_DT_fac  = 4.0_ip
 
 #ifdef USEPOINTERS
-      real(kind=ip),dimension(:,:,:),pointer :: kx
-      real(kind=ip),dimension(:,:,:),pointer :: ky
-      real(kind=ip),dimension(:,:,:),pointer :: kz
+      real(kind=ip),dimension(:,:,:),pointer,public :: kx
+      real(kind=ip),dimension(:,:,:),pointer,public :: ky
+      real(kind=ip),dimension(:,:,:),pointer,public :: kz
 #else
-      real(kind=ip),dimension(:,:,:),allocatable:: kx
-      real(kind=ip),dimension(:,:,:),allocatable:: ky
-      real(kind=ip),dimension(:,:,:),allocatable:: kz
+      real(kind=ip),dimension(:,:,:),allocatable,public :: kx
+      real(kind=ip),dimension(:,:,:),allocatable,public :: ky
+      real(kind=ip),dimension(:,:,:),allocatable,public :: kz
 #endif      
 
       contains
@@ -41,8 +59,6 @@
 !******************************************************************************
 
       subroutine Allocate_Diff(nx,ny,nz)
-
-      implicit none
 
       integer :: nx,ny,nz
       !integer :: ngridnode
@@ -61,8 +77,6 @@
 
       subroutine Deallocate_Diff
 
-      implicit none
-
       deallocate(kx)
       deallocate(ky)
       deallocate(kz)
@@ -75,8 +89,6 @@
 
       use global_param,  only : &
          useCN
-
-      implicit none
 
       integer :: i
 
@@ -120,8 +132,6 @@
       use global_param,  only : &
          useCN
 
-      implicit none
-
       if(useCN)then
         call diffCN_z
       else
@@ -148,8 +158,6 @@
 
       use time_data,     only : &
          dt
-
-      implicit none
 
       integer :: j,k,n  ! These are the indices mapping to the global arrays
       integer :: l_I    ! This is the interface index along the particular diffusion direction
@@ -285,8 +293,6 @@
       use time_data,     only : &
          dt
 
-      implicit none
-
       integer :: i,k,n  ! These are the indices mapping to the global arrays
       integer :: l_I    ! This is the interface index along the particular diffusion direction
       integer :: l_cc   ! This is the cell-centered index along the particular diffusion direction
@@ -411,8 +417,6 @@
       use time_data,     only : &
          dt
 
-      implicit none
-
       integer :: i,j,n  ! These are the indices mapping to the global arrays
       integer :: l_I    ! This is the interface index along the particular diffusion direction
       integer :: l_cc   ! This is the cell-centered index along the particular diffusion direction
@@ -536,8 +540,6 @@
 
       use time_data,     only : &
          dt
-
-      implicit none
 
       integer :: j,k,n  ! These are the indices mapping to the global arrays
       integer :: l_I    ! This is the interface index along the particular diffusion direction
@@ -794,8 +796,6 @@
       use time_data,     only : &
          dt
 
-      implicit none
-
       integer :: i,k,n  ! These are the indices mapping to the global arrays
       integer :: l_I    ! This is the interface index along the particular diffusion direction
       integer :: l_cc   ! This is the cell-centered index along the particular diffusion direction
@@ -1043,8 +1043,6 @@
 
       use time_data,     only : &
          dt
-
-      implicit none
 
       integer :: i,j,n  ! These are the indices mapping to the global arrays
       integer :: l_I    ! This is the interface index along the particular diffusion direction

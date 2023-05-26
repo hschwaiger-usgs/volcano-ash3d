@@ -1,3 +1,10 @@
+!      subroutine create_netcdf_file
+!      subroutine append_to_netcdf
+!      subroutine NC_RestartFile_ReadTimes
+!      subroutine NC_RestartFile_LoadConcen
+!      subroutine NC_check_status
+!      subroutine NC_Read_Output_Products
+
       module Ash3d_Netcdf
 
       use precis_param
@@ -7,6 +14,18 @@
       use netcdf
 
       implicit none
+
+        ! Set everything to private by default
+      private
+
+        ! Publicly available subroutines/functions
+      public create_netcdf_file,append_to_netcdf,NC_RestartFile_ReadTimes,&
+             NC_Read_Output_Products
+
+        ! Publicly available variables
+      !-- None --
+      integer,public :: tn_len
+
 
       integer :: NCversion
       integer :: NCsubversion
@@ -30,7 +49,6 @@
       integer :: bn_len
       integer :: pt_len
       integer :: pr_len
-      integer :: tn_len
 
       !integer :: pj_dim_id    = 0 ! projection parameter dimension
       !  Coordinate variables
@@ -189,8 +207,6 @@
       use MetReader,     only : &
          MR_iwindfiles,MR_windfiles,MR_GitComID,&
          MR_MetStep_findex,MR_windfile_starthour
-
-      implicit none
 
       integer :: nSTAT
 
@@ -2725,8 +2741,6 @@
       use time_data,     only : &
          time,ntmax,time_native,BaseYear
 
-      implicit none
-
       integer :: i,j,k,n
 
       integer :: nSTAT
@@ -3313,8 +3327,6 @@
       use time_data,         only : &
          time
 
-      implicit none
-
       integer :: nSTAT
       integer :: ncid
 
@@ -3385,8 +3397,6 @@
 
       use solution,          only : &
          concen_pd
-
-      implicit none
 
       integer :: i
       integer :: nSTAT
@@ -3474,8 +3484,6 @@
 
       use io_units
 
-      implicit none
-
       integer, intent(in) :: nSTAT
       integer, intent(in) :: errcode
       character(len=*), intent(in) :: operation
@@ -3552,8 +3560,6 @@
 
       use solution,      only : &
          SpeciesID
-
-      implicit none
 
       integer, intent(in), optional :: timestep
 

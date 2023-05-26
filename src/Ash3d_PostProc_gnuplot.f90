@@ -1,8 +1,22 @@
+!      subroutine write_2Dmap_PNG_gnuplot
+!      subroutine write_2Dprof_PNG_gnuplot
+!      subroutine write_DepPOI_TS_PNG_gnuplot
+
       module Ash3d_PostProc_gnuplot
 
       use precis_param
 
       use io_units
+
+      implicit none
+
+        ! Set everything to private by default
+      private
+
+        ! Publicly available subroutines/functions
+      public write_2Dmap_PNG_gnuplot,write_2Dprof_PNG_gnuplot,write_DepPOI_TS_PNG_gnuplot
+
+        ! Publicly available variables
 
       contains
 
@@ -45,8 +59,6 @@
          e_Volume,e_Duration,e_StartTime,e_PlumeHeight,lon_volcano,lat_volcano
 
       use citywriter
-
-      implicit none
 
       integer      ,intent(in) :: nx
       integer      ,intent(in) :: ny
@@ -526,8 +538,6 @@
       use time_data,     only : &
          os_time_log,SimStartHour,BaseYear,useLeap,ntmax,time_native
 
-      implicit none
-
       integer, intent (in) :: vprof_ID
 
       character(len=14) :: dp_gnufile
@@ -637,8 +647,6 @@
 
       use time_data,     only : &
          Simtime_in_hours
-
-      implicit none
 
       integer :: pt_indx,i
 
