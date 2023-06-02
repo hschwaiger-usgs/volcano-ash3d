@@ -151,7 +151,7 @@
 
       use mesh,          only : &
          IsLatLon,A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,&
-         A3d_radius_earth,de,dn,dx,dy,xLL,yLL,xUR,yUR,latLL,lonLL,latUR,lonUR
+         A3d_Re,de,dn,dx,dy,xLL,yLL,xUR,yUR,latLL,lonLL,latUR,lonUR
 
       use io_data,       only : &
          AppendExtAirportFile,nWriteTimes,ReadExtAirportFile
@@ -236,7 +236,7 @@
             lon_in = longitude
             lat_in = latitude
             call PJ_proj_for(lon_in,lat_in, A3d_iprojflag, &
-                       A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,A3d_radius_earth, &
+                       A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,A3d_Re, &
                        xout,yout)
             xnow = xout
             ynow = yout
@@ -298,7 +298,7 @@
             lon_in = longitude
             lat_in = latitude
             call PJ_proj_for(lon_in,lat_in, A3d_iprojflag, &
-                       A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,A3d_radius_earth, &
+                       A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,A3d_Re, &
                        xout,yout)
             xnow = xout
             ynow = yout

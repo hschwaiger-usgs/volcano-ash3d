@@ -378,7 +378,7 @@
 
       use mesh,          only : &
          A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-         A3d_k0_scale,A3d_radius_earth,de,dn,dx,dy,IsLatLon, &
+         A3d_k0_scale,A3d_Re,de,dn,dx,dy,IsLatLon, &
          latLL,lonLL,latUR,lonUR,xLL,yLL,xUR,yUR
 
       use io_data,       only : &
@@ -507,7 +507,7 @@
       if (.not.IsLatLon) then                        !get lon_volcano and lat_volcano
         call PJ_proj_inv(x_volcano, y_volcano, &
                    A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                   A3d_k0_scale,A3d_radius_earth, &
+                   A3d_k0_scale,A3d_Re, &
                    lon_volcano,lat_volcano)
       endif
       if (lon_volcano.gt.180.0_ip) then
@@ -689,7 +689,7 @@
       
       use mesh,          only : &
          nxmax,nymax,A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,&
-         A3d_k0_scale,A3d_radius_earth,de,dn,dx,dy,IsLatLon,&
+         A3d_k0_scale,A3d_Re,de,dn,dx,dy,IsLatLon,&
          lon_cc_pd,lat_cc_pd,x_cc_pd,y_cc_pd
 
       use time_data,     only : &
@@ -791,23 +791,23 @@
             ytop    = y_cc_pd(j) + dy/2.0_ip
             call PJ_proj_inv(xleft, ybottom,  &
                         A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                        A3d_k0_scale,A3d_radius_earth, &
+                        A3d_k0_scale,A3d_Re, &
                            longLL,lattLL)
             call PJ_proj_inv(xleft,    ytop,  &
                         A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                        A3d_k0_scale,A3d_radius_earth, &
+                        A3d_k0_scale,A3d_Re, &
                            longUL,lattUL)
             call PJ_proj_inv(xright,   ytop,  &
                         A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                        A3d_k0_scale,A3d_radius_earth, &
+                        A3d_k0_scale,A3d_Re, &
                            longUR,lattUR)
             call PJ_proj_inv(xright,ybottom,  &
                         A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                        A3d_k0_scale,A3d_radius_earth, &
+                        A3d_k0_scale,A3d_Re, &
                            longLR,lattLR)
             call PJ_proj_inv(x_cc_pd(i),y_cc_pd(j),  &
                         A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                        A3d_k0_scale,A3d_radius_earth, &
+                        A3d_k0_scale,A3d_Re, &
                            longCC,lattCC)
           endif ! IsLatLon
           if (longLL>180.0_ip) longLL = longLL-360.0_ip
@@ -1001,7 +1001,7 @@
 
       use mesh,          only : &
          A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,&
-         A3d_k0_scale,A3d_radius_earth,IsLatLon
+         A3d_k0_scale,A3d_Re,IsLatLon
 
       use io_data,       only : &
          nWriteTimes,VolcanoName,WriteTimes
@@ -1208,7 +1208,7 @@
       if (IsLatLon.eqv..False.) then      !Put a placemark at the location of the volcano
         call PJ_proj_inv(x_volcano, y_volcano,  &
                       A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                      A3d_k0_scale,A3d_radius_earth, &
+                      A3d_k0_scale,A3d_Re, &
                       lon_volcano,lat_volcano)
       endif
 
@@ -1521,7 +1521,7 @@
 
       use mesh,          only : &
          A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,&
-         A3d_k0_scale,A3d_radius_earth,IsLatLon
+         A3d_k0_scale,A3d_Re,IsLatLon
 
       use projection,    only : &
            PJ_proj_inv
@@ -1558,7 +1558,7 @@
         do ict=0,40
           call PJ_proj_inv(xplot(ict),yplot(ict),  &
                         A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                        A3d_k0_scale,A3d_radius_earth, &
+                        A3d_k0_scale,A3d_Re, &
                         lonplot(ict),latplot(ict))
         enddo
       endif

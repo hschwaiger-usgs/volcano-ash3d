@@ -16,7 +16,7 @@
          sigma_nx_pd,sigma_ny_pd,sigma_nz_pd,kappa_pd,&
          xLL,yLL,latLL,lonLL, &
          A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_phi1,&
-         A3d_phi2,A3d_radius_earth,IsLatLon,IsPeriodic
+         A3d_phi2,A3d_Re,IsLatLon,IsPeriodic
 
       use time_data,     only : &
          SimStartHour,Simtime_in_hours
@@ -183,7 +183,7 @@
         ! Initialize the grids needed for met data
       call MR_Set_CompProjection(IsLatLon,A3d_iprojflag,A3d_lam0, &
                                  A3d_phi0,A3d_phi1,A3d_phi2,       &
-                                 A3d_k0_scale,A3d_radius_earth)
+                                 A3d_k0_scale,A3d_Re)
 
       if(IsLatLon)then
         call MR_Initialize_Met_Grids(nxmax,nymax,nzmax,          &
@@ -222,7 +222,7 @@
       use mesh,              only : &
          nxmax,nymax,x_cc_pd,y_cc_pd,xy2ll_xlon,xy2ll_ylat,&
          A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_phi1,&
-         A3d_phi2,A3d_radius_earth
+         A3d_phi2,A3d_Re
 
       use projection,        only : &
            PJ_proj_inv
@@ -256,7 +256,7 @@
           yout = y_cc_pd(j)
           call PJ_proj_inv(xout,yout, &
                          A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                         A3d_k0_scale,A3d_radius_earth, &
+                         A3d_k0_scale,A3d_Re, &
                          olam_ip,ophi_ip)
           xy2ll_ylat(i,j)=ophi_ip
           if(olam_ip.lt.0.0_ip)olam_ip=olam_ip+360.0_ip

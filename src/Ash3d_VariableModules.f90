@@ -360,7 +360,7 @@
       real(kind=dp)      :: A3d_lam0
       real(kind=dp)      :: A3d_lam1,A3d_phi1
       real(kind=dp)      :: A3d_lam2,A3d_phi2
-      real(kind=dp)      :: A3d_radius_earth
+      real(kind=dp)      :: A3d_Re
 
       logical            :: IsPeriodic      = .false.
       real(kind=ip)      :: ZPADDING  = 1.3_ip

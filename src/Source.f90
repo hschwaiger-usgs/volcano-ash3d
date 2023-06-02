@@ -11,8 +11,6 @@
 
       use io_units
 
-      use global_param
-
       implicit none
 
         ! Set everything to private by default
@@ -35,7 +33,7 @@
       integer,public :: neruptions                  ! number of eruptions or eruptive pulses
       character(len=12),public :: SourceType          !may be 'point', 'line', or 'Suzuki' 
       real(kind=ip),public :: Suzuki_A
-      real(kind=ip) :: rate_height           !for plume calculations
+      !real(kind=ip) :: rate_height           !for plume calculations
       logical,public       :: IsCustom_SourceType = .false.
       character(len=30),dimension(MAXCustSrc) :: SourceType_Custom = ""
 
@@ -66,7 +64,7 @@
       real(kind=ip), dimension(:)        ,allocatable,public :: e_StartTime
       real(kind=ip), dimension(:)        ,allocatable,public :: e_EndTime
       real(kind=ip), dimension(:)        ,allocatable,public :: MassFlux
-      real(kind=ip), dimension(:)        ,allocatable :: Suzuki_param
+      !real(kind=ip), dimension(:)        ,allocatable :: Suzuki_param
       real(kind=ip), dimension(:)        ,allocatable,public :: e_prof_dz
       integer      , dimension(:)        ,allocatable,public :: e_prof_zpoints
       real(kind=ip), dimension(:,:)      ,allocatable,public :: e_prof_Volume
@@ -170,6 +168,9 @@
       subroutine TephraSourceNodes
 
 !     subroutine that finds the source nodes and assigns an ash concentration to them
+
+      use global_param,    only : &
+         EPS_SMALL
 
       use Tephra,        only : &
          Tephra_bin_mass,n_gs_max

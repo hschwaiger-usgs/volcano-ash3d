@@ -4,6 +4,7 @@
 
       ! Subroutine that reads ASCII input file and contains error traps for input
       use iso_c_binding
+
       use precis_param
 
       use io_units
@@ -51,7 +52,7 @@
          gridwidth_e,gridwidth_n,gridwidth_x,gridwidth_y,&
          lonLL,latLL,lonUR,latUR,xLL,yLL,xUR,yUR,&
          A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
-         A3d_phi2,A3d_radius_earth,IsLatLon,IsPeriodic,ZPADDING
+         A3d_phi2,A3d_Re,IsLatLon,IsPeriodic,ZPADDING
 
       use solution,      only : &
          StopValue,imin,imax,jmin,jmax,kmin,kmax
@@ -74,8 +75,7 @@
            Allocate_Diff
 
       use projection,    only : &
-         PJ_iprojflag,PJ_k0,PJ_lam0,PJ_lam1,PJ_lam2,PJ_phi0,PJ_phi1,PJ_phi2,&
-         PJ_radius_earth,&
+         PJ_iprojflag,PJ_k0,PJ_lam0,PJ_lam1,PJ_lam2,PJ_phi0,PJ_phi1,PJ_phi2,PJ_Re,&
            PJ_Set_Proj_Params
 
       use MetReader,     only : &
@@ -409,15 +409,15 @@
       ! Set Projection Parameters
       if (IsLatLon.eqv..false.)then
         call PJ_Set_Proj_Params(Comp_projection_line)
-        A3d_iprojflag    = PJ_iprojflag
-        A3d_k0_scale     = PJ_k0
-        A3d_radius_earth = PJ_radius_earth
-        A3d_lam0         = PJ_lam0
-        A3d_lam1         = PJ_lam1
-        A3d_lam2         = PJ_lam2
-        A3d_phi0         = PJ_phi0
-        A3d_phi1         = PJ_phi1
-        A3d_phi2         = PJ_phi2
+        A3d_iprojflag  = PJ_iprojflag
+        A3d_k0_scale   = PJ_k0
+        A3d_Re         = PJ_Re
+        A3d_lam0       = PJ_lam0
+        A3d_lam1       = PJ_lam1
+        A3d_lam2       = PJ_lam2
+        A3d_phi0       = PJ_phi0
+        A3d_phi1       = PJ_phi1
+        A3d_phi2       = PJ_phi2
       endif
 
       ! READ BOUNDARIES OF MODEL DOMAIN

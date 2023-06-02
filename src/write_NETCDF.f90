@@ -191,7 +191,7 @@
          nxmax,nymax,nzmax,nsmax,x_cc_pd,y_cc_pd,z_cc_pd,lon_cc_pd,lat_cc_pd,&
          sigma_nz_pd,dx,dy,dz_vec_pd,IsLatLon,ts1,&
          A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
-         A3d_phi2,A3d_radius_earth,ZPADDING
+         A3d_phi2,A3d_Re,ZPADDING
 
       use solution,      only : &
           vx_pd,vy_pd,vz_pd,vf_pd,concen_pd,DepositGranularity,SpeciesID,SpeciesSubID
@@ -802,7 +802,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var LatLon_Projection")
         nSTAT = nf90_put_att(ncid,proj_var_id,"grid_mapping_name","latitude_longitude")
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att LatLon_Projection grid_mapping_name")
-        nSTAT = nf90_put_att(ncid,proj_var_id,"semi_major_axis",A3d_radius_earth*1000.0_ip)
+        nSTAT = nf90_put_att(ncid,proj_var_id,"semi_major_axis",A3d_Re*1000.0_ip)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att LatLon_Projection semi_major_axis")
         nSTAT = nf90_put_att(ncid,proj_var_id,"inverse_flattening","0")
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att LatLon_Projection inverse_flattening")
@@ -851,7 +851,7 @@
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1, &
                               "put_att Polar_Stereographic latitude_of_projection_origin")
           nSTAT = nf90_put_att(ncid,proj_var_id,&
-                              "earth_radius",A3d_radius_earth*1000.0_ip)
+                              "earth_radius",A3d_Re*1000.0_ip)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1, &
                               "put_att Polar_Stereographic earth_radius")
         case(2)
@@ -880,7 +880,7 @@
           ! false_northing 
 
           nSTAT = nf90_put_att(ncid,proj_var_id,&
-                              "earth_radius",A3d_radius_earth*1000.0_ip)
+                              "earth_radius",A3d_Re*1000.0_ip)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Albers_Equal_Area earth_radius")
         case(3)
           ! UTM
@@ -912,7 +912,7 @@
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1, &
                              "put_att Lambert_Conformal latitude_of_projection_origin")
           nSTAT = nf90_put_att(ncid,proj_var_id,&
-                              "earth_radius",A3d_radius_earth*1000.0_ip)
+                              "earth_radius",A3d_Re*1000.0_ip)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1, &
                              "put_att Lambert_Conformal earth_radius")
         case(5)
@@ -963,7 +963,7 @@
           nSTAT = nf90_put_att(ncid,proj_var_id,&
                                "meridian2",A3d_lam2)
           nSTAT = nf90_put_att(ncid,proj_var_id,&
-                              "earth_radius",A3d_radius_earth*1000.0_ip)
+                              "earth_radius",A3d_Re*1000.0_ip)
         end select
       endif
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
