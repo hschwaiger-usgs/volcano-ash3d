@@ -40,7 +40,7 @@
 
 
       real(kind=ip), parameter :: R_GAS_IDEAL  = 8.3144621_ip ! Ideal gas constant (J /(kg K))
-      real(kind=ip), parameter :: R_GAS_DRYAIR = 286.98_ip    ! Specific gas constant of R=286.98 J /(kg K)
+      real(kind=ip), parameter,public :: R_GAS_DRYAIR = 286.98_ip    ! Specific gas constant of R=286.98 J /(kg K)
       real(kind=ip), parameter :: CP_AIR       = 1.004e3_ip   ! Specific heat capacity at p (J /kg K)
       real(kind=ip), parameter :: MB_DRY_AIR   = 0.028966_ip  ! Molecular weight of dry air in kg/mol
       real(kind=ip), parameter :: BoltzK       = 1.380658e-23_ip ! Boltzmann's constant kg m2 s-2 K-1 molec-1
@@ -365,7 +365,7 @@
 
         ! Get the density (kg/m^3) of dry air via the ideal gas law and
         ! Specific gas constant of R=286.98 J /(kg K)
-      Dens_IdealGasLaw = pres/(real(R_GAS_DRYAIR,kind=sp)*temp)
+      Dens_IdealGasLaw = pres/(real(temp*R_GAS_DRYAIR,kind=sp))
 
       return
 
@@ -397,8 +397,8 @@
       real(kind=sp) :: visc,pres,temp
 
         ! Mean-free-path of dry air : Eq. 9.6 of Seinfeld and Pandis
-      lambda_MeanFreePath = (2.0_sp*visc)/pres * &
-             sqrt(8.0_sp*real(MB_DRY_AIR/(PI*R_GAS_IDEAL),kind=sp)/temp)
+      lambda_MeanFreePath = (2.0_sp*visc)/ &
+             (pres*sqrt(8.0_sp*real(MB_DRY_AIR/(PI*R_GAS_IDEAL*temp),kind=sp)))
 
       return
 

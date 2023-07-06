@@ -19,13 +19,12 @@
       private
 
         ! Publicly available subroutines/functions
-      public create_netcdf_file,append_to_netcdf,NC_RestartFile_ReadTimes,&
+      public create_netcdf_file,append_to_netcdf,&
+             NC_RestartFile_ReadTimes,NC_RestartFile_LoadConcen,&
              NC_Read_Output_Products
 
         ! Publicly available variables
-      !-- None --
       integer,public :: tn_len
-
 
       integer :: NCversion
       integer :: NCsubversion
@@ -3383,8 +3382,8 @@
 
       subroutine NC_RestartFile_LoadConcen
 
-      use global_param,      only : &
-         KM2_2_M2
+!      use global_param,      only : &
+!         KM2_2_M2
 
       use io_data,           only : &
          concenfile,init_tstep
@@ -3393,7 +3392,7 @@
       !   n_gs_max
 
       use mesh,              only : &
-         nxmax,nymax,nzmax,nsmax,dz_vec_pd,ts0,ts1
+         nxmax,nymax,nzmax,nsmax,ts0,ts1
 
       use solution,          only : &
          concen_pd
@@ -3412,7 +3411,7 @@
         write(outlog(io),*)" with previous run."
       endif;enddo
 
-      ! Open netcdf file for writing
+      ! Open netcdf file for reading
       nSTAT=nf90_open(concenfile,nf90_nowrite,ncid)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"nf90_open")
 
@@ -3445,10 +3444,10 @@
                count = (/nxmax,nymax,nsmax,1/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depocon")
 
-      do i = 1,nsmax
-          ! Here's the conversion from kg/m^2
-        concen_pd(1:nxmax,1:nymax,0,i,ts1) = real(depocon(:,:,i),kind=ip)/(dz_vec_pd(0)/KM2_2_M2)
-      enddo
+      !do i = 1,nsmax
+      !    ! Here's the conversion from kg/m^2
+      !  concen_pd(1:nxmax,1:nymax,0,i,ts1) = real(depocon(:,:,i),kind=ip)/(dz_vec_pd(0)/KM2_2_M2)
+      !enddo
       concen_pd(:,:,:,:,ts0) = concen_pd(:,:,:,:,ts1)
 
       ! Close file

@@ -38,7 +38,7 @@
       character(len=30),dimension(MAXCustSrc) :: SourceType_Custom = ""
 
 #ifdef USEPOINTERS
-      real(kind=ip), dimension(:,:)  ,pointer,ppublic :: SourceNodeFlux      => null()
+      real(kind=ip), dimension(:,:)  ,pointer,public :: SourceNodeFlux      => null()
       real(kind=ip), dimension(:,:,:),pointer :: SourceNodeFlux_Area => null()
 #else
       real(kind=ip), dimension(:,:)  ,allocatable,public     :: SourceNodeFlux

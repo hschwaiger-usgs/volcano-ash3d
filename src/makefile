@@ -288,7 +288,7 @@ ifeq ($(RUN), OMPOPT)
     ASH3DEXEC=Ash3d_omp
 endif
       # Preprocessing flags
-    FPPFLAGS =  -x f95-cpp-input $(OSFPPFLAG) $(DATAFPPFLAG) $(LIMFPPFLAG) $(DIFFFPPFLAG) $(memFPPFLAG) $(extdatFPPFLAG) $(FASTFPPFLAG) $(PLOTFPPFLAG) $(PIIFPPFLAG)
+    FPPFLAGS =  -x f95-cpp-input $(OSFPPFLAG) $(DATAFPPFLAG) $(LIMFPPFLAG) $(DIFFFPPFLAG) $(memFPPFLAG) $(extdatFPPFLAG) $(FASTFPPFLAG) $(PIIFPPFLAG) $(PLOTFPPFLAG)
       # Extra flags
     #EXFLAGS = -xf95
     EXFLAGS =
@@ -343,7 +343,7 @@ ifeq ($(USENETCDF), T)
 endif
 
 Ash3d:  $(OBJECTS) $(DATAOBJ) Ash3d.F90 $(MFILE)
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c Ash3d.F90 
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c Ash3d.F90 
 	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d.o $(LIBS) -o $(ASH3DEXEC)
 	mkdir -p ../bin
 	cp $(ASH3DEXEC) ../bin/Ash3d

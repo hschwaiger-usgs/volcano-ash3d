@@ -8,7 +8,10 @@
       use io_units
 
       use global_param,    only : &
-         EPS_SMALL,MPS_2_KMPHR,GRAV, &
+#ifdef FAST_DT
+         EPS_SMALL,&
+#endif
+         MPS_2_KMPHR,GRAV, &
          useTemperature,useCalcFallVel,useVz_rhoG
 
       use solution,        only : &
