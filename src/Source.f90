@@ -498,5 +498,26 @@
 
 !******************************************************************************
 
+!      subroutine Integrate_Source
+!
+!              concen_pd(ivent,jvent,1:nzmax+1,1:n_gs_max,ts0) =  &
+!              concen_pd(ivent,jvent,1:nzmax+1,1:n_gs_max,ts0)    &
+!                + dt*SourceNodeFlux(1:nzmax+1,1:n_gs_max)
+!              ! this part is just for book-keeping and error checking
+!              do isize=1,n_gs_max
+!                do k=1,nzmax+1
+!                  SourceCumulativeVol = SourceCumulativeVol + & ! final units is km3
+!                    dt                              * & ! hr
+!                    SourceNodeFlux(k,isize)         * & ! kg/km3 hr
+!                    kappa_pd(ivent,jvent,k)         / & ! km3
+!                    MagmaDensity                    / & ! kg/m3
+!                    KM3_2_M3                            ! m3/km3
+!                enddo
+!              enddo
+!
+!      end subroutine Integrate_Source
+
+!******************************************************************************
+
       end module Source
 

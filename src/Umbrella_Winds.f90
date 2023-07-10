@@ -1,10 +1,26 @@
-      subroutine umbrella_winds(first_time)
+!      subroutine umbrella_winds
 
-      !subroutine that calculates radial winds from the center of an umbrella cloud
+      module Source_Umbrella
 
       use precis_param
 
       use io_units
+
+      implicit none
+
+        ! Set everything to private by default
+      private
+
+        ! Publicly available subroutines/functions
+      public umbrella_winds
+
+      contains
+
+!******************************************************************************
+
+      subroutine umbrella_winds(first_time)
+
+      !subroutine that calculates radial winds from the center of an umbrella cloud
 
       use global_param,  only : &
          DEG2KMLAT,DEG2KMLON,DEG2RAD,KM_2_M,PI,HR_2_S,MPS_2_KMPHR,EPS_SMALL
@@ -216,3 +232,59 @@
       return
 
       end subroutine umbrella_winds
+
+!******************************************************************************
+      subroutine Integrate_Souce_Umbrella
+
+              ! Umbrella clouds have a special integration
+              !  Below the umbrella cloud, add ash to vent nodes as above
+              concen_pd(ivent,jvent,1:ibase-1,1:n_gs_max,ts0) =          & ! 
+                       concen_pd(ivent,jvent,1:ibase-1,1:n_gs_max,ts0) + & ! kg/km3
+                       dt                                              * & ! hr
+                       SourceNodeFlux(1:ibase-1,1:n_gs_max)                ! kg/km3 hr
+              do isize=1,n_gs_max
+                do k=1,ibase-1
+                  SourceCumulativeVol = SourceCumulativeVol + & ! final units is km3
+                    dt                              * & ! hr
+                    SourceNodeFlux(k,isize)         * & ! kg/km3 hr
+                    kappa_pd(ivent,jvent,k)         / & ! km3
+                    MagmaDensity                    / & ! kg/m3
+                    KM3_2_M3                            ! m3/km3
+                enddo
+              enddo
+              do iz=ibase,itop
+                !Within the cloud: first, average the concentration that curently
+                !exists in the 9 cells surrounding the vent
+                do isize=1,n_gs_max
+                  avgcon=sum(concen_pd(ivent-1:ivent+1,jvent-1:jvent+1,iz,isize,ts0))/9.0_ip
+                  concen_pd(ivent-1:ivent+1,jvent-1:jvent+1,iz,isize,ts0)=avgcon
+                enddo
+              enddo
+              !Then, add tephra to the 9 nodes surrounding the vent
+              ! TephraSourceNodes has a special line to reduce SourceNodeFlux by a factor 9
+              ! because it is applied 9 times here.  We need to be careful about mixing mass
+              ! and concentration since cell volume differ in lat, but this should be minor
+              do ii=ivent-1,ivent+1
+                do jj=jvent-1,jvent+1
+                  do iz=ibase,itop
+                    concen_pd(ii,jj,iz,1:n_gs_max,ts0) =                &
+                              concen_pd(ii,jj,iz,1:n_gs_max,ts0)        &
+                                 + dt*SourceNodeFlux(iz,1:n_gs_max)
+                    do isize=1,n_gs_max
+                      SourceCumulativeVol = SourceCumulativeVol + & ! final units is km3
+                        dt                              * & ! hr
+                        SourceNodeFlux(iz,isize)         * & ! kg/km3 hr
+                        kappa_pd(ivent,jvent,iz)         / & ! km3
+                        MagmaDensity                    / & ! kg/m3
+                        KM3_2_M3                            ! m3/km3
+                    enddo
+                  enddo
+                enddo
+              enddo
+
+
+      end subroutine Integrate_Souce_Umbrella
+!******************************************************************************
+
+      end module Source_Umbrella
+

@@ -645,10 +645,10 @@
       elseif ((SourceType.eq.'umbrella_air').or. &
                  (SourceType.eq.'Umbrella_air').or. &
                  (SourceType.eq.'UMBRELLA_AIR')) then
-          !umbrella_air is the same as 'umbrella'
-          !but it is assumed to be an airborne run.
-          !Thus if gsbins=1, the MER is multiplied by 20
-          !to obtain the right rate of umbrella growth.
+          ! umbrella_air is the same as 'umbrella'
+          ! but it is assumed to be an airborne run.
+          ! Thus if gsbins=1, the MER is multiplied by 20
+          ! to obtain the right rate of umbrella growth.
           SourceType='umbrella_air'
           Suzuki_A = 12.0_ip
       else
@@ -3507,3 +3507,4 @@
       return
 
       end subroutine vprofchecker
+

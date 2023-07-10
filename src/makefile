@@ -387,7 +387,7 @@ TimeStepTotals.o: $(ASH3dCCSRC)/TimeStepTotals.f90 $(MFILE) Ash3d_VariableModule
 
 Atmosphere.o: $(ASH3dCCSRC)/Atmosphere.f90 $(MFILE) Ash3d_VariableModules.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Atmosphere.f90
-MesoInterpolater.o: $(ASH3dCCSRC)/MesoInterpolater.f90 $(MFILE) Atmosphere.o Tephra.o Ash3d_VariableModules.o
+MesoInterpolater.o: $(ASH3dCCSRC)/MesoInterpolater.f90 $(MFILE) Atmosphere.o Tephra.o Ash3d_VariableModules.o Umbrella_Winds.o Source.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/MesoInterpolater.f90
 
 # PDE Solver (Advection, Diffusion, B.C.'s)

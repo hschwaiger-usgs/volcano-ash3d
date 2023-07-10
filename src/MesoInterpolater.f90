@@ -43,6 +43,9 @@
       use Source,          only : &
          uvx_pd,uvy_pd,ibase,itop,SourceType,e_EndTime
 
+      use Source_Umbrella,        only : &
+           umbrella_winds
+
       use Tephra,          only : &
          n_gs_max,Tephra_v_s,   &
            Set_Vf_Meso
@@ -81,9 +84,6 @@
       !integer, intent(inout) :: Meso_toggle
 
       INTERFACE
-        subroutine umbrella_winds(first_time)
-          logical, intent(in)  :: first_time
-        end subroutine umbrella_winds
         subroutine Adjust_DT(mesostep)
           logical, intent(in), optional :: mesostep
         end subroutine Adjust_DT
@@ -116,7 +116,7 @@
         call MR_Read_HGT_arrays(MR_iMetStep_Now,first_time)
 
         if(Map_Case.eq.1.or.Map_Case.eq.2)then
-          ! Either both the comp and met1 grids are LL (Map_Case = 1)
+          ! Either both the comp and met grids are LL (Map_Case = 1)
           ! or they are both the same projection (Map_Case = 2) so
           ! we can read the velocity components individually and interpolate onto
           ! the computational grid
@@ -448,7 +448,7 @@
             write(errlog(io),*)"       flag is set because the velocity components added to"
             write(errlog(io),*)"       the background wind velocities would not be accounted"
             write(errlog(io),*)"       for in the dt calculation.  Please edit FASTFPPFLAG in"
-            write(errlog(io),*)"       the makefile and recompile Ash3d"
+            write(errlog(io),*)"       the makefile and recompile Ash3d."
             write(errlog(io),*)"       Exiting."
           endif;enddo
           stop 1
