@@ -35,11 +35,15 @@
          time,dt,Simtime_in_hours,t0,t1,ntmax
 
       use Source,        only : &
-         ibase,itop,SourceNodeFlux,e_EndTime_final,e_Volume,MassFluxRate_now,&
+         SourceNodeFlux,e_EndTime_final,e_Volume,MassFluxRate_now,&
          SourceType, &
            Allocate_Source_time,&
            MassFluxCalculator,&
            TephraSourceNodes
+
+      use Source_Umbrella, only : &
+         ibase,itop,SourceColumn_Umbrella,ScaleFac_Umbrella, &
+           Allocate_Source_Umbrella
 
       use Tephra,        only : &
          n_gs_max,n_gs_aloft,MagmaDensity,&
@@ -79,7 +83,7 @@
 
 !      integer               :: iostatus
       integer               :: itime
-      integer               :: j,k
+      integer               :: i,j,k
       integer               :: ii,jj,iz,isize
       real(kind=ip)         :: avgcon        ! avg concen of cells in umbrella
       real(kind=ip)         :: Interval_Frac
@@ -172,6 +176,10 @@
       call alloc_arrays
         ! Set up grids for solution and Met data
       call calc_mesh_params
+
+      if (((SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')))then
+        call Allocate_Source_Umbrella(nxmax,nymax,nzmax)
+      endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !   Initialize concen and any special source terms here
@@ -327,6 +335,9 @@
             ! Now integrate the ash concentration with the SourceNodeFlux
             if (SourceType.eq.'umbrella'.or. &
                (SourceType.eq.'umbrella_air')) then
+
+              !call SourceNodeFlux_Umbrella
+
               ! Umbrella clouds have a special integration
               !  Below the umbrella cloud, add ash to vent nodes as above
               concen_pd(ivent,jvent,1:ibase-1,1:n_gs_max,ts0) =          & ! 
@@ -346,8 +357,19 @@
               do iz=ibase,itop
                 !Within the cloud: first, average the concentration that curently
                 !exists in the 9 cells surrounding the vent
+                !SourceColumn_Umbrella
                 do isize=1,n_gs_max
-                  avgcon=sum(concen_pd(ivent-1:ivent+1,jvent-1:jvent+1,iz,isize,ts0))/9.0_ip
+                  avgcon=0.0_ip
+                  do i=1,3
+                    ii=ivent-2+i
+                    do j=1,3
+                      jj=jvent-2+j
+                      avgcon=avgcon+concen_pd(ii,jj,iz,isize,ts0)*ScaleFac_Umbrella(i,j,iz)
+                    enddo
+                  enddo
+
+!                do isize=1,n_gs_max
+!                  avgcon=sum(concen_pd(ivent-1:ivent+1,jvent-1:jvent+1,iz,isize,ts0))/9.0_ip
                   concen_pd(ivent-1:ivent+1,jvent-1:jvent+1,iz,isize,ts0)=avgcon
                 enddo
               enddo
@@ -355,16 +377,22 @@
               ! TephraSourceNodes has a special line to reduce SourceNodeFlux by a factor 9
               ! because it is applied 9 times here.  We need to be careful about mixing mass
               ! and concentration since cell volume differ in lat, but this should be minor
-              do ii=ivent-1,ivent+1
-                do jj=jvent-1,jvent+1
+!              do ii=ivent-1,ivent+1
+!                do jj=jvent-1,jvent+1
+              do i=1,3
+                ii=ivent-2+i
+                do j=1,3
+                  jj=jvent-2+j
                   do iz=ibase,itop
                     concen_pd(ii,jj,iz,1:n_gs_max,ts0) =                &
                               concen_pd(ii,jj,iz,1:n_gs_max,ts0)        &
-                                 + dt*SourceNodeFlux(iz,1:n_gs_max)
+                                 + dt*SourceNodeFlux(iz,1:n_gs_max)*ScaleFac_Umbrella(i,j,iz)
+!                                 + dt*SourceNodeFlux(iz,1:n_gs_max)/9.0_ip
                     do isize=1,n_gs_max
                       SourceCumulativeVol = SourceCumulativeVol + & ! final units is km3
                         dt                              * & ! hr
-                        SourceNodeFlux(iz,isize)         * & ! kg/km3 hr
+                        SourceNodeFlux(iz,isize)*ScaleFac_Umbrella(i,j,iz)         * & ! kg/km3 hr
+!                        SourceNodeFlux(iz,isize)/9.0_ip         * & ! kg/km3 hr
                         kappa_pd(ivent,jvent,iz)         / & ! km3
                         MagmaDensity                    / & ! kg/m3
                         KM3_2_M3                            ! m3/km3
@@ -540,7 +568,7 @@
         endif
            ! Error stop condition if the concen and outflow do not match the source
         StopConditions(4) = (MassConsErr.gt.1.0e-3_ip)
-        StopConditions(4) = .false.  ! We override this condition until the umbr. source conserves mass
+        StopConditions(4) = .false.  ! We override this condition until the umbrella source conserves mass
            ! Error stop condition if any volume measure is negative
         StopConditions(5) = (dep_vol.lt.-1.0_ip*EPS_SMALL).or.&
                             (aloft_vol.lt.-1.0_ip*EPS_SMALL).or.&

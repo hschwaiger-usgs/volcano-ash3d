@@ -12,11 +12,172 @@
       private
 
         ! Publicly available subroutines/functions
-      public umbrella_winds
+      public Allocate_Source_Umbrella,Deallocate_Source_Umbrella,&
+             umbrella_winds,Integrate_Source_Umbrella
+
+      real(kind=ip),dimension(:,:,:,:),allocatable,public :: SourceColumn_Umbrella
+      real(kind=ip),dimension(:,:,:),allocatable,public   :: ScaleFac_Umbrella
+
+      !components of the wind field used for umbrella clouds
+#ifdef USEPOINTERS
+      real(kind=ip),dimension(:,:,:),pointer,public :: uvx_pd =>null() ! u (E) component of wind
+      real(kind=ip),dimension(:,:,:),pointer,public :: uvy_pd =>null() ! v (N) component of wind
+#else
+      real(kind=ip),dimension(:,:,:),allocatable,public :: uvx_pd ! u (E) component of wind
+      real(kind=ip),dimension(:,:,:),allocatable,public :: uvy_pd ! v (N) component of wind
+#endif
+
+      !The following are used by SourceNodes for umbrella clouds
+      integer,public :: ibase     !z index of lowest node in the umbrella cloud
+      integer,public :: itop     !z index of highest node in the umbrella cloud
+       !width & height of source nodes in km
+      real(kind=ip),public :: SourceNodeWidth_km
+      real(kind=ip),public :: SourceNodeHeight_km
 
       contains
 
 !******************************************************************************
+
+      subroutine Allocate_Source_Umbrella(nx,ny,nz)
+
+      use mesh,          only : &
+         z_vec_init,kappa_pd,ivent,jvent
+
+      use Source,        only : &
+         SourceNodeFlux,e_PlumeHeight,SourceType
+
+      use Tephra,        only : &
+         n_gs_max
+
+      integer,intent(in) :: nx
+      integer,intent(in) :: ny
+      integer,intent(in) :: nz
+
+      integer :: i,j,k,ii,jj
+      real(kind=ip) :: tot_vol
+
+      allocate(SourceColumn_Umbrella(3,3,nz,n_gs_max)); SourceColumn_Umbrella=0.0_ip
+      allocate(ScaleFac_Umbrella(3,3,nz));              ScaleFac_Umbrella=0.0_ip
+
+      ! Get the weights for the averaging stencil for each z-level
+      do k = 1,nz
+        tot_vol = 0.0_ip
+        do i=1,3
+          ii=ivent-2+i
+          do j=1,3
+            jj=jvent-2+j
+            ScaleFac_Umbrella(i,j,k)=kappa_pd(ii,jj,k)
+            tot_vol = tot_vol + kappa_pd(ii,jj,k)
+          enddo
+        enddo
+        ScaleFac_Umbrella(:,:,k) = ScaleFac_Umbrella(:,:,k)/tot_vol
+      enddo
+
+      itop  = 0
+      ibase = 0
+      if ((SourceType.eq.'umbrella')    .or. &
+          (SourceType.eq.'umbrella_air')) then
+        !set nodes at base and top  of cloud
+        !itop  = int(e_PlumeHeight(1)/dz)+1           !node at top of plume
+        !ibase = int(0.75*e_PlumeHeight(1)/dz)        !node at base
+        do k = 1,nz
+          if(z_vec_init(k)  .ge.e_PlumeHeight(1).and.&
+             z_vec_init(k-1).lt.e_PlumeHeight(1))then
+            itop = k
+          endif
+          ! The Suzuki distribution for umbrella clouds is hardwired to k=12
+          ! The 0.75 for the plume bottom just ensures that the significant part
+          ! of the Suzuki mass loading profile will be within the ibase to itop nodes
+          if(z_vec_init(k)  .ge.0.75_ip*e_PlumeHeight(1).and. &
+             z_vec_init(k-1).lt.0.75_ip*e_PlumeHeight(1))then
+            ibase = k
+          endif
+        enddo
+      endif
+      !write(*,*)"Allocating uvx_pd,uvy_pd",nx,ny,ibase,itop
+      allocate(uvx_pd(-1:nx+2,-1:ny+2,ibase:itop));     uvx_pd = 0.0_ip
+      allocate(uvy_pd(-1:nx+2,-1:ny+2,ibase:itop));     uvy_pd = 0.0_ip
+
+      !stop 5
+
+      end subroutine Allocate_Source_Umbrella
+
+!******************************************************************************
+
+      subroutine Deallocate_Source_Umbrella
+
+        deallocate(SourceColumn_Umbrella)
+        deallocate(uvx_pd,uvy_pd)
+
+      end subroutine Deallocate_Source_Umbrella
+
+!******************************************************************************
+
+!      subroutine SourceNodeFlux_Umbrella
+!
+!      use global_param,    only : &
+!         EPS_SMALL
+!
+!      use mesh,          only : &
+!         IsLatLon,nzmax,ivent,jvent,z_lb_pd,z_cc_pd,kappa_pd
+!
+!      use Source,        only : &
+!         SourceNodeFlux,TephraFluxRate,MassFluxRate_now,Height_now,&
+!         SourceType
+!
+!      use Tephra,        only : &
+!         Tephra_bin_mass,n_gs_max
+!
+!      integer :: k
+!      real(kind=ip) :: SumSourceNodeFlux      ! checking terms
+!
+!      SumSourceNodeFlux    = 0.0_ip
+!
+!      !do k=kground,kPlumeTop
+!      do k=1,nzmax
+!!        if(k.lt.ibase)then
+!          ! This is the same calculation as the non-umbrella Suzuki source
+!          SourceNodeFlux(k,1:n_gs_max) = &  ! final units are kg/km3 hr
+!                Tephra_bin_mass(1:n_gs_max) * & ! fraction of total in bin
+!                TephraFluxRate(k)           / & ! kg/hr
+!                kappa_pd(ivent,jvent,k)         ! km3
+!          SumSourceNodeFlux = &
+!                SumSourceNodeFlux +        &         ! dimensionless
+!                sum(SourceNodeFlux(k,1:n_gs_max) * & ! kg/km3 hr
+!                kappa_pd(ivent,jvent,k)) / &         ! km3
+!                MassFluxRate_now                     ! kg/hr
+!!        else
+!!          ! For the umbrella case, we need the extra factor 1/9 to account for
+!!          ! the 9-node box around the vent
+!!          SourceNodeFlux(k,1:n_gs_max) = Tephra_bin_mass(1:n_gs_max)*        &
+!!                                         TephraFluxRate(k) /                 &
+!!                                         (9.0_ip*kappa_pd(ivent,jvent,k))
+!!          SumSourceNodeFlux = SumSourceNodeFlux +               &
+!!                                 9.0_ip*sum(SourceNodeFlux(k,1:n_gs_max) * &
+!!                                 kappa_pd(ivent,jvent,k))/MassFluxRate_now
+!!        endif
+!      enddo
+!
+!        ! Make sure the sum of the fluxes in all the cells equals the total flux
+!        !if (abs(SumSourceNodeFlux-1.0_ip).gt.1.0e-4_ip) then
+!        if (abs(SumSourceNodeFlux-1.0_ip).gt.EPS_SMALL) then
+!           do io=1,2;if(VB(io).le.verbosity_error)then
+!             !write(errlog(io) ,2) SumSourceNodeFlux-1.0_ip
+!             write(errlog(io),*)"SourceType = ",SourceType
+!             write(errlog(io),*)"Height_now =",Height_now
+!             !write(errlog(io),*)"z_cell_top,z_cell_bot = ",z_cell_top,z_cell_bot
+!             write(errlog(io),*)"MassFluxRate_now = ",MassFluxRate_now
+!             write(errlog(io),*)"n_gs_max = ",n_gs_max
+!             write(errlog(io),*)"SourceNodeFlux(1:nz)=",SourceNodeFlux(:,1)
+!           endif;enddo
+!          stop 1
+!        endif
+!
+!
+!      end subroutine SourceNodeFlux_Umbrella
+
+!******************************************************************************
+
 
       subroutine umbrella_winds(first_time)
 
@@ -33,8 +194,8 @@
          lat_cc_pd,lon_cc_pd
 
       use Source,        only : &
-         uvx_pd,uvy_pd,ibase,itop,lat_volcano,lon_volcano,&
-         MassFlux,SourceNodeWidth_km, SourceNodeHeight_km,&
+         lat_volcano,lon_volcano,&
+         MassFlux,&
          e_EndTime, SourceType
 
       use Tephra,        only : &
@@ -234,56 +395,58 @@
       end subroutine umbrella_winds
 
 !******************************************************************************
-      subroutine Integrate_Souce_Umbrella
 
-              ! Umbrella clouds have a special integration
-              !  Below the umbrella cloud, add ash to vent nodes as above
-              concen_pd(ivent,jvent,1:ibase-1,1:n_gs_max,ts0) =          & ! 
-                       concen_pd(ivent,jvent,1:ibase-1,1:n_gs_max,ts0) + & ! kg/km3
-                       dt                                              * & ! hr
-                       SourceNodeFlux(1:ibase-1,1:n_gs_max)                ! kg/km3 hr
-              do isize=1,n_gs_max
-                do k=1,ibase-1
-                  SourceCumulativeVol = SourceCumulativeVol + & ! final units is km3
-                    dt                              * & ! hr
-                    SourceNodeFlux(k,isize)         * & ! kg/km3 hr
-                    kappa_pd(ivent,jvent,k)         / & ! km3
-                    MagmaDensity                    / & ! kg/m3
-                    KM3_2_M3                            ! m3/km3
-                enddo
-              enddo
-              do iz=ibase,itop
-                !Within the cloud: first, average the concentration that curently
-                !exists in the 9 cells surrounding the vent
-                do isize=1,n_gs_max
-                  avgcon=sum(concen_pd(ivent-1:ivent+1,jvent-1:jvent+1,iz,isize,ts0))/9.0_ip
-                  concen_pd(ivent-1:ivent+1,jvent-1:jvent+1,iz,isize,ts0)=avgcon
-                enddo
-              enddo
-              !Then, add tephra to the 9 nodes surrounding the vent
-              ! TephraSourceNodes has a special line to reduce SourceNodeFlux by a factor 9
-              ! because it is applied 9 times here.  We need to be careful about mixing mass
-              ! and concentration since cell volume differ in lat, but this should be minor
-              do ii=ivent-1,ivent+1
-                do jj=jvent-1,jvent+1
-                  do iz=ibase,itop
-                    concen_pd(ii,jj,iz,1:n_gs_max,ts0) =                &
-                              concen_pd(ii,jj,iz,1:n_gs_max,ts0)        &
-                                 + dt*SourceNodeFlux(iz,1:n_gs_max)
-                    do isize=1,n_gs_max
-                      SourceCumulativeVol = SourceCumulativeVol + & ! final units is km3
-                        dt                              * & ! hr
-                        SourceNodeFlux(iz,isize)         * & ! kg/km3 hr
-                        kappa_pd(ivent,jvent,iz)         / & ! km3
-                        MagmaDensity                    / & ! kg/m3
-                        KM3_2_M3                            ! m3/km3
-                    enddo
-                  enddo
-                enddo
-              enddo
+      subroutine Integrate_Source_Umbrella
+
+!              ! Umbrella clouds have a special integration
+!              !  Below the umbrella cloud, add ash to vent nodes as above
+!              concen_pd(ivent,jvent,1:ibase-1,1:n_gs_max,ts0) =          & ! 
+!                       concen_pd(ivent,jvent,1:ibase-1,1:n_gs_max,ts0) + & ! kg/km3
+!                       dt                                              * & ! hr
+!                       SourceNodeFlux(1:ibase-1,1:n_gs_max)                ! kg/km3 hr
+!              do isize=1,n_gs_max
+!                do k=1,ibase-1
+!                  SourceCumulativeVol = SourceCumulativeVol + & ! final units is km3
+!                    dt                              * & ! hr
+!                    SourceNodeFlux(k,isize)         * & ! kg/km3 hr
+!                    kappa_pd(ivent,jvent,k)         / & ! km3
+!                    MagmaDensity                    / & ! kg/m3
+!                    KM3_2_M3                            ! m3/km3
+!                enddo
+!              enddo
+!              do iz=ibase,itop
+!                !Within the cloud: first, average the concentration that curently
+!                !exists in the 9 cells surrounding the vent
+!                do isize=1,n_gs_max
+!                  avgcon=sum(concen_pd(ivent-1:ivent+1,jvent-1:jvent+1,iz,isize,ts0))/9.0_ip
+!                  concen_pd(ivent-1:ivent+1,jvent-1:jvent+1,iz,isize,ts0)=avgcon
+!                enddo
+!              enddo
+!              !Then, add tephra to the 9 nodes surrounding the vent
+!              ! TephraSourceNodes has a special line to reduce SourceNodeFlux by a factor 9
+!              ! because it is applied 9 times here.  We need to be careful about mixing mass
+!              ! and concentration since cell volume differ in lat, but this should be minor
+!              do ii=ivent-1,ivent+1
+!                do jj=jvent-1,jvent+1
+!                  do iz=ibase,itop
+!                    concen_pd(ii,jj,iz,1:n_gs_max,ts0) =                &
+!                              concen_pd(ii,jj,iz,1:n_gs_max,ts0)        &
+!                                 + dt*SourceNodeFlux(iz,1:n_gs_max)
+!                    do isize=1,n_gs_max
+!                      SourceCumulativeVol = SourceCumulativeVol + & ! final units is km3
+!                        dt                              * & ! hr
+!                        SourceNodeFlux(iz,isize)         * & ! kg/km3 hr
+!                        kappa_pd(ivent,jvent,iz)         / & ! km3
+!                        MagmaDensity                    / & ! kg/m3
+!                        KM3_2_M3                            ! m3/km3
+!                    enddo
+!                  enddo
+!                enddo
+!              enddo
 
 
-      end subroutine Integrate_Souce_Umbrella
+      end subroutine Integrate_Source_Umbrella
+
 !******************************************************************************
 
       end module Source_Umbrella

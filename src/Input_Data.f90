@@ -35,10 +35,13 @@
       use Source,        only : &
          neruptions,e_Duration,e_Volume,e_PlumeHeight,e_prof_Volume,e_prof_dz,&
          MassFlux,e_EndTime,e_prof_MassFlux,e_prof_zpoints,e_StartTime,&
-         ESP_duration,ESP_height,ESP_Vol,e_EndTime_final,ibase,itop,&
+         ESP_duration,ESP_height,ESP_Vol,e_EndTime_final,&
          lat_volcano,lon_volcano,x_volcano,y_volcano,z_volcano,Suzuki_A,&
          IsCustom_SourceType,SourceType,&
            Allocate_Source_eruption
+
+!      use Source_Umbrella, only : &
+!           Allocate_Source_Umbrella
 
       use Tephra,        only : &
          DepositDensity,MagmaDensity,Tephra_v_s,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,&
@@ -729,6 +732,9 @@
 
       ! ALLOCATE ARRAYS OF ERUPTIVE PROPERTIES
       call Allocate_Source_eruption
+!      if (((SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')))then
+!        call Allocate_Source_Umbrella
+!      endif
 
       allocate (iyear(neruptions))
       allocate (imonth(neruptions))
@@ -1157,28 +1163,32 @@
         stop 1
       endif
 
-      !for umbrella clouds, 
-      itop  = 0
-      ibase = 0
-      if ((SourceType.eq.'umbrella')    .or. &
-          (SourceType.eq.'umbrella_air')) then
-        !set nodes at base and top  of cloud
-        !itop  = int(e_PlumeHeight(1)/dz)+1           !node at top of plume
-        !ibase = int(0.75*e_PlumeHeight(1)/dz)        !node at base
-        do k = 1,nzmax
-          if(z_vec_init(k)  .ge.e_PlumeHeight(1).and.&
-             z_vec_init(k-1).lt.e_PlumeHeight(1))then
-            itop = k
-          endif
-          ! The Suzuki distribution for umbrella clouds is hardwired to k=12
-          ! The 0.75 for the plume bottom just ensures that the significant part
-          ! of the Suzuki mass loading profile will be within the ibase to itop nodes
-          if(z_vec_init(k)  .ge.0.75_ip*e_PlumeHeight(1).and. &
-             z_vec_init(k-1).lt.0.75_ip*e_PlumeHeight(1))then
-            ibase = k
-          endif
-        enddo
-      endif
+!      !for umbrella clouds, 
+!      if (((SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')))then
+!        call Allocate_Source_Umbrella(nxmax,nymax,nzmax)
+!      endif
+
+!      itop  = 0
+!      ibase = 0
+!      if ((SourceType.eq.'umbrella')    .or. &
+!          (SourceType.eq.'umbrella_air')) then
+!        !set nodes at base and top  of cloud
+!        !itop  = int(e_PlumeHeight(1)/dz)+1           !node at top of plume
+!        !ibase = int(0.75*e_PlumeHeight(1)/dz)        !node at base
+!        do k = 1,nzmax
+!          if(z_vec_init(k)  .ge.e_PlumeHeight(1).and.&
+!             z_vec_init(k-1).lt.e_PlumeHeight(1))then
+!            itop = k
+!          endif
+!          ! The Suzuki distribution for umbrella clouds is hardwired to k=12
+!          ! The 0.75 for the plume bottom just ensures that the significant part
+!          ! of the Suzuki mass loading profile will be within the ibase to itop nodes
+!          if(z_vec_init(k)  .ge.0.75_ip*e_PlumeHeight(1).and. &
+!             z_vec_init(k-1).lt.0.75_ip*e_PlumeHeight(1))then
+!            ibase = k
+!          endif
+!        enddo
+!      endif
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)

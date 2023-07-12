@@ -22,7 +22,10 @@
          SimStartHour,Simtime_in_hours
 
       use Source,        only : &
-         lat_volcano,SourceNodeHeight_km,SourceType,SourceNodeWidth_km
+         lat_volcano,SourceType
+
+      use Source_Umbrella,        only : &
+         SourceNodeHeight_km,SourceNodeWidth_km
 
       use MetReader,     only : &
            MR_Set_CompProjection, &

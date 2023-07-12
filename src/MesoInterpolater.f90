@@ -41,9 +41,10 @@
          nxmax,nymax,nzmax
 
       use Source,          only : &
-         uvx_pd,uvy_pd,ibase,itop,SourceType,e_EndTime
+         SourceType,e_EndTime
 
       use Source_Umbrella,        only : &
+         uvx_pd,uvy_pd,ibase,itop, &
            umbrella_winds
 
       use Tephra,          only : &
