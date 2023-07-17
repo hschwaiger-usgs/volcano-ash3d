@@ -42,7 +42,7 @@
            TephraSourceNodes
 
       use Source_Umbrella, only : &
-         ibase,itop,SourceColumn_Umbrella,ScaleFac_Umbrella, &
+         ibase,itop,SourceColumn_Umbrella,AvgStenc_Umbrella,ScaleFac_Umbrella, &
            Allocate_Source_Umbrella
 
       use Tephra,        only : &
@@ -364,21 +364,21 @@
                     ii=ivent-2+i
                     do j=1,3
                       jj=jvent-2+j
-                      avgcon=avgcon+concen_pd(ii,jj,iz,isize,ts0)*ScaleFac_Umbrella(i,j,iz)
+                      avgcon=avgcon+concen_pd(ii,jj,iz,isize,ts0)*AvgStenc_Umbrella(i,j,iz)
                     enddo
                   enddo
-
-!                do isize=1,n_gs_max
-!                  avgcon=sum(concen_pd(ivent-1:ivent+1,jvent-1:jvent+1,iz,isize,ts0))/9.0_ip
                   concen_pd(ivent-1:ivent+1,jvent-1:jvent+1,iz,isize,ts0)=avgcon
                 enddo
               enddo
+
               !Then, add tephra to the 9 nodes surrounding the vent
               ! TephraSourceNodes has a special line to reduce SourceNodeFlux by a factor 9
               ! because it is applied 9 times here.  We need to be careful about mixing mass
               ! and concentration since cell volume differ in lat, but this should be minor
-!              do ii=ivent-1,ivent+1
-!                do jj=jvent-1,jvent+1
+
+              ! mass inserted = SourceNodeFlux * kappa
+              ! get concentration by mass over this 3x3 area
+
               do i=1,3
                 ii=ivent-2+i
                 do j=1,3
@@ -386,13 +386,11 @@
                   do iz=ibase,itop
                     concen_pd(ii,jj,iz,1:n_gs_max,ts0) =                &
                               concen_pd(ii,jj,iz,1:n_gs_max,ts0)        &
-                                 + dt*SourceNodeFlux(iz,1:n_gs_max)*ScaleFac_Umbrella(i,j,iz)
-!                                 + dt*SourceNodeFlux(iz,1:n_gs_max)/9.0_ip
+                                 + dt*SourceNodeFlux(iz,1:n_gs_max)*ScaleFac_Umbrella(iz)
                     do isize=1,n_gs_max
                       SourceCumulativeVol = SourceCumulativeVol + & ! final units is km3
                         dt                              * & ! hr
-                        SourceNodeFlux(iz,isize)*ScaleFac_Umbrella(i,j,iz)         * & ! kg/km3 hr
-!                        SourceNodeFlux(iz,isize)/9.0_ip         * & ! kg/km3 hr
+                        SourceNodeFlux(iz,isize)*AvgStenc_Umbrella(i,j,iz)         * & ! kg/km3 hr
                         kappa_pd(ivent,jvent,iz)         / & ! km3
                         MagmaDensity                    / & ! kg/m3
                         KM3_2_M3                            ! m3/km3
