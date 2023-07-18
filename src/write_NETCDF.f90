@@ -203,6 +203,9 @@
          ! These are umbrella parameters I'd like to change, but are not yet in a modual
          !    lambda,N_BV,k_entrainment
 
+      use Source_Umbrella, only : &
+         VelMod_umb,k_entrainment_umb,lambda_umb,N_BV_umb,SuzK_umb
+
       use MetReader,     only : &
          MR_iwindfiles,MR_windfiles,MR_GitComID,&
          MR_MetStep_findex,MR_windfile_starthour
@@ -513,12 +516,17 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment THICKNESS_THRESH:")
       nSTAT = nf90_put_att(ncid,nf90_global,"DBZ_THRESH",DBZ_THRESH)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment DBZ_THRESH:")
-      !nSTAT = nf90_put_att(ncid,nf90_global,"lambda",lambda)
-      !if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment lambda:")
-      !nSTAT = nf90_put_att(ncid,nf90_global,"N_BV",N_BV)
-      !if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment N_BV:")
-      !nSTAT = nf90_put_att(ncid,nf90_global,"k_entrainment",k_entrainment)
-      !if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment k_entrainment:")
+      ! Parameters for umbrella clouds
+      nSTAT = nf90_put_att(ncid,nf90_global,"VelMod_umb",VelMod_umb)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment VelMod_umb:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"lambda_umb",lambda_umb)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment lambda_umb:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"N_BV_umb",N_BV_umb)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment N_BV_umb:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"k_entrainment_umb",k_entrainment_umb)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment k_entrainment_umb:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"SuzK_umb",SuzK_umb)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment SuzK_umb:")
 
       ! Define dimensions
         ! t,z,y,x

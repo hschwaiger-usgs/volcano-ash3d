@@ -22,6 +22,10 @@
          DEPO_THRESH,DEPRATE_THRESH,CLOUDCON_THRESH,CLOUDLOAD_THRESH,&
          THICKNESS_THRESH,DBZ_THRESH,CLOUDCON_GRID_THRESH
 
+      use Source_Umbrella, only : &
+         k_entrainment_umb,lambda_umb,N_BV_umb,SuzK_umb !,&
+         !VelMod_umb
+
       integer, parameter :: MAXPARAMS = 50
 
       character(len=80) :: linebuffer080
@@ -356,57 +360,74 @@
                               "to ",pvalue(i)
           endif;enddo
           DBZ_THRESH = pvalue(i)
-        elseif (pname(i).eq.'lambda') then
+        elseif (pname(i).eq.'lambda_umb') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(errlog(io),*)"ERROR: lambda must be > 0"
+            write(errlog(io),*)"ERROR: lambda_umb must be > 0"
             stop 1
           elseif (pvalue(i).gt.100.0_ip)then
             do io=1,2;if(VB(io).le.verbosity_info)then         
-              write(outlog(io),*)"WARNING: lambda seems high."
+              write(outlog(io),*)"WARNING: lambda_umb seems high."
               write(outlog(io),*)&
-                "         This is the Suzuki parameter for the umbrella"
+                "         This is the Shape factor for the umbrella cloud"
             endif;enddo
           endif
-          !do io=1,2;if(VB(io).le.verbosity_info)then         
-          !  write(outlog(io),*)"  Resetting lambda from ",lambda,&
-          !                    "to ",pvalue(i)
-          !endif;enddo
-          !lambda = pvalue(i)
-        elseif (pname(i).eq.'N_BV') then
+          do io=1,2;if(VB(io).le.verbosity_info)then         
+            write(outlog(io),*)"  Resetting lambda_umb from ",lambda_umb,&
+                              "to ",pvalue(i)
+          endif;enddo
+          lambda_umb = pvalue(i)
+        elseif (pname(i).eq.'N_BV_umb') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
             write(errlog(io),*)"ERROR:  must be > 0"
             stop 1
           elseif (pvalue(i).gt.10.0_ip)then
             do io=1,2;if(VB(io).le.verbosity_info)then         
-              write(outlog(io),*)"WARNING: N_BV seems high."
+              write(outlog(io),*)"WARNING: N_BV_umb seems high."
               write(outlog(io),*)&
-                "         This is the Brunt-Vaisala frequency (1/s)"
+                "         This is the Brunt-Vaisala frequency (1/s) for umbrella sources"
             endif;enddo
           endif
-          !do io=1,2;if(VB(io).le.verbosity_info)then         
-          !  write(outlog(io),*)"  Resetting N_BV from ",N_BV,&
-          !                    "to ",pvalue(i)
-          !endif;enddo
-          !N_BV = pvalue(i)
-        elseif (pname(i).eq.'k_entrainment') then
+          do io=1,2;if(VB(io).le.verbosity_info)then         
+            write(outlog(io),*)"  Resetting N_BV_umb from ",N_BV_umb,&
+                              "to ",pvalue(i)
+          endif;enddo
+          N_BV_umb = pvalue(i)
+        elseif (pname(i).eq.'k_entrainment_umb') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(errlog(io),*)"ERROR: k_entrainment must be > 0"
+            write(errlog(io),*)"ERROR: k_entrainment_umb must be > 0"
             stop 1
           elseif (pvalue(i).gt.5.0_ip)then
             do io=1,2;if(VB(io).le.verbosity_info)then         
-              write(outlog(io),*)"WARNING: k_entrainment seems high."
+              write(outlog(io),*)"WARNING: k_entrainment_umb seems high."
               write(outlog(io),*)&
                 "         This is the umbrella entrainment coefficient"
             endif;enddo
           endif
-          !do io=1,2;if(VB(io).le.verbosity_info)then         
-          !  write(outlog(io),*)"  Resetting k_entrainment from ",k_entrainment,&
-          !                    "to ",pvalue(i)
-          !endif;enddo
-          !k_entrainment = pvalue(i)
+          do io=1,2;if(VB(io).le.verbosity_info)then         
+            write(outlog(io),*)"  Resetting k_entrainment_umb from ",k_entrainment_umb,&
+                              "to ",pvalue(i)
+          endif;enddo
+          k_entrainment_umb = pvalue(i)
+        elseif (pname(i).eq.'SuzK_umb') then
+          ! error-checking
+          if (pvalue(i).le.0.0_ip)then
+            write(errlog(io),*)"ERROR: SuzK_umb must be > 0"
+            stop 1
+          elseif (pvalue(i).gt.20.0_ip)then
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"WARNING: SuzK_umb seems high."
+              write(outlog(io),*)&
+                "         This is the Suzuki parameter for the umbrella"
+            endif;enddo
+          endif
+          do io=1,2;if(VB(io).le.verbosity_info)then         
+            write(outlog(io),*)"  Resetting SuzK_umb from ",SuzK_umb,&
+                              "to ",pvalue(i)
+          endif;enddo
+          SuzK_umb = pvalue(i)
         else
           do io=1,2;if(VB(io).le.verbosity_info)then         
             write(outlog(io),*)"Found unknown parameter/value: ", &

@@ -13,27 +13,37 @@
 
         ! Publicly available subroutines/functions
       public Allocate_Source_Umbrella,Deallocate_Source_Umbrella,&
-             umbrella_winds
-
-      real(kind=ip),dimension(:,:,:,:),allocatable,public :: SourceColumn_Umbrella
-      real(kind=ip),dimension(:,:,:)  ,allocatable,public :: AvgStenc_Umbrella
-      real(kind=ip),dimension(:)      ,allocatable,public :: ScaleFac_Umbrella
+             umbrella_winds,TephraSourceNodes_Umbrella,SourceVolInc_Umbrella,&
+             AvgCon_Umbrella
 
       !components of the wind field used for umbrella clouds
 #ifdef USEPOINTERS
+      real(kind=ip),dimension(:,:,:,:),pointer,public :: SourceNodeFlux_Umbrella =>null()
       real(kind=ip),dimension(:,:,:),pointer,public :: uvx_pd =>null() ! u (E) component of wind
       real(kind=ip),dimension(:,:,:),pointer,public :: uvy_pd =>null() ! v (N) component of wind
 #else
+      real(kind=ip),dimension(:,:,:,:),allocatable,public :: SourceNodeFlux_Umbrella
       real(kind=ip),dimension(:,:,:),allocatable,public :: uvx_pd ! u (E) component of wind
       real(kind=ip),dimension(:,:,:),allocatable,public :: uvy_pd ! v (N) component of wind
 #endif
 
-      !The following are used by SourceNodes for umbrella clouds
+      !The following are used by Mesointerpolator for umbrella clouds
       integer,public :: ibase     !z index of lowest node in the umbrella cloud
       integer,public :: itop     !z index of highest node in the umbrella cloud
+
+      ! These are only public since we want to write these to the ouput file
+      integer      ,public :: VelMod_umb         = 1       ! Velocity model to use (1=default)
+      real(kind=ip),public :: k_entrainment_umb  = 0.1_ip  ! entrainment coefficient
+      real(kind=ip),public :: lambda_umb         = 0.2_ip  ! umbrella cloud shape factor
+      real(kind=ip),public :: N_BV_umb           = 0.02_ip ! Brunt-Vaisala frequency, 1/s
+      real(kind=ip),public :: SuzK_umb           = 12.0_ip ! Suzuki parameter used for umb clouds
+
        !width & height of source nodes in km
-      real(kind=ip),public :: SourceNodeWidth_km
-      real(kind=ip),public :: SourceNodeHeight_km
+      real(kind=ip) :: SourceNodeWidth_km
+      real(kind=ip) :: SourceNodeHeight_km
+
+      real(kind=ip),dimension(:,:,:)  ,allocatable :: AvgStenc_Umbrella
+      real(kind=ip),dimension(:)      ,allocatable :: ScaleFac_Umbrella
 
       contains
 
@@ -42,7 +52,7 @@
       subroutine Allocate_Source_Umbrella(nx,ny,nz)
 
       use mesh,          only : &
-         z_vec_init,kappa_pd,ivent,jvent
+         z_vec_init,kappa_pd,ivent,jvent,de_km,dn_km
 
       use Source,        only : &
          e_PlumeHeight
@@ -57,11 +67,20 @@
       integer :: i,j,k,ii,jj
       real(kind=ip) :: tot_vol
 
-      allocate(SourceColumn_Umbrella(3,3,nz,n_gs_max)); SourceColumn_Umbrella=0.0_ip
-      allocate(ScaleFac_Umbrella(nz));                   ScaleFac_Umbrella=0.0_ip
-      allocate(AvgStenc_Umbrella(3,3,nz));               AvgStenc_Umbrella=0.0_ip
+      allocate(SourceNodeFlux_Umbrella(3,3,nz+1,n_gs_max)); SourceNodeFlux_Umbrella=0.0_ip
+      allocate(ScaleFac_Umbrella(nz));                  ScaleFac_Umbrella=0.0_ip
+      allocate(AvgStenc_Umbrella(3,3,nz));              AvgStenc_Umbrella=0.0_ip
+
+      SourceNodeWidth_km  = (3.0_ip/2.0_ip)*de_km
+      SourceNodeHeight_km = (3.0_ip/2.0_ip)*dn_km
 
       ! Get the weights for the averaging stencil for each z-level
+      ! The averaging stencil is used to smooth the concentration in the 3x3
+      ! zone around the vent to facilitate smooth radial spreading (otherwise
+      ! it will be lumpy).
+      ! The scale factor is used for converting mass inserted as a point above the
+      ! vent to mass inserted in the same 3x3 patch.  These factors only need to
+      ! be calculated once at the beginning of the run.
       do k = 1,nz
         tot_vol = 0.0_ip
         do i=1,3
@@ -94,8 +113,6 @@
       allocate(uvx_pd(-1:nx+2,-1:ny+2,ibase:itop));     uvx_pd = 0.0_ip
       allocate(uvy_pd(-1:nx+2,-1:ny+2,ibase:itop));     uvy_pd = 0.0_ip
 
-      !stop 5
-
       end subroutine Allocate_Source_Umbrella
 
 !******************************************************************************
@@ -103,15 +120,12 @@
       subroutine Deallocate_Source_Umbrella
 
         deallocate(AvgStenc_Umbrella,ScaleFac_Umbrella)
-        deallocate(SourceColumn_Umbrella)
+        deallocate(SourceNodeFlux_Umbrella)
         deallocate(uvx_pd,uvy_pd)
 
       end subroutine Deallocate_Source_Umbrella
 
 !******************************************************************************
-
-!******************************************************************************
-
 
       subroutine umbrella_winds(first_time)
 
@@ -125,7 +139,7 @@
 
       use mesh,          only : &
          nxmax,nymax,dn_km,de_km,IsLatLon,ivent,jvent,&
-         lat_cc_pd,lon_cc_pd
+         lat_cc_pd,lon_cc_pd,de_km,dn_km
 
       use Source,        only : &
          lat_volcano,lon_volcano,&
@@ -134,8 +148,6 @@
 
       use Tephra,        only : &
          n_gs_max
-
-      implicit none
 
       logical, intent(in)  :: first_time
 
@@ -146,26 +158,16 @@
       real(kind=ip):: edge_speed       !expansion rate of cloud edge, m/s
       real(kind=ip):: etime_s          !time since eruption start, seconds
       real(kind=ip):: ew_km,ns_km      !distances between vent & point
-      real(kind=ip):: k_entrainment    !entrainment coefficient
-      real(kind=ip):: lambda           !umbrella cloud shape factor
-      !real(kind=ip):: latnow, lonnow   !present latitude, longitude
       real(kind=ip):: massfluxnow      !current mass flux, kg/s
-      real(kind=ip):: N_BV             !Brunt-Vaisala frequency, 1/s
       real(kind=ip):: qnow             !volume flow rate into umbrella cloud, m3/s
       real(kind=ip):: radnow           !radial distance from cloud center, km
       real(kind=ip):: thetanow         !angle of point CW from east
       real(kind=ip) :: windspeedhere    !windspeed at this node
-      !real(kind=ip):: xyspacing        !average spacing between nodes, in km
       integer      :: ii,jj,iz         !counters
       integer      :: ew_nodes,ns_nodes!radius of clouds in nodes
       integer      :: west_node,east_node
       integer      :: south_node,north_node
-      !character    :: answer*1
 
-      !Set standard values
-      lambda                        = 0.2_ip
-      N_BV                          = 0.02_ip
-      k_entrainment                 = 0.1_ip
       uvx_pd(-1:nxmax+2,-1:nymax+2,ibase:itop) = 0.0_ip               !set umbrella winds to zero
       uvy_pd(-1:nxmax+2,-1:nymax+2,ibase:itop) = 0.0_ip    
  
@@ -177,7 +179,6 @@
         stop 1
       endif
 
-      !call MassFluxCalculator
       ! Convert MassFlux from kg/hr to a local variable in kg/s
       massfluxnow = MassFlux(1)/HR_2_S        !mass flux rate, kg/s
 
@@ -197,8 +198,8 @@
       endif
 
       ! Here is Eq. 2 of Mastin and Van Eaton, 2020 (m3/s)
-      qnow  = C_Costa*sqrt(k_entrainment)*massfluxnow**(3.0_ip/4.0_ip) / &
-              N_BV**(5.0_ip/4.0_ip)
+      qnow  = C_Costa*sqrt(k_entrainment_umb)*massfluxnow**(3.0_ip/4.0_ip) / &
+              N_BV_umb**(5.0_ip/4.0_ip)
 
       if(time.lt.EPS_SMALL) then
         do io=1,2;if(VB(io).le.verbosity_info)then
@@ -206,8 +207,8 @@
           write(outlog(io),*) 'in Umbrella_winds'
           write(outlog(io),*) '  massfluxnow (kg/s) = ',real(massfluxnow,kind=sp)
           write(outlog(io),*) '             C_Costa = ',real(C_Costa,kind=sp)
-          write(outlog(io),*) '                N_BV = ',real(N_BV,kind=sp)
-          write(outlog(io),*) '       k_entrainment = ',real(k_entrainment,kind=sp)
+          write(outlog(io),*) '                N_BV = ',real(N_BV_umb,kind=sp)
+          write(outlog(io),*) '       k_entrainment = ',real(k_entrainment_umb,kind=sp)
           write(outlog(io),*) '            Q (m3/s) = ',real(qnow,kind=sp)
           write(outlog(io),*)
           !If we're doing an airborne run and using only 1 grain size,
@@ -246,7 +247,7 @@
 
       ! Here is Eq. 1 of Mastin and Van Eaton, 2020
       !cloud radius, km
-      cloudrad_raw = (3.0_ip*lambda*N_BV*qnow/(2.0_ip*PI))**(1.0_ip/3.0_ip) * &
+      cloudrad_raw = (3.0_ip*lambda_umb*N_BV_umb*qnow/(2.0_ip*PI))**(1.0_ip/3.0_ip) * &
                      etime_s**(2.0_ip/3.0_ip) / KM_2_M
       !Make sure cloud radius extends beyond the source nodes
       !cloud_radius = max(cloudrad_raw,max(SourceNodeWidth_km,SourceNodeHeight_km))
@@ -254,7 +255,7 @@
 
       ! This is the time derivitive of Eq. 1 of Mastin and Van Eaton, 2020
       !cloud expansion rate, m/s
-      edge_speed   = (2.0_ip/3.0_ip)*(3.0_ip*lambda*N_BV*qnow/(2.0_ip*PI))**(1.0_ip/3.0_ip) * &
+      edge_speed   = (2.0_ip/3.0_ip)*(3.0_ip*lambda_umb*N_BV_umb*qnow/(2.0_ip*PI))**(1.0_ip/3.0_ip) * &
                     etime_s**(-1.0_ip/3.0_ip)  
 
       if (cloud_radius.le.max(SourceNodeWidth_km,SourceNodeHeight_km)) then
@@ -299,9 +300,6 @@
                                 (1.0_ip                              + &  ! Cons. of Vol term
                                  (1.0_ip/3.0_ip)*(radnow/cloud_radius)**3.0_ip) ! outward spreading,time flattening
 
-!                windspeedhere = (3.0_ip/4.0_ip)*edge_speed* &          !m/s
-!                    (cloud_radius/radnow)* &
-!                    (1.0_ip+(1.0_ip/3.0_ip)*(radnow**3.0_ip/cloud_radius**3.0_ip))
                 thetanow = atan2(ns_km,ew_km)     !angle CW from E
                 do iz=ibase,itop
                   ! These velocities are in km/hr
@@ -309,16 +307,6 @@
                   uvy_pd(ii,jj,iz)=windspeedhere*sin(thetanow)
                 enddo
               endif
-              !write(outlog(io),13) ii,jj,gridlat(jj),gridlon(ii), &
-              !            radnow/cloud_radius, &
-              !            uvx(ii,jj,ibase),uvy(ii,jj,ibase)
-!13            !format(2i4,3f8.3,2f7.1)
-              !if (radnow.lt.cloud_radius) then
-              !   write(outlog(io),*) 'Continue?'
-              !   read(5,'(a1)') answer
-              !   if (answer.eq.'n') stop 1
-              !endif
-!              if (jj.eq.jvent)write(*,*)"UMBR",ii,ew_km,thetanow,uvx_pd(ii,jj,ibase)
             enddo
           enddo
         endif
@@ -329,59 +317,125 @@
       end subroutine umbrella_winds
 
 !******************************************************************************
+!  Takes SourceNodeFlux calculated for the vent column in TephraSourceNodes
+!  and spreads it over the 3x3 source patch for the umbrella
 
-!      subroutine Integrate_Source_Umbrella
+      subroutine TephraSourceNodes_Umbrella
 
-!              ! Umbrella clouds have a special integration
-!              !  Below the umbrella cloud, add ash to vent nodes as above
-!              concen_pd(ivent,jvent,1:ibase-1,1:n_gs_max,ts0) =          & ! 
-!                       concen_pd(ivent,jvent,1:ibase-1,1:n_gs_max,ts0) + & ! kg/km3
-!                       dt                                              * & ! hr
-!                       SourceNodeFlux(1:ibase-1,1:n_gs_max)                ! kg/km3 hr
-!              do isize=1,n_gs_max
-!                do k=1,ibase-1
-!                  SourceCumulativeVol = SourceCumulativeVol + & ! final units is km3
-!                    dt                              * & ! hr
-!                    SourceNodeFlux(k,isize)         * & ! kg/km3 hr
-!                    kappa_pd(ivent,jvent,k)         / & ! km3
-!                    MagmaDensity                    / & ! kg/m3
-!                    KM3_2_M3                            ! m3/km3
-!                enddo
-!              enddo
-!              do iz=ibase,itop
-!                !Within the cloud: first, average the concentration that curently
-!                !exists in the 9 cells surrounding the vent
-!                do isize=1,n_gs_max
-!                  avgcon=sum(concen_pd(ivent-1:ivent+1,jvent-1:jvent+1,iz,isize,ts0))/9.0_ip
-!                  concen_pd(ivent-1:ivent+1,jvent-1:jvent+1,iz,isize,ts0)=avgcon
-!                enddo
-!              enddo
-!              !Then, add tephra to the 9 nodes surrounding the vent
-!              ! TephraSourceNodes has a special line to reduce SourceNodeFlux by a factor 9
-!              ! because it is applied 9 times here.  We need to be careful about mixing mass
-!              ! and concentration since cell volume differ in lat, but this should be minor
-!              do ii=ivent-1,ivent+1
-!                do jj=jvent-1,jvent+1
-!                  do iz=ibase,itop
-!                    concen_pd(ii,jj,iz,1:n_gs_max,ts0) =                &
-!                              concen_pd(ii,jj,iz,1:n_gs_max,ts0)        &
-!                                 + dt*SourceNodeFlux(iz,1:n_gs_max)
-!                    do isize=1,n_gs_max
-!                      SourceCumulativeVol = SourceCumulativeVol + & ! final units is km3
-!                        dt                              * & ! hr
-!                        SourceNodeFlux(iz,isize)         * & ! kg/km3 hr
-!                        kappa_pd(ivent,jvent,iz)         / & ! km3
-!                        MagmaDensity                    / & ! kg/m3
-!                        KM3_2_M3                            ! m3/km3
-!                    enddo
-!                  enddo
-!                enddo
-!              enddo
+      use mesh,          only : &
+         nzmax
 
+      use Source,        only : &
+         SourceNodeFlux
 
-!      end subroutine Integrate_Source_Umbrella
+      use Tephra,        only : &
+         n_gs_max
+
+      integer :: i,j,k
+
+      SourceNodeFlux_Umbrella(1:3,1:3,1:nzmax,1:n_gs_max) = 0.0_ip
+      do k=1,nzmax+1
+        if(k.lt.ibase)then
+          ! Below the cloud, use the normal Suzuki profile
+          SourceNodeFlux_Umbrella(2,2,k,1:n_gs_max)=SourceNodeFlux(k,1:n_gs_max)
+        elseif(k.le.itop)then
+          ! Above the umbrella base, but below its top, spread the source over the
+          ! 3x3 patch
+          do i=1,3
+            do j=1,3
+              SourceNodeFlux_Umbrella(i,j,k,1:n_gs_max) = &
+                SourceNodeFlux(k,1:n_gs_max)*ScaleFac_Umbrella(k)
+            enddo
+          enddo
+        else
+          ! Above the umbrella top, zero out source
+          SourceNodeFlux_Umbrella(2,2,k,1:n_gs_max) = 0.0_ip
+        endif
+      enddo
+
+      return
+
+      end subroutine TephraSourceNodes_Umbrella
+
+!******************************************************************************
+
+      function SourceVolInc_Umbrella(dt)
+
+      use global_param,  only : &
+         KM3_2_M3
+
+      use Tephra,        only : &
+         n_gs_max,MagmaDensity
+
+      use mesh,          only : &
+         nzmax,kappa_pd,ivent,jvent
+
+      use Source,        only : &
+         SourceNodeFlux
+
+      real(kind=ip) :: SourceVolInc_Umbrella
+      real(kind=ip) :: dt
+
+      real(kind=ip) :: tmp
+      integer :: i,j,ii,jj,k,isize
+
+      tmp = 0.0_ip
+
+      do isize=1,n_gs_max
+        do k=1,ibase-1
+          tmp = tmp                             + & ! final units is km3
+                dt                              * & ! hr
+                SourceNodeFlux(k,isize)         * & ! kg/km3 hr
+                kappa_pd(ivent,jvent,k)         / & ! km3
+                MagmaDensity                    / & ! kg/m3
+                KM3_2_M3                            ! m3/km3
+        enddo
+      enddo
+
+      do i=1,3
+        ii=ivent-2+i
+        do j=1,3
+          jj=jvent-2+j
+          do k=ibase,itop
+            do isize=1,n_gs_max
+              tmp= tmp                                           + & ! final units is km3
+                dt                                               * & ! hr
+                SourceNodeFlux(k,isize)*AvgStenc_Umbrella(i,j,k) * & ! kg/km3 hr
+                kappa_pd(ivent,jvent,k)                          / & ! km3
+                MagmaDensity                                     / & ! kg/m3
+                KM3_2_M3                                             ! m3/km3
+            enddo
+          enddo
+        enddo
+      enddo
+
+      SourceVolInc_Umbrella = tmp
+
+      return
+
+      end function SourceVolInc_Umbrella
+
+!******************************************************************************
+
+      function AvgCon_Umbrella(conpatch,iz)
+
+      real(kind=ip) :: AvgCon_Umbrella
+      real(kind=ip),dimension(3,3) :: conpatch
+      integer :: iz
+
+      integer :: i,j
+
+      AvgCon_Umbrella = 0.0_ip
+      do i=1,3
+        do j=1,3
+          AvgCon_Umbrella = AvgCon_Umbrella + conpatch(i,j)*AvgStenc_Umbrella(i,j,iz)
+        enddo
+      enddo
+
+      return
+
+      end function AvgCon_Umbrella
 
 !******************************************************************************
 
       end module Source_Umbrella
-

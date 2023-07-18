@@ -22,10 +22,7 @@
          SimStartHour,Simtime_in_hours
 
       use Source,        only : &
-         lat_volcano,SourceType
-
-      use Source_Umbrella,        only : &
-         SourceNodeHeight_km,SourceNodeWidth_km
+         lat_volcano
 
       use MetReader,     only : &
            MR_Set_CompProjection, &
@@ -81,18 +78,6 @@
         !find width and height of a node (km) at the volcano's location
         de_km = de*cos(lat_volcano*DEG2RAD)*DEG2KMLON
         dn_km = dn*DEG2KMLAT
-        if (SourceType.eq.'umbrella'.or.&
-            SourceType.eq.'umbrella_air') then
-           !calculate radius of umbrella cloud source nodes
-           SourceNodeWidth_km  = (3.0_ip/2.0_ip)*de_km
-           SourceNodeHeight_km = (3.0_ip/2.0_ip)*dn_km
-           do io=1,2;if(VB(io).le.verbosity_info)then
-             write(outlog(io),142) SourceNodeWidth_km, SourceNodeHeight_km
-           endif;enddo
-142        format(/,'Calculating width of source for umbrella.',/, &
-                  'SourceNodeWidth_km=',f5.1,/, &
-                  'SourceNodeHeight_km=',f5.1)
-        endif
         do i=-1,nxmax+2
           lon_cc_pd(i) = lonLL + de*real(i,kind=ip) - de*0.5_ip
         enddo
