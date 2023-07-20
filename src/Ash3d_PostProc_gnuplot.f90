@@ -337,7 +337,11 @@
       open(54,file=dp_outfile,status='replace')
       do i = 1,nx
         do j = 1,ny
-          write(54,*)lon_cc_pd(i)-360.0_ip,lat_cc_pd(j),OutVar(i,j)
+          if(lon_cc_pd(1).lt.180.0_ip)then
+            write(54,*)lon_cc_pd(i),lat_cc_pd(j),OutVar(i,j)
+          else
+            write(54,*)lon_cc_pd(i)-360.0_ip,lat_cc_pd(j),OutVar(i,j)
+          endif
         enddo
         write(54,*)" "
       enddo

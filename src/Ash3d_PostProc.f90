@@ -72,7 +72,7 @@
                                                      !   | | - Third
                                                      !   | | | - Fourth
                                                      !   V V V V
-      integer,dimension(Nplot_libs) :: plot_pref_map = (/3,1,2,4/) ! plot preference for maps
+      integer,dimension(Nplot_libs) :: plot_pref_map = (/2,1,3,4/) ! plot preference for maps
       integer,dimension(Nplot_libs) :: plot_pref_shp = (/3,1,2,4/) ! plot preference for contours
       integer,dimension(Nplot_libs) :: plot_pref_vpr = (/2,1,3,4/) ! plot preference for vert profs.
       integer,dimension(Nplot_libs) :: plot_pref_aTS = (/2,3,1,4/) ! plot preference for Airport TS
@@ -218,16 +218,19 @@
           write(outlog(io),*)'                    4 binary'
           write(outlog(io),*)'                    5 shape file'
           write(outlog(io),*)'                    6 grib2'
-          write(outlog(io),*)'                    7 tecplot'
-          write(outlog(io),*)'                    8 vtk'
+          write(outlog(io),*)'                    7 netcdf'
+          write(outlog(io),*)'                    8 tecplot'
+          write(outlog(io),*)'                    9 vtk'
   
           write(outlog(io),*)'         [t_index] = index of time slice to plot; -1 for final (optional)'
           write(outlog(io),*)'  '
         endif;enddo
 
-        if(VB(1).le.verbosity_silent)then
-          write(errlog(io),*)"Stdout is suppressed via VERB=9,10, but interactive input is expected."
-          write(errlog(io),*)"Either recompile with VERB<9 or provide the correct command-line arguments."
+        if(VB(1).ge.verbosity_silent)then
+          do io=1,2
+            write(errlog(io),*)"Stdout is suppressed via VERB=9,10, but interactive input is expected."
+            write(errlog(io),*)"Either recompile with VERB<9 or provide the correct command-line arguments."
+          enddo
           stop 1
         else
           do io=1,2;if(VB(io).le.verbosity_info)then

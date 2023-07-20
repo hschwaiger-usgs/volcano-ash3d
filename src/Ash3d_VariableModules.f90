@@ -129,7 +129,8 @@
       logical                  :: useVarDiffV     = .false.
 
       logical                  :: useTemperature  = .false.
-      logical                  :: useVz_rhoG      = .true.
+      !logical                  :: useVz_rhoG      = .true.
+      logical                  :: useVz_rhoG      = .false.
       logical                  :: useCalcFallVel  = .false.
       logical                  :: useVariableGSbins  = .false.
         ! Only load temperature and water content data if needed

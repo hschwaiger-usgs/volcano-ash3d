@@ -2107,7 +2107,7 @@
       if (ioerr.eq.0)then
         FV_ID = ivalue2
       else
-        FV_ID = 1
+        FV_ID = 1 ! Wilson and Huang
       endif
       allocate(temp_v_s(init_n_gs_max))
       allocate(temp_gsdiam(init_n_gs_max))
@@ -2168,6 +2168,7 @@
                 endif
               else
                 temp_gsF(i) = 0.44_ip
+                temp_gsG(i) = 1.0_ip
               endif
                 ! Initialize this to zero
               temp_v_s(i) = 0.0_ip

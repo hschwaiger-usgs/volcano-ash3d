@@ -148,6 +148,8 @@
       subroutine write_2D_ASCII(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
 
 !     Subroutine that writes out 2-D arrays in ESRI ASCII raster format
+!     This format can be post-processed with gmt converting to grid files with
+!     gmt grdconvert out.dat=ef out.grd
 
       use precis_param
 

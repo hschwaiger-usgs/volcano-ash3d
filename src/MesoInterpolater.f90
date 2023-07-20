@@ -505,7 +505,7 @@
             enddo
           enddo
         enddo
-        if(VB(1).lt.verbosity_silent)then
+        if(VB(1).ge.verbosity_silent)then
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*) 'Continue (y/n)?'
           endif;enddo
@@ -546,7 +546,7 @@
             enddo
           enddo
         enddo
-        if(VB(1).lt.verbosity_silent)then
+        if(VB(1).ge.verbosity_silent)then
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*) 'Continue (y/n)?'
           endif;enddo

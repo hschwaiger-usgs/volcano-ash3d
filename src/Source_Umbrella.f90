@@ -129,7 +129,11 @@
 
       subroutine umbrella_winds(first_time)
 
-      !subroutine that calculates radial winds from the center of an umbrella cloud
+      ! subroutine that calculates radial winds from the center of an umbrella cloud
+      ! Equations implemented are described in:
+      ! Mastin, L.G. and Van Eaton, A.R., Comparing Simulations of Umbrella-Cloud Growth
+      !   and Ash Transport with Observations from Pinatubo, Kelud, and Calbuco Volcanoes
+      !   Atmosphere, 2020, 11, 1038, doi:10.3390/atmos11101038
 
       use global_param,  only : &
          DEG2KMLAT,DEG2KMLON,DEG2RAD,KM_2_M,PI,HR_2_S,MPS_2_KMPHR,EPS_SMALL
@@ -151,22 +155,23 @@
 
       logical, intent(in)  :: first_time
 
-      real(kind=ip):: avg_lat          !avg latitude between vent & point
-      real(kind=ip):: C_Costa          !C constant used in Costa et al., 2013
-      real(kind=ip):: cloud_radius     !cloud radius, km
-      real(kind=ip):: cloudrad_raw     !cloud radius, km, uncorrected
-      real(kind=ip):: edge_speed       !expansion rate of cloud edge, m/s
-      real(kind=ip):: etime_s          !time since eruption start, seconds
-      real(kind=ip):: ew_km,ns_km      !distances between vent & point
-      real(kind=ip):: massfluxnow      !current mass flux, kg/s
-      real(kind=ip):: qnow             !volume flow rate into umbrella cloud, m3/s
-      real(kind=ip):: radnow           !radial distance from cloud center, km
-      real(kind=ip):: thetanow         !angle of point CW from east
-      real(kind=ip) :: windspeedhere    !windspeed at this node
-      integer      :: ii,jj,iz         !counters
-      integer      :: ew_nodes,ns_nodes!radius of clouds in nodes
-      integer      :: west_node,east_node
-      integer      :: south_node,north_node
+      real(kind=ip) :: avg_lat          ! avg latitude between vent & point
+      real(kind=ip) :: C_Costa          ! C constant used in Costa et al., 2013
+      real(kind=ip) :: cloud_radius     ! cloud radius, km
+      real(kind=ip) :: cloudrad_raw     ! cloud radius, km, uncorrected
+      real(kind=ip) :: edge_speed       ! expansion rate of cloud edge, m/s
+      real(kind=ip) :: etime_s          ! time since eruption start, seconds
+      real(kind=ip) :: ew_km,ns_km      ! distances between vent & point
+      real(kind=ip) :: massfluxnow      ! current mass flux, kg/s
+      real(kind=ip) :: qnow             ! volume flow rate into umbrella cloud, m3/s
+      real(kind=ip) :: radnow           ! radial distance from cloud center, km
+      real(kind=ip) :: thetanow         ! angle of point CW from east
+      real(kind=ip) :: windspeedhere    ! windspeed at this node
+      real(kind=ip) :: rexp             ! exponent in radial vel term
+      integer       :: ii,jj,iz         ! counters
+      integer       :: ew_nodes,ns_nodes! radius of clouds in nodes
+      integer       :: west_node,east_node
+      integer       :: south_node,north_node
 
       uvx_pd(-1:nxmax+2,-1:nymax+2,ibase:itop) = 0.0_ip               !set umbrella winds to zero
       uvy_pd(-1:nxmax+2,-1:nymax+2,ibase:itop) = 0.0_ip    
@@ -219,6 +224,13 @@
             write(outlog(io),*) 'massflux has been multiplied by 20'
           endif
         endif;enddo
+        if(VelMod_umb.ne.1.and.VelMod_umb.ne.2)then
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)" ERROR: Umb.Vel.Model unknown.  Should be 1 or 2."
+            write(errlog(io),*)" VelMod_umb  = ",VelMod_umb
+          endif;enddo
+          stop 1
+        endif
       endif ! time.eq.0.0_ip
 
       !convert from  hours to seconds
@@ -290,15 +302,24 @@
               radnow = sqrt(ns_km**2.0_ip+ew_km**2.0_ip)  !distance, km
               !make sure we're within the umbrella cloud
               if (radnow.lt.cloud_radius) then
-                ! This is Eq. 3 except the second term here has an extra r/R
-                ! Note that the radial windspeed function is just a non-dimensional radial
-                ! function scaling the of leading edge speed where the edge speed is from the
-                ! time derivitive of the edge position function.
-                windspeedhere = edge_speed  *                          &  ! m/s
-                                MPS_2_KMPHR *                          &  ! km/hr
-                                (3.0_ip/4.0_ip)*(cloud_radius/radnow)* &  ! Start of scaling term
-                                (1.0_ip                              + &  ! Cons. of Vol term
-                                 (1.0_ip/3.0_ip)*(radnow/cloud_radius)**3.0_ip) ! outward spreading,time flattening
+                if(VelMod_umb.eq.1)then
+                  ! This is Eq. 3 except the second term here has an extra r/R
+                  ! Note that the radial windspeed function is just a non-dimensional radial
+                  ! function scaling the of leading edge speed where the edge speed is from the
+                  ! time derivitive of the edge position function.
+                  rexp = 3.0_ip  ! This is from legacy code
+                  !rexp = 2.0_ip  ! This is from Eq 3 of paper
+                  windspeedhere = edge_speed  *                          &  ! m/s
+                                  MPS_2_KMPHR *                          &  ! km/hr
+                                  (3.0_ip/4.0_ip)*(cloud_radius/radnow)* &  ! Start of scaling term
+                                  (1.0_ip                              + &  ! Cons. of Vol term
+                                   (1.0_ip/3.0_ip)*(radnow/cloud_radius)**rexp) ! outward spreading,time flattening
+                elseif(VelMod_umb.eq.2)then
+                  ! This is Eq. 4
+                  windspeedhere = edge_speed  *                          &  ! m/s
+                                  MPS_2_KMPHR *                          &  ! km/hr
+                                  (cloud_radius/radnow)**0.5_ip             ! 
+                endif
 
                 thetanow = atan2(ns_km,ew_km)     !angle CW from E
                 do iz=ibase,itop

@@ -520,7 +520,7 @@
         endif
            ! Error stop condition if the concen and outflow do not match the source
         StopConditions(4) = (MassConsErr.gt.1.0e-3_ip)
-        StopConditions(4) = .false.  ! We override this condition until the umbrella source conserves mass
+        !StopConditions(4) = .false.  ! We override this condition until the umbrella source conserves mass
            ! Error stop condition if any volume measure is negative
         StopConditions(5) = (dep_vol.lt.-1.0_ip*EPS_SMALL).or.&
                             (aloft_vol.lt.-1.0_ip*EPS_SMALL).or.&

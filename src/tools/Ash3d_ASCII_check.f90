@@ -136,6 +136,9 @@
         endif
       endif
 
+      !do io=1,nio;if(VB(io).le.verbosity_error)then
+      !  write(outlog(io),*)"Reading ASCII file 1"
+      !endif;enddo
       call read_2D_ASCII(file1)
       nx_1  = R_nx
       ny_1  = R_ny
@@ -147,6 +150,9 @@
       XY_1  = R_XY
       deallocate(R_XY)
 
+      !do io=1,nio;if(VB(io).le.verbosity_error)then
+      !  write(outlog(io),*)"Reading ASCII file 2"
+      !endif;enddo
       call read_2D_ASCII(file2)
       nx_2  = R_nx
       ny_2  = R_ny
