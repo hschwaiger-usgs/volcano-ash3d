@@ -249,36 +249,40 @@
 
 !******************************************************************************
 
-      subroutine Allocate_Output_Vars(nx,ny,nz)
+!      subroutine Allocate_Output_Vars(nx,ny,nz)
+      subroutine Allocate_Output_Vars
 
-      integer,intent(in) :: nx
-      integer,intent(in) :: ny
-      integer,intent(in) :: nz
+      use mesh,          only : &
+         nxmax,nymax,nzmax
 
-      allocate(Mask_Cloud(nx,ny))
+      !integer,intent(in) :: nx
+      !integer,intent(in) :: ny
+      !integer,intent(in) :: nz
+
+      allocate(Mask_Cloud(nxmax,nymax))
       Mask_Cloud = .false.
-      allocate(Mask_Deposit(nx,ny))
+      allocate(Mask_Deposit(nxmax,nymax))
       Mask_Deposit = .false.
-      allocate(DepositThickness(nx,ny))
+      allocate(DepositThickness(nxmax,nymax))
       DepositThickness = 0.0_ip
-      allocate(MaxConcentration(nx,ny))
+      allocate(MaxConcentration(nxmax,nymax))
       MaxConcentration = MaxConcentration_FillValue
-      allocate(DepArrivalTime(nx,ny))
+      allocate(DepArrivalTime(nxmax,nymax))
       DepArrivalTime = DepArrivalTime_FillValue
-      allocate(CloudArrivalTime(nx,ny))                    ! time of arrival of ash cloud
+      allocate(CloudArrivalTime(nxmax,nymax))                    ! time of arrival of ash cloud
       CloudArrivalTime = CloudArrivalTime_FillValue
-      allocate(CloudLoad(nx,ny))
+      allocate(CloudLoad(nxmax,nymax))
       CloudLoad    = 0.0_ip
-      allocate(CloudLoadLast(nx,ny))
+      allocate(CloudLoadLast(nxmax,nymax))
       CloudLoadLast = 0.0_ip
-      allocate(MaxHeight(nx,ny))                           ! maximum height (top) of ash cloud
+      allocate(MaxHeight(nxmax,nymax))                           ! maximum height (top) of ash cloud
       MaxHeight = 0.0_ip
-      allocate(MinHeight(nx,ny))                           ! minimum height (bottom) of ash cloud
+      allocate(MinHeight(nxmax,nymax))                           ! minimum height (bottom) of ash cloud
       MinHeight = 0.0_ip
-      allocate(dbZCol(nx,ny))                              ! reflectivity in a column of nodes
+      allocate(dbZCol(nxmax,nymax))                              ! reflectivity in a column of nodes
       dbZCol = 0.0_ip
       ! ashcon_tot is allocated/deallocated as needed since it can be a bit big
-      allocate(dbZ(nx,ny,nz))                              ! radar reflectivity (dbZ)
+      allocate(dbZ(nxmax,nymax,nzmax))                              ! radar reflectivity (dbZ)
       dbZ = 0.0_ip
 
       end subroutine Allocate_Output_Vars
@@ -604,14 +608,14 @@
       use solution,      only : &
          concen_pd
 
-      integer :: n
+      integer :: isize
 
       if(n_gs_max.gt.0)then
         ashcon_tot = 0.0_op
-        do n=1,n_gs_max
+        do isize=1,n_gs_max
           ashcon_tot(1:nxmax,1:nymax,1:nzmax) =  &
            ashcon_tot(1:nxmax,1:nymax,1:nzmax) + &
-           real(concen_pd(1:nxmax,1:nymax,1:nzmax,n,ts1),kind=op)
+           real(concen_pd(1:nxmax,1:nymax,1:nzmax,isize,ts1),kind=op)
         enddo
       endif
 
@@ -633,7 +637,7 @@
       use solution,      only : &
          concen_pd,imin,imax,jmin,jmax,kmin,kmax
 
-      integer :: i,j,k,l
+      integer :: i,j,k,isize
       real(kind=ip) :: NumDens          !number densities (#/m3) of particles
       real(kind=ip) :: zcol             !z value of cell
       real(kind=ip) :: tmp
@@ -650,12 +654,12 @@
             if (CloudLoad(i,j).lt.CLOUDLOAD_THRESH) cycle
             do k=kmin,kmax
               zcol = 0.0_ip
-              do l=1,n_gs_max
+              do isize=1,n_gs_max
                 !convert concentration (kg/km3) to number density (#/m3)
-                NumDens = concen_pd(i,j,k,l,ts1) / &
-                            (Tephra_rho_m(l)*PI*Tephra_gsdiam(l)**3.0_ip/6.0_ip) / &
+                NumDens = concen_pd(i,j,k,isize,ts1) / &
+                            (Tephra_rho_m(isize)*PI*Tephra_gsdiam(isize)**3.0_ip/6.0_ip) / &
                             KM3_2_M3                                  !particles/m3
-                zcol    = zcol + NumDens*(1000.0_ip*Tephra_gsdiam(l))**6.0_ip
+                zcol    = zcol + NumDens*(1000.0_ip*Tephra_gsdiam(isize))**6.0_ip
               enddo
               if(zcol.lt.EPS_TINY)then
                 dbZ(i,j,k) = dbZCol_FillValue
@@ -1018,7 +1022,7 @@
                                   kappa_pd(1:nxmax,        0,1:nzmax)) +          &
                         sum(outflow_xz2_pd(1:nxmax,        1:nzmax,isize)  *   &
                                   kappa_pd(1:nxmax,nymax+1,1:nzmax)) +         &
-                        sum(outflow_xy2_pd(1:nxmax,1:nymax          ,isize)   *   &
+                        sum(outflow_xy2_pd(1:nxmax,1:nymax        ,isize)   *   &
                                   kappa_pd(1:nxmax,1:nymax,  nzmax+1)) )     /   & ! convert to kg
                         MagmaDensity                            /   & ! convert to m3
                         KM3_2_M3                                      ! convert to km3

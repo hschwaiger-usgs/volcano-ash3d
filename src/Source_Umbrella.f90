@@ -389,7 +389,7 @@
          n_gs_max,MagmaDensity
 
       use mesh,          only : &
-         nzmax,kappa_pd,ivent,jvent
+         kappa_pd,ivent,jvent
 
       use Source,        only : &
          SourceNodeFlux
@@ -438,18 +438,18 @@
 
 !******************************************************************************
 
-      function AvgCon_Umbrella(conpatch,iz)
+      function AvgCon_Umbrella(conpatch,klevel)
 
       real(kind=ip) :: AvgCon_Umbrella
       real(kind=ip),dimension(3,3) :: conpatch
-      integer :: iz
+      integer :: klevel
 
       integer :: i,j
 
       AvgCon_Umbrella = 0.0_ip
       do i=1,3
         do j=1,3
-          AvgCon_Umbrella = AvgCon_Umbrella + conpatch(i,j)*AvgStenc_Umbrella(i,j,iz)
+          AvgCon_Umbrella = AvgCon_Umbrella + conpatch(i,j)*AvgStenc_Umbrella(i,j,klevel)
         enddo
       enddo
 

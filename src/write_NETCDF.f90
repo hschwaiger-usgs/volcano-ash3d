@@ -222,7 +222,7 @@
       character(len=050):: linebuffer050
       character(len=130):: linebuffer130
       integer :: strlen
-      integer :: i,j,k,n
+      integer :: i,j,k,isize
       integer :: ivar
       integer,dimension(5) :: chunksizes5
 
@@ -2229,8 +2229,8 @@
       if(useCalcFallVel)then
         dum1d_out(1:n_gs_max) = real(Tephra_gsdiam(1:n_gs_max),kind=op)
       else
-        do i=1,n_gs_max
-          dum1d_out(i) = real(i,kind=op)
+        do isize=1,n_gs_max
+          dum1d_out(isize) = real(isize,kind=op)
         enddo
       endif
       nSTAT=nf90_put_var(ncid,gssd_var_id,dum1d_out,(/1/))
@@ -2361,15 +2361,15 @@
           ! netCDF standard requires that the unlimited dimension (time)
           ! be the most slowly varying, so dum3d_out unfortunately has a
           ! different shape than depocon
-        do i = 1,n_gs_max
+        do isize=1,n_gs_max
             ! Here's the conversion to kg/m^2 from kg/km^2
-          depocon(1:nxmax,1:nymax,i) = real(DepositGranularity(1:nxmax,1:nymax,i) * &
+          depocon(1:nxmax,1:nymax,isize) = real(DepositGranularity(1:nxmax,1:nymax,isize) * &
                                          dz_vec_pd(0)/KM2_2_M2,kind=op)
         enddo
-        do n=1,n_gs_max
+        do isize=1,n_gs_max
           do i=1,nxmax
             do j=1,nymax
-              if(depocon(i,j,n).le.EPS_SMALL)depocon(i,j,n)=0.0_op
+              if(depocon(i,j,isize).le.EPS_SMALL)depocon(i,j,isize)=0.0_op
             enddo
           enddo
         enddo
@@ -2746,7 +2746,7 @@
       use time_data,     only : &
          time,ntmax,time_native,BaseYear
 
-      integer :: i,j,k,n
+      integer :: i,j,k,isize
 
       integer :: nSTAT
       integer :: ivar
@@ -3062,15 +3062,15 @@
             ! netCDF standard requires that the unlimited dimension (time)
             ! be the most slowly varying, so dum3d_out unfortunately has a
             ! different shape than depocon
-          do i = 1,n_gs_max
+          do isize=1,n_gs_max
               ! Here's the conversion to kg/m^2 from kg/km^2
-            depocon(1:nxmax,1:nymax,i) = real(DepositGranularity(1:nxmax,1:nymax,i) * &
+            depocon(1:nxmax,1:nymax,isize) = real(DepositGranularity(1:nxmax,1:nymax,isize) * &
                                            dz_vec_pd(0)/KM2_2_M2,kind=op)
           enddo
-          do n=1,n_gs_max
+          do isize=1,n_gs_max
             do i=1,nxmax
               do j=1,nymax
-                if(depocon(i,j,n).le.EPS_SMALL)depocon(i,j,n)=0.0_op
+                if(depocon(i,j,isize).le.EPS_SMALL)depocon(i,j,isize)=0.0_op
               enddo
             enddo
           enddo
@@ -3394,9 +3394,6 @@
       use io_data,           only : &
          concenfile,init_tstep
 
-      !use Tephra,        only : &
-      !   n_gs_max
-
       use mesh,              only : &
          nxmax,nymax,nzmax,nsmax,ts0,ts1
 
@@ -3570,7 +3567,7 @@
 
       logical,save :: first_time = .true.
       integer :: nSTAT
-      integer :: it,i,j,n
+      integer :: it,i,j,isize
       integer :: var_xtype
       integer :: fop  ! output precision used for Ash3d output file being read in (4 or 8)
       character(len=NF90_MAX_NAME)  :: invar
@@ -4334,8 +4331,8 @@
         nSTAT = nf90_get_var(ncid,spec_var_id,SpeciesID)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var SpeciesID")
         n_gs_max = 0
-        do i = 1,nsmax
-          if(SpeciesID(i).eq.1) n_gs_max = n_gs_max + 1
+        do isize=1,nsmax
+          if(SpeciesID(isize).eq.1) n_gs_max = n_gs_max + 1
         enddo
 
         nWriteTimes = t_len
@@ -4699,10 +4696,10 @@
       if(.not.allocated(ashcon_tot) )allocate(ashcon_tot(x_len,y_len,z_len))
       ashcon_tot = 0.0_op
       if(n_gs_max.gt.0)then
-        do n=1,n_gs_max
+        do isize=1,n_gs_max
           ashcon_tot(1:x_len,1:y_len,1:z_len) =  &
            ashcon_tot(1:x_len,1:y_len,1:z_len) + &
-           real(ashcon(1:x_len,1:y_len,1:z_len,n),kind=op)
+           real(ashcon(1:x_len,1:y_len,1:z_len,isize),kind=op)
         enddo
       endif
 

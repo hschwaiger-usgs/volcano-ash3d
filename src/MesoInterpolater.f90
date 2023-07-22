@@ -74,9 +74,9 @@
       logical      ,intent(inout) :: Load_MesoSteps
       logical      ,intent(in)    :: first_time
 
-      integer           :: i
+      integer           :: i,j,k
+      integer           :: isize
       integer           :: ivar
-      integer           :: ix,iy,iz
       character(len=1)  :: answer
 
       real(kind=dp):: HoursIntoInterval ! hours since the last windfile timestep
@@ -212,9 +212,9 @@
           call Set_Vf_Meso(.true.)
         else
           ! This is the case where the fall velocity is assigned in the input file
-          do i=1,n_gs_max
-            vf_meso_next_step_sp(:,:,:,i) = real(Tephra_v_s(i),kind=sp)
-            vf_pd(:,:,:,i)                = Tephra_v_s(i)*MPS_2_KMPHR
+          do isize=1,n_gs_max
+            vf_meso_next_step_sp(:,:,:,isize) = real(Tephra_v_s(isize),kind=sp)
+            vf_pd(:,:,:,isize)                =      Tephra_v_s(isize)*MPS_2_KMPHR
           enddo
         endif
         ! We only loaded one step so set load flag to True
@@ -489,18 +489,17 @@
                   ' nymax=',i4,' nzmax=',i3,/, &
                   'SimStartHour=',f12.2,' MetStep_Hour_since_baseyear(MR_iMetStep_Now)',&
                   f12.2,' ForecastInterval=',f5.2)
-        do iz=1,nzmax
-          do ix=1,nxmax
-            do iy=1,nymax
-              if (abs(vx_pd(ix,iy,iz)).gt.5.0e3_ip) then
+        do k=1,nzmax
+          do i=1,nxmax
+            do j=1,nymax
+              if (abs(vx_pd(i,j,k)).gt.5.0e3_ip) then
                 do io=1,2;if(VB(io).le.verbosity_info)then
-                  write(outlog(io),1042) ix, iy, iz, vx_pd(ix,iy,iz), & 
-                              vx_meso_last_step_sp(ix,iy,iz), vx_meso_next_step_sp(ix,iy,iz),&
+                  write(outlog(io),1042) i,j,k,vx_pd(i,j,k), & 
+                              vx_meso_last_step_sp(i,j,k), vx_meso_next_step_sp(i,j,k),&
                               HoursIntoInterval
                 endif;enddo
-1042            format(4x,'ix=',i4,' iy=',i4,' iz=',i4,' vx=',e12.4, &
+1042            format(4x,'i=',i4,' iy=',i4,' iz=',i4,' vx=',e12.4, &
                           ' vx_regrid(1)=',e12.4,' vx_regrid(2)=',e12.4,e12.4)
-                !stop 1
               endif
             enddo
           enddo
@@ -532,15 +531,15 @@
                   'SimStartHour=',f12.2,' MetStep_Hour_since_baseyear(MR_iMetStep_Now)',&
                   f12.2,' ForecastInterval=',f5.2)
 
-        do iz=1,nzmax
-          do ix=1,nxmax
-            do iy=1,nymax
-              if (vy_pd(ix,iy,iz).gt.5.0e3_ip) then
+        do k=1,nzmax
+          do i=1,nxmax
+            do j=1,nymax
+              if (vy_pd(i,j,k).gt.5.0e3_ip) then
                 do io=1,2;if(VB(io).le.verbosity_info)then
-                  write(outlog(io),1044) ix, iy, iz, vy_pd(ix,iy,iz),  & 
-                              vy_meso_last_step_sp(ix,iy,iz), vy_meso_next_step_sp(ix,iy,iz)
+                  write(outlog(io),1044) i,j,k,vy_pd(i,j,k),  & 
+                              vy_meso_last_step_sp(i,j,k), vy_meso_next_step_sp(i,j,k)
                 endif;enddo
-1044            format(4x,'ix=',i4,' iy=',i4,' iz=',i4,' vy=',e12.4,/, &
+1044            format(4x,'i=',i4,' j=',i4,' k=',i4,' vy=',e12.4,/, &
                           ' vy_regrid(1)=',e12.4,' vy_regrid(2)=',e12.4)
               endif
             enddo

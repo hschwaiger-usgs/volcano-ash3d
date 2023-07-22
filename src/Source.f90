@@ -97,15 +97,13 @@
 
 !******************************************************************************
 
-      subroutine Allocate_Source_grid(nx,ny,nz)
+      subroutine Allocate_Source_grid
 
       use mesh,          only : &
-         nsmax
+         nzmax,nsmax
 
-      integer,intent(in) :: nx,ny,nz
-
-      allocate(SourceNodeFlux(0:nz+1,1:nsmax));      SourceNodeFlux = 0.0_ip
-      allocate(TephraFluxRate(nz));                  TephraFluxRate = 0.0_ip
+      allocate(SourceNodeFlux(0:nzmax+1,1:nsmax));      SourceNodeFlux = 0.0_ip
+      allocate(TephraFluxRate(nzmax));                  TephraFluxRate = 0.0_ip
 
       end subroutine Allocate_Source_grid
 
@@ -155,7 +153,7 @@
          Tephra_bin_mass,n_gs_max
 
       use mesh,          only : &
-         IsLatLon,nzmax,dx,dy,dz_vec_pd,ivent,jvent,z_lb_pd,z_cc_pd,kappa_pd
+         nzmax,dz_vec_pd,ivent,jvent,z_lb_pd,z_cc_pd,kappa_pd
  
       integer :: k
       real(kind=ip) :: Suzuki_k     ! k factor in the Suzuki equation (see Hurst's Ashfall manual)

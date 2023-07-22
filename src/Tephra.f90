@@ -160,7 +160,7 @@
       logical      ,intent(in) :: Load_MesoSteps
 
       real(kind=sp) :: vf_sp(n_gs_max)
-      integer :: i,j,k,is,l
+      integer :: i,j,k,is,isize
       real(kind=ip) :: dens,visc,lambda,Kna
       real(kind=ip) :: v_grav_set
 
@@ -190,57 +190,57 @@
                case (0)  ! No fall
                  vf_sp(:) = 0.0_ip
                case (1)  ! Wilson and Huang
-                 do l=1,n_gs_max
-                   if(.not.IsAloft(l)) cycle
-                   v_grav_set = vset_WH(dens,Tephra_rho_m(l),visc, &
-                                 Tephra_gsdiam(l),Tephra_gsF_fac(l,1),&
-                                 Tephra_gsF_fac(l,2))
-                   vf_sp(l) = real(v_grav_set,kind=sp)
+                 do isize=1,n_gs_max
+                   if(.not.IsAloft(isize)) cycle
+                   v_grav_set = vset_WH(dens,Tephra_rho_m(isize),visc, &
+                                 Tephra_gsdiam(isize),Tephra_gsF_fac(isize,1),&
+                                 Tephra_gsF_fac(isize,2))
+                   vf_sp(isize) = real(v_grav_set,kind=sp)
                  enddo
                case (2)  ! Wilson and Huang + Cunningham slip
-                 do l=1,n_gs_max
-                   if(.not.IsAloft(l)) cycle
-                   Kna = 2.0_ip*lambda/(Tephra_gsdiam(l)*Tephra_gsF_fac(l,5))
+                 do isize=1,n_gs_max
+                   if(.not.IsAloft(isize)) cycle
+                   Kna = 2.0_ip*lambda/(Tephra_gsdiam(isize)*Tephra_gsF_fac(isize,5))
                    ! The non-continuum effect are > 1% when
                    ! gs<250*lam_col_windp(k)
-                   if(Tephra_gsdiam(l).gt.LAM_GS_THRESH*lambda)then
-                     v_grav_set = vset_WH(dens,Tephra_rho_m(l),visc, &
-                                   Tephra_gsdiam(l),Tephra_gsF_fac(l,1),Tephra_gsF_fac(l,2))
+                   if(Tephra_gsdiam(isize).gt.LAM_GS_THRESH*lambda)then
+                     v_grav_set = vset_WH(dens,Tephra_rho_m(isize),visc, &
+                                   Tephra_gsdiam(isize),Tephra_gsF_fac(isize,1),Tephra_gsF_fac(isize,2))
                    else
-                     v_grav_set = vset_WH_slip(dens,Tephra_rho_m(l),visc, &
-                                   Tephra_gsdiam(l),Tephra_gsF_fac(l,1),Tephra_gsF_fac(l,2), &
+                     v_grav_set = vset_WH_slip(dens,Tephra_rho_m(isize),visc, &
+                                   Tephra_gsdiam(isize),Tephra_gsF_fac(isize,1),Tephra_gsF_fac(isize,2), &
                                    Kna)
                    endif
-                   vf_sp(l) = real(v_grav_set,kind=sp)
+                   vf_sp(isize) = real(v_grav_set,kind=sp)
                  enddo
                case (3)  ! Wilson and Huang + Mod by Pfeiffer Et al.
-                 do l=1,n_gs_max
-                   if(.not.IsAloft(l)) cycle
-                   v_grav_set = vset_WH_PCM(dens,Tephra_rho_m(l),visc, &
-                                 Tephra_gsdiam(l),Tephra_gsF_fac(l,1),Tephra_gsF_fac(l,2))
-                   vf_sp(l) = real(v_grav_set,kind=sp)
+                 do isize=1,n_gs_max
+                   if(.not.IsAloft(isize)) cycle
+                   v_grav_set = vset_WH_PCM(dens,Tephra_rho_m(isize),visc, &
+                                 Tephra_gsdiam(isize),Tephra_gsF_fac(isize,1),Tephra_gsF_fac(isize,2))
+                   vf_sp(isize) = real(v_grav_set,kind=sp)
                  enddo
                case (4)  ! Ganser
-                 do l=1,n_gs_max
-                   if(.not.IsAloft(l)) cycle
-                   v_grav_set = vset_Gans(dens,Tephra_rho_m(l),&
-                                          visc,Tephra_gsdiam(l), &
-                                          Tephra_gsF_fac(l,3),Tephra_gsF_fac(l,4))
-                   vf_sp(l) = real(v_grav_set,kind=sp)
+                 do isize=1,n_gs_max
+                   if(.not.IsAloft(isize)) cycle
+                   v_grav_set = vset_Gans(dens,Tephra_rho_m(isize),&
+                                          visc,Tephra_gsdiam(isize), &
+                                          Tephra_gsF_fac(isize,3),Tephra_gsF_fac(isize,4))
+                   vf_sp(isize) = real(v_grav_set,kind=sp)
                  enddo
                case (5)  ! Stokes flow for spherical particles + slip
-                 do l=1,n_gs_max
-                   if(.not.IsAloft(l)) cycle
-                   Kna = 2.0_ip*lambda/(Tephra_gsdiam(l))
-                   v_grav_set = vset_Stokesslip(Tephra_rho_m(l),visc,Tephra_gsdiam(l),Kna)
-                   vf_sp(l) = real(v_grav_set,kind=sp)
+                 do isize=1,n_gs_max
+                   if(.not.IsAloft(isize)) cycle
+                   Kna = 2.0_ip*lambda/(Tephra_gsdiam(isize))
+                   v_grav_set = vset_Stokesslip(Tephra_rho_m(isize),visc,Tephra_gsdiam(isize),Kna)
+                   vf_sp(isize) = real(v_grav_set,kind=sp)
                  enddo
                case default ! Wilson and Huang
-                 do l=1,n_gs_max
-                   if(.not.IsAloft(l)) cycle
-                   v_grav_set = vset_WH(dens,Tephra_rho_m(l),visc, &
-                                 Tephra_gsdiam(l),Tephra_gsF_fac(l,1),Tephra_gsF_fac(l,2))
-                   vf_sp(l) = real(v_grav_set,kind=sp)
+                 do isize=1,n_gs_max
+                   if(.not.IsAloft(isize)) cycle
+                   v_grav_set = vset_WH(dens,Tephra_rho_m(isize),visc, &
+                                 Tephra_gsdiam(isize),Tephra_gsF_fac(isize,1),Tephra_gsF_fac(isize,2))
+                   vf_sp(isize) = real(v_grav_set,kind=sp)
                  enddo
                end select
                vf_meso_next_step_MetP_sp(i,j,k,:) = vf_sp(1:n_gs_max)
@@ -249,11 +249,11 @@
         enddo !i
 
         ! Now need to interpolate vs_meso_last_step_MetP_sp onto vf_meso_1_sp
-        do l=1,n_gs_max
-          if(.not.IsAloft(l)) cycle
-          MR_dum3d_metP(:,:,:) = vf_meso_next_step_MetP_sp(:,:,:,l)
+        do isize=1,n_gs_max
+          if(.not.IsAloft(isize)) cycle
+          MR_dum3d_metP(:,:,:) = vf_meso_next_step_MetP_sp(:,:,:,isize)
           call MR_Regrid_MetP_to_CompH(MR_iMetStep_Now+1)
-          vf_meso_next_step_sp(:,:,:,l) = MR_dum3d_compH(:,:,:)*(-1.0_sp)
+          vf_meso_next_step_sp(:,:,:,isize) = MR_dum3d_compH(:,:,:)*(-1.0_sp)
         enddo
       endif
 
@@ -265,7 +265,7 @@
 
       !integer :: ngs
 
-      integer :: i,j
+      integer :: isize,j
       !real(kind=ip) :: ellipse_area,ellipse_vol,equiv_rad
       !real(kind=ip) :: diamN ! diamter of sphere with equivalent projected area
       !real(kind=ip) :: diamS ! diamter of sphere with equivalent surface area
@@ -280,49 +280,49 @@
 
 !     Calculating terms for Cunningham slip coefficients for non-spherical
 !     particles
-      Dahneke_LD(1)  = 1.0_ip
-      Dahneke_LD(2)  = 2.0_ip
-      Dahneke_LD(3)  = 3.0_ip
-      Dahneke_LD(4)  = 4.0_ip
-      Dahneke_LD(5)  = 6.0_ip
-      Dahneke_LD(6)  = 8.0_ip
-      Dahneke_LD(7)  = 10.0_ip
-      Dahneke_LD(8)  = 15.0_ip
-      Dahneke_LD(9)  = 20.0_ip
-      Dahneke_LD(10) = 30.0_ip
-      Dahneke_LD(11) = 50.0_ip
-      Dahneke_LD(12) = 75.0_ip
+      Dahneke_LD( 1) =   1.0_ip
+      Dahneke_LD( 2) =   2.0_ip
+      Dahneke_LD( 3) =   3.0_ip
+      Dahneke_LD( 4) =   4.0_ip
+      Dahneke_LD( 5) =   6.0_ip
+      Dahneke_LD( 6) =   8.0_ip
+      Dahneke_LD( 7) =  10.0_ip
+      Dahneke_LD( 8) =  15.0_ip
+      Dahneke_LD( 9) =  20.0_ip
+      Dahneke_LD(10) =  30.0_ip
+      Dahneke_LD(11) =  50.0_ip
+      Dahneke_LD(12) =  75.0_ip
       Dahneke_LD(13) = 100.0_ip
-      Dahneke_RL(1)  = 1.0_ip
-      Dahneke_RL(2)  = 1.23_ip
-      Dahneke_RL(3)  = 1.39_ip
-      Dahneke_RL(4)  = 1.51_ip
-      Dahneke_RL(5)  = 1.72_ip
-      Dahneke_RL(6)  = 1.87_ip
-      Dahneke_RL(7)  = 2.0_ip
-      Dahneke_RL(8)  = 2.25_ip
-      Dahneke_RL(9)  = 2.43_ip
+      Dahneke_RL( 1) = 1.00_ip
+      Dahneke_RL( 2) = 1.23_ip
+      Dahneke_RL( 3) = 1.39_ip
+      Dahneke_RL( 4) = 1.51_ip
+      Dahneke_RL( 5) = 1.72_ip
+      Dahneke_RL( 6) = 1.87_ip
+      Dahneke_RL( 7) = 2.00_ip
+      Dahneke_RL( 8) = 2.25_ip
+      Dahneke_RL( 9) = 2.43_ip
       Dahneke_RL(10) = 2.69_ip
       Dahneke_RL(11) = 3.02_ip
       Dahneke_RL(12) = 3.28_ip
       Dahneke_RL(13) = 3.47_ip
 
-      do i=1,n_gs_max
+      do isize=1,n_gs_max
         ! Precalculate the WilsonHuang factors based on particle shapes
-        Tephra_gsF_fac(i,1) = Tephra_gsF(i)**(-0.828_ip)   ! WH Stokes factor
-        Tephra_gsF_fac(i,2) = sqrt(1.07_ip-Tephra_gsF(i))  ! WH Newton factor
+        Tephra_gsF_fac(isize,1) = Tephra_gsF(isize)**(-0.828_ip)   ! WH Stokes factor
+        Tephra_gsF_fac(isize,2) = sqrt(1.07_ip-Tephra_gsF(isize))  ! WH Newton factor
         ! and precalculate the K1 and K2 if we use the Ganser model
         ! First get sphericity.
         ! Note: sphericity is the ratio of the surface area of a sphere with
         !       equivalent volume to the actual surface area of the particle
         ! following http://en.wikipedia.org/wiki/Ellipsoid
         p_exp = 1.6075_ip
-        tmp_b = 2*Tephra_gsF(i)/(1+Tephra_gsG(i))
-        tmp_c = 2*Tephra_gsF(i)*Tephra_gsG(i)/(1+Tephra_gsG(i))
-        phi_sphere = (tmp_b*tmp_c)**(2.0/3.0) * &
+        tmp_b = 2.0_ip*Tephra_gsF(isize)/(1+Tephra_gsG(isize))
+        tmp_c = 2.0_ip*Tephra_gsF(isize)*Tephra_gsG(isize)/(1+Tephra_gsG(isize))
+        phi_sphere = (tmp_b*tmp_c)**(2.0_ip/3.0_ip) * &
                       ((tmp_b**p_exp + &
                         tmp_c**p_exp + &
-                       (tmp_b*tmp_c)**p_exp)/3.0)**(-1.0_ip/p_exp)
+                       (tmp_b*tmp_c)**p_exp)/3.0_ip)**(-1.0_ip/p_exp)
 
         !ellipse_vol  = 4.0_ip*PI*Tephra_gsF(i)*Tephra_gsF(i)/3.0_ip
         !equiv_rad    = (ellipse_vol*3.0_ip/(4.0_ip*PI))**(1.0_ip/3.0_ip)
@@ -331,14 +331,14 @@
         !                    2.0_ip*(Tephra_gsF(i))**p_exp)/3.0_ip)**(1.0_ip/p_exp)
         !phi_sphere = sphere_area/ellipse_area
           ! Calculate K1 for Ganser model (Table 7 Isometric)
-        Tephra_gsF_fac(i,3) = 3.0_ip/(1.0_ip+2.0_ip*phi_sphere**(-0.5_ip))
+        Tephra_gsF_fac(isize,3) = 3.0_ip/(1.0_ip+2.0_ip*phi_sphere**(-0.5_ip))
           ! Calculate K2 for Ganser model (Table 7 Isometric)
-        Tephra_gsF_fac(i,4) = 1.84148_ip*(-log10(phi_sphere))**0.5743_ip
-        Tephra_gsF_fac(i,4) = 10.0_ip**Tephra_gsF_fac(i,4);
+        Tephra_gsF_fac(isize,4) = 1.84148_ip*(-log10(phi_sphere))**0.5743_ip
+        Tephra_gsF_fac(isize,4) = 10.0_ip**Tephra_gsF_fac(isize,4);
           ! Now calculate the aspherical correction to the Cunningham
           ! slip correction using Table 1 from Dahneke, Aerosol Sci, v4p163
           ! 1973.
-        onF = 1.0_ip/Tephra_gsF(i)
+        onF = 1.0_ip/Tephra_gsF(isize)
         Dahni = 0
         do j = 1,12
           if(onF.ge.Dahneke_LD(j).and.onF.lt.Dahneke_LD(j+1)) Dahni = j
@@ -348,9 +348,9 @@
             write(outlog(io),*)"WARNING: Could not determine slip correction factor."
             write(outlog(io),*)"         Setting factor to 1.0"
           endif;enddo
-          Tephra_gsF_fac(i,5) = 1.0_ip
+          Tephra_gsF_fac(isize,5) = 1.0_ip
         else
-          Tephra_gsF_fac(i,5) = Dahneke_RL(Dahni) + (onF-Dahneke_LD(Dahni))* &
+          Tephra_gsF_fac(isize,5) = Dahneke_RL(Dahni) + (onF-Dahneke_LD(Dahni))* &
                          (Dahneke_RL(Dahni+1)-Dahneke_RL(Dahni))/     &
                           (Dahneke_LD(Dahni+1)-Dahneke_LD(Dahni))
         endif
@@ -362,7 +362,7 @@
 
       subroutine Sort_Tephra_Size
 
-      integer :: i,j,l
+      integer :: i,isize
       real(kind=ip) :: tmp1,tmp2,tmp3,tmp4,tmp5,tmp6,tmp7
       real(kind=ip) :: temp_a(5)
       real(kind=ip) :: viscnow, densnow, vfnow
@@ -381,33 +381,33 @@
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*) 'GSD before sorting:'
       endif;enddo
-      do l=1,n_gs_max
+      do isize=1,n_gs_max
          if (useCalcFallVel) then
-            vfnow = vset_WH(densnow,Tephra_rho_m(l),viscnow, &
-                                Tephra_gsdiam(l),Tephra_gsF_fac(l,1),Tephra_gsF_fac(l,2))
-            vf_now(l) = vfnow
+            vfnow = vset_WH(densnow,Tephra_rho_m(isize),viscnow, &
+                                Tephra_gsdiam(isize),Tephra_gsF_fac(isize,1),Tephra_gsF_fac(isize,2))
+            vf_now(isize) = vfnow
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)&
-                       'l = ',l,', gsdiam = ',real(Tephra_gsdiam(l),kind=sp),&
-                       ', rho_m = ',real(Tephra_rho_m(l),kind=sp),&
-                       ', vf_now(l) = ',real(vf_now(l),kind=sp)
+                       'isize = ',isize,', gsdiam = ',real(Tephra_gsdiam(isize),kind=sp),&
+                       ', rho_m = ',real(Tephra_rho_m(isize),kind=sp),&
+                       ', vf_now(isize) = ',real(vf_now(isize),kind=sp)
            endif;enddo
          else
-            vf_now(l) = Tephra_v_s(l)
+            vf_now(isize) = Tephra_v_s(isize)
          endif
       enddo
 
         ! Using insertion sort on p321 of Numerical Recipes
-      do j=2,n_gs_max
-        tmp1   = vf_now(j)
-        tmp2   = Tephra_gsdiam(j)
-        tmp3   = Tephra_bin_mass(j)
-        tmp4   = Tephra_rho_m(j)
-        tmp5   = Tephra_v_s(j)
-        tmp6   = Tephra_gsF(j)
-        tmp7   = Tephra_gsG(j)
-        temp_a = Tephra_gsF_fac(j,:)
-        do i=j-1,1,-1
+      do isize=2,n_gs_max
+        tmp1   = vf_now(isize)
+        tmp2   = Tephra_gsdiam(isize)
+        tmp3   = Tephra_bin_mass(isize)
+        tmp4   = Tephra_rho_m(isize)
+        tmp5   = Tephra_v_s(isize)
+        tmp6   = Tephra_gsF(isize)
+        tmp7   = Tephra_gsG(isize)
+        temp_a = Tephra_gsF_fac(isize,:)
+        do i=isize-1,1,-1
             ! sort on grain-size
           if (vf_now(i).le.tmp1) goto 101
           vf_now(i+1)           = vf_now(i)
@@ -438,7 +438,7 @@
 
       subroutine partition_gsbins(mu,sigma)
 
-      integer :: i
+      integer :: isize
 
       real(kind=ip) :: mu,sigma
 
@@ -473,13 +473,13 @@
       endif
 
       ! Get the phi of the other bins
-      do i = 1,n_gs_max
-        phi(i) = -log(Tephra_gsdiam(i))/log(2.0_ip)
+      do isize = 1,n_gs_max
+        phi(isize) = -log(Tephra_gsdiam(isize))/log(2.0_ip)
       enddo
 
       ! boundary between bins is the average phi
-      do i = 1,n_gs_max-1
-        phi_boundaries(i) = (phi(i)+phi(i+1))*0.5_ip
+      do isize = 1,n_gs_max-1
+        phi_boundaries(isize) = (phi(isize)+phi(isize+1))*0.5_ip
       enddo
 
       if (n_gs_max.eq.0)then
@@ -492,8 +492,8 @@
       else
         ! Convert boundaries between grainsmaxs given to locations on a
         ! standard normal Gaussian, given mu and sigma
-        do i = 1,n_gs_max-1
-          phi_boundaries(i) = (phi_boundaries(i) - mu)/sigma
+        do isize = 1,n_gs_max-1
+          phi_boundaries(isize) = (phi_boundaries(isize) - mu)/sigma
         enddo
         if(phi_boundaries(1).lt.0.0_ip)then
           do io=1,2;if(VB(io).le.verbosity_error)then
@@ -501,9 +501,9 @@
             write(errlog(io),*)&
                "        Bin    :       gsdiam        :",&
                "        phi    :       right bin boundary (phi)"
-            do i = 1,n_gs_max
-              write(errlog(io),*)i,real(Tephra_gsdiam(i),kind=sp),real(phi(i),kind=sp),&
-                          real(phi_boundaries(i),kind=sp)
+            do isize = 1,n_gs_max
+              write(errlog(io),*)isize,real(Tephra_gsdiam(isize),kind=sp),real(phi(isize),kind=sp),&
+                          real(phi_boundaries(isize),kind=sp)
             enddo
             write(errlog(io),*)"Mean = ",mu
           endif;enddo
@@ -520,10 +520,10 @@
              suppl_frac(1) = 1.0_ip - erf_at_a
            endif
         else if(n_gs_max.ge.3)then
-          do i = 2,n_gs_max-1
+          do isize = 2,n_gs_max-1
             ! Find the bin that contains the mean of the distribution
-            if(phi_boundaries(i).le.0.0_ip.and.phi_boundaries(i-1).ge.0.0_ip)then
-              mid_bin = i
+            if(phi_boundaries(isize).le.0.0_ip.and.phi_boundaries(isize-1).ge.0.0_ip)then
+              mid_bin = isize
             endif
           enddo
         endif
@@ -533,10 +533,10 @@
         mid_bin_pos_half = fac1*erf(abs(phi_boundaries(mid_bin-1)))
         suppl_frac(mid_bin) = mid_bin_pos_half
         ! Now integrate the remaining bins on the positive side of mu
-        do i = mid_bin-1,2,-1
-          erf_at_a = fac1*erf(abs(phi_boundaries(i)))
-          erf_at_b = fac1*erf(abs(phi_boundaries(i-1)))
-          suppl_frac(i) = erf_at_b - erf_at_a
+        do isize = mid_bin-1,2,-1
+          erf_at_a = fac1*erf(abs(phi_boundaries(isize)))
+          erf_at_b = fac1*erf(abs(phi_boundaries(isize-1)))
+          suppl_frac(isize) = erf_at_b - erf_at_a
         enddo
         ! The last positive bin is from phi_boundaries(1) to Inf
         suppl_frac(1) = 0.5_ip - fac1*erf(abs(phi_boundaries(1)))
@@ -545,10 +545,10 @@
         mid_bin_neg_half = fac1*erf(abs(phi_boundaries(mid_bin)))
         suppl_frac(mid_bin) = mid_bin_neg_half
         ! Now integrate the remaining bins on the negative side of mu
-        do i = mid_bin+1,n_gs_max-1
-          erf_at_a = fac1*erf(abs(phi_boundaries(i-1)))
-          erf_at_b = fac1*erf(abs(phi_boundaries(i)))
-          suppl_frac(i) = erf_at_b - erf_at_a
+        do isize = mid_bin+1,n_gs_max-1
+          erf_at_a = fac1*erf(abs(phi_boundaries(isize-1)))
+          erf_at_b = fac1*erf(abs(phi_boundaries(isize)))
+          suppl_frac(isize) = erf_at_b - erf_at_a
         enddo
           ! The last negative bin is from phi_boundaries(1) to -Inf
         suppl_frac(n_gs_max) = 0.5_ip - fac1*erf(abs(phi_boundaries(n_gs_max-1)))
@@ -557,8 +557,8 @@
       endif
 
       frac_to_distrib = 1.0_ip - sum(Tephra_bin_mass(1:n_gs_max))
-      do i = 1,n_gs_max
-        Tephra_bin_mass(i) = Tephra_bin_mass(i) + suppl_frac(i)*frac_to_distrib
+      do isize = 1,n_gs_max
+        Tephra_bin_mass(isize) = Tephra_bin_mass(isize) + suppl_frac(isize)*frac_to_distrib
       enddo
 
       end subroutine partition_gsbins
@@ -570,7 +570,7 @@
       use solution,      only : &
            mass_aloft,IsAloft
 
-      integer :: n
+      integer :: isize
 
       ! Loop through all the grain sizes and check if any have completely
       ! flushed out.  If so, then 
@@ -579,12 +579,12 @@
       ! that size bin aloft
       ! Note: mass_aloft is calculated for all species in Output_Vars:Calc_AshVol_Aloft
       n_gs_aloft = 0
-      do n = 1,n_gs_max
-        if(IsAloft(n).and. &                     ! if bin is currently flagged as aloft
-           mass_aloft(n).lt.AIRBORNE_THRESH)then ! but the mass is less than the thresh
-          IsAloft(n) = .false.
+      do isize = 1,n_gs_max
+        if(IsAloft(isize).and. &                     ! if bin is currently flagged as aloft
+           mass_aloft(isize).lt.AIRBORNE_THRESH)then ! but the mass is less than the thresh
+          IsAloft(isize) = .false.
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Grainsize bin ",n," has fully deposited or left the domain."
+            write(outlog(io),*)"Grainsize bin ",isize," has fully deposited or left the domain."
           endif;enddo
         else
           n_gs_aloft = n_gs_aloft + 1

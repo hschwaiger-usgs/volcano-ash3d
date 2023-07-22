@@ -87,8 +87,8 @@
 
 !      integer               :: iostatus
       integer               :: itime
-      integer               :: i,j,k
-      integer               :: iz,isize
+      integer               :: i,k,isize
+      !integer               :: iz,isize
       real(kind=ip)         :: Interval_Frac
       logical               :: Load_MesoSteps
       logical               :: StopTimeLoop   = .false.
@@ -156,11 +156,11 @@
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Now looping through optional modules found in input file"
       endif;enddo
-      do j=1,nmods
+      do i=1,nmods
         do io=1,2;if(VB(io).le.verbosity_essential)then
-          write(outlog(io),*)"Testing for ",OPTMOD_names(j),j
+          write(outlog(io),*)"Testing for ",OPTMOD_names(i),i
         endif;enddo
-        if(OPTMOD_names(j).eq.'RESETPARAMS')then
+        if(OPTMOD_names(i).eq.'RESETPARAMS')then
           do io=1,2;if(VB(io).le.verbosity_essential)then
             write(outlog(io),*)"  Reading input block for RESETPARAMS"
           endif;enddo
@@ -355,10 +355,10 @@
 
             ! Before source insertion, we smooth over the concentration over the
             ! 3x3 patch within the umbrella zone using the weighted averaging stencil
-            do iz=ibase,itop
+            do k=ibase,itop
               do isize=1,n_gs_max
-                concen_pd(ivent-1:ivent+1,jvent-1:jvent+1,iz,isize,ts0) = &
-                  AvgCon_Umbrella(concen_pd(ivent-1:ivent+1,jvent-1:jvent+1,iz,isize,ts0),iz)
+                concen_pd(ivent-1:ivent+1,jvent-1:jvent+1,k,isize,ts0) = &
+                  AvgCon_Umbrella(concen_pd(ivent-1:ivent+1,jvent-1:jvent+1,k,isize,ts0),k)
               enddo
             enddo
             ! Here the integration is the same as for standard sources (point, line, profile, suzuki),
@@ -466,8 +466,8 @@
           !if ((WriteAirportFile_ASCII.or.WriteAirportFile_KML).and. &
           if (Write_PT_Data.and. &
               (iTimeNext.lt.nWriteTimes)) then
-            do j=iTimeNext,nWriteTimes
-              Airport_Thickness_TS(1:nairports,j) = Airport_Thickness(1:nairports)
+            do i=iTimeNext,nWriteTimes
+              Airport_Thickness_TS(1:nairports,i) = Airport_Thickness(1:nairports)
             enddo
           endif
         endif
@@ -642,8 +642,8 @@
         write(outlog(io),6) tot_vol
         write(outlog(io),9) maxval(DepositThickness), DepositAreaCovered
         write(outlog(io),34)       !write out area of cloud at different thresholds
-        do k=1,5
-          write(outlog(io),35) LoadVal(k), CloudLoadArea(k)
+        do i=1,5
+          write(outlog(io),35) LoadVal(i), CloudLoadArea(i)
         enddo
         write(outlog(io),33)    !write "normal completion"
       endif;enddo

@@ -95,7 +95,7 @@
       !character(kind=c_char), dimension(1:130) :: fc_inputfile
       character, dimension(1:130) :: fc_inputfile
 
-      integer           :: i,k,ii
+      integer           :: i,k,ii,isize
       !integer           :: iargc
       integer           :: nargs          ! number of command-line arguments
 
@@ -536,8 +536,8 @@
       nz_init  = ceiling(100.0_ip/dz_const)+1
       allocate(z_vec_init(0:nz_init))
       z_vec_init = 0.0_ip
-      do i=1,nz_init
-        z_vec_init(i)=dz_const*(i) ! This the top of cell-boundaries (lower bound at 0)
+      do k=1,nz_init
+        z_vec_init(k)=dz_const*(k) ! This the top of cell-boundaries (lower bound at 0)
       enddo
       goto 5220
 
@@ -2117,7 +2117,7 @@
       allocate(temp_gsG(init_n_gs_max))
 
       if(init_n_gs_max.gt.0)then
-        do i=1,init_n_gs_max
+        do isize=1,init_n_gs_max
           value1 = -1.99_ip
           value2 = -1.99_ip
           value3 = -1.99_ip
@@ -2129,7 +2129,7 @@
               write(errlog(io),*)"ERROR: ",&
                     "Error in specifying grain sizes.  You specified ",&
                             init_n_gs_max,', sizes,'
-              write(errlog(io),*) 'but only ',i-1,&
+              write(errlog(io),*) 'but only ',isize-1,&
                     ' size classes were listed in the input file.'
               write(errlog(io),*)' Offending line: ',linebuffer080
               write(errlog(io),*) 'Program stopped'
@@ -2147,32 +2147,32 @@
               ! fragments
               useCalcFallVel = .true. 
               useTemperature = .true. ! When calculating Fall Vel. we need T
-              temp_gsdiam(i) = value1
-              temp_bin_mass(i) = value2
-              temp_rho_m(i) = value3
+              temp_gsdiam(isize) = value1
+              temp_bin_mass(isize) = value2
+              temp_rho_m(isize) = value3
               ! Try for a forth value for shape
               read(linebuffer080,*,iostat=ioerr) value1, value2, value3, value4
               if (ioerr.eq.0)then
                 ! Fourth value was successfully read, interpret as W/H shape
                 ! parameter
-                temp_gsF(i) = value4
+                temp_gsF(isize) = value4
                 ! Try for a fifth value for second shape parameter for Ganser
                 ! model
                 read(linebuffer080,*,iostat=ioerr) value1, value2, value3, value4, value5
                 if (ioerr.eq.0)then
                   ! Fourth value was successfully read, interpret as Ganser 2nd
                   ! shape parameter
-                  temp_gsG(i) = value5
+                  temp_gsG(isize) = value5
                 else
-                  temp_gsG(i) = 1.0_ip
+                  temp_gsG(isize) = 1.0_ip
                 endif
               else
-                temp_gsF(i) = 0.44_ip
-                temp_gsG(i) = 1.0_ip
+                temp_gsF(isize) = 0.44_ip
+                temp_gsG(isize) = 1.0_ip
               endif
                 ! Initialize this to zero
-              temp_v_s(i) = 0.0_ip
-              if(temp_gsdiam(i).lt.0.0_ip)then
+              temp_v_s(isize) = 0.0_ip
+              if(temp_gsdiam(isize).lt.0.0_ip)then
                 if(i.lt.init_n_gs_max)then
                 do io=1,2;if(VB(io).le.verbosity_error)then
                     write(errlog(io),*)"ERROR: ",&
@@ -2202,21 +2202,21 @@
               ! old format as:
               ! FallVel, mass fraction
               useCalcFallVel = .false.
-              temp_v_s(i)     = value1
-              if (temp_v_s(i).lt.0.0_ip)then
+              temp_v_s(isize)     = value1
+              if (temp_v_s(isize).lt.0.0_ip)then
                 do io=1,2;if(VB(io).le.verbosity_info)then
                   write(outlog(io),*)&
                      "WARNING: fall velocity is negative.  Grains will 'fall' upward"
                 endif;enddo
               endif
-              temp_bin_mass(i)= value2
+              temp_bin_mass(isize)= value2
                 ! Initialize these
-              temp_gsdiam(i)  = 0.1_ip
-              temp_rho_m(i)   = 2000.0_ip
-              temp_gsF(i)     = 0.44_ip
+              temp_gsdiam(isize)  = 0.1_ip
+              temp_rho_m(isize)   = 2000.0_ip
+              temp_gsF(isize)     = 0.44_ip
             endif
           endif
-        enddo
+        enddo ! isize=1,init_n_gs_max
         ! Set the number of grain-size bins
         if (useVariableGSbins)then
           ! In this case, the last bin is the remainder to be distributed over the
@@ -2260,9 +2260,9 @@
 
         ! Find the fraction of fine (<= phi4, 63um)
         fracfine = 0.0_ip
-        do i=1,n_gs_max
-          if(Tephra_gsdiam(i).lt.6.4e-5_ip)then
-            fracfine = fracfine + Tephra_bin_mass(i)
+        do isize=1,n_gs_max
+          if(Tephra_gsdiam(isize).lt.6.4e-5_ip)then
+            fracfine = fracfine + Tephra_bin_mass(isize)
           endif
         enddo
 
@@ -2271,14 +2271,14 @@
           write(outlog(io),2531)
         endif;enddo
 2531    format('Checking to make sure Tephra_bin_mass>0 for all size classes')
-        do i=1,n_gs_max
-          if (Tephra_bin_mass(i).lt.0.0_ip) then
+        do isize=1,n_gs_max
+          if (Tephra_bin_mass(isize).lt.0.0_ip) then
             do io=1,2;if(VB(io).le.verbosity_error)then
-              write(errlog(io),25311) i
+              write(errlog(io),25311) isize
             endif;enddo
             stop 1
-          end if
-        end do
+          endif
+        enddo
 25311        format('Error: mass of bin ',i2,' is less than zero.  Program stopped')
 
 !       Send error message if sum(bin_mass(1:n_gs_max)) does not equal 1
@@ -2286,8 +2286,8 @@
         if(abs(sum_bins-1.0_ip).gt.0.02_ip) then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),2532)
-            do i=1,n_gs_max
-              write(errlog(io),2533) i, Tephra_bin_mass(i)
+            do isize=1,n_gs_max
+              write(errlog(io),2533) isize, Tephra_bin_mass(isize)
             enddo
             write(errlog(io),2534) sum_bins
           endif;enddo
@@ -2305,8 +2305,8 @@
 2535      format('Warning: sum(bin_mass(1:n_gs_max))=',f10.5,/, &
                  'This differs slightly from 1.0',/, &
                  'adjusting bin masses automatically.')
-          do i=1,n_gs_max
-            Tephra_bin_mass(i) = Tephra_bin_mass(i)*1.0_ip/sum_bins
+          do isize=1,n_gs_max
+            Tephra_bin_mass(isize) = Tephra_bin_mass(isize)*1.0_ip/sum_bins
           enddo
         endif
 
@@ -2332,17 +2332,18 @@
         if(useCalcFallVel)then
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),10)
-            do i=1,n_gs_max
+            do isize=1,n_gs_max
                 !write out diameter in mm, not m
-              write(outlog(io),11) Tephra_bin_mass(i), Tephra_gsdiam(i)*1000.0_ip, Tephra_rho_m(i),&
-                            Tephra_gsF(i), Tephra_gsG(i), temp_phi(i)
+              write(outlog(io),11) Tephra_bin_mass(isize), Tephra_gsdiam(isize)*1000.0_ip, &
+                                   Tephra_rho_m(isize),    Tephra_gsF(isize),              &
+                                   Tephra_gsG(isize),      temp_phi(isize)
             enddo
           endif;enddo
         else
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),2110)
-            do i=1,n_gs_max
-              write(outlog(io),2111) Tephra_bin_mass(i), Tephra_v_s(i)
+            do isize=1,n_gs_max
+              write(outlog(io),2111) Tephra_bin_mass(isize), Tephra_v_s(isize)
             enddo
           endif;enddo
         endif
@@ -2365,15 +2366,16 @@
 
           if(useCalcFallVel)then
             do io=1,2;if(VB(io).le.verbosity_info)then
-              do i=1,n_gs_max
+              do isize=1,n_gs_max
                 ! write out diameter in mm, not m
-                write(outlog(io),11) Tephra_bin_mass(i), Tephra_gsdiam(i)*1000.0_ip, Tephra_rho_m(i)
+                write(outlog(io),11) Tephra_bin_mass(isize), Tephra_gsdiam(isize)*1000.0_ip, &
+                                     Tephra_rho_m(isize)
               enddo
             endif;enddo
           else
             do io=1,2;if(VB(io).le.verbosity_info)then
-              do i=1,n_gs_max
-                write(outlog(io),2111) Tephra_bin_mass(i), Tephra_v_s(i)
+              do isize=1,n_gs_max
+                write(outlog(io),2111) Tephra_bin_mass(isize), Tephra_v_s(isize)
               enddo
             endif;enddo
           endif

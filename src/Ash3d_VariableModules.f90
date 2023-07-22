@@ -129,8 +129,8 @@
       logical                  :: useVarDiffV     = .false.
 
       logical                  :: useTemperature  = .false.
-      !logical                  :: useVz_rhoG      = .true.
-      logical                  :: useVz_rhoG      = .false.
+      logical                  :: useVz_rhoG      = .true.
+      !logical                  :: useVz_rhoG      = .false.
       logical                  :: useCalcFallVel  = .false.
       logical                  :: useVariableGSbins  = .false.
         ! Only load temperature and water content data if needed
@@ -729,12 +729,10 @@
       contains
 
       !------------------------------------------------------------------------
-      subroutine Allocate_wind_grid!(nsmax)
+      subroutine Allocate_wind_grid
 
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax
-
-      !integer, intent(in) :: nsmax
 
       allocate(vx_meso_last_step_sp(nxmax,nymax,nzmax))
       allocate(vx_meso_next_step_sp(nxmax,nymax,nzmax))

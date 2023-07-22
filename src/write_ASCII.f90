@@ -272,7 +272,7 @@
 
       implicit none
 
-      character(len=50),intent(in) :: filename
+      character(len=80),intent(in) :: filename
 
       integer :: fid
       integer :: i,j

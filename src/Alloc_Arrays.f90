@@ -36,8 +36,8 @@
       call Allocate_mesh
       call Allocate_solution
       call Allocate_wind_grid
-      call Allocate_Output_Vars(nxmax,nymax,nzmax)
-      call Allocate_Source_grid(nxmax,nymax,nzmax)
+      call Allocate_Output_Vars
+      call Allocate_Source_grid
       call Allocate_Diff(nxmax,nymax,nzmax)
 
       end subroutine alloc_arrays
