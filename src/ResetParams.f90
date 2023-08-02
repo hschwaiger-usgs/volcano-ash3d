@@ -82,7 +82,9 @@
         if (pname(i).eq.'MagmaDensity') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(errlog(io),*)"ERROR: MagmaDensity must be > 0"
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: MagmaDensity must be > 0"
+            endif;enddo
             stop 1
           elseif (pvalue(i).gt.10000.0_ip)then
             do io=1,2;if(VB(io).le.verbosity_info)then
@@ -98,7 +100,9 @@
         elseif (pname(i).eq.'DepositDensity') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(errlog(io),*)"ERROR: DepositDensity must be > 0"
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: DepositDensity must be > 0"
+            endif;enddo
             stop 1
           elseif (pvalue(i).gt.10000.0_ip)then
             do io=1,2;if(VB(io).le.verbosity_info)then
@@ -114,7 +118,9 @@
         elseif (pname(i).eq.'LAM_GS_THRESH') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(errlog(io),*)"ERROR: LAM_GS_THRESH must be > 0"
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: LAM_GS_THRESH must be > 0"
+            endif;enddo
             stop 1
           elseif (pvalue(i).gt.1000.0_ip)then
             do io=1,2;if(VB(io).le.verbosity_info)then
@@ -130,7 +136,9 @@
         elseif (pname(i).eq.'AIRBORNE_THRESH') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(errlog(io),*)"ERROR: AIRBORNE_THRESH must be > 0"
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: AIRBORNE_THRESH must be > 0"
+            endif;enddo
             stop 1
           elseif (pvalue(i).gt.1.0_ip)then
             do io=1,2;if(VB(io).le.verbosity_info)then
@@ -146,7 +154,9 @@
         elseif (pname(i).eq.'GRAV') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(errlog(io),*)"ERROR: GRAV must be > 0"
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: GRAV must be > 0"
+            endif;enddo
             stop 1
           elseif (pvalue(i).gt.20.0_ip)then
             do io=1,2;if(VB(io).le.verbosity_info)then
@@ -162,7 +172,9 @@
         elseif (pname(i).eq.'RAD_EARTH') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(errlog(io),*)"ERROR: RAD_EARTH must be > 0"
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: RAD_EARTH must be > 0"
+            endif;enddo
             stop 1
           elseif (pvalue(i).gt.10000.0_ip)then
             do io=1,2;if(VB(io).le.verbosity_info)then
@@ -178,10 +190,14 @@
         elseif (pname(i).eq.'CFL') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(errlog(io),*)"ERROR: CFL must be > 0"
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: CFL must be > 0"
+            endif;enddo
             stop 1
           elseif (pvalue(i).ge.1.0_ip)then
-            write(errlog(io),*)"ERROR: CFL must be < 1"
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: CFL must be < 1"
+            endif;enddo
             stop 1
           endif
           do io=1,2;if(VB(io).le.verbosity_info)then            
@@ -192,7 +208,9 @@
         elseif (pname(i).eq.'DT_MIN') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(errlog(io),*)"ERROR: DT_MIN must be > 0"
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: DT_MIN must be > 0"
+            endif;enddo
             stop 1
           elseif (pvalue(i).gt.1.0_ip)then
             do io=1,2;if(VB(io).le.verbosity_info)then            
@@ -209,10 +227,14 @@
         elseif (pname(i).eq.'DT_MAX') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(errlog(io),*)"ERROR: DT_MAX must be > 0"
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: DT_MAX must be > 0"
+            endif;enddo
             stop 1
           elseif (pvalue(i).le.DT_MIN)then
-            write(errlog(io),*)"ERROR: DT_MAX must be > DT_MIN"
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: DT_MAX must be > DT_MIN"
+            endif;enddo
             stop 1
           elseif (pvalue(i).gt.10.0_ip)then
             do io=1,2;if(VB(io).le.verbosity_info)then         
@@ -228,7 +250,9 @@
         elseif (pname(i).eq.'ZPADDING') then
           ! error-checking
           if (pvalue(i).le.1.0_ip)then
-            write(errlog(io),*)"ERROR: ZPADDING must be > 1"
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: ZPADDING must be > 1"
+            endif;enddo
             stop 1
           elseif (pvalue(i).gt.5.0_ip)then
             do io=1,2;if(VB(io).le.verbosity_info)then         
@@ -244,7 +268,9 @@
         elseif (pname(i).eq.'DEPO_THRESH') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(errlog(io),*)"ERROR: DEPO_THRESH must be > 0"
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: DEPO_THRESH must be > 0"
+            endif;enddo
             stop 1
           elseif (pvalue(i).gt.5.0_ip)then
             do io=1,2;if(VB(io).le.verbosity_info)then         
@@ -261,7 +287,9 @@
         elseif (pname(i).eq.'DEPRATE_THRESH') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(errlog(io),*)"ERROR: DEPRATE_THRESH must be > 0"
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: DEPRATE_THRESH must be > 0"
+            endif;enddo
             stop 1
           elseif (pvalue(i).gt.1.0_ip)then
             do io=1,2;if(VB(io).le.verbosity_info)then
@@ -278,7 +306,9 @@
         elseif (pname(i).eq.'CLOUDCON_THRESH') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(errlog(io),*)"ERROR: CLOUDCON_THRESH must be > 0"
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: CLOUDCON_THRESH must be > 0"
+            endif;enddo
             stop 1
           elseif (pvalue(i).gt.5.0_ip)then
             do io=1,2;if(VB(io).le.verbosity_info)then         
@@ -295,7 +325,9 @@
         elseif (pname(i).eq.'CLOUDCON_GRID_THRESH') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(errlog(io),*)"ERROR: CLOUDCON_GRID_THRESH must be > 0"
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: CLOUDCON_GRID_THRESH must be > 0"
+            endif;enddo
             stop 1
           elseif (pvalue(i).gt.1.0e-1_ip)then
             do io=1,2;if(VB(io).le.verbosity_info)then         
@@ -312,7 +344,9 @@
         elseif (pname(i).eq.'CLOUDLOAD_THRESH') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(errlog(io),*)"ERROR: CLOUDLOAD_THRESH must be > 0"
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: CLOUDLOAD_THRESH must be > 0"
+            endif;enddo
             stop 1
           elseif (pvalue(i).gt.5.0_ip)then
             do io=1,2;if(VB(io).le.verbosity_info)then         
@@ -329,7 +363,9 @@
         elseif (pname(i).eq.'THICKNESS_THRESH') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(errlog(io),*)"ERROR: THICKNESS_THRESH must be > 0"
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: THICKNESS_THRESH must be > 0"
+            endif;enddo
             stop 1
           elseif (pvalue(i).gt.5.0_ip)then
             do io=1,2;if(VB(io).le.verbosity_info)then         
@@ -346,7 +382,9 @@
         elseif (pname(i).eq.'DBZ_THRESH') then
           ! error-checking
           if (pvalue(i).ge.0.0_ip)then
-            write(errlog(io),*)"ERROR: DBZ_THRESH must be < 0"
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: DBZ_THRESH must be < 0"
+            endif;enddo
             stop 1
           elseif (pvalue(i).lt.-1000.0_ip)then
             do io=1,2;if(VB(io).le.verbosity_info)then         
@@ -363,7 +401,9 @@
         elseif (pname(i).eq.'lambda_umb') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(errlog(io),*)"ERROR: lambda_umb must be > 0"
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: lambda_umb must be > 0"
+            endif;enddo
             stop 1
           elseif (pvalue(i).gt.100.0_ip)then
             do io=1,2;if(VB(io).le.verbosity_info)then         
@@ -380,7 +420,9 @@
         elseif (pname(i).eq.'N_BV_umb') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(errlog(io),*)"ERROR:  must be > 0"
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR:  must be > 0"
+            endif;enddo
             stop 1
           elseif (pvalue(i).gt.10.0_ip)then
             do io=1,2;if(VB(io).le.verbosity_info)then         
@@ -397,7 +439,9 @@
         elseif (pname(i).eq.'k_entrainment_umb') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(errlog(io),*)"ERROR: k_entrainment_umb must be > 0"
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: k_entrainment_umb must be > 0"
+            endif;enddo
             stop 1
           elseif (pvalue(i).gt.5.0_ip)then
             do io=1,2;if(VB(io).le.verbosity_info)then         
@@ -414,7 +458,9 @@
         elseif (pname(i).eq.'SuzK_umb') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
-            write(errlog(io),*)"ERROR: SuzK_umb must be > 0"
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: SuzK_umb must be > 0"
+            endif;enddo
             stop 1
           elseif (pvalue(i).gt.20.0_ip)then
             do io=1,2;if(VB(io).le.verbosity_info)then

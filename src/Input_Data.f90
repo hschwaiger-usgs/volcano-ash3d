@@ -1,8 +1,38 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Subroutine Read_Control_File
+!
+! This subroutine sets up the parameters for the Ash3d run.
+! 
+! First the command-line is parsed.  If no command-line arguments are given, input will
+! be interactive with the user prompted for the control file name, then questioned if
+! this is a restart run.  If command-line arguments are given, then the first argument
+! is tested for '-h', in which case interactive help information will be printed to
+! the screen.  If help mode is not activated, then the command-line argument is
+! interpreted to be the name of the control file in the current working directory.
+! 
+! Next, the control file is opened and read block-by-block.
+!       ! BLOCK 1: GRID INFO
+!       ! BLOCK 2: ERUPTION PARAMETERS
+!       ! BLOCK 3: WIND PARAMETERS
+! Sets source term variables
+!       ! BLOCK 4: OUTPUT OPTIONS
+!       ! BLOCK 5: INPUT WIND FILES
+! Sets variable in MetReader
+!       ! BLOCK 6: AIRPORT FILE
+!       ! BLOCK 7: GRAIN-SIZE BINS, SETTLING VELOCITY
+! Sets parameters in Tephra module
+!       ! BLOCK 8: VERTICAL PROFILES
+!       ! BLOCK 9 (Optional): NETCDF ANNOTATIONS
+! 
+!       ! Subroutine that reads ASCII input file and contains error traps for input
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       !subroutine Read_Control_File(fc_inputfile)
       subroutine Read_Control_File
 
-      ! Subroutine that reads ASCII input file and contains error traps for input
+      ! This module requires Fortran 2003 or later
       use iso_c_binding
 
       use precis_param
@@ -214,8 +244,8 @@
           ! restart file
         if(VB(1).ge.verbosity_silent)then
           do io=1,2
-            write(errlog(io),*)"Stdout is suppressed via VERB=9, but interactive input is expected."
-            write(errlog(io),*)"Either recompile with VERB<9, over-ride with the environment variable"
+            write(errlog(io),*)"Stdout is suppressed via ASH3DVERB=9, but interactive input is expected."
+            write(errlog(io),*)"Either recompile with ASH3DVERB<9, over-ride with the environment variable"
             write(errlog(io),*)"(ASH3DVERB) or provide the correct command-line arguments."
           enddo
           stop 1
@@ -229,13 +259,14 @@
           write(outlog(io),*)'Load concentration file?'
         endif;enddo
         read(stdin,'(a3)') answer
-        if (answer.eq.'yes') then
+        if (answer.eq.'y'.or.answer.eq.'yes') then
           LoadConcen = .true.
-        elseif (answer.eq.'no') then
+        elseif (answer.eq.'n'.or.answer.eq.'no') then
           LoadConcen = .false.
         else
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*) 'Sorry, I cannot understand your answer.'
+            write(errlog(io),*) "Expected either 'yes' or 'no', but you provided:",answer
           endif;enddo
           stop 1
         endif
@@ -264,16 +295,16 @@
 #endif
         endif
       elseif (nargs.ge.1) then
-        if (nargs.gt.1) then
-          do io=1,2;if(VB(io).le.verbosity_production)then
-            write(outlog(io),*)&
-             "Only one command-line argument is expected."
-            write(outlog(io),*)&
-             "Reading first arguement as the control files and"
-            write(outlog(io),*)&
-             "disregarding all other arguements."
-          endif;enddo
-        endif
+        !if (nargs.gt.1) then
+        !  do io=1,2;if(VB(io).le.verbosity_production)then
+        !    write(outlog(io),*)&
+        !     "Only one command-line argument is expected."
+        !    write(outlog(io),*)&
+        !     "Reading first arguement as the control files and"
+        !    write(outlog(io),*)&
+        !     "disregarding all other arguements."
+        !  endif;enddo
+        !endif
           ! If only one argument is given, first test for the '-h' indicating a help
           ! request.
         call get_command_argument(1, linebuffer130, status)

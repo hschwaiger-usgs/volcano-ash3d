@@ -32,7 +32,7 @@
          Write_PT_Data,Write_PR_Data
 
       use time_data,     only : &
-         time,dt,Simtime_in_hours,t0,t1,ntmax
+         time,dt,Simtime_in_hours,t0,t1,t2,ntmax
 
       use Source,        only : &
          SourceNodeFlux,e_EndTime_final,e_Volume,MassFluxRate_now,&
@@ -129,15 +129,14 @@
         end subroutine dealloc_arrays
       END INTERFACE
 
-!      ! Before we do anything, start a log file
-!      open(unit=global_log,file='Ash3d.lst',status='unknown')
+      ! Start time logging
+      call cpu_time(t0) !time is a scaler real
 
+      ! Before we do anything, get the state of the executable, system, environment and run
       call Set_OS_Env
 
       aloft_percent_remaining = 1.0_ip
       SourceCumulativeVol     = 0.0_ip
-
-      call cpu_time(t0) !time is a scaler real
 
         ! input data for ash transport
       call Read_Control_File
@@ -271,6 +270,9 @@
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),1) tot_vol,ntmax
       endif;enddo
+
+      ! Get the cpu time for the start of the time loop
+      call cpu_time(t1) !time is a scaler real
 
       ! ************************************************************************
       ! ****** begin time simulation *******************************************
@@ -631,10 +633,10 @@
       call output_results
       !WRITE RESULTS TO LOG AND STANDARD OUTPUT
       !TotalTime_sp = etime(elapsed_sp)
-      call cpu_time(t1) !time is a scalar real
+      call cpu_time(t2) !time is a scalar real
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),3) t1-t0, time*HR_2_S
-        write(outlog(io),4) time*HR_2_S/(t1-t0)
+        write(outlog(io),3) t1-t0, t2-t1, time*HR_2_S
+        write(outlog(io),4) time*HR_2_S/(t2-t1)
       endif;enddo
       call TimeStepTotals(itime)
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -658,7 +660,8 @@
                 5x,'Source',6x,'Deposit',7x,'Aloft',5x,'Outflow',&
                 7x,'Total',10x,'km2')
 
-3     format(/,5x,'Execution time           = ',f15.4,' seconds',&
+3     format(/,5x,'Set-up time              = ',f15.4,' seconds',&
+               5x,'Execution time           = ',f15.4,' seconds',&
              /,5x,'Simulation time          = ',f15.4,' seconds')       
 4     format(  5x,'Execution time/CPU time  = ',f15.4)       
 5     format(  5x,'Ending deposit volume    = ',f15.4,' km3 DRE')       

@@ -35,6 +35,7 @@
       
       integer,dimension(2) :: VB = (/3,3/) ! Verbosity level for stdout and logfile, respectively
       integer :: VERB     = 3 ! stdout verbosity level 
+      character(10)  :: vlevel
 
       ! These verbosity levels are for harmonizing with forestclaw
       ! Only write statements verbosity level >= VERB will be written
@@ -202,7 +203,7 @@
       character (len=80) :: cdf_source
       character (len=80) :: cdf_history
       character (len=80) :: cdf_references
-      character (len=80) :: cdf_run_class
+      character (len=80) :: cdf_run_class  ! Forecast, Hypothetical, Analysis
       character (len=80) :: cdf_url
       character (len=80) :: cdf_comment
       character (len=80) :: cdf_conventions
@@ -653,7 +654,7 @@
       real(kind=dp)      :: SimStartHour     ! Simulation start time, in hours since 1900
       real(kind=dp)      :: time             ! physical time simulated by this model
 
-      real(kind=ip)      :: t0,t1           ! CPU time indicators
+      real(kind=ip)      :: t0,t1,t2        ! CPU time indicators
       real(kind=ip)      :: dt              ! dt used for actual integration
       real(kind=ip)      :: dt_meso_last    ! dt as calculated from meso_last
       real(kind=ip)      :: dt_meso_next    ! dt as calculated from meso_next
