@@ -1,3 +1,14 @@
+!##############################################################################
+!
+! AdvectionVert_DCU
+!
+! This module manages the advection routine used for vertical advection.
+! Only one subroutine is in this module, advect_z, which is the vertical
+! advection routine using the 1-d donor-cell-upwind (DCU) method.  Alternate
+! schemes could be invoked, but we have only implemented DCU.
+!
+!##############################################################################
+
       module AdvectionVert_DCU
 
       use precis_param
@@ -30,12 +41,24 @@
 
       contains
 
-!******************************************************************************
+      !------------------------------------------------------------------------
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  advect_z()
+!
+!  Called from: Ash3d.F90
+!  Arguments:
+!    none
+!
+!  This subroutine applies a 2nd order upwind advection routine with a limiter
+!  determined via preprocessor flags.  The concentration array is updated in
+!  concen_pd(:,:,:,:,t=2) then copied back to concen_pd(:,:,:,:,t=1).  This
+!  subroutine has the equivalent structure as advect_x and advect_y
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine advect_z
-
-      ! Explicit advection routine, 2nd order upwind with limiter.
-      ! RP Denlinger and HF Schwaiger
 
       !!!$ use omp_lib
 
@@ -296,7 +319,7 @@
       end subroutine advect_z
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       end module AdvectionVert_DCU
 
+!##############################################################################

@@ -1,13 +1,14 @@
- !****************************************************************************
- 
- !This file contains the module AdvectionHorz and subroutine AdvectHorz.
- !  The subroutine calls other subroutines, advect_x and advect_y, that
- !  calculate horizontal advection in the x and y directions.  
- !  AdvectHorz is called during the time loop in the main program
- !  Ash3d.F90, after setting boundary conditions and before calculating
- !  vertical advection.
- 
- !***************************************************************************
+!##############################################################################
+!
+! AdvectionHorz
+!
+! This module manages the advection routines used for horizontal advection.
+! Only one subroutine is in this module, AdvectHorz, which controls the
+! horizontal advection using the 1-d donor-cell-upwind (DCU) method.  This is
+! where alternate advection schemes could be invoked, such and the 2-d
+! corner-transport-upwind (CTU) or semi-Lagrange.
+!
+!##############################################################################
  
       module AdvectionHorz
 
@@ -23,7 +24,25 @@
 
       contains
 
-!****************************************************************************
+      !------------------------------------------------------------------------
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  AdvectHorz(itoggle)
+!
+!  Called from: Ash3d.F90
+!  Arguments:
+!    itoggle : integer time step that is evaluated for even/odd
+!
+!  This subroutine is called from the main time loop in Ash3d.F90 and invokes
+!  the horizontal advection routines.  This routine is called after the
+!  boundary conditions are set and before the vertical advection routine and
+!  the diffusion routines.  The default scheme is DCU, provided by the
+!  module AdvectionHorz_DCU with x and y advection treated separately.  A
+!  toggle variable is provided to determine which advection direction to
+!  apply first (even-> y then x; odd-> x then y). 
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine AdvectHorz(itoggle)
 
@@ -54,7 +73,7 @@
       kmax = nzmax
 
 #endif
-        ! Use dimension splitting with donor cell upwind (DCU)
+        ! Use dimension splitting with donor-cell-upwind (DCU)
       if(mod(itoggle,2).eq.0) then
           ! for even time steps, advect in y first
         call advect_y
@@ -66,9 +85,8 @@
 
       end subroutine AdvectHorz
 
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       end module AdvectionHorz
 
+!##############################################################################

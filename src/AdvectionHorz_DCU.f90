@@ -1,5 +1,14 @@
+!##############################################################################
+!
+! AdvectionHorz_DCU
+!
+! This module contains the subroutines used for advecting material horizontally
+! via the donor-cell-upwind
+!
 !      subroutine advect_x
 !      subroutine advect_y
+!
+!##############################################################################
 
       module AdvectionHorz_DCU
 
@@ -33,17 +42,29 @@
 
       contains
 
-!******************************************************************************
+      !------------------------------------------------------------------------
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  advect_x()
+!
+!  Called from: AdvectHorz
+!  Arguments:
+!    none
+!
+!  This subroutine applies a 2nd order upwind advection routine with a limiter
+!  determined via preprocessor flags.  The concentration array is updated in
+!  concen_pd(:,:,:,:,t=2) then copied back to concen_pd(:,:,:,:,t=1).  This
+!  subroutine has the equivalent structure as advect_y and advect_z
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine advect_x
 
-      ! Explicit advection routine, 2nd order upwind with limiter.
-      ! RP Denlinger and HF Schwaiger
-
       !!!$ use omp_lib
 
-      integer       :: j,k,n  ! These are the indeces mapping to the global arrays
-      integer       :: l        ! This is the index along the particular advection direction
+      integer       :: j,k,n  ! These are the indices mapping to the global arrays
+      integer       :: l      ! This is the index along the particular advection direction
       integer       :: ncells
 
        ! arrays that live on cell-centers: Note that we have 2 ghost cells
@@ -273,16 +294,26 @@
 
       end subroutine advect_x
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  advect_y()
+!
+!  Called from: AdvectHorz
+!  Arguments:
+!    none
+!
+!  This subroutine applies a 2nd order upwind advection routine with a limiter
+!  determined via preprocessor flags.  The concentration array is updated in
+!  concen_pd(:,:,:,:,t=2) then copied back to concen_pd(:,:,:,:,t=1).  This
+!  subroutine has the equivalent structure as advect_x and advect_z
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine advect_y
 
-      ! Explicit advection routine, 2nd order upwind with limiter.
-      ! RP Denlinger and HF Schwaiger
-
       !!!$ use omp_lib
 
-      integer       :: i,k,n  ! These are the indeces mapping to the global arrays
+      integer       :: i,k,n  ! These are the indices mapping to the global arrays
       integer       :: l        ! This is the index along the particular advection direction
       integer       :: ncells
 
@@ -512,6 +543,7 @@
       end subroutine advect_y
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       end module AdvectionHorz_DCU
+
+!##############################################################################

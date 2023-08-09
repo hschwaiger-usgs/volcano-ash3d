@@ -1,20 +1,22 @@
-!##############################################################################
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!     Adjust_DT
+!     Adjust_DT(mesostep)
 !
-!     This subroutine is used for calculating the maximal time step allowed
-!     given the velocities, cell sizes, CFL number, diffusivity and the numerical 
-!     scheme.
+!  Called from: MesoInterpolater
+!  Arguments:
+!    mesostep (optional) : logical value that indicates if a new mesostep is read.
+!
+!     This subroutine is used for calculating the maximal time step allowed given
+!     the velocities, cell sizes, CFL number, diffusivity and the numerical scheme.
 !     This subroutine is called at the end of MesoInterpolator.  The first
 !     call to MesoInterpolator (and therefore to Adjust_DT) is before the time
 !     loop to anticipate the total number of steps the simulation
 !     might need, and then once within the time loop after new velocities are 
 !     determinined.
 !
-!##############################################################################
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Adjust_DT(mesostep)
-!      subroutine Adjust_DT
 
       use precis_param
 
@@ -332,3 +334,5 @@
       endif
 
       end subroutine Adjust_DT
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

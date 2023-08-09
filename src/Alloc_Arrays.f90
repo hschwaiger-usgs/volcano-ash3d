@@ -1,3 +1,16 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  alloc_arrays()
+!
+!  Called from: Ash3d.F90
+!  Arguments:
+!    none
+!
+!  This subroutine call the allocation routined from each of the modules in
+!  Ash3d_VariableModules.f90
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
       subroutine alloc_arrays
 
       use precis_param

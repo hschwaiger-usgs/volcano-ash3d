@@ -1,4 +1,4 @@
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!##############################################################################
 !
 ! Airports module
 !
@@ -12,8 +12,7 @@
 !      subroutine Read_GlobalAirports(num_GlobAirports)
 !      function bilinear_thickness(i,OutVar)
 !
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+!##############################################################################
 
       module Airports
 
@@ -80,13 +79,20 @@
       integer, allocatable           :: jnext(:)    ! j node just north of airport
 
       contains
+      !------------------------------------------------------------------------
+
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  Allocate_Airports(nair,nWT)
 !
-!  This subroutine is call once from ReadAirports once the total number of
-!  airports/POI are in the domain.  The subset of the master airport lists
+!  Called from: ReadAirports
+!  Arguments:
+!    nair : number of airports in the domain
+!    nWT  : number or write times
+!
+!  This subroutine is call once after the total number of airports/POI are in the
+!  domain has been determined.  The subset of the master airport lists
 !  and/or the external list for name/code/location/etc. is filled.  Additionally,
 !  the variables needed for tracking output ash conditions at the points are
 !  allocated for the number of write times.
@@ -95,10 +101,10 @@
 
       subroutine Allocate_Airports(nair,nWT)
 
-      integer :: nair
-      integer :: nWT
+      integer,intent(in) :: nair
+      integer,intent(in) :: nWT
 
-!     ALLOCATE ARRAY OF AIRPORTS TO BE USED IN THE MAIN PROGRAM
+      ! Allocate array of airports to be used in the main program
       allocate(Airport_Name(nair))             ;             Airport_Name = ' '
       allocate(Airport_Code(nair))             ;             Airport_Code = ' '
       allocate(Airport_x(nair))                ;                Airport_x = 0.0_ip
@@ -135,14 +141,18 @@
 !
 !    Deallocate_Airports
 !
-!    This subroutine is called from dealloc_arrays at the end of the Ash3d
-!    run and deallocates all the variables allocated in Allocate_Airports.
+!  Called from: dealloc_arrays
+!  Arguments:
+!   none
+!
+!    This subroutine is called at the end of the Ash3d run and deallocates
+!    all the variables allocated in Allocate_Airports.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Deallocate_Airports
 
-!     ALLOCATE ARRAY OF AIRPORTS TO BE USED IN THE MAIN PROGRAM
+      ! Deallocation of arrays of airports used in the main program
       if(allocated(Airport_Name))              deallocate(Airport_Name)
       if(allocated(Airport_Code))              deallocate(Airport_Code)
       if(allocated(Airport_x))                 deallocate(Airport_x)
@@ -174,7 +184,11 @@
 !
 !  ReadAirports()
 !
-!  This subroutine is called from Ash3d.f90 and prepares the airport/POI list
+!  Called from: Ash3d.f90
+!  Arguments:
+!    none
+!
+!  This subroutine is called from the main program and prepares the airport/POI list
 !  needed for the run.  Initially, the global airport list is loaded into
 !  memory via Read_GlobalAirports(n).  Next, if the input file specified to
 !  read an external list, do that via ReadExtAirports().  Then we need to
@@ -416,6 +430,11 @@
 !
 !     bilinear_thickness(Airport_i,Variable_Field)
 !
+!  Called from: FirstAsh and Write_PointData_Airports_ASCII
+!  Arguments:
+!    Airport_i      : index of airport in 
+!    Variable_Field : variable field to interpolate
+!
 !     function that calculates deposit thickness at airports by bilinear
 !     interpolation
 !
@@ -499,6 +518,10 @@
 !
 !     ReadExtAirports()
 !
+!  Called from: ReadAirports
+!  Arguments:
+!    none
+!
 !     This subroutine reads an external file to populate (or supplement) the airport
 !     list.  This subroutine should be called once from ReadAirports.
 !     The file should be in the following format:
@@ -567,10 +590,28 @@
       end subroutine ReadExtAirports
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!     Read_GlobalAirports(num_GlobAirports)
+!
+!  Called from: ReadAirports
+!  Arguments:
+!    num_GlobAirports : returned number of airports in the global file
+!
+!  This subroutine populates several arrays of global airport variables,
+!  storing data for the coordinate (lat,lon), 3-character airport code, and
+!  the name, which is essentially the location.  These data are fixed so
+!  are normally built-in, as in the variables are simply filled by the data.
+!  Low memory systems, however, might have trouble compiling these large
+!  data arrays, so alternatively, Read_GlobalAirports can read an external
+!  file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #ifdef USEEXTDATA
       subroutine Read_GlobalAirports(num_GlobAirports)
-
+!
+!     This is the version where the external file is read
+!
       use global_param,  only : &
         DirDelim
 
@@ -584,7 +625,7 @@
       character(len=35)       :: inName
       character(len=3)        :: inCode
       logical                 :: IsThere
-      character(len=130)             :: AirportMasterFile           !Only needed if USEEXTDATA=T
+      character(len=130)      :: AirportMasterFile           !Only needed if USEEXTDATA=T
 
       allocate(AirportFullLat(MAXAIRPORTS))
       allocate(AirportFullLon(MAXAIRPORTS))
@@ -654,9 +695,10 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #else
-      ! This branch is compiled if the list should be built-in
       subroutine Read_GlobalAirports(num_GlobAirports)
-         !(NAIRPORTS,AirportFullLat,AirportFullLon, nAirportFullCode, AirportFullName)
+!
+!     This is the version where the data are filled directly at compile time
+!
 
       integer, intent(out) :: num_GlobAirports
 
@@ -12946,4 +12988,4 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       end module Airports
-
+!##############################################################################
