@@ -1,6 +1,6 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!  Subroutine Read_Control_File
+!  Subroutine Read_Control_File()
 !
 ! This subroutine sets up the parameters for the Ash3d run.
 ! 
@@ -15,18 +15,23 @@
 !       ! BLOCK 1: GRID INFO
 !       ! BLOCK 2: ERUPTION PARAMETERS
 !       ! BLOCK 3: WIND PARAMETERS
-! Sets source term variables
+!   Sets source term variables
 !       ! BLOCK 4: OUTPUT OPTIONS
 !       ! BLOCK 5: INPUT WIND FILES
-! Sets variable in MetReader
+!   Sets variable in MetReader
 !       ! BLOCK 6: AIRPORT FILE
 !       ! BLOCK 7: GRAIN-SIZE BINS, SETTLING VELOCITY
-! Sets parameters in Tephra module
+!   Sets parameters in Tephra module
 !       ! BLOCK 8: VERTICAL PROFILES
 !       ! BLOCK 9 (Optional): NETCDF ANNOTATIONS
-! 
-!       ! Subroutine that reads ASCII input file and contains error traps for input
-
+! After these standard block of the input file are read, the remaining part of the
+! file is searched for blocks that are part of user-built optional modules.  These
+! are indentified by the keywork OPTMOD and are read by customized subroutines in
+! the optional module.
+!
+! Lastly, some notes are writen to stdout and the logfile specifying some aspects of
+! the run.
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       !subroutine Read_Control_File(fc_inputfile)
@@ -236,7 +241,7 @@
       nWriteTimes  = 0                  !number of output files to write (default=0)
       NextWriteTime = 1.0_ip/EPS_TINY   !Time to write the next file (default = never)
 
-      ! TEST READ COMMAND LINE ARGUMENTS
+      ! Test read command-line arguments
       nargs = command_argument_count()
       if (nargs.eq.0) then
           ! If no command-line arguments are given, then prompt user
@@ -361,7 +366,7 @@
         endif;enddo
       endif
 
-      !OPEN AND READ ESP FILE
+      ! Open and read control file
       do io=1,2;if(VB(io).le.verbosity_production)then
         write(outlog(io),3) infile
       endif;enddo
@@ -451,7 +456,7 @@
         A3d_phi2       = PJ_phi2
       endif
 
-      ! READ BOUNDARIES OF MODEL DOMAIN
+      ! Read boundaries of model domain
       if(IsLatLon)then
         ! If input coordinates are in lat/lon, interpret lines as follows
         ! Block 1 Line 3
@@ -790,7 +795,7 @@
         write(outlog(io),*)' Reading Block 2: Eruption parameters'
         write(outlog(io),*)' *******************************************'
       endif;enddo
-      ! BEGIN READING TIMES OF ERUPTIVE PULSES      
+      ! Begin reading times of eruptive pulses
       do i=1,neruptions  
         ! Always check if we have overshot the block
         read(linebuffer130,*)testkey
@@ -1219,7 +1224,7 @@
         write(outlog(io),1439) SourceType
       endif;enddo
 
-!     CALCULATE MASS FLUX AND END TIMES OF EACH ERUPTIVE PULSE
+      ! Calculate mass flux and end times of each eruptive pulse
       do i=1,neruptions                            
              !mass flux in kg/hr
         if(SourceType.eq.'suzuki'      .or. &
@@ -1254,7 +1259,7 @@
       enddo
       e_EndTime_final = maxval(e_EndTime)  ! this marks the end of all eruptions
 
-!     FIND THE I AND J VALUES OF THE NODE WHERE THE VOLCANO LIES
+      ! Find the i,j index values of the node containing the source volcano
       if (IsLatLon) then
         ivent = int((lon_volcano-lonLL)/de) + 1
         jvent = int((lat_volcano-latLL)/dn) + 1
@@ -2341,9 +2346,9 @@
           enddo
         endif
 
-!       WRITE OUT GRAIN-SIZE BINS:
+        ! Write out grain-size bins
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),9) n_gs_max, FV_ID                               ! write out grain size bins
+          write(outlog(io),9) n_gs_max, FV_ID
           if(FV_ID.eq.0)then
             write(outlog(io),*)"Fall Model = None (tracer)"
           elseif(FV_ID.eq.1)then
@@ -2364,7 +2369,7 @@
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),10)
             do isize=1,n_gs_max
-                !write out diameter in mm, not m
+              ! write out diameter in mm, not m
               write(outlog(io),11) Tephra_bin_mass(isize), Tephra_gsdiam(isize)*1000.0_ip, &
                                    Tephra_rho_m(isize),    Tephra_gsF(isize),              &
                                    Tephra_gsG(isize),      temp_phi(isize)
@@ -2384,7 +2389,7 @@
           write(outlog(io),*)
           write(outlog(io),*)"Using a mass-fraction of fines (< 63um) of : ",real(fracfine,kind=sp)
         endif;enddo
-        !if bin masses sum up close to 1, adjust automatically      
+        ! if bin masses sum up close to 1 (within 1%), adjust automatically      
         if ((abs(sum(Tephra_bin_mass)-1.0_ip).gt.1.0e-5_ip).and. &  
             (abs(sum(Tephra_bin_mass)-1.0_ip).le.1.0e-02_ip)) then
           do io=1,2;if(VB(io).le.verbosity_info)then
@@ -2410,7 +2415,8 @@
               enddo
             endif;enddo
           endif
-        else if (abs(sum(Tephra_bin_mass)-1.0_ip).gt.1.0e-2_ip) then   !if bin masses are farther off, stop
+        else if (abs(sum(Tephra_bin_mass)-1.0_ip).gt.1.0e-2_ip) then
+          ! if bin masses are do not sum to within 1% of unity; stop
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),1000)
           endif;enddo
@@ -2444,7 +2450,7 @@
         write(outlog(io),*)' *******************************************'
       endif;enddo
 
-      !READ NUMBER OF VERTICAL PROFILES
+      ! Read number of vertical profiles
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*) 'Reading vertical profile information'
       endif;enddo
@@ -2519,7 +2525,10 @@
       !************************************************************************
 
       !************************************************************************
-      ! BLOCK 9 (Optional): NETCDF ANNOTATIONS
+      ! BLOCK 9: NETCDF ANNOTATIONS
+      !  This block is only optional in the sense that variables will have default
+      !  values if the input file ends before this block.  However, the presence of
+      !  optional_module blocks will not read correctly.
       read(10,'(a80)',iostat=ios)linebuffer080
       read(linebuffer080,*)testkey
       if (testkey.ne.'#'.and.testkey.ne.'*')then
@@ -2591,31 +2600,6 @@
           cdf_comment = trim(linebuffer080(1:iendstr-1))
         endif
 
-          ! Read run_class line up until the first '#', then truncate
-        read(10,'(a80)',iostat=ios,err=2010)linebuffer080
-        if(ios.ne.0)goto 2010
-        iendstr = SCAN(linebuffer080, "#")
-        if (iendstr.eq.0)then
-             ! '#' not found, just copy linebuffer080 to run_class
-          cdf_run_class = trim(adjustl(linebuffer080))
-        else
-            ! clip run class at key
-          cdf_run_class = trim(linebuffer080(1:iendstr-1))
-        endif
-
-          ! Read institution line up until the first '#', then truncate
-        read(10,'(a80)',iostat=ios,err=2010)linebuffer080
-        if(ios.ne.0)goto 2010
-        iendstr = SCAN(linebuffer080, "#")
-        if (iendstr.eq.0)then
-             ! '#' not found, just copy linebuffer080 to institution
-          cdf_institution = trim(adjustl(linebuffer080))
-        else
-            ! clip institution at key
-          cdf_institution = trim(linebuffer080(1:iendstr-1))
-        endif
-
-
         ! This is the end of the standard blocks
       endif
       ! END OF BLOCK 9
@@ -2656,8 +2640,9 @@
         write(outlog(io),25) infile
       endif;enddo
       close(10)
+      ! Here is the end of the input file
 
-      ! Here is the end of the file
+      ! Now write out what we found
 2010  continue
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)' *****************************************'
@@ -2696,13 +2681,13 @@
       ! assign initial values
       !total_time = Simtime_in_hours ! total simulated time in seconds
 
-!     CALCULATE SIZE OF GRID (cell-centered)
+      ! Calculate size of grid (cell-centered)
       if(IsLatLon) then
-        nxmax = ceiling((lonUR-lonLL)/de)         !number of x nodes
-        nymax = ceiling((latUR-latLL)/dn)         !number of y nodes
+        nxmax = ceiling((lonUR-lonLL)/de)     ! number of x nodes
+        nymax = ceiling((latUR-latLL)/dn)     ! number of y nodes
       else      
-        nxmax = ceiling((xUR-xLL)/dx)         !number of x nodes
-        nymax = ceiling((yUR-yLL)/dy)         !number of y nodes
+        nxmax = ceiling((xUR-xLL)/dx)         ! number of x nodes
+        nymax = ceiling((yUR-yLL)/dy)         ! number of y nodes
       endif
       ! initialize active grid domain to the full grid
       imin = 1
@@ -2754,7 +2739,7 @@
       return
 
 !******************************************************************************
-!     ERROR TRAPS
+      ! Error traps
 
       !ERROR TRAPS TO STDIN
 1900  do io=1,2;if(VB(io).le.verbosity_error)then
@@ -3295,11 +3280,16 @@
 
       end subroutine Read_Control_File
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!     LatLonChecker
+!
+!     This subroutine checks the domain for errors if IsLatLon=.true.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 
       subroutine LatLonChecker(latLL,lonLL,lat_volcano,lon_volcano,gridwidth_e,gridwidth_n)
-
-      !subroutine that checks the domain for errors if IsLatLon=.true.
 
       use precis_param
 
@@ -3379,7 +3369,13 @@
       
       end subroutine LatLonChecker
       
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!     xyChecker
+!
+!     This subroutine checks the domain for errors if IsLatLon=.false.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine xyChecker(xLL,yLL,dx,dy,x_volcano,y_volcano,gridwidth_x,gridwidth_y)
 
@@ -3444,11 +3440,15 @@
       end subroutine xyChecker
       
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!    vprofchecker
+!
+!    Subroutine that checks the locations of vertical profiles specified
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine vprofchecker(iprof)
-
-!     SUBROUTINE THAT CHECKS THE LOCATIONS OF VERTICAL PROFILES SPECIFIED
 
       use precis_param
 
@@ -3515,3 +3515,4 @@
 
       end subroutine vprofchecker
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

@@ -1,3 +1,9 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
       program Ash3d
 
       use precis_param
@@ -85,15 +91,12 @@
 
       implicit none
 
-!      integer               :: iostatus
       integer               :: itime
       integer               :: i,k,isize
-      !integer               :: iz,isize
       real(kind=ip)         :: Interval_Frac
       logical               :: Load_MesoSteps
       logical               :: StopTimeLoop   = .false.
       logical               :: first_time     = .true.
-!      character(len=130)    :: tmp_str
       real(kind=ip)         :: MassConsErr
 
       INTERFACE

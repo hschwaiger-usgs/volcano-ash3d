@@ -1,4 +1,43 @@
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Subroutine input_data_ResetParams()
+!
+!  This subroutine is called from Ash3d.F90 after Read_Control_File only if the
+!  input file has a block with the keyword OPTMOD=RESETPARAMS.
+!  An example block with all the variables availalbe to reset is given here. Not
+!  all variables need to be listed; only those changed from the defaults shown below.
+!
+!***********************
+!# Reset parameters
+!***********************
+!OPTMOD=RESETPARAMS
+! MagmaDensity         = 3500.0
+! DepositDensity       = 1300.0
+! LAM_GS_THRESH        = 250.0
+! AIRBORNE_THRESH      = 1.0e-3
+! GRAV                 = 9.81
+! RAD_EARTH            = 6371.229
+! CFL                  = 0.80
+! DT_MIN               = 1.0e-5
+! DT_MAX               = 1.0
+! ZPADDING             = 1.3
+! DEPO_THRESH          = 1.0e-1
+! DEPRATE_THRESH       = 1.0e-2
+! CLOUDCON_THRESH      = 2.0e-1
+! CLOUDCON_GRID_THRESH = 2.0e-1
+! CLOUDLOAD_THRESH     = 1.0e-2
+! THICKNESS_THRESH     = 1.0e-3
+! DBZ_THRESH           = -2.0e+1
+! VelMod_umb           = 1
+! lambda_umb           = 0.2
+! N_BV_umb             = 0.02
+! k_entrainment_umb    = 0.1
+! SuzK_umb             = 12.0
+! cdf_institution      = USGS
+! cdf_run_class        = Analysis
+! cdf_url              = https://vsc-ash.wr.usgs.gov/ash3d-gui
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine input_data_ResetParams
 
@@ -7,13 +46,13 @@
       use io_units
 
       use global_param,  only : &
-         nmods,GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH
+         nmods,GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH,EPS_SMALL
 
       use mesh,          only : &
          ZPADDING
 
       use io_data,       only : &
-         infile
+         infile,cdf_institution,cdf_run_class,cdf_url
 
       use Tephra,        only : &
          MagmaDensity,DepositDensity,LAM_GS_THRESH,AIRBORNE_THRESH
@@ -23,8 +62,8 @@
          THICKNESS_THRESH,DBZ_THRESH,CLOUDCON_GRID_THRESH
 
       use Source_Umbrella, only : &
-         k_entrainment_umb,lambda_umb,N_BV_umb,SuzK_umb !,&
-         !VelMod_umb
+         k_entrainment_umb,lambda_umb,N_BV_umb,SuzK_umb ,&
+         VelMod_umb
 
       integer, parameter :: MAXPARAMS = 50
 
@@ -36,6 +75,7 @@
       integer :: iparam
       character(len=20),dimension(MAXPARAMS) :: pname
       real(kind=ip),dimension(MAXPARAMS)     :: pvalue
+      character(len=50),dimension(MAXPARAMS) :: pvalue_str
       integer :: i
 
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -60,7 +100,7 @@
 1104    format(7x,a20)
       enddo
 
-      write(*,*)"Now parsing RESETPARAMS block"
+      !write(*,*)"Now parsing RESETPARAMS block"
       
       read(10,'(a80)',iostat=ios)linebuffer080
       read(linebuffer080,*)testkey
@@ -70,7 +110,13 @@
         iparam = iparam + 1
         substr_pos = index(linebuffer080,'=')
         pname(iparam)=trim(adjustl(linebuffer080(1:substr_pos-1)))
-        read(linebuffer080(substr_pos+1:80),*)pvalue(iparam)
+        ! first try to read this parameter as a real value
+        read(linebuffer080(substr_pos+1:80),*,iostat=ios)pvalue(iparam)
+        if(ios.ne.0)then
+          ! If reading a floating point value fails, then try to read as
+          ! a string
+          read(linebuffer080(substr_pos+1:50),*)pvalue_str(iparam)
+        endif
         read(10,'(a80)',iostat=ios)linebuffer080
         read(linebuffer080,*)testkey
       enddo
@@ -398,6 +444,16 @@
                               "to ",pvalue(i)
           endif;enddo
           DBZ_THRESH = pvalue(i)
+        elseif (pname(i).eq.'VelMod_umb') then
+          if(abs(pvalue(i)-1.0_ip).lt.EPS_SMALL)then
+            VelMod_umb = 1
+          elseif(abs(pvalue(i)-2.0_ip).lt.EPS_SMALL)then
+            VelMod_umb = 2
+          else
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: VelMod_umb not recognized; must be 1 or 2"
+            endif;enddo
+          endif
         elseif (pname(i).eq.'lambda_umb') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
@@ -474,6 +530,23 @@
                               "to ",pvalue(i)
           endif;enddo
           SuzK_umb = pvalue(i)
+
+        elseif (pname(i).eq.'cdf_institution') then
+          cdf_institution = trim(adjustl(pvalue_str(i)))
+        elseif (pname(i).eq.'cdf_run_class') then
+          if(abs(pvalue(i)-1.0_ip).lt.EPS_SMALL)then
+            cdf_url = 'Analysis'
+          elseif(abs(pvalue(i)-2.0_ip).lt.EPS_SMALL)then
+            cdf_url = 'Hypothetical'
+          elseif(abs(pvalue(i)-3.0_ip).lt.EPS_SMALL)then
+            cdf_url = 'Forecast'
+          else
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: run_class not recognized; must be 1,2, or 3"
+            endif;enddo
+          endif
+        elseif (pname(i).eq.'cdf_url') then
+          cdf_url = trim(adjustl(pvalue_str(i)))
         else
           do io=1,2;if(VB(io).le.verbosity_info)then         
             write(outlog(io),*)"Found unknown parameter/value: ", &

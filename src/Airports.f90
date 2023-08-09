@@ -1,9 +1,18 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! Airports module
+!
+! This module manages all aspect of airports, and by extension, point-of-interest (POI)
+! data.
+!
 !      subroutine Allocate_Airports(nair,nWT)
 !      subroutine Deallocate_Airports
 !      subroutine ReadAirports
 !      subroutine ReadExtAirports
 !      subroutine Read_GlobalAirports(num_GlobAirports)
 !      function bilinear_thickness(i,OutVar)
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
       module Airports
@@ -49,8 +58,9 @@
       integer,           allocatable,public :: Airport_TS_plotindex(:)
 
         ! Variables internal to module, but shared amoung subroutines
-      integer, parameter             :: MAXAIRPORTS     = 10000
+      integer, parameter             :: MAXAIRPORTS       = 10000
       integer                        :: NAIRPORTS_EWERT     ! number of airports in the global list in Read_GlobalAirports
+                                                            ! This is about 6117
       integer                        :: n_ext_airports      ! number of nearby airports in external file
 
       real(kind=ip),     allocatable :: AirportFullLat(:)
@@ -71,7 +81,17 @@
 
       contains
 
-!##############################################################################
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Allocate_Airports(nair,nWT)
+!
+!  This subroutine is call once from ReadAirports once the total number of
+!  airports/POI are in the domain.  The subset of the master airport lists
+!  and/or the external list for name/code/location/etc. is filled.  Additionally,
+!  the variables needed for tracking output ash conditions at the points are
+!  allocated for the number of write times.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Allocate_Airports(nair,nWT)
 
@@ -108,9 +128,17 @@
 
       end subroutine Allocate_Airports
 
-!##############################################################################
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-!##############################################################################
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!    Deallocate_Airports
+!
+!    This subroutine is called from dealloc_arrays at the end of the Ash3d
+!    run and deallocates all the variables allocated in Allocate_Airports.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Deallocate_Airports
 
@@ -142,12 +170,31 @@
 
       end subroutine Deallocate_Airports
 
-!##############################################################################
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  ReadAirports()
+!
+!  This subroutine is called from Ash3d.f90 and prepares the airport/POI list
+!  needed for the run.  Initially, the global airport list is loaded into
+!  memory via Read_GlobalAirports(n).  Next, if the input file specified to
+!  read an external list, do that via ReadExtAirports().  Then we need to
+!  determine if this possible external list should replace or supplement the
+!  master list of airports. Finally, we need to evaluate the list to determine
+!  which locations are within the compuatational domain.  We then allocate
+!  the needed space and fill the following variables:
+!     Airport_Name(nairports)      =
+!     Airport_Code(nairports)      =
+!     Airport_x(nairports)         =
+!     Airport_y(nairports)         =
+!     Airport_Latitude(nairports)  =
+!     Airport_Longitude(nairports) =
+!     Airport_i(nairports)         =
+!     Airport_j(nairports)         =
+!  as well as all the variables for logging ash arrival.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine ReadAirports
-
-!     Subroutine that finds the time of first arrival of tephra at specified
-!     locations within the modeled area.
 
       use mesh,          only : &
          IsLatLon,A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,&
@@ -167,16 +214,22 @@
       real(kind=dp)      :: lat_in,lon_in,xout,yout
       integer                        :: n_airports_total    ! number of airports in external file
 
+      ! This populates the global list, regardless of any other POI file
       call Read_GlobalAirports(NAIRPORTS_EWERT)
 
-      !If we are reading an external airport file
+      ! If we are reading an external airport file
+      !  i.e. something other than 'internal' or '' in line 4 of block 6
       if (ReadExtAirportFile) then
         call ReadExtAirports
       endif
+
       if (ReadExtAirportFile.eqv..false.) then
-        n_airports_total = NAIRPORTS_EWERT                     !if not reading external file
+        ! If we are not reading anything extra, then the total airports to consider
+        ! is just from the master list
+        n_airports_total = NAIRPORTS_EWERT
       elseif (AppendExtAirportFile.eqv..true.) then
-        n_airports_total = NAIRPORTS_EWERT + n_ext_airports    !if appending external to internal
+        ! This is the case where we read a user-supplied list and append to the global list
+        n_airports_total = NAIRPORTS_EWERT + n_ext_airports
         if(n_airports_total.gt.MAXAIRPORTS)then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: ",&
@@ -203,7 +256,9 @@
           enddo
         endif;enddo
       else
-        n_airports_total = n_ext_airports                      !if only reading external
+        ! This is the case where we are going to ignore the global list and only
+        ! consider the user-supplied list
+        n_airports_total = n_ext_airports
         do i=1,n_airports_total
           AirportFullLat(i)  = ExtAirportLat(i)
           AirportFullLon(i)  = ExtAirportLon(i)
@@ -211,13 +266,15 @@
           AirportFullName(i) = ExtAirportName(i)
         enddo
       endif
+      ! Finally have the full list of airports to consider
 
       ! Loop through n_airports_total twice:
-      !   first to determine how many airports are in the domain
-      !   next to populate external variables
+      !   First to determine how many airports are in the domain
+      !   then Allocate memory
+      !   next loop again to populate external variables
       nairports = 0
       do i = 1, n_airports_total
-        !make sure longitude is between 0
+        !make sure longitude is between 0 and 360
         if (AirportFullLon(i).lt.0.0_ip) &
           AirportFullLon(i) = AirportFullLon(i)+360.0_ip
         latitude  = AirportFullLat(i)
@@ -251,7 +308,7 @@
         endif
       enddo
 
-      ! ALLOCATE ARRAY OF AIRPORTS TO BE USED IN THE MAIN PROGRAM
+      ! Allocate all the arrays of airports used in the main program
       call Allocate_Airports(nairports,nWriteTimes)
 
       ind = 0
@@ -338,7 +395,7 @@
         endif
       enddo
 
-!     WRITE OUT AIRPORT NAMES TO LOG FILE
+      ! write out airport/POI names to log file
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),3) nairports
       endif;enddo
@@ -350,18 +407,21 @@
 
       return       
 
-      !FORMAT STATEMENTS
+      ! format statements
 3     format(/,5x,'Number of airports in modeled area = ',i5,/)
 
       end subroutine ReadAirports
 
-
-!******************************************************************************
-
-      function bilinear_thickness(i,OutVar)
-
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!     bilinear_thickness(Airport_i,Variable_Field)
+!
 !     function that calculates deposit thickness at airports by bilinear
 !     interpolation
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      function bilinear_thickness(i,OutVar)
 
       use mesh,          only : &
          IsLatLon,nxmax,nymax,dx,dy,de,dn,yLL,xLL,LatLL,LonLL
@@ -435,7 +495,25 @@
 
       end function bilinear_thickness
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!     ReadExtAirports()
+!
+!     This subroutine reads an external file to populate (or supplement) the airport
+!     list.  This subroutine should be called once from ReadAirports.
+!     The file should be in the following format:
+!       Latitude (or x), Longitude (or y), Station Code, Station Name
+!     The two floating point values for the station coordinates should be in the first
+!     50 charactes.  Station_Code is 3 characters (51-53)
+!     Station_Name is 35 characters (54-88)
+!     The following variables are filled:
+!       ExtAirportLat   : this could be interpreted as y
+!       ExtAirportLon   : this could be interpreted as x
+!       ExtAirportCode  : For point of interest or sample sites, this could be a 3-char
+!                         identifier such as POI, SAM
+!       ExtAirportName  : This name is used in post-processing (i.e. in KML files)
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine ReadExtAirports
 
@@ -449,31 +527,24 @@
 
       inow = 0
 
-!     OPEN THE AIRPORT LOCATION FILE
+      ! Open the airport location file
+      ! Note that this file was tested for existance in Read_Control_File()
       open(unit=17,file=AirportInFile,status='old',position='rewind',iostat=Iostatus)
-      inquire(17, exist=ex, opened=op, name=nam,access=acc,sequential=seq, form=frm, recl=irec, nextrec=nr)
-      !write(*,*)"File exist  status = ",ex
-      !write(*,*)"File open   status = ",op
-      !write(*,*)"File name   status = ",nam
-      !write(*,*)"File access status = ",acc
-      !write(*,*)"File sequen status = ",seq
-      !write(*,*)"File form   status = ",frm
-      !write(*,*)"File record status = ",irec
-      !write(*,*)"File next-r status = ",nr
+      !inquire(17, exist=ex, opened=op, name=nam,access=acc,sequential=seq, form=frm, recl=irec, nextrec=nr)
 
       ! Read the header line and set Iostatus for the while loop
       read(unit=17,fmt='(a95)',iostat=Iostatus) inputline
-      !write(*,*)"File read status = ",Iostatus
 
-!      READ AIRPORT LOCATIONS AND ASSIGN AIRPORTS IN THE MODELED AREA TO A
-!      TEMPORARY ARRAY      
+      ! Read airport locations and assign airports in the modeled area to a temporary array
       do while (Iostatus.ge.0)
         inow = inow+1
         read(17,'(a95)',IOSTAT=Iostatus) inputline
         read(inputline,*,err=2010) ExtAirportLat(inow), ExtAirportLon(inow)
         read(inputline,2) ExtAirportCode(inow), ExtAirportName(inow)
 2       format(50x,a3,1x,a35)
-        !make sure longitude is between 0
+        ! HFS: This assumes coordinates are lat,lon.
+        !      we might want these to be projected, or at least y,x
+        ! make sure longitude is between 0 and 360
         if (ExtAirportLon(inow).lt.0.0_ip) &
           ExtAirportLon(inow) = ExtAirportLon(inow)+360.0_ip
       enddo
@@ -482,20 +553,20 @@
       n_ext_airports = inow     !number of external airports read
       return
 
-      ! ERROR TRAP
+      ! error trap
 2010  do io=1,2;if(VB(io).le.verbosity_error)then
         write(errlog(io),6) inputline
       endif;enddo
       stop 1
 
-      ! FORMAT STATEMENTS
+      ! format statements
 6     format('Error reading from airport list.  Read statement was expecting',/, &
              'latitude longitude x y  (all real numbers).  The input line gave:',/, &
              a95,/,'program stopped')
 
       end subroutine ReadExtAirports
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #ifdef USEEXTDATA
       subroutine Read_GlobalAirports(num_GlobAirports)
@@ -579,10 +650,11 @@
 5     format(5x,'Error.  Can''t find input file ',a130,/,5x,'Program stopped')
 
       end subroutine Read_GlobalAirports
-!******************************************************************************
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #else
-      ! This branch is compiled if the list should be builtiin
+      ! This branch is compiled if the list should be built-in
       subroutine Read_GlobalAirports(num_GlobAirports)
          !(NAIRPORTS,AirportFullLat,AirportFullLon, nAirportFullCode, AirportFullName)
 
@@ -12871,6 +12943,7 @@
       
       end subroutine Read_GlobalAirports
 #endif
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       end module Airports
 
