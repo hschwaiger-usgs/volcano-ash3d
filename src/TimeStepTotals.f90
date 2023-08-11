@@ -1,3 +1,9 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  TimeStepTotals(itime)
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
       subroutine TimeStepTotals(itime)
 
 !  Subroutine that sums the volume erupted, deposited, and area of ash cloud at specified time steps.

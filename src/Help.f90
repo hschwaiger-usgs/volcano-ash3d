@@ -1,3 +1,9 @@
+!##############################################################################
+!
+!  help_input(blockID)
+!
+!##############################################################################
+
       subroutine help_input(blockID)
 
       use io_units
@@ -265,5 +271,7 @@
       write(outlog(io),1)'Eyjafjallajokull              # Title of simulation                                                    '
       write(outlog(io),1)'no comment                    # Comment                                                                '
       endif;enddo     
+
       end subroutine help_input
+!##############################################################################
 

@@ -40,13 +40,17 @@
       ! This module requires Fortran 2003 or later
       use iso_c_binding
 
+      ! This module requires Fortran 2003 or later
+      use iso_fortran_env, only : &
+         input_unit
+
       use precis_param
 
       use io_units
 
       use global_param,  only : &
          EPS_SMALL,EPS_TINY,nmods,OPTMOD_names,limiter,&
-         useDS,useTemperature,useCalcFallVel,useVariableGSbins,&
+         useDS,useTemperature,useCalcFallVel,useLogNormGSbins,&
          useDiffusion,useCN,KM3_2_M3,useVz_rhoG
 
       use io_data,       only : &
@@ -259,11 +263,11 @@
             write(outlog(io),*)'Enter name of ESP input file:'
           endif;enddo
         endif
-        read(stdin,*) infile
+        read(input_unit,*) infile
         do io=1,2;if(VB(io).le.verbosity_production)then
           write(outlog(io),*)'Load concentration file?'
         endif;enddo
-        read(stdin,'(a3)') answer
+        read(input_unit,'(a3)') answer
         if (answer.eq.'y'.or.answer.eq.'yes') then
           LoadConcen = .true.
         elseif (answer.eq.'n'.or.answer.eq.'no') then
@@ -282,7 +286,7 @@
           do io=1,2;if(VB(io).le.verbosity_production)then
             write(outlog(io),*)'Enter name of concentration file'
           endif;enddo
-          read(stdin,*) concenfile
+          read(input_unit,*) concenfile
 #ifdef USENETCDF
           call NC_RestartFile_ReadTimes
 #else
@@ -1627,7 +1631,7 @@
       !    write(outlog(io),38)
       !    write(outlog(io),39)
       !  endif;enddo
-      !  read(stdin,'(a1)') answer
+      !  read(input_unit,'(a1)') answer
       !  if (answer.ne.'y') stop 1
       !  WriteCloudConcentration_KML = .false.
       !  WriteDepositFinal_KML    = .false.
@@ -2230,7 +2234,7 @@
                     write(outlog(io),*)&
                           "    phi_stddev = ", phi_stddev
                   endif;enddo
-                  useVariableGSbins = .true.
+                  useLogNormGSbins = .true.
                 endif
               endif
             else
@@ -2254,7 +2258,7 @@
           endif
         enddo ! isize=1,init_n_gs_max
         ! Set the number of grain-size bins
-        if (useVariableGSbins)then
+        if (useLogNormGSbins)then
           ! In this case, the last bin is the remainder to be distributed over the
           ! previous bins.  So we need to decrement the tephra bins by 1
           n_gs_max = init_n_gs_max-1
@@ -2287,8 +2291,8 @@
         call Calculate_Tephra_Shape
 
         ! If a log-normal distribution is to be added, make sure the grainsize
-        ! bins are sorted by fall velocity (slowest first)
-        if (useVariableGSbins) call Sort_Tephra_Size
+        ! bins are sorted by size (smallest first)
+        if (useLogNormGSbins) call Sort_Tephra_Size
 
         temp_phi = -log(Tephra_gsdiam)/log(2.0)
 
@@ -3092,7 +3096,7 @@
 19827 do io=1,2;if(VB(io).le.verbosity_error)then
         write(errlog(io),*) 'Would you like Ash3d to use the interal airports database instead (y/n)?'
       endif;enddo
-      read(stdin,'(a1)') answer
+      read(input_unit,'(a1)') answer
       if (answer.eq.'y') then
         ReadExtAirportFile=.false.
         AppendExtAirportFile=.false.

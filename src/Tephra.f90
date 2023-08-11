@@ -1,3 +1,7 @@
+!##############################################################################
+!
+!  Tephra module
+!
 !      subroutine Allocate_Tephra
 !      subroutine Allocate_Tephra_Met
 !      subroutine Deallocate_Tephra
@@ -13,6 +17,8 @@
 !      function vset_Gans
 !      function vset_Stokesslip
 !      function vset_Stokes_Cloud
+!
+!##############################################################################
 
       module Tephra
 
@@ -21,7 +27,7 @@
       use io_units
 
       use global_param,  only : &
-         useCalcFallVel,useVariableGSbins,PI,GRAV
+         useCalcFallVel,useLogNormGSbins,PI,GRAV
 
       implicit none
 
@@ -45,17 +51,18 @@
       integer,public :: n_gs_aloft                    ! max gs bin still aloft
 
       real(kind=ip), dimension(:)  ,allocatable,public  :: Tephra_v_s         ! Settling vel (m/s)
-      real(kind=ip), dimension(:)  ,allocatable,public  :: Tephra_gsdiam      ! Grain-size diameter (read in mm, stored in m)
+      real(kind=ip), dimension(:)  ,allocatable,public  :: Tephra_gsdiam      ! Grain-size diameter 
+                                                                              !  (read in mm, stored in m)
       real(kind=ip), dimension(:)  ,allocatable,public  :: Tephra_bin_mass    ! mass    (kg)
       real(kind=ip), dimension(:)  ,allocatable,public  :: Tephra_rho_m       ! density (kg/m3)
       real(kind=ip), dimension(:)  ,allocatable,public  :: Tephra_gsF         ! Grain-size shape (b+c)/2a
       real(kind=ip), dimension(:)  ,allocatable,public  :: Tephra_gsG         ! Grain-size shape c/b
-      real(kind=ip), dimension(:,:),allocatable  :: Tephra_gsF_fac     ! Precalculated shape factors
-                                                                !  i=1 WH Stokes fac
-                                                                !  i=2 WH Newton fac
-                                                                !  i=3 Gans Stokes fac
-                                                                !  i=4 Gans Newton fac
-                                                                !  i=5 slip adjustment to diameter
+      real(kind=ip), dimension(:,:),allocatable         :: Tephra_gsF_fac     ! Precalculated shape factors
+                                                                              !  i=1 WH Stokes fac
+                                                                              !  i=2 WH Newton fac
+                                                                              !  i=3 Gans Stokes fac
+                                                                              !  i=4 Gans Newton fac
+                                                                              !  i=5 slip adjustment to diameter
               ! Fall velocity model
               !   0 = No fall (just tracer)
               !   1 = Wilson and Huang
@@ -66,9 +73,11 @@
       integer,public                                    :: FV_ID
 
 #ifdef USEPOINTERS
+      !real(kind=ip),dimension(:,:,:)  ,pointer :: DepositGranularity => null() ! accumulated ash mass on ground
       real(kind=sp),dimension(:,:,:,:),pointer :: vf_meso_last_step_MetP_sp => null()
       real(kind=sp),dimension(:,:,:,:),pointer :: vf_meso_next_step_MetP_sp => null()
 #else
+      !real(kind=ip),dimension(:,:,:)  ,allocatable :: DepositGranularity ! accumulated ash mass on ground 
       real(kind=sp),dimension(:,:,:,:),allocatable :: vf_meso_last_step_MetP_sp
       real(kind=sp),dimension(:,:,:,:),allocatable :: vf_meso_next_step_MetP_sp
 #endif
@@ -77,8 +86,13 @@
       real(kind=ip),public :: phi_stddev
 
       contains
+      !------------------------------------------------------------------------
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Allocate_Tephra
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Allocate_Tephra
 
@@ -92,7 +106,11 @@
 
       end subroutine Allocate_Tephra
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Allocate_Tephra_Met
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Allocate_Tephra_Met
 
@@ -110,7 +128,11 @@
 
       end subroutine Allocate_Tephra_Met
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Deallocate_Tephra
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Deallocate_Tephra
 
@@ -124,7 +146,11 @@
 
       end subroutine Deallocate_Tephra
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Deallocate_Tephra_Met
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Deallocate_Tephra_Met
 
@@ -138,7 +164,11 @@
 
       end subroutine Deallocate_Tephra_Met
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Set_Vf_Meso(Load_MesoSteps)
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Set_Vf_Meso(Load_MesoSteps)
 
@@ -259,11 +289,13 @@
 
       end subroutine Set_Vf_Meso
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Calculate_Tephra_Shape
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine Calculate_Tephra_Shape!(ngs)
-
-      !integer :: ngs
+      subroutine Calculate_Tephra_Shape
 
       integer :: isize,j
       !real(kind=ip) :: ellipse_area,ellipse_vol,equiv_rad
@@ -358,7 +390,11 @@
 
       end subroutine Calculate_Tephra_Shape
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Sort_Tephra_Size
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Sort_Tephra_Size
 
@@ -367,6 +403,10 @@
       real(kind=ip) :: temp_a(5)
       real(kind=ip) :: viscnow, densnow, vfnow
       real(kind=ip), dimension(:), allocatable      :: vf_now
+
+      ! HFS: We do not need to sort on fall velocity now that we prune the GS
+      !      rather than collapse the GS.  In fact, lognorm dist requires size
+      !      not fall velocity
 
       densnow = 1.2_ip           !air density at STP (approximate)
       viscnow = 1.0e-05_ip       !air viscosity at STP (approximate)
@@ -430,11 +470,15 @@
         Tephra_gsF_fac(i+1,:)= temp_a
       enddo
 
-      if (useVariableGSbins) call partition_gsbins(phi_mean,phi_stddev)
+      if (useLogNormGSbins) call partition_gsbins(phi_mean,phi_stddev)
 
       end subroutine Sort_Tephra_Size
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  partition_gsbins(mu,sigma)
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine partition_gsbins(mu,sigma)
 
@@ -563,7 +607,11 @@
 
       end subroutine partition_gsbins
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Prune_GS
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Prune_GS
 
@@ -593,7 +641,11 @@
 
       end subroutine Prune_GS
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  vset_WH(rho_air,rho_m,eta,diam,Ffac1,Ffac2)
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function vset_WH(rho_air,rho_m,eta,diam,Ffac1,Ffac2)
 
@@ -647,7 +699,11 @@
 
       end function vset_WH
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  vset_WH_slip(rho_air,rho_m,eta,diam,Ffac1,Ffac2,Kna)
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function vset_WH_slip(rho_air,rho_m,eta,diam,Ffac1,Ffac2,Kna)
       ! Modification to Wilson and Huang's with Cunningham slip
@@ -691,7 +747,11 @@
 
       end function vset_WH_slip
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  vset_WH_PCM(rho_air,rho_m,eta,diam,Ffac1,Ffac2)
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function vset_WH_PCM(rho_air,rho_m,eta,diam,Ffac1,Ffac2)
       ! Modification to Wilson and Huang's model suggested by:
@@ -743,7 +803,11 @@
 
       end function vset_WH_PCM
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  vset_Gans(rho_air,rho_m,eta,diam,K1,K2)
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function vset_Gans(rho_air,rho_m,eta,diam,K1,K2)
       ! Fall velocity as calculated from
@@ -788,7 +852,11 @@
 
       end function vset_Gans
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  vset_Stokesslip(rho_m,eta,diam,Kna)
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function vset_Stokesslip(rho_m,eta,diam,Kna)
       ! Fall velocity as calculated from
@@ -811,7 +879,11 @@
 
       end function vset_Stokesslip
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  vset_Stokes_Cloud(rho_m,eta,diam)
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function vset_Stokes_Cloud(rho_m,eta,diam)
       ! Fall velocity as calculated from Stokes flow
@@ -833,7 +905,7 @@
 
       end function vset_Stokes_Cloud
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       end module Tephra
-
+!##############################################################################

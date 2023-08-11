@@ -1,10 +1,19 @@
+!##############################################################################
+!
+!  Atmosphere module
+!
+!  This module contains the variables storing atmospheric variables such as
+!  density, viscosity, mean-free-path, as well as physical constants related
+!  to gas equations.
+!
 !      subroutine Allocate_Atmosphere_Met
 !      subroutine Deallocate_Atmosphere_Met
 !      subroutine Set_Atmosphere_Meso(Load_MesoSteps,Interval_Frac,first_time)
 !      function Dens_IdealGasLaw(pres,temp)
 !      function Visc_Sutherland(temp)
 !      function lambda_MeanFreePath(visc,pres,temp)
-
+!
+!##############################################################################
 
       module Atmosphere
 
@@ -37,13 +46,11 @@
       real(kind=sp),dimension(:,:,:),allocatable,public :: AirLamb_meso_next_step_MetP_sp
 #endif
 
-
-
-      real(kind=ip), parameter :: R_GAS_IDEAL  = 8.3144621_ip ! Ideal gas constant (J /(kg K))
-      real(kind=ip), parameter,public :: R_GAS_DRYAIR = 286.98_ip    ! Specific gas constant of R=286.98 J /(kg K)
-      real(kind=ip), parameter :: CP_AIR       = 1.004e3_ip   ! Specific heat capacity at p (J /kg K)
-      real(kind=ip), parameter :: MB_DRY_AIR   = 0.028966_ip  ! Molecular weight of dry air in kg/mol
-      real(kind=ip), parameter :: BoltzK       = 1.380658e-23_ip ! Boltzmann's constant kg m2 s-2 K-1 molec-1
+      real(kind=ip), parameter,public :: R_GAS_DRYAIR = 286.98_ip       ! Specific gas constant of R=286.98 J /(kg K)
+      real(kind=ip), parameter        :: R_GAS_IDEAL  = 8.3144621_ip    ! Ideal gas constant (J /(kg K))
+      real(kind=ip), parameter        :: CP_AIR       = 1.004e3_ip      ! Specific heat capacity at p (J /kg K)
+      real(kind=ip), parameter        :: MB_DRY_AIR   = 0.028966_ip     ! Molecular weight of dry air in kg/mol
+      real(kind=ip), parameter        :: BoltzK       = 1.380658e-23_ip ! Boltzmann's constant kg m2 s-2 K-1 molec-1
 
       ! Define atmospheric variables only needed on the native Met grid
       !  Physical Properties of air
@@ -74,8 +81,21 @@
       !real(kind=sp),dimension(:,:,:),allocatable :: vz_nxet_last_step_MetP_sp
 
       contains
+      !------------------------------------------------------------------------
 
-!******************************************************************************
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Allocate_Atmosphere_Met
+!
+!  Called from: Main ash3d (Ash3d.F90)
+!  Arguments:
+!    none
+!
+!  Allocates all atmospheric variables on the subset of the met grid with
+!  p and the vertical axis
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Allocate_Atmosphere_Met
 
@@ -115,39 +135,6 @@
         allocate(AirRelH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
         allocate(AirSH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
       endif
-
-
-!!      if (.not.associated(AirTemp_meso_last_step_MetP_sp)) then
-!!        allocate(AirTemp_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-!!    endif
-
-!!      if(.not.associated(AirDens_meso_last_step_MetP_sp))&
-!!        allocate(AirDens_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-!!      if(.not.associated(AirVisc_meso_last_step_MetP_sp))&
-!!        allocate(AirVisc_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-!!      if(.not.associated(AirLamb_meso_last_step_MetP_sp))&
-!!        allocate(AirLamb_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-!!      if(useMoistureVars)THEN
-!!        if(.not.associated(AirRelH_meso_last_step_MetP_sp))&
-!!          allocate(AirRelH_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-!!        if(.not.associated(AirSH_meso_last_step_MetP_sp))&
-!!          allocate(AirSH_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-!!      endif
-
-!!      if(.not.associated(AirTemp_meso_next_step_MetP_sp))&
-!!        allocate(AirTemp_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-!!      if(.not.associated(AirDens_meso_next_step_MetP_sp))&
-!!        allocate(AirDens_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-!!      if(.not.associated(AirVisc_meso_next_step_MetP_sp))&
-!!        allocate(AirVisc_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-!!      if(.not.associated(AirLamb_meso_next_step_MetP_sp))&
-!!        allocate(AirLamb_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-!!      if(useMoistureVars)THEN
-!!        if(.not.associated(AirRelH_meso_next_step_MetP_sp))&
-!!          allocate(AirRelH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-!!        if(.not.associated(AirSH_meso_next_step_MetP_sp))&
-!!          allocate(AirSH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-!!      endif
 #else
       if(.not.allocated(AirTemp_meso_last_step_MetP_sp))&
         allocate(AirTemp_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
@@ -182,7 +169,17 @@
 
       end subroutine Allocate_Atmosphere_Met
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Deallocate_Atmosphere_Met
+!
+!  Called from: dealloc_arrays
+!  Arguments:
+!    none
+!
+!  Deallocates all atmospheric variables if they were allocated
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Deallocate_Atmosphere_Met
 
@@ -190,23 +187,23 @@
          useMoistureVars
 
 #ifdef USEPOINTERS
-!!      if(associated(AirTemp_meso_last_step_MetP_sp))deallocate(AirTemp_meso_last_step_MetP_sp)
-!!      if(associated(AirDens_meso_last_step_MetP_sp))deallocate(AirDens_meso_last_step_MetP_sp)
-!!      if(associated(AirVisc_meso_last_step_MetP_sp))deallocate(AirVisc_meso_last_step_MetP_sp)
-!!      if(associated(AirLamb_meso_last_step_MetP_sp))deallocate(AirLamb_meso_last_step_MetP_sp)
-!!      if(useMoistureVars)THEN
-!!        if(associated(AirRelH_meso_last_step_MetP_sp))deallocate(AirRelH_meso_last_step_MetP_sp)
-!!        if(associated(AirSH_meso_last_step_MetP_sp))deallocate(AirSH_meso_last_step_MetP_sp)
-!!      endif
-!!
-!!      if(associated(AirTemp_meso_next_step_MetP_sp))deallocate(AirTemp_meso_next_step_MetP_sp)
-!!      if(associated(AirDens_meso_next_step_MetP_sp))deallocate(AirDens_meso_next_step_MetP_sp)
-!!      if(associated(AirVisc_meso_next_step_MetP_sp))deallocate(AirVisc_meso_next_step_MetP_sp)
-!!      if(associated(AirLamb_meso_next_step_MetP_sp))deallocate(AirLamb_meso_next_step_MetP_sp)
-!!      if(useMoistureVars)THEN
-!!        if(associated(AirRelH_meso_next_step_MetP_sp))deallocate(AirRelH_meso_next_step_MetP_sp)
-!!        if(associated(AirSH_meso_next_step_MetP_sp))deallocate(AirSH_meso_next_step_MetP_sp)
-!!      endif
+      if(associated(AirTemp_meso_last_step_MetP_sp))deallocate(AirTemp_meso_last_step_MetP_sp)
+      if(associated(AirDens_meso_last_step_MetP_sp))deallocate(AirDens_meso_last_step_MetP_sp)
+      if(associated(AirVisc_meso_last_step_MetP_sp))deallocate(AirVisc_meso_last_step_MetP_sp)
+      if(associated(AirLamb_meso_last_step_MetP_sp))deallocate(AirLamb_meso_last_step_MetP_sp)
+      if(useMoistureVars)THEN
+        if(associated(AirRelH_meso_last_step_MetP_sp))deallocate(AirRelH_meso_last_step_MetP_sp)
+        if(associated(AirSH_meso_last_step_MetP_sp))deallocate(AirSH_meso_last_step_MetP_sp)
+      endif
+
+      if(associated(AirTemp_meso_next_step_MetP_sp))deallocate(AirTemp_meso_next_step_MetP_sp)
+      if(associated(AirDens_meso_next_step_MetP_sp))deallocate(AirDens_meso_next_step_MetP_sp)
+      if(associated(AirVisc_meso_next_step_MetP_sp))deallocate(AirVisc_meso_next_step_MetP_sp)
+      if(associated(AirLamb_meso_next_step_MetP_sp))deallocate(AirLamb_meso_next_step_MetP_sp)
+      if(useMoistureVars)THEN
+        if(associated(AirRelH_meso_next_step_MetP_sp))deallocate(AirRelH_meso_next_step_MetP_sp)
+        if(associated(AirSH_meso_next_step_MetP_sp))deallocate(AirSH_meso_next_step_MetP_sp)
+      endif
 #else
       if(allocated(AirTemp_meso_last_step_MetP_sp))deallocate(AirTemp_meso_last_step_MetP_sp)
       if(allocated(AirDens_meso_last_step_MetP_sp))deallocate(AirDens_meso_last_step_MetP_sp)
@@ -229,7 +226,24 @@
 
       end subroutine Deallocate_Atmosphere_Met
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Set_Atmosphere_Meso(Load_MesoSteps,Interval_Frac,first_time)
+!
+!  Called from: MesoInterpolater
+!  Arguments:
+!    Load_MesoSteps = logical; triggers loading the next step
+!    Interval_Frac  = fraction of the time between last and next met steps
+!    first_time     = logical
+!
+!  Most []_Meso() subroutine interpolates data onto the current time and computational
+!  grid.  For the atmospheric data, we only use data on the met steps and on the 
+!  subgrid of the NWP grid.  These are used for calculating fall velocities at these
+!  met grid nodes, which are then interpolated onto the computational grid. So this
+!  subroutine is only called when a new met step needs to be loaded, populating density,
+!  viscosity and mean-free path on those met nodes.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Set_Atmosphere_Meso(Load_MesoSteps,Interval_Frac,first_time)
       !Fclaw subroutine Set_Atmosphere_Meso(Load_MesoSteps,Interval_Frac,first_time)
@@ -356,7 +370,19 @@
 
       end subroutine Set_Atmosphere_Meso
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Dens_IdealGasLaw(pres,temp)
+!
+!  Called from: Set_Atmosphere_Meso
+!  Arguments:
+!    pres = pressure (Pa)
+!    temp = temperature (K)
+!
+!  Function that calculates air density give pressure and temperature using
+!  the ideal gas law.  Density is returned in kg/m^3
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function Dens_IdealGasLaw(pres,temp)
 
@@ -371,7 +397,18 @@
 
       end function Dens_IdealGasLaw
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Visc_Sutherland(temp)
+!
+!  Called from: Set_Atmosphere_Meso
+!  Arguments:
+!    temp = temperature (K)
+!
+!  Function that calculates air viscosity given temperature in k via
+!  Sutherland's equation.  Viscosity is returned in kg/(m s)
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function Visc_Sutherland(temp)
 
@@ -386,7 +423,21 @@
 
       end function Visc_Sutherland
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  lambda_MeanFreePath(visc,pres,temp)
+!
+!  Called from: Set_Atmosphere_Meso
+!  Arguments:
+!    visc = viscosity kg/(m s)
+!    pres = pressure (Pa)
+!    temp = temperature (K)
+!
+!  Function that calculates the mean-free path of air given air viscosity,
+!  pressure and temperature using Eq. 9.6 of Seinfeld and Pandis. Output
+!  units are in m.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function lambda_MeanFreePath(visc,pres,temp)
 

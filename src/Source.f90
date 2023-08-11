@@ -1,3 +1,7 @@
+!##############################################################################
+!
+!  Source module
+!
 !      subroutine Allocate_Source_eruption
 !      subroutine Allocate_Source_grid
 !      subroutine Allocate_Source_time
@@ -5,6 +9,8 @@
 !      subroutine TephraSourceNodes
 !      subroutine MassFluxCalculator
 !      function SourceVolInc
+!
+!##############################################################################
 
       module Source
 
@@ -31,10 +37,10 @@
       real(kind=ip),public :: lat_volcano, lon_volcano  !position of volcano in lat/lon
       real(kind=ip),public :: z_volcano                 ! vent elevation
 
-      integer,public :: neruptions                  ! number of eruptions or eruptive pulses
+      integer,          public :: neruptions                  ! number of eruptions or eruptive pulses
       character(len=12),public :: SourceType          !may be 'point', 'line', or 'Suzuki' 
-      real(kind=ip),public :: Suzuki_A
-      logical,public       :: IsCustom_SourceType = .false.
+      real(kind=ip),    public :: Suzuki_A
+      logical,          public :: IsCustom_SourceType = .false.
       character(len=30),dimension(MAXCustSrc) :: SourceType_Custom = ""
 
 #ifdef USEPOINTERS
@@ -49,8 +55,8 @@
 #endif
 
         !The following arrays are used by MassFluxCalculator
-      real(kind=ip),public :: MassFluxRate_now
-      real(kind=ip),public :: Height_now
+      real(kind=ip), public :: MassFluxRate_now
+      real(kind=ip), public :: Height_now
       integer :: ieruption !eruption we're currently on
 
         !The following arrays are of length neruptions
@@ -64,17 +70,22 @@
       integer      , dimension(:)        ,allocatable,public :: e_prof_zpoints
       real(kind=ip), dimension(:,:)      ,allocatable,public :: e_prof_Volume
       real(kind=ip), dimension(:,:)      ,allocatable,public :: e_prof_MassFlux
-      real(kind=ip),public :: e_EndTime_final
+      real(kind=ip), public :: e_EndTime_final
 
-      real(kind=ip),public :: ESP_height        = 0.0_ip
-      real(kind=ip),public :: ESP_duration      = 0.0_ip
-      real(kind=ip),public :: ESP_MassFluxRate  = 0.0_ip
-      real(kind=ip),public :: ESP_Vol           = 0.0_ip
-      real(kind=ip),public :: ESP_massfracfine  = 0.0_ip
+      real(kind=ip), public :: ESP_height        = 0.0_ip
+      real(kind=ip), public :: ESP_duration      = 0.0_ip
+      real(kind=ip), public :: ESP_MassFluxRate  = 0.0_ip
+      real(kind=ip), public :: ESP_Vol           = 0.0_ip
+      real(kind=ip), public :: ESP_massfracfine  = 0.0_ip
 
       contains
+      !------------------------------------------------------------------------
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Allocate_Source_eruption
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Allocate_Source_eruption
 
@@ -95,7 +106,11 @@
 
       end subroutine Allocate_Source_eruption
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Allocate_Source_grid
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Allocate_Source_grid
 
@@ -107,7 +122,11 @@
 
       end subroutine Allocate_Source_grid
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Allocate_Source_time
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Allocate_Source_time
 
@@ -118,8 +137,11 @@
 
       end subroutine Allocate_Source_time
 
-
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Deallocate_Source
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Deallocate_Source
 
@@ -140,7 +162,12 @@
       deallocate(SourceNodeFlux)
 
       end subroutine Deallocate_Source
-!******************************************************************************
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  TephraSourceNodes
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine TephraSourceNodes
 
@@ -299,7 +326,11 @@
 
       end subroutine TephraSourceNodes
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  MassFluxCalculator
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine MassFluxCalculator
 
@@ -438,7 +469,11 @@
 
       end subroutine MassFluxCalculator
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  SourceVolInc(dt)
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function SourceVolInc(dt)
 
@@ -476,6 +511,6 @@
 
       end function SourceVolInc
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       end module Source

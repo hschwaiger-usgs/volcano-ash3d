@@ -46,7 +46,7 @@
       use io_units
 
       use global_param,  only : &
-        DirPrefix,DirDelim,IsLitEnd,IsLinux,IsWindows,IsMacOS, &
+        DirPrefix,DirDelim,IsLitEnd,IsLinux,IsWindows,IsMacOS,version, &
         CFL,OS_TYPE,OS_Flavor,os_full_command_line,os_cwd,os_host,os_user
 
       use io_data,       only : &
@@ -61,7 +61,6 @@
 
       ! This module requires Fortran 2003 or later
       use iso_fortran_env, only : &
-         input_unit,output_unit,error_unit,&
            compiler_version,&
            compiler_options
 
@@ -78,7 +77,6 @@
       real(kind=dp)     :: StartHour
       real(kind=dp)     :: RunStartHour    ! Start time of model run, in hours since BaseYear
       character(len=80) :: linebuffer080
-      character(len=8)  :: version             =  ' 1.0  '
       character(len=100):: CompVer
       character(len=508):: CompOpt
       logical           :: IsThere
@@ -143,15 +141,11 @@
       IsMacOS   = .false.
 #endif
 
-      ! Make sure our input,output and error units are in agreement with iso_fortran_env,
-      stdin       = input_unit
-      outlog(1:2) = (/output_unit,global_log/)
-      errlog(1:2) = (/ error_unit,global_log/)
-
       ! ENVIRONMENT VARIABLES
       ! First order of business is to get the environment variable (if present) for verbosity
       call get_environment_variable(name="ASH3DVERB",VALUE=tmp_str,STATUS=iostatus)
       if(iostatus.eq.0)then
+        ! read the value of the ASH3DVERB environment variable to the local variable VB(1)
         read(tmp_str,*,iostat=ierr)VB(1)
         if(ierr.ne.0)then
           write(errlog(1),*)"ERROR: ASH3DVERB found, but expecting an integer value"

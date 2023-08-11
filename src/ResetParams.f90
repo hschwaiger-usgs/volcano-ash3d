@@ -33,6 +33,8 @@
 ! N_BV_umb             = 0.02
 ! k_entrainment_umb    = 0.1
 ! SuzK_umb             = 12.0
+! useMoistureVars      = F
+! useVz_rhoG           = T
 ! cdf_institution      = USGS
 ! cdf_run_class        = Analysis
 ! cdf_url              = https://vsc-ash.wr.usgs.gov/ash3d-gui
@@ -46,7 +48,8 @@
       use io_units
 
       use global_param,  only : &
-         nmods,GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH,EPS_SMALL
+         nmods,GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH,EPS_SMALL,&
+         useMoistureVars, useVz_rhoG
 
       use mesh,          only : &
          ZPADDING
@@ -74,7 +77,7 @@
       integer :: substr_pos
       integer :: iparam
       character(len=20),dimension(MAXPARAMS) :: pname
-      real(kind=ip),dimension(MAXPARAMS)     :: pvalue
+      real(kind=ip)    ,dimension(MAXPARAMS) :: pvalue
       character(len=50),dimension(MAXPARAMS) :: pvalue_str
       integer :: i
 
@@ -530,7 +533,46 @@
                               "to ",pvalue(i)
           endif;enddo
           SuzK_umb = pvalue(i)
-
+        elseif (pname(i).eq.'useMoistureVars') then
+          ! error-checking
+          ! This should either be 0 for .false. or 1 for .true.
+          ! but we read the value as a float
+          if(abs(pvalue(i)).lt.EPS_SMALL)then
+            useMoistureVars = .false.
+          elseif(abs(pvalue(i)-1.0_ip).lt.EPS_SMALL)then
+            useMoistureVars = .true.
+          else
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: useMoistureVars should be:"
+              write(errlog(io),*)"         0 for false"
+              write(errlog(io),*)"         1 for true"
+              write(errlog(io),*)"     Value read = ",pvalue(i)
+              stop 1
+            endif;enddo
+          endif
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"  Resetting useMoistureVars to ",useMoistureVars
+          endif;enddo
+        elseif (pname(i).eq.'useVz_rhoG') then
+          ! error-checking
+          ! This should either be 0 for .false. or 1 for .true.
+          ! but we read the value as a float
+          if(abs(pvalue(i)).lt.EPS_SMALL)then
+            useVz_rhoG = .false.
+          elseif(abs(pvalue(i)-1.0_ip).lt.EPS_SMALL)then
+            useVz_rhoG = .true.
+          else
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: useVz_rhoG should be:"
+              write(errlog(io),*)"         0 for false"
+              write(errlog(io),*)"         1 for true"
+              write(errlog(io),*)"     Value read = ",pvalue(i)
+              stop 1
+            endif;enddo
+          endif
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"  Resetting useVz_rhoG to ",useVz_rhoG
+          endif;enddo
         elseif (pname(i).eq.'cdf_institution') then
           cdf_institution = trim(adjustl(pvalue_str(i)))
         elseif (pname(i).eq.'cdf_run_class') then

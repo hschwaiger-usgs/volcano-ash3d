@@ -1,6 +1,34 @@
+! All the modules in this file just define the essential variables grouped by
+! function
+!   precis_param
+!   io_units
+!   global_param
+!   io_data
+!   mesh
+!   solution
+!   time_data
+!   time_data
+!   wind_grid
+! Because these are just data modules, all variables are set to public by default.
+! A few of these modules have allocate/deallocate subroutines.
+
+
 
 !##############################################################################
+!
+!  precis_param module
+!
+!  This module just defines the precision parameters used throughout the program.
+!
+!##############################################################################
+
       module precis_param
+
+      implicit none
+
+        ! Set everything to public by default
+      public
+
         ! The first two precision parameters can be changed to meet your needs
       integer, parameter,public :: op         = 4 ! Output precision
       integer, parameter,public :: ip         = 8 ! Internal precision
@@ -14,31 +42,45 @@
       integer, parameter,public :: qp = selected_real_kind(33, 4931) ! quad precision
 
       end module precis_param
-!##############################################################################
 
 !##############################################################################
+!
+!  io_units module
+!
+!  This module defines the input/output variables as well as verbosity
+!  considerations.
+!
+!##############################################################################
+
       module io_units
 
+      ! This module requires Fortran 2003 or later
+      use iso_fortran_env, only : &
+         input_unit,output_unit,error_unit
+
+      implicit none
+
+        ! Set everything to public by default
+      public
+
       ! Initilize these with the defaults, but we will reset these in the subroutine
-      ! Set_OS_Env to whatever is in iso_fortran_env
-      integer :: stdin      = 5
-      integer :: global_log = 9
-      integer :: nio
-      integer :: io
-      integer,dimension(2) :: outlog = (/6,9/)
-      integer,dimension(2) :: errlog = (/0,9/)
+      integer,parameter :: global_log = 9    ! Log file will be unit 9
+      integer :: nio  = 1                    ! number of output streams (stdout and logfile)
+      integer :: io                          ! index over out-streams
+      integer,dimension(2) :: outlog = (/output_unit,global_log/)
+      integer,dimension(2) :: errlog = (/ error_unit,global_log/)
 
       character(9) :: logfile = 'Ash3d.lst'  ! This is the default Ash3d logfile
 
       ! default verbosity is 3
       ! This will write everything from verbosity_log to verbosity_error to both stdout and stdlog
-      
+      ! Note that this may be reset in Set_OS_Env is ASH3DVERB is set.
+      ! You could set the stdout and log to different velocity levels here is desired.
       integer,dimension(2) :: VB = (/3,3/) ! Verbosity level for stdout and logfile, respectively
-      integer :: VERB     = 3 ! stdout verbosity level 
-      character(10)  :: vlevel
+      character(10)        :: vlevel       ! Text description of verbosity level
 
       ! These verbosity levels are for harmonizing with forestclaw
-      ! Only write statements verbosity level >= VERB will be written
+      ! Only write statements verbosity level >= VB(1) will be written
       integer,parameter :: verbosity_debug2       = 1  ! Additional debugging information only written to stdout
       integer,parameter :: verbosity_debug1       = 2  ! Debugging information only written to stdout
       integer,parameter :: verbosity_log          = 3  ! Time step information (this is the limit for writing to logfile)
@@ -51,33 +93,48 @@
       integer,parameter :: verbosity_dark         = 10 ! No logging to stdout,stderr or logfile
 
       end module io_units
-!##############################################################################
 
 !##############################################################################
+!
+!  global_param module
+!
+!  This module sets many fixed parameters used in the run such as unit conversions
+!  and some physical constants.  Also included are many variables that control the
+!  activation or deactivation of routines such as horizontal/vertical advection,
+!  diffusion, or how vertical velocities are calculated.
+!
+!##############################################################################
+
       module global_param
 
       use precis_param
 
       implicit none
 
-#include "Ash3d_version.h"
+        ! Set everything to public by default
+      public
 
-      real(kind=ip), parameter :: EPS_SMALL  = 1.0e-7_ip  ! Small number
-      real(kind=ip), parameter :: EPS_TINY   = 1.0e-12_ip ! Very small number
+#include "Ash3d_version.h"  ! contain the git commit id
+
+      character(len=8)  :: version           =  ' 1.0  '  ! The Ash3d version number
+
+      real(kind=ip), parameter :: EPS_SMALL  = 1.0e-7_ip       ! Small number
+      real(kind=ip), parameter :: EPS_TINY   = 1.0e-12_ip      ! Very small number
       real(kind=ip), parameter :: PI         = 3.141592653589793_ip
       real(kind=ip), parameter :: DEG2RAD    = 1.7453292519943295e-2_ip
-      real(kind=ip), parameter :: DEG2KMLAT  = 111.0_ip     ! km/degree latitude 
-      real(kind=ip), parameter :: DEG2KMLON  = 111.321_ip   ! km/degree longitude at equator
-      real(kind=ip), parameter :: EPS_THRESH = 1.0e-10_ip ! Threshold for Riemann solver
-                                                           ! 1 kg/km3=0.001 mg/m3
-      real(kind=ip), parameter :: KM_2_M     = 1.0e3_ip     ! km to m conversion
-      real(kind=ip), parameter :: M_2_MM     = 1.0e3_ip
-      real(kind=ip), parameter :: MM_2_IN    = 3.937e-2_ip
-      real(kind=ip), parameter :: KM2_2_M2   = 1.0e6_ip
-      real(kind=ip), parameter :: KM3_2_M3   = 1.0e9_ip
-      real(kind=ip), parameter :: KG_2_MG    = 1.0e6_ip
-      real(kind=ip), parameter :: MPS_2_KMPHR= 3.6_ip       ! m/s to km/hr
-      real(kind=ip), parameter :: HR_2_S     = 3600.0_ip
+      real(kind=ip), parameter :: DEG2KMLAT  = 111.0_ip        ! km/degree latitude 
+      real(kind=ip), parameter :: DEG2KMLON  = 111.321_ip      ! km/degree longitude at equator
+      real(kind=ip), parameter :: EPS_THRESH = 1.0e-10_ip      ! Threshold for Riemann solver
+                                                               ! 1 kg/km3=0.001 mg/m3
+      ! Unit conversions
+      real(kind=ip), parameter :: KM_2_M     = 1.0e3_ip        ! km to m
+      real(kind=ip), parameter :: M_2_MM     = 1.0e3_ip        ! m to mm
+      real(kind=ip), parameter :: MM_2_IN    = 3.937e-2_ip     ! mm to inch
+      real(kind=ip), parameter :: KM2_2_M2   = 1.0e6_ip        ! km^2 to m^2
+      real(kind=ip), parameter :: KM3_2_M3   = 1.0e9_ip        ! km^3 to m^3
+      real(kind=ip), parameter :: KG_2_MG    = 1.0e6_ip        ! kg to mg
+      real(kind=ip), parameter :: MPS_2_KMPHR= 3.6_ip          ! m/s to km/hr
+      real(kind=ip), parameter :: HR_2_S     = 3600.0_ip       ! hour to seconds
 
 
       real(kind=ip) :: GRAV       = 9.81_ip     ! Gravitational acceleration m/s^2
@@ -90,8 +147,7 @@
       character(len=20),dimension(MAXNUM_OPTMODs) :: OPTMOD_names
       integer                  :: nmods
 
-      logical, parameter       :: useDS            = .true.
-
+      ! Some variables determined by preprocessor flags at compilation time
 #ifdef LIM_NONE
       character(len=10)        :: limiter = 'No'
 #endif
@@ -121,19 +177,30 @@
       logical, parameter       :: useCN           = .false.
 #endif
 
-      logical                  :: useVertAdvect = .true.
-      logical                  :: useHorzAdvect = .true.
+        ! These should not be changed unless needed for testing
+      logical, parameter       :: useDS            = .true.  ! Dimension splitting v.s. something else
+      logical, parameter       :: useVertAdvect    = .true.  ! Turns on/off vert. advection
+      logical, parameter       :: useHorzAdvect    = .true.  ! Turns on/off horz. advection
 
         ! This will be reset based on d_coeff (.true. if d_coeff<0.0)
-      logical                  :: useDiffusion    = .false.
-      logical                  :: useVarDiffH     = .false.
-      logical                  :: useVarDiffV     = .false.
+      logical                  :: useDiffusion     = .false. ! Reset in Read_Control_File by d_coeff
+      logical                  :: useVarDiffH      = .false. ! Turned on in variable diffusion optmod
+      logical                  :: useVarDiffV      = .false. ! Turned on in variable diffusion optmod
 
-      logical                  :: useTemperature  = .false.
-      logical                  :: useVz_rhoG      = .true.
-      !logical                  :: useVz_rhoG      = .false.
-      logical                  :: useCalcFallVel  = .false.
-      logical                  :: useVariableGSbins  = .false.
+        ! These are determined when reading Reading Block 7: Grain Size Groups
+      logical                  :: useCalcFallVel   = .false. ! Turned on in Read_Control_File if needed
+      logical                  :: useTemperature   = .false. 
+      logical                  :: useLogNormGSbins = .false.
+
+
+      ! The variables below can be reset via OPTMOD=RESETPARAMS
+        ! Vertical velocities come from Vertical_Velocity_Pressure (in Pa s)
+        ! This can be converted to m/s by dividing by dp/dz.  We have two
+        ! ways we can calculate dp/dz: using -rho g, or calculating a finite
+        ! difference approximation using p and GPH variable
+      logical                  :: useVz_rhoG      = .true.   ! using  -rho g
+      !logical                  :: useVz_rhoG      = .false. ! using  finite-differences
+
         ! Only load temperature and water content data if needed
         ! This must be turned on in optional modules if needed
       logical                  :: useMoistureVars    = .false.
@@ -149,7 +216,7 @@
       !        aloft_vol/tot_vol.lt.(1.0_ip-StopValue)
       !  2 = check if time is past sim end
       !        time.ge.Simtime_in_hours
-      !  3 = check if there is ash aloft
+      !  3 = check if there is ash aloft (this might be turned off for certain sources)
       !        n_gs_aloft.eq.0
       !  4 = check on mass balance
       !        MassConsErr.gt.1.0e-3_ip
@@ -162,6 +229,7 @@
       logical, dimension(5) :: StopConditions  = .false.  ! Various conditions that force the run to stop
       logical, dimension(5) :: CheckConditions = .true.   ! Which conditions to check
 
+      !  These are reset in Set_OS_Env
       integer   :: OS_TYPE                        ! 1=linux, 2=apple, 3=windows
       logical   :: IsLitEnd                       ! little-ndian-ness; set in Set_OS_Env
       logical   :: IsLinux    = .true.
@@ -176,24 +244,36 @@
       character (len=255)  :: os_cwd
 
       end module global_param
-!##############################################################################
-
 
 !##############################################################################
+!
+!  io_data module
+!
+!  This module stores variables associated with input and out.  Much of the
+!  information from the input control file is stored in these variables to be
+!  logged in the output netcdf file (if netcdf is requested).  Also, many
+!  logical variables are set in Read_Control_File that specify whether point,
+!  profile, 3d output are requested, whether KML or ASCII files are requested,
+!  etc.  
+!
+!##############################################################################
+
       module io_data
       
       use precis_param
 
       implicit none
 
+        ! Set everything to public by default
+      public
+
       integer            :: log_step = 1
 
-      integer            :: iolog      ! dummy value for output file identifier
       integer            :: iout3d          ! index for output timestep of 3d/2d data
       integer            :: ioutputFormat   ! determines the format of the output
-                                 ! (1=ASCII, 2=raw binary, 3=NetCDF)
-      character (len=130):: Ash3dHome                    ! path to Ash3d installation
-      character (len=130):: infile                       !input file name
+                                            ! (1=ASCII, 2=raw binary, 3=NetCDF)
+      character (len=130):: Ash3dHome       ! path to Ash3d installation
+      character (len=130):: infile          ! input file name
       character (len=50) :: outfile
       logical            :: LoadConcen
       character (len=80) :: concenfile
@@ -245,7 +325,7 @@
       character (len=80) :: cdf_b6l4
       character (len=80) :: cdf_b6l5
 !
-      logical            :: WriteCloudConcentration_ASCII ! .true. if cloud top files are to be written
+      logical            :: WriteCloudConcentration_ASCII ! .true. if cloud top files are to be written out
       logical            :: WriteCloudConcentration_KML
       logical            :: WriteCloudHeight_ASCII        ! .true. if kml file of cloud height (km) is to be written out
       logical            :: WriteCloudHeight_KML
@@ -257,14 +337,14 @@
       logical            :: WriteReflectivity_KML
       logical            :: WriteDepositFinal_ASCII       ! .true. if final deposit file is to be written out
       logical            :: WriteDepositFinal_KML
-      logical            :: WriteDepositTS_ASCII          ! .true. if time series of deposit files is to be written
+      logical            :: WriteDepositTS_ASCII          ! .true. if time series of deposit files is to be written out
       logical            :: WriteDepositTS_KML
       logical            :: WriteDepositTime_ASCII        ! .true. if time of first ash is to be written out
       logical            :: WriteDepositTime_KML
-      logical            :: WriteAirportFile_ASCII        ! .true. if ash arrival times at airports is to be written out to ASCII
-      logical            :: WriteAirportFile_KML          ! .true. if ash arrival times at airports is to be written out to KML
+      logical            :: WriteAirportFile_ASCII        ! .true. if ash arrival times at airports is to be written out
+      logical            :: WriteAirportFile_KML
       logical            :: Write_PT_Data                 ! .true. if either of the above is true (writes to netcdf)
-      logical            :: Write_PR_Data                 ! .true. if writting profile data
+      logical            :: Write_PR_Data                 ! .true. if writing profile data
       logical            :: ReadExtAirportFile            ! .true. if external airport file is to be read 
       logical            :: AppendExtAirportFile          ! .true. if external airports in external file are appended
 
@@ -291,6 +371,7 @@
       real(kind=ip),    dimension(:), allocatable :: x_vprofile, y_vprofile  ! x and y of vertical profiles
       character(len=50),dimension(:), allocatable :: Site_vprofile           ! name of profile location
 
+      ! These specify the number of user-defined variables.  This is mostly for optional modules.
       integer            :: nvar_User2d_static_XY  = 0
       integer            :: nvar_User2d_XY         = 0
       integer            :: nvar_User3d_XYGs       = 0
@@ -313,22 +394,29 @@
       if(allocated(j_vprofile))   deallocate(j_vprofile)
       if(allocated(x_vprofile))   deallocate(x_vprofile)
       if(allocated(y_vprofile))   deallocate(y_vprofile)
-      !if(allocated(lon_vprofile)) deallocate(lon_vprofile)
-      !if(allocated(lat_vprofile)) deallocate(lat_vprofile)
 
       end subroutine Deallocate_io_data
       !------------------------------------------------------------------------
 
       end module io_data
-!##############################################################################
-
 
 !##############################################################################
+!
+!  mesh module
+!
+!  This module contains variables that define all aspect of the computational
+!  mesh.
+!
+!##############################################################################
+
       module mesh
 
       use precis_param
   
       implicit none
+
+        ! Set everything to public by default
+      public
 
       integer, parameter :: ts0 = 0
       integer, parameter :: ts1 = 1
@@ -336,6 +424,9 @@
       integer            :: ivent,jvent                    ! ij coordinates of volcano
       logical            :: IsLatLon
 
+      ! projection parameters of the computational (Ash3d) mesh.  This might be
+      ! different from the projection of the NWP files, or it might be ignored
+      ! if the Ash3d mesh is lon/lat
       integer            :: A3d_iprojflag
       real(kind=dp)      :: A3d_k0_scale
       real(kind=dp)      :: A3d_phi0
@@ -344,23 +435,22 @@
       real(kind=dp)      :: A3d_lam2,A3d_phi2
       real(kind=dp)      :: A3d_Re
 
-      logical            :: IsPeriodic      = .false.
-      real(kind=ip)      :: ZPADDING  = 1.3_ip
+      logical            :: IsPeriodic   = .false.
+      real(kind=ip)      :: ZPADDING     = 1.3_ip
       character(len=7)   :: VarDzType
       real(kind=ip)      :: dz_const                        ! z nodal spacing (always km)
       real(kind=ip),dimension(:)    ,allocatable :: z_vec_init
 
       ! Dimensional parameters in km, used if IsLatLon=.False.        
-      real(kind=ip)      :: gridwidth_x, gridwidth_y            ! Dimensions (in km) of the grid
+      real(kind=ip)      :: gridwidth_x, gridwidth_y  ! Dimensions (in km) of the grid
       real(kind=ip)      :: xLL,xUR,yLL,yUR           ! lower-left,upper-right points of grid
-      real(kind=ip)      :: dx, dy                    ! horizontal & vertical cell size (km)
+      real(kind=ip)      :: dx, dy                    ! horizontal cell sizees (km)
 
       integer :: nxmax      ! number of nodes in x
       integer :: nymax      ! number of nodes in y
       integer :: nzmax      ! number of nodes in z
       integer :: nsmax      ! total number of species tracked in concen
                             !  i.e. all ash bins + anything else (aggs, water, chem)
-      !integer :: insmax     ! placeholder for species max
 
       ! Variables that are allocated based on the computational grid
       ! (nxmax,nymax)
@@ -384,8 +474,6 @@
 
       real(kind=ip),dimension(:)    ,pointer :: lat_cc_pd   => null() ! lat of i,j cell centers
       real(kind=ip),dimension(:)    ,pointer :: lon_cc_pd   => null() ! lon of i,j cell centers
-!      real(kind=ip),dimension(:)    ,pointer :: rdphi_pd    => null() 
-!      real(kind=ip),dimension(:,:)  ,pointer :: rdlambda_pd => null() 
       real(kind=ip),dimension(:,:,:),pointer :: sigma_nx_pd => null() ! area of x face at i-1/2,j,k
       real(kind=ip),dimension(:,:,:),pointer :: sigma_ny_pd => null() ! area of y face at i,j-1/2,k
       real(kind=ip),dimension(:,:,:),pointer :: sigma_nz_pd => null() ! area of z face at i,j,k-1/2
@@ -398,8 +486,6 @@
       real(kind=ip),dimension(:,:,:),allocatable :: kappa_pd !volume of each node in km3
       real(kind=ip),dimension(:)    ,allocatable :: lat_cc_pd ! lat of i,j cell centers
       real(kind=ip),dimension(:)    ,allocatable :: lon_cc_pd ! lon of i,j cell centers
-!      real(kind=ip),dimension(:)    ,allocatable :: rdphi_pd
-!      real(kind=ip),dimension(:,:)  ,allocatable :: rdlambda_pd
       real(kind=ip),dimension(:,:,:),allocatable :: sigma_nx_pd ! area of x face at i-1/2,j,k
       real(kind=ip),dimension(:,:,:),allocatable :: sigma_ny_pd ! area of y face at i,j-1/2,k
       real(kind=ip),dimension(:,:,:),allocatable :: sigma_nz_pd ! area of z face at i,j,k-1/2
@@ -417,8 +503,6 @@
       if (IsLatLon) then
         allocate(lon_cc_pd(-1:nxmax+2));                   lon_cc_pd   = 0.0_ip
         allocate(lat_cc_pd(-1:nymax+2));                   lat_cc_pd   = 0.0_ip
-!        allocate(rdphi_pd(-1:nzmax+2));                    rdphi_pd    = 0.0_ip
-!        allocate(rdlambda_pd(-1:nymax+2,-1:nzmax+2));      rdlambda_pd = 0.0_ip
       else
         allocate(x_cc_pd(-1:nxmax+2));                         x_cc_pd = 0.0_ip
         allocate(y_cc_pd(-1:nymax+2));                         y_cc_pd = 0.0_ip
@@ -447,8 +531,6 @@
       if(associated(kappa_pd))      deallocate(kappa_pd)
       if(associated(lon_cc_pd))     deallocate(lon_cc_pd)
       if(associated(lat_cc_pd))     deallocate(lat_cc_pd)
-!      if(associated(rdphi_pd))      deallocate(rdphi_pd)
-!      if(associated(rdlambda_pd))   deallocate(rdlambda_pd)
       if(associated(sigma_nx_pd))   deallocate(sigma_nx_pd)
       if(associated(sigma_ny_pd))   deallocate(sigma_ny_pd)
       if(associated(sigma_nz_pd))   deallocate(sigma_nz_pd)
@@ -464,8 +546,6 @@
       if(allocated(sigma_nz_pd))   deallocate(sigma_nz_pd)
       if(allocated(lon_cc_pd))     deallocate(lon_cc_pd)
       if(allocated(lat_cc_pd))     deallocate(lat_cc_pd)
-!      if(allocated(rdphi_pd))      deallocate(rdphi_pd)
-!      if(allocated(rdlambda_pd))   deallocate(rdlambda_pd)
 #endif
       if(allocated(z_vec_init))    deallocate(z_vec_init)
 
@@ -473,14 +553,25 @@
       !------------------------------------------------------------------------
 
       end module mesh
-!##############################################################################
 
 !##############################################################################
+!
+!  solution module
+!
+!  This module stores all the variables associated with the PDE such as concentration,
+!  velocities (on Ash3d grid), outflow, as well as the aspect of the solution needed for 
+!  evaluating stop conditions.
+!
+!##############################################################################
+
       module solution
 
       use precis_param
 
       implicit none
+
+        ! Set everything to public by default
+      public
 
 #ifdef USEPOINTERS
       real(kind=ip),dimension(:,:,:)    ,pointer :: vx_pd => null() ! u (E) component of wind
@@ -517,19 +608,21 @@
       real(kind=ip)      :: dep_vol,aloft_vol,outflow_vol,tot_vol
       real(kind=ip)      :: SourceCumulativeVol
 
-      real(kind=ip), dimension(:)  ,allocatable  :: mass_aloft
+      real(kind=ip), dimension(:), allocatable :: mass_aloft
 
-      integer, dimension(:) ,allocatable :: SpeciesID  ! 1 = ash gs bin
-                                                       ! 2 = aggregate
-                                                       ! 3 = chem species
-      integer, dimension(:) ,allocatable :: SpeciesSubID ! categorization within the class
+      integer,       dimension(:), allocatable :: SpeciesID  ! 1 = ash gs bin
+                                                             ! 2 = aggregate
+                                                             ! 3 = chem species
+      integer,       dimension(:), allocatable :: SpeciesSubID ! categorization within the class
 
-      real(kind=ip), dimension(:)  ,allocatable  :: v_s         ! Settling vel 
-      real(kind=ip), dimension(:)  ,allocatable  :: gsdiam      ! diameter (m)
-      real(kind=ip), dimension(:)  ,allocatable  :: bin_mass    ! mass
-      real(kind=ip), dimension(:)  ,allocatable  :: rho_m       ! density (kg/m3)
+      real(kind=ip), dimension(:), allocatable :: v_s         ! Settling vel 
+      real(kind=ip), dimension(:), allocatable :: gsdiam      ! diameter (m)
+      real(kind=ip), dimension(:), allocatable :: bin_mass    ! mass
+      real(kind=ip), dimension(:), allocatable :: rho_m       ! density (kg/m3)
 
-      logical, dimension(:) ,allocatable :: IsAloft    ! T/F indicator remaining airborn concentration
+      logical,       dimension(:), allocatable :: IsAloft    ! T/F indicator remaining airborn concentration
+
+        ! These are the max/min indices of the ash cloud used if FAST_SUBGRID is used
       integer :: imin,imax
       integer :: jmin,jmax
       integer :: kmin,kmax
@@ -537,7 +630,7 @@
       contains
 
       !------------------------------------------------------------------------
-      subroutine Allocate_solution!(nsmax)
+      subroutine Allocate_solution
 
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,ts0,ts1
@@ -563,9 +656,9 @@
         allocate(mass_aloft(1:nsmax)); 
         mass_aloft = 0.0_ip
         allocate(SpeciesID(1:nsmax));  SpeciesID = 1  ! Initialize everything to ash
-                                                    ! If nsmax>n_gs_max, then the
-                                                    ! extra bins will need to be
-                                                    ! flagged in the custom source modules
+                                                      ! If nsmax>n_gs_max, then the
+                                                      ! extra bins will need to be
+                                                      ! flagged in the custom source modules
 
         allocate(SpeciesSubID(1:nsmax));  SpeciesSubID = 0
         allocate(     v_s(1:nsmax)); v_s      = 0.0_ip
@@ -621,14 +714,23 @@
       !------------------------------------------------------------------------
 
       end module solution
-!##############################################################################
-
-
 
 !##############################################################################
+!
+!  time_data module
+!
+!  This module contains all the variables associated with time
+!
+!##############################################################################
+
       module time_data
 
       use precis_param
+
+      implicit none
+
+        ! Set everything to public by default
+      public
 
         ! If Ash3d needs to be run with wind data from a different time than the
         ! output (e.g. using a 1992 Spurr case for a present-day excercise) set
@@ -658,8 +760,6 @@
       real(kind=ip)      :: dt              ! dt used for actual integration
       real(kind=ip)      :: dt_meso_last    ! dt as calculated from meso_last
       real(kind=ip)      :: dt_meso_next    ! dt as calculated from meso_next
-      real(kind=ip)      :: dtodx   , dtody   , dtodz
-      real(kind=ip)      :: dtodxdx , dtodydy , dtodzdz
 
       ! Some stings that hold time data used in output files
       character(len=17)  :: os_time_log
@@ -672,15 +772,24 @@
       ! No allocatable arrays to allocate or deallocate
 
       end module time_data
-!##############################################################################
-
 
 !##############################################################################
+!
+!  wind_grid module
+!
+!  This module contains the Ash3d copies of the wind data on the grid of the
+!  NWP files and the computational grid copies at the NWP time intervals.
+!
+!##############################################################################
+
       module wind_grid
 
       use precis_param
 
       implicit none
+
+        ! Set everything to public by default
+      public
 
         ! toggle used for moving pointers between last and next
       integer            :: Meso_toggle
@@ -688,12 +797,6 @@
           ! wind file time steps.  The *_meso_[last,next]_sp are pointers that
           ! point to the correct memory locations.
           ! These exist on the computational (Ash3d) grid.
-      !real(kind=sp),dimension(:,:,:),pointer            :: vx_meso_last_step_sp => null()
-      !real(kind=sp),dimension(:,:,:),pointer            :: vx_meso_next_step_sp => null()
-      !real(kind=sp),dimension(:,:,:),pointer            :: vy_meso_last_step_sp => null()
-      !real(kind=sp),dimension(:,:,:),pointer            :: vy_meso_next_step_sp => null()
-      !real(kind=sp),dimension(:,:,:),pointer            :: vz_meso_last_step_sp => null()
-      !real(kind=sp),dimension(:,:,:),pointer            :: vz_meso_next_step_sp => null()
           ! For the fall velocity, we use named arrays (not pointers)
 #ifdef USEPOINTERS
       real(kind=sp),dimension(:,:,:)  ,pointer          :: vx_meso_last_step_sp => null()
@@ -799,4 +902,5 @@
       !------------------------------------------------------------------------
 
       end module wind_grid
+
 !##############################################################################
