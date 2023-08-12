@@ -1,8 +1,27 @@
-!##############################################################################
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  MesoInterpolater(TimeNow,Load_MesoSteps,Interval_Frac,first_time)
 !
-!##############################################################################
+!  Called from: Main ash3d (Ash3d.F90) in two places, once before the time loop
+!  and once within it
+!  Arguments:
+!    TimeNow        = current time, in hours since start of simulation
+!    Load_MesoSteps = logical flag to indicate loading the next met time-step
+!    Interval_Frac  = the fraction of the met step for the current time
+!    first_time     = logical flag to trigger loading braketing met steps
+!
+! This purpose of this subroutine is to interpolate data from the mesoscale NWP
+! files onto the current time of the simulation.  This subroutine manages the
+! calls to MetReader to populate the variables at the braketing timesteps of the
+! NWP files, reading the next step if the simulation time crossest over to the
+! next time step of the NWP files.
+! Initially, if the 'first_time' is set to true, then this is the call from
+! Ash3d.F90 prior to the time-integration loop.  During the first call, both
+! braketing time steps need to be loaded, velocities interpolated, then the
+! time step calculated. The variables are read into memory via the subroutine
+! Read_NextMesoStep
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine MesoInterpolater(TimeNow,Load_MesoSteps,Interval_Frac,first_time)
       ! Fclaw subroutine MesoInterpolater(TimeNow,Load_MesoSteps,Interval_Frac,first_time,Meso_toggle)
@@ -118,111 +137,9 @@
                     TimeNow_fromRefTime, &
                     MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now)
         endif;enddo
-        ! Before reading state variables, we need to load the height grid
-        ! which will be used in the QC checking
-        call MR_Read_HGT_arrays(MR_iMetStep_Now,first_time)
 
-        if(Map_Case.eq.1.or.Map_Case.eq.2)then
-          ! Either both the comp and met grids are LL (Map_Case = 1)
-          ! or they are both the same projection (Map_Case = 2) so
-          ! we can read the velocity components individually and interpolate onto
-          ! the computational grid
+        call Read_NextMesoStep(Load_MesoSteps)
 
-           ! Fill array from the step prior/equal to current time
-          ivar = 2 ! U winds
-          call MR_Read_3d_Met_Variable_to_CompH(ivar,MR_iMetStep_Now,.true.)
-            vx_meso_1_sp = MR_dum3d_compH
-            vx_meso_next_step_sp = vx_meso_1_sp
-
-          ivar = 3 ! V winds 
-          call MR_Read_3d_Met_Variable_to_CompH(ivar,MR_iMetStep_Now,.true.)
-            vy_meso_1_sp = MR_dum3d_compH
-            vy_meso_next_step_sp = vy_meso_1_sp
-        else
-          ! Grids are different, we will need to rotate vectors
-          ! In all these cases, we need:
-          !    MR_dum3d_compH   holding U
-          !    MR_dum3d_compH_2 holding V
-          if(Map_Case.eq.3)then
-              ! Met grid is natively LL and Comp grid is projected
-            call MR_Rotate_UV_ER2GR_Comp(MR_iMetStep_Now)
-          elseif(Map_Case.eq.4)then
-              ! Met grid is projected and comp grid is LL
-            if(isGridRelative)then
-              call MR_Rotate_UV_GR2ER_Met(MR_iMetStep_Now,.true.) ! optional argument returns data on compH
-            else
-              ! if the projected data is already Earth-relative (NARR), then just read it
-              ivar = 3 ! Vy
-              call MR_Read_3d_Met_Variable_to_CompH(ivar,MR_iMetStep_Now)
-              MR_dum3d_compH_2 = MR_dum3d_compH
-              ivar = 2 ! Vx
-              call MR_Read_3d_Met_Variable_to_CompH(ivar,MR_iMetStep_Now)
-            endif
-          elseif(Map_Case.eq.5)then
-            ! Both comp and met grids are projected, but with different projections
-            ! First, rotate winds from met grid to earth-relative on the met nodes
-            call MR_Rotate_UV_GR2ER_Met(MR_iMetStep_Now)
-            ! Now rotate and interpolate those earth-relative values to the projected comp grid.
-            call MR_Rotate_UV_ER2GR_Comp(MR_iMetStep_Now)
-          endif
-
-          vx_meso_1_sp = MR_dum3d_compH
-          vx_meso_next_step_sp = vx_meso_1_sp
-          vy_meso_1_sp = MR_dum3d_compH_2
-          vy_meso_next_step_sp = vy_meso_1_sp
-        endif
-
-        ! Only bother getting Vz if it is available in the wind files
-        if(useTemperature)then
-          call Set_Atmosphere_Meso(Load_MesoSteps,1.0_ip,first_time)
-        endif
-        if(Met_var_IsAvailable(4))then
-          if(useTemperature.and.useVz_rhoG)then
-            ! Now that we have temperature and density, we can get a better Vz
-            ivar = 7 ! Pressure Vertical Velocity
-            if(Met_var_IsAvailable(ivar))then
-              call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now)
-              MR_dum3d_MetP = MR_dum3d_MetP/      &
-               real((-AirDens_meso_next_step_MetP_sp*GRAV),kind=sp)
-              call MR_Regrid_MetP_to_CompH(MR_iMetStep_Now)
-            else
-              do io=1,2;if(VB(io).le.verbosity_info)then
-                write(outlog(io),*)"Tried to read variable, but it's not available: ",ivar,&
-                          Met_var_GRIB_names(ivar)
-              endif;enddo
-              MR_dum3d_compH = 0.0_sp
-            endif
-            vz_meso_1_sp = MR_dum3d_compH
-            vz_meso_next_step_sp = vz_meso_1_sp
-          else
-            ivar = 4 ! W winds
-            if(Met_var_IsAvailable(ivar))then
-              call MR_Read_3d_Met_Variable_to_CompH(ivar,MR_iMetStep_Now)
-            else
-              do io=1,2;if(VB(io).le.verbosity_info)then
-                write(outlog(io),*)"Tried to read variable, but it's not available: ",ivar,&
-                        Met_var_GRIB_names(ivar)
-              endif;enddo
-              MR_dum3d_compH = 0.0_sp
-            endif
-            vz_meso_1_sp = MR_dum3d_compH
-            vz_meso_next_step_sp = vz_meso_1_sp
-          endif
-        else
-          vz_meso_1_sp = 0.0_sp
-          vz_meso_next_step_sp = vz_meso_1_sp
-        endif
-
-        if(useCalcFallVel)then
-          ! Populate the fall velocities for the next meso step
-          call Set_Vf_Meso(.true.)
-        else
-          ! This is the case where the fall velocity is assigned in the input file
-          do isize=1,n_gs_max
-            vf_meso_next_step_sp(:,:,:,isize) = real(Tephra_v_s(isize),kind=sp)
-            vf_pd(:,:,:,isize)                =      Tephra_v_s(isize)*MPS_2_KMPHR
-          enddo
-        endif
         ! We only loaded one step so set load flag to True
         Load_MesoSteps = .true.
 #ifdef FAST_DT
@@ -265,140 +182,7 @@
 
         ! Copy the timestep from next to last
         dt_meso_last = dt_meso_next
-
-        ! This subroutine sets both last and next geoH arrays so call with
-        ! MR_iMetStep_Now
-        call MR_Read_HGT_arrays(MR_iMetStep_Now)
-
-        if(Map_Case.eq.1.or.Map_Case.eq.2)then
-          ! Either both the comp and met1 grids are LL (Map_Case = 1)
-          ! or they are both the same projection (Map_Case = 2) so
-          ! we can read the velocity components individually and interpolate onto
-          ! the computational grid
-
-           ! Fill array from the step prior/equal to current time
-          ivar = 2 ! U winds
-          call MR_Read_3d_Met_Variable_to_CompH(ivar,MR_iMetStep_Now+1,.true.)
-          if(Meso_toggle.eq.0)then
-            vx_meso_1_sp = MR_dum3d_compH
-            vx_meso_next_step_sp = vx_meso_1_sp
-          else
-            vx_meso_2_sp = MR_dum3d_compH
-            vx_meso_next_step_sp = vx_meso_2_sp
-          endif
-
-          ivar = 3 ! V winds 
-          call MR_Read_3d_Met_Variable_to_CompH(ivar,MR_iMetStep_Now+1,.true.)
-          if(Meso_toggle.eq.0)then
-            vy_meso_1_sp = MR_dum3d_compH
-            vy_meso_next_step_sp = vy_meso_1_sp
-          else
-            vy_meso_2_sp = MR_dum3d_compH
-            vy_meso_next_step_sp = vy_meso_2_sp
-          endif
-        else
-          ! Grids are different, we will need to rotate vectors
-          ! In all these cases, we need:
-          !    MR_dum3d_compH   holding U
-          !    MR_dum3d_compH_2 holding V
-          if(Map_Case.eq.3)then
-              ! Met grid is natively LL and Comp grid is projected
-            call MR_Rotate_UV_ER2GR_Comp(MR_iMetStep_Now+1)
-          elseif(Map_Case.eq.4)then
-              ! Met grid is projected and comp grid is LL
-            if(isGridRelative)then
-              call MR_Rotate_UV_GR2ER_Met(MR_iMetStep_Now+1,.true.) ! optional argument returns data on compH
-            else
-              ! if the projected data is already Earth-relative (NARR), then just read it
-              ivar = 3 ! Vy
-              call MR_Read_3d_Met_Variable_to_CompH(ivar,MR_iMetStep_Now+1)
-              MR_dum3d_compH_2 = MR_dum3d_compH
-              ivar = 2 ! Vx
-              call MR_Read_3d_Met_Variable_to_CompH(ivar,MR_iMetStep_Now+1)
-            endif
-          elseif(Map_Case.eq.5)then
-            ! Both comp and met grids are projected, but with different projections
-            ! First, rotate winds from met grid to earth-relative on the met nodes
-            call MR_Rotate_UV_GR2ER_Met(MR_iMetStep_Now+1)
-            ! Now rotate and interpolate those earth-relative values to the projected comp grid.
-            call MR_Rotate_UV_ER2GR_Comp(MR_iMetStep_Now+1)
-          endif
-
-          if(Meso_toggle.eq.0)then
-            vx_meso_1_sp = MR_dum3d_compH
-            vx_meso_next_step_sp = vx_meso_1_sp
-            vy_meso_1_sp = MR_dum3d_compH_2
-            vy_meso_next_step_sp = vy_meso_1_sp
-          else
-            vx_meso_2_sp = MR_dum3d_compH
-            vx_meso_next_step_sp = vx_meso_2_sp
-            vy_meso_2_sp = MR_dum3d_compH_2
-            vy_meso_next_step_sp = vy_meso_2_sp
-          endif
-        endif
-
-        vf_meso_last_step_sp = vf_meso_next_step_sp
-        ! Only bother getting Vz if it is available in the wind files
-        if(Met_var_IsAvailable(4))then
-          if(useTemperature.and.useVz_rhoG)then
-            call Set_Atmosphere_Meso(Load_MesoSteps,1.0_ip,first_time)
-            ! Again, now that we have temperature and density, we can get a better Vz
-            ivar = 7 ! Pressure Vertical Velocity
-            if(Met_var_IsAvailable(ivar))then
-              do io=1,2;if(VB(io).le.verbosity_info)then
-                write(outlog(io),*)"Vz is calculated by PressVertVel/(rho g)"
-              endif;enddo
-              call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now+1)
-              MR_dum3d_MetP = MR_dum3d_MetP/                   &
-                real((-AirDens_meso_next_step_MetP_sp*GRAV),kind=sp)
-              call MR_Regrid_MetP_to_CompH(MR_iMetStep_Now+1)
-            else
-              do io=1,2;if(VB(io).le.verbosity_error)then
-                write(errlog(io),*)"Tried to read variable, but it's not available: ",ivar,&
-                          Met_var_GRIB_names(ivar)
-              endif;enddo
-              MR_dum3d_compH = 0.0_sp
-              stop 1 
-            endif
-  
-            if(Meso_toggle.eq.0)then
-              vz_meso_1_sp = MR_dum3d_compH
-              vz_meso_next_step_sp = vz_meso_1_sp
-            else
-              vz_meso_2_sp = MR_dum3d_compH
-              vz_meso_next_step_sp = vz_meso_2_sp
-            endif
-          else
-            ivar = 4 ! W winds
-            if(Met_var_IsAvailable(ivar))then
-              do io=1,2;if(VB(io).le.verbosity_info)then
-                write(global_log,*)"Vz is calculated by PressVertVel/(dp/dz)"
-              endif;enddo
-              call MR_Read_3d_Met_Variable_to_CompH(ivar,MR_iMetStep_Now+1)
-            else
-              do io=1,2;if(VB(io).le.verbosity_error)then
-                write(errlog(io),*)"Tried to read variable, but it's not available: ",ivar,&
-                        Met_var_GRIB_names(ivar)
-              endif;enddo
-              MR_dum3d_compH = 0.0_sp
-              stop 1
-            endif
-            if(Meso_toggle.eq.0)then
-              vz_meso_1_sp = MR_dum3d_compH
-              vz_meso_next_step_sp = vz_meso_1_sp
-            else
-              vz_meso_2_sp = MR_dum3d_compH
-              vz_meso_next_step_sp = vz_meso_2_sp
-            endif
-          endif
-        else
-          vz_meso_next_step_sp = 0.0_sp
-        endif
-
-        if(useCalcFallVel)then
-          ! Populate the fall velocities for the next meso step
-          call Set_Vf_Meso(.true.)
-        endif
+        call Read_NextMesoStep(Load_MesoSteps)
 
 #ifdef FAST_DT
         ! Now calculate the dt at the next timestep
@@ -568,3 +352,243 @@
       return
 
       end subroutine MesoInterpolater
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Read_NextMesoStep(Load_MesoSteps)
+!
+!  Called from: MesoInterpolater
+!  Arguments:
+!    Load_MesoSteps = logical flag to indicate loading the next met time-step
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine Read_NextMesoStep(Load_MesoSteps)
+
+      use precis_param
+
+      use io_units
+
+      use global_param,    only : &
+#ifdef FAST_DT
+         EPS_SMALL,&
+#endif
+         MPS_2_KMPHR,GRAV, &
+         useTemperature,useCalcFallVel,useVz_rhoG
+
+      use solution,        only : &
+         vx_pd,vy_pd,vz_pd,vf_pd
+
+      use wind_grid,       only : &
+          vx_meso_last_step_sp,vx_meso_next_step_sp,&
+          vy_meso_last_step_sp,vy_meso_next_step_sp,&
+          vz_meso_last_step_sp,vz_meso_next_step_sp,&
+          vf_meso_last_step_sp,vf_meso_next_step_sp,&
+          vx_meso_1_sp,vy_meso_1_sp,vz_meso_1_sp, &
+          vx_meso_2_sp,vy_meso_2_sp,vz_meso_2_sp, &
+          Meso_toggle
+
+      use time_data,       only : &
+#ifdef FAST_DT
+         Simtime_in_hours,time,dt, &
+#endif
+         SimStartHour,dt_meso_last,dt_meso_next
+
+#ifdef FAST_DT
+      use io_data,       only : &
+         NextWriteTime
+#endif
+
+      use mesh,            only : &
+         nxmax,nymax,nzmax
+
+      use Source,          only : &
+         SourceType,e_EndTime
+
+      use Source_Umbrella,        only : &
+         uvx_pd,uvy_pd,ibase,itop, &
+           umbrella_winds
+
+      use Tephra,          only : &
+         n_gs_max,Tephra_v_s,   &
+           Set_Vf_Meso
+
+      use Atmosphere,      only : &
+         AirDens_meso_next_step_MetP_sp, &
+           Set_Atmosphere_Meso
+
+      use MetReader,       only : &
+         MR_dum3d_compH,MR_dum3d_compH_2,MR_iMetStep_Now,&
+         MR_MetSteps_Total,Met_var_IsAvailable,isGridRelative,Map_Case,&
+         MR_MetStep_Hour_since_baseyear,MR_MetStep_Interval,&
+         MR_dum3d_compH,MR_dum3d_metP,Met_var_GRIB_names,&
+           MR_Read_HGT_arrays,&
+           MR_Read_3d_Met_Variable_to_CompH,&
+           MR_Rotate_UV_GR2ER_Met,&
+           MR_Rotate_UV_ER2GR_Comp,&
+           MR_Regrid_MetP_to_CompH,&
+           MR_Read_3d_MetP_Variable
+
+      implicit none
+
+      logical      ,intent(inout) :: Load_MesoSteps
+      !logical      ,intent(in)    :: first_time
+
+      logical,save :: first_time = .true.
+
+      integer           :: i,j,k
+      integer           :: isize
+      integer           :: ivar
+      character(len=1)  :: answer
+      integer           :: istep
+
+        ! Before reading state variables, we need to load the height grid
+        ! which will be used in the QC checking
+      if(first_time)then
+        call MR_Read_HGT_arrays(MR_iMetStep_Now,first_time)
+        istep = MR_iMetStep_Now
+      else
+        ! This subroutine sets both last and next geoH arrays so call with
+        ! MR_iMetStep_Now
+        call MR_Read_HGT_arrays(MR_iMetStep_Now)
+        istep = MR_iMetStep_Now+1
+      endif
+
+        if(Map_Case.eq.1.or.Map_Case.eq.2)then
+          ! Either both the comp and met grids are LL (Map_Case = 1)
+          ! or they are both the same projection (Map_Case = 2) so
+          ! we can read the velocity components individually and interpolate onto
+          ! the computational grid
+
+           ! Fill array from the step prior/equal to current time
+          ivar = 2 ! U winds
+          call MR_Read_3d_Met_Variable_to_CompH(ivar,istep,.true.)
+          if(Meso_toggle.eq.0)then
+            vx_meso_1_sp = MR_dum3d_compH
+            vx_meso_next_step_sp = vx_meso_1_sp
+          else
+            vx_meso_2_sp = MR_dum3d_compH
+            vx_meso_next_step_sp = vx_meso_2_sp
+          endif
+
+          ivar = 3 ! V winds 
+          call MR_Read_3d_Met_Variable_to_CompH(ivar,istep,.true.)
+          if(Meso_toggle.eq.0)then
+            vy_meso_1_sp = MR_dum3d_compH
+            vy_meso_next_step_sp = vy_meso_1_sp
+          else
+            vy_meso_2_sp = MR_dum3d_compH
+            vy_meso_next_step_sp = vy_meso_2_sp
+          endif
+        else
+          ! Grids are different, we will need to rotate vectors
+          ! In all these cases, we need:
+          !    MR_dum3d_compH   holding U
+          !    MR_dum3d_compH_2 holding V
+          if(Map_Case.eq.3)then
+              ! Met grid is natively LL and Comp grid is projected
+            call MR_Rotate_UV_ER2GR_Comp(istep)
+          elseif(Map_Case.eq.4)then
+              ! Met grid is projected and comp grid is LL
+            if(isGridRelative)then
+              call MR_Rotate_UV_GR2ER_Met(istep,.true.) ! optional argument returns data on compH
+            else
+              ! if the projected data is already Earth-relative (NARR), then just read it
+              ivar = 3 ! Vy
+              call MR_Read_3d_Met_Variable_to_CompH(ivar,istep)
+              MR_dum3d_compH_2 = MR_dum3d_compH
+              ivar = 2 ! Vx
+              call MR_Read_3d_Met_Variable_to_CompH(ivar,istep)
+            endif
+          elseif(Map_Case.eq.5)then
+            ! Both comp and met grids are projected, but with different projections
+            ! First, rotate winds from met grid to earth-relative on the met nodes
+            call MR_Rotate_UV_GR2ER_Met(istep)
+            ! Now rotate and interpolate those earth-relative values to the projected comp grid.
+            call MR_Rotate_UV_ER2GR_Comp(istep)
+          endif
+
+          if(Meso_toggle.eq.0)then
+            vx_meso_1_sp = MR_dum3d_compH
+            vx_meso_next_step_sp = vx_meso_1_sp
+            vy_meso_1_sp = MR_dum3d_compH_2
+            vy_meso_next_step_sp = vy_meso_1_sp
+          else
+            vx_meso_2_sp = MR_dum3d_compH
+            vx_meso_next_step_sp = vx_meso_2_sp
+            vy_meso_2_sp = MR_dum3d_compH_2
+            vy_meso_next_step_sp = vy_meso_2_sp
+          endif
+        endif
+
+        vf_meso_last_step_sp = vf_meso_next_step_sp
+        ! Only bother getting Vz if it is available in the wind files
+        if(useTemperature)then
+          call Set_Atmosphere_Meso(Load_MesoSteps,1.0_ip,first_time)
+        endif
+        if(Met_var_IsAvailable(4))then
+          if(useTemperature.and.useVz_rhoG)then
+            ! Now that we have temperature and density, we can get a better Vz
+            ivar = 7 ! Pressure Vertical Velocity
+            if(Met_var_IsAvailable(ivar))then
+              call MR_Read_3d_MetP_Variable(ivar,istep)
+              MR_dum3d_MetP = MR_dum3d_MetP/      &
+               real((-AirDens_meso_next_step_MetP_sp*GRAV),kind=sp)
+              call MR_Regrid_MetP_to_CompH(istep)
+            else
+              do io=1,2;if(VB(io).le.verbosity_info)then
+                write(outlog(io),*)"Tried to read variable, but it's not available: ",ivar,&
+                          Met_var_GRIB_names(ivar)
+              endif;enddo
+              MR_dum3d_compH = 0.0_sp
+              stop 1
+            endif
+            if(Meso_toggle.eq.0)then
+              vz_meso_1_sp = MR_dum3d_compH
+              vz_meso_next_step_sp = vz_meso_1_sp
+            else
+              vz_meso_2_sp = MR_dum3d_compH
+              vz_meso_next_step_sp = vz_meso_2_sp
+            endif
+          else
+            ivar = 4 ! W winds
+            if(Met_var_IsAvailable(ivar))then
+              call MR_Read_3d_Met_Variable_to_CompH(ivar,istep)
+            else
+              do io=1,2;if(VB(io).le.verbosity_info)then
+                write(outlog(io),*)"Tried to read variable, but it's not available: ",ivar,&
+                        Met_var_GRIB_names(ivar)
+              endif;enddo
+              MR_dum3d_compH = 0.0_sp
+              stop 1
+            endif
+            if(Meso_toggle.eq.0)then
+              vz_meso_1_sp = MR_dum3d_compH
+              vz_meso_next_step_sp = vz_meso_1_sp
+            else
+              vz_meso_2_sp = MR_dum3d_compH
+              vz_meso_next_step_sp = vz_meso_2_sp
+            endif
+          endif
+        else
+          vz_meso_next_step_sp = 0.0_sp
+        endif
+
+        if(useCalcFallVel)then
+          ! Populate the fall velocities for the next meso step
+          call Set_Vf_Meso(.true.)
+        else
+          if(first_time)then
+            ! This is the case where the fall velocity is assigned in the input file
+            do isize=1,n_gs_max
+              vf_meso_next_step_sp(:,:,:,isize) = real(Tephra_v_s(isize),kind=sp)
+              vf_pd(:,:,:,isize)                =      Tephra_v_s(isize)*MPS_2_KMPHR
+            enddo
+          endif
+        endif
+
+        first_time = .false.
+
+      end subroutine Read_NextMesoStep
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
