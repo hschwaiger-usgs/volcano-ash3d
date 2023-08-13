@@ -2,6 +2,22 @@
 !
 !  calc_mesh_params
 !
+!  Called from: Ash3d.F90 just after arrays are allocated
+!  Arguments:
+!    none
+!
+!  This subroutine defines the mesh used by Ash3d and fill all the vaiables from
+!  the mesh data module.  Cartesian grids are treated separately with the
+!  horizontal cell-centered coordinate variables x_cc_pd and y_cc_pd.  Lon/Lat grids
+!  use lon_cc_pd and lat_cc_pd.  Additionally, both coordinate systems use the same
+!  geometry arrays for volume (kappa_pd) and surface area (sigma_[nx,ny,nz]_pd).
+!  The vertical coordinate is calculated from z_vec_init (built in Read_Control_File),
+!  populating the variables z_cc_pd (cell-centered vert. grid), dz_vec_pd (thickness
+!  of each cell), and z_lb_pd (height of lower boundary).  Next, the projection
+!  information for the compuational grid is sent to MetReader and the corresponding
+!  grids are built with a call to call MR_Initialize_Met_Grids.  Lastly, a call
+!  to MR_Set_Met_Times informs MetReader of the start and simulation time.
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine calc_mesh_params
@@ -93,9 +109,6 @@
 
         !*********************************************************************************
         do k=-1,nzmax+2
-          !rdphi_pd(k) = dn*DEG2RAD * (RAD_EARTH + z_cc_pd(k))
-          !r_1  = RAD_EARTH+z_cc_pd(k)               ! r at bottom of cell
-          !r_2  = RAD_EARTH+z_cc_pd(k)+dz_vec_pd(k)  ! r at top of cell
           r_1  = RAD_EARTH+z_cc_pd(k)-0.5_ip*dz_vec_pd(k)              ! r at bottom of cell
           r_2  = RAD_EARTH+z_cc_pd(k)+0.5_ip*dz_vec_pd(k)  ! r at top of cell
 
@@ -104,9 +117,6 @@
           drr  = (    r_2*r_2 -     r_1*r_1)  ! difference of squares
           drrr = (r_2*r_2*r_2 - r_1*r_1*r_1)  ! difference of cubes
           do j=-1,nymax+2
-!            rdlambda_pd(j,k) = (RAD_EARTH+z_cc_pd(k)) * &
-!                      cos(DEG2RAD*(lat_cc_pd(j)-0.5_ip*dn))*de*DEG2RAD
-            
             phi_1 = DEG2RAD*(lat_cc_pd(j)-0.5_ip*dn) ! phi at lower y of cell
             phi_2 = DEG2RAD*(lat_cc_pd(j)+0.5_ip*dn) ! phi at upper y of cell
             theta_1 = 0.5_ip*PI-phi_1
@@ -140,13 +150,9 @@
         do i=-1,nxmax+2
           x_cc_pd(i) = xLL + dx*real(i,kind=ip) - dx*0.5_ip
         enddo
-        !xmin = minval(x_cc_pd)
-        !xmax = maxval(x_cc_pd)
         do j=-1,nymax+2
           y_cc_pd(j) = yLL + dy*real(j,kind=ip) - dy*0.5_ip
         enddo
-        !ymin = minval(y_cc_pd)
-        !ymax = maxval(y_cc_pd)
 
           ! Area of face at i,j,k-1/2
         sigma_nz_pd(:,:,:) = dy*dx
@@ -173,6 +179,8 @@
           write(outlog(io),*)"     in z: ",real(z_cc_pd(1),kind=sp),real(z_cc_pd(nzmax),kind=sp)
         endif
       endif;enddo
+
+      ! Now setting up projection information
       ! Evaluate wind files for time/space consistency with model requests
         ! Initialize the grids needed for met data
       call MR_Set_CompProjection(IsLatLon,A3d_iprojflag,A3d_lam0, &
@@ -194,9 +202,14 @@
       endif
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Finished initializing Met Grids"
+      endif;enddo
+
+      ! Informing MetReader of the start and simulation time
+      do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Now determining which NWP files and steps needed."
       endif;enddo
       call MR_Set_Met_Times(SimStartHour, Simtime_in_hours)
+
 
 30    format(/,4x,'Calculating the locations of each cell-centered node in the grid.')
 !31    format(/,4x,&
@@ -205,7 +218,22 @@
   
       end subroutine calc_mesh_params
 
-!##############################################################################
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  get_minmax_lonlat
+!
+!  Called from: Not called from standard Ash3d, but used in some optional modules
+!  Arguments:
+!    lonmin,lonmax : minimum and maximum longitude of the computaional grid
+!    latmin,latmax : minimum and maximum latitude of the computaional grid
+!
+!  This subroutine has no input arguments, but returns min/max values for lon/lat
+!  for a projected grid.  Projected grids will have curved boundaries in lon/lat
+!  coordinates so the lon/lat minima/maxima might be along these boundaries.  This
+!  subroutine loops through all the cells, inverse-projects the coordinates, then
+!  returns the min/max values.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine get_minmax_lonlat(lonmin,lonmax,latmin,latmax)
 
@@ -266,8 +294,22 @@
 
       end subroutine get_minmax_lonlat
 
-
-!##############################################################################
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  get_minmax_index
+!
+!  Called from: AdvectHorz
+!  Arguments:
+!    none
+!
+!  This subroutine is called every time the horizontal advection routine is
+!  called if the executable was compiled with FAST_SUBGRID set.  This subroutine
+!  loops through all the cells in the domain and tracks the maximal and minimal
+!  extents of the airborne ash cloud, setting imin,imax,jmin,jmax,kmin,kmax.
+!  These values define the range of the do-loops for this time step, greatly
+!  reducing the computation time for small clouds in large domains.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine get_minmax_index
 

@@ -6,7 +6,7 @@
 !  Arguments:
 !    none
 !
-!  This subroutine call the allocation routined from each of the modules in
+!  This subroutine calls the allocation routines from each of the modules in
 !  Ash3d_VariableModules.f90
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -51,13 +51,24 @@
       call Allocate_wind_grid
       call Allocate_Output_Vars
       call Allocate_Source_grid
-      call Allocate_Diff(nxmax,nymax,nzmax)
+      call Allocate_Diff
 
       end subroutine alloc_arrays
-!###############################################################################
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  dealloc_arrays()
+!
+!  Called from: Ash3d.F90
+!  Arguments:
+!    none
+!
+!  This subroutine calls the deallocation routines from each of the modules in
+!  Ash3d_VariableModules.f90
+!
 
-!###############################################################################
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
       subroutine dealloc_arrays
 
       use io_units
@@ -120,5 +131,4 @@
 
       end subroutine dealloc_arrays
 
-!##############################################################################
-
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

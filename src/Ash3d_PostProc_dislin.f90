@@ -20,7 +20,7 @@
 
         ! Publicly available variables
 
-      integer,parameter :: DS = 4
+      integer,parameter :: DS = 8
 
       contains
 

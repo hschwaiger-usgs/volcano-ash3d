@@ -71,7 +71,6 @@
       jmax = nymax
       kmin = 1
       kmax = nzmax
-
 #endif
         ! Use dimension splitting with donor-cell-upwind (DCU)
       if(mod(itoggle,2).eq.0) then

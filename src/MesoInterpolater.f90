@@ -8,22 +8,27 @@
 !    TimeNow        = current time, in hours since start of simulation
 !    Load_MesoSteps = logical flag to indicate loading the next met time-step
 !    Interval_Frac  = the fraction of the met step for the current time
-!    first_time     = logical flag to trigger loading braketing met steps
 !
 ! This purpose of this subroutine is to interpolate data from the mesoscale NWP
-! files onto the current time of the simulation.  This subroutine manages the
-! calls to MetReader to populate the variables at the braketing timesteps of the
-! NWP files, reading the next step if the simulation time crossest over to the
-! next time step of the NWP files.
+! files onto the current time of the simulation.  
 ! Initially, if the 'first_time' is set to true, then this is the call from
 ! Ash3d.F90 prior to the time-integration loop.  During the first call, both
 ! braketing time steps need to be loaded, velocities interpolated, then the
-! time step calculated. The variables are read into memory via the subroutine
-! Read_NextMesoStep
+! time step calculated. The time step is calculated once all the velocities
+! are determined, including the additional component from umbrella cloud
+! spreading, if an umbrella source is used.  If compiled with FAST_DT set,
+! then Adjust_DT is not called for each step, but only on the intevals
+! of the NWP files with linear interpolation in between.
+! The variables are read into memory via the subroutine Read_NextMesoStep
+! After the current velocities are determined, some error-checking is
+! aplied at the end of the subroutine to ensure velocities are valid.
+!
+! Variables set: vx_pd, vy_pd, vz_pd, vf_pd, dt
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine MesoInterpolater(TimeNow,Load_MesoSteps,Interval_Frac,first_time)
+      subroutine MesoInterpolater(TimeNow,Load_MesoSteps,Interval_Frac)
+
       ! Fclaw subroutine MesoInterpolater(TimeNow,Load_MesoSteps,Interval_Frac,first_time,Meso_toggle)
 
 !    Subroutine that interpolates to obtain the current wind field
@@ -97,12 +102,14 @@
       real(kind=dp),intent(in)    :: TimeNow                !current time, in hours since start of simulation
       real(kind=dp),intent(out)   :: Interval_Frac
       logical      ,intent(inout) :: Load_MesoSteps
-      logical      ,intent(in)    :: first_time
 
       integer           :: i,j,k
       integer           :: isize
       integer           :: ivar
       character(len=1)  :: answer
+      logical,save      :: first_time = .true.  ! There is a bit of extra work the first time
+                                                ! this subroutine is called since we need to
+                                                ! fill the step prior to the start time.
 
       real(kind=dp):: HoursIntoInterval ! hours since the last windfile timestep
       real(kind=ip) :: TimeNow_fromRefTime
@@ -199,9 +206,9 @@
       ! Interpolate to get wind fields at current time and in km/hr
       ! Note: v[x,y,z,f]_pd are all in km/hr and
       !       v[x,y,z,f]_meso_[last,next]step_sp are in m/s
-      vx_pd = 0.0_ip
-      vy_pd = 0.0_ip
-      vz_pd = 0.0_ip
+      !vx_pd = 0.0_ip
+      !vy_pd = 0.0_ip
+      !vz_pd = 0.0_ip
       vx_pd(1:nxmax,1:nymax,1:nzmax) = &
             (real(vx_meso_last_step_sp(1:nxmax,1:nymax,1:nzmax),kind=ip) + &
            real((vx_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax) - &
@@ -349,6 +356,8 @@
         endif
       endif
 
+      first_time = .false.
+
       return
 
       end subroutine MesoInterpolater
@@ -360,6 +369,13 @@
 !  Called from: MesoInterpolater
 !  Arguments:
 !    Load_MesoSteps = logical flag to indicate loading the next met time-step
+!
+! This subroutine manages the calls to MetReader to populate the variables at
+! the braketing timesteps of the NWP files, reading the next step of the
+! simulation time crosses over to the next time step of the NWP files.  The
+! primary variables read from the NWP files are vx, vy, and vz, but it temperatures
+! are needed (as is the case for most fall models), the those are read via calls
+! to Set_Atmosphere_Meso.  Fall velocities are calculated via calls to Set_Vf_Meso.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -432,7 +448,6 @@
       implicit none
 
       logical      ,intent(inout) :: Load_MesoSteps
-      !logical      ,intent(in)    :: first_time
 
       logical,save :: first_time = .true.
 
@@ -589,6 +604,7 @@
 
         first_time = .false.
 
+        return
+
       end subroutine Read_NextMesoStep
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-

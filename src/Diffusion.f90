@@ -65,28 +65,39 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!  Allocate_Diff(nx,ny,nz)
+!  Allocate_Diff
+!
+!  Called from: alloc_arrays
+!  Arguments:
+!    none
+!
+!  Allocated the three diffusivity arrays.  These are full, 3-d arrays even when
+!  diffusivity is homogeneous.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine Allocate_Diff(nx,ny,nz)
+      subroutine Allocate_Diff
 
-      integer :: nx,ny,nz
-      !integer :: ngridnode
-
-      !ngridnode = (nx+2)*(ny+2)*(nz+2)
+      use mesh,          only : &
+         nxmax,nymax,nzmax
 
       ! Initialize diffusivity arrays with diffusivity_horz and diffusivity_vert
       ! These will change if useVarDiff = .true.
-      allocate(kx(0:nx+1,0:ny+1,0:nz+1)); kx = diffusivity_horz
-      allocate(ky(0:nx+1,0:ny+1,0:nz+1)); ky = diffusivity_horz
-      allocate(kz(0:nx+1,0:ny+1,0:nz+1)); kz = diffusivity_vert
+      allocate(kx(0:nxmax+1,0:nymax+1,0:nzmax+1)); kx = diffusivity_horz
+      allocate(ky(0:nxmax+1,0:nymax+1,0:nzmax+1)); ky = diffusivity_horz
+      allocate(kz(0:nxmax+1,0:nymax+1,0:nzmax+1)); kz = diffusivity_vert
 
       end subroutine Allocate_Diff
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  Deallocate_Diff
+!
+!  Called from: dealloc_arrays
+!  Arguments:
+!    none
+!
+!  Deallocates the three diffusivity arrays
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -102,6 +113,15 @@
 !
 !  DiffuseHorz(i)
 !
+!  Called from: Ash3d.F90
+!  Arguments:
+!    i : time step
+!
+!  This subroutine calls the horizontal diffusion routines. The time step passed
+!  as an argument is only used to toggle between x-first and y-first.  This
+!  subroutine uses the parameter useCN (set via preprocesso flag in global_param)
+!  to determine if implicit or explicit solvers should be used.
+! 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine DiffuseHorz(i)
@@ -147,6 +167,14 @@
 !
 !  DiffuseVert
 !
+!  Called from: Ash3d.F90
+!  Arguments:
+!    none
+!
+!  This subroutine calls the vertical diffusion routines. This subroutine uses
+!  the parameter useCN (set via preprocesso flag in global_param) to determine
+!  if implicit or explicit solvers should be used.
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine DiffuseVert
@@ -165,6 +193,17 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  diff_x
+!
+!  Called from: DiffuseHorz
+!  Arguments:
+!    none
+!
+!  This subroutine calculates diffusion in x for heterogeneous diffusivity using
+!  an explicit solver (Eq 4.11 LeVeque02).  Periodicity is imposed if a global
+!  domain is used.
+!  The concentration array is updated in concen_pd(:,:,:,:,t=2) then copied back
+!  to concen_pd(:,:,:,:,t=1).  This subroutine has the equivalent structure as
+!  diff_y and diff_y.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -304,6 +343,16 @@
 !
 !  diff_y
 !
+!  Called from: DiffuseHorz
+!  Arguments:
+!    none
+!
+!  This subroutine calculates diffusion in y for heterogeneous diffusivity using
+!  an explicit solver (Eq 4.11 LeVeque02).
+!  The concentration array is updated in concen_pd(:,:,:,:,t=2) then copied back
+!  to concen_pd(:,:,:,:,t=1).  This subroutine has the equivalent structure as
+!  diff_x and diff_z.
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine diff_y
@@ -431,6 +480,16 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  diff_z
+!
+!  Called from: DiffuseVert
+!  Arguments:
+!    none
+!
+!  This subroutine calculates diffusion in z for heterogeneous diffusivity using
+!  an explicit solver (Eq 4.11 LeVeque02). 
+!  The concentration array is updated in concen_pd(:,:,:,:,t=2) then copied back
+!  to concen_pd(:,:,:,:,t=1).  This subroutine has the equivalent structure as
+!  diff_x and diff_y.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -562,12 +621,22 @@
 !
 !  diffCN_x
 !
+!  Called from: DiffuseHorz
+!  Arguments:
+!    none
+!
+!  This subroutine calculates diffusion in x for heterogeneous diffusivity using
+!  an implicit solver (Eq 4.13 LeVeque02).  Periodicity is not imposed.  This
+!  subroutine was designed for Crank-Nicolson which mixes equal parts of the
+!  2nd derivitive stencil at t0 and t1.  This is set by Imp_fac which controls
+!  the mixing of t0 and t1: 0 for explicit, 0.5 for C-N, 1 for fully implicit.
+!  The concentration array is updated in concen_pd(:,:,:,:,t=2) then copied back
+!  to concen_pd(:,:,:,:,t=1).  This subroutine has the equivalent structure as
+!  diffCN_y and diffCN_z
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine diffCN_x
-
-      ! Implicit Crank-Nicolson diffusion routine
-      ! Implements Eq 4.13 of LeVeque02
 
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,ts0,ts1,kappa_pd,sigma_nx_pd,IsPeriodic
@@ -671,6 +740,8 @@
       concen_pd(nxmax+1,:,:,:,ts0) = concen_pd(nxmax,:,:,:,ts0)
       concen_pd(nxmax+2,:,:,:,ts0) = concen_pd(nxmax,:,:,:,ts0)
       ! Apply periodicity
+      ! Note that we are only applying periodicity at t0, not requiring periodicity
+      ! at t1
       if(IsPeriodic)then
         concen_pd(-1     ,:,:,:,ts0) = concen_pd(nxmax-1,:,:,:,ts0)
         concen_pd( 0     ,:,:,:,ts0) = concen_pd(nxmax  ,:,:,:,ts0)
@@ -732,7 +803,7 @@
                   ! RHS contains left boundary term
                 BC_left_t0 = q_cc(rmin)   ! This sets a Neuman condition at t0
                 !BC_left_t1 ~= q_cc(rmin) ! This condition is baked into the matrix
-                                       ! stencil so that BC_left_t1=q_cc(1) at t1
+                                          ! stencil so that BC_left_t1=q_cc(1) at t1
                 B_d(l_cc)  =        (1.0_ip-Imp_fac)*LeftFac    * BC_left_t0 + &
                           (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(rmin-1+l_cc) + &
                                     (1.0_ip-Imp_fac)*RightFac   * q_cc(rmin-1+l_cc+1)
@@ -821,12 +892,22 @@
 !
 !  diffCN_y
 !
+!  Called from: DiffuseHorz
+!  Arguments:
+!    none
+!
+!  This subroutine calculates diffusion in y for heterogeneous diffusivity using
+!  an implicit solver (Eq 4.13 LeVeque02).
+!  This subroutine was designed for Crank-Nicolson which mixes equal parts of the
+!  2nd derivitive stencil at t0 and t1.  This is set by Imp_fac which controls
+!  the mixing of t0 and t1: 0 for explicit, 0.5 for C-N, 1 for fully implicit.
+!  The concentration array is updated in concen_pd(:,:,:,:,t=2) then copied back
+!  to concen_pd(:,:,:,:,t=1).  This subroutine has the equivalent structure as
+!  diffCN_x and diffCN_z
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine diffCN_y
-
-      ! Implicit Crank-Nicolson diffusion routine
-      ! Implements Eq 4.13 of LeVeque02
 
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,ts0,ts1,kappa_pd,sigma_ny_pd
@@ -1072,6 +1153,19 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  diffCN_z
+!
+!  Called from: DiffuseVert
+!  Arguments:
+!    none
+!
+!  This subroutine calculates diffusion in z for heterogeneous diffusivity using
+!  an implicit solver (Eq 4.13 LeVeque02).
+!  This subroutine was designed for Crank-Nicolson which mixes equal parts of the
+!  2nd derivitive stencil at t0 and t1.  This is set by Imp_fac which controls
+!  the mixing of t0 and t1: 0 for explicit, 0.5 for C-N, 1 for fully implicit.
+!  The concentration array is updated in concen_pd(:,:,:,:,t=2) then copied back
+!  to concen_pd(:,:,:,:,t=1).  This subroutine has the equivalent structure as
+!  diffCN_x and diffCN_y
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -1324,5 +1418,4 @@
       end subroutine diffCN_z
 
       end module Diffusion
-!##############################################################################
-
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

@@ -96,7 +96,6 @@
       real(kind=ip)         :: Interval_Frac
       logical               :: Load_MesoSteps
       logical               :: StopTimeLoop   = .false.
-      logical               :: first_time     = .true.
       real(kind=ip)         :: MassConsErr
 
       INTERFACE
@@ -110,12 +109,11 @@
         end subroutine alloc_arrays
         subroutine calc_mesh_params
         end subroutine calc_mesh_params
-        subroutine MesoInterpolater(TimeNow,Load_MesoSteps,Interval_Frac,first_time)
+        subroutine MesoInterpolater(TimeNow,Load_MesoSteps,Interval_Frac)
           integer,parameter  :: dp         = 8 ! Double precision
           real(kind=dp),intent(in)    :: TimeNow
           real(kind=dp),intent(out)   :: Interval_Frac
           logical      ,intent(inout) :: Load_MesoSteps
-          logical      ,intent(in)    :: first_time
         end subroutine MesoInterpolater
         subroutine output_results
         end subroutine output_results
@@ -237,8 +235,7 @@
       time           = 0.0_ip
       Load_MesoSteps = .true.
       Interval_Frac  = 0.0_ip
-      first_time     = .true.
-      call MesoInterpolater(time , Load_MesoSteps , Interval_Frac, first_time)
+      call MesoInterpolater(time , Load_MesoSteps , Interval_Frac)
 
 !------------------------------------------------------------------------------
 !       OPTIONAL MODULES
@@ -309,8 +306,7 @@
         endif
 
           ! find the wind field at the current time
-        first_time     = .false.
-        call MesoInterpolater(time , Load_MesoSteps , Interval_Frac, first_time)
+        call MesoInterpolater(time , Load_MesoSteps , Interval_Frac)
 
 !------------------------------------------------------------------------------
 !       OPTIONAL MODULES

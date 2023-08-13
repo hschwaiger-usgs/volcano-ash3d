@@ -258,15 +258,10 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-!      subroutine Allocate_Output_Vars(nx,ny,nz)
       subroutine Allocate_Output_Vars
 
       use mesh,          only : &
          nxmax,nymax,nzmax
-
-      !integer,intent(in) :: nx
-      !integer,intent(in) :: ny
-      !integer,intent(in) :: nz
 
       allocate(Mask_Cloud(nxmax,nymax))
       Mask_Cloud = .false.
