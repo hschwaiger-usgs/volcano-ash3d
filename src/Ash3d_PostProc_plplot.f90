@@ -22,8 +22,8 @@
         ! Publicly available variables
 
       integer :: lib_ver_major = 5
-      integer :: lib_ver_minor = 10
-      !integer :: lib_ver_minor = 14
+      !integer :: lib_ver_minor = 10
+      integer :: lib_ver_minor = 14
 
       contains
 
@@ -351,10 +351,10 @@
       ! set image size via command-line options tool plsetopt
       if(lib_ver_minor.lt.12)then
         ! prior to v5.12, this was a subroutine call
-        call plsetopt("geometry","854x603, 854x603")
+!        call plsetopt("geometry","854x603, 854x603")
       else
         ! after v5.12, this is a function call returing an error code plsetopt_rc
-!        plsetopt_rc = plsetopt("geometry","854x603, 854x603")
+        plsetopt_rc = plsetopt("geometry","854x603, 854x603")
       endif
 
       !-----------------------------------
@@ -363,10 +363,10 @@
       ! sets cmap1 palette via pal file for continuous elements
       if(lib_ver_minor.lt.12)then
         ! prior to v5.12, the second argument was an integer
-        call plspal1('cmap1_blue_yellow.pal',1)
+!        call plspal1('cmap1_blue_yellow.pal',1)
       else
         ! after v5.12, this needs to be a logical
-!        call plspal1('cmap1_blue_yellow.pal',.true.)
+        call plspal1('cmap1_blue_yellow.pal',.true.)
       endif
 
       call plscmap0n(16)           ! sets number of colors in cmap0
@@ -427,9 +427,9 @@
       call pllab("Longitude", "Latitude", title_plot)
       if(lib_ver_minor.lt.12)then
         ! prior to v5.12, the second argument was an integer
-        call plstransform( 0 )
+!        call plstransform( 0 )
       else
-!        call plstransform
+        call plstransform
       endif
 
       !---------------------------------------------------------
@@ -741,12 +741,12 @@
       ! set image size and background color via command-line options tool plsetopt
       if(lib_ver_minor.lt.12)then
         ! prior to v5.12, this was a subroutine call
-        call plsetopt("geometry","854x603, 854x603")
-        call plsetopt("bg","FFFFFF")                  ! Set background color to white
+!        call plsetopt("geometry","854x603, 854x603")
+!        call plsetopt("bg","FFFFFF")                  ! Set background color to white
       else
         ! after v5.12, this is a function call returing an error code plsetopt_rc
-!        plsetopt_rc = plsetopt("geometry","854x603, 854x603")
-!        plsetopt_rc = plsetopt("bg","FFFFFF")
+        plsetopt_rc = plsetopt("geometry","854x603, 854x603")
+        plsetopt_rc = plsetopt("bg","FFFFFF")
       endif
 
       ! sets cmap0 palette via pal file for discrete elements
@@ -754,10 +754,10 @@
       ! sets cmap1 palette via pal file for continuous elements
       if(lib_ver_minor.lt.12)then
         ! prior to v5.12, the second argument was an integer
-        call plspal1('cmap1_blue_yellow.pal',1)
+!        call plspal1('cmap1_blue_yellow.pal',1)
       else
         ! after v5.12, this needs to be a logical
-!        call plspal1('cmap1_blue_yellow.pal',.true.)
+        call plspal1('cmap1_blue_yellow.pal',.true.)
       endif
 
       call plscmap0n(3)  ! Set number of colors in cmap0
@@ -778,16 +778,16 @@
       if(lib_ver_minor.lt.12)then
         ! prior to v5.12, plshades assumed coordinate trans. would deform
         ! rectangles
-        call plshades(conc(:ntmax,:nzmax), defined, &
-          tmin,tmax,zmin,zmax, &
-          shedge, fill_width, &
-          cont_color, cont_width )
-      else
-        ! after v5.12, a rectangular boolean is required
-!        call plshades(conc(:ntmax,:nzmax), &
+!        call plshades(conc(:ntmax,:nzmax), defined, &
 !          tmin,tmax,zmin,zmax, &
 !          shedge, fill_width, &
-!          cont_color, cont_width , .true.)
+!          cont_color, cont_width )
+      else
+        ! after v5.12, a rectangular boolean is required
+        call plshades(conc(:ntmax,:nzmax), &
+          tmin,tmax,zmin,zmax, &
+          shedge, fill_width, &
+          cont_color, cont_width , .true.)
       endif
 
       ! Smaller text, scale by second argument
@@ -958,12 +958,12 @@
       ! set image size and background colog via command-line options tool plsetopt
       if(lib_ver_minor.lt.12)then
         ! prior to v5.12, this was a subroutine call
-        call plsetopt("geometry","400x300, 400x300")
-        call plsetopt("bg","FFFFFF")
+!        call plsetopt("geometry","400x300, 400x300")
+!        call plsetopt("bg","FFFFFF")
       elseif(lib_ver_major.le.5.and.lib_ver_minor.eq.15)then
         ! after v5.12, this is a function call returing an error code plsetopt_rc
-!        plsetopt_rc = plsetopt("geometry","400x300, 400x300")  ! Set image size
-!        plsetopt_rc = plsetopt("bg","FFFFFF")                  ! Set background color to white
+        plsetopt_rc = plsetopt("geometry","400x300, 400x300")  ! Set image size
+        plsetopt_rc = plsetopt("bg","FFFFFF")                  ! Set background color to white
       endif
 
 

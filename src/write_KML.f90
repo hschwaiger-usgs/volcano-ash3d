@@ -1,10 +1,18 @@
+!##############################################################################
+!
+!  Output_KML module
+!
+!  This module manages all output to kml files
+!
 !      subroutine Set_OutVar_Specs
 !      subroutine OpenFile_KML
 !      subroutine Write_2D_KML
 !      subroutine Write_PointData_Airports_KML
 !      subroutine Close_KML
 !      subroutine PlotModelBoundary
-!      function month(imonth)
+!           function month(imonth)
+!
+!##############################################################################
 
       module Output_KML
 
@@ -63,15 +71,18 @@
       character(len=13),dimension(nvars           ) :: KML_AltMode
 
       contains
-
-!******************************************************************************
+      !------------------------------------------------------------------------
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!  Called from: 
+!
+!  Set_OutVar_Specs
+!
+!  Called from: output_results and Ash3d_PostProc.F90
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine essentially initializes variables local to the Output_KML module
+!  Many of these variables are slight modifications of varibles in Output_Vars
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -197,7 +208,6 @@
 
       ivar = 5 ! cloud arrival time
       KMZ_filename(ivar)      = 'cloud_arrivaltimes_hours.kmz'
-      !KML_filename(ivar)      = 'CloudArrivalTime.kml         '
       KML_filename(ivar)      = 'cloud_arrivaltimes_hours.kml'
       KML_units(ivar)         = ' hrs '
       KML_fid(ivar)           = 390
@@ -257,7 +267,6 @@
 
       ivar = 7 ! deposit
       KMZ_filename(ivar)      = 'deposit_thickness_mm.kmz     '
-      !KML_filename(ivar)      = 'Deposit.kml                  '
       KML_filename(ivar)      = 'deposit_thickness_mm.kml     '
       KML_units(ivar)         = '  mm '
       KML_fid(ivar)           = 50
@@ -287,7 +296,6 @@
 
       ivar = 8 ! deposit (NWS)
       KMZ_filename(ivar)      = 'deposit_thickness_inches.kmz  '
-      !KML_filename(ivar)      = 'Deposit_NWS.kml              '
       KML_filename(ivar)      = 'deposit_thickness_inches.kml  '
       KML_units(ivar)         = '  in.'
       KML_fid(ivar)           = 550
@@ -317,7 +325,6 @@
 
       ivar = 9 ! deposit time
       KMZ_filename(ivar)      = 'ashfall_arrivaltimes_hours.kmz'
-      !KML_filename(ivar)      = 'DepositArrivalTime.kml       '
       KML_filename(ivar)      = 'ashfall_arrivaltimes_hours.kml'
       KML_units(ivar)         = ' hrs '
       KML_fid(ivar)           = 290
@@ -376,20 +383,20 @@
 
       end subroutine Set_OutVar_Specs
 
-!******************************************************************************
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!  Called from: 
-!  Arguments:
-!    none
 !
-!  This subroutine
+!  OpenFile_KML
+!
+!  Called from: output_results and Ash3d_PostProc.F90
+!  Arguments:
+!    ivar = ID of variable to process
+!
+!  This subroutine opens and initializes the KML file
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine OpenFile_KML(ivar)
       
-      !Subroutine that opens and initializes the KML file
-
       use time_data,     only : &
          BaseYear,useLeap,SimStartHour,OutputOffset
 
@@ -409,7 +416,6 @@
            PJ_proj_inv
 
       integer             :: ivar
-      !character (len=13)  :: HS_yyyymmddhh_since
       character (len=13)  :: yyyymmddhh
       character (len=2)   :: opacity
       real(kind=ip)       :: xleft, xright, ybottom, ytop
@@ -423,7 +429,6 @@
       character(len=30)   :: filename
       integer             :: fid
       integer             :: n_clrmp,icmp
-      !real(kind=ip)   ,dimension(9)   :: color_map
       character(len=9),dimension(11)   :: Styles
       character(len=6),dimension(11)   :: Colors
       character(len=30)   :: description
@@ -446,7 +451,6 @@
       filename    = KML_filename(ivar)
       fid         = KML_fid(ivar)
       n_clrmp     = KML_n_clrmp(ivar)
-      !color_map   = KML_color_map(ivar,:)
       Styles(:)   = KML_Styles(ivar,:)
       Colors(:)   = KML_Colors(ivar,:)
       description = KML_description(ivar)
@@ -486,7 +490,7 @@
       !write legend (20 lines starting with ScreenOverlay)
       write(fid,5)description,legend,overlayX,overlayY,screenX,screenY,sizeX,sizeY
 
-      !PLOT MODEL REGION
+      ! Plot model region
       if (IsLatLon) then
         longLL  = lonLL - de/2.0_ip
         longUR  = lonUR + de/2.0_ip
@@ -508,7 +512,7 @@
 
       write(fid,7) VolcanoName, VolcanoName
 
-!     WRITE TABLE OF ESP'S TO THE VOLCANO PLACEMARK
+      ! write table of ESP's to the volcano placemark
       do ierup=1,neruptions
         yyyymmddhh = HS_yyyymmddhh_since(e_StartTime(ierup)+SimStartHour+OutputOffset,&
                                          BaseYear,useLeap)
@@ -520,7 +524,7 @@
 100     format(i4,i2,i2,f5.2)
       enddo
 
-      !PLOT VOLCANO
+      ! Plot volcano
       if (.not.IsLatLon) then                        !get lon_volcano and lat_volcano
         call PJ_proj_inv(x_volcano, y_volcano, &
                    A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
@@ -533,19 +537,17 @@
         write(fid,9) lon_volcano, lat_volcano
       endif
 
-      !CREATE FORECAST FOLDER ONLY FOR THE FILES THAT HAVE TIME STEPS
-      if ((ivar.eq.5).or. &                                       !cloud arrival time
-         ((ivar.eq.7).and.(.not.WriteDepositTS_KML)).or. & !deposit
-         ((ivar.eq.8).and.(.not.WriteDepositTS_KML)).or. & !deposit_NWS
-          (ivar.eq.9)) then                                       !deposit arrival time
+      ! Create forecast folder only for the files that have time steps
+      if ((ivar.eq.5).or. &                                    ! cloud arrival time
+         ((ivar.eq.7).and.(.not.WriteDepositTS_KML)).or. &     ! deposit
+         ((ivar.eq.8).and.(.not.WriteDepositTS_KML)).or. &     ! deposit_NWS
+          (ivar.eq.9)) then                                    ! deposit arrival time
         continue
       else
-        write(fid,6)                                       !create folder of forecasts
+        write(fid,6)                                       ! create folder of forecasts
       endif
 
       deallocate(iyear,imonth,iday,StartHour)
-
-      !write(fid,*)"---------  End of OpenFile_KML ------------"
 
       return
 
@@ -699,12 +701,16 @@
 
       end subroutine OpenFile_KML
 
-!******************************************************************************
-!******************************************************************************
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!  Called from: 
+!
+!  Write_2D_KML
+!
+!  Called from: output_results and Ash3d_PostProc.F90
 !  Arguments:
-!    none
+!    ivar        = ID of variable to process
+!    OutVar      = 2-d array of data to write to KML
+!    height_flag = flag to indicate heigh of cell (<0 : min, =0 : ground, >0 : max)
+!    TS_flag     = 0 = not a time-series, 1 = time-series
 !
 !  This subroutine
 !
@@ -750,7 +756,6 @@
       character(len=13)   :: AltMode
       real(kind=ip)   ,dimension(11)   :: color_map
       character(len=9),dimension(11)   :: Styles
-      !character(len=6),dimension(9)   :: Colors
       logical             :: CrossAntiMeridian     !if the polygon crosses the antimeridian
 
       INTERFACE
@@ -766,7 +771,6 @@
       n_clrmp   = KML_n_clrmp(ivar)
       color_map = KML_color_map(ivar,:)
       Styles(:) = KML_Styles(ivar,:)
-      !Colors(:) = KML_Colors(ivar,:)
       units     = KML_units(ivar)
       AltMode   = KML_AltMode(ivar)
 
@@ -1004,16 +1008,21 @@
 
       end subroutine Write_2D_KML
 
-!******************************************************************************
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!  Called from: 
+!
+!  Write_PointData_Airports_KML
+!
+!  Called from: output_results (in the isFinal_TS branch) and Ash3d_PostProc.F90
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine writes all airport data to ash_arrivaltimes_airports.kml.
+!  For each airport/POI, a short gnuplot script is writen and executed which
+!  creates a time-series plot of the deposit at accumulation at that point.
+!  These are linked to the kml file.  If zip is installed on the system, the
+!  kml file is compressed.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 
       subroutine Write_PointData_Airports_KML
 
@@ -1040,8 +1049,6 @@
       use io_data,       only : &
          nWriteTimes,VolcanoName,WriteTimes
 
-!      use mesh,          only : &
-!         nsmax
       use Tephra,          only : &
          n_gs_max
 
@@ -1519,13 +1526,18 @@
 
       end subroutine Write_PointData_Airports_KML
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! Close_KML
+!
 !  Called from: 
 !  Arguments:
-!    none
+!    ivar        = ID of variable to process
+!    TS_flag     = 0 = not a time-series, 1 = time-series
 !
-!  This subroutine
+!  This subroutine closes the kml file associated with the variable ivar
 !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Close_KML(ivar,TS_flag)
 
@@ -1553,19 +1565,20 @@
 
       end subroutine Close_KML
 
-!******************************************************************************
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!  Called from: 
-!  Arguments:
-!    none
 !
-!  This subroutine
+!  PlotModelBoundary
+!
+!  Called from: OpenFile_KML
+!  Arguments:
+!    xleft,xright,ybottom,ytop,fid
+!
+!  This subroutine finds the latitude & longitude of points in all sides of
+!  the model region
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine PlotModelBoundary(xleft,xright,ybottom,ytop,fid)
-
-      !subroutine that finds the latitude & longitude of points in all sides of the model region
 
       use mesh,          only : &
          A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,&
@@ -1690,55 +1703,54 @@
 
       end subroutine PlotModelBoundary
 
-!******************************************************************************
-
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  month
+!
 !  Called from: 
 !  Arguments:
-!    none
+!    imonth = 2-character 'number' for the month
 !
-!  This subroutine
+!  This function returns the name of the month given the month number as 2-char
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-      function month(imonth)
-
-!     function that returns the name of the month given the month number
-
-      character (len=2) :: imonth
-      character (len=3) :: month
-
-      if (imonth.eq.'01') then
-        month='jan'
-      else if (imonth.eq.'02') then
-        month='feb'
-      else if (imonth.eq.'03') then
-        month='mar'
-      else if (imonth.eq.'04') then
-        month='apr'
-      else if (imonth.eq.'05') then
-        month='may'
-      else if (imonth.eq.'06') then
-        month='jun'
-      else if (imonth.eq.'07') then
-        month='jul'
-      else if (imonth.eq.'08') then
-        month='aug'
-      else if (imonth.eq.'09') then
-        month='sep'
-      else if (imonth.eq.'10') then
-        month='oct'
-      else if (imonth.eq.'11') then
-        month='nov'
-      else if (imonth.eq.'12') then
-        month='dec'
-      else
-        month='xxx'
-      endif
-
-      return
-
-      end function month
+!
+!      function month(imonth)
+!
+!      character (len=2) :: imonth
+!      character (len=3) :: month
+!
+!      if (imonth.eq.'01') then
+!        month='jan'
+!      else if (imonth.eq.'02') then
+!        month='feb'
+!      else if (imonth.eq.'03') then
+!        month='mar'
+!      else if (imonth.eq.'04') then
+!        month='apr'
+!      else if (imonth.eq.'05') then
+!        month='may'
+!      else if (imonth.eq.'06') then
+!        month='jun'
+!      else if (imonth.eq.'07') then
+!        month='jul'
+!      else if (imonth.eq.'08') then
+!        month='aug'
+!      else if (imonth.eq.'09') then
+!        month='sep'
+!      else if (imonth.eq.'10') then
+!        month='oct'
+!      else if (imonth.eq.'11') then
+!        month='nov'
+!      else if (imonth.eq.'12') then
+!        month='dec'
+!      else
+!        month='xxx'
+!      endif
+!
+!      return
+!
+!      end function month
 
       end module Output_KML
+!##############################################################################

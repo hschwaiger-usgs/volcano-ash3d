@@ -32,7 +32,8 @@
 !   INDEX:     Index (starting at 0) of the contour level
 !   TIME:      Valid time (xmltime) for this feature (useful for combining multiple
 !              shapefiles of a transient variable)
-!  For linux or mac systems with zip installed, the four shapefile files are zipped.
+!  For linux or mac systems with zip installed, the four files needed for the
+!  shapefile (.shp, .shx, .dbf, and ,prj) are zipped via a system call.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -57,6 +58,9 @@
 
       use time_data,     only : &
          time,BaseYear,useLeap,SimStartHour,os_time_log
+
+      use mesh,          only : &
+         IsLatLon
 
       implicit none
 
@@ -146,8 +150,8 @@
       character(len=10):: DBASE_TableRecData14  ! index
       character(len=20):: DBASE_TableRecData15  ! Time of data
 
-      logical                 :: IsThere
-      character(len=71):: zipcom
+      logical           :: IsThere
+      character(len=71) :: zipcom
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
@@ -163,10 +167,6 @@
           character(len=1),intent(in)      :: DBASE_FieldTyp
           integer(kind=1),intent(in)       :: DBASE_FieldLen
         end subroutine writeShapFileFieldDesArr
-        integer(kind=2) function BigEnd_2int(isLit,r)
-          logical         :: isLit
-          integer(kind=2) :: r
-        end function BigEnd_2int
         integer(kind=4) function BigEnd_4int(isLit,r)
           logical         :: isLit
           integer(kind=4) :: r
@@ -185,36 +185,45 @@
         end function LitEnd_8real
       END INTERFACE
 
-      if(iprod.eq.3)then       ! deposit at specified times (mm)
+      if(.not.IsLatLon)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: Currently shapefiles are only tested for lon/lat coordinates."
+        endif;enddo
+        stop 1
+      endif
+
+      if(iprod.eq.3)then        ! deposit at specified times (mm)
         write(title_plot,'(a22,f5.2,a6)')': Deposit Thickness t=',WriteTimes(itime),' hours'
         plot_variable = 'Deposit Thickness'
         ov_fileroot = 'depothik'
         plot_units = 'mm'
-      elseif(iprod.eq.4)then   ! deposit at specified times (inches)
+      elseif(iprod.eq.4)then    ! deposit at specified times (inches)
         write(title_plot,'(a22,f5.2,a6)')': Deposit Thickness t=',WriteTimes(itime),' hours'
         plot_variable = 'Deposit Thickness'
         ov_fileroot = 'depothik'
         plot_units  = 'in'
-      elseif(iprod.eq.5)then       ! deposit at final time (mm)
+      elseif(iprod.eq.5)then    ! deposit at final time (mm)
         title_plot = ': Final Deposit Thickness'
         plot_variable = 'Final Deposit Thickness'
         ov_fileroot = 'depothik'
         plot_units = 'mm'
-      elseif(iprod.eq.6)then   ! deposit at final time (inches)
+      elseif(iprod.eq.6)then    ! deposit at final time (inches)
         title_plot = ': Final Deposit Thickness'
         plot_variable = 'Final Deposit Thickness'
         ov_fileroot = 'depothik'
         plot_units = 'in'
-      elseif(iprod.eq.7)then   ! ashfall arrival time (hours)
+      elseif(iprod.eq.7)then    ! ashfall arrival time (hours)
         write(title_plot,'(a22)')': Ashfall arrival time'
         plot_variable = 'Ashfall arrival time'
         ov_fileroot = 'DepAvlTm'
         plot_units = 'hours'
-      elseif(iprod.eq.8)then   ! ashfall arrival at airports/POI (mm)
-        write(errlog(io),*)"ERROR: No map PNG output option for airport arrival time data."
-        write(errlog(io),*)"       Should not be in write_2Dmap_PNG_dislin"
+      elseif(iprod.eq.8)then    ! ashfall arrival at airports/POI (mm)
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: No map shapefile output option for airport arrival time data."
+          write(errlog(io),*)"       Should not be in write_2Dmap_PNG_dislin"
+        endif;enddo
         stop 1
-      elseif(iprod.eq.9)then   ! ash-cloud concentration
+      elseif(iprod.eq.9)then    ! ash-cloud concentration
         write(title_plot,'(a28,f5.2,a6)')': Ash-cloud concentration t=',WriteTimes(itime),' hours'
         plot_variable ='Ash-cloud concentration'
         ov_fileroot = 'AshCdCon'
@@ -234,7 +243,7 @@
         plot_variable ='Ash-cloud load'
         ov_fileroot = 'AshCdLod'
         plot_units = 'T/km2'
-      elseif(iprod.eq.13)then  ! radar reflectivity
+      elseif(iprod.eq.13)then   ! radar reflectivity
         write(title_plot,'(a26,f5.2,a6)')': Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
         plot_variable ='Ash-cloud radar refl.'
         ov_fileroot = 'AshClRad'
@@ -250,11 +259,15 @@
         ov_fileroot = 'Topogrph'
         plot_units = 'km'
       elseif(iprod.eq.16)then   ! profile plots
-        write(errlog(io),*)"ERROR: No map PNG output option for vertical profile data."
-        write(errlog(io),*)"       Should not be in write_2Dmap_PNG_dislin"
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: No map shapefile output option for vertical profile data."
+          write(errlog(io),*)"       Should not be in write_2Dmap_PNG_dislin"
+        endif;enddo
         stop 1
       else
-        write(errlog(io),*)"ERROR: unexpected variable"
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: unexpected variable"
+        endif;enddo
         stop 1
       endif
 
@@ -526,7 +539,6 @@
 
       ! Populate each of the TableRecData fields with dummy values so we can get lengths to put
       ! in the header
-      ! HFS KLUDGE
       if(neruptions.gt.1)then
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"Multiple eruptions given in netcdf file."
@@ -551,11 +563,11 @@
       write(DBASE_TableRecData14,'(a10)')"         0"               ! INDEX
       write(DBASE_TableRecData15,'(a20)')HS_xmltime(SimStartHour+time,BaseYear,useLeap) ! TIME
 
-      DBASE_zero = 0
-      DBASE_v  = 3
-      DBASE_yy =95
-      DBASE_mm =07
-      DBASE_dd =26
+      DBASE_zero =  0
+      DBASE_v    =  3
+      DBASE_yy   = 95
+      DBASE_mm   = 07
+      DBASE_dd   = 26
 
       DBASE_nrec      = nrec
       DBASE_headlen   = int(32,kind=2) +     &   ! Table File Header length
@@ -849,66 +861,76 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
+!  BigEnd_2int
 !
-!  Called from: 
+!  Called from: Currently not called
 !  Arguments:
-!    none
+!    isLit = logical variable that is true if the local system is Little-endian
+!    r     = 2-byte integer to be converted
 !
-!  This subroutine
+!  This function returns the input variable 'r' in 2-byte integer in Big-endian
+!  format.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-      function BigEnd_2int(isLit,r)
-
-      implicit none
-
-      integer(kind=2) :: BigEnd_2int
-      logical         :: isLit
-      integer(kind=2) :: r
-
-      integer(kind=2) :: s  = 0
-      integer(kind=2) :: t  = 0
-      integer         :: bl = 8  ! bit length of the move
-
-      !integer(kind=2) :: ii(2), jj(2)
-
-      !equivalence (s,ii)
-      !equivalence (t,jj)
-      !if(isLit)then
-      !  ! We need r to be big-endian, but the system is little-endian
-      !  ! swap the bytes
-      !  s = r
-      !  jj(1) = ii(2)
-      !  jj(2) = ii(1)
-      !  BigEnd_2int = t
-      !else
-      !  BigEnd_2int = r
-      !endif
-
-      if(isLit)then
-        ! We need r to be big-endian, but the system is little-endian
-        ! swap the bytes
-        !  map r onto the 2-byte dummy integer
-        s = transfer(r,s)
-        ! move 8-bit packets to the reverse positions
-        call mvbits(s,0*bl,bl,t,1*bl)
-        call mvbits(s,1*bl,bl,t,0*bl)
-        ! map t onto the desired output
-        BigEnd_2int = transfer (t,BigEnd_2int)
-      else
-        BigEnd_2int = r
-      endif
-
-      end function BigEnd_2int
-
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!      function BigEnd_2int(isLit,r)
+!
+!      implicit none
+!
+!      integer(kind=2) :: BigEnd_2int
+!      logical         :: isLit
+!      integer(kind=2) :: r
+!
+!      integer(kind=2) :: s  = 0
+!      integer(kind=2) :: t  = 0
+!      integer         :: bl = 8  ! bit length of the move
+!
+!      ! Older compilers accepted this equivalence approach, but some newer ones
+!      ! complained.  The transfer->mvbits->transfer approach seems more accepted,
+!      ! though it required fortran 95 or newer.
+!
+!      !integer(kind=2) :: ii(2), jj(2)
+!
+!      !equivalence (s,ii)
+!      !equivalence (t,jj)
+!      !if(isLit)then
+!      !  ! We need r to be big-endian, but the system is little-endian
+!      !  ! swap the bytes
+!      !  s = r
+!      !  jj(1) = ii(2)
+!      !  jj(2) = ii(1)
+!      !  BigEnd_2int = t
+!      !else
+!      !  BigEnd_2int = r
+!      !endif
+!
+!      if(isLit)then
+!        ! We need r to be big-endian, but the system is little-endian
+!        ! swap the bytes
+!        !  map r onto the 2-byte dummy integer
+!        s = transfer(r,s)
+!        ! move 8-bit packets to the reverse positions
+!        call mvbits(s,0*bl,bl,t,1*bl)
+!        call mvbits(s,1*bl,bl,t,0*bl)
+!        ! map t onto the desired output
+!        BigEnd_2int = transfer (t,BigEnd_2int)
+!      else
+!        BigEnd_2int = r
+!      endif
+!
+!      end function BigEnd_2int
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!  Called from: 
-!  Arguments:
-!    none
 !
-!  This subroutine
+!  BigEnd_4int
+!
+!  Called from: write_ShapeFile_Polyline
+!  Arguments:
+!    isLit = logical variable that is true if the local system is Little-endian
+!    r     = 4-byte integer to be converted
+!
+!  This function returns the input variable 'r' in 4-byte integer in Big-endian
+!  format.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -924,21 +946,9 @@
       integer(kind=4) :: t  = 0
       integer         :: bl = 8  ! bit length of the move
 
-      if(isLit)then
-        ! We need r to be big-endian, but the system is little-endian
-        ! swap the bytes
-        !  map r onto the 2-byte dummy integer
-        s = transfer(r,s)
-        ! move 8-bit packets to the reverse positions
-        call mvbits(s,0*bl,bl,t,3*bl)
-        call mvbits(s,1*bl,bl,t,2*bl)
-        call mvbits(s,2*bl,bl,t,1*bl)
-        call mvbits(s,3*bl,bl,t,0*bl)
-        ! map t onto the desired output
-        BigEnd_4int = transfer (t,BigEnd_4int)
-      else
-        BigEnd_4int = r
-      endif
+      ! Older compilers accepted this equivalence approach, but some newer ones
+      ! complained.  The transfer->mvbits->transfer approach seems more accepted,
+      ! though it required fortran 95 or newer.
 
 !      integer(kind=1) :: ii(4), jj(4)
 !      equivalence (s,ii)
@@ -957,16 +967,35 @@
 !        BigEnd_4int = r
 !      endif
 
+      if(isLit)then
+        ! We need r to be big-endian, but the system is little-endian
+        ! swap the bytes
+        !  map r onto the 2-byte dummy integer
+        s = transfer(r,s)
+        ! move 8-bit packets to the reverse positions
+        call mvbits(s,0*bl,bl,t,3*bl)
+        call mvbits(s,1*bl,bl,t,2*bl)
+        call mvbits(s,2*bl,bl,t,1*bl)
+        call mvbits(s,3*bl,bl,t,0*bl)
+        ! map t onto the desired output
+        BigEnd_4int = transfer (t,BigEnd_4int)
+      else
+        BigEnd_4int = r
+      endif
+
       end function BigEnd_4int
 
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!  Called from: 
-!  Arguments:
-!    none
 !
-!  This subroutine
+!  LitEnd_2int
+!
+!  Called from: write_ShapeFile_Polyline
+!  Arguments:
+!    isLit = logical variable that is true if the local system is Little-endian
+!    r     = 2-byte integer to be converted
+!
+!  This function returns the input variable 'r' in 2-byte integer in Little-endian
+!  format.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -982,10 +1011,24 @@
       integer(kind=2) :: t  = 0
       integer         :: bl = 8  ! bit length of the move
 
+      ! Older compilers accepted this equivalence approach, but some newer ones
+      ! complained.  The transfer->mvbits->transfer approach seems more accepted,
+      ! though it required fortran 95 or newer.
+
 !      integer(kind=1) :: ii(2), jj(2)
 
 !      equivalence (s,ii)
 !      equivalence (t,jj)
+!      if(isLit)then
+!        LitEnd_2int = r
+!      else
+!        ! We need r to be little-endian, but the system is big-endian
+!        ! swap the bytes
+!        s = r
+!        jj(1) = ii(2)
+!        jj(2) = ii(1)
+!        LitEnd_2int = t
+!      endif
 
       if(isLit)then
         LitEnd_2int = r
@@ -1001,28 +1044,19 @@
         LitEnd_2int = transfer (t,LitEnd_2int)
       endif
 
-!      if(isLit)then
-!        LitEnd_2int = r
-!      else
-!        ! We need r to be little-endian, but the system is big-endian
-!        ! swap the bytes
-!        s = r
-!        jj(1) = ii(2)
-!        jj(2) = ii(1)
-!        LitEnd_2int = t
-!      endif
-
       end function LitEnd_2int
 
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!  Called from: 
-!  Arguments:
-!    none
 !
-!  This subroutine
+!  LitEnd_4int
+!
+!  Called from: write_ShapeFile_Polyline
+!  Arguments:
+!    isLit = logical variable that is true if the local system is Little-endian
+!    r     = 4-byte integer to be converted
+!
+!  This function returns the input variable 'r' in 4-byte integer in Little-endian
+!  format.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -1038,10 +1072,26 @@
       integer(kind=4) :: t  = 0
       integer         :: bl = 8  ! bit length of the move
 
+      ! Older compilers accepted this equivalence approach, but some newer ones
+      ! complained.  The transfer->mvbits->transfer approach seems more accepted,
+      ! though it required fortran 95 or newer.
+
 !      integer(kind=1) :: ii(4), jj(4)
 
 !      equivalence (s,ii)
 !      equivalence (t,jj)
+!      if(isLit)then
+!        LitEnd_4int = r
+!      else
+!        ! We need r to be little-endian, but the system is big-endian
+!        ! swap the bytes
+!        s = r
+!        jj(1) = ii(4)
+!        jj(2) = ii(3)
+!        jj(3) = ii(2)
+!        jj(4) = ii(1)
+!        LitEnd_4int = t
+!      endif
 
       if(isLit)then
         LitEnd_4int = r
@@ -1058,22 +1108,22 @@
         LitEnd_4int = transfer (t,LitEnd_4int)
       endif
 
-!      if(isLit)then
-!        LitEnd_4int = r
-!      else
-!        ! We need r to be little-endian, but the system is big-endian
-!        ! swap the bytes
-!        s = r
-!        jj(1) = ii(4)
-!        jj(2) = ii(3)
-!        jj(3) = ii(2)
-!        jj(4) = ii(1)
-!        LitEnd_4int = t
-!      endif
-
       end function LitEnd_4int
 
-!      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  BigEnd_8real
+!
+!  Called from: Currently not called
+!  Arguments:
+!    isLit = logical variable that is true if the local system is Little-endian
+!    r     = 8-byte real to be converted
+!
+!  This function returns the input variable 'r' in 8-byte real in Big-endian
+!  format.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 !      function BigEnd_8real(isLit,r)
 !
 !      implicit none
@@ -1082,40 +1132,67 @@
 !      logical         :: isLit
 !      real(kind=8)    :: r
 !
-!      integer(kind=1) :: ii(8), jj(8)
-!      real(kind=8)    :: s, t
+!      ! Older compilers accepted this equivalence approach, but some newer ones
+!      ! complained.  The transfer->mvbits->transfer approach seems more accepted,
+!      ! though it required fortran 95 or newer.
 !
-!      equivalence (s,ii)
-!      equivalence (t,jj)
+!!      integer(kind=1) :: ii(8), jj(8)
+!!      real(kind=8)    :: s, t
+!!
+!!      equivalence (s,ii)
+!!      equivalence (t,jj)
+!!
+!!      if(isLit)then
+!!        ! We need r to be big-endian, but the system is little-endian
+!!        ! swap the bytes
+!!        s = r
+!!        jj(1) = ii(8)
+!!        jj(2) = ii(7)
+!!        jj(3) = ii(6)
+!!        jj(4) = ii(5)
+!!        jj(5) = ii(4)
+!!        jj(6) = ii(3)
+!!        jj(7) = ii(2)
+!!        jj(8) = ii(1)
+!!        BigEnd_8real = t
+!!      else
+!!        BigEnd_8real = r
+!!      endif
+!
 !
 !      if(isLit)then
-!        ! We need r to be big-endian, but the system is little-endian
+!        ! We need r to be Big-endian, but the system is Little-endian
 !        ! swap the bytes
-!        s = r
-!        jj(1) = ii(8)
-!        jj(2) = ii(7)
-!        jj(3) = ii(6)
-!        jj(4) = ii(5)
-!        jj(5) = ii(4)
-!        jj(6) = ii(3)
-!        jj(7) = ii(2)
-!        jj(8) = ii(1)
-!        BigEnd_8real = t
+!        s = transfer(r,s)
+!        ! move 8-bit packets to the reverse positions
+!        call mvbits(s,0*bl,bl,t,7*bl)
+!        call mvbits(s,1*bl,bl,t,6*bl)
+!        call mvbits(s,2*bl,bl,t,5*bl)
+!        call mvbits(s,3*bl,bl,t,4*bl)
+!        call mvbits(s,4*bl,bl,t,3*bl)
+!        call mvbits(s,5*bl,bl,t,2*bl)
+!        call mvbits(s,6*bl,bl,t,1*bl)
+!        call mvbits(s,7*bl,bl,t,0*bl)
+!        ! map t onto the desired output
+!        BigEnd_8real = transfer (t,BigEnd_8real)
 !      else
 !        BigEnd_8real = r
 !      endif
 !
 !      end function BigEnd_8real
-!
-!      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!  Called from: 
-!  Arguments:
-!    none
 !
-!  This subroutine
+!  LitEnd_8real
+!
+!  Called from: write_ShapeFile_Polyline
+!  Arguments:
+!    isLit = logical variable that is true if the local system is Little-endian
+!    r     = 8-byte real to be converted
+!
+!  This function returns the input variable 'r' in 8-byte real in Little-endian
+!  format.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -1131,10 +1208,30 @@
       integer(kind=8) :: t  = 0
       integer         :: bl = 8  ! bit length of the move
 
+      ! Older compilers accepted this equivalence approach, but some newer ones
+      ! complained.  The transfer->mvbits->transfer approach seems more accepted,
+      ! though it required fortran 95 or newer.
+
 !      integer(kind=1) :: ii(8), jj(8)
 !
 !      equivalence (s,ii)
 !      equivalence (t,jj)
+!      if(isLit)then
+!        LitEnd_8real = r
+!      else
+!        ! We need r to be little-endian, but the system is big-endian
+!        ! swap the bytes
+!        s = r
+!        jj(1) = ii(8)
+!        jj(2) = ii(7)
+!        jj(3) = ii(6)
+!        jj(4) = ii(5)
+!        jj(5) = ii(4)
+!        jj(6) = ii(3)
+!        jj(7) = ii(2)
+!        jj(8) = ii(1)
+!        LitEnd_8real = t
+!      endif
 
       if(isLit)then
         LitEnd_8real = r
@@ -1155,22 +1252,6 @@
         LitEnd_8real = transfer (t,LitEnd_8real)
       endif
 
-!      if(isLit)then
-!        LitEnd_8real = r
-!      else
-!        ! We need r to be little-endian, but the system is big-endian
-!        ! swap the bytes
-!        s = r
-!        jj(1) = ii(8)
-!        jj(2) = ii(7)
-!        jj(3) = ii(6)
-!        jj(4) = ii(5)
-!        jj(5) = ii(4)
-!        jj(6) = ii(3)
-!        jj(7) = ii(2)
-!        jj(8) = ii(1)
-!        LitEnd_8real = t
-!      endif
-
       end function LitEnd_8real
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

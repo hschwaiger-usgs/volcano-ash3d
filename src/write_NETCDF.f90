@@ -1,9 +1,17 @@
-!      subroutine create_netcdf_file
-!      subroutine append_to_netcdf
+!##############################################################################
+! 
+! Ash3d_Netcdf module
+!
+! This module manages all input and output of Ash3d data in netcdf format.
+!
+!      subroutine NC_create_netcdf_file
+!      subroutine NC_append_to_netcdf
 !      subroutine NC_RestartFile_ReadTimes
 !      subroutine NC_RestartFile_LoadConcen
 !      subroutine NC_check_status
 !      subroutine NC_Read_Output_Products
+!
+!##############################################################################
 
       module Ash3d_Netcdf
 
@@ -19,7 +27,7 @@
       private
 
         ! Publicly available subroutines/functions
-      public create_netcdf_file,append_to_netcdf,&
+      public NC_create_netcdf_file,NC_append_to_netcdf,&
              NC_RestartFile_ReadTimes,NC_RestartFile_LoadConcen,&
              NC_Read_Output_Products
 
@@ -131,22 +139,25 @@
       real(kind=op), dimension(:,:,:)  ,allocatable :: depocon
 
       contains
+      !------------------------------------------------------------------------
 
-!##############################################################################
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!    create_netcdf_file
+!    NC_create_netcdf_file
 !
-!  Called from: 
+!  Called from: output_results
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine is called once before time integration starts, creating the output
+!  netcdf file, defining all the dimensions and variables.  Variables are filled with
+!  initial values.  All details of the control file, and resetable parameters are
+!  included as global attributes.  The output netcdf file is closed at the end of this
+!  subroutine and reopened as needed in NC_append_to_netcdf.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!##############################################################################
 
-      subroutine create_netcdf_file
+      subroutine NC_create_netcdf_file
 
       use global_param,  only : &
          EPS_SMALL,KM2_2_M2,useCalcFallVel,&
@@ -248,7 +259,7 @@
       END INTERFACE
 
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),*)"Inside create_netcdf_file"
+        write(outlog(io),*)"Inside NC_create_netcdf_file"
       endif;enddo
 
       allocate(dum2dint_out(nxmax,nymax))
@@ -2712,25 +2723,30 @@
         write(outlog(io),*)"Created netcdf file"
       endif;enddo
 
-      end subroutine create_netcdf_file
-!##############################################################################
+      end subroutine NC_create_netcdf_file
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!##############################################################################
 !
-!    append_to_netcdf
+!    NC_append_to_netcdf
 !
-!  Called from: 
+!  Called from: output_results
 !  Arguments:
 !    none
 !
-!  This subroutine
-!
+!  This subroutine is called each time output_results is called when a new output
+!  step is reached, writing the next step in the transient variables.  Additionally,
+!  this subroutine is called at the end of the simulation after the time integration.
+!  Variables for the Airport/POI data are also writen each time this is called.
+!  Several additional 'Final' variables are writen at this point such as the
+!  final deposit thickness (depothickFin) and the deposit/ash-cloud arrival
+!  times (depotime,ash_arrival_time). Airport/POI variables writen in this final
+!  step are the arrival and duration for both deposit and ash cloud.  If profile
+!  data is tracked, the whole transient variable (time_native) is writen in this
+!  final step.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!##############################################################################
-      subroutine append_to_netcdf
+
+      subroutine NC_append_to_netcdf
 
       use global_param,  only : &
          EPS_SMALL,KM2_2_M2
@@ -3336,21 +3352,21 @@
       deallocate(ashcon)
       deallocate(depocon)
 
-      end subroutine append_to_netcdf
+      end subroutine NC_append_to_netcdf
 
-!##############################################################################
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !    NC_RestartFile_ReadTimes
 !
-!  Called from: 
+!  Called from: Read_Control_File
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine is called if a restart run is requested.  The concentration
+!  file is opened and the time variable read.  The user if prompted for the
+!  start step (init_tstep).
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!##############################################################################
 
       subroutine NC_RestartFile_ReadTimes
 
@@ -3367,7 +3383,6 @@
       integer :: t_var_id
       integer :: t_len
       integer :: it
-      !real(kind=op)                                 :: dumscal_out
       real(kind=op), allocatable, dimension(:) :: t_list
 
       ! Open netcdf file for writing
@@ -3408,24 +3423,21 @@
 
       end subroutine NC_RestartFile_ReadTimes
 
-!##############################################################################
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !    NC_RestartFile_LoadConcen
 !
-!  Called from: 
+!  Called from: Ash3d.F90
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine reads the concentration and deposit arrays from the restart
+!  netcdf file for the time step requested in NC_RestartFile_ReadTimes and
+!  copies these data to concen_pd and outflow_xy1_pd (mirrored to DepositGranularity)
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!##############################################################################
 
       subroutine NC_RestartFile_LoadConcen
-
-!      use global_param,      only : &
-!         KM2_2_M2
 
       use io_data,           only : &
          concenfile,init_tstep
@@ -3434,7 +3446,7 @@
          nxmax,nymax,nzmax,nsmax,ts0,ts1
 
       use solution,          only : &
-         concen_pd
+         concen_pd,outflow_xy1_pd,DepositGranularity
 
       integer :: i
       integer :: nSTAT
@@ -3474,19 +3486,17 @@
 
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var ashcon")
 
-      do i = 1,nsmax
-        concen_pd(1:nxmax,1:nymax,1:nzmax,i,ts1) = real(ashcon(:,:,:,i),kind=ip)
-      enddo
-
       nSTAT=nf90_get_var(ncid,depocon_var_id,depocon,&
                start = (/1,1,1,init_tstep/),       &
                count = (/nxmax,nymax,nsmax,1/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depocon")
 
-      !do i = 1,nsmax
-      !    ! Here's the conversion from kg/m^2
-      !  concen_pd(1:nxmax,1:nymax,0,i,ts1) = real(depocon(:,:,i),kind=ip)/(dz_vec_pd(0)/KM2_2_M2)
-      !enddo
+      do i = 1,nsmax
+        concen_pd(1:nxmax,1:nymax,1:nzmax,i,ts1) = real(ashcon(:,:,:,i),kind=ip)
+        outflow_xy1_pd(1:nxmax,1:nymax,i) = real(depocon(:,:,i),kind=ip)
+        DepositGranularity(1:nxmax,1:nymax,i) = outflow_xy1_pd(1:nxmax,1:nymax,i) 
+      enddo
+
       concen_pd(:,:,:,:,ts0) = concen_pd(:,:,:,:,ts1)
 
       ! Close file
@@ -3504,39 +3514,35 @@
       end subroutine NC_RestartFile_LoadConcen
 
 
-!##############################################################################
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !    NC_check_status
 !
-!  Called from: 
+!  Called from: within the Ash3d_Netcdf module after each call to the ncf90 interface
 !  Arguments:
-!    none
-!
-!  This subroutine
-!
-!    nSTAT   = error code returned from netcdf call
-!    errcode = user-supplied return value on stopping of code
+!    nSTAT     = error code returned from netcdf call
+!    icode     = user-supplied return value on stopping of code (0 just issues warning)
 !    operation = string descriptor of function call causing error
 !
-!    Error-checking routine for NetCDF function calls.
-!    Modeled after a subroutine posted at:
+!  Error-checking routine for NetCDF function calls. Modeled after a subroutine
+!  posted at:
 !    https://climate-cms.org/2018/10/12/create-netcdf.html
+!  This subroutine provides a gracefull handling of errors returned from calls
+!  to the nf90 interface.  
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!##############################################################################
 
-      subroutine NC_check_status(nSTAT, errcode, operation)
+      subroutine NC_check_status(nSTAT, icode, operation)
 
       use io_units
 
       integer, intent(in) :: nSTAT
-      integer, intent(in) :: errcode
+      integer, intent(in) :: icode
       character(len=*), intent(in) :: operation
 
       character(len=9) :: severity
 
-      if (errcode.eq.0)then 
+      if (icode.eq.0)then 
         severity = "WARNING: "
        else
         severity = "ERROR:   "
@@ -3544,29 +3550,31 @@
 
       if (nSTAT == nf90_noerr) return
       do io=1,2;if(VB(io).le.verbosity_error)then
-        write(errlog(io) ,*)severity,errcode,operation,":",nf90_strerror(nSTAT)
+        write(errlog(io) ,*)severity,icode,operation,":",nf90_strerror(nSTAT)
       endif;enddo
 
       ! If user-supplied error code is 0, then consider this a warning,
       ! otherwise do a hard stop
-      if (errcode.ne.0) stop
+      if (icode.ne.0) stop icode
 
       end subroutine NC_check_status
 
-!##############################################################################
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !    NC_Read_Output_Products
 !
-!  Called from: 
+!  Called from: Ash3d_PostProc.f90
 !  Arguments:
-!    none
+!    timestep
 !
-!  This subroutine
+!  This subroutine is used in the post-processing tool to populate the variables
+!  for a requested time step.  All the standard output products are read, but
+!  only for timestep. If timestep = -1, then the last step in file is used
+!  unless there is a 'final' variable as in depothickFin.  All other variables
+!  needed for post-processing are also read, such as the grid coordinates,
+!  grainsize and eruption variables as well as many global attributes.
 !
-!    if timestep = -1, then use the last step in file
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!##############################################################################
 
       subroutine NC_Read_Output_Products(timestep)
 
@@ -4615,9 +4623,9 @@
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att institution:")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att institution: Assuming institution=USGS"
+            write(outlog(io),*)"Did not find att institution: Assuming institution=N/A"
           endif;enddo
-          cdf_institution="USGS"
+          cdf_institution="N/A"
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"run_class",cdf_run_class)
@@ -4637,7 +4645,6 @@
           endif;enddo
           cdf_url="https://vsc-ash.wr.usgs.gov/ash3d-gui"
         endif
-
 
         ! Get eruptions ESPs
         if(.not.allocated(e_StartTime))then

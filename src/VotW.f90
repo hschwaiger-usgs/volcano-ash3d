@@ -37,9 +37,9 @@
 !
 !  get_ESP(volc_code)
 !
-!  Called from: 
+!  Called from: Read_Control_File
 !  Arguments:
-!    none
+!    volc_code
 !
 !  This subroutine
 !

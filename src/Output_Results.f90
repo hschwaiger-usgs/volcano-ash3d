@@ -145,7 +145,7 @@
           if(ioutputFormat.eq.3)then
 #ifdef USENETCDF
             ! Create the netcdf file and define dimensions/variables
-            call create_netcdf_file
+            call NC_create_netcdf_file
 #else
             do io=1,2;if(VB(io).le.verbosity_error)then
               write(errlog(io),*)"ERROR: Ash3d was not compiled with netcdf libraries, but netcdf"
@@ -261,7 +261,7 @@
                               ' 0.000','DepositFile_        ')
         elseif(ioutputFormat.eq.3)then
 #ifdef USENETCDF
-          call append_to_netcdf
+          call NC_append_to_netcdf
 #endif
         endif
       endif

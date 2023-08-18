@@ -1,14 +1,21 @@
-!******************************************************************************
-!  Called from: 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  write_3D_Binary
+!
+!  Called from: output_results and Ash3d_PostProc.f90
 !  Arguments:
-!    none
+!    cio        = time string to be inserted into filename; either '________final'
+!                 or yyyymmddhh.h
+!    nx         = x length of output array OutVar
+!    ny         = y length of output array OutVar
+!    nz         = z length of output array OutVar
+!    ashcon_tot = 3d array containing the sum of all tephra concentration bins (1:n_gs_max)
 !
-!  This subroutine
+!  This subroutine writes out 3-D arrays in binary format
 !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine write_3D_Binary(cio,nx,ny,nz,ashcon_tot)
-
-!     Subroutine that writes out 3-D arrays in binary format
 
       use precis_param
 
@@ -39,17 +46,24 @@
 
       end subroutine write_3D_Binary
 
-!******************************************************************************
-!  Called from: 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  write_2D_Binary
+!
+!  Called from: output_results and Ash3d_PostProc.F90
 !  Arguments:
-!    none
+!    nx            = x length of output array OutVar
+!    ny            = y length of output array OutVar
+!    OutVar        = 2-d array to be writen to ASCII file
+!    VarMask       = 2-d logical that toggles data v.s. Fill_Value
+!    Fill_Value    = number used for No-data
+!    filename_root = root name of file (20 characters)
 !
-!  This subroutine
+!  Subroutine that writes out 2-D arrays in binary format
 !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine write_2D_Binary(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
-
-!     Subroutine that writes out 2-D arrays in binary format
 
       use precis_param
 

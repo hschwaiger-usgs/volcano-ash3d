@@ -17,21 +17,22 @@
 !
 !      contains
 !
-!******************************************************************************
+!##############################################################################
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!  Called from: 
+!
+!  vprofileopener
+!
+!  Called from: output_results and Ash3d_PostProc.F90
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine opens files for vertical profiles
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine vprofileopener
-
-!     subroutine that opens files for vertical profiles
 
       use io_units
 
@@ -80,20 +81,19 @@
 
       end subroutine vprofileopener
 
-!******************************************************************************
-
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!  Called from: 
+!
+!  vprofilewriter
+!
+!  Called from: Ash3d.F90 and Ash3d_PostProc.F90
 !  Arguments:
-!    none
+!    itime = time step index
 !
-!  This subroutine
+!  This subroutine writes data on vertical profiles
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      subroutine vprofilewriter(itime)
 
-!     subroutine that writes data on vertical profiles
+      subroutine vprofilewriter(itime)
 
       use precis_param
 
@@ -143,20 +143,20 @@
 
       end subroutine vprofilewriter
 
-!******************************************************************************
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!  Called from: 
+!
+!  vprofilecloser
+!
+!  Called from: output_results and Ash3d_PostProc.F90
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine closes vertical profile files
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine vprofilecloser
-
-!     subroutine that closes vertical profile files
 
       use io_data,       only : &
          nvprofiles
@@ -173,20 +173,26 @@
 
       end subroutine vprofilecloser
 
-!******************************************************************************
-
-!  Called from: 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  write_2D_ASCII
+!
+!  Called from: output_results and Ash3d_PostProc.F90
 !  Arguments:
-!    none
+!    nx            = x length of output array OutVar
+!    ny            = y length of output array OutVar
+!    OutVar        = 2-d array to be writen to ASCII file
+!    VarMask       = 2-d logical that toggles data v.s. Fill_Value
+!    Fill_Value    = number used for No-data
+!    filename_root = root name of file (20 characters)
 !
-!  This subroutine
+!  Subroutine that writes out 2-D arrays in ESRI ASCII raster format
+!  This format can be post-processed with gmt converting to grid files with
+!  gmt grdconvert out.dat=ef out.grd
 !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine write_2D_ASCII(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
-
-!     Subroutine that writes out 2-D arrays in ESRI ASCII raster format
-!     This format can be post-processed with gmt converting to grid files with
-!     gmt grdconvert out.dat=ef out.grd
 
       use precis_param
 
@@ -294,18 +300,20 @@
       
       end subroutine write_2D_ASCII
 
-!******************************************************************************
-
-!  Called from: 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  read_2D_ASCII
+!
+!  Called from: Ash3d_ASCII_check.f90
 !  Arguments:
-!    none
+!    filename = root name of file (20 characters)
 !
-!  This subroutine
+!  Subroutine that reads in 2-D arrays in ESRI ASCII raster format and
+!  populates R_nx,R_ny,R_XY,R_xll,R_yll,R_dx,R_dy,R_Fill from Output_Vars
 !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine read_2D_ASCII(filename)
-
-!     Subroutine that reads in 2-D arrays in ESRI ASCII raster format
 
       use precis_param
 
@@ -373,18 +381,20 @@
 
       end subroutine read_2D_ASCII
 
-!******************************************************************************
- 
-!  Called from: 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  write_3D_ASCII
+!
+!  Called from: output_results
 !  Arguments:
-!    none
+!    cio = time string to be inserted into filename; either '________final'
+!          or yyyymmddhh.h
 !
-!  This subroutine
+!  Subroutine that writes out 3-D arrays in ESRI ASCII raster format
 !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine write_3D_ASCII(cio)
-
-!     Subroutine that writes out 3-D arrays in ESRI ASCII raster format
 
       use precis_param
 
@@ -435,18 +445,19 @@
 
       end subroutine write_3D_ASCII
 
-!******************************************************************************
-
-!  Called from: 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Write_PointData_Airports_ASCII
+!
+!  Called from: output_results and Ash3d_PostProc.f90
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  Subroutine that writes the arrival time at airports to an ASCII file
 !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Write_PointData_Airports_ASCII
-
-!     Subroutine that writes the arrival time at airports to an ASCII file
 
       use precis_param
 
@@ -508,51 +519,53 @@
 
       out_unit = 18
 
-      !WRITE VALUES OUT TO ASCII FILE
+      ! Write values out to ASCII file
       if (WriteAirportFile_ASCII) then
-!        open(unit=28,file='dep_thick.txt',err=2000)
-!
-!        !WRITE OUT SOURCE PARAMETERS FOR AIRPORTS FILE
+
+        ! Write out source parameters for airports file
         open(unit=out_unit,file='ash_arrivaltimes_airports.txt',err=2000)
         write(out_unit,98)  infile, RunStartYear,RunStartMonth,RunStartDay,RunStartHr, &
                               RunStartMinute, VolcanoName  !write infile, simulation time
-        do i=1,neruptions  !write source parameters
+        do i=1,neruptions  ! write source parameters
           write(out_unit,99) i, HS_xmltime(SimStartHour+OutputOffset,&
                                            BaseYear,useLeap), &
                            e_Duration(i), e_PlumeHeight(i), e_PlumeHeight(i)*3280.8_ip, e_Volume(i)
         enddo
         write(out_unit,995)
-        if (WriteGSD) then                 !If we're writing out grain sizes.
-          if (UseCalcFallVel) then              !if fall velocity is calculated
+        if (WriteGSD) then
+          ! if we're writing out grain sizes.
+          if (UseCalcFallVel) then
+            ! if fall velocity is calculated
             write(out_unit,100) (Tephra_gsdiam(isize)*M_2_MM, isize=1,n_gs_max)
             write(out_unit,101)
             write(out_unit,102) (Tephra_rho_m(isize), isize=1,n_gs_max)
             write(out_unit,103)
-          else                                !if fall velocity is specified
+          else
+            ! if fall velocity is specified
             write(out_unit,110) (Tephra_v_s(isize), isize=1,n_gs_max)
           endif
-        else                             !If not
+        else
+          ! if not writing out grain sizes
           write(out_unit,1)
         endif
         nWrittenOut = 0
-        do i=1,nairports                      !write out the airports that are hit.
+        do i=1,nairports                      ! write out the airports that are hit.
           if (Airport_AshArrived(i).or.Airport_CloudArrived(i)) then
-
-            !rank ash thickness in NWS rank
-            Airport_thickness(i) = bilinear_thickness(i,DepositThickness) !interpolate to find thickness
-            if (Airport_thickness(i).le.0.7935_ip) then         !<1/32" thickness
+            ! rank ash thickness in NWS rank
+            Airport_thickness(i) = bilinear_thickness(i,DepositThickness) ! interpolate to find thickness
+            if (Airport_thickness(i).le.0.7935_ip) then         ! <1/32" thickness
               nwsthickness="trace or less"
-            elseif (Airport_thickness(i).le.6.35_ip) then      !<=1/4"
+            elseif (Airport_thickness(i).le.6.35_ip) then       ! <=1/4"
               nwsthickness="minor"
-            elseif (Airport_thickness(i).le.25.4_ip) then      !<=1"
+            elseif (Airport_thickness(i).le.25.4_ip) then       ! <=1"
               nwsthickness="substantial"
-            elseif (Airport_thickness(i).le.101.6_ip) then     !<=4"
+            elseif (Airport_thickness(i).le.101.6_ip) then      ! <=4"
               nwsthickness="heavy"
             else
               nwsthickness="severe"
             endif
 
-            !get yyyymmddhh of arrival
+            ! get yyyymmddhh of arrival
             yyyymmddhh_cloud = HS_xmltime(Airport_CloudArrivalTime(i)+SimStartHour+OutputOffset,&
                                           BaseYear,useLeap)
             if (Airport_AshArrived(i)) then
@@ -562,8 +575,8 @@
               yyyymmddhh_ash = '0000-00-00T00:00:00Z'
             endif
 
-            !See whether cloud is still overhead, or whether ash is still
-            !falling
+            ! See whether cloud is still overhead, or whether ash is still
+            ! falling
             if((Airport_AshArrived(i)).and.(Airport_depRate(i).gt.DEPRATE_THRESH)) then
               Airport_AshDuration(i) = time-Airport_AshArrivalTime(i)
               deposit_morethan = '>'
@@ -588,8 +601,7 @@
                        yyyymmddhh_ash, Airport_AshArrivalTime(i), deposit_morethan, Airport_AshDuration(i), &
                        Airport_thickness(i), nwsthickness, &
                        ((DepositGranularity(Airport_i(i),Airport_j(i),isize)/ &
-                         sum(DepositGranularity(Airport_i(i),Airport_j(i),:))),isize=1,nsmax)  !mass fraction of size i
-                      !(DepositGranularity(Airport_i(i),Airport_j(i),isize)*dz_vec_pd(0)/1.0e6_ip,isize=1,nsmax) !mpua, kg/m2 of size i
+                         sum(DepositGranularity(Airport_i(i),Airport_j(i),:))),isize=1,nsmax)  ! mass fraction of size i
             else
               write(out_unit,2) Airport_Name(i), Airport_Latitude(i), longitude_now, &
                        yyyymmddhh_cloud, Airport_CloudArrivalTime(i), cloud_morethan, Airport_CloudDuration(i), &
@@ -599,8 +611,8 @@
             nWrittenOut = nWrittenOut + 1
           endif
         enddo
-        if (nWrittenOut.eq.0) write(out_unit,3)    !If no airports are hit, say it in the file.
-        write(out_unit,120)                        !write footnotes & caveats
+        if (nWrittenOut.eq.0) write(out_unit,3)    ! if no airports are hit, say it in the file.
+        write(out_unit,120)                        ! write footnotes & caveats
         close(out_unit)
       endif
 
@@ -651,21 +663,6 @@
              '                                                        |      date/time UTC    start      hrs    |', &
              '       date/time UTC       hrs      hrs      mm   NWS rank     |  MASS FRACTION AT THE GIVEN GRAIN SIZE')
 
-!100   format('---------------------------------------------------------------------------------------------------', &
-!             '---------------------------------------------------------------',/, &
-!             '                      LOCATION                          |                  CLOUD                  |', &
-!             '                               DEPOSIT                         |', &
-!             '    MASS PER UNIT AREA AT THE GIVEN GRAIN SIZE (MM)',/, &
-!             '                                                        |                                         |', &
-!             '                                                               |',/, &
-!             '                                                        |                                         |', &
-!             '                                                               |',/, &
-!             '(Airport code & ) Place name         Latitude Longitude |        Cloud Arrival Time      Duration |', &
-!             '      Deposit Arrival Time        Duration      Thickness      |',/, &
-!             '                                                        |                      hrs after          |', &
-!             '                                                               |',/, &
-!             '                                                        |      date/time UTC    start      hrs    |', &
-!             '       date/time UTC       hrs      hrs      mm   NWS rank     |',30f12.4)
 110   format('---------------------------------------------------------------------------------------------------', &
              '----------------------------------------------------------------',/, &
              '                      LOCATION                          |                  CLOUD                  |', &

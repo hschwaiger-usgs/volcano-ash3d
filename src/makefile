@@ -219,10 +219,10 @@ endif
 PLOTFPPFLAG =
 ifeq ($(USEPLPLOT), T)
  plplotFPPFLAG = -DUSEPLPLOT
- plplotLIBS = -lplplotf95cd -lplplotf95d
- plplotINC  = -I/usr/include/plplot
- #plplotLIBS = -L/usr/local/plplot/lib -lplplot -lplplotfortran
- #plplotINC  = -I/usr/local/plplot/lib/fortran/modules/plplot
+# plplotLIBS = -lplplotf95cd -lplplotf95d
+# plplotINC  = -I/usr/include/plplot
+ plplotLIBS = -L/usr/local/plplot/lib -lplplot -lplplotfortran
+ plplotINC  = -I/usr/local/plplot/lib/fortran/modules/plplot
  plplotOBJ  = Ash3d_PostProc_plplot.o
 endif
 ifeq ($(USEDISLIN), T)

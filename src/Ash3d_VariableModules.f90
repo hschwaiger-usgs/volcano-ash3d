@@ -69,6 +69,7 @@
       integer :: io                          ! index over out-streams
       integer,dimension(2) :: outlog = (/output_unit,global_log/)
       integer,dimension(2) :: errlog = (/ error_unit,global_log/)
+      integer :: errcode = 1 
 
       character(9) :: logfile = 'Ash3d.lst'  ! This is the default Ash3d logfile
 
@@ -231,7 +232,7 @@
 
       !  These are reset in Set_OS_Env
       integer   :: OS_TYPE                        ! 1=linux, 2=apple, 3=windows
-      logical   :: IsLitEnd                       ! little-ndian-ness; set in Set_OS_Env
+      logical   :: IsLitEnd                       ! little-endian-ness; set in Set_OS_Env
       logical   :: IsLinux    = .true.
       logical   :: IsWindows  = .false.
       logical   :: IsMacOS    = .false.
