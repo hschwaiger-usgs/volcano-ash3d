@@ -2,6 +2,12 @@
 !
 !  TimeStepTotals(itime)
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine TimeStepTotals(itime)

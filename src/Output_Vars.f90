@@ -2,6 +2,27 @@
 !
 !  Output_Vars module
 !
+!  This module manages data, settings and the calculation of output variables.
+!  
+!
+!    area(lat, lon)
+!    depotime(lat, lon)
+!    ash_arrival_time(lat, lon)
+!    depothickFin(lat, lon)
+!    
+!    
+!    depothick(t, lat, lon)
+!    ashcon_max(t, lat, lon)
+!    cloud_height(t, lat, lon)
+!    cloud_load(t, lat, lon) 
+!    cloud_mask(t, lat, lon)
+!    cloud_bottom(t, lat, lon)
+!    
+!    radar_reflectivity(t, z, lat, lon)
+!    depocon(t, bn, lat, lon)
+!    ashcon(t, bn, z, lat, lon)
+
+!
 !      subroutine Allocate_Output_Vars
 !      subroutine Allocate_NTime
 !      subroutine Allocate_Profile
@@ -109,10 +130,9 @@
       !logical, parameter :: log_3d1_tmp          = .false.
       !logical, parameter :: log_4d1_tmp          = .false.
 
-        ! This variable should be set to true if you want to include
-        ! the standard derived variables
-        ! in the output file (this should nearly always be true, downstream
-        ! products rely on these variables)
+        ! This variable should be set to true if you want to include the standard
+        ! derived variables in the output file (this should nearly alwaysbe true,
+        ! downstream products rely on these variables)
       logical,public :: USE_OUTPROD_VARS  = .true.
 
         ! Set this variable to false if you do not want raw concentration
@@ -125,14 +145,14 @@
       real(kind=ip),public :: DepositAreaCovered       ! area covered by ash deposit
 
       ! Contour colors and levels
-      real(kind=ip),dimension(:),allocatable,public     :: ContourLev
-      integer                               ,public     :: nConLev
-      integer,parameter                         ,public :: Contour_MaxCurves  = 20
-      integer,parameter                         ,public :: Contour_MaxPoints  = 1000
-      real(kind=ip),dimension(:,:,:),allocatable,public :: ContourDataX        ! x curve data with dims: ilev, icurve, ipnt
-      real(kind=ip),dimension(:,:,:),allocatable,public :: ContourDataY        ! x curve data with dims: ilev, icurve, ipnt
-      integer      ,dimension(:)    ,allocatable,public :: ContourDataNcurves  ! num of curves for each level (some = 0)
-      integer      ,dimension(:,:)  ,allocatable,public :: ContourDataNpoints  ! num of pts for ilev and icurve
+      real(kind=ip),dimension(:),allocatable      ,public:: ContourLev
+      integer                                     ,public:: nConLev
+      integer,parameter                           ,public:: Contour_MaxCurves  = 20
+      integer,parameter                           ,public:: Contour_MaxPoints  = 1000
+      real(kind=ip),dimension(:,:,:),allocatable  ,public:: ContourDataX        ! x curve data with dims: ilev, icurve, ipnt
+      real(kind=ip),dimension(:,:,:),allocatable  ,public:: ContourDataY        ! x curve data with dims: ilev, icurve, ipnt
+      integer      ,dimension(:)    ,allocatable  ,public:: ContourDataNcurves  ! num of curves for each level (some = 0)
+      integer      ,dimension(:,:)  ,allocatable  ,public:: ContourDataNpoints  ! num of pts for ilev and icurve
       integer,parameter                           ,public:: Con_DepThick_mm_N   = 10
       integer      ,dimension(Con_DepThick_mm_N,3),public:: Con_DepThick_mm_RGB
       real(kind=ip),dimension(Con_DepThick_mm_N)  ,public:: Con_DepThick_mm_Lev
@@ -256,6 +276,12 @@
 !
 !  Allocate_Output_Vars
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Allocate_Output_Vars
@@ -295,6 +321,12 @@
 !
 !  Allocate_NTime(nt)
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Allocate_NTime(nt)
@@ -308,6 +340,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  Allocate_Profile(nz,nt,nv)
+!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -327,6 +365,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  Allocate_Output_UserVars(nx,ny,nz,ns)
+!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -399,6 +443,12 @@
 !
 !  Deallocate_Output_Vars()
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Deallocate_Output_Vars()
@@ -426,6 +476,12 @@
 !
 !  Deallocate_NTime
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Deallocate_NTime
@@ -438,6 +494,12 @@
 !
 !  Deallocate_Profile
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Deallocate_Profile
@@ -449,6 +511,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  Deallocate_Output_UserVars()
+!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -490,6 +558,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  Set_OutVar_ContourLevel
+!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -594,6 +668,12 @@
 !
 !  AshThicknessCalculator
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine AshThicknessCalculator
@@ -638,6 +718,12 @@
 !
 !  AshTotalCalculator
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine AshTotalCalculator
@@ -667,6 +753,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  dbZCalculator
+!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -729,6 +821,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  ConcentrationCalculator
+!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -831,6 +929,12 @@
 !
 !  CloudAreaCalculator
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine CloudAreaCalculator
@@ -873,6 +977,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  Gen_Output_Vars
+!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -932,6 +1042,12 @@
 !
 !  Calc_AshVol_Aloft(vol)
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Calc_AshVol_Aloft(vol)
@@ -973,6 +1089,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  Calc_vprofile(itime)
+!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -1034,6 +1156,12 @@
 !
 !  Calc_AshVol_Deposit(vol)
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Calc_AshVol_Deposit(vol)
@@ -1066,6 +1194,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  Calc_AshVol_Outflow(vol)
+!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -1110,6 +1244,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  FirstAsh
+!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -1192,6 +1332,8 @@
       return
 
       end subroutine FirstAsh
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       end module Output_Vars
 !##############################################################################

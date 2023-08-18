@@ -133,9 +133,17 @@
       contains
 
 !##############################################################################
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !    create_netcdf_file
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !##############################################################################
 
       subroutine create_netcdf_file
@@ -152,7 +160,7 @@
          cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,cdf_b4l11,cdf_b6l1,cdf_b6l2,&
          cdf_b6l3,cdf_b6l4,cdf_b6l5,cdf_conventions,&
          cdf_comment,cdf_title,cdf_institution,cdf_source,cdf_history,cdf_references,&
-         cdf_run_class,cdf_url,outfile,&
+         cdf_run_class,cdf_url,infile,outfile,&
          nvar_User2d_static_XY,nvar_User2d_XY,nvar_User3d_XYGs,nvar_User3d_XYZ,&
          nvar_User4d_XYZGs,Write_PT_Data,Write_PR_Data
 
@@ -360,11 +368,14 @@
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Filling in header info"
       endif;enddo
+
+      nSTAT = nf90_put_att(ncid,nf90_global,"control_file",infile)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att control_file:")
       nSTAT = nf90_put_att(ncid,nf90_global,"title",cdf_title)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att title:")
       nSTAT = nf90_put_att(ncid,nf90_global,"comment",cdf_comment)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att comment:")
-      nSTAT = nf90_put_att(ncid,nf90_global,"comment",cdf_run_class)
+      nSTAT = nf90_put_att(ncid,nf90_global,"run_class",cdf_run_class)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att run_class:")
       nSTAT = nf90_put_att(ncid,nf90_global,"institution",cdf_institution)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"tt institution:")
@@ -2704,11 +2715,20 @@
       end subroutine create_netcdf_file
 !##############################################################################
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !##############################################################################
 !
 !    append_to_netcdf
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !##############################################################################
       subroutine append_to_netcdf
 
@@ -3319,9 +3339,17 @@
       end subroutine append_to_netcdf
 
 !##############################################################################
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !    NC_RestartFile_ReadTimes
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !##############################################################################
 
       subroutine NC_RestartFile_ReadTimes
@@ -3381,9 +3409,17 @@
       end subroutine NC_RestartFile_ReadTimes
 
 !##############################################################################
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !    NC_RestartFile_LoadConcen
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !##############################################################################
 
       subroutine NC_RestartFile_LoadConcen
@@ -3469,8 +3505,15 @@
 
 
 !##############################################################################
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !    NC_check_status
+!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
 !
 !    nSTAT   = error code returned from netcdf call
 !    errcode = user-supplied return value on stopping of code
@@ -3480,6 +3523,7 @@
 !    Modeled after a subroutine posted at:
 !    https://climate-cms.org/2018/10/12/create-netcdf.html
 !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !##############################################################################
 
       subroutine NC_check_status(nSTAT, errcode, operation)
@@ -3510,10 +3554,18 @@
       end subroutine NC_check_status
 
 !##############################################################################
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !    NC_Read_Output_Products
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 !    if timestep = -1, then use the last step in file
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !##############################################################################
 
       subroutine NC_Read_Output_Products(timestep)
@@ -3524,6 +3576,7 @@
       use io_data,           only : &
          concenfile,init_tstep,nWriteTimes,WriteTimes,cdf_b1l1,cdf_b1l5,cdf_b3l1, &
          cdf_b3l3,VolcanoName,Write_PT_Data,isFinal_TS,&
+         cdf_run_class,cdf_url,cdf_institution,&
          Write_PR_Data,nvprofiles,x_vprofile,y_vprofile,Site_vprofile
 
       use Source,        only : &
@@ -4558,6 +4611,34 @@
           read(cdf_b1l5,*)x_volcano, y_volcano
         endif
 
+        nSTAT = nf90_get_att(ncid,nf90_global,"institution",cdf_institution)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att institution:")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Did not find att institution: Assuming institution=USGS"
+          endif;enddo
+          cdf_institution="USGS"
+        endif
+
+        nSTAT = nf90_get_att(ncid,nf90_global,"run_class",cdf_run_class)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att run_class:")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Did not find att institution: Assuming run class=Analysis"
+          endif;enddo
+          cdf_run_class="Analysis"
+        endif
+
+        nSTAT = nf90_get_att(ncid,nf90_global,"url",cdf_url)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att url:")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Did not find att url: Assuming url=https://vsc-ash.wr.usgs.gov/ash3d-gui"
+          endif;enddo
+          cdf_url="https://vsc-ash.wr.usgs.gov/ash3d-gui"
+        endif
+
+
         ! Get eruptions ESPs
         if(.not.allocated(e_StartTime))then
           allocate(e_StartTime(neruptions))
@@ -4895,6 +4976,7 @@
       deallocate(dum2dint_out)
 
       end subroutine NC_Read_Output_Products
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       end module Ash3d_Netcdf
 

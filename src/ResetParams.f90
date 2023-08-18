@@ -2,6 +2,12 @@
 !
 !  Subroutine input_data_ResetParams()
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 !  This subroutine is called from Ash3d.F90 after Read_Control_File only if the
 !  input file has a block with the keyword OPTMOD=RESETPARAMS.
 !  An example block with all the variables availalbe to reset is given here. Not

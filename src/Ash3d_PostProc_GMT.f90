@@ -1,3 +1,28 @@
+!      subroutine write_2Dmap_PNG_GMT
+!      subroutine write_2Dprof_PNG_GMT
+!      subroutine write_DepPOI_TS_PNG_GMT
+
+      module Ash3d_PostProc_GMT
+
+      use precis_param
+
+      use io_units
+
+      use gmt
+
+      implicit none
+
+        ! Set everything to private by default
+      private
+
+        ! Publicly available subroutines/functions
+      public write_2Dmap_PNG_GMT
+
+        ! Publicly available variables
+
+
+      contains
+
 !##############################################################################
 !
 !    write_2Dmap_PNG_GMT
@@ -5,12 +30,10 @@
 !    if timestep = -1, then use the last step in file
 !##############################################################################
 
-      subroutine write_2Dmap_PNG_GMT(iprod,itime,OutVar,writeContours)
-
-      use precis_param
+      subroutine write_2Dmap_PNG_GMT(nx,ny,iprod,itime,OutVar,writeContours)
 
       use mesh,          only : &
-         nxmax,nymax,x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd, &
+         x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd, &
          IsLatLon
 
       use Output_Vars,   only : &
@@ -28,23 +51,23 @@
          ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
          Contour_MaxCurves,Contour_MaxPoints,ContourLev
 
-      use time_data,     only : &
-         os_time_log,BaseYear,useLeap
-
       use io_data,       only : &
          nWriteTimes,WriteTimes,cdf_b3l1,VolcanoName
 
       use Source,        only : &
          neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight,lon_volcano,lat_volcano
 
-      use gmt
+      use time_data,     only : &
+         os_time_log,BaseYear,useLeap
 
-      implicit none
+      use citywriter
 
-      integer :: iprod
-      integer :: itime
-      real(kind=ip) :: OutVar(nxmax,nymax)
-      logical :: writeContours
+      integer      ,intent(in) :: nx
+      integer      ,intent(in) :: ny
+      integer      ,intent(in) :: iprod
+      integer      ,intent(in) :: itime
+      real(kind=ip),intent(in) :: OutVar(nx,ny)
+      logical      ,intent(in) :: writeContours
 
       character(16) filedat,filetxt,fileps
       character(20) module
@@ -79,6 +102,7 @@
         write(*,*)"Running GMT to generate contour plot"
       endif
 
+      stop 5
 
       end subroutine write_2Dmap_PNG_GMT
 
@@ -284,3 +308,6 @@
 !      call execute_command_line(gnucom)
 !
 !      end subroutine write_DepPOI_TS_PNG_GMT
+
+      end module Ash3d_PostProc_GMT
+

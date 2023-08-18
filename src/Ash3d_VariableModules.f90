@@ -737,7 +737,7 @@
         ! this parameter for the output products
       real(kind=dp),parameter :: OutputOffset    = 0.0_dp
 
-      integer            :: BaseYear = 1800
+      integer            :: BaseYear = 1900
       logical            :: useLeap  = .true.
 
       ! Variables for the wall time this simulation is launched
@@ -762,7 +762,8 @@
       real(kind=ip)      :: dt_meso_next    ! dt as calculated from meso_next
 
       ! Some stings that hold time data used in output files
-      character(len=17)  :: os_time_log
+      !character(len=17)  :: os_time_log
+      character(len=20)  :: os_time_log
       character(len=20)  :: xmlSimStartTime                     !start time of simulation in xml format
       character(len=20)  :: xmlTimeSpanStart
       character(len=20)  :: xmlTimeSpanEnd    !time periods written to kml files

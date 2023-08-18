@@ -92,6 +92,12 @@
 !
 !  Allocate_Tephra
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Allocate_Tephra
@@ -109,6 +115,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  Allocate_Tephra_Met
+!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -132,6 +144,12 @@
 !
 !  Deallocate_Tephra
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Deallocate_Tephra
@@ -150,6 +168,12 @@
 !
 !  Deallocate_Tephra_Met
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Deallocate_Tephra_Met
@@ -167,6 +191,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  Set_Vf_Meso(Load_MesoSteps)
+!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -293,6 +323,12 @@
 !
 !  Calculate_Tephra_Shape
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Calculate_Tephra_Shape
@@ -394,6 +430,12 @@
 !
 !  Sort_Tephra_Size
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Sort_Tephra_Size
@@ -477,6 +519,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  partition_gsbins(mu,sigma)
+!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -611,6 +659,12 @@
 !
 !  Prune_GS
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Prune_GS
@@ -644,6 +698,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  vset_WH(rho_air,rho_m,eta,diam,Ffac1,Ffac2)
+!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -703,6 +763,12 @@
 !
 !  vset_WH_slip(rho_air,rho_m,eta,diam,Ffac1,Ffac2,Kna)
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function vset_WH_slip(rho_air,rho_m,eta,diam,Ffac1,Ffac2,Kna)
@@ -750,6 +816,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  vset_WH_PCM(rho_air,rho_m,eta,diam,Ffac1,Ffac2)
+!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -807,6 +879,12 @@
 !
 !  vset_Gans(rho_air,rho_m,eta,diam,K1,K2)
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function vset_Gans(rho_air,rho_m,eta,diam,K1,K2)
@@ -856,6 +934,12 @@
 !
 !  vset_Stokesslip(rho_m,eta,diam,Kna)
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function vset_Stokesslip(rho_m,eta,diam,Kna)
@@ -882,6 +966,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  vset_Stokes_Cloud(rho_m,eta,diam)
+!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

@@ -95,6 +95,11 @@
           integer                    ::  byear
           logical                    ::  useLeaps
         end function HS_yyyymmddhhmm_since
+        character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
+          real(kind=8)              :: HoursSince
+          integer                   :: byear
+          logical                   :: useLeaps
+        end function HS_xmltime
         subroutine check_endian(IsLitEnd)
           logical,intent(inout)  :: IsLitEnd
         end subroutine check_endian
@@ -350,8 +355,9 @@
       read(RunStartHour_ch,'(11x,i2)') RunStartMinute
 
         ! Prepare a note to include in the netcdf output file
-      write(linebuffer080,102) RunStartYear,RunstartMonth,RunStartDay,RunStartHr,RunStartMinute
-      os_time_log = linebuffer080(1:17)
+!      write(linebuffer080,102) RunStartYear,RunstartMonth,RunStartDay,RunStartHr,RunStartMinute
+!      os_time_log = linebuffer080(1:17)
+      os_time_log = HS_xmltime(RunStartHour,BaseYear,useLeap)
 
       do io=1,2;if(VB(io).le.verbosity_production)then
         write(outlog(io),*)" System Information"

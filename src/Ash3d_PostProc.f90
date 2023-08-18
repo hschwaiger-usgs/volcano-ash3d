@@ -1,3 +1,65 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Ash3d_PostProc
+!
+!  This program is used for post-processing Ash3d output, primarily generating
+!  output products from the netcdf output file.  The normal output products
+!  available when running Ash3d, such as the kml files, 2-d ASCII output, 3-d
+!  binary or vertical profile data, are all reproducible from the netcdf
+!  output file using this program.  Additionally, this program can create kml,
+!  ASCII, binary, shapefiles or contour maps (in png format) for many 2d variables
+!  not available as options while running Ash3d.
+!  
+!  If no command-line arguments are provided, the program will run interactivley,
+!  prompting the user for the name of the netcdf file to process, followed by
+!  the output variable to process, the output format and the time step (if processing
+!  a transient variable).
+!  
+!  If one command-line argument is provided, it is assumed to be a control file
+!  that defines the input type and output products.  This is not yet implemented.
+!  
+!  If more than one command-line argument is given, this program expects the following:
+!    ./Ash3d_PostProc Ash3d_output.nc output_product_ID format_code [time_step]
+!  where output_product_ID is one of:
+!       1 full concentration array
+!       2 deposit granularity
+!       3 deposit thickness (mm time-series)
+!       4 deposit thickness (inches time-series)
+!       5 deposit thickness (mm final)
+!       6 deposit thickness (inches final)
+!       7 ashfall arrival time (hours)
+!       8 ashfall arrival at airports/POI (mm)
+!       9 ash-cloud concentration (mg/m3)
+!      10 ash-cloud height (km)
+!      11 ash-cloud bottom (km)
+!      12 ash-cloud load (T/km2 or )
+!      13 ash-cloud radar reflectivity (dBz)
+!      14 ash-cloud arrival time (hours)
+!      15 topography
+!      16 profile plots
+!  and format_code is one of:
+!       1 ASCII/ArcGIS
+!       2 KML/KMZ
+!       3 image/png
+!       4 binary
+!       5 shape file
+!       6 grib2   (not yet implemented)
+!       7 netcdf  (not yet implemented)
+!       8 tecplot (not yet implemented)
+!       9 vtk     (not yet implemented)
+!  and time_step can optionally be provided for transient variables with -1 denoting
+!  the final time data.  For data pproducts that require contours (shape files or
+!  contour plots), contour levels are defined in the module Output_Vars.
+!  
+!  For example, to product a contour map of ash-cloud arrival time:
+!   ./Ash3d_PostProc Ash3d_output.nc 14 3
+!  
+!  To produce a shapefile for deposit thickness (in mm) at the second time step:
+!   ./Ash3d_PostProc Ash3d_output.nc 3 5 2
+!  
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
       program Ash3d_PostProc
 
       use precis_param
@@ -31,13 +93,16 @@
       use Output_KML
 
       use Ash3d_Netcdf
-#ifdef USEPLPLOT
-      use Ash3d_PostProc_plplot
-#endif
 #ifdef USEDISLIN
       use Ash3d_PostProc_dislin
 #endif
+#ifdef USEPLPLOT
+      use Ash3d_PostProc_plplot
+#endif
       use Ash3d_PostProc_gnuplot
+#ifdef USEGMT
+      use Ash3d_PostProc_GMT
+#endif
 
       implicit none
 
@@ -228,13 +293,14 @@
 
         if(VB(1).ge.verbosity_silent)then
           do io=1,2
-            write(errlog(io),*)"Stdout is suppressed via VERB=9,10, but interactive input is expected."
-            write(errlog(io),*)"Either recompile with VERB<9 or provide the correct command-line arguments."
+            write(errlog(io),*)"Stdout is suppressed via verbosity=9,10, but interactive input is expected."
+            write(errlog(io),*)"Either recompile with verbosity<9 or provide the correct command-line arguments."
           enddo
           stop 1
         else
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)'Enter name of ESP input file:'
+            !write(outlog(io),*)'Enter name of ESP input file:'
+            write(outlog(io),*)'Enter name of netcdf output file:'
           endif;enddo
         endif
         read(5,*)concenfile
@@ -252,7 +318,7 @@
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)'Enter index for time step:'
         endif;enddo
-        read(5,*)iformat
+        read(5,*)itime
 
       elseif (nargs.eq.1) then
         ! Read control file
@@ -270,6 +336,8 @@
         if (nargs.eq.4) then
           call get_command_argument(4, arg, status)
           read(arg,*)itime
+        else
+          itime = -1
         endif
       else
         do io=1,2;if(VB(io).le.verbosity_error)then
@@ -788,8 +856,10 @@
 #endif
             case(3)
               call write_2Dprof_PNG_gnuplot(i)
-            !case(4)
+            case(4)
+#ifdef USEGMT
               !call write_2Dprof_PNG_GMT(i)
+#endif
             case default
               do io=1,2;if(VB(io).le.verbosity_error)then
                 write(errlog(io),*)"ERROR: Plots requested but no plotting package is installed"
@@ -819,8 +889,10 @@
 #endif
         case(3)
           call write_2Dmap_PNG_gnuplot(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
-        !case(4)
-          !call write_2Dmap_PNG_GMT(nxmax,nymax,iprod,iout3d,OutVar)
+        case(4)
+#ifdef USEGMT
+          call write_2Dmap_PNG_GMT(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
+#endif
         case default
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: Plots requested but no plotting package is installed"
@@ -879,8 +951,10 @@
 #endif
         case(3)
           call write_2Dmap_PNG_gnuplot(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
-        !case(4)
-          !call write_2Dmap_PNG_GMT(nxmax,nymax,iprod,iout3d,OutVar)
+        case(4)
+#ifdef USEGMT
+          call write_2Dmap_PNG_GMT(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
+#endif
         case default
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: Plots requested but no plotting package is installed"
@@ -890,13 +964,16 @@
 
         call write_ShapeFile_Polyline(iprod,iout3d)
         !  For contours that follow topography, use
-        !call write_ShapeFile_PolylineZ
+        !call write_ShapeFile_PolylineZ  (this is a place-holder, not yet implemented)
       elseif(iformat.eq.6)then
         !call write_2D_grib2
       elseif(iformat.eq.7)then
+        !call write_2D_netcdf
+      elseif(iformat.eq.8)then
         !call write_2D_tecplot
+      elseif(iformat.eq.9)then
+        !call write_2D_vtk
       endif
-
 
       end program Ash3d_PostProc
 

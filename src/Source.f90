@@ -85,6 +85,12 @@
 !
 !  Allocate_Source_eruption
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Allocate_Source_eruption
@@ -110,6 +116,12 @@
 !
 !  Allocate_Source_grid
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Allocate_Source_grid
@@ -126,6 +138,12 @@
 !
 !  Allocate_Source_time
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Allocate_Source_time
@@ -140,6 +158,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  Deallocate_Source
+!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -166,6 +190,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  TephraSourceNodes
+!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -330,6 +360,12 @@
 !
 !  MassFluxCalculator
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine MassFluxCalculator
@@ -472,6 +508,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  SourceVolInc(dt)
+!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

@@ -37,6 +37,12 @@
 !
 !  get_ESP(volc_code)
 !
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine get_ESP(volc_code)
@@ -257,6 +263,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  VotW_v12(MAXVOLCS,volcLat,volcLon,volcElev,volcLoc,volcESP_Code,volcID,volcName)
+!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

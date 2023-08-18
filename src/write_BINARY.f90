@@ -1,4 +1,10 @@
 !******************************************************************************
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 
       subroutine write_3D_Binary(cio,nx,ny,nz,ashcon_tot)
 
@@ -34,6 +40,12 @@
       end subroutine write_3D_Binary
 
 !******************************************************************************
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 
       subroutine write_2D_Binary(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
 

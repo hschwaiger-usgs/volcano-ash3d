@@ -16,8 +16,18 @@
 !      real(kind=ip) :: R_Fill
 !
 !      contains
-
+!
 !******************************************************************************
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine vprofileopener
 
@@ -72,6 +82,15 @@
 
 !******************************************************************************
 
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       subroutine vprofilewriter(itime)
 
 !     subroutine that writes data on vertical profiles
@@ -126,6 +145,15 @@
 
 !******************************************************************************
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
       subroutine vprofilecloser
 
 !     subroutine that closes vertical profile files
@@ -146,6 +174,13 @@
       end subroutine vprofilecloser
 
 !******************************************************************************
+
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 
       subroutine write_2D_ASCII(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
 
@@ -261,6 +296,13 @@
 
 !******************************************************************************
 
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
+
       subroutine read_2D_ASCII(filename)
 
 !     Subroutine that reads in 2-D arrays in ESRI ASCII raster format
@@ -333,6 +375,13 @@
 
 !******************************************************************************
  
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
+
       subroutine write_3D_ASCII(cio)
 
 !     Subroutine that writes out 3-D arrays in ESRI ASCII raster format
@@ -387,6 +436,13 @@
       end subroutine write_3D_ASCII
 
 !******************************************************************************
+
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
 
       subroutine Write_PointData_Airports_ASCII
 

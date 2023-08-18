@@ -1,7 +1,42 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  write_ShapeFile_Polyline
+!
+!  Called from: Ash3d_PostProc
+!  Arguments:
+!    iprod = ID of the 2d output product
+!    itime = index of time step
+!
+!  This subroutine writes contours of a 2d output product to a shapefile. To
+!  generate shapefiles, the contours must be available from dislin (internally
+!  created), gnuplot or gmt (created via system call with a temperary script).
+!  Shapefiles (.shp) are created following the specification in this document:
+!   https://www.esri.com/content/dam/esrisites/sitecore-archive/Files/Pdfs/library/whitepapers/pdfs/shapefile.pdf
+!  Database files (.dbf) are created using dBASE Level 5 according to this document:
+!   https://www.oocities.org/geoff_wass/dBASE/GaryWhite/dBASE/FAQ/qformt.htm Sec. D
+!  Because the shapefile format uses a mix of variable types and endian flavors, the
+!  files must be opened with 'stream' access, requiring Fortran 2003 or later.  The
+!  shapefiles will have the following attributes:
+!   ORG:       Organization; e.g. USGS
+!   VOLC:      Volcano name
+!   RUN DATE:  Run date of original simulation (xmltime yyyy-mm-ddThh:mm:ssZ)
+!   WINDFRMT:  Wind file format ID
+!   RUN CLASS: Indicator of type of run (Analysis, Forecast, Hypothetical)
+!   E_STIME:   Eruption start time (xmltime yyyy-mm-ddThh:mm:ssZ)
+!   E_PLMH:    Eruption plume height (km)
+!   E_VOL:     Eruption volume (km^3 DRE)
+!   URL:       web address for further information
+!   VAR:       Variable plotted
+!   VALUE:     Value of contour level (polyline)
+!   UNITS:     Units of variable
+!   INDEX:     Index (starting at 0) of the contour level
+!   TIME:      Valid time (xmltime) for this feature (useful for combining multiple
+!              shapefiles of a transient variable)
+!  For linux or mac systems with zip installed, the four shapefile files are zipped.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine write_ShapeFile_Polyline(iprod,itime)
-
-      ! input should be the contours, the output product, and the time step
 
       use precis_param
 
@@ -15,7 +50,13 @@
          ContourLev,nConLev
 
       use io_data,       only : &
-         WriteTimes,VolcanoName,cdf_institution,cdf_run_class,cdf_url
+         WriteTimes,VolcanoName,cdf_institution,cdf_run_class,cdf_url,cdf_b3l1
+
+      use Source,        only : &
+         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
+
+      use time_data,     only : &
+         time,BaseYear,useLeap,SimStartHour,os_time_log
 
       implicit none
 
@@ -50,6 +91,7 @@
       integer :: i,irec,ipart,ipt
       integer,dimension(:),allocatable :: reclen
       integer :: offset
+      integer :: iw,iwf
 
       integer(kind=4) :: file_code
       integer(kind=4) :: tmp4
@@ -108,6 +150,11 @@
       character(len=71):: zipcom
 
       INTERFACE
+        character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
+          real(kind=8)              :: HoursSince
+          integer                   :: byear
+          logical                   :: useLeaps
+        end function HS_xmltime
         subroutine writeShapFileFieldDesArr(ov_dbasID,fldlen,DBASE_FieldName,&
                                             DBASE_FieldTyp,DBASE_FieldLen)
           integer,intent(in)               :: ov_dbasID
@@ -480,25 +527,29 @@
       ! Populate each of the TableRecData fields with dummy values so we can get lengths to put
       ! in the header
       ! HFS KLUDGE
-      cdf_institution="USGS"
-      cdf_run_class="Analysis"
-      cdf_url="https://vsc-ash.wr.usgs.gov/ash3d-gui"
+      if(neruptions.gt.1)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Multiple eruptions given in netcdf file."
+          write(outlog(io),*)"Only writing first eruption to shapefile attributes."
+        endif;enddo
+      endif
+      read(cdf_b3l1,*)  iw,iwf
 
-      write(DBASE_TableRecData01,*)trim(adjustl(cdf_institution))
-      write(DBASE_TableRecData02,*)trim(adjustl(VolcanoName))
-      write(DBASE_TableRecData03,'(a20)')'1800-01-01T00:00:00Z'
-      write(DBASE_TableRecData04,'(i2)')25
-      write(DBASE_TableRecData05,*)trim(adjustl(cdf_run_class))
-      write(DBASE_TableRecData06,'(a20)')'1800-01-01T00:00:00Z'  ! start time
-      write(DBASE_TableRecData07,'(f10.3)')40.0 ! plume height
-      write(DBASE_TableRecData08,'(f10.3)')24.0 ! duration
-      write(DBASE_TableRecData09,'(e10.3)')40.0 ! erup.vol
-      write(DBASE_TableRecData10,*)trim(adjustl(cdf_url))
-      write(DBASE_TableRecData11,*)trim(adjustl(plot_variable))
-      write(DBASE_TableRecData12,'(a24)')"       0.000000000000000"
-      write(DBASE_TableRecData13,*)trim(adjustl(plot_units))
-      write(DBASE_TableRecData14,'(a10)')"         0"
-      write(DBASE_TableRecData15,'(a20)')'1800-01-01T00:00:00Z'
+      write(DBASE_TableRecData01,*)trim(adjustl(cdf_institution))   ! ORG
+      write(DBASE_TableRecData02,*)trim(adjustl(VolcanoName))       ! VOLC
+      write(DBASE_TableRecData03,'(a20)')os_time_log                ! RUN DATE
+      write(DBASE_TableRecData04,'(i2)')iwf                         ! WINDFRMT
+      write(DBASE_TableRecData05,*)trim(adjustl(cdf_run_class))     ! RUN CLASS
+      write(DBASE_TableRecData06,'(a20)')HS_xmltime(SimStartHour,BaseYear,useLeap) ! E_STIME
+      write(DBASE_TableRecData07,'(f10.3)')e_PlumeHeight(1)         ! E_PLMH
+      write(DBASE_TableRecData08,'(f10.3)')e_Duration(1)            ! E_DUR
+      write(DBASE_TableRecData09,'(e10.3)')e_Volume(1)              ! E_VOL
+      write(DBASE_TableRecData10,*)trim(adjustl(cdf_url))           ! URL
+      write(DBASE_TableRecData11,*)trim(adjustl(plot_variable))     ! VAR
+      write(DBASE_TableRecData12,'(a24)')"       0.000000000000000" ! VALUE
+      write(DBASE_TableRecData13,*)trim(adjustl(plot_units))        ! UNITS
+      write(DBASE_TableRecData14,'(a10)')"         0"               ! INDEX
+      write(DBASE_TableRecData15,'(a20)')HS_xmltime(SimStartHour+time,BaseYear,useLeap) ! TIME
 
       DBASE_zero = 0
       DBASE_v  = 3
@@ -659,7 +710,6 @@
       call writeShapFileFieldDesArr(ov_dbasID,fldlen,DBASE_FieldName,&
                                     DBASE_FieldTyp,DBASE_FieldLen)
 
-
       DBASE_FieldTyp = 'N'
 
       write(ov_dbasID)DBASE_FieldDesTerm
@@ -723,8 +773,17 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!  Subroutine writeShapFileFieldDesArr writes the Field Description to the
-!  Field Descriptor Array
+!  writeShapFileFieldDesArr
+!
+!  Called from: write_ShapeFile_Polyline
+!  Arguments:
+!    ov_dbasID       = database file ID
+!    fldlen          = length of field variable name (# chars)
+!    DBASE_FieldName = Field variable name
+!    DBASE_FieldTyp  = Field variable type (C or N)
+!    DBASE_FieldLen  = lenght in bytes of full field record
+!
+!  This subroutine writes the Field Description to the Field Descriptor Array.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -790,88 +849,15 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!  Subroutine SWAP_8REAL swaps the byte order of a 8-byte real
-!  Subroutine SWAP_4REAL swaps the byte order of a 4-byte real
-!  Subroutine SWAP_2INT  swaps the byte order of a 2-byte integer
-!  Subroutine SWAP_4INT  swaps the byte order of a 4-byte integer
+!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!
-!      subroutine swap_8real(r)
-!
-!      implicit none
-!
-!      integer(kind=1) :: ii(8), jj(8)
-!      real(kind=8)    :: r, s, t
-!
-!      equivalence (s,ii)
-!      equivalence (t,jj)
-!
-!      s = r
-!      jj(1) = ii(8)
-!      jj(2) = ii(7)
-!      jj(3) = ii(6)
-!      jj(4) = ii(5)
-!      jj(5) = ii(4)
-!      jj(6) = ii(3)
-!      jj(7) = ii(2)
-!      jj(8) = ii(1)
-!      r = t
-!      end subroutine swap_8real
-!
-!
-!      subroutine swap_4real(r)
-!
-!      implicit none
-!
-!      integer(kind=1) :: ii(4), jj(4)
-!      real(kind=4)    :: r, s, t
-!
-!      equivalence (s,ii)
-!      equivalence (t,jj)
-!
-!      s = r
-!      jj(1) = ii(4)
-!      jj(2) = ii(3)
-!      jj(3) = ii(2)
-!      jj(4) = ii(1)
-!      r = t
-!      end subroutine swap_4real
-!
-!      subroutine swap_2int(r)
-!
-!      implicit none
-!
-!      integer(kind=1) :: ii(2), jj(2)
-!      integer(kind=2) :: r, s, t
-!
-!      equivalence (s,ii)
-!      equivalence (t,jj)
-!
-!      s = r
-!      jj(1) = ii(2)
-!      jj(2) = ii(1)
-!      r = t
-!      end subroutine swap_2int
-!
-!      subroutine swap_4int(r)
-!
-!      implicit none
-!
-!      integer(kind=1) :: ii(4), jj(4)
-!      integer(kind=4) :: r, s, t
-!
-!      equivalence (s,ii)
-!      equivalence (t,jj)
-!      s = r
-!      jj(1) = ii(4)
-!      jj(2) = ii(3)
-!      jj(3) = ii(2)
-!      jj(4) = ii(1)
-!      r = t
-!      end subroutine swap_4int
 
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       function BigEnd_2int(isLit,r)
 
       implicit none
@@ -916,6 +902,15 @@
       end function BigEnd_2int
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function BigEnd_4int(isLit,r)
 
@@ -965,6 +960,16 @@
       end function BigEnd_4int
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
       function LitEnd_2int(isLit,r)
 
       implicit none
@@ -1010,6 +1015,17 @@
       end function LitEnd_2int
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
       function LitEnd_4int(isLit,r)
 
       implicit none
@@ -1092,6 +1108,17 @@
 !      end function BigEnd_8real
 !
 !      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
       function LitEnd_8real(isLit,r)
 
       implicit none

@@ -1,8 +1,22 @@
-!##############################################################################
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  output_results
 !
-!##############################################################################
+!  Called from: Ash3d.F90 at three points; first before the time loop, once within
+!               it, and once after.  This is also called once from the post-
+!               procession tool
+!  Arguments:
+!    none
+!
+!  This subroutine is primarily used to write out the requested output data on
+!  the output timesteps specified in the control file.  Profile data, or other
+!  data on a different output interval are exported elsewhere. There are three
+!  blocks in this subroutine: first a block that prepares the output files which
+!  is only executed the first time this subroutine is called (prior to the time
+!  loop in Ash3d.F90), next the block that writes out the data for the output
+!  step, and finally a block that closes the files at the end of the simulation.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine output_results
 
@@ -31,7 +45,6 @@
       use Output_Vars,   only : &
          DepositThickness,MaxConcentration,MaxHeight,&
          Mask_Cloud,Mask_Deposit,ashcon_tot, &
-         ! MinHeight, &
          CloudLoad,DepArrivalTime,CloudArrivalTime,dbZCol,&
          AshTotalCalculator
 
@@ -56,7 +69,6 @@
       real(kind=ip)     :: timestart
       real(kind=ip)     :: timeend
       logical,save      :: first_time = .true.
-      !character(len=1)  :: answer              !for debugging
 
       INTERFACE
         subroutine vprofileopener
@@ -122,7 +134,6 @@
         call Set_OutVar_Specs          ! Initialize variables local to the Output_KML module
         if (WriteCloudConcentration_KML)  call OpenFile_KML(1) ! Cloud Concentration
         if (WriteCloudHeight_KML)         call OpenFile_KML(2) ! Cloud Top Height
-        !if (WriteCloudHeight_KML)         call OpenFile_KML(3) ! Cloud Bottom Height
         if (WriteCloudLoad_KML)           call OpenFile_KML(4) ! Cloud Load
         if (WriteReflectivity_KML)        call OpenFile_KML(6) ! Reflectivity
         if (WriteDepositTS_KML.or.WriteDepositFinal_KML)  then
@@ -146,6 +157,7 @@
           endif
         endif
 
+        ! This is an not output step, so toggle off the marker for the output log
         OutputStep_Marker = ' '
 
         first_time = .false.
@@ -214,11 +226,6 @@
                               MaxHeight(1:nxmax,1:nymax), &
                               Mask_Cloud(1:nxmax,1:nymax),&
                               ' 0.000','CloudHeight_        ')
-        !if (WriteCloudHeight_ASCII)         &
-        !  call write_2D_ASCII(nxmax,nymax,&
-        !                      MinHeight(1:nxmax,1:nymax), &
-        !                      Mask_Cloud(1:nxmax,1:nymax),&
-        !                      '-9999.','CloudHeightBot_     ')
         if (WriteCloudLoad_ASCII)           &
           call write_2D_ASCII(nxmax,nymax,&
                               CloudLoad(1:nxmax,1:nymax), &
@@ -227,14 +234,12 @@
 
           ! Now KML files
         if (WriteCloudConcentration_KML)   call Write_2D_KML(1,MaxConcentration,1,1) ! Cloud Concentration
-        if (WriteCloudHeight_KML)          call Write_2D_KML(2,MaxHeight, 1,1) ! Cloud Top Height
-        !if (WriteCloudHeight_KML)          call Write_2D_KML(3,MinHeight,-1,1) ! Cloud Bottom Height
-        if (WriteCloudLoad_KML)            call Write_2D_KML(4,CloudLoad, 1,1) ! Cloud Load
-        if (WriteReflectivity_KML)         call Write_2D_KML(6,dbZCol, 1,1) ! Reflectivity
+        if (WriteCloudHeight_KML)          call Write_2D_KML(2,MaxHeight, 1,1)       ! Cloud Top Height
+        if (WriteCloudLoad_KML)            call Write_2D_KML(4,CloudLoad, 1,1)       ! Cloud Load
+        if (WriteReflectivity_KML)         call Write_2D_KML(6,dbZCol, 1,1)          ! Reflectivity
         if (WriteDepositTS_KML.or.WriteDepositFinal_KML)  then
-        !if (WriteDepositTS_KML)  then
-          call Write_2D_KML(7,DepositThickness,0,1) ! Deposit
-          call Write_2D_KML(8,DepositThickness*MM_2_IN,0,1) ! Deposit (NWS)
+          call Write_2D_KML(7,DepositThickness,0,1)         ! Deposit (mm)
+          call Write_2D_KML(8,DepositThickness*MM_2_IN,0,1) ! Deposit (NWS thresholds in inches)
         endif
 
       endif !.not.isFinal_TS
@@ -310,7 +315,6 @@
         ! Close KML files
         if (WriteCloudConcentration_KML) call Close_KML(1,1)
         if (WriteCloudHeight_KML)        call Close_KML(2,1)
-        !if (WriteCloudHeight_KML)        call Close_KML(3,1)
         if (WriteCloudLoad_KML)          call Close_KML(4,1)
         if (WriteReflectivity_KML)       call Close_KML(6,1)
         if (WriteDepositTS_KML) then
@@ -328,6 +332,7 @@
       endif
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+      ! This is an output step, so toggle on the marker for the output log
       OutputStep_Marker = '*'
 
       return
