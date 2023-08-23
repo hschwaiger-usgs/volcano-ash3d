@@ -15,7 +15,7 @@
 !      function vset_WH_slip
 !      function vset_WH_PCM
 !      function vset_Gans
-!      function vset_Stokesslip
+!      function vset_Stokes_slip
 !      function vset_Stokes_Cloud
 !
 !##############################################################################
@@ -35,8 +35,14 @@
       private
 
         ! Publicly available subroutines/functions
-      public Allocate_Tephra,Deallocate_Tephra,Allocate_Tephra_Met,Deallocate_Tephra_Met,&
-             Calculate_Tephra_Shape,Sort_Tephra_Size,Set_Vf_Meso,Prune_GS
+      public Allocate_Tephra,           &
+             Deallocate_Tephra,         &
+             Allocate_Tephra_Met,       &
+             Deallocate_Tephra_Met,     &
+             Calculate_Tephra_Shape,    &
+             Sort_Tephra_Size,          &
+             Set_Vf_Meso,               &
+             Prune_GS
 
         ! Publicly available variables
 
@@ -45,7 +51,7 @@
       real(kind=ip),public :: LAM_GS_THRESH  =  250.0_ip  ! Invokes Cslip once effect is 1%
                                      !=  125.0_ip  ! Invokes Cslip once effect is 2%
                                      !=   50.0_ip  ! Invokes Cslip once effect is 5%
-      real(kind=ip),public :: AIRBORNE_THRESH = 1.0e-3_ip ! Mass threshold for flagging bin as empty (1 gram)
+      real(kind=ip),public :: AIRBORNE_THRESH = 1.0e-3_ip ! Mass threshold for flagging bin as empty (kg)
 
       integer,public :: n_gs_max                    ! # size classes of particles 
       integer,public :: n_gs_aloft                    ! max gs bin still aloft
@@ -84,6 +90,7 @@
 
       real(kind=ip),public :: phi_mean
       real(kind=ip),public :: phi_stddev
+      real(kind=ip),parameter :: vset_ConvCrit = 0.001_ip
 
       contains
       !------------------------------------------------------------------------
@@ -92,11 +99,11 @@
 !
 !  Allocate_Tephra
 !
-!  Called from: 
+!  Called from: Read_Control_File
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine allocates several variables that describe the grainsize bins.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -116,11 +123,11 @@
 !
 !  Allocate_Tephra_Met
 !
-!  Called from: 
+!  Called from: Ash3d.F90
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine allocates the fall-velocity variables on the NWP grid.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -144,11 +151,11 @@
 !
 !  Deallocate_Tephra
 !
-!  Called from: 
+!  Called from: dealloc_arrays
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine deallocates the variables allocated in Allocate_Tephra.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -168,11 +175,11 @@
 !
 !  Deallocate_Tephra_Met
 !
-!  Called from: 
+!  Called from: dealloc_arrays
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine deallocates the variable allocated in Deallocate_Tephra_Met
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -192,11 +199,17 @@
 !
 !  Set_Vf_Meso(Load_MesoSteps)
 !
-!  Called from: 
+!  Called from: Read_NextMesoStep
 !  Arguments:
-!    none
+!    Load_MesoSteps = logical flag indicating that the next NWP step needs to
+!                     be calculated.
 !
-!  This subroutine
+!  This subroutine populates the fall velocity arrays on the MetP grid.  This
+!  subroutine is only called if a variable fall velocity model is used.  For
+!  each node, the atmospheric properties are loaded, then a function call to
+!  one of the v_s models, such as vset_WH.  Finally, these fall velocites on
+!  the metP grid are interpolated onto the compH grid at the NWP time step
+!  via MR_Regrid_MetP_to_CompH.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -223,25 +236,31 @@
       integer :: i,j,k,is,isize
       real(kind=ip) :: dens,visc,lambda,Kna
       real(kind=ip) :: v_grav_set
+      logical,save  :: first_time = .true.
 
       if(Load_MesoSteps)then
+        if(first_time)then
+          is = 1
+          first_time = .false.
+        else
+          is = 2
+        endif
         do i=1,nx_submet
          do j=1,ny_submet
             do k=1,np_fullmet
               ! Note: we solve for the fall velocities on the p-levels since
               ! that is where the atmospheric variables live, then we
               ! interpolate onto the compH grid
-               is = 2
                if(is.eq.1)then
-                 dens   = AirDens_meso_last_step_MetP_sp(i,j,k)
-                 visc   = AirVisc_meso_last_step_MetP_sp(i,j,k)
+                 dens   = AirDens_meso_last_step_MetP_sp(i,j,k) ! kg/m^3
+                 visc   = AirVisc_meso_last_step_MetP_sp(i,j,k) ! kg/(m s)
                  lambda = AirLamb_meso_last_step_MetP_sp(i,j,k)
                else
-                 dens   = AirDens_meso_next_step_MetP_sp(i,j,k)
-                 visc   = AirVisc_meso_next_step_MetP_sp(i,j,k)
+                 dens   = AirDens_meso_next_step_MetP_sp(i,j,k) ! kg/m^3
+                 visc   = AirVisc_meso_next_step_MetP_sp(i,j,k) ! kg/(m s)
                  lambda = AirLamb_meso_next_step_MetP_sp(i,j,k)
                endif
-                 ! Initialize fall velocities to because we will be
+                 ! Initialize fall velocities too because we will be
                  ! skipping over some slots
                vf_sp(:) = 0.0_ip
                select case (FV_ID)
@@ -292,7 +311,7 @@
                  do isize=1,n_gs_max
                    if(.not.IsAloft(isize)) cycle
                    Kna = 2.0_ip*lambda/(Tephra_gsdiam(isize))
-                   v_grav_set = vset_Stokesslip(Tephra_rho_m(isize),visc,Tephra_gsdiam(isize),Kna)
+                   v_grav_set = vset_Stokes_slip(Tephra_rho_m(isize),visc,Tephra_gsdiam(isize),Kna)
                    vf_sp(isize) = real(v_grav_set,kind=sp)
                  enddo
                case default ! Wilson and Huang
@@ -323,11 +342,12 @@
 !
 !  Calculate_Tephra_Shape
 !
-!  Called from: 
+!  Called from: Read_Control_File
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine calculates various aspect of the tephra shape needed for
+!  the Wilson/Huang, Ganser or Cunningham slip models.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -430,11 +450,13 @@
 !
 !  Sort_Tephra_Size
 !
-!  Called from: 
+!  Called from: Read_Control_File
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine sorts the list of grainsizes as read by the control file
+!  according to size with the smallest in the first slot.  This is a necessary
+!  step when calculating a log-normal grainsize distribution.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -520,11 +542,22 @@
 !
 !  partition_gsbins(mu,sigma)
 !
-!  Called from: 
+!  Called from: Sort_Tephra_Size
 !  Arguments:
-!    none
+!    mu    = grainsize distribution average phi
+!    sigma = grainsize distribution standard deviation in phi
 !
-!  This subroutine
+!  This subroutine will create a log-normal distribution of grainsizes (normal
+!  in the variable phi) according to the input parameters for the mean and
+!  standard distribution in phi-space (mu, sigma).  The phi-value of bin
+!  boudaries is assumed to be the average of neighboring phi values, so this
+!  works best if bins are equally spaced in phi and that the bins comfortably
+!  span the distribution.  Values for the upper and lower bins are calculated
+!  by integration the tails to the far boundary phi-value.  This log-normal
+!  distribution will only be applied to the mass-fraction not already specified.
+!  If no mass is specified in bins, then the total distribution will be this
+!  log-normal distribution.  If some bin have mass already specified, this
+!  log-normal distribution will supplement.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -548,7 +581,7 @@
       fac1 = 0.5_ip
 
       !Note: This subroutine assumes that the grainsmax bins have been
-      !sorted from smallest to largest
+      !      sorted from smallest to largest
 
       ! We have n_gs_max bins with real grainsmax info.  The last bin read
       ! in (init_n_gs_max = n_gs_max+1) is
@@ -594,7 +627,8 @@
                "        Bin    :       gsdiam        :",&
                "        phi    :       right bin boundary (phi)"
             do isize = 1,n_gs_max
-              write(errlog(io),*)isize,real(Tephra_gsdiam(isize),kind=sp),real(phi(isize),kind=sp),&
+              write(errlog(io),*)isize,real(Tephra_gsdiam(isize),kind=sp),&
+                          real(phi(isize),kind=sp),&
                           real(phi_boundaries(isize),kind=sp)
             enddo
             write(errlog(io),*)"Mean = ",mu
@@ -659,11 +693,14 @@
 !
 !  Prune_GS
 !
-!  Called from: 
+!  Called from: Ash3d.F90
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine the total mass aloft in each grainsize bin and compare it
+!  to the value AIRBORNE_THRESH.  If the mass drops below that value, that
+!  bin is flagged as fully deposited (or otherwise flushed out) and removed
+!  from further calculations.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -699,43 +736,53 @@
 !
 !  vset_WH(rho_air,rho_m,eta,diam,Ffac1,Ffac2)
 !
-!  Called from: 
+!  Called from: Set_Vf_Meso
 !  Arguments:
-!    none
+!    rho_air= density of air (kg/m^3)
+!    rho_m  = density of particle (kg/m^3)
+!    eta    = viscosity of air (kg/(m s))
+!    diam   = diameter of particle (m)
+!    Ffac1  = WH precalculated factor 1 = F**(-0.828)
+!    Ffac2  = WH precalculated factor 2 = sqrt(1.07-F)
 !
-!  This subroutine
+!  This function returns the terminal fall velocity of a prolate ellipsoidal particle
+!  given the density and viscosity of air along with the density, diameter and
+!  shape of the particle.  Velocity is returned in m/s.  The drag coefficient
+!  is that of Wilson and Huang which results in a quadratic expression that
+!  allows direct calculation.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function vset_WH(rho_air,rho_m,eta,diam,Ffac1,Ffac2)
 
-      real(kind=ip) :: vset_WH      ! Settling velocity in m/s
+      real(kind=ip) :: vset_WH   ! Settling velocity in m/s
       real(kind=ip) :: rho_air   ! density of air in kg/m3
       real(kind=ip) :: rho_m     ! density of the particle in km/m3
       real(kind=ip) :: eta       ! dynamic viscosity of air in (kg/(m s))
       real(kind=ip) :: diam      ! diameter of the particle in m
-      real(kind=ip) :: Ffac1     ! ! = F**(-0.828)
+      real(kind=ip) :: Ffac1     ! = F**(-0.828)
       real(kind=ip) :: Ffac2     ! = sqrt(1.07-F)
 
       real(kind=ip) :: vset2
 
-      !Wilson and Huang (1979, EPSL v. 44, ppp. 311-324) give the drag coefficient of tephra 
-      !as a function of its shape by defining tephra fragments as ellipsoidal with axes a, b, and c.
-      !they also define F=(b+c)/2a, and give the drag coefficient as:
-      !Cd = (24/Re)*F**(-0.828) + 2*sqrt(1.07-F)
-      !They have a table in which a, b, and c were measured for pumice, glass, and feldspar fragments.
-      !The average values of F for these three fragment types ranges from 0.39 to 0.42.  So I use 0.4
-      !here.
+      ! Wilson and Huang (1979, EPSL v. 44, pp. 311-324) give the drag coefficient
+      ! of tephra as a function of its shape by defining tephra fragments as 
+      ! ellipsoidal with axes a, b, and c. they also define F=(b+c)/2a, and give the
+      ! drag coefficient as:
+      !   Cd = (24/Re)*F**(-0.828) + 2*sqrt(1.07-F)
+      ! They have a table in which a, b, and c were measured for pumice, glass, and
+      ! feldspar fragments. The average values of F for these three fragment types
+      ! ranges from 0.39 to 0.42.
 
-      !F = 0.4
-      !Ffac1 = 2.13547419198160     ! = F**(-0.828)  where F=0.4
-      !Ffac1 = 1.34072838100802     ! = F**(-0.32)  where F=0.4; Suzuki's mod
-      !Ffac2 = 0.818535277187245    ! = sqrt(1.07-F) where F=0.4
+      ! F = 0.4
+      ! Ffac1 = 2.13547419198160     ! = F**(-0.828)  where F=0.4
+      ! Ffac1 = 1.34072838100802     ! = F**(-0.32)  where F=0.4; Suzuki's mod
+      ! Ffac2 = 0.818535277187245    ! = sqrt(1.07-F) where F=0.4
 
-      !F = 0.6666
-      !Ffac1 = 1.39896599613964      ! = F**(-0.828)  where F=0.6666
-      !Ffac1 = 1.13854602830969      ! = F**(-0.32)  where F=0.6666; Suzuki's mod
-      !Ffac2 = 0.635137780328017     ! = sqrt(1.07-F) where F=0.6666
+      ! F = 0.6666
+      ! Ffac1 = 1.39896599613964      ! = F**(-0.828)  where F=0.6666
+      ! Ffac1 = 1.13854602830969      ! = F**(-0.32)  where F=0.6666; Suzuki's mod
+      ! Ffac2 = 0.635137780328017     ! = sqrt(1.07-F) where F=0.6666
 
       ! The following roots are solved by the maxima script:
       !  load(f90)$
@@ -763,11 +810,25 @@
 !
 !  vset_WH_slip(rho_air,rho_m,eta,diam,Ffac1,Ffac2,Kna)
 !
-!  Called from: 
+!  Called from: Set_Vf_Meso
 !  Arguments:
-!    none
+!    rho_air= density of air (kg/m^3)
+!    rho_m  = density of particle (kg/m^3)
+!    eta    = viscosity of air (kg/(m s))
+!    diam   = diameter of particle (m)
+!    Ffac1  = WH precalculated factor 1 = F**(-0.828)
+!    Ffac2  = WH precalculated factor 2 = sqrt(1.07-F)
+!    Kna    = Knudsen number (dimensionless)
 !
-!  This subroutine
+!  This function returns the terminal fall velocity of a prolate ellipsoidal particle
+!  given the density and viscosity of air along with the density, diameter and
+!  shape of the particle and Knudsen number.  The Knudsen number is important
+!  at high altitudes with low air density and a large mean free path.  In these
+!  environments, Cunningham slip corrections should be applied to the fall model.
+!  Velocity is returned in m/s.  The drag coefficient is that of Wilson and Huang
+!  but with the slip correction.  The result is no longer quadratic and must
+!  be solved iteritively with Cd and Vs updated until Vs does not change by more than
+!  a small fraction vset_ConvCrit (~0.001).
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -779,17 +840,17 @@
       real(kind=ip) :: rho_m     ! density of the particle in km/m3
       real(kind=ip) :: eta       ! dynamic viscosity of air in (kg/(m s))
       real(kind=ip) :: diam      ! diameter of the particle in m
-      real(kind=ip) :: Ffac1     ! ! = F**(-0.828)
+      real(kind=ip) :: Ffac1     ! = F**(-0.828)
       real(kind=ip) :: Ffac2     ! = sqrt(1.07-F)
       real(kind=ip) :: Kna       ! adjusted Knudsen number 
 
-      real(kind=ip) :: vnew, vold, Re                      ! old and new settling velocity
-      real(kind=ip) :: Cd                                  ! drag coefficient
-      real(kind=ip) :: Cslip                               ! Slip correction
+      real(kind=ip) :: vnew, vold, Re            ! old and new settling velocity
+      real(kind=ip) :: Cd                        ! drag coefficient
+      real(kind=ip) :: Cslip                     ! Slip correction
 
-      vold = 1.0_ip                               !assume an initial settling velocity of 1 m/s
+      vold = 1.0_ip                              ! assume an initial settling velocity of 1 m/s
 
-      Re = rho_air*vold*diam/eta                       ! Eq. 4  of Wilson79
+      Re = rho_air*vold*diam/eta                 ! Eq. 4  of Wilson79
 
       ! Eq. 9.34 of Seinfeld and Pandis
       Cslip = 1.0_ip+ Kna * (1.257_ip + 0.4_ip*exp(-1.1_ip/Kna))
@@ -799,7 +860,7 @@
 
       vnew = sqrt((4.0_ip*rho_m*diam*GRAV)/(3.0_ip*rho_air*Cd))   ! Eq. 15 of WoodsBursik91
 
-      do while ((abs(vold-vnew)/vnew).gt.0.001_ip)
+      do while ((abs(vold-vnew)/vnew).gt.vset_ConvCrit)
         vold = vnew
         Re = rho_air*vold*diam/eta
         Cd = (24.0_ip/Re)*Ffac1 + Ffac2
@@ -817,11 +878,22 @@
 !
 !  vset_WH_PCM(rho_air,rho_m,eta,diam,Ffac1,Ffac2)
 !
-!  Called from: 
+!  Called from: Set_Vf_Meso
 !  Arguments:
-!    none
+!    rho_air= density of air (kg/m^3)
+!    rho_m  = density of particle (kg/m^3)
+!    eta    = viscosity of air (kg/(m s))
+!    diam   = diameter of particle (m)
+!    Ffac1  = WH precalculated factor 1 = F**(-0.828)
+!    Ffac2  = WH precalculated factor 2 = sqrt(1.07-F)
 !
-!  This subroutine
+!  This function returns the terminal fall velocity of a prolate ellipsoidal particle
+!  given the density and viscosity of air along with the density, diameter and
+!  shape of the particle.  Velocity is returned in m/s.  The drag coefficient
+!  is that of Wilson and Huang with the modification suggested by Pfeiffer, Costa,
+!  and Macedonio.  The result is no longer quadratic and must be solved iteritively
+!  with Cd and Vs updated until Vs does not change by more than a small fraction
+!  vset_ConvCrit (~0.001).
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -835,26 +907,25 @@
       real(kind=ip) :: rho_m     ! density of the particle in km/m3
       real(kind=ip) :: eta       ! dynamic viscosity of air in (kg/(m s))
       real(kind=ip) :: diam      ! diameter of the particle in m
-      real(kind=ip) :: Ffac1     ! ! = F**(-0.828)
+      real(kind=ip) :: Ffac1     ! = F**(-0.828)
       real(kind=ip) :: Ffac2     ! = sqrt(1.07-F)
 
-      real(kind=ip) :: vnew, vold, Re                      ! old and new settling velocity
-      real(kind=ip) :: Cd                                  ! drag coefficient
+      real(kind=ip) :: vnew, vold, Re            ! old and new settling velocity
+      real(kind=ip) :: Cd                        ! drag coefficient
 
       real(kind=ip) :: Cd100
 
-      !Cd100 = (24./100.0)*F**(-0.828) + 2.*sqrt(1.07-F)   ! Cd at Re=100
       Cd100 = (24.0_ip/100.0_ip)*Ffac1 + Ffac2
 
-      vold = 1.0_ip                               !assume an initial settling velocity of 1 m/s
+      vold = 1.0_ip                              ! assume an initial settling velocity of 1 m/s
 
-      Re = rho_air*vold*diam/eta                       ! Eq. 4  of Wilson79
+      Re = rho_air*vold*diam/eta                 ! Eq. 4  of Wilson79
 
       ! Get initial Cd from Wilson79, Eq 12
       Cd = (24.0_ip/Re)*Ffac1 + Ffac2
       vnew = sqrt((4.0_ip*rho_m*diam*GRAV)/(3.0_ip*rho_air*Cd))   ! Eq. 15 of WoodsBursik91
 
-      do while ((abs(vold-vnew)/vnew).gt.0.001_ip)
+      do while ((abs(vold-vnew)/vnew).gt.vset_ConvCrit)
         vold = vnew
         Re = rho_air*vold*diam/eta
         if (Re.lt.100.0_ip)then
@@ -863,7 +934,7 @@
           !  
           Cd = 1.0_ip
         else
-          !  !interpolate between values at Re=1000 and 100
+          ! interpolate between values at Re=1000 and 100
           Cd = 1.0_ip-(1.0_ip-Cd100)/900.0_ip *(1000.0_ip-Re)
         endif
         vnew = sqrt((4.0_ip*rho_m*diam*GRAV)/(3.0_ip*rho_air*Cd))
@@ -879,11 +950,22 @@
 !
 !  vset_Gans(rho_air,rho_m,eta,diam,K1,K2)
 !
-!  Called from: 
+!  Called from: Set_Vf_Meso
 !  Arguments:
-!    none
+!    rho_air= density of air (kg/m^3)
+!    rho_m  = density of particle (kg/m^3)
+!    eta    = viscosity of air (kg/(m s))
+!    diam   = diameter of particle (m)
+!    K1     = precalculated Stokes shape factor
+!    K2     = precalculated Newtons shape factor
 !
-!  This subroutine
+!  This function returns the terminal fall velocity of a general ellipsoidal particle
+!  (either prolate or oblate) given the density and viscosity of air along with the
+!  density, diameter and shape of the particle.  Velocity is returned in m/s.
+!  The drag coefficient is that of Ganser (1993) which uses two shape factors to
+!  characterize the type of ellipsoid.  As in the Wilson and Huang models the
+!  drag coefficient and fall velocity must be solved iteritively with Cd and Vs
+!  updated until Vs does not change by more than a small fraction vset_ConvCrit (~0.001).
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -892,21 +974,21 @@
       ! Ganser, Powder Tech., v77,2p143, 1993
       ! DOI:10.1016/0032-5910(93)80051-B
 
-      real(kind=ip) :: vset_Gans      ! Settling velocity in m/s
+      real(kind=ip) :: vset_Gans ! Settling velocity in m/s
       real(kind=ip) :: rho_air   ! density of air in kg/m3
       real(kind=ip) :: rho_m     ! density of the particle in km/m3
       real(kind=ip) :: eta       ! dynamic viscosity of air in (kg/(m s))
       real(kind=ip) :: diam      ! diameter of the particle in m
       real(kind=ip) :: K1,K2     ! Stokes shape factor and Newtons shape factor
 
-      real(kind=ip) :: vnew, vold, Re                      ! old and new settling velocity
-      real(kind=ip) :: Cd                                  ! drag coefficient
+      real(kind=ip) :: vnew, vold, Re            ! old and new settling velocity
+      real(kind=ip) :: Cd                        ! drag coefficient
 
       real(kind=ip) :: Cd1,Cd2
 
-      vold = 1.0_ip                               !assume an initial settling velocity of 1 m/s
+      vold = 1.0_ip                              ! assume an initial settling velocity of 1 m/s
 
-      Re = rho_air*vold*diam/eta                       ! Eq. 4  of Wilson79
+      Re = rho_air*vold*diam/eta                 ! Eq. 4  of Wilson79
 
       Cd1 = 1.0_ip + 0.1118_ip * (Re*K1*K2)**0.6567_ip
       Cd1 = Cd1 * 24.0_ip /(K1*Re)
@@ -914,7 +996,7 @@
       Cd = Cd1+Cd2;
       vnew = sqrt((4.0_ip*rho_m*diam*GRAV)/(3.0_ip*rho_air*Cd))   ! Eq. 15 of WoodsBursik91
 
-      do while ((abs(vold-vnew)/vnew).gt.0.001_ip)
+      do while ((abs(vold-vnew)/vnew).gt.vset_ConvCrit)
         vold = vnew
         Re = rho_air*vold*diam/eta
         Cd1 = 1.0_ip+0.1118_ip*(Re*K1*K2)**0.6567_ip
@@ -932,70 +1014,45 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!  vset_Stokesslip(rho_m,eta,diam,Kna)
+!  vset_Stokes_slip(rho_m,eta,diam,Kna)
 !
-!  Called from: 
+!  Called from: Set_Vf_Meso
 !  Arguments:
-!    none
+!    rho_m  = density of particle (kg/m^3)
+!    eta    = viscosity of air (kg/(m s))
+!    diam   = diameter of particle (m)
+!    Kna    = Knudsen number (dimensionless)
 !
-!  This subroutine
+!  This function returns the Stokes fall velocity of a spherical particle
+!  given the viscosity of air along with the density and diameter of the
+!  particle and Knudsen number.  The Knudsen number is important at high
+!  altitudes with low air density and a large mean free path.  In these
+!  environments, Cunningham slip corrections should be applied to the fall model.
+!  Velocity is returned in m/s. This solution is only valid for very small
+!  particles.  Fall velocity is calculated explicitly and no iteration is
+!  needed.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      function vset_Stokesslip(rho_m,eta,diam,Kna)
-      ! Fall velocity as calculated from
-      ! Stokes flow plus Cunningham slip
+      function vset_Stokes_slip(rho_m,eta,diam,Kna)
+      ! Fall velocity as calculated from Stokes flow plus Cunningham slip
 
-      real(kind=ip) :: vset_Stokesslip      ! Settling velocity in m/s
-      real(kind=ip) :: rho_m     ! density of the particle in km/m3
-      real(kind=ip) :: eta       ! dynamic viscosity of air in (kg/(m s))
-      real(kind=ip) :: diam      ! diameter of the particle in m
-      real(kind=ip) :: Kna       ! adjusted Knudsen number
+      real(kind=ip) :: vset_Stokes_slip  ! Settling velocity in m/s
+      real(kind=ip) :: rho_m             ! density of the particle in km/m3
+      real(kind=ip) :: eta               ! dynamic viscosity of air in (kg/(m s))
+      real(kind=ip) :: diam              ! diameter of the particle in m
+      real(kind=ip) :: Kna               ! adjusted Knudsen number
 
-      real(kind=ip) :: Cslip                                  ! drag coefficient
+      real(kind=ip) :: Cslip                     ! drag coefficient
 
       ! Eq. 9.34 of Seinfeld and Pandis
       Cslip = 1.0_ip+ Kna * (1.257_ip + 0.4_ip*exp(-1.1_ip/Kna))
 
-      vset_Stokesslip = diam*diam*rho_m*GRAV*Cslip/(18.0_ip*eta)
+      vset_Stokes_slip = diam*diam*rho_m*GRAV*Cslip/(18.0_ip*eta)
 
       return
 
-      end function vset_Stokesslip
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!
-!  vset_Stokes_Cloud(rho_m,eta,diam)
-!
-!  Called from: 
-!  Arguments:
-!    none
-!
-!  This subroutine
-!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-      function vset_Stokes_Cloud(rho_m,eta,diam)
-      ! Fall velocity as calculated from Stokes flow
-      ! for a sub-10 um particle acting as a cloud condensation nucleus
-      ! to produce a 10 um ash/water particle
-
-      real(kind=ip) vset_Stokes_Cloud  ! Settling velocity in m/s
-      real(kind=ip) rho_m              ! density of the particle in kg/m3
-      real(kind=ip) eta                ! dynamic viscosity of air in (kg/(m s))
-      real(kind=ip) diam               ! diameter of the particle in m
-
-      real(kind=ip) rho_cloud ! density of the cloud particle in kg/m3
-
-      rho_cloud = (diam/1.0e-5_ip)**3.0_ip *(rho_m-1000.0_ip) + 1000.0_ip
-
-      vset_Stokes_Cloud = 1.0_ip-10.0_ip*rho_cloud*GRAV/(18.0_ip*eta)
-
-      return
-
-      end function vset_Stokes_Cloud
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      end function vset_Stokes_slip
 
       end module Tephra
 !##############################################################################

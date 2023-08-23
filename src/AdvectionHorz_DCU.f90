@@ -35,7 +35,8 @@
       private
 
         ! Publicly available subroutines/functions
-      public advect_x,advect_y
+      public advect_x,                  &
+             advect_y
 
       integer, parameter :: fluc_l = 1
       integer, parameter :: fluc_r = 2

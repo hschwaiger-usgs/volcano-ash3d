@@ -44,6 +44,7 @@
          SourceNodeFlux,e_EndTime_final,e_Volume,MassFluxRate_now,&
          SourceType, &
            Allocate_Source_time,&
+           EruptivePulse_MassFlux,&
            MassFluxCalculator,&
            TephraSourceNodes,&
            SourceVolInc
@@ -264,7 +265,8 @@
 
       call Allocate_Source_time
 
-      !call MassFluxCalculator          !find current mass flux & plume height
+      ! Calculate mass flux and end times of each eruptive pulse
+      call EruptivePulse_MassFlux
 
       ! Write out starting volume, max time steps, and headers for the table that follows
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -314,7 +316,8 @@
 !
 !------------------------------------------------------------------------------
 
-        call MassFluxCalculator         ! call subroutine that determines mass flux & plume height
+          ! determine mass flux and plume height for this dt
+        call MassFluxCalculator
 
 !------------------------------------------------------------------------------
 !       OPTIONAL MODULES

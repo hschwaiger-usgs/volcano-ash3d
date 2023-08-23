@@ -78,8 +78,7 @@
            umbrella_winds
 
       use Tephra,          only : &
-         n_gs_max,Tephra_v_s,   &
-           Set_Vf_Meso
+         n_gs_max,Tephra_v_s
 
       use Atmosphere,      only : &
          AirDens_meso_next_step_MetP_sp, &
@@ -373,8 +372,8 @@
 ! This subroutine manages the calls to MetReader to populate the variables at
 ! the braketing timesteps of the NWP files, reading the next step of the
 ! simulation time crosses over to the next time step of the NWP files.  The
-! primary variables read from the NWP files are vx, vy, and vz, but it temperatures
-! are needed (as is the case for most fall models), the those are read via calls
+! primary variables read from the NWP files are vx, vy, and vz, but if temperatures
+! are needed (as is the case for most fall models), then those are read via calls
 ! to Set_Atmosphere_Meso.  Fall velocities are calculated via calls to Set_Vf_Meso.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

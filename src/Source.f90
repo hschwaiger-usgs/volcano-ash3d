@@ -2,12 +2,18 @@
 !
 !  Source module
 !
+!  This module sets up the basic structure for all sources in Ash3d and the
+!  standard sources in the column above the vent (line,Suzuki,profile,point).
+!  Specialized sources, such the umbrella cloud or surface area sources,
+!  can be included as separate modules, but generally rely on variables
+!  provided by this module.
+!
 !      subroutine Allocate_Source_eruption
 !      subroutine Allocate_Source_grid
 !      subroutine Allocate_Source_time
 !      subroutine Deallocate_Source
-!      subroutine TephraSourceNodes
 !      subroutine MassFluxCalculator
+!      subroutine TephraSourceNodes
 !      function SourceVolInc
 !
 !##############################################################################
@@ -24,31 +30,37 @@
       private
 
         ! Publicly available subroutines/functions
-      public Allocate_Source_eruption, Allocate_Source_grid,Allocate_Source_time,&
-             Deallocate_Source,MassFluxCalculator,TephraSourceNodes,SourceVolInc
+      public Allocate_Source_eruption,  &
+             Allocate_Source_grid,      &
+             Allocate_Source_time,      &
+             Deallocate_Source,         &
+             EruptivePulse_MassFlux,    &
+             MassFluxCalculator,        &
+             TephraSourceNodes,         &
+             SourceVolInc
 
         ! Publicly available variables
-
 
       integer, parameter :: MAXCustSrc = 10  ! The maximum number of custom
                                                !source types that we will check for
 
-      real(kind=ip),public :: x_volcano, y_volcano      ! x & y points of volcano (m)
-      real(kind=ip),public :: lat_volcano, lon_volcano  !position of volcano in lat/lon
-      real(kind=ip),public :: z_volcano                 ! vent elevation
+      real(kind=ip),public :: x_volcano, y_volcano      ! x & y points of volcano (km)
+      real(kind=ip),public :: lat_volcano, lon_volcano  ! position of volcano in lat/lon
+      real(kind=ip),public :: z_volcano                 ! vent elevation (km)
 
-      integer,          public :: neruptions                  ! number of eruptions or eruptive pulses
-      character(len=12),public :: SourceType          !may be 'point', 'line', or 'Suzuki' 
+      integer,          public :: neruptions            ! number of eruptions or eruptive pulses
+      character(len=12),public :: SourceType            ! may be 'point', 'line', or 'Suzuki' 
       real(kind=ip),    public :: Suzuki_A
       logical,          public :: IsCustom_SourceType = .false.
       character(len=30),dimension(MAXCustSrc) :: SourceType_Custom = ""
 
 #ifdef USEPOINTERS
-      real(kind=ip), dimension(:,:)  ,pointer,public :: SourceColumn
+      !real(kind=ip), dimension(:,:)  ,pointer,public :: SourceColumn
       real(kind=ip), dimension(:  )  ,pointer,public :: TephraFluxRate  => null()
       real(kind=ip), dimension(:,:)  ,pointer,public :: SourceNodeFlux      => null()
       real(kind=ip), dimension(:,:,:),pointer :: SourceNodeFlux_Area => null()
 #else
+      !real(kind=ip), dimension(:,:)  ,allocatable,public     :: SourceColumn
       real(kind=ip), dimension(:)    ,allocatable,public     :: TephraFluxRate
       real(kind=ip), dimension(:,:)  ,allocatable,public     :: SourceNodeFlux
       real(kind=ip), dimension(:,:,:),allocatable     :: SourceNodeFlux_Area
@@ -85,11 +97,11 @@
 !
 !  Allocate_Source_eruption
 !
-!  Called from: 
+!  Called from: Read_Control_File
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine allocated the main variables needed to specify the source.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -116,11 +128,11 @@
 !
 !  Allocate_Source_grid
 !
-!  Called from: 
+!  Called from: alloc_arrays
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine source variables that are a function of z
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -138,11 +150,11 @@
 !
 !  Allocate_Source_time
 !
-!  Called from: 
+!  Called from: Ash3d.F90
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine initializes some source variables at the start of the simulation.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -159,49 +171,266 @@
 !
 !  Deallocate_Source
 !
-!  Called from: 
+!  Called from: dealloc_arrays
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine deallocates variables allocated in Allocate_Source_eruption
+!  and Allocate_Source_grid.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Deallocate_Source
 
-      deallocate (e_StartTime)
-      deallocate (e_Duration)
-      deallocate (e_PlumeHeight)
-      deallocate (e_Volume)
-      deallocate (MassFlux)
-      deallocate (e_EndTime)
+      if(allocated(e_StartTime))      deallocate(e_StartTime)
+      if(allocated(e_Duration))       deallocate(e_Duration)
+      if(allocated(e_PlumeHeight))    deallocate(e_PlumeHeight)
+      if(allocated(e_Volume))         deallocate(e_Volume)
+      if(allocated(MassFlux))         deallocate(MassFlux)
+      if(allocated(e_EndTime))        deallocate(e_EndTime)
 
-      if(SourceType.eq.'profile')then
-        deallocate (e_prof_dz)
-        deallocate (e_prof_zpoints)
-        deallocate (e_prof_Volume)
-        deallocate (e_prof_MassFlux)
-      endif
+      ! SourceType.eq.'profile'
+      if(allocated(e_prof_dz))        deallocate(e_prof_dz)
+      if(allocated(e_prof_zpoints))   deallocate(e_prof_zpoints)
+      if(allocated(e_prof_Volume))    deallocate(e_prof_Volume)
+      if(allocated(e_prof_MassFlux))  deallocate(e_prof_MassFlux)
 
-      deallocate(SourceNodeFlux)
+      if(allocated(SourceNodeFlux))   deallocate(SourceNodeFlux)
+      if(allocated(TephraFluxRate))   deallocate(TephraFluxRate)
 
       end subroutine Deallocate_Source
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!  TephraSourceNodes
+!  EruptivePulse_MassFlux
 !
-!  Called from: 
+!  Called from: Ash3d.F90
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine is called after the control file has been read and the
+!  optional 'input_data_ResetParams' called (MagmaDensity can be reset from
+!  the control file).  For each eruptive pulse, the mass flux in kg/hr is
+!  calculated from the specified volume (DRE) and duration.  The end time
+!  of each eruptive ppulse is also calcualted here (in hours since BaseYear).
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine EruptivePulse_MassFlux
+
+      use global_param,  only : &
+         KM3_2_M3
+
+      use Tephra,        only : &
+         MagmaDensity
+
+      integer :: i
+
+      ! Calculate mass flux and end times of each eruptive pulse
+      do i=1,neruptions
+             !mass flux in kg/hr
+        if(SourceType.eq.'suzuki'      .or. &
+           SourceType.eq.'point'       .or. &
+           SourceType.eq.'line'        .or. &
+           SourceType.eq.'umbrella'    .or. &
+           SourceType.eq.'umbrella_air')then
+          MassFlux(i)  = MagmaDensity * & ! kg/m3
+                         e_Volume(i)  * & ! km3
+                         KM3_2_M3     / & ! m3/km3
+                         e_Duration(i)    ! hours  => kg/hr
+          e_EndTime(i) = e_StartTime(i) + e_Duration(i)
+
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),1023) MagmaDensity, e_Duration(i), MassFlux(i), e_Volume(i)
+          endif;enddo
+1023      format('   Magma density (kg/m3) = ',f6.1,', e_Duration(1) (hrs) = ',f6.3,/, &
+                 '   Mass flux (kg/hr) = ',e12.4,', Total volume (km3 DRE)=',f8.4,/,'Continue?')
+        elseif(SourceType.eq.'profile')then
+          e_prof_MassFlux(i,1:e_prof_zpoints(i)) = &
+                         MagmaDensity  * &                        ! kg/m3
+                         e_prof_Volume(i,1:e_prof_zpoints(i)) * & ! km3
+                         KM3_2_M3 / &                             ! m3/km3
+                         e_Duration(i)                            ! hours = kg/hr
+          MassFlux(i) = sum(e_prof_MassFlux(i,1:e_prof_zpoints(i)))
+        else
+          ! Custom source, initializing MassFlux and end time
+          MassFlux(i)  = 0.0_ip
+          e_EndTime(i) = 0.0_ip
+        endif
+
+      enddo
+      e_EndTime_final = maxval(e_EndTime)  ! this marks the end of all eruptions
+
+
+      end subroutine EruptivePulse_MassFlux
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  MassFluxCalculator
+!
+!  Called from: Ash3d.F90
+!  Arguments:
+!    none
+!
+!  This subroutine is called in every step of the time integration.  Its job
+!  is to mass flux (in kg/hr) within this particular time interval (time->time+dt).
+!  In some cases, the dt of the time integration might overshoot the end of
+!  an eruptive pulse, in which case, the mass flux is adjusted accordingly.
+!  It might also involve two eruptive pulses (3 will cause an error).  This
+!  subroutine also reports the height of the plume for this dt.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine MassFluxCalculator
+
+      use time_data,     only : &
+         time, dt
+
+      real(kind=ip)    :: tstart, tend    !start and end times of this time step
+
+      tstart = time
+      tend   = time+dt
+
+      MassFluxRate_now = 0.0_ip  ! kg/hr
+      Height_now       = 0.0_ip  ! km
+
+      if((SourceType.eq.'point')       .or. & ! profile is a branch below
+         (SourceType.eq.'line')        .or. &
+         (SourceType.eq.'suzuki')      .or. &
+         (SourceType.eq.'umbrella')    .or. &
+         (SourceType.eq.'umbrella_air'))then
+
+        ! Compare the time with the start and end times of the list of eruptions.
+
+        if (tstart.gt.e_EndTime(neruptions)) then
+          ! If the time slice starts after the last eruption ends
+          return
+        elseif (ieruption.gt.neruptions) then
+          ! Exit the subroutine if we're past the last eruption
+          return
+        elseif (tstart.ge.e_StartTime(ieruption)) then
+          ! If the time slice starts after the eruption starts . . .
+          if (tend.le.e_EndTime(ieruption))then
+            ! . . . and ends before the eruption ends, MassFluxRate=avg.
+            MassFluxRate_now = MassFlux(ieruption)
+            Height_now       = e_PlumeHeight(ieruption)
+          else
+            ! . . . and ends after the eruption ends, do some more checking.
+            if (ieruption.lt.neruptions) then
+              ! There are multiple eruptions. See if we need to construct
+              ! time averages
+              if (tend.gt.e_EndTime(ieruption+1)) then
+                ! If it ends AFTER the END of the NEXT eruption, stop the
+                ! program.
+                ! This means that the chosen dt is too large.
+                do io=1,2;if(VB(io).le.verbosity_error)then
+                  write(errlog(io),1)  ieruption+1
+                endif;enddo
+                stop 1
+              elseif (tend.gt.e_StartTime(ieruption+1)) then
+                ! If it ends AFTER the START of the NEXT eruption,
+                ! construct weighted average of the two eruptions
+                MassFluxRate_now    = MassFlux(ieruption)*(e_EndTime(ieruption)-tstart)  /dt + &
+                                      MassFlux(ieruption+1)*(tend-e_StartTime(ieruption+1))/dt
+                Height_now          = (e_PlumeHeight(ieruption) + e_PlumeHeight(ieruption+1))/2.0_ip
+                ieruption = ieruption+1
+              else
+                ! If it ends BEFORE the START of the NEXT eruption,
+                ! distribute the fraction of the time-step that is
+                ! erupting over the whole dt
+                MassFluxRate_now = MassFlux(ieruption)*(e_EndTime(ieruption)-tstart)/dt
+                Height_now       = e_PlumeHeight(ieruption)
+                ieruption = ieruption+1
+              endif
+            else
+              !If this is either the only or the last eruption, distribute
+              !the fraction of the time-step that is erupting over the
+              !whole dt
+
+              MassFluxRate_now = MassFlux(ieruption)*(e_EndTime(ieruption)-tstart)/dt
+              Height_now       = e_PlumeHeight(ieruption)
+              ieruption = ieruption+1
+            endif
+          endif  ! end of check on 
+        else
+          ! The time slice starts before the eruption starts . . .
+          if (tend>e_StartTime(ieruption)) then
+            if (tend.le.e_EndTime(ieruption)) then
+              ! . . . and ends during the eruption, interpolate
+
+              MassFluxRate_now = MassFlux(ieruption)*(tend-e_StartTime(ieruption))/dt
+              Height_now       = e_PlumeHeight(ieruption)
+            else
+              ! If it ends after the erupt ends, do some more checking
+              if (ieruption.lt.neruptions) then
+                ! If it ends before the next eruption starts, interpolate
+                if (tend.lt.e_StartTime(ieruption+1)) then
+                  MassFluxRate_now = MassFlux(ieruption)*(e_Duration(ieruption)/dt)
+                  Height_now       = e_PlumeHeight(ieruption)
+                  ieruption=ieruption+1
+                  ! If it ends during the next eruption do another interpolation
+                elseif (tend.le.e_EndTime(ieruption+1)) then
+                  MassFluxRate_now = MassFlux(ieruption)*((e_EndTime(ieruption)-tstart)/dt) + &
+                                     MassFlux(ieruption+1)*((tend-e_StartTime(ieruption))/dt)
+                  Height_now       = (e_PlumeHeight(ieruption)+e_PlumeHeight(ieruption+1))/2.0_ip
+
+                  ieruption=ieruption+1
+                  ! If it ends after the next eruption ends, stop the program
+                else
+                  do io=1,2;if(VB(io).le.verbosity_error)then
+                    write(errlog(io),1)  ieruption+1
+                  endif;enddo
+                  stop 1
+                endif
+                ! If it ends after the last eruption ends, interpolate and exit
+              else
+                Height_now       = e_PlumeHeight(ieruption)
+                MassFluxRate_now = MassFlux(ieruption)*(e_Duration(ieruption)/dt)
+                ieruption = ieruption + 1
+              endif
+            endif
+          else                                 ! . . . and ends before the eruption starts, move on
+            continue
+          endif
+        endif
+
+        return
+
+      elseif(SourceType.eq.'profile')then
+        Height_now       = e_PlumeHeight(ieruption)
+        MassFluxRate_now = sum(e_prof_MassFlux(ieruption,:))
+        return
+
+      else
+        ! For all non-standard sources, assign the height given on the source
+        ! line of the input file and assign a zero mass flux rate.
+        Height_now       = e_PlumeHeight(ieruption)
+        MassFluxRate_now = 0.0_ip
+        return
+      endif
+
+!     Format statements
+ 1     format(4x,'Warning.  Eruption ',i3,' is shorter than time steps dt.  Program stopped.')
+
+      end subroutine MassFluxCalculator
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  TephraSourceNodes
+!
+!  Called from: Ash3d.F90
+!  Arguments:
+!    none
+!
+!  This subroutine is called for every step of the time integration in which
+!  the mass flux is positive. Its job is to calculate SourceNodeFlux(0:nzmax+1,1:nsmax)
+!  which specifies the rate of tephra loading into each cell above the vent
+!  in mass/vol/time (kg/km^3/hr) for each grainsize.  This is calculated for
+!  all standard sources (point,line,suzuki,profile and umbrella/umbrella_air).
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine TephraSourceNodes
-
-!     subroutine that finds the source nodes and assigns an ash concentration to them
 
       use global_param,    only : &
          EPS_SMALL
@@ -250,8 +479,8 @@
                   exp(-Suzuki_A)))
       endif
 
-      ! FIND THE FRACTION OF THE ERUPTED MASS RATE (kg/hr) THAT LIES
-      ! WITHIN EACH HEIGHT INTERVAL DZ
+      ! Find the fraction of the erupted mass rate (kg/hr) that lies within
+      ! each height interval dz
       TephraFluxRate(1:nzmax) = 0.0_ip ! kg/hr of total tephra as a function of z
       do k=kground,kPlumeTop
         ! height at the top of this cell (or top of plume)
@@ -259,14 +488,13 @@
         ! height at the bottom
         z_cell_bot = z_cc_pd(k)-0.5_ip*dz_vec_pd(k)
 
-        ! First get the TephraFluxRate in kg/hr (total mass of tephra inserted)
-        !TephraFluxRate = 0.0_ip
+        ! First get the TephraFluxRate in kg/hr (total mass of tephra inserted per hour)
         PlumeHeight_above_ground = Height_now-zground
         if ((SourceType.eq.'suzuki')      .or. &
             (SourceType.eq.'umbrella')    .or. &
             (SourceType.eq.'umbrella_air')) then
           !For Suzuki plumes and umbrella clouds
-          ! HANS: double-check units and cite equation from User's Guide
+          ! HFS: double-check units and cite equation from User's Guide
           ! The equation below calculates the tephra volume flux 
           ! (m3 DRE/s) in the height interval.  
           ! It uses an equation obtained by integrating the 
@@ -358,162 +586,14 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!  MassFluxCalculator
-!
-!  Called from: 
-!  Arguments:
-!    none
-!
-!  This subroutine
-!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-      subroutine MassFluxCalculator
-
-!     function that calculates the mass flux as a function of time
-
-      use time_data,     only : &
-         time, dt
-
-      real(kind=ip)    :: tstart, tend    !start and end times of this time step
-
-      tstart = time
-      tend   = time+dt
-
-      MassFluxRate_now = 0.0_ip  ! kg/hr
-      Height_now       = 0.0_ip  ! km
-
-      !if (itime.eq.0) return     !exit the subroutine if itime=0
-
-      if((SourceType.eq.'point')       .or. & ! profile is a branch below
-         (SourceType.eq.'line')        .or. &
-         (SourceType.eq.'suzuki')      .or. &
-         (SourceType.eq.'umbrella')    .or. &
-         (SourceType.eq.'umbrella_air'))then
-
-        !COMPARE THE TIME WITH THE START & END TIMES OF THE DIFFERENT ERUPTIONS
-        !exit the subroutine if we're past the last eruption
-        if (tstart.gt.e_EndTime(neruptions)) return
-  
-        if (ieruption.gt.neruptions) then
-          ! If the time slice starts after the last eruption ends
-          ! do nothing (MassFluxRate & Height are already 0)
-          return
-        elseif (tstart>=e_StartTime(ieruption)) then
-          ! If the time slice starts after the eruption starts . . .
-          if (tend.le.e_EndTime(ieruption))then
-            ! . . . and ends before the eruption ends, MassFluxRate=avg.
-            MassFluxRate_now = MassFlux(ieruption)
-            Height_now       = e_PlumeHeight(ieruption)
-          else
-            ! . . . and ends after the eruption ends, do some more checking.
-            if (ieruption.lt.neruptions) then
-              !There are multiple eruptions. See if we need to construct
-              !time averages
-              if (tend.gt.e_EndTime(ieruption+1)) then
-                ! If it ends AFTER the END of the NEXT eruption, stop the
-                ! program.
-                ! This means that the chosen dt is too large.
-                do io=1,2;if(VB(io).le.verbosity_error)then
-                  write(errlog(io),1)  ieruption+1
-                endif;enddo
-                stop 1
-              elseif (tend.gt.e_StartTime(ieruption+1)) then
-                ! If it ends AFTER the START of the NEXT eruption,
-                ! construct weighted average of the two eruptions
-                MassFluxRate_now    = MassFlux(ieruption)*(e_EndTime(ieruption)-tstart)  /dt + &
-                                      MassFlux(ieruption+1)*(tend-e_StartTime(ieruption+1))/dt
-                Height_now          = (e_PlumeHeight(ieruption) + e_PlumeHeight(ieruption+1))/2.0_ip
-                ieruption = ieruption+1
-              else
-                ! If it ends BEFORE the START of the NEXT eruption,
-                ! distribute the fraction of the time-step that is
-                ! erupting over the whole dt
-                MassFluxRate_now = MassFlux(ieruption)*(e_EndTime(ieruption)-tstart)/dt
-                Height_now       = e_PlumeHeight(ieruption)
-                ieruption = ieruption+1
-              endif
-            else
-              !If this is either the only or the last eruption, distribute
-              !the fraction of the time-step that is erupting over the
-              !whole dt
-  
-              MassFluxRate_now = MassFlux(ieruption)*(e_EndTime(ieruption)-tstart)/dt
-              Height_now       = e_PlumeHeight(ieruption)
-              ieruption = ieruption+1
-            endif
-          endif  ! end of check on 
-        else
-          ! The time slice starts before the eruption starts . . .
-          if (tend>e_StartTime(ieruption)) then
-            if (tend.le.e_EndTime(ieruption)) then
-              ! . . . and ends during the eruption, interpolate
-  
-              MassFluxRate_now = MassFlux(ieruption)*(tend-e_StartTime(ieruption))/dt
-              Height_now       = e_PlumeHeight(ieruption)
-            else
-              !If it ends after the erupt ends, do some more checking
-              if (ieruption.lt.neruptions) then
-                !If it ends before the next eruption starts, interpolate
-                if (tend.lt.e_StartTime(ieruption+1)) then
-                  MassFluxRate_now = MassFlux(ieruption)*(e_Duration(ieruption)/dt)
-                  Height_now       = e_PlumeHeight(ieruption)
-                  ieruption=ieruption+1
-                  !If it ends during the next eruption do another interpolation
-                elseif (tend.le.e_EndTime(ieruption+1)) then
-                  MassFluxRate_now = MassFlux(ieruption)*((e_EndTime(ieruption)-tstart)/dt) + &
-                                     MassFlux(ieruption+1)*((tend-e_StartTime(ieruption))/dt)
-                  Height_now       = (e_PlumeHeight(ieruption)+e_PlumeHeight(ieruption+1))/2.0_ip
-
-                  ieruption=ieruption+1
-                  !If it ends after the next eruption ends, stop the program
-                else
-                  do io=1,2;if(VB(io).le.verbosity_error)then
-                    write(errlog(io),1)  ieruption+1
-                  endif;enddo
-                  stop 1
-                endif
-                !If if ends after the last eruption ends, interpolate and exit
-              else
-                Height_now       = e_PlumeHeight(ieruption)
-                MassFluxRate_now = MassFlux(ieruption)*(e_Duration(ieruption)/dt)
-                ieruption = ieruption + 1
-              endif
-            endif
-          else                                 ! . . . and ends before the eruption starts, move on
-            continue
-          endif
-        endif
-
-        return
-
-      elseif(SourceType.eq.'profile')then
-        Height_now       = e_PlumeHeight(ieruption)
-        MassFluxRate_now = sum(e_prof_MassFlux(ieruption,:))
-        return
-
-      else
-        ! For all non-standard sources, assign the height given on the source
-        ! line of the input file and assign a zero mass flux rate.
-        Height_now       = e_PlumeHeight(ieruption)
-        MassFluxRate_now = 0.0_ip
-        return
-      endif
-
-!     Format statements
- 1     format(4x,'Warning.  Eruption ',i3,' is shorter than time steps dt.  Program stopped.')
-
-      end subroutine MassFluxCalculator
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!
 !  SourceVolInc(dt)
 !
-!  Called from: 
+!  Called from: Ash3d.F90
 !  Arguments:
-!    none
+!    dt = time step in hours
 !
-!  This subroutine
+!  This function calculates the total tephra volume inserted in this time step.
+!  It is used only for mass-conservation error-checking.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

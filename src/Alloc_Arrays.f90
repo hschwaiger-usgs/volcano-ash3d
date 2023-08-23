@@ -91,6 +91,9 @@
       use Source,        only : &
            Deallocate_Source
 
+      use Source_Umbrella,only : &
+           Deallocate_Source_Umbrella
+
       use Diffusion,     only : &
            Deallocate_Diff
 
@@ -119,6 +122,7 @@
       call Deallocate_Tephra
       call Deallocate_Tephra_Met
       call Deallocate_Source
+      call Deallocate_Source_Umbrella
       call Deallocate_Diff
       call Deallocate_Output_Vars
       call Deallocate_NTime

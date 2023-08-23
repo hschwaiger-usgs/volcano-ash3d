@@ -64,10 +64,23 @@
       private
 
         ! Publicly available subroutines/functions
-      public Allocate_Output_Vars,Deallocate_Output_Vars,Allocate_NTime,Deallocate_NTime,&
-             Allocate_Profile,Deallocate_Profile,Allocate_Output_UserVars,Deallocate_Output_UserVars,&
-             Set_OutVar_ContourLevel,AshTotalCalculator,dbZCalculator,Gen_Output_Vars,Calc_AshVol_Aloft,&
-             Calc_vprofile,Calc_AshVol_Deposit,Calc_AshVol_Outflow,FirstAsh
+      public Allocate_Output_Vars,      &
+             Deallocate_Output_Vars,    &
+             Allocate_NTime,            &
+             Deallocate_NTime,          &
+             Allocate_Profile,          &
+             Deallocate_Profile,        &
+             Allocate_Output_UserVars,  &
+             Deallocate_Output_UserVars,&
+             Set_OutVar_ContourLevel,   &
+             AshTotalCalculator,        &
+             dbZCalculator,             &
+             Gen_Output_Vars,           &
+             Calc_AshVol_Aloft,         &
+             Calc_vprofile,             &
+             Calc_AshVol_Deposit,       &
+             Calc_AshVol_Outflow,       &
+             FirstAsh
 
         ! PRODUCT ID: KML var ID:: variable                     : units  : dims        : Output kml file name
         !----------------------------------------------------------------------------------------------------------

@@ -16,7 +16,8 @@
       private
 
         ! Publicly available subroutines/functions
-      public write_2Dmap_PNG_dislin,write_2Dprof_PNG_dislin
+      public write_2Dmap_PNG_dislin,    &
+             write_2Dprof_PNG_dislin
 
         ! Publicly available variables
 

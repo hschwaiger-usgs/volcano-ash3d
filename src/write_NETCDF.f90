@@ -27,8 +27,10 @@
       private
 
         ! Publicly available subroutines/functions
-      public NC_create_netcdf_file,NC_append_to_netcdf,&
-             NC_RestartFile_ReadTimes,NC_RestartFile_LoadConcen,&
+      public NC_create_netcdf_file,     &
+             NC_append_to_netcdf,       &
+             NC_RestartFile_ReadTimes,  &
+             NC_RestartFile_LoadConcen, &
              NC_Read_Output_Products
 
         ! Publicly available variables
@@ -3555,7 +3557,8 @@
 
       ! If user-supplied error code is 0, then consider this a warning,
       ! otherwise do a hard stop
-      if (icode.ne.0) stop icode
+      !if (icode.ne.0) stop icode
+      if (icode.ne.0) stop 1
 
       end subroutine NC_check_status
 

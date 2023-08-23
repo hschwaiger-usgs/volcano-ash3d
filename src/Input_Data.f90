@@ -51,7 +51,7 @@
       use global_param,  only : &
          EPS_SMALL,EPS_TINY,nmods,OPTMOD_names,limiter,&
          useDS,useTemperature,useCalcFallVel,useLogNormGSbins,&
-         useDiffusion,useCN,KM3_2_M3,useVz_rhoG
+         useDiffusion,useCN,useVz_rhoG
 
       use io_data,       only : &
          cdf_b1l1,cdf_b1l2,cdf_b1l3,cdf_b1l4,cdf_b1l5,cdf_b1l6,cdf_b1l7,cdf_b1l8,cdf_b1l9,&
@@ -74,13 +74,14 @@
       use Source,        only : &
          neruptions,e_Duration,e_Volume,e_PlumeHeight,e_prof_Volume,e_prof_dz,&
          MassFlux,e_EndTime,e_prof_MassFlux,e_prof_zpoints,e_StartTime,&
-         ESP_duration,ESP_height,ESP_Vol,e_EndTime_final,&
+         ESP_duration,ESP_height,ESP_Vol,&
          lat_volcano,lon_volcano,x_volcano,y_volcano,z_volcano,Suzuki_A,&
          IsCustom_SourceType,SourceType,&
-           Allocate_Source_eruption
+           Allocate_Source_eruption,&
+           EruptivePulse_MassFlux
 
       use Tephra,        only : &
-         DepositDensity,MagmaDensity,Tephra_v_s,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,&
+         DepositDensity,Tephra_v_s,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,&
          Tephra_gsF,Tephra_gsG,FV_ID,phi_mean,phi_stddev,n_gs_max,n_gs_aloft,&
            Calculate_Tephra_Shape,&
            Allocate_Tephra, &
@@ -135,7 +136,6 @@
       character, dimension(1:130) :: fc_inputfile
 
       integer           :: i,k,ii,isize
-      !integer           :: iargc
       integer           :: nargs          ! number of command-line arguments
 
       integer, allocatable, dimension(:)       :: iyear  ! time data read from files
@@ -162,8 +162,6 @@
       integer           :: iendstr,ios,ioerr,init_n_gs_max
       real(kind=ip)     :: value1, value2, value3, value4, value5
       real(kind=dp)     :: tmp_dp
-      !real(kind=dp)     :: StartHour
-      !real(kind=dp)     :: RunStartHour    ! Start time of model run, in hours since BaseYear
       real(kind=ip)     :: sum_bins
       character(len=8)  :: volc_code
       real(kind=ip),allocatable,dimension(:) :: dum_prof
@@ -180,12 +178,11 @@
       integer           :: substr_pos1
       integer           :: substr_pos2
       logical           :: IsThere
-      !character(len=8)  :: version             =  ' 1.0  '
       logical           :: StopWhenDeposited                       ! If true, StopValue=0.99, else StopValue=1e5.
       logical           :: runAsForecast       = .false.           ! This will be changed if year=0
       real(kind=dp)     :: FC_Offset = 0.0_dp
 
-      !! Size matches length of infile (specified in module io_data)
+      ! Size matches length of infile (specified in module io_data)
       integer fc_len
 
       INTERFACE
@@ -875,7 +872,7 @@
             exit
           endif
 
-        endif
+        endif ! SourceType
 
         ! if we're doing a forecast run, we'll need to add the windfile
         ! reference time to SimStartHour and e_StartTime(i) so
@@ -1117,7 +1114,7 @@
         endif
         e_StartTime(i) = HS_hours_since_baseyear(iyear(i),imonth(i),  &
                                 iday(i),hour(i),BaseYear,useLeap) - SimStartHour
-        !error trap if eruptions are not in chronological order
+        ! error trap if eruptions are not in chronological order
         if(.not.IsCustom_SourceType)then
           ! relax the chronological requirement for custom sources
           if (i.ge.2)then
@@ -1227,41 +1224,6 @@
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),1439) SourceType
       endif;enddo
-
-      ! Calculate mass flux and end times of each eruptive pulse
-      do i=1,neruptions                            
-             !mass flux in kg/hr
-        if(SourceType.eq.'suzuki'      .or. &
-           SourceType.eq.'point'       .or. &
-           SourceType.eq.'line'        .or. &
-           SourceType.eq.'umbrella'    .or. &
-           SourceType.eq.'umbrella_air')then
-          MassFlux(i)  = MagmaDensity * & ! kg/m3
-                         e_Volume(i)  * & ! km3
-                         KM3_2_M3     / & ! m3/km3
-                         e_Duration(i)    ! hours  => kg/hr
-          e_EndTime(i) = e_StartTime(i) + e_Duration(i)
-
-          do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),1023) MagmaDensity, e_Duration(i), MassFlux(i), e_Volume(i)
-          endif;enddo
-1023      format('   Magma density (kg/m3) = ',f6.1,', e_Duration(1) (hrs) = ',f6.3,/, &
-                 '   Mass flux (kg/hr) = ',e12.4,', Total volume (km3 DRE)=',f8.4,/,'Continue?')
-        elseif(SourceType.eq.'profile')then
-          e_prof_MassFlux(i,1:e_prof_zpoints(i)) = &
-                         MagmaDensity  * &                        ! kg/m3
-                         e_prof_Volume(i,1:e_prof_zpoints(i)) * & ! km3
-                         KM3_2_M3 / &                             ! m3/km3
-                         e_Duration(i)                            ! hours = kg/hr
-          MassFlux(i) = sum(e_prof_MassFlux(i,1:e_prof_zpoints(i)))
-        else
-          ! Custom source, initializing MassFlux and end time
-          MassFlux(i)  = 0.0_ip
-          e_EndTime(i) = 0.0_ip
-        endif
-
-      enddo
-      e_EndTime_final = maxval(e_EndTime)  ! this marks the end of all eruptions
 
       ! Find the i,j index values of the node containing the source volcano
       if (IsLatLon) then

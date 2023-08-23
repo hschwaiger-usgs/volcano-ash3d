@@ -17,7 +17,8 @@
       private
 
         ! Publicly available subroutines/functions
-      public write_2Dmap_PNG_plplot,write_2Dprof_PNG_plplot
+      public write_2Dmap_PNG_plplot,    &
+             write_2Dprof_PNG_plplot
 
         ! Publicly available variables
 

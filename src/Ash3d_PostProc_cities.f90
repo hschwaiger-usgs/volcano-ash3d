@@ -28,12 +28,12 @@
 
       implicit none
 
-      integer     ,intent(in) :: outCode ! 0 for list only, 1 for GMT, 2 for gnuplot
+      integer      ,intent(in) :: outCode ! 0 for list only, 1 for GMT, 2 for gnuplot
       real(kind=ip),intent(in) :: inlonLL
       real(kind=ip),intent(in) :: inlonUR
       real(kind=ip),intent(in) :: inlatLL
       real(kind=ip),intent(in) :: inlatUR
-      integer     ,intent(in) :: maxcities
+      integer      ,intent(in) :: maxcities
 
       real(kind=ip),dimension(maxcities),intent(out) :: CityLon_out
       real(kind=ip),dimension(maxcities),intent(out) :: CityLat_out
@@ -41,7 +41,6 @@
 
       integer            :: iostatus = 1
       integer            :: i, ncities, nread
-      !integer            :: status
       integer            :: resolution                              !# of cells in x and y
       character(len=26)  :: CityName
       character(len=133) :: inputline

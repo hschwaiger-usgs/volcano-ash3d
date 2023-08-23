@@ -30,7 +30,10 @@
       private
 
         ! Publicly available subroutines/functions
-      public Allocate_Diff,Deallocate_Diff,DiffuseHorz,DiffuseVert
+      public Allocate_Diff,             &
+             Deallocate_Diff,           &
+             DiffuseHorz,               &
+             DiffuseVert
 
         ! Publicly available variables
       real(kind=ip),public :: diffusivity_horz    ! horizontal diffusion coefficient (m2/s)
@@ -103,9 +106,9 @@
 
       subroutine Deallocate_Diff
 
-      deallocate(kx)
-      deallocate(ky)
-      deallocate(kz)
+      if(allocated(kx)) deallocate(kx)
+      if(allocated(ky)) deallocate(ky)
+      if(allocated(kz)) deallocate(kz)
 
       end subroutine Deallocate_Diff
 
@@ -876,10 +879,19 @@
         enddo ! loop over k
       enddo ! loop over n
 
-      if (ip.eq.4)then
-        deallocate(DL_s,D_s,DU_s,B_s)
-      endif
-      deallocate(DL_d,D_d,DU_d,B_d)
+      !if (ip.eq.4)then
+      !  deallocate(DL_s,D_s,DU_s,B_s)
+      !endif
+      !deallocate(DL_d,D_d,DU_d,B_d)
+
+      if(allocated(DL_s)) deallocate(DL_s)
+      if(allocated(D_s))  deallocate(D_s)
+      if(allocated(DU_s)) deallocate(DU_s)
+      if(allocated(B_s))  deallocate(B_s)
+      if(allocated(DL_d)) deallocate(DL_d)
+      if(allocated(D_d))  deallocate(D_d)
+      if(allocated(DU_d)) deallocate(DU_d)
+      if(allocated(B_d))  deallocate(B_d)
 
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
@@ -1138,10 +1150,19 @@
           enddo ! loop over i
         enddo ! loop over k
       enddo ! loop over n
-      if (ip.eq.4)then
-        deallocate(DL_s,D_s,DU_s,B_s)
-      endif
-      deallocate(DL_d,D_d,DU_d,B_d)
+      !if (ip.eq.4)then
+      !  deallocate(DL_s,D_s,DU_s,B_s)
+      !endif
+      !deallocate(DL_d,D_d,DU_d,B_d)
+
+      if(allocated(DL_s)) deallocate(DL_s)
+      if(allocated(D_s))  deallocate(D_s)
+      if(allocated(DU_s)) deallocate(DU_s)
+      if(allocated(B_s))  deallocate(B_s)
+      if(allocated(DL_d)) deallocate(DL_d)
+      if(allocated(D_d))  deallocate(D_d)
+      if(allocated(DU_d)) deallocate(DU_d)
+      if(allocated(B_d))  deallocate(B_d)
 
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
@@ -1405,10 +1426,19 @@
         enddo ! loop over i
       enddo ! loop over n
 
-      if (ip.eq.4)then
-        deallocate(DL_s,D_s,DU_s,B_s)
-      endif
-      deallocate(DL_d,D_d,DU_d,B_d)
+      !if (ip.eq.4)then
+      !  deallocate(DL_s,D_s,DU_s,B_s)
+      !endif
+      !deallocate(DL_d,D_d,DU_d,B_d)
+
+      if(allocated(DL_s)) deallocate(DL_s)
+      if(allocated(D_s))  deallocate(D_s)
+      if(allocated(DU_s)) deallocate(DU_s)
+      if(allocated(B_s))  deallocate(B_s)
+      if(allocated(DL_d)) deallocate(DL_d)
+      if(allocated(D_d))  deallocate(D_d)
+      if(allocated(DU_d)) deallocate(DU_d)
+      if(allocated(B_d))  deallocate(B_d)
 
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)

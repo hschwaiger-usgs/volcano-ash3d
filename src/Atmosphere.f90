@@ -27,10 +27,15 @@
       private
 
         ! Publicly available subroutines/functions
-      public Allocate_Atmosphere_Met,Deallocate_Atmosphere_Met,Set_Atmosphere_Meso
+      public Allocate_Atmosphere_Met,   &
+             Deallocate_Atmosphere_Met, &
+             Set_Atmosphere_Meso
 
         ! Publicly available variables
 #ifdef USEPOINTERS
+      ! Denisity is in kg/m^3
+      ! Viscosity is in kg/(m s)
+      ! Mean free path (lambda) is in m
       real(kind=sp),dimension(:,:,:),pointer,public :: AirDens_meso_last_step_MetP_sp => null()
       real(kind=sp),dimension(:,:,:),pointer,public :: AirVisc_meso_last_step_MetP_sp => null()
       real(kind=sp),dimension(:,:,:),pointer,public :: AirLamb_meso_last_step_MetP_sp => null()
@@ -405,7 +410,7 @@
 !  Arguments:
 !    temp = temperature (K)
 !
-!  Function that calculates air viscosity given temperature in k via
+!  Function that calculates air viscosity given temperature in K via
 !  Sutherland's equation.  Viscosity is returned in kg/(m s)
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

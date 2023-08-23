@@ -26,7 +26,11 @@
       private
 
         ! Publicly available subroutines/functions
-      public OpenFile_KML,Close_KML,Write_2D_KML,Write_PointData_Airports_KML,Set_OutVar_Specs
+      public OpenFile_KML,              &
+             Close_KML,                 &
+             Write_2D_KML,              &
+             Write_PointData_Airports_KML,&
+             Set_OutVar_Specs
 
         ! Publicly available variables
 

@@ -39,9 +39,12 @@
 !
 !  Called from: Read_Control_File
 !  Arguments:
-!    volc_code
+!    volc_code = Smithsonian volcano ID
 !
-!  This subroutine
+!  This subroutine first calls VotW_v12 to fill the volcano database, then 
+!  loops through the volcano ID's and searches for volc_code.  If found,
+!  it sets the variables ESP_height, ESP_duration, ESP_MassFluxRate,
+!  ESP_Vol, and ESP_massfracfine according the the classification S/M 1,2,3.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -68,7 +71,7 @@
 
       integer            :: i,Volcano_ID
 
-      !"http://www.volcano.si.edu/world/volcano.cfm?vnum="
+      ! http://www.volcano.si.edu/world/volcano.cfm?vnum=
       ! http://dx.doi.org/10.5479/si.GVP.VOTW4-2013
 
       ! Populate the Smithsonian lists
@@ -250,25 +253,26 @@
 
       return
 
-      
-      !FORMAT STATEMENTS
-!1     format(/,5x,'Reading from ESP file')      
-!2     format(49x,a35)
-!5     format(5x,'Error.  cannot find input file ',a130,/,5x,&
-!                'Program stopped')
-!50    format(a8,a42,a31,f21.3,a18,f19.3,a18,a15,a18)
-
       end subroutine get_ESP
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!  VotW_v12(MAXVOLCS,volcLat,volcLon,volcElev,volcLoc,volcESP_Code,volcID,volcName)
+!  VotW_v12
 !
-!  Called from: 
+!  Called from: get_ESP
 !  Arguments:
-!    none
+!    MAXVOLCS     =
+!    volcLat      =
+!    volcLon      =
+!    volcElev     =
+!    volcLoc      =
+!    volcESP_Code =
+!    volcID       =
+!    volcName     =
 !
-!  This subroutine
+!  This subroutine loads the volcano data into memory either by reading the
+!  file VotW_ESP_v12_csv.txt if USEEXTDATA is set, or by setting the variables
+!  at the time of compilation.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -285,17 +289,16 @@
       character(len=42) ,intent(inout) :: volcName(MAXVOLCS)
       logical              :: IsThere
       integer              :: Iostatus    = 1
-      character(len=20)    ::  temp1
-      character(len=20)    ::  temp2
-      character(len=20)    ::  temp3
-      character(len=30)    ::  volcElev_c(MAXVOLCS)
-      character            ::  volcNS(MAXVOLCS)
-      character            ::  volcWE(MAXVOLCS)
+      character(len=20)    :: temp1
+      character(len=20)    :: temp2
+      character(len=20)    :: temp3
+      character(len=30)    :: volcElev_c(MAXVOLCS)
+      character            :: volcNS(MAXVOLCS)
+      character            :: volcWE(MAXVOLCS)
 
       character(len=195) :: linebuffer195
-      integer         :: nvolcs
-      !integer         :: i,Volcano_ID
-      character       :: testkey
+      integer            :: nvolcs
+      character          :: testkey
 
       VotWMasterFile = trim(Ash3dHome) // &
                           '/share/VotW_ESP_v12_csv.txt'

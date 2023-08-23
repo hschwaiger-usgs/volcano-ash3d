@@ -29,7 +29,10 @@
       private
 
         ! Publicly available subroutines/functions
-      public Allocate_Airports,Deallocate_Airports,ReadAirports,bilinear_thickness
+      public Allocate_Airports,         &
+             Deallocate_Airports,       &
+             ReadAirports,              &
+             bilinear_thickness
 
         ! Publicly available variables
       integer,public                        :: nairports           ! number of nearby airports in domain
@@ -414,10 +417,10 @@
         write(outlog(io),3) nairports
       endif;enddo
 
-      deallocate(AirportFullLat)
-      deallocate(AirportFullLon)
-      deallocate(AirportFullCode)
-      deallocate(AirportFullName)
+      if(allocated(AirportFullLat))  deallocate(AirportFullLat)
+      if(allocated(AirportFullLon))  deallocate(AirportFullLon)
+      if(allocated(AirportFullCode)) deallocate(AirportFullCode)
+      if(allocated(AirportFullName)) deallocate(AirportFullName)
 
       return       
 

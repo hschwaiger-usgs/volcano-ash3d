@@ -2,7 +2,12 @@
 !
 !  Source_Umbrella module
 !
+!      subroutine Allocate_Source_Umbrella
+!      subroutine Deallocate_Source_Umbrella
 !      subroutine umbrella_winds
+!      subroutine TephraSourceNodes_Umbrella
+!      function SourceVolInc_Umbrella
+!      function AvgCon_Umbrella
 !
 !##############################################################################
 
@@ -18,8 +23,11 @@
       private
 
         ! Publicly available subroutines/functions
-      public Allocate_Source_Umbrella,Deallocate_Source_Umbrella,&
-             umbrella_winds,TephraSourceNodes_Umbrella,SourceVolInc_Umbrella,&
+      public Allocate_Source_Umbrella,  &
+             Deallocate_Source_Umbrella,&
+             umbrella_winds,            &
+             TephraSourceNodes_Umbrella,&
+             SourceVolInc_Umbrella,     &
              AvgCon_Umbrella
 
       !components of the wind field used for umbrella clouds
@@ -58,11 +66,14 @@
 !
 !  Allocate_Source_Umbrella(nx,ny,nz)
 !
-!  Called from: 
+!  Called from: Ash3d.F90
 !  Arguments:
-!    none
+!    nx         = x length of computational grid (needed for supplemental wind)
+!    ny         = y length of computational grid (needed for supplemental wind)
+!    nz         = z length of computational grid (needed for modified source column)
 !
-!  This subroutine
+!  This subroutine allocates the arrays needed for the umbrella source and
+!  pre-calculates some geometry and normalizing terms.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -136,19 +147,21 @@
 !
 !  Deallocate_Source_Umbrella
 !
-!  Called from: 
+!  Called from: dealloc_arrays
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine deallocates the arrays allocated in Allocate_Source_Umbrella
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Deallocate_Source_Umbrella
 
-        deallocate(AvgStenc_Umbrella,ScaleFac_Umbrella)
-        deallocate(SourceNodeFlux_Umbrella)
-        deallocate(uvx_pd,uvy_pd)
+        if(allocated(AvgStenc_Umbrella))       deallocate(AvgStenc_Umbrella)
+        if(allocated(ScaleFac_Umbrella))       deallocate(ScaleFac_Umbrella)
+        if(allocated(SourceNodeFlux_Umbrella)) deallocate(SourceNodeFlux_Umbrella)
+        if(allocated(uvx_pd))                  deallocate(uvx_pd)
+        if(allocated(uvx_pd))                  deallocate(uvy_pd)
 
       end subroutine Deallocate_Source_Umbrella
 
@@ -156,21 +169,20 @@
 !
 !  umbrella_winds(first_time)
 !
-!  Called from: 
+!  Called from: MesoInterpolater
 !  Arguments:
-!    none
+!    first_time = logical
 !
-!  This subroutine
+!  This subroutine calculates the radial wind associated with the umbrella
+!  spreading.  Equations implemented are described in:
+!       Mastin, L.G. and Van Eaton, A.R., Comparing Simulations of Umbrella-Cloud Growth
+!         and Ash Transport with Observations from Pinatubo, Kelud, and Calbuco Volcanoes
+!         Atmosphere, 2020, 11, 1038, doi:10.3390/atmos11101038
+
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine umbrella_winds(first_time)
-
-      ! subroutine that calculates radial winds from the center of an umbrella cloud
-      ! Equations implemented are described in:
-      ! Mastin, L.G. and Van Eaton, A.R., Comparing Simulations of Umbrella-Cloud Growth
-      !   and Ash Transport with Observations from Pinatubo, Kelud, and Calbuco Volcanoes
-      !   Atmosphere, 2020, 11, 1038, doi:10.3390/atmos11101038
 
       use global_param,  only : &
          DEG2KMLAT,DEG2KMLON,DEG2RAD,KM_2_M,PI,HR_2_S,MPS_2_KMPHR,EPS_SMALL
@@ -227,15 +239,15 @@
       !If there is only one size class, assume it's an airborne run and
       !multiply the mass flux by 20
       if ((SourceType.eq.'umbrella_air').and.(n_gs_max.eq.1)) then
-             massfluxnow = 20.0_ip*massfluxnow
+        massfluxnow = 20.0_ip*massfluxnow
       end if
 
       !set value of C based on latitude
       if (abs(lat_volcano).lt.23.0_ip) then
-          !m3 kg^(-3/4) s^(-7/8) for tropical eruptions
+          ! m3 kg^(-3/4) s^(-7/8) for tropical eruptions
         C_Costa = 0.43e3_ip
       else
-          !m3 kg^(-3/4) s^(-7/8) for non-tropical eruptions
+          ! m3 kg^(-3/4) s^(-7/8) for non-tropical eruptions
         C_Costa = 0.87e3_ip 
       endif
 
@@ -376,18 +388,16 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!  umbrella_winds(first_time)
+!  TephraSourceNodes_Umbrella
 !
-!  Called from: 
+!  Called from: Ash3d.F90
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine takes SourceNodeFlux calculated for the vent column in
+!  TephraSourceNodes and spreads it over the 3x3 source patch for the umbrella.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!  Takes SourceNodeFlux calculated for the vent column in TephraSourceNodes
-!  and spreads it over the 3x3 source patch for the umbrella
 
       subroutine TephraSourceNodes_Umbrella
 
@@ -430,11 +440,13 @@
 !
 !  SourceVolInc_Umbrella(dt)
 !
-!  Called from: 
+!  Called from: Ash3d.F90
 !  Arguments:
-!    none
+!    dt = time step in hours
 !
-!  This subroutine
+!  This function calculates the total tephra volume inserted in this time step.
+!  It is used only for mass-conservation error-checking.  It does the same
+!  work as SourceVolInc but also adds the umbrella bit over the 3x3 zone.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -498,11 +510,14 @@
 !
 !  AvgCon_Umbrella(conpatch,klevel)
 !
-!  Called from: 
+!  Called from: Ash3d.F90
 !  Arguments:
-!    none
+!    conpatch
+!    klevel
 !
-!  This subroutine
+!  This function is used for averaging the concentration in the 3x3 patch
+!  surrounding the vent within the umbrella cloud.  This is applied before
+!  source insertion and helps smooth the solution.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

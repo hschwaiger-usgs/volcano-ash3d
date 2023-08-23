@@ -2,18 +2,20 @@
 !
 !  TimeStepTotals(itime)
 !
-!  Called from: 
+!  Called from: Ash3d.F90, once within the time integration loop and once at the
+!               end.
 !  Arguments:
-!    none
+!    itime = integer time step
 !
-!  This subroutine
+!  This subroutine call subroutine to calculate the volume of ash aloft, in the
+!  deposit and that exited the domain through the sides and possibly the top
+!  at the specified time step itime.  This information, along with the time and
+!  cloud area are writen to stdout and the logfile.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine TimeStepTotals(itime)
 
-!  Subroutine that sums the volume erupted, deposited, and area of ash cloud at specified time steps.
-      
       use precis_param
 
       use io_units
@@ -47,9 +49,7 @@
         end function HS_yyyymmddhhmm_since
       END INTERFACE
 
-      !integer            :: isize !, ix, iy, iz
-
-!  SUM UP TOTAL ASH ON THE GROUND, IN THE AIR, AND DRIFTED OUT OF THE DOMAIN
+      ! Sum up the total ash aloft, on the ground and that left the domain
       tot_vol     = 0.0_ip
       dep_vol     = 0.0_ip 
       aloft_vol   = 0.0_ip
@@ -70,15 +70,6 @@
                          SourceCumulativeVol,dep_vol,aloft_vol,&
                          outflow_vol,tot_vol,CloudArea
       endif;enddo
-
-      !do io=1,2;if(VB(io).le.verbosity_info)then
-      !  write(outlog(io),*)sum(outflow_yz1(     1:ny,1:nz,1)*kappa(0     ,1:ny  ,1:nz  ))/MagmaDensity/KM3_2_M3,&
-      !            sum(outflow_yz2(     1:ny,1:nz,1)*kappa(  nx+1,1:ny  ,1:nz  ))/MagmaDensity/KM3_2_M3,&
-      !            sum(outflow_xz1(1:nx,     1:nz,1)*kappa(1:nx  ,0     ,1:nz  ))/MagmaDensity/KM3_2_M3,&
-      !            sum(outflow_xz2(1:nx,     1:nz,1)*kappa(1:nx  ,  ny+1,1:nz  ))/MagmaDensity/KM3_2_M3,&
-      !            sum(outflow_xy1(1:nx,1:ny,     1)*kappa(1:nx  ,1:ny  ,0     ))/MagmaDensity/KM3_2_M3,&
-      !            sum(outflow_xy2(1:nx,1:ny,     1)*kappa(1:nx  ,1:ny  ,  nz+1))/MagmaDensity/KM3_2_M3
-      !endif;enddo
 
       open(unit=19,file='progress.txt',status='replace')
       write(19,*)real(time/Simtime_in_hours,kind=4)

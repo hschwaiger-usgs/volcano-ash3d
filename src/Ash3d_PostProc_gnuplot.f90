@@ -14,7 +14,9 @@
       private
 
         ! Publicly available subroutines/functions
-      public write_2Dmap_PNG_gnuplot,write_2Dprof_PNG_gnuplot,write_DepPOI_TS_PNG_gnuplot
+      public write_2Dmap_PNG_gnuplot,   &
+             write_2Dprof_PNG_gnuplot,  &
+             write_DepPOI_TS_PNG_gnuplot
 
         ! Publicly available variables
 
