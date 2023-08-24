@@ -62,7 +62,7 @@
 
       !!!$ use omp_lib
 
-      integer       :: i,j,n  ! These are the indeces mapping to the global arrays
+      integer       :: i,j,n    ! These are the indeces mapping to the global arrays
       integer       :: l        ! This is the index along the particular advection direction
       integer       :: ncells
 
@@ -183,8 +183,6 @@
             !update_cc(-1:ncells+2) = AdvectUpdate_1d(ncells,q_cc,dt_vol_cc,usig_I)
 
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             ! This is the branch that includes the update in-line
             dq_I(rmin-1:rmin-1+ncells+2) = q_cc(rmin-1:rmin-1+ncells+2) - &
                                            q_cc(rmin-2:rmin-1+ncells+1)
@@ -273,7 +271,7 @@
             ! Now loop over the cell indicies and apply these fluxes to
             ! volume i_cc
             do i_cc=rmin-1,rmin-1+ncells+1  ! Note: we additionally loop on 1 ghost to get
-                                !       outflow boundary fluxes
+                                            !       outflow boundary fluxes
 
                ! Interface fluctuation/limited-q at left cell interface
               RFluct_Lbound  =  fs_I(i_cc,2)
@@ -290,8 +288,6 @@
                           LimFlux_Lbound)   ! limited flux function at left boundary
 
             enddo ! loop over l (cell centers)
-            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
             ! Now update concentration for all interior cells

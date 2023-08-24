@@ -339,6 +339,8 @@ PPOBJS = Ash3d_VariableModules.o        \
 
 GRAFOBJ = Ash3d_PostProc_gnuplot.o $(plplotOBJ) $(dislinOBJ) $(gmtOBJ)
 
+TOOLOBJ = Ash3d_ASCII_check.o
+
 ifeq ($(USENETCDF), T)
   DATAOBJ = write_NETCDF.o
 endif
@@ -470,8 +472,9 @@ check: ascii_check Ash3d $(MFILE)
 	./run_tests.sh
 
 clean:
-	rm -rf $(OBJECTS) $(PPOBJS) $(GRAFOBJ) Ash3d.o $(DATAOBJ) $(OPTMODS_OBJ) ../bin/$(ASH3DEXEC) ../bin/tools/Ash3d_ASCII_check \
-        *.mod *__genmod.f90
+	rm -rf $(OBJECTS) $(PPOBJS) $(GRAFOBJ) $(TOOLOBJ) Ash3d.o Ash3d_PostProc.o $(DATAOBJ) $(OPTMODS_OBJ) \
+               ../bin/$(ASH3DEXEC) ../bin/tools/Ash3d_ASCII_check \
+               *.mod *__genmod.f90
 
 install:
 	install -d $(INSTALLDIR)/bin $(INSTALLDIR)/share/post_proc

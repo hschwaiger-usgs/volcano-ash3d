@@ -31,8 +31,6 @@
 
       ! Fclaw subroutine MesoInterpolater(TimeNow,Load_MesoSteps,Interval_Frac,first_time,Meso_toggle)
 
-!    Subroutine that interpolates to obtain the current wind field
-!
       use precis_param
 
       use io_units
@@ -110,7 +108,7 @@
                                                 ! this subroutine is called since we need to
                                                 ! fill the step prior to the start time.
 
-      real(kind=dp):: HoursIntoInterval ! hours since the last windfile timestep
+      real(kind=dp) :: HoursIntoInterval ! hours since the last windfile timestep
       real(kind=ip) :: TimeNow_fromRefTime
       ! Fclaw
       !integer, intent(inout) :: Meso_toggle
@@ -234,7 +232,7 @@
                                                 Interval_Frac)*MPS_2_KMPHR
       endif
 
-      !if we're calculating an umbrella cloud, add the winds in the cloud
+      ! if we're calculating an umbrella cloud, add the winds in the cloud
       if (((SourceType.eq.'umbrella')     .or.   &
            (SourceType.eq.'umbrella_air')).and.  &   !(TimeNow.gt.0.0_ip).and. &
           (TimeNow.lt.e_EndTime(1))) then
@@ -271,8 +269,8 @@
       call Adjust_DT(.false.)
 #endif
 
-      !If vxmax or vymax > 2000 km/hr, send a warning and see which values of vx and vy
-      !are so high.
+      ! If vxmax or vymax > 2000 km/hr, send a warning and see which values of vx and vy
+      ! are so high.
       if (abs(maxval(vx_pd(1:nxmax,1:nymax,1:nzmax))).gt.5.0e3_ip) then
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),1041) nxmax, nymax, nzmax, SimStartHour, &

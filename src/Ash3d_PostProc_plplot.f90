@@ -1,6 +1,17 @@
+!##############################################################################
+!
+! Ash3d_PostProc_plplot module
+!
+! This module provides the subroutines that use plplot for creating 2d maps,
+! 2d vertical profiles, and the little deposit accumulation plots linked to
+! the airport arrival kml (ash_arrivaltimes_airports.kml). The plplot
+! library is linked at compile-time.
+!
 !      subroutine write_2Dmap_PNG_plplot
 !      subroutine write_2Dprof_PNG_plplot
 !      subroutine write_DepPOI_TS_PNG_plplot
+!
+!##############################################################################
 
       module Ash3d_PostProc_plplot
 
@@ -27,13 +38,29 @@
       integer :: lib_ver_minor = 14
 
       contains
+      !------------------------------------------------------------------------
 
-!##############################################################################
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!    write_2Dmap_PNG_plplot
+!  write_2Dmap_PNG_plplot
 !
-!    if timestep = -1, then use the last step in file
-!##############################################################################
+!  Called from: Ash3d_PostProc.f90
+!  Arguments:
+!    nx            = x length of output array OutVar
+!    ny            = y length of output array OutVar
+!    iprod         = product ID
+!    itime         = time index from netcdf data file
+!    OutVar        = 2-d array to be writen to ASCII file
+!    writeContours = logical
+!
+!  This subroutine creates a png map of the variable in OutVar using the plplot
+!  graphics package.  Annotations and contour levels are indicated via the
+!  product ID (iprod).  If writeContours is set to true, then this subroutine
+!  is only used for generating and storing the contours (for plplot, this
+!  throws an error since contour data is not available) with no png written.
+!  If timestep = -1, then use the last step in file
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine write_2Dmap_PNG_plplot(nx,ny,iprod,itime,OutVar,writeContours)
 
@@ -603,11 +630,19 @@
 
       end subroutine write_2Dmap_PNG_plplot
 
-!##############################################################################
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!    write_2Dprof_PNG_plplot
+!  write_2Dprof_PNG_plplot
 !
-!##############################################################################
+!  Called from: Ash3d_PostProc.f90
+!  Arguments:
+!    vprof_ID        = ID of the profile (number in list from Ash3d control file)
+!
+!  This subroutine creates a png plot of the transient vertical profile of ash
+!  concentration above the profile point (vprof_ID) using the plplot graphics
+!  package.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine write_2Dprof_PNG_plplot(vprof_ID)
 
@@ -878,11 +913,18 @@
 
       end subroutine write_2Dprof_PNG_plplot
 
-!##############################################################################
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!    write_DepPOI_TS_PNG_plplot
+!  write_DepPOI_TS_PNG_plplot
 !
-!##############################################################################
+!  Called from: Ash3d_PostProc.f90
+!  Arguments:
+!    pt_indx       = index of point in Ash3d netcdf output file
+!
+!  This subroutine creates a png plot of the transient deposit accumulation at
+!  the airport/POI given by pt_index using the plplot graphics package.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine write_DepPOI_TS_PNG_plplot(pt_indx)
 
@@ -988,7 +1030,8 @@
 
       end subroutine write_DepPOI_TS_PNG_plplot
 
-!##############################################################################
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       end module Ash3d_PostProc_plplot
 
+!##############################################################################

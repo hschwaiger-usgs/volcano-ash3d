@@ -12,8 +12,6 @@
 ! Because these are just data modules, all variables are set to public by default.
 ! A few of these modules have allocate/deallocate subroutines.
 
-
-
 !##############################################################################
 !
 !  precis_param module

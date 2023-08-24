@@ -243,8 +243,8 @@
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),1023) MagmaDensity, e_Duration(i), MassFlux(i), e_Volume(i)
           endif;enddo
-1023      format('   Magma density (kg/m3) = ',f6.1,', e_Duration(1) (hrs) = ',f6.3,/, &
-                 '   Mass flux (kg/hr) = ',e12.4,', Total volume (km3 DRE)=',f8.4,/,'Continue?')
+1023      format('   Magma density (kg/m3) = ',f6.1,', Pulse Duration (hrs) = ',f6.3,/, &
+                 '   Mass flux (kg/hr) = ',e12.4,', Pulse volume (km3 DRE)=',f8.4)
         elseif(SourceType.eq.'profile')then
           e_prof_MassFlux(i,1:e_prof_zpoints(i)) = &
                          MagmaDensity  * &                        ! kg/m3
@@ -259,8 +259,18 @@
         endif
 
       enddo
+
       e_EndTime_final = maxval(e_EndTime)  ! this marks the end of all eruptions
 
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),1024) e_EndTime_final-e_StartTime(1),&
+                               sum(e_Volume(1:neruptions)), &
+                               sum(e_Volume(1:neruptions))*MagmaDensity*KM3_2_M3*1.0e-9
+      endif;enddo
+
+1024  format('  Total Duration (hrs) = ',f6.3,/, &
+             '  Total volume (km3 DRE) = ',f8.4,/,&
+             '  Total mass (Tg) = ',f8.4)
 
       end subroutine EruptivePulse_MassFlux
 
@@ -636,3 +646,4 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       end module Source
+!##############################################################################

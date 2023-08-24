@@ -879,11 +879,6 @@
         enddo ! loop over k
       enddo ! loop over n
 
-      !if (ip.eq.4)then
-      !  deallocate(DL_s,D_s,DU_s,B_s)
-      !endif
-      !deallocate(DL_d,D_d,DU_d,B_d)
-
       if(allocated(DL_s)) deallocate(DL_s)
       if(allocated(D_s))  deallocate(D_s)
       if(allocated(DU_s)) deallocate(DU_s)
@@ -896,7 +891,7 @@
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
 
-      endif
+      endif ! ncells.gt.1
 
       end subroutine diffCN_x
 
@@ -1150,10 +1145,6 @@
           enddo ! loop over i
         enddo ! loop over k
       enddo ! loop over n
-      !if (ip.eq.4)then
-      !  deallocate(DL_s,D_s,DU_s,B_s)
-      !endif
-      !deallocate(DL_d,D_d,DU_d,B_d)
 
       if(allocated(DL_s)) deallocate(DL_s)
       if(allocated(D_s))  deallocate(D_s)
@@ -1167,7 +1158,7 @@
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
 
-      endif
+      endif ! ncells.gt.1
 
       end subroutine diffCN_y
 
@@ -1426,11 +1417,6 @@
         enddo ! loop over i
       enddo ! loop over n
 
-      !if (ip.eq.4)then
-      !  deallocate(DL_s,D_s,DU_s,B_s)
-      !endif
-      !deallocate(DL_d,D_d,DU_d,B_d)
-
       if(allocated(DL_s)) deallocate(DL_s)
       if(allocated(D_s))  deallocate(D_s)
       if(allocated(DU_s)) deallocate(DU_s)
@@ -1443,9 +1429,12 @@
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
 
-      endif
+      endif ! ncells.gt.1
 
       end subroutine diffCN_z
 
-      end module Diffusion
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      end module Diffusion
+
+!##############################################################################

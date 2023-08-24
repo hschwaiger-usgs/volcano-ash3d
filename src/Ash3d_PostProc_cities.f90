@@ -35,28 +35,28 @@
       real(kind=ip),intent(in) :: inlatUR
       integer      ,intent(in) :: maxcities
 
-      real(kind=ip),dimension(maxcities),intent(out) :: CityLon_out
-      real(kind=ip),dimension(maxcities),intent(out) :: CityLat_out
+      real(kind=ip)    ,dimension(maxcities),intent(out) :: CityLon_out
+      real(kind=ip)    ,dimension(maxcities),intent(out) :: CityLat_out
       character(len=26),dimension(maxcities),intent(out) :: CityName_out
 
       integer            :: iostatus = 1
       integer            :: i, ncities, nread
-      integer            :: resolution                              !# of cells in x and y
+      integer            :: resolution                              ! # of cells in x and y
       character(len=26)  :: CityName
       character(len=133) :: inputline
-      real(kind=ip)       :: lonLL,lonUR,latLL,latUR
-      real(kind=ip)       :: CityLat, CityLon
-      real(kind=ip)       :: dlat, dlon, cell_width, cell_height
-      real(kind=ip)       :: minspace_x, minspace_y
-      logical            :: IsOkay                 !true if city is not near any others
+      real(kind=ip)      :: lonLL,lonUR,latLL,latUR
+      real(kind=ip)      :: CityLat, CityLon
+      real(kind=ip)      :: dlat, dlon, cell_width, cell_height
+      real(kind=ip)      :: minspace_x, minspace_y
+      logical            :: IsOkay                     ! true if city is not near any others
       logical            :: IsThere,IsThere2
 
       character(len=130)             :: CityMasterFile
 
-      CityName_out = ''           !set default values
+      CityName_out = ''           ! set default values
       CityLon_out  = 0.0_ip
       CityLat_out  = 0.0_ip
-      resolution   = 100          !number of cells in width & height
+      resolution   = 100          ! number of cells in width & height
 
       ! All city longitudes are between -180 and 180 degrees.
       ! Make sure the requested computational domain is in the same range.
@@ -104,7 +104,8 @@
       endif
       open(unit=12,file=trim(adjustl(CityMasterFile)))
 
-      read(12,*)                                     !skip the first line
+      ! skip the first line
+      read(12,*)
 
       do while ((ncities.lt.maxcities).and.(iostatus.ge.0))
         read(12,'(a133)',IOSTAT=iostatus) inputline
@@ -176,15 +177,15 @@
 
       implicit none
 
-      integer     ,intent(in)    :: maxcities
+      integer      ,intent(in)    :: maxcities
       real(kind=ip),intent(in)    :: CityLon_out(maxcities)
       real(kind=ip),intent(in)    :: CityLat_out(maxcities)
-      integer     ,intent(in)    :: ncities
+      integer      ,intent(in)    :: ncities
       real(kind=ip),intent(in)    :: CityLon
       real(kind=ip),intent(in)    :: CityLat
       real(kind=ip),intent(in)    :: minspace_x
       real(kind=ip),intent(in)    :: minspace_y
-      logical     ,intent(inout) :: IsOkay                 !true if city is not near any others
+      logical      ,intent(inout) :: IsOkay                 ! true if city is not near any others
 
       integer            :: icity
 

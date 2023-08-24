@@ -172,29 +172,29 @@
       ! Finished opening all the netcdf and kml output files.
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      !construct text string for timespan written to KML files
+      ! Construct text string for timespan written to KML files
       if (iTimeNext.gt.0) then
          if (iTimeNext.eq.1) then
-             !if this is the first time, set timestart equal to the eruption time
+             ! If this is the first time, set timestart equal to the eruption time
              timestart = SimStartHour
            else
-             !otherwise, set it equal to the midpoint between now and the last write time
+             ! otherwise, set it equal to the midpoint between now and the last write time
              timestart = SimStartHour + (WriteTimes(iTimeNext-1)+WriteTimes(iTimeNext))/2.0_ip
          end if
          if (iTimeNext.lt.nWriteTimes) then
-             !Set timeend to the midpoint between now and the next write time
+             ! Set timeend to the midpoint between now and the next write time
              timeend = SimStartHour + (WriteTimes(iTimeNext)+WriteTimes(iTimeNext+1))/2.0_ip
            else
-             !If this is the last write time, set timeend to the end of the simulation
+             ! If this is the last write time, set timeend to the end of the simulation
              timeend = SimStartHour + Simtime_in_hours
          endif
          xmlTimeSpanStart = HS_xmltime(timestart,BaseYear,useLeap)
          xmlTimeSpanEnd   = HS_xmltime(timeend,BaseYear,useLeap)
       endif
 
-      !increment iTimeNext
-      iout3d = iout3d + 1    ! increment the counter for the output step
-      if (iTimeNext.lt.nWriteTimes) then   !adjust next write time
+      ! increment counter for the output step (iTimeNext)
+      iout3d = iout3d + 1
+      if (iTimeNext.lt.nWriteTimes) then   ! adjust next write time
          iTimeNext = iTimeNext + 1
          NextWriteTime = WriteTimes(iTimeNext)
         else
@@ -202,7 +202,7 @@
          NextWriteTime = 1.0_ip/EPS_SMALL
       endif
 
-      !get data string of current date & time
+      ! get data string of current date and time
       if (isFinal_TS) then
         cio='________final'
       else
@@ -339,4 +339,4 @@
 
       end subroutine output_results
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

@@ -109,8 +109,6 @@
 1104    format(7x,a20)
       enddo
 
-      !write(*,*)"Now parsing RESETPARAMS block"
-      
       read(10,'(a80)',iostat=ios)linebuffer080
       read(linebuffer080,*)testkey
       iparam = 0
@@ -132,7 +130,6 @@
 
       ! We've read all the parameters to reset, now loop through the list
       ! and reset values, error-check, etc.
-
       do i = 1,iparam
         if (pname(i).eq.'MagmaDensity') then
           ! error-checking
@@ -616,3 +613,4 @@
 
       end subroutine input_data_ResetParams
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

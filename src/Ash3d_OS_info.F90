@@ -146,7 +146,7 @@
       IsMacOS   = .false.
 #endif
 
-      ! ENVIRONMENT VARIABLES
+      ! Environment variables
       ! First order of business is to get the environment variable (if present) for verbosity
       call get_environment_variable(name="ASH3DVERB",VALUE=tmp_str,STATUS=iostatus)
       if(iostatus.eq.0)then
@@ -339,8 +339,8 @@
 
       ! Determining the run start time
       read(zone,'(i3)') timezone
-      ! FIND TIME IN UTC
-      StartHour = real(values(5)-timezone,kind=ip) + real(values(6)/60.0,kind=ip)    !add offset to UTC
+      ! Find time in UTC
+      StartHour = real(values(5)-timezone,kind=ip) + real(values(6)/60.0,kind=ip)    ! add offset to UTC
         ! find time in HoursSinceBaseYear
         !  Note: This will be relative to the BaseYear in time_data (default is 1900). 
         !        That BaseYear might be changed if the eruption start time is
@@ -355,8 +355,6 @@
       read(RunStartHour_ch,'(11x,i2)') RunStartMinute
 
         ! Prepare a note to include in the netcdf output file
-!      write(linebuffer080,102) RunStartYear,RunstartMonth,RunStartDay,RunStartHr,RunStartMinute
-!      os_time_log = linebuffer080(1:17)
       os_time_log = HS_xmltime(RunStartHour,BaseYear,useLeap)
 
       do io=1,2;if(VB(io).le.verbosity_production)then
@@ -457,13 +455,13 @@
         write(outlog(io),*)"                          compiled."
 #endif
   
-        ! WRITE OUT START TIME IN UTC
+        ! Write out start time in UTC
         write(outlog(io),*)
         write(outlog(io),2) version,RunStartYear,RunStartMonth,RunStartDay,RunStartHr,RunStartMinute
         write(outlog(io),*)
       endif;enddo
 
-      ! FORMAT STATEMENTS
+      ! Format statements
 2     format(4x,'Ash3d (Rev ',a5,') run ',&
              i4,'.',i2.2,'.',i2.2,i4,':',i2.2,' UTC')
 102   format(i4,'.',i2.2,'.',i2.2,i4,':',i2.2)
@@ -495,4 +493,4 @@
       endif 
 
       end subroutine check_endian
-
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

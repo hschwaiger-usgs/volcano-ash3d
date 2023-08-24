@@ -2601,7 +2601,7 @@
 1104    format(7x,a20)
       enddo
 
-!     CLOSE input file 
+!     close input file 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),25) infile
       endif;enddo
@@ -3109,7 +3109,7 @@
       !BLOCK 9: NETCDF ANNOTATIONS
 
 !***********************************************************************
-!     format STATEMENT
+!     format statement
 
 !2     format(4x,'Ash3d (Rev ',a5,') run ',&
 !             i4,'.',i2.2,'.',i2.2,i4,':',i2.2,' UTC')
@@ -3254,7 +3254,6 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-
       subroutine LatLonChecker(latLL,lonLL,lat_volcano,lon_volcano,gridwidth_e,gridwidth_n)
 
       use precis_param
@@ -3270,7 +3269,7 @@
       real(kind=ip), intent(in)    :: gridwidth_e
       real(kind=ip), intent(in)    :: gridwidth_n
 
-      !MAKE SURE THAT LATITUDE IS BETWEEN -90 AND 90.
+      ! Make sure that latitude is between -90 and 90.
       if(abs(latLL).gt.90.0_ip.or.abs(lat_volcano).gt.90.0_ip)then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: latLL and lat_volcano should be",&
@@ -3281,7 +3280,7 @@
         stop 1
       endif
       
-      !MAKE SURE THAT LONGITUDE OF LEFT SIDE OF GRID IS BETWEEN -360 AND 360.
+      ! Make sure that longitude of left side of grid is between -360 and 360.
       if(abs(lonLL).gt.360.0_ip.or.abs(lon_volcano).gt.360.0_ip)then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*) "ERROR: lonLL and lon_volcano should be",&
@@ -3292,7 +3291,7 @@
         stop 1
       endif
 
-      !MAKE SURE THAT gridwidth_e AND gridwidth_n ARE POSITIVE
+      ! Make sure that gridwidth_e and gridwidth_n are positive
       if((gridwidth_e.lt.0.0_ip).or.(gridwidth_n.lt.0.0_ip))then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: gridwidth_e and gridwidth_n must be positive."
@@ -3300,7 +3299,7 @@
         stop 1
       endif
 
-      !MAKE SURE THAT THE TOP OF THE GRID doES NOT EXTEND BEYOND 90n
+      ! Make sure that the top of the grid does not extend beyond 90n
       if ((latLL+gridwidth_n).gt.90.0_ip) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR:  Latitude at the top of the grid > 90."
@@ -3308,10 +3307,10 @@
         stop 1        
       endif
 
-      !MAKE SURE THAT lon_volcano>lonLL
+      ! Make sure that lon_volcano > lonLL
       if (lonLL.gt.lon_volcano) lon_volcano=lon_volcano+360.0_ip
 
-      !MAKE SURE THAT THE VOLCANO IS WITHIN THE MODEL REGION (LONGITUDE)
+      ! Make sure the volcano is within the model region (longitude)
       if ((lon_volcano.lt.lonLL).or.(lon_volcano.gt.(lonLL+gridwidth_e))) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*) 'ERROR: the volcano is not within the specified longitude region'
@@ -3321,7 +3320,7 @@
         stop 1
       endif
 
-      !MAKE SURE THE VOLCANO IS WITHIN THE MODEL REGION (LATITUDE)
+      ! Make sure the volcano is within the model region (latitude)
       if ((lat_volcano.lt.latLL).or.(lat_volcano.gt.(latLL+gridwidth_n))) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*) 'ERROR: the volcano is not within the specified latitude region'
@@ -3345,8 +3344,6 @@
 
       subroutine xyChecker(xLL,yLL,dx,dy,x_volcano,y_volcano,gridwidth_x,gridwidth_y)
 
-      !subroutine that checks the domain for errors if IsLatLon=.false.
-
       use precis_param
 
       use io_units
@@ -3361,7 +3358,7 @@
       real(kind=ip), intent(in) :: x_volcano,y_volcano
       real(kind=ip), intent(in) :: gridwidth_x,gridwidth_y
 
-      !MAKE SURE THAT gridwidth_x AND gridwidth_y ARE POSITIVE
+      ! Make sure thae gridwidth_x and gridwidth_y are positive
       if((gridwidth_x.lt.0.0_ip).or.(gridwidth_y.lt.0.0_ip))then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*) &
@@ -3370,7 +3367,7 @@
         stop 1
       endif
 
-      !MAKE SURE THAT DX AND DY ARE POSITIVE
+      ! Make sure that dx and dy are positive
       if((dx.lt.0.0_ip).or.(dy.lt.0.0_ip)) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*) "ERROR: dx and dy must be positive."
@@ -3378,7 +3375,7 @@
         stop 1
       endif
 
-      !MAKE SURE THE VOLCANO IS WITHIN THE MODEL REGION
+      ! Make sure the volcano is within the model region
       if (((x_volcano.lt.xLL).or.(x_volcano.gt.(xLL+gridwidth_x))).or. &
           ((y_volcano.lt.yLL).or.(y_volcano.gt.(yLL+gridwidth_y)))) then
         do io=1,2;if(VB(io).le.verbosity_error)then
@@ -3388,14 +3385,14 @@
         stop 1
       endif
 
-      !PRINT OUT WARNING MESSAGE if DX != DY
+      ! Print out warning message if dx != dy
       if (abs(dx-dy).lt.EPS_SMALL) then
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),1)              !print out a warning message about the deposit file
+          write(outlog(io),1)              ! print out a warning message about the deposit file
         endif;enddo
       endif
 
-      !format STATEMENTS
+      ! Format statements
 1     format (4x,'Warning: dx and dy are not the same.  If the',&
                 ' deposit file is read by ArcMap',/, &
              4x,'they  are assumed to be the same.  The nodal',&
@@ -3405,7 +3402,6 @@
 
       end subroutine xyChecker
       
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !    vprofchecker
@@ -3432,8 +3428,7 @@
       integer, intent(in) :: iprof
       real(kind=ip) :: lon_vprof, lat_vprof
 
-!     FIND THE I AND J VALUES OF THE NODE CONTAINING THE VERTICAL PROFILE
-
+      ! Find the i and j values of the node containing the vertical profile
       if (IsLatLon) then
         lon_vprof = x_vprofile(iprof)
         lat_vprof = y_vprofile(iprof)
@@ -3452,7 +3447,7 @@
       endif;enddo
 47    format(i11,2f10.3,2i6)
 
-           !MAKE SURE THE POINT IS WITHIN THE MODEL REGION
+      ! Make sure the point is within the model region
       if (IsLatLon) then
         if (((lon_vprof.lt.lonLL)               .or. &
              (lon_vprof.gt.(lonLL+gridwidth_e))).or. &

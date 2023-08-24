@@ -289,11 +289,12 @@
 !
 !  Allocate_Output_Vars
 !
-!  Called from: 
+!  Called from: alloc_arrays
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine allocated the arrays that store the output products, mostly
+!  2-d variables.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -334,11 +335,12 @@
 !
 !  Allocate_NTime(nt)
 !
-!  Called from: 
+!  Called from: Ash3d.F90
 !  Arguments:
-!    none
+!    nt  = total anticipated time steps
 !
-!  This subroutine
+!  This subroutine allocated the variable for storing the time steps for the
+!  simulation.  These are the full steps, not just the output or log steps.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -354,11 +356,14 @@
 !
 !  Allocate_Profile(nz,nt,nv)
 !
-!  Called from: 
+!  Called from: Ash3d.F90
 !  Arguments:
-!    none
+!    nz  = z length of vertical profile
+!    nt  = total anticipated time steps
+!    nv  = number of vertical profiles
 !
-!  This subroutine
+!  This subroutine allocates the variable for storing profile data, if profile
+!  data output is requested.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -379,11 +384,15 @@
 !
 !  Allocate_Output_UserVars(nx,ny,nz,ns)
 !
-!  Called from: 
+!  Called from: Ash3d.F90
 !  Arguments:
-!    none
+!    nx  = x length of computational grid
+!    ny  = y length of computational grid
+!    nz  = z length of computational grid
+!    ns  = number of bin characterizing grainsize/species
 !
-!  This subroutine
+!  This subroutine allocates all the variables needed for user-defined output
+!  products.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -456,11 +465,11 @@
 !
 !  Deallocate_Output_Vars()
 !
-!  Called from: 
+!  Called from: dealloc_arrays
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine deallocates the variables allocated in Allocate_Output_Vars.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -479,8 +488,6 @@
       if(allocated(MinHeight))        deallocate(MinHeight)
       if(allocated(dbZCol))           deallocate(dbZCol)
       if(allocated(dbZ))              deallocate(dbZ)
-
-      if(allocated(pr_ash))           deallocate(pr_ash)
 #endif
 
       end subroutine Deallocate_Output_Vars
@@ -489,11 +496,11 @@
 !
 !  Deallocate_NTime
 !
-!  Called from: 
+!  Called from: dealloc_arrays
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine deallocates the variables allocated in Allocate_NTime.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -507,11 +514,11 @@
 !
 !  Deallocate_Profile
 !
-!  Called from: 
+!  Called from: dealloc_arrays
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine deallocates the variables allocated in Allocate_Profile.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -525,11 +532,11 @@
 !
 !  Deallocate_Output_UserVars()
 !
-!  Called from: 
+!  Called from: dealloc_arrays
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine deallocates the variables allocated in Allocate_Output_UserVars.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -572,11 +579,12 @@
 !
 !  Set_OutVar_ContourLevel
 !
-!  Called from: 
+!  Called from: NC_Read_Output_Products
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine fills several variables that are needed when plotting
+!  maps in Ash3d_PostProc.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -681,11 +689,12 @@
 !
 !  AshThicknessCalculator
 !
-!  Called from: 
+!  Called from: Gen_Output_Vars and FirstAsh
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine calculates the thickness (mm) of the ash deposit by summing
+!  the mass of all the tephra bins and converting to thickness via DepositDensity.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -731,11 +740,12 @@
 !
 !  AshTotalCalculator
 !
-!  Called from: 
+!  Called from: output_results
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine calculates the total concentration of ash at every point in
+!  the domain by summing the concentrations of each tephra bin.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -767,18 +777,18 @@
 !
 !  dbZCalculator
 !
-!  Called from: 
+!  Called from: NC_append_to_netcdf
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine calculates the radar reflectivity factor (Z) in dBZ.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine dbZCalculator
 
       use global_param,  only : &
-          EPS_TINY
+          EPS_TINY,M_2_MM
 
       use Tephra,        only : &
          n_gs_max,Tephra_gsdiam,Tephra_rho_m
@@ -797,8 +807,8 @@
       dbZCol(:,:) = dbZCol_FillValue
       dbZ(:,:,:)  = dbZCol_FillValue
 
-      !calculate particle collision rate between two particle sizes
-      !note: this requires that only two particle sizes be used as input
+      ! Calculate particle collision rate between two particle sizes
+      ! Note: this requires that only two particle sizes be used as input
 
       if(n_gs_max.gt.0)then
         do i=imin,imax
@@ -807,11 +817,11 @@
             do k=kmin,kmax
               zcol = 0.0_ip
               do isize=1,n_gs_max
-                !convert concentration (kg/km3) to number density (#/m3)
+                ! convert concentration (kg/km3) to number density (#/m3)
                 NumDens = concen_pd(i,j,k,isize,ts1) / &
                             (Tephra_rho_m(isize)*PI*Tephra_gsdiam(isize)**3.0_ip/6.0_ip) / &
-                            KM3_2_M3                                  !particles/m3
-                zcol    = zcol + NumDens*(1000.0_ip*Tephra_gsdiam(isize))**6.0_ip
+                            KM3_2_M3                                  ! particles/m3
+                zcol    = zcol + NumDens*(Tephra_gsdiam(isize)*M_2_MM)**6.0_ip
               enddo
               if(zcol.lt.EPS_TINY)then
                 dbZ(i,j,k) = dbZCol_FillValue
@@ -835,11 +845,14 @@
 !
 !  ConcentrationCalculator
 !
-!  Called from: 
+!  Called from: Gen_Output_Vars and FirstAsh
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine several output variables derived from the airborne ash
+!  concentration: CloudLoad (vertically integrated value), 
+!  MaxConcentration (peak value of all z), Min and Max cloud height, the
+!  cloud mask (logical variable) and the CloudArea of the cloud mask.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -942,11 +955,12 @@
 !
 !  CloudAreaCalculator
 !
-!  Called from: 
+!  Called from: Gen_Output_Vars
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine calculates the area of the cloud with a cloud load that
+!  exceeds various threshholds.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -991,11 +1005,12 @@
 !
 !  Gen_Output_Vars
 !
-!  Called from: 
+!  Called from: Ash3d.F90
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine calls routines to calculate deposit thickness, ash cloud
+!  variables, and deposit/cloud masks.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -1011,9 +1026,6 @@
          Called_Gen_Output_Vars
 
       integer :: i,j
-
-      !real(kind=ip) :: thickness
-      !real(kind=ip) :: CloudLoadHere
 
       Mask_Cloud   = .false.
       Mask_Deposit = .false.
@@ -1035,12 +1047,9 @@
       ! Mark the arrival time of any new deposit
       do i=1,nxmax
         do j=1,nymax
-          !thickness = DepositThickness(i,j)
-          ! Note: this check below requires that the fill value be < 0
           if(Mask_Deposit(i,j).and.DepArrivalTime(i,j).lt.0.0_ip)then
             DepArrivalTime(i,j)=time
           endif
-          !CloudLoadHere = CloudLoad(i,j)
           if((Mask_Cloud(i,j)).and.(CloudArrivalTime(i,j).lt.0.0_ip))then
             CloudArrivalTime(i,j)=time
           endif
@@ -1055,11 +1064,12 @@
 !
 !  Calc_AshVol_Aloft(vol)
 !
-!  Called from: 
+!  Called from: TimeStepTotals
 !  Arguments:
-!    none
+!    vol  = output variable for the total volume of ash aloft
 !
-!  This subroutine
+!  This subroutine calculates the total mass aloft and converts it to vol in
+!  km^3 DRE for logging.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -1103,11 +1113,12 @@
 !
 !  Calc_vprofile(itime)
 !
-!  Called from: 
+!  Called from: Ash3d.F90
 !  Arguments:
-!    none
+!    itime  =  index of time_native (full time array)
 !
-!  This subroutine
+!  This subroutine sums the concentrations over each tephra bin above the 
+!  profile site and saves is to pr_ash in mg/m3.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -1169,11 +1180,12 @@
 !
 !  Calc_AshVol_Deposit(vol)
 !
-!  Called from: 
+!  Called from: TimeStepTotals
 !  Arguments:
-!    none
+!    vol  = output variable for the total volume of ash in the deposit
 !
-!  This subroutine
+!  This subroutine calculates the total mass of the deposit and converts it to
+!  vol in km^3 DRE for logging.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -1208,11 +1220,12 @@
 !
 !  Calc_AshVol_Outflow(vol)
 !
-!  Called from: 
+!  Called from: TimeStepTotals
 !  Arguments:
-!    none
+!    vol  = output variable for the total volume of ash that exited the domain
 !
-!  This subroutine
+!  This subroutine calculates the total mass that left the domain and converts
+!  it to vol in km^3 DRE for logging.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -1258,17 +1271,15 @@
 !
 !  FirstAsh
 !
-!  Called from: 
+!  Called from: Ash3d.F90
 !  Arguments:
 !    none
 !
-!  This subroutine
+!  This subroutine determines whether the ash has yet hit any airports.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine FirstAsh
-
-!     Subroutine that determines whether the ash has yet hit any airports
 
       use Airports,      only : &
          Airport_CloudHere,Airport_thickness,Airport_depRate,Airport_AshDuration,&

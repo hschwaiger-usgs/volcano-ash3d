@@ -3650,7 +3650,7 @@
     46.30833  -119.30556     0.00000     0.00000  RLD  Richland, WA                           
     47.49306  -122.21583     0.00000     0.00000  RNT  Renton Muni, WA                        
     47.21167  -119.83972     0.00000     0.00000  JZN  Quincy Muni, WA                        
-    46.74472  -117.10500     0.00000     0.00000  PUW  Pullman Moscow Reg1onal, WA            
+    46.74472  -117.10500     0.00000     0.00000  PUW  Pullman Moscow Regional, WA            
     46.21222  -119.79278     0.00000     0.00000  RQE  Prosser, WA                            
     48.05000  -122.80000     0.00000     0.00000  TWD  Jefferson Co Intl, WA                  
     47.43333  -122.66472     0.00000     0.00000  XWK  Port Orchard, WA                       

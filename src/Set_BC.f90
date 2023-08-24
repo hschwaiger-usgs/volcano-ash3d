@@ -2,17 +2,17 @@
 !
 !  Set_BC(bc_code)
 !
-!  Called from: 
+!  Called from: Ash3d.F90, advect_x, advect_y and advect_z
 !  Arguments:
-!    none
+!    bc_code
 !
-!  This subroutine
+!  This subroutine sets the boundary conditions on concentration and velocity
+!  for advection routines (if bc_code = 1) or for diffusion routines (if
+!  bc_code = 2).
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Set_BC(bc_code)
-
-      ! Set the Boundary conditions
 
       use precis_param
 
@@ -121,4 +121,3 @@
 
       end subroutine Set_BC
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-

@@ -512,8 +512,8 @@
 !
 !  Called from: Ash3d.F90
 !  Arguments:
-!    conpatch
-!    klevel
+!    conpatch = 3x3 patch over which we are averaging concentrations
+!    klevel   = z-index of patch (used to get volumes)
 !
 !  This function is used for averaging the concentration in the 3x3 patch
 !  surrounding the vent within the umbrella cloud.  This is applied before

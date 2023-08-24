@@ -236,7 +236,7 @@
           ! Write to output streams a comment about which of advection or
           ! diffusion is the dominant constraint on the time-step.
           ! Note: we don't want to do this for the variable diffusivity cases
-          ! since this will write out this comment every time-step.
+          !       since this will write out this comment every time-step.
           if(.not.useVarDiffH.and.&
              .not.useVarDiffV)then
             if (useCN) then

@@ -667,7 +667,7 @@
         ! The last positive bin is from phi_boundaries(1) to Inf
         suppl_frac(1) = 0.5_ip - fac1*erf(abs(phi_boundaries(1)))
 
-        !Now integrate the negative side
+        ! Now integrate the negative side
         mid_bin_neg_half = fac1*erf(abs(phi_boundaries(mid_bin)))
         suppl_frac(mid_bin) = mid_bin_neg_half
         ! Now integrate the remaining bins on the negative side of mu
@@ -1055,4 +1055,5 @@
       end function vset_Stokes_slip
 
       end module Tephra
+
 !##############################################################################

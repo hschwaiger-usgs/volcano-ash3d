@@ -134,7 +134,7 @@
         ionumber = 200+i
         cio = HS_yyyymmddhh_since(SimStartHour+time+OutputOffset,&
                                   BaseYear,useLeap)
-        write(ionumber,1) cio, time, (pr_ash(k,itime,i), k=1,nzmax)
+        write(ionumber,1) cio, time, (pr_ash(k,itime,i), k=1,nzmax) ! write tot. concen in mg/m3
 
 1       format(a13,',',f10.3,',',50(e15.3,','))
       enddo
@@ -715,6 +715,8 @@
 3     format(/,'No airports affected by ash')
 
       end subroutine Write_PointData_Airports_ASCII
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !      end module Ash3d_ASCII_IO
 !##############################################################################

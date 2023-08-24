@@ -441,7 +441,7 @@
 !
 !------------------------------------------------------------------------------
 
-            ! SEE WHETHER THE ASH HAS HIT ANY AIRPORTS
+            ! See whether the ash has hit any airports/POI
           call FirstAsh
 
             ! Track ash on vertical profiles
@@ -451,7 +451,7 @@
           endif
         endif
 
-        ! GO TO OUTPUT RESULTS IF WE'RE AT THE NEXT OUTPUT STAGE
+        ! Go to output results if we're at the next output stage
         ! Note that dt was set in Adjust_DT so that it is no larger than
         ! DT_MIN, but may be adjusted down so as to land on the next
         ! output time.  time has already been integrated forward so
@@ -477,7 +477,7 @@
         endif
 
         if(Output_at_logsteps)then  
-          !WRITE SUMMARY INFORMATION ON MASS CONSERVATION EVERY log_step TIME STEPS
+          ! Write summary information on mass conservation every log_step time steps
           if(mod(itime,log_step).eq.0) then
             if(.not.Called_Gen_Output_Vars)then
               call Gen_Output_Vars
@@ -524,7 +524,6 @@
         endif
            ! Error stop condition if the concen and outflow do not match the source
         StopConditions(4) = (MassConsErr.gt.1.0e-3_ip)
-        !StopConditions(4) = .false.  ! We override this condition until the umbrella source conserves mass
            ! Error stop condition if any volume measure is negative
         StopConditions(5) = (dep_vol.lt.-1.0_ip*EPS_SMALL).or.&
                             (aloft_vol.lt.-1.0_ip*EPS_SMALL).or.&
@@ -633,9 +632,8 @@
 !------------------------------------------------------------------------------
 
       call output_results
-      !WRITE RESULTS TO LOG AND STANDARD OUTPUT
-      !TotalTime_sp = etime(elapsed_sp)
-      call cpu_time(t2) !time is a scalar real
+      ! Write results to log and standard output
+      call cpu_time(t2) ! time is a scalar real
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),3) t1-t0, t2-t1, time*HR_2_S
         write(outlog(io),4) time*HR_2_S/(t2-t1)
@@ -645,11 +643,11 @@
         write(outlog(io),5) dep_vol
         write(outlog(io),6) tot_vol
         write(outlog(io),9) maxval(DepositThickness), DepositAreaCovered
-        write(outlog(io),34)       !write out area of cloud at different thresholds
+        write(outlog(io),34)       ! write out area of cloud at different thresholds
         do i=1,5
           write(outlog(io),35) LoadVal(i), CloudLoadArea(i)
         enddo
-        write(outlog(io),33)    !write "normal completion"
+        write(outlog(io),33)       ! write "normal completion"
       endif;enddo
 
       ! Format statements
@@ -690,3 +688,7 @@
       close(global_log)       !close log file 
 
       end program Ash3d
+
+
+!                             real(sum(e_volume)*MagmaDensity*KM3_2_M3*1.0e-9,kind=sp)," Tg"
+

@@ -39,19 +39,19 @@
       logical,public                        :: ProjectAirportLocations
       integer,           allocatable,public :: Airport_i(:)
       integer,           allocatable ,public:: Airport_j(:)
-      real(kind=ip),     allocatable,public :: Airport_AshArrivalTime(:)   !ash arrival time
-      real(kind=ip),     allocatable,public :: Airport_AshDuration(:)      !duration of ashfall
-      real(kind=ip),     allocatable,public :: Airport_CloudArrivalTime(:) !cloud arrival time
-      real(kind=ip),     allocatable,public :: Airport_CloudDuration(:)    !duration of cloud overhead
-      real(kind=ip),     allocatable,public :: Airport_DepRate(:)          !deposit thickness change during this time step
-      real(kind=ip),     allocatable,public :: Airport_DepRateLast(:)      !deposit thickness change during last time step
-      real(kind=ip),     allocatable,public :: Airport_Thickness(:)        !deposit thickness this time step
-      real(kind=ip),     allocatable,public :: Airport_ThicknessLast(:)    !deposit thickness last time step
+      real(kind=ip),     allocatable,public :: Airport_AshArrivalTime(:)   ! ash arrival time
+      real(kind=ip),     allocatable,public :: Airport_AshDuration(:)      ! duration of ashfall
+      real(kind=ip),     allocatable,public :: Airport_CloudArrivalTime(:) ! cloud arrival time
+      real(kind=ip),     allocatable,public :: Airport_CloudDuration(:)    ! duration of cloud overhead
+      real(kind=ip),     allocatable,public :: Airport_DepRate(:)          ! deposit thickness change during this time step
+      real(kind=ip),     allocatable,public :: Airport_DepRateLast(:)      ! deposit thickness change during last time step
+      real(kind=ip),     allocatable,public :: Airport_Thickness(:)        ! deposit thickness this time step
+      real(kind=ip),     allocatable,public :: Airport_ThicknessLast(:)    ! deposit thickness last time step
       real(kind=ip),     allocatable,public :: Airport_Latitude(:)
       real(kind=ip),     allocatable,public :: Airport_Longitude(:)
-      real(kind=ip),     allocatable,public :: Airport_CloudHere(:)        !cloud load overhead
-      real(kind=ip),     allocatable,public :: Airport_CloudHereLast(:)    !cloud load overhead in last time step
-      real(kind=ip),     allocatable,public :: Airport_Thickness_TS(:,:)   !deposit thickness for all output times
+      real(kind=ip),     allocatable,public :: Airport_CloudHere(:)        ! cloud load overhead
+      real(kind=ip),     allocatable,public :: Airport_CloudHereLast(:)    ! cloud load overhead in last time step
+      real(kind=ip),     allocatable,public :: Airport_Thickness_TS(:,:)   ! deposit thickness for all output times
       character(len=130),public             :: AirportInFile
       character(len=35), allocatable,public :: Airport_Name(:)
       character(len=3),  allocatable,public :: Airport_Code(:)
@@ -199,14 +199,14 @@
 !  master list of airports. Finally, we need to evaluate the list to determine
 !  which locations are within the compuatational domain.  We then allocate
 !  the needed space and fill the following variables:
-!     Airport_Name(nairports)      =
-!     Airport_Code(nairports)      =
-!     Airport_x(nairports)         =
-!     Airport_y(nairports)         =
-!     Airport_Latitude(nairports)  =
-!     Airport_Longitude(nairports) =
-!     Airport_i(nairports)         =
-!     Airport_j(nairports)         =
+!     Airport_Name(nairports)      = 35 character name, normally location
+!     Airport_Code(nairports)      = 3 character airport code
+!     Airport_x(nairports)         = x coordinate in projected space
+!     Airport_y(nairports)         = y coordinate in projected space
+!     Airport_Latitude(nairports)  = latitude of airport/POI
+!     Airport_Longitude(nairports) = longitude of airport/POI
+!     Airport_i(nairports)         = i index of airport/POI in the computational grid
+!     Airport_j(nairports)         = j index of airport/POI in the computational grid
 !  as well as all the variables for logging ash arrival.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -229,7 +229,7 @@
       character(len=3)   :: CodeNow
       real(kind=ip)      :: latitude, longitude
       real(kind=dp)      :: lat_in,lon_in,xout,yout
-      integer                        :: n_airports_total    ! number of airports in external file
+      integer            :: n_airports_total    ! number of airports in external file
 
       ! This populates the global list, regardless of any other POI file
       call Read_GlobalAirports(NAIRPORTS_EWERT)
@@ -260,7 +260,7 @@
           AirportFullLon(i)  = ExtAirportLon(i-NAIRPORTS_EWERT)
           AirportFullCode(i) = ExtAirportCode(i-NAIRPORTS_EWERT)
           AirportFullName(i) = ExtAirportName(i-NAIRPORTS_EWERT)
-          !make sure longitude is between 0
+          ! make sure longitude is between 0
           if (AirportFullLon(i).lt.0.0_ip) &
             AirportFullLon(i) = AirportFullLon(i)+360.0_ip
         enddo
@@ -269,7 +269,6 @@
           write(outlog(io),*) 'Airport name       lon      lat'
           do i=NAIRPORTS_EWERT+1,n_airports_total
             write(outlog(io),*) AirportFullName(i),AirportFullLon(i),AirportFullLat(i)
-!2563      format(a42,2f12.4)
           enddo
         endif;enddo
       else
@@ -291,7 +290,7 @@
       !   next loop again to populate external variables
       nairports = 0
       do i = 1, n_airports_total
-        !make sure longitude is between 0 and 360
+        ! make sure longitude is between 0 and 360
         if (AirportFullLon(i).lt.0.0_ip) &
           AirportFullLon(i) = AirportFullLon(i)+360.0_ip
         latitude  = AirportFullLat(i)
@@ -352,7 +351,7 @@
 
             Airport_i(ind) = int((Airport_Longitude(ind)-lonLL)/de) +1
             Airport_j(ind) = int((Airport_Latitude(ind)-latLL)/dn) +1
-            !find inext(i), jnext(i) for bilinear interpolation
+            ! find inext(i), jnext(i) for bilinear interpolation
             if ((Airport_Longitude(ind)-&
                  (lonLL+real(Airport_i(ind)-1,kind=ip)*de)).lt.(de/2.0_ip)) then
               inext(ind)=Airport_i(ind)
@@ -397,7 +396,7 @@
             Airport_Longitude(ind) = longitude
             Airport_i(ind) = int((Airport_x(ind)-xLL)/dx) +1
             Airport_j(ind) = int((Airport_y(ind)-yLL)/dy) +1
-            !find inext(i), jnext(i) for bilinear interpolation
+            ! find inext(i), jnext(i) for bilinear interpolation
             if ((Airport_x(ind)-(xLL+real(Airport_i(ind)-1,kind=ip)*dx)).lt.(dx/2.0_ip)) then
               inext(ind)=Airport_i(ind)
             else
@@ -471,7 +470,7 @@
         y2   = y1+dy
       endif
 
-      !First, see if the airport is on the corner or edge of the model domain
+      ! First, see if the airport is on the corner or edge of the model domain
       if (((inext(i).eq.1).or.(inext(i).eq.(nxmax+1))).and. &
           ((jnext(i).eq.1).or.(jnext(i).eq.(nymax+1)))) then
         ! We're at a corner.  Don't interpolate
@@ -487,23 +486,23 @@
         z22 = OutVar(inext(i)  ,Airport_j(i))
         znow =  z11 + (z22-z11)*(xnow-x1)/(x2-x1)
       else
-        !the bilinear interpolation is the sum of the values in the four corners
-        !that surround the point in question, weighted by the areas of the rectangles
-        !to the upper left, upper right, lower left, and lower right of the point in
-        !question, divided by the area of the entire square in which the point sits.
+        ! The bilinear interpolation is the sum of the values in the four corners
+        ! that surround the point in question, weighted by the areas of the rectangles
+        ! to the upper left, upper right, lower left, and lower right of the point in
+        ! question, divided by the area of the entire square in which the point sits.
         A11  = (xnow-  x1) * (ynow -   y1)    !area of lower  left rectangle
         A21  = (x2  -xnow) * (ynow -   y1)    !area of lower right rectangle
         A12  = (xnow-  x1) * (y2   - ynow)    !area of upper  left rectangle
         A22  = (x2  -xnow) * (y2   - ynow)    !area of upper right rectangle
         AREA = (y2  -  y1) * (x2   -   x1)    !total area of node
 
-        !thickness values at corners of the rectangle
+        ! Thickness values at corners of the rectangle
         z11 = OutVar(inext(i)-1,jnext(i)-1)
         z21 = OutVar(inext(i)  ,jnext(i)-1)
         z12 = OutVar(inext(i)-1,jnext(i)  )
         z22 = OutVar(inext(i)  ,jnext(i)  )
 
-        !thickness at the airport
+        ! Thickness at the airport
         znow = (1.0_ip/AREA) * &  !reciprocal of area of large rectangle
            (z22 * A11    + &  !z22 times area in lower left
             z12 * A21    + &  !z12 times area in lower right
@@ -655,11 +654,11 @@
         stop 1
       endif
 
-!     OPEN THE AIRPORT LOCATION FILE
+      ! Open the airport location file
       open(unit=17,file=AirportMasterFile,status='old',err=2000)
       ! Read first header line
       read(17,'(a120)',IOSTAT=Iostatus) inputline
-!      READ AIRPORT LOCATIONS AND ASSIGN AIPORTS IN THE MODELED AREA TO A TEMPORARY ARRAY      
+      ! Read airport locations and assign airports in the modeled area to a temporary array
       i = 0
       do while (Iostatus.ge.0)
         read(17,'(a120)',IOSTAT=Iostatus) inputline
@@ -683,13 +682,13 @@
 
       return
 
-      ! ERROR TRAP
+      ! Error traps
 2000  do io=1,2;if(VB(io).le.verbosity_error)then
         write(errlog(io),5) AirportInFile
       endif;enddo
       stop 1
 
-      ! FORMAT STATEMENTS
+      ! Format statements
 2     format(50x,a3,2x,a35)
 5     format(5x,'Error.  Can''t find input file ',a130,/,5x,'Program stopped')
 
@@ -702,7 +701,6 @@
 !
 !     This is the version where the data are filled directly at compile time
 !
-
       integer, intent(out) :: num_GlobAirports
 
       integer :: i
@@ -8016,7 +8014,7 @@
       i=i+1; AirportFullLat(i)= 47.21167_ip; AirportFullLon(i)= 240.160280_ip; 
              AirportFullCode(i)="JZN"; AirportFullName(i)="Quincy Muni, WA                           "; 
       i=i+1; AirportFullLat(i)= 46.74472_ip; AirportFullLon(i)= 242.895000_ip; 
-             AirportFullCode(i)="PUW"; AirportFullName(i)="Pullman Moscow Reg1onal, WA               "; 
+             AirportFullCode(i)="PUW"; AirportFullName(i)="Pullman Moscow Regional, WA               "; 
       i=i+1; AirportFullLat(i)= 46.21222_ip; AirportFullLon(i)= 240.207220_ip; 
              AirportFullCode(i)="RQE"; AirportFullName(i)="Prosser, WA                               "; 
       i=i+1; AirportFullLat(i)= 48.05000_ip; AirportFullLon(i)= 237.200000_ip; 

@@ -56,7 +56,6 @@
 !  
 !  To produce a shapefile for deposit thickness (in mm) at the second time step:
 !   ./Ash3d_PostProc Ash3d_output.nc 3 5 2
-!  
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -139,7 +138,7 @@
                                                      !   V V V V
       integer,dimension(Nplot_libs) :: plot_pref_map = (/2,1,3,4/) ! plot preference for maps
       integer,dimension(Nplot_libs) :: plot_pref_shp = (/3,1,2,4/) ! plot preference for contours
-      integer,dimension(Nplot_libs) :: plot_pref_vpr = (/2,1,3,4/) ! plot preference for vert profs.
+      integer,dimension(Nplot_libs) :: plot_pref_vpr = (/1,2,3,4/) ! plot preference for vert profs.
       integer,dimension(Nplot_libs) :: plot_pref_aTS = (/2,3,1,4/) ! plot preference for Airport TS
 
       INTERFACE
@@ -249,7 +248,7 @@
       WriteAirportFile_ASCII        = .false.
       Write3dFiles                  = .false.
 
-      ! TEST READ COMMAND LINE ARGUMENTS
+      ! Test read command line arguments
       nargs = command_argument_count()
       if (nargs.eq.0) then
           ! If no command-line arguments are given, then prompt user
@@ -299,7 +298,6 @@
           stop 1
         else
           do io=1,2;if(VB(io).le.verbosity_info)then
-            !write(outlog(io),*)'Enter name of ESP input file:'
             write(outlog(io),*)'Enter name of netcdf output file:'
           endif;enddo
         endif
@@ -587,7 +585,7 @@
           WriteDepositFinal_ASCII       = .true.
         elseif(iformat.eq.2)then
           WriteDepositFinal_KML         = .true.
-            ! Double-check this
+            ! HFS: Double-check this
           WriteDepositTS_KML            = .true.
         endif
       elseif(iprod.eq.7 )then ! ashfall arrival time
@@ -669,7 +667,7 @@
         if(iprod.eq.7.or.  &  ! Ashfall arrival time
            iprod.eq.14.or. &  ! Ash-cloud arrival time
            iprod.eq.15)then   ! Topography
-          !  We really should have the final deposit output be in this catagory
+          ! We really should have the final deposit output be in this catagory
           ! Static output
           ! We have already called the netcdf reader so we just need to write
           ! the KML output.
@@ -718,6 +716,7 @@
           enddo
           isFinal_TS = .true.
           ! For deposit output, load the final deposit variable and write to file
+          ! HFS
 !          if(iprod.eq.3.or.iprod.eq.5)then
             call NC_Read_Output_Products(-1)
             call output_results
@@ -762,6 +761,7 @@
         filename_root = 'DepositArrivalTime  '
       elseif(iprod.eq.8)then
          ! ashfall at airports/POI
+         ! HFS
          ! call Write_PointData_Airports_ASCII
       elseif(iprod.eq.9)then
         OutVar = MaxConcentration

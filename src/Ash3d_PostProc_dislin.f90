@@ -1,6 +1,17 @@
+!##############################################################################
+!
+! Ash3d_PostProc_dislin module
+!
+! This module provides the subroutines that use DISLIN for creating 2d maps,
+! 2d vertical profiles, and the little deposit accumulation plots linked to
+! the airport arrival kml (ash_arrivaltimes_airports.kml).  The dislin
+! library is linked at compile-time.
+!
 !      subroutine write_2Dmap_PNG_dislin
 !      subroutine write_2Dprof_PNG_dislin
 !      subroutine write_DepPOI_TS_PNG_dislin
+!
+!##############################################################################
 
       module Ash3d_PostProc_dislin
 
@@ -24,13 +35,29 @@
       integer,parameter :: DS = 4
 
       contains
+      !------------------------------------------------------------------------
 
-!##############################################################################
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!    write_2Dmap_PNG_dislin
+!  write_2Dmap_PNG_dislin
 !
-!    if timestep = -1, then use the last step in file
-!##############################################################################
+!  Called from: Ash3d_PostProc.f90
+!  Arguments:
+!    nx            = x length of output array OutVar
+!    ny            = y length of output array OutVar
+!    iprod         = product ID
+!    itime         = time index from netcdf data file
+!    OutVar        = 2-d array to be writen to ASCII file
+!    writeContours = logical
+!
+!  This subroutine creates a png map of the variable in OutVar using the dislin
+!  graphics package.  Annotations and contour levels are indicated via the
+!  product ID (iprod).  If writeContours is set to true, then this subroutine
+!  is only used for generating and storing the contours (for dislin, this is
+!  directly in memory as a variable) with no png written. If timestep = -1,
+!  then use the last step in file
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine write_2Dmap_PNG_dislin(nx,ny,iprod,itime,OutVar,writeContours)
 
@@ -497,11 +524,19 @@
 
       end subroutine write_2Dmap_PNG_dislin
 
-!##############################################################################
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!    write_2Dprof_PNG_dislin
+!  write_2Dprof_PNG_dislin
 !
-!##############################################################################
+!  Called from: Ash3d_PostProc.f90
+!  Arguments:
+!    vprof_ID        = ID of the profile (number in list from Ash3d control file)
+!
+!  This subroutine creates a png plot of the transient vertical profile of ash
+!  concentration above the profile point (vprof_ID) using the dislin graphics
+!  package.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine write_2Dprof_PNG_dislin(vprof_ID)
 
@@ -644,13 +679,13 @@
       ! https://www.dislin.de/
       ! wget
       ! https://ftp.gwdg.de/pub/grafik/dislin/linux/i586_64/dislin-11.4.linux.i586_64.tar.gz
-!     (1)    setting of page format, file format and filename
-!     (2)    initialization
-!     (3)    setting of plot parameters
-!     (4)    plotting of the axis system
-!     (5)    plotting the title
-!     (6)    plotting data points
-!     (7)    termination.
+      !(1)    setting of page format, file format and filename
+      !(2)    initialization
+      !(3)    setting of plot parameters
+      !(4)    plotting of the axis system
+      !(5)    plotting the title
+      !(6)    plotting data points
+      !(7)    termination.
 
       !  Dislin Level 0:  before initialization or after termination
       call metafl(cfmt)   ! set output driver/file-format (PNG); this is a 4-char string
@@ -715,11 +750,18 @@
 
       end subroutine write_2Dprof_PNG_dislin
 
-!##############################################################################
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!    write_DepPOI_TS_PNG_dislin
+!  write_DepPOI_TS_PNG_dislin
 !
-!##############################################################################
+!  Called from: Ash3d_PostProc.f90
+!  Arguments:
+!    pt_indx       = index of point in Ash3d netcdf output file
+!
+!  This subroutine creates a png plot of the transient deposit accumulation at
+!  the airport/POI given by pt_index using the dislin graphics package.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine write_DepPOI_TS_PNG_dislin(pt_indx)
 
@@ -783,13 +825,13 @@
       ! https://www.dislin.de/
       ! wget
       ! https://ftp.gwdg.de/pub/grafik/dislin/linux/i586_64/dislin-11.4.linux.i586_64.tar.gz
-!     (1)    setting of page format, file format and filename
-!     (2)    initialization
-!     (3)    setting of plot parameters
-!     (4)    plotting of the axis system
-!     (5)    plotting the title
-!     (6)    plotting data points
-!     (7)    termination.
+      !(1)    setting of page format, file format and filename
+      !(2)    initialization
+      !(3)    setting of plot parameters
+      !(4)    plotting of the axis system
+      !(5)    plotting the title
+      !(6)    plotting data points
+      !(7)    termination.
 
       !  Dislin Level 0:  before initialization or after termination
       call metafl(cfmt)   ! set output driver/file-format (PNG); this is a 4-char string
@@ -826,6 +868,8 @@
 
       end subroutine write_DepPOI_TS_PNG_dislin
 
-!##############################################################################
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       end module Ash3d_PostProc_dislin
+
+!##############################################################################
