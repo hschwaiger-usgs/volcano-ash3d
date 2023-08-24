@@ -73,7 +73,7 @@
 
       use Source,        only : &
          neruptions,e_Duration,e_Volume,e_PlumeHeight,e_prof_Volume,e_prof_dz,&
-         MassFlux,e_EndTime,e_prof_MassFlux,e_prof_zpoints,e_StartTime,&
+         MassFlux,e_prof_MassFlux,e_prof_zpoints,e_StartTime,&
          ESP_duration,ESP_height,ESP_Vol,&
          lat_volcano,lon_volcano,x_volcano,y_volcano,z_volcano,Suzuki_A,&
          IsCustom_SourceType,SourceType,&
@@ -2255,7 +2255,6 @@
         ! If a log-normal distribution is to be added, make sure the grainsize
         ! bins are sorted by size (smallest first)
         if (useLogNormGSbins) call Sort_Tephra_Size
-
         temp_phi = -log(Tephra_gsdiam)/log(2.0)
 
         if (useCalcFallVel) Tephra_gsdiam = Tephra_gsdiam/1000.0_ip   ! convert diameter from mm to m
@@ -2299,7 +2298,7 @@
 2533      format(i3,f7.4)
 2534      format(3x,f7.4,'  total',/,'Program stopped')
           stop 1
-            !If it differs just slightly from 1, adjust automatically
+            ! If it differs just slightly from 1, adjust automatically
         else if (abs(sum_bins-1.0_ip).gt.0.001_ip) then
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),2535) sum_bins

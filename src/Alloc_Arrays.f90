@@ -18,7 +18,6 @@
       use io_units
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,&
            Allocate_mesh
 
       use solution,      only : &

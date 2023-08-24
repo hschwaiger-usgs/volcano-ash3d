@@ -76,7 +76,6 @@
       integer           :: timezone
       real(kind=dp)     :: StartHour
       real(kind=dp)     :: RunStartHour    ! Start time of model run, in hours since BaseYear
-      character(len=80) :: linebuffer080
       character(len=100):: CompVer
       character(len=508):: CompOpt
       logical           :: IsThere

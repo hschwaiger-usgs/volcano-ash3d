@@ -580,11 +580,11 @@
           cdf_institution = trim(adjustl(pvalue_str(i)))
         elseif (pname(i).eq.'cdf_run_class') then
           if(abs(pvalue(i)-1.0_ip).lt.EPS_SMALL)then
-            cdf_url = 'Analysis'
+            cdf_run_class = 'Analysis'
           elseif(abs(pvalue(i)-2.0_ip).lt.EPS_SMALL)then
-            cdf_url = 'Hypothetical'
+            cdf_run_class = 'Hypothetical'
           elseif(abs(pvalue(i)-3.0_ip).lt.EPS_SMALL)then
-            cdf_url = 'Forecast'
+            cdf_run_class = 'Forecast'
           else
             do io=1,2;if(VB(io).le.verbosity_error)then
               write(errlog(io),*)"ERROR: run_class not recognized; must be 1,2, or 3"

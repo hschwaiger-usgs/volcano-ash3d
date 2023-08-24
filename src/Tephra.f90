@@ -462,48 +462,28 @@
 
       subroutine Sort_Tephra_Size
 
-      integer :: i,isize
-      real(kind=ip) :: tmp1,tmp2,tmp3,tmp4,tmp5,tmp6,tmp7
+      integer       :: i
+      integer       :: isize
+      real(kind=ip) :: tmp2,tmp3,tmp4,tmp5,tmp6,tmp7
       real(kind=ip) :: temp_a(5)
-      real(kind=ip) :: viscnow, densnow, vfnow
-      real(kind=ip), dimension(:), allocatable      :: vf_now
-
-      ! HFS: We do not need to sort on fall velocity now that we prune the GS
-      !      rather than collapse the GS.  In fact, lognorm dist requires size
-      !      not fall velocity
-
-      densnow = 1.2_ip           !air density at STP (approximate)
-      viscnow = 1.0e-05_ip       !air viscosity at STP (approximate)
 
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),*) 'WARNING: Sorting grain-size bins by vf'
+        write(outlog(io),*) 'WARNING: Sorting grain-size bins by size'
       endif;enddo
 
-      !Calculate fall velocity at 1 atmosphere and assume the relative values
-      !are the same at higher elevation
-      allocate(vf_now(n_gs_max))
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*) 'GSD before sorting:'
       endif;enddo
       do isize=1,n_gs_max
-         if (useCalcFallVel) then
-            vfnow = vset_WH(densnow,Tephra_rho_m(isize),viscnow, &
-                                Tephra_gsdiam(isize),Tephra_gsF_fac(isize,1),Tephra_gsF_fac(isize,2))
-            vf_now(isize) = vfnow
-            do io=1,2;if(VB(io).le.verbosity_info)then
-              write(outlog(io),*)&
-                       'isize = ',isize,', gsdiam = ',real(Tephra_gsdiam(isize),kind=sp),&
-                       ', rho_m = ',real(Tephra_rho_m(isize),kind=sp),&
-                       ', vf_now(isize) = ',real(vf_now(isize),kind=sp)
-           endif;enddo
-         else
-            vf_now(isize) = Tephra_v_s(isize)
-         endif
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)&
+             'isize = ',isize,', gsdiam = ',real(Tephra_gsdiam(isize),kind=sp),&
+             ', rho_m = ',real(Tephra_rho_m(isize),kind=sp)
+        endif;enddo
       enddo
 
         ! Using insertion sort on p321 of Numerical Recipes
       do isize=2,n_gs_max
-        tmp1   = vf_now(isize)
         tmp2   = Tephra_gsdiam(isize)
         tmp3   = Tephra_bin_mass(isize)
         tmp4   = Tephra_rho_m(isize)
@@ -513,8 +493,7 @@
         temp_a = Tephra_gsF_fac(isize,:)
         do i=isize-1,1,-1
             ! sort on grain-size
-          if (vf_now(i).le.tmp1) goto 101
-          vf_now(i+1)           = vf_now(i)
+          if (Tephra_gsdiam(i).le.tmp2) goto 101
           Tephra_gsdiam(i+1)    = Tephra_gsdiam(i)
           Tephra_bin_mass(i+1)  = Tephra_bin_mass(i)
           Tephra_rho_m(i+1)     = Tephra_rho_m(i)
@@ -524,8 +503,7 @@
           Tephra_gsF_fac(i+1,:) = Tephra_gsF_fac(i,:)
         enddo
         i=0
- 101    vf_now(i+1)          = tmp1
-        Tephra_gsdiam(i+1)   = tmp2
+ 101    Tephra_gsdiam(i+1)   = tmp2
         Tephra_bin_mass(i+1) = tmp3
         Tephra_rho_m(i+1)    = tmp4
         Tephra_v_s(i+1)      = tmp5

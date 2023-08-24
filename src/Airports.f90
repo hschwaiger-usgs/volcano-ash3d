@@ -545,10 +545,11 @@
       integer           :: inow,iostatus
       character(len=95) :: inputline
 
-      logical           :: ex, op
-      character(len=11) :: acc,seq, frm
-      character(len=80) :: nam
-      integer           :: irec, nr
+      ! These are some variables used if we do an inquire on this file
+      !logical           :: ex, op
+      !character(len=11) :: acc,seq, frm
+      !character(len=80) :: nam
+      !integer           :: irec, nr
 
       inow = 0
 

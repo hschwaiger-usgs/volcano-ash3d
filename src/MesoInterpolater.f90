@@ -39,8 +39,8 @@
 #ifdef FAST_DT
          EPS_SMALL,&
 #endif
-         MPS_2_KMPHR,GRAV, &
-         useTemperature,useCalcFallVel,useVz_rhoG
+         MPS_2_KMPHR, &
+         useCalcFallVel
 
       use solution,        only : &
          vx_pd,vy_pd,vz_pd,vf_pd
@@ -75,18 +75,13 @@
          uvx_pd,uvy_pd,ibase,itop, &
            umbrella_winds
 
-      use Tephra,          only : &
-         n_gs_max,Tephra_v_s
-
       use Atmosphere,      only : &
-         AirDens_meso_next_step_MetP_sp, &
            Set_Atmosphere_Meso
 
       use MetReader,       only : &
-         MR_dum3d_compH,MR_dum3d_compH_2,MR_iMetStep_Now,&
-         MR_MetSteps_Total,Met_var_IsAvailable,isGridRelative,Map_Case,&
+         MR_iMetStep_Now,&
+         MR_MetSteps_Total,&
          MR_MetStep_Hour_since_baseyear,MR_MetStep_Interval,&
-         MR_dum3d_compH,MR_dum3d_metP,Met_var_GRIB_names,&
            MR_Read_HGT_arrays,&
            MR_Read_3d_Met_Variable_to_CompH,&
            MR_Rotate_UV_GR2ER_Met,&
@@ -101,8 +96,8 @@
       logical      ,intent(inout) :: Load_MesoSteps
 
       integer           :: i,j,k
-      integer           :: isize
-      integer           :: ivar
+!      integer           :: isize
+!      integer           :: ivar
       character(len=1)  :: answer
       logical,save      :: first_time = .true.  ! There is a bit of extra work the first time
                                                 ! this subroutine is called since we need to
@@ -117,6 +112,9 @@
         subroutine Adjust_DT(mesostep)
           logical, intent(in), optional :: mesostep
         end subroutine Adjust_DT
+        subroutine Read_NextMesoStep(Load_MesoSteps)
+          logical      ,intent(inout) :: Load_MesoSteps
+        end subroutine Read_NextMesoStep
       END INTERFACE
 
       TimeNow_fromRefTime = SimStartHour+TimeNow  ! hours since reference time (1-1-1900)
@@ -390,36 +388,28 @@
          useTemperature,useCalcFallVel,useVz_rhoG
 
       use solution,        only : &
-         vx_pd,vy_pd,vz_pd,vf_pd
+         vf_pd
 
       use wind_grid,       only : &
-          vx_meso_last_step_sp,vx_meso_next_step_sp,&
-          vy_meso_last_step_sp,vy_meso_next_step_sp,&
-          vz_meso_last_step_sp,vz_meso_next_step_sp,&
+          vx_meso_next_step_sp,&
+          vy_meso_next_step_sp,&
+          vz_meso_next_step_sp,&
           vf_meso_last_step_sp,vf_meso_next_step_sp,&
           vx_meso_1_sp,vy_meso_1_sp,vz_meso_1_sp, &
           vx_meso_2_sp,vy_meso_2_sp,vz_meso_2_sp, &
           Meso_toggle
 
-      use time_data,       only : &
 #ifdef FAST_DT
-         Simtime_in_hours,time,dt, &
+      use time_data,       only : &
+         Simtime_in_hours,time,dt
 #endif
-         SimStartHour,dt_meso_last,dt_meso_next
 
 #ifdef FAST_DT
       use io_data,       only : &
          NextWriteTime
 #endif
 
-      use mesh,            only : &
-         nxmax,nymax,nzmax
-
-      use Source,          only : &
-         SourceType,e_EndTime
-
       use Source_Umbrella,        only : &
-         uvx_pd,uvy_pd,ibase,itop, &
            umbrella_winds
 
       use Tephra,          only : &
@@ -432,8 +422,7 @@
 
       use MetReader,       only : &
          MR_dum3d_compH,MR_dum3d_compH_2,MR_iMetStep_Now,&
-         MR_MetSteps_Total,Met_var_IsAvailable,isGridRelative,Map_Case,&
-         MR_MetStep_Hour_since_baseyear,MR_MetStep_Interval,&
+         Met_var_IsAvailable,isGridRelative,Map_Case,&
          MR_dum3d_compH,MR_dum3d_metP,Met_var_GRIB_names,&
            MR_Read_HGT_arrays,&
            MR_Read_3d_Met_Variable_to_CompH,&
@@ -448,10 +437,8 @@
 
       logical,save :: first_time = .true.
 
-      integer           :: i,j,k
       integer           :: isize
       integer           :: ivar
-      character(len=1)  :: answer
       integer           :: istep
 
         ! Before reading state variables, we need to load the height grid
