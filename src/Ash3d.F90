@@ -43,6 +43,7 @@
       use Source,        only : &
          SourceNodeFlux,e_EndTime_final,e_Volume,MassFluxRate_now,&
          SourceType, &
+           Calc_Normalized_SourceCol,&
            Allocate_Source_time,&
            EruptivePulse_MassFlux,&
            MassFluxCalculator,&
@@ -184,7 +185,7 @@
       if (((SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')))then
         call Allocate_Source_Umbrella(nxmax,nymax,nzmax)
       endif
-      !call Calc_Normalized_SourceCol
+      call Calc_Normalized_SourceCol
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !   Initialize concen and any special source terms here

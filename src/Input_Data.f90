@@ -73,7 +73,7 @@
 
       use Source,        only : &
          neruptions,e_Duration,e_Volume,e_PlumeHeight,e_prof_Volume,e_prof_dz,&
-         MassFlux,e_prof_MassFlux,e_prof_zpoints,e_StartTime,&
+         MassFlux,e_prof_MassFlux,e_prof_nzpoints,e_StartTime,&
          ESP_duration,ESP_height,ESP_Vol,&
          lat_volcano,lon_volcano,x_volcano,y_volcano,z_volcano,Suzuki_A,&
          IsCustom_SourceType,SourceType,&
@@ -161,6 +161,7 @@
       character         :: testkey,testkey2
       integer           :: iendstr,ios,ioerr,init_n_gs_max
       real(kind=ip)     :: value1, value2, value3, value4, value5
+      real(kind=ip)     :: tmp_ip
       real(kind=dp)     :: tmp_dp
       real(kind=ip)     :: sum_bins
       character(len=8)  :: volc_code
@@ -844,39 +845,39 @@
           !read start time, duration, plume height, volume of each pulse
           read(linebuffer130,*,err=1910) iyear(i),imonth(i),iday(i),hour(i), &
                                 e_Duration(i), e_PlumeHeight(i), e_Volume(i),&
-                                e_prof_dz(i),e_prof_zpoints(i)
-          allocate(dum_prof(e_prof_zpoints(i)))
-          read(10,*)dum_prof(1:e_prof_zpoints(i))
+                                e_prof_dz(i),e_prof_nzpoints(i)
+          allocate(dum_prof(e_prof_nzpoints(i)))
+          read(10,*)dum_prof(1:e_prof_nzpoints(i))
           ! Check to make sure the sum of the percentages add to 1.0
-          if(abs(sum(dum_prof(1:e_prof_zpoints(i)))-1.0_ip).gt.EPS_SMALL)then
+          if(abs(sum(dum_prof(1:e_prof_nzpoints(i)))-1.0_ip).gt.EPS_SMALL)then
             do io=1,2;if(VB(io).le.verbosity_error)then
               write(errlog(io),*)&
                'ERROR:  The profile fractions do not sum to 1.0 for eruptive pulse ',i
               write(errlog(io),*)'             i          z (km)           %'
-              do ii=1,e_prof_zpoints(i)
+              do ii=1,e_prof_nzpoints(i)
                 write(errlog(io),204)ii,e_prof_dz(i)*ii,dum_prof(ii)
  204            format(10x,i5,f15.3,f15.3)
               enddo
-              write(errlog(io),'(a12,f5.3)')'     Sum =  ',sum(dum_prof(1:e_prof_zpoints(i)))
+              write(errlog(io),'(a12,f5.3)')'     Sum =  ',sum(dum_prof(1:e_prof_nzpoints(i)))
             endif;enddo
             stop 1
           endif
           ! Check consistency between e_PlumeHeight(i) and the profile
-          tmp_dp = 0.0_dp
-          do ii=1,e_prof_zpoints(i)
+          tmp_ip = 0.0_ip
+          do ii=1,e_prof_nzpoints(i)
             if(dum_prof(ii).gt.EPS_SMALL)then
-              tmp_dp = max(e_PlumeHeight(i),e_prof_dz(i)*ii)
+              tmp_ip = max(e_PlumeHeight(i),e_prof_dz(i)*ii)
             endif
           enddo
-          if(tmp_dp.gt.e_PlumeHeight(i))then
+          if(tmp_ip.gt.e_PlumeHeight(i))then
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"Warning: Eruption pulse profile is higher than reported height."
               write(outlog(io),*)"         Reported height = ",e_PlumeHeight(i)
-              write(outlog(io),*)"         Resetting height to ",tmp_dp
+              write(outlog(io),*)"         Resetting height to ",tmp_ip
             endif;enddo
-            e_PlumeHeight(i) = real(tmp_dp,kind=ip)
+            e_PlumeHeight(i) = tmp_ip
           endif
-          e_prof_Volume(i,1:e_prof_zpoints(i))=dum_prof(1:e_prof_zpoints(i))*e_Volume(i)
+          e_prof_Volume(i,1:e_prof_nzpoints(i))=dum_prof(1:e_prof_nzpoints(i))*e_Volume(i)
           deallocate(dum_prof)
         else
           ! This is the custom source.  A special call to a source reader
@@ -1166,7 +1167,7 @@
         if(SourceType.eq.'profile')then
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)'             i          z (km)           km3'
-            do ii=1,e_prof_zpoints(i)
+            do ii=1,e_prof_nzpoints(i)
               write(outlog(io),205)ii,e_prof_dz(i)*ii,e_prof_Volume(i,ii)
             enddo
  205            format(10x,i5,f15.3,f15.7)
