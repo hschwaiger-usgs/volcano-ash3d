@@ -55,15 +55,15 @@
       character(len=30),dimension(MAXCustSrc) :: SourceType_Custom = ""
 
 #ifdef USEPOINTERS
-      !real(kind=ip), dimension(:,:)  ,pointer,public :: SourceColumn
-      real(kind=ip), dimension(:  )  ,pointer,public :: TephraFluxRate  => null()
+      real(kind=ip), dimension(:,:)  ,pointer,public :: NormSourceColumn    => null()
+      real(kind=ip), dimension(:  )  ,pointer,public :: TephraFluxRate      => null()
       real(kind=ip), dimension(:,:)  ,pointer,public :: SourceNodeFlux      => null()
-      real(kind=ip), dimension(:,:,:),pointer :: SourceNodeFlux_Area => null()
+      real(kind=ip), dimension(:,:,:),pointer        :: SourceNodeFlux_Area => null()
 #else
-      !real(kind=ip), dimension(:,:)  ,allocatable,public     :: SourceColumn
-      real(kind=ip), dimension(:)    ,allocatable,public     :: TephraFluxRate
-      real(kind=ip), dimension(:,:)  ,allocatable,public     :: SourceNodeFlux
-      real(kind=ip), dimension(:,:,:),allocatable     :: SourceNodeFlux_Area
+      real(kind=ip), dimension(:,:)  ,allocatable,public :: NormSourceColumn
+      real(kind=ip), dimension(:)    ,allocatable,public :: TephraFluxRate
+      real(kind=ip), dimension(:,:)  ,allocatable,public :: SourceNodeFlux
+      real(kind=ip), dimension(:,:,:),allocatable        :: SourceNodeFlux_Area
 #endif
 
         !The following arrays are used by MassFluxCalculator
@@ -141,8 +141,9 @@
       use mesh,          only : &
          nzmax,nsmax
 
-      allocate(SourceNodeFlux(0:nzmax+1,1:nsmax));      SourceNodeFlux = 0.0_ip
-      allocate(TephraFluxRate(nzmax));                  TephraFluxRate = 0.0_ip
+      allocate(NormSourceColumn(neruptions,0:nzmax+1));  NormSourceColumn = 0.0_ip
+      allocate(SourceNodeFlux(0:nzmax+1,1:nsmax));       SourceNodeFlux   = 0.0_ip
+      allocate(TephraFluxRate(nzmax));                   TephraFluxRate   = 0.0_ip
 
       end subroutine Allocate_Source_grid
 
@@ -195,10 +196,151 @@
       if(allocated(e_prof_Volume))    deallocate(e_prof_Volume)
       if(allocated(e_prof_MassFlux))  deallocate(e_prof_MassFlux)
 
+      if(allocated(NormSourceColumn)) deallocate(NormSourceColumn)
       if(allocated(SourceNodeFlux))   deallocate(SourceNodeFlux)
       if(allocated(TephraFluxRate))   deallocate(TephraFluxRate)
 
       end subroutine Deallocate_Source
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Calc_Normalized_SourceCol
+!
+!  Called from: Read_Control_File
+!  Arguments:
+!    none
+!
+!  This subroutine calculates the normalize representation of the source
+!  column descretized to the z-grid of this Ash3d run.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine Calc_Normalized_SourceCol
+
+      use global_param,    only : &
+         EPS_SMALL
+
+      use Tephra,        only : &
+         Tephra_bin_mass,n_gs_max
+
+      use mesh,          only : &
+         nzmax,dz_vec_pd,ivent,jvent,z_lb_pd,z_cc_pd,kappa_pd
+
+      integer :: i,k
+      real(kind=ip) :: Suzuki_k     ! k factor in the Suzuki equation (see Hurst's Ashfall manual)
+      real(kind=ip) :: z_cell_bot
+      real(kind=ip) :: z_cell_top
+      real(kind=ip) :: SumSourceNodeFlux      ! checking terms
+      real(kind=ip) :: zground, PlumeHeight_above_ground
+      integer       :: kground
+      real(kind=ip) :: ez
+      integer       :: kk
+      integer       :: kPlumeTop
+
+      SourceNodeFlux       = 0.0_ip           !initialize SourceNodeFlux
+      SumSourceNodeFlux    = 0.0_ip
+
+      do i=1,neruptions
+        ! Get the cell containing the bottom of the source
+        !  as well as the first cell above the plume top
+        ! if(useTopo) kground = topo_indx(ivent,jvent)
+        kground   = 1
+        kPlumeTop = 0
+        do k=1,nzmax+1
+          if (z_volcano.ge.z_lb_pd(k  ).and. &
+              z_volcano.lt.z_lb_pd(k+1))then
+            kground = k
+          endif
+          if(Height_now.ge.z_lb_pd(k  ).and. &
+             Height_now.lt.z_lb_pd(k+1))then
+            kPlumeTop = k
+          endif
+        enddo
+        zground = z_cc_pd(kground) - 0.5_ip*dz_vec_pd(kground)
+
+        if ((SourceType.eq.'suzuki')      .or. &
+            (SourceType.eq.'umbrella')    .or. &
+            (SourceType.eq.'umbrella_air')) then
+          Suzuki_k = Suzuki_A/((Height_now-zground)* &
+                    ((1.0_ip/Suzuki_A)-((Suzuki_A+1.0_ip)/Suzuki_A)* &
+                    exp(-Suzuki_A)))
+        endif
+
+        ! Find the fraction of the erupted mass rate (kg/hr) that lies within
+        ! each height interval dz
+        do k=kground,kPlumeTop
+          ! height at the top of this cell (or top of plume)
+          z_cell_top  = min(z_cc_pd(k)+0.5_ip*dz_vec_pd(k),Height_now)
+          ! height at the bottom
+          z_cell_bot = z_cc_pd(k)-0.5_ip*dz_vec_pd(k)
+
+          ! First get the TephraFluxRate in kg/hr (total mass of tephra inserted per hour)
+          PlumeHeight_above_ground = Height_now-zground
+          if ((SourceType.eq.'suzuki')      .or. &
+              (SourceType.eq.'umbrella')    .or. &
+              (SourceType.eq.'umbrella_air')) then
+            !For Suzuki plumes and umbrella clouds
+            ! HFS: double-check units and cite equation from User's Guide
+            ! The equation below calculates the tephra volume flux 
+            ! (m3 DRE/s) in the height interval.  
+            ! It uses an equation obtained by integrating the 
+            ! Suzuki equation given in Hurst.
+            TephraFluxRate(k) = (MassFluxRate_now*Suzuki_k*                     &
+                               PlumeHeight_above_ground/Suzuki_A) *             &
+                              ((1.0_ip+(1.0_ip/Suzuki_A)-((z_cell_top -zground)/&
+                                PlumeHeight_above_ground)) *                    &
+                                 exp(Suzuki_A *((z_cell_top -zground)/          &
+                                  PlumeHeight_above_ground-1.0_ip)) -           &
+                               (1.0_ip+(1.0_ip/Suzuki_A)-((z_cell_bot-zground)/ &
+                                PlumeHeight_above_ground)) *                    &
+                                 exp(Suzuki_A *((z_cell_bot-zground)/           &
+                                  PlumeHeight_above_ground-1.0_ip)))
+          elseif (SourceType.eq.'line') then
+            !for line sources, the fractional Tephra Flux Rate into the cell
+            ! at z is just the height of the cell over the length of the line
+            TephraFluxRate(k) = MassFluxRate_now * &
+                                (z_cell_top-z_cell_bot) / PlumeHeight_above_ground
+          elseif (SourceType.eq.'point') then
+            !for point sources, put all the MassFluxRate into the cell that contains
+            ! the point
+            if ((z_cell_top.ge.Height_now).and.    &
+                (z_cell_bot.lt.Height_now)) then
+              TephraFluxRate(k) = MassFluxRate_now
+            else
+              TephraFluxRate(k) = 0.0_ip
+            endif
+          elseif (SourceType.eq.'profile') then
+            ! loop over the points describing the eruption profile
+!1980 05 18 15.50        2.50    15.0    0.05 1.0 15
+!0.05 0.05 0.05 0.05 0.05 0.05 0.05 0.05 0.05 0.05 0.10 0.20 0.10 0.05 0.05
+!1980 05 18 18.00        6.50    15.0    0.15 1.0 15
+!0.05 0.05 0.05 0.05 0.05 0.05 0.05 0.05 0.05 0.05 0.10 0.20 0.10 0.05 0.05
+
+            do kk=1,e_prof_zpoints(ieruption)
+              ! Find the top node in the eruption profile
+              ez = e_PlumeHeight(ieruption) - &
+                      e_prof_dz(ieruption)*e_prof_zpoints(ieruption) + &
+                      (kk-1)*e_prof_dz(ieruption)
+              if ((z_cell_top.ge.ez).and. & 
+                  (z_cell_bot.lt.ez)) then
+                ! This assumes that the timestep is fully within the
+                ! eruption
+                TephraFluxRate(k) = TephraFluxRate(k) + e_prof_MassFlux(ieruption,kk)
+              else
+                TephraFluxRate(k) = 0.0_ip
+              endif
+            enddo
+          else
+            ! Source is none of suzuki,umbrella,umbrella_air,line,point,profile
+            ! This is probably a non-tephra source or some custom source entered
+            ! elsewhere. Set flux to zero for now.
+            NormSourceColumn(i,k) = 0.0_ip
+          endif
+          ! Done with this k-cell; continue upwards to the top of the plume
+        enddo ! nzmax+1
+      enddo ! neruptions
+
+      end subroutine Calc_Normalized_SourceCol
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
@@ -212,7 +354,7 @@
 !  optional 'input_data_ResetParams' called (MagmaDensity can be reset from
 !  the control file).  For each eruptive pulse, the mass flux in kg/hr is
 !  calculated from the specified volume (DRE) and duration.  The end time
-!  of each eruptive ppulse is also calcualted here (in hours since BaseYear).
+!  of each eruptive pulse is also calcualted here (in hours since BaseYear).
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -283,9 +425,9 @@
 !    none
 !
 !  This subroutine is called in every step of the time integration.  Its job
-!  is to mass flux (in kg/hr) within this particular time interval (time->time+dt).
-!  In some cases, the dt of the time integration might overshoot the end of
-!  an eruptive pulse, in which case, the mass flux is adjusted accordingly.
+!  is to calculate mass flux (in kg/hr) within this particular time interval
+!  (time->time+dt). In some cases, the dt of the time integration might overshoot
+!  the end of an eruptive pulse, in which case, the mass flux is adjusted accordingly.
 !  It might also involve two eruptive pulses (3 will cause an error).  This
 !  subroutine also reports the height of the plume for this dt.
 !
@@ -308,10 +450,10 @@
          (SourceType.eq.'line')        .or. &
          (SourceType.eq.'suzuki')      .or. &
          (SourceType.eq.'umbrella')    .or. &
-         (SourceType.eq.'umbrella_air'))then
+         (SourceType.eq.'umbrella_air').or. &
+         (SourceType.eq.'profile'))then
 
         ! Compare the time with the start and end times of the list of eruptions.
-
         if (tstart.gt.e_EndTime(neruptions)) then
           ! If the time slice starts after the last eruption ends
           return
@@ -353,9 +495,9 @@
                 ieruption = ieruption+1
               endif
             else
-              !If this is either the only or the last eruption, distribute
-              !the fraction of the time-step that is erupting over the
-              !whole dt
+              ! If this is either the only or the last eruption, distribute
+              ! the fraction of the time-step that is erupting over the
+              ! whole dt
 
               MassFluxRate_now = MassFlux(ieruption)*(e_EndTime(ieruption)-tstart)/dt
               Height_now       = e_PlumeHeight(ieruption)
@@ -403,14 +545,7 @@
             continue
           endif
         endif
-
         return
-
-      elseif(SourceType.eq.'profile')then
-        Height_now       = e_PlumeHeight(ieruption)
-        MassFluxRate_now = sum(e_prof_MassFlux(ieruption,:))
-        return
-
       else
         ! For all non-standard sources, assign the height given on the source
         ! line of the input file and assign a zero mass flux rate.
@@ -453,7 +588,8 @@
  
       integer :: k
       real(kind=ip) :: Suzuki_k     ! k factor in the Suzuki equation (see Hurst's Ashfall manual)
-      real(kind=ip) :: z_cell_bot, z_cell_top
+      real(kind=ip) :: z_cell_bot
+      real(kind=ip) :: z_cell_top
       real(kind=ip) :: SumSourceNodeFlux      ! checking terms
       real(kind=ip) :: zground, PlumeHeight_above_ground
       integer       :: kground

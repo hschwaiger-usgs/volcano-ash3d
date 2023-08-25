@@ -839,16 +839,45 @@
                                 e_Duration(i), e_PlumeHeight(i), e_Volume(i)
         elseif(SourceType.eq.'profile')then
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Start reading eruption profiles."
+            write(outlog(io),*)"Start reading eruption profile number ",i
           endif;enddo
           !read start time, duration, plume height, volume of each pulse
           read(linebuffer130,*,err=1910) iyear(i),imonth(i),iday(i),hour(i), &
-                                e_Duration(i), e_PlumeHeight(i), e_prof_dz(i),e_prof_zpoints(i)
+                                e_Duration(i), e_PlumeHeight(i), e_Volume(i),&
+                                e_prof_dz(i),e_prof_zpoints(i)
           allocate(dum_prof(e_prof_zpoints(i)))
           read(10,*)dum_prof(1:e_prof_zpoints(i))
-          e_prof_Volume(i,1:e_prof_zpoints(i))=dum_prof(1:e_prof_zpoints(i))
+          ! Check to make sure the sum of the percentages add to 1.0
+          if(abs(sum(dum_prof(1:e_prof_zpoints(i)))-1.0_ip).gt.EPS_SMALL)then
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)&
+               'ERROR:  The profile fractions do not sum to 1.0 for eruptive pulse ',i
+              write(errlog(io),*)'             i          z (km)           %'
+              do ii=1,e_prof_zpoints(i)
+                write(errlog(io),204)ii,e_prof_dz(i)*ii,dum_prof(ii)
+ 204            format(10x,i5,f15.3,f15.3)
+              enddo
+              write(errlog(io),'(a12,f5.3)')'     Sum =  ',sum(dum_prof(1:e_prof_zpoints(i)))
+            endif;enddo
+            stop 1
+          endif
+          ! Check consistency between e_PlumeHeight(i) and the profile
+          tmp_dp = 0.0_dp
+          do ii=1,e_prof_zpoints(i)
+            if(dum_prof(ii).gt.EPS_SMALL)then
+              tmp_dp = max(e_PlumeHeight(i),e_prof_dz(i)*ii)
+            endif
+          enddo
+          if(tmp_dp.gt.e_PlumeHeight(i))then
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"Warning: Eruption pulse profile is higher than reported height."
+              write(outlog(io),*)"         Reported height = ",e_PlumeHeight(i)
+              write(outlog(io),*)"         Resetting height to ",tmp_dp
+            endif;enddo
+            e_PlumeHeight(i) = real(tmp_dp,kind=ip)
+          endif
+          e_prof_Volume(i,1:e_prof_zpoints(i))=dum_prof(1:e_prof_zpoints(i))*e_Volume(i)
           deallocate(dum_prof)
-          e_Volume(i) = sum(e_prof_Volume(i,:))
         else
           ! This is the custom source.  A special call to a source reader
           ! will need to made from Ash3d_??.F90.  For now, just read the
@@ -1133,19 +1162,14 @@
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),8) i, e_PlumeHeight(i), iyear(i), imonth(i), &
                      iday(i), hour(i), e_Duration(i), e_Volume(i)
-          write(outlog(io),8) i, e_PlumeHeight(i), iyear(i), imonth(i), &
-                     iday(i), hour(i), e_Duration(i), e_Volume(i)
-          write(outlog(io),*)"  e_StartTime = ",1,&
-                              BaseYear,useLeap,          &
-                              real(SimStartHour,kind=4), &
-                              real(e_StartTime(i),kind=4)
         endif;enddo
         if(SourceType.eq.'profile')then
           do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)'             i          z (km)           km3'
             do ii=1,e_prof_zpoints(i)
-              write(outlog(io),*)"         ",ii,real((ii-1)*e_prof_dz(i),kind=4),&
-                                                 real(e_prof_Volume(i,ii),kind=4)
+              write(outlog(io),205)ii,e_prof_dz(i)*ii,e_prof_Volume(i,ii)
             enddo
+ 205            format(10x,i5,f15.3,f15.7)
             write(outlog(io),*)"         Total Volume for this pulse = ",&
                                 real(sum(e_prof_Volume(i,:)),kind=4),"km3 DRE"
           endif;enddo
@@ -1155,22 +1179,10 @@
         write(outlog(io),*)"Total volume of all eruptions = ",&
                             real(sum(e_volume),kind=sp),"km3 DRE"
       endif;enddo
+
       ! Now that we know the requested dz profile and the plume heights, we can
       ! set up the z-grid for computation
       CompGrid_height = ZPADDING*maxval(e_PlumeHeight(1:neruptions))
-!      if(CompGrid_height.lt.10.0_ip*dz_const)then
-!        write(outlog(io),*)&
-!         "  Highest source = ", maxval(e_PlumeHeight(1:neruptions))
-!        write(outlog(io),*)&
-!         "        ZPADDING = ",ZPADDING
-!        write(outlog(io),*)&
-!         " CompGrid_height = ",CompGrid_height
-!        write(outlog(io),*)&
-!         "This height for the grid is less than 10 * dz"
-!        write(outlog(io),*)&
-!         "Resetting grid height to ",10.0_ip*dz_const
-!        CompGrid_height = max(10.0_ip*dz_const,CompGrid_height)
-!      endif
       nzmax = 0
       do k = 1,nz_init-1
         if(z_vec_init(k+1).gt.CompGrid_height.and. &
