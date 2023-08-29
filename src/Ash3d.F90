@@ -41,12 +41,11 @@
          time,dt,Simtime_in_hours,t0,t1,t2,ntmax
 
       use Source,        only : &
-         SourceNodeFlux,e_EndTime_final,e_Volume,MassFluxRate_now,&
-         SourceType, &
+         SourceNodeFlux,e_EndTime_final,e_Volume,&
+         SourceType,Source_in_dt, &
            Calc_Normalized_SourceCol,&
-           Allocate_Source_time,&
-           EruptivePulse_MassFlux,&
-           MassFluxCalculator,&
+           EruptivePulse_MassFluxRate,&
+           CheckEruptivePulses,&
            TephraSourceNodes,&
            SourceVolInc
 
@@ -265,10 +264,8 @@
         write(outlog(io),7)
       endif;enddo
 
-      call Allocate_Source_time
-
       ! Calculate mass flux and end times of each eruptive pulse
-      call EruptivePulse_MassFlux
+      call EruptivePulse_MassFluxRate
 
       ! Write out starting volume, max time steps, and headers for the table that follows
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -318,8 +315,9 @@
 !
 !------------------------------------------------------------------------------
 
-          ! determine mass flux and plume height for this dt
-        call MassFluxCalculator
+          ! Determine if (and which) eruptive pulses are active in the current dt
+        !call MassFluxCalculator
+        call CheckEruptivePulses
 
 !------------------------------------------------------------------------------
 !       OPTIONAL MODULES
@@ -328,7 +326,7 @@
 !------------------------------------------------------------------------------
 
         ! Add source term
-        if(MassFluxRate_now.gt.0.0_ip) then
+        if(Source_in_dt) then
           ! Check if the source type is one of the standard types with a 1-node column
           if ((SourceType.eq.'point')  .or. &
               (SourceType.eq.'line')   .or. &
@@ -392,7 +390,7 @@
 !
 !------------------------------------------------------------------------------
           endif
-        endif !MassFluxRate_now.gt.0.0_ip
+        endif !MassFluxRate_dt1.gt.0.0_ip
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         ! Set Boundary Conditions

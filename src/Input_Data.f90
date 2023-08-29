@@ -73,12 +73,11 @@
 
       use Source,        only : &
          neruptions,e_Duration,e_Volume,e_PlumeHeight,e_prof_Volume,e_prof_dz,&
-         MassFlux,e_prof_MassFlux,e_prof_nzpoints,e_StartTime,&
+         e_prof_nzpoints,e_StartTime,&
          ESP_duration,ESP_height,ESP_Vol,&
          lat_volcano,lon_volcano,x_volcano,y_volcano,z_volcano,Suzuki_A,&
          IsCustom_SourceType,SourceType,&
-           Allocate_Source_eruption,&
-           EruptivePulse_MassFlux
+           Allocate_Source_eruption
 
       use Tephra,        only : &
          DepositDensity,Tephra_v_s,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,&
@@ -817,7 +816,6 @@
           if(iyear(i).ne.0.and.iyear(i).lt.BaseYear.or.iyear(i)-BaseYear.gt.100)then
             ! Reset BaseYear to the start of the century containing the eruption year
             BaseYear = iyear(i) - mod(iyear(i),100)
-            !BaseYear = 1
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"WARNING: Resetting BaseYear to ",BaseYear
             endif;enddo

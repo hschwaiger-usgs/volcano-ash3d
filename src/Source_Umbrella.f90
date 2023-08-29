@@ -195,9 +195,7 @@
          lat_cc_pd,lon_cc_pd,de_km,dn_km
 
       use Source,        only : &
-         lat_volcano,lon_volcano,&
-         MassFlux,&
-         e_EndTime, SourceType
+         lat_volcano,lon_volcano,MassFluxRate,e_EndTime, SourceType
 
       use Tephra,        only : &
          n_gs_max
@@ -211,7 +209,6 @@
       real(kind=ip) :: edge_speed       ! expansion rate of cloud edge, m/s
       real(kind=ip) :: etime_s          ! time since eruption start, seconds
       real(kind=ip) :: ew_km,ns_km      ! distances between vent & point
-      real(kind=ip) :: massfluxnow      ! current mass flux, kg/s
       real(kind=ip) :: qnow             ! volume flow rate into umbrella cloud, m3/s
       real(kind=ip) :: radnow           ! radial distance from cloud center, km
       real(kind=ip) :: thetanow         ! angle of point CW from east
@@ -221,6 +218,7 @@
       integer       :: ew_nodes,ns_nodes! radius of clouds in nodes
       integer       :: west_node,east_node
       integer       :: south_node,north_node
+      real(kind=ip) :: MassFluxRateMKS_now ! current mass flux rate, kg/s
 
       uvx_pd(-1:nxmax+2,-1:nymax+2,ibase:itop) = 0.0_ip               !set umbrella winds to zero
       uvy_pd(-1:nxmax+2,-1:nymax+2,ibase:itop) = 0.0_ip    
@@ -233,13 +231,13 @@
         stop 1
       endif
 
-      ! Convert MassFlux from kg/hr to a local variable in kg/s
-      massfluxnow = MassFlux(1)/HR_2_S        !mass flux rate, kg/s
+      ! Convert MassFluxRate from kg/hr to a local variable in kg/s
+      MassFluxRateMKS_now = MassFluxRate(1)/HR_2_S        !mass flux rate, kg/s
 
       !If there is only one size class, assume it's an airborne run and
       !multiply the mass flux by 20
       if ((SourceType.eq.'umbrella_air').and.(n_gs_max.eq.1)) then
-        massfluxnow = 20.0_ip*massfluxnow
+        MassFluxRateMKS_now = 20.0_ip*MassFluxRateMKS_now
       end if
 
       !set value of C based on latitude
@@ -252,14 +250,14 @@
       endif
 
       ! Here is Eq. 2 of Mastin and Van Eaton, 2020 (m3/s)
-      qnow  = C_Costa*sqrt(k_entrainment_umb)*massfluxnow**(3.0_ip/4.0_ip) / &
+      qnow  = C_Costa*sqrt(k_entrainment_umb)*MassFluxRateMKS_now**(3.0_ip/4.0_ip) / &
               N_BV_umb**(5.0_ip/4.0_ip)
 
       if(time.lt.EPS_SMALL) then
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*) 
           write(outlog(io),*) 'in Umbrella_winds'
-          write(outlog(io),*) '  massfluxnow (kg/s) = ',real(massfluxnow,kind=sp)
+          write(outlog(io),*) '  massfluxnow (kg/s) = ',real(MassFluxRateMKS_now,kind=sp)
           write(outlog(io),*) '             C_Costa = ',real(C_Costa,kind=sp)
           write(outlog(io),*) '                N_BV = ',real(N_BV_umb,kind=sp)
           write(outlog(io),*) '       k_entrainment = ',real(k_entrainment_umb,kind=sp)
