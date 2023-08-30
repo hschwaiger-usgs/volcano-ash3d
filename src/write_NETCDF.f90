@@ -246,6 +246,7 @@
       integer :: i,j,k,isize
       integer :: ivar
       integer,dimension(5) :: chunksizes5
+      logical :: IsThere
 
       INTERFACE
         character (len=13) function HS_yyyymmddhhmm_since(HoursSince,byear,useLeaps)
@@ -354,6 +355,15 @@
       cdf_WindStartTime = HS_xmltime(MR_windfile_starthour(MR_MetStep_findex(1)),BaseYear,useLeap)
 
       ! Create and open netcdf file
+      inquire(file=outfile,exist=IsThere)
+      if(IsThere)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"Specified output netcdf file already exists.  Exiting. "
+          write(errlog(io),*)"Output filename requested = ",outfile
+          stop 1
+        endif;enddo
+      endif
+
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Creating netcdf file"
       endif;enddo
@@ -3387,6 +3397,10 @@
       integer :: it
       real(kind=op), allocatable, dimension(:) :: t_list
 
+      ! Since we haven't opened a logfile yet, only write out to stdout if not a
+      ! control file case.
+      io = 1
+
       ! Open netcdf file for writing
       nSTAT=nf90_open(concenfile,nf90_nowrite,ncid)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"nSTAT=nf90_open")
@@ -3405,16 +3419,12 @@
       nSTAT = nf90_get_var(ncid,t_var_id,t_list)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var t")
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
-        write(outlog(io),*)"  Step :  time"
-        do it = 1,t_len
-          write(outlog(io),*)it,t_list(it)
-        enddo
-      endif;enddo
+      write(outlog(io),*)"  Step :  time"
+      do it = 1,t_len
+        write(outlog(io),*)it,t_list(it)
+      enddo
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),*)'Enter timestep for initialization'
-      endif;enddo
+      write(outlog(io),*)'Enter timestep for initialization'
       read(5,*) init_tstep
 
       nSTAT=nf90_get_var(ncid,t_var_id,dumscal_out,(/init_tstep/))
@@ -3471,12 +3481,6 @@
       ! Get variable ids
       nSTAT = nf90_inq_varid(ncid,"t",t_var_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid t")
-      nSTAT = nf90_inq_varid(ncid,"vx",vx_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid vx")
-      nSTAT = nf90_inq_varid(ncid,"vy",vy_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid vy")
-      nSTAT = nf90_inq_varid(ncid,"vz",vz_var_id)
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid vz")
       nSTAT = nf90_inq_varid(ncid,"ashcon",ashcon_var_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid ashcon")
       nSTAT = nf90_inq_varid(ncid,"depocon",depocon_var_id)

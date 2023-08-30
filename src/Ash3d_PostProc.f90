@@ -91,6 +91,9 @@
 
       use Output_KML
 
+      use help,          only : &
+           help_postproc
+
       use Ash3d_Netcdf
 #ifdef USEDISLIN
       use Ash3d_PostProc_dislin
@@ -256,39 +259,9 @@
           ! restart file
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)'No command-line arguments detected'
-          write(outlog(io),*)'Usage: Ash3d_PostProc control_file [t_index]'
-          write(outlog(io),*)'           or'
-          write(outlog(io),*)'       Ash3d_PostProc infile output_product format'
-          write(outlog(io),*)'  where: infile   = the netcdf file written by Ash3d'
-          write(outlog(io),*)'   output_product = 1 full concentration array'
-          write(outlog(io),*)'                    2 deposit granularity'
-          write(outlog(io),*)'                    3 deposit thickness (mm time-series)'
-          write(outlog(io),*)'                    4 deposit thickness (inches time-series)'
-          write(outlog(io),*)'                    5 deposit thickness (mm final)'
-          write(outlog(io),*)'                    6 deposit thickness (inches final)'
-          write(outlog(io),*)'                    7 ashfall arrival time (hours)'
-          write(outlog(io),*)'                    8 ashfall arrival at airports/POI (mm)'
-          write(outlog(io),*)'                    9 ash-cloud concentration (mg/m3)'
-          write(outlog(io),*)'                   10 ash-cloud height (km)'
-          write(outlog(io),*)'                   11 ash-cloud bottom (km)'
-          write(outlog(io),*)'                   12 ash-cloud load (T/km2 or )'
-          write(outlog(io),*)'                   13 ash-cloud radar reflectivity (dBz)'
-          write(outlog(io),*)'                   14 ash-cloud arrival time (hours)'
-          write(outlog(io),*)'                   15 topography'
-          write(outlog(io),*)'                   16 profile plots'
-          write(outlog(io),*)'           format = 1 ASCII/ArcGIS'
-          write(outlog(io),*)'                    2 KML/KMZ'
-          write(outlog(io),*)'                    3 image/png'
-          write(outlog(io),*)'                    4 binary'
-          write(outlog(io),*)'                    5 shape file'
-          write(outlog(io),*)'                    6 grib2'
-          write(outlog(io),*)'                    7 netcdf'
-          write(outlog(io),*)'                    8 tecplot'
-          write(outlog(io),*)'                    9 vtk'
-  
-          write(outlog(io),*)'         [t_index] = index of time slice to plot; -1 for final (optional)'
           write(outlog(io),*)'  '
         endif;enddo
+        call help_postproc
 
         if(VB(1).ge.verbosity_silent)then
           do io=1,2

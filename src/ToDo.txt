@@ -4,8 +4,7 @@ Test replacing the global file.
 Test having sample points (non-airports)
 Test projecting (or not) airport list
 
-Test vertical profile source.
-Sort_Tephra_Size needs to be sorted on size, not fall velocity.
+Add outflow to netcdf output file.  Needed for restart cases.
 
 Code up help
 

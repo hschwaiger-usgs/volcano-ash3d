@@ -100,6 +100,8 @@
       real(kind=ip)         :: MassConsErr
 
       INTERFACE
+        subroutine Parse_Command_Line
+        end subroutine Parse_Command_Line
         subroutine Set_OS_Env
         end subroutine Set_OS_Env
         subroutine Read_Control_File
@@ -133,6 +135,9 @@
 
       ! Start time logging
       call cpu_time(t0) !time is a scaler real
+
+      ! First, parse the command-line
+      call Parse_Command_Line
 
       ! Before we do anything, get the state of the executable, system, environment and run
       call Set_OS_Env
@@ -522,8 +527,10 @@
         if(SourceCumulativeVol.gt.EPS_TINY)then
           MassConsErr = abs(SourceCumulativeVol-tot_vol)/SourceCumulativeVol
         endif
-           ! Error stop condition if the concen and outflow do not match the source
-        StopConditions(4) = (MassConsErr.gt.1.0e-3_ip)
+           ! Error stop condition if the concen and outflow do not match the source,
+           ! but only trigger this condition if not a restart case (until outflow is tracked)
+        if(.not.LoadConcen) &
+          StopConditions(4) = (MassConsErr.gt.1.0e-3_ip)
            ! Error stop condition if any volume measure is negative
         StopConditions(5) = (dep_vol.lt.-1.0_ip*EPS_SMALL).or.&
                             (aloft_vol.lt.-1.0_ip*EPS_SMALL).or.&
@@ -688,7 +695,3 @@
       close(global_log)       !close log file 
 
       end program Ash3d
-
-
-!                             real(sum(e_volume)*MagmaDensity*KM3_2_M3*1.0e-9,kind=sp)," Tg"
-

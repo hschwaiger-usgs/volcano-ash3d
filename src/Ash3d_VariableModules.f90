@@ -85,7 +85,7 @@
       integer,parameter :: verbosity_log          = 3  ! Time step information (this is the limit for writing to logfile)
       integer,parameter :: verbosity_info         = 4  ! Additional information on run set up and shutdown
       integer,parameter :: verbosity_statistics   = 5  ! Details on health of run (timing, mass conservation)
-      integer,parameter :: verbosity_production   = 6  ! Major program flow info
+      integer,parameter :: verbosity_production   = 6  ! Major program flow info only
       integer,parameter :: verbosity_essential    = 7  ! Only start up and shutdown messages
       integer,parameter :: verbosity_error        = 8  ! No logging to stdout, only stderr (and logfile)
       integer,parameter :: verbosity_silent       = 9  ! No logging to stdout,stderr. Logfile written as normal

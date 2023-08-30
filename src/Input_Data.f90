@@ -1,5 +1,172 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
+!  Subroutine Parse_Command_Line
+!
+!  Called from: Ash3d.F90
+!  Arguments:
+!    none
+!
+! This subroutine parses the Ash3d command line to determine if the user needs
+! help, is running Ash3d interactively, or is running Ash3d via a control file.
+! Returns variables: LoadConcen, infile
+!
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine Parse_Command_Line
+
+      ! This module requires Fortran 2003 or later
+      use iso_c_binding
+
+      ! This module requires Fortran 2003 or later
+      use iso_fortran_env, only : &
+         input_unit
+
+      use precis_param
+
+      use io_units
+
+      use io_data,       only : &
+         concenfile,infile,LoadConcen
+
+      use help,          only : &
+             help_general, &
+             help_make,    &
+             help_run,     &
+             help_input,   &
+             help_postproc
+
+#ifdef USENETCDF
+      use Ash3d_Netcdf
+#endif
+
+      implicit none
+
+      integer           :: nargs          ! number of command-line arguments
+      character(len=3)  :: answer
+      character(len=130):: linebuffer130
+      character         :: testkey,testkey2
+      integer           :: status
+
+      !character(kind=c_char), dimension(1:130) :: fc_inputfile
+      character, dimension(1:130) :: fc_inputfile
+      ! Size matches length of infile (specified in module io_data)
+      integer fc_len
+
+      ! Since we haven't opened a logfile yet, only write out to stdout if not a
+      ! control file case.
+      io = 1
+
+      ! Test read command-line arguments
+      nargs = command_argument_count()
+      if (nargs.eq.0) then
+          ! If no command-line arguments are given, then prompt user
+          ! interactively for the command file name and possible a 
+          ! restart file
+        if(VB(1).ge.verbosity_silent)then
+          write(errlog(io),*)"Stdout is suppressed via ASH3DVERB=9, but interactive input is expected."
+          write(errlog(io),*)"Either recompile with ASH3DVERB<9, over-ride with the environment variable"
+          write(errlog(io),*)"(ASH3DVERB) or provide the correct command-line arguments."
+          stop 1
+        else
+          write(outlog(io),*)'Enter name of ESP input file:'
+        endif
+        read(input_unit,*) infile
+        write(outlog(io),*)'Load concentration file?'
+        read(input_unit,'(a3)') answer
+        if (answer.eq.'y'.or.answer.eq.'yes') then
+          LoadConcen = .true.
+        elseif (answer.eq.'n'.or.answer.eq.'no') then
+          LoadConcen = .false.
+        else
+          write(errlog(io),*) 'Sorry, I cannot understand your answer.'
+          write(errlog(io),*) "Expected either 'yes' or 'no', but you provided:",answer
+          stop 1
+        endif
+        if(LoadConcen)then
+          ! We are initializing the concentration and time from an output file
+          ! Currently, Ash3d assumes the concentration file is compatible with
+          ! the computational grid and grainsize distribution
+          write(outlog(io),*)'Enter name of concentration file'
+          read(input_unit,*) concenfile
+#ifdef USENETCDF
+          call NC_RestartFile_ReadTimes
+#else
+          write(errlog(io),*)"ERROR: ",&
+           "Loading concentration files requires previous netcdf"
+          write(errlog(io),*)&
+           "       output.  This Ash3d executable was not compiled with"
+          write(errlog(io),*)&
+           "       netcdf support.  Please recompile Ash3d with"
+          write(errlog(io),*)&
+           "       USENETCDF=T, or select another source."
+          stop 1
+#endif
+        endif
+      elseif (nargs.ge.1) then
+        !if (nargs.gt.1) then
+        !  do io=1,2;if(VB(io).le.verbosity_production)then
+        !    write(outlog(io),*)&
+        !     "Only one command-line argument is expected."
+        !    write(outlog(io),*)&
+        !     "Reading first arguement as the control files and"
+        !    write(outlog(io),*)&
+        !     "disregarding all other arguements."
+        !  endif;enddo
+        !endif
+          ! If only one argument is given, first test for the '-h' indicating a help
+          ! request.
+        call get_command_argument(1, linebuffer130, status)
+        testkey  = linebuffer130(1:1)
+        testkey2 = linebuffer130(2:2)
+        if(testkey.eq.'-')then
+          if(testkey2.eq.'h')then
+            if (nargs.eq.1) then
+              ! command is Ash3d -h
+              call help_general
+            else
+              ! command is Ash3d -h [help topic]
+              call get_command_argument(2, linebuffer130, status)
+              if(trim(adjustl(linebuffer130)).eq.'make')then
+                write(*,*)"Calling help for make"
+                call help_make
+              elseif(trim(adjustl(linebuffer130)).eq.'run')then
+                call help_run
+              elseif(trim(adjustl(linebuffer130)).eq.'input')then
+                call help_input
+              elseif(trim(adjustl(linebuffer130)).eq.'postproc')then
+                write(*,*)"Calling help for postproc"
+                call help_postproc
+              endif
+            endif
+          else
+            !  This branch is reserved for when we can't figure out
+            !  what help the user wants
+            write(outlog(io),*) 'Unknown command line options'
+            call help_general
+          endif
+          stop 1
+        else
+          ! If the first argument does not begin with '-', then
+          ! assume it is the input file name
+          read(linebuffer130,*)infile
+        endif
+      elseif (nargs < 0) then
+        !! When code called from ForestClaw, nargs is -1
+        fc_len = 0
+        do
+          if (fc_inputfile(fc_len+1) == C_NULL_CHAR) exit
+          fc_len = fc_len + 1
+          infile(fc_len:fc_len) = fc_inputfile(fc_len)
+        end do
+        write(outlog(io),*) 'Reading input file ''',&
+                           infile,''' from ForestClaw'
+      endif
+
+      end subroutine Parse_Command_Line
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
 !  Subroutine Read_Control_File()
 !
 ! This subroutine sets up the parameters for the Ash3d run.
@@ -61,7 +228,7 @@
          cdf_b6l5,cdf_comment,cdf_title,cdf_institution,cdf_source,cdf_history,cdf_references,&
          outfile,VolcanoName,WriteTimes,nWriteTimes,cdf_conventions,cdf_run_class,cdf_url,&
          x_vprofile,y_vprofile,i_vprofile,j_vprofile,Site_vprofile,&
-         concenfile,infile,ioutputFormat,LoadConcen,log_step,NextWriteTime,&
+         infile,ioutputFormat,LoadConcen,log_step,NextWriteTime,&
          AppendExtAirportFile,WriteInterval,WriteGSD,WriteDepositTS_KML,WriteDepositTS_ASCII,&
          WriteDepositTime_KML,WriteDepositTime_ASCII,WriteDepositFinal_KML,&
          WriteDepositFinal_ASCII,WriteCloudTime_KML,WriteCloudTime_ASCII,&
@@ -131,11 +298,7 @@
 
       implicit none
 
-      !character(kind=c_char), dimension(1:130) :: fc_inputfile
-      character, dimension(1:130) :: fc_inputfile
-
       integer           :: i,k,ii,isize
-      integer           :: nargs          ! number of command-line arguments
 
       integer, allocatable, dimension(:)       :: iyear  ! time data read from files
       integer, allocatable, dimension(:)       :: imonth
@@ -151,13 +314,12 @@
 
       integer           :: iw,iwf,igrid,idf,iwfiles
       integer           :: ivalue1, ivalue2, ivalue3, ivalue4
-      integer           :: status
       integer           :: loc
       integer           :: iform
 
       character(len=80) :: Comp_projection_line
       integer           :: ilatlonflag
-      character         :: testkey,testkey2
+      character         :: testkey
       integer           :: iendstr,ios,ioerr,init_n_gs_max
       real(kind=ip)     :: value1, value2, value3, value4, value5
       real(kind=ip)     :: tmp_ip
@@ -182,13 +344,7 @@
       logical           :: runAsForecast       = .false.           ! This will be changed if year=0
       real(kind=dp)     :: FC_Offset = 0.0_dp
 
-      ! Size matches length of infile (specified in module io_data)
-      integer fc_len
-
       INTERFACE
-        subroutine help_input(blockID)
-          integer,intent(in) :: blockID
-        end subroutine help_input
         subroutine LatLonChecker(latLL,lonLL,lat_volcano,lon_volcano,gridwidth_e,gridwidth_n)
           integer,parameter  :: ip         = 8 ! Internal precision
           real(kind=ip), intent(in)    :: latLL
@@ -237,135 +393,10 @@
         write(outlog(io),*)"--------------------------------------------------"
       endif;enddo
 
-      !initialize output
+      ! Initialize output
       formatanswer = 'null'
-      nWriteTimes  = 0                  !number of output files to write (default=0)
-      NextWriteTime = 1.0_ip/EPS_TINY   !Time to write the next file (default = never)
-
-      ! Test read command-line arguments
-      nargs = command_argument_count()
-      if (nargs.eq.0) then
-          ! If no command-line arguments are given, then prompt user
-          ! interactively for the command file name and possible a 
-          ! restart file
-        if(VB(1).ge.verbosity_silent)then
-          do io=1,2
-            write(errlog(io),*)"Stdout is suppressed via ASH3DVERB=9, but interactive input is expected."
-            write(errlog(io),*)"Either recompile with ASH3DVERB<9, over-ride with the environment variable"
-            write(errlog(io),*)"(ASH3DVERB) or provide the correct command-line arguments."
-          enddo
-          stop 1
-        else
-          do io=1,2;if(VB(io).le.verbosity_production)then
-            write(outlog(io),*)'Enter name of ESP input file:'
-          endif;enddo
-        endif
-        read(input_unit,*) infile
-        do io=1,2;if(VB(io).le.verbosity_production)then
-          write(outlog(io),*)'Load concentration file?'
-        endif;enddo
-        read(input_unit,'(a3)') answer
-        if (answer.eq.'y'.or.answer.eq.'yes') then
-          LoadConcen = .true.
-        elseif (answer.eq.'n'.or.answer.eq.'no') then
-          LoadConcen = .false.
-        else
-          do io=1,2;if(VB(io).le.verbosity_error)then
-            write(errlog(io),*) 'Sorry, I cannot understand your answer.'
-            write(errlog(io),*) "Expected either 'yes' or 'no', but you provided:",answer
-          endif;enddo
-          stop 1
-        endif
-        if(LoadConcen)then
-          ! We are initializing the concentration and time from an output file
-          ! Currently, Ash3d assumes the concentration file is compatible with
-          ! the computational grid and grainsize distribution
-          do io=1,2;if(VB(io).le.verbosity_production)then
-            write(outlog(io),*)'Enter name of concentration file'
-          endif;enddo
-          read(input_unit,*) concenfile
-#ifdef USENETCDF
-          call NC_RestartFile_ReadTimes
-#else
-          do io=1,2;if(VB(io).le.verbosity_error)then
-            write(errlog(io),*)"ERROR: ",&
-             "Loading concentration files requires previous netcdf"
-            write(errlog(io),*)&
-             "       output.  This Ash3d executable was not compiled with"
-            write(errlog(io),*)&
-             "       netcdf support.  Please recompile Ash3d with"
-            write(errlog(io),*)&
-             "       USENETCDF=T, or select another source."
-          endif;enddo
-          stop 1
-#endif
-        endif
-      elseif (nargs.ge.1) then
-        !if (nargs.gt.1) then
-        !  do io=1,2;if(VB(io).le.verbosity_production)then
-        !    write(outlog(io),*)&
-        !     "Only one command-line argument is expected."
-        !    write(outlog(io),*)&
-        !     "Reading first arguement as the control files and"
-        !    write(outlog(io),*)&
-        !     "disregarding all other arguements."
-        !  endif;enddo
-        !endif
-          ! If only one argument is given, first test for the '-h' indicating a help
-          ! request.
-        call get_command_argument(1, linebuffer130, status)
-        testkey  = linebuffer130(1:1)
-        testkey2 = linebuffer130(2:2)
-        if(testkey.eq.'-')then
-          if(testkey2.eq.'h')then
-            ! There should be some parsing of the help parameters
-            ! such as
-            ! Ash3d -h     or   Ash3d -h run
-            !            : gives information on how to execute
-            ! call help_run()
-            !
-            ! Ash3d -h input
-            !            : gives information on input file format
-            !call help_input(0)
-            !
-            ! Ash3d -h make
-            !            : gives information on the different make options
-            ! call help_make()
-            !
-            ! Ash3d -h wind
-            !            : gives information on the different wind
-            !            files, where to get them, etc.
-            ! call help_wind()
-            !
-
-            ! For now, just assume info is wanted on input file format
-
-            ! Call help routine for block=0 (i.e. all blocks of input
-            ! file)
-            call help_input(0) 
-          !else
-          !  This branch is reserved for when we can't figure out
-          !  what help the user wants
-          endif
-          stop 1
-        else
-          ! If the first argument does not begin with '-', then
-          ! assume it is the input file name
-          read(linebuffer130,*)infile
-        endif
-      elseif (nargs < 0) then
-        !! When code called from ForestClaw, nargs is -1
-        fc_len = 0
-        do
-          if (fc_inputfile(fc_len+1) == C_NULL_CHAR) exit
-          fc_len = fc_len + 1
-          infile(fc_len:fc_len) = fc_inputfile(fc_len)
-        end do
-        do io=1,2;if(VB(io).le.verbosity_production)then
-          write(outlog(io),*) 'Reading input file ''',&
-                             infile,''' from ForestClaw'
-        endif;enddo
-      endif
+      nWriteTimes  = 0                  ! number of output files to write (default=0)
+      NextWriteTime = 1.0_ip/EPS_TINY   ! Time to write the next file (default = never)
 
       ! Open and read control file
       do io=1,2;if(VB(io).le.verbosity_production)then
@@ -375,7 +406,7 @@
       inquire( file=infile, exist=IsThere )
       if(.not.IsThere)then
         do io=1,2;if(VB(io).le.verbosity_error)then
-          write(errlog(io),*)"ERROR: Cannot file input file"
+          write(errlog(io),*)"ERROR: Cannot find input file"
         endif;enddo
         stop 1
       endif

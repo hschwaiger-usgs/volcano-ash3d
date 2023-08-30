@@ -3,6 +3,7 @@
 !  Subroutine Set_OS_Env 
 !
 !  This subroutine evaluates the state of all aspect of the run.
+!  It is call from Ash3d.F90, or the help subroutine help_make
 !  First, runtime environment variables are checked, including:
 !    ASH3DVERB : (1-10), allows the verbosity level from the default (3) at runtime
 !      = 1 : debug2        Additional debugging information only written to stdout
