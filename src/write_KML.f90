@@ -1,6 +1,6 @@
 !##############################################################################
 !
-!  Output_KML module
+!  Ash3d_KML_IO module
 !
 !  This module manages all output to kml files
 !
@@ -14,7 +14,7 @@
 !
 !##############################################################################
 
-      module Output_KML
+      module Ash3d_KML_IO
 
       use precis_param
 
@@ -426,6 +426,8 @@
       real(kind=ip)       :: longLL,longUR
       real(kind=ip)       :: lattLL,lattUR
 
+      real(kind=dp)       :: olam,ophi ! using precision needed by libprojection
+
       integer,       dimension(:), allocatable :: iyear, imonth, iday
       real(kind=ip), dimension(:), allocatable :: StartHour
 
@@ -530,10 +532,12 @@
 
       ! Plot volcano
       if (.not.IsLatLon) then                        !get lon_volcano and lat_volcano
-        call PJ_proj_inv(x_volcano, y_volcano, &
+        call PJ_proj_inv(real(x_volcano,kind=dp),real(y_volcano,kind=dp), &
                    A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
                    A3d_k0_scale,A3d_Re, &
-                   lon_volcano,lat_volcano)
+                   olam,ophi)
+        lon_volcano = real(olam,kind=ip)
+        lat_volcano = real(ophi,kind=ip)
       endif
       if (lon_volcano.gt.180.0_ip) then
         write(fid,9) lon_volcano-360.0_ip, lat_volcano
@@ -742,6 +746,8 @@
       integer        :: height_flag          ! <0 : min, =0 : ground, >0 : max
       integer        :: TS_flag              ! 0 = not a time-series, 1 = time-series
 
+      real(kind=dp)       :: olam,ophi ! using precision needed by libprojection
+
       integer             :: i,j
       character (len=9)   :: StyleNow3
       real(kind=ip)       :: xleft,xright,ybottom,ytop
@@ -822,26 +828,36 @@
             xright  = x_cc_pd(i) + dx/2.0_ip
             ybottom = y_cc_pd(j) - dy/2.0_ip
             ytop    = y_cc_pd(j) + dy/2.0_ip
-            call PJ_proj_inv(xleft, ybottom,  &
+            call PJ_proj_inv(real(xleft,kind=dp), real(ybottom,kind=dp),  &
                         A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
                         A3d_k0_scale,A3d_Re, &
-                           longLL,lattLL)
-            call PJ_proj_inv(xleft,    ytop,  &
+                           olam,ophi)
+            longLL = real(olam,kind=ip)
+            lattLL = real(ophi,kind=ip)
+            call PJ_proj_inv(real(xleft,kind=dp),    real(ytop,kind=dp),  &
                         A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
                         A3d_k0_scale,A3d_Re, &
-                           longUL,lattUL)
-            call PJ_proj_inv(xright,   ytop,  &
+                           olam,ophi)
+            longUL = real(olam,kind=ip)
+            lattUL = real(ophi,kind=ip)
+            call PJ_proj_inv(real(xright,kind=dp),   real(ytop,kind=dp),  &
                         A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
                         A3d_k0_scale,A3d_Re, &
-                           longUR,lattUR)
-            call PJ_proj_inv(xright,ybottom,  &
+                           olam,ophi)
+            longUR = real(olam,kind=ip)
+            lattUR = real(ophi,kind=ip)
+            call PJ_proj_inv(real(xright,kind=dp),real(ybottom,kind=dp),  &
                         A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
                         A3d_k0_scale,A3d_Re, &
-                           longLR,lattLR)
-            call PJ_proj_inv(x_cc_pd(i),y_cc_pd(j),  &
+                           olam,ophi)
+            longLR = real(olam,kind=ip)
+            lattLR = real(ophi,kind=ip)
+            call PJ_proj_inv(real(x_cc_pd(i),kind=dp),real(y_cc_pd(j),kind=dp),  &
                         A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
                         A3d_k0_scale,A3d_Re, &
-                           longCC,lattCC)
+                           olam,ophi)
+            longCC = real(olam,kind=ip)
+            lattCC = real(ophi,kind=ip)
           endif ! IsLatLon
           if (longLL>180.0_ip) longLL = longLL-360.0_ip
           if (longUL>180.0_ip) longUL = longUL-360.0_ip
@@ -1067,7 +1083,7 @@
       integer             :: nWrittenOut
       character (len=13)  :: yyyymmddhh
       character (len=1)   :: cloud_morethan, deposit_morethan      !equals ">" if cloud is still overhead or ash is still falling
-      real(kind=ip)       :: CloudTime
+      real(kind=dp)        :: CloudTime
       character (len=20)  :: xmlTimeStart, xmlTimeEnd
       real(kind=ip)       :: airlon,airlat
 
@@ -1084,8 +1100,9 @@
       character(len=80) :: execpath
 
       real(kind=ip) :: ymaxpl
-      logical                 :: IsThere
-      integer             :: status
+      logical       :: IsThere
+      integer       :: status
+      real(kind=dp)  :: olam,ophi ! using precision needed by libprojection
 
       INTERFACE
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
@@ -1251,10 +1268,12 @@
         endif
       enddo
       if (IsLatLon.eqv..False.) then      !Put a placemark at the location of the volcano
-        call PJ_proj_inv(x_volcano, y_volcano,  &
+        call PJ_proj_inv(real(x_volcano,kind=dp), real(y_volcano,kind=dp),  &
                       A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
                       A3d_k0_scale,A3d_Re, &
-                      lon_volcano,lat_volcano)
+                      olam,ophi)
+        lon_volcano = real(olam,kind=ip)
+        lat_volcano = real(ophi,kind=ip)
       endif
 
       allocate(iyear(neruptions))         !Generate data needed to write ESP's
@@ -1591,9 +1610,10 @@
       use projection,    only : &
            PJ_proj_inv
 
-      real(kind=ip)  :: xplot(0:40),yplot(0:40),lonplot(0:40),latplot(0:40)
-      real(kind=ip)  :: xleft,xright,ybottom,ytop
-      integer        :: ict, fid
+      real(kind=ip) :: xplot(0:40),yplot(0:40),lonplot(0:40),latplot(0:40)
+      real(kind=ip) :: xleft,xright,ybottom,ytop
+      integer       :: ict, fid
+      real(kind=dp)  :: olam,ophi ! using precision needed by libprojection
 
       write(fid,3) ! write style for model boundary
 
@@ -1621,10 +1641,12 @@
         latplot = yplot
        else
         do ict=0,40
-          call PJ_proj_inv(xplot(ict),yplot(ict),  &
+          call PJ_proj_inv(real(xplot(ict),kind=dp),real(yplot(ict),kind=dp),  &
                         A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
                         A3d_k0_scale,A3d_Re, &
-                        lonplot(ict),latplot(ict))
+                        olam,ophi)
+          lonplot(ict) = real(olam,kind=ip)
+          latplot(ict) = real(ophi,kind=ip)
         enddo
       endif
 
@@ -1757,5 +1779,5 @@
 !      end function month
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      end module Output_KML
+      end module Ash3d_KML_IO
 !##############################################################################

@@ -156,7 +156,7 @@
               ! for gnuplot
               write(13,*) real(CityLon_out(i),kind=4),real(CityLat_out(i),kind=4),&
                           '"',trim(adjustl(CityName_out(i))),'"'
-3             format(2f10.4,1x,a26)
+!3             format(2f10.4,1x,a26)
             enddo
           else
             do io=1,2;if(VB(io).le.verbosity_info)then

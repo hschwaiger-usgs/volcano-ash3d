@@ -54,7 +54,7 @@
          WriteTimes,VolcanoName,cdf_institution,cdf_run_class,cdf_url,cdf_b3l1
 
       use Source,        only : &
-         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
+         neruptions,e_Volume,e_Duration,e_PlumeHeight
 
       use time_data,     only : &
          time,BaseYear,useLeap,SimStartHour,os_time_log
@@ -508,8 +508,8 @@
 
         do ipart=1,ContourDataNcurves(irec)
           do i=1,ContourDataNpoints(irec,ipart)
-            write(ov_mainID)LitEnd_8real(IsLitEnd,ContourDataX(irec,ipart,i))
-            write(ov_mainID)LitEnd_8real(IsLitEnd,ContourDataY(irec,ipart,i))
+            write(ov_mainID)LitEnd_8real(IsLitEnd,real(ContourDataX(irec,ipart,i),kind=8))
+            write(ov_mainID)LitEnd_8real(IsLitEnd,real(ContourDataY(irec,ipart,i),kind=8))
           enddo ! points in part
         enddo ! ipart
 

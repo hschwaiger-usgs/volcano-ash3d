@@ -776,7 +776,6 @@
 
       integer,intent(in) :: pt_indx
 
-      real(kind=DS) :: ymaxpl
       character(len=14) :: dp_pngfile
       integer,save      :: plot_index = 0
 

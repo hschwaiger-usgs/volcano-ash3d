@@ -203,8 +203,8 @@
       logical,       dimension(:,:),pointer,public :: Mask_Deposit
       real(kind=ip), dimension(:,:),pointer,public :: DepositThickness => null() ! accumulated ash thickness on ground (mm)
       real(kind=ip), dimension(:,:),pointer,public :: MaxConcentration => null() ! max concentration in the cloud at any i,j node (mg/m3)
-      real(kind=ip), dimension(:,:),pointer,public :: DepArrivalTime   => null() ! (hours)
-      real(kind=ip), dimension(:,:),pointer,public :: CloudArrivalTime => null() ! (hours)
+      real(kind=dp), dimension(:,:),pointer,public :: DepArrivalTime   => null() ! (hours)
+      real(kind=dp), dimension(:,:),pointer,public :: CloudArrivalTime => null() ! (hours)
       real(kind=ip), dimension(:,:),pointer,public :: CloudLoad        => null() ! Ash load in cloud, (tonnes/km2)
       real(kind=ip), dimension(:,:),pointer :: CloudLoadLast    => null() ! Ash load at last time step, (tonnes/km2)
       real(kind=ip), dimension(:,:),pointer,public :: MaxHeight        => null() ! maximum cloud height (km)
@@ -223,8 +223,8 @@
       logical,       dimension(:,:),allocatable,public :: Mask_Deposit
       real(kind=ip), dimension(:,:),allocatable,public :: DepositThickness   ! accumulated ash thickness on ground in mm (x,y)
       real(kind=ip), dimension(:,:),allocatable,public :: MaxConcentration   ! max concentration in the cloud at any i,j node (mg/m3)
-      real(kind=ip), dimension(:,:),allocatable,public :: DepArrivalTime     ! (hours)
-      real(kind=ip), dimension(:,:),allocatable,public :: CloudArrivalTime   ! (hours)
+      real(kind=dp), dimension(:,:),allocatable,public :: DepArrivalTime     ! (hours)
+      real(kind=dp), dimension(:,:),allocatable,public :: CloudArrivalTime   ! (hours)
       real(kind=ip), dimension(:,:),allocatable,public :: CloudLoad          ! Ash load in cloud, tonnes/km2
       real(kind=ip), dimension(:,:),allocatable :: CloudLoadLast      ! Ash load at last time step, tonnes/km2
       real(kind=ip), dimension(:,:),allocatable,public :: MaxHeight          ! maximum cloud height
@@ -235,14 +235,14 @@
       real(kind=ip), dimension(:,:,:),allocatable,public :: pr_ash           ! concentration profile
 
         ! These arrays are only used when reading an output file of unknown size
-      real(kind=ip), dimension(:,:),allocatable,public :: R_XY
-      integer      ,public :: R_nx
-      integer      ,public :: R_ny
-      real(kind=ip),public :: R_xll
-      real(kind=ip),public :: R_yll
-      real(kind=ip),public :: R_dx
-      real(kind=ip),public :: R_dy
-      real(kind=ip),public :: R_Fill
+      !real(kind=ip), dimension(:,:),allocatable,public :: R_XY
+      !integer      ,public :: R_nx
+      !integer      ,public :: R_ny
+      !real(kind=ip),public :: R_xll
+      !real(kind=ip),public :: R_yll
+      !real(kind=ip),public :: R_dx
+      !real(kind=ip),public :: R_dy
+      !real(kind=ip),public :: R_Fill
 
         ! 3-D variables
         !   (in x,y,z)
@@ -1315,7 +1315,8 @@
       do i=1,nairports
         Airport_CloudHere(i)  = CloudLoad(Airport_i(i),Airport_j(i))
         Airport_thickness(i)  = bilinear_thickness(i,DepositThickness)
-        Airport_depRate(i)    = (Airport_thickness(i)-Airport_thicknessLast(i))/dt       !dep. rate, mm/hr
+        Airport_depRate(i)    = (Airport_thickness(i)-Airport_thicknessLast(i)) / &
+                                real(dt,kind=ip)       !dep. rate, mm/hr
 
         !For airports where ash has arrived . . .
         !mark fall duration if ash has stopped falling

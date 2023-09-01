@@ -1,3 +1,6 @@
+----------------------------------
+Ash3d
+----------------------------------
 Test airport files with projected values
 Test supplementing the global file.
 Test replacing the global file.
@@ -9,3 +12,48 @@ Add outflow to netcdf output file.  Needed for restart cases.
 DepositGranularity should be part of tephra and only over n_gs_max, not identical to outflow_xy1_pd
 
 Add limits to iteration of vset so as to prevent run-away iterations.
+
+Add Albers to projection list
+Add new VOTW numbers to current database
+Add max z as optional parameter on line 7
+Fix dz_clog and dz_cuts
+Change 3d ascii output to include deposit separately.
+
+Add ip and op to argument lists to nail down interface blocks.
+Verify that all allocated variables are deallocated.
+Add a check for cwd in MetReader to give full paths to windfiles (needed in Win)
+
+Add tool to recreate input file from netcdf file
+Investigate all overflow/underflow errors
+Test timing of do loops reversed; particularly with openMP
+
+
+----------------------------------
+Ash3d_PostProc
+----------------------------------
+Make sure the colors are as specified for both plplot and dislin
+Check out gmt for fortran
+write GMT subroutine that export script file
+
+Confirm preferred shapefile specifications
+ name? : ; limited to 8 char
+ polylineM, polylineZ, add point with ESP's, check record type, available via URL,
+ proj, dBASE version
+
+Add command-file option
+
+Add custom contour levels
+
+Check ASCII output
+
+Add ability to convert ascii to png or shapefile
+
+Make sure all the postproc utilities work with projected grids too, including citywriter.
+
+Allow postproc program to read from input file and allow:
+  reading of 3d  binary data
+  loading 2d ASCII or binary data and allowing plots or other 2d output
+  Must have sections in the input file to allow for meta data normally pulled from netcdf
+  Add exposure output product when given flight path
+
+

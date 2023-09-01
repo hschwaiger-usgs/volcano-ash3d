@@ -207,8 +207,8 @@
       real(kind=ip)            :: CFL = 0.80_ip       ! courant number
                                                       ! Note: CFL can be reset via environment
                                                       !       variables or via the input file
-      real(kind=ip)            :: DT_MIN = 1.0e-5_ip  ! Minimum DT in hours
-      real(kind=ip)            :: DT_MAX = 1.0e0_ip   ! Maximum DT in hours
+      real(kind=dp)            :: DT_MIN = 1.0e-5_dp  ! Minimum DT in hours
+      real(kind=dp)            :: DT_MAX = 1.0e0_dp   ! Maximum DT in hours
 
       ! Stop conditions
       !  1 = check if amount aloft is too little
@@ -756,9 +756,10 @@
       real(kind=dp)      :: time             ! physical time simulated by this model
 
       real(kind=ip)      :: t0,t1,t2        ! CPU time indicators
-      real(kind=ip)      :: dt              ! dt used for actual integration
-      real(kind=ip)      :: dt_meso_last    ! dt as calculated from meso_last
-      real(kind=ip)      :: dt_meso_next    ! dt as calculated from meso_next
+      real(kind=ip)      :: dt_ip
+      real(kind=dp)      :: dt              ! dt used for actual integration
+      real(kind=dp)      :: dt_meso_last    ! dt as calculated from meso_last
+      real(kind=dp)      :: dt_meso_next    ! dt as calculated from meso_next
 
       ! Some stings that hold time data used in output files
       !character(len=17)  :: os_time_log

@@ -1,6 +1,6 @@
 !##############################################################################
 ! 
-! Ash3d_Netcdf module
+! Ash3d_Netcdf_IO module
 !
 ! This module manages all input and output of Ash3d data in netcdf format.
 !
@@ -13,7 +13,7 @@
 !
 !##############################################################################
 
-      module Ash3d_Netcdf
+      module Ash3d_Netcdf_IO
 
       use precis_param
 
@@ -4982,6 +4982,6 @@
       end subroutine NC_Read_Output_Products
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      end module Ash3d_Netcdf
+      end module Ash3d_Netcdf_IO
 
 !##############################################################################

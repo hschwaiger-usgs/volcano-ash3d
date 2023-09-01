@@ -224,7 +224,7 @@
          concen_pd,IsAloft,imin,imax,jmin,jmax,kmin,kmax
 
       use time_data,     only : &
-         dt
+         dt_ip
 
       integer :: j,k,n  ! These are the indices mapping to the global arrays
       integer :: l_I    ! This is the interface index along the particular diffusion direction
@@ -282,7 +282,7 @@
         if(.not.IsAloft(n)) cycle
       !!!$OMP PARALLEL DO &
       !!!$OMP DEFAULT(NONE) &
-      !!!$OMP SHARED(n,nymax,nzmax,ncells,nsmax,dt,concen_pd,kappa_pd,&
+      !!!$OMP SHARED(n,nymax,nzmax,ncells,nsmax,dt_ip,concen_pd,kappa_pd,&
       !!!$OMP sigma_nx_pd,kx,&
       !!!$OMP IsPeriodic),&
       !!!$OMP PRIVATE(l,j,k,q_cc,update_cc,ds,k_ds2_I,&
@@ -316,9 +316,9 @@
                 ! Eq 4.11 LeVeque02
                 ! Note that the ds used for the diffusive flux uses the
                 ! interface of the flux, but the kappa of the updated cell
-              LFluct_Rbound = dt*k_ds_I(l_I+1)*dq_I(l_I+1)* &
+              LFluct_Rbound = dt_ip*k_ds_I(l_I+1)*dq_I(l_I+1)* &
                                (sig_I(l_I+1)/vol_cc(l_cc))
-              RFluct_Lbound = -dt*k_ds_I(l_I  )*dq_I(l_I  )* &
+              RFluct_Lbound = -dt_ip*k_ds_I(l_I  )*dq_I(l_I  )* &
                                (sig_I(l_I)/vol_cc(l_cc))
 
               update_cc(l_cc) = LFluct_Rbound + RFluct_Lbound
@@ -372,7 +372,7 @@
          concen_pd,IsAloft,imin,imax,jmin,jmax,kmin,kmax
 
       use time_data,     only : &
-         dt
+         dt_ip
 
       integer :: i,k,n  ! These are the indices mapping to the global arrays
       integer :: l_I    ! This is the interface index along the particular diffusion direction
@@ -423,7 +423,7 @@
         if(.not.IsAloft(n)) cycle
       !!!$OMP PARALLEL DO &
       !!!$OMP DEFAULT(NONE) &
-      !!!$OMP SHARED(n,nxmax,nzmax,ncells,nsmax,dt,concen_pd,kappa_pd,&
+      !!!$OMP SHARED(n,nxmax,nzmax,ncells,nsmax,dt_ip,concen_pd,kappa_pd,&
       !!!$OMP sigma_ny_pd,ky,&
       !!!$OMP IsPeriodic),&
       !!!$OMP PRIVATE(l,j,k,q_cc,update_cc,ds,k_ds2_I,&
@@ -457,9 +457,9 @@
                 ! Eq 4.11 LeVeque02
                 ! Note that the ds used for the diffusive flux uses the
                 ! interface of the flux, but the kappa of the updated cell
-              LFluct_Rbound = dt*k_ds_I(l_I+1)*dq_I(l_I+1)* &
+              LFluct_Rbound = dt_ip*k_ds_I(l_I+1)*dq_I(l_I+1)* &
                                (sig_I(l_I+1)/vol_cc(l_cc))
-              RFluct_Lbound = -dt*k_ds_I(l_I  )*dq_I(l_I  )* &
+              RFluct_Lbound = -dt_ip*k_ds_I(l_I  )*dq_I(l_I  )* &
                                (sig_I(l_I)/vol_cc(l_cc))
 
               update_cc(l_cc) = LFluct_Rbound + RFluct_Lbound
@@ -510,7 +510,7 @@
          concen_pd,IsAloft,imin,imax,jmin,jmax,kmin,kmax
 
       use time_data,     only : &
-         dt
+         dt_ip
 
       integer :: i,j,n  ! These are the indices mapping to the global arrays
       integer :: l_I    ! This is the interface index along the particular diffusion direction
@@ -561,7 +561,7 @@
         if(.not.IsAloft(n)) cycle
       !!!$OMP PARALLEL DO &
       !!!$OMP DEFAULT(NONE) &
-      !!!$OMP SHARED(n,nymax,nzmax,ncells,nsmax,dt,concen_pd,kappa_pd,&
+      !!!$OMP SHARED(n,nymax,nzmax,ncells,nsmax,dt_ip,concen_pd,kappa_pd,&
       !!!$OMP sigma_nz_pd,kz,&
       !!!$OMP IsPeriodic),&
       !!!$OMP PRIVATE(l,j,k,q_cc,update_cc,ds,k_ds2_I,&
@@ -596,9 +596,9 @@
                 ! Eq 4.11 LeVeque02
                 ! Note that the ds used for the diffusive flux uses the
                 ! interface of the flux, but the kappa of the updated cell
-              LFluct_Rbound = dt*k_ds_I(l_I+1)*dq_I(l_I+1)* &
+              LFluct_Rbound = dt_ip*k_ds_I(l_I+1)*dq_I(l_I+1)* &
                                (sig_I(l_I+1)/vol_cc(l_cc))
-              RFluct_Lbound = -dt*k_ds_I(l_I  )*dq_I(l_I  )* &
+              RFluct_Lbound = -dt_ip*k_ds_I(l_I  )*dq_I(l_I  )* &
                                (sig_I(l_I)/vol_cc(l_cc))
 
               update_cc(l_cc) = LFluct_Rbound + RFluct_Lbound
@@ -648,7 +648,7 @@
          concen_pd,IsAloft,imin,imax,jmin,jmax,kmin,kmax
 
       use time_data,     only : &
-         dt
+         dt_ip
 
       integer :: j,k,n  ! These are the indices mapping to the global arrays
       integer :: l_I    ! This is the interface index along the particular diffusion direction
@@ -680,7 +680,6 @@
 !      real(kind=ip),dimension( 1:nxmax+1)     :: ksig2_vol_I  ! k*sig*sig/volavg 
 
       integer :: rmin, rmax     ! min and max indices of the row
-
 #ifdef CRANKNIC
       ! Note: The only reason not to use Crank-Nicolson is if you
       !       don't have blas and lapack installed.  This pre-proc.
@@ -791,8 +790,8 @@
             ! Loop over all cells in this x-row
             do l_cc=1,ncells
               l_I = l_cc  ! Interface ID refers to the Left side of the cell (k-1/2)
-              LeftFac    = dt*k_ds_I(rmin-1+l_I  )*sig_I(rmin-1+l_I  )/vol_cc(rmin-1+l_cc)
-              RightFac   = dt*k_ds_I(rmin-1+l_I+1)*sig_I(rmin-1+l_I+1)/vol_cc(rmin-1+l_cc)
+              LeftFac    = dt_ip*k_ds_I(rmin-1+l_I  )*sig_I(rmin-1+l_I  )/vol_cc(rmin-1+l_cc)
+              RightFac   = dt_ip*k_ds_I(rmin-1+l_I+1)*sig_I(rmin-1+l_I+1)/vol_cc(rmin-1+l_cc)
               CenterFac = LeftFac + RightFac
 
               if(l_cc.eq.1) then
@@ -861,6 +860,7 @@
                     B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                     ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                     info)      !o
+              concen_pd(rmin:rmin-1+ncells,j,k,n,ts1) = B_s
             elseif(ip.eq.8)then
               call dgtsv(     &
                     nlineq, &  !i The order of the matrix A.  N >= 0.
@@ -871,10 +871,9 @@
                     B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                     ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                     info)      !o
+              concen_pd(rmin:rmin-1+ncells,j,k,n,ts1) = B_d
             endif
 #endif
-            concen_pd(rmin:rmin-1+ncells,j,k,n,ts1) = B_d
-
           enddo ! loop over j
         enddo ! loop over k
       enddo ! loop over n
@@ -923,7 +922,7 @@
          concen_pd,IsAloft,imin,imax,jmin,jmax,kmin,kmax
 
       use time_data,     only : &
-         dt
+         dt_ip
 
       integer :: i,k,n  ! These are the indices mapping to the global arrays
       integer :: l_I    ! This is the interface index along the particular diffusion direction
@@ -1056,8 +1055,8 @@
             ! Loop over all cells in this y-row
             do l_cc=1,ncells
               l_I = l_cc  ! Interface ID refers to the Left side of the cell (k-1/2)
-              LeftFac    = dt*k_ds_I(rmin-1+l_I  )*sig_I(rmin-1+l_I  )/vol_cc(rmin-1+l_cc)
-              RightFac   = dt*k_ds_I(rmin-1+l_I+1)*sig_I(rmin-1+l_I+1)/vol_cc(rmin-1+l_cc)
+              LeftFac    = dt_ip*k_ds_I(rmin-1+l_I  )*sig_I(rmin-1+l_I  )/vol_cc(rmin-1+l_cc)
+              RightFac   = dt_ip*k_ds_I(rmin-1+l_I+1)*sig_I(rmin-1+l_I+1)/vol_cc(rmin-1+l_cc)
               CenterFac = LeftFac + RightFac
 
               if(l_cc.eq.1) then
@@ -1128,6 +1127,7 @@
                     B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                     ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                     info)      !o
+              concen_pd(i,rmin:rmin-1+ncells,k,n,ts1) = B_s
             elseif(ip.eq.8)then
               call dgtsv(     &
                     nlineq, &  !i The order of the matrix A.  N >= 0.
@@ -1138,9 +1138,10 @@
                     B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                     ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                     info)      !o
+              concen_pd(i,rmin:rmin-1+ncells,k,n,ts1) = B_d
             endif
 #endif
-            concen_pd(i,rmin:rmin-1+ncells,k,n,ts1) = B_d
+            !concen_pd(i,rmin:rmin-1+ncells,k,n,ts1) = real(B_d,kind=ip)
 
           enddo ! loop over i
         enddo ! loop over k
@@ -1193,7 +1194,7 @@
          concen_pd,IsAloft,imin,imax,jmin,jmax,kmin,kmax
 
       use time_data,     only : &
-         dt
+         dt_ip
 
       integer :: i,j,n  ! These are the indices mapping to the global arrays
       integer :: l_I    ! This is the interface index along the particular diffusion direction
@@ -1328,8 +1329,8 @@
             ! Loop over all cells in this z-row
             do l_cc=1,ncells
               l_I = l_cc  ! Interface ID refers to the Left side of the cell (k-1/2)
-              LeftFac    = dt*k_ds_I(rmin-1+l_I  )*sig_I(rmin-1+l_I  )/vol_cc(rmin-1+l_cc)
-              RightFac   = dt*k_ds_I(rmin-1+l_I+1)*sig_I(rmin-1+l_I+1)/vol_cc(rmin-1+l_cc)
+              LeftFac    = dt_ip*k_ds_I(rmin-1+l_I  )*sig_I(rmin-1+l_I  )/vol_cc(rmin-1+l_cc)
+              RightFac   = dt_ip*k_ds_I(rmin-1+l_I+1)*sig_I(rmin-1+l_I+1)/vol_cc(rmin-1+l_cc)
               CenterFac = LeftFac + RightFac
 
               if(l_cc.eq.1) then
@@ -1399,6 +1400,7 @@
                     B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                     ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                     info)      !o
+              concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = B_s
             elseif(ip.eq.8)then
               call dgtsv(     &
                     nlineq, &  !i The order of the matrix A.  N >= 0.
@@ -1409,9 +1411,10 @@
                     B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                     ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                     info)      !o
+              concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = B_d
             endif
 #endif
-            concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = B_d
+            !concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = real(B_d,kind=ip)
 
           enddo ! loop over j
         enddo ! loop over i

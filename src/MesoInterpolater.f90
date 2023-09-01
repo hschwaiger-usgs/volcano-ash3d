@@ -96,15 +96,13 @@
       logical      ,intent(inout) :: Load_MesoSteps
 
       integer           :: i,j,k
-!      integer           :: isize
-!      integer           :: ivar
       character(len=1)  :: answer
       logical,save      :: first_time = .true.  ! There is a bit of extra work the first time
                                                 ! this subroutine is called since we need to
                                                 ! fill the step prior to the start time.
 
       real(kind=dp) :: HoursIntoInterval ! hours since the last windfile timestep
-      real(kind=ip) :: TimeNow_fromRefTime
+      real(kind=dp) :: TimeNow_fromRefTime
       ! Fclaw
       !integer, intent(inout) :: Meso_toggle
 
@@ -208,26 +206,26 @@
             (real(vx_meso_last_step_sp(1:nxmax,1:nymax,1:nzmax),kind=ip) + &
            real((vx_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax) - &
                  vx_meso_last_step_sp(1:nxmax,1:nymax,1:nzmax)),kind=ip) * &
-                                     Interval_Frac)*MPS_2_KMPHR
+                                     real(Interval_Frac,kind=ip))*MPS_2_KMPHR
 
       vy_pd(1:nxmax,1:nymax,1:nzmax) = &
             (real(vy_meso_last_step_sp(1:nxmax,1:nymax,1:nzmax),kind=ip) + &
            real((vy_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax) - &
                  vy_meso_last_step_sp(1:nxmax,1:nymax,1:nzmax)),kind=ip) * &
-                                     Interval_Frac)*MPS_2_KMPHR
+                                     real(Interval_Frac,kind=ip))*MPS_2_KMPHR
 
       vz_pd(1:nxmax,1:nymax,1:nzmax) = &
             (real(vz_meso_last_step_sp(1:nxmax,1:nymax,1:nzmax),kind=ip) + &
            real((vz_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax) - &
                  vz_meso_last_step_sp(1:nxmax,1:nymax,1:nzmax)),kind=ip) * &
-                                     Interval_Frac)*MPS_2_KMPHR
+                                     real(Interval_Frac,kind=ip))*MPS_2_KMPHR
 
       ! Now interpolate onto current time
       if(useCalcFallVel)then
         vf_pd(1:nxmax,1:nymax,1:nzmax,:) = (real(vf_meso_last_step_sp(:,:,:,:),kind=ip) + &
-                                          real((vf_meso_next_step_sp(:,:,:,:) - &
+                                            real((vf_meso_next_step_sp(:,:,:,:) - &
                                                 vf_meso_last_step_sp(:,:,:,:)),kind=ip) * &
-                                                Interval_Frac)*MPS_2_KMPHR
+                                            real(Interval_Frac,kind=ip))*MPS_2_KMPHR
       endif
 
       ! if we're calculating an umbrella cloud, add the winds in the cloud

@@ -69,6 +69,9 @@
       use global_param,  only : &
          MM_2_IN
 
+      use Ash3d_Program_Control, only : &
+           Set_OS_Env
+
       use mesh,          only : &
          nxmax,nymax,nzmax
 
@@ -90,12 +93,25 @@
          DepositThickness,DepArrivalTime,CloudArrivalTime,ashcon_tot,&
          MaxConcentration,MaxHeight,CloudLoad,dbZCol,MinHeight,Mask_Cloud
 
-      use Output_KML
-
       use help,          only : &
            help_postproc
 
-      use Ash3d_Netcdf
+      use Ash3d_ASCII_IO,  only : &
+           write_2D_ASCII, &
+           write_3D_ASCII, &
+           vprofileopener, &
+           vprofilewriter, &
+           vprofilecloser, &
+           Write_PointData_Airports_ASCII
+
+      use Ash3d_Binary_IO, only : &
+           write_2D_Binary, &
+           write_3D_Binary
+
+      use Ash3d_Netcdf_IO
+
+      use Ash3d_KML_IO
+
 #ifdef USEDISLIN
       use Ash3d_PostProc_dislin
 #endif
@@ -146,50 +162,12 @@
       integer,dimension(Nplot_libs) :: plot_pref_aTS = (/2,3,1,4/) ! plot preference for Airport TS
 
       INTERFACE
-        subroutine Set_OS_Env
-        end subroutine Set_OS_Env
         subroutine output_results
         end subroutine output_results
-        subroutine Write_PointData_Airports_ASCII
-        end subroutine Write_PointData_Airports_ASCII
-        subroutine vprofileopener
-        end subroutine vprofileopener
-        subroutine vprofilewriter(itime)
-          integer, intent(in) :: itime
-        end subroutine vprofilewriter
-        subroutine vprofilecloser
-        end subroutine vprofilecloser
-        subroutine write_2D_ASCII(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
-          integer,parameter  :: ip         = 8
-          integer          ,intent(in) :: nx
-          integer          ,intent(in) :: ny
-          real(kind=ip)    ,intent(in) :: OutVar(nx,ny)
-          logical          ,intent(in) :: VarMask(nx,ny)
-          character(len=6) ,intent(in) :: Fill_Value
-          character(len=20),intent(in) :: filename_root
-        end subroutine write_2D_ASCII
-        subroutine write_2D_Binary(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
-          integer,parameter  :: ip         = 8
-          integer          ,intent(in) :: nx
-          integer          ,intent(in) :: ny
-          real(kind=ip)    ,intent(in) :: OutVar(nx,ny)
-          logical          ,intent(in) :: VarMask(nx,ny)
-          character(len=6) ,intent(in) :: Fill_Value
-          character(len=20),intent(in) :: filename_root
-        end subroutine write_2D_Binary
-        subroutine write_3D_Binary(cio,nx,ny,nz,ashcon_tot)
-          integer,parameter  :: op         = 4
-          character(len=13) ,intent(in) :: cio
-          integer           ,intent(in) :: nx
-          integer           ,intent(in) :: ny
-          integer           ,intent(in) :: nz
-          real(kind=op)     ,intent(in) :: ashcon_tot(nx,ny,nz)
-        end subroutine write_3D_Binary
         subroutine write_ShapeFile_Polyline(iprod,itime)
           integer,intent(in) :: iprod
           integer,intent(in) :: itime
         end subroutine write_ShapeFile_Polyline
-
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
           real(kind=8)               ::  HoursSince
           integer                    ::  byear
@@ -645,9 +623,9 @@
           call Set_OutVar_Specs
           call OpenFile_KML(ivar)
           if(iprod.eq.7)then
-            OutVar = DepArrivalTime(1:nxmax,1:nymax)
+            OutVar = real(DepArrivalTime(1:nxmax,1:nymax),kind=ip)
           elseif(iprod.eq.14)then
-            OutVar = CloudArrivalTime(1:nxmax,1:nymax)
+            OutVar = real(CloudArrivalTime(1:nxmax,1:nymax),kind=ip)
           !elseif(iprod.eq.15)then
           !  OutVar = Topography(1:nxmax,1:nymax)
           endif
@@ -718,7 +696,7 @@
         OutFillValue = 0.0_ip
         filename_root = 'DepositFile_        '
       elseif(iprod.eq.7)then
-        OutVar = DepArrivalTime
+        OutVar = real(DepArrivalTime,kind=ip)
         Fill_Value = '-1.000'
         OutFillValue = -1.0_ip
         filename_root = 'DepositArrivalTime  '
@@ -751,7 +729,7 @@
         OutFillValue = 0.0_ip
         filename_root = 'ClouddbZC_          '
       elseif(iprod.eq.14)then
-        OutVar = CloudArrivalTime
+        OutVar = real(CloudArrivalTime,kind=ip)
         Fill_Value = '-1.000'
         OutFillValue = -1.0_ip
         filename_root = 'CloudArrivalTime    '

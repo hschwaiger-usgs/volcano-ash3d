@@ -40,6 +40,11 @@
       use time_data,     only : &
          time,dt,Simtime_in_hours,t0,t1,t2,ntmax
 
+      use Ash3d_Program_Control, only : &
+           Parse_Command_Line, &
+           Set_OS_Env, &
+           Read_Control_File
+
       use Source,        only : &
          SourceNodeFlux,e_EndTime_final,e_Volume,&
          SourceType,Source_in_dt, &
@@ -79,8 +84,11 @@
          Airport_thickness_TS,Airport_thickness,nairports,&
            ReadAirports
 
+      use Ash3d_ASCII_IO,  only : &
+           vprofilewriter
+
 #ifdef USENETCDF
-      use Ash3d_Netcdf,  only : &
+      use Ash3d_Netcdf_IO,only : &
            NC_RestartFile_LoadConcen
 #endif
 
@@ -94,18 +102,12 @@
 
       integer               :: itime
       integer               :: i,k,isize
-      real(kind=ip)         :: Interval_Frac
+      real(kind=dp)         :: Interval_Frac
       logical               :: Load_MesoSteps
       logical               :: StopTimeLoop   = .false.
       real(kind=ip)         :: MassConsErr
 
       INTERFACE
-        subroutine Parse_Command_Line
-        end subroutine Parse_Command_Line
-        subroutine Set_OS_Env
-        end subroutine Set_OS_Env
-        subroutine Read_Control_File
-        end subroutine Read_Control_File
         subroutine input_data_ResetParams
         end subroutine input_data_ResetParams
         subroutine alloc_arrays
@@ -123,9 +125,6 @@
         subroutine Set_BC(bc_code)
           integer,intent(in) :: bc_code ! 1 for advection, 2 for diffusion
         end subroutine Set_BC
-        subroutine vprofilewriter(itime)
-          integer, intent(in) :: itime
-        end subroutine vprofilewriter
         subroutine TimeStepTotals(itime)
           integer, intent(in) :: itime
         end subroutine TimeStepTotals
@@ -241,7 +240,7 @@
       ! interpoated on the start time
       time           = 0.0_ip
       Load_MesoSteps = .true.
-      Interval_Frac  = 0.0_ip
+      Interval_Frac  = 0.0_8
       call MesoInterpolater(time , Load_MesoSteps , Interval_Frac)
 
 !------------------------------------------------------------------------------
@@ -344,8 +343,9 @@
             ! Most standard source types (point, line, profile, suzuki) are
             ! integrated as follows.
             concen_pd(ivent,jvent,1:nzmax+1,1:n_gs_max,ts0) =  &
-                concen_pd(ivent,jvent,1:nzmax+1,1:n_gs_max,ts0)    &
-                  + dt*SourceNodeFlux(1:nzmax+1,1:n_gs_max)
+                concen_pd(ivent,jvent,1:nzmax+1,1:n_gs_max,ts0) +  &
+                  real(dt,kind=ip) * &
+                  SourceNodeFlux(1:nzmax+1,1:n_gs_max)
 
             ! Keep track of the accumulated source inserted for mass conservation error-checking
             SourceCumulativeVol = SourceCumulativeVol + SourceVolInc(dt)
@@ -373,8 +373,9 @@
             ! Here the integration is the same as for standard sources (point, line, profile, suzuki),
             ! except we use a 3x3 column around ivent,jvent instead of just a single-node column.
             concen_pd(ivent-1:ivent+1,jvent-1:jvent+1,1:nzmax+1,1:n_gs_max,ts0) =  &
-                concen_pd(ivent-1:ivent+1,jvent-1:jvent+1,1:nzmax+1,1:n_gs_max,ts0)    &
-                  + dt*SourceNodeFlux_Umbrella(1:3,1:3,1:nzmax+1,1:n_gs_max)
+                concen_pd(ivent-1:ivent+1,jvent-1:jvent+1,1:nzmax+1,1:n_gs_max,ts0)  +  &
+                  real(dt,kind=ip) * &
+                  SourceNodeFlux_Umbrella(1:3,1:3,1:nzmax+1,1:n_gs_max)
 
             ! Keep track of the accumulated source inserted for mass conservation error-checking
             SourceCumulativeVol = SourceCumulativeVol + SourceVolInc_Umbrella(dt)

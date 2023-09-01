@@ -41,7 +41,7 @@
          vf_meso_next_step_sp
          
       use time_data,     only : &
-         time,dt,dt_meso_next,Simtime_in_hours
+         time,dt,dt_ip,dt_meso_next,Simtime_in_hours
 
       use io_data,       only : &
          NextWriteTime
@@ -55,14 +55,15 @@
 
       integer       :: i,j,k
       real(kind=ip) :: tmp1,tmp2,tmp3
-      real(kind=ip),save :: time_diffuse
-      real(kind=ip) :: time_advect
-      real(kind=ip) :: dx2,dy2,dz2,dt_tmp !,tmp_sum
+      real(kind=dp),save :: time_diffuse
+      real(kind=dp) :: time_advect
+      real(kind=dp) :: dt_tmp
+      real(kind=ip) :: dx2,dy2,dz2
       real(kind=ip) :: vxmax,vxmax_dx
       real(kind=ip) :: vymax,vymax_dy
       integer       :: fac
       real(kind=ip) :: vzmax_dz
-      real(kind=ip) :: diffx_dx,diffy_dy,diffz_dz
+      real(kind=dp) :: diffx_dx,diffy_dy,diffz_dz
       real(kind=ip) :: minsig
       real(kind=ip) :: maxdiffus
       logical       :: CheckMesoVel
@@ -229,9 +230,9 @@
             time_diffuse = time_diffuse * Imp_DT_fac
           else
             ! Forward Euler requires dt < 0.5 * dx2/k
-            time_diffuse = time_diffuse * 0.5_ip
+            time_diffuse = time_diffuse * 0.5_dp
           endif
-          maxdiffus    = min(dx2,dy2,dz2)/time_advect
+          maxdiffus    = min(dx2,dy2,dz2)/real(time_advect,kind=ip)
 
           ! Write to output streams a comment about which of advection or
           ! diffusion is the dominant constraint on the time-step.
@@ -313,7 +314,7 @@
         endif;enddo
         dt = DT_MAX
       else
-        dt = min(1.0_ip,CFL) * dt_tmp
+        dt = real(min(1.0_ip,CFL),kind=dp) * dt_tmp
       endif
       
       ! Reset dt to be an integer multiple of DT_MIN
@@ -328,6 +329,7 @@
         ! Don't let time advance past the requested stop time
         dt = Simtime_in_hours-time
       endif
+      dt_ip = real(dt,kind=ip)
 
       if(CheckMesoVel)then
         dt_meso_next = dt

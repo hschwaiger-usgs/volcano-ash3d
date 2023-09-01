@@ -207,7 +207,7 @@
       real(kind=ip) :: cloud_radius     ! cloud radius, km
       real(kind=ip) :: cloudrad_raw     ! cloud radius, km, uncorrected
       real(kind=ip) :: edge_speed       ! expansion rate of cloud edge, m/s
-      real(kind=ip) :: etime_s          ! time since eruption start, seconds
+      real(kind=dp) :: etime_s          ! time since eruption start, seconds
       real(kind=ip) :: ew_km,ns_km      ! distances between vent & point
       real(kind=ip) :: qnow             ! volume flow rate into umbrella cloud, m3/s
       real(kind=ip) :: radnow           ! radial distance from cloud center, km
@@ -286,9 +286,9 @@
         if(.not.first_time)then
           ! For the first time step, time=0 -> cloudrad=0 and uR=Inf
           ! so just use dt to get values at the end of step 1
-          etime_s      = max(time,dt)*HR_2_S
+          etime_s      = max(time,dt)*real(HR_2_S,kind=ip)
         else
-          etime_s      = min(Simtime_in_hours,e_EndTime(1))*HR_2_S
+          etime_s      = min(Simtime_in_hours,e_EndTime(1))*real(HR_2_S,kind=ip)
           !return                      !return to Mesointerpolator if time=0
         endif
 !      else
@@ -307,7 +307,7 @@
       ! Here is Eq. 1 of Mastin and Van Eaton, 2020
       !cloud radius, km
       cloudrad_raw = (3.0_ip*lambda_umb*N_BV_umb*qnow/(2.0_ip*PI))**(1.0_ip/3.0_ip) * &
-                     etime_s**(2.0_ip/3.0_ip) / KM_2_M
+                     real(etime_s,kind=ip)**(2.0_ip/3.0_ip) / KM_2_M
       !Make sure cloud radius extends beyond the source nodes
       !cloud_radius = max(cloudrad_raw,max(SourceNodeWidth_km,SourceNodeHeight_km))
       cloud_radius = cloudrad_raw            !for debugging
@@ -315,7 +315,7 @@
       ! This is the time derivitive of Eq. 1 of Mastin and Van Eaton, 2020
       !cloud expansion rate, m/s
       edge_speed   = (2.0_ip/3.0_ip)*(3.0_ip*lambda_umb*N_BV_umb*qnow/(2.0_ip*PI))**(1.0_ip/3.0_ip) * &
-                    etime_s**(-1.0_ip/3.0_ip)  
+                    real(etime_s,kind=ip)**(-1.0_ip/3.0_ip)  
 
       if (cloud_radius.le.max(SourceNodeWidth_km,SourceNodeHeight_km)) then
         return
@@ -463,7 +463,7 @@
          SourceNodeFlux
 
       real(kind=ip) :: SourceVolInc_Umbrella
-      real(kind=ip) :: dt
+      real(kind=dp) :: dt
 
       real(kind=ip) :: tmp
       integer :: i,j,ii,jj,k,isize
@@ -473,7 +473,7 @@
       do isize=1,n_gs_max
         do k=1,ibase-1
           tmp = tmp                             + & ! final units is km3
-                dt                              * & ! hr
+                real(dt,kind=ip)                * & ! hr
                 SourceNodeFlux(k,isize)         * & ! kg/km3 hr
                 kappa_pd(ivent,jvent,k)         / & ! km3
                 MagmaDensity                    / & ! kg/m3
@@ -488,7 +488,7 @@
           do k=ibase,itop
             do isize=1,n_gs_max
               tmp= tmp                                           + & ! final units is km3
-                dt                                               * & ! hr
+                real(dt,kind=ip)                                 * & ! hr      
                 SourceNodeFlux(k,isize)*AvgStenc_Umbrella(i,j,k) * & ! kg/km3 hr
                 kappa_pd(ivent,jvent,k)                          / & ! km3
                 MagmaDensity                                     / & ! kg/m3

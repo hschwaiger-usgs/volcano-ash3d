@@ -296,7 +296,6 @@ endif
 
 OBJECTS = \
 Ash3d_VariableModules.o  \
-Ash3d_OS_info.o          \
 Input_Data.o             \
 Help.o                   \
 VotW.o                   \
@@ -323,6 +322,9 @@ write_KML.o              \
 ResetParams.o
 
 PPOBJS = Ash3d_VariableModules.o        \
+         Input_Data.o                   \
+         Diffusion.o                    \
+         VotW.o                         \
          Help.o                         \
          Output_Vars.o                  \
          Output_Results.o \
@@ -335,8 +337,7 @@ PPOBJS = Ash3d_VariableModules.o        \
          write_ASCII.o                  \
          write_BINARY.o                 \
          write_Shapefile.o              \
-         Ash3d_PostProc_cities.o        \
-         Ash3d_OS_info.o
+         Ash3d_PostProc_cities.o
 
 GRAFOBJ = Ash3d_PostProc_gnuplot.o $(plplotOBJ) $(dislinOBJ) $(gmtOBJ)
 
@@ -358,8 +359,6 @@ Ash3d:  $(OBJECTS) $(DATAOBJ) Ash3d.F90 $(MFILE)
 Ash3d_VariableModules.o: $(ASH3dCCSRC)/Ash3d_VariableModules.f90 $(MFILE)
 	./get_version.sh
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Ash3d_VariableModules.f90
-Ash3d_OS_info.o: $(ASH3dCCSRC)/Ash3d_OS_info.F90 $(MFILE) $(ASH3dCCSRC)/Ash3d_VariableModules.f90
-	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Ash3d_OS_info.F90
 Input_Data.o: $(ASH3dCCSRC)/Input_Data.f90 $(MFILE) Ash3d_VariableModules.o Tephra.o Help.o VotW.o Diffusion.o Airports.o $(DATAOBJ) Output_Vars.o Source.o Source_Umbrella.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Input_Data.f90
 ResetParams.o: $(ASH3dCCSRC)/ResetParams.f90 $(MFILE) Ash3d_VariableModules.o Tephra.o Output_Vars.o Source_Umbrella.o
@@ -409,7 +408,7 @@ Set_BC.o: $(ASH3dCCSRC)/Set_BC.f90 $(MFILE) Ash3d_VariableModules.o Tephra.o
 # Output
 Output_Vars.o: $(ASH3dCCSRC)/Output_Vars.f90 $(MFILE) Ash3d_VariableModules.o Tephra.o Airports.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Output_Vars.f90
-Output_Results.o: $(ASH3dCCSRC)/Output_Results.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Tephra.o write_ASCII.o write_KML.o write_NETCDF.o
+Output_Results.o: $(ASH3dCCSRC)/Output_Results.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Tephra.o write_BINARY.o write_ASCII.o write_KML.o write_NETCDF.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Output_Results.f90
 write_ASCII.o: $(ASH3dCCSRC)/write_ASCII.f90 $(MFILE) Ash3d_VariableModules.o Airports.o Output_Vars.o Tephra.o Source.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_ASCII.f90

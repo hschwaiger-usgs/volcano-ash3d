@@ -1,3 +1,34 @@
+!##############################################################################
+!
+!  Ash3d_Binary_IO module
+!
+!  This module manages all output to kml files
+!
+!      subroutine write_3D_Binary
+!      subroutine write_2D_Binary
+!
+!##############################################################################
+
+      module Ash3d_Binary_IO
+
+      use precis_param
+
+      use io_units
+
+      implicit none
+
+        ! Set everything to private by default
+      private
+
+        ! Publicly available subroutines/functions
+      public write_3D_Binary,     &
+             write_2D_Binary
+
+        ! Publicly available variables
+
+      contains
+      !------------------------------------------------------------------------
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  write_3D_Binary
@@ -16,10 +47,6 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine write_3D_Binary(cio,nx,ny,nz,ashcon_tot)
-
-      use precis_param
-
-      implicit none
 
       character(len=13) ,intent(in) :: cio
       integer           ,intent(in) :: nx
@@ -64,10 +91,6 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine write_2D_Binary(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
-
-      use precis_param
-
-      use io_units
 
       use io_data,       only : &
          isFinal_TS,iout3d,WriteTimes
@@ -138,5 +161,10 @@
       close(21)
 
       end subroutine write_2D_Binary
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      end module Ash3d_Binary_IO
+
+!##############################################################################
 

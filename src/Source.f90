@@ -96,21 +96,21 @@
         !The following arrays are of length neruptions
       real(kind=ip), dimension(:)        ,allocatable,public :: e_PlumeHeight
       real(kind=ip), dimension(:)        ,allocatable,public :: e_Volume
-      real(kind=ip), dimension(:)        ,allocatable,public :: e_Duration
-      real(kind=ip), dimension(:)        ,allocatable,public :: e_StartTime
-      real(kind=ip), dimension(:)        ,allocatable,public :: e_EndTime
+      real(kind=dp), dimension(:)        ,allocatable,public :: e_Duration   ! Time needs to be dp
+      real(kind=dp), dimension(:)        ,allocatable,public :: e_StartTime  ! 
+      real(kind=dp), dimension(:)        ,allocatable,public :: e_EndTime    ! 
       real(kind=ip), dimension(:)        ,allocatable,public :: e_prof_dz
       integer      , dimension(:)        ,allocatable,public :: e_prof_nzpoints
       real(kind=ip), dimension(:,:)      ,allocatable,public :: e_prof_Volume
       real(kind=ip), dimension(:,:)      ,allocatable,public :: e_prof_MassFluxRate
       real(kind=ip), dimension(:)        ,allocatable,public :: MassFluxRate
 
-      real(kind=ip), dimension(:)        ,allocatable        :: dt_pulse_frac
+      real(kind=dp), dimension(:)        ,allocatable        :: dt_pulse_frac
 
-      real(kind=ip), public :: e_EndTime_final
+      real(kind=dp), public :: e_EndTime_final
 
       real(kind=ip), public :: ESP_height        = 0.0_ip
-      real(kind=ip), public :: ESP_duration      = 0.0_ip
+      real(kind=dp), public :: ESP_duration      = 0.0_ip
       real(kind=ip), public :: ESP_MassFluxRate  = 0.0_ip
       real(kind=ip), public :: ESP_Vol           = 0.0_ip
       real(kind=ip), public :: ESP_massfracfine  = 0.0_ip
@@ -145,7 +145,7 @@
       allocate (e_Volume(neruptions));               e_Volume      = 0.0_ip
       allocate (MassFluxRate(neruptions));           MassFluxRate  = 0.0_ip
       allocate (e_EndTime(neruptions));              e_EndTime     = 0.0_ip
-      allocate (dt_pulse_frac(neruptions));          dt_pulse_frac = 0.0_ip
+      allocate (dt_pulse_frac(neruptions));          dt_pulse_frac = 0.0_dp
 
       if(SourceType.eq.'profile')then
         allocate (e_prof_dz(neruptions));             e_prof_dz       = 0.0_ip
@@ -426,7 +426,7 @@
           MassFluxRate(i)  = MagmaDensity * & ! kg/m3
                              e_Volume(i)  * & ! km3
                              KM3_2_M3     / & ! m3/km3
-                             e_Duration(i)    ! hours  => kg/hr
+                             real(e_Duration(i),kind=ip)    ! hours  => kg/hr
           e_EndTime(i) = e_StartTime(i) + e_Duration(i)
 
           do io=1,2;if(VB(io).le.verbosity_info)then
@@ -440,7 +440,7 @@
                          MagmaDensity                          * & ! kg/m3
                          e_prof_Volume(i,1:e_prof_nzpoints(i)) * & ! km3
                          KM3_2_M3                              / & ! m3/km3
-                         e_Duration(i)                             ! hours = kg/hr
+                         real(e_Duration(i),kind=ip)                             ! hours = kg/hr
           MassFluxRate(i) = sum(e_prof_MassFluxRate(i,1:e_prof_nzpoints(i)))
           e_EndTime(i) = e_StartTime(i) + e_Duration(i)
         else
@@ -489,7 +489,7 @@
       use time_data,     only : &
          time, dt
 
-      real(kind=ip)    :: tstart, tend    !start and end times of this time step
+      real(kind=dp)    :: tstart, tend      ! start and end times of this time step
       logical          :: Pulse_contributes
       integer          :: i
 
@@ -497,7 +497,7 @@
       tend   = time+dt
 
       Source_in_dt     = .false.
-      dt_pulse_frac(:) = 0.0_ip
+      dt_pulse_frac(:) = 0.0_dp
 
       if((SourceType.eq.'point')       .or. & ! profile is a branch below
          (SourceType.eq.'line')        .or. &
@@ -543,7 +543,7 @@
         ! For all non-standard sources, assign the height given on the source
         ! line of the input file and assign a zero mass flux rate.
         Source_in_dt = .false.
-        dt_pulse_frac(:) = 0.0_ip
+        dt_pulse_frac(:) = 0.0_dp
         return
       endif
 
@@ -597,10 +597,12 @@
       TephraFluxRate(:) = 0.0_ip
       MassFluxRate_now  = 0.0_ip
       do i=ieruption,jeruption
-        TephraFluxRate(1:nzmax) = TephraFluxRate(1:nzmax)      + &
-                                  MassFluxRate(i)*dt_pulse_frac(i) * &
+        TephraFluxRate(1:nzmax) = TephraFluxRate(1:nzmax)        + &
+                                  MassFluxRate(i)                * &
+                                  real(dt_pulse_frac(i),kind=ip) * &
                                   NormSourceColumn(ieruption,1:nzmax)
-        MassFluxRate_now = MassFluxRate_now + MassFluxRate(i)*dt_pulse_frac(i)
+        MassFluxRate_now = MassFluxRate_now + MassFluxRate(i) * &
+                           real(dt_pulse_frac(i),kind=ip)
       enddo
 
         ! Now that we have the TephraFluxRate as a function of k, convert it to mass
@@ -668,7 +670,7 @@
          nzmax,kappa_pd,ivent,jvent
 
       real(kind=ip) :: SourceVolInc
-      real(kind=ip) :: dt
+      real(kind=dp) :: dt
 
       real(kind=ip) :: tmp
       integer :: k,isize
@@ -678,7 +680,7 @@
       do k=1,nzmax+1
         do isize=1,n_gs_max
           tmp = tmp                             + & ! final units is km3
-                dt                              * & ! hr
+                real(dt,kind=ip)                * & ! hr
                 SourceNodeFlux(k,isize)         * & ! kg/km3 hr
                 kappa_pd(ivent,jvent,k)         / & ! km3
                 MagmaDensity                    / & ! kg/m3

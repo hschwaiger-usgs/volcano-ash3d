@@ -1,24 +1,53 @@
 !##############################################################################
 !
-!      module Ash3d_ASCII_IO
+!      Ash3d_ASCII_IO module
 !
-!      use precis_param
+!  This module manages all output to ASCII files
 !
-!      use io_units
-!
-!      implicit none
-!
-!        ! These arrays are only used when reading an output file of unknown size
-!      real(kind=ip), dimension(:,:),allocatable :: R_XY
-!      integer       :: R_nx,R_ny
-!      real(kind=ip) :: R_xll,R_yll
-!      real(kind=ip) :: R_dx,R_dy
-!      real(kind=ip) :: R_Fill
-!
-!      contains
+!      subroutine vprofileopener
+!      subroutine vprofilewriter(itime)
+!      subroutine vprofilecloser
+!      subroutine write_2D_ASCII(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
+!      subroutine read_2D_ASCII(filename)
+!      subroutine write_3D_ASCII(cio)
+!      subroutine Write_PointData_Airports_ASCII
 !
 !##############################################################################
 
+      module Ash3d_ASCII_IO
+
+      use precis_param
+
+      use io_units
+
+      implicit none
+
+        ! Set everything to private by default
+      private
+
+        ! Publicly available subroutines/functions
+      public vprofileopener,     &
+             vprofilewriter,     &
+             vprofilecloser,     &
+             write_2D_ASCII,     &
+             read_2D_ASCII,      &
+             write_3D_ASCII,     &
+             Write_PointData_Airports_ASCII
+
+        ! Publicly available variables
+
+        ! These arrays are only used when reading an output file of unknown size
+      real(kind=ip), dimension(:,:),allocatable,public :: R_XY
+      integer      ,public :: R_nx
+      integer      ,public :: R_ny
+      real(kind=ip),public :: R_xll
+      real(kind=ip),public :: R_yll
+      real(kind=ip),public :: R_dx
+      real(kind=ip),public :: R_dy
+      real(kind=ip),public :: R_Fill
+
+      contains
+      !------------------------------------------------------------------------
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
@@ -34,15 +63,11 @@
 
       subroutine vprofileopener
 
-      use io_units
-
       use io_data,       only : &
          MAXPROFILES,nvprofiles,Site_vprofile,x_vprofile, y_vprofile
 
       use mesh,          only : &
          nzmax,z_cc_pd
-
-      implicit none
 
       integer :: i,j
 
@@ -95,8 +120,6 @@
 
       subroutine vprofilewriter(itime)
 
-      use precis_param
-
       use global_param,  only : &
          KG_2_MG,KM3_2_M3
 
@@ -111,8 +134,6 @@
 
       use Output_Vars,    only : &
          CLOUDCON_THRESH,pr_ash
-
-      implicit none
 
       integer, intent(in) :: itime
 
@@ -161,7 +182,6 @@
       use io_data,       only : &
          nvprofiles
 
-      implicit none
       integer  ::  i, ionumber
 
       do i=1,nvprofiles
@@ -194,10 +214,6 @@
 
       subroutine write_2D_ASCII(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
 
-      use precis_param
-
-      use io_units
-
       use global_param,  only  : &
          KM_2_M
 
@@ -206,8 +222,6 @@
 
       use io_data,       only : &
          isFinal_TS,iout3d,WriteTimes
-
-      implicit none
 
       integer          ,intent(in) :: nx,ny
       real(kind=ip)    ,intent(in) :: OutVar(nx,ny)
@@ -315,14 +329,8 @@
 
       subroutine read_2D_ASCII(filename)
 
-      use precis_param
-
-      use io_units
-
-      use Output_Vars,   only : &
-         R_nx,R_ny,R_XY,R_xll,R_yll,R_dx,R_dy,R_Fill
-
-      implicit none
+      !use Output_Vars,   only : &
+      !   R_nx,R_ny,R_XY,R_xll,R_yll,R_dx,R_dy,R_Fill
 
       character(len=80),intent(in) :: filename
 
@@ -396,16 +404,12 @@
 
       subroutine write_3D_ASCII(cio)
 
-      use precis_param
-
       use mesh,          only : &
          nxmax,nymax,nzmax,lon_cc_pd,lat_cc_pd,IsLatLon,&
          x_cc_pd,y_cc_pd,z_cc_pd,ts1
 
       use solution,      only : &
          concen_pd
-
-      implicit none
 
       character(len=13) ,intent(in) :: cio
 
@@ -459,10 +463,6 @@
 
       subroutine Write_PointData_Airports_ASCII
 
-      use precis_param
-
-      use io_units
-
       use global_param,  only : &
          M_2_MM,UseCalcFallVel
 
@@ -496,8 +496,6 @@
 
       use Source,        only : &
          neruptions,e_Duration,e_Volume,e_PlumeHeight
-
-      implicit none
 
       integer             :: i
       integer             :: nWrittenOut
@@ -718,5 +716,6 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-!      end module Ash3d_ASCII_IO
+      end module Ash3d_ASCII_IO
+
 !##############################################################################

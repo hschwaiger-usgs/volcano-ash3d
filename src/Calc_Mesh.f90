@@ -256,9 +256,9 @@
       real(kind=ip),intent(out) :: latmin
       real(kind=ip),intent(out) :: latmax
 
-      integer :: i,j
-      real(kind=ip)      :: olam_ip,ophi_ip ! using internal precision
-      real(kind=dp)       :: xout,yout
+      integer        :: i,j
+      real(kind=dp)  :: olam,ophi ! using precision needed by libprojection
+      real(kind=dp)  :: xin,yin
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Inside get_minmax_lonlat"
@@ -274,15 +274,17 @@
       ! interpolated values.
       do i=0,nxmax+1
         do j=0,nymax+1
-          xout = x_cc_pd(i)
-          yout = y_cc_pd(j)
-          call PJ_proj_inv(xout,yout, &
+          xin = real(x_cc_pd(i),kind=dp)  ! Projection routines use kind=8
+          yin = real(y_cc_pd(j),kind=dp)
+          call PJ_proj_inv(xin,yin, &
                          A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
                          A3d_k0_scale,A3d_Re, &
-                         olam_ip,ophi_ip)
-          xy2ll_ylat(i,j)=ophi_ip
-          if(olam_ip.lt.0.0_ip)olam_ip=olam_ip+360.0_ip
-          xy2ll_xlon(i,j)=olam_ip
+                         olam,ophi)
+          xy2ll_ylat(i,j) = real(ophi,kind=ip)
+          xy2ll_xlon(i,j) = real(olam,kind=ip)
+          if(xy2ll_xlon(i,j).lt.0.0_ip) xy2ll_xlon(i,j) = xy2ll_xlon(i,j) + 360.0_ip
+          !if(olam.lt.0.0_8)olam = olam + 360.0_8
+          !xy2ll_xlon(i,j) = real(olam,kind=ip)
         enddo
       enddo
 

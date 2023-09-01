@@ -149,7 +149,8 @@
 
             ! Calculate \Delta t / \kappa
               ! using kappa of cell
-            dt_vol_cc(rmin-2:rmin-1+ncells+2) = dt/kappa_pd(rmin-2:rmin-1+ncells+2,j,k)
+            dt_vol_cc(rmin-2:rmin-1+ncells+2) = real(dt,kind=ip) / &
+                                                kappa_pd(rmin-2:rmin-1+ncells+2,j,k)
 
             ! Make sure to initialize this since we are only setting it where is matters
             usig_I = 0.0_ip
@@ -394,7 +395,8 @@
 
             ! Calculate \Delta t / \kappa
               ! using kappa of cell
-            dt_vol_cc(rmin-2:rmin-1+ncells+2) = dt/kappa_pd(i,rmin-2:rmin-1+ncells+2,k)
+            dt_vol_cc(rmin-2:rmin-1+ncells+2) = real(dt,kind=ip) / &
+                                                kappa_pd(i,rmin-2:rmin-1+ncells+2,k)
 
             ! Make sure to initialize this since we are only setting it where is matters
             usig_I = 0.0_ip

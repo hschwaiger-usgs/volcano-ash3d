@@ -39,10 +39,10 @@
       logical,public                        :: ProjectAirportLocations
       integer,           allocatable,public :: Airport_i(:)
       integer,           allocatable ,public:: Airport_j(:)
-      real(kind=ip),     allocatable,public :: Airport_AshArrivalTime(:)   ! ash arrival time
-      real(kind=ip),     allocatable,public :: Airport_AshDuration(:)      ! duration of ashfall
-      real(kind=ip),     allocatable,public :: Airport_CloudArrivalTime(:) ! cloud arrival time
-      real(kind=ip),     allocatable,public :: Airport_CloudDuration(:)    ! duration of cloud overhead
+      real(kind=dp),     allocatable,public :: Airport_AshArrivalTime(:)   ! ash arrival time
+      real(kind=dp),     allocatable,public :: Airport_AshDuration(:)      ! duration of ashfall
+      real(kind=dp),     allocatable,public :: Airport_CloudArrivalTime(:) ! cloud arrival time
+      real(kind=dp),     allocatable,public :: Airport_CloudDuration(:)    ! duration of cloud overhead
       real(kind=ip),     allocatable,public :: Airport_DepRate(:)          ! deposit thickness change during this time step
       real(kind=ip),     allocatable,public :: Airport_DepRateLast(:)      ! deposit thickness change during last time step
       real(kind=ip),     allocatable,public :: Airport_Thickness(:)        ! deposit thickness this time step
@@ -313,8 +313,8 @@
             call PJ_proj_for(lon_in,lat_in, A3d_iprojflag, &
                        A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,A3d_Re, &
                        xout,yout)
-            xnow = xout
-            ynow = yout
+            xnow = real(xout,kind=ip)
+            ynow = real(yout,kind=ip)
           endif
 
           if ((xnow.ge.xLL+dx) .and. &
@@ -375,8 +375,8 @@
             call PJ_proj_for(lon_in,lat_in, A3d_iprojflag, &
                        A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,A3d_Re, &
                        xout,yout)
-            xnow = xout
-            ynow = yout
+            xnow = real(xout,kind=ip)
+            ynow = real(yout,kind=ip)
           endif
 
           ! Read the x and y values from the file.
@@ -585,14 +585,14 @@
           ExtAirportLon(inow) = ExtAirportLon(inow)+360.0_ip
 
         ! convert lat/lon to the projected values.
-        if (ProjectAirportLocations) then
+        if (.not.IsLatLon.and.ProjectAirportLocations) then
           lon_in = ExtAirportLon(inow)
           lat_in = ExtAirportLat(inow)
           call PJ_proj_for(lon_in,lat_in, A3d_iprojflag, &
                      A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,A3d_Re, &
                      xout,yout)
-          ExtAirportX(inow) = xout
-          ExtAirportY(inow) = yout
+          ExtAirportX(inow) = real(xout,kind=ip)
+          ExtAirportY(inow) = real(yout,kind=ip)
         endif
 
       enddo

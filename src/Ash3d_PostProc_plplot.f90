@@ -124,7 +124,7 @@
       real(kind=plflt)   :: clevel(1)
       integer(kind=4):: opt
 
-      integer, parameter :: MAX_NLEGEND = 11       ! max number of legend entries
+      !integer, parameter :: MAX_NLEGEND = 11       ! max number of legend entries
       !integer(kind=4)    :: opt_array(MAX_NLEGEND)
       !integer(kind=4)    :: text_colors(MAX_NLEGEND)
       !integer(kind=4)    :: box_colors(MAX_NLEGEND)
@@ -174,8 +174,8 @@
       integer :: plsetopt_rc
 
       integer :: ncities
-      real(kind=8),dimension(:),allocatable     :: lon_cities
-      real(kind=8),dimension(:),allocatable     :: lat_cities
+      real(kind=ip),dimension(:),allocatable     :: lon_cities
+      real(kind=ip),dimension(:),allocatable     :: lat_cities
       character(len=26),dimension(:),allocatable :: name_cities
 
       INTERFACE
@@ -358,7 +358,8 @@
       call citylist(0,real(xmin,kind=ip),real(xmax,kind=ip),&
                       real(ymin,kind=ip),real(ymax,kind=ip),&
                       ncities,                            &
-                      lon_cities,lat_cities,&
+                      lon_cities, &
+                      lat_cities, &
                       name_cities)
       allocate(x(nx))
       allocate(y(ny))
@@ -415,7 +416,7 @@
 
       ! Add cities
       do i=1,ncities
-        if(lon_cities(i).lt.xmin)lon_cities(i)=lon_cities(i)+360.0_plflt
+        if(lon_cities(i).lt.xmin)lon_cities(i)=lon_cities(i)+360.0_ip
           ! plssym: Set symbol size : default, scale
         call plssym( 0.0_plflt, 2.0_plflt )
           ! plpoin: Plot a glyph at the specified points 
@@ -436,7 +437,7 @@
       call plssym( 0.0_plflt, 1.0_plflt )
         ! plpoin: Plot a glyph at the specified points 
       if(lon_volcano.lt.xmin)then
-        lon_cities(1)=lon_volcano+360.0_plflt
+        lon_cities(1)=lon_volcano+360.0_ip
       else
         lon_cities(1)=lon_volcano
       endif
@@ -704,7 +705,7 @@
       integer           :: axis_subticks(NUM_AXES)
       character(len=100):: labels(NUM_LABELS)
       integer           :: label_opts(NUM_LABELS)
-      character(len=1)  :: defined
+      !character(len=1)  :: defined
       real(kind=plflt)  :: cloudcon_thresh_mgm3
       integer :: plsetopt_rc
 
@@ -939,10 +940,10 @@
 
       integer,intent(in) :: pt_indx
 
-      real(kind=8) :: ymaxpl
+      real(kind=dp)     :: ymaxpl
       character(len=14) :: dp_pngfile
       integer,save      :: plot_index = 0
-      integer :: plsetopt_rc
+      integer           :: plsetopt_rc
 
       real(kind=plflt) :: xmin
       real(kind=plflt) :: xmax

@@ -52,7 +52,18 @@
          BaseYear,useLeap,dt,time,SimStartHour,Simtime_in_hours,&
          xmlTimeSpanStart,xmlTimeSpanEnd
 
-      use Output_KML,    only : &
+      use Ash3d_ASCII_IO,  only : &
+           write_2D_ASCII, &
+           write_3D_ASCII, &
+           vprofileopener, &
+           vprofilecloser, &
+           Write_PointData_Airports_ASCII
+
+      use Ash3d_Binary_IO, only : &
+           write_2D_Binary, &
+           write_3D_Binary
+
+      use Ash3d_KML_IO,  only : &
            OpenFile_KML,&
            Close_KML,&
            Write_2D_KML,&
@@ -60,48 +71,17 @@
            Set_OutVar_Specs
 
 #ifdef USENETCDF
-      use Ash3d_Netcdf
+      use Ash3d_Netcdf_IO
 #endif
 
       implicit none
 
       character(len=13) :: cio
-      real(kind=ip)     :: timestart
-      real(kind=ip)     :: timeend
+      real(kind=8)      :: timestart
+      real(kind=8)      :: timeend
       logical,save      :: first_time = .true.
 
       INTERFACE
-        subroutine vprofileopener
-        end subroutine vprofileopener
-        subroutine vprofilecloser
-        end subroutine vprofilecloser
-        subroutine Write_PointData_Airports_ASCII
-        end subroutine Write_PointData_Airports_ASCII
-        subroutine write_2D_ASCII(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
-          integer,parameter  :: ip         = 8 ! Internal precision
-          integer          ,intent(in) :: nx,ny
-          real(kind=ip)    ,intent(in) :: OutVar(nx,ny)
-          logical          ,intent(in) :: VarMask(nx,ny)
-          character(len=6) ,intent(in) :: Fill_Value
-          character(len=20),intent(in) :: filename_root
-        end subroutine write_2D_ASCII
-        subroutine write_3D_ASCII(cio)
-          character(len=13) ,intent(in) :: cio
-        end subroutine write_3D_ASCII
-        subroutine write_3D_Binary(cio,nx,ny,nz,ashcon_tot)
-          integer,parameter  :: op         = 4 ! Output precision
-          character(len=13) ,intent(in) :: cio
-          integer           ,intent(in) :: nx,ny,nz
-          real(kind=op)     ,intent(in) :: ashcon_tot(nx,ny,nz)
-        end subroutine write_3D_Binary
-        subroutine write_2D_Binary(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
-          integer,parameter  :: ip         = 8 ! Internal precision
-          integer          ,intent(in) :: nx,ny
-          real(kind=ip)    ,intent(in) :: OutVar(nx,ny)
-          logical          ,intent(in) :: VarMask(nx,ny)
-          character(len=6) ,intent(in) :: Fill_Value
-          character(len=20),intent(in) :: filename_root
-        end subroutine write_2D_Binary
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
           real(kind=8)               ::  HoursSince
           integer                    ::  byear
@@ -280,22 +260,22 @@
         !if files of deposit arrival time are to be written out
         if (WriteDepositTime_KML) then
           call OpenFile_KML(9) ! Deposit Arrival Time
-          call Write_2D_KML(9,DepArrivalTime,0,0) ! Deposit
+          call Write_2D_KML(9,real(DepArrivalTime,kind=ip),0,0) ! Deposit
           call Close_KML(9,0)
         endif
         if (WriteDepositTime_ASCII)     &
           call write_2D_ASCII(nxmax,nymax,&
-                              DepArrivalTime(1:nxmax,1:nymax), &
+                              real(DepArrivalTime(1:nxmax,1:nymax),kind=ip), &
                               Mask_Deposit(1:nxmax,1:nymax),&
                               '-1.000','DepositArrivalTime  ')
         if (WriteCloudTime_KML) then
           call OpenFile_KML(5) ! Cloud Arrival Time
-          call Write_2D_KML(5,CloudArrivalTime,0,0) ! Deposit
+          call Write_2D_KML(5,real(CloudArrivalTime,kind=ip),0,0) ! Deposit
           call Close_KML(5,0)
         endif
         if (WriteCloudTime_ASCII)       &
           call write_2D_ASCII(nxmax,nymax,&
-                              CloudArrivalTime(1:nxmax,1:nymax), &
+                              real(CloudArrivalTime(1:nxmax,1:nymax),kind=ip), &
                               Mask_Cloud(1:nxmax,1:nymax),&
                               '-1.000','CloudArrivalTime    ')
         ! Write Final deposit file

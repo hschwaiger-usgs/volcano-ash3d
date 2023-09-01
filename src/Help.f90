@@ -82,25 +82,17 @@
 !    none
 !
 !  This subroutine writes to stdout the options that can be set by the user in
-!  the makefile.  Lastly, a call to Set_OS_Env will print out the settings used
-!  in this current executable.
+!  the makefile.  Lastly, controll is returned to Parse_Command_Line so the
+!  subroutine Set_OS_Env can be called, printing out the settings used in this
+!  current executable.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine help_make
 
-      INTERFACE
-        subroutine Set_OS_Env
-        end subroutine Set_OS_Env
-      END INTERFACE
-
       io = 1
 
       write(outlog(io),1)'                                                                                '
-
-      call Set_OS_Env
-
-      stop 1
 
  1    format(a80)
 
