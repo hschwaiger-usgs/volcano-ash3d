@@ -2748,12 +2748,12 @@
 !  This subroutine is called each time output_results is called when a new output
 !  step is reached, writing the next step in the transient variables.  Additionally,
 !  this subroutine is called at the end of the simulation after the time integration.
-!  Variables for the Airport/POI data are also writen each time this is called.
-!  Several additional 'Final' variables are writen at this point such as the
+!  Variables for the Airport/POI data are also written each time this is called.
+!  Several additional 'Final' variables are written at this point such as the
 !  final deposit thickness (depothickFin) and the deposit/ash-cloud arrival
-!  times (depotime,ash_arrival_time). Airport/POI variables writen in this final
+!  times (depotime,ash_arrival_time). Airport/POI variables written in this final
 !  step are the arrival and duration for both deposit and ash cloud.  If profile
-!  data is tracked, the whole transient variable (time_native) is writen in this
+!  data is tracked, the whole transient variable (time_native) is written in this
 !  final step.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2940,44 +2940,35 @@
         deallocate(dum2d_out)
 
         if (Write_PT_Data)then
-
-          !HFS: we can write all these directly without allocating/deallocating the dum variables
+          allocate(dum1d_out(nairports))
 
           ! Arrival time of ashfall
           nSTAT = nf90_inq_varid(ncid,"pt_depotime",pt_asharrival_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid pt_depotime")
-          allocate(dum1d_out(nairports))
           dum1d_out(1:nairports) = real(Airport_AshArrivalTime(1:nairports),kind=op)
           nSTAT=nf90_put_var(ncid,pt_asharrival_var_id,dum1d_out,(/1/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var pt_depotime")
-          deallocate(dum1d_out)
 
           ! Duration of ashfall
           nSTAT = nf90_inq_varid(ncid,"pt_depodur",pt_ashduration_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid pt_depodur")
-          allocate(dum1d_out(nairports))
           dum1d_out(1:nairports) = real(Airport_AshDuration(1:nairports),kind=op)
           nSTAT=nf90_put_var(ncid,pt_ashduration_var_id,dum1d_out,(/1/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var pt_depodur")
-          deallocate(dum1d_out)
 
           ! Arrival time of ash cloud
           nSTAT = nf90_inq_varid(ncid,"pt_cloud_arrival",pt_cloudarrival_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid pt_cloud_arrival")
-          allocate(dum1d_out(nairports))
           dum1d_out(1:nairports) = real(Airport_CloudArrivalTime(1:nairports),kind=op)
           nSTAT=nf90_put_var(ncid,pt_cloudarrival_var_id,dum1d_out,(/1/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var pt_cloud_arrival")
-          deallocate(dum1d_out)
 
           ! Duration of ash cloud
           nSTAT = nf90_inq_varid(ncid,"pt_cloud_dur",pt_cloudduration_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid pt_cloud_dur")
-          allocate(dum1d_out(nairports))
           dum1d_out(1:nairports) = real(Airport_CloudDuration(1:nairports),kind=op)
           nSTAT=nf90_put_var(ncid,pt_cloudduration_var_id,dum1d_out,(/1/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var pt_cloud_dur")
-          deallocate(dum1d_out)
 
           ! Final deposit thickness
           do io=1,2;if(VB(io).le.verbosity_debug1)then
@@ -2985,12 +2976,11 @@
           endif;enddo
           nSTAT = nf90_inq_varid(ncid,"pt_depothickFin",pt_ashthicknessFin_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid pt_depothickFin")
-          allocate(dum1d_out(nairports))
           dum1d_out(1:nairports) = real(Airport_thickness(1:nairports),kind=op)
           nSTAT=nf90_put_var(ncid,pt_ashthicknessFin_var_id,dum1d_out,(/1/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var pt_depothickFin")
-          deallocate(dum1d_out)
 
+          deallocate(dum1d_out)
         endif
 
         ! write out native time

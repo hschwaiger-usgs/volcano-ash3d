@@ -1021,7 +1021,7 @@
 !    none
 !
 !  This subroutine writes all airport data to ash_arrivaltimes_airports.kml.
-!  For each airport/POI, a short gnuplot script is writen and executed which
+!  For each airport/POI, a short gnuplot script is written and executed which
 !  creates a time-series plot of the deposit at accumulation at that point.
 !  These are linked to the kml file.  If zip is installed on the system, the
 !  kml file is compressed.

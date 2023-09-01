@@ -333,7 +333,7 @@
 
       do io=1,2;if(VB(io).le.verbosity_essential)then
         write(outlog(io),*)" "
-        write(outlog(io),*)"Running Ash3d with command-line: ",&
+        write(outlog(io),*)"Running Ash3d with command line: ",&
                     trim(adjustl(os_full_command_line))
       endif;enddo
 

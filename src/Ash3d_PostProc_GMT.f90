@@ -46,7 +46,7 @@
 !    ny            = y length of output array OutVar
 !    iprod         = product ID
 !    itime         = time index from netcdf data file
-!    OutVar        = 2-d array to be writen to ASCII file
+!    OutVar        = 2-d array to be written to ASCII file
 !    writeContours = logical
 !
 !  This subroutine creates a png map of the variable in OutVar using the GMT

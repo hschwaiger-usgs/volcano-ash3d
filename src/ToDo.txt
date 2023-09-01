@@ -6,8 +6,6 @@ Test projecting (or not) airport list
 
 Add outflow to netcdf output file.  Needed for restart cases.
 
-Code up help
-
 DepositGranularity should be part of tephra and only over n_gs_max, not identical to outflow_xy1_pd
 
 Add limits to iteration of vset so as to prevent run-away iterations.

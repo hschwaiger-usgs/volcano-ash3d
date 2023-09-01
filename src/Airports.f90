@@ -72,6 +72,8 @@
 
       real(kind=ip)                  :: ExtAirportLat(MAXAIRPORTS)
       real(kind=ip)                  :: ExtAirportLon(MAXAIRPORTS)
+      real(kind=ip)                  :: ExtAirportX(MAXAIRPORTS)
+      real(kind=ip)                  :: ExtAirportY(MAXAIRPORTS)
       character(len=3)               :: ExtAirportCode(MAXAIRPORTS)
       character(len=38)              :: ExtAirportName(MAXAIRPORTS)
 
@@ -377,13 +379,8 @@
             ynow = yout
           endif
 
-          ! HFS: This might be in error
-          !      Do we want to assume all input coordinates from
-          !      secondary files (Airport, 1D wind) be in lon/lat?
-          ! If we're not using the proj4 library, read the x and y values from
-          ! the file.
-          ! They are assumed to be in the same projection system as the wind
-          ! files.
+          ! Read the x and y values from the file.
+          ! They are assumed to be in the same projection system computational grid.
           if ((xnow.ge.xLL+dx) .and. &
               (xnow.le.xUR-dx) .and. &
               (ynow.ge.yLL+dy) .and. &
@@ -532,8 +529,10 @@
 !     50 charactes.  Station_Code is 3 characters (51-53)
 !     Station_Name is 35 characters (54-88)
 !     The following variables are filled:
-!       ExtAirportLat   : this could be interpreted as y
-!       ExtAirportLon   : this could be interpreted as x
+!       ExtAirportLat   :
+!       ExtAirportLon   :
+!       ExtAirportX     :
+!       ExtAirportY     :
 !       ExtAirportCode  : For point of interest or sample sites, this could be a 3-char
 !                         identifier such as POI, SAM
 !       ExtAirportName  : This name is used in post-processing (i.e. in KML files)
@@ -542,8 +541,17 @@
 
       subroutine ReadExtAirports
 
+      use mesh,          only : &
+         IsLatLon,A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,&
+         A3d_Re
+
+      use projection,    only : &
+         PJ_proj_for
+
       integer           :: inow,iostatus
       character(len=95) :: inputline
+      integer           :: ioerr
+      real(kind=dp)     :: lat_in,lon_in,xout,yout
 
       ! These are some variables used if we do an inquire on this file
       !logical           :: ex, op
@@ -566,13 +574,27 @@
         inow = inow+1
         read(17,'(a95)',IOSTAT=Iostatus) inputline
         read(inputline,*,err=2010) ExtAirportLat(inow), ExtAirportLon(inow)
+        read(inputline,*,iostat=ioerr) ExtAirportLat(inow), ExtAirportLon(inow), &
+                                       ExtAirportX(inow), ExtAirportY(inow)
+        ! Now read the code (char #51-54) and the name (char #56-80)
         read(inputline,2) ExtAirportCode(inow), ExtAirportName(inow)
 2       format(50x,a3,1x,a35)
-        ! HFS: This assumes coordinates are lat,lon.
-        !      we might want these to be projected, or at least y,x
+
         ! make sure longitude is between 0 and 360
         if (ExtAirportLon(inow).lt.0.0_ip) &
           ExtAirportLon(inow) = ExtAirportLon(inow)+360.0_ip
+
+        ! convert lat/lon to the projected values.
+        if (ProjectAirportLocations) then
+          lon_in = ExtAirportLon(inow)
+          lat_in = ExtAirportLat(inow)
+          call PJ_proj_for(lon_in,lat_in, A3d_iprojflag, &
+                     A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,A3d_Re, &
+                     xout,yout)
+          ExtAirportX(inow) = xout
+          ExtAirportY(inow) = yout
+        endif
+
       enddo
       close(17)
 

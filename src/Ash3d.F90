@@ -1,6 +1,6 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!
+!  
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -136,7 +136,7 @@
       ! Start time logging
       call cpu_time(t0) !time is a scaler real
 
-      ! First, parse the command-line
+      ! First, parse the command line
       call Parse_Command_Line
 
       ! Before we do anything, get the state of the executable, system, environment and run
@@ -266,7 +266,7 @@
       endif
 
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),7)
+        write(outlog(io),5007)
       endif;enddo
 
       ! Calculate mass flux and end times of each eruptive pulse
@@ -274,7 +274,7 @@
 
       ! Write out starting volume, max time steps, and headers for the table that follows
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),1) tot_vol,ntmax
+        write(outlog(io),5001) tot_vol,ntmax
       endif;enddo
 
       ! Get the cpu time for the start of the time loop
@@ -625,7 +625,7 @@
       Calculated_AshThickness = .false.
 
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),12)   !put footnotes below output table
+        write(outlog(io),5012)   ! put footnotes below output table
         write(outlog(io),*)'time=',real(time,kind=4),',dt=',real(dt,kind=4)
         write(outlog(io),*)"Mass Conservation Error = ",MassConsErr
       endif;enddo
@@ -642,23 +642,24 @@
       ! Write results to log and standard output
       call cpu_time(t2) ! time is a scalar real
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),3) t1-t0, t2-t1, time*HR_2_S
-        write(outlog(io),4) time*HR_2_S/(t2-t1)
+        write(outlog(io),5003) t1-t0, t2-t1, time*HR_2_S
+        write(outlog(io),5004) time*HR_2_S/(t2-t1)
       endif;enddo
       call TimeStepTotals(itime)
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),5) dep_vol
-        write(outlog(io),6) tot_vol
-        write(outlog(io),9) maxval(DepositThickness), DepositAreaCovered
-        write(outlog(io),34)       ! write out area of cloud at different thresholds
+        write(outlog(io),5005) dep_vol
+        write(outlog(io),5006) tot_vol
+        write(outlog(io),5009) maxval(DepositThickness), DepositAreaCovered
+        write(outlog(io),5034)       ! write out area of cloud at different thresholds
         do i=1,5
-          write(outlog(io),35) LoadVal(i), CloudLoadArea(i)
+          write(outlog(io),5035) LoadVal(i), CloudLoadArea(i)
         enddo
-        write(outlog(io),33)       ! write "normal completion"
+        write(outlog(io),5033)       ! write "normal completion"
       endif;enddo
 
       ! Format statements
-1     format(/,5x,'Starting volume (km3 DRE)    = ',f11.4,       &
+      ! Starting with 5000
+5001  format(/,5x,'Starting volume (km3 DRE)    = ',f11.4,       &
              /,5x,'maximum number of time steps = ',i8,          &
              //,21x,'Time',19x,                                  &
                 '|--------------------Volume (km3 DRE)-------------------|', &
@@ -667,21 +668,21 @@
                 5x,'Source',6x,'Deposit',7x,'Aloft',5x,'Outflow',&
                 7x,'Total',10x,'km2')
 
-3     format(/,5x,'Set-up time              = ',f15.4,' seconds',&
+5003  format(/,5x,'Set-up time              = ',f15.4,' seconds',&
                5x,'Execution time           = ',f15.4,' seconds',&
              /,5x,'Simulation time          = ',f15.4,' seconds')       
-4     format(  5x,'Execution time/CPU time  = ',f15.4)       
-5     format(  5x,'Ending deposit volume    = ',f15.4,' km3 DRE')       
-6     format(  5x,'Ending total volume      = ',f15.4,' km3 DRE')       
-7     format(  5x,'Building time array of plume height & eruption rate')
-9     format(/,5x,'Maximum deposit thickness (mm)   = ',f10.4, &
+5004  format(  5x,'Execution time/CPU time  = ',f15.4)       
+5005  format(  5x,'Ending deposit volume    = ',f15.4,' km3 DRE')       
+5006  format(  5x,'Ending total volume      = ',f15.4,' km3 DRE')       
+5007  format(  5x,'Building time array of plume height & eruption rate')
+5009  format(/,5x,'Maximum deposit thickness (mm)   = ',f10.4, &
              /,5x,'Area covered by >0.01 mm (km2)   = ',f10.1,/)
-12    format(4x,'*=files written out')
+5012  format(4x,'*=files written out')
 
-33    format(/,5x,'Normal completion')
-34    format(/,'  Ash load   cloud area',/, &
+5033  format(/,5x,'Normal completion')
+5034  format(/,'  Ash load   cloud area',/, &
                '      T/km2         km2')
-35    format(2f11.1)
+5035  format(2f11.1)
 
       ! clean up memory
       call dealloc_arrays

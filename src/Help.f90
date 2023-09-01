@@ -24,10 +24,11 @@
       private
 
        ! Publicly available subroutines/functions
-      public help_general, &
-             help_make,    &
-             help_run,     &
-             help_input,   &
+      public help_general,   &
+             help_make,      &
+             help_run,       &
+             help_input,     &
+             help_inputfile, &
              help_postproc
 
       contains
@@ -37,11 +38,18 @@
 !
 !  help_general
 !
+!  Called from: Parse_Command_Line
+!  Arguments:
+!    none
+!
+!  This subroutine is called if general Ash3d interactive help is requested
+!  via 'Ash3d -h'.  Further information on different help options are printed
+!  to stdout along with a call to help_run, giving information on how to
+!  run Ash3d on the command line.
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine help_general
-
- 1    format(a80)
 
       io = 1
 
@@ -50,20 +58,32 @@
       write(outlog(io),1)'                                                                                '
       write(outlog(io),1)' You can get more specific help by typing:                                      '
       write(outlog(io),1)'   Ash3d -h make     : Information on build options, if you want to rebuild     '
-      write(outlog(io),1)'   Ash3d -h run      : Information on running Ash3d from the command-line       '
+      write(outlog(io),1)'   Ash3d -h run      : Information on running Ash3d from the command line       '
       write(outlog(io),1)'   Ash3d -h input    : Information on the structure of the input file           '
       write(outlog(io),1)'   Ash3d -h postproc : Information on the post-processing output results        '
       write(outlog(io),1)'                                                                                '
-      write(outlog(io),1)' Writing run information:                                                       '
+      write(outlog(io),1)' Writing run help information:                                                       '
       write(outlog(io),1)'                                                                                '
 
       call help_run
+
+      stop 1
+
+ 1    format(a80)
 
       end subroutine help_general
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  help_make
+!
+!  Called from: Parse_Command_Line
+!  Arguments:
+!    none
+!
+!  This subroutine writes to stdout the options that can be set by the user in
+!  the makefile.  Lastly, a call to Set_OS_Env will print out the settings used
+!  in this current executable.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -78,8 +98,11 @@
 
       write(outlog(io),1)'                                                                                '
 
-
       call Set_OS_Env
+
+      stop 1
+
+ 1    format(a80)
 
       end subroutine help_make
 
@@ -87,18 +110,17 @@
 !
 !  help_run
 !
+!  Called from: Parse_Command_Line and help_general
+!  Arguments:
+!    none
+!
+!  This subroutine gives a bried description of what is required to run Ash3d
+!  from the command line.
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine help_run
 
-      character(len=3)  :: answer
-      integer           :: blockID
-
-      ! The idea with the blockID is that help for only a particular block could be
-      ! called if there is an error reading something in the input file.  For now, all
-      ! blocks are printed.
-
- 1    format(a80)
       io = 1
 
       write(outlog(io),1)'                                                                                '
@@ -143,11 +165,24 @@
       write(outlog(io),1)'       OMP_NUM_THREADS=4 ./Ash3d_opt control.in                                 '
       write(outlog(io),1)'                                                                                '
 
+      stop 1
+
+ 1    format(a80)
+
       end subroutine help_run
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  help_input
+!
+!  Called from: Parse_Command_Line
+!  Arguments:
+!    none
+!
+!  This subroutine first writes to stdout a general description of the structure
+!  of the Ash3d control file.  Then the user is prompted to request detailed
+!  information about each of the blocks of the control file via call to
+!  help_inputfile(blockID).
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -156,11 +191,6 @@
       character(len=3)  :: answer
       integer           :: blockID
 
-      ! The idea with the blockID is that help for only a particular block could be
-      ! called if there is an error reading something in the input file.  For now, all
-      ! blocks are printed.
-
- 1    format(a80)
       io = 1
 
       write(outlog(io),1)'                                                                                '
@@ -195,11 +225,20 @@
 
  10   stop 1
 
+ 1    format(a80)
+
       end subroutine help_input
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  help_inputfile(blockID)
+!
+!  Called from: Parse_Command_Line and help_input
+!  Arguments:
+!    blockID = block number of the control file to print
+!
+!  This subroutine writes an example of the requested block of the control file
+!  with descriptive comments above the block.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -207,7 +246,10 @@
 
       integer,intent(in) :: blockID
 
- 1    format(a103)
+      ! The idea with the blockID is that help for only a particular block is
+      ! called if there is an error reading something in the input file or if
+      ! the user requests it.
+
       io = 1
 
       select case (blockID)
@@ -279,7 +321,7 @@
       write(outlog(io),1)'#'
       write(outlog(io),1)'******************* BLOCK 1 ***************************************************                        '
       write(outlog(io),1)'Eyjafjallajokull               # Volcano name (character*30)                                           '
-      write(outlog(io),1)'1 1 0.0 90.0 0.933 6367.470    # Proj flags and params                                                 '
+      write(outlog(io),1)'1 1 0.0 90.0 0.933 6367.470    # Proj flags and params; first term (LLflag) is 1, so all else ignored  '
       write(outlog(io),1)'-25.0    45.0                  # x, y of LL corner of grid (km, or deg. if latlongflag=1)              '
       write(outlog(io),1)'55.0     25.0                  # grid width and height (km, or deg. if latlonflag=1)                   '
       write(outlog(io),1)'-19.62   63.63                 # vent location         (km, or deg. if latlonflag=1)                   '
@@ -292,7 +334,7 @@
       write(outlog(io),1)'# ERUPTION LINES (number = neruptions)                                                                 '
       write(outlog(io),1)'# In the following line, each line represents one eruptive pulse.                                      '
       write(outlog(io),1)'# Parameters are (1-4) start time (yyyy mm dd h.hh (UT)); (5) duration (hrs);                          '
-      write(outlog(io),1)'#                  (6) plume height;                      (7) eruped volume (km3)                      '
+      write(outlog(io),1)'#                  (6) plume height;                      (7) eruped volume (km3 DRE)                  '
       write(outlog(io),1)'# If neruptions=1 and the year is 0, then the model run in forecast mode where mm dd h.hh are          '
       write(outlog(io),1)'# interpreted as the time after the start of the windfile.  In this case, duration, plume              '
       write(outlog(io),1)'# height and erupted volume are replaced with ESP if the values are negative.                          '
@@ -316,7 +358,7 @@
       write(outlog(io),1)'# Ash3d will read from either a single 1-D wind sounding, or gridded, time-                            '
       write(outlog(io),1)'# dependent 3-D wind data, depending on the value of the parameter iwind.                              '
       write(outlog(io),1)'# For iwind = 1, read from a 1-D wind sounding                                                         '
-      write(outlog(io),1)'#             2, read from 3D gridded ASCII files generated by the Java script                         '
+      write(outlog(io),1)'#             2, read from 3D gridded ASCII files                                                      '
       write(outlog(io),1)'#             3/4, read directly from a single or multiple NetCDF files.                               '
       write(outlog(io),1)'#             5, read directly from multiple multi-timestep NetCDF files.                              '
       write(outlog(io),1)'# The parameter iwindformat specifies the format of the wind files, as follows:                        '
@@ -340,25 +382,24 @@
       write(outlog(io),1)'#                22: GFS 0.25 degree files Forecast                                                    '
       write(outlog(io),1)'#                23: NCEP DOE Reanalysis 2.5 degree                                                    '
       write(outlog(io),1)'#                24: NASA MERRA-2 Reanalysis                                                           '
-      write(outlog(io),1)'#                25: NCEP1 2.5 global Reanlysis (1948-pres)                                            '
+      write(outlog(io),1)'#                25: NCEP1 2.5 global Reanalysis (1948-pres)                                           '
       write(outlog(io),1)'#                      Note: use nWindFiles=1 for iwindformat=25                                       '
       write(outlog(io),1)'#                26: JRA-55 Reanalysis                                                                 '
-      write(outlog(io),1)'#                27: NOAA-CIRES II 2-deg global reanlysis (1870-2010)                                  '
+      write(outlog(io),1)'#                27: NOAA-CIRES II 2-deg global Reanalysis (1870-2010)                                 '
       write(outlog(io),1)'#                28: ECMWF ERA-Interim Reanalysis                                                      '
       write(outlog(io),1)'#                29: ECMWA ERA-5 Reanalysis                                                            '
       write(outlog(io),1)'#                30: ECMWA ERA-20C Reanalysis                                                          '
-      write(outlog(io),1)'#                31: Air Force Weather Agency                                                          '
       write(outlog(io),1)'#                32: Air Force Weather Agency                                                          '
       write(outlog(io),1)'#                33: CCSM 3.0 Community Atmospheric Model                                              '
       write(outlog(io),1)'#                40: NASA GEOS-5 Cp                                                                    '
       write(outlog(io),1)'#                41: NASA GEOS-5 Np                                                                    '
       write(outlog(io),1)'#                50: Weather Research and Forecast (WRF) output                                        '
       write(outlog(io),1)'#                                                                                                      '
-      write(outlog(io),1)'# igrid is the NCEP grid ID, if a NWP product is used, or the number of stations of                    '
-      write(outlog(io),1)'# sonde data, if iwind = 1.                                                                            '
-      write(outlog(io),1)'# idata is a flag for data type (1=ASCII, 2=netcdf, 3=grib).                                           '
+      write(outlog(io),1)'# igrid (optional, defaults to that associated with iwindformat) is the NCEP grid ID,                  '
+      write(outlog(io),1)'# if a NWP product is used, or the number of stations of sonde data, if iwind = 1.                     '
+      write(outlog(io),1)'# idata (optional, defaults to 2) is a flag for data type (1=ASCII, 2=netcdf, 3=grib).                 '
       write(outlog(io),1)'#                                                                                                      '
-      write(outlog(io),1)'# Many plumes extend  higher than the maximum height of mesoscale models.                              '
+      write(outlog(io),1)'# Many plumes extend higher than the maximum height of mesoscale models.                               '
       write(outlog(io),1)'# Ash3d handles this as determined by the parameter iHeightHandler, as follows:                        '
       write(outlog(io),1)'# for iHeightHandler = 1, stop the program if the plume height exceeds mesoscale height                '
       write(outlog(io),1)'#                      2, wind velocity at levels above the highest node                               '
@@ -372,17 +413,20 @@
       write(outlog(io),1)'# iwind=5 and one of the NWP products is used that require a special file structure,                   '
       write(outlog(io),1)'# then nWindFiles should be set to 1 and only the root folder of the windfiles listed.                 '
       write(outlog(io),1)'******************* BLOCK 3 ***************************************************                        '
-      write(outlog(io),1)'4  20               #iwind, iwindformat, [igrid, idata]                                                '
-      write(outlog(io),1)'2                   #iHeightHandler                                                                    '
-      write(outlog(io),1)'60                  #Simulation time in hours                                                          '
-      write(outlog(io),1)'no                  #stop computation when 99% of erupted mass has deposited?                          '
-      write(outlog(io),1)'16                  #nWindFiles, number of gridded wind files (used if iwind>1)                        '
+      write(outlog(io),1)'4  20               # iwind, iwindformat, [igrid, idata]                                               '
+      write(outlog(io),1)'2                   # iHeightHandler                                                                   '
+      write(outlog(io),1)'60                  # Simulation time in hours                                                         '
+      write(outlog(io),1)'no                  # stop computation when 99% of erupted mass has deposited?                         '
+      write(outlog(io),1)'16                  # nWindFiles, number of gridded wind files (used if iwind>1)                       '
         case(4) ! BLOCK 4: OUTPUT OPTIONS
       write(outlog(io),1)'*******************************************************************************                        '
       write(outlog(io),1)'# OUTPUT OPTIONS:                                                                                      '
       write(outlog(io),1)'# The list below allows users to specify the output options                                            '
       write(outlog(io),1)'# All but the final deposit file can be written out at specified                                       '
       write(outlog(io),1)'# times using the following parameters:                                                                '
+      write(outlog(io),1)'# Line 15 asks for 3d output (yes/no) followed by an optional output format code;                      '
+      write(outlog(io),1)'#   1 = (default) output all the normal 2d products to the output file as well as the 3d concentrations'
+      write(outlog(io),1)'#   2 = only output the 2d products                                                                    '
       write(outlog(io),1)'# nWriteTimes   = if >0,  number of times output are to be written. The following                      '
       write(outlog(io),1)'#                  line contains nWriteTimes numbers specifying the times of output                    '
       write(outlog(io),1)'#                 if =-1, it specifies that the following line gives a constant time                   '
@@ -391,24 +435,24 @@
       write(outlog(io),1)'#                 Times (hours since start of first eruption) for each output                          '
       write(outlog(io),1)'#                (if nWriteTimes >1)                                                                   '
       write(outlog(io),1)'******************* BLOCK 4 ***************************************************                        '
-      write(outlog(io),1)'no      #Write out ESRI ASCII file of final deposit thickness?                                         '
-      write(outlog(io),1)'yes     #Write out        KML file of final deposit thickness?                                         '
-      write(outlog(io),1)'no      #Write out ESRI ASCII deposit files at specified times?                                        '
-      write(outlog(io),1)'no      #Write out        KML deposit files at specified times?                                        '
-      write(outlog(io),1)'no      #Write out ESRI ASCII files of ash-cloud concentration?                                        '
-      write(outlog(io),1)'no      #Write out        KML files of ash-cloud concentration ?                                       '
-      write(outlog(io),1)'no      #Write out ESRI ASCII files of ash-cloud height?                                               '
-      write(outlog(io),1)'no      #Write out        KML files of ash-cloud height?                                               '
-      write(outlog(io),1)'yes     #Write out ESRI ASCII files of ash-cloud load (T/km2) at specified times?                      '
-      write(outlog(io),1)'yes     #Write out        KML files of ash-cloud load (T/km2) at specified times?                      '
-      write(outlog(io),1)'yes     #Write out ESRI ASCII file of deposit arrival times?                                           '
-      write(outlog(io),1)'yes     #Write out        KML file of deposit arrival times?                                           '
-      write(outlog(io),1)'yes     #write out ESRI ASCII file of cloud arrival times?                                             '
-      write(outlog(io),1)'yes     #Write out        KML file of cloud arrival times?                                             '
-      write(outlog(io),1)'yes     #Write out 3-D ash concentration at specified times?                                           '
-      write(outlog(io),1)'netcdf  #format of ash concentration files     (ascii, binary, or netcdf)                              '
-      write(outlog(io),1)'-1      #nWriteTimes                                                                                   '
-      write(outlog(io),1)'1       #WriteTimes (hours since eruption start)                                                       '
+      write(outlog(io),1)'no      # Write out ESRI ASCII file of final deposit thickness?                                        '
+      write(outlog(io),1)'yes     # Write out        KML file of final deposit thickness?                                        '
+      write(outlog(io),1)'no      # Write out ESRI ASCII deposit files at specified times?                                       '
+      write(outlog(io),1)'no      # Write out        KML deposit files at specified times?                                       '
+      write(outlog(io),1)'no      # Write out ESRI ASCII files of ash-cloud concentration?                                       '
+      write(outlog(io),1)'no      # Write out        KML files of ash-cloud concentration ?                                      '
+      write(outlog(io),1)'no      # Write out ESRI ASCII files of ash-cloud height?                                              '
+      write(outlog(io),1)'no      # Write out        KML files of ash-cloud height?                                              '
+      write(outlog(io),1)'yes     # Write out ESRI ASCII files of ash-cloud load (T/km2) at specified times?                     '
+      write(outlog(io),1)'yes     # Write out        KML files of ash-cloud load (T/km2) at specified times?                     '
+      write(outlog(io),1)'yes     # Write out ESRI ASCII file of deposit arrival times?                                          '
+      write(outlog(io),1)'yes     # Write out        KML file of deposit arrival times?                                          '
+      write(outlog(io),1)'yes     # write out ESRI ASCII file of cloud arrival times?                                            '
+      write(outlog(io),1)'yes     # Write out        KML file of cloud arrival times?                                            '
+      write(outlog(io),1)'yes 1   # Write out 3-D ash concentration at specified times? / [output code: 1=2d+concen,2=2d only]   '
+      write(outlog(io),1)'netcdf  # format of ash concentration files     (ascii, binary, or netcdf)                             '
+      write(outlog(io),1)'-1      # nWriteTimes                                                                                  '
+      write(outlog(io),1)'1       # WriteTimes (hours since eruption start)                                                      '
         case(5) ! BLOCK 5: INPUT WIND FILES
       write(outlog(io),1)'*******************************************************************************                        '
       write(outlog(io),1)'# WIND INPUT FILES                                                                                     '
@@ -440,20 +484,20 @@
       write(outlog(io),1)'*******************************************************************************                        '
       write(outlog(io),1)'# AIRPORT LOCATION FILE                                                                                '
       write(outlog(io),1)'# The following lines allow the user to specify whether times of ash arrival                           '
-      write(outlog(io),1)'# at airports & other locations will be written out, and which file                                    '
+      write(outlog(io),1)'# at airports and other locations will be written out, and which file                                  '
       write(outlog(io),1)'# to read for a list of airport locations.                                                             '
       write(outlog(io),1)'# PLEASE NOTE:  Each line in the airport location file should contain the                              '
       write(outlog(io),1)'#               airport latitude, longitude, projected x and y coordinates,                            '
-      write(outlog(io),1)'#               and airport name.  if you are using a projected grid,                                  '
+      write(outlog(io),1)'#               and airport name.  If you are using a projected grid,                                  '
       write(outlog(io),1)'#               THE X AND Y MUST BE IN THE SAME PROJECTION as the computational grid.                  '
       write(outlog(io),1)'#               Alternatively, if coordinates can be projected via libprojection                       '
       write(outlog(io),1)'#               by typing "yes" to the last parameter                                                  '
       write(outlog(io),1)'******************* BLOCK 6 ***************************************************                        '
-      write(outlog(io),1)'no                            #Write out ash arrival times at airports to ASCII FILE?                  '
-      write(outlog(io),1)'no                            #Write out grain-size distribution to ASCII airports file?               '
-      write(outlog(io),1)'no                            #Write out ash arrival times to kml file?                                '
-      write(outlog(io),1)'GlobalAirports.txt            #Name of file containing aiport locations                                '
-      write(outlog(io),1)'no                            #Have libprojection calculate projected coordinates?                     '
+      write(outlog(io),1)'no                            # Write out ash arrival times at airports to ASCII FILE?                 '
+      write(outlog(io),1)'no                            # Write out grain-size distribution to ASCII airports file?              '
+      write(outlog(io),1)'no                            # Write out ash arrival times to kml file?                               '
+      write(outlog(io),1)'GlobalAirports.txt            # Name of file containing aiport locations                               '
+      write(outlog(io),1)'no                            # Have libprojection calculate projected coordinates?                    '
         case(7) ! BLOCK 7: GRAIN-SIZE BINS, SETTLING VELOCITY
       write(outlog(io),1)'*******************************************************************************                        '
       write(outlog(io),1)'#GRAIN SIZE GROUPS                                                                                     '
@@ -476,29 +520,44 @@
       write(outlog(io),1)'# If FIVE are given, they are read as:  diameter (mm), mass fraction, density (kg/m3), Shape F, G      '
       write(outlog(io),1)'#  where G is an additional Ganser shape factor equal to c/b                                           '
       write(outlog(io),1)'#                                                                                                      '
-      write(outlog(io),1)'#If the last grain size bin has a negative diameter, then the remaining mass fraction                  '
+      write(outlog(io),1)'# If the last grain size bin has a negative diameter, then the remaining mass fraction                 '
       write(outlog(io),1)'# will be distributed over the previous bins via a log-normal distribution in phi.                     '
       write(outlog(io),1)'# The last bin would be interpreted as:                                                                '
       write(outlog(io),1)'# diam (neg value) , phi_mean, phi_stddev                                                              '
       write(outlog(io),1)'#                              # nsmax FV_ID                                                           '
       write(outlog(io),1)'*******************************************************************************                        '
-      write(outlog(io),1)'0.0010 1.0000 2500.0     #grain size (mm), mass fraction, density (kg/m3)                              '
+      write(outlog(io),1)'15                                 # Number of grain-size bins. FV_ID not given; defaults to 1         '
+      write(outlog(io),1)'2.000      0.0208  2003.   0.44    # grain size (mm), mass fraction, density (kg/m3), F=0.44           '
+      write(outlog(io),1)'1.414      0.0084  2350.   0.44                                                                        '
+      write(outlog(io),1)'1.000      0.0141  2005.   0.44                                                                        '
+      write(outlog(io),1)'0.707      0.0214  2248.   0.44                                                                        '
+      write(outlog(io),1)'0.500      0.0459  2624.   0.44                                                                        '
+      write(outlog(io),1)'0.354      0.0723  2644.   0.44                                                                        '
+      write(outlog(io),1)'0.250      0.0532  2639.   0.44                                                                        '
+      write(outlog(io),1)'0.177      0.0219  2690.   0.44                                                                        '
+      write(outlog(io),1)'0.125      0.0165  2691.   0.44                                                                        '
+      write(outlog(io),1)'0.088      0.0115  2730.   0.44                                                                        '
+      write(outlog(io),1)'0.2176     0.0714  600.    1.00    # Note that these are bigger again, low density and round           '
+      write(outlog(io),1)'0.2031     0.1428  600.    1.00    # These bottom five bins represent an aggregate distribution        '
+      write(outlog(io),1)'0.1895     0.2856  600.    1.00                                                                        '
+      write(outlog(io),1)'0.1768     0.1428  600.    1.00                                                                        '
+      write(outlog(io),1)'0.1649     0.0714  600.    1.00                                                                        '
         case(8) ! BLOCK 8: VERTICAL PROFILES
       write(outlog(io),1)'*******************************************************************************                        '
-      write(outlog(io),1)'#Options for writing vertical profiles                                                                 '
-      write(outlog(io),1)'#The first line below gives the number of locations (nlocs) where vertical                             '
+      write(outlog(io),1)'# Options for writing vertical profiles                                                                '
+      write(outlog(io),1)'# The first line below gives the number of locations (nlocs) where vertical                            '
       write(outlog(io),1)'# profiles are to be written.  That is followed by nlocs lines, each of which                          '
-      write(outlog(io),1)'#contain the location, in the same coordinate system specified above for the                           '
-      write(outlog(io),1)'#volcano.                                                                                              '
+      write(outlog(io),1)'# contain the location, in the same coordinate as the computational grid.                              '
+      write(outlog(io),1)'# Optionally, a site name can be provided in after the location.                                       '
       write(outlog(io),1)'******************* BLOCK 8 ***************************************************                        '
-      write(outlog(io),1)'4                             #number of locations for vertical profiles (nlocs)                       '
-      write(outlog(io),1)'12.4  51.4                    #Leipzig                                                                 '
-      write(outlog(io),1)'11.3  48.2                    #Munich (Maisach)                                                        '
-      write(outlog(io),1)'11.0  47.4                    #Schneefernerhaus (Zugspitze)                                            '
-      write(outlog(io),1)'11.0  47.8                    #Hohenpeissenberg                                                        '
+      write(outlog(io),1)'4                             # number of locations for vertical profiles (nlocs)                      '
+      write(outlog(io),1)'12.4  51.4  Leipzig           # x,y (or lon/lat) [Site name]                                           '
+      write(outlog(io),1)'11.3  48.2  Munich            # Munich (Maisach)                                                       '
+      write(outlog(io),1)'11.0  47.4  Schneefernerhaus  # Schneefernerhaus (Zugspitze)                                           '
+      write(outlog(io),1)'11.0  47.8  Hohenpeissenberg  # Hohenpeissenberg                                                       '
         case(9) ! BLOCK 9: (Optional): NETCDF ANNOTATIONS
       write(outlog(io),1)'*******************************************************************************                        '
-      write(outlog(io),1)'#netCDF output options                                                                                 '
+      write(outlog(io),1)'# netCDF output options                                                                                '
       write(outlog(io),1)'# This last block is optional.                                                                         '
       write(outlog(io),1)'# The output file name can be give, but will default to 3d_tephra_fall.nc if absent                    '
       write(outlog(io),1)'# The title and comment lines are passed through to the netcdf header of the                           '
@@ -544,14 +603,21 @@
       write(outlog(io),1)' cdf_url              = https://vsc-ash.wr.usgs.gov/ash3d-gui                                          '
 
 !        case default
-!      write(outlog(io),1)'no comment                    # Comment                                                                '
       end select
+
+ 1    format(a103)
 
       end subroutine help_inputfile
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!  help_make
+!  help_postproc
+!
+!  Called from: Parse_Command_Line or Ash3d_PostProc.f90
+!  Arguments:
+!    none
+!
+!  This subroutine writes the usage of the tool Ash3d_PostProc to the screen.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -559,40 +625,43 @@
 
       io = 1
 
-      write(outlog(io),*)' '
-      write(outlog(io),*)' Ash3d post-processing tool: Ash3d_PostProc'
-      write(outlog(io),*)' '
-      write(outlog(io),*)'Usage: Ash3d_PostProc control_file [t_index]'
-      write(outlog(io),*)'           or'
-      write(outlog(io),*)'       Ash3d_PostProc infile output_product format'
-      write(outlog(io),*)'  where: infile   = the netcdf file written by Ash3d'
-      write(outlog(io),*)'   output_product = 1 full concentration array'
-      write(outlog(io),*)'                    2 deposit granularity'
-      write(outlog(io),*)'                    3 deposit thickness (mm time-series)'
-      write(outlog(io),*)'                    4 deposit thickness (inches time-series)'
-      write(outlog(io),*)'                    5 deposit thickness (mm final)'
-      write(outlog(io),*)'                    6 deposit thickness (inches final)'
-      write(outlog(io),*)'                    7 ashfall arrival time (hours)'
-      write(outlog(io),*)'                    8 ashfall arrival at airports/POI (mm)'
-      write(outlog(io),*)'                    9 ash-cloud concentration (mg/m3)'
-      write(outlog(io),*)'                   10 ash-cloud height (km)'
-      write(outlog(io),*)'                   11 ash-cloud bottom (km)'
-      write(outlog(io),*)'                   12 ash-cloud load (T/km2 or )'
-      write(outlog(io),*)'                   13 ash-cloud radar reflectivity (dBz)'
-      write(outlog(io),*)'                   14 ash-cloud arrival time (hours)'
-      write(outlog(io),*)'                   15 topography'
-      write(outlog(io),*)'                   16 profile plots'
-      write(outlog(io),*)'           format = 1 ASCII/ArcGIS'
-      write(outlog(io),*)'                    2 KML/KMZ'
-      write(outlog(io),*)'                    3 image/png'
-      write(outlog(io),*)'                    4 binary'
-      write(outlog(io),*)'                    5 shape file'
-      write(outlog(io),*)'                    6 grib2'
-      write(outlog(io),*)'                    7 netcdf'
-      write(outlog(io),*)'                    8 tecplot'
-      write(outlog(io),*)'                    9 vtk'
+      write(outlog(io),1)'                                                                                '
+      write(outlog(io),1)' Ash3d post-processing tool: Ash3d_PostProc                                     '
+      write(outlog(io),1)'                                                                                '
+      write(outlog(io),1)'Usage: Ash3d_PostProc control_file [t_index]                                    '
+      write(outlog(io),1)'           or                                                                   '
+      write(outlog(io),1)'       Ash3d_PostProc infile output_product format                              '
+      write(outlog(io),1)'  where: infile   = the netcdf file written by Ash3d                            '
+      write(outlog(io),1)'   output_product = 1 full concentration array                                  '
+      write(outlog(io),1)'                    2 deposit granularity                                       '
+      write(outlog(io),1)'                    3 deposit thickness (mm time-series)                        '
+      write(outlog(io),1)'                    4 deposit thickness (inches time-series)                    '
+      write(outlog(io),1)'                    5 deposit thickness (mm final)                              '
+      write(outlog(io),1)'                    6 deposit thickness (inches final)                          '
+      write(outlog(io),1)'                    7 ashfall arrival time (hours)                              '
+      write(outlog(io),1)'                    8 ashfall arrival at airports/POI (mm)                      '
+      write(outlog(io),1)'                    9 ash-cloud concentration (mg/m3)                           '
+      write(outlog(io),1)'                   10 ash-cloud height (km)                                     '
+      write(outlog(io),1)'                   11 ash-cloud bottom (km)                                     '
+      write(outlog(io),1)'                   12 ash-cloud load (T/km2 or )                                '
+      write(outlog(io),1)'                   13 ash-cloud radar reflectivity (dBz)                        '
+      write(outlog(io),1)'                   14 ash-cloud arrival time (hours)                            '
+      write(outlog(io),1)'                   15 topography                                                '
+      write(outlog(io),1)'                   16 profile plots                                             '
+      write(outlog(io),1)'           format = 1 ASCII/ArcGIS                                              '
+      write(outlog(io),1)'                    2 KML/KMZ                                                   '
+      write(outlog(io),1)'                    3 image/png                                                 '
+      write(outlog(io),1)'                    4 binary                                                    '
+      write(outlog(io),1)'                    5 shape file                                                '
+      write(outlog(io),1)'                    6 grib2                                                     '
+      write(outlog(io),1)'                    7 netcdf                                                    '
+      write(outlog(io),1)'                    8 tecplot                                                   '
+      write(outlog(io),1)'                    9 vtk                                                       '
+      write(outlog(io),1)'         [t_index] = index of time slice to plot; -1 for final (optional)       '
 
-      write(outlog(io),*)'         [t_index] = index of time slice to plot; -1 for final (optional)'
+      stop 1
+
+ 1    format(a80)
 
       end subroutine help_postproc
 

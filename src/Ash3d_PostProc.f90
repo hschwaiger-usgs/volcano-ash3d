@@ -1,4 +1,5 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+         ! None of OutVar,Fill_Value,OutFillValue,filename_root need to be set
 !
 !  Ash3d_PostProc
 !
@@ -251,7 +252,7 @@
       WriteAirportFile_ASCII        = .false.
       Write3dFiles                  = .false.
 
-      ! Test read command line arguments
+      ! Test read command-line arguments
       nargs = command_argument_count()
       if (nargs.eq.0) then
           ! If no command-line arguments are given, then prompt user
@@ -504,7 +505,7 @@
         stop 1
       endif
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),*)'Finished reading command-line'
+        write(outlog(io),*)'Finished reading command line'
       endif;enddo
 
       ! Before we do anything, call routine to read the netcdf file, populate
@@ -544,8 +545,6 @@
           WriteDepositFinal_ASCII       = .true.
         elseif(iformat.eq.2)then
           WriteDepositFinal_KML         = .true.
-            ! Double-check this
-          WriteDepositTS_KML            = .true.
         endif
       elseif(iprod.eq.5 )then ! deposit at specified times (inches)
         if(    iformat.eq.1)then
@@ -558,8 +557,6 @@
           WriteDepositFinal_ASCII       = .true.
         elseif(iformat.eq.2)then
           WriteDepositFinal_KML         = .true.
-            ! HFS: Double-check this
-          WriteDepositTS_KML            = .true.
         endif
       elseif(iprod.eq.7 )then ! ashfall arrival time
         if(    iformat.eq.1)then
@@ -689,15 +686,8 @@
           enddo
           isFinal_TS = .true.
           ! For deposit output, load the final deposit variable and write to file
-          ! HFS
-!          if(iprod.eq.3.or.iprod.eq.5)then
-            call NC_Read_Output_Products(-1)
-            call output_results
-!          elseif(iprod.eq.4.or.iprod.eq.6)then
-!            call NC_Read_Output_Products(-1)
-            !OutVar = DepositThickness(1:nxmax,1:nymax)*MM_2_IN
-            !call Write_2D_KML(ivar,OutVar,height_flag,TS_flag)
-!          endif
+          call NC_Read_Output_Products(-1)
+          call output_results
         elseif(iprod.eq.8)then  ! ashfall at airports
           call Write_PointData_Airports_KML
         elseif(iprod.eq.16)then  ! vertical profile plots
@@ -734,8 +724,7 @@
         filename_root = 'DepositArrivalTime  '
       elseif(iprod.eq.8)then
          ! ashfall at airports/POI
-         ! HFS
-         ! call Write_PointData_Airports_ASCII
+         ! None of OutVar,Fill_Value,OutFillValue,filename_root need to be set
       elseif(iprod.eq.9)then
         OutVar = MaxConcentration
         Fill_Value = ' 0.000'

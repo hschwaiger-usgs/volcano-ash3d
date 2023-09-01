@@ -290,8 +290,12 @@
               ! Otherwise, read Rel Humidity and convert
               ivar = 30
               call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now)
-                !HFS : need to convert RH to SH
+                ! need to convert RH to SH
               !AirSH_meso_last_step_MetP_sp = MR_dum3d_MetP
+              do io=1,2;if(VB(io).le.verbosity_info)then
+                write(outlog(io),*)"WARNING: Specific Humidity requested but is unavailable."
+                write(outlog(io),*)"         Setting to zero."
+              endif;enddo
               AirSH_meso_last_step_MetP_sp = 0.0_sp
             else
               do io=1,2;if(VB(io).le.verbosity_error)then
@@ -322,8 +326,12 @@
             ! Otherwise, read Rel Humidity and convert
             ivar = 30
             call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now+1)
-                !HFS : need to convert RH to SH
+                ! need to convert RH to SH
             !AirSH_meso_next_step_MetP_sp = MR_dum3d_MetP
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"WARNING: Specific Humidity requested but is unavailable."
+              write(outlog(io),*)"         Setting to zero."
+            endif;enddo
             AirSH_meso_last_step_MetP_sp = 0.0_sp
           else
             do io=1,2;if(VB(io).le.verbosity_error)then  

@@ -78,7 +78,6 @@ USEGRIB   = T
 USEPOINTERS = F
 
 # EXTERNAL DATA FILES
-#
 USEEXTDATA = T
 
 # SPEED-UP ALGORITHMS
@@ -324,7 +323,9 @@ write_KML.o              \
 ResetParams.o
 
 PPOBJS = Ash3d_VariableModules.o        \
-         Output_Vars.o Output_Results.o \
+         Help.o                         \
+         Output_Vars.o                  \
+         Output_Results.o \
          Tephra.o                       \
          Source.o                       \
          Source_Umbrella.o              \

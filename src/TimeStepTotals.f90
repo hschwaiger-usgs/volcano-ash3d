@@ -10,7 +10,7 @@
 !  This subroutine call subroutine to calculate the volume of ash aloft, in the
 !  deposit and that exited the domain through the sides and possibly the top
 !  at the specified time step itime.  This information, along with the time and
-!  cloud area are writen to stdout and the logfile.
+!  cloud area are written to stdout and the logfile.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

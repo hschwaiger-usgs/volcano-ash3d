@@ -143,14 +143,17 @@
       !logical, parameter :: log_3d1_tmp          = .false.
       !logical, parameter :: log_4d1_tmp          = .false.
 
-        ! This variable should be set to true if you want to include the standard
-        ! derived variables in the output file (this should nearly alwaysbe true,
-        ! downstream products rely on these variables)
-      logical,public :: USE_OUTPROD_VARS  = .true.
+        ! This variable is set to true indicating that the output file should include
+        ! the standard derived variables in the output file.
+        ! This is currently not able to be turned off as downstream products
+        ! rely on these variables)
+      logical,public :: USE_OUTPROD_VARS = .true.
 
-        ! Set this variable to false if you do not want raw concentration
-        ! values exported (only derived products and deposits)
-      logical,public :: USE_RESTART_VARS  = .false.
+        ! This variable will be set to false if you do not want raw concentration
+        ! values exported (only derived products and deposits) if indicated
+        ! in the input file on block 5/line 15
+        ! yes 2   # Write out 3-D ash concentration at specified times? / [output code: 1=2d+concen,2=2d only]
+      logical,public :: USE_RESTART_VARS
 
       real(kind=ip),public :: CloudArea                ! area of ash cloud at a given time
       real(kind=ip),public :: LoadVal(5)               ! 5 threshold values for area calculations

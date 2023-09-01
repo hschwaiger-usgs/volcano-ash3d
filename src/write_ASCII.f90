@@ -181,7 +181,7 @@
 !  Arguments:
 !    nx            = x length of output array OutVar
 !    ny            = y length of output array OutVar
-!    OutVar        = 2-d array to be writen to ASCII file
+!    OutVar        = 2-d array to be written to ASCII file
 !    VarMask       = 2-d logical that toggles data v.s. Fill_Value
 !    Fill_Value    = number used for No-data
 !    filename_root = root name of file (20 characters)
