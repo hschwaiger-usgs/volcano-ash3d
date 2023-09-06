@@ -7,8 +7,8 @@ Ash3d_ASCII_check="../../bin/tools/Ash3d_ASCII_check"
 n2Dfiles=8
 ascii2Doutfiles=("CloudHeight_005.00hrs.dat" "CloudHeight_010.00hrs.dat" "CloudLoad_005.00hrs.dat" "CloudLoad_010.00hrs.dat" "CloudConcentration_005.00hrs.dat" "CloudConcentration_010.00hrs.dat" "CloudArrivalTime.dat" "DepositFile_005.00hrs.dat" "DepositFile_010.00hrs.dat" "DepositFile_____final.dat" "DepositArrivalTime.dat")
 
-nSubCases=8   # 0            1       2                3           4                5                6         7
-SubCaseLabels=("Suzuki (4)" "line" "point (tracer)" "point (WH)" "point (Ganser)" "point (Stokes)" "profile" "line (topo)")
+nSubCases=11  # 0            1       2                3           4                5                6         7            8                     9                    10
+SubCaseLabels=("Suzuki (4)" "line" "point (tracer)" "point (WH)" "point (Ganser)" "point (Stokes)" "profile" "line (topo)" "point (WH) dz_plin" "point (WH) dz_clog" "point (WH) dz_cust")
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'

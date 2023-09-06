@@ -1,5 +1,4 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-         ! None of OutVar,Fill_Value,OutFillValue,filename_root need to be set
 !
 !  Ash3d_PostProc
 !
@@ -477,8 +476,7 @@
       endif
       if(iprod.eq.2)then   ! deposit granularity
         do io=1,2;if(VB(io).le.verbosity_error)then
-          write(errlog(io),*)'We do not yet have a plan for processing depocon'
-          write(errlog(io),*)'This is probably where we would implement vtk, or tecplot'
+          write(errlog(io),*)'We do not yet have processing depocon implimented.'
         endif;enddo
         stop 1
       endif
@@ -491,6 +489,13 @@
       ! This call reads the 2d output products for the specified time
       ! If itime=-1 (for the final step), then
       call NC_Read_Output_Products(itime)
+
+      if(.not.IsLatLon)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)'Only post-processing of Lon/Lat grids is currently supported.'
+        endif;enddo
+        stop 1
+      endif
 
       if (itime.eq.-1) then
         iout3d = nWriteTimes

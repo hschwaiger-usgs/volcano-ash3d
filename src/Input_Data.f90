@@ -850,7 +850,6 @@
       character         :: testkey
       integer           :: iendstr,ios,ioerr,init_n_gs_max
       real(kind=ip)     :: value1, value2, value3, value4, value5
-      real(kind=ip)     :: tmp1, tmp2
       real(kind=ip),allocatable,dimension(:) :: values
       real(kind=ip)     :: tmp_ip
       real(kind=dp)     :: tmp_dp
@@ -858,7 +857,7 @@
       character(len=8)  :: volc_code
       real(kind=ip),allocatable,dimension(:) :: dum_prof
       integer           :: clog_nsteps,cust_nsteps
-      real(kind=ip)     :: clog_zmin,clog_zmax
+      real(kind=ip)     :: clog_zmax
 
 
       real(kind=ip),allocatable,dimension(:) :: temp_v_s,temp_gsdiam
@@ -1197,26 +1196,17 @@
         ! constant log steps
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"Logrithmic z (constant steps of dlog(z))"
-          write(outlog(io),*)"Now reading the clog_zmin, clog_zmax and number of steps."
+          write(outlog(io),*)"Now reading the clog_zmax and number of steps."
         endif;enddo
         ! Block 1 Line 7+1 (Reading the next line into cdf_b1l7)
         read(10,'(a80)')cdf_b1l7
-        read(cdf_b1l7,*,err=9107) clog_zmin, clog_zmax, clog_nsteps
-        if(clog_zmin.le.0.0)then
+        read(cdf_b1l7,*,err=9107) clog_zmax, clog_nsteps
+        if(clog_zmax.le.0.0)then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: ",&
-                         "lower z-level must be strictly positive"
+                         "z-level must be strictly positive"
             write(errlog(io),*)&
-                         "       z-min = ",clog_zmin
-          endif;enddo
-          stop 1
-        endif
-        if(clog_zmin.gt.clog_zmax)then
-          do io=1,2;if(VB(io).le.verbosity_error)then
-            write(errlog(io),*)"ERROR: ",&
-                         "lower z-level less than upper z-level"
-            write(errlog(io),*)&
-                         "       z-min,z-max",clog_zmin, clog_zmax
+                         "       z-max = ",clog_zmax
           endif;enddo
           stop 1
         endif
@@ -1234,13 +1224,12 @@
         allocate(z_vec_init(0:nz_init))
         z_vec_init = 0.0_ip
         do k=1,nz_init
-          tmp1 = (1.0_ip-real((k-1),kind=ip)/real(clog_nsteps)) * log10(clog_zmin)
-          tmp2 = (       real((k-1),kind=ip)/real(clog_nsteps)) * log10(clog_zmax)
-          z_vec_init(k)=10.0**(tmp1 + tmp2)
+          tmp_ip = (       real(k,kind=ip)/real(clog_nsteps)) * log10(clog_zmax+1.0_ip)
+          z_vec_init(k)=10.0**(tmp_ip) - 1.0_ip
         enddo
       elseif (VarDzType.eq.'dz_cust')then
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"Custum dz"
+          write(outlog(io),*)"Custom dz"
           write(outlog(io),*)"Now reading number of steps (ndz) followed by values(1:ndz)"
         endif;enddo
         ! Block 1 Line 7+1 (Reading the next line into cdf_b1l7)

@@ -10,7 +10,7 @@ TC3_MSH                           # Volcano name (character*30)
 -2239.77  2641.27                 # vent location         (km, or deg. if latlonflag=1)
  2.0      2.0                     # DX, DY of grid cells  (km, or deg.)
 dz_clog                           # DZ of grid cells      (always km)
-0.1 30.0 30                       # min z, maz z, steps for constant log(z)
+30.0 30                           # maz z, steps for constant log(z)
 0.0       point                   # diffusion coefficient (m2/s), Suzuki constant
 1                                 # neruptions, number of eruptions or pulses
 *******************************************************************************

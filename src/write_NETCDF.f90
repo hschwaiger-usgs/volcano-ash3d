@@ -3632,7 +3632,7 @@
       real(kind=op) :: dumscal_out
       real(kind=sp), dimension(:),allocatable :: dum1d_sp
       real(kind=dp), dimension(:),allocatable :: dum1d_dp
-      character(len=32)              :: time_units
+      character(len=32) :: time_units
       integer           :: iendstr
 
       integer :: itstart_year,itstart_month,itstart_day

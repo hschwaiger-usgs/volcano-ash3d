@@ -10,7 +10,7 @@ TC3_MSH                           # Volcano name (character*30)
 -2239.77  2641.27                 # vent location         (km, or deg. if latlonflag=1)
  2.0      2.0                     # DX, DY of grid cells  (km, or deg.)
 dz_plin                           # DZ of grid cells      (always km)
-4 6 0.25 5 0.5 5 1.0 10 2.0
+4 6 0.25 5 0.5 5 1.0 10 2.0       # n-segments nz1 dz1 nz2 dz2 nz3 dz3 ...
 0.0       point                   # diffusion coefficient (m2/s), Suzuki constant
 1                                 # neruptions, number of eruptions or pulses
 *******************************************************************************

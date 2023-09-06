@@ -7,8 +7,6 @@ Ash3d_ASCII_check="../../bin/tools/Ash3d_ASCII_check"
 n2Dfiles=11
 ascii2Doutfiles=("CloudHeight_008.00hrs.dat" "CloudHeight_016.00hrs.dat" "CloudLoad_008.00hrs.dat" "CloudLoad_016.00hrs.dat" "CloudConcentration_008.00hrs.dat" "CloudConcentration_016.00hrs.dat" "CloudArrivalTime.dat" "DepositFile_008.00hrs.dat" "DepositFile_016.00hrs.dat" "DepositFile_____final.dat" "DepositArrivalTime.dat")
 
-ln -s /data/WindFiles/NCEP Wind_nc
-
 nSubCases=4   # 0       1              2         3                  4
 SubCaseLabels=("Cloud" "umbrella_air" "deposit" "deposit umbrella" "cloud (global)")
 
@@ -18,6 +16,7 @@ NC='\033[0m' # No Color
 
 rc=0
 ./clean.sh
+ln -s /data/WindFiles/NCEP Wind_nc
 for (( s=0;s<nSubCases;s++))
 do
   echo     "-----------------------------------------------------------"
