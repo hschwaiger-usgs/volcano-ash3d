@@ -850,11 +850,16 @@
       character         :: testkey
       integer           :: iendstr,ios,ioerr,init_n_gs_max
       real(kind=ip)     :: value1, value2, value3, value4, value5
+      real(kind=ip)     :: tmp1, tmp2
+      real(kind=ip),allocatable,dimension(:) :: values
       real(kind=ip)     :: tmp_ip
       real(kind=dp)     :: tmp_dp
       real(kind=ip)     :: sum_bins
       character(len=8)  :: volc_code
       real(kind=ip),allocatable,dimension(:) :: dum_prof
+      integer           :: clog_nsteps,cust_nsteps
+      real(kind=ip)     :: clog_zmin,clog_zmax
+
 
       real(kind=ip),allocatable,dimension(:) :: temp_v_s,temp_gsdiam
       real(kind=ip),allocatable,dimension(:) :: temp_bin_mass,temp_rho_m
@@ -1141,10 +1146,11 @@
       read(cdf_b1l7,*,err=9107) VarDzType
       if (VarDzType.eq.'dz_plin')then
         ! Piece-wise linear
-        !  Read another line with n-segments, nz1, dz1, nz2, dz2, ...
+        !  Read another line with: n-segments, nz1, dz1, nz2, dz2, ...
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"z is piecewise linear:  Now reading the segments."
         endif;enddo
+        ! Block 1 Line 7+1 (Reading the next line into cdf_b1l7)
         read(10,'(a80)')cdf_b1l7
         read(cdf_b1l7,*,err=9107) nsegments
         if(nsegments.lt.1)then
@@ -1156,12 +1162,22 @@
           endif;enddo
           stop 1
         endif
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Found n-segments: ",nsegments
+          write(outlog(io),*)"      segment :    nz  :     dz "
+        endif;enddo
         allocate(nz_plin_segments(nsegments))
         allocate(dz_plin_segments(nsegments))
+        allocate(values(1+2*nsegments))
+        read(cdf_b1l7,*,err=9107)values(1:1+2*nsegments)
         do i=1,nsegments
-          read(10,'(a80)')cdf_b1l7
-          read(cdf_b1l7,*,err=9107) nz_plin_segments(i), dz_plin_segments(i)
+          nz_plin_segments(i) = nint(values(1+(i-1)*2 + 1))
+          dz_plin_segments(i) = values(1+(i-1)*2 + 2)
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),'(7x,i5,5x,i5,6x,f5.2)')i,nz_plin_segments(i),dz_plin_segments(i)
+          endif;enddo
         enddo
+        deallocate(values)
         nz_init = sum(nz_plin_segments(:))
         allocate(z_vec_init(0:nz_init))
         z_vec_init = 0.0_ip
@@ -1178,17 +1194,75 @@
           enddo
         enddo
       elseif (VarDzType.eq.'dz_clog')then
+        ! constant log steps
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)&
-                     "Logrithmic dz not yet implemented.  Setting to constant dz=0.25"
+          write(outlog(io),*)"Logrithmic z (constant steps of dlog(z))"
+          write(outlog(io),*)"Now reading the clog_zmin, clog_zmax and number of steps."
         endif;enddo
-        dz_const = 0.25_ip
+        ! Block 1 Line 7+1 (Reading the next line into cdf_b1l7)
+        read(10,'(a80)')cdf_b1l7
+        read(cdf_b1l7,*,err=9107) clog_zmin, clog_zmax, clog_nsteps
+        if(clog_zmin.le.0.0)then
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: ",&
+                         "lower z-level must be strictly positive"
+            write(errlog(io),*)&
+                         "       z-min = ",clog_zmin
+          endif;enddo
+          stop 1
+        endif
+        if(clog_zmin.gt.clog_zmax)then
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: ",&
+                         "lower z-level less than upper z-level"
+            write(errlog(io),*)&
+                         "       z-min,z-max",clog_zmin, clog_zmax
+          endif;enddo
+          stop 1
+        endif
+        if(clog_nsteps.le.1)then
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: ",&
+                         "Please choose more that 1 segments in log-z"
+            write(errlog(io),*)&
+                         "       n-segments = ",clog_nsteps
+          endif;enddo
+          stop 1
+        endif
+
+        nz_init = clog_nsteps+1
+        allocate(z_vec_init(0:nz_init))
+        z_vec_init = 0.0_ip
+        do k=1,nz_init
+          tmp1 = (1.0_ip-real((k-1),kind=ip)/real(clog_nsteps)) * log10(clog_zmin)
+          tmp2 = (       real((k-1),kind=ip)/real(clog_nsteps)) * log10(clog_zmax)
+          z_vec_init(k)=10.0**(tmp1 + tmp2)
+        enddo
       elseif (VarDzType.eq.'dz_cust')then
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)&
-                     "Custom dz not yet implemented.  Setting to constant dz=0.25"
+          write(outlog(io),*)"Custum dz"
+          write(outlog(io),*)"Now reading number of steps (ndz) followed by values(1:ndz)"
         endif;enddo
-        dz_const = 0.25_ip
+        ! Block 1 Line 7+1 (Reading the next line into cdf_b1l7)
+        read(10,'(a80)')cdf_b1l7
+        read(cdf_b1l7,*,err=9107) cust_nsteps
+        if(cust_nsteps.le.1)then
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: ",&
+                         "Must have a postive number of steps in z"
+            write(errlog(io),*)&
+                         "       n steps = ",cust_nsteps
+          endif;enddo
+          stop 1
+        endif
+        allocate(values(cust_nsteps))
+        read(cdf_b1l7,*,err=9107) cust_nsteps, values(1:cust_nsteps)
+        nz_init = cust_nsteps
+        allocate(z_vec_init(0:nz_init))
+        z_vec_init = 0.0_ip
+        do k=1,nz_init
+          z_vec_init(k)=z_vec_init(k-1)+values(k)
+        enddo
       else
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)&
@@ -1298,10 +1372,6 @@
         endif;enddo
         stop 1
       endif
-      !if(dz_const.le.0.0)then
-      !  write(outlog(io),*)"ERROR: dz_const must be positive, not ",dz_const
-      !  stop 1
-      !endif
       if(SourceType.eq.'suzuki'.and.(Suzuki_A.le.0.0_ip))then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -4019,7 +4089,7 @@
       ! Format statements
 1     format (4x,'Warning: dx and dy are not the same.  If the',&
                 ' deposit file is read by ArcMap',/, &
-             4x,'they  are assumed to be the same.  The nodal',&
+             4x,'they are assumed to be the same.  The nodal',&
                 ' spacing written to the ',/, &
              4x,'deposit file is dx, dy, but ArcMap will only read dx.')
       return

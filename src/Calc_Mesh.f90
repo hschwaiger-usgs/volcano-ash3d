@@ -210,11 +210,7 @@
       endif;enddo
       call MR_Set_Met_Times(SimStartHour, Simtime_in_hours)
 
-
 30    format(/,4x,'Calculating the locations of each cell-centered node in the grid.')
-!31    format(/,4x,&
-!             'interpolating to find winds at regular grid elevations')
-!32    format(/,4x,'Finding source nodes')
   
       end subroutine calc_mesh_params
 
