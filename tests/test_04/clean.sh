@@ -1,5 +1,4 @@
 #!/bin/bash
-rm -f Wind_nc
 rm -f CloudHeight*dat
 rm -f Ash3d.lst
 rm -f 3d_tephra_fall.nc

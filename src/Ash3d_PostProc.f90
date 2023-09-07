@@ -72,7 +72,7 @@
            Set_OS_Env
 
       use mesh,          only : &
-         nxmax,nymax,nzmax
+         nxmax,nymax,nzmax,IsLatLon
 
       use time_data,     only : &
          time,time_native,BaseYear,useLeap,SimStartHour

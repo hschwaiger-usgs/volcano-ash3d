@@ -15,6 +15,7 @@ GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
 rc=0
+rm -f Wind_nc
 ./clean.sh
 ln -s /data/WindFiles/NCEP Wind_nc
 for (( s=0;s<nSubCases;s++))

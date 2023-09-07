@@ -22,6 +22,11 @@ do
   outdir="output${s}"
 
   ${Ash3d} TC3_XY_MSH_SC${s}.inp > /dev/null 2>&1
+  rc=$((rc + $?))
+  if [[ "$rc" -gt 0 ]] ; then
+    echo "Error: Ash3d returned error code"
+    exit 1
+  fi
   for (( i=0;i<n2Dfiles;i++))
   do
     echo Checking 2d ASCII file "${ascii2Doutfiles[i]}"
