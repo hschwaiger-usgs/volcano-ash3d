@@ -20,20 +20,20 @@
 
       use io_units
 
+      use io_data,       only : &
+         OutputStep_Marker
+
       use solution,      only : &
          aloft_vol,dep_vol,outflow_vol,tot_vol,SourceCumulativeVol
+
+      use time_data,     only : &
+         time,SimStartHour,Simtime_in_hours,BaseYear,useLeap
 
       use Output_Vars,   only : &
          CloudArea,&
          Calc_AshVol_Aloft,&
          Calc_AshVol_Deposit,&
          Calc_AshVol_Outflow
-
-      use time_data,     only : &
-         time,SimStartHour,Simtime_in_hours,BaseYear,useLeap
-
-      use io_data,       only : &
-         OutputStep_Marker
 
       implicit none
 

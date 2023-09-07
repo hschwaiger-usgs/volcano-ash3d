@@ -177,6 +177,18 @@
          nvar_User2d_static_XY,nvar_User2d_XY,nvar_User3d_XYGs,nvar_User3d_XYZ,&
          nvar_User4d_XYZGs,Write_PT_Data,Write_PR_Data
 
+      use mesh,          only : &
+         nxmax,nymax,nzmax,nsmax,x_cc_pd,y_cc_pd,z_cc_pd,lon_cc_pd,lat_cc_pd,&
+         sigma_nz_pd,dx,dy,dz_vec_pd,IsLatLon,ts1,&
+         A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
+         A3d_phi2,A3d_Re,ZPADDING
+
+      use solution,      only : &
+          vx_pd,vy_pd,vz_pd,vf_pd,concen_pd,DepositGranularity,SpeciesID,SpeciesSubID
+
+      use time_data,     only : &
+          BaseYear,useLeap,os_time_log,time,SimStartHour,xmlSimStartTime,OutputOffset
+
       use Output_Vars,   only : &
          DepositThickness_FillValue,MaxConcentration_FillValue,DepArrivalTime_FillValue,&
          CloudArrivalTime_FillValue,CloudLoad_FillValue,MaxHeight_FillValue,&
@@ -206,18 +218,6 @@
       use Tephra,        only : &
          n_gs_max,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,&
          MagmaDensity,DepositDensity,LAM_GS_THRESH,AIRBORNE_THRESH
-
-      use mesh,          only : &
-         nxmax,nymax,nzmax,nsmax,x_cc_pd,y_cc_pd,z_cc_pd,lon_cc_pd,lat_cc_pd,&
-         sigma_nz_pd,dx,dy,dz_vec_pd,IsLatLon,ts1,&
-         A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
-         A3d_phi2,A3d_Re,ZPADDING
-
-      use solution,      only : &
-          vx_pd,vy_pd,vz_pd,vf_pd,concen_pd,DepositGranularity,SpeciesID,SpeciesSubID
-
-      use time_data,     only : &
-          BaseYear,useLeap,os_time_log,time,SimStartHour,xmlSimStartTime,OutputOffset
 
       use Source,        only : &
          neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
@@ -2767,6 +2767,15 @@
          iout3d,nvar_User2d_XY,nvar_User3d_XYGs,nvar_User3d_XYZ,nvar_User4d_XYZGs,&
          outfile,isFinal_TS,nvprofiles,Write_PT_Data,Write_PR_Data
 
+      use mesh,          only : &
+         nxmax,nymax,nzmax,nsmax,ts1,dz_vec_pd
+
+      use solution,      only : &
+         vx_pd,vy_pd,vz_pd,vf_pd,concen_pd,DepositGranularity
+
+      use time_data,     only : &
+         time,ntmax,time_native,BaseYear
+
       use Output_Vars,   only : &
          CloudLoad_FillValue,dbZCol_FillValue,MaxConcentration_FillValue,&
          MaxHeight_FillValue,MinHeight_FillValue,Mask_Cloud,Mask_Deposit,&
@@ -2784,15 +2793,6 @@
       use Airports,      only : &
          nairports,Airport_Thickness_TS,Airport_AshDuration,Airport_CloudArrivalTime,&
          Airport_CloudDuration,Airport_AshArrivalTime,Airport_thickness
-
-      use mesh,          only : &
-         nxmax,nymax,nzmax,nsmax,ts1,dz_vec_pd
-
-      use solution,      only : &
-         vx_pd,vy_pd,vz_pd,vf_pd,concen_pd,DepositGranularity
-
-      use time_data,     only : &
-         time,ntmax,time_native,BaseYear
 
       integer :: i,j,k,isize
 
@@ -3584,13 +3584,21 @@
          cdf_run_class,cdf_url,cdf_institution,&
          Write_PR_Data,nvprofiles,x_vprofile,y_vprofile,Site_vprofile
 
-      use Source,        only : &
-         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight, &
-         lat_volcano,lon_volcano,x_volcano,y_volcano
+      use mesh,          only : &
+         nxmax,nymax,nsmax,nzmax,x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd,z_cc_pd, &
+         dx,dy,de,dn,dz_const,IsLatLon,latLL,lonLL,latUR,lonUR,xLL,yLL,xUR,yUR,&
+         ZPADDING
+
+      use solution,      only : &
+         SpeciesID
 
       use time_data,     only : &
           BaseYear,useLeap,os_time_log,time,time_native,SimStartHour,xmlSimStartTime, &
           Simtime_in_hours,ntmax
+
+      use Source,        only : &
+         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight, &
+         lat_volcano,lon_volcano,x_volcano,y_volcano
 
       use Output_Vars,   only : &
          DepositThickness,DepArrivalTime,CloudArrivalTime,pr_ash,&
@@ -3610,16 +3618,8 @@
          Airport_Thickness,Airport_CloudArrived,Airport_i,Airport_j,&
            Allocate_Airports
 
-      use mesh,          only : &
-         nxmax,nymax,nsmax,nzmax,x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd,z_cc_pd, &
-         dx,dy,de,dn,dz_const,IsLatLon,latLL,lonLL,latUR,lonUR,xLL,yLL,xUR,yUR,&
-         ZPADDING
-
       use Tephra,        only : &
          n_gs_max,MagmaDensity,DepositDensity,LAM_GS_THRESH,AIRBORNE_THRESH
-
-      use solution,      only : &
-         SpeciesID
 
       integer, intent(in), optional :: timestep
 

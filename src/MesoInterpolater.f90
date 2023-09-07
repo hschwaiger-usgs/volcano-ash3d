@@ -42,17 +42,11 @@
          MPS_2_KMPHR, &
          useCalcFallVel
 
+      use mesh,            only : &
+         nxmax,nymax,nzmax
+
       use solution,        only : &
          vx_pd,vy_pd,vz_pd,vf_pd
-
-      use wind_grid,       only : &
-          vx_meso_last_step_sp,vx_meso_next_step_sp,&
-          vy_meso_last_step_sp,vy_meso_next_step_sp,&
-          vz_meso_last_step_sp,vz_meso_next_step_sp,&
-          vf_meso_last_step_sp,vf_meso_next_step_sp,&
-          vx_meso_1_sp,vy_meso_1_sp,vz_meso_1_sp, &
-          vx_meso_2_sp,vy_meso_2_sp,vz_meso_2_sp, &
-          Meso_toggle
 
       use time_data,       only : &
 #ifdef FAST_DT
@@ -65,8 +59,14 @@
          NextWriteTime
 #endif
 
-      use mesh,            only : &
-         nxmax,nymax,nzmax
+      use wind_grid,       only : &
+          vx_meso_last_step_sp,vx_meso_next_step_sp,&
+          vy_meso_last_step_sp,vy_meso_next_step_sp,&
+          vz_meso_last_step_sp,vz_meso_next_step_sp,&
+          vf_meso_last_step_sp,vf_meso_next_step_sp,&
+          vx_meso_1_sp,vy_meso_1_sp,vz_meso_1_sp, &
+          vx_meso_2_sp,vy_meso_2_sp,vz_meso_2_sp, &
+          Meso_toggle
 
       use Source,          only : &
          SourceType,e_EndTime
@@ -388,15 +388,6 @@
       use solution,        only : &
          vf_pd
 
-      use wind_grid,       only : &
-          vx_meso_next_step_sp,&
-          vy_meso_next_step_sp,&
-          vz_meso_next_step_sp,&
-          vf_meso_last_step_sp,vf_meso_next_step_sp,&
-          vx_meso_1_sp,vy_meso_1_sp,vz_meso_1_sp, &
-          vx_meso_2_sp,vy_meso_2_sp,vz_meso_2_sp, &
-          Meso_toggle
-
 #ifdef FAST_DT
       use time_data,       only : &
          Simtime_in_hours,time,dt
@@ -406,6 +397,15 @@
       use io_data,       only : &
          NextWriteTime
 #endif
+
+      use wind_grid,       only : &
+          vx_meso_next_step_sp,&
+          vy_meso_next_step_sp,&
+          vz_meso_next_step_sp,&
+          vf_meso_last_step_sp,vf_meso_next_step_sp,&
+          vx_meso_1_sp,vy_meso_1_sp,vz_meso_1_sp, &
+          vx_meso_2_sp,vy_meso_2_sp,vz_meso_2_sp, &
+          Meso_toggle
 
       use Source_Umbrella,        only : &
            umbrella_winds

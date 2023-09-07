@@ -187,12 +187,12 @@
       use global_param,  only : &
          DEG2KMLAT,DEG2KMLON,DEG2RAD,KM_2_M,PI,HR_2_S,MPS_2_KMPHR,EPS_SMALL
 
-      use time_data,     only : &
-         time,Simtime_in_hours,dt
-
       use mesh,          only : &
          nxmax,nymax,dn_km,de_km,IsLatLon,ivent,jvent,&
          lat_cc_pd,lon_cc_pd,de_km,dn_km
+
+      use time_data,     only : &
+         time,Simtime_in_hours,dt
 
       use Source,        only : &
          lat_volcano,lon_volcano,MassFluxRate,e_EndTime, SourceType
@@ -453,11 +453,11 @@
       use global_param,  only : &
          KM3_2_M3
 
-      use Tephra,        only : &
-         n_gs_max,MagmaDensity
-
       use mesh,          only : &
          kappa_pd,ivent,jvent
+
+      use Tephra,        only : &
+         n_gs_max,MagmaDensity
 
       use Source,        only : &
          SourceNodeFlux

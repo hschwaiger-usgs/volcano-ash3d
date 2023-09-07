@@ -26,6 +26,7 @@ Add a check for cwd in MetReader to give full paths to windfiles (needed in Win)
 Add tool to recreate input file from netcdf file
 Investigate all overflow/underflow errors
 Test timing of do loops reversed; particularly with openMP
+In get_minmax_index, vent needs to be included only until the eruption is turned off.
 
 
 ----------------------------------

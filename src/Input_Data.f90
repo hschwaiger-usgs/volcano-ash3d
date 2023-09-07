@@ -765,6 +765,19 @@
          Output_every_TS,Output_at_WriteTimes,Output_at_logsteps,nvprofiles,iTimeNext,&
          Write_PT_Data,Write_PR_Data
 
+      use mesh,          only : &
+         de,dn,dx,dy,z_vec_init,dz_const,nxmax,nymax,nzmax,nsmax,VarDzType,ivent,jvent,&
+         gridwidth_e,gridwidth_n,gridwidth_x,gridwidth_y,&
+         lonLL,latLL,lonUR,latUR,xLL,yLL,xUR,yUR,&
+         A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
+         A3d_phi2,A3d_Re,IsLatLon,IsPeriodic,ZPADDING
+
+      use solution,      only : &
+         StopValue,imin,imax,jmin,jmax,kmin,kmax
+
+      use time_data,     only : &
+         BaseYear,useLeap,time,SimStartHour,Simtime_in_hours,xmlSimStartTime
+
       use Source,        only : &
          neruptions,e_Duration,e_Volume,e_PlumeHeight,e_prof_Volume,e_prof_dz,&
          e_prof_nzpoints,e_StartTime,&
@@ -780,21 +793,8 @@
            Allocate_Tephra, &
            Sort_Tephra_Size
 
-      use mesh,          only : &
-         de,dn,dx,dy,z_vec_init,dz_const,nxmax,nymax,nzmax,nsmax,VarDzType,ivent,jvent,&
-         gridwidth_e,gridwidth_n,gridwidth_x,gridwidth_y,&
-         lonLL,latLL,lonUR,latUR,xLL,yLL,xUR,yUR,&
-         A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
-         A3d_phi2,A3d_Re,IsLatLon,IsPeriodic,ZPADDING
-
-      use solution,      only : &
-         StopValue,imin,imax,jmin,jmax,kmin,kmax
-
       use Output_Vars,   only : &
          USE_RESTART_VARS
-
-      use time_data,     only : &
-         BaseYear,useLeap,time,SimStartHour,Simtime_in_hours,xmlSimStartTime
 
       use Airports,      only : &
          AirportInFile,&
@@ -807,6 +807,9 @@
          diffusivity_horz,diffusivity_vert,&
            Allocate_Diff
 
+      use help,          only : &
+             help_inputfile
+
       use projection,    only : &
          PJ_iprojflag,PJ_k0,PJ_lam0,PJ_lam1,PJ_lam2,PJ_phi0,PJ_phi1,PJ_phi2,PJ_Re,&
            PJ_Set_Proj_Params
@@ -818,9 +821,6 @@
          MR_iwf_template,MR_iwind,&
            MR_Allocate_FullMetFileList, &
            MR_Read_Met_DimVars
-
-      use help,          only : &
-             help_inputfile
 
 #ifdef USENETCDF
       use Ash3d_Netcdf_IO

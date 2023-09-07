@@ -57,11 +57,11 @@
          nmods,GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH,EPS_SMALL,&
          useMoistureVars, useVz_rhoG
 
-      use mesh,          only : &
-         ZPADDING
-
       use io_data,       only : &
          infile,cdf_institution,cdf_run_class,cdf_url
+
+      use mesh,          only : &
+         ZPADDING
 
       use Tephra,        only : &
          MagmaDensity,DepositDensity,LAM_GS_THRESH,AIRBORNE_THRESH

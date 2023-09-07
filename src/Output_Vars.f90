@@ -703,14 +703,14 @@
 
       subroutine AshThicknessCalculator
 
-      use Tephra,        only : &
-         DepositDensity,n_gs_max
-
       use mesh,          only : &
          nxmax,nymax,dz_vec_pd,sigma_nz_pd
 
       use solution,      only : &
          DepositGranularity
+
+      use Tephra,        only : &
+         DepositDensity,n_gs_max
 
       integer :: i,j
 
@@ -754,14 +754,14 @@
 
       subroutine AshTotalCalculator
 
-      use Tephra,        only : &
-         n_gs_max
-
       use mesh,          only : &
          nxmax,nymax,nzmax,ts1
 
       use solution,      only : &
          concen_pd
+
+      use Tephra,        only : &
+         n_gs_max
 
       integer :: isize
 
@@ -793,14 +793,14 @@
       use global_param,  only : &
           EPS_TINY,M_2_MM
 
-      use Tephra,        only : &
-         n_gs_max,Tephra_gsdiam,Tephra_rho_m
-
       use mesh,          only : &
          nzmax,ts1
 
       use solution,      only : &
          concen_pd,imin,imax,jmin,jmax,kmin,kmax
+
+      use Tephra,        only : &
+         n_gs_max,Tephra_gsdiam,Tephra_rho_m
 
       integer :: i,j,k,isize
       real(kind=ip) :: NumDens          !number densities (#/m3) of particles
@@ -969,14 +969,14 @@
 
       subroutine CloudAreaCalculator
 
-      use Tephra,        only : &
-         n_gs_max
-
       use mesh,          only : &
          sigma_nz_pd
 
       use solution,      only : &
          imin,imax,jmin,jmax
+
+      use Tephra,        only : &
+         n_gs_max
 
       integer :: i,j,k
 
@@ -1019,14 +1019,14 @@
 
       subroutine Gen_Output_Vars
 
+      use io_data,       only : &
+         Called_Gen_Output_Vars
+
       use mesh,          only : &
          nxmax, nymax
 
       use time_data,     only : &
          time
-
-      use io_data,       only : &
-         Called_Gen_Output_Vars
 
       integer :: i,j
 
@@ -1140,13 +1140,10 @@
          concen_pd
 
       use time_data,     only : &
-         time
+         time,ntmax
 
       use Tephra,         only : &
          n_gs_max
-
-      use time_data,      only : &
-         ntmax
 
       integer, intent(in) :: itime
 
@@ -1284,15 +1281,15 @@
 
       subroutine FirstAsh
 
+      use time_data,     only : &
+         time, dt
+
       use Airports,      only : &
          Airport_CloudHere,Airport_thickness,Airport_depRate,Airport_AshDuration,&
          Airport_thicknessLast,Airport_depRateLast,Airport_CloudHereLast,&
          Airport_CloudDuration,Airport_CloudArrived,Airport_CloudArrivalTime,&
          Airport_AshArrived,Airport_AshArrivalTime,nairports,Airport_i,Airport_j,&
            bilinear_thickness
-
-      use time_data,     only : &
-         time, dt
 
       integer :: i
 

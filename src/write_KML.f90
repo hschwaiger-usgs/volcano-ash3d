@@ -400,17 +400,17 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine OpenFile_KML(ivar)
-      
-      use time_data,     only : &
-         BaseYear,useLeap,SimStartHour,OutputOffset
+
+      use io_data,       only : &
+         VolcanoName,WriteDepositTS_KML
 
       use mesh,          only : &
          A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
          A3d_k0_scale,A3d_Re,de,dn,dx,dy,IsLatLon, &
          latLL,lonLL,latUR,lonUR,xLL,yLL,xUR,yUR
 
-      use io_data,       only : &
-         VolcanoName,WriteDepositTS_KML
+      use time_data,     only : &
+         BaseYear,useLeap,SimStartHour,OutputOffset
 
       use Source,        only : &
          neruptions, e_StartTime,e_Duration,e_Volume,e_PlumeHeight, &
@@ -1049,6 +1049,16 @@
       use global_param,  only : &
          IsLinux,IsWindows,IsMacOS,DirPrefix,DirDelim
 
+      use io_data,       only : &
+         nWriteTimes,VolcanoName,WriteTimes
+
+      use mesh,          only : &
+         A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,&
+         A3d_k0_scale,A3d_Re,IsLatLon
+
+      use time_data,     only : &
+         time,BaseYear,useLeap,SimStartHour,Simtime_in_hours,OutputOffset
+
       use Output_Vars,   only : &
          CloudLoad,CLOUDLOAD_THRESH,DEPRATE_THRESH,THICKNESS_THRESH
 
@@ -1058,16 +1068,6 @@
          Airport_Thickness_TS,Airport_Name,Airport_AshArrived, &
          Airport_Longitude,Airport_Latitude,Airport_deprate, &
          Airport_i,Airport_j,Airport_Thickness,Airport_CloudArrived
-
-      use time_data,     only : &
-         time,BaseYear,useLeap,SimStartHour,Simtime_in_hours,OutputOffset
-
-      use mesh,          only : &
-         A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,&
-         A3d_k0_scale,A3d_Re,IsLatLon
-
-      use io_data,       only : &
-         nWriteTimes,VolcanoName,WriteTimes
 
       use Tephra,          only : &
          n_gs_max

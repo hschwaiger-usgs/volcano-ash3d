@@ -1,4 +1,4 @@
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  Ash3d_PostProc
 !
@@ -68,15 +68,6 @@
       use global_param,  only : &
          MM_2_IN
 
-      use Ash3d_Program_Control, only : &
-           Set_OS_Env
-
-      use mesh,          only : &
-         nxmax,nymax,nzmax,IsLatLon
-
-      use time_data,     only : &
-         time,time_native,BaseYear,useLeap,SimStartHour
-
       use io_data,       only : &
          iTimeNext, &
          concenfile,nWriteTimes,WriteTimes,Write_PT_Data,Write_PR_Data,&
@@ -87,6 +78,15 @@
          WriteCloudHeight_ASCII,WriteCloudConcentration_KML,WriteCloudConcentration_ASCII,&
          WriteAirportFile_KML,WriteAirportFile_ASCII,Write3dFiles,&
          nvprofiles
+
+      use mesh,          only : &
+         nxmax,nymax,nzmax,IsLatLon
+
+      use time_data,     only : &
+         time,time_native,BaseYear,useLeap,SimStartHour
+
+      use Ash3d_Program_Control, only : &
+           Set_OS_Env
 
       use Output_Vars,   only : &
          DepositThickness,DepArrivalTime,CloudArrivalTime,ashcon_tot,&

@@ -315,15 +315,15 @@
 
       use io_units
 
-      use Output_Vars,  only : &
-         CLOUDCON_GRID_THRESH
- 
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,ts0,ivent,jvent
 
       use solution,      only : &
          concen_pd,imin,imax,jmin,jmax,kmin,kmax
 
+      use Output_Vars,  only : &
+         CLOUDCON_GRID_THRESH
+ 
       implicit none
 
       integer :: i,j,k

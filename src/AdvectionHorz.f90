@@ -46,14 +46,14 @@
 
       subroutine AdvectHorz(itoggle)
 
-      use AdvectionHorz_DCU, only : &
-         advect_x,advect_y
+      use mesh,          only : &
+         nxmax,nymax,nzmax
 
       use solution,      only : &
          imin,imax,jmin,jmax,kmin,kmax
 
-      use mesh,          only : &
-         nxmax,nymax,nzmax
+      use AdvectionHorz_DCU, only : &
+         advect_x,advect_y
 
       integer,intent(in) :: itoggle
 

@@ -393,6 +393,7 @@
       if(allocated(j_vprofile))   deallocate(j_vprofile)
       if(allocated(x_vprofile))   deallocate(x_vprofile)
       if(allocated(y_vprofile))   deallocate(y_vprofile)
+      if(allocated(Site_vprofile))deallocate(Site_vprofile)
 
       end subroutine Deallocate_io_data
       !------------------------------------------------------------------------
@@ -619,7 +620,7 @@
       real(kind=ip), dimension(:), allocatable :: bin_mass    ! mass
       real(kind=ip), dimension(:), allocatable :: rho_m       ! density (kg/m3)
 
-      logical,       dimension(:), allocatable :: IsAloft    ! T/F indicator remaining airborn concentration
+      logical,       dimension(:), allocatable :: IsAloft    ! T/F indicator remaining airborne concentration
 
         ! These are the max/min indices of the ash cloud used if FAST_SUBGRID is used
       integer :: imin,imax
@@ -652,8 +653,7 @@
       allocate(DepositGranularity(nxmax,nymax,nsmax)); DepositGranularity = 0.0_ip
 
       if (.not. allocated(mass_aloft)) then
-        allocate(mass_aloft(1:nsmax)); 
-        mass_aloft = 0.0_ip
+        allocate(mass_aloft(1:nsmax)); mass_aloft = 0.0_ip
         allocate(SpeciesID(1:nsmax));  SpeciesID = 1  ! Initialize everything to ash
                                                       ! If nsmax>n_gs_max, then the
                                                       ! extra bins will need to be
@@ -839,19 +839,19 @@
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax
 
-      allocate(vx_meso_last_step_sp(nxmax,nymax,nzmax))
-      allocate(vx_meso_next_step_sp(nxmax,nymax,nzmax))
-      allocate(vy_meso_last_step_sp(nxmax,nymax,nzmax))
-      allocate(vy_meso_next_step_sp(nxmax,nymax,nzmax))
-      allocate(vz_meso_last_step_sp(nxmax,nymax,nzmax))
-      allocate(vz_meso_next_step_sp(nxmax,nymax,nzmax))
+      allocate(vx_meso_last_step_sp(nxmax,nymax,nzmax)); vx_meso_last_step_sp = 0.0_sp
+      allocate(vx_meso_next_step_sp(nxmax,nymax,nzmax)); vx_meso_next_step_sp = 0.0_sp
+      allocate(vy_meso_last_step_sp(nxmax,nymax,nzmax)); vy_meso_last_step_sp = 0.0_sp
+      allocate(vy_meso_next_step_sp(nxmax,nymax,nzmax)); vy_meso_next_step_sp = 0.0_sp
+      allocate(vz_meso_last_step_sp(nxmax,nymax,nzmax)); vz_meso_last_step_sp = 0.0_sp
+      allocate(vz_meso_next_step_sp(nxmax,nymax,nzmax)); vz_meso_next_step_sp = 0.0_sp
 
-      allocate(vx_meso_1_sp(nxmax,nymax,nzmax))
-      allocate(vx_meso_2_sp(nxmax,nymax,nzmax))
-      allocate(vy_meso_1_sp(nxmax,nymax,nzmax))
-      allocate(vy_meso_2_sp(nxmax,nymax,nzmax))
-      allocate(vz_meso_1_sp(nxmax,nymax,nzmax))
-      allocate(vz_meso_2_sp(nxmax,nymax,nzmax))
+      allocate(vx_meso_1_sp(nxmax,nymax,nzmax)); vx_meso_1_sp = 0.0_sp
+      allocate(vx_meso_2_sp(nxmax,nymax,nzmax)); vx_meso_2_sp = 0.0_sp
+      allocate(vy_meso_1_sp(nxmax,nymax,nzmax)); vy_meso_1_sp = 0.0_sp
+      allocate(vy_meso_2_sp(nxmax,nymax,nzmax)); vy_meso_2_sp = 0.0_sp
+      allocate(vz_meso_1_sp(nxmax,nymax,nzmax)); vz_meso_1_sp = 0.0_sp
+      allocate(vz_meso_2_sp(nxmax,nymax,nzmax)); vz_meso_2_sp = 0.0_sp
 
       ! Space for the fall velocity of each species at met steps
       allocate(vf_meso_last_step_sp(nxmax,nymax,nzmax,nsmax)); vf_meso_last_step_sp = 0.0_sp

@@ -26,9 +26,9 @@
          EPS_SMALL,CFL,DT_MAX,DT_MIN,MPS_2_KMPHR, &
          useDiffusion,useVarDiffH,useVarDiffV,useCN
 
-      use Tephra,        only : &
-         n_gs_aloft
-         
+      use io_data,       only : &
+         NextWriteTime
+
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,dx,dy,dz_vec_pd,IsLatLon,&
          kappa_pd,sigma_nx_pd,sigma_ny_pd,sigma_nz_pd
@@ -36,15 +36,15 @@
       use solution,      only : &
          vx_pd,vy_pd,vz_pd,vf_pd
 
+      use time_data,     only : &
+         time,dt,dt_ip,dt_meso_next,Simtime_in_hours
+
       use wind_grid,     only : &
          vx_meso_next_step_sp,vy_meso_next_step_sp,vz_meso_next_step_sp, &
          vf_meso_next_step_sp
          
-      use time_data,     only : &
-         time,dt,dt_ip,dt_meso_next,Simtime_in_hours
-
-      use io_data,       only : &
-         NextWriteTime
+      use Tephra,        only : &
+         n_gs_aloft
 
       use Diffusion,     only : &
          kx,ky,kz,Imp_DT_fac
@@ -148,6 +148,7 @@
         ! Use vx_meso_1_sp and vx_meso_2_sp
         ! First initialize vzmax_dz to 0.0 so we can test for the largest
         vzmax_dz = 0.0_ip
+        ! HFS : invert loop
         do i=1,nxmax
           do j=1,nymax
             do k=1,nzmax
@@ -166,7 +167,7 @@
               ! Note: for this to work, we really need to set vf_pd=0 for all
               !       species that are flushed out of the system. Otherwise, this
               !       will always be dominated by the large grain sizes with the
-              !       highest fall velocities
+              !       highest fall velocities.  This is done in Set_Vf_Meso.
               tmp3 =       (abs(vz_pd(i,j,k)) + &
                     maxval(abs(vf_pd(i,j,k,1:nsmax))))/dz_vec_pd(k)
               if(tmp3.gt.vzmax_dz) vzmax_dz = tmp3

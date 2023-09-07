@@ -42,15 +42,15 @@
       use mesh,          only : &
          nxmax,nymax,nzmax
 
+      use time_data,     only : &
+         BaseYear,useLeap,dt,time,SimStartHour,Simtime_in_hours,&
+         xmlTimeSpanStart,xmlTimeSpanEnd
+
       use Output_Vars,   only : &
          DepositThickness,MaxConcentration,MaxHeight,&
          Mask_Cloud,Mask_Deposit,ashcon_tot, &
          CloudLoad,DepArrivalTime,CloudArrivalTime,dbZCol,&
          AshTotalCalculator
-
-      use time_data,     only : &
-         BaseYear,useLeap,dt,time,SimStartHour,Simtime_in_hours,&
-         xmlTimeSpanStart,xmlTimeSpanEnd
 
       use Ash3d_ASCII_IO,  only : &
            write_2D_ASCII, &

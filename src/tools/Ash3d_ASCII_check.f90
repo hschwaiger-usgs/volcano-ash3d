@@ -9,7 +9,6 @@
       use global_param,   only : &
         EPS_TINY
 
-!      use Output_Vars,    only : &
       use Ash3d_ASCII_IO,  only : &
         R_XY,R_nx,R_ny,R_xll,R_yll,R_dx,R_dy, &
           read_2D_ASCII
@@ -36,12 +35,6 @@
       real(kind=ip) :: tmp_ip
       real(kind=ip) :: L2_toterror
       real(kind=ip) :: L2_tol = 1.0e-3
-
-      !INTERFACE
-      !  subroutine read_2D_ASCII(filename)
-      !    character(len=50),intent(in) :: filename
-      !  end subroutine
-      !END INTERFACE
 
       nio = 1  ! Turn off logging by setting output streams to stdout/stderr only
 

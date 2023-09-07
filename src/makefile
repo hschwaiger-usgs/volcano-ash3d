@@ -359,7 +359,7 @@ Ash3d:  $(OBJECTS) $(DATAOBJ) Ash3d.F90 $(MFILE)
 Ash3d_VariableModules.o: $(ASH3dCCSRC)/Ash3d_VariableModules.f90 $(MFILE)
 	./get_version.sh
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Ash3d_VariableModules.f90
-Input_Data.o: $(ASH3dCCSRC)/Input_Data.f90 $(MFILE) Ash3d_VariableModules.o Tephra.o Help.o VotW.o Diffusion.o Airports.o $(DATAOBJ) Output_Vars.o Source.o Source_Umbrella.o
+Input_Data.o: $(ASH3dCCSRC)/Input_Data.f90 $(MFILE) Ash3d_VariableModules.o Help.o Tephra.o VotW.o Diffusion.o Airports.o $(DATAOBJ) Output_Vars.o Source.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Input_Data.f90
 ResetParams.o: $(ASH3dCCSRC)/ResetParams.f90 $(MFILE) Ash3d_VariableModules.o Tephra.o Output_Vars.o Source_Umbrella.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/ResetParams.f90
@@ -371,13 +371,13 @@ VotW.o: $(ASH3dCCSRC)/VotW.f90 $(MFILE) Ash3d_VariableModules.o Source.o
 Airports.o: $(ASH3dCCSRC)/Airports.f90 $(MFILE) Ash3d_VariableModules.o 
 	echo "        Ash3dHome = '$(INSTALLDIR)'" > installpath.h
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Airports.f90
-Calc_Mesh.o: $(ASH3dCCSRC)/Calc_Mesh.f90 $(MFILE) Ash3d_VariableModules.o Tephra.o Atmosphere.o
+Calc_Mesh.o: $(ASH3dCCSRC)/Calc_Mesh.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Calc_Mesh.f90
 Alloc_Arrays.o: $(ASH3dCCSRC)/Alloc_Arrays.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o AdvectionHorz.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Alloc_Arrays.f90
-Source.o: $(ASH3dCCSRC)/Source.f90 $(MFILE) Ash3d_VariableModules.o
+Source.o: $(ASH3dCCSRC)/Source.f90 $(MFILE) Ash3d_VariableModules.o Tephra.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Source.f90
-Source_Umbrella.o: $(ASH3dCCSRC)/Source_Umbrella.f90 $(MFILE) Source.o
+Source_Umbrella.o: $(ASH3dCCSRC)/Source_Umbrella.f90 $(MFILE) Source.o Tephra.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Source_Umbrella.f90
 Tephra.o: $(ASH3dCCSRC)/Tephra.f90 $(MFILE) Atmosphere.o Ash3d_VariableModules.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Tephra.f90
@@ -385,44 +385,44 @@ Tephra.o: $(ASH3dCCSRC)/Tephra.f90 $(MFILE) Atmosphere.o Ash3d_VariableModules.o
 # Time
 Adjust_dt.o: $(ASH3dCCSRC)/Adjust_dt.f90 $(MFILE) Ash3d_VariableModules.o Tephra.o Diffusion.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3dCCSRC)/Adjust_dt.f90
-TimeStepTotals.o: $(ASH3dCCSRC)/TimeStepTotals.f90 $(MFILE) Ash3d_VariableModules.o Tephra.o Output_Vars.o
+TimeStepTotals.o: $(ASH3dCCSRC)/TimeStepTotals.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3dCCSRC)/TimeStepTotals.f90
 
 Atmosphere.o: $(ASH3dCCSRC)/Atmosphere.f90 $(MFILE) Ash3d_VariableModules.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Atmosphere.f90
-MesoInterpolater.o: $(ASH3dCCSRC)/MesoInterpolater.f90 $(MFILE) Atmosphere.o Tephra.o Ash3d_VariableModules.o Source.o Source_Umbrella.o
+MesoInterpolater.o: $(ASH3dCCSRC)/MesoInterpolater.f90 $(MFILE) Ash3d_VariableModules.o Atmosphere.o Tephra.o Source.o Source_Umbrella.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/MesoInterpolater.f90
 
 # PDE Solver (Advection, Diffusion, B.C.'s)
-AdvectionHorz.o: $(ASH3dCCSRC)/AdvectionHorz.f90 $(MFILE) AdvectionHorz_DCU.o Ash3d_VariableModules.o
+AdvectionHorz.o: $(ASH3dCCSRC)/AdvectionHorz.f90 $(MFILE) Ash3d_VariableModules.o AdvectionHorz_DCU.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3dCCSRC)/AdvectionHorz.f90
-AdvectionHorz_DCU.o: $(ASH3dCCSRC)/AdvectionHorz_DCU.f90 $(MFILE) Ash3d_VariableModules.o Tephra.o
+AdvectionHorz_DCU.o: $(ASH3dCCSRC)/AdvectionHorz_DCU.f90 $(MFILE) Ash3d_VariableModules.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3dCCSRC)/AdvectionHorz_DCU.f90
-AdvectionVert_DCU.o: $(ASH3dCCSRC)/AdvectionVert_DCU.f90 $(MFILE) Ash3d_VariableModules.o Tephra.o
+AdvectionVert_DCU.o: $(ASH3dCCSRC)/AdvectionVert_DCU.f90 $(MFILE) Ash3d_VariableModules.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3dCCSRC)/AdvectionVert_DCU.f90
-Diffusion.o: $(ASH3dCCSRC)/Diffusion.f90 $(MFILE) Ash3d_VariableModules.o Tephra.o
+Diffusion.o: $(ASH3dCCSRC)/Diffusion.f90 $(MFILE) Ash3d_VariableModules.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3dCCSRC)/Diffusion.f90
-Set_BC.o: $(ASH3dCCSRC)/Set_BC.f90 $(MFILE) Ash3d_VariableModules.o Tephra.o
+Set_BC.o: $(ASH3dCCSRC)/Set_BC.f90 $(MFILE) Ash3d_VariableModules.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3dCCSRC)/Set_BC.f90
 
 # Output
-Output_Vars.o: $(ASH3dCCSRC)/Output_Vars.f90 $(MFILE) Ash3d_VariableModules.o Tephra.o Airports.o
+Output_Vars.o: $(ASH3dCCSRC)/Output_Vars.f90 $(MFILE) Ash3d_VariableModules.o Airports.o Tephra.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Output_Vars.f90
-Output_Results.o: $(ASH3dCCSRC)/Output_Results.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Tephra.o write_BINARY.o write_ASCII.o write_KML.o write_NETCDF.o
+Output_Results.o: $(ASH3dCCSRC)/Output_Results.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o write_BINARY.o write_ASCII.o write_KML.o write_NETCDF.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Output_Results.f90
-write_ASCII.o: $(ASH3dCCSRC)/write_ASCII.f90 $(MFILE) Ash3d_VariableModules.o Airports.o Output_Vars.o Tephra.o Source.o
+write_ASCII.o: $(ASH3dCCSRC)/write_ASCII.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Airports.o Tephra.o Source.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_ASCII.f90
-write_BINARY.o: $(ASH3dCCSRC)/write_BINARY.f90 $(MFILE) Ash3d_VariableModules.o Airports.o Output_Vars.o
+write_BINARY.o: $(ASH3dCCSRC)/write_BINARY.f90 $(MFILE) Ash3d_VariableModules.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_BINARY.f90
 ifeq ($(USENETCDF), T)
-write_NETCDF.o: $(ASH3dCCSRC)/write_NETCDF.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Tephra.o Source.o Airports.o Source_Umbrella.o
+write_NETCDF.o: $(ASH3dCCSRC)/write_NETCDF.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Airports.o Tephra.o Source.o Source_Umbrella.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_NETCDF.f90
 endif
 #ifeq ($(USEGRIB), T)
-#write_GRIB.o: $(ASH3dCCSRC)/write_GRIB.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Tephra.o Source.o Airports.o
+#write_GRIB.o: $(ASH3dCCSRC)/write_GRIB.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Airports.o Tephra.o Source.o
 #	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_GRIB.f90
 #endif
-write_KML.o: $(ASH3dCCSRC)/write_KML.f90 $(MFILE) Ash3d_VariableModules.o Airports.o
+write_KML.o: $(ASH3dCCSRC)/write_KML.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Airports.o Tephra.o Source.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_KML.f90
 
 all: Ash3d tools

@@ -329,9 +329,6 @@
 
       subroutine read_2D_ASCII(filename)
 
-      !use Output_Vars,   only : &
-      !   R_nx,R_ny,R_XY,R_xll,R_yll,R_dx,R_dy,R_Fill
-
       character(len=80),intent(in) :: filename
 
       integer :: fid
@@ -466,6 +463,19 @@
       use global_param,  only : &
          M_2_MM,UseCalcFallVel
 
+      use io_data,       only : &
+         infile,WriteGSD,WriteAirportFile_ASCII,VolcanoName
+
+      use mesh,          only : &
+         nsmax
+
+       use solution,      only : &
+         DepositGranularity
+
+      use time_data,     only : &
+         time,SimStartHour,OutputOffset,BaseYear,useLeap,RunStartMinute,&
+         RunStartYear,RunStartMonth,RunStartDay,RunStartHr
+
       use Airports,      only : &
          Airport_AshArrivalTime,Airport_CloudArrivalTime, &
          Airport_thickness,Airport_AshDuration, &
@@ -474,25 +484,12 @@
          Airport_Longitude,Airport_Latitude,Airport_Name,&
          bilinear_thickness
 
-      use solution,      only : &
-         DepositGranularity
-
       use Output_Vars,   only : &
          DepositThickness,DEPRATE_THRESH, &
          CloudLoad,CLOUDLOAD_THRESH
 
-      use io_data,       only : &
-         infile,WriteGSD,WriteAirportFile_ASCII,VolcanoName
-
-      use time_data,     only : &
-         time,SimStartHour,OutputOffset,BaseYear,useLeap,RunStartMinute,&
-         RunStartYear,RunStartMonth,RunStartDay,RunStartHr
-
       use Tephra,        only : &
          n_gs_max,Tephra_gsdiam,Tephra_rho_m,Tephra_v_s
-
-      use mesh,          only : &
-         nsmax
 
       use Source,        only : &
          neruptions,e_Duration,e_Volume,e_PlumeHeight

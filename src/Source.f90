@@ -202,9 +202,9 @@
       if(allocated(e_Duration))       deallocate(e_Duration)
       if(allocated(e_PlumeHeight))    deallocate(e_PlumeHeight)
       if(allocated(e_Volume))         deallocate(e_Volume)
-      !if(allocated(MassFlux))         deallocate(MassFlux)
       if(allocated(MassFluxRate))     deallocate(MassFluxRate)
       if(allocated(e_EndTime))        deallocate(e_EndTime)
+      if(allocated(dt_pulse_frac))    deallocate(dt_pulse_frac)
 
       ! SourceType.eq.'profile'
       if(allocated(e_prof_dz))           deallocate(e_prof_dz)
@@ -578,12 +578,12 @@
       use global_param,    only : &
          EPS_SMALL
 
+      use mesh,          only : &
+         nzmax,ivent,jvent,kappa_pd
+
       use Tephra,        only : &
          Tephra_bin_mass,n_gs_max
 
-      use mesh,          only : &
-         nzmax,ivent,jvent,kappa_pd
- 
       integer :: i,k
       real(kind=ip) :: z_cell_bot
       real(kind=ip) :: z_cell_top
@@ -663,11 +663,11 @@
       use global_param,  only : &
          KM3_2_M3
 
-      use Tephra,        only : &
-         n_gs_max,MagmaDensity
-
       use mesh,          only : &
          nzmax,kappa_pd,ivent,jvent
+
+      use Tephra,        only : &
+         n_gs_max,MagmaDensity
 
       real(kind=ip) :: SourceVolInc
       real(kind=dp) :: dt
