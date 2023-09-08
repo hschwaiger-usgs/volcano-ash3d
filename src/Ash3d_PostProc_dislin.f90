@@ -19,6 +19,12 @@
 
       use io_units
 
+      use global_param,  only : &
+        DirDelim
+
+      use io_data,       only : &
+         Ash3dHome
+
       use dislin
 
       implicit none
@@ -32,7 +38,9 @@
 
         ! Publicly available variables
 
-      integer,parameter :: DS = 8
+      integer,parameter :: DS = 4
+      character(100) :: USGSIconFile
+
 
       contains
       !------------------------------------------------------------------------
@@ -392,7 +400,11 @@
       call paghdr('Ash3d Simulation plotted on ','---',4,0)
       y_footer = 1900
       call filbox(2250,y_footer,130,49)
-      call incfil('/opt/USGS/Ash3d/share/post_proc/USGSvid.png')
+      USGSIconFile = trim(Ash3dHome) // &
+                        DirDelim // 'share' // &
+                        DirDelim // 'post_proc' // &
+                        DirDelim // 'USGSvid.png'
+      call incfil(USGSIconFile)
 
        ! setting of plot parameters
       call triplx()  ! set font to triple stroke
@@ -521,6 +533,12 @@
 
       !  Dislin Level 0:  before initialization or after termination
       call disfin()
+
+      ! clean up memory
+      if(allocated(lon_cities))         deallocate(lon_cities)
+      if(allocated(lat_cities))         deallocate(lat_cities)
+      if(allocated(name_cities))        deallocate(name_cities)
+      if(allocated(zrgb))               deallocate(zrgb)
 
       end subroutine write_2Dmap_PNG_dislin
 
@@ -697,7 +715,11 @@
       call disini()       ! initialize plot (set to level 1)
       y_footer = 1900
       call filbox(2250,y_footer,130,49)
-      call incfil('/opt/USGS/Ash3d/share/post_proc/USGSvid.png')
+      USGSIconFile = trim(Ash3dHome) // &
+                        DirDelim // 'share' // &
+                        DirDelim // 'post_proc' // &
+                        DirDelim // 'USGSvid.png'
+      call incfil(USGSIconFile)
 
         ! setting of plot parameters
       !call pagera()       ! plot a border around the page
@@ -747,6 +769,11 @@
 
       !  Dislin Level 0:  before initialization or after termination
       call disfin()
+
+      ! clean up memory
+      if(allocated(t))      deallocate(t)
+      if(allocated(z))      deallocate(z)
+      if(allocated(conc))   deallocate(conc)
 
       end subroutine write_2Dprof_PNG_dislin
 
@@ -864,6 +891,10 @@
 
       !  Dislin Level 0:  before initialization or after termination
       call disfin()
+
+      ! clean up memory
+      if(allocated(x))      deallocate(x)
+      if(allocated(y))      deallocate(y)
 
       end subroutine write_DepPOI_TS_PNG_dislin
 

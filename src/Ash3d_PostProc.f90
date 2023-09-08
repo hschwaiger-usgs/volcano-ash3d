@@ -160,6 +160,11 @@
       integer,dimension(Nplot_libs) :: plot_pref_vpr = (/1,2,3,4/) ! plot preference for vert profs.
       integer,dimension(Nplot_libs) :: plot_pref_aTS = (/2,3,1,4/) ! plot preference for Airport TS
 
+!      integer,dimension(Nplot_libs) :: plot_pref_map = (/1,2,3,4/) ! plot preference for maps
+!      integer,dimension(Nplot_libs) :: plot_pref_shp = (/1,2,3,4/) ! plot preference for contours
+!      integer,dimension(Nplot_libs) :: plot_pref_vpr = (/1,2,3,4/) ! plot preference for vert profs.
+!      integer,dimension(Nplot_libs) :: plot_pref_aTS = (/1,2,3,4/) ! plot preference for Airport TS
+
       INTERFACE
         subroutine output_results
         end subroutine output_results
@@ -172,6 +177,8 @@
           integer                    ::  byear
           logical                    ::  useLeaps
         end function HS_yyyymmddhh_since
+        subroutine dealloc_arrays
+        end subroutine dealloc_arrays
       END INTERFACE
 
       open(unit=fid_logfile,file='Ash3d_pp.log',status='replace',action='write')
@@ -189,7 +196,27 @@
       plotlib_avail(2) = .false.
 #endif
       ! Test for gnuplot
+#ifdef LINUX
+        ! On a linux system, just try to execute gnuplot
+      istat = 0
       call execute_command_line("echo 'exit' | gnuplot",exitstat=istat)
+#endif
+#ifdef MACOS
+        ! On a MacOS system, not sure how to test yet
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Cannot test for gnuplot on MacOS for now."
+          write(outlog(io),*)"Disabling gnuplot."
+        endif;enddo
+        istat = 1
+#endif
+#ifdef WINDOWS
+        ! On a Windows system, not sure how to test yet
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Cannot test for gnuplot on Windows for now."
+          write(outlog(io),*)"Disabling gnuplot."
+        endif;enddo
+        istat = 1
+#endif
       if (istat.eq.0)then
         plotlib_avail(3) = .true.
       else
@@ -198,9 +225,9 @@
       ! Test for GMT
       plotlib_avail(4) = .false.
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),*)"Gnuplot ",plotlib_avail(1)
+        write(outlog(io),*)"Dislin  ",plotlib_avail(1)
         write(outlog(io),*)"Plplot  ",plotlib_avail(2)
-        write(outlog(io),*)"Dislin  ",plotlib_avail(3)
+        write(outlog(io),*)"Gnuplot ",plotlib_avail(3)
         write(outlog(io),*)"GMT     ",plotlib_avail(4)
       endif;enddo
 
@@ -919,6 +946,15 @@
       elseif(iformat.eq.9)then
         !call write_2D_vtk
       endif
+
+      ! clean up memory
+      if(allocated(OutVar)) deallocate(OutVar)
+      if(allocated(mask))   deallocate(mask)
+
+      call dealloc_arrays
+
+      ! Close log file
+      close(fid_logfile)
 
       end program Ash3d_PostProc
 

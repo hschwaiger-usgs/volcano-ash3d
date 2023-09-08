@@ -324,6 +324,7 @@ ResetParams.o
 PPOBJS = Ash3d_VariableModules.o        \
          Input_Data.o                   \
          Diffusion.o                    \
+         Alloc_Arrays.o                 \
          VotW.o                         \
          Help.o                         \
          Output_Vars.o                  \
@@ -434,7 +435,7 @@ postproc: $(ASH3dCCSRC)/Ash3d_PostProc.f90 $(PPOBJS) $(GRAFOBJ) $(DATAOBJ) $(MFI
 	$(FC) $(FFLAGS) $(EXFLAGS) Ash3d_PostProc.o $(PPOBJS) $(GRAFOBJ) $(DATAOBJ) $(LIBS) $(PLOTINC) $(PLOTLIBS) -o ../bin/Ash3d_PostProc
 # We always compile the gnuplot subroutine since these will just throw an error if gnuplot is not installed
 Ash3d_PostProc_gnuplot.o: Ash3d_PostProc_gnuplot.f90 $(MFILE) Ash3d_PostProc_cities.o
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_gnuplot.f90
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_gnuplot.f90
 ifeq ($(USEPLPLOT), T)
 Ash3d_PostProc_plplot.o: Ash3d_PostProc_plplot.f90 $(MFILE) Ash3d_PostProc_cities.o
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_plplot.f90

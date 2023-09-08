@@ -248,6 +248,7 @@
       integer :: ivar
       integer,dimension(5) :: chunksizes5
       logical :: IsThere
+      character(len=3)  :: answer
 
       INTERFACE
         character (len=13) function HS_yyyymmddhhmm_since(HoursSince,byear,useLeaps)
@@ -359,10 +360,27 @@
       inquire(file=outfile,exist=IsThere)
       if(IsThere)then
         do io=1,2;if(VB(io).le.verbosity_error)then
-          write(errlog(io),*)"Specified output netcdf file already exists.  Exiting. "
+          write(errlog(io),*)"Specified output netcdf file already exists."
           write(errlog(io),*)"Output filename requested = ",outfile
-          stop 1
+          write(errlog(io),*)"Would you like to over-write this file? (yes or no)"
         endif;enddo
+        read(input_unit,'(a3)') answer
+        if (answer.eq.'y'.or.answer.eq.'yes') then
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"Over-writing file: ",outfile
+          endif;enddo
+        elseif (answer.eq.'n'.or.answer.eq.'no') then
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"Exiting."
+          endif;enddo
+          stop 1
+        else
+          io = 1
+          write(errlog(io),*) 'Sorry, I cannot understand your answer.'
+          write(errlog(io),*) "Expected either 'yes' or 'no', but you provided:",answer
+          stop 1
+        endif
+
       endif
 
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -2178,7 +2196,7 @@
       nSTAT=nf90_put_var(ncid,er_var_id,dum1dint_out,(/1/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var er")
       deallocate(dum1dint_out)
-        ! WS
+        ! WF
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Fill WF"
       endif;enddo
@@ -2612,9 +2630,9 @@
         dum2dPOI_out(1:nairports,1) = real(Airport_Thickness_TS(1:nairports,1),kind=op)
         nSTAT=nf90_put_var(ncid,pt_ashthickness_var_id,dum2dPOI_out,(/1,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var pt_depothick")
-        deallocate(dum2dPOI_out)
         ! And copy this step (the first) to the variable for the final deposit
         nSTAT=nf90_put_var(ncid,pt_ashthicknessFin_var_id,dum2dPOI_out(:,1),(/1/))
+        deallocate(dum2dPOI_out)
 
       endif ! Write_PT_Data
 
@@ -3645,15 +3663,18 @@
         end function HS_hours_since_baseyear
       END INTERFACE
 
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"Reading NetCDF file ",concenfile
+      endif;enddo
+
+      ! Open netcdf file for reading
+      nSTAT=nf90_open(concenfile,nf90_nowrite,ncid)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"nSTAT=nf90_open")
+
       if(first_time)then
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"Reading NetCDF file ",concenfile
           write(outlog(io),*)"Found the following dimensions and sizes"
         endif;enddo
-
-        ! Open netcdf file for reading
-        nSTAT=nf90_open(concenfile,nf90_nowrite,ncid)
-        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"nSTAT=nf90_open")
 
         !!!!!!  TIME  !!!!!!!!!!!
         ! Identify dimension for time (and note size)
@@ -4969,9 +4990,17 @@
       call Set_OutVar_ContourLevel
 
       ! Cleaning up
-      deallocate(ashcon)
-      deallocate(dum2d_out)
-      deallocate(dum2dint_out)
+      if(allocated(ashcon))       deallocate(ashcon)
+      if(allocated(ashcon_tot))   deallocate(ashcon_tot)
+      if(allocated(dum2d_out))    deallocate(dum2d_out)
+      if(allocated(dum2dint_out)) deallocate(dum2dint_out)
+
+      ! Close file
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"Closing netCDF file."
+      endif;enddo      
+      nSTAT = nf90_close(ncid)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"nf90_close")
 
       end subroutine NC_Read_Output_Products
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

@@ -20,6 +20,12 @@
 
       use io_units
 
+      use global_param,  only : &
+        DirDelim
+
+      use io_data,       only : &
+         Ash3dHome
+
       implicit none
 
         ! Set everything to private by default
@@ -142,7 +148,10 @@
       write(gnucoastfile,'(a13)')"world_50m.txt"
       inquire(file=gnucoastfile,exist=IsThere1)
       if(.not.IsThere1)then
-        write(gnucoastfile,'(a45)')"/opt/USGS/Ash3d/share/post_proc/world_50m.txt"
+        gnucoastfile = trim(Ash3dHome) // &
+                          DirDelim // 'share' // &
+                          DirDelim // 'post_proc' // &
+                          DirDelim // 'world_50m.txt'
         inquire(file=gnucoastfile,exist=IsThere2)
         if(.not.IsThere2)then
           do io=1,2;if(VB(io).le.verbosity_error)then
@@ -150,7 +159,15 @@
             write(errlog(io),*)"This file is available at:"
             write(errlog(io),*)"  http://www.gnuplotting.org/data/world_50m.txt"
             write(errlog(io),*)"Please download this file to the current working directory or"
+#ifdef LINUX
             write(errlog(io),*)"copy to /opt/USGS/Ash3d/share/post_proc/"
+#endif
+#ifdef MACOS
+            write(errlog(io),*)"copy to /opt/USGS/Ash3d/share/post_proc/"
+#endif
+#ifdef WINDOWS
+            write(errlog(io),*)"copy to C:\opt\USGS\Ash3d\share\post_proc\"
+#endif
           endif;enddo
           stop 1
         endif
@@ -545,6 +562,12 @@
         enddo
 
       endif
+
+      ! clean up memory
+      if(allocated(lon_cities))         deallocate(lon_cities)
+      if(allocated(lat_cities))         deallocate(lat_cities)
+      if(allocated(name_cities))        deallocate(name_cities)
+      if(allocated(zrgb))               deallocate(zrgb)
 
       end subroutine write_2Dmap_PNG_gnuplot
 

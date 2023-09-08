@@ -781,6 +781,21 @@
         call execute_command_line(zipcom)
       endif
 
+      ! clean up memory
+      if(allocated(NumParts))            deallocate(NumParts)
+      if(allocated(NumPoints))           deallocate(NumPoints)
+      if(allocated(reclen))              deallocate(reclen)
+      if(allocated(xmin))                deallocate(xmin)
+      if(allocated(xmax))                deallocate(xmax)
+      if(allocated(ymin))                deallocate(ymin)
+      if(allocated(ymax))                deallocate(ymax)
+
+      if(allocated(ContourLev))         deallocate(ContourLev)
+      if(allocated(ContourDataNcurves)) deallocate(ContourDataNcurves)
+      if(allocated(ContourDataNpoints)) deallocate(ContourDataNpoints)
+      if(allocated(ContourDataX))       deallocate(ContourDataX)
+      if(allocated(ContourDataY))       deallocate(ContourDataY)
+
       end subroutine write_ShapeFile_Polyline
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

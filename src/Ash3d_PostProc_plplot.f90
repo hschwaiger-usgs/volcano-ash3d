@@ -629,6 +629,33 @@
 
       call plend()
 
+      ! clean up memory
+      if(allocated(lon_cities))      deallocate(lon_cities)
+      if(allocated(lat_cities))      deallocate(lat_cities)
+      if(allocated(name_cities))     deallocate(name_cities)
+      if(allocated(zrgb))            deallocate(zrgb)
+      if(allocated(x))               deallocate(x)
+      if(allocated(y))               deallocate(y)
+      if(allocated(var))             deallocate(var)
+      if(allocated(opt_array))       deallocate(opt_array)
+      if(allocated(text_colors))     deallocate(text_colors)
+      if(allocated(box_colors))      deallocate(box_colors)
+      if(allocated(box_patterns))    deallocate(box_patterns)
+      if(allocated(line_colors))     deallocate(line_colors)
+      if(allocated(line_styles))     deallocate(line_styles)
+      if(allocated(symbol_numbers))  deallocate(symbol_numbers)
+      if(allocated(symbol_colors))   deallocate(symbol_colors)
+      if(allocated(text))            deallocate(text)
+      if(allocated(symbols))         deallocate(symbols)
+      if(allocated(box_scales))      deallocate(box_scales)
+      if(allocated(box_line_widths)) deallocate(box_line_widths)
+      if(allocated(line_widths))     deallocate(line_widths)
+      if(allocated(symbol_scales))   deallocate(symbol_scales)
+      if(allocated(red))             deallocate(red)
+      if(allocated(green))           deallocate(green)
+      if(allocated(blue))            deallocate(blue)
+      if(allocated(alpha))           deallocate(alpha)
+
       end subroutine write_2Dmap_PNG_plplot
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -912,6 +939,12 @@
       ! Close PLplot library
       call plend
 
+      ! clean up memory
+      if(allocated(t))      deallocate(t)
+      if(allocated(z))      deallocate(z)
+      if(allocated(conc))   deallocate(conc)
+      if(allocated(shedge)) deallocate(shedge)
+
       end subroutine write_2Dprof_PNG_plplot
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1028,6 +1061,12 @@
 
       ! Close PLplot library
       call plend
+
+      ! clean up memory
+      if(allocated(x))  deallocate(x)
+      if(allocated(y))  deallocate(y)
+      if(allocated(x0)) deallocate(x0)
+      if(allocated(y0)) deallocate(y0)
 
       end subroutine write_DepPOI_TS_PNG_plplot
 
