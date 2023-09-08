@@ -109,13 +109,13 @@
 
       subroutine Allocate_Tephra
 
-      allocate(Tephra_v_s(n_gs_max))
-      allocate(Tephra_gsdiam(n_gs_max))
-      allocate(Tephra_bin_mass(n_gs_max))
-      allocate(Tephra_rho_m(n_gs_max))
-      allocate(Tephra_gsF(n_gs_max))
-      allocate(Tephra_gsG(n_gs_max))
-      allocate(Tephra_gsF_fac(n_gs_max,5))
+      allocate(Tephra_v_s(n_gs_max));       Tephra_v_s      = 0.0_ip
+      allocate(Tephra_gsdiam(n_gs_max));    Tephra_gsdiam   = 0.0_ip
+      allocate(Tephra_bin_mass(n_gs_max));  Tephra_bin_mass = 0.0_ip
+      allocate(Tephra_rho_m(n_gs_max));     Tephra_rho_m    = 0.0_ip
+      allocate(Tephra_gsF(n_gs_max));       Tephra_gsF      = 0.0_ip
+      allocate(Tephra_gsG(n_gs_max));       Tephra_gsG      = 0.0_ip
+      allocate(Tephra_gsF_fac(n_gs_max,5)); Tephra_gsF_fac  = 0.0_ip
 
       end subroutine Allocate_Tephra
 
@@ -407,11 +407,11 @@
         p_exp = 1.6075_ip
         tmp_b = 2.0_ip*Tephra_gsF(isize)/(1+Tephra_gsG(isize))
         tmp_c = 2.0_ip*Tephra_gsF(isize)*Tephra_gsG(isize)/(1+Tephra_gsG(isize))
+
         phi_sphere = (tmp_b*tmp_c)**(2.0_ip/3.0_ip) * &
                       ((tmp_b**p_exp + &
                         tmp_c**p_exp + &
                        (tmp_b*tmp_c)**p_exp)/3.0_ip)**(-1.0_ip/p_exp)
-
         !ellipse_vol  = 4.0_ip*PI*Tephra_gsF(i)*Tephra_gsF(i)/3.0_ip
         !equiv_rad    = (ellipse_vol*3.0_ip/(4.0_ip*PI))**(1.0_ip/3.0_ip)
         !sphere_area  = 4.0_ip*PI*equiv_rad*equiv_rad

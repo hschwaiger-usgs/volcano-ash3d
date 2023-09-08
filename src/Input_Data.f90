@@ -2815,6 +2815,7 @@
             temp_gsdiam(isize)  = 0.1_ip
             temp_rho_m(isize)   = 2000.0_ip
             temp_gsF(isize)     = 0.44_ip
+            temp_gsG(isize)     = 1.0_ip
           endif
         enddo ! isize=1,init_n_gs_max
         ! Set the number of grain-size bins

@@ -134,6 +134,7 @@
       real(kind=op), dimension(:)      ,allocatable :: dum1d_out
       real(kind=op), dimension(:,:)    ,allocatable :: dum2d_out
       real(kind=op), dimension(:,:,:)  ,allocatable :: dum3d_out
+      real(kind=dp), dimension(:)      ,allocatable :: dum1d_out_dp
       character                                     :: dumchar
       real(kind=op), dimension(:,:)    ,allocatable :: dum2dPOI_out
 
@@ -804,22 +805,11 @@
         nSTAT = nf90_put_att(ncid,pr_var_id,"units","index")
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr units")
 
-!        ! tn (time native)
-!        ! we can only have a second unlimited dimension with NC version 4
-!        do io=1,2;if(VB(io).le.verbosity_info)then
-!          write(outlog(io),*)"     TN: ",dim_names(11)
-!        endif;enddo
-!        nSTAT = nf90_def_var(ncid,dim_names(11),&
-!                             nf90_double,&
-!                             (/tn_dim_id/),&
-!                             tn_var_id)
-!        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var tn")
-!        nSTAT = nf90_put_att(ncid,tn_var_id,"long_name",dim_lnames(11))
-!        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att tn long_name")
-!        write(outstring,4501)BaseYear
-! 4501   format('hours since ',i4)
-!        nSTAT = nf90_put_att(ncid,tn_var_id,"units",outstring)
-!        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att tn units")
+        ! tn (time native)
+        ! We can only have a second unlimited dimension with NC version 4.
+        ! With NC version 3, we need to know the dimension length first, so
+        ! we define this dimension in NC_append_to_netcdf, but only for the
+        ! final step.
       endif
       !   End of dimension variables
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2986,8 +2976,12 @@
         ! write out native time
         nSTAT = nf90_inq_varid(ncid,"tn",tn_var_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid tn")
-        nSTAT=nf90_put_var(ncid,tn_var_id,real(time_native(1:ntmax),kind=dp),(/1/))
+
+        allocate(dum1d_out_dp(ntmax))
+        dum1d_out_dp(1:ntmax) = real(time_native(1:ntmax),kind=dp)
+        nSTAT=nf90_put_var(ncid,tn_var_id,dum1d_out_dp,(/1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var tn")
+        deallocate(dum1d_out_dp)
 
         if(Write_PR_Data)then
           ! Profile data

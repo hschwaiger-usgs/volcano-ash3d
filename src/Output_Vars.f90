@@ -351,7 +351,7 @@
 
       integer,intent(in) :: nt
 
-      allocate(time_native(nt))
+      allocate(time_native(nt)); time_native = 0.0_dp
 
       end subroutine Allocate_NTime
 
@@ -415,52 +415,52 @@
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Allocating var_User2d_static_XY: ",nx,ny,nvar_User2d_static_XY
       endif;enddo
-      allocate(var_User2d_static_XY_name(nvar_User2d_static_XY))
-      allocate(var_User2d_static_XY_unit(nvar_User2d_static_XY))
-      allocate(var_User2d_static_XY_lname(nvar_User2d_static_XY))
-      allocate(var_User2d_static_XY_MissVal(nvar_User2d_static_XY))
-      allocate(var_User2d_static_XY_FillVal(nvar_User2d_static_XY))
-      allocate(var_User2d_static_XY(nx,ny,nvar_User2d_static_XY))
+      allocate(var_User2d_static_XY_name(nvar_User2d_static_XY));   var_User2d_static_XY_name   = ''
+      allocate(var_User2d_static_XY_unit(nvar_User2d_static_XY));   var_User2d_static_XY_unit   = ''
+      allocate(var_User2d_static_XY_lname(nvar_User2d_static_XY));  var_User2d_static_XY_lname  = ''
+      allocate(var_User2d_static_XY_MissVal(nvar_User2d_static_XY));var_User2d_static_XY_MissVal= 0.0_op
+      allocate(var_User2d_static_XY_FillVal(nvar_User2d_static_XY));var_User2d_static_XY_FillVal= 0.0_op
+      allocate(var_User2d_static_XY(nx,ny,nvar_User2d_static_XY));  var_User2d_static_XY        = 0.0_op
         ! User-defined 2-D variables (in x,y)
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Allocating var_User2d_XY: ",nx,ny,nvar_User2d_XY
       endif;enddo
-      allocate(var_User2d_XY_name(nvar_User2d_XY))
-      allocate(var_User2d_XY_unit(nvar_User2d_XY))
-      allocate(var_User2d_XY_lname(nvar_User2d_XY))
-      allocate(var_User2d_XY_MissVal(nvar_User2d_XY))
-      allocate(var_User2d_XY_FillVal(nvar_User2d_XY))
-      allocate(var_User2d_XY(nx,ny,nvar_User2d_XY))
+      allocate(var_User2d_XY_name(nvar_User2d_XY));    var_User2d_XY_name   = ''
+      allocate(var_User2d_XY_unit(nvar_User2d_XY));    var_User2d_XY_unit   = ''
+      allocate(var_User2d_XY_lname(nvar_User2d_XY));   var_User2d_XY_lname  = ''
+      allocate(var_User2d_XY_MissVal(nvar_User2d_XY)); var_User2d_XY_MissVal= 0.0_op
+      allocate(var_User2d_XY_FillVal(nvar_User2d_XY)); var_User2d_XY_FillVal= 0.0_op
+      allocate(var_User2d_XY(nx,ny,nvar_User2d_XY));   var_User2d_XY        = 0.0_op
         ! User-defined 3-D variables (in x,y,gs)
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Allocating var_User3d_XYGs: ",nx,ny,ns,nvar_User3d_XYGs
       endif;enddo
-      allocate(var_User3d_XYGs_name(nvar_User3d_XYGs))
-      allocate(var_User3d_XYGs_unit(nvar_User3d_XYGs))
-      allocate(var_User3d_XYGs_lname(nvar_User3d_XYGs))
-      allocate(var_User3d_XYGs_MissVal(nvar_User3d_XYGs))
-      allocate(var_User3d_XYGs_FillVal(nvar_User3d_XYGs))
-      allocate(var_User3d_XYGs(nx,ny,ns,nvar_User3d_XYGs))
+      allocate(var_User3d_XYGs_name(nvar_User3d_XYGs));     var_User3d_XYGs_name   = ''
+      allocate(var_User3d_XYGs_unit(nvar_User3d_XYGs));     var_User3d_XYGs_unit   = ''
+      allocate(var_User3d_XYGs_lname(nvar_User3d_XYGs));    var_User3d_XYGs_lname  = ''
+      allocate(var_User3d_XYGs_MissVal(nvar_User3d_XYGs));  var_User3d_XYGs_MissVal= 0.0_op
+      allocate(var_User3d_XYGs_FillVal(nvar_User3d_XYGs));  var_User3d_XYGs_FillVal= 0.0_op
+      allocate(var_User3d_XYGs(nx,ny,ns,nvar_User3d_XYGs)); var_User3d_XYGs        = 0.0_op
         ! User-defined 3-D variables (in x,y,z)
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Allocating var_User3d_XYZ: ",nx,ny,nz,nvar_User3d_XYZ
       endif;enddo
-      allocate(var_User3d_XYZ_name(nvar_User3d_XYZ))
-      allocate(var_User3d_XYZ_unit(nvar_User3d_XYZ))
-      allocate(var_User3d_XYZ_lname(nvar_User3d_XYZ))
-      allocate(var_User3d_XYZ_MissVal(nvar_User3d_XYZ))
-      allocate(var_User3d_XYZ_FillVal(nvar_User3d_XYZ))
-      allocate(var_User3d_XYZ(nx,ny,nz,nvar_User3d_XYZ))
+      allocate(var_User3d_XYZ_name(nvar_User3d_XYZ));     var_User3d_XYZ_name   = ''
+      allocate(var_User3d_XYZ_unit(nvar_User3d_XYZ));     var_User3d_XYZ_unit   = ''
+      allocate(var_User3d_XYZ_lname(nvar_User3d_XYZ));    var_User3d_XYZ_lname  = ''
+      allocate(var_User3d_XYZ_MissVal(nvar_User3d_XYZ));  var_User3d_XYZ_MissVal= 0.0_op
+      allocate(var_User3d_XYZ_FillVal(nvar_User3d_XYZ));  var_User3d_XYZ_FillVal= 0.0_op
+      allocate(var_User3d_XYZ(nx,ny,nz,nvar_User3d_XYZ)); var_User3d_XYZ        = 0.0_op
         ! User-defined 4-D variables (in x,y,z,gs)
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Allocating var_User4d_XYZGs: ",nx,ny,ns,nvar_User4d_XYZGs
       endif;enddo
-      allocate(var_User4d_XYZGs_name(nvar_User4d_XYZGs))
-      allocate(var_User4d_XYZGs_unit(nvar_User4d_XYZGs))
-      allocate(var_User4d_XYZGs_lname(nvar_User4d_XYZGs))
-      allocate(var_User4d_XYZGs_MissVal(nvar_User4d_XYZGs))
-      allocate(var_User4d_XYZGs_FillVal(nvar_User4d_XYZGs))
-      allocate(var_User4d_XYZGs(nx,ny,nz,ns,nvar_User4d_XYZGs))
+      allocate(var_User4d_XYZGs_name(nvar_User4d_XYZGs));        var_User4d_XYZGs_name   = ''
+      allocate(var_User4d_XYZGs_unit(nvar_User4d_XYZGs));        var_User4d_XYZGs_unit   = ''
+      allocate(var_User4d_XYZGs_lname(nvar_User4d_XYZGs));       var_User4d_XYZGs_lname  = ''
+      allocate(var_User4d_XYZGs_MissVal(nvar_User4d_XYZGs));     var_User4d_XYZGs_MissVal= 0.0_op
+      allocate(var_User4d_XYZGs_FillVal(nvar_User4d_XYZGs));     var_User4d_XYZGs_FillVal= 0.0_op
+      allocate(var_User4d_XYZGs(nx,ny,nz,ns,nvar_User4d_XYZGs)); var_User4d_XYZGs        = 0.0_op
 
       end subroutine Allocate_Output_UserVars
 
