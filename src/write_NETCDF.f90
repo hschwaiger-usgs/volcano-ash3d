@@ -3544,7 +3544,7 @@
         severity = "ERROR:   "
       endif
 
-      if (nSTAT == nf90_noerr) return
+      if (nSTAT.eq.nf90_noerr) return
       do io=1,2;if(VB(io).le.verbosity_error)then
         write(errlog(io) ,*)severity,icode,operation,":",nf90_strerror(nSTAT)
       endif;enddo

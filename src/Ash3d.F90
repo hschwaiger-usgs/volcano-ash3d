@@ -694,6 +694,6 @@
 !
 !------------------------------------------------------------------------------
 
-      close(global_log)       !close log file 
+      close(fid_logfile)       !close log file 
 
       end program Ash3d

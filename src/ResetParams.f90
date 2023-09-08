@@ -91,11 +91,11 @@
         write(outlog(io),*)"    Searching for OPTMOD=RESETPARAMS"
       endif;enddo
       nmods = 0
-      open(unit=10,file=infile,status='old',err=1900)
+      open(unit=fid_ctrlfile,file=infile,status='old',action='read',err=1900)
 
-      read(10,'(a80)',iostat=ios)linebuffer080
+      read(fid_ctrlfile,'(a80)',iostat=ios)linebuffer080
       do while(ios.eq.0)
-        read(10,'(a80)',iostat=ios)linebuffer080
+        read(fid_ctrlfile,'(a80)',iostat=ios)linebuffer080
         substr_pos = index(linebuffer080,'OPTMOD')
         if(substr_pos.eq.1)then
           ! found an optional module
@@ -109,7 +109,7 @@
 1104    format(7x,a20)
       enddo
 
-      read(10,'(a80)',iostat=ios)linebuffer080
+      read(fid_ctrlfile,'(a80)',iostat=ios)linebuffer080
       read(linebuffer080,*)testkey
       iparam = 0
       do while(ios.eq.0.and. &
@@ -124,7 +124,7 @@
           ! a string
           read(linebuffer080(substr_pos+1:50),*)pvalue_str(iparam)
         endif
-        read(10,'(a80)',iostat=ios)linebuffer080
+        read(fid_ctrlfile,'(a80)',iostat=ios)linebuffer080
         read(linebuffer080,*)testkey
       enddo
 

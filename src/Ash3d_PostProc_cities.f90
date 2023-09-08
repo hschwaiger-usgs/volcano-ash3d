@@ -39,7 +39,7 @@
       real(kind=ip)    ,dimension(maxcities),intent(out) :: CityLat_out
       character(len=26),dimension(maxcities),intent(out) :: CityName_out
 
-      integer            :: iostatus = 1
+      integer            :: Iostatus = 1
       integer            :: i, ncities, nread
       integer            :: resolution                              ! # of cells in x and y
       character(len=26)  :: CityName
@@ -102,13 +102,13 @@
           return
         endif
       endif
-      open(unit=12,file=trim(adjustl(CityMasterFile)))
+      open(unit=fid_cities,file=trim(adjustl(CityMasterFile)),status='old',action='read')
 
       ! skip the first line
-      read(12,*)
+      read(fid_cities,*)
 
-      do while ((ncities.lt.maxcities).and.(iostatus.ge.0))
-        read(12,'(a133)',IOSTAT=iostatus) inputline
+      do while ((ncities.lt.maxcities).and.(Iostatus.ge.0))
+        read(fid_cities,'(a133)',iostat=Iostatus) inputline
         read(inputline,2) CityLon, CityLat, CityName
 2       format(f16.4,f15.4,a26)
         if ((CityLon.gt.lonLL).and.(CityLon.lt.lonUR).and. &
@@ -141,20 +141,20 @@
         endif
         nread=nread+1
       enddo
-      close(12)
+      close(fid_cities)
       if(outCode.gt.0)then
         if(ncities.gt.0) then
-          open(unit=13,file='cities.xy')
+          open(unit=fid_citiesxy,file='cities.xy',status='replace',action='write')
           if(outCode.eq.1)then
             ! for gmt
             do i=1,ncities
-              write(13,4) CityLon_out(i),CityLat_out(i),CityName_out(i)
+              write(fid_citiesxy,4) CityLon_out(i),CityLat_out(i),CityName_out(i)
 4             format(2f10.4,'  10  0  9  BL    ',a26)
             enddo
           elseif(outCode.eq.2)then
             do i=1,ncities
               ! for gnuplot
-              write(13,*) real(CityLon_out(i),kind=4),real(CityLat_out(i),kind=4),&
+              write(fid_citiesxy,*) real(CityLon_out(i),kind=4),real(CityLat_out(i),kind=4),&
                           '"',trim(adjustl(CityName_out(i))),'"'
 !3             format(2f10.4,1x,a26)
             enddo
@@ -163,7 +163,7 @@
               write(outlog(io),*)"outCode not recognized. No output file written"
             endif;enddo
           endif
-          close(13)
+          close(fid_citiesxy)
         endif
       endif
 

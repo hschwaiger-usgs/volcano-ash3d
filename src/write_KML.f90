@@ -98,7 +98,7 @@
       KMZ_filename(ivar)      = 'CloudConcentration.kmz       '
       KML_filename(ivar)      = 'CloudConcentration.kml       '
       KML_units(ivar)         = 'mg/m3'
-      KML_fid(ivar)           = 40
+      KML_fid(ivar)           = fid_kmlbase + ivar
       KML_n_clrmp(ivar)       = 8
       KML_color_map(ivar,:) = (/ 0.1_ip,   0.3_ip,   1.0_ip, 2.0_ip, 10.0_ip, &
                              30.0_ip, 100.0_ip, 300.0_ip, 0.0_ip, 0.0_ip, 0.0_ip/)
@@ -127,7 +127,7 @@
       KMZ_filename(ivar)      = 'CloudHeight.kmz              '
       KML_filename(ivar)      = 'CloudHeight.kml              '
       KML_units(ivar)         = ' km  '
-      KML_fid(ivar)           = 170
+      KML_fid(ivar)           = fid_kmlbase + ivar
       KML_n_clrmp(ivar)       = 9
       KML_color_map(ivar,:) = (/0.24_ip,  3.0_ip,  6.0_ip, 10.0_ip, 13.0_ip, &
                              16.0_ip, 20.0_ip, 25.0_ip, 30.0_ip, 0.0_ip, 0.0_ip/)
@@ -156,7 +156,7 @@
       KMZ_filename(ivar)      = 'CloudBottom.kmz              '
       KML_filename(ivar)      = 'CloudBottom.kml              '
       KML_units(ivar)         = ' km  '
-      KML_fid(ivar)           = 171
+      KML_fid(ivar)           = fid_kmlbase + ivar
       KML_n_clrmp(ivar)       = 9
       KML_color_map(ivar,:) = (/0.24_ip,  3.0_ip,  6.0_ip, 10.0_ip, 13.0_ip, &
                              16.0_ip, 20.0_ip, 25.0_ip, 30.0_ip, 0.0_ip, 0.0_ip/)
@@ -185,7 +185,7 @@
       KMZ_filename(ivar)      = 'CloudLoad.kmz                '
       KML_filename(ivar)      = 'CloudLoad.kml                '
       KML_units(ivar)         = 'T/km2'
-      KML_fid(ivar)           = 160
+      KML_fid(ivar)           = fid_kmlbase + ivar
       KML_n_clrmp(ivar)       = 9
       KML_color_map(ivar,:) = (/ 0.2_ip,   1.0_ip,   2.0_ip,    5.0_ip, 10.0_ip, &
                              30.0_ip, 100.0_ip, 300.0_ip, 1000.0_ip, 0.0_ip, 0.0_ip/)
@@ -214,7 +214,7 @@
       KMZ_filename(ivar)      = 'cloud_arrivaltimes_hours.kmz'
       KML_filename(ivar)      = 'cloud_arrivaltimes_hours.kml'
       KML_units(ivar)         = ' hrs '
-      KML_fid(ivar)           = 390
+      KML_fid(ivar)           = fid_kmlbase + ivar
       KML_n_clrmp(ivar)       = 9
       KML_color_map(ivar,:) = (/ 0.0_ip,  3.0_ip,  6.0_ip,  9.0_ip, 12.0_ip, &
                              15.0_ip, 18.0_ip, 24.0_ip, 36.0_ip, 0.0_ip, 0.0_ip/)
@@ -244,7 +244,7 @@
       KMZ_filename(ivar)      = 'reflectivity.kmz             '
       KML_filename(ivar)      = 'reflectivity.kml             '
       KML_units(ivar)         = ' dBZ '
-      KML_fid(ivar)           = 206
+      KML_fid(ivar)           = fid_kmlbase + ivar
       KML_n_clrmp(ivar)       = 9
       KML_color_map(ivar,:) = (/-20.0_ip, -10.0_ip,  0.0_ip, 10.0_ip, 20.0_ip, &
                            30.0_ip,  40.0_ip, 50.0_ip, 60.0_ip, 0.0_ip, 0.0_ip/)
@@ -273,7 +273,7 @@
       KMZ_filename(ivar)      = 'deposit_thickness_mm.kmz     '
       KML_filename(ivar)      = 'deposit_thickness_mm.kml     '
       KML_units(ivar)         = '  mm '
-      KML_fid(ivar)           = 50
+      KML_fid(ivar)           = fid_kmlbase + ivar
       KML_n_clrmp(ivar)       = 11
       KML_color_map(ivar,:) = (/ 0.01_ip, 0.03_ip, 0.1_ip,   0.3_ip,   1.0_ip,    3.0_ip, 10.0_ip,&
                              30.0_ip, 100.0_ip, 300.0_ip, 1000.0_ip/)
@@ -302,7 +302,7 @@
       KMZ_filename(ivar)      = 'deposit_thickness_inches.kmz  '
       KML_filename(ivar)      = 'deposit_thickness_inches.kml  '
       KML_units(ivar)         = '  in.'
-      KML_fid(ivar)           = 550
+      KML_fid(ivar)           = fid_kmlbase + ivar
       KML_n_clrmp(ivar)       = 3
       KML_color_map(ivar,:) = (/ 0.00394_ip, 0.0315_ip, 0.236_ip, 0.0_ip, 0.0_ip,&
                               0.0_ip, 0.0_ip, 0.0_ip, 0.0_ip, 0.0_ip, 0.0_ip/)
@@ -331,7 +331,7 @@
       KMZ_filename(ivar)      = 'ashfall_arrivaltimes_hours.kmz'
       KML_filename(ivar)      = 'ashfall_arrivaltimes_hours.kml'
       KML_units(ivar)         = ' hrs '
-      KML_fid(ivar)           = 290
+      KML_fid(ivar)           = fid_kmlbase + ivar
       KML_n_clrmp(ivar)       = 9
       KML_color_map(ivar,:) = (/ 0.0_ip,  3.0_ip,  6.0_ip,  9.0_ip, 12.0_ip, &
                              15.0_ip, 18.0_ip, 24.0_ip, 36.0_ip, 0.0_ip, 0.0_ip/)
@@ -360,7 +360,7 @@
       KMZ_filename(ivar)      = 'Topography.kmz                '
       KML_filename(ivar)      = 'Topography.kml                '
       KML_units(ivar)         = '  km '
-      KML_fid(ivar)           = 540
+      KML_fid(ivar)           = fid_kmlbase + ivar
       KML_n_clrmp(ivar)       = 8
       KML_color_map(ivar,:) = (/ 1.0_ip,   2.0_ip,   3.0_ip,    4.0_ip, 5.0_ip,&
                                  6.0_ip, 7.0_ip, 8.0_ip, 0.0_ip, 0.0_ip, 0.0_ip/)
@@ -472,7 +472,7 @@
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Opening KML file ",trim(adjustl(filename))
       endif;enddo
-      open(fid,file=trim(adjustl(filename)),status='unknown',err=2500)
+      open(fid,file=trim(adjustl(filename)),status='replace',action='write',err=2500)
 
       write(fid,1)                 ! write file header (35 lines)
 
@@ -493,7 +493,7 @@
         write(fid,4) Styles(icmp), opacity, Colors(icmp)
       enddo
 
-      !write legend (20 lines starting with ScreenOverlay)
+      ! write legend (20 lines starting with ScreenOverlay)
       write(fid,5)description,legend,overlayX,overlayY,screenX,screenY,sizeX,sizeY
 
       ! Plot model region
@@ -559,13 +559,13 @@
 
       return
 
-      !Error traps
+      ! Error traps
 2500  do io=1,2;if(VB(io).le.verbosity_error)then
         write(errlog(io),20)
       endif;enddo
       stop 1
 
-      !Format statements
+      ! Format statements
 1     format('<?xml version="1.0" encoding="UTF-8"?>',/, &
              '<kml xmlns="http://www.opengis.net/kml/2.2">',/, &
              '<Document>',/, &
@@ -792,16 +792,16 @@
       if(TS_flag.ne.0)then
         write(fid,1) xmlArrivalTime, xmlArrivalTime,  &
                  xmlTimeSpanStart, xmlTimeSpanEnd
-        !close forecast folder for deposit files on the last time step
-        !elseif  &
-        !  (((ivar.eq.7).and.WriteDepositTS_KML).or. & !deposit
-        !   ((ivar.eq.8).and.WriteDepositTS_KML)) then  !deposit_NWS
-        !    write(fid,3)
-        !    write(fid,15) 
+        ! close forecast folder for deposit files on the last time step
+        ! elseif  &
+        !   (((ivar.eq.7).and.WriteDepositTS_KML).or. & !deposit
+        !    ((ivar.eq.8).and.WriteDepositTS_KML)) then  !deposit_NWS
+        !     write(fid,3)
+        !     write(fid,15) 
       else
         write(fid,15) 
       endif
-      !close folder if this is the final deposit in a deposit file
+      ! close folder if this is the final deposit in a deposit file
       !if (final.and.WriteDepositFinal_KML)  write(fid,3)
 
       do i=1,nxmax
@@ -859,12 +859,12 @@
             longCC = real(olam,kind=ip)
             lattCC = real(ophi,kind=ip)
           endif ! IsLatLon
-          if (longLL>180.0_ip) longLL = longLL-360.0_ip
-          if (longUL>180.0_ip) longUL = longUL-360.0_ip
-          if (longLR>180.0_ip) longLR = longLR-360.0_ip
-          if (longUR>180.0_ip) longUR = longUR-360.0_ip
-          if (longCC>180.0_ip) longCC = longCC-360.0_ip
-          if(height_flag>0)then
+          if (longLL.gt.180.0_ip) longLL = longLL-360.0_ip
+          if (longUL.gt.180.0_ip) longUL = longUL-360.0_ip
+          if (longLR.gt.180.0_ip) longLR = longLR-360.0_ip
+          if (longUR.gt.180.0_ip) longUR = longUR-360.0_ip
+          if (longCC.gt.180.0_ip) longCC = longCC-360.0_ip
+          if(height_flag.gt.0)then
             height = int(MaxHeight(i,j)*1000.0_ip)
           elseif(height_flag.lt.0)then
             height = int(MinHeight(i,j)*1000.0_ip)
@@ -872,32 +872,32 @@
             height = 0
           endif
           if (LongUR.lt.LongUL) then
-            CrossAntiMeridian = .true.       !polygon crosses the antimeridian
-            !establish two polygons.  The first is left of the AM
+            CrossAntiMeridian = .true.       ! polygon crosses the antimeridian
+            ! establish two polygons.  The first is left of the AM
             longLL1=longLL
             longUL1=longUL
-            longLR1=179.9999
-            longUR1=179.9999
+            longLR1=179.9999_ip
+            longUR1=179.9999_ip
             lattLL1=lattLL
             lattUL1=lattUL
-            !The second polygon is right of the AM
-            longLL2=-179.9999
-            longUL2=-179.9999
+            ! The second polygon is right of the AM
+            longLL2=-179.9999_ip
+            longUL2=-179.9999_ip
             longLR2=longLR
             longUR2=longUR
             lattLR2=lattLR
             lattUR2=lattUR
-            !interpolate to find lattLR1,lattUR1,lattLL2,lattUL2
+            ! interpolate to find lattLR1,lattUR1,lattLL2,lattUL2
             longUR3=longUR+360.0_ip
             longLR3=longLR+360.0_ip
-            lattLR1=lattLL+(lattLR-lattLL)*(179.9999-longLL)/(longLR3-longLL)
-            lattUR1=lattUL+(lattUR-lattUL)*(179.9999-longUL)/(longUR3-longUL)
+            lattLR1=lattLL+(lattLR-lattLL)*(179.9999_ip-longLL)/(longLR3-longLL)
+            lattUR1=lattUL+(lattUR-lattUL)*(179.9999_ip-longUL)/(longUR3-longUL)
             lattLL2=lattLR1
             lattUL2=lattUR1
           else
             CrossAntiMeridian = .false.
           endif
-          !write out polygon to  kml file
+          ! write out polygon to  kml file
           if (.not.CrossAntiMeridian) then
             write(fid,2) OutVar(i,j),units,StyleNow3, &
                          longCC,lattCC,real(height,kind=4),  &
@@ -908,7 +908,7 @@
                          longUL,lattUL,real(height,kind=4), &
                          longLL,lattLL,real(height,kind=4)
           else
-             !This fixes the antimeridian problem
+            ! This fixes the antimeridian problem
             write(fid,25) OutVar(i,j),units,StyleNow3, &
                          longCC,lattCC,real(height,kind=4),  &
                          AltMode,                      &
@@ -923,15 +923,14 @@
                          longUL2,lattUL2,real(height,kind=4), &
                          longLL2,lattLL2,real(height,kind=4)
           endif
-!100       continue
         enddo
       enddo
 
-      write(fid,3)   !close folder
+      write(fid,3)   ! close folder
 
       return
       
-      !format statements
+      ! format statements
 1     format('      <Folder>',/, &
              '        <name>',a20,'</name>',/, &
              '        <open>0</open>',/, &
@@ -1083,7 +1082,7 @@
       integer             :: nWrittenOut
       character (len=13)  :: yyyymmddhh
       character (len=1)   :: cloud_morethan, deposit_morethan      !equals ">" if cloud is still overhead or ash is still falling
-      real(kind=dp)        :: CloudTime
+      real(kind=dp)       :: CloudTime
       character (len=20)  :: xmlTimeStart, xmlTimeEnd
       real(kind=ip)       :: airlon,airlat
 
@@ -1101,8 +1100,8 @@
 
       real(kind=ip) :: ymaxpl
       logical       :: IsThere
-      integer       :: status
-      real(kind=dp)  :: olam,ophi ! using precision needed by libprojection
+      integer       :: stat
+      real(kind=dp) :: olam,ophi ! using precision needed by libprojection
 
       INTERFACE
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
@@ -1121,7 +1120,7 @@
       ! impacted airports, incrementing a plot index and logging those airport
       ! in Airport_TS_plotindex by noting the polot index.
       plt_indx = 0
-      Airport_TS_plotindex = 0
+      Airport_TS_plotindex(:) = 0
       do ai=1,nairports
         ! First check if ash has accumulated there by more than 0.01 mm
         if(Airport_Thickness_TS(ai,nWriteTimes).lt.THICKNESS_THRESH)then
@@ -1145,26 +1144,26 @@
         write(dp_pngfile,53) plt_indx,".png"
  53     format('depTS_',i4.4,a4)
 
-        open(55,file=dp_gnufile,status='replace')
-        write(55,*)"set terminal png size 400,300"
-        write(55,*)"set key bmargin left horizontal Right noreverse enhanced ",&
-                   "autotitles box linetype -1 linewidth 1.000"
-        write(55,*)"set border 31 lw 2.0 lc rgb '#000000'"
-        write(55,*)"set style line 1 linecolor rgbcolor '#888888' linewidth 2.0 pt 7"
-        write(55,*)"set ylabel 'Deposit Thickeness (mm)'"
-        write(55,*)"set xlabel 'Time (hours after eruption)'"
-        write(55,*)"set nokey"
-        write(55,*)"set output '",dp_pngfile,"'"
-        write(55,*)"set title '",Airport_Name(ai),"'"
-        write(55,*)"plot [0:",ceiling(Simtime_in_hours),"][0:",&
-                   nint(ymaxpl),"] '",dp_outfile,"' with filledcurve x1 ls 1"
-        close(55)
+        open(fid_kmlgnuscr,file=dp_gnufile,status='replace',action='write')
+        write(fid_kmlgnuscr,*)"set terminal png size 400,300"
+        write(fid_kmlgnuscr,*)"set key bmargin left horizontal Right noreverse enhanced ",&
+                              "autotitles box linetype -1 linewidth 1.000"
+        write(fid_kmlgnuscr,*)"set border 31 lw 2.0 lc rgb '#000000'"
+        write(fid_kmlgnuscr,*)"set style line 1 linecolor rgbcolor '#888888' linewidth 2.0 pt 7"
+        write(fid_kmlgnuscr,*)"set ylabel 'Deposit Thickeness (mm)'"
+        write(fid_kmlgnuscr,*)"set xlabel 'Time (hours after eruption)'"
+        write(fid_kmlgnuscr,*)"set nokey"
+        write(fid_kmlgnuscr,*)"set output '",dp_pngfile,"'"
+        write(fid_kmlgnuscr,*)"set title '",Airport_Name(ai),"'"
+        write(fid_kmlgnuscr,*)"plot [0:",ceiling(Simtime_in_hours),"][0:",&
+                              nint(ymaxpl),"] '",dp_outfile,"' with filledcurve x1 ls 1"
+        close(fid_kmlgnuscr)
         ! Writing the data file the gnuplot script will plot
-        open(54,file=dp_outfile,status='replace')
+        open(fid_kmlgnudat,file=dp_outfile,status='replace',action='write')
         do i = 1,nWriteTimes
-           write(54,*)WriteTimes(i),Airport_Thickness_TS(ai,i)
+           write(fid_kmlgnudat,*)WriteTimes(i),Airport_Thickness_TS(ai,i)
         enddo
-        close(54)
+        close(fid_kmlgnudat)
         ! Test if gnuplot is installed
         if(IsLinux.or.IsMacOS)then
           execpath = trim(adjustl(DirPrefix)) // DirDelim // &
@@ -1181,93 +1180,109 @@
           write(gnucom,'(a21,a14)')'/usr/bin/gnuplot -p ',dp_gnufile
           call execute_command_line(gnucom)
           ! Now delete the script and data files
-          open(unit=54, iostat=status, file=dp_outfile, status='old')
-          if (status == 0) close(54, status='delete')
-          open(unit=55, iostat=status, file=dp_gnufile, status='old')
-          if (status == 0) close(55, status='delete')
+          open(unit=fid_kmlgnudat, iostat=stat, file=dp_outfile, status='old',action='write')
+          if (stat.eq.0) close(fid_kmlgnudat, status='delete')
+          open(unit=fid_kmlgnuscr, iostat=stat, file=dp_gnufile, status='old',action='write')
+          if (stat.eq.0) close(fid_kmlgnuscr, status='delete')
         endif
       enddo
 
       ! Now starting the kml file
-      open(unit=60,file='ash_arrivaltimes_airports.kml',err=2001)
-      write(60,5)                           !write out file header info
+      open(unit=fid_kmlPOI,file='ash_arrivaltimes_airports.kml',status='replace',action='write',err=2001)
+      write(fid_kmlPOI,5)                           ! write out file header info
       nWrittenOut = 0
       ! Loop through all the airports again so we can write out the airports that are hit.
-      do i=1,nairports
+      do ai=1,nairports
         ! First separate the airports into two categories: deposit cases or cloud cases
-        if ((n_gs_max.gt.1).and.&        ! Check if this is a web-cloud run by testing the number of grain sizes
-            Airport_AshArrived(i)) then  ! Check if ash has actually arrived here
+        if ((n_gs_max.gt.1).and.&         ! Check if this is a web-cloud run by testing the number of grain sizes
+            Airport_AshArrived(ai)) then  ! Check if ash has actually arrived here
           ! Deposit case
           deposit_morethan = ' '
           cloud_morethan   = ' '
-          airlon = Airport_Longitude(i)
-          airlat = Airport_Latitude(i)
-          xmlTimeStart = HS_xmltime(SimStartHour+Airport_AshArrivalTime(i)+OutputOffset,&
+          airlon = Airport_Longitude(ai)
+          airlat = Airport_Latitude(ai)
+          xmlTimeStart = HS_xmltime(SimStartHour+Airport_AshArrivalTime(ai)+OutputOffset,&
                                     BaseYear,useLeap)
           !See whether cloud is still overhead, or whether ash is still falling
-          if ((Airport_AshArrived(i)).and.(Airport_deprate(i).gt.DEPRATE_THRESH)) then
-            Airport_AshDuration(i) = time-Airport_AshArrivalTime(i)
+          if ((Airport_AshArrived(ai)).and.(Airport_deprate(ai).gt.DEPRATE_THRESH)) then
+            Airport_AshDuration(ai) = time-Airport_AshArrivalTime(ai)
             deposit_morethan = '>'
           else
             deposit_morethan = ' '
           endif
-          if (CloudLoad(Airport_i(i),Airport_j(i)).gt.CLOUDLOAD_THRESH) then
-            Airport_CloudDuration(i) = time-Airport_CloudArrivalTime(i)
+          if (CloudLoad(Airport_i(ai),Airport_j(ai)).gt.CLOUDLOAD_THRESH) then
+            Airport_CloudDuration(ai) = time-Airport_CloudArrivalTime(ai)
             cloud_morethan = '>'
           else
             cloud_morethan = ' '
           endif
-          if (Airport_Longitude(i).gt.180.0_ip) airlon=airlon-360.0_ip
-          if(ai.gt.0)then
+          if (Airport_Longitude(ai).gt.180.0_ip) airlon=airlon-360.0_ip
+          if (Airport_TS_plotindex(ai).gt.0)then
+            write(dp_pngfile,53) Airport_TS_plotindex(ai),".png"
+
             ! A cumulative deposit plot exists for this point since it has a plot index
             ! Write out a placemark which includes the png of the deposit time-series
-            write(60,16)Airport_Name(i), &
-                        Airport_CloudArrivalTime(i), &
-                        cloud_morethan, Airport_CloudDuration(i), &
-                        Airport_AshArrivalTime(i), &
-                        deposit_morethan, Airport_AshDuration(i), &
-                        Airport_Thickness(i), Airport_Thickness(i)/25.4, &
-                        dp_pngfile,&
-                        xmlTimeStart, airlon, airlat
+            write(fid_kmlPOI,16)Airport_Name(ai),      &
+                        Airport_CloudArrivalTime(ai),  &
+                        cloud_morethan,                &
+                        Airport_CloudDuration(ai),     &
+                        Airport_AshArrivalTime(ai),    &
+                        deposit_morethan,              &
+                        Airport_AshDuration(ai),       &
+                        Airport_Thickness(ai),         &
+                        Airport_Thickness(ai)/25.4_ip, &
+                        dp_pngfile,                    &
+                        xmlTimeStart,                  &
+                        airlon,                        &
+                        airlat
           else
             ! No ash has fallen here, but a cloud have been overhead
             ! Write out a normal placemark without image
-            write(60,6) Airport_Name(i), &
-                        Airport_CloudArrivalTime(i), &
-                        cloud_morethan, Airport_CloudDuration(i), &
-                        Airport_AshArrivalTime(i), &
-                        deposit_morethan, Airport_AshDuration(i), &
-                        Airport_Thickness(i), Airport_Thickness(i)/25.4, &
-                        xmlTimeStart, airlon, airlat
+            write(fid_kmlPOI,6) Airport_Name(ai),      &
+                        Airport_CloudArrivalTime(ai),  &
+                        cloud_morethan,                &
+                        Airport_CloudDuration(ai),     &
+                        Airport_AshArrivalTime(ai),    &
+                        deposit_morethan,              &
+                        Airport_AshDuration(ai),       &
+                        Airport_Thickness(ai),         &
+                        Airport_Thickness(ai)/25.4_ip, &
+                        xmlTimeStart,                  &
+                        airlon,                        &
+                        airlat
           endif
           nWrittenOut = nWrittenOut + 1
-        elseif (Airport_CloudArrived(i)) then       !if a cloud arrived but no deposit
+        elseif (Airport_CloudArrived(ai)) then       ! If a cloud arrived but no deposit
           ! Cloud case
           cloud_morethan   = ' '
-          airlon = Airport_Longitude(i)
-          airlat = Airport_Latitude(i)
-          CloudTime = SimStartHour+Airport_CloudArrivalTime(i)
+          airlon = Airport_Longitude(ai)
+          airlat = Airport_Latitude(ai)
+          CloudTime = SimStartHour+Airport_CloudArrivalTime(ai)
           xmlTimeStart = HS_xmltime(CloudTime+OutputOffset,&
                                     BaseYear,useLeap)
-          !See whether cloud is still overhead, or whether ash is still falling
-          if (CloudLoad(Airport_i(i),Airport_j(i)).gt.CLOUDLOAD_THRESH) then
-            Airport_CloudDuration(i) = time-Airport_CloudArrivalTime(i)
+          ! See whether cloud is still overhead, or whether ash is still falling
+          if (CloudLoad(Airport_i(ai),Airport_j(ai)).gt.CLOUDLOAD_THRESH) then
+            Airport_CloudDuration(ai) = time-Airport_CloudArrivalTime(ai)
             cloud_morethan = '>'
           else
             cloud_morethan = ' '
           endif
-          xmlTimeEnd   = HS_xmltime(CloudTime+Airport_CloudDuration(i)+OutputOffset,&
+          xmlTimeEnd   = HS_xmltime(CloudTime+Airport_CloudDuration(ai)+OutputOffset,&
                                     BaseYear,useLeap)
-          if (Airport_Longitude(i).gt.180.0_ip) airlon=airlon-360.0_ip
+          if (Airport_Longitude(ai).gt.180.0_ip) airlon=airlon-360.0_ip
           ! Write out a normal placemark without image
-          write(60,7) Airport_Name(i), &
-                      Airport_CloudArrivalTime(i), &
-                      cloud_morethan, Airport_CloudDuration(i), &
-                      xmlTimeStart, xmlTimeEnd, airlon, airlat
+          write(fid_kmlPOI,7) Airport_Name(ai),     &
+                      Airport_CloudArrivalTime(ai), &
+                      cloud_morethan,               &
+                      Airport_CloudDuration(ai),    &
+                      xmlTimeStart,                 &
+                      xmlTimeEnd,                   &
+                      airlon,                       &
+                      airlat
           nWrittenOut = nWrittenOut + 1
         endif
-      enddo
-      if (IsLatLon.eqv..False.) then      !Put a placemark at the location of the volcano
+      enddo ! ai=1,nairports
+      if (IsLatLon.eqv..False.) then      ! Put a placemark at the location of the volcano
         call PJ_proj_inv(real(x_volcano,kind=dp), real(y_volcano,kind=dp),  &
                       A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
                       A3d_k0_scale,A3d_Re, &
@@ -1276,40 +1291,40 @@
         lat_volcano = real(ophi,kind=ip)
       endif
 
-      allocate(iyear(neruptions))         !Generate data needed to write ESP's
+      allocate(iyear(neruptions))         ! Generate data needed to write ESP's
       allocate(imonth(neruptions))
       allocate(iday(neruptions))
       allocate(StartHour(neruptions))
-      write(60,8) VolcanoName, VolcanoName
+      write(fid_kmlPOI,8) VolcanoName, VolcanoName
       !  Write table of ESP's
       do ierup=1,neruptions
         yyyymmddhh = HS_yyyymmddhh_since(e_StartTime(ierup)+SimStartHour+OutputOffset,&
                                          BaseYear,useLeap)
         read(yyyymmddhh,200) iyear(ierup),imonth(ierup),iday(ierup), &
                       StartHour(ierup)
-        write(60,9) ierup,iyear(ierup),imonth(ierup),iday(ierup), &
+        write(fid_kmlPOI,9) ierup,iyear(ierup),imonth(ierup),iday(ierup), &
                       StartHour(ierup), &
                       e_PlumeHeight(ierup),e_Duration(ierup),e_Volume(ierup)
 200     format(i4,i2,i2,f5.2)
       enddo
-      if (nWrittenOut.gt.0) then              !If one or more airports were affected
+      if (nWrittenOut.gt.0) then             ! If one or more airports were affected
         if (lon_volcano.gt.180.0_ip) then
-          write(60,10) lon_volcano-360.0_ip, lat_volcano
+          write(fid_kmlPOI,10) lon_volcano-360.0_ip, lat_volcano
         else
-          write(60,10) lon_volcano, lat_volcano
+          write(fid_kmlPOI,10) lon_volcano, lat_volcano
         endif
-      else                                   !If no airports were affected
+      else                                   ! If no airports were affected
         if (lon_volcano.gt.180.0_ip) then
-          write(60,11) lon_volcano-360.0_ip, lat_volcano
+          write(fid_kmlPOI,11) lon_volcano-360.0_ip, lat_volcano
         else
-          write(60,11) lon_volcano, lat_volcano
+          write(fid_kmlPOI,11) lon_volcano, lat_volcano
         endif
       endif
-      write(60,12)                           !write final lines of file
-      close(60)                             !close file
+      write(fid_kmlPOI,12)                           ! write final lines of file
+      close(fid_kmlPOI)                              ! close file
 
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),4) nWrittenOut               !Write number of airports affected to log file & stdout
+        write(outlog(io),4) nWrittenOut      ! Write number of airports affected to log file & stdout
       endif;enddo
 
       ! Test if zip is installed
@@ -1329,7 +1344,7 @@
 
       return
 
-!     Error traps
+      ! Error traps
 2001  do io=1,2;if(VB(io).le.verbosity_error)then
         write(errlog(io),*)'Error opening ash_arrivaltimes_airports.kml.  Program stopped.'
       endif;enddo
@@ -1635,7 +1650,7 @@
         yplot(ict) = ytop - (ict-30)*(ytop-ybottom)/10.0_ip
       enddo
 
-      !Convert points to latitude & longitude
+      ! Convert points to latitude & longitude
       if (IsLatLon) then
         lonplot = xplot
         latplot = yplot
@@ -1650,17 +1665,17 @@
         enddo
       endif
 
-      !Make sure the longitude is between -180 and +180 degrees
+      ! Make sure the longitude is between -180 and +180 degrees
       do ict=0,40
         if (lonplot(ict).gt.180.0_ip)  lonplot(ict) = lonplot(ict)-360.0_ip
         if (lonplot(ict).lt.-180.0_ip) lonplot(ict) = lonplot(ict)+360.0_ip
       enddo
 
-      !write out the polygon
+      ! Write out the polygon
       write(fid,5) (lonplot(ict),latplot(ict), ict=0,40)
 
-      !Format statements
-3     format('	  <Style id="boundary_style">',/, &             !style for model boundary
+      ! Format statements
+3     format('	  <Style id="boundary_style">',/, &             ! style for model boundary
              '		<PolyStyle>',/, &
              '			<color>33ffffff</color>',/, &
              '                  <fill>0</fill>',/, &
@@ -1723,7 +1738,6 @@
             '           </outerBoundaryIs>',/, &
             '		</Polygon>',/, &
             '	</Placemark>')
-!11    format(' </Document>',/,'</kml>')
 
       return
 

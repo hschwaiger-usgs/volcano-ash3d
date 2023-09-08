@@ -125,7 +125,7 @@
       implicit none
 
       integer             :: nargs
-      integer             :: status
+      integer             :: stat
       integer             :: istat
       character (len=100) :: arg
       integer             :: iformat
@@ -174,7 +174,7 @@
         end function HS_yyyymmddhh_since
       END INTERFACE
 
-      open(unit=global_log,file='Ash3d_pp.log',status='unknown')
+      open(unit=fid_logfile,file='Ash3d_pp.log',status='replace',action='write')
       call Set_OS_Env
 
       ! Checking to see which plotting packages we have
@@ -276,14 +276,14 @@
         endif;enddo
         stop 1
       elseif (nargs.ge.3) then
-        call get_command_argument(1, arg, status)
+        call get_command_argument(1, arg, stat)
         read(arg,*)concenfile
-        call get_command_argument(2, arg, status)
+        call get_command_argument(2, arg, stat)
         read(arg,*)iprod
-        call get_command_argument(3, arg, status)
+        call get_command_argument(3, arg, stat)
         read(arg,*)iformat
         if (nargs.eq.4) then
-          call get_command_argument(4, arg, status)
+          call get_command_argument(4, arg, stat)
           read(arg,*)itime
         else
           itime = -1
@@ -641,7 +641,7 @@
           endif;enddo
           write(comd,*)"zip ",trim(adjustl(KMZ_filename(ivar))),' ',&
                               trim(adjustl(KML_filename(ivar)))
-          call execute_command_line (comd, exitstat=status)
+          call execute_command_line (comd, exitstat=stat)
         elseif(iprod.eq.3.or.iprod.eq.5.or. &  ! Deposit thickness mm (kml versions is TS + final)
                iprod.eq.4.or.iprod.eq.6.or. &  ! Deposit thickness inches (kml versions is TS + final)
                iprod.eq.9.or.               &  ! ash-cloud concentration

@@ -60,16 +60,16 @@
 
       ! 3-D total tephra concentration
       if(op.eq.4)then
-        open(unit=20,file='3d_tephra_fall_'//cio//'.raw', &
-          status='replace', &
+        open(unit=fid_bin3dout,file='3d_tephra_fall_'//cio//'.raw', &
+          status='replace', action='write', &
           access='direct',recl=4*nx*ny*nz)
       else
-        open(unit=20,file='3d_tephra_fall_'//cio//'.raw', &
-          status='replace', &
+        open(unit=fid_bin3dout,file='3d_tephra_fall_'//cio//'.raw', &
+          status='replace', action='write', &
           access='direct',recl=8*nx*ny*nz)
       endif
-      write(20,rec=1)(((ashcon_tot(i,j,k),i=1,nx),j=1,ny),k=1,nz)
-      close(20)
+      write(fid_bin3dout,rec=1)(((ashcon_tot(i,j,k),i=1,nx),j=1,ny),k=1,nz)
+      close(fid_bin3dout)
 
       end subroutine write_3D_Binary
 
@@ -106,14 +106,11 @@
 
       real(kind=op)  :: OVar(nx,ny)
       real(kind=op)  :: FValue
-      integer :: fid
       integer :: i,j
       character (len=9)  :: cio
       character(len=50)  :: filename_out
 
       read(Fill_Value,*)FValue
-
-      fid = 30
 
       if(isFinal_TS)then
         cio='____final'
@@ -129,7 +126,7 @@
 3         format(f6.2,'hrs')
         endif
       endif
-      if(INDEX(filename_root,'ArrivalTime').gt.0)then
+      if(index(filename_root,'ArrivalTime').gt.0)then
           ! For the special cases of DepositArrivalTime.dat and
           ! CloudArrivalTime.dat
         write(filename_out,*)trim(adjustl(filename_root)),'.raw'
@@ -149,16 +146,16 @@
       enddo
 
       if(op.eq.4)then
-        open(unit=21,file=trim(adjustl(filename_out)), &
-          status='replace', &
+        open(unit=fid_bin2dout,file=trim(adjustl(filename_out)), &
+          status='replace', action='write', &
           access='direct',recl=4*nx*ny)
       else
-       open(unit=20,file=trim(adjustl(filename_out)), &
-          status='replace', &
+       open(unit=fid_bin2dout,file=trim(adjustl(filename_out)), &
+          status='replace', action='write', &
           access='direct',recl=8*nx*ny)
       endif
-      write(21,rec=1)((OVar(i,j),i=1,nx),j=1,ny)
-      close(21)
+      write(fid_bin2dout,rec=1)((OVar(i,j),i=1,nx),j=1,ny)
+      close(fid_bin2dout)
 
       end subroutine write_2D_Binary
 

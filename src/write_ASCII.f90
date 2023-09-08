@@ -75,7 +75,7 @@
       character(len=14)  :: cio
 
       do i=1,nvprofiles
-        ionumber = 200+i
+        ionumber = fid_vprofbase + i-1
         if (i.lt.10) then
           write(cio,1) i
 1         format('vprofile0',i1,'.txt')
@@ -89,7 +89,7 @@
           endif;enddo
           stop 1
         endif
-        open(unit=ionumber,file=cio)
+        open(unit=ionumber,file=cio,status='replace',action='write')
         write(ionumber,*)'Vertical profile data for location: ',trim(adjustl(Site_vprofile(i)))
         write(ionumber,3)x_vprofile(i), y_vprofile(i)
 3       format( &
@@ -152,7 +152,7 @@
       do i=1,nvprofiles
         ! don't write if there's no ash
         if(maxval(pr_ash(1:nzmax,itime,i)).lt.CLOUDCON_THRESH*KG_2_MG/KM3_2_M3) cycle
-        ionumber = 200+i
+        ionumber = fid_vprofbase + i-1
         cio = HS_yyyymmddhh_since(SimStartHour+time+OutputOffset,&
                                   BaseYear,useLeap)
         write(ionumber,1) cio, time, (pr_ash(k,itime,i), k=1,nzmax) ! write tot. concen in mg/m3
@@ -185,7 +185,7 @@
       integer  ::  i, ionumber
 
       do i=1,nvprofiles
-        ionumber = 200+i
+        ionumber = fid_vprofbase + i-1
         close(ionumber)
       enddo
 
@@ -231,14 +231,14 @@
 
       real(kind=op)  :: OVar(nx,ny)
       real(kind=op)  :: FValue
-      integer :: fid
+      !integer :: fid
       integer :: i,j
       character (len=9)  :: cio
       character(len=50)  :: filename_out
 
       read(Fill_Value,*)FValue
 
-      fid = 30
+      !fid = 30
 
       if(isFinal_TS)then
         cio='____final'
@@ -254,7 +254,7 @@
 3         format(f6.2,'hrs')
         endif
       endif
-      if(INDEX(filename_root,'ArrivalTime').gt.0)then
+      if(index(filename_root,'ArrivalTime').gt.0)then
           ! For the special cases of DepositArrivalTime.dat and
           ! CloudArrivalTime.dat
         write(filename_out,*)trim(adjustl(filename_root)),'.dat'
@@ -262,20 +262,20 @@
         write(filename_out,*)trim(adjustl(filename_root)),cio,'.dat'
       endif
 
-      open(unit=fid,file=trim(adjustl(filename_out)), status='unknown',err=2500)
+      open(unit=fid_ascii2dout,file=trim(adjustl(filename_out)), status='replace',action='write',err=2500)
 
-      write(fid,3000) nx        ! write header values
-      write(fid,3001) ny
+      write(fid_ascii2dout,3000) nx        ! write header values
+      write(fid_ascii2dout,3001) ny
       if (IsLatLon) then
-        write(fid,3002) lonLL    
-        write(fid,3003) latLL    
-        write(fid,3004) de,dn
+        write(fid_ascii2dout,3002) lonLL    
+        write(fid_ascii2dout,3003) latLL    
+        write(fid_ascii2dout,3004) de,dn
       else
-        write(fid,3002) xLL*KM_2_M    ! convert xLL from km to meters so ArcMap can read it
-        write(fid,3003) yLL*KM_2_M    ! same with yLL
-        write(fid,3004) dx*KM_2_M,dy*KM_2_M    ! and with dx and dy
+        write(fid_ascii2dout,3002) xLL*KM_2_M    ! convert xLL from km to meters so ArcMap can read it
+        write(fid_ascii2dout,3003) yLL*KM_2_M    ! same with yLL
+        write(fid_ascii2dout,3004) dx*KM_2_M,dy*KM_2_M    ! and with dx and dy
       endif
-      write(fid,3005)Fill_Value
+      write(fid_ascii2dout,3005)Fill_Value
 
       ! Apply threshold mask to output variable
       do i=1,nx
@@ -290,11 +290,11 @@
 
       !Write out arrays of maximum concentration and maximum height
       do j=ny,1,-1
-        write(fid,3006) (OVar(i,j), i=1,nx)
-        write(fid,*)                                         !make a blank line between rows
+        write(fid_ascii2dout,3006) (OVar(i,j), i=1,nx)
+        write(fid_ascii2dout,*)                                         !make a blank line between rows
       enddo
       
-      close(fid)
+      close(fid_ascii2dout)
 
 !     format statements
 3000  format('NCOLS ',i5)      
@@ -331,15 +331,15 @@
 
       character(len=80),intent(in) :: filename
 
-      integer :: fid
+      !integer :: fid
       integer :: i,j
       integer :: iost
 
-      fid = 40
+      !fid = 40
 
-      open(unit=fid,file=trim(adjustl(filename)), status='old',err=2500)
+      open(unit=fid_ascii2din,file=trim(adjustl(filename)), status='old',action='read',err=2500)
 
-      read(fid,3000,iostat=iost,err=2600) R_nx        ! read header values
+      read(fid_ascii2din,3000,iostat=iost,err=2600) R_nx        ! read header values
       if(iost.gt.0)then
         ! We might have an empty file
         ! Issue warning and return
@@ -349,19 +349,19 @@
         endif;enddo
         return
       endif
-      read(fid,3001,err=2600) R_ny
+      read(fid_ascii2din,3001,err=2600) R_ny
       allocate(R_XY(R_nx,R_ny))
-      read(fid,3002,err=2600) R_xll
-      read(fid,3003,err=2600) R_yll
-      read(fid,3004,err=2600) R_dx,R_dy
-      read(fid,3005,err=2600) R_Fill
+      read(fid_ascii2din,3002,err=2600) R_xll
+      read(fid_ascii2din,3003,err=2600) R_yll
+      read(fid_ascii2din,3004,err=2600) R_dx,R_dy
+      read(fid_ascii2din,3005,err=2600) R_Fill
 
       do j=R_ny,1,-1
-        read(fid,3006,err=2600) (R_XY(i,j), i=1,R_nx)
-        read(fid,*)
+        read(fid_ascii2din,3006,err=2600) (R_XY(i,j), i=1,R_nx)
+        read(fid_ascii2din,*)
       enddo
 
-      close(fid)
+      close(fid_ascii2din)
 
 !     format statements
 3000  format(6x,i5)
@@ -418,14 +418,14 @@
       ! Output data in ASCII format
 
       DepOutfileName='3d_tephra_fall_'//cio//'.dat'
-      open(unit=100,file=DepOutfileName,status='replace')
-      write(100,*)&
+      open(unit=fid_ascii3dout,file=DepOutfileName,status='replace',action='write')
+      write(fid_ascii3dout,*)&
       'VARIABLES = "X","Y","Z","AshConc"'
       if(first_time)then
-        write(100,*) 'ZONE I = ',nxmax,' J = ',nymax,' K = ',nzmax
+        write(fid_ascii3dout,*) 'ZONE I = ',nxmax,' J = ',nymax,' K = ',nzmax
         first_time = .false.
       else
-        write(100,*) 'ZONE '
+        write(fid_ascii3dout,*) 'ZONE '
       endif
 
       do k=1,nzmax
@@ -433,16 +433,16 @@
           do i=1,nxmax
             rhom = sum(concen_pd(i,j,k,:,ts1)) !kg/km3
             if (IsLatLon) then
-              write(100,'(3(4x,f20.3),g20.5)') &
+              write(fid_ascii3dout,'(3(4x,f20.3),g20.5)') &
                 lon_cc_pd(i), lat_cc_pd(j), z_cc_pd(k), rhom
             else
-              write(100,'(3(4x,f20.3),g20.5)') &
+              write(fid_ascii3dout,'(3(4x,f20.3),g20.5)') &
                 x_cc_pd(i), y_cc_pd(j), z_cc_pd(k), rhom
             endif
           enddo
         enddo
       enddo
-      close(100)
+      close(fid_ascii3dout)
 
       end subroutine write_3D_ASCII
 
@@ -502,8 +502,6 @@
       integer             :: isize
       real(kind=ip)       :: longitude_now
 
-      integer             :: out_unit
-
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
           real(kind=8)              :: HoursSince
@@ -512,36 +510,34 @@
         end function HS_xmltime
       END INTERFACE
 
-      out_unit = 18
-
       ! Write values out to ASCII file
       if (WriteAirportFile_ASCII) then
 
         ! Write out source parameters for airports file
-        open(unit=out_unit,file='ash_arrivaltimes_airports.txt',err=2000)
-        write(out_unit,98)  infile, RunStartYear,RunStartMonth,RunStartDay,RunStartHr, &
+        open(unit=fid_asharrive,file='ash_arrivaltimes_airports.txt',status='replace',action='write',err=2000)
+        write(fid_asharrive,98)  infile, RunStartYear,RunStartMonth,RunStartDay,RunStartHr, &
                               RunStartMinute, VolcanoName  !write infile, simulation time
         do i=1,neruptions  ! write source parameters
-          write(out_unit,99) i, HS_xmltime(SimStartHour+OutputOffset,&
+          write(fid_asharrive,99) i, HS_xmltime(SimStartHour+OutputOffset,&
                                            BaseYear,useLeap), &
                            e_Duration(i), e_PlumeHeight(i), e_PlumeHeight(i)*3280.8_ip, e_Volume(i)
         enddo
-        write(out_unit,995)
+        write(fid_asharrive,995)
         if (WriteGSD) then
           ! if we're writing out grain sizes.
           if (UseCalcFallVel) then
             ! if fall velocity is calculated
-            write(out_unit,100) (Tephra_gsdiam(isize)*M_2_MM, isize=1,n_gs_max)
-            write(out_unit,101)
-            write(out_unit,102) (Tephra_rho_m(isize), isize=1,n_gs_max)
-            write(out_unit,103)
+            write(fid_asharrive,100) (Tephra_gsdiam(isize)*M_2_MM, isize=1,n_gs_max)
+            write(fid_asharrive,101)
+            write(fid_asharrive,102) (Tephra_rho_m(isize), isize=1,n_gs_max)
+            write(fid_asharrive,103)
           else
             ! if fall velocity is specified
-            write(out_unit,110) (Tephra_v_s(isize), isize=1,n_gs_max)
+            write(fid_asharrive,110) (Tephra_v_s(isize), isize=1,n_gs_max)
           endif
         else
           ! if not writing out grain sizes
-          write(out_unit,1)
+          write(fid_asharrive,1)
         endif
         nWrittenOut = 0
         do i=1,nairports                      ! write out the airports that are hit.
@@ -591,14 +587,14 @@
               longitude_now = Airport_Longitude(i)
             endif
             if (WriteGSD) then
-              write(out_unit,20) Airport_Name(i), Airport_Latitude(i), longitude_now, &
+              write(fid_asharrive,20) Airport_Name(i), Airport_Latitude(i), longitude_now, &
                        yyyymmddhh_cloud, Airport_CloudArrivalTime(i), cloud_morethan, Airport_CloudDuration(i), &
                        yyyymmddhh_ash, Airport_AshArrivalTime(i), deposit_morethan, Airport_AshDuration(i), &
                        Airport_thickness(i), nwsthickness, &
                        ((DepositGranularity(Airport_i(i),Airport_j(i),isize)/ &
                          sum(DepositGranularity(Airport_i(i),Airport_j(i),:))),isize=1,nsmax)  ! mass fraction of size i
             else
-              write(out_unit,2) Airport_Name(i), Airport_Latitude(i), longitude_now, &
+              write(fid_asharrive,2) Airport_Name(i), Airport_Latitude(i), longitude_now, &
                        yyyymmddhh_cloud, Airport_CloudArrivalTime(i), cloud_morethan, Airport_CloudDuration(i), &
                        yyyymmddhh_ash, Airport_AshArrivalTime(i), deposit_morethan, Airport_AshDuration(i), &
                        Airport_thickness(i), nwsthickness
@@ -606,9 +602,9 @@
             nWrittenOut = nWrittenOut + 1
           endif
         enddo
-        if (nWrittenOut.eq.0) write(out_unit,3)    ! if no airports are hit, say it in the file.
-        write(out_unit,120)                        ! write footnotes & caveats
-        close(out_unit)
+        if (nWrittenOut.eq.0) write(fid_asharrive,3)    ! if no airports are hit, say it in the file.
+        write(fid_asharrive,120)                        ! write footnotes & caveats
+        close(fid_asharrive)
       endif
 
       return

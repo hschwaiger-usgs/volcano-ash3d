@@ -71,9 +71,9 @@
                          outflow_vol,tot_vol,CloudArea
       endif;enddo
 
-      open(unit=19,file='progress.txt',status='replace')
-      write(19,*)real(time/Simtime_in_hours,kind=4)
-      close(19)
+      open(unit=fid_progress,file='progress.txt',status='replace',action='write')
+      write(fid_progress,*)real(time/Simtime_in_hours,kind=4)
+      close(fid_progress)
 
       OutputStep_Marker = ' ' 
 

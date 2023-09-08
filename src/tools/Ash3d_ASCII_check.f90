@@ -51,15 +51,15 @@
             write(outlog(io),*)'Enter name of the first ESRI ASCII file:'
           endif;enddo
         endif
-        read(5,*) file1
+        read(input_unit,*) file1
         do io=1,nio;if(VB(io).le.verbosity_production)then
           write(outlog(io),*)'Enter name of the second ESRI ASCII file:'
         endif;enddo
-        read(5,*) file2
+        read(input_unit,*) file2
         do io=1,nio;if(VB(io).le.verbosity_production)then
           write(outlog(io),*)'Enter the L2 tolerance (default is 1.0e-7):'
         endif;enddo
-        read(5,*) L2_tol
+        read(input_unit,*) L2_tol
       elseif (nargs.eq.1.or.nargs.gt.3) then
         do io=1,nio;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)'ERROR: Too few command-line arguments.'

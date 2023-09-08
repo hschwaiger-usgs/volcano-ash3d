@@ -61,12 +61,43 @@
         ! Set everything to public by default
       public
 
-      ! Initilize these with the defaults, but we will reset these in the subroutine
-      integer,parameter :: global_log = 9    ! Log file will be unit 9
+      ! File unit numbers used:
+      !   For information on state of run
+      !  stdin  = iso_fortran_env::input_unit = 5
+      !  stdout = iso_fortran_env::input_unit = 6
+      !  stderr = iso_fortran_env::error_unit = 6
+      integer,parameter :: fid_progress =  8    ! progress.txt updated with fraction complete
+      integer,parameter :: fid_logfile  =  9    ! Log file Ash3d.lst
+      !   For read-only data files
+      integer,parameter :: fid_ctrlfile = 10    ! Control file for Ash3d
+      integer,parameter :: fid_airport  = 15    ! Airport/POI file
+      integer,parameter :: fid_votw     = 20    ! Volcanoes file
+      integer,parameter :: fid_cities   = 25    ! Cities file sorted by population
+      !   For temporary output files
+      integer,parameter :: fid_citiesxy = 50    ! Cities within the domain
+      !   MetReader uses file handles in the 100-199 range (currently only 110,120)
+      !   For ASCII output, start file numbers at 200
+      !    vprofile file handles are from 200->200+MAXPROFILES
+      integer,parameter :: fid_vprofbase = 200
+      !    Other ASCII files start at 300
+      integer,parameter :: fid_ascii2din  = 300
+      integer,parameter :: fid_ascii2dout = 310
+      integer,parameter :: fid_ascii3dout = 320
+      integer,parameter :: fid_asharrive  = 330
+      !   For BINARY output, start file numbers at 400
+      integer,parameter :: fid_bin2dout   = 410
+      integer,parameter :: fid_bin3dout   = 420
+      !   For KLM output, start file numbers at 500
+      integer,parameter :: fid_kmlbase    = 500
+      integer,parameter :: fid_kmlPOI     = 550
+      integer,parameter :: fid_kmlgnuscr  = 555
+      integer,parameter :: fid_kmlgnudat  = 556
+
+      ! Initialize these with the defaults, but we will reset these in the subroutine
       integer :: nio  = 1                    ! number of output streams (stdout and logfile)
       integer :: io                          ! index over out-streams
-      integer,dimension(2) :: outlog = (/output_unit,global_log/)
-      integer,dimension(2) :: errlog = (/ error_unit,global_log/)
+      integer,dimension(2) :: outlog = (/output_unit,fid_logfile/)
+      integer,dimension(2) :: errlog = (/ error_unit,fid_logfile/)
       integer :: errcode = 1 
 
       character(9) :: logfile = 'Ash3d.lst'  ! This is the default Ash3d logfile
@@ -364,7 +395,7 @@
       integer           :: nWriteTimes       !number of deposit files to write
       real(kind=ip), dimension(:), allocatable :: WriteTimes      !times (hrs after first eruption start) to write out files
 
-      integer,parameter :: MAXPROFILES = 100
+      integer,parameter :: MAXPROFILES = 99
       integer           :: nvprofiles                                        ! number of vertical profiles to write out
       integer,          dimension(:), allocatable :: i_vprofile, j_vprofile  ! i and j values of vertical profiles
       real(kind=ip),    dimension(:), allocatable :: x_vprofile, y_vprofile  ! x and y of vertical profiles

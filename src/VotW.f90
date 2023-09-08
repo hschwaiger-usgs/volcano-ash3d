@@ -318,10 +318,10 @@
       endif
 
       !"http://www.volcano.si.edu/world/volcano.cfm?vnum="
-      open(unit=20,file=VotWMasterFile,status='old',err=3000)
-      read(20,'(a195)')linebuffer195
+      open(unit=fid_votw,file=VotWMasterFile,status='old',action='read',err=3000)
+      read(fid_votw,'(a195)')linebuffer195
       nvolcs = 0
-      read(20,'(a195)',IOSTAT=Iostatus) linebuffer195
+      read(fid_votw,'(a195)',iostat=Iostatus) linebuffer195
       do while (Iostatus.ge.0)
         nvolcs = nvolcs + 1
         read(linebuffer195,50)volcID(nvolcs),     &
@@ -355,10 +355,10 @@
           write(outlog(io),*)&
              volcID(nvolcs),volcName(nvolcs),volcLoc(nvolcs),volcLat(nvolcs),volcLon(nvolcs)
         endif;enddo
-        read(20,'(a195)',IOSTAT=Iostatus) linebuffer195
+        read(fid_votw,'(a195)',iostat=Iostatus) linebuffer195
       enddo
 
-      close(20)
+      close(fid_votw)
 
       return
 

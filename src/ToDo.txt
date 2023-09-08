@@ -16,7 +16,6 @@ Add limits to iteration of vset so as to prevent run-away iterations.
 Add Albers to projection list
 Add new VOTW numbers to current database
 Add max z as optional parameter on line 7
-Fix dz_clog and dz_cuts
 Change 3d ascii output to include deposit separately.
 
 Add ip and op to argument lists to nail down interface blocks.

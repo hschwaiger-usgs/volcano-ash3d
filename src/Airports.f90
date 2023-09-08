@@ -122,12 +122,12 @@
       allocate(jnext(nair))                    ;                    jnext = 0
       allocate(Airport_AshArrived(nair))       ;       Airport_AshArrived = .false.
       allocate(Airport_CloudArrived(nair))     ;     Airport_CloudArrived = .false.
-      allocate(Airport_AshArrivalTime(nair))   ;   Airport_AshArrivalTime = -9999.0_ip
-      allocate(Airport_CloudArrivalTime(nair)) ; Airport_CloudArrivalTime = -9999.0_ip
+      allocate(Airport_AshArrivalTime(nair))   ;   Airport_AshArrivalTime = -9999.0_dp
+      allocate(Airport_CloudArrivalTime(nair)) ; Airport_CloudArrivalTime = -9999.0_dp
       !allocate(Airport_AshArrivalTime(nair))   ;   Airport_AshArrivalTime = DepArrivalTime_FillValue
       !allocate(Airport_CloudArrivalTime(nair)) ; Airport_CloudArrivalTime = CloudArrivalTime_FillValue
-      allocate(Airport_AshDuration(nair))      ;      Airport_AshDuration = 0.0_ip
-      allocate(Airport_CloudDuration(nair))    ;    Airport_CloudDuration = 0.0_ip
+      allocate(Airport_AshDuration(nair))      ;      Airport_AshDuration = 0.0_dp
+      allocate(Airport_CloudDuration(nair))    ;    Airport_CloudDuration = 0.0_dp
       allocate(Airport_CloudHere(nair))        ;    Airport_CloudHere     = 0.0_ip       !cloud load overhead
       allocate(Airport_CloudHereLast(nair))    ;    Airport_CloudHereLast = 0.0_ip       !cloud load overhead in last time step
       allocate(Airport_DepRate(nair))          ;          Airport_DepRate = 0.0_ip
@@ -548,7 +548,7 @@
       use projection,    only : &
          PJ_proj_for
 
-      integer           :: inow,iostatus
+      integer           :: inow,Iostatus
       character(len=95) :: inputline
       integer           :: ioerr
       real(kind=dp)     :: lat_in,lon_in,xout,yout
@@ -563,16 +563,16 @@
 
       ! Open the airport location file
       ! Note that this file was tested for existance in Read_Control_File()
-      open(unit=17,file=AirportInFile,status='old',position='rewind',iostat=Iostatus)
-      !inquire(17, exist=ex, opened=op, name=nam,access=acc,sequential=seq, form=frm, recl=irec, nextrec=nr)
+      open(unit=fid_airport,file=AirportInFile,status='old',position='rewind',action='read',iostat=Iostatus)
+      !inquire(fid_airport, exist=ex, opened=op, name=nam,access=acc,sequential=seq, form=frm, recl=irec, nextrec=nr)
 
       ! Read the header line and set Iostatus for the while loop
-      read(unit=17,fmt='(a95)',iostat=Iostatus) inputline
+      read(unit=fid_airport,fmt='(a95)',iostat=Iostatus) inputline
 
       ! Read airport locations and assign airports in the modeled area to a temporary array
       do while (Iostatus.ge.0)
         inow = inow+1
-        read(17,'(a95)',IOSTAT=Iostatus) inputline
+        read(fid_airport,'(a95)',iostat=Iostatus) inputline
         read(inputline,*,err=2010) ExtAirportLat(inow), ExtAirportLon(inow)
         read(inputline,*,iostat=ioerr) ExtAirportLat(inow), ExtAirportLon(inow), &
                                        ExtAirportX(inow), ExtAirportY(inow)
@@ -596,7 +596,7 @@
         endif
 
       enddo
-      close(17)
+      close(fid_airport)
 
       n_ext_airports = inow     !number of external airports read
       return
@@ -678,13 +678,13 @@
       endif
 
       ! Open the airport location file
-      open(unit=17,file=AirportMasterFile,status='old',err=2000)
+      open(unit=fid_airport,file=AirportMasterFile,status='old',action='read',err=2000)
       ! Read first header line
-      read(17,'(a120)',IOSTAT=Iostatus) inputline
+      read(fid_airport,'(a120)',iostat=Iostatus) inputline
       ! Read airport locations and assign airports in the modeled area to a temporary array
       i = 0
       do while (Iostatus.ge.0)
-        read(17,'(a120)',IOSTAT=Iostatus) inputline
+        read(fid_airport,'(a120)',iostat=Iostatus) inputline
         read(inputline,*) inlat, inlon, inx, iny
         read(inputline,2) inCode,inName
         i = i+1
