@@ -209,8 +209,8 @@
 
         ! These should not be changed unless needed for testing
       logical, parameter       :: useDS            = .true.  ! Dimension splitting v.s. something else
-      logical, parameter       :: useVertAdvect    = .true.  ! Turns on/off vert. advection
-      logical, parameter       :: useHorzAdvect    = .true.  ! Turns on/off horz. advection
+      logical                  :: useVertAdvect    = .true.  ! Turns on/off vert. advection
+      logical                  :: useHorzAdvect    = .true.  ! Turns on/off horz. advection
 
         ! This will be reset based on d_coeff (.true. if d_coeff<0.0)
       logical                  :: useDiffusion     = .false. ! Reset in Read_Control_File by d_coeff
