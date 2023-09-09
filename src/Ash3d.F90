@@ -1,6 +1,31 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
+!  Ash3d is a program for modeling volcanic ash transport and dispersion.
+!
+!  This software is written in Frotran 2003 and is designed for use on a Linux
+!  operating system.
 !  
+!  This software, along with auxillary USGS libraries and related repositories,
+!  can be found at https://code.usgs.gov/vsc/ash3d
+!
+!  Installation instruction are given in the README.md file of this repository.
+!  Basic usage instructions are given in doc/UsersGuide.md.
+!
+!  The program description and numerical methodology employed is described in:
+!   Schwaiger, H.F., R.P. Denlinger, and L.G. Mastin, 2012, Ash3d, a finite-
+!     volume, conservative numerical model for ash transport and tephra
+!     deposition, Journal of Geophysical Research, 117, B04204,
+!     doi:10.1029/2011JB008968
+!
+!  A complete user's guide and reference manual is available at
+!
+!  The USGS provides a web-interface to this software at:
+!    https://vsc-ash.wr.usgs.gov
+!  with instructions on web-interface usage provided by:
+!   Mastin, L.G., M.J. Randall, H.F. Schwaiger and R.P. Denlinger, 2021, User's
+!     Guide and Reference to Ash3d-- A Three-Dimensional Model for Eulerian
+!     Atmospheric Tephra Transport and Deposition, USGS Open-File Report
+!     2013-1122, doi:10.3133/ofr20131122.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -320,7 +345,6 @@
 !------------------------------------------------------------------------------
 
           ! Determine if (and which) eruptive pulses are active in the current dt
-        !call MassFluxCalculator
         call CheckEruptivePulses
 
 !------------------------------------------------------------------------------
@@ -466,12 +490,12 @@
             ! Generate output variables if we haven't already
           if(.not.Called_Gen_Output_Vars)then
             call Gen_Output_Vars
-          endif
 !------------------------------------------------------------------------------
 !       OPTIONAL MODULES
 !         Insert calls output routines (every output-step) here
 !
 !------------------------------------------------------------------------------
+          endif
           call output_results
           !if ((WriteAirportFile_ASCII.or.WriteAirportFile_KML).and. &
           if (Write_PT_Data.and. &

@@ -1,6 +1,6 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!  MesoInterpolater(TimeNow,Load_MesoSteps,Interval_Frac,first_time)
+!  MesoInterpolater(TimeNow,Load_MesoSteps,Interval_Frac)
 !
 !  Called from: Main ash3d (Ash3d.F90) in two places, once before the time loop
 !  and once within it
