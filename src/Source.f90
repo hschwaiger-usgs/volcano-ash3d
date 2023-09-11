@@ -269,11 +269,12 @@
               z_volcano.lt.z_lb_pd(k+1))then
             kground = k
           endif
-          if(e_PlumeHeight(i).ge.z_lb_pd(k  ).and. &
-             e_PlumeHeight(i).lt.z_lb_pd(k+1))then
+          if(e_PlumeHeight(i).gt.z_lb_pd(k  ).and. &
+             e_PlumeHeight(i).le.z_lb_pd(k+1))then
             kPlumeTop = k
           endif
         enddo
+
         ! Set ground level to be the lower boundary of cell kground
         zground = z_lb_pd(kground)
 
