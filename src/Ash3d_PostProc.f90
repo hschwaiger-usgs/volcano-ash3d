@@ -133,6 +133,7 @@
       integer             :: ivar,TS_Flag,height_flag
       integer             :: itime = -1      ! initialize time step to the last step
       integer             :: i,ii
+      integer             :: tmp_int
       integer             :: icase
       real(kind=ip),dimension(:,:),allocatable :: OutVar
       logical      ,dimension(:,:),allocatable :: mask
@@ -142,6 +143,7 @@
       character(len=20)   :: filename_root
       character(len=70)   :: comd
       character(len=13)   :: cio
+      character           :: testkey,testkey2
       logical             :: writeContours = .false.
         ! plotting library availibility and preferences
         !  1 = dislin
@@ -155,15 +157,18 @@
                                                      !   | | - Third
                                                      !   | | | - Fourth
                                                      !   V V V V
+#ifdef WINDOWS
+      ! For Windows systems, dislin is working.
+      integer,dimension(Nplot_libs) :: plot_pref_map = (/1,2,3,4/) ! plot preference for maps
+      integer,dimension(Nplot_libs) :: plot_pref_shp = (/1,2,3,4/) ! plot preference for contours
+      integer,dimension(Nplot_libs) :: plot_pref_vpr = (/1,2,3,4/) ! plot preference for vert profs.
+      integer,dimension(Nplot_libs) :: plot_pref_aTS = (/1,2,3,4/) ! plot preference for Airport TS
+#else
       integer,dimension(Nplot_libs) :: plot_pref_map = (/2,1,3,4/) ! plot preference for maps
       integer,dimension(Nplot_libs) :: plot_pref_shp = (/3,1,2,4/) ! plot preference for contours
       integer,dimension(Nplot_libs) :: plot_pref_vpr = (/1,2,3,4/) ! plot preference for vert profs.
       integer,dimension(Nplot_libs) :: plot_pref_aTS = (/2,3,1,4/) ! plot preference for Airport TS
-
-!      integer,dimension(Nplot_libs) :: plot_pref_map = (/1,2,3,4/) ! plot preference for maps
-!      integer,dimension(Nplot_libs) :: plot_pref_shp = (/1,2,3,4/) ! plot preference for contours
-!      integer,dimension(Nplot_libs) :: plot_pref_vpr = (/1,2,3,4/) ! plot preference for vert profs.
-!      integer,dimension(Nplot_libs) :: plot_pref_aTS = (/1,2,3,4/) ! plot preference for Airport TS
+#endif
 
       INTERFACE
         subroutine output_results
@@ -182,7 +187,11 @@
       END INTERFACE
 
       open(unit=fid_logfile,file='Ash3d_pp.log',status='replace',action='write')
+      !   We want to call this subroutine silently, so reset the verbosity
+      tmp_int = VB(1)
+      VB(1)   = verbosity_dark
       call Set_OS_Env
+      VB(1)   = tmp_int
 
       ! Checking to see which plotting packages we have
 #ifdef USEDISLIN
@@ -266,7 +275,6 @@
           write(outlog(io),*)'No command-line arguments detected'
           write(outlog(io),*)'  '
         endif;enddo
-        call help_postproc
 
         if(VB(1).ge.verbosity_silent)then
           do io=1,2
@@ -274,34 +282,81 @@
             write(errlog(io),*)"Either recompile with verbosity<9 or provide the correct command-line arguments."
           enddo
           stop 1
-        else
-          do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)'Enter name of netcdf output file:'
-          endif;enddo
         endif
-        read(5,*)concenfile
 
         do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)'Enter name of netcdf output file:'
+        endif;enddo
+        read(input_unit,*) concenfile
+        inquire( file=concenfile, exist=IsThere )
+        if(.not.IsThere)then
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: Cannot find input file"
+            write(errlog(io),*)"     ",concenfile
+          endif;enddo
+          stop 1
+        endif
+
+        ! Before we do anything, call routine to read the netcdf file, populate
+        ! the dimensions so we can see what we are dealing with.
+        ! This call reads the 2d output products for the specified time
+        ! If itime=-1 (for the final step), then
+        !   We want to call this subroutine silently, so reset the verbosity
+        tmp_int = VB(1)
+        VB(1)   = verbosity_silent
+        call NC_Read_Output_Products(-1)
+        VB(1)   = tmp_int
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)'Select output variable:'
+          write(outlog(io),*)' 1 full concentration array             2 deposit granularity'
+          write(outlog(io),*)' 3 deposit thickness (mm time-series)   4 deposit thickness (inches time-series)'
+          write(outlog(io),*)' 5 deposit thickness (mm final)         6 deposit thickness (inches final)'
+          write(outlog(io),*)' 7 ashfall arrival time (hours)         8 ashfall arrival at airports/POI (mm)'
+          write(outlog(io),*)' 9 ash-cloud concentration (mg/m3)     10 ash-cloud height (km)'
+          write(outlog(io),*)'11 ash-cloud bottom (km)               12 ash-cloud load (T/km2)'
+          write(outlog(io),*)'13 ash-cloud radar reflectivity (dBz)  14 ash-cloud arrival time (hours)'
+          write(outlog(io),*)'15 topography                          16 profile plots'
+          write(outlog(io),*)' '
           write(outlog(io),*)'Enter code for output product:'
         endif;enddo
-        read(5,*)iprod
+        read(input_unit,*)iprod
 
         do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)'Select output format'
+          write(outlog(io),*)' 1 ASCII/ArcGIS           2 KML/KMZ'
+          write(outlog(io),*)' 3 image/png              4 binary'
+          write(outlog(io),*)' 5 shape file'
+          write(outlog(io),*)' '
           write(outlog(io),*)'Enter code for output format:'
         endif;enddo
-        read(5,*)iformat
+        read(input_unit,*)iformat
 
         do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)'Select time step:'
+          do i=1,nWriteTimes
+            write(outlog(io),*)i,WriteTimes(i)
+          enddo
           write(outlog(io),*)'Enter index for time step:'
         endif;enddo
-        read(5,*)itime
+        read(input_unit,*)itime
 
       elseif (nargs.eq.1) then
-        ! Read control file
-        do io=1,2;if(VB(io).le.verbosity_error)then
-          write(errlog(io),*)'Reading control file not yet implemented'
-        endif;enddo
-        stop 1
+          ! If an argument is given, first test for the '-h' indicating a help
+          ! request.
+        call get_command_argument(1, arg, stat)
+        testkey  = arg(1:1)
+        testkey2 = arg(2:2)
+        if(testkey.eq.'-'.and.testkey2.eq.'h')then
+          ! This is the branch for user-requested help
+          ! command is Ash3d_PostProc -h
+          call help_postproc
+        else
+          ! Read control file
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)'Reading control file not yet implemented'
+          endif;enddo
+          stop 1
+        endif
       elseif (nargs.ge.3) then
         call get_command_argument(1, arg, stat)
         read(arg,*)concenfile

@@ -51,6 +51,8 @@
 
       subroutine help_general
 
+      character(len=1)  :: key
+
       io = 1
 
       write(outlog(io),1)'                                                                                '
@@ -62,11 +64,16 @@
       write(outlog(io),1)'   Ash3d -h input    : Information on the structure of the input file           '
       write(outlog(io),1)'   Ash3d -h postproc : Information on the post-processing output results        '
       write(outlog(io),1)'                                                                                '
-      write(outlog(io),1)' Writing run help information:                                                       '
+      write(outlog(io),1)' Writing run help information:                                                  '
       write(outlog(io),1)'                                                                                '
 
       call help_run
 
+      ! For windows systems, allow the console to remain on the screen before exiting.
+#ifdef WINDOWS
+      write(outlog(io),*)'Press any key to exit.'
+      read(input_unit,'(a1)') key
+#endif
       stop 1
 
  1    format(a80)
@@ -208,6 +215,8 @@
 
       subroutine help_run
 
+      character(len=1)  :: key
+
       io = 1
 
       write(outlog(io),1)'                                                                                '
@@ -252,6 +261,11 @@
       write(outlog(io),1)'       OMP_NUM_THREADS=4 ./Ash3d_opt control.in                                 '
       write(outlog(io),1)'                                                                                '
 
+      ! For windows systems, allow the console to remain on the screen before exiting.
+#ifdef WINDOWS
+      write(outlog(io),*)'Press any key to exit.'
+      read(input_unit,'(a1)') key
+#endif
       stop 1
 
  1    format(a80)
@@ -277,6 +291,7 @@
 
       character(len=3)  :: answer
       integer           :: blockID
+      character(len=1)  :: key
 
       io = 1
 
@@ -310,6 +325,11 @@
         read(input_unit,'(a3)') answer
       enddo 
 
+      ! For windows systems, allow the console to remain on the screen before exiting.
+#ifdef WINDOWS
+      write(outlog(io),*)'Press any key to exit.'
+      read(input_unit,'(a1)') key
+#endif
  10   stop 1
 
  1    format(a80)
@@ -718,6 +738,8 @@
 
       subroutine help_postproc
 
+      character(len=1)  :: key
+
       io = 1
 
       write(outlog(io),1)'                                                                                '
@@ -748,12 +770,17 @@
       write(outlog(io),1)'                    3 image/png                                                 '
       write(outlog(io),1)'                    4 binary                                                    '
       write(outlog(io),1)'                    5 shape file                                                '
-      write(outlog(io),1)'                    6 grib2                                                     '
-      write(outlog(io),1)'                    7 netcdf                                                    '
-      write(outlog(io),1)'                    8 tecplot                                                   '
-      write(outlog(io),1)'                    9 vtk                                                       '
+      !write(outlog(io),1)'                    6 grib2                                                     '
+      !write(outlog(io),1)'                    7 netcdf                                                    '
+      !write(outlog(io),1)'                    8 tecplot                                                   '
+      !write(outlog(io),1)'                    9 vtk                                                       '
       write(outlog(io),1)'         [t_index] = index of time slice to plot; -1 for final (optional)       '
 
+      ! For windows systems, allow the console to remain on the screen before exiting.
+#ifdef WINDOWS
+      write(outlog(io),*)'Press any key to exit.'
+      read(input_unit,'(a1)') key
+#endif
       stop 1
 
  1    format(a80)

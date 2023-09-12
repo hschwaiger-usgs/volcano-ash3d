@@ -400,7 +400,9 @@
         write(errlog(1),*)"    verbosity level : ",VB(1)
         stop 1
       endif
-      write(outlog(1),*)"    verbosity level : ",VB(1), vlevel
+      if(VB(1).lt.9)then
+        write(outlog(1),*)"    verbosity level : ",VB(1), vlevel
+      endif
 
       if(VB(1).eq.verbosity_dark)then
         ! If the output verbosity is for nothing at all, reset the log verbosity to that too
@@ -436,7 +438,7 @@
                   "opt" // DirDelim // "USGS" // DirDelim // "Ash3d"
 
       ! Here it is over-written by compile-time path, if available
-#include "installpath.h"
+!#include "installpath.h"
       ! This can be over-written if an environment variable is set
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(2),*)" "
