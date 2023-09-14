@@ -46,9 +46,9 @@ SYSTEM = gfortran
 #      OMPOPT   : includes optimizations flags for fastest runtime and OpenMP directives
 #                 To run, enter: env OMP_NUM_THREADS=4 Ash3d input_file.inp
 #    This variable cannot be left blank
-RUN = DEBUG
+#RUN = DEBUG
 #RUN = PROF
-#RUN = OPT
+RUN = OPT
 #RUN = OMPOPT
 
 #    This variable cannot be left blank
@@ -95,8 +95,8 @@ FASTFPPFLAG =
 #  be generated either with gnuplot or dislin.  Set the corresponding variable
 #  below to 'T' if you want to build with these libraries.  Set to 'F' any you want
 #  to use the default gnuplot.  
-USEPLPLOT = T
-USEDISLIN = T
+USEPLPLOT = F
+USEDISLIN = F
 USEGMT    = F
 
 MFILE=makefile
@@ -479,9 +479,11 @@ clean:
 
 install:
 	install -d $(INSTALLDIR)/bin $(INSTALLDIR)/share/post_proc
+	install -d $(INSTALLDIR)/bin/tools
 	install -m 755 ../bin/$(ASH3DEXEC) $(INSTALLDIR)/bin/$(ASH3DEXEC)
 	install -m 755 ../bin/Ash3d $(INSTALLDIR)/bin/Ash3d
 	install -m 755 ../bin/Ash3d_PostProc $(INSTALLDIR)/bin/Ash3d_PostProc
+	install -m 755 ../bin/tools/Ash3d_ASCII_check $(INSTALLDIR)/bin/tools/Ash3d_ASCII_check
 	install -m 644 ../share/GlobalAirports_ewert.txt $(INSTALLDIR)/share/
 	install -m 644 ../share/VotW_ESP_v12_csv.txt  $(INSTALLDIR)/share/
 	install -m 644 ../share/post_proc/*png $(INSTALLDIR)/share/post_proc/

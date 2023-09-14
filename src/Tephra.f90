@@ -2,6 +2,10 @@
 !
 !  Tephra module
 !
+!  This module contains all the variables and subroutines needed for managing
+!  the tephra species of the concentration array. Note that there may be
+!  additional bins that are not managed by this module (i.e. n_gs_max<nsmax).
+!
 !      subroutine Allocate_Tephra
 !      subroutine Allocate_Tephra_Met
 !      subroutine Deallocate_Tephra
