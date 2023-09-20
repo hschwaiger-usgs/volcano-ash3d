@@ -216,7 +216,7 @@ Then type:
 Usage
 -----
 
-Please see the user's guide for more information on using this software.  A simplified
+Please see the [doc/UsersGuide.md](user's guide) for more information on using this software.  A simplified
 user's guide can be found in `volcano-ash3d/doc/UsersGuide.md`.  A guide for using the
 USGS web-based interface to Ash3d can be found at
 [Mastin et al, 2013](https://doi.org/10.3133/ofr20131122).

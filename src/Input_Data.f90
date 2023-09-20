@@ -106,9 +106,9 @@
         read(input_unit,*) infile
         write(outlog(io),*)'Load concentration file?'
         read(input_unit,'(a3)') answer
-        if (answer.eq.'y'.or.answer.eq.'yes') then
+        if (adjustl(trim(answer)).eq.'y'.or.adjustl(trim(answer)).eq.'yes') then
           LoadConcen = .true.
-        elseif (answer.eq.'n'.or.answer.eq.'no') then
+        elseif (adjustl(trim(answer)).eq.'n'.or.adjustl(trim(answer)).eq.'no') then
           LoadConcen = .false.
         else
           write(errlog(io),*) 'Sorry, I cannot understand your answer.'
@@ -1700,10 +1700,10 @@
       ! Block 3 Line 4
       cdf_b3l4 = linebuffer080
       read(linebuffer080,'(a3)',err=9304) answer
-      if (answer.eq.'yes') then
+      if (adjustl(trim(answer)).eq.'yes') then
         StopWhenDeposited = .true.
         StopValue = 0.99_ip
-       else if (answer(1:2).eq.'no') then
+       else if (adjustl(trim(answer(1:2))).eq.'no') then
         StopWhenDeposited = .false.
         StopValue = 1.0e2_ip
        else
@@ -1902,9 +1902,9 @@
         stop 1
       endif
       read(linebuffer080,'(a3)',err=9401) answer
-      if (answer.eq.'yes') then
+      if (adjustl(trim(answer)).eq.'yes') then
         WriteDepositFinal_ASCII = .true.
-       else if (answer(1:2).eq.'no') then
+       else if (adjustl(trim(answer(1:2))).eq.'no') then
         WriteDepositFinal_ASCII = .false.
        else
         goto 9401
@@ -1924,9 +1924,9 @@
       endif
       read(linebuffer080,'(a3)',err=9402) answer
       cdf_b4l2 = linebuffer080
-      if (answer.eq.'yes') then
+      if (adjustl(trim(answer)).eq.'yes') then
         WriteDepositFinal_KML = .true.
-       else if (answer(1:2).eq.'no') then
+       else if (adjustl(trim(answer(1:2))).eq.'no') then
         WriteDepositFinal_KML = .false.
        else
         goto 9402
@@ -1946,9 +1946,9 @@
       endif
       cdf_b4l3 = linebuffer080
       read(linebuffer080,'(a3)',err=9403) answer
-      if (answer.eq.'yes') then
+      if (adjustl(trim(answer)).eq.'yes') then
         WriteDepositTS_ASCII = .true.
-       else if (answer(1:2).eq.'no') then
+       else if (adjustl(trim(answer(1:2))).eq.'no') then
         WriteDepositTS_ASCII = .false.
        else
         goto 9403
@@ -1967,9 +1967,9 @@
       endif
       cdf_b4l4 = linebuffer080
       read(linebuffer080,'(a3)',err=9404) answer
-      if (answer.eq.'yes') then
+      if (adjustl(trim(answer)).eq.'yes') then
         WriteDepositTS_KML = .true.
-       else if (answer(1:2).eq.'no') then
+       else if (adjustl(trim(answer(1:2))).eq.'no') then
         WriteDepositTS_KML = .false.
        else
         goto 9404
@@ -1989,9 +1989,9 @@
       endif
       cdf_b4l5 = linebuffer080
       read(linebuffer080,'(a3)',err=9405) answer
-      if (answer.eq.'yes') then
+      if (adjustl(trim(answer)).eq.'yes') then
         WriteCloudConcentration_ASCII = .true.
-       else if (answer(1:2).eq.'no') then
+       else if (adjustl(trim(answer(1:2))).eq.'no') then
         WriteCloudConcentration_ASCII = .false.
        else
         goto 9405
@@ -2011,9 +2011,9 @@
       endif
       cdf_b4l6 = linebuffer080
       read(linebuffer080,'(a3)',err=9406) answer
-      if (answer.eq.'yes') then
+      if (adjustl(trim(answer)).eq.'yes') then
         WriteCloudConcentration_KML = .true.
-       else if (answer(1:2).eq.'no') then
+       else if (adjustl(trim(answer(1:2))).eq.'no') then
         WriteCloudConcentration_KML = .false.
        else
         goto 9406
@@ -2033,9 +2033,9 @@
       endif
       cdf_b4l7 = linebuffer080
       read(linebuffer080,'(a3)',err=9407) answer
-      if (answer.eq.'yes') then
+      if (adjustl(trim(answer)).eq.'yes') then
         WriteCloudHeight_ASCII = .true.
-       else if (answer(1:2).eq.'no') then
+       else if (adjustl(trim(answer(1:2))).eq.'no') then
         WriteCloudHeight_ASCII = .false.
        else
         goto 9407
@@ -2055,9 +2055,9 @@
       endif
       cdf_b4l8 = linebuffer080
       read(linebuffer080,'(a3)',err=9408) answer
-      if (answer.eq.'yes') then
+      if (adjustl(trim(answer)).eq.'yes') then
         WriteCloudHeight_KML = .true.
-       else if (answer(1:2).eq.'no') then
+       else if (adjustl(trim(answer(1:2))).eq.'no') then
         WriteCloudHeight_KML = .false.
        else
         goto 9408
@@ -2077,9 +2077,9 @@
       endif
       cdf_b4l9 = linebuffer080
       read(linebuffer080,'(a3)',err=9409) answer
-      if (answer.eq.'yes') then
+      if (adjustl(trim(answer)).eq.'yes') then
         WriteCloudLoad_ASCII = .true.
-       else if (answer(1:2).eq.'no') then
+       else if (adjustl(trim(answer(1:2))).eq.'no') then
         WriteCloudLoad_ASCII = .false.
        else
         goto 9409
@@ -2098,9 +2098,9 @@
       endif
       cdf_b4l10 = linebuffer080
       read(linebuffer080,'(a3)',err=9410) answer
-      if (answer.eq.'yes') then
+      if (adjustl(trim(answer)).eq.'yes') then
         WriteCloudLoad_KML = .true.
-       else if (answer(1:2).eq.'no') then
+       else if (adjustl(trim(answer(1:2))).eq.'no') then
         WriteCloudLoad_KML = .false.
        else
         goto 9410
@@ -2120,9 +2120,9 @@
       endif
       cdf_b4l11 = linebuffer080
       read(linebuffer080,'(a3)',err=9411) answer
-      if (answer.eq.'yes') then
+      if (adjustl(trim(answer)).eq.'yes') then
         WriteDepositTime_ASCII = .true.
-       else if (answer(1:2).eq.'no') then
+       else if (adjustl(trim(answer(1:2))).eq.'no') then
         WriteDepositTime_ASCII = .false.
        else
         goto 9411
@@ -2142,9 +2142,9 @@
       endif
       cdf_b4l12 = linebuffer080
       read(linebuffer080,'(a3)',err=9412) answer
-      if (answer.eq.'yes') then
+      if (adjustl(trim(answer)).eq.'yes') then
         WriteDepositTime_KML = .true.
-       else if (answer(1:2).eq.'no') then
+       else if (adjustl(trim(answer(1:2))).eq.'no') then
         WriteDepositTime_KML = .false.
        else
         goto 9412
@@ -2164,9 +2164,9 @@
       endif
       cdf_b4l13 = linebuffer080
       read(linebuffer080,'(a3)',err=9413) answer
-      if (answer.eq.'yes') then
+      if (adjustl(trim(answer)).eq.'yes') then
         WriteCloudTime_ASCII = .true.
-       else if (answer(1:2).eq.'no') then
+       else if (adjustl(trim(answer(1:2))).eq.'no') then
         WriteCloudTime_ASCII = .false.
        else
         goto 9413
@@ -2185,9 +2185,9 @@
       endif
       cdf_b4l14 = linebuffer080
       read(linebuffer080,'(a3)',err=9414) answer
-      if (answer.eq.'yes') then
+      if (adjustl(trim(answer)).eq.'yes') then
         WriteCloudTime_KML = .true.
-       else if (answer(1:2).eq.'no') then
+       else if (adjustl(trim(answer(1:2))).eq.'no') then
         WriteCloudTime_KML = .false.
        else
         goto 9414
@@ -2221,7 +2221,7 @@
       cdf_b4l15 = linebuffer080
       read(linebuffer080,'(a3)',err=9415) answer
       USE_RESTART_VARS = .true.
-      if (answer.eq.'yes') then
+      if (adjustl(trim(answer)).eq.'yes') then
         Write3dFiles = .true.
         ! if a consolidated output file will be written, assume both standard
         ! variables and the 3d ash concentrations will be written
@@ -2252,7 +2252,7 @@
             USE_RESTART_VARS = .true.
           endif
         endif
-       else if (answer(1:2).eq.'no') then
+       else if (adjustl(trim(answer(1:2))).eq.'no') then
         Write3dFiles = .false.
        else
         goto 9415
@@ -2576,10 +2576,10 @@
       ! Read whether to write out ASCII airport file
       cdf_b6l1 = linebuffer080
       read(linebuffer080,'(a3)',err=9601) answer
-      if (answer.eq.'yes') then
+      if (adjustl(trim(answer)).eq.'yes') then
         WriteAirportFile_ASCII = .true.
         Write_PT_Data          = .true.
-      else if (answer(1:2).eq.'no') then
+      else if (adjustl(trim(answer(1:2))).eq.'no') then
         WriteAirportFile_ASCII = .false.
       else
         goto 9601
@@ -2591,9 +2591,9 @@
       ! Block 6 Line 2
       cdf_b6l2 = linebuffer080
       read(linebuffer080,'(a3)',err=9602) answer
-      if (answer.eq.'yes') then
+      if (adjustl(trim(answer)).eq.'yes') then
         WriteGSD = .true.
-      else if (answer(1:2).eq.'no') then
+      else if (adjustl(trim(answer(1:2))).eq.'no') then
         WriteGSD = .false.
       else
         goto 9602
@@ -2604,10 +2604,10 @@
       read(fid_ctrlfile,'(a80)') linebuffer080
       cdf_b6l3 = linebuffer080
       read(linebuffer080,'(a3)',err=9603) answer
-      if (answer.eq.'yes') then
+      if (adjustl(trim(answer)).eq.'yes') then
         WriteAirportFile_KML = .true.
         Write_PT_Data        = .true.
-      else if (answer(1:2).eq.'no') then
+      else if (adjustl(trim(answer(1:2))).eq.'no') then
         WriteAirportFile_KML = .false.
       else
         goto 9603
@@ -2646,9 +2646,9 @@
       ! Have libprojection calculate projected coordinates?
       read(fid_ctrlfile,'(a80)') cdf_b6l5
       read(cdf_b6l5,'(a3)',err=9605) answer
-      if (answer.eq.'yes') then
+      if (adjustl(trim(answer)).eq.'yes') then
         ProjectAirportLocations = .true.
-       else if (answer(1:2).eq.'no') then
+       else if (adjustl(trim(answer(1:2))).eq.'no') then
         ProjectAirportLocations = .false.
        else
         goto 9605
@@ -3775,11 +3775,11 @@
         write(errlog(io),*) 'Would you like Ash3d to use the interal airports database instead (y/n)?'
       endif;enddo
       read(input_unit,'(a1)') answer
-      if (answer.eq.'y') then
+      if (adjustl(trim(answer)).eq.'y') then
         ReadExtAirportFile=.false.
         AppendExtAirportFile=.false.
         AirportInFile='internal'
-      else if (answer.eq.'n') then
+      else if (adjustl(trim(answer)).eq.'n') then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*) 'program stopped'
           write(errlog(io),*) '------------------------------'

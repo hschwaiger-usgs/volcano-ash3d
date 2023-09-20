@@ -312,7 +312,7 @@
       write(outlog(io),1)'Would you like information on the structure of these blocks? (y or n)           '
 
       read(input_unit,'(a3)') answer
-      do while (answer.eq.'y'.or.answer.eq.'yes')
+      do while (adjustl(trim(answer)).eq.'y'.or.adjustl(trim(answer)).eq.'yes')
         write(outlog(io),*)'  Please enter the block ID (1-10):'
         read(input_unit,*,err=10)blockID
         if(blockID.lt.1.or.blockID.gt.10)then
@@ -555,7 +555,7 @@
       write(outlog(io),1)'no      # Write out ESRI ASCII deposit files at specified times?                                       '
       write(outlog(io),1)'no      # Write out        KML deposit files at specified times?                                       '
       write(outlog(io),1)'no      # Write out ESRI ASCII files of ash-cloud concentration?                                       '
-      write(outlog(io),1)'no      # Write out        KML files of ash-cloud concentration ?                                      '
+      write(outlog(io),1)'no      # Write out        KML files of ash-cloud concentration?                                      '
       write(outlog(io),1)'no      # Write out ESRI ASCII files of ash-cloud height?                                              '
       write(outlog(io),1)'no      # Write out        KML files of ash-cloud height?                                              '
       write(outlog(io),1)'yes     # Write out ESRI ASCII files of ash-cloud load (T/km2) at specified times?                     '

@@ -299,7 +299,7 @@
             write(outlog(io),*) 'Continue (y/n)?'
           endif;enddo
           read(5,'(a1)') answer
-          if (answer.eq.'n') stop 1
+          if (adjustl(trim(answer)).eq.'n') stop 1
         else
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: velocities seem to be out of expected range."
@@ -340,7 +340,7 @@
             write(outlog(io),*) 'Continue (y/n)?'
           endif;enddo
           read(5,'(a1)') answer
-          if (answer.eq.'n') stop 1
+          if (adjustl(trim(answer)).eq.'n') stop 1
         else
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: velocities seem to be out of expected range."

@@ -365,11 +365,11 @@
           write(errlog(io),*)"Would you like to over-write this file? (yes or no)"
         endif;enddo
         read(input_unit,'(a3)') answer
-        if (answer.eq.'y'.or.answer.eq.'yes') then
+        if (adjustl(trim(answer)).eq.'y'.or.adjustl(trim(answer)).eq.'yes') then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"Over-writing file: ",outfile
           endif;enddo
-        elseif (answer.eq.'n'.or.answer.eq.'no') then
+        elseif (adjustl(trim(answer)).eq.'n'.or.adjustl(trim(answer)).eq.'no') then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"Exiting."
           endif;enddo
