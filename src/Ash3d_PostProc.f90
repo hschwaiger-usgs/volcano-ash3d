@@ -69,7 +69,7 @@
          MM_2_IN
 
       use io_data,       only : &
-         iTimeNext, &
+         iTimeNext,PP_infile,datafileIn, &
          concenfile,nWriteTimes,WriteTimes,Write_PT_Data,Write_PR_Data,&
          iout3d,isFinal_TS,WriteGSD,WriteDepositTS_KML,WriteDepositTS_ASCII,&
          WriteDepositTime_KML,WriteDepositTime_ASCII,WriteDepositFinal_KML,&
@@ -86,7 +86,8 @@
          time,time_native,BaseYear,useLeap,SimStartHour
 
       use Ash3d_Program_Control, only : &
-           Set_OS_Env
+           Set_OS_Env,                &
+           Read_PostProc_Control_File
 
       use Output_Vars,   only : &
          DepositThickness,DepArrivalTime,CloudArrivalTime,ashcon_tot,&
@@ -128,8 +129,11 @@
       integer             :: stat
       integer             :: istat
       character (len=100) :: arg
-      integer             :: iformat
-      integer             :: iprod
+      integer             :: informat     = 3 ! input format (default = 3 for netcdf)
+      integer             :: outformat        ! output format
+      integer             :: iiprod           ! code for input dataset
+      integer             :: iprod            ! code for output product
+      integer             ::  ndims           ! dimensions of the input data file
       integer             :: ivar,TS_Flag,height_flag
       integer             :: itime = -1      ! initialize time step to the last step
       integer             :: i,ii
@@ -151,6 +155,7 @@
         !  3 = gnuplot
         !  4 = GMT
       integer, parameter  :: Nplot_libs = 4
+      integer             :: iplotpref  = 0
       logical,dimension(Nplot_libs) :: plotlib_avail
                                                      !   -- First preference code 
                                                      !   | - Second
@@ -307,7 +312,7 @@
         call NC_Read_Output_Products(-1)
         VB(1)   = tmp_int
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)'Select output variable:'
+          write(outlog(io),*)'Select output variable (not all may be available):'
           write(outlog(io),*)' 1 full concentration array             2 deposit granularity'
           write(outlog(io),*)' 3 deposit thickness (mm time-series)   4 deposit thickness (inches time-series)'
           write(outlog(io),*)' 5 deposit thickness (mm final)         6 deposit thickness (inches final)'
@@ -329,7 +334,7 @@
           write(outlog(io),*)' '
           write(outlog(io),*)'Enter code for output format:'
         endif;enddo
-        read(input_unit,*)iformat
+        read(input_unit,*)outformat
 
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)'Select time step:'
@@ -352,18 +357,41 @@
           call help_postproc
         else
           ! Read control file
-          do io=1,2;if(VB(io).le.verbosity_error)then
-            write(errlog(io),*)'Reading control file not yet implemented'
-          endif;enddo
-          stop 1
+          call get_command_argument(1, arg, stat)
+          read(arg,*)PP_infile
+          inquire( file=PP_infile, exist=IsThere )
+          if(.not.IsThere)then
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: Cannot find input control file"
+            endif;enddo
+            stop 1
+          endif
+
+          call Read_PostProc_Control_File(informat,iiprod,iprod,ndims,outformat,iplotpref,itime)
+          ! Reset plotting preference if need be
+          if(iplotpref.gt.0)then
+            if(plotlib_avail(iplotpref))then
+              plot_pref_map(1:Nplot_libs) = iplotpref ! plot preference for maps
+              plot_pref_shp(1:Nplot_libs) = iplotpref ! plot preference for contours
+              plot_pref_vpr(1:Nplot_libs) = iplotpref ! plot preference for vert profs.
+              plot_pref_aTS(1:Nplot_libs) = iplotpref ! plot preference for Airport TS
+            else
+              do io=1,2;if(VB(io).le.verbosity_error)then
+                write(errlog(io),*)"WARNING: Preferred plotting library is not available."
+              endif;enddo
+            endif
+          endif
         endif
       elseif (nargs.ge.3) then
+        ! If we are doing command line only, then we need at least the netcdf filename, the output
+        ! product code and the format.  Optionally, we can add the timestep.  If there is an
+        ! inconsistency with iprod and outformat, an error message is issued before stopping.
         call get_command_argument(1, arg, stat)
         read(arg,*)concenfile
         call get_command_argument(2, arg, stat)
         read(arg,*)iprod
         call get_command_argument(3, arg, stat)
-        read(arg,*)iformat
+        read(arg,*)outformat
         if (nargs.eq.4) then
           call get_command_argument(4, arg, stat)
           read(arg,*)itime
@@ -380,18 +408,37 @@
       ! Now that we have read the command line, error-check and report back what
       ! we are about to do.
       !  Arg #1
-      inquire( file=concenfile, exist=IsThere )
-      if(.not.IsThere)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
-          write(errlog(io),*)"ERROR: Cannot find input file"
-          write(errlog(io),*)"     ",concenfile
-        endif;enddo
-        stop 1
+      if(informat.eq.3)then
+        ! Test if the Ash3d netcdf file exists
+        inquire( file=concenfile, exist=IsThere )
+        if(.not.IsThere)then
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: Cannot find input file"
+            write(errlog(io),*)"     ",concenfile
+          endif;enddo
+          stop 1
+        else
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Ash3d Output file: ",concenfile
+          endif;enddo
+        endif
       else
-        do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"Ash3d Output file: ",concenfile
-        endif;enddo
+        ! input file is either ASCII or Binary
+        ! Test if it can be found
+        inquire( file=datafileIn, exist=IsThere )
+        if(.not.IsThere)then
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: Cannot find input file"
+            write(errlog(io),*)"     ",datafileIn
+          endif;enddo
+          stop 1
+        else
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Ash3d Output file: ",datafileIn
+          endif;enddo
+        endif
       endif
+
       !  Arg #2
       if(iprod.lt.1.or.iprod.gt.16)then
         do io=1,2;if(VB(io).le.verbosity_error)then
@@ -513,7 +560,7 @@
         endif
       endif
       !  Arg #3
-      if(iformat.lt.1.or.iformat.gt.7)then
+      if(outformat.lt.1.or.outformat.gt.7)then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: output format requested is not in range 1-7."
           write(errlog(io),*)"       Run Ash3d_PostProc with no command-line"
@@ -522,19 +569,19 @@
         stop 1
       else
         do io=1,2;if(VB(io).le.verbosity_info)then
-          if(iformat.eq.1)then
+          if(outformat.eq.1)then
             write(outlog(io),*)'output format = 1 ASCII/ArcGIS'
-          elseif(iformat.eq.2)then
+          elseif(outformat.eq.2)then
             write(outlog(io),*)'output format = 2 KMZ'
-          elseif(iformat.eq.3)then
+          elseif(outformat.eq.3)then
             write(outlog(io),*)'output format = 3 image/png'
-          elseif(iformat.eq.4)then
+          elseif(outformat.eq.4)then
             write(outlog(io),*)'output format = 4 binary'
-          elseif(iformat.eq.5)then
+          elseif(outformat.eq.5)then
             write(outlog(io),*)'output format = 5 shape file'
-          elseif(iformat.eq.6)then
+          elseif(outformat.eq.6)then
             write(outlog(io),*)'output format = 6 grib2'
-          elseif(iformat.eq.7)then
+          elseif(outformat.eq.7)then
             write(outlog(io),*)'output format = 7 tecplot'
           endif
         endif;enddo
@@ -594,90 +641,90 @@
       if(    iprod.eq.1 )then ! full concentration array
         Write3dFiles = .true.
       elseif(iprod.eq.2 )then ! deposit granularity
-        if(    iformat.eq.1)then
+        if(    outformat.eq.1)then
           WriteGSD                      = .true.
-        elseif(iformat.eq.2)then
+        elseif(outformat.eq.2)then
           WriteGSD                      = .true.
         endif
       elseif(iprod.eq.3 )then ! deposit at specified times (mm)
-        if(    iformat.eq.1)then
+        if(    outformat.eq.1)then
           WriteDepositTS_ASCII          = .true.
-        elseif(iformat.eq.2)then
+        elseif(outformat.eq.2)then
           WriteDepositTS_KML            = .true.
         endif
       elseif(iprod.eq.4 )then ! deposit at final time (mm)
-        if(    iformat.eq.1)then
+        if(    outformat.eq.1)then
           WriteDepositFinal_ASCII       = .true.
-        elseif(iformat.eq.2)then
+        elseif(outformat.eq.2)then
           WriteDepositFinal_KML         = .true.
         endif
       elseif(iprod.eq.5 )then ! deposit at specified times (inches)
-        if(    iformat.eq.1)then
+        if(    outformat.eq.1)then
           WriteDepositTS_ASCII          = .true.
-        elseif(iformat.eq.2)then
+        elseif(outformat.eq.2)then
           WriteDepositTS_KML            = .true.
         endif
       elseif(iprod.eq.6 )then ! deposit at final time (inches)
-        if(    iformat.eq.1)then
+        if(    outformat.eq.1)then
           WriteDepositFinal_ASCII       = .true.
-        elseif(iformat.eq.2)then
+        elseif(outformat.eq.2)then
           WriteDepositFinal_KML         = .true.
         endif
       elseif(iprod.eq.7 )then ! ashfall arrival time
-        if(    iformat.eq.1)then
+        if(    outformat.eq.1)then
           WriteDepositTime_ASCII        = .true.
-        elseif(iformat.eq.2)then
+        elseif(outformat.eq.2)then
           WriteDepositTime_KML          = .true.
         endif
       elseif(iprod.eq.8 )then ! ashfall at airports/POI
         Write_PR_Data                   = .true.
-        if(    iformat.eq.1)then
+        if(    outformat.eq.1)then
           WriteAirportFile_ASCII        = .true.
-        elseif(iformat.eq.2)then
+        elseif(outformat.eq.2)then
           WriteAirportFile_KML          = .true.
         endif
       elseif(iprod.eq.9 )then ! ash-cloud concentration
-        if(    iformat.eq.1)then
+        if(    outformat.eq.1)then
           WriteCloudConcentration_ASCII = .true.
-        elseif(iformat.eq.2)then
+        elseif(outformat.eq.2)then
           WriteCloudConcentration_KML   = .true.
         endif
       elseif(iprod.eq.10)then ! ash-cloud height
-        if(    iformat.eq.1)then
+        if(    outformat.eq.1)then
           WriteCloudHeight_ASCII        = .true.
-        elseif(iformat.eq.2)then
+        elseif(outformat.eq.2)then
           WriteCloudHeight_KML          = .true.
         endif
       elseif(iprod.eq.11)then ! ash-cloud bottom
-        if(    iformat.eq.1)then
+        if(    outformat.eq.1)then
           WriteCloudHeight_ASCII        = .true.
-        elseif(iformat.eq.2)then
+        elseif(outformat.eq.2)then
           WriteCloudHeight_KML          = .true.
         endif
       elseif(iprod.eq.12)then ! ash-cloud load
-        if(    iformat.eq.1)then
+        if(    outformat.eq.1)then
           WriteCloudLoad_ASCII          = .true.
-        elseif(iformat.eq.2)then
+        elseif(outformat.eq.2)then
           WriteCloudLoad_KML            = .true.
         endif
       elseif(iprod.eq.13)then ! ash-cloud radar reflectivity
-        if(    iformat.eq.1)then
+        if(    outformat.eq.1)then
           WriteReflectivity_ASCII       = .true.
-        elseif(iformat.eq.2)then
+        elseif(outformat.eq.2)then
           WriteReflectivity_KML         = .true.
         endif
       elseif(iprod.eq.14)then ! ash-cloud arrival time
-        if(    iformat.eq.1)then
+        if(    outformat.eq.1)then
           WriteCloudTime_ASCII          = .true.
-        elseif(iformat.eq.2)then
+        elseif(outformat.eq.2)then
           WriteCloudTime_KML            = .true.
         endif
       !elseif(iprod.eq.15)then ! topography
-      !  if(    iformat.eq.1)then
-      !  elseif(iformat.eq.2)then
+      !  if(    outformat.eq.1)then
+      !  elseif(outformat.eq.2)then
       !  endif
       elseif(iprod.eq.16)then ! vertical profiles of concentration
-        if(    iformat.eq.1.or.iformat.eq.3)then
+        if(    outformat.eq.1.or.outformat.eq.3)then
           ! ASCII or png
           Write_PR_Data                 = .true.
         else
@@ -696,7 +743,7 @@
       ! The main differences in output products will be time-series, vs
       ! time-step output.  Currently, the time-series output will only be for
       ! the KML/KMZ files.
-      if(iformat.eq.2)then
+      if(outformat.eq.2)then
         ! KML output, separate into static vs time-series options
         !  First the static options
         if(iprod.eq.7.or.  &  ! Ashfall arrival time
@@ -766,7 +813,7 @@
           endif;enddo
           stop 1
         endif
-      endif ! iformat.eq.2 (KML)
+      endif ! outformat.eq.2 (KML)
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       ! This is the non-KML section
@@ -832,7 +879,7 @@
       endif
 
       ! This is the ASCII section
-      if(iformat.eq.1)then
+      if(outformat.eq.1)then
         ! First check for the special cases
         if(iprod.eq.8)then
           ! Point data
@@ -852,9 +899,9 @@
           ! All other ESRI/ASCII 2d grids
           call write_2D_ASCII(nxmax,nymax,OutVar,mask,Fill_Value,filename_root)
         endif
-      elseif(iformat.eq.2)then
+      elseif(outformat.eq.2)then
         ! All the KML routines were called above
-      elseif(iformat.eq.3)then ! image/png
+      elseif(outformat.eq.3)then ! image/png
         if(iprod.eq.8)then
           ! Point data
           do io=1,2;if(VB(io).le.verbosity_info)then          
@@ -928,7 +975,7 @@
         end select
 
         endif
-      elseif(iformat.eq.4)then
+      elseif(outformat.eq.4)then
         if(iprod.eq.1)then
           ! full concentration array but here we only output the total
           call write_3D_Binary(cio,nxmax,nymax,nzmax,ashcon_tot)
@@ -953,7 +1000,7 @@
         else
           call write_2D_Binary(nxmax,nymax,OutVar,mask,Fill_Value,filename_root)
         endif
-      elseif(iformat.eq.5)then
+      elseif(outformat.eq.5)then
         ! For 2d contours exported from dislin, gnuplot, gmt
         ! First call plotting routine, but only get the contours
         writeContours = .true.
@@ -992,13 +1039,13 @@
         call write_ShapeFile_Polyline(iprod,iout3d)
         !  For contours that follow topography, use
         !call write_ShapeFile_PolylineZ  (this is a place-holder, not yet implemented)
-      elseif(iformat.eq.6)then
+      elseif(outformat.eq.6)then
         !call write_2D_grib2
-      elseif(iformat.eq.7)then
+      elseif(outformat.eq.7)then
         !call write_2D_netcdf
-      elseif(iformat.eq.8)then
+      elseif(outformat.eq.8)then
         !call write_2D_tecplot
-      elseif(iformat.eq.9)then
+      elseif(outformat.eq.9)then
         !call write_2D_vtk
       endif
 

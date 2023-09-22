@@ -161,6 +161,7 @@
       real(kind=ip),public :: DepositAreaCovered       ! area covered by ash deposit
 
       ! Contour colors and levels
+      logical                                     ,public:: ContourFilled = .false. ! T if using filled contours, F if lines
       real(kind=ip),dimension(:),allocatable      ,public:: ContourLev
       integer                                     ,public:: nConLev
       integer,parameter                           ,public:: Contour_MaxCurves  = 20
@@ -169,6 +170,12 @@
       real(kind=ip),dimension(:,:,:),allocatable  ,public:: ContourDataY        ! x curve data with dims: ilev, icurve, ipnt
       integer      ,dimension(:)    ,allocatable  ,public:: ContourDataNcurves  ! num of curves for each level (some = 0)
       integer      ,dimension(:,:)  ,allocatable  ,public:: ContourDataNpoints  ! num of pts for ilev and icurve
+        ! User-specified contour interval and colors
+      logical                                     ,public:: Con_Cust   = .false.    ! T if using a custom set of contours
+      integer                                     ,public:: Con_Cust_N
+      integer      ,dimension(:,:)  ,allocatable  ,public:: Con_Cust_RGB
+      real(kind=ip),dimension(:)    ,allocatable  ,public:: Con_Cust_Lev
+        ! Fixed size arrays for output products
       integer,parameter                           ,public:: Con_DepThick_mm_N   = 10
       integer      ,dimension(Con_DepThick_mm_N,3),public:: Con_DepThick_mm_RGB
       real(kind=ip),dimension(Con_DepThick_mm_N)  ,public:: Con_DepThick_mm_Lev
@@ -233,16 +240,6 @@
       real(kind=op), dimension(:,:,:),allocatable ,public:: ashcon_tot       ! Total ash concentration (3d)
 
       real(kind=ip), dimension(:,:,:),allocatable,public :: pr_ash           ! concentration profile
-
-        ! These arrays are only used when reading an output file of unknown size
-      !real(kind=ip), dimension(:,:),allocatable,public :: R_XY
-      !integer      ,public :: R_nx
-      !integer      ,public :: R_ny
-      !real(kind=ip),public :: R_xll
-      !real(kind=ip),public :: R_yll
-      !real(kind=ip),public :: R_dx
-      !real(kind=ip),public :: R_dy
-      !real(kind=ip),public :: R_Fill
 
         ! 3-D variables
         !   (in x,y,z)
@@ -491,6 +488,8 @@
       if(allocated(MinHeight))        deallocate(MinHeight)
       if(allocated(dbZCol))           deallocate(dbZCol)
       if(allocated(dbZ))              deallocate(dbZ)
+      if(allocated(Con_Cust_RGB))     deallocate(Con_Cust_RGB)
+      if(allocated(Con_Cust_Lev))     deallocate(Con_Cust_Lev)
 #endif
 
       end subroutine Deallocate_Output_Vars

@@ -303,8 +303,10 @@
       integer            :: ioutputFormat   ! determines the format of the output
                                             ! (1=ASCII, 2=raw binary, 3=NetCDF)
       character (len=130):: Ash3dHome       ! path to Ash3d installation
-      character (len=130):: infile          ! input file name
-      character (len=50) :: outfile
+      character (len=130):: infile          ! input control file name for Ash3d
+      character (len=130):: PP_infile       ! input control file name for Ash3d_PostProc
+      character (len=50) :: datafileOut
+      character (len=80) :: datafileIn
       logical            :: LoadConcen
       character (len=80) :: concenfile
       integer            :: init_tstep
@@ -492,7 +494,7 @@
 ! *****************************************************************************
 !     Dimensional parameters in degrees, used if IsLatLon=.True.
       real(kind=ip)      :: latLL,lonLL,latUR,lonUR   ! lat/lon of LL corner
-      real(kind=ip)      :: gridwidth_e, gridwidth_n            ! Dimensions (in km) of the grid
+      real(kind=ip)      :: gridwidth_e, gridwidth_n  ! Dimensions (in km) of the grid
       real(kind=ip)      :: de, dn                    !nodal spacing east & north, degrees
       real(kind=ip)      :: de_km, dn_km              !nodal spacing, km, at volcano
 #ifdef USEPOINTERS

@@ -74,6 +74,7 @@
          IsLatLon
 
       use Output_Vars,   only : &
+         ContourFilled,Con_Cust,Con_Cust_N,Con_Cust_RGB,Con_Cust_Lev,&
          Con_DepThick_mm_N,Con_DepThick_mm_Lev,Con_DepThick_mm_RGB, &
          Con_DepThick_in_N,Con_DepThick_in_Lev,Con_DepThick_in_RGB, &
          Con_DepTime_N,Con_DepTime_Lev,Con_DepTime_RGB, &
@@ -82,7 +83,7 @@
          Con_CloudBot_N,Con_CloudBot_RGB,Con_CloudBot_Lev, &
          Con_CloudLoad_N,Con_CloudLoad_RGB,Con_CloudLoad_Lev, &
          Con_CloudRef_N,Con_CloudRef_RGB,Con_CloudRef_Lev, &
-         Con_CloudTime_N,Con_CloudTime_RGB,Con_CloudTime_Lev,&
+         Con_CloudTime_N,Con_CloudTime_RGB,Con_CloudTime_Lev, &
          ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
          Contour_MaxCurves,Contour_MaxPoints,ContourLev,nConLev
 
@@ -111,6 +112,7 @@
       character(len=40) :: outfile_name
       character(len= 9) :: cio
       character(len= 4) :: outfile_ext = '.png'
+      character(len=10) :: units
       integer :: ioerr,iw,iwf
       integer :: tmp_int
 
@@ -185,51 +187,74 @@
         endif
       endif
 
+      if(Con_Cust)then
+        nConLev = Con_Cust_N
+        allocate(zrgb(nConLev,3))
+        allocate(ContourLev(nConLev))
+        ContourLev(1:nConLev) = Con_Cust_Lev(1:nConLev)
+        zrgb(1:nConLev,1:3) = Con_Cust_RGB(1:nConLev,1:3)
+      endif
+
       if(iprod.eq.3)then       ! deposit at specified times (mm)
         write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
         title_legend = 'Dep.Thick.(mm)'
-        nConLev = Con_DepThick_mm_N
-        allocate(zrgb(nConLev,3))
-        allocate(ContourLev(nConLev))
-        ContourLev(1:nConLev) = Con_DepThick_mm_Lev(1:nConLev)
-        zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
+        units = " (mm)"
+        if(.not.Con_Cust)then
+          nConLev = Con_DepThick_mm_N
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev(1:nConLev) = Con_DepThick_mm_Lev(1:nConLev)
+          zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
+        endif
       elseif(iprod.eq.4)then   ! deposit at specified times (inches)
         write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
         title_legend = 'Dep.Thick.(in)'
-        nConLev = Con_DepThick_in_N
-        allocate(zrgb(nConLev,3))
-        allocate(ContourLev(nConLev))
-        ContourLev(1:nConLev) = Con_DepThick_in_Lev(1:nConLev)
-        zrgb(1:nConLev,1:3) = Con_DepThick_in_RGB(1:nConLev,1:3)
+        units = " (in)"
+        if(.not.Con_Cust)then
+          nConLev = Con_DepThick_in_N
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev(1:nConLev) = Con_DepThick_in_Lev(1:nConLev)
+          zrgb(1:nConLev,1:3) = Con_DepThick_in_RGB(1:nConLev,1:3)
+        endif
       elseif(iprod.eq.5)then       ! deposit at final time (mm)
         write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
         title_legend = 'Dep.Thick.(mm)'
-        nConLev = Con_DepThick_mm_N
-        allocate(zrgb(nConLev,3))
-        allocate(ContourLev(nConLev))
-        ContourLev(1:nConLev) = Con_DepThick_mm_Lev(1:nConLev)
-        zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
+        units = " (mm)"
+        if(.not.Con_Cust)then
+          nConLev = Con_DepThick_mm_N
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev(1:nConLev) = Con_DepThick_mm_Lev(1:nConLev)
+          zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
+        endif
       elseif(iprod.eq.6)then   ! deposit at final time (inches)
         write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
         title_legend = 'Dep.Thick.(in)'
-        nConLev = Con_DepThick_in_N
-        allocate(zrgb(nConLev,3))
-        allocate(ContourLev(nConLev))
-        ContourLev(1:nConLev) = Con_DepThick_in_Lev(1:nConLev)
-        zrgb(1:nConLev,1:3) = Con_DepThick_in_RGB(1:nConLev,1:3)
+        units = " (in)"
+        if(.not.Con_Cust)then
+          nConLev = Con_DepThick_in_N
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev(1:nConLev) = Con_DepThick_in_Lev(1:nConLev)
+          zrgb(1:nConLev,1:3) = Con_DepThick_in_RGB(1:nConLev,1:3)
+        endif
       elseif(iprod.eq.7)then   ! ashfall arrival time (hours)
         write(outfile_name,'(a22)')'DepositArrivalTime.png'
         write(title_plot,'(a20)')'Ashfall arrival time'
         title_legend = 'Time (hours)'
-        nConLev = Con_DepTime_N
-        allocate(zrgb(nConLev,3))
-        allocate(ContourLev(nConLev))
-        ContourLev(1:nConLev) = Con_DepTime_Lev(1:nConLev)
-        zrgb(1:nConLev,1:3) = Con_DepTime_RGB(1:nConLev,1:3)
+        units = " (hours)"
+        if(.not.Con_Cust)then
+          nConLev = Con_DepTime_N
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev(1:nConLev) = Con_DepTime_Lev(1:nConLev)
+          zrgb(1:nConLev,1:3) = Con_DepTime_RGB(1:nConLev,1:3)
+        endif
       elseif(iprod.eq.8)then   ! ashfall arrival at airports/POI (mm)
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: No map PNG output option for airport arrival time data."
@@ -240,65 +265,86 @@
         write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
         write(title_plot,'(a26,f5.2,a6)')'Ash-cloud concentration t=',WriteTimes(itime),' hours'
         title_legend = 'Max.Con.(mg/m3)'
-        nConLev = Con_CloudCon_N
-        allocate(zrgb(nConLev,3))
-        allocate(ContourLev(nConLev))
-        ContourLev(1:nConLev) = Con_CloudCon_Lev(1:nConLev)
-        zrgb(1:nConLev,1:3) = Con_CloudCon_RGB(1:nConLev,1:3)
+        units = " (mg/m3)"
+        if(.not.Con_Cust)then
+          nConLev = Con_CloudCon_N
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev(1:nConLev) = Con_CloudCon_Lev(1:nConLev)
+          zrgb(1:nConLev,1:3) = Con_CloudCon_RGB(1:nConLev,1:3)
+        endif
       elseif(iprod.eq.10)then   ! ash-cloud height
         write(outfile_name,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud height t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Height(km)'
-        nConLev = Con_CloudTop_N
-        allocate(zrgb(nConLev,3))
-        allocate(ContourLev(nConLev))
-        ContourLev(1:nConLev) = Con_CloudTop_Lev(1:nConLev)
-        zrgb(1:nConLev,1:3) = Con_CloudTop_RGB(1:nConLev,1:3)
+        units = " (km)"
+        if(.not.Con_Cust)then
+          nConLev = Con_CloudTop_N
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev(1:nConLev) = Con_CloudTop_Lev(1:nConLev)
+          zrgb(1:nConLev,1:3) = Con_CloudTop_RGB(1:nConLev,1:3)
+        endif
       elseif(iprod.eq.11)then   ! ash-cloud bottom
         write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud bottom t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Bot.(km)'
-        nConLev = Con_CloudBot_N
-        allocate(zrgb(nConLev,3))
-        allocate(ContourLev(nConLev))
-        ContourLev(1:nConLev) = Con_CloudBot_Lev(1:nConLev)
-        zrgb(1:nConLev,1:3) = Con_CloudBot_RGB(1:nConLev,1:3)
+        units = " (km)"
+        if(.not.Con_Cust)then
+          nConLev = Con_CloudBot_N
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev(1:nConLev) = Con_CloudBot_Lev(1:nConLev)
+          zrgb(1:nConLev,1:3) = Con_CloudBot_RGB(1:nConLev,1:3)
+        endif
       elseif(iprod.eq.12)then   ! ash-cloud load
         write(outfile_name,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
         write(title_plot,'(a17,f5.2,a6)')'Ash-cloud load t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Load(T/km2)'
-        nConLev = Con_CloudLoad_N
-        allocate(zrgb(nConLev,3))
-        allocate(ContourLev(nConLev))
-        ContourLev(1:nConLev) = Con_CloudLoad_Lev(1:nConLev)
-        zrgb(1:nConLev,1:3) = Con_CloudLoad_RGB(1:nConLev,1:3)
+        units = " (T/km2)"
+        if(.not.Con_Cust)then
+          nConLev = Con_CloudLoad_N
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev(1:nConLev) = Con_CloudLoad_Lev(1:nConLev)
+          zrgb(1:nConLev,1:3) = Con_CloudLoad_RGB(1:nConLev,1:3)
+        endif
       elseif(iprod.eq.13)then  ! radar reflectivity
         write(outfile_name,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
         write(title_plot,'(a24,f5.2,a6)')'Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Refl.(dBz)'
-        nConLev = Con_CloudRef_N
-        allocate(zrgb(nConLev,3))
-        allocate(ContourLev(nConLev))
-        ContourLev(1:nConLev) = Con_CloudRef_Lev(1:nConLev)
-        zrgb(1:nConLev,1:3) = Con_CloudRef_RGB(1:nConLev,1:3)
+        units = " (dBz)"
+        if(.not.Con_Cust)then
+          nConLev = Con_CloudRef_N
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev(1:nConLev) = Con_CloudRef_Lev(1:nConLev)
+          zrgb(1:nConLev,1:3) = Con_CloudRef_RGB(1:nConLev,1:3)
+        endif
       elseif(iprod.eq.14)then   ! ashcloud arrival time (hours)
         write(outfile_name,'(a20)')'CloudArrivalTime.png'
         write(title_plot,'(a22)')'Ash-cloud arrival time'
         title_legend = 'Time (hours)'
-        nConLev = Con_CloudTime_N
-        allocate(zrgb(nConLev,3))
-        allocate(ContourLev(nConLev))
-        ContourLev(1:nConLev) = Con_CloudTime_Lev(1:nConLev)
-        zrgb(1:nConLev,1:3) = Con_CloudTime_RGB(1:nConLev,1:3)
+        units = " (hours)"
+        if(.not.Con_Cust)then
+          nConLev = Con_CloudTime_N
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev(1:nConLev) = Con_CloudTime_Lev(1:nConLev)
+          zrgb(1:nConLev,1:3) = Con_CloudTime_RGB(1:nConLev,1:3)
+        endif
       elseif(iprod.eq.15)then   ! topography
         write(outfile_name,'(a14)')'Topography.png'
         write(title_plot,'(a10)')'Topography'
         title_legend = 'Elevation (km)'
-        nConLev = 8
-        allocate(zrgb(nConLev,3))
-        allocate(ContourLev(nConLev))
-        ContourLev = (/0.1_ip, 0.3_ip, 1.0_ip, 3.0_ip, &
-                10.0_ip, 30.0_ip, 100.0_ip, 300.0_ip/)
+        units = " (hours)"
+        if(.not.Con_Cust)then
+          nConLev = 8
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev = (/0.1_ip, 0.3_ip, 1.0_ip, 3.0_ip, &
+                  10.0_ip, 30.0_ip, 100.0_ip, 300.0_ip/)
+        endif
       elseif(iprod.eq.16)then   ! profile plots
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: No map PNG output option for vertical profile data."

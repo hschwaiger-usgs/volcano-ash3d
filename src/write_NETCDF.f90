@@ -174,7 +174,7 @@
          cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,cdf_b4l11,cdf_b6l1,cdf_b6l2,&
          cdf_b6l3,cdf_b6l4,cdf_b6l5,cdf_conventions,&
          cdf_comment,cdf_title,cdf_institution,cdf_source,cdf_history,cdf_references,&
-         cdf_run_class,cdf_url,infile,outfile,&
+         cdf_run_class,cdf_url,infile,concenfile,&
          nvar_User2d_static_XY,nvar_User2d_XY,nvar_User3d_XYGs,nvar_User3d_XYZ,&
          nvar_User4d_XYZGs,Write_PT_Data,Write_PR_Data
 
@@ -357,17 +357,17 @@
       cdf_WindStartTime = HS_xmltime(MR_windfile_starthour(MR_MetStep_findex(1)),BaseYear,useLeap)
 
       ! Create and open netcdf file
-      inquire(file=outfile,exist=IsThere)
+      inquire(file=concenfile,exist=IsThere)
       if(IsThere)then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"Specified output netcdf file already exists."
-          write(errlog(io),*)"Output filename requested = ",outfile
+          write(errlog(io),*)"Output filename requested = ",concenfile
           write(errlog(io),*)"Would you like to over-write this file? (yes or no)"
         endif;enddo
         read(input_unit,'(a3)') answer
         if (adjustl(trim(answer)).eq.'y'.or.adjustl(trim(answer)).eq.'yes') then
           do io=1,2;if(VB(io).le.verbosity_error)then
-            write(errlog(io),*)"Over-writing file: ",outfile
+            write(errlog(io),*)"Over-writing file: ",concenfile
           endif;enddo
         elseif (adjustl(trim(answer)).eq.'n'.or.adjustl(trim(answer)).eq.'no') then
           do io=1,2;if(VB(io).le.verbosity_error)then
@@ -396,13 +396,13 @@
 #endif
       if(NCversion.eq.4)then
 #ifndef NC3
-        nSTAT = nf90_create(outfile,nf90_netcdf4,ncid,           &
+        nSTAT = nf90_create(concenfile,nf90_netcdf4,ncid,           &
                             cache_nelems = 1000, &
                             cache_size = 32000000)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"create outfile v4:")
 #endif
       else
-        nSTAT = nf90_create(outfile,nf90_clobber, ncid)
+        nSTAT = nf90_create(concenfile,nf90_clobber, ncid)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"create outfile classic:")
       endif
 
@@ -2773,7 +2773,7 @@
 
       use io_data,       only : &
          iout3d,nvar_User2d_XY,nvar_User3d_XYGs,nvar_User3d_XYZ,nvar_User4d_XYZGs,&
-         outfile,isFinal_TS,nvprofiles,Write_PT_Data,Write_PR_Data
+         concenfile,isFinal_TS,nvprofiles,Write_PT_Data,Write_PR_Data
 
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,ts1,dz_vec_pd
@@ -2825,7 +2825,7 @@
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"opening netcdf file"
       endif;enddo
-      nSTAT=nf90_open(outfile,nf90_write, ncid)
+      nSTAT=nf90_open(concenfile,nf90_write, ncid)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"nf90_open")
 
       if(isFinal_TS)then

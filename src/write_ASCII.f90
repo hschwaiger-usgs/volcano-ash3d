@@ -231,7 +231,6 @@
 
       real(kind=op)  :: OVar(nx,ny)
       real(kind=op)  :: FValue
-      !integer :: fid
       integer :: i,j
       character (len=9)  :: cio
       character(len=50)  :: filename_out

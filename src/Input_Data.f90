@@ -12,6 +12,7 @@
 !      subroutine LatLonChecker
 !      subroutine xyChecker
 !      subroutine vprofchecker
+!      subroutine Read_PostProc_Control_File
 !
 !##############################################################################
 
@@ -29,7 +30,8 @@
         ! Publicly available subroutines/functions
       public Parse_Command_Line, &
              Set_OS_Env,         &
-             Read_Control_File
+             Read_Control_File,  &
+             Read_PostProc_Control_File
 
       contains
       !------------------------------------------------------------------------
@@ -711,14 +713,7 @@
 !
 ! This subroutine sets up the parameters for the Ash3d run.
 ! 
-! First the command line is parsed.  If no command-line arguments are given, input will
-! be interactive with the user prompted for the control file name, then questioned if
-! this is a restart run.  If command-line arguments are given, then the first argument
-! is tested for '-h', in which case interactive help information will be printed to
-! the screen.  If help mode is not activated, then the command-line argument is
-! interpreted to be the name of the control file in the current working directory.
-! 
-! Next, the control file is opened and read block-by-block.
+! The control file is opened and read block-by-block.
 !       ! BLOCK 1: GRID INFO
 !       ! BLOCK 2: ERUPTION PARAMETERS
 !       ! BLOCK 3: WIND PARAMETERS
@@ -762,7 +757,7 @@
          cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,cdf_b4l11,cdf_b4l12,cdf_b4l13,&
          cdf_b4l14,cdf_b4l15,cdf_b4l16,cdf_b4l17,cdf_b4l18,cdf_b6l1,cdf_b6l2,cdf_b6l3,cdf_b6l4,&
          cdf_b6l5,cdf_comment,cdf_title,cdf_institution,cdf_source,cdf_history,cdf_references,&
-         outfile,VolcanoName,WriteTimes,nWriteTimes,cdf_conventions,cdf_run_class,cdf_url,&
+         concenfile,VolcanoName,WriteTimes,nWriteTimes,cdf_conventions,cdf_run_class,cdf_url,&
          x_vprofile,y_vprofile,i_vprofile,j_vprofile,Site_vprofile,&
          infile,ioutputFormat,LoadConcen,log_step,NextWriteTime,&
          AppendExtAirportFile,WriteInterval,WriteGSD,WriteDepositTS_KML,WriteDepositTS_ASCII,&
@@ -3103,8 +3098,8 @@
       enddo
 
       ! Here are the default output file name and comments if Block 9 is not given
-      outfile = "3d_tephra_fall.nc"
-      cdf_title = infile
+      concenfile  = "3d_tephra_fall.nc"
+      cdf_title   = infile
       cdf_comment = "None"
       cdf_institution="USGS"
       cdf_source="ash3d v1.0b"
@@ -3130,8 +3125,8 @@
         ! Start reading annotation info
 
         ! First line is the output file name
-        read(linebuffer080,*) outfile
-        outfile = trim(adjustl(outfile))
+        read(linebuffer080,*) concenfile
+        concenfile = trim(adjustl(concenfile))
 
         ! Next line is the title of the job
           ! Read title line up until the first '#', then truncate
@@ -3301,7 +3296,7 @@
 
       !ERROR TRAPS TO STDIN
 9001  do io=1,2;if(VB(io).le.verbosity_error)then
-        write(errlog(io),*)  'error: cannot find input file: ',infile
+        write(errlog(io),*)  'error: cannot open input file: ',infile
         write(errlog(io),*)  'Program stopped'
       endif;enddo
       stop 1
@@ -4162,6 +4157,382 @@
       return
 
       end subroutine vprofchecker
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Subroutine Read_PostProc_Control_File()
+!
+! This subroutine sets up the parameters for the Ash3d Post-processing task via
+! a control file.
+!
+! 3d_tephra_fall.nc       data_filename
+! 3                       input format code (1=ascii, 2=binary, 3=netcdf, 4=grib, 5=tecplot, 6=vtk)
+! test.inp                Ash3d_control_file_name   (skipped if datafile is netcdf)
+! 5                       invar [outvar]    input variable and output variable, if different
+! 2                       ndims Only needed for format 1 or 2
+! 0 0                     nx ny [nz] Also only needed for format 1 or 2
+! 0.0 0.0                 dx dy [dz] Needed if not a part of the data file
+! 0.0 0.0                 srtx srty         Start x and y
+! 3                       output format     (1=ascii, 2=KML 3=image, 4=binary, 5=shapefile 6=grib, 7=tecplot, 8=vtk)
+! 3                       plot_pref         (1=dislin, 2=plplot, 3=gnuplot, 4=GMT)
+! -1                      time_step         Only needed if input file is multi-timestep (eg netcdf) (-1 for final, -2 for all)
+! 0                       Filled contour flag (1 for filled, 0 for lines)
+! 1 5                     custom contour flag (1 for true, 0 for false), number of contours
+! 1.0 3.0 10.0 50.0 100.0 lev(ncont)  : contour levels
+! 100 100 100 100 255     R(ncont)    : Red channel of RGB
+! 100 150 200 150   0     G(ncont)    : Green channel of RGB
+! 200 150 100  50   0     B(ncont)    : Blue channel of RGB
+!
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine Read_PostProc_Control_File(informat,iprod1,iprod2,ndims,outformat,iplotpref,itime)
+
+      use io_data,       only : &
+         PP_infile,concenfile,datafileIn,infile
+
+      use mesh,          only : &
+         nxmax,nymax,nzmax,dx,dy,dz_const,xLL,yLL
+
+      use Output_Vars,   only : &
+         ContourFilled,Con_Cust,Con_Cust_N,Con_Cust_RGB,Con_Cust_Lev
+
+      integer, intent(out) :: informat
+      integer, intent(out) :: iprod1
+      integer, intent(out) :: iprod2
+      integer, intent(out) :: ndims
+      integer, intent(out) :: outformat
+      integer, intent(out) :: iplotpref
+      integer, intent(out) :: itime
+
+      character(len=130) :: linebuffer080
+      integer            :: ioerr
+      integer            :: ivalue
+      real(kind=ip)      :: rvalue
+      integer            :: i
+
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"--------------------------------------------------"
+        write(outlog(io),*)"------ READ_POSTPROC_CONTROL_FILE ----------------"
+        write(outlog(io),*)"--------------------------------------------------"
+      endif;enddo
+
+      ! Open the control file. Note that we have already checked for existance
+      open(unit=fid_ctrlfile,file=PP_infile,status='old',action='read',err=9001)
+      ! Line 1:
+      !  The first line is the data file.  This is expected to be the netcdf file
+      !  with all the run information, but could be a binary or ASCII output file.
+      read(fid_ctrlfile,'(a80)')linebuffer080
+      read(linebuffer080,*) datafileIn
+      datafileIn = adjustl(trim(datafileIn))
+
+      ! Line 2:
+      !  This is the format code of the data file from line 1.  Currently, we expect
+      !  this to be the netcdf run output file, but could be binary or ASCII.  The
+      !  other formats are placeholders and not yet implemented.
+      read(fid_ctrlfile,'(a80)')linebuffer080
+      read(linebuffer080,*) informat
+      if (informat.ne.1.and.&
+          informat.ne.2.and.&
+          informat.ne.3)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: Invalid format code for data file."
+        endif;enddo
+        stop 1
+      else
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"File format of input data = ",informat
+        endif;enddo
+      endif
+      ! If this is a netcdf file, copy name to 
+      if(informat.eq.3)then
+        concenfile = adjustl(trim(datafileIn))
+      endif
+
+      ! Line 3:
+      !  The name of the input file used for this run. If the datafile is the
+      !  netcdf concentratiln file, then the contents of the input file are
+      !  already available and this line will be ignored.  However, ASCII and
+      !  binary files can use the additional information from the input file
+      !  for the output products.
+      read(fid_ctrlfile,'(a80)')linebuffer080
+      read(linebuffer080,*) infile
+
+      ! Line 4:
+      !  The code for the variable to read and optionally an output code.
+      !  Normally, the variable read with be what is written out, but you
+      !  could have a binary 3d concentration and want cloud_load or have
+      !  an ASCII deposit (in mm) and want a plot of deposit in inches.
+      read(fid_ctrlfile,'(a80)')linebuffer080
+      read(linebuffer080,*) iprod1
+      read(linebuffer080,*,iostat=ioerr) iprod1, ivalue
+      if (ioerr.eq.0)then
+        iprod2 = ivalue
+      else
+        iprod2 = iprod1
+      endif
+      ! Error-checking these values
+      if (iprod1.lt.1.or.iprod1.gt.16)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: Invalid format code input variable type."
+        endif;enddo
+        stop 1
+      else
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Variable code of input data = ",iprod1
+        endif;enddo
+      endif
+      if (iprod2.lt.1.or.iprod2.gt.16)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: Invalid format code output variable type."
+        endif;enddo
+        stop 1
+      else
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Variable code of output data = ",iprod2
+        endif;enddo
+      endif
+
+      ! Line 5:
+      !  number of dimensions of the input data file (2 or 3)
+      read(fid_ctrlfile,'(a80)')linebuffer080
+      read(linebuffer080,*) ndims
+      ! Error-checking ndims
+      if (ndims.ne.2.and.ndims.ne.3)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: Invalid number of dimensions. Should be 2 or 3."
+        endif;enddo
+        stop 1
+      else
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Number of dimensions of data = ",ndims
+        endif;enddo
+      endif
+
+      ! Line 6:
+      !  size of array in nx,ny,nz
+      !  This is overwritten when reading netcdf or ASCII data, but is needed for binary
+      read(fid_ctrlfile,'(a80)')linebuffer080
+      read(linebuffer080,*) nxmax,nymax
+      read(linebuffer080,*,iostat=ioerr) nxmax,nymax,ivalue
+      if (ioerr.eq.0)then
+        nzmax = ivalue
+      else
+        ! Do a hard stop if nz needs to be provided.
+        if (ndims.eq.3.and.informat.eq.3)then
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: 3D binary data requires a nz."
+          endif;enddo
+          stop 1
+        endif
+        nzmax = 1
+      endif
+      ! Error-checking nx,ny,nz
+      if (nxmax.lt.1.or.nymax.lt.1.or.nzmax.lt.1)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"WARNING: One or more dimension has non-positive size."
+        endif;enddo
+        if (informat.eq.2)then
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: Datafile is binary but dimesion size is invalid."
+          endif;enddo
+          stop 1
+        endif
+      else
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Size of input data grid = ",nxmax,nymax,nzmax
+        endif;enddo
+      endif
+
+      ! Line 7:
+      !  cell-size dx,dy,dz
+      !  This is overwritten when reading netcdf or ASCII data, but is needed for binary
+      read(fid_ctrlfile,'(a80)')linebuffer080
+      read(linebuffer080,*) dx,dy
+      read(linebuffer080,*,iostat=ioerr) dx,dy,rvalue
+      if (ioerr.eq.0)then
+        dz_const = rvalue
+      else
+        ! Do a hard stop if dz needs to be provided.
+        if (ndims.eq.3.and.informat.eq.3)then
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: 3D binary data requires a dz."
+          endif;enddo
+          stop 1
+        endif
+        dz_const = 1.0_ip
+      endif
+      ! Error-checking cell dimensions
+      if (dx.le.0.0_ip.or.dy.le.0.0_ip.or.dz_const.le.0.0_ip)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"WARNING: One or more cell dimension has an invalid thickness."
+        endif;enddo
+        if (informat.eq.2)then
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: Datafile is binary but cell dimesions are invalid."
+          endif;enddo
+          stop 1
+        endif
+      else
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Size of input data cell = ",dx,dy,dz_const
+        endif;enddo
+      endif
+
+      ! Line 8:
+      !  x,y of lower-left corner of grid
+      !  This is overwritten when reading netcdf or ASCII data, but is needed for binary
+      read(fid_ctrlfile,'(a80)')linebuffer080
+      read(linebuffer080,*) xLL,yLL
+      ! Error-checking cell coordinate
+      !if ()then
+      !  do io=1,2;if(VB(io).le.verbosity_error)then
+      !    write(errlog(io),*)"WARNING: Lower-left cell coordinate is invalid"
+      !  endif;enddo
+      !  if (informat.eq.2)then
+      !    do io=1,2;if(VB(io).le.verbosity_error)then
+      !      write(errlog(io),*)"ERROR: Datafile is binary but cell starting coordinate is invalid."
+      !    endif;enddo
+      !    stop 1
+      !  endif
+      !else
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Lower-left coordinate of computational grid = ",xLL,yLL
+        endif;enddo
+      !endif
+
+      ! Line 9:
+      !  This is the format code of the output file.
+      read(fid_ctrlfile,'(a80)')linebuffer080
+      read(linebuffer080,*)outformat
+      if (outformat.ne.1.and.&
+          outformat.ne.2.and.&
+          outformat.ne.3.and.&
+          outformat.ne.4.and.&
+          outformat.ne.5)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: Invalid format code for output product."
+        endif;enddo
+        stop 1
+      else
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Output product format = ",outformat
+        endif;enddo
+      endif
+
+      ! Line 10:
+      !  preferred plotting library
+      read(fid_ctrlfile,'(a80)')linebuffer080
+      read(linebuffer080,*) iplotpref
+      ! Error-checking iplotpref
+      if (iplotpref.lt.0.or.iplotpref.gt.4)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: Invalid code for plotting library."
+        endif;enddo
+        stop 1
+      else
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Preferred plotting package = ",iplotpref
+        endif;enddo
+      endif
+
+      ! Line 11:
+      !  output time step
+      read(fid_ctrlfile,'(a80)')linebuffer080
+      read(linebuffer080,*) itime
+      ! Error-checking itime
+      if (itime.lt.-2)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: Invalid timestep requested."
+        endif;enddo
+        stop 1
+      else
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Time step requested = ",itime
+        endif;enddo
+      endif
+
+      ! Line 12:
+      !  The flag for filled contours as opposed to the default lines.
+      read(fid_ctrlfile,'(a80)')linebuffer080
+      read(linebuffer080,*) ivalue
+      if (ivalue.eq.1)then
+        ContourFilled = .true.
+      endif
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"Draw flooded/filled contours = ",ContourFilled
+      endif;enddo 
+
+     ! Line 13+:
+      !  Custom contours
+      read(fid_ctrlfile,'(a80)')linebuffer080
+      read(linebuffer080,*) ivalue
+      if (ivalue.eq.1)then
+        Con_Cust = .true.
+      endif
+      if(Con_Cust)then
+        read(linebuffer080,*,iostat=ioerr) ivalue, Con_Cust_N
+        if (ioerr.eq.0)then
+          ! Success reading the number of custom levels; run error-check
+          if (Con_Cust_N.le.0)then
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: Number of contour levels must be positive."
+            endif;enddo
+            stop 1
+          else
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"Custom contours (# of levels) ",Con_Cust,Con_Cust_N
+            endif;enddo
+          endif
+        else
+          ! User wants custom contours, but we can't read the number
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: Number of contour levels must be positive."
+          endif;enddo
+          stop 1
+        endif
+        ! Now read an additional 4 lines with contour info:
+        allocate(Con_Cust_RGB(Con_Cust_N,3)); Con_Cust_RGB(:,:) = 0
+        allocate(Con_Cust_Lev(Con_Cust_N));   Con_Cust_Lev(:)   = 0.0_ip
+        ! Line 14: custom levels
+        read(fid_ctrlfile,'(a80)')linebuffer080
+        read(linebuffer080,*)Con_Cust_Lev(1:Con_Cust_N)
+
+        ! Line 15: custom color (R)
+        read(fid_ctrlfile,'(a80)')linebuffer080
+        read(linebuffer080,*)Con_Cust_RGB(1:Con_Cust_N,1)
+        ! Line 16: custom color (G)
+        read(fid_ctrlfile,'(a80)')linebuffer080
+        read(linebuffer080,*)Con_Cust_RGB(1:Con_Cust_N,2)
+        ! Line 17: custom color (B)
+        read(fid_ctrlfile,'(a80)')linebuffer080
+        read(linebuffer080,*)Con_Cust_RGB(1:Con_Cust_N,3)
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Custom contours levels"
+          do i=1,Con_Cust_N
+            write(outlog(io),*)i,real(Con_Cust_Lev(i),kind=4),Con_Cust_RGB(i,1:3)
+          enddo
+        endif;enddo
+
+      endif
+
+
+      close(fid_ctrlfile)
+
+      return
+
+!******************************************************************************
+      ! Error traps (starting with 9000)
+      ! For this subroutine, the 100's position refers to block # of control file
+
+      !ERROR TRAPS TO STDIN
+9001  do io=1,2;if(VB(io).le.verbosity_error)then
+        write(errlog(io),*)  'error: cannot open input file: ',PP_infile
+        write(errlog(io),*)  'Program stopped'
+      endif;enddo
+      stop 1
+
+      end subroutine Read_PostProc_Control_File
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
