@@ -67,8 +67,8 @@
         write(outlog(io),*)"--------------------------------------------------"
       endif;enddo
 
-!     SET UP CONCENTRATION GRID.
-!     THE CONCENTRATION IS CALCULATED AT CELL CENTERS
+     ! Set up concentration grid.
+     ! The concentration is calculated at cell centers
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),30)
       endif;enddo

@@ -82,8 +82,9 @@
       !    Other ASCII files start at 300
       integer,parameter :: fid_ascii2din  = 300
       integer,parameter :: fid_ascii2dout = 310
-      integer,parameter :: fid_ascii3dout = 320
-      integer,parameter :: fid_asharrive  = 330
+      integer,parameter :: fid_ascii3din  = 320
+      integer,parameter :: fid_ascii3dout = 330
+      integer,parameter :: fid_asharrive  = 340
       !   For BINARY output, start file numbers at 400
       integer,parameter :: fid_bin2dout   = 410
       integer,parameter :: fid_bin3dout   = 420
@@ -304,6 +305,7 @@
                                             ! (1=ASCII, 2=raw binary, 3=NetCDF)
       character (len=130):: Ash3dHome       ! path to Ash3d installation
       character (len=130):: infile          ! input control file name for Ash3d
+      logical            :: HaveInfile =.false. ! True if the input file is provided to Ash3d_PostProc
       character (len=130):: PP_infile       ! input control file name for Ash3d_PostProc
       character (len=50) :: datafileOut
       character (len=80) :: datafileIn

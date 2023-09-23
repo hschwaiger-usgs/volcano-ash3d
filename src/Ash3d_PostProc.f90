@@ -66,10 +66,10 @@
       use io_units
 
       use global_param,  only : &
-         MM_2_IN
+         MM_2_IN,EPS_SMALL
 
       use io_data,       only : &
-         iTimeNext,PP_infile,datafileIn, &
+         iTimeNext,PP_infile,datafileIn,HaveInfile, &
          concenfile,nWriteTimes,WriteTimes,Write_PT_Data,Write_PR_Data,&
          iout3d,isFinal_TS,WriteGSD,WriteDepositTS_KML,WriteDepositTS_ASCII,&
          WriteDepositTime_KML,WriteDepositTime_ASCII,WriteDepositFinal_KML,&
@@ -80,13 +80,15 @@
          nvprofiles
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,IsLatLon
+         nxmax,nymax,nzmax,IsLatLon,dx,dy,dz_const,xLL,yLL, &
+         lon_cc_pd,lat_cc_pd,z_cc_pd
 
       use time_data,     only : &
          time,time_native,BaseYear,useLeap,SimStartHour
 
       use Ash3d_Program_Control, only : &
            Set_OS_Env,                &
+           Read_Control_File,         &
            Read_PostProc_Control_File
 
       use Output_Vars,   only : &
@@ -97,15 +99,22 @@
            help_postproc
 
       use Ash3d_ASCII_IO,  only : &
-           write_2D_ASCII, &
-           write_3D_ASCII, &
-           vprofileopener, &
-           vprofilewriter, &
-           vprofilecloser, &
+         A_nx,A_ny,A_XY,A_xll,A_yll,A_zll,A_dx,A_dy,A_dz, &
+           deallocate_ASCII, &
+           write_2D_ASCII,   &
+           read_2D_ASCII,    &
+           write_3D_ASCII,   &
+           read_3D_ASCII,    &
+           vprofileopener,   &
+           vprofilewriter,   &
+           vprofilecloser,   &
            Write_PointData_Airports_ASCII
 
       use Ash3d_Binary_IO, only : &
-           write_2D_Binary, &
+         B_XY,                &
+           deallocate_Binary, &
+           write_2D_Binary,   &
+           read_2D_Binary,    &
            write_3D_Binary
 
       use Ash3d_Netcdf_IO
@@ -136,7 +145,7 @@
       integer             ::  ndims           ! dimensions of the input data file
       integer             :: ivar,TS_Flag,height_flag
       integer             :: itime = -1      ! initialize time step to the last step
-      integer             :: i,ii
+      integer             :: i,j,k,ii
       integer             :: tmp_int
       integer             :: icase
       real(kind=ip),dimension(:,:),allocatable :: OutVar
@@ -176,6 +185,8 @@
 #endif
 
       INTERFACE
+        subroutine alloc_arrays
+        end subroutine alloc_arrays
         subroutine output_results
         end subroutine output_results
         subroutine write_ShapeFile_Polyline(iprod,itime)
@@ -610,14 +621,93 @@
         stop 1
       endif
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),*)'Finished reading command line'
+        write(outlog(io),*)'Finished reading inputs.'
       endif;enddo
 
-      ! Before we do anything, call routine to read the netcdf file, populate
-      ! the dimensions so we can see what we are dealing with.
-      ! This call reads the 2d output products for the specified time
-      ! If itime=-1 (for the final step), then
-      call NC_Read_Output_Products(itime)
+      ! Before we do anything, we need to set up as much as we can of the grid
+      ! and populate auxilary variable.
+      if(informat.eq.3)then
+        ! call routine to read the netcdf file, populate
+        ! the dimensions so we can see what we are dealing with.
+        ! This call reads the 2d output products for the specified time
+        ! If itime=-1 (for the final step), then
+        call NC_Read_Output_Products(itime)
+      else
+        if(HaveInfile)then
+          ! If we have the Ash3d control file, read it to set grid and populate
+          ! volcano name, etc.
+          call Read_Control_File
+        endif
+        if(informat.eq.1)then
+          if(ndims.eq.2)then
+            call read_2D_ASCII(datafileIn)
+            if(nxmax.ne.A_nx.or.  &
+               nymax.ne.A_ny)then
+              do io=1,2;if(VB(io).le.verbosity_error)then
+                write(errlog(io),*)"WARNING: nx,ny in ASCII file are not the same as in control file."
+                write(errlog(io),*)"         Resetting nx,ny to ASCII values."
+                write(errlog(io),*)"    nx = ",nxmax
+                write(errlog(io),*)"    ny = ",nymax
+                write(errlog(io),*)"  A_nx = ",A_nx
+                write(errlog(io),*)"  A_ny = ",A_ny
+              endif;enddo
+            endif
+            if(abs(xLL-A_xll).gt.EPS_SMALL.or.  &
+               abs(yLL-A_yll).gt.EPS_SMALL)then
+              do io=1,2;if(VB(io).le.verbosity_error)then
+                write(errlog(io),*)"WARNING: xLL,yLL in ASCII file are not the same as in control file."
+                write(errlog(io),*)"         Resetting xLL,yLL to ASCII values."
+                write(errlog(io),*)"    xLL = ",xLL
+                write(errlog(io),*)"    yLL = ",yLL
+                write(errlog(io),*)"  A_xLL = ",A_xLL
+                write(errlog(io),*)"  A_yLL = ",A_yLL
+              endif;enddo
+            endif
+            if(abs(dx-A_dx).gt.EPS_SMALL.or.  &
+               abs(dy-A_dy).gt.EPS_SMALL)then
+              do io=1,2;if(VB(io).le.verbosity_error)then
+                write(errlog(io),*)"WARNING: dx,dy in ASCII file are not the same as in control file."
+                write(errlog(io),*)"         Resetting dx,dy to ASCII values."
+                write(errlog(io),*)"    dx = ",dx
+                write(errlog(io),*)"    dy = ",dy
+                write(errlog(io),*)"  A_dx = ",A_dx
+                write(errlog(io),*)"  A_dy = ",A_dy
+              endif;enddo
+            endif
+          elseif(ndims.eq.3)then
+            call read_3D_ASCII(datafileIn)
+            write(*,*)A_dx,A_dy,A_dz
+            write(*,*)A_xll,A_yll,A_zll
+          endif
+        elseif(informat.eq.2)then
+          if(ndims.eq.2)then
+            ! We didn't error-check nxmax and nymax on input, so do it now
+            if(nxmax.le.0.or.nymax.le.0)then
+              do io=1,2;if(VB(io).le.verbosity_error)then
+                write(errlog(io),*)"ERROR: Either nx or ny is not a positive integer."
+                stop 1
+              endif;enddo
+            endif
+            call read_2D_Binary(nxmax,nymax,datafileIn)
+          !elseif(ndims.eq.3)then
+          !  call read_3D_BINARY(datafileIn)
+          endif
+        endif ! informat = 2 or 3
+
+        ! Allocate grid
+        allocate(lon_cc_pd(-1:nxmax+2))
+        allocate(lat_cc_pd(-1:nymax+2))
+        allocate(z_cc_pd(-1:nzmax+2))
+        do i=-1,nxmax+2
+          lon_cc_pd(i) = xLL + dx*real(i,kind=ip) - dx*0.5_ip
+        enddo
+        do j=-1,nymax+2
+          lat_cc_pd(j) = yLL + dy*real(j,kind=ip) - dy*0.5_ip
+        enddo
+        do k=-1,nzmax+2
+          z_cc_pd(k) = 0.0_ip + dz_const*real(k,kind=ip) - dz_const*0.5_ip
+        enddo
+      endif  ! informat = 1 or not
 
       if(.not.IsLatLon)then
         do io=1,2;if(VB(io).le.verbosity_error)then
@@ -739,6 +829,55 @@
       allocate(OutVar(nxmax,nymax))
       allocate(mask(nxmax,nymax))
       mask = .true.
+      if(informat.eq.1)then
+        OutVar(1:nxmax,1:nymax) = A_XY(1:nxmax,1:nymax)
+      elseif(informat.eq.2)then
+        OutVar(1:nxmax,1:nymax) = B_XY(1:nxmax,1:nymax)
+      endif
+      if(informat.eq.1.or.informat.eq.2)then
+        if(ndims.eq.2)then
+          if(iprod.eq.3.or.iprod.eq.4.or.iprod.eq.5.or.iprod.eq.6)then
+            if(.not.allocated(DepositThickness)) allocate(DepositThickness(nxmax,nymax))
+            DepositThickness(1:nxmax,1:nymax) = OutVar(1:nxmax,1:nymax)
+          endif
+
+          if(iprod.eq. 7)then
+            if(.not.allocated(DepArrivalTime)) allocate(DepArrivalTime(nxmax,nymax))
+            DepArrivalTime(1:nxmax,1:nymax)   = OutVar(1:nxmax,1:nymax)
+          endif
+          if(iprod.eq. 8)then
+            stop 1
+          endif
+          if(iprod.eq. 9)then
+            if(.not.allocated(MaxConcentration)) allocate(MaxConcentration(nxmax,nymax))
+            MaxConcentration(1:nxmax,1:nymax) = OutVar(1:nxmax,1:nymax)
+          endif
+          if(iprod.eq.10)then
+            if(.not.allocated(MaxHeight)) allocate(MaxHeight(nxmax,nymax))
+            MaxHeight(1:nxmax,1:nymax)        = OutVar(1:nxmax,1:nymax)
+          endif
+          if(iprod.eq.11)then
+            if(.not.allocated(MinHeight)) allocate(MinHeight(nxmax,nymax))
+            MinHeight(1:nxmax,1:nymax)        = OutVar(1:nxmax,1:nymax)
+          endif
+          if(iprod.eq.12)then
+            if(.not.allocated(CloudLoad)) allocate(CloudLoad(nxmax,nymax))
+            CloudLoad(1:nxmax,1:nymax)        = OutVar(1:nxmax,1:nymax)
+          endif
+          if(iprod.eq.13)then
+            if(.not.allocated(dbZCol)) allocate(dbZCol(nxmax,nymax))
+            dbZCol(1:nxmax,1:nymax)           = OutVar(1:nxmax,1:nymax)
+          endif
+          if(iprod.eq.14)then
+            if(.not.allocated(CloudArrivalTime)) allocate(CloudArrivalTime(nxmax,nymax))
+            CloudArrivalTime(1:nxmax,1:nymax) = OutVar(1:nxmax,1:nymax)
+          endif
+          !if(iprod.eq.15)then
+          !  if(.not.allocated(Topography)) allocate(Topography(nxmax,nymax))
+          !  Topography(1:nxmax,1:nymax)       = OutVar(1:nxmax,1:nymax)
+          !endif
+        endif
+      endif
 
       ! The main differences in output products will be time-series, vs
       ! time-step output.  Currently, the time-series output will only be for
@@ -1054,6 +1193,8 @@
       if(allocated(mask))   deallocate(mask)
 
       call dealloc_arrays
+      call deallocate_ASCII
+      call deallocate_Binary
 
       ! Close log file
       close(fid_logfile)

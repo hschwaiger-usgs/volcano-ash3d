@@ -10,6 +10,7 @@
 !      subroutine write_2D_ASCII(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
 !      subroutine read_2D_ASCII(filename)
 !      subroutine write_3D_ASCII(cio)
+!      subroutine read_3D_ASCII(filename)
 !      subroutine Write_PointData_Airports_ASCII
 !
 !##############################################################################
@@ -26,28 +27,51 @@
       private
 
         ! Publicly available subroutines/functions
-      public vprofileopener,     &
-             vprofilewriter,     &
-             vprofilecloser,     &
-             write_2D_ASCII,     &
-             read_2D_ASCII,      &
-             write_3D_ASCII,     &
+      public deallocate_ASCII,  &
+             vprofileopener,    &
+             vprofilewriter,    &
+             vprofilecloser,    &
+             write_2D_ASCII,    &
+             read_2D_ASCII,     &
+             write_3D_ASCII,    &
+             read_3D_ASCII,     &
              Write_PointData_Airports_ASCII
 
         ! Publicly available variables
-
         ! These arrays are only used when reading an output file of unknown size
-      real(kind=ip), dimension(:,:),allocatable,public :: R_XY
-      integer      ,public :: R_nx
-      integer      ,public :: R_ny
-      real(kind=ip),public :: R_xll
-      real(kind=ip),public :: R_yll
-      real(kind=ip),public :: R_dx
-      real(kind=ip),public :: R_dy
-      real(kind=ip),public :: R_Fill
+      real(kind=ip), dimension(:,:)  ,allocatable,public :: A_XY
+      real(kind=ip), dimension(:,:,:),allocatable,public :: A_XYZ
+      integer      ,public :: A_nx
+      integer      ,public :: A_ny
+      integer      ,public :: A_nz
+      real(kind=ip),public :: A_xll
+      real(kind=ip),public :: A_yll
+      real(kind=ip),public :: A_zll
+      real(kind=ip),public :: A_dx
+      real(kind=ip),public :: A_dy
+      real(kind=ip),public :: A_dz
+      real(kind=ip),public :: A_Fill
 
       contains
       !------------------------------------------------------------------------
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  deallocate_ASCII
+!
+!  Called from: Ash3d_PostProc.F90
+!  Arguments:
+!    none
+!
+!  This subroutine deallocates ASCII variables
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine deallocate_ASCII
+
+      if(allocated(A_XY)) deallocate(A_XY)
+
+      end subroutine deallocate_ASCII
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
@@ -237,8 +261,6 @@
 
       read(Fill_Value,*)FValue
 
-      !fid = 30
-
       if(isFinal_TS)then
         cio='____final'
       else
@@ -287,10 +309,10 @@
         enddo
       enddo
 
-      !Write out arrays of maximum concentration and maximum height
+      ! Write out arrays of maximum concentration and maximum height
       do j=ny,1,-1
         write(fid_ascii2dout,3006) (OVar(i,j), i=1,nx)
-        write(fid_ascii2dout,*)                                         !make a blank line between rows
+        write(fid_ascii2dout,*)                                         ! make a blank line between rows
       enddo
       
       close(fid_ascii2dout)
@@ -302,7 +324,7 @@
 3003  format('YLLCORNER ',f15.3)
 3004  format('CELLSIZE ',2f15.3)
 3005  format('NODATA_VALUE ',a6)
-3006  format(10f15.3)
+3006  format(10f18.6)
       return
 
 !     Error traps
@@ -317,12 +339,12 @@
 !
 !  read_2D_ASCII
 !
-!  Called from: Ash3d_ASCII_check.f90
+!  Called from: Ash3d_ASCII_check.f90 and Ash3d_PostProc.F90
 !  Arguments:
 !    filename = root name of file (20 characters)
 !
 !  Subroutine that reads in 2-D arrays in ESRI ASCII raster format and
-!  populates R_nx,R_ny,R_XY,R_xll,R_yll,R_dx,R_dy,R_Fill from Output_Vars
+!  populates A_nx,A_ny,A_XY,A_xll,A_yll,A_dx,A_dy,A_Fill
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -330,15 +352,12 @@
 
       character(len=80),intent(in) :: filename
 
-      !integer :: fid
       integer :: i,j
       integer :: iost
 
-      !fid = 40
-
       open(unit=fid_ascii2din,file=trim(adjustl(filename)), status='old',action='read',err=2500)
 
-      read(fid_ascii2din,3000,iostat=iost,err=2600) R_nx        ! read header values
+      read(fid_ascii2din,3000,iostat=iost,err=2600) A_nx        ! read header values
       if(iost.gt.0)then
         ! We might have an empty file
         ! Issue warning and return
@@ -348,15 +367,15 @@
         endif;enddo
         return
       endif
-      read(fid_ascii2din,3001,err=2600) R_ny
-      allocate(R_XY(R_nx,R_ny))
-      read(fid_ascii2din,3002,err=2600) R_xll
-      read(fid_ascii2din,3003,err=2600) R_yll
-      read(fid_ascii2din,3004,err=2600) R_dx,R_dy
-      read(fid_ascii2din,3005,err=2600) R_Fill
+      read(fid_ascii2din,3001,err=2600) A_ny
+      allocate(A_XY(A_nx,A_ny))
+      read(fid_ascii2din,3002,err=2600) A_xll
+      read(fid_ascii2din,3003,err=2600) A_yll
+      read(fid_ascii2din,3004,err=2600) A_dx,A_dy
+      read(fid_ascii2din,3005,err=2600) A_Fill
 
-      do j=R_ny,1,-1
-        read(fid_ascii2din,3006,err=2600) (R_XY(i,j), i=1,R_nx)
+      do j=A_ny,1,-1
+        read(fid_ascii2din,3006,err=2600) (A_XY(i,j), i=1,A_nx)
         read(fid_ascii2din,*)
       enddo
 
@@ -369,7 +388,7 @@
 3003  format(10x,f15.3)
 3004  format(10x,2f15.3)
 3005  format(13x,a6)
-3006  format(10f15.3)
+3006  format(10f18.6)
       return
 
 !     Error traps
@@ -418,13 +437,12 @@
 
       DepOutfileName='3d_tephra_fall_'//cio//'.dat'
       open(unit=fid_ascii3dout,file=DepOutfileName,status='replace',action='write')
-      write(fid_ascii3dout,*)&
-      'VARIABLES = "X","Y","Z","AshConc"'
+      write(fid_ascii3dout,*)'VARIABLES = "X","Y","Z","AshConc"'
       if(first_time)then
-        write(fid_ascii3dout,*) 'ZONE I = ',nxmax,' J = ',nymax,' K = ',nzmax
+        write(fid_ascii3dout,3000) 'ZONE I = ',nxmax,' J = ',nymax,' K = ',nzmax
         first_time = .false.
       else
-        write(fid_ascii3dout,*) 'ZONE '
+        write(fid_ascii3dout,3001) 'ZONE '
       endif
 
       do k=1,nzmax
@@ -432,10 +450,10 @@
           do i=1,nxmax
             rhom = sum(concen_pd(i,j,k,:,ts1)) !kg/km3
             if (IsLatLon) then
-              write(fid_ascii3dout,'(3(4x,f20.3),g20.5)') &
+              write(fid_ascii3dout,'(3(4x,f20.3),g20.8)') &
                 lon_cc_pd(i), lat_cc_pd(j), z_cc_pd(k), rhom
             else
-              write(fid_ascii3dout,'(3(4x,f20.3),g20.5)') &
+              write(fid_ascii3dout,'(3(4x,f20.3),g20.8)') &
                 x_cc_pd(i), y_cc_pd(j), z_cc_pd(k), rhom
             endif
           enddo
@@ -443,7 +461,87 @@
       enddo
       close(fid_ascii3dout)
 
+!     format statements
+3000  format(a9,i5,a5,i5,a5,i5)
+3001  format(a5)
+
       end subroutine write_3D_ASCII
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  read_3D_ASCII
+!
+!  Called from: Ash3d_PostProc.F90
+!  Arguments:
+!    filename = root name of file (20 characters)
+!
+!  Subroutine that reads in 2-D arrays in ESRI ASCII raster format and
+!  populates A_nx,A_ny,A_XY,A_xll,A_yll,A_dx,A_dy,A_Fill
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine read_3D_ASCII(filename)
+
+      character(len=80),intent(in) :: filename
+
+      integer :: i,j,k
+      integer :: iost
+      character(len=130):: linebuffer130
+      real(kind=ip) :: value1,value2,value3
+
+      open(unit=fid_ascii2din,file=trim(adjustl(filename)), status='old',action='read',err=2500)
+
+      ! Read the header lines
+      read(fid_ascii3din,'(a130)')linebuffer130
+      read(fid_ascii3din,3000,iostat=iost,err=2600) A_nx,A_ny,A_nz
+      if(iost.gt.0)then
+        ! We might have an empty file
+        ! Issue warning and return
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*) 'Error reading file ',trim(adjustl(filename))
+          write(errlog(io),*) 'Check for zero-length file.'
+        endif;enddo
+        return
+      endif
+
+      if(.not.allocated(A_XYZ)) allocate(A_XYZ(1:A_nx,1:A_ny,1:A_nz))
+      do k=1,A_nz
+        do j=1,A_ny
+          do i=1,A_nx
+            read(fid_ascii3dout,'(3(4x,f20.3),g20.8)') value1,value2,value3,A_XYZ(i,j,k)
+            if(i.eq.1.and.j.eq.1)then
+              A_xll = value1
+              A_yll = value2
+              A_zll = value3
+            endif
+            if(i.eq.2) A_dx = value1 - A_xll
+          enddo
+          if(j.eq.2) A_dy = value2 - A_yll
+        enddo
+        if(k.eq.2) A_dz = value3 - A_zll
+      enddo
+      close(fid_ascii3din)
+
+!     format statements
+3000  format(9x,i5,5x,i5,5x,i5)
+
+      return
+
+!     Error traps
+2500  do io=1,2;if(VB(io).le.verbosity_error)then
+        write(errlog(io),*) 'Error opening ASCII file. Program stopped'
+      endif;enddo
+      stop 1
+
+2600  do io=1,2;if(VB(io).le.verbosity_error)then
+        write(errlog(io),*) 'Error reading from ASCII file.'
+      endif;enddo
+      stop 1
+
+
+
+
+      end subroutine read_3D_ASCII
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !

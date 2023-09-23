@@ -4189,10 +4189,10 @@
       subroutine Read_PostProc_Control_File(informat,iprod1,iprod2,ndims,outformat,iplotpref,itime)
 
       use io_data,       only : &
-         PP_infile,concenfile,datafileIn,infile
+         PP_infile,concenfile,datafileIn,infile,HaveInfile
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,dx,dy,dz_const,xLL,yLL
+         nxmax,nymax,nzmax,dx,dy,dz_const,xLL,yLL,IsLatLon
 
       use Output_Vars,   only : &
          ContourFilled,Con_Cust,Con_Cust_N,Con_Cust_RGB,Con_Cust_Lev
@@ -4210,6 +4210,7 @@
       integer            :: ivalue
       real(kind=ip)      :: rvalue
       integer            :: i
+      integer            :: ilatlonflag
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"--------------------------------------------------"
@@ -4257,6 +4258,12 @@
       !  for the output products.
       read(fid_ctrlfile,'(a80)')linebuffer080
       read(linebuffer080,*) infile
+      infile = adjustl(trim(infile))
+      if(infile(1:4).eq.'none')then
+        HaveInfile = .false.
+      else
+        HaveInfile = .true.
+      endif
 
       ! Line 4:
       !  The code for the variable to read and optionally an output code.
@@ -4296,7 +4303,7 @@
       ! Line 5:
       !  number of dimensions of the input data file (2 or 3)
       read(fid_ctrlfile,'(a80)')linebuffer080
-      read(linebuffer080,*) ndims
+      read(linebuffer080,*) ndims, ilatlonflag
       ! Error-checking ndims
       if (ndims.ne.2.and.ndims.ne.3)then
         do io=1,2;if(VB(io).le.verbosity_error)then
@@ -4307,6 +4314,14 @@
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"Number of dimensions of data = ",ndims
         endif;enddo
+      endif
+      if (ilatlonflag.eq.0) then
+        ! expecting input variables to be in the same projection as
+        ! specified by iprojflag and parameters
+        IsLatLon          = .false.
+      else
+        ! expecting input variables to be in lat/lon
+       IsLatLon          = .true.
       endif
 
       ! Line 6:

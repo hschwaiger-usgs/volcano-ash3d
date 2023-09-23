@@ -4,8 +4,10 @@
 !
 !  This module manages all output to kml files
 !
-!      subroutine write_3D_Binary
 !      subroutine write_2D_Binary
+!      subroutine read_2D_Binary(filename)
+!      subroutine write_3D_Binary
+!      subroutine read_3D_Binary(filename)
 !
 !##############################################################################
 
@@ -21,57 +23,36 @@
       private
 
         ! Publicly available subroutines/functions
-      public write_3D_Binary,     &
-             write_2D_Binary
+      public deallocate_Binary,  &
+             write_2D_Binary,    &
+             read_2D_Binary,     &
+             write_3D_Binary !    &
+             !read_3D_Binary
 
         ! Publicly available variables
+        ! These arrays are only used when reading an output file of unknown size
+      real(kind=ip), dimension(:,:),allocatable,public :: B_XY
 
       contains
       !------------------------------------------------------------------------
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!  write_3D_Binary
+!  deallocate_Binary
 !
-!  Called from: output_results and Ash3d_PostProc.f90
+!  Called from: Ash3d_PostProc.F90
 !  Arguments:
-!    cio        = time string to be inserted into filename; either '________final'
-!                 or yyyymmddhh.h
-!    nx         = x length of output array OutVar
-!    ny         = y length of output array OutVar
-!    nz         = z length of output array OutVar
-!    ashcon_tot = 3d array containing the sum of all tephra concentration bins (1:n_gs_max)
+!    none
 !
-!  This subroutine writes out 3-D arrays in binary format
+!  This subroutine deallocates Binary variables
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine write_3D_Binary(cio,nx,ny,nz,ashcon_tot)
+      subroutine deallocate_Binary
 
-      character(len=13) ,intent(in) :: cio
-      integer           ,intent(in) :: nx
-      integer           ,intent(in) :: ny
-      integer           ,intent(in) :: nz
-      real(kind=op)     ,intent(in) :: ashcon_tot(nx,ny,nz)
+      if(allocated(B_XY)) deallocate(B_XY)
 
-      integer :: i,j,k
-
-      ! Write out data in raw binary form
-
-      ! 3-D total tephra concentration
-      if(op.eq.4)then
-        open(unit=fid_bin3dout,file='3d_tephra_fall_'//cio//'.raw', &
-          status='replace', action='write', &
-          access='direct',recl=4*nx*ny*nz)
-      else
-        open(unit=fid_bin3dout,file='3d_tephra_fall_'//cio//'.raw', &
-          status='replace', action='write', &
-          access='direct',recl=8*nx*ny*nz)
-      endif
-      write(fid_bin3dout,rec=1)(((ashcon_tot(i,j,k),i=1,nx),j=1,ny),k=1,nz)
-      close(fid_bin3dout)
-
-      end subroutine write_3D_Binary
+      end subroutine deallocate_Binary
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
@@ -94,8 +75,6 @@
 
       use io_data,       only : &
          isFinal_TS,iout3d,WriteTimes
-
-      implicit none
 
       integer          ,intent(in) :: nx
       integer          ,intent(in) :: ny
@@ -158,6 +137,91 @@
       close(fid_bin2dout)
 
       end subroutine write_2D_Binary
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  read_2D_Binary
+!
+!  Called from: Ash3d_PostProc.F90
+!  Arguments:
+!    nx       = x length of output array OutVar
+!    ny       = y length of output array OutVar
+!    OutVar   = 2-d array to be written to binary file
+!    filename = name of file (80 characters)
+!
+!  Subroutine that writes out 2-D arrays in binary format
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine read_2D_Binary(nx,ny,filename)
+
+      integer          ,intent(in)  :: nx
+      integer          ,intent(in)  :: ny
+      character(len=80),intent(in)  :: filename
+
+      real(kind=op) :: OVar(nx,ny)
+      integer       :: i,j
+
+      if(op.eq.4)then
+        open(unit=fid_bin2dout,file=trim(adjustl(filename)), &
+          status='old', action='read', &
+          access='direct',recl=4*nx*ny)
+      else
+       open(unit=fid_bin2dout,file=trim(adjustl(filename)), &
+          status='old', action='read', &
+          access='direct',recl=8*nx*ny)
+      endif
+      read(fid_bin2dout,rec=1)((OVar(i,j),i=1,nx),j=1,ny)
+      close(fid_bin2dout)
+
+      if(.not.allocated(B_XY)) allocate(B_XY(1:nx,1:ny))
+      B_XY(1:nx,1:ny) = real(OVar(1:nx,1:ny),kind=ip)
+
+      end subroutine read_2D_Binary
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  write_3D_Binary
+!
+!  Called from: output_results and Ash3d_PostProc.f90
+!  Arguments:
+!    cio        = time string to be inserted into filename; either '________final'
+!                 or yyyymmddhh.h
+!    nx         = x length of output array OutVar
+!    ny         = y length of output array OutVar
+!    nz         = z length of output array OutVar
+!    ashcon_tot = 3d array containing the sum of all tephra concentration bins (1:n_gs_max)
+!
+!  This subroutine writes out 3-D arrays in binary format
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine write_3D_Binary(cio,nx,ny,nz,ashcon_tot)
+
+      character(len=13) ,intent(in) :: cio
+      integer           ,intent(in) :: nx
+      integer           ,intent(in) :: ny
+      integer           ,intent(in) :: nz
+      real(kind=op)     ,intent(in) :: ashcon_tot(nx,ny,nz)
+
+      integer :: i,j,k
+
+      ! Write out data in raw binary form
+
+      ! 3-D total tephra concentration
+      if(op.eq.4)then
+        open(unit=fid_bin3dout,file='3d_tephra_fall_'//cio//'.raw', &
+          status='replace', action='write', &
+          access='direct',recl=4*nx*ny*nz)
+      else
+        open(unit=fid_bin3dout,file='3d_tephra_fall_'//cio//'.raw', &
+          status='replace', action='write', &
+          access='direct',recl=8*nx*ny*nz)
+      endif
+      write(fid_bin3dout,rec=1)(((ashcon_tot(i,j,k),i=1,nx),j=1,ny),k=1,nz)
+      close(fid_bin3dout)
+
+      end subroutine write_3D_Binary
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

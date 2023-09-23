@@ -10,7 +10,7 @@
         EPS_TINY
 
       use Ash3d_ASCII_IO,  only : &
-        R_XY,R_nx,R_ny,R_xll,R_yll,R_dx,R_dy, &
+        A_XY,A_nx,A_ny,A_xll,A_yll,A_dx,A_dy, &
           read_2D_ASCII
 
       implicit none
@@ -135,29 +135,29 @@
       !  write(outlog(io),*)"Reading ASCII file 1"
       !endif;enddo
       call read_2D_ASCII(file1)
-      nx_1  = R_nx
-      ny_1  = R_ny
-      xll_1 = R_xll
-      yll_1 = R_yll
-      dx_1  = R_dx
-      dy_1  = R_dy
+      nx_1  = A_nx
+      ny_1  = A_ny
+      xll_1 = A_xll
+      yll_1 = A_yll
+      dx_1  = A_dx
+      dy_1  = A_dy
       allocate(XY_1(nx_1,ny_1))
-      XY_1  = R_XY
-      deallocate(R_XY)
+      XY_1  = A_XY
+      deallocate(A_XY)
 
       !do io=1,nio;if(VB(io).le.verbosity_error)then
       !  write(outlog(io),*)"Reading ASCII file 2"
       !endif;enddo
       call read_2D_ASCII(file2)
-      nx_2  = R_nx
-      ny_2  = R_ny
-      xll_2 = R_xll
-      yll_2 = R_yll
-      dx_2  = R_dx
-      dy_2  = R_dy
+      nx_2  = A_nx
+      ny_2  = A_ny
+      xll_2 = A_xll
+      yll_2 = A_yll
+      dx_2  = A_dx
+      dy_2  = A_dy
       allocate(XY_2(nx_2,ny_2))
-      XY_2  = R_XY
-      deallocate(R_XY)
+      XY_2  = A_XY
+      deallocate(A_XY)
 
       if(nx_1.ne.nx_2)then
         do io=1,nio;if(VB(io).le.verbosity_error)then

@@ -462,7 +462,7 @@
 
 1024  format('  Total Duration (hrs) = ',f6.3,/, &
              '  Total volume (km3 DRE) = ',f8.4,/,&
-             '  Total mass (Tg) = ',f8.4)
+             '  Total mass (Tg) = ',f12.4)
 
       end subroutine EruptivePulse_MassFluxRate
 
