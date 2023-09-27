@@ -51,7 +51,9 @@
 
       subroutine help_general
 
+#ifdef WINDOWS
       character(len=1)  :: key
+#endif
 
       io = 1
 
@@ -215,7 +217,9 @@
 
       subroutine help_run
 
+#ifdef WINDOWS
       character(len=1)  :: key
+#endif
 
       io = 1
 
@@ -291,8 +295,9 @@
 
       character(len=3)  :: answer
       integer           :: blockID
+#ifdef WINDOWS
       character(len=1)  :: key
-
+#endif
       io = 1
 
       write(outlog(io),1)'                                                                                '
@@ -738,7 +743,9 @@
 
       subroutine help_postproc
 
+#ifdef WINDOWS
       character(len=1)  :: key
+#endif
 
       io = 1
 

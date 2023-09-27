@@ -4192,7 +4192,7 @@
          PP_infile,concenfile,datafileIn,infile,HaveInfile
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,dx,dy,dz_const,xLL,yLL,IsLatLon
+         nxmax,nymax,nzmax,dx,dy,dz_const,xLL,yLL,IsLatLon,lonLL,latLL,de,dn
 
       use Output_Vars,   only : &
          ContourFilled,Con_Cust,Con_Cust_N,Con_Cust_RGB,Con_Cust_Lev
@@ -4399,6 +4399,11 @@
       !  This is overwritten when reading netcdf or ASCII data, but is needed for binary
       read(fid_ctrlfile,'(a80)')linebuffer080
       read(linebuffer080,*) xLL,yLL
+      ! Since currently, this only works for Lon/Lat grids, copy these values
+      lonLL = xLL
+      latLL = yLL
+      de    = dx
+      dn    = dy
       ! Error-checking cell coordinate
       !if ()then
       !  do io=1,2;if(VB(io).le.verbosity_error)then

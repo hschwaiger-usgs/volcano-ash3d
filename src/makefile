@@ -325,6 +325,7 @@ PPOBJS = Ash3d_VariableModules.o        \
          Input_Data.o                   \
          Diffusion.o                    \
          Alloc_Arrays.o                 \
+         Calc_Mesh.o                    \
          VotW.o                         \
          Help.o                         \
          Output_Vars.o                  \

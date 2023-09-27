@@ -747,7 +747,8 @@
 !    none
 !
 !  This subroutine calculates the total concentration of ash at every point in
-!  the domain by summing the concentrations of each tephra bin.
+!  the domain by summing the concentrations of each tephra bin.  This is only
+!  used in the writing out of 3d ASCII and BINARY values.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

@@ -536,21 +536,21 @@
         !   Input_Data.f90:Read_Control_File
         !    z_vec_init
       if (IsLatLon) then
-        allocate(lon_cc_pd(-1:nxmax+2));                   lon_cc_pd   = 0.0_ip
-        allocate(lat_cc_pd(-1:nymax+2));                   lat_cc_pd   = 0.0_ip
+        if(.not.allocated(lon_cc_pd))allocate(lon_cc_pd(-1:nxmax+2));                   lon_cc_pd   = 0.0_ip
+        if(.not.allocated(lat_cc_pd))allocate(lat_cc_pd(-1:nymax+2));                   lat_cc_pd   = 0.0_ip
       else
-        allocate(x_cc_pd(-1:nxmax+2));                         x_cc_pd = 0.0_ip
-        allocate(y_cc_pd(-1:nymax+2));                         y_cc_pd = 0.0_ip
+        if(.not.allocated(x_cc_pd))allocate(x_cc_pd(-1:nxmax+2));                         x_cc_pd = 0.0_ip
+        if(.not.allocated(y_cc_pd))allocate(y_cc_pd(-1:nymax+2));                         y_cc_pd = 0.0_ip
       endif
 
-      allocate( kappa_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  kappa_pd = 1.0_ip
-      allocate(dz_vec_pd(-1:nzmax+2));                       dz_vec_pd = 0.0_ip
-      allocate(  z_cc_pd(-1:nzmax+2));                         z_cc_pd = 0.0_ip
-      allocate(  z_lb_pd(-1:nzmax+2));                         z_lb_pd = 0.0_ip
+      if(.not.allocated(kappa_pd) )allocate( kappa_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  kappa_pd = 1.0_ip
+      if(.not.allocated(dz_vec_pd))allocate(dz_vec_pd(-1:nzmax+2));                       dz_vec_pd = 0.0_ip
+      if(.not.allocated(z_cc_pd)  )allocate(  z_cc_pd(-1:nzmax+2));                         z_cc_pd = 0.0_ip
+      if(.not.allocated(z_lb_pd)  )allocate(  z_lb_pd(-1:nzmax+2));                         z_lb_pd = 0.0_ip
 
-      allocate(sigma_nx_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_nx_pd = 1.0_ip
-      allocate(sigma_ny_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_ny_pd = 1.0_ip
-      allocate(sigma_nz_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_ny_pd = 1.0_ip
+      if(.not.allocated(sigma_nx_pd))allocate(sigma_nx_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_nx_pd = 1.0_ip
+      if(.not.allocated(sigma_ny_pd))allocate(sigma_ny_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_ny_pd = 1.0_ip
+      if(.not.allocated(sigma_nz_pd))allocate(sigma_nz_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_ny_pd = 1.0_ip
 
       end subroutine Allocate_mesh
       !------------------------------------------------------------------------
@@ -670,38 +670,36 @@
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,ts0,ts1
 
-      allocate(vx_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));         vx_pd = 0.0_ip 
-      allocate(vy_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));         vy_pd = 0.0_ip
-      allocate(vz_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));         vz_pd = 0.0_ip
-      allocate(vf_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2,1:nsmax)); vf_pd = 0.0_ip
+      if(.not.allocated(vx_pd))allocate(vx_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));         vx_pd = 0.0_ip 
+      if(.not.allocated(vy_pd))allocate(vy_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));         vy_pd = 0.0_ip
+      if(.not.allocated(vz_pd))allocate(vz_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));         vz_pd = 0.0_ip
+      if(.not.allocated(vf_pd))allocate(vf_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2,1:nsmax)); vf_pd = 0.0_ip
 
-      allocate(concen_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2,1:nsmax,ts0:ts1)); concen_pd = 0.0_ip
-      allocate(outflow_xz1_pd(-1:nxmax+2,-1:nzmax+2,1:nsmax)); outflow_xz1_pd = 0.0_ip
-      allocate(outflow_xz2_pd(-1:nxmax+2,-1:nzmax+2,1:nsmax)); outflow_xz2_pd = 0.0_ip
-      allocate(outflow_yz1_pd(-1:nymax+2,-1:nzmax+2,1:nsmax)); outflow_yz1_pd = 0.0_ip
-      allocate(outflow_yz2_pd(-1:nymax+2,-1:nzmax+2,1:nsmax)); outflow_yz2_pd = 0.0_ip
-      allocate(outflow_xy1_pd(-1:nxmax+2,-1:nymax+2,1:nsmax)); outflow_xy1_pd = 0.0_ip
-      allocate(outflow_xy2_pd(-1:nxmax+2,-1:nymax+2,1:nsmax)); outflow_xy2_pd = 0.0_ip
+      if(.not.allocated(concen_pd))allocate(concen_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2,1:nsmax,ts0:ts1)); concen_pd = 0.0_ip
+      if(.not.allocated(outflow_xz1_pd))allocate(outflow_xz1_pd(-1:nxmax+2,-1:nzmax+2,1:nsmax)); outflow_xz1_pd = 0.0_ip
+      if(.not.allocated(outflow_xz2_pd))allocate(outflow_xz2_pd(-1:nxmax+2,-1:nzmax+2,1:nsmax)); outflow_xz2_pd = 0.0_ip
+      if(.not.allocated(outflow_yz1_pd))allocate(outflow_yz1_pd(-1:nymax+2,-1:nzmax+2,1:nsmax)); outflow_yz1_pd = 0.0_ip
+      if(.not.allocated(outflow_yz2_pd))allocate(outflow_yz2_pd(-1:nymax+2,-1:nzmax+2,1:nsmax)); outflow_yz2_pd = 0.0_ip
+      if(.not.allocated(outflow_xy1_pd))allocate(outflow_xy1_pd(-1:nxmax+2,-1:nymax+2,1:nsmax)); outflow_xy1_pd = 0.0_ip
+      if(.not.allocated(outflow_xy2_pd))allocate(outflow_xy2_pd(-1:nxmax+2,-1:nymax+2,1:nsmax)); outflow_xy2_pd = 0.0_ip
 
       ! DepositGranularity should probably be a part of the Tephra
       ! module with trailing dimension of n_gs_max
-      allocate(DepositGranularity(nxmax,nymax,nsmax)); DepositGranularity = 0.0_ip
+      if(.not.allocated(DepositGranularity))allocate(DepositGranularity(nxmax,nymax,nsmax)); DepositGranularity = 0.0_ip
 
-      if (.not. allocated(mass_aloft)) then
-        allocate(mass_aloft(1:nsmax)); mass_aloft = 0.0_ip
-        allocate(SpeciesID(1:nsmax));  SpeciesID = 1  ! Initialize everything to ash
-                                                      ! If nsmax>n_gs_max, then the
-                                                      ! extra bins will need to be
-                                                      ! flagged in the custom source modules
+      if(.not.allocated(mass_aloft))allocate(mass_aloft(1:nsmax)); mass_aloft = 0.0_ip
+      if(.not.allocated(SpeciesID))allocate(SpeciesID(1:nsmax));  SpeciesID = 1  ! Initialize everything to ash
+                                                    ! If nsmax>n_gs_max, then the
+                                                    ! extra bins will need to be
+                                                    ! flagged in the custom source modules
 
-        allocate(SpeciesSubID(1:nsmax));  SpeciesSubID = 0
-        allocate(     v_s(1:nsmax)); v_s      = 0.0_ip
-        allocate(  gsdiam(1:nsmax)); gsdiam   = 0.0_ip
-        allocate(bin_mass(1:nsmax)); bin_mass = 0.0_ip
-        allocate(   rho_m(1:nsmax)); rho_m    = 0.0_ip
+      if(.not.allocated(SpeciesSubID))allocate(SpeciesSubID(1:nsmax));  SpeciesSubID = 0
+      if(.not.allocated(v_s         ))allocate(     v_s(1:nsmax)); v_s      = 0.0_ip
+      if(.not.allocated(gsdiam      ))allocate(  gsdiam(1:nsmax)); gsdiam   = 0.0_ip
+      if(.not.allocated(bin_mass    ))allocate(bin_mass(1:nsmax)); bin_mass = 0.0_ip
+      if(.not.allocated(rho_m       ))allocate(   rho_m(1:nsmax)); rho_m    = 0.0_ip
 
-        allocate(IsAloft(1:nsmax));   IsAloft = .true.
-      endif
+      if(.not.allocated(IsAloft     ))allocate(IsAloft(1:nsmax));   IsAloft = .true.
 
       end subroutine Allocate_solution
       !------------------------------------------------------------------------
@@ -874,23 +872,31 @@
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax
 
-      allocate(vx_meso_last_step_sp(nxmax,nymax,nzmax)); vx_meso_last_step_sp = 0.0_sp
-      allocate(vx_meso_next_step_sp(nxmax,nymax,nzmax)); vx_meso_next_step_sp = 0.0_sp
-      allocate(vy_meso_last_step_sp(nxmax,nymax,nzmax)); vy_meso_last_step_sp = 0.0_sp
-      allocate(vy_meso_next_step_sp(nxmax,nymax,nzmax)); vy_meso_next_step_sp = 0.0_sp
-      allocate(vz_meso_last_step_sp(nxmax,nymax,nzmax)); vz_meso_last_step_sp = 0.0_sp
-      allocate(vz_meso_next_step_sp(nxmax,nymax,nzmax)); vz_meso_next_step_sp = 0.0_sp
+      if(.not.allocated(vx_meso_last_step_sp))allocate(vx_meso_last_step_sp(nxmax,nymax,nzmax))
+      vx_meso_last_step_sp = 0.0_sp
+      if(.not.allocated(vx_meso_next_step_sp))allocate(vx_meso_next_step_sp(nxmax,nymax,nzmax))
+      vx_meso_next_step_sp = 0.0_sp
+      if(.not.allocated(vy_meso_last_step_sp))allocate(vy_meso_last_step_sp(nxmax,nymax,nzmax))
+      vy_meso_last_step_sp = 0.0_sp
+      if(.not.allocated(vy_meso_next_step_sp))allocate(vy_meso_next_step_sp(nxmax,nymax,nzmax))
+      vy_meso_next_step_sp = 0.0_sp
+      if(.not.allocated(vz_meso_last_step_sp))allocate(vz_meso_last_step_sp(nxmax,nymax,nzmax))
+      vz_meso_last_step_sp = 0.0_sp
+      if(.not.allocated(vz_meso_next_step_sp))allocate(vz_meso_next_step_sp(nxmax,nymax,nzmax))
+      vz_meso_next_step_sp = 0.0_sp
 
-      allocate(vx_meso_1_sp(nxmax,nymax,nzmax)); vx_meso_1_sp = 0.0_sp
-      allocate(vx_meso_2_sp(nxmax,nymax,nzmax)); vx_meso_2_sp = 0.0_sp
-      allocate(vy_meso_1_sp(nxmax,nymax,nzmax)); vy_meso_1_sp = 0.0_sp
-      allocate(vy_meso_2_sp(nxmax,nymax,nzmax)); vy_meso_2_sp = 0.0_sp
-      allocate(vz_meso_1_sp(nxmax,nymax,nzmax)); vz_meso_1_sp = 0.0_sp
-      allocate(vz_meso_2_sp(nxmax,nymax,nzmax)); vz_meso_2_sp = 0.0_sp
+      if(.not.allocated(vx_meso_1_sp))allocate(vx_meso_1_sp(nxmax,nymax,nzmax)); vx_meso_1_sp = 0.0_sp
+      if(.not.allocated(vx_meso_2_sp))allocate(vx_meso_2_sp(nxmax,nymax,nzmax)); vx_meso_2_sp = 0.0_sp
+      if(.not.allocated(vy_meso_1_sp))allocate(vy_meso_1_sp(nxmax,nymax,nzmax)); vy_meso_1_sp = 0.0_sp
+      if(.not.allocated(vy_meso_2_sp))allocate(vy_meso_2_sp(nxmax,nymax,nzmax)); vy_meso_2_sp = 0.0_sp
+      if(.not.allocated(vz_meso_1_sp))allocate(vz_meso_1_sp(nxmax,nymax,nzmax)); vz_meso_1_sp = 0.0_sp
+      if(.not.allocated(vz_meso_2_sp))allocate(vz_meso_2_sp(nxmax,nymax,nzmax)); vz_meso_2_sp = 0.0_sp
 
       ! Space for the fall velocity of each species at met steps
-      allocate(vf_meso_last_step_sp(nxmax,nymax,nzmax,nsmax)); vf_meso_last_step_sp = 0.0_sp
-      allocate(vf_meso_next_step_sp(nxmax,nymax,nzmax,nsmax)); vf_meso_next_step_sp = 0.0_sp
+      if(.not.allocated(vf_meso_last_step_sp))allocate(vf_meso_last_step_sp(nxmax,nymax,nzmax,nsmax))
+      vf_meso_last_step_sp = 0.0_sp
+      if(.not.allocated(vf_meso_next_step_sp))allocate(vf_meso_next_step_sp(nxmax,nymax,nzmax,nsmax))
+      vf_meso_next_step_sp = 0.0_sp
 
       end subroutine Allocate_wind_grid
       !------------------------------------------------------------------------

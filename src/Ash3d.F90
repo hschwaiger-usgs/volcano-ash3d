@@ -693,8 +693,8 @@
                 5x,'Source',6x,'Deposit',7x,'Aloft',5x,'Outflow',&
                 7x,'Total',10x,'km2')
 
-5003  format(/,5x,'Set-up time              = ',f15.4,' seconds',&
-               5x,'Execution time           = ',f15.4,' seconds',&
+5003  format(/,5x,'Set-up time              = ',f15.4,' seconds',/&
+               5x,'Execution time           = ',f15.4,' seconds',/&
              /,5x,'Simulation time          = ',f15.4,' seconds')       
 5004  format(  5x,'Execution time/CPU time  = ',f15.4)       
 5005  format(  5x,'Ending deposit volume    = ',f15.4,' km3 DRE')       

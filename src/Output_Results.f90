@@ -228,7 +228,11 @@
       !  WRITE OUT 3D CONCENTRATION FILES      
       if (Write3dFiles) then
         if(ioutputFormat.eq.1)then
-          call write_3D_ASCII(cio)
+          allocate(ashcon_tot(nxmax,nymax,nzmax))
+          ashcon_tot = 0.0_op
+          call AshTotalCalculator
+          call write_3D_ASCII(cio,nxmax,nymax,nzmax,ashcon_tot)
+          deallocate(ashcon_tot)
         elseif(ioutputFormat.eq.2)then
           allocate(ashcon_tot(nxmax,nymax,nzmax))
           ashcon_tot = 0.0_op

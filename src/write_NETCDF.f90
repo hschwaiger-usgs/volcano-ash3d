@@ -2428,12 +2428,13 @@
           write(outlog(io),*)"     Fill depothick"
         endif;enddo
         dum2d_out(:,:) = DepositThickness_FillValue
-        do i=1,nxmax
-          do j=1,nymax
-            if(Mask_Deposit(i,j))&
-                dum2d_out(i,j) = real(DepositThickness(i,j),kind=op)
-          enddo
-        enddo
+        dum2d_out = merge(real(DepositThickness,kind=op),dum2d_out,Mask_Deposit)
+        !do i=1,nxmax
+        !  do j=1,nymax
+        !    if(Mask_Deposit(i,j))&
+        !        dum2d_out(i,j) = real(DepositThickness(i,j),kind=op)
+        !  enddo
+        !enddo
         nSTAT=nf90_put_var(ncid,depothick_var_id,dum2d_out,(/1,1,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depothick")
 
@@ -2442,14 +2443,16 @@
           write(outlog(io),*)"     Fill ashconMax"
         endif;enddo
         dum2d_out(:,:) = real(MaxConcentration_FillValue,kind=op)
-        do i=1,nxmax
-          do j=1,nymax
-            if(Mask_Cloud(i,j))then
-              dumscal_out=real(MaxConcentration(i,j),kind=op)
-              dum2d_out(i,j) = dumscal_out
-            endif
-          enddo
-        enddo
+        dum2d_out = merge(real(MaxConcentration,kind=op),dum2d_out,Mask_Cloud)
+        !dum2d_out(:,:) = real(MaxConcentration_FillValue,kind=op)
+        !do i=1,nxmax
+        !  do j=1,nymax
+        !    if(Mask_Cloud(i,j))then
+        !      dumscal_out=real(MaxConcentration(i,j),kind=op)
+        !      dum2d_out(i,j) = dumscal_out
+        !    endif
+        !  enddo
+        !enddo
         nSTAT=nf90_put_var(ncid,ashconMax_var_id,dum2d_out,(/1,1,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var ashconMax")
 
@@ -2458,15 +2461,16 @@
           write(outlog(io),*)"     Fill ash_height"
         endif;enddo
         dum2d_out(:,:) = real(MaxHeight_FillValue,kind=op)
-        do i=1,nxmax
-          do j=1,nymax
-            !if(MaxHeight(i,j).gt.0.0_ip)then
-            if(Mask_Cloud(i,j))then
-              dumscal_out=real(MaxHeight(i,j),kind=op)
-              dum2d_out(i,j) = dumscal_out
-            endif
-          enddo
-        enddo
+        dum2d_out = merge(real(MaxHeight,kind=op),dum2d_out,Mask_Cloud)
+        !do i=1,nxmax
+        !  do j=1,nymax
+        !    !if(MaxHeight(i,j).gt.0.0_ip)then
+        !    if(Mask_Cloud(i,j))then
+        !      dumscal_out=real(MaxHeight(i,j),kind=op)
+        !      dum2d_out(i,j) = dumscal_out
+        !    endif
+        !  enddo
+        !enddo
         nSTAT=nf90_put_var(ncid,ashheight_var_id,dum2d_out,(/1,1,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var ashheight")
 
@@ -2475,14 +2479,15 @@
           write(outlog(io),*)"     Fill ashload"
         endif;enddo
         dum2d_out(:,:) = real(CloudLoad_FillValue,kind=op)
-        do i=1,nxmax
-          do j=1,nymax
-            if(Mask_Cloud(i,j))then
-              dumscal_out=real(CloudLoad(i,j),kind=op)
-              dum2d_out(i,j) = dumscal_out
-            endif
-          enddo
-        enddo
+        dum2d_out = merge(real(CloudLoad,kind=op),dum2d_out,Mask_Cloud)
+        !do i=1,nxmax
+        !  do j=1,nymax
+        !    if(Mask_Cloud(i,j))then
+        !      dumscal_out=real(CloudLoad(i,j),kind=op)
+        !      dum2d_out(i,j) = dumscal_out
+        !    endif
+        !  enddo
+        !enddo
         nSTAT=nf90_put_var(ncid,ashload_var_id,dum2d_out,(/1,1,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var ashload")
 
@@ -2490,15 +2495,16 @@
         do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill cloud mask"
         endif;enddo
-        do i=1,nxmax
-          do j=1,nymax
-            if(Mask_Cloud(i,j))then
-              dum2dint_out(i,j) = 1
-            else
-              dum2dint_out(i,j) = 0
-            endif
-          enddo
-        enddo
+        dum2dint_out = merge(1,0,Mask_Cloud)
+        !do i=1,nxmax
+        !  do j=1,nymax
+        !    if(Mask_Cloud(i,j))then
+        !      dum2dint_out(i,j) = 1
+        !    else
+        !      dum2dint_out(i,j) = 0
+        !    endif
+        !  enddo
+        !enddo
         nSTAT=nf90_put_var(ncid,cloudmask_var_id,dum2dint_out,(/1,1,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var cloud_mask")
 
@@ -2525,14 +2531,15 @@
           write(outlog(io),*)"     Fill ash height min"
         endif;enddo
         dum2d_out(:,:) = real(MinHeight_FillValue,kind=op)
-        do i=1,nxmax
-          do j=1,nymax
-            if(Mask_Cloud(i,j))then
-              dumscal_out=real(MinHeight(i,j),kind=op)
-              dum2d_out(i,j) = dumscal_out
-            endif
-          enddo
-        enddo
+        dum2d_out = merge(real(MinHeight,kind=op),dum2d_out,Mask_Cloud)
+        !do i=1,nxmax
+        !  do j=1,nymax
+        !    if(Mask_Cloud(i,j))then
+        !      dumscal_out=real(MinHeight(i,j),kind=op)
+        !      dum2d_out(i,j) = dumscal_out
+        !    endif
+        !  enddo
+        !enddo
         nSTAT=nf90_put_var(ncid,ashcloudBot_var_id,dum2d_out,(/1,1,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var cloud-bottom")
 
@@ -2544,12 +2551,13 @@
           write(outlog(io),*)"     Fill depothickFin"
         endif;enddo
         dum2d_out(:,:) = DepositThickness_FillValue
-        do i=1,nxmax
-          do j=1,nymax
-            if(Mask_Deposit(i,j))&
-                dum2d_out(i,j) = real(DepositThickness(i,j),kind=op)
-          enddo
-        enddo
+        dum2d_out = merge(real(DepositThickness,kind=op),dum2d_out,Mask_Deposit)
+        !do i=1,nxmax
+        !  do j=1,nymax
+        !    if(Mask_Deposit(i,j))&
+        !        dum2d_out(i,j) = real(DepositThickness(i,j),kind=op)
+        !  enddo
+        !enddo
         nSTAT=nf90_put_var(ncid,depothickFin_var_id,dum2d_out,(/1,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depothickFin")
 
@@ -2558,12 +2566,13 @@
           write(outlog(io),*)"     Fill depotime"
         endif;enddo
         dum2d_out(:,:) = DepArrivalTime_FillValue
-        do i=1,nxmax
-          do j=1,nymax
-            if(DepArrivalTime(i,j).ge.0.0_ip)&
-                dum2d_out(i,j)=real(DepArrivalTime(i,j),kind=op)
-          enddo
-        enddo
+        dum2d_out = merge(real(DepArrivalTime,kind=op),dum2d_out,Mask_Deposit)
+        !do i=1,nxmax
+        !  do j=1,nymax
+        !    if(DepArrivalTime(i,j).ge.0.0_ip)&
+        !        dum2d_out(i,j)=real(DepArrivalTime(i,j),kind=op)
+        !  enddo
+        !enddo
         nSTAT=nf90_put_var(ncid,depotime_var_id,dum2d_out,(/1,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depotime")
 
@@ -2901,12 +2910,13 @@
           write(outlog(io),*)"  Writing depothickFin"
         endif;enddo
         dum2d_out(:,:) = DepositThickness_FillValue
-        do i=1,nxmax
-          do j=1,nymax
-            if(Mask_Deposit(i,j))&
-                dum2d_out(i,j)=real(DepositThickness(i,j),kind=op)
-          enddo
-        enddo
+        dum2d_out = merge(real(DepositThickness,kind=op),dum2d_out,Mask_Deposit)
+        !do i=1,nxmax
+        !  do j=1,nymax
+        !    if(Mask_Deposit(i,j))&
+        !        dum2d_out(i,j)=real(DepositThickness(i,j),kind=op)
+        !  enddo
+        !enddo
         nSTAT=nf90_put_var(ncid,depothickFin_var_id,dum2d_out,(/1,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depothickFin")
         deallocate(dum2d_out)
@@ -3140,12 +3150,13 @@
             write(outlog(io),*)"  Writing depothick"
           endif;enddo
           dum2d_out(:,:) = DepositThickness_FillValue
-          do i=1,nxmax
-            do j=1,nymax
-              if(Mask_Deposit(i,j))&
-                  dum2d_out(i,j)=real(DepositThickness(i,j),kind=op)
-            enddo
-          enddo
+          dum2d_out = merge(real(DepositThickness,kind=op),dum2d_out,Mask_Deposit)
+          !do i=1,nxmax
+          !  do j=1,nymax
+          !    if(Mask_Deposit(i,j))&
+          !        dum2d_out(i,j)=real(DepositThickness(i,j),kind=op)
+          !  enddo
+          !enddo
           nSTAT=nf90_put_var(ncid,depothick_var_id,dum2d_out,(/1,1,iout3d/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depothick")
           deallocate(dum2d_out)
@@ -3158,14 +3169,15 @@
             write(outlog(io),*)"  Writing ashconMax"
           endif;enddo
           dum2d_out(:,:) = MaxConcentration_FillValue
-          do i=1,nxmax
-            do j=1,nymax
-              if(Mask_Cloud(i,j))then
-                dumscal_out=real(MaxConcentration(i,j),kind=op)
-                dum2d_out(i,j)=dumscal_out
-              endif
-            enddo
-          enddo
+          dum2d_out = merge(real(MaxConcentration,kind=op),dum2d_out,Mask_Cloud)
+          !do i=1,nxmax
+          !  do j=1,nymax
+          !    if(Mask_Cloud(i,j))then
+          !      dumscal_out=real(MaxConcentration(i,j),kind=op)
+          !      dum2d_out(i,j)=dumscal_out
+          !    endif
+          !  enddo
+          !enddo
           nSTAT=nf90_put_var(ncid,ashconMax_var_id,dum2d_out,(/1,1,iout3d/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var ashcon_max")
           deallocate(dum2d_out)
@@ -3178,14 +3190,15 @@
             write(outlog(io),*)"  Writing ash height"
           endif;enddo
           dum2d_out(:,:) = real(MaxHeight_FillValue,kind=op)
-          do i=1,nxmax
-            do j=1,nymax
-              if(Mask_Cloud(i,j))then
-                dumscal_out=real(MaxHeight(i,j),kind=op)
-                dum2d_out(i,j) = dumscal_out
-              endif
-            enddo
-          enddo
+          dum2d_out = merge(real(MaxHeight,kind=op),dum2d_out,Mask_Cloud)
+          !do i=1,nxmax
+          !  do j=1,nymax
+          !    if(Mask_Cloud(i,j))then
+          !      dumscal_out=real(MaxHeight(i,j),kind=op)
+          !      dum2d_out(i,j) = dumscal_out
+          !    endif
+          !  enddo
+          !enddo
           nSTAT=nf90_put_var(ncid,ashheight_var_id,dum2d_out,(/1,1,iout3d/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var cloud_height")
           deallocate(dum2d_out)
@@ -3198,14 +3211,15 @@
             write(outlog(io),*)"  Writing ash-load"
           endif;enddo
           dum2d_out(:,:) = real(CloudLoad_FillValue,kind=op)
-          do i=1,nxmax
-            do j=1,nymax
-              if(Mask_Cloud(i,j))then
-                dumscal_out=real(CloudLoad(i,j),kind=op)
-                dum2d_out(i,j) = dumscal_out
-              endif
-            enddo
-          enddo
+          dum2d_out = merge(real(CloudLoad,kind=op),dum2d_out,Mask_Cloud)
+          !do i=1,nxmax
+          !  do j=1,nymax
+          !    if(Mask_Cloud(i,j))then
+          !      dumscal_out=real(CloudLoad(i,j),kind=op)
+          !      dum2d_out(i,j) = dumscal_out
+          !    endif
+          !  enddo
+          !enddo
           nSTAT=nf90_put_var(ncid,ashload_var_id,dum2d_out,(/1,1,iout3d/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var cloud_load")
           deallocate(dum2d_out)
@@ -3215,15 +3229,16 @@
           do io=1,2;if(VB(io).le.verbosity_debug1)then
             write(outlog(io),*)"     Fill cloud mask"
           endif;enddo
-          do i=1,nxmax
-            do j=1,nymax
-              if(Mask_Cloud(i,j))then
-                dum2dint_out(i,j) = 1
-              else
-                dum2dint_out(i,j) = 0
-              endif
-            enddo
-          enddo
+          dum2dint_out = merge(1,0,Mask_Cloud)
+          !do i=1,nxmax
+          !  do j=1,nymax
+          !    if(Mask_Cloud(i,j))then
+          !      dum2dint_out(i,j) = 1
+          !    else
+          !      dum2dint_out(i,j) = 0
+          !    endif
+          !  enddo
+          !enddo
           nSTAT=nf90_put_var(ncid,cloudmask_var_id,dum2dint_out,(/1,1,iout3d/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var cloud_mask")
           deallocate(dum2dint_out)
@@ -3258,14 +3273,15 @@
             write(outlog(io),*)"  Writing ash-height (bottom)"
           endif;enddo
           dum2d_out(:,:) = real(MinHeight_FillValue,kind=op)
-          do i=1,nxmax
-            do j=1,nymax
-              if(Mask_Cloud(i,j))then
-                dumscal_out=real(MinHeight(i,j),kind=op)
-                dum2d_out(i,j) = dumscal_out
-              endif
-            enddo
-          enddo
+          dum2d_out = merge(real(MinHeight,kind=op),dum2d_out,Mask_Cloud)
+          !do i=1,nxmax
+          !  do j=1,nymax
+          !    if(Mask_Cloud(i,j))then
+          !      dumscal_out=real(MinHeight(i,j),kind=op)
+          !      dum2d_out(i,j) = dumscal_out
+          !    endif
+          !  enddo
+          !enddo
           nSTAT=nf90_put_var(ncid,ashcloudBot_var_id,dum2d_out,(/1,1,iout3d/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var cloud_bottom")
           deallocate(dum2d_out)

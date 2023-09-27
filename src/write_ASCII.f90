@@ -389,6 +389,7 @@
 3004  format(10x,2f15.3)
 3005  format(13x,a6)
 3006  format(10f18.6)
+
       return
 
 !     Error traps
@@ -417,44 +418,36 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine write_3D_ASCII(cio)
+      subroutine write_3D_ASCII(cio,nx,ny,nz,ashcon_tot)
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,lon_cc_pd,lat_cc_pd,IsLatLon,&
+         lon_cc_pd,lat_cc_pd,IsLatLon,&
          x_cc_pd,y_cc_pd,z_cc_pd,ts1
 
-      use solution,      only : &
-         concen_pd
-
       character(len=13) ,intent(in) :: cio
+      integer           ,intent(in) :: nx
+      integer           ,intent(in) :: ny
+      integer           ,intent(in) :: nz
+      real(kind=op)     ,intent(in) :: ashcon_tot(nx,ny,nz)
 
       integer :: i,j,k
-      real(kind=ip)     :: rhom
       character(len=32) :: DepOutfileName
-      logical,save :: first_time = .true.
 
       ! Output data in ASCII format
-
       DepOutfileName='3d_tephra_fall_'//cio//'.dat'
       open(unit=fid_ascii3dout,file=DepOutfileName,status='replace',action='write')
       write(fid_ascii3dout,*)'VARIABLES = "X","Y","Z","AshConc"'
-      if(first_time)then
-        write(fid_ascii3dout,3000) 'ZONE I = ',nxmax,' J = ',nymax,' K = ',nzmax
-        first_time = .false.
-      else
-        write(fid_ascii3dout,3001) 'ZONE '
-      endif
+      write(fid_ascii3dout,3000) 'ZONE I = ',nx,' J = ',ny,' K = ',nz
 
-      do k=1,nzmax
-        do j=1,nymax
-          do i=1,nxmax
-            rhom = sum(concen_pd(i,j,k,:,ts1)) !kg/km3
+      do k=1,nz
+        do j=1,ny
+          do i=1,nx
             if (IsLatLon) then
               write(fid_ascii3dout,'(3(4x,f20.3),g20.8)') &
-                lon_cc_pd(i), lat_cc_pd(j), z_cc_pd(k), rhom
+                lon_cc_pd(i), lat_cc_pd(j), z_cc_pd(k), ashcon_tot(i,j,k)
             else
               write(fid_ascii3dout,'(3(4x,f20.3),g20.8)') &
-                x_cc_pd(i), y_cc_pd(j), z_cc_pd(k), rhom
+                x_cc_pd(i), y_cc_pd(j), z_cc_pd(k), ashcon_tot(i,j,k)
             endif
           enddo
         enddo
@@ -489,7 +482,7 @@
       character(len=130):: linebuffer130
       real(kind=ip) :: value1,value2,value3
 
-      open(unit=fid_ascii2din,file=trim(adjustl(filename)), status='old',action='read',err=2500)
+      open(unit=fid_ascii3din,file=trim(adjustl(filename)), status='old',action='read',err=2500)
 
       ! Read the header lines
       read(fid_ascii3din,'(a130)')linebuffer130
@@ -508,8 +501,8 @@
       do k=1,A_nz
         do j=1,A_ny
           do i=1,A_nx
-            read(fid_ascii3dout,'(3(4x,f20.3),g20.8)') value1,value2,value3,A_XYZ(i,j,k)
-            if(i.eq.1.and.j.eq.1)then
+            read(fid_ascii3din,'(3(4x,f20.3),g20.8)') value1,value2,value3,A_XYZ(i,j,k)
+            if(i.eq.1.and.j.eq.1.and.k.eq.1)then
               A_xll = value1
               A_yll = value2
               A_zll = value3
@@ -537,9 +530,6 @@
         write(errlog(io),*) 'Error reading from ASCII file.'
       endif;enddo
       stop 1
-
-
-
 
       end subroutine read_3D_ASCII
 

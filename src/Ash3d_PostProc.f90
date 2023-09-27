@@ -80,8 +80,11 @@
          nvprofiles
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,IsLatLon,dx,dy,dz_const,xLL,yLL, &
-         lon_cc_pd,lat_cc_pd,z_cc_pd
+         nxmax,nymax,nzmax,nsmax,IsLatLon,dx,dy,xLL,yLL,ts0,ts1, &
+           Allocate_mesh
+
+      use solution,      only : &
+         concen_pd,DepositGranularity
 
       use time_data,     only : &
          time,time_native,BaseYear,useLeap,SimStartHour
@@ -93,13 +96,16 @@
 
       use Output_Vars,   only : &
          DepositThickness,DepArrivalTime,CloudArrivalTime,ashcon_tot,&
-         MaxConcentration,MaxHeight,CloudLoad,dbZCol,MinHeight,Mask_Cloud
+         MaxConcentration,MaxHeight,CloudLoad,dbZCol,MinHeight,Mask_Cloud, &
+           Gen_Output_Vars,  &
+           Allocate_Output_Vars, &
+           Set_OutVar_ContourLevel
 
       use help,          only : &
            help_postproc
 
       use Ash3d_ASCII_IO,  only : &
-         A_nx,A_ny,A_XY,A_xll,A_yll,A_zll,A_dx,A_dy,A_dz, &
+         A_nx,A_ny,A_XY,A_XYZ,A_xll,A_yll,A_dx,A_dy, &
            deallocate_ASCII, &
            write_2D_ASCII,   &
            read_2D_ASCII,    &
@@ -111,11 +117,12 @@
            Write_PointData_Airports_ASCII
 
       use Ash3d_Binary_IO, only : &
-         B_XY,                &
+         B_XY,B_XYZ,          &
            deallocate_Binary, &
            write_2D_Binary,   &
            read_2D_Binary,    &
-           write_3D_Binary
+           write_3D_Binary,   &
+           read_3D_Binary
 
       use Ash3d_Netcdf_IO
 
@@ -142,10 +149,10 @@
       integer             :: outformat        ! output format
       integer             :: iiprod           ! code for input dataset
       integer             :: iprod            ! code for output product
-      integer             ::  ndims           ! dimensions of the input data file
+      integer             :: ndims           ! dimensions of the input data file
       integer             :: ivar,TS_Flag,height_flag
       integer             :: itime = -1      ! initialize time step to the last step
-      integer             :: i,j,k,ii
+      integer             :: i,ii
       integer             :: tmp_int
       integer             :: icase
       real(kind=ip),dimension(:,:),allocatable :: OutVar
@@ -187,6 +194,8 @@
       INTERFACE
         subroutine alloc_arrays
         end subroutine alloc_arrays
+        subroutine calc_mesh_params
+        end subroutine calc_mesh_params
         subroutine output_results
         end subroutine output_results
         subroutine write_ShapeFile_Polyline(iprod,itime)
@@ -676,8 +685,6 @@
             endif
           elseif(ndims.eq.3)then
             call read_3D_ASCII(datafileIn)
-            write(*,*)A_dx,A_dy,A_dz
-            write(*,*)A_xll,A_yll,A_zll
           endif
         elseif(informat.eq.2)then
           if(ndims.eq.2)then
@@ -689,24 +696,16 @@
               endif;enddo
             endif
             call read_2D_Binary(nxmax,nymax,datafileIn)
-          !elseif(ndims.eq.3)then
-          !  call read_3D_BINARY(datafileIn)
+          elseif(ndims.eq.3)then
+            call read_3D_BINARY(nxmax,nymax,nzmax,datafileIn)
           endif
         endif ! informat = 2 or 3
 
         ! Allocate grid
-        allocate(lon_cc_pd(-1:nxmax+2))
-        allocate(lat_cc_pd(-1:nymax+2))
-        allocate(z_cc_pd(-1:nzmax+2))
-        do i=-1,nxmax+2
-          lon_cc_pd(i) = xLL + dx*real(i,kind=ip) - dx*0.5_ip
-        enddo
-        do j=-1,nymax+2
-          lat_cc_pd(j) = yLL + dy*real(j,kind=ip) - dy*0.5_ip
-        enddo
-        do k=-1,nzmax+2
-          z_cc_pd(k) = 0.0_ip + dz_const*real(k,kind=ip) - dz_const*0.5_ip
-        enddo
+        call Allocate_mesh
+        call calc_mesh_params
+        ! Load contour levels
+        call Set_OutVar_ContourLevel
       endif  ! informat = 1 or not
 
       if(.not.IsLatLon)then
@@ -830,12 +829,31 @@
       allocate(mask(nxmax,nymax))
       mask = .true.
       if(informat.eq.1)then
-        OutVar(1:nxmax,1:nymax) = A_XY(1:nxmax,1:nymax)
+        if(ndims.eq.2)then
+          OutVar(1:nxmax,1:nymax) = A_XY(1:nxmax,1:nymax)
+        elseif(ndims.eq.3)then
+          allocate(concen_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2,1:nsmax,ts0:ts1)); concen_pd = 0.0_ip
+          concen_pd(1:nxmax,1:nymax,1:nzmax,1,ts1) = A_XYZ(1:nxmax,1:nymax,1:nzmax)
+          allocate(DepositGranularity(nxmax,nymax,nsmax)); DepositGranularity = 0.0_ip
+          call Allocate_Output_Vars
+          call Gen_Output_Vars
+        endif
       elseif(informat.eq.2)then
-        OutVar(1:nxmax,1:nymax) = B_XY(1:nxmax,1:nymax)
+        if(ndims.eq.2)then
+          OutVar(1:nxmax,1:nymax) = B_XY(1:nxmax,1:nymax)
+        elseif(ndims.eq.3)then
+          allocate(concen_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2,1:nsmax,ts0:ts1)); concen_pd = 0.0_ip
+          concen_pd(1:nxmax,1:nymax,1:nzmax,1,ts1) = B_XYZ(1:nxmax,1:nymax,1:nzmax)
+          allocate(DepositGranularity(nxmax,nymax,nsmax)); DepositGranularity = 0.0_ip
+          call Allocate_Output_Vars
+          call Gen_Output_Vars
+        endif
       endif
+
       if(informat.eq.1.or.informat.eq.2)then
         if(ndims.eq.2)then
+          ! If we have read a 2d array, copy it to the proper named array so it can be
+          ! processed correctly
           if(iprod.eq.3.or.iprod.eq.4.or.iprod.eq.5.or.iprod.eq.6)then
             if(.not.allocated(DepositThickness)) allocate(DepositThickness(nxmax,nymax))
             DepositThickness(1:nxmax,1:nymax) = OutVar(1:nxmax,1:nymax)
@@ -876,6 +894,20 @@
           !  if(.not.allocated(Topography)) allocate(Topography(nxmax,nymax))
           !  Topography(1:nxmax,1:nymax)       = OutVar(1:nxmax,1:nymax)
           !endif
+        elseif(ndims.eq.3)then
+          ! For 3d input data, we only have the total 3d ash concentration, so we need
+          ! to stop if the requested output product cannot be calculated from this.
+          if(iprod.eq.3.or.iprod.eq.4.or.iprod.eq.5.or.iprod.eq.6.or.  & ! any of the deposit products
+             iprod.eq.7.or.   & ! ashfall arrival time
+             iprod.eq.8.or.   & ! ashfall arrival at airports
+             iprod.eq.13.or.  & ! ash-cloud radar reflectivity
+             iprod.eq.14.or.  & ! ash-cloud arrival time
+             iprod.eq.16)then   ! profile plots
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: Requested output is not available from input data."
+            endif;enddo
+            stop 1
+          endif
         endif
       endif
 
@@ -969,7 +1001,8 @@
         OutFillValue = 0.0_ip
         filename_root = 'DepositFile_        '
       elseif(iprod.eq.7)then
-        OutVar = real(DepArrivalTime,kind=ip)
+        OutVar = DepArrivalTime
+        !OutVar = DepArrivalTime * merge(1.0_ip,0.0_ip,Mask_Deposit)
         Fill_Value = '-1.000'
         OutFillValue = -1.0_ip
         filename_root = 'DepositArrivalTime  '
@@ -978,31 +1011,37 @@
          ! None of OutVar,Fill_Value,OutFillValue,filename_root need to be set
       elseif(iprod.eq.9)then
         OutVar = MaxConcentration
+        !OutVar = MaxConcentration * merge(1.0_ip,0.0_ip,Mask_Cloud)
         Fill_Value = ' 0.000'
         OutFillValue = 0.0_ip
         filename_root = 'CloudConcentration_ '
       elseif(iprod.eq.10)then
         OutVar = MaxHeight
+        !OutVar = MaxHeight * merge(1.0_ip,0.0_ip,Mask_Cloud)
         Fill_Value = ' 0.000'
         OutFillValue = 0.0_ip
         filename_root = 'CloudHeight_        '
       elseif(iprod.eq.11)then
         OutVar = MinHeight
+        !OutVar = MinHeight * merge(1.0_ip,0.0_ip,Mask_Cloud)
         Fill_Value = ' 0.000'
         OutFillValue = 0.0_ip
         filename_root = 'CloudHeightBot_     '
       elseif(iprod.eq.12)then
         OutVar = CloudLoad
+        !OutVar = CloudLoad * merge(1.0_ip,0.0_ip,Mask_Cloud)
         Fill_Value = ' 0.000'
         OutFillValue = 0.0_ip
         filename_root = 'CloudLoad_          '
       elseif(iprod.eq.13)then
         OutVar = dbZCol
+        !OutVar = dbZCol * merge(1.0_ip,0.0_ip,Mask_Cloud)
         Fill_Value = ' 0.000'
         OutFillValue = 0.0_ip
         filename_root = 'ClouddbZC_          '
       elseif(iprod.eq.14)then
         OutVar = real(CloudArrivalTime,kind=ip)
+        !OutVar = CloudArrivalTime * merge(1.0_ip,0.0_ip,Mask_Cloud)
         Fill_Value = '-1.000'
         OutFillValue = -1.0_ip
         filename_root = 'CloudArrivalTime    '

@@ -26,12 +26,13 @@
       public deallocate_Binary,  &
              write_2D_Binary,    &
              read_2D_Binary,     &
-             write_3D_Binary !    &
-             !read_3D_Binary
+             write_3D_Binary,     &
+             read_3D_Binary
 
         ! Publicly available variables
         ! These arrays are only used when reading an output file of unknown size
-      real(kind=ip), dimension(:,:),allocatable,public :: B_XY
+      real(kind=ip), dimension(:,:)  ,allocatable,public :: B_XY
+      real(kind=ip), dimension(:,:,:),allocatable,public :: B_XYZ
 
       contains
       !------------------------------------------------------------------------
@@ -222,6 +223,48 @@
       close(fid_bin3dout)
 
       end subroutine write_3D_Binary
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  read_3D_Binary
+!
+!  Called from: Ash3d_PostProc.F90
+!  Arguments:
+!    nx       = x length of output array OutVar
+!    ny       = y length of output array OutVar
+!    OutVar   = 2-d array to be written to binary file
+!    filename = name of file (80 characters)
+!
+!  Subroutine that writes out 2-D arrays in binary format
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine read_3D_Binary(nx,ny,nz,filename)
+
+      integer          ,intent(in)  :: nx
+      integer          ,intent(in)  :: ny
+      integer          ,intent(in)  :: nz
+      character(len=80),intent(in)  :: filename
+
+      real(kind=op) :: OVar3d(nx,ny,nz)
+      integer       :: i,j,k
+
+      if(op.eq.4)then
+        open(unit=fid_bin3dout,file=trim(adjustl(filename)), &
+          status='old', action='read', &
+          access='direct',recl=4*nx*ny*nz)
+      else
+       open(unit=fid_bin3dout,file=trim(adjustl(filename)), &
+          status='old', action='read', &
+          access='direct',recl=8*nx*ny*nz)
+      endif
+      read(fid_bin3dout,rec=1)(((OVar3d(i,j,k),i=1,nx),j=1,ny),k=1,nz)
+      close(fid_bin3dout)
+
+      if(.not.allocated(B_XYZ)) allocate(B_XYZ(1:nx,1:ny,1:nz))
+      B_XYZ(1:nx,1:ny,1:nz) = real(OVar3d(1:nx,1:ny,1:nz),kind=ip)
+
+      end subroutine read_3D_Binary
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
