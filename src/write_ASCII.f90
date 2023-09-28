@@ -422,7 +422,7 @@
 
       use mesh,          only : &
          lon_cc_pd,lat_cc_pd,IsLatLon,&
-         x_cc_pd,y_cc_pd,z_cc_pd,ts1
+         x_cc_pd,y_cc_pd,z_cc_pd
 
       character(len=13) ,intent(in) :: cio
       integer           ,intent(in) :: nx
@@ -456,7 +456,6 @@
 
 !     format statements
 3000  format(a9,i5,a5,i5,a5,i5)
-3001  format(a5)
 
       end subroutine write_3D_ASCII
 
