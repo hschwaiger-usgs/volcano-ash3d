@@ -77,7 +77,7 @@ Kasatochi                          # Volcano name (character*30)
  45.0  25.0                        # grid width and height (km, or deg. if latlonflag=1)
 -175.508 52.177                    # vent location         (km, or deg. if latlonflag=1)
 0.25      0.25                     # DX, DY of grid cells  (km, or deg. if latlonflag=1)
-1.000                              # DZ of grid cells      (always km)
+1.0                                # DZ of grid cells      (always km)
 0.0      profile                   # diffusion coefficient (m2/s), Suzuki constant
 18                                 # neruptions, number of eruptions or pulses
 *******************************************************************************

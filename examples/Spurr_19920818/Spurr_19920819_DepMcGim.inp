@@ -71,15 +71,15 @@
 #  linear       : mass uniformly distributed from z-vent to PlmH                                       
 # Line 9 : number of pulses to be read in BLOCK 2                           
 ******************* BLOCK 1 ***************************************************
-Spurr                          #Volcano name (character*30) (61.299,152.251)
-1 4 -107.0 50.0 50.0 50.0 6367.470    #Proj flags and params
--153.0 60.0                #x, y of LL corner of grid (km, or deg. if latlongflag=1)
-9.0 2.5                #grid width and height (km, or deg. if latlonflag=1)
--152.251 61.299 2.309              #vent location         (km, or deg. if latlonflag=1)
-0.125       0.125                  #DX, DY of grid cells  (km, or deg.)
-0.25                          #DZ of grid cells      (always km)
-100.0      8.                   #diffusion coefficient (m2/s), Suzuki constant
-1                              #neruptions, number of eruptions or pulses
+Spurr                              # Volcano name (character*30)
+1 4 -107.0 50.0 50.0 50.0 6367.470 # Proj flags and params; first term (LLflag) is 1, so all else ignored
+-153.0 60.0                        # x, y of LL corner of grid (km, or deg. if latlongflag=1)
+9.0 2.5                            # grid width and height (km, or deg. if latlonflag=1)
+-152.251 61.299 2.309              # vent location         (km, or deg. if latlonflag=1)
+0.125       0.125                  # DX, DY of grid cells  (km, or deg. if latlonflag=1)
+0.25                               # DZ of grid cells      (always km)
+100.0      8.                      # diffusion coefficient (m2/s), Suzuki constant
+1                                  # neruptions, number of eruptions or pulses
 *******************************************************************************
 # ERUPTION LINES (number = neruptions)                                                                 
 # In the following line, each line represents one eruptive pulse.                                      
@@ -93,7 +93,7 @@ Spurr                          #Volcano name (character*30) (61.299,152.251)
 # 2010 04 14   0.00   1.0     18.0  0.16 1.0 18                                                        
 # 0.01 0.02 0.03 0.03 0.04 0.04 0.05 0.06 0.06 0.070 0.08 0.08 0.09 0.09 0.09 0.08 0.06 0.02           
 ******************* BLOCK 2 *************************************************** 
-1992 08 19   1.0   3.5     13.7   0.014
+1992 08 19   1.0    3.5     13.7   0.014
 *******************************************************************************
 # WIND OPTIONS                                                                                         
 # Ash3d will read from either a single 1-D wind sounding, or gridded, time-                            

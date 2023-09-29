@@ -14,17 +14,17 @@ fi
 GMTpen=("-" "-" "-" "-" "/" ",")
 echo "GMT version = ${GMTv}"
 
-# Spurr coordinates
-vlt=61.299
-vln=-152.251
+# Mazama coordinates
+vlt=42.93
+vln=-122.12
 
-lonw=-154.0
-lone=-144.0
-lats=60.0
-latn=63.0
-DETAIL="-Dh"
-BASE="-Bg2/g1 -P"
-PROJ=-JS-150.0/90/8i
+lonw=225.0
+lone=269.0
+lats=33.0
+latn=57.0
+DETAIL="-Dl"
+BASE="-Bg5/g5 -P"
+PROJ="-JM${vln}/${vlt}/6.5i"
 AREA="-R${lonw}/${lats}/${lone}/${latn}r"
 COAST="-G220/220/220 -W"
 
@@ -65,7 +65,7 @@ gmt grdconvert "$infile?depothickFin" temp.grd
 gmt grdmath temp.grd zero.grd AND = temp.grd
 
 # Deposit data file
-datafile="../Data/Spurr_19920818_DepThick_mm.dat"
+#datafile="../Data/Spurr_19920818_DepThick_mm.dat"
 #******************************************************************************
 
 # Create Base Map
@@ -95,19 +95,19 @@ gmt grdcontour temp.grd $AREA $PROJ $BASE -Cdpm_100.lev  -A- -W3,255/0/0   -O -K
 LEGLOC="-Dx0.1i/4.1i/3.0i/1.0i/BL"
 gmt pslegend $AREA $PROJ $BASE -G255 $LEGLOC -K -O << EOF >> temp.ps
 C black
-H 14 1 Spurr August 18, 1992
+H 14 1 Mazama Umbrella Deposit
 D 1p
 EOF
 gmt psscale -Dx1.25i/4.6i/2i/0.15ih -C$CPT -Q -B10f5/:"mm": -O -K >> temp.ps
 # Plot the tephra site data
-gmt psxy ${datafile} $AREA $PROJ -Sc0.1i -C${CPT} -Wthinnest -O >> temp.ps
+#gmt psxy ${datafile} $AREA $PROJ -Sc0.1i -C${CPT} -Wthinnest -O >> temp.ps
 
 # Last gmt command is to plot the volcano and close out the ps file
 echo $vln $vlt '1.0' | gmt psxy $AREA $PROJ -St0.1i -Gblack -Wthinnest -O >> temp.ps
 
 # Save map
 ps2pdf temp.ps
-mv temp.pdf Spurr_deposit.pdf
+mv temp.pdf Mazama_deposit.pdf
 
 # Clean up
 rm temp.ps dpm*lev gmt.history gmt.conf dep.cpt zero.grd temp.grd
