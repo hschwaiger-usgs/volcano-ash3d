@@ -1,0 +1,100 @@
+#!/bin/bash
+# GMT Post-processing script for the Ash3d Spurr deposit validation test.
+
+# We need to know if we must prefix all gmt commands with 'gmt', as required by version 5/6
+GMTv=5
+type gmt >/dev/null 2>&1 || { echo >&2 "Command 'gmt' not found.  Assuming GMTv4."; GMTv=4;}
+if [ $GMTv -eq 4 ] ; then
+    echo "GMT 4 is no longer supported."
+    echo "Please update to GMT 5 or 6"
+    exit 1
+ else
+    GMTv=`gmt --version | cut -c1`
+fi
+GMTpen=("-" "-" "-" "-" "/" ",")
+echo "GMT version = ${GMTv}"
+
+# Kelud coordinates
+vlt=42.93
+vln=-122.12
+
+lonw=225.0
+lone=269.0
+lats=33.0
+latn=57.0
+DETAIL="-Dl"
+BASE="-Bg5/g5 -P"
+PROJ="-JM${vln}/${vlt}/6.5i"
+AREA="-R${lonw}/${lats}/${lone}/${latn}r"
+COAST="-G220/220/220 -W"
+
+# Set up some default values
+gmt gmtset PROJ_ELLIPSOID Sphere
+gmt gmtset PAPER_MEDIA=Custom_720x510
+
+#############################################################################
+# Color map for the deposit sample thicknesses
+CPT="dep.cpt"
+echo "# file dep.cpt
+#COLOR_MODEL = RGB
+0.03    90      0       90      0.1     90      0       90
+0.1	128	0	128	0.3	128	0	128
+0.3	0	0	255	1.0	0	0	255
+1.0	0	128	255	3.0	0	128	255
+3.0	0	255	255	10.0	0	255	255
+10.0	128	255	128	30.0	128	255	128
+30.0	255	255	0	100.0	255	255	0
+100.0	255	128	0	300.0	255	128	0
+300.0	255	0	0	1000.0	255	0	0" > ${CPT}
+
+#############################################################################
+# Ash3d data file
+infile="../3d_tephra_fall.nc"
+if test -r ${infile} ; then
+    echo "Preparing to read from ${infile} file"
+  else
+    echo "error: no ${infile} file. Exiting"
+    exit 1
+fi
+# Preparing grid file
+dep_grd=var_out_final.grd
+gmt grdconvert "$infile?area" zero.grd
+gmt grdmath 0.0 zero.grd MUL = zero.grd
+# We need to convert the NaN's to zero to get the lowest contour
+gmt grdconvert "$infile?depothickFin" temp.grd
+gmt grdmath temp.grd zero.grd AND = temp.grd
+
+# Deposit data file
+#datafile="../Data/Spurr_19920818_DepThick_mm.dat"
+#******************************************************************************
+
+# Create Base Map
+gmt pscoast $AREA $PROJ $BASE $DETAIL $COAST -S255/255/255 -K  > temp.ps
+
+# Contour Ash3d output
+echo "0.10 C" > ac0.1.lev
+i=2
+gmt grdconvert "${infile}?cloud_load[$i]" temp.grd
+gmt grdcontour temp.grd $AREA $PROJ $BASE -Cac0.1.lev  -A- -W1,0/0/0     -K -O >> temp.ps
+
+# Plot legend
+LEGLOC="-Dx0.1i/4.1i/3.0i/1.0i/BL"
+gmt pslegend $AREA $PROJ $BASE -G255 $LEGLOC -K -O << EOF >> temp.ps
+C black
+H 14 1 Kelud Umbrella Cloud
+D 1p
+EOF
+gmt psscale -Dx1.25i/4.6i/2i/0.15ih -C$CPT -Q -B10f5/:"mm": -O -K >> temp.ps
+# Plot the tephra site data
+#gmt psxy ${datafile} $AREA $PROJ -Sc0.1i -C${CPT} -Wthinnest -O >> temp.ps
+
+# Last gmt command is to plot the volcano and close out the ps file
+echo $vln $vlt '1.0' | gmt psxy $AREA $PROJ -St0.1i -Gblack -Wthinnest -O >> temp.ps
+
+# Save map
+ps2pdf temp.ps
+mv temp.pdf Kelud_Cloud.pdf
+
+# Clean up
+rm temp.ps gmt.history gmt.conf dep.cpt zero.grd temp.grd
+
