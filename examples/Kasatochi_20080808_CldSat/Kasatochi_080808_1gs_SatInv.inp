@@ -224,7 +224,7 @@ no      # Write out ESRI ASCII file of deposit arrival times?
 no      # Write out        KML file of deposit arrival times?                                          
 no      # write out ESRI ASCII file of cloud arrival times?                                            
 no      # Write out        KML file of cloud arrival times?                                            
-yes 1   # Write out 3-D ash concentration at specified times? / [output code: 1=2d+concen,2=2d only]   
+yes 2   # Write out 3-D ash concentration at specified times? / [output code: 1=2d+concen,2=2d only]   
 netcdf  # format of ash concentration files     (ascii, binary, or netcdf)                             
 8       # nWriteTimes
 9.1 20.2 32.3 43.3 55.2 64.6 78.2 89.5

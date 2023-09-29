@@ -36,13 +36,13 @@ lone=260
 lats=29.0
 latn=60.0
 DETAIL="-Dl"
-BASE1="-Bg10/g5 -P"
+BASE="-Bg10/g5 -P"
 PROJ=-JS-150.0/90/8i
 AREA="-R${lonw}/${lats}/${lone}/${latn}r"
 COAST="-G220/220/220 -W"
 
 # Set up some default values
-gmt gmtset ELLIPSOID Sphere
+gmt gmtset PROJ_ELLIPSOID Sphere
 gmt gmtset PAPER_MEDIA=Custom_720x510
 
 #############################################################################
@@ -63,6 +63,12 @@ N	128	128	128" > ${CPT}
 #############################################################################
 # Ash3d data file
 infile="../3d_tephra_fall.nc"
+if test -r ${infile} ; then
+    echo "Preparing to read from ${infile} file"
+  else
+    echo "error: no ${infile} file. Exiting"
+    exit 1
+fi
 
 # Satellite data file
 if [ "$i" = "0" ]; then
@@ -98,12 +104,10 @@ if [ "$i" = "7" ]; then
   modis_file="2008-08-11_21-33 (89.5 hours)"
 fi
 
-BASE1="-Bg10/g5 -P"
-
 # Create Base Map
-gmt pscoast $AREA $PROJ $BASE1 $DETAIL $COAST -S100/149/237 -K  > temp.ps
+gmt pscoast $AREA $PROJ $BASE $DETAIL $COAST -S100/149/237 -K  > temp.ps
 # Plot satellite cloud load
-gmt grdimage "${procfile}?Ash_Mass" -Q $AREA $PROJ $BASE1 -C${CPT} -K -O >> temp.ps
+gmt grdimage "${procfile}?Ash_Mass" -Q $AREA $PROJ $BASE -C${CPT} -K -O >> temp.ps
 
 # Contour Ash3d output
 echo "0.10 C" > ac0.1.lev
@@ -111,10 +115,10 @@ echo "1.00 C" > ac1.0.lev
 echo "2.00 C" > ac2.0.lev
 echo "3.00 C" > ac3.0.lev
 gmt grdconvert "${infile}?cloud_load[$i]" temp.grd
-gmt grdcontour temp.grd $AREA $PROJ $BASE1 -Cac0.1.lev  -A- -W1,0/0/0 -K -O >> temp.ps
-gmt grdcontour temp.grd $AREA $PROJ $BASE1 -Cac1.0.lev  -A- -W1,0/0/255 -K -O >> temp.ps
-gmt grdcontour temp.grd $AREA $PROJ $BASE1 -Cac2.0.lev  -A- -W1,255/0/255 -K -O >> temp.ps
-gmt grdcontour temp.grd $AREA $PROJ $BASE1 -Cac3.0.lev  -A- -W1,255/0/0 -K -O >> temp.ps
+gmt grdcontour temp.grd $AREA $PROJ $BASE -Cac0.1.lev  -A- -W1,0/0/0     -K -O >> temp.ps
+gmt grdcontour temp.grd $AREA $PROJ $BASE -Cac1.0.lev  -A- -W1,0/0/255   -K -O >> temp.ps
+gmt grdcontour temp.grd $AREA $PROJ $BASE -Cac2.0.lev  -A- -W1,255/0/255 -K -O >> temp.ps
+gmt grdcontour temp.grd $AREA $PROJ $BASE -Cac3.0.lev  -A- -W1,255/0/0   -K -O >> temp.ps
 
 # Plot legend
 LEGLOC="-Dx0.1i/3.4i/4.0i/1.7i/BL"
