@@ -33,12 +33,12 @@
       !components of the wind field used for umbrella clouds
 #ifdef USEPOINTERS
       real(kind=ip),dimension(:,:,:,:),pointer,public :: SourceNodeFlux_Umbrella =>null()
-      real(kind=ip),dimension(:,:,:),pointer,public :: uvx_pd =>null() ! u (E) component of wind
-      real(kind=ip),dimension(:,:,:),pointer,public :: uvy_pd =>null() ! v (N) component of wind
+      real(kind=ip),dimension(:,:,:)  ,pointer,public :: uvx_pd =>null() ! u (E) component of wind
+      real(kind=ip),dimension(:,:,:)  ,pointer,public :: uvy_pd =>null() ! v (N) component of wind
 #else
       real(kind=ip),dimension(:,:,:,:),allocatable,public :: SourceNodeFlux_Umbrella
-      real(kind=ip),dimension(:,:,:),allocatable,public :: uvx_pd ! u (E) component of wind
-      real(kind=ip),dimension(:,:,:),allocatable,public :: uvy_pd ! v (N) component of wind
+      real(kind=ip),dimension(:,:,:)  ,allocatable,public :: uvx_pd ! u (E) component of wind
+      real(kind=ip),dimension(:,:,:)  ,allocatable,public :: uvy_pd ! v (N) component of wind
 #endif
 
       !The following are used by Mesointerpolator for umbrella clouds

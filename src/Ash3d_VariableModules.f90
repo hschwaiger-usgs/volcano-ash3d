@@ -397,13 +397,23 @@
       real(kind=ip)     :: NextWriteTime     !time to write the next file
       character (len=1) :: OutputStep_Marker !=* if data were written out since the last log_step
       integer           :: nWriteTimes       !number of deposit files to write
+#ifdef USEPOINTERS
+      real(kind=ip), dimension(:), pointer     :: WriteTimes      !times (hrs after first eruption start) to write out files
+#else
       real(kind=ip), dimension(:), allocatable :: WriteTimes      !times (hrs after first eruption start) to write out files
+#endif
 
       integer,parameter :: MAXPROFILES = 99
       integer           :: nvprofiles                                        ! number of vertical profiles to write out
+#ifdef USEPOINTERS
+      integer,          dimension(:), pointer :: i_vprofile, j_vprofile  ! i and j values of vertical profiles
+      real(kind=ip),    dimension(:), pointer :: x_vprofile, y_vprofile  ! x and y of vertical profiles
+      character(len=50),dimension(:), pointer :: Site_vprofile           ! name of profile location
+#else
       integer,          dimension(:), allocatable :: i_vprofile, j_vprofile  ! i and j values of vertical profiles
       real(kind=ip),    dimension(:), allocatable :: x_vprofile, y_vprofile  ! x and y of vertical profiles
       character(len=50),dimension(:), allocatable :: Site_vprofile           ! name of profile location
+#endif
 
       ! These specify the number of user-defined variables.  This is mostly for optional modules.
       integer            :: nvar_User2d_static_XY  = 0
@@ -423,12 +433,21 @@
 
       subroutine Deallocate_io_data
 
+#ifdef USEPOINTERS
+      if(associated(WriteTimes))   deallocate(WriteTimes)
+      if(associated(i_vprofile))   deallocate(i_vprofile)
+      if(associated(j_vprofile))   deallocate(j_vprofile)
+      if(associated(x_vprofile))   deallocate(x_vprofile)
+      if(associated(y_vprofile))   deallocate(y_vprofile)
+      if(associated(Site_vprofile))deallocate(Site_vprofile)
+#else
       if(allocated(WriteTimes))   deallocate(WriteTimes)
       if(allocated(i_vprofile))   deallocate(i_vprofile)
       if(allocated(j_vprofile))   deallocate(j_vprofile)
       if(allocated(x_vprofile))   deallocate(x_vprofile)
       if(allocated(y_vprofile))   deallocate(y_vprofile)
       if(allocated(Site_vprofile))deallocate(Site_vprofile)
+#endif
 
       end subroutine Deallocate_io_data
       !------------------------------------------------------------------------
@@ -474,7 +493,6 @@
       real(kind=ip)      :: ZPADDING     = 1.3_ip
       character(len=7)   :: VarDzType
       real(kind=ip)      :: dz_const                        ! z nodal spacing (always km)
-      real(kind=ip),dimension(:)    ,allocatable :: z_vec_init
 
       ! Dimensional parameters in km, used if IsLatLon=.False.        
       real(kind=ip)      :: gridwidth_x, gridwidth_y  ! Dimensions (in km) of the grid
@@ -487,12 +505,6 @@
       integer :: nsmax      ! total number of species tracked in concen
                             !  i.e. all ash bins + anything else (aggs, water, chem)
 
-      ! Variables that are allocated based on the computational grid
-      ! (nxmax,nymax)
-        ! The (projected) computational grid back-projected onto lat/lon
-      real(kind=ip),dimension(:,:)  ,allocatable :: xy2ll_xlon
-      real(kind=ip),dimension(:,:)  ,allocatable :: xy2ll_ylat
-
 ! *****************************************************************************
 !     Dimensional parameters in degrees, used if IsLatLon=.True.
       real(kind=ip)      :: latLL,lonLL,latUR,lonUR   ! lat/lon of LL corner
@@ -500,19 +512,24 @@
       real(kind=ip)      :: de, dn                    !nodal spacing east & north, degrees
       real(kind=ip)      :: de_km, dn_km              !nodal spacing, km, at volcano
 #ifdef USEPOINTERS
+      real(kind=ip),dimension(:)    ,pointer :: z_vec_init
+      real(kind=ip),dimension(:,:)  ,pointer :: xy2ll_xlon
+      real(kind=ip),dimension(:,:)  ,pointer :: xy2ll_ylat
       real(kind=ip),dimension(:)    ,pointer :: dz_vec_pd ! used for variable dz cases
       real(kind=ip),dimension(:)    ,pointer :: x_cc_pd ! x_component of cell centers
       real(kind=ip),dimension(:)    ,pointer :: y_cc_pd ! y_component of cell centers
       real(kind=ip),dimension(:)    ,pointer :: z_cc_pd ! z_component of cell centers
       real(kind=ip),dimension(:)    ,pointer :: z_lb_pd ! z_component of cell lower-boundary
       real(kind=ip),dimension(:,:,:),pointer :: kappa_pd !volume of each node in km3
-
       real(kind=ip),dimension(:)    ,pointer :: lat_cc_pd   => null() ! lat of i,j cell centers
       real(kind=ip),dimension(:)    ,pointer :: lon_cc_pd   => null() ! lon of i,j cell centers
       real(kind=ip),dimension(:,:,:),pointer :: sigma_nx_pd => null() ! area of x face at i-1/2,j,k
       real(kind=ip),dimension(:,:,:),pointer :: sigma_ny_pd => null() ! area of y face at i,j-1/2,k
       real(kind=ip),dimension(:,:,:),pointer :: sigma_nz_pd => null() ! area of z face at i,j,k-1/2
 #else
+      real(kind=ip),dimension(:)    ,allocatable :: z_vec_init
+      real(kind=ip),dimension(:,:)  ,allocatable :: xy2ll_xlon ! The (projected) computational grid
+      real(kind=ip),dimension(:,:)  ,allocatable :: xy2ll_ylat !   back-projected onto lat/lon
       real(kind=ip),dimension(:)    ,allocatable :: dz_vec_pd ! used for variable dz cases
       real(kind=ip),dimension(:)    ,allocatable :: x_cc_pd ! x_component of cell centers
       real(kind=ip),dimension(:)    ,allocatable :: y_cc_pd ! y_component of cell centers
@@ -535,22 +552,42 @@
         ! Some allocatable arrays from this module are allocated in
         !   Input_Data.f90:Read_Control_File
         !    z_vec_init
+
+#ifdef USEPOINTERS
       if (IsLatLon) then
-        if(.not.allocated(lon_cc_pd))allocate(lon_cc_pd(-1:nxmax+2));                   lon_cc_pd   = 0.0_ip
-        if(.not.allocated(lat_cc_pd))allocate(lat_cc_pd(-1:nymax+2));                   lat_cc_pd   = 0.0_ip
-      else
-        if(.not.allocated(x_cc_pd))allocate(x_cc_pd(-1:nxmax+2));                         x_cc_pd = 0.0_ip
-        if(.not.allocated(y_cc_pd))allocate(y_cc_pd(-1:nymax+2));                         y_cc_pd = 0.0_ip
+        if(.not.associated(lon_cc_pd))allocate(lon_cc_pd(-1:nxmax+2));                            lon_cc_pd = 0.0_ip
+        if(.not.associated(lat_cc_pd))allocate(lat_cc_pd(-1:nymax+2));                            lat_cc_pd = 0.0_ip
+      else 
+        if(.not.associated(x_cc_pd))allocate(x_cc_pd(-1:nxmax+2));                                  x_cc_pd = 0.0_ip
+        if(.not.associated(y_cc_pd))allocate(y_cc_pd(-1:nymax+2));                                  y_cc_pd = 0.0_ip
       endif
 
-      if(.not.allocated(kappa_pd) )allocate( kappa_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  kappa_pd = 1.0_ip
-      if(.not.allocated(dz_vec_pd))allocate(dz_vec_pd(-1:nzmax+2));                       dz_vec_pd = 0.0_ip
-      if(.not.allocated(z_cc_pd)  )allocate(  z_cc_pd(-1:nzmax+2));                         z_cc_pd = 0.0_ip
-      if(.not.allocated(z_lb_pd)  )allocate(  z_lb_pd(-1:nzmax+2));                         z_lb_pd = 0.0_ip
+      if(.not.associated(kappa_pd) )allocate( kappa_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));         kappa_pd = 1.0_ip
+      if(.not.associated(dz_vec_pd))allocate(dz_vec_pd(-1:nzmax+2));                              dz_vec_pd = 0.0_ip
+      if(.not.associated(z_cc_pd)  )allocate(  z_cc_pd(-1:nzmax+2));                                z_cc_pd = 0.0_ip
+      if(.not.associated(z_lb_pd)  )allocate(  z_lb_pd(-1:nzmax+2));                                z_lb_pd = 0.0_ip
+
+      if(.not.associated(sigma_nx_pd))allocate(sigma_nx_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_nx_pd = 1.0_ip
+      if(.not.associated(sigma_ny_pd))allocate(sigma_ny_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_ny_pd = 1.0_ip
+      if(.not.associated(sigma_nz_pd))allocate(sigma_nz_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_ny_pd = 1.0_ip
+#else
+      if (IsLatLon) then
+        if(.not.allocated(lon_cc_pd))allocate(lon_cc_pd(-1:nxmax+2));                            lon_cc_pd = 0.0_ip
+        if(.not.allocated(lat_cc_pd))allocate(lat_cc_pd(-1:nymax+2));                            lat_cc_pd = 0.0_ip
+      else
+        if(.not.allocated(x_cc_pd))allocate(x_cc_pd(-1:nxmax+2));                                  x_cc_pd = 0.0_ip
+        if(.not.allocated(y_cc_pd))allocate(y_cc_pd(-1:nymax+2));                                  y_cc_pd = 0.0_ip
+      endif
+
+      if(.not.allocated(kappa_pd) )allocate( kappa_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));         kappa_pd = 1.0_ip
+      if(.not.allocated(dz_vec_pd))allocate(dz_vec_pd(-1:nzmax+2));                              dz_vec_pd = 0.0_ip
+      if(.not.allocated(z_cc_pd)  )allocate(  z_cc_pd(-1:nzmax+2));                                z_cc_pd = 0.0_ip
+      if(.not.allocated(z_lb_pd)  )allocate(  z_lb_pd(-1:nzmax+2));                                z_lb_pd = 0.0_ip
 
       if(.not.allocated(sigma_nx_pd))allocate(sigma_nx_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_nx_pd = 1.0_ip
       if(.not.allocated(sigma_ny_pd))allocate(sigma_ny_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_ny_pd = 1.0_ip
       if(.not.allocated(sigma_nz_pd))allocate(sigma_nz_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_ny_pd = 1.0_ip
+#endif
 
       end subroutine Allocate_mesh
       !------------------------------------------------------------------------
@@ -558,6 +595,9 @@
       subroutine Deallocate_mesh
 
 #ifdef USEPOINTERS
+      if(associated(z_vec_init))    deallocate(z_vec_init)
+      if(associated(xy2ll_xlon))    deallocate(xy2ll_xlon)
+      if(associated(xy2ll_ylat))    deallocate(xy2ll_ylat)
       if(associated(dz_vec_pd))     deallocate(dz_vec_pd)
       if(associated(x_cc_pd))       deallocate(x_cc_pd)
       if(associated(y_cc_pd))       deallocate(y_cc_pd)
@@ -570,6 +610,9 @@
       if(associated(sigma_ny_pd))   deallocate(sigma_ny_pd)
       if(associated(sigma_nz_pd))   deallocate(sigma_nz_pd)
 #else
+      if(allocated(z_vec_init))    deallocate(z_vec_init)
+      if(allocated(xy2ll_xlon))    deallocate(xy2ll_xlon)
+      if(allocated(xy2ll_ylat))    deallocate(xy2ll_ylat)
       if(allocated(dz_vec_pd))     deallocate(dz_vec_pd)
       if(allocated(x_cc_pd))       deallocate(x_cc_pd)
       if(allocated(y_cc_pd))       deallocate(y_cc_pd)
@@ -582,7 +625,6 @@
       if(allocated(lon_cc_pd))     deallocate(lon_cc_pd)
       if(allocated(lat_cc_pd))     deallocate(lat_cc_pd)
 #endif
-      if(allocated(z_vec_init))    deallocate(z_vec_init)
 
       end subroutine Deallocate_mesh
       !------------------------------------------------------------------------
@@ -613,7 +655,6 @@
       real(kind=ip),dimension(:,:,:)    ,pointer :: vy_pd => null() ! v (N) component of wind
       real(kind=ip),dimension(:,:,:)    ,pointer :: vz_pd => null() ! w (up) component of wind
       real(kind=ip),dimension(:,:,:,:)  ,pointer :: vf_pd => null() ! fall velocity (x,y,z,gs) (positive upward)
-
       real(kind=ip),dimension(:,:,:,:,:),pointer :: concen_pd      => null() !ash concentration in x,y,z,gs_bin,time
       real(kind=ip),dimension(:,:,:)    ,pointer :: outflow_xz1_pd => null()
       real(kind=ip),dimension(:,:,:)    ,pointer :: outflow_xz2_pd => null()
@@ -622,12 +663,21 @@
       real(kind=ip),dimension(:,:,:)    ,pointer :: outflow_xy1_pd => null()
       real(kind=ip),dimension(:,:,:)    ,pointer :: outflow_xy2_pd => null()
       real(kind=ip),dimension(:,:,:)    ,pointer :: DepositGranularity => null() ! accumulated ash mass on ground
+      real(kind=ip),dimension(:)        ,pointer :: mass_aloft
+      integer      ,dimension(:)        ,pointer :: SpeciesID   ! 1 = ash gs bin
+                                         pointer                ! 2 = aggregate
+                                         pointer                ! 3 = chem species
+      integer      ,dimension(:)        ,pointer :: SpeciesSubID ! categorization within the class
+      real(kind=ip),dimension(:)        ,pointer :: v_s         ! Settling vel 
+      real(kind=ip),dimension(:)        ,pointer :: gsdiam      ! diameter (m)
+      real(kind=ip),dimension(:)        ,pointer :: bin_mass    ! mass
+      real(kind=ip),dimension(:)        ,pointer :: rho_m       ! density (kg/m3)
+      logical      ,dimension(:)        ,pointer :: IsAloft    ! T/F indicator remaining airborne concentration
 #else
       real(kind=ip),dimension(:,:,:)    ,allocatable :: vx_pd ! u (E) component of wind
       real(kind=ip),dimension(:,:,:)    ,allocatable :: vy_pd ! v (N) component of wind
       real(kind=ip),dimension(:,:,:)    ,allocatable :: vz_pd ! w (up) component of wind
       real(kind=ip),dimension(:,:,:,:)  ,allocatable :: vf_pd ! fall velocity (x,y,z,gs) (positive upward)
-
       real(kind=ip),dimension(:,:,:,:,:),allocatable :: concen_pd       ! ash concentration in x,y,z,gs_bin,time
       real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_xz1_pd  ! outflow concentration in x,z,gs
       real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_xz2_pd  ! outflow concentration in x,z,gs
@@ -636,26 +686,22 @@
       real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_xy1_pd  ! outflow concentration in x,y,gs
       real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_xy2_pd  ! outflow concentration in x,y,gs
       real(kind=ip),dimension(:,:,:)    ,allocatable :: DepositGranularity ! accumulated ash mass on ground 
+      real(kind=ip),dimension(:)        ,allocatable :: mass_aloft
+      integer      ,dimension(:)        ,allocatable :: SpeciesID   ! 1 = ash gs bin
+                                                                    ! 2 = aggregate
+                                                                    ! 3 = chem species
+      integer      ,dimension(:)        ,allocatable :: SpeciesSubID ! categorization within the class
+      real(kind=ip),dimension(:)        ,allocatable :: v_s         ! Settling vel 
+      real(kind=ip),dimension(:)        ,allocatable :: gsdiam      ! diameter (m)
+      real(kind=ip),dimension(:)        ,allocatable :: bin_mass    ! mass
+      real(kind=ip),dimension(:)        ,allocatable :: rho_m       ! density (kg/m3)
+      logical      ,dimension(:)        ,allocatable :: IsAloft    ! T/F indicator remaining airborne concentration
 #endif
       real(kind=ip)      :: dep_percent_accumulated
       real(kind=ip)      :: aloft_percent_remaining
       real(kind=ip)      :: StopValue    !program stops when percent_accumulated>StopValue
       real(kind=ip)      :: dep_vol,aloft_vol,outflow_vol,tot_vol
       real(kind=ip)      :: SourceCumulativeVol
-
-      real(kind=ip), dimension(:), allocatable :: mass_aloft
-
-      integer,       dimension(:), allocatable :: SpeciesID  ! 1 = ash gs bin
-                                                             ! 2 = aggregate
-                                                             ! 3 = chem species
-      integer,       dimension(:), allocatable :: SpeciesSubID ! categorization within the class
-
-      real(kind=ip), dimension(:), allocatable :: v_s         ! Settling vel 
-      real(kind=ip), dimension(:), allocatable :: gsdiam      ! diameter (m)
-      real(kind=ip), dimension(:), allocatable :: bin_mass    ! mass
-      real(kind=ip), dimension(:), allocatable :: rho_m       ! density (kg/m3)
-
-      logical,       dimension(:), allocatable :: IsAloft    ! T/F indicator remaining airborne concentration
 
         ! These are the max/min indices of the ash cloud used if FAST_SUBGRID is used
       integer :: imin,imax
@@ -665,41 +711,80 @@
       contains
 
       !------------------------------------------------------------------------
-      subroutine Allocate_solution
+subroutine Allocate_solution
 
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,ts0,ts1
 
-      if(.not.allocated(vx_pd))allocate(vx_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));         vx_pd = 0.0_ip 
-      if(.not.allocated(vy_pd))allocate(vy_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));         vy_pd = 0.0_ip
-      if(.not.allocated(vz_pd))allocate(vz_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));         vz_pd = 0.0_ip
-      if(.not.allocated(vf_pd))allocate(vf_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2,1:nsmax)); vf_pd = 0.0_ip
-
-      if(.not.allocated(concen_pd))allocate(concen_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2,1:nsmax,ts0:ts1)); concen_pd = 0.0_ip
-      if(.not.allocated(outflow_xz1_pd))allocate(outflow_xz1_pd(-1:nxmax+2,-1:nzmax+2,1:nsmax)); outflow_xz1_pd = 0.0_ip
-      if(.not.allocated(outflow_xz2_pd))allocate(outflow_xz2_pd(-1:nxmax+2,-1:nzmax+2,1:nsmax)); outflow_xz2_pd = 0.0_ip
-      if(.not.allocated(outflow_yz1_pd))allocate(outflow_yz1_pd(-1:nymax+2,-1:nzmax+2,1:nsmax)); outflow_yz1_pd = 0.0_ip
-      if(.not.allocated(outflow_yz2_pd))allocate(outflow_yz2_pd(-1:nymax+2,-1:nzmax+2,1:nsmax)); outflow_yz2_pd = 0.0_ip
-      if(.not.allocated(outflow_xy1_pd))allocate(outflow_xy1_pd(-1:nxmax+2,-1:nymax+2,1:nsmax)); outflow_xy1_pd = 0.0_ip
-      if(.not.allocated(outflow_xy2_pd))allocate(outflow_xy2_pd(-1:nxmax+2,-1:nymax+2,1:nsmax)); outflow_xy2_pd = 0.0_ip
+#ifdef USEPOINTERS
+      if(.not.associated(vx_pd))         allocate(vx_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2))
+      if(.not.associated(vy_pd))         allocate(vy_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2))
+      if(.not.associated(vz_pd))         allocate(vz_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2))
+      if(.not.associated(vf_pd))         allocate(vf_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2,1:nsmax))
+      if(.not.associated(concen_pd))     allocate(concen_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2,1:nsmax,ts0:ts1))
+      if(.not.associated(outflow_xz1_pd))allocate(outflow_xz1_pd(-1:nxmax+2,-1:nzmax+2,1:nsmax))
+      if(.not.associated(outflow_xz2_pd))allocate(outflow_xz2_pd(-1:nxmax+2,-1:nzmax+2,1:nsmax))
+      if(.not.associated(outflow_yz1_pd))allocate(outflow_yz1_pd(-1:nymax+2,-1:nzmax+2,1:nsmax))
+      if(.not.associated(outflow_yz2_pd))allocate(outflow_yz2_pd(-1:nymax+2,-1:nzmax+2,1:nsmax))
+      if(.not.associated(outflow_xy1_pd))allocate(outflow_xy1_pd(-1:nxmax+2,-1:nymax+2,1:nsmax))
+      if(.not.associated(outflow_xy2_pd))allocate(outflow_xy2_pd(-1:nxmax+2,-1:nymax+2,1:nsmax))
+      if(.not.associated(mass_aloft))    allocate(mass_aloft(1:nsmax))
+      if(.not.associated(SpeciesID))     allocate(SpeciesID(1:nsmax))
+      if(.not.associated(SpeciesSubID))  allocate(SpeciesSubID(1:nsmax))
+      if(.not.associated(v_s         ))  allocate(     v_s(1:nsmax))
+      if(.not.associated(gsdiam      ))  allocate(  gsdiam(1:nsmax))
+      if(.not.associated(bin_mass    ))  allocate(bin_mass(1:nsmax))
+      if(.not.associated(rho_m       ))  allocate(   rho_m(1:nsmax))
+      if(.not.associated(IsAloft     ))  allocate(IsAloft(1:nsmax))
 
       ! DepositGranularity should probably be a part of the Tephra
       ! module with trailing dimension of n_gs_max
-      if(.not.allocated(DepositGranularity))allocate(DepositGranularity(nxmax,nymax,nsmax)); DepositGranularity = 0.0_ip
+      if(.not.associated(DepositGranularity))allocate(DepositGranularity(nxmax,nymax,nsmax))
+#else
+      if(.not.allocated(vx_pd))         allocate(vx_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2))
+      if(.not.allocated(vy_pd))         allocate(vy_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2))
+      if(.not.allocated(vz_pd))         allocate(vz_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2))
+      if(.not.allocated(vf_pd))         allocate(vf_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2,1:nsmax))
+      if(.not.allocated(concen_pd))     allocate(concen_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2,1:nsmax,ts0:ts1))
+      if(.not.allocated(outflow_xz1_pd))allocate(outflow_xz1_pd(-1:nxmax+2,-1:nzmax+2,1:nsmax))
+      if(.not.allocated(outflow_xz2_pd))allocate(outflow_xz2_pd(-1:nxmax+2,-1:nzmax+2,1:nsmax))
+      if(.not.allocated(outflow_yz1_pd))allocate(outflow_yz1_pd(-1:nymax+2,-1:nzmax+2,1:nsmax))
+      if(.not.allocated(outflow_yz2_pd))allocate(outflow_yz2_pd(-1:nymax+2,-1:nzmax+2,1:nsmax))
+      if(.not.allocated(outflow_xy1_pd))allocate(outflow_xy1_pd(-1:nxmax+2,-1:nymax+2,1:nsmax))
+      if(.not.allocated(outflow_xy2_pd))allocate(outflow_xy2_pd(-1:nxmax+2,-1:nymax+2,1:nsmax))
+      if(.not.allocated(mass_aloft))    allocate(mass_aloft(1:nsmax))
+      if(.not.allocated(SpeciesID))     allocate(SpeciesID(1:nsmax))
+      if(.not.allocated(SpeciesSubID))  allocate(SpeciesSubID(1:nsmax))
+      if(.not.allocated(v_s         ))  allocate(     v_s(1:nsmax))
+      if(.not.allocated(gsdiam      ))  allocate(  gsdiam(1:nsmax))
+      if(.not.allocated(bin_mass    ))  allocate(bin_mass(1:nsmax))
+      if(.not.allocated(rho_m       ))  allocate(   rho_m(1:nsmax))
+      if(.not.allocated(IsAloft     ))  allocate(IsAloft(1:nsmax))
 
-      if(.not.allocated(mass_aloft))allocate(mass_aloft(1:nsmax)); mass_aloft = 0.0_ip
-      if(.not.allocated(SpeciesID))allocate(SpeciesID(1:nsmax));  SpeciesID = 1  ! Initialize everything to ash
-                                                    ! If nsmax>n_gs_max, then the
-                                                    ! extra bins will need to be
-                                                    ! flagged in the custom source modules
-
-      if(.not.allocated(SpeciesSubID))allocate(SpeciesSubID(1:nsmax));  SpeciesSubID = 0
-      if(.not.allocated(v_s         ))allocate(     v_s(1:nsmax)); v_s      = 0.0_ip
-      if(.not.allocated(gsdiam      ))allocate(  gsdiam(1:nsmax)); gsdiam   = 0.0_ip
-      if(.not.allocated(bin_mass    ))allocate(bin_mass(1:nsmax)); bin_mass = 0.0_ip
-      if(.not.allocated(rho_m       ))allocate(   rho_m(1:nsmax)); rho_m    = 0.0_ip
-
-      if(.not.allocated(IsAloft     ))allocate(IsAloft(1:nsmax));   IsAloft = .true.
+      ! DepositGranularity should probably be a part of the Tephra
+      ! module with trailing dimension of n_gs_max
+      if(.not.allocated(DepositGranularity))allocate(DepositGranularity(nxmax,nymax,nsmax))
+#endif
+      vx_pd = 0.0_ip
+      vy_pd = 0.0_ip
+      vz_pd = 0.0_ip
+      vf_pd = 0.0_ip
+      concen_pd = 0.0_ip
+      outflow_xz1_pd = 0.0_ip
+      outflow_xz2_pd = 0.0_ip
+      outflow_yz1_pd = 0.0_ip
+      outflow_yz2_pd = 0.0_ip
+      outflow_xy1_pd = 0.0_ip
+      outflow_xy2_pd = 0.0_ip
+      mass_aloft = 0.0_ip
+      SpeciesID = 1  ! Initialize everything to ash
+      SpeciesSubID = 0
+      v_s      = 0.0_ip
+      gsdiam   = 0.0_ip
+      bin_mass = 0.0_ip
+      rho_m    = 0.0_ip
+      IsAloft = .true.
+      DepositGranularity = 0.0_ip
 
       end subroutine Allocate_solution
       !------------------------------------------------------------------------
@@ -718,6 +803,14 @@
       if(associated(outflow_yz2_pd))     deallocate(outflow_yz2_pd)
       if(associated(outflow_xy1_pd))     deallocate(outflow_xy1_pd)
       if(associated(outflow_xy2_pd))     deallocate(outflow_xy2_pd)
+      if(associated(mass_aloft))         deallocate(mass_aloft)
+      if(associated(SpeciesID))          deallocate(SpeciesID)
+      if(associated(SpeciesSubID))       deallocate(SpeciesSubID)
+      if(associated(v_s))                deallocate(v_s)
+      if(associated(gsdiam))             deallocate(gsdiam)
+      if(associated(bin_mass))           deallocate(bin_mass)
+      if(associated(rho_m))              deallocate(rho_m)
+      if(associated(IsAloft))            deallocate(IsAloft)
       if(associated(DepositGranularity)) deallocate(DepositGranularity)
 #else
       if(allocated(vx_pd))              deallocate(vx_pd)
@@ -731,16 +824,16 @@
       if(allocated(outflow_yz2_pd))     deallocate(outflow_yz2_pd)
       if(allocated(outflow_xy1_pd))     deallocate(outflow_xy1_pd)
       if(allocated(outflow_xy2_pd))     deallocate(outflow_xy2_pd)
+      if(allocated(mass_aloft))         deallocate(mass_aloft)
+      if(allocated(SpeciesID))          deallocate(SpeciesID)
+      if(allocated(SpeciesSubID))       deallocate(SpeciesSubID)
+      if(allocated(v_s))                deallocate(v_s)
+      if(allocated(gsdiam))             deallocate(gsdiam)
+      if(allocated(bin_mass))           deallocate(bin_mass)
+      if(allocated(rho_m))              deallocate(rho_m)
+      if(allocated(IsAloft))            deallocate(IsAloft)
       if(allocated(DepositGranularity)) deallocate(DepositGranularity)
 #endif
-      if(allocated(mass_aloft))   deallocate(mass_aloft)
-      if(allocated(SpeciesID))    deallocate(SpeciesID)
-      if(allocated(SpeciesSubID)) deallocate(SpeciesSubID)
-      if(allocated(v_s))          deallocate(v_s)
-      if(allocated(gsdiam))    deallocate(gsdiam)
-      if(allocated(bin_mass))  deallocate(bin_mass)
-      if(allocated(rho_m))     deallocate(rho_m)
-      if(allocated(IsAloft))   deallocate(IsAloft)
 
       end subroutine Deallocate_solution
       !------------------------------------------------------------------------
@@ -872,37 +965,56 @@
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax
 
+#ifdef USEPOINTERS
+      if(.not.associated(vx_meso_last_step_sp))allocate(vx_meso_last_step_sp(nxmax,nymax,nzmax))
+      if(.not.associated(vx_meso_next_step_sp))allocate(vx_meso_next_step_sp(nxmax,nymax,nzmax))
+      if(.not.associated(vy_meso_last_step_sp))allocate(vy_meso_last_step_sp(nxmax,nymax,nzmax))
+      if(.not.associated(vy_meso_next_step_sp))allocate(vy_meso_next_step_sp(nxmax,nymax,nzmax))
+      if(.not.associated(vz_meso_last_step_sp))allocate(vz_meso_last_step_sp(nxmax,nymax,nzmax))
+      if(.not.associated(vz_meso_next_step_sp))allocate(vz_meso_next_step_sp(nxmax,nymax,nzmax))
+      if(.not.associated(vx_meso_1_sp))        allocate(vx_meso_1_sp(nxmax,nymax,nzmax))
+      if(.not.associated(vx_meso_2_sp))        allocate(vx_meso_2_sp(nxmax,nymax,nzmax))
+      if(.not.associated(vy_meso_1_sp))        allocate(vy_meso_1_sp(nxmax,nymax,nzmax))
+      if(.not.associated(vy_meso_2_sp))        allocate(vy_meso_2_sp(nxmax,nymax,nzmax))
+      if(.not.associated(vz_meso_1_sp))        allocate(vz_meso_1_sp(nxmax,nymax,nzmax))
+      if(.not.associated(vz_meso_2_sp))        allocate(vz_meso_2_sp(nxmax,nymax,nzmax))
+      if(.not.associated(vf_meso_last_step_sp))allocate(vf_meso_last_step_sp(nxmax,nymax,nzmax,nsmax))
+      if(.not.associated(vf_meso_next_step_sp))allocate(vf_meso_next_step_sp(nxmax,nymax,nzmax,nsmax))
+#else
       if(.not.allocated(vx_meso_last_step_sp))allocate(vx_meso_last_step_sp(nxmax,nymax,nzmax))
-      vx_meso_last_step_sp = 0.0_sp
       if(.not.allocated(vx_meso_next_step_sp))allocate(vx_meso_next_step_sp(nxmax,nymax,nzmax))
-      vx_meso_next_step_sp = 0.0_sp
       if(.not.allocated(vy_meso_last_step_sp))allocate(vy_meso_last_step_sp(nxmax,nymax,nzmax))
-      vy_meso_last_step_sp = 0.0_sp
       if(.not.allocated(vy_meso_next_step_sp))allocate(vy_meso_next_step_sp(nxmax,nymax,nzmax))
-      vy_meso_next_step_sp = 0.0_sp
       if(.not.allocated(vz_meso_last_step_sp))allocate(vz_meso_last_step_sp(nxmax,nymax,nzmax))
-      vz_meso_last_step_sp = 0.0_sp
       if(.not.allocated(vz_meso_next_step_sp))allocate(vz_meso_next_step_sp(nxmax,nymax,nzmax))
-      vz_meso_next_step_sp = 0.0_sp
-
-      if(.not.allocated(vx_meso_1_sp))allocate(vx_meso_1_sp(nxmax,nymax,nzmax)); vx_meso_1_sp = 0.0_sp
-      if(.not.allocated(vx_meso_2_sp))allocate(vx_meso_2_sp(nxmax,nymax,nzmax)); vx_meso_2_sp = 0.0_sp
-      if(.not.allocated(vy_meso_1_sp))allocate(vy_meso_1_sp(nxmax,nymax,nzmax)); vy_meso_1_sp = 0.0_sp
-      if(.not.allocated(vy_meso_2_sp))allocate(vy_meso_2_sp(nxmax,nymax,nzmax)); vy_meso_2_sp = 0.0_sp
-      if(.not.allocated(vz_meso_1_sp))allocate(vz_meso_1_sp(nxmax,nymax,nzmax)); vz_meso_1_sp = 0.0_sp
-      if(.not.allocated(vz_meso_2_sp))allocate(vz_meso_2_sp(nxmax,nymax,nzmax)); vz_meso_2_sp = 0.0_sp
-
-      ! Space for the fall velocity of each species at met steps
+      if(.not.allocated(vx_meso_1_sp))        allocate(vx_meso_1_sp(nxmax,nymax,nzmax))
+      if(.not.allocated(vx_meso_2_sp))        allocate(vx_meso_2_sp(nxmax,nymax,nzmax))
+      if(.not.allocated(vy_meso_1_sp))        allocate(vy_meso_1_sp(nxmax,nymax,nzmax))
+      if(.not.allocated(vy_meso_2_sp))        allocate(vy_meso_2_sp(nxmax,nymax,nzmax))
+      if(.not.allocated(vz_meso_1_sp))        allocate(vz_meso_1_sp(nxmax,nymax,nzmax))
+      if(.not.allocated(vz_meso_2_sp))        allocate(vz_meso_2_sp(nxmax,nymax,nzmax))
       if(.not.allocated(vf_meso_last_step_sp))allocate(vf_meso_last_step_sp(nxmax,nymax,nzmax,nsmax))
-      vf_meso_last_step_sp = 0.0_sp
       if(.not.allocated(vf_meso_next_step_sp))allocate(vf_meso_next_step_sp(nxmax,nymax,nzmax,nsmax))
+#endif
+      vx_meso_last_step_sp = 0.0_sp
+      vx_meso_next_step_sp = 0.0_sp
+      vy_meso_last_step_sp = 0.0_sp
+      vy_meso_next_step_sp = 0.0_sp
+      vz_meso_last_step_sp = 0.0_sp
+      vz_meso_next_step_sp = 0.0_sp
+      vx_meso_1_sp         = 0.0_sp
+      vx_meso_2_sp         = 0.0_sp
+      vy_meso_1_sp         = 0.0_sp
+      vy_meso_2_sp         = 0.0_sp
+      vz_meso_1_sp         = 0.0_sp
+      vz_meso_2_sp         = 0.0_sp
+      vf_meso_last_step_sp = 0.0_sp
       vf_meso_next_step_sp = 0.0_sp
 
       end subroutine Allocate_wind_grid
       !------------------------------------------------------------------------
 
       subroutine Deallocate_wind_grid
-
 
 #ifdef USEPOINTERS
       if(associated(vx_meso_last_step_sp)) deallocate(vx_meso_last_step_sp)
@@ -911,14 +1023,12 @@
       if(associated(vy_meso_next_step_sp)) deallocate(vy_meso_next_step_sp)
       if(associated(vz_meso_last_step_sp)) deallocate(vz_meso_last_step_sp)
       if(associated(vz_meso_next_step_sp)) deallocate(vz_meso_next_step_sp)
-
-      if(associated(vx_meso_1_sp))   deallocate(vx_meso_1_sp)
-      if(associated(vx_meso_2_sp))   deallocate(vx_meso_2_sp)
-      if(associated(vy_meso_1_sp))   deallocate(vy_meso_1_sp)
-      if(associated(vy_meso_2_sp))   deallocate(vy_meso_2_sp)
-      if(associated(vz_meso_1_sp))   deallocate(vz_meso_1_sp)
-      if(associated(vz_meso_2_sp))   deallocate(vz_meso_2_sp)
-
+      if(associated(vx_meso_1_sp))         deallocate(vx_meso_1_sp)
+      if(associated(vx_meso_2_sp))         deallocate(vx_meso_2_sp)
+      if(associated(vy_meso_1_sp))         deallocate(vy_meso_1_sp)
+      if(associated(vy_meso_2_sp))         deallocate(vy_meso_2_sp)
+      if(associated(vz_meso_1_sp))         deallocate(vz_meso_1_sp)
+      if(associated(vz_meso_2_sp))         deallocate(vz_meso_2_sp)
       if(associated(vf_meso_last_step_sp)) deallocate(vf_meso_last_step_sp)
       if(associated(vf_meso_next_step_sp)) deallocate(vf_meso_next_step_sp)
 #else
@@ -928,14 +1038,12 @@
       if(allocated(vy_meso_next_step_sp)) deallocate(vy_meso_next_step_sp)
       if(allocated(vz_meso_last_step_sp)) deallocate(vz_meso_last_step_sp)
       if(allocated(vz_meso_next_step_sp)) deallocate(vz_meso_next_step_sp)
-
-      if(allocated(vx_meso_1_sp))   deallocate(vx_meso_1_sp)
-      if(allocated(vx_meso_2_sp))   deallocate(vx_meso_2_sp)
-      if(allocated(vy_meso_1_sp))   deallocate(vy_meso_1_sp)
-      if(allocated(vy_meso_2_sp))   deallocate(vy_meso_2_sp)
-      if(allocated(vz_meso_1_sp))   deallocate(vz_meso_1_sp)
-      if(allocated(vz_meso_2_sp))   deallocate(vz_meso_2_sp)
-
+      if(allocated(vx_meso_1_sp))         deallocate(vx_meso_1_sp)
+      if(allocated(vx_meso_2_sp))         deallocate(vx_meso_2_sp)
+      if(allocated(vy_meso_1_sp))         deallocate(vy_meso_1_sp)
+      if(allocated(vy_meso_2_sp))         deallocate(vy_meso_2_sp)
+      if(allocated(vz_meso_1_sp))         deallocate(vz_meso_1_sp)
+      if(allocated(vz_meso_2_sp))         deallocate(vz_meso_2_sp)
       if(allocated(vf_meso_last_step_sp)) deallocate(vf_meso_last_step_sp)
       if(allocated(vf_meso_next_step_sp)) deallocate(vf_meso_next_step_sp)
 #endif
