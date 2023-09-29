@@ -10,7 +10,6 @@
 !      subroutine Write_PointData_Airports_KML
 !      subroutine Close_KML
 !      subroutine PlotModelBoundary
-!           function month(imonth)
 !
 !##############################################################################
 
@@ -1743,54 +1742,6 @@
 
       end subroutine PlotModelBoundary
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!
-!  month
-!
-!  Called from: 
-!  Arguments:
-!    imonth = 2-character 'number' for the month
-!
-!  This function returns the name of the month given the month number as 2-char
-!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!
-!      function month(imonth)
-!
-!      character (len=2) :: imonth
-!      character (len=3) :: month
-!
-!      if (imonth.eq.'01') then
-!        month='jan'
-!      else if (imonth.eq.'02') then
-!        month='feb'
-!      else if (imonth.eq.'03') then
-!        month='mar'
-!      else if (imonth.eq.'04') then
-!        month='apr'
-!      else if (imonth.eq.'05') then
-!        month='may'
-!      else if (imonth.eq.'06') then
-!        month='jun'
-!      else if (imonth.eq.'07') then
-!        month='jul'
-!      else if (imonth.eq.'08') then
-!        month='aug'
-!      else if (imonth.eq.'09') then
-!        month='sep'
-!      else if (imonth.eq.'10') then
-!        month='oct'
-!      else if (imonth.eq.'11') then
-!        month='nov'
-!      else if (imonth.eq.'12') then
-!        month='dec'
-!      else
-!        month='xxx'
-!      endif
-!
-!      return
-!
-!      end function month
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       end module Ash3d_KML_IO
