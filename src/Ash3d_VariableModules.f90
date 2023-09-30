@@ -398,21 +398,25 @@
       character (len=1) :: OutputStep_Marker !=* if data were written out since the last log_step
       integer           :: nWriteTimes       !number of deposit files to write
 #ifdef USEPOINTERS
-      real(kind=ip), dimension(:), pointer     :: WriteTimes      !times (hrs after first eruption start) to write out files
+      real(kind=ip), dimension(:), pointer     :: WriteTimes => null() ! times (hrs after first eruption start) to write out files
 #else
-      real(kind=ip), dimension(:), allocatable :: WriteTimes      !times (hrs after first eruption start) to write out files
+      real(kind=ip), dimension(:), allocatable :: WriteTimes      ! times (hrs after first eruption start) to write out files
 #endif
 
       integer,parameter :: MAXPROFILES = 99
       integer           :: nvprofiles                                        ! number of vertical profiles to write out
 #ifdef USEPOINTERS
-      integer,          dimension(:), pointer :: i_vprofile, j_vprofile  ! i and j values of vertical profiles
-      real(kind=ip),    dimension(:), pointer :: x_vprofile, y_vprofile  ! x and y of vertical profiles
-      character(len=50),dimension(:), pointer :: Site_vprofile           ! name of profile location
+      integer,          dimension(:), pointer :: i_vprofile    => null() ! i value of vertical profiles
+      integer,          dimension(:), pointer :: j_vprofile    => null() ! j value of vertical profiles
+      real(kind=ip),    dimension(:), pointer :: x_vprofile    => null() ! x of vertical profiles
+      real(kind=ip),    dimension(:), pointer :: y_vprofile    => null() ! y of vertical profiles
+      character(len=50),dimension(:), pointer :: Site_vprofile => null() ! name of profile location
 #else
-      integer,          dimension(:), allocatable :: i_vprofile, j_vprofile  ! i and j values of vertical profiles
-      real(kind=ip),    dimension(:), allocatable :: x_vprofile, y_vprofile  ! x and y of vertical profiles
-      character(len=50),dimension(:), allocatable :: Site_vprofile           ! name of profile location
+      integer,          dimension(:), allocatable :: i_vprofile     ! i value of vertical profiles
+      integer,          dimension(:), allocatable :: j_vprofile     ! j value of vertical profiles
+      real(kind=ip),    dimension(:), allocatable :: x_vprofile     ! x of vertical profiles
+      real(kind=ip),    dimension(:), allocatable :: y_vprofile     ! y of vertical profiles
+      character(len=50),dimension(:), allocatable :: Site_vprofile  ! name of profile location
 #endif
 
       ! These specify the number of user-defined variables.  This is mostly for optional modules.
@@ -512,15 +516,15 @@
       real(kind=ip)      :: de, dn                    !nodal spacing east & north, degrees
       real(kind=ip)      :: de_km, dn_km              !nodal spacing, km, at volcano
 #ifdef USEPOINTERS
-      real(kind=ip),dimension(:)    ,pointer :: z_vec_init
-      real(kind=ip),dimension(:,:)  ,pointer :: xy2ll_xlon
-      real(kind=ip),dimension(:,:)  ,pointer :: xy2ll_ylat
-      real(kind=ip),dimension(:)    ,pointer :: dz_vec_pd ! used for variable dz cases
-      real(kind=ip),dimension(:)    ,pointer :: x_cc_pd ! x_component of cell centers
-      real(kind=ip),dimension(:)    ,pointer :: y_cc_pd ! y_component of cell centers
-      real(kind=ip),dimension(:)    ,pointer :: z_cc_pd ! z_component of cell centers
-      real(kind=ip),dimension(:)    ,pointer :: z_lb_pd ! z_component of cell lower-boundary
-      real(kind=ip),dimension(:,:,:),pointer :: kappa_pd !volume of each node in km3
+      real(kind=ip),dimension(:)    ,pointer :: z_vec_init  => null()
+      real(kind=ip),dimension(:,:)  ,pointer :: xy2ll_xlon  => null() ! The (projected) computational grid
+      real(kind=ip),dimension(:,:)  ,pointer :: xy2ll_ylat  => null() !   back-projected onto lat/lon
+      real(kind=ip),dimension(:)    ,pointer :: dz_vec_pd   => null() ! used for variable dz cases
+      real(kind=ip),dimension(:)    ,pointer :: x_cc_pd     => null() ! x_component of cell centers
+      real(kind=ip),dimension(:)    ,pointer :: y_cc_pd     => null() ! y_component of cell centers
+      real(kind=ip),dimension(:)    ,pointer :: z_cc_pd     => null() ! z_component of cell centers
+      real(kind=ip),dimension(:)    ,pointer :: z_lb_pd     => null() ! z_component of cell lower-boundary
+      real(kind=ip),dimension(:,:,:),pointer :: kappa_pd    => null() ! volume of each node in km3
       real(kind=ip),dimension(:)    ,pointer :: lat_cc_pd   => null() ! lat of i,j cell centers
       real(kind=ip),dimension(:)    ,pointer :: lon_cc_pd   => null() ! lon of i,j cell centers
       real(kind=ip),dimension(:,:,:),pointer :: sigma_nx_pd => null() ! area of x face at i-1/2,j,k
@@ -528,16 +532,16 @@
       real(kind=ip),dimension(:,:,:),pointer :: sigma_nz_pd => null() ! area of z face at i,j,k-1/2
 #else
       real(kind=ip),dimension(:)    ,allocatable :: z_vec_init
-      real(kind=ip),dimension(:,:)  ,allocatable :: xy2ll_xlon ! The (projected) computational grid
-      real(kind=ip),dimension(:,:)  ,allocatable :: xy2ll_ylat !   back-projected onto lat/lon
-      real(kind=ip),dimension(:)    ,allocatable :: dz_vec_pd ! used for variable dz cases
-      real(kind=ip),dimension(:)    ,allocatable :: x_cc_pd ! x_component of cell centers
-      real(kind=ip),dimension(:)    ,allocatable :: y_cc_pd ! y_component of cell centers
-      real(kind=ip),dimension(:)    ,allocatable :: z_cc_pd ! z_component of cell centers
-      real(kind=ip),dimension(:)    ,allocatable :: z_lb_pd ! z_component of cell lower-boundary
-      real(kind=ip),dimension(:,:,:),allocatable :: kappa_pd !volume of each node in km3
-      real(kind=ip),dimension(:)    ,allocatable :: lat_cc_pd ! lat of i,j cell centers
-      real(kind=ip),dimension(:)    ,allocatable :: lon_cc_pd ! lon of i,j cell centers
+      real(kind=ip),dimension(:,:)  ,allocatable :: xy2ll_xlon  ! The (projected) computational grid
+      real(kind=ip),dimension(:,:)  ,allocatable :: xy2ll_ylat  !   back-projected onto lat/lon
+      real(kind=ip),dimension(:)    ,allocatable :: dz_vec_pd   ! used for variable dz cases
+      real(kind=ip),dimension(:)    ,allocatable :: x_cc_pd     ! x_component of cell centers
+      real(kind=ip),dimension(:)    ,allocatable :: y_cc_pd     ! y_component of cell centers
+      real(kind=ip),dimension(:)    ,allocatable :: z_cc_pd     ! z_component of cell centers
+      real(kind=ip),dimension(:)    ,allocatable :: z_lb_pd     ! z_component of cell lower-boundary
+      real(kind=ip),dimension(:,:,:),allocatable :: kappa_pd    ! volume of each node in km3
+      real(kind=ip),dimension(:)    ,allocatable :: lat_cc_pd   ! lat of i,j cell centers
+      real(kind=ip),dimension(:)    ,allocatable :: lon_cc_pd   ! lon of i,j cell centers
       real(kind=ip),dimension(:,:,:),allocatable :: sigma_nx_pd ! area of x face at i-1/2,j,k
       real(kind=ip),dimension(:,:,:),allocatable :: sigma_ny_pd ! area of y face at i,j-1/2,k
       real(kind=ip),dimension(:,:,:),allocatable :: sigma_nz_pd ! area of z face at i,j,k-1/2
@@ -665,8 +669,8 @@
       real(kind=ip),dimension(:,:,:)    ,pointer :: DepositGranularity => null() ! accumulated ash mass on ground
       real(kind=ip),dimension(:)        ,pointer :: mass_aloft
       integer      ,dimension(:)        ,pointer :: SpeciesID   ! 1 = ash gs bin
-                                         pointer                ! 2 = aggregate
-                                         pointer                ! 3 = chem species
+                                                                ! 2 = aggregate
+                                                                ! 3 = chem species
       integer      ,dimension(:)        ,pointer :: SpeciesSubID ! categorization within the class
       real(kind=ip),dimension(:)        ,pointer :: v_s         ! Settling vel 
       real(kind=ip),dimension(:)        ,pointer :: gsdiam      ! diameter (m)
@@ -895,7 +899,11 @@ subroutine Allocate_solution
       character(len=20)  :: xmlTimeSpanEnd    !time periods written to kml files
 
       integer :: ntmax ! The maximum anticipated number of steps
+#ifdef USEPOINTERS
+      real(kind=dp),dimension(:),pointer :: time_native => null()
+#else
       real(kind=dp),dimension(:),allocatable :: time_native
+#endif
       ! No allocatable arrays to allocate or deallocate
 
       end module time_data

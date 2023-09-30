@@ -57,9 +57,37 @@
                                      !=   50.0_ip  ! Invokes Cslip once effect is 5%
       real(kind=ip),public :: AIRBORNE_THRESH = 1.0e-3_ip ! Mass threshold for flagging bin as empty (kg)
 
-      integer,public :: n_gs_max                    ! # size classes of particles 
+      integer,public :: n_gs_max                      ! # size classes of particles 
       integer,public :: n_gs_aloft                    ! max gs bin still aloft
 
+              ! Fall velocity model
+              !   0 = No fall (just tracer)
+              !   1 = Wilson and Huang
+              !   2 = Wilson and Huang + Cunningham slip
+              !   3 = Wilson and Huang + Mod by Pfeiffer Et al.
+              !   4 = Ganser
+              !   5 = Stokes flow for spherical particles + slip
+      integer,public                                    :: FV_ID
+
+#ifdef USEPOINTERS
+      real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_v_s         ! Settling vel (m/s)
+      real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_gsdiam      ! Grain-size diameter 
+                                                                          !  (read in mm, stored in m)
+      real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_bin_mass    ! mass    (kg)
+      real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_rho_m       ! density (kg/m3)
+      real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_gsF         ! Grain-size shape (b+c)/2a
+      real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_gsG         ! Grain-size shape c/b
+      real(kind=ip), dimension(:,:),pointer         :: Tephra_gsF_fac     ! Precalculated shape factors
+                                                                          !  i=1 WH Stokes fac
+                                                                          !  i=2 WH Newton fac
+                                                                          !  i=3 Gans Stokes fac
+                                                                          !  i=4 Gans Newton fac
+                                                                          !  i=5 slip adjustment to diameter
+
+      !real(kind=ip),dimension(:,:,:)  ,pointer :: DepositGranularity => null() ! accumulated ash mass on ground
+      real(kind=sp),dimension(:,:,:,:),pointer :: vf_meso_last_step_MetP_sp => null()
+      real(kind=sp),dimension(:,:,:,:),pointer :: vf_meso_next_step_MetP_sp => null()
+#else
       real(kind=ip), dimension(:)  ,allocatable,public  :: Tephra_v_s         ! Settling vel (m/s)
       real(kind=ip), dimension(:)  ,allocatable,public  :: Tephra_gsdiam      ! Grain-size diameter 
                                                                               !  (read in mm, stored in m)
@@ -73,20 +101,6 @@
                                                                               !  i=3 Gans Stokes fac
                                                                               !  i=4 Gans Newton fac
                                                                               !  i=5 slip adjustment to diameter
-              ! Fall velocity model
-              !   0 = No fall (just tracer)
-              !   1 = Wilson and Huang
-              !   2 = Wilson and Huang + Cunningham slip
-              !   3 = Wilson and Huang + Mod by Pfeiffer Et al.
-              !   4 = Ganser
-              !   5 = Stokes flow for spherical particles + slip
-      integer,public                                    :: FV_ID
-
-#ifdef USEPOINTERS
-      !real(kind=ip),dimension(:,:,:)  ,pointer :: DepositGranularity => null() ! accumulated ash mass on ground
-      real(kind=sp),dimension(:,:,:,:),pointer :: vf_meso_last_step_MetP_sp => null()
-      real(kind=sp),dimension(:,:,:,:),pointer :: vf_meso_next_step_MetP_sp => null()
-#else
       !real(kind=ip),dimension(:,:,:)  ,allocatable :: DepositGranularity ! accumulated ash mass on ground 
       real(kind=sp),dimension(:,:,:,:),allocatable :: vf_meso_last_step_MetP_sp
       real(kind=sp),dimension(:,:,:,:),allocatable :: vf_meso_next_step_MetP_sp
@@ -165,6 +179,15 @@
 
       subroutine Deallocate_Tephra
 
+#ifdef USEPOINTERS
+      if(associated(Tephra_v_s))        deallocate(Tephra_v_s)
+      if(associated(Tephra_gsdiam))     deallocate(Tephra_gsdiam)
+      if(associated(Tephra_bin_mass))   deallocate(Tephra_bin_mass)
+      if(associated(Tephra_rho_m))      deallocate(Tephra_rho_m)
+      if(associated(Tephra_gsF))        deallocate(Tephra_gsF)
+      if(associated(Tephra_gsG))        deallocate(Tephra_gsG)
+      if(associated(Tephra_gsF_fac))    deallocate(Tephra_gsF_fac)
+#else
       if(allocated(Tephra_v_s))        deallocate(Tephra_v_s)
       if(allocated(Tephra_gsdiam))     deallocate(Tephra_gsdiam)
       if(allocated(Tephra_bin_mass))   deallocate(Tephra_bin_mass)
@@ -172,6 +195,7 @@
       if(allocated(Tephra_gsF))        deallocate(Tephra_gsF)
       if(allocated(Tephra_gsG))        deallocate(Tephra_gsG)
       if(allocated(Tephra_gsF_fac))    deallocate(Tephra_gsF_fac)
+#endif
 
       end subroutine Deallocate_Tephra
 

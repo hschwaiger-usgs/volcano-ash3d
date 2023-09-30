@@ -6,7 +6,7 @@
 !  Arguments:
 !    none
 !
-!  This subroutine defines the mesh used by Ash3d and fill all the vaiables from
+!  This subroutine defines the mesh used by Ash3d and fills all the variables from
 !  the mesh data module.  Cartesian grids are treated separately with the
 !  horizontal cell-centered coordinate variables x_cc_pd and y_cc_pd.  Lon/Lat grids
 !  use lon_cc_pd and lat_cc_pd.  Additionally, both coordinate systems use the same
@@ -260,9 +260,20 @@
         write(outlog(io),*)"Inside get_minmax_lonlat"
         write(outlog(io),*)"Allocating of size: ",nxmax+2,nymax+2
       endif;enddo
-      if(.not.allocated(xy2ll_ylat))allocate(xy2ll_ylat(0:nxmax+1,0:nymax+1))
-      if(.not.allocated(xy2ll_xlon))allocate(xy2ll_xlon(0:nxmax+1,0:nymax+1))
-
+#ifdef USEPOINTERS
+      if(.not.associated(xy2ll_ylat))then
+#else
+      if(.not.allocated(xy2ll_ylat))then
+#endif
+        allocate(xy2ll_ylat(0:nxmax+1,0:nymax+1))
+      endif
+#ifdef USEPOINTERS
+      if(.not.associated(xy2ll_xlon))then
+#else
+      if(.not.allocated(xy2ll_xlon))then
+#endif
+        allocate(xy2ll_xlon(0:nxmax+1,0:nymax+1))
+      endif
       ! This block calculates the lon/lat for each computational grid
       ! point
       ! Note:  All we need here is just the min/max for lat/lon so that

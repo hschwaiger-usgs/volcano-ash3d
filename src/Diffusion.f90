@@ -54,9 +54,9 @@
       real(kind=ip),public    :: Imp_DT_fac  = 4.0_ip
 
 #ifdef USEPOINTERS
-      real(kind=ip),dimension(:,:,:),pointer,public :: kx
-      real(kind=ip),dimension(:,:,:),pointer,public :: ky
-      real(kind=ip),dimension(:,:,:),pointer,public :: kz
+      real(kind=ip),dimension(:,:,:),pointer,public :: kx  => null() 
+      real(kind=ip),dimension(:,:,:),pointer,public :: ky  => null() 
+      real(kind=ip),dimension(:,:,:),pointer,public :: kz  => null() 
 #else
       real(kind=ip),dimension(:,:,:),allocatable,public :: kx
       real(kind=ip),dimension(:,:,:),allocatable,public :: ky
@@ -86,9 +86,15 @@
 
       ! Initialize diffusivity arrays with diffusivity_horz and diffusivity_vert
       ! These will change if useVarDiff = .true.
-      allocate(kx(0:nxmax+1,0:nymax+1,0:nzmax+1)); kx = diffusivity_horz
-      allocate(ky(0:nxmax+1,0:nymax+1,0:nzmax+1)); ky = diffusivity_horz
-      allocate(kz(0:nxmax+1,0:nymax+1,0:nzmax+1)); kz = diffusivity_vert
+#ifdef USEPOINTERS
+      if(.not.associated(kx))allocate(kx(0:nxmax+1,0:nymax+1,0:nzmax+1)); kx = diffusivity_horz
+      if(.not.associated(ky))allocate(ky(0:nxmax+1,0:nymax+1,0:nzmax+1)); ky = diffusivity_horz
+      if(.not.associated(kz))allocate(kz(0:nxmax+1,0:nymax+1,0:nzmax+1)); kz = diffusivity_vert
+#else
+      if(.not.allocated(kx))allocate(kx(0:nxmax+1,0:nymax+1,0:nzmax+1)); kx = diffusivity_horz
+      if(.not.allocated(ky))allocate(ky(0:nxmax+1,0:nymax+1,0:nzmax+1)); ky = diffusivity_horz
+      if(.not.allocated(kz))allocate(kz(0:nxmax+1,0:nymax+1,0:nzmax+1)); kz = diffusivity_vert
+#endif
 
       end subroutine Allocate_Diff
 
@@ -106,9 +112,15 @@
 
       subroutine Deallocate_Diff
 
+#ifdef USEPOINTERS
+      if(associated(kx)) deallocate(kx)
+      if(associated(ky)) deallocate(ky)
+      if(associated(kz)) deallocate(kz)
+#else
       if(allocated(kx)) deallocate(kx)
       if(allocated(ky)) deallocate(ky)
       if(allocated(kz)) deallocate(kz)
+#endif
 
       end subroutine Deallocate_Diff
 

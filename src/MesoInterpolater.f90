@@ -199,9 +199,6 @@
       ! Interpolate to get wind fields at current time and in km/hr
       ! Note: v[x,y,z,f]_pd are all in km/hr and
       !       v[x,y,z,f]_meso_[last,next]step_sp are in m/s
-      !vx_pd = 0.0_ip
-      !vy_pd = 0.0_ip
-      !vz_pd = 0.0_ip
       vx_pd(1:nxmax,1:nymax,1:nzmax) = &
             (real(vx_meso_last_step_sp(1:nxmax,1:nymax,1:nzmax),kind=ip) + &
            real((vx_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax) - &

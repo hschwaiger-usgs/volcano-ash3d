@@ -206,45 +206,78 @@
 
 #ifdef USEPOINTERS
         ! 2-D variables (in x,y)
-      logical,       dimension(:,:),pointer,public :: Mask_Cloud
-      logical,       dimension(:,:),pointer,public :: Mask_Deposit
-      real(kind=ip), dimension(:,:),pointer,public :: DepositThickness => null() ! accumulated ash thickness on ground (mm)
-      real(kind=ip), dimension(:,:),pointer,public :: MaxConcentration => null() ! max concentration in the cloud at any i,j node (mg/m3)
-      real(kind=dp), dimension(:,:),pointer,public :: DepArrivalTime   => null() ! (hours)
-      real(kind=dp), dimension(:,:),pointer,public :: CloudArrivalTime => null() ! (hours)
-      real(kind=ip), dimension(:,:),pointer,public :: CloudLoad        => null() ! Ash load in cloud, (tonnes/km2)
-      real(kind=ip), dimension(:,:),pointer :: CloudLoadLast    => null() ! Ash load at last time step, (tonnes/km2)
-      real(kind=ip), dimension(:,:),pointer,public :: MaxHeight        => null() ! maximum cloud height (km)
-      real(kind=ip), dimension(:,:),pointer,public :: MinHeight        => null() ! cloud bottom height (km)
-      real(kind=ip), dimension(:,:),pointer :: dbZCol           => null() ! max reflectivity in a vertical column (dB)
-      real(kind=op), dimension(:,:,:),pointer :: ashcon_tot     => null() ! Total ash concentration (3d)
-
-      real(kind=ip), dimension(:,:,:),pointer :: pr_ash         => null() ! concentration profile
+      logical,       dimension(:,:)  ,pointer,public :: Mask_Cloud       => null()
+      logical,       dimension(:,:)  ,pointer,public :: Mask_Deposit     => null()
+      real(kind=ip), dimension(:,:)  ,pointer,public :: DepositThickness => null() ! accumulated ash thickness on ground (mm)
+      real(kind=ip), dimension(:,:)  ,pointer,public :: MaxConcentration => null() ! max concentration in the cloud at any i,j node (mg/m3)
+      real(kind=dp), dimension(:,:)  ,pointer,public :: DepArrivalTime   => null() ! (hours)
+      real(kind=dp), dimension(:,:)  ,pointer,public :: CloudArrivalTime => null() ! (hours)
+      real(kind=ip), dimension(:,:)  ,pointer,public :: CloudLoad        => null() ! Ash load in cloud, (tonnes/km2)
+      real(kind=ip), dimension(:,:)  ,pointer,public :: MaxHeight        => null() ! maximum cloud height (km)
+      real(kind=ip), dimension(:,:)  ,pointer,public :: MinHeight        => null() ! cloud bottom height (km)
+      real(kind=ip), dimension(:,:)  ,pointer,public :: dbZCol           => null() ! max reflectivity in a vertical column (dB)
+      real(kind=op), dimension(:,:,:),pointer,public :: ashcon_tot       => null() ! Total ash concentration (3d)
+      real(kind=ip), dimension(:,:,:),pointer,public :: pr_ash           => null() ! concentration profile
+      real(kind=ip), dimension(:,:)  ,pointer        :: CloudLoadLast    => null() ! Ash load at last time step, (tonnes/km2)
 
         ! 3-D variables
         !   (in x,y,z)
-      real(kind=ip), dimension(:,:,:),pointer :: dbZ => null()               ! radar reflectivty at time t (dbZ)
+      real(kind=ip), dimension(:,:,:),pointer,public :: dbZ => null()               ! radar reflectivty at time t (dbZ)
+
+        ! User-defined 2-D static variables (in x,y)
+      character(len=30), dimension(:),  pointer,public :: var_User2d_static_XY_name    => null()
+      character(len=30), dimension(:),  pointer,public :: var_User2d_static_XY_unit    => null()
+      character(len=30), dimension(:),  pointer,public :: var_User2d_static_XY_lname   => null()
+      real(kind=op),     dimension(:),  pointer,public :: var_User2d_static_XY_MissVal => null()
+      real(kind=op),     dimension(:),  pointer,public :: var_User2d_static_XY_FillVal => null()
+      real(kind=op), dimension(:,:,:),  pointer,public :: var_User2d_static_XY         => null()
+        ! User-defined 2-D variables (in x,y)
+      character(len=30), dimension(:),  pointer,public :: var_User2d_XY_name           => null()
+      character(len=30), dimension(:),  pointer,public :: var_User2d_XY_unit           => null()
+      character(len=30), dimension(:),  pointer,public :: var_User2d_XY_lname          => null()
+      real(kind=op),     dimension(:),  pointer,public :: var_User2d_XY_MissVal        => null()
+      real(kind=op),     dimension(:),  pointer,public :: var_User2d_XY_FillVal        => null()
+      real(kind=op), dimension(:,:,:),  pointer,public :: var_User2d_XY                => null()
+        ! User-defined 3-D variables (in x,y,gs)
+      character(len=30), dimension(:),  pointer,public :: var_User3d_XYGs_name         => null()
+      character(len=30), dimension(:),  pointer,public :: var_User3d_XYGs_unit         => null()
+      character(len=30), dimension(:),  pointer,public :: var_User3d_XYGs_lname        => null()
+      real(kind=op),     dimension(:),  pointer,public :: var_User3d_XYGs_MissVal      => null()
+      real(kind=op),     dimension(:),  pointer,public :: var_User3d_XYGs_FillVal      => null()
+      real(kind=op), dimension(:,:,:,:),pointer,public :: var_User3d_XYGs              => null()
+        ! User-defined 3-D variables (in x,y,z)
+      character(len=30), dimension(:),  pointer,public :: var_User3d_XYZ_name          => null()
+      character(len=30), dimension(:),  pointer,public :: var_User3d_XYZ_unit          => null()
+      character(len=30), dimension(:),  pointer,public :: var_User3d_XYZ_lname         => null()
+      real(kind=op),     dimension(:),  pointer,public :: var_User3d_XYZ_MissVal       => null()
+      real(kind=op),     dimension(:),  pointer,public :: var_User3d_XYZ_FillVal       => null()
+      real(kind=ip), dimension(:,:,:,:),pointer,public :: var_User3d_XYZ               => null()
+        ! User-defined 4-D variables (in x,y,z,gs)
+      character(len=30), dimension(:),    pointer,public :: var_User4d_XYZGs_name      => null()
+      character(len=30), dimension(:),    pointer,public :: var_User4d_XYZGs_unit      => null()
+      character(len=30), dimension(:),    pointer,public :: var_User4d_XYZGs_lname     => null()
+      real(kind=op),     dimension(:),    pointer,public :: var_User4d_XYZGs_MissVal   => null()
+      real(kind=op),     dimension(:),    pointer,public :: var_User4d_XYZGs_FillVal   => null()
+      real(kind=op), dimension(:,:,:,:,:),pointer,public :: var_User4d_XYZGs           => null()
 #else
         ! 2-D variables (in x,y)
-      logical,       dimension(:,:),allocatable,public :: Mask_Cloud
-      logical,       dimension(:,:),allocatable,public :: Mask_Deposit
-      real(kind=ip), dimension(:,:),allocatable,public :: DepositThickness   ! accumulated ash thickness on ground in mm (x,y)
-      real(kind=ip), dimension(:,:),allocatable,public :: MaxConcentration   ! max concentration in the cloud at any i,j node (mg/m3)
-      real(kind=dp), dimension(:,:),allocatable,public :: DepArrivalTime     ! (hours)
-      real(kind=dp), dimension(:,:),allocatable,public :: CloudArrivalTime   ! (hours)
-      real(kind=ip), dimension(:,:),allocatable,public :: CloudLoad          ! Ash load in cloud, tonnes/km2
-      real(kind=ip), dimension(:,:),allocatable :: CloudLoadLast      ! Ash load at last time step, tonnes/km2
-      real(kind=ip), dimension(:,:),allocatable,public :: MaxHeight          ! maximum cloud height
-      real(kind=ip), dimension(:,:),allocatable,public :: MinHeight          ! cloud bottom height
-      real(kind=ip), dimension(:,:),allocatable,public :: dbZCol             ! max reflectivity in a vertical column
-      real(kind=op), dimension(:,:,:),allocatable ,public:: ashcon_tot       ! Total ash concentration (3d)
-
-      real(kind=ip), dimension(:,:,:),allocatable,public :: pr_ash           ! concentration profile
+      logical,       dimension(:,:)  ,allocatable,public :: Mask_Cloud
+      logical,       dimension(:,:)  ,allocatable,public :: Mask_Deposit
+      real(kind=ip), dimension(:,:)  ,allocatable,public :: DepositThickness   ! accumulated ash thickness on ground in mm (x,y)
+      real(kind=ip), dimension(:,:)  ,allocatable,public :: MaxConcentration   ! max concentration in the cloud at any i,j node (mg/m3)
+      real(kind=dp), dimension(:,:)  ,allocatable,public :: DepArrivalTime     ! (hours)
+      real(kind=dp), dimension(:,:)  ,allocatable,public :: CloudArrivalTime   ! (hours)
+      real(kind=ip), dimension(:,:)  ,allocatable,public :: CloudLoad          ! Ash load in cloud, tonnes/km2
+      real(kind=ip), dimension(:,:)  ,allocatable,public :: MaxHeight          ! maximum cloud height
+      real(kind=ip), dimension(:,:)  ,allocatable,public :: MinHeight          ! cloud bottom height
+      real(kind=ip), dimension(:,:)  ,allocatable,public :: dbZCol             ! max reflectivity in a vertical column
+      real(kind=op), dimension(:,:,:),allocatable,public :: ashcon_tot         ! Total ash concentration (3d)
+      real(kind=ip), dimension(:,:,:),allocatable,public :: pr_ash             ! concentration profile
+      real(kind=ip), dimension(:,:)  ,allocatable        :: CloudLoadLast      ! Ash load at last time step, tonnes/km2
 
         ! 3-D variables
         !   (in x,y,z)
       real(kind=ip), dimension(:,:,:),allocatable,public :: dbZ                ! radar reflectivty at time t (dbZ)
-#endif
 
         ! User-defined 2-D static variables (in x,y)
       character(len=30), dimension(:),    allocatable,public :: var_User2d_static_XY_name
@@ -281,6 +314,7 @@
       real(kind=op),     dimension(:),    allocatable,public :: var_User4d_XYZGs_MissVal
       real(kind=op),     dimension(:),    allocatable,public :: var_User4d_XYZGs_FillVal
       real(kind=op), dimension(:,:,:,:,:),allocatable,public :: var_User4d_XYZGs
+#endif
 
       contains
       !------------------------------------------------------------------------
@@ -475,7 +509,20 @@
 
       subroutine Deallocate_Output_Vars()
 
-#ifndef USEPOINTERS
+#ifdef USEPOINTERS
+      if(associated(Mask_Cloud))       deallocate(Mask_Cloud)
+      if(associated(Mask_Deposit))     deallocate(Mask_Deposit)
+      if(associated(DepositThickness)) deallocate(DepositThickness)
+      if(associated(MaxConcentration)) deallocate(MaxConcentration)
+      if(associated(DepArrivalTime))   deallocate(DepArrivalTime)
+      if(associated(CloudArrivalTime)) deallocate(CloudArrivalTime)
+      if(associated(CloudLoad))        deallocate(CloudLoad)
+      if(associated(CloudLoadLast))    deallocate(CloudLoadLast)
+      if(associated(MaxHeight))        deallocate(MaxHeight)
+      if(associated(MinHeight))        deallocate(MinHeight)
+      if(associated(dbZCol))           deallocate(dbZCol)
+      if(associated(dbZ))              deallocate(dbZ)
+#else
       if(allocated(Mask_Cloud))       deallocate(Mask_Cloud)
       if(allocated(Mask_Deposit))     deallocate(Mask_Deposit)
       if(allocated(DepositThickness)) deallocate(DepositThickness)
@@ -488,9 +535,10 @@
       if(allocated(MinHeight))        deallocate(MinHeight)
       if(allocated(dbZCol))           deallocate(dbZCol)
       if(allocated(dbZ))              deallocate(dbZ)
-      if(allocated(Con_Cust_RGB))     deallocate(Con_Cust_RGB)
-      if(allocated(Con_Cust_Lev))     deallocate(Con_Cust_Lev)
 #endif
+
+      deallocate(Con_Cust_RGB)
+      deallocate(Con_Cust_Lev)
 
       end subroutine Deallocate_Output_Vars
 
@@ -508,7 +556,11 @@
 
       subroutine Deallocate_NTime
 
+#ifdef USEPOINTERS
+      if(associated(time_native))deallocate(time_native)
+#else
       if(allocated(time_native))deallocate(time_native)
+#endif
 
       end subroutine Deallocate_NTime
 
@@ -526,7 +578,11 @@
 
       subroutine Deallocate_Profile
 
+#ifdef USEPOINTERS
+      if(associated(pr_ash))deallocate(pr_ash)                       ! vertical ash profile
+#else
       if(allocated(pr_ash))deallocate(pr_ash)                       ! vertical ash profile
+#endif
 
       end subroutine Deallocate_Profile
 
@@ -544,6 +600,38 @@
 
       subroutine Deallocate_Output_UserVars()
 
+#ifdef USEPOINTERS
+      if(associated(var_User2d_static_XY_name))    deallocate(var_User2d_static_XY_name)
+      if(associated(var_User2d_static_XY_unit))    deallocate(var_User2d_static_XY_unit)
+      if(associated(var_User2d_static_XY_lname))   deallocate(var_User2d_static_XY_lname)
+      if(associated(var_User2d_static_XY_MissVal)) deallocate(var_User2d_static_XY_MissVal)
+      if(associated(var_User2d_static_XY_FillVal)) deallocate(var_User2d_static_XY_FillVal)
+      if(associated(var_User2d_static_XY))         deallocate(var_User2d_static_XY)
+      if(associated(var_User2d_XY_name))           deallocate(var_User2d_XY_name)
+      if(associated(var_User2d_XY_unit))           deallocate(var_User2d_XY_unit)
+      if(associated(var_User2d_XY_lname))          deallocate(var_User2d_XY_lname)
+      if(associated(var_User2d_XY_MissVal))        deallocate(var_User2d_XY_MissVal)
+      if(associated(var_User2d_XY_FillVal))        deallocate(var_User2d_XY_FillVal)
+      if(associated(var_User2d_XY))                deallocate(var_User2d_XY)
+      if(associated(var_User3d_XYGs_name))         deallocate(var_User3d_XYGs_name)
+      if(associated(var_User3d_XYGs_unit))         deallocate(var_User3d_XYGs_unit)
+      if(associated(var_User3d_XYGs_lname))        deallocate(var_User3d_XYGs_lname)
+      if(associated(var_User3d_XYGs_MissVal))      deallocate(var_User3d_XYGs_MissVal)
+      if(associated(var_User3d_XYGs_FillVal))      deallocate(var_User3d_XYGs_FillVal)
+      if(associated(var_User3d_XYGs))              deallocate(var_User3d_XYGs)
+      if(associated(var_User3d_XYZ_name))          deallocate(var_User3d_XYZ_name)
+      if(associated(var_User3d_XYZ_unit))          deallocate(var_User3d_XYZ_unit)
+      if(associated(var_User3d_XYZ_lname))         deallocate(var_User3d_XYZ_lname)
+      if(associated(var_User3d_XYZ_MissVal))       deallocate(var_User3d_XYZ_MissVal)
+      if(associated(var_User3d_XYZ_FillVal))       deallocate(var_User3d_XYZ_FillVal)
+      if(associated(var_User3d_XYZ))               deallocate(var_User3d_XYZ)
+      if(associated(var_User4d_XYZGs_name))        deallocate(var_User4d_XYZGs_name)
+      if(associated(var_User4d_XYZGs_unit))        deallocate(var_User4d_XYZGs_unit)
+      if(associated(var_User4d_XYZGs_lname))       deallocate(var_User4d_XYZGs_lname)
+      if(associated(var_User4d_XYZGs_MissVal))     deallocate(var_User4d_XYZGs_MissVal)
+      if(associated(var_User4d_XYZGs_FillVal))     deallocate(var_User4d_XYZGs_FillVal)
+      if(associated(var_User4d_XYZGs))             deallocate(var_User4d_XYZGs)
+#else
       if(allocated(var_User2d_static_XY_name))    deallocate(var_User2d_static_XY_name)
       if(allocated(var_User2d_static_XY_unit))    deallocate(var_User2d_static_XY_unit)
       if(allocated(var_User2d_static_XY_lname))   deallocate(var_User2d_static_XY_lname)
@@ -574,6 +662,7 @@
       if(allocated(var_User4d_XYZGs_MissVal))     deallocate(var_User4d_XYZGs_MissVal)
       if(allocated(var_User4d_XYZGs_FillVal))     deallocate(var_User4d_XYZGs_FillVal)
       if(allocated(var_User4d_XYZGs))             deallocate(var_User4d_XYZGs)
+#endif
 
       end subroutine Deallocate_Output_UserVars
 
@@ -982,7 +1071,7 @@
 
       real(kind=ip) :: CellArea
  
-      !calculate cloud concentration
+      ! calculate cloud concentration
       LoadVal(1)         = 0.24_ip
       LoadVal(2)         = 1.0_ip
       LoadVal(3)         = 2.0_ip

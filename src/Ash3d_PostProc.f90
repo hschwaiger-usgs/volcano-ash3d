@@ -855,39 +855,87 @@
           ! If we have read a 2d array, copy it to the proper named array so it can be
           ! processed correctly
           if(iprod.eq.3.or.iprod.eq.4.or.iprod.eq.5.or.iprod.eq.6)then
-            if(.not.allocated(DepositThickness)) allocate(DepositThickness(nxmax,nymax))
+#ifdef USEPOINTERS
+            if(.not.associated(DepositThickness))then
+#else
+            if(.not.allocated(DepositThickness))then
+#endif
+              allocate(DepositThickness(nxmax,nymax))
+            endif
             DepositThickness(1:nxmax,1:nymax) = OutVar(1:nxmax,1:nymax)
           endif
 
           if(iprod.eq. 7)then
-            if(.not.allocated(DepArrivalTime)) allocate(DepArrivalTime(nxmax,nymax))
+#ifdef USEPOINTERS
+            if(.not.associated(DepArrivalTime))then
+#else
+            if(.not.allocated(DepArrivalTime))then
+#endif
+              allocate(DepArrivalTime(nxmax,nymax))
+            endif
             DepArrivalTime(1:nxmax,1:nymax)   = OutVar(1:nxmax,1:nymax)
           endif
           if(iprod.eq. 8)then
             stop 1
           endif
           if(iprod.eq. 9)then
-            if(.not.allocated(MaxConcentration)) allocate(MaxConcentration(nxmax,nymax))
+#ifdef USEPOINTERS
+            if(.not.associated(MaxConcentration))then
+#else
+            if(.not.allocated(MaxConcentration))then
+#endif
+              allocate(MaxConcentration(nxmax,nymax))
+            endif
             MaxConcentration(1:nxmax,1:nymax) = OutVar(1:nxmax,1:nymax)
           endif
           if(iprod.eq.10)then
-            if(.not.allocated(MaxHeight)) allocate(MaxHeight(nxmax,nymax))
+#ifdef USEPOINTERS
+            if(.not.associated(MaxHeight))then
+#else
+            if(.not.allocated(MaxHeight))then
+#endif
+              allocate(MaxHeight(nxmax,nymax))
+            endif
             MaxHeight(1:nxmax,1:nymax)        = OutVar(1:nxmax,1:nymax)
           endif
           if(iprod.eq.11)then
-            if(.not.allocated(MinHeight)) allocate(MinHeight(nxmax,nymax))
+#ifdef USEPOINTERS
+            if(.not.associated(MinHeight))then
+#else
+            if(.not.allocated(MinHeight))then
+#endif
+              allocate(MinHeight(nxmax,nymax))
+            endif
             MinHeight(1:nxmax,1:nymax)        = OutVar(1:nxmax,1:nymax)
           endif
           if(iprod.eq.12)then
-            if(.not.allocated(CloudLoad)) allocate(CloudLoad(nxmax,nymax))
+#ifdef USEPOINTERS
+            if(.not.associated(CloudLoad))then
+#else
+            if(.not.allocated(CloudLoad))then
+#endif
+              allocate(CloudLoad(nxmax,nymax))
+            endif
             CloudLoad(1:nxmax,1:nymax)        = OutVar(1:nxmax,1:nymax)
           endif
           if(iprod.eq.13)then
-            if(.not.allocated(dbZCol)) allocate(dbZCol(nxmax,nymax))
+#ifdef USEPOINTERS
+            if(.not.associated(dbZCol))then
+#else
+            if(.not.allocated(dbZCol))then
+#endif
+              allocate(dbZCol(nxmax,nymax))
+            endif
             dbZCol(1:nxmax,1:nymax)           = OutVar(1:nxmax,1:nymax)
           endif
           if(iprod.eq.14)then
-            if(.not.allocated(CloudArrivalTime)) allocate(CloudArrivalTime(nxmax,nymax))
+#ifdef USEPOINTERS
+            if(.not.associated(CloudArrivalTime))then
+#else
+            if(.not.allocated(CloudArrivalTime))then
+#endif
+              allocate(CloudArrivalTime(nxmax,nymax))
+            endif
             CloudArrivalTime(1:nxmax,1:nymax) = OutVar(1:nxmax,1:nymax)
           endif
           !if(iprod.eq.15)then

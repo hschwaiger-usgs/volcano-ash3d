@@ -96,8 +96,8 @@
       real(kind=ip) :: tot_vol
 
       allocate(SourceNodeFlux_Umbrella(3,3,nz+1,n_gs_max)); SourceNodeFlux_Umbrella=0.0_ip
-      allocate(ScaleFac_Umbrella(nz));                  ScaleFac_Umbrella=0.0_ip
-      allocate(AvgStenc_Umbrella(3,3,nz));              AvgStenc_Umbrella=0.0_ip
+      allocate(ScaleFac_Umbrella(nz));                      ScaleFac_Umbrella=0.0_ip
+      allocate(AvgStenc_Umbrella(3,3,nz));                  AvgStenc_Umbrella=0.0_ip
 
       SourceNodeWidth_km  = (3.0_ip/2.0_ip)*de_km
       SourceNodeHeight_km = (3.0_ip/2.0_ip)*dn_km
@@ -157,11 +157,20 @@
 
       subroutine Deallocate_Source_Umbrella
 
-        if(allocated(AvgStenc_Umbrella))       deallocate(AvgStenc_Umbrella)
-        if(allocated(ScaleFac_Umbrella))       deallocate(ScaleFac_Umbrella)
+
+#ifdef USEPOINTERS
+        if(associated(SourceNodeFlux_Umbrella)) deallocate(SourceNodeFlux_Umbrella)
+        if(associated(uvx_pd))                  deallocate(uvx_pd)
+        if(associated(uvx_pd))                  deallocate(uvy_pd)
+#else
         if(allocated(SourceNodeFlux_Umbrella)) deallocate(SourceNodeFlux_Umbrella)
         if(allocated(uvx_pd))                  deallocate(uvx_pd)
         if(allocated(uvx_pd))                  deallocate(uvy_pd)
+#endif
+
+        if(allocated(AvgStenc_Umbrella))       deallocate(AvgStenc_Umbrella)
+        if(allocated(ScaleFac_Umbrella))       deallocate(ScaleFac_Umbrella)
+
 
       end subroutine Deallocate_Source_Umbrella
 

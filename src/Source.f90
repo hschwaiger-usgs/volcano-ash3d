@@ -83,29 +83,39 @@
       real(kind=ip), dimension(:  )  ,pointer,public :: TephraFluxRate      => null()
       real(kind=ip), dimension(:,:)  ,pointer,public :: SourceNodeFlux      => null()
       real(kind=ip), dimension(:,:,:),pointer        :: SourceNodeFlux_Area => null()
+        !The following arrays are of length neruptions
+      real(kind=ip), dimension(:)    ,pointer,public :: e_PlumeHeight        => null()
+      real(kind=ip), dimension(:)    ,pointer,public :: e_Volume             => null()
+      real(kind=dp), dimension(:)    ,pointer,public :: e_Duration           => null() ! Time needs to be dp
+      real(kind=dp), dimension(:)    ,pointer,public :: e_StartTime          => null()
+      real(kind=dp), dimension(:)    ,pointer,public :: e_EndTime            => null()
+      real(kind=ip), dimension(:)    ,pointer,public :: e_prof_dz            => null()
+      integer      , dimension(:)    ,pointer,public :: e_prof_nzpoints      => null()
+      real(kind=ip), dimension(:,:)  ,pointer,public :: e_prof_Volume        => null()
+      real(kind=ip), dimension(:,:)  ,pointer,public :: e_prof_MassFluxRate  => null()
+      real(kind=ip), dimension(:)    ,pointer,public :: MassFluxRate         => null()
+      real(kind=dp), dimension(:)    ,pointer        :: dt_pulse_frac        => null()
 #else
       real(kind=ip), dimension(:,:)  ,allocatable,public :: NormSourceColumn
       real(kind=ip), dimension(:)    ,allocatable,public :: TephraFluxRate
       real(kind=ip), dimension(:,:)  ,allocatable,public :: SourceNodeFlux
       real(kind=ip), dimension(:,:,:),allocatable        :: SourceNodeFlux_Area
+        !The following arrays are of length neruptions
+      real(kind=ip), dimension(:)    ,allocatable,public :: e_PlumeHeight
+      real(kind=ip), dimension(:)    ,allocatable,public :: e_Volume
+      real(kind=dp), dimension(:)    ,allocatable,public :: e_Duration   ! Time needs to be dp
+      real(kind=dp), dimension(:)    ,allocatable,public :: e_StartTime  ! 
+      real(kind=dp), dimension(:)    ,allocatable,public :: e_EndTime    ! 
+      real(kind=ip), dimension(:)    ,allocatable,public :: e_prof_dz
+      integer      , dimension(:)    ,allocatable,public :: e_prof_nzpoints
+      real(kind=ip), dimension(:,:)  ,allocatable,public :: e_prof_Volume
+      real(kind=ip), dimension(:,:)  ,allocatable,public :: e_prof_MassFluxRate
+      real(kind=ip), dimension(:)    ,allocatable,public :: MassFluxRate
+      real(kind=dp), dimension(:)    ,allocatable        :: dt_pulse_frac
 #endif
 
         !The following arrays are used by MassFluxCalculator
       logical,       public :: Source_in_dt        ! true if any eruption contributes in this dt
-
-        !The following arrays are of length neruptions
-      real(kind=ip), dimension(:)        ,allocatable,public :: e_PlumeHeight
-      real(kind=ip), dimension(:)        ,allocatable,public :: e_Volume
-      real(kind=dp), dimension(:)        ,allocatable,public :: e_Duration   ! Time needs to be dp
-      real(kind=dp), dimension(:)        ,allocatable,public :: e_StartTime  ! 
-      real(kind=dp), dimension(:)        ,allocatable,public :: e_EndTime    ! 
-      real(kind=ip), dimension(:)        ,allocatable,public :: e_prof_dz
-      integer      , dimension(:)        ,allocatable,public :: e_prof_nzpoints
-      real(kind=ip), dimension(:,:)      ,allocatable,public :: e_prof_Volume
-      real(kind=ip), dimension(:,:)      ,allocatable,public :: e_prof_MassFluxRate
-      real(kind=ip), dimension(:)        ,allocatable,public :: MassFluxRate
-
-      real(kind=dp), dimension(:)        ,allocatable        :: dt_pulse_frac
 
       real(kind=dp), public :: e_EndTime_final
 
@@ -139,20 +149,20 @@
 
       subroutine Allocate_Source_eruption
 
-      allocate (e_StartTime(neruptions));            e_StartTime   = 0.0_ip
-      allocate (e_Duration(neruptions));             e_Duration    = 0.0_ip
-      allocate (e_PlumeHeight(neruptions));          e_PlumeHeight = 0.0_ip
-      allocate (e_Volume(neruptions));               e_Volume      = 0.0_ip
-      allocate (MassFluxRate(neruptions));           MassFluxRate  = 0.0_ip
-      allocate (e_EndTime(neruptions));              e_EndTime     = 0.0_ip
-      allocate (dt_pulse_frac(neruptions));          dt_pulse_frac = 0.0_dp
+      allocate(e_StartTime(neruptions));            e_StartTime   = 0.0_ip
+      allocate(e_Duration(neruptions));             e_Duration    = 0.0_ip
+      allocate(e_PlumeHeight(neruptions));          e_PlumeHeight = 0.0_ip
+      allocate(e_Volume(neruptions));               e_Volume      = 0.0_ip
+      allocate(MassFluxRate(neruptions));           MassFluxRate  = 0.0_ip
+      allocate(e_EndTime(neruptions));              e_EndTime     = 0.0_ip
+      allocate(dt_pulse_frac(neruptions));          dt_pulse_frac = 0.0_dp
 
       if(SourceType.eq.'profile')then
-        allocate (e_prof_dz(neruptions));             e_prof_dz       = 0.0_ip
-        allocate (e_prof_nzpoints(neruptions));       e_prof_nzpoints = 0
+        allocate(e_prof_dz(neruptions));             e_prof_dz       = 0.0_ip
+        allocate(e_prof_nzpoints(neruptions));       e_prof_nzpoints = 0
           ! for profiles, assume 50 points
-        allocate (e_prof_Volume(neruptions,50));      e_prof_Volume   = 0.0_ip
-        allocate (e_prof_MassFluxRate(neruptions,50));e_prof_MassFluxRate = 0.0_ip
+        allocate(e_prof_Volume(neruptions,50));      e_prof_Volume   = 0.0_ip
+        allocate(e_prof_MassFluxRate(neruptions,50));e_prof_MassFluxRate = 0.0_ip
       endif
 
       ieruption = 1 ! Initialize eruption for the start of this dt to the starting eruption
@@ -198,6 +208,25 @@
 
       subroutine Deallocate_Source
 
+#ifdef USEPOINTERS
+      if(associated(e_StartTime))      deallocate(e_StartTime)
+      if(associated(e_Duration))       deallocate(e_Duration)
+      if(associated(e_PlumeHeight))    deallocate(e_PlumeHeight)
+      if(associated(e_Volume))         deallocate(e_Volume)
+      if(associated(MassFluxRate))     deallocate(MassFluxRate)
+      if(associated(e_EndTime))        deallocate(e_EndTime)
+      if(associated(dt_pulse_frac))    deallocate(dt_pulse_frac)
+
+      ! SourceType.eq.'profile'
+      if(associated(e_prof_dz))           deallocate(e_prof_dz)
+      if(associated(e_prof_nzpoints))     deallocate(e_prof_nzpoints)
+      if(associated(e_prof_Volume))       deallocate(e_prof_Volume)
+      if(associated(e_prof_MassFluxRate)) deallocate(e_prof_MassFluxRate)
+
+      if(associated(NormSourceColumn))    deallocate(NormSourceColumn)
+      if(associated(SourceNodeFlux))      deallocate(SourceNodeFlux)
+      if(associated(TephraFluxRate))      deallocate(TephraFluxRate)
+#else
       if(allocated(e_StartTime))      deallocate(e_StartTime)
       if(allocated(e_Duration))       deallocate(e_Duration)
       if(allocated(e_PlumeHeight))    deallocate(e_PlumeHeight)
@@ -215,6 +244,7 @@
       if(allocated(NormSourceColumn))    deallocate(NormSourceColumn)
       if(allocated(SourceNodeFlux))      deallocate(SourceNodeFlux)
       if(allocated(TephraFluxRate))      deallocate(TephraFluxRate)
+#endif
 
       end subroutine Deallocate_Source
 

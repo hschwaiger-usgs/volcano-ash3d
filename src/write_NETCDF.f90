@@ -3740,7 +3740,11 @@
             endif;enddo
             stop 1
           endif
+#ifdef USEPOINTERS
+          if(.not.associated(lon_cc_pd))then
+#else
           if(.not.allocated(lon_cc_pd))then
+#endif
             nxmax = x_len
             allocate(lon_cc_pd(-1:nxmax+2))
             if(fop.eq.4)then
@@ -3795,7 +3799,11 @@
             endif;enddo
             stop 1
           endif
+#ifdef USEPOINTERS
+          if(.not.associated(x_cc_pd))then
+#else
           if(.not.allocated(x_cc_pd))then
+#endif
             nxmax = x_len
             allocate(x_cc_pd(-1:nxmax+2))
             if(fop.eq.4)then
@@ -3835,7 +3843,11 @@
           ! Get variable id for this dimension
           nSTAT = nf90_inq_varid(ncid,"lat",y_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid y")
+#ifdef USEPOINTERS
+          if(.not.associated(lat_cc_pd))then
+#else
           if(.not.allocated(lat_cc_pd))then
+#endif
             nymax = y_len
             allocate(lat_cc_pd(-1:nymax+2))
             ! Assume we know fop already from x above
@@ -3872,7 +3884,11 @@
           ! Get variable id for this dimension
           nSTAT = nf90_inq_varid(ncid,"y",y_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid y")
+#ifdef USEPOINTERS
+          if(.not.associated(y_cc_pd))then
+#else
           if(.not.allocated(y_cc_pd))then
+#endif
             nymax = y_len
             allocate(y_cc_pd(-1:nymax+2))
             ! Assume we know fop already from x above
@@ -4416,7 +4432,13 @@
         endif
 
         ! Load and check species class so we can set n_gs_max
-        if(.not.allocated(SpeciesID)) allocate(SpeciesID(nsmax))
+#ifdef USEPOINTERS
+        if(.not.associated(SpeciesID))then
+#else
+        if(.not.allocated(SpeciesID))then
+#endif
+          allocate(SpeciesID(nsmax))
+        endif
         nSTAT = nf90_get_var(ncid,spec_var_id,SpeciesID)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var SpeciesID")
         n_gs_max = 0
@@ -4425,7 +4447,13 @@
         enddo
 
         nWriteTimes = t_len
-        if(.not.allocated(WriteTimes)) allocate(WriteTimes(nWriteTimes))
+#ifdef USEPOINTERS
+        if(.not.associated(WriteTimes))then
+#else
+        if(.not.allocated(WriteTimes))then
+#endif
+          allocate(WriteTimes(nWriteTimes))
+        endif
         ! Time should always be written with dp, however some older files used float
         ! Double-check type
         nSTAT = nf90_inquire_variable(ncid, t_var_id, invar, xtype = var_xtype)
@@ -4675,19 +4703,35 @@
         endif
 
         ! Get eruptions ESPs
+#ifdef USEPOINTERS
+        if(.not.associated(e_StartTime))then
+#else
         if(.not.allocated(e_StartTime))then
+#endif
           allocate(e_StartTime(neruptions))
           e_StartTime(:) = 0.0_ip
         endif
+#ifdef USEPOINTERS
+        if(.not.associated(e_Duration))then
+#else
         if(.not.allocated(e_Duration))then
+#endif
           allocate(e_Duration(neruptions))
           e_Duration(:) = 0.0_ip
         endif
+#ifdef USEPOINTERS
+        if(.not.associated(e_PlumeHeight))then
+#else
         if(.not.allocated(e_PlumeHeight))then
+#endif
           allocate(e_PlumeHeight(neruptions))
           e_PlumeHeight(:) = 0.0_ip
         endif
+#ifdef USEPOINTERS
+        if(.not.associated(e_Volume))then
+#else
         if(.not.allocated(e_Volume))then
+#endif
           allocate(e_Volume(neruptions))
           e_Volume(:) = 0.0_ip
         endif
@@ -4809,7 +4853,13 @@
                start = (/1,1,1,1/),       &
                count = (/x_len,y_len,z_len,bn_len/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var ashcon")
-      if(.not.allocated(ashcon_tot) )allocate(ashcon_tot(x_len,y_len,z_len))
+#ifdef USEPOINTERS
+      if(.not.associated(ashcon_tot) )then
+#else
+      if(.not.allocated(ashcon_tot) )then
+#endif
+        allocate(ashcon_tot(x_len,y_len,z_len))
+      endif
       ashcon_tot = 0.0_op
       if(n_gs_max.gt.0)then
         do isize=1,n_gs_max
@@ -4832,7 +4882,11 @@
                  start = (/1,1/),       &
                  count = (/x_len,y_len/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var depothickFin")
+#ifdef USEPOINTERS
+        if(.not.associated(DepositThickness))then
+#else
         if(.not.allocated(DepositThickness))then
+#endif
           allocate(DepositThickness(x_len,y_len))
           DepositThickness(:,:) = 0.0_ip
         endif
@@ -4843,7 +4897,11 @@
                  start = (/1,1,init_tstep/),       &
                  count = (/x_len,y_len,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var depothick")
+#ifdef USEPOINTERS
+        if(.not.associated(DepositThickness))then
+#else
         if(.not.allocated(DepositThickness))then
+#endif
           allocate(DepositThickness(x_len,y_len))
           DepositThickness(:,:) = 0.0_ip
         endif
@@ -4861,7 +4919,11 @@
                start = (/1,1/),       &
                count = (/x_len,y_len/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var depotime")
+#ifdef USEPOINTERS
+      if(.not.associated(DepArrivalTime))then
+#else
       if(.not.allocated(DepArrivalTime))then
+#endif
         allocate(DepArrivalTime(x_len,y_len))
         DepArrivalTime(:,:) = 0.0_ip
       endif
@@ -4878,7 +4940,11 @@
                start = (/1,1/),       &
                count = (/x_len,y_len/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var ashcloudtime")
+#ifdef USEPOINTERS
+      if(.not.associated(CloudArrivalTime))then
+#else
       if(.not.allocated(CloudArrivalTime))then
+#endif
         allocate(CloudArrivalTime(x_len,y_len))
         CloudArrivalTime(:,:) = 0.0_ip
       endif
@@ -4895,7 +4961,11 @@
                start = (/1,1,init_tstep/),       &
                count = (/x_len,y_len,1/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var ashconMax_var")
+#ifdef USEPOINTERS
+      if(.not.associated(MaxConcentration))then
+#else
       if(.not.allocated(MaxConcentration))then
+#endif
         allocate(MaxConcentration(x_len,y_len))
         MaxConcentration(:,:) = 0.0_ip
       endif
@@ -4912,7 +4982,11 @@
                start = (/1,1,init_tstep/),       &
                count = (/x_len,y_len,1/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var cloud_height")
+#ifdef USEPOINTERS
+      if(.not.associated(MaxHeight))then
+#else
       if(.not.allocated(MaxHeight))then
+#endif
         allocate(MaxHeight(x_len,y_len))
         MaxHeight(:,:) = 0.0_ip
       endif
@@ -4922,7 +4996,11 @@
                start = (/1,1,init_tstep/),       &
                count = (/x_len,y_len,1/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var cloud_bottom")
+#ifdef USEPOINTERS
+      if(.not.associated(MinHeight))then
+#else
       if(.not.allocated(MinHeight))then
+#endif
         allocate(MinHeight(x_len,y_len))
         MinHeight(:,:) = 0.0_ip
       endif
@@ -4939,7 +5017,11 @@
                start = (/1,1,init_tstep/),       &
                count = (/x_len,y_len,1/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var cloud_load")
+#ifdef USEPOINTERS
+      if(.not.associated(CloudLoad))then
+#else
       if(.not.allocated(CloudLoad))then
+#endif
         allocate(CloudLoad(x_len,y_len))
         CloudLoad(:,:) = 0.0_ip
       endif
@@ -4965,7 +5047,11 @@
                  count = (/x_len,y_len,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var cloud_mask")
       endif
+#ifdef USEPOINTERS
+      if(.not.associated(Mask_Cloud))then
+#else
       if(.not.allocated(Mask_Cloud))then
+#endif
         allocate(Mask_Cloud(x_len,y_len))
         Mask_Cloud(:,:) = .false.
       endif
@@ -4991,7 +5077,11 @@
                start = (/1,1,1,init_tstep/),       &
                count = (/x_len,y_len,z_len/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"get_var radar_reflectivity")
+#ifdef USEPOINTERS
+      if(.not.associated(dbZCol))then
+#else
       if(.not.allocated(dbZCol))then
+#endif
         allocate(dbZCol(x_len,y_len))
         dbZCol(:,:) = 0.0_ip
       endif
@@ -5006,8 +5096,12 @@
       call Set_OutVar_ContourLevel
 
       ! Cleaning up
-      if(allocated(ashcon))       deallocate(ashcon)
+#ifdef USEPOINTERS
+      if(associated(ashcon_tot))   deallocate(ashcon_tot)
+#else
       if(allocated(ashcon_tot))   deallocate(ashcon_tot)
+#endif
+      if(allocated(ashcon))       deallocate(ashcon)
       if(allocated(dum2d_out))    deallocate(dum2d_out)
       if(allocated(dum2dint_out)) deallocate(dum2dint_out)
 

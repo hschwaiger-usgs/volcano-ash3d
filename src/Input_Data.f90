@@ -832,9 +832,9 @@
 
       integer           :: i,k,ii,isize
 
-      integer, allocatable, dimension(:)       :: iyear  ! time data read from files
-      integer, allocatable, dimension(:)       :: imonth
-      integer, allocatable, dimension(:)       :: iday
+      integer,       allocatable, dimension(:) :: iyear  ! time data read from files
+      integer,       allocatable, dimension(:) :: imonth
+      integer,       allocatable, dimension(:) :: iday
       real(kind=dp), allocatable, dimension(:) :: hour   ! Start time of eruption in
                                                          !  hour (UT)
       character(len=80) :: linebuffer080
