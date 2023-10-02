@@ -537,8 +537,8 @@
       if(allocated(dbZ))              deallocate(dbZ)
 #endif
 
-      deallocate(Con_Cust_RGB)
-      deallocate(Con_Cust_Lev)
+      if(allocated(Con_Cust_RGB))     deallocate(Con_Cust_RGB)
+      if(allocated(Con_Cust_Lev))     deallocate(Con_Cust_Lev)
 
       end subroutine Deallocate_Output_Vars
 

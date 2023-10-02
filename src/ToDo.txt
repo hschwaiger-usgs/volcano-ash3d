@@ -27,6 +27,9 @@ Investigate all overflow/underflow errors
 Test timing of do loops reversed; particularly with openMP
 In get_minmax_index, vent needs to be included only until the eruption is turned off.
 
+make check fails if 'make install' had not been run since
+/opt/USGS/Ash3d/share/GlobalAirports_ewert.txt in not installed.
+Also fails if /data/WindFiles/NCEP/1980/hgt.1980.nc doesn't exist
 
 ----------------------------------
 Ash3d_PostProc
