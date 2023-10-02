@@ -45,7 +45,7 @@ no                  # Write        KML file of deposit arrival times?
 yes                 # write ESRI ASCII file of cloud arrival times?
 no                  # Write        KML file of cloud arrival times?
 yes                 # Write 3-D ash concentration at specified times?
-netcdf              # format of ash concentration files
+ascii               # format of ash concentration files
 2                   # nWriteTimes
 5.0 10.0
 *******************************************************************************

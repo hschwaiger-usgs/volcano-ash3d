@@ -60,12 +60,14 @@ OS = LINUX
 # This might be different from the INSTALLDIR path if you want to link to special MetReader
 # projection and HoursSince packages.
 USGSROOT=/opt/USGS
+#USGSROOT=$(HOME)/intel
 
 # This is the location of the Ash3d core code source files that we will build this
 # research branch with.
 ASH3dCCSRC=./
 
 INSTALLDIR=/opt/USGS/Ash3d
+#INSTALLDIR=$(HOME)/intel/Ash3d
 
 # DATA FORMATS
 #  For each data format you want to include in the library, set the corresponding
@@ -294,6 +296,45 @@ endif
 endif
 ###############################################################################
 
+##########  Intel Fortran Compiler  #############################################
+ifeq ($(SYSTEM), ifort)
+    FCHOME = /opt/intel/oneapi/compiler/latest/linux/
+    FC = $(FCHOME)/bin/intel64/ifort
+    COMPINC = -I./ -I$(FCHOME)/include
+    COMPLIBS = -L./ -L$(FCHOME)/lib
+    LIBS = $(COMPLIBS) $(USGSLIBDIR) $(USGSINC) $(COMPINC) -llapack -lblas -lirc -limf $(USGSLIB) $(DATALIBS)
+
+# Debugging flags
+ifeq ($(RUN), DEBUG)
+    FFLAGS = -g2 -pg -warn all -check all -real-size 64 -check uninit -traceback -ftrapuv -debug all
+    ASH3DEXEC=Ash3d_debug
+endif
+ifeq ($(RUN), DEBUGOMP)
+    FFLAGS = -g2 -pg -warn all -check all -real-size 64 -check uninit -traceback -ftrapuv -debug all -openmp
+    ASH3DEXEC=Ash3d_debugomp
+endif
+# Profiling flags
+ifeq ($(RUN), PROF)
+    FFLAGS = -g2 -pg
+    ASH3DEXEC=Ash3d_prof
+endif
+# Production run flags
+ifeq ($(RUN), OPT)
+    FFLAGS = -O3 -ftz -w -ipo
+    ASH3DEXEC=Ash3d_opt
+endif
+ifeq ($(RUN), OMPOPT)
+    FFLAGS = -O3 -ftz -w -ipo -openmp
+    ASH3DEXEC=Ash3d_omp
+endif
+      # Preprocessing flags
+    FPPFLAGS =  -fpp $(OSFPPFLAG) $(DATAFPPFLAG) $(LIMFPPFLAG) $(DIFFFPPFLAG) $(memFPPFLAG) $(extdatFPPFLAG) $(FASTFPPFLAG) $(PIIFPPFLAG) $(PLOTFPPFLAG)
+
+      # Extra flags
+    EXFLAGS =
+endif
+###############################################################################
+
 OBJECTS = \
 Ash3d_VariableModules.o  \
 Input_Data.o             \
@@ -375,7 +416,7 @@ Airports.o: $(ASH3dCCSRC)/Airports.f90 $(MFILE) Ash3d_VariableModules.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Airports.f90
 Calc_Mesh.o: $(ASH3dCCSRC)/Calc_Mesh.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Calc_Mesh.f90
-Alloc_Arrays.o: $(ASH3dCCSRC)/Alloc_Arrays.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o AdvectionHorz.o
+Alloc_Arrays.o: $(ASH3dCCSRC)/Alloc_Arrays.f90 $(MFILE) Ash3d_VariableModules.o Tephra.o Source.o Source_Umbrella.o Diffusion.o Output_Vars.o AdvectionHorz.o Airports.o Atmosphere.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Alloc_Arrays.f90
 Source.o: $(ASH3dCCSRC)/Source.f90 $(MFILE) Ash3d_VariableModules.o Tephra.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Source.f90

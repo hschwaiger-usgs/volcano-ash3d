@@ -458,7 +458,10 @@
           write(outlog(io),*)"  ASH3DHOME not found. Install path set to: ",trim(adjustl(Ash3dHome))
         endif;enddo
       endif
-      inquire(file=Ash3dHome,exist=IsThere)
+      ! For gfortran, use
+      inquire(file=trim(adjustl(Ash3dHome)),exist=IsThere)
+      ! For ifort, use
+      !inquire(directory=trim(adjustl(Ash3dHome)),exist=IsThere)
       if(IsThere)then
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"  Path to ASH3DHOME found on system.  Good."

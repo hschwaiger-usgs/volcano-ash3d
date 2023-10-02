@@ -60,6 +60,7 @@
       real(kind=ip) :: theta_1,theta_2,del_theta,del_costheta
       real(kind=ip) :: del_lam
       real(kind=ip) :: phi_bot,phi_top,phi
+      real(kind=sp),allocatable,dimension(:) :: dumx_sp,dumy_sp,dumz_sp
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"--------------------------------------------------"
@@ -186,20 +187,23 @@
       call MR_Set_CompProjection(IsLatLon,A3d_iprojflag,A3d_lam0, &
                                  A3d_phi0,A3d_phi1,A3d_phi2,       &
                                  A3d_k0_scale,A3d_Re)
-
+      allocate(dumx_sp(nxmax))
+      allocate(dumy_sp(nymax))
+      allocate(dumz_sp(nzmax))
       if(IsLatLon)then
-        call MR_Initialize_Met_Grids(nxmax,nymax,nzmax,          &
-                                real(lon_cc_pd(1:nxmax),kind=sp), &
-                                real(lat_cc_pd(1:nymax),kind=sp), &
-                                real(z_cc_pd(1:nzmax) ,kind=sp), &
-                                IsPeriodic)
+        dumx_sp(1:nxmax) = real(lon_cc_pd(1:nxmax),kind=sp)
+        dumy_sp(1:nymax) = real(lat_cc_pd(1:nymax),kind=sp)
+        dumz_sp(1:nzmax) = real(  z_cc_pd(1:nzmax),kind=sp)
       else
-        call MR_Initialize_Met_Grids(nxmax,nymax,nzmax,          &
-                                real(x_cc_pd(1:nxmax)    ,kind=sp), &
-                                real(y_cc_pd(1:nymax)    ,kind=sp), &
-                                real(z_cc_pd(1:nzmax)    ,kind=sp), &
-                                IsPeriodic)
-      endif
+        dumx_sp(1:nxmax) = real(  x_cc_pd(1:nxmax),kind=sp)
+        dumy_sp(1:nymax) = real(  y_cc_pd(1:nymax),kind=sp)
+        dumz_sp(1:nzmax) = real(  z_cc_pd(1:nzmax),kind=sp)
+       endif
+      call MR_Initialize_Met_Grids(nxmax,nymax,nzmax,             &
+                              dumx_sp,dumy_sp,dumz_sp,            &
+                              IsPeriodic)
+      deallocate(dumx_sp,dumy_sp,dumz_sp)
+
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Finished initializing Met Grids"
       endif;enddo
