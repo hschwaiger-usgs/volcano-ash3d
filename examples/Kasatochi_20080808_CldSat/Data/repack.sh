@@ -1,0 +1,9 @@
+#!/bin/bash
+bzip2 Kasatochi_SatCloudLoad_09hrs.nc
+bzip2 Kasatochi_SatCloudLoad_20hrs.nc
+bzip2 Kasatochi_SatCloudLoad_32hrs.nc
+bzip2 Kasatochi_SatCloudLoad_43hrs.nc
+bzip2 Kasatochi_SatCloudLoad_55hrs.nc
+bzip2 Kasatochi_SatCloudLoad_65hrs.nc
+bzip2 Kasatochi_SatCloudLoad_78hrs.nc
+bzip2 Kasatochi_SatCloudLoad_89hrs.nc

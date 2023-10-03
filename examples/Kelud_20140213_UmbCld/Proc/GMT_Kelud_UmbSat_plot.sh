@@ -15,13 +15,13 @@ GMTpen=("-" "-" "-" "-" "/" ",")
 echo "GMT version = ${GMTv}"
 
 # Kelud coordinates
-vlt=42.93
-vln=-122.12
+vlt=-14.4
+vln=99.0
 
-lonw=225.0
-lone=269.0
-lats=33.0
-latn=57.0
+lonw=100.0
+lone=118.0
+lats=-14.0
+latn=0.0
 DETAIL="-Dl"
 BASE="-Bg5/g5 -P"
 PROJ="-JM${vln}/${vlt}/6.5i"
@@ -33,21 +33,6 @@ gmt gmtset PROJ_ELLIPSOID Sphere
 gmt gmtset PAPER_MEDIA=Custom_720x510
 
 #############################################################################
-# Color map for the deposit sample thicknesses
-CPT="dep.cpt"
-echo "# file dep.cpt
-#COLOR_MODEL = RGB
-0.03    90      0       90      0.1     90      0       90
-0.1	128	0	128	0.3	128	0	128
-0.3	0	0	255	1.0	0	0	255
-1.0	0	128	255	3.0	0	128	255
-3.0	0	255	255	10.0	0	255	255
-10.0	128	255	128	30.0	128	255	128
-30.0	255	255	0	100.0	255	255	0
-100.0	255	128	0	300.0	255	128	0
-300.0	255	0	0	1000.0	255	0	0" > ${CPT}
-
-#############################################################################
 # Ash3d data file
 infile="../3d_tephra_fall.nc"
 if test -r ${infile} ; then
@@ -57,44 +42,77 @@ if test -r ${infile} ; then
     exit 1
 fi
 # Preparing grid file
-dep_grd=var_out_final.grd
-gmt grdconvert "$infile?area" zero.grd
-gmt grdmath 0.0 zero.grd MUL = zero.grd
-# We need to convert the NaN's to zero to get the lowest contour
-gmt grdconvert "$infile?depothickFin" temp.grd
-gmt grdmath temp.grd zero.grd AND = temp.grd
+for i in `seq 0 7`;
+do
 
-# Deposit data file
-#datafile="../Data/Spurr_19920818_DepThick_mm.dat"
-#******************************************************************************
+  gmt grdconvert "$infile?area" zero.grd
+  gmt grdmath 0.0 zero.grd MUL = zero.grd
+  # We need to convert the NaN's to zero to get the lowest contour
+  gmt grdconvert "$infile?cloud_load[$i]" temp.grd
+  gmt grdmath temp.grd zero.grd AND = temp.grd
+  
+  #******************************************************************************
+  
+  # Create Base Map
+  gmt pscoast $AREA $PROJ $BASE $DETAIL $COAST -S100/149/237 -K  > temp.ps
 
-# Create Base Map
-gmt pscoast $AREA $PROJ $BASE $DETAIL $COAST -S255/255/255 -K  > temp.ps
+  # Filled contour of Ash3d output
+  #gmt grdimage "${infile}?cloud_load[$i]" -Q $AREA $PROJ $BASE -CGMT_hot.cpt -K -O >> temp.ps
+  #gmt psscale -Dx1.25i/3.85i/2i/0.15ih -F+gwhite -CGMT_hot.cpt -B1f1/:"g/m^2": -O -K >> temp.ps
 
-# Contour Ash3d output
-echo "0.10 C" > ac0.1.lev
-i=2
-gmt grdconvert "${infile}?cloud_load[$i]" temp.grd
-gmt grdcontour temp.grd $AREA $PROJ $BASE -Cac0.1.lev  -A- -W1,0/0/0     -K -O >> temp.ps
-
-# Plot legend
-LEGLOC="-Dx0.1i/4.1i/3.0i/1.0i/BL"
+  # Contour Ash3d output
+  echo "100.0 C" > ac100.0.lev
+  gmt grdcontour temp.grd $AREA $PROJ $BASE -Cac100.0.lev  -A- -W2,255/0/0     -K -O >> temp.ps
+  
+  # Plot satellite cloud outline
+  if [ $i -eq 0 ]; then
+    cloud="../Data/m40_1619.csv"
+    sat_file="2014-02-16:19 (0.11 hours)"
+  elif [ $i -eq 1 ]; then
+    cloud="../Data/m40_1659.csv"
+    sat_file="2014-02-16:59 (0.77 hours)"
+  elif [ $i -eq 2 ]; then
+    cloud="../Data/m40_1709.csv"
+    sat_file="2014-02-17:09 (0.94 hours)"
+  elif [ $i -eq 3 ]; then
+    cloud="../Data/m40_1739.csv"
+    sat_file="2014-02-17:39 (1.44 hours)"
+  elif [ $i -eq 4 ]; then
+    cloud="../Data/m40_1809.csv"
+    sat_file="2014-02-18:09 (1.94 hours)"
+  elif [ $i -eq 5 ]; then
+    cloud="../Data/m40_1839.csv"
+    sat_file="2014-02-18:39 (2.44 hours)"
+  elif [ $i -eq 6 ]; then
+    cloud="../Data/m40_1909.csv"
+    sat_file="2014-02-19:09 (2.94 hours)"
+  elif [ $i -eq 7 ]; then
+    cloud="../Data/m40_1939.csv"
+    sat_file="2014-02-19:39 (3.44 hours)"
+  fi
+  
+  cat ${cloud} | awk -F "," '{print $2, $1}' | gmt psxy $AREA $PROJ $BASE -W2,0/255/0 -V -K -O >> temp.ps
+  
+  # Plot legend
+  LEGLOC="-Dx0.1i/4.0i/2.8i/1.0i/BL"
 gmt pslegend $AREA $PROJ $BASE -G255 $LEGLOC -K -O << EOF >> temp.ps
 C black
 H 14 1 Kelud Umbrella Cloud
+H 12 1 ${sat_file}
 D 1p
+S 0.1i - 0.15i red     0.5p,red     0.3i Ash3d 500 g/m^2
+S 0.1i - 0.15i green   0.5p,green   0.3i Sat.Cloud
 EOF
-gmt psscale -Dx1.25i/4.6i/2i/0.15ih -C$CPT -Q -B10f5/:"mm": -O -K >> temp.ps
-# Plot the tephra site data
-#gmt psxy ${datafile} $AREA $PROJ -Sc0.1i -C${CPT} -Wthinnest -O >> temp.ps
+  
+  # Last gmt command is to plot the volcano and close out the ps file
+  echo $vln $vlt '1.0' | gmt psxy $AREA $PROJ -St0.1i -Gmagenta -Wthinnest -O >> temp.ps
+ 
+  # Save map
+  ps2epsi temp.ps temp.eps
+  convert temp.eps Kelud_CloudOutline_$i.png
+  epstopdf temp.eps Kelud_CloudOutline_$i.pdf
+  
+  # Clean up
+  rm gmt.history gmt.conf zero.grd temp.* ac*lev 
 
-# Last gmt command is to plot the volcano and close out the ps file
-echo $vln $vlt '1.0' | gmt psxy $AREA $PROJ -St0.1i -Gblack -Wthinnest -O >> temp.ps
-
-# Save map
-ps2pdf temp.ps
-mv temp.pdf Kelud_Cloud.pdf
-
-# Clean up
-rm temp.ps gmt.history gmt.conf dep.cpt zero.grd temp.grd
-
+done

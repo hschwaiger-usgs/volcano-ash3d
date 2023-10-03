@@ -3633,6 +3633,7 @@
          MaxConcentration,MaxHeight,CloudLoad,dbZCol,MinHeight,Mask_Cloud,&
          CLOUDCON_GRID_THRESH,CLOUDCON_THRESH,THICKNESS_THRESH, &
          CLOUDLOAD_THRESH,DBZ_THRESH,DEPO_THRESH,DEPRATE_THRESH,ashcon_tot, &
+         USE_RESTART_VARS, &
            dbZCalculator, &
            Allocate_NTime, &
            Allocate_Profile, &
@@ -4298,6 +4299,9 @@
         if(nSTAT.ne.0)then
           ashcon_var_id = 0
           call NC_check_status(nSTAT,0,"inq_varid ashcon")
+          USE_RESTART_VARS = .false.
+        else
+          USE_RESTART_VARS = .true.
         endif
         ! depocon
         nSTAT = nf90_inq_varid(ncid,"depocon",depocon_var_id)
@@ -4849,24 +4853,26 @@
       allocate(dum2dint_out(x_len,y_len))
 
       ! Full concentration array
-      nSTAT=nf90_get_var(ncid,ashcon_var_id,ashcon,  &
-               start = (/1,1,1,1/),       &
-               count = (/x_len,y_len,z_len,bn_len/))
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var ashcon")
+      if(USE_RESTART_VARS)then
+        nSTAT=nf90_get_var(ncid,ashcon_var_id,ashcon,  &
+                 start = (/1,1,1,1/),       &
+                 count = (/x_len,y_len,z_len,bn_len/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var ashcon")
 #ifdef USEPOINTERS
-      if(.not.associated(ashcon_tot) )then
+        if(.not.associated(ashcon_tot) )then
 #else
-      if(.not.allocated(ashcon_tot) )then
+        if(.not.allocated(ashcon_tot) )then
 #endif
-        allocate(ashcon_tot(x_len,y_len,z_len))
-      endif
-      ashcon_tot = 0.0_op
-      if(n_gs_max.gt.0)then
-        do isize=1,n_gs_max
-          ashcon_tot(1:x_len,1:y_len,1:z_len) =  &
-           ashcon_tot(1:x_len,1:y_len,1:z_len) + &
-           real(ashcon(1:x_len,1:y_len,1:z_len,isize),kind=op)
-        enddo
+          allocate(ashcon_tot(x_len,y_len,z_len))
+        endif
+        ashcon_tot = 0.0_op
+        if(n_gs_max.gt.0)then
+          do isize=1,n_gs_max
+            ashcon_tot(1:x_len,1:y_len,1:z_len) =  &
+             ashcon_tot(1:x_len,1:y_len,1:z_len) + &
+             real(ashcon(1:x_len,1:y_len,1:z_len,isize),kind=op)
+          enddo
+        endif
       endif
 
       ! Deposit Thickness

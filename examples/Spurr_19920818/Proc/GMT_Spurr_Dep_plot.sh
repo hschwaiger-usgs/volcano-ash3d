@@ -100,15 +100,16 @@ D 1p
 EOF
 gmt psscale -Dx1.25i/4.6i/2i/0.15ih -C$CPT -Q -B10f5/:"mm": -O -K >> temp.ps
 # Plot the tephra site data
-gmt psxy ${datafile} $AREA $PROJ -Sc0.1i -C${CPT} -Wthinnest -O >> temp.ps
+gmt psxy ${datafile} $AREA $PROJ -Sc0.1i -C${CPT} -Wthinnest -O -K >> temp.ps
 
 # Last gmt command is to plot the volcano and close out the ps file
 echo $vln $vlt '1.0' | gmt psxy $AREA $PROJ -St0.1i -Gblack -Wthinnest -O >> temp.ps
 
 # Save map
-ps2pdf temp.ps
-mv temp.pdf Spurr_deposit.pdf
+ps2epsi temp.ps temp.eps
+convert temp.eps Spurr_Deposit.png
+epstopdf temp.eps Spurr_Deposit.pdf
 
 # Clean up
-rm temp.ps dpm*lev gmt.history gmt.conf dep.cpt zero.grd temp.grd
+rm temp.* dpm*lev gmt.history gmt.conf dep.cpt zero.grd
 

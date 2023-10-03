@@ -157,7 +157,7 @@ Mazama                             # Volcano name (character*30)
 5  25               # iwind, iwindformat, [igrid, idata]
 2                   # iHeightHandler
 144.0               # Simulation time in hours
-no                  # stop computation when 99% of erupted mass has deposited?
+yes                           #stop computation when 99% of erupted mass has deposited?
 1                   # nWindFiles, number of gridded wind files (used if iwind>1)
 *******************************************************************************
 # OUTPUT OPTIONS:                                                                                      

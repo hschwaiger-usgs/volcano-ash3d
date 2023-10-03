@@ -1,0 +1,73 @@
+#    Latitude    Longitude    T(cm)    Location
+    44.00610  -121.67574                          64   B21_46  Mount Bachelor
+    44.13317  -120.69873                          46   B21_50  Prineville
+    44.55443  -120.32066                          32   B21_55  Mitchell
+    46.5587   -122.2957                           6    B21_99  Davis Lake
+    46.184    -119.0322                           12.5 B21_89  Two Rivers Site
+    46.5002   -119.6301                           15   B21_95  Dry Creek
+    46.916    -121.6376                           6    B21_104 Mount Rainier National Park 
+    45.7533   -118.158                            37   B21_76  Dick Springs, Tollgate area
+    45.7028   -118.0336                           30   B21_73  Andies Prairie
+    45.7561   -118.1038                           38   B21_77  Meadowwood, Tollgate area
+    46.969    -121.8126                           5    B21_107 Mount Rainier, Carbon River
+    39.9743   -118.2408                           5    B21_4   Simon Young Site 24
+    47.5831   -121.9492                           2.5  B21_117 Simon Young Site 8
+    47.695    -121.8497                           5.5  B21_119 Moss Lake
+    44.92     -116.0698                           15   B21_62  McCall Fen
+    46.0662   -117.0113                           15   B21_84  Grande Ronde River Canyon
+    46.27     -116.9993                           12.5 B21_90  Tenmile Creek
+    46.4579   -117.186                            12.5 B21_92  Steptoe Canyon
+    46.4412   -117.1516                           12.5 B21_91  Imnaha Basalt
+    47.8971   -122.8814                           2    B21_126 Leland Lake
+    46.4681   -116.8403                           30   B21_94  Moscow, Idaho
+    47.3286   -117.6819                           46   B21_113 Williams Lake Fen
+    47.7683   -118.5487                           5    B21_121 Creston
+    47.7619   -118.5001                           24   B21_120 Creston Bog, Washington
+    48.4638   -123.4211                           1.5  B21_134 Portage Inlet, Vancouver Island
+    48.2758   -118.5983                           12   B21_131 Goose Lake
+    47.7732   -117.0995                           22.5 B21_122 Newman Lake
+    48.1841   -117.7906                           7.5  B21_129 Waits Lake
+    48.7782   -119.0613                           12   B21_148 Bonaparte Meadows
+    49.1781   -122.9738                           1.5  B21_160 Lulu Island
+    41.9824   -113.7361                           2    B21_16  Curelom Cirque
+    42.3221   -113.6499                           4    B21_19  Lake Cleveland
+    42.1993   -113.6676                           4    B21_17  Independence Lake
+    49.1924   -123.0561                           3.05 B21_162 Lulu Island
+    49.2745   -122.5399                           3    B21_165 Lake Mike
+    49.0269   -119.5626                           30   B21_153 Kilpoola Lake
+    45.692    -113.9492                           7    B21_72  Lost Trail Pass Bog
+    49.4808   -121.4061                           2    B21_174 Squeah Lake
+    48.58     -116.9569                           10   B21_141 Hager Pond 
+    49.3434   -117.8681                           8    B21_169 Twobit Creek
+    50.366    -122.4966                           1.01 B21_210 Lower Joffre Lake
+    50.2292   -119.0997                           10   B21_205 Lavington
+    48.7881   -115.1013                           10   B21_149 Tepee Lake
+    50.8199   -120.8442                           1.01 B21_229 Jesmond Bog
+    49.632    -115.5182                           7.5  B21_180 Fort Steele
+    50.7876   -119.0046                           9    B21_228 Mara Lake
+    43.7505   -110.7343                           1.01 B21_42  Jenny Lake, Wyoming
+    49.5657   -114.3585                           15   B21_177 Maple Leaf Archaeological Site
+    49.8701   -114.3654                           10   B21_195 The Gap
+    50.7815   -115.9292                           10   B21_227 Dog Lake, Kootenay National Park
+    50.6215   -115.1502                           10   B21_217 Upper Kananaskis Lake
+    51.341    -116.3122                           3    B21_254 Opabin Lake
+    51.3506   -116.3339                           6    B21_255 Mary Lake
+    51.356    -116.3303                           4    B21_256 Lake O'Hara
+    50.9545   -115.0562                           10   B21_238 West Calgary
+    52.0045   -118.5627                           5.08 B21_269 Mica Creek, Chapman
+    52.0765   -118.5734                           10.2 B21_271 Mica Creek
+    51.094    -114.729                            10   B21_245 Frederick Lake
+    51.9673   -116.7519                           12   B21_264 Banff National Park, Saskatchewan Crossing
+    51.1367   -114.2742                           6    B21_247 Tuscany site
+    51.9735   -116.4871                           5.08 B21_265 North Saskatchewan River
+    52.0045   -116.3395                           7.62 B21_268 Upper North Saskatchewan River
+    52.0221   -116.3183                           5.08 B21_270 Upper North Saskatchewan River
+    52.27     -116.12                             2    B21_274 Goldeye Lake Fen
+    53.1404   -119.1728                           2    B21_279 Tonquin Pass
+    50.1373   -110.5879                           9    B21_201 Island Bluff
+    53.303    -117.839                            2    B21_281 Brule Lake
+    53.3594   -117.587                            5.08 B21_283 Muscata Creek Viaduct
+    50.8899   -109.8458                           4.5  B21_234 Empress, Sastkatchewn Outlook
+    53.488    -114.174                            1.01 B21_285 Hasse Lake
+    53.557    -113.3537                           1.5  B21_290 Beverley
+    54.7235   -112.4811                           0.1  B21_291 Lofty Lake

@@ -12,7 +12,6 @@
 # i=6  2008-08-11_10-53 (78.2 hours)
 # i=7  2008-08-11_21-33 (89.5 hours)
 #  2,3,4,6
-i=2
 
 # We need to know if we must prefix all gmt commands with 'gmt', as required by version 5/6
 GMTv=5
@@ -70,59 +69,62 @@ if test -r ${infile} ; then
     exit 1
 fi
 
-# Satellite data file
-if [ "$i" = "0" ]; then
-  procfile="../Data/Kasatochi_SatCloudLoad_09hrs.nc"
-  modis_file="2008-08-08_13-40 (9.1 hours)"
-fi
-if [ "$i" = "1" ]; then
-  procfile="../Data/Kasatochi_SatCloudLoad_20hrs.nc"
-  modis_file="2008-08-09_00-20 (20.2 hours)"
-fi         
-if [ "$i" = "2" ]; then
-  procfile="../Data/Kasatochi_SatCloudLoad_32hrs.nc"
-  modis_file="2008-08-09_12-45 (32.3 hours)"
-fi         
-if [ "$i" = "3" ]; then
-  procfile="../Data/Kasatochi_SatCloudLoad_43hrs.nc"
-  modis_file="2008-08-09_23-25 (43.3 hours)"
-fi         
-if [ "$i" = "4" ]; then
-  procfile="../Data/Kasatochi_SatCloudLoad_55hrs.nc"
-  modis_file="2008-08-10_11-49 (55.2 hours)"
-fi         
-if [ "$i" = "5" ]; then
-  procfile="../Data/Kasatochi_SatCloudLoad_65hrs.nc"
-  modis_file="2008-08-10_22-29 (64.6 hours)"
-fi         
-if [ "$i" = "6" ]; then
-  procfile="../Data/Kasatochi_SatCloudLoad_78hrs.nc"
-  modis_file="2008-08-11_10-53 (78.2 hours)"
-fi         
-if [ "$i" = "7" ]; then
-  procfile="../Data/Kasatochi_SatCloudLoad_89hrs.nc"
-  modis_file="2008-08-11_21-33 (89.5 hours)"
-fi
-
-# Create Base Map
-gmt pscoast $AREA $PROJ $BASE $DETAIL $COAST -S100/149/237 -K  > temp.ps
-# Plot satellite cloud load
-gmt grdimage "${procfile}?Ash_Mass" -Q $AREA $PROJ $BASE -C${CPT} -K -O >> temp.ps
-
-# Contour Ash3d output
-echo "0.10 C" > ac0.1.lev
-echo "1.00 C" > ac1.0.lev
-echo "2.00 C" > ac2.0.lev
-echo "3.00 C" > ac3.0.lev
-gmt grdconvert "${infile}?cloud_load[$i]" temp.grd
-gmt grdcontour temp.grd $AREA $PROJ $BASE -Cac0.1.lev  -A- -W1,0/0/0     -K -O >> temp.ps
-gmt grdcontour temp.grd $AREA $PROJ $BASE -Cac1.0.lev  -A- -W1,0/0/255   -K -O >> temp.ps
-gmt grdcontour temp.grd $AREA $PROJ $BASE -Cac2.0.lev  -A- -W1,255/0/255 -K -O >> temp.ps
-gmt grdcontour temp.grd $AREA $PROJ $BASE -Cac3.0.lev  -A- -W1,255/0/0   -K -O >> temp.ps
-
-# Plot legend
-LEGLOC="-Dx0.1i/3.4i/4.0i/1.7i/BL"
-gmt pslegend $AREA $PROJ $BASE -G255 $LEGLOC -K -O << EOF >> temp.ps
+# Loop over all time steps
+for i in `seq 0 7`;
+do
+  # Satellite data file
+  if [ "$i" = "0" ]; then
+    procfile="../Data/Kasatochi_SatCloudLoad_09hrs.nc"
+    modis_file="2008-08-08_13-40 (9.1 hours)"
+  fi
+  if [ "$i" = "1" ]; then
+    procfile="../Data/Kasatochi_SatCloudLoad_20hrs.nc"
+    modis_file="2008-08-09_00-20 (20.2 hours)"
+  fi         
+  if [ "$i" = "2" ]; then
+    procfile="../Data/Kasatochi_SatCloudLoad_32hrs.nc"
+    modis_file="2008-08-09_12-45 (32.3 hours)"
+  fi         
+  if [ "$i" = "3" ]; then
+    procfile="../Data/Kasatochi_SatCloudLoad_43hrs.nc"
+    modis_file="2008-08-09_23-25 (43.3 hours)"
+  fi         
+  if [ "$i" = "4" ]; then
+    procfile="../Data/Kasatochi_SatCloudLoad_55hrs.nc"
+    modis_file="2008-08-10_11-49 (55.2 hours)"
+  fi         
+  if [ "$i" = "5" ]; then
+    procfile="../Data/Kasatochi_SatCloudLoad_65hrs.nc"
+    modis_file="2008-08-10_22-29 (64.6 hours)"
+  fi         
+  if [ "$i" = "6" ]; then
+    procfile="../Data/Kasatochi_SatCloudLoad_78hrs.nc"
+    modis_file="2008-08-11_10-53 (78.2 hours)"
+  fi         
+  if [ "$i" = "7" ]; then
+    procfile="../Data/Kasatochi_SatCloudLoad_89hrs.nc"
+    modis_file="2008-08-11_21-33 (89.5 hours)"
+  fi
+  
+  # Create Base Map
+  gmt pscoast $AREA $PROJ $BASE $DETAIL $COAST -S100/149/237 -K  > temp.ps
+  # Plot satellite cloud load
+  gmt grdimage "${procfile}?Ash_Mass" -Q $AREA $PROJ $BASE -C${CPT} -K -O >> temp.ps
+  
+  # Contour Ash3d output
+  echo "0.10 C" > ac0.1.lev
+  echo "1.00 C" > ac1.0.lev
+  echo "2.00 C" > ac2.0.lev
+  echo "3.00 C" > ac3.0.lev
+  gmt grdconvert "${infile}?cloud_load[$i]" temp.grd
+  gmt grdcontour temp.grd $AREA $PROJ $BASE -Cac0.1.lev  -A- -W1,0/0/0     -K -O >> temp.ps
+  gmt grdcontour temp.grd $AREA $PROJ $BASE -Cac1.0.lev  -A- -W1,0/0/255   -K -O >> temp.ps
+  gmt grdcontour temp.grd $AREA $PROJ $BASE -Cac2.0.lev  -A- -W1,255/0/255 -K -O >> temp.ps
+  gmt grdcontour temp.grd $AREA $PROJ $BASE -Cac3.0.lev  -A- -W1,255/0/0   -K -O >> temp.ps
+  
+  # Plot legend
+  LEGLOC="-Dx0.1i/3.4i/4.0i/1.7i/BL"
+  gmt pslegend $AREA $PROJ $BASE -G255 $LEGLOC -K -O << EOF >> temp.ps
 C black
 H 14 1 Kasatochi ${modis_file}
 D 1p
@@ -136,13 +138,14 @@ N 1
 D 1p
 H 12 1 Modis ash retrieval
 EOF
-gmt psscale -Dx1.25i/3.85i/2i/0.15ih -F+gwhite -C${CPT} -B1f1/:"g/m^2": -O -K >> temp.ps
-echo $vln $vlt '1.0' | gmt psxy $AREA $PROJ -St0.1i -Gmagenta -Wthinnest -O >> temp.ps
-
-# Save map
-ps2pdf temp.ps
-mv temp.pdf Kasatochi_cloudload_$i.pdf
-
-# Clean up
-rm temp.grd temp.ps ac*lev gmt.history gmt.conf cload.cpt
-
+  gmt psscale -Dx1.25i/3.85i/2i/0.15ih -F+gwhite -C${CPT} -B1f1/:"g/m^2": -O -K >> temp.ps
+  echo $vln $vlt '1.0' | gmt psxy $AREA $PROJ -St0.1i -Gmagenta -Wthinnest -O >> temp.ps
+  
+  # Save map
+  ps2epsi temp.ps temp.eps
+  convert temp.eps Kasatochi_CloudLoad_$i.png
+  epstopdf temp.eps Kasatochi_CloudLoad_$i.pdf
+  
+  # Clean up
+  rm temp.* ac*lev gmt.history gmt.conf cload.cpt
+done
