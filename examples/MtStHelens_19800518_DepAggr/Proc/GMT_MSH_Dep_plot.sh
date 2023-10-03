@@ -14,17 +14,17 @@ fi
 GMTpen=("-" "-" "-" "-" "/" ",")
 echo "GMT version = ${GMTv}"
 
-# Spurr coordinates
-vlt=61.299
-vln=-152.251
+# MSH coordinates
+vlt=46.20
+vln=-122.18
 
-lonw=-154.0
-lone=-144.0
-lats=60.0
-latn=63.0
-DETAIL="-Dh"
-BASE="-Bg2/g1 -P"
-PROJ=-JS-150.0/90/8i
+lonw=236.0
+lone=250.0
+lats=42.0
+latn=49.0
+DETAIL="-Dl"
+BASE="-Bg5/g5 -P"
+PROJ="-JM${vln}/${vlt}/6.5i"
 AREA="-R${lonw}/${lats}/${lone}/${latn}r"
 COAST="-G220/220/220 -W"
 
@@ -65,7 +65,10 @@ gmt grdconvert "$infile?depothickFin" temp.grd
 gmt grdmath temp.grd zero.grd AND = temp.grd
 
 # Deposit data file
-datafile="../Data/Spurr_19920818_DepThick_mm.dat"
+#datafile="../Data/Mazama_DepThick_mm.dat"
+
+# Ash3d deposit file (phi 1.0 rho2624)
+gmt grdconvert ../Data/DepositFile_____final.dat=ef out.grd
 #******************************************************************************
 
 # Create Base Map
@@ -82,33 +85,50 @@ echo "10.0   C"  >  dpm_10.lev   #deposit (1 cm)
 echo "30.0   C"  >  dpm_30.lev   #deposit (3 cm)
 echo "100.0  C"  > dpm_100.lev   #deposit (10cm)
 echo "300.0  C"  > dpm_300.lev   #deposit (30cm)
-gmt grdcontour temp.grd $AREA $PROJ $BASE -Cdpm_0.03.lev -A- -W3,90/0/90   -O -K >> temp.ps
-gmt grdcontour temp.grd $AREA $PROJ $BASE -Cdpm_0.1.lev  -A- -W3,128/0/128 -O -K >> temp.ps
-gmt grdcontour temp.grd $AREA $PROJ $BASE -Cdpm_0.3.lev  -A- -W3,0/0/255   -O -K >> temp.ps
-gmt grdcontour temp.grd $AREA $PROJ $BASE -Cdpm_1.lev    -A- -W3,0/128/255 -O -K >> temp.ps
-gmt grdcontour temp.grd $AREA $PROJ $BASE -Cdpm_3.lev    -A- -W3,0/255/128 -O -K >> temp.ps
-gmt grdcontour temp.grd $AREA $PROJ $BASE -Cdpm_10.lev   -A- -W3,195/195/0 -O -K >> temp.ps
-gmt grdcontour temp.grd $AREA $PROJ $BASE -Cdpm_30.lev   -A- -W3,255/128/0 -O -K >> temp.ps
-gmt grdcontour temp.grd $AREA $PROJ $BASE -Cdpm_100.lev  -A- -W3,255/0/0   -O -K >> temp.ps
+gmt grdcontour temp.grd $AREA $PROJ $BASE -Cdpm_0.03.lev -A- -W2,90/0/90,-   -O -K >> temp.ps
+gmt grdcontour temp.grd $AREA $PROJ $BASE -Cdpm_0.1.lev  -A- -W2,128/0/128,- -O -K >> temp.ps
+gmt grdcontour temp.grd $AREA $PROJ $BASE -Cdpm_0.3.lev  -A- -W2,0/0/255,-   -O -K >> temp.ps
+gmt grdcontour temp.grd $AREA $PROJ $BASE -Cdpm_1.lev    -A- -W2,0/128/255,- -O -K >> temp.ps
+gmt grdcontour temp.grd $AREA $PROJ $BASE -Cdpm_3.lev    -A- -W2,0/255/128,- -O -K >> temp.ps
+gmt grdcontour temp.grd $AREA $PROJ $BASE -Cdpm_10.lev   -A- -W2,195/195/0,- -O -K >> temp.ps
+gmt grdcontour temp.grd $AREA $PROJ $BASE -Cdpm_30.lev   -A- -W2,255/128/0,- -O -K >> temp.ps
+gmt grdcontour temp.grd $AREA $PROJ $BASE -Cdpm_100.lev  -A- -W2,255/0/0,-   -O -K >> temp.ps
+
+# Thin-line contours of the data from the Buckland paper
+#gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_0.03.lev -A- -W1,0/0/0 -O -K >> temp.ps
+#gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_0.1.lev  -A- -W1,0/0/0 -O -K >> temp.ps
+#gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_0.3.lev  -A- -W1,0/0/0 -O -K >> temp.ps
+#gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_1.lev    -A- -W1,0/0/0 -O -K >> temp.ps
+#gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_3.lev    -A- -W1,0/0/0 -O -K >> temp.ps
+#gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_10.lev   -A- -W1,0/0/0 -O -K >> temp.ps
+#gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_30.lev   -A- -W1,0/0/0 -O -K >> temp.ps
+#gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_100.lev  -A- -W1,0/0/0 -O -K >> temp.ps
 
 # Plot legend
-LEGLOC="-Dx0.1i/4.1i/3.0i/1.0i/BL"
+LEGLOC="-Dx4.4i/0.05i/2.0i/1.4i/BL"
 gmt pslegend $AREA $PROJ $BASE -G255 $LEGLOC -K -O << EOF >> temp.ps
 C black
-H 14 1 Spurr August 18, 1992
+H 14 1 Mt.St.Helens Dep.
 D 1p
+S 0.1i - 0.15i black  0.5p,black 0.3i Historic run
+S 0.1i - 0.15i red    3.0p,red   0.3i Ash3d (all colors)
+S 0.1i c 0.10i red  0.5p,black   0.3i measured thickness
 EOF
-gmt psscale -Dx1.25i/4.6i/2i/0.15ih -C$CPT -Q -B10f5/:"mm": -O -K >> temp.ps
+gmt psscale -Dx5.25i/0.5i/1.75i/0.15ih -C$CPT -Q -B10f5/:"mm": -O -K >> temp.ps
+
 # Plot the tephra site data
-gmt psxy ${datafile} $AREA $PROJ -Sc0.1i -C${CPT} -Wthinnest -O >> temp.ps
+# First, reformat data file to something more easily ingested by psxy
+#cat ${datafile} | awk '{print $2,$1,$3*10.0}' | tail -n +2 > dep.dat
+#gmt psxy dep.dat $AREA $PROJ -Sc0.1i -C${CPT} -Wthinnest -O -K >> temp.ps
 
 # Last gmt command is to plot the volcano and close out the ps file
 echo $vln $vlt '1.0' | gmt psxy $AREA $PROJ -St0.1i -Gblack -Wthinnest -O >> temp.ps
 
 # Save map
-ps2pdf temp.ps
-mv temp.pdf Spurr_deposit.pdf
+ps2epsi temp.ps temp.eps
+convert temp.eps MSH_Deposit.png
+epstopdf temp.eps MSH_Deposit.pdf
 
 # Clean up
-rm temp.ps dpm*lev gmt.history gmt.conf dep.cpt zero.grd temp.grd
+rm temp.* dpm*lev gmt.history gmt.conf dep.cpt zero.grd out.grd dep.dat
 
