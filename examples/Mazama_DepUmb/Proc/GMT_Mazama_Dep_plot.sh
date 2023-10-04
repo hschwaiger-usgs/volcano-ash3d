@@ -73,7 +73,7 @@ gmt grdconvert ../Data/MZRun022.txt=ef out.grd
 #******************************************************************************
 
 # Create Base Map
-gmt pscoast $AREA $PROJ $BASE $DETAIL $COAST -S255/255/255 -K  > temp.ps
+gmt pscoast $AREA $PROJ $BASE $DETAIL $COAST -S100/149/237 -K  > temp.ps
 
 # Contour Ash3d output
 echo "0.01   C" > dpm_0.01.lev   #deposit (0.01 mm)

@@ -131,7 +131,7 @@ no              #Write ASCII file of deposit arrival times?
 no              #Write KML file of deposit arrival times?
 yes             #write ASCII file of cloud arrival times?
 no              #Write KML file of cloud arrival times?
-yes             #Print out 3-D ash concentration at specified times?              
+no              #Print out 3-D ash concentration at specified times?              
 netcdf          #format of ash concentration files   (ascii, binary, or netcdf)
 20              #nWriteTimes
 0.25 0.75 1.25 1.75 2.25 2.75 3.25 3.75 4.25 4.75 5.25 5.75 6.25 6.75 7.25 7.75 8.25 8.75 9.25 9.75
@@ -156,7 +156,7 @@ NCEP
 #              Alternatively, if proj4 is compiled, you can have Proj4 
 #              find the projected coordinates by typing "yes" to the last parameter
 *******************************************************************************
-no                            #Write out ash arrival times at airports to ASCII FILE?
+yes                           #Write out ash arrival times at airports to ASCII FILE?
 no                            #Write out grain-size distribution to ASCII airports file?
 no                            #Write out ash arrival times to kml file?
 MSH_sample_locations.txt      #Name of file containing aiport locations

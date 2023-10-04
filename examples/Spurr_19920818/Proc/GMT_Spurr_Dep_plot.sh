@@ -69,7 +69,7 @@ datafile="../Data/Spurr_19920818_DepThick_mm.dat"
 #******************************************************************************
 
 # Create Base Map
-gmt pscoast $AREA $PROJ $BASE $DETAIL $COAST -S255/255/255 -K  > temp.ps
+gmt pscoast $AREA $PROJ $BASE $DETAIL $COAST -S100/149/237 -K  > temp.ps
 
 # Contour Ash3d output
 echo "0.01   C" > dpm_0.01.lev   #deposit (0.01 mm)
@@ -103,7 +103,7 @@ gmt psscale -Dx1.25i/4.6i/2i/0.15ih -C$CPT -Q -B10f5/:"mm": -O -K >> temp.ps
 gmt psxy ${datafile} $AREA $PROJ -Sc0.1i -C${CPT} -Wthinnest -O -K >> temp.ps
 
 # Last gmt command is to plot the volcano and close out the ps file
-echo $vln $vlt '1.0' | gmt psxy $AREA $PROJ -St0.1i -Gblack -Wthinnest -O >> temp.ps
+echo $vln $vlt '1.0' | gmt psxy $AREA $PROJ -St0.1i -Gmagenta -Wthinnest -O >> temp.ps
 
 # Save map
 ps2epsi temp.ps temp.eps

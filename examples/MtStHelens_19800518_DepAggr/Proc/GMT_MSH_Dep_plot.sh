@@ -16,14 +16,21 @@ echo "GMT version = ${GMTv}"
 
 # MSH coordinates
 vlt=46.20
-vln=-122.18
+vln=237.82
 
-lonw=236.0
-lone=250.0
-lats=42.0
-latn=49.0
-DETAIL="-Dl"
-BASE="-Bg5/g5 -P"
+# Full domain of tephra samples
+#lonw=235.0
+#lone=255.0
+#lats=45.0
+#latn=51.0
+
+# Near-field for comparison with historic Ash3d run
+lonw=235.0
+lone=243.0
+lats=44.9
+latn=48.0
+DETAIL="-Dh"
+BASE="-Bg1/g1 -P"
 PROJ="-JM${vln}/${vlt}/6.5i"
 AREA="-R${lonw}/${lats}/${lone}/${latn}r"
 COAST="-G220/220/220 -W"
@@ -49,30 +56,18 @@ echo "# file dep.cpt
 
 #############################################################################
 # Ash3d data file
-infile="../3d_tephra_fall.nc"
-if test -r ${infile} ; then
-    echo "Preparing to read from ${infile} file"
-  else
-    echo "error: no ${infile} file. Exiting"
-    exit 1
-fi
 # Preparing grid file
-dep_grd=var_out_final.grd
-gmt grdconvert "$infile?area" zero.grd
-gmt grdmath 0.0 zero.grd MUL = zero.grd
-# We need to convert the NaN's to zero to get the lowest contour
-gmt grdconvert "$infile?depothickFin" temp.grd
-gmt grdmath temp.grd zero.grd AND = temp.grd
+gmt grdconvert ../DepositFile_____final.dat=ef temp.grd
 
 # Deposit data file
-#datafile="../Data/Mazama_DepThick_mm.dat"
+datafile="../Data/sample_mpua.xy"
 
 # Ash3d deposit file (phi 1.0 rho2624)
 gmt grdconvert ../Data/DepositFile_____final.dat=ef out.grd
 #******************************************************************************
 
 # Create Base Map
-gmt pscoast $AREA $PROJ $BASE $DETAIL $COAST -S255/255/255 -K  > temp.ps
+gmt pscoast $AREA $PROJ $BASE $DETAIL $COAST -S100/149/237 -K  > temp.ps
 
 # Contour Ash3d output
 echo "0.01   C" > dpm_0.01.lev   #deposit (0.01 mm)
@@ -95,14 +90,14 @@ gmt grdcontour temp.grd $AREA $PROJ $BASE -Cdpm_30.lev   -A- -W2,255/128/0,- -O 
 gmt grdcontour temp.grd $AREA $PROJ $BASE -Cdpm_100.lev  -A- -W2,255/0/0,-   -O -K >> temp.ps
 
 # Thin-line contours of the data from the Buckland paper
-#gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_0.03.lev -A- -W1,0/0/0 -O -K >> temp.ps
-#gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_0.1.lev  -A- -W1,0/0/0 -O -K >> temp.ps
-#gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_0.3.lev  -A- -W1,0/0/0 -O -K >> temp.ps
-#gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_1.lev    -A- -W1,0/0/0 -O -K >> temp.ps
-#gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_3.lev    -A- -W1,0/0/0 -O -K >> temp.ps
-#gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_10.lev   -A- -W1,0/0/0 -O -K >> temp.ps
-#gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_30.lev   -A- -W1,0/0/0 -O -K >> temp.ps
-#gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_100.lev  -A- -W1,0/0/0 -O -K >> temp.ps
+gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_0.03.lev -A- -W1,0/0/0 -O -K >> temp.ps
+gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_0.1.lev  -A- -W1,0/0/0 -O -K >> temp.ps
+gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_0.3.lev  -A- -W1,0/0/0 -O -K >> temp.ps
+gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_1.lev    -A- -W1,0/0/0 -O -K >> temp.ps
+gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_3.lev    -A- -W1,0/0/0 -O -K >> temp.ps
+gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_10.lev   -A- -W1,0/0/0 -O -K >> temp.ps
+gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_30.lev   -A- -W1,0/0/0 -O -K >> temp.ps
+gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_100.lev  -A- -W1,0/0/0 -O -K >> temp.ps
 
 # Plot legend
 LEGLOC="-Dx4.4i/0.05i/2.0i/1.4i/BL"
@@ -118,11 +113,11 @@ gmt psscale -Dx5.25i/0.5i/1.75i/0.15ih -C$CPT -Q -B10f5/:"mm": -O -K >> temp.ps
 
 # Plot the tephra site data
 # First, reformat data file to something more easily ingested by psxy
-#cat ${datafile} | awk '{print $2,$1,$3*10.0}' | tail -n +2 > dep.dat
-#gmt psxy dep.dat $AREA $PROJ -Sc0.1i -C${CPT} -Wthinnest -O -K >> temp.ps
+cat ${datafile} | awk '{print $1,$2,$3*1.0}' > dep.dat
+gmt psxy dep.dat $AREA $PROJ -Sc0.05i -C${CPT} -Wthinnest -O -K >> temp.ps
 
 # Last gmt command is to plot the volcano and close out the ps file
-echo $vln $vlt '1.0' | gmt psxy $AREA $PROJ -St0.1i -Gblack -Wthinnest -O >> temp.ps
+echo $vln $vlt '1.0' | gmt psxy $AREA $PROJ -St0.1i -Gmagenta -Wthinnest -O >> temp.ps
 
 # Save map
 ps2epsi temp.ps temp.eps
@@ -130,5 +125,5 @@ convert temp.eps MSH_Deposit.png
 epstopdf temp.eps MSH_Deposit.pdf
 
 # Clean up
-rm temp.* dpm*lev gmt.history gmt.conf dep.cpt zero.grd out.grd dep.dat
+rm temp.* dpm*lev gmt.history gmt.conf dep.cpt out.grd dep.dat
 
