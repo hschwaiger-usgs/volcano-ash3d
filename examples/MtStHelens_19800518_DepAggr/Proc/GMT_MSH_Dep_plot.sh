@@ -31,7 +31,7 @@ lats=44.9
 latn=48.0
 DETAIL="-Dh"
 BASE="-Bg1/g1 -P"
-PROJ="-JM${vln}/${vlt}/6.5i"
+PROJ="-JM${vln}/${vlt}/8i"
 AREA="-R${lonw}/${lats}/${lone}/${latn}r"
 COAST="-G220/220/220 -W"
 
@@ -100,7 +100,7 @@ gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_30.lev   -A- -W1,0/0/0 -O -K >> t
 gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_100.lev  -A- -W1,0/0/0 -O -K >> temp.ps
 
 # Plot legend
-LEGLOC="-Dx4.4i/0.05i/2.0i/1.4i/BL"
+LEGLOC="-Dx5.9i/0.07i/2.0i/1.4i/BL"
 gmt pslegend $AREA $PROJ $BASE -G255 $LEGLOC -K -O << EOF >> temp.ps
 C black
 H 14 1 Mt.St.Helens Dep.
@@ -109,12 +109,12 @@ S 0.1i - 0.15i black  0.5p,black 0.3i Historic run
 S 0.1i - 0.15i red    3.0p,red   0.3i Ash3d (all colors)
 S 0.1i c 0.10i red  0.5p,black   0.3i measured thickness
 EOF
-gmt psscale -Dx5.25i/0.5i/1.75i/0.15ih -C$CPT -Q -B10f5/:"mm": -O -K >> temp.ps
+gmt psscale -Dx6.75i/0.5i/1.75i/0.15ih -C$CPT -Q -B10f5/:"mm": -O -K >> temp.ps
 
 # Plot the tephra site data
 # First, reformat data file to something more easily ingested by psxy
 cat ${datafile} | awk '{print $1,$2,$3*1.0}' > dep.dat
-gmt psxy dep.dat $AREA $PROJ -Sc0.05i -C${CPT} -Wthinnest -O -K >> temp.ps
+gmt psxy dep.dat $AREA $PROJ -Sc0.1i -C${CPT} -Wthinnest -O -K >> temp.ps
 
 # Last gmt command is to plot the volcano and close out the ps file
 echo $vln $vlt '1.0' | gmt psxy $AREA $PROJ -St0.1i -Gmagenta -Wthinnest -O >> temp.ps

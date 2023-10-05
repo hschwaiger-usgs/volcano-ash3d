@@ -1,0 +1,9 @@
+Mazama umbrella cloud comparison with deposits.
+
+Wind files needed: NCEP reanalysis, 2010
+Assuming you have volcano-ash3d-metreader installed in the default location, run:
+ /opt/USGS/bin/autorun_scripts/get_NCEP_50YearReanalysis.sh 2010
+
+Ref: Buckland, et al, Modelling the transport and deposition of ash following a
+magnitude 7 eruption: the distal Mazama tephra, Bulletin of Volcanology, v84,87,
+2022,doi:10.1007/s00445-022-01593-1

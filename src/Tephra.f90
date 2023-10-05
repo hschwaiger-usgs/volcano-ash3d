@@ -20,7 +20,6 @@
 !      function vset_WH_PCM
 !      function vset_Gans
 !      function vset_Stokes_slip
-!      function vset_Stokes_Cloud
 !
 !##############################################################################
 

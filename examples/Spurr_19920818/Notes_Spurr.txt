@@ -1,0 +1,11 @@
+Test of the deposit from the August 19, 1992 Mt. Spurr eruption.
+
+Wind files needed: NCEP reanalysis, 1992
+Assuming you have volcano-ash3d-metreader installed in the default location, run:
+ /opt/USGS/bin/autorun_scripts/get_NCEP_50YearReanalysis.sh 1992
+
+Ref: Neal, C. A., McGimsey, R. G., Gardner, C. A., Harbin, M. L., and Nye, C. J.,
+1995, Tephra-fall deposits from the 1992 eruptions of Crater Peak, Mount
+Spurr volcano, Alaska: a preliminary report on distribution, stratigraphy, and
+composition: in Keith, T. E. C., (ed.), The 1992 eruptions of Crater Peak Vent,
+Mount Spurr volcano, Alaska, U.S. Geological Survey Bulletin 2139, p. 65-79.

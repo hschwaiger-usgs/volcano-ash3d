@@ -1,0 +1,8 @@
+Kasatochi cloud run, comparing with satellite ash retrievals (in the style of
+Wen-Rose), using a source term calculated from an inversion on one of the
+satellite images.
+
+Wind files needed: NCEP reanalysis, 2008
+Assuming you have volcano-ash3d-metreader installed in the default location, run:
+ /opt/USGS/bin/autorun_scripts/get_NCEP_50YearReanalysis.sh 2008
+

@@ -1,0 +1,10 @@
+Kelud umbrella cloud source comparison with satellite observations
+of the spreading cloud.
+
+Wind files needed: NCEP reanalysis, 2014
+Assuming you have volcano-ash3d-metreader installed in the default location, run:
+ /opt/USGS/bin/autorun_scripts/get_NCEP_50YearReanalysis.sh 2014
+
+Ref: Mastin and Van Eaton, Comparing simulation of umbrella-cloud growth and ash
+transport with observations from Pinatubo, Kelud, and Calbuco Volcanoes,
+Atmosphere, v11,1038, 2020, doi:10.3390/atmos11101038

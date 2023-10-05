@@ -24,7 +24,7 @@ lats=-14.0
 latn=0.0
 DETAIL="-Dl"
 BASE="-Bg5/g5 -P"
-PROJ="-JM${vln}/${vlt}/6.5i"
+PROJ="-JM${vln}/${vlt}/7.0i"
 AREA="-R${lonw}/${lats}/${lone}/${latn}r"
 COAST="-G220/220/220 -W"
 

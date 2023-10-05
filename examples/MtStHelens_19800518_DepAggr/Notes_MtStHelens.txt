@@ -1,0 +1,9 @@
+Mt. St. Helens run testing aggregation GSD
+
+Wind files needed: NCEP reanalysis, 1980
+Assuming you have volcano-ash3d-metreader installed in the default location, run:
+ /opt/USGS/bin/autorun_scripts/get_NCEP_50YearReanalysis.sh 1980
+
+Ref: Mastin, et al., Adjusting particle-size distribution to account for
+aggregation in tephra-deposit model forecasts, Atmospheric Chemistry and
+Physics, v16 n14, 2016, doi:10.5194/acp-16-9399-2016
