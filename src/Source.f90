@@ -476,6 +476,9 @@
           e_EndTime(i) = e_StartTime(i) + e_Duration(i)
         else
           ! Custom source, initializing MassFluxRate and end time
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*) "Custom source: ",i," Initializing mass flux rate to 0"
+          endif;enddo
           MassFluxRate(i)  = 0.0_ip
           e_EndTime(i) = 0.0_ip
         endif
