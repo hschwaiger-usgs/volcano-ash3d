@@ -236,13 +236,13 @@
 
       character (len=20)  :: cdf_WindStartTime
 
-      character(len=3) ,dimension(11) :: dim_names
+      character(len=3 ),dimension(11) :: dim_names
       character(len=30),dimension(11) :: dim_lnames
       character(len=30),dimension(40) :: var_lnames
-      character (len=13)         :: reftimestr
-      character (len=16)         :: outstring
-      character(len=050):: linebuffer050
-      character(len=130):: linebuffer130
+      character(len=13)  :: reftimestr
+      character(len=16)  :: outstring
+      character(len=50 ) :: linebuffer050
+      character(len=130) :: linebuffer130
       integer :: strlen
       integer :: i,j,k,isize
       integer :: ivar
@@ -2427,8 +2427,9 @@
         do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill depothick"
         endif;enddo
-        dum2d_out(:,:) = DepositThickness_FillValue
-        dum2d_out = merge(real(DepositThickness,kind=op),dum2d_out,Mask_Deposit)
+        dum2d_out(:,:) = real(DepositThickness,kind=op)
+        !dum2d_out(:,:) = DepositThickness_FillValue
+        !dum2d_out = merge(real(DepositThickness,kind=op),dum2d_out,Mask_Deposit)
         !do i=1,nxmax
         !  do j=1,nymax
         !    if(Mask_Deposit(i,j))&
@@ -2442,8 +2443,9 @@
         do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill ashconMax"
         endif;enddo
-        dum2d_out(:,:) = real(MaxConcentration_FillValue,kind=op)
-        dum2d_out = merge(real(MaxConcentration,kind=op),dum2d_out,Mask_Cloud)
+        dum2d_out(:,:) = real(MaxConcentration,kind=op)
+        !dum2d_out(:,:) = real(MaxConcentration_FillValue,kind=op)
+        !dum2d_out = merge(real(MaxConcentration,kind=op),dum2d_out,Mask_Cloud)
         !dum2d_out(:,:) = real(MaxConcentration_FillValue,kind=op)
         !do i=1,nxmax
         !  do j=1,nymax
@@ -2478,8 +2480,9 @@
         do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill ashload"
         endif;enddo
-        dum2d_out(:,:) = real(CloudLoad_FillValue,kind=op)
-        dum2d_out = merge(real(CloudLoad,kind=op),dum2d_out,Mask_Cloud)
+        dum2d_out(:,:) = real(CloudLoad,kind=op)
+        !dum2d_out(:,:) = real(CloudLoad_FillValue,kind=op)
+        !dum2d_out = merge(real(CloudLoad,kind=op),dum2d_out,Mask_Cloud)
         !do i=1,nxmax
         !  do j=1,nymax
         !    if(Mask_Cloud(i,j))then
@@ -2550,8 +2553,9 @@
         do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill depothickFin"
         endif;enddo
-        dum2d_out(:,:) = DepositThickness_FillValue
-        dum2d_out = merge(real(DepositThickness,kind=op),dum2d_out,Mask_Deposit)
+        dum2d_out(:,:) = real(DepositThickness,kind=op)
+        !dum2d_out(:,:) = DepositThickness_FillValue
+        !dum2d_out = merge(real(DepositThickness,kind=op),dum2d_out,Mask_Deposit)
         !do i=1,nxmax
         !  do j=1,nymax
         !    if(Mask_Deposit(i,j))&
@@ -2909,8 +2913,9 @@
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"  Writing depothickFin"
         endif;enddo
-        dum2d_out(:,:) = DepositThickness_FillValue
-        dum2d_out = merge(real(DepositThickness,kind=op),dum2d_out,Mask_Deposit)
+        dum2d_out(:,:) = real(DepositThickness,kind=op)
+        !dum2d_out(:,:) = DepositThickness_FillValue
+        !dum2d_out = merge(real(DepositThickness,kind=op),dum2d_out,Mask_Deposit)
         !do i=1,nxmax
         !  do j=1,nymax
         !    if(Mask_Deposit(i,j))&
@@ -2929,12 +2934,13 @@
           write(outlog(io),*)"  Writing depotime"
         endif;enddo
         dum2d_out(:,:) = DepArrivalTime_FillValue
-        do i=1,nxmax
-          do j=1,nymax
-            if(DepArrivalTime(i,j).ge.0.0_ip)&
-                dum2d_out(i,j)=real(DepArrivalTime(i,j),kind=op)
-          enddo
-        enddo
+        dum2d_out = merge(real(DepArrivalTime,kind=op),dum2d_out,Mask_Deposit)
+        !do i=1,nxmax
+        !  do j=1,nymax
+        !    if(DepArrivalTime(i,j).ge.0.0_ip)&
+        !        dum2d_out(i,j)=real(DepArrivalTime(i,j),kind=op)
+        !  enddo
+        !enddo
         nSTAT=nf90_put_var(ncid,depotime_var_id,dum2d_out,(/1,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depotime")
         deallocate(dum2d_out)
@@ -3149,8 +3155,9 @@
           do io=1,2;if(VB(io).le.verbosity_debug1)then
             write(outlog(io),*)"  Writing depothick"
           endif;enddo
-          dum2d_out(:,:) = DepositThickness_FillValue
-          dum2d_out = merge(real(DepositThickness,kind=op),dum2d_out,Mask_Deposit)
+          dum2d_out(:,:) = real(DepositThickness,kind=op)
+          !dum2d_out(:,:) = DepositThickness_FillValue
+          !dum2d_out = merge(real(DepositThickness,kind=op),dum2d_out,Mask_Deposit)
           !do i=1,nxmax
           !  do j=1,nymax
           !    if(Mask_Deposit(i,j))&
@@ -3168,8 +3175,9 @@
           do io=1,2;if(VB(io).le.verbosity_debug1)then
             write(outlog(io),*)"  Writing ashconMax"
           endif;enddo
-          dum2d_out(:,:) = MaxConcentration_FillValue
-          dum2d_out = merge(real(MaxConcentration,kind=op),dum2d_out,Mask_Cloud)
+          dum2d_out(:,:) = real(MaxConcentration,kind=op)
+          !dum2d_out(:,:) = MaxConcentration_FillValue
+          !dum2d_out = merge(real(MaxConcentration,kind=op),dum2d_out,Mask_Cloud)
           !do i=1,nxmax
           !  do j=1,nymax
           !    if(Mask_Cloud(i,j))then
@@ -3210,8 +3218,9 @@
           do io=1,2;if(VB(io).le.verbosity_debug1)then
             write(outlog(io),*)"  Writing ash-load"
           endif;enddo
-          dum2d_out(:,:) = real(CloudLoad_FillValue,kind=op)
-          dum2d_out = merge(real(CloudLoad,kind=op),dum2d_out,Mask_Cloud)
+          dum2d_out(:,:) = real(CloudLoad,kind=op)
+          !dum2d_out(:,:) = real(CloudLoad_FillValue,kind=op)
+          !dum2d_out = merge(real(CloudLoad,kind=op),dum2d_out,Mask_Cloud)
           !do i=1,nxmax
           !  do j=1,nymax
           !    if(Mask_Cloud(i,j))then

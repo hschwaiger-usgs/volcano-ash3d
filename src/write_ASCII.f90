@@ -275,7 +275,11 @@
 3         format(f6.2,'hrs')
         endif
       endif
-      if(index(filename_root,'ArrivalTime').gt.0)then
+      if(index(filename_root,'outvar').gt.0)then
+        ! If this subroutine is called with a filename root of 'outvar', then just
+        ! write to file 'outvar.dat'
+        write(filename_out,*)trim(adjustl(filename_root)),'.dat'
+      elseif(index(filename_root,'ArrivalTime').gt.0)then
           ! For the special cases of DepositArrivalTime.dat and
           ! CloudArrivalTime.dat
         write(filename_out,*)trim(adjustl(filename_root)),'.dat'

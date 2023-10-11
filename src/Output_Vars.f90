@@ -104,27 +104,34 @@
         ! iprod = 16:ivar =     :: profiles concentration?      :
 
         ! Publicly available variables
+        !  Variable threshold values
+        !  The deposit and cloudload thresholds are special in that they are used
+        !  for delineating the deposit and cloud masks respectively.  These masks
+        !  are writen to the output netcdf file if post-processing required
+        !  thresholding (if flooded contours are to be suppressed below the
+        !  threshold, for example).
       real(kind=ip),public    :: DEPO_THRESH           = 1.0e-2_ip  ! threshold deposit thickness (mm)
-      real(kind=ip),public    :: DEPRATE_THRESH        = 1.0e-2_ip  ! threshold deposition rate (mm/hr)
-      real(kind=ip),public    :: CLOUDCON_THRESH       = 1.0e-3_ip  ! threshold cloud concentration (kg/km3) for output
-      real(kind=ip),public    :: CLOUDCON_GRID_THRESH  = 1.0e-7_ip  ! threshold cloud concentration (kg/km3) for subgrid
       real(kind=ip),public    :: CLOUDLOAD_THRESH      = 2.0e-1_ip  ! threshold cloud load (t/km2)
                                        ! 0.2 T/km2 is roughly the detection
                                        ! limit of Pavolonis's SEVIRI satellite retrievals
+
+      real(kind=ip),public    :: DEPRATE_THRESH        = 1.0e-2_ip  ! threshold deposition rate (mm/hr)
+      real(kind=ip),public    :: CLOUDCON_THRESH       = 1.0e-3_ip  ! threshold cloud concentration (kg/km3) for output
+      real(kind=ip),public    :: CLOUDCON_GRID_THRESH  = 1.0e-7_ip  ! threshold cloud concentration (kg/km3) for subgrid
 
       real(kind=ip),public    :: THICKNESS_THRESH = 1.0e-2_ip  !threshold thickness for start of deposition (mm)
       real(kind=ip),public    :: DBZ_THRESH       =-2.0e+1_ip  !threshold dbZ
 
       ! These are the initialized values
-      real(kind=op),public    :: DepositThickness_FillValue   =     0.0_op
+      real(kind=op),public    :: DepositThickness_FillValue   = -9999.0_op
       real(kind=op),public    :: MaxConcentration_FillValue   = -9999.0_op
       real(kind=op),public    :: DepArrivalTime_FillValue     = -9999.0_op
       real(kind=op),public    :: CloudArrivalTime_FillValue   = -9999.0_op
       real(kind=op),public    :: CloudLoad_FillValue          = -9999.0_op
       real(kind=op),public    :: MaxHeight_FillValue          = -9999.0_op
       real(kind=op),public    :: MinHeight_FillValue          = -9999.0_op
-      real(kind=op),public    :: dbZCol_FillValue             =  -100.0_op
-      real(kind=op),public    :: pr_ash_FillValue             =     0.0_op
+      real(kind=op),public    :: dbZCol_FillValue             = -9999.0_op
+      real(kind=op),public    :: pr_ash_FillValue             = -9999.0_op
 
       logical,public            :: Calculated_Cloud_Load
       logical,public            :: Calculated_AshThickness
@@ -344,7 +351,7 @@
       allocate(DepositThickness(nxmax,nymax))
       DepositThickness = 0.0_ip
       allocate(MaxConcentration(nxmax,nymax))
-      MaxConcentration = MaxConcentration_FillValue
+      MaxConcentration = 0.0_ip
       allocate(DepArrivalTime(nxmax,nymax))
       DepArrivalTime = DepArrivalTime_FillValue
       allocate(CloudArrivalTime(nxmax,nymax))                    ! time of arrival of ash cloud

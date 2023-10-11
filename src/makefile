@@ -487,7 +487,7 @@ Ash3d_PostProc_dislin.o: Ash3d_PostProc_dislin.f90 $(MFILE) Ash3d_PostProc_citie
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_dislin.f90
 endif
 ifeq ($(USEGMT), T)
-Ash3d_PostProc_GMT.o: Ash3d_PostProc_GMT.f90 $(MFILE) Ash3d_PostProc_cities.o gmt.o
+Ash3d_PostProc_GMT.o: Ash3d_PostProc_GMT.f90 $(MFILE) Ash3d_PostProc_cities.o write_ASCII.o gmt.o
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_GMT.f90
 gmt.o: $(gmtfortloc)/src/gmt.f90 $(MFILE)
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(gmtfortloc)/src/gmt.f90

@@ -418,7 +418,8 @@
       use projection,    only : &
            PJ_proj_inv
 
-      integer             :: ivar
+      integer,intent(in)  :: ivar
+
       character (len=13)  :: yyyymmddhh
       character (len=2)   :: opacity
       real(kind=ip)       :: xleft, xright, ybottom, ytop
@@ -740,10 +741,10 @@
       use projection,    only : &
            PJ_proj_inv
 
-      integer        :: ivar
-      real(kind=ip)  :: OutVar(nxmax,nymax)
-      integer        :: height_flag          ! <0 : min, =0 : ground, >0 : max
-      integer        :: TS_flag              ! 0 = not a time-series, 1 = time-series
+      integer      ,intent(in)  :: ivar
+      real(kind=ip),intent(in)  :: OutVar(nxmax,nymax)
+      integer      ,intent(in)  :: height_flag          ! <0 : min, =0 : ground, >0 : max
+      integer      ,intent(in)  :: TS_flag              ! 0 = not a time-series, 1 = time-series
 
       real(kind=dp)       :: olam,ophi ! using precision needed by libprojection
 
@@ -1578,8 +1579,8 @@
 
       subroutine Close_KML(ivar,TS_flag)
 
-      integer :: ivar
-      integer :: TS_flag
+      integer,intent(in) :: ivar
+      integer,intent(in) :: TS_flag
 
       integer :: fid
 

@@ -79,6 +79,8 @@
       character(len=13) :: cio
       real(kind=8)      :: timestart
       real(kind=8)      :: timeend
+      logical           :: Mask(nxmax,nymax)
+      integer           :: i,j
       logical,save      :: first_time = .true.
 
       INTERFACE
@@ -191,26 +193,31 @@
       ! Write time-series data at this output step
       if (.not.isFinal_TS) then
           ! First ascii files
-        if (WriteDepositTS_ASCII)            &
-          call write_2D_ASCII(nxmax,nymax,&
+        if (WriteDepositTS_ASCII)then
+          Mask(1:nxmax,1:nymax) = .true.
+          call write_2D_ASCII(nxmax,nymax,                       &
                               DepositThickness(1:nxmax,1:nymax), &
-                              Mask_Deposit(1:nxmax,1:nymax),&
-                              ' 0.000','DepositFile_        ')
-        if (WriteCloudConcentration_ASCII)  &
-          call write_2D_ASCII(nxmax,nymax,&
+                              Mask(1:nxmax,1:nymax),&
+                              '-9999.','DepositFile_        ')
+        elseif (WriteCloudConcentration_ASCII)then
+          Mask(1:nxmax,1:nymax) = .true.
+          call write_2D_ASCII(nxmax,nymax,                       &
                               MaxConcentration(1:nxmax,1:nymax), &
-                              Mask_Cloud(1:nxmax,1:nymax),&
-                              ' 0.000','CloudConcentration_ ')
-        if (WriteCloudHeight_ASCII)         &
-          call write_2D_ASCII(nxmax,nymax,&
+                              Mask(1:nxmax,1:nymax),             &
+                              '-9999.','CloudConcentration_ ')
+        elseif (WriteCloudHeight_ASCII)then
+          Mask(1:nxmax,1:nymax) = Mask_Cloud(1:nxmax,1:nymax)
+          call write_2D_ASCII(nxmax,nymax,                &
                               MaxHeight(1:nxmax,1:nymax), &
-                              Mask_Cloud(1:nxmax,1:nymax),&
-                              ' 0.000','CloudHeight_        ')
-        if (WriteCloudLoad_ASCII)           &
-          call write_2D_ASCII(nxmax,nymax,&
+                              Mask(1:nxmax,1:nymax),      &
+                              '-9999.','CloudHeight_        ')
+        elseif (WriteCloudLoad_ASCII)then
+          Mask(1:nxmax,1:nymax) = .true.
+          call write_2D_ASCII(nxmax,nymax,                &
                               CloudLoad(1:nxmax,1:nymax), &
-                              Mask_Cloud(1:nxmax,1:nymax),&
-                              ' 0.000','CloudLoad_          ')
+                              Mask(1:nxmax,1:nymax),      &
+                              '-9999.','CloudLoad_          ')
+        endif
 
           ! Now KML files
         if (WriteCloudConcentration_KML)   call Write_2D_KML(1,MaxConcentration,1,1) ! Cloud Concentration
@@ -239,9 +246,10 @@
           call AshTotalCalculator
           call write_3D_Binary(cio,nxmax,nymax,nzmax,ashcon_tot)
           deallocate(ashcon_tot)
-          call write_2D_Binary(nxmax,nymax,&
+          Mask(1:nxmax,1:nymax) = .true.
+          call write_2D_Binary(nxmax,nymax,                      &
                               DepositThickness(1:nxmax,1:nymax), &
-                              Mask_Deposit(1:nxmax,1:nymax),&
+                              Mask(1:nxmax,1:nymax),             &
                               ' 0.000','DepositFile_        ')
         elseif(ioutputFormat.eq.3)then
 #ifdef USENETCDF
@@ -267,29 +275,42 @@
           call Write_2D_KML(9,real(DepArrivalTime,kind=ip),0,0) ! Deposit
           call Close_KML(9,0)
         endif
-        if (WriteDepositTime_ASCII)     &
-          call write_2D_ASCII(nxmax,nymax,&
+        if (WriteDepositTime_ASCII)then
+          Mask(1:nxmax,1:nymax) = Mask_Deposit(1:nxmax,1:nymax)
+          call write_2D_ASCII(nxmax,nymax,                                   &
                               real(DepArrivalTime(1:nxmax,1:nymax),kind=ip), &
-                              Mask_Deposit(1:nxmax,1:nymax),&
-                              '-1.000','DepositArrivalTime  ')
+                              Mask(1:nxmax,1:nymax),                         &
+                              '-9999.','DepositArrivalTime  ')
+        endif
         if (WriteCloudTime_KML) then
           call OpenFile_KML(5) ! Cloud Arrival Time
           call Write_2D_KML(5,real(CloudArrivalTime,kind=ip),0,0) ! Deposit
           call Close_KML(5,0)
         endif
-        if (WriteCloudTime_ASCII)       &
+        if (WriteCloudTime_ASCII)then
+          ! cloud mask based on cloud load does not work in this case the cloud load mask
+          ! is a function of time
+          Mask(1:nxmax,1:nymax) = .true.
+          do i=1,nxmax
+            do j=1,nymax
+              if(CloudArrivalTime(i,j).lt.0.0_ip)Mask(i,j) = .false.
+            enddo
+          enddo
           call write_2D_ASCII(nxmax,nymax,&
                               real(CloudArrivalTime(1:nxmax,1:nymax),kind=ip), &
-                              Mask_Cloud(1:nxmax,1:nymax),&
-                              '-1.000','CloudArrivalTime    ')
+                              Mask(1:nxmax,1:nymax),&
+                              '-9999.','CloudArrivalTime    ')
+        endif
         ! Write Final deposit file
         if ((WriteDepositFinal_ASCII).and.                       &
-            (((nWriteTimes.gt.0).and.(abs(time-dt-WriteTimes(nWriteTimes)).gt.1.0e-4_ip)).or. &
-            (nWriteTimes.eq.0))) then
+            (((nWriteTimes.gt.0).and.&
+             (abs(time-dt-WriteTimes(nWriteTimes)).gt.1.0e-4_ip)).or. &
+             (nWriteTimes.eq.0))) then
+          Mask(1:nxmax,1:nymax) = .true.
           call write_2D_ASCII(nxmax,nymax,&
                               DepositThickness(1:nxmax,1:nymax), &
-                              Mask_Deposit(1:nxmax,1:nymax),&
-                              ' 0.000','DepositFile_        ')
+                              Mask(1:nxmax,1:nymax),&
+                              '-9999.','DepositFile_        ')
         endif
         if (WriteDepositFinal_KML) then
           call Write_2D_KML(7,DepositThickness,0,0) ! Deposit

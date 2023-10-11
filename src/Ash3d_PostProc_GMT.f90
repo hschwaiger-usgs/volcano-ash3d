@@ -1,6 +1,6 @@
 !##############################################################################
 !
-! Ash3d_PostProc_gnuplot module
+! Ash3d_PostProc_GMT module
 !
 ! This module provides the subroutines that use GMT for creating 2d maps,
 ! 2d vertical profiles, and the little deposit accumulation plots linked to
@@ -19,6 +19,12 @@
       use precis_param
 
       use io_units
+
+      use global_param,  only : &
+        DirDelim
+
+      use io_data,       only : &
+         Ash3dHome,concenfile
 
       use gmt
 
@@ -65,8 +71,6 @@
          IsLatLon
 
       use Output_Vars,   only : &
-         DepositThickness,DepArrivalTime,CloudArrivalTime,&
-         MaxConcentration,MaxHeight,CloudLoad,dbZ,MinHeight,Mask_Cloud,Mask_Deposit,&
          ContourFilled,Con_Cust,Con_Cust_N,Con_Cust_RGB,Con_Cust_Lev,&
          Con_DepThick_mm_N,Con_DepThick_mm_Lev,Con_DepThick_mm_RGB, &
          Con_DepThick_in_N,Con_DepThick_in_Lev,Con_DepThick_in_RGB, &
@@ -78,16 +82,20 @@
          Con_CloudRef_N,Con_CloudRef_RGB,Con_CloudRef_Lev, &
          Con_CloudTime_N,Con_CloudTime_RGB,Con_CloudTime_Lev, &
          ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
-         Contour_MaxCurves,Contour_MaxPoints,ContourLev
-
-      use io_data,       only : &
-         nWriteTimes,WriteTimes,cdf_b3l1,VolcanoName
-
-      use Source,        only : &
-         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight,lon_volcano,lat_volcano
+         Contour_MaxCurves,Contour_MaxPoints,ContourLev,nConLev,Mask_Cloud,&
+         CloudArrivalTime,Mask_Deposit
 
       use time_data,     only : &
-         os_time_log,BaseYear,useLeap
+         os_time_log,SimStartHour,BaseYear,useLeap
+
+      use io_data,       only : &
+         WriteTimes,cdf_b3l1,VolcanoName
+
+      use Source,        only : &
+         e_Volume,e_Duration,e_StartTime,e_PlumeHeight,lon_volcano,lat_volcano
+
+      use Ash3d_ASCII_IO,  only : &
+           write_2D_ASCII
 
       use citywriter
 
@@ -98,10 +106,503 @@
       real(kind=ip),intent(in) :: OutVar(nx,ny)
       logical      ,intent(in) :: writeContours
 
-      character(16) filedat,filetxt,fileps
-      character(20) module
-      character(100) args
+      logical          :: mask(nx,ny)
+      character(len=6) :: Fill_Value
+      character(16)  :: filedat
+      character(16)  :: filetxt
+      character(16)  :: fileps  = "temp.ps"
+      character(200) :: cmd
+      !character(20)  :: module
+      !character(100) args
 
+      integer :: i,j,ii
+      integer     , dimension(:,:),allocatable :: zrgb
+      character(len=40) :: title_plot
+      character(len=15) :: title_legend
+      character(len=40) :: outfile_name
+      character (len=9) :: cio
+      character (len=4) :: outfile_ext = '.png'
+      character(len=10) :: units
+
+      real(kind=ip)  :: xmin
+      real(kind=ip)  :: xmax
+      real(kind=ip)  :: ymin
+      real(kind=ip)  :: ymax
+
+      character(len=10) :: dp_gmtfile
+      character(len=10) :: dp_outfile
+      character(len=10) :: dp_confile
+      !character(len=26) :: coord_str
+      character(len=25) :: gmtcom
+      !character(len=80) :: gnucoastfile
+      integer :: ioerr,ioerr2,iw,iwf,istat
+
+      integer :: ncities
+      real(kind=ip),dimension(:),allocatable     :: lon_cities
+      real(kind=ip),dimension(:),allocatable     :: lat_cities
+      character(len=26),dimension(:),allocatable :: name_cities
+      logical           :: IsThere1,IsThere2
+      character(len=80) :: linebuffer080
+      character         :: testkey
+      integer           :: ilev,ignulev
+      integer           :: lev_i,substr_pos1,substr_pos2,substr_pos3
+      real(kind=4)      :: lev_r4
+      integer           :: icurve,ipt
+
+      character(len=20) :: varname
+      character(len=20),dimension(20) :: penstr
+      character(len=17) :: dumstr17
+      character(len=48) :: dumstr48
+      character(len=8)  :: flt_str
+      character(len=50) :: base_str
+      character(len=4 ) :: detail_str
+      character(len=50) :: proj_str
+      character(len=50) :: area_str
+      character(len=50) :: coast_str
+      character(len=50) :: river_str
+      character(len=50) :: start_ps
+      character(len=50) :: contn_ps
+      character(len=50) :: end_ps
+
+      INTERFACE
+        character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
+          real(kind=8)              :: HoursSince
+          integer                   :: byear
+          logical                   :: useLeaps
+        end function HS_xmltime
+      END INTERFACE
+
+      ncities = 20
+      allocate(lon_cities(ncities))
+      allocate(lat_cities(ncities))
+      allocate(name_cities(ncities))
+
+      if(iprod.eq.5.or.iprod.eq.6)then
+        cio='____final'
+      else
+        if (WriteTimes(itime).lt.10.0_ip) then
+          write(cio,1) WriteTimes(itime)
+1         format('00',f4.2,'hrs')
+        elseif (WriteTimes(itime).lt.100.0_ip) then
+          write(cio,2) WriteTimes(itime)
+2         format('0',f5.2,'hrs')
+        else
+          write(cio,3) WriteTimes(itime)
+3         format(f6.2,'hrs')
+        endif
+      endif
+
+      if(Con_Cust)then
+        nConLev = Con_Cust_N
+        allocate(zrgb(nConLev,3))
+        allocate(ContourLev(nConLev))
+        ContourLev(1:nConLev) = Con_Cust_Lev(1:nConLev)
+        zrgb(1:nConLev,1:3) = Con_Cust_RGB(1:nConLev,1:3)
+      endif
+
+      if(iprod.eq.3)then       ! deposit at specified times (mm)
+        varname = "depothick"
+        write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
+        write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
+        title_legend = 'Dep.Thick.(mm)'
+        units = " (mm)"
+        Fill_Value = '-9999.'
+        if(.not.Con_Cust)then
+          nConLev = Con_DepThick_mm_N
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev(1:nConLev) = Con_DepThick_mm_Lev(1:nConLev)
+          zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
+        endif
+      elseif(iprod.eq.4)then   ! deposit at specified times (inches)
+        varname = "depothick"
+        write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
+        write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
+        title_legend = 'Dep.Thick.(in)'
+        units = " (in)"
+        Fill_Value = '-9999.'
+        if(.not.Con_Cust)then
+          nConLev = Con_DepThick_in_N
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev(1:nConLev) = Con_DepThick_in_Lev(1:nConLev)
+          zrgb(1:nConLev,1:3) = Con_DepThick_in_RGB(1:nConLev,1:3)
+        endif
+      elseif(iprod.eq.5)then       ! deposit at final time (mm)
+        varname = "depothickFin"
+        write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
+        title_plot = 'Final Deposit Thickness'
+        title_legend = 'Dep.Thick.(mm)'
+        units = " (mm)"
+        Fill_Value = '-9999.'
+        if(.not.Con_Cust)then
+          nConLev = Con_DepThick_mm_N
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev(1:nConLev) = Con_DepThick_mm_Lev(1:nConLev)
+          zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
+        endif
+      elseif(iprod.eq.6)then   ! deposit at final time (inches)
+        varname = "depothickFin"
+        write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
+        title_plot = 'Final Deposit Thickness'
+        title_legend = 'Dep.Thick.(in)'
+        units = " (in)"
+        Fill_Value = '-9999.'
+        if(.not.Con_Cust)then
+          nConLev = Con_DepThick_in_N
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev(1:nConLev) = Con_DepThick_in_Lev(1:nConLev)
+          zrgb(1:nConLev,1:3) = Con_DepThick_in_RGB(1:nConLev,1:3)
+        endif
+      elseif(iprod.eq.7)then   ! ashfall arrival time (hours)
+        varname = "depotime"
+        write(outfile_name,'(a22)')'DepositArrivalTime.png'
+        write(title_plot,'(a20)')'Ashfall arrival time'
+        title_legend = 'Time (hours)'
+        units = " (hours)"
+        Fill_Value = '-9999.'
+        if(.not.Con_Cust)then
+          nConLev = Con_DepTime_N
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev(1:nConLev) = Con_DepTime_Lev(1:nConLev)
+          zrgb(1:nConLev,1:3) = Con_DepTime_RGB(1:nConLev,1:3)
+        endif
+      elseif(iprod.eq.8)then   ! ashfall arrival at airports/POI (mm)
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: No map PNG output option for airport arrival time data."
+          write(errlog(io),*)"       Should not be in write_2Dmap_PNG_dislin"
+        endif;enddo
+        stop 1
+      elseif(iprod.eq.9)then   ! ash-cloud concentration
+        varname = "ashcon_max"
+        write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
+        write(title_plot,'(a26,f5.2,a6)')'Ash-cloud concentration t=',WriteTimes(itime),' hours'
+        title_legend = 'Max.Con.(mg/m3)'
+        units = " (mg/m3)"
+        Fill_Value = '-9999.'
+        if(.not.Con_Cust)then
+          nConLev = Con_CloudCon_N
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev(1:nConLev) = Con_CloudCon_Lev(1:nConLev)
+          zrgb(1:nConLev,1:3) = Con_CloudCon_RGB(1:nConLev,1:3)
+        endif
+      elseif(iprod.eq.10)then   ! ash-cloud height
+        varname = "cloud_height"
+        write(outfile_name,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
+        write(title_plot,'(a19,f5.2,a6)')'Ash-cloud height t=',WriteTimes(itime),' hours'
+        title_legend = 'Cld.Height(km)'
+        units = " (km)"
+        Fill_Value = '-9999.'
+        if(.not.Con_Cust)then
+          nConLev = Con_CloudTop_N
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev(1:nConLev) = Con_CloudTop_Lev(1:nConLev)
+          zrgb(1:nConLev,1:3) = Con_CloudTop_RGB(1:nConLev,1:3)
+        endif
+      elseif(iprod.eq.11)then   ! ash-cloud bottom
+        varname = "cloud_bottom"
+        write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
+        write(title_plot,'(a19,f5.2,a6)')'Ash-cloud bottom t=',WriteTimes(itime),' hours'
+        title_legend = 'Cld.Bot.(km)'
+        units = " (km)"
+        Fill_Value = '-9999.'
+        if(.not.Con_Cust)then
+          nConLev = Con_CloudBot_N
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev(1:nConLev) = Con_CloudBot_Lev(1:nConLev)
+          zrgb(1:nConLev,1:3) = Con_CloudBot_RGB(1:nConLev,1:3)
+        endif
+      elseif(iprod.eq.12)then   ! ash-cloud load
+        varname = "cloud_load"
+        write(outfile_name,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
+        write(title_plot,'(a17,f5.2,a6)')'Ash-cloud load t=',WriteTimes(itime),' hours'
+        title_legend = 'Cld.Load(T/km2)'
+        units = " (T/km2)"
+        Fill_Value = '-9999.'
+        if(.not.Con_Cust)then
+          nConLev = Con_CloudLoad_N
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev(1:nConLev) = Con_CloudLoad_Lev(1:nConLev)
+          zrgb(1:nConLev,1:3) = Con_CloudLoad_RGB(1:nConLev,1:3)
+        endif
+      elseif(iprod.eq.13)then  ! radar reflectivity
+        varname = "radar_reflectivity"
+        write(outfile_name,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
+        write(title_plot,'(a24,f5.2,a6)')'Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
+        title_legend = 'Cld.Refl.(dBz)'
+        units = " (dBz)"
+        Fill_Value = '-9999.'
+        if(.not.Con_Cust)then
+          nConLev = Con_CloudRef_N
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev(1:nConLev) = Con_CloudRef_Lev(1:nConLev)
+          zrgb(1:nConLev,1:3) = Con_CloudRef_RGB(1:nConLev,1:3)
+        endif
+      elseif(iprod.eq.14)then   ! ashcloud arrival time (hours)
+        varname = "ash_arrival_time"
+        write(outfile_name,'(a20)')'CloudArrivalTime.png'
+        write(title_plot,'(a22)')'Ash-cloud arrival time'
+        title_legend = 'Time (hours)'
+        units = " (hours)"
+        Fill_Value = '-9999.'
+        if(.not.Con_Cust)then
+          nConLev = Con_CloudTime_N
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev(1:nConLev) = Con_CloudTime_Lev(1:nConLev)
+          zrgb(1:nConLev,1:3) = Con_CloudTime_RGB(1:nConLev,1:3)
+        endif
+      elseif(iprod.eq.15)then   ! topography
+        varname = "topography"
+        write(outfile_name,'(a14)')'Topography.png'
+        write(title_plot,'(a10)')'Topography'
+        title_legend = 'Elevation (km)'
+        units = " (hours)"
+        if(.not.Con_Cust)then
+          nConLev = 8
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev = (/0.1_ip, 0.3_ip, 1.0_ip, 3.0_ip, &
+                  10.0_ip, 30.0_ip, 100.0_ip, 300.0_ip/)
+        endif
+      elseif(iprod.eq.16)then   ! profile plots
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: No map PNG output option for vertical profile data."
+          write(errlog(io),*)"       Should not be in write_2Dmap_PNG_dislin"
+        endif;enddo
+        stop 1
+      else
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: unexpected variable"
+        endif;enddo
+        stop 1
+      endif
+
+      ! When we run this subroutine via a GMT script (as opposed to the API), we
+      ! write out OutVar to an ESRI ASCII file to be read by the script
+      ! Now mask out non-cloud values
+      if(iprod.eq.10.or.&  ! CloudHeight
+         iprod.eq.11)then  ! CloudHeightBot
+        mask = Mask_Cloud
+      elseif(iprod.eq.7)then ! DepArrivalTime
+        mask(1:nx,1:ny) = Mask_Deposit(1:nx,1:ny)
+      elseif(iprod.eq.14)then
+        ! cloud mask based on cloud load does not work in this case the cloud load mask
+        ! is a function of time
+        mask(1:nx,1:ny) = .true.
+        do i=1,nx
+          do j=1,ny
+            if(CloudArrivalTime(i,j).lt.0.0_ip)mask(i,j) = .false.
+          enddo
+        enddo
+      else
+        mask = .true.
+      endif
+
+      varname = "outvar"
+      call write_2D_ASCII(nx,ny,OutVar,mask,Fill_Value,varname)
+
+      ! write contour pen specifications to strings
+      do i=1,nConLev
+        write(flt_str,'(i3)')zrgb(i,1)
+        penstr(i)="-W3," // adjustl(trim(flt_str))
+        write(flt_str,'(i3)')zrgb(i,2)
+        penstr(i)= trim(penstr(i)) // "/" // adjustl(trim(flt_str))
+        write(flt_str,'(i3)')zrgb(i,3)
+        penstr(i)= trim(penstr(i)) // "/" // adjustl(trim(flt_str))
+      enddo
+
+      if(writeContours)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(outlog(io),*)"Running GMT to calculate contours lines"
+        endif;enddo
+        write(outfile_name,'(a14)')'tmp.png'
+        allocate(ContourDataNcurves(nConLev))
+        allocate(ContourDataNpoints(nConLev,Contour_MaxCurves))
+        allocate(ContourDataX(nConLev,Contour_MaxCurves,Contour_MaxPoints))
+        allocate(ContourDataY(nConLev,Contour_MaxCurves,Contour_MaxPoints))
+        ContourDataNcurves(:)   = 0
+        ContourDataNpoints(:,:) = 0
+        ContourDataX(:,:,:)     = 0.0_ip
+        ContourDataY(:,:,:)     = 0.0_ip
+      else
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(outlog(io),*)"Running GMT to generate contour plot"
+        endif;enddo
+      endif
+
+      write(dp_confile,53) "outvar.con"
+      write(dp_gmtfile,53) "outvar.gmt"
+ 53   format(a10)
+
+      ! Set up to plot via GMT script
+      open(55,file=dp_gmtfile,status='replace')
+
+      if(IsLatLon)then
+        xmin = minval(lon_cc_pd(1:nx))
+        ! Make sure xmin is in the range -180->180
+        if (xmin.gt.180.0_ip)then
+          xmin = minval(lon_cc_pd(1:nx))-360.0_ip
+          xmax = maxval(lon_cc_pd(1:nx))-360.0_ip
+        else
+          xmax = maxval(lon_cc_pd(1:nx))
+        endif
+        ymin = minval(lat_cc_pd(1:ny))
+        ymax = maxval(lat_cc_pd(1:ny))
+      else
+        xmin = minval(x_cc_pd(1:nx))
+        xmax = maxval(x_cc_pd(1:nx))
+        ymin = minval(y_cc_pd(1:ny))
+        ymax = maxval(y_cc_pd(1:ny))
+      endif
+      call citylist(2,xmin,xmax,ymin,ymax, &
+                      ncities,                        &
+                      lon_cities,lat_cities,          &
+                      name_cities)
+
+      if(lon_volcano.gt.xmax)lon_volcano=lon_volcano-360.0_ip
+
+      ! Start writing the gmt bits
+      ! BASE string:
+      if(xmax-xmin.le.2.0_ip)then
+        write(base_str,*)"-Ba0.25/a0.25"
+        write(detail_str,*)"-Dh"
+      elseif(xmax-xmin.le.5.0_ip)then
+        write(base_str,*)"-Ba1/1"
+        write(detail_str,*)"-Dh"
+      elseif(xmax-xmin.le.10.0_ip)then
+        write(base_str,*)"-Ba2/a2"
+        write(detail_str,*)"-Dh"
+      elseif(xmax-xmin.le.20.0_ip)then
+        write(base_str,*)"-Ba5/a5"
+        write(detail_str,*)"-Dh"
+      elseif(xmax-xmin.le.40.0_ip)then
+        write(base_str,*)"-Ba10/a10"
+        write(detail_str,*)"-Dl"
+      else
+        write(base_str,*)"-Ba20/a20"
+        write(detail_str,*)"-Dl"
+      endif
+
+      ! AREA string:    AREA="-R$lonmin/$lonmax/$latmin/$latmax"
+      area_str = " -R"
+      write(flt_str,'(f8.3)')xmin
+      area_str = trim(area_str) // adjustl(trim(flt_str))
+      write(flt_str,'(f8.3)')xmax
+      area_str = trim(area_str) // "/" // adjustl(trim(flt_str))
+      write(flt_str,'(f8.3)')ymin
+      area_str = trim(area_str) // "/" // adjustl(trim(flt_str))
+      write(flt_str,'(f8.3)')ymax
+      area_str = trim(area_str) // "/" // adjustl(trim(flt_str))
+
+      ! PROJ string:    PROJ="-JM${VCLON}/${VCLAT}/20"
+      proj_str = " -JM"
+      write(flt_str,'(f8.3)')lon_volcano
+      proj_str = trim(proj_str) // adjustl(trim(flt_str))
+      write(flt_str,'(f8.3)')lat_volcano
+      proj_str = trim(proj_str) // "/" // adjustl(trim(flt_str)) 
+      proj_str = trim(proj_str) // "/20"
+
+      ! COAST string
+      write(coast_str,*)" -G220/220/220 -W"
+
+      ! RIVER string
+      !if()then ! small domain, include rivers
+      !  write(river_str,*)" -I1/1p,blue -I2/0.25p,blue"
+      !else
+        write(river_str,*)" "
+      !endif
+
+      ! Initial pscoast command to start the ps file
+      start_ps = "-K > "     // adjustl(trim(fileps))
+      contn_ps = "-K -O >> " // adjustl(trim(fileps))
+      end_ps   = "-O >> "    // adjustl(trim(fileps))
+
+      ! Set up to plot via GMT script
+      write(55,*)'#!/bin/bash'
+      write(55,*)'gmt gmtset PROJ_ELLIPSOID Sphere'
+      cmd = "gmt pscoast " // adjustl(trim(area_str))   // " " // &
+                              adjustl(trim(proj_str))   // " " // &
+                              adjustl(trim(base_str))   // " " // &
+                              adjustl(trim(detail_str)) // " " // &
+                              adjustl(trim(coast_str))  // " " // &
+                              adjustl(trim(river_str))  // " " // &
+                              adjustl(trim(start_ps))
+      write(55,*)adjustl(trim(cmd))
+
+      ! Get grid to contour, converting the ASCII file generated above
+      cmd = "gmt grdconvert outvar.dat=ef out.grd"
+      write(55,*)adjustl(trim(cmd))
+
+      ! write contour
+      !gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_1.lev    -A- -W3,0/128/255   -O -K >> temp.ps
+      do i=1,nConLev
+        write(55,*)'echo "',ContourLev(i), '   C" > c.lev'
+        cmd = "gmt grdcontour out.grd " // adjustl(trim(area_str))  // " " // &
+                              adjustl(trim(proj_str))  // " " // &
+                              adjustl(trim(base_str))  // " " // &
+                              "-Cc.lev -A " // adjustl(trim(penstr(i))) // " " // &
+       !                       "-Cc.lev -A- " // adjustl(trim(penstr(i))) // " " // &
+                              adjustl(trim(contn_ps))
+        write(55,*)adjustl(trim(cmd))
+      enddo
+
+      ! Add cities.
+      do i=1,ncities
+        write(dumstr17,'(f8.3,1x,f8.3)')lon_cities(i),lat_cities(i)
+        cmd = "echo " // dumstr17 // " '1.0' | gmt psxy " &
+              // adjustl(trim(area_str))  // " " // &
+              adjustl(trim(proj_str))  // " " // &
+              "-Sc0.05i -Gblack -Wthinnest " // adjustl(trim(contn_ps))
+        write(55,*)adjustl(trim(cmd))
+
+        write(dumstr48,'(a1,f8.3,1x,f8.3,1x,a1,a26,a1,a1)')'"',lon_cities(i),lat_cities(i),"'",name_cities(i),"'",'"'
+        cmd = "echo " // dumstr48 // " | gmt pstext " &
+              // adjustl(trim(area_str))  // " " // &
+              adjustl(trim(proj_str))  // " " // &
+              "-D0.1/0.1 -V " // adjustl(trim(contn_ps))
+        write(55,*)adjustl(trim(cmd))
+      enddo
+
+      ! Add contour legend here
+
+      ! Add descriptive footer here
+
+
+      ! Last gmt command is to plot the volcano and close out the ps file
+      ! echo $VCLON $VCLAT '1.0' | ${GMTpre[GMTv]} psxy $AREA $PROJ -St0.1i -Gblack -Wthinnest -O >> temp.ps
+      write(dumstr17,'(f8.3,1x,f8.3)')lon_volcano,lat_volcano
+      cmd = "echo " // dumstr17 // " '1.0' | gmt psxy " &
+            // adjustl(trim(area_str))  // " " // &
+            adjustl(trim(proj_str))  // " " // &
+            "-St0.1i -Gmagenta -Wthinnest " // adjustl(trim(end_ps))
+      write(55,*)adjustl(trim(cmd))
+
+      ! This command converts temp.ps to temp.png
+      cmd = "gmt psconvert temp.ps -A -Tg"
+      write(55,*)adjustl(trim(cmd))
+
+      ! Move this png to the final filename
+      cmd = " mv temp.png " // outfile_name
+      write(55,*)adjustl(trim(cmd))
+
+      ! Clean up
+      !cmd = "rm c.lev out.grd temp.*"
+      !write(55,*)adjustl(trim(cmd))
+
+      close(55)
+      write(gmtcom,'(a3,a14)')'sh ',dp_gmtfile
+      call execute_command_line(gmtcom,exitstat=istat)
+
+      ! This is a test section that uses the GMT API
       !character(16) filedat,fileps
       !character(200) cmd
       !
@@ -124,16 +625,10 @@
       !! clean up
       !call sGMT_Destroy_Session()
 
-      if(writeContours)then
-        write(*,*)"Running GMT to calculate contours lines"
-        write(*,*)"Not sure yet how to call GMT without crashing"
-      else
-        write(*,*)"Running GMT to generate contour plot"
-      endif
-
-      stop 5
-
       end subroutine write_2Dmap_PNG_GMT
+
+
+!     All subroutines below are placeholder copies of the gnuplot subroutines.
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !

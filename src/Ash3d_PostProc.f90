@@ -139,6 +139,7 @@
       use Ash3d_PostProc_GMT
 #endif
 
+
       implicit none
 
       integer             :: nargs
@@ -152,7 +153,7 @@
       integer             :: ndims           ! dimensions of the input data file
       integer             :: ivar,TS_Flag,height_flag
       integer             :: itime = -1      ! initialize time step to the last step
-      integer             :: i,ii
+      integer             :: i,j,ii
       integer             :: tmp_int
       integer             :: icase
       real(kind=ip),dimension(:,:),allocatable :: OutVar
@@ -257,7 +258,7 @@
         plotlib_avail(3) = .false.
       endif
       ! Test for GMT
-      plotlib_avail(4) = .false.
+      plotlib_avail(4) = .true.
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Dislin  ",plotlib_avail(1)
         write(outlog(io),*)"Plplot  ",plotlib_avail(2)
@@ -1040,18 +1041,18 @@
       OutFillValue = 0.0_ip
       if(iprod.eq.3.or.iprod.eq.5)then
         OutVar = DepositThickness
-        Fill_Value = ' 0.000'
+        Fill_Value = '-9999.'
         OutFillValue = 0.0_ip
         filename_root = 'DepositFile_        '
       elseif(iprod.eq.4.or.iprod.eq.6)then
         OutVar = DepositThickness*MM_2_IN
-        Fill_Value = ' 0.000'
+        Fill_Value = '-9999.'
         OutFillValue = 0.0_ip
         filename_root = 'DepositFile_        '
       elseif(iprod.eq.7)then
         OutVar = DepArrivalTime
         !OutVar = DepArrivalTime * merge(1.0_ip,0.0_ip,Mask_Deposit)
-        Fill_Value = '-1.000'
+        Fill_Value = '-9999.'
         OutFillValue = -1.0_ip
         filename_root = 'DepositArrivalTime  '
       elseif(iprod.eq.8)then
@@ -1060,52 +1061,56 @@
       elseif(iprod.eq.9)then
         OutVar = MaxConcentration
         !OutVar = MaxConcentration * merge(1.0_ip,0.0_ip,Mask_Cloud)
-        Fill_Value = ' 0.000'
+        Fill_Value = '-9999.'
         OutFillValue = 0.0_ip
         filename_root = 'CloudConcentration_ '
       elseif(iprod.eq.10)then
         OutVar = MaxHeight
         !OutVar = MaxHeight * merge(1.0_ip,0.0_ip,Mask_Cloud)
-        Fill_Value = ' 0.000'
+        Fill_Value = '-9999.'
         OutFillValue = 0.0_ip
         filename_root = 'CloudHeight_        '
       elseif(iprod.eq.11)then
         OutVar = MinHeight
         !OutVar = MinHeight * merge(1.0_ip,0.0_ip,Mask_Cloud)
-        Fill_Value = ' 0.000'
+        Fill_Value = '-9999.'
         OutFillValue = 0.0_ip
         filename_root = 'CloudHeightBot_     '
       elseif(iprod.eq.12)then
         OutVar = CloudLoad
         !OutVar = CloudLoad * merge(1.0_ip,0.0_ip,Mask_Cloud)
-        Fill_Value = ' 0.000'
+        Fill_Value = '-9999.'
         OutFillValue = 0.0_ip
         filename_root = 'CloudLoad_          '
       elseif(iprod.eq.13)then
         OutVar = dbZCol
         !OutVar = dbZCol * merge(1.0_ip,0.0_ip,Mask_Cloud)
-        Fill_Value = ' 0.000'
+        Fill_Value = '-9999.'
         OutFillValue = 0.0_ip
         filename_root = 'ClouddbZC_          '
       elseif(iprod.eq.14)then
         OutVar = real(CloudArrivalTime,kind=ip)
         !OutVar = CloudArrivalTime * merge(1.0_ip,0.0_ip,Mask_Cloud)
-        Fill_Value = '-1.000'
+        Fill_Value = '-9999.'
         OutFillValue = -1.0_ip
         filename_root = 'CloudArrivalTime    '
       endif
       ! Now mask out non-cloud values
-      if(iprod.eq.9 .or.&
-         iprod.eq.10.or.&
-         iprod.eq.11.or.&
-         iprod.eq.12.or.&
-         iprod.eq.13.or.&
-         iprod.eq.14)then
+      if(iprod.eq.10.or.&  ! CloudHeight
+         iprod.eq.11)then  ! CloudHeightBot
         mask = Mask_Cloud
+      elseif(iprod.eq.14)then
+        ! cloud mask based on cloud load does not work in this case the cloud load mask
+        ! is a function of time
+        mask(1:nxmax,1:nymax) = .true.
+        do i=1,nxmax
+          do j=1,nymax
+            if(CloudArrivalTime(i,j).lt.0.0_ip)mask(i,j) = .false.
+          enddo
+        enddo
       endif
 
-      ! This is the ASCII section
-      if(outformat.eq.1)then
+      if(outformat.eq.1)then  ! ASCII
         ! First check for the special cases
         if(iprod.eq.8)then
           ! Point data
@@ -1125,7 +1130,7 @@
           ! All other ESRI/ASCII 2d grids
           call write_2D_ASCII(nxmax,nymax,OutVar,mask,Fill_Value,filename_root)
         endif
-      elseif(outformat.eq.2)then
+      elseif(outformat.eq.2)then ! KML
         ! All the KML routines were called above
       elseif(outformat.eq.3)then ! image/png
         if(iprod.eq.8)then
@@ -1201,7 +1206,7 @@
         end select
 
         endif
-      elseif(outformat.eq.4)then
+      elseif(outformat.eq.4)then ! Binary
         if(iprod.eq.1)then
           ! full concentration array but here we only output the total
           call write_3D_Binary(cio,nxmax,nymax,nzmax,ashcon_tot)
@@ -1226,7 +1231,7 @@
         else
           call write_2D_Binary(nxmax,nymax,OutVar,mask,Fill_Value,filename_root)
         endif
-      elseif(outformat.eq.5)then
+      elseif(outformat.eq.5)then ! Shapefile
         ! For 2d contours exported from dislin, gnuplot, gmt
         ! First call plotting routine, but only get the contours
         writeContours = .true.
