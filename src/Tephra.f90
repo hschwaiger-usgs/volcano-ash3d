@@ -84,8 +84,8 @@
                                                                           !  i=5 slip adjustment to diameter
 
       !real(kind=ip),dimension(:,:,:)  ,pointer :: DepositGranularity => null() ! accumulated ash mass on ground
-      real(kind=sp),dimension(:,:,:,:),pointer :: vf_meso_last_step_MetP_sp => null()
-      real(kind=sp),dimension(:,:,:,:),pointer :: vf_meso_next_step_MetP_sp => null()
+      real(kind=sp),dimension(:,:,:,:),pointer,public :: vf_meso_last_step_MetP_sp => null()
+      real(kind=sp),dimension(:,:,:,:),pointer,public :: vf_meso_next_step_MetP_sp => null()
 #else
       real(kind=ip), dimension(:)  ,allocatable,public  :: Tephra_v_s         ! Settling vel (m/s)
       real(kind=ip), dimension(:)  ,allocatable,public  :: Tephra_gsdiam      ! Grain-size diameter 
@@ -101,8 +101,8 @@
                                                                               !  i=4 Gans Newton fac
                                                                               !  i=5 slip adjustment to diameter
       !real(kind=ip),dimension(:,:,:)  ,allocatable :: DepositGranularity ! accumulated ash mass on ground 
-      real(kind=sp),dimension(:,:,:,:),allocatable :: vf_meso_last_step_MetP_sp
-      real(kind=sp),dimension(:,:,:,:),allocatable :: vf_meso_next_step_MetP_sp
+      real(kind=sp),dimension(:,:,:,:),allocatable,public :: vf_meso_last_step_MetP_sp
+      real(kind=sp),dimension(:,:,:,:),allocatable,public :: vf_meso_next_step_MetP_sp
 #endif
 
       real(kind=ip),public :: phi_mean

@@ -197,6 +197,9 @@
           call input_data_ResetParams
         endif
       enddo
+      do io=1,2;if(VB(io).le.verbosity_info)then    
+        write(outlog(io),*)"Finished reading all specialized input blocks"
+      endif;enddo
 !
 !------------------------------------------------------------------------------
 
@@ -283,7 +286,7 @@
         ! Call output_results before time loop to create output files
       call output_results
 
-      ntmax = max(1,3*int(Simtime_in_hours/dt))
+      ntmax = max(1,4*int(Simtime_in_hours/dt))
       call Allocate_NTime(ntmax)
       if (Write_PR_Data)then
         call Allocate_Profile(nzmax,ntmax,nvprofiles)
@@ -420,7 +423,7 @@
 !
 !------------------------------------------------------------------------------
           endif
-        endif !MassFluxRate_dt1.gt.0.0_ip
+        endif ! MassFluxRate_dt1.gt.0.0_ip
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         ! Set Boundary Conditions
@@ -490,12 +493,12 @@
             ! Generate output variables if we haven't already
           if(.not.Called_Gen_Output_Vars)then
             call Gen_Output_Vars
+          endif
 !------------------------------------------------------------------------------
 !       OPTIONAL MODULES
 !         Insert calls output routines (every output-step) here
 !
 !------------------------------------------------------------------------------
-          endif
           call output_results
           !if ((WriteAirportFile_ASCII.or.WriteAirportFile_KML).and. &
           if (Write_PT_Data.and. &

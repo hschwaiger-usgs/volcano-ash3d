@@ -82,7 +82,7 @@
       real(kind=ip), dimension(:,:)  ,pointer,public :: NormSourceColumn    => null()
       real(kind=ip), dimension(:  )  ,pointer,public :: TephraFluxRate      => null()
       real(kind=ip), dimension(:,:)  ,pointer,public :: SourceNodeFlux      => null()
-      real(kind=ip), dimension(:,:,:),pointer        :: SourceNodeFlux_Area => null()
+      real(kind=ip), dimension(:,:,:),pointer,public :: SourceNodeFlux_Area => null()
         !The following arrays are of length neruptions
       real(kind=ip), dimension(:)    ,pointer,public :: e_PlumeHeight        => null()
       real(kind=ip), dimension(:)    ,pointer,public :: e_Volume             => null()
@@ -99,7 +99,7 @@
       real(kind=ip), dimension(:,:)  ,allocatable,public :: NormSourceColumn
       real(kind=ip), dimension(:)    ,allocatable,public :: TephraFluxRate
       real(kind=ip), dimension(:,:)  ,allocatable,public :: SourceNodeFlux
-      real(kind=ip), dimension(:,:,:),allocatable        :: SourceNodeFlux_Area
+      real(kind=ip), dimension(:,:,:),allocatable,public :: SourceNodeFlux_Area
         !The following arrays are of length neruptions
       real(kind=ip), dimension(:)    ,allocatable,public :: e_PlumeHeight
       real(kind=ip), dimension(:)    ,allocatable,public :: e_Volume

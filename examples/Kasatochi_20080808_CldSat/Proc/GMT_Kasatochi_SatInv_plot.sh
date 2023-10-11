@@ -147,5 +147,7 @@ EOF
   epstopdf temp.eps Kasatochi_CloudLoad_$i.pdf
   
   # Clean up
-  rm temp.* ac*lev gmt.history gmt.conf cload.cpt
+  rm -f temp.* ac*lev gmt.history gmt.conf
 done
+
+rm -f cload.cpt

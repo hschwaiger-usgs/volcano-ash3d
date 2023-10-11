@@ -52,28 +52,28 @@
 #endif
 
       real(kind=ip), parameter,public :: R_GAS_DRYAIR = 286.98_ip       ! Specific gas constant of R=286.98 J /(kg K)
-      real(kind=ip), parameter        :: R_GAS_IDEAL  = 8.3144621_ip    ! Ideal gas constant (J /(kg K))
-      real(kind=ip), parameter        :: CP_AIR       = 1.004e3_ip      ! Specific heat capacity at p (J /kg K)
-      real(kind=ip), parameter        :: MB_DRY_AIR   = 0.028966_ip     ! Molecular weight of dry air in kg/mol
-      real(kind=ip), parameter        :: BoltzK       = 1.380658e-23_ip ! Boltzmann's constant kg m2 s-2 K-1 molec-1
+      real(kind=ip), parameter,public :: R_GAS_IDEAL  = 8.3144621_ip    ! Ideal gas constant (J /(kg K))
+      real(kind=ip), parameter,public :: CP_AIR       = 1.004e3_ip      ! Specific heat capacity at p (J /kg K)
+      real(kind=ip), parameter,public :: MB_DRY_AIR   = 0.028966_ip     ! Molecular weight of dry air in kg/mol
+      real(kind=ip), parameter,public :: BoltzK       = 1.380658e-23_ip ! Boltzmann's constant kg m2 s-2 K-1 molec-1
 
       ! Define atmospheric variables only needed on the native Met grid
       !  Physical Properties of air
       !  meso means grid of the met. file
 #ifdef USEPOINTERS
-      real(kind=sp),dimension(:,:,:),pointer :: AirTemp_meso_last_step_MetP_sp => null()
-      real(kind=sp),dimension(:,:,:),pointer :: AirRelH_meso_last_step_MetP_sp => null()
-      real(kind=sp),dimension(:,:,:),pointer :: AirSH_meso_last_step_MetP_sp   => null()
-      real(kind=sp),dimension(:,:,:),pointer :: AirTemp_meso_next_step_MetP_sp => null()
-      real(kind=sp),dimension(:,:,:),pointer :: AirRelH_meso_next_step_MetP_sp => null()
-      real(kind=sp),dimension(:,:,:),pointer :: AirSH_meso_next_step_MetP_sp   => null()
+      real(kind=sp),dimension(:,:,:),pointer,public :: AirTemp_meso_last_step_MetP_sp => null()
+      real(kind=sp),dimension(:,:,:),pointer,public :: AirRelH_meso_last_step_MetP_sp => null()
+      real(kind=sp),dimension(:,:,:),pointer,public :: AirSH_meso_last_step_MetP_sp   => null()
+      real(kind=sp),dimension(:,:,:),pointer,public :: AirTemp_meso_next_step_MetP_sp => null()
+      real(kind=sp),dimension(:,:,:),pointer,public :: AirRelH_meso_next_step_MetP_sp => null()
+      real(kind=sp),dimension(:,:,:),pointer,public :: AirSH_meso_next_step_MetP_sp   => null()
 #else
-      real(kind=sp),dimension(:,:,:),allocatable :: AirTemp_meso_last_step_MetP_sp
-      real(kind=sp),dimension(:,:,:),allocatable :: AirRelH_meso_last_step_MetP_sp
-      real(kind=sp),dimension(:,:,:),allocatable :: AirSH_meso_last_step_MetP_sp
-      real(kind=sp),dimension(:,:,:),allocatable :: AirTemp_meso_next_step_MetP_sp
-      real(kind=sp),dimension(:,:,:),allocatable :: AirRelH_meso_next_step_MetP_sp
-      real(kind=sp),dimension(:,:,:),allocatable :: AirSH_meso_next_step_MetP_sp
+      real(kind=sp),dimension(:,:,:),allocatable,public :: AirTemp_meso_last_step_MetP_sp
+      real(kind=sp),dimension(:,:,:),allocatable,public :: AirRelH_meso_last_step_MetP_sp
+      real(kind=sp),dimension(:,:,:),allocatable,public :: AirSH_meso_last_step_MetP_sp
+      real(kind=sp),dimension(:,:,:),allocatable,public :: AirTemp_meso_next_step_MetP_sp
+      real(kind=sp),dimension(:,:,:),allocatable,public :: AirRelH_meso_next_step_MetP_sp
+      real(kind=sp),dimension(:,:,:),allocatable,public :: AirSH_meso_next_step_MetP_sp
 #endif
 
       ! And since we are looking more carefully at atmospheric conditions,
