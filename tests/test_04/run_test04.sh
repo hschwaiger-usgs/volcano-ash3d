@@ -54,6 +54,7 @@ do
   ./clean.sh
 done
 
+echo     "-----------------------------------------------------------"
 # Last sub-case is extra long so evaluate that separately
 s=4
 echo "   Sub-case ${s} : ${SubCaseLabels[s]}"

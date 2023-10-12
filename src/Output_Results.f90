@@ -194,24 +194,39 @@
       if (.not.isFinal_TS) then
           ! First ascii files
         if (WriteDepositTS_ASCII)then
+          do io=1,2;if(VB(io).le.verbosity_debug1)then
+            write(outlog(io),*)"  Writing deposit thickenss ASCII file"
+          endif;enddo
           Mask(1:nxmax,1:nymax) = .true.
           call write_2D_ASCII(nxmax,nymax,                       &
                               DepositThickness(1:nxmax,1:nymax), &
                               Mask(1:nxmax,1:nymax),&
                               '-9999.','DepositFile_        ')
-        elseif (WriteCloudConcentration_ASCII)then
+        endif
+        if (WriteCloudConcentration_ASCII)then
+          do io=1,2;if(VB(io).le.verbosity_debug1)then
+            write(outlog(io),*)"  Writing max concentration ASCII file"
+          endif;enddo
           Mask(1:nxmax,1:nymax) = .true.
           call write_2D_ASCII(nxmax,nymax,                       &
                               MaxConcentration(1:nxmax,1:nymax), &
                               Mask(1:nxmax,1:nymax),             &
                               '-9999.','CloudConcentration_ ')
-        elseif (WriteCloudHeight_ASCII)then
+        endif
+        if (WriteCloudHeight_ASCII)then
+          do io=1,2;if(VB(io).le.verbosity_debug1)then
+            write(outlog(io),*)"  Writing max cloud height ASCII file"
+          endif;enddo
           Mask(1:nxmax,1:nymax) = Mask_Cloud(1:nxmax,1:nymax)
           call write_2D_ASCII(nxmax,nymax,                &
                               MaxHeight(1:nxmax,1:nymax), &
                               Mask(1:nxmax,1:nymax),      &
                               '-9999.','CloudHeight_        ')
-        elseif (WriteCloudLoad_ASCII)then
+        endif
+        if (WriteCloudLoad_ASCII)then
+          do io=1,2;if(VB(io).le.verbosity_debug1)then
+            write(outlog(io),*)"  Writing cloud load ASCII file"
+          endif;enddo
           Mask(1:nxmax,1:nymax) = .true.
           call write_2D_ASCII(nxmax,nymax,                &
                               CloudLoad(1:nxmax,1:nymax), &
