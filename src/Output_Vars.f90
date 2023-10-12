@@ -107,7 +107,7 @@
         !  Variable threshold values
         !  The deposit and cloudload thresholds are special in that they are used
         !  for delineating the deposit and cloud masks respectively.  These masks
-        !  are writen to the output netcdf file if post-processing required
+        !  are written to the output netcdf file if post-processing required
         !  thresholding (if flooded contours are to be suppressed below the
         !  threshold, for example).
       real(kind=ip),public    :: DEPO_THRESH           = 1.0e-2_ip  ! threshold deposit thickness (mm)

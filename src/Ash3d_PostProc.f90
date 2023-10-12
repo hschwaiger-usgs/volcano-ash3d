@@ -135,10 +135,8 @@
       use Ash3d_PostProc_plplot
 #endif
       use Ash3d_PostProc_gnuplot
-#ifdef USEGMT
-      use Ash3d_PostProc_GMT
-#endif
 
+      use Ash3d_PostProc_GMT
 
       implicit none
 
@@ -1162,9 +1160,7 @@
             case(3)
               call write_2Dprof_PNG_gnuplot(i)
             case(4)
-#ifdef USEGMT
-              !call write_2Dprof_PNG_GMT(i)
-#endif
+              call write_2Dprof_PNG_GMT(i)
             case default
               do io=1,2;if(VB(io).le.verbosity_error)then
                 write(errlog(io),*)"ERROR: Plots requested but no plotting package is installed"
@@ -1195,9 +1191,7 @@
         case(3)
           call write_2Dmap_PNG_gnuplot(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
         case(4)
-#ifdef USEGMT
           call write_2Dmap_PNG_GMT(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
-#endif
         case default
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: Plots requested but no plotting package is installed"
@@ -1257,9 +1251,7 @@
         case(3)
           call write_2Dmap_PNG_gnuplot(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
         case(4)
-#ifdef USEGMT
           call write_2Dmap_PNG_GMT(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
-#endif
         case default
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: Plots requested but no plotting package is installed"

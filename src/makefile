@@ -99,7 +99,7 @@ FASTFPPFLAG =
 #  to use the default gnuplot.  
 USEPLPLOT = F
 USEDISLIN = F
-USEGMT    = F
+USEGMT    = F  # Set to true only if using the API, otherwise scripts will be written
 
 MFILE=makefile
 
@@ -237,8 +237,11 @@ ifeq ($(USEGMT), T)
  gmtFPPFLAG = -DUSEGMT
  gmtLIBS = -L/usr/lib64 -lgmt -lpsl
  gmtINC  = -I/usr/include/gmt
- gmtOBJ  = gmt.o Ash3d_PostProc_GMT.o
+ gmtOBJ  = gmt.o
  gmtfortloc = /home/hschwaiger/Programs/GIT/gmt-fortran
+else
+ gmtFPPFLAG = 
+ gmtOBJ =
 endif
 
 
@@ -382,7 +385,7 @@ PPOBJS = Ash3d_VariableModules.o        \
          write_Shapefile.o              \
          Ash3d_PostProc_cities.o
 
-GRAFOBJ = Ash3d_PostProc_gnuplot.o $(plplotOBJ) $(dislinOBJ) $(gmtOBJ)
+GRAFOBJ = Ash3d_PostProc_gnuplot.o $(plplotOBJ) $(dislinOBJ) Ash3d_PostProc_GMT.o $(gmtOBJ)
 
 TOOLOBJ = Ash3d_ASCII_check.o
 
@@ -476,22 +479,22 @@ postproc: $(ASH3dCCSRC)/Ash3d_PostProc.f90 $(PPOBJS) $(GRAFOBJ) $(DATAOBJ) $(MFI
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc.f90
 	$(FC) $(FFLAGS) $(EXFLAGS) Ash3d_PostProc.o $(PPOBJS) $(GRAFOBJ) $(DATAOBJ) $(LIBS) $(PLOTINC) $(PLOTLIBS) -o ../bin/Ash3d_PostProc
 # We always compile the gnuplot subroutine since these will just throw an error if gnuplot is not installed
-Ash3d_PostProc_gnuplot.o: Ash3d_PostProc_gnuplot.f90 $(MFILE) Ash3d_PostProc_cities.o
+Ash3d_PostProc_gnuplot.o: Ash3d_PostProc_gnuplot.f90 $(MFILE) Ash3d_PostProc_cities.o Ash3d_VariableModules.o Output_Vars.o Airports.o Source.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_gnuplot.f90
 ifeq ($(USEPLPLOT), T)
-Ash3d_PostProc_plplot.o: Ash3d_PostProc_plplot.f90 $(MFILE) Ash3d_PostProc_cities.o
+Ash3d_PostProc_plplot.o: Ash3d_PostProc_plplot.f90 $(MFILE) Ash3d_PostProc_cities.o Ash3d_VariableModules.o Output_Vars.o Airports.o Source.o
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_plplot.f90
 endif
 ifeq ($(USEDISLIN), T)
-Ash3d_PostProc_dislin.o: Ash3d_PostProc_dislin.f90 $(MFILE) Ash3d_PostProc_cities.o
+Ash3d_PostProc_dislin.o: Ash3d_PostProc_dislin.f90 $(MFILE) Ash3d_PostProc_cities.o Ash3d_VariableModules.o Output_Vars.o Airports.o Source.o
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_dislin.f90
 endif
-ifeq ($(USEGMT), T)
-Ash3d_PostProc_GMT.o: Ash3d_PostProc_GMT.f90 $(MFILE) Ash3d_PostProc_cities.o write_ASCII.o gmt.o
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_GMT.f90
+#ifeq ($(USEGMT), T)
+Ash3d_PostProc_GMT.o: Ash3d_PostProc_GMT.f90 $(MFILE) Ash3d_PostProc_cities.o write_ASCII.o $(gmtOBJ) Ash3d_VariableModules.o Output_Vars.o Airports.o Source.o
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_GMT.f90
 gmt.o: $(gmtfortloc)/src/gmt.f90 $(MFILE)
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(gmtfortloc)/src/gmt.f90
-endif
+#endif
 Ash3d_PostProc_cities.o: Ash3d_PostProc_cities.f90 $(MFILE) Ash3d_VariableModules.o
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_cities.f90
 write_Shapefile.o: write_Shapefile.f90 $(MFILE) Ash3d_VariableModules.o

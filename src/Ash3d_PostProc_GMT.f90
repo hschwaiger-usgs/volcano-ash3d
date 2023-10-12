@@ -26,7 +26,10 @@
       use io_data,       only : &
          Ash3dHome,concenfile
 
+#if USEGMT
+      ! This is only for the experimental GMT API
       use gmt
+#endif
 
       implicit none
 
@@ -34,10 +37,14 @@
       private
 
         ! Publicly available subroutines/functions
-      public write_2Dmap_PNG_GMT
+      public write_2Dmap_PNG_GMT,  &
+             write_2Dprof_PNG_GMT, &
+             write_DepPOI_TS_PNG_GMT
 
         ! Publicly available variables
 
+
+      character(100) :: USGSIconFile
 
       contains
       !------------------------------------------------------------------------
@@ -151,10 +158,12 @@
 
       character(len=20) :: varname
       character(len=20),dimension(20) :: penstr
+      character(len=80),dimension(20) :: legpenstr
       character(len=17) :: dumstr17
       character(len=48) :: dumstr48
       character(len=8)  :: flt_str
       character(len=50) :: base_str
+      character(len=50) :: title_str
       character(len=4 ) :: detail_str
       character(len=50) :: proj_str
       character(len=50) :: area_str
@@ -163,6 +172,7 @@
       character(len=50) :: start_ps
       character(len=50) :: contn_ps
       character(len=50) :: end_ps
+      logical  :: IsThere
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
@@ -414,10 +424,15 @@
       do i=1,nConLev
         write(flt_str,'(i3)')zrgb(i,1)
         penstr(i)="-W3," // adjustl(trim(flt_str))
+        legpenstr(i)="S 0.1i - 0.15i black 3.0p," // adjustl(trim(flt_str))
         write(flt_str,'(i3)')zrgb(i,2)
         penstr(i)= trim(penstr(i)) // "/" // adjustl(trim(flt_str))
+        legpenstr(i)=trim(legpenstr(i)) // "/" // adjustl(trim(flt_str))
         write(flt_str,'(i3)')zrgb(i,3)
         penstr(i)= trim(penstr(i)) // "/" // adjustl(trim(flt_str))
+        legpenstr(i)=trim(legpenstr(i)) // "/" // adjustl(trim(flt_str))
+        write(flt_str,'(g8.3)')ContourLev(i)
+        legpenstr(i)=trim(legpenstr(i)) // " 0.3i " // adjustl(trim(flt_str))
       enddo
 
       if(writeContours)then
@@ -446,6 +461,51 @@
       ! Set up to plot via GMT script
       open(55,file=dp_gmtfile,status='replace')
 
+      ! Write annotations to several legends
+      !  Left panel
+      open(61,file="leg1.txt",status='replace')
+
+      write(61,*)"P"
+      write(61,*)"T Volcano: ",VolcanoName
+      write(61,*)"G0.2i"
+      write(61,*)"T Run Date: ",os_time_log
+      write(61,*)"G0.2i"
+      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
+      write(61,*)"T Windfile: ",iwf
+      close(61)
+      !  Right panel
+      open(62,file="leg2.txt",status='replace')
+      write(62,*)"T Erup. Start Time: ",HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap)
+      write(62,*)"G0.2i"
+      write(62,*)"T Erup. Plume Height: ",real(e_PlumeHeight(1),kind=4)," km"
+      write(62,*)"G0.2i"
+      write(62,*)"T Erup. Duration: ",real(e_Duration(1),kind=4)," hours"
+      write(62,*)"G0.2i"
+      write(62,*)"T Erup. Volume: ",real(e_Volume(1),kind=4)," km3(DRE)"
+      close(62)
+
+      !  USGS Logo
+      USGSIconFile = trim(Ash3dHome) // &
+                        DirDelim // 'share' // &
+                        DirDelim // 'post_proc' // &
+                        DirDelim // 'USGSvid.png'
+      inquire( file=trim(adjustl(USGSIconFile)), exist=IsThere)
+      if(IsThere)then
+        open(63,file="leg3.txt",status='replace')
+        write(63,*)"I ",adjustl(trim(USGSIconFile))," 2i C"
+        close(63)
+      endif
+
+      !  Contour legend
+      open(64,file="leg4.txt",status='replace')
+        write(64,*)"C black"
+        write(64,*)"H 12 1 ",adjustl(trim(units))
+        write(64,*)"N 1"
+        do i=1,nConLev
+          write(64,*)adjustl(trim(legpenstr(i)))
+        enddo
+      close(63)
+
       if(IsLatLon)then
         xmin = minval(lon_cc_pd(1:nx))
         ! Make sure xmin is in the range -180->180
@@ -473,24 +533,25 @@
       ! Start writing the gmt bits
       ! BASE string:
       if(xmax-xmin.le.2.0_ip)then
-        write(base_str,*)"-Ba0.25/a0.25"
+        write(base_str,*)"-Ba0.25"
         write(detail_str,*)"-Dh"
       elseif(xmax-xmin.le.5.0_ip)then
-        write(base_str,*)"-Ba1/1"
+        write(base_str,*)"-Ba1"
         write(detail_str,*)"-Dh"
       elseif(xmax-xmin.le.10.0_ip)then
-        write(base_str,*)"-Ba2/a2"
+        write(base_str,*)"-Ba2"
         write(detail_str,*)"-Dh"
       elseif(xmax-xmin.le.20.0_ip)then
-        write(base_str,*)"-Ba5/a5"
+        write(base_str,*)"-Ba5"
         write(detail_str,*)"-Dh"
       elseif(xmax-xmin.le.40.0_ip)then
-        write(base_str,*)"-Ba10/a10"
+        write(base_str,*)"-Ba10"
         write(detail_str,*)"-Dl"
       else
-        write(base_str,*)"-Ba20/a20"
+        write(base_str,*)"-Ba20"
         write(detail_str,*)"-Dl"
       endif
+      write(title_str,*)'-B+t"',trim(adjustl(title_plot)),units,'"'
 
       ! AREA string:    AREA="-R$lonmin/$lonmax/$latmin/$latmax"
       area_str = " -R"
@@ -509,7 +570,7 @@
       proj_str = trim(proj_str) // adjustl(trim(flt_str))
       write(flt_str,'(f8.3)')lat_volcano
       proj_str = trim(proj_str) // "/" // adjustl(trim(flt_str)) 
-      proj_str = trim(proj_str) // "/20"
+      proj_str = trim(proj_str) // "/7i"
 
       ! COAST string
       write(coast_str,*)" -G220/220/220 -W"
@@ -529,13 +590,19 @@
       ! Set up to plot via GMT script
       write(55,*)'#!/bin/bash'
       write(55,*)'gmt gmtset PROJ_ELLIPSOID Sphere'
-      cmd = "gmt pscoast " // adjustl(trim(area_str))   // " " // &
+      cmd = 'gmt psbasemap -X1.5i -Y2i ' // adjustl(trim(area_str))   // " " // &
                               adjustl(trim(proj_str))   // " " // &
                               adjustl(trim(base_str))   // " " // &
+                              adjustl(trim(title_str))  // " " // &
+                              adjustl(trim(start_ps))
+      write(55,*)adjustl(trim(cmd))
+
+      cmd = "gmt pscoast " // adjustl(trim(area_str))   // " " // &
+                              adjustl(trim(proj_str))   // " " // &
                               adjustl(trim(detail_str)) // " " // &
                               adjustl(trim(coast_str))  // " " // &
                               adjustl(trim(river_str))  // " " // &
-                              adjustl(trim(start_ps))
+                              adjustl(trim(contn_ps))
       write(55,*)adjustl(trim(cmd))
 
       ! Get grid to contour, converting the ASCII file generated above
@@ -545,12 +612,10 @@
       ! write contour
       !gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_1.lev    -A- -W3,0/128/255   -O -K >> temp.ps
       do i=1,nConLev
-        write(55,*)'echo "',ContourLev(i), '   C" > c.lev'
+        write(55,*)'echo "',real(ContourLev(i),kind=4), '   C" > c.lev'
         cmd = "gmt grdcontour out.grd " // adjustl(trim(area_str))  // " " // &
                               adjustl(trim(proj_str))  // " " // &
-                              adjustl(trim(base_str))  // " " // &
-                              "-Cc.lev -A " // adjustl(trim(penstr(i))) // " " // &
-       !                       "-Cc.lev -A- " // adjustl(trim(penstr(i))) // " " // &
+                              "-Cc.lev -A- " // adjustl(trim(penstr(i))) // " " // &
                               adjustl(trim(contn_ps))
         write(55,*)adjustl(trim(cmd))
       enddo
@@ -564,18 +629,14 @@
               "-Sc0.05i -Gblack -Wthinnest " // adjustl(trim(contn_ps))
         write(55,*)adjustl(trim(cmd))
 
-        write(dumstr48,'(a1,f8.3,1x,f8.3,1x,a1,a26,a1,a1)')'"',lon_cities(i),lat_cities(i),"'",name_cities(i),"'",'"'
-        cmd = "echo " // dumstr48 // " | gmt pstext " &
+        write(dumstr48,'(a1,f8.3,1x,f8.3,1x,a1,a26,a1,a1)')'"',&
+               lon_cities(i),lat_cities(i),"'",adjustl(trim(name_cities(i))),"'",'"'
+        cmd = "echo " // adjustl(trim(dumstr48)) // " | gmt pstext " &
               // adjustl(trim(area_str))  // " " // &
               adjustl(trim(proj_str))  // " " // &
               "-D0.1/0.1 -V " // adjustl(trim(contn_ps))
         write(55,*)adjustl(trim(cmd))
       enddo
-
-      ! Add contour legend here
-
-      ! Add descriptive footer here
-
 
       ! Last gmt command is to plot the volcano and close out the ps file
       ! echo $VCLON $VCLAT '1.0' | ${GMTpre[GMTv]} psxy $AREA $PROJ -St0.1i -Gblack -Wthinnest -O >> temp.ps
@@ -583,20 +644,62 @@
       cmd = "echo " // dumstr17 // " '1.0' | gmt psxy " &
             // adjustl(trim(area_str))  // " " // &
             adjustl(trim(proj_str))  // " " // &
-            "-St0.1i -Gmagenta -Wthinnest " // adjustl(trim(end_ps))
+            "-St0.1i -Gmagenta -Wthinnest " // adjustl(trim(contn_ps))
       write(55,*)adjustl(trim(cmd))
+
+      ! Add descriptive footer here
+      !gmt pslegend leg1.txt -R-134.500/-97.500/33.500/52.500  -JM-122.117/42.933/7i -Dx-1.0i/-1.5i/3.0i/1.0i/BL -K -O  >> temp.ps
+      cmd = "gmt pslegend leg1.txt " // adjustl(trim(area_str)) &
+                                     // adjustl(trim(proj_str)) &
+                                     // " -Dx-1.0i/-1.5i/3.0i/1.0i/BL " &
+                                     // adjustl(trim(contn_ps))
+      write(55,*)adjustl(trim(cmd))
+
+      !gmt pslegend leg2.txt -R-134.500/-97.500/33.500/52.500  -JM-122.117/42.933/7i -Dx2.0i/-1.5i/4.0i/1.0i/BL -K -O  >> temp.ps
+      cmd = "gmt pslegend leg2.txt " // adjustl(trim(area_str)) &
+                                     // adjustl(trim(proj_str)) &
+                                     // " -Dx2.0i/-1.5i/4.0i/1.0i/BL " &
+                                     // adjustl(trim(contn_ps))
+      write(55,*)adjustl(trim(cmd))
+
+      !gmt pslegend leg3.txt -R-134.500/-97.500/33.500/52.500  -JM-122.117/42.933/7i -Dx6.0i/-2.3i/2.0i/1.0i/BL -K -O  >> temp.ps
+      inquire( file="leg3.txt", exist=IsThere)
+      if(IsThere)then
+        cmd = "gmt pslegend leg3.txt " // adjustl(trim(area_str)) &
+                                     // adjustl(trim(proj_str)) &
+                                     // " -Dx6.0i/-2.3i/2.0i/1.0i/BL " &
+                                     // adjustl(trim(contn_ps))
+        write(55,*)adjustl(trim(cmd))
+      endif
+      ! Add contour legend here
+      cmd = "gmt pslegend leg4.txt " // adjustl(trim(area_str)) &
+                                     // adjustl(trim(proj_str)) &
+                                     // " -Dx8.0i/2.0i/1.25i/2.5i/BL -F " &
+                                     // adjustl(trim(end_ps))
+      write(55,*)adjustl(trim(cmd))
+
+      !gmt pslegend leg4.txt -R-134.500/-97.500/33.500/52.500  -JM-122.117/42.933/7i -Dx8.0i/2.0i/1.25i/2.5i/BL -F -O  >> temp.ps
+
 
       ! This command converts temp.ps to temp.png
       cmd = "gmt psconvert temp.ps -A -Tg"
       write(55,*)adjustl(trim(cmd))
+
+      ! Might need to add this check in the GMT script on version 5 vs 6 (5 needs rotation)
+      !GMTv=`gmt --version | cut -c1`
+      !if [ $GMTv -eq 5 ] ; then
+      !  convert -rotate 90 temp.png -resize 630x500 -alpha off temp.gif
+      !if [ $GMTv -eq 5 ] ; then
+      !  convert temp.png -resize 630x500 -alpha off temp.gif
+
 
       ! Move this png to the final filename
       cmd = " mv temp.png " // outfile_name
       write(55,*)adjustl(trim(cmd))
 
       ! Clean up
-      !cmd = "rm c.lev out.grd temp.*"
-      !write(55,*)adjustl(trim(cmd))
+      cmd = "rm -f c.lev out.grd temp.* leg*.txt"
+      write(55,*)adjustl(trim(cmd))
 
       close(55)
       write(gmtcom,'(a3,a14)')'sh ',dp_gmtfile
@@ -643,116 +746,36 @@
 !  package.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!
-!      subroutine write_2Dprof_PNG_GMT(vprof_ID)
-!
-!      use precis_param
-!
-!      use mesh,          only : &
-!         nzmax,z_cc_pd
-!
-!      use Output_Vars,   only : &
-!         pr_ash
-!
-!      use io_data,       only : &
-!         Site_vprofile,x_vprofile,y_vprofile,cdf_b3l1,VolcanoName
-!
-!      use Source,        only : &
-!         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
-!
-!      use time_data,     only : &
-!         os_time_log,BaseYear,useLeap,ntmax,time_native
-!
-!      implicit none
-!
-!      integer, intent (in) :: vprof_ID
-!
-!      character(len=14) :: dp_gnufile
-!      character(len=14) :: dp_outfile
-!      character(len=14) :: dp_pngfile
-!      character(len=26) :: coord_str
-!      character(len=25) :: gnucom
-!      integer :: k,i
-!      integer :: ioerr,iw,iwf
-!
-!      INTERFACE
-!        character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-!          real(kind=8)              :: HoursSince
-!          integer                   :: byear
-!          logical                   :: useLeaps
-!        end function HS_xmltime
-!      END INTERFACE
-!
-!      write(dp_outfile,53) vprof_ID,".dat"
-!      write(dp_gnufile,53) vprof_ID,".gpi"
-!      write(dp_pngfile,54) vprof_ID,".png"
-! 53   format('vprof_',i4.4,a4)
-! 54   format('gnupl_',i4.4,a4)
-!
-!      open(54,file=dp_outfile,status='replace')
-!      do i = 1,ntmax
-!        do k = 1,nzmax
-!          write(54,*)time_native(i),z_cc_pd(k),pr_ash(k,i,vprof_ID)
-!        enddo
-!        write(54,*)" "
-!      enddo
-!      close(54)
-!
-!      write(coord_str,101)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
-! 101  format(' (lon=',f7.2,', lat=',f6.2,')')
-!      ! Set up to plot via gnuplot script
-!      open(55,file=dp_gnufile,status='replace')
-!      write(55,*)"set terminal pngcairo font 'sans,12' size 854,603"   ! Set the image size
-!      write(55,*)"set origin 0, .10"
-!      write(55,*)"set size 0.85, 0.9"              ! Set x and y scale for plot
-!      write(55,*)"set ylabel 'Height (km)'"
-!      write(55,*)"set xlabel 'Time (hours after eruption)'"
-!      write(55,*)"set output '",dp_pngfile,"'"
-!      write(55,*)"set title '",&
-!                  trim(adjustl(Site_vprofile(vprof_ID))),&
-!                  coord_str,"'"
-!      write(55,*)"set isosamples 50"
-!      write(55,*)"set pm3d"
-!      write(55,*)"set palette cubehelix negative"
-!      write(55,*)"unset surface"
-!      write(55,*)"set view map"
-!      write(55,*)"set key off"
-!
-!      write(55,*)"XMIN = 0.0"
-!      write(55,*)"YMIN = 0.0"
-!      write(55,*)"XMAX = ",time_native(ntmax)
-!      write(55,*)"YMAX = ",z_cc_pd(nzmax)
-!      write(55,*)"XVAL = -XMAX*0.1"
-!      write(55,*)"YVAL = -YMAX*0.25"
-!      
-!      write(55,*)"set label 'Volcano: " ,VolcanoName,&
-!                  "' at XVAL, YVAL font 'sans,9'"
-!      write(55,*)"set label 'Run Date: ",os_time_log,&
-!                  "' at XVAL, YVAL font 'sans,9' offset character 0,-1"
-!      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
-!      write(55,*)"set label 'Windfile: ",iwf,&
-!                  "' at XVAL, YVAL font 'sans,9' offset character 0,-2"
-!
-!      write(55,*)"XVAL = XMAX*0.4"
-!      write(55,*)"set label 'Erup. Start Time: ",HS_xmltime(e_StartTime(1),BaseYear,useLeap),&
-!                  "' at XVAL, YVAL font 'sans,9'"
-!      write(55,*)"set label 'Erup. Plume Height: ",real(e_PlumeHeight(1),kind=4),&
-!                  " km' at XVAL, YVAL font 'sans,9' offset character 0,-1"
-!      write(55,*)"set label 'Erup. Duration: ",real(e_Duration(1),kind=4),&
-!                  " hours' at XVAL, YVAL font 'sans,9' offset character 0,-2"
-!      write(55,*)"set label 'Erup. Volume: ",real(e_Volume(1),kind=4),&
-!                  " km3 (DRE)' at XVAL, YVAL font 'sans,9' offset character 0,-3"
-!
-!      write(55,*)"set cblabel 'Ash con. in mg/m3'"
-!      write(55,*)"splot '",dp_outfile,"'"
-!
-!      close(55)
-!
-!      write(gnucom,'(a11,a14)')'gnuplot -p ',dp_gnufile
-!      call execute_command_line(gnucom)
-!
-!      end subroutine write_2Dprof_PNG_GMT
-!
+
+      subroutine write_2Dprof_PNG_GMT(vprof_ID)
+
+      use precis_param
+
+      use mesh,          only : &
+         nzmax,z_cc_pd
+
+      use Output_Vars,   only : &
+         pr_ash
+
+      use io_data,       only : &
+         Site_vprofile,x_vprofile,y_vprofile,cdf_b3l1,VolcanoName
+
+      use Source,        only : &
+         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
+
+      use time_data,     only : &
+         os_time_log,BaseYear,useLeap,ntmax,time_native
+
+      integer, intent (in) :: vprof_ID
+
+      do io=1,2;if(VB(io).le.verbosity_error)then
+        write(errlog(io),*)"ERROR: write_2Dprof_PNG_GMT is not yet implemented."
+        write(errlog(io),*)"       Please choose a different plotting package for profiles"
+      endif;enddo
+      stop 1
+
+      end subroutine write_2Dprof_PNG_GMT
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  write_DepPOI_TS_PNG_GMT
@@ -765,85 +788,32 @@
 !  the airport/POI given by pt_index using the GMT graphics package.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!
-!      subroutine write_DepPOI_TS_PNG_GMT(pt_indx)
-!
-!      use precis_param
-!
-!      use Output_Vars,   only : &
-!         THICKNESS_THRESH
-!
-!      use Airports,      only : &
-!         nairports,Airport_Code,Airport_Name,Airport_x,Airport_y,&
-!         Airport_Latitude,Airport_Longitude,Airport_Thickness_TS
-!
-!      use io_data,       only : &
-!         nWriteTimes,WriteTimes,VolcanoName
-!
-!      use time_data,     only : &
-!         Simtime_in_hours
-!
-!      implicit none
-!
-!      integer :: pt_indx,i
-!
-!      real(kind=8) :: ymaxpl
-!      character(len=14) :: dp_gnufile
-!      character(len=14) :: dp_outfile
-!      character(len=14) :: dp_pngfile
-!      character(len=25) :: gnucom
-!      integer,save      :: plot_index = 0
-!
-!      if(Airport_Thickness_TS(pt_indx,nWriteTimes).lt.THICKNESS_THRESH)then
-!        return
-!      else
-!        plot_index = plot_index + 1
-!      endif
-!
-!      write(dp_outfile,53) plot_index,".dat"
-!      write(dp_gnufile,53) plot_index,".gpi"
-!      write(dp_pngfile,54) plot_index,".png"
-! 53   format('depTS_',i4.4,a4)
-! 54   format('gnupl_',i4.4,a4)
-!
-!      open(54,file=dp_outfile,status='replace')
-!      do i = 1,nWriteTimes
-!        write(54,*)WriteTimes(i),Airport_Thickness_TS(pt_indx,i)
-!      enddo
-!      close(54)
-!
-!      if(Airport_Thickness_TS(plot_index,nWriteTimes).lt.THICKNESS_THRESH)then
-!        ymaxpl = 1.0
-!      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.1.0)then
-!        ymaxpl = 1.0
-!      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.5.0)then
-!        ymaxpl = 5.0
-!      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.25.0)then
-!        ymaxpl = 25.0
-!      else
-!        ymaxpl = 100.0
-!      endif
-!
-!      ! Set up to plot via gnuplot script
-!      open(55,file=dp_gnufile,status='replace')
-!      write(55,*)"set terminal png size 400,300"
-!      write(55,*)"set key bmargin left horizontal Right noreverse enhanced ",&
-!                 "autotitles box linetype -1 linewidth 1.000"
-!      write(55,*)"set border 31 lw 2.0 lc rgb '#000000'"
-!      write(55,*)"set style line 1 linecolor rgbcolor '#888888' linewidth 2.0 pt 7"
-!      write(55,*)"set ylabel 'Deposit Thickeness (mm)'"
-!      write(55,*)"set xlabel 'Time (hours after eruption)'"
-!      write(55,*)"set nokey"
-!      write(55,*)"set output '",dp_pngfile,"'"
-!      write(55,*)"set title '",Airport_Name(pt_indx),"'"
-!      write(55,*)"plot [0:",ceiling(Simtime_in_hours),"][0:",&
-!                 nint(ymaxpl),"] '",dp_outfile,"' with filledcurve x1 ls 1"
-!      close(55)
-!
-!      write(gnucom,'(a11,a14)')'gnuplot -p ',dp_gnufile
-!      call execute_command_line(gnucom)
-!
-!      end subroutine write_DepPOI_TS_PNG_GMT
+
+      subroutine write_DepPOI_TS_PNG_GMT(pt_indx)
+
+      use precis_param
+
+      use Output_Vars,   only : &
+         THICKNESS_THRESH
+
+      use Airports,      only : &
+         Airport_Name,Airport_Thickness_TS
+
+      use io_data,       only : &
+         nWriteTimes,WriteTimes
+
+      use time_data,     only : &
+         Simtime_in_hours
+
+      integer,intent(in) :: pt_indx
+
+      do io=1,2;if(VB(io).le.verbosity_error)then
+        write(errlog(io),*)"ERROR: write_DepPOI_TS_PNG_GMT is not yet implemented."
+        write(errlog(io),*)"       Please choose a different plotting package for POI dep."
+      endif;enddo
+      stop 1
+
+      end subroutine write_DepPOI_TS_PNG_GMT
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
