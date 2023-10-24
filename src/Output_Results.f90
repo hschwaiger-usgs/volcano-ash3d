@@ -303,8 +303,8 @@
           call Close_KML(5,0)
         endif
         if (WriteCloudTime_ASCII)then
-          ! cloud mask based on cloud load does not work in this case the cloud load mask
-          ! is a function of time
+          ! cloud mask based on cloud load does not work in this case where the cloud
+          ! load mask is a function of time
           Mask(1:nxmax,1:nymax) = .true.
           do i=1,nxmax
             do j=1,nymax

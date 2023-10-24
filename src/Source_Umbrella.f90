@@ -42,8 +42,8 @@
 #endif
 
       !The following are used by Mesointerpolator for umbrella clouds
-      integer,public :: ibase     !z index of lowest node in the umbrella cloud
-      integer,public :: itop     !z index of highest node in the umbrella cloud
+      integer,public :: ibase     ! z index of lowest node in the umbrella cloud
+      integer,public :: itop      ! z index of highest node in the umbrella cloud
 
       ! These are only public since we want to write these to the ouput file
       integer      ,public :: VelMod_umb         = 1       ! Velocity model to use (1=default)
@@ -56,8 +56,13 @@
       real(kind=ip) :: SourceNodeWidth_km
       real(kind=ip) :: SourceNodeHeight_km
 
+#ifdef USEPOINTERS
+      real(kind=ip),dimension(:,:,:)  ,pointer :: AvgStenc_Umbrella =>null()
+      real(kind=ip),dimension(:)      ,pointer :: ScaleFac_Umbrella =>null()
+#else
       real(kind=ip),dimension(:,:,:)  ,allocatable :: AvgStenc_Umbrella
       real(kind=ip),dimension(:)      ,allocatable :: ScaleFac_Umbrella
+#endif
 
       contains
       !------------------------------------------------------------------------
@@ -162,15 +167,15 @@
         if(associated(SourceNodeFlux_Umbrella)) deallocate(SourceNodeFlux_Umbrella)
         if(associated(uvx_pd))                  deallocate(uvx_pd)
         if(associated(uvx_pd))                  deallocate(uvy_pd)
+        if(associated(AvgStenc_Umbrella))       deallocate(AvgStenc_Umbrella)
+        if(associated(ScaleFac_Umbrella))       deallocate(ScaleFac_Umbrella)
 #else
         if(allocated(SourceNodeFlux_Umbrella)) deallocate(SourceNodeFlux_Umbrella)
         if(allocated(uvx_pd))                  deallocate(uvx_pd)
         if(allocated(uvx_pd))                  deallocate(uvy_pd)
-#endif
-
         if(allocated(AvgStenc_Umbrella))       deallocate(AvgStenc_Umbrella)
         if(allocated(ScaleFac_Umbrella))       deallocate(ScaleFac_Umbrella)
-
+#endif
 
       end subroutine Deallocate_Source_Umbrella
 

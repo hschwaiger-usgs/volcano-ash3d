@@ -242,6 +242,11 @@
 !    ASH3DCFL  : (0.0<CFL<=1.0) The default CFL factor is 0.8, but this can be overwritten by
 !                this environment variable.  Note; this could be subsequently overwritten
 !                if there is a RESETPARAMS block in the input file
+!    ASH3DPLOT : This environment variable allows overriding the default graphics package.
+!      = 1 : DISLIN
+!      = 2 : PLPLOT
+!      = 3 : GNUPLOT
+!      = 4 : GMT
 !  Next, details of the system state are logged, including OS type (Linux, Mac, Windows),
 !  endian flavor of hardware, fortran compiler version and flags, command-line arguments,
 !  and date/time of the run.  Additionally, if PII=ON was set in the makefile when this
@@ -263,7 +268,8 @@
 
       use global_param,  only : &
         DirPrefix,DirDelim,IsLitEnd,IsLinux,IsWindows,IsMacOS,version, &
-        CFL,OS_TYPE,OS_Flavor,os_full_command_line,os_cwd,os_host,os_user
+        CFL,OS_TYPE,OS_Flavor,os_full_command_line,os_cwd,os_host,os_user,&
+        useFastDt,FastDt_suppress
 
       use io_data,       only : &
         Ash3dHome
@@ -271,6 +277,9 @@
       use time_data,     only : &
         BaseYear,useLeap,os_time_log, &
         RunStartDay,RunStartHour_ch,RunStartHr,RunStartMinute,RunStartMonth,RunStartYear
+
+      use Output_Vars,   only : &
+         iplotpref
 
       use MetReader,     only : &
          MR_OS_TYPE,MR_DirPrefix,MR_DirDelim,MR_VERB,MR_nio
@@ -354,6 +363,18 @@
       IsLinux   = .false.
       IsWindows = .true.
       IsMacOS   = .false.
+#endif
+
+#ifdef FAST_DT
+      ! With Fast_Dt on, time step criteria is only checked at the meso steps
+      ! We can always suppress this if we have an active process that could
+      ! effect the time step (e.g. umbrella spreading or scrubbing)
+      ! Set the corresponding logical variables
+      useFastDt       = .true.
+      FastDt_suppress = .false.
+#else
+      useFastDt       = .false.
+      FastDt_suppress = .true.
 #endif
 
       ! Environment variables
@@ -440,7 +461,9 @@
                   "opt" // DirDelim // "USGS" // DirDelim // "Ash3d"
 
       ! Here it is over-written by compile-time path, if available
-!#include "installpath.h"
+#ifndef WINDOWS
+#include "installpath.h"
+#endif
       ! This can be over-written if an environment variable is set
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(2),*)" "
@@ -458,9 +481,10 @@
           write(outlog(io),*)"  ASH3DHOME not found. Install path set to: ",trim(adjustl(Ash3dHome))
         endif;enddo
       endif
-      ! For gfortran, use
-      inquire(file=trim(adjustl(Ash3dHome)),exist=IsThere)
-      ! For ifort, use
+      ! For testing the existance of a directory, append a delimiter and . to make a file
+      tmp_str = trim(adjustl(Ash3dHome)) // DirDelim // '.'
+      inquire(file=trim(adjustl(tmp_str)),exist=IsThere)
+      ! With ifort, we would need to test fot a directory as follows
       !inquire(directory=trim(adjustl(Ash3dHome)),exist=IsThere)
       if(IsThere)then
         do io=1,2;if(VB(io).le.verbosity_info)then
@@ -468,7 +492,10 @@
         endif;enddo
       else
         do io=1,2;if(VB(io).le.verbosity_error)then
-          write(errlog(io),*)"ERROR: Cannot find ASH3DHOME=",Ash3dHome
+          write(errlog(io),*)"WARNING: Cannot find ASH3DHOME=",Ash3dHome
+          write(errlog(io),*)"         If this run requires shared volcano or airport files,"
+          write(errlog(io),*)"         it will fail. Please either recompile with the install"
+          write(errlog(io),*)"         directory set, or set the environment variable ASH3DHOME"
         endif;enddo
         stop 1
       endif
@@ -512,6 +539,50 @@
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"  ASH3DCFL not found.  CFL condition : ",real(CFL,kind=4)
         endif;enddo
+      endif
+
+      ! Now, check for environment variables ASH3DPLOT
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(2),*)" "
+        write(outlog(io),*)"Checking for run-time environment variable: ASH3DPLOT"
+      endif;enddo
+      call get_environment_variable(name="ASH3DPLOT",value=tmp_str,status=Iostatus)
+      if(Iostatus.eq.0)then
+        read(tmp_str,*,iostat=ierr)iplotpref
+        if(ierr.ne.0)then
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: ASH3DPLOT found, but expecting an integer value"
+            write(errlog(io),*)"       Instead, env. variable set to: ",tmp_str
+          endif;enddo
+          stop 1
+        endif
+        if (iplotpref.le.0.or.iplotpref.gt.4)then
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: ASH3DPLOT must be any of:"
+            write(errlog(io),*)"         1 = dislin"
+            write(errlog(io),*)"         2 = plplot"
+            write(errlog(io),*)"         3 = gnuplot"
+            write(errlog(io),*)"         4 = GMT"
+            !write(errlog(io),*)"         5 = matlab"
+            !write(errlog(io),*)"         6 = cartopy"
+            !write(errlog(io),*)"         7 = R"
+            write(errlog(io),*)"       Currently set to ",iplotpref
+          endif;enddo
+          stop 1
+        else
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"  Plotting library reset from environment variable ASH3DPLOT=",iplotpref
+            if(iplotpref.eq.1)then
+              write(outlog(io),*)"           Using dislin if available."
+            elseif(iplotpref.eq.2)then
+              write(outlog(io),*)"           Using plplot if available."
+            elseif(iplotpref.eq.3)then
+              write(outlog(io),*)"           Using gnuplot if available."
+            elseif(iplotpref.eq.4)then
+              write(outlog(io),*)"           Using GMT if available."
+            endif
+          endif;enddo
+        endif
       endif
 
       ! Operating System details

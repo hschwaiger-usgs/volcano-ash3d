@@ -208,6 +208,9 @@
       logical, parameter       :: useCN           = .false.
 #endif
 
+      logical :: useFastDt        ! These are set in Set_OS_Env and control when
+      logical :: FastDt_suppress  ! time step restrictions need to be calculated
+
         ! These should not be changed unless needed for testing
       logical, parameter       :: useDS            = .true.  ! Dimension splitting v.s. something else
       logical                  :: useVertAdvect    = .true.  ! Turns on/off vert. advection
@@ -358,7 +361,7 @@
       character (len=80) :: cdf_b6l3
       character (len=80) :: cdf_b6l4
       character (len=80) :: cdf_b6l5
-!
+
       logical            :: WriteCloudConcentration_ASCII ! .true. if cloud top files are to be written out
       logical            :: WriteCloudConcentration_KML
       logical            :: WriteCloudHeight_ASCII        ! .true. if kml file of cloud height (km) is to be written out
@@ -390,13 +393,13 @@
       logical            :: Output_at_WriteTimes
       logical            :: Output_at_logsteps
       logical            :: Called_Gen_Output_Vars
-!
-      character (len=30):: VolcanoName       !name of the volcano, from the ESP input file
-      integer           :: iTimeNext         !index value of next time step to write
-      real(kind=ip)     :: WriteInterval     !time between file writing, used only if nWriteTimes=-1
-      real(kind=ip)     :: NextWriteTime     !time to write the next file
-      character (len=1) :: OutputStep_Marker !=* if data were written out since the last log_step
-      integer           :: nWriteTimes       !number of deposit files to write
+
+      character (len=30) :: VolcanoName       !name of the volcano, from the ESP input file
+      integer            :: iTimeNext         !index value of next time step to write
+      real(kind=ip)      :: WriteInterval     !time between file writing, used only if nWriteTimes=-1
+      real(kind=ip)      :: NextWriteTime     !time to write the next file
+      character (len=1)  :: OutputStep_Marker !=* if data were written out since the last log_step
+      integer            :: nWriteTimes       !number of deposit files to write
 #ifdef USEPOINTERS
       real(kind=ip), dimension(:), pointer     :: WriteTimes => null() ! times (hrs after first eruption start) to write out files
 #else
@@ -703,8 +706,11 @@
 #endif
       real(kind=ip)      :: dep_percent_accumulated
       real(kind=ip)      :: aloft_percent_remaining
-      real(kind=ip)      :: StopValue    !program stops when percent_accumulated>StopValue
-      real(kind=ip)      :: dep_vol,aloft_vol,outflow_vol,tot_vol
+      real(kind=ip)      :: StopValue                  ! program stops when percent_accumulated>StopValue
+      real(kind=ip)      :: dep_vol
+      real(kind=ip)      :: aloft_vol
+      real(kind=ip)      :: outflow_vol
+      real(kind=ip)      :: tot_vol
       real(kind=ip)      :: SourceCumulativeVol
 
         ! These are the max/min indices of the ash cloud used if FAST_SUBGRID is used
@@ -892,7 +898,6 @@ subroutine Allocate_solution
       real(kind=dp)      :: dt_meso_next    ! dt as calculated from meso_next
 
       ! Some stings that hold time data used in output files
-      !character(len=17)  :: os_time_log
       character(len=20)  :: os_time_log
       character(len=20)  :: xmlSimStartTime                     !start time of simulation in xml format
       character(len=20)  :: xmlTimeSpanStart

@@ -38,7 +38,7 @@
       integer,public                        :: nairports           ! number of nearby airports in domain
       logical,public                        :: ProjectAirportLocations
       integer,           allocatable,public :: Airport_i(:)
-      integer,           allocatable ,public:: Airport_j(:)
+      integer,           allocatable,public :: Airport_j(:)
       real(kind=dp),     allocatable,public :: Airport_AshArrivalTime(:)   ! ash arrival time
       real(kind=dp),     allocatable,public :: Airport_AshDuration(:)      ! duration of ashfall
       real(kind=dp),     allocatable,public :: Airport_CloudArrivalTime(:) ! cloud arrival time

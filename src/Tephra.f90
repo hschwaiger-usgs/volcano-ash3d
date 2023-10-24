@@ -69,19 +69,19 @@
       integer,public                                    :: FV_ID
 
 #ifdef USEPOINTERS
-      real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_v_s         ! Settling vel (m/s)
-      real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_gsdiam      ! Grain-size diameter 
-                                                                          !  (read in mm, stored in m)
-      real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_bin_mass    ! mass    (kg)
-      real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_rho_m       ! density (kg/m3)
-      real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_gsF         ! Grain-size shape (b+c)/2a
-      real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_gsG         ! Grain-size shape c/b
-      real(kind=ip), dimension(:,:),pointer         :: Tephra_gsF_fac     ! Precalculated shape factors
-                                                                          !  i=1 WH Stokes fac
-                                                                          !  i=2 WH Newton fac
-                                                                          !  i=3 Gans Stokes fac
-                                                                          !  i=4 Gans Newton fac
-                                                                          !  i=5 slip adjustment to diameter
+      real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_v_s     =>null()    ! Settling vel (m/s)
+      real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_gsdiam  =>null()    ! Grain-size diameter 
+                                                                                  !  (read in mm, stored in m)
+      real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_bin_mass=>null()    ! mass    (kg)
+      real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_rho_m   =>null()    ! density (kg/m3)
+      real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_gsF     =>null()    ! Grain-size shape (b+c)/2a
+      real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_gsG     =>null()    ! Grain-size shape c/b
+      real(kind=ip), dimension(:,:),pointer         :: Tephra_gsF_fac =>null()    ! Precalculated shape factors
+                                                                                  !  i=1 WH Stokes fac
+                                                                                  !  i=2 WH Newton fac
+                                                                                  !  i=3 Gans Stokes fac
+                                                                                  !  i=4 Gans Newton fac
+                                                                                  !  i=5 slip adjustment to diameter
 
       !real(kind=ip),dimension(:,:,:)  ,pointer :: DepositGranularity => null() ! accumulated ash mass on ground
       real(kind=sp),dimension(:,:,:,:),pointer,public :: vf_meso_last_step_MetP_sp => null()

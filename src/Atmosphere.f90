@@ -32,35 +32,19 @@
              Set_Atmosphere_Meso
 
         ! Publicly available variables
+        ! Define atmospheric variables only needed on the native Met grid
+        !  Physical Properties of air
+        !  meso means grid of the met. file
 #ifdef USEPOINTERS
-      ! Denisity is in kg/m^3
-      ! Viscosity is in kg/(m s)
-      ! Mean free path (lambda) is in m
+        ! Denisity is in kg/m^3
+        ! Viscosity is in kg/(m s)
+        ! Mean free path (lambda) is in m
       real(kind=sp),dimension(:,:,:),pointer,public :: AirDens_meso_last_step_MetP_sp => null()
       real(kind=sp),dimension(:,:,:),pointer,public :: AirVisc_meso_last_step_MetP_sp => null()
       real(kind=sp),dimension(:,:,:),pointer,public :: AirLamb_meso_last_step_MetP_sp => null()
       real(kind=sp),dimension(:,:,:),pointer,public :: AirDens_meso_next_step_MetP_sp => null()
       real(kind=sp),dimension(:,:,:),pointer,public :: AirVisc_meso_next_step_MetP_sp => null()
       real(kind=sp),dimension(:,:,:),pointer,public :: AirLamb_meso_next_step_MetP_sp => null()
-#else
-      real(kind=sp),dimension(:,:,:),allocatable,public :: AirDens_meso_last_step_MetP_sp
-      real(kind=sp),dimension(:,:,:),allocatable,public :: AirVisc_meso_last_step_MetP_sp
-      real(kind=sp),dimension(:,:,:),allocatable,public :: AirLamb_meso_last_step_MetP_sp
-      real(kind=sp),dimension(:,:,:),allocatable,public :: AirDens_meso_next_step_MetP_sp
-      real(kind=sp),dimension(:,:,:),allocatable,public :: AirVisc_meso_next_step_MetP_sp
-      real(kind=sp),dimension(:,:,:),allocatable,public :: AirLamb_meso_next_step_MetP_sp
-#endif
-
-      real(kind=ip), parameter,public :: R_GAS_DRYAIR = 286.98_ip       ! Specific gas constant of R=286.98 J /(kg K)
-      real(kind=ip), parameter,public :: R_GAS_IDEAL  = 8.3144621_ip    ! Ideal gas constant (J /(kg K))
-      real(kind=ip), parameter,public :: CP_AIR       = 1.004e3_ip      ! Specific heat capacity at p (J /kg K)
-      real(kind=ip), parameter,public :: MB_DRY_AIR   = 0.028966_ip     ! Molecular weight of dry air in kg/mol
-      real(kind=ip), parameter,public :: BoltzK       = 1.380658e-23_ip ! Boltzmann's constant kg m2 s-2 K-1 molec-1
-
-      ! Define atmospheric variables only needed on the native Met grid
-      !  Physical Properties of air
-      !  meso means grid of the met. file
-#ifdef USEPOINTERS
       real(kind=sp),dimension(:,:,:),pointer,public :: AirTemp_meso_last_step_MetP_sp => null()
       real(kind=sp),dimension(:,:,:),pointer,public :: AirRelH_meso_last_step_MetP_sp => null()
       real(kind=sp),dimension(:,:,:),pointer,public :: AirSH_meso_last_step_MetP_sp   => null()
@@ -68,6 +52,12 @@
       real(kind=sp),dimension(:,:,:),pointer,public :: AirRelH_meso_next_step_MetP_sp => null()
       real(kind=sp),dimension(:,:,:),pointer,public :: AirSH_meso_next_step_MetP_sp   => null()
 #else
+      real(kind=sp),dimension(:,:,:),allocatable,public :: AirDens_meso_last_step_MetP_sp
+      real(kind=sp),dimension(:,:,:),allocatable,public :: AirVisc_meso_last_step_MetP_sp
+      real(kind=sp),dimension(:,:,:),allocatable,public :: AirLamb_meso_last_step_MetP_sp
+      real(kind=sp),dimension(:,:,:),allocatable,public :: AirDens_meso_next_step_MetP_sp
+      real(kind=sp),dimension(:,:,:),allocatable,public :: AirVisc_meso_next_step_MetP_sp
+      real(kind=sp),dimension(:,:,:),allocatable,public :: AirLamb_meso_next_step_MetP_sp
       real(kind=sp),dimension(:,:,:),allocatable,public :: AirTemp_meso_last_step_MetP_sp
       real(kind=sp),dimension(:,:,:),allocatable,public :: AirRelH_meso_last_step_MetP_sp
       real(kind=sp),dimension(:,:,:),allocatable,public :: AirSH_meso_last_step_MetP_sp
@@ -76,6 +66,13 @@
       real(kind=sp),dimension(:,:,:),allocatable,public :: AirSH_meso_next_step_MetP_sp
 #endif
 
+      real(kind=ip), parameter,public :: R_GAS_DRYAIR = 286.98_ip       ! Specific gas constant of R=286.98 J /(kg K)
+      real(kind=ip), parameter,public :: R_GAS_IDEAL  = 8.3144621_ip    ! Ideal gas constant (J /(kg K))
+      real(kind=ip), parameter,public :: CP_AIR       = 1.004e3_ip      ! Specific heat capacity at p (J /kg K)
+      real(kind=ip), parameter,public :: MB_DRY_AIR   = 0.028966_ip     ! Molecular weight of dry air in kg/mol
+      real(kind=ip), parameter,public :: BoltzK       = 1.380658e-23_ip ! Boltzmann's constant kg m2 s-2 K-1 molec-1
+
+      ! HFS : Probably delete this
       ! And since we are looking more carefully at atmospheric conditions,
       ! allocate the winds on the MetP grid
       !real(kind=sp),dimension(:,:,:),allocatable :: vx_meso_last_step_MetP_sp

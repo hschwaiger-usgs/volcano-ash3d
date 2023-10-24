@@ -97,6 +97,7 @@
       use Output_Vars,   only : &
          DepositThickness,DepArrivalTime,CloudArrivalTime,ashcon_tot,&
          MaxConcentration,MaxHeight,CloudLoad,dbZCol,MinHeight,Mask_Cloud, &
+         iplotpref, &
            Gen_Output_Vars,  &
            Allocate_Output_Vars, &
            Set_OutVar_ContourLevel
@@ -170,7 +171,6 @@
         !  3 = gnuplot
         !  4 = GMT
       integer, parameter  :: Nplot_libs = 4
-      integer             :: iplotpref  = 0
       logical,dimension(Nplot_libs) :: plotlib_avail
                                                      !   -- First preference code 
                                                      !   | - Second
@@ -387,19 +387,19 @@
           endif
 
           call Read_PostProc_Control_File(informat,iiprod,iprod,ndims,outformat,iplotpref,itime)
-          ! Reset plotting preference if need be
-          if(iplotpref.gt.0)then
-            if(plotlib_avail(iplotpref))then
-              plot_pref_map(1:Nplot_libs) = iplotpref ! plot preference for maps
-              plot_pref_shp(1:Nplot_libs) = iplotpref ! plot preference for contours
-              plot_pref_vpr(1:Nplot_libs) = iplotpref ! plot preference for vert profs.
-              plot_pref_aTS(1:Nplot_libs) = iplotpref ! plot preference for Airport TS
-            else
-              do io=1,2;if(VB(io).le.verbosity_error)then
-                write(errlog(io),*)"WARNING: Preferred plotting library is not available."
-              endif;enddo
-            endif
-          endif
+!          ! Reset plotting preference if need be
+!          if(iplotpref.gt.0)then
+!            if(plotlib_avail(iplotpref))then
+!              plot_pref_map(1:Nplot_libs) = iplotpref ! plot preference for maps
+!              plot_pref_shp(1:Nplot_libs) = iplotpref ! plot preference for contours
+!              plot_pref_vpr(1:Nplot_libs) = iplotpref ! plot preference for vert profs.
+!              plot_pref_aTS(1:Nplot_libs) = iplotpref ! plot preference for Airport TS
+!            else
+!              do io=1,2;if(VB(io).le.verbosity_error)then
+!                write(errlog(io),*)"WARNING: Preferred plotting library is not available."
+!              endif;enddo
+!            endif
+!          endif
         endif
       elseif (nargs.ge.3) then
         ! If we are doing command line only, then we need at least the netcdf filename, the output
@@ -631,6 +631,32 @@
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)'Finished reading inputs.'
       endif;enddo
+
+      ! Reset plotting preference if need be
+      if(iplotpref.gt.0)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"  Plotting library reset"
+          if(iplotpref.eq.1)then
+            write(outlog(io),*)"           Using dislin if available."
+          elseif(iplotpref.eq.2)then
+            write(outlog(io),*)"           Using plplot if available."
+          elseif(iplotpref.eq.3)then
+            write(outlog(io),*)"           Using gnuplot if available."
+          elseif(iplotpref.eq.4)then
+            write(outlog(io),*)"           Using GMT if available."
+          endif
+        endif;enddo
+        if(plotlib_avail(iplotpref))then
+          plot_pref_map(1:Nplot_libs) = iplotpref ! plot preference for maps
+          plot_pref_shp(1:Nplot_libs) = iplotpref ! plot preference for contours
+          plot_pref_vpr(1:Nplot_libs) = iplotpref ! plot preference for vert profs.
+          plot_pref_aTS(1:Nplot_libs) = iplotpref ! plot preference for Airport TS
+        else
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"WARNING: Preferred plotting library is not available."
+          endif;enddo
+        endif
+      endif
 
       ! Before we do anything, we need to set up as much as we can of the grid
       ! and populate auxilary variable.

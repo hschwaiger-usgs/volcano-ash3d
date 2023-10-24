@@ -274,10 +274,10 @@
                concen_pd(rmin:rmin-1+ncells,j,k,n,ts0) + &
                update_cc(rmin:rmin-1+ncells)
 
-            if(rmin.eq.1.and..not.ISPeriodic) &
+            if(rmin.eq.1.and..not.IsPeriodic) &
               ! Flux out the - side of advection row  (W)
               outflow_yz1_pd(j,k,n) = outflow_yz1_pd(j,k,n) + update_cc(0)
-            if(rmax.eq.nxmax.and..not.ISPeriodic) &
+            if(rmax.eq.nxmax.and..not.IsPeriodic) &
               ! Flux out the + side of advection row  (E)
               outflow_yz2_pd(j,k,n) = outflow_yz2_pd(j,k,n) + update_cc(nxmax+1)
 

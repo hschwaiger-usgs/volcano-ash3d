@@ -76,16 +76,16 @@
 
       integer, parameter :: MAXPARAMS = 50
 
+      integer           :: i
       character(len=80) :: linebuffer080
-      character :: testkey
-      integer :: ios
+      character         :: testkey
+      integer           :: ios
       character(len=20) :: mod_name
-      integer :: substr_pos
-      integer :: iparam
+      integer           :: substr_pos
+      integer           :: iparam
       character(len=20),dimension(MAXPARAMS) :: pname
       real(kind=ip)    ,dimension(MAXPARAMS) :: pvalue
       character(len=50),dimension(MAXPARAMS) :: pvalue_str
-      integer :: i
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"    Searching for OPTMOD=RESETPARAMS"

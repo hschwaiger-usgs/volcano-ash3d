@@ -167,21 +167,39 @@
       real(kind=ip),public :: CloudLoadArea(5)         ! Corresponding areas where ash cloud exceeds LoadVal(i)
       real(kind=ip),public :: DepositAreaCovered       ! area covered by ash deposit
 
+      integer      ,public :: iplotpref  = 0           ! Used in post-processing to specify plotting package
+
       ! Contour colors and levels
       logical                                     ,public:: ContourFilled = .false. ! T if using filled contours, F if lines
-      real(kind=ip),dimension(:),allocatable      ,public:: ContourLev
       integer                                     ,public:: nConLev
       integer,parameter                           ,public:: Contour_MaxCurves  = 20
       integer,parameter                           ,public:: Contour_MaxPoints  = 1000
+        ! User-specified contour interval and colors
+      logical                                     ,public:: Con_Cust   = .false.    ! T if using a custom set of contours
+      integer                                     ,public:: Con_Cust_N
+
+#ifdef USEPOINTERS
+      real(kind=ip),dimension(:)    ,pointer ,public:: ContourLev         => null()
+      real(kind=ip),dimension(:,:,:),pointer ,public:: ContourDataX       => null() ! x curve data with dims: ilev, icurve, ipnt
+      real(kind=ip),dimension(:,:,:),pointer ,public:: ContourDataY       => null() ! x curve data with dims: ilev, icurve, ipnt
+      integer      ,dimension(:)    ,pointer ,public:: ContourDataNcurves => null() ! num of curves for each level (some = 0)
+      integer      ,dimension(:,:)  ,pointer ,public:: ContourDataNpoints => null() ! num of pts for ilev and icurve
+        ! User-specified contour interval and colors
+      integer      ,dimension(:,:)  ,pointer,public:: Con_Cust_RGB        => null()
+      real(kind=ip),dimension(:)    ,pointer,public:: Con_Cust_Lev        => null()
+#else
+      real(kind=ip),dimension(:),allocatable      ,public:: ContourLev
       real(kind=ip),dimension(:,:,:),allocatable  ,public:: ContourDataX        ! x curve data with dims: ilev, icurve, ipnt
       real(kind=ip),dimension(:,:,:),allocatable  ,public:: ContourDataY        ! x curve data with dims: ilev, icurve, ipnt
       integer      ,dimension(:)    ,allocatable  ,public:: ContourDataNcurves  ! num of curves for each level (some = 0)
       integer      ,dimension(:,:)  ,allocatable  ,public:: ContourDataNpoints  ! num of pts for ilev and icurve
         ! User-specified contour interval and colors
-      logical                                     ,public:: Con_Cust   = .false.    ! T if using a custom set of contours
-      integer                                     ,public:: Con_Cust_N
       integer      ,dimension(:,:)  ,allocatable  ,public:: Con_Cust_RGB
       real(kind=ip),dimension(:)    ,allocatable  ,public:: Con_Cust_Lev
+#endif
+
+
+
         ! Fixed size arrays for output products
       integer,parameter                           ,public:: Con_DepThick_mm_N   = 10
       integer      ,dimension(Con_DepThick_mm_N,3),public:: Con_DepThick_mm_RGB
@@ -529,6 +547,8 @@
       if(associated(MinHeight))        deallocate(MinHeight)
       if(associated(dbZCol))           deallocate(dbZCol)
       if(associated(dbZ))              deallocate(dbZ)
+      if(associated(Con_Cust_RGB))     deallocate(Con_Cust_RGB)
+      if(associated(Con_Cust_Lev))     deallocate(Con_Cust_Lev)
 #else
       if(allocated(Mask_Cloud))       deallocate(Mask_Cloud)
       if(allocated(Mask_Deposit))     deallocate(Mask_Deposit)
@@ -542,10 +562,9 @@
       if(allocated(MinHeight))        deallocate(MinHeight)
       if(allocated(dbZCol))           deallocate(dbZCol)
       if(allocated(dbZ))              deallocate(dbZ)
-#endif
-
       if(allocated(Con_Cust_RGB))     deallocate(Con_Cust_RGB)
       if(allocated(Con_Cust_Lev))     deallocate(Con_Cust_Lev)
+#endif
 
       end subroutine Deallocate_Output_Vars
 

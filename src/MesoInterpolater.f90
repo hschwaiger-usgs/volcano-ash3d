@@ -36,11 +36,7 @@
       use io_units
 
       use global_param,    only : &
-#ifdef FAST_DT
-         EPS_SMALL,&
-#endif
-         MPS_2_KMPHR, &
-         useCalcFallVel
+         EPS_SMALL,useFastDt,FastDt_suppress,MPS_2_KMPHR,useCalcFallVel
 
       use mesh,            only : &
          nxmax,nymax,nzmax
@@ -49,15 +45,10 @@
          vx_pd,vy_pd,vz_pd,vf_pd
 
       use time_data,       only : &
-#ifdef FAST_DT
-         Simtime_in_hours,time,dt, &
-#endif
-         SimStartHour,dt_meso_last,dt_meso_next
+         Simtime_in_hours,time,dt,SimStartHour,dt_meso_last,dt_meso_next
 
-#ifdef FAST_DT
       use io_data,       only : &
          NextWriteTime
-#endif
 
       use wind_grid,       only : &
           vx_meso_last_step_sp,vx_meso_next_step_sp,&
@@ -91,7 +82,7 @@
  
       implicit none
 
-      real(kind=dp),intent(in)    :: TimeNow                !current time, in hours since start of simulation
+      real(kind=dp),intent(in)    :: TimeNow                ! current time, in hours since start of simulation
       real(kind=dp),intent(out)   :: Interval_Frac
       logical      ,intent(inout) :: Load_MesoSteps
 
@@ -142,11 +133,13 @@
 
         ! We only loaded one step so set load flag to True
         Load_MesoSteps = .true.
-#ifdef FAST_DT
-        call Adjust_DT(Load_MesoSteps)
-        ! Since this is the first time, copy the output dt_meso_next to dt_meso_last
-        dt_meso_last = dt_meso_next
-#endif
+        if(useFastDt)then
+          ! Here we call adjust_dt for the meso step even if it might be suppressed later
+          ! since once the suppression turns off, we will need to have these available.
+          call Adjust_DT(Load_MesoSteps)
+          ! Since this is the first time, copy the output dt_meso_next to dt_meso_last
+          dt_meso_last = dt_meso_next
+        endif
       else
         ! If this is NOT the first time MesoInterpolater is called, then check
         ! if we need to load the next step
@@ -184,10 +177,11 @@
         dt_meso_last = dt_meso_next
         call Read_NextMesoStep(Load_MesoSteps)
 
-#ifdef FAST_DT
-        ! Now calculate the dt at the next timestep
-        call Adjust_DT(Load_MesoSteps)
-#endif
+        if(useFastDt)then
+          ! Now calculate the dt at the next timestep (again, even though it might
+          ! be suppressed later)
+          call Adjust_DT(Load_MesoSteps)
+        endif
 
       endif   ! Load_MesoSteps
 
@@ -227,40 +221,34 @@
 
       ! if we're calculating an umbrella cloud, add the winds in the cloud
       if (((SourceType.eq.'umbrella')     .or.   &
-           (SourceType.eq.'umbrella_air')).and.  &   !(TimeNow.gt.0.0_ip).and. &
-          (TimeNow.lt.e_EndTime(1))) then
-#ifdef FAST_DT
-          do io=1,2;if(VB(io).le.verbosity_error)then
-            write(errlog(io),*)"ERROR: Ash3d was compiled with the preproccesor flag -DFAST_DT"
-            write(errlog(io),*)"       Umbrella cloud source terms cannot be used when this"
-            write(errlog(io),*)"       flag is set because the velocity components added to"
-            write(errlog(io),*)"       the background wind velocities would not be accounted"
-            write(errlog(io),*)"       for in the dt calculation.  Please edit FASTFPPFLAG in"
-            write(errlog(io),*)"       the makefile and recompile Ash3d."
-            write(errlog(io),*)"       Exiting."
-          endif;enddo
-          stop 1
-#endif
+           (SourceType.eq.'umbrella_air')))then
+        if(TimeNow.lt.e_EndTime(1))then
+          FastDt_suppress = .true.
           call umbrella_winds(first_time)
           vx_pd(1:nxmax,1:nymax,ibase:itop) = vx_pd(1:nxmax,1:nymax,ibase:itop) + &
                                            uvx_pd(1:nxmax,1:nymax,ibase:itop)
           vy_pd(1:nxmax,1:nymax,ibase:itop) = vy_pd(1:nxmax,1:nymax,ibase:itop) + &
                                            uvy_pd(1:nxmax,1:nymax,ibase:itop)
+        else
+          ! Even though the umbrella winds change the windfield, we can turn Fast_DT
+          ! back on since the umbrella cloud has stopped spreading.
+          FastDt_suppress = .false.
+        endif
       endif
 
-#ifdef FAST_DT
-      dt = dt_meso_last + (dt_meso_next-dt_meso_last)*Interval_Frac
-      if (((NextWriteTime-time).gt.EPS_SMALL).and.(NextWriteTime-time.lt.dt))then
-        ! Don't let time advance past the next output time step
-          dt = NextWritetime-time
+      if(useFastDt.and..not.FastDt_suppress)then
+        dt = dt_meso_last + (dt_meso_next-dt_meso_last)*Interval_Frac
+        if (((NextWriteTime-time).gt.EPS_SMALL).and.(NextWriteTime-time.lt.dt))then
+          ! Don't let time advance past the next output time step
+            dt = NextWritetime-time
+        endif
+        if(time+dt.gt.Simtime_in_hours)then
+          ! Don't let time advance past the requested stop time
+          dt = Simtime_in_hours-time
+        endif
+      else
+        call Adjust_DT(.false.)
       endif
-      if(time+dt.gt.Simtime_in_hours)then
-        ! Don't let time advance past the requested stop time
-        dt = Simtime_in_hours-time
-      endif
-#else
-      call Adjust_DT(.false.)
-#endif
 
       ! If vxmax or vymax > 2000 km/hr, send a warning and see which values of vx and vy
       ! are so high.
@@ -403,9 +391,6 @@
           vx_meso_1_sp,vy_meso_1_sp,vz_meso_1_sp, &
           vx_meso_2_sp,vy_meso_2_sp,vz_meso_2_sp, &
           Meso_toggle
-
-      use Source_Umbrella,        only : &
-           umbrella_winds
 
       use Tephra,          only : &
          n_gs_max,Tephra_v_s,   &

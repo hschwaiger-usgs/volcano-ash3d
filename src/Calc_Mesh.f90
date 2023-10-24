@@ -278,11 +278,10 @@
 #endif
         allocate(xy2ll_xlon(0:nxmax+1,0:nymax+1))
       endif
-      ! This block calculates the lon/lat for each computational grid
-      ! point
-      ! Note:  All we need here is just the min/max for lat/lon so that
-      ! we can generate our own, regular lat/lon grid filled with
-      ! interpolated values.
+      ! This block calculates the lon/lat for each computational grid point
+      ! Note:  All we need here is just the min/max for lat/lon so that we
+      !        can generate our own, regular lat/lon grid filled with
+      !        interpolated values.
       do i=0,nxmax+1
         do j=0,nymax+1
           xin = real(x_cc_pd(i),kind=dp)  ! Projection routines use kind=8
@@ -294,8 +293,6 @@
           xy2ll_ylat(i,j) = real(ophi,kind=ip)
           xy2ll_xlon(i,j) = real(olam,kind=ip)
           if(xy2ll_xlon(i,j).lt.0.0_ip) xy2ll_xlon(i,j) = xy2ll_xlon(i,j) + 360.0_ip
-          !if(olam.lt.0.0_8)olam = olam + 360.0_8
-          !xy2ll_xlon(i,j) = real(olam,kind=ip)
         enddo
       enddo
 
@@ -331,7 +328,7 @@
       use io_units
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,nsmax,ts0,ivent,jvent
+         nxmax,nymax,nzmax,nsmax,ts0,ivent,jvent,IsPeriodic
 
       use solution,      only : &
          concen_pd,imin,imax,jmin,jmax,kmin,kmax
@@ -364,6 +361,14 @@
           exit
         endif
       enddo
+      if(IsPeriodic)then
+        ! if this is a periodic case and the ash touches a boundary, set the min and max
+        ! to the full domain
+        if(imin.eq.1.or.imax.eq.nxmax)then
+          imin = 1
+          imax = nxmax
+        endif
+      endif
       !  Now in y
       jmin = 1
       jmax = nymax

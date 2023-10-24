@@ -55,7 +55,6 @@
 
       integer       :: i,j,k
       real(kind=ip) :: tmp1,tmp2,tmp3
-      real(kind=dp),save :: time_diffuse
       real(kind=dp) :: time_advect
       real(kind=dp) :: dt_tmp
       real(kind=ip) :: dx2,dy2,dz2
@@ -67,7 +66,9 @@
       real(kind=ip) :: minsig
       real(kind=ip) :: maxdiffus
       logical       :: CheckMesoVel
-      logical,save  :: have_DT_diffus = .false.
+
+      real(kind=dp),save :: time_diffuse
+      logical      ,save :: have_DT_diffus = .false.
 
       !-------------------------------------------------------
       !  ADVECTION

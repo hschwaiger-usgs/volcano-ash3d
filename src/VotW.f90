@@ -280,6 +280,9 @@
 #ifdef USEEXTDATA
       subroutine VotW_v12(MAXVOLCS,volcLat,volcLon,volcElev,volcLoc,volcESP_Code,volcID,volcName)
 
+      use global_param,  only : &
+        DirDelim
+
       integer           ,intent(in)    :: MAXVOLCS
       real(kind=ip)     ,intent(inout) :: volcLat(MAXVOLCS)
       real(kind=ip)     ,intent(inout) :: volcLon(MAXVOLCS)
@@ -302,7 +305,8 @@
       character          :: testkey
 
       VotWMasterFile = trim(Ash3dHome) // &
-                          '/share/VotW_ESP_v12_csv.txt'
+                            DirDelim // "share" // &
+                            DirDelim // "VotW_ESP_v12_csv.txt"
       ! Test for existance of the VotW file
       inquire( file=trim(adjustl(VotWMasterFile)), exist=IsThere )
       do io=1,2;if(VB(io).le.verbosity_info)then

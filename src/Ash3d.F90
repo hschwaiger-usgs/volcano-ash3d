@@ -8,7 +8,7 @@
 !  This software, along with auxillary USGS libraries and related repositories,
 !  can be found at https://code.usgs.gov/vsc/ash3d
 !
-!  Installation instruction are given in the README.md file of this repository.
+!  Installation instructions are given in the README.md file of this repository.
 !  Basic usage instructions are given in doc/UsersGuide.md.
 !
 !  The program description and numerical methodology employed is described in:
