@@ -146,16 +146,18 @@
 
       do n=1,nsmax
         if(.not.IsAloft(n)) cycle
-        !$OMP PARALLEL DO &
-        !$OMP DEFAULT(NONE) &
-        !$OMP SHARED(n,nxmax,nymax,ncells,nsmax,dt,concen_pd,kappa_pd,&
-        !$OMP vz_pd,sigma_nz_pd,outflow_xy1_pd,outflow_xy2_pd,vf_pd),&
-        !$OMP PRIVATE(l,i,j,q_cc,vel_cc,dt_vol_cc,usig_I,update_cc,&
-        !$OMP dq_I,fs_I,fss_I,ldq_I,dqu_I,i_I,i_cc,&
-        !$OMP aus,theta,divu_p,divu_m,&
-        !$OMP LFluct_Rbound,RFluct_Lbound,&
-        !$OMP LimFlux_Rbound,LimFlux_Lbound),&
-        !$OMP collapse(2)
+        !$OMP PARALLEL DO                                             &
+        !$OMP SCHEDULE (static)                                       &
+        !$OMP DEFAULT(NONE)                                           &
+        !$OMP SHARED(n,jmin,jmax,imin,imax,rmin,rmax,nzmax,ncells,    &
+        !$OMP        dt,concen_pd,kappa_pd,vf_pd,                     &
+        !$OMP        vz_pd,sigma_nz_pd,outflow_xy1_pd,outflow_xy2_pd) &
+        !$OMP PRIVATE(l,i,j,q_cc,vel_cc,dt_vol_cc,usig_I,update_cc,   &
+        !$OMP         dq_I,fs_I,fss_I,ldq_I,dqu_I,i_I,i_cc,           &
+        !$OMP         aus,theta,divu_p,divu_m,                        &
+        !$OMP         LFluct_Rbound,RFluct_Lbound,                    &
+        !$OMP         LimFlux_Rbound,LimFlux_Lbound)                  &
+        !$OMP COLLAPSE(2)
         do j=jmin,jmax
           do i=imin,imax
             ! Initialize cell-centered values for this z-column
@@ -303,10 +305,10 @@
                 ! Flux out the + side of advection row  (top of domain)
                 outflow_xy2_pd(i,j,n) = outflow_xy2_pd(i,j,n) + update_cc(ncells+1)
 
-          enddo
-        enddo
+          enddo ! loop over i=imin,imax
+        enddo ! loop over j=jmin,jmax
         !$OMP END PARALLEL DO
-      enddo ! loop over idx_dum
+      enddo ! loop over n
 
       concen_pd(  1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)

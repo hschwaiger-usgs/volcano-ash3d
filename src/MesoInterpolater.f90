@@ -45,7 +45,8 @@
          vx_pd,vy_pd,vz_pd,vf_pd
 
       use time_data,       only : &
-         Simtime_in_hours,time,dt,SimStartHour,dt_meso_last,dt_meso_next
+         Simtime_in_hours,time,dt,SimStartHour,dt_meso_last,dt_meso_next, &
+         tw1,tw2,tw_tot
 
       use io_data,       only : &
          NextWriteTime
@@ -129,7 +130,10 @@
                     MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now)
         endif;enddo
 
+        call cpu_time(tw1)
         call Read_NextMesoStep(Load_MesoSteps)
+        call cpu_time(tw2)
+        tw_tot = tw_tot + (tw2-tw1)
 
         ! We only loaded one step so set load flag to True
         Load_MesoSteps = .true.
@@ -175,7 +179,10 @@
 
         ! Copy the timestep from next to last
         dt_meso_last = dt_meso_next
+        call cpu_time(tw1)
         call Read_NextMesoStep(Load_MesoSteps)
+        call cpu_time(tw2)
+        tw_tot = tw_tot + (tw2-tw1)
 
         if(useFastDt)then
           ! Now calculate the dt at the next timestep (again, even though it might

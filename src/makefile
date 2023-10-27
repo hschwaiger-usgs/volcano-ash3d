@@ -47,6 +47,7 @@ SYSTEM = gfortran
 #                 To run, enter: env OMP_NUM_THREADS=4 Ash3d input_file.inp
 #    This variable cannot be left blank
 #RUN = DEBUG
+#RUN = DEBUGOMP
 #RUN = PROF
 RUN = OPT
 #RUN = OMPOPT
@@ -269,12 +270,12 @@ ifeq ($(SYSTEM), gfortran)
     # -lefence
 # Debugging flags
 ifeq ($(RUN), DEBUG)
-    FFLAGS = -O0 -g3 -Wall -Wextra -fimplicit-none  -Wall  -Wline-truncation  -Wcharacter-truncation  -Wsurprising  -Waliasing  -Wimplicit-interface  -Wunused-parameter  -fwhole-file  -fcheck=all -pedantic  -fbacktrace -Wunderflow -ffpe-trap=invalid,zero,overflow 
+    FFLAGS = -O0 -g3 -Wall -Wextra -fimplicit-none -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -Wimplicit-interface -Wunused-parameter -fwhole-file -fcheck=all -pedantic -fbacktrace -Wunderflow -ffpe-trap=invalid,zero,overflow -Wuninitialized -Wmaybe-uninitialized
 #-fdefault-real-8 -std=f2008 
     ASH3DEXEC=Ash3d_debug
 endif
 ifeq ($(RUN), DEBUGOMP)
-    FFLAGS =  -g3 -pg -Wall -fbounds-check -pedantic -fimplicit-none -Wunderflow -Wuninitialized -Wmaybe-uninitialized -ffpe-trap=invalid,zero,overflow -fdefault-real-8 -fopenmp -lgomp
+    FFLAGS = -O0 -g3 -Wall -Wextra -fimplicit-none -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -Wimplicit-interface -Wunused-parameter -fwhole-file -fcheck=all -pedantic -fbacktrace -Wunderflow -ffpe-trap=invalid,zero,overflow -Wuninitialized -Wmaybe-uninitialized -fopenmp -lgomp
     ASH3DEXEC=Ash3d_debugomp
 endif
 # Profiling flags

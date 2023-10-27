@@ -125,16 +125,18 @@
 
       do n=1,nsmax
         if(.not.IsAloft(n)) cycle
-        !$OMP PARALLEL DO &
-        !$OMP DEFAULT(NONE) &
-        !$OMP SHARED(n,nymax,nzmax,ncells,nsmax,dt,concen_pd,kappa_pd,&
-        !$OMP vx_pd,sigma_nx_pd,outflow_yz1_pd,outflow_yz2_pd,IsPeriodic),&
-        !$OMP PRIVATE(l,j,k,q_cc,vel_cc,dt_vol_cc,usig_I,update_cc,&
-        !$OMP dq_I,fs_I,fss_I,ldq_I,dqu_I,i_I,i_cc,&
-        !$OMP aus,theta,divu_p,divu_m,&
-        !$OMP LFluct_Rbound,RFluct_Lbound,&
-        !$OMP LimFlux_Rbound,LimFlux_Lbound),&
-        !$OMP collapse(2)
+        !$OMP PARALLEL DO                                             &
+        !$OMP SCHEDULE (static)                                       &
+        !$OMP DEFAULT(NONE)                                           &
+        !$OMP SHARED(n,kmin,kmax,jmin,jmax,rmin,rmax,nxmax,ncells,    &
+        !$OMP        dt,concen_pd,kappa_pd,IsPeriodic,                &
+        !$OMP        vx_pd,sigma_nx_pd,outflow_yz1_pd,outflow_yz2_pd) &
+        !$OMP PRIVATE(l,j,k,q_cc,vel_cc,dt_vol_cc,usig_I,update_cc,   &
+        !$OMP         dq_I,fs_I,fss_I,ldq_I,dqu_I,i_I,i_cc,           &
+        !$OMP         aus,theta,divu_p,divu_m,                        &
+        !$OMP         LFluct_Rbound,RFluct_Lbound,                    &
+        !$OMP         LimFlux_Rbound,LimFlux_Lbound)                  &
+        !$OMP COLLAPSE(2)
         do k=kmin,kmax
           do j=jmin,jmax
             ! Initialize cell-centered values for this x-row
@@ -281,11 +283,11 @@
               ! Flux out the + side of advection row  (E)
               outflow_yz2_pd(j,k,n) = outflow_yz2_pd(j,k,n) + update_cc(nxmax+1)
 
-          enddo ! 
-        enddo ! loop over j=1,nymax
-      !$OMP END PARALLEL do
+          enddo ! loop over j=jmin,jmax
+        enddo ! loop over k=kmin,kmax
+      !$OMP END PARALLEL DO
 
-      enddo ! loop over idx_dum
+      enddo ! loop over n
 
       concen_pd(  1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
@@ -371,16 +373,18 @@
 
       do n=1,nsmax
         if(.not.IsAloft(n)) cycle
-        !$OMP PARALLEL DO &
-        !$OMP DEFAULT(NONE) &
-        !$OMP SHARED(n,nxmax,nzmax,ncells,nsmax,dt,concen_pd,kappa_pd,&
-        !$OMP vy_pd,sigma_ny_pd,outflow_xz1_pd,outflow_xz2_pd),&
-        !$OMP PRIVATE(l,i,k,q_cc,vel_cc,dt_vol_cc,usig_I,update_cc,&
-        !$OMP dq_I,fs_I,fss_I,ldq_I,dqu_I,i_I,i_cc,&
-        !$OMP aus,theta,divu_p,divu_m,&
-        !$OMP LFluct_Rbound,RFluct_Lbound,&
-        !$OMP LimFlux_Rbound,LimFlux_Lbound),&
-        !$OMP collapse(2)
+        !$OMP PARALLEL DO                                             &
+        !$OMP SCHEDULE (static)                                       &
+        !$OMP DEFAULT(NONE)                                           &
+        !$OMP SHARED(n,kmin,kmax,imin,imax,rmin,rmax,nymax,ncells,    &
+        !$OMP        dt,concen_pd,kappa_pd,                           &
+        !$OMP        vy_pd,sigma_ny_pd,outflow_xz1_pd,outflow_xz2_pd) &
+        !$OMP PRIVATE(l,i,k,q_cc,vel_cc,dt_vol_cc,usig_I,update_cc,   &
+        !$OMP         dq_I,fs_I,fss_I,ldq_I,dqu_I,i_I,i_cc,           &
+        !$OMP         aus,theta,divu_p,divu_m,                        &
+        !$OMP         LFluct_Rbound,RFluct_Lbound,                    &
+        !$OMP         LimFlux_Rbound,LimFlux_Lbound)                  &
+        !$OMP COLLAPSE(2)
         do k=kmin,kmax
           do i=imin,imax
             ! Initialize cell-centered values for this y-row
@@ -526,11 +530,11 @@
               ! Flux out the + side of advection row  (S)
               outflow_xz2_pd(i,k,n) = outflow_xz2_pd(i,k,n) + update_cc(nymax+1)
 
-          enddo ! 
-        enddo ! loop over i=1,nxmax
-      !$OMP END PARALLEL do
+          enddo ! loop over i=imin,imax
+        enddo ! loop over k=kmin,kmax
+      !$OMP END PARALLEL DO
 
-      enddo ! loop over idx_dum
+      enddo ! loop over n
 
       concen_pd(  1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)

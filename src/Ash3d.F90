@@ -63,7 +63,8 @@
          Write_PT_Data,Write_PR_Data
 
       use time_data,     only : &
-         time,dt,Simtime_in_hours,t0,t1,t2,ntmax
+         time,dt,Simtime_in_hours,t0,t1,t2,ntmax,tcount1,tcount2,&
+         tcount_rate,tcount_max,tw_tot
 
       use Ash3d_Program_Control, only : &
            Parse_Command_Line, &
@@ -159,6 +160,7 @@
 
       ! Start time logging
       call cpu_time(t0) !time is a scaler real
+      call system_clock(tcount1,tcount_rate,tcount_max)
 
       ! First, parse the command line
       call Parse_Command_Line
@@ -669,9 +671,12 @@
       call output_results
       ! Write results to log and standard output
       call cpu_time(t2) ! time is a scalar real
+      call system_clock(tcount2,tcount_rate,tcount_max)
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),5003) t1-t0, t2-t1, time*HR_2_S
-        write(outlog(io),5004) time*HR_2_S/(t2-t1)
+        write(outlog(io),5003) t1-t0,tw_tot,t2-t1,&
+                               real(tcount2-tcount1,kind=dp)/real(tcount_rate,kind=dp)
+!        write(outlog(io),5003) t1-t0, t2-t1, time*HR_2_S
+!        write(outlog(io),5004) time*HR_2_S/(t2-t1)
       endif;enddo
       call TimeStepTotals(itime)
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -696,10 +701,14 @@
                 5x,'Source',6x,'Deposit',7x,'Aloft',5x,'Outflow',&
                 7x,'Total',10x,'km2')
 
-5003  format(/,5x,'Set-up time              = ',f15.4,' seconds',/&
-               5x,'Execution time           = ',f15.4,' seconds',/&
-              ,5x,'Simulation time          = ',f15.4,' seconds')       
-5004  format(  5x,'Execution time/CPU time  = ',f15.4)       
+5003  format(/,5x,'Set-up time (cpu)         = ',f15.4,' seconds',/&
+               5x,'MetReader time (cpu)      = ',f15.4,' seconds',/&
+               5x,'Total solver time (cpu)   = ',f15.4,' seconds',/&
+              ,5x,'Wall clock time           = ',f15.4,' seconds') 
+!5003  format(/,5x,'Set-up time              = ',f15.4,' seconds',/&
+!               5x,'Execution time           = ',f15.4,' seconds',/&
+!              ,5x,'Simulation time          = ',f15.4,' seconds')      
+!5004  format(  5x,'Execution time/CPU time  = ',f15.4)
 5005  format(  5x,'Ending deposit volume    = ',f15.4,' km3 DRE')       
 5006  format(  5x,'Ending total volume      = ',f15.4,' km3 DRE')       
 5007  format(  5x,'Building time array of plume height & eruption rate')
