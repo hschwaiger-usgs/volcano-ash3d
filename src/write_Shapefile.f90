@@ -90,9 +90,10 @@
       logical           :: debugmode = .false.
 
       integer                                  :: nrec      ! num of records (e.g. contour levels)
+      integer(kind=4),dimension(:),allocatable :: rec2lev   ! mapping of record to contour level index
       integer(kind=4),dimension(:),allocatable :: NumParts
       integer(kind=4),dimension(:),allocatable :: NumPoints ! total points
-      integer :: i,irec,ipart,ipt
+      integer :: i,ilev,irec,ipart,ipt
       integer,dimension(:),allocatable :: reclen
       integer :: offset
       integer :: iw,iwf
@@ -273,8 +274,14 @@
 
       ! Get number of records; number of actual contour levels used
       nrec=0
-      do i = 1,nConLev
-        if(ContourDataNcurves(i).gt.0)nrec=nrec+1
+      allocate(rec2lev(nConLev))
+      rec2lev = 0
+      do ilev = 1,nConLev
+        if(ContourDataNcurves(ilev).gt.0)then
+          nrec=nrec+1
+          ! log the mapping of record level to contour index
+          rec2lev(nrec) = ilev
+        endif
       enddo
 
       ! We allocate variables here to hold the contour data mainly so ensure that
@@ -287,28 +294,31 @@
       allocate(ymin(nrec)); ymin(:) =  1.0e8_8
       allocate(ymax(nrec)); ymax(:) = -1.0e8_8
 
-      do irec = 1,nrec  ! This is the loop of the layers (records)
-        NumParts(irec) = ContourDataNcurves(irec)
+      do irec = 1,nrec  ! This is the loop over the layers (records)
+      !irec = 0
+      !do ilev = 1,nConLev  ! This is the loop over the contours
+        ilev = rec2lev(irec)
+        NumParts(irec) = ContourDataNcurves(ilev)
         NumPoints(irec) = 0  ! Initialize the number of points for this record
         ! Loop through all the parts (individual curves) for this level and sum points
-        do ipart = 1,ContourDataNcurves(irec)
-          NumPoints(irec) = NumPoints(irec) + ContourDataNpoints(irec,ipart)
+        do ipart = 1,ContourDataNcurves(ilev)
+          NumPoints(irec) = NumPoints(irec) + ContourDataNpoints(ilev,ipart)
         enddo
         ! Set the min/max for each record, as well as the global min/max and
         ! the length of each polyline record
-        do ipart = 1,ContourDataNcurves(irec)
-          do ipt = 1,ContourDataNpoints(irec,ipart)
-            if(ContourDataX(irec,ipart,ipt).lt.xmin(irec))then
-              xmin(irec) = ContourDataX(irec,ipart,ipt)
+        do ipart = 1,ContourDataNcurves(ilev)
+          do ipt = 1,ContourDataNpoints(ilev,ipart)
+            if(ContourDataX(ilev,ipart,ipt).lt.xmin(irec))then
+              xmin(irec) = ContourDataX(ilev,ipart,ipt)
             endif
-            if(ContourDataX(irec,ipart,ipt).gt.xmax(irec))then
-              xmax(irec) = ContourDataX(irec,ipart,ipt)
+            if(ContourDataX(ilev,ipart,ipt).gt.xmax(irec))then
+              xmax(irec) = ContourDataX(ilev,ipart,ipt)
             endif
-            if(ContourDataY(irec,ipart,ipt).lt.ymin(irec))then
-              ymin(irec) = ContourDataY(irec,ipart,ipt)
+            if(ContourDataY(ilev,ipart,ipt).lt.ymin(irec))then
+              ymin(irec) = ContourDataY(ilev,ipart,ipt)
             endif
-            if(ContourDataY(irec,ipart,ipt).gt.ymax(irec))then
-              ymax(irec) = ContourDataY(irec,ipart,ipt)
+            if(ContourDataY(ilev,ipart,ipt).gt.ymax(irec))then
+              ymax(irec) = ContourDataY(ilev,ipart,ipt)
             endif
           enddo
         enddo
@@ -501,15 +511,16 @@
         ! Address of the start of the first part is 0
         write(ov_mainID)LitEnd_4int(IsLitEnd,0_4) ! An array of length NumParts with each value
                                                   ! the address (zero-offset) of the start of the part
+        ilev = rec2lev(irec)
         do i=1,NumParts(irec)-1
-          tmp4 = sum(ContourDataNpoints(irec,1:i)) !-1
+          tmp4 = sum(ContourDataNpoints(ilev,1:i)) !-1
           write(ov_mainID)LitEnd_4int(IsLitEnd,tmp4)
         enddo
 
-        do ipart=1,ContourDataNcurves(irec)
-          do i=1,ContourDataNpoints(irec,ipart)
-            write(ov_mainID)LitEnd_8real(IsLitEnd,real(ContourDataX(irec,ipart,i),kind=8))
-            write(ov_mainID)LitEnd_8real(IsLitEnd,real(ContourDataY(irec,ipart,i),kind=8))
+        do ipart=1,ContourDataNcurves(ilev)
+          do i=1,ContourDataNpoints(ilev,ipart)
+            write(ov_mainID)LitEnd_8real(IsLitEnd,real(ContourDataX(ilev,ipart,i),kind=8))
+            write(ov_mainID)LitEnd_8real(IsLitEnd,real(ContourDataY(ilev,ipart,i),kind=8))
           enddo ! points in part
         enddo ! ipart
 
@@ -782,6 +793,7 @@
       endif
 
       ! clean up memory
+      if(allocated(rec2lev))             deallocate(rec2lev)
       if(allocated(NumParts))            deallocate(NumParts)
       if(allocated(NumPoints))           deallocate(NumPoints)
       if(allocated(reclen))              deallocate(reclen)
@@ -790,11 +802,19 @@
       if(allocated(ymin))                deallocate(ymin)
       if(allocated(ymax))                deallocate(ymax)
 
+#ifdef USEPOINTERS
+      if(associated(ContourLev))         deallocate(ContourLev)
+      if(associated(ContourDataNcurves)) deallocate(ContourDataNcurves)
+      if(associated(ContourDataNpoints)) deallocate(ContourDataNpoints)
+      if(associated(ContourDataX))       deallocate(ContourDataX)
+      if(associated(ContourDataY))       deallocate(ContourDataY)
+#else
       if(allocated(ContourLev))         deallocate(ContourLev)
       if(allocated(ContourDataNcurves)) deallocate(ContourDataNcurves)
       if(allocated(ContourDataNpoints)) deallocate(ContourDataNpoints)
       if(allocated(ContourDataX))       deallocate(ContourDataX)
       if(allocated(ContourDataY))       deallocate(ContourDataY)
+#endif
 
       end subroutine write_ShapeFile_Polyline
 

@@ -20,7 +20,7 @@
       use io_units
 
       use global_param,  only : &
-        DirDelim
+         DirDelim
 
       use io_data,       only : &
          Ash3dHome
@@ -34,13 +34,13 @@
 
         ! Publicly available subroutines/functions
       public write_2Dmap_PNG_dislin,    &
-             write_2Dprof_PNG_dislin
+             write_2Dprof_PNG_dislin,   &
+             write_DepPOI_TS_PNG_dislin
 
         ! Publicly available variables
 
       integer,parameter :: DS = 8
-      character(100) :: USGSIconFile
-
+      character(100)    :: USGSIconFile
 
       contains
       !------------------------------------------------------------------------

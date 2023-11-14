@@ -21,7 +21,7 @@
       use io_units
 
       use global_param,  only : &
-        DirDelim
+         DirDelim
 
       use io_data,       only : &
          Ash3dHome,concenfile
@@ -42,7 +42,6 @@
              write_DepPOI_TS_PNG_GMT
 
         ! Publicly available variables
-
 
       character(100) :: USGSIconFile
 
@@ -113,22 +112,20 @@
       real(kind=ip),intent(in) :: OutVar(nx,ny)
       logical      ,intent(in) :: writeContours
 
-      logical          :: mask(nx,ny)
-      character(len=6) :: Fill_Value
-      character(16)  :: filedat
-      character(16)  :: filetxt
-      character(16)  :: fileps  = "temp.ps"
-      character(200) :: cmd
-      !character(20)  :: module
-      !character(100) args
+      logical            :: mask(nx,ny)
+      character(len=6)   :: Fill_Value
+      character(len=16)  :: filedat
+      character(len=16)  :: filetxt
+      character(len=16)  :: fileps  = "temp.ps"
+      character(len=200) :: cmd
 
       integer :: i,j,ii
       integer     , dimension(:,:),allocatable :: zrgb
       character(len=40) :: title_plot
       character(len=15) :: title_legend
       character(len=40) :: outfile_name
-      character (len=9) :: cio
-      character (len=4) :: outfile_ext = '.png'
+      character(len= 9) :: cio
+      character(len= 4) :: outfile_ext = '.png'
       character(len=10) :: units
 
       real(kind=ip)  :: xmin
@@ -139,9 +136,7 @@
       character(len=10) :: dp_gmtfile
       character(len=10) :: dp_outfile
       character(len=10) :: dp_confile
-      !character(len=26) :: coord_str
       character(len=25) :: gmtcom
-      !character(len=80) :: gnucoastfile
       integer :: ioerr,ioerr2,iw,iwf,istat
 
       integer :: ncities
@@ -589,13 +584,13 @@
 
       ! Set up to plot via GMT script
       write(55,*)'#!/bin/bash'
-      write(55,*)'gmt gmtset PROJ_ELLIPSOID Sphere'
+      if(.not.writeContours)write(55,*)'gmt gmtset PROJ_ELLIPSOID Sphere'
       cmd = 'gmt psbasemap -X1.5i -Y2i ' // adjustl(trim(area_str))   // " " // &
                               adjustl(trim(proj_str))   // " " // &
                               adjustl(trim(base_str))   // " " // &
                               adjustl(trim(title_str))  // " " // &
                               adjustl(trim(start_ps))
-      write(55,*)adjustl(trim(cmd))
+      if(.not.writeContours)write(55,*)adjustl(trim(cmd))
 
       cmd = "gmt pscoast " // adjustl(trim(area_str))   // " " // &
                               adjustl(trim(proj_str))   // " " // &
@@ -603,21 +598,34 @@
                               adjustl(trim(coast_str))  // " " // &
                               adjustl(trim(river_str))  // " " // &
                               adjustl(trim(contn_ps))
-      write(55,*)adjustl(trim(cmd))
+      if(.not.writeContours)write(55,*)adjustl(trim(cmd))
 
       ! Get grid to contour, converting the ASCII file generated above
+      ! We need this line regardless of if we are just making contours or not
       cmd = "gmt grdconvert outvar.dat=ef out.grd"
       write(55,*)adjustl(trim(cmd))
 
       ! write contour
       !gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_1.lev    -A- -W3,0/128/255   -O -K >> temp.ps
-      do i=1,nConLev
-        write(55,*)'echo "',real(ContourLev(i),kind=4), '   C" > c.lev'
+      do ilev=1,nConLev
+        write(55,*)'echo "',real(ContourLev(ilev),kind=4), '   C" > c.lev'
         cmd = "gmt grdcontour out.grd " // adjustl(trim(area_str))  // " " // &
                               adjustl(trim(proj_str))  // " " // &
-                              "-Cc.lev -A- " // adjustl(trim(penstr(i))) // " " // &
+                              "-Cc.lev -A- " // adjustl(trim(penstr(ilev))) // " " // &
                               adjustl(trim(contn_ps))
-        write(55,*)adjustl(trim(cmd))
+        if(.not.writeContours)write(55,*)adjustl(trim(cmd))
+
+        if(writeContours)then
+          ! write contours to files
+          write(dp_confile,54) "out",ilev,".con"
+ 54       format(a3,i0.2,a4)  ! write contour file name with level zero-padded
+          !gmt grdcontour out.grd $AREA $PROJ $BASE -Cc.lev    -A- -W3,0/128/255 -Dcfile.xyz
+!          write(55,*)'echo "',real(ContourLev(i),kind=4), '   C" > c.lev'
+          cmd = "gmt grdcontour out.grd " // adjustl(trim(area_str))  // " " // &
+                                adjustl(trim(proj_str))  // " " // &
+                                "-Cc.lev -A- " // adjustl(trim(penstr(ilev))) // " -D" // adjustl(trim(dp_confile))
+          write(55,*)adjustl(trim(cmd))
+        endif
       enddo
 
       ! Add cities.
@@ -627,7 +635,7 @@
               // adjustl(trim(area_str))  // " " // &
               adjustl(trim(proj_str))  // " " // &
               "-Sc0.05i -Gblack -Wthinnest " // adjustl(trim(contn_ps))
-        write(55,*)adjustl(trim(cmd))
+        if(.not.writeContours)write(55,*)adjustl(trim(cmd))
 
         write(dumstr48,'(a1,f8.3,1x,f8.3,1x,a1,a26,a1,a1)')'"',&
                lon_cities(i),lat_cities(i),"'",adjustl(trim(name_cities(i))),"'",'"'
@@ -635,7 +643,7 @@
               // adjustl(trim(area_str))  // " " // &
               adjustl(trim(proj_str))  // " " // &
               "-D0.1/0.1 -V " // adjustl(trim(contn_ps))
-        write(55,*)adjustl(trim(cmd))
+        if(.not.writeContours)write(55,*)adjustl(trim(cmd))
       enddo
 
       ! Last gmt command is to plot the volcano and close out the ps file
@@ -645,7 +653,7 @@
             // adjustl(trim(area_str))  // " " // &
             adjustl(trim(proj_str))  // " " // &
             "-St0.1i -Gmagenta -Wthinnest " // adjustl(trim(contn_ps))
-      write(55,*)adjustl(trim(cmd))
+      if(.not.writeContours)write(55,*)adjustl(trim(cmd))
 
       ! Add descriptive footer here
       !gmt pslegend leg1.txt -R-134.500/-97.500/33.500/52.500  -JM-122.117/42.933/7i -Dx-1.0i/-1.5i/3.0i/1.0i/BL -K -O  >> temp.ps
@@ -653,14 +661,14 @@
                                      // adjustl(trim(proj_str)) &
                                      // " -Dx-1.0i/-1.5i/3.0i/1.0i/BL " &
                                      // adjustl(trim(contn_ps))
-      write(55,*)adjustl(trim(cmd))
+      if(.not.writeContours)write(55,*)adjustl(trim(cmd))
 
       !gmt pslegend leg2.txt -R-134.500/-97.500/33.500/52.500  -JM-122.117/42.933/7i -Dx2.0i/-1.5i/4.0i/1.0i/BL -K -O  >> temp.ps
       cmd = "gmt pslegend leg2.txt " // adjustl(trim(area_str)) &
                                      // adjustl(trim(proj_str)) &
                                      // " -Dx2.0i/-1.5i/4.0i/1.0i/BL " &
                                      // adjustl(trim(contn_ps))
-      write(55,*)adjustl(trim(cmd))
+      if(.not.writeContours)write(55,*)adjustl(trim(cmd))
 
       !gmt pslegend leg3.txt -R-134.500/-97.500/33.500/52.500  -JM-122.117/42.933/7i -Dx6.0i/-2.3i/2.0i/1.0i/BL -K -O  >> temp.ps
       inquire( file="leg3.txt", exist=IsThere)
@@ -669,21 +677,20 @@
                                      // adjustl(trim(proj_str)) &
                                      // " -Dx6.0i/-2.3i/2.0i/1.0i/BL " &
                                      // adjustl(trim(contn_ps))
-        write(55,*)adjustl(trim(cmd))
+        if(.not.writeContours)write(55,*)adjustl(trim(cmd))
       endif
       ! Add contour legend here
       cmd = "gmt pslegend leg4.txt " // adjustl(trim(area_str)) &
                                      // adjustl(trim(proj_str)) &
                                      // " -Dx8.0i/2.0i/1.25i/2.5i/BL -F " &
                                      // adjustl(trim(end_ps))
-      write(55,*)adjustl(trim(cmd))
+      if(.not.writeContours)write(55,*)adjustl(trim(cmd))
 
       !gmt pslegend leg4.txt -R-134.500/-97.500/33.500/52.500  -JM-122.117/42.933/7i -Dx8.0i/2.0i/1.25i/2.5i/BL -F -O  >> temp.ps
 
-
       ! This command converts temp.ps to temp.png
       cmd = "gmt psconvert temp.ps -A -Tg"
-      write(55,*)adjustl(trim(cmd))
+      if(.not.writeContours)write(55,*)adjustl(trim(cmd))
 
       ! Might need to add this check in the GMT script on version 5 vs 6 (5 needs rotation)
       !GMTv=`gmt --version | cut -c1`
@@ -692,18 +699,99 @@
       !if [ $GMTv -eq 5 ] ; then
       !  convert temp.png -resize 630x500 -alpha off temp.gif
 
-
       ! Move this png to the final filename
       cmd = " mv temp.png " // outfile_name
-      write(55,*)adjustl(trim(cmd))
+      if(.not.writeContours)write(55,*)adjustl(trim(cmd))
 
       ! Clean up
-      cmd = "rm -f c.lev out.grd temp.* leg*.txt"
+      cmd = "rm -f c.lev out.grd temp.* leg*.txt out*.con cities.xy"
       write(55,*)adjustl(trim(cmd))
 
       close(55)
       write(gmtcom,'(a3,a14)')'sh ',dp_gmtfile
       call execute_command_line(gmtcom,exitstat=istat)
+
+      ! GMT script has been run, now we need to read the contour lines if we want
+      ! to write a shapefile
+      if(writeContours)then
+        ContourDataNcurves(:) = 0
+        do ilev=1,nConLev
+          write(dp_confile,54) "out",ilev,".con"
+          ! Read dp_confile
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Now trying to read contour file and loading contour data.",&
+                adjustl(trim(dp_confile))
+          endif;enddo
+          inquire( file=trim(adjustl(dp_confile)), exist=IsThere)
+          if(IsThere)then
+            open(54,file=dp_confile,status='old')
+          else
+            ! File does not exist; try next contour level
+            cycle
+          endif
+        ! In the GMT contour files, all contours of a have a header in the following
+        ! format:
+        !> 0.01 contour -Z0.01
+        ! Each curve for that level is separated by a line containing '>'
+
+        read(54,'(a80)',iostat=ioerr)linebuffer080
+        do while(ioerr.ge.0)
+          ! Check if this is a header line
+          read(linebuffer080,*,iostat=ioerr2)testkey
+          if(ioerr2.lt.0)then
+            ! If reading one character fails, then there is a blank line
+            ! shouldn't happen with  GMT v 5 or 6
+            ! Log zero contours for this level
+            ioerr = -1
+            ContourDataNcurves(ilev) = 0
+            cycle
+
+          elseif(testkey.eq.'>')then
+            ! This is a header line
+            !   n it will have this format:> 0.03 contour -Z0.03
+            substr_pos1 = index(linebuffer080,'contour')
+
+            if(substr_pos1.eq.0)then
+              ! key > is present, but 'contour' is not
+              read(54,'(a80)',iostat=ioerr)linebuffer080
+              cycle
+            else
+              ! Contours are all written to separate files
+              ! Increment the number of curves for this level
+              ContourDataNcurves(ilev) = ContourDataNcurves(ilev) + 1
+              icurve = ContourDataNcurves(ilev)
+            endif
+          else
+            ! This is the data section
+            ! Increment the number of points
+            ContourDataNpoints(ilev,icurve) = ContourDataNpoints(ilev,icurve) + 1
+            ipt = ContourDataNpoints(ilev,icurve)
+            read(linebuffer080,*)ContourDataX(ilev,icurve,ipt),ContourDataY(ilev,icurve,ipt)
+          endif
+
+            ! Try to read the next line
+            read(54,'(a80)',iostat=ioerr)linebuffer080
+          enddo    ! ioerr.ge.0
+          close(54)  ! Close this contour file and open the next
+        enddo    ! ilev=1,nConLev
+
+        ! Loop through all the levels and curves and trim any curves with zero length
+        do ilev=1,nConLev
+          ! start at the last contour level
+          icurve = Contour_MaxCurves + 1
+          do ii=Contour_MaxCurves,1,-1
+            if(ContourDataNpoints(ilev,ii).le.0)then
+              ! log each curve number with no points
+              icurve = ii
+            endif
+          enddo
+          ContourDataNcurves(i) = max(0,icurve-1)
+        enddo
+      endif
+
+
+
+
 
       ! This is a test section that uses the GMT API
       !character(16) filedat,fileps

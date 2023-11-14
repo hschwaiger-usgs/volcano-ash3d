@@ -355,15 +355,30 @@
         endif;enddo
         read(input_unit,*)outformat
 
-        do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)'Select time step:'
-          do i=1,nWriteTimes
-            write(outlog(io),*)i,WriteTimes(i)
-          enddo
-          write(outlog(io),*)'Enter index for time step:'
-        endif;enddo
-        read(input_unit,*)itime
-
+        if(iprod.eq.5.or.iprod.eq.6)then
+          ! For final deposit variables, set itime to -1
+          itime = -1
+        elseif(iprod.eq.1.or.&
+               iprod.eq.2.or.&
+               iprod.eq.3.or.&
+               iprod.eq.4.or.&
+               iprod.eq.9.or.&
+               iprod.eq.10.or.&
+               iprod.eq.11.or.&
+               iprod.eq.12.or.&
+               iprod.eq.13)then
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)'Select time step:'
+            do i=1,nWriteTimes
+              write(outlog(io),*)i,WriteTimes(i)
+            enddo
+            write(outlog(io),*)'Enter index for time step:'
+          endif;enddo
+          read(input_unit,*)itime
+        else
+          ! iprod = 7,8,14,15 are not time-series, but set itime to -1
+          itime = -1
+        endif
       elseif (nargs.eq.1) then
           ! If an argument is given, first test for the '-h' indicating a help
           ! request.

@@ -21,7 +21,7 @@
       use io_units
 
       use global_param,  only : &
-        DirDelim
+         DirDelim
 
       use io_data,       only : &
          Ash3dHome
@@ -37,6 +37,8 @@
              write_DepPOI_TS_PNG_gnuplot
 
         ! Publicly available variables
+
+!      character(100) :: USGSIconFile
 
       contains
       !------------------------------------------------------------------------
@@ -109,8 +111,8 @@
       character(len=40) :: title_plot
       character(len=15) :: title_legend
       character(len=40) :: outfile_name
-      character (len=9) :: cio
-      character (len=4) :: outfile_ext = '.png'
+      character(len= 9) :: cio
+      character(len= 4) :: outfile_ext = '.png'
       character(len=10) :: units
 
       real(kind=ip)  :: xmin
