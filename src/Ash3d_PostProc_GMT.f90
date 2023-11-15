@@ -460,23 +460,23 @@
       !  Left panel
       open(61,file="leg1.txt",status='replace')
 
-      write(61,*)"P"
-      write(61,*)"T Volcano: ",VolcanoName
-      write(61,*)"G0.2i"
-      write(61,*)"T Run Date: ",os_time_log
-      write(61,*)"G0.2i"
+      write(61,'(a1)')"P"
+      write(61,'(a11,a30)')"T Volcano: ",VolcanoName
+      write(61,'(a5)')"G0.2i"
+      write(61,'(a12,a20)')"T Run Date: ",os_time_log
+      write(61,'(a5)')"G0.2i"
       read(cdf_b3l1,*,iostat=ioerr) iw,iwf
-      write(61,*)"T Windfile: ",iwf
+      write(61,'(a12,i3)')"T Windfile: ",iwf
       close(61)
       !  Right panel
       open(62,file="leg2.txt",status='replace')
-      write(62,*)"T Erup. Start Time: ",HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap)
-      write(62,*)"G0.2i"
-      write(62,*)"T Erup. Plume Height: ",real(e_PlumeHeight(1),kind=4)," km"
-      write(62,*)"G0.2i"
-      write(62,*)"T Erup. Duration: ",real(e_Duration(1),kind=4)," hours"
-      write(62,*)"G0.2i"
-      write(62,*)"T Erup. Volume: ",real(e_Volume(1),kind=4)," km3(DRE)"
+      write(62,'(a20,a20)')"T Erup. Start Time: ",HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap)
+      write(62,'(a5)')"G0.2i"
+      write(62,'(a22,f5.2,a3)')"T Erup. Plume Height: ",real(e_PlumeHeight(1),kind=4)," km"
+      write(62,'(a)')"G0.2i"
+      write(62,'(a18,f5.2,a6)')"T Erup. Duration: ",real(e_Duration(1),kind=4)," hours"
+      write(62,'(a5)')"G0.2i"
+      write(62,'(a16,f5.2,a9)')"T Erup. Volume: ",real(e_Volume(1),kind=4)," km3(DRE)"
       close(62)
 
       !  USGS Logo
@@ -487,17 +487,17 @@
       inquire( file=trim(adjustl(USGSIconFile)), exist=IsThere)
       if(IsThere)then
         open(63,file="leg3.txt",status='replace')
-        write(63,*)"I ",adjustl(trim(USGSIconFile))," 2i C"
+        write(63,'(g0)')"I " // adjustl(trim(USGSIconFile)) // " 2i C"
         close(63)
       endif
 
       !  Contour legend
       open(64,file="leg4.txt",status='replace')
-        write(64,*)"C black"
-        write(64,*)"H 12 1 ",adjustl(trim(units))
-        write(64,*)"N 1"
+        write(64,'(a7)')"C black"
+        write(64,'(g0)')"H 12 1 " // adjustl(trim(units))
+        write(64,'(a3)')"N 1"
         do i=1,nConLev
-          write(64,*)adjustl(trim(legpenstr(i)))
+          write(64,'(g0)')adjustl(trim(legpenstr(i)))
         enddo
       close(63)
 
@@ -700,7 +700,7 @@
       !  convert temp.png -resize 630x500 -alpha off temp.gif
 
       ! Move this png to the final filename
-      cmd = " mv temp.png " // outfile_name
+      cmd = "mv temp.png " // outfile_name
       if(.not.writeContours)write(55,*)adjustl(trim(cmd))
 
       ! Clean up

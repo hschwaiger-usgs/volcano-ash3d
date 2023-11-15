@@ -98,8 +98,8 @@ FASTFPPFLAG =
 #  be generated either with gnuplot or dislin.  Set the corresponding variable
 #  below to 'T' if you want to build with these libraries.  Set to 'F' any you want
 #  to use the default gnuplot.  
-USEPLPLOT = F
-USEDISLIN = F
+USEPLPLOT = T
+USEDISLIN = T
 USEGMT    = F  # Set to true only if using the API, otherwise scripts will be written
 
 MFILE=makefile

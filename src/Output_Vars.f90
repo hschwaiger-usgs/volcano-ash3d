@@ -188,7 +188,7 @@
       integer      ,dimension(:,:)  ,pointer,public:: Con_Cust_RGB        => null()
       real(kind=ip),dimension(:)    ,pointer,public:: Con_Cust_Lev        => null()
 #else
-      real(kind=ip),dimension(:),allocatable      ,public:: ContourLev
+      real(kind=ip),dimension(:)    ,allocatable  ,public:: ContourLev
       real(kind=ip),dimension(:,:,:),allocatable  ,public:: ContourDataX        ! x curve data with dims: ilev, icurve, ipnt
       real(kind=ip),dimension(:,:,:),allocatable  ,public:: ContourDataY        ! x curve data with dims: ilev, icurve, ipnt
       integer      ,dimension(:)    ,allocatable  ,public:: ContourDataNcurves  ! num of curves for each level (some = 0)
