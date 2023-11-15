@@ -45,7 +45,8 @@
              Calculate_Tephra_Shape,    &
              Sort_Tephra_Size,          &
              Set_Vf_Meso,               &
-             Prune_GS
+             Prune_GS,                  &
+             vset_WH                        ! This is only public for test cases
 
         ! Publicly available variables
 

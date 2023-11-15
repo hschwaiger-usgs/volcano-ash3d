@@ -401,10 +401,9 @@ Ash3d:  $(OBJECTS) $(DATAOBJ) Ash3d.F90 $(MFILE)
 	cp $(ASH3DEXEC) ../bin/Ash3d
 	mv $(ASH3DEXEC) ../bin/$(ASH3DEXEC)
 
-
 # Objects/Modules for initilization and model set-up
 Ash3d_VariableModules.o: $(ASH3dCCSRC)/Ash3d_VariableModules.f90 $(MFILE)
-	$(ASH3dCCSRC)/get_version.sh
+	sh $(ASH3dCCSRC)/get_version.sh
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Ash3d_VariableModules.f90
 Input_Data.o: $(ASH3dCCSRC)/Input_Data.f90 $(MFILE) Ash3d_VariableModules.o Help.o Tephra.o VotW.o Diffusion.o Airports.o $(DATAOBJ) Output_Vars.o Source.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Input_Data.f90
@@ -499,7 +498,7 @@ gmt.o: $(gmtfortloc)/src/gmt.f90 $(MFILE)
 Ash3d_PostProc_cities.o: Ash3d_PostProc_cities.f90 $(MFILE) Ash3d_VariableModules.o
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_cities.f90
 write_Shapefile.o: write_Shapefile.f90 $(MFILE) Ash3d_VariableModules.o
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_Shapefile.f90
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_Shapefile.f90
 
 tools: ascii_check
 
@@ -516,7 +515,7 @@ ascii_stats: $(ASH3dCCSRC)/tools/Ash3d_ASCII_stats.f90 Ash3d_VariableModules.o w
 	mv Ash3d_ASCII_stats ../bin/tools/Ash3d_ASCII_stats
 
 check: ascii_check Ash3d $(MFILE)
-	./run_tests.sh
+	sh run_tests.sh
 
 clean:
 	rm -rf $(OBJECTS) $(PPOBJS) $(GRAFOBJ) $(TOOLOBJ) Ash3d.o Ash3d_PostProc.o $(DATAOBJ) $(OPTMODS_OBJ) \
