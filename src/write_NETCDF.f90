@@ -3934,9 +3934,7 @@
           endif;enddo
           tn_len = 0
           ntmax  = 0
-          !hasAirportTSData = .false.
         else
-          !hasAirportTSData = .true.
           nSTAT = nf90_Inquire_Dimension(ncid,tn_dim_id,len=tn_len)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"Inquire_Dimension tn")
           ! Get variable id for this dimension
@@ -4450,12 +4448,17 @@
         !       tn_len will be 0
         allocate(dum1d_dp(1:tn_len))
         nSTAT = nf90_get_var(ncid,tn_var_id,dum1d_dp)
+!              nSTAT=nf90_get_var(ncid,x_var_id,dum1d_sp,  &
+!                       start = (/1/),       &
+!                       count = (/x_len/))
+!              if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var x")
+!              lon_cc_pd(1:nxmax) = real(dum1d_sp(1:nxmax),kind=ip)
+
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_var tn")
-        else
           dum1d_dp = 0.0_dp
         endif
-        time_native(1:tn_len) = real(dum1d_dp(1:tn_len),kind=ip)
+        time_native(1:tn_len) = real(dum1d_dp(1:tn_len),kind=dp)
         deallocate(dum1d_dp)
 
         if(Write_PR_Data)then

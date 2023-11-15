@@ -604,11 +604,14 @@
 
       subroutine write_2Dprof_PNG_dislin(vprof_ID)
 
+      use global_param,  only : &
+         KG_2_MG,KM3_2_M3
+
       use mesh,          only : &
          nzmax,z_cc_pd
 
       use Output_Vars,   only : &
-         pr_ash
+         pr_ash,CLOUDCON_THRESH
 
       use time_data,     only : &
          ntmax,time_native
@@ -638,6 +641,7 @@
       real(kind=DS) :: zmax
       real(kind=DS) :: zlab1
       real(kind=DS) :: zlabstep
+      real(kind=DS) :: cloudcon_thresh_mgm3
       real(kind=DS) :: cmin
       real(kind=DS) :: cmax
       real(kind=DS) :: clab1
@@ -700,8 +704,11 @@
         zlabstep = 1.0_DS
       endif
 
+      cloudcon_thresh_mgm3 = CLOUDCON_THRESH * KG_2_MG / KM3_2_M3 !convert from kg/km3 to mg/m3
       cmin=real(0,kind=DS)
-      cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=DS)
+      cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=DS)    ! Get the max value for this profile
+      cmax=real(max(cmax,cloudcon_thresh_mgm3),kind=DS)  ! Do not let cmax drop below the threshold
+
       if    (cmax.gt.4.0e4_DS)then
           clabstep = 5.0e3_DS
       elseif(cmax.gt.1.0e4_DS)then

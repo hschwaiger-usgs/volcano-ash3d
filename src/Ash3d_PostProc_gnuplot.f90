@@ -622,11 +622,14 @@
 
       subroutine write_2Dprof_PNG_gnuplot(vprof_ID)
 
+      use global_param,  only : &
+         KG_2_MG,KM3_2_M3
+
       use mesh,          only : &
          nzmax,z_cc_pd
 
       use Output_Vars,   only : &
-         pr_ash
+         pr_ash,CLOUDCON_THRESH
 
       use io_data,       only : &
          Site_vprofile,x_vprofile,y_vprofile,cdf_b3l1,VolcanoName
@@ -647,6 +650,14 @@
       integer :: k,i
       integer :: ioerr,iw,iwf
 
+      real(kind=ip)  :: tmin
+      real(kind=ip)  :: tmax
+      real(kind=ip)  :: zmin
+      real(kind=ip)  :: zmax
+      real(kind=ip)  :: cloudcon_thresh_mgm3
+      real(kind=ip)  :: cmin
+      real(kind=ip)  :: cmax
+
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
           real(kind=8)              :: HoursSince
@@ -660,6 +671,16 @@
       write(dp_pngfile,54) vprof_ID,".png"
  53   format('vprof_',i4.4,a4)
  54   format('gnupl_',i4.4,a4)
+
+      cloudcon_thresh_mgm3 = CLOUDCON_THRESH * KG_2_MG / KM3_2_M3 !convert from kg/km3 to mg/m3
+
+      tmin=real(0.0,kind=ip)
+      tmax=real(ceiling(time_native(ntmax)),kind=ip)
+      zmin=real(0.0,kind=ip)
+      zmax=real(z_cc_pd(nzmax),kind=ip)
+      cmin=real(0.0,kind=ip)
+      cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=ip)       ! Get the max value for this profile
+      cmax=real(max(cmax,cloudcon_thresh_mgm3),kind=ip)  ! Do not let cmax drop below the threshold
 
       open(54,file=dp_outfile,status='replace')
       do i = 1,ntmax
