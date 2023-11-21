@@ -61,27 +61,28 @@ installed, if possible:
 
 All of these packages (except dislin) are available on Red Hat and Ubuntu systems and can be installed
 using the standard distribution software installer (yum/dnf for RedHat systems or apt for
-Ubunto).  
+Ubunto).  For some of these packages and for some distributions, you might need to enable
+extra repositories, such as epel and powertools/CRB (for Red Hat systems)
 
 On RedHat-based systems, these can be installed with:  
-  `yum install lapack lapack-devel blas blas-devel`  
-  `yum install netcdf netcdf-devel netcdf-fortran netcdf-fortran-devel`  
-  `yum install eccodes eccodes-devel`  
-  `yum install zip`  
-  `yum install gnuplot`  
-  `yum install plplot`
+  `sudo yum install lapack lapack-devel blas blas-devel`  
+  `sudo yum install netcdf netcdf-devel netcdf-fortran netcdf-fortran-devel`  
+  `sudo yum install eccodes eccodes-devel`  
+  `sudo yum install zip`  
+  `sudo yum install gnuplot`  
+  `sudo yum install plplot`
 
 On Ubuntu-based systems:  
-  `apt install liblapack64-3 liblapack64-dev libblas64-3 libblas64-dev`
-  `apt install libnetcdf-c++4 libnetcdf-dev libnetcdff-dev`
-  `apt libeccodes0 libeccodes-dev`
-  `apt install zip`
-  `apt install gnuplot`
-  `apt install plplot`
+  `sudo apt install liblapack64-3 liblapack64-dev libblas64-3 libblas64-dev`
+  `sudo apt install libnetcdf-c++4 libnetcdf-dev libnetcdff-dev`
+  `sudo apt libeccodes0 libeccodes-dev`
+  `sudo apt install zip`
+  `sudo apt install gnuplot`
+  `sudo apt install plplot`
 
 ### Compiling Ash3d with the default settings
 Once the necessary USGS libraries and optional distribution packages are installed, Ash3d can
-be build.  The makefile in `volcano-ash3d/src` can be edited to suit your system.
+be built.  The makefile in `volcano-ash3d/src` can be edited to suit your system.
 
 To compile, verify that the makefile is consistent with the install directory and options
 used in the installation of the preliminary software. Then simply type:  
@@ -94,13 +95,17 @@ compares two ASCII output files for run verification.  To test the installation,
   `make check`
 
 This will run all the tests in `tests/test_[1-4]` and run `Ash3d_ASCII_check` on the
-resulting ASCII output files, reporting SUCCESS or FAIL.  The test cases in 
+resulting ASCII output files, reporting PASS or FAIL.  The test cases in 
 `tests/test_04` require that the NCEP 50-year reanalysis data files for the year 1980
 be stored in `/data/WindFiles/NCEP/1980`.  Assuming MetReader was installed in the default
 location, these reanayalsis files can be downloaded by running the following script
 installed when MetReader was installed.
 
 `/opt/USGS/bin/autorun_scripts/get_NCEP_50YearReanalysis.sh 1980`
+
+This script expects that the directories `/data/WindFiles/NCEP` and
+`/data/WindFiles/NCEP/dbuffer` exist and that the user
+running the script has write permissions.
 
 To install the software, edit the `INSTALLDIR` variable of the makefile (the
 default is `/opt/USGS`) and type:
@@ -149,7 +154,7 @@ The following are the variables available to edit:
 - `USEPOINTERS = T or [F]`  
               The default is for arrays to be allocatable, but if you are
               building Ash3d to be called from C++ codes, such as forestclaw,
-              then some arrays need to be defined as pointer. This does not
+              then some arrays need to be defined as pointers. This does not
               work with older versions of gfortran.  
 - `USEEXTDATA  = [T] or F`  
               Ash3d can be built with lists of Airports and global volcanoes
@@ -202,9 +207,8 @@ by typing:
 Ash3d can write output products directly at run-time in a number of different formats, including
 ERSI ASCII, binary, kml/kmz.  Alternatively, it can also write a netcdf file which contains
 all the information of these output products along with 3-D variables for transient
-concentrations.  If this netcdf file is written, the post-processing tool `Ash3d_PostProc`.
-
-This tool can be used to write ASCII, binary, kml, shapefiles, or png images of output variables.
+concentrations.  If this netcdf file is written, the post-processing tool `Ash3d_PostProc`,
+can be used to write ASCII, binary, kml, shapefiles, or png images of output variables.
 
 To compile this tool, make sure the makefile variables `USEPLPLOT` and `USEDISLIN`
 match your system and that the paths of the include directories and libraries are correct
@@ -216,7 +220,7 @@ Then type:
 Usage
 -----
 
-Please see the [doc/UsersGuide.md](user's guide) for more information on using this software.  A simplified
+Please see the [user's guide](doc/UsersGuide.md) for more information on using this software.  A simplified
 user's guide can be found in `volcano-ash3d/doc/UsersGuide.md`.  A guide for using the
 USGS web-based interface to Ash3d can be found at
 [Mastin et al, 2013](https://doi.org/10.3133/ofr20131122).

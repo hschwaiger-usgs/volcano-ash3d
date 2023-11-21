@@ -24,6 +24,16 @@ if [ -z ${WINDROOT} ];then
  # Mac
  #WINDROOT="/opt/data/WindFiles"
 fi
+# Check to see if the NCEP data for 1980 is present
+ls -1r ${WINDROOT}/NCEP/1980/air.1980.nc
+rc=$((rc + $?))
+if [[ "$rc" -gt 0 ]] ; then
+  echo "Error: Could not find NCEP data for 1980"
+  echo "To download the NCEP data, run:"
+  echo "/opt/USGS/bin/autorun_scripts/autorun_scripts/get_NCEP_50YearReanalysis.sh 1980"
+  exit
+fi
+
 ln -s ${WINDROOT}/NCEP Wind_nc
 
 for (( s=0;s<nSubCases;s++))
