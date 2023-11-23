@@ -142,10 +142,11 @@ EOF
   echo $vln $vlt '1.0' | gmt psxy $AREA $PROJ -St0.1i -Gmagenta -Wthinnest -O >> temp.ps
   
   # Save map
-  ps2epsi temp.ps temp.eps
-  convert temp.eps Kasatochi_CloudLoad_$i.png
-  epstopdf temp.eps Kasatochi_CloudLoad_$i.pdf
-  
+  #ps2epsi temp.ps temp.eps
+  #convert temp.eps Kasatochi_CloudLoad_$i.png
+  #epstopdf temp.eps Kasatochi_CloudLoad_$i.pdf
+  ps2pdf temp.eps Kasatochi_CloudLoad_$i.pdf
+
   # Clean up
   rm -f temp.* ac*lev gmt.history gmt.conf
 done

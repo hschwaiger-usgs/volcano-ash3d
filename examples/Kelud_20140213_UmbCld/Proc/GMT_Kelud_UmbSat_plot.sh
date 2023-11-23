@@ -12,7 +12,7 @@ if [ $GMTv -eq 4 ] ; then
     GMTv=`gmt --version | cut -c1`
 fi
 GMTpen=("-" "-" "-" "-" "/" ",")
-echo "GMT version = ${GMTv}"
+#echo "GMT version = ${GMTv}"
 
 # Kelud coordinates
 vlt=-14.4
@@ -108,11 +108,12 @@ EOF
   echo $vln $vlt '1.0' | gmt psxy $AREA $PROJ -St0.1i -Gmagenta -Wthinnest -O >> temp.ps
  
   # Save map
-  ps2epsi temp.ps temp.eps
-  convert temp.eps Kelud_CloudOutline_$i.png
-  epstopdf temp.eps Kelud_CloudOutline_$i.pdf
-  
+  #ps2epsi temp.ps temp.eps
+  #convert temp.eps Kelud_CloudOutline_$i.png
+  #epstopdf temp.eps Kelud_CloudOutline_$i.pdf
+  ps2pdf temp.ps Kelud_CloudOutline_$i.pdf
+ 
   # Clean up
-  rm gmt.history gmt.conf zero.grd temp.* ac*lev 
+  rm -f gmt.history gmt.conf zero.grd temp.* ac*lev 
 
 done

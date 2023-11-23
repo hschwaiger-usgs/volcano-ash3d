@@ -322,18 +322,18 @@
           integer                   :: byear
           logical                   :: useLeaps
         end function HS_xmltime
-#ifdef USEPII
-        ! These are included in gfortran, but are not standard
-        subroutine getlog(os_user)
-          character(len=32) :: os_user
-        end subroutine getlog
-        subroutine hostnm(os_host)
-          character(*) :: os_host
-        end subroutine hostnm
-        subroutine getcwd(os_cwd)
-          character(len=255) :: os_cwd
-        end subroutine getcwd
-#endif
+!#ifdef USEPII
+!        ! These are included in gfortran, but are not standard
+!        subroutine getlog(os_user)
+!          character(len=32) :: os_user
+!        end subroutine getlog
+!        subroutine hostnm(os_host)
+!          character(*) :: os_host
+!        end subroutine hostnm
+!        subroutine getcwd(os_cwd)
+!          character(len=255) :: os_cwd
+!        end subroutine getcwd
+!#endif
       END INTERFACE
 
       ! Reset OS varibles based on PP flags set in the makefile
@@ -478,7 +478,8 @@
         endif;enddo
       else
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"  ASH3DHOME not found. Install path set to: ",trim(adjustl(Ash3dHome))
+          write(outlog(io),*)"  ASH3DHOME environment variable not found."
+          write(outlog(io),*)"   Install path set at compilation is: ",trim(adjustl(Ash3dHome))
         endif;enddo
       endif
       ! For testing the existance of a directory, append a delimiter and . to make a file
@@ -495,9 +496,10 @@
           write(errlog(io),*)"WARNING: Cannot find ASH3DHOME=",Ash3dHome
           write(errlog(io),*)"         If this run requires shared volcano or airport files,"
           write(errlog(io),*)"         it will fail. Please either recompile with the install"
-          write(errlog(io),*)"         directory set, or set the environment variable ASH3DHOME"
+          write(errlog(io),*)"         directory set, or set the environment variable ASH3DHOME."
+          write(errlog(io),*)"   Note: These files might not yet be in their final location until"
+          write(errlog(io),*)"         you run 'make install'"
         endif;enddo
-        stop 1
       endif
 
       ! Now, check for environment variables ASH3DCFL

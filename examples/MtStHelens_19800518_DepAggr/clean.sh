@@ -7,3 +7,5 @@ rm -f Ash3d.lst
 rm -f NCEP
 rm -f Ash3d
 rm -f progress.txt
+rm -f Proc/*pdf
+

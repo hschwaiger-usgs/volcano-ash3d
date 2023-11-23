@@ -26,7 +26,8 @@
 #      Sequence of commands:
 #      "make"  compiles the Ash3d executable
 #      "make all" builds the executables and copies to bin
-#      "make install" copies the contents of branches/core_code/bin to the install location
+#      "make check" runs the test cases in /tests/test_0[1-4]
+#      "make install" copies the contents of volcano-ash3d/bin to the install location
 #                        e.g. /opt/USGS/Ash3d
 #
 #  SYSTEM specifies which compiler to use
@@ -81,7 +82,7 @@ USEGRIB   = T
 USEPOINTERS = F
 
 # EXTERNAL DATA FILES
-USEEXTDATA = T
+USEEXTDATA = F
 
 # SPEED-UP ALGORITHMS
 #  FAST_DT
@@ -98,8 +99,8 @@ FASTFPPFLAG =
 #  be generated either with gnuplot or dislin.  Set the corresponding variable
 #  below to 'T' if you want to build with these libraries.  Set to 'F' any you want
 #  to use the default gnuplot.  
-USEPLPLOT = T
-USEDISLIN = T
+USEPLPLOT = F
+USEDISLIN = F
 USEGMT    = F  # Set to true only if using the API, otherwise scripts will be written
 
 MFILE=makefile
@@ -137,8 +138,8 @@ OPTMODS_OBJ=
 # (or current working directory).  Although this is useful for record-keeping,
 # this can be considered sensitive information.  To disable this logging,
 # set PII=OFF
-#PII=ON
-PII=OFF
+PII=ON
+#PII=OFF
 
 ###############################################################################
 #####  END OF USER SPECIFIED FLAGS  ###########################################
@@ -201,9 +202,6 @@ ifeq ($(USENETCDF), T)
 endif
 ifeq ($(USEGRIB), T)
  grbFPPFLAG = -DUSEGRIB
- # These are the libraries for grib_api
- #grbLIBS = -lgrib_api_f90 -lgrib_api
- # These are the libraries for ecCodes
  grbLIBS = -leccodes -leccodes_f90
 endif
 
@@ -471,7 +469,7 @@ endif
 write_KML.o: $(ASH3dCCSRC)/write_KML.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Airports.o Tephra.o Source.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_KML.f90
 
-all: Ash3d tools
+all: Ash3d tools postproc
 
 
 # Post-Processing tool
@@ -519,7 +517,7 @@ check: ascii_check Ash3d $(MFILE)
 
 clean:
 	rm -rf $(OBJECTS) $(PPOBJS) $(GRAFOBJ) $(TOOLOBJ) Ash3d.o Ash3d_PostProc.o $(DATAOBJ) $(OPTMODS_OBJ) \
-               ../bin/$(ASH3DEXEC) ../bin/tools/Ash3d_ASCII_check \
+               ../bin/$(ASH3DEXEC) ../bin/Ash3d ../bin/tools/Ash3d_ASCII_check \
                *.mod *__genmod.f90
 
 install:

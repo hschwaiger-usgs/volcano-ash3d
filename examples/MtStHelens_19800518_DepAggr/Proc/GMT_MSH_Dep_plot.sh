@@ -12,7 +12,7 @@ if [ $GMTv -eq 4 ] ; then
     GMTv=`gmt --version | cut -c1`
 fi
 GMTpen=("-" "-" "-" "-" "/" ",")
-echo "GMT version = ${GMTv}"
+#echo "GMT version = ${GMTv}"
 
 # MSH coordinates
 vlt=46.20
@@ -120,10 +120,11 @@ gmt psxy dep.dat $AREA $PROJ -Sc0.1i -C${CPT} -Wthinnest -O -K >> temp.ps
 echo $vln $vlt '1.0' | gmt psxy $AREA $PROJ -St0.1i -Gmagenta -Wthinnest -O >> temp.ps
 
 # Save map
-ps2epsi temp.ps temp.eps
-convert temp.eps MSH_Deposit.png
-epstopdf temp.eps MSH_Deposit.pdf
+#ps2epsi temp.ps temp.eps
+#convert temp.eps MSH_Deposit.png
+#epstopdf temp.eps MSH_Deposit.pdf
+ps2pdf temp.ps MSH_Deposit.pdf
 
 # Clean up
-rm temp.* dpm*lev gmt.history gmt.conf dep.cpt out.grd dep.dat
+rm -f temp.* dpm*lev gmt.history gmt.conf dep.cpt out.grd dep.dat
 

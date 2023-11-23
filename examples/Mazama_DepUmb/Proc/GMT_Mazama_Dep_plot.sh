@@ -12,7 +12,7 @@ if [ $GMTv -eq 4 ] ; then
     GMTv=`gmt --version | cut -c1`
 fi
 GMTpen=("-" "-" "-" "-" "/" ",")
-echo "GMT version = ${GMTv}"
+#echo "GMT version = ${GMTv}"
 
 # Mazama coordinates
 vlt=42.93
@@ -126,10 +126,11 @@ gmt psxy dep.dat $AREA $PROJ -Sc0.1i -C${CPT} -Wthinnest -O -K >> temp.ps
 echo $vln $vlt '1.0' | gmt psxy $AREA $PROJ -St0.1i -Gblack -Wthinnest -O >> temp.ps
 
 # Save map
-ps2epsi temp.ps temp.eps
-convert temp.eps Mazama_UmbrellaDeposit.png
-epstopdf temp.eps Mazama_UmbrellaDeposit.pdf
+#ps2epsi temp.ps temp.eps
+#convert temp.eps Mazama_UmbrellaDeposit.png
+#epstopdf temp.eps Mazama_UmbrellaDeposit.pdf
+ps2pdf temp.ps Mazama_UmbrellaDeposit.pdf
 
 # Clean up
-rm temp.* dpm*lev gmt.history gmt.conf dep.cpt zero.grd out.grd dep.dat
+rm -f temp.* dpm*lev gmt.history gmt.conf dep.cpt zero.grd out.grd dep.dat
 
