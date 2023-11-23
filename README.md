@@ -90,7 +90,8 @@ used in the installation of the preliminary software. Then simply type:
   `make`
 
 Alternatively, `make all` will also compile the `tools`, including `Ash3d_ASCII_check` which
-compares two ASCII output files for run verification.  To test the installation, type:
+compares two ASCII output files for run verification as well as `Ash3d_PostProc` which
+can be used for post-processing Ash3d output.  To test the installation, type:
 
   `make check`
 
@@ -105,7 +106,9 @@ installed when MetReader was installed.
 
 This script expects that the directories `/data/WindFiles/NCEP` and
 `/data/WindFiles/NCEP/dbuffer` exist and that the user
-running the script has write permissions.
+running the script has write permissions. If windfiles are stored elsewhere, please
+make sure that the environment variable WINDROOT is set in your .bash\_profile or .bashrc
+files.
 
 To install the software, edit the `INSTALLDIR` variable of the makefile (the
 default is `/opt/USGS`) and type:
@@ -156,7 +159,7 @@ The following are the variables available to edit:
               building Ash3d to be called from C++ codes, such as forestclaw,
               then some arrays need to be defined as pointers. This does not
               work with older versions of gfortran.  
-- `USEEXTDATA  = [T] or F`  
+- `USEEXTDATA  = T or [F]`  
               Ash3d can be built with lists of Airports and global volcanoes
               as data variables set at compile-time.  Some low-memory systems
               might not be able to compile with these data variables (e.g. on

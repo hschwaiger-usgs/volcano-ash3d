@@ -138,8 +138,8 @@ OPTMODS_OBJ=
 # (or current working directory).  Although this is useful for record-keeping,
 # this can be considered sensitive information.  To disable this logging,
 # set PII=OFF
-PII=ON
-#PII=OFF
+#PII=ON
+PII=OFF
 
 ###############################################################################
 #####  END OF USER SPECIFIED FLAGS  ###########################################
