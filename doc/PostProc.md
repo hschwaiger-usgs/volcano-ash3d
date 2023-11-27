@@ -36,59 +36,59 @@ arguments.  If one argument is provided, it is interpreted to be the name
 of a control file (described below).
 Minimal instructions
 for running this tool are available by running the program with a `-h` as
-the only argument
-`Ash3d_PostProc -h` 
-` Dislin   T` 
-` Plplot   T` 
-` Gnuplot  T` 
-` GMT      T` 
-`                                                                                `
-` Ash3d post-processing tool: Ash3d_PostProc                                     `
-`                                                                                `
-`Usage: Ash3d_PostProc control_file [t_index]                                    `
-`           or                                                                   `
-`       Ash3d_PostProc infile output_product format                              `
-`  where: infile   = the netcdf file written by Ash3d                            `
-`   output_product = 1 full concentration array                                  `
-`                    2 deposit granularity                                       `
-`                    3 deposit thickness (mm time-series)                        `
-`                    4 deposit thickness (inches time-series)                    `
-`                    5 deposit thickness (mm final)                              `
-`                    6 deposit thickness (inches final)                          `
-`                    7 ashfall arrival time (hours)                              `
-`                    8 ashfall arrival at airports/POI (mm)                      `
-`                    9 ash-cloud concentration (mg/m3)                           `
-`                   10 ash-cloud height (km)                                     `
-`                   11 ash-cloud bottom (km)                                     `
-`                   12 ash-cloud load (T/km2 or )                                `
-`                   13 ash-cloud radar reflectivity (dBz)                        `
-`                   14 ash-cloud arrival time (hours)                            `
-`                   15 topography                                                `
-`                   16 profile plots                                             `
-`           format = 1 ASCII/ArcGIS                                              `
-`                    2 KML/KMZ                                                   `
-`                    3 image/png                                                 `
-`                    4 binary                                                    `
-`                    5 shape file                                                `
-`         [t_index] = index of time slice to plot; -1 for final (optional)       `
+the only argument  
+`Ash3d_PostProc -h`  
+` Dislin   T`  
+` Plplot   T`  
+` Gnuplot  T`  
+` GMT      T`  
+`                                                             `  
+` Ash3d post-processing tool: Ash3d_PostProc                  `  
+`                                                             `  
+`Usage: Ash3d_PostProc control_file [t_index]                 `  
+`           or                                                `  
+`       Ash3d_PostProc infile output_product format           `  
+`  where: infile   = the netcdf file written by Ash3d         `  
+`   output_product = 1 full concentration array               `  
+`                    2 deposit granularity                    `  
+`                    3 deposit thickness (mm time-series)     `  
+`                    4 deposit thickness (inches time-series) `  
+`                    5 deposit thickness (mm final)           `  
+`                    6 deposit thickness (inches final)       `  
+`                    7 ashfall arrival time (hours)           `  
+`                    8 ashfall arrival at airports/POI (mm)   `  
+`                    9 ash-cloud concentration (mg/m3)        `  
+`                   10 ash-cloud height (km)                  `  
+`                   11 ash-cloud bottom (km)                  `  
+`                   12 ash-cloud load (T/km2 or )             `  
+`                   13 ash-cloud radar reflectivity (dBz)     `  
+`                   14 ash-cloud arrival time (hours)         `  
+`                   15 topography                             `  
+`                   16 profile plots                          `  
+`           format = 1 ASCII/ArcGIS                           `  
+`                    2 KML/KMZ                                `  
+`                    3 image/png                              `  
+`                    4 binary                                 `  
+`                    5 shape file                             `  
+`         [t_index] = index of time slice to plot; -1 for final (optional)`  
 
 For example, to generate a contour plot of the final deposit thickness in mm from
 the output NetCDF file, enter: 
 
-`Ash3d_PostProc 3d_tephra_fall.nc 5 3` 
+`Ash3d_PostProc 3d_tephra_fall.nc 5 3`  
 
 The preferred graphics package is
 set at the time of compilation depending on the system (Linux, Windows, MacOS)
 and the availability of the libraries.  These can alway be overriden at
 run-time with the environmet variable `ASH3DPLOT`,
-where: `1=[dislin](Figs/Ash3d_Deposit____final_dislin.png)`, `2=[plplot](Figs/Ash3d_Deposit____final_plplot.png)`,
-`3=[gnuplot](Figs/Ash3d_Deposit____final_gnuplot.png)`,
-and `4=[GMT](Figs/Ash3d_Deposit____final_gmt.png)`. 
+where: 1=[dislin](Figs/Ash3d_Deposit____final_dislin.png), 2=[plplot](Figs/Ash3d_Deposit____final_plplot.png),
+3=[gnuplot](Figs/Ash3d_Deposit____final_gnuplot.png),
+and 4=[GMT](Figs/Ash3d_Deposit____final_gmt.png).  
 
-`ASH3DPLOT=3 Ash3d_PostProc 3d_tephra_fall.nc 5 3` 
+`ASH3DPLOT=3 Ash3d_PostProc 3d_tephra_fall.nc 5 3`  
 
-To generate a shapefile of the cloud load at step 3 of the output file, enter: 
-`Ash3d_PostProc 3d_tephra_fall.nc 12 5 3` 
+To generate a shapefile of the cloud load at step 3 of the output file, enter:  
+`Ash3d_PostProc 3d_tephra_fall.nc 12 5 3`  
 
 ## Running Ash3d_PostProc with a control file
 
@@ -96,25 +96,25 @@ Using a control file give much more flexibility and allows plotting maps
 from 2d ASCII or binary files, or to customize the contour levels and colors.
 
 Below is an example of a control file that can be used to convert a 2d ESRI ASCII
-output file of the deposit thickness to a map image with custom contour levels. 
+output file of the deposit thickness to a map image with custom contour levels.  
 
-`DepositFile_____final.dat       data_filename` 
-`1                       input format code (1=ascii, 2=binary, 3=netcdf)` 
-`test.inp                Ash3d_control_file_name   (skipped if datafile is netcdf)` 
-`5                       invar [outvar]    input variable and output variable, if different` 
-`2 1                     ndims Only needed for format 1 or 2, LatLonFlag` 
-`38 20                   nx ny [nz] Also only needed for format 1 or 2` 
-`1.0 1.0                 dx dy [dz] Needed if not a part of the data file` 
-`225.0 33.0              srtx srty         Start x and y` 
-`3                       output format     (1=ascii, 2=KML 3=image, 4=binary, 5=shapefile)` 
-`4                       plot_pref         (1=dislin, 2=plplot, 3=gnuplot, 4=GMT)` 
-`-1                      time_step         Only needed if input file is multi-timestep (eg netcdf) (-1 for final, -2 for all)` 
-`0                       Filled contour flag (1 for filled, 0 for lines)` 
-`1 5                     custom contour flag (1 for true, 0 for false), number of contours` 
-`1.0 3.0 10.0 50.0 100.0 lev(ncont)  : contour levels` 
-`100 100 100 100 255     R(ncont)    : Red channel of RGB` 
-`100 150 200 150   0     G(ncont)    : Green channel of RGB` 
-`200 150 100  50   0     B(ncont)    : Blue channel of RGB` 
+`DepositFile_____final.dat       data_filename`  
+`1                       input format code (1=ascii, 2=binary, 3=netcdf)`  
+`test.inp                Ash3d_control_file_name   (skipped if datafile is netcdf)`  
+`5                       invar [outvar]    input variable and output variable, if different`  
+`2 1                     ndims Only needed for format 1 or 2, LatLonFlag`  
+`38 20                   nx ny [nz] Also only needed for format 1 or 2`  
+`1.0 1.0                 dx dy [dz] Needed if not a part of the data file`  
+`225.0 33.0              srtx srty         Start x and y`  
+`3                       output format     (1=ascii, 2=KML 3=image, 4=binary, 5=shapefile)`  
+`4                       plot_pref         (1=dislin, 2=plplot, 3=gnuplot, 4=GMT)`  
+`-1                      time_step         Only needed if input file is multi-timestep (eg netcdf) (-1 for final, -2 for all)`  
+`0                       Filled contour flag (1 for filled, 0 for lines)`  
+`1 5                     custom contour flag (1 for true, 0 for false), number of contours`  
+`1.0 3.0 10.0 50.0 100.0 lev(ncont)  : contour levels`  
+`100 100 100 100 255     R(ncont)    : Red channel of RGB`  
+`100 150 200 150   0     G(ncont)    : Green channel of RGB`  
+`200 150 100  50   0     B(ncont)    : Blue channel of RGB`  
 
 Line 1 contains the data file name, in this case `DepositFile_____final.dat`, but it could be
 the output NetCDF file or any 2/3d binary or ASCII output file.
