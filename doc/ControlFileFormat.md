@@ -24,13 +24,13 @@ Line 1 of this block identifies the volcano by name.
 If the volcano name begins with either 0 or 1, then the volcano
 is assumed to be in the Smithonian database and default values for
 Plume Height, Duration, Mass Flux Rate, Volume, and mass fraction of
-fines are loaded.  These can be over-written by entering non-negative
+fines are loaded. These can be over-written by entering non-negative
 values in the appropriate locations in this input file.  
 
 ##### Projection specification  
 Line 2 of this block identifies the projection used and the form of
 the input coordinates and is of the following format:  
-   `latlonflag`, `projflag`,  followed by a variable list of projection parameters
+   `latlonflag`, `projflag`, followed by a variable list of projection parameters
 `projflag` describes the projection used for the Ash3d run. The windfiles used to
 populate the computational grid can have a different projection.  
 For a particular `projflag`, additional values are read defining the projection.  
@@ -82,9 +82,9 @@ If `dz_cust`, then a second line is read containing:
         This corresponds to 10 steps of 0.5, 9 steps of 1.5, followed by 1 step of 5.5.  
 
 ##### Eruption catagory and number
-Line 8 is the the diffusivity (m2/s) followed by the eruption specifier.  The
+Line 8 is the the diffusivity (m2/s) followed by the eruption specifier. The
 eruption specifier can be a real number, in which case it is assumed to be the
-positive constant specifying the Suzuki distribution.  Alternatively, it can be  
+positive constant specifying the Suzuki distribution. Alternatively, it can be  
  `umbrella`: Suzuki (const. = 12) with radial spreading of the plume  
  `umbrella_air `: Suzuki (const. = 12) with radial spreading of the plume scaled to 5% of vol.  
  `point`: all mass inserted in cell containing PlmH  
@@ -109,9 +109,9 @@ Example
 #### BLOCK 2: Eruption Parameters
 In the following line, each line represents one eruptive pulse.
 Parameters are (1-4) start time (yyyy mm dd h.hh (UT)); (5) duration (hrs);
-                 (6) plume height;                      (7) eruped volume (km3 DRE)
+(6) plume height; (7) eruped volume (km3 DRE)
 If neruptions=1 and the year is 0, then the model run in forecast mode where mm dd h.hh are
-interpreted as the time after the start of the windfile.  In this case, duration, plume
+interpreted as the time after the start of the windfile. In this case, duration, plume
 height and erupted volume are replaced with ESP if the values are negative.
 This applies to source types: `suzuki`, `point`, `line`, `umbrella` and `umbrella_air`.
 For profile sources, an additional two values are read: `dz` and `nz`  
@@ -171,26 +171,26 @@ The parameter iwindformat specifies the format of the wind files, as follows:
 40. NASA GEOS-5 Cp                                                                    
 41. NASA GEOS-5 Np                                                                    
 50. Weather Research and Forecast (WRF) output                                        
-                                                                                                     
+  
 `igrid` is the NCEP grid ID. If a NWP product is used, or the number of stations of
 sonde data, if iwind = 1.  This is optional and defaults to that associated with 
 `iwindformat`.  
 `idata` is a flag for data type (1=ASCII, 2=netcdf, 3=grib).
 This is also optional and defaults to 2 for netcdf.  
-                                                                                                     
-Many plumes extend higher than the maximum height of mesoscale models.                               
-Ash3d handles this as determined by the parameter iHeightHandler, as follows:                        
+  
+Many plumes extend higher than the maximum height of mesoscale models.  
+Ash3d handles this as determined by the parameter iHeightHandler, as follows:  
 `iHeightHandler =`  
 1. stop the program if the plume height exceeds mesoscale height  
 2. wind velocity at levels above the highest node
-equal that of the highest node.  Temperatures in the
+equal that of the highest node. Temperatures in the
 upper nodes do not change between 11 and 20 km; above
 20 km they increase by 2 C/km, as in the Standard
-atmosphere.  A warning is written to the log file.  
+atmosphere. A warning is written to the log file.  
 
 Simulation time in hours is the maximal length of the simulation.  
 Ash3d can end the simulation early if desired, once 99% of the ash has deposited.
-The last line of this block is the number of windfiles listed in block 5 below.  If
+The last line of this block is the number of windfiles listed in block 5 below. If
 iwind=5 and one of the NWP products is used that require a special file structure,
 then nWindFiles should be set to 1 and only the root folder of the windfiles listed.  
 `******************* BLOCK 3 ***************************************************`  
@@ -208,11 +208,11 @@ times using the following parameters:
 Line 15 asks for 3d output (yes/no) followed by an optional output format code;  
   1 = (default) output all the normal 2d products to the output file as well as the 3d concentrations  
   2 = only output the 2d products  
-nWriteTimes   = if >0,  number of times output are to be written. The following
+nWriteTimes  = if >0, number of times output are to be written. The following
 line contains nWriteTimes numbers specifying the times of output
 if =-1, it specifies that the following line gives a constant time
 interval in hours between write times.
-WriteTimes    = Hours between output (if nWritetimes=-1), or
+WriteTimes   = Hours between output (if nWritetimes=-1), or
 Times (hours since start of first eruption) for each output
 (if nWriteTimes >1).  
 `******************* BLOCK 4 ***************************************************`  
@@ -270,7 +270,7 @@ at airports and other locations will be written out, and which file
 to read for a list of airport locations.
 Each line in the airport location file should contain the
 airport latitude, longitude, projected x and y coordinates,
-and airport name.  If you are using a projected grid,
+and airport name. If you are using a projected grid,
 THE X AND Y MUST BE IN THE SAME PROJECTION as the computational grid.
 Alternatively, if coordinates can be projected via libprojection
 by typing "yes" to the last parameter.  

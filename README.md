@@ -227,7 +227,7 @@ Please see the [user's guide](doc/UsersGuide.md) for more information on using t
 user's guide can be found in `volcano-ash3d/doc/UsersGuide.md`.  A guide for using the
 USGS web-based interface to Ash3d can be found at
 [Mastin et al, 2013](https://doi.org/10.3133/ofr20131122).
-
+Instructions on usage of the `Ash3d_PostProc` tool can be found [here](doc/PostProc.md)
 
 References
 ----------
