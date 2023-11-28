@@ -362,24 +362,24 @@
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"Specified output netcdf file already exists."
           write(errlog(io),*)"Output filename requested = ",concenfile
-          write(errlog(io),*)"Would you like to over-write this file? (yes or no)"
+!          write(errlog(io),*)"Would you like to over-write this file? (yes or no)"
         endif;enddo
-        read(input_unit,'(a3)') answer
-        if (adjustl(trim(answer)).eq.'y'.or.adjustl(trim(answer)).eq.'yes') then
+!        read(input_unit,'(a3)') answer
+!        if (adjustl(trim(answer)).eq.'y'.or.adjustl(trim(answer)).eq.'yes') then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"Over-writing file: ",concenfile
           endif;enddo
-        elseif (adjustl(trim(answer)).eq.'n'.or.adjustl(trim(answer)).eq.'no') then
-          do io=1,2;if(VB(io).le.verbosity_error)then
-            write(errlog(io),*)"Exiting."
-          endif;enddo
-          stop 1
-        else
-          io = 1
-          write(errlog(io),*) 'Sorry, I cannot understand your answer.'
-          write(errlog(io),*) "Expected either 'yes' or 'no', but you provided:",answer
-          stop 1
-        endif
+!        elseif (adjustl(trim(answer)).eq.'n'.or.adjustl(trim(answer)).eq.'no') then
+!          do io=1,2;if(VB(io).le.verbosity_error)then
+!            write(errlog(io),*)"Exiting."
+!          endif;enddo
+!          stop 1
+!        else
+!          io = 1
+!          write(errlog(io),*) 'Sorry, I cannot understand your answer.'
+!          write(errlog(io),*) "Expected either 'yes' or 'no', but you provided:",answer
+!          stop 1
+!        endif
 
       endif
 
