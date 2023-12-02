@@ -82,7 +82,7 @@ USEGRIB   = T
 USEPOINTERS = F
 
 # EXTERNAL DATA FILES
-USEEXTDATA = F
+USEEXTDATA = T
 
 # SPEED-UP ALGORITHMS
 #  FAST_DT
@@ -138,8 +138,8 @@ OPTMODS_OBJ=
 # (or current working directory).  Although this is useful for record-keeping,
 # this can be considered sensitive information.  To disable this logging,
 # set PII=OFF
-#PII=ON
-PII=OFF
+PII=ON
+#PII=OFF
 
 ###############################################################################
 #####  END OF USER SPECIFIED FLAGS  ###########################################
@@ -219,7 +219,7 @@ endif
 PLOTFPPFLAG =
 ifeq ($(USEPLPLOT), T)
  plplotFPPFLAG = -DUSEPLPLOT
- plplotLIBS = -lplplotf95cd -lplplotf95d
+ plplotLIBS = -L/usr/local/plplot/lib -lplplotf95cd -lplplotf95d
  plplotINC  = -I/usr/include/plplot
 # plplotLIBS = -L/usr/local/plplot/lib -lplplot -lplplotfortran
 # plplotINC  = -I/usr/local/plplot/lib/fortran/modules/plplot
@@ -227,7 +227,7 @@ ifeq ($(USEPLPLOT), T)
 endif
 ifeq ($(USEDISLIN), T)
  dislinFPPFLAG = -DUSEDISLIN
- # Note that -ldislin if for single and -ldislin_d is double precision
+ # Note that -ldislin is for single and -ldislin_d is double precision
  dislinLIBS = -L/usr/local/dislin -ldislin_d
  dislinINC  = -I/usr/local/dislin/gf
  dislinOBJ  = Ash3d_PostProc_dislin.o
@@ -257,83 +257,34 @@ PIIFPP =
 ifeq ($(PII), ON)
  PIIFPPFLAG = -DUSEPII
 endif
+
+# Executables
+ifeq ($(RUN), DEBUG)
+    ASH3DEXEC=Ash3d_debug
+endif
+ifeq ($(RUN), DEBUGOMP)
+    ASH3DEXEC=Ash3d_debugomp
+endif
+ifeq ($(RUN), OPT)
+    ASH3DEXEC=Ash3d_opt
+endif
+ifeq ($(RUN), OMPOPT)
+    ASH3DEXEC=Ash3d_omp
+endif
+
+
 ###############################################################################
 ##########  GNU Fortran Compiler  #############################################
 ifeq ($(SYSTEM), gfortran)
-    FCHOME=/usr
-    FC=/usr/bin/gfortran
-    COMPINC = -I$(FCHOME)/include -I$(FCHOME)/lib64/gfortran/modules
-    COMPLIBS = -L$(FCHOME)/lib64 -L$(FCHOME)/lib
-    LIBS = $(COMPLIBS) $(USGSLIBDIR) $(USGSINC) $(COMPINC) -llapack -lblas $(USGSLIB) $(DATALIBS)
-    # -lefence
-# Debugging flags
-ifeq ($(RUN), DEBUG)
-    FFLAGS = -O0 -g3 -Wall -Wextra -fimplicit-none -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -Wimplicit-interface -Wunused-parameter -fwhole-file -fcheck=all -pedantic -fbacktrace -Wunderflow -ffpe-trap=invalid,zero,overflow -Wuninitialized -Wmaybe-uninitialized
-#-fdefault-real-8 -std=f2008 
-    ASH3DEXEC=Ash3d_debug
-endif
-ifeq ($(RUN), DEBUGOMP)
-    FFLAGS = -O0 -g3 -Wall -Wextra -fimplicit-none -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -Wimplicit-interface -Wunused-parameter -fwhole-file -fcheck=all -pedantic -fbacktrace -Wunderflow -ffpe-trap=invalid,zero,overflow -Wuninitialized -Wmaybe-uninitialized -fopenmp -lgomp
-    ASH3DEXEC=Ash3d_debugomp
-endif
-# Profiling flags
-ifeq ($(RUN), PROF)
-    FFLAGS = -g -pg -w -fno-math-errno -funsafe-math-optimizations -fno-trapping-math -fno-signaling-nans -fcx-limited-range -fno-rounding-math -fdefault-real-8
-    ASH3DEXEC=Ash3d_prof
-endif
-# Production run flags
-ifeq ($(RUN), OPT)
-    FFLAGS = -O3 -w -fno-math-errno -funsafe-math-optimizations -fno-trapping-math -fno-signaling-nans -fcx-limited-range -fno-rounding-math -fdefault-real-8
-    ASH3DEXEC=Ash3d_opt
-endif
-ifeq ($(RUN), OMPOPT)
-    FFLAGS = -O3 -w -fno-math-errno -funsafe-math-optimizations -fno-trapping-math -fno-signaling-nans -fcx-limited-range -fno-rounding-math -fdefault-real-8 -fopenmp -lgomp
-    ASH3DEXEC=Ash3d_omp
-endif
-      # Preprocessing flags
-    FPPFLAGS =  -x f95-cpp-input $(OSFPPFLAG) $(DATAFPPFLAG) $(LIMFPPFLAG) $(DIFFFPPFLAG) $(memFPPFLAG) $(extdatFPPFLAG) $(FASTFPPFLAG) $(PIIFPPFLAG) $(PLOTFPPFLAG)
-      # Extra flags
-    #EXFLAGS = -xf95
-    EXFLAGS =
+  include make_gfortran.inc
+  SYSFPPFLAG = -DGFORTRAN
 endif
 ###############################################################################
 
-##########  Intel Fortran Compiler  #############################################
+##########  Intel Fortran Compiler  ###########################################
 ifeq ($(SYSTEM), ifort)
-    FCHOME = /opt/intel/oneapi/compiler/latest/linux/
-    FC = $(FCHOME)/bin/intel64/ifort
-    COMPINC = -I./ -I$(FCHOME)/include
-    COMPLIBS = -L./ -L$(FCHOME)/lib
-    LIBS = $(COMPLIBS) $(USGSLIBDIR) $(USGSINC) $(COMPINC) -llapack -lblas -lirc -limf $(USGSLIB) $(DATALIBS)
-
-# Debugging flags
-ifeq ($(RUN), DEBUG)
-    FFLAGS = -g2 -pg -warn all -check all -real-size 64 -check uninit -traceback -ftrapuv -debug all
-    ASH3DEXEC=Ash3d_debug
-endif
-ifeq ($(RUN), DEBUGOMP)
-    FFLAGS = -g2 -pg -warn all -check all -real-size 64 -check uninit -traceback -ftrapuv -debug all -openmp
-    ASH3DEXEC=Ash3d_debugomp
-endif
-# Profiling flags
-ifeq ($(RUN), PROF)
-    FFLAGS = -g2 -pg
-    ASH3DEXEC=Ash3d_prof
-endif
-# Production run flags
-ifeq ($(RUN), OPT)
-    FFLAGS = -O3 -ftz -w -ipo
-    ASH3DEXEC=Ash3d_opt
-endif
-ifeq ($(RUN), OMPOPT)
-    FFLAGS = -O3 -ftz -w -ipo -openmp
-    ASH3DEXEC=Ash3d_omp
-endif
-      # Preprocessing flags
-    FPPFLAGS =  -fpp $(OSFPPFLAG) $(DATAFPPFLAG) $(LIMFPPFLAG) $(DIFFFPPFLAG) $(memFPPFLAG) $(extdatFPPFLAG) $(FASTFPPFLAG) $(PIIFPPFLAG) $(PLOTFPPFLAG)
-
-      # Extra flags
-    EXFLAGS =
+  include make_ifort.inc
+  SYSFPPFLAG = -DIFORT
 endif
 ###############################################################################
 

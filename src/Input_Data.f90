@@ -255,6 +255,7 @@
 !  Finally, all pre-processor flags are checked here with logging to stdout of which flags
 !  are invoked. Pre-processor flags checked:
 !   LINUX, MACOS, WINDOWS  : OS declaration
+!   GFORTRAN,IFORT         : fortran compiler (for turning on/off non-standard subroutines)
 !   FAST_DT, FAST_SUBGRID  : Speed-up tools for dt and grid calculations
 !   EXPLDIFF, CRANKNIC     : Explicit vs implicit diffusion algorithm
 !   LIM_NONE,LIM_LAXWEN,LIM_BW,LIM_FROMM,LIM_MINMOD,LIM_SUPERBEE,LIM_MC  : Limiter for advection
@@ -269,7 +270,7 @@
       use global_param,  only : &
         DirPrefix,DirDelim,IsLitEnd,IsLinux,IsWindows,IsMacOS,version, &
         CFL,OS_TYPE,OS_Flavor,os_full_command_line,os_cwd,os_host,os_user,&
-        useFastDt,FastDt_suppress
+        Comp_Code,Comp_Flavor,useFastDt,FastDt_suppress
 
       use io_data,       only : &
         Ash3dHome
@@ -364,6 +365,16 @@
       IsWindows = .true.
       IsMacOS   = .false.
 #endif
+
+#ifdef GFORTRAN
+      Comp_Code   = 1
+      Comp_Flavor = 'gfortran'
+#endif
+#ifdef IFORT
+      Comp_Code   = 2
+      Comp_Flavor = 'ifort'
+#endif
+
 
 #ifdef FAST_DT
       ! With Fast_Dt on, time step criteria is only checked at the meso steps
@@ -482,11 +493,19 @@
           write(outlog(io),*)"   Install path set at compilation is: ",trim(adjustl(Ash3dHome))
         endif;enddo
       endif
-      ! For testing the existance of a directory, append a delimiter and . to make a file
+
+      ! Testing for the presence of a directory is compiler-specific
+#ifdef GFORTRAN
+      ! For testing the existance of a directory with gfortran, append a delimiter
+      ! and . to make a file
       tmp_str = trim(adjustl(Ash3dHome)) // DirDelim // '.'
       inquire(file=trim(adjustl(tmp_str)),exist=IsThere)
+#endif
+#ifdef IFORT
       ! With ifort, we would need to test fot a directory as follows
-      !inquire(directory=trim(adjustl(Ash3dHome)),exist=IsThere)
+      inquire(directory=trim(adjustl(Ash3dHome)),exist=IsThere)
+#endif
+
       if(IsThere)then
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"  Path to ASH3DHOME found on system.  Good."
@@ -666,6 +685,13 @@
         write(outlog(io),*)"    ",trim(adjustl(CompVer))
         write(outlog(io),*)"    ",trim(adjustl(CompOpt))
         write(outlog(io),*)"and with the following pre-processor flags:"
+#ifdef GFORTRAN
+        write(outlog(io),*)"      GFORTRAN: Compiler specified in makefile"
+#endif
+#ifdef IFORT
+        write(outlog(io),*)"         IFORT: Compiler specified in makefile"
+#endif
+
 #ifdef LINUX
         write(outlog(io),*)"         LINUX: System specified as linux"
 #endif

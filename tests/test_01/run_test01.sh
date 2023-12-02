@@ -13,7 +13,7 @@ NC='\033[0m' # No Color
 
 outdir="output"
 
-${Ash3d} TC1_XY_MSH.inp > /dev/null 2>&1
+ASH3DHOME=../../ ${Ash3d} TC1_XY_MSH.inp > /dev/null 2>&1
 rc=$((rc + $?))
 if [[ "$rc" -gt 0 ]] ; then
   echo "Error: Ash3d returned error code"

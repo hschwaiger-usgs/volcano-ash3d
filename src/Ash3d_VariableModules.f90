@@ -276,6 +276,8 @@
       character (len=32)   :: os_user
       character (len=50)   :: os_host
       character (len=255)  :: os_cwd
+      integer              :: Comp_Code           ! 1=gfortran,2=ifort
+      character (len=8)    :: Comp_Flavor         ! 'gfortran' or 'ifort'
 
       end module global_param
 

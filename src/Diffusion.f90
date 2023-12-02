@@ -669,8 +669,10 @@
 
       real(kind=ip) :: BC_left_t0,BC_right_t0
       !real(kind=ip) :: BC_left_t1,BC_right_t1
-      real(kind=sp),allocatable,dimension(:) :: DL_s,D_s,DU_s,B_s
-      real(kind=dp),allocatable,dimension(:) :: DL_d,D_d,DU_d,B_d
+      real(kind=sp),allocatable,dimension(:)   :: DL_s,D_s,DU_s
+      real(kind=sp),allocatable,dimension(:,:) :: B_s
+      real(kind=dp),allocatable,dimension(:)   :: DL_d,D_d,DU_d
+      real(kind=dp),allocatable,dimension(:,:) :: B_d
       integer :: nlineq,nrhs,ldb,info
       real(kind=ip) :: LeftFac,CenterFac,RightFac
 
@@ -698,43 +700,25 @@
       !       directive allows this section to be turned off.
       INTERFACE
         subroutine sgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
-          integer                         ,intent(in)    :: N
-          integer                         ,intent(in)    :: NRHS
-          real(kind=4),dimension(N-1)     ,intent(inout) :: DL
-          real(kind=4),dimension(N)       ,intent(inout) :: D
-          real(kind=4),dimension(N-1)     ,intent(inout) :: DU
-          integer                         ,intent(in)    :: LDB
-          real(kind=4),dimension(ldb,NRHS),intent(inout) :: B
-          integer                         ,intent(out)   :: INFO
+          integer                          :: N
+          integer                          :: NRHS
+          real(kind=4),dimension(N-1)      :: DL
+          real(kind=4),dimension(N)        :: D
+          real(kind=4),dimension(N-1)      :: DU
+          integer                          :: LDB
+          real(kind=4),dimension(ldb,NRHS) :: B
+          integer                          :: INFO
         end subroutine sgtsv
         subroutine dgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
-          integer                         ,intent(in)    :: N
-          integer                         ,intent(in)    :: NRHS
-          real(kind=8),dimension(N-1)     ,intent(inout) :: DL
-          real(kind=8),dimension(N)       ,intent(inout) :: D
-          real(kind=8),dimension(N-1)     ,intent(inout) :: DU
-          integer                         ,intent(in)    :: LDB
-          real(kind=8),dimension(ldb,NRHS),intent(inout) :: B
-          integer                         ,intent(out)   :: INFO
+          integer                          :: N
+          integer                          :: NRHS
+          real(kind=8),dimension(N-1)      :: DL
+          real(kind=8),dimension(N)        :: D
+          real(kind=8),dimension(N-1)      :: DU
+          integer                          :: LDB
+          real(kind=8),dimension(ldb,NRHS) :: B
+          integer                          :: INFO
         end subroutine dgtsv
-        subroutine sptsv(N,NRHS,D,E,B,LDB,INFO)
-          integer                         ,intent(in)    :: N
-          integer                         ,intent(in)    :: NRHS
-          real(kind=4),dimension(N)       ,intent(inout) :: D
-          real(kind=4),dimension(N-1)     ,intent(inout) :: E
-          integer                         ,intent(in)    :: LDB
-          real(kind=4),dimension(ldb,NRHS),intent(inout) :: B
-          integer                         ,intent(out)   :: INFO
-        end subroutine sptsv
-        subroutine dptsv(N,NRHS,D,E,B,LDB,INFO)
-          integer                         ,intent(in)    :: N
-          integer                         ,intent(in)    :: NRHS
-          real(kind=8),dimension(N)       ,intent(inout) :: D
-          real(kind=8),dimension(N-1)     ,intent(inout) :: E
-          integer                         ,intent(in)    :: LDB
-          real(kind=8),dimension(ldb,NRHS),intent(inout) :: B
-          integer                         ,intent(out)   :: INFO
-        end subroutine dptsv
       END INTERFACE
 #endif
 
@@ -771,12 +755,12 @@
         allocate(DL_s(nlineq-1));
         allocate(D_s(nlineq));
         allocate(DU_s(nlineq-1));
-        allocate(B_s(nlineq));
+        allocate(B_s(nlineq,1));
       endif
       allocate(DL_d(nlineq-1));
       allocate(D_d(nlineq));
       allocate(DU_d(nlineq-1));
-      allocate(B_d(nlineq));
+      allocate(B_d(nlineq,1));
 
       do n=1,nsmax
         if(.not.IsAloft(n)) cycle
@@ -818,7 +802,7 @@
                 BC_left_t0 = q_cc(rmin)   ! This sets a Neuman condition at t0
                 !BC_left_t1 ~= q_cc(rmin) ! This condition is baked into the matrix
                                           ! stencil so that BC_left_t1=q_cc(1) at t1
-                B_d(l_cc)  =        (1.0_ip-Imp_fac)*LeftFac    * BC_left_t0 + &
+                B_d(l_cc,1)  =      (1.0_ip-Imp_fac)*LeftFac    * BC_left_t0 + &
                           (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(rmin-1+l_cc) + &
                                     (1.0_ip-Imp_fac)*RightFac   * q_cc(rmin-1+l_cc+1)
               elseif(l_cc.lt.ncells)then
@@ -826,7 +810,7 @@
                 D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac
                 DU_d(l_cc)   =         - (Imp_fac)*RightFac
 
-                B_d(l_cc)    =           (1.0_ip-Imp_fac)*LeftFac    * q_cc(rmin-1+l_cc-1) + &
+                B_d(l_cc,1)  =           (1.0_ip-Imp_fac)*LeftFac    * q_cc(rmin-1+l_cc-1) + &
                                (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(rmin-1+l_cc  ) + &
                                          (1.0_ip-Imp_fac)*RightFac   * q_cc(rmin-1+l_cc+1)
               elseif(l_cc.eq.ncells)then
@@ -841,7 +825,7 @@
                 BC_right_t0 = q_cc(rmin-1+ncells)    ! This sets a Neuman condition at t0
                 !BC_right_t1 ~= q_cc(ncells)  ! This condition is baked into the matrix
                                               ! stencil so that BC_right_t1=q_cc(ncells) at t1
-                B_d(l_cc)    =           (1.0_ip-Imp_fac)*LeftFac    * q_cc(rmin-1+l_cc-1) + &
+                B_d(l_cc,1)  =           (1.0_ip-Imp_fac)*LeftFac    * q_cc(rmin-1+l_cc-1) + &
                                (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(rmin-1+l_cc ) + &
                                          (1.0_ip-Imp_fac)*RightFac   * BC_right_t0
               endif
@@ -872,7 +856,7 @@
                     B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                     ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                     info)      !o
-              concen_pd(rmin:rmin-1+ncells,j,k,n,ts1) = B_s
+              concen_pd(rmin:rmin-1+ncells,j,k,n,ts1) = B_s(:,1)
             elseif(ip.eq.8)then
               call dgtsv(     &
                     nlineq, &  !i The order of the matrix A.  N >= 0.
@@ -883,7 +867,7 @@
                     B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                     ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                     info)      !o
-              concen_pd(rmin:rmin-1+ncells,j,k,n,ts1) = B_d
+              concen_pd(rmin:rmin-1+ncells,j,k,n,ts1) = B_d(:,1)
             endif
 #endif
           enddo ! loop over j
@@ -943,8 +927,10 @@
 
       real(kind=ip) :: BC_left_t0,BC_right_t0
       !real(kind=ip) :: BC_left_t1,BC_right_t1
-      real(kind=sp),allocatable,dimension(:) :: DL_s,D_s,DU_s,B_s
-      real(kind=dp),allocatable,dimension(:) :: DL_d,D_d,DU_d,B_d
+      real(kind=sp),allocatable,dimension(:)   :: DL_s,D_s,DU_s
+      real(kind=sp),allocatable,dimension(:,:) :: B_s
+      real(kind=dp),allocatable,dimension(:)   :: DL_d,D_d,DU_d
+      real(kind=dp),allocatable,dimension(:,:) :: B_d
       integer :: nlineq,nrhs,ldb,info
       real(kind=ip) :: LeftFac,CenterFac,RightFac
 
@@ -972,43 +958,25 @@
       !       directive allows this section to be turned off.
       INTERFACE
         subroutine sgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
-          integer                         ,intent(in)    :: N
-          integer                         ,intent(in)    :: NRHS
-          real(kind=4),dimension(N-1)     ,intent(inout) :: DL
-          real(kind=4),dimension(N)       ,intent(inout) :: D
-          real(kind=4),dimension(N-1)     ,intent(inout) :: DU
-          integer                         ,intent(in)    :: LDB
-          real(kind=4),dimension(ldb,NRHS),intent(inout) :: B
-          integer                         ,intent(out)   :: INFO
+          integer                          :: N
+          integer                          :: NRHS
+          real(kind=4),dimension(N-1)      :: DL
+          real(kind=4),dimension(N)        :: D
+          real(kind=4),dimension(N-1)      :: DU
+          integer                          :: LDB
+          real(kind=4),dimension(ldb,NRHS) :: B
+          integer                          :: INFO
         end subroutine sgtsv
         subroutine dgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
-          integer                         ,intent(in)    :: N
-          integer                         ,intent(in)    :: NRHS
-          real(kind=8),dimension(N-1)     ,intent(inout) :: DL
-          real(kind=8),dimension(N)       ,intent(inout) :: D
-          real(kind=8),dimension(N-1)     ,intent(inout) :: DU
-          integer                         ,intent(in)    :: LDB
-          real(kind=8),dimension(ldb,NRHS),intent(inout) :: B
-          integer                         ,intent(out)   :: INFO
+          integer                          :: N
+          integer                          :: NRHS
+          real(kind=8),dimension(N-1)      :: DL
+          real(kind=8),dimension(N)        :: D
+          real(kind=8),dimension(N-1)      :: DU
+          integer                          :: LDB
+          real(kind=8),dimension(ldb,NRHS) :: B
+          integer                          :: INFO
         end subroutine dgtsv
-        subroutine sptsv(N,NRHS,D,E,B,LDB,INFO)
-          integer                         ,intent(in)    :: N
-          integer                         ,intent(in)    :: NRHS
-          real(kind=4),dimension(N)       ,intent(inout) :: D
-          real(kind=4),dimension(N-1)     ,intent(inout) :: E
-          integer                         ,intent(in)    :: LDB
-          real(kind=4),dimension(ldb,NRHS),intent(inout) :: B
-          integer                         ,intent(out)   :: INFO
-        end subroutine sptsv
-        subroutine dptsv(N,NRHS,D,E,B,LDB,INFO)
-          integer                         ,intent(in)    :: N
-          integer                         ,intent(in)    :: NRHS
-          real(kind=8),dimension(N)       ,intent(inout) :: D
-          real(kind=8),dimension(N-1)     ,intent(inout) :: E
-          integer                         ,intent(in)    :: LDB
-          real(kind=8),dimension(ldb,NRHS),intent(inout) :: B
-          integer                         ,intent(out)   :: INFO
-        end subroutine dptsv
       END INTERFACE
 #endif
 
@@ -1036,12 +1004,12 @@
         allocate(DL_s(nlineq-1));
         allocate(D_s(nlineq));
         allocate(DU_s(nlineq-1));
-        allocate(B_s(nlineq));
+        allocate(B_s(nlineq,1));
       endif
       allocate(DL_d(nlineq-1));
       allocate(D_d(nlineq));
       allocate(DU_d(nlineq-1));
-      allocate(B_d(nlineq));
+      allocate(B_d(nlineq,1));
 
       do n=1,nsmax
         if(.not.IsAloft(n)) cycle
@@ -1083,7 +1051,7 @@
                 BC_left_t0 = q_cc(rmin)   ! This sets a Neuman condition at t0
                 !BC_left_t1 ~= q_cc(rmin) ! This condition is baked into the matrix
                                           ! stencil so that BC_left_t1=q_cc(1) at t1
-                B_d(l_cc)  =   (1.0_ip-Imp_fac)*LeftFac    * BC_left_t0 + &
+                B_d(l_cc,1)  = (1.0_ip-Imp_fac)*LeftFac    * BC_left_t0 + &
                      (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(rmin-1+l_cc) + &
                                (1.0_ip-Imp_fac)*RightFac   * q_cc(rmin-1+l_cc+1)
 
@@ -1093,7 +1061,7 @@
                 D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac
                 DU_d(l_cc)   =      - (Imp_fac)*RightFac
 
-                B_d(l_cc)    = (1.0_ip-Imp_fac)*LeftFac    * q_cc(rmin-1+l_cc-1) + &
+                B_d(l_cc,1)  = (1.0_ip-Imp_fac)*LeftFac    * q_cc(rmin-1+l_cc-1) + &
                      (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(rmin-1+l_cc  ) + &
                                (1.0_ip-Imp_fac)*RightFac   * q_cc(rmin-1+l_cc+1)
               elseif(l_cc.eq.ncells)then
@@ -1108,7 +1076,7 @@
                 BC_right_t0 = q_cc(rmin-1+ncells)    ! This sets a Neuman condition at t0
                 !BC_right_t1 ~= q_cc(ncells)  ! This condition is baked into the matrix
                                               ! stencil so that BC_right_t1=q_cc(ncells) at t1
-                B_d(l_cc)    = (1.0_ip-Imp_fac)*LeftFac    * q_cc(rmin-1+l_cc-1) + &
+                B_d(l_cc,1)  = (1.0_ip-Imp_fac)*LeftFac    * q_cc(rmin-1+l_cc-1) + &
                      (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(rmin-1+l_cc  ) + &
                                (1.0_ip-Imp_fac)*RightFac   * BC_right_t0
               endif
@@ -1139,7 +1107,7 @@
                     B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                     ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                     info)      !o
-              concen_pd(i,rmin:rmin-1+ncells,k,n,ts1) = B_s
+              concen_pd(i,rmin:rmin-1+ncells,k,n,ts1) = B_s(:,1)
             elseif(ip.eq.8)then
               call dgtsv(     &
                     nlineq, &  !i The order of the matrix A.  N >= 0.
@@ -1150,10 +1118,9 @@
                     B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                     ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                     info)      !o
-              concen_pd(i,rmin:rmin-1+ncells,k,n,ts1) = B_d
+              concen_pd(i,rmin:rmin-1+ncells,k,n,ts1) = B_d(:,1)
             endif
 #endif
-            !concen_pd(i,rmin:rmin-1+ncells,k,n,ts1) = real(B_d,kind=ip)
 
           enddo ! loop over i
         enddo ! loop over k
@@ -1215,8 +1182,10 @@
 
       real(kind=ip) :: BC_left_t0,BC_right_t0
       !real(kind=ip) :: BC_left_t1,BC_right_t1
-      real(kind=sp),allocatable,dimension(:) :: DL_s,D_s,DU_s,B_s
-      real(kind=dp),allocatable,dimension(:) :: DL_d,D_d,DU_d,B_d
+      real(kind=sp),allocatable,dimension(:)   :: DL_s,D_s,DU_s
+      real(kind=sp),allocatable,dimension(:,:) :: B_s
+      real(kind=dp),allocatable,dimension(:)   :: DL_d,D_d,DU_d
+      real(kind=dp),allocatable,dimension(:,:) :: B_d
       integer :: nlineq,nrhs,ldb,info
       real(kind=ip) :: LeftFac,CenterFac,RightFac
 
@@ -1245,43 +1214,25 @@
       !       directive allows this section to be turned off.
       INTERFACE
         subroutine sgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
-          integer                         ,intent(in)    :: N
-          integer                         ,intent(in)    :: NRHS
-          real(kind=4),dimension(N-1)     ,intent(inout) :: DL
-          real(kind=4),dimension(N)       ,intent(inout) :: D
-          real(kind=4),dimension(N-1)     ,intent(inout) :: DU
-          integer                         ,intent(in)    :: LDB
-          real(kind=4),dimension(ldb,NRHS),intent(inout) :: B
-          integer                         ,intent(out)   :: INFO
+          integer                          :: N
+          integer                          :: NRHS
+          real(kind=4),dimension(N-1)      :: DL
+          real(kind=4),dimension(N)        :: D
+          real(kind=4),dimension(N-1)      :: DU
+          real(kind=4),dimension(ldb,NRHS) :: B
+          integer                          :: LDB
+          integer                          :: INFO
         end subroutine sgtsv
         subroutine dgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
-          integer                         ,intent(in)    :: N
-          integer                         ,intent(in)    :: NRHS
-          real(kind=8),dimension(N-1)     ,intent(inout) :: DL
-          real(kind=8),dimension(N)       ,intent(inout) :: D
-          real(kind=8),dimension(N-1)     ,intent(inout) :: DU
-          integer                         ,intent(in)    :: LDB
-          real(kind=8),dimension(ldb,NRHS),intent(inout) :: B
-          integer                         ,intent(out)   :: INFO
+          integer                          :: N
+          integer                          :: NRHS
+          real(kind=8),dimension(N-1)      :: DL
+          real(kind=8),dimension(N)        :: D
+          real(kind=8),dimension(N-1)      :: DU
+          real(kind=8),dimension(ldb,NRHS) :: B
+          integer                          :: LDB
+          integer                          :: INFO
         end subroutine dgtsv
-        subroutine sptsv(N,NRHS,D,E,B,LDB,INFO)
-          integer                         ,intent(in)    :: N
-          integer                         ,intent(in)    :: NRHS
-          real(kind=4),dimension(N)       ,intent(inout) :: D
-          real(kind=4),dimension(N-1)     ,intent(inout) :: E
-          integer                         ,intent(in)    :: LDB
-          real(kind=4),dimension(ldb,NRHS),intent(inout) :: B
-          integer                         ,intent(out)   :: INFO
-        end subroutine sptsv
-        subroutine dptsv(N,NRHS,D,E,B,LDB,INFO)
-          integer                         ,intent(in)    :: N
-          integer                         ,intent(in)    :: NRHS
-          real(kind=8),dimension(N)       ,intent(inout) :: D
-          real(kind=8),dimension(N-1)     ,intent(inout) :: E
-          integer                         ,intent(in)    :: LDB
-          real(kind=8),dimension(ldb,NRHS),intent(inout) :: B
-          integer                         ,intent(out)   :: INFO
-        end subroutine dptsv
       END INTERFACE
 #endif
 
@@ -1309,12 +1260,12 @@
         allocate(DL_s(nlineq-1));
         allocate(D_s(nlineq));
         allocate(DU_s(nlineq-1));
-        allocate(B_s(nlineq));
+        allocate(B_s(nlineq,1));
       endif
       allocate(DL_d(nlineq-1));
       allocate(D_d(nlineq));
       allocate(DU_d(nlineq-1));
-      allocate(B_d(nlineq));
+      allocate(B_d(nlineq,1));
 
       do n=1,nsmax
         if(.not.IsAloft(n)) cycle
@@ -1357,7 +1308,7 @@
                 BC_left_t0 = q_cc(rmin)   ! This sets a Neuman condition at t0
                 !BC_left_t1 ~= q_cc(rmin) ! This condition is baked into the matrix
                                           ! stencil so that BC_left_t1=q_cc(1) at t1
-                B_d(l_cc)  =        (1.0_ip-Imp_fac)*LeftFac    * BC_left_t0 + &
+                B_d(l_cc,1)  =      (1.0_ip-Imp_fac)*LeftFac    * BC_left_t0 + &
                           (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(rmin-1+l_cc) + &
                                     (1.0_ip-Imp_fac)*RightFac   * q_cc(rmin-1+l_cc+1)
 
@@ -1367,7 +1318,7 @@
                 D_d(l_cc)    = 1.0_ip + (Imp_fac)*CenterFac
                 DU_d(l_cc)   =        - (Imp_fac)*RightFac
 
-                B_d(l_cc)    =           (1.0_ip-Imp_fac)*LeftFac    * q_cc(rmin-1+l_cc-1) + &
+                B_d(l_cc,1)  =           (1.0_ip-Imp_fac)*LeftFac    * q_cc(rmin-1+l_cc-1) + &
                                (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(rmin-1+l_cc  ) + &
                                          (1.0_ip-Imp_fac)*RightFac   * q_cc(rmin-1+l_cc+1)
               elseif(l_cc.eq.ncells)then
@@ -1382,7 +1333,7 @@
                 BC_right_t0 = q_cc(rmin-1+ncells)    ! This sets a Neuman condition at t0
                 !BC_right_t1 ~= q_cc(ncells)  ! This condition is baked into the matrix
                                               ! stencil so that BC_left_t1=q_cc(1) at t1
-                B_d(l_cc)    =           (1.0_ip-Imp_fac)*LeftFac    * q_cc(rmin-1+l_cc-1) + &
+                B_d(l_cc,1)  =           (1.0_ip-Imp_fac)*LeftFac    * q_cc(rmin-1+l_cc-1) + &
                                (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(rmin-1+l_cc  ) + &
                                          (1.0_ip-Imp_fac)*RightFac   * BC_right_t0
               endif
@@ -1392,7 +1343,8 @@
       !       don't have blas and lapack installed.  This pre-proc.
       !       directive allows this section to be turned off.
             ! This is the call for solving single or double
-            ! precision general tridiagonal Ax=b.
+            ! precision general tridiagonal Ax=b by Gaussian elimination with
+            ! partial pivoting.
             ! If every cell had the same geometry and kz were homogeneous, we
             ! could use the specialized routines for a symmetric matrix (sptsv
             ! dptsv), but this is both not really useful, nor faster.
@@ -1412,7 +1364,7 @@
                     B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                     ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                     info)      !o
-              concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = B_s
+              concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = B_s(:,1)
             elseif(ip.eq.8)then
               call dgtsv(     &
                     nlineq, &  !i The order of the matrix A.  N >= 0.
@@ -1423,7 +1375,7 @@
                     B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                     ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                     info)      !o
-              concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = B_d
+              concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = B_d(:,1)
             endif
 #endif
             !concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = real(B_d,kind=ip)

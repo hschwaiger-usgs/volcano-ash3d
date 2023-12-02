@@ -87,7 +87,7 @@
          concen_pd,DepositGranularity
 
       use time_data,     only : &
-         time,time_native,BaseYear,useLeap,SimStartHour
+         ntmax,time,time_native,BaseYear,useLeap,SimStartHour
 
       use Ash3d_Program_Control, only : &
            Set_OS_Env,                &
@@ -125,7 +125,9 @@
            write_3D_Binary,   &
            read_3D_Binary
 
+#ifdef USENETCDF
       use Ash3d_Netcdf_IO
+#endif
 
       use Ash3d_KML_IO
 
@@ -307,11 +309,22 @@
           enddo
           stop 1
         endif
-
+#ifndef USENETCDF
+        ! If we are here, then we expect to read the netcdf output file.  If netcdf
+        ! not linked, give an error and exit
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)'Expecting to prompt for a netcdf file, but the netcdf'
+          write(errlog(io),*)'library is not linked.  Please recompile, linking to'
+          write(errlog(io),*)'netcdf or run Ash3d_PostProc with a control file and'
+          write(errlog(io),*)'ASCII data.'
+        endif;enddo
+        stop 1
+#else
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)'Enter name of netcdf output file:'
         endif;enddo
         read(input_unit,*) concenfile
+#endif
         inquire( file=concenfile, exist=IsThere )
         if(.not.IsThere)then
           do io=1,2;if(VB(io).le.verbosity_error)then
@@ -328,7 +341,9 @@
         !   We want to call this subroutine silently, so reset the verbosity
         tmp_int = VB(1)
         VB(1)   = verbosity_silent
+#ifdef USENETCDF
         call NC_Read_Output_Products(-1)
+#endif  
         VB(1)   = tmp_int
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)'Select output variable (not all may be available):'
@@ -680,7 +695,19 @@
         ! the dimensions so we can see what we are dealing with.
         ! This call reads the 2d output products for the specified time
         ! If itime=-1 (for the final step), then
+#ifndef USENETCDF
+        ! If we are here, then we expect to read the netcdf output file.  If netcdf
+        ! not linked, give an error and exit
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)'A netcdf file was provided in the control file, but'
+          write(errlog(io),*)'the netcdf library is not linked.  Please recompile,'
+          write(errlog(io),*)'linking to netcdf or run Ash3d_PostProc with a control'
+          write(errlog(io),*)'file and ASCII data.'
+        endif;enddo
+        stop 1
+#else
         call NC_Read_Output_Products(itime)
+#endif
       else
         if(HaveInfile)then
           ! If we have the Ash3d control file, read it to set grid and populate
@@ -1048,7 +1075,9 @@
 
           ! We need to loop over all times
           do i = 1,nWriteTimes
+#ifdef USENETCDF
             call NC_Read_Output_Products(i)
+#endif
             time = WriteTimes(i)
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"time = ",time
@@ -1057,7 +1086,9 @@
           enddo
           isFinal_TS = .true.
           ! For deposit output, load the final deposit variable and write to file
+#ifdef USENETCDF
           call NC_Read_Output_Products(-1)
+#endif
           call output_results
         elseif(iprod.eq.8)then  ! ashfall at airports
           call Write_PointData_Airports_KML
@@ -1160,7 +1191,7 @@
         elseif(iprod.eq.16)then
           ! Vertical profile data
           call vprofileopener
-          do itime=1,tn_len
+          do itime=1,ntmax
             time = time_native(itime)
             call vprofilewriter(itime)
           enddo
