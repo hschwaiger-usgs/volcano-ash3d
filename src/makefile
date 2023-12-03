@@ -32,11 +32,12 @@
 #
 #  SYSTEM specifies which compiler to use
 #    Current available options are:
-#      gfortran , ifort
+#      gfortran , ifort , aocc
 #    This variable cannot be left blank
 #
 SYSTEM = gfortran
 #SYSTEM = ifort
+#SYSTEM = aocc
 #
 #  RUN specifies which collection of compilation flags that should be run
 #    Current available options are:
@@ -47,10 +48,10 @@ SYSTEM = gfortran
 #      OMPOPT   : includes optimizations flags for fastest runtime and OpenMP directives
 #                 To run, enter: env OMP_NUM_THREADS=4 Ash3d input_file.inp
 #    This variable cannot be left blank
-#RUN = DEBUG
+RUN = DEBUG
 #RUN = DEBUGOMP
 #RUN = PROF
-RUN = OPT
+#RUN = OPT
 #RUN = OMPOPT
 
 #    This variable cannot be left blank
@@ -63,6 +64,7 @@ OS = LINUX
 # projection and HoursSince packages.
 USGSROOT=/opt/USGS
 #USGSROOT=$(HOME)/intel
+#USGSROOT=$(HOME)/aocc
 
 # This is the location of the Ash3d core code source files that we will build this
 # research branch with.
@@ -70,12 +72,13 @@ ASH3dCCSRC=./
 
 INSTALLDIR=/opt/USGS/Ash3d
 #INSTALLDIR=$(HOME)/intel/Ash3d
+#INSTALLDIR=$(HOME)/aocc/Ash3d
 
 # DATA FORMATS
 #  For each data format you want to include in the library, set the corresponding
 #  variable below to 'T'.  Set to 'F' any you do not want compiled or any unavailable
-USENETCDF = T
-USEGRIB   = T
+USENETCDF = F
+USEGRIB   = F
 
 # MEMORY
 # If you need pointer arrays instead of allocatable arrays, set this to 'T'
@@ -280,11 +283,16 @@ ifeq ($(SYSTEM), gfortran)
   SYSFPPFLAG = -DGFORTRAN
 endif
 ###############################################################################
-
 ##########  Intel Fortran Compiler  ###########################################
 ifeq ($(SYSTEM), ifort)
   include make_ifort.inc
   SYSFPPFLAG = -DIFORT
+endif
+###############################################################################
+##########  AMD Optimizing C/C++/Fortran Compiler (aocc) ######################
+ifeq ($(SYSTEM), aocc)
+  include make_aocc.inc
+  SYSFPPFLAG = -DAOCC
 endif
 ###############################################################################
 
@@ -403,7 +411,7 @@ Set_BC.o: $(ASH3dCCSRC)/Set_BC.f90 $(MFILE) Ash3d_VariableModules.o
 # Output
 Output_Vars.o: $(ASH3dCCSRC)/Output_Vars.f90 $(MFILE) Ash3d_VariableModules.o Airports.o Tephra.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Output_Vars.f90
-Output_Results.o: $(ASH3dCCSRC)/Output_Results.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o write_BINARY.o write_ASCII.o write_KML.o write_NETCDF.o
+Output_Results.o: $(ASH3dCCSRC)/Output_Results.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o write_BINARY.o write_ASCII.o write_KML.o $(DATAOBJ)
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Output_Results.f90
 write_ASCII.o: $(ASH3dCCSRC)/write_ASCII.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Airports.o Tephra.o Source.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_ASCII.f90

@@ -2,24 +2,21 @@
 ##########  GNU Fortran Compiler  #############################################
 FCHOME=/usr
 FC=/usr/bin/gfortran
-#COMPINC = -I$(FCHOME)/include -I$(FCHOME)/lib64/gfortran/modules
-#COMPLIBS = -L$(FCHOME)/lib64 -L$(FCHOME)/lib
 
 #LAPACKLIB = -L$(FCHOME)/lib64 -llapack
 LAPACKLIB = -L$(HOME)/Programs/Tarballs/lapack-3.11 -llapack
 
 COMPINC = -I$(FCHOME)/lib64/gfortran/modules
-COMPLIBS = -L$(FCHOME)/lib64 
+COMPLIBS = -L$(FCHOME)/lib64
 LIBS = $(LAPACKLIB) $(COMPLIBS) $(USGSLIBDIR) $(USGSINC) $(COMPINC) $(USGSLIB) $(DATALIBS)
-# -lefence
 
 # Debugging flags
 ifeq ($(RUN), DEBUG)
-    FFLAGS = -O0 -g3 -Wall -Wextra -fimplicit-none -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -Wimplicit-interface -Wunused-parameter -fwhole-file -fcheck=all -pedantic -fbacktrace -Wunderflow -ffpe-trap=invalid,zero,overflow -Wuninitialized -Wmaybe-uninitialized
-#-fdefault-real-8 -std=f2008 
+    # consider including -lefence for debugging
+    FFLAGS = -O0 -g3 -Wall -Wextra -fimplicit-none -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -Wimplicit-interface -Wunused-parameter -fwhole-file -fcheck=all -std=f2008 -pedantic -fbacktrace -Wunderflow -ffpe-trap=invalid,zero,overflow -Wuninitialized -Wmaybe-uninitialized -fdefault-real-8
 endif
 ifeq ($(RUN), DEBUGOMP)
-    FFLAGS = -O0 -g3 -Wall -Wextra -fimplicit-none -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -Wimplicit-interface -Wunused-parameter -fwhole-file -fcheck=all -pedantic -fbacktrace -Wunderflow -ffpe-trap=invalid,zero,overflow -Wuninitialized -Wmaybe-uninitialized -fopenmp -lgomp
+    FFLAGS = -O0 -g3 -Wall -Wextra -fimplicit-none -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -Wimplicit-interface -Wunused-parameter -fwhole-file -fcheck=all -std=f2208 -pedantic -fbacktrace -Wunderflow -ffpe-trap=invalid,zero,overflow -Wuninitialized -Wmaybe-uninitialized -fdefault-real-8 -fopenmp -lgomp
 endif
 # Profiling flags
 ifeq ($(RUN), PROF)
@@ -37,4 +34,3 @@ FPPFLAGS =  -x f95-cpp-input $(OSFPPFLAG) $(DATAFPPFLAG) $(LIMFPPFLAG) $(DIFFFPP
   # Extra flags
 EXFLAGS =
 ###############################################################################
-

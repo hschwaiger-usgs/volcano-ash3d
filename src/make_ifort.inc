@@ -8,7 +8,7 @@ LIBS = $(COMPLIBS) $(USGSLIBDIR) $(USGSINC) $(COMPINC) -llapack -lirc -limf $(US
 
 # Debugging flags
 ifeq ($(RUN), DEBUG)
-    FFLAGS = -g2 -pg -warn all -check all -real-size 64 -check uninit -traceback -ftrapuv -debug all
+    FFLAGS = -g2 -pg -warn all -check all -real-size 64 -check uninit -traceback -ftrapuv -debug all 
 endif
 ifeq ($(RUN), DEBUGOMP)
     FFLAGS = -g2 -pg -warn all -check all -real-size 64 -check uninit -traceback -ftrapuv -debug all -openmp
@@ -26,8 +26,6 @@ ifeq ($(RUN), OMPOPT)
 endif
   # Preprocessing flags
 FPPFLAGS =  -fpp $(OSFPPFLAG) $(DATAFPPFLAG) $(LIMFPPFLAG) $(DIFFFPPFLAG) $(memFPPFLAG) $(extdatFPPFLAG) $(FASTFPPFLAG) $(PIIFPPFLAG) $(PLOTFPPFLAG)
-
   # Extra flags
 EXFLAGS =
 ###############################################################################
-
