@@ -37,7 +37,7 @@
 
       use global_param,  only : &
          useCalcFallVel,useDiffusion,useHorzAdvect,useVertAdvect,&
-         HR_2_S,useTemperature,DT_MIN,EPS_TINY,EPS_SMALL,&
+         useTemperature,DT_MIN,EPS_TINY,EPS_SMALL,&
          nmods,OPTMOD_names,StopConditions,CheckConditions      
 
       use mesh,          only : &
@@ -675,8 +675,6 @@
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),5003) t1-t0,tw_tot,t2-t1,&
                                real(tcount2-tcount1,kind=dp)/real(tcount_rate,kind=dp)
-!        write(outlog(io),5003) t1-t0, t2-t1, time*HR_2_S
-!        write(outlog(io),5004) time*HR_2_S/(t2-t1)
       endif;enddo
       call TimeStepTotals(itime)
       do io=1,2;if(VB(io).le.verbosity_info)then

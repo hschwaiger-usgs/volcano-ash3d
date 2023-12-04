@@ -1,7 +1,9 @@
 ###############################################################################
 ##########  GNU Fortran Compiler  #############################################
-FCHOME=/usr
-FC=/usr/bin/gfortran
+SYSFPPFLAG = -DGFORTRAN
+
+FCHOME = /usr
+FC = $(FCHOME)/bin/gfortran
 
 #LAPACKLIB = -L$(FCHOME)/lib64 -llapack
 LAPACKLIB = -L$(HOME)/Programs/Tarballs/lapack-3.11 -llapack
@@ -13,7 +15,7 @@ LIBS = $(LAPACKLIB) $(COMPLIBS) $(USGSLIBDIR) $(USGSINC) $(COMPINC) $(USGSLIB) $
 # Debugging flags
 ifeq ($(RUN), DEBUG)
     # consider including -lefence for debugging
-    FFLAGS = -O0 -g3 -Wall -Wextra -fimplicit-none -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -Wimplicit-interface -Wunused-parameter -fwhole-file -fcheck=all -std=f2008 -pedantic -fbacktrace -Wunderflow -ffpe-trap=invalid,zero,overflow -Wuninitialized -Wmaybe-uninitialized -fdefault-real-8
+    FFLAGS = -O0 -g3 -Wall -Wextra -fimplicit-none -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -Wimplicit-interface -Wunused-parameter -fwhole-file -fcheck=all -pedantic -fbacktrace -Wunderflow -ffpe-trap=invalid,zero,overflow -Wuninitialized -Wmaybe-uninitialized -fdefault-real-8
 endif
 ifeq ($(RUN), DEBUGOMP)
     FFLAGS = -O0 -g3 -Wall -Wextra -fimplicit-none -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -Wimplicit-interface -Wunused-parameter -fwhole-file -fcheck=all -std=f2208 -pedantic -fbacktrace -Wunderflow -ffpe-trap=invalid,zero,overflow -Wuninitialized -Wmaybe-uninitialized -fdefault-real-8 -fopenmp -lgomp

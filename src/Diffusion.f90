@@ -702,20 +702,20 @@
         subroutine sgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
           integer                          :: N
           integer                          :: NRHS
+          integer                          :: LDB
           real(kind=4),dimension(N-1)      :: DL
           real(kind=4),dimension(N)        :: D
           real(kind=4),dimension(N-1)      :: DU
-          integer                          :: LDB
           real(kind=4),dimension(ldb,NRHS) :: B
           integer                          :: INFO
         end subroutine sgtsv
         subroutine dgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
           integer                          :: N
           integer                          :: NRHS
+          integer                          :: LDB
           real(kind=8),dimension(N-1)      :: DL
           real(kind=8),dimension(N)        :: D
           real(kind=8),dimension(N-1)      :: DU
-          integer                          :: LDB
           real(kind=8),dimension(ldb,NRHS) :: B
           integer                          :: INFO
         end subroutine dgtsv
@@ -960,20 +960,20 @@
         subroutine sgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
           integer                          :: N
           integer                          :: NRHS
+          integer                          :: LDB
           real(kind=4),dimension(N-1)      :: DL
           real(kind=4),dimension(N)        :: D
           real(kind=4),dimension(N-1)      :: DU
-          integer                          :: LDB
           real(kind=4),dimension(ldb,NRHS) :: B
           integer                          :: INFO
         end subroutine sgtsv
         subroutine dgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
           integer                          :: N
           integer                          :: NRHS
+          integer                          :: LDB
           real(kind=8),dimension(N-1)      :: DL
           real(kind=8),dimension(N)        :: D
           real(kind=8),dimension(N-1)      :: DU
-          integer                          :: LDB
           real(kind=8),dimension(ldb,NRHS) :: B
           integer                          :: INFO
         end subroutine dgtsv
@@ -1216,21 +1216,21 @@
         subroutine sgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
           integer                          :: N
           integer                          :: NRHS
+          integer                          :: LDB
           real(kind=4),dimension(N-1)      :: DL
           real(kind=4),dimension(N)        :: D
           real(kind=4),dimension(N-1)      :: DU
           real(kind=4),dimension(ldb,NRHS) :: B
-          integer                          :: LDB
           integer                          :: INFO
         end subroutine sgtsv
         subroutine dgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
           integer                          :: N
           integer                          :: NRHS
+          integer                          :: LDB
           real(kind=8),dimension(N-1)      :: DL
           real(kind=8),dimension(N)        :: D
           real(kind=8),dimension(N-1)      :: DU
           real(kind=8),dimension(ldb,NRHS) :: B
-          integer                          :: LDB
           integer                          :: INFO
         end subroutine dgtsv
       END INTERFACE

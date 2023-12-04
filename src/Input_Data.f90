@@ -323,18 +323,6 @@
           integer                   :: byear
           logical                   :: useLeaps
         end function HS_xmltime
-!#ifdef USEPII
-!        ! These are included in gfortran, but are not standard
-!        subroutine getlog(os_user)
-!          character(len=32) :: os_user
-!        end subroutine getlog
-!        subroutine hostnm(os_host)
-!          character(*) :: os_host
-!        end subroutine hostnm
-!        subroutine getcwd(os_cwd)
-!          character(len=255) :: os_cwd
-!        end subroutine getcwd
-!#endif
       END INTERFACE
 
       ! Reset OS varibles based on PP flags set in the makefile
@@ -373,6 +361,10 @@
 #ifdef IFORT
       Comp_Code   = 2
       Comp_Flavor = 'ifort'
+#endif
+#ifdef AOCC
+      Comp_Code   = 3
+      Comp_Flavor = 'aocc'
 #endif
 
 
@@ -495,15 +487,14 @@
       endif
 
       ! Testing for the presence of a directory is compiler-specific
-#ifdef GFORTRAN
-      ! For testing the existance of a directory with gfortran, append a delimiter
-      ! and . to make a file
-      tmp_str = trim(adjustl(Ash3dHome)) // DirDelim // '.'
-      inquire(file=trim(adjustl(tmp_str)),exist=IsThere)
-#endif
 #ifdef IFORT
       ! With ifort, we would need to test fot a directory as follows
       inquire(directory=trim(adjustl(Ash3dHome)),exist=IsThere)
+#else
+      ! For testing the existance of a directory with gfortran or aocc, append a delimiter
+      ! and . to make a file
+      tmp_str = trim(adjustl(Ash3dHome)) // DirDelim // '.'
+      inquire(file=trim(adjustl(tmp_str)),exist=IsThere)
 #endif
 
       if(IsThere)then
@@ -620,14 +611,17 @@
       ! Get some run-specific and system-specific information
       call get_command(os_full_command_line)
 
-#ifdef USEPII
-      call getlog(os_user)
-      call hostnm(os_host)
-      call getcwd(os_cwd)
-#else
+      ! Fill these with N/A in case we don't have the fuctions to fill them
       os_user = 'N/A'
       os_host = 'N/A'
       os_cwd  = 'N/A'
+#ifdef USEPII
+      call get_environment_variable(name="USER",value=tmp_str,status=Iostatus)
+      os_user = adjustl(trim(tmp_str))
+      call get_environment_variable(name="HOSTNAME",value=tmp_str,status=Iostatus)
+      os_host = adjustl(trim(tmp_str))
+      call get_environment_variable(name="PWD",value=tmp_str,status=Iostatus)
+      os_cwd = adjustl(trim(tmp_str))
 #endif
       call date_and_time(date,time2,zone,values)
         ! date  = ccyymmdd
@@ -685,22 +679,22 @@
         write(outlog(io),*)"    ",trim(adjustl(CompVer))
         write(outlog(io),*)"    ",trim(adjustl(CompOpt))
         write(outlog(io),*)"and with the following pre-processor flags:"
-#ifdef GFORTRAN
+#if defined GFORTRAN
         write(outlog(io),*)"      GFORTRAN: Compiler specified in makefile"
-#endif
-#ifdef IFORT
+#elif defined IFORT
         write(outlog(io),*)"         IFORT: Compiler specified in makefile"
+#elif defined AOCC
+        write(outlog(io),*)"          AOCC: Compiler specified in makefile"
 #endif
 
-#ifdef LINUX
+#if defined LINUX
         write(outlog(io),*)"         LINUX: System specified as linux"
-#endif
-#ifdef MACOS
+#elif defined MACOS
         write(outlog(io),*)"         MACOS: System specified as MacOS"
-#endif
-#ifdef WINDOWS
+#elif defined WINDOWS
         write(outlog(io),*)"       WINDOWS: System specified as MS Windows"
 #endif
+
 #ifdef FAST_DT
         write(outlog(io),*)"       FAST_DT: ON"
         write(outlog(io),*)"              : dt will only be evaluated on the time steps"

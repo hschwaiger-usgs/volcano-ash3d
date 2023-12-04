@@ -145,7 +145,8 @@
         ! Set everything to public by default
       public
 
-#include "Ash3d_version.h"  ! contain the git commit id
+      ! This include file contain the git commit id
+#include "Ash3d_version.h"
 
       character(len=8)  :: version           =  ' 1.0  '  ! The Ash3d version number
 
