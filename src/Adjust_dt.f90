@@ -244,11 +244,11 @@
              .not.useVarDiffV)then
             if (useCN) then
               do io=1,2;if(VB(io).le.verbosity_info)then
-                write(outlog(io),*)"Appling time factor of ",Imp_DT_fac
+                write(outlog(io),'(a24,f8.2)')"Applying time factor of ",Imp_DT_fac
               endif;enddo
             else
               do io=1,2;if(VB(io).le.verbosity_info)then
-                write(outlog(io),*)"Appling time factor of 0.5"
+                write(outlog(io),*)"Applying time factor of 0.5"
               endif;enddo
             endif
 
@@ -274,7 +274,7 @@
                   write(outlog(io),*)"   Restriction set by dz2/kz"
                 endif
               endif
-              write(outlog(io),*)"   Velocities allow up a diffusivity up to",maxdiffus
+              write(outlog(io),'(a42,f10.3)')"   Velocities allow up a diffusivity up to",maxdiffus
             endif;enddo
           endif
 

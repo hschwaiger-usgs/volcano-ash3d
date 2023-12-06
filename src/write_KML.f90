@@ -749,7 +749,7 @@
       real(kind=dp)       :: olam,ophi ! using precision needed by libprojection
 
       integer             :: i,j
-      character (len=9)   :: StyleNow3
+      character(len=9)    :: StyleNow3
       real(kind=ip)       :: xleft,xright,ybottom,ytop
       real(kind=ip)       :: longLL,longUL,longLR,longUR,longCC
       real(kind=ip)       :: lattLL,lattUL,lattLR,lattUR,lattCC
@@ -769,7 +769,7 @@
       logical             :: CrossAntiMeridian     !if the polygon crosses the antimeridian
 
       INTERFACE
-        character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
+        character(len=20) function HS_xmltime(HoursSince,byear,useLeaps)
           real(kind=8)              :: HoursSince
           integer                   :: byear
           logical                   :: useLeaps

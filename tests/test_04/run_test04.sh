@@ -34,15 +34,13 @@ if [[ "$rc" -gt 0 ]] ; then
   exit
 fi
 
-ln -s ${WINDROOT}/NCEP Wind_nc
-
 for (( s=0;s<nSubCases;s++))
 do
   echo     "-----------------------------------------------------------"
   echo "   Sub-case ${s} : ${SubCaseLabels[s]}"
   outdir="output${s}"
-
-  ${Ash3d} TC4_LL_MSH_SC${s}.inp > /dev/null 2>&1
+  ln -s ${WINDROOT}/NCEP Wind_nc
+  ASH3DHOME=../../ ${Ash3d} TC4_LL_MSH_SC${s}.inp > /dev/null 2>&1
   rc=$((rc + $?))
   if [[ "$rc" -gt 0 ]] ; then
     echo "Error: Ash3d returned error code"
@@ -78,8 +76,9 @@ s=4
 echo "   Sub-case ${s} : ${SubCaseLabels[s]}"
 outdir="output${s}"
 ascii2Doutfiles2=("CloudHeight_120.00hrs.dat" "CloudHeight_240.00hrs.dat" "CloudLoad_120.00hrs.dat" "CloudLoad_240.00hrs.dat" "CloudConcentration_120.00hrs.dat" "CloudConcentration_240.00hrs.dat" "CloudArrivalTime.dat" "DepositFile_120.00hrs.dat" "DepositFile_240.00hrs.dat" "DepositFile_____final.dat" "DepositArrivalTime.dat")
+ln -s ${WINDROOT}/NCEP Wind_nc
 
-${Ash3d} TC4_LL_MSH_SC${s}.inp > /dev/null 2>&1
+ASH3DHOME=../../ ${Ash3d} TC4_LL_MSH_SC${s}.inp > /dev/null 2>&1
 for (( i=0;i<n2Dfiles;i++))
 do
   echo Checking 2d ASCII file "${ascii2Doutfiles2[i]}"

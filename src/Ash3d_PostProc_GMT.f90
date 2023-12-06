@@ -114,8 +114,6 @@
 
       logical            :: mask(nx,ny)
       character(len=6)   :: Fill_Value
-      character(len=16)  :: filedat
-      character(len=16)  :: filetxt
       character(len=16)  :: fileps  = "temp.ps"
       character(len=200) :: cmd
 
@@ -134,7 +132,6 @@
       real(kind=ip)  :: ymax
 
       character(len=10) :: dp_gmtfile
-      character(len=10) :: dp_outfile
       character(len=10) :: dp_confile
       character(len=25) :: gmtcom
       integer :: ioerr,ioerr2,iw,iwf,istat
@@ -143,12 +140,10 @@
       real(kind=ip),dimension(:),allocatable     :: lon_cities
       real(kind=ip),dimension(:),allocatable     :: lat_cities
       character(len=26),dimension(:),allocatable :: name_cities
-      logical           :: IsThere1,IsThere2
       character(len=80) :: linebuffer080
       character         :: testkey
-      integer           :: ilev,ignulev
-      integer           :: lev_i,substr_pos1,substr_pos2,substr_pos3
-      real(kind=4)      :: lev_r4
+      integer           :: ilev
+      integer           :: substr_pos1
       integer           :: icurve,ipt
 
       character(len=20) :: varname
@@ -574,7 +569,7 @@
       !if()then ! small domain, include rivers
       !  write(river_str,*)" -I1/1p,blue -I2/0.25p,blue"
       !else
-        write(river_str,*)" "
+        write(river_str,'(/)')""
       !endif
 
       ! Initial pscoast command to start the ps file
@@ -606,27 +601,31 @@
       write(55,*)adjustl(trim(cmd))
 
       ! write contour
-      !gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_1.lev    -A- -W3,0/128/255   -O -K >> temp.ps
-      do ilev=1,nConLev
-        write(55,*)'echo "',real(ContourLev(ilev),kind=4), '   C" > c.lev'
-        cmd = "gmt grdcontour out.grd " // adjustl(trim(area_str))  // " " // &
-                              adjustl(trim(proj_str))  // " " // &
-                              "-Cc.lev -A- " // adjustl(trim(penstr(ilev))) // " " // &
-                              adjustl(trim(contn_ps))
-        if(.not.writeContours)write(55,*)adjustl(trim(cmd))
-
-        if(writeContours)then
-          ! write contours to files
-          write(dp_confile,54) "out",ilev,".con"
- 54       format(a3,i0.2,a4)  ! write contour file name with level zero-padded
-          !gmt grdcontour out.grd $AREA $PROJ $BASE -Cc.lev    -A- -W3,0/128/255 -Dcfile.xyz
-!          write(55,*)'echo "',real(ContourLev(i),kind=4), '   C" > c.lev'
+      if(ContourFilled)then
+        ! Filled contours not yet implemented
+      else
+        !gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_1.lev    -A- -W3,0/128/255   -O -K >> temp.ps
+        do ilev=1,nConLev
+          write(55,*)'echo "',real(ContourLev(ilev),kind=4), '   C" > c.lev'
           cmd = "gmt grdcontour out.grd " // adjustl(trim(area_str))  // " " // &
                                 adjustl(trim(proj_str))  // " " // &
-                                "-Cc.lev -A- " // adjustl(trim(penstr(ilev))) // " -D" // adjustl(trim(dp_confile))
-          write(55,*)adjustl(trim(cmd))
-        endif
-      enddo
+                                "-Cc.lev -A- " // adjustl(trim(penstr(ilev))) // " " // &
+                                adjustl(trim(contn_ps))
+          if(.not.writeContours)write(55,*)adjustl(trim(cmd))
+
+          if(writeContours)then
+            ! write contours to files
+            write(dp_confile,54) "out",ilev,".con"
+ 54         format(a3,i0.2,a4)  ! write contour file name with level zero-padded
+            !gmt grdcontour out.grd $AREA $PROJ $BASE -Cc.lev    -A- -W3,0/128/255 -Dcfile.xyz
+!            write(55,*)'echo "',real(ContourLev(i),kind=4), '   C" > c.lev'
+            cmd = "gmt grdcontour out.grd " // adjustl(trim(area_str))  // " " // &
+                                  adjustl(trim(proj_str))  // " " // &
+                                  "-Cc.lev -A- " // adjustl(trim(penstr(ilev))) // " -D" // adjustl(trim(dp_confile))
+            write(55,*)adjustl(trim(cmd))
+          endif
+        enddo
+      endif
 
       ! Add cities.
       do i=1,ncities
@@ -790,9 +789,6 @@
       endif
 
 
-
-
-
       ! This is a test section that uses the GMT API
       !character(16) filedat,fileps
       !character(200) cmd
@@ -839,20 +835,20 @@
 
       use precis_param
 
-      use mesh,          only : &
-         nzmax,z_cc_pd
-
-      use Output_Vars,   only : &
-         pr_ash
-
-      use io_data,       only : &
-         Site_vprofile,x_vprofile,y_vprofile,cdf_b3l1,VolcanoName
-
-      use Source,        only : &
-         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
-
-      use time_data,     only : &
-         os_time_log,BaseYear,useLeap,ntmax,time_native
+!      use mesh,          only : &
+!         nzmax,z_cc_pd
+!
+!      use Output_Vars,   only : &
+!         pr_ash
+!
+!      use io_data,       only : &
+!         Site_vprofile,x_vprofile,y_vprofile,cdf_b3l1,VolcanoName
+!
+!      use Source,        only : &
+!         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
+!
+!      use time_data,     only : &
+!         os_time_log,BaseYear,useLeap,ntmax,time_native
 
       integer, intent (in) :: vprof_ID
 
@@ -881,17 +877,17 @@
 
       use precis_param
 
-      use Output_Vars,   only : &
-         THICKNESS_THRESH
-
-      use Airports,      only : &
-         Airport_Name,Airport_Thickness_TS
-
-      use io_data,       only : &
-         nWriteTimes,WriteTimes
-
-      use time_data,     only : &
-         Simtime_in_hours
+!      use Output_Vars,   only : &
+!         THICKNESS_THRESH
+!
+!      use Airports,      only : &
+!         Airport_Name,Airport_Thickness_TS
+!
+!      use io_data,       only : &
+!         nWriteTimes,WriteTimes
+!
+!      use time_data,     only : &
+!         Simtime_in_hours
 
       integer,intent(in) :: pt_indx
 

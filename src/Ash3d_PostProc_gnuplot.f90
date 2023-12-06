@@ -425,7 +425,7 @@
             write(54,*)lon_cc_pd(i)-360.0_ip,lat_cc_pd(j),OutVar(i,j)
           endif
         enddo
-        write(54,*)" "
+        write(54,'(/)')""
       enddo
       close(54)
       open(54,file="volc.dat",status='replace')
@@ -687,7 +687,7 @@
         do k = 1,nzmax
           write(54,*)time_native(i),z_cc_pd(k),pr_ash(k,i,vprof_ID)
         enddo
-        write(54,*)" "
+        write(54,'(/)')""
       enddo
       close(54)
 

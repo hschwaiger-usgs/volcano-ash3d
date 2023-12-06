@@ -21,7 +21,7 @@ do
   echo "   Sub-case ${s} : ${SubCaseLabels[s]}"
   outdir="output${s}"
 
-  ${Ash3d} TC3_XY_MSH_SC${s}.inp > /dev/null 2>&1
+  ASH3DHOME=../../ ${Ash3d} TC3_XY_MSH_SC${s}.inp > /dev/null 2>&1
   rc=$((rc + $?))
   if [[ "$rc" -gt 0 ]] ; then
     echo "Error: Ash3d returned error code"

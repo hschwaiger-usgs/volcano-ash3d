@@ -664,7 +664,7 @@
       inquire( file=trim(adjustl(AirportMasterFile)), exist=IsThere )
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)&
-          "Trying to read external global airport file in home=",Ash3dHome
+          "Trying to read external global airport file in home=",adjustl(trim(Ash3dHome))
         write(outlog(io),*)"Full file name = ",trim(adjustl(AirportMasterFile))
         write(outlog(io),*)"  Exists = ",IsThere
       endif;enddo
