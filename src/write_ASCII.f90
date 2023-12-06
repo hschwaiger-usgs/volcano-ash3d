@@ -317,7 +317,7 @@
       do j=ny,1,-1
         write(fid_ascii2dout,3006) (OVar(i,j), i=1,nx)
         !write(fid_ascii2dout,'(g0)') ''          ! make a blank line between rows
-        write(fid_ascii2dout,'(/)')               ! make a blank line between rows
+        write(fid_ascii2dout,*)" "               ! make a blank line between rows
       enddo
       
       close(fid_ascii2dout)
@@ -381,7 +381,7 @@
 
       do j=A_ny,1,-1
         read(fid_ascii2din,3006,err=2600) (A_XY(i,j), i=1,A_nx)
-        read(fid_ascii2din,'(/)')
+        read(fid_ascii2din,*)
       enddo
 
       close(fid_ascii2din)

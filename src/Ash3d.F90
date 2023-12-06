@@ -600,7 +600,7 @@
          (StopConditions(1).eqv..true.))then
         ! Normal stop condition set by user tracking the deposit
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),'(35,f8.3)')"Percent accumulated/exited exceeds ",StopValue
+          write(outlog(io),'(a35,f8.3)')"Percent accumulated/exited exceeds ",StopValue
         endif;enddo
       endif
       if((CheckConditions(2).eqv..true.).and.&

@@ -145,7 +145,7 @@ EOF
   #ps2epsi temp.ps temp.eps
   #convert temp.eps Kasatochi_CloudLoad_$i.png
   #epstopdf temp.eps Kasatochi_CloudLoad_$i.pdf
-  ps2pdf temp.eps Kasatochi_CloudLoad_$i.pdf
+  ps2pdf temp.ps Kasatochi_CloudLoad_$i.pdf
 
   # Clean up
   rm -f temp.* ac*lev gmt.history gmt.conf

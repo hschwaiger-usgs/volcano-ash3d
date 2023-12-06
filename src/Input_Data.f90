@@ -3864,7 +3864,7 @@
       !Block 6/Line 4: 
       !               Name of file containing aiport locations
 96041 do io=1,2;if(VB(io).le.verbosity_error)then
-        write(errlog(io),*) 'Would you like Ash3d to use the interal airports database instead (y/n)?'
+        write(errlog(io),*) 'Would you like Ash3d to use the internal airports database instead (y/n)?'
       endif;enddo
       read(input_unit,'(a1)') answer
       if (adjustl(trim(answer)).eq.'y') then
