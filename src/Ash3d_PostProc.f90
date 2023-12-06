@@ -299,7 +299,7 @@
           ! restart file
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)'No command-line arguments detected'
-          write(outlog(io),*)'  '
+          write(outlog(io),'(/)')''
         endif;enddo
 
         if(VB(1).ge.verbosity_silent)then
@@ -355,7 +355,7 @@
           write(outlog(io),*)'11 ash-cloud bottom (km)               12 ash-cloud load (T/km2)'
           write(outlog(io),*)'13 ash-cloud radar reflectivity (dBz)  14 ash-cloud arrival time (hours)'
           write(outlog(io),*)'15 topography                          16 profile plots'
-          write(outlog(io),*)' '
+          write(outlog(io),'(/)')''
           write(outlog(io),*)'Enter code for output product:'
         endif;enddo
         read(input_unit,*)iprod
@@ -365,7 +365,7 @@
           write(outlog(io),*)' 1 ASCII/ArcGIS           2 KML/KMZ'
           write(outlog(io),*)' 3 image/png              4 binary'
           write(outlog(io),*)' 5 shape file'
-          write(outlog(io),*)' '
+          write(outlog(io),'(/)')''
           write(outlog(io),*)'Enter code for output format:'
         endif;enddo
         read(input_unit,*)outformat

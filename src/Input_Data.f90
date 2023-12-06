@@ -255,7 +255,7 @@
 !  Finally, all pre-processor flags are checked here with logging to stdout of which flags
 !  are invoked. Pre-processor flags checked:
 !   LINUX, MACOS, WINDOWS  : OS declaration
-!   GFORTRAN,IFORT         : fortran compiler (for turning on/off non-standard subroutines)
+!   GFORTRAN,IFORT,AOCC    : fortran compiler (for turning on/off non-standard subroutines)
 !   FAST_DT, FAST_SUBGRID  : Speed-up tools for dt and grid calculations
 !   EXPLDIFF, CRANKNIC     : Explicit vs implicit diffusion algorithm
 !   LIM_NONE,LIM_LAXWEN,LIM_BW,LIM_FROMM,LIM_MINMOD,LIM_SUPERBEE,LIM_MC  : Limiter for advection
@@ -456,7 +456,6 @@
       MR_nio  = 2    ! Ash3d uses a logfile so set the output streams to stdin/stderr + logfile
 
       ! Next, check for environment variables ASH3DHOME
-
       ! Set the default installation path
       ! This is only needed if shared data files with fixed paths are read
       ! in such as the global airport and volcano ESP files.
@@ -488,7 +487,7 @@
 
       ! Testing for the presence of a directory is compiler-specific
 #ifdef IFORT
-      ! With ifort, we would need to test fot a directory as follows
+      ! With ifort, we need to test for a directory as follows
       inquire(directory=trim(adjustl(Ash3dHome)),exist=IsThere)
 #else
       ! For testing the existance of a directory with gfortran or aocc, append a delimiter
@@ -503,12 +502,13 @@
         endif;enddo
       else
         do io=1,2;if(VB(io).le.verbosity_error)then
-          write(errlog(io),*)"WARNING: Cannot find ASH3DHOME=",Ash3dHome
+          write(errlog(io),*)"WARNING: Cannot find ASH3DHOME=",trim(adjustl(Ash3dHome))
           write(errlog(io),*)"         If this run requires shared volcano or airport files,"
-          write(errlog(io),*)"         it will fail. Please either recompile with the install"
-          write(errlog(io),*)"         directory set, or set the environment variable ASH3DHOME."
-          write(errlog(io),*)"   Note: These files might not yet be in their final location until"
-          write(errlog(io),*)"         you run 'make install'"
+          write(errlog(io),*)"         it will fail. This directory could be missing if you have"
+          write(errlog(io),*)"         not yet executed 'make install', or it could be that 'make install'"
+          write(errlog(io),*)"         failed if permissions were not adaquate."
+          write(errlog(io),*)"         Please either recompile with the install directory set,"
+          write(errlog(io),*)"         or set the environment variable ASH3DHOME"
         endif;enddo
       endif
 
@@ -529,27 +529,27 @@
         endif
         if (CFL.le.0.0_ip)then
           do io=1,2;if(VB(io).le.verbosity_error)then
-            write(errlog(io),*)"ERROR: CFL must be > 0"
-            write(errlog(io),*)"       Currently set to ",CFL
+            write(errlog(io),'(a22)')     "ERROR: CFL must be > 0"
+            write(errlog(io),'(a24,f8.2)')"       Currently set to ",CFL
           endif;enddo
           stop 1
         elseif (CFL.ge.1.0_ip)then
           do io=1,2;if(VB(io).le.verbosity_error)then
-            write(errlog(io),*)"ERROR: CFL must be < 1"
-            write(errlog(io),*)"       Currently set to ",CFL
+            write(errlog(io),'(a22)')     "ERROR: CFL must be < 1"
+            write(errlog(io),'(a24,f8.2)')"       Currently set to ",CFL
           endif;enddo
           stop 1
         endif
         ! variable seems valid, proceeding.
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"  CFL condition reset by environment variable to: ",real(CFL,kind=4)
-          write(outlog(io),*)"   Note: It is possible this may be subsequently reset via"
-          write(outlog(io),*)"         the control file in a RESETPARAM block. Check the log file"
+          write(outlog(io),'(a50,f8.2)')"  CFL condition reset by environment variable to: ",CFL
+          write(outlog(io),*)"   Note: It is possible this may be subsequently reset via the"
+          write(outlog(io),*)"         control file in a RESETPARAM block. Check the log file"
           write(outlog(io),*)"         or the netcdf output file for final CFL used."
         endif;enddo
       else
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"  ASH3DCFL not found.  CFL condition : ",real(CFL,kind=4)
+          write(outlog(io),'(a40,f8.2)')"  ASH3DCFL not found.  CFL condition : ",CFL
         endif;enddo
       endif
 
@@ -637,7 +637,7 @@
         ! VALUE(8) = The milliseconds of the second
 
       do io=1,2;if(VB(io).le.verbosity_essential)then
-        write(outlog(io),*)" "
+        write(outlog(io),'(/)')
         write(outlog(io),*)"Running Ash3d with command line: ",&
                     trim(adjustl(os_full_command_line))
       endif;enddo
@@ -674,7 +674,7 @@
         write(outlog(io),*)"    cwd: ",trim(adjustl(os_cwd))
         write(outlog(io),*)"   user: ",trim(adjustl(os_user))
 
-        write(outlog(io),*)"  "
+        write(outlog(io),*)
         write(outlog(io),*)"This executable was compiled with the following compiler and options:"
         write(outlog(io),*)"    ",trim(adjustl(CompVer))
         write(outlog(io),*)"    ",trim(adjustl(CompOpt))
@@ -863,7 +863,7 @@
          WriteCloudHeight_ASCII,WriteCloudConcentration_KML,WriteCloudConcentration_ASCII,&
          WriteAirportFile_KML,WriteAirportFile_ASCII,Write3dFiles,ReadExtAirportFile,&
          Output_every_TS,Output_at_WriteTimes,Output_at_logsteps,nvprofiles,iTimeNext,&
-         Write_PT_Data,Write_PR_Data
+         Write_PT_Data,Write_PR_Data,isFinal_TS
 
       use mesh,          only : &
          de,dn,dx,dy,z_vec_init,dz_const,nxmax,nymax,nzmax,nsmax,VarDzType,ivent,jvent,&
@@ -1007,8 +1007,9 @@
       endif;enddo
 
       ! Initialize output
-      formatanswer = 'null'
-      nWriteTimes  = 0                  ! number of output files to write (default=0)
+      formatanswer  = 'null'
+      isFinal_TS    = .false.
+      nWriteTimes   = 0                 ! number of output files to write (default=0)
       NextWriteTime = 1.0_ip/EPS_TINY   ! Time to write the next file (default = never)
 
       ! Open and read control file
@@ -1164,15 +1165,15 @@
         latUR = latLL + gridwidth_n
 
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)'lonLL      = ',real(lonLL,kind=sp)
-          write(outlog(io),*)'lonUR      = ',real(lonUR,kind=sp)
-          write(outlog(io),*)'latLL      = ',real(latLL,kind=sp)
-          write(outlog(io),*)'latUR      = ',real(latUR,kind=sp)
-          write(outlog(io),*)'lon_volcano= ',real(lon_volcano,kind=sp)
-          write(outlog(io),*)'lat_volcano= ',real(lat_volcano,kind=sp)
+          write(outlog(io),'(a13,f10.4)')'lonLL      = ',lonLL
+          write(outlog(io),'(a13,f10.4)')'lonUR      = ',lonUR
+          write(outlog(io),'(a13,f10.4)')'latLL      = ',latLL
+          write(outlog(io),'(a13,f10.4)')'latUR      = ',latUR
+          write(outlog(io),'(a13,f10.4)')'lon_volcano= ',lon_volcano
+          write(outlog(io),'(a13,f10.4)')'lat_volcano= ',lat_volcano
           write(outlog(io),4) lonLL, latLL, gridwidth_e, gridwidth_n, &
                               lon_volcano, lat_volcano
-          write(outlog(io),*)'z_volcano  = ',real(z_volcano,kind=sp),' km'
+          write(outlog(io),'(a13,f10.4,a3)')'z_volcano  = ',z_volcano,' km'
           write(outlog(io),5) de, dn
        endif;enddo
 
@@ -1205,15 +1206,15 @@
         read(fid_ctrlfile,'(a80)')cdf_b1l6
         read(cdf_b1l6,*,err=9106) dx, dy                 ! cell size in horizontal, vertical, in km
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)'xLL       = ',real(xLL,kind=sp)
-          write(outlog(io),*)'xUR       = ',real(xUR,kind=sp)
-          write(outlog(io),*)'yLL       = ',real(yLL,kind=sp)
-          write(outlog(io),*)'yUR       = ',real(yUR,kind=sp)
-          write(outlog(io),*)'x_volcano = ',real(x_volcano,kind=sp)
-          write(outlog(io),*)'y_volcano = ',real(y_volcano,kind=sp)
+          write(outlog(io),'(a12,f10.4)')'xLL       = ',xLL
+          write(outlog(io),'(a12,f10.4)')'xUR       = ',xUR
+          write(outlog(io),'(a12,f10.4)')'yLL       = ',yLL
+          write(outlog(io),'(a12,f10.4)')'yUR       = ',yUR
+          write(outlog(io),'(a12,f10.4)')'x_volcano = ',x_volcano
+          write(outlog(io),'(a12,f10.4)')'y_volcano = ',y_volcano
           write(outlog(io),4) xLL, yLL, gridwidth_x, gridwidth_y, &
                               x_volcano,y_volcano
-          write(outlog(io),*)'z_volcano = ',real(z_volcano,kind=sp),' km'
+          write(outlog(io),'(a12,f10.4,a3)')'z_volcano = ',z_volcano,' km'
           write(outlog(io),5) dx, dy
         endif;enddo
         call xyChecker(xLL,yLL,dx,dy,x_volcano,y_volcano,gridwidth_x,gridwidth_y)
@@ -1436,7 +1437,7 @@
         stop 1
       else
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"Using constant turbulent diffusivity:  ",&
+          write(outlog(io),'(a39,f10.3,a5)')"Using constant turbulent diffusivity:  ",&
                   diffusivity_horz/3.6e-3_ip," m2/s"
         endif;enddo
         useDiffusion = .true.
@@ -1855,14 +1856,14 @@
               write(outlog(io),205)ii,e_prof_dz(i)*ii,e_prof_Volume(i,ii)
             enddo
  205            format(10x,i5,f15.3,f15.7)
-            write(outlog(io),*)"         Total Volume for this pulse = ",&
-                                real(sum(e_prof_Volume(i,:)),kind=4),"km3 DRE"
+            write(outlog(io),'(a39,g12.5,a7)')"         Total Volume for this pulse = ",&
+                                sum(e_prof_Volume(i,:)),"km3 DRE"
           endif;enddo
         endif
       enddo
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),*)"Total volume of all eruptions = ",&
-                            real(sum(e_volume),kind=sp),"km3 DRE"
+        write(outlog(io),'(a32,g12.5,a7)')"Total volume of all eruptions = ",&
+                            sum(e_volume),"km3 DRE"
       endif;enddo
 
       ! Now that we know the requested dz profile and the plume heights, we can
@@ -2429,9 +2430,9 @@
           ! Redefine nWriteTimes since it was read in as -1
           nWriteTimes = int(Simtime_in_hours/WriteInterval)+1
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"  WriteInterval    = ",real(WriteInterval,kind=sp)
-            write(outlog(io),*)"  Simtime_in_hours = ",real(Simtime_in_hours,kind=sp)
-            write(outlog(io),*)"  nWriteTimes      = ",nWriteTimes
+            write(outlog(io),'(a21,f10.3)')"  WriteInterval    = ",WriteInterval
+            write(outlog(io),'(a21,f10.3)')"  Simtime_in_hours = ",Simtime_in_hours
+            write(outlog(io),'(a21,i3)')"  nWriteTimes      = ",nWriteTimes
           endif;enddo
           allocate(WriteTimes(nWriteTimes))
 
@@ -2480,22 +2481,22 @@
       ! output options
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),33) WriteDepositFinal_ASCII,       &
-                              WriteDepositFinal_KML,         &
-                              WriteDepositTS_ASCII,          &
-                              WriteDepositTS_KML,            &
-                              WriteCloudConcentration_ASCII, &
-                              WriteCloudConcentration_KML,   &
-                              WriteCloudHeight_ASCII,        &
-                              WriteCloudHeight_KML,          &
-                              WriteCloudLoad_ASCII,          &
-                              WriteCloudLoad_KML,            &
-                              WriteDepositTime_ASCII,        &
-                              WriteDepositTime_KML,          &
-                              WriteCloudTime_ASCII,          &
-                              WriteCloudTime_KML,            &
-                              Write3dFiles,                  &
-                              formatanswer,                  &
-                              nWriteTimes
+                             WriteDepositFinal_KML,         &
+                             WriteDepositTS_ASCII,          &
+                             WriteDepositTS_KML,            &
+                             WriteCloudConcentration_ASCII, &
+                             WriteCloudConcentration_KML,   &
+                             WriteCloudHeight_ASCII,        &
+                             WriteCloudHeight_KML,          &
+                             WriteCloudLoad_ASCII,          &
+                             WriteCloudLoad_KML,            &
+                             WriteDepositTime_ASCII,        &
+                             WriteDepositTime_KML,          &
+                             WriteCloudTime_ASCII,          &
+                             WriteCloudTime_KML,            &
+                             Write3dFiles,                  &
+                             formatanswer,                  &
+                             nWriteTimes
       endif;enddo
       if (WriteDepositTS_ASCII          .or. &
           WriteDepositTS_KML            .or. &
@@ -3042,9 +3043,9 @@
         endif
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)
-          write(outlog(io),*)"Using deposit density (kg/m3) of: ",DepositDensity
+          write(outlog(io),'(a26,f10.3,a6)')"Using deposit density of: ",DepositDensity," kg/m3"
           write(outlog(io),*)
-          write(outlog(io),*)"Using a mass-fraction of fines (< 63um) of : ",real(fracfine,kind=sp)
+          write(outlog(io),'(a45,f10.3)')"Using a mass-fraction of fines (< 63um) of : ",fracfine
         endif;enddo
         ! if bin masses sum up close to 1 (within 1%), adjust automatically      
         if ((abs(sum(Tephra_bin_mass)-1.0_ip).gt.1.0e-5_ip).and. &  

@@ -125,7 +125,7 @@
           endif
         enddo
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"MR_iMetStep_Now = ",MR_iMetStep_Now, &
+          write(outlog(io),'(a18,i4,2f15.3)')"MR_iMetStep_Now = ",MR_iMetStep_Now, &
                     TimeNow_fromRefTime, &
                     MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now)
         endif;enddo
@@ -154,7 +154,7 @@
           MR_iMetStep_Now = MR_iMetStep_Now+1
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"  Need to load next step"
-            write(outlog(io),*)"MR_iMetStep_Now = ",MR_iMetStep_Now, &
+            write(outlog(io),'(a18,i4,2f15.3)')"MR_iMetStep_Now = ",MR_iMetStep_Now, &
                       TimeNow_fromRefTime, &
                       MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now)
           endif;enddo

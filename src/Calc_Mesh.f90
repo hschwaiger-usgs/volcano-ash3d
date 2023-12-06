@@ -171,13 +171,13 @@
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"    Cell-centered computational grid extends from:"
         if (IsLatLon) then
-          write(outlog(io),*)"     in lon: ",real(lon_cc_pd(1),kind=sp),real(lon_cc_pd(nxmax),kind=sp)
-          write(outlog(io),*)"     in lat: ",real(lat_cc_pd(1),kind=sp),real(lat_cc_pd(nymax),kind=sp)
-          write(outlog(io),*)"     in   z: ",real(   z_cc_pd(1),kind=sp),real(   z_cc_pd(nzmax),kind=sp)
+          write(outlog(io),'(a13,2f10.3)')"     in lon: ",lon_cc_pd(1),lon_cc_pd(nxmax)
+          write(outlog(io),'(a13,2f10.3)')"     in lat: ",lat_cc_pd(1),lat_cc_pd(nymax)
+          write(outlog(io),'(a13,2f10.3)')"     in   z: ",   z_cc_pd(1), z_cc_pd(nzmax)
         else
-          write(outlog(io),*)"     in x: ",real(x_cc_pd(1),kind=sp),real(x_cc_pd(nxmax),kind=sp)
-          write(outlog(io),*)"     in y: ",real(y_cc_pd(1),kind=sp),real(y_cc_pd(nymax),kind=sp)
-          write(outlog(io),*)"     in z: ",real(z_cc_pd(1),kind=sp),real(z_cc_pd(nzmax),kind=sp)
+          write(outlog(io),'(a11,2f10.3)')"     in x: ",x_cc_pd(1),x_cc_pd(nxmax)
+          write(outlog(io),'(a11,2f10.3)')"     in y: ",y_cc_pd(1),y_cc_pd(nymax)
+          write(outlog(io),'(a11,2f10.3)')"     in z: ",z_cc_pd(1),z_cc_pd(nzmax)
         endif
       endif;enddo
 

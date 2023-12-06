@@ -17,19 +17,19 @@ ifeq ($(RUN), DEBUG)
     FFLAGS = -O0 -g3 -Wall -Mstandard -fPIC -v
 endif
 ifeq ($(RUN), DEBUGOMP)
-    FFLAGS = -O0 -g3 -Wall -Wextra -fimplicit-none -Wline-truncation -Wcharacter-truncation -Wsurprising -Waliasing -Wimplicit-interface -Wunused-parameter -fwhole-file -fcheck=all -std=f2208 -pedantic -fbacktrace -Wunderflow -ffpe-trap=invalid,zero,overflow -Wuninitialized -Wmaybe-uninitialized -fdefault-real-8 -fopenmp -lgomp
+    FFLAGS = -O0 -g3 -Wall -Mstandard -fPIC -v -fopenmp
 endif
 # Profiling flags
 ifeq ($(RUN), PROF)
-    FFLAGS = -g2 -pg -fPIC
+    FFLAGS = -g2 -pg -Mstandard -fPIC
 endif
 # Production run flags
 ifeq ($(RUN), OPT)
     #FFLAGS = -O3 -zopt -ftz -w -ipo
-    FFLAGS = -O3 -fPIC -mavx -fplugin-arg-dragonegg-llvm-codegen-optimize=3 -fplugin-arg-dragonegg-llvm-ir-optimize=3
+    FFLAGS = -Ofast -Mstandard -fPIC -mavx -fplugin-arg-dragonegg-llvm-codegen-optimize=3 -fplugin-arg-dragonegg-llvm-ir-optimize=3
 endif
 ifeq ($(RUN), OMPOPT)
-    FFLAGS = -O3 -w -fno-math-errno -funsafe-math-optimizations -fno-trapping-math -fno-signaling-nans -fcx-limited-range -fno-rounding-math -fdefault-real-8 -fopenmp -lgomp
+    FFLAGS = -Ofast -Mstandard -fPIC -mavx -fplugin-arg-dragonegg-llvm-codegen-optimize=3 -fplugin-arg-dragonegg-llvm-ir-optimize=3 -fopenmp
 endif
   # Preprocessing flags
 FPPFLAGS =  -Mpreprocess $(OSFPPFLAG) $(DATAFPPFLAG) $(LIMFPPFLAG) $(DIFFFPPFLAG) $(memFPPFLAG) $(extdatFPPFLAG) $(FASTFPPFLAG) $(PIIFPPFLAG) $(SYSFPPFLAG) $(PLOTFPPFLAG)

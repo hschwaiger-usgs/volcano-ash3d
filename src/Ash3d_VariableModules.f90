@@ -203,10 +203,10 @@
 #endif
 
 #ifdef CRANKNIC
-      logical, parameter       :: useCN           = .true.
+      logical, parameter       :: useCN   = .true.
 #endif
 #ifdef EXPLDIFF
-      logical, parameter       :: useCN           = .false.
+      logical, parameter       :: useCN   = .false.
 #endif
 
       logical :: useFastDt        ! These are set in Set_OS_Env and control when
@@ -265,8 +265,8 @@
       logical, dimension(5) :: CheckConditions = .true.   ! Which conditions to check
 
       !  These are reset in Set_OS_Env
-      integer   :: OS_TYPE                        ! 1=linux, 2=apple, 3=windows
-      logical   :: IsLitEnd                       ! little-endian-ness; set in Set_OS_Env
+      integer   :: OS_TYPE    = 1                 ! 1=linux, 2=apple, 3=windows
+      logical   :: IsLitEnd   = .true.            ! little-endian-ness; set in Set_OS_Env
       logical   :: IsLinux    = .true.
       logical   :: IsWindows  = .false.
       logical   :: IsMacOS    = .false.
@@ -315,7 +315,7 @@
       character (len=130):: PP_infile       ! input control file name for Ash3d_PostProc
       character (len=50) :: datafileOut
       character (len=80) :: datafileIn
-      logical            :: LoadConcen
+      logical            :: LoadConcen =.false.
       character (len=80) :: concenfile
       integer            :: init_tstep
       character (len=130):: cdf_title
@@ -365,37 +365,37 @@
       character (len=80) :: cdf_b6l4
       character (len=80) :: cdf_b6l5
 
-      logical            :: WriteCloudConcentration_ASCII ! .true. if cloud top files are to be written out
+      logical            :: WriteCloudConcentration_ASCII=.false. ! .true. if cloud top files are to be written out
       logical            :: WriteCloudConcentration_KML
-      logical            :: WriteCloudHeight_ASCII        ! .true. if kml file of cloud height (km) is to be written out
+      logical            :: WriteCloudHeight_ASCII       =.false. ! .true. if kml file of cloud height (km) is to be written out
       logical            :: WriteCloudHeight_KML
-      logical            :: WriteCloudLoad_ASCII          ! .true. if kml file of cloud load (T/km2) is to be written out
+      logical            :: WriteCloudLoad_ASCII         =.false. ! .true. if kml file of cloud load (T/km2) is to be written out
       logical            :: WriteCloudLoad_KML
-      logical            :: WriteCloudTime_ASCII          ! .true. if time of cloud arrival is to be written out
+      logical            :: WriteCloudTime_ASCII         =.false. ! .true. if time of cloud arrival is to be written out
       logical            :: WriteCloudTime_KML
-      logical            :: WriteReflectivity_ASCII       ! .true. if radar dbZ is to be calculated
+      logical            :: WriteReflectivity_ASCII      =.false. ! .true. if radar dbZ is to be calculated
       logical            :: WriteReflectivity_KML
-      logical            :: WriteDepositFinal_ASCII       ! .true. if final deposit file is to be written out
+      logical            :: WriteDepositFinal_ASCII      =.false. ! .true. if final deposit file is to be written out
       logical            :: WriteDepositFinal_KML
-      logical            :: WriteDepositTS_ASCII          ! .true. if time series of deposit files is to be written out
+      logical            :: WriteDepositTS_ASCII         =.false. ! .true. if time series of deposit files is to be written out
       logical            :: WriteDepositTS_KML
-      logical            :: WriteDepositTime_ASCII        ! .true. if time of first ash is to be written out
+      logical            :: WriteDepositTime_ASCII       =.false. ! .true. if time of first ash is to be written out
       logical            :: WriteDepositTime_KML
-      logical            :: WriteAirportFile_ASCII        ! .true. if ash arrival times at airports is to be written out
+      logical            :: WriteAirportFile_ASCII       =.false. ! .true. if ash arrival times at airports is to be written out
       logical            :: WriteAirportFile_KML
-      logical            :: Write_PT_Data                 ! .true. if either of the above is true (writes to netcdf)
-      logical            :: Write_PR_Data                 ! .true. if writing profile data
-      logical            :: ReadExtAirportFile            ! .true. if external airport file is to be read 
-      logical            :: AppendExtAirportFile          ! .true. if external airports in external file are appended
+      logical            :: Write_PT_Data                =.false. ! .true. if either of the above is true (writes to netcdf)
+      logical            :: Write_PR_Data                =.false. ! .true. if writing profile data
+      logical            :: ReadExtAirportFile           =.false. ! .true. if external airport file is to be read 
+      logical            :: AppendExtAirportFile         =.false. ! .true. if external airports in external file are appended
 
-      logical            :: Write3dFiles            ! .true. if 3d files are to be written
-      logical            :: WriteGSD                ! .true. if grain-size distribution is to be written to airport file
-      logical            :: isFinal_TS              ! .true. if we're writing out the final deposit file
+      logical            :: Write3dFiles                 =.false. ! .true. if 3d files are to be written
+      logical            :: WriteGSD                     =.false. ! .true. if grain-size distribution is to be written to airport file
+      logical            :: isFinal_TS                   =.false. ! .true. if we're writing out the final deposit file
       
-      logical            :: Output_every_TS
-      logical            :: Output_at_WriteTimes
-      logical            :: Output_at_logsteps
-      logical            :: Called_Gen_Output_Vars
+      logical            :: Output_every_TS              =.false. !
+      logical            :: Output_at_WriteTimes         =.false. !
+      logical            :: Output_at_logsteps           =.false. !
+      logical            :: Called_Gen_Output_Vars       =.false. !
 
       character (len=30) :: VolcanoName       !name of the volcano, from the ESP input file
       integer            :: iTimeNext         !index value of next time step to write
@@ -410,7 +410,7 @@
 #endif
 
       integer,parameter :: MAXPROFILES = 99
-      integer           :: nvprofiles                                        ! number of vertical profiles to write out
+      integer           :: nvprofiles                             ! number of vertical profiles to write out
 #ifdef USEPOINTERS
       integer,          dimension(:), pointer :: i_vprofile    => null() ! i value of vertical profiles
       integer,          dimension(:), pointer :: j_vprofile    => null() ! j value of vertical profiles
@@ -707,14 +707,14 @@
       real(kind=ip),dimension(:)        ,allocatable :: rho_m       ! density (kg/m3)
       logical      ,dimension(:)        ,allocatable :: IsAloft    ! T/F indicator remaining airborne concentration
 #endif
-      real(kind=ip)      :: dep_percent_accumulated
-      real(kind=ip)      :: aloft_percent_remaining
-      real(kind=ip)      :: StopValue                  ! program stops when percent_accumulated>StopValue
-      real(kind=ip)      :: dep_vol
-      real(kind=ip)      :: aloft_vol
-      real(kind=ip)      :: outflow_vol
-      real(kind=ip)      :: tot_vol
-      real(kind=ip)      :: SourceCumulativeVol
+      real(kind=ip)      :: dep_percent_accumulated = 0.0_ip
+      real(kind=ip)      :: aloft_percent_remaining = 0.0_ip
+      real(kind=ip)      :: StopValue               = 0.0_ip   ! program stops when percent_accumulated>StopValue
+      real(kind=ip)      :: dep_vol                 = 0.0_ip
+      real(kind=ip)      :: aloft_vol               = 0.0_ip
+      real(kind=ip)      :: outflow_vol             = 0.0_ip
+      real(kind=ip)      :: tot_vol                 = 0.0_ip
+      real(kind=ip)      :: SourceCumulativeVol     = 0.0_ip
 
         ! These are the max/min indices of the ash cloud used if FAST_SUBGRID is used
       integer :: imin,imax
