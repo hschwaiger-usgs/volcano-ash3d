@@ -69,6 +69,10 @@
 
       subroutine deallocate_ASCII
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine deallocate_ASCII"
+      endif;enddo
+
       if(allocated(A_XY)) deallocate(A_XY)
 
       end subroutine deallocate_ASCII
@@ -97,6 +101,10 @@
 
       integer  ::  ionumber            !number of output file
       character(len=14)  :: cio
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine vprofileopener"
+      endif;enddo
 
       do i=1,nvprofiles
         ionumber = fid_vprofbase + i-1
@@ -173,6 +181,10 @@
         end function HS_yyyymmddhh_since
       END INTERFACE
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine vprofilewriter"
+      endif;enddo
+
       do i=1,nvprofiles
         ! don't write if there's no ash
         if(maxval(pr_ash(1:nzmax,itime,i)).lt.CLOUDCON_THRESH*KG_2_MG/KM3_2_M3) cycle
@@ -187,7 +199,6 @@
       return
 
       end subroutine vprofilewriter
-
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
@@ -207,6 +218,10 @@
          nvprofiles
 
       integer  ::  i, ionumber
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine vprofilecloser"
+      endif;enddo
 
       do i=1,nvprofiles
         ionumber = fid_vprofbase + i-1
@@ -258,6 +273,10 @@
       integer :: i,j
       character (len=9)  :: cio
       character(len=50)  :: filename_out
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_2D_ASCII"
+      endif;enddo
 
       read(Fill_Value,*)FValue
 
@@ -360,6 +379,10 @@
       integer :: i,j
       integer :: iost
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine read_2D_ASCII"
+      endif;enddo
+
       open(unit=fid_ascii2din,file=trim(adjustl(filename)), status='old',action='read',err=2500)
 
       read(fid_ascii2din,3000,iostat=iost,err=2600) A_nx        ! read header values
@@ -438,6 +461,10 @@
       integer :: i,j,k
       character(len=32) :: DepOutfileName
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_3D_ASCII"
+      endif;enddo
+
       ! Output data in ASCII format
       DepOutfileName='3d_tephra_fall_'//cio//'.dat'
       open(unit=fid_ascii3dout,file=DepOutfileName,status='replace',action='write')
@@ -485,6 +512,10 @@
       integer :: iost
       character(len=130):: linebuffer130
       real(kind=ip) :: value1,value2,value3
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine read_3D_ASCII"
+      endif;enddo
 
       open(unit=fid_ascii3din,file=trim(adjustl(filename)), status='old',action='read',err=2500)
 
@@ -600,6 +631,10 @@
           logical                   :: useLeaps
         end function HS_xmltime
       END INTERFACE
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Write_PointData_Airports_ASCII"
+      endif;enddo
 
       ! Write values out to ASCII file
       if (WriteAirportFile_ASCII) then

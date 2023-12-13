@@ -107,6 +107,10 @@
         end subroutine Read_NextMesoStep
       END INTERFACE
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine MesoInterpolator"
+      endif;enddo
+
       TimeNow_fromRefTime = SimStartHour+TimeNow  ! hours since reference time (1-1-1900)
       ! MesoInterpolater is called once before the time loop in order to
       ! initilize velocities on the computational grid and to determine the
@@ -427,6 +431,10 @@
       integer           :: isize
       integer           :: ivar
       integer           :: istep
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Read_NextMesoStep"
+      endif;enddo
 
         ! Before reading state variables, we need to load the height grid
         ! which will be used in the QC checking

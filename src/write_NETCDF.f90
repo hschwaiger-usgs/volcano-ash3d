@@ -264,7 +264,7 @@
       END INTERFACE
 
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),*)"Inside NC_create_netcdf_file"
+        write(outlog(io),*)"     Entered Subroutine NC_create_netcdf_file"
       endif;enddo
 
       allocate(dum2dint_out(nxmax,nymax))
@@ -2753,7 +2753,7 @@
       character (len=16)         :: outstring
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
-        write(outlog(io),*)"Allocating output vars"
+        write(outlog(io),*)"     Entered Subroutine NC_append_to_netcdf"
       endif;enddo
 
       allocate(ashcon(nxmax,nymax,nzmax,nsmax))
@@ -3288,6 +3288,10 @@
       integer :: it
       real(kind=op), allocatable, dimension(:) :: t_list
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine NC_RestartFile_ReadTimes"
+      endif;enddo
+
       ! Since we haven't opened a logfile yet, only write out to stdout if not a
       ! control file case.
       io = 1
@@ -3354,6 +3358,10 @@
       integer :: i
       integer :: nSTAT
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine NC)_RestartFile_LoadConcen"
+      endif;enddo
+
       allocate(dum2d_out(nxmax,nymax))
       allocate(dum3d_out(nxmax,nymax,nzmax))
       allocate(ashcon(nxmax,nymax,nzmax,nsmax))
@@ -3410,7 +3418,6 @@
 
       end subroutine NC_RestartFile_LoadConcen
 
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !    NC_check_status
@@ -3438,6 +3445,10 @@
       character(len=*), intent(in) :: operation
 
       character(len=9) :: severity
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine NC_check_status"
+      endif;enddo
 
       if (icode.eq.0)then 
         severity = "WARNING: "
@@ -3552,6 +3563,10 @@
           logical            :: useLeaps
         end function HS_hours_since_baseyear
       END INTERFACE
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine NC_Read_Output_Products"
+      endif;enddo
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Reading NetCDF file ",concenfile

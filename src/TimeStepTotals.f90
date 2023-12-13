@@ -49,6 +49,10 @@
         end function HS_yyyymmddhhmm_since
       END INTERFACE
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine TimeStepTotals"
+      endif;enddo
+
       ! Sum up the total ash aloft, on the ground and that left the domain
       tot_vol     = 0.0_ip
       dep_vol     = 0.0_ip 

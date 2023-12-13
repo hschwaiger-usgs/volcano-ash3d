@@ -109,6 +109,10 @@
       integer,intent(in) :: nair
       integer,intent(in) :: nWT
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Allocate_Airports"
+      endif;enddo
+
       ! Allocate array of airports to be used in the main program
       allocate(Airport_Name(nair))             ;             Airport_Name = ' '
       allocate(Airport_Code(nair))             ;             Airport_Code = ' '
@@ -156,6 +160,10 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Deallocate_Airports
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Deallocate_Airports"
+      endif;enddo
 
       ! Deallocation of arrays of airports used in the main program
       if(allocated(Airport_Name))              deallocate(Airport_Name)
@@ -232,6 +240,10 @@
       real(kind=ip)      :: latitude, longitude
       real(kind=dp)      :: lat_in,lon_in,xout,yout
       integer            :: n_airports_total    ! number of airports in external file
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine ReadAirports"
+      endif;enddo
 
       ! This populates the global list, regardless of any other POI file
       call Read_GlobalAirports(NAIRPORTS_EWERT)
@@ -451,6 +463,10 @@
       real(kind=ip) :: xnow, ynow, AREA, A11, A12, A21, A22, x1, x2, y1, y2
       real(kind=ip) :: z11, z12, z21, z22, znow
 
+      do io=1,2;if(VB(io).le.verbosity_debug2)then
+        write(outlog(io),*)"     Entered Function bilinear_thickness"
+      endif;enddo
+
       if (IsLatLon) then
         xnow = Airport_Longitude(i)
         ynow = Airport_Latitude(i)
@@ -553,6 +569,10 @@
       integer           :: ioerr
       real(kind=dp)     :: lat_in,lon_in,xout,yout
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine ReadExtAirports"
+      endif;enddo
+
       ! These are some variables used if we do an inquire on this file
       !logical           :: ex, op
       !character(len=11) :: acc,seq, frm
@@ -652,6 +672,10 @@
       logical                 :: IsThere
       character(len=130)      :: AirportMasterFile           !Only needed if USEEXTDATA=T
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Read_GlobalAirports"
+      endif;enddo
+
       allocate(AirportFullLat(MAXAIRPORTS))
       allocate(AirportFullLon(MAXAIRPORTS))
       allocate(AirportFullCode(MAXAIRPORTS))
@@ -727,6 +751,10 @@
       integer, intent(out) :: num_GlobAirports
 
       integer :: i
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Read_GlobalAirports"
+      endif;enddo
 
       allocate(AirportFullLat(MAXAIRPORTS))
       allocate(AirportFullLon(MAXAIRPORTS))

@@ -186,6 +186,10 @@
         end function LitEnd_8real
       END INTERFACE
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_ShapeFile_Polyline"
+      endif;enddo
+
       if(.not.IsLatLon)then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: Currently shapefiles are only tested for lon/lat coordinates."
@@ -837,6 +841,8 @@
       subroutine writeShapFileFieldDesArr(ov_dbasID,fldlen,DBASE_FieldName,&
                                    DBASE_FieldTyp,DBASE_FieldLen)
 
+      use io_units
+
       implicit none
 
       integer,intent(in)               :: ov_dbasID
@@ -850,6 +856,10 @@
       integer(kind=1)  :: DBASE_FieldWrkArID
       integer(kind=1)  :: DBASE_zero     = 0
       integer          :: i
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine writeShapFileFieldDesArr"
+      endif;enddo
 
       !  Now the fields followed by the field terminator
       !32-n : 32 bytes: Field descriptor array

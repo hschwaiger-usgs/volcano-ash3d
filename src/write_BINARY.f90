@@ -51,6 +51,10 @@
 
       subroutine deallocate_Binary
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine deallocate_Binary"
+      endif;enddo
+
       if(allocated(B_XY)) deallocate(B_XY)
 
       end subroutine deallocate_Binary
@@ -89,6 +93,10 @@
       integer :: i,j
       character(len= 9)  :: cio
       character(len=50)  :: filename_out
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_2D_Binary"
+      endif;enddo
 
       read(Fill_Value,*)FValue
 
@@ -163,6 +171,10 @@
       real(kind=op) :: OVar(nx,ny)
       integer       :: i,j
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine read_2D_Binary"
+      endif;enddo
+
       if(op.eq.4)then
         open(unit=fid_bin2dout,file=trim(adjustl(filename)), &
           status='old', action='read', &
@@ -207,6 +219,10 @@
 
       integer :: i,j,k
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_3D_Binary"
+      endif;enddo
+
       ! Write out data in raw binary form
 
       ! 3-D total tephra concentration
@@ -249,6 +265,10 @@
       real(kind=op) :: OVar3d(nx,ny,nz)
       integer       :: i,j,k
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine read_3D_Binary"
+      endif;enddo
+
       if(op.eq.4)then
         open(unit=fid_bin3dout,file=trim(adjustl(filename)), &
           status='old', action='read', &
@@ -271,4 +291,3 @@
       end module Ash3d_Binary_IO
 
 !##############################################################################
-

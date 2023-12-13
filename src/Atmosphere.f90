@@ -187,6 +187,10 @@
       use global_param,  only : &
          useMoistureVars
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Deallocate_Atmosphere_Met"
+      endif;enddo
+
 #ifdef USEPOINTERS
       if(associated(AirTemp_meso_last_step_MetP_sp))deallocate(AirTemp_meso_last_step_MetP_sp)
       if(associated(AirDens_meso_last_step_MetP_sp))deallocate(AirDens_meso_last_step_MetP_sp)
@@ -270,6 +274,10 @@
       !logical :: first_time
       ! Fclaw
       !logical,save :: first_time = .true.
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Set_Atmosphere_Meso"
+      endif;enddo
 
       if(Load_MesoSteps)THEN
         if(first_time)THEN
@@ -398,6 +406,10 @@
       real(kind=sp) :: Dens_IdealGasLaw
       real(kind=sp) :: pres,temp
 
+      do io=1,2;if(VB(io).le.verbosity_debug2)then
+        write(outlog(io),*)"     Entered function Dens_IdealGasLaw"
+      endif;enddo
+
         ! Get the density (kg/m^3) of dry air via the ideal gas law and
         ! Specific gas constant of R=286.98 J /(kg K)
       Dens_IdealGasLaw = pres/(real(temp*R_GAS_DRYAIR,kind=sp))
@@ -423,6 +435,10 @@
 
       real(kind=sp) :: Visc_Sutherland
       real(kind=sp) :: temp
+
+      do io=1,2;if(VB(io).le.verbosity_debug2)then
+        write(outlog(io),*)"     Entered Visc_Sutherland"
+      endif;enddo
 
             ! Get the dynamic viscosity (kg/(m s)) of air via Sutherland's
             ! equation (Jacobson05 p. 102 Eq 4.54))
@@ -455,6 +471,10 @@
 
       real(kind=sp) :: lambda_MeanFreePath
       real(kind=sp) :: visc,pres,temp
+
+      do io=1,2;if(VB(io).le.verbosity_debug2)then
+        write(outlog(io),*)"     Entered function lambda_MeanFreePath"
+      endif;enddo
 
         ! Mean-free-path of dry air : Eq. 9.6 of Seinfeld and Pandis
       lambda_MeanFreePath = (2.0_sp*visc)/ &

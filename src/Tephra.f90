@@ -127,6 +127,10 @@
 
       subroutine Allocate_Tephra
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Allocate_Tephra"
+      endif;enddo
+
       allocate(Tephra_v_s(n_gs_max));       Tephra_v_s      = 0.0_ip
       allocate(Tephra_gsdiam(n_gs_max));    Tephra_gsdiam   = 0.0_ip
       allocate(Tephra_bin_mass(n_gs_max));  Tephra_bin_mass = 0.0_ip
@@ -154,6 +158,10 @@
       use MetReader,     only : &
          nx_submet,ny_submet,np_fullmet
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Allocate_Tephra_Met"
+      endif;enddo
+
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"--------------------------------------------------"
         write(outlog(io),*)"---------- ALLOCATE_TEPHRA_MET -------------------"
@@ -178,6 +186,10 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Deallocate_Tephra
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Deallocate_Tephra"
+      endif;enddo
 
 #ifdef USEPOINTERS
       if(associated(Tephra_v_s))        deallocate(Tephra_v_s)
@@ -212,6 +224,10 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Deallocate_Tephra_Met
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Deallocate_Tephra_Met"
+      endif;enddo
 
 #ifdef USEPOINTERS
       if(associated(vf_meso_last_step_MetP_sp)) deallocate(vf_meso_last_step_MetP_sp)
@@ -265,6 +281,10 @@
       real(kind=ip) :: dens,visc,lambda,Kna
       real(kind=ip) :: v_grav_set
       logical,save  :: first_time = .true.
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Set_Vf_Meso"
+      endif;enddo
 
       if(Load_MesoSteps)then
         if(first_time)then
@@ -394,6 +414,10 @@
       real(kind=ip) :: tmp_b, tmp_c
       integer       :: Dahni
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Calculate_Tephra_Shape"
+      endif;enddo
+
 !     Calculating terms for Cunningham slip coefficients for non-spherical
 !     particles
       Dahneke_LD( 1) =   1.0_ip
@@ -495,6 +519,10 @@
       real(kind=ip) :: tmp2,tmp3,tmp4,tmp5,tmp6,tmp7
       real(kind=ip) :: temp_a(5)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Sort_Tephra_Size"
+      endif;enddo
+
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*) 'WARNING: Sorting grain-size bins by size'
       endif;enddo
@@ -581,6 +609,10 @@
       real(kind=ip) :: mid_bin_pos_half
       real(kind=ip) :: erf_at_a,erf_at_b
       real(kind=ip) :: fac1,frac_to_distrib
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine partition_gsbins"
+      endif;enddo
 
       suppl_frac = 0.0_ip
       mid_bin = 1
@@ -717,6 +749,10 @@
 
       integer :: isize
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Prune_GS"
+      endif;enddo
+
       ! Loop through all the grain sizes and check if any have completely
       ! flushed out.  If so, then 
       ! modify the max index of the grain-size loop (n_gs_aloft)
@@ -805,6 +841,10 @@
       !vset2 = (sqrt(6.)*sqrt(diam**3.*Ffac2*g*rho_air*rho_m + &
       !         54.*eta**2.*Ffac1**2.)-18.*eta*Ffac1)/(diam*Ffac2*rho_air)/3.0
 
+      do io=1,2;if(VB(io).le.verbosity_debug2)then
+        write(outlog(io),*)"     Entered function vset_WH"
+      endif;enddo
+
       ! Here's expanding out exponents and precalculating roots
       vset2 = (2.44948974278318_ip*sqrt(diam*diam*diam*Ffac2*GRAV*rho_air*rho_m + &
                54.0_ip*eta*eta*Ffac1*Ffac1)-18.0_ip*eta*Ffac1)/(diam*Ffac2*rho_air)/3.0_ip
@@ -853,6 +893,10 @@
       real(kind=ip) :: vnew, vold, Re            ! old and new settling velocity
       real(kind=ip) :: Cd                        ! drag coefficient
       real(kind=ip) :: Cslip                     ! Slip correction
+
+      do io=1,2;if(VB(io).le.verbosity_debug2)then
+        write(outlog(io),*)"     Entered function vset_WH_slip"
+      endif;enddo
 
       vold = 1.0_ip                              ! assume an initial settling velocity of 1 m/s
 
@@ -920,6 +964,10 @@
       real(kind=ip) :: Cd                        ! drag coefficient
 
       real(kind=ip) :: Cd100
+
+      do io=1,2;if(VB(io).le.verbosity_debug2)then
+        write(outlog(io),*)"     Entered function vset_WH_PCM"
+      endif;enddo
 
       Cd100 = (24.0_ip/100.0_ip)*Ffac1 + Ffac2
 
@@ -992,6 +1040,10 @@
 
       real(kind=ip) :: Cd1,Cd2
 
+      do io=1,2;if(VB(io).le.verbosity_debug2)then
+        write(outlog(io),*)"     Entered function vset_Gans"
+      endif;enddo
+
       vold = 1.0_ip                              ! assume an initial settling velocity of 1 m/s
 
       Re = rho_air*vold*diam/eta                 ! Eq. 4  of Wilson79
@@ -1050,6 +1102,10 @@
       real(kind=ip) :: Kna               ! adjusted Knudsen number
 
       real(kind=ip) :: Cslip                     ! drag coefficient
+
+      do io=1,2;if(VB(io).le.verbosity_debug2)then
+        write(outlog(io),*)"     Entered function vset_Stokes_slip"
+      endif;enddo
 
       ! Eq. 9.34 of Seinfeld and Pandis
       Cslip = 1.0_ip+ Kna * (1.257_ip + 0.4_ip*exp(-1.1_ip/Kna))

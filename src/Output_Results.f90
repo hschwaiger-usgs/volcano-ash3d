@@ -96,6 +96,10 @@
         end function HS_xmltime
       END INTERFACE
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine output_results"
+      endif;enddo
+
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ! Open/Create output files
       !   This is only executed the first time output_results is called

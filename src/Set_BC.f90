@@ -28,6 +28,10 @@
 
       integer,intent(in) :: bc_code ! 1 for advection, 2 for diffusion
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Set_BC"
+      endif;enddo
+
       if(bc_code.eq.1)then ! ADVECTION
         !------------------------------------------------------------------------
         !   VELOCITIES

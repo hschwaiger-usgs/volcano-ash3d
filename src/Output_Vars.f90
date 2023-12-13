@@ -362,6 +362,10 @@
       use mesh,          only : &
          nxmax,nymax,nzmax
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Allocate_Outpur_Vars"
+      endif;enddo
+
       allocate(Mask_Cloud(nxmax,nymax))
       Mask_Cloud = .false.
       allocate(Mask_Deposit(nxmax,nymax))
@@ -407,6 +411,10 @@
 
       integer,intent(in) :: nt
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Allocate_NTime"
+      endif;enddo
+
       allocate(time_native(nt)); time_native = 0.0_dp
 
       end subroutine Allocate_NTime
@@ -431,6 +439,10 @@
       integer,intent(in) :: nz
       integer,intent(in) :: nt
       integer,intent(in) :: nv
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Allocate_Profile"
+      endif;enddo
 
       if(nv.gt.0)then
         allocate(pr_ash(nz,nt,nv))                       ! vertical ash profile
@@ -466,6 +478,10 @@
       integer,intent(in) :: ny
       integer,intent(in) :: nz
       integer,intent(in) :: ns
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Allocate_Output_UserVars"
+      endif;enddo
 
         ! User-defined 2-D static variables (in x,y)
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -534,6 +550,10 @@
 
       subroutine Deallocate_Output_Vars()
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Deallocate_Output_Vars"
+      endif;enddo
+
 #ifdef USEPOINTERS
       if(associated(Mask_Cloud))       deallocate(Mask_Cloud)
       if(associated(Mask_Deposit))     deallocate(Mask_Deposit)
@@ -582,6 +602,10 @@
 
       subroutine Deallocate_NTime
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Deallocate_NTime"
+      endif;enddo
+
 #ifdef USEPOINTERS
       if(associated(time_native))deallocate(time_native)
 #else
@@ -604,6 +628,10 @@
 
       subroutine Deallocate_Profile
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Deallocate_Profile"
+      endif;enddo
+
 #ifdef USEPOINTERS
       if(associated(pr_ash))deallocate(pr_ash)                       ! vertical ash profile
 #else
@@ -625,6 +653,10 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Deallocate_Output_UserVars()
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Deallocate_Output_UserVars"
+      endif;enddo
 
 #ifdef USEPOINTERS
       if(associated(var_User2d_static_XY_name))    deallocate(var_User2d_static_XY_name)
@@ -706,6 +738,10 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Set_OutVar_ContourLevel
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Set_OutVar_ContourLevel"
+      endif;enddo
 
       ! Set contour levels and colors
       !  Deposit Thickness (mm)
@@ -828,6 +864,10 @@
 
       integer :: i,j
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine AshThicknessCalculator"
+      endif;enddo
+
       !calculate deposit thickness in mm, and area covered
       Mask_Deposit(:,:)         = .false.
       DepositThickness(:,:)     = 0.0_ip
@@ -880,6 +920,10 @@
 
       integer :: isize
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine AshTotalCalculator"
+      endif;enddo
+
       if(n_gs_max.gt.0)then
         ashcon_tot = 0.0_op
         do isize=1,n_gs_max
@@ -921,6 +965,10 @@
       real(kind=ip) :: NumDens          !number densities (#/m3) of particles
       real(kind=ip) :: zcol             !z value of cell
       real(kind=ip) :: tmp
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine dbZCalculator"
+      endif;enddo
 
       dbZCol(:,:) = dbZCol_FillValue
       dbZ(:,:,:)  = dbZCol_FillValue
@@ -992,6 +1040,10 @@
       real(kind=ip),dimension(nzmax) :: TotalConcentration ! concentration from all grain sizes as a vertical column
       real(kind=ip)                  :: MaxTotalConcentration
  
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine ConcentrationCalculator"
+      endif;enddo
+
       ! calculate cloud concentration,
       ! cloud height, and cloud bottom
 
@@ -1096,7 +1148,11 @@
       integer :: i,j,k
 
       real(kind=ip) :: CellArea
- 
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine CloudAreaCalculator"
+      endif;enddo
+
       ! calculate cloud concentration
       LoadVal(1)         = 0.24_ip
       LoadVal(2)         = 1.0_ip
@@ -1144,6 +1200,10 @@
          time
 
       integer :: i,j
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Gen_Output_Vars"
+      endif;enddo
 
       Mask_Cloud   = .false.
       Mask_Deposit = .false.
@@ -1205,6 +1265,10 @@
       real(kind=ip),intent(out) :: vol ! Total volume of ash still airborne
       integer :: isize
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Calc_AshVol_Aloft"
+      endif;enddo
+
       vol = 0.0_ip
 
       ! First calculate mass of all species
@@ -1265,6 +1329,10 @@
       integer :: i,k
       real(kind=ip) :: totalash
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Calc_vprofile"
+      endif;enddo
+
       if(itime.gt.ntmax)then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: itime is greater than ntmax"
@@ -1274,7 +1342,6 @@
       else
         time_native(itime) = time
       endif
-
 
       do i=1,nvprofiles
         ! Get the total ash aloft in the coloumn at this point in kg/km3
@@ -1318,6 +1385,10 @@
       real(kind=ip),intent(out) :: vol ! Total volume of ash in deposit
       integer :: isize
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Calc_AshVol_Deposit"
+      endif;enddo
+
       vol = 0.0_ip
 
       if(n_gs_max.gt.0)then
@@ -1358,6 +1429,10 @@
       real(kind=ip),intent(out) :: vol ! Total volume of ash flowing out of gird
 
       integer :: isize
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Calc_AshVol_Outflow"
+      endif;enddo
 
       vol = 0.0_ip
 
@@ -1419,6 +1494,10 @@
         ! where the deposit is located and where FillValues should used
         call AshThicknessCalculator
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine FirstAsh"
+      endif;enddo
 
         !record thickness & cloud concentration in last time step      
       Airport_CloudHereLast  = Airport_CloudHere

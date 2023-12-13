@@ -93,6 +93,10 @@
 
       integer :: ivar
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Set_OutVar_Specs"
+      endif;enddo
+
       ivar = 1 ! cloud concentration
       KMZ_filename(ivar)      = 'CloudConcentration.kmz       '
       KML_filename(ivar)      = 'CloudConcentration.kml       '
@@ -454,6 +458,10 @@
         end function HS_yyyymmddhh_since
       END INTERFACE
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine OpenFile_KML"
+      endif;enddo
+
       filename    = KML_filename(ivar)
       fid         = KML_fid(ivar)
       n_clrmp     = KML_n_clrmp(ivar)
@@ -776,6 +784,9 @@
         end function HS_xmltime
       END INTERFACE
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Write_2D_KML"
+      endif;enddo
 
       fid       = KML_fid(ivar)
       n_clrmp   = KML_n_clrmp(ivar)
@@ -1115,6 +1126,10 @@
           logical                   :: useLeaps
         end function HS_xmltime
       END INTERFACE
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Write_PointData_Airports_KML"
+      endif;enddo
 
       ! Loop of all airports in the computational domain and build list of
       ! impacted airports, incrementing a plot index and logging those airport
@@ -1584,6 +1599,10 @@
 
       integer :: fid
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Close_KML"
+      endif;enddo
+
       fid = KML_fid(ivar)
 
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -1629,6 +1648,10 @@
       real(kind=ip) :: xleft,xright,ybottom,ytop
       integer       :: ict, fid
       real(kind=dp)  :: olam,ophi ! using precision needed by libprojection
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine PlotModelBoundary"
+      endif;enddo
 
       write(fid,3) ! write style for model boundary
 

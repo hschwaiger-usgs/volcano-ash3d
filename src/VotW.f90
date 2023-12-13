@@ -72,6 +72,10 @@
 
       integer            :: i,Volcano_ID
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine get_ESP"
+      endif;enddo
+
       ! http://www.volcano.si.edu/world/volcano.cfm?vnum=
       ! http://dx.doi.org/10.5479/si.GVP.VOTW4-2013
 
@@ -304,6 +308,10 @@
       integer            :: nvolcs
       character          :: testkey
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine VotW_v12"
+      endif;enddo
+
       VotWMasterFile = trim(Ash3dHome) // &
                             DirDelim // "share" // &
                             DirDelim // "VotW_ESP_v12_csv.txt"
@@ -392,6 +400,10 @@
       character(len=42) ,intent(inout) :: volcName(MAXVOLCS)
 
       integer :: i
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine VotW_v12"
+      endif;enddo
 
       i = 0;
       i=i+1; volcLat(i)= 50.170; volcLon(i)=  6.850; volcElev(i)=  600;  volcLoc(i)="Germany                       "; 

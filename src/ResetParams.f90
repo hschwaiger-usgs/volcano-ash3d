@@ -87,6 +87,10 @@
       real(kind=ip)    ,dimension(MAXPARAMS) :: pvalue
       character(len=50),dimension(MAXPARAMS) :: pvalue_str
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine input_data_ResetParams"
+      endif;enddo
+
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"    Searching for OPTMOD=RESETPARAMS"
       endif;enddo

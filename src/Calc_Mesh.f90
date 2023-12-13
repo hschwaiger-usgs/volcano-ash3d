@@ -260,7 +260,7 @@
       real(kind=dp)  :: olam,ophi ! using precision needed by libprojection
       real(kind=dp)  :: xin,yin
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"Inside get_minmax_lonlat"
         write(outlog(io),*)"Allocating of size: ",nxmax+2,nymax+2
       endif;enddo
@@ -340,6 +340,10 @@
 
       integer :: i,j,k
       real(kind=ip) :: tmp_flt
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine get_minmax_index"
+      endif;enddo
 
       ! Find extent of ash cloud making sure to include the vent
       !  First in x

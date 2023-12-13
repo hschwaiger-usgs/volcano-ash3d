@@ -149,6 +149,10 @@
 
       subroutine Allocate_Source_eruption
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Allocate_Source_eruption"
+      endif;enddo
+
       allocate(e_StartTime(neruptions));            e_StartTime   = 0.0_ip
       allocate(e_Duration(neruptions));             e_Duration    = 0.0_ip
       allocate(e_PlumeHeight(neruptions));          e_PlumeHeight = 0.0_ip
@@ -187,6 +191,10 @@
       use mesh,          only : &
          nzmax,nsmax
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Allocate_Source_grid"
+      endif;enddo
+
       allocate(NormSourceColumn(neruptions,1:nzmax));    NormSourceColumn = 0.0_ip
       allocate(SourceNodeFlux(0:nzmax+1,1:nsmax));       SourceNodeFlux   = 0.0_ip
       allocate(TephraFluxRate(nzmax));                   TephraFluxRate   = 0.0_ip
@@ -207,6 +215,10 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Deallocate_Source
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Deallocate_Source"
+      endif;enddo
 
 #ifdef USEPOINTERS
       if(associated(e_StartTime))      deallocate(e_StartTime)
@@ -285,6 +297,10 @@
       integer       :: kground
       integer       :: kk
       integer       :: kPlumeTop
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Calc_Normalized_SourceCol"
+      endif;enddo
 
       NormSourceColumn     = 0.0_ip
 
@@ -446,6 +462,10 @@
 
       integer :: i
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine EruptivePulse_MassFluxRate"
+      endif;enddo
+
       ! Calculate mass flux and end times of each eruptive pulse
       do i=1,neruptions
              !mass flux in kg/hr
@@ -526,6 +546,10 @@
       real(kind=dp)    :: tstart, tend      ! start and end times of this time step
       logical          :: Pulse_contributes
       integer          :: i
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine CheckEruptivePulses"
+      endif;enddo
 
       tstart = time
       tend   = time+dt
@@ -624,6 +648,10 @@
       real(kind=ip) :: SumSourceNodeFlux      ! checking terms
       real(kind=ip) :: MassFluxRate_now
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine TephraSourceNodes"
+      endif;enddo
+
       SourceNodeFlux       = 0.0_ip           ! initialize SourceNodeFlux
       SumSourceNodeFlux    = 0.0_ip
 
@@ -708,6 +736,10 @@
 
       real(kind=ip) :: tmp
       integer :: k,isize
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered function SourceVolInc"
+      endif;enddo
 
       tmp = 0.0_ip
 

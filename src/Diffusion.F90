@@ -84,6 +84,10 @@
       use mesh,          only : &
          nxmax,nymax,nzmax
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Allocate_Diff"
+      endif;enddo
+
       ! Initialize diffusivity arrays with diffusivity_horz and diffusivity_vert
       ! These will change if useVarDiff = .true.
 #ifdef USEPOINTERS
@@ -111,6 +115,10 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Deallocate_Diff
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Deallocate_Diff"
+      endif;enddo
 
 #ifdef USEPOINTERS
       if(associated(kx)) deallocate(kx)
@@ -145,6 +153,10 @@
          useCN
 
       integer :: i
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine DiffuseHorz"
+      endif;enddo
 
       if(useCN)then
         if(mod(i,2).eq.0) then
@@ -196,6 +208,10 @@
 
       use global_param,  only : &
          useCN
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine DiffuseVert"
+      endif;enddo
 
       if(useCN)then
         call diffCN_z
@@ -266,6 +282,10 @@
       !integer OMP_GET_THREAD_NUM
       !integer :: nthreads,thread_num
       !logical :: OMP_get_nested
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine diff_x"
+      endif;enddo
 
       ! We are diffusing in x so set the length of the cell list accordingly
       rmin = imin
@@ -415,6 +435,10 @@
       !integer :: nthreads,thread_num
       !logical :: OMP_get_nested
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine diff_y"
+      endif;enddo
+
       ! We are diffusing in y so set the length of the cell list accordingly
       rmin = jmin
       rmax = jmax
@@ -552,6 +576,10 @@
       !integer OMP_GET_THREAD_NUM
       !integer :: nthreads,thread_num
       !logical :: OMP_get_nested
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine diff_z"
+      endif;enddo
 
       ! We are diffusing in z so set the length of the cell list accordingly
       rmin = kmin
@@ -721,6 +749,10 @@
         end subroutine dgtsv
       END INTERFACE
 #endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine diffCN_x"
+      endif;enddo
 
       ! We are diffusing in x so set the length of the cell list accordingly
       rmin = imin
@@ -980,6 +1012,10 @@
       END INTERFACE
 #endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine diffCN_y"
+      endif;enddo
+
       ! We are diffusing in y so set the length of the cell list accordingly
       rmin = jmin
       rmax = jmax
@@ -1235,6 +1271,10 @@
         end subroutine dgtsv
       END INTERFACE
 #endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine diffCN_z"
+      endif;enddo
 
       ! We are diffusing in z so set the length of the cell list accordingly
       rmin = kmin

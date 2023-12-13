@@ -13,6 +13,8 @@
 
       use precis_param
 
+      use io_units
+
       use global_param,  only : &
          EPS_THRESH
 
@@ -110,6 +112,10 @@
         !  real(kind=8),dimension(-1:ncells+2) :: usig_I
         !end function AdvectUpdate_1d
       END INTERFACE
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine advect_z"
+      endif;enddo
 
       call Set_BC(1)
 

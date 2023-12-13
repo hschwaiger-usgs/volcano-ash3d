@@ -55,6 +55,10 @@
       character(len=1)  :: key
 #endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine help_general"
+      endif;enddo
+
       io = 1
 
       write(outlog(io),1)'                                                                                '
@@ -98,6 +102,10 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine help_make
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine help_make"
+      endif;enddo
 
       io = 1
 
@@ -221,6 +229,10 @@
       character(len=1)  :: key
 #endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine help_run"
+      endif;enddo
+
       io = 1
 
       write(outlog(io),1)'                                                                                '
@@ -298,6 +310,11 @@
 #ifdef WINDOWS
       character(len=1)  :: key
 #endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine help_input"
+      endif;enddo
+
       io = 1
 
       write(outlog(io),1)'                                                                                '
@@ -361,6 +378,10 @@
       ! The idea with the blockID is that help for only a particular block is
       ! called if there is an error reading something in the input file or if
       ! the user requests it.
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine help_inputfile"
+      endif;enddo
 
       io = 1
 
@@ -745,6 +766,10 @@
 #ifdef WINDOWS
       character(len=1)  :: key
 #endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine help_postproc"
+      endif;enddo
 
       io = 1
 

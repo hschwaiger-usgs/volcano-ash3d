@@ -100,6 +100,10 @@
       integer :: i,j,k,ii,jj
       real(kind=ip) :: tot_vol
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Allocate_Source_Umbrella"
+      endif;enddo
+
       allocate(SourceNodeFlux_Umbrella(3,3,nz+1,n_gs_max)); SourceNodeFlux_Umbrella=0.0_ip
       allocate(ScaleFac_Umbrella(nz));                      ScaleFac_Umbrella=0.0_ip
       allocate(AvgStenc_Umbrella(3,3,nz));                  AvgStenc_Umbrella=0.0_ip
@@ -162,6 +166,9 @@
 
       subroutine Deallocate_Source_Umbrella
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Deallocate_Source_Umbrella"
+      endif;enddo
 
 #ifdef USEPOINTERS
         if(associated(SourceNodeFlux_Umbrella)) deallocate(SourceNodeFlux_Umbrella)
@@ -233,6 +240,10 @@
       integer       :: west_node,east_node
       integer       :: south_node,north_node
       real(kind=ip) :: MassFluxRateMKS_now ! current mass flux rate, kg/s
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine umbrella_winds"
+      endif;enddo
 
       uvx_pd(-1:nxmax+2,-1:nymax+2,ibase:itop) = 0.0_ip               !set umbrella winds to zero
       uvy_pd(-1:nxmax+2,-1:nymax+2,ibase:itop) = 0.0_ip    
@@ -424,6 +435,10 @@
 
       integer :: i,j,k
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine TephraSouceNodes_Umbrella"
+      endif;enddo
+
       SourceNodeFlux_Umbrella(1:3,1:3,1:nzmax,1:n_gs_max) = 0.0_ip
       do k=1,nzmax+1
         if(k.lt.ibase)then
@@ -481,6 +496,10 @@
 
       real(kind=ip) :: tmp
       integer :: i,j,ii,jj,k,isize
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine SourceVolInc_Umbrella"
+      endif;enddo
 
       tmp = 0.0_ip
 
@@ -540,6 +559,10 @@
       integer :: klevel
 
       integer :: i,j
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered function AvgCon_Umbrella"
+      endif;enddo
 
       AvgCon_Umbrella = 0.0_ip
       do i=1,3

@@ -325,6 +325,10 @@
         end function HS_xmltime
       END INTERFACE
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Set_OS_Env"
+      endif;enddo
+
       ! Reset OS varibles based on PP flags set in the makefile
 #ifdef LINUX
       OS_TYPE = 1
@@ -792,6 +796,10 @@
       logical,intent(inout)  :: IsLitEnd
 
       integer(kind=2)  :: s = 1
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine check_endian"
+      endif;enddo
 
       if(btest(transfer(int((/1,0/),kind=1),s),0)) then
         ! System is Little-Endian
@@ -1462,12 +1470,18 @@
         endif;enddo
         stop 1
       endif
-      if(SourceType.eq.'suzuki'.and.(Suzuki_A.le.0.0_ip))then
-        do io=1,2;if(VB(io).le.verbosity_error)then
-          write(errlog(io),*)"ERROR: ",&
-                "Suzuki_A must be positive, not ",Suzuki_A
-        endif;enddo
-        stop 1
+      if(SourceType.eq.'suzuki')then
+        if(Suzuki_A.le.0.0_ip)then
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: ",&
+                  "Suzuki_A must be positive, not ",Suzuki_A
+          endif;enddo
+          stop 1
+        endif
+      else
+        ! Source type is not Suzuki, so Suzuki_A may have been mangled trying
+        ! to read something into it.  Reinitialize.
+        Suzuki_A = 4.0_ip
       endif
       if(neruptions.le.0)then
         do io=1,2;if(VB(io).le.verbosity_error)then
