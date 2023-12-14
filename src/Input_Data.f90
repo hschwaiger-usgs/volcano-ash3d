@@ -894,6 +894,9 @@
          IsCustom_SourceType,SourceType,&
            Allocate_Source_eruption
 
+      use Source_Umbrella, only : &
+         SuzK_umb
+
       use Tephra,        only : &
          DepositDensity,Tephra_v_s,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,&
          Tephra_gsF,Tephra_gsG,FV_ID,phi_mean,phi_stddev,n_gs_max,n_gs_aloft,&
@@ -1404,7 +1407,7 @@
                  (SourceType.eq.'Umbrella').or. &
                  (SourceType.eq.'UMBRELLA')) then
           SourceType='umbrella'
-          Suzuki_A = 12.0_ip
+          Suzuki_A = SuzK_umb
       elseif ((SourceType.eq.'umbrella_air').or. &
                  (SourceType.eq.'Umbrella_air').or. &
                  (SourceType.eq.'UMBRELLA_AIR')) then
@@ -1413,7 +1416,7 @@
           ! Thus if gsbins=1, the MER is multiplied by 20
           ! to obtain the right rate of umbrella growth.
           SourceType='umbrella_air'
-          Suzuki_A = 12.0_ip
+          Suzuki_A = SuzK_umb
       else
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)&
@@ -1481,7 +1484,7 @@
       else
         ! Source type is not Suzuki, so Suzuki_A may have been mangled trying
         ! to read something into it.  Reinitialize.
-        Suzuki_A = 4.0_ip
+        Suzuki_A = SuzK_umb
       endif
       if(neruptions.le.0)then
         do io=1,2;if(VB(io).le.verbosity_error)then
