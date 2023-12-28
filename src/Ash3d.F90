@@ -73,7 +73,7 @@
 
       use Source,        only : &
          SourceNodeFlux,e_EndTime_final,e_Volume,&
-         SourceType,Source_in_dt, &
+         SourceType,Source_in_dt,IsCustom_SourceType, &
            Calc_Normalized_SourceCol,&
            EruptivePulse_MassFluxRate,&
            CheckEruptivePulses,&
@@ -215,10 +215,12 @@
         ! Set up grids for solution and Met data
       call calc_mesh_params
 
-      if (((SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')))then
+      if(((SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')))then
         call Allocate_Source_Umbrella(nxmax,nymax,nzmax)
       endif
-      call Calc_Normalized_SourceCol
+      if(.not.IsCustom_SourceType)then
+        call Calc_Normalized_SourceCol
+      endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !   Initialize concen and any special source terms here
