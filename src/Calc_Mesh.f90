@@ -251,10 +251,10 @@
 
       implicit none
 
-      real(kind=ip),intent(out) :: lonmin
-      real(kind=ip),intent(out) :: lonmax
-      real(kind=ip),intent(out) :: latmin
-      real(kind=ip),intent(out) :: latmax
+      real(kind=dp),intent(out) :: lonmin
+      real(kind=dp),intent(out) :: lonmax
+      real(kind=dp),intent(out) :: latmin
+      real(kind=dp),intent(out) :: latmax
 
       integer        :: i,j
       real(kind=dp)  :: olam,ophi ! using precision needed by libprojection
@@ -282,6 +282,10 @@
       ! Note:  All we need here is just the min/max for lat/lon so that we
       !        can generate our own, regular lat/lon grid filled with
       !        interpolated values.
+      latmax =  -90.0_dp
+      latmin =   90.0_dp
+      lonmin =  360.0_dp
+      lonmax = -360.0_sp
       do i=0,nxmax+1
         do j=0,nymax+1
           xin = real(x_cc_pd(i),kind=dp)  ! Projection routines use kind=8
@@ -290,6 +294,10 @@
                          A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
                          A3d_k0_scale,A3d_Re, &
                          olam,ophi)
+          if(olam.lt.latmin)latmin=olam
+          if(olam.gt.latmax)latmax=olam
+          if(ophi.lt.lonmin)lonmin=ophi
+          if(ophi.gt.lonmax)lonmax=ophi
           xy2ll_ylat(i,j) = real(ophi,kind=ip)
           xy2ll_xlon(i,j) = real(olam,kind=ip)
           if(xy2ll_xlon(i,j).lt.0.0_ip) xy2ll_xlon(i,j) = xy2ll_xlon(i,j) + 360.0_ip
@@ -297,10 +305,10 @@
       enddo
 
       ! Get the extremal extents in lat/lon space
-      latmin = minval(minval(xy2ll_ylat,1),1)
-      latmax = maxval(maxval(xy2ll_ylat,1),1)
-      lonmin = minval(minval(xy2ll_xlon,1),1)
-      lonmax = maxval(maxval(xy2ll_xlon,1),1)
+      !latmin = minval(minval(xy2ll_ylat,1),1)
+      !latmax = maxval(maxval(xy2ll_ylat,1),1)
+      !lonmin = minval(minval(xy2ll_xlon,1),1)
+      !lonmax = maxval(maxval(xy2ll_xlon,1),1)
 
       end subroutine get_minmax_lonlat
 
