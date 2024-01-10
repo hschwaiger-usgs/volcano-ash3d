@@ -41,11 +41,11 @@
          nmods,OPTMOD_names,StopConditions,CheckConditions      
 
       use mesh,          only : &
-         ivent,jvent,nxmax,nymax,nzmax,nsmax,ts0,ts1
+         ivent,jvent,nxmax,nymax,nzmax,nsmax,ts0,ts1,ZPADDING,dz_vec_pd,z_cc_pd
 
       use solution,      only : &
          concen_pd,DepositGranularity,StopValue,aloft_percent_remaining, &
-         SourceCumulativeVol,dep_vol,aloft_vol,outflow_vol,tot_vol
+         SourceCumulativeVol,dep_vol,aloft_vol,outflow_vol,tot_vol,vf_pd
 
       use Output_Vars,   only : &
          DepositAreaCovered,DepositThickness,LoadVal,CloudLoadArea,&
@@ -88,7 +88,7 @@
            AvgCon_Umbrella
 
       use Tephra,        only : &
-         n_gs_max,n_gs_aloft,&
+         n_gs_max,n_gs_aloft,Tephra_gsdiam,&
            Allocate_Tephra,&
            Allocate_Tephra_Met,&
            Prune_GS
@@ -129,6 +129,7 @@
       integer               :: itime
       integer               :: i,k,isize
       real(kind=dp)         :: Interval_Frac
+      real(kind=ip)         :: falltime
       logical               :: Load_MesoSteps
       logical               :: StopTimeLoop   = .false.
       real(kind=ip)         :: MassConsErr
@@ -269,11 +270,35 @@
       call Allocate_Output_UserVars(nxmax,nymax,nzmax,nsmax)
 
       ! Now that we have the Met grids initialized, get the state variables
-      ! interpoated on the start time
+      ! interpolated on the start time
       time           = 0.0_ip
       Load_MesoSteps = .true.
       Interval_Frac  = 0.0_8
       call MesoInterpolater(time , Load_MesoSteps , Interval_Frac)
+
+      ! Calculate the fall time of each grain size
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),5020)
+      endif;enddo
+      do isize = 1,n_gs_max
+        falltime = 0.0_ip
+        do k = nzmax,1,-1
+          if(z_cc_pd(k)+0.5_ip*dz_vec_pd(k).lt.z_cc_pd(nzmax)/ZPADDING)then
+            if(abs(vf_pd(ivent,jvent,k,isize)).gt.EPS_SMALL)then
+              falltime = falltime - dz_vec_pd(k)/vf_pd(ivent,jvent,k,isize)
+            else
+              falltime = 0.0_ip
+            endif
+          endif
+        enddo
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          if(falltime.lt.EPS_SMALL)then
+            write(outlog(io),*)isize," Tracer particle; no appreciable fall velocity."
+          else
+            write(outlog(io),5021)isize,Tephra_gsdiam(isize)*1000.0_ip,falltime
+          endif
+        endif;enddo
+      enddo
 
 !------------------------------------------------------------------------------
 !       OPTIONAL MODULES
@@ -715,6 +740,10 @@
 5009  format(/,5x,'Maximum deposit thickness (mm)   = ',f10.4, &
              /,5x,'Area covered by >0.01 mm (km2)   = ',f10.1,/)
 5012  format(4x,'*=files written out')
+
+5020  format('Calculating fall time from plume top',/,&
+              5x,'GS index',5x,'diam (mm)',5x,'fall time (hours)')
+5021  format(5x,i4,7x,f8.3,10x,f15.1)
 
 5033  format(/,5x,'Normal completion')
 5034  format(/,'  Ash load   cloud area',/, &

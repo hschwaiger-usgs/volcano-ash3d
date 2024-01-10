@@ -294,10 +294,10 @@
                          A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
                          A3d_k0_scale,A3d_Re, &
                          olam,ophi)
-          if(olam.lt.latmin)latmin=olam
-          if(olam.gt.latmax)latmax=olam
-          if(ophi.lt.lonmin)lonmin=ophi
-          if(ophi.gt.lonmax)lonmax=ophi
+          if(olam.lt.lonmin)lonmin=olam
+          if(olam.gt.lonmax)lonmax=olam
+          if(ophi.lt.latmin)latmin=ophi
+          if(ophi.gt.latmax)latmax=ophi
           xy2ll_ylat(i,j) = real(ophi,kind=ip)
           xy2ll_xlon(i,j) = real(olam,kind=ip)
           if(xy2ll_xlon(i,j).lt.0.0_ip) xy2ll_xlon(i,j) = xy2ll_xlon(i,j) + 360.0_ip

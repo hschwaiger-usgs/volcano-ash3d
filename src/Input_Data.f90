@@ -222,7 +222,7 @@
 !  Subroutine Set_OS_Env 
 !
 !  This subroutine evaluates the state of all aspect of the run.
-!  It is call from Ash3d.F90, or the help subroutine help_make
+!  It is called from Ash3d.F90, or the help subroutine help_make
 !  First, runtime environment variables are checked, including:
 !    ASH3DVERB : (1-10), allows the verbosity level from the default (3) at runtime
 !      = 1 : debug2        Additional debugging information only written to stdout
@@ -261,7 +261,8 @@
 !   LIM_NONE,LIM_LAXWEN,LIM_BW,LIM_FROMM,LIM_MINMOD,LIM_SUPERBEE,LIM_MC  : Limiter for advection
 !   USENETCDF, USEGRIB     : Invokes netcdf and/or grib functionality
 !   USEPOINTERS            : determines if variables are pointers or allocatable arrays
-!   USEEXTDATA             : determines if Ash3d will rely on external lists for airport and volcano data
+!   USEEXTDATA             : determines if Ash3d will rely on external lists for airport and
+!                            volcano data
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -1432,7 +1433,8 @@
         write(outlog(io),*)"  SourceType = ",SourceType
       endif;enddo
 
-5230  diffusivity_horz = diffusivity_horz*3.6e-3_ip  !convert diffusion coefficient from m2/s to km2/hr
+      ! convert diffusion coefficient from m2/s to km2/hr
+5230  diffusivity_horz = diffusivity_horz*3.6e-3_ip
       diffusivity_vert = diffusivity_horz
 
       if(abs(diffusivity_horz).lt.EPS_SMALL)then
@@ -2885,10 +2887,10 @@
               ! Initialize this to zero
             temp_v_s(isize) = 0.0_ip
             if(temp_gsdiam(isize).lt.0.0_ip)then
-              if(i.lt.init_n_gs_max)then
+              if(isize.lt.init_n_gs_max)then
               do io=1,2;if(VB(io).le.verbosity_error)then
                   write(errlog(io),*)"ERROR: ",&
-                        "diameter must be positive"
+                        "diameter must be positive",isize,init_n_gs_max,temp_gsdiam(isize)
                 endif;enddo
                 stop 1
               else
