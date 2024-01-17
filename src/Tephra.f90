@@ -68,6 +68,10 @@
               !   4 = Ganser
               !   5 = Stokes flow for spherical particles + slip
       integer,public                                    :: FV_ID
+              ! Shape parameter
+              !   1 = Wilson and Huang: F = (b+c)/2a maybe also with G = c/b
+              !   2 = Sphericity
+      integer,public                                    :: Shape_Id
 
 #ifdef USEPOINTERS
       real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_v_s     =>null()    ! Settling vel (m/s)
@@ -77,6 +81,7 @@
       real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_rho_m   =>null()    ! density (kg/m3)
       real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_gsF     =>null()    ! Grain-size shape (b+c)/2a
       real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_gsG     =>null()    ! Grain-size shape c/b
+      real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_gsPhi   =>null()    ! Grain-size shape sphericity
       real(kind=ip), dimension(:,:),pointer         :: Tephra_gsF_fac =>null()    ! Precalculated shape factors
                                                                                   !  i=1 WH Stokes fac
                                                                                   !  i=2 WH Newton fac
@@ -95,6 +100,7 @@
       real(kind=ip), dimension(:)  ,allocatable,public  :: Tephra_rho_m       ! density (kg/m3)
       real(kind=ip), dimension(:)  ,allocatable,public  :: Tephra_gsF         ! Grain-size shape (b+c)/2a
       real(kind=ip), dimension(:)  ,allocatable,public  :: Tephra_gsG         ! Grain-size shape c/b
+      real(kind=ip), dimension(:)  ,allocatable,public  :: Tephra_gsPhi       ! Grain-size shape sphericity
       real(kind=ip), dimension(:,:),allocatable         :: Tephra_gsF_fac     ! Precalculated shape factors
                                                                               !  i=1 WH Stokes fac
                                                                               !  i=2 WH Newton fac
@@ -137,6 +143,7 @@
       allocate(Tephra_rho_m(n_gs_max));     Tephra_rho_m    = 0.0_ip
       allocate(Tephra_gsF(n_gs_max));       Tephra_gsF      = 0.0_ip
       allocate(Tephra_gsG(n_gs_max));       Tephra_gsG      = 0.0_ip
+      allocate(Tephra_gsPhi(n_gs_max));     Tephra_gsPhi    = 0.0_ip
       allocate(Tephra_gsF_fac(n_gs_max,5)); Tephra_gsF_fac  = 0.0_ip
 
       end subroutine Allocate_Tephra
@@ -198,6 +205,7 @@
       if(associated(Tephra_rho_m))      deallocate(Tephra_rho_m)
       if(associated(Tephra_gsF))        deallocate(Tephra_gsF)
       if(associated(Tephra_gsG))        deallocate(Tephra_gsG)
+      if(associated(Tephra_gsPhi))      deallocate(Tephra_gsPhi)
       if(associated(Tephra_gsF_fac))    deallocate(Tephra_gsF_fac)
 #else
       if(allocated(Tephra_v_s))        deallocate(Tephra_v_s)
@@ -206,6 +214,7 @@
       if(allocated(Tephra_rho_m))      deallocate(Tephra_rho_m)
       if(allocated(Tephra_gsF))        deallocate(Tephra_gsF)
       if(allocated(Tephra_gsG))        deallocate(Tephra_gsG)
+      if(allocated(Tephra_gsPhi))      deallocate(Tephra_gsPhi)
       if(allocated(Tephra_gsF_fac))    deallocate(Tephra_gsF_fac)
 #endif
 
@@ -408,7 +417,7 @@
       !real(kind=ip) :: diamV ! diamter of sphere with equivalent volume
       real(kind=ip) :: p_exp
       !real(kind=ip) :: sphere_area
-      real(kind=ip) :: phi_sphere
+!      real(kind=ip) :: phi_sphere
 
       real(kind=ip) :: Dahneke_LD(13), Dahneke_RL(13),onF
       real(kind=ip) :: tmp_b, tmp_c
@@ -451,29 +460,34 @@
         ! Precalculate the WilsonHuang factors based on particle shapes
         Tephra_gsF_fac(isize,1) = Tephra_gsF(isize)**(-0.828_ip)   ! WH Stokes factor
         Tephra_gsF_fac(isize,2) = sqrt(1.07_ip-Tephra_gsF(isize))  ! WH Newton factor
-        ! and precalculate the K1 and K2 if we use the Ganser model
-        ! First get sphericity.
-        ! Note: sphericity is the ratio of the surface area of a sphere with
-        !       equivalent volume to the actual surface area of the particle
-        ! following http://en.wikipedia.org/wiki/Ellipsoid
-        p_exp = 1.6075_ip
-        tmp_b = 2.0_ip*Tephra_gsF(isize)/(1+Tephra_gsG(isize))
-        tmp_c = 2.0_ip*Tephra_gsF(isize)*Tephra_gsG(isize)/(1+Tephra_gsG(isize))
 
-        phi_sphere = (tmp_b*tmp_c)**(2.0_ip/3.0_ip) * &
-                      ((tmp_b**p_exp + &
-                        tmp_c**p_exp + &
-                       (tmp_b*tmp_c)**p_exp)/3.0_ip)**(-1.0_ip/p_exp)
+        ! and precalculate the K1 and K2 if we use the Ganser model
+        if(Shape_Id.eq.1)then
+          ! First, if we are using F and G for shape, get sphericity.
+          ! Note: sphericity is the ratio of the surface area of a sphere with
+          !       equivalent volume to the actual surface area of the particle
+          ! following http://en.wikipedia.org/wiki/Ellipsoid
+          p_exp = 1.6075_ip
+          tmp_b = 2.0_ip*Tephra_gsF(isize)/(1+Tephra_gsG(isize))
+          tmp_c = 2.0_ip*Tephra_gsF(isize)*Tephra_gsG(isize)/(1+Tephra_gsG(isize))
+
+          Tephra_gsPhi(isize) = (tmp_b*tmp_c)**(2.0_ip/3.0_ip) * &
+                        ((tmp_b**p_exp + &
+                          tmp_c**p_exp + &
+                         (tmp_b*tmp_c)**p_exp)/3.0_ip)**(-1.0_ip/p_exp)
+        endif
+
         !ellipse_vol  = 4.0_ip*PI*Tephra_gsF(i)*Tephra_gsF(i)/3.0_ip
         !equiv_rad    = (ellipse_vol*3.0_ip/(4.0_ip*PI))**(1.0_ip/3.0_ip)
         !sphere_area  = 4.0_ip*PI*equiv_rad*equiv_rad
         !ellipse_area = 4.0_ip*PI*(((Tephra_gsF(i)*Tephra_gsF(i))**p_exp + &
         !                    2.0_ip*(Tephra_gsF(i))**p_exp)/3.0_ip)**(1.0_ip/p_exp)
         !phi_sphere = sphere_area/ellipse_area
+
           ! Calculate K1 for Ganser model (Table 7 Isometric)
-        Tephra_gsF_fac(isize,3) = 3.0_ip/(1.0_ip+2.0_ip*phi_sphere**(-0.5_ip))
+        Tephra_gsF_fac(isize,3) = 3.0_ip/(1.0_ip+2.0_ip*Tephra_gsPhi(isize)**(-0.5_ip))
           ! Calculate K2 for Ganser model (Table 7 Isometric)
-        Tephra_gsF_fac(isize,4) = 1.84148_ip*(-log10(phi_sphere))**0.5743_ip
+        Tephra_gsF_fac(isize,4) = 1.84148_ip*(-log10(Tephra_gsPhi(isize)))**0.5743_ip
         Tephra_gsF_fac(isize,4) = 10.0_ip**Tephra_gsF_fac(isize,4);
           ! Now calculate the aspherical correction to the Cunningham
           ! slip correction using Table 1 from Dahneke, Aerosol Sci, v4p163
@@ -985,7 +999,6 @@
         if (Re.lt.100.0_ip)then
           Cd = (24.0_ip/Re)*Ffac1 + Ffac2
         elseif (Re.gt.1000.0_ip)then
-          !  
           Cd = 1.0_ip
         else
           ! interpolate between values at Re=1000 and 100

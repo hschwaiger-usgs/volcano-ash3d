@@ -899,8 +899,8 @@
          SuzK_umb
 
       use Tephra,        only : &
-         DepositDensity,Tephra_v_s,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,&
-         Tephra_gsF,Tephra_gsG,FV_ID,phi_mean,phi_stddev,n_gs_max,n_gs_aloft,&
+         DepositDensity,Tephra_v_s,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,Tephra_gsPhi,&
+         Tephra_gsF,Tephra_gsG,FV_ID,Shape_Id,phi_mean,phi_stddev,n_gs_max,n_gs_aloft,&
            Calculate_Tephra_Shape,&
            Allocate_Tephra, &
            Sort_Tephra_Size
@@ -2810,6 +2810,8 @@
       read(linebuffer080,*,err=9701) ivalue1
       init_n_gs_max = ivalue1
       read(linebuffer080,*,iostat=ioerr) ivalue1, ivalue2
+      FV_ID    = 1
+      Shape_Id = 1
       ! Assume we can read at least read one value, try for two with the second being
       ! the fall model:
       !  FV_ID = 0 -> No fall (just tracer)
@@ -2820,6 +2822,18 @@
       !          5 -> Stokes flow for spherical particles + slip
       if (ioerr.eq.0)then
         FV_ID = ivalue2
+        if(FV_ID.ne.0.and.FV_ID.ne.1.and.FV_ID.ne.2.and.&
+           FV_ID.ne.3.and.FV_ID.ne.4.and.FV_ID.ne.5)then
+          FV_ID = 1 ! Default to Wilson and Huang
+        endif
+        ! Try for a third value which specifies shape factory (F vs phi)
+        read(linebuffer080,*,iostat=ioerr) ivalue1, ivalue2, ivalue3
+        if (ioerr.eq.0)then
+          Shape_Id = ivalue3
+          if(Shape_Id.ne.1.and.Shape_Id.ne.2)then
+            Shape_Id = 1 ! Default to Wilson and Huang
+          endif
+        endif
       else
         FV_ID = 1 ! Wilson and Huang
       endif
@@ -2870,12 +2884,10 @@
               ! Fourth value was successfully read, interpret as W/H shape
               ! parameter
               temp_gsF(isize) = value4
-              ! Try for a fifth value for second shape parameter for Ganser
-              ! model
+              ! Try for a fifth value for ratio of minor axies of ellipsoid
               read(linebuffer080,*,iostat=ioerr) value1, value2, value3, value4, value5
               if (ioerr.eq.0)then
-                ! Fourth value was successfully read, interpret as Ganser 2nd
-                ! shape parameter
+                ! Fourth value was successfully read, interpret as c/b
                 temp_gsG(isize) = value5
               else
                 temp_gsG(isize) = 1.0_ip
@@ -2956,8 +2968,17 @@
       Tephra_gsdiam(1:n_gs_max)   = temp_gsdiam(1:n_gs_max)
       Tephra_bin_mass(1:n_gs_max) = temp_bin_mass(1:n_gs_max)
       Tephra_rho_m(1:n_gs_max)    = temp_rho_m(1:n_gs_max)
-      Tephra_gsF(1:n_gs_max)      = temp_gsF(1:n_gs_max)
-      Tephra_gsG(1:n_gs_max)      = temp_gsG(1:n_gs_max)
+      if(Shape_Id.eq.1)then
+        ! Interpret shape columns as F [and G]
+        Tephra_gsF(1:n_gs_max)      = temp_gsF(1:n_gs_max)
+        Tephra_gsG(1:n_gs_max)      = temp_gsG(1:n_gs_max)
+        Tephra_gsPhi(1:n_gs_max)    = 1.0_ip
+      elseif(Shape_Id.eq.2)then
+        ! Interpret shape columns as Phi
+        Tephra_gsF(1:n_gs_max)      = 1.0_ip
+        Tephra_gsG(1:n_gs_max)      = 1.0_ip
+        Tephra_gsPhi(1:n_gs_max)    = temp_gsF(1:n_gs_max)
+      endif
 
       deallocate(temp_v_s,temp_gsdiam,temp_bin_mass,temp_rho_m,temp_gsF)
 
@@ -3049,7 +3070,7 @@
               ! write out diameter in mm, not m
               write(outlog(io),11) Tephra_bin_mass(isize), Tephra_gsdiam(isize)*1000.0_ip, &
                                    Tephra_rho_m(isize),    Tephra_gsF(isize),              &
-                                   Tephra_gsG(isize),      temp_phi(isize)
+                                   Tephra_gsG(isize),      Tephra_gsPhi(isize), temp_phi(isize)
             enddo
           endif;enddo
         else
@@ -3995,8 +4016,8 @@
 9     format(/,4x,'Number of grain-size bins:     ',i2, &
              /,4x,'               Fall Model:     ',i2)
 10    format(4x,'Bins:',/,4x,&
-        'mass fraction      diameter (mm)     density (kg/m3)      F     G         phi')
-11    format(8x,f10.5,4x,f11.6,10x,f10.4,5x,f8.2,2x,f4.2,5x,f5.2)
+        'mass fraction      diameter (mm)     density (kg/m3)      F     G    Sphr    phi')
+11    format(8x,f10.5,4x,f11.6,10x,f10.4,5x,f8.2,2x,f4.2,2x,f4.2,5x,f5.2)
 2110  format(4x,'Bins:',/,4x,&
              'mass fraction      v_s (m/s)')
 2111  format(8x,f5.3,4x,f11.6)
