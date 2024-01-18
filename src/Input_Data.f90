@@ -3062,6 +3062,11 @@
           else
             write(outlog(io),*)"Default Fall Model = Wilson and Huang"
           endif
+          if(Shape_ID.eq.1)then
+            write(outlog(io),*)"Shape Specification : axis ratios : F=(b+c)/2a [and G=c/b]"
+          elseif(Shape_ID.eq.2)then
+            write(outlog(io),*)"Shape Specification : sphericity : Area-of-vol.eq.sphere/Area-of-particle"
+          endif
         endif;enddo
         if(useCalcFallVel)then
           do io=1,2;if(VB(io).le.verbosity_info)then
@@ -4016,7 +4021,7 @@
 9     format(/,4x,'Number of grain-size bins:     ',i2, &
              /,4x,'               Fall Model:     ',i2)
 10    format(4x,'Bins:',/,4x,&
-        'mass fraction      diameter (mm)     density (kg/m3)      F     G    Sphr    phi')
+        'mass fraction      diameter (mm)     density (kg/m3)      F     G     Sphr       phi')
 11    format(8x,f10.5,4x,f11.6,10x,f10.4,5x,f8.2,2x,f4.2,2x,f4.2,5x,f5.2)
 2110  format(4x,'Bins:',/,4x,&
              'mass fraction      v_s (m/s)')
