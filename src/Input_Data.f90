@@ -1332,13 +1332,18 @@
           endif;enddo
           stop 1
         endif
-
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Generating log profile with ",clog_nsteps," steps up to ",clog_zmax
+        endif;enddo
         nz_init = clog_nsteps+1
         allocate(z_vec_init(0:nz_init))
         z_vec_init = 0.0_ip
         do k=1,nz_init
           tmp_ip = (       real(k,kind=ip)/real(clog_nsteps)) * log10(clog_zmax+1.0_ip)
           z_vec_init(k)=10.0**(tmp_ip) - 1.0_ip
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)k,z_vec_init(k)
+          endif;enddo
         enddo
       elseif (VarDzType.eq.'dz_cust')then
         do io=1,2;if(VB(io).le.verbosity_info)then
@@ -4222,13 +4227,14 @@
         endif;enddo
       endif
 
+      return
+
       ! Format statements
 1     format (4x,'Warning: dx and dy are not the same.  If the',&
                 ' deposit file is read by ArcMap',/, &
              4x,'they are assumed to be the same.  The nodal',&
                 ' spacing written to the ',/, &
              4x,'deposit file is dx, dy, but ArcMap will only read dx.')
-      return
 
       end subroutine xyChecker
       
