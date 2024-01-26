@@ -37,7 +37,7 @@ test_04:
 These 5 subcases test more realistic cases with transient, 3d winds (NCEP).
  Sub-case  0: Suz=4
  Sub-case  1: umbrella_air
- Sub-case  2: iSuz=4; 12-bin 'deposit' grainsize distribution
+ Sub-case  2: Suz=4; 12-bin 'deposit' grainsize distribution
  Sub-case  3: umbrella
  Sub-case  4: periodic BC (global)
 

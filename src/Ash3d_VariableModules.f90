@@ -166,7 +166,8 @@
       real(kind=ip), parameter :: KM3_2_M3   = 1.0e9_ip        ! km^3 to m^3
       real(kind=ip), parameter :: KG_2_MG    = 1.0e6_ip        ! kg to mg
       real(kind=ip), parameter :: MPS_2_KMPHR= 3.6_ip          ! m/s to km/hr
-      real(kind=ip), parameter :: HR_2_S     = 3600.0_ip       ! hour to seconds
+      real(kind=ip), parameter :: M2PS_2_KM2PHR = 3.6e-3_ip    ! m2/s to km2/hr
+      real(kind=ip), parameter :: HR_2_S     = 3.6e+3_ip       ! hour to seconds
 
 
       real(kind=ip) :: GRAV       = 9.81_ip     ! Gravitational acceleration m/s^2

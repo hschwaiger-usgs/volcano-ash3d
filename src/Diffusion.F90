@@ -36,8 +36,8 @@
              DiffuseVert
 
         ! Publicly available variables
-      real(kind=ip),public :: diffusivity_horz    ! horizontal diffusion coefficient (m2/s)
-      real(kind=ip),public :: diffusivity_vert    ! vertical diffusion coefficient (m2/s)
+      real(kind=ip),public :: diffusivity_horz    ! horizontal diffusion coefficient (km2/hr)
+      real(kind=ip),public :: diffusivity_vert    ! vertical diffusion coefficient (km2/hr)
 
          ! Factor that controls how much of the n+1 time step is used in the solution
          !  0.0 = Forward-Euler
@@ -50,7 +50,7 @@
          !       explicit solver.  If either Imp_fac = 0.5 or 1.0, then the
          !       method is unconditionally stable, but accuracy requires a
          !       Imp_DT_fac to be around 1.0 - 4.0
-      real(kind=ip),parameter :: Imp_fac = 0.5_ip    
+      real(kind=ip),parameter :: Imp_fac     = 0.5_ip    
       real(kind=ip),public    :: Imp_DT_fac  = 4.0_ip
 
 #ifdef USEPOINTERS

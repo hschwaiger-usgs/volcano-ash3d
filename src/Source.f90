@@ -237,6 +237,7 @@
 
       if(associated(NormSourceColumn))    deallocate(NormSourceColumn)
       if(associated(SourceNodeFlux))      deallocate(SourceNodeFlux)
+      if(associated(SourceNodeFlux_Area)) deallocate(SourceNodeFlux_Area)
       if(associated(TephraFluxRate))      deallocate(TephraFluxRate)
 #else
       if(allocated(e_StartTime))      deallocate(e_StartTime)
@@ -255,6 +256,7 @@
 
       if(allocated(NormSourceColumn))    deallocate(NormSourceColumn)
       if(allocated(SourceNodeFlux))      deallocate(SourceNodeFlux)
+      if(allocated(SourceNodeFlux_Area)) deallocate(SourceNodeFlux_Area)
       if(allocated(TephraFluxRate))      deallocate(TephraFluxRate)
 #endif
 

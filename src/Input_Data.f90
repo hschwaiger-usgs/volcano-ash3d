@@ -854,7 +854,7 @@
       use global_param,  only : &
          EPS_SMALL,EPS_TINY,nmods,OPTMOD_names,limiter,&
          useDS,useTemperature,useCalcFallVel,useLogNormGSbins,&
-         useDiffusion,useCN,useVz_rhoG
+         useDiffusion,useCN,useVz_rhoG,M2PS_2_KM2PHR
 
       use io_data,       only : &
          cdf_b1l1,cdf_b1l2,cdf_b1l3,cdf_b1l4,cdf_b1l5,cdf_b1l6,cdf_b1l7,cdf_b1l8,cdf_b1l9,&
@@ -1439,7 +1439,7 @@
       endif;enddo
 
       ! convert diffusion coefficient from m2/s to km2/hr
-5230  diffusivity_horz = diffusivity_horz*3.6e-3_ip
+5230  diffusivity_horz = diffusivity_horz*M2PS_2_KM2PHR
       diffusivity_vert = diffusivity_horz
 
       if(abs(diffusivity_horz).lt.EPS_SMALL)then
@@ -1456,7 +1456,7 @@
       else
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),'(a39,f10.3,a5)')"Using constant turbulent diffusivity:  ",&
-                  diffusivity_horz/3.6e-3_ip," m2/s"
+                  diffusivity_horz/M2PS_2_KM2PHR," m2/s"
         endif;enddo
         useDiffusion = .true.
       endif
