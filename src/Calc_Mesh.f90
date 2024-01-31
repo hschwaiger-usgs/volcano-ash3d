@@ -154,7 +154,6 @@
         do j=-1,nymax+2
           y_cc_pd(j) = yLL + dy*real(j,kind=ip) - dy*0.5_ip
         enddo
-
           ! Area of face at i,j,k-1/2
         sigma_nz_pd(:,:,:) = dy*dx
         do k=-1,nzmax+2
@@ -166,7 +165,7 @@
           kappa_pd(-1:nxmax+2,-1:nymax+2,k)=dx*dy*dz_vec_pd(k)
         enddo
 
-      endif !IsLatLon
+      endif ! IsLatLon
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"    Cell-centered computational grid extends from:"

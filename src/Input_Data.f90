@@ -702,13 +702,13 @@
 
 #ifdef FAST_DT
         write(outlog(io),*)"       FAST_DT: ON"
-        write(outlog(io),*)"              : dt will only be evaluated on the time steps"
+        write(outlog(io),*)"                dt will only be evaluated on the time steps"
         write(outlog(io),*)"                in the wind files.  If there are processes"
         write(outlog(io),*)"                that affect the wind speeds (e.g. umbrella"
         write(outlog(io),*)"                spreading), this can cause job failure."
 #else
         write(outlog(io),*)"       FAST_DT: OFF"
-        write(outlog(io),*)"              : dt will be evaluated each time step"
+        write(outlog(io),*)"                dt will be evaluated each time step"
 #endif
 #ifdef FAST_SUBGRID
         write(outlog(io),*)"  FAST_SUBGRID: ON"
@@ -749,27 +749,35 @@
         write(outlog(io),*)"        LIM_MC: Advection routines use a MC limiter"
 #endif
 #ifdef USENETCDF
-        write(outlog(io),*)"     USENETCDF: NetCDF functionality is included"
+        write(outlog(io),*)"     USENETCDF: ON"
+        write(outlog(io),*)"                NetCDF functionality is included"
 #else
-        write(outlog(io),*)"     USENETCDF not found: NetCDF functionality is not included"
+        write(outlog(io),*)"     USENETCDF: OFF"
+        write(outlog(io),*)"                NetCDF functionality is not included"
 #endif
 #ifdef USEGRIB
-        write(outlog(io),*)"       USEGRIB: Grib functionality is included"
+        write(outlog(io),*)"       USEGRIB: ON"
+        write(outlog(io),*)"                Grib functionality is included"
 #else
-        write(outlog(io),*)"       USEGRIB not found: Grib functionality is not included"
+        write(outlog(io),*)"       USEGRIB: OFF"
+        write(outlog(io),*)"                Grib functionality is not included"
 #endif
 #ifdef USEPOINTERS
-        write(outlog(io),*)"   USEPOINTERS: Arrays are defined as pointers"
+        write(outlog(io),*)"   USEPOINTERS: ON"
+        write(outlog(io),*)"                Arrays are defined as pointers"
         write(outlog(io),*)"                This helps Ash3d subroutines to be called via C++"
 #else
-        write(outlog(io),*)"   USEPOINTERS not found: All arrays are allocatable."
+        write(outlog(io),*)"   USEPOINTERS: OFF"
+        write(outlog(io),*)"                All arrays are allocatable."
 #endif
 #ifdef USEEXTDATA
-        write(outlog(io),*)"   USEEXTDATA: Data files for airports and volcanoes are"
+        write(outlog(io),*)"    USEEXTDATA: ON"
+        write(outlog(io),*)"                Data files for airports and volcanoes are"
         write(outlog(io),*)"                read at run-time"
 #else
-        write(outlog(io),*)"   USEEXTDATA not found: airport and volcano list included when"
-        write(outlog(io),*)"                          compiled."
+        write(outlog(io),*)"    USEEXTDATA: OFF"
+        write(outlog(io),*)"                Data arrays for airports and volcanoes are"
+        write(outlog(io),*)"                included when compiled."
 #endif
 
         ! Write out start time in UTC
@@ -1166,7 +1174,7 @@
         if (lon_volcano.lt.  0.0_ip) lon_volcano = lon_volcano+360.0_ip
         if (lon_volcano.ge.360.0_ip) lon_volcano = mod(lon_volcano,360.0_ip)
 
-        If(IsLatLon.and.&
+        if(IsLatLon.and.&
            (gridwidth_e.ge.360.0_ip.or.&
             abs(gridwidth_e-360.0_ip).lt.EPS_TINY))then
           IsPeriodic  = .true.
@@ -1200,6 +1208,7 @@
         read(cdf_b1l4,*,err=9104) gridwidth_x, gridwidth_y         ! width and height of simulation area in km
         xUR = xLL + gridwidth_x
         yUR = yLL + gridwidth_y
+
         ! Block 1 Line 5
         read(fid_ctrlfile,'(a80)')cdf_b1l5
         read(cdf_b1l5,*,err=9105) value1, value2   ! First read two values and flag
@@ -4683,7 +4692,6 @@
         endif;enddo
 
       endif
-
 
       close(fid_ctrlfile)
 
