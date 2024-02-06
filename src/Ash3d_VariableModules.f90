@@ -123,6 +123,40 @@
       integer,parameter :: verbosity_silent       = 9  ! No logging to stdout,stderr. Logfile written as normal
       integer,parameter :: verbosity_dark         = 10 ! No logging to stdout,stderr or logfile
 
+      contains
+
+!##############################################################################
+!
+!    FileIO_Error_Handler
+!
+!    Subroutine called whenever a line from a file is read with a non-zero
+!    iostat.
+!
+!##############################################################################
+
+      subroutine FileIO_Error_Handler(ios,linebuffer080,iomessage)
+
+      integer           ,intent(in) :: ios
+      character(len= 80),intent(in) :: linebuffer080
+      character(len=120),intent(in) :: iomessage
+
+      integer :: io
+
+      do io=1,nio;if(VB(io).le.verbosity_error)then
+        if(ios.lt.0)then
+          write(errlog(io),*)'ERROR Reading from file:  EOF encountered',ios
+        else
+          write(errlog(io),*)'ERROR Reading line from file:  input line format error',ios
+          write(errlog(io),*)linebuffer080
+        endif
+        write(errlog(io),*)'System Message: ',trim(adjustl(iomessage))
+      endif;enddo
+      stop 1
+
+      end subroutine FileIO_Error_Handler
+
+!##############################################################################
+
       end module io_units
 
 !##############################################################################

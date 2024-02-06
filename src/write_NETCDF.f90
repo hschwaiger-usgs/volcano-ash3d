@@ -3287,6 +3287,7 @@
       integer :: t_len
       integer :: it
       real(kind=op), allocatable, dimension(:) :: t_list
+      logical           :: IsThere
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine NC_RestartFile_ReadTimes"
@@ -3296,7 +3297,13 @@
       ! control file case.
       io = 1
 
-      ! Open netcdf file for writing
+      inquire(file=trim(adjustl(concenfile)),exist=IsThere)
+      if(.not.IsThere)then
+        write(outlog(io),*)"Concentraion file not found."
+        stop 1
+      endif
+
+      ! Open netcdf file for reading
       nSTAT=nf90_open(concenfile,nf90_nowrite,ncid)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"nSTAT=nf90_open")
 
