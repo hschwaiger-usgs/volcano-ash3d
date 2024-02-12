@@ -81,7 +81,7 @@
       character         :: testkey,testkey2
       integer           :: stat
       integer           :: iostatus
-      character(len=120) :: iomessage
+      character(len=120):: iomessage
       integer           :: blockID
 
       !character(kind=c_char), dimension(1:130) :: fc_inputfile
@@ -95,7 +95,7 @@
 
       ! Test read command-line arguments
       nargs = command_argument_count()
-      if (nargs.eq.0) then
+      if(nargs.eq.0) then
           ! If no command-line arguments are given, then prompt user
           ! interactively for the command file name and possible a 
           ! restart file
@@ -110,9 +110,9 @@
         read(input_unit,*,iostat=iostatus,iomsg=iomessage) infile 
         write(outlog(io),*)'Load concentration file?'
         read(input_unit,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-        if (adjustl(trim(answer)).eq.'y'.or.adjustl(trim(answer)).eq.'yes') then
+        if(adjustl(trim(answer)).eq.'y'.or.adjustl(trim(answer)).eq.'yes') then
           LoadConcen = .true.
-        elseif (adjustl(trim(answer)).eq.'n'.or.adjustl(trim(answer)).eq.'no') then
+        elseif(adjustl(trim(answer)).eq.'n'.or.adjustl(trim(answer)).eq.'no') then
           LoadConcen = .false.
         else
           write(errlog(io),*) 'Sorry, I cannot understand your answer.'
@@ -139,7 +139,7 @@
           stop 1
 #endif
         endif
-      elseif (nargs.ge.1) then
+      elseif(nargs.ge.1) then
           ! If an argument is given, first test for the '-h' indicating a help
           ! request.
         call get_command_argument(1, linebuffer130, stat)
@@ -148,7 +148,7 @@
         if(testkey.eq.'-')then
           if(testkey2.eq.'h')then
             ! This is the branch for user-requested help
-            if (nargs.eq.1) then
+            if(nargs.eq.1) then
               ! command is Ash3d -h
               call help_general
             else
@@ -164,7 +164,7 @@
               elseif(trim(adjustl(linebuffer130)).eq.'run')then
                 call help_run
               elseif(trim(adjustl(linebuffer130)).eq.'input')then
-                if (nargs.ge.3) then
+                if(nargs.ge.3) then
                   ! So far, we have Ash3d -h input
                   ! Check if there is an additional command-line parameter specifying
                   ! the block number
@@ -210,11 +210,11 @@
             stop 1
           endif
         endif
-      elseif (nargs.lt.0) then
+      elseif(nargs.lt.0) then
         ! When code called from ForestClaw, nargs is -1
         fc_len = 0
         do
-          if (fc_inputfile(fc_len+1).eq.C_NULL_CHAR) exit
+          if(fc_inputfile(fc_len+1).eq.C_NULL_CHAR) exit
           fc_len = fc_len + 1
           infile(fc_len:fc_len) = fc_inputfile(fc_len)
         end do
@@ -552,13 +552,13 @@
           endif;enddo
           stop 1
         endif
-        if (CFL.le.0.0_ip)then
+        if(CFL.le.0.0_ip)then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),'(a22)')     "ERROR: CFL must be > 0"
             write(errlog(io),'(a24,f8.2)')"       Currently set to ",CFL
           endif;enddo
           stop 1
-        elseif (CFL.ge.1.0_ip)then
+        elseif(CFL.ge.1.0_ip)then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),'(a22)')     "ERROR: CFL must be < 1"
             write(errlog(io),'(a24,f8.2)')"       Currently set to ",CFL
@@ -595,7 +595,7 @@
           endif;enddo
           stop 1
         endif
-        if (iplotpref.le.0.or.iplotpref.gt.4)then
+        if(iplotpref.le.0.or.iplotpref.gt.4)then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: ASH3DPLOT must be any of:"
             write(errlog(io),*)"         1 = dislin"
@@ -991,8 +991,8 @@
       character(len=80) :: Comp_projection_line
       integer           :: ilatlonflag
       character         :: testkey
-      integer            :: iostatus
-      character(len=120) :: iomessage
+      integer           :: iostatus
+      character(len=120):: iomessage
       integer           :: iendstr,ios,ioerr,init_n_gs_max
       real(kind=ip)     :: value1, value2, value3, value4, value5
       real(kind=ip),allocatable,dimension(:) :: values
@@ -1159,7 +1159,7 @@
         stop 1
       endif
 
-      if (ilatlonflag.eq.0) then
+      if(ilatlonflag.eq.0) then
         ! expecting input variables to be in the same projection as
         ! specified by iprojflag and parameters
         IsLatLon          = .false.
@@ -1169,7 +1169,7 @@
       endif
 
       ! Set Projection Parameters
-      if (IsLatLon.eqv..false.)then
+      if(IsLatLon.eqv..false.)then
         call PJ_Set_Proj_Params(Comp_projection_line)
         A3d_iprojflag  = PJ_iprojflag
         A3d_k0_scale   = PJ_k0
@@ -1189,19 +1189,19 @@
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
         cdf_b1l3 = linebuffer080
-        read(cdf_b1l3,*,err=9103,iostat=iostatus,iomsg=iomessage) lonLL, latLL            ! lat/lon of LL corner
+        read(linebuffer080,*,err=9103,iostat=iostatus,iomsg=iomessage) lonLL, latLL            ! lat/lon of LL corner
         ! Block 1 Line 4
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
         cdf_b1l4 = linebuffer080
-        read(cdf_b1l4,*,err=9104,iostat=iostatus,iomsg=iomessage) gridwidth_e, gridwidth_n   ! Dimensions (in degrees) of the grid
+        read(linebuffer080,*,err=9104,iostat=iostatus,iomsg=iomessage) gridwidth_e, gridwidth_n   ! Dimensions (in degrees) of the grid
         ! Block 1 Line 5
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage) linebuffer080
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
         cdf_b1l5 = linebuffer080
-        read(cdf_b1l5,*,err=9105,iostat=iostatus,iomsg=iomessage) value1, value2   ! First read two values and flag
-        read(cdf_b1l5,*,iostat=iostatus,iomsg=iomessage) value1, value2, value3 ! Try for 3
-        if (iostatus.eq.0)then
+        read(linebuffer080,*,err=9105,iostat=iostatus,iomsg=iomessage) value1, value2   ! First read two values and flag
+        read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) value1, value2, value3 ! Try for 3
+        if(iostatus.eq.0)then
           ! Successfully read 3 values; third is interpreted as elevation (in km)
           lon_volcano = value1
           lat_volcano = value2
@@ -1216,27 +1216,27 @@
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
         cdf_b1l6 = linebuffer080
-        read(cdf_b1l6,*,err=9106,iostat=iostatus,iomsg=iomessage) de, dn                 ! cell size in degrees 
+        read(linebuffer080,*,err=9106,iostat=iostatus,iomsg=iomessage) de, dn                 ! cell size in degrees 
 
         !Make sure longitudes are between 0 and 360 degrees
-        if (lonLL.lt.-360.0_ip) then
+        if(lonLL.lt.-360.0_ip) then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)&
                   "Please give longitude values between -360 and 360."
           endif;enddo
           stop 1
         endif
-        if (lonLL.lt.  0.0_ip) lonLL=lonLL+360.0_ip
-        if (lonLL.ge.360.0_ip) lonLL=mod(lonLL,360.0_ip)
-        if (lon_volcano.lt.-360.0) then
+        if(lonLL.lt.  0.0_ip) lonLL=lonLL+360.0_ip
+        if(lonLL.ge.360.0_ip) lonLL=mod(lonLL,360.0_ip)
+        if(lon_volcano.lt.-360.0) then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)&
                   "Please give longitude values between -360 and 360."
           endif;enddo
           stop 1
         endif
-        if (lon_volcano.lt.  0.0_ip) lon_volcano = lon_volcano+360.0_ip
-        if (lon_volcano.ge.360.0_ip) lon_volcano = mod(lon_volcano,360.0_ip)
+        if(lon_volcano.lt.  0.0_ip) lon_volcano = lon_volcano+360.0_ip
+        if(lon_volcano.ge.360.0_ip) lon_volcano = mod(lon_volcano,360.0_ip)
 
         if(IsLatLon.and.&
            (gridwidth_e.ge.360.0_ip.or.&
@@ -1268,12 +1268,12 @@
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
         cdf_b1l3 = linebuffer080
-        read(cdf_b1l3,*,err=9103,iostat=iostatus,iomsg=iomessage) xLL, yLL                ! LL corner in km 
+        read(linebuffer080,*,err=9103,iostat=iostatus,iomsg=iomessage) xLL, yLL                ! LL corner in km 
         ! Block 1 Line 4
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
         cdf_b1l4 = linebuffer080
-        read(cdf_b1l4,*,err=9104,iostat=iostatus,iomsg=iomessage) gridwidth_x, gridwidth_y ! width and height of simulation area in km
+        read(linebuffer080,*,err=9104,iostat=iostatus,iomsg=iomessage) gridwidth_x, gridwidth_y ! width and height of simulation area in km
         xUR = xLL + gridwidth_x
         yUR = yLL + gridwidth_y
 
@@ -1281,10 +1281,10 @@
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
         cdf_b1l5 = linebuffer080
-        read(cdf_b1l5,*,err=9105,iostat=iostatus,iomsg=iomessage) value1, value2   ! First read two values and flag
+        read(linebuffer080,*,err=9105,iostat=iostatus,iomsg=iomessage) value1, value2   ! First read two values and flag
                                                    ! an error if unable
-        read(cdf_b1l5,*,iostat=iostatus,iomsg=iomessage) value1, value2, value3 ! Try for 3
-        if (iostatus.eq.0)then
+        read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) value1, value2, value3 ! Try for 3
+        if(iostatus.eq.0)then
           x_volcano = value1
           y_volcano = value2
           z_volcano = value3
@@ -1297,7 +1297,7 @@
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
         cdf_b1l6 = linebuffer080
-        read(cdf_b1l6,*,err=9106,iostat=iostatus,iomsg=iomessage) dx, dy                 ! cell size in horizontal, vertical, in km
+        read(linebuffer080,*,err=9106,iostat=iostatus,iomsg=iomessage) dx, dy                 ! cell size in horizontal, vertical, in km
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),'(a12,f10.4)')'xLL       = ',xLL
           write(outlog(io),'(a12,f10.4)')'xUR       = ',xUR
@@ -1317,7 +1317,7 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       cdf_b1l7 = linebuffer080
-      read(cdf_b1l7,*,iostat=iostatus,iomsg=iomessage) dz_const    ! nodal spacing in z (always km)
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) dz_const    ! nodal spacing in z (always km)
       if(iostatus.eq.0)then
         ! numeric value read for nodal spacing in z; assume constant
         VarDzType = "dz_cons"
@@ -1338,10 +1338,10 @@
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)&
                      "Could not read dz. Trying to reinterpret as alternate z-spacing"
-          write(outlog(io),*)cdf_b1l7
+          write(outlog(io),*)linebuffer080
         endif;enddo
-        read(cdf_b1l7,*,err=9107,iostat=iostatus,iomsg=iomessage) VarDzType
-        if (VarDzType.eq.'dz_plin')then
+        read(linebuffer080,*,err=9107,iostat=iostatus,iomsg=iomessage) VarDzType
+        if(VarDzType.eq.'dz_plin')then
           ! Piece-wise linear
           !  Read another line with: n-segments, nz1, dz1, nz2, dz2, ...
           do io=1,2;if(VB(io).le.verbosity_info)then
@@ -1351,7 +1351,7 @@
           read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
           cdf_b1l7 = linebuffer080
-          read(cdf_b1l7,*,err=9107,iostat=iostatus,iomsg=iomessage) nsegments
+          read(linebuffer080,*,err=9107,iostat=iostatus,iomsg=iomessage) nsegments
           if(nsegments.lt.1)then
             do io=1,2;if(VB(io).le.verbosity_error)then
               write(errlog(io),*)"ERROR: ",&
@@ -1368,7 +1368,7 @@
           allocate(nz_plin_segments(nsegments))
           allocate(dz_plin_segments(nsegments))
           allocate(values(1+2*nsegments))
-          read(cdf_b1l7,*,err=9107,iostat=iostatus,iomsg=iomessage)values(1:1+2*nsegments)
+          read(linebuffer080,*,err=9107,iostat=iostatus,iomsg=iomessage)values(1:1+2*nsegments)
           do i=1,nsegments
             nz_plin_segments(i) = nint(values(1+(i-1)*2 + 1))
             dz_plin_segments(i) = values(1+(i-1)*2 + 2)
@@ -1392,7 +1392,7 @@
               z_vec_init(k)=last_z+dz_plin_segments(i)
             enddo
           enddo
-        elseif (VarDzType.eq.'dz_clog')then
+        elseif(VarDzType.eq.'dz_clog')then
           ! constant log steps
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"Logrithmic z (constant steps of dlog(z))"
@@ -1402,7 +1402,7 @@
           read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
           cdf_b1l7 = linebuffer080
-          read(cdf_b1l7,*,err=9107,iostat=iostatus,iomsg=iomessage) clog_zmax, clog_nsteps
+          read(linebuffer080,*,err=9107,iostat=iostatus,iomsg=iomessage) clog_zmax, clog_nsteps
           if(clog_zmax.le.0.0)then
             do io=1,2;if(VB(io).le.verbosity_error)then
               write(errlog(io),*)"ERROR: ",&
@@ -1434,7 +1434,7 @@
               write(outlog(io),*)k,z_vec_init(k)
             endif;enddo
           enddo
-        elseif (VarDzType.eq.'dz_cust')then
+        elseif(VarDzType.eq.'dz_cust')then
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"Custom dz"
             write(outlog(io),*)"Now reading number of steps (ndz) followed by values(1:ndz)"
@@ -1443,7 +1443,7 @@
           read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
           cdf_b1l7 = linebuffer080
-          read(cdf_b1l7,*,err=9107,iostat=iostatus,iomsg=iomessage) cust_nsteps
+          read(linebuffer080,*,err=9107,iostat=iostatus,iomsg=iomessage) cust_nsteps
           if(cust_nsteps.le.1)then
             do io=1,2;if(VB(io).le.verbosity_error)then
               write(errlog(io),*)"ERROR: ",&
@@ -1454,7 +1454,7 @@
             stop 1
           endif
           allocate(values(cust_nsteps))
-          read(cdf_b1l7,*,err=9107,iostat=iostatus,iomsg=iomessage) cust_nsteps, values(1:cust_nsteps)
+          read(linebuffer080,*,err=9107,iostat=iostatus,iomsg=iomessage) cust_nsteps, values(1:cust_nsteps)
           nz_init = cust_nsteps
           allocate(z_vec_init(0:nz_init))
           z_vec_init = 0.0_ip
@@ -1483,7 +1483,7 @@
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       cdf_b1l8 = linebuffer080
       ! First read the diffusivity
-      read(cdf_b1l8,*,iostat=iostatus,iomsg=iomessage) diffusivity_horz
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) diffusivity_horz
       if(iostatus.ne.0)then
         ! Cannot read a valid diffusivity value
         do io=1,2;if(VB(io).le.verbosity_error)then
@@ -1495,7 +1495,7 @@
         stop 1
       endif
       ! Now try both diffusivity and a Suzuki coefficient
-      read(cdf_b1l8,*,iostat=iostatus,iomsg=iomessage) diffusivity_horz, Suzuki_A
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) diffusivity_horz, Suzuki_A
       if(iostatus.eq.0)then
         SourceType='suzuki'
       else
@@ -1504,25 +1504,25 @@
           write(outlog(io),*)&
             "Source type is not suzuki. Trying to read another standard type"
         endif;enddo
-        read(cdf_b1l8,*,err=9108,iostat=iostatus,iomsg=iomessage) diffusivity_horz, SourceType
-        if ((SourceType.eq.'point').or. &
+        read(linebuffer080,*,err=9108,iostat=iostatus,iomsg=iomessage) diffusivity_horz, SourceType
+        if((SourceType.eq.'point').or. &
             (SourceType.eq.'Point').or. &
             (SourceType.eq.'POINT')) then
             SourceType='point'
-        elseif ((SourceType.eq.'line').or. &
+        elseif((SourceType.eq.'line').or. &
                    (SourceType.eq.'Line').or. &
                    (SourceType.eq.'LINE')) then
             SourceType='line'
-        elseif ((SourceType.eq.'profile').or. &
+        elseif((SourceType.eq.'profile').or. &
                    (SourceType.eq.'Profile').or. &
                    (SourceType.eq.'PROFILE')) then
             SourceType='profile'
-        elseif ((SourceType.eq.'umbrella').or. &
+        elseif((SourceType.eq.'umbrella').or. &
                    (SourceType.eq.'Umbrella').or. &
                    (SourceType.eq.'UMBRELLA')) then
             SourceType='umbrella'
             Suzuki_A = SuzK_umb
-        elseif ((SourceType.eq.'umbrella_air').or. &
+        elseif((SourceType.eq.'umbrella_air').or. &
                    (SourceType.eq.'Umbrella_air').or. &
                    (SourceType.eq.'UMBRELLA_AIR')) then
             ! umbrella_air is the same as 'umbrella'
@@ -1573,12 +1573,12 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       cdf_b1l9 = linebuffer080
-      read(cdf_b1l9,*,err=9109,iostat=iostatus,iomsg=iomessage) neruptions  ! read in number of eruptions or pulses
+      read(linebuffer080,*,err=9109,iostat=iostatus,iomsg=iomessage) neruptions  ! read in number of eruptions or pulses
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*) 'Expecting to read ',neruptions,&
                            ' eruptions lines in Block 2.'
       endif;enddo
-      if (((SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')) &
+      if(((SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')) &
            .and.(neruptions.gt.1)) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -1627,7 +1627,8 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
-      if (testkey.ne.'#'.and.testkey.ne.'*')then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.ne.'#'.and.testkey.ne.'*')then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 'Expecting a comment line separating blocks.'
@@ -1641,6 +1642,7 @@
         read(fid_ctrlfile,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer130(1:80),iomessage)
         read(linebuffer130,*,iostat=iostatus,iomsg=iomessage)testkey
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       enddo
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)' *******************************************'
@@ -1651,7 +1653,8 @@
       do i=1,neruptions  
         ! Always check if we have overshot the block
         read(linebuffer130,*,iostat=iostatus,iomsg=iomessage)testkey
-        if (testkey.eq.'#'.or.testkey.eq.'*') then
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer130(1:80),iomessage)
+        if(testkey.eq.'#'.or.testkey.eq.'*') then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: ",&
                   'Trying to read Block 2 and detecting comment line'
@@ -1698,7 +1701,8 @@
                                 e_prof_dz(i),e_prof_nzpoints(i)
           allocate(dum_prof(e_prof_nzpoints(i)))
           read(fid_ctrlfile,*,iostat=iostatus,iomsg=iomessage)dum_prof(1:e_prof_nzpoints(i))
-
+          linebuffer080="Direct read of profile points; no line buffer"
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
           ! Check to make sure the sum of the percentages add to 1.0
           if(abs(sum(dum_prof(1:e_prof_nzpoints(i)))-1.0_ip).gt.EPS_SMALL)then
             do io=1,2;if(VB(io).le.verbosity_error)then
@@ -1793,9 +1797,10 @@
           read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
           read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
         enddo
       else
-        if (linebuffer130(1:5).ne.'*****') then
+        if(linebuffer130(1:5).ne.'*****') then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)&
              'The beginning of the line following the list of', &
@@ -1816,7 +1821,8 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
-      if (.not.IsCustom_SourceType.and.&  ! only perform this check for standard src
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(.not.IsCustom_SourceType.and.&  ! only perform this check for standard src
           testkey.ne.'#'.and.testkey.ne.'*')then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -1831,6 +1837,7 @@
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       enddo
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)' *******************************************'
@@ -1845,11 +1852,11 @@
       idf = 0
       ! Succeeded in reading the two required values, try for three
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) iw, iwf, ivalue3
-      if (iostatus.eq.0)then
+      if(iostatus.eq.0)then
         ! Success reading three values, try for four
         igrid = ivalue3
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) iw, iwf, ivalue3, ivalue4
-        if (iostatus.eq.0)then
+        if(iostatus.eq.0)then
           ! Success!, set data format (ascii, netcdf, grib)
           idf = ivalue4
         endif
@@ -1879,7 +1886,8 @@
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
-        if (testkey.eq.'#'.or.testkey.eq.'*') then
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+        if(testkey.eq.'#'.or.testkey.eq.'*') then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: ",&
                   "Trying to read template name and detecting comment line"
@@ -1900,7 +1908,9 @@
 
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
-      if (testkey.eq.'#'.or.testkey.eq.'*') then
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.eq.'#'.or.testkey.eq.'*') then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read MR_iHeightHandler and detecting comment line"
@@ -1915,7 +1925,9 @@
 
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
-      if (testkey.eq.'#'.or.testkey.eq.'*') then
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.eq.'#'.or.testkey.eq.'*') then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read Simtime_in_hours and detecting comment line"
@@ -1932,7 +1944,9 @@
       ! Block 3 Line 4
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage) linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
-      if (testkey.eq.'#'.or.testkey.eq.'*') then
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.eq.'#'.or.testkey.eq.'*') then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read StopWhenDeposited and detecting comment line"
@@ -1942,10 +1956,10 @@
       ! Block 3 Line 4
       cdf_b3l4 = linebuffer080
       read(linebuffer080,'(a3)',err=9304,iostat=iostatus,iomsg=iomessage) answer
-      if (adjustl(trim(answer)).eq.'yes') then
+      if(adjustl(trim(answer)).eq.'yes') then
         StopWhenDeposited = .true.
         StopValue = 0.99_ip
-       else if (adjustl(trim(answer(1:2))).eq.'no') then
+       else if(adjustl(trim(answer(1:2))).eq.'no') then
         StopWhenDeposited = .false.
         StopValue = 1.0e2_ip
        else
@@ -1954,7 +1968,9 @@
 
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
-      if (testkey.eq.'#'.or.testkey.eq.'*') then
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.eq.'#'.or.testkey.eq.'*') then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read nWindFiles and detecting comment line"
@@ -1971,7 +1987,7 @@
         !set start time of simulation
         ! Note: This will be updated for forecast runs once we know the start
         !       time of the windfiles
-        if (i.eq.1) then
+        if(i.eq.1) then
           SimStartHour = HS_hours_since_baseyear(iyear(i),imonth(i),  &
                         iday(i),hour(i),BaseYear,useLeap)
           xmlSimStartTime = HS_xmltime(SimStartHour,BaseYear,useLeap)
@@ -1983,7 +1999,7 @@
         ! error trap if eruptions are not in chronological order
         if(.not.IsCustom_SourceType)then
           ! relax the chronological requirement for custom sources
-          if (i.ge.2)then
+          if(i.ge.2)then
             !(add 0.001 hours to make sure that rounding error does not cause
             !the program to stop)
             if((e_StartTime(i)+0.001_ip).lt.(e_StartTime(i-1)+e_Duration(i-1))) goto 9202
@@ -2059,7 +2075,7 @@
         SimStartHour = SimStartHour + tmp_dp
         xmlSimStartTime = HS_xmltime(SimStartHour,BaseYear,useLeap)
       endif
-      if (SourceType.eq.'suzuki') then
+      if(SourceType.eq.'suzuki') then
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),6) diffusivity_horz, Suzuki_A, &
                                StopWhenDeposited, Simtime_in_hours
@@ -2075,7 +2091,7 @@
       endif;enddo
 
       ! Find the i,j index values of the node containing the source volcano
-      if (IsLatLon) then
+      if(IsLatLon) then
         ivent = int((lon_volcano-lonLL)/de) + 1
         jvent = int((lat_volcano-latLL)/dn) + 1
       else
@@ -2096,7 +2112,8 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
-      if (testkey.ne.'#'.and.testkey.ne.'*')then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.ne.'#'.and.testkey.ne.'*')then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Expecting a comment line separating blocks."
@@ -2109,6 +2126,7 @@
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       enddo
       ! Block 4
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -2138,7 +2156,8 @@
       ! Block 4 Line 1
       ! Read whether to write out final ESRI ASCII deposit file
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
-      if (testkey.eq.'#'.or.testkey.eq.'*') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.eq.'#'.or.testkey.eq.'*') then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteDepositFinal_ASCII and detecting",& 
@@ -2147,9 +2166,10 @@
         stop 1
       endif
       read(linebuffer080,'(a3)',err=9401,iostat=iostatus,iomsg=iomessage) answer
-      if (adjustl(trim(answer)).eq.'yes') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(adjustl(trim(answer)).eq.'yes') then
         WriteDepositFinal_ASCII = .true.
-       else if (adjustl(trim(answer(1:2))).eq.'no') then
+       else if(adjustl(trim(answer(1:2))).eq.'no') then
         WriteDepositFinal_ASCII = .false.
        else
         goto 9401
@@ -2160,7 +2180,8 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
-      if (testkey.eq.'#'.or.testkey.eq.'*') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.eq.'#'.or.testkey.eq.'*') then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteDepositFinal_KML and detecting", &
@@ -2169,10 +2190,11 @@
         stop 1
       endif
       read(linebuffer080,'(a3)',err=9402,iostat=iostatus,iomsg=iomessage) answer
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       cdf_b4l2 = linebuffer080
-      if (adjustl(trim(answer)).eq.'yes') then
+      if(adjustl(trim(answer)).eq.'yes') then
         WriteDepositFinal_KML = .true.
-       else if (adjustl(trim(answer(1:2))).eq.'no') then
+       else if(adjustl(trim(answer(1:2))).eq.'no') then
         WriteDepositFinal_KML = .false.
        else
         goto 9402
@@ -2183,7 +2205,8 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
-      if (testkey.eq.'#'.or.testkey.eq.'*') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.eq.'#'.or.testkey.eq.'*') then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteDepositTS_ASCII and detecting",&
@@ -2193,9 +2216,10 @@
       endif
       cdf_b4l3 = linebuffer080
       read(linebuffer080,'(a3)',err=9403,iostat=iostatus,iomsg=iomessage) answer
-      if (adjustl(trim(answer)).eq.'yes') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(adjustl(trim(answer)).eq.'yes') then
         WriteDepositTS_ASCII = .true.
-       else if (adjustl(trim(answer(1:2))).eq.'no') then
+       else if(adjustl(trim(answer(1:2))).eq.'no') then
         WriteDepositTS_ASCII = .false.
        else
         goto 9403
@@ -2206,7 +2230,8 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
-      if (testkey.eq.'#'.or.testkey.eq.'*') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.eq.'#'.or.testkey.eq.'*') then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteDepositTS_KML and detecting comment line"
@@ -2215,9 +2240,10 @@
       endif
       cdf_b4l4 = linebuffer080
       read(linebuffer080,'(a3)',err=9404,iostat=iostatus,iomsg=iomessage) answer
-      if (adjustl(trim(answer)).eq.'yes') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(adjustl(trim(answer)).eq.'yes') then
         WriteDepositTS_KML = .true.
-       else if (adjustl(trim(answer(1:2))).eq.'no') then
+       else if(adjustl(trim(answer(1:2))).eq.'no') then
         WriteDepositTS_KML = .false.
        else
         goto 9404
@@ -2228,7 +2254,8 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
-      if (testkey.eq.'#'.or.testkey.eq.'*') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.eq.'#'.or.testkey.eq.'*') then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteCloudConcentration_ASCII and detecting",&
@@ -2238,9 +2265,10 @@
       endif
       cdf_b4l5 = linebuffer080
       read(linebuffer080,'(a3)',err=9405,iostat=iostatus,iomsg=iomessage) answer
-      if (adjustl(trim(answer)).eq.'yes') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(adjustl(trim(answer)).eq.'yes') then
         WriteCloudConcentration_ASCII = .true.
-       else if (adjustl(trim(answer(1:2))).eq.'no') then
+       else if(adjustl(trim(answer(1:2))).eq.'no') then
         WriteCloudConcentration_ASCII = .false.
        else
         goto 9405
@@ -2251,7 +2279,8 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
-      if (testkey.eq.'#'.or.testkey.eq.'*') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.eq.'#'.or.testkey.eq.'*') then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteCloudConcentration_KML and detecting",&
@@ -2261,9 +2290,9 @@
       endif
       cdf_b4l6 = linebuffer080
       read(linebuffer080,'(a3)',err=9406,iostat=iostatus,iomsg=iomessage) answer
-      if (adjustl(trim(answer)).eq.'yes') then
+      if(adjustl(trim(answer)).eq.'yes') then
         WriteCloudConcentration_KML = .true.
-       else if (adjustl(trim(answer(1:2))).eq.'no') then
+       else if(adjustl(trim(answer(1:2))).eq.'no') then
         WriteCloudConcentration_KML = .false.
        else
         goto 9406
@@ -2274,7 +2303,8 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
-      if (testkey.eq.'#'.or.testkey.eq.'*') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.eq.'#'.or.testkey.eq.'*') then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteCloudHeight_ASCII and detecting",&
@@ -2284,9 +2314,10 @@
       endif
       cdf_b4l7 = linebuffer080
       read(linebuffer080,'(a3)',err=9407,iostat=iostatus,iomsg=iomessage) answer
-      if (adjustl(trim(answer)).eq.'yes') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(adjustl(trim(answer)).eq.'yes') then
         WriteCloudHeight_ASCII = .true.
-       else if (adjustl(trim(answer(1:2))).eq.'no') then
+       else if(adjustl(trim(answer(1:2))).eq.'no') then
         WriteCloudHeight_ASCII = .false.
        else
         goto 9407
@@ -2297,7 +2328,8 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
-      if (testkey.eq.'#'.or.testkey.eq.'*') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.eq.'#'.or.testkey.eq.'*') then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteCloudHeight_KML and detecting",&
@@ -2307,9 +2339,10 @@
       endif
       cdf_b4l8 = linebuffer080
       read(linebuffer080,'(a3)',err=9408,iostat=iostatus,iomsg=iomessage) answer
-      if (adjustl(trim(answer)).eq.'yes') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(adjustl(trim(answer)).eq.'yes') then
         WriteCloudHeight_KML = .true.
-       else if (adjustl(trim(answer(1:2))).eq.'no') then
+       else if(adjustl(trim(answer(1:2))).eq.'no') then
         WriteCloudHeight_KML = .false.
        else
         goto 9408
@@ -2320,7 +2353,8 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
-      if (testkey.eq.'#'.or.testkey.eq.'*') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.eq.'#'.or.testkey.eq.'*') then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteCloudLoad_ASCII and detecting",&
@@ -2330,9 +2364,10 @@
       endif
       cdf_b4l9 = linebuffer080
       read(linebuffer080,'(a3)',err=9409,iostat=iostatus,iomsg=iomessage) answer
-      if (adjustl(trim(answer)).eq.'yes') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(adjustl(trim(answer)).eq.'yes') then
         WriteCloudLoad_ASCII = .true.
-       else if (adjustl(trim(answer(1:2))).eq.'no') then
+       else if(adjustl(trim(answer(1:2))).eq.'no') then
         WriteCloudLoad_ASCII = .false.
        else
         goto 9409
@@ -2343,7 +2378,8 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
-      if (testkey.eq.'#'.or.testkey.eq.'*') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.eq.'#'.or.testkey.eq.'*') then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteCloudLoad_KML and detecting comment line"
@@ -2352,9 +2388,10 @@
       endif
       cdf_b4l10 = linebuffer080
       read(linebuffer080,'(a3)',err=9410,iostat=iostatus,iomsg=iomessage) answer
-      if (adjustl(trim(answer)).eq.'yes') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(adjustl(trim(answer)).eq.'yes') then
         WriteCloudLoad_KML = .true.
-       else if (adjustl(trim(answer(1:2))).eq.'no') then
+       else if(adjustl(trim(answer(1:2))).eq.'no') then
         WriteCloudLoad_KML = .false.
        else
         goto 9410
@@ -2365,7 +2402,8 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
-      if (testkey.eq.'#'.or.testkey.eq.'*') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.eq.'#'.or.testkey.eq.'*') then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteDepositTime_ASCII and detecting",&
@@ -2375,9 +2413,10 @@
       endif
       cdf_b4l11 = linebuffer080
       read(linebuffer080,'(a3)',err=9411,iostat=iostatus,iomsg=iomessage) answer
-      if (adjustl(trim(answer)).eq.'yes') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(adjustl(trim(answer)).eq.'yes') then
         WriteDepositTime_ASCII = .true.
-       else if (adjustl(trim(answer(1:2))).eq.'no') then
+       else if(adjustl(trim(answer(1:2))).eq.'no') then
         WriteDepositTime_ASCII = .false.
        else
         goto 9411
@@ -2388,7 +2427,8 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
-      if (testkey.eq.'#'.or.testkey.eq.'*') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.eq.'#'.or.testkey.eq.'*') then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteDepositTime_KML and detecting",&
@@ -2398,9 +2438,10 @@
       endif
       cdf_b4l12 = linebuffer080
       read(linebuffer080,'(a3)',err=9412,iostat=iostatus,iomsg=iomessage) answer
-      if (adjustl(trim(answer)).eq.'yes') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(adjustl(trim(answer)).eq.'yes') then
         WriteDepositTime_KML = .true.
-       else if (adjustl(trim(answer(1:2))).eq.'no') then
+       else if(adjustl(trim(answer(1:2))).eq.'no') then
         WriteDepositTime_KML = .false.
        else
         goto 9412
@@ -2411,7 +2452,8 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
-      if (testkey.eq.'#'.or.testkey.eq.'*') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.eq.'#'.or.testkey.eq.'*') then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteCloudTime_ASCII and detecting",&
@@ -2421,9 +2463,10 @@
       endif
       cdf_b4l13 = linebuffer080
       read(linebuffer080,'(a3)',err=9413,iostat=iostatus,iomsg=iomessage) answer
-      if (adjustl(trim(answer)).eq.'yes') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(adjustl(trim(answer)).eq.'yes') then
         WriteCloudTime_ASCII = .true.
-       else if (adjustl(trim(answer(1:2))).eq.'no') then
+       else if(adjustl(trim(answer(1:2))).eq.'no') then
         WriteCloudTime_ASCII = .false.
        else
         goto 9413
@@ -2434,7 +2477,8 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
-      if (testkey.eq.'#'.or.testkey.eq.'*') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.eq.'#'.or.testkey.eq.'*') then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteCloudTime_KML and detecting comment line"
@@ -2443,23 +2487,24 @@
       endif
       cdf_b4l14 = linebuffer080
       read(linebuffer080,'(a3)',err=9414,iostat=iostatus,iomsg=iomessage) answer
-      if (adjustl(trim(answer)).eq.'yes') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(adjustl(trim(answer)).eq.'yes') then
         WriteCloudTime_KML = .true.
-       else if (adjustl(trim(answer(1:2))).eq.'no') then
+       else if(adjustl(trim(answer(1:2))).eq.'no') then
         WriteCloudTime_KML = .false.
        else
         goto 9414
       endif
 
       !If IsLatLon=false, KML files can't be written out until they're re-projected.
-      !if ((WriteDepositFinal_KML.or.WriteDepositTS_KML.or.WriteCloudConcentration_KML).and. &
+      !if((WriteDepositFinal_KML.or.WriteDepositTS_KML.or.WriteCloudConcentration_KML).and. &
       !    (.not.IsLatLon)) then
       !  do io=1,2;if(VB(io).le.verbosity_info)then
       !    write(outlog(io),38)
       !    write(outlog(io),39)
       !  endif;enddo
-      !  read(input_unit,'(a1)') answer
-      !  if (answer.ne.'y') stop 1
+      !  read(input_unit,'(a1)',iostat=iostatus,iomsg=iomessage) answer
+      !  if(answer.ne.'y') stop 1
       !  WriteCloudConcentration_KML = .false.
       !  WriteDepositFinal_KML    = .false.
       !  WriteDepositTS_KML   = .false.
@@ -2470,7 +2515,8 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
-      if (testkey.eq.'#'.or.testkey.eq.'*') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.eq.'#'.or.testkey.eq.'*') then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read Write3dFiles and detecting comment line"
@@ -2479,8 +2525,9 @@
       endif
       cdf_b4l15 = linebuffer080
       read(linebuffer080,'(a3)',err=9415,iostat=iostatus,iomsg=iomessage) answer
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       USE_RESTART_VARS = .true.
-      if (adjustl(trim(answer)).eq.'yes') then
+      if(adjustl(trim(answer)).eq.'yes') then
         Write3dFiles = .true.
         ! if a consolidated output file will be written, assume both standard
         ! variables and the 3d ash concentrations will be written
@@ -2489,7 +2536,7 @@
         loc = index(linebuffer080,'yes')
         dumstr20 = linebuffer080(loc+4:loc+24)
         read(dumstr20,*,iostat=iostatus,iomsg=iomessage) iform
-        if (iostatus.eq.0)then
+        if(iostatus.eq.0)then
           ! Succeeded in reading the format code
           if(iform.eq.1)then
             do io=1,2;if(VB(io).le.verbosity_info)then
@@ -2511,7 +2558,7 @@
             USE_RESTART_VARS = .true.
           endif
         endif
-       else if (adjustl(trim(answer(1:2))).eq.'no') then
+       else if(adjustl(trim(answer(1:2))).eq.'no') then
         Write3dFiles = .false.
        else
         goto 9415
@@ -2522,7 +2569,8 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
-      if (testkey.eq.'#'.or.testkey.eq.'*') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.eq.'#'.or.testkey.eq.'*') then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read output format and detecting comment line"
@@ -2530,13 +2578,15 @@
         stop 1
       endif
       cdf_b4l16 = linebuffer080
-      if (Write3dFiles) then
+      linebuffer080=adjustl(linebuffer080)
+      if(Write3dFiles) then
          read(linebuffer080,'(a6)',err=9416,iostat=iostatus,iomsg=iomessage) formatanswer
-         if (formatanswer(1:5).eq.'ascii') then
+         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+         if(formatanswer(1:5).eq.'ascii') then
             ioutputFormat = 1
-          else if (formatanswer(1:6).eq.'binary') then
+          else if(formatanswer(1:6).eq.'binary') then
             ioutputFormat = 2
-          else if (formatanswer(1:6).eq.'netcdf') then
+          else if(formatanswer(1:6).eq.'netcdf') then
             ioutputFormat = 3
           else
            goto 9416
@@ -2548,7 +2598,8 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage) linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
-      if (testkey.eq.'#'.or.testkey.eq.'*') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.eq.'#'.or.testkey.eq.'*') then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read nWriteTimes and detecting comment line"
@@ -2557,11 +2608,16 @@
       endif
       cdf_b4l17 = linebuffer080
 
+
+      ! HFS Fix this out-of-order reading of strings
+      ! Code should just read nWriteTimes values and not limit the write-time
+      ! string to be 130 of 80 characters
       ! Block 4 Line 18
       read(fid_ctrlfile,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer130(1:80),iomessage)
       read(linebuffer130,*,iostat=iostatus,iomsg=iomessage)testkey
-      if (testkey.eq.'#'.or.testkey.eq.'*') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.eq.'#'.or.testkey.eq.'*') then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteTimes or WriteInterval and detecting",&
@@ -2570,7 +2626,7 @@
         stop 1
       endif
       cdf_b4l18 = linebuffer130(1:80)
-      if (WriteDepositFinal_ASCII      .or. &
+      if(WriteDepositFinal_ASCII      .or. &
           WriteDepositFinal_KML        .or. &
           WriteDepositTS_ASCII         .or. &
           WriteDepositTS_KML           .or. &
@@ -2580,17 +2636,17 @@
           WriteCloudHeight_ASCII       .or. &
           WriteCloudHeight_KML         .or. &
           WriteCloudLoad_KML) then
-        read(cdf_b4l17,*,err=9417,iostat=iostatus,iomsg=iomessage) nWriteTimes
+        read(linebuffer080,*,err=9417,iostat=iostatus,iomsg=iomessage) nWriteTimes
           ! Check how to interpret nWriteTimes
-        if (nWriteTimes.gt.0) then
+        if(nWriteTimes.gt.0) then
           ! If a positive number, then we're reading an array of times
           allocate(WriteTimes(nWriteTimes))
           read(linebuffer130,*,err=9418,iostat=iostatus,iomsg=iomessage) WriteTimes(1:nWriteTimes)
-        elseif (nWriteTimes.eq.0) then
+        elseif(nWriteTimes.eq.0) then
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"nWriteTimes = 0: Running without output"
           endif;enddo
-        elseif (nWriteTimes.ne.-1) then
+        elseif(nWriteTimes.ne.-1) then
           ! If not a positive number, then it should be -1
           ! Report error otherwise
           goto 9417
@@ -2611,7 +2667,7 @@
             WriteTimes(i) = (i-1)*WriteInterval
           enddo
           do i=1,nWriteTimes     !check writetimes for errors
-            if (WriteTimes(i).lt.0.0_ip) then  !if the time <0
+            if(WriteTimes(i).lt.0.0_ip) then  !if the time <0
                 ! Abort the program
               goto 94182
             elseif(i.gt.1)then
@@ -2619,7 +2675,7 @@
                   ! Abort the program
                 goto 94183
               endif
-            elseif (WriteTimes(i).gt.Simtime_in_hours) then   !if some times exceed the simulation time
+            elseif(WriteTimes(i).gt.Simtime_in_hours) then   !if some times exceed the simulation time
               do io=1,2;if(VB(io).le.verbosity_info)then
                 write(outlog(io),32)
               endif;enddo
@@ -2631,7 +2687,7 @@
 
         if(LoadConcen)then
           ! Find the output time index that is next
-          if (time.le.WriteTimes(1))then
+          if(time.le.WriteTimes(1))then
             iTimeNext = 1
           else
             do i = 2, nWriteTimes
@@ -2668,7 +2724,7 @@
                              formatanswer,                  &
                              nWriteTimes
       endif;enddo
-      if (WriteDepositTS_ASCII          .or. &
+      if(WriteDepositTS_ASCII          .or. &
           WriteDepositTS_KML            .or. &
           WriteCloudConcentration_ASCII .or. &
           WriteCloudConcentration_KML   .or. &
@@ -2695,7 +2751,8 @@
         read(fid_ctrlfile,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer130(1:80),iomessage)
         read(linebuffer130,*,iostat=iostatus,iomsg=iomessage)testkey
-        if (testkey.ne.'#'.and.testkey.ne.'*')then
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer130(1:80),iomessage)
+        if(testkey.ne.'#'.and.testkey.ne.'*')then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: ",&
                   "Expecting a comment line separating blocks."
@@ -2706,6 +2763,8 @@
         do while(testkey.eq.'#'.or.testkey.eq.'*')
            ! Line is a comment, read next line
           read(fid_ctrlfile,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer130(1:80),iomessage)
+          read(linebuffer130,*,iostat=iostatus,iomsg=iomessage)testkey
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer130(1:80),iomessage)
           testkey=linebuffer130(1:1)
         enddo
@@ -2730,7 +2789,7 @@
           do i=1,iwfiles
             ! Always check if we have overshot the block
             testkey=linebuffer130(1:1)
-            if (testkey.eq.'#'.or.testkey.eq.'*') then
+            if(testkey.eq.'#'.or.testkey.eq.'*') then
               do io=1,2;if(VB(io).le.verbosity_error)then
                 write(errlog(io),*)"ERROR: ",&
                      "Trying to read Block 5 and detecting comment line"
@@ -2791,7 +2850,7 @@
       endif
 
       ! Error trap if more windfiles are entered than are specified
-      if (linebuffer130(1:5).ne.'*****') then
+      if(linebuffer130(1:5).ne.'*****') then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)&
                 'The beginning of the line following the list of', &
@@ -2821,7 +2880,8 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
-      if (testkey.ne.'#'.and.testkey.ne.'*')then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.ne.'#'.and.testkey.ne.'*')then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Expecting a comment line separating blocks."
@@ -2834,6 +2894,7 @@
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       enddo
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)' *******************************************'
@@ -2844,10 +2905,11 @@
       ! Read whether to write out ASCII airport file
       cdf_b6l1 = linebuffer080
       read(linebuffer080,'(a3)',err=9601,iostat=iostatus,iomsg=iomessage) answer
-      if (adjustl(trim(answer)).eq.'yes') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(adjustl(trim(answer)).eq.'yes') then
         WriteAirportFile_ASCII = .true.
         Write_PT_Data          = .true.
-      else if (adjustl(trim(answer(1:2))).eq.'no') then
+      else if(adjustl(trim(answer(1:2))).eq.'no') then
         WriteAirportFile_ASCII = .false.
       else
         goto 9601
@@ -2860,9 +2922,10 @@
       ! Block 6 Line 2
       cdf_b6l2 = linebuffer080
       read(linebuffer080,'(a3)',err=9602,iostat=iostatus,iomsg=iomessage) answer
-      if (adjustl(trim(answer)).eq.'yes') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(adjustl(trim(answer)).eq.'yes') then
         WriteGSD = .true.
-      else if (adjustl(trim(answer(1:2))).eq.'no') then
+      else if(adjustl(trim(answer(1:2))).eq.'no') then
         WriteGSD = .false.
       else
         goto 9602
@@ -2874,10 +2937,11 @@
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       cdf_b6l3 = linebuffer080
       read(linebuffer080,'(a3)',err=9603,iostat=iostatus,iomsg=iomessage) answer
-      if (adjustl(trim(answer)).eq.'yes') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(adjustl(trim(answer)).eq.'yes') then
         WriteAirportFile_KML = .true.
         Write_PT_Data        = .true.
-      else if (adjustl(trim(answer(1:2))).eq.'no') then
+      else if(adjustl(trim(answer(1:2))).eq.'no') then
         WriteAirportFile_KML = .false.
       else
         goto 9603
@@ -2891,10 +2955,10 @@
       AirportInFile = cdf_b6l4(1:scan(cdf_b6l4,' ')-1)     !Read to the first blank space
 
       !See if we need to read an external airport file
-      if ((AirportInFile.ne.'internal').and. &
+      if((AirportInFile.ne.'internal').and. &
           (AirportInFile.ne.'')) then
         ReadExtAirportFile=.true.              ! read external data, do not append
-        if (AirportInFile(1:1).eq.'+') then
+        if(AirportInFile(1:1).eq.'+') then
           AppendExtAirportFile=.true.          ! read and append external data
           AirportInFile = AirportInFile(2:)    ! strip off the "plus" at the beginning
         else
@@ -2919,10 +2983,11 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage) linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       cdf_b6l5 = linebuffer080
-      read(cdf_b6l5,'(a3)',err=9605,iostat=iostatus,iomsg=iomessage) answer
-      if (adjustl(trim(answer)).eq.'yes') then
+      read(linebuffer080,'(a3)',err=9605,iostat=iostatus,iomsg=iomessage) answer
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(adjustl(trim(answer)).eq.'yes') then
         ProjectAirportLocations = .true.
-       else if (adjustl(trim(answer(1:2))).eq.'no') then
+       else if(adjustl(trim(answer(1:2))).eq.'no') then
         ProjectAirportLocations = .false.
        else
         goto 9605
@@ -2942,7 +3007,8 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
-      if (testkey.ne.'#'.and.testkey.ne.'*')then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.ne.'#'.and.testkey.ne.'*')then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Expecting a comment line separating blocks."
@@ -2955,6 +3021,7 @@
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       enddo
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)' *******************************************'
@@ -2985,7 +3052,7 @@
       !          3 -> Wilson and Huang + Mod by Pfeiffer Et al.
       !          4 -> Ganser
       !          5 -> Stokes flow for spherical particles + slip
-      if (ioerr.eq.0)then
+      if(iostatus.eq.0)then
         FV_ID = ivalue2
         if(FV_ID.ne.0.and.FV_ID.ne.1.and.FV_ID.ne.2.and.&
            FV_ID.ne.3.and.FV_ID.ne.4.and.FV_ID.ne.5)then
@@ -2993,7 +3060,7 @@
         endif
         ! Try for a third value which specifies shape factory (F vs phi)
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) ivalue1, ivalue2, ivalue3
-        if (iostatus.eq.0)then
+        if(iostatus.eq.0)then
           Shape_Id = ivalue3
           if(Shape_Id.ne.1.and.Shape_Id.ne.2)then
             Shape_Id = 1 ! Default to Wilson and Huang
@@ -3018,7 +3085,7 @@
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
           ! Always check if we have overshot the block
           testkey = linebuffer080(1:1)
-          if ((testkey.eq.'*').or.(testkey.eq.'#')) then
+          if((testkey.eq.'*').or.(testkey.eq.'#')) then
           do io=1,2;if(VB(io).le.verbosity_error)then
               write(errlog(io),*)"ERROR: ",&
                     "Error in specifying grain sizes.  You specified ",&
@@ -3030,11 +3097,11 @@
             endif;enddo
             stop 1
           endif
-          ! Read at least two values or throw and error
+          ! Read at least two values or throw an error
           read(linebuffer080,*,err=9702,iostat=iostatus,iomsg=iomessage) value1, value2
-          ! Assume we can read at least read two values, try for three
+          ! Two values successfully read; try for three
           read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) value1, value2, value3
-          if (iostatus.eq.0)then
+          if(iostatus.eq.0)then
             ! Three values were successfully read, interpret as:
             ! grain-size, mass fraction, density
             ! W&H suggest 800 kg/m3 for d>300um and 2000 for d<88um for pumice
@@ -3046,13 +3113,13 @@
             temp_rho_m(isize) = value3
             ! Try for a forth value for shape
             read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) value1, value2, value3, value4
-            if (iostatus.eq.0)then
+            if(iostatus.eq.0)then
               ! Fourth value was successfully read, interpret as W/H shape
               ! parameter
               temp_gsF(isize) = value4
               ! Try for a fifth value for ratio of minor axies of ellipsoid
               read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) value1, value2, value3, value4, value5
-              if (iostatus.eq.0)then
+              if(iostatus.eq.0)then
                 ! Fourth value was successfully read, interpret as c/b
                 temp_gsG(isize) = value5
               else
@@ -3095,7 +3162,7 @@
             ! FallVel, mass fraction
             useCalcFallVel = .false.
             temp_v_s(isize)     = value1
-            if (temp_v_s(isize).lt.0.0_ip)then
+            if(temp_v_s(isize).lt.0.0_ip)then
               do io=1,2;if(VB(io).le.verbosity_info)then
                 write(outlog(io),*)&
                    "WARNING: fall velocity is negative.  Grains will 'fall' upward"
@@ -3110,7 +3177,7 @@
           endif
         enddo ! isize=1,init_n_gs_max
         ! Set the number of grain-size bins
-        if (useLogNormGSbins)then
+        if(useLogNormGSbins)then
           ! In this case, the last bin is the remainder to be distributed over the
           ! previous bins.  So we need to decrement the tephra bins by 1
           n_gs_max = init_n_gs_max-1
@@ -3153,10 +3220,10 @@
 
         ! If a log-normal distribution is to be added, make sure the grainsize
         ! bins are sorted by size (smallest first)
-        if (useLogNormGSbins) call Sort_Tephra_Size
+        if(useLogNormGSbins) call Sort_Tephra_Size
         temp_phi = -log(Tephra_gsdiam)/log(2.0)
 
-        if (useCalcFallVel) Tephra_gsdiam = Tephra_gsdiam/1000.0_ip   ! convert diameter from mm to m
+        if(useCalcFallVel) Tephra_gsdiam = Tephra_gsdiam/1000.0_ip   ! convert diameter from mm to m
 
         ! Find the fraction of fine (<= phi4, 63um)
         fracfine = 0.0_ip
@@ -3172,7 +3239,7 @@
         endif;enddo
 2531    format('Checking to make sure Tephra_bin_mass>0 for all size classes')
         do isize=1,n_gs_max
-          if (Tephra_bin_mass(isize).lt.0.0_ip) then
+          if(Tephra_bin_mass(isize).lt.0.0_ip) then
             do io=1,2;if(VB(io).le.verbosity_error)then
               write(errlog(io),25311) isize
             endif;enddo
@@ -3198,7 +3265,7 @@
 2534      format(3x,f7.4,'  total',/,'Program stopped')
           stop 1
             ! If it differs just slightly from 1, adjust automatically
-        else if (abs(sum_bins-1.0_ip).gt.0.001_ip) then
+        else if(abs(sum_bins-1.0_ip).gt.0.001_ip) then
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),2535) sum_bins
           endif;enddo
@@ -3259,7 +3326,7 @@
           write(outlog(io),'(a45,f10.3)')"Using a mass-fraction of fines (< 63um) of : ",fracfine
         endif;enddo
         ! if bin masses sum up close to 1 (within 1%), adjust automatically      
-        if ((abs(sum(Tephra_bin_mass)-1.0_ip).gt.1.0e-5_ip).and. &  
+        if((abs(sum(Tephra_bin_mass)-1.0_ip).gt.1.0e-5_ip).and. &  
             (abs(sum(Tephra_bin_mass)-1.0_ip).le.1.0e-02_ip)) then
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),1001) sum(Tephra_bin_mass)
@@ -3284,7 +3351,7 @@
               enddo
             endif;enddo
           endif
-        else if (abs(sum(Tephra_bin_mass)-1.0_ip).gt.1.0e-2_ip) then
+        else if(abs(sum(Tephra_bin_mass)-1.0_ip).gt.1.0e-2_ip) then
           ! if bin masses are do not sum to within 1% of unity; stop
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),1000)
@@ -3301,7 +3368,8 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
-      if (testkey.ne.'#'.and.testkey.ne.'*')then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.ne.'#'.and.testkey.ne.'*')then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Expecting a comment line separating blocks."
@@ -3314,6 +3382,7 @@
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       enddo
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)' *******************************************'
@@ -3331,7 +3400,7 @@
         write(outlog(io),*) 'number of vertical profiles=',nvprofiles
       endif;enddo
 
-      if (nvprofiles.gt.0) then
+      if(nvprofiles.gt.0) then
         Write_PR_Data = .true.
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"Allocating profile arrays:",nvprofiles
@@ -3351,7 +3420,7 @@
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
           ! Always check if we have overshot the block
           testkey=linebuffer080(1:1)
-          if (testkey.eq.'#'.or.testkey.eq.'*') then
+          if(testkey.eq.'#'.or.testkey.eq.'*') then
           do io=1,2;if(VB(io).le.verbosity_error)then
               write(errlog(io),*)"ERROR: ",&
                     "Trying to read Block 8 and detecting comment line"
@@ -3368,7 +3437,7 @@
           write(Site_vprofile(i),'(a14,1x,i3)')"Vertical Prof ",i
           ! Assume we can read at least read two values, try for three
           read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) value1, value2, Site_vprofile(i)
-          if (iostatus.eq.0)then
+          if(iostatus.eq.0)then
             substr_pos1 = index(linebuffer080,trim(adjustl(Site_vprofile(i))))
             substr_pos2 = index(linebuffer080,'#')
             if(substr_pos2.eq.0)then
@@ -3394,8 +3463,9 @@
       !  optional_module blocks will not read correctly.
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
-      read(linebuffer080,*)testkey
-      if (testkey.ne.'#'.and.testkey.ne.'*')then
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(testkey.ne.'#'.and.testkey.ne.'*')then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Expecting a comment line separating blocks."
@@ -3408,6 +3478,7 @@
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       enddo
 
       ! Here are the default output file name and comments if Block 9 is not given
@@ -3439,14 +3510,18 @@
 
         ! First line is the output file name
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) concenfile
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
         concenfile = trim(adjustl(concenfile))
+
+        ! We only really need the name of the output concentration file. If we don't
+        ! have the next two lines, error in reading will sent control to lable 2010,
+        ! which just allows continuation of code.
 
         ! Next line is the title of the job
           ! Read title line up until the first '#', then truncate
         read(fid_ctrlfile,'(a80)',err=2010,iostat=iostatus,iomsg=iomessage)linebuffer080
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
-        iendstr = SCAN(linebuffer080, "#")
-        if (iendstr.eq.0)then
+        iendstr = scan(linebuffer080, "#")
+        if(iendstr.eq.0)then
              ! '#' not found, just copy linebuffer080 to title
           cdf_title = trim(adjustl(linebuffer080))
         else
@@ -3456,10 +3531,9 @@
 
           ! Read comment line up until the first '#', then truncate
         read(fid_ctrlfile,'(a80)',err=2010,iostat=iostatus,iomsg=iomessage)linebuffer080
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
         if(iostatus.ne.0)goto 2010
-        iendstr = SCAN(linebuffer080, "#")
-        if (iendstr.eq.0)then
+        iendstr = scan(linebuffer080, "#")
+        if(iendstr.eq.0)then
              ! '#' not found, just copy linebuffer080 to comment
           cdf_comment = trim(adjustl(linebuffer080))
         else
@@ -3493,6 +3567,7 @@
           nmods = nmods + 1
           !  Parse for the keyword
           read(linebuffer080,1104,iostat=iostatus,iomsg=iomessage)mod_name
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
           OPTMOD_names(nmods) = trim(adjustl(mod_name))
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"     Found optional module : ",&
@@ -3500,6 +3575,13 @@
           endif;enddo
         endif
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+        if(iostatus.lt.0)then
+          ! end of file reached; exit do loop
+          exit
+        else
+          ! Some non-EOF error
+          call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+        endif
 1104    format(7x,a20)
       enddo
 
@@ -3531,7 +3613,7 @@
           !write(outlog(io),*)""
         endif
         write(outlog(io),*)limiter," limiter is used."
-        if (useCN) then
+        if(useCN) then
           write(outlog(io),*)&
            "Diffusion is calculated via Crank-Nicolson."
         else
@@ -3583,7 +3665,7 @@
         Output_every_TS = .false.
       endif
         ! Next check if there are requests at specific write times
-      if (WriteDepositTS_ASCII           .or.      &
+      if(WriteDepositTS_ASCII           .or.      &
           WriteCloudConcentration_ASCII  .or.      &
           WriteCloudHeight_ASCII         .or.      &
           WriteCloudLoad_ASCII           .or.      &
@@ -3598,7 +3680,7 @@
         Output_at_WriteTimes = .false.
       endif
         ! Finally, check if we will be logging progress at log_steps
-      if (log_step.gt.0)then
+      if(log_step.gt.0)then
         Output_at_logsteps = .true.
       else
         Output_at_logsteps = .false.
@@ -4085,12 +4167,13 @@
 96041 do io=1,2;if(VB(io).le.verbosity_error)then
         write(errlog(io),*) 'Would you like Ash3d to use the internal airports database instead (y/n)?'
       endif;enddo
-      read(input_unit,'(a1)') answer
-      if (adjustl(trim(answer)).eq.'y') then
+      read(input_unit,'(a1)',iostat=iostatus,iomsg=iomessage) answer
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,answer,iomessage)
+      if(adjustl(trim(answer)).eq.'y') then
         ReadExtAirportFile=.false.
         AppendExtAirportFile=.false.
         AirportInFile='internal'
-      else if (adjustl(trim(answer)).eq.'n') then
+      else if(adjustl(trim(answer)).eq.'n') then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*) 'program stopped'
           write(errlog(io),*) '------------------------------'
@@ -4310,7 +4393,7 @@
       endif
 
       ! Make sure that the top of the grid does not extend beyond 90n
-      if ((latLL+gridwidth_n).gt.90.0_ip) then
+      if((latLL+gridwidth_n).gt.90.0_ip) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR:  Latitude at the top of the grid > 90."
         endif;enddo
@@ -4318,10 +4401,10 @@
       endif
 
       ! Make sure that lon_volcano > lonLL
-      if (lonLL.gt.lon_volcano) lon_volcano=lon_volcano+360.0_ip
+      if(lonLL.gt.lon_volcano) lon_volcano=lon_volcano+360.0_ip
 
       ! Make sure the volcano is within the model region (longitude)
-      if ((lon_volcano.lt.lonLL).or.(lon_volcano.gt.(lonLL+gridwidth_e))) then
+      if((lon_volcano.lt.lonLL).or.(lon_volcano.gt.(lonLL+gridwidth_e))) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*) 'ERROR: the volcano is not within the specified longitude region'
           write(errlog(io),*) "lon_volcano=",lon_volcano,', lonLL=',lonLL
@@ -4331,7 +4414,7 @@
       endif
 
       ! Make sure the volcano is within the model region (latitude)
-      if ((lat_volcano.lt.latLL).or.(lat_volcano.gt.(latLL+gridwidth_n))) then
+      if((lat_volcano.lt.latLL).or.(lat_volcano.gt.(latLL+gridwidth_n))) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*) 'ERROR: the volcano is not within the specified latitude region'
           write(errlog(io),*) "lat_volcano=",lat_volcano,', latLL=',latLL
@@ -4380,7 +4463,7 @@
       endif
 
       ! Make sure the volcano is within the model region
-      if (((x_volcano.lt.xLL).or.(x_volcano.gt.(xLL+gridwidth_x))).or. &
+      if(((x_volcano.lt.xLL).or.(x_volcano.gt.(xLL+gridwidth_x))).or. &
           ((y_volcano.lt.yLL).or.(y_volcano.gt.(yLL+gridwidth_y)))) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*) &
@@ -4390,7 +4473,7 @@
       endif
 
       ! Print out warning message if dx != dy
-      if (abs(dx-dy).lt.EPS_SMALL) then
+      if(abs(dx-dy).lt.EPS_SMALL) then
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),1)              ! print out a warning message about the deposit file
         endif;enddo
@@ -4428,10 +4511,10 @@
       real(kind=ip) :: lon_vprof, lat_vprof
 
       ! Find the i and j values of the node containing the vertical profile
-      if (IsLatLon) then
+      if(IsLatLon) then
         lon_vprof = x_vprofile(iprof)
         lat_vprof = y_vprofile(iprof)
-        if ((lonLL+gridwidth_e-lon_vprof).gt.360.0_ip) &
+        if((lonLL+gridwidth_e-lon_vprof).gt.360.0_ip) &
           lon_vprof = lon_vprof+360.0_ip
         i_vprofile(iprof) = int((lon_vprof-lonLL)/de) + 1
         j_vprofile(iprof) = int((lat_vprof-latLL)/dn) + 1
@@ -4447,8 +4530,8 @@
 47    format(i11,2f10.3,2i6)
 
       ! Make sure the point is within the model region
-      if (IsLatLon) then
-        if (((lon_vprof.lt.lonLL)               .or. &
+      if(IsLatLon) then
+        if(((lon_vprof.lt.lonLL)               .or. &
              (lon_vprof.gt.(lonLL+gridwidth_e))).or. &
             ((lat_vprof.lt.latLL)               .or. &
              (lat_vprof.gt.(latLL+gridwidth_n)))) then
@@ -4459,7 +4542,7 @@
           stop 1
         endif
       else
-        if (((x_vprofile(iprof).lt.xLL)               .or.&
+        if(((x_vprofile(iprof).lt.xLL)               .or.&
              (x_vprofile(iprof).gt.(xLL+gridwidth_x))).or.&
             ((y_vprofile(iprof).lt.yLL)               .or.&
             (y_vprofile(iprof).gt.(yLL+gridwidth_y)))) then
@@ -4523,6 +4606,8 @@
       integer, intent(out) :: itime
 
       character(len=130) :: linebuffer080
+      integer            :: iostatus
+      character(len=120) :: iomessage
       integer            :: ioerr
       integer            :: ivalue
       real(kind=ip)      :: rvalue
@@ -4540,17 +4625,21 @@
       ! Line 1:
       !  The first line is the data file.  This is expected to be the netcdf file
       !  with all the run information, but could be a binary or ASCII output file.
-      read(fid_ctrlfile,'(a80)')linebuffer080
-      read(linebuffer080,*) datafileIn
+      read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) datafileIn
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       datafileIn = adjustl(trim(datafileIn))
 
       ! Line 2:
       !  This is the format code of the data file from line 1.  Currently, we expect
       !  this to be the netcdf run output file, but could be binary or ASCII.  The
       !  other formats are placeholders and not yet implemented.
-      read(fid_ctrlfile,'(a80)')linebuffer080
-      read(linebuffer080,*) informat
-      if (informat.ne.1.and.&
+      read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) informat
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(informat.ne.1.and.&
           informat.ne.2.and.&
           informat.ne.3)then
         do io=1,2;if(VB(io).le.verbosity_error)then
@@ -4573,8 +4662,10 @@
       !  already available and this line will be ignored.  However, ASCII and
       !  binary files can use the additional information from the input file
       !  for the output products.
-      read(fid_ctrlfile,'(a80)')linebuffer080
-      read(linebuffer080,*) infile
+      read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) infile
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       infile = adjustl(trim(infile))
       if(infile(1:4).eq.'none')then
         HaveInfile = .false.
@@ -4587,16 +4678,18 @@
       !  Normally, the variable read with be what is written out, but you
       !  could have a binary 3d concentration and want cloud_load or have
       !  an ASCII deposit (in mm) and want a plot of deposit in inches.
-      read(fid_ctrlfile,'(a80)')linebuffer080
-      read(linebuffer080,*) iprod1
-      read(linebuffer080,*,iostat=ioerr) iprod1, ivalue
-      if (ioerr.eq.0)then
+      read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) iprod1
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      read(linebuffer080,*,iostat=ioerr,iomsg=iomessage) iprod1, ivalue
+      if(ioerr.eq.0)then
         iprod2 = ivalue
       else
         iprod2 = iprod1
       endif
       ! Error-checking these values
-      if (iprod1.lt.1.or.iprod1.gt.16)then
+      if(iprod1.lt.1.or.iprod1.gt.16)then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: Invalid format code input variable type."
         endif;enddo
@@ -4606,7 +4699,7 @@
           write(outlog(io),*)"Variable code of input data = ",iprod1
         endif;enddo
       endif
-      if (iprod2.lt.1.or.iprod2.gt.16)then
+      if(iprod2.lt.1.or.iprod2.gt.16)then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: Invalid format code output variable type."
         endif;enddo
@@ -4619,10 +4712,12 @@
 
       ! Line 5:
       !  number of dimensions of the input data file (2 or 3)
-      read(fid_ctrlfile,'(a80)')linebuffer080
-      read(linebuffer080,*) ndims, ilatlonflag
+      read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) ndims, ilatlonflag
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       ! Error-checking ndims
-      if (ndims.ne.2.and.ndims.ne.3)then
+      if(ndims.ne.2.and.ndims.ne.3)then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: Invalid number of dimensions. Should be 2 or 3."
         endif;enddo
@@ -4632,7 +4727,7 @@
           write(outlog(io),*)"Number of dimensions of data = ",ndims
         endif;enddo
       endif
-      if (ilatlonflag.eq.0) then
+      if(ilatlonflag.eq.0) then
         ! expecting input variables to be in the same projection as
         ! specified by iprojflag and parameters
         IsLatLon          = .false.
@@ -4644,14 +4739,16 @@
       ! Line 6:
       !  size of array in nx,ny,nz
       !  This is overwritten when reading netcdf or ASCII data, but is needed for binary
-      read(fid_ctrlfile,'(a80)')linebuffer080
-      read(linebuffer080,*) nxmax,nymax
-      read(linebuffer080,*,iostat=ioerr) nxmax,nymax,ivalue
-      if (ioerr.eq.0)then
+      read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) nxmax,nymax
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      read(linebuffer080,*,iostat=ioerr,iomsg=iomessage) nxmax,nymax,ivalue
+      if(ioerr.eq.0)then
         nzmax = ivalue
       else
         ! Do a hard stop if nz needs to be provided.
-        if (ndims.eq.3.and.informat.eq.3)then
+        if(ndims.eq.3.and.informat.eq.3)then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: 3D binary data requires a nz."
           endif;enddo
@@ -4660,11 +4757,11 @@
         nzmax = 1
       endif
       ! Error-checking nx,ny,nz
-      if (nxmax.lt.1.or.nymax.lt.1.or.nzmax.lt.1)then
+      if(nxmax.lt.1.or.nymax.lt.1.or.nzmax.lt.1)then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"WARNING: One or more dimension has non-positive size."
         endif;enddo
-        if (informat.eq.2)then
+        if(informat.eq.2)then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: Datafile is binary but dimesion size is invalid."
           endif;enddo
@@ -4679,14 +4776,16 @@
       ! Line 7:
       !  cell-size dx,dy,dz
       !  This is overwritten when reading netcdf or ASCII data, but is needed for binary
-      read(fid_ctrlfile,'(a80)')linebuffer080
-      read(linebuffer080,*) dx,dy
-      read(linebuffer080,*,iostat=ioerr) dx,dy,rvalue
-      if (ioerr.eq.0)then
+      read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) dx,dy
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      read(linebuffer080,*,iostat=ioerr,iomsg=iomessage) dx,dy,rvalue
+      if(ioerr.eq.0)then
         dz_const = rvalue
       else
         ! Do a hard stop if dz needs to be provided.
-        if (ndims.eq.3.and.informat.eq.3)then
+        if(ndims.eq.3.and.informat.eq.3)then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: 3D binary data requires a dz."
           endif;enddo
@@ -4695,11 +4794,11 @@
         dz_const = 1.0_ip
       endif
       ! Error-checking cell dimensions
-      if (dx.le.0.0_ip.or.dy.le.0.0_ip.or.dz_const.le.0.0_ip)then
+      if(dx.le.0.0_ip.or.dy.le.0.0_ip.or.dz_const.le.0.0_ip)then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"WARNING: One or more cell dimension has an invalid thickness."
         endif;enddo
-        if (informat.eq.2)then
+        if(informat.eq.2)then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: Datafile is binary but cell dimesions are invalid."
           endif;enddo
@@ -4714,19 +4813,21 @@
       ! Line 8:
       !  x,y of lower-left corner of grid
       !  This is overwritten when reading netcdf or ASCII data, but is needed for binary
-      read(fid_ctrlfile,'(a80)')linebuffer080
-      read(linebuffer080,*) xLL,yLL
+      read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) xLL,yLL
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       ! Since currently, this only works for Lon/Lat grids, copy these values
       lonLL = xLL
       latLL = yLL
       de    = dx
       dn    = dy
       ! Error-checking cell coordinate
-      !if ()then
+      !if()then
       !  do io=1,2;if(VB(io).le.verbosity_error)then
       !    write(errlog(io),*)"WARNING: Lower-left cell coordinate is invalid"
       !  endif;enddo
-      !  if (informat.eq.2)then
+      !  if(informat.eq.2)then
       !    do io=1,2;if(VB(io).le.verbosity_error)then
       !      write(errlog(io),*)"ERROR: Datafile is binary but cell starting coordinate is invalid."
       !    endif;enddo
@@ -4740,9 +4841,11 @@
 
       ! Line 9:
       !  This is the format code of the output file.
-      read(fid_ctrlfile,'(a80)')linebuffer080
-      read(linebuffer080,*)outformat
-      if (outformat.ne.1.and.&
+      read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)outformat
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(outformat.ne.1.and.&
           outformat.ne.2.and.&
           outformat.ne.3.and.&
           outformat.ne.4.and.&
@@ -4759,10 +4862,12 @@
 
       ! Line 10:
       !  preferred plotting library
-      read(fid_ctrlfile,'(a80)')linebuffer080
-      read(linebuffer080,*) iplotpref
+      read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) iplotpref
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       ! Error-checking iplotpref
-      if (iplotpref.lt.0.or.iplotpref.gt.4)then
+      if(iplotpref.lt.0.or.iplotpref.gt.4)then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: Invalid code for plotting library."
         endif;enddo
@@ -4775,10 +4880,12 @@
 
       ! Line 11:
       !  output time step
-      read(fid_ctrlfile,'(a80)')linebuffer080
-      read(linebuffer080,*) itime
+      read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) itime
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       ! Error-checking itime
-      if (itime.lt.-2)then
+      if(itime.lt.-2)then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: Invalid timestep requested."
         endif;enddo
@@ -4791,9 +4898,11 @@
 
       ! Line 12:
       !  The flag for filled contours as opposed to the default lines.
-      read(fid_ctrlfile,'(a80)')linebuffer080
-      read(linebuffer080,*) ivalue
-      if (ivalue.eq.1)then
+      read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) ivalue
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(ivalue.eq.1)then
         ContourFilled = .true.
       endif
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -4802,16 +4911,18 @@
 
      ! Line 13+:
       !  Custom contours
-      read(fid_ctrlfile,'(a80)')linebuffer080
-      read(linebuffer080,*) ivalue
-      if (ivalue.eq.1)then
+      read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) ivalue
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      if(ivalue.eq.1)then
         Con_Cust = .true.
       endif
       if(Con_Cust)then
-        read(linebuffer080,*,iostat=ioerr) ivalue, Con_Cust_N
-        if (ioerr.eq.0)then
+        read(linebuffer080,*,iostat=ioerr,iomsg=iomessage) ivalue, Con_Cust_N
+        if(ioerr.eq.0)then
           ! Success reading the number of custom levels; run error-check
-          if (Con_Cust_N.le.0)then
+          if(Con_Cust_N.le.0)then
             do io=1,2;if(VB(io).le.verbosity_error)then
               write(errlog(io),*)"ERROR: Number of contour levels must be positive."
             endif;enddo
@@ -4832,18 +4943,26 @@
         allocate(Con_Cust_RGB(Con_Cust_N,3)); Con_Cust_RGB(:,:) = 0
         allocate(Con_Cust_Lev(Con_Cust_N));   Con_Cust_Lev(:)   = 0.0_ip
         ! Line 14: custom levels
-        read(fid_ctrlfile,'(a80)')linebuffer080
-        read(linebuffer080,*)Con_Cust_Lev(1:Con_Cust_N)
+        read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+        read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)Con_Cust_Lev(1:Con_Cust_N)
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
 
         ! Line 15: custom color (R)
-        read(fid_ctrlfile,'(a80)')linebuffer080
-        read(linebuffer080,*)Con_Cust_RGB(1:Con_Cust_N,1)
+        read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+        read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)Con_Cust_RGB(1:Con_Cust_N,1)
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
         ! Line 16: custom color (G)
-        read(fid_ctrlfile,'(a80)')linebuffer080
-        read(linebuffer080,*)Con_Cust_RGB(1:Con_Cust_N,2)
+        read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+        read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)Con_Cust_RGB(1:Con_Cust_N,2)
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
         ! Line 17: custom color (B)
-        read(fid_ctrlfile,'(a80)')linebuffer080
-        read(linebuffer080,*)Con_Cust_RGB(1:Con_Cust_N,3)
+        read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+        read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)Con_Cust_RGB(1:Con_Cust_N,3)
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"Custom contours levels"
           do i=1,Con_Cust_N

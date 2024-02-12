@@ -146,7 +146,9 @@
       integer             :: nargs
       integer             :: stat
       integer             :: istat
-      character (len=100) :: arg
+      integer             :: iostatus
+      character(len=120)  :: iomessage
+      character(len=100)  :: arg
       integer             :: informat     = 3 ! input format (default = 3 for netcdf)
       integer             :: outformat        ! output format
       integer             :: iiprod           ! code for input dataset
@@ -323,7 +325,8 @@
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)'Enter name of netcdf output file:'
         endif;enddo
-        read(input_unit,*) concenfile
+        read(input_unit,*,iostat=iostatus,iomsg=iomessage) concenfile
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,"concenfile",iomessage)
 #endif
         inquire( file=concenfile, exist=IsThere )
         if(.not.IsThere)then
@@ -358,7 +361,8 @@
           write(outlog(io),'(/)')''
           write(outlog(io),*)'Enter code for output product:'
         endif;enddo
-        read(input_unit,*)iprod
+        read(input_unit,*,iostat=iostatus,iomsg=iomessage)iprod
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,"iprod",iomessage)
 
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)'Select output format'
@@ -368,7 +372,8 @@
           write(outlog(io),'(/)')''
           write(outlog(io),*)'Enter code for output format:'
         endif;enddo
-        read(input_unit,*)outformat
+        read(input_unit,*,iostat=iostatus,iomsg=iomessage)outformat
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,"outformat",iomessage)
 
         if(iprod.eq.5.or.iprod.eq.6)then
           ! For final deposit variables, set itime to -1
@@ -389,7 +394,8 @@
             enddo
             write(outlog(io),*)'Enter index for time step:'
           endif;enddo
-          read(input_unit,*)itime
+          read(input_unit,*,iostat=iostatus,iomsg=iomessage)itime
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,"itime",iomessage)
         else
           ! iprod = 7,8,14,15 are not time-series, but set itime to -1
           itime = -1
@@ -407,7 +413,8 @@
         else
           ! Read control file
           call get_command_argument(1, arg, stat)
-          read(arg,*)PP_infile
+          read(arg,*,iostat=iostatus,iomsg=iomessage)PP_infile
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,arg(1:80),iomessage)
           inquire( file=PP_infile, exist=IsThere )
           if(.not.IsThere)then
             do io=1,2;if(VB(io).le.verbosity_error)then
@@ -436,14 +443,18 @@
         ! product code and the format.  Optionally, we can add the timestep.  If there is an
         ! inconsistency with iprod and outformat, an error message is issued before stopping.
         call get_command_argument(1, arg, stat)
-        read(arg,*)concenfile
+        read(arg,*,iostat=iostatus,iomsg=iomessage)concenfile
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,arg(1:80),iomessage)
         call get_command_argument(2, arg, stat)
-        read(arg,*)iprod
+        read(arg,*,iostat=iostatus,iomsg=iomessage)iprod
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,arg(1:80),iomessage)
         call get_command_argument(3, arg, stat)
-        read(arg,*)outformat
+        read(arg,*,iostat=iostatus,iomsg=iomessage)outformat
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,arg(1:80),iomessage)
         if (nargs.eq.4) then
           call get_command_argument(4, arg, stat)
-          read(arg,*)itime
+          read(arg,*,iostat=iostatus,iomsg=iomessage)itime
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,arg(1:80),iomessage)
         else
           itime = -1
         endif

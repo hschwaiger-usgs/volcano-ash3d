@@ -79,7 +79,9 @@
       integer           :: i
       character(len=80) :: linebuffer080
       character         :: testkey
-      integer           :: ios
+      integer           :: iostatus
+      integer           :: ioerr
+      character(len=120):: iomessage
       character(len=20) :: mod_name
       integer           :: substr_pos
       integer           :: iparam
@@ -97,15 +99,17 @@
       nmods = 0
       open(unit=fid_ctrlfile,file=infile,status='old',action='read',err=1900)
 
-      read(fid_ctrlfile,'(a80)',iostat=ios)linebuffer080
-      do while(ios.eq.0)
-        read(fid_ctrlfile,'(a80)',iostat=ios)linebuffer080
+      read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      do while(iostatus.eq.0)
+        read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+        if(iostatus.ne.0)exit
         substr_pos = index(linebuffer080,'OPTMOD')
         if(substr_pos.eq.1)then
           ! found an optional module
           !  Parse for the keyword
             write(*,*)"Found optmod"
-          read(linebuffer080,1104)mod_name
+          read(linebuffer080,1104,iostat=iostatus,iomsg=iomessage)mod_name
           if(trim(adjustl(mod_name)).eq.'RESETPARAMS')then
             exit
           endif
@@ -113,23 +117,28 @@
 1104    format(7x,a20)
       enddo
 
-      read(fid_ctrlfile,'(a80)',iostat=ios)linebuffer080
-      read(linebuffer080,*)testkey
+      read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       iparam = 0
-      do while(ios.eq.0.and. &
+      do while(iostatus.eq.0.and. &
                testkey.ne.'#'.and.testkey.ne.'*')
         iparam = iparam + 1
         substr_pos = index(linebuffer080,'=')
         pname(iparam)=trim(adjustl(linebuffer080(1:substr_pos-1)))
         ! first try to read this parameter as a real value
-        read(linebuffer080(substr_pos+1:80),*,iostat=ios)pvalue(iparam)
-        if(ios.ne.0)then
+        read(linebuffer080(substr_pos+1:80),*,iostat=iostatus,iomsg=iomessage)pvalue(iparam)
+        if(iostatus.ne.0)then
           ! If reading a floating point value fails, then try to read as
           ! a string
-          read(linebuffer080(substr_pos+1:50),*)pvalue_str(iparam)
+          read(linebuffer080(substr_pos+1:50),*,iostat=ioerr,iomsg=iomessage)pvalue_str(iparam)
+          if(ioerr.ne.0) call FileIO_Error_Handler(ioerr,linebuffer080,iomessage)
         endif
-        read(fid_ctrlfile,'(a80)',iostat=ios)linebuffer080
-        read(linebuffer080,*)testkey
+        read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+        if(iostatus.ne.0) exit
+        read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       enddo
 
       ! We've read all the parameters to reset, now loop through the list

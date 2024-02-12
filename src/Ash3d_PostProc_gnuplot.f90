@@ -126,7 +126,10 @@
       !character(len=26) :: coord_str
       character(len=25) :: gnucom
       character(len=80) :: gnucoastfile
-      integer :: ioerr,ioerr2,iw,iwf,istat
+      integer           :: ioerr
+      integer           :: iostatus
+      character(len=120):: iomessage
+      integer           :: iw,iwf
 
       integer :: ncities
       real(kind=ip),dimension(:),allocatable     :: lon_cities
@@ -471,7 +474,8 @@
                   "' at XVAL, YVAL font 'sans,9'"
       write(55,*)"set label 'Run Date: ",os_time_log,&
                   "' at XVAL, YVAL font 'sans,9' offset character 0,-1"
-      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
+      read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,cdf_b3l1,iomessage)
       write(55,*)"set label 'Windfile: ",iwf,&
                   "' at XVAL, YVAL font 'sans,9' offset character 0,-2"
 
@@ -496,7 +500,7 @@
       close(55)
 
       write(gnucom,'(a11,a14)')'gnuplot -p ',dp_gnufile
-      call execute_command_line(gnucom,exitstat=istat)
+      call execute_command_line(gnucom,exitstat=iostatus)
 
       if(writeContours)then
 
@@ -514,17 +518,19 @@
         ! correctly.
         ilev = -1
         ignulev = -1
-        read(54,'(a80)',iostat=ioerr)linebuffer080
-        do while(ioerr.ge.0)
+        read(54,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+        do while(iostatus.eq.0)
           ! Check if this is a header line
-          read(linebuffer080,*,iostat=ioerr2)testkey
-          if(ioerr2.lt.0)then
+          read(linebuffer080,*,iostat=ioerr,iomsg=iomessage)testkey
+          if(ioerr.lt.0)then
             ! if there was an error trying to read a character, then this is a blank
             ! line; check if we are in a contour block or still in the file header
             if(ignulev.eq.-1)then
               ! Still in file header
               ! Read the next line and cycle
-              read(54,'(a80)',iostat=ioerr)linebuffer080
+              read(54,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+              !if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
               cycle
             else
               ! Blank line in a contour block means we are starting another curve
@@ -543,10 +549,11 @@
 
             if(substr_pos1.eq.0)then
               ! This is a file header line
-              read(54,'(a80)',iostat=ioerr)linebuffer080
+              read(54,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
               cycle
             else
-              read(linebuffer080,4,iostat=ioerr2)ignulev
+              read(linebuffer080,4,iostat=ioerr,iomsg=iomessage)ignulev
+              if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
 4             format(9x,i2)
               ! Now read the level. Look for the ':' to isolate the last bit
               substr_pos1 = index(linebuffer080,':')
@@ -555,9 +562,11 @@
               substr_pos3 = index(linebuffer080(20:),'e')
               if(substr_pos2.gt.0.or.substr_pos3.gt.0)then
                 ! level is written as real
-                read(linebuffer080(substr_pos1+1:28),*)lev_r4
+                read(linebuffer080(substr_pos1+1:28),*,iostat=iostatus,iomsg=iomessage)lev_r4
+                if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
               else
-                read(linebuffer080(substr_pos1+1:28),*)lev_i
+                read(linebuffer080(substr_pos1+1:28),*,iostat=iostatus,iomsg=iomessage)lev_i
+                if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
                 lev_r4 = real(lev_i,kind=4)
               endif
               ! The value for this new level ignulev is lev_r4, but we need to find which
@@ -576,11 +585,13 @@
             ! Increment the number of points
             ContourDataNpoints(ilev,icurve) = ContourDataNpoints(ilev,icurve) + 1
             ipt = ContourDataNpoints(ilev,icurve) 
-            read(linebuffer080,*)ContourDataX(ilev,icurve,ipt),ContourDataY(ilev,icurve,ipt)
+            read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) &
+                       ContourDataX(ilev,icurve,ipt),ContourDataY(ilev,icurve,ipt)
+            if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
           endif
 
           ! Try to read the next line
-          read(54,'(a80)',iostat=ioerr)linebuffer080
+          read(54,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         enddo
         close(54)
 

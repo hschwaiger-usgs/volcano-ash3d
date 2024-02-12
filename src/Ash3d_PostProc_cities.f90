@@ -39,11 +39,12 @@
       real(kind=ip)    ,dimension(maxcities),intent(out) :: CityLat_out
       character(len=26),dimension(maxcities),intent(out) :: CityName_out
 
-      integer            :: Iostatus = 1
+      integer            :: iostatus = 1
+      character(len=120)   :: iomessage
       integer            :: i, ncities, nread
       integer            :: resolution                              ! # of cells in x and y
       character(len=26)  :: CityName
-      character(len=133) :: inputline
+      character(len=133) :: linebuffer133
       real(kind=ip)      :: lonLL,lonUR,latLL,latUR
       real(kind=ip)      :: CityLat, CityLon
       real(kind=ip)      :: dlat, dlon, cell_width, cell_height
@@ -105,11 +106,19 @@
       open(unit=fid_cities,file=trim(adjustl(CityMasterFile)),status='old',action='read')
 
       ! skip the first line
-      read(fid_cities,*)
+      read(fid_cities,*,iostat=iostatus,iomsg=iomessage) linebuffer133
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer133(1:80),iomessage)
 
-      do while ((ncities.lt.maxcities).and.(Iostatus.ge.0))
-        read(fid_cities,'(a133)',iostat=Iostatus) inputline
-        read(inputline,2) CityLon, CityLat, CityName
+      do while ((ncities.lt.maxcities).and.(iostatus.ge.0))
+        read(fid_cities,'(a133)',iostat=iostatus,iomsg=iomessage) linebuffer133
+        if(iostatus.lt.0)then
+          exit
+        elseif(iostatus.gt.0)then 
+          call FileIO_Error_Handler(iostatus,linebuffer133(1:80),iomessage)
+        endif
+        read(linebuffer133,2,iostat=iostatus,iomsg=iomessage) CityLon, CityLat, CityName
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer133(1:80),iomessage)
+
 2       format(f16.4,f15.4,a26)
         if ((CityLon.gt.lonLL).and.(CityLon.lt.lonUR).and. &
             (CityLat.gt.latLL).and.(CityLat.lt.latUR)) then

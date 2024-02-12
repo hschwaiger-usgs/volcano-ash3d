@@ -273,12 +273,15 @@
       integer :: i,j
       character (len=9)  :: cio
       character(len=50)  :: filename_out
+      integer           :: iostatus
+      character(len=120):: iomessage
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_2D_ASCII"
       endif;enddo
 
-      read(Fill_Value,*)FValue
+      read(Fill_Value,*,iostat=iostatus,iomsg=iomessage)FValue
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,Fill_Value,iomessage)
 
       if(isFinal_TS)then
         cio='____final'
@@ -377,7 +380,8 @@
       character(len=80),intent(in) :: filename
 
       integer :: i,j
-      integer :: iost
+      integer           :: iostatus
+      character(len=120):: iomessage
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine read_2D_ASCII"
@@ -385,8 +389,8 @@
 
       open(unit=fid_ascii2din,file=trim(adjustl(filename)), status='old',action='read',err=2500)
 
-      read(fid_ascii2din,3000,iostat=iost,err=2600) A_nx        ! read header values
-      if(iost.gt.0)then
+      read(fid_ascii2din,3000,err=2600,iostat=iostatus,iomsg=iomessage) A_nx        ! read header values
+      if(iostatus.ne.0)then
         ! We might have an empty file
         ! Issue warning and return
         do io=1,2;if(VB(io).le.verbosity_error)then
@@ -395,16 +399,16 @@
         endif;enddo
         return
       endif
-      read(fid_ascii2din,3001,err=2600) A_ny
+      read(fid_ascii2din,3001,err=2600,iostat=iostatus,iomsg=iomessage) A_ny
       allocate(A_XY(A_nx,A_ny))
-      read(fid_ascii2din,3002,err=2600) A_xll
-      read(fid_ascii2din,3003,err=2600) A_yll
-      read(fid_ascii2din,3004,err=2600) A_dx,A_dy
-      read(fid_ascii2din,3005,err=2600) A_Fill
+      read(fid_ascii2din,3002,err=2600,iostat=iostatus,iomsg=iomessage) A_xll
+      read(fid_ascii2din,3003,err=2600,iostat=iostatus,iomsg=iomessage) A_yll
+      read(fid_ascii2din,3004,err=2600,iostat=iostatus,iomsg=iomessage) A_dx,A_dy
+      read(fid_ascii2din,3005,err=2600,iostat=iostatus,iomsg=iomessage) A_Fill
 
       do j=A_ny,1,-1
-        read(fid_ascii2din,3006,err=2600) (A_XY(i,j), i=1,A_nx)
-        read(fid_ascii2din,*)
+        read(fid_ascii2din,3006,err=2600,iostat=iostatus,iomsg=iomessage) (A_XY(i,j), i=1,A_nx)
+        read(fid_ascii2din,*,iostat=iostatus,iomsg=iomessage)
       enddo
 
       close(fid_ascii2din)
@@ -509,7 +513,8 @@
       character(len=80),intent(in) :: filename
 
       integer :: i,j,k
-      integer :: iost
+      integer :: iostatus
+      character(len=120)   :: iomessage
       character(len=130):: linebuffer130
       real(kind=ip) :: value1,value2,value3
 
@@ -520,9 +525,10 @@
       open(unit=fid_ascii3din,file=trim(adjustl(filename)), status='old',action='read',err=2500)
 
       ! Read the header lines
-      read(fid_ascii3din,'(a130)')linebuffer130
-      read(fid_ascii3din,3000,iostat=iost,err=2600) A_nx,A_ny,A_nz
-      if(iost.gt.0)then
+      read(fid_ascii3din,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer130(1:80),iomessage)
+      read(fid_ascii3din,3000,err=2600,iostat=iostatus,iomsg=iomessage) A_nx,A_ny,A_nz
+      if(iostatus.ne.0)then
         ! We might have an empty file
         ! Issue warning and return
         do io=1,2;if(VB(io).le.verbosity_error)then
@@ -536,7 +542,11 @@
       do k=1,A_nz
         do j=1,A_ny
           do i=1,A_nx
-            read(fid_ascii3din,'(3(4x,f20.3),g20.8)') value1,value2,value3,A_XYZ(i,j,k)
+            read(fid_ascii3din,*,iostat=iostatus,iomsg=iomessage)linebuffer130
+            read(linebuffer130,'(3(4x,f20.3),g20.8)',iostat=iostatus,iomsg=iomessage) &
+                   value1,value2,value3,A_XYZ(i,j,k)
+            if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer130(1:80),iomessage)
+
             if(i.eq.1.and.j.eq.1.and.k.eq.1)then
               A_xll = value1
               A_yll = value2

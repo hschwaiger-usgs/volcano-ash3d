@@ -230,6 +230,9 @@
          MR_iwindfiles,MR_windfiles,MR_GitComID,&
          MR_MetStep_findex,MR_windfile_starthour
 
+      use projection,      only : &
+         PJ_GitComID
+
       integer :: nSTAT
 
       character(len=32)              :: time_units
@@ -249,6 +252,8 @@
       integer,dimension(5) :: chunksizes5
       logical :: IsThere
       character(len=3)  :: answer
+      integer           :: iostatus
+      character(len=120):: iomessage
 
       INTERFACE
         character (len=13) function HS_yyyymmddhhmm_since(HoursSince,byear,useLeaps)
@@ -364,7 +369,7 @@
           write(errlog(io),*)"Output filename requested = ",concenfile
 !          write(errlog(io),*)"Would you like to over-write this file? (yes or no)"
         endif;enddo
-!        read(input_unit,'(a3)') answer
+!        read(input_unit,'(a3)',iostat=iostatus,iomsg=iomessage) answer
 !        if (adjustl(trim(answer)).eq.'y'.or.adjustl(trim(answer)).eq.'yes') then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"Over-writing file: ",concenfile
@@ -387,13 +392,18 @@
         write(outlog(io),*)"Creating netcdf file"
       endif;enddo
       linebuffer130 = trim(nf90_inq_libvers())
-      read(linebuffer130,'(i1,a1,i1)')NCversion,dumchar,NCsubversion
+      read(linebuffer130,'(i1,a1,i1)',iostat=iostatus,iomsg=iomessage)NCversion,dumchar,NCsubversion
+      if(iostatus.ne.0)then
+        ! If we couldn't read and verify the library version, assume v3
+        NCversion = 3
+      endif
+#ifdef NC3
+      ! library version might be forced to v3 by preprocessor flags
+      NCversion = 3
+#endif
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Netcdf library version = ",NCversion
       endif;enddo
-#ifdef NC3
-      NCversion = 3
-#endif
       if(NCversion.eq.4)then
 #ifndef NC3
         nSTAT = nf90_create(concenfile,nf90_netcdf4,ncid,           &
@@ -456,7 +466,9 @@
       endif
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att useLeap:")
 
-      nSTAT = nf90_put_att(ncid,nf90_global,"MetReader_Git_Commit_ID",MR_GitComID)
+      nSTAT = nf90_put_att(ncid,nf90_global,"Projection_Git_Commit_ID",PJ_GitComID)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att PJ_GitComID:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"Projection_Git_Commit_ID",MR_GitComID)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att MR_GitComID:")
       nSTAT = nf90_put_att(ncid,nf90_global,"Ash3d_Git_Commit_ID",Ash3d_GitComID)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Ash3d_GitComID:")
@@ -3288,6 +3300,9 @@
       integer :: it
       real(kind=op), allocatable, dimension(:) :: t_list
       logical           :: IsThere
+      integer           :: iostatus
+      character(len=120):: iomessage
+      character(len=80) :: linebuffer080
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine NC_RestartFile_ReadTimes"
@@ -3327,7 +3342,10 @@
       enddo
 
       write(outlog(io),*)'Enter timestep for initialization'
-      read(5,*) init_tstep
+      read(5,*,iostat=iostatus,iomsg=iomessage) linebuffer080
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) init_tstep
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
 
       nSTAT=nf90_get_var(ncid,t_var_id,dumscal_out,(/init_tstep/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var t")
@@ -3554,6 +3572,9 @@
       real(kind=dp), dimension(:),allocatable :: dum1d_dp
       character(len=32) :: time_units
       integer           :: iendstr
+      integer           :: iostatus
+      character(len=120):: iomessage
+      character(len=80) :: linebuffer080
 
       integer :: itstart_year,itstart_month,itstart_day
       integer :: itstart_hour,itstart_min,itstart_sec
@@ -4370,10 +4391,13 @@
         endif
         nSTAT = nf90_get_att(ncid,t_var_id,"units",time_units)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_att units t:")
-        read(time_units,4313) xmlSimStartTime
+        read(time_units,4313,iostat=iostatus,iomsg=iomessage) xmlSimStartTime
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,xmlSimStartTime,iomessage)
   4313  format(12x,a20)
-        read(xmlSimStartTime,4314)itstart_year,itstart_month,itstart_day, &
+        read(xmlSimStartTime,4314,iostat=iostatus,iomsg=iomessage)&
+                             itstart_year,itstart_month,itstart_day, &
                              itstart_hour,itstart_min,itstart_sec
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,xmlSimStartTime,iomessage)
         filestart_hour = real(itstart_hour,kind=sp) + &
                              real(itstart_min,kind=sp)/60.0_sp      + &
                              real(itstart_sec,kind=sp)/3600.0_sp
@@ -4568,13 +4592,16 @@
         nSTAT = nf90_get_att(ncid,nf90_global,"b3l1",cdf_b3l1)
         ! Get Simulation time info
         nSTAT = nf90_get_att(ncid,nf90_global,"b3l3",cdf_b3l3)
-        read(cdf_b3l3,*) Simtime_in_hours        ! simulated transport time
+        read(cdf_b3l3,*,iostat=iostatus,iomsg=iomessage) Simtime_in_hours        ! simulated transport time
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,cdf_b3l3,iomessage)
         ! Get vent location
         nSTAT = nf90_get_att(ncid,nf90_global,"b1l5",cdf_b1l5)
         if (IsLatLon) then                        !get lon_volcano and lat_volcano
-          read(cdf_b1l5,*)lon_volcano, lat_volcano
+          read(cdf_b1l5,*,iostat=iostatus,iomsg=iomessage)lon_volcano, lat_volcano
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,cdf_b1l5,iomessage)
         else
-          read(cdf_b1l5,*)x_volcano, y_volcano
+          read(cdf_b1l5,*,iostat=iostatus,iomsg=iomessage)x_volcano, y_volcano
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,cdf_b1l5,iomessage)
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"institution",cdf_institution)
@@ -4714,7 +4741,10 @@
           write(outlog(io),*)'Enter timestep for initialization'
         endif;enddo
 
-        read(5,*) init_tstep
+        read(5,*,iostat=iostatus,iomsg=iomessage) linebuffer080
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+        read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) init_tstep
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       else
         if (timestep.eq.-1)then
           isFinal_TS = .true.

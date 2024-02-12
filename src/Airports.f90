@@ -564,10 +564,12 @@
       use projection,    only : &
          PJ_proj_for
 
-      integer           :: inow,Iostatus
-      character(len=95) :: inputline
-      integer           :: ioerr
-      real(kind=dp)     :: lat_in,lon_in,xout,yout
+      integer            :: isite
+      integer            :: iostatus
+      character(len=120) :: iomessage
+      integer            :: ioerr
+      character(len=95)  :: linebuffer095
+      real(kind=dp)      :: lat_in,lon_in,xout,yout
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine ReadExtAirports"
@@ -579,51 +581,66 @@
       !character(len=80) :: nam
       !integer           :: irec, nr
 
-      inow = 0
+      isite = 0
 
       ! Open the airport location file
       ! Note that this file was tested for existance in Read_Control_File()
-      open(unit=fid_airport,file=AirportInFile,status='old',position='rewind',action='read',iostat=Iostatus)
+      open(unit=fid_airport,file=AirportInFile,status='old',position='rewind',action='read',iostat=iostatus)
       !inquire(fid_airport, exist=ex, opened=op, name=nam,access=acc,sequential=seq, form=frm, recl=irec, nextrec=nr)
 
-      ! Read the header line and set Iostatus for the while loop
-      read(unit=fid_airport,fmt='(a95)',iostat=Iostatus) inputline
+      ! Read the header line and set iostatus for the while loop
+      read(unit=fid_airport,fmt='(a95)',iostat=iostatus,iomsg=iomessage) linebuffer095
 
       ! Read airport locations and assign airports in the modeled area to a temporary array
-      do while (Iostatus.ge.0)
-        inow = inow+1
-        read(fid_airport,'(a95)',iostat=Iostatus) inputline
-        read(inputline,*,err=2010) ExtAirportLat(inow), ExtAirportLon(inow)
-        read(inputline,*,iostat=ioerr) ExtAirportLat(inow), ExtAirportLon(inow), &
-                                       ExtAirportX(inow), ExtAirportY(inow)
+      do while (iostatus.ge.0)
+        read(fid_airport,'(a95)',iostat=iostatus,iomsg=iomessage) linebuffer095
+        if(iostatus.eq.0)then
+          isite = isite+1
+        else
+          exit
+        endif
+        read(linebuffer095,*,err=2010,iostat=ioerr,iomsg=iomessage) &
+                                       ExtAirportLat(isite), ExtAirportLon(isite)
+        ! Here we do not actually do a hard stop if we can't read projected values
+        read(linebuffer095,*,iostat=ioerr,iomsg=iomessage) &
+                                       ExtAirportLat(isite), ExtAirportLon(isite), &
+                                       ExtAirportX(isite), ExtAirportY(isite)
+        if(ioerr.ne.0)then
+          ExtAirportX(isite)=0.0_ip
+          ExtAirportY(isite)=0.0_ip
+        endif
         ! Now read the code (char #51-54) and the name (char #56-80)
-        read(inputline,2) ExtAirportCode(inow), ExtAirportName(inow)
+        read(linebuffer095,2,iostat=ioerr,iomsg=iomessage) ExtAirportCode(isite), ExtAirportName(isite)
 2       format(50x,a3,1x,a35)
+        if(ioerr.ne.0)then
+          ExtAirportCode(isite) = "   "
+          ExtAirportName(isite) = "          "
+        endif
 
         ! make sure longitude is between 0 and 360
-        if (ExtAirportLon(inow).lt.0.0_ip) &
-          ExtAirportLon(inow) = ExtAirportLon(inow)+360.0_ip
+        if (ExtAirportLon(isite).lt.0.0_ip) &
+          ExtAirportLon(isite) = ExtAirportLon(isite)+360.0_ip
 
         ! convert lat/lon to the projected values.
         if (.not.IsLatLon.and.ProjectAirportLocations) then
-          lon_in = ExtAirportLon(inow)
-          lat_in = ExtAirportLat(inow)
+          lon_in = ExtAirportLon(isite)
+          lat_in = ExtAirportLat(isite)
           call PJ_proj_for(lon_in,lat_in, A3d_iprojflag, &
                      A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,A3d_Re, &
                      xout,yout)
-          ExtAirportX(inow) = real(xout,kind=ip)
-          ExtAirportY(inow) = real(yout,kind=ip)
+          ExtAirportX(isite) = real(xout,kind=ip)
+          ExtAirportY(isite) = real(yout,kind=ip)
         endif
 
       enddo
       close(fid_airport)
 
-      n_ext_airports = inow     !number of external airports read
+      n_ext_airports = isite     !number of external airports read
       return
 
       ! error trap
 2010  do io=1,2;if(VB(io).le.verbosity_error)then
-        write(errlog(io),6) inputline
+        write(errlog(io),6) linebuffer095
       endif;enddo
       stop 1
 
@@ -662,15 +679,17 @@
 
       integer, intent(out) :: num_GlobAirports
 
-      integer                 :: i
-      integer                 :: Iostatus    = 1
-      real(kind=ip)           :: inx, iny
-      real(kind=ip)           :: inlat, inlon
-      character(len=120)      :: inputline
-      character(len=35)       :: inName
-      character(len=3)        :: inCode
-      logical                 :: IsThere
-      character(len=130)      :: AirportMasterFile           !Only needed if USEEXTDATA=T
+      integer            :: isite
+      integer            :: iostatus
+      character(len=120) :: iomessage
+      integer            :: ioerr
+      real(kind=ip)      :: inx, iny
+      real(kind=ip)      :: inlat, inlon
+      character(len=120) :: linebuffer120
+      character(len=35)  :: inName
+      character(len=3)   :: inCode
+      logical            :: IsThere
+      character(len=130) :: AirportMasterFile           !Only needed if USEEXTDATA=T
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Read_GlobalAirports"
@@ -704,28 +723,49 @@
       ! Open the airport location file
       open(unit=fid_airport,file=AirportMasterFile,status='old',action='read',err=2000)
       ! Read first header line
-      read(fid_airport,'(a120)',iostat=Iostatus) inputline
+      read(fid_airport,'(a120)',iostat=iostatus,iomsg=iomessage) linebuffer120
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer120(1:80),iomessage)
       ! Read airport locations and assign airports in the modeled area to a temporary array
-      i = 0
-      do while (Iostatus.ge.0)
-        read(fid_airport,'(a120)',iostat=Iostatus) inputline
-        read(inputline,*) inlat, inlon, inx, iny
-        read(inputline,2) inCode,inName
-        i = i+1
-        if(i.gt.MAXAIRPORTS)then
+      isite = 0
+      do while (iostatus.ge.0)
+        read(fid_airport,'(a120)',iostat=iostatus,iomsg=iomessage) linebuffer120
+        if(iostatus.eq.0)then
+          isite = isite+1
+        else
+          exit
+        endif
+        read(linebuffer120,*,iostat=ioerr,iomsg=iomessage) inlat, inlon
+        ! Here we do not actually do a hard stop if we can't read projected values
+        read(linebuffer120,*,iostat=ioerr,iomsg=iomessage) inlat, inlon, inx, iny
+        if(ioerr.ne.0)then
+          inx = 0.0_ip
+          iny = 0.0_ip
+        endif
+        ! Now read the code (char #51-54) and the name (char #56-80)
+        read(linebuffer120,2,iostat=ioerr,iomsg=iomessage) inCode,inName
+2       format(50x,a3,1x,a35)
+!2       format(50x,a3,2x,a35)
+        if(ioerr.ne.0)then
+          inCode = "   "
+          inName = "          "
+        endif
+
+        if(isite.gt.MAXAIRPORTS)then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: ","Airport file contains too many entries"
+            write(errlog(io),*)"       Currently limited to ",MAXAIRPORTS
+            write(errlog(io),*)"       Increase MAXAIRPORTS and recompile."
           endif;enddo
           stop 1
         endif
-        AirportFullCode(i) = trim(adjustl(inCode))
-        AirportFullName(i) = trim(adjustl(inName))
-        AirportFullLat(i)  = inlat
-        AirportFullLon(i)  = inlon
+        AirportFullCode(isite) = trim(adjustl(inCode))
+        AirportFullName(isite) = trim(adjustl(inName))
+        AirportFullLat(isite)  = inlat
+        AirportFullLon(isite)  = inlon
       end do
 
       ! return the number of airports in this global list.
-      num_GlobAirports = i
+      num_GlobAirports = isite
 
       return
 
@@ -736,7 +776,6 @@
       stop 1
 
       ! Format statements
-2     format(50x,a3,2x,a35)
 5     format(5x,'Error.  Can''t find input file ',a130,/,5x,'Program stopped')
 
       end subroutine Read_GlobalAirports

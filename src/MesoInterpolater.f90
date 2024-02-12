@@ -92,6 +92,8 @@
       logical,save      :: first_time = .true.  ! There is a bit of extra work the first time
                                                 ! this subroutine is called since we need to
                                                 ! fill the step prior to the start time.
+      integer           :: iostatus
+      character(len=120):: iomessage
 
       real(kind=dp) :: HoursIntoInterval ! hours since the last windfile timestep
       real(kind=dp) :: TimeNow_fromRefTime
@@ -294,7 +296,8 @@
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*) 'Continue (y/n)?'
           endif;enddo
-          read(5,'(a1)') answer
+          read(5,'(a1)',iostat=iostatus,iomsg=iomessage) answer
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,answer,iomessage)
           if (adjustl(trim(answer)).eq.'n') stop 1
         else
           do io=1,2;if(VB(io).le.verbosity_error)then
@@ -335,7 +338,8 @@
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*) 'Continue (y/n)?'
           endif;enddo
-          read(5,'(a1)') answer
+          read(5,'(a1)',iostat=iostatus,iomsg=iomessage) answer
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,answer,iomessage)
           if (adjustl(trim(answer)).eq.'n') stop 1
         else
           do io=1,2;if(VB(io).le.verbosity_error)then

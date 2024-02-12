@@ -51,6 +51,9 @@
 
       subroutine help_general
 
+      integer           :: iostatus
+      character(len=120):: iomessage
+
 #ifdef WINDOWS
       character(len=1)  :: key
 #endif
@@ -78,7 +81,7 @@
       ! For windows systems, allow the console to remain on the screen before exiting.
 #ifdef WINDOWS
       write(outlog(io),*)'Press any key to exit.'
-      read(input_unit,'(a1)') key
+      read(input_unit,'(a1)',iostat=iostatus,iomsg=iomessage) key
 #endif
       stop 1
 
@@ -225,6 +228,9 @@
 
       subroutine help_run
 
+      integer           :: iostatus
+      character(len=120):: iomessage
+
 #ifdef WINDOWS
       character(len=1)  :: key
 #endif
@@ -280,7 +286,7 @@
       ! For windows systems, allow the console to remain on the screen before exiting.
 #ifdef WINDOWS
       write(outlog(io),*)'Press any key to exit.'
-      read(input_unit,'(a1)') key
+      read(input_unit,'(a1)',iostat=iostatus,iomsg=iomessage) key
 #endif
       stop 1
 
@@ -307,6 +313,9 @@
 
       character(len=3)  :: answer
       integer           :: blockID
+      integer           :: iostatus
+      character(len=120):: iomessage
+
 #ifdef WINDOWS
       character(len=1)  :: key
 #endif
@@ -333,10 +342,12 @@
       write(outlog(io),1)' BLOCK 10: OPTIONAL MODULES                                                     '
       write(outlog(io),1)'Would you like information on the structure of these blocks? (y or n)           '
 
-      read(input_unit,'(a3)') answer
+      read(input_unit,'(a3)',iostat=iostatus,iomsg=iomessage) answer
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,answer,iomessage)
       do while (adjustl(trim(answer)).eq.'y'.or.adjustl(trim(answer)).eq.'yes')
         write(outlog(io),*)'  Please enter the block ID (1-10):'
-        read(input_unit,*,err=10)blockID
+        read(input_unit,*,err=10,iostat=iostatus,iomsg=iomessage)blockID
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,"blockID",iomessage)
         if(blockID.lt.1.or.blockID.gt.10)then
           write(errlog(io),*)'  Invalid range for blockID; should be between 1 and 10.'
         else
@@ -344,13 +355,14 @@
         endif
         write(outlog(io),1)'                                                                                '
         write(outlog(io),1)'Would you like information on another block? (y or n)                           '
-        read(input_unit,'(a3)') answer
+        read(input_unit,'(a3)',iostat=iostatus,iomsg=iomessage) answer
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,answer,iomessage)
       enddo 
 
       ! For windows systems, allow the console to remain on the screen before exiting.
 #ifdef WINDOWS
       write(outlog(io),*)'Press any key to exit.'
-      read(input_unit,'(a1)') key
+      read(input_unit,'(a1)',iostat=iostatus,iomsg=iomessage) key
 #endif
  10   stop 1
 
@@ -768,6 +780,9 @@
 
       subroutine help_postproc
 
+      integer           :: iostatus
+      character(len=120):: iomessage
+
 #ifdef WINDOWS
       character(len=1)  :: key
 #endif
@@ -815,7 +830,7 @@
       ! For windows systems, allow the console to remain on the screen before exiting.
 #ifdef WINDOWS
       write(outlog(io),*)'Press any key to exit.'
-      read(input_unit,'(a1)') key
+      read(input_unit,'(a1)',iostat=iostatus,iomsg=iomessage) key
 #endif
       stop 1
 

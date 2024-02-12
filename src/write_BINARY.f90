@@ -93,12 +93,15 @@
       integer :: i,j
       character(len= 9)  :: cio
       character(len=50)  :: filename_out
+      integer              :: iostatus
+      character(len=120)   :: iomessage
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_2D_Binary"
       endif;enddo
 
-      read(Fill_Value,*)FValue
+      read(Fill_Value,*,iostat=iostatus,iomsg=iomessage)FValue
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,Fill_Value,iomessage)
 
       if(isFinal_TS)then
         cio='____final'
@@ -170,6 +173,8 @@
 
       real(kind=op) :: OVar(nx,ny)
       integer       :: i,j
+      integer              :: iostatus
+      character(len=120)   :: iomessage
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine read_2D_Binary"
@@ -184,7 +189,8 @@
           status='old', action='read', &
           access='direct',recl=8*nx*ny)
       endif
-      read(fid_bin2dout,rec=1)((OVar(i,j),i=1,nx),j=1,ny)
+      read(fid_bin2dout,rec=1,iostat=iostatus,iomsg=iomessage)((OVar(i,j),i=1,nx),j=1,ny)
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,"Binary read",iomessage)
       close(fid_bin2dout)
 
       if(.not.allocated(B_XY)) allocate(B_XY(1:nx,1:ny))
@@ -264,6 +270,8 @@
 
       real(kind=op) :: OVar3d(nx,ny,nz)
       integer       :: i,j,k
+      integer              :: iostatus
+      character(len=120)   :: iomessage
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine read_3D_Binary"
@@ -278,7 +286,10 @@
           status='old', action='read', &
           access='direct',recl=8*nx*ny*nz)
       endif
-      read(fid_bin3dout,rec=1)(((OVar3d(i,j,k),i=1,nx),j=1,ny),k=1,nz)
+      read(fid_bin3dout,rec=1,iostat=iostatus,iomsg=iomessage) &
+           (((OVar3d(i,j,k),i=1,nx),j=1,ny),k=1,nz)
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,"Binary read",iomessage)
+
       close(fid_bin3dout)
 
       if(.not.allocated(B_XYZ)) allocate(B_XYZ(1:nx,1:ny,1:nz))

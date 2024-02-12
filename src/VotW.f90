@@ -296,7 +296,10 @@
       character(len=8 ) ,intent(inout) :: volcID(MAXVOLCS)
       character(len=42) ,intent(inout) :: volcName(MAXVOLCS)
       logical              :: IsThere
-      integer              :: Iostatus    = 1
+      integer              :: iostatus
+      integer              :: ioerr
+      character(len=120)   :: iomessage
+
       character(len=20)    :: temp1
       character(len=20)    :: temp2
       character(len=20)    :: temp3
@@ -331,12 +334,17 @@
 
       !"http://www.volcano.si.edu/world/volcano.cfm?vnum="
       open(unit=fid_votw,file=VotWMasterFile,status='old',action='read',err=3000)
-      read(fid_votw,'(a195)')linebuffer195
+      ! Read the header
+      read(fid_votw,'(a195)',iostat=iostatus,iomsg=iomessage)linebuffer195
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer195(1:80),iomessage)
       nvolcs = 0
-      read(fid_votw,'(a195)',iostat=Iostatus) linebuffer195
-      do while (Iostatus.ge.0)
+      ! Now start reading the data lines
+      read(fid_votw,'(a195)',iostat=iostatus,iomsg=iomessage)linebuffer195
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer195(1:80),iomessage)
+      do while (iostatus.eq.0)
         nvolcs = nvolcs + 1
-        read(linebuffer195,50)volcID(nvolcs),     &
+        read(linebuffer195,50,iostat=ioerr,iomsg=iomessage)&
+                              volcID(nvolcs),     &
                               volcName(nvolcs),   &
                               volcLoc(nvolcs),    &
                               volcLat(nvolcs),    &
@@ -345,6 +353,7 @@
                               temp2,              &
                               volcElev_c(nvolcs), &
                               temp3
+        if(ioerr.ne.0) call FileIO_Error_Handler(ioerr,linebuffer195(1:80),iomessage)
         volcName(nvolcs) = adjustl(volcName(nvolcs))
         volcLoc(nvolcs)  = adjustl(volcLoc(nvolcs))
         volcElev_c(nvolcs) = adjustl(volcElev_c(nvolcs))
@@ -355,11 +364,13 @@
         temp3              = adjustl(temp3)
         volcESP_Code(nvolcs) = temp3(1:1)
 
-        read(volcElev_c(nvolcs),*)testkey
+        read(volcElev_c(nvolcs),*,iostat=ioerr,iomsg=iomessage)testkey
+        if(ioerr.ne.0) call FileIO_Error_Handler(ioerr,volcElev_c(nvolcs),iomessage)
         if(testkey.eq.'U'.or.testkey.eq.'v')then
           volcElev(nvolcs) = 0
         else
-          read(volcElev_c(nvolcs),*)volcElev(nvolcs)
+          read(volcElev_c(nvolcs),*,iostat=ioerr,iomsg=iomessage)volcElev(nvolcs)
+          if(ioerr.ne.0) call FileIO_Error_Handler(ioerr,volcElev_c(nvolcs),iomessage)
         endif
         if(volcNS(nvolcs).eq.'S') volcLat(nvolcs) = -volcLat(nvolcs)
         if(volcWE(nvolcs).eq.'W') volcLon(nvolcs) = -volcLon(nvolcs) + 360.0_ip
@@ -367,7 +378,14 @@
           write(outlog(io),*)&
              volcID(nvolcs),volcName(nvolcs),volcLoc(nvolcs),volcLat(nvolcs),volcLon(nvolcs)
         endif;enddo
-        read(fid_votw,'(a195)',iostat=Iostatus) linebuffer195
+        read(fid_votw,'(a195)',iostat=iostatus,iomsg=iomessage) linebuffer195
+        if(iostatus.lt.0)then
+          ! End of file; break out of do loop
+          exit
+        elseif(iostatus.gt.0)then
+          ! Error reading line
+          call FileIO_Error_Handler(iostatus,linebuffer195(1:80),iomessage)
+        endif
       enddo
 
       close(fid_votw)

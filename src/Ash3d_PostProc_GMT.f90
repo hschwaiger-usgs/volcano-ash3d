@@ -134,7 +134,10 @@
       character(len=10) :: dp_gmtfile
       character(len=10) :: dp_confile
       character(len=25) :: gmtcom
-      integer :: ioerr,ioerr2,iw,iwf,istat
+      integer           :: ioerr
+      integer           :: iostatus
+      character(len=120):: iomessage
+      integer           :: iw,iwf
 
       integer :: ncities
       real(kind=ip),dimension(:),allocatable     :: lon_cities
@@ -460,7 +463,8 @@
       write(61,'(a5)')"G0.2i"
       write(61,'(a12,a20)')"T Run Date: ",os_time_log
       write(61,'(a5)')"G0.2i"
-      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
+      read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,"iw,iwf",iomessage)
       write(61,'(a12,i3)')"T Windfile: ",iwf
       close(61)
       !  Right panel
@@ -708,7 +712,7 @@
 
       close(55)
       write(gmtcom,'(a3,a14)')'sh ',dp_gmtfile
-      call execute_command_line(gmtcom,exitstat=istat)
+      call execute_command_line(gmtcom,exitstat=iostatus)
 
       ! GMT script has been run, now we need to read the contour lines if we want
       ! to write a shapefile
@@ -733,11 +737,11 @@
         !> 0.01 contour -Z0.01
         ! Each curve for that level is separated by a line containing '>'
 
-        read(54,'(a80)',iostat=ioerr)linebuffer080
-        do while(ioerr.ge.0)
+        read(54,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+        do while(iostatus.ge.0)
           ! Check if this is a header line
-          read(linebuffer080,*,iostat=ioerr2)testkey
-          if(ioerr2.lt.0)then
+          read(linebuffer080,*,iostat=ioerr,iomsg=iomessage)testkey
+          if(ioerr.lt.0)then
             ! If reading one character fails, then there is a blank line
             ! shouldn't happen with  GMT v 5 or 6
             ! Log zero contours for this level
@@ -752,7 +756,7 @@
 
             if(substr_pos1.eq.0)then
               ! key > is present, but 'contour' is not
-              read(54,'(a80)',iostat=ioerr)linebuffer080
+              read(54,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
               cycle
             else
               ! Contours are all written to separate files
@@ -765,12 +769,12 @@
             ! Increment the number of points
             ContourDataNpoints(ilev,icurve) = ContourDataNpoints(ilev,icurve) + 1
             ipt = ContourDataNpoints(ilev,icurve)
-            read(linebuffer080,*)ContourDataX(ilev,icurve,ipt),ContourDataY(ilev,icurve,ipt)
+            read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)ContourDataX(ilev,icurve,ipt),ContourDataY(ilev,icurve,ipt)
           endif
 
             ! Try to read the next line
-            read(54,'(a80)',iostat=ioerr)linebuffer080
-          enddo    ! ioerr.ge.0
+            read(54,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+          enddo    ! iostatus.ge.0
           close(54)  ! Close this contour file and open the next
         enddo    ! ilev=1,nConLev
 

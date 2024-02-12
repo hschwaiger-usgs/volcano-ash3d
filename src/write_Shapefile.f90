@@ -97,6 +97,8 @@
       integer,dimension(:),allocatable :: reclen
       integer :: offset
       integer :: iw,iwf
+      integer           :: iostatus
+      character(len=120):: iomessage
 
       integer(kind=4) :: file_code
       integer(kind=4) :: tmp4
@@ -560,7 +562,8 @@
           write(outlog(io),*)"Only writing first eruption to shapefile attributes."
         endif;enddo
       endif
-      read(cdf_b3l1,*)  iw,iwf
+      read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage)  iw,iwf
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,cdf_b3l1,iomessage)
 
       write(DBASE_TableRecData01,*)trim(adjustl(cdf_institution))   ! ORG
       write(DBASE_TableRecData02,*)trim(adjustl(VolcanoName))       ! VOLC

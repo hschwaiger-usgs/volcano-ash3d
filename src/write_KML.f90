@@ -449,6 +449,8 @@
       character(len=3)    :: screenY
       character(len=3)    :: sizeX
       character(len=3)    :: sizeY
+      integer           :: iostatus
+      character(len=120):: iomessage
 
       INTERFACE
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
@@ -530,8 +532,10 @@
       do ierup=1,neruptions
         yyyymmddhh = HS_yyyymmddhh_since(e_StartTime(ierup)+SimStartHour+OutputOffset,&
                                          BaseYear,useLeap)
-        read(yyyymmddhh,100) iyear(ierup),imonth(ierup),iday(ierup), &
+        read(yyyymmddhh,100,iostat=iostatus,iomsg=iomessage) &
+                             iyear(ierup),imonth(ierup),iday(ierup), &
                              StartHour(ierup)
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,yyyymmddhh,iomessage)
         write(fid,8) ierup,iyear(ierup),imonth(ierup),iday(ierup), &
                              StartHour(ierup), &
                              e_PlumeHeight(ierup),e_Duration(ierup),e_Volume(ierup)
@@ -1113,6 +1117,8 @@
       logical       :: IsThere
       integer       :: stat
       real(kind=dp) :: olam,ophi ! using precision needed by libprojection
+      integer           :: iostatus
+      character(len=120):: iomessage
 
       INTERFACE
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
@@ -1315,8 +1321,10 @@
       do ierup=1,neruptions
         yyyymmddhh = HS_yyyymmddhh_since(e_StartTime(ierup)+SimStartHour+OutputOffset,&
                                          BaseYear,useLeap)
-        read(yyyymmddhh,200) iyear(ierup),imonth(ierup),iday(ierup), &
+        read(yyyymmddhh,200,iostat=iostatus,iomsg=iomessage) &
+                      iyear(ierup),imonth(ierup),iday(ierup), &
                       StartHour(ierup)
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,yyyymmddhh,iomessage)
         write(fid_kmlPOI,9) ierup,iyear(ierup),imonth(ierup),iday(ierup), &
                       StartHour(ierup), &
                       e_PlumeHeight(ierup),e_Duration(ierup),e_Volume(ierup)
