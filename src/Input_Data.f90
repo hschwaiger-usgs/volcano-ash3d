@@ -3578,7 +3578,7 @@
         if(iostatus.lt.0)then
           ! end of file reached; exit do loop
           exit
-        else
+        elseif(iostatus.gt.0)then
           ! Some non-EOF error
           call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
         endif
