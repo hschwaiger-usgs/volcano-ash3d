@@ -573,7 +573,7 @@
       !if()then ! small domain, include rivers
       !  write(river_str,*)" -I1/1p,blue -I2/0.25p,blue"
       !else
-        write(river_str,'(/)')""
+        write(river_str,*)""
       !endif
 
       ! Initial pscoast command to start the ps file

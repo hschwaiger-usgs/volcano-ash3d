@@ -664,7 +664,7 @@
         ! VALUE(8) = The milliseconds of the second
 
       do io=1,2;if(VB(io).le.verbosity_essential)then
-        write(outlog(io),'(/)')
+        write(outlog(io),*)""
         write(outlog(io),*)"Running Ash3d with command line: ",&
                     trim(adjustl(os_full_command_line))
       endif;enddo
