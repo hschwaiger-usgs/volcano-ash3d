@@ -3506,7 +3506,7 @@
       cdf_history=""
       cdf_references="https://pubs.usgs.gov/of/2013/1122/ofr20131122.pdf"
       cdf_conventions='CF-1.5'
-      if(ios.ne.0)then
+      if(iostatus.ne.0)then
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)'  Setting outfile to: 3d_tephra_fall.nc'
           write(outlog(io),*)'  Setting Title to: ',infile
