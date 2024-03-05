@@ -142,7 +142,7 @@
       elseif(nargs.ge.1) then
           ! If an argument is given, first test for the '-h' indicating a help
           ! request.
-        call get_command_argument(1, linebuffer130, stat)
+        call get_command_argument(1, linebuffer130, status=iostatus)
         testkey  = linebuffer130(1:1)
         testkey2 = linebuffer130(2:2)
         if(testkey.eq.'-')then
@@ -153,7 +153,7 @@
               call help_general
             else
               ! command is Ash3d -h [help topic]
-              call get_command_argument(2, linebuffer130, stat)
+              call get_command_argument(2, linebuffer130, status=iostatus)
               if(trim(adjustl(linebuffer130)).eq.'make')then
                 call help_make
                 write(outlog(io),*) ' --------------------------------------------'
@@ -169,7 +169,7 @@
                   ! Check if there is an additional command-line parameter specifying
                   ! the block number
 
-                  call get_command_argument(3, linebuffer130, stat)
+                  call get_command_argument(3, linebuffer130, status=iostatus)
 
                   read(linebuffer130,*,err=1600,iostat=iostatus,iomsg=iomessage)blockID
                   if(blockID.lt.1.or.blockID.gt.10)then
@@ -2867,6 +2867,20 @@
 
         ! Check for existance and compatibility with simulation time requirements
       call MR_Read_Met_DimVars(iyear(1))
+      if(MR_BaseYear.ne.BaseYear)then
+        ! Base year was reset, probably because a windfile had an old base year
+        useLeap  = MR_useLeap
+        BaseYear = MR_BaseYear
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Change in calandar; resetting e_StartTime"
+        endif;enddo
+        tmp_dp = HS_hours_since_baseyear(iyear(1),imonth(1),  &
+                         iday(1),hour(1),BaseYear,useLeap)
+        tmp_dp = tmp_dp - SimStartHour   ! Recast tmp_dp as the difference in calandars
+        SimStartHour = SimStartHour + tmp_dp
+        xmlSimStartTime = HS_xmltime(SimStartHour,BaseYear,useLeap)
+      endif
+
         ! Now that we have the actual times available from the Met files, we can reset
         ! the Simulation Start times for forecast runs
       if(runAsForecast)then
