@@ -3,3 +3,6 @@ src/*.mod
 bin/*
 src/version.h
 examples/*/Proc/*.pdf
+src/Ash3d_version.h
+src/installpath.h
+src/update.sh

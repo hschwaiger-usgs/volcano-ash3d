@@ -343,7 +343,7 @@ Ash3d:  $(OBJECTS) $(DATAOBJ) Ash3d.F90 $(MFILE) $(SYSINC)
 
 # Objects/Modules for initilization and model set-up
 Ash3d_VariableModules.o: $(ASH3dCCSRC)/Ash3d_VariableModules.f90 $(MFILE) $(SYSINC)
-	sh $(ASH3dCCSRC)/get_version.sh
+	bash $(ASH3dCCSRC)/get_version.sh
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Ash3d_VariableModules.f90
 Input_Data.o: $(ASH3dCCSRC)/Input_Data.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Help.o Tephra.o VotW.o Diffusion.o Airports.o $(DATAOBJ) Output_Vars.o Source.o Source_Umbrella.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Input_Data.f90
@@ -455,7 +455,7 @@ ascii_stats: $(ASH3dCCSRC)/tools/Ash3d_ASCII_stats.f90 Ash3d_VariableModules.o w
 	mv Ash3d_ASCII_stats ../bin/tools/Ash3d_ASCII_stats
 
 check: ascii_check Ash3d $(MFILE) $(SYSINC)
-	sh run_tests.sh
+	bash run_tests.sh
 
 clean:
 	rm -rf $(OBJECTS) $(PPOBJS) $(GRAFOBJ) $(TOOLOBJ) Ash3d.o Ash3d_PostProc.o $(DATAOBJ) $(OPTMODS_OBJ) \
