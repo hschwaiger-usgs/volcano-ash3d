@@ -36,7 +36,7 @@
          lon_cc_pd,lat_cc_pd,de,dn,de_km,dn_km, &
          z_lb_pd,z_vec_init,z_cc_pd,dz_vec_pd, &
          sigma_nx_pd,sigma_ny_pd,sigma_nz_pd,kappa_pd,&
-         xLL,yLL,latLL,lonLL, &
+         xLL,yLL,latLL,lonLL,s_cc_pd, &
          A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_phi1,&
          A3d_phi2,A3d_Re,IsLatLon,IsPeriodic
 
@@ -82,7 +82,7 @@
         !       calculations, limited to just the height needed (e_PlumeHeight*ZPADDING)
         dz_vec_pd(k) = z_vec_init(k) - z_vec_init(k-1)
         z_cc_pd(k)   = z_vec_init(k) - 0.5_ip*dz_vec_pd(k)
-        z_lb_pd(k)   = z_cc_pd(k) - 0.5_ip*dz_vec_pd(k)  ! This is essentially just z_vec_init(k-1)
+        z_lb_pd(k)   = z_cc_pd(k)    - 0.5_ip*dz_vec_pd(k)  ! This is essentially just z_vec_init(k-1)
       enddo
       z_cc_pd( 0)      = z_cc_pd(1)     - dz_vec_pd(1)
       z_lb_pd( 0)      = z_cc_pd(0)     - dz_vec_pd(1)
@@ -97,8 +97,10 @@
       dz_vec_pd(nzmax+1) = dz_vec_pd(nzmax)
       dz_vec_pd(nzmax+2) = dz_vec_pd(nzmax)
 
+      s_cc_pd(:) = (z_lb_pd(nzmax+1) - z_cc_pd(:))/(z_lb_pd(nzmax+1))
+
       if (IsLatLon) then
-        !find width and height of a node (km) at the volcano's location
+        ! Find width and height of a node (km) at the volcano's location
         de_km = de*cos(lat_volcano*DEG2RAD)*DEG2KMLON
         dn_km = dn*DEG2KMLAT
         do i=-1,nxmax+2
@@ -130,7 +132,6 @@
               ! Area of face at i-1/2,j,k
             sigma_nx_pd(-1:nxmax+2,j,k) = 0.5_ip*del_theta*drr
               ! Area of face at i,j-1/2,k
-            !sigma_ny_pd(-1:nxmax+2,j,k) = 0.5_ip*sin(0.5_ip*PI-phi_2)*del_lam*drr
             sigma_ny_pd(-1:nxmax+2,j,k) = 0.5_ip*sin(theta_1)*del_lam*drr
               ! Area of face at i,j,k-1/2
             sigma_nz_pd(-1:nxmax+2,j,k) = rr_1*del_lam*del_costheta

@@ -98,7 +98,7 @@ FASTFPPFLAG =
 #  below to 'T' if you want to build with these libraries.  Set to 'F' any you want
 #  to use the default gnuplot.  
 USEPLPLOT = F
-USEDISLIN = F
+USEDISLIN = T
 USEGMT    = F  # Set to true only if using the API, otherwise scripts will be written
 
 MFILE=makefile

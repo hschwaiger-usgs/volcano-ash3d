@@ -335,7 +335,7 @@
         enddo
       enddo
 
-      ! Write out arrays of maximum concentration and maximum height
+      ! Write out arrays
       do j=ny,1,-1
         write(fid_ascii2dout,3006) (OVar(i,j), i=1,nx)
         !write(fid_ascii2dout,'(g0)') ''          ! make a blank line between rows

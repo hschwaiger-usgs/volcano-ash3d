@@ -993,7 +993,7 @@
       character         :: testkey
       integer           :: iostatus
       character(len=120):: iomessage
-      integer           :: iendstr,ios,ioerr,init_n_gs_max
+      integer           :: iendstr,init_n_gs_max
       real(kind=ip)     :: value1, value2, value3, value4, value5
       real(kind=ip),allocatable,dimension(:) :: values
       real(kind=ip)     :: tmp_ip
@@ -3487,7 +3487,7 @@
         endif;enddo
         stop 1
       endif      
-      do while(ios.eq.0.and.(testkey.eq.'#'.or.testkey.eq.'*'))
+      do while(iostatus.eq.0.and.(testkey.eq.'#'.or.testkey.eq.'*'))
          ! Line is a comment, read next line
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
@@ -4622,7 +4622,6 @@
       character(len=130) :: linebuffer080
       integer            :: iostatus
       character(len=120) :: iomessage
-      integer            :: ioerr
       integer            :: ivalue
       real(kind=ip)      :: rvalue
       integer            :: i
@@ -4696,8 +4695,8 @@
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) iprod1
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
-      read(linebuffer080,*,iostat=ioerr,iomsg=iomessage) iprod1, ivalue
-      if(ioerr.eq.0)then
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) iprod1, ivalue
+      if(iostatus.eq.0)then
         iprod2 = ivalue
       else
         iprod2 = iprod1
@@ -4757,8 +4756,8 @@
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) nxmax,nymax
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
-      read(linebuffer080,*,iostat=ioerr,iomsg=iomessage) nxmax,nymax,ivalue
-      if(ioerr.eq.0)then
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) nxmax,nymax,ivalue
+      if(iostatus.eq.0)then
         nzmax = ivalue
       else
         ! Do a hard stop if nz needs to be provided.
@@ -4794,8 +4793,8 @@
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) dx,dy
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
-      read(linebuffer080,*,iostat=ioerr,iomsg=iomessage) dx,dy,rvalue
-      if(ioerr.eq.0)then
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) dx,dy,rvalue
+      if(iostatus.eq.0)then
         dz_const = rvalue
       else
         ! Do a hard stop if dz needs to be provided.
@@ -4933,8 +4932,8 @@
         Con_Cust = .true.
       endif
       if(Con_Cust)then
-        read(linebuffer080,*,iostat=ioerr,iomsg=iomessage) ivalue, Con_Cust_N
-        if(ioerr.eq.0)then
+        read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) ivalue, Con_Cust_N
+        if(iostatus.eq.0)then
           ! Success reading the number of custom levels; run error-check
           if(Con_Cust_N.le.0)then
             do io=1,2;if(VB(io).le.verbosity_error)then
