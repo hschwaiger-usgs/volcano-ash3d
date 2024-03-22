@@ -198,7 +198,7 @@
         dumx_sp(1:nxmax) = real(  x_cc_pd(1:nxmax),kind=sp)
         dumy_sp(1:nymax) = real(  y_cc_pd(1:nymax),kind=sp)
         dumz_sp(1:nzmax) = real(  z_cc_pd(1:nzmax),kind=sp)
-       endif
+      endif
       call MR_Initialize_Met_Grids(nxmax,nymax,nzmax,             &
                               dumx_sp,dumy_sp,dumz_sp,            &
                               IsPeriodic)

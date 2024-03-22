@@ -89,6 +89,7 @@
 
       integer           :: i,j,k
       character(len=1)  :: answer
+      character(len=80) :: linebuffer080
       logical,save      :: first_time = .true.  ! There is a bit of extra work the first time
                                                 ! this subroutine is called since we need to
                                                 ! fill the step prior to the start time.
@@ -297,7 +298,8 @@
             write(outlog(io),*) 'Continue (y/n)?'
           endif;enddo
           read(5,'(a1)',iostat=iostatus,iomsg=iomessage) answer
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,answer,iomessage)
+          linebuffer080 = answer
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
           if (adjustl(trim(answer)).eq.'n') stop 1
         else
           do io=1,2;if(VB(io).le.verbosity_error)then
@@ -339,7 +341,8 @@
             write(outlog(io),*) 'Continue (y/n)?'
           endif;enddo
           read(5,'(a1)',iostat=iostatus,iomsg=iomessage) answer
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,answer,iomessage)
+          linebuffer080 = answer
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
           if (adjustl(trim(answer)).eq.'n') stop 1
         else
           do io=1,2;if(VB(io).le.verbosity_error)then

@@ -93,15 +93,17 @@
       integer :: i,j
       character(len= 9)  :: cio
       character(len=50)  :: filename_out
-      integer              :: iostatus
-      character(len=120)   :: iomessage
+      integer            :: iostatus
+      character(len=120) :: iomessage
+      character(len=80)  :: linebuffer080
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_2D_Binary"
       endif;enddo
 
       read(Fill_Value,*,iostat=iostatus,iomsg=iomessage)FValue
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,Fill_Value,iomessage)
+      linebuffer080 = Fill_Value
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
 
       if(isFinal_TS)then
         cio='____final'
@@ -171,10 +173,11 @@
       integer          ,intent(in)  :: ny
       character(len=80),intent(in)  :: filename
 
-      real(kind=op) :: OVar(nx,ny)
-      integer       :: i,j
-      integer              :: iostatus
-      character(len=120)   :: iomessage
+      real(kind=op)      :: OVar(nx,ny)
+      integer            :: i,j
+      integer            :: iostatus
+      character(len=120) :: iomessage
+      character(len=80)  :: linebuffer080
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine read_2D_Binary"
@@ -190,7 +193,8 @@
           access='direct',recl=8*nx*ny)
       endif
       read(fid_bin2dout,rec=1,iostat=iostatus,iomsg=iomessage)((OVar(i,j),i=1,nx),j=1,ny)
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,"Binary read",iomessage)
+      linebuffer080 = "Binary read"
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       close(fid_bin2dout)
 
       if(.not.allocated(B_XY)) allocate(B_XY(1:nx,1:ny))
@@ -268,10 +272,11 @@
       integer          ,intent(in)  :: nz
       character(len=80),intent(in)  :: filename
 
-      real(kind=op) :: OVar3d(nx,ny,nz)
-      integer       :: i,j,k
-      integer              :: iostatus
-      character(len=120)   :: iomessage
+      real(kind=op)      :: OVar3d(nx,ny,nz)
+      integer            :: i,j,k
+      integer            :: iostatus
+      character(len=120) :: iomessage
+      character(len=80)  :: linebuffer080
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine read_3D_Binary"
@@ -288,7 +293,8 @@
       endif
       read(fid_bin3dout,rec=1,iostat=iostatus,iomsg=iomessage) &
            (((OVar3d(i,j,k),i=1,nx),j=1,ny),k=1,nz)
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,"Binary read",iomessage)
+      linebuffer080 = "Binary read"
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
 
       close(fid_bin3dout)
 

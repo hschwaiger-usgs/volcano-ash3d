@@ -165,7 +165,7 @@
       character(len=50) :: start_ps
       character(len=50) :: contn_ps
       character(len=50) :: end_ps
-      logical  :: IsThere
+      logical           :: IsThere
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
@@ -464,7 +464,8 @@
       write(61,'(a12,a20)')"T Run Date: ",os_time_log
       write(61,'(a5)')"G0.2i"
       read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,"iw,iwf",iomessage)
+      linebuffer080 = "iw,iwf"
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       write(61,'(a12,i3)')"T Windfile: ",iwf
       close(61)
       !  Right panel

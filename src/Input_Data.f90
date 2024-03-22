@@ -79,7 +79,6 @@
       character(len=3)  :: answer
       character(len=130):: linebuffer130
       character         :: testkey,testkey2
-      integer           :: stat
       integer           :: iostatus
       character(len=120):: iomessage
       integer           :: blockID
@@ -317,7 +316,7 @@
       real(kind=dp)     :: StartHour
       real(kind=dp)     :: RunStartHour    ! Start time of model run, in hours since BaseYear
       character(len=100):: CompVer
-      character(len=508):: CompOpt
+      character(len=602):: CompOpt
       logical           :: IsThere
 
       INTERFACE
@@ -4182,7 +4181,8 @@
         write(errlog(io),*) 'Would you like Ash3d to use the internal airports database instead (y/n)?'
       endif;enddo
       read(input_unit,'(a1)',iostat=iostatus,iomsg=iomessage) answer
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,answer,iomessage)
+      linebuffer080 = answer
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       if(adjustl(trim(answer)).eq.'y') then
         ReadExtAirportFile=.false.
         AppendExtAirportFile=.false.
