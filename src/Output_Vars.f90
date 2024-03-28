@@ -136,8 +136,8 @@
       logical,public            :: Calculated_Cloud_Load
       logical,public            :: Calculated_AshThickness
         ! Set this parameter if you want to include velocities in the output file
-      logical, parameter,public :: USE_WIND_VARS  = .false.
-      !logical, parameter,public :: USE_WIND_VARS  = .true.
+      !logical, parameter,public :: USE_WIND_VARS  = .false.
+      logical, parameter,public :: USE_WIND_VARS  = .true.
 
         ! Set this to true if you want the extra output variables defined in the
         ! optional modules

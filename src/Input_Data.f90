@@ -960,7 +960,7 @@
          MR_iwindfiles,MR_windfiles,MR_BaseYear,MR_useLeap,MR_Comp_StartHour,&
          MR_windfiles_GRIB_index,MR_windfiles_Have_GRIB_index,MR_Comp_Time_in_hours,&
          MR_windfile_starthour,MR_windfile_stephour,MR_iHeightHandler,&
-         MR_iwf_template,MR_iwind,&
+         MR_iwf_template,MR_iwind,MR_Comp_StartYear,MR_Comp_StartMonth,&
            MR_Allocate_FullMetFileList, &
            MR_Read_Met_DimVars
 
@@ -1612,7 +1612,7 @@
       ! END OF BLOCK 1
       !************************************************************************
 
-      ! ALLOCATE ARRAYS OF ERUPTIVE PROPERTIES
+      ! Allocate arrays of eruptive properties
       call Allocate_Source_eruption
 
       allocate (iyear(neruptions))
@@ -1665,9 +1665,11 @@
           stop 1
         endif
         if(i.eq.1)then
-          read(linebuffer130,*,err=9201,iostat=iostatus,iomsg=iomessage) iyear(i)
+          read(linebuffer130,*,err=9201,iostat=iostatus,iomsg=iomessage) iyear(i),imonth(i)
           if(iyear(i).ne.0.and.iyear(i).lt.BaseYear.or.iyear(i)-BaseYear.gt.100)then
             ! Reset BaseYear to the start of the century containing the eruption year
+            MR_Comp_StartYear  = iyear(i)
+            MR_Comp_StartMonth = imonth(i)
             BaseYear = iyear(i) - mod(iyear(i),100)
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"WARNING: Resetting BaseYear to ",BaseYear
