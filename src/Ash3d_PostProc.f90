@@ -148,6 +148,7 @@
       integer             :: istat
       integer             :: iostatus
       character(len=120)  :: iomessage
+      character(len=80)   :: linebuffer080
       character(len=100)  :: arg
       integer             :: informat     = 3 ! input format (default = 3 for netcdf)
       integer             :: outformat        ! output format
@@ -326,7 +327,8 @@
           write(outlog(io),*)'Enter name of netcdf output file:'
         endif;enddo
         read(input_unit,*,iostat=iostatus,iomsg=iomessage) concenfile
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,"concenfile",iomessage)
+        linebuffer080 = "concenfile"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
 #endif
         inquire( file=concenfile, exist=IsThere )
         if(.not.IsThere)then
@@ -362,7 +364,8 @@
           write(outlog(io),*)'Enter code for output product:'
         endif;enddo
         read(input_unit,*,iostat=iostatus,iomsg=iomessage)iprod
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,"iprod",iomessage)
+        linebuffer080 = "iprod"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
 
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)'Select output format'
@@ -373,7 +376,8 @@
           write(outlog(io),*)'Enter code for output format:'
         endif;enddo
         read(input_unit,*,iostat=iostatus,iomsg=iomessage)outformat
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,"outformat",iomessage)
+        linebuffer080 = "outformat"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
 
         if(iprod.eq.5.or.iprod.eq.6)then
           ! For final deposit variables, set itime to -1
@@ -395,7 +399,8 @@
             write(outlog(io),*)'Enter index for time step:'
           endif;enddo
           read(input_unit,*,iostat=iostatus,iomsg=iomessage)itime
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,"itime",iomessage)
+          linebuffer080 = "itime"
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
         else
           ! iprod = 7,8,14,15 are not time-series, but set itime to -1
           itime = -1

@@ -79,7 +79,6 @@
       character(len=3)  :: answer
       character(len=130):: linebuffer130
       character         :: testkey,testkey2
-      integer           :: stat
       integer           :: iostatus
       character(len=120):: iomessage
       integer           :: blockID
@@ -142,7 +141,7 @@
       elseif(nargs.ge.1) then
           ! If an argument is given, first test for the '-h' indicating a help
           ! request.
-        call get_command_argument(1, linebuffer130, stat)
+        call get_command_argument(1, linebuffer130, status=iostatus)
         testkey  = linebuffer130(1:1)
         testkey2 = linebuffer130(2:2)
         if(testkey.eq.'-')then
@@ -153,7 +152,7 @@
               call help_general
             else
               ! command is Ash3d -h [help topic]
-              call get_command_argument(2, linebuffer130, stat)
+              call get_command_argument(2, linebuffer130, status=iostatus)
               if(trim(adjustl(linebuffer130)).eq.'make')then
                 call help_make
                 write(outlog(io),*) ' --------------------------------------------'
@@ -169,7 +168,7 @@
                   ! Check if there is an additional command-line parameter specifying
                   ! the block number
 
-                  call get_command_argument(3, linebuffer130, stat)
+                  call get_command_argument(3, linebuffer130, status=iostatus)
 
                   read(linebuffer130,*,err=1600,iostat=iostatus,iomsg=iomessage)blockID
                   if(blockID.lt.1.or.blockID.gt.10)then
@@ -317,7 +316,7 @@
       real(kind=dp)     :: StartHour
       real(kind=dp)     :: RunStartHour    ! Start time of model run, in hours since BaseYear
       character(len=100):: CompVer
-      character(len=508):: CompOpt
+      character(len=602):: CompOpt
       logical           :: IsThere
 
       INTERFACE
@@ -961,7 +960,7 @@
          MR_iwindfiles,MR_windfiles,MR_BaseYear,MR_useLeap,MR_Comp_StartHour,&
          MR_windfiles_GRIB_index,MR_windfiles_Have_GRIB_index,MR_Comp_Time_in_hours,&
          MR_windfile_starthour,MR_windfile_stephour,MR_iHeightHandler,&
-         MR_iwf_template,MR_iwind,&
+         MR_iwf_template,MR_iwind,MR_Comp_StartYear,MR_Comp_StartMonth,&
            MR_Allocate_FullMetFileList, &
            MR_Read_Met_DimVars
 
@@ -993,7 +992,7 @@
       character         :: testkey
       integer           :: iostatus
       character(len=120):: iomessage
-      integer           :: iendstr,ios,ioerr,init_n_gs_max
+      integer           :: iendstr,init_n_gs_max
       real(kind=ip)     :: value1, value2, value3, value4, value5
       real(kind=ip),allocatable,dimension(:) :: values
       real(kind=ip)     :: tmp_ip
@@ -1613,7 +1612,7 @@
       ! END OF BLOCK 1
       !************************************************************************
 
-      ! ALLOCATE ARRAYS OF ERUPTIVE PROPERTIES
+      ! Allocate arrays of eruptive properties
       call Allocate_Source_eruption
 
       allocate (iyear(neruptions))
@@ -1666,9 +1665,11 @@
           stop 1
         endif
         if(i.eq.1)then
-          read(linebuffer130,*,err=9201,iostat=iostatus,iomsg=iomessage) iyear(i)
+          read(linebuffer130,*,err=9201,iostat=iostatus,iomsg=iomessage) iyear(i),imonth(i)
           if(iyear(i).ne.0.and.iyear(i).lt.BaseYear.or.iyear(i)-BaseYear.gt.100)then
             ! Reset BaseYear to the start of the century containing the eruption year
+            MR_Comp_StartYear  = iyear(i)
+            MR_Comp_StartMonth = imonth(i)
             BaseYear = iyear(i) - mod(iyear(i),100)
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"WARNING: Resetting BaseYear to ",BaseYear
@@ -2867,6 +2868,20 @@
 
         ! Check for existance and compatibility with simulation time requirements
       call MR_Read_Met_DimVars(iyear(1))
+      if(MR_BaseYear.ne.BaseYear)then
+        ! Base year was reset, probably because a windfile had an old base year
+        useLeap  = MR_useLeap
+        BaseYear = MR_BaseYear
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Change in calandar; resetting e_StartTime"
+        endif;enddo
+        tmp_dp = HS_hours_since_baseyear(iyear(1),imonth(1),  &
+                         iday(1),hour(1),BaseYear,useLeap)
+        tmp_dp = tmp_dp - SimStartHour   ! Recast tmp_dp as the difference in calandars
+        SimStartHour = SimStartHour + tmp_dp
+        xmlSimStartTime = HS_xmltime(SimStartHour,BaseYear,useLeap)
+      endif
+
         ! Now that we have the actual times available from the Met files, we can reset
         ! the Simulation Start times for forecast runs
       if(runAsForecast)then
@@ -3473,7 +3488,7 @@
         endif;enddo
         stop 1
       endif      
-      do while(ios.eq.0.and.(testkey.eq.'#'.or.testkey.eq.'*'))
+      do while(iostatus.eq.0.and.(testkey.eq.'#'.or.testkey.eq.'*'))
          ! Line is a comment, read next line
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
@@ -4168,7 +4183,8 @@
         write(errlog(io),*) 'Would you like Ash3d to use the internal airports database instead (y/n)?'
       endif;enddo
       read(input_unit,'(a1)',iostat=iostatus,iomsg=iomessage) answer
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,answer,iomessage)
+      linebuffer080 = answer
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       if(adjustl(trim(answer)).eq.'y') then
         ReadExtAirportFile=.false.
         AppendExtAirportFile=.false.
@@ -4608,7 +4624,6 @@
       character(len=130) :: linebuffer080
       integer            :: iostatus
       character(len=120) :: iomessage
-      integer            :: ioerr
       integer            :: ivalue
       real(kind=ip)      :: rvalue
       integer            :: i
@@ -4682,8 +4697,8 @@
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) iprod1
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
-      read(linebuffer080,*,iostat=ioerr,iomsg=iomessage) iprod1, ivalue
-      if(ioerr.eq.0)then
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) iprod1, ivalue
+      if(iostatus.eq.0)then
         iprod2 = ivalue
       else
         iprod2 = iprod1
@@ -4743,8 +4758,8 @@
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) nxmax,nymax
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
-      read(linebuffer080,*,iostat=ioerr,iomsg=iomessage) nxmax,nymax,ivalue
-      if(ioerr.eq.0)then
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) nxmax,nymax,ivalue
+      if(iostatus.eq.0)then
         nzmax = ivalue
       else
         ! Do a hard stop if nz needs to be provided.
@@ -4780,8 +4795,8 @@
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) dx,dy
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
-      read(linebuffer080,*,iostat=ioerr,iomsg=iomessage) dx,dy,rvalue
-      if(ioerr.eq.0)then
+      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) dx,dy,rvalue
+      if(iostatus.eq.0)then
         dz_const = rvalue
       else
         ! Do a hard stop if dz needs to be provided.
@@ -4919,8 +4934,8 @@
         Con_Cust = .true.
       endif
       if(Con_Cust)then
-        read(linebuffer080,*,iostat=ioerr,iomsg=iomessage) ivalue, Con_Cust_N
-        if(ioerr.eq.0)then
+        read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) ivalue, Con_Cust_N
+        if(iostatus.eq.0)then
           ! Success reading the number of custom levels; run error-check
           if(Con_Cust_N.le.0)then
             do io=1,2;if(VB(io).le.verbosity_error)then

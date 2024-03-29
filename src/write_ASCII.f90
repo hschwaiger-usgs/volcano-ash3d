@@ -273,15 +273,17 @@
       integer :: i,j
       character (len=9)  :: cio
       character(len=50)  :: filename_out
-      integer           :: iostatus
-      character(len=120):: iomessage
+      integer            :: iostatus
+      character(len=120) :: iomessage
+      character(len=80)  :: linebuffer080
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_2D_ASCII"
       endif;enddo
 
       read(Fill_Value,*,iostat=iostatus,iomsg=iomessage)FValue
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,Fill_Value,iomessage)
+      linebuffer080 = Fill_Value
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
 
       if(isFinal_TS)then
         cio='____final'
@@ -335,7 +337,7 @@
         enddo
       enddo
 
-      ! Write out arrays of maximum concentration and maximum height
+      ! Write out arrays
       do j=ny,1,-1
         write(fid_ascii2dout,3006) (OVar(i,j), i=1,nx)
         !write(fid_ascii2dout,'(g0)') ''          ! make a blank line between rows

@@ -171,6 +171,7 @@
 
       aloft_percent_remaining = 1.0_ip
       SourceCumulativeVol     = 0.0_ip
+      MassConsErr             = 0.0_ip
 
         ! input data for ash transport
       call Read_Control_File

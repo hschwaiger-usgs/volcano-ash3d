@@ -251,7 +251,7 @@
       integer :: ivar
       integer,dimension(5) :: chunksizes5
       logical :: IsThere
-      character(len=3)  :: answer
+      !character(len=3)  :: answer
       integer           :: iostatus
       character(len=120):: iomessage
 
@@ -2741,9 +2741,9 @@
          time,ntmax,time_native,BaseYear
 
       use Output_Vars,   only : &
-         CloudLoad_FillValue,dbZCol_FillValue,MaxConcentration_FillValue,&
+         dbZCol_FillValue,MaxConcentration_FillValue,&
          MaxHeight_FillValue,MinHeight_FillValue,Mask_Cloud,Mask_Deposit,&
-         DepositThickness_FillValue,CloudArrivalTime_FillValue,DepArrivalTime_FillValue,&
+         CloudArrivalTime_FillValue,DepArrivalTime_FillValue,&
          var_User2d_XY_name,var_User2d_XY,var_User3d_XYGs_name,var_User3d_XYGs,&
          var_User3d_XYZ_name,var_User3d_XYZ,var_User4d_XYZGs_name,var_User4d_XYZGs,&
          DBZ_THRESH,USE_OPTMOD_VARS,USE_RESTART_VARS,&
@@ -4392,12 +4392,13 @@
         nSTAT = nf90_get_att(ncid,t_var_id,"units",time_units)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_att units t:")
         read(time_units,4313,iostat=iostatus,iomsg=iomessage) xmlSimStartTime
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,xmlSimStartTime,iomessage)
+        linebuffer080 = xmlSimStartTime
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
   4313  format(12x,a20)
         read(xmlSimStartTime,4314,iostat=iostatus,iomsg=iomessage)&
                              itstart_year,itstart_month,itstart_day, &
                              itstart_hour,itstart_min,itstart_sec
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,xmlSimStartTime,iomessage)
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
         filestart_hour = real(itstart_hour,kind=sp) + &
                              real(itstart_min,kind=sp)/60.0_sp      + &
                              real(itstart_sec,kind=sp)/3600.0_sp

@@ -704,7 +704,7 @@
         zlabstep = 1.0_DS
       endif
 
-      cloudcon_thresh_mgm3 = CLOUDCON_THRESH * KG_2_MG / KM3_2_M3 !convert from kg/km3 to mg/m3
+      cloudcon_thresh_mgm3 = real(CLOUDCON_THRESH * KG_2_MG / KM3_2_M3,kind=DS) !convert from kg/km3 to mg/m3
       cmin=real(0,kind=DS)
       cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=DS)    ! Get the max value for this profile
       cmax=real(max(cmax,cloudcon_thresh_mgm3),kind=DS)  ! Do not let cmax drop below the threshold

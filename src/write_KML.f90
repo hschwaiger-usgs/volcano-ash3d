@@ -422,35 +422,36 @@
       use projection,    only : &
            PJ_proj_inv
 
-      integer,intent(in)  :: ivar
+      integer,intent(in) :: ivar
 
-      character (len=13)  :: yyyymmddhh
-      character (len=2)   :: opacity
-      real(kind=ip)       :: xleft, xright, ybottom, ytop
-      real(kind=ip)       :: longLL,longUR
-      real(kind=ip)       :: lattLL,lattUR
+      character (len=13) :: yyyymmddhh
+      character (len=2)  :: opacity
+      real(kind=ip)      :: xleft, xright, ybottom, ytop
+      real(kind=ip)      :: longLL,longUR
+      real(kind=ip)      :: lattLL,lattUR
 
-      real(kind=dp)       :: olam,ophi ! using precision needed by libprojection
+      real(kind=dp)      :: olam,ophi ! using precision needed by libprojection
 
       integer,       dimension(:), allocatable :: iyear, imonth, iday
       real(kind=ip), dimension(:), allocatable :: StartHour
 
-      integer             :: ierup
-      character(len=30)   :: filename
-      integer             :: fid
-      integer             :: n_clrmp,icmp
+      integer            :: ierup
+      character(len=30)  :: filename
+      integer            :: fid
+      integer            :: n_clrmp,icmp
       character(len=9),dimension(11)   :: Styles
       character(len=6),dimension(11)   :: Colors
-      character(len=30)   :: description
-      character(len=30)   :: legend
-      character(len=3)    :: overlayX
-      character(len=3)    :: overlayY
-      character(len=3)    :: screenX
-      character(len=3)    :: screenY
-      character(len=3)    :: sizeX
-      character(len=3)    :: sizeY
-      integer           :: iostatus
-      character(len=120):: iomessage
+      character(len=30)  :: description
+      character(len=30)  :: legend
+      character(len=3)   :: overlayX
+      character(len=3)   :: overlayY
+      character(len=3)   :: screenX
+      character(len=3)   :: screenY
+      character(len=3)   :: sizeX
+      character(len=3)   :: sizeY
+      integer            :: iostatus
+      character(len=120) :: iomessage
+      character(len=80)  :: linebuffer080
 
       INTERFACE
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
@@ -535,7 +536,8 @@
         read(yyyymmddhh,100,iostat=iostatus,iomsg=iomessage) &
                              iyear(ierup),imonth(ierup),iday(ierup), &
                              StartHour(ierup)
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,yyyymmddhh,iomessage)
+        linebuffer080 = yyyymmddhh
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
         write(fid,8) ierup,iyear(ierup),imonth(ierup),iday(ierup), &
                              StartHour(ierup), &
                              e_PlumeHeight(ierup),e_Duration(ierup),e_Volume(ierup)
@@ -1113,12 +1115,13 @@
       character(len=77) :: zipcom
       character(len=80) :: execpath
 
-      real(kind=ip) :: ymaxpl
-      logical       :: IsThere
-      integer       :: stat
-      real(kind=dp) :: olam,ophi ! using precision needed by libprojection
-      integer           :: iostatus
-      character(len=120):: iomessage
+      real(kind=ip)      :: ymaxpl
+      logical            :: IsThere
+      integer            :: stat
+      real(kind=dp)      :: olam,ophi ! using precision needed by libprojection
+      integer            :: iostatus
+      character(len=120) :: iomessage
+      character(len=80)  :: linebuffer080
 
       INTERFACE
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
@@ -1324,7 +1327,8 @@
         read(yyyymmddhh,200,iostat=iostatus,iomsg=iomessage) &
                       iyear(ierup),imonth(ierup),iday(ierup), &
                       StartHour(ierup)
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,yyyymmddhh,iomessage)
+        linebuffer080 = yyyymmddhh
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
         write(fid_kmlPOI,9) ierup,iyear(ierup),imonth(ierup),iday(ierup), &
                       StartHour(ierup), &
                       e_PlumeHeight(ierup),e_Duration(ierup),e_Volume(ierup)

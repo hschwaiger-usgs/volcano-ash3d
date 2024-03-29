@@ -97,7 +97,7 @@
           stop 1
         endif
         file2=trim(adjustl(linebuffer080))
-        inquire( file=adjustl(trim(file1)), exist=IsThere2 )
+        inquire( file=adjustl(trim(file2)), exist=IsThere2 )
 
         if (.not.IsThere1.and..not.IsThere2)then
           do io=1,nio;if(VB(io).le.verbosity_error)then
