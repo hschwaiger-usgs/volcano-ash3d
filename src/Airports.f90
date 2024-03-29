@@ -590,7 +590,6 @@
 
       ! Read the header line and set iostatus for the while loop
       read(unit=fid_airport,fmt='(a95)',iostat=iostatus,iomsg=iomessage) linebuffer095
-
       ! Read airport locations and assign airports in the modeled area to a temporary array
       do while (iostatus.ge.0)
         read(fid_airport,'(a95)',iostat=iostatus,iomsg=iomessage) linebuffer095
@@ -599,8 +598,19 @@
         else
           exit
         endif
-        read(linebuffer095,*,err=2010,iostat=ioerr,iomsg=iomessage) &
+        read(linebuffer095,*,iostat=ioerr,iomsg=iomessage) &
                                        ExtAirportLat(isite), ExtAirportLon(isite)
+        write(*,*)'ioerr = ',ioerr
+        if(ioerr.ne.0)then
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)'Next line of Airport/POI file loaded without error, however'
+            write(outlog(io),*)'could not read lat/lon. Check if your file has trainling'
+            write(outlog(io),*)'blank lines.  Ending reading of sites at #',isite-1
+          endif;enddo
+          isite = isite - 1
+          exit
+        endif
+
         ! Here we do not actually do a hard stop if we can't read projected values
         read(linebuffer095,*,iostat=ioerr,iomsg=iomessage) &
                                        ExtAirportLat(isite), ExtAirportLon(isite), &
@@ -615,6 +625,18 @@
         if(ioerr.ne.0)then
           ExtAirportCode(isite) = "   "
           ExtAirportName(isite) = "          "
+        endif
+
+        ! make sure latitude is between -90 and 90
+        if (ExtAirportLat(isite).lt.-90.0_ip.or.&
+            ExtAirportLat(isite).gt. 90.0_ip)then
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)'Latitude of Airport/POI out of range.'
+            write(errlog(io),*)'External file format is:'
+            write(errlog(io),*)'# Header line'
+            write(errlog(io),*)'Latitude   Longitude           x           y  Code Location'
+            stop 1
+          endif;enddo
         endif
 
         ! make sure longitude is between 0 and 360
@@ -633,16 +655,17 @@
         endif
 
       enddo
+
       close(fid_airport)
 
       n_ext_airports = isite     !number of external airports read
       return
 
-      ! error trap
-2010  do io=1,2;if(VB(io).le.verbosity_error)then
-        write(errlog(io),6) linebuffer095
-      endif;enddo
-      stop 1
+!      ! error trap
+!2010  do io=1,2;if(VB(io).le.verbosity_error)then
+!        write(errlog(io),6) linebuffer095
+!      endif;enddo
+!      stop 1
 
       ! format statements
 6     format('Error reading from airport list.  Read statement was expecting',/, &

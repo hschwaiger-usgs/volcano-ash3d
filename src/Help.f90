@@ -645,7 +645,7 @@
       write(outlog(io),1)'#               airport latitude, longitude, projected x and y coordinates,                            '
       write(outlog(io),1)'#               and airport name.  If you are using a projected grid,                                  '
       write(outlog(io),1)'#               THE X AND Y MUST BE IN THE SAME PROJECTION as the computational grid.                  '
-      write(outlog(io),1)'#               Alternatively, if coordinates can be projected via libprojection                       '
+      write(outlog(io),1)'#               Alternatively, coordinates can be projected via libprojection                          '
       write(outlog(io),1)'#               by typing "yes" to the last parameter                                                  '
       write(outlog(io),1)'******************* BLOCK 6 ***************************************************                        '
       write(outlog(io),1)'no                            # Write out ash arrival times at airports to ASCII FILE?                 '

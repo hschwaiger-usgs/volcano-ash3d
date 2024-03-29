@@ -2609,7 +2609,6 @@
       endif
       cdf_b4l17 = linebuffer080
 
-
       ! HFS Fix this out-of-order reading of strings
       ! Code should just read nWriteTimes values and not limit the write-time
       ! string to be 130 of 80 characters
@@ -2972,22 +2971,27 @@
       !See if we need to read an external airport file
       if((AirportInFile.ne.'internal').and. &
           (AirportInFile.ne.'')) then
-        ReadExtAirportFile=.true.              ! read external data, do not append
+        ReadExtAirportFile=.true.              ! read external data
         if(AirportInFile(1:1).eq.'+') then
-          AppendExtAirportFile=.true.          ! read and append external data
+          AppendExtAirportFile=.true.          ! read and append external data to master list
           AirportInFile = AirportInFile(2:)    ! strip off the "plus" at the beginning
         else
-          AppendExtAirportFile=.false.         ! read and append external data
+          AppendExtAirportFile=.false.         ! read external data; do not append to master list
         endif
         ! Make sure the external file exists and can be opened.
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)'Making sure the external airport file exists and can be opened'
+          write(outlog(io),*)'Opening ',trim(adjustl(AirportInFile))
         endif;enddo
         ! try opening the external file
         open(unit=fid_airport,file=AirportInFile,status='old',action='read',err=9604)
         close(fid_airport)                         ! if it opens, close it back up.
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)'Success.'
+        endif;enddo
       else
-         ReadExtAirportFile = .false.              ! read external data, do not append
+         ReadExtAirportFile = .false.              ! Do not read external data
+                                                   ! Internal list might still be used
       endif
 
       ! Read whether to project airport coordinates
@@ -3002,9 +3006,9 @@
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
       if(adjustl(trim(answer)).eq.'yes') then
         ProjectAirportLocations = .true.
-       else if(adjustl(trim(answer(1:2))).eq.'no') then
+      else if(adjustl(trim(answer(1:2))).eq.'no') then
         ProjectAirportLocations = .false.
-       else
+      else
         goto 9605
       endif
 
@@ -3014,6 +3018,23 @@
                   WriteAirportFile_ASCII, WriteGSD, WriteAirportFile_KML, &
                   ProjectAirportLocations, AirportInFile
       endif;enddo
+      if(ProjectAirportLocations)then
+        if(IsLatLon)then
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"     The control file indicates that the projected coordinates"
+            write(outlog(io),*)"     of the Airport/POI file should be used, but the current"
+            write(outlog(io),*)"     coordinate system is lon/lat.  Projected coordinates will"
+            write(outlog(io),*)"     be ignored and the lon/lat used instead."
+          endif;enddo
+        else
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"     The control file indicates that the projected coordinates"
+            write(outlog(io),*)"     of the Airport/POI file should be used.  Please make sure"
+            write(outlog(io),*)"     that the projected coordinates match the projection of"
+            write(outlog(io),*)"     the computational grid."
+          endif;enddo
+        endif
+      endif
       ! END OF BLOCK 6
       !************************************************************************
 
@@ -3599,6 +3620,15 @@
         endif
 1104    format(7x,a20)
       enddo
+      if(nmods.eq.0)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"No OPTMOD blocks found."
+        endif;enddo
+      else
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Number of OPTMOD blocks found = ",nmods
+        endif;enddo
+      endif
 
      ! close input file 
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -3707,7 +3737,6 @@
       ! Error traps (starting with 9000)
       ! For this subroutine, the 100's position refers to block # of control file
 
-      !ERROR TRAPS TO STDIN
 9001  do io=1,2;if(VB(io).le.verbosity_error)then
         write(errlog(io),*)  'error: cannot open input file: ',infile
         write(errlog(io),*)  'Program stopped'
