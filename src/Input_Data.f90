@@ -2025,13 +2025,13 @@
             enddo
  205            format(10x,i5,f15.3,f15.7)
             write(outlog(io),'(a39,g12.5,a7)')"         Total Volume for this pulse = ",&
-                                sum(e_prof_Volume(i,:)),"km3 DRE"
+                                sum(e_prof_Volume(i,:))," km3 DRE"
           endif;enddo
         endif
       enddo
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),'(a32,g12.5,a7)')"Total volume of all eruptions = ",&
-                            sum(e_volume),"km3 DRE"
+                            sum(e_volume)," km3 DRE"
       endif;enddo
 
       ! Now that we know the requested dz profile and the plume heights, we can
@@ -4518,7 +4518,7 @@
       endif
 
       ! Print out warning message if dx != dy
-      if(abs(dx-dy).lt.EPS_SMALL) then
+      if(abs(dx-dy).gt.EPS_SMALL) then
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),1)              ! print out a warning message about the deposit file
         endif;enddo

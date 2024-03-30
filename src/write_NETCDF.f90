@@ -228,7 +228,7 @@
 
       use MetReader,     only : &
          MR_iwindfiles,MR_windfiles,MR_GitComID,&
-         MR_MetStep_findex,MR_windfile_starthour,Met_proj4
+         MR_MetStep_findex,MR_windfile_starthour,Met_proj4,Comp_proj4
 
       use projection,      only : &
          PJ_GitComID
@@ -453,8 +453,10 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att date:")
       nSTAT = nf90_put_att(ncid,nf90_global,"NWPStartTime",cdf_WindStartTime)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att NWPStartTime:")
-      nSTAT = nf90_put_att(ncid,nf90_global,"NWPproj4",trim(adjustl(Met_proj4)))
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att NWPproj4:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"MepProj4",trim(adjustl(Met_proj4)))
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att MepProj4:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"CompProj4",trim(adjustl(Comp_proj4)))
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att CompProj4:")
       nSTAT = nf90_put_att(ncid,nf90_global,"host",os_host)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att host:")
       nSTAT = nf90_put_att(ncid,nf90_global,"CWD",os_cwd)
