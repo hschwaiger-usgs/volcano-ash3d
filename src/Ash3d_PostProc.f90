@@ -16,11 +16,12 @@
 !  a transient variable).
 !  
 !  If one command-line argument is provided, it is assumed to be a control file
-!  that defines the input type and output products.  This is not yet implemented.
+!  that defines the input type and output products.  This allows the greatest flexibility.
 !  
 !  If more than one command-line argument is given, this program expects the following:
 !    ./Ash3d_PostProc Ash3d_output.nc output_product_ID format_code [time_step]
 !  where output_product_ID is one of:
+!       0 custom (e.g. variable from user-defined module)
 !       1 full concentration array
 !       2 deposit granularity
 !       3 deposit thickness (mm time-series)
@@ -51,7 +52,7 @@
 !  the final time data.  For data pproducts that require contours (shape files or
 !  contour plots), contour levels are defined in the module Output_Vars.
 !  
-!  For example, to product a contour map of ash-cloud arrival time:
+!  For example, to produce a contour map of ash-cloud arrival time:
 !   ./Ash3d_PostProc Ash3d_output.nc 14 3
 !  
 !  To produce a shapefile for deposit thickness (in mm) at the second time step:
@@ -155,7 +156,9 @@
       integer             :: iiprod           ! code for input dataset
       integer             :: iprod            ! code for output product
       integer             :: ndims           ! dimensions of the input data file
-      integer             :: ivar,TS_Flag,height_flag
+      integer             :: ivar
+      integer             :: TS_Flag
+      integer             :: height_flag
       integer             :: itime = -1      ! initialize time step to the last step
       integer             :: i,j,ii
       integer             :: tmp_int
@@ -183,7 +186,7 @@
                                                      !   | | | - Fourth
                                                      !   V V V V
 #ifdef WINDOWS
-      ! For Windows systems, dislin is working.
+      ! For Windows systems, dislin is working; others not yet.
       integer,dimension(Nplot_libs) :: plot_pref_map = (/1,2,3,4/) ! plot preference for maps
       integer,dimension(Nplot_libs) :: plot_pref_shp = (/1,2,3,4/) ! plot preference for contours
       integer,dimension(Nplot_libs) :: plot_pref_vpr = (/1,2,3,4/) ! plot preference for vert profs.
@@ -261,7 +264,33 @@
         plotlib_avail(3) = .false.
       endif
       ! Test for GMT
-      plotlib_avail(4) = .true.
+#ifdef LINUX
+        ! On a linux system, just try to execute gmt
+      istat = 0
+      call execute_command_line("echo 'exit' | gmt",exitstat=istat)
+#endif
+#ifdef MACOS
+        ! On a MacOS system, not sure how to test yet
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Cannot test for gmt on MacOS for now."
+          write(outlog(io),*)"Disabling gmt."
+        endif;enddo
+        istat = 1
+#endif
+#ifdef WINDOWS
+        ! On a Windows system, not sure how to test yet
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Cannot test for gmt on Windows for now."
+          write(outlog(io),*)"Disabling gmt."
+        endif;enddo
+        istat = 1
+#endif
+      if (istat.eq.0)then
+        plotlib_avail(4) = .true.
+      else
+        plotlib_avail(4) = .false.
+      endif
+
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Dislin  ",plotlib_avail(1)
         write(outlog(io),*)"Plplot  ",plotlib_avail(2)
@@ -319,7 +348,7 @@
           write(errlog(io),*)'Expecting to prompt for a netcdf file, but the netcdf'
           write(errlog(io),*)'library is not linked.  Please recompile, linking to'
           write(errlog(io),*)'netcdf or run Ash3d_PostProc with a control file and'
-          write(errlog(io),*)'ASCII data.'
+          write(errlog(io),*)'ASCII/binary data.'
         endif;enddo
         stop 1
 #else
@@ -360,6 +389,7 @@
           write(outlog(io),*)'11 ash-cloud bottom (km)               12 ash-cloud load (T/km2)'
           write(outlog(io),*)'13 ash-cloud radar reflectivity (dBz)  14 ash-cloud arrival time (hours)'
           write(outlog(io),*)'15 topography                          16 profile plots'
+!          write(outlog(io),*)'  or enter 0 to be prompted for a variable name'
           write(outlog(io),*)''
           write(outlog(io),*)'Enter code for output product:'
         endif;enddo
@@ -505,6 +535,7 @@
       endif
 
       !  Arg #2
+      !if(iprod.lt.0.or.iprod.gt.16)then    ! Activate this line when custom variables are coded
       if(iprod.lt.1.or.iprod.gt.16)then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: output product requested is not in range 1-16."
