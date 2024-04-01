@@ -3521,14 +3521,15 @@
 
       use io_data,           only : &
          concenfile,init_tstep,nWriteTimes,WriteTimes,cdf_b1l1,cdf_b1l5,cdf_b3l1, &
-         cdf_b3l3,VolcanoName,Write_PT_Data,isFinal_TS,&
+         cdf_b1l2,cdf_b3l3,VolcanoName,Write_PT_Data,isFinal_TS,&
          cdf_run_class,cdf_url,cdf_institution,&
          Write_PR_Data,nvprofiles,x_vprofile,y_vprofile,Site_vprofile
 
       use mesh,          only : &
          nxmax,nymax,nsmax,nzmax,x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd,z_cc_pd, &
          dx,dy,de,dn,dz_const,IsLatLon,latLL,lonLL,latUR,lonUR,xLL,yLL,xUR,yUR,&
-         ZPADDING
+         A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
+         A3d_phi2,A3d_Re,ZPADDING
 
       use solution,      only : &
          SpeciesID
@@ -3563,6 +3564,10 @@
       use Tephra,        only : &
          n_gs_max,MagmaDensity,DepositDensity,LAM_GS_THRESH,AIRBORNE_THRESH
 
+      use projection,    only : &
+         PJ_iprojflag,PJ_k0,PJ_lam0,PJ_lam1,PJ_lam2,PJ_phi0,PJ_phi1,PJ_phi2,PJ_Re,&
+           PJ_Set_Proj_Params,PJ_proj_for
+
       integer, intent(in), optional :: timestep
 
       logical,save :: first_time = .true.
@@ -3584,6 +3589,8 @@
       integer :: itstart_hour,itstart_min,itstart_sec
       real(kind=ip) :: filestart_hour
       integer :: tmp_int
+      real(kind=ip) :: lat_in,lon_in
+      real(kind=ip) :: xnow,ynow,xout,yout
 
       INTERFACE
         real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
@@ -3694,6 +3701,25 @@
             write(outlog(io),2501)"lon",x_len
           endif;enddo
         else
+          ! Get projection information
+          nSTAT = nf90_get_att(ncid,nf90_global,"b1l2",cdf_b1l2)
+          if(nSTAT.ne.0)then
+            call NC_check_status(nSTAT,0,"get_att b1l2:")
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"Did not find att b1l2: Projection parameters"
+            endif;enddo
+          endif
+          call PJ_Set_Proj_Params(cdf_b1l2)
+          A3d_iprojflag  = PJ_iprojflag
+          A3d_k0_scale   = PJ_k0
+          A3d_Re         = PJ_Re
+          A3d_lam0       = PJ_lam0
+          A3d_lam1       = PJ_lam1
+          A3d_lam2       = PJ_lam2
+          A3d_phi0       = PJ_phi0
+          A3d_phi1       = PJ_phi1
+          A3d_phi2       = PJ_phi2
+
           ! Get variable id for this dimension
           nSTAT = nf90_inq_varid(ncid,"x",x_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid x")
@@ -4480,17 +4506,39 @@
             deallocate(dum1d_dp)
           endif
 
-          do i=1,nairports
-            Airport_i(i) = int((Airport_Longitude(i)-lonLL)/de) +1
-            Airport_j(i) = int((Airport_Latitude(i)-latLL)/dn) +1
-            ! Ash has arrived if the arrival time is positive
-            if(Airport_AshArrivalTime(i).gt.0.0_ip)then
-              Airport_AshArrived(i) = .true.
-            endif
-            if(Airport_CloudArrivalTime(i).gt.0.0_ip)then
-              Airport_CloudArrived(i) = .true.
-            endif
-          enddo
+          if (IsLatLon) then
+            do i=1,nairports
+              Airport_i(i) = int((Airport_Longitude(i)-lonLL)/de) +1
+              Airport_j(i) = int((Airport_Latitude(i)-latLL)/dn) +1
+              ! Ash has arrived if the arrival time is positive
+              if(Airport_AshArrivalTime(i).gt.0.0_ip)then
+                Airport_AshArrived(i) = .true.
+              endif
+              if(Airport_CloudArrivalTime(i).gt.0.0_ip)then
+                Airport_CloudArrived(i) = .true.
+              endif
+            enddo
+          else
+            do i=1,nairports
+              lon_in = Airport_Longitude(i)
+              lat_in = Airport_Latitude(i)
+              call PJ_proj_for(lon_in,lat_in, A3d_iprojflag, &
+                         A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,A3d_Re, &
+                         xout,yout)
+              xnow = real(xout,kind=ip)
+              ynow = real(yout,kind=ip)
+
+              Airport_i(i) = int((xnow-xLL)/dx) +1
+              Airport_j(i) = int((ynow-yLL)/dy) +1
+              ! Ash has arrived if the arrival time is positive
+              if(Airport_AshArrivalTime(i).gt.0.0_ip)then
+                Airport_AshArrived(i) = .true.
+              endif
+              if(Airport_CloudArrivalTime(i).gt.0.0_ip)then
+                Airport_CloudArrived(i) = .true.
+              endif
+            enddo
+          endif
 
         endif
 

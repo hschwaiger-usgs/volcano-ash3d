@@ -173,6 +173,7 @@
       character(len=13)   :: cio
       character           :: testkey,testkey2
       logical             :: writeContours = .false.
+      logical             :: CleanScripts  = .false.
         ! plotting library availibility and preferences
         !  1 = dislin
         !  2 = plplot
@@ -259,6 +260,7 @@
         istat = 1
 #endif
       if (istat.eq.0)then
+        CleanScripts_gnuplot = CleanScripts
         plotlib_avail(3) = .true.
       else
         plotlib_avail(3) = .false.
@@ -267,7 +269,7 @@
 #ifdef LINUX
         ! On a linux system, just try to execute gmt
       istat = 0
-      call execute_command_line("echo 'exit' | gmt",exitstat=istat)
+      call execute_command_line("gmt --version > /dev/null",exitstat=istat)
 #endif
 #ifdef MACOS
         ! On a MacOS system, not sure how to test yet
@@ -286,6 +288,7 @@
         istat = 1
 #endif
       if (istat.eq.0)then
+        CleanScripts_GMT = CleanScripts
         plotlib_avail(4) = .true.
       else
         plotlib_avail(4) = .false.
@@ -824,9 +827,17 @@
 
       if(.not.IsLatLon)then
         do io=1,2;if(VB(io).le.verbosity_error)then
-          write(errlog(io),*)'Only post-processing of Lon/Lat grids is currently supported.'
+          write(outlog(io),*)'Mapping/shapefiles of projected grids is currently only supported'
+          write(outlog(io),*)'using the GMT plotting option.'
         endif;enddo
-        stop 1
+        if(plotlib_avail(4))then
+          plot_pref_map = (/4,1,2,3/)
+        else
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(outlog(io),*)'Mapping/shapefiles of projected grids requested, but GMT is not available.'
+          endif;enddo
+          stop 1
+        endif
       endif
 
       if (itime.eq.-1) then
@@ -1370,6 +1381,8 @@
         case(3)
           call write_2Dmap_PNG_gnuplot(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
         case(4)
+          write(*,*)'calling write_2Dmap_PNG_GMT'
+          stop 66
           call write_2Dmap_PNG_GMT(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
         case default
           do io=1,2;if(VB(io).le.verbosity_error)then

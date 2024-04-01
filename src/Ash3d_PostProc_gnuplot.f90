@@ -39,6 +39,7 @@
         ! Publicly available variables
 
 !      character(100) :: USGSIconFile
+      logical, public :: CleanScripts_gnuplot = .false.
 
       contains
       !------------------------------------------------------------------------

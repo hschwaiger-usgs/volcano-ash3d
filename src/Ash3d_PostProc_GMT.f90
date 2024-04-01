@@ -44,6 +44,7 @@
         ! Publicly available variables
 
       character(100) :: USGSIconFile
+      logical, public :: CleanScripts_GMT = .false.
 
       contains
       !------------------------------------------------------------------------
@@ -708,8 +709,10 @@
       if(.not.writeContours)write(55,*)adjustl(trim(cmd))
 
       ! Clean up
-      cmd = "rm -f c.lev out.grd temp.* leg*.txt out*.con cities.xy"
-      write(55,*)adjustl(trim(cmd))
+      if (CleanScripts_GMT) then
+        cmd = "rm -f c.lev out.grd temp.* leg*.txt out*.con cities.xy"
+        write(55,*)adjustl(trim(cmd))
+      endif
 
       close(55)
       write(gmtcom,'(a3,a14)')'sh ',dp_gmtfile
