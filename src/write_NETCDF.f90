@@ -3566,7 +3566,7 @@
 
       use projection,    only : &
          PJ_iprojflag,PJ_k0,PJ_lam0,PJ_lam1,PJ_lam2,PJ_phi0,PJ_phi1,PJ_phi2,PJ_Re,&
-           PJ_Set_Proj_Params,PJ_proj_for
+           PJ_Set_Proj_Params,PJ_proj_for,PJ_proj_inv
 
       integer, intent(in), optional :: timestep
 
@@ -4655,6 +4655,12 @@
         else
           read(cdf_b1l5,*,iostat=iostatus,iomsg=iomessage)x_volcano, y_volcano
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,cdf_b1l5,iomessage)
+          call PJ_proj_inv(real(x_volcano,kind=dp),real(y_volcano,kind=dp), &
+                     A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
+                     A3d_k0_scale,A3d_Re, &
+                     lon_in,lat_in)
+          lon_volcano = real(lon_in,kind=ip)
+          lat_volcano = real(lat_in,kind=ip)
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"institution",cdf_institution)

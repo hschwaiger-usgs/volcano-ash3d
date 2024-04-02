@@ -74,8 +74,10 @@
       subroutine write_2Dmap_PNG_GMT(nx,ny,iprod,itime,OutVar,writeContours)
 
       use mesh,          only : &
-         x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd, &
-         IsLatLon
+         A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
+         A3d_k0_scale,A3d_Re,de,dn,dx,dy,IsLatLon, &
+         latLL,lonLL,latUR,lonUR,xLL,yLL,xUR,yUR,&
+         x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd
 
       use Output_Vars,   only : &
          ContourFilled,Con_Cust,Con_Cust_N,Con_Cust_RGB,Con_Cust_Lev,&
@@ -106,6 +108,9 @@
 
       use citywriter
 
+      use projection,    only : &
+           PJ_proj_inv
+
       integer      ,intent(in) :: nx
       integer      ,intent(in) :: ny
       integer      ,intent(in) :: iprod
@@ -131,6 +136,9 @@
       real(kind=ip)  :: xmax
       real(kind=ip)  :: ymin
       real(kind=ip)  :: ymax
+      real(kind=ip)  :: plotw  = 7.0_ip
+      real(kind=ip)  :: ploth
+      real(kind=ip)  :: asprat
 
       character(len=10) :: dp_gmtfile
       character(len=10) :: dp_confile
@@ -160,6 +168,7 @@
       character(len=50) :: title_str
       character(len=4 ) :: detail_str
       character(len=50) :: proj_str
+      character(len=50) :: projX_str
       character(len=50) :: area_str
       character(len=50) :: coast_str
       character(len=50) :: river_str
@@ -167,6 +176,8 @@
       character(len=50) :: contn_ps
       character(len=50) :: end_ps
       logical           :: IsThere
+      real(kind=dp)      :: olam,ophi ! using precision needed by libprojection
+
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
@@ -417,16 +428,16 @@
       ! write contour pen specifications to strings
       do i=1,nConLev
         write(flt_str,'(i3)')zrgb(i,1)
-        penstr(i)="-W3," // adjustl(trim(flt_str))
-        legpenstr(i)="S 0.1i - 0.15i black 3.0p," // adjustl(trim(flt_str))
+        penstr(i)="-W3," // trim(adjustl(flt_str))
+        legpenstr(i)="S 0.1i - 0.15i black 3.0p," // trim(adjustl(flt_str))
         write(flt_str,'(i3)')zrgb(i,2)
-        penstr(i)= trim(penstr(i)) // "/" // adjustl(trim(flt_str))
-        legpenstr(i)=trim(legpenstr(i)) // "/" // adjustl(trim(flt_str))
+        penstr(i)= trim(penstr(i)) // "/" // trim(adjustl(flt_str))
+        legpenstr(i)=trim(legpenstr(i)) // "/" // trim(adjustl(flt_str))
         write(flt_str,'(i3)')zrgb(i,3)
-        penstr(i)= trim(penstr(i)) // "/" // adjustl(trim(flt_str))
-        legpenstr(i)=trim(legpenstr(i)) // "/" // adjustl(trim(flt_str))
+        penstr(i)= trim(penstr(i)) // "/" // trim(adjustl(flt_str))
+        legpenstr(i)=trim(legpenstr(i)) // "/" // trim(adjustl(flt_str))
         write(flt_str,'(g8.3)')ContourLev(i)
-        legpenstr(i)=trim(legpenstr(i)) // " 0.3i " // adjustl(trim(flt_str))
+        legpenstr(i)=trim(legpenstr(i)) // " 0.3i " // trim(adjustl(flt_str))
       enddo
 
       if(writeContours)then
@@ -488,17 +499,17 @@
       inquire( file=trim(adjustl(USGSIconFile)), exist=IsThere)
       if(IsThere)then
         open(63,file="leg3.txt",status='replace')
-        write(63,'(g0)')"I " // adjustl(trim(USGSIconFile)) // " 2i C"
+        write(63,'(g0)')"I " // trim(adjustl(USGSIconFile)) // " 2i C"
         close(63)
       endif
 
       !  Contour legend
       open(64,file="leg4.txt",status='replace')
         write(64,'(a7)')"C black"
-        write(64,'(g0)')"H 12 1 " // adjustl(trim(units))
+        write(64,'(g0)')"H 12 1 " // trim(adjustl(units))
         write(64,'(a3)')"N 1"
         do i=1,nConLev
-          write(64,'(g0)')adjustl(trim(legpenstr(i)))
+          write(64,'(g0)')trim(adjustl(legpenstr(i)))
         enddo
       close(63)
 
@@ -513,34 +524,60 @@
         endif
         ymin = minval(lat_cc_pd(1:ny))
         ymax = maxval(lat_cc_pd(1:ny))
+        xmin = lonLL
+        xmax = lonUR
+        ymin = latLL
+        ymax = latUR
+        asprat = (ymax-ymin)/(xmax-xmin)
       else
-        xmin = minval(x_cc_pd(1:nx))
-        xmax = maxval(x_cc_pd(1:nx))
-        ymin = minval(y_cc_pd(1:ny))
-        ymax = maxval(y_cc_pd(1:ny))
+        xmin = xLL
+        xmax = xUR
+        ymin = yLL
+        ymax = yUR
+        asprat = (ymax-ymin)/(xmax-xmin)
+
+        call PJ_proj_inv(real(xmin,kind=dp), real(ymin,kind=dp),  &
+                      A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
+                      A3d_k0_scale,A3d_Re, &
+                      olam,ophi)
+        lonLL = real(olam,kind=ip)
+        latLL = real(ophi,kind=ip)
+        call PJ_proj_inv(real(xmax,kind=dp), real(ymax,kind=dp),  &
+                      A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
+                      A3d_k0_scale,A3d_Re, &
+                      olam,ophi)
+        lonUR = real(olam,kind=ip)
+        latUR = real(ophi,kind=ip)
+
       endif
-      call citylist(2,xmin,xmax,ymin,ymax, &
+
+      ! Note, this subroutine requires lon/lat for input values.
+      call citylist(2,lonLL,lonUR,latLL,latUR, &
                       ncities,                        &
                       lon_cities,lat_cities,          &
                       name_cities)
-
-      if(lon_volcano.gt.xmax)lon_volcano=lon_volcano-360.0_ip
+      if(lon_volcano.gt.lonUR)lon_volcano=lon_volcano-360.0_ip
 
       ! Start writing the gmt bits
       ! BASE string:
-      if(xmax-xmin.le.2.0_ip)then
+!      if(xmax-xmin.le.2.0_ip)then
+      if(lonUR-lonLL.le.2.0_ip)then
         write(base_str,*)"-Ba0.25"
         write(detail_str,*)"-Dh"
-      elseif(xmax-xmin.le.5.0_ip)then
+!      elseif(xmax-xmin.le.5.0_ip)then
+      elseif(lonUR-lonLL.le.5.0_ip)then
         write(base_str,*)"-Ba1"
         write(detail_str,*)"-Dh"
-      elseif(xmax-xmin.le.10.0_ip)then
+!      elseif(xmax-xmin.le.10.0_ip)then
+      elseif(lonUR-lonLL.le.10.0_ip)then
         write(base_str,*)"-Ba2"
         write(detail_str,*)"-Dh"
-      elseif(xmax-xmin.le.20.0_ip)then
+!      elseif(xmax-xmin.le.20.0_ip)then
+      elseif(lonUR-lonLL.le.20.0_ip)then
         write(base_str,*)"-Ba5"
         write(detail_str,*)"-Dh"
-      elseif(xmax-xmin.le.40.0_ip)then
+!      elseif(xmax-xmin.le.40.0_ip)then
+      elseif(lonUR-lonLL.le.40.0_ip)then
         write(base_str,*)"-Ba10"
         write(detail_str,*)"-Dl"
       else
@@ -551,22 +588,42 @@
 
       ! AREA string:    AREA="-R$lonmin/$lonmax/$latmin/$latmax"
       area_str = " -R"
-      write(flt_str,'(f8.3)')xmin
-      area_str = trim(area_str) // adjustl(trim(flt_str))
-      write(flt_str,'(f8.3)')xmax
-      area_str = trim(area_str) // "/" // adjustl(trim(flt_str))
-      write(flt_str,'(f8.3)')ymin
-      area_str = trim(area_str) // "/" // adjustl(trim(flt_str))
-      write(flt_str,'(f8.3)')ymax
-      area_str = trim(area_str) // "/" // adjustl(trim(flt_str))
+      write(flt_str,'(f8.3)')lonLL
+      area_str = trim(area_str) // trim(adjustl(flt_str))
+      write(flt_str,'(f8.3)')latLL
+      area_str = trim(area_str) // "/" // trim(adjustl(flt_str))
+      write(flt_str,'(f8.3)')lonUR
+      area_str = trim(area_str) // "/" // trim(adjustl(flt_str))
+      write(flt_str,'(f8.3)')latUR
+      area_str = trim(area_str) // "/" // trim(adjustl(flt_str)) // "r"
 
-      ! PROJ string:    PROJ="-JM${VCLON}/${VCLAT}/20"
-      proj_str = " -JM"
-      write(flt_str,'(f8.3)')lon_volcano
-      proj_str = trim(proj_str) // adjustl(trim(flt_str))
-      write(flt_str,'(f8.3)')lat_volcano
-      proj_str = trim(proj_str) // "/" // adjustl(trim(flt_str)) 
-      proj_str = trim(proj_str) // "/7i"
+      ploth = plotw*asprat
+
+      if (IsLatLon) then
+        ! For lon/lat grids, default to a Mercator projection
+        ! PROJ string:    PROJ="-JM${VCLON}/${VCLAT}/20"
+        proj_str = " -JM"
+        write(flt_str,'(f8.3)')lon_volcano
+        proj_str = trim(proj_str) // trim(adjustl(flt_str))
+        write(flt_str,'(f8.3)')lat_volcano
+        proj_str = trim(proj_str) // "/" // trim(adjustl(flt_str)) 
+        write(flt_str,'(f3.1)')plotw
+        proj_str = trim(proj_str) // "/" // trim(adjustl(flt_str)) // "i"
+      else
+        ! HFS Change this to specific projection of grid
+
+        write(*,*)"WARNING: Using -JS-135/90"
+        write(*,*)"         Need to process actual projection parameters."
+        write(flt_str,'(f3.1)')plotw
+        proj_str=" -JS-135/90/" // trim(adjustl(flt_str)) // "i"
+
+        ! This is the xy grid for contours that will be overlain on the lon/lat grid
+        projX_str = " -JX"
+        write(flt_str,'(f3.1)')plotw
+        projX_str = trim(projX_str) // trim(adjustl(flt_str)) // "i/"
+        write(flt_str,'(f3.1)')ploth
+        projX_str = trim(projX_str) // trim(adjustl(flt_str)) // "i"
+      endif
 
       ! COAST string
       write(coast_str,*)" -G220/220/220 -W"
@@ -579,32 +636,34 @@
       !endif
 
       ! Initial pscoast command to start the ps file
-      start_ps = "-K > "     // adjustl(trim(fileps))
-      contn_ps = "-K -O >> " // adjustl(trim(fileps))
-      end_ps   = "-O >> "    // adjustl(trim(fileps))
+      start_ps = "-K > "     // trim(adjustl(fileps))
+      contn_ps = "-K -O >> " // trim(adjustl(fileps))
+      end_ps   = "-O >> "    // trim(adjustl(fileps))
 
       ! Set up to plot via GMT script
       write(55,*)'#!/bin/bash'
       if(.not.writeContours)write(55,*)'gmt gmtset PROJ_ELLIPSOID Sphere'
-      cmd = 'gmt psbasemap -X1.5i -Y2i ' // adjustl(trim(area_str))   // " " // &
-                              adjustl(trim(proj_str))   // " " // &
-                              adjustl(trim(base_str))   // " " // &
-                              adjustl(trim(title_str))  // " " // &
-                              adjustl(trim(start_ps))
-      if(.not.writeContours)write(55,*)adjustl(trim(cmd))
+      cmd = 'gmt psbasemap -X1.5i -Y2i'  // " " // &
+              trim(adjustl(area_str))    // " " // &
+              trim(adjustl(proj_str))    // " " // &
+              trim(adjustl(base_str))    // " " // &
+              trim(adjustl(title_str))   // " " // &
+              trim(adjustl(start_ps))
+      if(.not.writeContours)write(55,*)trim(adjustl(cmd))
 
-      cmd = "gmt pscoast " // adjustl(trim(area_str))   // " " // &
-                              adjustl(trim(proj_str))   // " " // &
-                              adjustl(trim(detail_str)) // " " // &
-                              adjustl(trim(coast_str))  // " " // &
-                              adjustl(trim(river_str))  // " " // &
-                              adjustl(trim(contn_ps))
-      if(.not.writeContours)write(55,*)adjustl(trim(cmd))
+      cmd = "gmt pscoast"               // " " // &
+              trim(adjustl(area_str))   // " " // &
+              trim(adjustl(proj_str))   // " " // &
+              trim(adjustl(detail_str)) // " " // &
+              trim(adjustl(coast_str))  // " " // &
+              trim(adjustl(river_str))  // " " // &
+              trim(adjustl(contn_ps))
+      if(.not.writeContours)write(55,*)trim(adjustl(cmd))
 
       ! Get grid to contour, converting the ASCII file generated above
       ! We need this line regardless of if we are just making contours or not
       cmd = "gmt grdconvert outvar.dat=ef out.grd"
-      write(55,*)adjustl(trim(cmd))
+      write(55,*)trim(adjustl(cmd))
 
       ! write contour
       if(ContourFilled)then
@@ -613,11 +672,7 @@
         !gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_1.lev    -A- -W3,0/128/255   -O -K >> temp.ps
         do ilev=1,nConLev
           write(55,*)'echo "',real(ContourLev(ilev),kind=4), '   C" > c.lev'
-          cmd = "gmt grdcontour out.grd " // adjustl(trim(area_str))  // " " // &
-                                adjustl(trim(proj_str))  // " " // &
-                                "-Cc.lev -A- " // adjustl(trim(penstr(ilev))) // " " // &
-                                adjustl(trim(contn_ps))
-          if(.not.writeContours)write(55,*)adjustl(trim(cmd))
+
 
           if(writeContours)then
             ! write contours to files
@@ -625,10 +680,40 @@
  54         format(a3,i0.2,a4)  ! write contour file name with level zero-padded
             !gmt grdcontour out.grd $AREA $PROJ $BASE -Cc.lev    -A- -W3,0/128/255 -Dcfile.xyz
 !            write(55,*)'echo "',real(ContourLev(i),kind=4), '   C" > c.lev'
-            cmd = "gmt grdcontour out.grd " // adjustl(trim(area_str))  // " " // &
-                                  adjustl(trim(proj_str))  // " " // &
-                                  "-Cc.lev -A- " // adjustl(trim(penstr(ilev))) // " -D" // adjustl(trim(dp_confile))
-            write(55,*)adjustl(trim(cmd))
+
+            if (IsLatLon) then
+              cmd = "gmt grdcontour out.grd"      // " " // &
+                      trim(adjustl(area_str))     // " " // &
+                      trim(adjustl(proj_str))     // " " // &
+                      "-Cc.lev -A-"               // " " // &
+                      trim(adjustl(penstr(ilev))) // " " // &
+                      "-D"                        // &
+                      trim(adjustl(dp_confile))
+            else
+              cmd = "gmt grdcontour out.grd"      // " " // &
+                      trim(adjustl(projX_str))    // " " // &
+                      "-Cc.lev -A-"               // " " // &
+                      trim(adjustl(penstr(ilev))) // " " // &
+                      "-D"                        // &
+                      trim(adjustl(dp_confile))
+            endif
+            write(55,*)trim(adjustl(cmd))
+          else
+            if (IsLatLon) then
+              cmd = "gmt grdcontour out.grd"      // " " // &
+                      trim(adjustl(area_str))     // " " // &
+                      trim(adjustl(proj_str))     // " " // &
+                      "-Cc.lev -A-"               // " " // & 
+                      trim(adjustl(penstr(ilev))) // " " // &
+                      trim(adjustl(contn_ps))
+            else
+              cmd = "gmt grdcontour out.grd"      // " " // &
+                      trim(adjustl(projX_str))    // " " // &
+                      "-Cc.lev -A-"               // " " // &
+                      trim(adjustl(penstr(ilev))) // " " // &
+                      trim(adjustl(contn_ps))
+            endif
+            write(55,*)trim(adjustl(cmd))
           endif
         enddo
       endif
@@ -636,66 +721,74 @@
       ! Add cities.
       do i=1,ncities
         write(dumstr17,'(f8.3,1x,f8.3)')lon_cities(i),lat_cities(i)
-        cmd = "echo " // dumstr17 // " '1.0' | gmt psxy " &
-              // adjustl(trim(area_str))  // " " // &
-              adjustl(trim(proj_str))  // " " // &
-              "-Sc0.05i -Gblack -Wthinnest " // adjustl(trim(contn_ps))
-        if(.not.writeContours)write(55,*)adjustl(trim(cmd))
+        cmd = "echo " // dumstr17 // " '1.0' | gmt psxy " // &
+                trim(adjustl(area_str))        // " " // &
+                trim(adjustl(proj_str))        // " " // &
+                "-Sc0.05i -Gblack -Wthinnest"  // " " // &
+                trim(adjustl(contn_ps))
+        if(.not.writeContours)write(55,*)trim(adjustl(cmd))
 
         write(dumstr48,'(a1,f8.3,1x,f8.3,1x,a1,a26,a1,a1)')'"',&
-               lon_cities(i),lat_cities(i),"'",adjustl(trim(name_cities(i))),"'",'"'
-        cmd = "echo " // adjustl(trim(dumstr48)) // " | gmt pstext " &
-              // adjustl(trim(area_str))  // " " // &
-              adjustl(trim(proj_str))  // " " // &
-              "-D0.1/0.1 -V " // adjustl(trim(contn_ps))
-        if(.not.writeContours)write(55,*)adjustl(trim(cmd))
+               lon_cities(i),lat_cities(i),"'",trim(adjustl(name_cities(i))),"'",'"'
+        cmd = "echo " // trim(adjustl(dumstr48)) // " | gmt pstext " // &
+              trim(adjustl(area_str))  // " " // &
+              trim(adjustl(proj_str))  // " " // &
+              "-D0.1/0.1 -V"           // " " // &
+              trim(adjustl(contn_ps))
+        if(.not.writeContours)write(55,*)trim(adjustl(cmd))
       enddo
 
       ! Last gmt command is to plot the volcano and close out the ps file
       ! echo $VCLON $VCLAT '1.0' | ${GMTpre[GMTv]} psxy $AREA $PROJ -St0.1i -Gblack -Wthinnest -O >> temp.ps
       write(dumstr17,'(f8.3,1x,f8.3)')lon_volcano,lat_volcano
-      cmd = "echo " // dumstr17 // " '1.0' | gmt psxy " &
-            // adjustl(trim(area_str))  // " " // &
-            adjustl(trim(proj_str))  // " " // &
-            "-St0.1i -Gmagenta -Wthinnest " // adjustl(trim(contn_ps))
-      if(.not.writeContours)write(55,*)adjustl(trim(cmd))
+      cmd = "echo " // dumstr17 // " '1.0' | gmt psxy " // &
+              trim(adjustl(area_str))  // " " // &
+              trim(adjustl(proj_str))  // " " // &
+              "-St0.1i -Gmagenta -Wthinnest " // &
+              trim(adjustl(contn_ps))
+      if(.not.writeContours)write(55,*)trim(adjustl(cmd))
 
       ! Add descriptive footer here
       !gmt pslegend leg1.txt -R-134.500/-97.500/33.500/52.500  -JM-122.117/42.933/7i -Dx-1.0i/-1.5i/3.0i/1.0i/BL -K -O  >> temp.ps
-      cmd = "gmt pslegend leg1.txt " // adjustl(trim(area_str)) &
-                                     // adjustl(trim(proj_str)) &
-                                     // " -Dx-1.0i/-1.5i/3.0i/1.0i/BL " &
-                                     // adjustl(trim(contn_ps))
-      if(.not.writeContours)write(55,*)adjustl(trim(cmd))
+      cmd = "gmt pslegend leg1.txt"   // " " // &
+              trim(adjustl(area_str)) // " " // &
+              trim(adjustl(proj_str)) // " " // &
+              "-Dx-1.0i/-1.5i/3.0i/1.0i/BL " // &
+              "-Dx-1.0i/-1.5i/3.0i/1.0i/BL " // &
+              trim(adjustl(contn_ps))
+      if(.not.writeContours)write(55,*) trim(adjustl(cmd))
 
       !gmt pslegend leg2.txt -R-134.500/-97.500/33.500/52.500  -JM-122.117/42.933/7i -Dx2.0i/-1.5i/4.0i/1.0i/BL -K -O  >> temp.ps
-      cmd = "gmt pslegend leg2.txt " // adjustl(trim(area_str)) &
-                                     // adjustl(trim(proj_str)) &
-                                     // " -Dx2.0i/-1.5i/4.0i/1.0i/BL " &
-                                     // adjustl(trim(contn_ps))
-      if(.not.writeContours)write(55,*)adjustl(trim(cmd))
+      cmd = "gmt pslegend leg2.txt"   // " " // &
+              trim(adjustl(area_str)) // " " // &
+              trim(adjustl(proj_str)) // " " // &
+              "-Dx2.0i/-1.5i/4.0i/1.0i/BL "  // &
+              trim(adjustl(contn_ps))
+      if(.not.writeContours)write(55,*) trim(adjustl(cmd))
 
       !gmt pslegend leg3.txt -R-134.500/-97.500/33.500/52.500  -JM-122.117/42.933/7i -Dx6.0i/-2.3i/2.0i/1.0i/BL -K -O  >> temp.ps
       inquire( file="leg3.txt", exist=IsThere)
       if(IsThere)then
-        cmd = "gmt pslegend leg3.txt " // adjustl(trim(area_str)) &
-                                     // adjustl(trim(proj_str)) &
-                                     // " -Dx6.0i/-2.3i/2.0i/1.0i/BL " &
-                                     // adjustl(trim(contn_ps))
-        if(.not.writeContours)write(55,*)adjustl(trim(cmd))
+        cmd = "gmt pslegend leg3.txt"        // " " // &
+                trim(adjustl(area_str))      // " " // &
+                trim(adjustl(proj_str))      // " " // &
+                "-Dx6.0i/-2.3i/2.0i/1.0i/BL" // " " // &
+                trim(adjustl(contn_ps))
+        if(.not.writeContours)write(55,*)trim(adjustl(cmd))
       endif
       ! Add contour legend here
-      cmd = "gmt pslegend leg4.txt " // adjustl(trim(area_str)) &
-                                     // adjustl(trim(proj_str)) &
-                                     // " -Dx8.0i/2.0i/1.25i/2.5i/BL -F " &
-                                     // adjustl(trim(end_ps))
-      if(.not.writeContours)write(55,*)adjustl(trim(cmd))
+      cmd = "gmt pslegend leg4.txt"     // " " // &
+              trim(adjustl(area_str))   // " " // &
+              trim(adjustl(proj_str))   // " " // &
+              "-Dx8.0i/2.0i/1.25i/2.5i/BL -F " // &
+              trim(adjustl(end_ps))
+      if(.not.writeContours)write(55,*)  trim(adjustl(cmd))
 
       !gmt pslegend leg4.txt -R-134.500/-97.500/33.500/52.500  -JM-122.117/42.933/7i -Dx8.0i/2.0i/1.25i/2.5i/BL -F -O  >> temp.ps
 
       ! This command converts temp.ps to temp.png
       cmd = "gmt psconvert temp.ps -A -Tg"
-      if(.not.writeContours)write(55,*)adjustl(trim(cmd))
+      if(.not.writeContours)write(55,*)trim(adjustl(cmd))
 
       ! Might need to add this check in the GMT script on version 5 vs 6 (5 needs rotation)
       !GMTv=`gmt --version | cut -c1`
@@ -706,12 +799,12 @@
 
       ! Move this png to the final filename
       cmd = "mv temp.png " // outfile_name
-      if(.not.writeContours)write(55,*)adjustl(trim(cmd))
+      if(.not.writeContours)write(55,*)trim(adjustl(cmd))
 
       ! Clean up
       if (CleanScripts_GMT) then
         cmd = "rm -f c.lev out.grd temp.* leg*.txt out*.con cities.xy"
-        write(55,*)adjustl(trim(cmd))
+        write(55,*)trim(adjustl(cmd))
       endif
 
       close(55)
@@ -727,7 +820,7 @@
           ! Read dp_confile
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"Now trying to read contour file and loading contour data.",&
-                adjustl(trim(dp_confile))
+                trim(adjustl(dp_confile))
           endif;enddo
           inquire( file=trim(adjustl(dp_confile)), exist=IsThere)
           if(IsThere)then
