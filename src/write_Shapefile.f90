@@ -772,14 +772,30 @@
       write(ov_dbasID)DBASE_EOF
 
       close(ov_dbasID)
-
       open(ov_projID, file=trim(adjustl(ov_projfile)), access='stream', form='unformatted', status='replace')
-      write(ov_projID)'GEOGCS["GCS_WGS_1984",'
-      write(ov_projID)'DATUM["D_WGS_1984",'
-      write(ov_projID)'SPHEROID["WGS_1984",'
-      write(ov_projID)'6378137,298.257223563]],'
-      write(ov_projID)'PRIMEM["Greenwich",0],'
-      write(ov_projID)'UNIT["Degree",0.017453292519943295]]'
+      if (IsLatLon)then
+        write(ov_projID)'GEOGCS["GCS_WGS_1984",'
+        write(ov_projID)'DATUM["D_WGS_1984",'
+        write(ov_projID)'SPHEROID["WGS_1984",'
+        write(ov_projID)'6378137,298.257223563]],'
+        write(ov_projID)'PRIMEM["Greenwich",0],'
+        write(ov_projID)'UNIT["Degree",0.017453292519943295]]'
+      else
+        select case (A3d_iprojflag)
+        case(0)
+          ! Non-geographic projection, (x,y) only
+        case(1)
+          ! Polar stereographic
+        case(2)
+          ! Albers Equal Area
+        case(3)
+          ! UTM
+        case(4)
+          ! Lambert conformal conic 
+        case(5)
+          ! Mercator
+        end select
+      endif
       close(ov_projID)
 
       ! Now zip it up if we can

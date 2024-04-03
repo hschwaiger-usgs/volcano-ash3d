@@ -560,23 +560,18 @@
 
       ! Start writing the gmt bits
       ! BASE string:
-!      if(xmax-xmin.le.2.0_ip)then
       if(lonUR-lonLL.le.2.0_ip)then
         write(base_str,*)"-Ba0.25"
         write(detail_str,*)"-Dh"
-!      elseif(xmax-xmin.le.5.0_ip)then
       elseif(lonUR-lonLL.le.5.0_ip)then
         write(base_str,*)"-Ba1"
         write(detail_str,*)"-Dh"
-!      elseif(xmax-xmin.le.10.0_ip)then
       elseif(lonUR-lonLL.le.10.0_ip)then
         write(base_str,*)"-Ba2"
         write(detail_str,*)"-Dh"
-!      elseif(xmax-xmin.le.20.0_ip)then
       elseif(lonUR-lonLL.le.20.0_ip)then
         write(base_str,*)"-Ba5"
         write(detail_str,*)"-Dh"
-!      elseif(xmax-xmin.le.40.0_ip)then
       elseif(lonUR-lonLL.le.40.0_ip)then
         write(base_str,*)"-Ba10"
         write(detail_str,*)"-Dl"
@@ -610,12 +605,65 @@
         write(flt_str,'(f3.1)')plotw
         proj_str = trim(proj_str) // "/" // trim(adjustl(flt_str)) // "i"
       else
-        ! HFS Change this to specific projection of grid
-
-        write(*,*)"WARNING: Using -JS-135/90"
-        write(*,*)"         Need to process actual projection parameters."
-        write(flt_str,'(f3.1)')plotw
-        proj_str=" -JS-135/90/" // trim(adjustl(flt_str)) // "i"
+        select case (A3d_iprojflag)
+        case(0)
+          ! Non-geographic projection, (x,y) only
+          proj_str = " -JX"
+          write(flt_str,'(f3.1)')plotw
+          proj_str = trim(proj_str) // trim(adjustl(flt_str)) // "i/"
+          write(flt_str,'(f3.1)')ploth
+          proj_str = trim(proj_str) // trim(adjustl(flt_str)) // "i"
+        case(1)
+          ! Polar stereographic
+          ! e.g.  -JS-135/90/7i"
+          proj_str= " -JS"
+          write(flt_str,'(f8.1)')A3d_lam0
+          proj_str=trim(proj_str) // trim(adjustl(flt_str))
+          write(flt_str,'(f8.1)')A3d_phi0
+          proj_str=trim(proj_str) // "/" // trim(adjustl(flt_str))
+          write(flt_str,'(f3.1)')plotw
+          proj_str=trim(proj_str) // "/" // trim(adjustl(flt_str)) // "i"
+        case(2)
+          ! Albers Equal Area
+          ! e.g.  -JB198.475/20.0/12c
+          proj_str= " -JB"
+          write(flt_str,'(f8.1)')A3d_lam0
+          proj_str=trim(proj_str) // trim(adjustl(flt_str))
+          write(flt_str,'(f8.1)')A3d_phi0
+          proj_str=trim(proj_str) // "/" // trim(adjustl(flt_str))
+          write(flt_str,'(f8.1)')A3d_lam1
+          proj_str=trim(proj_str) // "/" // trim(adjustl(flt_str))
+          write(flt_str,'(f8.1)')A3d_lam2
+          proj_str=trim(proj_str) // "/" // trim(adjustl(flt_str))
+          write(flt_str,'(f3.1)')plotw
+          proj_str=trim(proj_str) // "/" // trim(adjustl(flt_str)) // "i"
+        case(3)
+          ! UTM
+        case(4)
+          ! Lambert conformal conic 
+          ! e.g.  -JM198.475/20.0/12c
+          proj_str= " -JL"
+          write(flt_str,'(f8.1)')A3d_lam0
+          proj_str=trim(proj_str) // trim(adjustl(flt_str))
+          write(flt_str,'(f8.1)')A3d_phi0
+          proj_str=trim(proj_str) // "/" // trim(adjustl(flt_str))
+          write(flt_str,'(f8.1)')A3d_lam1
+          proj_str=trim(proj_str) // "/" // trim(adjustl(flt_str))
+          write(flt_str,'(f8.1)')A3d_lam2
+          proj_str=trim(proj_str) // "/" // trim(adjustl(flt_str))
+          write(flt_str,'(f3.1)')plotw
+          proj_str=trim(proj_str) // "/" // trim(adjustl(flt_str)) // "i"
+        case(5)
+          ! Mercator
+          ! e.g.  -JM198.475/20.0/12c
+          proj_str= " -JM"
+          write(flt_str,'(f8.1)')A3d_lam0
+          proj_str=trim(proj_str) // trim(adjustl(flt_str))
+          write(flt_str,'(f8.1)')A3d_phi0
+          proj_str=trim(proj_str) // "/" // trim(adjustl(flt_str))
+          write(flt_str,'(f3.1)')plotw
+          proj_str=trim(proj_str) // "/" // trim(adjustl(flt_str)) // "i"
+        end select
 
         ! This is the xy grid for contours that will be overlain on the lon/lat grid
         projX_str = " -JX"
