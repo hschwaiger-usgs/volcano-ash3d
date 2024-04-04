@@ -60,7 +60,8 @@
          time,BaseYear,useLeap,SimStartHour,os_time_log
 
       use mesh,          only : &
-         IsLatLon
+         A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
+         A3d_k0_scale,A3d_Re,IsLatLon
 
       implicit none
 
@@ -770,33 +771,89 @@
         write(ov_dbasID)DBASE_TableRecData15
       enddo
       write(ov_dbasID)DBASE_EOF
-
       close(ov_dbasID)
-      open(ov_projID, file=trim(adjustl(ov_projfile)), access='stream', form='unformatted', status='replace')
+
       if (IsLatLon)then
+        open(ov_projID, file=trim(adjustl(ov_projfile)), access='stream', form='unformatted', status='replace')
         write(ov_projID)'GEOGCS["GCS_WGS_1984",'
         write(ov_projID)'DATUM["D_WGS_1984",'
         write(ov_projID)'SPHEROID["WGS_1984",'
         write(ov_projID)'6378137,298.257223563]],'
         write(ov_projID)'PRIMEM["Greenwich",0],'
         write(ov_projID)'UNIT["Degree",0.017453292519943295]]'
+        close(ov_projID)
       else
         select case (A3d_iprojflag)
         case(0)
           ! Non-geographic projection, (x,y) only
+          !  Just create a file with no content
+          open(ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
+          write(ov_projID,*)' '
+          close(ov_projID)
         case(1)
           ! Polar stereographic
+          open(ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
+          write(ov_projID,501)A3d_lam0,A3d_k0_scale,A3d_phi1
+501       format('PROJECTION["Polar_Stereographic"],',          &
+                 'PARAMETER["False_Easting",500000.0],',        &
+                 'PARAMETER["False_Northing",0.0],',            &
+                 'PARAMETER["Central_Meridian",',f5.1,'],',     &
+                 'PARAMETER["Scale_Factor",',f5.3,'],', &
+                 'PARAMETER["Latitude_Of_Origin",',f12.8,'],',  &
+                 'UNIT["Meter",1.0]]')
+          close(ov_projID)
         case(2)
           ! Albers Equal Area
+          open(ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
+          write(ov_projID,502)A3d_lam0,A3d_phi1,A3d_phi2,A3d_phi0
+502       format('PROJECTION["Albers_Equal_Area"],',            &
+                 'PARAMETER["False_Easting",500000.0],',        &
+                 'PARAMETER["False_Northing",0.0],',            &
+                 'PARAMETER["Central_Meridian",',f5.1,'],',     &
+                 'PARAMETER["Standard_Parallel_1",',f12.8,'],', &
+                 'PARAMETER["Standard_Parallel_2",',f12.8,'],', &
+                 'PARAMETER["Latitude_Of_Origin",',f12.8,'],',  &
+                 'UNIT["Meter",1.0]]')
+          close(ov_projID)
         case(3)
           ! UTM
+          open(ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
+          write(ov_projID,503)A3d_lam0,A3d_phi0,A3d_k0_scale
+503       format('PROJECTION["Transverse_Mercator"],',      &
+                 'PARAMETER["False_Easting",500000.0],',        &
+                 'PARAMETER["False_Northing",0.0],',            &
+                 'PARAMETER["Central_Meridian",',f5.1,'],',     &
+                 'PARAMETER["Latitude_Of_Origin",',f12.8,'],',  &
+                 'PARAMETER["Scale_Factor",',f12.8,'],',        &
+                 'UNIT["Meter",1.0]]')
+          close(ov_projID)
         case(4)
           ! Lambert conformal conic 
+          open(ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
+          write(ov_projID,504)A3d_lam0,A3d_phi1,A3d_phi2,A3d_phi0
+504       format('PROJECTION["Lambert_Conformal_Conic"],',      &
+                 'PARAMETER["False_Easting",500000.0],',        &
+                 'PARAMETER["False_Northing",0.0],',            &
+                 'PARAMETER["Central_Meridian",',f5.1,'],',     &
+                 'PARAMETER["Standard_Parallel_1",',f12.8,'],', &
+                 'PARAMETER["Standard_Parallel_2",',f12.8,'],', &
+                 'PARAMETER["Latitude_Of_Origin",',f12.8,'],',  &
+                 'UNIT["Meter",1.0]]')
+          close(ov_projID)
         case(5)
           ! Mercator
+          open(ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
+          write(ov_projID,505)A3d_lam0,A3d_phi0,A3d_k0_scale
+505       format('PROJECTION["Transverse_Mercator"],',          &
+                 'PARAMETER["False_Easting",500000.0],',        &
+                 'PARAMETER["False_Northing",0.0],',            &
+                 'PARAMETER["Central_Meridian",',f5.1,'],',     &
+                 'PARAMETER["Latitude_Of_Origin",',f12.8,'],',  &
+                 'PARAMETER["Scale_Factor",',f12.8,'],',        &
+                 'UNIT["Meter",1.0]]')
+          close(ov_projID)
         end select
       endif
-      close(ov_projID)
 
       ! Now zip it up if we can
       ! Test if zip is installed

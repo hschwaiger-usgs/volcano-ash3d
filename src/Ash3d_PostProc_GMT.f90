@@ -74,7 +74,7 @@
       subroutine write_2Dmap_PNG_GMT(nx,ny,iprod,itime,OutVar,writeContours)
 
       use mesh,          only : &
-         A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
+         A3d_iprojflag,A3d_lam0,A3d_lam1,A3d_lam2,A3d_phi0,A3d_phi1,A3d_phi2, &
          A3d_k0_scale,A3d_Re,de,dn,dx,dy,IsLatLon, &
          latLL,lonLL,latUR,lonUR,xLL,yLL,xUR,yUR,&
          x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd
@@ -631,9 +631,9 @@
           proj_str=trim(proj_str) // trim(adjustl(flt_str))
           write(flt_str,'(f8.1)')A3d_phi0
           proj_str=trim(proj_str) // "/" // trim(adjustl(flt_str))
-          write(flt_str,'(f8.1)')A3d_lam1
+          write(flt_str,'(f8.1)')A3d_phi1
           proj_str=trim(proj_str) // "/" // trim(adjustl(flt_str))
-          write(flt_str,'(f8.1)')A3d_lam2
+          write(flt_str,'(f8.1)')A3d_phi2
           proj_str=trim(proj_str) // "/" // trim(adjustl(flt_str))
           write(flt_str,'(f3.1)')plotw
           proj_str=trim(proj_str) // "/" // trim(adjustl(flt_str)) // "i"
@@ -647,9 +647,9 @@
           proj_str=trim(proj_str) // trim(adjustl(flt_str))
           write(flt_str,'(f8.1)')A3d_phi0
           proj_str=trim(proj_str) // "/" // trim(adjustl(flt_str))
-          write(flt_str,'(f8.1)')A3d_lam1
+          write(flt_str,'(f8.1)')A3d_phi1
           proj_str=trim(proj_str) // "/" // trim(adjustl(flt_str))
-          write(flt_str,'(f8.1)')A3d_lam2
+          write(flt_str,'(f8.1)')A3d_phi2
           proj_str=trim(proj_str) // "/" // trim(adjustl(flt_str))
           write(flt_str,'(f3.1)')plotw
           proj_str=trim(proj_str) // "/" // trim(adjustl(flt_str)) // "i"
