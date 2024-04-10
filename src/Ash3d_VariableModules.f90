@@ -536,9 +536,10 @@
 
       logical            :: IsPeriodic   = .false.
       real(kind=ip)      :: ZPADDING     = 1.3_ip
+      real(kind=ip)      :: Ztop
       character(len=7)   :: VarDzType
       real(kind=ip)      :: dz_const                        ! z nodal spacing (always km)
-      integer            :: ZScaling_ID  = 0
+      integer            :: ZScaling_ID  = 0                ! altitude coordinates :: s=z
 
       ! Dimensional parameters in km, used if IsLatLon=.False.        
       real(kind=ip)      :: gridwidth_x, gridwidth_y  ! Dimensions (in km) of the grid

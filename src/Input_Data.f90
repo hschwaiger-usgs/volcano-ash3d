@@ -909,7 +909,7 @@
          gridwidth_e,gridwidth_n,gridwidth_x,gridwidth_y,&
          lonLL,latLL,lonUR,latUR,xLL,yLL,xUR,yUR,&
          A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
-         A3d_phi2,A3d_Re,IsLatLon,IsPeriodic,ZPADDING
+         A3d_phi2,A3d_Re,IsLatLon,IsPeriodic,ZPADDING,Ztop
 
       use solution,      only : &
          StopValue,imin,imax,jmin,jmax,kmin,kmax
@@ -960,7 +960,7 @@
          MR_iwindfiles,MR_windfiles,MR_BaseYear,MR_useLeap,MR_Comp_StartHour,&
          MR_windfiles_GRIB_index,MR_windfiles_Have_GRIB_index,MR_Comp_Time_in_hours,&
          MR_windfile_starthour,MR_windfile_stephour,MR_iHeightHandler,&
-         MR_iwf_template,MR_iwind,MR_Comp_StartYear,MR_Comp_StartMonth,&
+         MR_iwf_template,MR_iwind,MR_Comp_StartYear,MR_Comp_StartMonth,MR_ztop,&
            MR_Allocate_FullMetFileList, &
            MR_Read_Met_DimVars
 
@@ -1008,7 +1008,7 @@
       real(kind=ip),allocatable,dimension(:) :: temp_bin_mass,temp_rho_m
       real(kind=ip),allocatable,dimension(:) :: temp_gsF,temp_gsG,temp_phi
       real(kind=ip)     :: fracfine = 0.0_ip
-      real(kind=ip)     :: CompGrid_height
+      !real(kind=ip)     :: CompGrid_height
       real(kind=ip)     :: last_z
       integer           :: nz_init,nsegments
       integer      ,allocatable,dimension(:) :: nz_plin_segments
@@ -2036,11 +2036,12 @@
 
       ! Now that we know the requested dz profile and the plume heights, we can
       ! set up the z-grid for computation
-      CompGrid_height = ZPADDING*maxval(e_PlumeHeight(1:neruptions))
+      Ztop = ZPADDING*maxval(e_PlumeHeight(1:neruptions))
+      MR_ztop         = Ztop   ! Set the MetReader copy in case we scale the grid
       nzmax = 0
       do k = 1,nz_init-1
-        if(z_vec_init(k+1).gt.CompGrid_height.and. &
-           z_vec_init(k).le.CompGrid_height)then
+        if(z_vec_init(k+1).gt.Ztop.and. &
+           z_vec_init(k).le.Ztop)then
           nzmax = k
         endif
       enddo
@@ -2051,7 +2052,7 @@
           write(errlog(io),*)"        for given plume heights."
           write(errlog(io),*)"    e_PlumeHeight = ",e_PlumeHeight(1:neruptions)
           write(errlog(io),*)"         ZPADDING = ",ZPADDING
-          write(errlog(io),*)"  CompGrid_height = ",CompGrid_height
+          write(errlog(io),*)"  CompGrid_height = ",Ztop
           write(errlog(io),*)"       z_vec_init = "
           do k = 1,nz_init-1
             write(errlog(io),*)"                ",k,real(z_vec_init(k),kind=4)

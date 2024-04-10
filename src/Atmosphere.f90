@@ -437,7 +437,7 @@
       real(kind=sp) :: temp
 
       do io=1,2;if(VB(io).le.verbosity_debug2)then
-        write(outlog(io),*)"     Entered Visc_Sutherland"
+        write(outlog(io),*)"     Entered function Visc_Sutherland"
       endif;enddo
 
             ! Get the dynamic viscosity (kg/(m s)) of air via Sutherland's
