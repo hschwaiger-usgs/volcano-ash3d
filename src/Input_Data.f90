@@ -930,7 +930,7 @@
 
       use Tephra,        only : &
          DepositDensity,Tephra_v_s,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,Tephra_gsPhi,&
-         Tephra_gsF,Tephra_gsG,FV_ID,Shape_Id,phi_mean,phi_stddev,n_gs_max,n_gs_aloft,&
+         Tephra_gsF,Tephra_gsG,FV_ID,Shape_ID,phi_mean,phi_stddev,n_gs_max,n_gs_aloft,&
            Calculate_Tephra_Shape,&
            Allocate_Tephra, &
            Sort_Tephra_Size
@@ -3080,7 +3080,7 @@
       init_n_gs_max = ivalue1
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) ivalue1, ivalue2
       FV_ID    = 1
-      Shape_Id = 1
+      Shape_ID = 1
       ! Assume we can read at least read one value, try for two with the second being
       ! the fall model:
       !  FV_ID = 0 -> No fall (just tracer)
@@ -3088,19 +3088,20 @@
       !          2 -> Wilson and Huang + Cunningham slip
       !          3 -> Wilson and Huang + Mod by Pfeiffer Et al.
       !          4 -> Ganser
-      !          5 -> Stokes flow for spherical particles + slip
+      !          5 -> Ganser + Cunningham slip
+      !          6 -> Stokes flow for spherical particles + slip
       if(iostatus.eq.0)then
         FV_ID = ivalue2
         if(FV_ID.ne.0.and.FV_ID.ne.1.and.FV_ID.ne.2.and.&
-           FV_ID.ne.3.and.FV_ID.ne.4.and.FV_ID.ne.5)then
+           FV_ID.ne.3.and.FV_ID.ne.4.and.FV_ID.ne.5.and.FV_ID.ne.6)then
           FV_ID = 1 ! Default to Wilson and Huang
         endif
         ! Try for a third value which specifies shape factory (F vs phi)
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) ivalue1, ivalue2, ivalue3
         if(iostatus.eq.0)then
-          Shape_Id = ivalue3
-          if(Shape_Id.ne.1.and.Shape_Id.ne.2)then
-            Shape_Id = 1 ! Default to Wilson and Huang
+          Shape_ID = ivalue3
+          if(Shape_ID.ne.1.and.Shape_ID.ne.2)then
+            Shape_ID = 1 ! Default to Wilson and Huang
           endif
         endif
       else
@@ -3238,12 +3239,12 @@
       Tephra_gsdiam(1:n_gs_max)   = temp_gsdiam(1:n_gs_max)
       Tephra_bin_mass(1:n_gs_max) = temp_bin_mass(1:n_gs_max)
       Tephra_rho_m(1:n_gs_max)    = temp_rho_m(1:n_gs_max)
-      if(Shape_Id.eq.1)then
+      if(Shape_ID.eq.1)then
         ! Interpret shape columns as F [and G]
         Tephra_gsF(1:n_gs_max)      = temp_gsF(1:n_gs_max)
         Tephra_gsG(1:n_gs_max)      = temp_gsG(1:n_gs_max)
         Tephra_gsPhi(1:n_gs_max)    = 1.0_ip
-      elseif(Shape_Id.eq.2)then
+      elseif(Shape_ID.eq.2)then
         ! Interpret shape columns as Phi
         Tephra_gsF(1:n_gs_max)      = 1.0_ip
         Tephra_gsG(1:n_gs_max)      = 1.0_ip
@@ -3328,6 +3329,8 @@
           elseif(FV_ID.eq.4)then
             write(outlog(io),*)"Fall Model = Ganser"
           elseif(FV_ID.eq.5)then
+            write(outlog(io),*)"Fall Model = Ganser + Cunningham slip"
+          elseif(FV_ID.eq.6)then
             write(outlog(io),*)"Fall Model = Stokes flow + slip"
           else
             write(outlog(io),*)"Default Fall Model = Wilson and Huang"
@@ -3339,6 +3342,7 @@
           endif
         endif;enddo
         if(useCalcFallVel)then
+          ! HFS make sure F and G are calculated from sphericity
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),10)
             do isize=1,n_gs_max

@@ -73,6 +73,7 @@
       integer :: tn_var_id             = 0 ! time (native)
 
       integer :: proj_var_id           = 0 ! Projection
+      integer :: FV_var_id             = 0 ! Fall model
       integer :: spec_var_id           = 0 ! Species class ID
       integer :: subspec_var_id        = 0 ! Species sub-class ID
 
@@ -98,6 +99,10 @@
       integer :: gssd_var_id           = 0 ! Grain diameter
       integer :: gsmf_var_id           = 0 ! Grain mass fraction
       integer :: gsdens_var_id         = 0 ! Grain density
+      integer :: gsF_var_id            = 0 ! Grain shape fac F
+      integer :: gsG_var_id            = 0 ! Grain shape fac G
+      integer :: gsP_var_id            = 0 ! Grain shape fac Phi
+
       integer :: er_stime_var_id       = 0 ! eruption start time
       integer :: er_duration_var_id    = 0 ! eruption duration
       integer :: er_plumeheight_var_id = 0 ! eruption plume height
@@ -163,7 +168,7 @@
       subroutine NC_create_netcdf_file
 
       use global_param,  only : &
-         EPS_SMALL,KM2_2_M2,useCalcFallVel,&
+         EPS_SMALL,KM2_2_M2,M_2_MM,useCalcFallVel,&
          GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH,Ash3d_GitComID,os_cwd,os_host,os_user,&
          useVz_rhoG
 
@@ -217,7 +222,8 @@
          Airport_Latitude,Airport_Longitude,Airport_Thickness_TS
 
       use Tephra,        only : &
-         n_gs_max,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,&
+         n_gs_max,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,FV_ID,&
+         Tephra_gsF,Tephra_gsG,Tephra_gsPhi,&
          MagmaDensity,DepositDensity,LAM_GS_THRESH,AIRBORNE_THRESH
 
       use Source,        only : &
@@ -340,6 +346,9 @@
       var_lnames(20) = "Grain density"
       var_lnames(21) = "Deposit arrival time"
       var_lnames(22) = "Elevation"
+      var_lnames(23) = "Grain shape factor F"
+      var_lnames(24) = "Grain shape factor G"
+      var_lnames(25) = "Grain sphericity"
 
       var_lnames(30) = "Deposit thickness"
       var_lnames(31) = "Airborne ash arrival time"
@@ -1029,6 +1038,55 @@
                               "earth_radius",A3d_Re*1000.0_ip)
         end select
       endif
+
+      ! Create variable defining the fall velocity model used
+      nSTAT = nf90_def_var(ncid,"Fall_Model",&
+                           nf90_int,&
+                           FV_var_id)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var Fall_Model")
+      select case (FV_ID)
+      case(0)
+        ! No fall (just tracer)
+        nSTAT = nf90_put_att(ncid,FV_var_id,&
+                             "model", &
+                             "No fall (just tracer)")
+      case(1)
+        ! Wilson and Huang
+        nSTAT = nf90_put_att(ncid,FV_var_id,&
+                             "model", &
+                             "Wilson and Huang")
+      case(2)
+        ! Wilson and Huang + Cunningham slip
+        nSTAT = nf90_put_att(ncid,FV_var_id,&
+                             "model", &
+                             "Wilson and Huang + Cunningham slip")
+      case(3)
+        ! Wilson and Huang + Mod by Pfeiffer Et al.
+        nSTAT = nf90_put_att(ncid,FV_var_id,&
+                             "model", &
+                             "Wilson and Huang + Mod by Pfeiffer Et al.")
+      case(4)
+        ! Ganser
+        nSTAT = nf90_put_att(ncid,FV_var_id,&
+                             "model", &
+                             "Ganser")
+      case(5)
+        ! Ganser + Cunningham slip
+        nSTAT = nf90_put_att(ncid,FV_var_id,&
+                             "model", &
+                             "Ganser + Cunningham slip")
+      case(6)
+        ! Stokes flow for spherical particles + slip
+        nSTAT = nf90_put_att(ncid,FV_var_id,&
+                             "model", &
+                             "Stokes,flow for spherical particles + slip")
+      case default
+        ! Wilson and Huang
+        nSTAT = nf90_put_att(ncid,FV_var_id,&
+                             "model", &
+                             "Wilson and Huang")
+      end select
+
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !   Now a few other variables that are a function of BN
          ! Species class ID
@@ -1120,6 +1178,60 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_dens long_name")
       nSTAT = nf90_put_att(ncid,gsdens_var_id,"units","kg/m3")
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_dens units")
+
+         ! gs_F (Shape factor of grain: F = (B+C)/2A)
+      if(op.eq.8)then
+        nSTAT = nf90_def_var(ncid,"gs_F",&
+                             nf90_double,&
+                             (/bn_dim_id/),&
+                             gsF_var_id)
+      else
+        nSTAT = nf90_def_var(ncid,"gs_F",&
+                             nf90_float,&
+                             (/bn_dim_id/), &
+                             gsF_var_id)
+      endif
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var gs_F")
+      nSTAT = nf90_put_att(ncid,gsF_var_id,"long_name",var_lnames(23))
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_F long_name")
+      nSTAT = nf90_put_att(ncid,gsF_var_id,"units","none")
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_F units")
+
+         ! gs_G (Shape factor of grain: G = B/C)
+      if(op.eq.8)then
+        nSTAT = nf90_def_var(ncid,"gs_G",&
+                             nf90_double,&
+                             (/bn_dim_id/),&
+                             gsG_var_id)
+      else
+        nSTAT = nf90_def_var(ncid,"gs_G",&
+                             nf90_float,&
+                             (/bn_dim_id/), &
+                             gsG_var_id)
+      endif
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var gs_G")
+      nSTAT = nf90_put_att(ncid,gsG_var_id,"long_name",var_lnames(24))
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_G long_name")
+      nSTAT = nf90_put_att(ncid,gsG_var_id,"units","none")
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_G units")
+
+         ! gs_Phi (Sphericity of grain: Psi = Area-of-vol.eq.sphere/Area-of-particle)
+      if(op.eq.8)then
+        nSTAT = nf90_def_var(ncid,"gs_Phi",&
+                             nf90_double,&
+                             (/bn_dim_id/),&
+                             gsP_var_id)
+      else
+        nSTAT = nf90_def_var(ncid,"gs_Phi",&
+                             nf90_float,&
+                             (/bn_dim_id/), &
+                             gsP_var_id)
+      endif
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var gs_P")
+      nSTAT = nf90_put_att(ncid,gsP_var_id,"long_name",var_lnames(25))
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_P long_name")
+      nSTAT = nf90_put_att(ncid,gsP_var_id,"units","none")
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_P units")
 
       !   Now a few other variables that are a function of ER
          ! er_stime (Start time of eruption)
@@ -2285,7 +2397,7 @@
       allocate(dum1d_out(nsmax))
       dum1d_out = 0.0_op
       if(useCalcFallVel)then
-        dum1d_out(1:n_gs_max) = real(Tephra_gsdiam(1:n_gs_max),kind=op)
+        dum1d_out(1:n_gs_max) = real(Tephra_gsdiam(1:n_gs_max)*M_2_MM,kind=op)
       else
         do isize=1,n_gs_max
           dum1d_out(isize) = real(isize,kind=op)
@@ -2309,7 +2421,33 @@
       endif
       nSTAT=nf90_put_var(ncid,gsdens_var_id,dum1d_out,(/1/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_dens")
+       ! gs_F (Shape factor of grain F)
+      if(useCalcFallVel)then
+        dum1d_out(1:n_gs_max) = real(Tephra_gsF(1:n_gs_max),kind=op)
+      else
+        dum1d_out = 0.0_op
+      endif
+      nSTAT=nf90_put_var(ncid,gsF_var_id,dum1d_out,(/1/))
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_F")
+
+       ! gs_G (Shape factor of grain G
+      if(useCalcFallVel)then
+        dum1d_out(1:n_gs_max) = real(Tephra_gsG(1:n_gs_max),kind=op)
+      else
+        dum1d_out = 0.0_op
+      endif
+      nSTAT=nf90_put_var(ncid,gsG_var_id,dum1d_out,(/1/))
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_G")
+       ! gs_Phi (Shape factor of grain Phi)
+      if(useCalcFallVel)then
+        dum1d_out(1:n_gs_max) = real(Tephra_gsPhi(1:n_gs_max),kind=op)
+      else
+        dum1d_out = 0.0_op
+      endif
+      nSTAT=nf90_put_var(ncid,gsG_var_id,dum1d_out,(/1/))
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_Phi")
       deallocate(dum1d_out)
+
 
       !   Now fill a few other variables that are a function of ER
         ! er_stime (Start time of eruption)
