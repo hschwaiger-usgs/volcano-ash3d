@@ -544,7 +544,7 @@
       ! Dimensional parameters in km, used if IsLatLon=.False.        
       real(kind=ip)      :: gridwidth_x, gridwidth_y  ! Dimensions (in km) of the grid
       real(kind=ip)      :: xLL,xUR,yLL,yUR           ! lower-left,upper-right points of grid
-      real(kind=ip)      :: dx, dy                    ! horizontal cell sizees (km)
+      real(kind=ip)      :: dx, dy                    ! horizontal cell sizes (km)
 
       integer :: nxmax      ! number of nodes in x
       integer :: nymax      ! number of nodes in y

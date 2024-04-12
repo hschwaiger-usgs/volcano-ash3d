@@ -38,7 +38,7 @@
 
         ! Publicly available variables
 
-!      character(100) :: USGSIconFile
+!      character(100) :: Instit_IconFile
       logical, public :: CleanScripts_gnuplot = .false.
 
       contains

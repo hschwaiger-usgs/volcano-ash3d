@@ -40,7 +40,7 @@
         ! Publicly available variables
 
       integer,parameter :: DS = 8
-      character(100)    :: USGSIconFile
+      character(100)    :: Instit_IconFile
 
       contains
       !------------------------------------------------------------------------
@@ -445,12 +445,28 @@
 
       call paghdr('Ash3d Simulation plotted on ','---',4,0)
       y_footer = 1900
-      call filbox(2250,y_footer,130,49)
-      USGSIconFile = trim(Ash3dHome) // &
+
+      !  Local Logo
+      !   First check is a local logo in installed on this system
+      Instit_IconFile= trim(Ash3dHome) // &
                         DirDelim // 'share' // &
                         DirDelim // 'post_proc' // &
-                        DirDelim // 'USGSvid.png'
-      call incfil(USGSIconFile)
+                        DirDelim // 'logo.png'
+      inquire( file=trim(adjustl(Instit_IconFile)), exist=IsThere)
+
+      if (.not.IsThere) then
+        !  USGS Logo (130x49)
+        !   No local logo, open the USGS version
+        Instit_IconFile= trim(Ash3dHome) // &
+                          DirDelim // 'share' // &
+                          DirDelim // 'post_proc' // &
+                          DirDelim // 'USGSvid.png'
+        inquire( file=trim(adjustl(Instit_IconFile)), exist=IsThere)
+      endif
+      if(IsThere)then
+        call filbox(2250,y_footer,130,49)
+        call incfil(Instit_IconFile)
+      endif
 
        ! setting of plot parameters
       call triplx()  ! set font to triple stroke
@@ -767,12 +783,28 @@
       !  Dislin Level 1:  after initialization or a call to ENDGRF
       call disini()       ! initialize plot (set to level 1)
       y_footer = 1900
-      call filbox(2250,y_footer,130,49)
-      USGSIconFile = trim(Ash3dHome) // &
+
+      !  Local Logo
+      !   First check is a local logo in installed on this system
+      Instit_IconFile= trim(Ash3dHome) // &
                         DirDelim // 'share' // &
                         DirDelim // 'post_proc' // &
-                        DirDelim // 'USGSvid.png'
-      call incfil(USGSIconFile)
+                        DirDelim // 'logo.png'
+      inquire( file=trim(adjustl(Instit_IconFile)), exist=IsThere)
+
+      if (.not.IsThere) then
+        !  USGS Logo (130x49)
+        !   No local logo, open the USGS version
+        Instit_IconFile= trim(Ash3dHome) // &
+                          DirDelim // 'share' // &
+                          DirDelim // 'post_proc' // &
+                          DirDelim // 'USGSvid.png'
+        inquire( file=trim(adjustl(Instit_IconFile)), exist=IsThere)
+      endif
+      if(IsThere)then
+        call filbox(2250,y_footer,130,49)
+        call incfil(Instit_IconFile)
+      endif
 
         ! setting of plot parameters
       !call pagera()       ! plot a border around the page

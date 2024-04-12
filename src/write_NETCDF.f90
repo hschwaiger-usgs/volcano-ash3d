@@ -187,7 +187,7 @@
          nxmax,nymax,nzmax,nsmax,x_cc_pd,y_cc_pd,z_cc_pd,lon_cc_pd,lat_cc_pd,&
          sigma_nz_pd,dx,dy,dz_vec_pd,IsLatLon,ts1,&
          A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
-         A3d_phi2,A3d_Re,ZPADDING
+         A3d_phi2,A3d_Re,ZPADDING,ZScaling_ID,Ztop
 
       use solution,      only : &
           vx_pd,vy_pd,vz_pd,vf_pd,concen_pd,DepositGranularity,SpeciesID,SpeciesSubID
@@ -223,7 +223,7 @@
 
       use Tephra,        only : &
          n_gs_max,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,FV_ID,&
-         Tephra_gsF,Tephra_gsG,Tephra_gsPhi,&
+         Tephra_gsF,Tephra_gsG,Tephra_gsPhi,Shape_ID,&
          MagmaDensity,DepositDensity,LAM_GS_THRESH,AIRBORNE_THRESH
 
       use Source,        only : &
@@ -689,10 +689,16 @@
       nSTAT = nf90_put_att(ncid,t_var_id,"ReferenceTime",reftimestr)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att t ReferenceTime:")
 
-         ! Z
+         ! Z or S
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),*)"     Z: ",dim_names(2)
+        if (ZScaling_ID.eq.0) then
+          write(outlog(io),*)"     Z: ",dim_names(2)
+        else
+          write(outlog(io),*)"     S: ","s"
+        endif
       endif;enddo
+      ! This is the normal z=altitude coordinate (assumes topography = 0)
+      ! Always written
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,dim_names(2),&
                              nf90_double,&
@@ -767,6 +773,41 @@
         nSTAT = nf90_put_att(ncid,x_var_id,"standard_name","projection_x_coordinate")
       endif
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att x units standard_name")
+
+      if (ZScaling_ID.gt.0) then
+        ! This branch is for z-shifting/scaling
+        if(op.eq.8)then
+          nSTAT = nf90_def_var(ncid,"s",&
+                               nf90_double,&
+                               (/z_dim_id/),&
+                               z_var_id)
+        else
+          nSTAT = nf90_def_var(ncid,"s",&
+                               nf90_float,&
+                               (/z_dim_id/), &
+                               z_var_id)
+        endif
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var s")
+        if(ZScaling_ID.eq.1)then
+          nSTAT = nf90_put_att(ncid,z_var_id,"long_name","shifted-altitude")
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att s long_name")
+          nSTAT = nf90_put_att(ncid,z_var_id,"units","km")
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att s units")
+          nSTAT = nf90_put_att(ncid,z_var_id,"note","s=z-zsurf")
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att s note")
+        elseif(ZScaling_ID.eq.2)then
+          nSTAT = nf90_put_att(ncid,z_var_id,"long_name","sigma-altitude")
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att s long_name")
+          nSTAT = nf90_put_att(ncid,z_var_id,"units","none")
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att s units")
+          nSTAT = nf90_put_att(ncid,z_var_id,"note","s=(z-zsurf)/(top-surf)")
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att s note")
+        endif
+        nSTAT = nf90_put_att(ncid,z_var_id,"positive","up")
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att s positive")
+        nSTAT = nf90_put_att(ncid,z_var_id,"ztop",Ztop)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att s ztop")
+      endif
 
          ! BN (Grain size bin ID)
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -1055,26 +1096,36 @@
         nSTAT = nf90_put_att(ncid,FV_var_id,&
                              "model", &
                              "Wilson and Huang")
+        nSTAT = nf90_put_att(ncid,FV_var_id,&
+                             "doi","10.1016/0012-821X(79)90179-1")
       case(2)
         ! Wilson and Huang + Cunningham slip
         nSTAT = nf90_put_att(ncid,FV_var_id,&
                              "model", &
                              "Wilson and Huang + Cunningham slip")
+        nSTAT = nf90_put_att(ncid,FV_var_id,&
+                             "doi","10.1016/0012-821X(79)90179-1")
       case(3)
         ! Wilson and Huang + Mod by Pfeiffer Et al.
         nSTAT = nf90_put_att(ncid,FV_var_id,&
                              "model", &
                              "Wilson and Huang + Mod by Pfeiffer Et al.")
+        nSTAT = nf90_put_att(ncid,FV_var_id,&
+                             "doi","10.1016/j.jvolgeores.2004.09.001")
       case(4)
         ! Ganser
         nSTAT = nf90_put_att(ncid,FV_var_id,&
                              "model", &
                              "Ganser")
+        nSTAT = nf90_put_att(ncid,FV_var_id,&
+                             "doi","10.1016/0032-5910(93)80051-B");
       case(5)
         ! Ganser + Cunningham slip
         nSTAT = nf90_put_att(ncid,FV_var_id,&
                              "model", &
                              "Ganser + Cunningham slip")
+        nSTAT = nf90_put_att(ncid,FV_var_id,&
+                             "doi","10.1016/0032-5910(93)80051-B");
       case(6)
         ! Stokes flow for spherical particles + slip
         nSTAT = nf90_put_att(ncid,FV_var_id,&
@@ -1085,6 +1136,8 @@
         nSTAT = nf90_put_att(ncid,FV_var_id,&
                              "model", &
                              "Wilson and Huang")
+        nSTAT = nf90_put_att(ncid,FV_var_id,&
+                             "doi","10.1016/0012-821X(79)90179-1")
       end select
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1196,6 +1249,15 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_F long_name")
       nSTAT = nf90_put_att(ncid,gsF_var_id,"units","none")
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_F units")
+      nSTAT = nf90_put_att(ncid,gsF_var_id,"note","F=(C+B)/2A")
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_F note")
+      if (Shape_ID.eq.1) then
+        nSTAT = nf90_put_att(ncid,gsF_var_id,"source","provided")
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_F source")
+      else
+        nSTAT = nf90_put_att(ncid,gsF_var_id,"source","calculated")
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_F source")
+      endif
 
          ! gs_G (Shape factor of grain: G = B/C)
       if(op.eq.8)then
@@ -1214,6 +1276,15 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_G long_name")
       nSTAT = nf90_put_att(ncid,gsG_var_id,"units","none")
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_G units")
+      nSTAT = nf90_put_att(ncid,gsG_var_id,"note","G=C/B")
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_G note")
+      if (Shape_ID.eq.1) then
+        nSTAT = nf90_put_att(ncid,gsG_var_id,"source","provided")
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_F source")
+      else
+        nSTAT = nf90_put_att(ncid,gsG_var_id,"source","calculated")
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_F source")
+      endif
 
          ! gs_Phi (Sphericity of grain: Psi = Area-of-vol.eq.sphere/Area-of-particle)
       if(op.eq.8)then
@@ -1232,6 +1303,15 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_P long_name")
       nSTAT = nf90_put_att(ncid,gsP_var_id,"units","none")
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_P units")
+      nSTAT = nf90_put_att(ncid,gsP_var_id,"note","Phi=(Area of vol.equ.sphere)/(Area of particle)")
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_P note")
+      if (Shape_ID.eq.1) then
+        nSTAT = nf90_put_att(ncid,gsP_var_id,"source","calculated")
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_P source")
+      else
+        nSTAT = nf90_put_att(ncid,gsP_var_id,"source","provided")
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_P source")
+      endif
 
       !   Now a few other variables that are a function of ER
          ! er_stime (Start time of eruption)
@@ -2444,10 +2524,9 @@
       else
         dum1d_out = 0.0_op
       endif
-      nSTAT=nf90_put_var(ncid,gsG_var_id,dum1d_out,(/1/))
+      nSTAT=nf90_put_var(ncid,gsP_var_id,dum1d_out,(/1/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_Phi")
       deallocate(dum1d_out)
-
 
       !   Now fill a few other variables that are a function of ER
         ! er_stime (Start time of eruption)
@@ -2469,6 +2548,14 @@
       nSTAT=nf90_put_var(ncid,er_volume_var_id,dum1d_out,(/1/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var er_volume")
       deallocate(dum1d_out)
+
+      ! And a few variables that are not functions of any dimensions
+        ! projection flag (name and attributes already defind this)
+      nSTAT=nf90_put_var(ncid,proj_var_id,A3d_iprojflag)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var proj_var_id")
+        ! Fall Model ID
+      nSTAT=nf90_put_var(ncid,FV_var_id,FV_ID)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var FV_var_id")
 
          ! Now fill the other (non-time-dependent) variables
          ! wf_name (Name of windfile)

@@ -71,7 +71,7 @@
               ! Shape parameter
               !   1 = Wilson and Huang: F = (b+c)/2a maybe also with G = c/b
               !   2 = Sphericity
-      integer,public                                    :: Shape_Id
+      integer,public                                    :: Shape_ID
 
 #ifdef USEPOINTERS
       real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_v_s     =>null()    ! Settling vel (m/s)
@@ -462,7 +462,7 @@
         Tephra_gsF_fac(isize,2) = sqrt(1.07_ip-Tephra_gsF(isize))  ! WH Newton factor
 
         ! and precalculate the K1 and K2 if we use the Ganser model
-        if(Shape_Id.eq.1)then
+        if(Shape_ID.eq.1)then
           ! First, if we are using F and G for shape, get sphericity.
           ! Note: sphericity is the ratio of the surface area of a sphere with
           !       equivalent volume to the actual surface area of the particle
@@ -475,6 +475,14 @@
                         ((tmp_b**p_exp + &
                           tmp_c**p_exp + &
                          (tmp_b*tmp_c)**p_exp)/3.0_ip)**(-1.0_ip/p_exp)
+        elseif(Shape_ID.eq.2)then
+          ! Shape factor is given as sphericity
+          ! Assume prolate ellipsoids with B=C (i.e. G=1.0)
+          ! Need to calculate F for logging
+          Tephra_gsG(isize) = 1.0_ip
+          ! Looks like the solution if 3*phi^(-p) = F^(-p/3)*(2+F)
+          ! Probably not worth calculating here.
+          Tephra_gsF(isize) = 1.0_ip
         endif
 
         !ellipse_vol  = 4.0_ip*PI*Tephra_gsF(i)*Tephra_gsF(i)/3.0_ip

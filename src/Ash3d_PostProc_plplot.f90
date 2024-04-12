@@ -43,7 +43,7 @@
       !integer :: lib_ver_minor = 10
       integer :: lib_ver_minor = 14
 
-!      character(100) :: USGSIconFile
+!      character(100) :: Instit_IconFile
 
       contains
       !------------------------------------------------------------------------

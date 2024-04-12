@@ -43,7 +43,7 @@
 
         ! Publicly available variables
 
-      character(100) :: USGSIconFile
+      character(100)  :: Instit_IconFile
       logical, public :: CleanScripts_GMT = .false.
 
       contains
@@ -491,15 +491,26 @@
       write(62,'(a16,f5.2,a9)')"T Erup. Volume: ",real(e_Volume(1),kind=4)," km3(DRE)"
       close(62)
 
-      !  USGS Logo
-      USGSIconFile = trim(Ash3dHome) // &
+      !  Local Logo
+      !   First check is a local logo in installed on this system
+      Instit_IconFile= trim(Ash3dHome) // &
                         DirDelim // 'share' // &
                         DirDelim // 'post_proc' // &
-                        DirDelim // 'USGSvid.png'
-      inquire( file=trim(adjustl(USGSIconFile)), exist=IsThere)
+                        DirDelim // 'logo.png'
+      inquire( file=trim(adjustl(Instit_IconFile)), exist=IsThere)
+
+      if (.not.IsThere) then
+        !  USGS Logo (130x49)
+        !   No local logo, open the USGS version
+        Instit_IconFile= trim(Ash3dHome) // &
+                          DirDelim // 'share' // &
+                          DirDelim // 'post_proc' // &
+                          DirDelim // 'USGSvid.png'
+        inquire( file=trim(adjustl(Instit_IconFile)), exist=IsThere)
+      endif
       if(IsThere)then
         open(63,file="leg3.txt",status='replace')
-        write(63,'(g0)')"I " // trim(adjustl(USGSIconFile)) // " 2i C"
+        write(63,'(g0)')"I " // trim(adjustl(Instit_IconFile)) // " 2i C"
         close(63)
       endif
 
