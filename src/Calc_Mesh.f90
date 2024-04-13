@@ -47,6 +47,7 @@
          lat_volcano
 
       use MetReader,     only : &
+         s_comp_sp, &
            MR_Set_CompProjection, &
            MR_Initialize_Met_Grids, &
            MR_Set_Met_Times
@@ -209,6 +210,7 @@
       call MR_Initialize_Met_Grids(nxmax,nymax,nzmax,             &
                               dumx_sp,dumy_sp,dumz_sp,            &
                               IsPeriodic)
+      s_comp_sp(1:nzmax) = s_cc_pd(1:nzmax)
       deallocate(dumx_sp,dumy_sp,dumz_sp)
 
       do io=1,2;if(VB(io).le.verbosity_info)then
