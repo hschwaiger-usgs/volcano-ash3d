@@ -65,6 +65,7 @@
       integer :: x_var_id              = 0 ! X-distance
       integer :: y_var_id              = 0 ! Y-distance
       integer :: z_var_id              = 0 ! Z-distance
+      integer :: s_var_id              = 0 ! shifted (or sigma) altitude
       integer :: bn_var_id             = 0 ! index for species (grain-size bin, gas, water, etc.)
       integer :: er_var_id             = 0 ! eruption index
       integer :: wf_var_id             = 0 ! wind file index
@@ -184,7 +185,7 @@
          nvar_User4d_XYZGs,Write_PT_Data,Write_PR_Data
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,nsmax,x_cc_pd,y_cc_pd,z_cc_pd,lon_cc_pd,lat_cc_pd,&
+         nxmax,nymax,nzmax,nsmax,x_cc_pd,y_cc_pd,z_cc_pd,lon_cc_pd,lat_cc_pd,s_cc_pd,&
          sigma_nz_pd,dx,dy,dz_vec_pd,IsLatLon,ts1,&
          A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
          A3d_phi2,A3d_Re,ZPADDING,ZScaling_ID,Ztop
@@ -689,7 +690,7 @@
       nSTAT = nf90_put_att(ncid,t_var_id,"ReferenceTime",reftimestr)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att t ReferenceTime:")
 
-         ! Z or S
+         ! Z
       do io=1,2;if(VB(io).le.verbosity_info)then
         if (ZScaling_ID.eq.0) then
           write(outlog(io),*)"     Z: ",dim_names(2)
@@ -780,32 +781,32 @@
           nSTAT = nf90_def_var(ncid,"s",&
                                nf90_double,&
                                (/z_dim_id/),&
-                               z_var_id)
+                               s_var_id)
         else
           nSTAT = nf90_def_var(ncid,"s",&
                                nf90_float,&
                                (/z_dim_id/), &
-                               z_var_id)
+                               s_var_id)
         endif
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var s")
         if(ZScaling_ID.eq.1)then
-          nSTAT = nf90_put_att(ncid,z_var_id,"long_name","shifted-altitude")
+          nSTAT = nf90_put_att(ncid,s_var_id,"long_name","shifted-altitude")
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att s long_name")
-          nSTAT = nf90_put_att(ncid,z_var_id,"units","km")
+          nSTAT = nf90_put_att(ncid,s_var_id,"units","km")
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att s units")
-          nSTAT = nf90_put_att(ncid,z_var_id,"note","s=z-zsurf")
+          nSTAT = nf90_put_att(ncid,s_var_id,"note","s=z-zsurf")
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att s note")
         elseif(ZScaling_ID.eq.2)then
-          nSTAT = nf90_put_att(ncid,z_var_id,"long_name","sigma-altitude")
+          nSTAT = nf90_put_att(ncid,s_var_id,"long_name","sigma-altitude")
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att s long_name")
-          nSTAT = nf90_put_att(ncid,z_var_id,"units","none")
+          nSTAT = nf90_put_att(ncid,s_var_id,"units","none")
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att s units")
-          nSTAT = nf90_put_att(ncid,z_var_id,"note","s=(z-zsurf)/(top-surf)")
+          nSTAT = nf90_put_att(ncid,s_var_id,"note","s=(z-zsurf)/(top-surf)")
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att s note")
         endif
-        nSTAT = nf90_put_att(ncid,z_var_id,"positive","up")
+        nSTAT = nf90_put_att(ncid,s_var_id,"positive","up")
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att s positive")
-        nSTAT = nf90_put_att(ncid,z_var_id,"ztop",Ztop)
+        nSTAT = nf90_put_att(ncid,s_var_id,"ztop",Ztop)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att s ztop")
       endif
 
@@ -2380,6 +2381,19 @@
       nSTAT=nf90_put_var(ncid,x_var_id,dum1d_out,(/1/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var x")
       deallocate(dum1d_out)
+
+        ! S
+      if (ZScaling_ID.gt.0) then
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
+          write(outlog(io),*)"     Fill S"
+        endif;enddo
+        allocate(dum1d_out(nzmax))
+        dum1d_out(:) = real(s_cc_pd(1:nzmax),kind=op)
+        nSTAT=nf90_put_var(ncid,s_var_id,dum1d_out,(/1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var s")
+        deallocate(dum1d_out)
+      endif
+
         ! BN (Grain size bin ID)
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Fill BN"

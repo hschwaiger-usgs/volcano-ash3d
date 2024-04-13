@@ -36,7 +36,7 @@
          lon_cc_pd,lat_cc_pd,de,dn,de_km,dn_km, &
          z_lb_pd,z_vec_init,z_cc_pd,dz_vec_pd, &
          sigma_nx_pd,sigma_ny_pd,sigma_nz_pd,kappa_pd,&
-         xLL,yLL,latLL,lonLL,s_cc_pd,Ztop, &
+         xLL,yLL,latLL,lonLL,s_cc_pd,Ztop,ZScaling_ID, &
          A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_phi1,&
          A3d_phi2,A3d_Re,IsLatLon,IsPeriodic
 
@@ -98,7 +98,13 @@
       dz_vec_pd(nzmax+2) = dz_vec_pd(nzmax)
       ! s_cc is the scaled (sigma-altitude) coordinate s= (z-zsurf)/(ztop-zsurf)
       ! Here we set up the s-values with zsurf=0 and might apply topography later
-      s_cc_pd(:) = (z_cc_pd(:)-0.0_ip)/(Ztop-0.0_ip)
+      if(ZScaling_ID.eq.0)then
+        s_cc_pd(:) = z_cc_pd(:)
+      elseif(ZScaling_ID.eq.1)then
+        s_cc_pd(:) = z_cc_pd(:)
+      elseif(ZScaling_ID.eq.2)then
+        s_cc_pd(:) = (z_cc_pd(:)-0.0_ip)/(Ztop-0.0_ip)
+      endif
 
       if (IsLatLon) then
         ! Find width and height of a node (km) at the volcano's location

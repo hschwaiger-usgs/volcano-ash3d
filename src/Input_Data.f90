@@ -1019,6 +1019,8 @@
       logical           :: StopWhenDeposited                       ! If true, StopValue=0.99, else StopValue=1e5.
       logical           :: runAsForecast       = .false.           ! This will be changed if year=0
       real(kind=dp)     :: FC_Offset = 0.0_dp
+      real(kind=ip)     :: Davg,Aaxis,Baxis,Caxis
+
 
       INTERFACE
         real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
@@ -3322,18 +3324,26 @@
             write(outlog(io),*)"Fall Model = None (tracer)"
           elseif(FV_ID.eq.1)then
             write(outlog(io),*)"Fall Model = Wilson and Huang"
+            write(outlog(io),*)"     Input particle sizes are interpreted to be the mean; Da=(A+B+C)/3"
           elseif(FV_ID.eq.2)then
             write(outlog(io),*)"Fall Model = Wilson and Huang + Cunningham slip"
+            write(outlog(io),*)"     Input particle sizes are interpreted to be the mean; Da=(A+B+C)/3"
           elseif(FV_ID.eq.3)then
             write(outlog(io),*)"Fall Model = Wilson and Huang + Mod by PCM"
+            write(outlog(io),*)"     Input particle sizes are interpreted to be the mean; Da=(A+B+C)/3"
           elseif(FV_ID.eq.4)then
             write(outlog(io),*)"Fall Model = Ganser"
+            write(outlog(io),*)"     Input particle sizes are interpreted to be the geometric mean; Dv=(ABC)^0.33"
+            write(outlog(io),*)"     which is also the diameter of a volume-equivalent sphere."
           elseif(FV_ID.eq.5)then
             write(outlog(io),*)"Fall Model = Ganser + Cunningham slip"
+            write(outlog(io),*)"     Input particle sizes are interpreted to be the geometric mean; Dv=(ABC)^0.33"
+            write(outlog(io),*)"     which is also the diameter of a volume-equivalent sphere."
           elseif(FV_ID.eq.6)then
             write(outlog(io),*)"Fall Model = Stokes flow + slip"
           else
             write(outlog(io),*)"Default Fall Model = Wilson and Huang"
+            write(outlog(io),*)"     Input particle sizes are interpreted to be the mean; Da=(A+B+C)/3"
           endif
           if(Shape_ID.eq.1)then
             write(outlog(io),*)"Shape Specification : axis ratios : F=(b+c)/2a [and G=c/b]"
@@ -3352,6 +3362,45 @@
                                    Tephra_gsG(isize),      Tephra_gsPhi(isize), temp_phi(isize)
             enddo
           endif;enddo
+          if(FV_ID.gt.0.and.Shape_ID.eq.1)then
+            ! Now write some details of the particle axes given Da and F (and G)
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"Particle shapes were defined with F and G.  This corresponds to the"
+              if(FV_ID.le.3)then
+                write(outlog(io),*)"following axes lengths (Assuming diameter = arithmetic average):"
+              elseif(FV_ID.le.5)then
+                write(outlog(io),*)"following axes lengths (Assuming diameter = geometric average):"
+              else
+                write(outlog(io),*)"following axes lengths:"
+              endif
+              write(outlog(io),*)"   Bin # : diameter (mm)   :  A (mm)   :  B (mm)   :  C (mm)"
+              do isize=1,n_gs_max
+                ! write out diameter in mm, not m
+                if(FV_ID.le.3)then
+                  ! Wilson/Huang models uses arithmetic average
+                  Davg = Tephra_gsdiam(isize)*1000.0_ip
+                  Aaxis= Davg*(3.0_ip/(1.0_ip+2.0_ip*Tephra_gsF(isize)))
+                  Baxis= Davg*6.0_ip*Tephra_gsF(isize)/&
+                   ( (1.0_ip+Tephra_gsG(isize)) * (1.0_ip+2.0_ip*Tephra_gsF(isize)))
+                  Caxis=3.0_ip*Davg - Aaxis - Baxis
+                elseif(FV_ID.le.5)then
+                  ! Ganser model uses geometric average
+                  Davg = Tephra_gsdiam(isize)*1000.0_ip
+                  Aaxis= Davg*(((1.0_ip+Tephra_gsG(isize))**2.0_ip)/&
+                                (4.0_ip*Tephra_gsF(isize)*Tephra_gsF(isize)*Tephra_gsG(isize)))**(1.0_ip/3.0_ip)
+                  Baxis= sqrt(Davg*Davg*Davg/Aaxis/Tephra_gsG(isize))
+                  Caxis= Davg**3.0_ip/Aaxis/Baxis
+                else
+                  ! Stokes flow is for a spherical particle
+                  Davg = Tephra_gsdiam(isize)*1000.0_ip
+                  Aaxis= Davg
+                  Baxis= Davg
+                  Caxis= Davg
+                endif
+                write(outlog(io),'(4x,i5,4x,4f12.4)')isize,Davg,Aaxis,Baxis,Caxis
+              enddo
+            endif;enddo
+          endif
         else
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),2110)
