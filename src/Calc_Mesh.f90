@@ -50,7 +50,8 @@
          s_comp_sp, &
            MR_Set_CompProjection, &
            MR_Initialize_Met_Grids, &
-           MR_Set_Met_Times
+           MR_Set_Met_Times, &
+           MR_Set_SigmaAlt_Scaling
 
       implicit none
 
@@ -211,6 +212,18 @@
                               dumx_sp,dumy_sp,dumz_sp,            &
                               IsPeriodic)
       s_comp_sp(1:nzmax) = s_cc_pd(1:nzmax)
+      call MR_Set_SigmaAlt_Scaling()
+!      if(ZScaling_ID.eq.0)then
+!        MR_jacob_comp(:,:) = 1.0_sp
+!        MR_jacob_met(:,:) = 1.0_sp
+!      elseif(ZScaling_ID.eq.1)then
+!        MR_jacob_comp(:,:) = 1.0_sp
+!        MR_jacob_met(:,:) = 1.0_sp
+!      elseif(ZScaling_ID.eq.2)then
+!        MR_jacob_comp(:,:) = MR_ztop - MR_Topo_comp(:,:)
+!        MR_jacob_met(:,:) = MR_ztop - MR_Topo_met(:,:)
+!      endif
+
       deallocate(dumx_sp,dumy_sp,dumz_sp)
 
       do io=1,2;if(VB(io).le.verbosity_info)then
