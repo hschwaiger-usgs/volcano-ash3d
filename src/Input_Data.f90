@@ -2039,7 +2039,7 @@
       ! Now that we know the requested dz profile and the plume heights, we can
       ! set up the z-grid for computation
       Ztop = ZPADDING*maxval(e_PlumeHeight(1:neruptions))
-      MR_ztop         = Ztop   ! Set the MetReader copy in case we scale the grid
+      MR_ztop         = real(Ztop,kind=sp)   ! Set the MetReader copy in case we scale the grid
       nzmax = 0
       do k = 1,nz_init-1
         if(z_vec_init(k+1).gt.Ztop.and. &

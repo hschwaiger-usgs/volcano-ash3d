@@ -47,7 +47,6 @@
          lat_volcano
 
       use MetReader,     only : &
-         s_comp_sp, &
            MR_Set_CompProjection, &
            MR_Initialize_Met_Grids, &
            MR_Set_Met_Times, &
@@ -62,7 +61,7 @@
       real(kind=ip) :: theta_1,theta_2,del_theta,del_costheta
       real(kind=ip) :: del_lam
       real(kind=ip) :: phi_bot,phi_top,phi
-      real(kind=sp),allocatable,dimension(:) :: dumx_sp,dumy_sp,dumz_sp
+      real(kind=sp),allocatable,dimension(:) :: dumx_sp,dumy_sp,dumz_sp,dums_sp
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"--------------------------------------------------"
@@ -199,32 +198,24 @@
       allocate(dumx_sp(nxmax))
       allocate(dumy_sp(nymax))
       allocate(dumz_sp(nzmax))
+      allocate(dums_sp(nzmax))
       if(IsLatLon)then
         dumx_sp(1:nxmax) = real(lon_cc_pd(1:nxmax),kind=sp)
         dumy_sp(1:nymax) = real(lat_cc_pd(1:nymax),kind=sp)
         dumz_sp(1:nzmax) = real(  z_cc_pd(1:nzmax),kind=sp)
+        dums_sp(1:nzmax) = real(  s_cc_pd(1:nzmax),kind=sp)
       else
         dumx_sp(1:nxmax) = real(  x_cc_pd(1:nxmax),kind=sp)
         dumy_sp(1:nymax) = real(  y_cc_pd(1:nymax),kind=sp)
         dumz_sp(1:nzmax) = real(  z_cc_pd(1:nzmax),kind=sp)
+        dums_sp(1:nzmax) = real(  s_cc_pd(1:nzmax),kind=sp)
       endif
       call MR_Initialize_Met_Grids(nxmax,nymax,nzmax,             &
                               dumx_sp,dumy_sp,dumz_sp,            &
                               IsPeriodic)
-      s_comp_sp(1:nzmax) = s_cc_pd(1:nzmax)
-      call MR_Set_SigmaAlt_Scaling()
-!      if(ZScaling_ID.eq.0)then
-!        MR_jacob_comp(:,:) = 1.0_sp
-!        MR_jacob_met(:,:) = 1.0_sp
-!      elseif(ZScaling_ID.eq.1)then
-!        MR_jacob_comp(:,:) = 1.0_sp
-!        MR_jacob_met(:,:) = 1.0_sp
-!      elseif(ZScaling_ID.eq.2)then
-!        MR_jacob_comp(:,:) = MR_ztop - MR_Topo_comp(:,:)
-!        MR_jacob_met(:,:) = MR_ztop - MR_Topo_met(:,:)
-!      endif
+      call MR_Set_SigmaAlt_Scaling(nzmax,dums_sp)
 
-      deallocate(dumx_sp,dumy_sp,dumz_sp)
+      deallocate(dumx_sp,dumy_sp,dumz_sp,dums_sp)
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Finished initializing Met Grids"
