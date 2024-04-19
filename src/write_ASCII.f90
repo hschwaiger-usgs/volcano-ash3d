@@ -245,9 +245,12 @@
 !    Fill_Value    = number used for No-data
 !    filename_root = root name of file (20 characters)
 !
-!  Subroutine that writes out 2-D arrays in ESRI ASCII raster format
+!  Subroutine that writes out 2-D arrays in ESRI ASCII raster format.
+!  Format specification is given at the following web sites:
+!   https://help.arcgis.com/en/arcgisdesktop/10.0/help/index.html#/ESRI_ASCII_raster_format/009t0000000z000000/
+!   https://en.wikipedia.org/wiki/Esri_grid
 !  This format can be post-processed with gmt converting to grid files with
-!  gmt grdconvert out.dat=ef out.grd
+!   gmt grdconvert out.dat=ef out.grd
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -353,6 +356,7 @@
 3003  format('YLLCORNER ',f15.3)
 3004  format('CELLSIZE ',2f15.3)
 3005  format('NODATA_VALUE ',a6)
+!3006  format(10f15.3)               ! Older ASCII output file from Ash3d used this format
 3006  format(10f18.6)
       return
 
@@ -374,6 +378,8 @@
 !
 !  Subroutine that reads in 2-D arrays in ESRI ASCII raster format and
 !  populates A_nx,A_ny,A_XY,A_xll,A_yll,A_dx,A_dy,A_Fill
+!  Note that this is not a generic ERSI ASCII reader. This subroutine is
+!  designed to read ASCII files written by the subroutine write_2D_ASCII above.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -422,6 +428,7 @@
 3003  format(10x,f15.3)
 3004  format(10x,2f15.3)
 3005  format(13x,a6)
+!3006  format(10f15.3)               ! Older ASCII output file from Ash3d used this format
 3006  format(10f18.6)
 
       return
@@ -449,6 +456,9 @@
 !          or yyyymmddhh.h
 !
 !  Subroutine that writes out 3-D arrays in ESRI ASCII raster format
+!  Format specification is given at the following web sites:
+!   https://help.arcgis.com/en/arcgisdesktop/10.0/help/index.html#/ESRI_ASCII_raster_format/009t0000000z000000/
+!   https://en.wikipedia.org/wiki/Esri_grid
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -505,8 +515,10 @@
 !  Arguments:
 !    filename = root name of file (20 characters)
 !
-!  Subroutine that reads in 2-D arrays in ESRI ASCII raster format and
-!  populates A_nx,A_ny,A_XY,A_xll,A_yll,A_dx,A_dy,A_Fill
+!  Subroutine that reads in 3-D arrays in ESRI ASCII raster format and
+!  populates A_nx,A_ny,A_nz,A_XYZ,A_xll,A_yll,A_zll,A_dx,A_dy,A_dz,A_Fill
+!  Note that this is not a generic ERSI ASCII reader. This subroutine is
+!  designed to read ASCII files written by the subroutine write_3D_ASCII above.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

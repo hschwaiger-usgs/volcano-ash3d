@@ -1178,7 +1178,7 @@
 
          ! Grain-size diameter
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),*)"     GS: grain-diameter"
+        write(outlog(io),*)"     gs_diameter: grain diameter"
       endif;enddo
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,"gs_diameter",&
@@ -1198,6 +1198,9 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_diameter units")
 
          ! gs_massfrac (Mass fraction of grain size)
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"     gs_massfrac: grain mass fraction"
+      endif;enddo
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,"gs_massfrac",&
                              nf90_double,&
@@ -1216,6 +1219,9 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_massfrac units")
 
          ! gs_dens (Density of grain)
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"     gs_dens: grain density"
+      endif;enddo
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,"gs_dens",&
                              nf90_double,&
@@ -1234,6 +1240,9 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_dens units")
 
          ! gs_F (Shape factor of grain: F = (B+C)/2A)
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"     gs_F: grain shape factor (B+C)/2A"
+      endif;enddo
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,"gs_F",&
                              nf90_double,&
@@ -1261,6 +1270,9 @@
       endif
 
          ! gs_G (Shape factor of grain: G = B/C)
+      do io=1,2;if(VB(io).le.verbosity_info)then      
+        write(outlog(io),*)"     gs_G: grain shape factor B/C"
+      endif;enddo
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,"gs_G",&
                              nf90_double,&
@@ -1288,6 +1300,9 @@
       endif
 
          ! gs_Phi (Sphericity of grain: Psi = Area-of-vol.eq.sphere/Area-of-particle)
+      do io=1,2;if(VB(io).le.verbosity_info)then      
+        write(outlog(io),*)"     gs_Phi: grain sphericity Psi = Area-of-vol.eq.sphere/Area-of-particle"
+      endif;enddo
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,"gs_Phi",&
                              nf90_double,&
@@ -1317,6 +1332,9 @@
       !   Now a few other variables that are a function of ER
          ! er_stime (Start time of eruption)
       ! Time variables should always be doubles to match with libhourssince
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"     er_stime: Eruption pulse start time"
+      endif;enddo
       nSTAT = nf90_def_var(ncid,"er_stime",&
                            nf90_double,&
                            (/er_dim_id/),&
@@ -1331,6 +1349,9 @@
 
          ! er_duration (Duration of eruption)
       ! Time variables should always be doubles to match with libhourssince
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"     er_duration: Eruption pulse duration"
+      endif;enddo
       nSTAT = nf90_def_var(ncid,"er_duration",&
                            nf90_double,&
                            (/er_dim_id/),&
@@ -1342,6 +1363,9 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er_duration units")
 
          ! er_plumeheight (Plume height of eruption)
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"     er_plumeheight: Eruption pulse Plume Height"
+      endif;enddo
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,"er_plumeheight",&
                              nf90_double,&
@@ -1360,6 +1384,9 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er_plumeheight units")
 
          ! er_volume (Volume of eruption)
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"     er_volume: Eruption pulse volume (DRE)"
+      endif;enddo
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,"er_volume",&
                              nf90_double,&
@@ -1392,7 +1419,7 @@
 
          ! Cell area
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),*)"     area"
+        write(outlog(io),*)"     area: cell area"
       endif;enddo
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,"area",&
@@ -1549,7 +1576,7 @@
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ! Derived variables
       if(USE_OUTPROD_VARS)then
-        ! DEPOSIT (as function of grainsmax)
+        ! Deposit(as function of grainsmax)
            ! Concentration of deposit by grain size(z=0 plane of tot_ashcon)
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"     depocon: ",var_lnames(12)
@@ -1576,7 +1603,7 @@
         nSTAT = nf90_put_att(ncid,depocon_var_id,"_FillValue",-9999.0_op)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att depocon _FillValue")
 
-        ! DEPOSIT thickness
+        ! Deposit thickness
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"     depothick: ",var_lnames(30)
         endif;enddo
@@ -1602,7 +1629,7 @@
         nSTAT = nf90_put_att(ncid,depothick_var_id,"_FillValue",DepositThickness_FillValue)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att depothick _FillValue")
 
-        ! DEPOSIT thickness (Final)
+        ! Depositthickness (Final)
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"     depothickFin: ",var_lnames(37)
         endif;enddo
@@ -1766,7 +1793,7 @@
 
            ! Cloud Mask (this is an integer array flagging where the CloudLoad is non-zero
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"     cloud_mask: "
+          write(outlog(io),*)"     cloud_mask: 1=volcanic cloud, 0=clear air"
         endif;enddo
         nSTAT = nf90_def_var(ncid,"cloud_mask",&
                              nf90_int,  &
@@ -1838,7 +1865,7 @@
       if (Write_PT_Data)then
         ! x coordinate of point
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"     pt_x"
+          write(outlog(io),*)"     pt_x: x (or lon) of Airport/POI data"
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"pt_x",&
@@ -1863,7 +1890,7 @@
 
         ! y coordinate of point
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"     pt_y"
+          write(outlog(io),*)"     pt_y: y (or lat) of Airport/POI data"
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"pt_y",&
@@ -1888,7 +1915,7 @@
 
         ! Point/Airport code (3-char label)
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"     pt_code"
+          write(outlog(io),*)"     pt_code: Airport/POI data 3-character code"
         endif;enddo
         nSTAT = nf90_def_var(ncid,"pt_code",&
                              nf90_char,   &
@@ -1902,7 +1929,7 @@
 
         ! Point/Airport name
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"     pt_name"
+          write(outlog(io),*)"     pt_name: Airport/POI data location name"
         endif;enddo
         nSTAT = nf90_def_var(ncid,"pt_name",&
                              nf90_char,   &
@@ -1916,7 +1943,7 @@
 
         ! Point/Airport ashfall arrival time
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"     pt_depotime"
+          write(outlog(io),*)"     pt_depotime: Airport/POI time of deposit arrival"
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"pt_depotime",&
@@ -1942,7 +1969,7 @@
 
         ! Point/Airport ashfall duration
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"     pt_depodur"
+          write(outlog(io),*)"     pt_depodur: Airport/POI duration of deposition"
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"pt_depodur",&
@@ -1968,7 +1995,7 @@
 
         ! Point/Airport ash cloud arrival time
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"     pt_cloud_arrival"
+          write(outlog(io),*)"     pt_cloud_arrival: Airport/POI time of airborne cloud arrival"
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"pt_cloud_arrival",&
@@ -1994,7 +2021,7 @@
 
         ! Point/Airport ash cloud duration
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"     pt_cloud_dur"
+          write(outlog(io),*)"     pt_cloud_dur: Airport/POI duration of airborne cloud transit"
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"pt_cloud_dur",&
@@ -2020,7 +2047,7 @@
 
         ! Point/Airport ashfall accumulation
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"     pt_depothick"
+          write(outlog(io),*)"     pt_depothick: Airport/POI time-series of deposit accumulation"
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"pt_depothick",&
@@ -2046,7 +2073,7 @@
 
         ! Point/Airport ashfall thickness
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"     pt_depothickFin"
+          write(outlog(io),*)"     pt_depothickFin: Airport/POI final deposit thickness"
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"pt_depothickFin",&
@@ -2075,7 +2102,7 @@
       if(Write_PR_Data)then
         ! x coordinate of point
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"     pr_x"
+          write(outlog(io),*)"     pr_x: x (or lon) coordinate of vertical profile"
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"pr_x",&
@@ -2100,7 +2127,7 @@
 
         ! y coordinate of point
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"     pr_y"
+          write(outlog(io),*)"     pr_y: y (or lat) coordinate of vertical profile"
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"pr_y",&
@@ -2125,7 +2152,7 @@
 
         ! Name of point
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"     pr_name"
+          write(outlog(io),*)"     pr_name: Vertical profile name"
         endif;enddo
         nSTAT = nf90_def_var(ncid,"pr_name",&
                              nf90_char,   &
@@ -2137,28 +2164,9 @@
         nSTAT = nf90_put_att(ncid,pr_name_var_id,"units","text")
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_name units")
 
-!        ! Profile data
-!        if(op.eq.8)then
-!          nSTAT = nf90_def_var(ncid,"pr_ash",&
-!                               nf90_double, &
-!                               (/z_dim_id,tn_dim_id,pr_dim_id/),                &
-!                               pr_ash_var_id)
-!        else
-!          nSTAT = nf90_def_var(ncid,"pr_ash",&
-!                               nf90_float,  &
-!                               (/z_dim_id,tn_dim_id,pr_dim_id/),                &
-!                               pr_ash_var_id)
-!        endif
-!        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var pr_ash")
-!        nSTAT = nf90_put_att(ncid,pr_ash_var_id,"long_name",var_lnames(32))
-!        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_ash long_name")
-!        nSTAT = nf90_put_att(ncid,pr_ash_var_id,"units","mg/m3")
-!        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_ash units")
-!        nSTAT = nf90_put_att(ncid,pr_ash_var_id,&
-!                 "missing_value", MaxConcentration_FillValue)
-!        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_ash missing_value")
-!        nSTAT = nf90_put_att(ncid,pr_ash_var_id,"_FillValue",MaxConcentration_FillValue)
-!        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_ash _FillValue")
+        ! Profile data
+        ! Variable for profile data (pr_ash) will be defined in NC_append_to_netcdf
+        ! in the finalization step.
       endif
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
