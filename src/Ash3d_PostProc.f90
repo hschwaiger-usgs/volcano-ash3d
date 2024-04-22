@@ -451,7 +451,8 @@
         else
           ! Read control file
           call get_command_argument(1, arg, stat)
-          read(arg,*,iostat=iostatus,iomsg=iomessage)PP_infile
+          !read(arg,*,iostat=iostatus,iomsg=iomessage)PP_infile
+          PP_infile = trim(adjustl(arg))
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,arg(1:80),iomessage)
           inquire( file=PP_infile, exist=IsThere )
           if(.not.IsThere)then
@@ -481,8 +482,11 @@
         ! product code and the format.  Optionally, we can add the timestep.  If there is an
         ! inconsistency with iprod and outformat, an error message is issued before stopping.
         call get_command_argument(1, arg, stat)
-        read(arg,*,iostat=iostatus,iomsg=iomessage)concenfile
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,arg(1:80),iomessage)
+        ! Note: unformatted read of concenfile from arg will only read the bit
+        ! up to the first '/'
+        !read(arg,*,iostat=iostatus,iomsg=iomessage)concenfile
+        concenfile = trim(adjustl(arg))
+        !if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,arg(1:80),iomessage)
         call get_command_argument(2, arg, stat)
         read(arg,*,iostat=iostatus,iomsg=iomessage)iprod
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,arg(1:80),iomessage)
