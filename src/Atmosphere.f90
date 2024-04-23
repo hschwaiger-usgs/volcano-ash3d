@@ -72,16 +72,6 @@
       real(kind=ip), parameter,public :: MB_DRY_AIR   = 0.028966_ip     ! Molecular weight of dry air in kg/mol
       real(kind=ip), parameter,public :: BoltzK       = 1.380658e-23_ip ! Boltzmann's constant kg m2 s-2 K-1 molec-1
 
-      ! HFS : Probably delete this
-      ! And since we are looking more carefully at atmospheric conditions,
-      ! allocate the winds on the MetP grid
-      !real(kind=sp),dimension(:,:,:),allocatable :: vx_meso_last_step_MetP_sp
-      !real(kind=sp),dimension(:,:,:),allocatable :: vy_meso_last_step_MetP_sp
-      !real(kind=sp),dimension(:,:,:),allocatable :: vz_meso_last_step_MetP_sp
-      !real(kind=sp),dimension(:,:,:),allocatable :: vx_next_last_step_MetP_sp
-      !real(kind=sp),dimension(:,:,:),allocatable :: vy_nxet_last_step_MetP_sp
-      !real(kind=sp),dimension(:,:,:),allocatable :: vz_nxet_last_step_MetP_sp
-
       contains
       !------------------------------------------------------------------------
 

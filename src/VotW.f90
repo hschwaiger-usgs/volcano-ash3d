@@ -307,6 +307,7 @@
       character            :: volcNS(MAXVOLCS)
       character            :: volcWE(MAXVOLCS)
 
+      character(len= 50) :: linebuffer050 
       character(len=195) :: linebuffer195
       integer            :: nvolcs
       character          :: testkey
@@ -336,11 +337,13 @@
       open(unit=fid_votw,file=VotWMasterFile,status='old',action='read',err=3000)
       ! Read the header
       read(fid_votw,'(a195)',iostat=iostatus,iomsg=iomessage)linebuffer195
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer195(1:80),iomessage)
+      linebuffer050 = "Reading line from volcano file, header"
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer195(1:80),iomessage)
       nvolcs = 0
       ! Now start reading the data lines
       read(fid_votw,'(a195)',iostat=iostatus,iomsg=iomessage)linebuffer195
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer195(1:80),iomessage)
+      linebuffer050 = "Reading line from volcano file"
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer195(1:80),iomessage)
       do while (iostatus.eq.0)
         nvolcs = nvolcs + 1
         read(linebuffer195,50,iostat=ioerr,iomsg=iomessage)&
@@ -353,7 +356,8 @@
                               temp2,              &
                               volcElev_c(nvolcs), &
                               temp3
-        if(ioerr.ne.0) call FileIO_Error_Handler(ioerr,linebuffer195(1:80),iomessage)
+        linebuffer050 = "Reading from linebuffer from volcano file"
+        if(ioerr.ne.0) call FileIO_Error_Handler(ioerr,linebuffer050,linebuffer195(1:80),iomessage)
         volcName(nvolcs) = adjustl(volcName(nvolcs))
         volcLoc(nvolcs)  = adjustl(volcLoc(nvolcs))
         volcElev_c(nvolcs) = adjustl(volcElev_c(nvolcs))
@@ -365,12 +369,14 @@
         volcESP_Code(nvolcs) = temp3(1:1)
 
         read(volcElev_c(nvolcs),*,iostat=ioerr,iomsg=iomessage)testkey
-        if(ioerr.ne.0) call FileIO_Error_Handler(ioerr,volcElev_c(nvolcs),iomessage)
+        linebuffer050 = "Reading testkey from linefuffer of volc file"
+        if(ioerr.ne.0) call FileIO_Error_Handler(ioerr,linebuffer050,volcElev_c(nvolcs),iomessage)
         if(testkey.eq.'U'.or.testkey.eq.'v')then
           volcElev(nvolcs) = 0
         else
           read(volcElev_c(nvolcs),*,iostat=ioerr,iomsg=iomessage)volcElev(nvolcs)
-          if(ioerr.ne.0) call FileIO_Error_Handler(ioerr,volcElev_c(nvolcs),iomessage)
+          linebuffer050 = "Reading volcano file, elevation"
+          if(ioerr.ne.0) call FileIO_Error_Handler(ioerr,linebuffer050,volcElev_c(nvolcs),iomessage)
         endif
         if(volcNS(nvolcs).eq.'S') volcLat(nvolcs) = -volcLat(nvolcs)
         if(volcWE(nvolcs).eq.'W') volcLon(nvolcs) = -volcLon(nvolcs) + 360.0_ip
@@ -384,7 +390,8 @@
           exit
         elseif(iostatus.gt.0)then
           ! Error reading line
-          call FileIO_Error_Handler(iostatus,linebuffer195(1:80),iomessage)
+          linebuffer050 = "Reading from line from volcano file"
+          call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer195(1:80),iomessage)
         endif
       enddo
 

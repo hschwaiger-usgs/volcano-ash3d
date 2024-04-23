@@ -152,6 +152,7 @@
       real(kind=ip),dimension(:),allocatable     :: lon_cities
       real(kind=ip),dimension(:),allocatable     :: lat_cities
       character(len=26),dimension(:),allocatable :: name_cities
+      character(len=50) :: linebuffer050
       character(len=80) :: linebuffer080
       character         :: testkey
       integer           :: ilev
@@ -476,8 +477,9 @@
       write(61,'(a12,a20)')"T Run Date: ",os_time_log
       write(61,'(a5)')"G0.2i"
       read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
-      linebuffer080 = "iw,iwf"
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      linebuffer080 = cdf_b3l1
+      linebuffer050 = "Reading iw,iwf from cdf_b3l1"
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
       write(61,'(a12,i3)')"T Windfile: ",iwf
       close(61)
       !  Right panel

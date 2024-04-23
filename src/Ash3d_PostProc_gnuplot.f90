@@ -137,6 +137,7 @@
       real(kind=ip),dimension(:),allocatable     :: lat_cities
       character(len=26),dimension(:),allocatable :: name_cities
       logical           :: IsThere1,IsThere2
+      character(len=50) :: linebuffer050 
       character(len=80) :: linebuffer080
       character         :: testkey
       integer           :: ilev,ignulev
@@ -476,7 +477,8 @@
       write(55,*)"set label 'Run Date: ",os_time_log,&
                   "' at XVAL, YVAL font 'sans,9' offset character 0,-1"
       read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,cdf_b3l1,iomessage)
+      linebuffer050 = "Reading iw,iwf from cdf_b3l1"
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,cdf_b3l1,iomessage)
       write(55,*)"set label 'Windfile: ",iwf,&
                   "' at XVAL, YVAL font 'sans,9' offset character 0,-2"
 
@@ -520,7 +522,8 @@
         ilev = -1
         ignulev = -1
         read(54,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+        linebuffer050 = "Reading line from contour file"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         do while(iostatus.eq.0)
           ! Check if this is a header line
           read(linebuffer080,*,iostat=ioerr,iomsg=iomessage)testkey
@@ -531,7 +534,7 @@
               ! Still in file header
               ! Read the next line and cycle
               read(54,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-              !if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+              !if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
               cycle
             else
               ! Blank line in a contour block means we are starting another curve
@@ -554,7 +557,8 @@
               cycle
             else
               read(linebuffer080,4,iostat=ioerr,iomsg=iomessage)ignulev
-              if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+              linebuffer050 = "Reading line from contour file, ignulev"
+              if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
 4             format(9x,i2)
               ! Now read the level. Look for the ':' to isolate the last bit
               substr_pos1 = index(linebuffer080,':')
@@ -564,10 +568,12 @@
               if(substr_pos2.gt.0.or.substr_pos3.gt.0)then
                 ! level is written as real
                 read(linebuffer080(substr_pos1+1:28),*,iostat=iostatus,iomsg=iomessage)lev_r4
-                if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+                linebuffer050 = "Reading line from contour file, lev_r4"
+                if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
               else
                 read(linebuffer080(substr_pos1+1:28),*,iostat=iostatus,iomsg=iomessage)lev_i
-                if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+                linebuffer050 = "Reading line from contour file, lev_i"
+                if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
                 lev_r4 = real(lev_i,kind=4)
               endif
               ! The value for this new level ignulev is lev_r4, but we need to find which
@@ -588,7 +594,8 @@
             ipt = ContourDataNpoints(ilev,icurve) 
             read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) &
                        ContourDataX(ilev,icurve,ipt),ContourDataY(ilev,icurve,ipt)
-            if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+            linebuffer050 = "Reading line from contour file, x,y"
+            if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
           endif
 
           ! Try to read the next line

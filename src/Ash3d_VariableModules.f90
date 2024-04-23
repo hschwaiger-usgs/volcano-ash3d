@@ -134,11 +134,12 @@
 !
 !##############################################################################
 
-      subroutine FileIO_Error_Handler(ios,linebuffer080,iomessage)
+      subroutine FileIO_Error_Handler(ios,linebuffer050,linebuffer080,iomessage)
 
-      integer           ,intent(in) :: ios
-      character(len= 80),intent(in) :: linebuffer080
-      character(len=120),intent(in) :: iomessage
+      integer           ,intent(in) :: ios           ! error code
+      character(len= 50),intent(in) :: linebuffer050 ! Diagnostic from Ash3d
+      character(len= 80),intent(in) :: linebuffer080 ! line from file causing error
+      character(len=120),intent(in) :: iomessage     ! system message
 
       integer :: io
 
@@ -147,8 +148,9 @@
           write(errlog(io),*)'ERROR Reading from file:  EOF encountered',ios
         else
           write(errlog(io),*)'ERROR Reading line from file:  input line format error',ios
-          write(errlog(io),*)linebuffer080
+          write(errlog(io),*)'Offending line: ',linebuffer080
         endif
+        write(errlog(io),*)'Ash3d diagnostics: ',linebuffer050
         write(errlog(io),*)'System Message: ',trim(adjustl(iomessage))
       endif;enddo
       stop 1

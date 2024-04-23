@@ -708,6 +708,7 @@
       integer            :: ioerr
       real(kind=ip)      :: inx, iny
       real(kind=ip)      :: inlat, inlon
+      character(len= 50) :: linebuffer050
       character(len=120) :: linebuffer120
       character(len=35)  :: inName
       character(len=3)   :: inCode
@@ -747,7 +748,8 @@
       open(unit=fid_airport,file=AirportMasterFile,status='old',action='read',err=2000)
       ! Read first header line
       read(fid_airport,'(a120)',iostat=iostatus,iomsg=iomessage) linebuffer120
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer120(1:80),iomessage)
+      linebuffer050 = "Reading first line of Airport/POI file."
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer120(1:80),iomessage)
       ! Read airport locations and assign airports in the modeled area to a temporary array
       isite = 0
       do while (iostatus.ge.0)

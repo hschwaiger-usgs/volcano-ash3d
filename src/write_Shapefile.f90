@@ -61,7 +61,7 @@
 
       use mesh,          only : &
          A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-         A3d_k0_scale,A3d_Re,IsLatLon
+         A3d_k0_scale,IsLatLon
 
       implicit none
 
@@ -100,6 +100,7 @@
       integer :: iw,iwf
       integer           :: iostatus
       character(len=120):: iomessage
+      character(len= 50):: linebuffer050 
 
       integer(kind=4) :: file_code
       integer(kind=4) :: tmp4
@@ -564,7 +565,8 @@
         endif;enddo
       endif
       read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage)  iw,iwf
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,cdf_b3l1,iomessage)
+      linebuffer050 = "Reading iw,iwf from cdf_b3l1"
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,cdf_b3l1,iomessage)
 
       write(DBASE_TableRecData01,*)trim(adjustl(cdf_institution))   ! ORG
       write(DBASE_TableRecData02,*)trim(adjustl(VolcanoName))       ! VOLC

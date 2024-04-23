@@ -149,6 +149,7 @@
       integer             :: istat
       integer             :: iostatus
       character(len=120)  :: iomessage
+      character(len=50)   :: linebuffer050
       character(len=80)   :: linebuffer080
       character(len=100)  :: arg
       integer             :: informat     = 3 ! input format (default = 3 for netcdf)
@@ -360,7 +361,8 @@
         endif;enddo
         read(input_unit,*,iostat=iostatus,iomsg=iomessage) concenfile
         linebuffer080 = "concenfile"
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+        linebuffer050 = "Reading concenfile from stdin"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
 #endif
         inquire( file=concenfile, exist=IsThere )
         if(.not.IsThere)then
@@ -398,7 +400,8 @@
         endif;enddo
         read(input_unit,*,iostat=iostatus,iomsg=iomessage)iprod
         linebuffer080 = "iprod"
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+        linebuffer050 = "Reading iprod from stdin"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
 
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)'Select output format'
@@ -410,7 +413,8 @@
         endif;enddo
         read(input_unit,*,iostat=iostatus,iomsg=iomessage)outformat
         linebuffer080 = "outformat"
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+        linebuffer050 = "Reading outformat from stdin"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
 
         if(iprod.eq.5.or.iprod.eq.6)then
           ! For final deposit variables, set itime to -1
@@ -433,7 +437,8 @@
           endif;enddo
           read(input_unit,*,iostat=iostatus,iomsg=iomessage)itime
           linebuffer080 = "itime"
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+          linebuffer050 = "Reading itime from stdin"
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         else
           ! iprod = 7,8,14,15 are not time-series, but set itime to -1
           itime = -1
@@ -453,7 +458,8 @@
           call get_command_argument(1, arg, stat)
           !read(arg,*,iostat=iostatus,iomsg=iomessage)PP_infile
           PP_infile = trim(adjustl(arg))
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,arg(1:80),iomessage)
+          linebuffer050 = "Reading control file from command-line arg."
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,arg(1:80),iomessage)
           inquire( file=PP_infile, exist=IsThere )
           if(.not.IsThere)then
             do io=1,2;if(VB(io).le.verbosity_error)then
@@ -486,17 +492,21 @@
         ! up to the first '/'
         !read(arg,*,iostat=iostatus,iomsg=iomessage)concenfile
         concenfile = trim(adjustl(arg))
-        !if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,arg(1:80),iomessage)
+        !linebuffer050 = "Reading concenfile from command-line arg 1"
+        !if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,arg(1:80),iomessage)
         call get_command_argument(2, arg, stat)
         read(arg,*,iostat=iostatus,iomsg=iomessage)iprod
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,arg(1:80),iomessage)
+        linebuffer050 = "Reading iprod from command-line arg 2"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,arg(1:80),iomessage)
         call get_command_argument(3, arg, stat)
         read(arg,*,iostat=iostatus,iomsg=iomessage)outformat
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,arg(1:80),iomessage)
+        linebuffer050 = "Reading outformat from command-line arg 3"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,arg(1:80),iomessage)
         if (nargs.eq.4) then
           call get_command_argument(4, arg, stat)
           read(arg,*,iostat=iostatus,iomsg=iomessage)itime
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,arg(1:80),iomessage)
+          linebuffer050 = "Reading itime from command-line arg 4"
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,arg(1:80),iomessage)
         else
           itime = -1
         endif

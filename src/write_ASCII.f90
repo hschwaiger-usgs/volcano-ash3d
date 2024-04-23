@@ -278,7 +278,8 @@
       character(len=50)  :: filename_out
       integer            :: iostatus
       character(len=120) :: iomessage
-      character(len=80)  :: linebuffer080
+      character(len= 50) :: linebuffer050 
+      character(len= 80) :: linebuffer080
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_2D_ASCII"
@@ -286,7 +287,8 @@
 
       read(Fill_Value,*,iostat=iostatus,iomsg=iomessage)FValue
       linebuffer080 = Fill_Value
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      linebuffer050 = "Reading FValue from ASCII file"
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
 
       if(isFinal_TS)then
         cio='____final'
@@ -528,8 +530,9 @@
 
       integer :: i,j,k
       integer :: iostatus
-      character(len=120)   :: iomessage
-      character(len=130):: linebuffer130
+      character(len=120) :: iomessage
+      character(len= 50) :: linebuffer050 
+      character(len=130) :: linebuffer130
       real(kind=ip) :: value1,value2,value3
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
@@ -540,7 +543,8 @@
 
       ! Read the header lines
       read(fid_ascii3din,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer130(1:80),iomessage)
+      linebuffer050 = "Reading line from ASCII file"
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
       read(fid_ascii3din,3000,err=2600,iostat=iostatus,iomsg=iomessage) A_nx,A_ny,A_nz
       if(iostatus.ne.0)then
         ! We might have an empty file
@@ -559,7 +563,8 @@
             read(fid_ascii3din,*,iostat=iostatus,iomsg=iomessage)linebuffer130
             read(linebuffer130,'(3(4x,f20.3),g20.8)',iostat=iostatus,iomsg=iomessage) &
                    value1,value2,value3,A_XYZ(i,j,k)
-            if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer130(1:80),iomessage)
+            linebuffer050 = "Reading line from ASCII file"
+            if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
 
             if(i.eq.1.and.j.eq.1.and.k.eq.1)then
               A_xll = value1

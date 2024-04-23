@@ -77,6 +77,7 @@
       integer, parameter :: MAXPARAMS = 50
 
       integer           :: i
+      character(len=50) :: linebuffer050 
       character(len=80) :: linebuffer080
       character         :: testkey
       integer           :: iostatus
@@ -100,7 +101,8 @@
       open(unit=fid_ctrlfile,file=infile,status='old',action='read',err=1900)
 
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      linebuffer050 = "Reading line from control file, RESETPARAMS"
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
       do while(iostatus.eq.0)
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         if(iostatus.ne.0)exit
@@ -118,9 +120,11 @@
       enddo
 
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      linebuffer050 = "Reading line from control file, RESETPARAMS"
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      linebuffer050 = "Reading testkey from linebuffer, RESETPARAMS"
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
       iparam = 0
       do while(iostatus.eq.0.and. &
                testkey.ne.'#'.and.testkey.ne.'*')
@@ -133,12 +137,14 @@
           ! If reading a floating point value fails, then try to read as
           ! a string
           read(linebuffer080(substr_pos+1:50),*,iostat=ioerr,iomsg=iomessage)pvalue_str(iparam)
-          if(ioerr.ne.0) call FileIO_Error_Handler(ioerr,linebuffer080,iomessage)
+          linebuffer050 = "Reading value from linebuffer, RESETPARAMS"
+          if(ioerr.ne.0) call FileIO_Error_Handler(ioerr,linebuffer050,linebuffer080,iomessage)
         endif
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         if(iostatus.ne.0) exit
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+        linebuffer050 = "Reading testkey from linebuffer, RESETPARAMS"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
       enddo
 
       ! We've read all the parameters to reset, now loop through the list

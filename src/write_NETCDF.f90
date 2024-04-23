@@ -251,7 +251,7 @@
       character(len=30),dimension(40) :: var_lnames
       character(len=13)  :: reftimestr
       character(len=16)  :: outstring
-      character(len=50 ) :: linebuffer050
+      character(len= 50) :: linebuffer050
       character(len=130) :: linebuffer130
       integer :: strlen
       integer :: i,j,k,isize
@@ -3553,7 +3553,8 @@
       logical           :: IsThere
       integer           :: iostatus
       character(len=120):: iomessage
-      character(len=80) :: linebuffer080
+      character(len= 50):: linebuffer050 
+      character(len= 80):: linebuffer080
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine NC_RestartFile_ReadTimes"
@@ -3593,10 +3594,12 @@
       enddo
 
       write(outlog(io),*)'Enter timestep for initialization'
-      read(5,*,iostat=iostatus,iomsg=iomessage) linebuffer080
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      read(input_unit,*,iostat=iostatus,iomsg=iomessage) linebuffer080
+      linebuffer050 = "Reading init_tstep from stdin"
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) init_tstep
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      linebuffer050 = "Reading init_tstep from linebuffer"
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
 
       nSTAT=nf90_get_var(ncid,t_var_id,dumscal_out,(/init_tstep/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var t")
@@ -3830,7 +3833,8 @@
       integer           :: iendstr
       integer           :: iostatus
       character(len=120):: iomessage
-      character(len=80) :: linebuffer080
+      character(len= 50):: linebuffer050 
+      character(len= 80):: linebuffer080
 
       integer :: itstart_year,itstart_month,itstart_day
       integer :: itstart_hour,itstart_min,itstart_sec
@@ -4670,12 +4674,14 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_att units t:")
         read(time_units,4313,iostat=iostatus,iomsg=iomessage) xmlSimStartTime
         linebuffer080 = xmlSimStartTime
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+        linebuffer050 = "Reading xmlSimStartTime from time var attribute"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
   4313  format(12x,a20)
         read(xmlSimStartTime,4314,iostat=iostatus,iomsg=iomessage)&
                              itstart_year,itstart_month,itstart_day, &
                              itstart_hour,itstart_min,itstart_sec
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+        linebuffer050 = "Reading xmlSimStartTime from time var attribute"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         filestart_hour = real(itstart_hour,kind=sp) + &
                              real(itstart_min,kind=sp)/60.0_sp      + &
                              real(itstart_sec,kind=sp)/3600.0_sp
@@ -4893,15 +4899,18 @@
         ! Get Simulation time info
         nSTAT = nf90_get_att(ncid,nf90_global,"b3l3",cdf_b3l3)
         read(cdf_b3l3,*,iostat=iostatus,iomsg=iomessage) Simtime_in_hours        ! simulated transport time
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,cdf_b3l3,iomessage)
+        linebuffer050 = "Reading simtime from cdf_b3l3"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,cdf_b3l3,iomessage)
         ! Get vent location
         nSTAT = nf90_get_att(ncid,nf90_global,"b1l5",cdf_b1l5)
         if (IsLatLon) then                        !get lon_volcano and lat_volcano
           read(cdf_b1l5,*,iostat=iostatus,iomsg=iomessage)lon_volcano, lat_volcano
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,cdf_b1l5,iomessage)
+          linebuffer050 = "Reading vlon,vlat from cdf_b3l5"
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,cdf_b1l5,iomessage)
         else
           read(cdf_b1l5,*,iostat=iostatus,iomsg=iomessage)x_volcano, y_volcano
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,cdf_b1l5,iomessage)
+          linebuffer050 = "Reading vx,vy from cdf_b3l5"
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,cdf_b1l5,iomessage)
           call PJ_proj_inv(real(x_volcano,kind=dp),real(y_volcano,kind=dp), &
                      A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
                      A3d_k0_scale,A3d_Re, &
@@ -5047,10 +5056,12 @@
           write(outlog(io),*)'Enter timestep for initialization'
         endif;enddo
 
-        read(5,*,iostat=iostatus,iomsg=iomessage) linebuffer080
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+        read(input_unit,*,iostat=iostatus,iomsg=iomessage) linebuffer080
+        linebuffer050 = "Reading init_tstep from stdin"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) init_tstep
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+        linebuffer050 = "Reading init_tstep from stdin linebuffer"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
       else
         if (timestep.eq.-1)then
           isFinal_TS = .true.

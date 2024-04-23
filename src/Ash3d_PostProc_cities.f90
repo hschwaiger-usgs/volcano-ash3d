@@ -40,7 +40,8 @@
       character(len=26),dimension(maxcities),intent(out) :: CityName_out
 
       integer            :: iostatus = 1
-      character(len=120)   :: iomessage
+      character(len=120) :: iomessage
+      character(len= 50) :: linebuffer050
       integer            :: i, ncities, nread
       integer            :: resolution                              ! # of cells in x and y
       character(len=26)  :: CityName
@@ -107,17 +108,20 @@
 
       ! skip the first line
       read(fid_cities,*,iostat=iostatus,iomsg=iomessage) linebuffer133
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer133(1:80),iomessage)
+      linebuffer050 = "Reading header line of city file"
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer133(1:80),iomessage)
 
       do while ((ncities.lt.maxcities).and.(iostatus.ge.0))
         read(fid_cities,'(a133)',iostat=iostatus,iomsg=iomessage) linebuffer133
         if(iostatus.lt.0)then
           exit
         elseif(iostatus.gt.0)then 
-          call FileIO_Error_Handler(iostatus,linebuffer133(1:80),iomessage)
+          linebuffer050 = "Reading line from city file"
+          call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer133(1:80),iomessage)
         endif
         read(linebuffer133,2,iostat=iostatus,iomsg=iomessage) CityLon, CityLat, CityName
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer133(1:80),iomessage)
+        linebuffer050 = "Reading city lon,lat,name from linebuffer"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer133(1:80),iomessage)
 
 2       format(f16.4,f15.4,a26)
         if ((CityLon.gt.lonLL).and.(CityLon.lt.lonUR).and. &
