@@ -90,7 +90,7 @@
          ContourLev,nConLev
        ! These are needed if we can figure out how to extract contour data
 !         ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
-!         Contour_MaxCurves,Contour_MaxPoints
+!         CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS
 
       use io_data,       only : &
          WriteTimes,cdf_b3l1,VolcanoName
@@ -737,7 +737,7 @@
          nzmax,z_cc_pd
 
       use Output_Vars,   only : &
-         pr_ash,CLOUDCON_THRESH
+         pr_ash,CLOUDCON_THRESH,CONTOUR_MAXCURVES
 
       use time_data,     only : &
          ntmax,time_native
@@ -754,7 +754,7 @@
       integer,intent(in) :: vprof_ID
 
       !integer,parameter :: NLEVEL     = 11
-      integer,parameter :: NLEVEL     = 20
+      !integer,parameter :: NLEVEL     = 30
       integer,parameter :: NUM_AXES   = 1
       integer,parameter :: NUM_LABELS = 1
 
@@ -783,7 +783,8 @@
       !parameter(NUM_AXES=1, NUM_LABELS=1)
       character(len=20) :: axis_opts(NUM_AXES)
       integer           :: num_values(NUM_AXES)
-      real(kind=plflt)  :: values(NUM_AXES,NLEVEL+1)
+      !real(kind=plflt)  :: values(NUM_AXES,NLEVEL+1)
+      real(kind=plflt)  :: values(NUM_AXES,CONTOUR_MAXCURVES+1)
       real(kind=plflt)  :: axis_ticks(NUM_AXES)
       integer           :: axis_subticks(NUM_AXES)
       character(len=100):: labels(NUM_LABELS)
@@ -833,11 +834,17 @@
         enddo
       enddo
 
-      allocate(shedge(NLEVEL+1))
+!      allocate(shedge(NLEVEL+1))
+      allocate(shedge(CONTOUR_MAXCURVES+1))
       ! Here we linearly interpolate color levels to the min/max of the data
-      do i = 1, NLEVEL+1
-        shedge(i) = cmin + (cmax - cmin) * real(i-1,kind=plflt) / real(NLEVEL,kind=plflt)
+!      do i = 1, NLEVEL+1
+!        shedge(i) = cmin + (cmax - cmin) * real(i-1,kind=plflt) / real(NLEVEL,kind=plflt)
+!      enddo
+      do i = 1, CONTOUR_MAXCURVES+1
+        shedge(i) = cmin + (cmax - cmin) * real(i-1,kind=plflt) / &
+                            real(CONTOUR_MAXCURVES,kind=plflt)
       enddo
+
       ! Here we hard-wire the color levels to the same as the kml plot
       !shedge(:) = (/ 0.0_plflt,  0.1_plflt,   0.3_plflt,   1.0_plflt, 2.0_plflt, &
       !              10.0_plflt, 30.0_plflt, 100.0_plflt, 300.0_plflt, & 
@@ -922,7 +929,9 @@
       call plschr(0.0_plflt,1.0_plflt)  ! Change font scale
       call pllab("Time (hours after eruption)", "Height (km)", trim(adjustl(title_str)))
 
-      num_values(1) = NLEVEL + 1;
+!      num_values(1) = NLEVEL + 1;
+      num_values(1) = CONTOUR_MAXCURVES + 1;
+
       values(1,:)   = shedge;
       call plcolorbar( colorbar_width, colorbar_height, &  ! these are output values
             PL_COLORBAR_SHADE ,  &
@@ -930,7 +939,8 @@
             0, &                                               ! sets position
             0.015_plflt, 0.1_plflt, 0.0375_plflt, 0.8_plflt, &  ! x,y, dimesions
             0, 1, 1, &                                         ! bg_color,bb_color,bb_style
-            0.0_plflt, shedge(NLEVEL+1), & ! low/high 
+            0.0_plflt, shedge(CONTOUR_MAXCURVES+1), & ! low/high 
+!            0.0_plflt, shedge(NLEVEL+1), & ! low/high 
             cont_color, cont_width, &
             label_opts, labels, &
             axis_opts, &

@@ -263,10 +263,11 @@
         n_airports_total = NAIRPORTS_EWERT + n_ext_airports
         if(n_airports_total.gt.MAXAIRPORTS)then
           do io=1,2;if(VB(io).le.verbosity_error)then
-            write(errlog(io),*)"ERROR: ",&
-                 "Too many airports are requested."
-            write(errlog(io),*)&
-                  "       Increase MAXAIRPORTS and recompile"
+            write(errlog(io),*)"ERROR: Too many airports are requested."
+            write(errlog(io),*)"       Increase MAXAIRPORTS and recompile"
+            write(errlog(io),*)"       Current maximum set to MAXAIRPORTS = ",MAXAIRPORTS
+            write(errlog(io),*)"       Please increase MAXAIRPORTS and recompile."
+            write(errlog(io),*)" Airports.f90:MAXAIRPORTS"
           endif;enddo
         endif
         do i=NAIRPORTS_EWERT+1,n_airports_total

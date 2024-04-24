@@ -346,6 +346,15 @@
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer195(1:80),iomessage)
       do while (iostatus.eq.0)
         nvolcs = nvolcs + 1
+        if(nvolcs.gt.MAXVOLCS)then
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: Maximum number of volcanoes in file exceeded"
+            write(errlog(io),*)"       Current maximum set to MAXVOLCS = ",MAXVOLCS
+            write(errlog(io),*)"       Please increase MAXVOLCS and recompile."
+            write(errlog(io),*)" VotW.f90:MAXVOLCS"
+          endif;enddo
+          stop 1
+        endif
         read(linebuffer195,50,iostat=ioerr,iomsg=iomessage)&
                               volcID(nvolcs),     &
                               volcName(nvolcs),   &

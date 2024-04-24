@@ -145,13 +145,15 @@
 
       do io=1,nio;if(VB(io).le.verbosity_error)then
         if(ios.lt.0)then
-          write(errlog(io),*)'ERROR Reading from file:  EOF encountered',ios
+          write(errlog(io),*)'ERROR Reading from file:  EOF encountered'
+          write(errlog(io),*)'  error code: ',ios
         else
-          write(errlog(io),*)'ERROR Reading line from file:  input line format error',ios
-          write(errlog(io),*)'Offending line: ',linebuffer080
+          write(errlog(io),*)'ERROR Reading line from file:  input line format error'
+          write(errlog(io),*)'  error code: ',ios
+          write(errlog(io),*)'  Offending line: ',linebuffer080
         endif
-        write(errlog(io),*)'Ash3d diagnostics: ',linebuffer050
-        write(errlog(io),*)'System Message: ',trim(adjustl(iomessage))
+        write(errlog(io),*)'  Ash3d diagnostics: ',linebuffer050
+        write(errlog(io),*)'  System Message: ',trim(adjustl(iomessage))
       endif;enddo
       stop 1
 
@@ -212,8 +214,8 @@
                                                 !  Note: a particular projection might
                                                 !        use a different radius
 
-      integer,       parameter :: MAXNUM_OPTMODs   = 10   ! used just to preallocate block array
-      character(len=20),dimension(MAXNUM_OPTMODs) :: OPTMOD_names
+      integer,       parameter :: MAXNUM_OPTMODS   = 10   ! used just to preallocate block array
+      character(len=20),dimension(MAXNUM_OPTMODS) :: OPTMOD_names
       integer                  :: nmods
 
       ! Some variables determined by preprocessor flags at compilation time

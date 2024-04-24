@@ -91,7 +91,7 @@
          Con_CloudRef_N,Con_CloudRef_RGB,Con_CloudRef_Lev, &
          Con_CloudTime_N,Con_CloudTime_RGB,Con_CloudTime_Lev, &
          ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
-         Contour_MaxCurves,Contour_MaxPoints,ContourLev,nConLev,Mask_Cloud,&
+         CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS,ContourLev,nConLev,Mask_Cloud,&
          CloudArrivalTime,Mask_Deposit
 
       use time_data,     only : &
@@ -447,9 +447,9 @@
         endif;enddo
         write(outfile_name,'(a14)')'tmp.png'
         allocate(ContourDataNcurves(nConLev))
-        allocate(ContourDataNpoints(nConLev,Contour_MaxCurves))
-        allocate(ContourDataX(nConLev,Contour_MaxCurves,Contour_MaxPoints))
-        allocate(ContourDataY(nConLev,Contour_MaxCurves,Contour_MaxPoints))
+        allocate(ContourDataNpoints(nConLev,CONTOUR_MAXCURVES))
+        allocate(ContourDataX(nConLev,CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS))
+        allocate(ContourDataY(nConLev,CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS))
         ContourDataNcurves(:)   = 0
         ContourDataNpoints(:,:) = 0
         ContourDataX(:,:,:)     = 0.0_ip
@@ -920,12 +920,30 @@
               ! Contours are all written to separate files
               ! Increment the number of curves for this level
               ContourDataNcurves(ilev) = ContourDataNcurves(ilev) + 1
+              if(ContourDataNcurves(ilev).gt.CONTOUR_MAXCURVES)then
+                do io=1,2;if(VB(io).le.verbosity_error)then
+                  write(errlog(io),*)"ERROR: Maximum number of curves for this level exceeded by GMT"
+                  write(errlog(io),*)"       Current maximum set to CONTOUR_MAXCURVES = ",CONTOUR_MAXCURVES
+                  write(errlog(io),*)"       Please increase CONTOUR_MAXCURVES and recompile."
+                  write(errlog(io),*)"  Output_Vars.f90:CONTOUR_MAXCURVES"
+                endif;enddo
+                stop 1
+              endif
               icurve = ContourDataNcurves(ilev)
             endif
           else
             ! This is the data section
             ! Increment the number of points
             ContourDataNpoints(ilev,icurve) = ContourDataNpoints(ilev,icurve) + 1
+            if(ContourDataNpoints(ilev,icurve).gt.CONTOUR_MAXPOINTS)then
+              do io=1,2;if(VB(io).le.verbosity_error)then
+                write(errlog(io),*)"ERROR: Maximum number of points for this curve exceeded by GMT"
+                write(errlog(io),*)"       Current maximum set to CONTOUR_MAXPOINTS = ",CONTOUR_MAXPOINTS
+                write(errlog(io),*)"       Please increase CONTOUR_MAXPOINTS and recompile."
+                write(errlog(io),*)"  Output_Vars.f90:CONTOUR_MAXPOINTS"
+              endif;enddo
+              stop 1
+            endif
             ipt = ContourDataNpoints(ilev,icurve)
             read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)ContourDataX(ilev,icurve,ipt),ContourDataY(ilev,icurve,ipt)
           endif
@@ -939,8 +957,8 @@
         ! Loop through all the levels and curves and trim any curves with zero length
         do ilev=1,nConLev
           ! start at the last contour level
-          icurve = Contour_MaxCurves + 1
-          do ii=Contour_MaxCurves,1,-1
+          icurve = CONTOUR_MAXCURVES + 1
+          do ii = CONTOUR_MAXCURVES,1,-1
             if(ContourDataNpoints(ilev,ii).le.0)then
               ! log each curve number with no points
               icurve = ii

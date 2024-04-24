@@ -145,9 +145,9 @@
       implicit none
 
       integer             :: nargs
-      integer             :: stat
       integer             :: istat
       integer             :: iostatus
+      integer             :: arglen
       character(len=120)  :: iomessage
       character(len=50)   :: linebuffer050
       character(len=80)   :: linebuffer080
@@ -446,7 +446,7 @@
       elseif (nargs.eq.1) then
           ! If an argument is given, first test for the '-h' indicating a help
           ! request.
-        call get_command_argument(1, arg, stat)
+        call get_command_argument(1, arg, length=arglen, status=iostatus)
         testkey  = arg(1:1)
         testkey2 = arg(2:2)
         if(testkey.eq.'-'.and.testkey2.eq.'h')then
@@ -455,7 +455,7 @@
           call help_postproc
         else
           ! Read control file
-          call get_command_argument(1, arg, stat)
+          call get_command_argument(1, arg, length=arglen, status=iostatus)
           !read(arg,*,iostat=iostatus,iomsg=iomessage)PP_infile
           PP_infile = trim(adjustl(arg))
           linebuffer050 = "Reading control file from command-line arg."
@@ -487,23 +487,23 @@
         ! If we are doing command line only, then we need at least the netcdf filename, the output
         ! product code and the format.  Optionally, we can add the timestep.  If there is an
         ! inconsistency with iprod and outformat, an error message is issued before stopping.
-        call get_command_argument(1, arg, stat)
+        call get_command_argument(1, arg, length=arglen, status=iostatus)
         ! Note: unformatted read of concenfile from arg will only read the bit
         ! up to the first '/'
         !read(arg,*,iostat=iostatus,iomsg=iomessage)concenfile
         concenfile = trim(adjustl(arg))
         !linebuffer050 = "Reading concenfile from command-line arg 1"
         !if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,arg(1:80),iomessage)
-        call get_command_argument(2, arg, stat)
+        call get_command_argument(2, arg, length=arglen, status=iostatus)
         read(arg,*,iostat=iostatus,iomsg=iomessage)iprod
         linebuffer050 = "Reading iprod from command-line arg 2"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,arg(1:80),iomessage)
-        call get_command_argument(3, arg, stat)
+        call get_command_argument(3, arg, length=arglen, status=iostatus)
         read(arg,*,iostat=iostatus,iomsg=iomessage)outformat
         linebuffer050 = "Reading outformat from command-line arg 3"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,arg(1:80),iomessage)
         if (nargs.eq.4) then
-          call get_command_argument(4, arg, stat)
+          call get_command_argument(4, arg, length=arglen, status=iostatus)
           read(arg,*,iostat=iostatus,iomsg=iomessage)itime
           linebuffer050 = "Reading itime from command-line arg 4"
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,arg(1:80),iomessage)
@@ -1128,7 +1128,7 @@
           endif;enddo
           write(comd,*)"zip ",trim(adjustl(KMZ_filename(ivar))),' ',&
                               trim(adjustl(KML_filename(ivar)))
-          call execute_command_line (comd, exitstat=stat)
+          call execute_command_line (comd, exitstat=istat)
         elseif(iprod.eq.3.or.iprod.eq.5.or. &  ! Deposit thickness mm (kml versions is TS + final)
                iprod.eq.4.or.iprod.eq.6.or. &  ! Deposit thickness inches (kml versions is TS + final)
                iprod.eq.9.or.               &  ! ash-cloud concentration

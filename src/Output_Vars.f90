@@ -172,8 +172,8 @@
       ! Contour colors and levels
       logical                                     ,public:: ContourFilled = .false. ! T if using filled contours, F if lines
       integer                                     ,public:: nConLev
-      integer,parameter                           ,public:: Contour_MaxCurves  = 30
-      integer,parameter                           ,public:: Contour_MaxPoints  = 1000
+      integer,parameter                           ,public:: CONTOUR_MAXCURVES  = 40
+      integer,parameter                           ,public:: CONTOUR_MAXPOINTS  = 1000
         ! User-specified contour interval and colors
       logical                                     ,public:: Con_Cust   = .false.    ! T if using a custom set of contours
       integer                                     ,public:: Con_Cust_N

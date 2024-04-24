@@ -79,6 +79,7 @@
       character(len=3)  :: answer
       character(len=130):: linebuffer130
       character         :: testkey,testkey2
+      integer           :: arglen
       integer           :: iostatus
       character(len=120):: iomessage
       integer           :: blockID
@@ -141,7 +142,7 @@
       elseif(nargs.ge.1) then
           ! If an argument is given, first test for the '-h' indicating a help
           ! request.
-        call get_command_argument(1, linebuffer130, status=iostatus)
+        call get_command_argument(1, linebuffer130, length=arglen, status=iostatus)
         testkey  = linebuffer130(1:1)
         testkey2 = linebuffer130(2:2)
         if(testkey.eq.'-')then
@@ -152,7 +153,7 @@
               call help_general
             else
               ! command is Ash3d -h [help topic]
-              call get_command_argument(2, linebuffer130, status=iostatus)
+              call get_command_argument(2, linebuffer130, length=arglen, status=iostatus)
               if(trim(adjustl(linebuffer130)).eq.'make')then
                 call help_make
                 write(outlog(io),*) ' --------------------------------------------'
@@ -168,7 +169,7 @@
                   ! Check if there is an additional command-line parameter specifying
                   ! the block number
 
-                  call get_command_argument(3, linebuffer130, status=iostatus)
+                  call get_command_argument(3, linebuffer130, length=arglen, status=iostatus)
 
                   read(linebuffer130,*,err=1600,iostat=iostatus,iomsg=iomessage)blockID
                   if(blockID.lt.1.or.blockID.gt.10)then
@@ -884,7 +885,7 @@
       use global_param,  only : &
          EPS_SMALL,EPS_TINY,nmods,OPTMOD_names,limiter,&
          useDS,useTemperature,useCalcFallVel,useLogNormGSbins,&
-         useDiffusion,useCN,useVz_rhoG,M2PS_2_KM2PHR
+         useDiffusion,useCN,useVz_rhoG,M2PS_2_KM2PHR,MAXNUM_OPTMODS
 
       use io_data,       only : &
          cdf_b1l1,cdf_b1l2,cdf_b1l3,cdf_b1l4,cdf_b1l5,cdf_b1l6,cdf_b1l7,cdf_b1l8,cdf_b1l9,&
@@ -3781,6 +3782,15 @@
         if(substr_pos1.eq.1)then
           ! found an optional module
           nmods = nmods + 1
+          if(nmods.gt.MAXNUM_OPTMODS)then
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: Maximum number of optional modules exceeded"
+              write(errlog(io),*)"       Current maximum set to MAXNUM_OPTMODS = ",MAXNUM_OPTMODS
+              write(errlog(io),*)"       Please increase MAXNUM_OPTMODS and recompile."
+              write(errlog(io),*)"  Ash3d_VariableModules.f90:global_param:MAXNUM_OPTMODS"
+            endif;enddo
+            stop 1
+          endif
           !  Parse for the keyword
           read(linebuffer080,1104,iostat=iostatus,iomsg=iomessage)mod_name
           linebuffer050 = "Reading control file blk9+ (OPTMOD)"

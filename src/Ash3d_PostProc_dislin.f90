@@ -85,7 +85,7 @@
          Con_CloudRef_N,Con_CloudRef_RGB,Con_CloudRef_Lev, &
          Con_CloudTime_N,Con_CloudTime_RGB,Con_CloudTime_Lev, &
          ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
-         Contour_MaxCurves,Contour_MaxPoints,ContourLev,nConLev
+         CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS,ContourLev,nConLev
 
       use io_data,       only : &
          WriteTimes,cdf_b3l1,VolcanoName
@@ -128,10 +128,10 @@
       character(len=80) :: cbuf
       integer :: nmaxln  ! number of characters in the longest line of text
       character(len=7) :: zlevlab
-      real(kind=DS) :: xpts(Contour_MaxPoints)
-      real(kind=DS) :: ypts(Contour_MaxPoints)
+      real(kind=DS) :: xpts(CONTOUR_MAXPOINTS)
+      real(kind=DS) :: ypts(CONTOUR_MAXPOINTS)
 
-      integer :: iray(Contour_MaxCurves)
+      integer :: iray(CONTOUR_MAXCURVES)
       integer :: nxp,nyp,nclr,NCURVS
 
       real(kind=DS) :: xp,yp
@@ -360,32 +360,50 @@
 
       if(writeContours)then
         allocate(ContourDataNcurves(nConLev))
-        allocate(ContourDataNpoints(nConLev,Contour_MaxCurves))
-        allocate(ContourDataX(nConLev,Contour_MaxCurves,Contour_MaxPoints))
-        allocate(ContourDataY(nConLev,Contour_MaxCurves,Contour_MaxPoints))
+        allocate(ContourDataNpoints(nConLev,CONTOUR_MAXCURVES))
+        allocate(ContourDataX(nConLev,CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS))
+        allocate(ContourDataY(nConLev,CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS))
         ContourDataNcurves(:)   = 0
         ContourDataNpoints(:,:) = 0
         ContourDataX(:,:,:)     = 0.0_ip
         ContourDataY(:,:,:)     = 0.0_ip
         do i=1,nConLev
           ! This part calculates the contours
-          xpts(1:Contour_MaxPoints) = 0.0_DS
-          ypts(1:Contour_MaxPoints) = 0.0_DS
-          iray(1:Contour_MaxCurves) = 0
+          xpts(1:CONTOUR_MAXPOINTS) = 0.0_DS
+          ypts(1:CONTOUR_MAXPOINTS) = 0.0_DS
+          iray(1:CONTOUR_MAXCURVES) = 0
           call conpts(real(lon_cc_pd(1:nx),kind=DS),nx,&  ! x coord and size
                       real(lat_cc_pd(1:ny),kind=DS),ny,&  ! y coord and size
                       real(OutVar(1:nx,1:ny),kind=DS), &  ! matrix with function values
                       real(ContourLev(i),kind=DS),     &  ! level to contour
-                      xpts(1:Contour_MaxPoints),   &  ! x of contour (may have mul. curvex)
-                      ypts(1:Contour_MaxPoints),   &  ! y of contour (may have mul. curves)
-                      Contour_MaxPoints,           &  ! max # of points for contour arrays
-                      iray(1:Contour_MaxCurves),   &  ! num of points for each contour
-                      Contour_MaxCurves,           &  ! max number of curves
+                      xpts(1:CONTOUR_MAXPOINTS),   &  ! x of contour (may have mul. curvex)
+                      ypts(1:CONTOUR_MAXPOINTS),   &  ! y of contour (may have mul. curves)
+                      CONTOUR_MAXPOINTS,           &  ! max # of points for contour arrays
+                      iray(1:CONTOUR_MAXCURVES),   &  ! num of points for each contour
+                      CONTOUR_MAXCURVES,           &  ! max number of curves
                       NCURVS)                         ! actual number of curves
 
+          if(NCURVS.gt.CONTOUR_MAXCURVES)then
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: Maximum number of curves for this level exceeded by conpts"
+              write(errlog(io),*)"       Current maximum set to CONTOUR_MAXCURVES = ",CONTOUR_MAXCURVES
+              write(errlog(io),*)"       Please increase CONTOUR_MAXCURVES and recompile."
+              write(errlog(io),*)"  Output_Vars.f90:CONTOUR_MAXCURVES"
+            endif;enddo
+            stop 1
+          endif
           ContourDataNcurves(i)=NCURVS
           do j=1,NCURVS
             ContourDataNpoints(i,j)=iray(j)
+            if(ContourDataNpoints(i,j).gt.CONTOUR_MAXPOINTS)then
+              do io=1,2;if(VB(io).le.verbosity_error)then
+                write(errlog(io),*)"ERROR: Maximum number of points for this curve exceeded by conpts"
+                write(errlog(io),*)"       Current maximum set to CONTOUR_MAXPOINTS = ",CONTOUR_MAXPOINTS
+                write(errlog(io),*)"       Please increase CONTOUR_MAXPOINTS and recompile."
+                write(errlog(io),*)"  Output_Vars.f90:CONTOUR_MAXPOINTS"
+              endif;enddo
+              stop 1 
+            endif
             do k=1,iray(j)
               ContourDataX(i,j,k) = real(xpts(k),kind=ip)
               ContourDataY(i,j,k) = real(ypts(k),kind=ip)

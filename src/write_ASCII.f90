@@ -118,6 +118,8 @@
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: Too many vertical profiles."
             write(errlog(io),*)"nvprofiles must be < ",MAXPROFILES
+              write(errlog(io),*)"       Please increase MAXNPROFILES and recompile."
+              write(errlog(io),*)" Ash3d_VariableModules.f90:io_data:MAXPROFILES"
           endif;enddo
           stop 1
         endif
