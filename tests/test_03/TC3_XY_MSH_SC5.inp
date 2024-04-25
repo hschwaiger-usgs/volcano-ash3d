@@ -63,7 +63,7 @@ yes                 # Calculate projected coordinates internally?
 *******************************************************************************
 # GRAIN SIZE GROUPS
 ******************* BLOCK 7 ***************************************************
-1 5                 # Number of settling velocity groups
+1 6                 # Number of settling velocity groups
 0.01  1.0 1520.0  
 *******************************************************************************
 # Vertical profiles
