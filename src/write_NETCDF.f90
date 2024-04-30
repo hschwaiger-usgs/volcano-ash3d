@@ -213,8 +213,8 @@
          var_User4d_XYZGs_MissVal,var_User4d_XYZGs_FillVal,var_User4d_XYZGs,&
          DEPO_THRESH,DEPRATE_THRESH,CLOUDCON_THRESH,CLOUDLOAD_THRESH,&
          THICKNESS_THRESH,DBZ_THRESH,CLOUDCON_GRID_THRESH,&
-         DBZ_THRESH,USE_OPTMOD_VARS,USE_RESTART_VARS,&
-         USE_OUTPROD_VARS,USE_WIND_VARS,DepositThickness,DepArrivalTime,CloudArrivalTime,&
+         DBZ_THRESH,USE_OPTMOD_VARS,useRestartVars,&
+         useOutprodVars,useWindVars,DepositThickness,DepArrivalTime,CloudArrivalTime,&
          MaxConcentration,MaxHeight,CloudLoad,dbZ,MinHeight,Mask_Cloud,Mask_Deposit,&
            dbZCalculator
 
@@ -1441,7 +1441,7 @@
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      if(USE_WIND_VARS)then
+      if(useWindVars)then
          ! Now define the time-dependent variables
          ! Vx
         do io=1,2;if(VB(io).le.verbosity_info)then
@@ -1524,13 +1524,13 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att vf long_name")
         nSTAT = nf90_put_att(ncid,vf_var_id,"units","km/hr")
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att vf units")
-      endif  ! USE_WIND_VARS
+      endif  ! useWindVars
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      if(USE_RESTART_VARS)then
+      if(useRestartVars)then
          ! Full Ash Concentration
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"     ashcon :",var_lnames(11)
@@ -1568,14 +1568,14 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att ashcon missing_value")
         nSTAT = nf90_put_att(ncid,ashcon_var_id,"_FillValue",MaxConcentration_FillValue)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att ashcon _FillValue")
-      endif ! USE_RESTART_VARS
+      endif ! useRestartVars
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ! Derived variables
-      if(USE_OUTPROD_VARS)then
+      if(useOutprodVars)then
         ! Deposit(as function of grainsmax)
            ! Concentration of deposit by grain size(z=0 plane of tot_ashcon)
         do io=1,2;if(VB(io).le.verbosity_info)then
@@ -1857,7 +1857,7 @@
         nSTAT = nf90_put_att(ncid,ashcloudBot_var_id,"_FillValue",MinHeight_FillValue)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att cloud_bottom _FillValue")
 
-      endif ! USE_OUTPROD_VARS
+      endif ! useOutprodVars
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       ! Point output (Airport/POI)
@@ -2604,7 +2604,7 @@
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      if(USE_WIND_VARS)then
+      if(useWindVars)then
           ! Vz
         do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill Vz"
@@ -2631,13 +2631,13 @@
              real(vf_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax),kind=op)
         nSTAT=nf90_put_var(ncid,vf_var_id,ashcon,(/1,1,1,1,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var vf")
-      endif  ! USE_WIND_VARS
+      endif  ! useWindVars
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      if(USE_RESTART_VARS)then
+      if(useRestartVars)then
         do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill ashcon"
         endif;enddo
@@ -2651,13 +2651,13 @@
         enddo
         nSTAT=nf90_put_var(ncid,ashcon_var_id,ashcon,(/1,1,1,1,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var ashcon")
-      endif  ! USE_RESTART_VARS
+      endif  ! useRestartVars
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      if(USE_OUTPROD_VARS)then
+      if(useOutprodVars)then
           ! depocon
         do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill depocon"
@@ -2788,7 +2788,7 @@
         nSTAT=nf90_put_var(ncid,ashcloudtime_var_id,dum2d_out,(/1,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var ashcloudtime_")
 
-      endif ! USE_OUTPROD_VARS
+      endif ! useOutprodVars
 
       if (Write_PT_Data)then
         ! These are variable associated with the dimension for point output
@@ -2997,8 +2997,8 @@
          CloudArrivalTime_FillValue,DepArrivalTime_FillValue,&
          var_User2d_XY_name,var_User2d_XY,var_User3d_XYGs_name,var_User3d_XYGs,&
          var_User3d_XYZ_name,var_User3d_XYZ,var_User4d_XYZGs_name,var_User4d_XYZGs,&
-         DBZ_THRESH,USE_OPTMOD_VARS,USE_RESTART_VARS,&
-         USE_OUTPROD_VARS,USE_WIND_VARS,DepositThickness,DepArrivalTime,CloudArrivalTime,&
+         DBZ_THRESH,USE_OPTMOD_VARS,useRestartVars,&
+         useOutprodVars,useWindVars,DepositThickness,DepArrivalTime,CloudArrivalTime,&
          MaxConcentration,MaxHeight,CloudLoad,dbZ,MinHeight,pr_ash,&
            dbZCalculator
 
@@ -3234,7 +3234,7 @@
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        if(USE_WIND_VARS)then
+        if(useWindVars)then
           allocate(dum3d_out(nxmax,nymax,nzmax))
             ! Vz
           nSTAT = nf90_inq_varid(ncid,"vz",vz_var_id)
@@ -3276,7 +3276,7 @@
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        if(USE_RESTART_VARS)then
+        if(useRestartVars)then
             ! ashcon
             ! netCDF standard requires that the unlimited dimension (time)
             ! be the most slowly varying, so ashcon unfortunately has a
@@ -3296,7 +3296,7 @@
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        if(USE_OUTPROD_VARS)then
+        if(useOutprodVars)then
 
             ! depocon
           do io=1,2;if(VB(io).le.verbosity_debug1)then
@@ -3422,7 +3422,7 @@
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var cloud_bottom")
           deallocate(dum2d_out)
 
-        endif ! USE_OUTPROD_VARS
+        endif ! useOutprodVars
 
         if (Write_PT_Data)then
           ! Time-series of ash accumulation at points
@@ -3797,7 +3797,7 @@
          MaxConcentration,MaxHeight,CloudLoad,dbZCol,MinHeight,Mask_Cloud,&
          CLOUDCON_GRID_THRESH,CLOUDCON_THRESH,THICKNESS_THRESH, &
          CLOUDLOAD_THRESH,DBZ_THRESH,DEPO_THRESH,DEPRATE_THRESH,ashcon_tot, &
-         USE_RESTART_VARS, &
+         useRestartVars, &
            dbZCalculator, &
            Allocate_NTime, &
            Allocate_Profile, &
@@ -4494,9 +4494,9 @@
         if(nSTAT.ne.0)then
           ashcon_var_id = 0
           call NC_check_status(nSTAT,0,"inq_varid ashcon")
-          USE_RESTART_VARS = .false.
+          useRestartVars = .false.
         else
-          USE_RESTART_VARS = .true.
+          useRestartVars = .true.
         endif
         ! depocon
         nSTAT = nf90_inq_varid(ncid,"depocon",depocon_var_id)
@@ -5098,7 +5098,7 @@
       allocate(dum2dint_out(x_len,y_len))
 
       ! Full concentration array
-      if(USE_RESTART_VARS)then
+      if(useRestartVars)then
         nSTAT=nf90_get_var(ncid,ashcon_var_id,ashcon,  &
                  start = (/1,1,1,1/),       &
                  count = (/x_len,y_len,z_len,bn_len/))

@@ -937,7 +937,7 @@
            Sort_Tephra_Size
 
       use Output_Vars,   only : &
-         USE_RESTART_VARS
+         useRestartVars
 
       use Airports,      only : &
          AirportInFile,&
@@ -2620,7 +2620,7 @@
       read(linebuffer080,'(a3)',err=9415,iostat=iostatus,iomsg=iomessage) answer
       linebuffer050 = "Reading control file Blk 4, line 15"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      USE_RESTART_VARS = .true.
+      useRestartVars = .true.
       if(adjustl(trim(answer)).eq.'yes') then
         Write3dFiles = .true.
         ! if a consolidated output file will be written, assume both standard
@@ -2637,19 +2637,19 @@
               write(outlog(io),*)" Successfully read format code=1"
               write(outlog(io),*)"  Both output products and ash concentrations will be written"
             endif;enddo
-            USE_RESTART_VARS = .true.
+            useRestartVars = .true.
           elseif(iform.eq.2)then
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)" Successfully read format code=2"
               write(outlog(io),*)"  Only output products will be written"
             endif;enddo
-            USE_RESTART_VARS = .false.
+            useRestartVars = .false.
           else
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)" Could not read format code"
               write(outlog(io),*)"  Assuming both output products and ash concentration will be written"
             endif;enddo
-            USE_RESTART_VARS = .true.
+            useRestartVars = .true.
           endif
         endif
        else if(adjustl(trim(answer(1:2))).eq.'no') then

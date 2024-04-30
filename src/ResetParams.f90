@@ -41,6 +41,9 @@
 ! SuzK_umb             = 12.0
 ! useMoistureVars      = 0
 ! useVz_rhoG           = 1
+! useWindVars          = 0
+! useOutprodVars       = 1
+! useRestartVars       = 0
 ! cdf_institution      = USGS
 ! cdf_run_class        = Analysis
 ! cdf_url              = https://vsc-ash.wr.usgs.gov/ash3d-gui
@@ -68,7 +71,8 @@
 
       use Output_Vars,   only : &
          DEPO_THRESH,DEPRATE_THRESH,CLOUDCON_THRESH,CLOUDLOAD_THRESH,&
-         THICKNESS_THRESH,DBZ_THRESH,CLOUDCON_GRID_THRESH
+         THICKNESS_THRESH,DBZ_THRESH,CLOUDCON_GRID_THRESH,useWindVars,&
+         useOutprodVars,useRestartVars
 
       use Source_Umbrella, only : &
          k_entrainment_umb,lambda_umb,N_BV_umb,SuzK_umb ,&
@@ -121,10 +125,10 @@
 
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading line from control file, RESETPARAMS"
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      !if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer, RESETPARAMS"
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      !if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
       iparam = 0
       do while(iostatus.eq.0.and. &
                testkey.ne.'#'.and.testkey.ne.'*')
@@ -136,15 +140,15 @@
         if(iostatus.ne.0)then
           ! If reading a floating point value fails, then try to read as
           ! a string
-          read(linebuffer080(substr_pos+1:50),*,iostat=ioerr,iomsg=iomessage)pvalue_str(iparam)
+          read(linebuffer080(substr_pos+1:substr_pos+50),'(a50)',iostat=ioerr,iomsg=iomessage)pvalue_str(iparam)
           linebuffer050 = "Reading value from linebuffer, RESETPARAMS"
-          if(ioerr.ne.0) call FileIO_Error_Handler(ioerr,linebuffer050,linebuffer080,iomessage)
+          !if(ioerr.ne.0) call FileIO_Error_Handler(ioerr,linebuffer050,linebuffer080,iomessage)
         endif
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         if(iostatus.ne.0) exit
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
         linebuffer050 = "Reading testkey from linebuffer, RESETPARAMS"
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        !if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
       enddo
 
       ! We've read all the parameters to reset, now loop through the list
@@ -294,7 +298,6 @@
                               "to ",pvalue(i)
           endif;enddo 
           DT_MIN = pvalue(i)
-
         elseif (pname(i).eq.'DT_MAX') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
@@ -574,6 +577,73 @@
           endif
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"  Resetting useMoistureVars to ",useMoistureVars
+          endif;enddo
+        elseif (pname(i).eq.'useWindVars') then
+          ! error-checking
+          ! This should either be 0 for .false. or 1 for .true.
+          ! but we read the value as a float
+          if(abs(pvalue(i)).lt.EPS_SMALL)then
+            useWindVars = .false.
+          elseif(abs(pvalue(i)-1.0_ip).lt.EPS_SMALL)then
+            useWindVars = .true.
+          else
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: useWindVars should be:"
+              write(errlog(io),*)"         0 for false"
+              write(errlog(io),*)"         1 for true"
+              write(errlog(io),*)"     Value read = ",pvalue(i)
+              stop 1
+            endif;enddo
+          endif
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"  Resetting useWindVars to ",useWindVars
+          endif;enddo
+        elseif (pname(i).eq.'useOutprodVars') then
+          ! error-checking
+          ! This should either be 0 for .false. or 1 for .true.
+          ! but we read the value as a float
+          if(abs(pvalue(i)).lt.EPS_SMALL)then
+            useOutprodVars = .false.
+          elseif(abs(pvalue(i)-1.0_ip).lt.EPS_SMALL)then
+            useOutprodVars = .true.
+          else
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: useOutprodVars should be:"
+              write(errlog(io),*)"         0 for false"
+              write(errlog(io),*)"         1 for true"
+              write(errlog(io),*)"     Value read = ",pvalue(i)
+              stop 1
+            endif;enddo
+          endif
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"  Resetting useOutprodVars to ",useOutprodVars
+            if(.not.useWindVars)then
+              write(outlog(io),*)"  WARNING: All expected 2-D output products are"
+              write(outlog(io),*)"           deactivated. Included post-processing"
+              write(outlog(io),*)"           scripts/programs will fail. Please double-"
+              write(outlog(io),*)"           check your output settings to make sure"
+              write(outlog(io),*)"           needed output is written."
+            endif
+          endif;enddo
+        elseif (pname(i).eq.'useRestartVars') then
+          ! error-checking
+          ! This should either be 0 for .false. or 1 for .true.
+          ! but we read the value as a float
+          if(abs(pvalue(i)).lt.EPS_SMALL)then
+            useRestartVars = .false.
+          elseif(abs(pvalue(i)-1.0_ip).lt.EPS_SMALL)then
+            useRestartVars = .true.
+          else
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: useRestartVars should be:"
+              write(errlog(io),*)"         0 for false"
+              write(errlog(io),*)"         1 for true"
+              write(errlog(io),*)"     Value read = ",pvalue(i)
+              stop 1
+            endif;enddo
+          endif
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"  Resetting useRestartVars to ",useRestartVars
           endif;enddo
         elseif (pname(i).eq.'useVz_rhoG') then
           ! error-checking

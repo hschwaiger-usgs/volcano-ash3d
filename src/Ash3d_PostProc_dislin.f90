@@ -154,6 +154,7 @@
       real(kind=ip),dimension(:),allocatable     :: lon_cities
       real(kind=ip),dimension(:),allocatable     :: lat_cities
       character(len=26),dimension(:),allocatable :: name_cities
+      logical           :: IsThere
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
@@ -682,6 +683,7 @@
       real(kind=DS) :: clabstep
       real(kind=DS), dimension(:),   allocatable :: t, z
       real(kind=DS), dimension(:,:), allocatable :: conc
+      logical           :: IsThere
 
       ! dislin stuff
       ! https://www.dislin.de/
