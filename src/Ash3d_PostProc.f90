@@ -216,6 +216,11 @@
           integer                    ::  byear
           logical                    ::  useLeaps
         end function HS_yyyymmddhh_since
+        character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
+          real(kind=8)              :: HoursSince
+          integer                   :: byear
+          logical                   :: useLeaps
+        end function HS_xmltime
         subroutine dealloc_arrays
         end subroutine dealloc_arrays
       END INTERFACE
@@ -431,7 +436,8 @@
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)'Select time step:'
             do i=1,nWriteTimes
-              write(outlog(io),*)i,WriteTimes(i)
+              write(outlog(io),*)i,real(WriteTimes(i),kind=sp),&
+                                 HS_xmltime(SimStartHour+WriteTimes(i),BaseYear,useLeap)
             enddo
             write(outlog(io),*)'Enter index for time step:'
           endif;enddo
