@@ -263,10 +263,11 @@
         n_airports_total = NAIRPORTS_EWERT + n_ext_airports
         if(n_airports_total.gt.MAXAIRPORTS)then
           do io=1,2;if(VB(io).le.verbosity_error)then
-            write(errlog(io),*)"ERROR: ",&
-                 "Too many airports are requested."
-            write(errlog(io),*)&
-                  "       Increase MAXAIRPORTS and recompile"
+            write(errlog(io),*)"ERROR: Too many airports are requested."
+            write(errlog(io),*)"       Increase MAXAIRPORTS and recompile"
+            write(errlog(io),*)"       Current maximum set to MAXAIRPORTS = ",MAXAIRPORTS
+            write(errlog(io),*)"       Please increase MAXAIRPORTS and recompile."
+            write(errlog(io),*)" Airports.f90:MAXAIRPORTS"
           endif;enddo
         endif
         do i=NAIRPORTS_EWERT+1,n_airports_total
@@ -590,7 +591,6 @@
 
       ! Read the header line and set iostatus for the while loop
       read(unit=fid_airport,fmt='(a95)',iostat=iostatus,iomsg=iomessage) linebuffer095
-
       ! Read airport locations and assign airports in the modeled area to a temporary array
       do while (iostatus.ge.0)
         read(fid_airport,'(a95)',iostat=iostatus,iomsg=iomessage) linebuffer095
@@ -599,8 +599,19 @@
         else
           exit
         endif
-        read(linebuffer095,*,err=2010,iostat=ioerr,iomsg=iomessage) &
+        read(linebuffer095,*,iostat=ioerr,iomsg=iomessage) &
                                        ExtAirportLat(isite), ExtAirportLon(isite)
+        write(*,*)'ioerr = ',ioerr
+        if(ioerr.ne.0)then
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)'Next line of Airport/POI file loaded without error, however'
+            write(outlog(io),*)'could not read lat/lon. Check if your file has trainling'
+            write(outlog(io),*)'blank lines.  Ending reading of sites at #',isite-1
+          endif;enddo
+          isite = isite - 1
+          exit
+        endif
+
         ! Here we do not actually do a hard stop if we can't read projected values
         read(linebuffer095,*,iostat=ioerr,iomsg=iomessage) &
                                        ExtAirportLat(isite), ExtAirportLon(isite), &
@@ -615,6 +626,18 @@
         if(ioerr.ne.0)then
           ExtAirportCode(isite) = "   "
           ExtAirportName(isite) = "          "
+        endif
+
+        ! make sure latitude is between -90 and 90
+        if (ExtAirportLat(isite).lt.-90.0_ip.or.&
+            ExtAirportLat(isite).gt. 90.0_ip)then
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)'Latitude of Airport/POI out of range.'
+            write(errlog(io),*)'External file format is:'
+            write(errlog(io),*)'# Header line'
+            write(errlog(io),*)'Latitude   Longitude           x           y  Code Location'
+            stop 1
+          endif;enddo
         endif
 
         ! make sure longitude is between 0 and 360
@@ -633,16 +656,17 @@
         endif
 
       enddo
+
       close(fid_airport)
 
       n_ext_airports = isite     !number of external airports read
       return
 
-      ! error trap
-2010  do io=1,2;if(VB(io).le.verbosity_error)then
-        write(errlog(io),6) linebuffer095
-      endif;enddo
-      stop 1
+!      ! error trap
+!2010  do io=1,2;if(VB(io).le.verbosity_error)then
+!        write(errlog(io),6) linebuffer095
+!      endif;enddo
+!      stop 1
 
       ! format statements
 6     format('Error reading from airport list.  Read statement was expecting',/, &
@@ -685,6 +709,7 @@
       integer            :: ioerr
       real(kind=ip)      :: inx, iny
       real(kind=ip)      :: inlat, inlon
+      character(len= 50) :: linebuffer050
       character(len=120) :: linebuffer120
       character(len=35)  :: inName
       character(len=3)   :: inCode
@@ -724,7 +749,8 @@
       open(unit=fid_airport,file=AirportMasterFile,status='old',action='read',err=2000)
       ! Read first header line
       read(fid_airport,'(a120)',iostat=iostatus,iomsg=iomessage) linebuffer120
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer120(1:80),iomessage)
+      linebuffer050 = "Reading first line of Airport/POI file."
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer120(1:80),iomessage)
       ! Read airport locations and assign airports in the modeled area to a temporary array
       isite = 0
       do while (iostatus.ge.0)

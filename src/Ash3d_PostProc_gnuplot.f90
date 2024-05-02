@@ -38,7 +38,8 @@
 
         ! Publicly available variables
 
-!      character(100) :: USGSIconFile
+!      character(100) :: Instit_IconFile
+      logical, public :: CleanScripts_gnuplot = .false.
 
       contains
       !------------------------------------------------------------------------
@@ -86,7 +87,7 @@
          Con_CloudRef_N,Con_CloudRef_RGB,Con_CloudRef_Lev, &
          Con_CloudTime_N,Con_CloudTime_RGB,Con_CloudTime_Lev, &
          ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
-         Contour_MaxCurves,Contour_MaxPoints,ContourLev,nConLev
+         CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS,ContourLev,nConLev
 
       use time_data,     only : &
          os_time_log,SimStartHour,BaseYear,useLeap
@@ -136,6 +137,7 @@
       real(kind=ip),dimension(:),allocatable     :: lat_cities
       character(len=26),dimension(:),allocatable :: name_cities
       logical           :: IsThere1,IsThere2
+      character(len=50) :: linebuffer050 
       character(len=80) :: linebuffer080
       character         :: testkey
       integer           :: ilev,ignulev
@@ -376,9 +378,9 @@
         endif;enddo
         write(outfile_name,'(a14)')'tmp.png'
         allocate(ContourDataNcurves(nConLev))
-        allocate(ContourDataNpoints(nConLev,Contour_MaxCurves))
-        allocate(ContourDataX(nConLev,Contour_MaxCurves,Contour_MaxPoints))
-        allocate(ContourDataY(nConLev,Contour_MaxCurves,Contour_MaxPoints))
+        allocate(ContourDataNpoints(nConLev,CONTOUR_MAXCURVES))
+        allocate(ContourDataX(nConLev,CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS))
+        allocate(ContourDataY(nConLev,CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS))
         ContourDataNcurves(:)   = 0
         ContourDataNpoints(:,:) = 0
         ContourDataX(:,:,:)     = 0.0_ip
@@ -475,7 +477,8 @@
       write(55,*)"set label 'Run Date: ",os_time_log,&
                   "' at XVAL, YVAL font 'sans,9' offset character 0,-1"
       read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,cdf_b3l1,iomessage)
+      linebuffer050 = "Reading iw,iwf from cdf_b3l1"
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,cdf_b3l1,iomessage)
       write(55,*)"set label 'Windfile: ",iwf,&
                   "' at XVAL, YVAL font 'sans,9' offset character 0,-2"
 
@@ -519,7 +522,8 @@
         ilev = -1
         ignulev = -1
         read(54,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+        linebuffer050 = "Reading line from contour file"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         do while(iostatus.eq.0)
           ! Check if this is a header line
           read(linebuffer080,*,iostat=ioerr,iomsg=iomessage)testkey
@@ -530,12 +534,21 @@
               ! Still in file header
               ! Read the next line and cycle
               read(54,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-              !if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+              !if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
               cycle
             else
               ! Blank line in a contour block means we are starting another curve
               ! Increment the number of curves for this level
               ContourDataNcurves(ilev) = ContourDataNcurves(ilev) + 1
+              if(ContourDataNcurves(ilev).gt.CONTOUR_MAXCURVES)then
+                do io=1,2;if(VB(io).le.verbosity_error)then
+                  write(errlog(io),*)"ERROR: Maximum number of curves for this level exceeded by gnuplot"
+                  write(errlog(io),*)"       Current maximum set to CONTOUR_MAXCURVES = ",CONTOUR_MAXCURVES
+                  write(errlog(io),*)"       Please increase CONTOUR_MAXCURVES and recompile."
+                  write(errlog(io),*)"  Output_Vars.f90:CONTOUR_MAXCURVES"
+                endif;enddo
+                stop 1
+              endif
               ! This is an easier index to used
               icurve = ContourDataNcurves(ilev)
             endif
@@ -553,7 +566,8 @@
               cycle
             else
               read(linebuffer080,4,iostat=ioerr,iomsg=iomessage)ignulev
-              if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+              linebuffer050 = "Reading line from contour file, ignulev"
+              if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
 4             format(9x,i2)
               ! Now read the level. Look for the ':' to isolate the last bit
               substr_pos1 = index(linebuffer080,':')
@@ -563,10 +577,12 @@
               if(substr_pos2.gt.0.or.substr_pos3.gt.0)then
                 ! level is written as real
                 read(linebuffer080(substr_pos1+1:28),*,iostat=iostatus,iomsg=iomessage)lev_r4
-                if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+                linebuffer050 = "Reading line from contour file, lev_r4"
+                if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
               else
                 read(linebuffer080(substr_pos1+1:28),*,iostat=iostatus,iomsg=iomessage)lev_i
-                if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+                linebuffer050 = "Reading line from contour file, lev_i"
+                if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
                 lev_r4 = real(lev_i,kind=4)
               endif
               ! The value for this new level ignulev is lev_r4, but we need to find which
@@ -584,10 +600,20 @@
             ! This is the data section
             ! Increment the number of points
             ContourDataNpoints(ilev,icurve) = ContourDataNpoints(ilev,icurve) + 1
+            if(ContourDataNpoints(ilev,icurve).gt.CONTOUR_MAXPOINTS)then
+              do io=1,2;if(VB(io).le.verbosity_error)then
+                write(errlog(io),*)"ERROR: Maximum number of points for this curve exceeded by GMT"
+                write(errlog(io),*)"       Current maximum set to CONTOUR_MAXPOINTS = ",CONTOUR_MAXPOINTS
+                write(errlog(io),*)"       Please increase CONTOUR_MAXPOINTS and recompile."
+                write(errlog(io),*)"  Output_Vars.f90:CONTOUR_MAXPOINTS"
+              endif;enddo
+              stop 1 
+            endif
             ipt = ContourDataNpoints(ilev,icurve) 
             read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) &
                        ContourDataX(ilev,icurve,ipt),ContourDataY(ilev,icurve,ipt)
-            if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+            linebuffer050 = "Reading line from contour file, x,y"
+            if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
           endif
 
           ! Try to read the next line
@@ -597,8 +623,8 @@
 
         ! Loop through all the levels and curves and trim any curves with zero length
         do i=1,nConLev
-          icurve = Contour_MaxCurves + 1
-          do ii=Contour_MaxCurves,1,-1
+          icurve = CONTOUR_MAXCURVES + 1
+          do ii = CONTOUR_MAXCURVES,1,-1
             if(ContourDataNpoints(i,ii).le.0)then
               ! log each curve number with no points
               icurve = ii

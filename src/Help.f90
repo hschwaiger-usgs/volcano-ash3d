@@ -310,6 +310,7 @@
       subroutine help_input
 
       character(len=3)  :: answer
+      character(len=50) :: linebuffer050 
       character(len=80) :: linebuffer080
       integer           :: blockID
       integer           :: iostatus
@@ -343,12 +344,14 @@
 
       read(input_unit,'(a3)',iostat=iostatus,iomsg=iomessage) answer
       linebuffer080 = answer
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      linebuffer050 = "Reading from stdin, answer"
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
       do while (adjustl(trim(answer)).eq.'y'.or.adjustl(trim(answer)).eq.'yes')
         write(outlog(io),*)'  Please enter the block ID (1-10):'
         read(input_unit,*,err=10,iostat=iostatus,iomsg=iomessage)blockID
         linebuffer080 = "blockID"
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+        linebuffer050 = "Reading from stdin, blockID"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         if(blockID.lt.1.or.blockID.gt.10)then
           write(errlog(io),*)'  Invalid range for blockID; should be between 1 and 10.'
         else
@@ -358,7 +361,8 @@
         write(outlog(io),1)'Would you like information on another block? (y or n)                           '
         read(input_unit,'(a3)',iostat=iostatus,iomsg=iomessage) answer
         linebuffer080 = answer
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+        linebuffer050 = "Reading from stdin, answer"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
       enddo 
 
       ! For windows systems, allow the console to remain on the screen before exiting.
@@ -645,7 +649,7 @@
       write(outlog(io),1)'#               airport latitude, longitude, projected x and y coordinates,                            '
       write(outlog(io),1)'#               and airport name.  If you are using a projected grid,                                  '
       write(outlog(io),1)'#               THE X AND Y MUST BE IN THE SAME PROJECTION as the computational grid.                  '
-      write(outlog(io),1)'#               Alternatively, if coordinates can be projected via libprojection                       '
+      write(outlog(io),1)'#               Alternatively, coordinates can be projected via libprojection                          '
       write(outlog(io),1)'#               by typing "yes" to the last parameter                                                  '
       write(outlog(io),1)'******************* BLOCK 6 ***************************************************                        '
       write(outlog(io),1)'no                            # Write out ash arrival times at airports to ASCII FILE?                 '

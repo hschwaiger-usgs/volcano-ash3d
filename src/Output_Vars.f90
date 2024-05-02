@@ -119,8 +119,8 @@
       real(kind=ip),public    :: CLOUDCON_THRESH       = 1.0e-3_ip  ! threshold cloud concentration (kg/km3) for output
       real(kind=ip),public    :: CLOUDCON_GRID_THRESH  = 1.0e-7_ip  ! threshold cloud concentration (kg/km3) for subgrid
 
-      real(kind=ip),public    :: THICKNESS_THRESH = 1.0e-2_ip  !threshold thickness for start of deposition (mm)
-      real(kind=ip),public    :: DBZ_THRESH       =-2.0e+1_ip  !threshold dbZ
+      real(kind=ip),public    :: THICKNESS_THRESH = 1.0e-2_ip  ! threshold thickness for start of deposition (mm)
+      real(kind=ip),public    :: DBZ_THRESH       =-2.0e+1_ip  ! threshold dbZ
 
       ! These are the initialized values
       real(kind=op),public    :: DepositThickness_FillValue   = -9999.0_op
@@ -133,11 +133,10 @@
       real(kind=op),public    :: dbZCol_FillValue             = -9999.0_op
       real(kind=op),public    :: pr_ash_FillValue             = -9999.0_op
 
-      logical,public            :: Calculated_Cloud_Load
-      logical,public            :: Calculated_AshThickness
+      logical,public          :: Calculated_Cloud_Load
+      logical,public          :: Calculated_AshThickness
         ! Set this parameter if you want to include velocities in the output file
-      !logical, parameter,public :: USE_WIND_VARS  = .false.
-      logical, parameter,public :: USE_WIND_VARS  = .true.
+      logical,public          :: useWindVars  = .false.
 
         ! Set this to true if you want the extra output variables defined in the
         ! optional modules
@@ -152,15 +151,14 @@
 
         ! This variable is set to true indicating that the output file should include
         ! the standard derived variables in the output file.
-        ! This is currently not able to be turned off as downstream products
-        ! rely on these variables)
-      logical,public :: USE_OUTPROD_VARS = .true.
+      logical,public :: useOutprodVars = .true.
 
         ! This variable will be set to false if you do not want raw concentration
         ! values exported (only derived products and deposits) if indicated
         ! in the input file on block 5/line 15
         ! yes 2   # Write out 3-D ash concentration at specified times? / [output code: 1=2d+concen,2=2d only]
-      logical,public :: USE_RESTART_VARS
+        ! Can also be reset in RESETPARAMS
+      logical,public :: useRestartVars = .false.
 
       real(kind=ip),public :: CloudArea                ! area of ash cloud at a given time
       real(kind=ip),public :: LoadVal(5)               ! 5 threshold values for area calculations
@@ -172,8 +170,8 @@
       ! Contour colors and levels
       logical                                     ,public:: ContourFilled = .false. ! T if using filled contours, F if lines
       integer                                     ,public:: nConLev
-      integer,parameter                           ,public:: Contour_MaxCurves  = 20
-      integer,parameter                           ,public:: Contour_MaxPoints  = 1000
+      integer,parameter                           ,public:: CONTOUR_MAXCURVES  = 40
+      integer,parameter                           ,public:: CONTOUR_MAXPOINTS  = 1000
         ! User-specified contour interval and colors
       logical                                     ,public:: Con_Cust   = .false.    ! T if using a custom set of contours
       integer                                     ,public:: Con_Cust_N
@@ -363,7 +361,7 @@
          nxmax,nymax,nzmax
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
-        write(outlog(io),*)"     Entered Subroutine Allocate_Outpur_Vars"
+        write(outlog(io),*)"     Entered Subroutine Allocate_Output_Vars"
       endif;enddo
 
       allocate(Mask_Cloud(nxmax,nymax))

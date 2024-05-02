@@ -125,9 +125,9 @@
       real(kind=ip), public :: ESP_Vol           = 0.0_ip
       real(kind=ip), public :: ESP_massfracfine  = 0.0_ip
 
-      integer, parameter :: MAXCustSrc = 10    ! The maximum number of custom
+      integer, parameter :: MAXCUSTSRC = 10    ! The maximum number of custom
                                                ! source types that we will check for
-      character(len=30),dimension(MAXCustSrc) :: SourceType_Custom = ""
+      character(len=30),dimension(MAXCUSTSRC) :: SourceType_Custom = ""
 
       integer :: ieruption          ! eruption at the start of the time step
       integer :: jeruption          ! eruption at the end of the time step

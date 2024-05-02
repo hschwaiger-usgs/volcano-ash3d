@@ -118,6 +118,8 @@
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: Too many vertical profiles."
             write(errlog(io),*)"nvprofiles must be < ",MAXPROFILES
+              write(errlog(io),*)"       Please increase MAXNPROFILES and recompile."
+              write(errlog(io),*)" Ash3d_VariableModules.f90:io_data:MAXPROFILES"
           endif;enddo
           stop 1
         endif
@@ -245,9 +247,12 @@
 !    Fill_Value    = number used for No-data
 !    filename_root = root name of file (20 characters)
 !
-!  Subroutine that writes out 2-D arrays in ESRI ASCII raster format
+!  Subroutine that writes out 2-D arrays in ESRI ASCII raster format.
+!  Format specification is given at the following web sites:
+!   https://help.arcgis.com/en/arcgisdesktop/10.0/help/index.html#/ESRI_ASCII_raster_format/009t0000000z000000/
+!   https://en.wikipedia.org/wiki/Esri_grid
 !  This format can be post-processed with gmt converting to grid files with
-!  gmt grdconvert out.dat=ef out.grd
+!   gmt grdconvert out.dat=ef out.grd
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -275,7 +280,8 @@
       character(len=50)  :: filename_out
       integer            :: iostatus
       character(len=120) :: iomessage
-      character(len=80)  :: linebuffer080
+      character(len= 50) :: linebuffer050 
+      character(len= 80) :: linebuffer080
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_2D_ASCII"
@@ -283,7 +289,8 @@
 
       read(Fill_Value,*,iostat=iostatus,iomsg=iomessage)FValue
       linebuffer080 = Fill_Value
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+      linebuffer050 = "Reading FValue from ASCII file"
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
 
       if(isFinal_TS)then
         cio='____final'
@@ -353,6 +360,7 @@
 3003  format('YLLCORNER ',f15.3)
 3004  format('CELLSIZE ',2f15.3)
 3005  format('NODATA_VALUE ',a6)
+!3006  format(10f15.3)               ! Older ASCII output file from Ash3d used this format
 3006  format(10f18.6)
       return
 
@@ -374,6 +382,8 @@
 !
 !  Subroutine that reads in 2-D arrays in ESRI ASCII raster format and
 !  populates A_nx,A_ny,A_XY,A_xll,A_yll,A_dx,A_dy,A_Fill
+!  Note that this is not a generic ERSI ASCII reader. This subroutine is
+!  designed to read ASCII files written by the subroutine write_2D_ASCII above.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -422,6 +432,7 @@
 3003  format(10x,f15.3)
 3004  format(10x,2f15.3)
 3005  format(13x,a6)
+!3006  format(10f15.3)               ! Older ASCII output file from Ash3d used this format
 3006  format(10f18.6)
 
       return
@@ -449,6 +460,9 @@
 !          or yyyymmddhh.h
 !
 !  Subroutine that writes out 3-D arrays in ESRI ASCII raster format
+!  Format specification is given at the following web sites:
+!   https://help.arcgis.com/en/arcgisdesktop/10.0/help/index.html#/ESRI_ASCII_raster_format/009t0000000z000000/
+!   https://en.wikipedia.org/wiki/Esri_grid
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -505,8 +519,10 @@
 !  Arguments:
 !    filename = root name of file (20 characters)
 !
-!  Subroutine that reads in 2-D arrays in ESRI ASCII raster format and
-!  populates A_nx,A_ny,A_XY,A_xll,A_yll,A_dx,A_dy,A_Fill
+!  Subroutine that reads in 3-D arrays in ESRI ASCII raster format and
+!  populates A_nx,A_ny,A_nz,A_XYZ,A_xll,A_yll,A_zll,A_dx,A_dy,A_dz,A_Fill
+!  Note that this is not a generic ERSI ASCII reader. This subroutine is
+!  designed to read ASCII files written by the subroutine write_3D_ASCII above.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -516,8 +532,9 @@
 
       integer :: i,j,k
       integer :: iostatus
-      character(len=120)   :: iomessage
-      character(len=130):: linebuffer130
+      character(len=120) :: iomessage
+      character(len= 50) :: linebuffer050 
+      character(len=130) :: linebuffer130
       real(kind=ip) :: value1,value2,value3
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
@@ -528,7 +545,8 @@
 
       ! Read the header lines
       read(fid_ascii3din,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer130(1:80),iomessage)
+      linebuffer050 = "Reading line from ASCII file"
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
       read(fid_ascii3din,3000,err=2600,iostat=iostatus,iomsg=iomessage) A_nx,A_ny,A_nz
       if(iostatus.ne.0)then
         ! We might have an empty file
@@ -547,7 +565,8 @@
             read(fid_ascii3din,*,iostat=iostatus,iomsg=iomessage)linebuffer130
             read(linebuffer130,'(3(4x,f20.3),g20.8)',iostat=iostatus,iomsg=iomessage) &
                    value1,value2,value3,A_XYZ(i,j,k)
-            if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer130(1:80),iomessage)
+            linebuffer050 = "Reading line from ASCII file"
+            if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
 
             if(i.eq.1.and.j.eq.1.and.k.eq.1)then
               A_xll = value1

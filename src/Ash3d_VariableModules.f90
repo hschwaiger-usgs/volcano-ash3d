@@ -134,22 +134,26 @@
 !
 !##############################################################################
 
-      subroutine FileIO_Error_Handler(ios,linebuffer080,iomessage)
+      subroutine FileIO_Error_Handler(ios,linebuffer050,linebuffer080,iomessage)
 
-      integer           ,intent(in) :: ios
-      character(len= 80),intent(in) :: linebuffer080
-      character(len=120),intent(in) :: iomessage
+      integer           ,intent(in) :: ios           ! error code
+      character(len= 50),intent(in) :: linebuffer050 ! Diagnostic from Ash3d
+      character(len= 80),intent(in) :: linebuffer080 ! line from file causing error
+      character(len=120),intent(in) :: iomessage     ! system message
 
       integer :: io
 
       do io=1,nio;if(VB(io).le.verbosity_error)then
         if(ios.lt.0)then
-          write(errlog(io),*)'ERROR Reading from file:  EOF encountered',ios
+          write(errlog(io),*)'ERROR Reading from file:  EOF encountered'
+          write(errlog(io),*)'  error code: ',ios
         else
-          write(errlog(io),*)'ERROR Reading line from file:  input line format error',ios
-          write(errlog(io),*)linebuffer080
+          write(errlog(io),*)'ERROR Reading line from file:  input line format error'
+          write(errlog(io),*)'  error code: ',ios
+          write(errlog(io),*)'  Offending line: ',linebuffer080
         endif
-        write(errlog(io),*)'System Message: ',trim(adjustl(iomessage))
+        write(errlog(io),*)'  Ash3d diagnostics: ',linebuffer050
+        write(errlog(io),*)'  System Message: ',trim(adjustl(iomessage))
       endif;enddo
       stop 1
 
@@ -210,8 +214,8 @@
                                                 !  Note: a particular projection might
                                                 !        use a different radius
 
-      integer,       parameter :: MAXNUM_OPTMODs   = 10   ! used just to preallocate block array
-      character(len=20),dimension(MAXNUM_OPTMODs) :: OPTMOD_names
+      integer,       parameter :: MAXNUM_OPTMODS   = 10   ! used just to preallocate block array
+      character(len=20),dimension(MAXNUM_OPTMODS) :: OPTMOD_names
       integer                  :: nmods
 
       ! Some variables determined by preprocessor flags at compilation time
@@ -536,14 +540,15 @@
 
       logical            :: IsPeriodic   = .false.
       real(kind=ip)      :: ZPADDING     = 1.3_ip
+      real(kind=ip)      :: Ztop
       character(len=7)   :: VarDzType
       real(kind=ip)      :: dz_const                        ! z nodal spacing (always km)
-      integer            :: ZScaling_ID  = 0
+      integer            :: ZScaling_ID  = 0                ! altitude coordinates :: s=z
 
       ! Dimensional parameters in km, used if IsLatLon=.False.        
       real(kind=ip)      :: gridwidth_x, gridwidth_y  ! Dimensions (in km) of the grid
       real(kind=ip)      :: xLL,xUR,yLL,yUR           ! lower-left,upper-right points of grid
-      real(kind=ip)      :: dx, dy                    ! horizontal cell sizees (km)
+      real(kind=ip)      :: dx, dy                    ! horizontal cell sizes (km)
 
       integer :: nxmax      ! number of nodes in x
       integer :: nymax      ! number of nodes in y

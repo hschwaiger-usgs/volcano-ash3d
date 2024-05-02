@@ -16,11 +16,12 @@
 !  a transient variable).
 !  
 !  If one command-line argument is provided, it is assumed to be a control file
-!  that defines the input type and output products.  This is not yet implemented.
+!  that defines the input type and output products.  This allows the greatest flexibility.
 !  
 !  If more than one command-line argument is given, this program expects the following:
 !    ./Ash3d_PostProc Ash3d_output.nc output_product_ID format_code [time_step]
 !  where output_product_ID is one of:
+!       0 custom (e.g. variable from user-defined module)
 !       1 full concentration array
 !       2 deposit granularity
 !       3 deposit thickness (mm time-series)
@@ -51,7 +52,7 @@
 !  the final time data.  For data pproducts that require contours (shape files or
 !  contour plots), contour levels are defined in the module Output_Vars.
 !  
-!  For example, to product a contour map of ash-cloud arrival time:
+!  For example, to produce a contour map of ash-cloud arrival time:
 !   ./Ash3d_PostProc Ash3d_output.nc 14 3
 !  
 !  To produce a shapefile for deposit thickness (in mm) at the second time step:
@@ -144,10 +145,11 @@
       implicit none
 
       integer             :: nargs
-      integer             :: stat
       integer             :: istat
       integer             :: iostatus
+      integer             :: arglen
       character(len=120)  :: iomessage
+      character(len=50)   :: linebuffer050
       character(len=80)   :: linebuffer080
       character(len=100)  :: arg
       integer             :: informat     = 3 ! input format (default = 3 for netcdf)
@@ -155,7 +157,9 @@
       integer             :: iiprod           ! code for input dataset
       integer             :: iprod            ! code for output product
       integer             :: ndims           ! dimensions of the input data file
-      integer             :: ivar,TS_Flag,height_flag
+      integer             :: ivar
+      integer             :: TS_Flag
+      integer             :: height_flag
       integer             :: itime = -1      ! initialize time step to the last step
       integer             :: i,j,ii
       integer             :: tmp_int
@@ -170,6 +174,7 @@
       character(len=13)   :: cio
       character           :: testkey,testkey2
       logical             :: writeContours = .false.
+      logical             :: CleanScripts  = .false.
         ! plotting library availibility and preferences
         !  1 = dislin
         !  2 = plplot
@@ -183,7 +188,7 @@
                                                      !   | | | - Fourth
                                                      !   V V V V
 #ifdef WINDOWS
-      ! For Windows systems, dislin is working.
+      ! For Windows systems, dislin is working; others not yet.
       integer,dimension(Nplot_libs) :: plot_pref_map = (/1,2,3,4/) ! plot preference for maps
       integer,dimension(Nplot_libs) :: plot_pref_shp = (/1,2,3,4/) ! plot preference for contours
       integer,dimension(Nplot_libs) :: plot_pref_vpr = (/1,2,3,4/) ! plot preference for vert profs.
@@ -211,6 +216,11 @@
           integer                    ::  byear
           logical                    ::  useLeaps
         end function HS_yyyymmddhh_since
+        character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
+          real(kind=8)              :: HoursSince
+          integer                   :: byear
+          logical                   :: useLeaps
+        end function HS_xmltime
         subroutine dealloc_arrays
         end subroutine dealloc_arrays
       END INTERFACE
@@ -256,12 +266,40 @@
         istat = 1
 #endif
       if (istat.eq.0)then
+        CleanScripts_gnuplot = CleanScripts
         plotlib_avail(3) = .true.
       else
         plotlib_avail(3) = .false.
       endif
       ! Test for GMT
-      plotlib_avail(4) = .true.
+#ifdef LINUX
+        ! On a linux system, just try to execute gmt
+      istat = 0
+      call execute_command_line("gmt --version > /dev/null",exitstat=istat)
+#endif
+#ifdef MACOS
+        ! On a MacOS system, not sure how to test yet
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Cannot test for gmt on MacOS for now."
+          write(outlog(io),*)"Disabling gmt."
+        endif;enddo
+        istat = 1
+#endif
+#ifdef WINDOWS
+        ! On a Windows system, not sure how to test yet
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Cannot test for gmt on Windows for now."
+          write(outlog(io),*)"Disabling gmt."
+        endif;enddo
+        istat = 1
+#endif
+      if (istat.eq.0)then
+        CleanScripts_GMT = CleanScripts
+        plotlib_avail(4) = .true.
+      else
+        plotlib_avail(4) = .false.
+      endif
+
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Dislin  ",plotlib_avail(1)
         write(outlog(io),*)"Plplot  ",plotlib_avail(2)
@@ -319,7 +357,7 @@
           write(errlog(io),*)'Expecting to prompt for a netcdf file, but the netcdf'
           write(errlog(io),*)'library is not linked.  Please recompile, linking to'
           write(errlog(io),*)'netcdf or run Ash3d_PostProc with a control file and'
-          write(errlog(io),*)'ASCII data.'
+          write(errlog(io),*)'ASCII/binary data.'
         endif;enddo
         stop 1
 #else
@@ -328,7 +366,8 @@
         endif;enddo
         read(input_unit,*,iostat=iostatus,iomsg=iomessage) concenfile
         linebuffer080 = "concenfile"
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+        linebuffer050 = "Reading concenfile from stdin"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
 #endif
         inquire( file=concenfile, exist=IsThere )
         if(.not.IsThere)then
@@ -360,12 +399,14 @@
           write(outlog(io),*)'11 ash-cloud bottom (km)               12 ash-cloud load (T/km2)'
           write(outlog(io),*)'13 ash-cloud radar reflectivity (dBz)  14 ash-cloud arrival time (hours)'
           write(outlog(io),*)'15 topography                          16 profile plots'
+!          write(outlog(io),*)'  or enter 0 to be prompted for a variable name'
           write(outlog(io),*)''
           write(outlog(io),*)'Enter code for output product:'
         endif;enddo
         read(input_unit,*,iostat=iostatus,iomsg=iomessage)iprod
         linebuffer080 = "iprod"
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+        linebuffer050 = "Reading iprod from stdin"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
 
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)'Select output format'
@@ -377,7 +418,8 @@
         endif;enddo
         read(input_unit,*,iostat=iostatus,iomsg=iomessage)outformat
         linebuffer080 = "outformat"
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+        linebuffer050 = "Reading outformat from stdin"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
 
         if(iprod.eq.5.or.iprod.eq.6)then
           ! For final deposit variables, set itime to -1
@@ -394,13 +436,15 @@
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)'Select time step:'
             do i=1,nWriteTimes
-              write(outlog(io),*)i,WriteTimes(i)
+              write(outlog(io),*)i,real(WriteTimes(i),kind=sp),&
+                                 HS_xmltime(SimStartHour+WriteTimes(i),BaseYear,useLeap)
             enddo
             write(outlog(io),*)'Enter index for time step:'
           endif;enddo
           read(input_unit,*,iostat=iostatus,iomsg=iomessage)itime
           linebuffer080 = "itime"
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+          linebuffer050 = "Reading itime from stdin"
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         else
           ! iprod = 7,8,14,15 are not time-series, but set itime to -1
           itime = -1
@@ -408,7 +452,7 @@
       elseif (nargs.eq.1) then
           ! If an argument is given, first test for the '-h' indicating a help
           ! request.
-        call get_command_argument(1, arg, stat)
+        call get_command_argument(1, arg, length=arglen, status=iostatus)
         testkey  = arg(1:1)
         testkey2 = arg(2:2)
         if(testkey.eq.'-'.and.testkey2.eq.'h')then
@@ -417,9 +461,11 @@
           call help_postproc
         else
           ! Read control file
-          call get_command_argument(1, arg, stat)
-          read(arg,*,iostat=iostatus,iomsg=iomessage)PP_infile
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,arg(1:80),iomessage)
+          call get_command_argument(1, arg, length=arglen, status=iostatus)
+          !read(arg,*,iostat=iostatus,iomsg=iomessage)PP_infile
+          PP_infile = trim(adjustl(arg))
+          linebuffer050 = "Reading control file from command-line arg."
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,arg(1:80),iomessage)
           inquire( file=PP_infile, exist=IsThere )
           if(.not.IsThere)then
             do io=1,2;if(VB(io).le.verbosity_error)then
@@ -447,19 +493,26 @@
         ! If we are doing command line only, then we need at least the netcdf filename, the output
         ! product code and the format.  Optionally, we can add the timestep.  If there is an
         ! inconsistency with iprod and outformat, an error message is issued before stopping.
-        call get_command_argument(1, arg, stat)
-        read(arg,*,iostat=iostatus,iomsg=iomessage)concenfile
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,arg(1:80),iomessage)
-        call get_command_argument(2, arg, stat)
+        call get_command_argument(1, arg, length=arglen, status=iostatus)
+        ! Note: unformatted read of concenfile from arg will only read the bit
+        ! up to the first '/'
+        !read(arg,*,iostat=iostatus,iomsg=iomessage)concenfile
+        concenfile = trim(adjustl(arg))
+        !linebuffer050 = "Reading concenfile from command-line arg 1"
+        !if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,arg(1:80),iomessage)
+        call get_command_argument(2, arg, length=arglen, status=iostatus)
         read(arg,*,iostat=iostatus,iomsg=iomessage)iprod
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,arg(1:80),iomessage)
-        call get_command_argument(3, arg, stat)
+        linebuffer050 = "Reading iprod from command-line arg 2"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,arg(1:80),iomessage)
+        call get_command_argument(3, arg, length=arglen, status=iostatus)
         read(arg,*,iostat=iostatus,iomsg=iomessage)outformat
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,arg(1:80),iomessage)
+        linebuffer050 = "Reading outformat from command-line arg 3"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,arg(1:80),iomessage)
         if (nargs.eq.4) then
-          call get_command_argument(4, arg, stat)
+          call get_command_argument(4, arg, length=arglen, status=iostatus)
           read(arg,*,iostat=iostatus,iomsg=iomessage)itime
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,arg(1:80),iomessage)
+          linebuffer050 = "Reading itime from command-line arg 4"
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,arg(1:80),iomessage)
         else
           itime = -1
         endif
@@ -505,6 +558,7 @@
       endif
 
       !  Arg #2
+      !if(iprod.lt.0.or.iprod.gt.16)then    ! Activate this line when custom variables are coded
       if(iprod.lt.1.or.iprod.gt.16)then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: output product requested is not in range 1-16."
@@ -793,9 +847,17 @@
 
       if(.not.IsLatLon)then
         do io=1,2;if(VB(io).le.verbosity_error)then
-          write(errlog(io),*)'Only post-processing of Lon/Lat grids is currently supported.'
+          write(outlog(io),*)'Mapping/shapefiles of projected grids is currently only supported'
+          write(outlog(io),*)'using the GMT plotting option.'
         endif;enddo
-        stop 1
+        if(plotlib_avail(4))then
+          plot_pref_map = (/4,1,2,3/)
+        else
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(outlog(io),*)'Mapping/shapefiles of projected grids requested, but GMT is not available.'
+          endif;enddo
+          stop 1
+        endif
       endif
 
       if (itime.eq.-1) then
@@ -1072,7 +1134,7 @@
           endif;enddo
           write(comd,*)"zip ",trim(adjustl(KMZ_filename(ivar))),' ',&
                               trim(adjustl(KML_filename(ivar)))
-          call execute_command_line (comd, exitstat=stat)
+          call execute_command_line (comd, exitstat=istat)
         elseif(iprod.eq.3.or.iprod.eq.5.or. &  ! Deposit thickness mm (kml versions is TS + final)
                iprod.eq.4.or.iprod.eq.6.or. &  ! Deposit thickness inches (kml versions is TS + final)
                iprod.eq.9.or.               &  ! ash-cloud concentration
@@ -1339,6 +1401,8 @@
         case(3)
           call write_2Dmap_PNG_gnuplot(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
         case(4)
+          write(*,*)'calling write_2Dmap_PNG_GMT'
+          stop 66
           call write_2Dmap_PNG_GMT(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
         case default
           do io=1,2;if(VB(io).le.verbosity_error)then

@@ -66,12 +66,13 @@
               !   2 = Wilson and Huang + Cunningham slip
               !   3 = Wilson and Huang + Mod by Pfeiffer Et al.
               !   4 = Ganser
-              !   5 = Stokes flow for spherical particles + slip
+              !   5 = Ganser + Cunningham slip
+              !   6 = Stokes flow for spherical particles + slip
       integer,public                                    :: FV_ID
               ! Shape parameter
               !   1 = Wilson and Huang: F = (b+c)/2a maybe also with G = c/b
               !   2 = Sphericity
-      integer,public                                    :: Shape_Id
+      integer,public                                    :: Shape_ID
 
 #ifdef USEPOINTERS
       real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_v_s     =>null()    ! Settling vel (m/s)
@@ -364,7 +365,25 @@
                                           Tephra_gsF_fac(isize,3),Tephra_gsF_fac(isize,4))
                    vf_sp(isize) = real(v_grav_set,kind=sp)
                  enddo
-               case (5)  ! Stokes flow for spherical particles + slip
+               case (5)  ! Ganser + Cunningham slip
+                 do isize=1,n_gs_max
+                   if(.not.IsAloft(isize)) cycle
+                   Kna = 2.0_ip*lambda/(Tephra_gsdiam(isize)*Tephra_gsF_fac(isize,5))
+                   ! The non-continuum effect are > 1% when
+                   ! gs<250*lam_col_windp(k)
+                   if(Tephra_gsdiam(isize).gt.LAM_GS_THRESH*lambda)then
+                     v_grav_set = vset_Gans(dens,Tephra_rho_m(isize),&
+                                            visc,Tephra_gsdiam(isize), &
+                                            Tephra_gsF_fac(isize,3),Tephra_gsF_fac(isize,4))
+                   else
+                     v_grav_set = vset_Gans_slip(dens,Tephra_rho_m(isize),&
+                                            visc,Tephra_gsdiam(isize), &
+                                            Tephra_gsF_fac(isize,3),Tephra_gsF_fac(isize,4),&
+                                            kna)
+                   endif
+                   vf_sp(isize) = real(v_grav_set,kind=sp)
+                 enddo
+               case (6)  ! Stokes flow for spherical particles + slip
                  do isize=1,n_gs_max
                    if(.not.IsAloft(isize)) cycle
                    Kna = 2.0_ip*lambda/(Tephra_gsdiam(isize))
@@ -462,7 +481,7 @@
         Tephra_gsF_fac(isize,2) = sqrt(1.07_ip-Tephra_gsF(isize))  ! WH Newton factor
 
         ! and precalculate the K1 and K2 if we use the Ganser model
-        if(Shape_Id.eq.1)then
+        if(Shape_ID.eq.1)then
           ! First, if we are using F and G for shape, get sphericity.
           ! Note: sphericity is the ratio of the surface area of a sphere with
           !       equivalent volume to the actual surface area of the particle
@@ -475,6 +494,14 @@
                         ((tmp_b**p_exp + &
                           tmp_c**p_exp + &
                          (tmp_b*tmp_c)**p_exp)/3.0_ip)**(-1.0_ip/p_exp)
+        elseif(Shape_ID.eq.2)then
+          ! Shape factor is given as sphericity
+          ! Assume prolate ellipsoids with B=C (i.e. G=1.0)
+          ! Need to calculate F for logging
+          Tephra_gsG(isize) = 1.0_ip
+          ! Looks like the solution if 3*phi^(-p) = F^(-p/3)*(2+F)
+          ! Probably not worth calculating here.
+          Tephra_gsF(isize) = 1.0_ip
         endif
 
         !ellipse_vol  = 4.0_ip*PI*Tephra_gsF(i)*Tephra_gsF(i)/3.0_ip
@@ -1082,6 +1109,87 @@
       return
 
       end function vset_Gans
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  vset_Gans_slip(rho_air,rho_m,eta,diam,K1,K2,Kna)
+!
+!  Called from: Set_Vf_Meso
+!  Arguments:
+!    rho_air= density of air (kg/m^3)
+!    rho_m  = density of particle (kg/m^3)
+!    eta    = viscosity of air (kg/(m s))
+!    diam   = diameter of particle (m)
+!    K1     = precalculated Stokes shape factor
+!    K2     = precalculated Newtons shape factor
+!    Kna    = Knudsen number (dimensionless)
+!
+!  This function returns the terminal fall velocity of a general ellipsoidal particle
+!  (either prolate or oblate) given the density and viscosity of air along with the
+!  density, diameter, shape of the particle, and the Knudsen number.  Velocity is returned
+!  in m/s. The drag coefficient is that of Ganser (1993) which uses two shape factors to
+!  characterize the type of ellipsoid.  As in the Wilson and Huang models the
+!  drag coefficient and fall velocity must be solved iteritively with Cd and Vs
+!  updated until Vs does not change by more than a small fraction vset_ConvCrit (~0.001).
+!  The Knudsen number is important at high altitudes with low air density and a large
+!  mean free path.  In these environments, Cunningham slip corrections should be
+!  applied to the fall model. This solution is only valid for very small particles.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      function vset_Gans_slip(rho_air,rho_m,eta,diam,K1,K2,Kna)
+      ! Fall velocity as calculated from
+      ! Ganser, Powder Tech., v77,2p143, 1993
+      ! DOI:10.1016/0032-5910(93)80051-B
+
+      real(kind=ip) :: vset_Gans_slip ! Settling velocity in m/s
+      real(kind=ip) :: rho_air        ! density of air in kg/m3
+      real(kind=ip) :: rho_m          ! density of the particle in km/m3
+      real(kind=ip) :: eta            ! dynamic viscosity of air in (kg/(m s))
+      real(kind=ip) :: diam           ! diameter of the particle in m
+      real(kind=ip) :: K1,K2          ! Stokes shape factor and Newtons shape factor
+      real(kind=ip) :: Kna            ! adjusted Knudsen number
+
+      real(kind=ip) :: Cslip                     ! drag coefficient
+
+      real(kind=ip) :: vnew, vold, Re            ! old and new settling velocity
+      real(kind=ip) :: Cd                        ! drag coefficient
+
+      real(kind=ip) :: Cd1,Cd2
+
+      do io=1,2;if(VB(io).le.verbosity_debug2)then
+        write(outlog(io),*)"     Entered function vset_Gans_slip"
+      endif;enddo
+
+      vold = 1.0_ip                              ! assume an initial settling velocity of 1 m/s
+
+      Re = rho_air*vold*diam/eta                 ! Eq. 4  of Wilson79
+
+      ! Eq. 9.34 of Seinfeld and Pandis
+      Cslip = 1.0_ip+ Kna * (1.257_ip + 0.4_ip*exp(-1.1_ip/Kna))
+
+      Cd1 = 1.0_ip + 0.1118_ip * (Re*K1*K2)**0.6567_ip
+      Cd1 = Cd1 * 24.0_ip /(K1*Re)
+      Cd2 = 0.4305_ip*K2/(1.0_ip+3305.0_ip/(Re*K1*K2))
+      Cd = Cd1+Cd2;
+      vnew = sqrt((4.0_ip*rho_m*diam*GRAV)/(3.0_ip*rho_air*Cd))   ! Eq. 15 of WoodsBursik91
+
+      do while ((abs(vold-vnew)/vnew).gt.vset_ConvCrit)
+        vold = vnew
+        Re = rho_air*vold*diam/eta
+        Cd1 = 1.0_ip+0.1118_ip*(Re*K1*K2)**0.6567_ip
+        Cd1 = Cd1 * 24.0_ip /(K1*Re)
+        Cd2 = 0.4305_ip*K2/(1.0_ip+3305.0_ip/(Re*K1*K2))
+        Cd = Cd1+Cd2;
+        Cd = Cd/Cslip
+        vnew = sqrt((4.0_ip*rho_m*diam*GRAV)/(3.0_ip*rho_air*Cd))
+      enddo
+
+      vset_Gans_slip = vnew
+
+      return
+
+      end function vset_Gans_slip
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !

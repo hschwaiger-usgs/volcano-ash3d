@@ -451,7 +451,8 @@
       character(len=3)   :: sizeY
       integer            :: iostatus
       character(len=120) :: iomessage
-      character(len=80)  :: linebuffer080
+      character(len= 50) :: linebuffer050 
+      character(len= 80) :: linebuffer080
 
       INTERFACE
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
@@ -537,7 +538,8 @@
                              iyear(ierup),imonth(ierup),iday(ierup), &
                              StartHour(ierup)
         linebuffer080 = yyyymmddhh
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+        linebuffer050 = "Reading date from date_string (write_KML)"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         write(fid,8) ierup,iyear(ierup),imonth(ierup),iday(ierup), &
                              StartHour(ierup), &
                              e_PlumeHeight(ierup),e_Duration(ierup),e_Volume(ierup)
@@ -1121,7 +1123,8 @@
       real(kind=dp)      :: olam,ophi ! using precision needed by libprojection
       integer            :: iostatus
       character(len=120) :: iomessage
-      character(len=80)  :: linebuffer080
+      character(len= 50) :: linebuffer050 
+      character(len= 80) :: linebuffer080
 
       INTERFACE
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
@@ -1328,7 +1331,8 @@
                       iyear(ierup),imonth(ierup),iday(ierup), &
                       StartHour(ierup)
         linebuffer080 = yyyymmddhh
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+        linebuffer050 = "Reading date from date_string (write_KML)"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         write(fid_kmlPOI,9) ierup,iyear(ierup),imonth(ierup),iday(ierup), &
                       StartHour(ierup), &
                       e_PlumeHeight(ierup),e_Duration(ierup),e_Volume(ierup)

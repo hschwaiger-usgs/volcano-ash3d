@@ -89,6 +89,7 @@
 
       integer           :: i,j,k
       character(len=1)  :: answer
+      character(len=50) :: linebuffer050 
       character(len=80) :: linebuffer080
       logical,save      :: first_time = .true.  ! There is a bit of extra work the first time
                                                 ! this subroutine is called since we need to
@@ -297,9 +298,10 @@
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*) 'Continue (y/n)?'
           endif;enddo
-          read(5,'(a1)',iostat=iostatus,iomsg=iomessage) answer
+          read(input_unit,'(a1)',iostat=iostatus,iomsg=iomessage) answer
           linebuffer080 = answer
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+          linebuffer050 = "Reading from stdin, answer"
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
           if (adjustl(trim(answer)).eq.'n') stop 1
         else
           do io=1,2;if(VB(io).le.verbosity_error)then
@@ -340,9 +342,10 @@
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*) 'Continue (y/n)?'
           endif;enddo
-          read(5,'(a1)',iostat=iostatus,iomsg=iomessage) answer
+          read(input_unit,'(a1)',iostat=iostatus,iomsg=iomessage) answer
           linebuffer080 = answer
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer080,iomessage)
+          linebuffer050 = "Reading from stdin, answer"
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
           if (adjustl(trim(answer)).eq.'n') stop 1
         else
           do io=1,2;if(VB(io).le.verbosity_error)then
@@ -408,8 +411,6 @@
           vf_meso_last_step_sp,vf_meso_next_step_sp,&
           vx_meso_1_sp,vy_meso_1_sp,vz_meso_1_sp, &
           vx_meso_2_sp,vy_meso_2_sp,vz_meso_2_sp, &
-          vx_meso_last_step_sp,&
-          vy_meso_last_step_sp,&
           Meso_toggle
 
       use Tephra,          only : &
@@ -431,12 +432,6 @@
            MR_Regrid_MetP_to_CompH,&
            MR_Read_3d_MetP_Variable
 
-
-
-      use mesh,            only : &
-         nxmax,nymax,nzmax
-
-
       implicit none
 
       logical      ,intent(inout) :: Load_MesoSteps
@@ -446,7 +441,7 @@
       integer           :: isize
       integer           :: ivar
       integer           :: istep
-      integer           :: k
+
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Read_NextMesoStep"
       endif;enddo
@@ -583,11 +578,6 @@
           vz_meso_next_step_sp = 0.0_sp
         endif
 
-!        do k = 1,nzmax
-!          write(*,*)k,vx_meso_last_step_sp(5,5,k),vx_meso_next_step_sp(5,5,k),&
-!                      vy_meso_last_step_sp(5,5,k),vy_meso_next_step_sp(5,5,k)
-!        enddo
-!        stop 77
         if(useCalcFallVel)then
           ! Populate the fall velocities for the next meso step
           call Set_Vf_Meso(.true.)

@@ -36,7 +36,7 @@
          lon_cc_pd,lat_cc_pd,de,dn,de_km,dn_km, &
          z_lb_pd,z_vec_init,z_cc_pd,dz_vec_pd, &
          sigma_nx_pd,sigma_ny_pd,sigma_nz_pd,kappa_pd,&
-         xLL,yLL,latLL,lonLL,s_cc_pd, &
+         xLL,yLL,latLL,lonLL,s_cc_pd,Ztop,ZScaling_ID, &
          A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_phi1,&
          A3d_phi2,A3d_Re,IsLatLon,IsPeriodic
 
@@ -49,7 +49,8 @@
       use MetReader,     only : &
            MR_Set_CompProjection, &
            MR_Initialize_Met_Grids, &
-           MR_Set_Met_Times
+           MR_Set_Met_Times, &
+           MR_Set_SigmaAlt_Scaling
 
       implicit none
 
@@ -60,7 +61,7 @@
       real(kind=ip) :: theta_1,theta_2,del_theta,del_costheta
       real(kind=ip) :: del_lam
       real(kind=ip) :: phi_bot,phi_top,phi
-      real(kind=sp),allocatable,dimension(:) :: dumx_sp,dumy_sp,dumz_sp
+      real(kind=sp),allocatable,dimension(:) :: dumx_sp,dumy_sp,dumz_sp,dums_sp
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"--------------------------------------------------"
@@ -96,8 +97,15 @@
       dz_vec_pd( 0)      = dz_vec_pd(1)
       dz_vec_pd(nzmax+1) = dz_vec_pd(nzmax)
       dz_vec_pd(nzmax+2) = dz_vec_pd(nzmax)
-
-      s_cc_pd(:) = (z_lb_pd(nzmax+1) - z_cc_pd(:))/(z_lb_pd(nzmax+1))
+      ! s_cc is the scaled (sigma-altitude) coordinate s= (z-zsurf)/(ztop-zsurf)
+      ! Here we set up the s-values with zsurf=0 and might apply topography later
+      if(ZScaling_ID.eq.0)then
+        s_cc_pd(:) = z_cc_pd(:)
+      elseif(ZScaling_ID.eq.1)then
+        s_cc_pd(:) = z_cc_pd(:)
+      elseif(ZScaling_ID.eq.2)then
+        s_cc_pd(:) = (z_cc_pd(:)-0.0_ip)/(Ztop-0.0_ip)
+      endif
 
       if (IsLatLon) then
         ! Find width and height of a node (km) at the volcano's location
@@ -190,19 +198,24 @@
       allocate(dumx_sp(nxmax))
       allocate(dumy_sp(nymax))
       allocate(dumz_sp(nzmax))
+      allocate(dums_sp(nzmax))
       if(IsLatLon)then
         dumx_sp(1:nxmax) = real(lon_cc_pd(1:nxmax),kind=sp)
         dumy_sp(1:nymax) = real(lat_cc_pd(1:nymax),kind=sp)
         dumz_sp(1:nzmax) = real(  z_cc_pd(1:nzmax),kind=sp)
+        dums_sp(1:nzmax) = real(  s_cc_pd(1:nzmax),kind=sp)
       else
         dumx_sp(1:nxmax) = real(  x_cc_pd(1:nxmax),kind=sp)
         dumy_sp(1:nymax) = real(  y_cc_pd(1:nymax),kind=sp)
         dumz_sp(1:nzmax) = real(  z_cc_pd(1:nzmax),kind=sp)
+        dums_sp(1:nzmax) = real(  s_cc_pd(1:nzmax),kind=sp)
       endif
       call MR_Initialize_Met_Grids(nxmax,nymax,nzmax,             &
                               dumx_sp,dumy_sp,dumz_sp,            &
                               IsPeriodic)
-      deallocate(dumx_sp,dumy_sp,dumz_sp)
+      call MR_Set_SigmaAlt_Scaling(nzmax,dums_sp)
+
+      deallocate(dumx_sp,dumy_sp,dumz_sp,dums_sp)
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Finished initializing Met Grids"
