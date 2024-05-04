@@ -31,7 +31,8 @@
              NC_append_to_netcdf,       &
              NC_RestartFile_ReadTimes,  &
              NC_RestartFile_LoadConcen, &
-             NC_Read_Output_Products
+             NC_Read_Output_Products,   &
+             NC_check_status
 
         ! Publicly available variables
       integer,public :: tn_len
