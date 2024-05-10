@@ -78,7 +78,7 @@
          WriteCloudLoad_KML,WriteReflectivity_KML,WriteCloudLoad_ASCII,WriteCloudHeight_KML,&
          WriteCloudHeight_ASCII,WriteCloudConcentration_KML,WriteCloudConcentration_ASCII,&
          WriteAirportFile_KML,WriteAirportFile_ASCII,Write3dFiles,&
-         nvprofiles
+         nvprofiles,nvar_User2d_static_XY,nvar_User2d_XY
 
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,IsLatLon,dx,dy,xLL,yLL,ts0,ts1, &
@@ -166,6 +166,7 @@
       integer             :: icase
       real(kind=ip),dimension(:,:),allocatable :: OutVar
       logical      ,dimension(:,:),allocatable :: mask
+      real(kind=ip),dimension(:,:),allocatable :: Topography
       real(kind=ip)       :: OutFillValue
       logical             :: IsThere
       character(len=6)    :: Fill_Value
@@ -378,6 +379,59 @@
           stop 1
         endif
 
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)'Select output variable (not all may be available):'
+          write(outlog(io),*)' 1 full concentration array             2 deposit granularity'
+          write(outlog(io),*)' 3 deposit thickness (mm time-series)   4 deposit thickness (inches time-series)'
+          write(outlog(io),*)' 5 deposit thickness (mm final)         6 deposit thickness (inches final)'
+          write(outlog(io),*)' 7 ashfall arrival time (hours)         8 ashfall arrival at airports/POI (mm)'
+          write(outlog(io),*)' 9 ash-cloud concentration (mg/m3)     10 ash-cloud height (km)'
+          write(outlog(io),*)'11 ash-cloud bottom (km)               12 ash-cloud load (T/km2)'
+          write(outlog(io),*)'13 ash-cloud radar reflectivity (dBz)  14 ash-cloud arrival time (hours)'
+          write(outlog(io),*)'15 topography                          16 profile plots'
+          write(outlog(io),*)'  or enter 0 to be prompted for a variable name'
+          write(outlog(io),*)''
+          write(outlog(io),*)'Enter code for output product:'
+        endif;enddo
+        read(input_unit,*,iostat=iostatus,iomsg=iomessage)iprod
+        linebuffer080 = "iprod"
+        linebuffer050 = "Reading iprod from stdin"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        if(iprod.eq.0)then
+          ! Get name of user variable
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)'Enter name of 2d variable in netcdf file:'
+          endif;enddo
+          read(input_unit,*,iostat=iostatus,iomsg=iomessage)Extra2dVarName
+          linebuffer080 = "Extra2dVarName"
+          linebuffer050 = "Reading Extra2dVarName from stdin"
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+
+          ! Get static vs TS
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)'Is this variable static or time-series?'
+            write(outlog(io),*)' 1 static'
+            write(outlog(io),*)' 2 time-series'
+            write(outlog(io),*)''
+            write(outlog(io),*)'Enter 1 or 2:'
+          endif;enddo
+          read(input_unit,*,iostat=iostatus,iomsg=iomessage)tmp_int
+          linebuffer080 = "TSorNo"
+          linebuffer050 = "Reading TSorNo from stdin"
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+          if(tmp_int.eq.1)then
+            nvar_User2d_static_XY = 1
+          elseif(tmp_int.eq.2)then
+            nvar_User2d_XY = 1
+          else
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: Cannot find input file"
+              write(errlog(io),*)"     ",concenfile
+            endif;enddo
+            stop 1
+          endif
+        endif
+
         ! Before we do anything, call routine to read the netcdf file, populate
         ! the dimensions so we can see what we are dealing with.
         ! This call reads the 2d output products for the specified time
@@ -389,24 +443,6 @@
         call NC_Read_Output_Products(-1)
 #endif  
         VB(1)   = tmp_int
-        do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)'Select output variable (not all may be available):'
-          write(outlog(io),*)' 1 full concentration array             2 deposit granularity'
-          write(outlog(io),*)' 3 deposit thickness (mm time-series)   4 deposit thickness (inches time-series)'
-          write(outlog(io),*)' 5 deposit thickness (mm final)         6 deposit thickness (inches final)'
-          write(outlog(io),*)' 7 ashfall arrival time (hours)         8 ashfall arrival at airports/POI (mm)'
-          write(outlog(io),*)' 9 ash-cloud concentration (mg/m3)     10 ash-cloud height (km)'
-          write(outlog(io),*)'11 ash-cloud bottom (km)               12 ash-cloud load (T/km2)'
-          write(outlog(io),*)'13 ash-cloud radar reflectivity (dBz)  14 ash-cloud arrival time (hours)'
-          write(outlog(io),*)'15 topography                          16 profile plots'
-!          write(outlog(io),*)'  or enter 0 to be prompted for a variable name'
-          write(outlog(io),*)''
-          write(outlog(io),*)'Enter code for output product:'
-        endif;enddo
-        read(input_unit,*,iostat=iostatus,iomsg=iomessage)iprod
-        linebuffer080 = "iprod"
-        linebuffer050 = "Reading iprod from stdin"
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
 
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)'Select output format'
@@ -558,10 +594,10 @@
       endif
 
       !  Arg #2
-      !if(iprod.lt.0.or.iprod.gt.16)then    ! Activate this line when custom variables are coded
-      if(iprod.lt.1.or.iprod.gt.16)then
+      if(iprod.lt.0.or.iprod.gt.16)then    ! Activate this line when custom variables are coded
+      !if(iprod.lt.1.or.iprod.gt.16)then
         do io=1,2;if(VB(io).le.verbosity_error)then
-          write(errlog(io),*)"ERROR: output product requested is not in range 1-16."
+          write(errlog(io),*)"ERROR: output product requested is not in range 0-16."
           write(errlog(io),*)"       Run Ash3d_PostProc with no command-line"
           write(errlog(io),*)"       arguments to set usage information"
         endif;enddo
@@ -666,9 +702,7 @@
         elseif(iprod.eq.15)then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)'output variable =15 Topography (km)'
-            write(errlog(io),*)' Currently, no output formats available for iprod=15'
           endif;enddo
-          stop 1
           ivar = 10
           TS_flag = 0      ! 1 = not a time series
           height_flag = 0  ! All the cells should be pinned to z=0
@@ -953,10 +987,9 @@
         elseif(outformat.eq.2)then
           WriteCloudTime_KML            = .true.
         endif
-      !elseif(iprod.eq.15)then ! topography
-      !  if(    outformat.eq.1)then
-      !  elseif(outformat.eq.2)then
-      !  endif
+      elseif(iprod.eq.15)then ! topography
+        nvar_User2d_static_XY = 1
+        Extra2dVarName = "Topography"
       elseif(iprod.eq.16)then ! vertical profiles of concentration
         if(    outformat.eq.1.or.outformat.eq.3)then
           ! ASCII or png
@@ -1083,10 +1116,10 @@
             endif
             CloudArrivalTime(1:nxmax,1:nymax) = OutVar(1:nxmax,1:nymax)
           endif
-          !if(iprod.eq.15)then
-          !  if(.not.allocated(Topography)) allocate(Topography(nxmax,nymax))
-          !  Topography(1:nxmax,1:nymax)       = OutVar(1:nxmax,1:nymax)
-          !endif
+          if(iprod.eq.15)then
+            if(.not.allocated(Topography)) allocate(Topography(nxmax,nymax))
+            Topography(1:nxmax,1:nymax)       = OutVar(1:nxmax,1:nymax)
+          endif
         elseif(ndims.eq.3)then
           ! For 3d input data, we only have the total 3d ash concentration, so we need
           ! to stop if the requested output product cannot be calculated from this.
@@ -1124,8 +1157,8 @@
             OutVar = real(DepArrivalTime(1:nxmax,1:nymax),kind=ip)
           elseif(iprod.eq.14)then
             OutVar = real(CloudArrivalTime(1:nxmax,1:nymax),kind=ip)
-          !elseif(iprod.eq.15)then
-          !  OutVar = Topography(1:nxmax,1:nymax)
+          elseif(iprod.eq.15)then
+            OutVar = Topography(1:nxmax,1:nymax)
           endif
           call Write_2D_KML(ivar,OutVar,height_flag,TS_flag)
           call Close_KML(ivar,TS_flag)
@@ -1242,6 +1275,11 @@
         Fill_Value = '-9999.'
         OutFillValue = -1.0_ip
         filename_root = 'CloudArrivalTime    '
+      elseif(iprod.eq.15)then
+        OutVar = real(Topography,kind=ip)
+        Fill_Value = '-9999.'
+        OutFillValue = -1.0_ip
+        filename_root = 'Topography          '
       endif
       ! Now mask out non-cloud values
       if(iprod.eq.10.or.&  ! CloudHeight

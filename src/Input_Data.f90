@@ -4807,13 +4807,14 @@
 ! 3                       input format code (1=ascii, 2=binary, 3=netcdf, 4=grib, 5=tecplot, 6=vtk)
 ! test.inp                Ash3d_control_file_name   (skipped if datafile is netcdf)
 ! 5                       invar [outvar]    input variable and output variable, if different
+!  if invar=0 varname
 ! 2                       ndims Only needed for format 1 or 2
 ! 0 0                     nx ny [nz] Also only needed for format 1 or 2
 ! 0.0 0.0                 dx dy [dz] Needed if not a part of the data file
 ! 0.0 0.0                 srtx srty         Start x and y
 ! 3                       output format     (1=ascii, 2=KML 3=image, 4=binary, 5=shapefile 6=grib, 7=tecplot, 8=vtk)
 ! 3                       plot_pref         (1=dislin, 2=plplot, 3=gnuplot, 4=GMT)
-! -1                      time_step         Only needed if input file is multi-timestep (eg netcdf) (-1 for final, -2 for all)
+! -1                      time_step         Only needed if input file is multi-timestep (eg netcdf) (0 for static, -1 for final, -2 for all)
 ! 0                       Filled contour flag (1 for filled, 0 for lines)
 ! 1 5                     custom contour flag (1 for true, 0 for false), number of contours
 ! 1.0 3.0 10.0 50.0 100.0 lev(ncont)  : contour levels
@@ -4935,7 +4936,7 @@
         iprod2 = iprod1
       endif
       ! Error-checking these values
-      if(iprod1.lt.1.or.iprod1.gt.16)then
+      if(iprod1.lt.0.or.iprod1.gt.16)then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: Invalid format code input variable type."
         endif;enddo
@@ -4954,6 +4955,14 @@
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"Variable code of output data = ",iprod2
         endif;enddo
+      endif
+        ! Now the bonus line if the user requests a custom variable
+      if(iprod1.eq.0)then
+        ! HFS fix this
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: Need to code custom variables in control file"
+        endif;enddo
+        stop 1
       endif
 
       ! Line 5:

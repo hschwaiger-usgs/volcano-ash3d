@@ -36,6 +36,8 @@
 
         ! Publicly available variables
       integer,public :: tn_len
+      character(len=30),public :: Extra2dVarName
+      real(kind=ip),dimension(:,:),allocatable,public :: Extra2dVar
 
       integer :: NCversion
       integer :: NCsubversion
@@ -3774,7 +3776,8 @@
          concenfile,init_tstep,nWriteTimes,WriteTimes,cdf_b1l1,cdf_b1l5,cdf_b3l1, &
          cdf_b1l2,cdf_b3l3,VolcanoName,Write_PT_Data,isFinal_TS,&
          cdf_run_class,cdf_url,cdf_institution,&
-         Write_PR_Data,nvprofiles,x_vprofile,y_vprofile,Site_vprofile
+         Write_PR_Data,nvprofiles,x_vprofile,y_vprofile,Site_vprofile,&
+         nvar_User2d_static_XY,nvar_User2d_XY
 
       use mesh,          only : &
          nxmax,nymax,nsmax,nzmax,x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd,z_cc_pd, &
@@ -4568,6 +4571,15 @@
           call NC_check_status(nSTAT,0,"inq_varid ash_arrival_time")
         endif
 
+        ! Extra 2d Var static or TS
+        if(nvar_User2d_static_XY.gt.0.or.nvar_User2d_XY.gt.0)then
+          nSTAT = nf90_inq_varid(ncid,Extra2dVarName,temp1_2d_var_id)
+          if(nSTAT.ne.0)then
+            temp1_2d_var_id = 0
+            call NC_check_status(nSTAT,0,"inq_varid User2d_static")
+          endif
+        endif
+
         if(Write_PT_Data)then
           ! pt_x
           nSTAT = nf90_inq_varid(ncid,"pt_x",pt_x_var_id)
@@ -5097,6 +5109,16 @@
       allocate(ashcon(x_len,y_len,z_len,bn_len))
       allocate(dum2d_out(x_len,y_len))
       allocate(dum2dint_out(x_len,y_len))
+      if(nvar_User2d_static_XY.gt.0.or.nvar_User2d_XY.gt.0)then
+#ifdef USEPOINTERS
+        if(.not.associated(Extra2dVar) )then
+#else
+        if(.not.allocated(Extra2dVar) )then
+#endif
+          allocate(Extra2dVar(x_len,y_len))
+        endif
+        Extra2dVar = 0.0_ip
+      endif
 
       ! Full concentration array
       if(useRestartVars)then
@@ -5243,6 +5265,7 @@
         MaxHeight(:,:) = 0.0_ip
       endif
       MaxHeight = real(dum2d_out,kind=ip)
+
       ! Ash-cloud bottom
       nSTAT=nf90_get_var(ncid,ashcloudBot_var_id,dum2d_out,  &
                start = (/1,1,init_tstep/),       &
@@ -5278,6 +5301,41 @@
         CloudLoad(:,:) = 0.0_ip
       endif
       CloudLoad = real(dum2d_out,kind=ip)
+
+      ! Extra 2d variable
+      if(nvar_User2d_static_XY.gt.0)then
+        ! Static case
+        write(*,*)"Trying to read static variable:",temp1_2d_var_id
+        write(*,*)trim(adjustl(Extra2dVarName))
+        if(temp1_2d_var_id.eq.0)then
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: Trying to read user-specified variable : ",trim(adjustl(Extra2dVarName))
+            write(errlog(io),*)"       but the variable is not available"
+          endif;enddo
+          stop 1
+        endif
+        nSTAT=nf90_get_var(ncid,temp1_2d_var_id,dum2d_out,  &
+                 start = (/1,1/),       &
+                 count = (/x_len,y_len/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var extra2d")
+        Extra2dVar = real(dum2d_out,kind=ip)
+      elseif(nvar_User2d_XY.gt.0)then
+        ! Transient case
+        write(*,*)"Trying to read TS variable:",temp1_2d_var_id
+        write(*,*)trim(adjustl(Extra2dVarName))
+        if(temp1_2d_var_id.eq.0)then
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: Trying to read user-specified variable : ",trim(adjustl(Extra2dVarName))
+            write(errlog(io),*)"       but the variable is not available"
+          endif;enddo
+          stop 1
+        endif
+        nSTAT=nf90_get_var(ncid,temp1_2d_var_id,dum2d_out,  &
+                 start = (/1,1,init_tstep/),       &
+                 count = (/x_len,y_len,1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var extra2d")
+        Extra2dVar = real(dum2d_out,kind=ip)
+      endif
 
       ! Cloud-mask
       if(cloudmask_var_id.eq.0)then
