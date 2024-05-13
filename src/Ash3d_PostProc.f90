@@ -333,9 +333,14 @@
       WriteAirportFile_ASCII        = .false.
       Write3dFiles                  = .false.
 
+      ! Completed evaluating status of environment; now checking how to proceed:
+      !  No command-line arguments -> interactively prompt user
+      !  One command-line argument -> check for '-h' otherwise assume control file
+      !  3+ command-line arguemnts -> command-line only driven run
+
       ! Test read command-line arguments
       nargs = command_argument_count()
-      if (nargs.eq.0) then
+100   if (nargs.eq.0) then
           ! If no command-line arguments are given, then prompt user
           ! interactively for the command file name and possible a 
           ! restart file
@@ -485,7 +490,7 @@
           ! iprod = 7,8,14,15 are not time-series, but set itime to -1
           itime = -1
         endif
-      elseif (nargs.eq.1) then
+110   elseif (nargs.eq.1) then
           ! If an argument is given, first test for the '-h' indicating a help
           ! request.
         call get_command_argument(1, arg, length=arglen, status=iostatus)
@@ -525,7 +530,7 @@
 !            endif
 !          endif
         endif
-      elseif (nargs.ge.3) then
+120   elseif (nargs.ge.3) then
         ! If we are doing command line only, then we need at least the netcdf filename, the output
         ! product code and the format.  Optionally, we can add the timestep.  If there is an
         ! inconsistency with iprod and outformat, an error message is issued before stopping.
@@ -562,7 +567,7 @@
       ! Now that we have read the command line, error-check and report back what
       ! we are about to do.
       !  Arg #1
-      if(informat.eq.3)then
+130   if(informat.eq.3)then
         ! Test if the Ash3d netcdf file exists
         inquire( file=concenfile, exist=IsThere )
         if(.not.IsThere)then
@@ -743,7 +748,9 @@
       if(itime.eq.-1)then
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)'itime = -1 (Final time step)'
-          write(outlog(io),*)'Either no time step was provided or the last time step is requested.'
+          write(outlog(io),*)'  This signifiies one of two conditions:'
+          write(outlog(io),*)'   1. No time step provided (e.g. variable is not at time-series)'
+          write(outlog(io),*)'   2. The final time step should be used'
         endif;enddo
       elseif(itime.eq.0)then
         do io=1,2;if(VB(io).le.verbosity_error)then
@@ -764,6 +771,7 @@
       endif
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)'Finished reading inputs.'
+        write(outlog(io),*)' '
       endif;enddo
 
       ! Reset plotting preference if need be
@@ -794,7 +802,7 @@
 
       ! Before we do anything, we need to set up as much as we can of the grid
       ! and populate auxilary variable.
-      if(informat.eq.3)then
+      if(informat.eq.3)then ! netcdf
         ! call routine to read the netcdf file, populate
         ! the dimensions so we can see what we are dealing with.
         ! This call reads the 2d output products for the specified time
@@ -818,7 +826,7 @@
           ! volcano name, etc.
           call Read_Control_File
         endif
-        if(informat.eq.1)then
+        if(informat.eq.1)then ! ASCII
           if(ndims.eq.2)then
             call read_2D_ASCII(datafileIn)
             if(nxmax.ne.A_nx.or.  &
@@ -857,7 +865,7 @@
           elseif(ndims.eq.3)then
             call read_3D_ASCII(datafileIn)
           endif
-        elseif(informat.eq.2)then
+        elseif(informat.eq.2)then ! BINARY
           if(ndims.eq.2)then
             ! We didn't error-check nxmax and nymax on input, so do it now
             if(nxmax.le.0.or.nymax.le.0)then
@@ -1003,8 +1011,11 @@
         endif
       endif
 
+      write(*,*)nxmax,nymax
+
       allocate(OutVar(nxmax,nymax))
       allocate(mask(nxmax,nymax))
+      write(*,*)"allocated OutVar and mask"
       mask = .true.
       if(informat.eq.1)then
         if(ndims.eq.2)then
@@ -1117,6 +1128,7 @@
             CloudArrivalTime(1:nxmax,1:nymax) = OutVar(1:nxmax,1:nymax)
           endif
           if(iprod.eq.15)then
+            write(*,*)"Allocating topo"
             if(.not.allocated(Topography)) allocate(Topography(nxmax,nymax))
             Topography(1:nxmax,1:nymax)       = OutVar(1:nxmax,1:nymax)
           endif
@@ -1135,7 +1147,7 @@
             stop 1
           endif
         endif
-      endif
+      endif !informat.eq.1.or.informat.eq.2
 
       ! The main differences in output products will be time-series, vs
       ! time-step output.  Currently, the time-series output will only be for
@@ -1276,7 +1288,7 @@
         OutFillValue = -1.0_ip
         filename_root = 'CloudArrivalTime    '
       elseif(iprod.eq.15)then
-        OutVar = real(Topography,kind=ip)
+        OutVar = real(Extra2dVar,kind=ip)
         Fill_Value = '-9999.'
         OutFillValue = -1.0_ip
         filename_root = 'Topography          '

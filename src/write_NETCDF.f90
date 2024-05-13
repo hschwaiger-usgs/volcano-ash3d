@@ -3740,7 +3740,8 @@
 
       if (nSTAT.eq.nf90_noerr) return
       do io=1,2;if(VB(io).le.verbosity_error)then
-        write(errlog(io) ,*)severity,icode,operation,":",nf90_strerror(nSTAT)
+        write(errlog(io) ,*)severity,icode,operation," :: ",&
+                            trim(adjustl(nf90_strerror(nSTAT)))
       endif;enddo
 
       ! If user-supplied error code is 0, then consider this a warning,
@@ -3760,7 +3761,7 @@
 !
 !  This subroutine is used in the post-processing tool to populate the variables
 !  for a requested time step.  All the standard output products are read, but
-!  only for timestep. If timestep = -1, then the last step in file is used
+!  only for one timestep. If timestep = -1, then the last step in file is used
 !  unless there is a 'final' variable as in depothickFin.  All other variables
 !  needed for post-processing are also read, such as the grid coordinates,
 !  grainsize and eruption variables as well as many global attributes.
@@ -4258,7 +4259,8 @@
           tn_dim_id = 0
           call NC_check_status(nSTAT,0,"inq_dimid tn")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find dim tn: Output file has no native time data (for profiles)"
+            write(outlog(io),*)"Did not find dim tn: ",&
+                  "Output file has no native time data (for profiles)"
           endif;enddo
           tn_len = 0
           ntmax  = 0
@@ -5307,6 +5309,7 @@
         ! Static case
         write(*,*)"Trying to read static variable:",temp1_2d_var_id
         write(*,*)trim(adjustl(Extra2dVarName))
+        stop 88
         if(temp1_2d_var_id.eq.0)then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: Trying to read user-specified variable : ",trim(adjustl(Extra2dVarName))
@@ -5418,7 +5421,7 @@
       ! Close file
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Closing netCDF file."
-      endif;enddo      
+      endif;enddo 
       nSTAT = nf90_close(ncid)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"nf90_close")
 
