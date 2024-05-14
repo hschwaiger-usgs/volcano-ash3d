@@ -343,8 +343,8 @@
           nConLev = 8
           allocate(zrgb(nConLev,3))
           allocate(ContourLev(nConLev))
-          ContourLev = (/0.1_ip, 0.3_ip, 1.0_ip, 3.0_ip, &
-                  10.0_ip, 30.0_ip, 100.0_ip, 300.0_ip/)
+          ContourLev = (/1.0_ip, 2.0_ip, 3.0_ip, 4.0_ip, &
+                  5.0_ip, 6.0_ip, 7.0_ip, 8.0_ip/)
         endif
       elseif(iprod.eq.16)then   ! profile plots
         do io=1,2;if(VB(io).le.verbosity_error)then

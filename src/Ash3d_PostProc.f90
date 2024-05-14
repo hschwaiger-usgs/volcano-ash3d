@@ -334,9 +334,9 @@
       Write3dFiles                  = .false.
 
       ! Completed evaluating status of environment; now checking how to proceed:
-      !  No command-line arguments -> interactively prompt user
-      !  One command-line argument -> check for '-h' otherwise assume control file
-      !  3+ command-line arguemnts -> command-line only driven run
+      !  No command-line arguments (100) -> interactively prompt user
+      !  One command-line argument (110) -> check for '-h' otherwise assume control file
+      !  3+ command-line arguemnts (120) -> command-line only driven run
 
       ! Test read command-line arguments
       nargs = command_argument_count()
@@ -435,6 +435,9 @@
             endif;enddo
             stop 1
           endif
+        elseif(iprod.eq.15)then
+          nvar_User2d_static_XY = 1
+          Extra2dVarName = "Topography"
         endif
 
         ! Before we do anything, call routine to read the netcdf file, populate
@@ -708,6 +711,8 @@
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)'output variable =15 Topography (km)'
           endif;enddo
+          nvar_User2d_static_XY = 1
+          Extra2dVarName = "Topography"
           ivar = 10
           TS_flag = 0      ! 1 = not a time series
           height_flag = 0  ! All the cells should be pinned to z=0
@@ -1011,12 +1016,10 @@
         endif
       endif
 
-      write(*,*)nxmax,nymax
-
       allocate(OutVar(nxmax,nymax))
       allocate(mask(nxmax,nymax))
-      write(*,*)"allocated OutVar and mask"
       mask = .true.
+      ! Load the variable OutVar from the ASCII or Binary arrays
       if(informat.eq.1)then
         if(ndims.eq.2)then
           OutVar(1:nxmax,1:nymax) = A_XY(1:nxmax,1:nymax)
@@ -1039,6 +1042,7 @@
         endif
       endif
 
+      ! Now depending on the output product ID, copy OutVar to the named array
       if(informat.eq.1.or.informat.eq.2)then
         if(ndims.eq.2)then
           ! If we have read a 2d array, copy it to the proper named array so it can be
