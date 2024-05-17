@@ -848,7 +848,9 @@
 
       real(kind=ip) :: vset2
 
-      ! Wilson and Huang (1979, EPSL v. 44, pp. 311-324) give the drag coefficient
+      ! Wilson and Huang (1979)
+      !  EPSL v. 44, pp. 311-324: https://doi.org/10.1016/0012-821X(79)90179-1
+      ! This model gives the drag coefficient
       ! of tephra as a function of its shape by defining tephra fragments as 
       ! ellipsoidal with axes a, b, and c. they also define F=(b+c)/2a, and give the
       ! drag coefficient as:
