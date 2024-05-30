@@ -685,7 +685,7 @@
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),5012)   ! put footnotes below output table
         write(outlog(io),'(a5,f10.3,a5,f10.3)')'time=',time,', dt=',dt
-        write(outlog(io),'(a26,f15.5)')"Mass Conservation Error = ",MassConsErr
+        write(outlog(io),'(a26,g15.5)')"Mass Conservation Error = ",MassConsErr
       endif;enddo
 
         ! Make sure we have the latest output variables and go to write routines

@@ -230,8 +230,19 @@
       !   We want to call this subroutine silently, so reset the verbosity
       tmp_int = VB(1)
       VB(1)   = verbosity_dark
+      VB(2)   = verbosity_dark
       call Set_OS_Env
-      VB(1)   = tmp_int
+      if(VB(1).eq.verbosity_dark)then
+        VB(1)   = tmp_int
+      endif
+
+      if(VB(1).le.verbosity_debug1)then
+        CleanScripts = .false.
+      else
+        CleanScripts = .true.
+      endif
+      CleanScripts_gnuplot = CleanScripts
+      CleanScripts_GMT     = CleanScripts
 
       ! Checking to see which plotting packages we have
 #ifdef USEDISLIN
@@ -251,20 +262,20 @@
       call execute_command_line("echo 'exit' | gnuplot",exitstat=istat)
 #endif
 #ifdef MACOS
-        ! On a MacOS system, not sure how to test yet
-        do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"Cannot test for gnuplot on MacOS for now."
-          write(outlog(io),*)"Disabling gnuplot."
-        endif;enddo
-        istat = 1
+      ! On a MacOS system, not sure how to test yet
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"Cannot test for gnuplot on MacOS for now."
+        write(outlog(io),*)"Disabling gnuplot."
+      endif;enddo
+      istat = 1
 #endif
 #ifdef WINDOWS
-        ! On a Windows system, not sure how to test yet
-        do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"Cannot test for gnuplot on Windows for now."
-          write(outlog(io),*)"Disabling gnuplot."
-        endif;enddo
-        istat = 1
+      ! On a Windows system, not sure how to test yet
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"Cannot test for gnuplot on Windows for now."
+        write(outlog(io),*)"Disabling gnuplot."
+      endif;enddo
+      istat = 1
 #endif
       if (istat.eq.0)then
         CleanScripts_gnuplot = CleanScripts

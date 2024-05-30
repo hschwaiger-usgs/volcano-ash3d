@@ -323,7 +323,12 @@
       write(fid_ascii2dout,3000) nx        ! write header values
       write(fid_ascii2dout,3001) ny
       if (IsLatLon) then
-        write(fid_ascii2dout,3002) lonLL    
+        if (lonLL.gt.180.0_ip)then
+          ! GIS software seem to prefer the domain -180->180
+          write(fid_ascii2dout,3002) lonLL -360.0_ip
+        else
+          write(fid_ascii2dout,3002) lonLL
+        endif
         write(fid_ascii2dout,3003) latLL    
         write(fid_ascii2dout,3004) de,dn
       else

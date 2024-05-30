@@ -510,16 +510,16 @@
 
       ! Plot model region
       if (IsLatLon) then
-        longLL  = lonLL - de/2.0_ip
-        longUR  = lonUR + de/2.0_ip
-        lattLL  = latLL - dn/2.0_ip
-        lattUR  = latUR + dn/2.0_ip
+        longLL  = lonLL
+        longUR  = lonUR
+        lattLL  = latLL
+        lattUR  = latUR
         call PlotModelBoundary(longLL,longUR,lattLL,lattUR,fid)
       else
-        xleft   = xLL - dx/2.0_ip
-        xright  = xUR + dx/2.0_ip
-        ybottom = yLL - dy/2.0_ip
-        ytop    = yUR + dy/2.0_ip
+        xleft   = xLL
+        xright  = xUR
+        ybottom = yLL
+        ytop    = yUR
         call PlotModelBoundary(xleft,xright,ybottom,ytop,fid)
       endif ! IsLatLon
 

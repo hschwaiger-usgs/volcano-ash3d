@@ -179,7 +179,6 @@
       logical           :: IsThere
       real(kind=dp)      :: olam,ophi ! using precision needed by libprojection
 
-
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
           real(kind=8)              :: HoursSince
@@ -856,21 +855,22 @@
       !if [ $GMTv -eq 5 ] ; then
       !  convert -rotate 90 temp.png -resize 630x500 -alpha off temp.gif
       !if [ $GMTv -eq 5 ] ; then
-      !  convert temp.png -resize 630x500 -alpha off temp.gif
+      cmd = "convert temp.png -resize 850x600 -alpha off temp.png"
+      if(.not.writeContours)write(55,*)trim(adjustl(cmd))
 
       ! Move this png to the final filename
       cmd = "mv temp.png " // outfile_name
       if(.not.writeContours)write(55,*)trim(adjustl(cmd))
 
-      ! Clean up
-      if (CleanScripts_GMT) then
-        cmd = "rm -f c.lev out.grd temp.* leg*.txt out*.con cities.xy"
-        write(55,*)trim(adjustl(cmd))
-      endif
-
       close(55)
       write(gmtcom,'(a3,a14)')'sh ',dp_gmtfile
       call execute_command_line(gmtcom,exitstat=iostatus)
+
+      ! Clean up
+      if (CleanScripts_GMT) then
+        cmd = "rm -f c.lev out.grd temp.* leg*.txt outvar.* cities.xy gmt.*"
+        call execute_command_line(trim(adjustl(cmd)),exitstat=iostatus)
+      endif
 
       ! GMT script has been run, now we need to read the contour lines if we want
       ! to write a shapefile

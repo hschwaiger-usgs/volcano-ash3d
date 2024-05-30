@@ -114,7 +114,6 @@
         if(substr_pos.eq.1)then
           ! found an optional module
           !  Parse for the keyword
-            write(*,*)"Found optmod"
           read(linebuffer080,1104,iostat=iostatus,iomsg=iomessage)mod_name
           if(trim(adjustl(mod_name)).eq.'RESETPARAMS')then
             exit

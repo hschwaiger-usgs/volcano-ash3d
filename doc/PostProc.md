@@ -79,7 +79,7 @@ the output NetCDF file, enter:
 
 The preferred graphics package is
 set at the time of compilation depending on the system (Linux, Windows, MacOS)
-and the availability of the libraries. These can alway be overriden at
+and the availability of the libraries. These can always be overriden at
 run-time with the environmet variable `ASH3DPLOT`,
 where: 1=[dislin](Figs/Ash3d_Deposit____final_dislin.png), 2=[plplot](Figs/Ash3d_Deposit____final_plplot.png),
 3=[gnuplot](Figs/Ash3d_Deposit____final_gnuplot.png),
