@@ -287,7 +287,7 @@
 
       ! Stop conditions
       !  1 = check if amount aloft is too little
-      !        aloft_vol/tot_vol.lt.(1.0_ip-StopValue)
+      !        aloft_vol/tot_vol.lt.(1.0_ip-StopValue_FracAshDep)
       !  2 = check if time is past sim end
       !        time.ge.Simtime_in_hours
       !  3 = check if there is ash aloft (this might be turned off for certain sources)
@@ -756,7 +756,7 @@
 #endif
       real(kind=ip)      :: dep_percent_accumulated = 0.0_ip
       real(kind=ip)      :: aloft_percent_remaining = 0.0_ip
-      real(kind=ip)      :: StopValue               = 0.0_ip   ! program stops when percent_accumulated>StopValue
+      real(kind=ip)      :: StopValue_FracAshDep = 0.0_ip   ! program stops when percent_accumulated>StopValue_FracAshDep
       real(kind=ip)      :: dep_vol                 = 0.0_ip
       real(kind=ip)      :: aloft_vol               = 0.0_ip
       real(kind=ip)      :: outflow_vol             = 0.0_ip

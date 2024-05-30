@@ -79,7 +79,7 @@ the output NetCDF file, enter:
 
 The preferred graphics package is
 set at the time of compilation depending on the system (Linux, Windows, MacOS)
-and the availability of the libraries. These can always be overriden at
+and the availability of the libraries. These can alway be overriden at
 run-time with the environmet variable `ASH3DPLOT`,
 where: 1=[dislin](Figs/Ash3d_Deposit____final_dislin.png), 2=[plplot](Figs/Ash3d_Deposit____final_plplot.png),
 3=[gnuplot](Figs/Ash3d_Deposit____final_gnuplot.png),
@@ -132,7 +132,7 @@ file of the airborne ash concentration, but cloud load is needed for the output,
 4 would contain `1 12`.  
 Line 5 contains the number of dimensions of the data file (2 or 3) and a code indicating if
 the data are projected or in lon/lat coordinates (0 or 1). `Ash3d_PostProc` currently
-only can plot lon/lat data.  
+only can plot projected data using GMT.  
 Line 6 gives the number of nodes in the x,y, and possibly z directions for the data file.  
 Line 7 gives the grid spacing for all the coordinate directions of the file and line 8
 gives the start coordinates.  

@@ -49,7 +49,7 @@
 !       8 tecplot (not yet implemented)
 !       9 vtk     (not yet implemented)
 !  and time_step can optionally be provided for transient variables with -1 denoting
-!  the final time data.  For data pproducts that require contours (shape files or
+!  the final time data.  For data products that require contours (shape files or
 !  contour plots), contour levels are defined in the module Output_Vars.
 !  
 !  For example, to produce a contour map of ash-cloud arrival time:

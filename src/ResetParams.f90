@@ -6,8 +6,6 @@
 !  Arguments:
 !    none
 !
-!  This subroutine
-!
 !  This subroutine is called from Ash3d.F90 after Read_Control_File only if the
 !  input file has a block with the keyword OPTMOD=RESETPARAMS.
 !  An example block with all the variables availalbe to reset is given here. Not
@@ -33,6 +31,7 @@
 ! CLOUDCON_GRID_THRESH = 2.0e-1
 ! CLOUDLOAD_THRESH     = 1.0e-2
 ! THICKNESS_THRESH     = 1.0e-3
+! StopValue_FracAshDep = 0.99
 ! DBZ_THRESH           = -2.0e+1
 ! VelMod_umb           = 1
 ! lambda_umb           = 0.2
@@ -77,6 +76,9 @@
       use Source_Umbrella, only : &
          k_entrainment_umb,lambda_umb,N_BV_umb,SuzK_umb ,&
          VelMod_umb
+
+      use solution,      only : &
+         StopValue_FracAshDep
 
       integer, parameter :: MAXPARAMS = 50
 
@@ -452,6 +454,25 @@
                               "to ",pvalue(i)
           endif;enddo
           THICKNESS_THRESH = pvalue(i)
+        elseif (pname(i).eq.'StopValue_FracAshDep') then
+          ! error-checking
+          if (pvalue(i).le.0.0_ip)then
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: StopValue_FracAshDep must be > 0"
+            endif;enddo
+            stop 1
+          elseif (pvalue(i).gt.1.0_ip)then
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"WARNING: StopValue_FracAshDep seems high."
+              write(outlog(io),*)&
+                "         This is the threshold for stopping simulation (fraction departed)"
+            endif;enddo
+          endif
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"  Resetting StopValue_FracAshDep from ",StopValue_FracAshDep,&
+                              "to ",pvalue(i)
+          endif;enddo
+          StopValue_FracAshDep = pvalue(i)
         elseif (pname(i).eq.'DBZ_THRESH') then
           ! error-checking
           if (pvalue(i).ge.0.0_ip)then

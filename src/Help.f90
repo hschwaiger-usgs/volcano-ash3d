@@ -71,6 +71,7 @@
       write(outlog(io),1)'   Ash3d -h run      : Information on running Ash3d from the command line       '
       write(outlog(io),1)'   Ash3d -h input    : Information on the structure of the input file           '
       write(outlog(io),1)'   Ash3d -h postproc : Information on the post-processing output results        '
+      write(outlog(io),1)'   Ash3d -h info     : Information on this executable                           '
       write(outlog(io),1)'                                                                                '
       write(outlog(io),1)' Writing run help information:                                                  '
       write(outlog(io),1)'                                                                                '
@@ -749,8 +750,8 @@
       write(outlog(io),1)' ZPADDING             = 1.3                                                                            '
       write(outlog(io),1)' DEPO_THRESH          = 1.0e-1                                                                         '
       write(outlog(io),1)' DEPRATE_THRESH       = 1.0e-2                                                                         '
-      write(outlog(io),1)' CLOUDCON_THRESH      = 2.0e-1                                                                         '
-      write(outlog(io),1)' CLOUDCON_GRID_THRESH = 2.0e-1                                                                         '
+      write(outlog(io),1)' CLOUDCON_THRESH      = 1.0e-3                                                                         '
+      write(outlog(io),1)' CLOUDCON_GRID_THRESH = 1.0e-7                                                                         '
       write(outlog(io),1)' CLOUDLOAD_THRESH     = 1.0e-2                                                                         '
       write(outlog(io),1)' THICKNESS_THRESH     = 1.0e-3                                                                         '
       write(outlog(io),1)' DBZ_THRESH           = -2.0e+1                                                                        '
@@ -761,6 +762,9 @@
       write(outlog(io),1)' SuzK_umb             = 12.0                                                                           '
       write(outlog(io),1)' useMoistureVars      = F                                                                              '
       write(outlog(io),1)' useVz_rhoG           = T                                                                              '
+      write(outlog(io),1)' useWindVars          = F                                                                              '
+      write(outlog(io),1)' useOutprodVars       = T                                                                              '
+      write(outlog(io),1)' useRestartVars       = T                                                                              '
       write(outlog(io),1)' cdf_institution      = USGS                                                                           '
       write(outlog(io),1)' cdf_run_class        = Analysis                                                                       '
       write(outlog(io),1)' cdf_url              = https://vsc-ash.wr.usgs.gov/ash3d-gui                                          '
@@ -842,8 +846,6 @@
  1    format(a80)
 
       end subroutine help_postproc
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       end module help
 

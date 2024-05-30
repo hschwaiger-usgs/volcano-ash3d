@@ -28,6 +28,7 @@ or with more specific help requests, such as:
 `Ash3d -h make`  
 `Ash3d -h run`  
 `Ash3d -h input`  
+`Ash3d -h info`  
 `Ash3d -h postproc`  
 
 ### Run-time environment variables
