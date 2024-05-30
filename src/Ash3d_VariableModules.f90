@@ -542,8 +542,11 @@
       real(kind=ip)      :: ZPADDING     = 1.3_ip
       real(kind=ip)      :: Ztop
       character(len=7)   :: VarDzType
-      real(kind=ip)      :: dz_const                        ! z nodal spacing (always km)
-      integer            :: ZScaling_ID  = 0                ! altitude coordinates :: s=z
+      real(kind=ip)      :: dz_const                  ! z nodal spacing (always km)
+      integer            :: ZScaling_ID  = 0          ! altitude coordinates :: s=z  (J=1)
+                                                      !  if using topo, may have:    (J=1)
+                                                      !  1=shifted s=z-Zsurf
+                                                      !  2=sigma   s=(z-Zsurf)/(Ztop-Zsurf) (J=Ztop-Zsurf)
 
       ! Dimensional parameters in km, used if IsLatLon=.False.        
       real(kind=ip)      :: gridwidth_x, gridwidth_y  ! Dimensions (in km) of the grid
@@ -571,13 +574,15 @@
       real(kind=ip),dimension(:)    ,pointer :: y_cc_pd     => null() ! y_component of cell centers
       real(kind=ip),dimension(:)    ,pointer :: z_cc_pd     => null() ! z_component of cell centers
       real(kind=ip),dimension(:)    ,pointer :: z_lb_pd     => null() ! z_component of cell lower-boundary
-      real(kind=ip),dimension(:)    ,pointer :: s_cc_pd     => null() ! s_component of cell centers (sigma-altitude)
+      real(kind=ip),dimension(:)    ,pointer :: s_cc_pd     => null() ! s_component of cell centers (z,shifted,sigma)
+      real(kind=ip),dimension(:,:)  ,pointer :: j_cc_pd     => null() ! Jacobian when using topography
       real(kind=ip),dimension(:,:,:),pointer :: kappa_pd    => null() ! volume of each node in km3
       real(kind=ip),dimension(:)    ,pointer :: lat_cc_pd   => null() ! lat of i,j cell centers
       real(kind=ip),dimension(:)    ,pointer :: lon_cc_pd   => null() ! lon of i,j cell centers
       real(kind=ip),dimension(:,:,:),pointer :: sigma_nx_pd => null() ! area of x face at i-1/2,j,k
       real(kind=ip),dimension(:,:,:),pointer :: sigma_ny_pd => null() ! area of y face at i,j-1/2,k
       real(kind=ip),dimension(:,:,:),pointer :: sigma_nz_pd => null() ! area of z face at i,j,k-1/2
+
 #else
       real(kind=ip),dimension(:)    ,allocatable :: z_vec_init
       real(kind=ip),dimension(:,:)  ,allocatable :: xy2ll_xlon  ! The (projected) computational grid
@@ -587,7 +592,8 @@
       real(kind=ip),dimension(:)    ,allocatable :: y_cc_pd     ! y_component of cell centers
       real(kind=ip),dimension(:)    ,allocatable :: z_cc_pd     ! z_component of cell centers
       real(kind=ip),dimension(:)    ,allocatable :: z_lb_pd     ! z_component of cell lower-boundary
-      real(kind=ip),dimension(:)    ,allocatable :: s_cc_pd     ! s_component of cell centers (sigma-altitude)
+      real(kind=ip),dimension(:)    ,allocatable :: s_cc_pd     ! s_component of cell centers (z,shifted,sigma)
+      real(kind=ip),dimension(:,:)  ,allocatable :: j_cc_pd     ! Jacobian when using topography
       real(kind=ip),dimension(:,:,:),allocatable :: kappa_pd    ! volume of each node in km3
       real(kind=ip),dimension(:)    ,allocatable :: lat_cc_pd   ! lat of i,j cell centers
       real(kind=ip),dimension(:)    ,allocatable :: lon_cc_pd   ! lon of i,j cell centers
@@ -623,7 +629,8 @@
       if(.not.associated(sigma_nx_pd))allocate(sigma_nx_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_nx_pd = 1.0_ip
       if(.not.associated(sigma_ny_pd))allocate(sigma_ny_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_ny_pd = 1.0_ip
       if(.not.associated(sigma_nz_pd))allocate(sigma_nz_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_ny_pd = 1.0_ip
-      if(.not.associated(s_cc_pd))allocate(s_cc_pd(-1:nzmax+2));           s_cc_pd     = 0.0_ip
+      if(.not.associated(s_cc_pd))allocate(s_cc_pd(-1:nzmax+2));                                s_cc_pd     = 0.0_ip
+      if(.not.associated(j_cc_pd))allocate(j_cc_pd(-1:nxmax+2,-1:nymax+2));                     j_cc_pd     = 1.0_ip
 #else
       if (IsLatLon) then
         if(.not.allocated(lon_cc_pd))allocate(lon_cc_pd(-1:nxmax+2));                            lon_cc_pd = 0.0_ip
@@ -641,7 +648,8 @@
       if(.not.allocated(sigma_nx_pd))allocate(sigma_nx_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_nx_pd = 1.0_ip
       if(.not.allocated(sigma_ny_pd))allocate(sigma_ny_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_ny_pd = 1.0_ip
       if(.not.allocated(sigma_nz_pd))allocate(sigma_nz_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_ny_pd = 1.0_ip
-      if(.not.allocated(s_cc_pd))allocate(s_cc_pd(-1:nzmax+2));           s_cc_pd     = 0.0_ip
+      if(.not.allocated(s_cc_pd))allocate(s_cc_pd(-1:nzmax+2));                                s_cc_pd     = 0.0_ip
+      if(.not.allocated(j_cc_pd))allocate(j_cc_pd(-1:nxmax+2,-1:nymax+2));                     j_cc_pd     = 1.0_ip
 #endif
 
       end subroutine Allocate_mesh
@@ -665,6 +673,7 @@
       if(associated(sigma_ny_pd))   deallocate(sigma_ny_pd)
       if(associated(sigma_nz_pd))   deallocate(sigma_nz_pd)
       if(associated(s_cc_pd))       deallocate(s_cc_pd)
+      if(associated(j_cc_pd))       deallocate(j_cc_pd)
 #else
       if(allocated(z_vec_init))    deallocate(z_vec_init)
       if(allocated(xy2ll_xlon))    deallocate(xy2ll_xlon)
@@ -681,6 +690,7 @@
       if(allocated(lon_cc_pd))     deallocate(lon_cc_pd)
       if(allocated(lat_cc_pd))     deallocate(lat_cc_pd)
       if(allocated(s_cc_pd))       deallocate(s_cc_pd)
+      if(allocated(j_cc_pd))       deallocate(j_cc_pd)
 #endif
 
       end subroutine Deallocate_mesh
