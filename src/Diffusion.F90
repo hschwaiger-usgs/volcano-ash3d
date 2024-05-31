@@ -632,7 +632,7 @@
       !!!$OMP collapse(2)
         do j=jmin,jmax
           do i=imin,imax
-            jac = jac_cc_pd(i,j)
+            jac = j_cc_pd(i,j)
             ! Initialize cell-centered values for this z-row
             ! Note: ghost cells should contain q_cc values at edge (Neumann)
             update_cc(0:ncells+1) = 0.0_ip
