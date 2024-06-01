@@ -143,7 +143,7 @@
 !  Arguments:
 !    none
 !
-!  This subroutine allocated the main variables needed to specify the source.
+!  This subroutine allocates the main variables needed to specify the source.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -182,7 +182,7 @@
 !  Arguments:
 !    none
 !
-!  This subroutine source variables that are a function of z
+!  This subroutine allocates source variables that are a function of z
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -283,7 +283,7 @@
          EPS_SMALL
 
       use mesh,          only : &
-         nzmax,dz_vec_pd,z_lb_pd,z_cc_pd
+         nzmax,dz_vec_pd,z_lb_pd,z_cc_pd,s_cc_pd,Zsurf
 
       integer :: i
       integer :: k

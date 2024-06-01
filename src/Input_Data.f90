@@ -2078,7 +2078,7 @@
         endif
       enddo
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),'(a32,g12.5,a7)')"Total volume of all eruptions = ",&
+        write(outlog(io),'(a32,g12.5,a8)')"Total volume of all eruptions = ",&
                             sum(e_volume)," km3 DRE"
       endif;enddo
 

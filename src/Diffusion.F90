@@ -642,6 +642,7 @@
             ! Now scale according to local Jacobian
             q_cc(rmin-1:rmin-1+ncells+1)   =   q_cc(rmin-1:rmin-1+ncells+1)   * &
                                             jac
+            ! area of z-faces is not scaled by Jacobian
 !            sig_I(rmin  :rmin-1+ncells+1)  =  sig_I(rmin  :rmin-1+ncells+1) / &
 !                                            jac
             kap_cc(rmin-1:rmin-1+ncells+1) = kap_cc(rmin-1:rmin-1+ncells+1) / &
@@ -658,7 +659,7 @@
                 ! average of the volumes across the interface
               ds_I(l_I) = 2.0_ip*sig_I(l_I)/(kap_cc(l_cc-1)+kap_cc(l_cc))
                 ! get an average diffusivity using the arithmetic average
-              k_ds_I(l_I) = 0.5_ip*(kz(i,j,l_cc-1)+kz(i,j,l_cc))*ds_I(l_I)
+              k_ds_I(l_I) = 0.5_ip*(kz(i,j,l_cc-1)+kz(i,j,l_cc))*ds_I(l_I)/jac/jac
             enddo
 
               ! Loop over cells and update
@@ -1374,15 +1375,16 @@
             ! Now scale according to local Jacobian
             q_cc(rmin-1:rmin-1+ncells+1)   =   q_cc(rmin-1:rmin-1+ncells+1)   * &
                                             jac
+            ! area of z-faces is not scaled by Jacobian
 !            sig_I(rmin  :rmin-1+ncells+1)  =  sig_I(rmin  :rmin-1+ncells+1) / &
 !                                            jac
             kap_cc(rmin-1:rmin-1+ncells+1) = kap_cc(rmin-1:rmin-1+ncells+1) / &
                                             jac
+            kavg_I(rmin  :rmin-1+ncells+1) = 0.5_ip*(kz(i,j,  rmin-1:rmin-1+ncells  ) + &
+                                                     kz(i,j,  rmin  :rmin-1+ncells+1))/jac/jac
 
             vavg_I(rmin  :rmin-1+ncells+1) = 0.5_ip*(kap_cc(  rmin-1:rmin-1+ncells  ) + &
                                                      kap_cc(  rmin  :rmin-1+ncells+1))
-            kavg_I(rmin  :rmin-1+ncells+1) = 0.5_ip*(kz(i,j,  rmin-1:rmin-1+ncells  ) + &
-                                                     kz(i,j,  rmin  :rmin-1+ncells+1))
             ds_I(  rmin  :rmin-1+ncells+1) = sig_I(           rmin  :rmin-1+ncells+1) / &
                                             vavg_I(           rmin  :rmin-1+ncells+1)
             k_ds_I(rmin  :rmin-1+ncells+1) = kavg_I(          rmin  :rmin-1+ncells+1)* &

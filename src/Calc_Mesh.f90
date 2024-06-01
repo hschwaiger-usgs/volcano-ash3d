@@ -99,6 +99,7 @@
       dz_vec_pd(nzmax+2) = dz_vec_pd(nzmax)
       ! s_cc is the replacement z-coordinate: either s=z or s=(z-zsurf)/(ztop-zsurf)
       ! Here we set up the s-values with zsurf=0 and might apply topography later
+      !
       if(ZScaling_ID.eq.0)then
         s_cc_pd(:) = z_cc_pd(:)
       elseif(ZScaling_ID.eq.1)then
