@@ -94,7 +94,7 @@
       real(kind=ip), dimension(:,:)  ,pointer,public :: e_prof_Volume        => null()
       real(kind=ip), dimension(:,:)  ,pointer,public :: e_prof_MassFluxRate  => null()
       real(kind=ip), dimension(:)    ,pointer,public :: MassFluxRate         => null()
-      real(kind=dp), dimension(:)    ,pointer        :: dt_pulse_frac        => null()
+      real(kind=dp), dimension(:)    ,pointer,public :: dt_pulse_frac        => null()
 #else
       real(kind=ip), dimension(:,:)  ,allocatable,public :: NormSourceColumn
       real(kind=ip), dimension(:)    ,allocatable,public :: TephraFluxRate
@@ -111,7 +111,7 @@
       real(kind=ip), dimension(:,:)  ,allocatable,public :: e_prof_Volume
       real(kind=ip), dimension(:,:)  ,allocatable,public :: e_prof_MassFluxRate
       real(kind=ip), dimension(:)    ,allocatable,public :: MassFluxRate
-      real(kind=dp), dimension(:)    ,allocatable        :: dt_pulse_frac
+      real(kind=dp), dimension(:)    ,allocatable,public :: dt_pulse_frac
 #endif
 
         !The following arrays are used by MassFluxCalculator
@@ -129,8 +129,8 @@
                                                ! source types that we will check for
       character(len=30),dimension(MAXCUSTSRC) :: SourceType_Custom = ""
 
-      integer :: ieruption          ! eruption at the start of the time step
-      integer :: jeruption          ! eruption at the end of the time step
+      integer, public :: ieruption          ! eruption at the start of the time step
+      integer, public :: jeruption          ! eruption at the end of the time step
 
       contains
       !------------------------------------------------------------------------
@@ -502,7 +502,7 @@
             write(outlog(io),*) "Custom source: ",i," Initializing mass flux rate to 0"
           endif;enddo
           MassFluxRate(i)  = 0.0_ip
-          e_EndTime(i) = 0.0_ip
+          e_EndTime(i) = e_StartTime(i) + e_Duration(i)
         endif
 
       enddo
