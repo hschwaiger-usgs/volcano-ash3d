@@ -297,6 +297,7 @@
       endif;enddo
 
       if(Load_MesoSteps)then
+        vf_meso_next_step_sp(:,:,:,:) = 0.0_sp
         if(first_time)then
           is = 1
           first_time = .false.

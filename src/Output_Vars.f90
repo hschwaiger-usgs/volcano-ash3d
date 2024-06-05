@@ -1276,7 +1276,7 @@
       enddo
 
       ! Now loop over just the tephra bins (first n_gs_max bins) and
-      ! calculate volume
+      ! calculate tephra volume
       if(n_gs_max.gt.0)then
         do isize=1,n_gs_max
             ! Increment total ash in air

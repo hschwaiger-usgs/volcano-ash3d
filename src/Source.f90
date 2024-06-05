@@ -509,15 +509,27 @@
 
       e_EndTime_final = maxval(e_EndTime)  ! this marks the end of all eruptions
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),1024) e_EndTime_final-e_StartTime(1),&
-                               sum(e_Volume(1:neruptions)), &
-                               sum(e_Volume(1:neruptions))*MagmaDensity*KM3_2_M3*1.0e-9
-      endif;enddo
+      if(sum(SpeciesID(1:nsmax)).eq.nsmax)then
+        ! If all species ID's are '1' (i.e. ash)
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),1024) e_EndTime_final-e_StartTime(1),&
+                                 sum(e_Volume(1:neruptions)), &
+                                 sum(e_Volume(1:neruptions))*MagmaDensity*KM3_2_M3*1.0e-9
+        endif;enddo
+      else
+        ! Some species are not ash; just print mass
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),1025) e_EndTime_final-e_StartTime(1),&
+                                 sum(e_Volume(1:neruptions))*MagmaDensity*KM3_2_M3*1.0e-9
+        endif;enddo
+      endif
 
 1024  format('  Total Duration (hrs) = ',f6.3,/, &
              '  Total volume (km3 DRE) = ',f8.4,/,&
-             '  Total mass (Tg) = ',f12.4)
+             '  Total ash mass (Tg) = ',f16.8)
+
+1025  format('  Total Duration (hrs) = ',f6.3,/, &
+             '  Total ash mass (Tg) = ',f16.8)
 
       end subroutine EruptivePulse_MassFluxRate
 
