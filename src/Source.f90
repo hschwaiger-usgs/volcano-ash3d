@@ -459,6 +459,12 @@
       use global_param,  only : &
          KM3_2_M3
 
+      use mesh,          only : &
+         nsmax
+
+      use Solution,      only : &
+         SpeciesID
+
       use Tephra,        only : &
          MagmaDensity
 

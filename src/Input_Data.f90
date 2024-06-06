@@ -2084,6 +2084,7 @@
 
       ! Now that we know the requested dz profile and the plume heights, we can
       ! set up the z-grid for computation
+      ! HFS: ZPADDING might be changed in ResetParam
       Ztop = ZPADDING*maxval(e_PlumeHeight(1:neruptions))
       MR_ztop         = real(Ztop,kind=sp)   ! Set the MetReader copy in case we scale the grid
       nzmax = 0
@@ -3228,6 +3229,7 @@
       else
         FV_ID = 1 ! Wilson and Huang
       endif
+
       allocate(temp_v_s(init_n_gs_max))
       allocate(temp_gsdiam(init_n_gs_max))
       allocate(temp_bin_mass(init_n_gs_max))
@@ -3235,7 +3237,21 @@
       allocate(temp_gsF(init_n_gs_max))
       allocate(temp_gsG(init_n_gs_max))
 
-      if(init_n_gs_max.gt.0)then
+      if(init_n_gs_max.lt.0)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*) 'ERROR: Number of grainsizes must be non-negative.'
+          write(errlog(io),*) 'Program stopped'
+        endif;enddo
+        stop 1
+      elseif(init_n_gs_max.eq.0)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(errlog(io),*) 'WARNING: Number of grainsizes is 0.'
+          write(errlog(io),*) '         Assuming a custom module is being used to'
+          write(errlog(io),*) '         add to the concen array.'
+        endif;enddo
+        n_gs_max = init_n_gs_max
+      else
+        ! This is the normal case with actual grain size bins specified
         do isize=1,init_n_gs_max
           value1 = -1.99_ip
           value2 = -1.99_ip
@@ -3246,7 +3262,7 @@
           ! Always check if we have overshot the block
           testkey = linebuffer080(1:1)
           if((testkey.eq.'*').or.(testkey.eq.'#')) then
-          do io=1,2;if(VB(io).le.verbosity_error)then
+            do io=1,2;if(VB(io).le.verbosity_error)then
               write(errlog(io),*)"ERROR: ",&
                     "Error in specifying grain sizes.  You specified ",&
                             init_n_gs_max,', sizes,'
@@ -3353,24 +3369,26 @@
       nsmax      = n_gs_max  ! Total tracked bins
       n_gs_aloft = n_gs_max  ! Number of tephra species aloft
 
-      call Allocate_Tephra
-      allocate(temp_phi(n_gs_max))
+      if(n_gs_max.gt.0)then
+        call Allocate_Tephra
+        allocate(temp_phi(n_gs_max))
 
-      Tephra_v_s(1:n_gs_max)      = -1.0_ip * temp_v_s(1:n_gs_max) ! make sure 'fall velocity'
-                                                                   ! is in the -z direction
-      Tephra_gsdiam(1:n_gs_max)   = temp_gsdiam(1:n_gs_max)
-      Tephra_bin_mass(1:n_gs_max) = temp_bin_mass(1:n_gs_max)
-      Tephra_rho_m(1:n_gs_max)    = temp_rho_m(1:n_gs_max)
-      if(Shape_ID.eq.1)then
-        ! Interpret shape columns as F [and G]
-        Tephra_gsF(1:n_gs_max)      = temp_gsF(1:n_gs_max)
-        Tephra_gsG(1:n_gs_max)      = temp_gsG(1:n_gs_max)
-        Tephra_gsPhi(1:n_gs_max)    = 1.0_ip
-      elseif(Shape_ID.eq.2)then
-        ! Interpret shape columns as Phi
-        Tephra_gsF(1:n_gs_max)      = 1.0_ip
-        Tephra_gsG(1:n_gs_max)      = 1.0_ip
-        Tephra_gsPhi(1:n_gs_max)    = temp_gsF(1:n_gs_max)
+        Tephra_v_s(1:n_gs_max)      = -1.0_ip * temp_v_s(1:n_gs_max) ! make sure 'fall velocity'
+                                                                     ! is in the -z direction
+        Tephra_gsdiam(1:n_gs_max)   = temp_gsdiam(1:n_gs_max)
+        Tephra_bin_mass(1:n_gs_max) = temp_bin_mass(1:n_gs_max)
+        Tephra_rho_m(1:n_gs_max)    = temp_rho_m(1:n_gs_max)
+        if(Shape_ID.eq.1)then
+          ! Interpret shape columns as F [and G]
+          Tephra_gsF(1:n_gs_max)      = temp_gsF(1:n_gs_max)
+          Tephra_gsG(1:n_gs_max)      = temp_gsG(1:n_gs_max)
+          Tephra_gsPhi(1:n_gs_max)    = 1.0_ip
+        elseif(Shape_ID.eq.2)then
+          ! Interpret shape columns as Phi
+          Tephra_gsF(1:n_gs_max)      = 1.0_ip
+          Tephra_gsG(1:n_gs_max)      = 1.0_ip
+          Tephra_gsPhi(1:n_gs_max)    = temp_gsF(1:n_gs_max)
+        endif
       endif
 
       deallocate(temp_v_s,temp_gsdiam,temp_bin_mass,temp_rho_m,temp_gsF)

@@ -539,7 +539,7 @@
       real(kind=dp)      :: A3d_Re
 
       logical            :: IsPeriodic   = .false.
-      real(kind=ip)      :: ZPADDING     = 1.3_ip
+      real(kind=ip)      :: ZPADDING     = 1.5_ip
       real(kind=ip)      :: Ztop
       character(len=7)   :: VarDzType
       real(kind=ip)      :: dz_const                  ! z nodal spacing (always km)

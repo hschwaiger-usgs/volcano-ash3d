@@ -2499,59 +2499,63 @@
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Fill GS Diameter"
       endif;enddo
-      allocate(dum1d_out(nsmax))
-      dum1d_out = 0.0_op
-      if(useCalcFallVel)then
-        dum1d_out(1:n_gs_max) = real(Tephra_gsdiam(1:n_gs_max)*M_2_MM,kind=op)
-      else
-        do isize=1,n_gs_max
-          dum1d_out(isize) = real(isize,kind=op)
-        enddo
-      endif
-      nSTAT=nf90_put_var(ncid,gssd_var_id,dum1d_out,(/1/))
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_diameter")
-         ! gs_massfrac (Mass fraction of grain size)
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
-        write(outlog(io),*)"     Fill GS MassFrac"
-      endif;enddo
-      dum1d_out = 0.0_op
-      dum1d_out(1:n_gs_max) = real(Tephra_bin_mass(1:n_gs_max),kind=op)
-      nSTAT=nf90_put_var(ncid,gsmf_var_id,dum1d_out,(/1/))
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_massfrac")
-       ! gs_dens (Density of grain)
-      if(useCalcFallVel)then
-        dum1d_out(1:n_gs_max) = real(Tephra_rho_m(1:n_gs_max),kind=op)
-      else
-        dum1d_out = 0.0_op
-      endif
-      nSTAT=nf90_put_var(ncid,gsdens_var_id,dum1d_out,(/1/))
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_dens")
-       ! gs_F (Shape factor of grain F)
-      if(useCalcFallVel)then
-        dum1d_out(1:n_gs_max) = real(Tephra_gsF(1:n_gs_max),kind=op)
-      else
-        dum1d_out = 0.0_op
-      endif
-      nSTAT=nf90_put_var(ncid,gsF_var_id,dum1d_out,(/1/))
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_F")
 
-       ! gs_G (Shape factor of grain G
-      if(useCalcFallVel)then
-        dum1d_out(1:n_gs_max) = real(Tephra_gsG(1:n_gs_max),kind=op)
-      else
+      if(n_gs_max.gt.0)then
+        ! These are tephra variables so only allocate them if we have tephra bins
+        allocate(dum1d_out(nsmax))  ! allocate for the full nsmax
         dum1d_out = 0.0_op
-      endif
-      nSTAT=nf90_put_var(ncid,gsG_var_id,dum1d_out,(/1/))
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_G")
-       ! gs_Phi (Shape factor of grain Phi)
-      if(useCalcFallVel)then
-        dum1d_out(1:n_gs_max) = real(Tephra_gsPhi(1:n_gs_max),kind=op)
-      else
+        if(useCalcFallVel)then
+          dum1d_out(1:n_gs_max) = real(Tephra_gsdiam(1:n_gs_max)*M_2_MM,kind=op)
+        else
+          do isize=1,n_gs_max
+            dum1d_out(isize) = real(isize,kind=op)
+          enddo
+        endif
+        nSTAT=nf90_put_var(ncid,gssd_var_id,dum1d_out,(/1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_diameter")
+           ! gs_massfrac (Mass fraction of grain size)
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
+          write(outlog(io),*)"     Fill GS MassFrac"
+        endif;enddo
         dum1d_out = 0.0_op
+        dum1d_out(1:n_gs_max) = real(Tephra_bin_mass(1:n_gs_max),kind=op)
+        nSTAT=nf90_put_var(ncid,gsmf_var_id,dum1d_out,(/1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_massfrac")
+         ! gs_dens (Density of grain)
+        if(useCalcFallVel)then
+          dum1d_out(1:n_gs_max) = real(Tephra_rho_m(1:n_gs_max),kind=op)
+        else
+          dum1d_out = 0.0_op
+        endif
+        nSTAT=nf90_put_var(ncid,gsdens_var_id,dum1d_out,(/1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_dens")
+         ! gs_F (Shape factor of grain F)
+        if(useCalcFallVel)then
+          dum1d_out(1:n_gs_max) = real(Tephra_gsF(1:n_gs_max),kind=op)
+        else
+          dum1d_out = 0.0_op
+        endif
+        nSTAT=nf90_put_var(ncid,gsF_var_id,dum1d_out,(/1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_F")
+
+         ! gs_G (Shape factor of grain G
+        if(useCalcFallVel)then
+          dum1d_out(1:n_gs_max) = real(Tephra_gsG(1:n_gs_max),kind=op)
+        else
+          dum1d_out = 0.0_op
+        endif
+        nSTAT=nf90_put_var(ncid,gsG_var_id,dum1d_out,(/1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_G")
+         ! gs_Phi (Shape factor of grain Phi)
+        if(useCalcFallVel)then
+          dum1d_out(1:n_gs_max) = real(Tephra_gsPhi(1:n_gs_max),kind=op)
+        else
+          dum1d_out = 0.0_op
+        endif
+        nSTAT=nf90_put_var(ncid,gsP_var_id,dum1d_out,(/1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_Phi")
+        deallocate(dum1d_out)
       endif
-      nSTAT=nf90_put_var(ncid,gsP_var_id,dum1d_out,(/1/))
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_Phi")
-      deallocate(dum1d_out)
 
       !   Now fill a few other variables that are a function of ER
         ! er_stime (Start time of eruption)
