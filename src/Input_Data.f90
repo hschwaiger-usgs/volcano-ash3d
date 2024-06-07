@@ -1026,9 +1026,11 @@
       logical           :: runAsForecast       = .false.  ! This will be changed if year=0
       real(kind=dp)     :: FC_Offset = 0.0_dp
       real(kind=ip)     :: Davg,Aaxis,Baxis,Caxis
-
+      logical           :: od
 
       INTERFACE
+        subroutine input_data_ResetParams
+        end subroutine input_data_ResetParams
         real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
           integer            :: iyear
           integer            :: imonth
@@ -1077,6 +1079,90 @@
         stop 1
       endif
       open(unit=fid_ctrlfile,file=infile,status='old',action='read',err=9001)
+
+      !************************************************************************
+      ! Searching for optional blocks labled by OPTMOD
+      !  These are expected to be at the end of the control file, but we need to
+      !  know now if we are calling input_data_ResetParams as this can effect the
+      !  grid
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)' *****************************************'
+        write(outlog(io),*)' Reading control file for optional modules   '
+        write(outlog(io),*)' *****************************************'
+      endif;enddo
+
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"Searching for blocks with OPTMOD"
+      endif;enddo
+      nmods = 0
+      read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+      ! if there are no further blocks, then we will skip over this while loop
+      do while(iostatus.eq.0)
+        substr_pos1 = index(linebuffer080,'OPTMOD')
+        if(substr_pos1.eq.1)then
+          ! found an optional module
+          nmods = nmods + 1
+          if(nmods.gt.MAXNUM_OPTMODS)then
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: Maximum number of optional modules exceeded"
+              write(errlog(io),*)"       Current maximum set to MAXNUM_OPTMODS = ",MAXNUM_OPTMODS
+              write(errlog(io),*)"       Please increase MAXNUM_OPTMODS and recompile."
+              write(errlog(io),*)"  Ash3d_VariableModules.f90:global_param:MAXNUM_OPTMODS"
+            endif;enddo
+            stop 1
+          endif
+          !  Parse for the keyword
+          read(linebuffer080,1104,iostat=iostatus,iomsg=iomessage)mod_name
+          linebuffer050 = "Reading control file blk9+ (OPTMOD)"
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+          OPTMOD_names(nmods) = trim(adjustl(mod_name))
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"     Found optional module : ",&
+                                OPTMOD_names(nmods),nmods
+          endif;enddo
+        endif
+        read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+        if(iostatus.lt.0)then
+          ! end of file reached; exit do loop
+          exit
+        elseif(iostatus.gt.0)then
+          ! Some non-EOF error
+          linebuffer050 = "Reading control file blk9+ (OPTMOD)"
+          call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        endif
+1104    format(7x,a20)
+      enddo
+      if(nmods.eq.0)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"No OPTMOD blocks found."
+        endif;enddo
+      else
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Number of OPTMOD blocks found = ",nmods
+        endif;enddo
+      endif
+
+      ! Now checking if we need to reset any parameters
+      do i=1,nmods
+        do io=1,2;if(VB(io).le.verbosity_essential)then
+          write(outlog(io),*)"Testing for ",OPTMOD_names(i),i
+        endif;enddo
+        if(OPTMOD_names(i).eq.'RESETPARAMS')then
+          do io=1,2;if(VB(io).le.verbosity_essential)then
+            write(outlog(io),*)"  Reading input block for RESETPARAMS"
+          endif;enddo
+          call input_data_ResetParams
+        endif
+      enddo
+
+      ! Reopen or rewind to begining so we can start parsing block 1
+      !   check to make sure the control file is open
+      inquire(unit=fid_ctrlfile,opened=od)
+      if(od)then
+        rewind(fid_ctrlfile)
+      else
+        open(unit=fid_ctrlfile,file=infile,status='old',action='read',err=9001)
+      endif
 
       !************************************************************************
       ! BLOCK 1: GRID INFO
@@ -3784,64 +3870,64 @@
       ! END OF BLOCK 9
       !************************************************************************
 
-      !************************************************************************
-      ! Searching for optional blocks labled by OPTMOD
-      do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),*)' *****************************************'
-        write(outlog(io),*)' Reading Post-Block 9: optional modules   '
-        write(outlog(io),*)' *****************************************'
-      endif;enddo
-
-      do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),*)"Searching for blocks with OPTMOD"
-      endif;enddo
-      nmods = 0
-      read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-      ! if there are no further blocks, then we will skip over this while loop
-      do while(iostatus.eq.0)
-        substr_pos1 = index(linebuffer080,'OPTMOD')
-        if(substr_pos1.eq.1)then
-          ! found an optional module
-          nmods = nmods + 1
-          if(nmods.gt.MAXNUM_OPTMODS)then
-            do io=1,2;if(VB(io).le.verbosity_error)then
-              write(errlog(io),*)"ERROR: Maximum number of optional modules exceeded"
-              write(errlog(io),*)"       Current maximum set to MAXNUM_OPTMODS = ",MAXNUM_OPTMODS
-              write(errlog(io),*)"       Please increase MAXNUM_OPTMODS and recompile."
-              write(errlog(io),*)"  Ash3d_VariableModules.f90:global_param:MAXNUM_OPTMODS"
-            endif;enddo
-            stop 1
-          endif
-          !  Parse for the keyword
-          read(linebuffer080,1104,iostat=iostatus,iomsg=iomessage)mod_name
-          linebuffer050 = "Reading control file blk9+ (OPTMOD)"
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-          OPTMOD_names(nmods) = trim(adjustl(mod_name))
-          do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"     Found optional module : ",&
-                                OPTMOD_names(nmods),nmods
-          endif;enddo
-        endif
-        read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-        if(iostatus.lt.0)then
-          ! end of file reached; exit do loop
-          exit
-        elseif(iostatus.gt.0)then
-          ! Some non-EOF error
-          linebuffer050 = "Reading control file blk9+ (OPTMOD)"
-          call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-        endif
-1104    format(7x,a20)
-      enddo
-      if(nmods.eq.0)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"No OPTMOD blocks found."
-        endif;enddo
-      else
-        do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"Number of OPTMOD blocks found = ",nmods
-        endif;enddo
-      endif
+!      !************************************************************************
+!      ! Searching for optional blocks labled by OPTMOD
+!      do io=1,2;if(VB(io).le.verbosity_info)then
+!        write(outlog(io),*)' *****************************************'
+!        write(outlog(io),*)' Reading Post-Block 9: optional modules   '
+!        write(outlog(io),*)' *****************************************'
+!      endif;enddo
+!
+!      do io=1,2;if(VB(io).le.verbosity_info)then
+!        write(outlog(io),*)"Searching for blocks with OPTMOD"
+!      endif;enddo
+!      nmods = 0
+!      read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+!      ! if there are no further blocks, then we will skip over this while loop
+!      do while(iostatus.eq.0)
+!        substr_pos1 = index(linebuffer080,'OPTMOD')
+!        if(substr_pos1.eq.1)then
+!          ! found an optional module
+!          nmods = nmods + 1
+!          if(nmods.gt.MAXNUM_OPTMODS)then
+!            do io=1,2;if(VB(io).le.verbosity_error)then
+!              write(errlog(io),*)"ERROR: Maximum number of optional modules exceeded"
+!              write(errlog(io),*)"       Current maximum set to MAXNUM_OPTMODS = ",MAXNUM_OPTMODS
+!              write(errlog(io),*)"       Please increase MAXNUM_OPTMODS and recompile."
+!              write(errlog(io),*)"  Ash3d_VariableModules.f90:global_param:MAXNUM_OPTMODS"
+!            endif;enddo
+!            stop 1
+!          endif
+!          !  Parse for the keyword
+!          read(linebuffer080,1104,iostat=iostatus,iomsg=iomessage)mod_name
+!          linebuffer050 = "Reading control file blk9+ (OPTMOD)"
+!          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+!          OPTMOD_names(nmods) = trim(adjustl(mod_name))
+!          do io=1,2;if(VB(io).le.verbosity_info)then
+!            write(outlog(io),*)"     Found optional module : ",&
+!                                OPTMOD_names(nmods),nmods
+!          endif;enddo
+!        endif
+!        read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+!        if(iostatus.lt.0)then
+!          ! end of file reached; exit do loop
+!          exit
+!        elseif(iostatus.gt.0)then
+!          ! Some non-EOF error
+!          linebuffer050 = "Reading control file blk9+ (OPTMOD)"
+!          call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+!        endif
+!1104    format(7x,a20)
+!      enddo
+!      if(nmods.eq.0)then
+!        do io=1,2;if(VB(io).le.verbosity_info)then
+!          write(outlog(io),*)"No OPTMOD blocks found."
+!        endif;enddo
+!      else
+!        do io=1,2;if(VB(io).le.verbosity_info)then
+!          write(outlog(io),*)"Number of OPTMOD blocks found = ",nmods
+!        endif;enddo
+!      endif
 
      ! close input file 
       do io=1,2;if(VB(io).le.verbosity_info)then
