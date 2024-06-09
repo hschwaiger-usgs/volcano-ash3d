@@ -326,7 +326,8 @@ PPOBJS = Ash3d_VariableModules.o        \
          write_ASCII.o                  \
          write_BINARY.o                 \
          write_Shapefile.o              \
-         Ash3d_PostProc_cities.o
+         Ash3d_PostProc_cities.o        \
+         ResetParams.o
 
 GRAFOBJ = Ash3d_PostProc_gnuplot.o $(plplotOBJ) $(dislinOBJ) Ash3d_PostProc_GMT.o $(gmtOBJ)
 
