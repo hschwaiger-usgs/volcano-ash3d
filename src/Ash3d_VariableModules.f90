@@ -525,6 +525,7 @@
       integer, parameter :: ts1 = 1
 
       integer            :: ivent,jvent                    ! ij coordinates of volcano
+      integer            :: kvent
       logical            :: IsLatLon
 
       ! projection parameters of the computational (Ash3d) mesh.  This might be

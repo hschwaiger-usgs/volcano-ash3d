@@ -104,7 +104,7 @@
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"    Searching for OPTMOD=RESETPARAMS"
       endif;enddo
-      nmods = 0
+
       ! check to make sure the control file is open
       inquire(unit=fid_ctrlfile,opened=od)
       if(od)then

@@ -194,6 +194,12 @@
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Allocate_Source_grid"
       endif;enddo
+      if(nsmax.eq.0)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"     Trying to allocate SourceNodeFlux but nsmax=0"
+        endif;enddo
+        stop 1
+      endif
 
       allocate(NormSourceColumn(neruptions,1:nzmax));    NormSourceColumn = 0.0_ip
       allocate(SourceNodeFlux(0:nzmax+1,1:nsmax));       SourceNodeFlux   = 0.0_ip
@@ -590,6 +596,7 @@
              (tstart.lt.e_EndTime(i)))then     ! beginning of time step is before same pulse ends
             ! This catches all pulses that touch the start of dt
             Pulse_contributes = .true.
+            jeruption = i                      ! Make sure jeruption is at least 
           elseif((tend.gt.e_StartTime(i)).and. & ! end of time step at or after pulse start
                  (tend.le.e_EndTime(i)))then     ! end of time step is before same pulse ends
             ! This catches all pulses that touch the end of dt
@@ -608,6 +615,7 @@
               write(outlog(io),1)i
             endif;enddo
             Pulse_contributes = .true.
+            jeruption = i
           endif
           if(Pulse_contributes)then
             ! If any pulse contributes, update the global flag
@@ -663,8 +671,8 @@
          Tephra_bin_mass,n_gs_max
 
       integer :: i,k
-      real(kind=ip) :: z_cell_bot
-      real(kind=ip) :: z_cell_top
+!      real(kind=ip) :: z_cell_bot
+!      real(kind=ip) :: z_cell_top
       real(kind=ip) :: SumSourceNodeFlux      ! checking terms
       real(kind=ip) :: MassFluxRate_now
 
@@ -685,6 +693,7 @@
                                   NormSourceColumn(ieruption,1:nzmax)
         MassFluxRate_now = MassFluxRate_now + MassFluxRate(i) * &
                            real(dt_pulse_frac(i),kind=ip)
+
       enddo
 
         ! Now that we have the TephraFluxRate as a function of k, convert it to mass
@@ -696,6 +705,7 @@
               Tephra_bin_mass(1:n_gs_max) * & ! fraction of total in bin
               TephraFluxRate(k)           / & ! kg/hr
               kappa_pd(ivent,jvent,k)         ! km3
+
         SumSourceNodeFlux = &
               SumSourceNodeFlux +        &         ! dimensionless
               sum(SourceNodeFlux(k,1:n_gs_max) * & ! kg/km3 hr
@@ -707,8 +717,8 @@
          do io=1,2;if(VB(io).le.verbosity_error)then
            write(errlog(io) ,2) SumSourceNodeFlux-1.0_ip
            write(errlog(io),*)"SourceType          = ",SourceType
-           write(errlog(io),*)"z_cell_bot          = ",z_cell_bot
-           write(errlog(io),*)"z_cell_top          = ",z_cell_top
+!           write(errlog(io),*)"z_cell_bot          = ",z_cell_bot
+!           write(errlog(io),*)"z_cell_top          = ",z_cell_top
            write(errlog(io),*)"MassFluxRate_now    = ",MassFluxRate_now
            write(errlog(io),*)"n_gs_max            = ",n_gs_max
            write(errlog(io),*)"SourceNodeFlux(1:nz)=",real(SourceNodeFlux(:,1),kind=4)
@@ -783,4 +793,5 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       end module Source
+
 !##############################################################################

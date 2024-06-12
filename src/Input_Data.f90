@@ -909,7 +909,7 @@
          Write_PT_Data,Write_PR_Data,isFinal_TS
 
       use mesh,          only : &
-         de,dn,dx,dy,z_vec_init,dz_const,nxmax,nymax,nzmax,nsmax,VarDzType,ivent,jvent,&
+         de,dn,dx,dy,z_vec_init,dz_const,nxmax,nymax,nzmax,nsmax,VarDzType,ivent,jvent,kvent,&
          gridwidth_e,gridwidth_n,gridwidth_x,gridwidth_y,&
          lonLL,latLL,lonUR,latUR,xLL,yLL,xUR,yUR,&
          A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
@@ -1154,7 +1154,6 @@
           call input_data_ResetParams
         endif
       enddo
-
       ! Reopen or rewind to begining so we can start parsing block 1
       !   check to make sure the control file is open
       inquire(unit=fid_ctrlfile,opened=od)
@@ -2170,7 +2169,6 @@
 
       ! Now that we know the requested dz profile and the plume heights, we can
       ! set up the z-grid for computation
-      ! HFS: ZPADDING might be changed in ResetParam
       Ztop = ZPADDING*maxval(e_PlumeHeight(1:neruptions))
       MR_ztop         = real(Ztop,kind=sp)   ! Set the MetReader copy in case we scale the grid
       nzmax = 0
@@ -2190,6 +2188,10 @@
           write(errlog(io),*)"  CompGrid_height = ",Ztop
           write(errlog(io),*)"       z_vec_init = "
           do k = 1,nz_init-1
+            if(maxval(e_PlumeHeight(1:neruptions)).gt.z_vec_init(k).and.&
+               maxval(e_PlumeHeight(1:neruptions)).lt.z_vec_init(k+1))then
+              kvent=k
+            endif
             write(errlog(io),*)"                ",k,real(z_vec_init(k),kind=4)
           enddo
         endif;enddo

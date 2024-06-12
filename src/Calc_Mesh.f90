@@ -350,7 +350,7 @@
       use io_units
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,nsmax,ts0,ivent,jvent,IsPeriodic
+         nxmax,nymax,nzmax,nsmax,ts0,ivent,jvent,kvent,IsPeriodic
 
       use solution,      only : &
          concen_pd,imin,imax,jmin,jmax,kmin,kmax
@@ -371,7 +371,7 @@
       !  First in x
       imin = 1
       imax = nxmax
-      do i=2,ivent
+      do i=2,ivent-1
         tmp_flt=maxval(concen_pd(i,1:nymax,1:nzmax,1:nsmax,ts0))
         if(tmp_flt.lt.CLOUDCON_GRID_THRESH)then
           imin = i
@@ -379,7 +379,7 @@
           exit
         endif
       enddo
-      do i=nxmax,imin,-1
+      do i=nxmax,imin+2,-1
         tmp_flt=maxval(concen_pd(i,1:nymax,1:nzmax,1:nsmax,ts0))
         if(tmp_flt.lt.CLOUDCON_GRID_THRESH)then
           imax = i
@@ -398,7 +398,7 @@
       !  Now in y
       jmin = 1
       jmax = nymax
-      do j=2,jvent
+      do j=2,jvent-1
         tmp_flt=maxval(concen_pd(1:nxmax,j,1:nzmax,1:nsmax,ts0))
         if(tmp_flt.lt.CLOUDCON_GRID_THRESH)then
           jmin = j
@@ -406,7 +406,7 @@
           exit
         endif
       enddo
-      do j=nymax,jmin,-1
+      do j=nymax,jmin+2,-1
         tmp_flt=maxval(concen_pd(1:nxmax,j,1:nzmax,1:nsmax,ts0))
         if(tmp_flt.lt.CLOUDCON_GRID_THRESH)then
           jmax = j
@@ -417,7 +417,8 @@
       !  Now in z
       kmin = 1
       kmax = nzmax
-      do k=2,nzmax
+      !do k=2,nzmax
+      do k=2,kvent-1
         tmp_flt=maxval(concen_pd(1:nxmax,1:nymax,k,1:nsmax,ts0))
         if(tmp_flt.lt.CLOUDCON_GRID_THRESH)then
           kmin = k
@@ -425,7 +426,8 @@
           exit
         endif
       enddo
-      do k=nzmax,kmin,-1
+      !do k=nzmax,kmin,-1
+      do k=nzmax,kmin+2,-1
         tmp_flt=maxval(concen_pd(1:nxmax,1:nymax,k,1:nsmax,ts0))
         if(tmp_flt.lt.CLOUDCON_GRID_THRESH)then
           kmax = k
@@ -438,6 +440,11 @@
           write(errlog(io),*)"ERROR: kmax<kmin in get_minmax_index"
         endif;enddo
         stop 1
+      endif
+      ! Advection routines expect at least three cells. Adjust k as needed
+      if(kmax-kmin.le.1)then
+        kmax = min(kmax+1,nzmax)
+        kmin = kmax-2
       endif
 
       end subroutine get_minmax_index
