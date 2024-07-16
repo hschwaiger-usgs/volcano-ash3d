@@ -289,7 +289,8 @@
          EPS_SMALL
 
       use mesh,          only : &
-         nzmax,dz_vec_pd,z_lb_pd,z_cc_pd,s_cc_pd,Zsurf
+         nzmax,dz_vec_pd,z_lb_pd,z_cc_pd,&
+         ds_vec_pd,s_cc_pd,Zsurf,Ztop,ivent,jvent,ZScaling_ID
 
       integer :: i
       integer :: k
@@ -299,12 +300,19 @@
       real(kind=ip) :: zbot_prof
       real(kind=ip) :: ztop_prof
       real(kind=ip) :: zground
-      real(kind=ip) :: PlumeHeight_above_ground
+      real(kind=ip) :: s_PlumeHeight_above_ground
       real(kind=ip) :: frac
       real(kind=ip) :: tot
       integer       :: kground
       integer       :: kk
       integer       :: kPlumeTop
+      real(kind=ip) :: s_volcano
+      real(kind=ip) :: s_cell_bot
+      real(kind=ip) :: s_cell_top
+      real(kind=ip) :: sbot_prof
+      real(kind=ip) :: stop_prof
+      real(kind=ip) :: sground
+      real(kind=ip),dimension(:),allocatable :: s_PlumeHeight
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Calc_Normalized_SourceCol"
@@ -312,30 +320,45 @@
 
       NormSourceColumn     = 0.0_ip
 
+      ! Convert z_volcano to s-coordinate
+      allocate(s_PlumeHeight(neruptions))
+      if(ZScaling_ID.eq.0)then
+        s_volcano = z_volcano
+        s_PlumeHeight(:) = e_PlumeHeight(:)
+      elseif(ZScaling_ID.eq.1)then
+        z_volcano = max(z_volcano,Zsurf(ivent,jvent))
+        s_volcano = z_volcano - Zsurf(ivent,jvent)
+        s_PlumeHeight(:) = e_PlumeHeight(:) - Zsurf(ivent,jvent)
+      elseif(ZScaling_ID.eq.2)then
+        z_volcano = max(z_volcano,Zsurf(ivent,jvent))
+        s_volcano = (z_volcano-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
+        s_PlumeHeight(:) = (e_PlumeHeight(:)-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
+      endif
+
       do i=1,neruptions
         ! Get the cell containing the bottom of the source
         !  as well as the first cell above the plume top
-        ! if(useTopo) kground = topo_indx(ivent,jvent)
         kground   = 1
         kPlumeTop = 0
         do k=1,nzmax+1
-          if (z_volcano.ge.z_lb_pd(k  ).and. &
-              z_volcano.lt.z_lb_pd(k+1))then
+          if (s_volcano.ge.s_cc_pd(k)-0.5_ip*ds_vec_pd(k).and. &
+              s_volcano.lt.s_cc_pd(k)+0.5_ip*ds_vec_pd(k))then
             kground = k
           endif
-          if(e_PlumeHeight(i).gt.z_lb_pd(k  ).and. &
-             e_PlumeHeight(i).le.z_lb_pd(k+1))then
+          if(s_PlumeHeight(i).gt.s_cc_pd(k)-0.5_ip*ds_vec_pd(k).and. &
+             s_PlumeHeight(i).le.s_cc_pd(k)+0.5_ip*ds_vec_pd(k))then
             kPlumeTop = k
           endif
         enddo
 
         ! Set ground level to be the lower boundary of cell kground
-        zground = z_lb_pd(kground)
+        !zground = z_lb_pd(kground)
+        sground = s_cc_pd(kground)-0.5_ip*ds_vec_pd(k)
 
         if ((SourceType.eq.'suzuki')      .or. &
             (SourceType.eq.'umbrella')    .or. &
             (SourceType.eq.'umbrella_air')) then
-          Suzuki_k = Suzuki_A/((e_PlumeHeight(i)-zground)* &
+          Suzuki_k = Suzuki_A/((s_PlumeHeight(i)-sground)* &
                     ((1.0_ip/Suzuki_A)-((Suzuki_A+1.0_ip)/Suzuki_A)* &
                     exp(-Suzuki_A)))
         endif
@@ -344,12 +367,15 @@
         ! each height interval dz
         do k=kground,kPlumeTop
           ! height at the top of this cell (or top of plume)
-          z_cell_top  = min(z_cc_pd(k)+0.5_ip*dz_vec_pd(k),e_PlumeHeight(i))
+!          z_cell_top  = min(z_cc_pd(k)+0.5_ip*dz_vec_pd(k),e_PlumeHeight(i))
+          s_cell_top  = min(s_cc_pd(k)+0.5_ip*ds_vec_pd(k),s_PlumeHeight(i))
           ! height at the bottom
-          z_cell_bot = z_cc_pd(k)-0.5_ip*dz_vec_pd(k)
+!          z_cell_bot = z_cc_pd(k)-0.5_ip*dz_vec_pd(k)
+          s_cell_bot = s_cc_pd(k)-0.5_ip*ds_vec_pd(k)
 
           ! First get the TephraFluxRate in kg/hr (total mass of tephra inserted per hour)
-          PlumeHeight_above_ground = e_PlumeHeight(i)-zground
+!          PlumeHeight_above_ground = e_PlumeHeight(i)-zground
+          s_PlumeHeight_above_ground = s_PlumeHeight(i)-sground
           if ((SourceType.eq.'suzuki')      .or. &
               (SourceType.eq.'umbrella')    .or. &
               (SourceType.eq.'umbrella_air')) then
@@ -357,24 +383,24 @@
             ! It uses an equation obtained by integrating the 
             ! Suzuki equation given in Hurst.
             NormSourceColumn(i,k) = (Suzuki_k*                                  &
-                               PlumeHeight_above_ground/Suzuki_A) *             &
-                              ((1.0_ip+(1.0_ip/Suzuki_A)-((z_cell_top -zground)/&
-                                PlumeHeight_above_ground)) *                    &
-                                 exp(Suzuki_A *((z_cell_top -zground)/          &
-                                  PlumeHeight_above_ground-1.0_ip)) -           &
-                               (1.0_ip+(1.0_ip/Suzuki_A)-((z_cell_bot-zground)/ &
-                                PlumeHeight_above_ground)) *                    &
-                                 exp(Suzuki_A *((z_cell_bot-zground)/           &
-                                  PlumeHeight_above_ground-1.0_ip)))
+                               s_PlumeHeight_above_ground/Suzuki_A) *             &
+                              ((1.0_ip+(1.0_ip/Suzuki_A)-((s_cell_top -sground)/&
+                                s_PlumeHeight_above_ground)) *                    &
+                                 exp(Suzuki_A *((s_cell_top -sground)/          &
+                                  s_PlumeHeight_above_ground-1.0_ip)) -           &
+                               (1.0_ip+(1.0_ip/Suzuki_A)-((s_cell_bot-sground)/ &
+                                s_PlumeHeight_above_ground)) *                    &
+                                 exp(Suzuki_A *((s_cell_bot-sground)/           &
+                                  s_PlumeHeight_above_ground-1.0_ip)))
           elseif (SourceType.eq.'line') then
             ! For line sources, the fractional contribution of the cell
             ! at z is just the height of the cell over the length of the line
-            NormSourceColumn(i,k) = (z_cell_top-z_cell_bot) / PlumeHeight_above_ground
+            NormSourceColumn(i,k) = (s_cell_top-s_cell_bot) / s_PlumeHeight_above_ground
           elseif (SourceType.eq.'point') then
             !for point sources, put all the contribution into the cell that contains
             ! the point
-            if ((z_cell_top.ge.e_PlumeHeight(i)).and.    &
-                (z_cell_bot.lt.e_PlumeHeight(i))) then
+            if ((s_cell_top.ge.s_PlumeHeight(i)).and.    &
+                (s_cell_bot.lt.s_PlumeHeight(i))) then
               NormSourceColumn(i,k) = 1.0_ip
             else
               NormSourceColumn(i,k) = 0.0_ip
@@ -390,6 +416,8 @@
             ! loop over the points describing the eruption profile
             do kk=1,e_prof_nzpoints(i)
               ! Find the bot/top altitude of this step of the eruption profile
+              ! HFS : not working for sigmaz coordinates
+              stop 1
               zbot_prof = e_prof_dz(i)*(kk-1)
               ztop_prof = e_prof_dz(i)*(kk)
               if(ztop_prof.lt.zground)then
@@ -439,6 +467,21 @@
 
         tot = sum(NormSourceColumn(i,:))
         NormSourceColumn(i,:) = NormSourceColumn(i,:)/tot
+
+
+
+!      do k=1,nzmax
+!        if(ZScaling_ID.eq.0)then
+!          write(*,*)s_cc_pd(k),NormSourceColumn(1,k)
+!        elseif(ZScaling_ID.eq.1)then
+!          write(*,*)z_cc_pd(k)+Zsurf(ivent,jvent),NormSourceColumn(1,k)
+!        elseif(ZScaling_ID.eq.2)then
+!          write(*,*)s_cc_pd(k)*(Ztop-Zsurf(ivent,jvent))+Zsurf(ivent,jvent),NormSourceColumn(1,k)
+!        endif
+!      enddo
+!      stop 66
+
+
 
       enddo ! neruptions
 
@@ -665,7 +708,7 @@
          EPS_SMALL
 
       use mesh,          only : &
-         nzmax,ivent,jvent,kappa_pd
+         nzmax,ivent,jvent,kappa_pd,j_cc_pd
 
       use Tephra,        only : &
          Tephra_bin_mass,n_gs_max
@@ -756,7 +799,7 @@
          KM3_2_M3
 
       use mesh,          only : &
-         nzmax,kappa_pd,ivent,jvent
+         nzmax,kappa_pd,ivent,jvent,j_cc_pd
 
       use Tephra,        only : &
          n_gs_max,MagmaDensity
@@ -776,6 +819,7 @@
       do k=1,nzmax+1
         do isize=1,n_gs_max
           tmp = tmp                             + & ! final units is km3
+!                j_cc_pd(ivent,jvent)            * & ! Scale source by Jacobian
                 real(dt,kind=ip)                * & ! hr
                 SourceNodeFlux(k,isize)         * & ! kg/km3 hr
                 kappa_pd(ivent,jvent,k)         / & ! km3

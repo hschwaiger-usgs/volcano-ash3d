@@ -36,15 +36,15 @@
          lon_cc_pd,lat_cc_pd,de,dn,de_km,dn_km, &
          z_lb_pd,z_vec_init,z_cc_pd,dz_vec_pd, &
          sigma_nx_pd,sigma_ny_pd,sigma_nz_pd,kappa_pd,&
-         xLL,yLL,latLL,lonLL,s_cc_pd,Ztop,ZScaling_ID, &
+         xLL,yLL,latLL,lonLL,s_cc_pd,Ztop,ZScaling_ID,ds_vec_pd, &
          A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_phi1,&
-         A3d_phi2,A3d_Re,IsLatLon,IsPeriodic
+         A3d_phi2,A3d_Re,IsLatLon,IsPeriodic,Zsurf,ivent,jvent
 
       use time_data,     only : &
          SimStartHour,Simtime_in_hours
 
       use Source,        only : &
-         lat_volcano
+         lat_volcano,z_volcano
 
       use MetReader,     only : &
            MR_Set_CompProjection, &
@@ -61,6 +61,7 @@
       real(kind=ip) :: theta_1,theta_2,del_theta,del_costheta
       real(kind=ip) :: del_lam
       real(kind=ip) :: phi_bot,phi_top,phi
+      real(kind=ip) :: s_lb,s_ub
       real(kind=sp),allocatable,dimension(:) :: dumx_sp,dumy_sp,dumz_sp,dums_sp
 
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -97,15 +98,31 @@
       dz_vec_pd( 0)      = dz_vec_pd(1)
       dz_vec_pd(nzmax+1) = dz_vec_pd(nzmax)
       dz_vec_pd(nzmax+2) = dz_vec_pd(nzmax)
+
       ! s_cc is the replacement z-coordinate: either s=z or s=(z-zsurf)/(ztop-zsurf)
       ! Here we set up the s-values with zsurf=0 and might apply topography later
-      !
       if(ZScaling_ID.eq.0)then
+        ! No topography modification; s=z in km
         s_cc_pd(:) = z_cc_pd(:)
       elseif(ZScaling_ID.eq.1)then
-        s_cc_pd(:) = z_cc_pd(:)
+        ! Coordinate system will be shifted by topography (surf -> surf + Ztop in km)
+        s_cc_pd(:) = z_cc_pd(:)-Zsurf(ivent,jvent)
       elseif(ZScaling_ID.eq.2)then
-        s_cc_pd(:) = (z_cc_pd(:)-0.0_ip)/(Ztop-0.0_ip)
+        ! Coordinate system will be scaled by topography (0->1 unitless)
+        s_cc_pd(:) = (z_cc_pd(:)-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
+      endif
+      if(ZScaling_ID.eq.0.or.ZScaling_ID.eq.1)then
+        ds_vec_pd(:) = dz_vec_pd(:)
+      else
+        do k=1,nzmax
+          s_lb = (z_lb_pd(k)-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
+          s_ub = (z_lb_pd(k+1)-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
+          ds_vec_pd(k) = s_ub - s_lb
+        enddo
+        ds_vec_pd(-1) = ds_vec_pd(1)
+        ds_vec_pd( 0) = ds_vec_pd(1)
+        ds_vec_pd(nzmax+1) = ds_vec_pd(nzmax)
+        ds_vec_pd(nzmax+2) = ds_vec_pd(nzmax)
       endif
 
       if (IsLatLon) then
@@ -121,8 +138,16 @@
 
         !*********************************************************************************
         do k=-1,nzmax+2
-          r_1  = RAD_EARTH+z_cc_pd(k)-0.5_ip*dz_vec_pd(k)              ! r at bottom of cell
-          r_2  = RAD_EARTH+z_cc_pd(k)+0.5_ip*dz_vec_pd(k)  ! r at top of cell
+!          r_1  = RAD_EARTH+z_cc_pd(k)-0.5_ip*dz_vec_pd(k)  ! r at bottom of cell
+!          r_2  = RAD_EARTH+z_cc_pd(k)+0.5_ip*dz_vec_pd(k)  ! r at top of cell
+
+          if(ZScaling_ID.eq.0.or.ZScaling_ID.eq.1)then
+            r_1  = RAD_EARTH+s_cc_pd(k)-0.5_ip*ds_vec_pd(k)  ! r at bottom of cell
+            r_2  = RAD_EARTH+s_cc_pd(k)+0.5_ip*ds_vec_pd(k)  ! r at top of cell
+          else
+            r_1  = RAD_EARTH+s_cc_pd(k)-0.5_ip*ds_vec_pd(k)*(Ztop-Zsurf(ivent,jvent))  ! r at bottom of cell
+            r_2  = RAD_EARTH+s_cc_pd(k)+0.5_ip*ds_vec_pd(k)*(Ztop-Zsurf(ivent,jvent))  ! r at top of cell
+          endif
 
           rr_1 =      r_1*r_1
           rr_2 =      r_2*r_2
@@ -146,6 +171,8 @@
             sigma_nz_pd(-1:nxmax+2,j,k) = rr_1*del_lam*del_costheta
               ! Volume of cell
             kappa_pd(-1:nxmax+2,j,k)=del_lam*drrr*del_costheta/3.0_ip
+
+
           enddo
         enddo
         !*********************************************************************************

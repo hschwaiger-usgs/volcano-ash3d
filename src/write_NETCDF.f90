@@ -466,8 +466,8 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att date:")
       nSTAT = nf90_put_att(ncid,nf90_global,"NWPStartTime",cdf_WindStartTime)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att NWPStartTime:")
-      nSTAT = nf90_put_att(ncid,nf90_global,"MepProj4",trim(adjustl(Met_proj4)))
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att MepProj4:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"MetProj4",trim(adjustl(Met_proj4)))
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att MetProj4:")
       nSTAT = nf90_put_att(ncid,nf90_global,"CompProj4",trim(adjustl(Comp_proj4)))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att CompProj4:")
       nSTAT = nf90_put_att(ncid,nf90_global,"host",os_host)
@@ -576,6 +576,8 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment DT_MAX:")
       nSTAT = nf90_put_att(ncid,nf90_global,"ZPADDING",ZPADDING)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment ZPADDING:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"ZScaling_ID",ZScaling_ID)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment ZScaling_ID:")
       if(useVz_rhoG)then
         nSTAT = nf90_put_att(ncid,nf90_global,"useVz_rhoG","true")
       else
