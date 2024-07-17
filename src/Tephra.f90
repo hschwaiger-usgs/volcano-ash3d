@@ -19,6 +19,7 @@
 !      function vset_WH_slip
 !      function vset_WH_PCM
 !      function vset_Gans
+!      function vset_Gans_slip
 !      function vset_Stokes_slip
 !
 !##############################################################################

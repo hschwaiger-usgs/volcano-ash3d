@@ -11,6 +11,7 @@
 !      subroutine Allocate_Source_eruption
 !      subroutine Allocate_Source_grid
 !      subroutine Deallocate_Source
+!      subroutine Calc_Normalized_SourceCol
 !      subroutine CheckEruptivePulses
 !      subroutine TephraSourceNodes
 !      function SourceVolInc
