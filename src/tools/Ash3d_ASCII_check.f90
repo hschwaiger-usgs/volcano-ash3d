@@ -184,10 +184,12 @@
         stop 1
       endif
       if(abs(xll_1-xll_2).gt.EPS_TINY)then
-        do io=1,nio;if(VB(io).le.verbosity_error)then
-          write(errlog(io),*)"FAIL : xll differs"
-        endif;enddo
-        stop 1
+        if(abs(abs(xll_1-xll_2)-360.0_sp).gt.EPS_TINY)then
+          do io=1,nio;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"FAIL : xll differs"
+          endif;enddo
+          stop 1
+        endif
       endif
       if(abs(yll_1-yll_2).gt.EPS_TINY)then
         do io=1,nio;if(VB(io).le.verbosity_error)then

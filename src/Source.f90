@@ -324,13 +324,16 @@
       ! Convert z_volcano to s-coordinate
       allocate(s_PlumeHeight(neruptions))
       if(ZScaling_ID.eq.0)then
+        ! No z-adjustment, just use s=z
         s_volcano = z_volcano
         s_PlumeHeight(:) = e_PlumeHeight(:)
       elseif(ZScaling_ID.eq.1)then
+        ! Shifted coordinates, choose the surface or z (if z is higher)
         z_volcano = max(z_volcano,Zsurf(ivent,jvent))
         s_volcano = z_volcano - Zsurf(ivent,jvent)
         s_PlumeHeight(:) = e_PlumeHeight(:) - Zsurf(ivent,jvent)
       elseif(ZScaling_ID.eq.2)then
+        ! Scaled coordinates, choose the surface or z (if z is higher)
         z_volcano = max(z_volcano,Zsurf(ivent,jvent))
         s_volcano = (z_volcano-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
         s_PlumeHeight(:) = (e_PlumeHeight(:)-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
@@ -407,7 +410,8 @@
               NormSourceColumn(i,k) = 0.0_ip
             endif
           elseif (SourceType.eq.'profile') then
-            ! loop over the points describing the eruption profile
+            ! loop over the points describing the eruption profile. These are always
+            ! given from z=0 to the top of the profile (in km).
 
             ! Recall that the column we are considering is within kground -> kPlumeTop
             ! The particular cell is z_cell_bot -> z_cell_top
@@ -418,10 +422,23 @@
             do kk=1,e_prof_nzpoints(i)
               ! Find the bot/top altitude of this step of the eruption profile
               ! HFS : not working for sigmaz coordinates
-              stop 1
+              !stop 1
               zbot_prof = e_prof_dz(i)*(kk-1)
               ztop_prof = e_prof_dz(i)*(kk)
-              if(ztop_prof.lt.zground)then
+              ! Now convert these z-values to s-coordinates
+              if(ZScaling_ID.eq.0)then
+                sbot_prof = zbot_prof
+                stop_prof = ztop_prof
+              elseif(ZScaling_ID.eq.1)then
+                sbot_prof = zbot_prof - Zsurf(ivent,jvent)
+                stop_prof = ztop_prof - Zsurf(ivent,jvent)
+              elseif(ZScaling_ID.eq.2)then
+                sbot_prof = (zbot_prof-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
+                stop_prof = (ztop_prof-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
+              endif
+
+!              if(ztop_prof.lt.zground)then
+              if(stop_prof.lt.sground)then
                 ! If line element is fully below zground
                 frac = 0.0_ip
                 if(e_prof_Volume(i,kk).gt.EPS_SMALL)then
@@ -433,27 +450,51 @@
                   endif;enddo
                 endif
                 cycle
-              elseif((zbot_prof.le.z_cell_bot).and.&
-                     (ztop_prof.ge.z_cell_bot).and.&
-                     (ztop_prof.le.z_cell_top))then
+!              elseif((zbot_prof.le.z_cell_bot).and.&
+!                     (ztop_prof.ge.z_cell_bot).and.&
+!                      (ztop_prof.le.z_cell_top))then
+!                ! Add any fractional bit that straddles the bottom part of the z-cell
+!                frac = (ztop_prof-z_cell_bot)/dz_vec_pd(k)
+!              elseif((zbot_prof.ge.z_cell_bot).and.&
+!                     (ztop_prof.lt.z_cell_top))then
+!                ! Add any step fully within the z-cell
+!                frac = (ztop_prof-zbot_prof)/dz_vec_pd(k)
+!              elseif((zbot_prof.ge.z_cell_bot).and.&
+!                     (zbot_prof.le.z_cell_top).and.&
+!                     (ztop_prof.ge.z_cell_top))then
+!                ! Add any fractional bit that straddles the top part of the z-cell
+!                frac = (z_cell_top-zbot_prof)/dz_vec_pd(k)
+!              elseif(zbot_prof.lt.z_cell_bot.and.ztop_prof.gt.z_cell_top)then
+!                ! If the eruption profile step fully encompasses the z-cell, no frac needed
+!                frac = 1.0_ip
+!              else
+!                ! This profile step does not contribute to this z-cell
+!                frac = 0.0_ip
+!              endif
+
+              elseif((sbot_prof.le.s_cell_bot).and.&
+                     (stop_prof.ge.s_cell_bot).and.&
+                     (stop_prof.le.s_cell_top))then
                 ! Add any fractional bit that straddles the bottom part of the z-cell
-                frac = (ztop_prof-z_cell_bot)/dz_vec_pd(k)
-              elseif((zbot_prof.ge.z_cell_bot).and.&
-                     (ztop_prof.lt.z_cell_top))then
+                frac = (stop_prof-s_cell_bot)/ds_vec_pd(k)
+              elseif((sbot_prof.ge.s_cell_bot).and.&
+                     (stop_prof.lt.s_cell_top))then
                 ! Add any step fully within the z-cell
-                frac = (ztop_prof-zbot_prof)/dz_vec_pd(k)
-              elseif((zbot_prof.ge.z_cell_bot).and.&
-                     (zbot_prof.le.z_cell_top).and.&
-                     (ztop_prof.ge.z_cell_top))then
+                frac = (stop_prof-sbot_prof)/ds_vec_pd(k)
+              elseif((sbot_prof.ge.s_cell_bot).and.&
+                     (sbot_prof.le.s_cell_top).and.&
+                     (stop_prof.ge.s_cell_top))then
                 ! Add any fractional bit that straddles the top part of the z-cell
-                frac = (z_cell_top-zbot_prof)/dz_vec_pd(k)
-              elseif(zbot_prof.lt.z_cell_bot.and.ztop_prof.gt.z_cell_top)then
+                frac = (s_cell_top-sbot_prof)/ds_vec_pd(k)
+              elseif(sbot_prof.lt.s_cell_bot.and.stop_prof.gt.s_cell_top)then
                 ! If the eruption profile step fully encompasses the z-cell, no frac needed
                 frac = 1.0_ip
               else
                 ! This profile step does not contribute to this z-cell
                 frac = 0.0_ip
               endif
+
+
                 NormSourceColumn(i,k) = NormSourceColumn(i,k) + &
                   e_prof_Volume(i,kk)*frac
             enddo

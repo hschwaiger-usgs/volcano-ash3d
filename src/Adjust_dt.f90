@@ -324,7 +324,7 @@
       dt = DT_MIN*fac
 
       if (((NextWriteTime-time).gt.EPS_SMALL).and.(NextWriteTime-time.lt.dt)) then
-          dt = NextWritetime-time
+        dt = NextWritetime-time
       endif
 
       if(time+dt.gt.Simtime_in_hours)then

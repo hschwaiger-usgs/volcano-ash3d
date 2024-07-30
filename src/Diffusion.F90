@@ -930,7 +930,7 @@
                     B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                     ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                     info)      !o
-              concen_pd(rmin:rmin-1+ncells,j,k,n,ts1) = B_s(:,1)/j_cc_pd(rmin-1:rmin-1+ncells+1,j)
+              concen_pd(rmin:rmin-1+ncells,j,k,n,ts1) = B_s(:,1)/j_cc_pd(rmin:rmin-1+ncells,j)
             elseif(ip.eq.8)then
               call dgtsv(     &
                     nlineq, &  !i The order of the matrix A.  N >= 0.
@@ -941,7 +941,7 @@
                     B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                     ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                     info)      !o
-              concen_pd(rmin:rmin-1+ncells,j,k,n,ts1) = B_d(:,1)/j_cc_pd(rmin-1:rmin-1+ncells+1,j)
+              concen_pd(rmin:rmin-1+ncells,j,k,n,ts1) = B_d(:,1)/j_cc_pd(rmin:rmin-1+ncells,j)
             endif
 #endif
           enddo ! loop over j
@@ -1195,7 +1195,7 @@
                     B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                     ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                     info)      !o
-              concen_pd(i,rmin:rmin-1+ncells,k,n,ts1) = B_s(:,1)/j_cc_pd(i,rmin-1:rmin-1+ncells+1)
+              concen_pd(i,rmin:rmin-1+ncells,k,n,ts1) = B_s(:,1)/j_cc_pd(i,rmin:rmin-1+ncells)
             elseif(ip.eq.8)then
               call dgtsv(     &
                     nlineq, &  !i The order of the matrix A.  N >= 0.
@@ -1206,7 +1206,7 @@
                     B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                     ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                     info)      !o
-              concen_pd(i,rmin:rmin-1+ncells,k,n,ts1) = B_d(:,1)/j_cc_pd(i,rmin-1:rmin-1+ncells+1)
+              concen_pd(i,rmin:rmin-1+ncells,k,n,ts1) = B_d(:,1)/j_cc_pd(i,rmin:rmin-1+ncells)
             endif
 #endif
 
