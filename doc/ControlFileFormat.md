@@ -89,6 +89,7 @@ positive constant specifying the Suzuki distribution. Alternatively, it can be
  `umbrella_air `: Suzuki (const. = 12) with radial spreading of the plume scaled to 5% of vol.  
  `point`: all mass inserted in cell containing PlmH  
  `linear`: mass uniformly distributed from z-vent to PlmH  
+ `profile`: mass distributed with a user-specified vertical profile  
 Line 9 : number of pulses to be read in BLOCK 2  
 
 Example  
@@ -185,7 +186,7 @@ Ash3d handles this as determined by the parameter iHeightHandler, as follows:
 2. wind velocity at levels above the highest node
 equal that of the highest node. Temperatures in the
 upper nodes do not change between 11 and 20 km; above
-20 km they increase by 2 C/km, as in the Standard
+20 km they increase by 2 C/km, as in the U.S. Standard
 atmosphere. A warning is written to the log file.  
 
 Simulation time in hours is the maximal length of the simulation.  
@@ -284,23 +285,30 @@ by typing "yes" to the last parameter.
 
 #### BLOCK 7: Grain-size bins, Settling Velocity
 The first line must contain the number of settling velocity groups, but
-can optionally also include a flag for the fall velocity model to be used.  
-`FV_ID =`  
-1. Wilson and Huang  
+can optionally also include a flag for the fall velocity model to be used and a flag
+specifying the shape parameterization used.  
+Fall velocity model `FV_ID =`  
+1. Wilson and Huang (default)  
 2. Wilson and Huang + Cunningham slip  
 3. Wilson and Huang + Mod by Pfeiffer Et al.  
-4. Ganser (assuming prolate ellipsoids)  
-5. Stokes flow for spherical particles + slip  
+4. Ganser   
+5. Ganser + Cunningham slip  
+6. Stokes flow for spherical particles + slip  
 If no fall model is specified, FV_ID = 1, by default
 The grain size bins can be enters with 2, 3, or 4 parameters.
 If TWO are given, they are read as:   FallVel (in m/s), mass fraction
 If THREE are given, they are read as: diameter (mm), mass fraction, density (kg/m3)
 If FOUR are given, they are read as:  diameter (mm), mass fraction, density (kg/m3), Shape F
-The shape factor is given as in Wilson and Huang: F=(b+c)/(2*a), but converted
+The shape factor is given as in Wilson and Huang: F=(b+c)/(2a), but converted
 to sphericity (assuming b=c) for the Ganser model.
 If a shape factor is not given, a default value of F=0.4 is used.
 If FIVE are given, they are read as:  diameter (mm), mass fraction, density (kg/m3), Shape F, G
 where G is an additional Ganser shape factor equal to c/b.  
+
+Shape Parameterization `Shape_ID =`  
+1. Shape factor from Wilson and Huang for column 4 (default)  
+2. column 4 holds sphericity  
+
 
 If the last grain size bin has a negative diameter, then the remaining mass fraction
 will be distributed over the previous bins via a log-normal distribution in phi.
@@ -353,9 +361,18 @@ output file.
 
 #### BLOCK 10: Optional Modules
 Optional Modules are identified by the text string at the top of the block
-`OPTMOD=[module name]`.
+`OPTMOD=[module name]`.  These are not required to be in the control file, but
+can be included to invoke features of the program other than the default
+behavior. These additional input blocks allow a means for controlling user-provided
+features such as non-standard source terms or physical processes.
 There will need to be a custom block reader in the module to read this section
-section of the input file.  Below is the built-in example for resetting parameters  
+section of the input file.  There are two optional modules built in to the
+main Ash3d code: RESTETPARAMS and TOPO.  
+
+
+Below is the built-in example for resetting parameters.
+Shown below are all the parameters avaiable to be reset (along with the default
+value). Only the parameters to be reset need to be listed.  
 `*******************************************************************************`  
 `OPTMOD=RESETPARAMS`  
 `MagmaDensity         = 3500.0`  
@@ -374,6 +391,7 @@ section of the input file.  Below is the built-in example for resetting paramete
 `CLOUDCON_GRID_THRESH = 2.0e-1`  
 `CLOUDLOAD_THRESH     = 1.0e-2`  
 `THICKNESS_THRESH     = 1.0e-3`  
+`StopValue_FracAshDep = 0.99`  
 `DBZ_THRESH           = -2.0e+1`  
 `VelMod_umb           = 1`  
 `lambda_umb           = 0.2`  
@@ -382,12 +400,37 @@ section of the input file.  Below is the built-in example for resetting paramete
 `SuzK_umb             = 12.0`  
 `useMoistureVars      = F`  
 `useVz_rhoG           = T`  
+`useWindVars          = 0`  
+`useOutprodVars       = 1`  
+`useRestartVars       = 0`  
 `cdf_institution      = USGS`  
 `cdf_run_class        = Analysis`  
 `cdf_url              = https://vsc-ash.wr.usgs.gov/ash3d-gui`  
 `*******************************************************************************`  
 
 
+Topography can be included in Ash3d by including the following optional block.  
+`*******************************************************************************`  
+`OPTMOD=TOPO`  
+`yes 2                         # use topography?; z-mod (0=none,1=shift,2=sigma)`  
+`1 1.0                         # Topofile format, smoothing radius`  
+`GEBCO_08.nc                   # topofile name`  
+`*******************************************************************************`  
+
+Line 1 indicates whether or not to use topography followed by the integer flag
+describing how topography will modify the vertical grid.  
+0. = no vertical modification; z-grid remains 0-> top throughout the domain  
+1. = shifted; s = z-z_surf; computational grid is uniformly shifted upward everywhere by topography  
+2. = sigma-altitude; s=(z-z_surf)/(z_top-z_surf); topography has decaying influence with height  
+Line 2 indicates the topography data format followed by the smoothing radius in km.
+Topofile format must be one of:  
+1. Gridded lon/lat (netcdf)  
+ETOPO : https://www.ncei.noaa.gov/products/etopo-global-relief-model  
+GEBCO : https://www.gebco.net/  
+2. Gridded Binary  
+NOAA Globe (1-km/30 arcsec) https://www.ngdc.noaa.gov/mgg/topo/globe.html  
+GTOPO30 (1-km/30 arcsec)  
+3. ESRI ASCII  
 
 
 

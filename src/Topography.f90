@@ -3,10 +3,10 @@
 !  Topography module
 !
 !  This module is used for optionally reading topography files of various formats,
-!  and appling them to the computational Ash3d grid as well as the sub-grid of
+!  and applying them to the computational Ash3d grid as well as the sub-grid of
 !  the NWP data.  Smoothing of the topographic data is applied instead of
 !  cell averaging.  This module is invoked if the OPTMOD=TOPO block is present in
-!  the Ash3d input file.  The block as the following format:
+!  the Ash3d control file.  The block as the following format:
 !
 !OPTMOD=TOPO
 !yes 2                         # use topography?; z-mod (0=none,1=shift,2=sigma)
