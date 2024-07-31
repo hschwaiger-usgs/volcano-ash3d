@@ -113,6 +113,9 @@
       use Ash3d_ASCII_IO,  only : &
            vprofilewriter
 
+      use MetReader,       only : &
+           MR_Set_SigmaAlt_Scaling
+
 #ifdef USENETCDF
       use Ash3d_Netcdf_IO,only : &
            NC_RestartFile_LoadConcen
@@ -122,6 +125,7 @@
 !       OPTIONAL MODULES
 !         Insert 'use' statements here
 !
+      use Topography
 !------------------------------------------------------------------------------
 
       implicit none
@@ -200,6 +204,12 @@
         !  endif;enddo
         !  call input_data_ResetParams
         !endif
+        if(OPTMOD_names(i).eq.'TOPO')then
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"  Reading input block for TOPO"
+          endif;enddo
+          call input_data_Topo
+        endif
       enddo
       do io=1,2;if(VB(io).le.verbosity_info)then    
         write(outlog(io),*)"Finished reading all specialized input blocks"
@@ -219,6 +229,10 @@
 
       if(((SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')))then
         call Allocate_Source_Umbrella(nxmax,nymax,nzmax)
+      endif
+      if(useTopo)then
+        call Allocate_Topo(nxmax,nymax)
+        call Get_Topo
       endif
       if(.not.IsCustom_SourceType)then
         call Calc_Normalized_SourceCol
@@ -311,6 +325,7 @@
 !       OPTIONAL MODULES
 !         Insert calls to prep user-specified output
 !
+      if(useTopo) call Prep_output_Topo
 !------------------------------------------------------------------------------
 
         ! Call output_results before time loop to create output files
@@ -758,6 +773,7 @@
 !       OPTIONAL MODULES
 !         Insert calls deallocation routines here
 !
+      if(useTopo)                     call Deallocate_Topo
 !------------------------------------------------------------------------------
 
       close(fid_logfile)       !close log file 

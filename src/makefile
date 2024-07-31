@@ -306,6 +306,7 @@ Output_Results.o         \
 write_ASCII.o            \
 write_BINARY.o           \
 write_KML.o              \
+Topography.o             \
 ResetParams.o
 
 PPOBJS = Ash3d_VariableModules.o        \
@@ -352,6 +353,8 @@ Input_Data.o: $(ASH3dCCSRC)/Input_Data.f90 $(MFILE) $(SYSINC) Ash3d_VariableModu
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Input_Data.f90
 ResetParams.o: $(ASH3dCCSRC)/ResetParams.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Tephra.o Output_Vars.o Source_Umbrella.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/ResetParams.f90
+Topography.o: Topography.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Tephra.o Calc_Mesh.o $(DATAOBJ) write_BINARY.o write_ASCII.o
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c Topography.f90
 Help.o: $(ASH3dCCSRC)/Help.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3dCCSRC)/Help.f90
 VotW.o: $(ASH3dCCSRC)/VotW.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Source.o
