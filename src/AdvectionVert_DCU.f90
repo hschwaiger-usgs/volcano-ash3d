@@ -66,7 +66,7 @@
 
       !!!$ use omp_lib
 
-      integer       :: i,j,n    ! These are the indeces mapping to the global arrays
+      integer       :: i,j,n    ! These are the indices mapping to the global arrays
       integer       :: l        ! This is the index along the particular advection direction
       integer       :: ncells
 
@@ -97,7 +97,7 @@
       real(kind=ip) :: divu_p, divu_m
       real(kind=ip) :: LFluct_Rbound,RFluct_Lbound
       real(kind=ip) :: LimFlux_Rbound,LimFlux_Lbound
-      integer :: rmin, rmax     ! min and max indecies of the row
+      integer :: rmin, rmax     ! min and max indicies of the row
 
       !integer OMP_GET_MAX_THREADS
       !integer OMP_GET_NUM_THREADS
@@ -148,7 +148,7 @@
 
 !      do idx_dum=1,nsmax*nymax*nxmax
 !         ! Now recover i,j and n
-!         ! Note: we can recover these indecies in any order we choose,
+!         ! Note: we can recover these indicies in any order we choose,
 !         ! as long as all are accounted for.  So recover in optimal
 !         ! (column-major) order
 !         i = (idx_dum-1)/(nymax*nsmax)+1

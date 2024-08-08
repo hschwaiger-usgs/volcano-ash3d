@@ -4,6 +4,7 @@ echo "RUNNING TEST CASE 2: 2D-DIFFUSION"
 echo     "-----------------------------------------------------------"
 Ash3d="../../bin/Ash3d"
 Ash3d_ASCII_check="../../bin/tools/Ash3d_ASCII_check"
+tol=0.1
 n2Dfiles=4
 ascii2Doutfiles=("CloudHeight_002.00hrs.dat" "CloudHeight_004.00hrs.dat" "CloudLoad_002.00hrs.dat" "CloudLoad_004.00hrs.dat")
 
@@ -23,7 +24,7 @@ fi
 for (( i=0;i<n2Dfiles;i++))
 do
   echo Checking 2d ASCII file "${ascii2Doutfiles[i]}"
-  stat=`${Ash3d_ASCII_check} ${ascii2Doutfiles[i]} ${outdir}/${ascii2Doutfiles[i]} 0.1 | cut -f1 -d':'`\
+  stat=`${Ash3d_ASCII_check} ${ascii2Doutfiles[i]} ${outdir}/${ascii2Doutfiles[i]} ${tol} | cut -f1 -d':'`\
 
   if [[ $stat == *PASS* ]];
   then

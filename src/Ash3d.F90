@@ -2,7 +2,7 @@
 !
 !  Ash3d is a program for modeling volcanic ash transport and dispersion.
 !
-!  This software is written in Frotran 2003 and is designed for use on a Linux
+!  This software is written in Fortran 2003 and is designed for use on a Linux
 !  operating system.
 !  
 !  This software, along with auxillary USGS libraries and related repositories,
@@ -217,7 +217,7 @@
 !
 !------------------------------------------------------------------------------
 
-        ! Read airports/POI and allocate/initilize arrays
+        ! Read airports/POI and allocate/initialize arrays
         ! We only need to do this if an output variable demands it since this is
         ! a burden every time step
       if(Output_every_TS) &

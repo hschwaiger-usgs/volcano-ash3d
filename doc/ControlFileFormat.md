@@ -22,7 +22,7 @@ as comments.
 
 Line 1 of this block identifies the volcano by name.
 If the volcano name begins with either 0 or 1, then the volcano
-is assumed to be in the Smithonian database and default values for
+is assumed to be in the Smithsonian database and default values for
 Plume Height, Duration, Mass Flux Rate, Volume, and mass fraction of
 fines are loaded. These can be over-written by entering non-negative
 values in the appropriate locations in this input file.  
@@ -42,7 +42,7 @@ For a particular `projflag`, additional values are read defining the projection.
  - k0      -- scale factor at projection point  
  - radius  -- earth radius for spherical earth  
 e.g. for NAM 104,198, 216: 0 1 -105.0 90.0 0.933 6371.229  
-2. projflag   = 2: Alberts Equal Area (not yet implemented)  
+2. projflag   = 2: Albers Equal Area (not yet implemented)  
 3. projflag   = 3: UTM (not yet implemented)  
 4. projflag   = 4: Lambert conformal conic  
  - lambda0 -- longitude of origin  
@@ -81,7 +81,7 @@ If `dz_cust`, then a second line is read containing:
   e.g. 20 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 5.5  
         This corresponds to 10 steps of 0.5, 9 steps of 1.5, followed by 1 step of 5.5.  
 
-##### Eruption catagory and number
+##### Eruption category and number
 Line 8 is the the diffusivity (m2/s) followed by the eruption specifier. The
 eruption specifier can be a real number, in which case it is assumed to be the
 positive constant specifying the Suzuki distribution. Alternatively, it can be  
@@ -110,7 +110,7 @@ Example
 #### BLOCK 2: Eruption Parameters
 In the following line, each line represents one eruptive pulse.
 Parameters are (1-4) start time (yyyy mm dd h.hh (UT)); (5) duration (hrs);
-(6) plume height; (7) eruped volume (km3 DRE)
+(6) plume height; (7) erupted volume (km3 DRE)
 If neruptions=1 and the year is 0, then the model run in forecast mode where mm dd h.hh are
 interpreted as the time after the start of the windfile. In this case, duration, plume
 height and erupted volume are replaced with ESP if the values are negative.
@@ -265,7 +265,7 @@ the directory with the windfiles (e.g. Wind_nc).
 `*******************************************************************************`  
 
 
-#### BLOCK 6: Airpot File
+#### BLOCK 6: Airport File
 The following lines allow the user to specify whether times of ash arrival
 at airports and other locations will be written out, and which file
 to read for a list of airport locations.
@@ -279,7 +279,7 @@ by typing "yes" to the last parameter.
 `no                            # Write out ash arrival times at airports to ASCII FILE?`  
 `no                            # Write out grain-size distribution to ASCII airports file?`  
 `no                            # Write out ash arrival times to kml file?`  
-`GlobalAirports.txt            # Name of file containing aiport locations`  
+`GlobalAirports.txt            # Name of file containing airport locations`  
 `no                            # Have libprojection calculate projected coordinates?`  
 `*******************************************************************************`  
 
@@ -371,7 +371,7 @@ main Ash3d code: RESTETPARAMS and TOPO.
 
 
 Below is the built-in example for resetting parameters.
-Shown below are all the parameters avaiable to be reset (along with the default
+Shown below are all the parameters available to be reset (along with the default
 value). Only the parameters to be reset need to be listed.  
 `*******************************************************************************`  
 `OPTMOD=RESETPARAMS`  
@@ -414,7 +414,7 @@ Topography can be included in Ash3d by including the following optional block.
 `OPTMOD=TOPO`  
 `yes 2                         # use topography?; z-mod (0=none,1=shift,2=sigma)`  
 `1 1.0                         # Topofile format, smoothing radius`  
-`GEBCO_08.nc                   # topofile name`  
+`GEBCO_08.nc                   # Topofile name`  
 `*******************************************************************************`  
 
 Line 1 indicates whether or not to use topography followed by the integer flag

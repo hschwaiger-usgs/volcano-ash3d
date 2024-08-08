@@ -14,7 +14,7 @@
 !  The vertical coordinate is calculated from z_vec_init (built in Read_Control_File),
 !  populating the variables z_cc_pd (cell-centered vert. grid), dz_vec_pd (thickness
 !  of each cell), and z_lb_pd (height of lower boundary).  Next, the projection
-!  information for the compuational grid is sent to MetReader and the corresponding
+!  information for the computational grid is sent to MetReader and the corresponding
 !  grids are built with a call to call MR_Initialize_Met_Grids.  Lastly, a call
 !  to MR_Set_Met_Times informs MetReader of the start and simulation time.
 !
@@ -265,8 +265,8 @@
 !
 !  Called from: Not called from standard Ash3d, but used in some optional modules
 !  Arguments:
-!    lonmin,lonmax : minimum and maximum longitude of the computaional grid
-!    latmin,latmax : minimum and maximum latitude of the computaional grid
+!    lonmin,lonmax : minimum and maximum longitude of the computational grid
+!    latmin,latmax : minimum and maximum latitude of the computational grid
 !
 !  This subroutine has no input arguments, but returns min/max values for lon/lat
 !  for a projected grid.  Projected grids will have curved boundaries in lon/lat

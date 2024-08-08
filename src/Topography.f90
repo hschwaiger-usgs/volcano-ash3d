@@ -162,10 +162,10 @@
       !integer      ,dimension(:,:)  ,allocatable :: topo_indx ! kindex of topo
       integer,private :: lon_shift_flag
 
-      real(kind=ip) :: minlon_Topo_comp,maxlon_Topo_comp
-      real(kind=ip) :: minlat_Topo_comp,maxlat_Topo_comp
-      real(kind=ip) :: minlon_Topo_Met,maxlon_Topo_Met
-      real(kind=ip) :: minlat_Topo_Met,maxlat_Topo_Met
+      real(kind=dp) :: minlon_Topo_comp,maxlon_Topo_comp
+      real(kind=dp) :: minlat_Topo_comp,maxlat_Topo_comp
+      real(kind=dp) :: minlon_Topo_Met,maxlon_Topo_Met
+      real(kind=dp) :: minlat_Topo_Met,maxlat_Topo_Met
       logical       :: Topo_UseCompGrid      = .false.
 
       contains
@@ -387,7 +387,7 @@
       allocate(topo_comp(nx,ny));       topo_comp = 0.0_sp
       !allocate(topo_indx(nx,ny));       topo_indx = 0
 
-      ! Set the start indecies
+      ! Set the start indicies
       indx_User2d_static_XY_Topo = nvar_User2d_static_XY
       indx_User2d_XY_Topo        = nvar_User2d_XY
       indx_User3d_XYGs_Topo      = nvar_User3d_XYGs

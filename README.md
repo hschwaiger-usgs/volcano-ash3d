@@ -173,7 +173,7 @@ The following are the variables available to edit:
                cannot be used with sources that effect the winds (umbrella).  
           -  `-DFAST_SUBGRID` adjusts the computational domain to be just the
                min/max in x,y,z of the region where ash concentration exceeds
-               some threshhold.  
+               some threshold.  
 - `USEPLPLOT   = T or [F]`  
               If Ash3d_PostProc is to be built, this variable indicates if
               the plplot library is available on the system for plotting maps

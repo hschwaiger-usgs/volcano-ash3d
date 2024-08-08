@@ -4,6 +4,7 @@ echo "RUNNING TEST CASE 4: MSH with NCEP winds"
 echo     "-----------------------------------------------------------"
 Ash3d="../../bin/Ash3d"
 Ash3d_ASCII_check="../../bin/tools/Ash3d_ASCII_check"
+tol=0.01
 n2Dfiles=11
 ascii2Doutfiles=("CloudHeight_008.00hrs.dat" "CloudHeight_016.00hrs.dat" "CloudLoad_008.00hrs.dat" "CloudLoad_016.00hrs.dat" "CloudConcentration_008.00hrs.dat" "CloudConcentration_016.00hrs.dat" "CloudArrivalTime.dat" "DepositFile_008.00hrs.dat" "DepositFile_016.00hrs.dat" "DepositFile_____final.dat" "DepositArrivalTime.dat")
 
@@ -57,7 +58,7 @@ do
   for (( i=0;i<n2Dfiles;i++))
   do
     echo Checking 2d ASCII file "${ascii2Doutfiles[i]}"
-    stat=`${Ash3d_ASCII_check} ${ascii2Doutfiles[i]} ${outdir}/${ascii2Doutfiles[i]} | cut -f1 -d':'`\
+    stat=`${Ash3d_ASCII_check} ${ascii2Doutfiles[i]} ${outdir}/${ascii2Doutfiles[i]} ${tol} | cut -f1 -d':'`\
 
     if [[ $stat == *PASS* ]];
     then
@@ -82,7 +83,7 @@ ASH3DHOME=../../ ${Ash3d} TC4_LL_MSH_SC${s}.inp > /dev/null 2>&1
 for (( i=0;i<n2Dfiles;i++))
 do
   echo Checking 2d ASCII file "${ascii2Doutfiles2[i]}"
-  stat=`${Ash3d_ASCII_check} ${ascii2Doutfiles2[i]} ${outdir}/${ascii2Doutfiles2[i]} | cut -f1 -d':'`\
+  stat=`${Ash3d_ASCII_check} ${ascii2Doutfiles2[i]} ${outdir}/${ascii2Doutfiles2[i]} ${tol} | cut -f1 -d':'`\
 
   if [[ $stat == *PASS* ]];
   then

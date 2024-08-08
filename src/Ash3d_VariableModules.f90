@@ -188,15 +188,15 @@
 
       character(len=8)  :: version           =  ' 1.0  '  ! The Ash3d version number
 
-      real(kind=ip), parameter :: EPS_SMALL  = 1.0e-7_ip       ! Small number
+      real(kind=ip), parameter :: EPS_SMALL  = 1.0e-6_ip       ! Small number
       real(kind=ip), parameter :: EPS_TINY   = 1.0e-12_ip      ! Very small number
+      real(kind=ip), parameter :: EPS_THRESH = 1.0e-10_ip      ! Threshold for Riemann solver
+                                                               ! 1 kg/km3=0.001 mg/m3
       real(kind=ip), parameter :: PI         = 3.141592653589793_ip
+      ! Unit conversions
       real(kind=ip), parameter :: DEG2RAD    = 1.7453292519943295e-2_ip
       real(kind=ip), parameter :: DEG2KMLAT  = 111.0_ip        ! km/degree latitude 
       real(kind=ip), parameter :: DEG2KMLON  = 111.321_ip      ! km/degree longitude at equator
-      real(kind=ip), parameter :: EPS_THRESH = 1.0e-10_ip      ! Threshold for Riemann solver
-                                                               ! 1 kg/km3=0.001 mg/m3
-      ! Unit conversions
       real(kind=ip), parameter :: KM_2_M     = 1.0e3_ip        ! km to m
       real(kind=ip), parameter :: M_2_MM     = 1.0e3_ip        ! m to mm
       real(kind=ip), parameter :: MM_2_IN    = 3.937e-2_ip     ! mm to inch

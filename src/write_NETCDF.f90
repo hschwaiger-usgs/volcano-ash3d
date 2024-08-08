@@ -3851,8 +3851,9 @@
       integer :: itstart_hour,itstart_min,itstart_sec
       real(kind=ip) :: filestart_hour
       integer :: tmp_int
-      real(kind=ip) :: lat_in,lon_in
-      real(kind=ip) :: xnow,ynow,xout,yout
+      real(kind=dp) :: lat_in,lon_in
+      real(kind=ip) :: xnow,ynow
+      real(kind=dp) :: xout,yout
 
       INTERFACE
         real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)

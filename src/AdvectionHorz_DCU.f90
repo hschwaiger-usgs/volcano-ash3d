@@ -96,7 +96,7 @@
       real(kind=ip) :: divu_p, divu_m
       real(kind=ip) :: LFluct_Rbound,RFluct_Lbound
       real(kind=ip) :: LimFlux_Rbound,LimFlux_Lbound
-      integer :: rmin, rmax     ! min and max indecies of the row
+      integer :: rmin, rmax     ! min and max indicies of the row
 
       !integer OMP_GET_MAX_THREADS
       !integer OMP_GET_NUM_THREADS
@@ -368,7 +368,7 @@
       real(kind=ip) :: divu_p, divu_m
       real(kind=ip) :: LFluct_Rbound,RFluct_Lbound
       real(kind=ip) :: LimFlux_Rbound,LimFlux_Lbound
-      integer :: rmin, rmax     ! min and max indecies of the row
+      integer :: rmin, rmax     ! min and max indicies of the row
 
       !integer OMP_GET_MAX_THREADS
       !integer OMP_GET_NUM_THREADS

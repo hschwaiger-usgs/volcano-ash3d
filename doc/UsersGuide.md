@@ -117,10 +117,10 @@ Once the Ash3d program starts, the following files are opened:
 After completion, the KML/KMZ files can be viewed using your favorite KML-viewer,
 such as GoogleEarth. The ESRI ASCII files can be imported into a GIS tool. The
 output netcdf file can be viewed or processed with a variety of third-party tools.
-Simple post-processing of the netcdf file (with limited mapping capibilities) can
+Simple post-processing of the netcdf file (with limited mapping capabilities) can
 be accomplished with the post-processing tool, `Ash3d_PostProc`. Instructions on
 using this tool can be found [here](PostProc.md), along with other post-processing
-recomendations.
+recommendations.
 
 
 
