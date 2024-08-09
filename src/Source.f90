@@ -32,14 +32,14 @@
 !# ERUPTION LINES (number = neruptions)
 !# In the following line, each line represents one eruptive pulse.
 !# Parameters are (1-4) start time (yyyy mm dd h.hh (UT)); (5) duration (hrs);
-!#                  (6) plume height (km);                 (7) eruped volume (km3)
+!#                  (6) plume height (km);                 (7) erupted volume (km3)
 !******************* BLOCK 2 ***************************************************
 !2010 04 14   0.00   1.0     18.0  0.16
 !
 ! The profile option has the additional two values for the dz and nz
 !
 !# Parameters are (1-4) start time (yyyy mm dd h.hh (UT)); (5) duration (hrs);
-!#                  (6) plume height (km);                 (7) eruped volume (km3)
+!#                  (6) plume height (km);                 (7) erupted volume (km3)
 !#                  (8) dz of profile;                     (9) number of z segments
 !******************* BLOCK 2 ***************************************************
 !2010 04 14   0.00   1.0     18.0  0.16 1.0 18

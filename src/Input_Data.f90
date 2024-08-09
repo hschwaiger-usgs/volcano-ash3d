@@ -757,7 +757,7 @@
         write(outlog(io),*)"      LIM_NONE: Advection routines use no limiters"
 #endif
 #ifdef LIM_LAXWEN
-        write(outlog(io),*)"    LIM_LAXWEN: Advection routines use a Lax-Wendrof limiter"
+        write(outlog(io),*)"    LIM_LAXWEN: Advection routines use a Lax-Wendroff limiter"
 #endif
 #ifdef LIM_BW
         write(outlog(io),*)"        LIM_BW: Advection routines use a Beam-Warming limiter"
@@ -766,10 +766,10 @@
         write(outlog(io),*)"     LIM_FROMM: Advection routines use a Fromm limiter"
 #endif
 #ifdef LIM_MINMOD
-        write(outlog(io),*)"    LIM_MINMOD: Advection routines use a MinMod limiter"
+        write(outlog(io),*)"    LIM_MINMOD: Advection routines use a minmod limiter"
 #endif
 #ifdef LIM_SUPERBEE
-        write(outlog(io),*)"  LIM_SUPERBEE: Advection routines use a SuperBee limiter"
+        write(outlog(io),*)"  LIM_SUPERBEE: Advection routines use a superbee limiter"
 #endif
 #ifdef LIM_MC
         write(outlog(io),*)"        LIM_MC: Advection routines use a MC limiter"
@@ -4508,7 +4508,7 @@
       ! for the internal list of airports.
 
       !Block 6/Line 4: 
-      !               Name of file containing aiport locations
+      !               Name of file containing airport locations
 96041 do io=1,2;if(VB(io).le.verbosity_error)then
         write(errlog(io),*) 'Would you like Ash3d to use the internal airports database instead (y/n)?'
       endif;enddo

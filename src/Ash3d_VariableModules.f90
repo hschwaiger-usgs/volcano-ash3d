@@ -220,25 +220,25 @@
 
       ! Some variables determined by preprocessor flags at compilation time
 #ifdef LIM_NONE
-      character(len=10)        :: limiter = 'No'
+      character(len=11)        :: limiter = 'No'
 #endif
 #ifdef LIM_LAXWEN
-      character(len=10)        :: limiter = 'LaxWendrof'
+      character(len=11)        :: limiter = 'LaxWendroff'
 #endif
 #ifdef LIM_BW
-      character(len=10)        :: limiter = 'BeamWarm'
+      character(len=11)        :: limiter = 'BeamWarm'
 #endif
 #ifdef LIM_FROMM
-      character(len=10)        :: limiter = 'Fromm'
+      character(len=11)        :: limiter = 'Fromm'
 #endif
 #ifdef LIM_MINMOD
-      character(len=10)        :: limiter = 'Minmod'
+      character(len=11)        :: limiter = 'Minmod'
 #endif
 #ifdef LIM_SUPERBEE
-      character(len=10)        :: limiter = 'Superbee'
+      character(len=11)        :: limiter = 'Superbee'
 #endif
 #ifdef LIM_MC
-      character(len=10)        :: limiter = 'MC'
+      character(len=11)        :: limiter = 'MC'
 #endif
 
 #ifdef CRANKNIC

@@ -515,7 +515,7 @@
 
 !------------------------------------------------------------------------------
 !       OPTIONAL MODULES
-!         Insert calls output routines (every timestep) here
+!         Insert calls output routines (every time step) here
 !
 !------------------------------------------------------------------------------
 

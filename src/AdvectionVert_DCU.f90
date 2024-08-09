@@ -227,7 +227,7 @@
 #endif
 
 #if LIM_LAXWEN
-              ! Lax-Wendrof (linear)
+              ! Lax-Wendroff (linear)
               ldq_I = dq_I(i_I)
 #else
               ! Only calculate dqu_I and theta if the limiter is being used

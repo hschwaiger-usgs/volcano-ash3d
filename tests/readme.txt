@@ -1,6 +1,6 @@
 These tests in directories 1-4 are quick tests that are run via the script
 src/run_tests.sh which is launched from 'make check'.  These tests are
-designed to run in just a few minutes andto verify that changes to the 
+designed to run in just a few minutes and to verify that changes to the 
 code do not cause a significant change in the output.
 
 All these tests produce ASCII output files which are compared with files
@@ -16,7 +16,7 @@ This test used a 1-d ASCII windfile and tests fallout of a single grain-
 size using a Suzuki source.
 
 test_02:
-This test invokes 3d homogeneouw diffusion.
+This test invokes 3d homogeneous diffusion.
 
 test_03:
 These 11 subcases test different source types, fall models and vertical

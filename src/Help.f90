@@ -494,7 +494,7 @@
       write(outlog(io),1)'# ERUPTION LINES (number = neruptions)                                                                 '
       write(outlog(io),1)'# In the following line, each line represents one eruptive pulse.                                      '
       write(outlog(io),1)'# Parameters are (1-4) start time (yyyy mm dd h.hh (UT)); (5) duration (hrs);                          '
-      write(outlog(io),1)'#                  (6) plume height;                      (7) eruped volume (km3 DRE)                  '
+      write(outlog(io),1)'#                  (6) plume height;                      (7) erupted volume (km3 DRE)                 '
       write(outlog(io),1)'# If neruptions=1 and the year is 0, then the model run in forecast mode where mm dd h.hh are          '
       write(outlog(io),1)'# interpreted as the time after the start of the windfile.  In this case, duration, plume              '
       write(outlog(io),1)'# height and erupted volume are replaced with ESP if the values are negative.                          '
@@ -656,7 +656,7 @@
       write(outlog(io),1)'no                            # Write out ash arrival times at airports to ASCII FILE?                 '
       write(outlog(io),1)'no                            # Write out grain-size distribution to ASCII airports file?              '
       write(outlog(io),1)'no                            # Write out ash arrival times to kml file?                               '
-      write(outlog(io),1)'GlobalAirports.txt            # Name of file containing aiport locations                               '
+      write(outlog(io),1)'GlobalAirports.txt            # Name of file containing airport locations                              '
       write(outlog(io),1)'no                            # Have libprojection calculate projected coordinates?                    '
         case(7) ! BLOCK 7: GRAIN-SIZE BINS, SETTLING VELOCITY
       write(outlog(io),1)'*******************************************************************************                        '

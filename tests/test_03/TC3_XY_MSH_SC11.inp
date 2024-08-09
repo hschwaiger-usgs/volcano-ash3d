@@ -6,12 +6,11 @@
 TC3_MSH                           # Volcano name (character*30)
 0 4 265.0 25.0 25.0 25.0 6371.229 # (-120.0   46.20) in LCC grid 212 coords
 -2289.77  2591.27                 # x, y of LL corner of grid (km, or deg. if latlongflag=1)
- 100.0    100.0                   # grid width and height (km, or deg. if latlonflag=1)
+ 100.0    100.0  1.0              # grid width and height (km, or deg. if latlonflag=1)
 -2239.77  2641.27                 # vent location         (km, or deg. if latlonflag=1)
  2.0      2.0                     # DX, DY of grid cells  (km, or deg.)
-dz_cust                           # DZ of grid cells      (always km)
-20 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 5.5 # ndz dz(1:ndz)
-0.0       point                   # diffusion coefficient (m2/s), Suzuki constant
+1.0                               # DZ of grid cells      (always km)
+0.0       4.0                     # diffusion coefficient (m2/s), Suzuki constant
 1                                 # neruptions, number of eruptions or pulses
 *******************************************************************************
 # ERUPTION LINES (number = neruptions)
@@ -19,7 +18,7 @@ dz_cust                           # DZ of grid cells      (always km)
 # Parameters are (1-4) start time (yyyy mm dd h.hh (UT)); (5) duration (hrs);
 #                  (6) plume height (km);                 (7) erupted volume (km3)
 ******************* BLOCK 2 ***************************************************
-2010 04 14   0.00   1.0     18.0  0.16
+2010 04 14   0.00   1.0     19.0  0.16
 *******************************************************************************
 # WIND OPTIONS
 ******************* BLOCK 3 ***************************************************
@@ -52,7 +51,7 @@ ascii               # format of ash concentration files
 *******************************************************************************
 # WIND INPUT FILES
 ******************* BLOCK 5 ***************************************************
-Hanford_Ncol.txt
+Hanford_Ncol_topo.txt
 *******************************************************************************
 # AIRPORT LOCATION FILE
 ******************* BLOCK 6 ***************************************************
@@ -64,7 +63,7 @@ yes                 # Calculate projected coordinates internally?
 *******************************************************************************
 # GRAIN SIZE GROUPS
 ******************* BLOCK 7 ***************************************************
-1 1                 # Number of settling velocity groups
+1                   # Number of settling velocity groups
 0.125  1.0  1520.0  0.44
 *******************************************************************************
 # Vertical profiles
@@ -75,5 +74,12 @@ yes                 # Calculate projected coordinates internally?
 # netCDF output options
 ******************* BLOCK 9 ***************************************************
 3d_tephra_fall.nc   # Name of output file
-TC3_XY_MSH_SC10     # Title of simulation
+TC3_XY_MSH_SC0      # Title of simulation
 no comment          # Comment
+*******************************************************************************
+# Topography
+*******************************************************************************
+OPTMOD=TOPO
+yes 0                         # use topography?
+3 0.0                         # Topofile format, smoothing radius
+topo.dat                      # topofile name

@@ -1918,6 +1918,7 @@
       endif
 
       if(start_lon_idx+nlon_topo_subgrid-1.gt.nlon_topo_fullgrid)then
+        write(*,*)start_lon_idx,nlon_topo_subgrid,nlon_topo_fullgrid
         !wrapgrid = .true.
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: Cannot use grid-wrapping for ASCII data, at the moment."
@@ -2260,6 +2261,8 @@
           endif;enddo
           nx = nx_submet
           ny = ny_submet
+          write(*,*)MR_dx_met
+          stop 6
           rad = 0.25_ip/1000.0_ip*real(MR_minlen,kind=ip)  ! Smooth over the width of the met cells
           cell_len = min(minval(MR_dx_met(:)),minval(MR_dy_met(:)))*DEG2RAD*RAD_EARTH
         else

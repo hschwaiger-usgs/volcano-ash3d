@@ -5,12 +5,12 @@
 ******************* BLOCK 1 ***************************************************
 TC4_MSH                           # Volcano name (character*30)
 1 1 -135.0 90.0 0.933 6371.229    # Proj flags and params
--135.0    33.5                    # x, y of LL corner of grid (km, or deg. if latlongflag=1)
-37.0      20.5                    # grid width and height (km, or deg. if latlonflag=1)
+-125.0    38.0                    # x, y of LL corner of grid (km, or deg. if latlongflag=1)
+15.0      15.0                    # grid width and height (km, or deg. if latlonflag=1)
 -122.117  42.933                  # vent location         (km, or deg. if latlonflag=1)
 0.5       0.5                     # DX, DY of grid cells  (km, or deg.)
 2.0                               # DZ of grid cells      (always km)
-0.0       umbrella_air            # diffusion coefficient (m2/s), Suzuki constant
+0.0       4.0                     # diffusion coefficient (m2/s), Suzuki constant
 1                                 # neruptions, number of eruptions or pulses
 *******************************************************************************
 # ERUPTION LINES (number = neruptions)
@@ -22,11 +22,11 @@ TC4_MSH                           # Volcano name (character*30)
 *******************************************************************************
 # WIND OPTIONS
 ******************* BLOCK 3 ***************************************************
-5 25                # iwind, iwindFormat
+1 2 6 1             # iwind, iwindFormat
 2                   # iHeightHandler
-48.0                # Simulation time in hours
+24.0                # Simulation time in hours
 yes                 # stop computation when 99% of erupted mass has deposited?
-1                   # nWindFiles, number of gridded wind files (used if iwind>1)
+48                  # nWindFiles, number of gridded wind files (used if iwind>1)
 *******************************************************************************
 # OUTPUT OPTIONS:
 ******************* BLOCK 4 ***************************************************
@@ -46,12 +46,59 @@ yes                 # write ESRI ASCII file of cloud arrival times?
 no                  # Write        KML file of cloud arrival times?
 yes                 # Write 3-D ash concentration at specified times?
 netcdf              # format of ash concentration files
-2                   # nWriteTimes  
-8.0 16.0
+-1                   # nWriteTimes  
+1.0
 *******************************************************************************
 # WIND INPUT FILES
 ******************* BLOCK 5 ***************************************************
-Wind_nc
+UpperAirSoundings/BOI_1980051700_raw.dat
+UpperAirSoundings/GGW_1980051700_raw.dat
+UpperAirSoundings/GJT_1980051700_raw.dat
+UpperAirSoundings/MFR_1980051700_raw.dat
+UpperAirSoundings/SLC_1980051700_raw.dat
+UpperAirSoundings/SLE_1980051700_raw.dat
+UpperAirSoundings/BOI_1980051712_raw.dat
+UpperAirSoundings/GGW_1980051712_raw.dat
+UpperAirSoundings/GJT_1980051712_raw.dat
+UpperAirSoundings/MFR_1980051712_raw.dat
+UpperAirSoundings/SLC_1980051712_raw.dat
+UpperAirSoundings/SLE_1980051712_raw.dat
+UpperAirSoundings/BOI_1980051800_raw.dat
+UpperAirSoundings/GGW_1980051800_raw.dat
+UpperAirSoundings/GJT_1980051800_raw.dat
+UpperAirSoundings/MFR_1980051800_raw.dat
+UpperAirSoundings/SLC_1980051800_raw.dat
+UpperAirSoundings/SLE_1980051800_raw.dat
+UpperAirSoundings/BOI_1980051812_raw.dat
+UpperAirSoundings/GGW_1980051812_raw.dat
+UpperAirSoundings/GJT_1980051812_raw.dat
+UpperAirSoundings/MFR_1980051812_raw.dat
+UpperAirSoundings/SLC_1980051812_raw.dat
+UpperAirSoundings/SLE_1980051812_raw.dat
+UpperAirSoundings/BOI_1980051900_raw.dat
+UpperAirSoundings/GGW_1980051900_raw.dat
+UpperAirSoundings/GJT_1980051900_raw.dat
+UpperAirSoundings/MFR_1980051900_raw.dat
+UpperAirSoundings/SLC_1980051900_raw.dat
+UpperAirSoundings/SLE_1980051900_raw.dat
+UpperAirSoundings/BOI_1980051912_raw.dat
+UpperAirSoundings/GGW_1980051912_raw.dat
+UpperAirSoundings/GJT_1980051912_raw.dat
+UpperAirSoundings/MFR_1980051912_raw.dat
+UpperAirSoundings/SLC_1980051912_raw.dat
+UpperAirSoundings/SLE_1980051912_raw.dat
+UpperAirSoundings/BOI_1980052000_raw.dat
+UpperAirSoundings/GGW_1980052000_raw.dat
+UpperAirSoundings/GJT_1980052000_raw.dat
+UpperAirSoundings/MFR_1980052000_raw.dat
+UpperAirSoundings/SLC_1980052000_raw.dat
+UpperAirSoundings/SLE_1980052000_raw.dat
+UpperAirSoundings/BOI_1980052012_raw.dat
+UpperAirSoundings/GGW_1980052012_raw.dat
+UpperAirSoundings/GJT_1980052012_raw.dat
+UpperAirSoundings/MFR_1980052012_raw.dat
+UpperAirSoundings/SLC_1980052012_raw.dat
+UpperAirSoundings/SLE_1980052012_raw.dat
 *******************************************************************************
 # AIRPORT LOCATION FILE
 ******************* BLOCK 6 ***************************************************
@@ -68,12 +115,22 @@ no                  # Calculate projected coordinates internally?
 *******************************************************************************
 # Vertical profiles
 ******************* BLOCK 8 ***************************************************
-2                   # number of locations for vertical profiles (nlocs)
--114.20 43.1
--121.20 42.8
+0                   # number of locations for vertical profiles (nlocs)
 *******************************************************************************
 # netCDF output options
 ******************* BLOCK 9 ***************************************************
 3d_tephra_fall.nc   # Name of output file
-TC4_LL_MSH_SC1      # Title of simulation
+TC4_LL_MSH_SC5      # Title of simulation
 no comment          # Comment
+*******************************************************************************
+# Reset parameters
+*******************************************************************************
+OPTMOD=RESETPARAMS
+useWindVars          = 1
+*******************************************************************************
+# Topography
+*******************************************************************************
+OPTMOD=TOPO
+yes 0                         # use topography?
+3 1.0                         # Topofile format, smoothing radius
+Topography.dat                # topofile name
