@@ -2784,7 +2784,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depotime")
 
           ! ashtime
-       do io=1,2;if(VB(io).le.verbosity_debug1)then
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill ashtime"
         endif;enddo
         dum2d_out(:,:) = CloudArrivalTime_FillValue
@@ -3347,6 +3347,16 @@
           dum2d_out(:,:) = real(DepositThickness,kind=op)
           nSTAT=nf90_put_var(ncid,depothick_var_id,dum2d_out,(/1,1,iout3d/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depothick")
+          ! while we are here, just update the 'final' variable with this
+          ! preliminary copy
+          nSTAT = nf90_inq_varid(ncid,"depothickFin",depothickFin_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid depothickFin")
+          do io=1,2;if(VB(io).le.verbosity_debug1)then
+            write(outlog(io),*)"  Writing depothickFin"
+          endif;enddo
+          dum2d_out(:,:) = real(DepositThickness,kind=op)
+          nSTAT=nf90_put_var(ncid,depothickFin_var_id,dum2d_out,(/1,1/))
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depothickFin")
           deallocate(dum2d_out)
 
           ! ashconMax

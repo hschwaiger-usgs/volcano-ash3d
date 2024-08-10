@@ -1913,7 +1913,7 @@
         stop 1
       endif
       if(Topo_UseCompGrid)then
-        nlon_topo_subgrid = floor((maxlon_Topo_comp-minlon_Topo_comp)/dlon_topo)+1
+        nlon_topo_subgrid = floor((maxlon_Topo_comp-minlon_Topo_comp)/dlon_topo)
         nlat_topo_subgrid = int((maxlat_Topo_comp-minlat_Topo_comp)/dlat_topo)
       endif
 
@@ -2261,8 +2261,6 @@
           endif;enddo
           nx = nx_submet
           ny = ny_submet
-          write(*,*)MR_dx_met
-          stop 6
           rad = 0.25_ip/1000.0_ip*real(MR_minlen,kind=ip)  ! Smooth over the width of the met cells
           cell_len = min(minval(MR_dx_met(:)),minval(MR_dy_met(:)))*DEG2RAD*RAD_EARTH
         else
