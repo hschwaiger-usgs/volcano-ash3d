@@ -41,7 +41,8 @@
          nmods,OPTMOD_names,StopConditions,CheckConditions      
 
       use mesh,          only : &
-         ivent,jvent,nxmax,nymax,nzmax,nsmax,ts0,ts1,ZPADDING,dz_vec_pd,z_cc_pd
+         ivent,jvent,nxmax,nymax,nzmax,nsmax,ts0,ts1,ZPADDING,dz_vec_pd,&
+         z_cc_pd
 
       use solution,      only : &
          concen_pd,DepositGranularity,StopValue_FracAshDep,aloft_percent_remaining, &
@@ -145,6 +146,8 @@
         end subroutine alloc_arrays
         subroutine calc_mesh_params
         end subroutine calc_mesh_params
+        subroutine calc_s_mesh
+        end subroutine calc_s_mesh
         subroutine MesoInterpolater(TimeNow,Load_MesoSteps,Interval_Frac)
           integer,parameter  :: dp         = 8 ! Double precision
           real(kind=dp),intent(in)    :: TimeNow
@@ -226,14 +229,19 @@
       call alloc_arrays
         ! Set up grids for solution and Met data
       call calc_mesh_params
+      if(useTopo)then
+        ! This can only be called after calc_mesh_params since we need
+        ! the horizontal grid to build the topo array
+        call Allocate_Topo(nxmax,nymax)
+        call Get_Topo
+      endif
+      ! Now that we potentially have topography, we can build the s_cc_pd array
+      call calc_s_mesh
 
       if(((SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')))then
         call Allocate_Source_Umbrella(nxmax,nymax,nzmax)
       endif
-      if(useTopo)then
-        call Allocate_Topo(nxmax,nymax)
-        call Get_Topo
-      endif
+
       if(.not.IsCustom_SourceType)then
         call Calc_Normalized_SourceCol
       endif

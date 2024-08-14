@@ -22,7 +22,7 @@
 
       subroutine calc_mesh_params
 
-      ! set up grids for solution and wind arrays
+      ! set up grids for solution and wind arrays using x,y (or lon,lat) and z in km
 
       use precis_param
 
@@ -34,9 +34,10 @@
       use mesh,          only : &
          nxmax,nymax,nzmax,x_cc_pd,y_cc_pd,dx,dy,&
          lon_cc_pd,lat_cc_pd,de,dn,de_km,dn_km, &
-         z_lb_pd,z_vec_init,z_cc_pd,dz_vec_pd, &
+         z_lb_pd,z_cc_pd,dz_vec_pd,z_vec_init, &
+         s_lb_pd,s_cc_pd,ds_vec_pd,Ztop,ZScaling_ID, &
          sigma_nx_pd,sigma_ny_pd,sigma_nz_pd,kappa_pd,&
-         xLL,yLL,latLL,lonLL,s_cc_pd,Ztop,ZScaling_ID,ds_vec_pd, &
+         xLL,yLL,latLL,lonLL, &
          A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_phi1,&
          A3d_phi2,A3d_Re,IsLatLon,IsPeriodic,Zsurf,ivent,jvent
 
@@ -61,7 +62,6 @@
       real(kind=ip) :: theta_1,theta_2,del_theta,del_costheta
       real(kind=ip) :: del_lam
       real(kind=ip) :: phi_bot,phi_top,phi
-      real(kind=ip) :: s_lb,s_ub
       real(kind=sp),allocatable,dimension(:) :: dumx_sp,dumy_sp,dumz_sp,dums_sp
 
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -99,32 +99,6 @@
       dz_vec_pd(nzmax+1) = dz_vec_pd(nzmax)
       dz_vec_pd(nzmax+2) = dz_vec_pd(nzmax)
 
-      ! s_cc is the replacement z-coordinate: either s=z or s=(z-zsurf)/(ztop-zsurf)
-      ! Here we set up the s-values with zsurf=0 and might apply topography later
-      if(ZScaling_ID.eq.0)then
-        ! No topography modification; s=z in km
-        s_cc_pd(:) = z_cc_pd(:)
-      elseif(ZScaling_ID.eq.1)then
-        ! Coordinate system will be shifted by topography (surf -> surf + Ztop in km)
-        s_cc_pd(:) = z_cc_pd(:)-Zsurf(ivent,jvent)
-      elseif(ZScaling_ID.eq.2)then
-        ! Coordinate system will be scaled by topography (0->1 unitless)
-        s_cc_pd(:) = (z_cc_pd(:)-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
-      endif
-      if(ZScaling_ID.eq.0.or.ZScaling_ID.eq.1)then
-        ds_vec_pd(:) = dz_vec_pd(:)
-      else
-        do k=1,nzmax
-          s_lb = (z_lb_pd(k)-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
-          s_ub = (z_lb_pd(k+1)-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
-          ds_vec_pd(k) = s_ub - s_lb
-        enddo
-        ds_vec_pd(-1) = ds_vec_pd(1)
-        ds_vec_pd( 0) = ds_vec_pd(1)
-        ds_vec_pd(nzmax+1) = ds_vec_pd(nzmax)
-        ds_vec_pd(nzmax+2) = ds_vec_pd(nzmax)
-      endif
-
       if (IsLatLon) then
         ! Find width and height of a node (km) at the volcano's location
         de_km = de*cos(lat_volcano*DEG2RAD)*DEG2KMLON
@@ -138,16 +112,8 @@
 
         !*********************************************************************************
         do k=-1,nzmax+2
-!          r_1  = RAD_EARTH+z_cc_pd(k)-0.5_ip*dz_vec_pd(k)  ! r at bottom of cell
-!          r_2  = RAD_EARTH+z_cc_pd(k)+0.5_ip*dz_vec_pd(k)  ! r at top of cell
-
-          if(ZScaling_ID.eq.0.or.ZScaling_ID.eq.1)then
-            r_1  = RAD_EARTH+s_cc_pd(k)-0.5_ip*ds_vec_pd(k)  ! r at bottom of cell
-            r_2  = RAD_EARTH+s_cc_pd(k)+0.5_ip*ds_vec_pd(k)  ! r at top of cell
-          else
-            r_1  = RAD_EARTH+s_cc_pd(k)-0.5_ip*ds_vec_pd(k)*(Ztop-Zsurf(ivent,jvent))  ! r at bottom of cell
-            r_2  = RAD_EARTH+s_cc_pd(k)+0.5_ip*ds_vec_pd(k)*(Ztop-Zsurf(ivent,jvent))  ! r at top of cell
-          endif
+          r_1  = RAD_EARTH+z_cc_pd(k)-0.5_ip*dz_vec_pd(k)  ! r at bottom of cell
+          r_2  = RAD_EARTH+z_cc_pd(k)+0.5_ip*dz_vec_pd(k)  ! r at top of cell
 
           rr_1 =      r_1*r_1
           rr_2 =      r_2*r_2
@@ -171,7 +137,6 @@
             sigma_nz_pd(-1:nxmax+2,j,k) = rr_1*del_lam*del_costheta
               ! Volume of cell
             kappa_pd(-1:nxmax+2,j,k)=del_lam*drrr*del_costheta/3.0_ip
-
 
           enddo
         enddo
@@ -226,24 +191,20 @@
       allocate(dumx_sp(nxmax))
       allocate(dumy_sp(nymax))
       allocate(dumz_sp(nzmax))
-      allocate(dums_sp(nzmax))
       if(IsLatLon)then
         dumx_sp(1:nxmax) = real(lon_cc_pd(1:nxmax),kind=sp)
         dumy_sp(1:nymax) = real(lat_cc_pd(1:nymax),kind=sp)
         dumz_sp(1:nzmax) = real(  z_cc_pd(1:nzmax),kind=sp)
-        dums_sp(1:nzmax) = real(  s_cc_pd(1:nzmax),kind=sp)
       else
         dumx_sp(1:nxmax) = real(  x_cc_pd(1:nxmax),kind=sp)
         dumy_sp(1:nymax) = real(  y_cc_pd(1:nymax),kind=sp)
         dumz_sp(1:nzmax) = real(  z_cc_pd(1:nzmax),kind=sp)
-        dums_sp(1:nzmax) = real(  s_cc_pd(1:nzmax),kind=sp)
       endif
       call MR_Initialize_Met_Grids(nxmax,nymax,nzmax,             &
                               dumx_sp,dumy_sp,dumz_sp,            &
                               IsPeriodic)
-      call MR_Set_SigmaAlt_Scaling(nzmax,dums_sp)
 
-      deallocate(dumx_sp,dumy_sp,dumz_sp,dums_sp)
+      deallocate(dumx_sp,dumy_sp,dumz_sp)
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Finished initializing Met Grids"
@@ -258,6 +219,106 @@
 30    format(/,4x,'Calculating the locations of each cell-centered node in the grid.')
   
       end subroutine calc_mesh_params
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  calc_s_mesh
+!
+!  Called from: Ash3d.F90 just after topography is loaded. If topography is not
+!  used (ZScaling_ID=0; default), then s = z. If ZScaling_ID=1 (shifted topo) or
+!  ZScaling_ID=2 (scaled topo), then s is a bit different.
+!
+!  Arguments:
+!    none
+!
+!  Assigns:
+!    s_cc_pd,s_lb_pd,ds_vec_pd and Met variables through MR_Set_SigmaAlt_Scaling
+!    
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine calc_s_mesh
+
+      ! set up grids for solution and wind arrays
+
+      use precis_param
+
+      use io_units
+
+      use global_param,  only : &
+         DEG2KMLON,DEG2RAD,DEG2KMLAT,RAD_EARTH,PI
+
+      use mesh,          only : &
+         nxmax,nymax,nzmax,x_cc_pd,y_cc_pd,dx,dy,&
+         lon_cc_pd,lat_cc_pd,de,dn,de_km,dn_km, &
+         z_lb_pd,z_cc_pd,dz_vec_pd,z_vec_init, &
+         s_lb_pd,s_cc_pd,ds_vec_pd,Ztop,ZScaling_ID, &
+         sigma_nx_pd,sigma_ny_pd,sigma_nz_pd,kappa_pd,&
+         xLL,yLL,latLL,lonLL, &
+         A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_phi1,&
+         A3d_phi2,A3d_Re,IsLatLon,IsPeriodic,Zsurf,ivent,jvent
+
+      use time_data,     only : &
+         SimStartHour,Simtime_in_hours
+
+      use Source,        only : &
+         lat_volcano,z_volcano
+
+      use MetReader,     only : &
+           MR_Set_CompProjection, &
+           MR_Initialize_Met_Grids, &
+           MR_Set_Met_Times, &
+           MR_Set_SigmaAlt_Scaling
+
+      implicit none
+
+      integer :: i,j,k
+
+      real(kind=ip) :: r_1,r_2,rr_2,rr_1,drr,drrr
+      real(kind=ip) :: phi_1,phi_2
+      real(kind=ip) :: theta_1,theta_2,del_theta,del_costheta
+      real(kind=ip) :: del_lam
+      real(kind=ip) :: phi_bot,phi_top,phi
+      real(kind=ip) :: s_lb,s_ub
+      real(kind=sp),allocatable,dimension(:) :: dumx_sp,dumy_sp,dumz_sp,dums_sp
+
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"--------------------------------------------------"
+        write(outlog(io),*)"---------- CALC_S_MESH ---------------------------"
+        write(outlog(io),*)"--------------------------------------------------"
+      endif;enddo
+
+      ! s_cc is the replacement z-coordinate: either s=z or s=(z-zsurf)/(ztop-zsurf)
+      ! Here we set up the s-values with zsurf=0 and might apply topography later
+      if(ZScaling_ID.eq.0)then
+        ! No topography modification; s=z in km
+        s_cc_pd(:) = z_cc_pd(:)
+        s_lb_pd(:) = z_lb_pd(:)
+      elseif(ZScaling_ID.eq.1)then
+        ! Coordinate system will be shifted by topography (surf -> surf + Ztop in km)
+        s_cc_pd(:) = z_cc_pd(:)-Zsurf(ivent,jvent)
+        s_lb_pd(:) = z_lb_pd(:)-Zsurf(ivent,jvent)
+      elseif(ZScaling_ID.eq.2)then
+        ! Coordinate system will be scaled by topography (0->1 unitless)
+        s_cc_pd(:) = (z_cc_pd(:)-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
+        s_lb_pd(:) = (z_lb_pd(:)-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
+      endif
+      if(ZScaling_ID.eq.0.or.ZScaling_ID.eq.1)then
+        ds_vec_pd(:) = dz_vec_pd(:)
+      else
+        ds_vec_pd(:) = (dz_vec_pd(:))/(Ztop-Zsurf(ivent,jvent))
+      endif
+
+      allocate(dums_sp(nzmax))
+      if(IsLatLon)then
+        dums_sp(1:nzmax) = real(  s_cc_pd(1:nzmax),kind=sp)
+      else
+        dums_sp(1:nzmax) = real(  s_cc_pd(1:nzmax),kind=sp)
+      endif
+      call MR_Set_SigmaAlt_Scaling(nzmax,dums_sp)
+
+      deallocate(dums_sp)
+
+      end subroutine calc_s_mesh
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !

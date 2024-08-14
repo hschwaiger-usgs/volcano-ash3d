@@ -290,17 +290,15 @@
          EPS_SMALL
 
       use mesh,          only : &
-         nzmax,dz_vec_pd,z_lb_pd,z_cc_pd,&
+         nzmax,&
          ds_vec_pd,s_cc_pd,Zsurf,Ztop,ivent,jvent,ZScaling_ID
 
       integer :: i
       integer :: k
       real(kind=ip) :: Suzuki_k     ! k factor in the Suzuki equation (see Hurst's Ashfall manual)
-      real(kind=ip) :: z_cell_bot
-      real(kind=ip) :: z_cell_top
+                                    ! Note, this had dimension of 1/s where s is km or unitless (if z_ID=2)
       real(kind=ip) :: zbot_prof
       real(kind=ip) :: ztop_prof
-      real(kind=ip) :: zground
       real(kind=ip) :: s_PlumeHeight_above_ground
       real(kind=ip) :: frac
       real(kind=ip) :: tot
@@ -313,6 +311,7 @@
       real(kind=ip) :: sbot_prof
       real(kind=ip) :: stop_prof
       real(kind=ip) :: sground
+      real(kind=ip) :: scalefac,fac1,fac2,expfac1,expfac2
       real(kind=ip),dimension(:),allocatable :: s_PlumeHeight
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
@@ -371,14 +370,11 @@
         ! each height interval dz
         do k=kground,kPlumeTop
           ! height at the top of this cell (or top of plume)
-!          z_cell_top  = min(z_cc_pd(k)+0.5_ip*dz_vec_pd(k),e_PlumeHeight(i))
           s_cell_top  = min(s_cc_pd(k)+0.5_ip*ds_vec_pd(k),s_PlumeHeight(i))
           ! height at the bottom
-!          z_cell_bot = z_cc_pd(k)-0.5_ip*dz_vec_pd(k)
           s_cell_bot = s_cc_pd(k)-0.5_ip*ds_vec_pd(k)
 
           ! First get the TephraFluxRate in kg/hr (total mass of tephra inserted per hour)
-!          PlumeHeight_above_ground = e_PlumeHeight(i)-zground
           s_PlumeHeight_above_ground = s_PlumeHeight(i)-sground
           if ((SourceType.eq.'suzuki')      .or. &
               (SourceType.eq.'umbrella')    .or. &
@@ -386,16 +382,14 @@
             ! For Suzuki plumes and umbrella clouds
             ! It uses an equation obtained by integrating the 
             ! Suzuki equation given in Hurst.
-            NormSourceColumn(i,k) = (Suzuki_k*                                  &
-                               s_PlumeHeight_above_ground/Suzuki_A) *             &
-                              ((1.0_ip+(1.0_ip/Suzuki_A)-((s_cell_top -sground)/&
-                                s_PlumeHeight_above_ground)) *                    &
-                                 exp(Suzuki_A *((s_cell_top -sground)/          &
-                                  s_PlumeHeight_above_ground-1.0_ip)) -           &
-                               (1.0_ip+(1.0_ip/Suzuki_A)-((s_cell_bot-sground)/ &
-                                s_PlumeHeight_above_ground)) *                    &
-                                 exp(Suzuki_A *((s_cell_bot-sground)/           &
-                                  s_PlumeHeight_above_ground-1.0_ip)))
+            ! Find the bit in this cell by integrating from bottom to top.
+            scalefac = s_PlumeHeight_above_ground*Suzuki_k/Suzuki_A
+            fac1 = 1.0_ip+(1.0_ip/Suzuki_A)-((s_cell_top -sground)/s_PlumeHeight_above_ground)
+            fac2 = 1.0_ip+(1.0_ip/Suzuki_A)-((s_cell_bot -sground)/s_PlumeHeight_above_ground)
+            expfac1 = (s_cell_top -sground)/s_PlumeHeight_above_ground -1.0_ip
+            expfac2 = (s_cell_bot -sground)/s_PlumeHeight_above_ground -1.0_ip
+            NormSourceColumn(i,k) = scalefac*fac1*exp(Suzuki_A*expfac1) - &
+                                    scalefac*fac2*exp(Suzuki_A*expfac2)
           elseif (SourceType.eq.'line') then
             ! For line sources, the fractional contribution of the cell
             ! at z is just the height of the cell over the length of the line
@@ -450,27 +444,6 @@
                   endif;enddo
                 endif
                 cycle
-!              elseif((zbot_prof.le.z_cell_bot).and.&
-!                     (ztop_prof.ge.z_cell_bot).and.&
-!                      (ztop_prof.le.z_cell_top))then
-!                ! Add any fractional bit that straddles the bottom part of the z-cell
-!                frac = (ztop_prof-z_cell_bot)/dz_vec_pd(k)
-!              elseif((zbot_prof.ge.z_cell_bot).and.&
-!                     (ztop_prof.lt.z_cell_top))then
-!                ! Add any step fully within the z-cell
-!                frac = (ztop_prof-zbot_prof)/dz_vec_pd(k)
-!              elseif((zbot_prof.ge.z_cell_bot).and.&
-!                     (zbot_prof.le.z_cell_top).and.&
-!                     (ztop_prof.ge.z_cell_top))then
-!                ! Add any fractional bit that straddles the top part of the z-cell
-!                frac = (z_cell_top-zbot_prof)/dz_vec_pd(k)
-!              elseif(zbot_prof.lt.z_cell_bot.and.ztop_prof.gt.z_cell_top)then
-!                ! If the eruption profile step fully encompasses the z-cell, no frac needed
-!                frac = 1.0_ip
-!              else
-!                ! This profile step does not contribute to this z-cell
-!                frac = 0.0_ip
-!              endif
 
               elseif((sbot_prof.le.s_cell_bot).and.&
                      (stop_prof.ge.s_cell_bot).and.&
@@ -509,21 +482,6 @@
 
         tot = sum(NormSourceColumn(i,:))
         NormSourceColumn(i,:) = NormSourceColumn(i,:)/tot
-
-
-
-!      do k=1,nzmax
-!        if(ZScaling_ID.eq.0)then
-!          write(*,*)s_cc_pd(k),NormSourceColumn(1,k)
-!        elseif(ZScaling_ID.eq.1)then
-!          write(*,*)z_cc_pd(k)+Zsurf(ivent,jvent),NormSourceColumn(1,k)
-!        elseif(ZScaling_ID.eq.2)then
-!          write(*,*)s_cc_pd(k)*(Ztop-Zsurf(ivent,jvent))+Zsurf(ivent,jvent),NormSourceColumn(1,k)
-!        endif
-!      enddo
-!      stop 66
-
-
 
       enddo ! neruptions
 
@@ -750,14 +708,12 @@
          EPS_SMALL
 
       use mesh,          only : &
-         nzmax,ivent,jvent,kappa_pd,j_cc_pd
+         nzmax,ivent,jvent,kappa_pd
 
       use Tephra,        only : &
          Tephra_bin_mass,n_gs_max
 
       integer :: i,k
-!      real(kind=ip) :: z_cell_bot
-!      real(kind=ip) :: z_cell_top
       real(kind=ip) :: SumSourceNodeFlux      ! checking terms
       real(kind=ip) :: MassFluxRate_now
 
@@ -802,8 +758,6 @@
          do io=1,2;if(VB(io).le.verbosity_error)then
            write(errlog(io) ,2) SumSourceNodeFlux-1.0_ip
            write(errlog(io),*)"SourceType          = ",SourceType
-!           write(errlog(io),*)"z_cell_bot          = ",z_cell_bot
-!           write(errlog(io),*)"z_cell_top          = ",z_cell_top
            write(errlog(io),*)"MassFluxRate_now    = ",MassFluxRate_now
            write(errlog(io),*)"n_gs_max            = ",n_gs_max
            write(errlog(io),*)"SourceNodeFlux(1:nz)=",real(SourceNodeFlux(:,1),kind=4)
@@ -841,7 +795,7 @@
          KM3_2_M3
 
       use mesh,          only : &
-         nzmax,kappa_pd,ivent,jvent,j_cc_pd
+         nzmax,kappa_pd,ivent,jvent
 
       use Tephra,        only : &
          n_gs_max,MagmaDensity
@@ -861,7 +815,6 @@
       do k=1,nzmax+1
         do isize=1,n_gs_max
           tmp = tmp                             + & ! final units is km3
-!                j_cc_pd(ivent,jvent)            * & ! Scale source by Jacobian
                 real(dt,kind=ip)                * & ! hr
                 SourceNodeFlux(k,isize)         * & ! kg/km3 hr
                 kappa_pd(ivent,jvent,k)         / & ! km3

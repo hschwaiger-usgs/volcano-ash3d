@@ -195,7 +195,8 @@
               ! using kappa of cell
 !            dt_vol_cc(rmin-2:rmin-1+ncells+2) = real(dt,kind=ip) / &
 !                                                kappa_pd(i,j,rmin-2:rmin-1+ncells+2)
-            dt_vol_cc(rmin-2:rmin-1+ncells+2) = real(dt,kind=ip) / kap_cc(rmin-2:rmin-1+ncells+2)
+            dt_vol_cc(rmin-2:rmin-1+ncells+2) = real(dt,kind=ip) / &
+                                                kap_cc(rmin-2:rmin-1+ncells+2)
 
             ! Make sure to initialize this since we are only setting it where is matters
             usig_I = 0.0_ip

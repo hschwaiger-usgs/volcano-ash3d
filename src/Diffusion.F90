@@ -263,7 +263,6 @@
        ! arrays that live on cell-centers: Note that we only have 1 ghost cell
       real(kind=ip),dimension(0:nxmax+1)     :: update_cc
       real(kind=ip),dimension(0:nxmax+1)     :: q_cc      ! concen
-      real(kind=ip),dimension(0:nxmax+1)     :: sig_cc    ! cell area
       real(kind=ip),dimension(0:nxmax+1)     :: kap_cc    ! cell volume
 
        ! arrays that live on cell interfaces
@@ -426,7 +425,6 @@
        ! arrays that live on cell-centers: Note that we only have 1 ghost cell
       real(kind=ip),dimension(0:nymax+1)     :: update_cc
       real(kind=ip),dimension(0:nymax+1)     :: q_cc      ! concen
-      real(kind=ip),dimension(0:nymax+1)     :: sig_cc    ! cell area
       real(kind=ip),dimension(0:nymax+1)     :: kap_cc    ! cell volume
 
        ! arrays that live on cell interfaces
@@ -577,7 +575,6 @@
        ! arrays that live on cell-centers: Note that we only have 1 ghost cell
       real(kind=ip),dimension(0:nzmax+1)     :: update_cc
       real(kind=ip),dimension(0:nzmax+1)     :: q_cc      ! concen
-      real(kind=ip),dimension(0:nzmax+1)     :: sig_cc    ! cell area
       real(kind=ip),dimension(0:nzmax+1)     :: kap_cc    ! cell volume
 
        ! arrays that live on cell interfaces
@@ -739,7 +736,6 @@
 
        ! arrays that live on cell-centers: Note that we only have 1 ghost cell
       real(kind=ip),dimension(0:nxmax+1)     :: q_cc      ! concen
-      real(kind=ip),dimension(0:nxmax+1)     :: sig_cc    ! cell area
       real(kind=ip),dimension(0:nxmax+1)     :: kap_cc    ! cell volume
 
        ! arrays that live on cell interfaces
@@ -1011,7 +1007,6 @@
 
        ! arrays that live on cell-centers: Note that we only have 1 ghost cell
       real(kind=ip),dimension(0:nymax+1)     :: q_cc      ! concen
-      real(kind=ip),dimension(0:nymax+1)     :: sig_cc    ! cell area
       real(kind=ip),dimension(0:nymax+1)     :: kap_cc    ! cell volume
 
        ! arrays that live on cell interfaces
@@ -1280,7 +1275,6 @@
 
        ! arrays that live on cell-centers: Note that we only have 1 ghost cell
       real(kind=ip),dimension(0:nzmax+1)     :: q_cc      ! concen
-      real(kind=ip),dimension(0:nzmax+1)     :: sig_cc    ! cell area
       real(kind=ip),dimension(0:nzmax+1)     :: kap_cc    ! cell volume
 
        ! arrays that live on cell interfaces

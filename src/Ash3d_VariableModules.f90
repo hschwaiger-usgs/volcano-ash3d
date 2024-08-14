@@ -304,7 +304,7 @@
       logical, dimension(5) :: CheckConditions = .true.   ! Which conditions to check
 
       !  These are reset in Set_OS_Env
-      integer   :: OS_TYPE    = 1                 ! 1=linux, 2=apple, 3=windows
+      integer   :: OS_TYPE    = 1                 ! 1=Linux, 2=MacOS, 3=Windows
       logical   :: IsLitEnd   = .true.            ! little-endian-ness; set in Set_OS_Env
       logical   :: IsLinux    = .true.
       logical   :: IsWindows  = .false.
@@ -576,6 +576,7 @@
       real(kind=ip),dimension(:)    ,pointer :: z_cc_pd     => null() ! z_component of cell centers
       real(kind=ip),dimension(:)    ,pointer :: z_lb_pd     => null() ! z_component of cell lower-boundary
       real(kind=ip),dimension(:)    ,pointer :: s_cc_pd     => null() ! s_component of cell centers (z,shifted,sigma)
+      real(kind=ip),dimension(:)    ,pointer :: s_lb_pd     => null() ! s_component of cell lower-boundary
       real(kind=ip),dimension(:)    ,pointer :: ds_vec_pd   => null() ! used for variable ds cases
       real(kind=ip),dimension(:,:)  ,pointer :: j_cc_pd     => null() ! Jacobian when using topography
       real(kind=ip),dimension(:,:)  ,pointer :: Zsurf       => null() ! topography in km
@@ -596,6 +597,7 @@
       real(kind=ip),dimension(:)    ,allocatable :: z_cc_pd     ! z_component of cell centers
       real(kind=ip),dimension(:)    ,allocatable :: z_lb_pd     ! z_component of cell lower-boundary
       real(kind=ip),dimension(:)    ,allocatable :: s_cc_pd     ! s_component of cell centers (z,shifted,sigma)
+      real(kind=ip),dimension(:)    ,allocatable :: s_lb_pd     ! s_component of cell lower-boundary
       real(kind=ip),dimension(:)    ,allocatable :: ds_vec_pd   ! used for variable ds cases
       real(kind=ip),dimension(:,:)  ,allocatable :: j_cc_pd     ! Jacobian when using topography
       real(kind=ip),dimension(:,:)  ,allocatable :: Zsurf       ! topography in km
@@ -635,7 +637,8 @@
       if(.not.associated(sigma_ny_pd))allocate(sigma_ny_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_ny_pd = 1.0_ip
       if(.not.associated(sigma_nz_pd))allocate(sigma_nz_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_ny_pd = 1.0_ip
       if(.not.associated(s_cc_pd))    allocate(s_cc_pd(-1:nzmax+2));                            s_cc_pd     = 0.0_ip
-      if(.not.associated(ds_vec_pd))  allocate(ds_vec_pd(-1:nzmax+2));                            ds_vec_pd = 0.0_ip
+      if(.not.associated(s_lb_pd)  )  allocate(s_lb_pd(-1:nzmax+2));                            s_lb_pd     = 0.0_ip
+      if(.not.associated(ds_vec_pd))  allocate(ds_vec_pd(-1:nzmax+2));                          ds_vec_pd   = 0.0_ip
       if(.not.associated(j_cc_pd))    allocate(j_cc_pd(-1:nxmax+2,-1:nymax+2));                 j_cc_pd     = 1.0_ip
       if(.not.associated(Zsurf))      allocate(Zsurf(1:nxmax,1:nymax));                         Zsurf       = 0.0_ip
 #else
@@ -656,7 +659,8 @@
       if(.not.allocated(sigma_ny_pd))allocate(sigma_ny_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_ny_pd = 1.0_ip
       if(.not.allocated(sigma_nz_pd))allocate(sigma_nz_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_ny_pd = 1.0_ip
       if(.not.allocated(s_cc_pd))    allocate(s_cc_pd(-1:nzmax+2));                            s_cc_pd     = 0.0_ip
-      if(.not.allocated(ds_vec_pd))  allocate(ds_vec_pd(-1:nzmax+2));                          ds_vec_pd = 0.0_ip
+      if(.not.allocated(s_lb_pd)  )  allocate(s_lb_pd(-1:nzmax+2));                            s_lb_pd     = 0.0_ip
+      if(.not.allocated(ds_vec_pd))  allocate(ds_vec_pd(-1:nzmax+2));                          ds_vec_pd   = 0.0_ip
       if(.not.allocated(j_cc_pd))    allocate(j_cc_pd(-1:nxmax+2,-1:nymax+2));                 j_cc_pd     = 1.0_ip
       if(.not.allocated(Zsurf))      allocate(Zsurf(1:nxmax,1:nymax));                         Zsurf       = 0.0_ip
 #endif
@@ -682,6 +686,7 @@
       if(associated(sigma_ny_pd))   deallocate(sigma_ny_pd)
       if(associated(sigma_nz_pd))   deallocate(sigma_nz_pd)
       if(associated(s_cc_pd))       deallocate(s_cc_pd)
+      if(associated(s_lb_pd))       deallocate(s_lb_pd)
       if(associated(j_cc_pd))       deallocate(j_cc_pd)
 #else
       if(allocated(z_vec_init))    deallocate(z_vec_init)
@@ -699,6 +704,7 @@
       if(allocated(lon_cc_pd))     deallocate(lon_cc_pd)
       if(allocated(lat_cc_pd))     deallocate(lat_cc_pd)
       if(allocated(s_cc_pd))       deallocate(s_cc_pd)
+      if(allocated(s_lb_pd))       deallocate(s_lb_pd)
       if(allocated(j_cc_pd))       deallocate(j_cc_pd)
 #endif
 

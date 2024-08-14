@@ -156,12 +156,12 @@
 
             ! Now scale according to local Jacobian
             q_cc(rmin-2:rmin-1+ncells+2)   = q_cc(rmin-2:rmin-1+ncells+2)   * &
-                                          j_cc_pd(rmin-2:rmin-1+ncells+2,j)
-            !vel_cc(:) = vel_cc(:)
-            sig_I(rmin-2:rmin-1+ncells+2)  =  sig_I(rmin-2:rmin-1+ncells+2) / &
-                                            j_cc_pd(rmin-2:rmin-1+ncells+2,j)
+                                              j_cc_pd(rmin-2:rmin-1+ncells+2,j)
+            !vel_cc(:) = vel_cc(:)        ! vx not scaled by jac
+            sig_I(rmin-2:rmin-1+ncells+2)  = sig_I(rmin-2:rmin-1+ncells+2) / &
+                                              j_cc_pd(rmin-2:rmin-1+ncells+2,j)
             kap_cc(rmin-2:rmin-1+ncells+2) = kap_cc(rmin-2:rmin-1+ncells+2) / &
-                                            j_cc_pd(rmin-2:rmin-1+ncells+2,j)
+                                              j_cc_pd(rmin-2:rmin-1+ncells+2,j)
 
             ! Ghost cells were set in Set_BC.f90, but could be reset here
             ! if desired or for testing.  Tests showed that velocities
@@ -427,12 +427,12 @@
 
             ! Now scale according to local Jacobian
             q_cc(rmin-2:rmin-1+ncells+2)   = q_cc(rmin-2:rmin-1+ncells+2)   * &
-                                          j_cc_pd(i,rmin-2:rmin-1+ncells+2)
-            !vel_cc(:) = vel_cc(:)
-            sig_I(rmin-2:rmin-1+ncells+2)  =  sig_I(rmin-2:rmin-1+ncells+2) / &
-                                            j_cc_pd(i,rmin-2:rmin-1+ncells+2)
+                                              j_cc_pd(i,rmin-2:rmin-1+ncells+2)
+            !vel_cc(:) = vel_cc(:)           ! vy not scaled by jac
+            sig_I(rmin-2:rmin-1+ncells+2)  = sig_I(rmin-2:rmin-1+ncells+2) / &
+                                              j_cc_pd(i,rmin-2:rmin-1+ncells+2)
             kap_cc(rmin-2:rmin-1+ncells+2) = kap_cc(rmin-2:rmin-1+ncells+2) / &
-                                            j_cc_pd(i,rmin-2:rmin-1+ncells+2)
+                                              j_cc_pd(i,rmin-2:rmin-1+ncells+2)
 
             ! Ghost cells were set in Set_BC.f90, but could be reset here
             ! if desired or for testing.  Tests showed that velocities

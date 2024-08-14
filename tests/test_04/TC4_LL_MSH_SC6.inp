@@ -9,7 +9,7 @@ TC4_MSH                           # Volcano name (character*30)
 15.0      15.0                    # grid width and height (km, or deg. if latlonflag=1)
 -122.117  42.933                  # vent location         (km, or deg. if latlonflag=1)
 0.5       0.5                     # DX, DY of grid cells  (km, or deg.)
-2.0                               # DZ of grid cells      (always km)
+1.0                               # DZ of grid cells      (always km)
 0.0       4.0                     # diffusion coefficient (m2/s), Suzuki constant
 1                                 # neruptions, number of eruptions or pulses
 *******************************************************************************
@@ -80,6 +80,7 @@ no comment          # Comment
 *******************************************************************************
 OPTMOD=RESETPARAMS
 useWindVars          = 1
+ZPADDING             = 1.5
 *******************************************************************************
 # Topography
 *******************************************************************************
