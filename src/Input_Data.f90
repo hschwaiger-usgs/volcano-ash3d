@@ -2800,7 +2800,7 @@
       cdf_b4l17 = linebuffer080
 
       ! Block 4 Line 18
-      read(fid_ctrlfile,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer400
+      read(fid_ctrlfile,'(a400)',iostat=iostatus,iomsg=iomessage)linebuffer400
       linebuffer050 = "Reading control file Blk 4, line 18"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer400(1:80),iomessage)
       read(linebuffer400,*,iostat=iostatus,iomsg=iomessage)testkey
@@ -2953,14 +2953,22 @@
         endif      
         do while(testkey.eq.'#'.or.testkey.eq.'*')
            ! Line is a comment, read next line
+          iostatus=0
+          iomessage='M'
+          write(*,*)'reading next line from ',fid_ctrlfile
           read(fid_ctrlfile,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
           linebuffer050 = "Reading test line of blk5"
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
           read(linebuffer130,*,iostat=iostatus,iomsg=iomessage)testkey
+          write(*,*)'iostat=',iostatus,iomessage
           linebuffer050 = "Reading testkey from linebuffer (Blk5)"
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
           testkey=linebuffer130(1:1)
+          write(*,*)'+',linebuffer130,'x'
+          write(*,*)'++',trim(adjustl(linebuffer130)),'xx'
+          write(*,*)'++',linebuffer130(1:1),'xx',testkey
         enddo
+        write(*,*)'|',linebuffer130,'-'
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)' *****************************************'
           write(outlog(io),*)' Reading Block 5: Windfile names'
@@ -2983,6 +2991,7 @@
           do i=1,iwfiles
             ! Always check if we have overshot the block
             testkey=linebuffer130(1:1)
+            write(*,*)'+++',linebuffer130(1:1),'xxx',testkey
             if(testkey.eq.'#'.or.testkey.eq.'*') then
               do io=1,2;if(VB(io).le.verbosity_error)then
                 write(errlog(io),*)"ERROR: ",&
@@ -2992,6 +3001,7 @@
               endif;enddo
               stop 1
             endif
+            write(*,*)"reading windfile from linebuffer:",trim(adjustl(linebuffer130))
             read(linebuffer130,'(a130)',err=9501,iostat=iostatus,iomsg=iomessage) MR_windfiles(i)
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),1034) i,trim(adjustl(MR_windfiles(i)))

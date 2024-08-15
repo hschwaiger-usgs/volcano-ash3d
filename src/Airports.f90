@@ -669,9 +669,9 @@
 !      stop 1
 
       ! format statements
-6     format('Error reading from airport list.  Read statement was expecting',/, &
-             'latitude longitude x y  (all real numbers).  The input line gave:',/, &
-             a95,/,'program stopped')
+!6     format('Error reading from airport list.  Read statement was expecting',/, &
+!             'latitude longitude x y  (all real numbers).  The input line gave:',/, &
+!             a95,/,'program stopped')
 
       end subroutine ReadExtAirports
 

@@ -36,8 +36,8 @@
 
         ! Publicly available variables
       integer,public :: tn_len
-      character(len=30),public :: Extra2dVarName
-      real(kind=ip),dimension(:,:),allocatable,public :: Extra2dVar
+      !character(len=30),public :: Extra2dVarName
+      !real(kind=ip),dimension(:,:),allocatable,public :: Extra2dVar
 
       integer :: NCversion
       integer :: NCsubversion
@@ -3818,7 +3818,7 @@
          MaxConcentration,MaxHeight,CloudLoad,dbZCol,MinHeight,Mask_Cloud,&
          CLOUDCON_GRID_THRESH,CLOUDCON_THRESH,THICKNESS_THRESH, &
          CLOUDLOAD_THRESH,DBZ_THRESH,DEPO_THRESH,DEPRATE_THRESH,ashcon_tot, &
-         useRestartVars, &
+         useRestartVars,Extra2dVar,Extra2dVarName, &
            dbZCalculator, &
            Allocate_NTime, &
            Allocate_Profile, &

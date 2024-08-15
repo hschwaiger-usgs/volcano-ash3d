@@ -308,6 +308,7 @@
       character            :: volcWE(MAXVOLCS)
 
       character(len= 50) :: linebuffer050 
+      character(len= 80) :: linebuffer080
       character(len=195) :: linebuffer195
       integer            :: nvolcs
       character          :: testkey
@@ -379,13 +380,15 @@
 
         read(volcElev_c(nvolcs),*,iostat=ioerr,iomsg=iomessage)testkey
         linebuffer050 = "Reading testkey from linefuffer of volc file"
-        if(ioerr.ne.0) call FileIO_Error_Handler(ioerr,linebuffer050,volcElev_c(nvolcs),iomessage)
+        linebuffer080 = volcElev_c(nvolcs)
+        if(ioerr.ne.0) call FileIO_Error_Handler(ioerr,linebuffer050,linebuffer080,iomessage)
         if(testkey.eq.'U'.or.testkey.eq.'v')then
           volcElev(nvolcs) = 0
         else
           read(volcElev_c(nvolcs),*,iostat=ioerr,iomsg=iomessage)volcElev(nvolcs)
           linebuffer050 = "Reading volcano file, elevation"
-          if(ioerr.ne.0) call FileIO_Error_Handler(ioerr,linebuffer050,volcElev_c(nvolcs),iomessage)
+          linebuffer080 = volcElev_c(nvolcs)
+          if(ioerr.ne.0) call FileIO_Error_Handler(ioerr,linebuffer050,linebuffer080,iomessage)
         endif
         if(volcNS(nvolcs).eq.'S') volcLat(nvolcs) = -volcLat(nvolcs)
         if(volcWE(nvolcs).eq.'W') volcLon(nvolcs) = -volcLon(nvolcs) + 360.0_ip

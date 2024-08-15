@@ -35,17 +35,16 @@
          nxmax,nymax,nzmax,x_cc_pd,y_cc_pd,dx,dy,&
          lon_cc_pd,lat_cc_pd,de,dn,de_km,dn_km, &
          z_lb_pd,z_cc_pd,dz_vec_pd,z_vec_init, &
-         s_lb_pd,s_cc_pd,ds_vec_pd,Ztop,ZScaling_ID, &
          sigma_nx_pd,sigma_ny_pd,sigma_nz_pd,kappa_pd,&
          xLL,yLL,latLL,lonLL, &
          A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_phi1,&
-         A3d_phi2,A3d_Re,IsLatLon,IsPeriodic,Zsurf,ivent,jvent
+         A3d_phi2,A3d_Re,IsLatLon,IsPeriodic
 
       use time_data,     only : &
          SimStartHour,Simtime_in_hours
 
       use Source,        only : &
-         lat_volcano,z_volcano
+         lat_volcano
 
       use MetReader,     only : &
            MR_Set_CompProjection, &
@@ -62,7 +61,7 @@
       real(kind=ip) :: theta_1,theta_2,del_theta,del_costheta
       real(kind=ip) :: del_lam
       real(kind=ip) :: phi_bot,phi_top,phi
-      real(kind=sp),allocatable,dimension(:) :: dumx_sp,dumy_sp,dumz_sp,dums_sp
+      real(kind=sp),allocatable,dimension(:) :: dumx_sp,dumy_sp,dumz_sp
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"--------------------------------------------------"
@@ -244,24 +243,11 @@
 
       use io_units
 
-      use global_param,  only : &
-         DEG2KMLON,DEG2RAD,DEG2KMLAT,RAD_EARTH,PI
-
       use mesh,          only : &
-         nxmax,nymax,nzmax,x_cc_pd,y_cc_pd,dx,dy,&
-         lon_cc_pd,lat_cc_pd,de,dn,de_km,dn_km, &
-         z_lb_pd,z_cc_pd,dz_vec_pd,z_vec_init, &
+         nzmax,&
+         z_lb_pd,z_cc_pd,dz_vec_pd, &
          s_lb_pd,s_cc_pd,ds_vec_pd,Ztop,ZScaling_ID, &
-         sigma_nx_pd,sigma_ny_pd,sigma_nz_pd,kappa_pd,&
-         xLL,yLL,latLL,lonLL, &
-         A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_phi1,&
-         A3d_phi2,A3d_Re,IsLatLon,IsPeriodic,Zsurf,ivent,jvent
-
-      use time_data,     only : &
-         SimStartHour,Simtime_in_hours
-
-      use Source,        only : &
-         lat_volcano,z_volcano
+         IsLatLon,Zsurf,ivent,jvent
 
       use MetReader,     only : &
            MR_Set_CompProjection, &
@@ -271,15 +257,7 @@
 
       implicit none
 
-      integer :: i,j,k
-
-      real(kind=ip) :: r_1,r_2,rr_2,rr_1,drr,drrr
-      real(kind=ip) :: phi_1,phi_2
-      real(kind=ip) :: theta_1,theta_2,del_theta,del_costheta
-      real(kind=ip) :: del_lam
-      real(kind=ip) :: phi_bot,phi_top,phi
-      real(kind=ip) :: s_lb,s_ub
-      real(kind=sp),allocatable,dimension(:) :: dumx_sp,dumy_sp,dumz_sp,dums_sp
+      real(kind=sp),allocatable,dimension(:) :: dums_sp
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"--------------------------------------------------"

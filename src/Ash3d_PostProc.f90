@@ -98,7 +98,7 @@
       use Output_Vars,   only : &
          DepositThickness,DepArrivalTime,CloudArrivalTime,ashcon_tot,&
          MaxConcentration,MaxHeight,CloudLoad,dbZCol,MinHeight,Mask_Cloud, &
-         iplotpref, &
+         iplotpref,Extra2dVar,Extra2dVarName, &
            Gen_Output_Vars,  &
            Allocate_Output_Vars, &
            Set_OutVar_ContourLevel
@@ -351,7 +351,8 @@
 
       ! Test read command-line arguments
       nargs = command_argument_count()
-100   if (nargs.eq.0) then
+!100
+      if (nargs.eq.0) then
           ! If no command-line arguments are given, then prompt user
           ! interactively for the command file name and possible a 
           ! restart file
@@ -504,7 +505,8 @@
           ! iprod = 7,8,14,15 are not time-series, but set itime to -1
           itime = -1
         endif
-110   elseif (nargs.eq.1) then
+!110
+      elseif (nargs.eq.1) then
           ! If an argument is given, first test for the '-h' indicating a help
           ! request.
         call get_command_argument(1, arg, length=arglen, status=iostatus)
@@ -544,7 +546,8 @@
 !            endif
 !          endif
         endif
-120   elseif (nargs.ge.3) then
+!120
+          elseif (nargs.ge.3) then
         ! If we are doing command line only, then we need at least the netcdf filename, the output
         ! product code and the format.  Optionally, we can add the timestep.  If there is an
         ! inconsistency with iprod and outformat, an error message is issued before stopping.
@@ -581,7 +584,8 @@
       ! Now that we have read the command line, error-check and report back what
       ! we are about to do.
       !  Arg #1
-130   if(informat.eq.3)then
+!130
+      if(informat.eq.3)then
         ! Test if the Ash3d netcdf file exists
         inquire( file=concenfile, exist=IsThere )
         if(.not.IsThere)then

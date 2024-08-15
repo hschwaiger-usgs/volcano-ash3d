@@ -160,7 +160,7 @@
       ! These are on the computational grid
       real(kind=sp),dimension(:,:)  ,allocatable :: topo_comp ! Used if useTopo=.true.
       !integer      ,dimension(:,:)  ,allocatable :: topo_indx ! kindex of topo
-      integer,private :: lon_shift_flag
+      !integer,private :: lon_shift_flag
 
       real(kind=dp) :: minlon_Topo_comp,maxlon_Topo_comp
       real(kind=dp) :: minlat_Topo_comp,maxlat_Topo_comp
@@ -2006,10 +2006,10 @@
       subroutine Interp_Topo
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,lon_cc_pd,lat_cc_pd,z_cc_pd,xy2ll_ylat,&
+         nxmax,nymax,lon_cc_pd,lat_cc_pd,xy2ll_ylat,&
          xy2ll_xlon,IsLatLon
 
-      integer :: i,j,k
+      integer :: i,j
       real(kind=ip) :: ophi,olam
       real(kind=ip) :: a1,a2,a3,a4
       real(kind=ip) :: xc,yc,xfrac,yfrac
@@ -2224,14 +2224,14 @@
          RAD_EARTH,DEG2RAD,DEG2RAD,PI
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,IsLatLon,dx,dy,de,dn,lat_cc_pd,lon_cc_pd,&
-         x_cc_pd,y_cc_pd,z_cc_pd,lonLL,latLL
+         nxmax,nymax,IsLatLon,dx,dy,de,dn,lat_cc_pd,lon_cc_pd,&
+         x_cc_pd,y_cc_pd,lonLL,latLL
 
       use MetReader,       only : &
          MR_minlen,x_submet_sp,y_submet_sp,nx_submet,ny_submet,MR_dx_met,MR_dy_met,&
          MR_Topo_comp,MR_Topo_met
 
-      integer :: i,j,k,it
+      integer :: i,j,it
       integer :: iidx,jidx
       integer :: ncells
       real(kind=ip) :: topo_avg,dist,cell_len

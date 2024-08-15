@@ -339,6 +339,9 @@
       real(kind=op), dimension(:,:,:,:,:),allocatable,public :: var_User4d_XYZGs
 #endif
 
+      character(len=30)                       ,public :: Extra2dVarName
+      real(kind=ip),dimension(:,:),allocatable,public :: Extra2dVar
+
       contains
       !------------------------------------------------------------------------
 
