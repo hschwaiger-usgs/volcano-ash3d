@@ -24,8 +24,8 @@ TC4_MSH                           # Volcano name (character*30)
 ******************* BLOCK 3 ***************************************************
 1 1                 # iwind, iwindFormat
 2                   # iHeightHandler
-24.0                # Simulation time in hours
-yes                 # stop computation when 99% of erupted mass has deposited?
+30.0                # Simulation time in hours
+no                  # stop computation when 99% of erupted mass has deposited?
 1                   # nWindFiles, number of gridded wind files (used if iwind>1)
 *******************************************************************************
 # OUTPUT OPTIONS:

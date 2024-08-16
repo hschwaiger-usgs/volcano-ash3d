@@ -289,9 +289,9 @@
       use global_param,    only : &
          EPS_SMALL
 
-      use mesh,          only : &
+      use mesh,            only : &
          nzmax,&
-         ds_vec_pd,s_cc_pd,Zsurf,Ztop,ivent,jvent,ZScaling_ID
+         ds_vec_pd,s_cc_pd,s_lb_pd,Zsurf,Ztop,ivent,jvent,ZScaling_ID
 
       integer :: i
       integer :: k
@@ -311,7 +311,8 @@
       real(kind=ip) :: sbot_prof
       real(kind=ip) :: stop_prof
       real(kind=ip) :: sground
-      real(kind=ip) :: scalefac,fac1,fac2,expfac1,expfac2
+      real(kind=ip) :: fac1,fac2
+      real(kind=ip) :: sclfac1,sclfac2,cmpsclfac1,cmpsclfac2
       real(kind=ip),dimension(:),allocatable :: s_PlumeHeight
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
@@ -343,27 +344,25 @@
         !  as well as the first cell above the plume top
         kground   = 1
         kPlumeTop = 0
-        do k=1,nzmax+1
-          if (s_volcano.ge.s_cc_pd(k)-0.5_ip*ds_vec_pd(k).and. &
-              s_volcano.lt.s_cc_pd(k)+0.5_ip*ds_vec_pd(k))then
+        do k=1,nzmax
+          if (s_volcano.ge.s_lb_pd(k  ).and. &
+              s_volcano.lt.s_lb_pd(k+1))then
             kground = k
           endif
-          if(s_PlumeHeight(i).gt.s_cc_pd(k)-0.5_ip*ds_vec_pd(k).and. &
-             s_PlumeHeight(i).le.s_cc_pd(k)+0.5_ip*ds_vec_pd(k))then
+          if(s_PlumeHeight(i).gt.s_lb_pd(k  ).and. &
+             s_PlumeHeight(i).le.s_lb_pd(k+1))then
             kPlumeTop = k
           endif
         enddo
 
         ! Set ground level to be the lower boundary of cell kground
-        !zground = z_lb_pd(kground)
-        sground = s_cc_pd(kground)-0.5_ip*ds_vec_pd(k)
+        sground = s_lb_pd(kground)
+        s_PlumeHeight_above_ground = s_PlumeHeight(i)-sground
 
         if ((SourceType.eq.'suzuki')      .or. &
             (SourceType.eq.'umbrella')    .or. &
             (SourceType.eq.'umbrella_air')) then
-          Suzuki_k = Suzuki_A/((s_PlumeHeight(i)-sground)* &
-                    ((1.0_ip/Suzuki_A)-((Suzuki_A+1.0_ip)/Suzuki_A)* &
-                    exp(-Suzuki_A)))
+          Suzuki_k = Suzuki_A / (1.0_ip -(Suzuki_A+1.0_ip)*exp(-Suzuki_A))
         endif
 
         ! Find the fraction of the erupted mass rate (kg/hr) that lies within
@@ -375,7 +374,6 @@
           s_cell_bot = s_cc_pd(k)-0.5_ip*ds_vec_pd(k)
 
           ! First get the TephraFluxRate in kg/hr (total mass of tephra inserted per hour)
-          s_PlumeHeight_above_ground = s_PlumeHeight(i)-sground
           if ((SourceType.eq.'suzuki')      .or. &
               (SourceType.eq.'umbrella')    .or. &
               (SourceType.eq.'umbrella_air')) then
@@ -383,13 +381,20 @@
             ! It uses an equation obtained by integrating the 
             ! Suzuki equation given in Hurst.
             ! Find the bit in this cell by integrating from bottom to top.
-            scalefac = s_PlumeHeight_above_ground*Suzuki_k/Suzuki_A
-            fac1 = 1.0_ip+(1.0_ip/Suzuki_A)-((s_cell_top -sground)/s_PlumeHeight_above_ground)
-            fac2 = 1.0_ip+(1.0_ip/Suzuki_A)-((s_cell_bot -sground)/s_PlumeHeight_above_ground)
-            expfac1 = (s_cell_top -sground)/s_PlumeHeight_above_ground -1.0_ip
-            expfac2 = (s_cell_bot -sground)/s_PlumeHeight_above_ground -1.0_ip
-            NormSourceColumn(i,k) = scalefac*fac1*exp(Suzuki_A*expfac1) - &
-                                    scalefac*fac2*exp(Suzuki_A*expfac2)
+              ! Scale factor for top/bottom of cell relative to total height
+            sclfac1 = (s_cell_top -sground)/s_PlumeHeight_above_ground
+            sclfac2 = (s_cell_bot -sground)/s_PlumeHeight_above_ground
+              ! Complementary scale factors
+            cmpsclfac1 = 1.0_ip - sclfac1
+            cmpsclfac2 = 1.0_ip - sclfac2
+
+            fac1 = 1.0_ip/Suzuki_A + cmpsclfac1
+            fac2 = 1.0_ip/Suzuki_A + cmpsclfac2
+
+            NormSourceColumn(i,k) = Suzuki_k * &
+                        (fac1*exp(-1.0_ip*Suzuki_A*cmpsclfac1) - &
+                         fac2*exp(-1.0_ip*Suzuki_A*cmpsclfac2) )
+
           elseif (SourceType.eq.'line') then
             ! For line sources, the fractional contribution of the cell
             ! at z is just the height of the cell over the length of the line
@@ -431,7 +436,6 @@
                 stop_prof = (ztop_prof-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
               endif
 
-!              if(ztop_prof.lt.zground)then
               if(stop_prof.lt.sground)then
                 ! If line element is fully below zground
                 frac = 0.0_ip
@@ -579,6 +583,7 @@
         endif;enddo
       endif
 
+
 1024  format('  Total Duration (hrs) = ',f6.3,/, &
              '  Total volume (km3 DRE) = ',f8.4,/,&
              '  Total ash mass (Tg) = ',f16.8)
@@ -716,6 +721,7 @@
       integer :: i,k
       real(kind=ip) :: SumSourceNodeFlux      ! checking terms
       real(kind=ip) :: MassFluxRate_now
+      real(kind=ip) :: kap
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine TephraSourceNodes"
@@ -727,6 +733,7 @@
       ! Loop over all the eruptive pulses active in this time step
       TephraFluxRate(:) = 0.0_ip
       MassFluxRate_now  = 0.0_ip
+
       do i=ieruption,jeruption
         TephraFluxRate(1:nzmax) = TephraFluxRate(1:nzmax)        + &
                                   MassFluxRate(i)                * &
@@ -734,7 +741,6 @@
                                   NormSourceColumn(ieruption,1:nzmax)
         MassFluxRate_now = MassFluxRate_now + MassFluxRate(i) * &
                            real(dt_pulse_frac(i),kind=ip)
-
       enddo
 
         ! Now that we have the TephraFluxRate as a function of k, convert it to mass
@@ -742,17 +748,19 @@
         ! SumSourceNodeFlux is used for check the sum of all source nodes
         ! against the total MassFluxRate (i.e. should equal 1.0)
       do k=1,nzmax
+        kap = kappa_pd(ivent,jvent,k)
         SourceNodeFlux(k,1:n_gs_max) =      & ! final units are kg/km3/hr
               Tephra_bin_mass(1:n_gs_max) * & ! fraction of total in bin
               TephraFluxRate(k)           / & ! kg/hr
-              kappa_pd(ivent,jvent,k)         ! km3
+              kap
 
         SumSourceNodeFlux = &
               SumSourceNodeFlux +        &         ! dimensionless
               sum(SourceNodeFlux(k,1:n_gs_max) * & ! kg/km3 hr
-              kappa_pd(ivent,jvent,k)) / &         ! km3
+              kap)                     / &
               MassFluxRate_now
       enddo
+
       ! Make sure the sum of the fluxes in all the cells equals the total flux
       if (abs(SumSourceNodeFlux-1.0_ip).gt.EPS_SMALL) then
          do io=1,2;if(VB(io).le.verbosity_error)then

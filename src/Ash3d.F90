@@ -765,7 +765,7 @@
              /,5x,'Area covered by >0.01 mm (km2)   = ',f10.1,/)
 5012  format(4x,'*=files written out')
 
-5020  format('Calculating fall time from plume top',/,&
+5020  format('Calculating fall time from plume top to z=0',/,&
               5x,'GS index',5x,'diam (mm)',5x,'fall time (hours)')
 5021  format(5x,i4,7x,f8.3,10x,f15.1)
 

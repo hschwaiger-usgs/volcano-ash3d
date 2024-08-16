@@ -1070,7 +1070,7 @@
       integer(kind=2), dimension(:)   ,allocatable :: dum1d_short
       !integer(kind=2), dimension(:,:) ,allocatable :: dum2d_short
 
-      !integer :: nlat_tot,nlon_tot
+      integer :: lon_shift_flag
       integer :: start_lat_idx,start_lon_idx,end_lon_idx
       integer :: ilat,ilon,idx
 

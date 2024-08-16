@@ -244,7 +244,7 @@
       use io_units
 
       use mesh,          only : &
-         nzmax,&
+         nxmax,nymax,nzmax,j_cc_pd,sigma_nx_pd,sigma_ny_pd,kappa_pd,&
          z_lb_pd,z_cc_pd,dz_vec_pd, &
          s_lb_pd,s_cc_pd,ds_vec_pd,Ztop,ZScaling_ID, &
          IsLatLon,Zsurf,ivent,jvent
@@ -258,6 +258,8 @@
       implicit none
 
       real(kind=sp),allocatable,dimension(:) :: dums_sp
+      real(kind=ip) :: tmp
+      integer       :: i,j
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"--------------------------------------------------"
@@ -273,13 +275,20 @@
         s_lb_pd(:) = z_lb_pd(:)
       elseif(ZScaling_ID.eq.1)then
         ! Coordinate system will be shifted by topography (surf -> surf + Ztop in km)
-        s_cc_pd(:) = z_cc_pd(:)-Zsurf(ivent,jvent)
-        s_lb_pd(:) = z_lb_pd(:)-Zsurf(ivent,jvent)
+        ! Since we want the s array to start at the surface (not just the s-value of
+        ! the z-array), we use the same values as z with the understanding that it is
+        ! shifted
+        s_cc_pd(:) = z_cc_pd(:)
+        s_lb_pd(:) = z_lb_pd(:)
       elseif(ZScaling_ID.eq.2)then
         ! Coordinate system will be scaled by topography (0->1 unitless)
-        s_cc_pd(:) = (z_cc_pd(:)-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
-        s_lb_pd(:) = (z_lb_pd(:)-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
+        ! Same logic as above; surface to top should be 0->1 so use Zsurf of 0
+        ! for the purpose of indexing (otherwise we just have the s-values of
+        ! the Cartesian z-array)
+        s_cc_pd(:) = z_cc_pd(:)/Ztop
+        s_lb_pd(:) = z_lb_pd(:)/Ztop
       endif
+
       if(ZScaling_ID.eq.0.or.ZScaling_ID.eq.1)then
         ds_vec_pd(:) = dz_vec_pd(:)
       else
@@ -296,6 +305,23 @@
 
       deallocate(dums_sp)
 
+      ! Now modify all the cell face area and volume measures if we are using
+      ! the scaled coordinates. Note: these variables are in km2 and km3
+      ! regardless of if the vertical coordinate has units of km or is unitless.
+      if(ZScaling_ID.eq.2)then
+        do i=-1,nxmax+2
+          do j=-1,nymax+2
+            tmp = j_cc_pd(ivent,jvent)/Ztop
+            ! Note that sigma_nz_pd is unaffected
+              ! Area of face at i-1/2,j,k
+            sigma_nx_pd(i,j,:) = sigma_nx_pd(i,j,:)*tmp
+              ! Area of face at i,j-1/2,k
+            sigma_ny_pd(i,j,:) = sigma_ny_pd(i,j,:)*tmp
+              ! Volume of cell
+            kappa_pd(i,j,:)    = kappa_pd(i,j,:)*tmp
+          enddo
+        enddo
+      endif
       end subroutine calc_s_mesh
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -483,7 +509,6 @@
       !  Now in z
       kmin = 1
       kmax = nzmax
-      !do k=2,nzmax
       do k=2,kvent-1
         tmp_flt=maxval(concen_pd(1:nxmax,1:nymax,k,1:nsmax,ts0))
         if(tmp_flt.lt.CLOUDCON_GRID_THRESH)then
@@ -492,7 +517,6 @@
           exit
         endif
       enddo
-      !do k=nzmax,kmin,-1
       do k=nzmax,kmin+2,-1
         tmp_flt=maxval(concen_pd(1:nxmax,1:nymax,k,1:nsmax,ts0))
         if(tmp_flt.lt.CLOUDCON_GRID_THRESH)then

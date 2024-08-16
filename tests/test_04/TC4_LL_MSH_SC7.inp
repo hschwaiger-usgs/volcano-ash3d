@@ -9,7 +9,8 @@ TC4_MSH                           # Volcano name (character*30)
 15.0      15.0                    # grid width and height (km, or deg. if latlonflag=1)
 -122.117  42.933                  # vent location         (km, or deg. if latlonflag=1)
 0.5       0.5                     # DX, DY of grid cells  (km, or deg.)
-1.0                               # DZ of grid cells      (always km)
+dz_clog                           # DZ of grid cells      (always km)
+25.0 25                           # maz z, steps for constant log(z)
 0.0       4.0                     # diffusion coefficient (m2/s), Suzuki constant
 1                                 # neruptions, number of eruptions or pulses
 *******************************************************************************
@@ -24,8 +25,8 @@ TC4_MSH                           # Volcano name (character*30)
 ******************* BLOCK 3 ***************************************************
 1 1                 # iwind, iwindFormat
 2                   # iHeightHandler
-24.0                # Simulation time in hours
-yes                 # stop computation when 99% of erupted mass has deposited?
+30.0                # Simulation time in hours
+no                  # stop computation when 99% of erupted mass has deposited?
 1                   # nWindFiles, number of gridded wind files (used if iwind>1)
 *******************************************************************************
 # OUTPUT OPTIONS:

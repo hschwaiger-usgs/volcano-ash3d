@@ -41,5 +41,5 @@ These 5 subcases test more realistic cases with transient, 3d winds (NCEP).
  Sub-case  3: umbrella
  Sub-case  4: periodic BC (global)
  Sub-case  5: 1-D wind, Topo with Z_ID=0 (no actual z-grid modification)
- Sub-case  6: 1-D wind, Topo with Z_ID=1 (shifted)
- Sub-case  7: 1-D wind, Topo with Z_ID=2 (scaled)
+ Sub-case  6: 1-D wind, Topo with Z_ID=1 (shifted: effectively same as 5)
+ Sub-case  7: 1-D wind, Topo with Z_ID=2 (scaled: same source as 5/6 but with dz_clog)
