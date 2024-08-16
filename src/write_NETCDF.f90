@@ -36,8 +36,6 @@
 
         ! Publicly available variables
       integer,public :: tn_len
-      !character(len=30),public :: Extra2dVarName
-      !real(kind=ip),dimension(:,:),allocatable,public :: Extra2dVar
 
       integer :: NCversion
       integer :: NCsubversion
