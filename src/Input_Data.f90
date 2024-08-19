@@ -5077,7 +5077,6 @@
       endif
         ! Now the bonus line if the user requests a custom variable
       if(iprod1.eq.0)then
-        ! HFS fix this
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: Need to code custom variables in control file"
         endif;enddo

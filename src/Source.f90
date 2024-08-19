@@ -420,8 +420,6 @@
             ! loop over the points describing the eruption profile
             do kk=1,e_prof_nzpoints(i)
               ! Find the bot/top altitude of this step of the eruption profile
-              ! HFS : not working for sigmaz coordinates
-              !stop 1
               zbot_prof = e_prof_dz(i)*(kk-1)
               ztop_prof = e_prof_dz(i)*(kk)
               ! Now convert these z-values to s-coordinates

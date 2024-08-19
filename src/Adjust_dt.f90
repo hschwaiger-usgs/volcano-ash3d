@@ -149,7 +149,6 @@
         ! Use vx_meso_1_sp and vx_meso_2_sp
         ! First initialize vzmax_dz to 0.0 so we can test for the largest
         vzmax_dz = 0.0_ip
-        ! HFS : invert loop
         do i=1,nxmax
           do j=1,nymax
             do k=1,nzmax
