@@ -10,4 +10,4 @@ rm -f CloudConcentration_*.dat
 rm -f DepositArrivalTime.dat
 rm -f DepositFile_*.dat
 rm -f DepositFile_____final.dat
-rm Wind_nc
+rm -f Wind_nc

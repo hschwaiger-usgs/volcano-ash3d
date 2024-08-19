@@ -188,15 +188,15 @@
 
       character(len=8)  :: version           =  ' 1.0  '  ! The Ash3d version number
 
-      real(kind=ip), parameter :: EPS_SMALL  = 1.0e-7_ip       ! Small number
+      real(kind=ip), parameter :: EPS_SMALL  = 1.0e-6_ip       ! Small number
       real(kind=ip), parameter :: EPS_TINY   = 1.0e-12_ip      ! Very small number
+      real(kind=ip), parameter :: EPS_THRESH = 1.0e-10_ip      ! Threshold for Riemann solver
+                                                               ! 1 kg/km3=0.001 mg/m3
       real(kind=ip), parameter :: PI         = 3.141592653589793_ip
+      ! Unit conversions
       real(kind=ip), parameter :: DEG2RAD    = 1.7453292519943295e-2_ip
       real(kind=ip), parameter :: DEG2KMLAT  = 111.0_ip        ! km/degree latitude 
       real(kind=ip), parameter :: DEG2KMLON  = 111.321_ip      ! km/degree longitude at equator
-      real(kind=ip), parameter :: EPS_THRESH = 1.0e-10_ip      ! Threshold for Riemann solver
-                                                               ! 1 kg/km3=0.001 mg/m3
-      ! Unit conversions
       real(kind=ip), parameter :: KM_2_M     = 1.0e3_ip        ! km to m
       real(kind=ip), parameter :: M_2_MM     = 1.0e3_ip        ! m to mm
       real(kind=ip), parameter :: MM_2_IN    = 3.937e-2_ip     ! mm to inch
@@ -220,25 +220,25 @@
 
       ! Some variables determined by preprocessor flags at compilation time
 #ifdef LIM_NONE
-      character(len=10)        :: limiter = 'No'
+      character(len=11)        :: limiter = 'No'
 #endif
 #ifdef LIM_LAXWEN
-      character(len=10)        :: limiter = 'LaxWendrof'
+      character(len=11)        :: limiter = 'LaxWendroff'
 #endif
 #ifdef LIM_BW
-      character(len=10)        :: limiter = 'BeamWarm'
+      character(len=11)        :: limiter = 'BeamWarm'
 #endif
 #ifdef LIM_FROMM
-      character(len=10)        :: limiter = 'Fromm'
+      character(len=11)        :: limiter = 'Fromm'
 #endif
 #ifdef LIM_MINMOD
-      character(len=10)        :: limiter = 'Minmod'
+      character(len=11)        :: limiter = 'Minmod'
 #endif
 #ifdef LIM_SUPERBEE
-      character(len=10)        :: limiter = 'Superbee'
+      character(len=11)        :: limiter = 'Superbee'
 #endif
 #ifdef LIM_MC
-      character(len=10)        :: limiter = 'MC'
+      character(len=11)        :: limiter = 'MC'
 #endif
 
 #ifdef CRANKNIC
@@ -304,7 +304,7 @@
       logical, dimension(5) :: CheckConditions = .true.   ! Which conditions to check
 
       !  These are reset in Set_OS_Env
-      integer   :: OS_TYPE    = 1                 ! 1=linux, 2=apple, 3=windows
+      integer   :: OS_TYPE    = 1                 ! 1=Linux, 2=MacOS, 3=Windows
       logical   :: IsLitEnd   = .true.            ! little-endian-ness; set in Set_OS_Env
       logical   :: IsLinux    = .true.
       logical   :: IsWindows  = .false.
@@ -525,6 +525,7 @@
       integer, parameter :: ts1 = 1
 
       integer            :: ivent,jvent                    ! ij coordinates of volcano
+      integer            :: kvent
       logical            :: IsLatLon
 
       ! projection parameters of the computational (Ash3d) mesh.  This might be
@@ -575,7 +576,10 @@
       real(kind=ip),dimension(:)    ,pointer :: z_cc_pd     => null() ! z_component of cell centers
       real(kind=ip),dimension(:)    ,pointer :: z_lb_pd     => null() ! z_component of cell lower-boundary
       real(kind=ip),dimension(:)    ,pointer :: s_cc_pd     => null() ! s_component of cell centers (z,shifted,sigma)
+      real(kind=ip),dimension(:)    ,pointer :: s_lb_pd     => null() ! s_component of cell lower-boundary
+      real(kind=ip),dimension(:)    ,pointer :: ds_vec_pd   => null() ! used for variable ds cases
       real(kind=ip),dimension(:,:)  ,pointer :: j_cc_pd     => null() ! Jacobian when using topography
+      real(kind=ip),dimension(:,:)  ,pointer :: Zsurf       => null() ! topography in km
       real(kind=ip),dimension(:,:,:),pointer :: kappa_pd    => null() ! volume of each node in km3
       real(kind=ip),dimension(:)    ,pointer :: lat_cc_pd   => null() ! lat of i,j cell centers
       real(kind=ip),dimension(:)    ,pointer :: lon_cc_pd   => null() ! lon of i,j cell centers
@@ -593,7 +597,10 @@
       real(kind=ip),dimension(:)    ,allocatable :: z_cc_pd     ! z_component of cell centers
       real(kind=ip),dimension(:)    ,allocatable :: z_lb_pd     ! z_component of cell lower-boundary
       real(kind=ip),dimension(:)    ,allocatable :: s_cc_pd     ! s_component of cell centers (z,shifted,sigma)
+      real(kind=ip),dimension(:)    ,allocatable :: s_lb_pd     ! s_component of cell lower-boundary
+      real(kind=ip),dimension(:)    ,allocatable :: ds_vec_pd   ! used for variable ds cases
       real(kind=ip),dimension(:,:)  ,allocatable :: j_cc_pd     ! Jacobian when using topography
+      real(kind=ip),dimension(:,:)  ,allocatable :: Zsurf       ! topography in km
       real(kind=ip),dimension(:,:,:),allocatable :: kappa_pd    ! volume of each node in km3
       real(kind=ip),dimension(:)    ,allocatable :: lat_cc_pd   ! lat of i,j cell centers
       real(kind=ip),dimension(:)    ,allocatable :: lon_cc_pd   ! lon of i,j cell centers
@@ -629,8 +636,11 @@
       if(.not.associated(sigma_nx_pd))allocate(sigma_nx_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_nx_pd = 1.0_ip
       if(.not.associated(sigma_ny_pd))allocate(sigma_ny_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_ny_pd = 1.0_ip
       if(.not.associated(sigma_nz_pd))allocate(sigma_nz_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_ny_pd = 1.0_ip
-      if(.not.associated(s_cc_pd))allocate(s_cc_pd(-1:nzmax+2));                                s_cc_pd     = 0.0_ip
-      if(.not.associated(j_cc_pd))allocate(j_cc_pd(-1:nxmax+2,-1:nymax+2));                     j_cc_pd     = 1.0_ip
+      if(.not.associated(s_cc_pd))    allocate(s_cc_pd(-1:nzmax+2));                            s_cc_pd     = 0.0_ip
+      if(.not.associated(s_lb_pd)  )  allocate(s_lb_pd(-1:nzmax+2));                            s_lb_pd     = 0.0_ip
+      if(.not.associated(ds_vec_pd))  allocate(ds_vec_pd(-1:nzmax+2));                          ds_vec_pd   = 0.0_ip
+      if(.not.associated(j_cc_pd))    allocate(j_cc_pd(-1:nxmax+2,-1:nymax+2));                 j_cc_pd     = 1.0_ip
+      if(.not.associated(Zsurf))      allocate(Zsurf(1:nxmax,1:nymax));                         Zsurf       = 0.0_ip
 #else
       if (IsLatLon) then
         if(.not.allocated(lon_cc_pd))allocate(lon_cc_pd(-1:nxmax+2));                            lon_cc_pd = 0.0_ip
@@ -648,8 +658,11 @@
       if(.not.allocated(sigma_nx_pd))allocate(sigma_nx_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_nx_pd = 1.0_ip
       if(.not.allocated(sigma_ny_pd))allocate(sigma_ny_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_ny_pd = 1.0_ip
       if(.not.allocated(sigma_nz_pd))allocate(sigma_nz_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_ny_pd = 1.0_ip
-      if(.not.allocated(s_cc_pd))allocate(s_cc_pd(-1:nzmax+2));                                s_cc_pd     = 0.0_ip
-      if(.not.allocated(j_cc_pd))allocate(j_cc_pd(-1:nxmax+2,-1:nymax+2));                     j_cc_pd     = 1.0_ip
+      if(.not.allocated(s_cc_pd))    allocate(s_cc_pd(-1:nzmax+2));                            s_cc_pd     = 0.0_ip
+      if(.not.allocated(s_lb_pd)  )  allocate(s_lb_pd(-1:nzmax+2));                            s_lb_pd     = 0.0_ip
+      if(.not.allocated(ds_vec_pd))  allocate(ds_vec_pd(-1:nzmax+2));                          ds_vec_pd   = 0.0_ip
+      if(.not.allocated(j_cc_pd))    allocate(j_cc_pd(-1:nxmax+2,-1:nymax+2));                 j_cc_pd     = 1.0_ip
+      if(.not.allocated(Zsurf))      allocate(Zsurf(1:nxmax,1:nymax));                         Zsurf       = 0.0_ip
 #endif
 
       end subroutine Allocate_mesh
@@ -673,6 +686,7 @@
       if(associated(sigma_ny_pd))   deallocate(sigma_ny_pd)
       if(associated(sigma_nz_pd))   deallocate(sigma_nz_pd)
       if(associated(s_cc_pd))       deallocate(s_cc_pd)
+      if(associated(s_lb_pd))       deallocate(s_lb_pd)
       if(associated(j_cc_pd))       deallocate(j_cc_pd)
 #else
       if(allocated(z_vec_init))    deallocate(z_vec_init)
@@ -690,6 +704,7 @@
       if(allocated(lon_cc_pd))     deallocate(lon_cc_pd)
       if(allocated(lat_cc_pd))     deallocate(lat_cc_pd)
       if(allocated(s_cc_pd))       deallocate(s_cc_pd)
+      if(allocated(s_lb_pd))       deallocate(s_lb_pd)
       if(allocated(j_cc_pd))       deallocate(j_cc_pd)
 #endif
 

@@ -4,6 +4,7 @@ echo "RUNNING TEST CASE 3: Simple sources and fall models"
 echo     "-----------------------------------------------------------"
 Ash3d="../../bin/Ash3d"
 Ash3d_ASCII_check="../../bin/tools/Ash3d_ASCII_check"
+tol=0.01
 n2Dfiles=8
 ascii2Doutfiles=("CloudHeight_005.00hrs.dat" "CloudHeight_010.00hrs.dat" "CloudLoad_005.00hrs.dat" "CloudLoad_010.00hrs.dat" "CloudConcentration_005.00hrs.dat" "CloudConcentration_010.00hrs.dat" "CloudArrivalTime.dat" "DepositFile_005.00hrs.dat" "DepositFile_010.00hrs.dat" "DepositFile_____final.dat" "DepositArrivalTime.dat")
 
@@ -30,7 +31,7 @@ do
   for (( i=0;i<n2Dfiles;i++))
   do
     echo Checking 2d ASCII file "${ascii2Doutfiles[i]}"
-    stat=`${Ash3d_ASCII_check} ${ascii2Doutfiles[i]} ${outdir}/${ascii2Doutfiles[i]} | cut -f1 -d':'`\
+    stat=`${Ash3d_ASCII_check} ${ascii2Doutfiles[i]} ${outdir}/${ascii2Doutfiles[i]} ${tol} | cut -f1 -d':'`\
 
     if [[ $stat == *PASS* ]];
     then

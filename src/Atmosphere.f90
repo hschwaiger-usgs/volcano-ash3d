@@ -365,7 +365,7 @@
         do io=1,2;if(VB(io).le.verbosity_error)then              
           write(errlog(io),*)"Calling Set_Atmosphere_Meso outside of a Load_MesoSteps=.true."
           write(errlog(io),*)"case for Interval_Frac = ",Interval_Frac
-          write(errlog(io),*)"This is a place-holder for interpolating tempertures to the"
+          write(errlog(io),*)"This is a place-holder for interpolating temperatures to the"
           write(errlog(io),*)"current time.  Not yet implemented."
         endif;enddo
         stop 1

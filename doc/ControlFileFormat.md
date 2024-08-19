@@ -22,7 +22,7 @@ as comments.
 
 Line 1 of this block identifies the volcano by name.
 If the volcano name begins with either 0 or 1, then the volcano
-is assumed to be in the Smithonian database and default values for
+is assumed to be in the Smithsonian database and default values for
 Plume Height, Duration, Mass Flux Rate, Volume, and mass fraction of
 fines are loaded. These can be over-written by entering non-negative
 values in the appropriate locations in this input file.  
@@ -42,7 +42,7 @@ For a particular `projflag`, additional values are read defining the projection.
  - k0      -- scale factor at projection point  
  - radius  -- earth radius for spherical earth  
 e.g. for NAM 104,198, 216: 0 1 -105.0 90.0 0.933 6371.229  
-2. projflag   = 2: Alberts Equal Area (not yet implemented)  
+2. projflag   = 2: Albers Equal Area (not yet implemented)  
 3. projflag   = 3: UTM (not yet implemented)  
 4. projflag   = 4: Lambert conformal conic  
  - lambda0 -- longitude of origin  
@@ -81,7 +81,7 @@ If `dz_cust`, then a second line is read containing:
   e.g. 20 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 5.5  
         This corresponds to 10 steps of 0.5, 9 steps of 1.5, followed by 1 step of 5.5.  
 
-##### Eruption catagory and number
+##### Eruption category and number
 Line 8 is the the diffusivity (m2/s) followed by the eruption specifier. The
 eruption specifier can be a real number, in which case it is assumed to be the
 positive constant specifying the Suzuki distribution. Alternatively, it can be  
@@ -89,6 +89,7 @@ positive constant specifying the Suzuki distribution. Alternatively, it can be
  `umbrella_air `: Suzuki (const. = 12) with radial spreading of the plume scaled to 5% of vol.  
  `point`: all mass inserted in cell containing PlmH  
  `linear`: mass uniformly distributed from z-vent to PlmH  
+ `profile`: mass distributed with a user-specified vertical profile  
 Line 9 : number of pulses to be read in BLOCK 2  
 
 Example  
@@ -109,7 +110,7 @@ Example
 #### BLOCK 2: Eruption Parameters
 In the following line, each line represents one eruptive pulse.
 Parameters are (1-4) start time (yyyy mm dd h.hh (UT)); (5) duration (hrs);
-(6) plume height; (7) eruped volume (km3 DRE)
+(6) plume height; (7) erupted volume (km3 DRE)
 If neruptions=1 and the year is 0, then the model run in forecast mode where mm dd h.hh are
 interpreted as the time after the start of the windfile. In this case, duration, plume
 height and erupted volume are replaced with ESP if the values are negative.
@@ -185,7 +186,7 @@ Ash3d handles this as determined by the parameter iHeightHandler, as follows:
 2. wind velocity at levels above the highest node
 equal that of the highest node. Temperatures in the
 upper nodes do not change between 11 and 20 km; above
-20 km they increase by 2 C/km, as in the Standard
+20 km they increase by 2 C/km, as in the U.S. Standard
 atmosphere. A warning is written to the log file.  
 
 Simulation time in hours is the maximal length of the simulation.  
@@ -264,7 +265,7 @@ the directory with the windfiles (e.g. Wind_nc).
 `*******************************************************************************`  
 
 
-#### BLOCK 6: Airpot File
+#### BLOCK 6: Airport File
 The following lines allow the user to specify whether times of ash arrival
 at airports and other locations will be written out, and which file
 to read for a list of airport locations.
@@ -278,29 +279,36 @@ by typing "yes" to the last parameter.
 `no                            # Write out ash arrival times at airports to ASCII FILE?`  
 `no                            # Write out grain-size distribution to ASCII airports file?`  
 `no                            # Write out ash arrival times to kml file?`  
-`GlobalAirports.txt            # Name of file containing aiport locations`  
+`GlobalAirports.txt            # Name of file containing airport locations`  
 `no                            # Have libprojection calculate projected coordinates?`  
 `*******************************************************************************`  
 
 #### BLOCK 7: Grain-size bins, Settling Velocity
 The first line must contain the number of settling velocity groups, but
-can optionally also include a flag for the fall velocity model to be used.  
-`FV_ID =`  
-1. Wilson and Huang  
+can optionally also include a flag for the fall velocity model to be used and a flag
+specifying the shape parameterization used.  
+Fall velocity model `FV_ID =`  
+1. Wilson and Huang (default)  
 2. Wilson and Huang + Cunningham slip  
 3. Wilson and Huang + Mod by Pfeiffer Et al.  
-4. Ganser (assuming prolate ellipsoids)  
-5. Stokes flow for spherical particles + slip  
+4. Ganser   
+5. Ganser + Cunningham slip  
+6. Stokes flow for spherical particles + slip  
 If no fall model is specified, FV_ID = 1, by default
 The grain size bins can be enters with 2, 3, or 4 parameters.
 If TWO are given, they are read as:   FallVel (in m/s), mass fraction
 If THREE are given, they are read as: diameter (mm), mass fraction, density (kg/m3)
 If FOUR are given, they are read as:  diameter (mm), mass fraction, density (kg/m3), Shape F
-The shape factor is given as in Wilson and Huang: F=(b+c)/(2*a), but converted
+The shape factor is given as in Wilson and Huang: F=(b+c)/(2a), but converted
 to sphericity (assuming b=c) for the Ganser model.
 If a shape factor is not given, a default value of F=0.4 is used.
 If FIVE are given, they are read as:  diameter (mm), mass fraction, density (kg/m3), Shape F, G
 where G is an additional Ganser shape factor equal to c/b.  
+
+Shape Parameterization `Shape_ID =`  
+1. Shape factor from Wilson and Huang for column 4 (default)  
+2. column 4 holds sphericity  
+
 
 If the last grain size bin has a negative diameter, then the remaining mass fraction
 will be distributed over the previous bins via a log-normal distribution in phi.
@@ -353,9 +361,18 @@ output file.
 
 #### BLOCK 10: Optional Modules
 Optional Modules are identified by the text string at the top of the block
-`OPTMOD=[module name]`.
+`OPTMOD=[module name]`.  These are not required to be in the control file, but
+can be included to invoke features of the program other than the default
+behavior. These additional input blocks allow a means for controlling user-provided
+features such as non-standard source terms or physical processes.
 There will need to be a custom block reader in the module to read this section
-section of the input file.  Below is the built-in example for resetting parameters  
+section of the input file.  There are two optional modules built in to the
+main Ash3d code: RESTETPARAMS and TOPO.  
+
+
+Below is the built-in example for resetting parameters.
+Shown below are all the parameters available to be reset (along with the default
+value). Only the parameters to be reset need to be listed.  
 `*******************************************************************************`  
 `OPTMOD=RESETPARAMS`  
 `MagmaDensity         = 3500.0`  
@@ -374,6 +391,7 @@ section of the input file.  Below is the built-in example for resetting paramete
 `CLOUDCON_GRID_THRESH = 2.0e-1`  
 `CLOUDLOAD_THRESH     = 1.0e-2`  
 `THICKNESS_THRESH     = 1.0e-3`  
+`StopValue_FracAshDep = 0.99`  
 `DBZ_THRESH           = -2.0e+1`  
 `VelMod_umb           = 1`  
 `lambda_umb           = 0.2`  
@@ -382,12 +400,37 @@ section of the input file.  Below is the built-in example for resetting paramete
 `SuzK_umb             = 12.0`  
 `useMoistureVars      = F`  
 `useVz_rhoG           = T`  
+`useWindVars          = 0`  
+`useOutprodVars       = 1`  
+`useRestartVars       = 0`  
 `cdf_institution      = USGS`  
 `cdf_run_class        = Analysis`  
 `cdf_url              = https://vsc-ash.wr.usgs.gov/ash3d-gui`  
 `*******************************************************************************`  
 
 
+Topography can be included in Ash3d by including the following optional block.  
+`*******************************************************************************`  
+`OPTMOD=TOPO`  
+`yes 2                         # use topography?; z-mod (0=none,1=shift,2=sigma)`  
+`1 1.0                         # Topofile format, smoothing radius`  
+`GEBCO_08.nc                   # Topofile name`  
+`*******************************************************************************`  
+
+Line 1 indicates whether or not to use topography followed by the integer flag
+describing how topography will modify the vertical grid.  
+0. = no vertical modification; z-grid remains 0-> top throughout the domain  
+1. = shifted; s = z-z_surf; computational grid is uniformly shifted upward everywhere by topography  
+2. = sigma-altitude; s=(z-z_surf)/(z_top-z_surf); topography has decaying influence with height  
+Line 2 indicates the topography data format followed by the smoothing radius in km.
+Topofile format must be one of:  
+1. Gridded lon/lat (netcdf)  
+ETOPO : https://www.ncei.noaa.gov/products/etopo-global-relief-model  
+GEBCO : https://www.gebco.net/  
+2. Gridded Binary  
+NOAA Globe (1-km/30 arcsec) https://www.ngdc.noaa.gov/mgg/topo/globe.html  
+GTOPO30 (1-km/30 arcsec)  
+3. ESRI ASCII  
 
 
 

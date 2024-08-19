@@ -27,6 +27,11 @@ Investigate all overflow/underflow errors
 Test timing of do loops reversed; particularly with openMP
 In get_minmax_index, vent needs to be included only until the eruption is turned off.
 
+Add tests for equivalence of topography cases:
+  (1) simple suzuki source with no topo
+  (2) set topo to uniform 1km, Add 1 km to plume height =? same deposit
+  (3) same as 2, but use scaled topo
+
 make check fails if 'make install' had not been run since
 /opt/USGS/Ash3d/share/GlobalAirports_ewert.txt in not installed.
 Also fails if /data/WindFiles/NCEP/1980/hgt.1980.nc doesn't exist

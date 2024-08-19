@@ -7,6 +7,8 @@
 ! advection routine using the 1-d donor-cell-upwind (DCU) method.  Alternate
 ! schemes could be invoked, but we have only implemented DCU.
 !
+!      subroutine advect_z
+!
 !##############################################################################
 
       module AdvectionVert_DCU
@@ -20,7 +22,7 @@
 
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,dx,dy,dz_vec_pd,ts0,ts1,&
-         sigma_nz_pd,kappa_pd 
+         sigma_nz_pd,kappa_pd,j_cc_pd
 
       use solution,      only : &
          concen_pd,vz_pd,vf_pd, &
@@ -64,7 +66,7 @@
 
       !!!$ use omp_lib
 
-      integer       :: i,j,n    ! These are the indeces mapping to the global arrays
+      integer       :: i,j,n    ! These are the indices mapping to the global arrays
       integer       :: l        ! This is the index along the particular advection direction
       integer       :: ncells
 
@@ -72,6 +74,8 @@
       real(kind=ip),dimension(-1:nzmax+2)               :: update_cc
       real(kind=ip),dimension(-1:nzmax+2)               :: q_cc      ! concen
       real(kind=ip),dimension(-1:nzmax+2)               :: vel_cc    ! vel
+      real(kind=ip),dimension(-1:nzmax+2)               :: sig_I     ! cell area
+      real(kind=ip),dimension(-1:nzmax+2)               :: kap_cc    ! cell volume
       real(kind=ip),dimension(-1:nzmax+2)               :: dt_vol_cc ! dt on local cell volume
        ! arrays that live on cell interfaces
        !  Note: interface I for cell i is at (i-1/2); i.e. the left or negative side of i
@@ -87,12 +91,13 @@
       real(kind=ip) :: dqu_I ! Delta Q at upwind interface
       integer :: i_I
       integer :: i_cc
+      real(kind=ip) :: jac
       real(kind=ip) :: aus      ! absolute value of usig at interface
       real(kind=ip) :: theta
       real(kind=ip) :: divu_p, divu_m
       real(kind=ip) :: LFluct_Rbound,RFluct_Lbound
       real(kind=ip) :: LimFlux_Rbound,LimFlux_Lbound
-      integer :: rmin, rmax     ! min and max indecies of the row
+      integer :: rmin, rmax     ! min and max indicies of the row
 
       !integer OMP_GET_MAX_THREADS
       !integer OMP_GET_NUM_THREADS
@@ -143,7 +148,7 @@
 
 !      do idx_dum=1,nsmax*nymax*nxmax
 !         ! Now recover i,j and n
-!         ! Note: we can recover these indecies in any order we choose,
+!         ! Note: we can recover these indicies in any order we choose,
 !         ! as long as all are accounted for.  So recover in optimal
 !         ! (column-major) order
 !         i = (idx_dum-1)/(nymax*nsmax)+1
@@ -166,11 +171,20 @@
         !$OMP COLLAPSE(2)
         do j=jmin,jmax
           do i=imin,imax
+            jac = j_cc_pd(i,j)
             ! Initialize cell-centered values for this z-column
             ! Note: ghost cells should contain q_cc=0 and vel_cc=edge
             q_cc(  rmin-2:rmin-1+ncells+2) = concen_pd(i,j,rmin-2:rmin-1+ncells+2,n,ts0)
-            vel_cc(rmin-2:rmin-1+ncells+2) =     vz_pd(i,j,rmin-2:rmin-1+ncells+2) + &
-                                                 vf_pd(i,j,rmin-2:rmin-1+ncells+2,n)
+            vel_cc(rmin-2:rmin-1+ncells+2) =    (vz_pd(i,j,rmin-2:rmin-1+ncells+2) + &
+                                                 vf_pd(i,j,rmin-2:rmin-1+ncells+2,n))
+            sig_I(rmin-2:rmin-1+ncells+2)  = sigma_nz_pd(i,j,rmin-2:rmin-1+ncells+2)
+            kap_cc(rmin-2:rmin-1+ncells+2) = kappa_pd(i,j,rmin-2:rmin-1+ncells+2)
+
+            ! Now scale according to local Jacobian
+            q_cc(rmin-2:rmin-1+ncells+2)   = q_cc(rmin-2:rmin-1+ncells+2)   * jac
+            vel_cc(rmin-2:rmin-1+ncells+2) = vel_cc(rmin-2:rmin-1+ncells+2) / jac
+            !sig_I(rmin-2:rmin-1+ncells+2) = sig_I(rmin-2:rmin-1+ncells+2)        ! z-face not scaled
+            kap_cc(rmin-2:rmin-1+ncells+2) = kap_cc(rmin-2:rmin-1+ncells+2) / jac
 
             ! Ghost cells were set in Set_BC.f90, but could be reset here
             ! if desired or for testing.  Tests showed that velocities
@@ -179,13 +193,16 @@
 
             ! Calculate \Delta t / \kappa
               ! using kappa of cell
+!            dt_vol_cc(rmin-2:rmin-1+ncells+2) = real(dt,kind=ip) / &
+!                                                kappa_pd(i,j,rmin-2:rmin-1+ncells+2)
             dt_vol_cc(rmin-2:rmin-1+ncells+2) = real(dt,kind=ip) / &
-                                                kappa_pd(i,j,rmin-2:rmin-1+ncells+2)
+                                                kap_cc(rmin-2:rmin-1+ncells+2)
 
             ! Make sure to initialize this since we are only setting it where is matters
             usig_I = 0.0_ip
             do l=rmin,rmin-1+ncells+1
-              usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sigma_nz_pd(i,j,l)
+              !usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sigma_nz_pd(i,j,l)
+              usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sig_I(l)
             enddo
 
             ! This calculates the update in a row in one function call
@@ -211,7 +228,7 @@
 #endif
 
 #if LIM_LAXWEN
-              ! Lax-Wendrof (linear)
+              ! Lax-Wendroff (linear)
               ldq_I = dq_I(i_I)
 #else
               ! Only calculate dqu_I and theta if the limiter is being used
@@ -298,6 +315,8 @@
 
             enddo ! loop over l (cell centers)
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            ! Now scale the update back to z
+            update_cc(rmin-1:rmin-1+ncells+1) = update_cc(rmin-1:rmin-1+ncells+1) / jac
 
             ! Now update concentration for all interior cells
             concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = &

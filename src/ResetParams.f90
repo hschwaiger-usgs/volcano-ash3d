@@ -95,6 +95,7 @@
       character(len=20),dimension(MAXPARAMS) :: pname
       real(kind=ip)    ,dimension(MAXPARAMS) :: pvalue
       character(len=50),dimension(MAXPARAMS) :: pvalue_str
+      logical           :: od
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine input_data_ResetParams"
@@ -103,8 +104,14 @@
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"    Searching for OPTMOD=RESETPARAMS"
       endif;enddo
-      nmods = 0
-      open(unit=fid_ctrlfile,file=infile,status='old',action='read',err=1900)
+
+      ! check to make sure the control file is open
+      inquire(unit=fid_ctrlfile,opened=od)
+      if(od)then
+        rewind(fid_ctrlfile)
+      else
+        open(unit=fid_ctrlfile,file=infile,status='old',action='read',err=9001)
+      endif
 
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading line from control file, RESETPARAMS"
@@ -710,12 +717,12 @@
         endif
       enddo
 
-      close(10)
+      !close(fid_ctrlfile)
 
       return
 
-1900  do io=1,2;if(VB(io).le.verbosity_error)then
-        write(errlog(io),*)  'error: cannot find input file: ',infile
+9001  do io=1,2;if(VB(io).le.verbosity_error)then
+        write(errlog(io),*)  'error: cannot open input file: ',infile
         write(errlog(io),*)  'Program stopped'
       endif;enddo
       stop 1

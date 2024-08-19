@@ -17,7 +17,7 @@ dz_cust                           # DZ of grid cells      (always km)
 # ERUPTION LINES (number = neruptions)
 # In the following line, each line represents one eruptive pulse.
 # Parameters are (1-4) start time (yyyy mm dd h.hh (UT)); (5) duration (hrs);
-#                  (6) plume height (km);                 (7) eruped volume (km3)
+#                  (6) plume height (km);                 (7) erupted volume (km3)
 ******************* BLOCK 2 ***************************************************
 2010 04 14   0.00   1.0     18.0  0.16
 *******************************************************************************
@@ -59,7 +59,7 @@ Hanford_Ncol.txt
 no                  # Write out ash arrival times at airports to ASCII FILE?
 no                  # Write out grain-size distribution to ASCII airport file?
 no                  # Write out ash arrival times to kml file?
-internal            # Name of file containing aiport locations
+internal            # Name of file containing airport locations
 yes                 # Calculate projected coordinates internally?
 *******************************************************************************
 # GRAIN SIZE GROUPS

@@ -14,7 +14,7 @@
 !  The vertical coordinate is calculated from z_vec_init (built in Read_Control_File),
 !  populating the variables z_cc_pd (cell-centered vert. grid), dz_vec_pd (thickness
 !  of each cell), and z_lb_pd (height of lower boundary).  Next, the projection
-!  information for the compuational grid is sent to MetReader and the corresponding
+!  information for the computational grid is sent to MetReader and the corresponding
 !  grids are built with a call to call MR_Initialize_Met_Grids.  Lastly, a call
 !  to MR_Set_Met_Times informs MetReader of the start and simulation time.
 !
@@ -22,7 +22,7 @@
 
       subroutine calc_mesh_params
 
-      ! set up grids for solution and wind arrays
+      ! set up grids for solution and wind arrays using x,y (or lon,lat) and z in km
 
       use precis_param
 
@@ -34,9 +34,9 @@
       use mesh,          only : &
          nxmax,nymax,nzmax,x_cc_pd,y_cc_pd,dx,dy,&
          lon_cc_pd,lat_cc_pd,de,dn,de_km,dn_km, &
-         z_lb_pd,z_vec_init,z_cc_pd,dz_vec_pd, &
+         z_lb_pd,z_cc_pd,dz_vec_pd,z_vec_init, &
          sigma_nx_pd,sigma_ny_pd,sigma_nz_pd,kappa_pd,&
-         xLL,yLL,latLL,lonLL,s_cc_pd,Ztop,ZScaling_ID, &
+         xLL,yLL,latLL,lonLL, &
          A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_phi1,&
          A3d_phi2,A3d_Re,IsLatLon,IsPeriodic
 
@@ -61,7 +61,7 @@
       real(kind=ip) :: theta_1,theta_2,del_theta,del_costheta
       real(kind=ip) :: del_lam
       real(kind=ip) :: phi_bot,phi_top,phi
-      real(kind=sp),allocatable,dimension(:) :: dumx_sp,dumy_sp,dumz_sp,dums_sp
+      real(kind=sp),allocatable,dimension(:) :: dumx_sp,dumy_sp,dumz_sp
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"--------------------------------------------------"
@@ -97,15 +97,6 @@
       dz_vec_pd( 0)      = dz_vec_pd(1)
       dz_vec_pd(nzmax+1) = dz_vec_pd(nzmax)
       dz_vec_pd(nzmax+2) = dz_vec_pd(nzmax)
-      ! s_cc is the replacement z-coordinate: either s=z or s=(z-zsurf)/(ztop-zsurf)
-      ! Here we set up the s-values with zsurf=0 and might apply topography later
-      if(ZScaling_ID.eq.0)then
-        s_cc_pd(:) = z_cc_pd(:)
-      elseif(ZScaling_ID.eq.1)then
-        s_cc_pd(:) = z_cc_pd(:)
-      elseif(ZScaling_ID.eq.2)then
-        s_cc_pd(:) = (z_cc_pd(:)-0.0_ip)/(Ztop-0.0_ip)
-      endif
 
       if (IsLatLon) then
         ! Find width and height of a node (km) at the volcano's location
@@ -120,7 +111,7 @@
 
         !*********************************************************************************
         do k=-1,nzmax+2
-          r_1  = RAD_EARTH+z_cc_pd(k)-0.5_ip*dz_vec_pd(k)              ! r at bottom of cell
+          r_1  = RAD_EARTH+z_cc_pd(k)-0.5_ip*dz_vec_pd(k)  ! r at bottom of cell
           r_2  = RAD_EARTH+z_cc_pd(k)+0.5_ip*dz_vec_pd(k)  ! r at top of cell
 
           rr_1 =      r_1*r_1
@@ -145,6 +136,7 @@
             sigma_nz_pd(-1:nxmax+2,j,k) = rr_1*del_lam*del_costheta
               ! Volume of cell
             kappa_pd(-1:nxmax+2,j,k)=del_lam*drrr*del_costheta/3.0_ip
+
           enddo
         enddo
         !*********************************************************************************
@@ -198,24 +190,20 @@
       allocate(dumx_sp(nxmax))
       allocate(dumy_sp(nymax))
       allocate(dumz_sp(nzmax))
-      allocate(dums_sp(nzmax))
       if(IsLatLon)then
         dumx_sp(1:nxmax) = real(lon_cc_pd(1:nxmax),kind=sp)
         dumy_sp(1:nymax) = real(lat_cc_pd(1:nymax),kind=sp)
         dumz_sp(1:nzmax) = real(  z_cc_pd(1:nzmax),kind=sp)
-        dums_sp(1:nzmax) = real(  s_cc_pd(1:nzmax),kind=sp)
       else
         dumx_sp(1:nxmax) = real(  x_cc_pd(1:nxmax),kind=sp)
         dumy_sp(1:nymax) = real(  y_cc_pd(1:nymax),kind=sp)
         dumz_sp(1:nzmax) = real(  z_cc_pd(1:nzmax),kind=sp)
-        dums_sp(1:nzmax) = real(  s_cc_pd(1:nzmax),kind=sp)
       endif
       call MR_Initialize_Met_Grids(nxmax,nymax,nzmax,             &
                               dumx_sp,dumy_sp,dumz_sp,            &
                               IsPeriodic)
-      call MR_Set_SigmaAlt_Scaling(nzmax,dums_sp)
 
-      deallocate(dumx_sp,dumy_sp,dumz_sp,dums_sp)
+      deallocate(dumx_sp,dumy_sp,dumz_sp)
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Finished initializing Met Grids"
@@ -233,12 +221,117 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
+!  calc_s_mesh
+!
+!  Called from: Ash3d.F90 just after topography is loaded. If topography is not
+!  used (ZScaling_ID=0; default), then s = z. If ZScaling_ID=1 (shifted topo) or
+!  ZScaling_ID=2 (scaled topo), then s is a bit different.
+!
+!  Arguments:
+!    none
+!
+!  Assigns:
+!    s_cc_pd,s_lb_pd,ds_vec_pd and Met variables through MR_Set_SigmaAlt_Scaling
+!    
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine calc_s_mesh
+
+      ! set up grids for solution and wind arrays
+
+      use precis_param
+
+      use io_units
+
+      use mesh,          only : &
+         nxmax,nymax,nzmax,j_cc_pd,sigma_nx_pd,sigma_ny_pd,kappa_pd,&
+         z_lb_pd,z_cc_pd,dz_vec_pd, &
+         s_lb_pd,s_cc_pd,ds_vec_pd,Ztop,ZScaling_ID, &
+         IsLatLon,Zsurf,ivent,jvent
+
+      use MetReader,     only : &
+           MR_Set_CompProjection, &
+           MR_Initialize_Met_Grids, &
+           MR_Set_Met_Times, &
+           MR_Set_SigmaAlt_Scaling
+
+      implicit none
+
+      real(kind=sp),allocatable,dimension(:) :: dums_sp
+      real(kind=ip) :: tmp
+      integer       :: i,j
+
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"--------------------------------------------------"
+        write(outlog(io),*)"---------- CALC_S_MESH ---------------------------"
+        write(outlog(io),*)"--------------------------------------------------"
+      endif;enddo
+
+      ! s_cc is the replacement z-coordinate: either s=z or s=(z-zsurf)/(ztop-zsurf)
+      ! Here we set up the s-values with zsurf=0 and might apply topography later
+      if(ZScaling_ID.eq.0)then
+        ! No topography modification; s=z in km
+        s_cc_pd(:) = z_cc_pd(:)
+        s_lb_pd(:) = z_lb_pd(:)
+      elseif(ZScaling_ID.eq.1)then
+        ! Coordinate system will be shifted by topography (surf -> surf + Ztop in km)
+        ! Since we want the s array to start at the surface (not just the s-value of
+        ! the z-array), we use the same values as z with the understanding that it is
+        ! shifted
+        s_cc_pd(:) = z_cc_pd(:)
+        s_lb_pd(:) = z_lb_pd(:)
+      elseif(ZScaling_ID.eq.2)then
+        ! Coordinate system will be scaled by topography (0->1 unitless)
+        ! Same logic as above; surface to top should be 0->1 so use Zsurf of 0
+        ! for the purpose of indexing (otherwise we just have the s-values of
+        ! the Cartesian z-array)
+        s_cc_pd(:) = z_cc_pd(:)/Ztop
+        s_lb_pd(:) = z_lb_pd(:)/Ztop
+      endif
+
+      if(ZScaling_ID.eq.0.or.ZScaling_ID.eq.1)then
+        ds_vec_pd(:) = dz_vec_pd(:)
+      else
+        ds_vec_pd(:) = (dz_vec_pd(:))/(Ztop-Zsurf(ivent,jvent))
+      endif
+
+      allocate(dums_sp(nzmax))
+      if(IsLatLon)then
+        dums_sp(1:nzmax) = real(  s_cc_pd(1:nzmax),kind=sp)
+      else
+        dums_sp(1:nzmax) = real(  s_cc_pd(1:nzmax),kind=sp)
+      endif
+      call MR_Set_SigmaAlt_Scaling(nzmax,dums_sp)
+
+      deallocate(dums_sp)
+
+      ! Now modify all the cell face area and volume measures if we are using
+      ! the scaled coordinates. Note: these variables are in km2 and km3
+      ! regardless of if the vertical coordinate has units of km or is unitless.
+      if(ZScaling_ID.eq.2)then
+        do i=-1,nxmax+2
+          do j=-1,nymax+2
+            tmp = j_cc_pd(ivent,jvent)/Ztop
+            ! Note that sigma_nz_pd is unaffected
+              ! Area of face at i-1/2,j,k
+            sigma_nx_pd(i,j,:) = sigma_nx_pd(i,j,:)*tmp
+              ! Area of face at i,j-1/2,k
+            sigma_ny_pd(i,j,:) = sigma_ny_pd(i,j,:)*tmp
+              ! Volume of cell
+            kappa_pd(i,j,:)    = kappa_pd(i,j,:)*tmp
+          enddo
+        enddo
+      endif
+      end subroutine calc_s_mesh
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
 !  get_minmax_lonlat
 !
 !  Called from: Not called from standard Ash3d, but used in some optional modules
 !  Arguments:
-!    lonmin,lonmax : minimum and maximum longitude of the computaional grid
-!    latmin,latmax : minimum and maximum latitude of the computaional grid
+!    lonmin,lonmax : minimum and maximum longitude of the computational grid
+!    latmin,latmax : minimum and maximum latitude of the computational grid
 !
 !  This subroutine has no input arguments, but returns min/max values for lon/lat
 !  for a projected grid.  Projected grids will have curved boundaries in lon/lat
@@ -349,7 +442,7 @@
       use io_units
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,nsmax,ts0,ivent,jvent,IsPeriodic
+         nxmax,nymax,nzmax,nsmax,ts0,ivent,jvent,kvent,IsPeriodic
 
       use solution,      only : &
          concen_pd,imin,imax,jmin,jmax,kmin,kmax
@@ -370,7 +463,7 @@
       !  First in x
       imin = 1
       imax = nxmax
-      do i=2,ivent
+      do i=2,ivent-1
         tmp_flt=maxval(concen_pd(i,1:nymax,1:nzmax,1:nsmax,ts0))
         if(tmp_flt.lt.CLOUDCON_GRID_THRESH)then
           imin = i
@@ -378,7 +471,7 @@
           exit
         endif
       enddo
-      do i=nxmax,imin,-1
+      do i=nxmax,imin+2,-1
         tmp_flt=maxval(concen_pd(i,1:nymax,1:nzmax,1:nsmax,ts0))
         if(tmp_flt.lt.CLOUDCON_GRID_THRESH)then
           imax = i
@@ -397,7 +490,7 @@
       !  Now in y
       jmin = 1
       jmax = nymax
-      do j=2,jvent
+      do j=2,jvent-1
         tmp_flt=maxval(concen_pd(1:nxmax,j,1:nzmax,1:nsmax,ts0))
         if(tmp_flt.lt.CLOUDCON_GRID_THRESH)then
           jmin = j
@@ -405,7 +498,7 @@
           exit
         endif
       enddo
-      do j=nymax,jmin,-1
+      do j=nymax,jmin+2,-1
         tmp_flt=maxval(concen_pd(1:nxmax,j,1:nzmax,1:nsmax,ts0))
         if(tmp_flt.lt.CLOUDCON_GRID_THRESH)then
           jmax = j
@@ -416,7 +509,7 @@
       !  Now in z
       kmin = 1
       kmax = nzmax
-      do k=2,nzmax
+      do k=2,kvent-1
         tmp_flt=maxval(concen_pd(1:nxmax,1:nymax,k,1:nsmax,ts0))
         if(tmp_flt.lt.CLOUDCON_GRID_THRESH)then
           kmin = k
@@ -424,7 +517,7 @@
           exit
         endif
       enddo
-      do k=nzmax,kmin,-1
+      do k=nzmax,kmin+2,-1
         tmp_flt=maxval(concen_pd(1:nxmax,1:nymax,k,1:nsmax,ts0))
         if(tmp_flt.lt.CLOUDCON_GRID_THRESH)then
           kmax = k
@@ -437,6 +530,11 @@
           write(errlog(io),*)"ERROR: kmax<kmin in get_minmax_index"
         endif;enddo
         stop 1
+      endif
+      ! Advection routines expect at least three cells. Adjust k as needed
+      if(kmax-kmin.le.1)then
+        kmax = min(kmax+1,nzmax)
+        kmin = kmax-2
       endif
 
       end subroutine get_minmax_index

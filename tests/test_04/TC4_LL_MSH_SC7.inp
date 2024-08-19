@@ -5,12 +5,13 @@
 ******************* BLOCK 1 ***************************************************
 TC4_MSH                           # Volcano name (character*30)
 1 1 -135.0 90.0 0.933 6371.229    # Proj flags and params
--135.0    33.5                    # x, y of LL corner of grid (km, or deg. if latlongflag=1)
-37.0      20.5                    # grid width and height (km, or deg. if latlonflag=1)
+-130.0    38.0  1.0               # x, y of LL corner of grid (km, or deg. if latlongflag=1)
+15.0      15.0                    # grid width and height (km, or deg. if latlonflag=1)
 -122.117  42.933                  # vent location         (km, or deg. if latlonflag=1)
 0.5       0.5                     # DX, DY of grid cells  (km, or deg.)
-2.0                               # DZ of grid cells      (always km)
-0.0       umbrella_air            # diffusion coefficient (m2/s), Suzuki constant
+dz_clog                           # DZ of grid cells      (always km)
+25.0 25                           # maz z, steps for constant log(z)
+0.0       4.0                     # diffusion coefficient (m2/s), Suzuki constant
 1                                 # neruptions, number of eruptions or pulses
 *******************************************************************************
 # ERUPTION LINES (number = neruptions)
@@ -18,40 +19,40 @@ TC4_MSH                           # Volcano name (character*30)
 # Parameters are (1-4) start time (yyyy mm dd h.hh (UT)); (5) duration (hrs);
 #                  (6) plume height (km);                 (7) erupted volume (km3)
 ******************* BLOCK 2 ***************************************************
-  1980     5    18     17.48     9.00     24.00  5.000E-2
+  1980     5    18     18.0     10.00     16.00  1.000E-2
 *******************************************************************************
 # WIND OPTIONS
 ******************* BLOCK 3 ***************************************************
-5 25                # iwind, iwindFormat
+1 1                 # iwind, iwindFormat
 2                   # iHeightHandler
-48.0                # Simulation time in hours
-yes                 # stop computation when 99% of erupted mass has deposited?
+30.0                # Simulation time in hours
+no                  # stop computation when 99% of erupted mass has deposited?
 1                   # nWindFiles, number of gridded wind files (used if iwind>1)
 *******************************************************************************
 # OUTPUT OPTIONS:
 ******************* BLOCK 4 ***************************************************
 yes                 # Write ESRI ASCII file of final deposit thickness?
 no                  # Write        KML file of final deposit thickness?
-yes                 # Write ESRI ASCII deposit files at specified times?
+no                  # Write ESRI ASCII deposit files at specified times?
 no                  # Write        KML deposit files at specified times?
-yes                 # Write ESRI ASCII files of ash-cloud concentration?
+no                  # Write ESRI ASCII files of ash-cloud concentration?
 no                  # Write        KML files of ash-cloud concentration?
-yes                 # Write ESRI ASCII files of ash-cloud height?
+no                  # Write ESRI ASCII files of ash-cloud height?
 no                  # Write        KML files of ash-cloud height?
-yes                 # Write ESRI ASCII files of ash-cloud load (T/km2) at specified times?
+no                  # Write ESRI ASCII files of ash-cloud load (T/km2) at specified times?
 no                  # Write        KML files of ash-cloud load (T/km2) at specified times?
-yes                 # Write ESRI ASCII file of deposit arrival times?
+no                  # Write ESRI ASCII file of deposit arrival times?
 no                  # Write        KML file of deposit arrival times?
-yes                 # write ESRI ASCII file of cloud arrival times?
+no                  # write ESRI ASCII file of cloud arrival times?
 no                  # Write        KML file of cloud arrival times?
-yes                 # Write 3-D ash concentration at specified times?
+no                  # Write 3-D ash concentration at specified times?
 netcdf              # format of ash concentration files
-2                   # nWriteTimes  
-8.0 16.0
+-1                   # nWriteTimes  
+1.0
 *******************************************************************************
 # WIND INPUT FILES
 ******************* BLOCK 5 ***************************************************
-Wind_nc
+MSH_Ncol_N_Topo.txt
 *******************************************************************************
 # AIRPORT LOCATION FILE
 ******************* BLOCK 6 ***************************************************
@@ -64,16 +65,27 @@ no                  # Calculate projected coordinates internally?
 # GRAIN SIZE GROUPS
 ******************* BLOCK 7 ***************************************************
 1                   # Number of settling velocity groups
-0.01 1.0 2000.0
+0.1 1.0 2000.0
 *******************************************************************************
 # Vertical profiles
 ******************* BLOCK 8 ***************************************************
-2                   # number of locations for vertical profiles (nlocs)
--114.20 43.1
--121.20 42.8
+0                   # number of locations for vertical profiles (nlocs)
 *******************************************************************************
 # netCDF output options
 ******************* BLOCK 9 ***************************************************
 3d_tephra_fall.nc   # Name of output file
-TC4_LL_MSH_SC1      # Title of simulation
+TC4_LL_MSH_SC7      # Title of simulation
 no comment          # Comment
+*******************************************************************************
+# Reset parameters
+*******************************************************************************
+OPTMOD=RESETPARAMS
+useWindVars          = 1
+ZPADDING             = 1.5
+*******************************************************************************
+# Topography
+*******************************************************************************
+OPTMOD=TOPO
+yes 2                         # use topography?
+3 1.0                         # Topofile format, smoothing radius
+topography.dat                # topofile name

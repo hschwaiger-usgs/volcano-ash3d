@@ -409,8 +409,8 @@
 
       use mesh,          only : &
          A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-         A3d_k0_scale,A3d_Re,de,dn,dx,dy,IsLatLon, &
-         latLL,lonLL,latUR,lonUR,xLL,yLL,xUR,yUR
+         A3d_k0_scale,A3d_Re,IsLatLon, &
+         latLL,lonLL,latUR,lonUR,xLL,yLL,xUR,yUR !,de,dn,dx,dy
 
       use time_data,     only : &
          BaseYear,useLeap,SimStartHour,OutputOffset

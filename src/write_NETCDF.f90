@@ -36,8 +36,6 @@
 
         ! Publicly available variables
       integer,public :: tn_len
-      character(len=30),public :: Extra2dVarName
-      real(kind=ip),dimension(:,:),allocatable,public :: Extra2dVar
 
       integer :: NCversion
       integer :: NCsubversion
@@ -466,8 +464,8 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att date:")
       nSTAT = nf90_put_att(ncid,nf90_global,"NWPStartTime",cdf_WindStartTime)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att NWPStartTime:")
-      nSTAT = nf90_put_att(ncid,nf90_global,"MepProj4",trim(adjustl(Met_proj4)))
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att MepProj4:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"MetProj4",trim(adjustl(Met_proj4)))
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att MetProj4:")
       nSTAT = nf90_put_att(ncid,nf90_global,"CompProj4",trim(adjustl(Comp_proj4)))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att CompProj4:")
       nSTAT = nf90_put_att(ncid,nf90_global,"host",os_host)
@@ -576,6 +574,8 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment DT_MAX:")
       nSTAT = nf90_put_att(ncid,nf90_global,"ZPADDING",ZPADDING)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment ZPADDING:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"ZScaling_ID",ZScaling_ID)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment ZScaling_ID:")
       if(useVz_rhoG)then
         nSTAT = nf90_put_att(ncid,nf90_global,"useVz_rhoG","true")
       else
@@ -2499,59 +2499,63 @@
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Fill GS Diameter"
       endif;enddo
-      allocate(dum1d_out(nsmax))
-      dum1d_out = 0.0_op
-      if(useCalcFallVel)then
-        dum1d_out(1:n_gs_max) = real(Tephra_gsdiam(1:n_gs_max)*M_2_MM,kind=op)
-      else
-        do isize=1,n_gs_max
-          dum1d_out(isize) = real(isize,kind=op)
-        enddo
-      endif
-      nSTAT=nf90_put_var(ncid,gssd_var_id,dum1d_out,(/1/))
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_diameter")
-         ! gs_massfrac (Mass fraction of grain size)
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
-        write(outlog(io),*)"     Fill GS MassFrac"
-      endif;enddo
-      dum1d_out = 0.0_op
-      dum1d_out(1:n_gs_max) = real(Tephra_bin_mass(1:n_gs_max),kind=op)
-      nSTAT=nf90_put_var(ncid,gsmf_var_id,dum1d_out,(/1/))
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_massfrac")
-       ! gs_dens (Density of grain)
-      if(useCalcFallVel)then
-        dum1d_out(1:n_gs_max) = real(Tephra_rho_m(1:n_gs_max),kind=op)
-      else
-        dum1d_out = 0.0_op
-      endif
-      nSTAT=nf90_put_var(ncid,gsdens_var_id,dum1d_out,(/1/))
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_dens")
-       ! gs_F (Shape factor of grain F)
-      if(useCalcFallVel)then
-        dum1d_out(1:n_gs_max) = real(Tephra_gsF(1:n_gs_max),kind=op)
-      else
-        dum1d_out = 0.0_op
-      endif
-      nSTAT=nf90_put_var(ncid,gsF_var_id,dum1d_out,(/1/))
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_F")
 
-       ! gs_G (Shape factor of grain G
-      if(useCalcFallVel)then
-        dum1d_out(1:n_gs_max) = real(Tephra_gsG(1:n_gs_max),kind=op)
-      else
+      if(n_gs_max.gt.0)then
+        ! These are tephra variables so only allocate them if we have tephra bins
+        allocate(dum1d_out(nsmax))  ! allocate for the full nsmax
         dum1d_out = 0.0_op
-      endif
-      nSTAT=nf90_put_var(ncid,gsG_var_id,dum1d_out,(/1/))
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_G")
-       ! gs_Phi (Shape factor of grain Phi)
-      if(useCalcFallVel)then
-        dum1d_out(1:n_gs_max) = real(Tephra_gsPhi(1:n_gs_max),kind=op)
-      else
+        if(useCalcFallVel)then
+          dum1d_out(1:n_gs_max) = real(Tephra_gsdiam(1:n_gs_max)*M_2_MM,kind=op)
+        else
+          do isize=1,n_gs_max
+            dum1d_out(isize) = real(isize,kind=op)
+          enddo
+        endif
+        nSTAT=nf90_put_var(ncid,gssd_var_id,dum1d_out,(/1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_diameter")
+           ! gs_massfrac (Mass fraction of grain size)
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
+          write(outlog(io),*)"     Fill GS MassFrac"
+        endif;enddo
         dum1d_out = 0.0_op
+        dum1d_out(1:n_gs_max) = real(Tephra_bin_mass(1:n_gs_max),kind=op)
+        nSTAT=nf90_put_var(ncid,gsmf_var_id,dum1d_out,(/1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_massfrac")
+         ! gs_dens (Density of grain)
+        if(useCalcFallVel)then
+          dum1d_out(1:n_gs_max) = real(Tephra_rho_m(1:n_gs_max),kind=op)
+        else
+          dum1d_out = 0.0_op
+        endif
+        nSTAT=nf90_put_var(ncid,gsdens_var_id,dum1d_out,(/1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_dens")
+         ! gs_F (Shape factor of grain F)
+        if(useCalcFallVel)then
+          dum1d_out(1:n_gs_max) = real(Tephra_gsF(1:n_gs_max),kind=op)
+        else
+          dum1d_out = 0.0_op
+        endif
+        nSTAT=nf90_put_var(ncid,gsF_var_id,dum1d_out,(/1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_F")
+
+         ! gs_G (Shape factor of grain G
+        if(useCalcFallVel)then
+          dum1d_out(1:n_gs_max) = real(Tephra_gsG(1:n_gs_max),kind=op)
+        else
+          dum1d_out = 0.0_op
+        endif
+        nSTAT=nf90_put_var(ncid,gsG_var_id,dum1d_out,(/1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_G")
+         ! gs_Phi (Shape factor of grain Phi)
+        if(useCalcFallVel)then
+          dum1d_out(1:n_gs_max) = real(Tephra_gsPhi(1:n_gs_max),kind=op)
+        else
+          dum1d_out = 0.0_op
+        endif
+        nSTAT=nf90_put_var(ncid,gsP_var_id,dum1d_out,(/1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_Phi")
+        deallocate(dum1d_out)
       endif
-      nSTAT=nf90_put_var(ncid,gsP_var_id,dum1d_out,(/1/))
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_Phi")
-      deallocate(dum1d_out)
 
       !   Now fill a few other variables that are a function of ER
         ! er_stime (Start time of eruption)
@@ -2778,7 +2782,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depotime")
 
           ! ashtime
-       do io=1,2;if(VB(io).le.verbosity_debug1)then
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill ashtime"
         endif;enddo
         dum2d_out(:,:) = CloudArrivalTime_FillValue
@@ -3341,6 +3345,16 @@
           dum2d_out(:,:) = real(DepositThickness,kind=op)
           nSTAT=nf90_put_var(ncid,depothick_var_id,dum2d_out,(/1,1,iout3d/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depothick")
+          ! while we are here, just update the 'final' variable with this
+          ! preliminary copy
+          nSTAT = nf90_inq_varid(ncid,"depothickFin",depothickFin_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid depothickFin")
+          do io=1,2;if(VB(io).le.verbosity_debug1)then
+            write(outlog(io),*)"  Writing depothickFin"
+          endif;enddo
+          dum2d_out(:,:) = real(DepositThickness,kind=op)
+          nSTAT=nf90_put_var(ncid,depothickFin_var_id,dum2d_out,(/1,1/))
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depothickFin")
           deallocate(dum2d_out)
 
           ! ashconMax
@@ -3802,7 +3816,7 @@
          MaxConcentration,MaxHeight,CloudLoad,dbZCol,MinHeight,Mask_Cloud,&
          CLOUDCON_GRID_THRESH,CLOUDCON_THRESH,THICKNESS_THRESH, &
          CLOUDLOAD_THRESH,DBZ_THRESH,DEPO_THRESH,DEPRATE_THRESH,ashcon_tot, &
-         useRestartVars, &
+         useRestartVars,Extra2dVar,Extra2dVarName, &
            dbZCalculator, &
            Allocate_NTime, &
            Allocate_Profile, &
@@ -3845,8 +3859,9 @@
       integer :: itstart_hour,itstart_min,itstart_sec
       real(kind=ip) :: filestart_hour
       integer :: tmp_int
-      real(kind=ip) :: lat_in,lon_in
-      real(kind=ip) :: xnow,ynow,xout,yout
+      real(kind=dp) :: lat_in,lon_in
+      real(kind=ip) :: xnow,ynow
+      real(kind=dp) :: xout,yout
 
       INTERFACE
         real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)

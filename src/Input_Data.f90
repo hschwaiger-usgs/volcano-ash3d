@@ -757,7 +757,7 @@
         write(outlog(io),*)"      LIM_NONE: Advection routines use no limiters"
 #endif
 #ifdef LIM_LAXWEN
-        write(outlog(io),*)"    LIM_LAXWEN: Advection routines use a Lax-Wendrof limiter"
+        write(outlog(io),*)"    LIM_LAXWEN: Advection routines use a Lax-Wendroff limiter"
 #endif
 #ifdef LIM_BW
         write(outlog(io),*)"        LIM_BW: Advection routines use a Beam-Warming limiter"
@@ -766,10 +766,10 @@
         write(outlog(io),*)"     LIM_FROMM: Advection routines use a Fromm limiter"
 #endif
 #ifdef LIM_MINMOD
-        write(outlog(io),*)"    LIM_MINMOD: Advection routines use a MinMod limiter"
+        write(outlog(io),*)"    LIM_MINMOD: Advection routines use a minmod limiter"
 #endif
 #ifdef LIM_SUPERBEE
-        write(outlog(io),*)"  LIM_SUPERBEE: Advection routines use a SuperBee limiter"
+        write(outlog(io),*)"  LIM_SUPERBEE: Advection routines use a superbee limiter"
 #endif
 #ifdef LIM_MC
         write(outlog(io),*)"        LIM_MC: Advection routines use a MC limiter"
@@ -909,7 +909,7 @@
          Write_PT_Data,Write_PR_Data,isFinal_TS
 
       use mesh,          only : &
-         de,dn,dx,dy,z_vec_init,dz_const,nxmax,nymax,nzmax,nsmax,VarDzType,ivent,jvent,&
+         de,dn,dx,dy,z_vec_init,dz_const,nxmax,nymax,nzmax,nsmax,VarDzType,ivent,jvent,kvent,&
          gridwidth_e,gridwidth_n,gridwidth_x,gridwidth_y,&
          lonLL,latLL,lonUR,latUR,xLL,yLL,xUR,yUR,&
          A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
@@ -1026,9 +1026,11 @@
       logical           :: runAsForecast       = .false.  ! This will be changed if year=0
       real(kind=dp)     :: FC_Offset = 0.0_dp
       real(kind=ip)     :: Davg,Aaxis,Baxis,Caxis
-
+      logical           :: od
 
       INTERFACE
+        subroutine input_data_ResetParams
+        end subroutine input_data_ResetParams
         real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
           integer            :: iyear
           integer            :: imonth
@@ -1077,6 +1079,89 @@
         stop 1
       endif
       open(unit=fid_ctrlfile,file=infile,status='old',action='read',err=9001)
+
+      !************************************************************************
+      ! Searching for optional blocks labled by OPTMOD
+      !  These are expected to be at the end of the control file, but we need to
+      !  know now if we are calling input_data_ResetParams as this can effect the
+      !  grid
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)' *****************************************'
+        write(outlog(io),*)' Reading control file for optional modules   '
+        write(outlog(io),*)' *****************************************'
+      endif;enddo
+
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"Searching for blocks with OPTMOD"
+      endif;enddo
+      nmods = 0
+      read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+      ! if there are no further blocks, then we will skip over this while loop
+      do while(iostatus.eq.0)
+        substr_pos1 = index(linebuffer080,'OPTMOD')
+        if(substr_pos1.eq.1)then
+          ! found an optional module
+          nmods = nmods + 1
+          if(nmods.gt.MAXNUM_OPTMODS)then
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: Maximum number of optional modules exceeded"
+              write(errlog(io),*)"       Current maximum set to MAXNUM_OPTMODS = ",MAXNUM_OPTMODS
+              write(errlog(io),*)"       Please increase MAXNUM_OPTMODS and recompile."
+              write(errlog(io),*)"  Ash3d_VariableModules.f90:global_param:MAXNUM_OPTMODS"
+            endif;enddo
+            stop 1
+          endif
+          !  Parse for the keyword
+          read(linebuffer080,1104,iostat=iostatus,iomsg=iomessage)mod_name
+          linebuffer050 = "Reading control file blk9+ (OPTMOD)"
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+          OPTMOD_names(nmods) = trim(adjustl(mod_name))
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"     Found optional module : ",&
+                                OPTMOD_names(nmods),nmods
+          endif;enddo
+        endif
+        read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+        if(iostatus.lt.0)then
+          ! end of file reached; exit do loop
+          exit
+        elseif(iostatus.gt.0)then
+          ! Some non-EOF error
+          linebuffer050 = "Reading control file blk9+ (OPTMOD)"
+          call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        endif
+1104    format(7x,a20)
+      enddo
+      if(nmods.eq.0)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"No OPTMOD blocks found."
+        endif;enddo
+      else
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Number of OPTMOD blocks found = ",nmods
+        endif;enddo
+      endif
+
+      ! Now checking if we need to reset any parameters
+      do i=1,nmods
+        do io=1,2;if(VB(io).le.verbosity_essential)then
+          write(outlog(io),*)"Testing for ",OPTMOD_names(i),i
+        endif;enddo
+        if(OPTMOD_names(i).eq.'RESETPARAMS')then
+          do io=1,2;if(VB(io).le.verbosity_essential)then
+            write(outlog(io),*)"  Reading input block for RESETPARAMS"
+          endif;enddo
+          call input_data_ResetParams
+        endif
+      enddo
+      ! Reopen or rewind to begining so we can start parsing block 1
+      !   check to make sure the control file is open
+      inquire(unit=fid_ctrlfile,opened=od)
+      if(od)then
+        rewind(fid_ctrlfile)
+      else
+        open(unit=fid_ctrlfile,file=infile,status='old',action='read',err=9001)
+      endif
 
       !************************************************************************
       ! BLOCK 1: GRID INFO
@@ -2078,7 +2163,7 @@
         endif
       enddo
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),'(a32,g12.5,a7)')"Total volume of all eruptions = ",&
+        write(outlog(io),'(a32,g12.5,a8)')"Total volume of all eruptions = ",&
                             sum(e_volume)," km3 DRE"
       endif;enddo
 
@@ -2103,6 +2188,10 @@
           write(errlog(io),*)"  CompGrid_height = ",Ztop
           write(errlog(io),*)"       z_vec_init = "
           do k = 1,nz_init-1
+            if(maxval(e_PlumeHeight(1:neruptions)).gt.z_vec_init(k).and.&
+               maxval(e_PlumeHeight(1:neruptions)).lt.z_vec_init(k+1))then
+              kvent=k
+            endif
             write(errlog(io),*)"                ",k,real(z_vec_init(k),kind=4)
           enddo
         endif;enddo
@@ -2711,7 +2800,7 @@
       cdf_b4l17 = linebuffer080
 
       ! Block 4 Line 18
-      read(fid_ctrlfile,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer400
+      read(fid_ctrlfile,'(a400)',iostat=iostatus,iomsg=iomessage)linebuffer400
       linebuffer050 = "Reading control file Blk 4, line 18"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer400(1:80),iomessage)
       read(linebuffer400,*,iostat=iostatus,iomsg=iomessage)testkey
@@ -2864,14 +2953,22 @@
         endif      
         do while(testkey.eq.'#'.or.testkey.eq.'*')
            ! Line is a comment, read next line
+          iostatus=0
+          iomessage='M'
+          write(*,*)'reading next line from ',fid_ctrlfile
           read(fid_ctrlfile,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
           linebuffer050 = "Reading test line of blk5"
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
           read(linebuffer130,*,iostat=iostatus,iomsg=iomessage)testkey
+          write(*,*)'iostat=',iostatus,iomessage
           linebuffer050 = "Reading testkey from linebuffer (Blk5)"
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
           testkey=linebuffer130(1:1)
+          write(*,*)'+',linebuffer130,'x'
+          write(*,*)'++',trim(adjustl(linebuffer130)),'xx'
+          write(*,*)'++',linebuffer130(1:1),'xx',testkey
         enddo
+        write(*,*)'|',linebuffer130,'-'
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)' *****************************************'
           write(outlog(io),*)' Reading Block 5: Windfile names'
@@ -2894,6 +2991,7 @@
           do i=1,iwfiles
             ! Always check if we have overshot the block
             testkey=linebuffer130(1:1)
+            write(*,*)'+++',linebuffer130(1:1),'xxx',testkey
             if(testkey.eq.'#'.or.testkey.eq.'*') then
               do io=1,2;if(VB(io).le.verbosity_error)then
                 write(errlog(io),*)"ERROR: ",&
@@ -2903,6 +3001,7 @@
               endif;enddo
               stop 1
             endif
+            write(*,*)"reading windfile from linebuffer:",trim(adjustl(linebuffer130))
             read(linebuffer130,'(a130)',err=9501,iostat=iostatus,iomsg=iomessage) MR_windfiles(i)
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),1034) i,trim(adjustl(MR_windfiles(i)))
@@ -3228,6 +3327,7 @@
       else
         FV_ID = 1 ! Wilson and Huang
       endif
+
       allocate(temp_v_s(init_n_gs_max))
       allocate(temp_gsdiam(init_n_gs_max))
       allocate(temp_bin_mass(init_n_gs_max))
@@ -3235,7 +3335,21 @@
       allocate(temp_gsF(init_n_gs_max))
       allocate(temp_gsG(init_n_gs_max))
 
-      if(init_n_gs_max.gt.0)then
+      if(init_n_gs_max.lt.0)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*) 'ERROR: Number of grainsizes must be non-negative.'
+          write(errlog(io),*) 'Program stopped'
+        endif;enddo
+        stop 1
+      elseif(init_n_gs_max.eq.0)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(errlog(io),*) 'WARNING: Number of grainsizes is 0.'
+          write(errlog(io),*) '         Assuming a custom module is being used to'
+          write(errlog(io),*) '         add to the concen array.'
+        endif;enddo
+        n_gs_max = init_n_gs_max
+      else
+        ! This is the normal case with actual grain size bins specified
         do isize=1,init_n_gs_max
           value1 = -1.99_ip
           value2 = -1.99_ip
@@ -3246,7 +3360,7 @@
           ! Always check if we have overshot the block
           testkey = linebuffer080(1:1)
           if((testkey.eq.'*').or.(testkey.eq.'#')) then
-          do io=1,2;if(VB(io).le.verbosity_error)then
+            do io=1,2;if(VB(io).le.verbosity_error)then
               write(errlog(io),*)"ERROR: ",&
                     "Error in specifying grain sizes.  You specified ",&
                             init_n_gs_max,', sizes,'
@@ -3353,24 +3467,26 @@
       nsmax      = n_gs_max  ! Total tracked bins
       n_gs_aloft = n_gs_max  ! Number of tephra species aloft
 
-      call Allocate_Tephra
-      allocate(temp_phi(n_gs_max))
+      if(n_gs_max.gt.0)then
+        call Allocate_Tephra
+        allocate(temp_phi(n_gs_max))
 
-      Tephra_v_s(1:n_gs_max)      = -1.0_ip * temp_v_s(1:n_gs_max) ! make sure 'fall velocity'
-                                                                   ! is in the -z direction
-      Tephra_gsdiam(1:n_gs_max)   = temp_gsdiam(1:n_gs_max)
-      Tephra_bin_mass(1:n_gs_max) = temp_bin_mass(1:n_gs_max)
-      Tephra_rho_m(1:n_gs_max)    = temp_rho_m(1:n_gs_max)
-      if(Shape_ID.eq.1)then
-        ! Interpret shape columns as F [and G]
-        Tephra_gsF(1:n_gs_max)      = temp_gsF(1:n_gs_max)
-        Tephra_gsG(1:n_gs_max)      = temp_gsG(1:n_gs_max)
-        Tephra_gsPhi(1:n_gs_max)    = 1.0_ip
-      elseif(Shape_ID.eq.2)then
-        ! Interpret shape columns as Phi
-        Tephra_gsF(1:n_gs_max)      = 1.0_ip
-        Tephra_gsG(1:n_gs_max)      = 1.0_ip
-        Tephra_gsPhi(1:n_gs_max)    = temp_gsF(1:n_gs_max)
+        Tephra_v_s(1:n_gs_max)      = -1.0_ip * temp_v_s(1:n_gs_max) ! make sure 'fall velocity'
+                                                                     ! is in the -z direction
+        Tephra_gsdiam(1:n_gs_max)   = temp_gsdiam(1:n_gs_max)
+        Tephra_bin_mass(1:n_gs_max) = temp_bin_mass(1:n_gs_max)
+        Tephra_rho_m(1:n_gs_max)    = temp_rho_m(1:n_gs_max)
+        if(Shape_ID.eq.1)then
+          ! Interpret shape columns as F [and G]
+          Tephra_gsF(1:n_gs_max)      = temp_gsF(1:n_gs_max)
+          Tephra_gsG(1:n_gs_max)      = temp_gsG(1:n_gs_max)
+          Tephra_gsPhi(1:n_gs_max)    = 1.0_ip
+        elseif(Shape_ID.eq.2)then
+          ! Interpret shape columns as Phi
+          Tephra_gsF(1:n_gs_max)      = 1.0_ip
+          Tephra_gsG(1:n_gs_max)      = 1.0_ip
+          Tephra_gsPhi(1:n_gs_max)    = temp_gsF(1:n_gs_max)
+        endif
       endif
 
       deallocate(temp_v_s,temp_gsdiam,temp_bin_mass,temp_rho_m,temp_gsF)
@@ -3766,64 +3882,64 @@
       ! END OF BLOCK 9
       !************************************************************************
 
-      !************************************************************************
-      ! Searching for optional blocks labled by OPTMOD
-      do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),*)' *****************************************'
-        write(outlog(io),*)' Reading Post-Block 9: optional modules   '
-        write(outlog(io),*)' *****************************************'
-      endif;enddo
-
-      do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),*)"Searching for blocks with OPTMOD"
-      endif;enddo
-      nmods = 0
-      read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-      ! if there are no further blocks, then we will skip over this while loop
-      do while(iostatus.eq.0)
-        substr_pos1 = index(linebuffer080,'OPTMOD')
-        if(substr_pos1.eq.1)then
-          ! found an optional module
-          nmods = nmods + 1
-          if(nmods.gt.MAXNUM_OPTMODS)then
-            do io=1,2;if(VB(io).le.verbosity_error)then
-              write(errlog(io),*)"ERROR: Maximum number of optional modules exceeded"
-              write(errlog(io),*)"       Current maximum set to MAXNUM_OPTMODS = ",MAXNUM_OPTMODS
-              write(errlog(io),*)"       Please increase MAXNUM_OPTMODS and recompile."
-              write(errlog(io),*)"  Ash3d_VariableModules.f90:global_param:MAXNUM_OPTMODS"
-            endif;enddo
-            stop 1
-          endif
-          !  Parse for the keyword
-          read(linebuffer080,1104,iostat=iostatus,iomsg=iomessage)mod_name
-          linebuffer050 = "Reading control file blk9+ (OPTMOD)"
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-          OPTMOD_names(nmods) = trim(adjustl(mod_name))
-          do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"     Found optional module : ",&
-                                OPTMOD_names(nmods),nmods
-          endif;enddo
-        endif
-        read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-        if(iostatus.lt.0)then
-          ! end of file reached; exit do loop
-          exit
-        elseif(iostatus.gt.0)then
-          ! Some non-EOF error
-          linebuffer050 = "Reading control file blk9+ (OPTMOD)"
-          call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-        endif
-1104    format(7x,a20)
-      enddo
-      if(nmods.eq.0)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"No OPTMOD blocks found."
-        endif;enddo
-      else
-        do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"Number of OPTMOD blocks found = ",nmods
-        endif;enddo
-      endif
+!      !************************************************************************
+!      ! Searching for optional blocks labled by OPTMOD
+!      do io=1,2;if(VB(io).le.verbosity_info)then
+!        write(outlog(io),*)' *****************************************'
+!        write(outlog(io),*)' Reading Post-Block 9: optional modules   '
+!        write(outlog(io),*)' *****************************************'
+!      endif;enddo
+!
+!      do io=1,2;if(VB(io).le.verbosity_info)then
+!        write(outlog(io),*)"Searching for blocks with OPTMOD"
+!      endif;enddo
+!      nmods = 0
+!      read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+!      ! if there are no further blocks, then we will skip over this while loop
+!      do while(iostatus.eq.0)
+!        substr_pos1 = index(linebuffer080,'OPTMOD')
+!        if(substr_pos1.eq.1)then
+!          ! found an optional module
+!          nmods = nmods + 1
+!          if(nmods.gt.MAXNUM_OPTMODS)then
+!            do io=1,2;if(VB(io).le.verbosity_error)then
+!              write(errlog(io),*)"ERROR: Maximum number of optional modules exceeded"
+!              write(errlog(io),*)"       Current maximum set to MAXNUM_OPTMODS = ",MAXNUM_OPTMODS
+!              write(errlog(io),*)"       Please increase MAXNUM_OPTMODS and recompile."
+!              write(errlog(io),*)"  Ash3d_VariableModules.f90:global_param:MAXNUM_OPTMODS"
+!            endif;enddo
+!            stop 1
+!          endif
+!          !  Parse for the keyword
+!          read(linebuffer080,1104,iostat=iostatus,iomsg=iomessage)mod_name
+!          linebuffer050 = "Reading control file blk9+ (OPTMOD)"
+!          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+!          OPTMOD_names(nmods) = trim(adjustl(mod_name))
+!          do io=1,2;if(VB(io).le.verbosity_info)then
+!            write(outlog(io),*)"     Found optional module : ",&
+!                                OPTMOD_names(nmods),nmods
+!          endif;enddo
+!        endif
+!        read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+!        if(iostatus.lt.0)then
+!          ! end of file reached; exit do loop
+!          exit
+!        elseif(iostatus.gt.0)then
+!          ! Some non-EOF error
+!          linebuffer050 = "Reading control file blk9+ (OPTMOD)"
+!          call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+!        endif
+!1104    format(7x,a20)
+!      enddo
+!      if(nmods.eq.0)then
+!        do io=1,2;if(VB(io).le.verbosity_info)then
+!          write(outlog(io),*)"No OPTMOD blocks found."
+!        endif;enddo
+!      else
+!        do io=1,2;if(VB(io).le.verbosity_info)then
+!          write(outlog(io),*)"Number of OPTMOD blocks found = ",nmods
+!        endif;enddo
+!      endif
 
      ! close input file 
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -4402,7 +4518,7 @@
       ! for the internal list of airports.
 
       !Block 6/Line 4: 
-      !               Name of file containing aiport locations
+      !               Name of file containing airport locations
 96041 do io=1,2;if(VB(io).le.verbosity_error)then
         write(errlog(io),*) 'Would you like Ash3d to use the internal airports database instead (y/n)?'
       endif;enddo
@@ -4961,7 +5077,6 @@
       endif
         ! Now the bonus line if the user requests a custom variable
       if(iprod1.eq.0)then
-        ! HFS fix this
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: Need to code custom variables in control file"
         endif;enddo

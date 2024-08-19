@@ -17,8 +17,8 @@ output products Ash3d could produce at run-time.
 
 `Ash3d_PostProc` is a tool that can be used to post-process the Ash3d output
 from the NetCDF output file. Any of the standard output products (ESRI ASCII,
-kml/kmz, binanry) can be recreated using this tool along with png images of
-2d data in mapview (or contour plots for vertical prodiles) or shapefiles of 2d
+kml/kmz, binary) can be recreated using this tool along with png images of
+2d data in mapview (or contour plots for vertical profiles) or shapefiles of 2d
 data. To produce image files, `Ash3d_PostProc` can use a variety of geographic
 plotting software. Both `dislin` and `plplot` are available as libraries and can
 be linked to `Ash3d_PostProc` at compilation time. `dislin` includes the feature
@@ -79,8 +79,8 @@ the output NetCDF file, enter:
 
 The preferred graphics package is
 set at the time of compilation depending on the system (Linux, Windows, MacOS)
-and the availability of the libraries. These can alway be overriden at
-run-time with the environmet variable `ASH3DPLOT`,
+and the availability of the libraries. These can alway be overwritten at
+run-time with the environment variable `ASH3DPLOT`,
 where: 1=[dislin](Figs/Ash3d_Deposit____final_dislin.png), 2=[plplot](Figs/Ash3d_Deposit____final_plplot.png),
 3=[gnuplot](Figs/Ash3d_Deposit____final_gnuplot.png),
 and 4=[GMT](Figs/Ash3d_Deposit____final_gmt.png).  
@@ -148,6 +148,6 @@ number of custom levels (`nlev`).
 If custom contours are requested, then four additional lines are read in the control file.
 Line 13 contains the `nlev` floating point values for the contour levels in the
 default units of the output variable.  
-Lines 14, 15, and 16 are the `nlev` integer values of the RGB componets of the colors (0-255).
+Lines 14, 15, and 16 are the `nlev` integer values of the RGB components of the colors (0-255).
 
 
