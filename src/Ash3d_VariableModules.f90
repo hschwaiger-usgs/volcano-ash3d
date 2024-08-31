@@ -640,7 +640,7 @@
       if(.not.associated(s_lb_pd)  )  allocate(s_lb_pd(-1:nzmax+2));                            s_lb_pd     = 0.0_ip
       if(.not.associated(ds_vec_pd))  allocate(ds_vec_pd(-1:nzmax+2));                          ds_vec_pd   = 0.0_ip
       if(.not.associated(j_cc_pd))    allocate(j_cc_pd(-1:nxmax+2,-1:nymax+2));                 j_cc_pd     = 1.0_ip
-      if(.not.associated(Zsurf))      allocate(Zsurf(1:nxmax,1:nymax));                         Zsurf       = 0.0_ip
+      if(.not.associated(Zsurf))      allocate(Zsurf(-1:nxmax+2,-1:nymax+2));                   Zsurf       = 0.0_ip
 #else
       if (IsLatLon) then
         if(.not.allocated(lon_cc_pd))allocate(lon_cc_pd(-1:nxmax+2));                            lon_cc_pd = 0.0_ip
@@ -662,7 +662,7 @@
       if(.not.allocated(s_lb_pd)  )  allocate(s_lb_pd(-1:nzmax+2));                            s_lb_pd     = 0.0_ip
       if(.not.allocated(ds_vec_pd))  allocate(ds_vec_pd(-1:nzmax+2));                          ds_vec_pd   = 0.0_ip
       if(.not.allocated(j_cc_pd))    allocate(j_cc_pd(-1:nxmax+2,-1:nymax+2));                 j_cc_pd     = 1.0_ip
-      if(.not.allocated(Zsurf))      allocate(Zsurf(1:nxmax,1:nymax));                         Zsurf       = 0.0_ip
+      if(.not.allocated(Zsurf))      allocate(Zsurf(-1:nxmax+2,-1:nymax+2));                   Zsurf       = 0.0_ip
 #endif
 
       end subroutine Allocate_mesh
@@ -736,6 +736,7 @@
       real(kind=ip),dimension(:,:,:)    ,pointer :: vx_pd => null() ! u (E) component of wind
       real(kind=ip),dimension(:,:,:)    ,pointer :: vy_pd => null() ! v (N) component of wind
       real(kind=ip),dimension(:,:,:)    ,pointer :: vz_pd => null() ! w (up) component of wind
+      real(kind=ip),dimension(:,:,:)    ,pointer :: vh_pd => null() ! supplemental due to topography
       real(kind=ip),dimension(:,:,:,:)  ,pointer :: vf_pd => null() ! fall velocity (x,y,z,gs) (positive upward)
       real(kind=ip),dimension(:,:,:,:,:),pointer :: concen_pd      => null() !ash concentration in x,y,z,gs_bin,time
       real(kind=ip),dimension(:,:,:)    ,pointer :: outflow_xz1_pd => null()
@@ -759,6 +760,7 @@
       real(kind=ip),dimension(:,:,:)    ,allocatable :: vx_pd ! u (E) component of wind
       real(kind=ip),dimension(:,:,:)    ,allocatable :: vy_pd ! v (N) component of wind
       real(kind=ip),dimension(:,:,:)    ,allocatable :: vz_pd ! w (up) component of wind
+      real(kind=ip),dimension(:,:,:)    ,allocatable :: vh_pd ! supplemental due to topography
       real(kind=ip),dimension(:,:,:,:)  ,allocatable :: vf_pd ! fall velocity (x,y,z,gs) (positive upward)
       real(kind=ip),dimension(:,:,:,:,:),allocatable :: concen_pd       ! ash concentration in x,y,z,gs_bin,time
       real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_xz1_pd  ! outflow concentration in x,z,gs
@@ -805,6 +807,7 @@ subroutine Allocate_solution
       if(.not.associated(vx_pd))         allocate(vx_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2))
       if(.not.associated(vy_pd))         allocate(vy_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2))
       if(.not.associated(vz_pd))         allocate(vz_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2))
+      if(.not.associated(vh_pd))         allocate(vh_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2))
       if(.not.associated(vf_pd))         allocate(vf_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2,1:nsmax))
       if(.not.associated(concen_pd))     allocate(concen_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2,1:nsmax,ts0:ts1))
       if(.not.associated(outflow_xz1_pd))allocate(outflow_xz1_pd(-1:nxmax+2,-1:nzmax+2,1:nsmax))
@@ -829,6 +832,7 @@ subroutine Allocate_solution
       if(.not.allocated(vx_pd))         allocate(vx_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2))
       if(.not.allocated(vy_pd))         allocate(vy_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2))
       if(.not.allocated(vz_pd))         allocate(vz_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2))
+      if(.not.allocated(vh_pd))         allocate(vh_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2))
       if(.not.allocated(vf_pd))         allocate(vf_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2,1:nsmax))
       if(.not.allocated(concen_pd))     allocate(concen_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2,1:nsmax,ts0:ts1))
       if(.not.allocated(outflow_xz1_pd))allocate(outflow_xz1_pd(-1:nxmax+2,-1:nzmax+2,1:nsmax))
@@ -853,6 +857,7 @@ subroutine Allocate_solution
       vx_pd = 0.0_ip
       vy_pd = 0.0_ip
       vz_pd = 0.0_ip
+      vh_pd = 0.0_ip
       vf_pd = 0.0_ip
       concen_pd = 0.0_ip
       outflow_xz1_pd = 0.0_ip
@@ -880,6 +885,7 @@ subroutine Allocate_solution
       if(associated(vx_pd))              deallocate(vx_pd)
       if(associated(vy_pd))              deallocate(vy_pd)
       if(associated(vz_pd))              deallocate(vz_pd)
+      if(associated(vh_pd))              deallocate(vh_pd)
       if(associated(vf_pd))              deallocate(vf_pd)
       if(associated(concen_pd))          deallocate(concen_pd)
       if(associated(outflow_xz1_pd))     deallocate(outflow_xz1_pd)
@@ -901,6 +907,7 @@ subroutine Allocate_solution
       if(allocated(vx_pd))              deallocate(vx_pd)
       if(allocated(vy_pd))              deallocate(vy_pd)
       if(allocated(vz_pd))              deallocate(vz_pd)
+      if(allocated(vh_pd))              deallocate(vh_pd)
       if(allocated(vf_pd))              deallocate(vf_pd)
       if(allocated(concen_pd))          deallocate(concen_pd)
       if(allocated(outflow_xz1_pd))     deallocate(outflow_xz1_pd)

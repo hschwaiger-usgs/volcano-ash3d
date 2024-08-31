@@ -281,8 +281,8 @@
         s_cc_pd(:) = z_cc_pd(:)
         s_lb_pd(:) = z_lb_pd(:)
       elseif(ZScaling_ID.eq.2)then
-        ! Coordinate system will be scaled by topography (0->1 unitless)
-        ! Same logic as above; surface to top should be 0->1 so use Zsurf of 0
+        ! Coordinate system will be scaled by topography (0->Ztop in km)
+        ! Same logic as above; surface to top should be 0->Ztop so use Zsurf of 0
         ! for the purpose of indexing (otherwise we just have the s-values of
         ! the Cartesian z-array)
         s_cc_pd(:) = z_cc_pd(:)/Ztop
@@ -292,7 +292,7 @@
       if(ZScaling_ID.eq.0.or.ZScaling_ID.eq.1)then
         ds_vec_pd(:) = dz_vec_pd(:)
       else
-        ds_vec_pd(:) = (dz_vec_pd(:))/(Ztop-Zsurf(ivent,jvent))
+        ds_vec_pd(:) = (dz_vec_pd(:))*Ztop/(Ztop-Zsurf(ivent,jvent))
       endif
 
       allocate(dums_sp(nzmax))
@@ -307,18 +307,17 @@
 
       ! Now modify all the cell face area and volume measures if we are using
       ! the scaled coordinates. Note: these variables are in km2 and km3
-      ! regardless of if the vertical coordinate has units of km or is unitless.
+      ! since the jacobian for all cases is unitless
       if(ZScaling_ID.eq.2)then
         do i=-1,nxmax+2
           do j=-1,nymax+2
-            tmp = j_cc_pd(ivent,jvent)/Ztop
             ! Note that sigma_nz_pd is unaffected
               ! Area of face at i-1/2,j,k
-            sigma_nx_pd(i,j,:) = sigma_nx_pd(i,j,:)*tmp
+            sigma_nx_pd(i,j,:) = sigma_nx_pd(i,j,:)*j_cc_pd(i,j)
               ! Area of face at i,j-1/2,k
-            sigma_ny_pd(i,j,:) = sigma_ny_pd(i,j,:)*tmp
+            sigma_ny_pd(i,j,:) = sigma_ny_pd(i,j,:)*j_cc_pd(i,j)
               ! Volume of cell
-            kappa_pd(i,j,:)    = kappa_pd(i,j,:)*tmp
+            kappa_pd(i,j,:)    = kappa_pd(i,j,:)*j_cc_pd(i,j)
           enddo
         enddo
       endif
@@ -382,7 +381,7 @@
 #else
       if(.not.allocated(xy2ll_xlon))then
 #endif
-        allocate(xy2ll_xlon(0:nxmax+1,0:nymax+1))
+        allocate(xy2ll_xlon(-1:nxmax+2,-1:nymax+2))
       endif
       ! This block calculates the lon/lat for each computational grid point
       ! Note:  All we need here is just the min/max for lat/lon so that we
@@ -392,8 +391,8 @@
       latmin =   90.0_dp
       lonmin =  360.0_dp
       lonmax = -360.0_sp
-      do i=0,nxmax+1
-        do j=0,nymax+1
+      do i=-1,nxmax+2
+        do j=-1,nymax+2
           xin = real(x_cc_pd(i),kind=dp)  ! Projection routines use kind=8
           yin = real(y_cc_pd(j),kind=dp)
           call PJ_proj_inv(xin,yin, &

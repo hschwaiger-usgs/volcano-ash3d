@@ -151,17 +151,17 @@
             ! Note: ghost cells should contain q_cc=0 and vel_cc=edge
             q_cc(  rmin-2:rmin-1+ncells+2) = concen_pd(rmin-2:rmin-1+ncells+2,j,k,n,ts0)
             vel_cc(rmin-2:rmin-1+ncells+2) =     vx_pd(rmin-2:rmin-1+ncells+2,j,k)
-            sig_I(rmin-2:rmin-1+ncells+2)  = sigma_nx_pd(rmin-2:rmin-1+ncells+2,j,k)
-            kap_cc(rmin-2:rmin-1+ncells+2) = kappa_pd(rmin-2:rmin-1+ncells+2,j,k)
+!            sig_I(rmin-2:rmin-1+ncells+2)  = sigma_nx_pd(rmin-2:rmin-1+ncells+2,j,k)
+!            kap_cc(rmin-2:rmin-1+ncells+2) = kappa_pd(rmin-2:rmin-1+ncells+2,j,k)
 
             ! Now scale according to local Jacobian
             q_cc(rmin-2:rmin-1+ncells+2)   = q_cc(rmin-2:rmin-1+ncells+2)   * &
                                               j_cc_pd(rmin-2:rmin-1+ncells+2,j)
-            !vel_cc(:) = vel_cc(:)        ! vx not scaled by jac
-            sig_I(rmin-2:rmin-1+ncells+2)  = sig_I(rmin-2:rmin-1+ncells+2) / &
-                                              j_cc_pd(rmin-2:rmin-1+ncells+2,j)
-            kap_cc(rmin-2:rmin-1+ncells+2) = kap_cc(rmin-2:rmin-1+ncells+2) / &
-                                              j_cc_pd(rmin-2:rmin-1+ncells+2,j)
+            !vel_cc(:) = vel_cc(:)           ! vx not scaled by jac
+!            sig_I(rmin-2:rmin-1+ncells+2)  = sig_I(rmin-2:rmin-1+ncells+2) / &
+!                                              j_cc_pd(rmin-2:rmin-1+ncells+2,j)
+!            kap_cc(rmin-2:rmin-1+ncells+2) = kap_cc(rmin-2:rmin-1+ncells+2) / &
+!                                              j_cc_pd(rmin-2:rmin-1+ncells+2,j)
 
             ! Ghost cells were set in Set_BC.f90, but could be reset here
             ! if desired or for testing.  Tests showed that velocities
@@ -170,16 +170,16 @@
 
             ! Calculate \Delta t / \kappa
               ! using kappa of cell
-!            dt_vol_cc(rmin-2:rmin-1+ncells+2) = real(dt,kind=ip) / &
-!                                                kappa_pd(rmin-2:rmin-1+ncells+2,j,k)
             dt_vol_cc(rmin-2:rmin-1+ncells+2) = real(dt,kind=ip) / &
-                                                kap_cc(rmin-2:rmin-1+ncells+2)
+                                                kappa_pd(rmin-2:rmin-1+ncells+2,j,k)
+!            dt_vol_cc(rmin-2:rmin-1+ncells+2) = real(dt,kind=ip) / &
+!                                                kap_cc(rmin-2:rmin-1+ncells+2)
 
             ! Make sure to initialize this since we are only setting it where is matters
             usig_I = 0.0_ip
             do l=rmin,rmin-1+ncells+1
-              !usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sigma_nx_pd(l,j,k)
-              usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sig_I(l)
+              usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sigma_nx_pd(l,j,k)
+!              usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sig_I(l)
             enddo
 
             ! This calculates the update in a row in one function call
@@ -422,17 +422,17 @@
             ! Note: ghost cells should contain q_cc=0 and vel_cc=edge
             q_cc(  rmin-2:rmin-1+ncells+2) = concen_pd(i,rmin-2:rmin-1+ncells+2,k,n,ts0)
             vel_cc(rmin-2:rmin-1+ncells+2) =     vy_pd(i,rmin-2:rmin-1+ncells+2,k)
-            sig_I(rmin-2:rmin-1+ncells+2)  = sigma_ny_pd(i,rmin-2:rmin-1+ncells+2,k)
-            kap_cc(rmin-2:rmin-1+ncells+2) = kappa_pd(i,rmin-2:rmin-1+ncells+2,k)
+!            sig_I(rmin-2:rmin-1+ncells+2)  = sigma_ny_pd(i,rmin-2:rmin-1+ncells+2,k)
+!            kap_cc(rmin-2:rmin-1+ncells+2) = kappa_pd(i,rmin-2:rmin-1+ncells+2,k)
 
             ! Now scale according to local Jacobian
             q_cc(rmin-2:rmin-1+ncells+2)   = q_cc(rmin-2:rmin-1+ncells+2)   * &
                                               j_cc_pd(i,rmin-2:rmin-1+ncells+2)
             !vel_cc(:) = vel_cc(:)           ! vy not scaled by jac
-            sig_I(rmin-2:rmin-1+ncells+2)  = sig_I(rmin-2:rmin-1+ncells+2) / &
-                                              j_cc_pd(i,rmin-2:rmin-1+ncells+2)
-            kap_cc(rmin-2:rmin-1+ncells+2) = kap_cc(rmin-2:rmin-1+ncells+2) / &
-                                              j_cc_pd(i,rmin-2:rmin-1+ncells+2)
+!            sig_I(rmin-2:rmin-1+ncells+2)  = sig_I(rmin-2:rmin-1+ncells+2) / &
+!                                              j_cc_pd(i,rmin-2:rmin-1+ncells+2)
+!            kap_cc(rmin-2:rmin-1+ncells+2) = kap_cc(rmin-2:rmin-1+ncells+2) / &
+!                                              j_cc_pd(i,rmin-2:rmin-1+ncells+2)
 
             ! Ghost cells were set in Set_BC.f90, but could be reset here
             ! if desired or for testing.  Tests showed that velocities
@@ -441,16 +441,16 @@
 
             ! Calculate \Delta t / \kappa
               ! using kappa of cell
-!            dt_vol_cc(rmin-2:rmin-1+ncells+2) = real(dt,kind=ip) / &
-!                                                kappa_pd(i,rmin-2:rmin-1+ncells+2,k)
             dt_vol_cc(rmin-2:rmin-1+ncells+2) = real(dt,kind=ip) / &
-                                                kap_cc(rmin-2:rmin-1+ncells+2)
+                                                kappa_pd(i,rmin-2:rmin-1+ncells+2,k)
+!            dt_vol_cc(rmin-2:rmin-1+ncells+2) = real(dt,kind=ip) / &
+!                                                kap_cc(rmin-2:rmin-1+ncells+2)
 
             ! Make sure to initialize this since we are only setting it where is matters
             usig_I = 0.0_ip
             do l=rmin,rmin-1+ncells+1
-!              usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sigma_ny_pd(i,l,k)
-              usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sig_I(l)
+              usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sigma_ny_pd(i,l,k)
+!              usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sig_I(l)
             enddo
 
             ! This calculates the update in a row in one function call

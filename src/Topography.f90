@@ -101,6 +101,7 @@
 !      subroutine Load_Topo_Gridded_bin
 !      subroutine Load_Topo_Gridded_ASCII
 !      subroutine Interp_Topo
+!      subroutine Calc_FDGrad_Topo
 !      subroutine Smooth_Topo
 !
 !*******************************************************************************
@@ -155,12 +156,18 @@
       real(kind=dp) :: dlat_topo
       real(kind=dp) :: dlon_topo
       real(kind=dp) :: cleft,cright
-      real(kind=sp), dimension(:,:)  ,allocatable :: topo_subgrid
+      real(kind=ip), dimension(:,:)  ,allocatable :: topo_subgrid
+      logical,dimension(:,:)  ,allocatable :: IsWater_subgrid
 
       ! These are on the computational grid
-      real(kind=sp),dimension(:,:)  ,allocatable :: topo_comp ! Used if useTopo=.true.
+      real(kind=ip),dimension(:,:)  ,allocatable :: topo_comp ! Used if useTopo=.true.
+      real(kind=ip),dimension(:,:)  ,allocatable :: dhdx_comp
+      real(kind=ip),dimension(:,:)  ,allocatable :: dhdy_comp
       !integer      ,dimension(:,:)  ,allocatable :: topo_indx ! kindex of topo
       !integer,private :: lon_shift_flag
+
+      ! HFS: Should first map all topo points onto computational grid, average those values,
+      !      Then apply a smoothing of the comp grid
 
       real(kind=dp) :: minlon_Topo_comp,maxlon_Topo_comp
       real(kind=dp) :: minlat_Topo_comp,maxlat_Topo_comp
@@ -255,7 +262,7 @@
           elseif(ZScaling_ID.eq.1)then
             write(outlog(io),*)"     with shifted-altitude coordinates :: s=z-Zsurf"
           elseif(ZScaling_ID.eq.2)then
-            write(outlog(io),*)"     with sigma-altitude coordinates :: s=(z-Zsurf)/(Ztop-Zsurf)"
+            write(outlog(io),*)"     with sigma-altitude coordinates :: s=Ztop*(z-Zsurf)/(Ztop-Zsurf)"
           endif
         endif;enddo
       elseif(answer(1:2).eq.'no') then
@@ -384,7 +391,10 @@
         write(outlog(io),*)"--------------------------------------------------"
       endif;enddo
 
-      allocate(topo_comp(nx,ny));       topo_comp = 0.0_sp
+      allocate(topo_comp(-1:nx+2,-1:ny+2));       topo_comp = -9999.0_ip
+      allocate(dhdx_comp(-1:nx+2,-1:ny+2));       dhdx_comp = 0.0_ip
+      allocate(dhdy_comp(-1:nx+2,-1:ny+2));       dhdy_comp = 0.0_ip
+
       !allocate(topo_indx(nx,ny));       topo_indx = 0
 
       ! Set the start indicies
@@ -462,6 +472,9 @@
       subroutine Deallocate_Topo
 
       deallocate(topo_comp)
+      deallocate(dhdx_comp)
+      deallocate(dhdy_comp)
+      deallocate(IsWater_subgrid)
       !deallocate(topo_indx)
 
       end subroutine Deallocate_Topo
@@ -504,10 +517,10 @@
         !Just get min and max of lat and lon.
         ! These were already calculated in calc_grid under the names
         ! lonmin,lonmax,latmin,latmax
-        minlon_Topo_comp = minval(lon_cc_pd(1:nxmax)-0.5_ip*de)
-        maxlon_Topo_comp = maxval(lon_cc_pd(1:nxmax)+0.5_ip*de)
-        minlat_Topo_comp = minval(lat_cc_pd(1:nymax)-0.5_ip*dn)
-        maxlat_Topo_comp = maxval(lat_cc_pd(1:nymax)+0.5_ip*dn)
+        minlon_Topo_comp = minval(lon_cc_pd(-1:nxmax+2)-0.5_ip*de)
+        maxlon_Topo_comp = maxval(lon_cc_pd(-1:nxmax+2)+0.5_ip*de)
+        minlat_Topo_comp = minval(lat_cc_pd(-1:nymax+2)-0.5_ip*dn)
+        maxlat_Topo_comp = maxval(lat_cc_pd(-1:nymax+2)+0.5_ip*dn)
       else
         ! This function is in Calc_Mesh
         call get_minmax_lonlat(minlon_Topo_comp,maxlon_Topo_comp,minlat_Topo_comp,maxlat_Topo_comp)
@@ -561,31 +574,33 @@
 
       call Smooth_Topo
 
+      call Calc_FDGrad_Topo
+
       ! Now that we have the topography prepared on the computational grid, set the jacobian
       if(ZScaling_ID.eq.0)then
-        Zsurf(1:nxmax,1:nymax)   = 0.0_ip
+        Zsurf(-1:nxmax+2,-1:nymax+2)   = 0.0_ip
         ! No shifting or scaling so Jacobian remains 1 and dimensionless
         j_cc_pd(-1:nxmax+2,-1:nymax+2) = 1.0_ip
       elseif(ZScaling_ID.eq.1)then
-        Zsurf(1:nxmax,1:nymax)   = topo_comp(1:nxmax,1:nymax)
+        Zsurf(-1:nxmax+2,-1:nymax+2)   = topo_comp(-1:nxmax+2,-1:nymax+2)
         ! Shifted grid: Jacobian remains 1 and dimensionless
         j_cc_pd(-1:nxmax+2,-1:nymax+2) = 1.0_ip
       elseif(ZScaling_ID.eq.2)then
-        Zsurf(1:nxmax,1:nymax)   = topo_comp(1:nxmax,1:nymax)
-        ! Scaled (sigma-altitude) Jacobian = Ztop-Zsurf (in km)
-        j_cc_pd(1:nxmax,1:nymax) = Ztop - Zsurf(1:nxmax,1:nymax)
-        j_cc_pd(1:nxmax,-1)      = j_cc_pd(1:nxmax,1)
-        j_cc_pd(1:nxmax, 0)      = j_cc_pd(1:nxmax,1)
-        j_cc_pd(1:nxmax,nymax+1) = j_cc_pd(1:nxmax,nymax)
-        j_cc_pd(1:nxmax,nymax+2) = j_cc_pd(1:nxmax,nymax)
-        j_cc_pd(-1,1:nymax)      = j_cc_pd(1,1:nymax)
-        j_cc_pd( 0,1:nymax)      = j_cc_pd(1,1:nymax)
-        j_cc_pd(nxmax+1,1:nymax) = j_cc_pd(nxmax,1:nymax)
-        j_cc_pd(nxmax+2,1:nymax) = j_cc_pd(nxmax,1:nymax)
-        j_cc_pd(-1:0           ,-1:0)           = j_cc_pd(1,1)
-        j_cc_pd(nxmax+1:nxmax+2,-1:0)           = j_cc_pd(nxmax,1)
-        j_cc_pd(-1:0           ,nymax+1:nymax+2)= j_cc_pd(1,nymax)
-        j_cc_pd(nxmax+1:nxmax+2,nymax+1:nymax+2)= j_cc_pd(nxmax,nymax)
+        Zsurf(-1:nxmax+2,-1:nymax+2)   = topo_comp(-1:nxmax+2,-1:nymax+2)
+        ! Scaled (sigma-altitude) Jacobian = (Ztop-Zsurf)/Ztop and dimensionless
+        j_cc_pd(-1:nxmax+2,-1:nymax+2) = (Ztop - Zsurf(-1:nxmax+2,-1:nymax+2))/Ztop
+        !j_cc_pd(1:nxmax,-1)      = j_cc_pd(1:nxmax,1)
+        !j_cc_pd(1:nxmax, 0)      = j_cc_pd(1:nxmax,1)
+        !j_cc_pd(1:nxmax,nymax+1) = j_cc_pd(1:nxmax,nymax)
+        !j_cc_pd(1:nxmax,nymax+2) = j_cc_pd(1:nxmax,nymax)
+        !j_cc_pd(-1,1:nymax)      = j_cc_pd(1,1:nymax)
+        !j_cc_pd( 0,1:nymax)      = j_cc_pd(1,1:nymax)
+        !j_cc_pd(nxmax+1,1:nymax) = j_cc_pd(nxmax,1:nymax)
+        !j_cc_pd(nxmax+2,1:nymax) = j_cc_pd(nxmax,1:nymax)
+        !j_cc_pd(-1:0           ,-1:0)           = j_cc_pd(1,1)
+        !j_cc_pd(nxmax+1:nxmax+2,-1:0)           = j_cc_pd(nxmax,1)
+        !j_cc_pd(-1:0           ,nymax+1:nymax+2)= j_cc_pd(1,nymax)
+        !j_cc_pd(nxmax+1:nxmax+2,nymax+1:nymax+2)= j_cc_pd(nxmax,nymax)
       endif
 
       end subroutine Get_Topo
@@ -636,10 +651,12 @@
 
       real(kind=sp)   ,dimension(:)   ,allocatable :: temp1d_sp
       real(kind=dp)   ,dimension(:)   ,allocatable :: temp1d_dp
-     
+
       integer :: start_lat_idx,start_lon_idx
       integer :: end_lat_idx
       integer :: ilat,ilon
+      real(kind=dp) :: topolonmin,topolonmax
+      real(kind=dp) :: topolatmin,topolatmax
 
       logical :: x_inverted     = .false.
       logical :: y_inverted     = .false.
@@ -707,7 +724,7 @@
         ! The deprecated GEBCO 08 data stores elevation in one long array
         ! Need to use a special reader for this
         do io=1,nio;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"This looks like GEBCO_08 which has topography in one variable z(nx*ny)"
+          write(outlog(io),*)"This looks like GEBCO_08 which has topography as a 1-D variable z(nx*ny)"
           write(outlog(io),*)"Calling special reader"
         endif;enddo
         nSTAT = nf90_close(ncid)
@@ -845,14 +862,18 @@
         minlon_Topo_Met  = minlon_Topo_Met  + 360.0_dp
         maxlon_Topo_Met  = maxlon_Topo_Met  + 360.0_dp
       endif
+      topolonmin = min(minlon_Topo_Met,minlon_Topo_comp)
+      topolonmax = max(maxlon_Topo_Met,maxlon_Topo_comp)
+      topolatmin = min(minlat_Topo_Met,minlat_Topo_comp)
+      topolatmax = max(maxlat_Topo_Met,maxlat_Topo_comp)
       start_lon_idx = -1
       cleft = lon_topo_fullgrid(1)-0.5_dp*dlon_topo
       do ilon=1,nlon_topo_fullgrid
         cright = lon_topo_fullgrid(ilon)+0.5_dp*dlon_topo
+!HFS
         if(minlon_Topo_Met.ge.cleft.and. &
            minlon_Topo_Met.lt.cright.and.&
            .not.Topo_UseCompGrid)then
-          write(*,*)"Setting start_lon_idx by Met grid"
           start_lon_idx = ilon
         endif
         ! Use extents of computational grid if topo grid does not cover Met grid
@@ -954,6 +975,8 @@
       allocate(loncc_topo_subgrid(nlon_topo_subgrid))
       allocate(latcc_topo_subgrid(nlat_topo_subgrid))
       allocate(topo_subgrid(nlon_topo_subgrid,nlat_topo_subgrid))
+      allocate(IsWater_subgrid(nlon_topo_subgrid,nlat_topo_subgrid))
+
       do ilon=1,nlon_topo_subgrid
         loncc_topo_subgrid(ilon)=lon_topo_fullgrid(start_lon_idx)+(ilon-1)*dlat_topo
       enddo
@@ -1073,6 +1096,8 @@
       integer :: lon_shift_flag
       integer :: start_lat_idx,start_lon_idx,end_lon_idx
       integer :: ilat,ilon,idx
+      real(kind=dp) :: topolonmin,topolonmax
+      real(kind=dp) :: topolatmin,topolatmax
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Reading topography data in NetCDF format."
@@ -1101,22 +1126,38 @@
       nlon_topo_fullgrid = 43200
       dlon_topo = 1.0_dp/120.0_dp
       dlat_topo = 1.0_dp/120.0_dp
-      start_lat_idx = int((minlat_Topo_Met+90.0_ip)/dlon_topo)
+      topolonmin = min(minlon_Topo_Met,minlon_Topo_comp)
+      topolonmax = max(maxlon_Topo_Met,maxlon_Topo_comp)
+      topolatmin = min(minlat_Topo_Met,minlat_Topo_comp)
+      topolatmax = max(maxlat_Topo_Met,maxlat_Topo_comp)
+      start_lat_idx = int((topolatmin+90.0_ip)/dlon_topo)
       start_lat_idx = nlat_topo_fullgrid-start_lat_idx
 
       ! Define the sub-grid holding the topo data we need
-      nlon_topo_subgrid = int((maxlon_Topo_Met-minlon_Topo_Met)/dlon_topo) + 4
-      nlat_topo_subgrid = int((maxlat_Topo_Met-minlat_Topo_Met)/dlat_topo) + 4
+!      nlon_topo_subgrid = int((maxlon_Topo_Met-minlon_Topo_Met)/dlon_topo) + 4
+!      nlat_topo_subgrid = int((maxlat_Topo_Met-minlat_Topo_Met)/dlat_topo) + 4
+      nlon_topo_subgrid = int((topolonmax-topolonmin)/dlon_topo) + 4
+      nlat_topo_subgrid = int((topolatmax-topolatmin)/dlat_topo) + 4
       allocate(loncc_topo_subgrid(nlon_topo_subgrid))
       allocate(latcc_topo_subgrid(nlat_topo_subgrid))
       allocate(topo_subgrid(nlon_topo_subgrid,nlat_topo_subgrid))
+      allocate(IsWater_subgrid(nlon_topo_subgrid,nlat_topo_subgrid))
+
       ! GEBCO08 has data that start at -180, so shift 0 accordingly
-      if(minlon_Topo_Met.lt.0.0_dp)then
-        start_lon_idx = int((minlon_Topo_Met+180.0_dp)/dlon_topo)
-      elseif(minlon_Topo_Met.ge.0.0_dp.and.minlon_Topo_Met.lt.180.0_dp)then
-        start_lon_idx = int((minlon_Topo_Met+180.0_dp)/dlon_topo)
-      elseif(minlon_Topo_Met.ge.180.0_dp)then
-        start_lon_idx = int((minlon_Topo_Met-180.0_dp)/dlon_topo)
+!      if(minlon_Topo_Met.lt.0.0_dp)then
+!        start_lon_idx = int((minlon_Topo_Met+180.0_dp)/dlon_topo)
+!      elseif(minlon_Topo_Met.ge.0.0_dp.and.minlon_Topo_Met.lt.180.0_dp)then
+!        start_lon_idx = int((minlon_Topo_Met+180.0_dp)/dlon_topo)
+!      elseif(minlon_Topo_Met.ge.180.0_dp)then
+!        start_lon_idx = int((minlon_Topo_Met-180.0_dp)/dlon_topo)
+!      endif
+
+      if(topolonmin.lt.0.0_dp)then
+        start_lon_idx = int((topolonmin+180.0_dp)/dlon_topo)
+      elseif(topolonmin.ge.0.0_dp.and.minlon_Topo_Met.lt.180.0_dp)then
+        start_lon_idx = int((topolonmin+180.0_dp)/dlon_topo)
+      elseif(topolonmin.ge.180.0_dp)then
+        start_lon_idx = int((topolonmin-180.0_dp)/dlon_topo)
       endif
 
       do ilon=1,nlon_topo_subgrid
@@ -1205,6 +1246,8 @@
       integer :: start_lat_idx,start_lon_idx
       integer :: end_lat_idx,end_lon_idx
       integer :: ilat,ilon
+      real(kind=dp) :: topolonmin,topolonmax
+      real(kind=dp) :: topolatmin,topolatmax
       integer :: irec,i
 
       logical :: y_inverted     = .false.
@@ -1600,6 +1643,11 @@
         minlon_Topo_Met  = minlon_Topo_Met  + 360.0_dp
         maxlon_Topo_Met  = maxlon_Topo_Met  + 360.0_dp
       endif
+      topolonmin = min(minlon_Topo_Met,minlon_Topo_comp)
+      topolonmax = max(maxlon_Topo_Met,maxlon_Topo_comp)
+      topolatmin = min(minlat_Topo_Met,minlat_Topo_comp)
+      topolatmax = max(maxlat_Topo_Met,maxlat_Topo_comp)
+!HFS
       start_lon_idx = -1
       cleft = lon_topo_fullgrid(1)-0.5_dp*dlon_topo
       do ilon=1,nlon_topo_fullgrid
@@ -1717,6 +1765,7 @@
       allocate(loncc_topo_subgrid(nlon_topo_subgrid))
       allocate(latcc_topo_subgrid(nlat_topo_subgrid))
       allocate(topo_subgrid(nlon_topo_subgrid,nlat_topo_subgrid))
+      allocate(IsWater_subgrid(nlon_topo_subgrid,nlat_topo_subgrid))
 
       loncc_topo_subgrid(1:nlon_topo_subgrid) = lon_topo_fullgrid(start_lon_idx:end_lon_idx-1)
       if(y_inverted)then
@@ -1846,6 +1895,8 @@
       integer :: start_lat_idx,start_lon_idx
       integer :: end_lat_idx,end_lon_idx
       integer :: ilat,ilon
+      real(kind=dp) :: topolonmin,topolonmax
+      real(kind=dp) :: topolatmin,topolatmax
 
       ! We have already checked for the existance of the topo file, so now just
       ! read it
@@ -1887,6 +1938,11 @@
         minlon_Topo_Met  = minlon_Topo_Met  + 360.0_dp
         maxlon_Topo_Met  = maxlon_Topo_Met  + 360.0_dp
       endif
+      topolonmin = min(minlon_Topo_Met,minlon_Topo_comp)
+      topolonmax = max(maxlon_Topo_Met,maxlon_Topo_comp)
+      topolatmin = min(minlat_Topo_Met,minlat_Topo_comp)
+      topolatmax = max(maxlat_Topo_Met,maxlat_Topo_comp)
+!HFS
       start_lon_idx = -1
       cleft = lon_topo_fullgrid(1)-0.5_dp*dlon_topo
       do ilon=1,nlon_topo_fullgrid
@@ -1976,6 +2032,7 @@
       allocate(loncc_topo_subgrid(nlon_topo_subgrid))
       allocate(latcc_topo_subgrid(nlat_topo_subgrid))
       allocate(topo_subgrid(nlon_topo_subgrid,nlat_topo_subgrid))
+      allocate(IsWater_subgrid(nlon_topo_subgrid,nlat_topo_subgrid))
 
       loncc_topo_subgrid(1:nlon_topo_subgrid) = lon_topo_fullgrid(start_lon_idx:start_lon_idx+nlon_topo_subgrid-1)
       latcc_topo_subgrid(1:nlat_topo_subgrid) = lat_topo_fullgrid(start_lat_idx:start_lat_idx+nlat_topo_subgrid-1)
@@ -1985,6 +2042,97 @@
                   start_lat_idx:start_lat_idx+nlat_topo_subgrid-1),kind=sp)
 
       end subroutine Load_Topo_Gridded_ASCII
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  RemoveBath_Topo
+!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine loops through all the computational cell-center coordinates,
+!  maps the coordinates to the topo grid, then interpolates the topography value
+!  onto topo_comp.
+!   Sets:
+!     topo_indx
+!     topo_comp
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine RemoveBath_Topo
+
+      use mesh,          only : &
+         nxmax,nymax
+
+      use MetReader,       only : &
+         nx_submet,ny_submet,MR_Topo_comp,MR_Topo_met
+
+        !IsWater_subgrid
+
+      integer :: i,j
+
+      do i = -1,nxmax+2
+        do j = -1,nymax+2
+          if(topo_comp(i,j).lt.0.0_ip)then
+            topo_comp(i,j)    = 0.0_ip
+            MR_Topo_comp(i,j) = 0.0_sp
+          endif
+        enddo
+      enddo
+
+      do i = 1,nx_submet
+        do j = 1,ny_submet
+          if (MR_Topo_met(i,j).lt.0.0_sp) MR_Topo_met(i,j) = 0.0_sp
+        enddo
+      enddo
+
+      end subroutine RemoveBath_Topo
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Calc_Vmod_Topo
+!
+!  Called from: 
+!  Arguments:
+!    none
+!
+!  This subroutine loops through all the computational cell-center coordinates,
+!  and calculates the modification needed for the vz advection routine.
+!   Sets:
+!     vh_pd
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine Calc_Vmod_Topo
+
+      use mesh,          only : &
+         ZScaling_ID,nxmax,nymax,Ztop,&
+         lon_cc_pd,sigma_nx_pd,kappa_pd
+
+      use solution,        only : &
+         vx_pd,vy_pd,vh_pd
+
+      integer :: i,j
+
+      ! Set the supplemental vertical velocity
+      if(ZScaling_ID.eq.0)then
+        vh_pd = 0.0_ip
+      elseif(ZScaling_ID.eq.1)then
+        do i=-1,nxmax+2
+          do j=-1,nymax+2
+            vh_pd(i,j,:)=-1.0_ip*(vx_pd(i,j,:)*dhdx_comp(i,j)+vy_pd(i,j,:)*dhdy_comp(i,j))
+          enddo
+        enddo
+      elseif(ZScaling_ID.eq.2)then
+        do i=-1,nxmax+2
+          do j=-1,nymax+2
+            vh_pd(i,j,:)=(s_cc_pd(:)/Ztop-1.0_ip)*vx_pd(i,j,:)*dhdx_comp(i,j)+vy_pd(i,j,:)*dhdy_comp(i,j)
+          enddo
+        enddo
+      endif
+
+      end subroutine Calc_Vmod_Topo
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
@@ -2033,8 +2181,8 @@
       latcl_topo_subgrid(nlat_topo_subgrid+1)=latcl_topo_subgrid(nlat_topo_subgrid)+dlat_topo
 
       ! Loop over all the computational grid points
-      do i=1,nxmax
-        do j=1,nymax
+      do i=-1,nxmax+2
+        do j=-1,nymax+2
 
           if(IsLatLon)then
             olam = lon_cc_pd(i)
@@ -2177,7 +2325,7 @@
                                 a2*topo_subgrid(ilon+1,ilat  ) + &
                                 a3*topo_subgrid(ilon+1,ilat+1) + &
                                 a4*topo_subgrid(ilon  ,ilat+1),kind=sp)
-          topo_comp(i,j) = topo_comp(i,j) / 1000.0_sp ! convert to km
+          topo_comp(i,j) = topo_comp(i,j) / 1000.0_ip ! convert to km
 
           !topo_indx(i,j) = 0
           !do k=1,nzmax+1
@@ -2189,6 +2337,7 @@
           !enddo
         enddo
       enddo
+
       deallocate(loncc_topo_subgrid,latcc_topo_subgrid,topo_subgrid)
       deallocate(loncl_topo_subgrid,latcl_topo_subgrid)
 
@@ -2197,6 +2346,66 @@
       endif
 
       end subroutine Interp_Topo
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Calc_FDGrad_Topo
+!
+!  Called from: Get_Topo
+!  Arguments:
+!    none
+!
+!  This subroutine loops through all the nodes of the comptational grid and
+!  calculates the gradient of topography using finite-differencing.
+!   Resets:
+!     dhdx_comp
+!     dhdy_comp
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine Calc_FDGrad_Topo
+
+      use mesh,          only : &
+         nxmax,nymax,sigma_ny_pd,sigma_nx_pd,kappa_pd
+
+      integer :: i,j
+      real(kind=ip) :: ds
+
+      ! Now calculate derivitives of topo
+      do i=-1,nxmax+2
+        do j=-1,nymax+2
+          ! gradient of topo in x
+          if(i.eq.-1)then
+            ! one-sided FD
+            ds = kappa_pd(i,j,1)/sigma_nx_pd(i,j,1)
+            dhdx_comp(i,j) = (topo_comp(i+1,j) - topo_comp(i,j))/ds
+          elseif(i.eq.nxmax+2)then
+            ! one-sided FD
+            ds = kappa_pd(i,j,1)/sigma_nx_pd(i,j,1)
+            dhdx_comp(i,j) = (topo_comp(i,j) - topo_comp(i-1,j))/ds
+          else
+            ! two-sided FD
+            ds = kappa_pd(i,j,1)/(sigma_nx_pd(i,j,1)+sigma_nx_pd(i+1,j,1))
+            dhdx_comp(i,j) =2* (topo_comp(i+1,j) - topo_comp(i-1,j))/ds
+          endif
+          ! gradient of topo in y
+          if(j.eq.-1)then
+            ! one-sided FD
+            ds = kappa_pd(i,j,1)/sigma_ny_pd(i,j,1)
+            dhdy_comp(i,j) = (topo_comp(i,j+1) - topo_comp(i,j))/ds
+          elseif(j.eq.nymax+2)then
+            ! one-sided FD
+            ds = kappa_pd(i,j,1)/sigma_ny_pd(i,j,1)
+            dhdy_comp(i,j) = (topo_comp(i,j) - topo_comp(i,j-1))/ds
+          else
+            ! two-sided FD
+            ds = kappa_pd(i,j,1)/(sigma_ny_pd(i,j,1)+sigma_ny_pd(i,j+1,1))
+            dhdy_comp(i,j) =2* (topo_comp(i,j+1) - topo_comp(i,j-1))/ds
+          endif
+        enddo
+      enddo
+
+      end subroutine Calc_FDGrad_Topo
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
@@ -2221,11 +2430,12 @@
       subroutine Smooth_Topo
 
       use global_param,  only : &
-         RAD_EARTH,DEG2RAD,DEG2RAD,PI
+         RAD_EARTH,DEG2RAD,DEG2RAD,PI,EPS_SMALL
 
       use mesh,          only : &
          nxmax,nymax,IsLatLon,dx,dy,de,dn,lat_cc_pd,lon_cc_pd,&
-         x_cc_pd,y_cc_pd,lonLL,latLL
+         x_cc_pd,y_cc_pd,lonLL,latLL, &
+         kappa_pd,sigma_nx_pd,sigma_ny_pd
 
       use MetReader,       only : &
          MR_minlen,x_submet_sp,y_submet_sp,nx_submet,ny_submet,MR_dx_met,MR_dy_met,&
@@ -2235,13 +2445,17 @@
       integer :: iidx,jidx
       integer :: ncells
       real(kind=ip) :: topo_avg,dist,cell_len
+      real(kind=ip) :: tmp
+      real(kind=ip),dimension(2) :: topo_grad,ijDel_X,GradW
       real(kind=ip) :: deltheta,x1,x2,y1,y2,z1,z2
       real(kind=ip) :: rad_smooth_ang
       real(kind=ip) :: Const1_2d     = 0.6820926132509800_ip
-      real(kind=ip) :: fac_1,r,temp1,wg,char_len,norm
+      real(kind=ip) :: fac_1,r,temp1,wg1,wg2,char_len,norm
       real(kind=ip) :: rad
-      real(kind=sp) :: topo_smooth_comp(nxmax,nymax)
-      real(kind=sp) :: xin,yin
+      real(kind=ip) :: topo_smooth_comp(-1:nxmax+2,-1:nymax+2)
+      real(kind=ip) :: dtopo_dx_comp(nxmax,nymax)
+      real(kind=ip) :: dtopo_dy_comp(nxmax,nymax)
+      real(kind=ip) :: xin,yin
 
       integer :: nx,ny
       integer :: ii,ipad,jj,jpad
@@ -2321,9 +2535,9 @@
           jpad = floor(rad/dy)
         endif
 
-        do i=1,nxmax
-          do j=1,nymax
-
+        do i=-1,nxmax+2
+          do j=-1,nymax+2
+!            topo_grad(:) = 0.0_ip
             topo_avg = 0.0_ip
             ncells = 0
             norm = 0.0_ip
@@ -2334,10 +2548,11 @@
               z1=cos(0.5_ip*PI-lat_cc_pd(j)*DEG2RAD)
             endif
 
-            do ii=max(1,i-ipad),min(i+ipad,nxmax)
-              do jj=max(1,j-jpad),min(j+jpad,nymax)
+            do ii=max(-1,i-ipad),min(i+ipad,nxmax+2)
+              do jj=max(-1,j-jpad),min(j+jpad,nymax+2)
                 if (ii.eq.i.and.jj.eq.j)then
                   dist = 0.0_ip
+!                  ijDel_X = 0.0_ip
                 else
                   if(IsLatLon)then
                     ! Get distance by converting to cartesian on unit sphere
@@ -2348,9 +2563,13 @@
                     ! of inner product
                     deltheta = acos(x1*x2 + y1*y2 + z1*z2)
                     dist = deltheta*RAD_EARTH
+!                    ijDel_X(1) = x1-x2
+!                    ijDel_X(2) = y1-y2
                   else
                     dist=sqrt((x_cc_pd(ii)-x_cc_pd(i))**2.0_ip + &
                               (y_cc_pd(jj)-y_cc_pd(j))**2.0_ip)
+!                    ijDel_X(1) =x_cc_pd(i)-x_cc_pd(ii)
+!                    ijDel_X(2) =y_cc_pd(i)-y_cc_pd(ii)
                   endif
                 endif
 
@@ -2361,16 +2580,22 @@
                   r = dist/char_len
                   fac_1 = Const1_2d/(char_len*char_len)
                   if (r.gt.2.0_ip) then
-                    wg = 0.0_ip
+                    wg1 = 0.0_ip
+!                    wg2 = 0.0_ip
                   else if (r.gt.1.0_ip) then
                     temp1 = 2.0_ip-r
-                    wg = fac_1*((temp1*temp1*temp1)/6.0_ip)
+                    wg1 = fac_1*temp1*temp1*temp1/6.0_ip
+!                    wg2 = fac_1*(-0.5_ip)*temp1*temp1/char_len
                   else
-                    wg = fac_1*(2.0_ip/3.0_ip - r*r + 0.5_ip*r*r*r)
+                    wg1 = fac_1*(2.0_ip/3.0_ip - r*r + 0.5_ip*r*r*r)
+!                    wg2 = fac_1*(-2.0_ip*r + 1.5_ip*r*r)/char_len
                   endif
-                  topo_avg = topo_avg + wg*topo_comp(ii,jj)
-                  norm = norm + wg
-
+                  topo_avg = topo_avg + wg1*topo_comp(ii,jj)
+                  norm = norm + wg1
+!                  if(abs(dist).gt.EPS_SMALL)then
+!                    GradW(:) = wg2*ijDel_X(:)/dist
+!                    topo_grad(:) = topo_grad(:) + GradW(:) * topo_comp(ii,jj)
+!                  endif
                     ! This line can be used to check that the integration
                     ! over the spline is accurate (i.e. should
                     ! reconstructe a topography of 1.0 if the weights are
@@ -2378,9 +2603,14 @@
                 endif
               enddo ! loop over jj
             enddo ! loop over ii
+!            write(*,*)i,j,topo_avg,norm
             topo_smooth_comp(i,j) = real(topo_avg/norm,kind=sp)
+!            dtopo_dx_comp(i,j)    = real(topo_grad(1)/norm,kind=sp)
+!            dtopo_dy_comp(i,j)    = real(topo_grad(2)/norm,kind=sp)
+
             ! Assume anything lower than 0.0 is bathymetry; reset to 0.0
-            if (topo_smooth_comp(i,j).lt.0.0_sp) topo_smooth_comp(i,j) = 0.0_sp
+            !if (topo_smooth_comp(i,j).lt.0.0_ip) topo_smooth_comp(i,j) = 0.0_ip
+
             ! Reset the topo index
             ! This is only needed if we are letting the grid intersect topography
             !topo_indx(i,j) = 0
@@ -2395,26 +2625,36 @@
         enddo
       enddo
       ! Copy the smoothed data onto the main topo array
-      topo_comp(1:nxmax,1:nymax) = topo_smooth_comp(1:nxmax,1:nymax)
+      topo_comp(-1:nxmax+2,-1:nymax+2) = topo_smooth_comp(-1:nxmax+2,-1:nymax+2)
       ! And copy to the MetReader array
-      MR_Topo_comp(1:nxmax,1:nymax) = topo_smooth_comp(1:nxmax,1:nymax)
+      MR_Topo_comp(-1:nxmax+2,-1:nymax+2) = real(topo_smooth_comp(-1:nxmax+2,-1:nymax+2),kind=sp)
+
+      !do i = 1,nxmax-1
+      !  tmp=kappa_pd(i,20,1)/sigma_nx_pd(i,20,1)
+      !  write(*,*)lon_cc_pd(i),tmp,&
+      !            topo_comp(i,20),dtopo_dx_comp(i,20),&
+      !            (topo_comp(i+1,20)-topo_comp(i,20))/tmp
+      !enddo
+      !stop 55
 
       ! Now populate the topo array on the met grid
       do i = 1,nx_submet
-        xin = x_submet_sp(i)
+        xin  = real(x_submet_sp(i),kind=ip)
         iidx = floor((xin-lonLL)/de) + 1
-        iidx = max(iidx,1)
-        iidx = min(iidx,nxmax)
+        iidx = max(iidx,-1)
+        iidx = min(iidx,nxmax+2)
         do j = 1,ny_submet
-          yin = y_submet_sp(j)
+          yin = real(y_submet_sp(j),kind=ip)
           jidx = floor((yin-latLL)/dn) + 1
-          jidx = max(jidx,1)
-          jidx = min(jidx,nymax)
-          MR_Topo_met(i,j) = topo_comp(iidx,jidx)
-          ! Assume anything lower than 0.0 is bathymetry; reset to 0.0
-          if (MR_Topo_met(i,j).lt.0.0_sp) MR_Topo_met(i,j) = 0.0_sp
+          jidx = max(jidx,-1)
+          jidx = min(jidx,nymax+2)
+          MR_Topo_met(i,j) = real(topo_comp(iidx,jidx),kind=sp)
+!          ! Assume anything lower than 0.0 is bathymetry; reset to 0.0
+!          if (MR_Topo_met(i,j).lt.0.0_sp) MR_Topo_met(i,j) = 0.0_sp
         enddo
       enddo
+
+      call RemoveBath_Topo
 
       return
 

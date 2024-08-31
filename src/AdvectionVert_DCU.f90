@@ -25,7 +25,7 @@
          sigma_nz_pd,kappa_pd,j_cc_pd
 
       use solution,      only : &
-         concen_pd,vz_pd,vf_pd, &
+         concen_pd,vz_pd,vf_pd,vh_pd, &
          outflow_xy1_pd,outflow_xy2_pd,DepositGranularity,&
          SpeciesID,IsAloft,imin,imax,jmin,jmax,kmin,kmax
 
@@ -172,19 +172,21 @@
         do j=jmin,jmax
           do i=imin,imax
             jac = j_cc_pd(i,j)
+!            Dep = ztop-topo_comp(i.j)
             ! Initialize cell-centered values for this z-column
             ! Note: ghost cells should contain q_cc=0 and vel_cc=edge
             q_cc(  rmin-2:rmin-1+ncells+2) = concen_pd(i,j,rmin-2:rmin-1+ncells+2,n,ts0)
-            vel_cc(rmin-2:rmin-1+ncells+2) =    (vz_pd(i,j,rmin-2:rmin-1+ncells+2) + &
+            vel_cc(rmin-2:rmin-1+ncells+2) =    (vz_pd(i,j,rmin-2:rmin-1+ncells+2)/jac + &
+                                                 vh_pd(i,j,rmin-2:rmin-1+ncells+2)/jac + &
                                                  vf_pd(i,j,rmin-2:rmin-1+ncells+2,n))
-            sig_I(rmin-2:rmin-1+ncells+2)  = sigma_nz_pd(i,j,rmin-2:rmin-1+ncells+2)
-            kap_cc(rmin-2:rmin-1+ncells+2) = kappa_pd(i,j,rmin-2:rmin-1+ncells+2)
+!            sig_I(rmin-2:rmin-1+ncells+2)  = sigma_nz_pd(i,j,rmin-2:rmin-1+ncells+2)
+!            kap_cc(rmin-2:rmin-1+ncells+2) = kappa_pd(i,j,rmin-2:rmin-1+ncells+2)
 
             ! Now scale according to local Jacobian
             q_cc(rmin-2:rmin-1+ncells+2)   = q_cc(rmin-2:rmin-1+ncells+2)   * jac
-            vel_cc(rmin-2:rmin-1+ncells+2) = vel_cc(rmin-2:rmin-1+ncells+2) / jac
-            !sig_I(rmin-2:rmin-1+ncells+2) = sig_I(rmin-2:rmin-1+ncells+2)        ! z-face not scaled
-            kap_cc(rmin-2:rmin-1+ncells+2) = kap_cc(rmin-2:rmin-1+ncells+2) / jac
+!            vel_cc(rmin-2:rmin-1+ncells+2) = vel_cc(rmin-2:rmin-1+ncells+2) / jac
+!            !sig_I(rmin-2:rmin-1+ncells+2) = sig_I(rmin-2:rmin-1+ncells+2)        ! z-face not scaled
+!            kap_cc(rmin-2:rmin-1+ncells+2) = kap_cc(rmin-2:rmin-1+ncells+2) / jac
 
             ! Ghost cells were set in Set_BC.f90, but could be reset here
             ! if desired or for testing.  Tests showed that velocities
@@ -193,16 +195,16 @@
 
             ! Calculate \Delta t / \kappa
               ! using kappa of cell
-!            dt_vol_cc(rmin-2:rmin-1+ncells+2) = real(dt,kind=ip) / &
-!                                                kappa_pd(i,j,rmin-2:rmin-1+ncells+2)
             dt_vol_cc(rmin-2:rmin-1+ncells+2) = real(dt,kind=ip) / &
-                                                kap_cc(rmin-2:rmin-1+ncells+2)
+                                                kappa_pd(i,j,rmin-2:rmin-1+ncells+2)
+!            dt_vol_cc(rmin-2:rmin-1+ncells+2) = real(dt,kind=ip) / &
+!                                                kap_cc(rmin-2:rmin-1+ncells+2)
 
             ! Make sure to initialize this since we are only setting it where is matters
             usig_I = 0.0_ip
             do l=rmin,rmin-1+ncells+1
-              !usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sigma_nz_pd(i,j,l)
-              usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sig_I(l)
+              usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sigma_nz_pd(i,j,l)
+!              usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sig_I(l)
             enddo
 
             ! This calculates the update in a row in one function call

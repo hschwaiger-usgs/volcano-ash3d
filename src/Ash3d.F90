@@ -201,12 +201,7 @@
         do io=1,2;if(VB(io).le.verbosity_essential)then
           write(outlog(io),*)"Testing for ",OPTMOD_names(i),i
         endif;enddo
-        !if(OPTMOD_names(i).eq.'RESETPARAMS')then
-        !  do io=1,2;if(VB(io).le.verbosity_essential)then
-        !    write(outlog(io),*)"  Reading input block for RESETPARAMS"
-        !  endif;enddo
-        !  call input_data_ResetParams
-        !endif
+        ! Note that RESETPARAMS is handeled in Input_Data.F90::Read_Control_File()
         if(OPTMOD_names(i).eq.'TOPO')then
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"  Reading input block for TOPO"
@@ -393,6 +388,8 @@
 
           ! find the wind field at the current time
         call MesoInterpolater(time , Load_MesoSteps , Interval_Frac)
+
+        if(useTopo) call Calc_Vmod_Topo
 
 !------------------------------------------------------------------------------
 !       OPTIONAL MODULES
