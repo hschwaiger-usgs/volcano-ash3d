@@ -2108,7 +2108,7 @@
 
       use mesh,          only : &
          ZScaling_ID,nxmax,nymax,Ztop,&
-         lon_cc_pd,sigma_nx_pd,kappa_pd
+         lon_cc_pd,sigma_nx_pd,kappa_pd,s_cc_pd
 
       use solution,        only : &
          vx_pd,vy_pd,vh_pd
@@ -2127,7 +2127,8 @@
       elseif(ZScaling_ID.eq.2)then
         do i=-1,nxmax+2
           do j=-1,nymax+2
-            vh_pd(i,j,:)=(s_cc_pd(:)/Ztop-1.0_ip)*vx_pd(i,j,:)*dhdx_comp(i,j)+vy_pd(i,j,:)*dhdy_comp(i,j)
+            vh_pd(i,j,:)=(s_cc_pd(:)/Ztop-1.0_ip)* &
+                         (vx_pd(i,j,:)*dhdx_comp(i,j)+vy_pd(i,j,:)*dhdy_comp(i,j))
           enddo
         enddo
       endif

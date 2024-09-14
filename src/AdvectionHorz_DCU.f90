@@ -21,7 +21,7 @@
 
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,dx,dy,dz_vec_pd,ts0,ts1,&
-         sigma_ny_pd,sigma_nx_pd,kappa_pd,IsPeriodic,j_cc_pd
+         sigma_ny_pd,sigma_nx_pd,kappa_pd,IsPeriodic,j_cc_pd,Ztop,ZScaling_ID
 
       use solution,      only : &
          concen_pd,vx_pd,vy_pd, &
@@ -77,10 +77,12 @@
       real(kind=ip),dimension(-1:nxmax+2)               :: sig_I     ! cell area
       real(kind=ip),dimension(-1:nxmax+2)               :: kap_cc    ! cell volume
       real(kind=ip),dimension(-1:nxmax+2)               :: dt_vol_cc ! dt on local cell volume
+      real(kind=ip),dimension(-1:nxmax+2)               :: Depth_cc
        ! arrays that live on cell interfaces
        !  Note: interface I for cell i is at (i-1/2); i.e. the left or negative side of i
        !        We only need the interfaces up to the boundary of the domain (not the ghost cells)
       real(kind=ip),dimension(-1:nxmax+2)               :: usig_I   ! vel*(interface area)
+      real(kind=ip),dimension(-1:nxmax+2)               :: DelDonD_I
 
       ! This block is only needed for the in-line 1-d advection code as
       ! opposed to the function call
@@ -94,6 +96,7 @@
       real(kind=ip) :: aus      ! absolute value of usig at interface
       real(kind=ip) :: theta
       real(kind=ip) :: divu_p, divu_m
+      real(kind=ip) :: tmp
       real(kind=ip) :: LFluct_Rbound,RFluct_Lbound
       real(kind=ip) :: LimFlux_Rbound,LimFlux_Lbound
       integer :: rmin, rmax     ! min and max indicies of the row
@@ -149,19 +152,11 @@
           do j=jmin,jmax
             ! Initialize cell-centered values for this x-row
             ! Note: ghost cells should contain q_cc=0 and vel_cc=edge
-            q_cc(  rmin-2:rmin-1+ncells+2) = concen_pd(rmin-2:rmin-1+ncells+2,j,k,n,ts0)
-            vel_cc(rmin-2:rmin-1+ncells+2) =     vx_pd(rmin-2:rmin-1+ncells+2,j,k)
-!            sig_I(rmin-2:rmin-1+ncells+2)  = sigma_nx_pd(rmin-2:rmin-1+ncells+2,j,k)
-!            kap_cc(rmin-2:rmin-1+ncells+2) = kappa_pd(rmin-2:rmin-1+ncells+2,j,k)
-
-            ! Now scale according to local Jacobian
-            q_cc(rmin-2:rmin-1+ncells+2)   = q_cc(rmin-2:rmin-1+ncells+2)   * &
-                                              j_cc_pd(rmin-2:rmin-1+ncells+2,j)
-            !vel_cc(:) = vel_cc(:)           ! vx not scaled by jac
-!            sig_I(rmin-2:rmin-1+ncells+2)  = sig_I(rmin-2:rmin-1+ncells+2) / &
-!                                              j_cc_pd(rmin-2:rmin-1+ncells+2,j)
-!            kap_cc(rmin-2:rmin-1+ncells+2) = kap_cc(rmin-2:rmin-1+ncells+2) / &
-!                                              j_cc_pd(rmin-2:rmin-1+ncells+2,j)
+            Depth_cc(rmin-2:rmin-1+ncells+2) = Ztop*j_cc_pd(rmin-2:rmin-1+ncells+2,j)
+            q_cc(    rmin-2:rmin-1+ncells+2) = concen_pd(rmin-2:rmin-1+ncells+2,j,k,n,ts0)
+            vel_cc(  rmin-2:rmin-1+ncells+2) =     vx_pd(rmin-2:rmin-1+ncells+2,j,k)
+            sig_I(rmin-2:rmin-1+ncells+2)    = sigma_nx_pd(rmin-2:rmin-1+ncells+2,j,k)
+            kap_cc(rmin-2:rmin-1+ncells+2)   = kappa_pd(rmin-2:rmin-1+ncells+2,j,k)
 
             ! Ghost cells were set in Set_BC.f90, but could be reset here
             ! if desired or for testing.  Tests showed that velocities
@@ -171,16 +166,20 @@
             ! Calculate \Delta t / \kappa
               ! using kappa of cell
             dt_vol_cc(rmin-2:rmin-1+ncells+2) = real(dt,kind=ip) / &
-                                                kappa_pd(rmin-2:rmin-1+ncells+2,j,k)
-!            dt_vol_cc(rmin-2:rmin-1+ncells+2) = real(dt,kind=ip) / &
-!                                                kap_cc(rmin-2:rmin-1+ncells+2)
+                                                kap_cc(rmin-2:rmin-1+ncells+2)
 
             ! Make sure to initialize this since we are only setting it where is matters
-            usig_I = 0.0_ip
-            do l=rmin,rmin-1+ncells+1
-              usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sigma_nx_pd(l,j,k)
-!              usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sig_I(l)
-            enddo
+            usig_I      = 0.0_ip
+            usig_I(rmin-1:rmin-1+ncells+1) = 0.5_ip*(vel_cc(rmin-2:rmin-1+ncells  ) + &
+                                                     vel_cc(rmin-1:rmin-1+ncells+1))* &
+                                                      sig_I(rmin-1:rmin-1+ncells+1)
+            DelDonD_I   = 0.0_ip
+            if (ZScaling_ID.ne.2) then
+              DelDonD_I(rmin-1:rmin-1+ncells+1)= 0.5_ip*(Depth_cc(rmin-1:rmin-1+ncells+1)  - &
+                                                         Depth_cc(rmin-2:rmin-1+ncells  )) / &
+                                                        (Depth_cc(rmin-1:rmin-1+ncells+1)  + &
+                                                         Depth_cc(rmin-2:rmin-1+ncells  ))
+            endif
 
             ! This calculates the update in a row in one function call
             !update_cc(-1:ncells+2) = AdvectUpdate_1d(ncells,q_cc,dt_vol_cc,usig_I)
@@ -194,7 +193,7 @@
             ! methods
             ldq_I = 0.0_ip
             fs_I( rmin-1:rmin-1+ncells+2,1:2) = 0.0_ip
-            fss_I(rmin-1:rmin-1+ncells+2) = 0.0_ip
+            fss_I(rmin-1:rmin-1+ncells+2)     = 0.0_ip
 
 #ifndef LIM_NONE
             do i_I = rmin,rmin-1+ncells+1
@@ -263,11 +262,16 @@
               fs_I(i_I,1) = min(0.0_ip,usig_I(i_I))*dq_I(i_I) ! flux OUT OF l cell to l-1 cell
                 ! Modification for conservative form in
                 ! divergent/convergent velocities
-              divu_p = max(0.0_ip,usig_I(i_I  )) - max(0.0_ip,usig_I(i_I-1))
-              divu_m = min(0.0_ip,usig_I(i_I+1)) - min(0.0_ip,usig_I(i_I))
+              divu_p = (max(0.0_ip,usig_I(i_I  )) - max(0.0_ip,usig_I(i_I-1)))
+              divu_m = (min(0.0_ip,usig_I(i_I+1)) - min(0.0_ip,usig_I(i_I  )))
 
               fs_I(i_I,2) = fs_I(i_I,2) + q_cc(i_I  ) * divu_m
               fs_I(i_I,1) = fs_I(i_I,1) + q_cc(i_I-1) * divu_p
+
+              ! Topo bit
+              tmp = 0.5_ip*(q_cc(i_I)+q_cc(i_I-1))*DelDonD_I(i_I)
+              fs_I(i_I,2) = fs_I(i_I,2) + (usig_I(i_I))*tmp
+              fs_I(i_I,1) = fs_I(i_I,1) - (usig_I(i_I))*tmp
             enddo  ! loop over i_I (interfaces)
 
             !--------------------------------------------------------
@@ -292,9 +296,6 @@
 
             enddo ! loop over l (cell centers)
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            ! Now scale the update back to z
-            update_cc(rmin-1:rmin-1+ncells+1) = update_cc(rmin-1:rmin-1+ncells+1) / &
-                                                  j_cc_pd(rmin-1:rmin-1+ncells+1,j)
 
             ! Now update concentration for all interior cells
             concen_pd(rmin:rmin-1+ncells,j,k,n,ts1) = &
@@ -349,10 +350,12 @@
       real(kind=ip),dimension(-1:nymax+2)               :: sig_I     ! cell area
       real(kind=ip),dimension(-1:nymax+2)               :: kap_cc    ! cell volume
       real(kind=ip),dimension(-1:nymax+2)               :: dt_vol_cc ! dt on local cell volume
+      real(kind=ip),dimension(-1:nymax+2)               :: Depth_cc
        ! arrays that live on cell interfaces
        !  Note: interface I for cell i is at (i-1/2); i.e. the left or negative side of i
        !        We only need the interfaces up to the boundary of the domain (not the ghost cells)
       real(kind=ip),dimension(-1:nymax+2)               :: usig_I   ! vel*(interface area)
+      real(kind=ip),dimension(-1:nymax+2)               :: DelDonD_I
 
       ! This block is only needed for the in-line 1-d advection code as
       ! opposed to the function call
@@ -366,6 +369,7 @@
       real(kind=ip) :: aus      ! absolute value of usig at interface
       real(kind=ip) :: theta
       real(kind=ip) :: divu_p, divu_m
+      real(kind=ip) :: tmp
       real(kind=ip) :: LFluct_Rbound,RFluct_Lbound
       real(kind=ip) :: LimFlux_Rbound,LimFlux_Lbound
       integer :: rmin, rmax     ! min and max indicies of the row
@@ -420,19 +424,11 @@
           do i=imin,imax
             ! Initialize cell-centered values for this y-row
             ! Note: ghost cells should contain q_cc=0 and vel_cc=edge
-            q_cc(  rmin-2:rmin-1+ncells+2) = concen_pd(i,rmin-2:rmin-1+ncells+2,k,n,ts0)
-            vel_cc(rmin-2:rmin-1+ncells+2) =     vy_pd(i,rmin-2:rmin-1+ncells+2,k)
-!            sig_I(rmin-2:rmin-1+ncells+2)  = sigma_ny_pd(i,rmin-2:rmin-1+ncells+2,k)
-!            kap_cc(rmin-2:rmin-1+ncells+2) = kappa_pd(i,rmin-2:rmin-1+ncells+2,k)
-
-            ! Now scale according to local Jacobian
-            q_cc(rmin-2:rmin-1+ncells+2)   = q_cc(rmin-2:rmin-1+ncells+2)   * &
-                                              j_cc_pd(i,rmin-2:rmin-1+ncells+2)
-            !vel_cc(:) = vel_cc(:)           ! vy not scaled by jac
-!            sig_I(rmin-2:rmin-1+ncells+2)  = sig_I(rmin-2:rmin-1+ncells+2) / &
-!                                              j_cc_pd(i,rmin-2:rmin-1+ncells+2)
-!            kap_cc(rmin-2:rmin-1+ncells+2) = kap_cc(rmin-2:rmin-1+ncells+2) / &
-!                                              j_cc_pd(i,rmin-2:rmin-1+ncells+2)
+            Depth_cc( rmin-2:rmin-1+ncells+2) = Ztop*j_cc_pd(i,rmin-2:rmin-1+ncells+2)
+            q_cc(     rmin-2:rmin-1+ncells+2) = concen_pd(i,rmin-2:rmin-1+ncells+2,k,n,ts0)
+            vel_cc(   rmin-2:rmin-1+ncells+2) =     vy_pd(i,rmin-2:rmin-1+ncells+2,k)
+            sig_I(rmin-2:rmin-1+ncells+2)     = sigma_ny_pd(i,rmin-2:rmin-1+ncells+2,k)
+            kap_cc(rmin-2:rmin-1+ncells+2)    = kappa_pd(i,rmin-2:rmin-1+ncells+2,k)
 
             ! Ghost cells were set in Set_BC.f90, but could be reset here
             ! if desired or for testing.  Tests showed that velocities
@@ -442,16 +438,20 @@
             ! Calculate \Delta t / \kappa
               ! using kappa of cell
             dt_vol_cc(rmin-2:rmin-1+ncells+2) = real(dt,kind=ip) / &
-                                                kappa_pd(i,rmin-2:rmin-1+ncells+2,k)
-!            dt_vol_cc(rmin-2:rmin-1+ncells+2) = real(dt,kind=ip) / &
-!                                                kap_cc(rmin-2:rmin-1+ncells+2)
+                                                kap_cc(rmin-2:rmin-1+ncells+2)
 
             ! Make sure to initialize this since we are only setting it where is matters
             usig_I = 0.0_ip
-            do l=rmin,rmin-1+ncells+1
-              usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sigma_ny_pd(i,l,k)
-!              usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sig_I(l)
-            enddo
+            usig_I(rmin-1:rmin-1+ncells+1) = 0.5_ip*(vel_cc(rmin-2:rmin-1+ncells  ) + &
+                                                     vel_cc(rmin-1:rmin-1+ncells+1))* &
+                                                      sig_I(rmin-1:rmin-1+ncells+1)
+            DelDonD_I   = 0.0_ip
+            if (ZScaling_ID.ne.2) then
+              DelDonD_I(rmin-1:rmin-1+ncells+1)= 0.5_ip*(Depth_cc(rmin-1:rmin-1+ncells+1)  - &
+                                                         Depth_cc(rmin-2:rmin-1+ncells  )) / &
+                                                        (Depth_cc(rmin-1:rmin-1+ncells+1)  + &
+                                                         Depth_cc(rmin-2:rmin-1+ncells  ))
+            endif
 
             ! This calculates the update in a row in one function call
             !update_cc(-1:ncells+2) = AdvectUpdate_1d(ncells,q_cc,dt_vol_cc,usig_I)
@@ -538,6 +538,11 @@
 
               fs_I(i_I,2) = fs_I(i_I,2) + q_cc(i_I  ) * divu_m
               fs_I(i_I,1) = fs_I(i_I,1) + q_cc(i_I-1) * divu_p
+
+              ! Topo bit
+              tmp = 0.5_ip*(q_cc(i_I)+q_cc(i_I-1))*DelDonD_I(i_I)
+              fs_I(i_I,2) = fs_I(i_I,2) + (usig_I(i_I))*tmp
+              fs_I(i_I,1) = fs_I(i_I,1) - (usig_I(i_I))*tmp
             enddo  ! loop over i_I (interfaces)
 
             !--------------------------------------------------------
@@ -563,8 +568,6 @@
             enddo ! loop over l (cell centers)
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             ! Now scale the update back to z
-            update_cc(rmin-1:rmin-1+ncells+1) = update_cc(rmin-1:rmin-1+ncells+1) / &
-                                                  j_cc_pd(i,rmin-1:rmin-1+ncells+1)
 
             ! Now update concentration for all interior cells
             concen_pd(i,rmin:rmin-1+ncells,k,n,ts1) = &

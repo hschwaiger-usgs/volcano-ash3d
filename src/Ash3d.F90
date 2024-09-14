@@ -101,7 +101,7 @@
            AdvectHorz
 
       use AdvectionVert_DCU, only : &
-           advect_z
+           AdvectVert
 
       use Diffusion,     only : &
            DiffuseHorz,&
@@ -496,7 +496,7 @@
 
         if(useHorzAdvect) call AdvectHorz(itime)
 
-        if(useVertAdvect) call advect_z
+        if(useVertAdvect) call AdvectVert
 
         if(useDiffusion)then
           call Set_BC(2)
