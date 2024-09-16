@@ -174,7 +174,7 @@
                                                      vel_cc(rmin-1:rmin-1+ncells+1))* &
                                                       sig_I(rmin-1:rmin-1+ncells+1)
             DelDonD_I   = 0.0_ip
-            if (ZScaling_ID.ne.2) then
+            if (ZScaling_ID.eq.2) then
               DelDonD_I(rmin-1:rmin-1+ncells+1)= 0.5_ip*(Depth_cc(rmin-1:rmin-1+ncells+1)  - &
                                                          Depth_cc(rmin-2:rmin-1+ncells  )) / &
                                                         (Depth_cc(rmin-1:rmin-1+ncells+1)  + &
@@ -446,7 +446,7 @@
                                                      vel_cc(rmin-1:rmin-1+ncells+1))* &
                                                       sig_I(rmin-1:rmin-1+ncells+1)
             DelDonD_I   = 0.0_ip
-            if (ZScaling_ID.ne.2) then
+            if (ZScaling_ID.eq.2) then
               DelDonD_I(rmin-1:rmin-1+ncells+1)= 0.5_ip*(Depth_cc(rmin-1:rmin-1+ncells+1)  - &
                                                          Depth_cc(rmin-2:rmin-1+ncells  )) / &
                                                         (Depth_cc(rmin-1:rmin-1+ncells+1)  + &
