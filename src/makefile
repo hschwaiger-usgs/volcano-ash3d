@@ -388,7 +388,7 @@ MesoInterpolater.o: $(ASH3dCCSRC)/MesoInterpolater.f90 $(MFILE) $(SYSINC) Ash3d_
 # PDE Solver (Advection, Diffusion, B.C.'s)
 AdvectionHorz.o: $(ASH3dCCSRC)/AdvectionHorz.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o AdvectionHorz_DCU.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3dCCSRC)/AdvectionHorz.f90
-AdvectionHorz_DCU.o: $(ASH3dCCSRC)/AdvectionHorz_DCU.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
+AdvectionHorz_DCU.o: $(ASH3dCCSRC)/AdvectionHorz_DCU.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Topography.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3dCCSRC)/AdvectionHorz_DCU.f90
 AdvectionVert_DCU.o: $(ASH3dCCSRC)/AdvectionVert_DCU.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3dCCSRC)/AdvectionVert_DCU.f90

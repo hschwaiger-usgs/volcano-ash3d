@@ -22,7 +22,7 @@
 
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,dx,dy,dz_vec_pd,ts0,ts1,&
-         sigma_nz_pd,kappa_pd,j_cc_pd,Ztop
+         sigma_nz_pd,kappa_pd
 
       use solution,      only : &
          concen_pd,vz_pd,vf_pd,vh_pd, &
@@ -67,11 +67,17 @@
          ZScaling_ID
 
         ! Use dimension splitting with donor-cell-upwind (DCU)
-      if (ZScaling_ID.ne.2) then
-        call advect_z
-      else
-        call advect_sigma
-      endif
+      
+      select case (ZScaling_ID)
+        case(0)
+          call advect_z
+        case(1)
+          call advect_z
+        case(2)
+          call advect_sigma
+        case default
+          call advect_z
+      end select
 
       end subroutine AdvectVert
 
@@ -96,7 +102,8 @@
       !!!$ use omp_lib
 
       integer       :: i,j,n    ! These are the indices mapping to the global arrays
-      integer       :: l        ! This is the index along the particular advection direction
+      integer       :: i_I    ! This is the index along interfaces in the particular advection direction
+      integer       :: i_cc   ! This is the index along cell-centers in the particular advection direction
       integer       :: ncells
 
        ! arrays that live on cell-centers: Note that we have 2 ghost cells
@@ -118,9 +125,7 @@
       real(kind=ip),dimension( 0:nzmax+2,1:2) :: fs_I     ! second-order term of Taylor S.(~F)
       real(kind=ip) :: ldq_I ! limited Delta Q
       real(kind=ip) :: dqu_I ! Delta Q at upwind interface
-      integer :: i_I
-      integer :: i_cc
-      real(kind=ip) :: jac
+
       real(kind=ip) :: aus      ! absolute value of usig at interface
       real(kind=ip) :: theta
       real(kind=ip) :: divu_p, divu_m
@@ -200,8 +205,6 @@
         !$OMP COLLAPSE(2)
         do j=jmin,jmax
           do i=imin,imax
-            jac = j_cc_pd(i,j)
-!            Dep = ztop-topo_comp(i.j)
             ! Initialize cell-centered values for this z-column
             ! Note: ghost cells should contain q_cc=0 and vel_cc=edge
             q_cc(  rmin-2:rmin-1+ncells+2) = concen_pd(i,j,rmin-2:rmin-1+ncells+2,n,ts0)
@@ -218,16 +221,17 @@
 
             ! Calculate \Delta t / \kappa
               ! using kappa of cell
-!            dt_vol_cc(rmin-2:rmin-1+ncells+2) = real(dt,kind=ip) / &
-!                                                kappa_pd(i,j,rmin-2:rmin-1+ncells+2)
             dt_vol_cc(rmin-2:rmin-1+ncells+2) = real(dt,kind=ip) / &
                                                 kap_cc(rmin-2:rmin-1+ncells+2)
 
             ! Make sure to initialize this since we are only setting it where is matters
             usig_I = 0.0_ip
-            do l=rmin,rmin-1+ncells+1
-              usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sig_I(l)
-            enddo
+            usig_I(rmin-1:rmin-1+ncells+1) = 0.5_ip*(vel_cc(rmin-2:rmin-1+ncells  ) + &
+                                                     vel_cc(rmin-1:rmin-1+ncells+1))* &
+                                                      sig_I(rmin-1:rmin-1+ncells+1)
+            !do l=rmin,rmin-1+ncells+1
+            !  usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sig_I(l)
+            !enddo
 
             ! This calculates the update in a row in one function call
             !update_cc(-1:ncells+2) = AdvectUpdate_1d(ncells,q_cc,dt_vol_cc,usig_I)
@@ -240,7 +244,8 @@
             ! First get the limited Delta Q, in we are using high-order
             ! methods
             ldq_I = 0.0_ip
-            fs_I( rmin-1:rmin-1+ncells+2,1:2) = 0.0_ip
+            fs_I( rmin-1:rmin-1+ncells+2,fluc_l) = 0.0_ip
+            fs_I( rmin-1:rmin-1+ncells+2,fluc_r) = 0.0_ip
             fss_I(rmin-1:rmin-1+ncells+2) = 0.0_ip
 
 #ifndef LIM_NONE
@@ -306,15 +311,15 @@
             do i_I=rmin-1,rmin-1+ncells+1
                 ! Set flux based on upwind velocity for color equation
                 !  (equals conservative form if div.v=0)
-              fs_I(i_I,2) = max(0.0_ip,usig_I(i_I))*dq_I(i_I) ! flux OUT OF l-1 cell to l cell
-              fs_I(i_I,1) = min(0.0_ip,usig_I(i_I))*dq_I(i_I) ! flux OUT OF l cell to l-1 cell
+              fs_I(i_I,fluc_r) = max(0.0_ip,usig_I(i_I))*dq_I(i_I) ! flux OUT OF l-1 cell to l cell
+              fs_I(i_I,fluc_l) = min(0.0_ip,usig_I(i_I))*dq_I(i_I) ! flux OUT OF l cell to l-1 cell
                 ! Modification for conservative form in
                 ! divergent/convergent velocities
               divu_p = max(0.0_ip,usig_I(i_I  )) - max(0.0_ip,usig_I(i_I-1))
               divu_m = min(0.0_ip,usig_I(i_I+1)) - min(0.0_ip,usig_I(i_I))
 
-              fs_I(i_I,2) = fs_I(i_I,2) + q_cc(i_I  ) * divu_m
-              fs_I(i_I,1) = fs_I(i_I,1) + q_cc(i_I-1) * divu_p
+              fs_I(i_I,fluc_r) = fs_I(i_I,fluc_r) + q_cc(i_I  ) * divu_m
+              fs_I(i_I,fluc_l) = fs_I(i_I,fluc_l) + q_cc(i_I-1) * divu_p
             enddo  ! loop over i_I (interfaces)
 
             !--------------------------------------------------------
@@ -324,10 +329,10 @@
                                             !       outflow boundary fluxes
 
                ! Interface fluctuation/limited-q at left cell interface
-              RFluct_Lbound  =  fs_I(i_cc,2)
+              RFluct_Lbound  =  fs_I(i_cc,fluc_r)
               LimFlux_Lbound = fss_I(i_cc)
                ! Interface fluctuation/limited-q at right cell interface
-              LFluct_Rbound  =  fs_I(i_cc+1,1)
+              LFluct_Rbound  =  fs_I(i_cc+1,fluc_l)
               LimFlux_Rbound = fss_I(i_cc+1)
               ! Building Eq 6.59 of LeVeque
               !   Apply the first- and second-order term of Taylor series
@@ -375,7 +380,8 @@
 !  This subroutine applies a 2nd order upwind advection routine with a limiter
 !  determined via preprocessor flags.  The concentration array is updated in
 !  concen_pd(:,:,:,:,t=2) then copied back to concen_pd(:,:,:,:,t=1).  This
-!  subroutine has the equivalent structure as advect_x and advect_y
+!  subroutine has the equivalent structure as advect_z (advect_x and advect_y),
+!  but modified for the sigma-altitude equations.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -384,7 +390,8 @@
       !!!$ use omp_lib
 
       integer       :: i,j,n    ! These are the indices mapping to the global arrays
-      integer       :: l        ! This is the index along the particular advection direction
+      integer       :: i_I    ! This is the index along interfaces in the particular advection direction
+      integer       :: i_cc   ! This is the index along cell-centers in the particular advection direction
       integer       :: ncells
 
        ! arrays that live on cell-centers: Note that we have 2 ghost cells
@@ -404,12 +411,9 @@
       real(kind=ip),dimension( 0:nzmax+2)     :: dq_I
       real(kind=ip),dimension( 0:nzmax+2)     :: fss_I    ! fluctuations (A delQ)+-
       real(kind=ip),dimension( 0:nzmax+2,1:2) :: fs_I     ! second-order term of Taylor S.(~F)
-      real(kind=ip) :: Depth_cc
       real(kind=ip) :: ldq_I ! limited Delta Q
       real(kind=ip) :: dqu_I ! Delta Q at upwind interface
-      integer :: i_I
-      integer :: i_cc
-      real(kind=ip) :: jac
+
       real(kind=ip) :: aus      ! absolute value of usig at interface
       real(kind=ip) :: theta
       real(kind=ip) :: divu_p, divu_m
@@ -489,8 +493,6 @@
         !$OMP COLLAPSE(2)
         do j=jmin,jmax
           do i=imin,imax
-            jac      = j_cc_pd(i,j)
-            Depth_cc = Ztop*jac
             ! Initialize cell-centered values for this z-column
             ! Note: ghost cells should contain q_cc=0 and vel_cc=edge
             q_cc(  rmin-2:rmin-1+ncells+2) = concen_pd(i,j,rmin-2:rmin-1+ncells+2,n,ts0)
@@ -500,12 +502,6 @@
             sig_I(rmin-2:rmin-1+ncells+2)  = sigma_nz_pd(i,j,rmin-2:rmin-1+ncells+2)
             kap_cc(rmin-2:rmin-1+ncells+2) = kappa_pd(i,j,rmin-2:rmin-1+ncells+2)
 
-            ! Now scale according to local Jacobian
-!            q_cc(rmin-2:rmin-1+ncells+2)   = q_cc(rmin-2:rmin-1+ncells+2)   * jac
-!            vel_cc(rmin-2:rmin-1+ncells+2) = vel_cc(rmin-2:rmin-1+ncells+2) / jac
-!            !sig_I(rmin-2:rmin-1+ncells+2) = sig_I(rmin-2:rmin-1+ncells+2)        ! z-face not scaled
-!            kap_cc(rmin-2:rmin-1+ncells+2) = kap_cc(rmin-2:rmin-1+ncells+2) / jac
-
             ! Ghost cells were set in Set_BC.f90, but could be reset here
             ! if desired or for testing.  Tests showed that velocities
             ! should either have a constant or a linear extrapolation, but
@@ -513,16 +509,17 @@
 
             ! Calculate \Delta t / \kappa
               ! using kappa of cell
-!            dt_vol_cc(rmin-2:rmin-1+ncells+2) = real(dt,kind=ip) / &
-!                                                kappa_pd(i,j,rmin-2:rmin-1+ncells+2)
             dt_vol_cc(rmin-2:rmin-1+ncells+2) = real(dt,kind=ip) / &
                                                 kap_cc(rmin-2:rmin-1+ncells+2)
 
             ! Make sure to initialize this since we are only setting it where is matters
             usig_I = 0.0_ip
-            do l=rmin,rmin-1+ncells+1
-              usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sig_I(l)
-            enddo
+            usig_I(rmin-1:rmin-1+ncells+1) = 0.5_ip*(vel_cc(rmin-2:rmin-1+ncells  ) + &
+                                                     vel_cc(rmin-1:rmin-1+ncells+1))* &
+                                                      sig_I(rmin-1:rmin-1+ncells+1)
+            !do l=rmin,rmin-1+ncells+1
+            !  usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sig_I(l)
+            !enddo
 
             ! This calculates the update in a row in one function call
             !update_cc(-1:ncells+2) = AdvectUpdate_1d(ncells,q_cc,dt_vol_cc,usig_I)
@@ -535,7 +532,8 @@
             ! First get the limited Delta Q, in we are using high-order
             ! methods
             ldq_I = 0.0_ip
-            fs_I( rmin-1:rmin-1+ncells+2,1:2) = 0.0_ip
+            fs_I( rmin-1:rmin-1+ncells+2,fluc_l) = 0.0_ip
+            fs_I( rmin-1:rmin-1+ncells+2,fluc_r) = 0.0_ip
             fss_I(rmin-1:rmin-1+ncells+2) = 0.0_ip
 
 #ifndef LIM_NONE
@@ -601,15 +599,15 @@
             do i_I=rmin-1,rmin-1+ncells+1
                 ! Set flux based on upwind velocity for color equation
                 !  (equals conservative form if div.v=0)
-              fs_I(i_I,2) = max(0.0_ip,usig_I(i_I))*dq_I(i_I) ! flux OUT OF l-1 cell to l cell
-              fs_I(i_I,1) = min(0.0_ip,usig_I(i_I))*dq_I(i_I) ! flux OUT OF l cell to l-1 cell
+              fs_I(i_I,fluc_r) = max(0.0_ip,usig_I(i_I))*dq_I(i_I) ! flux OUT OF l-1 cell to l cell
+              fs_I(i_I,fluc_l) = min(0.0_ip,usig_I(i_I))*dq_I(i_I) ! flux OUT OF l cell to l-1 cell
                 ! Modification for conservative form in
                 ! divergent/convergent velocities
               divu_p = max(0.0_ip,usig_I(i_I  )) - max(0.0_ip,usig_I(i_I-1))
               divu_m = min(0.0_ip,usig_I(i_I+1)) - min(0.0_ip,usig_I(i_I))
 
-              fs_I(i_I,2) = fs_I(i_I,2) + q_cc(i_I  ) * divu_m
-              fs_I(i_I,1) = fs_I(i_I,1) + q_cc(i_I-1) * divu_p
+              fs_I(i_I,fluc_r) = fs_I(i_I,fluc_r) + q_cc(i_I  ) * divu_m
+              fs_I(i_I,fluc_l) = fs_I(i_I,fluc_l) + q_cc(i_I-1) * divu_p
             enddo  ! loop over i_I (interfaces)
 
             !--------------------------------------------------------
@@ -619,10 +617,10 @@
                                             !       outflow boundary fluxes
 
                ! Interface fluctuation/limited-q at left cell interface
-              RFluct_Lbound  =  fs_I(i_cc,2)
+              RFluct_Lbound  =  fs_I(i_cc,fluc_r)
               LimFlux_Lbound = fss_I(i_cc)
                ! Interface fluctuation/limited-q at right cell interface
-              LFluct_Rbound  =  fs_I(i_cc+1,1)
+              LFluct_Rbound  =  fs_I(i_cc+1,fluc_l)
               LimFlux_Rbound = fss_I(i_cc+1)
               ! Building Eq 6.59 of LeVeque
               !   Apply the first- and second-order term of Taylor series
@@ -634,8 +632,6 @@
 
             enddo ! loop over l (cell centers)
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            ! Now scale the update back to z
-            update_cc(rmin-1:rmin-1+ncells+1) = update_cc(rmin-1:rmin-1+ncells+1) / jac
 
             ! Now update concentration for all interior cells
             concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = &

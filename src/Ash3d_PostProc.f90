@@ -724,7 +724,7 @@
           height_flag = 0  ! All the cells should be pinned to z=0
         elseif(iprod.eq.15)then
           do io=1,2;if(VB(io).le.verbosity_error)then
-            write(errlog(io),*)'output variable =15 Topography (km)'
+            write(errlog(io),*)'output variable =15 Topography (m)'
           endif;enddo
           nvar_User2d_static_XY = 1
           Extra2dVarName = "Topography"
@@ -1147,9 +1147,8 @@
             CloudArrivalTime(1:nxmax,1:nymax) = OutVar(1:nxmax,1:nymax)
           endif
           if(iprod.eq.15)then
-            write(*,*)"Allocating topo"
             if(.not.allocated(Topography)) allocate(Topography(nxmax,nymax))
-            Topography(1:nxmax,1:nymax)       = OutVar(1:nxmax,1:nymax)
+            Topography(1:nxmax,1:nymax)    = OutVar(1:nxmax,1:nymax)
           endif
         elseif(ndims.eq.3)then
           ! For 3d input data, we only have the total 3d ash concentration, so we need

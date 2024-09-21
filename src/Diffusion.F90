@@ -331,12 +331,12 @@
             sig_I( rmin  :rmin-1+ncells+1) = sigma_nx_pd(rmin  :rmin-1+ncells+1,j,k)
 
             ! Now scale according to local Jacobian
-            q_cc(rmin-1:rmin-1+ncells+1)   =   q_cc(rmin-1:rmin-1+ncells+1)   * &
-                                            j_cc_pd(rmin-1:rmin-1+ncells+1,j)
-            sig_I(rmin  :rmin-1+ncells+1)  =  sig_I(rmin  :rmin-1+ncells+1) / &
-                                            j_cc_pd(rmin  :rmin-1+ncells+1,j)
-            kap_cc(rmin-1:rmin-1+ncells+1) = kap_cc(rmin-1:rmin-1+ncells+1) / &
-                                            j_cc_pd(rmin-1:rmin-1+ncells+1,j)
+!            q_cc(rmin-1:rmin-1+ncells+1)   =   q_cc(rmin-1:rmin-1+ncells+1)   * &
+!                                            j_cc_pd(rmin-1:rmin-1+ncells+1,j)
+!            sig_I(rmin  :rmin-1+ncells+1)  =  sig_I(rmin  :rmin-1+ncells+1) / &
+!                                            j_cc_pd(rmin  :rmin-1+ncells+1,j)
+!            kap_cc(rmin-1:rmin-1+ncells+1) = kap_cc(rmin-1:rmin-1+ncells+1) / &
+!                                            j_cc_pd(rmin-1:rmin-1+ncells+1,j)
 
             dq_I(  rmin  :rmin-1+ncells+1) = q_cc(       rmin  :rmin-1+ncells+1) - &
                                              q_cc(       rmin-1:rmin-1+ncells)
@@ -366,7 +366,7 @@
               update_cc(l_cc) = LFluct_Rbound + RFluct_Lbound
 
             enddo ! loop over l (cell centers)
-            update_cc(rmin:rmin-1+ncells) = update_cc(rmin:rmin-1+ncells) / j_cc_pd(rmin:rmin-1+ncells,j)
+            update_cc(rmin:rmin-1+ncells) = update_cc(rmin:rmin-1+ncells) !/ j_cc_pd(rmin:rmin-1+ncells,j)
             concen_pd(   rmin:rmin-1+ncells,j,k,n,ts1) = &
                concen_pd(rmin:rmin-1+ncells,j,k,n,ts0) + &
                update_cc(rmin:rmin-1+ncells)
@@ -485,12 +485,12 @@
             q_cc(  rmin-1:rmin-1+ncells+1) = concen_pd(  i,rmin-1:rmin-1+ncells+1,k,n,ts0)
             sig_I(rmin:rmin-1+ncells+1)    = sigma_ny_pd(i,rmin  :rmin-1+ncells+1,k)
             ! Now scale according to local Jacobian
-            q_cc(rmin-1:rmin-1+ncells+1)   =     q_cc(rmin-1:rmin-1+ncells+1)   * &
-                                            j_cc_pd(i,rmin-1:rmin-1+ncells+1)
-            sig_I(rmin  :rmin-1+ncells+1)  =    sig_I(rmin  :rmin-1+ncells+1) / &
-                                            j_cc_pd(i,rmin  :rmin-1+ncells+1)
-            kap_cc(rmin-1:rmin-1+ncells+1) =   kap_cc(rmin-1:rmin-1+ncells+1) / &
-                                            j_cc_pd(i,rmin-1:rmin-1+ncells+1)
+!            q_cc(rmin-1:rmin-1+ncells+1)   =     q_cc(rmin-1:rmin-1+ncells+1)   * &
+!                                            j_cc_pd(i,rmin-1:rmin-1+ncells+1)
+!            sig_I(rmin  :rmin-1+ncells+1)  =    sig_I(rmin  :rmin-1+ncells+1) / &
+!                                            j_cc_pd(i,rmin  :rmin-1+ncells+1)
+!            kap_cc(rmin-1:rmin-1+ncells+1) =   kap_cc(rmin-1:rmin-1+ncells+1) / &
+!                                            j_cc_pd(i,rmin-1:rmin-1+ncells+1)
             dq_I(rmin:rmin-1+ncells+1)     = q_cc(         rmin  :rmin-1+ncells+1) - &
                                              q_cc(         rmin-1:rmin-1+ncells)
 
@@ -518,7 +518,7 @@
 
               update_cc(l_cc) = LFluct_Rbound + RFluct_Lbound
             enddo ! loop over l (cell centers)
-            update_cc(rmin:rmin-1+ncells) = update_cc(rmin:rmin-1+ncells) / j_cc_pd(i,rmin:rmin-1+ncells)
+            update_cc(rmin:rmin-1+ncells) = update_cc(rmin:rmin-1+ncells) !/ j_cc_pd(i,rmin:rmin-1+ncells)
             concen_pd(   i,rmin:rmin-1+ncells,k,n,ts1) = &
                concen_pd(i,rmin:rmin-1+ncells,k,n,ts0) + &
                update_cc(  rmin:rmin-1+ncells)
@@ -589,7 +589,7 @@
 
       real(kind=ip) :: LFluct_Rbound,RFluct_Lbound
       integer :: rmin, rmax     ! min and max indices of the row
-      real(kind=ip) :: jac
+!      real(kind=ip) :: jac
 
       !integer OMP_GET_MAX_THREADS
       !integer OMP_GET_NUM_THREADS
@@ -629,7 +629,7 @@
       !!!$OMP collapse(2)
         do j=jmin,jmax
           do i=imin,imax
-            jac = j_cc_pd(i,j)
+!            jac = j_cc_pd(i,j)
             ! Initialize cell-centered values for this z-row
             ! Note: ghost cells should contain q_cc values at edge (Neumann)
             update_cc(0:ncells+1) = 0.0_ip
@@ -637,13 +637,8 @@
             q_cc(  rmin-1:rmin-1+ncells+1) = concen_pd(  i,j,rmin-1:rmin-1+ncells+1,n,ts0)
             sig_I( rmin  :rmin-1+ncells+1) = sigma_nz_pd(i,j,rmin  :rmin-1+ncells+1)
             ! Now scale according to local Jacobian
-            q_cc(rmin-1:rmin-1+ncells+1)   =   q_cc(rmin-1:rmin-1+ncells+1)   * &
-                                            jac
-            ! area of z-faces is not scaled by Jacobian
-!            sig_I(rmin  :rmin-1+ncells+1)  =  sig_I(rmin  :rmin-1+ncells+1) / &
-!                                            jac
-            kap_cc(rmin-1:rmin-1+ncells+1) = kap_cc(rmin-1:rmin-1+ncells+1) / &
-                                            jac
+!            !q_cc(rmin-1:rmin-1+ncells+1)   =   q_cc(rmin-1:rmin-1+ncells+1)   * &
+!            !                                jac
             dq_I(  rmin  :rmin-1+ncells+1) = q_cc(           rmin  :rmin-1+ncells+1) - &
                                              q_cc(           rmin-1:rmin-1+ncells)
 
@@ -656,7 +651,7 @@
                 ! average of the volumes across the interface
               ds_I(l_I) = 2.0_ip*sig_I(l_I)/(kap_cc(l_cc-1)+kap_cc(l_cc))
                 ! get an average diffusivity using the arithmetic average
-              k_ds_I(l_I) = 0.5_ip*(kz(i,j,l_cc-1)+kz(i,j,l_cc))*ds_I(l_I)/jac/jac
+              k_ds_I(l_I) = 0.5_ip*(kz(i,j,l_cc-1)+kz(i,j,l_cc))*ds_I(l_I) !/jac/jac
             enddo
 
               ! Loop over cells and update
@@ -673,7 +668,7 @@
               update_cc(l_cc) = LFluct_Rbound + RFluct_Lbound
 
             enddo ! loop over l (cell centers)
-            update_cc(rmin:rmin-1+ncells) = update_cc(rmin:rmin-1+ncells) / jac
+            update_cc(rmin:rmin-1+ncells) = update_cc(rmin:rmin-1+ncells) !/ jac
             concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = &
                concen_pd(i,j,rmin:rmin-1+ncells,n,ts0) + &
                update_cc(rmin:rmin-1+ncells)
@@ -834,12 +829,12 @@
             q_cc(  rmin-1:rmin-1+ncells+1) = concen_pd(     rmin-1:rmin-1+ncells+1,j,k,n,ts0)
             sig_I( rmin  :rmin-1+ncells+1) = sigma_nx_pd(   rmin  :rmin-1+ncells+1,j,k)
             ! Now scale according to local Jacobian
-            q_cc(rmin-1:rmin-1+ncells+1)   =   q_cc(rmin-1:rmin-1+ncells+1)   * &
-                                            j_cc_pd(rmin-1:rmin-1+ncells+1,j)
-            sig_I(rmin  :rmin-1+ncells+1)  =  sig_I(rmin  :rmin-1+ncells+1) / &
-                                            j_cc_pd(rmin  :rmin-1+ncells+1,j)
-            kap_cc(rmin-1:rmin-1+ncells+1) = kap_cc(rmin-1:rmin-1+ncells+1) / &
-                                            j_cc_pd(rmin-1:rmin-1+ncells+1,j)
+!            q_cc(rmin-1:rmin-1+ncells+1)   =   q_cc(rmin-1:rmin-1+ncells+1)   * &
+!                                            j_cc_pd(rmin-1:rmin-1+ncells+1,j)
+!            sig_I(rmin  :rmin-1+ncells+1)  =  sig_I(rmin  :rmin-1+ncells+1) / &
+!                                            j_cc_pd(rmin  :rmin-1+ncells+1,j)
+!            kap_cc(rmin-1:rmin-1+ncells+1) = kap_cc(rmin-1:rmin-1+ncells+1) / &
+!                                            j_cc_pd(rmin-1:rmin-1+ncells+1,j)
 
             vavg_I(rmin  :rmin-1+ncells+1) = 0.5_ip*(kap_cc(rmin-1:rmin-1+ncells ) + &
                                                      kap_cc(rmin  :rmin-1+ncells+1))
@@ -877,7 +872,7 @@
                                     (1.0_ip-Imp_fac)*RightFac   * q_cc(rmin-1+l_cc+1)
               elseif(l_cc.lt.ncells)then
                 DL_d(l_cc-1) =         - (Imp_fac)*LeftFac
-                D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac
+                D_d(l_cc)    =  1.0_ip + (Imp_fac)*CenterFac
                 DU_d(l_cc)   =         - (Imp_fac)*RightFac
 
                 B_d(l_cc,1)  =           (1.0_ip-Imp_fac)*LeftFac    * q_cc(rmin-1+l_cc-1) + &
@@ -926,7 +921,7 @@
                     B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                     ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                     info)      !o
-              concen_pd(rmin:rmin-1+ncells,j,k,n,ts1) = B_s(:,1)/j_cc_pd(rmin:rmin-1+ncells,j)
+              concen_pd(rmin:rmin-1+ncells,j,k,n,ts1) = B_s(:,1) !/j_cc_pd(rmin:rmin-1+ncells,j)
             elseif(ip.eq.8)then
               call dgtsv(     &
                     nlineq, &  !i The order of the matrix A.  N >= 0.
@@ -937,7 +932,7 @@
                     B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                     ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                     info)      !o
-              concen_pd(rmin:rmin-1+ncells,j,k,n,ts1) = B_d(:,1)/j_cc_pd(rmin:rmin-1+ncells,j)
+              concen_pd(rmin:rmin-1+ncells,j,k,n,ts1) = B_d(:,1) !/j_cc_pd(rmin:rmin-1+ncells,j)
             endif
 #endif
           enddo ! loop over j
@@ -1096,12 +1091,12 @@
             q_cc(  rmin-1:rmin-1+ncells+1) = concen_pd(   i,rmin-1:rmin-1+ncells+1,k,n,ts0)
             sig_I( rmin  :rmin-1+ncells+1) = sigma_ny_pd( i,rmin  :rmin-1+ncells+1,k)
             ! Now scale according to local Jacobian
-            q_cc(rmin-1:rmin-1+ncells+1)   =     q_cc(rmin-1:rmin-1+ncells+1)   * &
-                                            j_cc_pd(i,rmin-1:rmin-1+ncells+1)
-            sig_I(rmin  :rmin-1+ncells+1)  =    sig_I(rmin  :rmin-1+ncells+1) / &
-                                            j_cc_pd(i,rmin  :rmin-1+ncells+1)
-            kap_cc(rmin-1:rmin-1+ncells+1) =   kap_cc(rmin-1:rmin-1+ncells+1) / &
-                                            j_cc_pd(i,rmin-1:rmin-1+ncells+1)
+!            q_cc(rmin-1:rmin-1+ncells+1)   =     q_cc(rmin-1:rmin-1+ncells+1)   * &
+!                                            j_cc_pd(i,rmin-1:rmin-1+ncells+1)
+!            sig_I(rmin  :rmin-1+ncells+1)  =    sig_I(rmin  :rmin-1+ncells+1) / &
+!                                            j_cc_pd(i,rmin  :rmin-1+ncells+1)
+!            kap_cc(rmin-1:rmin-1+ncells+1) =   kap_cc(rmin-1:rmin-1+ncells+1) / &
+!                                            j_cc_pd(i,rmin-1:rmin-1+ncells+1)
 
             vavg_I(rmin  :rmin-1+ncells+1) = 0.5_ip*(kap_cc(rmin-1:rmin-1+ncells  ) + &
                                                      kap_cc(rmin  :rmin-1+ncells+1))
@@ -1190,7 +1185,7 @@
                     B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                     ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                     info)      !o
-              concen_pd(i,rmin:rmin-1+ncells,k,n,ts1) = B_s(:,1)/j_cc_pd(i,rmin:rmin-1+ncells)
+              concen_pd(i,rmin:rmin-1+ncells,k,n,ts1) = B_s(:,1) !/j_cc_pd(i,rmin:rmin-1+ncells)
             elseif(ip.eq.8)then
               call dgtsv(     &
                     nlineq, &  !i The order of the matrix A.  N >= 0.
@@ -1201,7 +1196,7 @@
                     B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                     ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                     info)      !o
-              concen_pd(i,rmin:rmin-1+ncells,k,n,ts1) = B_d(:,1)/j_cc_pd(i,rmin:rmin-1+ncells)
+              concen_pd(i,rmin:rmin-1+ncells,k,n,ts1) = B_d(:,1) !/j_cc_pd(i,rmin:rmin-1+ncells)
             endif
 #endif
 
@@ -1291,7 +1286,7 @@
       !real(kind=ip),dimension( 1:nzmax+1)     :: ksig2_vol_I  ! k*sig*sig/volavg 
 
       integer :: rmin, rmax     ! min and max indices of the row
-      real(kind=ip) :: jac
+!      real(kind=ip) :: jac
 
 #ifdef CRANKNIC
       ! Note: The only reason not to use Crank-Nicolson is if you
@@ -1361,21 +1356,21 @@
 
         do j=jmin,jmax
           do i=imin,imax
-            jac = j_cc_pd(i,j)
+!            jac = j_cc_pd(i,j)
             ! solve the problem in z for each y
             kap_cc(rmin-1:rmin-1+ncells+1) = kappa_pd(    i,j,rmin-1:rmin-1+ncells+1)
             q_cc(  rmin-1:rmin-1+ncells+1) = concen_pd(   i,j,rmin-1:rmin-1+ncells+1,n,ts0)
             sig_I( rmin  :rmin-1+ncells+1) = sigma_nz_pd( i,j,rmin  :rmin-1+ncells+1)
             ! Now scale according to local Jacobian
-            q_cc(rmin-1:rmin-1+ncells+1)   =   q_cc(rmin-1:rmin-1+ncells+1)   * &
-                                            jac
+!            q_cc(rmin-1:rmin-1+ncells+1)   =   q_cc(rmin-1:rmin-1+ncells+1)   * &
+!                                            jac
             ! area of z-faces is not scaled by Jacobian
 !            sig_I(rmin  :rmin-1+ncells+1)  =  sig_I(rmin  :rmin-1+ncells+1) / &
 !                                            jac
-            kap_cc(rmin-1:rmin-1+ncells+1) = kap_cc(rmin-1:rmin-1+ncells+1) / &
-                                            jac
+!            kap_cc(rmin-1:rmin-1+ncells+1) = kap_cc(rmin-1:rmin-1+ncells+1) / &
+!                                            jac
             kavg_I(rmin  :rmin-1+ncells+1) = 0.5_ip*(kz(i,j,  rmin-1:rmin-1+ncells  ) + &
-                                                     kz(i,j,  rmin  :rmin-1+ncells+1))/jac/jac
+                                                     kz(i,j,  rmin  :rmin-1+ncells+1)) !/jac/jac
 
             vavg_I(rmin  :rmin-1+ncells+1) = 0.5_ip*(kap_cc(  rmin-1:rmin-1+ncells  ) + &
                                                      kap_cc(  rmin  :rmin-1+ncells+1))
@@ -1462,7 +1457,7 @@
                     B_s,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                     ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                     info)      !o
-              concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = B_s(:,1)/jac
+              concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = B_s(:,1) !/jac
             elseif(ip.eq.8)then
               call dgtsv(     &
                     nlineq, &  !i The order of the matrix A.  N >= 0.
@@ -1473,7 +1468,7 @@
                     B_d,    &  !b dimension (LDB,NRHS) On entry, the N by NRHS matrix of right hand side matrix B.
                     ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                     info)      !o
-              concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = B_d(:,1)/jac
+              concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = B_d(:,1) !/jac
             endif
 #endif
             !concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = real(B_d,kind=ip)

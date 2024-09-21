@@ -423,7 +423,6 @@
                 concen_pd(ivent,jvent,1:nzmax+1,1:n_gs_max,ts0) +  &
                   real(dt,kind=ip) * &
                   SourceNodeFlux(1:nzmax+1,1:n_gs_max)
-
             ! Keep track of the accumulated source inserted for mass conservation error-checking
             SourceCumulativeVol = SourceCumulativeVol + SourceVolInc(dt)
 

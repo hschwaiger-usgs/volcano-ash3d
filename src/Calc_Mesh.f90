@@ -258,7 +258,6 @@
       implicit none
 
       real(kind=sp),allocatable,dimension(:) :: dums_sp
-      real(kind=ip) :: tmp
       integer       :: i,j
 
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -285,8 +284,8 @@
         ! Same logic as above; surface to top should be 0->Ztop so use Zsurf of 0
         ! for the purpose of indexing (otherwise we just have the s-values of
         ! the Cartesian z-array)
-        s_cc_pd(:) = z_cc_pd(:)/Ztop
-        s_lb_pd(:) = z_lb_pd(:)/Ztop
+        s_cc_pd(:) = z_cc_pd(:)
+        s_lb_pd(:) = z_lb_pd(:)
       endif
 
       if(ZScaling_ID.eq.0.or.ZScaling_ID.eq.1)then

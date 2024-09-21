@@ -335,8 +335,10 @@
       elseif(ZScaling_ID.eq.2)then
         ! Scaled coordinates, choose the surface or z (if z is higher)
         z_volcano = max(z_volcano,Zsurf(ivent,jvent))
-        s_volcano = (z_volcano-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
-        s_PlumeHeight(:) = (e_PlumeHeight(:)-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
+!        s_volcano = (z_volcano-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
+!        s_PlumeHeight(:) = (e_PlumeHeight(:)-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
+        s_volcano = Ztop*(z_volcano-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
+        s_PlumeHeight(:) = Ztop*(e_PlumeHeight(:)-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
       endif
 
       do i=1,neruptions
@@ -430,8 +432,8 @@
                 sbot_prof = zbot_prof - Zsurf(ivent,jvent)
                 stop_prof = ztop_prof - Zsurf(ivent,jvent)
               elseif(ZScaling_ID.eq.2)then
-                sbot_prof = (zbot_prof-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
-                stop_prof = (ztop_prof-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
+                sbot_prof = Ztop*(zbot_prof-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
+                stop_prof = Ztop*(ztop_prof-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
               endif
 
               if(stop_prof.lt.sground)then
