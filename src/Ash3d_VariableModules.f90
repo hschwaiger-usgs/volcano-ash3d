@@ -130,7 +130,17 @@
 !    FileIO_Error_Handler
 !
 !    Subroutine called whenever a line from a file is read with a non-zero
-!    iostat.
+!    iostat. This subroutine writes the error messages to screen/log-file and
+!    exits the program.
+!
+!  Arguments:
+!    ios           : integer error code from the read statement
+!    linebuffer050 : Ash3d message about what program was trying to do
+!    linebuffer080 : the string Ash3d was trying to parse
+!    iomessage     : system message (e.g. End of File)
+!
+!  Assigns:
+!    none
 !
 !##############################################################################
 
@@ -158,6 +168,76 @@
       stop 1
 
       end subroutine FileIO_Error_Handler
+
+!##############################################################################
+!
+!    FileIO_Check_testkey
+!
+!    Subroutine called whenever a testkey character is read from a line buffer
+!    string from an input file. The testkey is always the first character on
+!    the line, but occasionally files can get corrupted with non-printable
+!    characters starting the line. This subroutine catches those events and
+!    returns a meaningful error-message
+!
+!##############################################################################
+
+      subroutine FileIO_Check_testkey(testkey,IsComment)
+
+      character ,intent(in ) :: testkey           ! First character of linebuffer
+      logical   ,intent(out) :: IsComment         ! Flag set if testkey= # or *
+
+      integer :: asciicode
+      logical :: IsNumber,IsUpperCase,IsLowerCase,IsWhiteSpace
+
+      IsComment = .false.
+      IsNumber  = .false.
+      IsUpperCase = .false.
+      IsLowerCase = .false.
+      IsWhiteSpace = .false.
+
+      asciicode = ichar(testkey)
+      ! Check if testkey is '#' (code=23) or
+      !                     '*' (code=42)
+      if (asciicode.eq.35.or.asciicode.eq.42) then
+        IsComment = .true.
+        return
+      else
+        if (asciicode.ge.48.and.asciicode.le.57.or.asciicode.eq.45) then
+          ! Check if 0-9 or -
+          IsNumber = .true.
+        elseif (asciicode.ge.65.and.asciicode.le.90) then
+          ! Check if A-Z
+          IsUpperCase = .true.
+        elseif (asciicode.ge.97.and.asciicode.le.122) then
+          ! Check if a-z
+         IsLowerCase = .true.
+        elseif (asciicode.eq.9.or.asciicode.eq.32) then
+          ! only check TAB (code=9) and space (code=32)
+          IsWhiteSpace = .true.
+        endif
+      endif
+
+      if (IsNumber.or.IsUpperCase.or.IsLowerCase.or.IsWhiteSpace) then
+        ! character is not a comment, but is a regular ASCII letter or number
+        return
+      else
+        ! Character is either a non-printable character or punctuation
+        ! Issue error and exit
+        do io=1,nio;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)'ERROR Reading character from string'
+          write(errlog(io),*)'       offending character  = ',testkey
+          write(errlog(io),*)'       character ASCII code = ',asciicode
+          write(errlog(io),*)'      Expecting character to be # or * for comment'
+          write(errlog(io),*)'      or letter/number'
+          write(errlog(io),*)'Check to make sure there are no white-spaces,'
+          write(errlog(io),*)'punctuation, or control characters at the start'
+          write(errlog(io),*)'of the line. You can try running dos2unix on the file'
+          write(errlog(io),*)'to strip off the control characters.'
+        endif;enddo
+        stop 1
+      endif
+
+      end subroutine FileIO_Check_testkey
 
 !##############################################################################
 
