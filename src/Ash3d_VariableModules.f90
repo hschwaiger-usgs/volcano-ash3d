@@ -181,10 +181,11 @@
 !
 !##############################################################################
 
-      subroutine FileIO_Check_testkey(testkey,IsComment)
+      subroutine FileIO_Check_testkey(testkey,linebuffer080,IsComment)
 
-      character ,intent(in ) :: testkey           ! First character of linebuffer
-      logical   ,intent(out) :: IsComment         ! Flag set if testkey= # or *
+      character        ,intent(in ) :: testkey       ! First character of linebuffer
+      character(len=80),intent(in)  :: linebuffer080 ! String with testkey
+      logical          ,intent(out) :: IsComment     ! Flag set if testkey= # or *
 
       integer :: asciicode
       logical :: IsNumber,IsUpperCase,IsLowerCase,IsWhiteSpace
@@ -227,6 +228,7 @@
           write(errlog(io),*)'ERROR Reading character from string'
           write(errlog(io),*)'       offending character  = ',testkey
           write(errlog(io),*)'       character ASCII code = ',asciicode
+          write(errlog(io),*)'       Offending line = ',linebuffer080
           write(errlog(io),*)'      Expecting character to be # or * for comment'
           write(errlog(io),*)'      or letter/number'
           write(errlog(io),*)'Check to make sure there are no white-spaces,'

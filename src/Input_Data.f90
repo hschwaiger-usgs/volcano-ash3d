@@ -1177,7 +1177,7 @@
       linebuffer050 = "Reading first line of control file."
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
       read(linebuffer080,'(a1)',iostat=iostatus,iomsg=iomessage)testkey
-      call FileIO_Check_testkey(testkey,IsComment)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       do while (IsComment)
          ! Line is a comment, read next line
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
@@ -1197,7 +1197,7 @@
           endif;enddo
           stop 1
         else
-          call FileIO_Check_testkey(testkey,IsComment)
+          call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
         endif
       enddo
 
@@ -1743,7 +1743,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (.not.IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -1761,7 +1761,7 @@
         read(linebuffer130,*,iostat=iostatus,iomsg=iomessage)testkey
         linebuffer050 = "Reading testkey from linebuffer"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130,iomessage)
-        call FileIO_Check_testkey(testkey,IsComment)
+        call FileIO_Check_testkey(testkey,linebuffer130(1:80),IsComment)
       enddo
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)' *******************************************'
@@ -1774,7 +1774,7 @@
         read(linebuffer130,*,iostat=iostatus,iomsg=iomessage)testkey
         linebuffer050 = "Reading control file, Blk2, Line 1+."
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
-        call FileIO_Check_testkey(testkey,IsComment)
+        call FileIO_Check_testkey(testkey,linebuffer130(1:80),IsComment)
         if (IsComment) then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: ",&
@@ -1917,7 +1917,7 @@
             'the source is a custom type'
         endif;enddo
         ! For the custom source, we will need to read to the end of block 2
-        call FileIO_Check_testkey(testkey,IsComment)
+        call FileIO_Check_testkey(testkey,linebuffer130(1:80),IsComment)
         do while (IsComment)
            ! Line is a comment, read next line
           read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
@@ -1926,7 +1926,7 @@
           read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
           linebuffer050 = "Reading testkey from linebuffer"
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-          call FileIO_Check_testkey(testkey,IsComment)
+          call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
         enddo
       else
         if(linebuffer130(1:5).ne.'*****') then
@@ -1953,7 +1953,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk3)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if(.not.IsCustom_SourceType.and..not.IsComment) then !&  ! only perform this check for standard src
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -1971,7 +1971,7 @@
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
         linebuffer050 = "Reading testkey from linebuffer (Blk3)"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-        call FileIO_Check_testkey(testkey,IsComment)
+        call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       enddo
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)' *******************************************'
@@ -2023,7 +2023,7 @@
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
         linebuffer050 = "Reading testkey from linebuffer (Blk3)"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-        call FileIO_Check_testkey(testkey,IsComment)
+        call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
         if (IsComment) then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: ",&
@@ -2049,7 +2049,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk3)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -2069,7 +2069,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk3)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -2091,7 +2091,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk3)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -2118,7 +2118,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk3)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment) 
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment) 
       if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -2269,7 +2269,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (.not.IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -2286,7 +2286,7 @@
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
         linebuffer050 = "Reading testkey from linebuffer (Blk4)"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-        call FileIO_Check_testkey(testkey,IsComment)
+        call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       enddo
       ! Block 4
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -2318,7 +2318,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -2346,7 +2346,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -2375,7 +2375,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -2404,7 +2404,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -2432,7 +2432,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -2461,7 +2461,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -2488,7 +2488,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -2517,7 +2517,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -2546,7 +2546,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -2575,7 +2575,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -2603,7 +2603,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -2632,7 +2632,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -2661,7 +2661,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment) 
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -2690,7 +2690,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -2732,7 +2732,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -2790,7 +2790,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -2823,7 +2823,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -2839,8 +2839,8 @@
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer400(1:80),iomessage)
       read(linebuffer400,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment)
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer400(1:80),iomessage)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -2978,7 +2978,7 @@
         read(linebuffer130,*,iostat=iostatus,iomsg=iomessage)testkey
         linebuffer050 = "Reading testkey from linebuffer (Blk5)"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
-        call FileIO_Check_testkey(testkey,IsComment)
+        call FileIO_Check_testkey(testkey,linebuffer130(1:80),IsComment)
         if (.not.IsComment) then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: ",&
@@ -2997,7 +2997,7 @@
           read(linebuffer130,*,iostat=iostatus,iomsg=iomessage)testkey
           linebuffer050 = "Reading testkey from linebuffer (Blk5)"
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
-          call FileIO_Check_testkey(testkey,IsComment)
+          call FileIO_Check_testkey(testkey,linebuffer130(1:80),IsComment)
         enddo
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)' *****************************************'
@@ -3021,7 +3021,7 @@
           do i=1,iwfiles
             ! Always check if we have overshot the block
             testkey=linebuffer130(1:1)
-            call FileIO_Check_testkey(testkey,IsComment)
+            call FileIO_Check_testkey(testkey,linebuffer130(1:80),IsComment)
             if (IsComment) then
               do io=1,2;if(VB(io).le.verbosity_error)then
                 write(errlog(io),*)"ERROR: ",&
@@ -3132,7 +3132,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk6)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (.not.IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -3149,7 +3149,7 @@
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
         linebuffer050 = "Reading testkey from linebuffer (Blk6)"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-        call FileIO_Check_testkey(testkey,IsComment)
+        call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       enddo
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)' *******************************************'
@@ -3295,7 +3295,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk7)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (.not.IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -3312,7 +3312,7 @@
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
         linebuffer050 = "Reading testkey from linebuffer (Blk7)"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-        call FileIO_Check_testkey(testkey,IsComment)
+        call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       enddo
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)' *******************************************'
@@ -3393,7 +3393,7 @@
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
           ! Always check if we have overshot the block
           testkey = linebuffer080(1:1)
-          call FileIO_Check_testkey(testkey,IsComment)
+          call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
           if (IsComment) then
             do io=1,2;if(VB(io).le.verbosity_error)then
               write(errlog(io),*)"ERROR: ",&
@@ -3732,7 +3732,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk8)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (.not.IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -3749,7 +3749,7 @@
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
         linebuffer050 = "Reading testkey from linebuffer (Blk8)"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-        call FileIO_Check_testkey(testkey,IsComment)
+        call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       enddo
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)' *******************************************'
@@ -3788,7 +3788,7 @@
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
           ! Always check if we have overshot the block
           testkey=linebuffer080(1:1)
-          call FileIO_Check_testkey(testkey,IsComment)
+          call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
           if (IsComment) then
           do io=1,2;if(VB(io).le.verbosity_error)then
               write(errlog(io),*)"ERROR: ",&
@@ -3836,7 +3836,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk9)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,IsComment)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (.not.IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -3853,7 +3853,7 @@
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
         linebuffer050 = "Reading testkey from linebuffer (Blk9)"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-        call FileIO_Check_testkey(testkey,IsComment)
+        call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       enddo
 
       ! Here are the default output file name and comments if Block 9 is not given
