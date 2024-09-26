@@ -320,7 +320,7 @@
       real(kind=dp)     :: StartHour
       real(kind=dp)     :: RunStartHour    ! Start time of model run, in hours since BaseYear
       character(len=100):: CompVer
-      character(len=602):: CompOpt
+      character(len=604):: CompOpt
       logical           :: IsThere
 
       INTERFACE
@@ -3031,7 +3031,6 @@
               endif;enddo
               stop 1
             endif
-            write(*,*)"reading windfile from linebuffer:",trim(adjustl(linebuffer130))
             read(linebuffer130,'(a130)',err=9501,iostat=iostatus,iomsg=iomessage) MR_windfiles(i)
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),1034) i,trim(adjustl(MR_windfiles(i)))

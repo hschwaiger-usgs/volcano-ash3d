@@ -5322,7 +5322,6 @@
       ! Extra 2d variable
       if(nvar_User2d_static_XY.gt.0)then
         ! Static case
-        write(*,*)trim(adjustl(Extra2dVarName))
         if(temp1_2d_var_id.eq.0)then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: Trying to read user-specified variable : ",trim(adjustl(Extra2dVarName))
@@ -5337,8 +5336,6 @@
         Extra2dVar = real(dum2d_out,kind=ip)
       elseif(nvar_User2d_XY.gt.0)then
         ! Transient case
-        write(*,*)"Trying to read TS variable:",temp1_2d_var_id
-        write(*,*)trim(adjustl(Extra2dVarName))
         if(temp1_2d_var_id.eq.0)then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: Trying to read user-specified variable : ",trim(adjustl(Extra2dVarName))

@@ -36,7 +36,7 @@
         !  Physical Properties of air
         !  meso means grid of the met. file
 #ifdef USEPOINTERS
-        ! Denisity is in kg/m^3
+        ! Density is in kg/m^3
         ! Viscosity is in kg/(m s)
         ! Mean free path (lambda) is in m
       real(kind=sp),dimension(:,:,:),pointer,public :: AirDens_meso_last_step_MetP_sp => null()

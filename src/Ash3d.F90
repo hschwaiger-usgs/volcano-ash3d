@@ -17,7 +17,8 @@
 !     deposition, Journal of Geophysical Research, 117, B04204,
 !     doi:10.1029/2011JB008968
 !
-!  A complete user's guide and reference manual is available at
+!  A complete user's guide and reference manual is available at:
+!   https://code.usgs.gov/vsc/ash3d/ash3d_users_guide
 !
 !  The USGS provides a web-interface to this software at:
 !    https://vsc-ash.wr.usgs.gov

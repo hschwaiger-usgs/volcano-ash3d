@@ -769,7 +769,9 @@
       if(associated(sigma_nz_pd))   deallocate(sigma_nz_pd)
       if(associated(s_cc_pd))       deallocate(s_cc_pd)
       if(associated(s_lb_pd))       deallocate(s_lb_pd)
+      if(associated(ds_vec_pd))     deallocate(ds_vec_pd)
       if(associated(j_cc_pd))       deallocate(j_cc_pd)
+      if(associated(Zsurf))         deallocate(Zsurf)
 #else
       if(allocated(z_vec_init))    deallocate(z_vec_init)
       if(allocated(xy2ll_xlon))    deallocate(xy2ll_xlon)
@@ -787,7 +789,9 @@
       if(allocated(lat_cc_pd))     deallocate(lat_cc_pd)
       if(allocated(s_cc_pd))       deallocate(s_cc_pd)
       if(allocated(s_lb_pd))       deallocate(s_lb_pd)
+      if(allocated(ds_vec_pd))     deallocate(ds_vec_pd)
       if(allocated(j_cc_pd))       deallocate(j_cc_pd)
+      if(allocated(Zsurf))         deallocate(Zsurf)
 #endif
 
       end subroutine Deallocate_mesh

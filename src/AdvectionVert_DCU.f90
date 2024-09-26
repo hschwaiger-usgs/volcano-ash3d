@@ -198,7 +198,7 @@
         !$OMP        dt,concen_pd,kappa_pd,vf_pd,                     &
         !$OMP        vz_pd,sigma_nz_pd,outflow_xy1_pd,outflow_xy2_pd) &
         !$OMP PRIVATE(l,i,j,q_cc,vel_cc,dt_vol_cc,usig_I,update_cc,   &
-        !$OMP         dq_I,fs_I,fss_I,ldq_I,dqu_I,i_I,i_cc,           &
+        !$OMP         dq_I,fs_I,fss_I,ldq_I,dqu_I,i_I,i_cc,kap_cc,    &
         !$OMP         aus,theta,divu_p,divu_m,                        &
         !$OMP         LFluct_Rbound,RFluct_Lbound,                    &
         !$OMP         LimFlux_Rbound,LimFlux_Lbound)                  &
@@ -486,7 +486,7 @@
         !$OMP        dt,concen_pd,kappa_pd,vf_pd,                     &
         !$OMP        vz_pd,sigma_nz_pd,outflow_xy1_pd,outflow_xy2_pd) &
         !$OMP PRIVATE(l,i,j,q_cc,vel_cc,dt_vol_cc,usig_I,update_cc,   &
-        !$OMP         dq_I,fs_I,fss_I,ldq_I,dqu_I,i_I,i_cc,           &
+        !$OMP         dq_I,fs_I,fss_I,ldq_I,dqu_I,i_I,i_cc,kap_cc,    &
         !$OMP         aus,theta,divu_p,divu_m,                        &
         !$OMP         LFluct_Rbound,RFluct_Lbound,                    &
         !$OMP         LimFlux_Rbound,LimFlux_Lbound)                  &
@@ -517,9 +517,6 @@
             usig_I(rmin-1:rmin-1+ncells+1) = 0.5_ip*(vel_cc(rmin-2:rmin-1+ncells  ) + &
                                                      vel_cc(rmin-1:rmin-1+ncells+1))* &
                                                       sig_I(rmin-1:rmin-1+ncells+1)
-            !do l=rmin,rmin-1+ncells+1
-            !  usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sig_I(l)
-            !enddo
 
             ! This calculates the update in a row in one function call
             !update_cc(-1:ncells+2) = AdvectUpdate_1d(ncells,q_cc,dt_vol_cc,usig_I)

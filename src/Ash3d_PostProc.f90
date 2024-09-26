@@ -1261,7 +1261,7 @@
         OutFillValue = 0.0_ip
         filename_root = 'DepositFile_        '
       elseif(iprod.eq.7)then
-        OutVar = DepArrivalTime
+        OutVar = real(DepArrivalTime,kind=ip)
         !OutVar = DepArrivalTime * merge(1.0_ip,0.0_ip,Mask_Deposit)
         Fill_Value = '-9999.'
         OutFillValue = -1.0_ip
@@ -1469,8 +1469,6 @@
         case(3)
           call write_2Dmap_PNG_gnuplot(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
         case(4)
-          write(*,*)'calling write_2Dmap_PNG_GMT'
-          stop 66
           call write_2Dmap_PNG_GMT(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
         case default
           do io=1,2;if(VB(io).le.verbosity_error)then

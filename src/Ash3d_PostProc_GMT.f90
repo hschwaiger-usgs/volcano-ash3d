@@ -74,10 +74,11 @@
       subroutine write_2Dmap_PNG_GMT(nx,ny,iprod,itime,OutVar,writeContours)
 
       use mesh,          only : &
-         A3d_iprojflag,A3d_lam0,A3d_lam1,A3d_lam2,A3d_phi0,A3d_phi1,A3d_phi2, &
-         A3d_k0_scale,A3d_Re,de,dn,dx,dy,IsLatLon, &
+         A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
+         A3d_k0_scale,A3d_Re,IsLatLon, &
          latLL,lonLL,latUR,lonUR,xLL,yLL,xUR,yUR,&
-         x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd
+         lon_cc_pd,lat_cc_pd !,&
+         !A3d_lam1,A3d_lam2,de,dn,dx,dy,x_cc_pd,y_cc_pd
 
       use Output_Vars,   only : &
          ContourFilled,Con_Cust,Con_Cust_N,Con_Cust_RGB,Con_Cust_Lev,&

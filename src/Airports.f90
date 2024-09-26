@@ -601,7 +601,6 @@
         endif
         read(linebuffer095,*,iostat=ioerr,iomsg=iomessage) &
                                        ExtAirportLat(isite), ExtAirportLon(isite)
-        write(*,*)'ioerr = ',ioerr
         if(ioerr.ne.0)then
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)'Next line of Airport/POI file loaded without error, however'

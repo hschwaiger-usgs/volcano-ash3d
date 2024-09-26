@@ -181,8 +181,8 @@
       real(kind=ip),dimension(:,:)  ,allocatable :: dhdx_comp
       real(kind=ip),dimension(:,:)  ,allocatable :: dhdy_comp
 
-      ! HFS: Should first map all topo points onto computational grid, average those values,
-      !      Then apply a smoothing of the comp grid
+      ! Note: Should first map all topo points onto computational grid, average those values,
+      !       then apply a smoothing of the comp grid
 
       real(kind=dp) :: minlon_Topo_comp,maxlon_Topo_comp
       real(kind=dp) :: minlat_Topo_comp,maxlat_Topo_comp
@@ -497,7 +497,6 @@
       deallocate(DelDxonD_cc)
       deallocate(DelDyonD_cc)
       deallocate(IsWater_subgrid)
-      !deallocate(topo_indx)
 
       end subroutine Deallocate_Topo
 
@@ -2257,19 +2256,23 @@
           ! Double-check that olam is between left and right sides of cell
           if(olam.lt.loncl_topo_subgrid(ilon).or.&
              olam.gt.loncl_topo_subgrid(ilon+1))then
-            write(*,*)"Lon error: ",ilon,&
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: ",ilon,&
                       loncl_topo_subgrid(ilon),&
                       olam,&
                       loncl_topo_subgrid(ilon+1)
-            stop 101
+            endif;enddo
+            stop 1
           endif
           if(ophi.lt.latcl_topo_subgrid(ilat).or.&
              ophi.gt.latcl_topo_subgrid(ilat+1))then
-            write(*,*)"Lat error: ",ilat,&
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: ",ilat,&
                       latcl_topo_subgrid(ilat),&
                       ophi,&
                       latcl_topo_subgrid(ilat+1)
-            stop 102
+            endif;enddo
+            stop 1
           endif
 
           if(olam-loncl_topo_subgrid(ilon).lt.0.0_ip)then
@@ -2294,7 +2297,7 @@
             ilon=nlon_topo_subgrid-1
             xfrac=1.0_ip
           else
-            xfrac=(olam-loncl_topo_subgrid(ilon))/dlon_topo
+            xfrac=real((olam-loncl_topo_subgrid(ilon))/dlon_topo,kind=ip)
           endif
           if(ilat.eq.0)then
             ilat=1
@@ -2303,7 +2306,7 @@
             ilat=nlat_topo_subgrid-1
             yfrac=1.0_ip
           else
-            yfrac=(ophi-latcl_topo_subgrid(ilat))/dlat_topo
+            yfrac=real((ophi-latcl_topo_subgrid(ilat))/dlat_topo,kind=ip)
           endif
           xc = 1.0_ip-xfrac
           yc = 1.0_ip-yfrac
@@ -2533,6 +2536,13 @@
               write(outlog(io),*)"          50x the grid size of computational data."
               write(outlog(io),*)"    Smoothing radius (km)          = ",real(rad,kind=4)
               write(outlog(io),*)"    Kernel width (km)              = ",real(4.0_ip*rad,kind=4)
+              write(outlog(io),*)"    Shortest comp grid length (km) = ",real(cell_len,kind=4)
+            endif;enddo
+          else
+            ! Report on the smoothing length relative to the comp and met grids
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"    Smoothing radius (km)          = ",real(rad,kind=4)
+              write(outlog(io),*)"    Shortest met grid length (km)  = ",real(MR_minlen/1000.0_ip,kind=4)
               write(outlog(io),*)"    Shortest comp grid length (km) = ",real(cell_len,kind=4)
             endif;enddo
           endif
