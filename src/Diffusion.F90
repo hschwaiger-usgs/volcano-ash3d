@@ -262,7 +262,7 @@
        ! arrays that live on cell-centers: Note that we only have 1 ghost cell
       real(kind=ip),dimension(0:nxmax+1)     :: update_cc
       real(kind=ip),dimension(0:nxmax+1)     :: q_cc      ! concen
-      real(kind=ip),dimension(0:nxmax+1)     :: vol_cc    ! volume of cell
+      real(kind=ip),dimension(0:nxmax+1)     :: kap_cc    ! cell volume
 
        ! arrays that live on cell interfaces
        !  Note: interface I for cell i is at (i-1/2); i.e. the left or negative side of i
@@ -325,9 +325,10 @@
             ! Initialize cell-centered values for this x-row
             ! Note: ghost cells should contain q_cc values at edge (Neumann)
             update_cc(0:ncells+1) = 0.0_ip
-            vol_cc(rmin-1:rmin-1+ncells+1) = kappa_pd(   rmin-1:rmin-1+ncells+1,j,k)
+            kap_cc(rmin-1:rmin-1+ncells+1) = kappa_pd(   rmin-1:rmin-1+ncells+1,j,k)
             q_cc(  rmin-1:rmin-1+ncells+1) = concen_pd(  rmin-1:rmin-1+ncells+1,j,k,n,ts0)
             sig_I( rmin  :rmin-1+ncells+1) = sigma_nx_pd(rmin  :rmin-1+ncells+1,j,k)
+
             dq_I(  rmin  :rmin-1+ncells+1) = q_cc(       rmin  :rmin-1+ncells+1) - &
                                              q_cc(       rmin-1:rmin-1+ncells)
 
@@ -338,7 +339,7 @@
                 ! For approximating the dx with respect to the gradient of k, we
                 ! use a symmetric ds with the area of the interface and the
                 ! average of the volumes across the interface
-              ds_I(l_I) = 2.0_ip*sig_I(l_I)/(vol_cc(l_cc-1)+vol_cc(l_cc))
+              ds_I(l_I) = 2.0_ip*sig_I(l_I)/(kap_cc(l_cc-1)+kap_cc(l_cc))
                 ! get an average diffusivity using the arithmetic average
               k_ds_I(l_I) = 0.5_ip*(kx(l_cc-1,j,k)+kx(l_cc,j,k))*ds_I(l_I)
             enddo
@@ -349,14 +350,14 @@
                 ! Note that the ds used for the diffusive flux uses the
                 ! interface of the flux, but the kappa of the updated cell
               LFluct_Rbound = dt_ip*k_ds_I(l_I+1)*dq_I(l_I+1)* &
-                               (sig_I(l_I+1)/vol_cc(l_cc))
+                               (sig_I(l_I+1)/kap_cc(l_cc))
               RFluct_Lbound = -dt_ip*k_ds_I(l_I  )*dq_I(l_I  )* &
-                               (sig_I(l_I)/vol_cc(l_cc))
+                               (sig_I(l_I)/kap_cc(l_cc))
 
               update_cc(l_cc) = LFluct_Rbound + RFluct_Lbound
 
             enddo ! loop over l (cell centers)
-
+            update_cc(rmin:rmin-1+ncells) = update_cc(rmin:rmin-1+ncells)
             concen_pd(   rmin:rmin-1+ncells,j,k,n,ts1) = &
                concen_pd(rmin:rmin-1+ncells,j,k,n,ts0) + &
                update_cc(rmin:rmin-1+ncells)
@@ -414,7 +415,7 @@
        ! arrays that live on cell-centers: Note that we only have 1 ghost cell
       real(kind=ip),dimension(0:nymax+1)     :: update_cc
       real(kind=ip),dimension(0:nymax+1)     :: q_cc      ! concen
-      real(kind=ip),dimension(0:nymax+1)     :: vol_cc    ! volume of cell
+      real(kind=ip),dimension(0:nymax+1)     :: kap_cc    ! cell volume
 
        ! arrays that live on cell interfaces
        !  Note: interface I for cell i is at (i-1/2); i.e. the left or negative side of i
@@ -470,7 +471,7 @@
             ! Initialize cell-centered values for this y-row
             ! Note: ghost cells should contain q_cc values at edge (Neumann)
             update_cc(0:ncells+1) = 0.0_ip
-            vol_cc(rmin-1:rmin-1+ncells+1) = kappa_pd(   i,rmin-1:rmin-1+ncells+1,k)
+            kap_cc(rmin-1:rmin-1+ncells+1) = kappa_pd(   i,rmin-1:rmin-1+ncells+1,k)
             q_cc(  rmin-1:rmin-1+ncells+1) = concen_pd(  i,rmin-1:rmin-1+ncells+1,k,n,ts0)
             sig_I(rmin:rmin-1+ncells+1)    = sigma_ny_pd(i,rmin  :rmin-1+ncells+1,k)
             dq_I(rmin:rmin-1+ncells+1)     = q_cc(         rmin  :rmin-1+ncells+1) - &
@@ -483,7 +484,7 @@
                 ! For approximating the dy with respect to the gradient of k, we
                 ! use a symmetric ds with the area of the interface and the
                 ! average of the volumes across the interface
-              ds_I(l_I) = 2.0_ip*sig_I(l_I)/(vol_cc(l_cc-1)+vol_cc(l_cc))
+              ds_I(l_I) = 2.0_ip*sig_I(l_I)/(kap_cc(l_cc-1)+kap_cc(l_cc))
                 ! get an average diffusivity using the arithmetic average
               k_ds_I(l_I) = 0.5_ip*(ky(i,l_cc-1,k)+ky(i,l_cc,k))*ds_I(l_I)
             enddo
@@ -494,13 +495,13 @@
                 ! Note that the ds used for the diffusive flux uses the
                 ! interface of the flux, but the kappa of the updated cell
               LFluct_Rbound = dt_ip*k_ds_I(l_I+1)*dq_I(l_I+1)* &
-                               (sig_I(l_I+1)/vol_cc(l_cc))
+                               (sig_I(l_I+1)/kap_cc(l_cc))
               RFluct_Lbound = -dt_ip*k_ds_I(l_I  )*dq_I(l_I  )* &
-                               (sig_I(l_I)/vol_cc(l_cc))
+                               (sig_I(l_I)/kap_cc(l_cc))
 
               update_cc(l_cc) = LFluct_Rbound + RFluct_Lbound
             enddo ! loop over l (cell centers)
-
+            update_cc(rmin:rmin-1+ncells) = update_cc(rmin:rmin-1+ncells)
             concen_pd(   i,rmin:rmin-1+ncells,k,n,ts1) = &
                concen_pd(i,rmin:rmin-1+ncells,k,n,ts0) + &
                update_cc(  rmin:rmin-1+ncells)
@@ -556,7 +557,7 @@
        ! arrays that live on cell-centers: Note that we only have 1 ghost cell
       real(kind=ip),dimension(0:nzmax+1)     :: update_cc
       real(kind=ip),dimension(0:nzmax+1)     :: q_cc      ! concen
-      real(kind=ip),dimension(0:nzmax+1)     :: vol_cc    ! volume of cell
+      real(kind=ip),dimension(0:nzmax+1)     :: kap_cc    ! cell volume
 
        ! arrays that live on cell interfaces
        !  Note: interface I for cell i is at (i-1/2); i.e. the left or negative side of i
@@ -612,7 +613,7 @@
             ! Initialize cell-centered values for this z-row
             ! Note: ghost cells should contain q_cc values at edge (Neumann)
             update_cc(0:ncells+1) = 0.0_ip
-            vol_cc(rmin-1:rmin-1+ncells+1) = kappa_pd(   i,j,rmin-1:rmin-1+ncells+1)
+            kap_cc(rmin-1:rmin-1+ncells+1) = kappa_pd(   i,j,rmin-1:rmin-1+ncells+1)
             q_cc(  rmin-1:rmin-1+ncells+1) = concen_pd(  i,j,rmin-1:rmin-1+ncells+1,n,ts0)
             sig_I( rmin  :rmin-1+ncells+1) = sigma_nz_pd(i,j,rmin  :rmin-1+ncells+1)
             dq_I(  rmin  :rmin-1+ncells+1) = q_cc(           rmin  :rmin-1+ncells+1) - &
@@ -625,7 +626,7 @@
                 ! For approximating the dz with respect to the gradient of k, we
                 ! use a symmetric ds with the area of the interface and the
                 ! average of the volumes across the interface
-              ds_I(l_I) = 2.0_ip*sig_I(l_I)/(vol_cc(l_cc-1)+vol_cc(l_cc))
+              ds_I(l_I) = 2.0_ip*sig_I(l_I)/(kap_cc(l_cc-1)+kap_cc(l_cc))
                 ! get an average diffusivity using the arithmetic average
               k_ds_I(l_I) = 0.5_ip*(kz(i,j,l_cc-1)+kz(i,j,l_cc))*ds_I(l_I)
             enddo
@@ -637,14 +638,14 @@
                 ! Note that the ds used for the diffusive flux uses the
                 ! interface of the flux, but the kappa of the updated cell
               LFluct_Rbound = dt_ip*k_ds_I(l_I+1)*dq_I(l_I+1)* &
-                               (sig_I(l_I+1)/vol_cc(l_cc))
+                               (sig_I(l_I+1)/kap_cc(l_cc))
               RFluct_Lbound = -dt_ip*k_ds_I(l_I  )*dq_I(l_I  )* &
-                               (sig_I(l_I)/vol_cc(l_cc))
+                               (sig_I(l_I)/kap_cc(l_cc))
 
               update_cc(l_cc) = LFluct_Rbound + RFluct_Lbound
 
             enddo ! loop over l (cell centers)
-
+            update_cc(rmin:rmin-1+ncells) = update_cc(rmin:rmin-1+ncells)
             concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = &
                concen_pd(i,j,rmin:rmin-1+ncells,n,ts0) + &
                update_cc(rmin:rmin-1+ncells)
@@ -706,7 +707,7 @@
 
        ! arrays that live on cell-centers: Note that we only have 1 ghost cell
       real(kind=ip),dimension(0:nxmax+1)     :: q_cc      ! concen
-      real(kind=ip),dimension(0:nxmax+1)     :: vol_cc    ! volume of cell
+      real(kind=ip),dimension(0:nxmax+1)     :: kap_cc    ! cell volume
 
        ! arrays that live on cell interfaces
        !  Note: interface I for cell i is at (i-1/2); i.e. the left or negative
@@ -800,11 +801,11 @@
         do k=kmin,kmax
           do j=jmin,jmax
             ! solve the problem in x for each y
-            vol_cc(rmin-1:rmin-1+ncells+1) = kappa_pd(      rmin-1:rmin-1+ncells+1,j,k)
+            kap_cc(rmin-1:rmin-1+ncells+1) = kappa_pd(      rmin-1:rmin-1+ncells+1,j,k)
             q_cc(  rmin-1:rmin-1+ncells+1) = concen_pd(     rmin-1:rmin-1+ncells+1,j,k,n,ts0)
             sig_I( rmin  :rmin-1+ncells+1) = sigma_nx_pd(   rmin  :rmin-1+ncells+1,j,k)
-            vavg_I(rmin  :rmin-1+ncells+1) = 0.5_ip*(vol_cc(rmin-1:rmin-1+ncells ) + &
-                                                     vol_cc(rmin  :rmin-1+ncells+1))
+            vavg_I(rmin  :rmin-1+ncells+1) = 0.5_ip*(kap_cc(rmin-1:rmin-1+ncells ) + &
+                                                     kap_cc(rmin  :rmin-1+ncells+1))
             kavg_I(rmin  :rmin-1+ncells+1) = 0.5_ip*(kx(    rmin-1:rmin-1+ncells  ,j,k) + &
                                                      kx(    rmin  :rmin-1+ncells+1,j,k))
             ds_I(  rmin  :rmin-1+ncells+1) = sig_I(         rmin  :rmin-1+ncells+1) / &
@@ -818,8 +819,8 @@
             ! Loop over all cells in this x-row
             do l_cc=1,ncells
               l_I = l_cc  ! Interface ID refers to the Left side of the cell (k-1/2)
-              LeftFac    = dt_ip*k_ds_I(rmin-1+l_I  )*sig_I(rmin-1+l_I  )/vol_cc(rmin-1+l_cc)
-              RightFac   = dt_ip*k_ds_I(rmin-1+l_I+1)*sig_I(rmin-1+l_I+1)/vol_cc(rmin-1+l_cc)
+              LeftFac    = dt_ip*k_ds_I(rmin-1+l_I  )*sig_I(rmin-1+l_I  )/kap_cc(rmin-1+l_cc)
+              RightFac   = dt_ip*k_ds_I(rmin-1+l_I+1)*sig_I(rmin-1+l_I+1)/kap_cc(rmin-1+l_cc)
               CenterFac = LeftFac + RightFac
 
               if(l_cc.eq.1) then
@@ -839,7 +840,7 @@
                                     (1.0_ip-Imp_fac)*RightFac   * q_cc(rmin-1+l_cc+1)
               elseif(l_cc.lt.ncells)then
                 DL_d(l_cc-1) =         - (Imp_fac)*LeftFac
-                D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac
+                D_d(l_cc)    =  1.0_ip + (Imp_fac)*CenterFac
                 DU_d(l_cc)   =         - (Imp_fac)*RightFac
 
                 B_d(l_cc,1)  =           (1.0_ip-Imp_fac)*LeftFac    * q_cc(rmin-1+l_cc-1) + &
@@ -968,7 +969,7 @@
 
        ! arrays that live on cell-centers: Note that we only have 1 ghost cell
       real(kind=ip),dimension(0:nymax+1)     :: q_cc      ! concen
-      real(kind=ip),dimension(0:nymax+1)     :: vol_cc    ! volume of cell
+      real(kind=ip),dimension(0:nymax+1)     :: kap_cc    ! cell volume
 
        ! arrays that live on cell interfaces
        !  Note: interface I for cell i is at (i-1/2); i.e. the left or negative
@@ -1053,11 +1054,11 @@
         do k=kmin,kmax
           do i=imin,imax
             ! solve the problem in y for each x
-            vol_cc(rmin-1:rmin-1+ncells+1) = kappa_pd(    i,rmin-1:rmin-1+ncells+1,k)
+            kap_cc(rmin-1:rmin-1+ncells+1) = kappa_pd(    i,rmin-1:rmin-1+ncells+1,k)
             q_cc(  rmin-1:rmin-1+ncells+1) = concen_pd(   i,rmin-1:rmin-1+ncells+1,k,n,ts0)
             sig_I( rmin  :rmin-1+ncells+1) = sigma_ny_pd( i,rmin  :rmin-1+ncells+1,k)
-            vavg_I(rmin  :rmin-1+ncells+1) = 0.5_ip*(vol_cc(rmin-1:rmin-1+ncells  ) + &
-                                                     vol_cc(rmin  :rmin-1+ncells+1))
+            vavg_I(rmin  :rmin-1+ncells+1) = 0.5_ip*(kap_cc(rmin-1:rmin-1+ncells  ) + &
+                                                     kap_cc(rmin  :rmin-1+ncells+1))
             kavg_I(rmin  :rmin-1+ncells+1) = 0.5_ip*(ky(  i,rmin-1:rmin-1+ncells  ,k) + &
                                                      ky(  i,rmin  :rmin-1+ncells+1,k))
             ds_I(  rmin  :rmin-1+ncells+1) = sig_I(         rmin  :rmin-1+ncells+1) / &
@@ -1071,8 +1072,8 @@
             ! Loop over all cells in this y-row
             do l_cc=1,ncells
               l_I = l_cc  ! Interface ID refers to the Left side of the cell (k-1/2)
-              LeftFac    = dt_ip*k_ds_I(rmin-1+l_I  )*sig_I(rmin-1+l_I  )/vol_cc(rmin-1+l_cc)
-              RightFac   = dt_ip*k_ds_I(rmin-1+l_I+1)*sig_I(rmin-1+l_I+1)/vol_cc(rmin-1+l_cc)
+              LeftFac    = dt_ip*k_ds_I(rmin-1+l_I  )*sig_I(rmin-1+l_I  )/kap_cc(rmin-1+l_cc)
+              RightFac   = dt_ip*k_ds_I(rmin-1+l_I+1)*sig_I(rmin-1+l_I+1)/kap_cc(rmin-1+l_cc)
               CenterFac = LeftFac + RightFac
 
               if(l_cc.eq.1) then
@@ -1227,7 +1228,7 @@
 
        ! arrays that live on cell-centers: Note that we only have 1 ghost cell
       real(kind=ip),dimension(0:nzmax+1)     :: q_cc      ! concen
-      real(kind=ip),dimension(0:nzmax+1)     :: vol_cc    ! volume of cell
+      real(kind=ip),dimension(0:nzmax+1)     :: kap_cc    ! cell volume
 
        ! arrays that live on cell interfaces
        !  Note: interface I for cell i is at (i-1/2); i.e. the left or negative
@@ -1312,15 +1313,15 @@
 
         do j=jmin,jmax
           do i=imin,imax
-
             ! solve the problem in z for each y
-            vol_cc(rmin-1:rmin-1+ncells+1) = kappa_pd(    i,j,rmin-1:rmin-1+ncells+1)
+            kap_cc(rmin-1:rmin-1+ncells+1) = kappa_pd(    i,j,rmin-1:rmin-1+ncells+1)
             q_cc(  rmin-1:rmin-1+ncells+1) = concen_pd(   i,j,rmin-1:rmin-1+ncells+1,n,ts0)
             sig_I( rmin  :rmin-1+ncells+1) = sigma_nz_pd( i,j,rmin  :rmin-1+ncells+1)
-            vavg_I(rmin  :rmin-1+ncells+1) = 0.5_ip*(vol_cc(  rmin-1:rmin-1+ncells  ) + &
-                                                     vol_cc(  rmin  :rmin-1+ncells+1))
             kavg_I(rmin  :rmin-1+ncells+1) = 0.5_ip*(kz(i,j,  rmin-1:rmin-1+ncells  ) + &
                                                      kz(i,j,  rmin  :rmin-1+ncells+1))
+
+            vavg_I(rmin  :rmin-1+ncells+1) = 0.5_ip*(kap_cc(  rmin-1:rmin-1+ncells  ) + &
+                                                     kap_cc(  rmin  :rmin-1+ncells+1))
             ds_I(  rmin  :rmin-1+ncells+1) = sig_I(           rmin  :rmin-1+ncells+1) / &
                                             vavg_I(           rmin  :rmin-1+ncells+1)
             k_ds_I(rmin  :rmin-1+ncells+1) = kavg_I(          rmin  :rmin-1+ncells+1)* &
@@ -1332,8 +1333,8 @@
             ! Loop over all cells in this z-row
             do l_cc=1,ncells
               l_I = l_cc  ! Interface ID refers to the Left side of the cell (k-1/2)
-              LeftFac    = dt_ip*k_ds_I(rmin-1+l_I  )*sig_I(rmin-1+l_I  )/vol_cc(rmin-1+l_cc)
-              RightFac   = dt_ip*k_ds_I(rmin-1+l_I+1)*sig_I(rmin-1+l_I+1)/vol_cc(rmin-1+l_cc)
+              LeftFac    = dt_ip*k_ds_I(rmin-1+l_I  )*sig_I(rmin-1+l_I  )/kap_cc(rmin-1+l_cc)
+              RightFac   = dt_ip*k_ds_I(rmin-1+l_I+1)*sig_I(rmin-1+l_I+1)/kap_cc(rmin-1+l_cc)
               CenterFac = LeftFac + RightFac
 
               if(l_cc.eq.1) then

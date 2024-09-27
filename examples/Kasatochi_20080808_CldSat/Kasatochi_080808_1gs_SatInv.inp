@@ -4,7 +4,7 @@
 # GENERAL SOURCE PARAMETERS. DO NOT DELETE ANY NON-COMMENT LINES                                       
 #  The first line of this block identifies the volcano by name.                                        
 #  If the volcano name begins with either 0 or 1, then the volcano                                     
-#  is assumed to be in the Smithonian database and default values for                                  
+#  is assumed to be in the Smithsonian database and default values for                                 
 #  Plume Height, Duration, Mass Flux Rate, Volume, and mass fraction of                                
 #  fines are loaded.  These can be over-written by entering non-negative                               
 #  values in the appropriate locations in this input file.                                             
@@ -23,7 +23,7 @@
 #           k0      -- scale factor at projection point                                                
 #           radius  -- earth radius for spherical earth                                                
 #     e.g. for NAM 104,198, 216: 0 1 -105.0 90.0 0.933 6371.229                                        
-#               = 2 -- Alberts Equal Area ( not yet implemented)                                       
+#               = 2 -- Albers Equal Area ( not yet implemented)                                        
 #               = 3 -- UTM ( not yet implemented)                                                      
 #               = 4 -- Lambert conformal conic                                                         
 #           lambda0 -- longitude of origin                                                             
@@ -69,7 +69,7 @@
 #  umbrella_air : Suzuki (const. = 12) with radial spreading of the plume scaled to 5% of vol.         
 #  point        : all mass inserted in cell containing PlmH                                            
 #  linear       : mass uniformly distributed from z-vent to PlmH                                       
-# Line 9 : number of pulses to be read in BLOCK 2                           
+# Line 9 : number of pulses to be read in BLOCK 2                                                      
 ******************* BLOCK 1 ***************************************************
 Kasatochi                          # Volcano name (character*30)
 1 4 -107.0 50.0 50.0 50.0 6367.470 # Proj flags and params; first term (LLflag) is 1, so all else ignored
@@ -84,7 +84,7 @@ Kasatochi                          # Volcano name (character*30)
 # ERUPTION LINES (number = neruptions)                                                                 
 # In the following line, each line represents one eruptive pulse.                                      
 # Parameters are (1-4) start time (yyyy mm dd h.hh (UT)); (5) duration (hrs);                          
-#                  (6) plume height;                      (7) eruped volume (km3 DRE)                  
+#                  (6) plume height;                      (7) erupted volume (km3 DRE)                 
 # If neruptions=1 and the year is 0, then the model run in forecast mode where mm dd h.hh are          
 # interpreted as the time after the start of the windfile.  In this case, duration, plume              
 # height and erupted volume are replaced with ESP if the values are negative.                          
@@ -209,13 +209,13 @@ no                  # stop computation when 99% of erupted mass has deposited?
 # WriteTimes    = Hours between output (if nWritetimes=-1), or                                         
 #                 Times (hours since start of first eruption) for each output                          
 #                (if nWriteTimes >1)                                                                   
-******************* BLOCK 4 ***************************************************  
+******************* BLOCK 4 ***************************************************
 no      # Write out ESRI ASCII file of final deposit thickness?                                        
 no      # Write out        KML file of final deposit thickness?                                        
 no      # Write out ESRI ASCII deposit files at specified times?                                       
 no      # Write out        KML deposit files at specified times?                                       
 no      # Write out ESRI ASCII files of ash-cloud concentration?                                       
-no      # Write out        KML files of ash-cloud concentration?                                      
+no      # Write out        KML files of ash-cloud concentration?                                       
 no      # Write out ESRI ASCII files of ash-cloud height?                                              
 no      # Write out        KML files of ash-cloud height?                                              
 no      # Write out ESRI ASCII files of ash-cloud load (T/km2) at specified times?                     
@@ -237,7 +237,7 @@ netcdf  # format of ash concentration files     (ascii, binary, or netcdf)
 # the format volcano_name_yyyymmddhh_FHhh.win                                                          
 # For iwindformat=25 (continuous wind data from 1948-pres), just give                                  
 # the directory with the windfiles (e.g. Wind_nc)                                                      
-******************* BLOCK 5 *************************************************** 
+******************* BLOCK 5 ***************************************************
 NCEP
 *******************************************************************************
 # AIRPORT LOCATION FILE                                                                                
@@ -254,7 +254,7 @@ NCEP
 no                            # Write out ash arrival times at airports to ASCII FILE?
 no                            # Write out grain-size distribution to ASCII airport file?
 no                            # Write out ash arrival times to kml file?
-                              # Name of file containing aiport locations
+                              # Name of file containing airport locations
 no                            # Have libprojection calculate projected coordinates?
 *******************************************************************************
 # GRAIN SIZE GROUPS
@@ -264,7 +264,8 @@ no                            # Have libprojection calculate projected coordinat
 #          = 2, Wilson and Huang + Cunningham slip                                                     
 #          = 3, Wilson and Huang + Mod by Pfeiffer Et al.                                              
 #          = 4, Ganser (assuming prolate ellipsoids)                                                   
-#          = 5, Stokes flow for spherical particles + slip                                             
+#          = 5, Ganser + Cunningham slip                                                               
+#          = 6, Stokes flow for spherical particles + slip                                             
 # If no fall model is specified, FV_ID = 1, by default                                                 
 # The grain size bins can be enters with 2, 3, or 4 parameters.                                        
 # If TWO are given, they are read as:   FallVel (in m/s), mass fraction                                
@@ -281,7 +282,7 @@ no                            # Have libprojection calculate projected coordinat
 # The last bin would be interpreted as:                                                                
 # diam (neg value) , phi_mean, phi_stddev                                                              
 #                              # nsmax FV_ID 
-******************* BLOCK 7 ***************************************************                        
+******************* BLOCK 7 ***************************************************
 1                              # Number of grain-size bins. FV_ID not given; defaults to 1
 0.010   1.0 2000.0             # grain size (mm), mass fraction, density (kg/m3), [F=0.44]
 *******************************************************************************
@@ -291,7 +292,7 @@ no                            # Have libprojection calculate projected coordinat
 # contain the location, in the same coordinate as the computational grid.                              
 # Optionally, a site name can be provided in after the location.                                       
 ******************* BLOCK 8 ***************************************************                        
-0                             # number of locations for vertical profiles (nlocs)  
+0                             # number of locations for vertical profiles (nlocs)                      
 *******************************************************************************
 # netCDF output options                                                                                
 # This last block is optional.                                                                         
@@ -308,5 +309,5 @@ Ash3d validation test         # Comment
 # There will need to be a custom block reader in the module to read this section                       
 # section of the input file.  Below is the built-in example for resetting parameters                   
 ******************* BLOCK 10+ *************************************************
-OPTMOD=RESETPARAMS                                                             
-CLOUDLOAD_THRESH     = 1.0e-2                                                  
+OPTMOD=RESETPARAMS                                                                                     
+CLOUDLOAD_THRESH     = 1.0e-2                                                                          

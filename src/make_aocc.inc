@@ -19,10 +19,12 @@ endif
 ifeq ($(RUN), DEBUGOMP)
     FFLAGS = -O0 -g3 -Wall -Mstandard -fPIC -v -fopenmp
 endif
+
 # Profiling flags
 ifeq ($(RUN), PROF)
     FFLAGS = -g2 -pg -Mstandard -fPIC
 endif
+
 # Production run flags
 ifeq ($(RUN), OPT)
     #FFLAGS = -O3 -zopt -ftz -w -ipo
@@ -31,8 +33,10 @@ endif
 ifeq ($(RUN), OMPOPT)
     FFLAGS = -Ofast -Mstandard -fPIC -mavx -fplugin-arg-dragonegg-llvm-codegen-optimize=3 -fplugin-arg-dragonegg-llvm-ir-optimize=3 -fopenmp
 endif
+
   # Preprocessing flags
 FPPFLAGS =  -Mpreprocess $(OSFPPFLAG) $(DATAFPPFLAG) $(LIMFPPFLAG) $(DIFFFPPFLAG) $(memFPPFLAG) $(extdatFPPFLAG) $(FASTFPPFLAG) $(PIIFPPFLAG) $(SYSFPPFLAG) $(PLOTFPPFLAG)
   # Extra flags
 EXFLAGS =
+
 ###############################################################################

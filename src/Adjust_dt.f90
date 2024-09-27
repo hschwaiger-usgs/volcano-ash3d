@@ -12,7 +12,7 @@
 !     call to MesoInterpolator (and therefore to Adjust_DT) is before the time
 !     loop to anticipate the total number of steps the simulation
 !     might need, and then once within the time loop after new velocities are 
-!     determinined.
+!     determined
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -149,7 +149,6 @@
         ! Use vx_meso_1_sp and vx_meso_2_sp
         ! First initialize vzmax_dz to 0.0 so we can test for the largest
         vzmax_dz = 0.0_ip
-        ! HFS : invert loop
         do i=1,nxmax
           do j=1,nymax
             do k=1,nzmax
@@ -324,7 +323,7 @@
       dt = DT_MIN*fac
 
       if (((NextWriteTime-time).gt.EPS_SMALL).and.(NextWriteTime-time.lt.dt)) then
-          dt = NextWritetime-time
+        dt = NextWritetime-time
       endif
 
       if(time+dt.gt.Simtime_in_hours)then

@@ -5,7 +5,8 @@
 ! This module provides the subroutines that use DISLIN for creating 2d maps,
 ! 2d vertical profiles, and the little deposit accumulation plots linked to
 ! the airport arrival kml (ash_arrivaltimes_airports.kml).  The dislin
-! library is linked at compile-time.
+! library is linked at compile-time. DISLIN is available from
+! https://www.dislin.de
 !
 !      subroutine write_2Dmap_PNG_dislin
 !      subroutine write_2Dprof_PNG_dislin
@@ -39,7 +40,7 @@
 
         ! Publicly available variables
 
-      integer,parameter :: DS = 8
+      integer,parameter :: DS = 4
       character(100)    :: Instit_IconFile
 
       contains
@@ -343,8 +344,8 @@
           nConLev = 8
           allocate(zrgb(nConLev,3))
           allocate(ContourLev(nConLev))
-          ContourLev = (/0.1_ip, 0.3_ip, 1.0_ip, 3.0_ip, &
-                  10.0_ip, 30.0_ip, 100.0_ip, 300.0_ip/)
+          ContourLev = (/1.0_ip, 2.0_ip, 3.0_ip, 4.0_ip, &
+                  5.0_ip, 6.0_ip, 7.0_ip, 8.0_ip/)
         endif
       elseif(iprod.eq.16)then   ! profile plots
         do io=1,2;if(VB(io).le.verbosity_error)then

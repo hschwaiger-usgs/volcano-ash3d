@@ -26,8 +26,16 @@
       public deallocate_Binary,  &
              write_2D_Binary,    &
              read_2D_Binary,     &
-             write_3D_Binary,     &
-             read_3D_Binary
+             write_3D_Binary,    &
+             read_3D_Binary,     &
+             BigEnd_2int,        &
+             BigEnd_4int,        &
+             LitEnd_2int,        &
+             LitEnd_4int,        &
+             BigEnd_4real,       &
+             BigEnd_8real,       &
+             LitEnd_4real,       &
+             LitEnd_8real
 
         ! Publicly available variables
         ! These arrays are only used when reading an output file of unknown size
@@ -308,7 +316,535 @@
       end subroutine read_3D_Binary
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  BigEnd_2int
+!
+!  Called from: Currently not called
+!  Arguments:
+!    isLit = logical variable that is true if the input r is Little-endian
+!    r     = 2-byte integer to be converted
+!
+!  This function returns the input variable 'r' in 2-byte integer in Big-endian
+!  format.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      function BigEnd_2int(isLit,r)
+
+      implicit none
+
+      integer(kind=2) :: BigEnd_2int
+      logical         :: isLit
+      integer(kind=2) :: r
+
+      integer(kind=2) :: s  = 0
+      integer(kind=2) :: t  = 0
+      integer         :: bl = 8  ! bit length of the move
+
+      ! Older compilers accepted this equivalence approach, but some newer ones
+      ! complained.  The transfer->mvbits->transfer approach seems more accepted,
+      ! though it required fortran 95 or newer.
+
+      !integer(kind=2) :: ii(2), jj(2)
+
+      !equivalence (s,ii)
+      !equivalence (t,jj)
+      !if(isLit)then
+      !  ! We need r to be big-endian, but the system is little-endian
+      !  ! swap the bytes
+      !  s = r
+      !  jj(1) = ii(2)
+      !  jj(2) = ii(1)
+      !  BigEnd_2int = t
+      !else
+      !  BigEnd_2int = r
+      !endif
+
+      if(isLit)then
+        ! We need r to be big-endian, but the system is little-endian
+        ! swap the bytes
+        !  map r onto the 2-byte dummy integer
+        s = transfer(r,s)
+        ! move 8-bit packets to the reverse positions
+        call mvbits(s,0*bl,bl,t,1*bl)
+        call mvbits(s,1*bl,bl,t,0*bl)
+        ! map t onto the desired output
+        BigEnd_2int = transfer (t,BigEnd_2int)
+      else
+        BigEnd_2int = r
+      endif
+
+      end function BigEnd_2int
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  BigEnd_4int
+!
+!  Called from: write_ShapeFile_Polyline
+!  Arguments:
+!    isLit = logical variable that is true if the input r is Little-endian
+!    r     = 4-byte integer to be converted
+!
+!  This function returns the input variable 'r' in 4-byte integer in Big-endian
+!  format.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      function BigEnd_4int(isLit,r)
+
+      implicit none
+
+      integer(kind=4) :: BigEnd_4int
+      logical         :: isLit
+      integer(kind=4) :: r
+
+      integer(kind=4) :: s  = 0
+      integer(kind=4) :: t  = 0
+      integer         :: bl = 8  ! bit length of the move
+
+      ! Older compilers accepted this equivalence approach, but some newer ones
+      ! complained.  The transfer->mvbits->transfer approach seems more accepted,
+      ! though it required fortran 95 or newer.
+
+!      integer(kind=1) :: ii(4), jj(4)
+!      equivalence (s,ii)
+!      equivalence (t,jj)
+
+!      if(isLit)then
+!        ! We need r to be big-endian, but the system is little-endian
+!        ! swap the bytes
+!        s = r
+!        jj(1) = ii(4)
+!        jj(2) = ii(3)
+!        jj(3) = ii(2)
+!        jj(4) = ii(1)
+!        BigEnd_4int = t
+!      else
+!        BigEnd_4int = r
+!      endif
+
+      if(isLit)then
+        ! We need r to be big-endian, but the system is little-endian
+        ! swap the bytes
+        !  map r onto the 2-byte dummy integer
+        s = transfer(r,s)
+        ! move 8-bit packets to the reverse positions
+        call mvbits(s,0*bl,bl,t,3*bl)
+        call mvbits(s,1*bl,bl,t,2*bl)
+        call mvbits(s,2*bl,bl,t,1*bl)
+        call mvbits(s,3*bl,bl,t,0*bl)
+        ! map t onto the desired output
+        BigEnd_4int = transfer (t,BigEnd_4int)
+      else
+        BigEnd_4int = r
+      endif
+
+      end function BigEnd_4int
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  LitEnd_2int
+!
+!  Called from: write_ShapeFile_Polyline
+!  Arguments:
+!    isLit = logical variable that is true if the input r is Little-endian
+!    r     = 2-byte integer to be converted
+!
+!  This function returns the input variable 'r' in 2-byte integer in Little-endian
+!  format.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      function LitEnd_2int(isLit,r)
+
+      implicit none
+
+      integer(kind=2) :: LitEnd_2int
+      logical         :: isLit
+      integer(kind=2) :: r
+
+      integer(kind=2) :: s  = 0
+      integer(kind=2) :: t  = 0
+      integer         :: bl = 8  ! bit length of the move
+
+      ! Older compilers accepted this equivalence approach, but some newer ones
+      ! complained.  The transfer->mvbits->transfer approach seems more accepted,
+      ! though it required fortran 95 or newer.
+
+!      integer(kind=1) :: ii(2), jj(2)
+
+!      equivalence (s,ii)
+!      equivalence (t,jj)
+!      if(isLit)then
+!        LitEnd_2int = r
+!      else
+!        ! We need r to be little-endian, but the system is big-endian
+!        ! swap the bytes
+!        s = r
+!        jj(1) = ii(2)
+!        jj(2) = ii(1)
+!        LitEnd_2int = t
+!      endif
+
+      if(isLit)then
+        LitEnd_2int = r
+      else
+        ! We need r to be little-endian, but the system is big-endian
+        ! swap the bytes
+        !  map r onto the 2-byte dummy integer
+        s = transfer(r,s)
+        ! move 8-bit packets to the reverse positions
+        call mvbits(s,0*bl,bl,t,1*bl)
+        call mvbits(s,1*bl,bl,t,0*bl)
+        ! map t onto the desired output
+        LitEnd_2int = transfer (t,LitEnd_2int)
+      endif
+
+      end function LitEnd_2int
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  LitEnd_4int
+!
+!  Called from: write_ShapeFile_Polyline
+!  Arguments:
+!    isLit = logical variable that is true if the input r is Little-endian
+!    r     = 4-byte integer to be converted
+!
+!  This function returns the input variable 'r' in 4-byte integer in Little-endian
+!  format.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      function LitEnd_4int(isLit,r)
+
+      implicit none
+
+      integer(kind=4) :: LitEnd_4int
+      logical         :: isLit
+      integer(kind=4) :: r
+
+      integer(kind=4) :: s  = 0
+      integer(kind=4) :: t  = 0
+      integer         :: bl = 8  ! bit length of the move
+
+      ! Older compilers accepted this equivalence approach, but some newer ones
+      ! complained.  The transfer->mvbits->transfer approach seems more accepted,
+      ! though it required fortran 95 or newer.
+
+!      integer(kind=1) :: ii(4), jj(4)
+
+!      equivalence (s,ii)
+!      equivalence (t,jj)
+!      if(isLit)then
+!        LitEnd_4int = r
+!      else
+!        ! We need r to be little-endian, but the system is big-endian
+!        ! swap the bytes
+!        s = r
+!        jj(1) = ii(4)
+!        jj(2) = ii(3)
+!        jj(3) = ii(2)
+!        jj(4) = ii(1)
+!        LitEnd_4int = t
+!      endif
+
+      if(isLit)then
+        LitEnd_4int = r
+      else
+        ! We need r to be little-endian, but the system is big-endian
+        ! swap the bytes
+        s = transfer(r,s)
+        ! move 8-bit packets to the reverse positions
+        call mvbits(s,0*bl,bl,t,3*bl)
+        call mvbits(s,1*bl,bl,t,2*bl)
+        call mvbits(s,2*bl,bl,t,1*bl)
+        call mvbits(s,3*bl,bl,t,0*bl)
+        ! map t onto the desired output
+        LitEnd_4int = transfer (t,LitEnd_4int)
+      endif
+
+      end function LitEnd_4int
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  BigEnd_4real
+!
+!  Called from: Currently not called
+!  Arguments:
+!    isLit = logical variable that is true if the input r is Little-endian
+!    r     = 4-byte real to be converted
+!
+!  This function returns the input variable 'r' in 4-byte real in Big-endian
+!  format.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      function BigEnd_4real(isLit,r)
+
+      implicit none
+
+      real(kind=4)    :: BigEnd_4real
+      logical         :: isLit
+      real(kind=4)    :: r
+
+      integer(kind=4) :: s  = 0
+      integer(kind=4) :: t  = 0
+      integer         :: bl = 8  ! bit length of the move
+
+      ! Older compilers accepted this equivalence approach, but some newer ones
+      ! complained.  The transfer->mvbits->transfer approach seems more accepted,
+      ! though it required fortran 95 or newer.
+
+!      integer(kind=1) :: ii(4), jj(4)
+!      real(kind=4)    :: s, t
+!
+!      equivalence (s,ii)
+!      equivalence (t,jj)
+!
+!      if(isLit)then
+!        ! We need r to be big-endian, but the system is little-endian
+!        ! swap the bytes
+!        s = r
+!        jj(1) = ii(4)
+!        jj(2) = ii(3)
+!        jj(3) = ii(2)
+!        jj(4) = ii(1)
+!        BigEnd_4real = t
+!      else
+!        BigEnd_4real = r
+!      endif
+
+
+      if(isLit)then
+        ! We need r to be Big-endian, but the system is Little-endian
+        ! swap the bytes
+        s = transfer(r,s)
+        ! move 8-bit packets to the reverse positions
+        call mvbits(s,0*bl,bl,t,3*bl)
+        call mvbits(s,1*bl,bl,t,2*bl)
+        call mvbits(s,2*bl,bl,t,1*bl)
+        call mvbits(s,3*bl,bl,t,0*bl)
+        ! map t onto the desired output
+        BigEnd_4real = transfer (t,BigEnd_4real)
+      else
+        BigEnd_4real = r
+      endif
+
+      end function BigEnd_4real
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  BigEnd_8real
+!
+!  Called from: Currently not called
+!  Arguments:
+!    isLit = logical variable that is true if the input r is Little-endian
+!    r     = 8-byte real to be converted
+!
+!  This function returns the input variable 'r' in 8-byte real in Big-endian
+!  format.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      function BigEnd_8real(isLit,r)
+
+      implicit none
+
+      real(kind=8)    :: BigEnd_8real
+      logical         :: isLit
+      real(kind=8)    :: r
+
+      integer(kind=8) :: s  = 0
+      integer(kind=8) :: t  = 0
+      integer         :: bl = 8  ! bit length of the move
+
+      ! Older compilers accepted this equivalence approach, but some newer ones
+      ! complained.  The transfer->mvbits->transfer approach seems more accepted,
+      ! though it required fortran 95 or newer.
+
+!      integer(kind=1) :: ii(8), jj(8)
+!      real(kind=8)    :: s, t
+!
+!      equivalence (s,ii)
+!      equivalence (t,jj)
+!
+!      if(isLit)then
+!        ! We need r to be big-endian, but the system is little-endian
+!        ! swap the bytes
+!        s = r
+!        jj(1) = ii(8)
+!        jj(2) = ii(7)
+!        jj(3) = ii(6)
+!        jj(4) = ii(5)
+!        jj(5) = ii(4)
+!        jj(6) = ii(3)
+!        jj(7) = ii(2)
+!        jj(8) = ii(1)
+!        BigEnd_8real = t
+!      else
+!        BigEnd_8real = r
+!      endif
+
+
+      if(isLit)then
+        ! We need r to be Big-endian, but the system is Little-endian
+        ! swap the bytes
+        s = transfer(r,s)
+        ! move 8-bit packets to the reverse positions
+        call mvbits(s,0*bl,bl,t,7*bl)
+        call mvbits(s,1*bl,bl,t,6*bl)
+        call mvbits(s,2*bl,bl,t,5*bl)
+        call mvbits(s,3*bl,bl,t,4*bl)
+        call mvbits(s,4*bl,bl,t,3*bl)
+        call mvbits(s,5*bl,bl,t,2*bl)
+        call mvbits(s,6*bl,bl,t,1*bl)
+        call mvbits(s,7*bl,bl,t,0*bl)
+        ! map t onto the desired output
+        BigEnd_8real = transfer (t,BigEnd_8real)
+      else
+        BigEnd_8real = r
+      endif
+
+      end function BigEnd_8real
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  LitEnd_4real
+!
+!  Called from: Currently not called
+!  Arguments:
+!    isLit = logical variable that is true if the input r is Little-endian
+!    r     = 4-byte real to be converted
+!
+!  This function returns the input variable 'r' in 4-byte real in Little-endian
+!  format.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      function LitEnd_4real(isLit,r)
+
+      implicit none
+
+      real(kind=4)    :: LitEnd_4real
+      logical         :: isLit
+      real(kind=4)    :: r
+
+      integer(kind=4) :: s  = 0
+      integer(kind=4) :: t  = 0
+      integer         :: bl = 8  ! bit length of the move
+
+      ! Older compilers accepted this equivalence approach, but some newer ones
+      ! complained.  The transfer->mvbits->transfer approach seems more accepted,
+      ! though it required fortran 95 or newer.
+
+!      integer(kind=1) :: ii(4), jj(4)
+!
+!      equivalence (s,ii)
+!      equivalence (t,jj)
+!      if(isLit)then
+!        LitEnd_4real = r
+!      else
+!        ! We need r to be little-endian, but the system is big-endian
+!        ! swap the bytes
+!        s = r
+!        jj(1) = ii(4)
+!        jj(2) = ii(3)
+!        jj(3) = ii(2)
+!        jj(4) = ii(1)
+!        LitEnd_4real = t
+!      endif
+
+      if(isLit)then
+        LitEnd_4real = r
+      else
+        ! We need r to be little-endian, but the system is big-endian
+        ! swap the bytes
+        s = transfer(r,s)
+        ! move 8-bit packets to the reverse positions
+        call mvbits(s,0*bl,bl,t,3*bl)
+        call mvbits(s,1*bl,bl,t,2*bl)
+        call mvbits(s,2*bl,bl,t,1*bl)
+        call mvbits(s,3*bl,bl,t,0*bl)
+        ! map t onto the desired output
+        LitEnd_4real = transfer (t,LitEnd_4real)
+      endif
+
+      end function LitEnd_4real
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  LitEnd_8real
+!
+!  Called from: write_ShapeFile_Polyline
+!  Arguments:
+!    isLit = logical variable that is true if the input r is Little-endian
+!    r     = 8-byte real to be converted
+!
+!  This function returns the input variable 'r' in 8-byte real in Little-endian
+!  format.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      function LitEnd_8real(isLit,r)
+
+      implicit none
+
+      real(kind=8)    :: LitEnd_8real
+      logical         :: isLit
+      real(kind=8)    :: r
+
+      integer(kind=8) :: s  = 0
+      integer(kind=8) :: t  = 0
+      integer         :: bl = 8  ! bit length of the move
+
+      ! Older compilers accepted this equivalence approach, but some newer ones
+      ! complained.  The transfer->mvbits->transfer approach seems more accepted,
+      ! though it required fortran 95 or newer.
+
+!      integer(kind=1) :: ii(8), jj(8)
+!
+!      equivalence (s,ii)
+!      equivalence (t,jj)
+!      if(isLit)then
+!        LitEnd_8real = r
+!      else
+!        ! We need r to be little-endian, but the system is big-endian
+!        ! swap the bytes
+!        s = r
+!        jj(1) = ii(8)
+!        jj(2) = ii(7)
+!        jj(3) = ii(6)
+!        jj(4) = ii(5)
+!        jj(5) = ii(4)
+!        jj(6) = ii(3)
+!        jj(7) = ii(2)
+!        jj(8) = ii(1)
+!        LitEnd_8real = t
+!      endif
+
+      if(isLit)then
+        LitEnd_8real = r
+      else
+        ! We need r to be little-endian, but the system is big-endian
+        ! swap the bytes
+        s = transfer(r,s)
+        ! move 8-bit packets to the reverse positions
+        call mvbits(s,0*bl,bl,t,7*bl)
+        call mvbits(s,1*bl,bl,t,6*bl)
+        call mvbits(s,2*bl,bl,t,5*bl)
+        call mvbits(s,3*bl,bl,t,4*bl)
+        call mvbits(s,4*bl,bl,t,3*bl)
+        call mvbits(s,5*bl,bl,t,2*bl)
+        call mvbits(s,6*bl,bl,t,1*bl)
+        call mvbits(s,7*bl,bl,t,0*bl)
+        ! map t onto the desired output
+        LitEnd_8real = transfer (t,LitEnd_8real)
+      endif
+
+      end function LitEnd_8real
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       end module Ash3d_Binary_IO
 
-!##############################################################################

@@ -39,7 +39,7 @@
         ! Publicly available variables
 
 !      character(100) :: Instit_IconFile
-      logical, public :: CleanScripts_gnuplot = .false.
+      logical, public :: CleanScripts_gnuplot
 
       contains
       !------------------------------------------------------------------------
@@ -107,6 +107,8 @@
       real(kind=ip),intent(in) :: OutVar(nx,ny)
       logical      ,intent(in) :: writeContours
 
+      character(len=200) :: cmd
+
       integer :: i,j,ii
       integer     , dimension(:,:),allocatable :: zrgb
       character(len=40) :: title_plot
@@ -168,10 +170,12 @@
             write(errlog(io),*)"  http://www.gnuplotting.org/data/world_50m.txt"
             write(errlog(io),*)"Please download this file to the current working directory or"
 #ifdef LINUX
-            write(errlog(io),*)"copy to /opt/USGS/Ash3d/share/post_proc/"
+            write(errlog(io),*)"copy to ${ASH3DHOME}/share/post_proc/"
+            write(errlog(io),*)" e.g. /opt/USGS/Ash3d/share/post_proc/"
 #endif
 #ifdef MACOS
-            write(errlog(io),*)"copy to /opt/USGS/Ash3d/share/post_proc/"
+            write(errlog(io),*)"copy to ${ASH3DHOME}/share/post_proc/"
+            write(errlog(io),*)" e.g. /opt/USGS/Ash3d/share/post_proc/"
 #endif
 #ifdef WINDOWS
             write(errlog(io),*)"copy to C:\opt\USGS\Ash3d\share\post_proc\"
@@ -356,8 +360,8 @@
           nConLev = 8
           allocate(zrgb(nConLev,3))
           allocate(ContourLev(nConLev))
-          ContourLev = (/0.1_ip, 0.3_ip, 1.0_ip, 3.0_ip, &
-                  10.0_ip, 30.0_ip, 100.0_ip, 300.0_ip/)
+          ContourLev = (/1.0_ip, 2.0_ip, 3.0_ip, 4.0_ip, &
+                  5.0_ip, 6.0_ip, 7.0_ip, 8.0_ip/)
         endif
       elseif(iprod.eq.16)then   ! profile plots
         do io=1,2;if(VB(io).le.verbosity_error)then
@@ -635,6 +639,12 @@
 
       endif
 
+      ! Clean up
+      if (CleanScripts_gnuplot) then
+        cmd = "rm -f outvar.* cities.xy volc.dat"
+        call execute_command_line(trim(adjustl(cmd)))
+      endif
+
       ! clean up memory
       if(allocated(lon_cities))         deallocate(lon_cities)
       if(allocated(lat_cities))         deallocate(lat_cities)
@@ -686,6 +696,7 @@
       character(len=25) :: gnucom
       integer :: k,i
       integer :: ioerr,iw,iwf
+      character(len=200) :: cmd
 
       real(kind=ip)  :: tmin
       real(kind=ip)  :: tmax
@@ -781,6 +792,12 @@
       write(gnucom,'(a11,a14)')'gnuplot -p ',dp_gnufile
       call execute_command_line(gnucom)
 
+      ! Clean up
+      if (CleanScripts_gnuplot) then
+        cmd = "rm -f outvar.* volc.dat vprof_*dat vprof_*gpi"
+        call execute_command_line(trim(adjustl(cmd)))
+      endif
+
       end subroutine write_2Dprof_PNG_gnuplot
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -818,6 +835,7 @@
       character(len=14) :: dp_pngfile
       character(len=25) :: gnucom
       integer,save      :: plot_index = 0
+      character(len=200) :: cmd
 
       if(Airport_Thickness_TS(pt_indx,nWriteTimes).lt.THICKNESS_THRESH)then
         return
@@ -867,6 +885,12 @@
 
       write(gnucom,'(a11,a14)')'gnuplot -p ',dp_gnufile
       call execute_command_line(gnucom)
+
+      ! Clean up
+      if (CleanScripts_gnuplot) then
+        cmd = "rm -f outvar.* cities.xy volc.dat"
+        call execute_command_line(trim(adjustl(cmd)))
+      endif
 
       end subroutine write_DepPOI_TS_PNG_gnuplot
 

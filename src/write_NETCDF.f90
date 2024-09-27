@@ -31,7 +31,8 @@
              NC_append_to_netcdf,       &
              NC_RestartFile_ReadTimes,  &
              NC_RestartFile_LoadConcen, &
-             NC_Read_Output_Products
+             NC_Read_Output_Products,   &
+             NC_check_status
 
         ! Publicly available variables
       integer,public :: tn_len
@@ -463,8 +464,8 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att date:")
       nSTAT = nf90_put_att(ncid,nf90_global,"NWPStartTime",cdf_WindStartTime)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att NWPStartTime:")
-      nSTAT = nf90_put_att(ncid,nf90_global,"MepProj4",trim(adjustl(Met_proj4)))
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att MepProj4:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"MetProj4",trim(adjustl(Met_proj4)))
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att MetProj4:")
       nSTAT = nf90_put_att(ncid,nf90_global,"CompProj4",trim(adjustl(Comp_proj4)))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att CompProj4:")
       nSTAT = nf90_put_att(ncid,nf90_global,"host",os_host)
@@ -573,6 +574,8 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment DT_MAX:")
       nSTAT = nf90_put_att(ncid,nf90_global,"ZPADDING",ZPADDING)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment ZPADDING:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"ZScaling_ID",ZScaling_ID)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment ZScaling_ID:")
       if(useVz_rhoG)then
         nSTAT = nf90_put_att(ncid,nf90_global,"useVz_rhoG","true")
       else
@@ -2496,59 +2499,63 @@
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Fill GS Diameter"
       endif;enddo
-      allocate(dum1d_out(nsmax))
-      dum1d_out = 0.0_op
-      if(useCalcFallVel)then
-        dum1d_out(1:n_gs_max) = real(Tephra_gsdiam(1:n_gs_max)*M_2_MM,kind=op)
-      else
-        do isize=1,n_gs_max
-          dum1d_out(isize) = real(isize,kind=op)
-        enddo
-      endif
-      nSTAT=nf90_put_var(ncid,gssd_var_id,dum1d_out,(/1/))
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_diameter")
-         ! gs_massfrac (Mass fraction of grain size)
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
-        write(outlog(io),*)"     Fill GS MassFrac"
-      endif;enddo
-      dum1d_out = 0.0_op
-      dum1d_out(1:n_gs_max) = real(Tephra_bin_mass(1:n_gs_max),kind=op)
-      nSTAT=nf90_put_var(ncid,gsmf_var_id,dum1d_out,(/1/))
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_massfrac")
-       ! gs_dens (Density of grain)
-      if(useCalcFallVel)then
-        dum1d_out(1:n_gs_max) = real(Tephra_rho_m(1:n_gs_max),kind=op)
-      else
-        dum1d_out = 0.0_op
-      endif
-      nSTAT=nf90_put_var(ncid,gsdens_var_id,dum1d_out,(/1/))
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_dens")
-       ! gs_F (Shape factor of grain F)
-      if(useCalcFallVel)then
-        dum1d_out(1:n_gs_max) = real(Tephra_gsF(1:n_gs_max),kind=op)
-      else
-        dum1d_out = 0.0_op
-      endif
-      nSTAT=nf90_put_var(ncid,gsF_var_id,dum1d_out,(/1/))
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_F")
 
-       ! gs_G (Shape factor of grain G
-      if(useCalcFallVel)then
-        dum1d_out(1:n_gs_max) = real(Tephra_gsG(1:n_gs_max),kind=op)
-      else
+      if(n_gs_max.gt.0)then
+        ! These are tephra variables so only allocate them if we have tephra bins
+        allocate(dum1d_out(nsmax))  ! allocate for the full nsmax
         dum1d_out = 0.0_op
-      endif
-      nSTAT=nf90_put_var(ncid,gsG_var_id,dum1d_out,(/1/))
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_G")
-       ! gs_Phi (Shape factor of grain Phi)
-      if(useCalcFallVel)then
-        dum1d_out(1:n_gs_max) = real(Tephra_gsPhi(1:n_gs_max),kind=op)
-      else
+        if(useCalcFallVel)then
+          dum1d_out(1:n_gs_max) = real(Tephra_gsdiam(1:n_gs_max)*M_2_MM,kind=op)
+        else
+          do isize=1,n_gs_max
+            dum1d_out(isize) = real(isize,kind=op)
+          enddo
+        endif
+        nSTAT=nf90_put_var(ncid,gssd_var_id,dum1d_out,(/1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_diameter")
+           ! gs_massfrac (Mass fraction of grain size)
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
+          write(outlog(io),*)"     Fill GS MassFrac"
+        endif;enddo
         dum1d_out = 0.0_op
+        dum1d_out(1:n_gs_max) = real(Tephra_bin_mass(1:n_gs_max),kind=op)
+        nSTAT=nf90_put_var(ncid,gsmf_var_id,dum1d_out,(/1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_massfrac")
+         ! gs_dens (Density of grain)
+        if(useCalcFallVel)then
+          dum1d_out(1:n_gs_max) = real(Tephra_rho_m(1:n_gs_max),kind=op)
+        else
+          dum1d_out = 0.0_op
+        endif
+        nSTAT=nf90_put_var(ncid,gsdens_var_id,dum1d_out,(/1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_dens")
+         ! gs_F (Shape factor of grain F)
+        if(useCalcFallVel)then
+          dum1d_out(1:n_gs_max) = real(Tephra_gsF(1:n_gs_max),kind=op)
+        else
+          dum1d_out = 0.0_op
+        endif
+        nSTAT=nf90_put_var(ncid,gsF_var_id,dum1d_out,(/1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_F")
+
+         ! gs_G (Shape factor of grain G
+        if(useCalcFallVel)then
+          dum1d_out(1:n_gs_max) = real(Tephra_gsG(1:n_gs_max),kind=op)
+        else
+          dum1d_out = 0.0_op
+        endif
+        nSTAT=nf90_put_var(ncid,gsG_var_id,dum1d_out,(/1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_G")
+         ! gs_Phi (Shape factor of grain Phi)
+        if(useCalcFallVel)then
+          dum1d_out(1:n_gs_max) = real(Tephra_gsPhi(1:n_gs_max),kind=op)
+        else
+          dum1d_out = 0.0_op
+        endif
+        nSTAT=nf90_put_var(ncid,gsP_var_id,dum1d_out,(/1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_Phi")
+        deallocate(dum1d_out)
       endif
-      nSTAT=nf90_put_var(ncid,gsP_var_id,dum1d_out,(/1/))
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_Phi")
-      deallocate(dum1d_out)
 
       !   Now fill a few other variables that are a function of ER
         ! er_stime (Start time of eruption)
@@ -2775,7 +2782,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depotime")
 
           ! ashtime
-       do io=1,2;if(VB(io).le.verbosity_debug1)then
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill ashtime"
         endif;enddo
         dum2d_out(:,:) = CloudArrivalTime_FillValue
@@ -3338,6 +3345,16 @@
           dum2d_out(:,:) = real(DepositThickness,kind=op)
           nSTAT=nf90_put_var(ncid,depothick_var_id,dum2d_out,(/1,1,iout3d/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depothick")
+          ! while we are here, just update the 'final' variable with this
+          ! preliminary copy
+          nSTAT = nf90_inq_varid(ncid,"depothickFin",depothickFin_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid depothickFin")
+          do io=1,2;if(VB(io).le.verbosity_debug1)then
+            write(outlog(io),*)"  Writing depothickFin"
+          endif;enddo
+          dum2d_out(:,:) = real(DepositThickness,kind=op)
+          nSTAT=nf90_put_var(ncid,depothickFin_var_id,dum2d_out,(/1,1/))
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var depothickFin")
           deallocate(dum2d_out)
 
           ! ashconMax
@@ -3737,7 +3754,8 @@
 
       if (nSTAT.eq.nf90_noerr) return
       do io=1,2;if(VB(io).le.verbosity_error)then
-        write(errlog(io) ,*)severity,icode,operation,":",nf90_strerror(nSTAT)
+        write(errlog(io) ,*)severity,icode,operation," :: ",&
+                            trim(adjustl(nf90_strerror(nSTAT)))
       endif;enddo
 
       ! If user-supplied error code is 0, then consider this a warning,
@@ -3757,7 +3775,7 @@
 !
 !  This subroutine is used in the post-processing tool to populate the variables
 !  for a requested time step.  All the standard output products are read, but
-!  only for timestep. If timestep = -1, then the last step in file is used
+!  only for one timestep. If timestep = -1, then the last step in file is used
 !  unless there is a 'final' variable as in depothickFin.  All other variables
 !  needed for post-processing are also read, such as the grid coordinates,
 !  grainsize and eruption variables as well as many global attributes.
@@ -3773,7 +3791,8 @@
          concenfile,init_tstep,nWriteTimes,WriteTimes,cdf_b1l1,cdf_b1l5,cdf_b3l1, &
          cdf_b1l2,cdf_b3l3,VolcanoName,Write_PT_Data,isFinal_TS,&
          cdf_run_class,cdf_url,cdf_institution,&
-         Write_PR_Data,nvprofiles,x_vprofile,y_vprofile,Site_vprofile
+         Write_PR_Data,nvprofiles,x_vprofile,y_vprofile,Site_vprofile,&
+         nvar_User2d_static_XY,nvar_User2d_XY
 
       use mesh,          only : &
          nxmax,nymax,nsmax,nzmax,x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd,z_cc_pd, &
@@ -3797,7 +3816,7 @@
          MaxConcentration,MaxHeight,CloudLoad,dbZCol,MinHeight,Mask_Cloud,&
          CLOUDCON_GRID_THRESH,CLOUDCON_THRESH,THICKNESS_THRESH, &
          CLOUDLOAD_THRESH,DBZ_THRESH,DEPO_THRESH,DEPRATE_THRESH,ashcon_tot, &
-         useRestartVars, &
+         useRestartVars,Extra2dVar,Extra2dVarName, &
            dbZCalculator, &
            Allocate_NTime, &
            Allocate_Profile, &
@@ -3840,8 +3859,9 @@
       integer :: itstart_hour,itstart_min,itstart_sec
       real(kind=ip) :: filestart_hour
       integer :: tmp_int
-      real(kind=ip) :: lat_in,lon_in
-      real(kind=ip) :: xnow,ynow,xout,yout
+      real(kind=dp) :: lat_in,lon_in
+      real(kind=ip) :: xnow,ynow
+      real(kind=dp) :: xout,yout
 
       INTERFACE
         real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
@@ -4254,7 +4274,8 @@
           tn_dim_id = 0
           call NC_check_status(nSTAT,0,"inq_dimid tn")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find dim tn: Output file has no native time data (for profiles)"
+            write(outlog(io),*)"Did not find dim tn: ",&
+                  "Output file has no native time data (for profiles)"
           endif;enddo
           tn_len = 0
           ntmax  = 0
@@ -4565,6 +4586,15 @@
         if(nSTAT.ne.0)then
           ashcloudtime_var_id = 0
           call NC_check_status(nSTAT,0,"inq_varid ash_arrival_time")
+        endif
+
+        ! Extra 2d Var static or TS
+        if(nvar_User2d_static_XY.gt.0.or.nvar_User2d_XY.gt.0)then
+          nSTAT = nf90_inq_varid(ncid,Extra2dVarName,temp1_2d_var_id)
+          if(nSTAT.ne.0)then
+            temp1_2d_var_id = 0
+            call NC_check_status(nSTAT,0,"inq_varid User2d_static")
+          endif
         endif
 
         if(Write_PT_Data)then
@@ -5096,6 +5126,16 @@
       allocate(ashcon(x_len,y_len,z_len,bn_len))
       allocate(dum2d_out(x_len,y_len))
       allocate(dum2dint_out(x_len,y_len))
+      if(nvar_User2d_static_XY.gt.0.or.nvar_User2d_XY.gt.0)then
+#ifdef USEPOINTERS
+        if(.not.associated(Extra2dVar) )then
+#else
+        if(.not.allocated(Extra2dVar) )then
+#endif
+          allocate(Extra2dVar(x_len,y_len))
+        endif
+        Extra2dVar = 0.0_ip
+      endif
 
       ! Full concentration array
       if(useRestartVars)then
@@ -5242,6 +5282,7 @@
         MaxHeight(:,:) = 0.0_ip
       endif
       MaxHeight = real(dum2d_out,kind=ip)
+
       ! Ash-cloud bottom
       nSTAT=nf90_get_var(ncid,ashcloudBot_var_id,dum2d_out,  &
                start = (/1,1,init_tstep/),       &
@@ -5277,6 +5318,37 @@
         CloudLoad(:,:) = 0.0_ip
       endif
       CloudLoad = real(dum2d_out,kind=ip)
+
+      ! Extra 2d variable
+      if(nvar_User2d_static_XY.gt.0)then
+        ! Static case
+        if(temp1_2d_var_id.eq.0)then
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: Trying to read user-specified variable : ",trim(adjustl(Extra2dVarName))
+            write(errlog(io),*)"       but the variable is not available"
+          endif;enddo
+          stop 1
+        endif
+        nSTAT=nf90_get_var(ncid,temp1_2d_var_id,dum2d_out,  &
+                 start = (/1,1/),       &
+                 count = (/x_len,y_len/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var extra2d")
+        Extra2dVar = real(dum2d_out,kind=ip)
+      elseif(nvar_User2d_XY.gt.0)then
+        ! Transient case
+        if(temp1_2d_var_id.eq.0)then
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: Trying to read user-specified variable : ",trim(adjustl(Extra2dVarName))
+            write(errlog(io),*)"       but the variable is not available"
+          endif;enddo
+          stop 1
+        endif
+        nSTAT=nf90_get_var(ncid,temp1_2d_var_id,dum2d_out,  &
+                 start = (/1,1,init_tstep/),       &
+                 count = (/x_len,y_len,1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var extra2d")
+        Extra2dVar = real(dum2d_out,kind=ip)
+      endif
 
       ! Cloud-mask
       if(cloudmask_var_id.eq.0)then
@@ -5359,7 +5431,7 @@
       ! Close file
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Closing netCDF file."
-      endif;enddo      
+      endif;enddo 
       nSTAT = nf90_close(ncid)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"nf90_close")
 

@@ -19,6 +19,7 @@
 !      function vset_WH_slip
 !      function vset_WH_PCM
 !      function vset_Gans
+!      function vset_Gans_slip
 !      function vset_Stokes_slip
 !
 !##############################################################################
@@ -297,6 +298,7 @@
       endif;enddo
 
       if(Load_MesoSteps)then
+        vf_meso_next_step_sp(:,:,:,:) = 0.0_sp
         if(first_time)then
           is = 1
           first_time = .false.
@@ -848,7 +850,9 @@
 
       real(kind=ip) :: vset2
 
-      ! Wilson and Huang (1979, EPSL v. 44, pp. 311-324) give the drag coefficient
+      ! Wilson and Huang (1979)
+      !  EPSL v. 44, pp. 311-324: https://doi.org/10.1016/0012-821X(79)90179-1
+      ! This model gives the drag coefficient
       ! of tephra as a function of its shape by defining tephra fragments as 
       ! ellipsoidal with axes a, b, and c. they also define F=(b+c)/2a, and give the
       ! drag coefficient as:

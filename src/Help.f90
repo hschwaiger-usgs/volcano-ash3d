@@ -71,6 +71,7 @@
       write(outlog(io),1)'   Ash3d -h run      : Information on running Ash3d from the command line       '
       write(outlog(io),1)'   Ash3d -h input    : Information on the structure of the input file           '
       write(outlog(io),1)'   Ash3d -h postproc : Information on the post-processing output results        '
+      write(outlog(io),1)'   Ash3d -h info     : Information on this executable                           '
       write(outlog(io),1)'                                                                                '
       write(outlog(io),1)' Writing run help information:                                                  '
       write(outlog(io),1)'                                                                                '
@@ -493,7 +494,7 @@
       write(outlog(io),1)'# ERUPTION LINES (number = neruptions)                                                                 '
       write(outlog(io),1)'# In the following line, each line represents one eruptive pulse.                                      '
       write(outlog(io),1)'# Parameters are (1-4) start time (yyyy mm dd h.hh (UT)); (5) duration (hrs);                          '
-      write(outlog(io),1)'#                  (6) plume height;                      (7) eruped volume (km3 DRE)                  '
+      write(outlog(io),1)'#                  (6) plume height;                      (7) erupted volume (km3 DRE)                 '
       write(outlog(io),1)'# If neruptions=1 and the year is 0, then the model run in forecast mode where mm dd h.hh are          '
       write(outlog(io),1)'# interpreted as the time after the start of the windfile.  In this case, duration, plume              '
       write(outlog(io),1)'# height and erupted volume are replaced with ESP if the values are negative.                          '
@@ -655,7 +656,7 @@
       write(outlog(io),1)'no                            # Write out ash arrival times at airports to ASCII FILE?                 '
       write(outlog(io),1)'no                            # Write out grain-size distribution to ASCII airports file?              '
       write(outlog(io),1)'no                            # Write out ash arrival times to kml file?                               '
-      write(outlog(io),1)'GlobalAirports.txt            # Name of file containing aiport locations                               '
+      write(outlog(io),1)'GlobalAirports.txt            # Name of file containing airport locations                              '
       write(outlog(io),1)'no                            # Have libprojection calculate projected coordinates?                    '
         case(7) ! BLOCK 7: GRAIN-SIZE BINS, SETTLING VELOCITY
       write(outlog(io),1)'*******************************************************************************                        '
@@ -749,8 +750,8 @@
       write(outlog(io),1)' ZPADDING             = 1.3                                                                            '
       write(outlog(io),1)' DEPO_THRESH          = 1.0e-1                                                                         '
       write(outlog(io),1)' DEPRATE_THRESH       = 1.0e-2                                                                         '
-      write(outlog(io),1)' CLOUDCON_THRESH      = 2.0e-1                                                                         '
-      write(outlog(io),1)' CLOUDCON_GRID_THRESH = 2.0e-1                                                                         '
+      write(outlog(io),1)' CLOUDCON_THRESH      = 1.0e-3                                                                         '
+      write(outlog(io),1)' CLOUDCON_GRID_THRESH = 1.0e-7                                                                         '
       write(outlog(io),1)' CLOUDLOAD_THRESH     = 1.0e-2                                                                         '
       write(outlog(io),1)' THICKNESS_THRESH     = 1.0e-3                                                                         '
       write(outlog(io),1)' DBZ_THRESH           = -2.0e+1                                                                        '
@@ -761,6 +762,9 @@
       write(outlog(io),1)' SuzK_umb             = 12.0                                                                           '
       write(outlog(io),1)' useMoistureVars      = F                                                                              '
       write(outlog(io),1)' useVz_rhoG           = T                                                                              '
+      write(outlog(io),1)' useWindVars          = F                                                                              '
+      write(outlog(io),1)' useOutprodVars       = T                                                                              '
+      write(outlog(io),1)' useRestartVars       = T                                                                              '
       write(outlog(io),1)' cdf_institution      = USGS                                                                           '
       write(outlog(io),1)' cdf_run_class        = Analysis                                                                       '
       write(outlog(io),1)' cdf_url              = https://vsc-ash.wr.usgs.gov/ash3d-gui                                          '
@@ -842,8 +846,6 @@
  1    format(a80)
 
       end subroutine help_postproc
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       end module help
 

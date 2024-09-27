@@ -282,6 +282,7 @@
       real(kind=op),     dimension(:),    pointer,public :: var_User4d_XYZGs_MissVal   => null()
       real(kind=op),     dimension(:),    pointer,public :: var_User4d_XYZGs_FillVal   => null()
       real(kind=op), dimension(:,:,:,:,:),pointer,public :: var_User4d_XYZGs           => null()
+      real(kind=ip),     dimension(:,:),  pointer,public :: Extra2dVar                 => null()
 #else
         ! 2-D variables (in x,y)
       logical,       dimension(:,:)  ,allocatable,public :: Mask_Cloud
@@ -337,7 +338,9 @@
       real(kind=op),     dimension(:),    allocatable,public :: var_User4d_XYZGs_MissVal
       real(kind=op),     dimension(:),    allocatable,public :: var_User4d_XYZGs_FillVal
       real(kind=op), dimension(:,:,:,:,:),allocatable,public :: var_User4d_XYZGs
+      real(kind=ip),     dimension(:,:),  allocatable,public :: Extra2dVar
 #endif
+      character(len=30)                       ,public :: Extra2dVarName
 
       contains
       !------------------------------------------------------------------------
@@ -1276,7 +1279,7 @@
       enddo
 
       ! Now loop over just the tephra bins (first n_gs_max bins) and
-      ! calculate volume
+      ! calculate tephra volume
       if(n_gs_max.gt.0)then
         do isize=1,n_gs_max
             ! Increment total ash in air

@@ -47,10 +47,10 @@ SYSINC = make_$(SYSTEM).inc
 #      OMPOPT   : includes optimizations flags for fastest runtime and OpenMP directives
 #                 To run, enter: env OMP_NUM_THREADS=4 Ash3d input_file.inp
 #    This variable cannot be left blank
-RUN = DEBUG
+#RUN = DEBUG
 #RUN = DEBUGOMP
 #RUN = PROF
-#RUN = OPT
+RUN = OPT
 #RUN = OMPOPT
 
 #    This variable cannot be left blank
@@ -217,10 +217,12 @@ endif
 PLOTFPPFLAG =
 ifeq ($(USEPLPLOT), T)
  plplotFPPFLAG = -DUSEPLPLOT
- plplotLIBS = -L/usr/local/plplot/lib -lplplotf95cd -lplplotf95d
- plplotINC  = -I/usr/include/plplot
+# plplotLIBS = -L/usr/local/plplot/lib -lplplotf95cd -lplplotf95d
+# plplotINC  = -I/usr/include/plplot
 # plplotLIBS = -L/usr/local/plplot/lib -lplplot -lplplotfortran
 # plplotINC  = -I/usr/local/plplot/lib/fortran/modules/plplot
+ plplotLIBS = -L/usr/lib64 -lplplot -lplplotfortran
+ plplotINC  = -I/usr/lib64/gfortran/modules
  plplotOBJ  = Ash3d_PostProc_plplot.o
 endif
 ifeq ($(USEDISLIN), T)
@@ -304,6 +306,7 @@ Output_Results.o         \
 write_ASCII.o            \
 write_BINARY.o           \
 write_KML.o              \
+Topography.o             \
 ResetParams.o
 
 PPOBJS = Ash3d_VariableModules.o        \
@@ -324,7 +327,8 @@ PPOBJS = Ash3d_VariableModules.o        \
          write_ASCII.o                  \
          write_BINARY.o                 \
          write_Shapefile.o              \
-         Ash3d_PostProc_cities.o
+         Ash3d_PostProc_cities.o        \
+         ResetParams.o
 
 GRAFOBJ = Ash3d_PostProc_gnuplot.o $(plplotOBJ) $(dislinOBJ) Ash3d_PostProc_GMT.o $(gmtOBJ)
 
@@ -345,10 +349,12 @@ Ash3d:  $(OBJECTS) $(DATAOBJ) Ash3d.F90 $(MFILE) $(SYSINC)
 Ash3d_VariableModules.o: $(ASH3dCCSRC)/Ash3d_VariableModules.f90 $(MFILE) $(SYSINC)
 	bash $(ASH3dCCSRC)/get_version.sh
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Ash3d_VariableModules.f90
-Input_Data.o: $(ASH3dCCSRC)/Input_Data.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Help.o Tephra.o VotW.o Diffusion.o Airports.o $(DATAOBJ) Output_Vars.o Source.o Source_Umbrella.o
+Input_Data.o: $(ASH3dCCSRC)/Input_Data.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Help.o Tephra.o VotW.o Diffusion.o Airports.o $(DATAOBJ) Output_Vars.o Source.o Source_Umbrella.o ResetParams.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Input_Data.f90
 ResetParams.o: $(ASH3dCCSRC)/ResetParams.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Tephra.o Output_Vars.o Source_Umbrella.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/ResetParams.f90
+Topography.o: Topography.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Tephra.o Calc_Mesh.o $(DATAOBJ) write_BINARY.o write_ASCII.o
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c Topography.f90
 Help.o: $(ASH3dCCSRC)/Help.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3dCCSRC)/Help.f90
 VotW.o: $(ASH3dCCSRC)/VotW.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Source.o
@@ -382,7 +388,7 @@ MesoInterpolater.o: $(ASH3dCCSRC)/MesoInterpolater.f90 $(MFILE) $(SYSINC) Ash3d_
 # PDE Solver (Advection, Diffusion, B.C.'s)
 AdvectionHorz.o: $(ASH3dCCSRC)/AdvectionHorz.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o AdvectionHorz_DCU.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3dCCSRC)/AdvectionHorz.f90
-AdvectionHorz_DCU.o: $(ASH3dCCSRC)/AdvectionHorz_DCU.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
+AdvectionHorz_DCU.o: $(ASH3dCCSRC)/AdvectionHorz_DCU.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Topography.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3dCCSRC)/AdvectionHorz_DCU.f90
 AdvectionVert_DCU.o: $(ASH3dCCSRC)/AdvectionVert_DCU.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3dCCSRC)/AdvectionVert_DCU.f90
@@ -437,7 +443,7 @@ gmt.o: $(gmtfortloc)/src/gmt.f90 $(MFILE) $(SYSINC)
 #endif
 Ash3d_PostProc_cities.o: Ash3d_PostProc_cities.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_cities.f90
-write_Shapefile.o: write_Shapefile.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
+write_Shapefile.o: write_Shapefile.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o write_BINARY.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_Shapefile.f90
 
 tools: ascii_check

@@ -17,8 +17,8 @@ output products Ash3d could produce at run-time.
 
 `Ash3d_PostProc` is a tool that can be used to post-process the Ash3d output
 from the NetCDF output file. Any of the standard output products (ESRI ASCII,
-kml/kmz, binanry) can be recreated using this tool along with png images of
-2d data in mapview (or contour plots for vertical prodiles) or shapefiles of 2d
+kml/kmz, binary) can be recreated using this tool along with png images of
+2d data in mapview (or contour plots for vertical profiles) or shapefiles of 2d
 data. To produce image files, `Ash3d_PostProc` can use a variety of geographic
 plotting software. Both `dislin` and `plplot` are available as libraries and can
 be linked to `Ash3d_PostProc` at compilation time. `dislin` includes the feature
@@ -79,8 +79,8 @@ the output NetCDF file, enter:
 
 The preferred graphics package is
 set at the time of compilation depending on the system (Linux, Windows, MacOS)
-and the availability of the libraries. These can alway be overriden at
-run-time with the environmet variable `ASH3DPLOT`,
+and the availability of the libraries. These can alway be overwritten at
+run-time with the environment variable `ASH3DPLOT`,
 where: 1=[dislin](Figs/Ash3d_Deposit____final_dislin.png), 2=[plplot](Figs/Ash3d_Deposit____final_plplot.png),
 3=[gnuplot](Figs/Ash3d_Deposit____final_gnuplot.png),
 and 4=[GMT](Figs/Ash3d_Deposit____final_gmt.png).  
@@ -132,7 +132,7 @@ file of the airborne ash concentration, but cloud load is needed for the output,
 4 would contain `1 12`.  
 Line 5 contains the number of dimensions of the data file (2 or 3) and a code indicating if
 the data are projected or in lon/lat coordinates (0 or 1). `Ash3d_PostProc` currently
-only can plot lon/lat data.  
+only can plot projected data using GMT.  
 Line 6 gives the number of nodes in the x,y, and possibly z directions for the data file.  
 Line 7 gives the grid spacing for all the coordinate directions of the file and line 8
 gives the start coordinates.  
@@ -148,6 +148,6 @@ number of custom levels (`nlev`).
 If custom contours are requested, then four additional lines are read in the control file.
 Line 13 contains the `nlev` floating point values for the contour levels in the
 default units of the output variable.  
-Lines 14, 15, and 16 are the `nlev` integer values of the RGB componets of the colors (0-255).
+Lines 14, 15, and 16 are the `nlev` integer values of the RGB components of the colors (0-255).
 
 

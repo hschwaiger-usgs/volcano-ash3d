@@ -130,7 +130,17 @@
 !    FileIO_Error_Handler
 !
 !    Subroutine called whenever a line from a file is read with a non-zero
-!    iostat.
+!    iostat. This subroutine writes the error messages to screen/log-file and
+!    exits the program.
+!
+!  Arguments:
+!    ios           : integer error code from the read statement
+!    linebuffer050 : Ash3d message about what program was trying to do
+!    linebuffer080 : the string Ash3d was trying to parse
+!    iomessage     : system message (e.g. End of File)
+!
+!  Assigns:
+!    none
 !
 !##############################################################################
 
@@ -158,6 +168,78 @@
       stop 1
 
       end subroutine FileIO_Error_Handler
+
+!##############################################################################
+!
+!    FileIO_Check_testkey
+!
+!    Subroutine called whenever a testkey character is read from a line buffer
+!    string from an input file. The testkey is always the first character on
+!    the line, but occasionally files can get corrupted with non-printable
+!    characters starting the line. This subroutine catches those events and
+!    returns a meaningful error-message
+!
+!##############################################################################
+
+      subroutine FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+
+      character        ,intent(in ) :: testkey       ! First character of linebuffer
+      character(len=80),intent(in)  :: linebuffer080 ! String with testkey
+      logical          ,intent(out) :: IsComment     ! Flag set if testkey= # or *
+
+      integer :: asciicode
+      logical :: IsNumber,IsUpperCase,IsLowerCase,IsWhiteSpace
+
+      IsComment = .false.
+      IsNumber  = .false.
+      IsUpperCase = .false.
+      IsLowerCase = .false.
+      IsWhiteSpace = .false.
+
+      asciicode = ichar(testkey)
+      ! Check if testkey is '#' (code=23) or
+      !                     '*' (code=42)
+      if (asciicode.eq.35.or.asciicode.eq.42) then
+        IsComment = .true.
+        return
+      else
+        if (asciicode.ge.48.and.asciicode.le.57.or.asciicode.eq.45) then
+          ! Check if 0-9 or -
+          IsNumber = .true.
+        elseif (asciicode.ge.65.and.asciicode.le.90) then
+          ! Check if A-Z
+          IsUpperCase = .true.
+        elseif (asciicode.ge.97.and.asciicode.le.122) then
+          ! Check if a-z
+         IsLowerCase = .true.
+        elseif (asciicode.eq.9.or.asciicode.eq.32) then
+          ! only check TAB (code=9) and space (code=32)
+          IsWhiteSpace = .true.
+        endif
+      endif
+
+      if (IsNumber.or.IsUpperCase.or.IsLowerCase.or.IsWhiteSpace) then
+        ! character is not a comment, but is a regular ASCII letter or number
+        return
+      else
+        ! Character is either a non-printable character or punctuation
+        ! Issue error and exit
+        do io=1,nio;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)'ERROR Reading character from string'
+          write(errlog(io),*)'       offending character  = ',testkey
+          write(errlog(io),*)'       character ASCII code = ',asciicode
+          write(errlog(io),*)'       Offending line = ',linebuffer080
+          write(errlog(io),*)'      Expecting character to be # or * for comment'
+          write(errlog(io),*)'      or letter/number'
+          write(errlog(io),*)'Check to make sure there are no white-spaces,'
+          write(errlog(io),*)'punctuation, or control characters at the start'
+          write(errlog(io),*)'of the line. You can try running dos2unix on the file'
+          write(errlog(io),*)'to strip off the control characters.'
+        endif;enddo
+        stop 1
+      endif
+
+      end subroutine FileIO_Check_testkey
 
 !##############################################################################
 
@@ -188,15 +270,15 @@
 
       character(len=8)  :: version           =  ' 1.0  '  ! The Ash3d version number
 
-      real(kind=ip), parameter :: EPS_SMALL  = 1.0e-7_ip       ! Small number
+      real(kind=ip), parameter :: EPS_SMALL  = 1.0e-6_ip       ! Small number
       real(kind=ip), parameter :: EPS_TINY   = 1.0e-12_ip      ! Very small number
+      real(kind=ip), parameter :: EPS_THRESH = 1.0e-10_ip      ! Threshold for Riemann solver
+                                                               ! 1 kg/km3=0.001 mg/m3
       real(kind=ip), parameter :: PI         = 3.141592653589793_ip
+      ! Unit conversions
       real(kind=ip), parameter :: DEG2RAD    = 1.7453292519943295e-2_ip
       real(kind=ip), parameter :: DEG2KMLAT  = 111.0_ip        ! km/degree latitude 
       real(kind=ip), parameter :: DEG2KMLON  = 111.321_ip      ! km/degree longitude at equator
-      real(kind=ip), parameter :: EPS_THRESH = 1.0e-10_ip      ! Threshold for Riemann solver
-                                                               ! 1 kg/km3=0.001 mg/m3
-      ! Unit conversions
       real(kind=ip), parameter :: KM_2_M     = 1.0e3_ip        ! km to m
       real(kind=ip), parameter :: M_2_MM     = 1.0e3_ip        ! m to mm
       real(kind=ip), parameter :: MM_2_IN    = 3.937e-2_ip     ! mm to inch
@@ -220,25 +302,25 @@
 
       ! Some variables determined by preprocessor flags at compilation time
 #ifdef LIM_NONE
-      character(len=10)        :: limiter = 'No'
+      character(len=11)        :: limiter = 'No'
 #endif
 #ifdef LIM_LAXWEN
-      character(len=10)        :: limiter = 'LaxWendrof'
+      character(len=11)        :: limiter = 'LaxWendroff'
 #endif
 #ifdef LIM_BW
-      character(len=10)        :: limiter = 'BeamWarm'
+      character(len=11)        :: limiter = 'BeamWarm'
 #endif
 #ifdef LIM_FROMM
-      character(len=10)        :: limiter = 'Fromm'
+      character(len=11)        :: limiter = 'Fromm'
 #endif
 #ifdef LIM_MINMOD
-      character(len=10)        :: limiter = 'Minmod'
+      character(len=11)        :: limiter = 'Minmod'
 #endif
 #ifdef LIM_SUPERBEE
-      character(len=10)        :: limiter = 'Superbee'
+      character(len=11)        :: limiter = 'Superbee'
 #endif
 #ifdef LIM_MC
-      character(len=10)        :: limiter = 'MC'
+      character(len=11)        :: limiter = 'MC'
 #endif
 
 #ifdef CRANKNIC
@@ -287,7 +369,7 @@
 
       ! Stop conditions
       !  1 = check if amount aloft is too little
-      !        aloft_vol/tot_vol.lt.(1.0_ip-StopValue)
+      !        aloft_vol/tot_vol.lt.(1.0_ip-StopValue_FracAshDep)
       !  2 = check if time is past sim end
       !        time.ge.Simtime_in_hours
       !  3 = check if there is ash aloft (this might be turned off for certain sources)
@@ -304,7 +386,7 @@
       logical, dimension(5) :: CheckConditions = .true.   ! Which conditions to check
 
       !  These are reset in Set_OS_Env
-      integer   :: OS_TYPE    = 1                 ! 1=linux, 2=apple, 3=windows
+      integer   :: OS_TYPE    = 1                 ! 1=Linux, 2=MacOS, 3=Windows
       logical   :: IsLitEnd   = .true.            ! little-endian-ness; set in Set_OS_Env
       logical   :: IsLinux    = .true.
       logical   :: IsWindows  = .false.
@@ -525,6 +607,7 @@
       integer, parameter :: ts1 = 1
 
       integer            :: ivent,jvent                    ! ij coordinates of volcano
+      integer            :: kvent
       logical            :: IsLatLon
 
       ! projection parameters of the computational (Ash3d) mesh.  This might be
@@ -542,8 +625,11 @@
       real(kind=ip)      :: ZPADDING     = 1.3_ip
       real(kind=ip)      :: Ztop
       character(len=7)   :: VarDzType
-      real(kind=ip)      :: dz_const                        ! z nodal spacing (always km)
-      integer            :: ZScaling_ID  = 0                ! altitude coordinates :: s=z
+      real(kind=ip)      :: dz_const                  ! z nodal spacing (always km)
+      integer            :: ZScaling_ID  = 0          ! altitude coordinates :: s=z  (J=1)
+                                                      !  if using topo, may have:    (J=1)
+                                                      !  1=shifted s=z-Zsurf
+                                                      !  2=sigma   s=(z-Zsurf)/(Ztop-Zsurf) (J=Ztop-Zsurf)
 
       ! Dimensional parameters in km, used if IsLatLon=.False.        
       real(kind=ip)      :: gridwidth_x, gridwidth_y  ! Dimensions (in km) of the grid
@@ -571,13 +657,18 @@
       real(kind=ip),dimension(:)    ,pointer :: y_cc_pd     => null() ! y_component of cell centers
       real(kind=ip),dimension(:)    ,pointer :: z_cc_pd     => null() ! z_component of cell centers
       real(kind=ip),dimension(:)    ,pointer :: z_lb_pd     => null() ! z_component of cell lower-boundary
-      real(kind=ip),dimension(:)    ,pointer :: s_cc_pd     => null() ! s_component of cell centers (sigma-altitude)
+      real(kind=ip),dimension(:)    ,pointer :: s_cc_pd     => null() ! s_component of cell centers (z,shifted,sigma)
+      real(kind=ip),dimension(:)    ,pointer :: s_lb_pd     => null() ! s_component of cell lower-boundary
+      real(kind=ip),dimension(:)    ,pointer :: ds_vec_pd   => null() ! used for variable ds cases
+      real(kind=ip),dimension(:,:)  ,pointer :: j_cc_pd     => null() ! Jacobian when using topography
+      real(kind=ip),dimension(:,:)  ,pointer :: Zsurf       => null() ! topography in km
       real(kind=ip),dimension(:,:,:),pointer :: kappa_pd    => null() ! volume of each node in km3
       real(kind=ip),dimension(:)    ,pointer :: lat_cc_pd   => null() ! lat of i,j cell centers
       real(kind=ip),dimension(:)    ,pointer :: lon_cc_pd   => null() ! lon of i,j cell centers
       real(kind=ip),dimension(:,:,:),pointer :: sigma_nx_pd => null() ! area of x face at i-1/2,j,k
       real(kind=ip),dimension(:,:,:),pointer :: sigma_ny_pd => null() ! area of y face at i,j-1/2,k
       real(kind=ip),dimension(:,:,:),pointer :: sigma_nz_pd => null() ! area of z face at i,j,k-1/2
+
 #else
       real(kind=ip),dimension(:)    ,allocatable :: z_vec_init
       real(kind=ip),dimension(:,:)  ,allocatable :: xy2ll_xlon  ! The (projected) computational grid
@@ -587,7 +678,11 @@
       real(kind=ip),dimension(:)    ,allocatable :: y_cc_pd     ! y_component of cell centers
       real(kind=ip),dimension(:)    ,allocatable :: z_cc_pd     ! z_component of cell centers
       real(kind=ip),dimension(:)    ,allocatable :: z_lb_pd     ! z_component of cell lower-boundary
-      real(kind=ip),dimension(:)    ,allocatable :: s_cc_pd     ! s_component of cell centers (sigma-altitude)
+      real(kind=ip),dimension(:)    ,allocatable :: s_cc_pd     ! s_component of cell centers (z,shifted,sigma)
+      real(kind=ip),dimension(:)    ,allocatable :: s_lb_pd     ! s_component of cell lower-boundary
+      real(kind=ip),dimension(:)    ,allocatable :: ds_vec_pd   ! used for variable ds cases
+      real(kind=ip),dimension(:,:)  ,allocatable :: j_cc_pd     ! Jacobian when using topography
+      real(kind=ip),dimension(:,:)  ,allocatable :: Zsurf       ! topography in km
       real(kind=ip),dimension(:,:,:),allocatable :: kappa_pd    ! volume of each node in km3
       real(kind=ip),dimension(:)    ,allocatable :: lat_cc_pd   ! lat of i,j cell centers
       real(kind=ip),dimension(:)    ,allocatable :: lon_cc_pd   ! lon of i,j cell centers
@@ -623,7 +718,11 @@
       if(.not.associated(sigma_nx_pd))allocate(sigma_nx_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_nx_pd = 1.0_ip
       if(.not.associated(sigma_ny_pd))allocate(sigma_ny_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_ny_pd = 1.0_ip
       if(.not.associated(sigma_nz_pd))allocate(sigma_nz_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_ny_pd = 1.0_ip
-      if(.not.associated(s_cc_pd))allocate(s_cc_pd(-1:nzmax+2));           s_cc_pd     = 0.0_ip
+      if(.not.associated(s_cc_pd))    allocate(s_cc_pd(-1:nzmax+2));                            s_cc_pd     = 0.0_ip
+      if(.not.associated(s_lb_pd)  )  allocate(s_lb_pd(-1:nzmax+2));                            s_lb_pd     = 0.0_ip
+      if(.not.associated(ds_vec_pd))  allocate(ds_vec_pd(-1:nzmax+2));                          ds_vec_pd   = 0.0_ip
+      if(.not.associated(j_cc_pd))    allocate(j_cc_pd(-1:nxmax+2,-1:nymax+2));                 j_cc_pd     = 1.0_ip
+      if(.not.associated(Zsurf))      allocate(Zsurf(-1:nxmax+2,-1:nymax+2));                   Zsurf       = 0.0_ip
 #else
       if (IsLatLon) then
         if(.not.allocated(lon_cc_pd))allocate(lon_cc_pd(-1:nxmax+2));                            lon_cc_pd = 0.0_ip
@@ -641,7 +740,11 @@
       if(.not.allocated(sigma_nx_pd))allocate(sigma_nx_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_nx_pd = 1.0_ip
       if(.not.allocated(sigma_ny_pd))allocate(sigma_ny_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_ny_pd = 1.0_ip
       if(.not.allocated(sigma_nz_pd))allocate(sigma_nz_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2));  sigma_ny_pd = 1.0_ip
-      if(.not.allocated(s_cc_pd))allocate(s_cc_pd(-1:nzmax+2));           s_cc_pd     = 0.0_ip
+      if(.not.allocated(s_cc_pd))    allocate(s_cc_pd(-1:nzmax+2));                            s_cc_pd     = 0.0_ip
+      if(.not.allocated(s_lb_pd)  )  allocate(s_lb_pd(-1:nzmax+2));                            s_lb_pd     = 0.0_ip
+      if(.not.allocated(ds_vec_pd))  allocate(ds_vec_pd(-1:nzmax+2));                          ds_vec_pd   = 0.0_ip
+      if(.not.allocated(j_cc_pd))    allocate(j_cc_pd(-1:nxmax+2,-1:nymax+2));                 j_cc_pd     = 1.0_ip
+      if(.not.allocated(Zsurf))      allocate(Zsurf(-1:nxmax+2,-1:nymax+2));                   Zsurf       = 0.0_ip
 #endif
 
       end subroutine Allocate_mesh
@@ -665,6 +768,10 @@
       if(associated(sigma_ny_pd))   deallocate(sigma_ny_pd)
       if(associated(sigma_nz_pd))   deallocate(sigma_nz_pd)
       if(associated(s_cc_pd))       deallocate(s_cc_pd)
+      if(associated(s_lb_pd))       deallocate(s_lb_pd)
+      if(associated(ds_vec_pd))     deallocate(ds_vec_pd)
+      if(associated(j_cc_pd))       deallocate(j_cc_pd)
+      if(associated(Zsurf))         deallocate(Zsurf)
 #else
       if(allocated(z_vec_init))    deallocate(z_vec_init)
       if(allocated(xy2ll_xlon))    deallocate(xy2ll_xlon)
@@ -681,6 +788,10 @@
       if(allocated(lon_cc_pd))     deallocate(lon_cc_pd)
       if(allocated(lat_cc_pd))     deallocate(lat_cc_pd)
       if(allocated(s_cc_pd))       deallocate(s_cc_pd)
+      if(allocated(s_lb_pd))       deallocate(s_lb_pd)
+      if(allocated(ds_vec_pd))     deallocate(ds_vec_pd)
+      if(allocated(j_cc_pd))       deallocate(j_cc_pd)
+      if(allocated(Zsurf))         deallocate(Zsurf)
 #endif
 
       end subroutine Deallocate_mesh
@@ -711,6 +822,7 @@
       real(kind=ip),dimension(:,:,:)    ,pointer :: vx_pd => null() ! u (E) component of wind
       real(kind=ip),dimension(:,:,:)    ,pointer :: vy_pd => null() ! v (N) component of wind
       real(kind=ip),dimension(:,:,:)    ,pointer :: vz_pd => null() ! w (up) component of wind
+      real(kind=ip),dimension(:,:,:)    ,pointer :: vh_pd => null() ! supplemental due to topography
       real(kind=ip),dimension(:,:,:,:)  ,pointer :: vf_pd => null() ! fall velocity (x,y,z,gs) (positive upward)
       real(kind=ip),dimension(:,:,:,:,:),pointer :: concen_pd      => null() !ash concentration in x,y,z,gs_bin,time
       real(kind=ip),dimension(:,:,:)    ,pointer :: outflow_xz1_pd => null()
@@ -734,6 +846,7 @@
       real(kind=ip),dimension(:,:,:)    ,allocatable :: vx_pd ! u (E) component of wind
       real(kind=ip),dimension(:,:,:)    ,allocatable :: vy_pd ! v (N) component of wind
       real(kind=ip),dimension(:,:,:)    ,allocatable :: vz_pd ! w (up) component of wind
+      real(kind=ip),dimension(:,:,:)    ,allocatable :: vh_pd ! supplemental due to topography
       real(kind=ip),dimension(:,:,:,:)  ,allocatable :: vf_pd ! fall velocity (x,y,z,gs) (positive upward)
       real(kind=ip),dimension(:,:,:,:,:),allocatable :: concen_pd       ! ash concentration in x,y,z,gs_bin,time
       real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_xz1_pd  ! outflow concentration in x,z,gs
@@ -756,7 +869,7 @@
 #endif
       real(kind=ip)      :: dep_percent_accumulated = 0.0_ip
       real(kind=ip)      :: aloft_percent_remaining = 0.0_ip
-      real(kind=ip)      :: StopValue               = 0.0_ip   ! program stops when percent_accumulated>StopValue
+      real(kind=ip)      :: StopValue_FracAshDep = 0.0_ip   ! program stops when percent_accumulated>StopValue_FracAshDep
       real(kind=ip)      :: dep_vol                 = 0.0_ip
       real(kind=ip)      :: aloft_vol               = 0.0_ip
       real(kind=ip)      :: outflow_vol             = 0.0_ip
@@ -780,6 +893,7 @@ subroutine Allocate_solution
       if(.not.associated(vx_pd))         allocate(vx_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2))
       if(.not.associated(vy_pd))         allocate(vy_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2))
       if(.not.associated(vz_pd))         allocate(vz_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2))
+      if(.not.associated(vh_pd))         allocate(vh_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2))
       if(.not.associated(vf_pd))         allocate(vf_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2,1:nsmax))
       if(.not.associated(concen_pd))     allocate(concen_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2,1:nsmax,ts0:ts1))
       if(.not.associated(outflow_xz1_pd))allocate(outflow_xz1_pd(-1:nxmax+2,-1:nzmax+2,1:nsmax))
@@ -804,6 +918,7 @@ subroutine Allocate_solution
       if(.not.allocated(vx_pd))         allocate(vx_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2))
       if(.not.allocated(vy_pd))         allocate(vy_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2))
       if(.not.allocated(vz_pd))         allocate(vz_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2))
+      if(.not.allocated(vh_pd))         allocate(vh_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2))
       if(.not.allocated(vf_pd))         allocate(vf_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2,1:nsmax))
       if(.not.allocated(concen_pd))     allocate(concen_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2,1:nsmax,ts0:ts1))
       if(.not.allocated(outflow_xz1_pd))allocate(outflow_xz1_pd(-1:nxmax+2,-1:nzmax+2,1:nsmax))
@@ -828,6 +943,7 @@ subroutine Allocate_solution
       vx_pd = 0.0_ip
       vy_pd = 0.0_ip
       vz_pd = 0.0_ip
+      vh_pd = 0.0_ip
       vf_pd = 0.0_ip
       concen_pd = 0.0_ip
       outflow_xz1_pd = 0.0_ip
@@ -855,6 +971,7 @@ subroutine Allocate_solution
       if(associated(vx_pd))              deallocate(vx_pd)
       if(associated(vy_pd))              deallocate(vy_pd)
       if(associated(vz_pd))              deallocate(vz_pd)
+      if(associated(vh_pd))              deallocate(vh_pd)
       if(associated(vf_pd))              deallocate(vf_pd)
       if(associated(concen_pd))          deallocate(concen_pd)
       if(associated(outflow_xz1_pd))     deallocate(outflow_xz1_pd)
@@ -876,6 +993,7 @@ subroutine Allocate_solution
       if(allocated(vx_pd))              deallocate(vx_pd)
       if(allocated(vy_pd))              deallocate(vy_pd)
       if(allocated(vz_pd))              deallocate(vz_pd)
+      if(allocated(vh_pd))              deallocate(vh_pd)
       if(allocated(vf_pd))              deallocate(vf_pd)
       if(allocated(concen_pd))          deallocate(concen_pd)
       if(allocated(outflow_xz1_pd))     deallocate(outflow_xz1_pd)

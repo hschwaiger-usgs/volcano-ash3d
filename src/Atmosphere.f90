@@ -36,7 +36,7 @@
         !  Physical Properties of air
         !  meso means grid of the met. file
 #ifdef USEPOINTERS
-        ! Denisity is in kg/m^3
+        ! Density is in kg/m^3
         ! Viscosity is in kg/(m s)
         ! Mean free path (lambda) is in m
       real(kind=sp),dimension(:,:,:),pointer,public :: AirDens_meso_last_step_MetP_sp => null()
@@ -365,7 +365,7 @@
         do io=1,2;if(VB(io).le.verbosity_error)then              
           write(errlog(io),*)"Calling Set_Atmosphere_Meso outside of a Load_MesoSteps=.true."
           write(errlog(io),*)"case for Interval_Frac = ",Interval_Frac
-          write(errlog(io),*)"This is a place-holder for interpolating tempertures to the"
+          write(errlog(io),*)"This is a place-holder for interpolating temperatures to the"
           write(errlog(io),*)"current time.  Not yet implemented."
         endif;enddo
         stop 1

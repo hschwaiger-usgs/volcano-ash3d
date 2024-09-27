@@ -207,7 +207,7 @@
 !  read an external list, do that via ReadExtAirports().  Then we need to
 !  determine if this possible external list should replace or supplement the
 !  master list of airports. Finally, we need to evaluate the list to determine
-!  which locations are within the compuatational domain.  We then allocate
+!  which locations are within the computational domain.  We then allocate
 !  the needed space and fill the following variables:
 !     Airport_Name(nairports)      = 35 character name, normally location
 !     Airport_Code(nairports)      = 3 character airport code
@@ -543,7 +543,7 @@
 !     The file should be in the following format:
 !       Latitude (or x), Longitude (or y), Station Code, Station Name
 !     The two floating point values for the station coordinates should be in the first
-!     50 charactes.  Station_Code is 3 characters (51-53)
+!     50 characters.  Station_Code is 3 characters (51-53)
 !     Station_Name is 35 characters (54-88)
 !     The following variables are filled:
 !       ExtAirportLat   :
@@ -585,7 +585,7 @@
       isite = 0
 
       ! Open the airport location file
-      ! Note that this file was tested for existance in Read_Control_File()
+      ! Note that this file was tested for existence in Read_Control_File()
       open(unit=fid_airport,file=AirportInFile,status='old',position='rewind',action='read',iostat=iostatus)
       !inquire(fid_airport, exist=ex, opened=op, name=nam,access=acc,sequential=seq, form=frm, recl=irec, nextrec=nr)
 
@@ -601,7 +601,6 @@
         endif
         read(linebuffer095,*,iostat=ioerr,iomsg=iomessage) &
                                        ExtAirportLat(isite), ExtAirportLon(isite)
-        write(*,*)'ioerr = ',ioerr
         if(ioerr.ne.0)then
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)'Next line of Airport/POI file loaded without error, however'
@@ -669,9 +668,9 @@
 !      stop 1
 
       ! format statements
-6     format('Error reading from airport list.  Read statement was expecting',/, &
-             'latitude longitude x y  (all real numbers).  The input line gave:',/, &
-             a95,/,'program stopped')
+!6     format('Error reading from airport list.  Read statement was expecting',/, &
+!             'latitude longitude x y  (all real numbers).  The input line gave:',/, &
+!             a95,/,'program stopped')
 
       end subroutine ReadExtAirports
 

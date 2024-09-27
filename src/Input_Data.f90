@@ -183,6 +183,9 @@
                 endif
               elseif(trim(adjustl(linebuffer130)).eq.'postproc')then
                 call help_postproc
+              elseif(trim(adjustl(linebuffer130)).eq.'info')then
+                call Set_OS_Env
+                stop 1
               else
                 write(outlog(io),*) 'Unknown help option'
                 call help_general
@@ -317,7 +320,7 @@
       real(kind=dp)     :: StartHour
       real(kind=dp)     :: RunStartHour    ! Start time of model run, in hours since BaseYear
       character(len=100):: CompVer
-      character(len=602):: CompOpt
+      character(len=604):: CompOpt
       logical           :: IsThere
 
       INTERFACE
@@ -754,7 +757,7 @@
         write(outlog(io),*)"      LIM_NONE: Advection routines use no limiters"
 #endif
 #ifdef LIM_LAXWEN
-        write(outlog(io),*)"    LIM_LAXWEN: Advection routines use a Lax-Wendrof limiter"
+        write(outlog(io),*)"    LIM_LAXWEN: Advection routines use a Lax-Wendroff limiter"
 #endif
 #ifdef LIM_BW
         write(outlog(io),*)"        LIM_BW: Advection routines use a Beam-Warming limiter"
@@ -763,10 +766,10 @@
         write(outlog(io),*)"     LIM_FROMM: Advection routines use a Fromm limiter"
 #endif
 #ifdef LIM_MINMOD
-        write(outlog(io),*)"    LIM_MINMOD: Advection routines use a MinMod limiter"
+        write(outlog(io),*)"    LIM_MINMOD: Advection routines use a minmod limiter"
 #endif
 #ifdef LIM_SUPERBEE
-        write(outlog(io),*)"  LIM_SUPERBEE: Advection routines use a SuperBee limiter"
+        write(outlog(io),*)"  LIM_SUPERBEE: Advection routines use a superbee limiter"
 #endif
 #ifdef LIM_MC
         write(outlog(io),*)"        LIM_MC: Advection routines use a MC limiter"
@@ -906,14 +909,14 @@
          Write_PT_Data,Write_PR_Data,isFinal_TS
 
       use mesh,          only : &
-         de,dn,dx,dy,z_vec_init,dz_const,nxmax,nymax,nzmax,nsmax,VarDzType,ivent,jvent,&
+         de,dn,dx,dy,z_vec_init,dz_const,nxmax,nymax,nzmax,nsmax,VarDzType,ivent,jvent,kvent,&
          gridwidth_e,gridwidth_n,gridwidth_x,gridwidth_y,&
          lonLL,latLL,lonUR,latUR,xLL,yLL,xUR,yUR,&
          A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
          A3d_phi2,A3d_Re,IsLatLon,IsPeriodic,ZPADDING,Ztop
 
       use solution,      only : &
-         StopValue,imin,imax,jmin,jmax,kmin,kmax
+         StopValue_FracAshDep,imin,imax,jmin,jmax,kmin,kmax
 
       use time_data,     only : &
          BaseYear,useLeap,time,SimStartHour,Simtime_in_hours,xmlSimStartTime
@@ -1019,13 +1022,16 @@
       integer           :: substr_pos1
       integer           :: substr_pos2
       logical           :: IsThere
-      logical           :: StopWhenDeposited                       ! If true, StopValue=0.99, else StopValue=1e5.
-      logical           :: runAsForecast       = .false.           ! This will be changed if year=0
+      logical           :: StopWhenDeposited   ! If true, StopValue_FracAshDep=0.99, else StopValue_FracAshDep=1e5.
+      logical           :: runAsForecast       = .false.  ! This will be changed if year=0
       real(kind=dp)     :: FC_Offset = 0.0_dp
       real(kind=ip)     :: Davg,Aaxis,Baxis,Caxis
-
+      logical           :: od
+      logical           :: IsComment
 
       INTERFACE
+        subroutine input_data_ResetParams
+        end subroutine input_data_ResetParams
         real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
           integer            :: iyear
           integer            :: imonth
@@ -1076,6 +1082,89 @@
       open(unit=fid_ctrlfile,file=infile,status='old',action='read',err=9001)
 
       !************************************************************************
+      ! Searching for optional blocks labled by OPTMOD
+      !  These are expected to be at the end of the control file, but we need to
+      !  know now if we are calling input_data_ResetParams as this can effect the
+      !  grid
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)' *****************************************'
+        write(outlog(io),*)' Reading control file for optional modules   '
+        write(outlog(io),*)' *****************************************'
+      endif;enddo
+
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"Searching for blocks with OPTMOD"
+      endif;enddo
+      nmods = 0
+      read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+      ! if there are no further blocks, then we will skip over this while loop
+      do while(iostatus.eq.0)
+        substr_pos1 = index(linebuffer080,'OPTMOD')
+        if(substr_pos1.eq.1)then
+          ! found an optional module
+          nmods = nmods + 1
+          if(nmods.gt.MAXNUM_OPTMODS)then
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: Maximum number of optional modules exceeded"
+              write(errlog(io),*)"       Current maximum set to MAXNUM_OPTMODS = ",MAXNUM_OPTMODS
+              write(errlog(io),*)"       Please increase MAXNUM_OPTMODS and recompile."
+              write(errlog(io),*)"  Ash3d_VariableModules.f90:global_param:MAXNUM_OPTMODS"
+            endif;enddo
+            stop 1
+          endif
+          !  Parse for the keyword
+          read(linebuffer080,1104,iostat=iostatus,iomsg=iomessage)mod_name
+          linebuffer050 = "Reading control file blk9+ (OPTMOD)"
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+          OPTMOD_names(nmods) = trim(adjustl(mod_name))
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"     Found optional module : ",&
+                                OPTMOD_names(nmods),nmods
+          endif;enddo
+        endif
+        read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+        if(iostatus.lt.0)then
+          ! end of file reached; exit do loop
+          exit
+        elseif(iostatus.gt.0)then
+          ! Some non-EOF error
+          linebuffer050 = "Reading control file blk9+ (OPTMOD)"
+          call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        endif
+1104    format(7x,a20)
+      enddo
+      if(nmods.eq.0)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"No OPTMOD blocks found."
+        endif;enddo
+      else
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Number of OPTMOD blocks found = ",nmods
+        endif;enddo
+      endif
+
+      ! Now checking if we need to reset any parameters
+      do i=1,nmods
+        do io=1,2;if(VB(io).le.verbosity_essential)then
+          write(outlog(io),*)"Testing for ",OPTMOD_names(i),i
+        endif;enddo
+        if(OPTMOD_names(i).eq.'RESETPARAMS')then
+          do io=1,2;if(VB(io).le.verbosity_essential)then
+            write(outlog(io),*)"  Reading input block for RESETPARAMS"
+          endif;enddo
+          call input_data_ResetParams
+        endif
+      enddo
+      ! Reopen or rewind to begining so we can start parsing block 1
+      !   check to make sure the control file is open
+      inquire(unit=fid_ctrlfile,opened=od)
+      if(od)then
+        rewind(fid_ctrlfile)
+      else
+        open(unit=fid_ctrlfile,file=infile,status='old',action='read',err=9001)
+      endif
+
+      !************************************************************************
       ! BLOCK 1: GRID INFO
       ! Start reading the input file assuming there is a variable length
       ! header with each header line flagged by a '#' or '*' in the first position
@@ -1087,8 +1176,9 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading first line of control file."
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
-      do while(testkey.eq.'#'.or.testkey.eq.'*')
+      read(linebuffer080,'(a1)',iostat=iostatus,iomsg=iomessage)testkey
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      do while (IsComment)
          ! Line is a comment, read next line
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         linebuffer050 = "Reading comment line of control file (until Blk1)"
@@ -1106,6 +1196,8 @@
             endif
           endif;enddo
           stop 1
+        else
+          call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
         endif
       enddo
 
@@ -1651,7 +1743,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.ne.'#'.and.testkey.ne.'*')then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if (.not.IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 'Expecting a comment line separating blocks.'
@@ -1660,7 +1753,7 @@
         endif;enddo
         stop 1
       endif
-      do while(testkey.eq.'#'.or.testkey.eq.'*')
+      do while (IsComment)
          ! Line is a comment, read next line
         read(fid_ctrlfile,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
         linebuffer050 = "Reading control file, past Blk1, looking for Blk2"
@@ -1668,6 +1761,7 @@
         read(linebuffer130,*,iostat=iostatus,iomsg=iomessage)testkey
         linebuffer050 = "Reading testkey from linebuffer"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130,iomessage)
+        call FileIO_Check_testkey(testkey,linebuffer130(1:80),IsComment)
       enddo
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)' *******************************************'
@@ -1680,7 +1774,8 @@
         read(linebuffer130,*,iostat=iostatus,iomsg=iomessage)testkey
         linebuffer050 = "Reading control file, Blk2, Line 1+."
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
-        if(testkey.eq.'#'.or.testkey.eq.'*') then
+        call FileIO_Check_testkey(testkey,linebuffer130(1:80),IsComment)
+        if (IsComment) then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: ",&
                   'Trying to read Blk2 and detecting comment line'
@@ -1714,7 +1809,7 @@
            SourceType.eq.'line'        .or. &
            SourceType.eq.'umbrella'    .or. &
            SourceType.eq.'umbrella_air')then
-         !read start time, duration, plume height, volume of each pulse
+          ! read start time, duration, plume height, volume of each pulse
           read(linebuffer130,*,err=9201,iostat=iostatus,iomsg=iomessage) &
                                 iyear(i),imonth(i),iday(i),hour(i), &
                                 e_Duration(i), e_PlumeHeight(i), e_Volume(i)
@@ -1722,7 +1817,7 @@
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"Start reading eruption profile number ",i
           endif;enddo
-          !read start time, duration, plume height, volume of each pulse
+          ! read start time, duration, plume height, volume of each pulse
           read(linebuffer130,*,err=9201,iostat=iostatus,iomsg=iomessage) &
                                 iyear(i),imonth(i),iday(i),hour(i), &
                                 e_Duration(i), e_PlumeHeight(i), e_Volume(i),&
@@ -1822,7 +1917,8 @@
             'the source is a custom type'
         endif;enddo
         ! For the custom source, we will need to read to the end of block 2
-        do while(testkey.ne.'#'.and.testkey.ne.'*')
+        call FileIO_Check_testkey(testkey,linebuffer130(1:80),IsComment)
+        do while (IsComment)
            ! Line is a comment, read next line
           read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
           linebuffer050 = "Reading ctr file, past Blk 2, looking for Blk 3."
@@ -1830,6 +1926,7 @@
           read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
           linebuffer050 = "Reading testkey from linebuffer"
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+          call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
         enddo
       else
         if(linebuffer130(1:5).ne.'*****') then
@@ -1856,8 +1953,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk3)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(.not.IsCustom_SourceType.and.&  ! only perform this check for standard src
-          testkey.ne.'#'.and.testkey.ne.'*')then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if(.not.IsCustom_SourceType.and..not.IsComment) then !&  ! only perform this check for standard src
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 'Expecting a comment line separating blks.'
@@ -1866,7 +1963,7 @@
         endif;enddo
         stop 1
       endif
-      do while(testkey.eq.'#'.or.testkey.eq.'*')
+      do while (IsComment)
          ! Line is a comment, read next line
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         linebuffer050 = "Reading control file, Blk3 Line 1"
@@ -1874,6 +1971,7 @@
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
         linebuffer050 = "Reading testkey from linebuffer (Blk3)"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       enddo
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)' *******************************************'
@@ -1925,7 +2023,8 @@
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
         linebuffer050 = "Reading testkey from linebuffer (Blk3)"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-        if(testkey.eq.'#'.or.testkey.eq.'*') then
+        call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+        if (IsComment) then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: ",&
                   "Trying to read template name and detecting comment line"
@@ -1950,7 +2049,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk3)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.eq.'#'.or.testkey.eq.'*') then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read MR_iHeightHandler and detecting comment line"
@@ -1969,7 +2069,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk3)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.eq.'#'.or.testkey.eq.'*') then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read Simtime_in_hours and detecting comment line"
@@ -1990,7 +2091,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk3)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.eq.'#'.or.testkey.eq.'*') then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read StopWhenDeposited and detecting comment line"
@@ -2002,10 +2104,10 @@
       read(linebuffer080,'(a3)',err=9304,iostat=iostatus,iomsg=iomessage) answer
       if(adjustl(trim(answer)).eq.'yes') then
         StopWhenDeposited = .true.
-        StopValue = 0.99_ip
+        StopValue_FracAshDep = 0.99_ip
        else if(adjustl(trim(answer(1:2))).eq.'no') then
         StopWhenDeposited = .false.
-        StopValue = 1.0e2_ip
+        StopValue_FracAshDep = 1.0e2_ip
        else
         goto 9304
       endif
@@ -2016,7 +2118,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk3)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.eq.'#'.or.testkey.eq.'*') then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment) 
+      if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read nWindFiles and detecting comment line"
@@ -2075,7 +2178,7 @@
         endif
       enddo
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),'(a32,g12.5,a7)')"Total volume of all eruptions = ",&
+        write(outlog(io),'(a32,g12.5,a8)')"Total volume of all eruptions = ",&
                             sum(e_volume)," km3 DRE"
       endif;enddo
 
@@ -2100,6 +2203,10 @@
           write(errlog(io),*)"  CompGrid_height = ",Ztop
           write(errlog(io),*)"       z_vec_init = "
           do k = 1,nz_init-1
+            if(maxval(e_PlumeHeight(1:neruptions)).gt.z_vec_init(k).and.&
+               maxval(e_PlumeHeight(1:neruptions)).lt.z_vec_init(k+1))then
+              kvent=k
+            endif
             write(errlog(io),*)"                ",k,real(z_vec_init(k),kind=4)
           enddo
         endif;enddo
@@ -2162,7 +2269,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.ne.'#'.and.testkey.ne.'*')then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if (.not.IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Expecting a comment line separating blocks."
@@ -2170,7 +2278,7 @@
         endif;enddo
         stop 1
       endif
-      do while(testkey.eq.'#'.or.testkey.eq.'*')
+      do while (IsComment)
          ! Line is a comment, read next line
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         linebuffer050 = "Reading test line from control file, blk4"
@@ -2178,6 +2286,7 @@
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
         linebuffer050 = "Reading testkey from linebuffer (Blk4)"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       enddo
       ! Block 4
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -2209,7 +2318,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.eq.'#'.or.testkey.eq.'*') then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteDepositFinal_ASCII and detecting",& 
@@ -2236,7 +2346,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.eq.'#'.or.testkey.eq.'*') then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteDepositFinal_KML and detecting", &
@@ -2264,7 +2375,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.eq.'#'.or.testkey.eq.'*') then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteDepositTS_ASCII and detecting",&
@@ -2292,7 +2404,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.eq.'#'.or.testkey.eq.'*') then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteDepositTS_KML and detecting comment line"
@@ -2319,7 +2432,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.eq.'#'.or.testkey.eq.'*') then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteCloudConcentration_ASCII and detecting",&
@@ -2347,7 +2461,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.eq.'#'.or.testkey.eq.'*') then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteCloudConcentration_KML and detecting",&
@@ -2373,7 +2488,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.eq.'#'.or.testkey.eq.'*') then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteCloudHeight_ASCII and detecting",&
@@ -2401,7 +2517,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.eq.'#'.or.testkey.eq.'*') then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteCloudHeight_KML and detecting",&
@@ -2429,7 +2546,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.eq.'#'.or.testkey.eq.'*') then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteCloudLoad_ASCII and detecting",&
@@ -2457,7 +2575,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.eq.'#'.or.testkey.eq.'*') then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteCloudLoad_KML and detecting comment line"
@@ -2484,7 +2603,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.eq.'#'.or.testkey.eq.'*') then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteDepositTime_ASCII and detecting",&
@@ -2512,7 +2632,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.eq.'#'.or.testkey.eq.'*') then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteDepositTime_KML and detecting",&
@@ -2540,7 +2661,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.eq.'#'.or.testkey.eq.'*') then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteCloudTime_ASCII and detecting",&
@@ -2568,7 +2690,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.eq.'#'.or.testkey.eq.'*') then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteCloudTime_KML and detecting comment line"
@@ -2609,7 +2732,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.eq.'#'.or.testkey.eq.'*') then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read Write3dFiles and detecting comment line"
@@ -2666,7 +2790,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.eq.'#'.or.testkey.eq.'*') then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read output format and detecting comment line"
@@ -2698,7 +2823,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.eq.'#'.or.testkey.eq.'*') then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read nWriteTimes and detecting comment line"
@@ -2708,13 +2834,14 @@
       cdf_b4l17 = linebuffer080
 
       ! Block 4 Line 18
-      read(fid_ctrlfile,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer400
+      read(fid_ctrlfile,'(a400)',iostat=iostatus,iomsg=iomessage)linebuffer400
       linebuffer050 = "Reading control file Blk 4, line 18"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer400(1:80),iomessage)
       read(linebuffer400,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.eq.'#'.or.testkey.eq.'*') then
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer400(1:80),iomessage)
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Trying to read WriteTimes or WriteInterval and detecting",&
@@ -2851,7 +2978,8 @@
         read(linebuffer130,*,iostat=iostatus,iomsg=iomessage)testkey
         linebuffer050 = "Reading testkey from linebuffer (Blk5)"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
-        if(testkey.ne.'#'.and.testkey.ne.'*')then
+        call FileIO_Check_testkey(testkey,linebuffer130(1:80),IsComment)
+        if (.not.IsComment) then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: ",&
                   "Expecting a comment line separating blocks."
@@ -2859,15 +2987,17 @@
           endif;enddo
           stop 1
         endif      
-        do while(testkey.eq.'#'.or.testkey.eq.'*')
+        do while (IsComment)
            ! Line is a comment, read next line
+          !iostatus=0
+          !iomessage='M'
           read(fid_ctrlfile,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
           linebuffer050 = "Reading test line of blk5"
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
           read(linebuffer130,*,iostat=iostatus,iomsg=iomessage)testkey
           linebuffer050 = "Reading testkey from linebuffer (Blk5)"
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
-          testkey=linebuffer130(1:1)
+          call FileIO_Check_testkey(testkey,linebuffer130(1:80),IsComment)
         enddo
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)' *****************************************'
@@ -2891,7 +3021,8 @@
           do i=1,iwfiles
             ! Always check if we have overshot the block
             testkey=linebuffer130(1:1)
-            if(testkey.eq.'#'.or.testkey.eq.'*') then
+            call FileIO_Check_testkey(testkey,linebuffer130(1:80),IsComment)
+            if (IsComment) then
               do io=1,2;if(VB(io).le.verbosity_error)then
                 write(errlog(io),*)"ERROR: ",&
                      "Trying to read Block 5 and detecting comment line"
@@ -3000,7 +3131,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk6)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.ne.'#'.and.testkey.ne.'*')then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if (.not.IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Expecting a comment line separating blocks."
@@ -3008,7 +3140,7 @@
         endif;enddo
         stop 1
       endif
-      do while(testkey.eq.'#'.or.testkey.eq.'*')
+      do while (IsComment)
          ! Line is a comment, read next line
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         linebuffer050 = "Reading test line from blk6"
@@ -3016,6 +3148,7 @@
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
         linebuffer050 = "Reading testkey from linebuffer (Blk6)"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       enddo
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)' *******************************************'
@@ -3161,7 +3294,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk7)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.ne.'#'.and.testkey.ne.'*')then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if (.not.IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Expecting a comment line separating blocks."
@@ -3169,7 +3303,7 @@
         endif;enddo
         stop 1
       endif
-      do while(testkey.eq.'#'.or.testkey.eq.'*')
+      do while (IsComment)
          ! Line is a comment, read next line
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         linebuffer050 = "Reading test line from control file (Blk7)"
@@ -3177,6 +3311,7 @@
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
         linebuffer050 = "Reading testkey from linebuffer (Blk7)"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       enddo
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)' *******************************************'
@@ -3225,6 +3360,7 @@
       else
         FV_ID = 1 ! Wilson and Huang
       endif
+
       allocate(temp_v_s(init_n_gs_max))
       allocate(temp_gsdiam(init_n_gs_max))
       allocate(temp_bin_mass(init_n_gs_max))
@@ -3232,7 +3368,21 @@
       allocate(temp_gsF(init_n_gs_max))
       allocate(temp_gsG(init_n_gs_max))
 
-      if(init_n_gs_max.gt.0)then
+      if(init_n_gs_max.lt.0)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*) 'ERROR: Number of grainsizes must be non-negative.'
+          write(errlog(io),*) 'Program stopped'
+        endif;enddo
+        stop 1
+      elseif(init_n_gs_max.eq.0)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(errlog(io),*) 'WARNING: Number of grainsizes is 0.'
+          write(errlog(io),*) '         Assuming a custom module is being used to'
+          write(errlog(io),*) '         add to the concen array.'
+        endif;enddo
+        n_gs_max = init_n_gs_max
+      else
+        ! This is the normal case with actual grain size bins specified
         do isize=1,init_n_gs_max
           value1 = -1.99_ip
           value2 = -1.99_ip
@@ -3242,8 +3392,9 @@
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
           ! Always check if we have overshot the block
           testkey = linebuffer080(1:1)
-          if((testkey.eq.'*').or.(testkey.eq.'#')) then
-          do io=1,2;if(VB(io).le.verbosity_error)then
+          call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+          if (IsComment) then
+            do io=1,2;if(VB(io).le.verbosity_error)then
               write(errlog(io),*)"ERROR: ",&
                     "Error in specifying grain sizes.  You specified ",&
                             init_n_gs_max,', sizes,'
@@ -3350,24 +3501,26 @@
       nsmax      = n_gs_max  ! Total tracked bins
       n_gs_aloft = n_gs_max  ! Number of tephra species aloft
 
-      call Allocate_Tephra
-      allocate(temp_phi(n_gs_max))
+      if(n_gs_max.gt.0)then
+        call Allocate_Tephra
+        allocate(temp_phi(n_gs_max))
 
-      Tephra_v_s(1:n_gs_max)      = -1.0_ip * temp_v_s(1:n_gs_max) ! make sure 'fall velocity'
-                                                                   ! is in the -z direction
-      Tephra_gsdiam(1:n_gs_max)   = temp_gsdiam(1:n_gs_max)
-      Tephra_bin_mass(1:n_gs_max) = temp_bin_mass(1:n_gs_max)
-      Tephra_rho_m(1:n_gs_max)    = temp_rho_m(1:n_gs_max)
-      if(Shape_ID.eq.1)then
-        ! Interpret shape columns as F [and G]
-        Tephra_gsF(1:n_gs_max)      = temp_gsF(1:n_gs_max)
-        Tephra_gsG(1:n_gs_max)      = temp_gsG(1:n_gs_max)
-        Tephra_gsPhi(1:n_gs_max)    = 1.0_ip
-      elseif(Shape_ID.eq.2)then
-        ! Interpret shape columns as Phi
-        Tephra_gsF(1:n_gs_max)      = 1.0_ip
-        Tephra_gsG(1:n_gs_max)      = 1.0_ip
-        Tephra_gsPhi(1:n_gs_max)    = temp_gsF(1:n_gs_max)
+        Tephra_v_s(1:n_gs_max)      = -1.0_ip * temp_v_s(1:n_gs_max) ! make sure 'fall velocity'
+                                                                     ! is in the -z direction
+        Tephra_gsdiam(1:n_gs_max)   = temp_gsdiam(1:n_gs_max)
+        Tephra_bin_mass(1:n_gs_max) = temp_bin_mass(1:n_gs_max)
+        Tephra_rho_m(1:n_gs_max)    = temp_rho_m(1:n_gs_max)
+        if(Shape_ID.eq.1)then
+          ! Interpret shape columns as F [and G]
+          Tephra_gsF(1:n_gs_max)      = temp_gsF(1:n_gs_max)
+          Tephra_gsG(1:n_gs_max)      = temp_gsG(1:n_gs_max)
+          Tephra_gsPhi(1:n_gs_max)    = 1.0_ip
+        elseif(Shape_ID.eq.2)then
+          ! Interpret shape columns as Phi
+          Tephra_gsF(1:n_gs_max)      = 1.0_ip
+          Tephra_gsG(1:n_gs_max)      = 1.0_ip
+          Tephra_gsPhi(1:n_gs_max)    = temp_gsF(1:n_gs_max)
+        endif
       endif
 
       deallocate(temp_v_s,temp_gsdiam,temp_bin_mass,temp_rho_m,temp_gsF)
@@ -3578,7 +3731,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk8)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.ne.'#'.and.testkey.ne.'*')then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if (.not.IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Expecting a comment line separating blocks."
@@ -3586,7 +3740,7 @@
         endif;enddo
         stop 1
       endif
-      do while(testkey.eq.'#'.or.testkey.eq.'*')
+      do while (IsComment)
          ! Line is a comment, read next line
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         linebuffer050 = "Reading test line from control file (Blk8)"
@@ -3594,6 +3748,7 @@
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
         linebuffer050 = "Reading testkey from linebuffer (Blk8)"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       enddo
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)' *******************************************'
@@ -3632,7 +3787,8 @@
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
           ! Always check if we have overshot the block
           testkey=linebuffer080(1:1)
-          if(testkey.eq.'#'.or.testkey.eq.'*') then
+          call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+          if (IsComment) then
           do io=1,2;if(VB(io).le.verbosity_error)then
               write(errlog(io),*)"ERROR: ",&
                     "Trying to read Block 8 and detecting comment line"
@@ -3679,7 +3835,8 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk9)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      if(testkey.ne.'#'.and.testkey.ne.'*')then
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
+      if (.not.IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 "Expecting a comment line separating blocks."
@@ -3687,7 +3844,7 @@
         endif;enddo
         stop 1
       endif      
-      do while(iostatus.eq.0.and.(testkey.eq.'#'.or.testkey.eq.'*'))
+      do while(iostatus.eq.0.and.IsComment)
          ! Line is a comment, read next line
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         linebuffer050 = "Reading test line from control file blk9"
@@ -3695,6 +3852,7 @@
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
         linebuffer050 = "Reading testkey from linebuffer (Blk9)"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       enddo
 
       ! Here are the default output file name and comments if Block 9 is not given
@@ -3763,64 +3921,64 @@
       ! END OF BLOCK 9
       !************************************************************************
 
-      !************************************************************************
-      ! Searching for optional blocks labled by OPTMOD
-      do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),*)' *****************************************'
-        write(outlog(io),*)' Reading Post-Block 9: optional modules   '
-        write(outlog(io),*)' *****************************************'
-      endif;enddo
-
-      do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),*)"Searching for blocks with OPTMOD"
-      endif;enddo
-      nmods = 0
-      read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-      ! if there are no further blocks, then we will skip over this while loop
-      do while(iostatus.eq.0)
-        substr_pos1 = index(linebuffer080,'OPTMOD')
-        if(substr_pos1.eq.1)then
-          ! found an optional module
-          nmods = nmods + 1
-          if(nmods.gt.MAXNUM_OPTMODS)then
-            do io=1,2;if(VB(io).le.verbosity_error)then
-              write(errlog(io),*)"ERROR: Maximum number of optional modules exceeded"
-              write(errlog(io),*)"       Current maximum set to MAXNUM_OPTMODS = ",MAXNUM_OPTMODS
-              write(errlog(io),*)"       Please increase MAXNUM_OPTMODS and recompile."
-              write(errlog(io),*)"  Ash3d_VariableModules.f90:global_param:MAXNUM_OPTMODS"
-            endif;enddo
-            stop 1
-          endif
-          !  Parse for the keyword
-          read(linebuffer080,1104,iostat=iostatus,iomsg=iomessage)mod_name
-          linebuffer050 = "Reading control file blk9+ (OPTMOD)"
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-          OPTMOD_names(nmods) = trim(adjustl(mod_name))
-          do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"     Found optional module : ",&
-                                OPTMOD_names(nmods),nmods
-          endif;enddo
-        endif
-        read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-        if(iostatus.lt.0)then
-          ! end of file reached; exit do loop
-          exit
-        elseif(iostatus.gt.0)then
-          ! Some non-EOF error
-          linebuffer050 = "Reading control file blk9+ (OPTMOD)"
-          call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-        endif
-1104    format(7x,a20)
-      enddo
-      if(nmods.eq.0)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"No OPTMOD blocks found."
-        endif;enddo
-      else
-        do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"Number of OPTMOD blocks found = ",nmods
-        endif;enddo
-      endif
+!      !************************************************************************
+!      ! Searching for optional blocks labled by OPTMOD
+!      do io=1,2;if(VB(io).le.verbosity_info)then
+!        write(outlog(io),*)' *****************************************'
+!        write(outlog(io),*)' Reading Post-Block 9: optional modules   '
+!        write(outlog(io),*)' *****************************************'
+!      endif;enddo
+!
+!      do io=1,2;if(VB(io).le.verbosity_info)then
+!        write(outlog(io),*)"Searching for blocks with OPTMOD"
+!      endif;enddo
+!      nmods = 0
+!      read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+!      ! if there are no further blocks, then we will skip over this while loop
+!      do while(iostatus.eq.0)
+!        substr_pos1 = index(linebuffer080,'OPTMOD')
+!        if(substr_pos1.eq.1)then
+!          ! found an optional module
+!          nmods = nmods + 1
+!          if(nmods.gt.MAXNUM_OPTMODS)then
+!            do io=1,2;if(VB(io).le.verbosity_error)then
+!              write(errlog(io),*)"ERROR: Maximum number of optional modules exceeded"
+!              write(errlog(io),*)"       Current maximum set to MAXNUM_OPTMODS = ",MAXNUM_OPTMODS
+!              write(errlog(io),*)"       Please increase MAXNUM_OPTMODS and recompile."
+!              write(errlog(io),*)"  Ash3d_VariableModules.f90:global_param:MAXNUM_OPTMODS"
+!            endif;enddo
+!            stop 1
+!          endif
+!          !  Parse for the keyword
+!          read(linebuffer080,1104,iostat=iostatus,iomsg=iomessage)mod_name
+!          linebuffer050 = "Reading control file blk9+ (OPTMOD)"
+!          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+!          OPTMOD_names(nmods) = trim(adjustl(mod_name))
+!          do io=1,2;if(VB(io).le.verbosity_info)then
+!            write(outlog(io),*)"     Found optional module : ",&
+!                                OPTMOD_names(nmods),nmods
+!          endif;enddo
+!        endif
+!        read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+!        if(iostatus.lt.0)then
+!          ! end of file reached; exit do loop
+!          exit
+!        elseif(iostatus.gt.0)then
+!          ! Some non-EOF error
+!          linebuffer050 = "Reading control file blk9+ (OPTMOD)"
+!          call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+!        endif
+!1104    format(7x,a20)
+!      enddo
+!      if(nmods.eq.0)then
+!        do io=1,2;if(VB(io).le.verbosity_info)then
+!          write(outlog(io),*)"No OPTMOD blocks found."
+!        endif;enddo
+!      else
+!        do io=1,2;if(VB(io).le.verbosity_info)then
+!          write(outlog(io),*)"Number of OPTMOD blocks found = ",nmods
+!        endif;enddo
+!      endif
 
      ! close input file 
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -4399,7 +4557,7 @@
       ! for the internal list of airports.
 
       !Block 6/Line 4: 
-      !               Name of file containing aiport locations
+      !               Name of file containing airport locations
 96041 do io=1,2;if(VB(io).le.verbosity_error)then
         write(errlog(io),*) 'Would you like Ash3d to use the internal airports database instead (y/n)?'
       endif;enddo
@@ -4807,13 +4965,14 @@
 ! 3                       input format code (1=ascii, 2=binary, 3=netcdf, 4=grib, 5=tecplot, 6=vtk)
 ! test.inp                Ash3d_control_file_name   (skipped if datafile is netcdf)
 ! 5                       invar [outvar]    input variable and output variable, if different
+!  if invar=0 varname
 ! 2                       ndims Only needed for format 1 or 2
 ! 0 0                     nx ny [nz] Also only needed for format 1 or 2
 ! 0.0 0.0                 dx dy [dz] Needed if not a part of the data file
 ! 0.0 0.0                 srtx srty         Start x and y
 ! 3                       output format     (1=ascii, 2=KML 3=image, 4=binary, 5=shapefile 6=grib, 7=tecplot, 8=vtk)
 ! 3                       plot_pref         (1=dislin, 2=plplot, 3=gnuplot, 4=GMT)
-! -1                      time_step         Only needed if input file is multi-timestep (eg netcdf) (-1 for final, -2 for all)
+! -1                      time_step         Only needed if input file is multi-timestep (eg netcdf) (0 for static, -1 for final, -2 for all)
 ! 0                       Filled contour flag (1 for filled, 0 for lines)
 ! 1 5                     custom contour flag (1 for true, 0 for false), number of contours
 ! 1.0 3.0 10.0 50.0 100.0 lev(ncont)  : contour levels
@@ -4935,7 +5094,7 @@
         iprod2 = iprod1
       endif
       ! Error-checking these values
-      if(iprod1.lt.1.or.iprod1.gt.16)then
+      if(iprod1.lt.0.or.iprod1.gt.16)then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: Invalid format code input variable type."
         endif;enddo
@@ -4954,6 +5113,13 @@
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"Variable code of output data = ",iprod2
         endif;enddo
+      endif
+        ! Now the bonus line if the user requests a custom variable
+      if(iprod1.eq.0)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: Need to code custom variables in control file"
+        endif;enddo
+        stop 1
       endif
 
       ! Line 5:

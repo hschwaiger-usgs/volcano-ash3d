@@ -74,10 +74,11 @@
       subroutine write_2Dmap_PNG_GMT(nx,ny,iprod,itime,OutVar,writeContours)
 
       use mesh,          only : &
-         A3d_iprojflag,A3d_lam0,A3d_lam1,A3d_lam2,A3d_phi0,A3d_phi1,A3d_phi2, &
-         A3d_k0_scale,A3d_Re,de,dn,dx,dy,IsLatLon, &
+         A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
+         A3d_k0_scale,A3d_Re,IsLatLon, &
          latLL,lonLL,latUR,lonUR,xLL,yLL,xUR,yUR,&
-         x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd
+         lon_cc_pd,lat_cc_pd !,&
+         !A3d_lam1,A3d_lam2,de,dn,dx,dy,x_cc_pd,y_cc_pd
 
       use Output_Vars,   only : &
          ContourFilled,Con_Cust,Con_Cust_N,Con_Cust_RGB,Con_Cust_Lev,&
@@ -178,7 +179,6 @@
       character(len=50) :: end_ps
       logical           :: IsThere
       real(kind=dp)      :: olam,ophi ! using precision needed by libprojection
-
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
@@ -386,8 +386,8 @@
           nConLev = 8
           allocate(zrgb(nConLev,3))
           allocate(ContourLev(nConLev))
-          ContourLev = (/0.1_ip, 0.3_ip, 1.0_ip, 3.0_ip, &
-                  10.0_ip, 30.0_ip, 100.0_ip, 300.0_ip/)
+          ContourLev = (/1.0_ip, 2.0_ip, 3.0_ip, 4.0_ip, &
+                  5.0_ip, 6.0_ip, 7.0_ip, 8.0_ip/)
         endif
       elseif(iprod.eq.16)then   ! profile plots
         do io=1,2;if(VB(io).le.verbosity_error)then
@@ -856,21 +856,22 @@
       !if [ $GMTv -eq 5 ] ; then
       !  convert -rotate 90 temp.png -resize 630x500 -alpha off temp.gif
       !if [ $GMTv -eq 5 ] ; then
-      !  convert temp.png -resize 630x500 -alpha off temp.gif
+      cmd = "convert temp.png -resize 850x600 -alpha off temp.png"
+      if(.not.writeContours)write(55,*)trim(adjustl(cmd))
 
       ! Move this png to the final filename
       cmd = "mv temp.png " // outfile_name
       if(.not.writeContours)write(55,*)trim(adjustl(cmd))
 
-      ! Clean up
-      if (CleanScripts_GMT) then
-        cmd = "rm -f c.lev out.grd temp.* leg*.txt out*.con cities.xy"
-        write(55,*)trim(adjustl(cmd))
-      endif
-
       close(55)
       write(gmtcom,'(a3,a14)')'sh ',dp_gmtfile
       call execute_command_line(gmtcom,exitstat=iostatus)
+
+      ! Clean up
+      if (CleanScripts_GMT) then
+        cmd = "rm -f c.lev out.grd temp.* leg*.txt outvar.* cities.xy gmt.*"
+        call execute_command_line(trim(adjustl(cmd)),exitstat=iostatus)
+      endif
 
       ! GMT script has been run, now we need to read the contour lines if we want
       ! to write a shapefile
