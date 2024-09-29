@@ -64,7 +64,7 @@ OS = LINUX
 USGSROOT=/opt/USGS
 
 # This is the location of the Ash3d core code source files that we will build this
-# research branch with.
+# branch with.
 ASH3dCCSRC=./
 
 INSTALLDIR=/opt/USGS/Ash3d

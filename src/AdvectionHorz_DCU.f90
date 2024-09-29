@@ -140,12 +140,12 @@
         !$OMP SCHEDULE (static)                                       &
         !$OMP DEFAULT(NONE)                                           &
         !$OMP SHARED(n,kmin,kmax,jmin,jmax,rmin,rmax,nxmax,ncells,    &
-        !$OMP        dt,concen_pd,kappa_pd,IsPeriodic,DelDxonD_cc,    &
+        !$OMP        dt,concen_pd,kappa_pd,IsPeriodic,                &
         !$OMP        vx_pd,sigma_nx_pd,outflow_yz1_pd,outflow_yz2_pd, &
         !$OMP        DelDxonD_cc,ZScaling_ID) &
-        !$OMP PRIVATE(l,j,k,q_cc,vel_cc,dt_vol_cc,usig_I,update_cc,   &
+        !$OMP PRIVATE(j,k,q_cc,vel_cc,dt_vol_cc,usig_I,update_cc,     &
         !$OMP         dq_I,fs_I,fss_I,ldq_I,dqu_I,i_I,i_cc,kap_cc,    &
-        !$OMP         aus,theta,divu_p,divu_m,                        &
+        !$OMP         aus,theta,divu_p,divu_m,sig_I,                  &
         !$OMP         LFluct_Rbound,RFluct_Lbound,                    &
         !$OMP         LimFlux_Rbound,LimFlux_Lbound,DelDonD_cc)       &
         !$OMP COLLAPSE(2)
@@ -410,11 +410,11 @@
         !$OMP SCHEDULE (static)                                       &
         !$OMP DEFAULT(NONE)                                           &
         !$OMP SHARED(n,kmin,kmax,imin,imax,rmin,rmax,nymax,ncells,    &
-        !$OMP        dt,concen_pd,kappa_pd,DelDyonD_cc,               &
+        !$OMP        dt,concen_pd,kappa_pd,DelDyonD_cc,ZScaling_ID,   &
         !$OMP        vy_pd,sigma_ny_pd,outflow_xz1_pd,outflow_xz2_pd) &
-        !$OMP PRIVATE(l,i,k,q_cc,vel_cc,dt_vol_cc,usig_I,update_cc,   &
+        !$OMP PRIVATE(i,k,q_cc,vel_cc,dt_vol_cc,usig_I,update_cc,   &
         !$OMP         dq_I,fs_I,fss_I,ldq_I,dqu_I,i_I,i_cc,kap_cc,    &
-        !$OMP         aus,theta,divu_p,divu_m,                        &
+        !$OMP         aus,theta,divu_p,divu_m,sig_I,                  &
         !$OMP         LFluct_Rbound,RFluct_Lbound,                    &
         !$OMP         LimFlux_Rbound,LimFlux_Lbound,DelDonD_cc)       &
         !$OMP COLLAPSE(2)
