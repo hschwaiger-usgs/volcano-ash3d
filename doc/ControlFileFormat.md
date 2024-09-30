@@ -420,8 +420,8 @@ Topography can be included in Ash3d by including the following optional block.
 Line 1 indicates whether or not to use topography followed by the integer flag
 describing how topography will modify the vertical grid.  
 0. = no vertical modification; z-grid remains 0-> top throughout the domain  
-1. = shifted; s = z-z_surf; computational grid is uniformly shifted upward everywhere by topography  
-2. = sigma-altitude; s=(z-z_surf)/(z_top-z_surf); topography has decaying influence with height  
+1. = shifted; s = z-z_s; computational grid is uniformly shifted upward everywhere by topography  
+2. = sigma-altitude; s=z_t(z-z_s)/(z_t-z_s); topography has decaying influence with height  
 Line 2 indicates the topography data format followed by the smoothing radius in km.
 Topofile format must be one of:  
 1. Gridded lon/lat (netcdf)  
@@ -431,6 +431,7 @@ GEBCO : https://www.gebco.net/
 NOAA Globe (1-km/30 arcsec) https://www.ngdc.noaa.gov/mgg/topo/globe.html  
 GTOPO30 (1-km/30 arcsec)  
 3. ESRI ASCII  
-
-
+This format is intended to import smoothed topographic data from a prior Ash3d run,
+exported with the command:  
+`Ash3d_PostProc 3d_tephra_fall.nc 15 1`
 

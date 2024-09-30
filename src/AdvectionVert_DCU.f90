@@ -195,11 +195,11 @@
         !$OMP SCHEDULE (static)                                       &
         !$OMP DEFAULT(NONE)                                           &
         !$OMP SHARED(n,jmin,jmax,imin,imax,rmin,rmax,nzmax,ncells,    &
-        !$OMP        dt,concen_pd,kappa_pd,vf_pd,                     &
+        !$OMP        dt,concen_pd,kappa_pd,vf_pd,vh_pd,               &
         !$OMP        vz_pd,sigma_nz_pd,outflow_xy1_pd,outflow_xy2_pd) &
-        !$OMP PRIVATE(l,i,j,q_cc,vel_cc,dt_vol_cc,usig_I,update_cc,   &
+        !$OMP PRIVATE(i,j,q_cc,vel_cc,dt_vol_cc,usig_I,update_cc,     &
         !$OMP         dq_I,fs_I,fss_I,ldq_I,dqu_I,i_I,i_cc,kap_cc,    &
-        !$OMP         aus,theta,divu_p,divu_m,                        &
+        !$OMP         aus,theta,divu_p,divu_m,sig_I,                  &
         !$OMP         LFluct_Rbound,RFluct_Lbound,                    &
         !$OMP         LimFlux_Rbound,LimFlux_Lbound)                  &
         !$OMP COLLAPSE(2)
@@ -483,11 +483,11 @@
         !$OMP SCHEDULE (static)                                       &
         !$OMP DEFAULT(NONE)                                           &
         !$OMP SHARED(n,jmin,jmax,imin,imax,rmin,rmax,nzmax,ncells,    &
-        !$OMP        dt,concen_pd,kappa_pd,vf_pd,                     &
+        !$OMP        dt,concen_pd,kappa_pd,vf_pd,vh_pd,               &
         !$OMP        vz_pd,sigma_nz_pd,outflow_xy1_pd,outflow_xy2_pd) &
-        !$OMP PRIVATE(l,i,j,q_cc,vel_cc,dt_vol_cc,usig_I,update_cc,   &
+        !$OMP PRIVATE(i,j,q_cc,vel_cc,dt_vol_cc,usig_I,update_cc,   &
         !$OMP         dq_I,fs_I,fss_I,ldq_I,dqu_I,i_I,i_cc,kap_cc,    &
-        !$OMP         aus,theta,divu_p,divu_m,                        &
+        !$OMP         aus,theta,divu_p,divu_m,sig_I,                  &
         !$OMP         LFluct_Rbound,RFluct_Lbound,                    &
         !$OMP         LimFlux_Rbound,LimFlux_Lbound)                  &
         !$OMP COLLAPSE(2)
