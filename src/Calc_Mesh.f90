@@ -355,14 +355,14 @@
 
       implicit none
 
-      real(kind=dp),intent(out) :: lonmin
-      real(kind=dp),intent(out) :: lonmax
-      real(kind=dp),intent(out) :: latmin
-      real(kind=dp),intent(out) :: latmax
+      real(kind=8),intent(out) :: lonmin
+      real(kind=8),intent(out) :: lonmax
+      real(kind=8),intent(out) :: latmin
+      real(kind=8),intent(out) :: latmax
 
-      integer        :: i,j
-      real(kind=dp)  :: olam,ophi ! using precision needed by libprojection
-      real(kind=dp)  :: xin,yin
+      integer       :: i,j
+      real(kind=8)  :: olam,ophi ! using precision needed by libprojection
+      real(kind=8)  :: xin,yin
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"Inside get_minmax_lonlat"
@@ -386,10 +386,10 @@
       ! Note:  All we need here is just the min/max for lat/lon so that we
       !        can generate our own, regular lat/lon grid filled with
       !        interpolated values.
-      latmax =  -90.0_dp
-      latmin =   90.0_dp
-      lonmin =  360.0_dp
-      lonmax = -360.0_sp
+      latmax =  -90.0_8
+      latmin =   90.0_8
+      lonmin =  360.0_8
+      lonmax = -360.0_8
       do i=-1,nxmax+2
         do j=-1,nymax+2
           xin = real(x_cc_pd(i),kind=dp)  ! Projection routines use kind=8
