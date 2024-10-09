@@ -249,3 +249,11 @@ Authors
 Hans F. Schwaiger <hschwaiger@usgs.gov>  
 Larry G. Mastin <lgmastin@usgs.gov>  
 Roger P. Denlinger <rdenlinger@usgs.gov>
+
+Citation
+--------
+
+If you would like to reference Ash3d in your paper, please cite the software as follows. 
+Schwaiger, H.F. et al (2024) Ash3d (Version 1.0.0), U.S. Geological Survey Software Release,
+https://doi.org/10.5066/P1SJWAKZ
+
