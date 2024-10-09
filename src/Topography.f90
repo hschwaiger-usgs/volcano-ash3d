@@ -184,10 +184,10 @@
       ! Note: Should first map all topo points onto computational grid, average those values,
       !       then apply a smoothing of the comp grid
 
-      real(kind=dp) :: minlon_Topo_comp,maxlon_Topo_comp
-      real(kind=dp) :: minlat_Topo_comp,maxlat_Topo_comp
-      real(kind=dp) :: minlon_Topo_Met,maxlon_Topo_Met
-      real(kind=dp) :: minlat_Topo_Met,maxlat_Topo_Met
+      real(kind=8) :: minlon_Topo_comp,maxlon_Topo_comp
+      real(kind=8) :: minlat_Topo_comp,maxlat_Topo_comp
+      real(kind=8) :: minlon_Topo_Met,maxlon_Topo_Met
+      real(kind=8) :: minlat_Topo_Met,maxlat_Topo_Met
       logical       :: Topo_UseCompGrid      = .false.
 
       contains
@@ -526,10 +526,10 @@
 
       INTERFACE
         subroutine get_minmax_lonlat(lonmin,lonmax,latmin,latmax)
-          real(kind=8) :: lonmin
-          real(kind=8) :: lonmax
-          real(kind=8) :: latmin
-          real(kind=8) :: latmax
+          real(kind=8),intent(out) :: lonmin
+          real(kind=8),intent(out) :: lonmax
+          real(kind=8),intent(out) :: latmin
+          real(kind=8),intent(out) :: latmax
         end subroutine 
       END INTERFACE
 

@@ -1034,7 +1034,8 @@
       integer, intent (in) :: vprof_ID
 
       do io=1,2;if(VB(io).le.verbosity_error)then
-        write(errlog(io),*)"ERROR: write_2Dprof_PNG_GMT is not yet implemented."
+        write(errlog(io),*)"ERROR: Trying to write GMT vertical profile: ",vprof_ID
+        write(errlog(io),*)"       but write_2Dprof_PNG_GMT is not yet implemented."
         write(errlog(io),*)"       Please choose a different plotting package for profiles"
       endif;enddo
       stop 1
@@ -1073,7 +1074,8 @@
       integer,intent(in) :: pt_indx
 
       do io=1,2;if(VB(io).le.verbosity_error)then
-        write(errlog(io),*)"ERROR: write_DepPOI_TS_PNG_GMT is not yet implemented."
+        write(errlog(io),*)"ERROR: Trying to write GMT deposit TS: ",pt_indx
+        write(errlog(io),*)"       but write_DepPOI_TS_PNG_GMT is not yet implemented."
         write(errlog(io),*)"       Please choose a different plotting package for POI dep."
       endif;enddo
       stop 1
