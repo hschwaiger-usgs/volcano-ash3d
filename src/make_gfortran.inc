@@ -5,10 +5,10 @@ SYSFPPFLAG = -DGFORTRAN
 FCHOME = /usr
 FC = $(FCHOME)/bin/gfortran
 
-#LAPACKLIB = -L$(FCHOME)/lib64 -llapack
+#LAPACKLIB = -L$(FCHOME)/lib64 -L$(FCHOME)/lib/x86_64-linux-gnu -llapack
 LAPACKLIB = -L$(HOME)/Programs/Tarballs/lapack-3.11 -llapack
 
-COMPINC = -I./ -I$(FCHOME)/lib64/gfortran/modules
+COMPINC = -I./ -I$(FCHOME)/include -I$(FCHOME)/lib64/gfortran/modules
 COMPLIBS = -L$(FCHOME)/lib64
 LIBS = $(LAPACKLIB) $(COMPLIBS) $(USGSLIBDIR) $(USGSINC) $(COMPINC) $(USGSLIB) $(DATALIBS)
 
