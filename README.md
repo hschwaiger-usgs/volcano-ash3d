@@ -73,12 +73,12 @@ On RedHat-based systems, these can be installed with:
   `sudo yum install plplot`
 
 On Ubuntu-based systems:  
-  `sudo apt install liblapack64-3 liblapack64-dev libblas64-3 libblas64-dev`
-  `sudo apt install libnetcdf-c++4 libnetcdf-dev libnetcdff-dev`
-  `sudo apt libeccodes0 libeccodes-dev`
-  `sudo apt install zip`
-  `sudo apt install gnuplot`
-  `sudo apt install plplot`
+  `sudo apt install liblapack64-3 liblapack64-dev libblas64-3 libblas64-dev`  
+  `sudo apt install libnetcdf-c++4 libnetcdf-dev libnetcdff-dev`  
+  `sudo apt libeccodes0 libeccodes-dev`  
+  `sudo apt install zip`  
+  `sudo apt install gnuplot`  
+  `sudo apt install plplot`  
 
 ### Compiling Ash3d with the default settings
 Once the necessary USGS libraries and optional distribution packages are installed, Ash3d can
@@ -96,7 +96,9 @@ can be used for post-processing Ash3d output.  To test the installation, type:
   `make check`
 
 This will run all the tests in `tests/test_[1-4]` and run `Ash3d_ASCII_check` on the
-resulting ASCII output files, reporting PASS or FAIL.  The test cases in 
+resulting ASCII output files, reporting PASS or FAIL.  These tests are described in
+`tests/readme.txt` and are designed to be quick runs with output compared with expected
+output.  The test cases in 
 `tests/test_04` require that the NCEP 50-year reanalysis data files for the year 1980
 be stored in `/data/WindFiles/NCEP/1980`.  Assuming MetReader was installed in the default
 location, these reanayalsis files can be downloaded by running the following script
@@ -117,6 +119,34 @@ default is `/opt/USGS`) and type:
 
 You will need to have write permission in `${INSTALLDIR}` or install as root.
 This will install the following in `${INSTALLDIR}/bin/`:
+
+Validation tests are found in the `examples` directory. These test cases compare
+Ash3d results with both data and with past published results. Each of these test
+cases require NCEP reanalysis data for the years of each eruption, which can be
+downloaded as described above. The test cases are:
+
+1. Mt. Spurr, Aug. 18, 1992  
+This case models the fallout using a total grainsize distribution and fallout
+measurements reported in McGimsey et al, 2001.
+
+2. Kasatochi, Aug. 8, 2008  
+This case models the drifting ash cloud over several days and compares modeling
+cloud load with satellite retrievals.
+
+3. Mt. St. Helens, May 18, 1980  
+This case does not model the full event, but just compares model output with a
+published result from Mastin, et al, 2016.
+
+4. Mazama
+This case also does not model a particular event, but is intended to be compared
+with published model results for ash fallout. The source term is an umbrella cloud.
+Results are compared with those from Buckland, et al, 2022.
+
+5. Kelud, Feb. 13, 2014
+This case also uses an umbrella source, but just for tracking the ash cloud
+(source is `umbrella_air`). Model results of the cloud development and advection
+are compared with cloud outlines from satellite observations presented in Mastin
+and Van Eaton, 2020.
 
 ### Compiling Ash3d with the customized settings
 To build Ash3d, we currently use a user-edited makefile.  All the main
@@ -232,16 +262,33 @@ Instructions on usage of the `Ash3d_PostProc` tool can be found [here](doc/PostP
 References
 ----------
 
-1. Schwaiger, H.F., R.P. Denlinger, and L.G. Mastin, 2012, Ash3d, a finite-volume,
-conservative numerical model for ash transport and tephra deposition,
-Journal of Geophysical Research, 117, B04204,
-[doi:10.1029/2011JB008968](https://doi.org/10.1029/2011JB008968).
-
+1. Buckland, et al, Modelling the transport and deposition of ash following a
+magnitude 7 eruption: the distal Mazama tephra, Bulletin of Volcanology, v84,87,
+2022,[doi:10.1007/s00445-022-01593-1](https://doi.org/10.1007/s00445-022-01593-1).
 
 2. Mastin, L.G., M.J. Randall, H.F. Schwaiger, and R.P. Denlinger, 2013,
 User’s Guide and Reference to Ash3d—A Three-Dimensional Model for Eulerian
 Atmospheric Tephra Transport and Deposition, Open-File Report 2013-1122
 [doi:10.3133/ofr20131122](https://doi.org/10.3133/ofr20131122).
+
+3. Mastin, et al., 2016, Adjusting particle-size distribution to account for
+aggregation in tephra-deposit model forecasts, Atmospheric Chemistry and
+Physics, v16 n14, [doi:10.5194/acp-16-9399-2016](https://doi.org/10.5194/acp-16-9399-2016).
+
+4. Mastin and Van Eaton, Comparing simulation of umbrella-cloud growth and ash
+transport with observations from Pinatubo, Kelud, and Calbuco Volcanoes,
+Atmosphere, v11,1038, 2020, [doi:10.3390/atmos11101038](https://doi.org/10.3390/atmos11101038).
+
+5. McGimsey, R.G, Neal, C.A., and Riley, C.M., 2001, Areal distribution, thickness,
+mass, volume, and grain size of tephra-fall deposits from the 1992 eruptions of
+Crater Peak vent, Mt. Spurr Volcano, Alaska, U.S. Geological Survey Open-File
+Report 01-370, [doi:10.3133/ofr01370](https://doi.org/10.3133/ofr01370).
+
+6. Schwaiger, H.F., R.P. Denlinger, and L.G. Mastin, 2012, Ash3d, a finite-volume,
+conservative numerical model for ash transport and tephra deposition,
+Journal of Geophysical Research, 117, B04204,
+[doi:10.1029/2011JB008968](https://doi.org/10.1029/2011JB008968).
+
 
 Authors
 -------
