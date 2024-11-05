@@ -39,6 +39,7 @@
 
         ! Publicly available variables
         ! These arrays are only used when reading an output file of unknown size
+      integer,       dimension(:,:)  ,allocatable,public :: A_XY_int
       real(kind=ip), dimension(:,:)  ,allocatable,public :: A_XY
       real(kind=ip), dimension(:,:,:),allocatable,public :: A_XYZ
       integer      ,public :: A_nx
@@ -51,6 +52,8 @@
       real(kind=ip),public :: A_dy
       real(kind=ip),public :: A_dz
       real(kind=ip),public :: A_Fill
+      integer      ,public :: A_Fill_int
+      logical      ,public :: A_IsInt    = .false.
 
       contains
       !------------------------------------------------------------------------
@@ -73,7 +76,9 @@
         write(outlog(io),*)"     Entered Subroutine deallocate_ASCII"
       endif;enddo
 
-      if(allocated(A_XY)) deallocate(A_XY)
+      if(allocated(A_XY))     deallocate(A_XY)
+      if(allocated(A_XY_int)) deallocate(A_XY_int)
+      if(allocated(A_XYZ))    deallocate(A_XYZ)
 
       end subroutine deallocate_ASCII
 
@@ -396,9 +401,13 @@
 
       character(len=80),intent(in) :: filename
 
-      integer :: i,j
+      integer           :: i,j
+      character(len=080):: linebuffer080
       integer           :: iostatus
+      integer           :: iostatus2
       character(len=120):: iomessage
+      character(len=20) :: tst_str
+      integer           :: substr_pos1
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine read_2D_ASCII"
@@ -406,7 +415,16 @@
 
       open(unit=fid_ascii2din,file=trim(adjustl(filename)), status='old',action='read',err=2500)
 
-      read(fid_ascii2din,3000,err=2600,iostat=iostatus,iomsg=iomessage) A_nx        ! read header values
+      ! The header of the ESRI ASCII file has 6 lines
+      ! NCOLS (ncols)                 int
+      ! NROWS (nrows)                 int
+      ! XLLCORNER (xllcorner)         double
+      ! YLLCORNER (yllcorner)         double
+      ! CELLSIZE (cellsize)           double (and maybe a second double)
+      ! NODATA_VALUE (NODATA_value)   double or int
+
+      read(fid_ascii2din,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+      read(linebuffer080(7:),*,iostat=iostatus,iomsg=iomessage)A_nx
       if(iostatus.ne.0)then
         ! We might have an empty file
         ! Issue warning and return
@@ -416,27 +434,58 @@
         endif;enddo
         return
       endif
-      read(fid_ascii2din,3001,err=2600,iostat=iostatus,iomsg=iomessage) A_ny
-      allocate(A_XY(A_nx,A_ny))
-      read(fid_ascii2din,3002,err=2600,iostat=iostatus,iomsg=iomessage) A_xll
-      read(fid_ascii2din,3003,err=2600,iostat=iostatus,iomsg=iomessage) A_yll
-      read(fid_ascii2din,3004,err=2600,iostat=iostatus,iomsg=iomessage) A_dx,A_dy
-      read(fid_ascii2din,3005,err=2600,iostat=iostatus,iomsg=iomessage) A_Fill
+      read(fid_ascii2din,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+      read(linebuffer080(7:),*,iostat=iostatus,iomsg=iomessage)A_ny
+      read(fid_ascii2din,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+      read(linebuffer080(10:),*,iostat=iostatus,iomsg=iomessage)A_xll
+      read(fid_ascii2din,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+      read(linebuffer080(10:),*,iostat=iostatus,iomsg=iomessage)A_yll
+      read(fid_ascii2din,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+      read(linebuffer080(10:),*,iostat=iostatus,iomsg=iomessage)A_dx
+      ! test if two cell lengths are provided
+      read(linebuffer080(10:),*,iostat=iostatus,iomsg=iomessage)A_dx,A_dy
+      if(iostatus.ne.0)then
+        ! only one cell size provided; copy dx to dy
+        A_dy = A_dx
+      endif
 
-      do j=A_ny,1,-1
-        read(fid_ascii2din,3006,err=2600,iostat=iostatus,iomsg=iomessage) (A_XY(i,j), i=1,A_nx)
-        read(fid_ascii2din,*,iostat=iostatus,iomsg=iomessage)
-      enddo
+      ! Try to read the nondata value, first as a float
+      read(fid_ascii2din,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+      tst_str(1:20) = linebuffer080(13:33)
+      substr_pos1 = index(tst_str,'.')
+      if(substr_pos1.gt.0)then
+        ! period found, assume data are floats
+        read(linebuffer080(13:),*,iostat=iostatus,iomsg=iomessage)A_Fill
+        A_IsInt = .false.
+      else
+        read(linebuffer080(13:),*,iostat=iostatus,iomsg=iomessage)A_Fill_int
+        A_IsInt = .true.
+      endif
+
+      if(A_IsInt)then
+        allocate(A_XY_int(A_nx,A_ny))
+        do j=A_ny,1,-1
+          ! This format reads the full line of integers
+          read(fid_ascii2din,*,err=2600,iostat=iostatus,iomsg=iomessage) (A_XY_int(i,j), i=1,A_nx)
+        enddo
+      else
+        allocate(A_XY(A_nx,A_ny))
+        do j=A_ny,1,-1
+          ! This format ID directs to read 10 floats at a time, matching the Ash3d ASCII output format
+          read(fid_ascii2din,3006,err=2600,iostat=iostatus,iomsg=iomessage) (A_XY(i,j), i=1,A_nx)
+          read(fid_ascii2din,*,iostat=iostatus,iomsg=iomessage)
+        enddo
+      endif
 
       close(fid_ascii2din)
 
 !     format statements
-3000  format(6x,i5)
-3001  format(6x,i5)
-3002  format(10x,f15.3)
-3003  format(10x,f15.3)
-3004  format(10x,2f15.3)
-3005  format(13x,a6)
+!3000  format(6x,i5)
+!3001  format(6x,i5)
+!3002  format(10x,f15.3)
+!3003  format(10x,f15.3)
+!3004  format(10x,2f15.3)
+!3005  format(13x,a6)
 !3006  format(10f15.3)               ! Older ASCII output file from Ash3d used this format
 3006  format(10f18.6)
 

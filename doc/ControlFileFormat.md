@@ -431,7 +431,10 @@ GEBCO : https://www.gebco.net/
 NOAA Globe (1-km/30 arcsec) https://www.ngdc.noaa.gov/mgg/topo/globe.html  
 GTOPO30 (1-km/30 arcsec)  
 3. ESRI ASCII  
-This format is intended to import smoothed topographic data from a prior Ash3d run,
+This can be files downloaded from topography data providers such as https://www.gebco.net/ or
+https://opentopography.org/. Please make sure the downloaded domain includes not only the
+computational domain, but also a 2-ghost-cell boundary. Note,
+this format can also be used to import smoothed topographic data from a prior Ash3d run,
 exported with the command:  
 `Ash3d_PostProc 3d_tephra_fall.nc 15 1`
 

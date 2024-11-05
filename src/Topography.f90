@@ -1892,8 +1892,9 @@
       subroutine Load_Topo_Gridded_ASCII
 
       use Ash3d_ASCII_IO,  only : &
-         A_nx,A_ny,A_XY,A_xll,A_yll,A_dx,A_dy, &
-           read_2D_ASCII
+         A_nx,A_ny,A_XY,A_XY_int,A_xll,A_yll,A_dx,A_dy,A_IsInt, &
+           read_2D_ASCII,&
+           deallocate_ASCII
 
       character(len=80) :: linebuffer080
       integer :: start_lat_idx,start_lon_idx
@@ -1912,7 +1913,9 @@
       linebuffer080 = trim(adjustl(file_topo))
       call read_2D_ASCII(linebuffer080)
 
-      ! Full topo data is now stored in A_XY
+      ! Full topo data is now stored in A_XY of A_XY_int
+      !  ASCII data from prior Ash3d runs is stores as floats in A_XY, but
+      !  most ASCII topo data (e.g. gebco or from opentopo) is stored as integers
       ! For ASCII data, automatically pad array with two ghost cells
       ! These will be filled with edge values
       nlon_topo_fullgrid = A_nx + 4
@@ -2044,9 +2047,16 @@
       latcc_topo_subgrid(1:nlat_topo_subgrid) = &
          lat_topo_fullgrid(start_lat_idx:start_lat_idx+nlat_topo_subgrid-1)
 
-      topo_subgrid(3:nlon_topo_subgrid-2,3:nlat_topo_subgrid-2) = &
-         real(A_XY(start_lon_idx:start_lon_idx+nlon_topo_subgrid-5,&
-                  start_lat_idx:start_lat_idx+nlat_topo_subgrid-5),kind=sp)
+      if(A_IsInt)then
+        topo_subgrid(3:nlon_topo_subgrid-2,3:nlat_topo_subgrid-2) = &
+           real(A_XY_int(start_lon_idx:start_lon_idx+nlon_topo_subgrid-5,&
+                    start_lat_idx:start_lat_idx+nlat_topo_subgrid-5),kind=sp)
+      else
+        topo_subgrid(3:nlon_topo_subgrid-2,3:nlat_topo_subgrid-2) = &
+           real(A_XY(start_lon_idx:start_lon_idx+nlon_topo_subgrid-5,&
+                    start_lat_idx:start_lat_idx+nlat_topo_subgrid-5),kind=sp)
+      endif
+      call deallocate_ASCII
 
       topo_subgrid(1,1:nlat_topo_subgrid) = topo_subgrid(3,1:nlat_topo_subgrid)
       topo_subgrid(2,1:nlat_topo_subgrid) = topo_subgrid(3,1:nlat_topo_subgrid)
