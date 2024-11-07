@@ -4010,7 +4010,13 @@
         write(outlog(io),*)limiter," limiter is used."
         if(useCN) then
           write(outlog(io),*)&
-           "Diffusion is calculated via Crank-Nicolson."
+           "Diffusion is calculated implicitly."
+          write(outlog(io),*)&
+           "Note, if Imp_fac=0.5 then Crank-Nicolson is used (equal parts t and t+1 in stencil) solved with lapack." 
+          write(outlog(io),*)&
+           "If Imp_fac=1.0 then the solver is Backward Euler."
+          write(outlog(io),*)&
+           "If Imp_fac=0.0 (no fraction of t+1 step) then the solver is Forward Euler, but with lapack libraries."
         else
           write(outlog(io),*)"Diffusion is calculated explicitly."
         endif

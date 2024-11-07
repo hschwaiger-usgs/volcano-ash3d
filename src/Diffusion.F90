@@ -50,8 +50,9 @@
          !       explicit solver.  If either Imp_fac = 0.5 or 1.0, then the
          !       method is unconditionally stable, but accuracy requires a
          !       Imp_DT_fac to be around 1.0 - 4.0
-      real(kind=ip),parameter :: Imp_fac     = 0.5_ip    
-      real(kind=ip),public    :: Imp_DT_fac  = 4.0_ip
+      real(kind=ip),public  :: Imp_fac     = 0.5_ip    
+      real(kind=ip),public  :: Imp_DT_fac  = 4.0_ip
+
 
 #ifdef USEPOINTERS
       real(kind=ip),dimension(:,:,:),pointer,public :: kx  => null() 

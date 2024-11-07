@@ -529,8 +529,16 @@
         endif;enddo
         stop 1
       endif
-      ! Advection routines expect at least three cells. Adjust k as needed
-      if(kmax-kmin.le.1)then
+      ! Advection routines expect at least three cells. Adjust i,j,k as needed
+      if(imax-imin.le.2)then
+        imax = min(imax+1,nxmax)
+        imin = imax-2
+      endif
+      if(jmax-jmin.le.2)then
+        jmax = min(jmax+1,nymax)
+        jmin = jmax-2
+      endif
+      if(kmax-kmin.le.2)then
         kmax = min(kmax+1,nzmax)
         kmin = kmax-2
       endif

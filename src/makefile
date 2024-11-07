@@ -317,7 +317,7 @@ PPOBJS = Ash3d_VariableModules.o        \
          VotW.o                         \
          Help.o                         \
          Output_Vars.o                  \
-         Output_Results.o \
+         Output_Results.o               \
          Tephra.o                       \
          Source.o                       \
          Source_Umbrella.o              \
@@ -338,6 +338,8 @@ ifeq ($(USENETCDF), T)
   DATAOBJ = write_NETCDF.o
 endif
 
+all: Ash3d tools postproc
+
 Ash3d:  $(OBJECTS) $(DATAOBJ) Ash3d.F90 $(MFILE) $(SYSINC)
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c Ash3d.F90 
 	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d.o $(LIBS) -o $(ASH3DEXEC)
@@ -351,7 +353,7 @@ Ash3d_VariableModules.o: $(ASH3dCCSRC)/Ash3d_VariableModules.f90 $(MFILE) $(SYSI
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Ash3d_VariableModules.f90
 Input_Data.o: $(ASH3dCCSRC)/Input_Data.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Help.o Tephra.o VotW.o Diffusion.o Airports.o $(DATAOBJ) Output_Vars.o Source.o Source_Umbrella.o ResetParams.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Input_Data.f90
-ResetParams.o: $(ASH3dCCSRC)/ResetParams.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Tephra.o Output_Vars.o Source_Umbrella.o
+ResetParams.o: $(ASH3dCCSRC)/ResetParams.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Tephra.o Output_Vars.o Source_Umbrella.o Diffusion.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/ResetParams.f90
 Topography.o: Topography.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Tephra.o Calc_Mesh.o $(DATAOBJ) write_BINARY.o write_ASCII.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c Topography.f90
@@ -417,9 +419,6 @@ endif
 write_KML.o: $(ASH3dCCSRC)/write_KML.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Output_Vars.o Airports.o Tephra.o Source.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_KML.f90
 
-all: Ash3d tools postproc
-
-
 # Post-Processing tool
 postproc: $(ASH3dCCSRC)/Ash3d_PostProc.f90 $(PPOBJS) $(GRAFOBJ) $(DATAOBJ) $(MFILE) $(SYSINC)
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc.f90
@@ -482,12 +481,19 @@ install:
 
 uninstall:
 	rm -f $(INSTALLDIR)/bin/$(ASH3DEXEC)
-	rm -r $(INSTALLDIR)/share/GlobalAirports_ewert.txt
+	rm -f $(INSTALLDIR)/bin/Ash3d
+	rm -f $(INSTALLDIR)/bin/Ash3d_PostProc
+	rm -f $(INSTALLDIR)/bin/tools/Ash3d_ASCII_check
+	rm -f $(INSTALLDIR)/share/GlobalAirports_ewert.txt
 	rm -f $(INSTALLDIR)/share/VotW_ESP_v12_csv.txt
 	rm -f $(INSTALLDIR)/share/post_proc/CloudLoad_hsv.png
+	rm -f $(INSTALLDIR)/share/post_proc/USGSvid.png
+	rm -f $(INSTALLDIR)/share/post_proc/logo.png
 	rm -f $(INSTALLDIR)/share/post_proc/USGS_warning3.png
+	rm -f $(INSTALLDIR)/share/post_proc/world_cities.txt
 	rmdir $(INSTALLDIR)/share/post_proc
 	rmdir $(INSTALLDIR)/share
+	rmdir $(INSTALLDIR)/bin/tools
 	rmdir $(INSTALLDIR)/bin
 	rmdir $(INSTALLDIR)
 

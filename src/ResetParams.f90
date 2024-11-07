@@ -33,6 +33,8 @@
 ! THICKNESS_THRESH     = 1.0e-3
 ! StopValue_FracAshDep = 0.99
 ! DBZ_THRESH           = -2.0e+1
+! Imp_fac              = 0.5
+! Imp_DT_fac           = 4.0
 ! VelMod_umb           = 1
 ! lambda_umb           = 0.2
 ! N_BV_umb             = 0.02
@@ -79,6 +81,9 @@
 
       use solution,      only : &
          StopValue_FracAshDep
+
+      use Diffusion,     only : &
+         Imp_fac,Imp_DT_fac
 
       integer, parameter :: MAXPARAMS = 50
 
@@ -499,6 +504,32 @@
                               "to ",pvalue(i)
           endif;enddo
           DBZ_THRESH = pvalue(i)
+        elseif (pname(i).eq.'Imp_fac') then
+          ! error-checking
+          if (pvalue(i).lt.0.0_ip.or.pvalue(i).gt.1.0_ip)then
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: Imp_fac must be between 0 and 1"
+            endif;enddo
+            stop 1
+          endif
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"  Resetting Imp_fac from ",Imp_fac,&
+                              "to ",pvalue(i)
+          endif;enddo
+          Imp_fac = pvalue(i)
+        elseif (pname(i).eq.'Imp_DT_fac') then
+          ! error-checking
+          if (pvalue(i).lt.0.5_ip.or.pvalue(i).gt.4.0_ip)then
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: Imp_DT_fac should be between 0.5 and 4.0"
+            endif;enddo
+            stop 1
+          endif
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"  Resetting Imp_DT_fac from ",Imp_DT_fac,&
+                              "to ",pvalue(i)
+          endif;enddo
+          Imp_DT_fac = pvalue(i)
         elseif (pname(i).eq.'VelMod_umb') then
           if(abs(pvalue(i)-1.0_ip).lt.EPS_SMALL)then
             VelMod_umb = 1

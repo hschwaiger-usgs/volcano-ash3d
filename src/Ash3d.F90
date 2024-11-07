@@ -219,7 +219,7 @@
         ! Read airports/POI and allocate/initialize arrays
         ! We only need to do this if an output variable demands it since this is
         ! a burden every time step
-      if(Output_every_TS) &
+      if(Write_PT_Data) &
         call ReadAirports
 
       call alloc_arrays
@@ -525,6 +525,7 @@
 !------------------------------------------------------------------------------
 
             ! See whether the ash has hit any airports/POI
+          if (Write_PT_Data) &
           call FirstAsh
 
             ! Track ash on vertical profiles
