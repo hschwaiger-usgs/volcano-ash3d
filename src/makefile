@@ -67,7 +67,7 @@ USGSROOT=/opt/USGS
 # branch with.
 ASH3dCCSRC=./
 
-INSTALLDIR=/opt/USGS/Ash3d
+INSTALLDIR=$(USGSROOT)/Ash3d
 
 # DATA FORMATS
 #  For each data format you want to include in the library, set the corresponding

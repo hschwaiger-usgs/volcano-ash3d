@@ -153,11 +153,35 @@
       use global_param,  only : &
          useCN
 
+      use mesh,          only : &
+         nxmax,nymax,nzmax
+
+      use solution,      only : &
+         imin,imax,jmin,jmax,kmin,kmax
+
       integer :: i
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine DiffuseHorz"
       endif;enddo
+
+#ifdef FAST_SUBGRID
+      ! Advection routines have been run so we need to add an extra cell all around
+      ! the subgrid
+      imin = max(1,imin-1)
+      imax = min(nxmax,imax+1)
+      jmin = max(1,jmin-1)
+      jmax = min(nymax,jmax+1)
+      kmin = max(1,kmin-1)
+      kmax = min(nzmax,kmax+1)
+#else
+      imin = 1
+      imax = nxmax
+      jmin = 1
+      jmax = nymax
+      kmin = 1
+      kmax = nzmax
+#endif
 
       if(useCN)then
         if(mod(i,2).eq.0) then
@@ -325,7 +349,14 @@
           do j=jmin,jmax
             ! Initialize cell-centered values for this x-row
             ! Note: ghost cells should contain q_cc values at edge (Neumann)
-            update_cc(0:ncells+1) = 0.0_ip
+            update_cc(0:nxmax+1) = 0.0_ip
+            q_cc(0:nxmax+1)      = 0.0_ip
+            kap_cc(0:nxmax+1)    = 0.0_ip
+            sig_I(1:nxmax+1)     = 0.0_ip
+            ds_I(1:nxmax+1)      = 0.0_ip
+            dq_I(1:nxmax+1)      = 0.0_ip
+            k_ds_I(1:nxmax+1)    = 0.0_ip
+
             kap_cc(rmin-1:rmin-1+ncells+1) = kappa_pd(   rmin-1:rmin-1+ncells+1,j,k)
             q_cc(  rmin-1:rmin-1+ncells+1) = concen_pd(  rmin-1:rmin-1+ncells+1,j,k,n,ts0)
             sig_I( rmin  :rmin-1+ncells+1) = sigma_nx_pd(rmin  :rmin-1+ncells+1,j,k)
@@ -357,13 +388,11 @@
 
               update_cc(l_cc) = LFluct_Rbound + RFluct_Lbound
 
-            enddo ! loop over l (cell centers)
-            update_cc(rmin:rmin-1+ncells) = update_cc(rmin:rmin-1+ncells)
+            enddo ! loop over l_cc (cell centers)
             concen_pd(   rmin:rmin-1+ncells,j,k,n,ts1) = &
                concen_pd(rmin:rmin-1+ncells,j,k,n,ts0) + &
                update_cc(rmin:rmin-1+ncells)
-
-          enddo ! 
+          enddo !
         enddo ! loop over j=1,nymax
      !!!! !$OMP END PARALLEL do
 
@@ -471,7 +500,14 @@
           do i=imin,imax
             ! Initialize cell-centered values for this y-row
             ! Note: ghost cells should contain q_cc values at edge (Neumann)
-            update_cc(0:ncells+1) = 0.0_ip
+            update_cc(0:nymax+1) = 0.0_ip
+            q_cc(0:nymax+1)      = 0.0_ip
+            kap_cc(0:nymax+1)    = 0.0_ip
+            sig_I(1:nymax+1)     = 0.0_ip
+            ds_I(1:nymax+1)      = 0.0_ip
+            dq_I(1:nymax+1)      = 0.0_ip
+            k_ds_I(1:nymax+1)    = 0.0_ip
+
             kap_cc(rmin-1:rmin-1+ncells+1) = kappa_pd(   i,rmin-1:rmin-1+ncells+1,k)
             q_cc(  rmin-1:rmin-1+ncells+1) = concen_pd(  i,rmin-1:rmin-1+ncells+1,k,n,ts0)
             sig_I(rmin:rmin-1+ncells+1)    = sigma_ny_pd(i,rmin  :rmin-1+ncells+1,k)
@@ -502,7 +538,6 @@
 
               update_cc(l_cc) = LFluct_Rbound + RFluct_Lbound
             enddo ! loop over l (cell centers)
-            update_cc(rmin:rmin-1+ncells) = update_cc(rmin:rmin-1+ncells)
             concen_pd(   i,rmin:rmin-1+ncells,k,n,ts1) = &
                concen_pd(i,rmin:rmin-1+ncells,k,n,ts0) + &
                update_cc(  rmin:rmin-1+ncells)
@@ -613,7 +648,14 @@
           do i=imin,imax
             ! Initialize cell-centered values for this z-row
             ! Note: ghost cells should contain q_cc values at edge (Neumann)
-            update_cc(0:ncells+1) = 0.0_ip
+            update_cc(0:nzmax+1) = 0.0_ip
+            q_cc(0:nzmax+1)      = 0.0_ip
+            kap_cc(0:nzmax+1)    = 0.0_ip
+            sig_I(1:nzmax+1)     = 0.0_ip
+            ds_I(1:nzmax+1)      = 0.0_ip
+            dq_I(1:nzmax+1)      = 0.0_ip
+            k_ds_I(1:nzmax+1)    = 0.0_ip
+
             kap_cc(rmin-1:rmin-1+ncells+1) = kappa_pd(   i,j,rmin-1:rmin-1+ncells+1)
             q_cc(  rmin-1:rmin-1+ncells+1) = concen_pd(  i,j,rmin-1:rmin-1+ncells+1,n,ts0)
             sig_I( rmin  :rmin-1+ncells+1) = sigma_nz_pd(i,j,rmin  :rmin-1+ncells+1)
@@ -646,7 +688,6 @@
               update_cc(l_cc) = LFluct_Rbound + RFluct_Lbound
 
             enddo ! loop over l (cell centers)
-            update_cc(rmin:rmin-1+ncells) = update_cc(rmin:rmin-1+ncells)
             concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = &
                concen_pd(i,j,rmin:rmin-1+ncells,n,ts0) + &
                update_cc(rmin:rmin-1+ncells)

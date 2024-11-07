@@ -75,3 +75,9 @@ yes                 # Calculate projected coordinates internally?
 3d_tephra_fall.nc   # Name of output file
 TC2_XY_MSH          # Title of simulation
 no comment          # Comment
+***********************
+# Reset parameters
+***********************
+OPTMOD=RESETPARAMS
+Imp_fac              = 0.0
+Imp_DT_fac           = 0.5
