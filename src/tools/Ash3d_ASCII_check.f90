@@ -10,7 +10,7 @@
         EPS_TINY
 
       use Ash3d_ASCII_IO,  only : &
-        A_XY,A_nx,A_ny,A_xll,A_yll,A_dx,A_dy, &
+        A_XY,A_nx,A_ny,A_xll,A_yll,A_dx,A_dy,A_Fill, &
           read_2D_ASCII
 
       implicit none
@@ -142,6 +142,12 @@
       dx_1  = A_dx
       dy_1  = A_dy
       allocate(XY_1(nx_1,ny_1))
+      ! zero out any NaN so that it doesn't throw off the error
+      do i=1,nx_1
+        do j=1,ny_1
+          if(abs(A_XY(i,j)-A_Fill).lt.0.01_ip)A_XY(i,j)=0.0_ip
+        enddo
+      enddo
       XY_1  = A_XY
       deallocate(A_XY)
 
@@ -156,6 +162,12 @@
       dx_2  = A_dx
       dy_2  = A_dy
       allocate(XY_2(nx_2,ny_2))
+      ! zero out any NaN so that it doesn't throw off the error
+      do i=1,nx_1
+        do j=1,ny_1
+          if(abs(A_XY(i,j)-A_Fill).lt.0.01_ip)A_XY(i,j)=0.0_ip
+        enddo
+      enddo
       XY_2  = A_XY
       deallocate(A_XY)
 
