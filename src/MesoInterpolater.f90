@@ -45,7 +45,7 @@
          vx_pd,vy_pd,vz_pd,vf_pd
 
       use time_data,       only : &
-         Simtime_in_hours,time,dt,SimStartHour,dt_meso_last,dt_meso_next, &
+         Simtime_in_hours,time,dt,dt_ip,SimStartHour,dt_meso_last,dt_meso_next, &
          tw1,tw2,tw_tot
 
       use io_data,       only : &
@@ -255,12 +255,13 @@
         dt = dt_meso_last + (dt_meso_next-dt_meso_last)*Interval_Frac
         if (((NextWriteTime-time).gt.EPS_SMALL).and.(NextWriteTime-time.lt.dt))then
           ! Don't let time advance past the next output time step
-            dt = NextWritetime-time
+          dt = NextWritetime-time
         endif
         if(time+dt.gt.Simtime_in_hours)then
           ! Don't let time advance past the requested stop time
           dt = Simtime_in_hours-time
         endif
+        dt_ip = real(dt,kind=ip)
       else
         call Adjust_DT(.false.)
       endif

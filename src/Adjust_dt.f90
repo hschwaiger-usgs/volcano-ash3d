@@ -75,7 +75,7 @@
       !-------------------------------------------------------
       ! Advection time restriction follows Eq. 4.16 of LeVeque
       !   nu = abs( u dt/dx) < 1  where nu is the CFL number
-      ! We impose the CFL number (~0.8 or so, but < 1.0) so we have
+      ! We impose the CFL number (default is 0.8 or so, but must be < 1.0) so we have
       !   dt = CFL / abs(u/dx)
       ! We need to find the largest u/dx quotient across the grid and
       ! similarly for v/dy and w/dz to get the most restrictive dt

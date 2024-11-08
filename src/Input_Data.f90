@@ -751,7 +751,7 @@
         write(outlog(io),*)"      EXPLDIFF: Diffusion will be calculated via the explicit solver."
 #endif
 #ifdef CRANKNIC
-        write(outlog(io),*)"      CRANKNIC: Diffusion will be calculated via Crank-Nicolson"
+        write(outlog(io),*)"      CRANKNIC: Diffusion will be calculated implicitly (via Crank-Nicolson)"
 #endif
 #ifdef LIM_NONE
         write(outlog(io),*)"      LIM_NONE: Advection routines use no limiters"
@@ -950,7 +950,7 @@
            get_ESP
 
       use Diffusion,     only : &
-         diffusivity_horz,diffusivity_vert,&
+         diffusivity_horz,diffusivity_vert,Imp_fac,Imp_DT_fac, &
            Allocate_Diff
 
       use help,          only : &
@@ -1026,7 +1026,8 @@
       logical           :: runAsForecast       = .false.  ! This will be changed if year=0
       real(kind=dp)     :: FC_Offset = 0.0_dp
       real(kind=ip)     :: Davg,Aaxis,Baxis,Caxis
-      logical           :: od
+      logical           :: IsOpen
+      logical           :: IsSat
       logical           :: IsComment
 
       INTERFACE
@@ -1157,8 +1158,8 @@
       enddo
       ! Reopen or rewind to begining so we can start parsing block 1
       !   check to make sure the control file is open
-      inquire(unit=fid_ctrlfile,opened=od)
-      if(od)then
+      inquire(unit=fid_ctrlfile,opened=IsOpen)
+      if(IsOpen)then
         rewind(fid_ctrlfile)
       else
         open(unit=fid_ctrlfile,file=infile,status='old',action='read',err=9001)
@@ -4010,13 +4011,48 @@
         write(outlog(io),*)limiter," limiter is used."
         if(useCN) then
           write(outlog(io),*)&
-           "Diffusion is calculated implicitly."
+           "Diffusion is calculated implicitly using lapack routines for solving Ax=b."
           write(outlog(io),*)&
-           "Note, if Imp_fac=0.5 then Crank-Nicolson is used (equal parts t and t+1 in stencil) solved with lapack." 
+           "Note, Imp_fac controls the amount of the t+1 step is used in the stencil."
           write(outlog(io),*)&
-           "If Imp_fac=1.0 then the solver is Backward Euler."
+           "  Imp_fac = 1.0 (  0% t, 100% t+1) :: Backward Euler"
           write(outlog(io),*)&
-           "If Imp_fac=0.0 (no fraction of t+1 step) then the solver is Forward Euler, but with lapack libraries."
+           "  Imp_fac = 0.5 ( 50% t,  50% t+1) :: Crank-Nicolson"
+          write(outlog(io),*)&
+           "  Imp_fac = 0.0 (100% t,   0% t+1) :: Forward Euler"
+          write(outlog(io),*)&
+           "  In this run, we are using Imp_fac = ",real(Imp_fac,kind=4)
+          IsSat = .false.
+          if(Imp_fac.lt.0.0_ip)then
+            ! error
+            write(outlog(io),*)"    ERROR: Imp_fac must be > 0"
+            stop 1
+          elseif(Imp_fac.lt.EPS_SMALL)then
+            ! FE
+            write(outlog(io),*)"    Forward Euler"
+            write(outlog(io),*)"     CFL condition requires that Imp_DT_fac<=0.5"
+            if(Imp_DT_fac.le.0.5_ip)IsSat = .true.
+          elseif(abs(Imp_fac-0.5_ip).lt.EPS_SMALL)then
+            ! CN
+            write(outlog(io),*)"    Crank-Nicolson"
+            write(outlog(io),*)"     Unconditionally stable, but for accuracy, please use Imp_DT_fac<=4.0"
+            if(Imp_DT_fac.le.4.0_ip)IsSat = .true.
+          elseif(abs(Imp_fac-1.0_ip).lt.EPS_SMALL)then
+            ! BE
+            write(outlog(io),*)"    Backward Euler"
+            write(outlog(io),*)"     Unconditionally stable, but for accuracy, please use Imp_DT_fac<=4.0"
+            if(Imp_DT_fac.le.4.0_ip)IsSat = .true.
+          else
+            ! Some other blend
+            write(outlog(io),*)"    Non-standard mix of t and t+1"
+            write(outlog(io),*)"     Unknown stability; probably should use Imp_DT_fac<=0.5"
+            if(Imp_DT_fac.le.0.5_ip)IsSat = .true.
+          endif
+          if(IsSat)then
+             write(outlog(io),*)"     Good, it satisfies the condition. Imp_DT_fac=",real(Imp_DT_fac,kind=4)
+          else
+            write(outlog(io),*)"     WARNING: Condition not satisfied. Imp_DT_fac=",real(Imp_DT_fac,kind=4)
+          endif
         else
           write(outlog(io),*)"Diffusion is calculated explicitly."
         endif
