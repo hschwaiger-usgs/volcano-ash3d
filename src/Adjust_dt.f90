@@ -61,7 +61,7 @@
       real(kind=ip) :: vxmax,vxmax_dx
       real(kind=ip) :: vymax,vymax_dy
       integer       :: fac
-      real(kind=ip) :: vzmax_dz
+      real(kind=ip) :: vzmax,vzmax_dz
       real(kind=dp) :: diffx_dx,diffy_dy,diffz_dz
       real(kind=ip) :: minsig
       real(kind=ip) :: maxdiffus
@@ -98,6 +98,10 @@
           vymax = real(maxval(abs(vy_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax))),kind=ip)
           vymax = vymax*MPS_2_KMPHR
           vymax_dy = vymax/dy
+          !vzmax = real(maxval(abs(vz_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax))) + &
+          !             maxval(abs(vf_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax,1:nsmax))),kind=ip)
+          !vzmax = vzmax*MPS_2_KMPHR
+          !vzmax_dz = vzmax/minval(dz_vec_pd)
         else
           vxmax_dx = 0.0_ip
           vymax_dy = 0.0_ip
@@ -108,8 +112,8 @@
         do i=1,nxmax
           do j=1,nymax
             do k=1,nzmax
-
               if(IsLatLon)then
+
                 ! Advect in x
                 minsig = minval(sigma_nx_pd(i:i+1,j,k))
                 tmp1 = real(abs(vx_meso_next_step_sp(i,j,k)),kind=ip)*MPS_2_KMPHR*minsig/kappa_pd(i,j,k)
@@ -118,7 +122,7 @@
                 minsig = minval(sigma_ny_pd(i,j:j+1,k))
                 tmp2 = real(abs(vy_meso_next_step_sp(i,j,k)),kind=ip)*MPS_2_KMPHR*minsig/kappa_pd(i,j,k)
                 if(tmp2.gt.vymax_dy)vymax_dy=tmp2
-
+              endif
               ! Advect in z
               ! Note: for this to work, we really need to set vf_pd=0 for all
               !       species that are flushed out of the system.  Otherwise, this
@@ -129,7 +133,6 @@
                        *MPS_2_KMPHR / dz_vec_pd(k)
               if(tmp3.gt.vzmax_dz) vzmax_dz = tmp3
 
-              endif
             enddo
           enddo
         enddo
@@ -163,7 +166,7 @@
                 tmp2 = abs(vy_pd(i,j,k))*minsig/kappa_pd(i,j,k)
                 if(tmp2.gt.vymax_dy) vymax_dy=tmp2
               endif
-              ! Advect in y
+              ! Advect in z
               ! Note: for this to work, we really need to set vf_pd=0 for all
               !       species that are flushed out of the system. Otherwise, this
               !       will always be dominated by the large grain sizes with the
