@@ -82,7 +82,9 @@
 !                 hgt as signed 16 bit integer binary
 !
 !    3 : ESRI ASCII 
-!        This currently is not set up as a generic ESRI ASCII input, but rather
+!        This is set up as a generic ESRI ASCII input, but tested with ASCII files
+!        from OpenTopography and from gebco.com. Either integers or floats are
+!        read based on the variable type for NODATA_value. This reader can also read
 !        the ESRI ASCII topography file written by
 !          Ash3d_PostProc 3d_tephra_fall.nc 15 1
 !        This output file (Topography____final.dat) likely already had a smoothing
@@ -2536,7 +2538,8 @@
               write(outlog(io),*)" WARNING: Width of smoothing kernel (4x radius) is less than"
               write(outlog(io),*)"          the grid size of Met data."
               write(outlog(io),*)"    Smoothing radius (km)         = ",real(rad,kind=4)
-              write(outlog(io),*)"    Shortest met grid length (km) = ",real(MR_minlen/1000.0_ip,kind=4)
+              write(outlog(io),*)"    Shortest met grid length (km) = ",real(MR_minlen,kind=4)
+              !write(outlog(io),*)"    Shortest met grid length (km) = ",real(MR_minlen/1000.0_ip,kind=4)
             endif;enddo
           elseif(rad.gt.cell_len*12.5_ip)then
             ! Conversely, issue a warning if it is too big since this will choke up the smoothing kernel
@@ -2552,7 +2555,8 @@
             ! Report on the smoothing length relative to the comp and met grids
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"    Smoothing radius (km)          = ",real(rad,kind=4)
-              write(outlog(io),*)"    Shortest met grid length (km)  = ",real(MR_minlen/1000.0_ip,kind=4)
+              write(outlog(io),*)"    Shortest met grid length (km)  = ",real(MR_minlen,kind=4)
+              !write(outlog(io),*)"    Shortest met grid length (km)  = ",real(MR_minlen/1000.0_ip,kind=4)
               write(outlog(io),*)"    Shortest comp grid length (km) = ",real(cell_len,kind=4)
             endif;enddo
           endif

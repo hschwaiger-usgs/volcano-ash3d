@@ -39,7 +39,8 @@
       use global_param,  only : &
          useCalcFallVel,useDiffusion,useHorzAdvect,useVertAdvect,&
          useTemperature,DT_MIN,EPS_TINY,EPS_SMALL,&
-         nmods,OPTMOD_names,StopConditions,CheckConditions      
+         nmods,OPTMOD_names,StopConditions,CheckConditions, &
+         useVarDiffH,useVarDiffV
 
       use mesh,          only : &
          ivent,jvent,nxmax,nymax,nzmax,nsmax,ts0,ts1,ZPADDING,dz_vec_pd,&
@@ -128,6 +129,9 @@
 !         Insert 'use' statements here
 !
       use Topography
+
+      use Diffusivity_Variable
+
 !------------------------------------------------------------------------------
 
       implicit none
@@ -197,6 +201,7 @@
 !
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Now looping through optional modules found in input file"
+        write(outlog(io),*)"Found ",nmods," optional modules"
       endif;enddo
       do i=1,nmods
         do io=1,2;if(VB(io).le.verbosity_essential)then
@@ -208,6 +213,12 @@
             write(outlog(io),*)"  Reading input block for TOPO"
           endif;enddo
           call input_data_Topo
+        endif
+        if(OPTMOD_names(i).eq.'VARDIFF')then
+          do io=1,2;if(VB(io).le.verbosity_info)then    
+            write(outlog(io),*)"  Reading input block for VARDIFF"
+          endif;enddo
+          call input_data_VarDiff
         endif
       enddo
       do io=1,2;if(VB(io).le.verbosity_info)then    
@@ -284,6 +295,8 @@
 !       OPTIONAL MODULES
 !         Insert calls to optional variable allocation subroutines here
 !
+      if(useVarDiffV)                  call Allocate_Atmosphere_Met
+      if(useVarDiffH.or.useVarDiffV)   call Allocate_VarDiff_Met
 !------------------------------------------------------------------------------
       ! Allocate all the output variables
       call Allocate_Output_UserVars(nxmax,nymax,nzmax,nsmax)
@@ -323,6 +336,8 @@
 !       OPTIONAL MODULES
 !         Insert calls to special MesoInterpolaters subroutines here
 !
+        if(useVarDiffH)     call Set_VarDiffH_Meso(Load_MesoSteps,Interval_Frac)
+        if(useVarDiffV)     call Set_VarDiffV_Meso(Load_MesoSteps,Interval_Frac)
 !------------------------------------------------------------------------------
 
 !------------------------------------------------------------------------------
@@ -330,6 +345,12 @@
 !         Insert calls to prep user-specified output
 !
       if(useTopo) call Prep_output_Topo
+      if(useVarDiffH.or.useVarDiffV)then
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
+          write(outlog(io),*)"Calling Prep_output_VarDiff."
+        endif;enddo
+        call Prep_output_VarDiff
+      endif
 !------------------------------------------------------------------------------
 
         ! Call output_results before time loop to create output files
@@ -396,6 +417,14 @@
 !       OPTIONAL MODULES
 !         Insert calls to special MesoInterpolaters subroutines here
 !
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
+          write(outlog(io),*)"Calling Set_VarDiffH_Meso."
+        endif;enddo
+        if(useVarDiffH)     call Set_VarDiffH_Meso(Load_MesoSteps,Interval_Frac)
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
+          write(outlog(io),*)"Calling Set_VarDiffV_Meso."
+        endif;enddo
+        if(useVarDiffV)     call Set_VarDiffV_Meso(Load_MesoSteps,Interval_Frac)
 !------------------------------------------------------------------------------
 
           ! Determine if (and which) eruptive pulses are active in the current dt
@@ -526,7 +555,7 @@
 
             ! See whether the ash has hit any airports/POI
           if (Write_PT_Data) &
-          call FirstAsh
+            call FirstAsh
 
             ! Track ash on vertical profiles
           if (Write_PR_Data)then
@@ -549,6 +578,12 @@
 !       OPTIONAL MODULES
 !         Insert calls output routines (every output-step) here
 !
+          if(useVarDiffH.or.useVarDiffV)then
+            do io=1,2;if(VB(io).le.verbosity_debug1)then
+              write(outlog(io),*)"Calling Prep_output_VarDiff."
+            endif;enddo
+            call Prep_output_VarDiff
+          endif
 !------------------------------------------------------------------------------
           call output_results
           !if ((WriteAirportFile_ASCII.or.WriteAirportFile_KML).and. &
@@ -780,6 +815,7 @@
 !         Insert calls deallocation routines here
 !
       if(useTopo)                     call Deallocate_Topo
+      if(useVarDiffH.or.useVarDiffV)  call Deallocate_VarDiff_Met
 !------------------------------------------------------------------------------
 
       close(fid_logfile)       !close log file 
