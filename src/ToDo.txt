@@ -47,6 +47,10 @@ Add openmp directives around the outer loops for both CN and Expl.
 
 Add an openmp branch just for reading the next windfile prior to when it is needed.
 
+Strip lines of the input file of tabs and replace with spaces for export to
+netcdf output fileStrip lines of the input file of tabs and replace with spaces for export to
+netcdf output file..
+
 ----------------------------------
 Ash3d_PostProc
 ----------------------------------

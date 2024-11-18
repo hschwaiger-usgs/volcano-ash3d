@@ -18,7 +18,7 @@
 !           0 = no vertical modification; z-grid remains 0-> top throughout the domain
 !           1 = shifted; s = z-z_surf; computational grid is uniformly shifted upward
 !               everywhere by topography
-!           2 = sigma-altitude; s=(z-z_surf)/(z_top-z_surf); topography has decaying
+!           2 = sigma-altitude; s=z_top(z-z_surf)/(z_top-z_surf); topography has decaying
 !               influence with height
 !  Line 2 indicates the topography data format followed by the smoothing radius in km
 !  Topofile format must be one of

@@ -58,23 +58,25 @@
       !Exp_UnStab   = -0.25
 
       ! Set the number of output variables for this module
-      integer, parameter :: nvar_User2d_static_XY_VarDiff = 0
-      integer, parameter :: nvar_User2d_XY_VarDiff        = 1 ! Pbl
-      integer, parameter :: nvar_User3d_XYGs_VarDiff      = 0
-      integer, parameter :: nvar_User3d_XYZ_VarDiff       = 3 ! khorz, kvert, Ri
-      integer, parameter :: nvar_User4d_XYZGs_VarDiff     = 0
+      ! This depends on settings from the input block
+      logical :: use_Output_Vars_VarDiff       = .true.
+      integer :: nvar_User2d_static_XY_VarDiff = 0
+      integer :: nvar_User2d_XY_VarDiff        = 0 ! If using Kz, then =1 : Pbl
+      integer :: nvar_User3d_XYGs_VarDiff      = 0
+      integer :: nvar_User3d_XYZ_VarDiff       = 0 ! If using Kh, then =1 khorz; if also Kz, then =3 kvert, Ri
+      integer :: nvar_User4d_XYZGs_VarDiff     = 0
 
-      character(len=30),dimension(nvar_User2d_XY_VarDiff) :: temp_2d_name_VarDiff
-      character(len=30),dimension(nvar_User2d_XY_VarDiff) :: temp_2d_unit_VarDiff
-      character(len=30),dimension(nvar_User2d_XY_VarDiff) :: temp_2d_lname_VarDiff
-      real(kind=op),    dimension(nvar_User2d_XY_VarDiff) :: temp_2d_MissVal_VarDiff
-      real(kind=op),    dimension(nvar_User2d_XY_VarDiff) :: temp_2d_FillVal_VarDiff
+      character(len=30),dimension(:),allocatable :: temp_2d_name_VarDiff
+      character(len=30),dimension(:),allocatable :: temp_2d_unit_VarDiff
+      character(len=30),dimension(:),allocatable :: temp_2d_lname_VarDiff
+      real(kind=op),    dimension(:),allocatable :: temp_2d_MissVal_VarDiff
+      real(kind=op),    dimension(:),allocatable :: temp_2d_FillVal_VarDiff
 
-      character(len=30),dimension(nvar_User3d_XYZ_VarDiff) :: temp_3d_name_VarDiff
-      character(len=30),dimension(nvar_User3d_XYZ_VarDiff) :: temp_3d_unit_VarDiff
-      character(len=30),dimension(nvar_User3d_XYZ_VarDiff) :: temp_3d_lname_VarDiff
-      real(kind=op),    dimension(nvar_User3d_XYZ_VarDiff) :: temp_3d_MissVal_VarDiff
-      real(kind=op),    dimension(nvar_User3d_XYZ_VarDiff) :: temp_3d_FillVal_VarDiff
+      character(len=30),dimension(:),allocatable :: temp_3d_name_VarDiff
+      character(len=30),dimension(:),allocatable :: temp_3d_unit_VarDiff
+      character(len=30),dimension(:),allocatable :: temp_3d_lname_VarDiff
+      real(kind=op),    dimension(:),allocatable :: temp_3d_MissVal_VarDiff
+      real(kind=op),    dimension(:),allocatable :: temp_3d_FillVal_VarDiff
 
       ! These are used to keep track of which index in the global list, this
       ! modules output vars corespond to
@@ -175,10 +177,10 @@
 
       implicit none
 
-      character(len=3)  :: answer
+      character(len=3 )  :: answer
       character(len=80)  :: linebuffer080
       integer :: ios,ioerr
-      character(len=20) :: mod_name
+      character(len=20)  :: mod_name
       integer :: substr_pos
 
       open(unit=10,file=infile,status='old',err=1900)
@@ -269,6 +271,17 @@
 
       endif
 
+      ! Now set up output variable options
+      if(use_Output_Vars_VarDiff.and.useVarDiffH)then
+        nvar_User3d_XYZ_VarDiff = nvar_User3d_XYZ_VarDiff + 1  ! for Kh
+      endif
+
+      if(use_Output_Vars_VarDiff.and.useVarDiffV)then
+        nvar_User2d_XY_VarDiff  = nvar_User2d_XY_VarDiff  + 1  ! for Pbl
+        nvar_User3d_XYZ_VarDiff = nvar_User3d_XYZ_VarDiff + 1  ! for Kv
+        nvar_User3d_XYZ_VarDiff = nvar_User3d_XYZ_VarDiff + 1  ! for Ri
+      endif
+
 2010  continue
       close(10)
 
@@ -297,7 +310,7 @@
       subroutine Allocate_VarDiff_Met
 
       use global_param,  only : &
-         PI
+         PI,useVarDiffH,useVarDiffV
 
       use io_data,       only : &
          nvar_User2d_static_XY,nvar_User3d_XYGs,nvar_User2d_XY,&
@@ -311,12 +324,15 @@
 
       implicit none
 
+      integer :: i
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"--------------------------------------------------"
         write(outlog(io),*)"---------- ALLOCATE_VARDIFF_MET ------------------"
         write(outlog(io),*)"--------------------------------------------------"
       endif;enddo
+
+      ! HFS only allocate the bits needed for Kh vs Kv
 
       allocate(dVel_dz_MetP_sp(nx_submet,ny_submet,np_fullmet))
       allocate(du_dx_MetP_sp(nx_submet,ny_submet,np_fullmet))
@@ -362,29 +378,50 @@
       indx_User3d_XYZ_VarDiff       = nvar_User3d_XYZ
       indx_User4d_XYZGs_VarDiff     = nvar_User4d_XYZGs
 
-      temp_2d_name_VarDiff(1) = "PBL"
-      temp_2d_lname_VarDiff(1) = "Planetary Boundary Layer"
-      temp_2d_unit_VarDiff(1) = "km"
-      temp_2d_MissVal_VarDiff(1) = -9999.0_op
-      temp_2d_FillVal_VarDiff(1) = -9999.0_op
+      ! Allocate output variables if needed
+      if(.not.allocated(temp_2d_name_VarDiff))allocate(temp_2d_name_VarDiff(nvar_User2d_XY_VarDiff))
+      if(.not.allocated(temp_2d_unit_VarDiff))allocate(temp_2d_unit_VarDiff(nvar_User2d_XY_VarDiff))
+      if(.not.allocated(temp_2d_lname_VarDiff))allocate(temp_2d_lname_VarDiff(nvar_User2d_XY_VarDiff))
+      if(.not.allocated(temp_2d_MissVal_VarDiff))allocate(temp_2d_MissVal_VarDiff(nvar_User2d_XY_VarDiff))
+      if(.not.allocated(temp_2d_FillVal_VarDiff))allocate(temp_2d_FillVal_VarDiff(nvar_User2d_XY_VarDiff))
 
-      temp_3d_name_VarDiff(1) = "Kh"
-      temp_3d_lname_VarDiff(1) = "Diffusivity_Horizontal"
-      temp_3d_unit_VarDiff(1) = "m2/s"
-      temp_3d_MissVal_VarDiff(1) = -9999.0_op
-      temp_3d_FillVal_VarDiff(1) = -9999.0_op
+      if(.not.allocated(temp_3d_name_VarDiff))allocate(temp_3d_name_VarDiff(nvar_User3d_XYZ_VarDiff))
+      if(.not.allocated(temp_3d_unit_VarDiff))allocate(temp_3d_unit_VarDiff(nvar_User3d_XYZ_VarDiff))
+      if(.not.allocated(temp_3d_lname_VarDiff))allocate(temp_3d_lname_VarDiff(nvar_User3d_XYZ_VarDiff))
+      if(.not.allocated(temp_3d_MissVal_VarDiff))allocate(temp_3d_MissVal_VarDiff(nvar_User3d_XYZ_VarDiff))
+      if(.not.allocated(temp_3d_FillVal_VarDiff))allocate(temp_3d_FillVal_VarDiff(nvar_User3d_XYZ_VarDiff))
 
-      temp_3d_name_VarDiff(2) = "Kv"
-      temp_3d_lname_VarDiff(2) = "Diffusivity_Vertical"
-      temp_3d_unit_VarDiff(2) = "m2/s"
-      temp_3d_MissVal_VarDiff(2) = -9999.0_op
-      temp_3d_FillVal_VarDiff(2) = -9999.0_op
+      i = 0 
+      if(use_Output_Vars_VarDiff.and.useVarDiffH)then
+        i = 1
+        temp_3d_name_VarDiff(i) = "Kh"
+        temp_3d_lname_VarDiff(i) = "Diffusivity_Horizontal"
+        temp_3d_unit_VarDiff(i) = "m2/s"
+        temp_3d_MissVal_VarDiff(i) = -9999.0_op
+        temp_3d_FillVal_VarDiff(i) = -9999.0_op
+      endif
 
-      temp_3d_name_VarDiff(3) = "Ri"
-      temp_3d_lname_VarDiff(3) = "Gradient_Richardson_Number"
-      temp_3d_unit_VarDiff(3) = "none"
-      temp_3d_MissVal_VarDiff(3) = -9999.0_op
-      temp_3d_FillVal_VarDiff(3) = -9999.0_op
+      if(use_Output_Vars_VarDiff.and.useVarDiffV)then
+        temp_2d_name_VarDiff(1) = "PBL"
+        temp_2d_lname_VarDiff(1) = "Planetary Boundary Layer"
+        temp_2d_unit_VarDiff(1) = "km"
+        temp_2d_MissVal_VarDiff(1) = -9999.0_op
+        temp_2d_FillVal_VarDiff(1) = -9999.0_op
+
+        i = i + 1
+        temp_3d_name_VarDiff(i) = "Kv"
+        temp_3d_lname_VarDiff(i) = "Diffusivity_Vertical"
+        temp_3d_unit_VarDiff(i) = "m2/s"
+        temp_3d_MissVal_VarDiff(i) = -9999.0_op
+        temp_3d_FillVal_VarDiff(i) = -9999.0_op
+
+        i = i + 1
+        temp_3d_name_VarDiff(i) = "Ri"
+        temp_3d_lname_VarDiff(i) = "Gradient_Richardson_Number"
+        temp_3d_unit_VarDiff(i) = "none"
+        temp_3d_MissVal_VarDiff(i) = -9999.0_op
+        temp_3d_FillVal_VarDiff(i) = -9999.0_op
+      endif
 
       nvar_User2d_static_XY = nvar_User2d_static_XY + nvar_User2d_static_XY_VarDiff
       nvar_User2d_XY        = nvar_User2d_XY        + nvar_User2d_XY_VarDiff
@@ -399,6 +436,9 @@
 !******************************************************************************
 
       subroutine Prep_output_VarDiff
+
+      use global_param,  only : &
+         useVarDiffH
 
       use mesh,          only : &
          nxmax,nymax,nzmax
@@ -419,11 +459,13 @@
 
       implicit none
 
-      integer :: i,indx
+      integer :: i,ii,indx
 
       ! Might have to build in some logic for Kh vs Kz
 
       do i=1,nvar_User2d_XY_VarDiff
+        ! We could put a conditional block here, but we would not enter this
+        ! do loop if we didn't plan to write out Planetary Boundary Layer Height
         indx = indx_User2d_XY_VarDiff+i
         var_User2d_XY_name(indx)   = temp_2d_name_VarDiff(i)
         var_User2d_XY_unit(indx)   = temp_2d_unit_VarDiff(i)
@@ -445,9 +487,22 @@
         var_User3d_XYZ_lname(indx)  = temp_3d_lname_VarDiff(i)
         var_User3d_XYZ_MissVal(indx)= temp_3d_MissVal_VarDiff(i)
         var_User3d_XYZ_FillVal(indx)= temp_3d_FillVal_VarDiff(i)
-        if(i.eq.1) var_User3d_XYZ(1:nxmax,1:nymax,1:nzmax,indx) = kx(1:nxmax,1:nymax,1:nzmax)
-        if(i.eq.2) var_User3d_XYZ(1:nxmax,1:nymax,1:nzmax,indx) = kz(1:nxmax,1:nymax,1:nzmax)
-        if(i.eq.3)then
+        if(use_Output_Vars_VarDiff.and.useVarDiffH)then
+          ii = 1
+        else
+          ii = 0
+        endif
+        if(i.eq.ii  )then
+          ! Horizontal diffusivity is already on the comp grid
+          ! This branch is unused if useVarDiffH = .false. since ii=0
+          var_User3d_XYZ(1:nxmax,1:nymax,1:nzmax,indx) = kx(1:nxmax,1:nymax,1:nzmax)
+        endif
+        if(i.eq.ii+1)then
+          ! Vertical diffusivity is already on the comp grid
+          var_User3d_XYZ(1:nxmax,1:nymax,1:nzmax,indx) = kz(1:nxmax,1:nymax,1:nzmax)
+        endif
+        if(i.eq.ii+2)then
+           ! Ri just exists on the MetP grid for output
            ! Now resample onto computational grid
           MR_dum3d_metP = Ri_meso_next_step_MetP_sp
           call MR_Regrid_MetP_to_CompH(MR_iMetStep_Now)
@@ -508,7 +563,7 @@
          HR_2_S
 
       use MetReader,     only : &
-         nx_submet,ny_submet,np_fullmet
+         nx_submet,ny_submet,np_fullmet,MR_sigma_nz_submet
 
       implicit none
 
@@ -517,6 +572,7 @@
       real(kind=ip) :: E11,E12,E21,E22
       real(kind=ip) :: D2_tension,D2_strain
       real(kind=ip) :: LES_TimeScale
+      real(kind=ip) :: LES_LengthScale
 
       do i=1,nx_submet
         do j=1,ny_submet
@@ -525,6 +581,8 @@
       ! Smagorinsky LES horizontal eddy diffusivity is proportional
       ! to sqrt((E12+E21)^2 + (E11-E22)^2) where E is the velocity gradient
       ! tensor (just in x and y)
+      ! This is following the description in
+      ! Griffies and Hallberg, MWR, 2000 doi:10.1175/1520-0493(2000)128<2935:BFWASL>2.0.CO;2
 
         ! spatial derivatives of velocity (in 1/s)
       E11=du_dx_MetP_sp(i,j,k)
@@ -533,7 +591,8 @@
       E22=dv_dy_MetP_sp(i,j,k)
 
       D2_strain  = (E12+E21)**2.0_ip
-      D2_tension = (E11-E22)**2.0_ip
+      D2_tension = (E11-E22)**2.0_ip          ! Smagorinsky (1963, 1993)
+      !D2_tension = 0.5_ip*(E11*E11+E22*E22)   ! Pielke (1974)
 
       ! Note: Costa et al (2006) use a different form.  Their "tension" is the
       ! sum of the derivatives (essentially the velocity divergence), whereas
@@ -542,10 +601,16 @@
         ! in units of 1/s
       LES_TimeScale = sqrt(D2_tension+D2_strain)
         ! in units of 1/hr
-      Khz_meso_next_step_MetP_sp(i,j,k) = real(LES_TimeScale*HR_2_S,kind=sp)
+      LES_TimeScale = LES_TimeScale * HR_2_S
+        ! length scale^2 in km^2
+      LES_LengthScale = MR_sigma_nz_submet(i,j)
+
+      Khz_meso_next_step_MetP_sp(i,j,k) = real(LES_LengthScale*LES_TimeScale,kind=sp)
+
           enddo !k
         enddo !j
       enddo !i
+
       ! This eddy diffusivity will be scaled to the computational grid
       ! and multiplied by (KH_SmagC*KH_SmagC/PI/PI) * DELTA
       ! where DELTA is either dx*dy or sigma_nz
@@ -677,11 +742,10 @@
       logical      ,intent(in) :: Load_MesoSteps
       real(kind=ip),intent(in) :: Interval_Frac
 
-      logical,save :: first_time = .true.
+      logical,save  :: first_time = .true.
+      real(kind=sp) :: M_2_KM = 1.0e-3_sp
 
       integer :: i
-
-!      write(*,*)"Inside Set_VarDiffH_Meso"
 
       if(Load_MesoSteps)then
         if(first_time)then
@@ -694,24 +758,16 @@
           !vx_meso_next_step_MetP_sp = MR_dum3d_metP
           vx_meso_next_step_MetP_sp = MR_vx_metP_last
           MR_dum3d_metP             = MR_vx_metP_last
-!          write(*,*)"MR_dum3d_metP"
-!          write(*,*)MR_dum3d_metP
 
             ! Now differentiate
+            ! Note: velocities are in m/s, but the dx and dy are in km
+            !       We want du_dx to be in 1/s
           call MR_DelMetP_Dx
-          du_dx_MetP_sp = MR_dum3d2_metP
-!          write(*,*)"du_dx_MetP_sp"
-!          write(*,*)du_dx_MetP_sp
+          du_dx_MetP_sp = MR_dum3d2_metP * M_2_KM
 
           call MR_DelMetP_Dy
-          du_dy_MetP_sp = MR_dum3d2_metP
-!          write(*,*)"du_dy_MetP_sp"
-!          write(*,*)du_dy_MetP_sp
+          du_dy_MetP_sp = MR_dum3d2_metP * M_2_KM
 
-          !do i=1,nx_submet
-          !  write(*,*)du_dx_MetP_sp(i,3,3),du_dy_MetP_sp(i,3,3)
-          !enddo
-          !stop 8
           ! Load V winds on MetP
           !ivar = 3 ! V winds
           !call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now)
@@ -719,27 +775,16 @@
           vy_meso_next_step_MetP_sp = MR_vy_metP_last
           MR_dum3d_metP             = MR_vy_metP_last
             ! Now differentiate
+            ! Again, velocities are in m/s, but the dx and dy are in km
           call MR_DelMetP_Dx
-          dv_dx_MetP_sp = MR_dum3d2_metP
+          dv_dx_MetP_sp = MR_dum3d2_metP * M_2_KM
           call MR_DelMetP_Dy
-          dv_dy_MetP_sp = MR_dum3d2_metP
+          dv_dy_MetP_sp = MR_dum3d2_metP * M_2_KM
           call Eddy_diff
            ! Now resample onto computational grid
           MR_dum3d_metP = Khz_meso_next_step_MetP_sp
           call MR_Regrid_MetP_to_CompH(MR_iMetStep_Now)
           Khz_meso_next_step_sp = MR_dum3d_compH
-!          write(*,*)"Khz_meso_next_step_sp"
-!          write(*,*)Khz_meso_next_step_sp
-!          stop 89
-          if(IsLatLon) then
-            Khz_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax) = &
-             Khz_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax) * &
-                     real(LES_L2ScaleCoeff * sigma_nz_pd(1:nxmax,1:nymax,1:nzmax),kind=sp)
-          else
-            Khz_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax) = &
-             Khz_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax) * &
-                     real(LES_L2ScaleCoeff * dx * dy,kind=sp)
-          endif
           first_time = .false.
         endif ! first_time
         Khz_meso_last_step_MetP_sp = Khz_meso_next_step_MetP_sp
@@ -755,9 +800,9 @@
         MR_dum3d_metP             = MR_vx_metP_next
           ! Now differentiate
         call MR_DelMetP_Dx
-        du_dx_MetP_sp = MR_dum3d2_metP
+        du_dx_MetP_sp = MR_dum3d2_metP * M_2_KM
         call MR_DelMetP_Dy
-        du_dy_MetP_sp = MR_dum3d2_metP
+        du_dy_MetP_sp = MR_dum3d2_metP * M_2_KM
         ! Load V winds on MetP
         !ivar = 3 ! V winds
         !call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now+1)
@@ -765,54 +810,44 @@
         MR_dum3d_metP             = MR_vy_metP_next
           ! Now differentiate
         call MR_DelMetP_Dx
-        dv_dx_MetP_sp = MR_dum3d2_metP
+        dv_dx_MetP_sp = MR_dum3d2_metP * M_2_KM
         call MR_DelMetP_Dy
-        dv_dy_MetP_sp = MR_dum3d2_metP
+        dv_dy_MetP_sp = MR_dum3d2_metP * M_2_KM
         call Eddy_diff
          ! Now resample onto computational grid
         MR_dum3d_metP = Khz_meso_next_step_MetP_sp
         call MR_Regrid_MetP_to_CompH(MR_iMetStep_Now+1)
         Khz_meso_next_step_sp = MR_dum3d_compH
-        if(IsLatLon) then
-          Khz_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax) = &
-           Khz_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax) * &
-                   real(LES_L2ScaleCoeff * sigma_nz_pd(1:nxmax,1:nymax,1:nzmax),kind=sp)
-        else
-          Khz_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax) = &
-           Khz_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax) * &
-                   real(LES_L2ScaleCoeff * dx * dy,kind=sp)
-        endif
 
       endif
 
-        kx(1:nxmax,1:nymax,1:nzmax) = real( Khz_meso_last_step_sp(:,:,:),kind=ip) + &
-                                      real((Khz_meso_next_step_sp(:,:,:) - &
-                                            Khz_meso_last_step_sp(:,:,:)),kind=ip) * &
-                                                Interval_Frac
-        ky = kx
+      kx(1:nxmax,1:nymax,1:nzmax) = real( Khz_meso_last_step_sp(:,:,:),kind=ip) + &
+                                    real((Khz_meso_next_step_sp(:,:,:) - &
+                                          Khz_meso_last_step_sp(:,:,:)),kind=ip) * &
+                                              Interval_Frac
+      ky = kx
 
-        ! Set boundary kx and ky
-          ! Bottom
-        kx(0:nxmax+1,0:nymax+1,0) = kx(0:nxmax+1,0:nymax+1,1)
-        ky(0:nxmax+1,0:nymax+1,0) = ky(0:nxmax+1,0:nymax+1,1)
-          ! Top
-        kx(0:nxmax+1,0:nymax+1,nzmax+1) = kx(0:nxmax+1,0:nymax+1,nzmax)
-        ky(0:nxmax+1,0:nymax+1,nzmax+1) = ky(0:nxmax+1,0:nymax+1,nzmax)
-          ! Left (West)
-        kx(0,0:nymax+1,0:nzmax+1) = kx(1,0:nymax+1,0:nzmax+1)
-        ky(0,0:nymax+1,0:nzmax+1) = ky(1,0:nymax+1,0:nzmax+1)
-          ! Right (East)
-        kx(nxmax+1,0:nymax+1,0:nzmax+1) = kx(nxmax,0:nymax+1,0:nzmax+1)
-        ky(nxmax+1,0:nymax+1,0:nzmax+1) = ky(nxmax,0:nymax+1,0:nzmax+1)
-          ! -y (South)
-        kx(0:nxmax+1,0,0:nzmax+1) = kx(0:nxmax+1,1,0:nzmax+1)
-        ky(0:nxmax+1,0,0:nzmax+1) = ky(0:nxmax+1,1,0:nzmax+1)
-          ! +y (North)
-        kx(0:nxmax+1,nymax+1,0:nzmax+1) = kx(0:nxmax+1,nymax,0:nzmax+1)
-        ky(0:nxmax+1,nymax+1,0:nzmax+1) = ky(0:nxmax+1,nymax,0:nzmax+1)
+      ! Set boundary kx and ky
+        ! Bottom
+      kx(0:nxmax+1,0:nymax+1,0) = kx(0:nxmax+1,0:nymax+1,1)
+      ky(0:nxmax+1,0:nymax+1,0) = ky(0:nxmax+1,0:nymax+1,1)
+        ! Top
+      kx(0:nxmax+1,0:nymax+1,nzmax+1) = kx(0:nxmax+1,0:nymax+1,nzmax)
+      ky(0:nxmax+1,0:nymax+1,nzmax+1) = ky(0:nxmax+1,0:nymax+1,nzmax)
+        ! Left (West)
+      kx(0,0:nymax+1,0:nzmax+1) = kx(1,0:nymax+1,0:nzmax+1)
+      ky(0,0:nymax+1,0:nzmax+1) = ky(1,0:nymax+1,0:nzmax+1)
+        ! Right (East)
+      kx(nxmax+1,0:nymax+1,0:nzmax+1) = kx(nxmax,0:nymax+1,0:nzmax+1)
+      ky(nxmax+1,0:nymax+1,0:nzmax+1) = ky(nxmax,0:nymax+1,0:nzmax+1)
+        ! -y (South)
+      kx(0:nxmax+1,0,0:nzmax+1) = kx(0:nxmax+1,1,0:nzmax+1)
+      ky(0:nxmax+1,0,0:nzmax+1) = ky(0:nxmax+1,1,0:nzmax+1)
+        ! +y (North)
+      kx(0:nxmax+1,nymax+1,0:nzmax+1) = kx(0:nxmax+1,nymax,0:nzmax+1)
+      ky(0:nxmax+1,nymax+1,0:nzmax+1) = ky(0:nxmax+1,nymax,0:nzmax+1)
 
       end subroutine Set_VarDiffH_Meso
-
 
 !******************************************************************************
 
