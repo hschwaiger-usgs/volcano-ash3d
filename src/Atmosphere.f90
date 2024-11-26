@@ -66,8 +66,9 @@
       real(kind=sp),dimension(:,:,:),allocatable,public :: AirSH_meso_next_step_MetP_sp
 #endif
 
-      real(kind=ip), parameter,public :: R_GAS_DRYAIR = 286.98_ip       ! Specific gas constant of R=286.98 J /(kg K)
+      real(kind=ip), parameter,public :: R_GAS_DRYAIR = 286.98_ip       ! Specific dry air gas constant of R=286.98 J /(kg K)
       real(kind=ip), parameter,public :: R_GAS_IDEAL  = 8.3144621_ip    ! Ideal gas constant (J /(kg K))
+      real(kind=ip), parameter,public :: R_GAS_WATVAP = 461.5_ip        ! Specific water vapor gas constant of R=461.98 J /(kg K)
       real(kind=ip), parameter,public :: CP_AIR       = 1.004e3_ip      ! Specific heat capacity at p (J /kg K)
       real(kind=ip), parameter,public :: MB_DRY_AIR   = 0.028966_ip     ! Molecular weight of dry air in kg/mol
       real(kind=ip), parameter,public :: BoltzK       = 1.380658e-23_ip ! Boltzmann's constant kg m2 s-2 K-1 molec-1

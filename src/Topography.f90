@@ -428,6 +428,9 @@
       temp_2ds_unit_Topo(1)  = "m"
       temp_2ds_MissVal_Topo(1) = -9999.0_op
       temp_2ds_FillVal_Topo(1) = -9999.0_op
+      ! HFS: Should add notes to netcdf attributes
+      !       source = GEBCO_2023.nc
+      !       smoothing length = 1.0
 
       nvar_User2d_static_XY = nvar_User2d_static_XY + nvar_User2d_static_XY_Topo
       nvar_User2d_XY        = nvar_User2d_XY        + nvar_User2d_XY_Topo

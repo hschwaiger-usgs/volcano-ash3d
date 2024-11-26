@@ -5,6 +5,10 @@
 !  This module calculates the horizontal and vertical diffusivities as a
 !  function of the local meteorological conditions.
 !
+!  Horizontal diffusivity is calculated using spatial derivatives of the
+!  horizontal velocities using either the model of Smagorinsky (1963) or
+!  from Pielke (1974). This LES approach uses the area of the NWP cells
+!  to scale 
 !
 !      subroutine input_data_VarDiff
 !      subroutine Allocate_VarDiff_Met
@@ -20,14 +24,12 @@
 !      subroutine Calc_Boundary_Lengths
 !      function Fc
 !      function Fc_PMB
-!      function Phi_Similarity_Kansas
-!      function Phi_Similarity_Kansas_Ri
-!      function Phi_WindShear_NonDim
 !      function MixLen
+!      function Phi_WindShear_Similarity
 !
 !
 ! OPTMOD=VARDIFF
-! yes                         # use horizontal variable diffusivity
+! yes 1                       # use horizontal variable diffusivity
 ! yes                         # use vertical variable diffusivity
 ! 0.9                         # KH_SmagC
 ! 0.4                         # vonKarman
@@ -42,20 +44,28 @@
 
       use io_units
 
-        ! Smagorinsky (1993) constant for LES horizontal diffusivity
-        ! (should be 0.2 - 0.9)
-      real(kind=ip),parameter :: Coeff_Stab   =   9.2_ip
-      real(kind=ip),parameter :: Coeff_UnStab = -13.0_ip
-      real(kind=ip),parameter :: Exp_UnStab   =  -0.5_ip
+      integer :: Kh_model_ID     ! [1] = Smagorinsky (1963); 2 = Pielke (1974)
+      integer :: Phi_model_ID    ! 
 
-      real(kind=ip) :: KH_SmagC     != 0.9_ip
-      real(kind=ip) :: vonKarman    != 0.4_ip   ! von Karman constant
-      real(kind=ip) :: LambdaC      != 30.0_ip  ! Asymptotic length scale (m)
-      real(kind=ip) :: RI_CRIT      != 0.25_ip  ! Critical Richardson number
+      !  These are the parameters that control the diffusivity calculations
+      !    C from Smagorinsky model of horizontal diffusivity
+      real(kind=ip) :: KH_SmagC     ! Smagorinsky (1993) constant for LES horizontal diffusivity (0.2 - 0.9)
+      !    These next three are needed for the vertical diffusivity
+      real(kind=ip) :: vonKarman    ! von Karman constant (around 0.4)
+      real(kind=ip) :: LambdaC      ! Asymptotic length scale (around 30 m)
+      real(kind=ip) :: RI_CRIT      ! Critical Richardson number (0.25)
 
-      !Coeff_Stab   =   6.9_ip
-      !Coeff_UnStab = -22.0_ip
-      !Exp_UnStab   = -0.25
+      !    These are the values controlling the stability function Phi (lots of models out there)
+      !   source              alpha   beta   gamma
+      ! Businger-Dyer (1971)  -1/4    5.0    -16.0
+      ! Carl (1973)           -1/3    5.0    -15.0
+      ! Troen-Mahrt (1986)    -1/3    4.7     -7.0
+      ! Ulke (2000)           -1/2    9.2    -13.0
+      real(kind=ip) :: phi_alpha = -0.33333_ip   ! Exponent in unstable term
+      real(kind=ip) :: phi_beta  =  4.7_ip       ! Coefficient in stable term (pretty much always 4.7->5.2
+      real(kind=ip) :: phi_gamma = -7.0_ip       ! Coefficient in unstable term
+
+      real(kind=ip) :: PBL_exp = 1.0_ip
 
       ! Set the number of output variables for this module
       ! This depends on settings from the input block
@@ -179,9 +189,9 @@
 
       character(len=3 )  :: answer
       character(len=80)  :: linebuffer080
-      integer :: ios,ioerr
+      integer            :: ios,ioerr
       character(len=20)  :: mod_name
-      integer :: substr_pos
+      integer            :: substr_pos
 
       open(unit=10,file=infile,status='old',err=1900)
 
@@ -219,6 +229,26 @@
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"    Using horizontal variable diffusivity"
         endif;enddo
+        ! Try to read the horizontal model ID
+        read(linebuffer080(4:),*,iostat=ios)Kh_model_ID
+        if(ios.eq.0)then
+          if(Kh_model_ID.eq.1)then
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"    Horizontal diffusivity model ID = 1: Smagorinsky (1963)"
+            endif;enddo
+          elseif(Kh_model_ID.eq.2)then
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"    Horizontal diffusivity model ID = 2: Pielke (1974)"
+            endif;enddo
+          else
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"    Horizontal diffusivity model ID not recognized."
+              write(outlog(io),*)"    Using model ID = 1: Smagorinsky (1963)"
+            endif;enddo
+          endif
+        else
+          Kh_model_ID = 1
+        endif
       elseif(answer(1:2).eq.'no') then
         useVarDiffH = .false.
         do io=1,2;if(VB(io).le.verbosity_info)then
@@ -255,10 +285,6 @@
         read(10,'(a80)',iostat=ios,err=2010)linebuffer080
         read(linebuffer080,*,iostat=ioerr) RI_CRIT
 
-        !KH_SmagC  = 0.9
-        !vonKarman = 0.4
-        !LambdaC   = 30.0
-        !RI_CRIT   = 0.25
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)KH_SmagC
           write(outlog(io),*)vonKarman
@@ -429,8 +455,6 @@
       nvar_User3d_XYZ       = nvar_User3d_XYZ       + nvar_User3d_XYZ_VarDiff
       nvar_User4d_XYZGs     = nvar_User4d_XYZGs     + nvar_User4d_XYZGs_VarDiff
 
-        !call MetReader subroutine to set up rdphi_wind rdlambda_wind
-
       end subroutine Allocate_VarDiff_Met
 
 !******************************************************************************
@@ -438,7 +462,7 @@
       subroutine Prep_output_VarDiff
 
       use global_param,  only : &
-         useVarDiffH
+         useVarDiffH,KM_2_M,HR_2_S
 
       use mesh,          only : &
          nxmax,nymax,nzmax
@@ -495,11 +519,12 @@
         if(i.eq.ii  )then
           ! Horizontal diffusivity is already on the comp grid
           ! This branch is unused if useVarDiffH = .false. since ii=0
-          var_User3d_XYZ(1:nxmax,1:nymax,1:nzmax,indx) = kx(1:nxmax,1:nymax,1:nzmax)
+          ! Note that the native units are km2/hr, but we need to convert to m2/s
+          var_User3d_XYZ(1:nxmax,1:nymax,1:nzmax,indx) = kx(1:nxmax,1:nymax,1:nzmax)*KM_2_M*KM_2_M/HR_2_S
         endif
         if(i.eq.ii+1)then
           ! Vertical diffusivity is already on the comp grid
-          var_User3d_XYZ(1:nxmax,1:nymax,1:nzmax,indx) = kz(1:nxmax,1:nymax,1:nzmax)
+          var_User3d_XYZ(1:nxmax,1:nymax,1:nzmax,indx) = kz(1:nxmax,1:nymax,1:nzmax)*KM_2_M*KM_2_M/HR_2_S
         endif
         if(i.eq.ii+2)then
            ! Ri just exists on the MetP grid for output
@@ -585,19 +610,22 @@
       ! Griffies and Hallberg, MWR, 2000 doi:10.1175/1520-0493(2000)128<2935:BFWASL>2.0.CO;2
 
         ! spatial derivatives of velocity (in 1/s)
-      E11=du_dx_MetP_sp(i,j,k)
-      E12=du_dy_MetP_sp(i,j,k)
-      E21=dv_dx_MetP_sp(i,j,k)
-      E22=dv_dy_MetP_sp(i,j,k)
+      E11 = du_dx_MetP_sp(i,j,k)
+      E12 = du_dy_MetP_sp(i,j,k)
+      E21 = dv_dx_MetP_sp(i,j,k)
+      E22 = dv_dy_MetP_sp(i,j,k)
 
       D2_strain  = (E12+E21)**2.0_ip
-      D2_tension = (E11-E22)**2.0_ip          ! Smagorinsky (1963, 1993)
-      !D2_tension = 0.5_ip*(E11*E11+E22*E22)   ! Pielke (1974)
-
-      ! Note: Costa et al (2006) use a different form.  Their "tension" is the
-      ! sum of the derivatives (essentially the velocity divergence), whereas
-      ! Smagorinsky uses the difference.  They also weigh this term by either
-      ! 0.5 or 2.0.
+      if(Kh_model_ID.eq.1)then
+        D2_tension = (E11-E22)**2.0_ip          ! Smagorinsky (1963, 1993)
+      elseif(Kh_model_ID.eq.2)then
+        D2_tension = 0.5_ip*(E11*E11+E22*E22)   ! Pielke (1974)
+      else
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)  'error: currently only Smagorinsky and Pielke models allowed.'
+        endif;enddo
+        stop 1
+      endif
         ! in units of 1/s
       LES_TimeScale = sqrt(D2_tension+D2_strain)
         ! in units of 1/hr
@@ -605,16 +633,13 @@
         ! length scale^2 in km^2
       LES_LengthScale = MR_sigma_nz_submet(i,j)
 
-      Khz_meso_next_step_MetP_sp(i,j,k) = real(LES_LengthScale*LES_TimeScale,kind=sp)
+        ! Diffusivity in km2/hr
+      Khz_meso_next_step_MetP_sp(i,j,k) = real(KH_SmagC*LES_LengthScale*LES_TimeScale,kind=sp)
 
           enddo !k
         enddo !j
       enddo !i
 
-      ! This eddy diffusivity will be scaled to the computational grid
-      ! and multiplied by (KH_SmagC*KH_SmagC/PI/PI) * DELTA
-      ! where DELTA is either dx*dy or sigma_nz
-      ! The units will then be that of diffusivity (km^2/hr).
       return
 
       end subroutine Eddy_diff
@@ -641,7 +666,7 @@
       real(kind=ip) :: Kv_col(np_fullmet)
       real(kind=ip) :: L_MonOb
       real(kind=ip) :: PBLz
-      real(kind=ip) :: PBL_coeff
+      real(kind=ip) :: Phi
       real(kind=ip) :: PBL_profile_fac
       real(kind=ip) :: Kz_tmp
       real(kind=ip) :: Lc
@@ -676,21 +701,15 @@
             elseif(z_col(k).lt.PBLz)then
               ! Within the PBL, use similarity theory
                 ! Parabolic profile factor for Kv between 0 and PBL
-              PBL_profile_fac = z_col(k)*(1.0_sp-z_col(k)/PBLz)
+              PBL_profile_fac = (1.0_sp-z_col(k)/PBLz)**PBL_exp
 
-              !PBL_coeff = Phi_Similarity_Kansas(z_on_L)
-              !PBL_coeff = Phi_Similarity_Kansas_Ri(Ri_col(k))
-              !PBL_coeff = Phi_Similarity_Ulke(z_col(k),PBLz,L_MonOb)
-              PBL_coeff = Phi_WindShear_NonDim(z_col(k),PBLz,L_MonOb, &
-                                    Coeff_Stab,Coeff_UnStab,Exp_UnStab)
-    
+              Phi = Phi_WindShear_Similarity(z_col(k)/L_MonOb)
               ! Kz from similarity theory (Eq. 8.48 of Jacobson)
-              Kz_tmp = z_col(k)*vonKarman*FricVel*PBL_profile_fac/PBL_coeff
+              Kz_tmp = z_col(k)*vonKarman*FricVel*PBL_profile_fac/Phi
             else
     
                 ! In free atmosphere above the PBL, use Prandtl's mixing
                 ! length theory for thermally stratified atmosphere.
-                ! This is what Costa et al, 2006 uses (Eq. 8)
                 !  First get mixing length scale
                 !    There are several ways to parameterize the mixing
                 !    length (Randerson, p155, 1984; Monin and Yaglom, v1,
@@ -952,10 +971,11 @@
       use Atmosphere,    only : &
          AirSH_meso_last_step_MetP_sp,AirSH_meso_next_step_MetP_sp,&
          AirTemp_meso_last_step_MetP_sp,AirTemp_meso_next_step_MetP_sp,&
-         R_GAS_DRYAIR,CP_AIR
+         R_GAS_DRYAIR,CP_AIR,R_GAS_WATVAP
 
       use MetReader,     only : &
          nx_submet,ny_submet,np_fullmet,p_fullmet_sp,&
+         x_submet_sp,y_submet_sp,&
          MR_geoH_metP_last,MR_geoH_MetP_next
 
       implicit none
@@ -972,6 +992,7 @@
 
       integer :: i,j,k,k1,k2
       real(kind=ip) :: refP
+      real(kind=ip) :: mixrat
       real(kind=ip) :: del_z
       real(kind=ip) :: dudz,dvdz,dtdz
       real(kind=ip) :: temp_term,mech_term
@@ -990,6 +1011,7 @@
       p(1:np_fullmet) = p_fullmet_sp(1:np_fullmet)
       do i=1,nx_submet
         do j=1,ny_submet
+          
           if(last_or_next.eq.0)then
             z(1:np_fullmet) = MR_geoH_metP_last(i,j,1:np_fullmet) * KM_2_M
             u(1:np_fullmet) = vx_meso_last_step_MetP_sp(i,j,1:np_fullmet)
@@ -1014,7 +1036,13 @@
             endif
           endif
           do k=1,np_fullmet
-            Tpoten(k) = (T(k)*(refP/p(k))**(R_GAS_DRYAIR/CP_AIR))*(1.0_ip + 0.608_ip*Q(k))
+            ! First get the potential temperature, i.e. the temperature an air parcel would have
+            ! if it were taken adiabaticlly to refP
+            Tpoten(k) = (T(k)*(refP/p(k))**(R_GAS_DRYAIR/CP_AIR))   ! Potential temperature
+            ! Now convert to virtual potential temperature is there is some Spec.Hum. around
+            ! Note: this moisture bit makes practically no difference
+            mixrat = Q(k)/(1.0_ip-Q(k))   ! Water mixing ratio from Spec.Hum
+            Tpoten(k) = Tpoten(k) *(1.0_ip + (R_GAS_WATVAP/R_GAS_DRYAIR-1.0_ip)*mixrat)
           enddo
 
           do k=1,np_fullmet
@@ -1038,12 +1066,19 @@
             ! MERRA, it seems that the magnitude of dv_dz is at least
             ! 3.0e-3 m/s.  Smaller values cause Ri to become singular.
             ! In fact, they may assume a (dv_dz)^2 = 3.0e-3 m/s
-            mech_term = max(real(dV_dz_MetP_sp(i,j,k)**2.0_sp,kind=ip),3.0e-3_ip)/GRAV
+            !mech_term = max(real(dV_dz_MetP_sp(i,j,k)**2.0_sp,kind=ip),3.0e-3_ip)/GRAV
+            mech_term = max((dudz*dudz + dvdz*dvdz)/GRAV,1.0e-6_ip)
             Ri = real(temp_term / mech_term,kind=sp)
             if(last_or_next.eq.0)then
               Ri_meso_last_step_MetP_sp(i,j,k) = Ri
             else
               Ri_meso_next_step_MetP_sp(i,j,k) = Ri
+            endif
+
+            ! This picks out i=11, j=30
+            if(x_submet_sp(i).gt.-280.0.and.x_submet_sp(i).lt.-276.0.and.&
+               y_submet_sp(j).gt.-3352.0.and.y_submet_sp(j).lt.-3350.0)then
+              write(*,'(i3,14g10.3)')k,p(k),z(k),u(k),v(k),T(k),Q(k),Tpoten(k),temp_term,mech_term,Ri,del_z,dtdz,dudz,dvdz
             endif
 
           enddo ! k
@@ -1250,6 +1285,8 @@
         endif
       endif
 
+      PBL_override = .true.
+
       if(.not.Met_var_IsAvailable(ivar).or.PBL_override)then
         ! If PBLH is not provided by the NWP file or is corrupted, then
         ! we need to calculate PBLH internally.  There are many more involved
@@ -1327,8 +1364,8 @@
             endif
           enddo
           if(abs(Ri_col(k_L)).lt.EPS_SMALL)then
-              ! For the neutrally stable case, set L to 0
-            L_MonOb = 0.0_ip
+              ! For the neutrally stable case, L->Inf ; set to 10 km
+            L_MonOb = 10000.0_ip
           elseif(Ri_col(k_L).lt.0.0_ip)then
               ! Unstable (negative L)
             L_MonOb = z_col(k_L)/Ri_col(k_L)
@@ -1347,6 +1384,9 @@
         enddo
       enddo
 
+      write(*,*)PBLH_meso_last_step_Met_sp(11,30),PBLH_meso_next_step_Met_sp(11,30),&
+                L_MonOb_meso_last_step_Met_sp(11,30),L_MonOb_meso_next_step_Met_sp(11,30)
+
       end subroutine Calc_Boundary_Lengths
 !
 !!******************************************************************************
@@ -1354,7 +1394,6 @@
       function Fc(Ri)
 
       ! Stability function for vertical diffusion in the free atmosphere above the PBL
-      ! see Costa et al, EPSL v241, p634, 2006; eq 10
       ! Originally from Collins et al, NCAR TN-464, 2004
       ! http://www.cesm.ucar.edu/models/atm-cam/docs/description/description.pdf
 
@@ -1411,120 +1450,6 @@
 
 !!******************************************************************************
 
-      function Phi_Similarity_Kansas(z_on_L)
-
-      ! Similarity function for boundary layer from the 1968 Kansas Field
-      ! Program
-      ! This function returns 1/phi where phi is given by Eq. 8.29 of Jacobson
-      ! ( Eq 11.6 of Arya, Eq. 16.75 of Seinfeld and Pandis
-      ! As noted in Costa et al, 2006, this is only really valid for the surface
-      ! layer, which is about 0.1*h where h is the thickness of the planetary or
-      ! atmospheric boundary layer
-
-      implicit none
-
-      real(kind=ip) :: Phi_Similarity_Kansas
-      real(kind=ip) :: z_on_L
-      real(kind=ip) :: beta,gammam
-
-      ! if vonKarman = 0.35
-      ! beta   = 4.7
-      ! gammam = 15.0
-
-      ! if vonKarman = 0.4
-      beta   = 6.0_ip
-      gammam = 19.3_ip
-
-      if(z_on_L.ge.0.0_ip)then
-        ! Stable
-        Phi_Similarity_Kansas = 1.0_ip/(1.0_ip+beta*z_on_L)
-      else
-        ! Unstable
-        Phi_Similarity_Kansas = (1.0_ip-gammam*z_on_L)**0.25_ip
-      endif
-
-      return
-
-      end function Phi_Similarity_Kansas
-
-!!******************************************************************************
-
-      function Phi_Similarity_Kansas_Ri(Ri)
-
-      ! Similarity function for boundary layer from the 1968 Kansas Field
-      ! Program, but expressed in terms of the Richardson number
-      ! Eq 11.11 of Arya
-      ! As noted in Costa et al, 2006, this is only really valid for the surface
-      ! layer, which is about 0.1*h where h is the thickness of the planetary or
-      ! atmospheric boundary layer
-
-      implicit none
-
-      real(kind=ip) :: Phi_Similarity_Kansas_Ri
-      real(kind=ip)::  Ri
-
-      if(Ri.lt.0.0_ip)then
-        ! Unstable
-        Phi_Similarity_Kansas_Ri = (1.0_ip-15.0_ip*Ri)**0.25_ip
-        ! Note: Kramm et al, Precip Scav and Atmos Surf Exch v.2 p1125-1141,1992
-        ! in eq 19, use 16.0*Ri instead of 15.0*Ri
-      elseif(Ri.le.RI_CRIT)then
-        ! Unstable
-        Phi_Similarity_Kansas_Ri = 1.0_ip-5.0_ip*Ri
-      else
-      !  ! shouldn't be calculating boundary layer diffusivity for Ri this high
-        Phi_Similarity_Kansas_Ri = 0.0_ip
-      endif
-
-      return
-
-      end function Phi_Similarity_Kansas_Ri
-
-!!******************************************************************************
-
-      function Phi_WindShear_NonDim(z,h,L,CStab,CUnStab,EUnStab)
-
-      use global_param,  only : &
-         EPS_SMALL
-
-      ! Similarity function for full atmospheric boundary layer given by Ulke,
-      ! Atmospheric Environment, v34 p1029-1042, 2000. Eq. 4a and 4b; 5a and 5b
-      ! Note: Costa et al, 2006, cite this parameterization
-
-      implicit none
-
-      real(kind=ip) :: Phi_WindShear_NonDim
-      real(kind=ip) :: z,h,L
-
-      real(kind=ip) :: z_on_h,z_on_L,h_on_L
-      real(kind=ip) :: CStab
-      real(kind=ip) :: CUnStab
-      real(kind=ip) :: EUnStab
-
-      if(abs(h).lt.EPS_SMALL.or.abs(L).lt.EPS_SMALL)then
-        Phi_WindShear_NonDim = EPS_SMALL
-      elseif(z.le.0.0_ip)then
-        Phi_WindShear_NonDim = EPS_SMALL
-      else
-        z_on_h = z/h
-        z_on_L = z/L
-        h_on_L = h/L
-
-        if(h_on_L.ge.0.0_ip)then
-          ! Stable
-          Phi_WindShear_NonDim = (1.0_ip+CStab*z_on_L)
-        else
-          ! Unstable
-          Phi_WindShear_NonDim = (1.0_ip+CUnStab*z_on_L)**EUnStab
-        endif
-      endif
-
-      return
-
-      end function Phi_WindShear_NonDim
-
-!!******************************************************************************
-
       function MixLen(z)
 
       ! Returns the mixing length for Prandtl's turbulent diffusion
@@ -1549,6 +1474,33 @@
       return
 
       end function MixLen
+
+
+!!******************************************************************************
+
+      function Phi_WindShear_Similarity(z_on_L)
+
+      ! Generalized wind shear similarity function of z/L
+      ! Coefficients and exponents are module variables
+
+      implicit none
+
+      real(kind=ip) :: Phi_WindShear_Similarity
+
+      real(kind=ip) :: z_on_L
+
+      if(z_on_L.ge.0.0_ip)then
+          ! Stable
+        Phi_WindShear_Similarity = (1.0_ip + phi_beta*z_on_L)
+      else
+          ! Unstable
+        Phi_WindShear_Similarity = (1.0_ip + phi_gamma*z_on_L)**phi_alpha
+      endif
+
+      return
+
+      end function Phi_WindShear_Similarity
+
 
 !******************************************************************************
 

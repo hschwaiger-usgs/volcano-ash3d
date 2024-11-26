@@ -358,7 +358,7 @@ ResetParams.o: $(ASH3dCCSRC)/ResetParams.f90 $(MFILE) $(SYSINC) Ash3d_VariableMo
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/ResetParams.f90
 Topography.o: Topography.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Tephra.o Calc_Mesh.o $(DATAOBJ) write_BINARY.o write_ASCII.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c Topography.f90
-Diffusivity_Variable.o: Diffusivity_Variable.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Tephra.o Diffusion.o
+Diffusivity_Variable.o: Diffusivity_Variable.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Tephra.o Diffusion.o Atmosphere.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c Diffusivity_Variable.f90
 Help.o: $(ASH3dCCSRC)/Help.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3dCCSRC)/Help.f90
