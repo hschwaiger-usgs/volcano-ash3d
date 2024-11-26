@@ -241,6 +241,9 @@
 
       use precis_param
 
+      use global_param,  only : &
+         CFL
+
       use io_units
 
       use mesh,          only : &
@@ -259,6 +262,7 @@
 
       real(kind=sp),allocatable,dimension(:) :: dums_sp
       integer       :: i,j
+      real(kind=ip) :: j_max
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"--------------------------------------------------"
@@ -308,6 +312,16 @@
       ! the scaled coordinates. Note: these variables are in km2 and km3
       ! since the jacobian for all cases is unitless
       if(ZScaling_ID.eq.2)then
+        ! The Jacobian measures the change in volumen of the cell which is
+        ! accommodated by a change in thickness. We have to scale the CFL to
+        ! be stable with these squeezed cells
+        j_max = maxval(j_cc_pd(:,:))
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Cells are thinned by up to ",real(j_max,kind=4)
+          write(outlog(io),*)"Resetting CFL from ",real(CFL,kind=4)
+          write(outlog(io),*)"  to ",real(CFL * j_max,kind=4)
+        endif;enddo
+        CFL = CFL * j_max
         do i=-1,nxmax+2
           do j=-1,nymax+2
             ! Note that sigma_nz_pd is unaffected
