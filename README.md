@@ -31,9 +31,9 @@ have had no trouble building the software on MacOS or Microsoft Windows.
 This software relies on several auxiliary libraries for managing time calculations, projections,
 and for interfacing with the variety of types of atmospheric data:  
 
-- [HoursSince](https://github.com/DOI-USGS/volcano-ash3d-hourssince)
-- [projection](https://github.com/DOI-USGS/volcano-ash3d-projection)
-- [MetReader](https://github.com/DOI-USGS/volcano-ash3d-metreader)
+- [HoursSince](https://code.usgs.gov/vsc/ash3d/volcano-ash3d-hourssince), [github mirror](https://github.com/DOI-USGS/volcano-ash3d-hourssince)
+- [projection](https://code.usgs.gov/vsc/ash3d/volcano-ash3d-projection), [github mirror](https://github.com/DOI-USGS/volcano-ash3d-projection)
+- [MetReader](https://code.usgs.gov/vsc/ash3d/volcano-ash3d-metreader), [github mirror](https://github.com/DOI-USGS/volcano-ash3d-metreader)
 
 These libraries are currently available at the locations given above.
 Installation instructions are given in the repositories for each of these libraries.  
@@ -127,7 +127,7 @@ downloaded as described above. The test cases are:
 
 1. Mt. Spurr, Aug. 18, 1992  
 This case models the fallout using a total grainsize distribution and fallout
-measurements reported in McGimsey et al, 2001.
+measurements reported in [McGimsey et al, 2001](https://doi.org/10.3133/ofr01370).
 
 2. Kasatochi, Aug. 8, 2008  
 This case models the drifting ash cloud over several days and compares modeling
@@ -135,18 +135,31 @@ cloud load with satellite retrievals.
 
 3. Mt. St. Helens, May 18, 1980  
 This case does not model the full event, but just compares model output with a
-published result from Mastin, et al, 2016.
+published result from [Mastin et al, 2016](https://doi.org/10.5194/acp-16-9399-2016).
 
 4. Mazama
 This case also does not model a particular event, but is intended to be compared
 with published model results for ash fallout. The source term is an umbrella cloud.
-Results are compared with those from Buckland, et al, 2022.
+Results are compared with those from [Buckland et al, 2022](https://doi.org/10.1007/s00445-022-01593-1).
 
 5. Kelud, Feb. 13, 2014
 This case also uses an umbrella source, but just for tracking the ash cloud
 (source is `umbrella_air`). Model results of the cloud development and advection
-are compared with cloud outlines from satellite observations presented in Mastin
-and Van Eaton, 2020.
+are compared with cloud outlines from satellite observations presented in
+[Mastin and Van Eaton, 2020](https://doi.org/10.3390/atmos11101038).
+
+The validation tests above demonstrate the utility of Ash3d in modeling volcanic
+ash cloud transport and deposition for a variety of erpution scenarios, compared
+with several types of observations. Verification tests, which demonstrate that
+Ash3d solves the equations described in [Schwaiger et al.](https://doi.org/10.1029/2011JB008968),
+can be found in the repository
+[volcano-ash3d-optionalmodules](https://code.usgs.gov/vsc/ash3d/volcano-ash3d-optionalmodules).
+This repository is structured as an example of how to construct an optional module
+for user-created features and to build with the core Ash3d software. The example used in
+this repository is a Testcases module that is composed of six sets of idealized tests
+the compare Ash3d model results against analytic results for simplified cases of horizontal
+advection, vertical advection, rigid rotation, diffusion, shear rotation and using the method
+of manufactured solutions. Each test is set up to show the rate of convergence.
 
 ### Compiling Ash3d with the customized settings
 To build Ash3d, we currently use a user-edited makefile.  All the main
@@ -300,7 +313,17 @@ Roger P. Denlinger <rdenlinger@usgs.gov>
 Citation
 --------
 
-If you would like to reference Ash3d in your paper, please cite the software as follows. 
-Schwaiger, H.F. et al (2024) Ash3d (Version 1.0.0), U.S. Geological Survey Software Release,
-https://doi.org/10.5066/P1SJWAKZ
+If you would like to reference Ash3d in your paper, please cite the software as follows.  
+
+Schwaiger, H.F. et al. (2024) Ash3d (Version 1.0.0), U.S. Geological Survey Software Release,
+[doi:10.5066/P1SJWAKZ](https://doi.org/10.5066/P1SJWAKZ).  
+
+or you can cite the journal article describing the software given in reference 6 above.
+
+License and Disclaimer
+----------------------
+
+[LICENSE](LICENSE.md): This project is in the public domain.  
+
+[DISCLAIMER](DISCLAIMER.md): This software is preliminary or provisional and is subject to revision.
 

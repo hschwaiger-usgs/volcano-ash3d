@@ -54,7 +54,7 @@
       logical, intent(in), optional :: mesostep
 
       integer       :: i,j,k
-      real(kind=ip) :: tmp1,tmp2,tmp3
+      real(kind=ip) :: tmp1,tmp2,tmp3,tmp4
       real(kind=dp) :: time_advect
       real(kind=dp) :: dt_tmp
       real(kind=ip) :: dx2,dy2,dz2
@@ -62,7 +62,6 @@
       real(kind=ip) :: vymax,vymax_dy
       integer       :: fac
       real(kind=ip) :: vzmax,vzmax_dz
-      real(kind=dp) :: diffx_dx,diffy_dy,diffz_dz
       real(kind=ip) :: minsig
       real(kind=ip) :: maxdiffus
       logical       :: CheckMesoVel
@@ -87,33 +86,32 @@
       else
         CheckMesoVel = .false.
       endif
+      vxmax_dx = 0.0_ip
+      vymax_dy = 0.0_ip
+      vzmax_dz = 0.0_ip
 
+      ! First, determine if we are running a FAST_DT case where we are only evaluating
+      ! the dt based on the bracketing Met steps, or if we are calculating dt every time
+      ! the solution advances
       if(CheckMesoVel)then
-        ! In this block, we find the conditions based on velocities at the next
-        ! meso time step
+        ! Met step only
         if(.not.IsLatLon) then
+          ! regular projected grids have a uniform x and y geometry so it is faster
+          ! to calculate these terms here
           vxmax = real(maxval(abs(vx_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax))),kind=ip)
           vxmax = vxmax*MPS_2_KMPHR
           vxmax_dx = vxmax/dx
           vymax = real(maxval(abs(vy_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax))),kind=ip)
           vymax = vymax*MPS_2_KMPHR
           vymax_dy = vymax/dy
-          !vzmax = real(maxval(abs(vz_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax))) + &
-          !             maxval(abs(vf_meso_next_step_sp(1:nxmax,1:nymax,1:nzmax,1:nsmax))),kind=ip)
-          !vzmax = vzmax*MPS_2_KMPHR
-          !vzmax_dz = vzmax/minval(dz_vec_pd)
-        else
-          vxmax_dx = 0.0_ip
-          vymax_dy = 0.0_ip
         endif
-        vzmax_dz = 0.0_ip
-        ! This branch looks at conditions cell-by-cell
+        ! This branch looks at conditions cell-by-cell which is needed for Lon/Lat girds
+        ! and also all z calculations (because we might have a logarithmic or variable dz)
         ! Use vx_meso_1_sp and vx_meso_2_sp
         do i=1,nxmax
           do j=1,nymax
             do k=1,nzmax
               if(IsLatLon)then
-
                 ! Advect in x
                 minsig = minval(sigma_nx_pd(i:i+1,j,k))
                 tmp1 = real(abs(vx_meso_next_step_sp(i,j,k)),kind=ip)*MPS_2_KMPHR*minsig/kappa_pd(i,j,k)
@@ -124,7 +122,7 @@
                 if(tmp2.gt.vymax_dy)vymax_dy=tmp2
               endif
               ! Advect in z
-              ! Note: for this to work, we really need to set vf_pd=0 for all
+              ! Note: for this to work, we really need to set vf_meso_next_step_sp=0 for all
               !       species that are flushed out of the system.  Otherwise, this
               !       will always be dominated by the large grain sizes with the
               !       highest fall velocities
@@ -132,30 +130,26 @@
                      maxval(abs(vf_meso_next_step_sp(i,j,k,1:nsmax))),kind=ip)) &
                        *MPS_2_KMPHR / dz_vec_pd(k)
               if(tmp3.gt.vzmax_dz) vzmax_dz = tmp3
-
             enddo
           enddo
         enddo
       else
-        ! This is the normal block which looks over all cells using the
+        ! This is the default block which looks over all cells using the
         ! velocities for this time step
         if(.not.IsLatLon) then
+          ! regular projected grids have a uniform x and y geometry so it is faster
+          ! to calculate these terms here
           vxmax = maxval(abs(vx_pd(1:nxmax,1:nymax,1:nzmax)))
           vxmax_dx = vxmax/dx
           vymax = maxval(abs(vy_pd(1:nxmax,1:nymax,1:nzmax)))
           vymax_dy = vymax/dy
-        else
-          vxmax_dx = 0.0_ip
-          vymax_dy = 0.0_ip
         endif
-        ! This branch looks at conditions cell-by-cell
-        ! Use vx_meso_1_sp and vx_meso_2_sp
-        ! First initialize vzmax_dz to 0.0 so we can test for the largest
-        vzmax_dz = 0.0_ip
+        ! This branch looks at conditions cell-by-cell which is needed for Lon/Lat girds
+        ! and also all z calculations (because we might have a logarithmic or variable dz)
+        ! Using vx_pd and vy_pd
         do i=1,nxmax
           do j=1,nymax
             do k=1,nzmax
-
               if(IsLatLon)then
                 ! Advect in x
                 minsig = minval(sigma_nx_pd(i:i+1,j,k))
@@ -174,28 +168,29 @@
               tmp3 =       (abs(vz_pd(i,j,k)) + &
                     maxval(abs(vf_pd(i,j,k,1:nsmax))))/dz_vec_pd(k)
               if(tmp3.gt.vzmax_dz) vzmax_dz = tmp3
-
             enddo
           enddo
         enddo
       endif
+      ! We might have a special case where we need to continue advection even when no ash
+      ! is present (between eruptive pulses, resuspension cases where source hasn't been activated)
+      ! Reset vzmaz_dz if this case is special.
       if(n_gs_aloft.eq.0)vzmax_dz = 0.0_ip
       time_advect = 1.0_ip/max(vxmax_dx,vymax_dy,vzmax_dz)
 
       !-------------------------------------------------------
       !  DIFFUSION
       !-------------------------------------------------------
-      ! 
       if (useDiffusion)then
         if (useVarDiffH.or.useVarDiffV)then
           ! If we are using variable diffusivity based on current wind velocities,
-          ! then we always need to calculate DT (at least on each met step).  If
-          ! neither the grid nor the diffusivities change, then we only need to
+          ! then we always need to calculate DT (or each met step if using FAST_DT).
+          ! If neither the grid nor the diffusivities change, then we only need to
           ! do this once.
           have_DT_diffus = .false.
         endif
   
-        if (.not.have_DT_diffus)then
+        if (.not.have_DT_diffus)then  ! If we don't have dt precalculated, enter this branch
           ! Recall that dx and dy are set in Calc_Mesh to be the most restrictive
           !   -- it is better to test cell-by-cell with the same ds measure as
           !      the diffusion routines
@@ -203,28 +198,30 @@
           dy2 = dy*dy
           dz2 = minval(dz_vec_pd(1:nzmax))**2.0_ip
 
-          diffx_dx = DT_MAX
-          diffy_dy = DT_MAX
-          diffz_dz = DT_MAX
+          ! Note: we might want to separate these into different diffusion scenarios depending
+          !       on if horizontal and vertical diffusion are independently turned on or off.
+          !         1-d: only vert
+          !         2-d: only horz
+          !         3-d: both
+          !       Current implementation assume 3-d diffusion with non-zero diffusivities
+          time_diffuse = DT_MAX
           do i=1,nxmax
             do j=1,nymax
               do k=1,nzmax
                 ! Diffusion in x
                 minsig = minval(sigma_nx_pd(i:i+1,j,k))
                 tmp1 = ((kappa_pd(i,j,k)/minsig)**2.0_ip)/kx(i,j,k)
-                if(tmp1.lt.diffx_dx) diffx_dx=tmp1
                 ! Diffusion in y
                 minsig = minval(sigma_ny_pd(i,j:j+1,k))
                 tmp2 = ((kappa_pd(i,j,k)/minsig)**2.0_ip)/ky(i,j,k)
-                if(tmp2.lt.diffy_dy) diffy_dy=tmp2
                 ! Diffusion in z
                 minsig = minval(sigma_nz_pd(i,j,k:k+1))
                 tmp3 = ((kappa_pd(i,j,k)/minsig)**2.0_ip)/kz(i,j,k)
-                if(tmp3.lt.diffz_dz) diffz_dz=tmp3
+                tmp4 = tmp1+tmp2+tmp3
+                if(time_diffuse.gt.tmp4)time_diffuse=tmp4
               enddo
             enddo
           enddo
-          time_diffuse = min(tmp1,tmp2,tmp3)
 
           ! Now set the time step restriction
           if (useCN) then
