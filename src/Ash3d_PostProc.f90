@@ -156,11 +156,11 @@
       integer             :: outformat        ! output format
       integer             :: iiprod           ! code for input dataset
       integer             :: iprod            ! code for output product
-      integer             :: ndims           ! dimensions of the input data file
+      integer             :: ndims            ! dimensions of the input data file
       integer             :: ivar
       integer             :: TS_Flag
       integer             :: height_flag
-      integer             :: itime = -1      ! initialize time step to the last step
+      integer             :: itime = -1       ! initialize time step to the last step
       integer             :: i,j,ii
       integer             :: tmp_int
       integer             :: icase

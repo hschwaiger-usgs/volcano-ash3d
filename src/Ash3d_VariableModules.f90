@@ -297,12 +297,10 @@
       character(len=20),dimension(MAXNUM_OPTMODS) :: OPTMOD_names
       integer                  :: nmods
 
-#ifdef USEZIP
-      logical, parameter       :: usezip = .true.
-#else
-      logical, parameter       :: usezip = .false.
-#endif
+      logical                  :: usezip = .false.
       character(len=50)        :: zippath = ''
+      logical                  :: usegnuplot = .false.
+      character(len=50)        :: gnuplotpath = ''
 
       ! Some variables determined by preprocessor flags at compilation time
 #ifdef LIM_NONE
@@ -393,8 +391,8 @@
       integer   :: OS_TYPE    = 1                 ! 1=Linux, 2=MacOS, 3=Windows
       logical   :: IsLitEnd   = .true.            ! little-endian-ness; set in Set_OS_Env
       logical   :: IsLinux    = .true.
-      logical   :: IsWindows  = .false.
       logical   :: IsMacOS    = .false.
+      logical   :: IsWindows  = .false.
       character (len=7)    :: OS_Flavor
       character (len=2)    :: DirPrefix  = 'c:'
       character (len=1)    :: DirDelim   = '/'
@@ -402,8 +400,8 @@
       character (len=32)   :: os_user
       character (len=50)   :: os_host
       character (len=255)  :: os_cwd
-      integer              :: Comp_Code           ! 1=gfortran,2=ifort
-      character (len=8)    :: Comp_Flavor         ! 'gfortran' or 'ifort'
+      integer              :: Comp_Code           ! 1=gfortran,2=ifort,3=aocc,4=nvhpc
+      character (len=8)    :: Comp_Flavor         ! 'gfortran','ifort','flang','nvfortran'
 
       end module global_param
 

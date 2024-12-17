@@ -1394,10 +1394,10 @@
 
       if(n_gs_max.gt.0)then
         do isize=1,n_gs_max
-          vol = vol + sum(DepositGranularity(1:nxmax,1:nymax,isize) *   & ! in kg/km^3
-                           kappa_pd(1:nxmax,1:nymax,0))          /   & ! convert to kg
-                      MagmaDensity                      /   & ! convert to m3
-                      KM3_2_M3                                ! convert to km3
+          vol = vol + sum(DepositGranularity(1:nxmax,1:nymax,isize) * & ! in kg/km^3
+                           kappa_pd(1:nxmax,1:nymax,0))             / & ! convert to kg
+                      MagmaDensity                                  / & ! convert to m3
+                      KM3_2_M3                                          ! convert to km3
         enddo
       endif
 
@@ -1444,14 +1444,14 @@
                                   kappa_pd(      0,1:nymax,1:nzmax)) +       &
                         sum(outflow_yz2_pd(        1:nymax,1:nzmax,isize)*   &
                                   kappa_pd(nxmax+1,1:nymax,1:nzmax)) +       &
-                        sum(outflow_xz1_pd(1:nxmax,        1:nzmax,isize)   *   &
-                                  kappa_pd(1:nxmax,        0,1:nzmax)) +          &
-                        sum(outflow_xz2_pd(1:nxmax,        1:nzmax,isize)  *   &
-                                  kappa_pd(1:nxmax,nymax+1,1:nzmax)) +         &
-                        sum(outflow_xy2_pd(1:nxmax,1:nymax        ,isize)   *   &
-                                  kappa_pd(1:nxmax,1:nymax,  nzmax+1)) )     /   & ! convert to kg
-                        MagmaDensity                            /   & ! convert to m3
-                        KM3_2_M3                                      ! convert to km3
+                        sum(outflow_xz1_pd(1:nxmax,        1:nzmax,isize)*   &
+                                  kappa_pd(1:nxmax,        0,1:nzmax))   +   &
+                        sum(outflow_xz2_pd(1:nxmax,        1:nzmax,isize)*   &
+                                  kappa_pd(1:nxmax,nymax+1,1:nzmax))     +   &
+                        sum(outflow_xy2_pd(1:nxmax,1:nymax        ,isize)*   &
+                                  kappa_pd(1:nxmax,1:nymax,  nzmax+1)) ) /   & ! convert to kg
+                        MagmaDensity                                     /   & ! convert to m3
+                        KM3_2_M3                                               ! convert to km3
 
         enddo
       endif

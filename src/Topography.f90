@@ -1722,7 +1722,6 @@
           if(maxlat_Topo_Met.le.cleft.and.&
              maxlat_Topo_Met.gt.cright)then
             end_lat_idx = ilat
-            !Topo_UseCompGrid = .true.
           endif
         else
           if(minlat_Topo_Met.ge.cleft.and.&
@@ -1744,7 +1743,6 @@
           if(maxlat_Topo_comp.gt.cleft.and.&
              maxlat_Topo_comp.le.cright)then
             end_lat_idx = ilat
-            !Topo_UseCompGrid = .true.
           endif
 
         endif
@@ -1776,7 +1774,6 @@
       loncc_topo_subgrid(1:nlon_topo_subgrid) = lon_topo_fullgrid(start_lon_idx:end_lon_idx-1)
       if(y_inverted)then
         do ilat=1,nlat_topo_subgrid
-          !lat_topo_subgrid(nlat_topo_subgrid-ilat+1) = lat_topo_fullgrid(start_lat_idx+1-ilat)
           latcc_topo_subgrid(ilat) = lat_topo_fullgrid(start_lat_idx+1-ilat)
         enddo
       else
@@ -2094,8 +2091,6 @@
 
       use MetReader,       only : &
          nx_submet,ny_submet,MR_Topo_comp,MR_Topo_met
-
-        !IsWater_subgrid
 
       integer :: i,j
 
@@ -2673,6 +2668,8 @@
       return
 
       end subroutine Smooth_Topo
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       end module Topography
 

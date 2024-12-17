@@ -16,15 +16,15 @@ duration. Multiple eruptions separated in time may be included in a single simul
 For larger events, an umbrella source can be used to account for the radial spreading
 of the cloud.
 
-The software is written in Fortran 2003 and is designed for a linux system, although we
+The software is written in Fortran 2008 and is designed for a Linux system, although we
 have had no trouble building the software on MacOS or Microsoft Windows.
 
-For details on usage, please see the User's Guide and look through the example
-programs.
+For details on usage, please see the [User's Guide](doc/UsersGuide.md)
+and look through the example programs.
 
 ## Building Ash3d
 
-Ash3d is written in Fortran 2003 and is designed for a linux system, although we
+Ash3d is written in Fortran 2008 and is designed for a Linux system, although we
 have had no trouble building the software on MacOS or Microsoft Windows.
 
 ### Prerequisite Software
@@ -209,6 +209,8 @@ The following are the variables available to edit:
           -  `-DFAST_SUBGRID` adjusts the computational domain to be just the
                min/max in x,y,z of the region where ash concentration exceeds
                some threshold.  
+- `USEZIP      = T or [F]`
+              If Ash3d_PostProc
 - `USEPLPLOT   = T or [F]`  
               If Ash3d_PostProc is to be built, this variable indicates if
               the plplot library is available on the system for plotting maps

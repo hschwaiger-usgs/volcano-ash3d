@@ -29,8 +29,6 @@
 
       subroutine MesoInterpolater(TimeNow,Load_MesoSteps,Interval_Frac)
 
-      ! Fclaw subroutine MesoInterpolater(TimeNow,Load_MesoSteps,Interval_Frac,first_time,Meso_toggle)
-
       use precis_param
 
       use io_units
@@ -99,8 +97,6 @@
 
       real(kind=dp) :: HoursIntoInterval ! hours since the last windfile timestep
       real(kind=dp) :: TimeNow_fromRefTime
-      ! Fclaw
-      !integer, intent(inout) :: Meso_toggle
 
       INTERFACE
         subroutine Adjust_DT(mesostep)

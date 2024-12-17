@@ -357,7 +357,6 @@
       ! Write out arrays
       do j=ny,1,-1
         write(fid_ascii2dout,3006) (OVar(i,j), i=1,nx)
-        !write(fid_ascii2dout,'(g0)') ''          ! make a blank line between rows
         write(fid_ascii2dout,*)" "               ! make a blank line between rows
       enddo
       
@@ -480,12 +479,6 @@
       close(fid_ascii2din)
 
 !     format statements
-!3000  format(6x,i5)
-!3001  format(6x,i5)
-!3002  format(10x,f15.3)
-!3003  format(10x,f15.3)
-!3004  format(10x,2f15.3)
-!3005  format(13x,a6)
 !3006  format(10f15.3)               ! Older ASCII output file from Ash3d used this format
 3006  format(10f18.6)
 

@@ -432,14 +432,7 @@
       subroutine Calculate_Tephra_Shape
 
       integer :: isize,j
-      !real(kind=ip) :: ellipse_area,ellipse_vol,equiv_rad
-      !real(kind=ip) :: diamN ! diamter of sphere with equivalent projected area
-      !real(kind=ip) :: diamS ! diamter of sphere with equivalent surface area
-      !real(kind=ip) :: diamV ! diamter of sphere with equivalent volume
       real(kind=ip) :: p_exp
-      !real(kind=ip) :: sphere_area
-!      real(kind=ip) :: phi_sphere
-
       real(kind=ip) :: Dahneke_LD(13), Dahneke_RL(13),onF
       real(kind=ip) :: tmp_b, tmp_c
       integer       :: Dahni
@@ -506,6 +499,7 @@
           Tephra_gsF(isize) = 1.0_ip
         endif
 
+        ! Volume and area equations
         !ellipse_vol  = 4.0_ip*PI*Tephra_gsF(i)*Tephra_gsF(i)/3.0_ip
         !equiv_rad    = (ellipse_vol*3.0_ip/(4.0_ip*PI))**(1.0_ip/3.0_ip)
         !sphere_area  = 4.0_ip*PI*equiv_rad*equiv_rad
@@ -1240,6 +1234,8 @@
       return
 
       end function vset_Stokes_slip
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       end module Tephra
 

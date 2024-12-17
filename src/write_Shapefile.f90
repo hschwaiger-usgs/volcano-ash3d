@@ -178,22 +178,6 @@
           character(len=1),intent(in)      :: DBASE_FieldTyp
           integer(kind=1),intent(in)       :: DBASE_FieldLen
         end subroutine writeShapFileFieldDesArr
-!        integer(kind=4) function BigEnd_4int(isLit,r)
-!          logical         :: isLit
-!          integer(kind=4) :: r
-!        end function BigEnd_4int
-!        integer(kind=2) function LitEnd_2int(isLit,r)
-!          logical         :: isLit
-!          integer(kind=2) :: r
-!        end function LitEnd_2int
-!        integer(kind=4) function LitEnd_4int(isLit,r)
-!          logical         :: isLit
-!          integer(kind=4) :: r
-!        end function LitEnd_4int
-!        real(kind=8) function LitEnd_8real(isLit,r)
-!          logical         :: isLit
-!          real(kind=8)    :: r
-!        end function LitEnd_8real
       END INTERFACE
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
@@ -309,8 +293,6 @@
       allocate(ymax(nrec)); ymax(:) = -1.0e8_8
 
       do irec = 1,nrec  ! This is the loop over the layers (records)
-      !irec = 0
-      !do ilev = 1,nConLev  ! This is the loop over the contours
         ilev = rec2lev(irec)
         NumParts(irec) = ContourDataNcurves(ilev)
         NumPoints(irec) = 0  ! Initialize the number of points for this record

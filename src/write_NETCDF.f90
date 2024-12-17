@@ -373,6 +373,8 @@
       cdf_WindStartTime = HS_xmltime(MR_windfile_starthour(MR_MetStep_findex(1)),BaseYear,useLeap)
 
       ! Create and open netcdf file
+      !  If you want to make Ash3d interactive if the output file already exists, then
+      !  uncomment the lines in the if-block below
       inquire(file=concenfile,exist=IsThere)
       if(IsThere)then
         do io=1,2;if(VB(io).le.verbosity_error)then
