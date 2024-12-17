@@ -99,8 +99,6 @@
 
       subroutine advect_z
 
-      !!!$ use omp_lib
-
       integer       :: i,j,n    ! These are the indices mapping to the global arrays
       integer       :: i_I    ! This is the index along interfaces in the particular advection direction
       integer       :: i_cc   ! This is the index along cell-centers in the particular advection direction
@@ -133,23 +131,10 @@
       real(kind=ip) :: LimFlux_Rbound,LimFlux_Lbound
       integer :: rmin, rmax     ! min and max indicies of the row
 
-      !integer OMP_GET_MAX_THREADS
-      !integer OMP_GET_NUM_THREADS
-      !integer OMP_GET_THREAD_NUM
-      !integer :: nthreads,thread_num
-      !logical :: OMP_get_nested
-
       INTERFACE
         subroutine Set_BC(bc_code)
           integer,intent(in) :: bc_code ! 1 for advection, 2 for diffusion
         end subroutine Set_BC
-        !function AdvectUpdate_1d(ncells,q_cc,dt_vol_cc,usig_I)
-        !  integer :: ncells
-        !  real(kind=8),dimension(-1:ncells+2) :: AdvectUpdate_1d
-        !  real(kind=8),dimension(-1:ncells+2) :: q_cc
-        !  real(kind=8),dimension(-1:ncells+2) :: dt_vol_cc
-        !  real(kind=8),dimension(-1:ncells+2) :: usig_I
-        !end function AdvectUpdate_1d
       END INTERFACE
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
@@ -164,30 +149,6 @@
       ncells = rmax - rmin + 1
 
       concen_pd(:,:,:,:,ts1) = 0.0_ip
-
-! There are a few strategies here: loop over a combined index for n and
-! j, loop over a combined index for n, j and i, or loop first over n,
-! then launch opm threads over nested i,j with a collapse flag
-!
-!      ! Here we bundle the n and j loops into one do loop to more
-!      ! efficiently enable parallelization 
-!      do idx_dum=1,nsmax*nymax
-!      ! Now recover n and j
-!        j = mod(idx_dum-1,nymax) +1
-!        n = floor(real((idx_dum-1)/nymax,kind=ip))+1
-!        if(.not.IsAloft(n)) cycle
-!        do i=1,nxmax
-
-!  OR
-
-!      do idx_dum=1,nsmax*nymax*nxmax
-!         ! Now recover i,j and n
-!         ! Note: we can recover these indicies in any order we choose,
-!         ! as long as all are accounted for.  So recover in optimal
-!         ! (column-major) order
-!         i = (idx_dum-1)/(nymax*nsmax)+1
-!         j = (idx_dum - (i-1)*nymax*nsmax-1)/nsmax+1
-!         n = idx_dum - (j-1) * nsmax - (i-1)*nymax*nsmax
 
       do n=1,nsmax
         if(.not.IsAloft(n)) cycle
@@ -229,15 +190,7 @@
             usig_I(rmin-1:rmin-1+ncells+1) = 0.5_ip*(vel_cc(rmin-2:rmin-1+ncells  ) + &
                                                      vel_cc(rmin-1:rmin-1+ncells+1))* &
                                                       sig_I(rmin-1:rmin-1+ncells+1)
-            !do l=rmin,rmin-1+ncells+1
-            !  usig_I(l) = 0.5_ip*(vel_cc(l-1)+vel_cc(l))*sig_I(l)
-            !enddo
 
-            ! This calculates the update in a row in one function call
-            !update_cc(-1:ncells+2) = AdvectUpdate_1d(ncells,q_cc,dt_vol_cc,usig_I)
-
-            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            ! This is the branch that includes the update in-line
             dq_I(rmin-1:rmin-1+ncells+2) = q_cc(rmin-1:rmin-1+ncells+2) - &
                                            q_cc(rmin-2:rmin-1+ncells+1)
 
@@ -387,8 +340,6 @@
 
       subroutine advect_sigma
 
-      !!!$ use omp_lib
-
       integer       :: i,j,n    ! These are the indices mapping to the global arrays
       integer       :: i_I    ! This is the index along interfaces in the particular advection direction
       integer       :: i_cc   ! This is the index along cell-centers in the particular advection direction
@@ -421,23 +372,10 @@
       real(kind=ip) :: LimFlux_Rbound,LimFlux_Lbound
       integer :: rmin, rmax     ! min and max indicies of the row
 
-      !integer OMP_GET_MAX_THREADS
-      !integer OMP_GET_NUM_THREADS
-      !integer OMP_GET_THREAD_NUM
-      !integer :: nthreads,thread_num
-      !logical :: OMP_get_nested
-
       INTERFACE
         subroutine Set_BC(bc_code)
           integer,intent(in) :: bc_code ! 1 for advection, 2 for diffusion
         end subroutine Set_BC
-        !function AdvectUpdate_1d(ncells,q_cc,dt_vol_cc,usig_I)
-        !  integer :: ncells
-        !  real(kind=8),dimension(-1:ncells+2) :: AdvectUpdate_1d
-        !  real(kind=8),dimension(-1:ncells+2) :: q_cc
-        !  real(kind=8),dimension(-1:ncells+2) :: dt_vol_cc
-        !  real(kind=8),dimension(-1:ncells+2) :: usig_I
-        !end function AdvectUpdate_1d
       END INTERFACE
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
@@ -452,30 +390,6 @@
       ncells = rmax - rmin + 1
 
       concen_pd(:,:,:,:,ts1) = 0.0_ip
-
-! There are a few strategies here: loop over a combined index for n and
-! j, loop over a combined index for n, j and i, or loop first over n,
-! then launch opm threads over nested i,j with a collapse flag
-!
-!      ! Here we bundle the n and j loops into one do loop to more
-!      ! efficiently enable parallelization 
-!      do idx_dum=1,nsmax*nymax
-!      ! Now recover n and j
-!        j = mod(idx_dum-1,nymax) +1
-!        n = floor(real((idx_dum-1)/nymax,kind=ip))+1
-!        if(.not.IsAloft(n)) cycle
-!        do i=1,nxmax
-
-!  OR
-
-!      do idx_dum=1,nsmax*nymax*nxmax
-!         ! Now recover i,j and n
-!         ! Note: we can recover these indicies in any order we choose,
-!         ! as long as all are accounted for.  So recover in optimal
-!         ! (column-major) order
-!         i = (idx_dum-1)/(nymax*nsmax)+1
-!         j = (idx_dum - (i-1)*nymax*nsmax-1)/nsmax+1
-!         n = idx_dum - (j-1) * nsmax - (i-1)*nymax*nsmax
 
       do n=1,nsmax
         if(.not.IsAloft(n)) cycle
@@ -518,11 +432,6 @@
                                                      vel_cc(rmin-1:rmin-1+ncells+1))* &
                                                       sig_I(rmin-1:rmin-1+ncells+1)
 
-            ! This calculates the update in a row in one function call
-            !update_cc(-1:ncells+2) = AdvectUpdate_1d(ncells,q_cc,dt_vol_cc,usig_I)
-
-            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            ! This is the branch that includes the update in-line
             dq_I(rmin-1:rmin-1+ncells+2) = q_cc(rmin-1:rmin-1+ncells+2) - &
                                            q_cc(rmin-2:rmin-1+ncells+1)
 

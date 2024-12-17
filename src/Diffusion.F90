@@ -266,9 +266,6 @@
       subroutine diff_x
 
       ! Explicit diffusion routine.
-      ! RP Denlinger and HF Schwaiger
-
-      !!!$ USE omp_lib
 
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,ts0,ts1,kappa_pd,sigma_nx_pd,IsPeriodic
@@ -302,12 +299,6 @@
       real(kind=ip) :: LFluct_Rbound,RFluct_Lbound
       integer :: rmin, rmax     ! min and max indices of the row
 
-      !integer OMP_GET_MAX_THREADS
-      !integer OMP_GET_NUM_THREADS
-      !integer OMP_GET_THREAD_NUM
-      !integer :: nthreads,thread_num
-      !logical :: OMP_get_nested
-
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine diff_x"
       endif;enddo
@@ -337,14 +328,6 @@
 
       do n=1,nsmax
         if(.not.IsAloft(n)) cycle
-      !!!$OMP PARALLEL DO &
-      !!!$OMP DEFAULT(NONE) &
-      !!!$OMP SHARED(n,nymax,nzmax,ncells,nsmax,dt_ip,concen_pd,kappa_pd,&
-      !!!$OMP sigma_nx_pd,kx,&
-      !!!$OMP IsPeriodic),&
-      !!!$OMP PRIVATE(l,j,k,q_cc,update_cc,ds,k_ds2_I,&
-      !!!$OMP dq_I,l_cc,k_ds2_I)&
-      !!!$OMP collapse(2)
         do k=kmin,kmax
           do j=jmin,jmax
             ! Initialize cell-centered values for this x-row
@@ -394,7 +377,6 @@
                update_cc(rmin:rmin-1+ncells)
           enddo !
         enddo ! loop over j=1,nymax
-     !!!! !$OMP END PARALLEL do
 
       enddo ! loop over idx_dum
 
@@ -424,9 +406,6 @@
       subroutine diff_y
 
       ! Explicit diffusion routine.
-      ! RP Denlinger and HF Schwaiger
-
-      !!!$ USE omp_lib
 
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,ts0,ts1,kappa_pd,sigma_ny_pd
@@ -460,12 +439,6 @@
       real(kind=ip) :: LFluct_Rbound,RFluct_Lbound
       integer :: rmin, rmax     ! min and max indices of the row
 
-      !integer OMP_GET_MAX_THREADS
-      !integer OMP_GET_NUM_THREADS
-      !integer OMP_GET_THREAD_NUM
-      !integer :: nthreads,thread_num
-      !logical :: OMP_get_nested
-
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine diff_y"
       endif;enddo
@@ -488,14 +461,6 @@
 
       do n=1,nsmax
         if(.not.IsAloft(n)) cycle
-      !!!$OMP PARALLEL DO &
-      !!!$OMP DEFAULT(NONE) &
-      !!!$OMP SHARED(n,nxmax,nzmax,ncells,nsmax,dt_ip,concen_pd,kappa_pd,&
-      !!!$OMP sigma_ny_pd,ky,&
-      !!!$OMP IsPeriodic),&
-      !!!$OMP PRIVATE(l,j,k,q_cc,update_cc,ds,k_ds2_I,&
-      !!!$OMP dq_I,l_cc,k_ds2_I)&
-      !!!$OMP collapse(2)
         do k=kmin,kmax
           do i=imin,imax
             ! Initialize cell-centered values for this y-row
@@ -544,7 +509,6 @@
 
           enddo ! 
         enddo ! loop over j=1,nymax
-     !!!! !$OMP END PARALLEL do
 
       enddo ! loop over idx_dum
 
@@ -572,9 +536,6 @@
       subroutine diff_z
 
       ! Explicit diffusion routine.
-      ! RP Denlinger and HF Schwaiger
-
-      !!!$ USE omp_lib
 
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,ts0,ts1,kappa_pd,sigma_nz_pd
@@ -608,12 +569,6 @@
       real(kind=ip) :: LFluct_Rbound,RFluct_Lbound
       integer :: rmin, rmax     ! min and max indices of the row
 
-      !integer OMP_GET_MAX_THREADS
-      !integer OMP_GET_NUM_THREADS
-      !integer OMP_GET_THREAD_NUM
-      !integer :: nthreads,thread_num
-      !logical :: OMP_get_nested
-
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine diff_z"
       endif;enddo
@@ -636,14 +591,6 @@
 
       do n=1,nsmax
         if(.not.IsAloft(n)) cycle
-      !!!$OMP PARALLEL DO &
-      !!!$OMP DEFAULT(NONE) &
-      !!!$OMP SHARED(n,nymax,nzmax,ncells,nsmax,dt_ip,concen_pd,kappa_pd,&
-      !!!$OMP sigma_nz_pd,kz,&
-      !!!$OMP IsPeriodic),&
-      !!!$OMP PRIVATE(l,j,k,q_cc,update_cc,ds,k_ds2_I,&
-      !!!$OMP dq_I,l_cc,k_ds2_I)&
-      !!!$OMP collapse(2)
         do j=jmin,jmax
           do i=imin,imax
             ! Initialize cell-centered values for this z-row
@@ -694,7 +641,6 @@
 
           enddo ! 
         enddo ! loop over j=1,nymax
-     !!!! !$OMP END PARALLEL do
 
       enddo ! loop over idx_dum
 
@@ -739,7 +685,7 @@
       integer :: ncells
 
       real(kind=ip) :: BC_left_t0,BC_right_t0
-      !real(kind=ip) :: BC_left_t1,BC_right_t1
+      !real(kind=ip) :: BC_left_t1,BC_right_t1  ! We do not currently use BC at t1
       real(kind=sp),allocatable,dimension(:)   :: DL_s,D_s,DU_s
       real(kind=sp),allocatable,dimension(:,:) :: B_s
       real(kind=dp),allocatable,dimension(:)   :: DL_d,D_d,DU_d
@@ -762,7 +708,6 @@
       real(kind=ip),dimension( 1:nxmax+1)     :: vavg_I
       real(kind=ip),dimension( 1:nxmax+1)     :: kavg_I
       real(kind=ip),dimension( 1:nxmax+1)     :: k_ds_I  ! k/ds
-!      real(kind=ip),dimension( 1:nxmax+1)     :: ksig2_vol_I  ! k*sig*sig/volavg 
 
       integer :: rmin, rmax     ! min and max indices of the row
 #ifdef CRANKNIC
@@ -1001,7 +946,7 @@
       integer :: ncells
 
       real(kind=ip) :: BC_left_t0,BC_right_t0
-      !real(kind=ip) :: BC_left_t1,BC_right_t1
+      !real(kind=ip) :: BC_left_t1,BC_right_t1  ! We do not currently use BC at t1
       real(kind=sp),allocatable,dimension(:)   :: DL_s,D_s,DU_s
       real(kind=sp),allocatable,dimension(:,:) :: B_s
       real(kind=dp),allocatable,dimension(:)   :: DL_d,D_d,DU_d
@@ -1260,7 +1205,7 @@
       integer :: ncells
 
       real(kind=ip) :: BC_left_t0,BC_right_t0
-      !real(kind=ip) :: BC_left_t1,BC_right_t1
+      !real(kind=ip) :: BC_left_t1,BC_right_t1  ! We do not currently use BC at t1
       real(kind=sp),allocatable,dimension(:)   :: DL_s,D_s,DU_s
       real(kind=sp),allocatable,dimension(:,:) :: B_s
       real(kind=dp),allocatable,dimension(:)   :: DL_d,D_d,DU_d
@@ -1283,7 +1228,6 @@
       real(kind=ip),dimension( 1:nzmax+1)     :: vavg_I
       real(kind=ip),dimension( 1:nzmax+1)     :: kavg_I
       real(kind=ip),dimension( 1:nzmax+1)     :: k_ds_I  ! k/ds
-      !real(kind=ip),dimension( 1:nzmax+1)     :: ksig2_vol_I  ! k*sig*sig/volavg 
 
       integer :: rmin, rmax     ! min and max indices of the row
 

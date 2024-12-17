@@ -102,23 +102,10 @@
       real(kind=ip) :: LimFlux_Rbound,LimFlux_Lbound
       integer :: rmin, rmax     ! min and max indicies of the row
 
-      !integer OMP_GET_MAX_THREADS
-      !integer OMP_GET_NUM_THREADS
-      !integer OMP_GET_THREAD_NUM
-      !integer :: nthreads,thread_num
-      !logical :: OMP_get_nested
-
       INTERFACE
         subroutine Set_BC(bc_code)
           integer,intent(in) :: bc_code ! 1 for advection, 2 for diffusion
         end subroutine Set_BC
-        !function AdvectUpdate_1d(ncells,q_cc,dt_vol_cc,usig_I)
-        !  integer :: ncells
-        !  real(kind=8),dimension(-1:ncells+2) :: AdvectUpdate_1d
-        !  real(kind=8),dimension(-1:ncells+2) :: q_cc
-        !  real(kind=8),dimension(-1:ncells+2) :: dt_vol_cc
-        !  real(kind=8),dimension(-1:ncells+2) :: usig_I
-        !end function AdvectUpdate_1d
       END INTERFACE
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
@@ -177,11 +164,7 @@
             if (ZScaling_ID.eq.2) then
               DelDonD_cc(rmin-1:rmin-1+ncells+1)=DelDxonD_cc(rmin-1:rmin-1+ncells+1,j)
             endif
-            ! This calculates the update in a row in one function call
-            !update_cc(-1:ncells+2) = AdvectUpdate_1d(ncells,q_cc,dt_vol_cc,usig_I)
 
-            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            ! This is the branch that includes the update in-line
             dq_I(rmin-1:rmin-1+ncells+2) = q_cc(rmin-1:rmin-1+ncells+2) - &
                                            q_cc(rmin-2:rmin-1+ncells+1)
 
@@ -338,8 +321,6 @@
 
       subroutine advect_y
 
-      !!!$ use omp_lib
-
       integer       :: i,k,n    ! These are the indices mapping to the global arrays
       integer       :: i_I    ! This is the index along interfaces in the particular advection direction
       integer       :: i_cc   ! This is the index along cell-centers in the particular advection direction
@@ -372,23 +353,10 @@
       real(kind=ip) :: LimFlux_Rbound,LimFlux_Lbound
       integer :: rmin, rmax     ! min and max indicies of the row
 
-      !integer OMP_GET_MAX_THREADS
-      !integer OMP_GET_NUM_THREADS
-      !integer OMP_GET_THREAD_NUM
-      !integer :: nthreads,thread_num
-      !logical :: OMP_get_nested
-
       INTERFACE
         subroutine Set_BC(bc_code)
           integer,intent(in) :: bc_code ! 1 for advection, 2 for diffusion
         end subroutine Set_BC
-        !function AdvectUpdate_1d(ncells,q_cc,dt_vol_cc,usig_I)
-        !  integer :: ncells
-        !  real(kind=8),dimension(-1:ncells+2) :: AdvectUpdate_1d
-        !  real(kind=8),dimension(-1:ncells+2) :: q_cc
-        !  real(kind=8),dimension(-1:ncells+2) :: dt_vol_cc
-        !  real(kind=8),dimension(-1:ncells+2) :: usig_I
-        !end function AdvectUpdate_1d
       END INTERFACE
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
@@ -448,11 +416,6 @@
               DelDonD_cc(rmin-1:rmin-1+ncells+1)=DelDyonD_cc(i,rmin-1:rmin-1+ncells+1) 
             endif
 
-            ! This calculates the update in a row in one function call
-            !update_cc(-1:ncells+2) = AdvectUpdate_1d(ncells,q_cc,dt_vol_cc,usig_I)
-
-            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            ! This is the branch that includes the update in-line
             dq_I(rmin-1:rmin-1+ncells+2) = q_cc(rmin-1:rmin-1+ncells+2) - &
                                            q_cc(rmin-2:rmin-1+ncells+1)
 

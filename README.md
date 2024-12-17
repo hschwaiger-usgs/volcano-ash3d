@@ -20,7 +20,7 @@ The software is written in Fortran 2003 and is designed for a linux system, alth
 have had no trouble building the software on MacOS or Microsoft Windows.
 
 For details on usage, please see the User's Guide and look through the example
-programs.  
+programs.
 
 ## Building Ash3d
 
@@ -61,51 +61,45 @@ installed, if possible:
 
 All of these packages (except dislin) are available on Red Hat and Ubuntu systems and can be installed
 using the standard distribution software installer (yum/dnf for RedHat systems or apt for
-Ubunto).  For some of these packages and for some distributions, you might need to enable
+Ubunto). For some of these packages and for some distributions, you might need to enable
 extra repositories, such as epel and powertools/CRB (for Red Hat systems)
 
 On RedHat-based systems, these can be installed with:  
-  `sudo yum install lapack lapack-devel blas blas-devel`  
-  `sudo yum install netcdf netcdf-devel netcdf-fortran netcdf-fortran-devel`  
-  `sudo yum install eccodes eccodes-devel`  
-  `sudo yum install zip`  
-  `sudo yum install gnuplot`  
-  `sudo yum install plplot`
+`sudo yum install lapack lapack-devel blas blas-devel`  
+`sudo yum install netcdf netcdf-devel netcdf-fortran netcdf-fortran-devel`  
+`sudo yum install eccodes eccodes-devel`  
+`sudo yum install zip`  
+`sudo yum install gnuplot`  
+`sudo yum install plplot`
 
 On Ubuntu-based systems:  
-  `sudo apt install liblapack64-3 liblapack64-dev libblas64-3 libblas64-dev`  
-  `sudo apt install libnetcdf-c++4 libnetcdf-dev libnetcdff-dev`  
-  `sudo apt libeccodes0 libeccodes-dev`  
-  `sudo apt install zip`  
-  `sudo apt install gnuplot`  
-  `sudo apt install plplot`  
+`sudo apt install liblapack64-3 liblapack64-dev libblas64-3 libblas64-dev`  
+`sudo apt install libnetcdf-c++4 libnetcdf-dev libnetcdff-dev`  
+`sudo apt libeccodes0 libeccodes-dev`  
+`sudo apt install zip`  
+`sudo apt install gnuplot`  
+`sudo apt install plplot`  
 
 ### Compiling Ash3d with the default settings
 Once the necessary USGS libraries and optional distribution packages are installed, Ash3d can
-be built.  The makefile in `volcano-ash3d/src` can be edited to suit your system.
+be built. The makefile in `volcano-ash3d/src` can be edited to suit your system.
 
 To compile, verify that the makefile is consistent with the install directory and options
 used in the installation of the preliminary software. Then simply type:  
-
-  `make`
-
+`make`  
 Alternatively, `make all` will also compile the `tools`, including `Ash3d_ASCII_check` which
 compares two ASCII output files for run verification as well as `Ash3d_PostProc` which
-can be used for post-processing Ash3d output.  To test the installation, type:
-
-  `make check`
-
+can be used for post-processing Ash3d output. To test the installation, type:  
+`make check`  
 This will run all the tests in `tests/test_[1-4]` and run `Ash3d_ASCII_check` on the
-resulting ASCII output files, reporting PASS or FAIL.  These tests are described in
+resulting ASCII output files, reporting PASS or FAIL. These tests are described in
 `tests/readme.txt` and are designed to be quick runs with output compared with expected
-output.  The test cases in 
+output. The test cases in 
 `tests/test_04` require that the NCEP 50-year reanalysis data files for the year 1980
-be stored in `/data/WindFiles/NCEP/1980`.  Assuming MetReader was installed in the default
+be stored in `/data/WindFiles/NCEP/1980`. Assuming MetReader was installed in the default
 location, these reanayalsis files can be downloaded by running the following script
-installed when MetReader was installed.
-
-`/opt/USGS/bin/autorun_scripts/get_NCEP_50YearReanalysis.sh 1980`
-
+installed when MetReader was installed.  
+`/opt/USGS/bin/autorun_scripts/get_NCEP_50YearReanalysis.sh 1980`  
 This script expects that the directories `/data/WindFiles/NCEP` and
 `/data/WindFiles/NCEP/dbuffer` exist and that the user
 running the script has write permissions. If windfiles are stored elsewhere, please
@@ -113,10 +107,8 @@ make sure that the environment variable WINDROOT is set in your .bash\_profile o
 files.
 
 To install the software, edit the `INSTALLDIR` variable of the makefile (the
-default is `/opt/USGS`) and type:
-
-  `make install`
-
+default is `/opt/USGS`) and type:  
+`make install`  
 You will need to have write permission in `${INSTALLDIR}` or install as root.
 This will install the following in `${INSTALLDIR}/bin/`:
 
@@ -137,12 +129,12 @@ cloud load with satellite retrievals.
 This case does not model the full event, but just compares model output with a
 published result from [Mastin et al, 2016](https://doi.org/10.5194/acp-16-9399-2016).
 
-4. Mazama
+4. Mazama  
 This case also does not model a particular event, but is intended to be compared
 with published model results for ash fallout. The source term is an umbrella cloud.
 Results are compared with those from [Buckland et al, 2022](https://doi.org/10.1007/s00445-022-01593-1).
 
-5. Kelud, Feb. 13, 2014
+5. Kelud, Feb. 13, 2014  
 This case also uses an umbrella source, but just for tracking the ash cloud
 (source is `umbrella_air`). Model results of the cloud development and advection
 are compared with cloud outlines from satellite observations presented in
@@ -162,11 +154,11 @@ advection, vertical advection, rigid rotation, diffusion, shear rotation and usi
 of manufactured solutions. Each test is set up to show the rate of convergence.
 
 ### Compiling Ash3d with the customized settings
-To build Ash3d, we currently use a user-edited makefile.  All the main
+To build Ash3d, we currently use a user-edited makefile. All the main
 variables to edit are in the top block of the makefile up to the lines:  
-`###############################################################################`
-`#####  END OF USER SPECIFIED FLAGS  ###########################################`
-`###############################################################################`
+`###############################################################################`  
+`#####  END OF USER SPECIFIED FLAGS  ###########################################`  
+`###############################################################################`  
 
 The following are the variables available to edit:  
 
@@ -244,30 +236,28 @@ The following are the variables available to edit:
               may be desired for logging of runs.
 
 If you have a working executable, you can always see what settings were used to build it
-by typing:
-
-`Ash3d -help make`
+by typing:  
+`Ash3d -help make`  
 
 ### Ash3d Post-processing tool
 
 Ash3d can write output products directly at run-time in a number of different formats, including
-ERSI ASCII, binary, kml/kmz.  Alternatively, it can also write a netcdf file which contains
+ERSI ASCII, binary, kml/kmz. Alternatively, it can also write a netcdf file which contains
 all the information of these output products along with 3-D variables for transient
-concentrations.  If this netcdf file is written, the post-processing tool `Ash3d_PostProc`,
+concentrations. If this netcdf file is written, the post-processing tool `Ash3d_PostProc`,
 can be used to write ASCII, binary, kml, shapefiles, or png images of output variables.
 
 To compile this tool, make sure the makefile variables `USEPLPLOT` and `USEDISLIN`
 match your system and that the paths of the include directories and libraries are correct
 for your system.
-Then type:
-
-`make postproc`
+Then type:  
+`make postproc`  
 
 Usage
 -----
 
-Please see the [user's guide](doc/UsersGuide.md) for more information on using this software.  A simplified
-user's guide can be found in `volcano-ash3d/doc/UsersGuide.md`.  A guide for using the
+Please see the [user's guide](doc/UsersGuide.md) for more information on using this software. A simplified
+user's guide can be found in `volcano-ash3d/doc/UsersGuide.md`. A guide for using the
 USGS web-based interface to Ash3d can be found at
 [Mastin et al, 2013](https://doi.org/10.3133/ofr20131122).
 Instructions on usage of the `Ash3d_PostProc` tool can be found [here](doc/PostProc.md)

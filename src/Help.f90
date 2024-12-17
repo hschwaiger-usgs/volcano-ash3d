@@ -830,6 +830,7 @@
       write(outlog(io),1)'                    3 image/png                                                 '
       write(outlog(io),1)'                    4 binary                                                    '
       write(outlog(io),1)'                    5 shape file                                                '
+       ! Place-holders for planned data formats
       !write(outlog(io),1)'                    6 grib2                                                     '
       !write(outlog(io),1)'                    7 netcdf                                                    '
       !write(outlog(io),1)'                    8 tecplot                                                   '
@@ -850,4 +851,3 @@
       end module help
 
 !##############################################################################
-

@@ -6,7 +6,12 @@
 !  operating system.
 !  
 !  This software, along with auxillary USGS libraries and related repositories,
-!  can be found at https://code.usgs.gov/vsc/ash3d
+!  can be found at https://code.usgs.gov/vsc/volcano-ash3d
+!
+!  To cite for this software, please see https://code.usgs.gov/vsc/volcano-ash3d/CHANGELOG.md
+!  for the doi for each release version. Version 1.0.0 can be referenced by:
+!   Schwaiger, H.F. et al. (2024) Ash3d (Version 1.0.0), U.S. Geological Survey Software Release,
+!     [doi:10.5066/P1SJWAKZ](https://doi.org/10.5066/P1SJWAKZ)
 !
 !  Installation instructions are given in the README.md file of this repository.
 !  Basic usage instructions are given in doc/UsersGuide.md.
@@ -752,10 +757,6 @@
                5x,'MetReader time (cpu)      = ',f15.4,' seconds',/&
                5x,'Total solver time (cpu)   = ',f15.4,' seconds',/&
               ,5x,'Wall clock time           = ',f15.4,' seconds') 
-!5003  format(/,5x,'Set-up time              = ',f15.4,' seconds',/&
-!               5x,'Execution time           = ',f15.4,' seconds',/&
-!              ,5x,'Simulation time          = ',f15.4,' seconds')      
-!5004  format(  5x,'Execution time/CPU time  = ',f15.4)
 5005  format(  5x,'Ending deposit volume    = ',f15.4,' km3 DRE')       
 5006  format(  5x,'Ending total volume      = ',f15.4,' km3 DRE')       
 5007  format(  5x,'Building time array of plume height & eruption rate')

@@ -279,6 +279,7 @@
 !   USEPOINTERS            : determines if variables are pointers or allocatable arrays
 !   USEEXTDATA             : determines if Ash3d will rely on external lists for airport and
 !                            volcano data
+!   USEZIP                 : specifies that 'zip' should be used to compress/bundle kml files and pngs
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -287,7 +288,7 @@
       use global_param,  only : &
         DirPrefix,DirDelim,IsLitEnd,IsLinux,IsWindows,IsMacOS,version, &
         CFL,OS_TYPE,OS_Flavor,os_full_command_line,os_cwd,os_host,os_user,&
-        Comp_Code,Comp_Flavor,useFastDt,FastDt_suppress
+        Comp_Code,Comp_Flavor,useFastDt,FastDt_suppress,usezip,zippath
 
       use io_data,       only : &
         Ash3dHome
@@ -375,6 +376,10 @@
       IsLinux   = .false.
       IsWindows = .true.
       IsMacOS   = .false.
+#endif
+
+#ifdef USEZIP
+      zippath = '/usr/bin/zip'
 #endif
 
 #ifdef GFORTRAN
@@ -605,6 +610,7 @@
             write(errlog(io),*)"         2 = plplot"
             write(errlog(io),*)"         3 = gnuplot"
             write(errlog(io),*)"         4 = GMT"
+            ! Placeholders for other post-processing graphics packages
             !write(errlog(io),*)"         5 = matlab"
             !write(errlog(io),*)"         6 = cartopy"
             !write(errlog(io),*)"         7 = R"
@@ -724,6 +730,13 @@
         write(outlog(io),*)"         MACOS: System specified as MacOS"
 #elif defined WINDOWS
         write(outlog(io),*)"       WINDOWS: System specified as MS Windows"
+#endif
+
+#ifdef USEZIP
+       write(outlog(io),*)"         USEZIP: zip will be used to bundle kmz files using path: ",&
+                          trim(adjustl(zippath))
+       call execute_command_line('which zip',exitstat=iostatus)
+       if(iostatus.eq.0)
 #endif
 
 #ifdef FAST_DT

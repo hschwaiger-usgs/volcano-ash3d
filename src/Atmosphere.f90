@@ -261,10 +261,6 @@
       integer :: i,j,k
       real(kind=sp) :: temp,pres
 
-      !logical :: first_time
-      ! Fclaw
-      !logical,save :: first_time = .true.
-
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Set_Atmosphere_Meso"
       endif;enddo
@@ -298,8 +294,6 @@
               stop 1
             endif
           endif
-          ! Fclaw  : delete this line
-          !first_time = .false.
         endif ! first_time
         AirTemp_meso_last_step_MetP_sp = AirTemp_meso_next_step_MetP_sp
         if(useMoistureVars)THEN
@@ -369,6 +363,9 @@
           write(errlog(io),*)"current time.  Not yet implemented."
         endif;enddo
         stop 1
+        ! If we were to call this subroutine when Load_MesoSteps=.false., we would interpolate
+        ! values as follows.
+
         !Temperature(:,:,:) = real( Temp_meso_last_step_sp(:,:,:),kind=ip) + &
         !                     real((Temp_meso_next_step_sp(:,:,:) - &
         !                           Temp_meso_last_step_sp(:,:,:)),kind=ip) * &

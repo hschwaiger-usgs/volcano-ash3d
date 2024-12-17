@@ -1065,7 +1065,7 @@
       subroutine Write_PointData_Airports_KML
 
       use global_param,  only : &
-         IsLinux,IsWindows,IsMacOS,DirPrefix,DirDelim
+         IsLinux,IsWindows,IsMacOS,DirPrefix,DirDelim,usezip,zippath
 
       use io_data,       only : &
          nWriteTimes,VolcanoName,WriteTimes
@@ -1359,8 +1359,10 @@
       endif;enddo
 
       ! Test if zip is installed
-      if(IsLinux.or.IsMacOS)then
-        inquire( file=trim(adjustl('/usr/bin/zip')), exist=IsThere)
+      IsThere = .false.
+      if(usezip.or.IsLinux.or.IsMacOS)then
+        ! double-check that zip is installed
+        inquire( file=trim(adjustl(zippath)), exist=IsThere)
       elseif(IsWindows)then
         ! this is a placeholder for now
         IsThere = .false.

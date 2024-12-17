@@ -97,6 +97,7 @@ FASTFPPFLAG = -DFAST_DT -DFAST_SUBGRID
 #  be generated either with gnuplot or dislin.  Set the corresponding variable
 #  below to 'T' if you want to build with these libraries.  Set to 'F' any you want
 #  to use the default gnuplot.  
+USEZIP    = T
 USEPLPLOT = F
 USEDISLIN = F
 USEGMT    = F  # Set to true only if using the API, otherwise scripts will be written
@@ -215,6 +216,9 @@ ifeq ($(USEEXTDATA), T)
 endif
 
 PLOTFPPFLAG =
+ifeq ($(USEZIP), T)
+ zipFPPFLAG = -DUSEZIP
+endif
 ifeq ($(USEPLPLOT), T)
  plplotFPPFLAG = -DUSEPLPLOT
 # plplotLIBS = -L/usr/local/plplot/lib -lplplotf95cd -lplplotf95d
@@ -249,7 +253,7 @@ USGSLIBDIR = -L$(USGSROOT)/lib
 USGSLIB = -lMetReader -lhourssince -lprojection
 USGSINC = -I$(USGSROOT)/include
 
-PLOTFPPFLAG = $(plplotFPPFLAG) $(dislinFPPFLAG) $(gmtFPPFLAG)
+PLOTFPPFLAG = $(zipFPPFLAG) $(plplotFPPFLAG) $(dislinFPPFLAG) $(gmtFPPFLAG)
 PLOTLIBS= $(plplotLIBS) $(dislinLIBS) $(gmtLIBS)
 PLOTINC=$(plplotINC) $(dislinINC) $(gmtINC)
 

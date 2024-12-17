@@ -33,8 +33,8 @@ Add tests for equivalence of topography cases:
   (3) same as 2, but use scaled topo
 
 make check fails if 'make install' had not been run since
-/opt/USGS/Ash3d/share/GlobalAirports_ewert.txt in not installed.
-Also fails if /data/WindFiles/NCEP/1980/hgt.1980.nc doesn't exist
+~ASH3DHOME/share/GlobalAirports_ewert.txt in not installed.
+Also fails if ~WINDROOT/NCEP/1980/hgt.1980.nc doesn't exist
 
 get_version.sh needs to be fixed so that it works on a MacOS as well.
 Also, it should be run with sh get_version.sh since some systems will not
