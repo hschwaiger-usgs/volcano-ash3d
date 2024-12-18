@@ -61,7 +61,7 @@
       real(kind=ip) :: vxmax,vxmax_dx
       real(kind=ip) :: vymax,vymax_dy
       integer       :: fac
-      real(kind=ip) :: vzmax,vzmax_dz
+      real(kind=ip) :: vzmax_dz
       real(kind=ip) :: minsig
       real(kind=ip) :: maxdiffus
       logical       :: CheckMesoVel

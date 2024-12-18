@@ -4092,7 +4092,7 @@
           write(outlog(io),*)&
            "Diffusion is calculated implicitly using lapack routines for solving Ax=b."
           write(outlog(io),*)&
-           "Note, Imp_fac controls the amount of the t+1 step is used in the stencil."
+           "Note, Imp_fac controls the amount of the t+1 step that is used in the stencil."
           write(outlog(io),*)&
            "  Imp_fac = 1.0 (  0% t, 100% t+1) :: Backward Euler"
           write(outlog(io),*)&

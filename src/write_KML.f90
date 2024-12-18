@@ -1055,7 +1055,7 @@
       subroutine Write_PointData_Airports_KML
 
       use global_param,  only : &
-         IsLinux,IsWindows,IsMacOS,DirPrefix,DirDelim,usezip,zippath,&
+         IsLinux,IsWindows,IsMacOS,usezip,zippath,&
          usegnuplot,gnuplotpath
 
       use io_data,       only : &
@@ -1104,9 +1104,8 @@
       character(len=14) :: dp_outfile
       character(len=14) :: dp_gnufile
       character(len=14) :: dp_pngfile
-      character(len=35) :: gnucom
+      character(len=80) :: gnucom
       character(len=77) :: zipcom
-      character(len=80) :: execpath
 
       real(kind=ip)      :: ymaxpl
       logical            :: IsThere
@@ -1185,7 +1184,7 @@
         ! Test if gnuplot is installed
         if(usegnuplot)then
           ! if we have gnuplot installed, just create the plots now
-          write(gnucom,'(a21,a4,a14)')trim(adjustl(gnuplotpath)),' -p ',dp_gnufile
+          write(gnucom,*)trim(adjustl(gnuplotpath)),' -p ',dp_gnufile
           call execute_command_line(gnucom)
           ! Now delete the script and data files
           open(unit=fid_kmlgnudat, iostat=stat, file=dp_outfile, status='old',action='write')

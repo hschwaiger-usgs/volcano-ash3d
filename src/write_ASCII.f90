@@ -403,7 +403,6 @@
       integer           :: i,j
       character(len=080):: linebuffer080
       integer           :: iostatus
-      integer           :: iostatus2
       character(len=120):: iomessage
       character(len=20) :: tst_str
       integer           :: substr_pos1

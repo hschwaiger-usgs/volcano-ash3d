@@ -472,7 +472,7 @@
         var_User2d_static_XY_FillVal(indx)= temp_2ds_FillVal_Topo(i)
         if(i.eq.1) &
           var_User2d_static_XY(1:nxmax,1:nymax,indx) = &
-           real(topo_comp(1:nxmax,1:nymax),kind=op)*KM_2_M
+           real(topo_comp(1:nxmax,1:nymax)*KM_2_M,kind=op)
       enddo
 
       end subroutine Prep_output_Topo
