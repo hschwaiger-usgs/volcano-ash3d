@@ -32,7 +32,7 @@
 #
 #  SYSTEM specifies which compiler to use
 #    Current available options are:
-#      gfortran , ifort , aocc
+#      gfortran , ifort , aocc , nvhpc
 #    This variable cannot be left blank
 #
 SYSTEM = gfortran
@@ -93,13 +93,19 @@ FASTFPPFLAG = -DFAST_DT -DFAST_SUBGRID
 # PLOTTING LIBRARIES
 #  The default plotting utility for Ash3d_PostProc is gnuplot with plots generated
 #  through system calls to that external program.  Alternatively, you can use either
-#  the plplot or dislin plotting packages.  Currently, shapefile require contour to
-#  be generated either with gnuplot or dislin.  Set the corresponding variable
-#  below to 'T' if you want to build with these libraries.  Set to 'F' any you want
-#  to use the default gnuplot.  
-USEPLPLOT = F
-USEDISLIN = F
-USEGMT    = F  # Set to true only if using the API, otherwise scripts will be written
+#  the plplot, dislin or GMT plotting packages.  Currently, shapefile require contour to
+#  be generated either with gnuplot, dislin or GMT.  Set the corresponding variable
+#  below to 'T' if you want to build with these libraries.
+    # Set to F if you do not have zip installed (verify below that zippath=/usr/bin/zip)
+USEZIP     = T
+    # Set to F if you do not have gnuplot installed (verify below that zippath=/usr/bin/gnuplot)
+USEGNUPLOT = T
+    # Set to T if you want ploplot included (verify local paths below)
+USEPLPLOT  = F
+    # Set to T if you want dislin included (verify local paths below)
+USEDISLIN  = F
+    # Set to T only if using the API, otherwise scripts will be written
+USEGMT     = F
 
 MFILE=makefile
 
@@ -215,15 +221,12 @@ ifeq ($(USEEXTDATA), T)
 endif
 
 PLOTFPPFLAG =
-ifeq ($(USEPLPLOT), T)
- plplotFPPFLAG = -DUSEPLPLOT
-# plplotLIBS = -L/usr/local/plplot/lib -lplplotf95cd -lplplotf95d
-# plplotINC  = -I/usr/include/plplot
-# plplotLIBS = -L/usr/local/plplot/lib -lplplot -lplplotfortran
-# plplotINC  = -I/usr/local/plplot/lib/fortran/modules/plplot
- plplotLIBS = -L/usr/lib64 -lplplot -lplplotfortran
- plplotINC  = -I/usr/lib64/gfortran/modules
- plplotOBJ  = Ash3d_PostProc_plplot.o
+ifeq ($(USEZIP), T)
+ zipFPPFLAG = -DUSEZIP
+ zippath = '/usr/bin/zip'
+else
+ zipFPPFLAG =
+ zippath = '/dev/null'
 endif
 ifeq ($(USEDISLIN), T)
  dislinFPPFLAG = -DUSEDISLIN
@@ -231,27 +234,49 @@ ifeq ($(USEDISLIN), T)
  dislinLIBS = -L/usr/local/dislin -ldislin_d
  dislinINC  = -I/usr/local/dislin/gf
  dislinOBJ  = Ash3d_PostProc_dislin.o
+else
+ dislinFPPFLAG = 
+endif
+ifeq ($(USEPLPLOT), T)
+ plplotFPPFLAG = -DUSEPLPLOT
+  # If you installed distribution packages, your plplot paths are likely here
+ plplotLIBS = -L/usr/lib64 -lplplot -lplplotfortran
+ plplotINC  = -I/usr/lib64/gfortran/modules
+  # If you built your own version of plplot, edit the following
+# plplotLIBS = -L/usr/local/plplot/lib -lplplotf95cd -lplplotf95d
+# plplotINC  = -I/usr/include/plplot
+# plplotLIBS = -L/usr/local/plplot/lib -lplplot -lplplotfortran
+# plplotINC  = -I/usr/local/plplot/lib/fortran/modules/plplot
+
+ plplotOBJ  = Ash3d_PostProc_plplot.o
+else
+ plplotFPPFLAG =
+endif
+ifeq ($(USEGNUPLOT), T)
+ gnuplotFPPFLAG = -DUSEGNUPLOT
+ gnuplotpath = '/usr/bin/gnuplot'
+else
+ gnuplotFPPFLAG =
+ gnuplotpath = '/dev/nul'
 endif
 ifeq ($(USEGMT), T)
  gmtFPPFLAG = -DUSEGMT
  gmtLIBS = -L/usr/lib64 -lgmt -lpsl
  gmtINC  = -I/usr/include/gmt
  gmtOBJ  = gmt.o
- gmtfortloc = /home/hschwaiger/Programs/GIT/gmt-fortran
+ gmtfortloc = ~/Programs/GIT/gmt-fortran
 else
  gmtFPPFLAG = 
  gmtOBJ =
 endif
-
+PLOTFPPFLAG = $(zipFPPFLAG) $(gnuplotFPPFLAG) $(plplotFPPFLAG) $(dislinFPPFLAG) $(gmtFPPFLAG)
+PLOTLIBS= $(plplotLIBS) $(dislinLIBS) $(gmtLIBS)
+PLOTINC=$(plplotINC) $(dislinINC) $(gmtINC)
 
 # location of MetReader, HoursSince and projection
 USGSLIBDIR = -L$(USGSROOT)/lib
 USGSLIB = -lMetReader -lhourssince -lprojection
 USGSINC = -I$(USGSROOT)/include
-
-PLOTFPPFLAG = $(plplotFPPFLAG) $(dislinFPPFLAG) $(gmtFPPFLAG)
-PLOTLIBS= $(plplotLIBS) $(dislinLIBS) $(gmtLIBS)
-PLOTINC=$(plplotINC) $(dislinINC) $(gmtINC)
 
 PIIFPP =
 ifeq ($(PII), ON)
@@ -351,6 +376,9 @@ Ash3d:  $(OBJECTS) $(DATAOBJ) Ash3d.F90 $(MFILE) $(SYSINC)
 # Objects/Modules for initilization and model set-up
 Ash3d_VariableModules.o: $(ASH3dCCSRC)/Ash3d_VariableModules.f90 $(MFILE) $(SYSINC)
 	bash $(ASH3dCCSRC)/get_version.sh
+	echo "        Ash3dHome = '$(INSTALLDIR)'" > installpath.h
+	echo "        zippath = $(zippath)" > zippath.h
+	echo "        gnuplotpath = $(gnuplotpath)" > gnuplotpath.h
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Ash3d_VariableModules.f90
 Input_Data.o: $(ASH3dCCSRC)/Input_Data.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Help.o Tephra.o VotW.o Diffusion.o Airports.o $(DATAOBJ) Output_Vars.o Source.o Source_Umbrella.o ResetParams.o Diffusivity_Variable.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Input_Data.f90
@@ -363,10 +391,8 @@ Diffusivity_Variable.o: Diffusivity_Variable.f90 $(MFILE) Ash3d_VariableModules.
 Help.o: $(ASH3dCCSRC)/Help.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3dCCSRC)/Help.f90
 VotW.o: $(ASH3dCCSRC)/VotW.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Source.o
-	echo "        Ash3dHome = '$(INSTALLDIR)'" > installpath.h
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/VotW.f90
 Airports.o: $(ASH3dCCSRC)/Airports.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o 
-	echo "        Ash3dHome = '$(INSTALLDIR)'" > installpath.h
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Airports.f90
 Calc_Mesh.o: $(ASH3dCCSRC)/Calc_Mesh.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Output_Vars.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Calc_Mesh.f90
@@ -440,8 +466,8 @@ endif
 #ifeq ($(USEGMT), T)
 Ash3d_PostProc_GMT.o: Ash3d_PostProc_GMT.f90 $(MFILE) $(SYSINC) Ash3d_PostProc_cities.o write_ASCII.o $(gmtOBJ) Ash3d_VariableModules.o Output_Vars.o Airports.o Source.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_GMT.f90
-gmt.o: $(gmtfortloc)/src/gmt.f90 $(MFILE) $(SYSINC)
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(gmtfortloc)/src/gmt.f90
+#gmt.o: $(gmtfortloc)/src/gmt.f90 $(MFILE) $(SYSINC)
+#	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(gmtfortloc)/src/gmt.f90
 #endif
 Ash3d_PostProc_cities.o: Ash3d_PostProc_cities.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_cities.f90

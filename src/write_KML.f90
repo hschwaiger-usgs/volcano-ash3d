@@ -494,8 +494,6 @@
       enddo
 
       ! write highlighted styles (each call is 19 lines)
-      !write(fid,3) 'PureWhite',   opacity, 'ffffff'
-      !write(fid,3) 'pure__red',   opacity, '0000ff'
       do icmp = 1,n_clrmp
         write(fid,3) Styles(icmp), opacity, Colors(icmp)
       enddo
@@ -691,7 +689,6 @@
             '       <visibility>1</visibility>',/,&
             '       <Style>',/, &
             '           <ListStyle>',/, &
-!            '               <listItemType>radioFolder</listItemType>',/, &
             '               <bgColor>00ffffff</bgColor>',/, &
             '           </ListStyle>',/, &
             '       </Style>')
@@ -811,17 +808,10 @@
       if(TS_flag.ne.0)then
         write(fid,1) xmlArrivalTime, xmlArrivalTime,  &
                  xmlTimeSpanStart, xmlTimeSpanEnd
-        ! close forecast folder for deposit files on the last time step
-        ! elseif  &
-        !   (((ivar.eq.7).and.WriteDepositTS_KML).or. & !deposit
-        !    ((ivar.eq.8).and.WriteDepositTS_KML)) then  !deposit_NWS
-        !     write(fid,3)
-        !     write(fid,15) 
       else
         write(fid,15) 
       endif
       ! close folder if this is the final deposit in a deposit file
-      !if (final.and.WriteDepositFinal_KML)  write(fid,3)
 
       do i=1,nxmax
         do j=1,nymax
@@ -1065,7 +1055,8 @@
       subroutine Write_PointData_Airports_KML
 
       use global_param,  only : &
-         IsLinux,IsWindows,IsMacOS,DirPrefix,DirDelim
+         IsLinux,IsWindows,IsMacOS,usezip,zippath,&
+         usegnuplot,gnuplotpath
 
       use io_data,       only : &
          nWriteTimes,VolcanoName,WriteTimes
@@ -1113,9 +1104,8 @@
       character(len=14) :: dp_outfile
       character(len=14) :: dp_gnufile
       character(len=14) :: dp_pngfile
-      character(len=35) :: gnucom
+      character(len=80) :: gnucom
       character(len=77) :: zipcom
-      character(len=80) :: execpath
 
       real(kind=ip)      :: ymaxpl
       logical            :: IsThere
@@ -1192,19 +1182,9 @@
         enddo
         close(fid_kmlgnudat)
         ! Test if gnuplot is installed
-        if(IsLinux.or.IsMacOS)then
-          execpath = trim(adjustl(DirPrefix)) // DirDelim // &
-                  "usr" // DirDelim // "bin" // DirDelim // "gnuplot"
-          inquire( file=trim(adjustl(execpath)), exist=IsThere)
-        elseif(IsWindows)then
-          ! this is a placeholder for now
-          IsThere = .false.
-        else
-          IsThere = .false.
-        endif
-        if(IsThere)then
+        if(usegnuplot)then
           ! if we have gnuplot installed, just create the plots now
-          write(gnucom,'(a21,a14)')'/usr/bin/gnuplot -p ',dp_gnufile
+          write(gnucom,*)trim(adjustl(gnuplotpath)),' -p ',dp_gnufile
           call execute_command_line(gnucom)
           ! Now delete the script and data files
           open(unit=fid_kmlgnudat, iostat=stat, file=dp_outfile, status='old',action='write')
@@ -1359,15 +1339,17 @@
       endif;enddo
 
       ! Test if zip is installed
-      if(IsLinux.or.IsMacOS)then
-        inquire( file=trim(adjustl('/usr/bin/zip')), exist=IsThere)
+      IsThere = .false.
+      if(usezip.or.IsLinux.or.IsMacOS)then
+        ! double-check that zip is installed
+        inquire( file=trim(adjustl(zippath)), exist=IsThere)
       elseif(IsWindows)then
         ! this is a placeholder for now
         IsThere = .false.
       else
         IsThere = .false.
       endif
-      if(IsThere)then
+      if(usezip)then
         write(zipcom,'(a77)')&
           'zip -r ash_arrivaltimes_airports.kmz ash_arrivaltimes_airports.kml depTS*.png'
         call execute_command_line(zipcom)

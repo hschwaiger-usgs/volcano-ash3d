@@ -661,17 +661,6 @@
       n_ext_airports = isite     !number of external airports read
       return
 
-!      ! error trap
-!2010  do io=1,2;if(VB(io).le.verbosity_error)then
-!        write(errlog(io),6) linebuffer095
-!      endif;enddo
-!      stop 1
-
-      ! format statements
-!6     format('Error reading from airport list.  Read statement was expecting',/, &
-!             'latitude longitude x y  (all real numbers).  The input line gave:',/, &
-!             a95,/,'program stopped')
-
       end subroutine ReadExtAirports
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -694,9 +683,9 @@
 
 #ifdef USEEXTDATA
       subroutine Read_GlobalAirports(num_GlobAirports)
-!
-!     This is the version where the external file is read
-!
+
+      ! This is the version where the external file is read
+
       use global_param,  only : &
         DirDelim
 
@@ -769,7 +758,6 @@
         ! Now read the code (char #51-54) and the name (char #56-80)
         read(linebuffer120,2,iostat=ioerr,iomsg=iomessage) inCode,inName
 2       format(50x,a3,1x,a35)
-!2       format(50x,a3,2x,a35)
         if(ioerr.ne.0)then
           inCode = "   "
           inName = "          "
@@ -809,9 +797,9 @@
 
 #else
       subroutine Read_GlobalAirports(num_GlobAirports)
-!
-!     This is the version where the data are filled directly at compile time
-!
+
+      ! This is the version where the data are filled directly at compile time
+
       integer, intent(out) :: num_GlobAirports
 
       integer :: i

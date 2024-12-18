@@ -335,8 +335,6 @@
       elseif(ZScaling_ID.eq.2)then
         ! Scaled coordinates, choose the surface or z (if z is higher)
         z_volcano = max(z_volcano,Zsurf(ivent,jvent))
-!        s_volcano = (z_volcano-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
-!        s_PlumeHeight(:) = (e_PlumeHeight(:)-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
         s_volcano = Ztop*(z_volcano-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
         s_PlumeHeight(:) = Ztop*(e_PlumeHeight(:)-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
       endif

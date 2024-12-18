@@ -29,8 +29,6 @@
 
       subroutine MesoInterpolater(TimeNow,Load_MesoSteps,Interval_Frac)
 
-      ! Fclaw subroutine MesoInterpolater(TimeNow,Load_MesoSteps,Interval_Frac,first_time,Meso_toggle)
-
       use precis_param
 
       use io_units
@@ -99,8 +97,6 @@
 
       real(kind=dp) :: HoursIntoInterval ! hours since the last windfile timestep
       real(kind=dp) :: TimeNow_fromRefTime
-      ! Fclaw
-      !integer, intent(inout) :: Meso_toggle
 
       INTERFACE
         subroutine Adjust_DT(mesostep)
@@ -386,24 +382,11 @@
       use io_units
 
       use global_param,    only : &
-#ifdef FAST_DT
-         EPS_SMALL,&
-#endif
          MPS_2_KMPHR,GRAV, &
          useTemperature,useCalcFallVel,useVz_rhoG
 
       use solution,        only : &
          vf_pd
-
-#ifdef FAST_DT
-      use time_data,       only : &
-         Simtime_in_hours,time,dt
-#endif
-
-#ifdef FAST_DT
-      use io_data,       only : &
-         NextWriteTime
-#endif
 
       use wind_grid,       only : &
           vx_meso_next_step_sp,&

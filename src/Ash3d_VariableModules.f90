@@ -31,10 +31,7 @@
       integer, parameter,public :: op         = 4 ! Output precision
       integer, parameter,public :: ip         = 8 ! Internal precision
 
-        ! These single and double precision parameters must not be changed from
-        ! 4 and 8 or the reading of the windfiles will fail.
-      !integer, parameter,public :: sp         = 4 ! single precision
-      !integer, parameter,public :: dp         = 8 ! double precision
+        ! These single and double precision parameters should be 4 and 8
       integer, parameter,public :: sp = selected_real_kind( 6,   37) ! single precision
       integer, parameter,public :: dp = selected_real_kind(15,  307) ! double precision
       integer, parameter,public :: qp = selected_real_kind(33, 4931) ! quad precision
@@ -300,6 +297,11 @@
       character(len=20),dimension(MAXNUM_OPTMODS) :: OPTMOD_names
       integer                  :: nmods
 
+      logical                  :: usezip = .false.
+      character(len=50)        :: zippath = ''
+      logical                  :: usegnuplot = .false.
+      character(len=50)        :: gnuplotpath = ''
+
       ! Some variables determined by preprocessor flags at compilation time
 #ifdef LIM_NONE
       character(len=11)        :: limiter = 'No'
@@ -389,8 +391,8 @@
       integer   :: OS_TYPE    = 1                 ! 1=Linux, 2=MacOS, 3=Windows
       logical   :: IsLitEnd   = .true.            ! little-endian-ness; set in Set_OS_Env
       logical   :: IsLinux    = .true.
-      logical   :: IsWindows  = .false.
       logical   :: IsMacOS    = .false.
+      logical   :: IsWindows  = .false.
       character (len=7)    :: OS_Flavor
       character (len=2)    :: DirPrefix  = 'c:'
       character (len=1)    :: DirDelim   = '/'
@@ -398,8 +400,8 @@
       character (len=32)   :: os_user
       character (len=50)   :: os_host
       character (len=255)  :: os_cwd
-      integer              :: Comp_Code           ! 1=gfortran,2=ifort
-      character (len=8)    :: Comp_Flavor         ! 'gfortran' or 'ifort'
+      integer              :: Comp_Code           ! 1=gfortran,2=ifort,3=aocc,4=nvhpc
+      character (len=8)    :: Comp_Flavor         ! 'gfortran','ifort','flang','nvfortran'
 
       end module global_param
 
@@ -448,7 +450,7 @@
       character (len=80) :: cdf_url
       character (len=80) :: cdf_comment
       character (len=80) :: cdf_conventions
-      character (len=80) :: cdf_b1l1 !character strings containing parameters for netcdf file
+      character (len=80) :: cdf_b1l1       ! character strings containing parameters for netcdf file
       character (len=80) :: cdf_b1l2
       character (len=80) :: cdf_b1l3
       character (len=80) :: cdf_b1l4

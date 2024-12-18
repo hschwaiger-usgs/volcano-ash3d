@@ -422,12 +422,6 @@
         enddo
       enddo
 
-      ! Get the extremal extents in lat/lon space
-      !latmin = minval(minval(xy2ll_ylat,1),1)
-      !latmax = maxval(maxval(xy2ll_ylat,1),1)
-      !lonmin = minval(minval(xy2ll_xlon,1),1)
-      !lonmax = maxval(maxval(xy2ll_xlon,1),1)
-
       end subroutine get_minmax_lonlat
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -560,4 +554,3 @@
       end subroutine get_minmax_index
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-

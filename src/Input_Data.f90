@@ -270,15 +270,17 @@
 !
 !  Finally, all pre-processor flags are checked here with logging to stdout of which flags
 !  are invoked. Pre-processor flags checked:
-!   LINUX, MACOS, WINDOWS  : OS declaration
-!   GFORTRAN,IFORT,AOCC    : fortran compiler (for turning on/off non-standard subroutines)
-!   FAST_DT, FAST_SUBGRID  : Speed-up tools for dt and grid calculations
-!   EXPLDIFF, CRANKNIC     : Explicit vs implicit diffusion algorithm
+!   LINUX, MACOS, WINDOWS     : OS declaration
+!   GFORTRAN,IFORT,AOCC,NVHPC : fortran compiler (for turning on/off non-standard subroutines)
+!   FAST_DT, FAST_SUBGRID     : Speed-up tools for dt and grid calculations
+!   EXPLDIFF, CRANKNIC        : Explicit vs implicit diffusion algorithm
 !   LIM_NONE,LIM_LAXWEN,LIM_BW,LIM_FROMM,LIM_MINMOD,LIM_SUPERBEE,LIM_MC  : Limiter for advection
-!   USENETCDF, USEGRIB     : Invokes netcdf and/or grib functionality
-!   USEPOINTERS            : determines if variables are pointers or allocatable arrays
-!   USEEXTDATA             : determines if Ash3d will rely on external lists for airport and
-!                            volcano data
+!   USENETCDF, USEGRIB        : Invokes netcdf and/or grib functionality
+!   USEPOINTERS               : determines if variables are pointers or allocatable arrays
+!   USEEXTDATA                : determines if Ash3d will rely on external lists for airport and
+!                               volcano data
+!   USEZIP                    : specifies that 'zip' should be used to compress/bundle kml files and pngs
+!   USEDISLIN,USEPLPLOT,USEGNUPLOT,USEGMT : plotting packages linked or declared as available
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -287,7 +289,8 @@
       use global_param,  only : &
         DirPrefix,DirDelim,IsLitEnd,IsLinux,IsWindows,IsMacOS,version, &
         CFL,OS_TYPE,OS_Flavor,os_full_command_line,os_cwd,os_host,os_user,&
-        Comp_Code,Comp_Flavor,useFastDt,FastDt_suppress
+        Comp_Code,Comp_Flavor,useFastDt,FastDt_suppress, &
+        usezip,zippath,usegnuplot,gnuplotpath
 
       use io_data,       only : &
         Ash3dHome
@@ -308,6 +311,7 @@
            compiler_options
 
       integer            :: iostatus
+      integer            :: cstat
       character(len=120) :: iomessage
 
       character(len=130)   :: tmp_str
@@ -377,6 +381,25 @@
       IsMacOS   = .false.
 #endif
 
+#ifdef USEZIP
+      !zippath = '/usr/bin/zip'
+#include "zippath.h"
+#endif
+
+!#ifdef USEDISLIN
+!  For now, nor Dislin-specific varibles are set
+!#endif
+!#ifdef USEPLPLOT
+!  For now, nor plplot-specific varibles are set
+!#endif
+#ifdef USEGNUPLOT
+      !gnuplotpath = '/usr/bin/gnuplot'
+#include "gnuplotpath.h"
+#endif
+!#ifdef USEGMT
+!  For now, nor GMT-specific varibles are set
+!#endif
+
 #ifdef GFORTRAN
       Comp_Code   = 1
       Comp_Flavor = 'gfortran'
@@ -387,9 +410,12 @@
 #endif
 #ifdef AOCC
       Comp_Code   = 3
-      Comp_Flavor = 'aocc'
+      Comp_Flavor = 'flang'
 #endif
-
+#ifdef NVHPC
+      Comp_Code   = 4
+      Comp_Flavor = 'nvfortran'
+#endif
 
 #ifdef FAST_DT
       ! With Fast_Dt on, time step criteria is only checked at the meso steps
@@ -412,7 +438,7 @@
         if(iostatus.ne.0)then
           write(outlog(1),*)"WARNING: ASH3DVERB found, but expecting an integer value"
           write(outlog(1),*)"         Instead, env. variable set to: ",tmp_str
-          write(outlog(1),*)"         Resetting to ASH3dVERB=3"
+          write(outlog(1),*)"         Resetting to ASH3DVERB=3"
           VB(1) = 3
         endif
         if(VB(1).le.verbosity_info)then
@@ -448,7 +474,7 @@
       else
         write(errlog(1),*)"WARNING: Verbosity level not recognized. Value should be between 1 and 10."
         write(errlog(1),*)"         verbosity level : ",VB(1)
-        write(outlog(1),*)"         Resetting to ASH3dVERB=3"
+        write(outlog(1),*)"         Resetting to ASH3DVERB=3"
         VB(1) = 3
       endif
       if(VB(1).lt.9)then
@@ -605,6 +631,7 @@
             write(errlog(io),*)"         2 = plplot"
             write(errlog(io),*)"         3 = gnuplot"
             write(errlog(io),*)"         4 = GMT"
+            ! Placeholders for other post-processing graphics packages
             !write(errlog(io),*)"         5 = matlab"
             !write(errlog(io),*)"         6 = cartopy"
             !write(errlog(io),*)"         7 = R"
@@ -716,6 +743,8 @@
         write(outlog(io),*)"         IFORT: Compiler specified in makefile"
 #elif defined AOCC
         write(outlog(io),*)"          AOCC: Compiler specified in makefile"
+#elif defined NVHPC
+        write(outlog(io),*)"         NVHPC: Compiler specified in makefile"
 #endif
 
 #if defined LINUX
@@ -724,6 +753,110 @@
         write(outlog(io),*)"         MACOS: System specified as MacOS"
 #elif defined WINDOWS
         write(outlog(io),*)"       WINDOWS: System specified as MS Windows"
+#endif
+
+#ifdef USEZIP
+        if(IsWindows)then
+          write(outlog(io),*)"      USEZIP: zip set to T, but this is a Windows system"
+          write(outlog(io),*)"              zip currently not integrated with Ash3d on Windows."
+          write(outlog(io),*)"       Deactivating zip"
+          usezip = .false.
+        else
+          usezip = .true.
+          write(outlog(io),*)"        USEZIP: zip will be used to bundle kmz files using path: ",&
+                             trim(adjustl(zippath))
+          ! First check if zip is actually in the path
+          write(outlog(io),*)"                  Checking for default path for zip"
+          call execute_command_line('which zip',wait=.true.,exitstat=iostatus)
+          if(iostatus.ne.0)then
+            write(outlog(io),*)"Error: 'which zip' failed. No zip executable in default path"
+            write(outlog(io),*)"       Deactivating zip"
+            usezip = .false.
+          endif
+          if(usezip)then
+            ! Next check if zippath exists
+            inquire( file=trim(adjustl(zippath)), exist=IsThere)
+            if(.not.IsThere)then
+              write(outlog(io),*)"Error: user-specified path does not exist and is"
+              write(outlog(io),*)"       inconsistent with 'which zip'."
+              write(outlog(io),*)"       Please correct zippath in makefile."
+              write(outlog(io),*)"       Deactivating zip"
+              usezip = .false.
+            endif
+          endif
+          if(usezip)then
+            ! Finally, do a test run of the zip executable
+            write(outlog(io),*)"                  Checking if zip executes."
+            call execute_command_line("echo 'exit' | zip --version > /dev/null",&
+                                      WAIT=.true., EXITSTAT=iostatus, CMDSTAT=cstat, CMDMSG=iomessage)
+            if(iostatus.eq.0)then
+              write(outlog(io),*)"                  Success"
+            else
+              write(outlog(io),*)"Error: Something is wrong with the zip executable."
+              write(outlog(io),*)"         zip is returing an error code = ",iostatus
+              write(outlog(io),*)"       execute_command_line command status = ",cstat
+              write(outlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
+              write(outlog(io),*)"       Deactivating zip"
+              usezip = .false.
+            endif
+          endif
+        endif
+#endif
+
+#ifdef USEDISLIN
+        write(outlog(io),*)"     USEDISLIN: API to Dislin plotting package is enabled"
+#endif
+#ifdef USEPLPLOT
+        write(outlog(io),*)"     USEPLPLOT: API to plplot plotting package is enabled"
+#endif
+#ifdef USEGNUPLOT
+        if(IsWindows)then
+          write(outlog(io),*)"    USEGNUPLOT: gnuplot set to T, but this is a Windows system"
+          write(outlog(io),*)"                gnuplot currently not integrated with Ash3d on Windows."
+          write(outlog(io),*)"       Deactivating gnuplot"
+          usegnuplot = .false.
+        else
+          usegnuplot = .true.
+          write(outlog(io),*)"    USEGNUPLOT: gnuplot plotting package is installed"
+          ! First check if gnuplot is actually in the path
+          write(outlog(io),*)"                  Checking for default path for gnuplot"
+          call execute_command_line('which gnuplot',wait=.true.,exitstat=iostatus)
+          if(iostatus.ne.0)then
+            write(outlog(io),*)"Error: 'which gnuplot' failed. No gnuplot executable in default path"
+            write(outlog(io),*)"       Deactivating gnuplot"
+            usegnuplot = .false.
+          endif
+          if(usegnuplot)then
+            ! Next check if gnuplotpath exists
+            inquire( file=trim(adjustl(gnuplotpath)), exist=IsThere)
+            if(.not.IsThere)then
+              write(outlog(io),*)"Error: user-specified path does not exist and is"
+              write(outlog(io),*)"       inconsistent with 'which gnuplot'."
+              write(outlog(io),*)"       Please correct gnuplotpath in makefile."
+              write(outlog(io),*)"       Deactivating gnuplot"
+              usegnuplot = .false.
+            endif
+          endif
+          if(usegnuplot)then
+            ! Finally, do a test run of the gnuplot executable
+            write(outlog(io),*)"                  Checking if gnuplot executes."
+            call execute_command_line("echo 'exit' | gnuplot",&
+                                      WAIT=.true., EXITSTAT=iostatus, CMDSTAT=cstat, CMDMSG=iomessage)
+            if(iostatus.eq.0)then
+              write(outlog(io),*)"                  Success"
+            else
+              write(outlog(io),*)"Error: Something is wrong with the gnuplot executable."
+              write(outlog(io),*)"       gnuplot is returing an error code",iostatus
+              write(outlog(io),*)"       execute_command_line command status = ",cstat
+              write(outlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
+              write(outlog(io),*)"       Deactivating gnuplot"
+              usegnuplot = .false.
+            endif
+          endif
+        endif
+#endif
+#ifdef USEGMT
+        write(outlog(io),*)"        USEGMT: API to GMT plotting package is enabled"
 #endif
 
 #ifdef FAST_DT
@@ -3922,64 +4055,10 @@
       ! END OF BLOCK 9
       !************************************************************************
 
-!      !************************************************************************
-!      ! Searching for optional blocks labled by OPTMOD
-!      do io=1,2;if(VB(io).le.verbosity_info)then
-!        write(outlog(io),*)' *****************************************'
-!        write(outlog(io),*)' Reading Post-Block 9: optional modules   '
-!        write(outlog(io),*)' *****************************************'
-!      endif;enddo
-!
-!      do io=1,2;if(VB(io).le.verbosity_info)then
-!        write(outlog(io),*)"Searching for blocks with OPTMOD"
-!      endif;enddo
-!      nmods = 0
-!      read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-!      ! if there are no further blocks, then we will skip over this while loop
-!      do while(iostatus.eq.0)
-!        substr_pos1 = index(linebuffer080,'OPTMOD')
-!        if(substr_pos1.eq.1)then
-!          ! found an optional module
-!          nmods = nmods + 1
-!          if(nmods.gt.MAXNUM_OPTMODS)then
-!            do io=1,2;if(VB(io).le.verbosity_error)then
-!              write(errlog(io),*)"ERROR: Maximum number of optional modules exceeded"
-!              write(errlog(io),*)"       Current maximum set to MAXNUM_OPTMODS = ",MAXNUM_OPTMODS
-!              write(errlog(io),*)"       Please increase MAXNUM_OPTMODS and recompile."
-!              write(errlog(io),*)"  Ash3d_VariableModules.f90:global_param:MAXNUM_OPTMODS"
-!            endif;enddo
-!            stop 1
-!          endif
-!          !  Parse for the keyword
-!          read(linebuffer080,1104,iostat=iostatus,iomsg=iomessage)mod_name
-!          linebuffer050 = "Reading control file blk9+ (OPTMOD)"
-!          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-!          OPTMOD_names(nmods) = trim(adjustl(mod_name))
-!          do io=1,2;if(VB(io).le.verbosity_info)then
-!            write(outlog(io),*)"     Found optional module : ",&
-!                                OPTMOD_names(nmods),nmods
-!          endif;enddo
-!        endif
-!        read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-!        if(iostatus.lt.0)then
-!          ! end of file reached; exit do loop
-!          exit
-!        elseif(iostatus.gt.0)then
-!          ! Some non-EOF error
-!          linebuffer050 = "Reading control file blk9+ (OPTMOD)"
-!          call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-!        endif
-!1104    format(7x,a20)
-!      enddo
-!      if(nmods.eq.0)then
-!        do io=1,2;if(VB(io).le.verbosity_info)then
-!          write(outlog(io),*)"No OPTMOD blocks found."
-!        endif;enddo
-!      else
-!        do io=1,2;if(VB(io).le.verbosity_info)then
-!          write(outlog(io),*)"Number of OPTMOD blocks found = ",nmods
-!        endif;enddo
-!      endif
+      !************************************************************************
+      ! Might have optional modules; these were identified at the start of this
+      ! subroutine.
+      !************************************************************************
 
      ! close input file 
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -4013,7 +4092,7 @@
           write(outlog(io),*)&
            "Diffusion is calculated implicitly using lapack routines for solving Ax=b."
           write(outlog(io),*)&
-           "Note, Imp_fac controls the amount of the t+1 step is used in the stencil."
+           "Note, Imp_fac controls the amount of the t+1 step that is used in the stencil."
           write(outlog(io),*)&
            "  Imp_fac = 1.0 (  0% t, 100% t+1) :: Backward Euler"
           write(outlog(io),*)&
@@ -4064,9 +4143,6 @@
           write(outlog(io),*)"Vz calculated via PVV and finite-differencing dp/dz"
         endif
       endif;enddo
-
-      ! assign initial values
-      !total_time = Simtime_in_hours ! total simulated time in seconds
 
       ! Calculate size of grid (cell-centered)
       if(IsLatLon) then

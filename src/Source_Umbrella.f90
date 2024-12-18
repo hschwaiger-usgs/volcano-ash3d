@@ -306,35 +306,19 @@
       endif ! time.eq.0.0_ip
 
       !convert from  hours to seconds
-!      if (itime.gt.0) then
-!        if (time.gt.0.0_ip) then
-        if(.not.first_time)then
-          ! For the first time step, time=0 -> cloudrad=0 and uR=Inf
-          ! so just use dt to get values at the end of step 1
-          etime_s      = max(time,dt)*real(HR_2_S,kind=ip)
-        else
-          etime_s      = min(Simtime_in_hours,e_EndTime(1))*real(HR_2_S,kind=ip)
-          !return                      !return to Mesointerpolator if time=0
-        endif
-!      else
-         ! If this is the first call to mesointerpolator before the beginning 
-         ! of the simulation, the call is made simply to find the first value of 
-         ! dt so that ntmax can be assigned using ntmax=int(SimTime_in_hours/dt).  
-         ! If the initial value of dt underestimates the average time step used in 
-         ! the simulation, it will under-allocate the array size. The radial wind 
-         ! speeds in adjacent nodes increase with time during the eruption,
-         ! meaning that dt should decrease.  Thus we want to estimate dt using radial 
-         ! wind speeds at the end of the eruption, as below.  These wind speeds are 
-         ! not actually used in the calculation of advecting ash.
-!        etime_s      = min(3600.0_ip*Simtime_in_hours,3600.0_ip*e_EndTime(1))
-!      endif
+      if(.not.first_time)then
+        ! For the first time step, time=0 -> cloudrad=0 and uR=Inf
+        ! so just use dt to get values at the end of step 1
+        etime_s      = max(time,dt)*real(HR_2_S,kind=ip)
+      else
+        etime_s      = min(Simtime_in_hours,e_EndTime(1))*real(HR_2_S,kind=ip)
+      endif
 
       ! Here is Eq. 1 of Mastin and Van Eaton, 2020
       !cloud radius, km
       cloudrad_raw = (3.0_ip*lambda_umb*N_BV_umb*qnow/(2.0_ip*PI))**(1.0_ip/3.0_ip) * &
                      real(etime_s,kind=ip)**(2.0_ip/3.0_ip) / KM_2_M
       !Make sure cloud radius extends beyond the source nodes
-      !cloud_radius = max(cloudrad_raw,max(SourceNodeWidth_km,SourceNodeHeight_km))
       cloud_radius = cloudrad_raw            !for debugging
 
       ! This is the time derivitive of Eq. 1 of Mastin and Van Eaton, 2020
@@ -578,5 +562,5 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       end module Source_Umbrella
-!##############################################################################
 
+!##############################################################################
