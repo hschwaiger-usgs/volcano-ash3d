@@ -57,7 +57,7 @@ installed, if possible:
 5. gnuplot: This is the default graphics package for creating plots directly from Ash3d.
 6. dislin : This is an alternate graphics package for creating plots from Ash3d (preferred for Windows),
    available from `https://www.dislin.de`
-7. plplot : Another alternate graphics package for creating plots from Ash3d (also work on Windows).
+7. plplot : Another alternate graphics package for creating plots from Ash3d (also works on Windows).
 
 All of these packages (except dislin) are available on Red Hat and Ubuntu systems and can be installed
 using the standard distribution software installer (yum/dnf for RedHat systems or apt for
@@ -70,7 +70,7 @@ On RedHat-based systems, these can be installed with:
 `sudo yum install eccodes eccodes-devel`  
 `sudo yum install zip`  
 `sudo yum install gnuplot`  
-`sudo yum install plplot`
+`sudo yum install plplot`  
 
 On Ubuntu-based systems:  
 `sudo apt install liblapack64-3 liblapack64-dev libblas64-3 libblas64-dev`  
@@ -79,6 +79,14 @@ On Ubuntu-based systems:
 `sudo apt install zip`  
 `sudo apt install gnuplot`  
 `sudo apt install plplot`  
+
+Note that these particular package names are the distribution packages for the latest versions of RedHat and Ubuntu
+at the time of writing. There may be slight variations to these names for older or newer
+systems. If you prefer managing libraries either within a conda environment or via modules, you will likely have
+to edit both `makefile` and `make_gfortran` (or whichever include file you need for the compiler
+you are using), in order for the compiler to find the needed libraries and include files.
+If you use modules, you will need to make sure that netcdf package you load (as well as eccodes, if desired)
+is built with the compiler you plan to use.
 
 ### Compiling Ash3d with the default settings
 Once the necessary USGS libraries and optional distribution packages are installed, Ash3d can
@@ -177,7 +185,7 @@ The following are the variables available to edit:
               This is the location of the USGS libraries and include files
               needed from `volcano-ash3d-hourssince`, `volcano-ash3d-projection`,
               and `volcano-ash3d-metreader`.  
-- `ASH3dCCSRC  = [./]`  
+- `ASH3DCCSRC  = [./]`  
               Location of the Ash3d core code source files. This is normally
               just the `cwd` unless you are building an optional module and
               need to link to the code Ash3d files.  
@@ -209,8 +217,10 @@ The following are the variables available to edit:
           -  `-DFAST_SUBGRID` adjusts the computational domain to be just the
                min/max in x,y,z of the region where ash concentration exceeds
                some threshold.  
-- `USEZIP      = T or [F]`
-              If Ash3d_PostProc
+- `USEZIP      = T or [F]`  
+              Zip is used to convert kml to kml and to bundle linked graphics,
+              such as time-series ash accumulation plots, together with the kml
+              file. Set this to F if zip is not installed on this system.
 - `USEPLPLOT   = T or [F]`  
               If Ash3d_PostProc is to be built, this variable indicates if
               the plplot library is available on the system for plotting maps
@@ -219,6 +229,9 @@ The following are the variables available to edit:
               If Ash3d_PostProc is to be built, this variable indicates if
               the dislin library is available on the system for plotting maps
               and/or vertical profiles.  
+- `USEGNUPLOT  = [T] or F`  
+              Gnuplot is used by default to create time-series ash accumulation plots.
+              If it is not installed, set this value to F.
 - `USEGMT      = [F]`  
               If Ash3d_PostProc is to be built, this variable indicates if
               the GMT library is available on the system for plotting maps
