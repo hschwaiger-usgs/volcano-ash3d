@@ -65,7 +65,7 @@ USGSROOT=/opt/USGS
 
 # This is the location of the Ash3d core code source files that we will build this
 # branch with.
-ASH3dCCSRC=./
+ASH3DCCSRC=./
 
 INSTALLDIR=$(USGSROOT)/Ash3d
 
@@ -374,8 +374,8 @@ Ash3d:  $(OBJECTS) $(DATAOBJ) Ash3d.F90 $(MFILE) $(SYSINC)
 	mv $(ASH3DEXEC) ../bin/$(ASH3DEXEC)
 
 # Objects/Modules for initilization and model set-up
-Ash3d_VariableModules.o: $(ASH3dCCSRC)/Ash3d_VariableModules.f90 $(MFILE) $(SYSINC)
-	bash $(ASH3dCCSRC)/get_version.sh
+Ash3d_VariableModules.o: $(ASH3DCCSRC)/Ash3d_VariableModules.f90 $(MFILE) $(SYSINC)
+	bash $(ASH3DCCSRC)/get_version.sh
 	echo "        Ash3dHome = '$(INSTALLDIR)'" > installpath.h
 	echo "        zippath = $(zippath)" > zippath.h
 	echo "        gnuplotpath = $(gnuplotpath)" > gnuplotpath.h
@@ -406,84 +406,84 @@ Tephra.o: $(ASH3dCCSRC)/Tephra.f90 $(MFILE) $(SYSINC) Atmosphere.o Ash3d_Variabl
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Tephra.f90
 
 # Time
-Adjust_dt.o: $(ASH3dCCSRC)/Adjust_dt.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Tephra.o Diffusion.o
-	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3dCCSRC)/Adjust_dt.f90
-TimeStepTotals.o: $(ASH3dCCSRC)/TimeStepTotals.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Output_Vars.o
-	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3dCCSRC)/TimeStepTotals.f90
+Adjust_dt.o: $(ASH3DCCSRC)/Adjust_dt.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Tephra.o Diffusion.o
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3DCCSRC)/Adjust_dt.f90
+TimeStepTotals.o: $(ASH3DCCSRC)/TimeStepTotals.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Output_Vars.o
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3DCCSRC)/TimeStepTotals.f90
 
-Atmosphere.o: $(ASH3dCCSRC)/Atmosphere.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
-	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Atmosphere.f90
-MesoInterpolater.o: $(ASH3dCCSRC)/MesoInterpolater.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Atmosphere.o Tephra.o Source.o Source_Umbrella.o
-	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/MesoInterpolater.f90
+Atmosphere.o: $(ASH3DCCSRC)/Atmosphere.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/Atmosphere.f90
+MesoInterpolater.o: $(ASH3DCCSRC)/MesoInterpolater.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Atmosphere.o Tephra.o Source.o Source_Umbrella.o
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/MesoInterpolater.f90
 
 # PDE Solver (Advection, Diffusion, B.C.'s)
-AdvectionHorz.o: $(ASH3dCCSRC)/AdvectionHorz.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o AdvectionHorz_DCU.o
-	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3dCCSRC)/AdvectionHorz.f90
-AdvectionHorz_DCU.o: $(ASH3dCCSRC)/AdvectionHorz_DCU.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Topography.o
-	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3dCCSRC)/AdvectionHorz_DCU.f90
-AdvectionVert_DCU.o: $(ASH3dCCSRC)/AdvectionVert_DCU.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
-	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3dCCSRC)/AdvectionVert_DCU.f90
-Diffusion.o: $(ASH3dCCSRC)/Diffusion.F90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
-	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3dCCSRC)/Diffusion.F90
-Set_BC.o: $(ASH3dCCSRC)/Set_BC.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
-	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3dCCSRC)/Set_BC.f90
+AdvectionHorz.o: $(ASH3DCCSRC)/AdvectionHorz.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o AdvectionHorz_DCU.o
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3DCCSRC)/AdvectionHorz.f90
+AdvectionHorz_DCU.o: $(ASH3DCCSRC)/AdvectionHorz_DCU.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Topography.o
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3DCCSRC)/AdvectionHorz_DCU.f90
+AdvectionVert_DCU.o: $(ASH3DCCSRC)/AdvectionVert_DCU.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3DCCSRC)/AdvectionVert_DCU.f90
+Diffusion.o: $(ASH3DCCSRC)/Diffusion.F90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3DCCSRC)/Diffusion.F90
+Set_BC.o: $(ASH3DCCSRC)/Set_BC.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3DCCSRC)/Set_BC.f90
 
 # Output
-Output_Vars.o: $(ASH3dCCSRC)/Output_Vars.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Airports.o Tephra.o
-	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Output_Vars.f90
-Output_Results.o: $(ASH3dCCSRC)/Output_Results.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Output_Vars.o write_BINARY.o write_ASCII.o write_KML.o $(DATAOBJ)
-	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/Output_Results.f90
-write_ASCII.o: $(ASH3dCCSRC)/write_ASCII.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Output_Vars.o Airports.o Tephra.o Source.o
-	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_ASCII.f90
-write_BINARY.o: $(ASH3dCCSRC)/write_BINARY.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
-	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_BINARY.f90
+Output_Vars.o: $(ASH3DCCSRC)/Output_Vars.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Airports.o Tephra.o
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/Output_Vars.f90
+Output_Results.o: $(ASH3DCCSRC)/Output_Results.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Output_Vars.o write_BINARY.o write_ASCII.o write_KML.o $(DATAOBJ)
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/Output_Results.f90
+write_ASCII.o: $(ASH3DCCSRC)/write_ASCII.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Output_Vars.o Airports.o Tephra.o Source.o
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/write_ASCII.f90
+write_BINARY.o: $(ASH3DCCSRC)/write_BINARY.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/write_BINARY.f90
 ifeq ($(USENETCDF), T)
-write_NETCDF.o: $(ASH3dCCSRC)/write_NETCDF.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Output_Vars.o Airports.o Tephra.o Source.o Source_Umbrella.o
-	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_NETCDF.f90
+write_NETCDF.o: $(ASH3DCCSRC)/write_NETCDF.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Output_Vars.o Airports.o Tephra.o Source.o Source_Umbrella.o
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/write_NETCDF.f90
 endif
 #ifeq ($(USEGRIB), T)
-#write_GRIB.o: $(ASH3dCCSRC)/write_GRIB.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Output_Vars.o Airports.o Tephra.o Source.o
-#	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_GRIB.f90
+#write_GRIB.o: $(ASH3DCCSRC)/write_GRIB.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Output_Vars.o Airports.o Tephra.o Source.o
+#	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/write_GRIB.f90
 #endif
-write_KML.o: $(ASH3dCCSRC)/write_KML.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Output_Vars.o Airports.o Tephra.o Source.o
-	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_KML.f90
+write_KML.o: $(ASH3DCCSRC)/write_KML.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Output_Vars.o Airports.o Tephra.o Source.o
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/write_KML.f90
 
 # Post-Processing tool
-postproc: $(ASH3dCCSRC)/Ash3d_PostProc.f90 $(PPOBJS) $(GRAFOBJ) $(DATAOBJ) $(MFILE) $(SYSINC)
-	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc.f90
+postproc: $(ASH3DCCSRC)/Ash3d_PostProc.f90 $(PPOBJS) $(GRAFOBJ) $(DATAOBJ) $(MFILE) $(SYSINC)
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3DCCSRC)/Ash3d_PostProc.f90
 	$(FC) $(FFLAGS) $(EXFLAGS) Ash3d_PostProc.o $(PPOBJS) $(GRAFOBJ) $(DATAOBJ) $(LIBS) $(PLOTINC) $(PLOTLIBS) -o ../bin/Ash3d_PostProc
 # We always compile the gnuplot subroutine since these will just throw an error if gnuplot is not installed
 Ash3d_PostProc_gnuplot.o: Ash3d_PostProc_gnuplot.f90 $(MFILE) $(SYSINC) Ash3d_PostProc_cities.o Ash3d_VariableModules.o Output_Vars.o Airports.o Source.o
-	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_gnuplot.f90
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3DCCSRC)/Ash3d_PostProc_gnuplot.f90
 ifeq ($(USEPLPLOT), T)
 Ash3d_PostProc_plplot.o: Ash3d_PostProc_plplot.f90 $(MFILE) $(SYSINC) Ash3d_PostProc_cities.o Ash3d_VariableModules.o Output_Vars.o Airports.o Source.o
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_plplot.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3DCCSRC)/Ash3d_PostProc_plplot.f90
 endif
 ifeq ($(USEDISLIN), T)
 Ash3d_PostProc_dislin.o: Ash3d_PostProc_dislin.f90 $(MFILE) $(SYSINC) Ash3d_PostProc_cities.o Ash3d_VariableModules.o Output_Vars.o Airports.o Source.o
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_dislin.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3DCCSRC)/Ash3d_PostProc_dislin.f90
 endif
 #ifeq ($(USEGMT), T)
 Ash3d_PostProc_GMT.o: Ash3d_PostProc_GMT.f90 $(MFILE) $(SYSINC) Ash3d_PostProc_cities.o write_ASCII.o $(gmtOBJ) Ash3d_VariableModules.o Output_Vars.o Airports.o Source.o
-	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_GMT.f90
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3DCCSRC)/Ash3d_PostProc_GMT.f90
 #gmt.o: $(gmtfortloc)/src/gmt.f90 $(MFILE) $(SYSINC)
 #	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(gmtfortloc)/src/gmt.f90
 #endif
 Ash3d_PostProc_cities.o: Ash3d_PostProc_cities.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3dCCSRC)/Ash3d_PostProc_cities.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3DCCSRC)/Ash3d_PostProc_cities.f90
 write_Shapefile.o: write_Shapefile.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o write_BINARY.o
-	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/write_Shapefile.f90
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/write_Shapefile.f90
 
 tools: ascii_check
 
-ascii_check: $(ASH3dCCSRC)/tools/Ash3d_ASCII_check.f90 Ash3d_VariableModules.o write_ASCII.o $(MFILE) $(SYSINC)
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/tools/Ash3d_ASCII_check.f90
+ascii_check: $(ASH3DCCSRC)/tools/Ash3d_ASCII_check.f90 Ash3d_VariableModules.o write_ASCII.o $(MFILE) $(SYSINC)
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/tools/Ash3d_ASCII_check.f90
 	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d_ASCII_check.o $(LIBS) -o Ash3d_ASCII_check
 	mkdir -p ../bin/tools
 	mv Ash3d_ASCII_check ../bin/tools/Ash3d_ASCII_check
 
-ascii_stats: $(ASH3dCCSRC)/tools/Ash3d_ASCII_stats.f90 Ash3d_VariableModules.o write_ASCII.o $(MFILE) $(SYSINC)
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3dCCSRC)/tools/Ash3d_ASCII_stats.f90
+ascii_stats: $(ASH3DCCSRC)/tools/Ash3d_ASCII_stats.f90 Ash3d_VariableModules.o write_ASCII.o $(MFILE) $(SYSINC)
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/tools/Ash3d_ASCII_stats.f90
 	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d_ASCII_stats.o $(LIBS) -o Ash3d_ASCII_stats
 	mkdir -p ../bin/tools
 	mv Ash3d_ASCII_stats ../bin/tools/Ash3d_ASCII_stats
