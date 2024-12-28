@@ -30,7 +30,7 @@
     ],
 
     "languages": [
-      "Fortran 2003"
+      "Fortran 2008"
     ],
 
     "contact": {
@@ -47,7 +47,7 @@
     "organization": "U.S. Geological Survey",
     "description": "Ash3d: Volcanic ash advection/dispersion/sedimentation model",
     "version": "1.0.0",
-    "status": "Release Candidate",
+    "status": "Production",
 
     "permissions": {
       "usageType": "openSource",
@@ -73,7 +73,7 @@
     ],
 
     "languages": [
-      "Fortran 2003"
+      "Fortran 2008"
     ],
 
     "contact": {
