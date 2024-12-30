@@ -522,7 +522,8 @@
          ZScaling_ID,j_cc_pd,Ztop,Zsurf
 
       use MetReader,       only : &
-         nx_submet,ny_submet,x_submet_sp,y_submet_sp
+         nx_submet,ny_submet,x_submet_sp,y_submet_sp,&
+         MR_lonmin,MR_lonmax,MR_latmin,MR_latmax
 
       INTERFACE
         subroutine get_minmax_lonlat(lonmin,lonmax,latmin,latmax)
@@ -547,10 +548,17 @@
         call get_minmax_lonlat(minlon_Topo_comp,maxlon_Topo_comp,minlat_Topo_comp,maxlat_Topo_comp)
       endif
 
-      minlon_Topo_Met = real(minval(x_submet_sp(1:nx_submet)),kind=ip)
-      maxlon_Topo_Met = real(maxval(x_submet_sp(1:nx_submet)),kind=ip)
-      minlat_Topo_Met = real(minval(y_submet_sp(1:ny_submet)),kind=ip)
-      maxlat_Topo_Met = real(maxval(y_submet_sp(1:ny_submet)),kind=ip)
+      if(IsLatLon)then
+        minlon_Topo_Met = real(minval(x_submet_sp(1:nx_submet)),kind=ip)
+        maxlon_Topo_Met = real(maxval(x_submet_sp(1:nx_submet)),kind=ip)
+        minlat_Topo_Met = real(minval(y_submet_sp(1:ny_submet)),kind=ip)
+        maxlat_Topo_Met = real(maxval(y_submet_sp(1:ny_submet)),kind=ip)
+      else
+        minlon_Topo_Met = real(MR_lonmin,kind=ip)
+        maxlon_Topo_Met = real(MR_lonmax,kind=ip)
+        minlat_Topo_Met = real(MR_latmin,kind=ip)
+        maxlat_Topo_Met = real(MR_latmax,kind=ip)
+      endif
 
       ! ETOPO and GEBCO data are provided on -180->180 grid so map to that domain
       if(minlon_Topo_comp.ge.180_ip)then
@@ -564,11 +572,11 @@
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Minimun/maximum longitide of computational grid = ",&
                              real(minlon_Topo_comp,kind=4),real(maxlon_Topo_comp,kind=4)
-        write(outlog(io),*)"Minimun/maximum longitide of computational grid = ",&
+        write(outlog(io),*)"Minimun/maximum latitide of computational grid = ",&
                              real(minlat_Topo_comp,kind=4),real(maxlat_Topo_comp,kind=4)
         write(outlog(io),*)"Minimun/maximum longitide of Met grid = ",&
                              real(minlon_Topo_Met,kind=4),real(maxlon_Topo_Met,kind=4)
-        write(outlog(io),*)"Minimun/maximum longitide of Met grid = ",&
+        write(outlog(io),*)"Minimun/maximum latitide of Met grid = ",&
                              real(minlat_Topo_Met,kind=4),real(maxlat_Topo_Met,kind=4)
       endif;enddo
 
@@ -2215,6 +2223,8 @@
             olam = xy2ll_xlon(i,j)
             ophi = xy2ll_ylat(i,j)
           endif
+          write(*,*)i,j,xy2ll_xlon(i,j),xy2ll_ylat(i,j)
+
           if(olam.gt. 180.0_ip.and.&
              loncc_topo_subgrid(nlon_topo_subgrid).lt.180.0_ip)olam=olam-360.0_ip
           if(olam.lt.-180.0_ip)olam=olam+360.0_ip
@@ -2225,7 +2235,7 @@
             do io=1,2;if(VB(io).le.verbosity_error)then
               write(errlog(io),*)"ERROR: Computational grid point mapping outside of topo grid (lon)."
               write(errlog(io),*)'olam                                   = ',olam
-              write(errlog(io),*)'dlom_topo                              = ',dlon_topo
+              write(errlog(io),*)'dlon_topo                              = ',dlon_topo
               write(errlog(io),*)'loncl_topo_subgrid(1)                  = ',loncl_topo_subgrid(1)
               write(errlog(io),*)'loncl_topo_subgrid(nlon_topo_subgrid+1)= ',loncl_topo_subgrid(nlon_topo_subgrid+1)
             endif;enddo

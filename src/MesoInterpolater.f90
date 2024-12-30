@@ -408,7 +408,7 @@
       use MetReader,       only : &
          MR_dum3d_compH,MR_dum3d_compH_2,MR_iMetStep_Now,&
          Met_var_IsAvailable,isGridRelative,Map_Case,&
-         MR_dum3d_compH,MR_dum3d_metP,Met_var_GRIB_names,&
+         MR_dum3d_metP,Met_var_GRIB_names,&
            MR_Read_HGT_arrays,&
            MR_Read_3d_Met_Variable_to_CompH,&
            MR_Rotate_UV_GR2ER_Met,&

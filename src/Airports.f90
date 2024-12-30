@@ -328,6 +328,15 @@
                        xout,yout)
             xnow = real(xout,kind=ip)
             ynow = real(yout,kind=ip)
+          else
+            ! This is a projected grid case and we are using the provided x,y of the file
+            ! This only works for user-provided files
+            !xnow = real(xout,kind=ip)
+            !ynow = real(yout,kind=ip)
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: Need projected values of Airports/POI."
+            endif;enddo
+            stop 1
           endif
 
           if ((xnow.ge.xLL+dx) .and. &
