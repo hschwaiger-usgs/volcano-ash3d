@@ -265,8 +265,9 @@
       ! This include file contain the git commit id
 #include "Ash3d_version.h"
 
-      character(len=8)  :: version           =  ' 1.0  '  ! The Ash3d version number
-
+      integer      , parameter :: version_major = 1
+      integer      , parameter :: version_minor = 0
+      integer      , parameter :: version_patch = 0
       real(kind=ip), parameter :: EPS_SMALL  = 1.0e-6_ip       ! Small number
       real(kind=ip), parameter :: EPS_TINY   = 1.0e-12_ip      ! Very small number
       real(kind=ip), parameter :: EPS_THRESH = 1.0e-10_ip      ! Threshold for Riemann solver
@@ -635,7 +636,8 @@
 
       ! Dimensional parameters in km, used if IsLatLon=.False.        
       real(kind=ip)      :: gridwidth_x, gridwidth_y  ! Dimensions (in km) of the grid
-      real(kind=ip)      :: xLL,xUR,yLL,yUR           ! lower-left,upper-right points of grid
+      real(kind=ip)      :: xLL,yLL                   ! coordinate of lower-left point of grid
+      real(kind=ip)      :: xUR,yUR                   ! coordinate of upper-right points of grid
       real(kind=ip)      :: dx, dy                    ! horizontal cell sizes (km)
 
       integer :: nxmax      ! number of nodes in x
@@ -646,10 +648,11 @@
 
 ! *****************************************************************************
 !     Dimensional parameters in degrees, used if IsLatLon=.True.
-      real(kind=ip)      :: latLL,lonLL,latUR,lonUR   ! lat/lon of LL corner
       real(kind=ip)      :: gridwidth_e, gridwidth_n  ! Dimensions (in km) of the grid
-      real(kind=ip)      :: de, dn                    !nodal spacing east & north, degrees
-      real(kind=ip)      :: de_km, dn_km              !nodal spacing, km, at volcano
+      real(kind=ip)      :: lonLL,latLL               ! lon/lat of lower-left corner
+      real(kind=ip)      :: lonUR,latUR               ! lon/lat of upper-right corner
+      real(kind=ip)      :: de, dn                    ! nodal spacing east & north, degrees
+      real(kind=ip)      :: de_km, dn_km              ! nodal spacing, km, at volcano
 #ifdef USEPOINTERS
       real(kind=ip),dimension(:)    ,pointer :: z_vec_init  => null()
       real(kind=ip),dimension(:,:)  ,pointer :: xy2ll_xlon  => null() ! The (projected) computational grid

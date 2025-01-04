@@ -523,7 +523,7 @@
 
       use MetReader,       only : &
          nx_submet,ny_submet,x_submet_sp,y_submet_sp,&
-         MR_lonmin,MR_lonmax,MR_latmin,MR_latmax
+         MR_lonmin,MR_lonmax,MR_latmin,MR_latmax,IsLatLon_MetGrid
 
       INTERFACE
         subroutine get_minmax_lonlat(lonmin,lonmax,latmin,latmax)
@@ -548,7 +548,7 @@
         call get_minmax_lonlat(minlon_Topo_comp,maxlon_Topo_comp,minlat_Topo_comp,maxlat_Topo_comp)
       endif
 
-      if(IsLatLon)then
+      if(IsLatLon_MetGrid)then
         minlon_Topo_Met = real(minval(x_submet_sp(1:nx_submet)),kind=ip)
         maxlon_Topo_Met = real(maxval(x_submet_sp(1:nx_submet)),kind=ip)
         minlat_Topo_Met = real(minval(y_submet_sp(1:ny_submet)),kind=ip)
@@ -2188,8 +2188,16 @@
          nxmax,nymax,lon_cc_pd,lat_cc_pd,xy2ll_ylat,&
          xy2ll_xlon,IsLatLon
 
+      use MetReader,     only : &
+         IsLatLon_MetGrid,Met_iprojflag,Met_lam0,Met_phi0,Met_phi1,Met_phi2,&
+         Met_k0,Met_Re,nx_submet,ny_submet,x_submet_sp,y_submet_sp,MR_Topo_met
+
+      use projection,        only : &
+           PJ_proj_inv
+
       integer :: i,j
       real(kind=ip) :: ophi,olam
+      real(kind=dp) :: xin,yin
       real(kind=ip) :: a1,a2,a3,a4
       real(kind=ip) :: xc,yc,xfrac,yfrac
       integer       :: ilon,ilat
@@ -2223,8 +2231,6 @@
             olam = xy2ll_xlon(i,j)
             ophi = xy2ll_ylat(i,j)
           endif
-          write(*,*)i,j,xy2ll_xlon(i,j),xy2ll_ylat(i,j)
-
           if(olam.gt. 180.0_ip.and.&
              loncc_topo_subgrid(nlon_topo_subgrid).lt.180.0_ip)olam=olam-360.0_ip
           if(olam.lt.-180.0_ip)olam=olam+360.0_ip
@@ -2301,8 +2307,8 @@
             ilat=ilat+1
           endif
 
-          ! No interp; just lower-left corner
-          topo_comp(i,j) = topo_subgrid(ilon,ilat)
+!          ! No interp; just lower-left corner
+!          topo_comp(i,j) = topo_subgrid(ilon,ilat) / 1000.0_ip ! convert to km
 
           ! Bilinear interpolation (between cell-centers)
           if(ilon.eq.0)then
@@ -2351,6 +2357,85 @@
                                 a3*topo_subgrid(ilon+1,ilat+1) + &
                                 a4*topo_subgrid(ilon  ,ilat+1),kind=sp)
           topo_comp(i,j) = topo_comp(i,j) / 1000.0_ip ! convert to km
+        enddo
+      enddo
+
+      ! Now do the same thing for the met grid
+      ! Loop over all the NWP file grid points and pick corresponding the topo point 
+      ! We need topography on the met grid since we will use this for recovering real-world
+      ! altitudes when using a sigma coordinate system. It would be better to use
+      ! the smoothed topography on the computational grid, but some met points will be
+      ! outside of the computational grid.
+      do i=1,nx_submet
+        do j=1,ny_submet
+          ! Get lon/lat of met point
+          if(IsLatLon_MetGrid)then
+            olam = x_submet_sp(i)
+            ophi = y_submet_sp(j)
+          else
+            xin = real(x_submet_sp(i),kind=dp)  ! Projection routines use kind=8
+            yin = real(y_submet_sp(j),kind=dp)
+            call PJ_proj_inv(xin,yin, &
+                           Met_iprojflag, Met_lam0,Met_phi0,Met_phi1,Met_phi2, &
+                           Met_k0,Met_Re, &
+                           olam,ophi)
+          endif
+          if(olam.gt. 180.0_ip.and.&
+             loncc_topo_subgrid(nlon_topo_subgrid).lt.180.0_ip)olam=olam-360.0_ip
+          if(olam.lt.-180.0_ip)olam=olam+360.0_ip
+
+          ! Now find the corresponding topo point
+          ! We need to find where olam,ophi maps onto the grid defined by the cell-centers
+          ilon = floor((olam-loncl_topo_subgrid(1))/dlon_topo) + 1
+          ilat = floor((ophi-latcl_topo_subgrid(1))/dlat_topo) + 1
+          ! Adjust for the cases where we have the comp point right on top of the topo point
+          if(olam.lt.loncl_topo_subgrid(ilon))then
+            ilon = ilon-1
+          elseif(olam.gt.loncl_topo_subgrid(ilon+1))then
+            ilon = ilon+1
+          endif
+          if(ophi.lt.latcl_topo_subgrid(ilat))then
+            ilat = ilat-1
+          elseif(ophi.gt.latcl_topo_subgrid(ilat+1))then
+            ilat = ilat+1
+          endif
+
+          ! Double-check that olam is between left and right sides of cell
+          if(olam.lt.loncl_topo_subgrid(ilon).or.&
+             olam.gt.loncl_topo_subgrid(ilon+1))then
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: ",ilon,&
+                      loncl_topo_subgrid(ilon),&
+                      olam,&
+                      loncl_topo_subgrid(ilon+1)
+            endif;enddo
+            stop 1
+          endif
+          if(ophi.lt.latcl_topo_subgrid(ilat).or.&
+             ophi.gt.latcl_topo_subgrid(ilat+1))then
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: ",ilat,&
+                      latcl_topo_subgrid(ilat),&
+                      ophi,&
+                      latcl_topo_subgrid(ilat+1)
+            endif;enddo
+            stop 1
+          endif
+
+          if(olam-loncl_topo_subgrid(ilon).lt.0.0_ip)then
+            ilon=ilon-1
+          elseif(olam-loncl_topo_subgrid(ilon+1).ge.dlon_topo)then
+            ilon=ilon+1
+          endif
+          if(ophi-latcl_topo_subgrid(ilat).lt.0.0_ip)then
+            ilat=ilat-1
+          elseif(ophi-latcl_topo_subgrid(ilat+1).ge.dlat_topo)then
+            ilat=ilat+1
+          endif
+
+          ! No interp; just lower-left corner
+          MR_Topo_met(i,j) = real(topo_subgrid(ilon,ilat),kind=sp) / 1000.0_ip ! convert to km
+
         enddo
       enddo
 
@@ -2486,7 +2571,6 @@
          MR_Topo_comp,MR_Topo_met
 
       integer :: i,j,it
-      integer :: iidx,jidx
       integer :: ncells
       real(kind=ip) :: topo_avg,dist,cell_len
       real(kind=ip) :: deltheta,x1,x2,y1,y2,z1,z2
@@ -2518,7 +2602,7 @@
           endif;enddo
           nx = nx_submet
           ny = ny_submet
-          rad = 0.25_ip/1000.0_ip*real(MR_minlen,kind=ip)  ! Smooth over the width of the met cells
+          rad = 0.25_ip*real(MR_minlen,kind=ip)  ! Smooth over the width of the met cells
           cell_len = min(minval(MR_dx_met(:)),minval(MR_dy_met(:)))*DEG2RAD*RAD_EARTH
         else
           ! Second time, smooth topography on the computational grid using the smoothing
@@ -2530,18 +2614,18 @@
           ny = nymax
           rad = rad_smooth  ! Smooth over the radius specified in the input file
           if(IsLatLon)then
-            cell_len = min(de,dn)*DEG2RAD*RAD_EARTH
+            cell_len = min(de,dn)*DEG2RAD*RAD_EARTH ! in km
           else
-            cell_len = min(dx,dy)
+            cell_len = min(dx,dy)                   ! in km
           endif
           ! Smoothing radius should smooth over something like the scale of the met grid
           ! Issue a warning if it is much smaller
-          if(rad.lt.0.25_ip/1000.0_ip*real(MR_minlen,kind=ip))then
+          if(rad.lt.0.25_ip*real(MR_minlen,kind=ip))then
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)" WARNING: Width of smoothing kernel (4x radius) is less than"
               write(outlog(io),*)"          the grid size of Met data."
               write(outlog(io),*)"    Smoothing radius (km)         = ",real(rad,kind=4)
-              write(outlog(io),*)"    Shortest met grid length (km) = ",real(MR_minlen/1000.0_ip,kind=4)
+              write(outlog(io),*)"    Shortest met grid length (km) = ",real(MR_minlen,kind=4)
             endif;enddo
           elseif(rad.gt.cell_len*12.5_ip)then
             ! Conversely, issue a warning if it is too big since this will choke up the smoothing kernel
@@ -2557,7 +2641,7 @@
             ! Report on the smoothing length relative to the comp and met grids
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"    Smoothing radius (km)          = ",real(rad,kind=4)
-              write(outlog(io),*)"    Shortest met grid length (km)  = ",real(MR_minlen/1000.0_ip,kind=4)
+              write(outlog(io),*)"    Shortest met grid length (km)  = ",real(MR_minlen,kind=4)
               write(outlog(io),*)"    Shortest comp grid length (km) = ",real(cell_len,kind=4)
             endif;enddo
           endif
@@ -2596,6 +2680,9 @@
               x1=sin(0.5_ip*PI-lat_cc_pd(j)*DEG2RAD)*cos(lon_cc_pd(i)*DEG2RAD)
               y1=sin(0.5_ip*PI-lat_cc_pd(j)*DEG2RAD)*sin(lon_cc_pd(i)*DEG2RAD)
               z1=cos(0.5_ip*PI-lat_cc_pd(j)*DEG2RAD)
+            else
+              x1 = x_cc_pd(i)
+              y1 = y_cc_pd(j)
             endif
 
             do ii=max(-1,i-ipad),min(i+ipad,nxmax+2)
@@ -2616,8 +2703,9 @@
                     !ijDel_X(1) = x1-x2
                     !ijDel_X(2) = y1-y2
                   else
-                    dist=sqrt((x_cc_pd(ii)-x_cc_pd(i))**2.0_ip + &
-                              (y_cc_pd(jj)-y_cc_pd(j))**2.0_ip)
+                    x2 = x_cc_pd(ii)
+                    y2 = y_cc_pd(jj)
+                    dist=sqrt((x2-x1)**2.0_ip + (y2-y1)**2.0_ip)
                     !ijDel_X(1) =x_cc_pd(i)-x_cc_pd(ii)
                     !ijDel_X(2) =y_cc_pd(i)-y_cc_pd(ii)
                   endif
@@ -2657,21 +2745,6 @@
       topo_comp(-1:nxmax+2,-1:nymax+2) = topo_smooth_comp(-1:nxmax+2,-1:nymax+2)
       ! And copy to the MetReader array
       MR_Topo_comp(-1:nxmax+2,-1:nymax+2) = real(topo_smooth_comp(-1:nxmax+2,-1:nymax+2),kind=sp)
-
-      ! Now populate the topo array on the met grid
-      do i = 1,nx_submet
-        xin  = real(x_submet_sp(i),kind=ip)
-        iidx = floor((xin-lonLL)/de) + 1
-        iidx = max(iidx,-1)
-        iidx = min(iidx,nxmax+2)
-        do j = 1,ny_submet
-          yin = real(y_submet_sp(j),kind=ip)
-          jidx = floor((yin-latLL)/dn) + 1
-          jidx = max(jidx,-1)
-          jidx = min(jidx,nymax+2)
-          MR_Topo_met(i,j) = real(topo_comp(iidx,jidx),kind=sp)
-        enddo
-      enddo
 
       call RemoveBath_Topo
 
