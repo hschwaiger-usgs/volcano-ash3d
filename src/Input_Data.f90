@@ -287,7 +287,8 @@
       subroutine Set_OS_Env
 
       use global_param,  only : &
-        DirPrefix,DirDelim,IsLitEnd,IsLinux,IsWindows,IsMacOS,version, &
+        DirPrefix,DirDelim,IsLitEnd,IsLinux,IsWindows,IsMacOS, &
+        version_major,version_minor,version_patch,&
         CFL,OS_TYPE,OS_Flavor,os_full_command_line,os_cwd,os_host,os_user,&
         Comp_Code,Comp_Flavor,useFastDt,FastDt_suppress, &
         usezip,zippath,usegnuplot,gnuplotpath
@@ -326,6 +327,7 @@
       character(len=100):: CompVer
       character(len=604):: CompOpt
       logical           :: IsThere
+      character(len=8)  :: version         ! Text string of the Ash3d version number
 
       INTERFACE
         real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
@@ -498,7 +500,8 @@
           if(VB(2).le.verbosity_info)then
             write(outlog(2),*)" "
             write(outlog(2),*)"Checking for run-time environment variable: ASH3DVERB"
-            write(outlog(2),*)"  ASH3DVERB environment variable not found.  verbosity level : ",VB(1)
+            write(outlog(2),*)"  ASH3DVERB environment variable not found."
+            write(outlog(2),*)"    verbosity level : ",VB(1)
           endif
         endif
       endif
@@ -566,7 +569,7 @@
 
       ! Now, check for environment variables ASH3DCFL
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(2),*)" "
+        write(outlog(io),*)" "
         write(outlog(io),*)"Checking for run-time environment variable: ASH3DCFL"
       endif;enddo
       call get_environment_variable(name="ASH3DCFL",value=tmp_str,status=iostatus)
@@ -609,7 +612,7 @@
 
       ! Now, check for environment variables ASH3DPLOT
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(2),*)" "
+        write(outlog(io),*)" "
         write(outlog(io),*)"Checking for run-time environment variable: ASH3DPLOT"
       endif;enddo
       call get_environment_variable(name="ASH3DPLOT",value=tmp_str,status=iostatus)
@@ -941,12 +944,13 @@
 
         ! Write out start time in UTC
         write(outlog(io),*)
+        write(version,'(i0,a1,i0,a1,i0)')version_major,'.',version_minor,'.',version_patch
         write(outlog(io),2) version,RunStartYear,RunStartMonth,RunStartDay,RunStartHr,RunStartMinute
         write(outlog(io),*)
       endif;enddo
 
       ! Format statements
-2     format(4x,'Ash3d (Rev ',a5,') run ',&
+2     format(4x,'Ash3d ( v. ',a8,') run ',&
              i4,'.',i2.2,'.',i2.2,i4,':',i2.2,' UTC')
 
       end subroutine Set_OS_Env
