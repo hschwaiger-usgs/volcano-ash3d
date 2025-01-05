@@ -3290,7 +3290,7 @@
       enddo
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)' *******************************************'
-        write(outlog(io),*)' Reading Block 6: Airport location output'
+        write(outlog(io),*)' Reading Block 6: Airport/POI location output'
         write(outlog(io),*)' *******************************************'
       endif;enddo
       ! Block 6 Line 1
@@ -3352,7 +3352,7 @@
       cdf_b6l4 = linebuffer080
       AirportInFile = cdf_b6l4(1:scan(cdf_b6l4,' ')-1)     !Read to the first blank space
 
-      !See if we need to read an external airport file
+      ! See if we need to read an external airport file
       if((AirportInFile.ne.'internal').and. &
           (AirportInFile.ne.'')) then
         ReadExtAirportFile=.true.              ! read external data
@@ -3402,15 +3402,36 @@
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),44) ReadExtAirportFile, AppendExtAirportFile, &
                   WriteAirportFile_ASCII, WriteGSD, WriteAirportFile_KML, &
-                  ProjectAirportLocations, AirportInFile
+                  ProjectAirportLocations
+44      format(4x,'Airport choices:',/, &
+                4x,'   Read external file of locations (T/F)                        = ',L1,/, &
+                4x,'   Append external locations to airport list (T/F)              = ',L1,/, &
+                4x,'   Write ASCII file of ash arrival times at airports (T/F)      = ',L1,/, &
+                4x,'   Write deposit grain-size distribution to airports file (T/F) = ',L1,/, &
+                4x,'   Write KML file of ash arrival times at airports (T/F)        = ',L1,/, &
+                4x,'   Calculate projected airport locations using Ash3d (T/F)      = ',L1,/)
+        if(ReadExtAirportFile)then
+          write(outlog(io),*)'   Name of file containing airport locations: ', &
+                             adjustl(trim(AirportInFile))
+          if(AppendExtAirportFile)then
+            write(outlog(io),*)'   Airports/POI in this file will be appended to the internal'
+            write(outlog(io),*)'   global list.'
+          else
+            write(outlog(io),*)'   This file will replace the internal global list of airports.'
+          endif
+        else
+          write(outlog(io),*)'   Internal list of global airport locations will be used.'
+        endif
+          write(outlog(io),*)' '
       endif;enddo
       if(ProjectAirportLocations)then
         if(IsLatLon)then
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"     The control file indicates that the projected coordinates"
-            write(outlog(io),*)"     of the Airport/POI file should be used, but the current"
-            write(outlog(io),*)"     coordinate system is lon/lat.  Projected coordinates will"
-            write(outlog(io),*)"     be ignored and the lon/lat used instead."
+            write(outlog(io),*)"     in columns 3 and 4 of the Airport/POI file should be used,"
+            write(outlog(io),*)"     but the current coordinate system is lon/lat.  Projected"
+            write(outlog(io),*)"     coordinates will be ignored and the lon/lat provided in"
+            write(outlog(io),*)"     the file used instead."
           endif;enddo
         else
           do io=1,2;if(VB(io).le.verbosity_info)then
@@ -3421,6 +3442,7 @@
           endif;enddo
         endif
       endif
+
       ! END OF BLOCK 6
       !************************************************************************
 
@@ -4848,18 +4870,6 @@
 34    format(/, 4x,'Files to be written out at the following hours',&
                    ' after the eruption start:')
 35    format(8x,f10.3)
-44    format(4x,'Airport choices:',/, &
-                4x,'   Read external file of locations (T/F) = ',L1,/, &
-                4x,'   Append external locations to airport list (T/F) = ',L1,/, &
-                4x,'   Write ASCII file of ash arrival times at',&
-                   ' airports (T/F) = ',L1,/, &
-                4x,'   Write deposit grain-size distribution to',&
-                   ' airports file (T/F) = ',L1,/, &
-                4x,'     Write KML file of ash arrival times at',&
-                   ' airports (T/F) = ',L1,/, &
-                4x,'     Calculate projected airport locations using',&
-                   ' Ash3d (T/F) = ',L1,//, &
-                4x,' Name of file containing airport locations: ',a130)
 
       end subroutine Read_Control_File
 

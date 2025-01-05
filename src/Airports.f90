@@ -550,10 +550,13 @@
 !     This subroutine reads an external file to populate (or supplement) the airport
 !     list.  This subroutine should be called once from ReadAirports.
 !     The file should be in the following format:
-!       Latitude (or x), Longitude (or y), Station Code, Station Name
-!     The two floating point values for the station coordinates should be in the first
-!     50 characters.  Station_Code is 3 characters (51-53)
-!     Station_Name is 35 characters (54-88)
+!       Characters 1-50 contain at least two columns, but optionally four columns
+!         Latitude Longitude [x y]
+!       Characters 51-53 contain a 3-char Station Code
+!       Characters 55-89 contain the Station Name
+!     If projected coordinates are provided and specified to be used in Block 6, line 5
+!     of the control file, then they are assumed to be in the same projection as the
+!     computational grid.
 !     The following variables are filled:
 !       ExtAirportLat   :
 !       ExtAirportLon   :
@@ -628,7 +631,7 @@
           ExtAirportX(isite)=0.0_ip
           ExtAirportY(isite)=0.0_ip
         endif
-        ! Now read the code (char #51-54) and the name (char #56-80)
+        ! Now read the code (char #51-53) and the name (char #56-80)
         read(linebuffer095,2,iostat=ioerr,iomsg=iomessage) ExtAirportCode(isite), ExtAirportName(isite)
 2       format(50x,a3,1x,a35)
         if(ioerr.ne.0)then
@@ -661,6 +664,7 @@
                      xout,yout)
           ExtAirportX(isite) = real(xout,kind=ip)
           ExtAirportY(isite) = real(yout,kind=ip)
+          write(*,*)ExtAirportName(isite),lon_in,lat_in,ExtAirportX(isite),ExtAirportY(isite)
         endif
 
       enddo
@@ -764,7 +768,7 @@
           inx = 0.0_ip
           iny = 0.0_ip
         endif
-        ! Now read the code (char #51-54) and the name (char #56-80)
+        ! Now read the code (char #51-53) and the name (char #55-89)
         read(linebuffer120,2,iostat=ioerr,iomsg=iomessage) inCode,inName
 2       format(50x,a3,1x,a35)
         if(ioerr.ne.0)then
