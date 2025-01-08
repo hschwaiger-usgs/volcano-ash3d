@@ -387,6 +387,7 @@
       ! Note:  All we need here is just the min/max for lat/lon so that we
       !        can generate our own, regular lat/lon grid filled with
       !        interpolated values.
+      !     HFS: change this to just calculate the edge inverse-projection
       latmax =  -90.0_8
       latmin =   90.0_8
       lonmin =  360.0_8

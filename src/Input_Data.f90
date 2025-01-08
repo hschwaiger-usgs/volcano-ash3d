@@ -1080,8 +1080,7 @@
          useRestartVars
 
       use Airports,      only : &
-         AirportInFile,&
-           ProjectAirportLocations
+         AirportInFile,ProjectAirportLocations
 
       use VotW_ESP,      only : &
            get_ESP
@@ -3262,7 +3261,7 @@
       endif
 
       !************************************************************************
-      ! BLOCK 6: AIRPORT FILE
+      ! BLOCK 6: AIRPORT/POI FILE
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading ctr file, past Blk 5, looking for Blk 6."
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
@@ -3353,6 +3352,8 @@
       AirportInFile = cdf_b6l4(1:scan(cdf_b6l4,' ')-1)     !Read to the first blank space
 
       ! See if we need to read an external airport file
+      ReadExtAirportFile   = .false.
+      AppendExtAirportFile = .false.
       if((AirportInFile.ne.'internal').and. &
           (AirportInFile.ne.'')) then
         ReadExtAirportFile=.true.              ! read external data

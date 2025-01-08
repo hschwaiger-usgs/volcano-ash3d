@@ -10,6 +10,7 @@
 !      subroutine ReadAirports
 !      subroutine ReadExtAirports
 !      subroutine Read_GlobalAirports(num_GlobAirports)
+!      subroutine Project_GlobalAirports
 !      function bilinear_thickness(i,OutVar)
 !
 !##############################################################################
@@ -59,7 +60,7 @@
       logical,           allocatable,public :: Airport_CloudArrived(:)
       integer,           allocatable,public :: Airport_TS_plotindex(:)
 
-        ! Variables internal to module, but shared amoung subroutines
+        ! Variables internal to module, but shared among subroutines
       integer, parameter             :: MAXAIRPORTS       = 10000
       integer                        :: NAIRPORTS_EWERT     ! number of airports in the global list in Read_GlobalAirports
                                                             ! This is about 6117
@@ -67,6 +68,8 @@
 
       real(kind=ip),     allocatable :: AirportFullLat(:)
       real(kind=ip),     allocatable :: AirportFullLon(:)
+      real(kind=ip),     allocatable :: AirportFullX(:)
+      real(kind=ip),     allocatable :: AirportFullY(:)
       character(len=3),  allocatable :: AirportFullCode(:)
       character(len=42), allocatable :: AirportFullName(:)
 
@@ -75,7 +78,7 @@
       real(kind=ip)                  :: ExtAirportX(MAXAIRPORTS)
       real(kind=ip)                  :: ExtAirportY(MAXAIRPORTS)
       character(len=3)               :: ExtAirportCode(MAXAIRPORTS)
-      character(len=38)              :: ExtAirportName(MAXAIRPORTS)
+      character(len=42)              :: ExtAirportName(MAXAIRPORTS)
 
       real(kind=ip),     allocatable :: Airport_x(:)
       real(kind=ip),     allocatable :: Airport_y(:)
@@ -227,8 +230,7 @@
          AppendExtAirportFile,nWriteTimes,ReadExtAirportFile
 
       use mesh,          only : &
-         IsLatLon,A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,&
-         A3d_Re,de,dn,dx,dy,xLL,yLL,xUR,yUR,latLL,lonLL,latUR,lonUR
+         IsLatLon,de,dn,dx,dy,xLL,yLL,xUR,yUR,latLL,lonLL,latUR,lonUR
 
       use projection,    only : &
          PJ_proj_for
@@ -238,15 +240,73 @@
       character(len=35)  :: NameNow
       character(len=3)   :: CodeNow
       real(kind=ip)      :: latitude, longitude
-      real(kind=dp)      :: lat_in,lon_in,xout,yout
       integer            :: n_airports_total    ! number of airports in external file
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine ReadAirports"
       endif;enddo
 
-      ! This populates the global list, regardless of any other POI file
-      call Read_GlobalAirports(NAIRPORTS_EWERT)
+      ! Write out what we are about to do
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)" "
+        write(outlog(io),*)" Now populating Airport/POI lists"
+        if(.not.ReadExtAirportFile.or.AppendExtAirportFile)then
+          ! Either no external file provided or the external file will supplement the
+          ! internal list. In either case, we need to load the global list
+          ! (or via the shared file GlobalAirports_ewert.txt).
+          if(AppendExtAirportFile)then
+            write(outlog(io),*)" External Airport/POI list provided, but first we need to",&
+                               " load the internal global airport list."
+          else
+            write(outlog(io),*)" Only internal global airport list will be used."
+          endif
+          if(IsLatLon)then
+            write(outlog(io),*)"  Coordinate system is LL; no projection calculations needed."
+          else
+            write(outlog(io),*)"  Coordinate system is projected; calculating global"
+            write(outlog(io),*)"  airport coordinates in local projection using libprojection."
+          endif
+        endif ! conditional for when internal list is loaded
+
+        ! Now comment on the plan for the external file, if provided
+        if(ReadExtAirportFile)then
+          if(ProjectAirportLocations)then
+            write(outlog(io),*)"  External Airport/POI file will be read with columns 1-2 loaded ",&
+                               "and 3-4 ignored."
+            if(IsLatLon)then
+              write(outlog(io),*)"   Lat/Lon values of external file will be used."
+            else
+              write(outlog(io),*)"   Lat/Lon values of external file will be used and projected internally."
+            endif
+          else
+            write(outlog(io),*)"  External Airport/POI file will be read with columns 3-4 loaded ",&
+                               "and 1-2 ignored."
+            write(outlog(io),*)"  Lat/Lon values of external file will be calculated from projected coordinates."
+          endif
+        endif ! conditional for when external file is read
+      endif;enddo
+
+      allocate(AirportFullLat(MAXAIRPORTS))
+      allocate(AirportFullLon(MAXAIRPORTS))
+      allocate(AirportFullX(MAXAIRPORTS))
+      allocate(AirportFullY(MAXAIRPORTS))
+      allocate(AirportFullCode(MAXAIRPORTS))
+      allocate(AirportFullName(MAXAIRPORTS))
+
+      if(.not.ReadExtAirportFile.or.AppendExtAirportFile)then
+        ! Populate the global list if needed. Note that we might supplement this list.
+        ! This will either be a call to a subroutine that reads the
+        ! installed file Ash3dHome/share/GlobalAirports_ewert.txt
+        ! or a subroutine (with the same name) that loads the data
+        ! directly to variables depending on the makefile variable USEEXTDATA = T/F
+        call Read_GlobalAirports(NAIRPORTS_EWERT)
+  
+        if(.not.IsLatLon)then
+          ! If we are using a projected grid, we need to map the LL of the global list to 
+          ! the current projection
+          call Project_GlobalAirports
+        endif
+      endif
 
       ! If we are reading an external airport file
       !  i.e. something other than 'internal' or '' in line 4 of block 6
@@ -273,6 +333,8 @@
         do i=NAIRPORTS_EWERT+1,n_airports_total
           AirportFullLat(i)  = ExtAirportLat(i-NAIRPORTS_EWERT)
           AirportFullLon(i)  = ExtAirportLon(i-NAIRPORTS_EWERT)
+          AirportFullX(i)    = ExtAirportX(i-NAIRPORTS_EWERT)
+          AirportFullY(i)    = ExtAirportY(i-NAIRPORTS_EWERT)
           AirportFullCode(i) = ExtAirportCode(i-NAIRPORTS_EWERT)
           AirportFullName(i) = ExtAirportName(i-NAIRPORTS_EWERT)
           ! make sure longitude is between 0
@@ -293,6 +355,8 @@
         do i=1,n_airports_total
           AirportFullLat(i)  = ExtAirportLat(i)
           AirportFullLon(i)  = ExtAirportLon(i)
+          AirportFullX(i)    = ExtAirportX(i)
+          AirportFullY(i)    = ExtAirportY(i)
           AirportFullCode(i) = ExtAirportCode(i)
           AirportFullName(i) = ExtAirportName(i)
         enddo
@@ -310,7 +374,8 @@
           AirportFullLon(i) = AirportFullLon(i)+360.0_ip
         latitude  = AirportFullLat(i)
         longitude = AirportFullLon(i)
-
+        xnow      = AirportFullX(i)
+        ynow      = AirportFullY(i)
         if (IsLatLon) then
           if ((longitude.ge.lonLL+de) .and. &
               (longitude.le.lonUR-de) .and. &
@@ -319,26 +384,6 @@
             nairports = nairports+1
           endif
         else
-          ! convert lat/lon to the projected values.
-          if (ProjectAirportLocations) then
-            lon_in = longitude
-            lat_in = latitude
-            call PJ_proj_for(lon_in,lat_in, A3d_iprojflag, &
-                       A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,A3d_Re, &
-                       xout,yout)
-            xnow = real(xout,kind=ip)
-            ynow = real(yout,kind=ip)
-          else
-            ! This is a projected grid case and we are using the provided x,y of the file
-            ! This only works for user-provided files
-            !xnow = real(xout,kind=ip)
-            !ynow = real(yout,kind=ip)
-            do io=1,2;if(VB(io).le.verbosity_error)then
-              write(errlog(io),*)"ERROR: Need projected values of Airports/POI."
-            endif;enddo
-            stop 1
-          endif
-
           if ((xnow.ge.xLL+dx) .and. &
               (xnow.le.xUR-dx) .and. &
               (ynow.ge.yLL+dy) .and. &
@@ -358,8 +403,8 @@
         CodeNow   = AirportFullCode(i)(1:3)
         NameNow   = AirportFullName(i)(1:35) ! Copy to a temp variable and
                                              ! truncate to 35 chars
-        xnow = 0.0_ip
-        ynow = 0.0_ip
+        xnow      = AirportFullX(i)
+        ynow      = AirportFullY(i)
         if (IsLatLon) then
           if ((longitude.ge.lonLL+de) .and. &
               (longitude.le.lonUR-de) .and. &
@@ -390,19 +435,6 @@
             endif
           endif
         else
-          ! convert lat/lon to the projected values.
-          if (ProjectAirportLocations) then
-            lon_in = longitude
-            lat_in = latitude
-            call PJ_proj_for(lon_in,lat_in, A3d_iprojflag, &
-                       A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,A3d_Re, &
-                       xout,yout)
-            xnow = real(xout,kind=ip)
-            ynow = real(yout,kind=ip)
-          endif
-
-          ! Read the x and y values from the file.
-          ! They are assumed to be in the same projection system computational grid.
           if ((xnow.ge.xLL+dx) .and. &
               (xnow.le.xUR-dx) .and. &
               (ynow.ge.yLL+dy) .and. &
@@ -437,6 +469,8 @@
 
       if(allocated(AirportFullLat))  deallocate(AirportFullLat)
       if(allocated(AirportFullLon))  deallocate(AirportFullLon)
+      if(allocated(AirportFullX))    deallocate(AirportFullX)
+      if(allocated(AirportFullY))    deallocate(AirportFullY)
       if(allocated(AirportFullCode)) deallocate(AirportFullCode)
       if(allocated(AirportFullName)) deallocate(AirportFullName)
 
@@ -554,8 +588,8 @@
 !         Latitude Longitude [x y]
 !       Characters 51-53 contain a 3-char Station Code
 !       Characters 55-89 contain the Station Name
-!     If projected coordinates are provided and specified to be used in Block 6, line 5
-!     of the control file, then they are assumed to be in the same projection as the
+!     If projected coordinates are provided and specified to be used ('yes' in Block 6, line 5
+!     of the control file), then they are assumed to be in the same projection as the
 !     computational grid.
 !     The following variables are filled:
 !       ExtAirportLat   :
@@ -571,18 +605,20 @@
       subroutine ReadExtAirports
 
       use mesh,          only : &
-         IsLatLon,A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,&
+         A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,&
          A3d_Re
 
       use projection,    only : &
-         PJ_proj_for
+         PJ_proj_for,PJ_proj_inv
 
       integer            :: isite
       integer            :: iostatus
       character(len=120) :: iomessage
       integer            :: ioerr
       character(len=95)  :: linebuffer095
-      real(kind=dp)      :: lat_in,lon_in,xout,yout
+      real(kind=dp)      :: lat_in,lon_in
+      real(kind=dp)      :: x_in,y_in
+      real(kind=dp)      :: xout,yout
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine ReadExtAirports"
@@ -616,7 +652,7 @@
         if(ioerr.ne.0)then
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)'Next line of Airport/POI file loaded without error, however'
-            write(outlog(io),*)'could not read lat/lon. Check if your file has trainling'
+            write(outlog(io),*)'could not read lat/lon. Check if your file has trailing'
             write(outlog(io),*)'blank lines.  Ending reading of sites at #',isite-1
           endif;enddo
           isite = isite - 1
@@ -628,8 +664,8 @@
                                        ExtAirportLat(isite), ExtAirportLon(isite), &
                                        ExtAirportX(isite), ExtAirportY(isite)
         if(ioerr.ne.0)then
-          ExtAirportX(isite)=0.0_ip
-          ExtAirportY(isite)=0.0_ip
+          ExtAirportX(isite) = -9999.0_ip
+          ExtAirportY(isite) = -9999.0_ip
         endif
         ! Now read the code (char #51-53) and the name (char #56-80)
         read(linebuffer095,2,iostat=ioerr,iomsg=iomessage) ExtAirportCode(isite), ExtAirportName(isite)
@@ -656,7 +692,8 @@
           ExtAirportLon(isite) = ExtAirportLon(isite)+360.0_ip
 
         ! convert lat/lon to the projected values.
-        if (.not.IsLatLon.and.ProjectAirportLocations) then
+        if (ProjectAirportLocations) then
+          ! For this branch, we are trusting the lon/lat coordinates from columns 1,2
           lon_in = ExtAirportLon(isite)
           lat_in = ExtAirportLat(isite)
           call PJ_proj_for(lon_in,lat_in, A3d_iprojflag, &
@@ -664,7 +701,16 @@
                      xout,yout)
           ExtAirportX(isite) = real(xout,kind=ip)
           ExtAirportY(isite) = real(yout,kind=ip)
-          write(*,*)ExtAirportName(isite),lon_in,lat_in,ExtAirportX(isite),ExtAirportY(isite)
+        else
+          ! For this branch, we are trusting the projected coordinates from columns 3,4 and inverse-projecting
+          ! to get the lon/lat
+          x_in = ExtAirportX(isite)
+          y_in = ExtAirportY(isite)
+          call PJ_proj_inv(x_in,y_in, A3d_iprojflag, &
+                     A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,A3d_Re, &
+                     xout,yout)
+          ExtAirportLon(isite) = real(xout,kind=ip)
+          ExtAirportLat(isite) = real(yout,kind=ip)
         endif
 
       enddo
@@ -721,11 +767,6 @@
         write(outlog(io),*)"     Entered Subroutine Read_GlobalAirports"
       endif;enddo
 
-      allocate(AirportFullLat(MAXAIRPORTS))
-      allocate(AirportFullLon(MAXAIRPORTS))
-      allocate(AirportFullCode(MAXAIRPORTS))
-      allocate(AirportFullName(MAXAIRPORTS))
-
       AirportMasterFile = trim(Ash3dHome) // &
                           DirDelim // 'share' // &
                           DirDelim // 'GlobalAirports_ewert.txt'
@@ -733,7 +774,7 @@
       inquire( file=trim(adjustl(AirportMasterFile)), exist=IsThere )
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)&
-          "Trying to read external global airport file in home=",adjustl(trim(Ash3dHome))
+          "Trying to read installed global airport file in Ash3d home = ",adjustl(trim(Ash3dHome))
         write(outlog(io),*)"Full file name = ",trim(adjustl(AirportMasterFile))
         write(outlog(io),*)"  Exists = ",IsThere
       endif;enddo
@@ -765,8 +806,8 @@
         ! Here we do not actually do a hard stop if we can't read projected values
         read(linebuffer120,*,iostat=ioerr,iomsg=iomessage) inlat, inlon, inx, iny
         if(ioerr.ne.0)then
-          inx = 0.0_ip
-          iny = 0.0_ip
+          inx = -9999.0_ip
+          iny = -9999.0_ip
         endif
         ! Now read the code (char #51-53) and the name (char #55-89)
         read(linebuffer120,2,iostat=ioerr,iomsg=iomessage) inCode,inName
@@ -788,10 +829,19 @@
         AirportFullName(isite) = trim(adjustl(inName))
         AirportFullLat(isite)  = inlat
         AirportFullLon(isite)  = inlon
+
       end do
+
+      close(fid_airport)
 
       ! return the number of airports in this global list.
       num_GlobAirports = isite
+
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)&
+          " Successfully read default global airport file: ",trim(adjustl(AirportMasterFile))
+        write(outlog(io),*)" Number of airports read = ",num_GlobAirports
+      endif;enddo
 
       return
 
@@ -823,8 +873,16 @@
 
       allocate(AirportFullLat(MAXAIRPORTS))
       allocate(AirportFullLon(MAXAIRPORTS))
+      allocate(AirportFullX(MAXAIRPORTS))
+      allocate(AirportFullY(MAXAIRPORTS))
       allocate(AirportFullCode(MAXAIRPORTS))
       allocate(AirportFullName(MAXAIRPORTS))
+
+      ! WARNING: if you add airports to this internal master list, you need to make
+      !          sure you do not add too many and exceed MAXAIRPORTS
+      !          Current list is about 6117 elements and MAXAIRPORTS = 10000
+      !          If you add a lot of airports and get a segmentation fault, increase
+      !          MAXAIRPORTS or, better yet, read an external file.
 
       i = 0;
       i=i+1; AirportFullLat(i)= 41.60833_ip; AirportFullLon(i)= 271.905830_ip; 
@@ -13096,12 +13154,66 @@
       i=i+1; AirportFullLat(i)=  7.03917_ip; AirportFullLon(i)=  39.399170_ip; 
              AirportFullCode(i)="ABA"; AirportFullName(i)="Adaba, Ethiopia                           "; 
 
-      ! return the number of airports in this global list.  Hopefully, this does not exceed
-      ! the max MAXAIRPORTS = 10000
+      ! WARNING: if you add airports to this internal master list, you need to make
+      !          sure you do not add too many and exceed MAXAIRPORTS
+      !          Current list is about 6117 elements and MAXAIRPORTS = 10000
+      !          If you add a lot of airports and get a segmentation fault, increase
+      !          MAXAIRPORTS or, better yet, read an external file.
+
+      ! return the number of airports in this global list.
+
       num_GlobAirports = i
       
       end subroutine Read_GlobalAirports
 #endif
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!     Project_GlobalAirports
+!
+!  Called from: ReadAirports
+!  Arguments:
+!    none
+!
+!  This subroutine calculates the projected coordinates of the internal
+!  list of global airports (which only provide Lon/Lat coordinates) using
+!  the libprojection library.
+!  This subroutine sets AirportFullX and AirportFullY
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine Project_GlobalAirports
+
+      use mesh,          only : &
+         IsLatLon,A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,&
+         A3d_Re
+
+      use projection,    only : &
+         PJ_proj_for
+
+      integer            :: isite
+      real(kind=dp)      :: lat_in,lon_in,xout,yout
+
+      do isite=1,NAIRPORTS_EWERT
+        ! convert lat/lon to the projected values.
+        ! Note that we convert the internal list regardless of the status of
+        ! ProjectAirportLocations. The internal list does not have valid
+        ! projected coordinates which must be calculated with libprojection.
+        if (.not.IsLatLon) then
+          lon_in = AirportFullLon(isite)
+          lat_in = AirportFullLat(isite)
+          call PJ_proj_for(lon_in,lat_in, A3d_iprojflag, &
+                     A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,A3d_Re, &
+                     xout,yout)
+          AirportFullX(isite) = real(xout,kind=ip)
+          AirportFullY(isite) = real(yout,kind=ip)
+        endif
+      end do
+
+      end subroutine Project_GlobalAirports
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       end module Airports
