@@ -334,6 +334,7 @@
           enddo
         enddo
       endif
+
       end subroutine calc_s_mesh
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -387,19 +388,20 @@
 #else
       if(.not.allocated(xy2ll_ylat))then
 #endif
-        allocate(xy2ll_ylat(0:nxmax+1,0:nymax+1))
+        allocate(xy2ll_ylat(-1:nxmax+2,-1:nymax+2)); xy2ll_ylat(:,:) = 0.0_ip
       endif
 #ifdef USEPOINTERS
       if(.not.associated(xy2ll_xlon))then
 #else
       if(.not.allocated(xy2ll_xlon))then
 #endif
-        allocate(xy2ll_xlon(-1:nxmax+2,-1:nymax+2))
+        allocate(xy2ll_xlon(-1:nxmax+2,-1:nymax+2)); xy2ll_xlon(:,:) = 0.0_ip
       endif
       ! This block calculates the lon/lat for each computational grid point
       ! Note:  All we need here is just the min/max for lat/lon so that we
       !        can generate our own, regular lat/lon grid filled with
       !        interpolated values.
+      !     HFS: change this to just calculate the edge inverse-projection
       latmax =  -90.0_8
       latmin =   90.0_8
       lonmin =  360.0_8
@@ -416,9 +418,9 @@
           if(olam.gt.lonmax)lonmax=olam
           if(ophi.lt.latmin)latmin=ophi
           if(ophi.gt.latmax)latmax=ophi
-          xy2ll_ylat(i,j) = real(ophi,kind=ip)
           xy2ll_xlon(i,j) = real(olam,kind=ip)
           if(xy2ll_xlon(i,j).lt.0.0_ip) xy2ll_xlon(i,j) = xy2ll_xlon(i,j) + 360.0_ip
+          xy2ll_ylat(i,j) = real(ophi,kind=ip)
         enddo
       enddo
 

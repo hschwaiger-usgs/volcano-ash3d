@@ -668,7 +668,7 @@
       write(outlog(io),1)'no                            # Write out grain-size distribution to ASCII airports file?              '
       write(outlog(io),1)'no                            # Write out ash arrival times to kml file?                               '
       write(outlog(io),1)'GlobalAirports.txt            # Name of file containing airport locations                              '
-      write(outlog(io),1)'no                            # Have libprojection calculate projected coordinates?                    '
+      write(outlog(io),1)'yes                           # Defer to Lon/Lat coordinates? ("no" defers to projected)               '
         case(7) ! BLOCK 7: GRAIN-SIZE BINS, SETTLING VELOCITY
       write(outlog(io),1)'*******************************************************************************                        '
       write(outlog(io),1)'# GRAIN SIZE GROUPS                                                                                    '

@@ -287,7 +287,8 @@
       subroutine Set_OS_Env
 
       use global_param,  only : &
-        DirPrefix,DirDelim,IsLitEnd,IsLinux,IsWindows,IsMacOS,version, &
+        DirPrefix,DirDelim,IsLitEnd,IsLinux,IsWindows,IsMacOS, &
+        version_major,version_minor,version_patch,&
         CFL,OS_TYPE,OS_Flavor,os_full_command_line,os_cwd,os_host,os_user,&
         Comp_Code,Comp_Flavor,useFastDt,FastDt_suppress, &
         usezip,zippath,usegnuplot,gnuplotpath
@@ -326,6 +327,7 @@
       character(len=100):: CompVer
       character(len=604):: CompOpt
       logical           :: IsThere
+      character(len=8)  :: version         ! Text string of the Ash3d version number
 
       INTERFACE
         real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
@@ -498,7 +500,8 @@
           if(VB(2).le.verbosity_info)then
             write(outlog(2),*)" "
             write(outlog(2),*)"Checking for run-time environment variable: ASH3DVERB"
-            write(outlog(2),*)"  ASH3DVERB environment variable not found.  verbosity level : ",VB(1)
+            write(outlog(2),*)"  ASH3DVERB environment variable not found."
+            write(outlog(2),*)"    verbosity level : ",VB(1)
           endif
         endif
       endif
@@ -566,7 +569,7 @@
 
       ! Now, check for environment variables ASH3DCFL
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(2),*)" "
+        write(outlog(io),*)" "
         write(outlog(io),*)"Checking for run-time environment variable: ASH3DCFL"
       endif;enddo
       call get_environment_variable(name="ASH3DCFL",value=tmp_str,status=iostatus)
@@ -609,7 +612,7 @@
 
       ! Now, check for environment variables ASH3DPLOT
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(2),*)" "
+        write(outlog(io),*)" "
         write(outlog(io),*)"Checking for run-time environment variable: ASH3DPLOT"
       endif;enddo
       call get_environment_variable(name="ASH3DPLOT",value=tmp_str,status=iostatus)
@@ -941,12 +944,13 @@
 
         ! Write out start time in UTC
         write(outlog(io),*)
+        write(version,'(i0,a1,i0,a1,i0)')version_major,'.',version_minor,'.',version_patch
         write(outlog(io),2) version,RunStartYear,RunStartMonth,RunStartDay,RunStartHr,RunStartMinute
         write(outlog(io),*)
       endif;enddo
 
       ! Format statements
-2     format(4x,'Ash3d (Rev ',a5,') run ',&
+2     format(4x,'Ash3d ( v. ',a8,') run ',&
              i4,'.',i2.2,'.',i2.2,i4,':',i2.2,' UTC')
 
       end subroutine Set_OS_Env
@@ -1076,8 +1080,7 @@
          useRestartVars
 
       use Airports,      only : &
-         AirportInFile,&
-           ProjectAirportLocations
+         AirportInFile,ProjectAirportLocations
 
       use VotW_ESP,      only : &
            get_ESP
@@ -3258,7 +3261,7 @@
       endif
 
       !************************************************************************
-      ! BLOCK 6: AIRPORT FILE
+      ! BLOCK 6: AIRPORT/POI FILE
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading ctr file, past Blk 5, looking for Blk 6."
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
@@ -3286,7 +3289,7 @@
       enddo
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)' *******************************************'
-        write(outlog(io),*)' Reading Block 6: Airport location output'
+        write(outlog(io),*)' Reading Block 6: Airport/POI location output'
         write(outlog(io),*)' *******************************************'
       endif;enddo
       ! Block 6 Line 1
@@ -3348,7 +3351,9 @@
       cdf_b6l4 = linebuffer080
       AirportInFile = cdf_b6l4(1:scan(cdf_b6l4,' ')-1)     !Read to the first blank space
 
-      !See if we need to read an external airport file
+      ! See if we need to read an external airport file
+      ReadExtAirportFile   = .false.
+      AppendExtAirportFile = .false.
       if((AirportInFile.ne.'internal').and. &
           (AirportInFile.ne.'')) then
         ReadExtAirportFile=.true.              ! read external data
@@ -3398,15 +3403,36 @@
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),44) ReadExtAirportFile, AppendExtAirportFile, &
                   WriteAirportFile_ASCII, WriteGSD, WriteAirportFile_KML, &
-                  ProjectAirportLocations, AirportInFile
+                  ProjectAirportLocations
+44      format(4x,'Airport choices:',/, &
+                4x,'   Read external file of locations (T/F)                        = ',L1,/, &
+                4x,'   Append external locations to airport list (T/F)              = ',L1,/, &
+                4x,'   Write ASCII file of ash arrival times at airports (T/F)      = ',L1,/, &
+                4x,'   Write deposit grain-size distribution to airports file (T/F) = ',L1,/, &
+                4x,'   Write KML file of ash arrival times at airports (T/F)        = ',L1,/, &
+                4x,'   Calculate projected airport locations using Ash3d (T/F)      = ',L1,/)
+        if(ReadExtAirportFile)then
+          write(outlog(io),*)'   Name of file containing airport locations: ', &
+                             adjustl(trim(AirportInFile))
+          if(AppendExtAirportFile)then
+            write(outlog(io),*)'   Airports/POI in this file will be appended to the internal'
+            write(outlog(io),*)'   global list.'
+          else
+            write(outlog(io),*)'   This file will replace the internal global list of airports.'
+          endif
+        else
+          write(outlog(io),*)'   Internal list of global airport locations will be used.'
+        endif
+          write(outlog(io),*)' '
       endif;enddo
       if(ProjectAirportLocations)then
         if(IsLatLon)then
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"     The control file indicates that the projected coordinates"
-            write(outlog(io),*)"     of the Airport/POI file should be used, but the current"
-            write(outlog(io),*)"     coordinate system is lon/lat.  Projected coordinates will"
-            write(outlog(io),*)"     be ignored and the lon/lat used instead."
+            write(outlog(io),*)"     in columns 3 and 4 of the Airport/POI file should be used,"
+            write(outlog(io),*)"     but the current coordinate system is lon/lat.  Projected"
+            write(outlog(io),*)"     coordinates will be ignored and the lon/lat provided in"
+            write(outlog(io),*)"     the file used instead."
           endif;enddo
         else
           do io=1,2;if(VB(io).le.verbosity_info)then
@@ -3417,6 +3443,7 @@
           endif;enddo
         endif
       endif
+
       ! END OF BLOCK 6
       !************************************************************************
 
@@ -4844,18 +4871,6 @@
 34    format(/, 4x,'Files to be written out at the following hours',&
                    ' after the eruption start:')
 35    format(8x,f10.3)
-44    format(4x,'Airport choices:',/, &
-                4x,'   Read external file of locations (T/F) = ',L1,/, &
-                4x,'   Append external locations to airport list (T/F) = ',L1,/, &
-                4x,'   Write ASCII file of ash arrival times at',&
-                   ' airports (T/F) = ',L1,/, &
-                4x,'   Write deposit grain-size distribution to',&
-                   ' airports file (T/F) = ',L1,/, &
-                4x,'     Write KML file of ash arrival times at',&
-                   ' airports (T/F) = ',L1,/, &
-                4x,'     Calculate projected airport locations using',&
-                   ' Ash3d (T/F) = ',L1,//, &
-                4x,' Name of file containing airport locations: ',a130)
 
       end subroutine Read_Control_File
 
