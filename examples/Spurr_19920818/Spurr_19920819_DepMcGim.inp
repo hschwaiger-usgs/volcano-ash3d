@@ -267,7 +267,11 @@ yes                           # Defer to Lon/Lat coordinates? ("no" defers to pr
 # contain the location, in the same coordinate as the computational grid.                              
 # Optionally, a site name can be provided in after the location.                                       
 ******************* BLOCK 8 ***************************************************                        
-0                             # number of locations for vertical profiles (nlocs)                      
+4                             # number of locations for vertical profiles (nlocs)                      
+-149.98528 61.16917  Anchorage Airport
+-149.0350  61.3754   Eklutna Lake
+-148.68389 60.77306  Whittier Airport
+-149.45667 61.58417  Wasilla Airport
 *******************************************************************************
 # netCDF output options                                                                                
 # This last block is optional.                                                                         
