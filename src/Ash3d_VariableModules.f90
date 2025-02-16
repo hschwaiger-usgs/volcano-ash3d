@@ -268,6 +268,7 @@
       integer      , parameter :: version_major = 1
       integer      , parameter :: version_minor = 0
       integer      , parameter :: version_patch = 0
+      character(len=8)         :: version         ! Text string of the Ash3d version number
       real(kind=ip), parameter :: EPS_SMALL  = 1.0e-6_ip       ! Small number
       real(kind=ip), parameter :: EPS_TINY   = 1.0e-12_ip      ! Very small number
       real(kind=ip), parameter :: EPS_THRESH = 1.0e-10_ip      ! Threshold for Riemann solver

@@ -172,7 +172,7 @@
       use global_param,  only : &
          EPS_SMALL,KM2_2_M2,M_2_MM,useCalcFallVel,&
          GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH,Ash3d_GitComID,os_cwd,os_host,os_user,&
-         useVz_rhoG
+         useVz_rhoG,version
 
       use io_data,       only : &
          nvprofiles,Site_vprofile,x_vprofile,y_vprofile, &
@@ -485,10 +485,12 @@
 
       nSTAT = nf90_put_att(ncid,nf90_global,"Projection_Git_Commit_ID",PJ_GitComID)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att PJ_GitComID:")
-      nSTAT = nf90_put_att(ncid,nf90_global,"Projection_Git_Commit_ID",MR_GitComID)
+      nSTAT = nf90_put_att(ncid,nf90_global,"MetReader_Git_Commit_ID",MR_GitComID)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att MR_GitComID:")
       nSTAT = nf90_put_att(ncid,nf90_global,"Ash3d_Git_Commit_ID",Ash3d_GitComID)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Ash3d_GitComID:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"Ash3d_version",version)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Ash3d_version")
 
         ! Add lines copied from the input file
       nSTAT = nf90_put_att(ncid,nf90_global,"b1l1",cdf_b1l1)

@@ -288,7 +288,7 @@
 
       use global_param,  only : &
         DirPrefix,DirDelim,IsLitEnd,IsLinux,IsWindows,IsMacOS, &
-        version_major,version_minor,version_patch,&
+        version,version_major,version_minor,version_patch,&
         CFL,OS_TYPE,OS_Flavor,os_full_command_line,os_cwd,os_host,os_user,&
         Comp_Code,Comp_Flavor,useFastDt,FastDt_suppress, &
         usezip,zippath,usegnuplot,gnuplotpath
@@ -327,7 +327,6 @@
       character(len=100):: CompVer
       character(len=604):: CompOpt
       logical           :: IsThere
-      character(len=8)  :: version         ! Text string of the Ash3d version number
 
       INTERFACE
         real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
