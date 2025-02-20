@@ -233,7 +233,7 @@ yes                           # Write out ash arrival times at airports to ASCII
 no                            # Write out grain-size distribution to ASCII airport file?
 no                            # Write out ash arrival times to kml file?
 MSH_sample_locations.txt      # Name of file containing airport locations
-no                            # Have libprojection calculate projected coordinates?
+yes                           # Defer to Lon/Lat coordinates? ("no" defers to projected)
 *******************************************************************************
 # GRAIN SIZE GROUPS
 # The first line must contain the number of settling velocity groups, but                              

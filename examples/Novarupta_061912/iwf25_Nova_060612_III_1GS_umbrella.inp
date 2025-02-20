@@ -136,7 +136,7 @@ no                            #Write out ash arrival times at airports to ASCII 
 no                            #Write out grain-size distribution to ASCII airport file?
 no                            #Write out ash arrival times to kml file?
 internal                      #Name of file containing aiport locations
-yes                           #Have Proj4 calculate projected coordinates?
+yes                           # Defer to Lon/Lat coordinates? ("no" defers to projected)
 *******************************************************************************
 #GRAIN SIZE GROUPS
 *******************************************************************************
