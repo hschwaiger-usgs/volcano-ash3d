@@ -1,9 +1,7 @@
 #!/bin/bash
 if [ -z ${WINDROOT} ];then
- # Standard Linux location
+ # default location
  WINDROOT="/data/WindFiles"
- # Mac
- #WINDROOT="/opt/data/WindFiles"
 fi
 rc=0
 ls -1r ${WINDROOT}/NCEP/2008/air.2008.nc
