@@ -21,11 +21,13 @@
 !      subroutine Calc_Ri
 !      subroutine Calc_SurfaceRoughnessLength
 !      subroutine Calc_SurfaceFrictionVelocity
-!      subroutine Calc_Boundary_Lengths
+!      subroutine Calc_Monin_Length
+!      subroutine Calc_PBLH
 !      function Fc
 !      function Fc_PMB
 !      function MixLen
 !      function Phi_WindShear_Similarity
+!      function Psi_WindShear_Similarity
 !
 !
 ! OPTMOD=VARDIFF
@@ -138,6 +140,9 @@
       real(kind=sp),dimension(:,:,:)  ,allocatable :: dV_dz_MetP_sp
       real(kind=sp),dimension(:,:)    ,allocatable :: SurfRoughLen_Met_sp
 
+      ! HFS: Consider moving Ri, PBLH, L_MonOb, FricVel, TropoH, SurfRoughLen, displacement height to Atmosphere
+      !      These would still be allocated here if needed here
+
         ! and at both meso steps (also MetP)
       real(kind=sp),dimension(:,:,:)  ,allocatable :: Ri_meso_last_step_MetP_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: Ri_meso_next_step_MetP_sp
@@ -153,6 +158,10 @@
       real(kind=sp),dimension(:,:)    ,allocatable :: L_MonOb_meso_next_step_Met_sp
       real(kind=sp),dimension(:,:)    ,allocatable :: FricVel_meso_last_step_Met_sp
       real(kind=sp),dimension(:,:)    ,allocatable :: FricVel_meso_next_step_Met_sp
+      real(kind=sp),dimension(:,:)    ,allocatable :: v10x_meso_last_step_MetP_sp
+      real(kind=sp),dimension(:,:)    ,allocatable :: v10y_meso_last_step_MetP_sp
+      real(kind=sp),dimension(:,:)    ,allocatable :: v10x_meso_next_step_MetP_sp
+      real(kind=sp),dimension(:,:)    ,allocatable :: v10y_meso_next_step_MetP_sp
 
       ! Variables needed on Comp grid (kx,y,z are already allocated)
       real(kind=sp),dimension(:,:)    ,allocatable :: FricVel_meso_last_step_sp
@@ -304,6 +313,7 @@
 
       if(use_Output_Vars_VarDiff.and.useVarDiffV)then
         nvar_User2d_XY_VarDiff  = nvar_User2d_XY_VarDiff  + 1  ! for Pbl
+        nvar_User2d_XY_VarDiff  = nvar_User2d_XY_VarDiff  + 1  ! for U*
         nvar_User3d_XYZ_VarDiff = nvar_User3d_XYZ_VarDiff + 1  ! for Kv
         nvar_User3d_XYZ_VarDiff = nvar_User3d_XYZ_VarDiff + 1  ! for Ri
       endif
@@ -434,6 +444,12 @@
         temp_2d_MissVal_VarDiff(1) = -9999.0_op
         temp_2d_FillVal_VarDiff(1) = -9999.0_op
 
+        temp_2d_name_VarDiff(2) = "Ust"
+        temp_2d_lname_VarDiff(2) = "Friction Velocity"
+        temp_2d_unit_VarDiff(2) = "m/s"
+        temp_2d_MissVal_VarDiff(2) = -9999.0_op
+        temp_2d_FillVal_VarDiff(2) = -9999.0_op
+
         i = i + 1
         temp_3d_name_VarDiff(i) = "Kv"
         temp_3d_lname_VarDiff(i) = "Diffusivity_Vertical"
@@ -462,10 +478,10 @@
       subroutine Prep_output_VarDiff
 
       use global_param,  only : &
-         useVarDiffH,KM_2_M,HR_2_S
+         useVarDiffH,KM_2_M,HR_2_S,DEG2RAD
 
       use mesh,          only : &
-         nxmax,nymax,nzmax
+         nxmax,nymax,nzmax,lon_cc_pd,lat_cc_pd
 
       use Diffusion,     only : &
          kx,kz
@@ -481,9 +497,34 @@
            MR_Regrid_MetP_to_CompH,&
            MR_Regrid_Met2d_to_Comp2D
 
+      use Atmosphere,    only : &
+           solar_zenith
+
+      use time_data,     only : &
+         time,SimStartHour,Simtime_in_hours,BaseYear,useLeap
+
       implicit none
 
       integer :: i,ii,indx
+
+      integer :: iii,jjj,kkk,hh,mm
+      real(kind=ip) :: tmp
+      real(kind=8) :: hour
+      integer :: jday
+      integer :: iyear,imonth,iday,idoy
+
+      INTERFACE
+        integer function HS_DayOfYear(HoursSince,byear,useLeaps)
+          real(kind=8)               ::  HoursSince
+          integer                    ::  byear
+          logical                    ::  useLeaps
+        end function HS_DayOfYear
+        real(kind=8) function HS_HourOfDay(HoursSince,byear,useLeaps)
+          real(kind=8)               ::  HoursSince
+          integer                    ::  byear
+          logical                    ::  useLeaps
+        end function HS_HourOfDay
+      END INTERFACE
 
       ! Might have to build in some logic for Kh vs Kz
 
@@ -499,6 +540,11 @@
         if(i.eq.1)then
            ! Now resample onto computational grid
           MR_dum2d_met = PBLH_meso_next_step_Met_sp
+          call MR_Regrid_Met2d_to_Comp2D
+          var_User2d_XY(1:nxmax,1:nymax,indx) = MR_dum2d_comp(1:nxmax,1:nymax)
+        elseif(i.eq.2)then
+           ! Now resample onto computational grid
+          MR_dum2d_met = FricVel_meso_next_step_Met_sp
           call MR_Regrid_Met2d_to_Comp2D
           var_User2d_XY(1:nxmax,1:nymax,indx) = MR_dum2d_comp(1:nxmax,1:nymax)
         endif
@@ -521,6 +567,24 @@
           ! This branch is unused if useVarDiffH = .false. since ii=0
           ! Note that the native units are km2/hr, but we need to convert to m2/s
           var_User3d_XYZ(1:nxmax,1:nymax,1:nzmax,indx) = kx(1:nxmax,1:nymax,1:nzmax)*KM_2_M*KM_2_M/HR_2_S
+
+!          jday = HS_DayOfYear(SimStartHour+time,BaseYear,useLeap)
+!          hour = HS_HourOfDay(SimStartHour+time,BaseYear,useLeap)
+!          hh   = floor(hour)
+!          mm   = floor((hour-hh)*60.0_ip)
+!          do iii=1,nxmax
+!            do jjj=1,nymax
+!              tmp = min(solar_zenith(lon_cc_pd(iii),lat_cc_pd(jjj),jday,hh,mm),90.0_ip)
+!              var_User3d_XYZ(iii,jjj,1:nzmax,indx) = 361.0*cos(tmp*DEG2RAD)
+!              var_User3d_XYZ(iii,jjj,1:nzmax,indx) = L_MonOb_meso_last_step_Met_sp(i)
+!            enddo
+!          enddo
+           ! Now resample L_Mon onto computational grid
+          MR_dum2d_met = L_MonOb_meso_last_step_Met_sp
+          call MR_Regrid_Met2d_to_Comp2D
+          do kkk=1,nzmax
+            var_User3d_XYZ(1:nxmax,1:nymax,kkk,indx) = MR_dum2d_comp(1:nxmax,1:nymax)
+          enddo
         endif
         if(i.eq.ii+1)then
           ! Vertical diffusivity is already on the comp grid
@@ -649,10 +713,11 @@
       subroutine Calc_Vert_Diff(last_or_next)
 
       use global_param,  only : &
-         KM_2_M,HR_2_S,KM_2_M
+         KM_2_M,HR_2_S,KM_2_M,DEG2RAD
 
       use MetReader,     only : &
-        nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,MR_geoH_metP_next
+        nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,MR_geoH_metP_next,y_submet_sp,&
+        MR_xy2ll_ylat,IsLatLon_MetGrid
 
       implicit none
 
@@ -670,6 +735,8 @@
       real(kind=ip) :: PBL_profile_fac
       real(kind=ip) :: Kz_tmp
       real(kind=ip) :: Lc
+      real(kind=ip) :: EckF
+      real(kind=ip) :: lat
 
       do i=1,nx_submet
         do j=1,ny_submet
@@ -698,18 +765,11 @@
                 ! If point is at a negative gpm, then assign the kz from the
                 ! node above
               Kz_tmp = Kv_col(k+1)
-            elseif(z_col(k).lt.PBLz)then
-              ! Within the PBL, use similarity theory
-                ! Parabolic profile factor for Kv between 0 and PBL
-              PBL_profile_fac = (1.0_sp-z_col(k)/PBLz)**PBL_exp
-
-              Phi = Phi_WindShear_Similarity(z_col(k)/L_MonOb)
-              ! Kz from similarity theory (Eq. 8.48 of Jacobson)
-              Kz_tmp = z_col(k)*vonKarman*FricVel*PBL_profile_fac/Phi
             else
-    
                 ! In free atmosphere above the PBL, use Prandtl's mixing
                 ! length theory for thermally stratified atmosphere.
+                ! We calculate this term for all cases and update the PBL zone only if
+                ! we exceed that calculated from mixing-length theory.
                 !  First get mixing length scale
                 !    There are several ways to parameterize the mixing
                 !    length (Randerson, p155, 1984; Monin and Yaglom, v1,
@@ -720,6 +780,27 @@
                 ! The Ri-term seems to zero out anything above the PBL
                 ! since Ri is too high
               Kz_tmp = Lc*Lc*abs(dv_dz_col(k))!*Fc(Ri_col_windp(k))
+
+              if(z_col(k).lt.PBLz)then
+                ! Within the PBL, use similarity theory
+                  ! if PBL_exp=1; linear taper profile factor for Kv between 0 and PBL
+                PBL_profile_fac = (1.0_sp-z_col(k)/PBLz)**PBL_exp
+
+                if(IsLatLon_MetGrid)then
+                  lat = y_submet_sp(j)
+                else
+                  lat = MR_xy2ll_ylat(i,j)
+                endif
+                lat = max(20.0_ip,abs(lat));
+                EckF= 2.0_ip*7.292e-5_ip*sin(lat*DEG2RAD);
+                PBL_profile_fac = exp(-8.0_ip*EckF*z_col(k)/FricVel);
+
+
+                Phi = Phi_WindShear_Similarity(z_col(k)/L_MonOb)
+                ! Kz from similarity theory (Eq. 8.48 of Jacobson)
+                Kz_tmp = z_col(k)*vonKarman*FricVel*PBL_profile_fac/Phi
+              endif
+
             endif
     
             ! assign to array and convert from m2/s to km2/hr
@@ -881,6 +962,9 @@
       use Diffusion,     only : &
          kz
 
+      use Atmosphere,    only : &
+           Set_VirtPotenTemp
+
       use MetReader,     only : &
          MR_iMetStep_Now,MR_dum3d_MetP,MR_dum3d_compH,&
            MR_Regrid_MetP_to_CompH
@@ -909,29 +993,40 @@
       if(Load_MesoSteps)then
         if(first_time)then
           !  Populate values for the 'last' step
+          call Set_VirtPotenTemp(0)
           call Calc_Ri(0)
+          call Calc_Monin_Length(0)
           call Calc_SurfaceRoughnessLength
           call Calc_SurfaceFrictionVelocity(0)
-          call Calc_Boundary_Lengths(0)
+          call Calc_PBLH(0)
 
           call Calc_Vert_Diff(0)
           MR_dum3d_MetP = Kv_meso_last_step_MetP_sp
           call MR_Regrid_MetP_to_CompH(MR_iMetStep_Now)
           Kv_meso_last_step_sp = MR_dum3d_compH
 
+          ! The calls above with parameter 0 sets _last_ directly
+          Ri_meso_next_step_MetP_sp     = Ri_meso_last_step_MetP_sp
+          L_MonOb_meso_next_step_Met_sp = L_MonOb_meso_last_step_Met_sp
+          FricVel_meso_next_step_Met_sp = FricVel_meso_last_step_Met_sp
+          PBLH_meso_next_step_Met_sp    = PBLH_meso_last_step_Met_sp
+          Kv_meso_next_step_sp          = Kv_meso_last_step_sp
+
           first_time = .false.
         else
           ! If we've already filled 'next', copy 'next' to 'last'
           Ri_meso_last_step_MetP_sp     = Ri_meso_next_step_MetP_sp
+          L_MonOb_meso_last_step_Met_sp = L_MonOb_meso_next_step_Met_sp
           FricVel_meso_last_step_Met_sp = FricVel_meso_next_step_Met_sp
           PBLH_meso_last_step_Met_sp    = PBLH_meso_next_step_Met_sp
-          L_MonOb_meso_last_step_Met_sp = L_MonOb_meso_next_step_Met_sp
           Kv_meso_last_step_sp          = Kv_meso_next_step_sp
         endif ! first_time
           ! Populate Ri for the 'next' step
+        call Set_VirtPotenTemp(1)
         call Calc_Ri(1)                           ! sets Ri_meso_next_step_MetP_sp
+        call Calc_Monin_Length(1)
         call Calc_SurfaceFrictionVelocity(1)      ! sets FricVel_meso_next_step_Met_sp
-        call Calc_Boundary_Lengths(1)             ! sets PBLH_meso_next_step_Met_sp
+        call Calc_PBLH(1)
                                                   !  and L_MonOb_meso_next_step_Met_sp
         call Calc_Vert_Diff(1)
         MR_dum3d_MetP = Kv_meso_next_step_MetP_sp
@@ -971,6 +1066,7 @@
       use Atmosphere,    only : &
          AirSH_meso_last_step_MetP_sp,AirSH_meso_next_step_MetP_sp,&
          AirTemp_meso_last_step_MetP_sp,AirTemp_meso_next_step_MetP_sp,&
+         AirVPTemp_meso_last_step_MetP_sp,AirVPTemp_meso_next_step_MetP_sp,&
          R_GAS_DRYAIR,CP_AIR,R_GAS_WATVAP
 
       use MetReader,     only : &
@@ -982,19 +1078,22 @@
 
       integer, intent(in) :: last_or_next
 
+      real(kind=ip),parameter :: MIN_DVDZ = 3.0e-2_ip ! The minimum vertical shear assumed
+                                                      ! No min leads to singular Ri
+                                                      ! This value is assumed based on comparisons to MERRA
+
       real(kind=ip),dimension(:),allocatable :: z ! in m
       real(kind=ip),dimension(:),allocatable :: u ! in m/s
       real(kind=ip),dimension(:),allocatable :: v ! in m/s
       real(kind=ip),dimension(:),allocatable :: p ! in Pa
-      real(kind=ip),dimension(:),allocatable :: T ! in K
-      real(kind=ip),dimension(:),allocatable :: Q ! in kg/kg
       real(kind=ip),dimension(:),allocatable :: Tpoten
 
-      integer :: i,j,k,k1,k2
+      integer       :: i,j,k,k1,k2
       real(kind=ip) :: refP
       real(kind=ip) :: mixrat
       real(kind=ip) :: del_z
       real(kind=ip) :: dudz,dvdz,dtdz
+      real(kind=ip) :: dveldz2
       real(kind=ip) :: temp_term,mech_term
       real(kind=ip) :: Ri
 
@@ -1002,8 +1101,6 @@
       allocate(u(np_fullmet))
       allocate(v(np_fullmet))
       allocate(p(np_fullmet))
-      allocate(T(np_fullmet))
-      allocate(Q(np_fullmet))
       allocate(Tpoten(np_fullmet))
 
       refP = 1.0e5_ip   ! reference pressure for potential temperature
@@ -1016,34 +1113,13 @@
             z(1:np_fullmet) = MR_geoH_metP_last(i,j,1:np_fullmet) * KM_2_M
             u(1:np_fullmet) = vx_meso_last_step_MetP_sp(i,j,1:np_fullmet)
             v(1:np_fullmet) = vy_meso_last_step_MetP_sp(i,j,1:np_fullmet)
-            T(1:np_fullmet) = AirTemp_meso_last_step_MetP_sp(i,j,1:np_fullmet)
-            if(useMoistureVars)then
-                ! If moisture is enabled, use virtual potential temperatrue
-              Q(1:np_fullmet) = AirSH_meso_last_step_MetP_sp(i,j,1:np_fullmet)
-            else
-                ! Otherwise, we will just use potential temperature
-              Q(1:np_fullmet) = 0.0_ip
-            endif
+            Tpoten(1:np_fullmet) = AirVPTemp_meso_last_step_MetP_sp(i,j,1:np_fullmet)
           else
             z(1:np_fullmet) = MR_geoH_MetP_next(i,j,1:np_fullmet) * KM_2_M
             u(1:np_fullmet) = vx_meso_next_step_MetP_sp(i,j,1:np_fullmet)
             v(1:np_fullmet) = vy_meso_next_step_MetP_sp(i,j,1:np_fullmet)
-            T(1:np_fullmet) = AirTemp_meso_next_step_MetP_sp(i,j,1:np_fullmet)
-            if(useMoistureVars)then
-              Q(1:np_fullmet) = AirSH_meso_next_step_MetP_sp(i,j,1:np_fullmet)
-            else
-              Q(1:np_fullmet) = 0.0_ip
-            endif
+            Tpoten(1:np_fullmet) = AirVPTemp_meso_next_step_MetP_sp(i,j,1:np_fullmet)
           endif
-          do k=1,np_fullmet
-            ! First get the potential temperature, i.e. the temperature an air parcel would have
-            ! if it were taken adiabaticlly to refP
-            Tpoten(k) = (T(k)*(refP/p(k))**(R_GAS_DRYAIR/CP_AIR))   ! Potential temperature
-            ! Now convert to virtual potential temperature is there is some Spec.Hum. around
-            ! Note: this moisture bit makes practically no difference
-            mixrat = Q(k)/(1.0_ip-Q(k))   ! Water mixing ratio from Spec.Hum
-            Tpoten(k) = Tpoten(k) *(1.0_ip + (R_GAS_WATVAP/R_GAS_DRYAIR-1.0_ip)*mixrat)
-          enddo
 
           do k=1,np_fullmet
             ! We need vertical derivatives of theta_v and u
@@ -1060,25 +1136,22 @@
             dudz   = (u(k2)-u(k1)) / del_z
             dvdz   = (v(k2)-v(k1)) / del_z
 
+            ! Only need magnitudes and nothing too close to 0 (leads to singular Ri)
+            dudz   = max(abs(dudz),MIN_DVDZ)
+            dvdz   = max(abs(dvdz),MIN_DVDZ)
+
             temp_term = dtdz/Tpoten(k)
-            dV_dz_MetP_sp(i,j,k) = real(max(abs(dudz)+abs(dvdz),EPS_SMALL),kind=sp)
-            ! When comparing the Ri calculation below with that from
-            ! MERRA, it seems that the magnitude of dv_dz is at least
-            ! 3.0e-3 m/s.  Smaller values cause Ri to become singular.
-            ! In fact, they may assume a (dv_dz)^2 = 3.0e-3 m/s
-            !mech_term = max(real(dV_dz_MetP_sp(i,j,k)**2.0_sp,kind=ip),3.0e-3_ip)/GRAV
-            mech_term = max((dudz*dudz + dvdz*dvdz)/GRAV,1.0e-6_ip)
+            dveldz2   = dudz*dudz + dvdz*dvdz
+            mech_term = dveldz2/GRAV
             Ri = real(temp_term / mech_term,kind=sp)
+
+            ! Log this term since we will need it later when calculating free-air Kz
+            dV_dz_MetP_sp(i,j,k) = real(sqrt(dveldz2),kind=sp)
+
             if(last_or_next.eq.0)then
               Ri_meso_last_step_MetP_sp(i,j,k) = Ri
             else
               Ri_meso_next_step_MetP_sp(i,j,k) = Ri
-            endif
-
-            ! This picks out i=11, j=30
-            if(x_submet_sp(i).gt.-280.0.and.x_submet_sp(i).lt.-276.0.and.&
-               y_submet_sp(j).gt.-3352.0.and.y_submet_sp(j).lt.-3350.0)then
-              write(*,'(i3,14g10.3)')k,p(k),z(k),u(k),v(k),T(k),Q(k),Tpoten(k),temp_term,mech_term,Ri,del_z,dtdz,dudz,dvdz
             endif
 
           enddo ! k
@@ -1102,7 +1175,7 @@
       if(Met_var_IsAvailable(ivar))then
         ! Surface roughness is provided, read it from the met file
         call MR_Read_2d_Met_Variable(ivar,MR_iMetStep_Now)
-        SurfRoughLen_Met_sp  = MR_dum2d_Met
+        SurfRoughLen_Met_sp(1:nx_submet,1:ny_submet)  = MR_dum2d_Met(1:nx_submet,1:ny_submet)
 
       !elseif(useLandCover)then
       !  ! Set SurfRoughLen_Met_sp from Land use classification
@@ -1157,7 +1230,7 @@
       !  endif
       else
         ! Set SurfRoughLen_Met_sp by assumption
-          SurfRoughLen_Met_sp  = 0.1_sp
+          SurfRoughLen_Met_sp(1:nx_submet,1:ny_submet)  = 0.1_sp
       endif
 
       end subroutine Calc_SurfaceRoughnessLength
@@ -1170,7 +1243,7 @@
          EPS_SMALL,KM_2_M,MPS_2_KMPHR
 
       use MetReader,     only : &
-         Met_var_IsAvailable,MR_iMetStep_Now,np_fullmet,MR_iMetStep_Now,&
+         Met_var_IsAvailable,MR_iMetStep_Now,np_fullmet,MR_iMetStep_Now,MR_Topo_met,&
          MR_geoH_metP_last,MR_geoH_metP_next,MR_dum2d_Met,nx_submet,ny_submet,&
            MR_Read_2d_Met_Variable
 
@@ -1178,7 +1251,14 @@
 
       integer, intent(in) :: last_or_next
 
-      real(kind=ip) :: U_mag,denom,z0
+      real(kind=ip) :: U_mag
+      real(kind=ip) :: denom1,denom2
+      real(kind=ip) :: z0
+      real(kind=ip) :: L_MonOb
+      real(kind=ip) :: zonL
+      real(kind=sp),dimension(:,:),allocatable :: SurfVelx_meso_Met_sp
+      real(kind=sp),dimension(:,:),allocatable :: SurfVely_meso_Met_sp
+      real(kind=sp),dimension(:,:),allocatable :: SurfVelh_meso_Met_sp
       integer :: i,j,k
       integer :: ivar
       logical :: FV_override = .false.
@@ -1203,65 +1283,129 @@
           endif
         endif
       endif
-        !FricVel_meso_next_step_Met_sp = MR_dum2d_Met
 
       if(.not.Met_var_IsAvailable(ivar).or.FV_override)then
         ! friction velocity is not provided by the met file (or is not valid)
         ! Calculate it ourselves
         ! Get surface friction velocity using Panofsky/Dutton p376
+
+        allocate(SurfVelx_meso_Met_sp(nx_submet,ny_submet))
+        allocate(SurfVely_meso_Met_sp(nx_submet,ny_submet))
+        allocate(SurfVelh_meso_Met_sp(nx_submet,ny_submet))
+
+        ! First check if we can get the 10m wind (both x and y)
+        if(Met_var_IsAvailable(11).and.Met_var_IsAvailable(12))then
+          if(last_or_next.eq.0)then
+            call MR_Read_2d_Met_Variable(11,MR_iMetStep_Now)
+              SurfVelx_meso_Met_sp = MR_dum2d_Met
+!            if(maxval(MR_dum2d_Met(:,:)).lt.EPS_SMALL)then
+!              ! variable was present in file, but filled with nonsense
+!              FV_override = .true.
+!            endif
+            call MR_Read_2d_Met_Variable(12,MR_iMetStep_Now)
+              SurfVely_meso_Met_sp = MR_dum2d_Met
+          else
+            call MR_Read_2d_Met_Variable(11,MR_iMetStep_Now+1)
+              SurfVelx_meso_Met_sp = MR_dum2d_Met
+!            if(maxval(MR_dum2d_Met(:,:)).lt.EPS_SMALL)then
+!              ! variable was present in file, but filled with nonsense
+!              FV_override = .true.
+!            endif
+            call MR_Read_2d_Met_Variable(12,MR_iMetStep_Now+1)
+              SurfVely_meso_Met_sp = MR_dum2d_Met
+          endif
+          SurfVelh_meso_Met_sp = 10.0_sp
+        else
+          ! If the 10m winds are not available, then use the lower levels of the 3d winds
+          do i=1,nx_submet
+            do j=1,ny_submet
+              z0 = SurfRoughLen_Met_sp(i,j)
+              if(last_or_next.eq.0)then
+                do k=1,np_fullmet
+                  if(MR_geoH_metP_last(i,j,k)*KM_2_M.gt.1000.0_ip*MR_Topo_met(i,j)+z0)then
+                    exit
+                  endif
+                enddo
+                SurfVelx_meso_Met_sp(i,j) = vx_meso_last_step_MetP_sp(i,j,k)
+                SurfVely_meso_Met_sp(i,j) = vy_meso_last_step_MetP_sp(i,j,k)
+                SurfVelh_meso_Met_sp(i,j) = (MR_geoH_metP_last(i,j,k)-MR_Topo_met(i,j))*KM_2_M
+              else
+                do k=1,np_fullmet
+                  if(MR_geoH_metP_next(i,j,k)*KM_2_M.gt.1000.0_ip*MR_Topo_met(i,j)+z0)then
+                    exit
+                  endif
+                enddo
+                SurfVelx_meso_Met_sp(i,j) = vx_meso_next_step_MetP_sp(i,j,k)
+                SurfVely_meso_Met_sp(i,j) = vy_meso_next_step_MetP_sp(i,j,k)
+                SurfVelh_meso_Met_sp(i,j) = (MR_geoH_metP_next(i,j,k)-MR_Topo_met(i,j))*KM_2_M
+              endif
+            enddo
+          enddo
+        endif
+
+        ! Now we have Vx, Vy, and H needed for calculating Ust, either from 10m data or lower-level winds
         do i=1,nx_submet
           do j=1,ny_submet
             z0 = SurfRoughLen_Met_sp(i,j)
+            U_mag = sqrt(SurfVelx_meso_Met_sp(i,j)**2.0_sp + &
+                         SurfVely_meso_Met_sp(i,j)**2.0_sp)! / MPS_2_KMPHR
+            denom1 = log(SurfVelh_meso_Met_sp(i,j)/z0)
             if(last_or_next.eq.0)then
-              do k=1,np_fullmet
-                if(MR_geoH_metP_last(i,j,k).gt.z0)then
-                  exit
-                endif
-              enddo
-              U_mag = sqrt(vx_meso_last_step_MetP_sp(i,j,k)**2.0_ip + &
-                           vy_meso_last_step_MetP_sp(i,j,k)**2.0_ip) / MPS_2_KMPHR
-              denom = log(MR_geoH_metP_last(i,j,k)*KM_2_M/z0)
-              FricVel_meso_last_step_Met_sp(i,j) = real(U_mag*vonKarman/denom,kind=sp)
+              L_MonOb   = real(L_MonOb_meso_last_step_Met_sp(i,j),kind=ip)
+              zonL = SurfVelh_meso_Met_sp(i,j)/L_MonOb
+              denom2 = Phi_WindShear_Similarity(zonL)
+              FricVel_meso_last_step_Met_sp(i,j) = real(U_mag*vonKarman/(denom1+denom2),kind=sp)
             else
-              do k=1,np_fullmet
-                if(MR_geoH_metP_next(i,j,k).gt.z0)then
-                  exit
-                endif
-              enddo
-              U_mag = sqrt(vx_meso_next_step_MetP_sp(i,j,k)**2.0_ip + &
-                           vy_meso_next_step_MetP_sp(i,j,k)**2.0_ip) / MPS_2_KMPHR
-              denom = log(MR_geoH_metP_next(i,j,k)*KM_2_M/z0)
-              FricVel_meso_next_step_Met_sp(i,j) = real(U_mag*vonKarman/denom,kind=sp)
+              L_MonOb   = real(L_MonOb_meso_next_step_Met_sp(i,j),kind=ip)
+              zonL = SurfVelh_meso_Met_sp(i,j)/L_MonOb
+              denom2 = Phi_WindShear_Similarity(zonL)
+              FricVel_meso_next_step_Met_sp(i,j) = real(U_mag*vonKarman/(denom1+denom2),kind=sp)
             endif
           enddo
         enddo
+
+        deallocate(SurfVelx_meso_Met_sp)
+        deallocate(SurfVely_meso_Met_sp)
+        deallocate(SurfVelh_meso_Met_sp)
+
       endif
 
       end subroutine Calc_SurfaceFrictionVelocity
 
 !******************************************************************************
 
-      subroutine Calc_Boundary_Lengths(last_or_next)
+      subroutine Calc_PBLH(last_or_next)
 
       use global_param,  only : &
-         EPS_SMALL,KM_2_M
+         EPS_SMALL,KM_2_M,DEG2RAD
+
+      use Atmosphere,    only : &
+         AirVPTemp_meso_last_step_MetP_sp,AirVPTemp_meso_next_step_MetP_sp
 
       use MetReader,     only : &
          nx_submet,ny_submet,np_fullmet,Met_var_IsAvailable,&
          MR_geoH_metP_last,MR_geoH_metP_next,MR_dum2d_Met,MR_iMetStep_Now,&
-           MR_Read_2d_Met_Variable
+         MR_Have_LL_mapping,MR_xy2ll_ylat,IsLatLon_MetGrid,y_submet_sp,&
+           MR_Read_2d_Met_Variable,MR_Set_LL_mapping
 
       implicit none
 
       integer, intent(in) :: last_or_next
 
       integer :: ivar
-      integer :: i,j,k,k_L
+      integer :: i,j,k,k_L,kk
       real(kind=ip) :: denom,tmp
       real(kind=ip) :: Ri_col(np_fullmet)
       real(kind=ip) :: z_col(np_fullmet)
+      real(kind=ip) :: vpt_col(np_fullmet)
+      real(kind=ip) :: lapse
+      real(kind=ip) :: lat
       real(kind=ip) :: L_MonOb
+      real(kind=ip) :: Ust
+      real(kind=ip) :: EckF
       real(kind=ip) :: PBLz
+      real(kind=ip) :: cn,cs
+      real(kind=ip),dimension(:,:,:),allocatable :: PBLtmp
       logical :: PBL_override = .false.
 
       ! Check if the windfile being used provides PBLH
@@ -1290,25 +1434,84 @@
       if(.not.Met_var_IsAvailable(ivar).or.PBL_override)then
         ! If PBLH is not provided by the NWP file or is corrupted, then
         ! we need to calculate PBLH internally.  There are many more involved
-        ! methods of determining the PBL, but using Ri and Ri_crit seems to
-        ! work fairly well, although it tends to calculate thiner PBLH than
-        ! NARR and MERRA report.  Sometimes the difference is dramatic.
-          ! Now loop back through and find where Ri exceeds Ri_crit (~0.3)
-          ! Troen and Mahrt, Boundary-Layer Meteorology, v37, p129-148, 1986.
+        ! methods of determining the PBL, but flagging the first temperature
+        ! inversion, using Ustar to determine the Eckman layer and using Ri with
+        ! Ri_crit seem to work fairly well.
+
+        ! From Sugiyama and Nasstrom, 1999
+        ! https://digital.library.unt.edu/ark:/67531/metadc740014/m2/1/high_res_d/8191.pdf
+
+        ! Calculate three measures of the PBL:
+        !   (1) First, look for critical temperature inversion
+        !   (2) Second approach uses the Eckman layer
+        !   (3) Third approach used Ri with a critical threshold (~0.5)
+        allocate(PBLtmp(nx_submet,ny_submet,3))
+        PBLtmp(1:nx_submet,1:ny_submet,1:3) = 0.0_ip
+
+        ! Eckman layer approach requires knowing the latitude; get that if neded
+        if(.not.IsLatLon_MetGrid.and..not.MR_Have_LL_mapping)then
+          call MR_Set_LL_mapping
+        endif
+
         do i=1,nx_submet
           do j=1,ny_submet
             if(last_or_next.eq.0)then
               Ri_col(:) = Ri_meso_last_step_MetP_sp(i,j,:)
               z_col(:)  = MR_geoH_metP_last(i,j,:)*KM_2_M
+              vpt_col(:)= AirVPTemp_meso_last_step_MetP_sp(i,j,:)
+              L_MonOb   = real(L_MonOb_meso_last_step_Met_sp(i,j),kind=ip)
+              Ust       = real(FricVel_meso_last_step_Met_sp(i,j),kind=ip)
             else
               Ri_col(:) = Ri_meso_next_step_MetP_sp(i,j,:)
               z_col(:)  = MR_geoH_metP_next(i,j,:)*KM_2_M
+              vpt_col(:)= AirVPTemp_meso_next_step_MetP_sp(i,j,:)
+              L_MonOb   = real(L_MonOb_meso_next_step_Met_sp(i,j),kind=ip)
+              Ust       = real(FricVel_meso_next_step_Met_sp(i,j),kind=ip)
             endif
+
+            ! (1) temperature inversion
+            kk = 0
+            do k = 2,np_fullmet
+              lapse = -(vpt_col(k) - vpt_col(k-1)) / &
+                       (z_col(k)   - z_col(k-1))
+              if(lapse.le.-0.005_ip)then
+                kk = k
+                exit
+              endif
+            enddo
+            if(kk.gt.0)then
+              PBLz = z_col(kk) - 2.0_ip/lapse
+            else
+              PBLz = EPS_SMALL
+            endif
+            PBLtmp(i,j,1) = PBLz
+
+            ! (2) Eckman thickness
+            !     This always has a non-zero solution
+            if(IsLatLon_MetGrid)then
+              lat = y_submet_sp(j)
+            else
+              lat = MR_xy2ll_ylat(i,j)
+            endif
+            lat = max(20.0_ip,abs(lat));
+            EckF= 2.0_ip*7.292e-5_ip*sin(lat*DEG2RAD);
+            tmp = abs(Ust/EckF/L_MonOb);
+            if(tmp.lt.4.0_ip)then
+              cn = 0.2;
+              PBLtmp(i,j,2) = cn*Ust/abs(EckF);
+            else
+              cs = 0.4;
+              PBLtmp(i,j,2) = cs*sqrt(abs(Ust*L_MonOb/EckF));
+            endif
+
+            ! (3) evaluate Ri crit
               ! Initialize boundary layer height to sea level
-            ! HFS fix this: some points do not result in a PBLz
             PBLz = EPS_SMALL
             do k = 2,np_fullmet-1
-              if(Ri_col(k).gt.RI_CRIT.and.Ri_col(k-1).le.RI_CRIT)then
+              if(Ri_col(k).gt.RI_CRIT.and.Ri_col(k-1).le.RI_CRIT &
+                 .and.z_col(k).lt.3000.0_ip)then ! We need this upper limit of 3km to avoid
+                                                 ! missing the PBL and flagging the tropopause
+
                 ! This height is above the PBL; interpolate back to
                 ! k-1 to get PBLz
                 if(abs(Ri_col(k)-Ri_col(k-1)).lt.EPS_SMALL)cycle
@@ -1326,7 +1529,17 @@
             enddo
     
             ! Make sure that PBLz is not negative
-            PBLz = max(PBLz,EPS_SMALL)
+            PBLtmp(i,j,3) = max(PBLz,EPS_SMALL)
+
+            ! Set PBLH to temperature inversion height
+            !PBLz = PBLtmp(i,j,1)
+            ! Set PBLH to Eckman thickness
+            !PBLz = PBLtmp(i,j,2)
+            ! Set PBLH to height of Ri_crit
+            !PBLz = PBLtmp(i,j,3)
+
+            PBLz = maxval(PBLtmp(i,j,1:3))
+
             if(last_or_next.eq.0)then
               PBLH_meso_last_step_Met_sp(i,j) = real(PBLz,kind=sp)
             else
@@ -1334,11 +1547,38 @@
             endif
           enddo
         enddo
+        deallocate(PBLtmp)
       endif
 
-      ! The surface layer is typically 10% of the planetary boundary layer.
-      ! This is the region where Monin-Obukhov theory applies.
-      !SurfLayerThick = 0.1_ip*PBLz
+
+      end subroutine Calc_PBLH
+
+!!******************************************************************************
+
+
+!******************************************************************************
+
+      subroutine Calc_Monin_Length(last_or_next)
+
+      use global_param,  only : &
+         EPS_SMALL,KM_2_M
+
+      use MetReader,     only : &
+         nx_submet,ny_submet,np_fullmet,Met_var_IsAvailable,&
+         MR_geoH_metP_last,MR_geoH_metP_next,MR_dum2d_Met,MR_iMetStep_Now,&
+           MR_Read_2d_Met_Variable
+
+      implicit none
+
+      integer, intent(in) :: last_or_next
+
+      integer :: ivar
+      integer :: i,j,k,k_L
+      real(kind=ip) :: denom,tmp
+      real(kind=ip) :: Ri
+      real(kind=ip) :: Ri_col(np_fullmet)
+      real(kind=ip) :: z_col(np_fullmet)
+      real(kind=ip) :: L_MonOb
 
       ! Get Monin-Obukhov length from the
       ! Businger-Dyer-Pandolfo empirical result 
@@ -1351,10 +1591,10 @@
         do j=1,ny_submet
           if(last_or_next.eq.0)then
             Ri_col(:) = Ri_meso_last_step_MetP_sp(i,j,:)
-            z_col(:)      = MR_geoH_metP_last(i,j,:)*KM_2_M
+            z_col(:)  = MR_geoH_metP_last(i,j,:)*KM_2_M
           else
             Ri_col(:) = Ri_meso_next_step_MetP_sp(i,j,:)
-            z_col(:)      = MR_geoH_metP_next(i,j,:)*KM_2_M
+            z_col(:)  = MR_geoH_metP_next(i,j,:)*KM_2_M
           endif
 
           ! Pick the bottom (non-zero) z
@@ -1363,19 +1603,31 @@
               exit
             endif
           enddo
-          if(abs(Ri_col(k_L)).lt.EPS_SMALL)then
-              ! For the neutrally stable case, L->Inf ; set to 10 km
-            L_MonOb = 10000.0_ip
-          elseif(Ri_col(k_L).lt.0.0_ip)then
+          ! For the purpuse of calculating L, don't let Ri get too close to 0
+          Ri = sign(max(abs(Ri_col(k_L)),1.0e-2_ip),Ri_col(k_L))
+!          write(*,*)i,j,k_L,z_col(k_L),Ri_col(k_L),Ri
+          if(Ri_col(k_L).lt.RI_CRIT)then
               ! Unstable (negative L)
-            L_MonOb = z_col(k_L)/Ri_col(k_L)
-          elseif(Ri_col(k_L).lt.RI_CRIT)then
+            L_MonOb = z_col(k_L)/Ri
+          elseif(Ri_col(k_L).gt.RI_CRIT)then
               ! Stable (positive L)
-            L_MonOb = z_col(k_L)/Ri_col(k_L) &
-                       * (1.0_ip-Ri_col(k_L)/RI_CRIT)
-          else
-            L_MonOb = -1.0e-3_ip
+            L_MonOb = z_col(k_L)/Ri * (1.0_ip - 5.0_ip*Ri)
           endif
+          L_MonOb = sign(min(abs(L_MonOb),100.0_ip),L_MonOb)
+
+
+!          if(abs(Ri_col(k_L)).lt.EPS_SMALL)then
+!              ! For the neutrally stable case, L->Inf ; set to 1 km
+!            L_MonOb = 1000.0_ip
+!          elseif(Ri_col(k_L).lt.0.0_ip)then
+!              ! Unstable (negative L)
+!            L_MonOb = z_col(k_L)/Ri_col(k_L)
+!          elseif(Ri_col(k_L).gt.RI_CRIT)then
+!              ! Stable (positive L)
+!            L_MonOb = z_col(k_L)/Ri_col(k_L) * (1.0_ip - 5.0_ip*Ri_col(k_L))
+!          else
+!            L_MonOb = -1.0e-3_ip
+!          endif
           if(last_or_next.eq.0)then
             L_MonOb_meso_last_step_Met_sp(i,j) = real(L_MonOb,kind=sp)
           else
@@ -1384,10 +1636,10 @@
         enddo
       enddo
 
-      write(*,*)PBLH_meso_last_step_Met_sp(11,30),PBLH_meso_next_step_Met_sp(11,30),&
-                L_MonOb_meso_last_step_Met_sp(11,30),L_MonOb_meso_next_step_Met_sp(11,30)
+!      write(*,*)PBLH_meso_last_step_Met_sp(11,30),PBLH_meso_next_step_Met_sp(11,30),&
+!                L_MonOb_meso_last_step_Met_sp(11,30),L_MonOb_meso_next_step_Met_sp(11,30)
 
-      end subroutine Calc_Boundary_Lengths
+      end subroutine Calc_Monin_Length
 !
 !!******************************************************************************
 
@@ -1475,8 +1727,7 @@
 
       end function MixLen
 
-
-!!******************************************************************************
+!******************************************************************************
 
       function Phi_WindShear_Similarity(z_on_L)
 
@@ -1489,18 +1740,49 @@
 
       real(kind=ip) :: z_on_L
 
-      if(z_on_L.ge.0.0_ip)then
-          ! Stable
-        Phi_WindShear_Similarity = (1.0_ip + phi_beta*z_on_L)
-      else
+      if(z_on_L.le.0.0_ip)then
           ! Unstable
         Phi_WindShear_Similarity = (1.0_ip + phi_gamma*z_on_L)**phi_alpha
+      else
+          ! Stable
+        Phi_WindShear_Similarity = (1.0_ip + phi_beta*z_on_L)
       endif
 
       return
 
       end function Phi_WindShear_Similarity
 
+!******************************************************************************
+
+      function Psi_WindShear_Similarity(z_on_L)
+
+      ! Generalized wind shear similarity function of z/L (integral of phi)
+
+      use global_param,  only : &
+         PI
+
+      implicit none
+
+      real(kind=ip) :: Psi_WindShear_Similarity
+
+      real(kind=ip) :: z_on_L
+
+      real(kind=ip) :: x,tmp1,tmp2
+
+      if(z_on_L.le.0.0_ip)then
+          ! Unstable
+        x = (1.0_ip-16.0_ip*z_on_L)**0.25_ip
+        tmp1 = 0.5_ip*(1.0_ip+x*x);
+        tmp2 = (0.5_ip*(1.0_ip+x))**2.0_ip;
+        Psi_WindShear_Similarity = log(tmp1*tmp2) - 2.0_ip*atan(x) + 0.5_ip*PI;
+      else
+          ! Stable
+        Psi_WindShear_Similarity = -5.0_ip*z_on_L
+      endif
+
+      return
+
+      end function Psi_WindShear_Similarity
 
 !******************************************************************************
 

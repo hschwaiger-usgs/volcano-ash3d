@@ -528,7 +528,8 @@
 
       use MetReader,       only : &
          nx_submet,ny_submet,x_submet_sp,y_submet_sp,&
-         MR_lonmin,MR_lonmax,MR_latmin,MR_latmax,IsLatLon_MetGrid
+         MR_lonmin,MR_lonmax,MR_latmin,MR_latmax,IsLatLon_MetGrid,MR_Have_LL_mapping,&
+           MR_Set_LL_mapping
 
       INTERFACE
         subroutine get_minmax_lonlat(lonmin,lonmax,latmin,latmax)
@@ -559,6 +560,9 @@
         minlat_Topo_Met = real(minval(y_submet_sp(1:ny_submet)),kind=ip)
         maxlat_Topo_Met = real(maxval(y_submet_sp(1:ny_submet)),kind=ip)
       else
+        if(.not.MR_Have_LL_mapping)then
+          call MR_Set_LL_mapping
+        endif
         minlon_Topo_Met = real(MR_lonmin,kind=ip)
         maxlon_Topo_Met = real(MR_lonmax,kind=ip)
         minlat_Topo_Met = real(MR_latmin,kind=ip)
@@ -905,7 +909,7 @@
       enddo
       if(Topo_UseCompGrid)then
         nlon_topo_subgrid = floor((maxlon_Topo_comp-minlon_Topo_comp)/dlon_topo)+1
-        nlat_topo_subgrid = int((maxlat_Topo_comp-minlat_Topo_comp)/dlat_topo)
+        nlat_topo_subgrid = floor((maxlat_Topo_comp-minlat_Topo_comp)/dlat_topo)+1
       else
         nlon_topo_subgrid = floor((maxlon_Topo_Met-minlon_Topo_Met)/dlon_topo)+1
       endif
@@ -1879,7 +1883,6 @@
 
       end subroutine Load_Topo_Gridded_bin
 
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  Load_Topo_Gridded_ASCII
@@ -2391,40 +2394,25 @@
 
           ! Now find the corresponding topo point
           ! We need to find where olam,ophi maps onto the grid defined by the cell-centers
+          ! Note that the clipped topo grid was based on what was needed for the computational
+          ! grid. If a met point is outside that, use the closest point on the clipped grid.
           ilon = floor((olam-loncl_topo_subgrid(1))/dlon_topo) + 1
+          ilon = max(ilon,1)
+          ilon = min(ilon,nlon_topo_subgrid)
           ilat = floor((ophi-latcl_topo_subgrid(1))/dlat_topo) + 1
-          ! Adjust for the cases where we have the comp point right on top of the topo point
-          if(olam.lt.loncl_topo_subgrid(ilon))then
-            ilon = ilon-1
-          elseif(olam.gt.loncl_topo_subgrid(ilon+1))then
-            ilon = ilon+1
-          endif
-          if(ophi.lt.latcl_topo_subgrid(ilat))then
-            ilat = ilat-1
-          elseif(ophi.gt.latcl_topo_subgrid(ilat+1))then
-            ilat = ilat+1
-          endif
+          ilat = max(ilat,1)
+          ilat = min(ilat,nlat_topo_subgrid)
 
-          ! Double-check that olam is between left and right sides of cell
-          if(olam.lt.loncl_topo_subgrid(ilon).or.&
-             olam.gt.loncl_topo_subgrid(ilon+1))then
-            do io=1,2;if(VB(io).le.verbosity_error)then
-              write(errlog(io),*)"ERROR: ",ilon,&
-                      loncl_topo_subgrid(ilon),&
-                      olam,&
-                      loncl_topo_subgrid(ilon+1)
-            endif;enddo
-            stop 1
+          ! Adjust for the cases where we have the comp point right on top of the topo point
+          if(ilon.gt.1.and.olam.lt.loncl_topo_subgrid(ilon))then
+            ilon = ilon-1
+          elseif(ilon.lt.nlon_topo_subgrid)then
+            if(olam.gt.loncl_topo_subgrid(ilon+1))ilon = ilon+1
           endif
-          if(ophi.lt.latcl_topo_subgrid(ilat).or.&
-             ophi.gt.latcl_topo_subgrid(ilat+1))then
-            do io=1,2;if(VB(io).le.verbosity_error)then
-              write(errlog(io),*)"ERROR: ",ilat,&
-                      latcl_topo_subgrid(ilat),&
-                      ophi,&
-                      latcl_topo_subgrid(ilat+1)
-            endif;enddo
-            stop 1
+          if(ilat.gt.1.and.ophi.lt.latcl_topo_subgrid(ilat))then
+            ilat = ilat-1
+          elseif(ilat.lt.nlat_topo_subgrid)then
+            if(ophi.gt.latcl_topo_subgrid(ilat+1))ilat = ilat+1
           endif
 
           if(olam-loncl_topo_subgrid(ilon).lt.0.0_ip)then
@@ -2432,11 +2420,15 @@
           elseif(olam-loncl_topo_subgrid(ilon+1).ge.dlon_topo)then
             ilon=ilon+1
           endif
+          ilon = max(ilon,1)
+          ilon = min(ilon,nlon_topo_subgrid)
           if(ophi-latcl_topo_subgrid(ilat).lt.0.0_ip)then
             ilat=ilat-1
           elseif(ophi-latcl_topo_subgrid(ilat+1).ge.dlat_topo)then
             ilat=ilat+1
           endif
+          ilat = max(ilat,1)
+          ilat = min(ilat,nlat_topo_subgrid)
 
           ! No interp; just lower-left corner
           MR_Topo_met(i,j) = real(topo_subgrid(ilon,ilat),kind=sp) / 1000.0_ip ! convert to km
