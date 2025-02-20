@@ -365,6 +365,13 @@ ifeq ($(USENETCDF), T)
 endif
 
 all: Ash3d tools postproc
+	$(info -------------------------------------)
+	$(info  Before running 'make check', set the WINDROOT and USGSROOT environment variables.)
+	$(info  e.g. execute: )
+	$(info  export WINDROOT="${WINDROOT}")
+	$(info  export USGSROOT="${USGSROOT}")
+	$(info            or: source set_Ash3d.env)
+	$(info -------------------------------------)
 
 Ash3d:  $(OBJECTS) $(DATAOBJ) Ash3d.F90 $(MFILE) $(SYSINC)
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c Ash3d.F90 

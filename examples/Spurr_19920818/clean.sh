@@ -10,3 +10,4 @@ rm -f ash_arrivaltimes_airports.txt
 rm -f depTS_*.png
 rm -f *kml *kmz
 rm -f Proc/*pdf
+rm -f vprofile0*txt
