@@ -31,12 +31,23 @@
 !
 !
 ! OPTMOD=VARDIFF
-! yes 1                       # use horizontal variable diffusivity
-! yes                         # use vertical variable diffusivity
-! 0.9                         # KH_SmagC
-! 0.4                         # vonKarman
-! 30.0                        # LambdaC
-! 0.25                        # RI_CRIT
+! Horizontal diff
+!  yes 1 500.0     # 1=const ; value in m2/s
+!  yes 2 0.2       # 2=Smagorinsky ; C
+!  yes 3 0.2       # 3=Pielke      ; C
+! Vertical diff
+!  yes 
+!  1 500.0         # BL model 1=const ; value
+!  2               #          2=Troen and Mahrt
+!  3               #          3=Ulke
+!  4               #          4=Shir / Businger,Ayer
+!  1 500.0         # Free-Air 1=const ; value
+!  2               #          2=Jac
+!  3               #          3=Collin
+!  4               #          4=Piedelievre
+!0.4                         # vonKarman
+!30.0                        # LambdaC
+!0.25                        # RI_CRIT
 ! 
 !##############################################################################
 
@@ -46,8 +57,13 @@
 
       use io_units
 
+      use Diffusion,     only : &
+         diffusivity_horz,diffusivity_vert
+
       integer :: Kh_model_ID     ! [1] = Smagorinsky (1963); 2 = Pielke (1974)
       integer :: Phi_model_ID    ! 
+      integer :: KvBL_model_ID
+      integer :: KvFA_model_ID
 
       !  These are the parameters that control the diffusivity calculations
       !    C from Smagorinsky model of horizontal diffusivity
@@ -69,6 +85,7 @@
 
       real(kind=ip) :: PBL_exp = 1.0_ip
 
+      real(kind=ip) :: diffusivity_BL
       ! Set the number of output variables for this module
       ! This depends on settings from the input block
       logical :: use_Output_Vars_VarDiff       = .true.
@@ -201,6 +218,7 @@
       integer            :: ios,ioerr
       character(len=20)  :: mod_name
       integer            :: substr_pos
+      real(kind=ip)      :: tmp
 
       open(unit=10,file=infile,status='old',err=1900)
 
@@ -234,29 +252,43 @@
       read(10,'(a80)',iostat=ios,err=2010)linebuffer080
       read(linebuffer080,'(a3)',err=2011) answer
       if (answer.eq.'yes') then
-        useVarDiffH = .true.
+        useVarDiffH = .true.  ! might be changed back below if we are holding Kh constant:w
+
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"    Using horizontal variable diffusivity"
         endif;enddo
         ! Try to read the horizontal model ID
-        read(linebuffer080(4:),*,iostat=ios)Kh_model_ID
+        read(linebuffer080(4:),*,iostat=ios)Kh_model_ID,tmp
         if(ios.eq.0)then
           if(Kh_model_ID.eq.1)then
+            useVarDiffH = .false.
+            diffusivity_horz = tmp
             do io=1,2;if(VB(io).le.verbosity_info)then
-              write(outlog(io),*)"    Horizontal diffusivity model ID = 1: Smagorinsky (1963)"
+              write(outlog(io),*)"    Horizontal diffusivity model ID = 1: Constant"
+              write(outlog(io),*)"                            with Kh = ",diffusivity_horz
             endif;enddo
           elseif(Kh_model_ID.eq.2)then
+            KH_SmagC = tmp
             do io=1,2;if(VB(io).le.verbosity_info)then
-              write(outlog(io),*)"    Horizontal diffusivity model ID = 2: Pielke (1974)"
+              write(outlog(io),*)"    Horizontal diffusivity model ID = 2: Smagorinsky (1963)"
+              write(outlog(io),*)"                             with C = ",KH_SmagC
+            endif;enddo
+          elseif(Kh_model_ID.eq.3)then
+            KH_SmagC = tmp
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"    Horizontal diffusivity model ID = 3: Pielke (1974)"
+              write(outlog(io),*)"                             with C = ",KH_SmagC
             endif;enddo
           else
+            KH_SmagC = 0.2_ip
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"    Horizontal diffusivity model ID not recognized."
-              write(outlog(io),*)"    Using model ID = 1: Smagorinsky (1963)"
+              write(outlog(io),*)"    Using model ID = 2: Smagorinsky (1963)"
+              write(outlog(io),*)"                             with C = ",KH_SmagC
             endif;enddo
           endif
         else
-          Kh_model_ID = 1
+          Kh_model_ID = 2
         endif
       elseif(answer(1:2).eq.'no') then
         useVarDiffH = .false.
@@ -282,11 +314,80 @@
       else
         goto 2011
       endif
+      if(useVarDiffV)then
+        ! Need to read two more lines defining first the Boundary Layer model, then the Free-Air model
+        read(10,'(a80)',iostat=ios,err=2010)linebuffer080
+        read(linebuffer080,*,iostat=ios)KvBL_model_ID
+        if(KvBL_model_ID.eq.1)then
+          ! Diffusivity is constant in the BL; read the value
+          read(linebuffer080,*,iostat=ios)KvBL_model_ID,diffusivity_BL
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"    Using constant vertical diffusivity in the boundary layer."
+          endif;enddo
+        elseif(KvBL_model_ID.eq.2)then
+          ! Model from Troen and Mahrt, 1973
+          phi_alpha = -0.33333_ip   ! Exponent in unstable term
+          phi_beta  =  4.7_ip       ! Coefficient in stable term (pretty much always 4.7->5.2
+          phi_gamma = -7.0_ip       ! Coefficient in unstable term
+          PBL_exp   = 2.0_ip
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"    Using boundary layer vertical diffusivity as outlined by Troen and Mahrt (1973)."
+          endif;enddo
+        elseif(KvBL_model_ID.eq.3)then
+          ! Model from Ulke (2000)
+          phi_alpha = -0.5_ip   ! Exponent in unstable term
+          phi_beta  =  9.2_ip       ! Coefficient in stable term (pretty much always 4.7->5.2
+          phi_gamma = -13.0_ip       ! Coefficient in unstable term
+          PBL_exp   = 1.0_ip
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"    Using boundary layer vertical diffusivity as outlined by Ulke (2000)."
+          endif;enddo
+        elseif(KvBL_model_ID.eq.4)then
+          ! Model from Shir / Businger,Ayer outlined in Seinfeld and Pandis
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"    Using boundary layer vertical diffusivity as outlined by in Seinfeld and Pandis."
+          endif;enddo
+        else
+          KvBL_model_ID = 2
+         do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"    Using boundary layer vertical diffusivity as outlined by Troen and Mahrt (1973)."
+          endif;enddo
+        endif
+
+        read(linebuffer080(4:),*,iostat=ios)KvFA_model_ID
+        if(KvFA_model_ID.eq.1)then
+          ! Diffusivity is constant in the BL; read the value
+          read(linebuffer080,*,iostat=ios)KvFA_model_ID,diffusivity_vert
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"    Using constant vertical diffusivity above the boundary layer."
+          endif;enddo
+        elseif(KvFA_model_ID.eq.2)then
+          ! Mixing length model with Fc from Jacobson
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"    Using free air vertical diffusivity with stability function from Jacobson."
+          endif;enddo
+        elseif(KvFA_model_ID.eq.3)then
+          ! Mixing length model with Fc from Collin et al
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"    Using free air vertical diffusivity with stability function from Collin et al."
+          endif;enddo
+        elseif(KvFA_model_ID.eq.4)then
+          ! Mixing length model with Fc from Piedelievre et al
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"    Using free air vertical diffusivity with stability function from Piedelievre et al."
+          endif;enddo
+        else
+          KvFA_model_ID = 3
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"    Using free air vertical diffusivity with stability function from Collin et al."
+          endif;enddo
+        endif
+
+
+      endif
 
       if (useVarDiffH.or.useVarDiffV) then
         ! Check if we're using variable diffusivity, then get the constants
-        read(10,'(a80)',iostat=ios,err=2010)linebuffer080
-        read(linebuffer080,*,iostat=ioerr) KH_SmagC
         read(10,'(a80)',iostat=ios,err=2010)linebuffer080
         read(linebuffer080,*,iostat=ioerr) vonKarman
         read(10,'(a80)',iostat=ios,err=2010)linebuffer080
@@ -295,7 +396,6 @@
         read(linebuffer080,*,iostat=ioerr) RI_CRIT
 
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)KH_SmagC
           write(outlog(io),*)vonKarman
           write(outlog(io),*)LambdaC
           write(outlog(io),*)RI_CRIT
@@ -438,8 +538,8 @@
       endif
 
       if(use_Output_Vars_VarDiff.and.useVarDiffV)then
-        temp_2d_name_VarDiff(1) = "PBL"
-        temp_2d_lname_VarDiff(1) = "Planetary Boundary Layer"
+        temp_2d_name_VarDiff(1) = "PBLH"
+        temp_2d_lname_VarDiff(1) = "Planetary Boundary Layer Height"
         temp_2d_unit_VarDiff(1) = "km"
         temp_2d_MissVal_VarDiff(1) = -9999.0_op
         temp_2d_FillVal_VarDiff(1) = -9999.0_op
@@ -478,7 +578,7 @@
       subroutine Prep_output_VarDiff
 
       use global_param,  only : &
-         useVarDiffH,KM_2_M,HR_2_S,DEG2RAD
+         useVarDiffH,KM_2_M,HR_2_S,DEG2RAD,M2PS_2_KM2PHR
 
       use mesh,          only : &
          nxmax,nymax,nzmax,lon_cc_pd,lat_cc_pd
@@ -526,7 +626,7 @@
         end function HS_HourOfDay
       END INTERFACE
 
-      ! Might have to build in some logic for Kh vs Kz
+      ! Might have to build in some logic for Kh vs Kv
 
       do i=1,nvar_User2d_XY_VarDiff
         ! We could put a conditional block here, but we would not enter this
@@ -539,7 +639,7 @@
         var_User2d_XY_FillVal(indx)= temp_2d_FillVal_VarDiff(i)
         if(i.eq.1)then
            ! Now resample onto computational grid
-          MR_dum2d_met = PBLH_meso_next_step_Met_sp
+          MR_dum2d_met = PBLH_meso_next_step_Met_sp/KM_2_M
           call MR_Regrid_Met2d_to_Comp2D
           var_User2d_XY(1:nxmax,1:nymax,indx) = MR_dum2d_comp(1:nxmax,1:nymax)
         elseif(i.eq.2)then
@@ -566,7 +666,8 @@
           ! Horizontal diffusivity is already on the comp grid
           ! This branch is unused if useVarDiffH = .false. since ii=0
           ! Note that the native units are km2/hr, but we need to convert to m2/s
-          var_User3d_XYZ(1:nxmax,1:nymax,1:nzmax,indx) = kx(1:nxmax,1:nymax,1:nzmax)*KM_2_M*KM_2_M/HR_2_S
+          !var_User3d_XYZ(1:nxmax,1:nymax,1:nzmax,indx) = kx(1:nxmax,1:nymax,1:nzmax)*KM_2_M*KM_2_M/HR_2_S
+          var_User3d_XYZ(1:nxmax,1:nymax,1:nzmax,indx) = kx(1:nxmax,1:nymax,1:nzmax)/M2PS_2_KM2PHR
 
 !          jday = HS_DayOfYear(SimStartHour+time,BaseYear,useLeap)
 !          hour = HS_HourOfDay(SimStartHour+time,BaseYear,useLeap)
@@ -580,11 +681,11 @@
 !            enddo
 !          enddo
            ! Now resample L_Mon onto computational grid
-          MR_dum2d_met = L_MonOb_meso_last_step_Met_sp
-          call MR_Regrid_Met2d_to_Comp2D
-          do kkk=1,nzmax
-            var_User3d_XYZ(1:nxmax,1:nymax,kkk,indx) = MR_dum2d_comp(1:nxmax,1:nymax)
-          enddo
+!          MR_dum2d_met = L_MonOb_meso_last_step_Met_sp
+!          call MR_Regrid_Met2d_to_Comp2D
+!          do kkk=1,nzmax
+!            var_User3d_XYZ(1:nxmax,1:nymax,kkk,indx) = MR_dum2d_comp(1:nxmax,1:nymax)
+!          enddo
         endif
         if(i.eq.ii+1)then
           ! Vertical diffusivity is already on the comp grid
@@ -649,7 +750,7 @@
       subroutine Eddy_diff
 
       use global_param,  only : &
-         HR_2_S
+         HR_2_S,M2PS_2_KM2PHR
 
       use MetReader,     only : &
          nx_submet,ny_submet,np_fullmet,MR_sigma_nz_submet
@@ -663,46 +764,50 @@
       real(kind=ip) :: LES_TimeScale
       real(kind=ip) :: LES_LengthScale
 
-      do i=1,nx_submet
-        do j=1,ny_submet
-          do k=1,np_fullmet
-
-      ! Smagorinsky LES horizontal eddy diffusivity is proportional
-      ! to sqrt((E12+E21)^2 + (E11-E22)^2) where E is the velocity gradient
-      ! tensor (just in x and y)
-      ! This is following the description in
-      ! Griffies and Hallberg, MWR, 2000 doi:10.1175/1520-0493(2000)128<2935:BFWASL>2.0.CO;2
-
-        ! spatial derivatives of velocity (in 1/s)
-      E11 = du_dx_MetP_sp(i,j,k)
-      E12 = du_dy_MetP_sp(i,j,k)
-      E21 = dv_dx_MetP_sp(i,j,k)
-      E22 = dv_dy_MetP_sp(i,j,k)
-
-      D2_strain  = (E12+E21)**2.0_ip
       if(Kh_model_ID.eq.1)then
-        D2_tension = (E11-E22)**2.0_ip          ! Smagorinsky (1963, 1993)
-      elseif(Kh_model_ID.eq.2)then
-        D2_tension = 0.5_ip*(E11*E11+E22*E22)   ! Pielke (1974)
+        Khz_meso_next_step_MetP_sp(:,:,:) = diffusivity_vert*M2PS_2_KM2PHR
       else
-        do io=1,2;if(VB(io).le.verbosity_error)then
-          write(errlog(io),*)  'error: currently only Smagorinsky and Pielke models allowed.'
-        endif;enddo
-        stop 1
+        do i=1,nx_submet
+          do j=1,ny_submet
+            do k=1,np_fullmet
+  
+        ! Smagorinsky LES horizontal eddy diffusivity is proportional
+        ! to sqrt((E12+E21)^2 + (E11-E22)^2) where E is the velocity gradient
+        ! tensor (just in x and y)
+        ! This is following the description in
+        ! Griffies and Hallberg, MWR, 2000 doi:10.1175/1520-0493(2000)128<2935:BFWASL>2.0.CO;2
+  
+          ! spatial derivatives of velocity (in 1/s)
+        E11 = du_dx_MetP_sp(i,j,k)
+        E12 = du_dy_MetP_sp(i,j,k)
+        E21 = dv_dx_MetP_sp(i,j,k)
+        E22 = dv_dy_MetP_sp(i,j,k)
+  
+        D2_strain  = (E12+E21)**2.0_ip
+        if(Kh_model_ID.eq.2)then
+          D2_tension = (E11-E22)**2.0_ip          ! Smagorinsky (1963, 1993)
+        elseif(Kh_model_ID.eq.3)then
+          D2_tension = 0.5_ip*(E11*E11+E22*E22)   ! Pielke (1974)
+        else
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)  'error: currently only Smagorinsky and Pielke models allowed.'
+          endif;enddo
+          stop 1
+        endif
+          ! in units of 1/s
+        LES_TimeScale = sqrt(D2_tension+D2_strain)
+          ! in units of 1/hr
+        LES_TimeScale = LES_TimeScale * HR_2_S
+          ! length scale^2 in km^2
+        LES_LengthScale = MR_sigma_nz_submet(i,j)
+  
+          ! Diffusivity in km2/hr
+        Khz_meso_next_step_MetP_sp(i,j,k) = real(KH_SmagC*LES_LengthScale*LES_TimeScale,kind=sp)
+  
+            enddo !k
+          enddo !j
+        enddo !i
       endif
-        ! in units of 1/s
-      LES_TimeScale = sqrt(D2_tension+D2_strain)
-        ! in units of 1/hr
-      LES_TimeScale = LES_TimeScale * HR_2_S
-        ! length scale^2 in km^2
-      LES_LengthScale = MR_sigma_nz_submet(i,j)
-
-        ! Diffusivity in km2/hr
-      Khz_meso_next_step_MetP_sp(i,j,k) = real(KH_SmagC*LES_LengthScale*LES_TimeScale,kind=sp)
-
-          enddo !k
-        enddo !j
-      enddo !i
 
       return
 
@@ -733,7 +838,7 @@
       real(kind=ip) :: PBLz
       real(kind=ip) :: Phi
       real(kind=ip) :: PBL_profile_fac
-      real(kind=ip) :: Kz_tmp
+      real(kind=ip) :: Kv_FreeAir, Kv_BL
       real(kind=ip) :: Lc
       real(kind=ip) :: EckF
       real(kind=ip) :: lat
@@ -759,12 +864,14 @@
           endif
 
           do k = np_fullmet,1,-1
-            ! Determine which form of Kz based on height relative to
+            ! Determine which form of Kv based on height relative to
             ! atmospheric boundary layer
+            Kv_BL      = 0.0_ip
+            Kv_FreeAir = 0.0_ip
             if(z_col(k).le.0.0_sp)then
                 ! If point is at a negative gpm, then assign the kz from the
                 ! node above
-              Kz_tmp = Kv_col(k+1)
+              Kv_BL = Kv_col(k+1)
             else
                 ! In free atmosphere above the PBL, use Prandtl's mixing
                 ! length theory for thermally stratified atmosphere.
@@ -779,7 +886,7 @@
                 ! calculate eq 8
                 ! The Ri-term seems to zero out anything above the PBL
                 ! since Ri is too high
-              Kz_tmp = Lc*Lc*abs(dv_dz_col(k))!*Fc(Ri_col_windp(k))
+              Kv_FreeAir = Lc*Lc*abs(dv_dz_col(k))!*Fc(Ri_col_windp(k))
 
               if(z_col(k).lt.PBLz)then
                 ! Within the PBL, use similarity theory
@@ -793,18 +900,17 @@
                 endif
                 lat = max(20.0_ip,abs(lat));
                 EckF= 2.0_ip*7.292e-5_ip*sin(lat*DEG2RAD);
-                PBL_profile_fac = exp(-8.0_ip*EckF*z_col(k)/FricVel);
-
+!                PBL_profile_fac = exp(-8.0_ip*EckF*z_col(k)/FricVel);
 
                 Phi = Phi_WindShear_Similarity(z_col(k)/L_MonOb)
-                ! Kz from similarity theory (Eq. 8.48 of Jacobson)
-                Kz_tmp = z_col(k)*vonKarman*FricVel*PBL_profile_fac/Phi
+                ! Kv from similarity theory (Eq. 8.48 of Jacobson)
+                Kv_BL = z_col(k)*vonKarman*FricVel*PBL_profile_fac/Phi
               endif
 
             endif
     
             ! assign to array and convert from m2/s to km2/hr
-            Kv_col(k) = Kz_tmp * HR_2_S/KM_2_M/KM_2_M
+            Kv_col(k) = max(Kv_BL,Kv_FreeAir) * HR_2_S/KM_2_M/KM_2_M
           enddo
 
           if(last_or_next.eq.0)then
@@ -880,7 +986,7 @@
           dv_dx_MetP_sp = MR_dum3d2_metP * M_2_KM
           call MR_DelMetP_Dy
           dv_dy_MetP_sp = MR_dum3d2_metP * M_2_KM
-          call Eddy_diff
+          call Eddy_diff  ! this sets Khz in km2/hr
            ! Now resample onto computational grid
           MR_dum3d_metP = Khz_meso_next_step_MetP_sp
           call MR_Regrid_MetP_to_CompH(MR_iMetStep_Now)
@@ -913,7 +1019,7 @@
         dv_dx_MetP_sp = MR_dum3d2_metP * M_2_KM
         call MR_DelMetP_Dy
         dv_dy_MetP_sp = MR_dum3d2_metP * M_2_KM
-        call Eddy_diff
+        call Eddy_diff  ! this sets Khz in km2/hr
          ! Now resample onto computational grid
         MR_dum3d_metP = Khz_meso_next_step_MetP_sp
         call MR_Regrid_MetP_to_CompH(MR_iMetStep_Now+1)
@@ -1166,6 +1272,7 @@
 
       use MetReader,     only : &
          Met_var_IsAvailable,MR_iMetStep_Now,MR_dum2d_Met,&
+         nx_submet,ny_submet, &
            MR_Read_2d_Met_Variable
 
       integer :: ivar
@@ -1605,29 +1712,20 @@
           enddo
           ! For the purpuse of calculating L, don't let Ri get too close to 0
           Ri = sign(max(abs(Ri_col(k_L)),1.0e-2_ip),Ri_col(k_L))
-!          write(*,*)i,j,k_L,z_col(k_L),Ri_col(k_L),Ri
           if(Ri_col(k_L).lt.RI_CRIT)then
+            ! Test for special case of neutrally stable case, L->Inf ; set to 1 km
+            if (abs(Ri_col(k_L)).lt.EPS_SMALL)then
+              L_MonOb = sign(abs(L_MonOb),100.0_ip)
+            else
               ! Unstable (negative L)
-            L_MonOb = z_col(k_L)/Ri
+              L_MonOb = z_col(k_L)/Ri
+            endif
           elseif(Ri_col(k_L).gt.RI_CRIT)then
               ! Stable (positive L)
             L_MonOb = z_col(k_L)/Ri * (1.0_ip - 5.0_ip*Ri)
           endif
           L_MonOb = sign(min(abs(L_MonOb),100.0_ip),L_MonOb)
 
-
-!          if(abs(Ri_col(k_L)).lt.EPS_SMALL)then
-!              ! For the neutrally stable case, L->Inf ; set to 1 km
-!            L_MonOb = 1000.0_ip
-!          elseif(Ri_col(k_L).lt.0.0_ip)then
-!              ! Unstable (negative L)
-!            L_MonOb = z_col(k_L)/Ri_col(k_L)
-!          elseif(Ri_col(k_L).gt.RI_CRIT)then
-!              ! Stable (positive L)
-!            L_MonOb = z_col(k_L)/Ri_col(k_L) * (1.0_ip - 5.0_ip*Ri_col(k_L))
-!          else
-!            L_MonOb = -1.0e-3_ip
-!          endif
           if(last_or_next.eq.0)then
             L_MonOb_meso_last_step_Met_sp(i,j) = real(L_MonOb,kind=sp)
           else
@@ -1635,9 +1733,6 @@
           endif
         enddo
       enddo
-
-!      write(*,*)PBLH_meso_last_step_Met_sp(11,30),PBLH_meso_next_step_Met_sp(11,30),&
-!                L_MonOb_meso_last_step_Met_sp(11,30),L_MonOb_meso_next_step_Met_sp(11,30)
 
       end subroutine Calc_Monin_Length
 !
