@@ -2431,7 +2431,7 @@
           ilat = min(ilat,nlat_topo_subgrid)
 
           ! No interp; just lower-left corner
-          MR_Topo_met(i,j) = real(topo_subgrid(ilon,ilat),kind=sp) / 1000.0_ip ! convert to km
+          MR_Topo_met(i,j) = real(topo_subgrid(ilon,ilat),kind=sp) / 1000.0_sp ! convert to km
 
         enddo
       enddo
@@ -2561,11 +2561,11 @@
 
       use mesh,          only : &
          nxmax,nymax,IsLatLon,dx,dy,de,dn,lat_cc_pd,lon_cc_pd,&
-         x_cc_pd,y_cc_pd,lonLL,latLL
+         x_cc_pd,y_cc_pd
 
       use MetReader,       only : &
-         MR_minlen,x_submet_sp,y_submet_sp,nx_submet,ny_submet,MR_dx_met,MR_dy_met,&
-         MR_Topo_comp,MR_Topo_met
+         MR_minlen,nx_submet,ny_submet,MR_dx_met,MR_dy_met,&
+         MR_Topo_comp
 
       integer :: i,j,it
       integer :: ncells
@@ -2576,7 +2576,6 @@
       real(kind=ip) :: fac_1,r,temp1,wg1,char_len,norm
       real(kind=ip) :: rad
       real(kind=ip) :: topo_smooth_comp(-1:nxmax+2,-1:nymax+2)
-      real(kind=ip) :: xin,yin
       integer :: nx,ny
       integer :: ii,ipad,jj,jpad
       ! These variables are used for the kernel interpolation of grad h, but this

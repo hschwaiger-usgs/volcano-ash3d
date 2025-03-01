@@ -420,8 +420,8 @@
          useMoistureVars,KM_2_M
 
       use MetReader,     only : &
-         nx_submet,ny_submet,np_fullmet,p_fullmet_sp,MR_dum3d_MetP,MR_iMetStep_Now,&
-         Met_var_IsAvailable,MR_geoH_metP_last,MR_geoH_metP_next, &
+         nx_submet,ny_submet,np_fullmet,p_fullmet_sp,&
+         MR_geoH_metP_last,MR_geoH_metP_next, &
            MR_Read_3d_MetP_Variable
 
       integer, intent(in) :: last_or_next
@@ -432,7 +432,7 @@
       real(kind=sp),dimension(:),allocatable :: Q ! in kg/kg
       real(kind=sp),dimension(:),allocatable :: Tpoten
 
-      integer :: i,j,k,k1,k2
+      integer :: i,j,k
       real(kind=sp) :: refP
       real(kind=sp) :: mixrat
 
@@ -459,7 +459,7 @@
       do i=1,nx_submet
         do j=1,ny_submet
           if(last_or_next.eq.0)then
-            z(1:np_fullmet) = MR_geoH_metP_last(i,j,1:np_fullmet) * KM_2_M
+            z(1:np_fullmet) = MR_geoH_metP_last(i,j,1:np_fullmet) * real(KM_2_M,kind=sp)
             T(1:np_fullmet) = AirTemp_meso_last_step_MetP_sp(i,j,1:np_fullmet)
             if(useMoistureVars)then
                 ! If moisture is enabled, use virtual potential temperatrue
@@ -469,7 +469,7 @@
               Q(1:np_fullmet) = 0.0_sp
             endif
           else
-            z(1:np_fullmet) = MR_geoH_MetP_next(i,j,1:np_fullmet) * KM_2_M
+            z(1:np_fullmet) = MR_geoH_MetP_next(i,j,1:np_fullmet) * real(KM_2_M,kind=sp)
             T(1:np_fullmet) = AirTemp_meso_next_step_MetP_sp(i,j,1:np_fullmet)
             if(useMoistureVars)then
                 ! If moisture is enabled, use virtual potential temperatrue
@@ -482,11 +482,11 @@
           do k=1,np_fullmet
             ! First get the potential temperature, i.e. the temperature an air parcel would have
             ! if it were taken adiabaticlly to refP
-            Tpoten(k) = (T(k)*(refP/p(k))**(R_GAS_DRYAIR/CP_AIR))   ! Potential temperature
+            Tpoten(k) = real((T(k)*(refP/p(k))**(R_GAS_DRYAIR/CP_AIR)),kind=sp)   ! Potential temperature
             ! Now convert to virtual potential temperature is there is some Spec.Hum. around
             ! Note: this moisture bit makes practically no difference
             mixrat = Q(k)/(1.0_sp-Q(k))   ! Water mixing ratio from Spec.Hum
-            Tpoten(k) = Tpoten(k) *(1.0_sp + (R_GAS_WATVAP/R_GAS_DRYAIR-1.0_sp)*mixrat)
+            Tpoten(k) = real(Tpoten(k) *(1.0_sp + (R_GAS_WATVAP/R_GAS_DRYAIR-1.0_sp)*mixrat),kind=sp)
           enddo
           if(last_or_next.eq.0)then
             AirVPTemp_meso_last_step_MetP_sp(i,j,1:np_fullmet)=Tpoten(1:np_fullmet)

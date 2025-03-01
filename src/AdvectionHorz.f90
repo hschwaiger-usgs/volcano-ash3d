@@ -46,11 +46,13 @@
 
       subroutine AdvectHorz(itoggle)
 
+#ifndef FAST_SUBGRID
       use mesh,          only : &
          nxmax,nymax,nzmax
 
       use solution,      only : &
          imin,imax,jmin,jmax,kmin,kmax
+#endif
 
       use AdvectionHorz_DCU, only : &
          advect_x,advect_y

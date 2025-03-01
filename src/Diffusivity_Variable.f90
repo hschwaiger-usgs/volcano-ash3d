@@ -23,7 +23,8 @@
 !      subroutine Calc_SurfaceFrictionVelocity
 !      subroutine Calc_Monin_Length
 !      subroutine Calc_PBLH
-!      function Fc
+!      function Fc_Jac
+!      function Fc_Collin
 !      function Fc_PMB
 !      function MixLen
 !      function Phi_WindShear_Similarity
@@ -38,13 +39,14 @@
 ! Vertical diff
 !  yes 
 !  1 500.0         # BL model 1=const ; value
-!  2               #          2=Troen and Mahrt
-!  3               #          3=Ulke
-!  4               #          4=Shir / Businger,Ayer
+!  2               #          2=no BL, only free-air throughout
+!  3               #          3=Troen and Mahrt
+!  4               #          4=Ulke
+!  5               #          5=Shir / Businger,Ayer
 !  1 500.0         # Free-Air 1=const ; value
-!  2               #          2=Jac
-!  3               #          3=Collin
-!  4               #          4=Piedelievre
+!  2               #          2=F(Ri)=Jacobson
+!  3               #          3=F(Ri)=Collin
+!  4               #          4=F(Ri)=Piedelievre
 !0.4                         # vonKarman
 !30.0                        # LambdaC
 !0.25                        # RI_CRIT
@@ -85,6 +87,7 @@
 
       real(kind=ip) :: PBL_exp = 1.0_ip
 
+      logical       :: useBoundaryLayer = .true.
       real(kind=ip) :: diffusivity_BL
       ! Set the number of output variables for this module
       ! This depends on settings from the input block
@@ -117,37 +120,6 @@
 
       real(kind=ip) :: LES_L2ScaleCoeff
 
-      ! Note: RoughLen_z can be related to Land use
-      !    From Stohl et al, ACP, v5n9p2461, 2005 Table 3
-      !         Grassland       :: 0.10
-      !         Arable land     :: 0.15
-      !         Permanent crops :: 0.30
-      !         Forest          :: 0.60
-      !         Inland water    :: Charnock
-      !         Urban areas     :: 0.70
-      !         Other           :: 0.10
-      !         Ocean           :: Charnock
-      !   Note: Charnok relation is z_0 = a(u_star^2/g) with a~ 0.018
-      !    From Stohl et al, Tech Note FLEXPART 8.2 :: surfdata.t
-      !         landuse   comment                               z0        glcf
-      !         --------------------------------------------------------
-      !          1 Urban land                                   0.7       13
-      !          2 Agricultural land                            0.1       11
-      !          3 Range land                                   0.1       10
-      !          4 Deciduous forest                             1.         3,4
-      !          5 Coniferous forest                            1.         1,2
-      !          6 Mixed forest including wetland               0.7        5
-      !          7 water, both salt and fresh                   0.001      0
-      !          8 barren land mostly desert                    0.01      12
-      !          9 nonforested wetland                          0.1
-      !         10 mixed agricultural and range land            0.1        6,7,8,9
-      !         11 rocky open areas with low grow shrubs        0.05 
-      !         12 snow and ice                                 0.001
-      !         13 rainforest                                   1.
-      ! For resuspension cases, friction velocity is needed at every cell and so
-      ! will the z0 (RoughLen_z).  Vr (U10 and V10) need to be calculated of
-      ! read for the wind grid and regridded to the comp grid.
-      
       ! 3d Variables needed on MetP grid
       real(kind=sp),dimension(:,:,:)  ,allocatable :: dVel_dz_MetP_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: du_dx_MetP_sp
@@ -157,8 +129,9 @@
       real(kind=sp),dimension(:,:,:)  ,allocatable :: dV_dz_MetP_sp
       real(kind=sp),dimension(:,:)    ,allocatable :: SurfRoughLen_Met_sp
 
-      ! HFS: Consider moving Ri, PBLH, L_MonOb, FricVel, TropoH, SurfRoughLen, displacement height to Atmosphere
-      !      These would still be allocated here if needed here
+      ! HFS: Consider moving Ri, PBLH, L_MonOb, FricVel, TropoH,
+      !      SurfRoughLen, displacement height to Atmosphere.f90
+      !       These would still be allocated here if needed here
 
         ! and at both meso steps (also MetP)
       real(kind=sp),dimension(:,:,:)  ,allocatable :: Ri_meso_last_step_MetP_sp
@@ -265,26 +238,26 @@
             diffusivity_horz = tmp
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"    Horizontal diffusivity model ID = 1: Constant"
-              write(outlog(io),*)"                            with Kh = ",diffusivity_horz
+              write(outlog(io),*)"                            with Kh (in m2/s) = ",real(diffusivity_horz,kind=4)
             endif;enddo
           elseif(Kh_model_ID.eq.2)then
             KH_SmagC = tmp
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"    Horizontal diffusivity model ID = 2: Smagorinsky (1963)"
-              write(outlog(io),*)"                             with C = ",KH_SmagC
+              write(outlog(io),*)"                             with C = ",real(KH_SmagC,kind=4)
             endif;enddo
           elseif(Kh_model_ID.eq.3)then
             KH_SmagC = tmp
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"    Horizontal diffusivity model ID = 3: Pielke (1974)"
-              write(outlog(io),*)"                             with C = ",KH_SmagC
+              write(outlog(io),*)"                             with C = ",real(KH_SmagC,kind=4)
             endif;enddo
           else
             KH_SmagC = 0.2_ip
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"    Horizontal diffusivity model ID not recognized."
               write(outlog(io),*)"    Using model ID = 2: Smagorinsky (1963)"
-              write(outlog(io),*)"                             with C = ",KH_SmagC
+              write(outlog(io),*)"                             with C = ",real(KH_SmagC,kind=4)
             endif;enddo
           endif
         else
@@ -319,12 +292,26 @@
         read(10,'(a80)',iostat=ios,err=2010)linebuffer080
         read(linebuffer080,*,iostat=ios)KvBL_model_ID
         if(KvBL_model_ID.eq.1)then
-          ! Diffusivity is constant in the BL; read the value
-          read(linebuffer080,*,iostat=ios)KvBL_model_ID,diffusivity_BL
+          ! Diffusivity is constant in the BL
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"    Using constant vertical diffusivity in the boundary layer."
           endif;enddo
+          ! Try to read the diffusivity value
+          read(linebuffer080,*,iostat=ios)KvBL_model_ID,diffusivity_BL
+          if(ios.ne.0)then
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: ",&
+                    'Constant diffusivity in BL specified, but diffusivity value not provided.'
+            endif;enddo
+            stop 1
+          endif
         elseif(KvBL_model_ID.eq.2)then
+          ! Boundary Layer is turned off and vertical diffusivity will just be from the free-air equation
+          useBoundaryLayer = .false.
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"    Using free-air expression for vertical diffusivity throughout domain."
+          endif;enddo
+        elseif(KvBL_model_ID.eq.3)then
           ! Model from Troen and Mahrt, 1973
           phi_alpha = -0.33333_ip   ! Exponent in unstable term
           phi_beta  =  4.7_ip       ! Coefficient in stable term (pretty much always 4.7->5.2
@@ -333,7 +320,7 @@
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"    Using boundary layer vertical diffusivity as outlined by Troen and Mahrt (1973)."
           endif;enddo
-        elseif(KvBL_model_ID.eq.3)then
+        elseif(KvBL_model_ID.eq.4)then
           ! Model from Ulke (2000)
           phi_alpha = -0.5_ip   ! Exponent in unstable term
           phi_beta  =  9.2_ip       ! Coefficient in stable term (pretty much always 4.7->5.2
@@ -342,7 +329,7 @@
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"    Using boundary layer vertical diffusivity as outlined by Ulke (2000)."
           endif;enddo
-        elseif(KvBL_model_ID.eq.4)then
+        elseif(KvBL_model_ID.eq.5)then
           ! Model from Shir / Businger,Ayer outlined in Seinfeld and Pandis
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"    Using boundary layer vertical diffusivity as outlined by in Seinfeld and Pandis."
@@ -364,25 +351,36 @@
         elseif(KvFA_model_ID.eq.2)then
           ! Mixing length model with Fc from Jacobson
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"    Using free air vertical diffusivity with stability function from Jacobson."
+            write(outlog(io),*)"    Using free-air vertical diffusivity with stability function from Jacobson."
           endif;enddo
         elseif(KvFA_model_ID.eq.3)then
           ! Mixing length model with Fc from Collin et al
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"    Using free air vertical diffusivity with stability function from Collin et al."
+            write(outlog(io),*)"    Using free-air vertical diffusivity with stability function from Collin et al."
           endif;enddo
         elseif(KvFA_model_ID.eq.4)then
           ! Mixing length model with Fc from Piedelievre et al
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"    Using free air vertical diffusivity with stability function from Piedelievre et al."
+            write(outlog(io),*)"    Using free-air vertical diffusivity with stability function from Piedelievre et al."
           endif;enddo
         else
           KvFA_model_ID = 3
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"    Using free air vertical diffusivity with stability function from Collin et al."
+            write(outlog(io),*)"    Using free-air vertical diffusivity with stability function from Collin et al."
           endif;enddo
         endif
 
+        if(useBoundaryLayer)then
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"      The planetary boundary layer will be identified, if possible, first by"
+            write(outlog(io),*)"      trying to read PBLH from the Met files. If that is unavailable, then"
+            write(outlog(io),*)"      Ash3d will search for a low-level temperature inversion, inspect Ri(z)"
+            write(outlog(io),*)"      relative to Ri_crit, and calculate the Eckman layer thickness from the"
+            write(outlog(io),*)"      latitude and friction velocity. If the atmospheric data is too coarse"
+            write(outlog(io),*)"      to determine the bondary layer, the free-air mixing-length will be used"
+            write(outlog(io),*)"      for vertical diffusivity calculations throughout the domain."
+          endif;enddo
+        endif
 
       endif
 
@@ -396,9 +394,9 @@
         read(linebuffer080,*,iostat=ioerr) RI_CRIT
 
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)vonKarman
-          write(outlog(io),*)LambdaC
-          write(outlog(io),*)RI_CRIT
+          write(outlog(io),*)"von Karman constant = ",real(vonKarman,kind=4)
+          write(outlog(io),*)"     Mixinng Length = ",real(LambdaC,kind=4)
+          write(outlog(io),*)"        Critical Ri = ",real(RI_CRIT,kind=4)
         endif;enddo
 
         ! We will want to reuse velocities on the metP grid for this module
@@ -539,7 +537,7 @@
 
       if(use_Output_Vars_VarDiff.and.useVarDiffV)then
         temp_2d_name_VarDiff(1) = "PBLH"
-        temp_2d_lname_VarDiff(1) = "Planetary Boundary Layer Height"
+        temp_2d_lname_VarDiff(1) = "Planetary Boundary Layer H"
         temp_2d_unit_VarDiff(1) = "km"
         temp_2d_MissVal_VarDiff(1) = -9999.0_op
         temp_2d_FillVal_VarDiff(1) = -9999.0_op
@@ -578,10 +576,10 @@
       subroutine Prep_output_VarDiff
 
       use global_param,  only : &
-         useVarDiffH,KM_2_M,HR_2_S,DEG2RAD,M2PS_2_KM2PHR
+         useVarDiffH,KM_2_M,HR_2_S,M2PS_2_KM2PHR
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,lon_cc_pd,lat_cc_pd
+         nxmax,nymax,nzmax !,lon_cc_pd,lat_cc_pd
 
       use Diffusion,     only : &
          kx,kz
@@ -597,21 +595,21 @@
            MR_Regrid_MetP_to_CompH,&
            MR_Regrid_Met2d_to_Comp2D
 
-      use Atmosphere,    only : &
-           solar_zenith
+!      use Atmosphere,    only : &
+!           solar_zenith
 
-      use time_data,     only : &
-         time,SimStartHour,Simtime_in_hours,BaseYear,useLeap
+!      use time_data,     only : &
+!         time,Simtime_in_hours,useLeap
 
       implicit none
 
       integer :: i,ii,indx
 
-      integer :: iii,jjj,kkk,hh,mm
-      real(kind=ip) :: tmp
-      real(kind=8) :: hour
-      integer :: jday
-      integer :: iyear,imonth,iday,idoy
+      !integer :: iii,jjj,kkk
+      !real(kind=ip) :: tmp
+      !real(kind=8) :: hour
+      !integer :: jday
+      !integer :: iyear,imonth,iday,idoy
 
       INTERFACE
         integer function HS_DayOfYear(HoursSince,byear,useLeaps)
@@ -639,7 +637,7 @@
         var_User2d_XY_FillVal(indx)= temp_2d_FillVal_VarDiff(i)
         if(i.eq.1)then
            ! Now resample onto computational grid
-          MR_dum2d_met = PBLH_meso_next_step_Met_sp/KM_2_M
+          MR_dum2d_met = PBLH_meso_next_step_Met_sp/real(KM_2_M,kind=sp)
           call MR_Regrid_Met2d_to_Comp2D
           var_User2d_XY(1:nxmax,1:nymax,indx) = MR_dum2d_comp(1:nxmax,1:nymax)
         elseif(i.eq.2)then
@@ -765,7 +763,7 @@
       real(kind=ip) :: LES_LengthScale
 
       if(Kh_model_ID.eq.1)then
-        Khz_meso_next_step_MetP_sp(:,:,:) = diffusivity_vert*M2PS_2_KM2PHR
+        Khz_meso_next_step_MetP_sp(:,:,:) = real(diffusivity_vert*M2PS_2_KM2PHR,kind=sp)
       else
         do i=1,nx_submet
           do j=1,ny_submet
@@ -843,6 +841,7 @@
       real(kind=ip) :: EckF
       real(kind=ip) :: lat
 
+      ! Even if we are not using a BL, we need Ri
       do i=1,nx_submet
         do j=1,ny_submet
           ! For the calculations, we need:
@@ -888,7 +887,7 @@
                 ! since Ri is too high
               Kv_FreeAir = Lc*Lc*abs(dv_dz_col(k))!*Fc(Ri_col_windp(k))
 
-              if(z_col(k).lt.PBLz)then
+              if(useBoundaryLayer.and.z_col(k).lt.PBLz)then
                 ! Within the PBL, use similarity theory
                   ! if PBL_exp=1; linear taper profile factor for Kv between 0 and PBL
                 PBL_profile_fac = (1.0_sp-z_col(k)/PBLz)**PBL_exp
@@ -930,7 +929,7 @@
       subroutine Set_VarDiffH_Meso(Load_MesoSteps,Interval_Frac)
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,dx,dy,IsLatLon,sigma_nz_pd
+         nxmax,nymax,nzmax
 
       use Diffusion,     only : &
          kx,ky
@@ -938,7 +937,6 @@
       use MetReader,     only : &
          MR_dum3d_compH,MR_vx_metP_last,MR_dum3d_metP,MR_dum3d2_metP,MR_iMetStep_Now,&
          MR_vy_metP_last,MR_vy_metP_next,MR_vx_metP_next,&
-         nx_submet,ny_submet,&
            MR_DelMetP_Dx,&
            MR_DelMetP_Dy,&
            MR_Regrid_MetP_to_CompH
@@ -951,7 +949,7 @@
       logical,save  :: first_time = .true.
       real(kind=sp) :: M_2_KM = 1.0e-3_sp
 
-      integer :: i
+      !integer :: i
 
       if(Load_MesoSteps)then
         if(first_time)then
@@ -1167,17 +1165,17 @@
       subroutine Calc_Ri(last_or_next)
 
       use global_param,  only : &
-         GRAV,KM_2_M,useMoistureVars,EPS_SMALL
+         GRAV,KM_2_M !,useMoistureVars,EPS_SMALL
 
       use Atmosphere,    only : &
-         AirSH_meso_last_step_MetP_sp,AirSH_meso_next_step_MetP_sp,&
-         AirTemp_meso_last_step_MetP_sp,AirTemp_meso_next_step_MetP_sp,&
-         AirVPTemp_meso_last_step_MetP_sp,AirVPTemp_meso_next_step_MetP_sp,&
-         R_GAS_DRYAIR,CP_AIR,R_GAS_WATVAP
+!         AirSH_meso_last_step_MetP_sp,AirSH_meso_next_step_MetP_sp,&
+!         AirTemp_meso_last_step_MetP_sp,AirTemp_meso_next_step_MetP_sp,&
+         AirVPTemp_meso_last_step_MetP_sp,AirVPTemp_meso_next_step_MetP_sp
+!         R_GAS_DRYAIR,CP_AIR,R_GAS_WATVAP
 
       use MetReader,     only : &
          nx_submet,ny_submet,np_fullmet,p_fullmet_sp,&
-         x_submet_sp,y_submet_sp,&
+         !x_submet_sp,y_submet_sp,&
          MR_geoH_metP_last,MR_geoH_MetP_next
 
       implicit none
@@ -1196,7 +1194,7 @@
 
       integer       :: i,j,k,k1,k2
       real(kind=ip) :: refP
-      real(kind=ip) :: mixrat
+      !real(kind=ip) :: mixrat
       real(kind=ip) :: del_z
       real(kind=ip) :: dudz,dvdz,dtdz
       real(kind=ip) :: dveldz2
@@ -1255,9 +1253,9 @@
             dV_dz_MetP_sp(i,j,k) = real(sqrt(dveldz2),kind=sp)
 
             if(last_or_next.eq.0)then
-              Ri_meso_last_step_MetP_sp(i,j,k) = Ri
+              Ri_meso_last_step_MetP_sp(i,j,k) = real(Ri,kind=sp)
             else
-              Ri_meso_next_step_MetP_sp(i,j,k) = Ri
+              Ri_meso_next_step_MetP_sp(i,j,k) = real(Ri,kind=sp)
             endif
 
           enddo ! k
@@ -1283,58 +1281,6 @@
         ! Surface roughness is provided, read it from the met file
         call MR_Read_2d_Met_Variable(ivar,MR_iMetStep_Now)
         SurfRoughLen_Met_sp(1:nx_submet,1:ny_submet)  = MR_dum2d_Met(1:nx_submet,1:ny_submet)
-
-      !elseif(useLandCover)then
-      !  ! Set SurfRoughLen_Met_sp from Land use classification
-
-      !  if(LandCover_Format.eq.1)then
-      !    ! 1 degree resolution
-      !    if(LC_grid)!0       Water
-      !    !1       Broadleaf Evergreen Forest
-      !    !2       Coniferous Evergreen Forest and Woodland
-      !    !3       High Latitude Deciduous Forest and Woodland
-      !    !4       Tundra
-      !    !5       Mixed Coniferous Forest and Woodland
-      !    !6       Wooded Grassland
-      !    !7       Grassland
-      !    !8       Bare Ground
-      !    !9       Shrubs and Bare Ground
-      !    !10      Cultivated Crops
-      !    !11      Broadleaf Deciduous Forest and Woodland
-      !    !12      Data Unavailable
-      !  elseif(LandCover_Format.eq.2)then
-      !    ! 8 km resolution
-      !    !0       Water (and Goode's interrupted space)
-      !    !1       Evergreen Needleleaf Forest
-      !    !2       Evergreen Broadleaf Foreset
-      !    !3       Deciduous Needleleaf Forest
-      !    !4       Deciduous Broadleaf Forest
-      !    !5       Mixed Forest
-      !    !6       Woodland
-      !    !7       Wooded Grassland
-      !    !8       Closed Shrubland
-      !    !9       Open Shrubland
-      !    !10      Grassland
-      !    !11      Cropland
-      !    !12      Bare Ground
-      !    !13      Urban and Built-up
-      !  elseif(LandCover_Format.eq.3)then
-      !    ! 1 km resolution
-      !    !0       Water (and Goode's interrupted space)
-      !    !1       Evergreen Needleleaf Forest
-      !    !2       Evergreen Broadleaf Foreset
-      !    !3       Deciduous Needleleaf Forest
-      !    !4       Deciduous Broadleaf Forest
-      !    !5       Mixed Forest
-      !    !6       Woodland
-      !    !7       Wooded Grassland
-      !    !8       Closed Shrubland
-      !    !9       Open Shrubland
-      !    !10      Grassland
-      !    !11      Cropland
-      !    !12      Bare Ground
-      !    !13      Urban and Built-up
-      !  endif
       else
         ! Set SurfRoughLen_Met_sp by assumption
           SurfRoughLen_Met_sp(1:nx_submet,1:ny_submet)  = 0.1_sp
@@ -1347,7 +1293,7 @@
       subroutine Calc_SurfaceFrictionVelocity(last_or_next)
 
       use global_param,  only : &
-         EPS_SMALL,KM_2_M,MPS_2_KMPHR
+         EPS_SMALL,KM_2_M
 
       use MetReader,     only : &
          Met_var_IsAvailable,MR_iMetStep_Now,np_fullmet,MR_iMetStep_Now,MR_Topo_met,&
@@ -1435,7 +1381,7 @@
                 enddo
                 SurfVelx_meso_Met_sp(i,j) = vx_meso_last_step_MetP_sp(i,j,k)
                 SurfVely_meso_Met_sp(i,j) = vy_meso_last_step_MetP_sp(i,j,k)
-                SurfVelh_meso_Met_sp(i,j) = (MR_geoH_metP_last(i,j,k)-MR_Topo_met(i,j))*KM_2_M
+                SurfVelh_meso_Met_sp(i,j) = real((MR_geoH_metP_last(i,j,k)-MR_Topo_met(i,j))*KM_2_M,kind=sp)
               else
                 do k=1,np_fullmet
                   if(MR_geoH_metP_next(i,j,k)*KM_2_M.gt.1000.0_ip*MR_Topo_met(i,j)+z0)then
@@ -1444,7 +1390,7 @@
                 enddo
                 SurfVelx_meso_Met_sp(i,j) = vx_meso_next_step_MetP_sp(i,j,k)
                 SurfVely_meso_Met_sp(i,j) = vy_meso_next_step_MetP_sp(i,j,k)
-                SurfVelh_meso_Met_sp(i,j) = (MR_geoH_metP_next(i,j,k)-MR_Topo_met(i,j))*KM_2_M
+                SurfVelh_meso_Met_sp(i,j) = real((MR_geoH_metP_next(i,j,k)-MR_Topo_met(i,j))*KM_2_M,kind=sp)
               endif
             enddo
           enddo
@@ -1500,7 +1446,7 @@
       integer, intent(in) :: last_or_next
 
       integer :: ivar
-      integer :: i,j,k,k_L,kk
+      integer :: i,j,k,kk
       real(kind=ip) :: denom,tmp
       real(kind=ip) :: Ri_col(np_fullmet)
       real(kind=ip) :: z_col(np_fullmet)
@@ -1671,17 +1617,16 @@
          EPS_SMALL,KM_2_M
 
       use MetReader,     only : &
-         nx_submet,ny_submet,np_fullmet,Met_var_IsAvailable,&
-         MR_geoH_metP_last,MR_geoH_metP_next,MR_dum2d_Met,MR_iMetStep_Now,&
+         nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,MR_geoH_metP_next,&
            MR_Read_2d_Met_Variable
 
       implicit none
 
       integer, intent(in) :: last_or_next
 
-      integer :: ivar
-      integer :: i,j,k,k_L
-      real(kind=ip) :: denom,tmp
+      !integer :: ivar
+      integer :: i,j,k_L
+      !real(kind=ip) :: tmp
       real(kind=ip) :: Ri
       real(kind=ip) :: Ri_col(np_fullmet)
       real(kind=ip) :: z_col(np_fullmet)
@@ -1738,7 +1683,7 @@
 !
 !!******************************************************************************
 
-      function Fc(Ri)
+      function Fc_Jac(Ri)
 
       ! Stability function for vertical diffusion in the free atmosphere above the PBL
       ! Originally from Collins et al, NCAR TN-464, 2004
@@ -1746,20 +1691,45 @@
 
       implicit none
 
-      real(kind=ip) :: Fc ! dimensionless
+      real(kind=ip) :: Fc_Jac ! dimensionless
       real(kind=ip) :: Ri ! dimensionless
 
       if(Ri.ge.0.0_ip)then
-          ! Eq. 4.465  : Stable atmosphere
-        Fc = 1.0_ip/(1.0_ip+10.0_ip*Ri*(1.0_ip+8.0_ip*Ri))
+          ! Eq. 8.70  : Stable atmosphere
+        Fc_Jac = (RI_CRIT-Ri)/Ri
       else
-          ! Eq. 4.464  : unstable
-        Fc = sqrt(1.0_ip-18.0_ip*Ri)
+          ! unstable
+        Fc_Jac = 0.0_ip
       endif
 
       return
 
-      end function Fc
+      end function Fc_Jac
+
+!!******************************************************************************
+
+      function Fc_Collin(Ri)
+
+      ! Stability function for vertical diffusion in the free atmosphere above the PBL
+      ! Originally from Collins et al, NCAR TN-464, 2004
+      ! http://www.cesm.ucar.edu/models/atm-cam/docs/description/description.pdf
+
+      implicit none
+
+      real(kind=ip) :: Fc_Collin ! dimensionless
+      real(kind=ip) :: Ri ! dimensionless
+
+      if(Ri.ge.0.0_ip)then
+          ! Eq. 4.465  : Stable atmosphere
+        Fc_Collin = 1.0_ip/(1.0_ip+10.0_ip*Ri*(1.0_ip+8.0_ip*Ri))
+      else
+          ! Eq. 4.464  : unstable
+        Fc_Collin = sqrt(1.0_ip-18.0_ip*Ri)
+      endif
+
+      return
+
+      end function Fc_Collin
 
 !!******************************************************************************
 

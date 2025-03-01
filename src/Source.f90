@@ -582,12 +582,12 @@
       endif
 
 
-1024  format('  Total Duration (hrs) = ',f6.3,/, &
-             '  Total volume (km3 DRE) = ',f8.4,/,&
-             '  Total ash mass (Tg) = ',f16.8)
+1024  format('   Total Duration (hrs)   = ',f6.3,/, &
+             '   Total volume (km3 DRE) = ',f8.4,/,&
+             '   Total ash mass (Tg)    = ',f16.8)
 
-1025  format('  Total Duration (hrs) = ',f6.3,/, &
-             '  Total ash mass (Tg) = ',f16.8)
+1025  format('   Total Duration (hrs)   = ',f6.3,/, &
+             '   Total ash mass (Tg)    = ',f16.8)
 
       end subroutine EruptivePulse_MassFluxRate
 
