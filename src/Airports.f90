@@ -606,7 +606,7 @@
 
       use mesh,          only : &
          A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,&
-         A3d_Re
+         A3d_Re,IsLatLon
 
       use projection,    only : &
          PJ_proj_for,PJ_proj_inv
@@ -692,25 +692,27 @@
           ExtAirportLon(isite) = ExtAirportLon(isite)+360.0_ip
 
         ! convert lat/lon to the projected values.
-        if (ProjectAirportLocations) then
-          ! For this branch, we are trusting the lon/lat coordinates from columns 1,2
-          lon_in = ExtAirportLon(isite)
-          lat_in = ExtAirportLat(isite)
-          call PJ_proj_for(lon_in,lat_in, A3d_iprojflag, &
-                     A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,A3d_Re, &
-                     xout,yout)
-          ExtAirportX(isite) = real(xout,kind=ip)
-          ExtAirportY(isite) = real(yout,kind=ip)
-        else
-          ! For this branch, we are trusting the projected coordinates from columns 3,4 and inverse-projecting
-          ! to get the lon/lat
-          x_in = ExtAirportX(isite)
-          y_in = ExtAirportY(isite)
-          call PJ_proj_inv(x_in,y_in, A3d_iprojflag, &
-                     A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,A3d_Re, &
-                     xout,yout)
-          ExtAirportLon(isite) = real(xout,kind=ip)
-          ExtAirportLat(isite) = real(yout,kind=ip)
+        if (.not.IsLatLon) then
+          if (ProjectAirportLocations) then
+            ! For this branch, we are trusting the lon/lat coordinates from columns 1,2
+            lon_in = ExtAirportLon(isite)
+            lat_in = ExtAirportLat(isite)
+            call PJ_proj_for(lon_in,lat_in, A3d_iprojflag, &
+                       A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,A3d_Re, &
+                       xout,yout)
+            ExtAirportX(isite) = real(xout,kind=ip)
+            ExtAirportY(isite) = real(yout,kind=ip)
+          else
+            ! For this branch, we are trusting the projected coordinates from columns 3,4 and inverse-projecting
+            ! to get the lon/lat
+            x_in = ExtAirportX(isite)
+            y_in = ExtAirportY(isite)
+            call PJ_proj_inv(x_in,y_in, A3d_iprojflag, &
+                       A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,A3d_Re, &
+                       xout,yout)
+            ExtAirportLon(isite) = real(xout,kind=ip)
+            ExtAirportLat(isite) = real(yout,kind=ip)
+          endif
         endif
 
       enddo

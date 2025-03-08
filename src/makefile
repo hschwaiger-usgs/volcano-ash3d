@@ -47,10 +47,10 @@ SYSINC = make_$(SYSTEM).inc
 #      OMPOPT   : includes optimizations flags for fastest runtime and OpenMP directives
 #                 To run, enter: env OMP_NUM_THREADS=4 Ash3d input_file.inp
 #    This variable cannot be left blank
-RUN = DEBUG
+#RUN = DEBUG
 #RUN = DEBUGOMP
 #RUN = PROF
-#RUN = OPT
+RUN = OPT
 #RUN = OMPOPT
 
 #    This variable cannot be left blank
@@ -332,7 +332,7 @@ write_ASCII.o            \
 write_BINARY.o           \
 write_KML.o              \
 Topography.o             \
-Diffusivity_Variable.o     \
+Diffusivity_Variable.o   \
 ResetParams.o
 
 PPOBJS = Ash3d_VariableModules.o        \
@@ -391,10 +391,10 @@ Input_Data.o: $(ASH3DCCSRC)/Input_Data.f90 $(MFILE) $(SYSINC) Ash3d_VariableModu
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/Input_Data.f90
 ResetParams.o: $(ASH3DCCSRC)/ResetParams.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Tephra.o Output_Vars.o Source_Umbrella.o Diffusion.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/ResetParams.f90
-Topography.o: Topography.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Tephra.o Calc_Mesh.o $(DATAOBJ) write_BINARY.o write_ASCII.o
-	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c Topography.f90
-Diffusivity_Variable.o: Diffusivity_Variable.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Tephra.o Diffusion.o Atmosphere.o
-	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c Diffusivity_Variable.f90
+Topography.o: $(ASH3DCCSRC)/Topography.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Tephra.o Calc_Mesh.o $(DATAOBJ) write_BINARY.o write_ASCII.o
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/Topography.f90
+Diffusivity_Variable.o: $(ASH3DCCSRC)/Diffusivity_Variable.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Tephra.o Diffusion.o Atmosphere.o
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/Diffusivity_Variable.f90
 Help.o: $(ASH3DCCSRC)/Help.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3DCCSRC)/Help.f90
 VotW.o: $(ASH3DCCSRC)/VotW.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Source.o

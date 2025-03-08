@@ -562,6 +562,7 @@
       write(outlog(io),1)'#                30: ECMWA ERA-20C Reanalysis                                                          '
       write(outlog(io),1)'#                32: Air Force Weather Agency                                                          '
       write(outlog(io),1)'#                33: CCSM 3.0 Community Atmospheric Model                                              '
+      write(outlog(io),1)'#                34: ECMWF 0.25-degree forecast                                                        '
       write(outlog(io),1)'#                40: NASA GEOS-5 Cp                                                                    '
       write(outlog(io),1)'#                41: NASA GEOS-5 Np                                                                    '
       write(outlog(io),1)'#                50: Weather Research and Forecast (WRF) output                                        '

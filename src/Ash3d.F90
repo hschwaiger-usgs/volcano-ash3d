@@ -5,10 +5,10 @@
 !  This software is written in Fortran 2003 and is designed for use on a Linux
 !  operating system.
 !  
-!  This software, along with auxillary USGS libraries and related repositories,
-!  can be found at https://code.usgs.gov/vsc/volcano-ash3d
+!  This software, along with auxiliary USGS libraries and related repositories,
+!  can be found at https://code.usgs.gov/vsc/ash3d/volcano-ash3d
 !
-!  To cite for this software, please see https://code.usgs.gov/vsc/volcano-ash3d/CHANGELOG.md
+!  To cite for this software, please see https://code.usgs.gov/vsc/ash3d/volcano-ash3d/CHANGELOG.md
 !  for the doi for each release version. Version 1.0.0 can be referenced by:
 !   Schwaiger, H.F. et al. (2024) Ash3d (Version 1.0.0), U.S. Geological Survey Software Release,
 !     [doi:10.5066/P1SJWAKZ](https://doi.org/10.5066/P1SJWAKZ)
@@ -134,9 +134,9 @@
 !         Insert 'use' statements here
 !
       use Topography
-
+      
       use Diffusivity_Variable
-
+      
 !------------------------------------------------------------------------------
 
       implicit none
@@ -189,6 +189,7 @@
       aloft_percent_remaining = 1.0_ip
       SourceCumulativeVol     = 0.0_ip
       MassConsErr             = 0.0_ip
+
 
         ! input data for ash transport
       call Read_Control_File
@@ -302,6 +303,7 @@
 !
       if(useVarDiffV)                  call Allocate_Atmosphere_Met
       if(useVarDiffH.or.useVarDiffV)   call Allocate_VarDiff_Met
+
 !------------------------------------------------------------------------------
       ! Allocate all the output variables
       call Allocate_Output_UserVars(nxmax,nymax,nzmax,nsmax)
@@ -343,6 +345,7 @@
 !
         if(useVarDiffH)     call Set_VarDiffH_Meso(Load_MesoSteps,Interval_Frac)
         if(useVarDiffV)     call Set_VarDiffV_Meso(Load_MesoSteps,Interval_Frac)
+
 !------------------------------------------------------------------------------
 
 !------------------------------------------------------------------------------
@@ -350,6 +353,7 @@
 !         Insert calls to prep user-specified output
 !
       if(useTopo) call Prep_output_Topo
+      
       if(useVarDiffH.or.useVarDiffV)then
         do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"Calling Prep_output_VarDiff."
@@ -422,14 +426,9 @@
 !       OPTIONAL MODULES
 !         Insert calls to special MesoInterpolaters subroutines here
 !
-        do io=1,2;if(VB(io).le.verbosity_debug1)then
-          write(outlog(io),*)"Calling Set_VarDiffH_Meso."
-        endif;enddo
         if(useVarDiffH)     call Set_VarDiffH_Meso(Load_MesoSteps,Interval_Frac)
-        do io=1,2;if(VB(io).le.verbosity_debug1)then
-          write(outlog(io),*)"Calling Set_VarDiffV_Meso."
-        endif;enddo
         if(useVarDiffV)     call Set_VarDiffV_Meso(Load_MesoSteps,Interval_Frac)
+
 !------------------------------------------------------------------------------
 
           ! Determine if (and which) eruptive pulses are active in the current dt
@@ -578,7 +577,6 @@
             ! Generate output variables if we haven't already
           if(.not.Called_Gen_Output_Vars)then
             call Gen_Output_Vars
-          endif
 !------------------------------------------------------------------------------
 !       OPTIONAL MODULES
 !         Insert calls output routines (every output-step) here
@@ -590,6 +588,7 @@
             call Prep_output_VarDiff
           endif
 !------------------------------------------------------------------------------
+          endif
           call output_results
           !if ((WriteAirportFile_ASCII.or.WriteAirportFile_KML).and. &
           if (Write_PT_Data.and. &

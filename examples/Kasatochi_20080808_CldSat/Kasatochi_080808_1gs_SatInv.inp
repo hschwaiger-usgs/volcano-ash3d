@@ -167,6 +167,7 @@ Kasatochi                          # Volcano name (character*30)
 #                30: ECMWA ERA-20C Reanalysis                                                          
 #                32: Air Force Weather Agency                                                          
 #                33: CCSM 3.0 Community Atmospheric Model                                              
+#                34: ECMWF 0.25-degree forecast
 #                40: NASA GEOS-5 Cp                                                                    
 #                41: NASA GEOS-5 Np                                                                    
 #                50: Weather Research and Forecast (WRF) output                                        
