@@ -11,7 +11,7 @@
 !OPTMOD=TOPO
 !yes 2                         # use topography?; z-mod (0=none,1=shift,2=sigma)
 !1 1.0                         # Topofile format, smoothing radius
-!GEBCO_08.nc                   # topofile name
+!GEBCO_2023.nc                 # topofile name
 ! 
 !  Line 1 indicates whether or not to use topography followed by the integer flag
 !         describing how topography will modify the vertical grid.
@@ -92,6 +92,7 @@
 !
 !    4 : Geotiff (Not yet implemented)
 !
+!  Line 3 contains the name of the file for the topographic data.
 !
 !      subroutine input_data_Topo
 !      subroutine Allocate_Topo
@@ -2206,6 +2207,7 @@
       integer :: i,j
       real(kind=ip) :: ophi,olam
       real(kind=dp) :: xin,yin
+      real(kind=dp) :: xout,yout
       real(kind=ip) :: a1,a2,a3,a4
       real(kind=ip) :: xc,yc,xfrac,yfrac
       integer       :: ilon,ilat
@@ -2378,15 +2380,17 @@
         do j=1,ny_submet
           ! Get lon/lat of met point
           if(IsLatLon_MetGrid)then
-            olam = x_submet_sp(i)
-            ophi = y_submet_sp(j)
+            olam = real(x_submet_sp(i),kind=ip)
+            ophi = real(y_submet_sp(j),kind=ip)
           else
             xin = real(x_submet_sp(i),kind=dp)  ! Projection routines use kind=8
             yin = real(y_submet_sp(j),kind=dp)
             call PJ_proj_inv(xin,yin, &
                            Met_iprojflag, Met_lam0,Met_phi0,Met_phi1,Met_phi2, &
                            Met_k0,Met_Re, &
-                           olam,ophi)
+                           xout,yout)
+            olam = real(xout,kind=ip)
+            ophi = real(yout,kind=ip)
           endif
           if(olam.gt. 180.0_ip.and.&
              loncc_topo_subgrid(nlon_topo_subgrid).lt.180.0_ip)olam=olam-360.0_ip

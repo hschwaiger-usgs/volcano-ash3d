@@ -15,6 +15,7 @@
 !      subroutine CheckEruptivePulses
 !      subroutine TephraSourceNodes
 !      function SourceVolInc
+!      function HandDUR_2_EVol
 !
 !  Note: source type is given on line 8 of block 1 of the control file
 !        For a Suzuki source, we would have just the Suzuki constant:
@@ -66,7 +67,8 @@
              EruptivePulse_MassFluxRate,&
              CheckEruptivePulses,       &
              TephraSourceNodes,         &
-             SourceVolInc
+             SourceVolInc,              &
+             HandDUR_2_EVol
 
         ! Publicly available variables
 
@@ -834,6 +836,39 @@
       return
 
       end function SourceVolInc
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  HandDUR_2_EVol(PlmH,EDur)
+!
+!  Called from: 
+!  Arguments:
+!    PlmH = height of plume in km
+!    EDur = duration in hours
+!
+!  This function calculates the expected eruptive volume (DRE) given the plume
+!  height and duration from the Mastin relation.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      function HandDUR_2_EVol(PlmH,EDur)
+
+      real(kind=ip) :: PlmH
+      real(kind=dp) :: EDur  ! Time is always in dp
+
+      real(kind=ip) :: HandDUR_2_EVol
+
+      ! From Mastin
+      real(kind=ip), parameter :: Coeff = 2.0_ip
+      real(kind=ip), parameter :: Expo  = 0.241_ip
+
+      ! From Sparks
+      !real(kind=ip), parameter :: Coeff = 1.67_ip
+      !real(kind=ip), parameter :: Expo  = 0.259_ip
+
+        HandDUR_2_EVol = EDur*3600.0_ip*(PlmH/Coeff)**(1.0_ip/Expo) / 1.0e9_ip
+
+      end function HandDUR_2_EVol
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

@@ -893,9 +893,9 @@
                 PBL_profile_fac = (1.0_sp-z_col(k)/PBLz)**PBL_exp
 
                 if(IsLatLon_MetGrid)then
-                  lat = y_submet_sp(j)
+                  lat = real(y_submet_sp(j),kind=ip)
                 else
-                  lat = MR_xy2ll_ylat(i,j)
+                  lat = real(MR_xy2ll_ylat(i,j),kind=ip)
                 endif
                 lat = max(20.0_ip,abs(lat));
                 EckF= 2.0_ip*7.292e-5_ip*sin(lat*DEG2RAD);
@@ -944,7 +944,7 @@
       implicit none
 
       logical      ,intent(in) :: Load_MesoSteps
-      real(kind=ip),intent(in) :: Interval_Frac
+      real(kind=dp),intent(in) :: Interval_Frac
 
       logical,save  :: first_time = .true.
       real(kind=sp) :: M_2_KM = 1.0e-3_sp
@@ -1028,7 +1028,7 @@
       kx(1:nxmax,1:nymax,1:nzmax) = real( Khz_meso_last_step_sp(:,:,:),kind=ip) + &
                                     real((Khz_meso_next_step_sp(:,:,:) - &
                                           Khz_meso_last_step_sp(:,:,:)),kind=ip) * &
-                                              Interval_Frac
+                                    real(Interval_Frac,kind=ip)
       ky = kx
 
       ! Set boundary kx and ky
@@ -1076,7 +1076,7 @@
       implicit none
 
       logical      ,intent(in) :: Load_MesoSteps
-      real(kind=ip),intent(in) :: Interval_Frac
+      real(kind=dp),intent(in) :: Interval_Frac
 
       logical,save :: first_time = .true.
 
@@ -1142,7 +1142,7 @@
       kz(1:nxmax,1:nymax,1:nzmax) = real(Kv_meso_last_step_sp(:,:,:),kind=ip) + &
                                     real((Kv_meso_next_step_sp(:,:,:) - &
                                           Kv_meso_last_step_sp(:,:,:)),kind=ip) * &
-                                              Interval_Frac * M2PS_2_KM2PHR
+                                    real(Interval_Frac,kind=ip) * M2PS_2_KM2PHR
       ! Set boundary kz
         ! Bottom
       kz(0:nxmax+1,0:nymax+1,0) = kz(0:nxmax+1,0:nymax+1,1)
@@ -1542,9 +1542,9 @@
             ! (2) Eckman thickness
             !     This always has a non-zero solution
             if(IsLatLon_MetGrid)then
-              lat = y_submet_sp(j)
+              lat = real(y_submet_sp(j),kind=ip)
             else
-              lat = MR_xy2ll_ylat(i,j)
+              lat = real(MR_xy2ll_ylat(i,j),kind=ip)
             endif
             lat = max(20.0_ip,abs(lat));
             EckF= 2.0_ip*7.292e-5_ip*sin(lat*DEG2RAD);

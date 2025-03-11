@@ -29,7 +29,7 @@
 
         ! The first two precision parameters can be changed to meet your needs
       integer, parameter,public :: op         = 4 ! Output precision
-      integer, parameter,public :: ip         = 8 ! Internal precision
+      integer, parameter,public :: ip         = 4 ! Internal precision
 
         ! These single and double precision parameters should be 4 and 8
       integer, parameter,public :: sp = selected_real_kind( 6,   37) ! single precision
