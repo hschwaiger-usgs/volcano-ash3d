@@ -503,6 +503,8 @@
       deallocate(DelDxonD_cc)
       deallocate(DelDyonD_cc)
       deallocate(IsWater_subgrid)
+      deallocate(lon_topo_fullgrid)
+      deallocate(lat_topo_fullgrid)
 
       end subroutine Deallocate_Topo
 
@@ -2574,7 +2576,9 @@
       integer :: i,j,it
       integer :: ncells
       real(kind=ip) :: topo_avg,dist,cell_len
-      real(kind=ip) :: deltheta,x1,x2,y1,y2,z1,z2
+      real(kind=ip) :: deltheta
+      real(kind=dp) :: x1,x2,y1,y2,z1,z2  ! these really need to be double-precision
+      real(kind=dp) :: tmp_dp
       real(kind=ip) :: rad_smooth_ang
       real(kind=ip) :: Const1_2d     = 0.6820926132509800_ip
       real(kind=ip) :: fac_1,r,temp1,wg1,char_len,norm
@@ -2677,12 +2681,12 @@
             norm = 0.0_ip
             if(IsLatLon)then
               ! Get distance by converting to cartesian on unit sphere
-              x1=sin(0.5_ip*PI-lat_cc_pd(j)*DEG2RAD)*cos(lon_cc_pd(i)*DEG2RAD)
-              y1=sin(0.5_ip*PI-lat_cc_pd(j)*DEG2RAD)*sin(lon_cc_pd(i)*DEG2RAD)
-              z1=cos(0.5_ip*PI-lat_cc_pd(j)*DEG2RAD)
+              x1=real(sin(0.5_ip*PI-lat_cc_pd(j)*DEG2RAD)*cos(lon_cc_pd(i)*DEG2RAD),kind=dp)
+              y1=real(sin(0.5_ip*PI-lat_cc_pd(j)*DEG2RAD)*sin(lon_cc_pd(i)*DEG2RAD),kind=dp)
+              z1=real(cos(0.5_ip*PI-lat_cc_pd(j)*DEG2RAD),kind=dp)
             else
-              x1 = x_cc_pd(i)
-              y1 = y_cc_pd(j)
+              x1 = real(x_cc_pd(i),kind=dp)
+              y1 = real(y_cc_pd(j),kind=dp)
             endif
 
             do ii=max(-1,i-ipad),min(i+ipad,nxmax+2)
@@ -2693,19 +2697,20 @@
                 else
                   if(IsLatLon)then
                     ! Get distance by converting to cartesian on unit sphere
-                    x2=sin(0.5_ip*PI-lat_cc_pd(jj)*DEG2RAD)*cos(lon_cc_pd(ii)*DEG2RAD)
-                    y2=sin(0.5_ip*PI-lat_cc_pd(jj)*DEG2RAD)*sin(lon_cc_pd(ii)*DEG2RAD)
-                    z2=cos(0.5_ip*PI-lat_cc_pd(jj)*DEG2RAD)
+                    x2=real(sin(0.5_ip*PI-lat_cc_pd(jj)*DEG2RAD)*cos(lon_cc_pd(ii)*DEG2RAD),kind=dp)
+                    y2=real(sin(0.5_ip*PI-lat_cc_pd(jj)*DEG2RAD)*sin(lon_cc_pd(ii)*DEG2RAD),kind=dp)
+                    z2=real(cos(0.5_ip*PI-lat_cc_pd(jj)*DEG2RAD),kind=dp)
                     ! Position vectors were normalized so angle is just acos
                     ! of inner product
-                    deltheta = acos(x1*x2 + y1*y2 + z1*z2)
+                    tmp_dp = max(-1.0_dp,min(x1*x2 + y1*y2 + z1*z2,1.0_dp)) ! cap the ends at =-1
+                    deltheta = real(acos(tmp_dp),kind=ip)
                     dist = deltheta*RAD_EARTH
                     !ijDel_X(1) = x1-x2
                     !ijDel_X(2) = y1-y2
                   else
-                    x2 = x_cc_pd(ii)
-                    y2 = y_cc_pd(jj)
-                    dist=sqrt((x2-x1)**2.0_ip + (y2-y1)**2.0_ip)
+                    x2 = real(x_cc_pd(ii),kind=dp)
+                    y2 = real(y_cc_pd(jj),kind=dp)
+                    dist=real(sqrt((x2-x1)**2.0_ip + (y2-y1)**2.0_ip),kind=ip)
                     !ijDel_X(1) =x_cc_pd(i)-x_cc_pd(ii)
                     !ijDel_X(2) =y_cc_pd(i)-y_cc_pd(ii)
                   endif
