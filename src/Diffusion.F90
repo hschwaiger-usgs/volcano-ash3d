@@ -878,6 +878,8 @@
                     info)      !o
               concen_pd(rmin:rmin-1+ncells,j,k,n,ts1) = B_s(:,1)
             elseif(ip.eq.8)then
+              ! NOTE: if you are here because the compiler complained about conversion from REAL(8) to REAL(4)
+              !       when using ip=4, rest assured that this branch will not be executed when ip=4
               call dgtsv(     &
                     nlineq, &  !i The order of the matrix A.  N >= 0.
                     nrhs,   &  !i The number of right hand sides
@@ -1133,6 +1135,8 @@
                     info)      !o
               concen_pd(i,rmin:rmin-1+ncells,k,n,ts1) = B_s(:,1)
             elseif(ip.eq.8)then
+              ! NOTE: if you are here because the compiler complained about conversion from REAL(8) to REAL(4)
+              !       when using ip=4, rest assured that this branch will not be executed when ip=4
               call dgtsv(     &
                     nlineq, &  !i The order of the matrix A.  N >= 0.
                     nrhs,   &  !i The number of right hand sides
@@ -1393,6 +1397,8 @@
                     info)      !o
               concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = B_s(:,1)
             elseif(ip.eq.8)then
+              ! NOTE: if you are here because the compiler complained about conversion from REAL(8) to REAL(4)
+              !       when using ip=4, rest assured that this branch will not be executed when ip=4
               call dgtsv(     &
                     nlineq, &  !i The order of the matrix A.  N >= 0.
                     nrhs,   &  !i The number of right hand sides

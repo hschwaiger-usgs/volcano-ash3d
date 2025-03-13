@@ -325,7 +325,7 @@
       real(kind=dp)     :: StartHour
       real(kind=dp)     :: RunStartHour    ! Start time of model run, in hours since BaseYear
       character(len=100):: CompVer
-      character(len=604):: CompOpt
+      character(len=608):: CompOpt
       logical           :: IsThere
 
       INTERFACE
@@ -3768,26 +3768,26 @@
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),9) n_gs_max, FV_ID
           if(FV_ID.eq.0)then
-            write(outlog(io),*)"Fall Model = None (tracer)"
+            write(outlog(io),*)"               None (tracer)"
           elseif(FV_ID.eq.1)then
-            write(outlog(io),*)"Fall Model = Wilson and Huang"
+            write(outlog(io),*)"               Wilson and Huang"
             write(outlog(io),*)"     Input particle sizes are interpreted to be the mean; Da=(A+B+C)/3"
           elseif(FV_ID.eq.2)then
-            write(outlog(io),*)"Fall Model = Wilson and Huang + Cunningham slip"
+            write(outlog(io),*)"               Wilson and Huang + Cunningham slip"
             write(outlog(io),*)"     Input particle sizes are interpreted to be the mean; Da=(A+B+C)/3"
           elseif(FV_ID.eq.3)then
-            write(outlog(io),*)"Fall Model = Wilson and Huang + Mod by PCM"
+            write(outlog(io),*)"               Wilson and Huang + Mod by PCM"
             write(outlog(io),*)"     Input particle sizes are interpreted to be the mean; Da=(A+B+C)/3"
           elseif(FV_ID.eq.4)then
-            write(outlog(io),*)"Fall Model = Ganser"
+            write(outlog(io),*)"               Ganser"
             write(outlog(io),*)"     Input particle sizes are interpreted to be the geometric mean; Dv=(ABC)^0.33"
             write(outlog(io),*)"     which is also the diameter of a volume-equivalent sphere."
           elseif(FV_ID.eq.5)then
-            write(outlog(io),*)"Fall Model = Ganser + Cunningham slip"
+            write(outlog(io),*)"               Ganser + Cunningham slip"
             write(outlog(io),*)"     Input particle sizes are interpreted to be the geometric mean; Dv=(ABC)^0.33"
             write(outlog(io),*)"     which is also the diameter of a volume-equivalent sphere."
           elseif(FV_ID.eq.6)then
-            write(outlog(io),*)"Fall Model = Stokes flow + slip"
+            write(outlog(io),*)"               Stokes flow + slip"
           else
             write(outlog(io),*)"Default Fall Model = Wilson and Huang"
             write(outlog(io),*)"     Input particle sizes are interpreted to be the mean; Da=(A+B+C)/3"
