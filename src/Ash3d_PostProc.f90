@@ -458,9 +458,10 @@
         ! If itime=-1 (for the final step), then
         !   We want to call this subroutine silently, so reset the verbosity
         tmp_int = VB(1)
-        VB(1)   = verbosity_silent
+        !VB(1)   = verbosity_silent
 #ifdef USENETCDF
-        call NC_Read_Output_Products(-1)
+        !call NC_Read_Output_Products(-1)
+        call NC_Read_Output_Products(1)
 #endif  
         VB(1)   = tmp_int
 
@@ -488,12 +489,17 @@
                iprod.eq.10.or.&
                iprod.eq.11.or.&
                iprod.eq.12.or.&
-               iprod.eq.13)then
+               iprod.eq.13.or.&
+               (iprod.eq.0.and.nvar_User2d_XY.eq.1))then  ! Last line is for custom var(t)
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)'Select time step:'
             do i=1,nWriteTimes
-              write(outlog(io),*)i,real(WriteTimes(i),kind=sp),&
-                                 HS_xmltime(SimStartHour+WriteTimes(i),BaseYear,useLeap)
+              if(WriteTimes(i).lt.1.0e10)then
+                write(outlog(io),*)i,real(WriteTimes(i),kind=sp),&
+                                   HS_xmltime(SimStartHour+WriteTimes(i),BaseYear,useLeap)
+              else
+                write(outlog(io),*)i,"step appears corrupt. Do not select this step."
+              endif
             enddo
             write(outlog(io),*)'Enter index for time step:'
           endif;enddo
@@ -1310,6 +1316,11 @@
         Fill_Value = '-9999.'
         OutFillValue = -1.0_ip
         filename_root = 'Topography          '
+      elseif(iprod.eq.0)then
+        OutVar = real(Extra2dVar,kind=ip)
+        Fill_Value = '-9999.'
+        !filename_root = 'UserVar             '
+        filename_root = Extra2dVarName
       endif
       ! Now mask out non-cloud values
       if(iprod.eq.10.or.&  ! CloudHeight
@@ -1324,6 +1335,8 @@
             if(CloudArrivalTime(i,j).lt.0.0_ip)mask(i,j) = .false.
           enddo
         enddo
+      else
+        mask(1:nxmax,1:nymax) = .true.
       endif
 
       if(outformat.eq.1)then  ! ASCII

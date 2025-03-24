@@ -387,7 +387,7 @@
 !
 !  Called from: Ash3d_ASCII_check.f90 and Ash3d_PostProc.F90
 !  Arguments:
-!    filename = root name of file (20 characters)
+!    filename = full filename (80 characters)
 !
 !  Subroutine that reads in 2-D arrays in ESRI ASCII raster format and
 !  populates A_nx,A_ny,A_XY,A_xll,A_yll,A_dx,A_dy,A_Fill

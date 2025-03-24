@@ -5135,13 +5135,15 @@
       subroutine Read_PostProc_Control_File(informat,iprod1,iprod2,ndims,outformat,iplotpref,itime)
 
       use io_data,       only : &
-         PP_infile,concenfile,datafileIn,infile,HaveInfile
+         PP_infile,concenfile,datafileIn,infile,HaveInfile,&
+         nvar_User2d_static_XY,nvar_User2d_XY
 
       use mesh,          only : &
          nxmax,nymax,nzmax,dx,dy,dz_const,xLL,yLL,IsLatLon,lonLL,latLL,de,dn
 
       use Output_Vars,   only : &
-         ContourFilled,Con_Cust,Con_Cust_N,Con_Cust_RGB,Con_Cust_Lev
+         ContourFilled,Con_Cust,Con_Cust_N,Con_Cust_RGB,Con_Cust_Lev, &
+         Extra2dVarName
 
       integer, intent(out) :: informat
       integer, intent(out) :: iprod1
@@ -5227,7 +5229,7 @@
 
       ! Line 4:
       !  The code for the variable to read and optionally an output code.
-      !  Normally, the variable read with be what is written out, but you
+      !  Normally, the variable read wil be what is written out, but you
       !  could have a binary 3d concentration and want cloud_load or have
       !  an ASCII deposit (in mm) and want a plot of deposit in inches.
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
@@ -5238,9 +5240,27 @@
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) iprod1, ivalue
       if(iostatus.eq.0)then
-        iprod2 = ivalue
+        if(iprod1.eq.0)then
+          ! If we are reading in a non-standard product, then interpret the second integer
+          ! to be the TS or no flag
+          iprod2 = iprod1
+          if(ivalue.eq.1)then
+            nvar_User2d_static_XY = 1
+          else
+            nvar_User2d_XY = 1
+          endif
+        else
+          ! If this is a standard product code, then second int is the outproduct
+          iprod2 = ivalue
+        endif
       else
-        iprod2 = iprod1
+        if(iprod1.eq.0)then
+          ! non-standard product given, but no TS code, assume TS
+          nvar_User2d_XY = 1
+        else
+          ! standard product 1, but no product 2; assume the same
+          iprod2 = iprod1
+        endif
       endif
       ! Error-checking these values
       if(iprod1.lt.0.or.iprod1.gt.16)then
@@ -5253,7 +5273,7 @@
           write(outlog(io),*)"Variable code of input data = ",iprod1
         endif;enddo
       endif
-      if(iprod2.lt.1.or.iprod2.gt.16)then
+      if(iprod2.lt.0.or.iprod2.gt.16)then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: Invalid format code output variable type."
         endif;enddo
@@ -5265,10 +5285,17 @@
       endif
         ! Now the bonus line if the user requests a custom variable
       if(iprod1.eq.0)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
-          write(errlog(io),*)"ERROR: Need to code custom variables in control file"
-        endif;enddo
-        stop 1
+
+        read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+        linebuffer050 = "Reading custom variable name from control file"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) Extra2dVarName
+        linebuffer050 = "Reading datafileIn from linebuffer"
+
+        !do io=1,2;if(VB(io).le.verbosity_error)then
+        !  write(errlog(io),*)"ERROR: Need to code custom variables in control file"
+        !endif;enddo
+        !stop 1
       endif
 
       ! Line 5:
