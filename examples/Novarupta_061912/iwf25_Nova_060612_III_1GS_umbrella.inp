@@ -71,11 +71,11 @@
 #  linear       : mass uniformly distributed from z-vent to PlmH                                       
 # Line 9 : number of pulses to be read in BLOCK 2                                                      
 ******************* BLOCK 1 ***************************************************
-Novarupta                          # Volcano name (character*30) (61.299,152.251)
-1 4 -107.0 50.0 50.0 50.0 6367.470 # Proj flags and params
-0.0 0.0                            # x, y of LL corner of grid (km, or deg. if latlongflag=1) -165 40
+Novarupta                          # Volcano name (character*30)
+1 4 -107.0 50.0 50.0 50.0 6367.470 # Proj flags and params; first term (LLflag) is 1, so all else ignored
+0.0 0.0                            # x, y of LL corner of grid (km, or deg. if latlongflag=1)
 360.0  80.0                        # grid width and height (km, or deg. if latlonflag=1)
--155.1591 58.2624 1.0              # vent location         (km, or deg. if latlonflag=1) 52.177N 175.508W
+-155.1591 58.2624 1.0              # vent location         (km, or deg. if latlonflag=1)
 1.0      1.0                       # DX, DY of grid cells  (km, or deg. if latlonflag=1)
 1.0                                # DZ of grid cells      (always km)
 0.0      umbrella                  # diffusion coefficient (m2/s), Suzuki constant
@@ -196,13 +196,26 @@ netcdf          #format of ash concentration files                              
 1.0
 *******************************************************************************
 # WIND INPUT FILES                                                                                     
-# The following block of data contains names of wind files.                                            
-# If we are reading from a 1-D wind sounding (i.e. iwind=1) then there should                          
-# be only one wind file.                                                                               
-# If we are reading gridded data there should be iWinNum wind files, each having                       
-# the format volcano_name_yyyymmddhh_FHhh.win                                                          
-# For iwindformat=25 (continuous wind data from 1948-pres), just give                                  
-# the directory with the windfiles (e.g. Wind_nc)                                                      
+# The following block of data contains names of wind files. There should be one line for
+# each of nWindFiles (from Block 3 Line 5) windfiles. Files should be given in
+# chronological order, should have names with only letters and numbers (no spaces)
+# and should not exceed 130 characters in length.
+# For iwind=5 (files with hard-coded paths), just provide the directory with the
+# windfiles or the root of the dataset (if files are sorted by year).
+# For example, iwind=5, iwindformat=25 for NCEP reanalysis, data might look like:
+# /data/WindFiles/NCEP
+# |-- 2016
+# |   |-- air.2016.nc
+# |   |-- hgt.2016.nc
+# |   |-- omega.2016.nc
+# |   |-- uwnd.2016.nc
+# |   `-- vwnd.2016.nc
+# |-- 2017
+#     |-- air.2017.nc
+# In this case, Block 5 will just contain one line: /data/WindFiles/NCEP or just NCEP
+# if you have a soft link in the run directory.
+# For a network of radiosonde data, please see the MetReader documentation for
+# the input specification https://code.usgs.gov/vsc/ash3d/volcano-ash3d-metreader.
 ******************* BLOCK 5 ***************************************************
 NCEP
 *******************************************************************************
@@ -214,7 +227,7 @@ NCEP
 #               airport latitude, longitude, projected x and y coordinates,                            
 #               and airport name.  If you are using a projected grid,                                  
 #               THE X AND Y MUST BE IN THE SAME PROJECTION as the computational grid.                  
-#               Alternatively, if coordinates can be projected via libprojection                       
+#               Alternatively, coordinates can be projected via libprojection                       
 #               by typing "yes" to the last parameter                                                  
 ******************* BLOCK 6 ***************************************************
 no                            # Write out ash arrival times at airports to ASCII FILE?
@@ -247,15 +260,14 @@ yes                           # Defer to Lon/Lat coordinates? ("no" defers to pr
 # will be distributed over the previous bins via a log-normal distribution in phi.                     
 # The last bin would be interpreted as:                                                                
 # diam (neg value) , phi_mean, phi_stddev                                                              
-#                              # nsmax FV_ID 
 ******************* BLOCK 7 ***************************************************
-1 2                           #Number of settling velocity groups
-0.0010  1.0 2000.0 0.8
+1 2                           # Number of grain-size bins. FV_ID not given; defaults to 1
+0.0010  1.0 2000.0 0.8        # grain size (mm), mass fraction, density (kg/m3), [F=0.44]
 *******************************************************************************
 # Options for writing vertical profiles                                                                
 # The first line below gives the number of locations (nlocs) where vertical                            
 # profiles are to be written.  That is followed by nlocs lines, each of which                          
-# contain the location, in the same coordinate as the computational grid.                              
+# contain the location, in the same coordinates as the computational grid.                              
 # Optionally, a site name can be provided in after the location.                                       
 ******************* BLOCK 8 ***************************************************                        
 0                             # number of locations for vertical profiles (nlocs)                      
