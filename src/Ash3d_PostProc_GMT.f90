@@ -21,10 +21,10 @@
       use io_units
 
       use global_param,  only : &
-         DirDelim
+         DirDelim,EPS_SMALL
 
       use io_data,       only : &
-         Ash3dHome,concenfile
+         Ash3dHome
 
 #if USEGMT
       ! This is only for the experimental GMT API
@@ -60,6 +60,7 @@
 !    iprod         = product ID
 !    itime         = time index from netcdf data file
 !    OutVar        = 2-d array to be written to ASCII file
+!    Fill_Value    = NaN value
 !    writeContours = logical
 !
 !  This subroutine creates a png map of the variable in OutVar using the GMT
@@ -71,13 +72,13 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine write_2Dmap_PNG_GMT(nx,ny,iprod,itime,OutVar,writeContours)
+      subroutine write_2Dmap_PNG_GMT(nx,ny,iprod,itime,OutVar,Fill_Value,writeContours)
 
       use mesh,          only : &
          A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
          A3d_k0_scale,A3d_Re,IsLatLon, &
          latLL,lonLL,latUR,lonUR,xLL,yLL,xUR,yUR,&
-         lon_cc_pd,lat_cc_pd !,&
+         lon_cc_pd,lat_cc_pd,dx,dy,de,dn !,&
          !A3d_lam1,A3d_lam2,de,dn,dx,dy,x_cc_pd,y_cc_pd
 
       use Output_Vars,   only : &
@@ -117,10 +118,11 @@
       integer      ,intent(in) :: iprod
       integer      ,intent(in) :: itime
       real(kind=ip),intent(in) :: OutVar(nx,ny)
+      real(kind=ip),intent(in) :: Fill_Value
       logical      ,intent(in) :: writeContours
 
       logical            :: mask(nx,ny)
-      character(len=6)   :: Fill_Value
+      character(len=6)   :: Fill_Value_str
       character(len=16)  :: fileps  = "temp.ps"
       character(len=200) :: cmd
 
@@ -142,7 +144,9 @@
       real(kind=ip)  :: asprat
 
       character(len=10) :: dp_gmtfile
+      character(len=10) :: dp_outfile
       character(len=10) :: dp_confile
+
       character(len=25) :: gmtcom
       integer           :: ioerr
       integer           :: iostatus
@@ -172,13 +176,17 @@
       character(len=50) :: proj_str
       character(len=50) :: projX_str
       character(len=50) :: area_str
+      character(len=50) :: area2_str
       character(len=50) :: coast_str
       character(len=50) :: river_str
       character(len=50) :: start_ps
       character(len=50) :: contn_ps
+      character(len=50) :: incr_str
       character(len=50) :: end_ps
       logical           :: IsThere
-      real(kind=dp)      :: olam,ophi ! using precision needed by libprojection
+      logical           :: IsRegGrid
+      real(kind=ip)     :: tmp_ip
+      real(kind=dp)     :: olam,ophi ! using precision needed by libprojection
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
@@ -222,7 +230,7 @@
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
         title_legend = 'Dep.Thick.(mm)'
         units = " (mm)"
-        Fill_Value = '-9999.'
+        Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
           nConLev = Con_DepThick_mm_N
           allocate(zrgb(nConLev,3))
@@ -236,7 +244,7 @@
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
         title_legend = 'Dep.Thick.(in)'
         units = " (in)"
-        Fill_Value = '-9999.'
+        Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
           nConLev = Con_DepThick_in_N
           allocate(zrgb(nConLev,3))
@@ -250,7 +258,7 @@
         title_plot = 'Final Deposit Thickness'
         title_legend = 'Dep.Thick.(mm)'
         units = " (mm)"
-        Fill_Value = '-9999.'
+        Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
           nConLev = Con_DepThick_mm_N
           allocate(zrgb(nConLev,3))
@@ -264,7 +272,7 @@
         title_plot = 'Final Deposit Thickness'
         title_legend = 'Dep.Thick.(in)'
         units = " (in)"
-        Fill_Value = '-9999.'
+        Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
           nConLev = Con_DepThick_in_N
           allocate(zrgb(nConLev,3))
@@ -278,7 +286,7 @@
         write(title_plot,'(a20)')'Ashfall arrival time'
         title_legend = 'Time (hours)'
         units = " (hours)"
-        Fill_Value = '-9999.'
+        Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
           nConLev = Con_DepTime_N
           allocate(zrgb(nConLev,3))
@@ -298,7 +306,7 @@
         write(title_plot,'(a26,f5.2,a6)')'Ash-cloud concentration t=',WriteTimes(itime),' hours'
         title_legend = 'Max.Con.(mg/m3)'
         units = " (mg/m3)"
-        Fill_Value = '-9999.'
+        Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
           nConLev = Con_CloudCon_N
           allocate(zrgb(nConLev,3))
@@ -312,7 +320,7 @@
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud height t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Height(km)'
         units = " (km)"
-        Fill_Value = '-9999.'
+        Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
           nConLev = Con_CloudTop_N
           allocate(zrgb(nConLev,3))
@@ -326,7 +334,7 @@
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud bottom t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Bot.(km)'
         units = " (km)"
-        Fill_Value = '-9999.'
+        Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
           nConLev = Con_CloudBot_N
           allocate(zrgb(nConLev,3))
@@ -340,7 +348,7 @@
         write(title_plot,'(a17,f5.2,a6)')'Ash-cloud load t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Load(T/km2)'
         units = " (T/km2)"
-        Fill_Value = '-9999.'
+        Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
           nConLev = Con_CloudLoad_N
           allocate(zrgb(nConLev,3))
@@ -354,7 +362,7 @@
         write(title_plot,'(a24,f5.2,a6)')'Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Refl.(dBz)'
         units = " (dBz)"
-        Fill_Value = '-9999.'
+        Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
           nConLev = Con_CloudRef_N
           allocate(zrgb(nConLev,3))
@@ -368,7 +376,7 @@
         write(title_plot,'(a22)')'Ash-cloud arrival time'
         title_legend = 'Time (hours)'
         units = " (hours)"
-        Fill_Value = '-9999.'
+        Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
           nConLev = Con_CloudTime_N
           allocate(zrgb(nConLev,3))
@@ -382,6 +390,7 @@
         write(title_plot,'(a10)')'Topography'
         title_legend = 'Elevation (km)'
         units = " (hours)"
+        Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
           nConLev = 8
           allocate(zrgb(nConLev,3))
@@ -398,6 +407,8 @@
       else
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: unexpected variable"
+          write(errlog(io),*)"         iprod = ",iprod
+          write(errlog(io),*)"       Cannot map this variable."
         endif;enddo
         stop 1
       endif
@@ -423,8 +434,44 @@
         mask = .true.
       endif
 
-      varname = "outvar"
-      call write_2D_ASCII(nx,ny,OutVar,mask,Fill_Value,varname)
+      if(IsLatLon)then
+        if(abs(dn-de).lt.EPS_SMALL)then
+          IsRegGrid = .true.
+        else
+          IsRegGrid = .false.
+        endif
+      else
+        if(abs(dx-dy).lt.EPS_SMALL)then
+          IsRegGrid = .true.
+        else
+          IsRegGrid = .false.
+        endif
+      endif
+      if(IsRegGrid)then
+        ! If the grid is regular (dx=dy) then we can write an ESRI ASCII file and convert to grd
+        ! via gmt grdconvert outvar.dat=ef out.grd
+        varname = "outvar"
+        call write_2D_ASCII(nx,ny,OutVar,mask,Fill_Value_str,varname)
+      else
+        write(dp_outfile,53) "outvar.dat"
+        open(54,file=dp_outfile,status='replace')
+        do i = 1,nx
+          do j = 1,ny
+            if(lon_cc_pd(1).lt.180.0_ip)then
+              tmp_ip = lon_cc_pd(i)
+            else
+              tmp_ip = lon_cc_pd(i)-360.0_ip
+            endif
+            if(abs(OutVar(i,j)-Fill_Value).lt.EPS_SMALL)then
+              write(54,*)tmp_ip,lat_cc_pd(j),"NaN"
+            else
+              write(54,*)tmp_ip,lat_cc_pd(j),OutVar(i,j)
+            endif
+          enddo
+          !write(54,*)""
+        enddo
+        close(54)
+      endif
 
       ! write contour pen specifications to strings
       do i=1,nConLev
@@ -561,7 +608,6 @@
                       olam,ophi)
         lonUR = real(olam,kind=ip)
         latUR = real(ophi,kind=ip)
-
       endif
 
       ! Note, this subroutine requires lon/lat for input values.
@@ -604,6 +650,38 @@
       area_str = trim(area_str) // "/" // trim(adjustl(flt_str))
       write(flt_str,'(f8.3)')latUR
       area_str = trim(area_str) // "/" // trim(adjustl(flt_str)) // "r"
+      area2_str = " -R"
+      if(IsLatLon)then
+        write(flt_str,'(f8.3)')lonLL+de*0.5_ip
+        area2_str = trim(area2_str) // trim(adjustl(flt_str))
+        write(flt_str,'(f8.3)')latLL+dn*0.5_ip
+        area2_str = trim(area2_str) // "/" // trim(adjustl(flt_str))
+        write(flt_str,'(f8.3)')lonUR-de*0.5_ip
+        area2_str = trim(area2_str) // "/" // trim(adjustl(flt_str))
+        write(flt_str,'(f8.3)')latUR-dn*0.5_ip
+        area2_str = trim(area2_str) // "/" // trim(adjustl(flt_str)) // "r"
+        ! Increment string:-I0.263d/0.127d
+        incr_str = " -I"
+        write(flt_str,'(f8.3)')de
+        incr_str = trim(incr_str) // trim(adjustl(flt_str)) // "d"
+        write(flt_str,'(f8.3)')dn
+        incr_str = trim(incr_str) // trim(adjustl(flt_str)) // "d"
+      else
+        write(flt_str,'(f8.3)')lonLL+dx*0.5_ip
+        area2_str = trim(area2_str) // trim(adjustl(flt_str))
+        write(flt_str,'(f8.3)')latLL+dy*0.5_ip
+        area2_str = trim(area2_str) // "/" // trim(adjustl(flt_str))
+        write(flt_str,'(f8.3)')lonUR-dx*0.5_ip
+        area2_str = trim(area2_str) // "/" // trim(adjustl(flt_str))
+        write(flt_str,'(f8.3)')latUR-dy*0.5_ip
+        area2_str = trim(area2_str) // "/" // trim(adjustl(flt_str)) // "r"
+        ! Increment string:-I0.263d/0.127d
+        incr_str = " -I"
+        write(flt_str,'(f8.3)')dx
+        incr_str = trim(incr_str) // trim(adjustl(flt_str)) // "d"
+        write(flt_str,'(f8.3)')dy
+        incr_str = trim(incr_str) // trim(adjustl(flt_str)) // "d"
+      endif
 
       ploth = plotw*asprat
 
@@ -723,7 +801,14 @@
 
       ! Get grid to contour, converting the ASCII file generated above
       ! We need this line regardless of if we are just making contours or not
-      cmd = "gmt grdconvert outvar.dat=ef out.grd"
+      if(IsRegGrid)then
+        cmd = "gmt grdconvert outvar.dat=ef out.grd"
+      else
+        cmd = "gmt xyz2grd outvar.dat" // " " // &
+              trim(adjustl(area2_str)) // " " // &
+              trim(adjustl(incr_str))   // " " // &
+              trim(adjustl(" -Gout.grd"))
+      endif
       write(55,*)trim(adjustl(cmd))
 
       ! write contour

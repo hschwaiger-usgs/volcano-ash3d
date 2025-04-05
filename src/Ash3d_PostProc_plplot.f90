@@ -61,6 +61,7 @@
 !    iprod         = product ID
 !    itime         = time index from netcdf data file
 !    OutVar        = 2-d array to be written to ASCII file
+!    Fill_Value    = NaN value
 !    writeContours = logical
 !
 !  This subroutine creates a png map of the variable in OutVar using the plplot
@@ -72,7 +73,7 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine write_2Dmap_PNG_plplot(nx,ny,iprod,itime,OutVar,writeContours)
+      subroutine write_2Dmap_PNG_plplot(nx,ny,iprod,itime,OutVar,Fill_Value,writeContours)
 
       use mesh,          only : &
          x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd, &
@@ -110,6 +111,7 @@
       integer      ,intent(in) :: iprod
       integer      ,intent(in) :: itime
       real(kind=ip),intent(in) :: OutVar(nx,ny)
+      real(kind=ip),intent(in) :: Fill_Value
       logical      ,intent(in) :: writeContours
 
       integer :: i
@@ -398,6 +400,8 @@
       else
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: unexpected variable"
+          write(errlog(io),*)"         iprod = ",iprod
+          write(errlog(io),*)"       Cannot map this variable."
         endif;enddo
         stop 1
       endif

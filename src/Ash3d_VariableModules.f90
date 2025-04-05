@@ -441,7 +441,7 @@
       character (len=50) :: datafileOut
       character (len=80) :: datafileIn
       logical            :: LoadConcen =.false.
-      character (len=80) :: concenfile
+      character (len=80) :: concenfile = ""
       integer            :: init_tstep
       character (len=130):: cdf_title
       character (len=80) :: cdf_institution

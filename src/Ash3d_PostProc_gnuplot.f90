@@ -55,6 +55,7 @@
 !    iprod         = product ID
 !    itime         = time index from netcdf data file
 !    OutVar        = 2-d array to be written to ASCII file
+!    Fill_Value    = NaN value
 !    writeContours = logical
 !
 !  This subroutine creates a png map of the variable in OutVar using the gnuplot
@@ -66,7 +67,7 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine write_2Dmap_PNG_gnuplot(nx,ny,iprod,itime,OutVar,writeContours)
+      subroutine write_2Dmap_PNG_gnuplot(nx,ny,iprod,itime,OutVar,Fill_Value,writeContours)
 
       use global_param,  only : &
          EPS_SMALL
@@ -105,11 +106,13 @@
       integer      ,intent(in) :: iprod
       integer      ,intent(in) :: itime
       real(kind=ip),intent(in) :: OutVar(nx,ny)
+      real(kind=ip),intent(in) :: Fill_Value
       logical      ,intent(in) :: writeContours
 
       character(len=200) :: cmd
 
       integer :: i,j,ii
+      real(kind=ip) :: tmp_ip
       integer     , dimension(:,:),allocatable :: zrgb
       character(len=40) :: title_plot
       character(len=15) :: title_legend
@@ -372,6 +375,8 @@
       else
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: unexpected variable"
+          write(errlog(io),*)"         iprod = ",iprod
+          write(errlog(io),*)"       Cannot map this variable."
         endif;enddo
         stop 1
       endif
@@ -429,9 +434,14 @@
       do i = 1,nx
         do j = 1,ny
           if(lon_cc_pd(1).lt.180.0_ip)then
-            write(54,*)lon_cc_pd(i),lat_cc_pd(j),OutVar(i,j)
+            tmp_ip = lon_cc_pd(i)
           else
-            write(54,*)lon_cc_pd(i)-360.0_ip,lat_cc_pd(j),OutVar(i,j)
+            tmp_ip = lon_cc_pd(i)-360.0_ip
+          endif
+          if(abs(OutVar(i,j)-Fill_Value).lt.EPS_SMALL)then
+            write(54,*)tmp_ip,lat_cc_pd(j),"NaN"
+          else
+            write(54,*)tmp_ip,lat_cc_pd(j),OutVar(i,j)
           endif
         enddo
         write(54,*)""
@@ -450,6 +460,7 @@
       write(55,*)"set xlabel 'Longitude'"
       write(55,*)"set output '",trim(adjustl(outfile_name)),"'"
       write(55,*)"set title '",trim(adjustl(title_plot)),units,"'"
+      write(55,*)"set datafile missing 'NaN'"
       write(55,*)"XMIN = ",real(xmin,kind=4)
       write(55,*)"YMIN = ",real(ymin,kind=4)
       write(55,*)"XMAX = ",real(xmax,kind=4)

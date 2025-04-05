@@ -169,7 +169,7 @@
       real(kind=ip),dimension(:,:),allocatable :: Topography
       real(kind=ip)       :: OutFillValue
       logical             :: IsThere
-      character(len=6)    :: Fill_Value
+      character(len=6)    :: Fill_Value_str
       character(len=20)   :: filename_root
       character(len=70)   :: comd
       character(len=13)   :: cio
@@ -774,7 +774,7 @@
       if(itime.eq.-1)then
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)'itime = -1 (Final time step)'
-          write(outlog(io),*)'  This signifiies one of two conditions:'
+          write(outlog(io),*)'  This signifies one of two conditions:'
           write(outlog(io),*)'   1. No time step provided (e.g. variable is not at time-series)'
           write(outlog(io),*)'   2. The final time step should be used'
         endif;enddo
@@ -1258,19 +1258,21 @@
       OutFillValue = 0.0_ip
       if(iprod.eq.3.or.iprod.eq.5)then
         OutVar = DepositThickness
-        Fill_Value = '-9999.'
-        OutFillValue = 0.0_ip
+        Fill_Value_str= '-9999.'
+        OutFillValue  = 0.0_ip
+        OutFillValue  = -9999.0_ip
         filename_root = 'DepositFile_        '
       elseif(iprod.eq.4.or.iprod.eq.6)then
         OutVar = DepositThickness*MM_2_IN
-        Fill_Value = '-9999.'
-        OutFillValue = 0.0_ip
+        Fill_Value_str= '-9999.'
+        OutFillValue  = 0.0_ip
+        OutFillValue  = -9999.0_ip
         filename_root = 'DepositFile_        '
       elseif(iprod.eq.7)then
         OutVar = real(DepArrivalTime,kind=ip)
         !OutVar = DepArrivalTime * merge(1.0_ip,0.0_ip,Mask_Deposit)
-        Fill_Value = '-9999.'
-        OutFillValue = -1.0_ip
+        Fill_Value_str= '-9999.'
+        OutFillValue  = -9999.0_ip
         filename_root = 'DepositArrivalTime  '
       elseif(iprod.eq.8)then
          ! ashfall at airports/POI
@@ -1278,47 +1280,55 @@
       elseif(iprod.eq.9)then
         OutVar = MaxConcentration
         !OutVar = MaxConcentration * merge(1.0_ip,0.0_ip,Mask_Cloud)
-        Fill_Value = '-9999.'
-        OutFillValue = 0.0_ip
+        Fill_Value_str= '-9999.'
+        OutFillValue  = 0.0_ip
+        OutFillValue  = -9999.0_ip
         filename_root = 'CloudConcentration_ '
       elseif(iprod.eq.10)then
         OutVar = MaxHeight
         !OutVar = MaxHeight * merge(1.0_ip,0.0_ip,Mask_Cloud)
-        Fill_Value = '-9999.'
-        OutFillValue = 0.0_ip
+        Fill_Value_str= '-9999.'
+        OutFillValue  = 0.0_ip
+        OutFillValue  = -9999.0_ip
         filename_root = 'CloudHeight_        '
       elseif(iprod.eq.11)then
         OutVar = MinHeight
         !OutVar = MinHeight * merge(1.0_ip,0.0_ip,Mask_Cloud)
-        Fill_Value = '-9999.'
-        OutFillValue = 0.0_ip
+        Fill_Value_str= '-9999.'
+        OutFillValue  = 0.0_ip
+        OutFillValue  = -9999.0_ip
         filename_root = 'CloudHeightBot_     '
       elseif(iprod.eq.12)then
         OutVar = CloudLoad
         !OutVar = CloudLoad * merge(1.0_ip,0.0_ip,Mask_Cloud)
-        Fill_Value = '-9999.'
-        OutFillValue = 0.0_ip
+        Fill_Value_str= '-9999.'
+        OutFillValue  = 0.0_ip
+        OutFillValue  = -9999.0_ip
         filename_root = 'CloudLoad_          '
       elseif(iprod.eq.13)then
         OutVar = dbZCol
         !OutVar = dbZCol * merge(1.0_ip,0.0_ip,Mask_Cloud)
-        Fill_Value = '-9999.'
-        OutFillValue = 0.0_ip
+        Fill_Value_str= '-9999.'
+        OutFillValue  = 0.0_ip
+        OutFillValue  = -9999.0_ip
         filename_root = 'ClouddbZC_          '
       elseif(iprod.eq.14)then
         OutVar = real(CloudArrivalTime,kind=ip)
         !OutVar = CloudArrivalTime * merge(1.0_ip,0.0_ip,Mask_Cloud)
-        Fill_Value = '-9999.'
-        OutFillValue = -1.0_ip
+        Fill_Value_str= '-9999.'
+        OutFillValue  = -1.0_ip
+        OutFillValue  = -9999.0_ip
         filename_root = 'CloudArrivalTime    '
       elseif(iprod.eq.15)then
         OutVar = real(Extra2dVar,kind=ip)
-        Fill_Value = '-9999.'
-        OutFillValue = -1.0_ip
+        Fill_Value_str= '-9999.'
+        OutFillValue  = -1.0_ip
+        OutFillValue  = -9999.0_ip
         filename_root = 'Topography          '
       elseif(iprod.eq.0)then
         OutVar = real(Extra2dVar,kind=ip)
-        Fill_Value = '-9999.'
+        Fill_Value_str = '-9999.'
+        OutFillValue  = -9999.0_ip
         !filename_root = 'UserVar             '
         filename_root = Extra2dVarName
       endif
@@ -1357,7 +1367,7 @@
           call vprofilecloser
         else
           ! All other ESRI/ASCII 2d grids
-          call write_2D_ASCII(nxmax,nymax,OutVar,mask,Fill_Value,filename_root)
+          call write_2D_ASCII(nxmax,nymax,OutVar,mask,Fill_Value_str,filename_root)
         endif
       elseif(outformat.eq.2)then ! KML
         ! All the KML routines were called above
@@ -1410,19 +1420,20 @@
             exit
           endif
         enddo
+
         select case (icase)
         case(1)
 #ifdef USEDISLIN
-          call write_2Dmap_PNG_dislin(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
+          call write_2Dmap_PNG_dislin(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
 #endif
         case(2)
 #ifdef USEPLPLOT
-          call write_2Dmap_PNG_plplot(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
+          call write_2Dmap_PNG_plplot(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
 #endif
         case(3)
-          call write_2Dmap_PNG_gnuplot(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
+          call write_2Dmap_PNG_gnuplot(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
         case(4)
-          call write_2Dmap_PNG_GMT(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
+          call write_2Dmap_PNG_GMT(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
         case default
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: Plots requested but no plotting package is installed"
@@ -1454,7 +1465,7 @@
           endif;enddo
           stop 1
         else
-          call write_2D_Binary(nxmax,nymax,OutVar,mask,Fill_Value,filename_root)
+          call write_2D_Binary(nxmax,nymax,OutVar,mask,Fill_Value_str,filename_root)
         endif
       elseif(outformat.eq.5)then ! Shapefile
         ! For 2d contours exported from dislin, gnuplot, gmt
@@ -1473,16 +1484,16 @@
         select case (icase)
         case(1)
 #ifdef USEDISLIN
-          call write_2Dmap_PNG_dislin(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
+          call write_2Dmap_PNG_dislin(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
 #endif
         case(2)
 #ifdef USEPLPLOT
-          call write_2Dmap_PNG_plplot(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
+          call write_2Dmap_PNG_plplot(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
 #endif
         case(3)
-          call write_2Dmap_PNG_gnuplot(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
+          call write_2Dmap_PNG_gnuplot(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
         case(4)
-          call write_2Dmap_PNG_GMT(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
+          call write_2Dmap_PNG_GMT(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
         case default
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: Plots requested but no plotting package is installed"
