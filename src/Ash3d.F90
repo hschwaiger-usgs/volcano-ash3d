@@ -207,7 +207,7 @@
         do io=1,2;if(VB(io).le.verbosity_essential)then
           write(outlog(io),*)"Testing for ",OPTMOD_names(i),i
         endif;enddo
-        ! Note that RESETPARAMS is handeled in Input_Data.F90::Read_Control_File()
+        ! Note that RESETPARAMS is handled in Input_Data.F90::Read_Control_File()
         if(OPTMOD_names(i).eq.'TOPO')then
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"  Reading input block for TOPO"
