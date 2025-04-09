@@ -294,7 +294,7 @@
         usezip,zippath,usegnuplot,gnuplotpath
 
       use io_data,       only : &
-        Ash3dHome
+        Ash3dHome,cdf_source
 
       use time_data,     only : &
         BaseYear,useLeap,os_time_log, &
@@ -949,6 +949,7 @@
         write(outlog(io),*)
       endif;enddo
 
+      write(cdf_source,'(a7,i0,a1,i0,a1,i0)')'Ash3d v',version_major,'.',version_minor,'.',version_patch
       ! Format statements
 2     format(4x,'Ash3d ( v. ',a8,') run ',&
              i4,'.',i2.2,'.',i2.2,i4,':',i2.2,' UTC')
@@ -1032,7 +1033,7 @@
          cdf_b3l1,cdf_b3l2,cdf_b3l3,cdf_b3l4,cdf_b3l5,cdf_b4l1,cdf_b4l2,cdf_b4l3,cdf_b4l4,&
          cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,cdf_b4l11,cdf_b4l12,cdf_b4l13,&
          cdf_b4l14,cdf_b4l15,cdf_b4l16,cdf_b4l17,cdf_b4l18,cdf_b6l1,cdf_b6l2,cdf_b6l3,cdf_b6l4,&
-         cdf_b6l5,cdf_comment,cdf_title,cdf_institution,cdf_source,cdf_history,cdf_references,&
+         cdf_b6l5,cdf_comment,cdf_title,cdf_institution,cdf_source_url,cdf_history,cdf_references,&
          concenfile,VolcanoName,WriteTimes,nWriteTimes,cdf_conventions,cdf_run_class,cdf_url,&
          x_vprofile,y_vprofile,i_vprofile,j_vprofile,Site_vprofile,&
          infile,ioutputFormat,LoadConcen,log_step,NextWriteTime,&
@@ -4019,21 +4020,10 @@
       ! Here are the default output file name and comments if Block 9 is not given
       concenfile  = "3d_tephra_fall.nc"
       cdf_title   = infile
-      cdf_comment = "None"
-      cdf_institution="USGS"
-      cdf_source="ash3d v1.0b"
-      cdf_run_class="Analysis"
-      cdf_url="https://vsc-ash.wr.usgs.gov/ash3d-gui"
-      cdf_history=""
-      cdf_references="https://pubs.usgs.gov/of/2013/1122/ofr20131122.pdf"
-      cdf_conventions='CF-1.5'
       if(iostatus.ne.0)then
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)'  Setting outfile to: 3d_tephra_fall.nc'
           write(outlog(io),*)'  Setting Title to: ',infile
-          write(outlog(io),*)'  Setting comment to: None'
-          write(outlog(io),*)'  Setting run class to: Analysis'
-          write(outlog(io),*)'  Setting institution to: USGS'
         endif;enddo
       else
         do io=1,2;if(VB(io).le.verbosity_info)then

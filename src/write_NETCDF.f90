@@ -180,7 +180,7 @@
          cdf_b3l1,cdf_b3l2,cdf_b3l3,cdf_b3l4,cdf_b3l5,cdf_b4l1,cdf_b4l2,cdf_b4l3,cdf_b4l4,&
          cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,cdf_b4l11,cdf_b6l1,cdf_b6l2,&
          cdf_b6l3,cdf_b6l4,cdf_b6l5,cdf_conventions,&
-         cdf_comment,cdf_title,cdf_institution,cdf_source,cdf_history,cdf_references,&
+         cdf_comment,cdf_title,cdf_institution,cdf_source,cdf_source_url,cdf_history,cdf_references,&
          cdf_run_class,cdf_url,infile,concenfile,&
          nvar_User2d_static_XY,nvar_User2d_XY,nvar_User3d_XYGs,nvar_User3d_XYZ,&
          nvar_User4d_XYZGs,Write_PT_Data,Write_PR_Data
@@ -447,6 +447,8 @@
 
       nSTAT = nf90_put_att(ncid,nf90_global,"source",cdf_source)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att source:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"source_url",cdf_source_url)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att source_url:")
 
       cdf_history=os_time_log
       nSTAT = nf90_put_att(ncid,nf90_global,"history",cdf_history)

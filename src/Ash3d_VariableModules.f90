@@ -442,15 +442,16 @@
       logical            :: LoadConcen =.false.
       character (len=80) :: concenfile
       integer            :: init_tstep
-      character (len=130):: cdf_title
-      character (len=80) :: cdf_institution
-      character (len=80) :: cdf_source
-      character (len=80) :: cdf_history
-      character (len=80) :: cdf_references
-      character (len=80) :: cdf_run_class  ! Forecast, Hypothetical, Analysis
-      character (len=80) :: cdf_url
-      character (len=80) :: cdf_comment
-      character (len=80) :: cdf_conventions
+      character (len=130):: cdf_title       = "test"
+      character (len=80) :: cdf_institution = "USGS"
+      character (len=80) :: cdf_source      = "Ash3d v"   ! This is rewritten in Input_Data.f90
+      character (len=80) :: cdf_source_url  = "https://code.usgs.gov/vsc/ash3d/volcano-ash3d"
+      character (len=80) :: cdf_history     = ""
+      character (len=80) :: cdf_references  = "https://pubs.usgs.gov/of/2013/1122/ofr20131122.pdf"
+      character (len=80) :: cdf_run_class   = "Analysis"  ! Forecast, Hypothetical, Analysis
+      character (len=80) :: cdf_url         = "https://vsc-ash.wr.usgs.gov/ash3d-gui"
+      character (len=80) :: cdf_comment     = "None"
+      character (len=80) :: cdf_conventions = "CF-1.5"
       character (len=80) :: cdf_b1l1       ! character strings containing parameters for netcdf file
       character (len=80) :: cdf_b1l2
       character (len=80) :: cdf_b1l3
