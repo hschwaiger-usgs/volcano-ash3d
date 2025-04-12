@@ -129,6 +129,10 @@
       character(len=10) :: dp_gnufile
       character(len=10) :: dp_outfile
       character(len=10) :: dp_confile
+      integer           :: dp_miscfileID = 53
+      integer           :: dp_gnufileID  = 55
+      integer           :: dp_outfileID  = 56
+      integer           :: dp_confileID  = 54
       !character(len=26) :: coord_str
       character(len=25) :: gnucom
       character(len=80) :: gnucoastfile
@@ -430,7 +434,7 @@
       if(lon_volcano.gt.xmax)lon_volcano=lon_volcano-360.0_ip
 
       ! write out the data in a form that gnuplot can read
-      open(54,file=dp_outfile,status='replace')
+      open(unit=dp_outfileID,file=dp_outfile,status='replace')
       do i = 1,nx
         do j = 1,ny
           if(lon_cc_pd(1).lt.180.0_ip)then
@@ -439,83 +443,84 @@
             tmp_ip = lon_cc_pd(i)-360.0_ip
           endif
           if(abs(OutVar(i,j)-Fill_Value).lt.EPS_SMALL)then
-            write(54,*)tmp_ip,lat_cc_pd(j),"NaN"
+            write(dp_outfileID,*)tmp_ip,lat_cc_pd(j),"NaN"
           else
-            write(54,*)tmp_ip,lat_cc_pd(j),OutVar(i,j)
+            write(dp_outfileID,*)tmp_ip,lat_cc_pd(j),OutVar(i,j)
           endif
         enddo
-        write(54,*)""
+        write(dp_outfileID,*)""
       enddo
-      close(54)
-      open(54,file="volc.dat",status='replace')
-      write(54,*)real(lon_volcano,kind=4),real(lat_volcano,kind=4),'""'
-      close(54)
+      close(dp_outfileID)
+
+      open(unit=dp_miscfileID,file="volc.dat",status='replace')
+      write(dp_miscfileID,*)real(lon_volcano,kind=4),real(lat_volcano,kind=4),'""'
+      close(dp_miscfileID)
 
       ! Set up to plot via gnuplot script
-      open(55,file=dp_gnufile,status='replace')
-      write(55,*)"set terminal pngcairo font 'sans,12' size 854,603"   ! Set the image size
-      write(55,*)"set origin 0.05, .20"
-      write(55,*)"set size 0.85, 0.8"              ! Set x and y scale for plot
-      write(55,*)"set ylabel 'Latitude'"
-      write(55,*)"set xlabel 'Longitude'"
-      write(55,*)"set output '",trim(adjustl(outfile_name)),"'"
-      write(55,*)"set title '",trim(adjustl(title_plot)),units,"'"
-      write(55,*)"set datafile missing 'NaN'"
-      write(55,*)"XMIN = ",real(xmin,kind=4)
-      write(55,*)"YMIN = ",real(ymin,kind=4)
-      write(55,*)"XMAX = ",real(xmax,kind=4)
-      write(55,*)"YMAX = ",real(ymax,kind=4)
+      open(unit=dp_gnufileID,file=dp_gnufile,status='replace')
+      write(dp_gnufileID,*)"set terminal pngcairo font 'sans,12' size 854,603"   ! Set the image size
+      write(dp_gnufileID,*)"set origin 0.05, .20"
+      write(dp_gnufileID,*)"set size 0.85, 0.8"              ! Set x and y scale for plot
+      write(dp_gnufileID,*)"set ylabel 'Latitude'"
+      write(dp_gnufileID,*)"set xlabel 'Longitude'"
+      write(dp_gnufileID,*)"set output '",trim(adjustl(outfile_name)),"'"
+      write(dp_gnufileID,*)"set title '",trim(adjustl(title_plot)),units,"'"
+      write(dp_gnufileID,*)"set datafile missing 'NaN'"
+      write(dp_gnufileID,*)"XMIN = ",real(xmin,kind=4)
+      write(dp_gnufileID,*)"YMIN = ",real(ymin,kind=4)
+      write(dp_gnufileID,*)"XMAX = ",real(xmax,kind=4)
+      write(dp_gnufileID,*)"YMAX = ",real(ymax,kind=4)
 
-      write(55,*)"set xrange [XMIN:XMAX]"
-      write(55,*)"set yrange [YMIN:YMAX]"
-      write(55,*)"set contour base"
-      write(55,*)"set cntrparam bspline"
-      write(55,*)"set cntrparam levels discrete \"
+      write(dp_gnufileID,*)"set xrange [XMIN:XMAX]"
+      write(dp_gnufileID,*)"set yrange [YMIN:YMAX]"
+      write(dp_gnufileID,*)"set contour base"
+      write(dp_gnufileID,*)"set cntrparam bspline"
+      write(dp_gnufileID,*)"set cntrparam levels discrete \"
       do i=1,nConLev-1
-        write(55,*)real(ContourLev(i),kind=4),', \'
+        write(dp_gnufileID,*)real(ContourLev(i),kind=4),', \'
       enddo
-      write(55,*)real(ContourLev(nConLev),kind=4)
-      write(55,*)"unset surface"
+      write(dp_gnufileID,*)real(ContourLev(nConLev),kind=4)
+      write(dp_gnufileID,*)"unset surface"
       ! Now write out the contours to a datafile
-      write(55,*)"set table 'outvar.con'"
-      write(55,*)"splot 'outvar.dat' using 1:2:3"
-      write(55,*)"unset table"
-      write(55,*)"set style line 2 lc rgb '#808080' lt 0 lw 1"
-      write(55,*)"set grid front ls 2"
-      write(55,*)"unset key"
+      write(dp_gnufileID,*)"set table 'outvar.con'"
+      write(dp_gnufileID,*)"splot 'outvar.dat' using 1:2:3"
+      write(dp_gnufileID,*)"unset table"
+      write(dp_gnufileID,*)"set style line 2 lc rgb '#808080' lt 0 lw 1"
+      write(dp_gnufileID,*)"set grid front ls 2"
+      write(dp_gnufileID,*)"unset key"
 
-      write(55,*)"XVAL = XMIN-(XMAX-XMIN)*0.1"
-      write(55,*)"YVAL = YMIN-(YMAX-YMIN)*0.25"
+      write(dp_gnufileID,*)"XVAL = XMIN-(XMAX-XMIN)*0.1"
+      write(dp_gnufileID,*)"YVAL = YMIN-(YMAX-YMIN)*0.25"
 
-      write(55,*)"set label 'Volcano: " ,VolcanoName,&
-                  "' at XVAL, YVAL font 'sans,9'"
-      write(55,*)"set label 'Run Date: ",os_time_log,&
+      write(dp_gnufileID,*)"set label 'Volcano: " ,VolcanoName,&
+                            "' at XVAL, YVAL font 'sans,9'"
+      write(dp_gnufileID,*)"set label 'Run Date: ",os_time_log,&
                   "' at XVAL, YVAL font 'sans,9' offset character 0,-1"
       read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
       linebuffer050 = "Reading iw,iwf from cdf_b3l1"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,cdf_b3l1,iomessage)
-      write(55,*)"set label 'Windfile: ",iwf,&
-                  "' at XVAL, YVAL font 'sans,9' offset character 0,-2"
+      write(dp_gnufileID,*)"set label 'Windfile: ",iwf,&
+                            "' at XVAL, YVAL font 'sans,9' offset character 0,-2"
 
-      write(55,*)"XVAL = XMIN+(XMAX-XMIN)*0.4"
-      write(55,*)"set label 'Erup. Start Time: ",HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap),&
-                  "' at XVAL, YVAL font 'sans,9'"
-      write(55,*)"set label 'Erup. Plume Height: ",real(e_PlumeHeight(1),kind=4),&
-                  " km' at XVAL, YVAL font 'sans,9' offset character 0,-1"
-      write(55,*)"set label 'Erup. Duration: ",real(e_Duration(1),kind=4),&
-                  " hours' at XVAL, YVAL font 'sans,9' offset character 0,-2"
-      write(55,*)"set label 'Erup. Volume: ",real(e_Volume(1),kind=4),&
-                  " km3 (DRE)' at XVAL, YVAL font 'sans,9' offset character 0,-3"
+      write(dp_gnufileID,*)"XVAL = XMIN+(XMAX-XMIN)*0.4"
+      write(dp_gnufileID,*)"set label 'Erup. Start Time: ",HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap),&
+                            "' at XVAL, YVAL font 'sans,9'"
+      write(dp_gnufileID,*)"set label 'Erup. Plume Height: ",real(e_PlumeHeight(1),kind=4),&
+                            " km' at XVAL, YVAL font 'sans,9' offset character 0,-1"
+      write(dp_gnufileID,*)"set label 'Erup. Duration: ",real(e_Duration(1),kind=4),&
+                            " hours' at XVAL, YVAL font 'sans,9' offset character 0,-2"
+      write(dp_gnufileID,*)"set label 'Erup. Volume: ",real(e_Volume(1),kind=4),&
+                            " km3 (DRE)' at XVAL, YVAL font 'sans,9' offset character 0,-3"
 
-      write(55,*)" plot '",trim(adjustl(gnucoastfile)),"' with filledcurves linetype rgb '#dddddd' , \"
-      write(55,*)"   'outvar.con' using 1:2 with l lc rgb '#888888' , \"
-      write(55,*)"   '' every 1000 with labels font ',6' , \"
-      write(55,*)"   'cities.xy' using 1:2 , \"
-      write(55,*)"   '' using 1:2:3 with labels font ',10' point pointtype 7 offset char 1,1, \"
-      write(55,*)"   'volc.dat' using 1:2 , \"
-      write(55,*)"   '' using 1:2:3 with labels point pointtype 22 pointsize 2 lt rgb 'red'"
+      write(dp_gnufileID,*)" plot '",trim(adjustl(gnucoastfile)),"' with filledcurves linetype rgb '#dddddd' , \"
+      write(dp_gnufileID,*)"   'outvar.con' using 1:2 with l lc rgb '#888888' , \"
+      write(dp_gnufileID,*)"   '' every 1000 with labels font ',6' , \"
+      write(dp_gnufileID,*)"   'cities.xy' using 1:2 , \"
+      write(dp_gnufileID,*)"   '' using 1:2:3 with labels font ',10' point pointtype 7 offset char 1,1, \"
+      write(dp_gnufileID,*)"   'volc.dat' using 1:2 , \"
+      write(dp_gnufileID,*)"   '' using 1:2:3 with labels point pointtype 22 pointsize 2 lt rgb 'red'"
 
-      close(55)
+      close(dp_gnufileID)
 
       write(gnucom,'(a11,a14)')'gnuplot -p ',dp_gnufile
       call execute_command_line(gnucom,exitstat=iostatus)
@@ -526,7 +531,7 @@
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"Now reading outvar.con and loading contour data."
         endif;enddo
-        open(54,file=dp_confile,status='old')
+        open(unit=dp_confileID,file=dp_confile,status='old',err=9001)
         ! In the gnuplot contour file, all contours of a certain level have a header
         ! in the following format:
         !# Contour 0, label:      300
@@ -536,7 +541,8 @@
         ! correctly.
         ilev = -1
         ignulev = -1
-        read(54,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+        read(dp_confileID,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+
         linebuffer050 = "Reading line from contour file"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         do while(iostatus.eq.0)
@@ -548,7 +554,7 @@
             if(ignulev.eq.-1)then
               ! Still in file header
               ! Read the next line and cycle
-              read(54,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+              read(dp_confileID,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
               !if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
               cycle
             else
@@ -577,25 +583,26 @@
 
             if(substr_pos1.eq.0)then
               ! This is a file header line
-              read(54,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+              read(dp_confileID,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
               cycle
             else
-              read(linebuffer080,4,iostat=ioerr,iomsg=iomessage)ignulev
+              ! Here is the expected format, so start reading from character 10
+              !# Contour 10, label:        2
+              read(linebuffer080(10:),*,iostat=ioerr,iomsg=iomessage)ignulev
               linebuffer050 = "Reading line from contour file, ignulev"
               if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-4             format(9x,i2)
               ! Now read the level. Look for the ':' to isolate the last bit
               substr_pos1 = index(linebuffer080,':')
               ! Also look for a '.' or an 'e' to see if the level value is written as a real or int
               substr_pos2 = index(linebuffer080,'.')
-              substr_pos3 = index(linebuffer080(20:),'e')
+              substr_pos3 = index(linebuffer080(substr_pos1:),'e')
               if(substr_pos2.gt.0.or.substr_pos3.gt.0)then
                 ! level is written as real
-                read(linebuffer080(substr_pos1+1:28),*,iostat=iostatus,iomsg=iomessage)lev_r4
+                read(linebuffer080(substr_pos1+1:),*,iostat=iostatus,iomsg=iomessage)lev_r4
                 linebuffer050 = "Reading line from contour file, lev_r4"
                 if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
               else
-                read(linebuffer080(substr_pos1+1:28),*,iostat=iostatus,iomsg=iomessage)lev_i
+                read(linebuffer080(substr_pos1+1:),*,iostat=iostatus,iomsg=iomessage)lev_i
                 linebuffer050 = "Reading line from contour file, lev_i"
                 if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
                 lev_r4 = real(lev_i,kind=4)
@@ -632,9 +639,9 @@
           endif
 
           ! Try to read the next line
-          read(54,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+          read(dp_confileID,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         enddo
-        close(54)
+        close(unit=dp_confileID)
 
         ! Loop through all the levels and curves and trim any curves with zero length
         do i=1,nConLev
@@ -661,6 +668,17 @@
       if(allocated(lat_cities))         deallocate(lat_cities)
       if(allocated(name_cities))        deallocate(name_cities)
       if(allocated(zrgb))               deallocate(zrgb)
+
+      return
+
+      ! Error traps (starting with 9000)
+      ! For this subroutine, the 100's position refers to block # of control file
+
+9001  do io=1,2;if(VB(io).le.verbosity_error)then
+        write(errlog(io),*)  'error: cannot open file: ',dp_confile
+        write(errlog(io),*)  'Program stopped'
+      endif;enddo
+      stop 1
 
       end subroutine write_2Dmap_PNG_gnuplot
 
@@ -703,6 +721,9 @@
       character(len=14) :: dp_gnufile
       character(len=14) :: dp_outfile
       character(len=14) :: dp_pngfile
+      integer           :: dp_gnufileID  = 55
+      integer           :: dp_outfileID  = 54
+      integer           :: dp_pngfileID  = 53
       character(len=26) :: coord_str
       character(len=25) :: gnucom
       integer :: k,i
@@ -741,64 +762,64 @@
       cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=ip)       ! Get the max value for this profile
       cmax=real(max(cmax,cloudcon_thresh_mgm3),kind=ip)  ! Do not let cmax drop below the threshold
 
-      open(54,file=dp_outfile,status='replace')
+      open(dp_outfileID,file=dp_outfile,status='replace')
       do i = 1,ntmax
         do k = 1,nzmax
-          write(54,*)time_native(i),z_cc_pd(k),pr_ash(k,i,vprof_ID)
+          write(dp_outfileID,*)time_native(i),z_cc_pd(k),pr_ash(k,i,vprof_ID)
         enddo
-        write(54,*)""
+        write(dp_outfileID,*)""
       enddo
-      close(54)
+      close(dp_outfileID)
 
       write(coord_str,101)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
  101  format(' (lon=',f7.2,', lat=',f6.2,')')
       ! Set up to plot via gnuplot script
-      open(55,file=dp_gnufile,status='replace')
-      write(55,*)"set terminal pngcairo font 'sans,12' size 854,603"   ! Set the image size
-      write(55,*)"set origin 0, .10"
-      write(55,*)"set size 0.85, 0.9"              ! Set x and y scale for plot
-      write(55,*)"set ylabel 'Height (km)'"
-      write(55,*)"set xlabel 'Time (hours after eruption)'"
-      write(55,*)"set output '",dp_pngfile,"'"
-      write(55,*)"set title '",&
-                  trim(adjustl(Site_vprofile(vprof_ID))),&
-                  coord_str,"'"
-      write(55,*)"set isosamples 50"
-      write(55,*)"set pm3d"
-      write(55,*)"set palette cubehelix negative"
-      write(55,*)"unset surface"
-      write(55,*)"set view map"
-      write(55,*)"set key off"
+      open(dp_gnufileID,file=dp_gnufile,status='replace')
+      write(dp_gnufileID,*)"set terminal pngcairo font 'sans,12' size 854,603"   ! Set the image size
+      write(dp_gnufileID,*)"set origin 0, .10"
+      write(dp_gnufileID,*)"set size 0.85, 0.9"              ! Set x and y scale for plot
+      write(dp_gnufileID,*)"set ylabel 'Height (km)'"
+      write(dp_gnufileID,*)"set xlabel 'Time (hours after eruption)'"
+      write(dp_gnufileID,*)"set output '",dp_pngfile,"'"
+      write(dp_gnufileID,*)"set title '",&
+                           trim(adjustl(Site_vprofile(vprof_ID))),&
+                           coord_str,"'"
+      write(dp_gnufileID,*)"set isosamples 50"
+      write(dp_gnufileID,*)"set pm3d"
+      write(dp_gnufileID,*)"set palette cubehelix negative"
+      write(dp_gnufileID,*)"unset surface"
+      write(dp_gnufileID,*)"set view map"
+      write(dp_gnufileID,*)"set key off"
 
-      write(55,*)"XMIN = 0.0"
-      write(55,*)"YMIN = 0.0"
-      write(55,*)"XMAX = ",time_native(ntmax)
-      write(55,*)"YMAX = ",z_cc_pd(nzmax)
-      write(55,*)"XVAL = -XMAX*0.1"
-      write(55,*)"YVAL = -YMAX*0.25"
+      write(dp_gnufileID,*)"XMIN = 0.0"
+      write(dp_gnufileID,*)"YMIN = 0.0"
+      write(dp_gnufileID,*)"XMAX = ",time_native(ntmax)
+      write(dp_gnufileID,*)"YMAX = ",z_cc_pd(nzmax)
+      write(dp_gnufileID,*)"XVAL = -XMAX*0.1"
+      write(dp_gnufileID,*)"YVAL = -YMAX*0.25"
       
-      write(55,*)"set label 'Volcano: " ,VolcanoName,&
-                  "' at XVAL, YVAL font 'sans,9'"
-      write(55,*)"set label 'Run Date: ",os_time_log,&
+      write(dp_gnufileID,*)"set label 'Volcano: " ,VolcanoName,&
+                           "' at XVAL, YVAL font 'sans,9'"
+      write(dp_gnufileID,*)"set label 'Run Date: ",os_time_log,&
                   "' at XVAL, YVAL font 'sans,9' offset character 0,-1"
       read(cdf_b3l1,*,iostat=ioerr) iw,iwf
-      write(55,*)"set label 'Windfile: ",iwf,&
-                  "' at XVAL, YVAL font 'sans,9' offset character 0,-2"
+      write(dp_gnufileID,*)"set label 'Windfile: ",iwf,&
+                "' at XVAL, YVAL font 'sans,9' offset character 0,-2"
 
-      write(55,*)"XVAL = XMAX*0.4"
-      write(55,*)"set label 'Erup. Start Time: ",HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap),&
-                  "' at XVAL, YVAL font 'sans,9'"
-      write(55,*)"set label 'Erup. Plume Height: ",real(e_PlumeHeight(1),kind=4),&
-                  " km' at XVAL, YVAL font 'sans,9' offset character 0,-1"
-      write(55,*)"set label 'Erup. Duration: ",real(e_Duration(1),kind=4),&
-                  " hours' at XVAL, YVAL font 'sans,9' offset character 0,-2"
-      write(55,*)"set label 'Erup. Volume: ",real(e_Volume(1),kind=4),&
-                  " km3 (DRE)' at XVAL, YVAL font 'sans,9' offset character 0,-3"
+      write(dp_gnufileID,*)"XVAL = XMAX*0.4"
+      write(dp_gnufileID,*)"set label 'Erup. Start Time: ",HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap),&
+                "' at XVAL, YVAL font 'sans,9'"
+      write(dp_gnufileID,*)"set label 'Erup. Plume Height: ",real(e_PlumeHeight(1),kind=4),&
+                " km' at XVAL, YVAL font 'sans,9' offset character 0,-1"
+      write(dp_gnufileID,*)"set label 'Erup. Duration: ",real(e_Duration(1),kind=4),&
+                " hours' at XVAL, YVAL font 'sans,9' offset character 0,-2"
+      write(dp_gnufileID,*)"set label 'Erup. Volume: ",real(e_Volume(1),kind=4),&
+                " km3 (DRE)' at XVAL, YVAL font 'sans,9' offset character 0,-3"
 
-      write(55,*)"set cblabel 'Ash con. in mg/m3'"
-      write(55,*)"splot '",dp_outfile,"'"
+      write(dp_gnufileID,*)"set cblabel 'Ash con. in mg/m3'"
+      write(dp_gnufileID,*)"splot '",dp_outfile,"'"
 
-      close(55)
+      close(dp_gnufileID)
 
       write(gnucom,'(a11,a14)')'gnuplot -p ',dp_gnufile
       call execute_command_line(gnucom)
@@ -844,6 +865,8 @@
       character(len=14) :: dp_gnufile
       character(len=14) :: dp_outfile
       character(len=14) :: dp_pngfile
+      integer           :: dp_outfileID  = 54
+      integer           :: dp_gnufileID  = 55
       character(len=25) :: gnucom
       integer,save      :: plot_index = 0
       character(len=200) :: cmd
@@ -860,11 +883,11 @@
  53   format('depTS_',i4.4,a4)
  54   format('gnupl_',i4.4,a4)
 
-      open(54,file=dp_outfile,status='replace')
+      open(dp_outfileID,file=dp_outfile,status='replace')
       do i = 1,nWriteTimes
-        write(54,*)WriteTimes(i),Airport_Thickness_TS(pt_indx,i)
+        write(dp_outfileID,*)WriteTimes(i),Airport_Thickness_TS(pt_indx,i)
       enddo
-      close(54)
+      close(dp_outfileID)
 
       if(Airport_Thickness_TS(plot_index,nWriteTimes).lt.THICKNESS_THRESH)then
         ymaxpl = 1.0_dp
@@ -879,20 +902,20 @@
       endif
 
       ! Set up to plot via gnuplot script
-      open(55,file=dp_gnufile,status='replace')
-      write(55,*)"set terminal png size 400,300"
-      write(55,*)"set key bmargin left horizontal Right noreverse enhanced ",&
-                 "autotitles box linetype -1 linewidth 1.000"
-      write(55,*)"set border 31 lw 2.0 lc rgb '#000000'"
-      write(55,*)"set style line 1 linecolor rgbcolor '#888888' linewidth 2.0 pt 7"
-      write(55,*)"set ylabel 'Deposit Thickeness (mm)'"
-      write(55,*)"set xlabel 'Time (hours after eruption)'"
-      write(55,*)"set nokey"
-      write(55,*)"set output '",dp_pngfile,"'"
-      write(55,*)"set title '",Airport_Name(pt_indx),"'"
-      write(55,*)"plot [0:",ceiling(Simtime_in_hours),"][0:",&
-                 nint(ymaxpl),"] '",dp_outfile,"' with filledcurve x1 ls 1"
-      close(55)
+      open(dp_gnufileID,file=dp_gnufile,status='replace')
+      write(dp_gnufileID,*)"set terminal png size 400,300"
+      write(dp_gnufileID,*)"set key bmargin left horizontal Right noreverse enhanced ",&
+               "autotitles box linetype -1 linewidth 1.000"
+      write(dp_gnufileID,*)"set border 31 lw 2.0 lc rgb '#000000'"
+      write(dp_gnufileID,*)"set style line 1 linecolor rgbcolor '#888888' linewidth 2.0 pt 7"
+      write(dp_gnufileID,*)"set ylabel 'Deposit Thickeness (mm)'"
+      write(dp_gnufileID,*)"set xlabel 'Time (hours after eruption)'"
+      write(dp_gnufileID,*)"set nokey"
+      write(dp_gnufileID,*)"set output '",dp_pngfile,"'"
+      write(dp_gnufileID,*)"set title '",Airport_Name(pt_indx),"'"
+      write(dp_gnufileID,*)"plot [0:",ceiling(Simtime_in_hours),"][0:",&
+               nint(ymaxpl),"] '",dp_outfile,"' with filledcurve x1 ls 1"
+      close(dp_gnufileID)
 
       write(gnucom,'(a11,a14)')'gnuplot -p ',dp_gnufile
       call execute_command_line(gnucom)
