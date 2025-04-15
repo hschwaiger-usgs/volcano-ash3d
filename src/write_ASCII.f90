@@ -414,12 +414,12 @@
       open(unit=fid_ascii2din,file=trim(adjustl(filename)), status='old',action='read',err=2500)
 
       ! The header of the ESRI ASCII file has 6 lines
-      ! NCOLS (ncols)                 int
-      ! NROWS (nrows)                 int
-      ! XLLCORNER (xllcorner)         double
-      ! YLLCORNER (yllcorner)         double
-      ! CELLSIZE (cellsize)           double (and maybe a second double)
-      ! NODATA_VALUE (NODATA_value)   double or int
+      ! NCOLS (ncols)                           int
+      ! NROWS (nrows)                           int
+      ! XLLCORNER/XLLCENTER (xllcorner)         double
+      ! YLLCORNER/YLLCENTER (yllcorner)         double
+      ! CELLSIZE (cellsize)                     double (and maybe a second double)
+      ! NODATA_VALUE (NODATA_value)             double or int
 
       read(fid_ascii2din,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       read(linebuffer080(7:),*,iostat=iostatus,iomsg=iomessage)A_nx

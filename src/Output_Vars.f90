@@ -119,8 +119,8 @@
       real(kind=ip),public    :: CLOUDCON_THRESH       = 1.0e-3_ip  ! threshold cloud concentration (kg/km3) for output
       real(kind=ip),public    :: CLOUDCON_GRID_THRESH  = 1.0e-7_ip  ! threshold cloud concentration (kg/km3) for subgrid
 
-      real(kind=ip),public    :: THICKNESS_THRESH = 1.0e-2_ip  ! threshold thickness for start of deposition (mm)
-      real(kind=ip),public    :: DBZ_THRESH       =-2.0e+1_ip  ! threshold dbZ
+      real(kind=ip),public    :: THICKNESS_THRESH      = 1.0e-2_ip  ! threshold thickness for start of deposition (mm)
+      real(kind=ip),public    :: DBZ_THRESH            =-2.0e+1_ip  ! threshold dbZ
 
       ! These are the initialized values
       real(kind=op),public    :: DepositThickness_FillValue   = -9999.0_op
@@ -183,8 +183,8 @@
       integer      ,dimension(:)    ,pointer ,public:: ContourDataNcurves => null() ! num of curves for each level (some = 0)
       integer      ,dimension(:,:)  ,pointer ,public:: ContourDataNpoints => null() ! num of pts for ilev and icurve
         ! User-specified contour interval and colors
-      integer      ,dimension(:,:)  ,pointer,public:: Con_Cust_RGB        => null()
-      real(kind=ip),dimension(:)    ,pointer,public:: Con_Cust_Lev        => null()
+      integer      ,dimension(:,:)  ,pointer ,public:: Con_Cust_RGB       => null()
+      real(kind=ip),dimension(:)    ,pointer ,public:: Con_Cust_Lev       => null()
 #else
       real(kind=ip),dimension(:)    ,allocatable  ,public:: ContourLev
       real(kind=ip),dimension(:,:,:),allocatable  ,public:: ContourDataX        ! x curve data with dims: ilev, icurve, ipnt
@@ -195,8 +195,6 @@
       integer      ,dimension(:,:)  ,allocatable  ,public:: Con_Cust_RGB
       real(kind=ip),dimension(:)    ,allocatable  ,public:: Con_Cust_Lev
 #endif
-
-
 
         ! Fixed size arrays for output products
       integer,parameter                           ,public:: Con_DepThick_mm_N   = 10

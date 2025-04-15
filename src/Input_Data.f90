@@ -5155,6 +5155,7 @@
 
       character(len=50)  :: linebuffer050 
       character(len=80)  :: linebuffer080
+      character(len=10)  :: tmpstr
       integer            :: iostatus
       character(len=120) :: iomessage
       integer            :: ivalue
@@ -5192,15 +5193,18 @@
       linebuffer050 = "Reading informat from linebuffer"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
       if(informat.ne.1.and.&
-          informat.ne.2.and.&
-          informat.ne.3)then
+         informat.ne.2.and.&
+         informat.ne.3)then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: Invalid format code for data file."
         endif;enddo
         stop 1
       else
+        if(informat.eq.1)tmpstr="ASCII"
+        if(informat.eq.2)tmpstr="Binary"
+        if(informat.eq.3)tmpstr="NetCDF"
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"File format of input data = ",informat
+          write(outlog(io),*)"File format of input data    = ",informat,tmpstr
         endif;enddo
       endif
       ! If this is a netcdf file, copy name to 
@@ -5270,7 +5274,7 @@
         stop 1
       else
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"Variable code of input data = ",iprod1
+          write(outlog(io),*)"Variable code of input data  = ",iprod1
         endif;enddo
       endif
       if(iprod2.lt.0.or.iprod2.gt.16)then
@@ -5280,7 +5284,7 @@
         stop 1
       else
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"Variable code of output data = ",iprod2
+          write(outlog(io),*)"Variable code of output data  = ",iprod2
         endif;enddo
       endif
         ! Now the bonus line if the user requests a custom variable

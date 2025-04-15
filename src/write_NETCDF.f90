@@ -3868,7 +3868,7 @@
          lat_volcano,lon_volcano,x_volcano,y_volcano
 
       use Output_Vars,   only : &
-         DepositThickness,DepArrivalTime,CloudArrivalTime,pr_ash,&
+         DepositThickness,DepArrivalTime,CloudArrivalTime,pr_ash,Mask_Deposit,&
          MaxConcentration,MaxHeight,CloudLoad,dbZCol,MinHeight,Mask_Cloud,&
          CLOUDCON_GRID_THRESH,CLOUDCON_THRESH,THICKNESS_THRESH, &
          CLOUDLOAD_THRESH,DBZ_THRESH,DEPO_THRESH,DEPRATE_THRESH,ashcon_tot, &
@@ -5443,6 +5443,37 @@
           endif
         enddo
       enddo
+
+      ! Deposit-mask
+      ! This is no longer stored in the default netcdf file, but can be recreated from 
+      ! Deposit Arrival Time
+#ifdef USEPOINTERS
+      if(.not.associated(Mask_Deposit))then
+#else
+      if(.not.allocated(Mask_Deposit))then
+#endif
+        allocate(Mask_Deposit(x_len,y_len))
+      endif
+
+#ifdef USEPOINTERS
+      if(.not.associated(DepArrivalTime))then
+#else
+      if(.not.allocated(DepArrivalTime))then
+#endif
+        ! DepArrivalTime has not been allocated, so set all to F
+        Mask_Deposit(:,:) = .false.
+      else
+        do i=1,x_len
+          do j=1,y_len
+            if(DepArrivalTime(i,j).ge.0.0_op)then
+              Mask_Deposit(i,j) = .true.
+            else
+              Mask_Deposit(i,j) = .false.
+            endif
+          enddo
+        enddo
+      endif
+
 
       ! Radar_Reflec
       allocate(dum3d_out(x_len,y_len,z_len))

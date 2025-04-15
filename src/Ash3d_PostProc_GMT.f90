@@ -419,7 +419,7 @@
       ! Now mask out non-cloud values
       if(iprod.eq.10.or.&  ! CloudHeight
          iprod.eq.11)then  ! CloudHeightBot
-        mask = Mask_Cloud
+        mask(1:nx,1:ny) = Mask_Cloud(1:nx,1:ny)
       elseif(iprod.eq.7)then ! DepArrivalTime
         mask(1:nx,1:ny) = Mask_Deposit(1:nx,1:ny)
       elseif(iprod.eq.14)then
@@ -961,6 +961,10 @@
 
       ! GMT script has been run, now we need to read the contour lines if we want
       ! to write a shapefile
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)'Finished running GMT script. Now processing contour files if necessary.'
+      endif;enddo
+
       if(writeContours)then
         ContourDataNcurves(:) = 0
         do ilev=1,nConLev
@@ -992,6 +996,9 @@
             ! Log zero contours for this level
             ioerr = -1
             ContourDataNcurves(ilev) = 0
+            do io=1,2;if(VB(io).le.verbosity_debug2)then
+              write(outlog(io),*)'  File exists, but has no content. Settingn ncurves for this level to 0.'
+            endif;enddo
             cycle
 
           elseif(testkey.eq.'>')then
@@ -1051,7 +1058,7 @@
               icurve = ii
             endif
           enddo
-          ContourDataNcurves(i) = max(0,icurve-1)
+          ContourDataNcurves(ilev) = max(0,icurve-1)
         enddo
       endif
 

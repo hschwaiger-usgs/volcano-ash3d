@@ -129,6 +129,7 @@
       ! https://www.dislin.de/
       character(len= 4) :: cfmt = "PNG "
       character(len=80) :: cbuf
+      character(len= 3) :: cmode = "ON "
       integer :: nmaxln  ! number of characters in the longest line of text
       character(len=7) :: zlevlab
       real(kind=DS) :: xpts(CONTOUR_MAXPOINTS)
@@ -364,6 +365,8 @@
         stop 1
       endif
 
+      cmode = "ON "
+      !call nancrv(cmode)
       if(writeContours)then
         allocate(ContourDataNcurves(nConLev))
         allocate(ContourDataNpoints(nConLev,CONTOUR_MAXCURVES))
@@ -451,6 +454,24 @@
       xmaxDIS = real(xmax- 360.0_ip+0.5_ip*dx,kind=DS)
       yminDIS = real(ymin-0.5_ip*dy,kind=DS)
       ymaxDIS = real(ymax+0.5_ip*dy,kind=DS)
+      if(xmaxDIS-xminDIS.gt.40.0_ip)then
+        dx_map = 10.0_DS
+      elseif(xmaxDIS-xminDIS.gt.10.0_ip)then
+        dx_map = 5.0_DS
+      elseif(xmaxDIS-xminDIS.gt.5.0_ip)then
+        dx_map = 2.0_DS
+      else
+        dx_map = 1.0_DS
+      endif
+      if(ymaxDIS-yminDIS.gt.40.0_ip)then
+        dy_map = 10.0_DS
+      elseif(ymaxDIS-yminDIS.gt.10.0_ip)then
+        dy_map = 5.0_DS
+      elseif(ymaxDIS-yminDIS.gt.5.0_ip)then
+        dy_map = 2.0_DS
+      else
+        dy_map = 1.0_DS
+      endif
       xgrid_1 = real(ceiling(xminDIS/dx_map) * dx_map,kind=DS)
       ygrid_1 = real(ceiling(yminDIS/dy_map) * dy_map,kind=DS)
 
@@ -789,8 +810,7 @@
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ! DISLIN block
       ! https://www.dislin.de/
-      ! wget
-      ! https://ftp.gwdg.de/pub/grafik/dislin/linux/i586_64/dislin-11.4.linux.i586_64.tar.gz
+      ! wget https://www.dislin.de/downloads/linux/i586_64/dislin-11.5.linux.i586_64.tar.gz
       !(1)    setting of page format, file format and filename
       !(2)    initialization
       !(3)    setting of plot parameters
