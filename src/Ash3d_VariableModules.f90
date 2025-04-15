@@ -88,8 +88,14 @@
       !   For KLM output, start file numbers at 500
       integer,parameter :: fid_kmlbase    = 500
       integer,parameter :: fid_kmlPOI     = 550
-      integer,parameter :: fid_kmlgnuscr  = 555
-      integer,parameter :: fid_kmlgnudat  = 556
+      !   For graphics scripts and files, start file numbers at 600
+      !integer,parameter :: fid_kmlgnuscr  = 555
+      !integer,parameter :: fid_kmlgnudat  = 556
+      integer,parameter :: fid_script     = 600
+      integer,parameter :: fid_outdata    = 610
+      integer,parameter :: fid_contourdata= 620
+      integer,parameter :: fid_misc       = 630
+
 
       ! Initialize these with the defaults, but we will reset these in the subroutine
       integer :: nio  = 1                    ! number of output streams (stdout and logfile)

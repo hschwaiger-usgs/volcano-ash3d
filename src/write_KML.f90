@@ -1101,9 +1101,9 @@
       integer :: ierup
       integer :: ai
       integer :: plt_indx
-      character(len=14) :: dp_outfile
-      character(len=14) :: dp_gnufile
-      character(len=14) :: dp_pngfile
+      character(len=14) :: filename_script
+      character(len=14) :: filename_outdata
+      character(len=14) :: filename_png
       character(len=80) :: gnucom
       character(len=77) :: zipcom
 
@@ -1156,41 +1156,41 @@
         Airport_TS_plotindex(ai) = plt_indx
 
         ! Writing a gnuplot script for this airport
-        write(dp_outfile,53) plt_indx,".dat"
-        write(dp_gnufile,53) plt_indx,".gnu"
-        write(dp_pngfile,53) plt_indx,".png"
+        write(filename_outdata,53) plt_indx,".dat"
+        write(filename_script,53) plt_indx,".gnu"
+        write(filename_png,53) plt_indx,".png"
  53     format('depTS_',i4.4,a4)
 
-        open(fid_kmlgnuscr,file=dp_gnufile,status='replace',action='write')
-        write(fid_kmlgnuscr,*)"set terminal png size 400,300"
-        write(fid_kmlgnuscr,*)"set key bmargin left horizontal Right noreverse enhanced ",&
+        open(fid_script,file=filename_script,status='replace',action='write')
+        write(fid_script,*)"set terminal png size 400,300"
+        write(fid_script,*)"set key bmargin left horizontal Right noreverse enhanced ",&
                               "autotitles box linetype -1 linewidth 1.000"
-        write(fid_kmlgnuscr,*)"set border 31 lw 2.0 lc rgb '#000000'"
-        write(fid_kmlgnuscr,*)"set style line 1 linecolor rgbcolor '#888888' linewidth 2.0 pt 7"
-        write(fid_kmlgnuscr,*)"set ylabel 'Deposit Thickeness (mm)'"
-        write(fid_kmlgnuscr,*)"set xlabel 'Time (hours after eruption)'"
-        write(fid_kmlgnuscr,*)"set nokey"
-        write(fid_kmlgnuscr,*)"set output '",dp_pngfile,"'"
-        write(fid_kmlgnuscr,*)"set title '",Airport_Name(ai),"'"
-        write(fid_kmlgnuscr,*)"plot [0:",ceiling(Simtime_in_hours),"][0:",&
-                              nint(ymaxpl),"] '",dp_outfile,"' with filledcurve x1 ls 1"
-        close(fid_kmlgnuscr)
+        write(fid_script,*)"set border 31 lw 2.0 lc rgb '#000000'"
+        write(fid_script,*)"set style line 1 linecolor rgbcolor '#888888' linewidth 2.0 pt 7"
+        write(fid_script,*)"set ylabel 'Deposit Thickeness (mm)'"
+        write(fid_script,*)"set xlabel 'Time (hours after eruption)'"
+        write(fid_script,*)"set nokey"
+        write(fid_script,*)"set output '",filename_png,"'"
+        write(fid_script,*)"set title '",Airport_Name(ai),"'"
+        write(fid_script,*)"plot [0:",ceiling(Simtime_in_hours),"][0:",&
+                              nint(ymaxpl),"] '",filename_outdata,"' with filledcurve x1 ls 1"
+        close(fid_script)
         ! Writing the data file the gnuplot script will plot
-        open(fid_kmlgnudat,file=dp_outfile,status='replace',action='write')
+        open(fid_outdata,file=filename_outdata,status='replace',action='write')
         do i = 1,nWriteTimes
-           write(fid_kmlgnudat,*)WriteTimes(i),Airport_Thickness_TS(ai,i)
+           write(fid_outdata,*)WriteTimes(i),Airport_Thickness_TS(ai,i)
         enddo
-        close(fid_kmlgnudat)
+        close(fid_outdata)
         ! Test if gnuplot is installed
         if(usegnuplot)then
           ! if we have gnuplot installed, just create the plots now
-          write(gnucom,*)trim(adjustl(gnuplotpath)),' -p ',dp_gnufile
+          write(gnucom,*)trim(adjustl(gnuplotpath)),' -p ',filename_script
           call execute_command_line(gnucom)
           ! Now delete the script and data files
-          open(unit=fid_kmlgnudat, iostat=stat, file=dp_outfile, status='old',action='write')
-          if (stat.eq.0) close(fid_kmlgnudat, status='delete')
-          open(unit=fid_kmlgnuscr, iostat=stat, file=dp_gnufile, status='old',action='write')
-          if (stat.eq.0) close(fid_kmlgnuscr, status='delete')
+          open(unit=fid_outdata, iostat=stat, file=filename_outdata, status='old',action='write')
+          if (stat.eq.0) close(fid_outdata, status='delete')
+          open(unit=fid_script, iostat=stat, file=filename_script, status='old',action='write')
+          if (stat.eq.0) close(fid_script, status='delete')
         endif
       enddo
 
@@ -1225,7 +1225,7 @@
           endif
           if (Airport_Longitude(ai).gt.180.0_ip) airlon=airlon-360.0_ip
           if (Airport_TS_plotindex(ai).gt.0)then
-            write(dp_pngfile,53) Airport_TS_plotindex(ai),".png"
+            write(filename_png,53) Airport_TS_plotindex(ai),".png"
 
             ! A cumulative deposit plot exists for this point since it has a plot index
             ! Write out a placemark which includes the png of the deposit time-series
@@ -1238,7 +1238,7 @@
                         Airport_AshDuration(ai),       &
                         Airport_Thickness(ai),         &
                         Airport_Thickness(ai)/25.4_ip, &
-                        dp_pngfile,                    &
+                        filename_png,                    &
                         xmlTimeStart,                  &
                         airlon,                        &
                         airlat

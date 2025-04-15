@@ -75,11 +75,9 @@
       subroutine write_2Dmap_PNG_GMT(nx,ny,iprod,itime,OutVar,Fill_Value,writeContours)
 
       use mesh,          only : &
-         A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-         A3d_k0_scale,A3d_Re,IsLatLon, &
-         latLL,lonLL,latUR,lonUR,xLL,yLL,xUR,yUR,&
-         lon_cc_pd,lat_cc_pd,dx,dy,de,dn !,&
-         !A3d_lam1,A3d_lam2,de,dn,dx,dy,x_cc_pd,y_cc_pd
+         IsLatLon,lon_cc_pd,lat_cc_pd,de,dn,latLL,lonLL,latUR,lonUR, &
+         x_cc_pd,y_cc_pd,dx,dy,xLL,yLL,xUR,yUR, &
+         A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,A3d_Re
 
       use Output_Vars,   only : &
          ContourFilled,Con_Cust,Con_Cust_N,Con_Cust_RGB,Con_Cust_Lev,&
@@ -93,8 +91,11 @@
          Con_CloudRef_N,Con_CloudRef_RGB,Con_CloudRef_Lev, &
          Con_CloudTime_N,Con_CloudTime_RGB,Con_CloudTime_Lev, &
          ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
-         CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS,ContourLev,nConLev,Mask_Cloud,&
-         CloudArrivalTime,Mask_Deposit
+         CloudArrivalTime,Mask_Deposit,Mask_Cloud,&
+         CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS,ContourLev,nConLev
+
+      use io_units,      only : &
+         fid_script,fid_outdata,fid_contourdata,fid_misc
 
       use time_data,     only : &
          os_time_log,SimStartHour,BaseYear,useLeap
@@ -143,9 +144,9 @@
       real(kind=ip)  :: ploth
       real(kind=ip)  :: asprat
 
-      character(len=10) :: dp_gmtfile
-      character(len=10) :: dp_outfile
-      character(len=10) :: dp_confile
+      character(len=10) :: filename_script
+      character(len=10) :: filename_outdata
+      character(len=10) :: filename_contourdata
 
       character(len=25) :: gmtcom
       integer           :: ioerr
@@ -453,8 +454,8 @@
         varname = "outvar"
         call write_2D_ASCII(nx,ny,OutVar,mask,Fill_Value_str,varname)
       else
-        write(dp_outfile,53) "outvar.dat"
-        open(54,file=dp_outfile,status='replace')
+        write(filename_outdata,53) "outvar.dat"
+        open(fid_outdata,file=filename_outdata,status='replace')
         do i = 1,nx
           do j = 1,ny
             if(lon_cc_pd(1).lt.180.0_ip)then
@@ -463,14 +464,14 @@
               tmp_ip = lon_cc_pd(i)-360.0_ip
             endif
             if(abs(OutVar(i,j)-Fill_Value).lt.EPS_SMALL)then
-              write(54,*)tmp_ip,lat_cc_pd(j),"NaN"
+              write(fid_outdata,*)tmp_ip,lat_cc_pd(j),"NaN"
             else
-              write(54,*)tmp_ip,lat_cc_pd(j),OutVar(i,j)
+              write(fid_outdata,*)tmp_ip,lat_cc_pd(j),OutVar(i,j)
             endif
           enddo
-          !write(54,*)""
+          !write(fid_outdata,*)""
         enddo
-        close(54)
+        close(fid_outdata)
       endif
 
       ! write contour pen specifications to strings
@@ -507,38 +508,38 @@
         endif;enddo
       endif
 
-      write(dp_confile,53) "outvar.con"
-      write(dp_gmtfile,53) "outvar.gmt"
+      write(filename_contourdata,53) "outvar.con"
+      write(filename_script,53) "outvar.gmt"
  53   format(a10)
 
       ! Set up to plot via GMT script
-      open(55,file=dp_gmtfile,status='replace')
+      open(fid_script,file=filename_script,status='replace')
 
       ! Write annotations to several legends
       !  Left panel
-      open(61,file="leg1.txt",status='replace')
-
-      write(61,'(a1)')"P"
-      write(61,'(a11,a30)')"T Volcano: ",VolcanoName
-      write(61,'(a5)')"G0.2i"
-      write(61,'(a12,a20)')"T Run Date: ",os_time_log
-      write(61,'(a5)')"G0.2i"
+      open( fid_misc,file="leg1.txt",status='replace')
+      write(fid_misc,'(a1)')"P"
+      write(fid_misc,'(a11,a30)')"T Volcano: ",VolcanoName
+      write(fid_misc,'(a5)')"G0.2i"
+      write(fid_misc,'(a12,a20)')"T Run Date: ",os_time_log
+      write(fid_misc,'(a5)')"G0.2i"
       read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
       linebuffer080 = cdf_b3l1
       linebuffer050 = "Reading iw,iwf from cdf_b3l1"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      write(61,'(a12,i3)')"T Windfile: ",iwf
-      close(61)
+      write(fid_misc,'(a12,i3)')"T Windfile: ",iwf
+      close(fid_misc)
+
       !  Right panel
-      open(62,file="leg2.txt",status='replace')
-      write(62,'(a20,a20)')"T Erup. Start Time: ",HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap)
-      write(62,'(a5)')"G0.2i"
-      write(62,'(a22,f5.2,a3)')"T Erup. Plume Height: ",real(e_PlumeHeight(1),kind=4)," km"
-      write(62,'(a)')"G0.2i"
-      write(62,'(a18,f5.2,a6)')"T Erup. Duration: ",real(e_Duration(1),kind=4)," hours"
-      write(62,'(a5)')"G0.2i"
-      write(62,'(a16,f5.2,a9)')"T Erup. Volume: ",real(e_Volume(1),kind=4)," km3(DRE)"
-      close(62)
+      open( fid_misc,file="leg2.txt",status='replace')
+      write(fid_misc,'(a20,a20)')"T Erup. Start Time: ",HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap)
+      write(fid_misc,'(a5)')"G0.2i"
+      write(fid_misc,'(a22,f5.2,a3)')"T Erup. Plume Height: ",real(e_PlumeHeight(1),kind=4)," km"
+      write(fid_misc,'(a)')"G0.2i"
+      write(fid_misc,'(a18,f5.2,a6)')"T Erup. Duration: ",real(e_Duration(1),kind=4)," hours"
+      write(fid_misc,'(a5)')"G0.2i"
+      write(fid_misc,'(a16,f5.2,a9)')"T Erup. Volume: ",real(e_Volume(1),kind=4)," km3(DRE)"
+      close(fid_misc)
 
       !  Local Logo
       !   First check is a local logo in installed on this system
@@ -558,20 +559,20 @@
         inquire( file=trim(adjustl(Instit_IconFile)), exist=IsThere)
       endif
       if(IsThere)then
-        open(63,file="leg3.txt",status='replace')
-        write(63,'(g0)')"I " // trim(adjustl(Instit_IconFile)) // " 2i C"
-        close(63)
+        open( fid_misc,file="leg3.txt",status='replace')
+        write(fid_misc,'(g0)')"I " // trim(adjustl(Instit_IconFile)) // " 2i C"
+        close(fid_misc)
       endif
 
       !  Contour legend
-      open(64,file="leg4.txt",status='replace')
-        write(64,'(a7)')"C black"
-        write(64,'(g0)')"H 12 1 " // trim(adjustl(units))
-        write(64,'(a3)')"N 1"
-        do i=1,nConLev
-          write(64,'(g0)')trim(adjustl(legpenstr(i)))
-        enddo
-      close(63)
+      open( fid_misc,file="leg4.txt",status='replace')
+      write(fid_misc,'(a7)')"C black"
+      write(fid_misc,'(g0)')"H 12 1 " // trim(adjustl(units))
+      write(fid_misc,'(a3)')"N 1"
+      do i=1,nConLev
+        write(fid_misc,'(g0)')trim(adjustl(legpenstr(i)))
+      enddo
+      close(fid_misc)
 
       if(IsLatLon)then
         xmin = minval(lon_cc_pd(1:nx))
@@ -780,15 +781,15 @@
       end_ps   = "-O >> "    // trim(adjustl(fileps))
 
       ! Set up to plot via GMT script
-      write(55,*)'#!/bin/bash'
-      if(.not.writeContours)write(55,*)'gmt gmtset PROJ_ELLIPSOID Sphere'
+      write(fid_script,*)'#!/bin/bash'
+      if(.not.writeContours)write(fid_script,*)'gmt gmtset PROJ_ELLIPSOID Sphere'
       cmd = 'gmt psbasemap -X1.5i -Y2i'  // " " // &
               trim(adjustl(area_str))    // " " // &
               trim(adjustl(proj_str))    // " " // &
               trim(adjustl(base_str))    // " " // &
               trim(adjustl(title_str))   // " " // &
               trim(adjustl(start_ps))
-      if(.not.writeContours)write(55,*)trim(adjustl(cmd))
+      if(.not.writeContours)write(fid_script,*)trim(adjustl(cmd))
 
       cmd = "gmt pscoast"               // " " // &
               trim(adjustl(area_str))   // " " // &
@@ -797,7 +798,7 @@
               trim(adjustl(coast_str))  // " " // &
               trim(adjustl(river_str))  // " " // &
               trim(adjustl(contn_ps))
-      if(.not.writeContours)write(55,*)trim(adjustl(cmd))
+      if(.not.writeContours)write(fid_script,*)trim(adjustl(cmd))
 
       ! Get grid to contour, converting the ASCII file generated above
       ! We need this line regardless of if we are just making contours or not
@@ -809,7 +810,7 @@
               trim(adjustl(incr_str))   // " " // &
               trim(adjustl(" -Gout.grd"))
       endif
-      write(55,*)trim(adjustl(cmd))
+      write(fid_script,*)trim(adjustl(cmd))
 
       ! write contour
       if(ContourFilled)then
@@ -817,15 +818,15 @@
       else
         !gmt grdcontour out.grd $AREA $PROJ $BASE -Cdpm_1.lev    -A- -W3,0/128/255   -O -K >> temp.ps
         do ilev=1,nConLev
-          write(55,*)'echo "',real(ContourLev(ilev),kind=4), '   C" > c.lev'
+          write(fid_script,*)'echo "',real(ContourLev(ilev),kind=4), '   C" > c.lev'
 
 
           if(writeContours)then
             ! write contours to files
-            write(dp_confile,54) "out",ilev,".con"
+            write(filename_contourdata,54) "out",ilev,".con"
  54         format(a3,i0.2,a4)  ! write contour file name with level zero-padded
             !gmt grdcontour out.grd $AREA $PROJ $BASE -Cc.lev    -A- -W3,0/128/255 -Dcfile.xyz
-!            write(55,*)'echo "',real(ContourLev(i),kind=4), '   C" > c.lev'
+!            write(fid_script,*)'echo "',real(ContourLev(i),kind=4), '   C" > c.lev'
 
             if (IsLatLon) then
               cmd = "gmt grdcontour out.grd"      // " " // &
@@ -834,16 +835,16 @@
                       "-Cc.lev -A-"               // " " // &
                       trim(adjustl(penstr(ilev))) // " " // &
                       "-D"                        // &
-                      trim(adjustl(dp_confile))
+                      trim(adjustl(filename_contourdata))
             else
               cmd = "gmt grdcontour out.grd"      // " " // &
                       trim(adjustl(projX_str))    // " " // &
                       "-Cc.lev -A-"               // " " // &
                       trim(adjustl(penstr(ilev))) // " " // &
                       "-D"                        // &
-                      trim(adjustl(dp_confile))
+                      trim(adjustl(filename_contourdata))
             endif
-            write(55,*)trim(adjustl(cmd))
+            write(fid_script,*)trim(adjustl(cmd))
           else
             if (IsLatLon) then
               cmd = "gmt grdcontour out.grd"      // " " // &
@@ -859,7 +860,7 @@
                       trim(adjustl(penstr(ilev))) // " " // &
                       trim(adjustl(contn_ps))
             endif
-            write(55,*)trim(adjustl(cmd))
+            write(fid_script,*)trim(adjustl(cmd))
           endif
         enddo
       endif
@@ -872,7 +873,7 @@
                 trim(adjustl(proj_str))        // " " // &
                 "-Sc0.05i -Gblack -Wthinnest"  // " " // &
                 trim(adjustl(contn_ps))
-        if(.not.writeContours)write(55,*)trim(adjustl(cmd))
+        if(.not.writeContours)write(fid_script,*)trim(adjustl(cmd))
 
         write(dumstr48,'(a1,f8.3,1x,f8.3,1x,a1,a26,a1,a1)')'"',&
                lon_cities(i),lat_cities(i),"'",trim(adjustl(name_cities(i))),"'",'"'
@@ -881,7 +882,7 @@
               trim(adjustl(proj_str))  // " " // &
               "-D0.1/0.1 -V"           // " " // &
               trim(adjustl(contn_ps))
-        if(.not.writeContours)write(55,*)trim(adjustl(cmd))
+        if(.not.writeContours)write(fid_script,*)trim(adjustl(cmd))
       enddo
 
       ! Last gmt command is to plot the volcano and close out the ps file
@@ -892,7 +893,7 @@
               trim(adjustl(proj_str))  // " " // &
               "-St0.1i -Gmagenta -Wthinnest " // &
               trim(adjustl(contn_ps))
-      if(.not.writeContours)write(55,*)trim(adjustl(cmd))
+      if(.not.writeContours)write(fid_script,*)trim(adjustl(cmd))
 
       ! Add descriptive footer here
       !gmt pslegend leg1.txt -R-134.500/-97.500/33.500/52.500  -JM-122.117/42.933/7i -Dx-1.0i/-1.5i/3.0i/1.0i/BL -K -O  >> temp.ps
@@ -902,7 +903,7 @@
               "-Dx-1.0i/-1.5i/3.0i/1.0i/BL " // &
               "-Dx-1.0i/-1.5i/3.0i/1.0i/BL " // &
               trim(adjustl(contn_ps))
-      if(.not.writeContours)write(55,*) trim(adjustl(cmd))
+      if(.not.writeContours)write(fid_script,*) trim(adjustl(cmd))
 
       !gmt pslegend leg2.txt -R-134.500/-97.500/33.500/52.500  -JM-122.117/42.933/7i -Dx2.0i/-1.5i/4.0i/1.0i/BL -K -O  >> temp.ps
       cmd = "gmt pslegend leg2.txt"   // " " // &
@@ -910,7 +911,7 @@
               trim(adjustl(proj_str)) // " " // &
               "-Dx2.0i/-1.5i/4.0i/1.0i/BL "  // &
               trim(adjustl(contn_ps))
-      if(.not.writeContours)write(55,*) trim(adjustl(cmd))
+      if(.not.writeContours)write(fid_script,*) trim(adjustl(cmd))
 
       !gmt pslegend leg3.txt -R-134.500/-97.500/33.500/52.500  -JM-122.117/42.933/7i -Dx6.0i/-2.3i/2.0i/1.0i/BL -K -O  >> temp.ps
       inquire( file="leg3.txt", exist=IsThere)
@@ -920,7 +921,7 @@
                 trim(adjustl(proj_str))      // " " // &
                 "-Dx6.0i/-2.3i/2.0i/1.0i/BL" // " " // &
                 trim(adjustl(contn_ps))
-        if(.not.writeContours)write(55,*)trim(adjustl(cmd))
+        if(.not.writeContours)write(fid_script,*)trim(adjustl(cmd))
       endif
       ! Add contour legend here
       cmd = "gmt pslegend leg4.txt"     // " " // &
@@ -928,13 +929,13 @@
               trim(adjustl(proj_str))   // " " // &
               "-Dx8.0i/2.0i/1.25i/2.5i/BL -F " // &
               trim(adjustl(end_ps))
-      if(.not.writeContours)write(55,*)  trim(adjustl(cmd))
+      if(.not.writeContours)write(fid_script,*)  trim(adjustl(cmd))
 
       !gmt pslegend leg4.txt -R-134.500/-97.500/33.500/52.500  -JM-122.117/42.933/7i -Dx8.0i/2.0i/1.25i/2.5i/BL -F -O  >> temp.ps
 
       ! This command converts temp.ps to temp.png
       cmd = "gmt psconvert temp.ps -A -Tg"
-      if(.not.writeContours)write(55,*)trim(adjustl(cmd))
+      if(.not.writeContours)write(fid_script,*)trim(adjustl(cmd))
 
       ! Might need to add this check in the GMT script on version 5 vs 6 (5 needs rotation)
       !GMTv=`gmt --version | cut -c1`
@@ -942,14 +943,14 @@
       !  convert -rotate 90 temp.png -resize 630x500 -alpha off temp.gif
       !if [ $GMTv -eq 5 ] ; then
       cmd = "convert temp.png -resize 850x600 -alpha off temp.png"
-      if(.not.writeContours)write(55,*)trim(adjustl(cmd))
+      if(.not.writeContours)write(fid_script,*)trim(adjustl(cmd))
 
       ! Move this png to the final filename
       cmd = "mv temp.png " // outfile_name
-      if(.not.writeContours)write(55,*)trim(adjustl(cmd))
+      if(.not.writeContours)write(fid_script,*)trim(adjustl(cmd))
 
-      close(55)
-      write(gmtcom,'(a3,a14)')'sh ',dp_gmtfile
+      close(fid_script)
+      write(gmtcom,'(a3,a14)')'sh ',filename_script
       call execute_command_line(gmtcom,exitstat=iostatus)
 
       ! Clean up
@@ -963,15 +964,15 @@
       if(writeContours)then
         ContourDataNcurves(:) = 0
         do ilev=1,nConLev
-          write(dp_confile,54) "out",ilev,".con"
-          ! Read dp_confile
+          write(filename_contourdata,54) "out",ilev,".con"
+          ! Read filename_contourdata
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"Now trying to read contour file and loading contour data.",&
-                trim(adjustl(dp_confile))
+                trim(adjustl(filename_contourdata))
           endif;enddo
-          inquire( file=trim(adjustl(dp_confile)), exist=IsThere)
+          inquire( file=trim(adjustl(filename_contourdata)), exist=IsThere)
           if(IsThere)then
-            open(54,file=dp_confile,status='old')
+            open(fid_contourdata,file=filename_contourdata,status='old')
           else
             ! File does not exist; try next contour level
             cycle
@@ -981,7 +982,7 @@
         !> 0.01 contour -Z0.01
         ! Each curve for that level is separated by a line containing '>'
 
-        read(54,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+        read(fid_contourdata,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         do while(iostatus.ge.0)
           ! Check if this is a header line
           read(linebuffer080,*,iostat=ioerr,iomsg=iomessage)testkey
@@ -1000,7 +1001,7 @@
 
             if(substr_pos1.eq.0)then
               ! key > is present, but 'contour' is not
-              read(54,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+              read(fid_contourdata,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
               cycle
             else
               ! Contours are all written to separate files
@@ -1035,9 +1036,9 @@
           endif
 
             ! Try to read the next line
-            read(54,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+            read(fid_contourdata,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
           enddo    ! iostatus.ge.0
-          close(54)  ! Close this contour file and open the next
+          close(fid_contourdata)  ! Close this contour file and open the next
         enddo    ! ilev=1,nConLev
 
         ! Loop through all the levels and curves and trim any curves with zero length
