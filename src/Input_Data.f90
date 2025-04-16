@@ -1110,11 +1110,11 @@
 
       integer           :: i,k,ii,isize
 
-      integer,       allocatable, dimension(:) :: iyear  ! time data read from files
-      integer,       allocatable, dimension(:) :: imonth
-      integer,       allocatable, dimension(:) :: iday
-      real(kind=dp), allocatable, dimension(:) :: hour   ! Start time of eruption in
-                                                         !  hour (UT)
+      integer,       allocatable, dimension(:) :: e_iyear  ! time data read from files
+      integer,       allocatable, dimension(:) :: e_imonth
+      integer,       allocatable, dimension(:) :: e_iday
+      real(kind=dp), allocatable, dimension(:) :: e_hour   ! Start time of eruption in
+                                                           !  hour (UT)
       character(len=50) :: linebuffer050 
       character(len=80) :: linebuffer080
       character(len=130):: linebuffer130
@@ -1866,10 +1866,10 @@
       ! Allocate arrays of eruptive properties
       call Allocate_Source_eruption
 
-      allocate (iyear(neruptions))
-      allocate (imonth(neruptions))
-      allocate (iday(neruptions))
-      allocate (hour(neruptions))
+      allocate (e_iyear(neruptions))
+      allocate (e_imonth(neruptions))
+      allocate (e_iday(neruptions))
+      allocate (e_hour(neruptions))
       !************************************************************************
       ! BLOCK 2: ERUPTION PARAMETERS
       ! Again, assuming there is a variable length
@@ -1924,17 +1924,17 @@
           stop 1
         endif
         if(i.eq.1)then
-          read(linebuffer130,*,err=9201,iostat=iostatus,iomsg=iomessage) iyear(i),imonth(i)
-          if(iyear(i).ne.0.and.iyear(i).lt.BaseYear.or.iyear(i)-BaseYear.gt.100)then
+          read(linebuffer130,*,err=9201,iostat=iostatus,iomsg=iomessage) e_iyear(i),e_imonth(i)
+          if(e_iyear(i).ne.0.and.e_iyear(i).lt.BaseYear.or.e_iyear(i)-BaseYear.gt.100)then
             ! Reset BaseYear to the start of the century containing the eruption year
-            MR_Comp_StartYear  = iyear(i)
-            MR_Comp_StartMonth = imonth(i)
-            BaseYear = iyear(i) - mod(iyear(i),100)
+            MR_Comp_StartYear  = e_iyear(i)
+            MR_Comp_StartMonth = e_imonth(i)
+            BaseYear = e_iyear(i) - mod(e_iyear(i),100)
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"WARNING: Resetting BaseYear to ",BaseYear
             endif;enddo
           endif
-          if(iyear(i).eq.0)then
+          if(e_iyear(i).eq.0)then
             runAsForecast = .true.
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"Year = 0; Running as forecast."
@@ -1948,7 +1948,7 @@
            SourceType.eq.'umbrella_air')then
           ! read start time, duration, plume height, volume of each pulse
           read(linebuffer130,*,err=9201,iostat=iostatus,iomsg=iomessage) &
-                                iyear(i),imonth(i),iday(i),hour(i), &
+                                e_iyear(i),e_imonth(i),e_iday(i),e_hour(i), &
                                 e_Duration(i), e_PlumeHeight(i), e_Volume(i)
         elseif(SourceType.eq.'profile')then
           do io=1,2;if(VB(io).le.verbosity_info)then
@@ -1956,7 +1956,7 @@
           endif;enddo
           ! read start time, duration, plume height, volume of each pulse
           read(linebuffer130,*,err=9201,iostat=iostatus,iomsg=iomessage) &
-                                iyear(i),imonth(i),iday(i),hour(i), &
+                                e_iyear(i),e_imonth(i),e_iday(i),e_hour(i), &
                                 e_Duration(i), e_PlumeHeight(i), e_Volume(i),&
                                 e_prof_dz(i),e_prof_nzpoints(i)
           allocate(dum_prof(e_prof_nzpoints(i)))
@@ -2000,7 +2000,7 @@
           ! will need to made from Ash3d_??.F90.  For now, just read the
           ! start time, duration, and plume height
           read(linebuffer130,*,err=9201,iostat=iostatus,iomsg=iomessage)&
-                                       iyear(i),imonth(i),iday(i),hour(i),&
+                                       e_iyear(i),e_imonth(i),e_iday(i),e_hour(i),&
                                        e_Duration(i), e_PlumeHeight(i)
           e_Volume(i)    = 0.0_ip
           if(neruptions.gt.1)then
@@ -2009,10 +2009,10 @@
             ! For now, copy slot 1 to all the others and break out of the do loop.
             ! The full source list must be populated by the user-provided custom source
             ! readers.
-            iyear(2:neruptions)         = iyear(1)
-            imonth(2:neruptions)        = imonth(1)
-            iday(2:neruptions)          = iday(1)
-            hour(2:neruptions)          = hour(1)
+            e_iyear(2:neruptions)       = e_iyear(1)
+            e_imonth(2:neruptions)      = e_imonth(1)
+            e_iday(2:neruptions)        = e_iday(1)
+            e_hour(2:neruptions)        = e_hour(1)
             e_Duration(2:neruptions)    = e_Duration(1)
             e_PlumeHeight(2:neruptions) = e_PlumeHeight(1)
             e_Volume(2:neruptions)      = e_Volume(1)
@@ -2027,10 +2027,10 @@
         ! considered 'days after start of wind file', then we need to
         ! add 1 so that the hours are calculated properly.
         if(runAsForecast)then
-          iyear(i) = BaseYear
-          imonth(i) = 1
-          iday(i) = iday(i) + 1
-          FC_Offset = real(hour(1),sp)
+          e_iyear(i)  = BaseYear
+          e_imonth(i) = 1
+          e_iday(i)   = e_iday(i) + 1
+          FC_Offset   = real(e_hour(1),sp)
         endif
         if(e_Duration(i).lt.0.0_ip)    e_Duration(i)    = ESP_duration
         if(e_PlumeHeight(i).lt.0.0_ip) e_PlumeHeight(i) = ESP_height
@@ -2274,14 +2274,14 @@
         ! Note: This will be updated for forecast runs once we know the start
         !       time of the windfiles
         if(i.eq.1) then
-          SimStartHour = HS_hours_since_baseyear(iyear(i),imonth(i),  &
-                        iday(i),hour(i),BaseYear,useLeap)
+          SimStartHour = HS_hours_since_baseyear(e_iyear(i),e_imonth(i),  &
+                        e_iday(i),e_hour(i),BaseYear,useLeap)
           xmlSimStartTime = HS_xmltime(SimStartHour,BaseYear,useLeap)
           MR_Comp_StartHour     = SimStartHour
           MR_Comp_Time_in_hours = Simtime_in_hours
         endif
-        e_StartTime(i) = HS_hours_since_baseyear(iyear(i),imonth(i),  &
-                                iday(i),hour(i),BaseYear,useLeap) - SimStartHour
+        e_StartTime(i) = HS_hours_since_baseyear(e_iyear(i),e_imonth(i),  &
+                                e_iday(i),e_hour(i),BaseYear,useLeap) - SimStartHour
         ! error trap if eruptions are not in chronological order
         if(.not.IsCustom_SourceType)then
           ! relax the chronological requirement for custom sources
@@ -2299,8 +2299,8 @@
       endif;enddo
       do i=1,neruptions
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),8) i, e_PlumeHeight(i), iyear(i), imonth(i), &
-                     iday(i), hour(i), e_Duration(i), e_Volume(i)
+          write(outlog(io),8) i, e_PlumeHeight(i), e_iyear(i), e_imonth(i), &
+                     e_iday(i), e_hour(i), e_Duration(i), e_Volume(i)
         endif;enddo
         if(SourceType.eq.'profile')then
           do io=1,2;if(VB(io).le.verbosity_info)then
@@ -2376,8 +2376,8 @@
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"Change in calandar; resetting e_StartTime"
         endif;enddo
-        tmp_dp = HS_hours_since_baseyear(iyear(1),imonth(1),  &
-                         iday(1),hour(1),BaseYear,useLeap)
+        tmp_dp = HS_hours_since_baseyear(e_iyear(1),e_imonth(1),  &
+                         e_iday(1),e_hour(1),BaseYear,useLeap)
         tmp_dp = tmp_dp - SimStartHour   ! Recast tmp_dp as the difference in calandars
         SimStartHour = SimStartHour + tmp_dp
         xmlSimStartTime = HS_xmltime(SimStartHour,BaseYear,useLeap)
@@ -3253,7 +3253,7 @@
       !************************************************************************
 
         ! Check for existance and compatibility with simulation time requirements
-      call MR_Read_Met_DimVars(iyear(1))
+      call MR_Read_Met_DimVars(e_iyear(1))
       if(MR_BaseYear.ne.BaseYear)then
         ! Base year was reset, probably because a windfile had an old base year
         useLeap  = MR_useLeap
@@ -3261,8 +3261,8 @@
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"Change in calandar; resetting e_StartTime"
         endif;enddo
-        tmp_dp = HS_hours_since_baseyear(iyear(1),imonth(1),  &
-                         iday(1),hour(1),BaseYear,useLeap)
+        tmp_dp = HS_hours_since_baseyear(e_iyear(1),e_imonth(1),  &
+                         e_iday(1),e_hour(1),BaseYear,useLeap)
         tmp_dp = tmp_dp - SimStartHour   ! Recast tmp_dp as the difference in calandars
         SimStartHour = SimStartHour + tmp_dp
         xmlSimStartTime = HS_xmltime(SimStartHour,BaseYear,useLeap)
@@ -4208,10 +4208,10 @@
         write(outlog(io),*)
       endif;enddo
 
-      deallocate(iyear)
-      deallocate(imonth)
-      deallocate(iday)
-      deallocate(hour)
+      deallocate(e_iyear)
+      deallocate(e_imonth)
+      deallocate(e_iday)
+      deallocate(e_hour)
 
       ! Set up logging logical values
         ! First check for output requests that require evaluating every time step
@@ -4338,7 +4338,7 @@
 
 
 9202  do io=1,2;if(VB(io).le.verbosity_error)then
-        write(errlog(io),5678)  i,e_StartTime(i),e_StartTime(i-1)+e_Duration(i-1),hour(i)
+        write(errlog(io),5678)  i,e_StartTime(i),e_StartTime(i-1)+e_Duration(i-1),e_hour(i)
       endif;enddo
 5678  format(4x,'error: eruption pulses are not in chronological order.',/, &
              4x,'e_StartTime(i)<(e_StartTime(i-1)+e_Duration(i-1))',/, &
