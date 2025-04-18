@@ -540,6 +540,9 @@
               write(errlog(io),*)"ERROR: VelMod_umb not recognized; must be 1 or 2"
             endif;enddo
           endif
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"  Resetting VelMod_umb to ",VelMod_umb
+          endif;enddo
         elseif (pname(i).eq.'lambda_umb') then
           ! error-checking
           if (pvalue(i).le.0.0_ip)then
@@ -725,6 +728,9 @@
           endif;enddo
         elseif (pname(i).eq.'cdf_institution') then
           cdf_institution = trim(adjustl(pvalue_str(i)))
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"  Resetting cdf_institution to ",cdf_institution
+          endif;enddo
         elseif (pname(i).eq.'cdf_run_class') then
           if(abs(pvalue(i)-1.0_ip).lt.EPS_SMALL)then
             cdf_run_class = 'Analysis'
@@ -737,8 +743,14 @@
               write(errlog(io),*)"ERROR: run_class not recognized; must be 1,2, or 3"
             endif;enddo
           endif
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"  Resetting cdf_run_class to ",cdf_run_class
+          endif;enddo
         elseif (pname(i).eq.'cdf_url') then
           cdf_url = trim(adjustl(pvalue_str(i)))
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"  Resetting cdf_url to ",cdf_url
+          endif;enddo
         else
           do io=1,2;if(VB(io).le.verbosity_info)then         
             write(outlog(io),*)"Found unknown parameter/value: ", &
