@@ -4035,21 +4035,21 @@
       ! Here are the default output file name and comments if Block 9 is not given
       concenfile  = "3d_tephra_fall.nc"
       cdf_title   = infile
-      cdf_comment = "None"
-      cdf_institution="USGS"
-      cdf_source="ash3d v1.0b"
-      cdf_run_class="Analysis"
-      cdf_url="https://vsc-ash.wr.usgs.gov/ash3d-gui"
-      cdf_history=""
-      cdf_references="https://pubs.usgs.gov/of/2013/1122/ofr20131122.pdf"
-      cdf_conventions='CF-1.5'
+      !cdf_comment = "None"
+      !cdf_institution="USGS"
+      !cdf_source="ash3d v1.0b"
+      !cdf_run_class="Analysis"
+      !cdf_url="https://vsc-ash.wr.usgs.gov/ash3d-gui"
+      !cdf_history=""
+      !cdf_references="https://pubs.usgs.gov/of/2013/1122/ofr20131122.pdf"
+      !cdf_conventions='CF-1.5'
       if(iostatus.ne.0)then
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)'  Setting outfile to: 3d_tephra_fall.nc'
           write(outlog(io),*)'  Setting Title to: ',infile
-          write(outlog(io),*)'  Setting comment to: None'
-          write(outlog(io),*)'  Setting run class to: Analysis'
-          write(outlog(io),*)'  Setting institution to: USGS'
+          !write(outlog(io),*)'  Setting comment to: None'
+          !write(outlog(io),*)'  Setting run class to: Analysis'
+          !write(outlog(io),*)'  Setting institution to: USGS'
         endif;enddo
       else
         do io=1,2;if(VB(io).le.verbosity_info)then
