@@ -1033,7 +1033,7 @@
          n_gs_max
 
       integer :: i,j,k
-      real(kind=ip) :: CellArea
+      !real(kind=ip) :: CellArea
 
       ! Both these concentration variables are in the 'natural' units of kg/km3
       real(kind=ip),dimension(nzmax) :: TotalConcentration ! concentration from all grain sizes as a vertical column
@@ -1057,7 +1057,7 @@
       if(n_gs_max.gt.0)then
         do i=imin,imax
           do j=jmin,jmax
-            CellArea = sigma_nz_pd(i,j,1)
+            !CellArea = sigma_nz_pd(i,j,1)
             TotalConcentration = 0.0_ip
             do k=1,nzmax
                ! Increment the cloud load for this column

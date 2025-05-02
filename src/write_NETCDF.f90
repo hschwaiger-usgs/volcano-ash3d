@@ -265,14 +265,14 @@
 
       INTERFACE
         character (len=13) function HS_yyyymmddhhmm_since(HoursSince,byear,useLeaps)
-          real(kind=8)               ::  HoursSince
-          integer                    ::  byear
-          logical                    ::  useLeaps
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
         end function HS_yyyymmddhhmm_since
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8)              :: HoursSince
-          integer                   :: byear
-          logical                   :: useLeaps
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
 
@@ -681,7 +681,7 @@
       endif;enddo
       ! Time variables should always be doubles to match with libhourssince
       nSTAT = nf90_def_var(ncid,dim_names(1),&
-                           nf90_double,& 
+                           NF90_DOUBLE,& 
                            (/t_dim_id/),&
                            t_var_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var t:")
@@ -722,12 +722,12 @@
       ! Always written
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,dim_names(2),&
-                             nf90_double,&
+                             NF90_DOUBLE,&
                              (/z_dim_id/),&
                              z_var_id)
       else
         nSTAT = nf90_def_var(ncid,dim_names(2),&
-                             nf90_float,&
+                             NF90_FLOAT,&
                              (/z_dim_id/), &
                              z_var_id)
       endif
@@ -749,12 +749,12 @@
       endif;enddo
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,dim_names(3),&
-                             nf90_double,&
+                             NF90_DOUBLE,&
                              (/y_dim_id/),&
                              y_var_id)
       else
         nSTAT = nf90_def_var(ncid,dim_names(3),&
-                             nf90_float,&
+                             NF90_FLOAT,&
                              (/y_dim_id/), &
                              y_var_id)
       endif
@@ -778,12 +778,12 @@
       endif;enddo
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,dim_names(4),&
-                             nf90_double,&
+                             NF90_DOUBLE,&
                              (/x_dim_id/),&
                              x_var_id)
       else
         nSTAT = nf90_def_var(ncid,dim_names(4),&
-                             nf90_float,&
+                             NF90_FLOAT,&
                              (/x_dim_id/), &
                              x_var_id)
       endif
@@ -805,12 +805,12 @@
         ! This branch is for z-shifting/scaling
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"s",&
-                               nf90_double,&
+                               NF90_DOUBLE,&
                                (/z_dim_id/),&
                                s_var_id)
         else
           nSTAT = nf90_def_var(ncid,"s",&
-                               nf90_float,&
+                               NF90_FLOAT,&
                                (/z_dim_id/), &
                                s_var_id)
         endif
@@ -841,7 +841,7 @@
         write(outlog(io),*)"     Bin: ",dim_names(5)
       endif;enddo
       nSTAT = nf90_def_var(ncid,dim_names(5),&
-                           nf90_int,&
+                           NF90_INT,&
                            (/bn_dim_id/), &
                            bn_var_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var bn")
@@ -858,7 +858,7 @@
         write(outlog(io),*)"     ER: ",dim_names(6)
       endif;enddo
       nSTAT = nf90_def_var(ncid,dim_names(6),&
-                           nf90_int,&
+                           NF90_INT,&
                            (/er_dim_id/),&
                            er_var_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var er")
@@ -872,7 +872,7 @@
         write(outlog(io),*)"     WF: ",dim_names(7)
       endif;enddo
       nSTAT = nf90_def_var(ncid,dim_names(7),&
-                           nf90_int,&
+                           NF90_INT,&
                            (/wf_dim_id/),&
                            wf_var_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var wf")
@@ -891,7 +891,7 @@
           write(outlog(io),*)"     PT: ",dim_names(9)
        endif;enddo
         nSTAT = nf90_def_var(ncid,dim_names(9),&
-                             nf90_int,&
+                             NF90_INT,&
                              (/pt_dim_id/),&
                              pt_var_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var pt")
@@ -907,7 +907,7 @@
           write(outlog(io),*)"     PR: ",dim_names(10)
         endif;enddo
         nSTAT = nf90_def_var(ncid,dim_names(10),&
-                             nf90_int,&
+                             NF90_INT,&
                              (/pr_dim_id/),&
                              pr_var_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var pr")
@@ -937,7 +937,7 @@
           write(outlog(io),*)"     LatLon_Projection"
         endif;enddo
         nSTAT = nf90_def_var(ncid,"LatLon_Projection",&
-                             nf90_int,&
+                             NF90_INT,&
                              proj_var_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var LatLon_Projection")
         nSTAT = nf90_put_att(ncid,proj_var_id,"lon_name","latitude_longitude")
@@ -956,7 +956,7 @@
             write(outlog(io),*)"     Projection : Non-geographic"
           endif;enddo
           nSTAT = nf90_def_var(ncid,"Non-geographic",&
-                               nf90_int,&
+                               NF90_INT,&
                                proj_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var Non-geographic")
           nSTAT = nf90_put_att(ncid,proj_var_id,&
@@ -973,7 +973,7 @@
             write(outlog(io),*)"     Projection : Polar_Stereographic"
           endif;enddo
           nSTAT = nf90_def_var(ncid,"Polar_Stereographic",&
-                               nf90_int,&
+                               NF90_INT,&
                                proj_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var Polar_Stereographic")
           nSTAT = nf90_put_att(ncid,proj_var_id,&
@@ -1012,7 +1012,7 @@
             write(outlog(io),*)"     Projection : Albers Equal Area"
           endif;enddo
           nSTAT = nf90_def_var(ncid,"Albers_Equal_Area",&
-                               nf90_int,&
+                               NF90_INT,&
                                proj_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var Albers_Equal_Area")
           nSTAT = nf90_put_att(ncid,proj_var_id,&
@@ -1050,7 +1050,7 @@
             write(outlog(io),*)"     Projection : Lambert_Conformal"
           endif;enddo
           nSTAT = nf90_def_var(ncid,"Lambert_Conformal",&
-                               nf90_int,&
+                               NF90_INT,&
                                proj_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var Lambert_Conformal")
           nSTAT = nf90_put_att(ncid,proj_var_id,&
@@ -1088,7 +1088,7 @@
             write(outlog(io),*)"     Projection : Mercator"
           endif;enddo
           nSTAT = nf90_def_var(ncid,"Mercator",&
-                               nf90_int,&
+                               NF90_INT,&
                                proj_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var Mercator")
           nSTAT = nf90_put_att(ncid,proj_var_id,&
@@ -1114,7 +1114,7 @@
             write(outlog(io),*)"     Projection : Not specified"
           endif;enddo
           nSTAT = nf90_def_var(ncid,"Projection",&
-                               nf90_int,&
+                               NF90_INT,&
                                proj_var_id)
           nSTAT = nf90_put_att(ncid,proj_var_id,&
                                "long_name", &
@@ -1145,7 +1145,7 @@
 
       ! Create variable defining the fall velocity model used
       nSTAT = nf90_def_var(ncid,"Fall_Model",&
-                           nf90_int,&
+                           NF90_INT,&
                            FV_var_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var Fall_Model")
       select case (FV_ID)
@@ -1210,7 +1210,7 @@
         write(outlog(io),*)"     SC: Species Class"
       endif;enddo
       nSTAT = nf90_def_var(ncid,"spec_class",&
-                           nf90_int,&
+                           NF90_INT,&
                            (/bn_dim_id/), &
                            spec_var_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var spec_class")
@@ -1226,7 +1226,7 @@
         write(outlog(io),*)"     SSC: Species Sub-class"
       endif;enddo
       nSTAT = nf90_def_var(ncid,"spec_subclass",&
-                           nf90_int,&
+                           NF90_INT,&
                            (/bn_dim_id/), &
                            subspec_var_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var spec_subclass")
@@ -1244,12 +1244,12 @@
       endif;enddo
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,"gs_diameter",&
-                             nf90_double,&
+                             NF90_DOUBLE,&
                              (/bn_dim_id/),&
                              gssd_var_id)
       else
         nSTAT = nf90_def_var(ncid,"gs_diameter",&
-                             nf90_float,&
+                             NF90_FLOAT,&
                              (/bn_dim_id/), &
                              gssd_var_id)
       endif
@@ -1265,12 +1265,12 @@
       endif;enddo
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,"gs_massfrac",&
-                             nf90_double,&
+                             NF90_DOUBLE,&
                              (/bn_dim_id/),&
                              gsmf_var_id)
       else
         nSTAT = nf90_def_var(ncid,"gs_massfrac",&
-                             nf90_float,&
+                             NF90_FLOAT,&
                              (/bn_dim_id/), &
                              gsmf_var_id)
       endif
@@ -1286,12 +1286,12 @@
       endif;enddo
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,"gs_dens",&
-                             nf90_double,&
+                             NF90_DOUBLE,&
                              (/bn_dim_id/),&
                              gsdens_var_id)
       else
         nSTAT = nf90_def_var(ncid,"gs_dens",&
-                             nf90_float,&
+                             NF90_FLOAT,&
                              (/bn_dim_id/), &
                              gsdens_var_id)
       endif
@@ -1307,12 +1307,12 @@
       endif;enddo
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,"gs_F",&
-                             nf90_double,&
+                             NF90_DOUBLE,&
                              (/bn_dim_id/),&
                              gsF_var_id)
       else
         nSTAT = nf90_def_var(ncid,"gs_F",&
-                             nf90_float,&
+                             NF90_FLOAT,&
                              (/bn_dim_id/), &
                              gsF_var_id)
       endif
@@ -1337,12 +1337,12 @@
       endif;enddo
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,"gs_G",&
-                             nf90_double,&
+                             NF90_DOUBLE,&
                              (/bn_dim_id/),&
                              gsG_var_id)
       else
         nSTAT = nf90_def_var(ncid,"gs_G",&
-                             nf90_float,&
+                             NF90_FLOAT,&
                              (/bn_dim_id/), &
                              gsG_var_id)
       endif
@@ -1367,12 +1367,12 @@
       endif;enddo
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,"gs_Phi",&
-                             nf90_double,&
+                             NF90_DOUBLE,&
                              (/bn_dim_id/),&
                              gsP_var_id)
       else
         nSTAT = nf90_def_var(ncid,"gs_Phi",&
-                             nf90_float,&
+                             NF90_FLOAT,&
                              (/bn_dim_id/), &
                              gsP_var_id)
       endif
@@ -1398,7 +1398,7 @@
         write(outlog(io),*)"     er_stime: Eruption pulse start time"
       endif;enddo
       nSTAT = nf90_def_var(ncid,"er_stime",&
-                           nf90_double,&
+                           NF90_DOUBLE,&
                            (/er_dim_id/),&
                            er_stime_var_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var er_stime")
@@ -1415,7 +1415,7 @@
         write(outlog(io),*)"     er_duration: Eruption pulse duration"
       endif;enddo
       nSTAT = nf90_def_var(ncid,"er_duration",&
-                           nf90_double,&
+                           NF90_DOUBLE,&
                            (/er_dim_id/),&
                            er_duration_var_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var er_duration")
@@ -1430,12 +1430,12 @@
       endif;enddo
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,"er_plumeheight",&
-                             nf90_double,&
+                             NF90_DOUBLE,&
                              (/er_dim_id/),&
                              er_plumeheight_var_id)
       else
         nSTAT = nf90_def_var(ncid,"er_plumeheight",&
-                             nf90_float,&
+                             NF90_FLOAT,&
                              (/er_dim_id/), &
                              er_plumeheight_var_id)
       endif
@@ -1451,12 +1451,12 @@
       endif;enddo
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,"er_volume",&
-                             nf90_double,&
+                             NF90_DOUBLE,&
                              (/er_dim_id/),&
                              er_volume_var_id)
       else
         nSTAT = nf90_def_var(ncid,"er_volume",&
-                             nf90_float,&
+                             NF90_FLOAT,&
                              (/er_dim_id/), &
                              er_volume_var_id)
       endif
@@ -1469,7 +1469,7 @@
          ! Now define the other (non-time-dependent) variables
          ! wf_name (Name of windfile)
       nSTAT = nf90_def_var(ncid,"wf_name",&
-                           nf90_char, &
+                           NF90_CHAR, &
                            (/sl_dim_id,wf_dim_id/),&
                            wf_name_var_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var wf_name")
@@ -1484,12 +1484,12 @@
       endif;enddo
       if(op.eq.8)then
         nSTAT = nf90_def_var(ncid,"area",&
-                             nf90_double, &
+                             NF90_DOUBLE, &
                              (/x_dim_id,y_dim_id/),                &
                              area_var_id)
       else
         nSTAT = nf90_def_var(ncid,"area",&
-                             nf90_float,  &
+                             NF90_FLOAT,  &
                              (/x_dim_id,y_dim_id/),                &
                              area_var_id)
       endif
@@ -1510,12 +1510,12 @@
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"vx",&
-                               nf90_double,  &
+                               NF90_DOUBLE,  &
                                (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/), &
                                vx_var_id)
         else
           nSTAT = nf90_def_var(ncid,"vx",&
-                               nf90_float,   &
+                               NF90_FLOAT,   &
                                (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/), &
                                vx_var_id)
         endif
@@ -1530,12 +1530,12 @@
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"vy",&
-                               nf90_double,  &
+                               NF90_DOUBLE,  &
                                (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/), &
                                vy_var_id)
         else
           nSTAT = nf90_def_var(ncid,"vy",&
-                               nf90_float,   &
+                               NF90_FLOAT,   &
                                (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/), &
                                vy_var_id)
         endif
@@ -1550,12 +1550,12 @@
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"vz",&
-                               nf90_double,  &
+                               NF90_DOUBLE,  &
                                (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/), &
                                vz_var_id)
         else
           nSTAT = nf90_def_var(ncid,"vz",&
-                               nf90_float,   &
+                               NF90_FLOAT,   &
                                (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/), &
                                vz_var_id)
         endif
@@ -1571,12 +1571,12 @@
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"vf",&
-                               nf90_double,  &
+                               NF90_DOUBLE,  &
                                (/x_dim_id,y_dim_id,z_dim_id,bn_dim_id,t_dim_id/), &
                                vf_var_id)
         else
           nSTAT = nf90_def_var(ncid,"vf",&
-                               nf90_float,   &
+                               NF90_FLOAT,   &
                                (/x_dim_id,y_dim_id,z_dim_id,bn_dim_id,t_dim_id/), &
                                vf_var_id)
         endif
@@ -1598,12 +1598,12 @@
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"ashcon",&
-                               nf90_double, &
+                               NF90_DOUBLE, &
                                (/x_dim_id,y_dim_id,z_dim_id,bn_dim_id,t_dim_id/),    &
                                ashcon_var_id)
         else
           nSTAT = nf90_def_var(ncid,"ashcon",&
-                               nf90_float,  &
+                               NF90_FLOAT,  &
                                (/x_dim_id,y_dim_id,z_dim_id,bn_dim_id,t_dim_id/),    &
                                 ashcon_var_id)
         endif
@@ -1644,12 +1644,12 @@
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"depocon",&
-                               nf90_double, &
+                               NF90_DOUBLE, &
                                (/x_dim_id,y_dim_id,bn_dim_id,t_dim_id/),                &
                                depocon_var_id)
         else
           nSTAT = nf90_def_var(ncid,"depocon",&
-                               nf90_float,  &
+                               NF90_FLOAT,  &
                                (/x_dim_id,y_dim_id,bn_dim_id,t_dim_id/),                &
                                depocon_var_id)
         endif
@@ -1670,12 +1670,12 @@
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"depothick",&
-                               nf90_double, &
+                               NF90_DOUBLE, &
                                (/x_dim_id,y_dim_id,t_dim_id/),                &
                                depothick_var_id)
         else
           nSTAT = nf90_def_var(ncid,"depothick",&
-                               nf90_float,  &
+                               NF90_FLOAT,  &
                                (/x_dim_id,y_dim_id,t_dim_id/),                &
                                depothick_var_id)
         endif
@@ -1696,12 +1696,12 @@
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"depothickFin",&
-                               nf90_double, &
+                               NF90_DOUBLE, &
                                (/x_dim_id,y_dim_id/),                &
                                depothickFin_var_id)
         else
           nSTAT = nf90_def_var(ncid,"depothickFin",&
-                               nf90_float,  &
+                               NF90_FLOAT,  &
                                (/x_dim_id,y_dim_id/),                &
                                depothickFin_var_id)
         endif
@@ -1722,12 +1722,12 @@
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"depotime",&
-                               nf90_double, &
+                               NF90_DOUBLE, &
                                (/x_dim_id,y_dim_id/),                &
                                depotime_var_id)
         else
           nSTAT = nf90_def_var(ncid,"depotime",&
-                               nf90_float,  &
+                               NF90_FLOAT,  &
                                (/x_dim_id,y_dim_id/),                &
                                depotime_var_id)
         endif
@@ -1748,12 +1748,12 @@
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"ash_arrival_time",&
-                               nf90_double, &
+                               NF90_DOUBLE, &
                                (/x_dim_id,y_dim_id/),                &
                                ashcloudtime_var_id)
         else
           nSTAT = nf90_def_var(ncid,"ash_arrival_time",&
-                               nf90_float,  &
+                               NF90_FLOAT,  &
                                (/x_dim_id,y_dim_id/),                &
                                ashcloudtime_var_id)
         endif
@@ -1774,12 +1774,12 @@
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"ashcon_max",&
-                               nf90_double, &
+                               NF90_DOUBLE, &
                                (/x_dim_id,y_dim_id,t_dim_id/),                &
                                ashconMax_var_id)
         else
           nSTAT = nf90_def_var(ncid,"ashcon_max",&
-                               nf90_float,  &
+                               NF90_FLOAT,  &
                                (/x_dim_id,y_dim_id,t_dim_id/),                &
                                ashconMax_var_id)
         endif
@@ -1800,12 +1800,12 @@
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"cloud_height",&
-                               nf90_double, &
+                               NF90_DOUBLE, &
                                (/x_dim_id,y_dim_id,t_dim_id/),                &
                                ashheight_var_id)
         else
           nSTAT = nf90_def_var(ncid,"cloud_height",&
-                               nf90_float,  &
+                               NF90_FLOAT,  &
                                (/x_dim_id,y_dim_id,t_dim_id/),                &
                                ashheight_var_id)
         endif
@@ -1829,12 +1829,12 @@
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"cloud_load",&
-                               nf90_double, &
+                               NF90_DOUBLE, &
                                (/x_dim_id,y_dim_id,t_dim_id/),                &
                                ashload_var_id)
         else
           nSTAT = nf90_def_var(ncid,"cloud_load",&
-                               nf90_float,  &
+                               NF90_FLOAT,  &
                                (/x_dim_id,y_dim_id,t_dim_id/),                &
                                ashload_var_id)
         endif
@@ -1857,7 +1857,7 @@
           write(outlog(io),*)"     cloud_mask: 1=volcanic cloud, 0=clear air"
         endif;enddo
         nSTAT = nf90_def_var(ncid,"cloud_mask",&
-                             nf90_int,  &
+                             NF90_INT,  &
                              (/x_dim_id,y_dim_id,t_dim_id/),                &
                              cloudmask_var_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var cloud_mask")
@@ -1872,12 +1872,12 @@
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"radar_reflectivity",&
-                               nf90_double, &
+                               NF90_DOUBLE, &
                                (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/),                &
                                radrefl_var_id)
         else
           nSTAT = nf90_def_var(ncid,"radar_reflectivity",&
-                               nf90_float,  &
+                               NF90_FLOAT,  &
                                (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/),                &
                                radrefl_var_id)
         endif
@@ -1898,12 +1898,12 @@
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"cloud_bottom",&
-                               nf90_double, &
+                               NF90_DOUBLE, &
                                (/x_dim_id,y_dim_id,t_dim_id/),                &
                                ashcloudBot_var_id)
         else
           nSTAT = nf90_def_var(ncid,"cloud_bottom",&
-                               nf90_float,  &
+                               NF90_FLOAT,  &
                                (/x_dim_id,y_dim_id,t_dim_id/),                &
                                ashcloudBot_var_id)
         endif
@@ -1930,12 +1930,12 @@
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"pt_x",&
-                               nf90_double,   &
+                               NF90_DOUBLE,   &
                                (/pt_dim_id/), &
                                pt_x_var_id)
         else
           nSTAT = nf90_def_var(ncid,"pt_x",&
-                               nf90_float,  &
+                               NF90_FLOAT,  &
                                (/pt_dim_id/),                &
                                pt_x_var_id)
         endif
@@ -1955,12 +1955,12 @@
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"pt_y",&
-                               nf90_double,   &
+                               NF90_DOUBLE,   &
                                (/pt_dim_id/), &
                                pt_y_var_id)
         else
           nSTAT = nf90_def_var(ncid,"pt_y",&
-                               nf90_float,  &
+                               NF90_FLOAT,  &
                                (/pt_dim_id/),                &
                                pt_y_var_id)
         endif
@@ -1979,7 +1979,7 @@
           write(outlog(io),*)"     pt_code: Airport/POI data 3-character code"
         endif;enddo
         nSTAT = nf90_def_var(ncid,"pt_code",&
-                             nf90_char,   &
+                             NF90_CHAR,   &
                              (/sl_dim_id,pt_dim_id/),&
                              pt_code_var_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var pt_code")
@@ -1993,7 +1993,7 @@
           write(outlog(io),*)"     pt_name: Airport/POI data location name"
         endif;enddo
         nSTAT = nf90_def_var(ncid,"pt_name",&
-                             nf90_char,   &
+                             NF90_CHAR,   &
                              (/sl_dim_id,pt_dim_id/),&
                              pt_name_var_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var pt_name")
@@ -2008,12 +2008,12 @@
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"pt_depotime",&
-                               nf90_double, &
+                               NF90_DOUBLE, &
                                (/pt_dim_id/),                &
                                pt_asharrival_var_id)
         else
           nSTAT = nf90_def_var(ncid,"pt_depotime",&
-                               nf90_float,  &
+                               NF90_FLOAT,  &
                                (/pt_dim_id/),                &
                                pt_asharrival_var_id)
         endif
@@ -2034,12 +2034,12 @@
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"pt_depodur",&
-                               nf90_double, &
+                               NF90_DOUBLE, &
                                (/pt_dim_id/),                &
                                pt_ashduration_var_id)
         else
           nSTAT = nf90_def_var(ncid,"pt_depodur",&
-                               nf90_float,  &
+                               NF90_FLOAT,  &
                                (/pt_dim_id/),                &
                                pt_ashduration_var_id)
         endif
@@ -2060,12 +2060,12 @@
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"pt_cloud_arrival",&
-                               nf90_double, &
+                               NF90_DOUBLE, &
                                (/pt_dim_id/),                &
                                pt_cloudarrival_var_id)
         else
           nSTAT = nf90_def_var(ncid,"pt_cloud_arrival",&
-                               nf90_float,  &
+                               NF90_FLOAT,  &
                                (/pt_dim_id/),                &
                                pt_cloudarrival_var_id)
         endif
@@ -2086,12 +2086,12 @@
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"pt_cloud_dur",&
-                               nf90_double, &
+                               NF90_DOUBLE, &
                                (/pt_dim_id/),                &
                                pt_cloudduration_var_id)
         else
           nSTAT = nf90_def_var(ncid,"pt_cloud_dur",&
-                               nf90_float,  &
+                               NF90_FLOAT,  &
                                (/pt_dim_id/),                &
                                pt_cloudduration_var_id)
         endif
@@ -2112,12 +2112,12 @@
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"pt_depothick",&
-                               nf90_double, &
+                               NF90_DOUBLE, &
                                (/pt_dim_id,t_dim_id/),                &
                                pt_ashthickness_var_id)
         else
           nSTAT = nf90_def_var(ncid,"pt_depothick",&
-                               nf90_float,  &
+                               NF90_FLOAT,  &
                                (/pt_dim_id,t_dim_id/),                &
                                pt_ashthickness_var_id)
         endif
@@ -2138,12 +2138,12 @@
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"pt_depothickFin",&
-                               nf90_double, &
+                               NF90_DOUBLE, &
                                (/pt_dim_id/),                &
                                pt_ashthicknessFin_var_id)
         else
           nSTAT = nf90_def_var(ncid,"pt_depothickFin",&
-                               nf90_float,  &
+                               NF90_FLOAT,  &
                                (/pt_dim_id/),                &
                                pt_ashthicknessFin_var_id)
         endif
@@ -2167,12 +2167,12 @@
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"pr_x",&
-                               nf90_double,   &
+                               NF90_DOUBLE,   &
                                (/pr_dim_id/), &
                                pr_x_var_id)
         else
           nSTAT = nf90_def_var(ncid,"pr_x",&
-                               nf90_float,  &
+                               NF90_FLOAT,  &
                                (/pr_dim_id/),                &
                                pr_x_var_id)
         endif
@@ -2192,12 +2192,12 @@
         endif;enddo
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"pr_y",&
-                               nf90_double,   &
+                               NF90_DOUBLE,   &
                                (/pr_dim_id/), &
                                pr_y_var_id)
         else
           nSTAT = nf90_def_var(ncid,"pr_y",&
-                               nf90_float,  &
+                               NF90_FLOAT,  &
                                (/pr_dim_id/),                &
                                pr_y_var_id)
         endif
@@ -2216,7 +2216,7 @@
           write(outlog(io),*)"     pr_name: Vertical profile name"
         endif;enddo
         nSTAT = nf90_def_var(ncid,"pr_name",&
-                             nf90_char,   &
+                             NF90_CHAR,   &
                              (/sl_dim_id,pr_dim_id/), &
                              pr_name_var_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var pr_name")
@@ -2241,12 +2241,12 @@
           do ivar=1,nvar_User2d_static_XY
             if(op.eq.8)then
               nSTAT = nf90_def_var(ncid,var_User2d_static_XY_name(ivar),&
-                                   nf90_double,  &
+                                   NF90_DOUBLE,  &
                                    (/x_dim_id,y_dim_id/), &
                                    temp1_2d_var_id)
             else
               nSTAT = nf90_def_var(ncid,var_User2d_static_XY_name(ivar),&
-                                   nf90_float,  &
+                                   NF90_FLOAT,  &
                                    (/x_dim_id,y_dim_id/), &
                                    temp1_2d_var_id)
             endif
@@ -2271,12 +2271,12 @@
           do ivar=1,nvar_User2d_XY
             if(op.eq.8)then
               nSTAT = nf90_def_var(ncid,var_User2d_XY_name(ivar),&
-                                   nf90_double,  &
+                                   NF90_DOUBLE,  &
                                    (/x_dim_id,y_dim_id,t_dim_id/), &
                                    temp1_2d_var_id)
             else
               nSTAT = nf90_def_var(ncid,var_User2d_XY_name(ivar),&
-                                   nf90_float,  &
+                                   NF90_FLOAT,  &
                                    (/x_dim_id,y_dim_id,t_dim_id/), &
                                    temp1_2d_var_id)
             endif
@@ -2301,12 +2301,12 @@
           do ivar=1,nvar_User3d_XYGs
             if(op.eq.8)then
               nSTAT = nf90_def_var(ncid,var_User3d_XYGs_name(ivar),&
-                                   nf90_double,  &
+                                   NF90_DOUBLE,  &
                                    (/x_dim_id,y_dim_id,bn_dim_id,t_dim_id/), &
                                    temp1_3d_var_id)
             else
               nSTAT = nf90_def_var(ncid,var_User3d_XYGs_name(ivar),&
-                                   nf90_float,  &
+                                   NF90_FLOAT,  &
                                    (/x_dim_id,y_dim_id,bn_dim_id,t_dim_id/), &
                                    temp1_3d_var_id)
             endif
@@ -2331,12 +2331,12 @@
           do ivar=1,nvar_User3d_XYZ
             if(op.eq.8)then
               nSTAT = nf90_def_var(ncid,var_User3d_XYZ_name(ivar),&
-                                   nf90_double,  &
+                                   NF90_DOUBLE,  &
                                    (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/), &
                                    temp1_3d_var_id)
             else
               nSTAT = nf90_def_var(ncid,var_User3d_XYZ_name(ivar),&
-                                   nf90_float,  &
+                                   NF90_FLOAT,  &
                                    (/x_dim_id,y_dim_id,z_dim_id,t_dim_id/), &
                                    temp1_3d_var_id)
             endif
@@ -2361,12 +2361,12 @@
           do ivar=1,nvar_User4d_XYZGs
             if(op.eq.8)then
               nSTAT = nf90_def_var(ncid,var_User4d_XYZGs_name(ivar),&
-                                   nf90_double,  &
+                                   NF90_DOUBLE,  &
                                    (/x_dim_id,y_dim_id,z_dim_id,bn_dim_id,t_dim_id/), &
                                    temp1_4d_var_id)
             else
               nSTAT = nf90_def_var(ncid,var_User4d_XYZGs_name(ivar),&
-                                   nf90_float, &
+                                   NF90_FLOAT, &
                                    (/x_dim_id,y_dim_id,z_dim_id,bn_dim_id,t_dim_id/), &
                                    temp1_4d_var_id)
             endif
@@ -3119,7 +3119,7 @@
           write(outlog(io),*)"     TN: ","tn"
         endif;enddo
         nSTAT = nf90_def_var(ncid,"tn",&
-                             nf90_double,&
+                             NF90_DOUBLE,&
                              (/tn_dim_id/),&
                              tn_var_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var tn")
@@ -3134,12 +3134,12 @@
           ! Profile data
           if(op.eq.8)then
             nSTAT = nf90_def_var(ncid,"pr_ash",&
-                                 nf90_double, &
+                                 NF90_DOUBLE, &
                                  (/z_dim_id,tn_dim_id,pr_dim_id/),                &
                                  pr_ash_var_id)
           else
             nSTAT = nf90_def_var(ncid,"pr_ash",&
-                                 nf90_float,  &
+                                 NF90_FLOAT,  &
                                  (/z_dim_id,tn_dim_id,pr_dim_id/),                &
                                  pr_ash_var_id)
           endif
@@ -3923,12 +3923,12 @@
 
       INTERFACE
         real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
-          integer            :: iyear
-          integer            :: imonth
-          integer            :: iday
-          real(kind=8)       :: hours
-          integer            :: byear
-          logical            :: useLeaps
+          integer     ,intent(in) :: iyear
+          integer     ,intent(in) :: imonth
+          integer     ,intent(in) :: iday
+          real(kind=8),intent(in) :: hours
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
         end function HS_hours_since_baseyear
       END INTERFACE
 

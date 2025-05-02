@@ -479,7 +479,7 @@
       real(kind=dp) :: dt
 
       real(kind=ip) :: tmp
-      integer :: i,j,ii,jj,k,isize
+      integer :: i,j,k,isize
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine SourceVolInc_Umbrella"
@@ -499,9 +499,9 @@
       enddo
 
       do i=1,3
-        ii=ivent-2+i
+        !ii=ivent-2+i
         do j=1,3
-          jj=jvent-2+j
+          !jj=jvent-2+j
           do k=ibase,itop
             do isize=1,n_gs_max
               tmp= tmp                                           + & ! final units is km3

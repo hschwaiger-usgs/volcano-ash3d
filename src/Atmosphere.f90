@@ -426,7 +426,7 @@
 
       integer, intent(in) :: last_or_next
 
-      real(kind=sp),dimension(:),allocatable :: z ! in m
+      !real(kind=sp),dimension(:),allocatable :: z ! in m
       real(kind=sp),dimension(:),allocatable :: p ! in Pa
       real(kind=sp),dimension(:),allocatable :: T ! in K
       real(kind=sp),dimension(:),allocatable :: Q ! in kg/kg
@@ -436,7 +436,7 @@
       real(kind=sp) :: refP
       real(kind=sp) :: mixrat
 
-      allocate(z(np_fullmet))
+      !allocate(z(np_fullmet))
       allocate(p(np_fullmet))
       allocate(T(np_fullmet))
       allocate(Q(np_fullmet))
@@ -459,7 +459,7 @@
       do i=1,nx_submet
         do j=1,ny_submet
           if(last_or_next.eq.0)then
-            z(1:np_fullmet) = MR_geoH_metP_last(i,j,1:np_fullmet) * real(KM_2_M,kind=sp)
+            !z(1:np_fullmet) = MR_geoH_metP_last(i,j,1:np_fullmet) * real(KM_2_M,kind=sp)
             T(1:np_fullmet) = AirTemp_meso_last_step_MetP_sp(i,j,1:np_fullmet)
             if(useMoistureVars)then
                 ! If moisture is enabled, use virtual potential temperatrue
@@ -469,7 +469,7 @@
               Q(1:np_fullmet) = 0.0_sp
             endif
           else
-            z(1:np_fullmet) = MR_geoH_MetP_next(i,j,1:np_fullmet) * real(KM_2_M,kind=sp)
+            !z(1:np_fullmet) = MR_geoH_MetP_next(i,j,1:np_fullmet) * real(KM_2_M,kind=sp)
             T(1:np_fullmet) = AirTemp_meso_next_step_MetP_sp(i,j,1:np_fullmet)
             if(useMoistureVars)then
                 ! If moisture is enabled, use virtual potential temperatrue
@@ -628,7 +628,7 @@
       integer       :: hh             ! hour of day
       integer       :: mm             ! minute of hour
 
-      real(kind=ip) :: lonR           ! longitude in radians
+!      real(kind=ip) :: lonR           ! longitude in radians
       real(kind=ip) :: latR           ! latitude in radians
       integer       :: ss             ! seconds of minute, used in Eqs, but not in function
       integer       :: tzone          ! time zone offset (assumed 0 for UTC)
@@ -645,7 +645,7 @@
       tzone = 0
       ss    = 0
       latR  = latD*DEG2RAD
-      lonR  = lonD*DEG2RAD
+!      lonR  = lonD*DEG2RAD
 
       ! Fractional year
       fyr = (jday-1 + (hh-12 + mm/60.0_ip)/24.0_ip)/365.0_ip

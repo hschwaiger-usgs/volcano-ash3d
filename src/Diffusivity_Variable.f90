@@ -613,14 +613,14 @@
 
       INTERFACE
         integer function HS_DayOfYear(HoursSince,byear,useLeaps)
-          real(kind=8)               ::  HoursSince
-          integer                    ::  byear
-          logical                    ::  useLeaps
+          real(kind=8),intent(in)   ::  HoursSince
+          integer     ,intent(in)   ::  byear
+          logical     ,intent(in)   ::  useLeaps
         end function HS_DayOfYear
         real(kind=8) function HS_HourOfDay(HoursSince,byear,useLeaps)
-          real(kind=8)               ::  HoursSince
-          integer                    ::  byear
-          logical                    ::  useLeaps
+          real(kind=8),intent(in)   ::  HoursSince
+          integer     ,intent(in)   ::  byear
+          logical     ,intent(in)   ::  useLeaps
         end function HS_HourOfDay
       END INTERFACE
 

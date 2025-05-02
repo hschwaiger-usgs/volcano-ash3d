@@ -82,7 +82,6 @@
       real(kind=ip),dimension(-1:nxmax+2)               :: kap_cc    ! cell volume
       real(kind=ip),dimension(-1:nxmax+2)               :: dt_vol_cc ! dt on local cell volume
       real(kind=ip),dimension(-1:nxmax+2)               :: DelDonD_cc
-
        ! arrays that live on cell interfaces
        !  Note: interface I for cell i is at (i-1/2); i.e. the left or negative side of i
        !        We only need the interfaces up to the boundary of the domain (not the ghost cells)

@@ -182,9 +182,9 @@
 
       INTERFACE
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
-          real(kind=8)               ::  HoursSince
-          integer                    ::  byear
-          logical                    ::  useLeaps
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
         end function HS_yyyymmddhh_since
       END INTERFACE
 
@@ -449,7 +449,7 @@
 
       ! Try to read the nondata value, first as a float
       read(fid_ascii2din,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-      tst_str(1:20) = linebuffer080(13:33)
+      tst_str(1:20) = linebuffer080(13:32)
       substr_pos1 = index(tst_str,'.')
       if(substr_pos1.gt.0)then
         ! period found, assume data are floats
@@ -703,9 +703,9 @@
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8)              :: HoursSince
-          integer                   :: byear
-          logical                   :: useLeaps
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
 

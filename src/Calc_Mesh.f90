@@ -56,7 +56,7 @@
 
       integer :: i,j,k
 
-      real(kind=ip) :: r_1,r_2,rr_2,rr_1,drr,drrr
+      real(kind=ip) :: r_1,r_2,rr_1,drr,drrr
       real(kind=ip) :: phi_1,phi_2
       real(kind=ip) :: theta_1,theta_2,del_theta,del_costheta
       real(kind=ip) :: del_lam
@@ -115,7 +115,6 @@
           r_2  = RAD_EARTH+z_cc_pd(k)+0.5_ip*dz_vec_pd(k)  ! r at top of cell
 
           rr_1 =      r_1*r_1
-          rr_2 =      r_2*r_2
           drr  = (    r_2*r_2 -     r_1*r_1)  ! difference of squares
           drrr = (r_2*r_2*r_2 - r_1*r_1*r_1)  ! difference of cubes
           do j=-1,nymax+2

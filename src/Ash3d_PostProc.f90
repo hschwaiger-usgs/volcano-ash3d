@@ -127,7 +127,8 @@
            read_3D_Binary
 
 #ifdef USENETCDF
-      use Ash3d_Netcdf_IO
+      use Ash3d_Netcdf_IO,  only : &
+           NC_Read_Output_Products
 #endif
 
       use Ash3d_KML_IO

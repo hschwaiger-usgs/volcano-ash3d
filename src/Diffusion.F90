@@ -710,6 +710,7 @@
       real(kind=ip),dimension( 1:nxmax+1)     :: k_ds_I  ! k/ds
 
       integer :: rmin, rmax     ! min and max indices of the row
+
 #ifdef CRANKNIC
       ! Note: The only reason not to use Crank-Nicolson is if you
       !       don't have blas and lapack installed.  This pre-proc.
@@ -1227,7 +1228,7 @@
        !        We only need the interfaces up to the boundary of the domain
        !        (not the ghost cells)
            ! These should be only from 1 to ncells + 1
-      real(kind=ip),dimension( 1:nzmax+1)     :: sig_I        ! area of interface
+      real(kind=ip),dimension( 1:nzmax+1)     :: sig_I   ! area of interface
       real(kind=ip),dimension( 1:nzmax+1)     :: ds_I    ! length measure used at interface
       real(kind=ip),dimension( 1:nzmax+1)     :: vavg_I
       real(kind=ip),dimension( 1:nzmax+1)     :: kavg_I
