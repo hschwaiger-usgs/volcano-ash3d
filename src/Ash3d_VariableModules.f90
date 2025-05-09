@@ -625,7 +625,7 @@
       ! different from the projection of the NWP files, or it might be ignored
       ! if the Ash3d mesh is lon/lat
       integer            :: A3d_iprojflag
-      real(kind=dp)      :: A3d_k0_scale
+      real(kind=dp)      :: A3d_k0
       real(kind=dp)      :: A3d_phi0
       real(kind=dp)      :: A3d_lam0
       real(kind=dp)      :: A3d_lam1,A3d_phi1

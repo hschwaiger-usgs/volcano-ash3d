@@ -409,7 +409,7 @@
 
       use mesh,          only : &
          A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-         A3d_k0_scale,A3d_Re,IsLatLon, &
+         A3d_k0,A3d_Re,IsLatLon, &
          latLL,lonLL,latUR,lonUR,xLL,yLL,xUR,yUR !,de,dn,dx,dy
 
       use time_data,     only : &
@@ -548,7 +548,7 @@
       if (.not.IsLatLon) then                        !get lon_volcano and lat_volcano
         call PJ_proj_inv(real(x_volcano,kind=dp),real(y_volcano,kind=dp), &
                    A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                   A3d_k0_scale,A3d_Re, &
+                   A3d_k0,A3d_Re, &
                    olam,ophi)
         lon_volcano = real(olam,kind=ip)
         lat_volcano = real(ophi,kind=ip)
@@ -741,7 +741,7 @@
       
       use mesh,          only : &
          nxmax,nymax,A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,&
-         A3d_k0_scale,A3d_Re,de,dn,dx,dy,IsLatLon,&
+         A3d_k0,A3d_Re,de,dn,dx,dy,IsLatLon,&
          lon_cc_pd,lat_cc_pd,x_cc_pd,y_cc_pd
 
       use time_data,     only : &
@@ -839,31 +839,31 @@
             ytop    = y_cc_pd(j) + dy/2.0_ip
             call PJ_proj_inv(real(xleft,kind=dp), real(ybottom,kind=dp),  &
                         A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                        A3d_k0_scale,A3d_Re, &
+                        A3d_k0,A3d_Re, &
                            olam,ophi)
             longLL = real(olam,kind=ip)
             lattLL = real(ophi,kind=ip)
             call PJ_proj_inv(real(xleft,kind=dp),    real(ytop,kind=dp),  &
                         A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                        A3d_k0_scale,A3d_Re, &
+                        A3d_k0,A3d_Re, &
                            olam,ophi)
             longUL = real(olam,kind=ip)
             lattUL = real(ophi,kind=ip)
             call PJ_proj_inv(real(xright,kind=dp),   real(ytop,kind=dp),  &
                         A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                        A3d_k0_scale,A3d_Re, &
+                        A3d_k0,A3d_Re, &
                            olam,ophi)
             longUR = real(olam,kind=ip)
             lattUR = real(ophi,kind=ip)
             call PJ_proj_inv(real(xright,kind=dp),real(ybottom,kind=dp),  &
                         A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                        A3d_k0_scale,A3d_Re, &
+                        A3d_k0,A3d_Re, &
                            olam,ophi)
             longLR = real(olam,kind=ip)
             lattLR = real(ophi,kind=ip)
             call PJ_proj_inv(real(x_cc_pd(i),kind=dp),real(y_cc_pd(j),kind=dp),  &
                         A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                        A3d_k0_scale,A3d_Re, &
+                        A3d_k0,A3d_Re, &
                            olam,ophi)
             longCC = real(olam,kind=ip)
             lattCC = real(ophi,kind=ip)
@@ -1063,7 +1063,7 @@
 
       use mesh,          only : &
          A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,&
-         A3d_k0_scale,A3d_Re,IsLatLon
+         A3d_k0,A3d_Re,IsLatLon
 
       use time_data,     only : &
          time,BaseYear,useLeap,SimStartHour,Simtime_in_hours,OutputOffset
@@ -1292,7 +1292,7 @@
       if (IsLatLon.eqv..False.) then      ! Put a placemark at the location of the volcano
         call PJ_proj_inv(real(x_volcano,kind=dp), real(y_volcano,kind=dp),  &
                       A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                      A3d_k0_scale,A3d_Re, &
+                      A3d_k0,A3d_Re, &
                       olam,ophi)
         lon_volcano = real(olam,kind=ip)
         lat_volcano = real(ophi,kind=ip)
@@ -1644,7 +1644,7 @@
 
       use mesh,          only : &
          A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,&
-         A3d_k0_scale,A3d_Re,IsLatLon
+         A3d_k0,A3d_Re,IsLatLon
 
       use projection,    only : &
            PJ_proj_inv
@@ -1686,7 +1686,7 @@
         do ict=0,40
           call PJ_proj_inv(real(xplot(ict),kind=dp),real(yplot(ict),kind=dp),  &
                         A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                        A3d_k0_scale,A3d_Re, &
+                        A3d_k0,A3d_Re, &
                         olam,ophi)
           lonplot(ict) = real(olam,kind=ip)
           latplot(ict) = real(ophi,kind=ip)

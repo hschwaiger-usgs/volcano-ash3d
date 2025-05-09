@@ -37,7 +37,7 @@
          z_lb_pd,z_cc_pd,dz_vec_pd,z_vec_init, &
          sigma_nx_pd,sigma_ny_pd,sigma_nz_pd,kappa_pd,&
          xLL,yLL,latLL,lonLL, &
-         A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_phi1,&
+         A3d_iprojflag,A3d_k0,A3d_phi0,A3d_lam0,A3d_phi1,&
          A3d_phi2,A3d_Re,IsLatLon,IsPeriodic
 
       use time_data,     only : &
@@ -185,7 +185,7 @@
         ! Initialize the grids needed for met data
       call MR_Set_CompProjection(IsLatLon,A3d_iprojflag,A3d_lam0, &
                                  A3d_phi0,A3d_phi1,A3d_phi2,       &
-                                 A3d_k0_scale,A3d_Re)
+                                 A3d_k0,A3d_Re)
       allocate(dumx_sp(nxmax))
       allocate(dumy_sp(nymax))
       allocate(dumz_sp(nzmax))
@@ -361,7 +361,7 @@
 
       use mesh,              only : &
          nxmax,nymax,x_cc_pd,y_cc_pd,xy2ll_xlon,xy2ll_ylat,&
-         A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_phi1,&
+         A3d_iprojflag,A3d_k0,A3d_phi0,A3d_lam0,A3d_phi1,&
          A3d_phi2,A3d_Re
 
       use projection,        only : &
@@ -411,7 +411,7 @@
           yin = real(y_cc_pd(j),kind=dp)
           call PJ_proj_inv(xin,yin, &
                          A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                         A3d_k0_scale,A3d_Re, &
+                         A3d_k0,A3d_Re, &
                          olam,ophi)
           if(olam.lt.lonmin)lonmin=olam
           if(olam.gt.lonmax)lonmax=olam

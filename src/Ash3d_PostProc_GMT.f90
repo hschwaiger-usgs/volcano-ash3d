@@ -77,7 +77,7 @@
       use mesh,          only : &
          IsLatLon,lon_cc_pd,lat_cc_pd,de,dn,latLL,lonLL,latUR,lonUR, &
          x_cc_pd,y_cc_pd,dx,dy,xLL,yLL,xUR,yUR, &
-         A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,A3d_Re
+         A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0,A3d_Re
 
       use Output_Vars,   only : &
          ContourFilled,Con_Cust,Con_Cust_N,Con_Cust_RGB,Con_Cust_Lev,&
@@ -599,13 +599,13 @@
 
         call PJ_proj_inv(real(xmin,kind=dp), real(ymin,kind=dp),  &
                       A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                      A3d_k0_scale,A3d_Re, &
+                      A3d_k0,A3d_Re, &
                       olam,ophi)
         lonLL = real(olam,kind=ip)
         latLL = real(ophi,kind=ip)
         call PJ_proj_inv(real(xmax,kind=dp), real(ymax,kind=dp),  &
                       A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                      A3d_k0_scale,A3d_Re, &
+                      A3d_k0,A3d_Re, &
                       olam,ophi)
         lonUR = real(olam,kind=ip)
         latUR = real(ophi,kind=ip)

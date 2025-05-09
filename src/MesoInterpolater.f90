@@ -74,7 +74,6 @@
          MR_MetStep_Hour_since_baseyear,MR_MetStep_Interval,&
            MR_Read_HGT_arrays,&
            MR_Read_3d_Met_Variable_to_CompH,&
-!           MR_Rotate_UV_GR2ER_Met,&
            MR_Rotate_UV_ER2GR_Comp,&
            MR_Regrid_MetP_to_CompH,&
            MR_Read_3d_MetP_Variable

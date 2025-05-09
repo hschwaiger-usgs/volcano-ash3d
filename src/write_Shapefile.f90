@@ -61,7 +61,7 @@
 
       use mesh,          only : &
          A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-         A3d_k0_scale,IsLatLon
+         A3d_k0,IsLatLon
 
       use Ash3d_Binary_IO, only : &
          BigEnd_4int,   &
@@ -783,7 +783,7 @@
         case(1)
           ! Polar stereographic
           open(ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
-          write(ov_projID,501)A3d_lam0,A3d_k0_scale,A3d_phi1
+          write(ov_projID,501)A3d_lam0,A3d_k0,A3d_phi1
 501       format('PROJECTION["Polar_Stereographic"],',          &
                  'PARAMETER["False_Easting",500000.0],',        &
                  'PARAMETER["False_Northing",0.0],',            &
@@ -808,7 +808,7 @@
         case(3)
           ! UTM
           open(ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
-          write(ov_projID,503)A3d_lam0,A3d_phi0,A3d_k0_scale
+          write(ov_projID,503)A3d_lam0,A3d_phi0,A3d_k0
 503       format('PROJECTION["Transverse_Mercator"],',      &
                  'PARAMETER["False_Easting",500000.0],',        &
                  'PARAMETER["False_Northing",0.0],',            &
@@ -833,7 +833,7 @@
         case(5)
           ! Mercator
           open(ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
-          write(ov_projID,505)A3d_lam0,A3d_phi0,A3d_k0_scale
+          write(ov_projID,505)A3d_lam0,A3d_phi0,A3d_k0
 505       format('PROJECTION["Transverse_Mercator"],',          &
                  'PARAMETER["False_Easting",500000.0],',        &
                  'PARAMETER["False_Northing",0.0],',            &

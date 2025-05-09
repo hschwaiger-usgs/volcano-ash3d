@@ -1049,7 +1049,7 @@
          de,dn,dx,dy,z_vec_init,dz_const,nxmax,nymax,nzmax,nsmax,VarDzType,ivent,jvent,kvent,&
          gridwidth_e,gridwidth_n,gridwidth_x,gridwidth_y,&
          lonLL,latLL,lonUR,latUR,xLL,yLL,xUR,yUR,&
-         A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
+         A3d_iprojflag,A3d_k0,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
          A3d_phi2,A3d_Re,IsLatLon,IsPeriodic,ZPADDING,Ztop
 
       use solution,      only : &
@@ -1409,7 +1409,7 @@
       if(IsLatLon.eqv..false.)then
         call PJ_Set_Proj_Params(Comp_projection_line)
         A3d_iprojflag  = PJ_iprojflag
-        A3d_k0_scale   = PJ_k0
+        A3d_k0         = PJ_k0
         A3d_Re         = PJ_Re
         A3d_lam0       = PJ_lam0
         A3d_lam1       = PJ_lam1

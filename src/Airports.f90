@@ -232,8 +232,6 @@
       use mesh,          only : &
          IsLatLon,de,dn,dx,dy,xLL,yLL,xUR,yUR,latLL,lonLL,latUR,lonUR
 
-      use projection,    only : &
-         PJ_proj_for
 
       integer :: i,ind
       real(kind=ip)      :: xnow, ynow
@@ -605,7 +603,7 @@
       subroutine ReadExtAirports
 
       use mesh,          only : &
-         A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,&
+         A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0,&
          A3d_Re,IsLatLon
 
       use projection,    only : &
@@ -698,7 +696,7 @@
             lon_in = ExtAirportLon(isite)
             lat_in = ExtAirportLat(isite)
             call PJ_proj_for(lon_in,lat_in, A3d_iprojflag, &
-                       A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,A3d_Re, &
+                       A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0,A3d_Re, &
                        xout,yout)
             ExtAirportX(isite) = real(xout,kind=ip)
             ExtAirportY(isite) = real(yout,kind=ip)
@@ -708,7 +706,7 @@
             x_in = ExtAirportX(isite)
             y_in = ExtAirportY(isite)
             call PJ_proj_inv(x_in,y_in, A3d_iprojflag, &
-                       A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,A3d_Re, &
+                       A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0,A3d_Re, &
                        xout,yout)
             ExtAirportLon(isite) = real(xout,kind=ip)
             ExtAirportLat(isite) = real(yout,kind=ip)
@@ -13189,7 +13187,7 @@
       subroutine Project_GlobalAirports
 
       use mesh,          only : &
-         IsLatLon,A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,&
+         IsLatLon,A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0,&
          A3d_Re
 
       use projection,    only : &
@@ -13207,7 +13205,7 @@
           lon_in = AirportFullLon(isite)
           lat_in = AirportFullLat(isite)
           call PJ_proj_for(lon_in,lat_in, A3d_iprojflag, &
-                     A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,A3d_Re, &
+                     A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0,A3d_Re, &
                      xout,yout)
           AirportFullX(isite) = real(xout,kind=ip)
           AirportFullY(isite) = real(yout,kind=ip)

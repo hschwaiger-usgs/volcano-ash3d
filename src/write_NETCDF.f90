@@ -188,7 +188,7 @@
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,x_cc_pd,y_cc_pd,z_cc_pd,lon_cc_pd,lat_cc_pd,s_cc_pd,&
          sigma_nz_pd,dx,dy,dz_vec_pd,IsLatLon,ts1,&
-         A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
+         A3d_iprojflag,A3d_k0,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
          A3d_phi2,A3d_Re,ZPADDING,ZScaling_ID,Ztop
 
       use solution,      only : &
@@ -995,7 +995,7 @@
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1, &
                               "put_att Polar_Stereographic straight_vertical_longitude_from_pole")
           nSTAT = nf90_put_att(ncid,proj_var_id,&
-                              "scale_factor_at_projection_origin",A3d_k0_scale)
+                              "scale_factor_at_projection_origin",A3d_k0)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1, &
                               "put_att Polar_Stereographic scale_factor_at_projection_origin")
           nSTAT = nf90_put_att(ncid,proj_var_id,&
@@ -3855,7 +3855,7 @@
       use mesh,          only : &
          nxmax,nymax,nsmax,nzmax,x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd,z_cc_pd, &
          dx,dy,de,dn,dz_const,IsLatLon,latLL,lonLL,latUR,lonUR,xLL,yLL,xUR,yUR,&
-         A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
+         A3d_iprojflag,A3d_k0,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
          A3d_phi2,A3d_Re,ZPADDING
 
       use solution,      only : &
@@ -4040,7 +4040,7 @@
           endif
           call PJ_Set_Proj_Params(cdf_b1l2)
           A3d_iprojflag  = PJ_iprojflag
-          A3d_k0_scale   = PJ_k0
+          A3d_k0   = PJ_k0
           A3d_Re         = PJ_Re
           A3d_lam0       = PJ_lam0
           A3d_lam1       = PJ_lam1
@@ -4864,7 +4864,7 @@
               lon_in = Airport_Longitude(i)
               lat_in = Airport_Latitude(i)
               call PJ_proj_for(lon_in,lat_in, A3d_iprojflag, &
-                         A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,A3d_Re, &
+                         A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0,A3d_Re, &
                          xout,yout)
               xnow = real(xout,kind=ip)
               ynow = real(yout,kind=ip)
@@ -5001,7 +5001,7 @@
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,cdf_b1l5,iomessage)
           call PJ_proj_inv(real(x_volcano,kind=dp),real(y_volcano,kind=dp), &
                      A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                     A3d_k0_scale,A3d_Re, &
+                     A3d_k0,A3d_Re, &
                      lon_in,lat_in)
           lon_volcano = real(lon_in,kind=ip)
           lat_volcano = real(lat_in,kind=ip)
