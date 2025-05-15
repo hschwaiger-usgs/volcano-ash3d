@@ -495,6 +495,12 @@ ascii_stats: $(ASH3DCCSRC)/tools/Ash3d_ASCII_stats.f90 Ash3d_VariableModules.o w
 	mkdir -p ../bin/tools
 	mv Ash3d_ASCII_stats ../bin/tools/Ash3d_ASCII_stats
 
+ascii_dep: $(ASH3DCCSRC)/tools/Ash3d_ASCII_DepThin.f90 Ash3d_VariableModules.o write_ASCII.o $(MFILE) $(SYSINC)
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/tools/Ash3d_ASCII_DepThin.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d_ASCII_DepThin.o $(LIBS) -o Ash3d_ASCII_DepThin
+	mkdir -p ../bin/tools
+	mv Ash3d_ASCII_DepThin ../bin/tools/Ash3d_ASCII_DepThin
+
 check: ascii_check Ash3d $(MFILE) $(SYSINC)
 	bash run_tests.sh
 
