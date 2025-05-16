@@ -356,7 +356,7 @@ PPOBJS = Ash3d_VariableModules.o        \
          Ash3d_PostProc_cities.o        \
          ResetParams.o
 
-GRAFOBJ = Ash3d_PostProc_gnuplot.o $(plplotOBJ) $(dislinOBJ) Ash3d_PostProc_GMT.o $(gmtOBJ)
+GRAFOBJ = Ash3d_PostProc_gnuplot.o $(plplotOBJ) $(dislinOBJ) Ash3d_PostProc_GMT.o $(gmtOBJ) Ash3d_PostProc_matlab.o
 
 TOOLOBJ = Ash3d_ASCII_check.o
 
@@ -462,6 +462,8 @@ postproc: $(ASH3DCCSRC)/Ash3d_PostProc.f90 $(PPOBJS) $(GRAFOBJ) $(DATAOBJ) $(MFI
 # We always compile the gnuplot subroutine since these will just throw an error if gnuplot is not installed
 Ash3d_PostProc_gnuplot.o: Ash3d_PostProc_gnuplot.f90 $(MFILE) $(SYSINC) Ash3d_PostProc_cities.o Ash3d_VariableModules.o Output_Vars.o Airports.o Source.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3DCCSRC)/Ash3d_PostProc_gnuplot.f90
+Ash3d_PostProc_matlab.o: Ash3d_PostProc_matlab.f90 $(MFILE) $(SYSINC) Ash3d_PostProc_cities.o write_ASCII.o Ash3d_VariableModules.o Output_Vars.o Airports.o Source.o
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3DCCSRC)/Ash3d_PostProc_matlab.f90
 ifeq ($(USEPLPLOT), T)
 Ash3d_PostProc_plplot.o: Ash3d_PostProc_plplot.f90 $(MFILE) $(SYSINC) Ash3d_PostProc_cities.o Ash3d_VariableModules.o Output_Vars.o Airports.o Source.o
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3DCCSRC)/Ash3d_PostProc_plplot.f90

@@ -148,7 +148,7 @@
       character(len=10) :: filename_outdata
       character(len=10) :: filename_contourdata
 
-      character(len=25) :: gmtcom
+      character(len=25) :: plotcom
       integer           :: ioerr
       integer           :: iostatus
       character(len=120):: iomessage
@@ -298,7 +298,7 @@
       elseif(iprod.eq.8)then   ! ashfall arrival at airports/POI (mm)
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: No map PNG output option for airport arrival time data."
-          write(errlog(io),*)"       Should not be in write_2Dmap_PNG_dislin"
+          write(errlog(io),*)"       Should not be in write_2Dmap_PNG_GMT"
         endif;enddo
         stop 1
       elseif(iprod.eq.9)then   ! ash-cloud concentration
@@ -402,7 +402,7 @@
       elseif(iprod.eq.16)then   ! profile plots
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: No map PNG output option for vertical profile data."
-          write(errlog(io),*)"       Should not be in write_2Dmap_PNG_dislin"
+          write(errlog(io),*)"       Should not be in write_2Dmap_PNG_GMT"
         endif;enddo
         stop 1
       else
@@ -950,8 +950,8 @@
       if(.not.writeContours)write(fid_script,*)trim(adjustl(cmd))
 
       close(fid_script)
-      write(gmtcom,'(a3,a14)')'sh ',filename_script
-      call execute_command_line(gmtcom,exitstat=iostatus)
+      write(plotcom,'(a3,a14)')'sh ',filename_script
+      call execute_command_line(plotcom,exitstat=iostatus)
 
       ! Clean up
       if (CleanScripts_GMT) then
@@ -997,7 +997,7 @@
             ioerr = -1
             ContourDataNcurves(ilev) = 0
             do io=1,2;if(VB(io).le.verbosity_debug2)then
-              write(outlog(io),*)'  File exists, but has no content. Settingn ncurves for this level to 0.'
+              write(outlog(io),*)'  File exists, but has no content. Setting ncurves for this level to 0.'
             endif;enddo
             cycle
 
@@ -1042,8 +1042,8 @@
             read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)ContourDataX(ilev,icurve,ipt),ContourDataY(ilev,icurve,ipt)
           endif
 
-            ! Try to read the next line
-            read(fid_contourdata,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+          ! Try to read the next line
+          read(fid_contourdata,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
           enddo    ! iostatus.ge.0
           close(fid_contourdata)  ! Close this contour file and open the next
         enddo    ! ilev=1,nConLev

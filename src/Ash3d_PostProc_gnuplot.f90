@@ -110,6 +110,7 @@
       real(kind=ip),intent(in) :: Fill_Value
       logical      ,intent(in) :: writeContours
 
+      character(len=6)   :: Fill_Value_str
       character(len=200) :: cmd
 
       integer :: i,j,ii
@@ -132,8 +133,8 @@
       character(len=10) :: filename_contourdata
 
       !character(len=26) :: coord_str
-      character(len=25) :: gnucom
-      character(len=80) :: gnucoastfile
+      character(len=25) :: plotcom
+      character(len=80) :: coastfile
       integer           :: ioerr
       integer           :: iostatus
       character(len=120):: iomessage
@@ -152,6 +153,8 @@
       real(kind=4)      :: lev_r4
       integer           :: icurve,ipt
 
+      character(len=20) :: varname
+
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
           real(kind=8),intent(in) :: HoursSince
@@ -160,14 +163,14 @@
         end function HS_xmltime
       END INTERFACE
 
-      write(gnucoastfile,'(a13)')"world_50m.txt"
-      inquire(file=gnucoastfile,exist=IsThere1)
+      write(coastfile,'(a13)')"world_50m.txt"
+      inquire(file=coastfile,exist=IsThere1)
       if(.not.IsThere1)then
-        gnucoastfile = trim(Ash3dHome) // &
+        coastfile = trim(Ash3dHome) // &
                           DirDelim // 'share' // &
                           DirDelim // 'post_proc' // &
                           DirDelim // 'world_50m.txt'
-        inquire(file=gnucoastfile,exist=IsThere2)
+        inquire(file=coastfile,exist=IsThere2)
         if(.not.IsThere2)then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"Could not find required file world_50m.txt"
@@ -219,10 +222,12 @@
       endif
 
       if(iprod.eq.3)then       ! deposit at specified times (mm)
+        varname = "depothick"
         write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
         title_legend = 'Dep.Thick.(mm)'
         units = " (mm)"
+        Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
           nConLev = Con_DepThick_mm_N
           allocate(zrgb(nConLev,3))
@@ -231,10 +236,12 @@
           zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.4)then   ! deposit at specified times (inches)
+        varname = "depothick"
         write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
         title_legend = 'Dep.Thick.(in)'
         units = " (in)"
+        Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
           nConLev = Con_DepThick_in_N
           allocate(zrgb(nConLev,3))
@@ -243,10 +250,12 @@
           zrgb(1:nConLev,1:3) = Con_DepThick_in_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.5)then       ! deposit at final time (mm)
+        varname = "depothickFin"
         write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
         title_legend = 'Dep.Thick.(mm)'
         units = " (mm)"
+        Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
           nConLev = Con_DepThick_mm_N
           allocate(zrgb(nConLev,3))
@@ -255,10 +264,12 @@
           zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.6)then   ! deposit at final time (inches)
+        varname = "depothickFin"
         write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
         title_legend = 'Dep.Thick.(in)'
         units = " (in)"
+        Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
           nConLev = Con_DepThick_in_N
           allocate(zrgb(nConLev,3))
@@ -267,10 +278,12 @@
           zrgb(1:nConLev,1:3) = Con_DepThick_in_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.7)then   ! ashfall arrival time (hours)
+        varname = "depotime"
         write(outfile_name,'(a22)')'DepositArrivalTime.png'
         write(title_plot,'(a20)')'Ashfall arrival time'
         title_legend = 'Time (hours)'
         units = " (hours)"
+        Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
           nConLev = Con_DepTime_N
           allocate(zrgb(nConLev,3))
@@ -281,14 +294,16 @@
       elseif(iprod.eq.8)then   ! ashfall arrival at airports/POI (mm)
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: No map PNG output option for airport arrival time data."
-          write(errlog(io),*)"       Should not be in write_2Dmap_PNG_dislin"
+          write(errlog(io),*)"       Should not be in write_2Dmap_PNG_gnuplot"
         endif;enddo
         stop 1
       elseif(iprod.eq.9)then   ! ash-cloud concentration
+        varname = "ashcon_max"
         write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
         write(title_plot,'(a26,f5.2,a6)')'Ash-cloud concentration t=',WriteTimes(itime),' hours'
         title_legend = 'Max.Con.(mg/m3)'
         units = " (mg/m3)"
+        Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
           nConLev = Con_CloudCon_N
           allocate(zrgb(nConLev,3))
@@ -297,10 +312,12 @@
           zrgb(1:nConLev,1:3) = Con_CloudCon_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.10)then   ! ash-cloud height
+        varname = "cloud_height"
         write(outfile_name,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud height t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Height(km)'
         units = " (km)"
+        Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
           nConLev = Con_CloudTop_N
           allocate(zrgb(nConLev,3))
@@ -309,10 +326,12 @@
           zrgb(1:nConLev,1:3) = Con_CloudTop_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.11)then   ! ash-cloud bottom
+        varname = "cloud_bottom"
         write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud bottom t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Bot.(km)'
         units = " (km)"
+        Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
           nConLev = Con_CloudBot_N
           allocate(zrgb(nConLev,3))
@@ -321,10 +340,12 @@
           zrgb(1:nConLev,1:3) = Con_CloudBot_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.12)then   ! ash-cloud load
+        varname = "cloud_load"
         write(outfile_name,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
         write(title_plot,'(a17,f5.2,a6)')'Ash-cloud load t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Load(T/km2)'
         units = " (T/km2)"
+        Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
           nConLev = Con_CloudLoad_N
           allocate(zrgb(nConLev,3))
@@ -333,10 +354,12 @@
           zrgb(1:nConLev,1:3) = Con_CloudLoad_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.13)then  ! radar reflectivity
+        varname = "radar_reflectivity"
         write(outfile_name,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
         write(title_plot,'(a24,f5.2,a6)')'Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Refl.(dBz)'
         units = " (dBz)"
+        Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
           nConLev = Con_CloudRef_N
           allocate(zrgb(nConLev,3))
@@ -345,10 +368,12 @@
           zrgb(1:nConLev,1:3) = Con_CloudRef_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.14)then   ! ashcloud arrival time (hours)
+        varname = "ash_arrival_time"
         write(outfile_name,'(a20)')'CloudArrivalTime.png'
         write(title_plot,'(a22)')'Ash-cloud arrival time'
         title_legend = 'Time (hours)'
         units = " (hours)"
+        Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
           nConLev = Con_CloudTime_N
           allocate(zrgb(nConLev,3))
@@ -357,10 +382,12 @@
           zrgb(1:nConLev,1:3) = Con_CloudTime_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.15)then   ! topography
+        varname = "topography"
         write(outfile_name,'(a14)')'Topography.png'
         write(title_plot,'(a10)')'Topography'
         title_legend = 'Elevation (km)'
         units = " (hours)"
+        Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
           nConLev = 8
           allocate(zrgb(nConLev,3))
@@ -371,7 +398,7 @@
       elseif(iprod.eq.16)then   ! profile plots
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: No map PNG output option for vertical profile data."
-          write(errlog(io),*)"       Should not be in write_2Dmap_PNG_dislin"
+          write(errlog(io),*)"       Should not be in write_2Dmap_PNG_gnuplot"
         endif;enddo
         stop 1
       else
@@ -510,7 +537,7 @@
       write(fid_script,*)"set label 'Erup. Volume: ",real(e_Volume(1),kind=4),&
                             " km3 (DRE)' at XVAL, YVAL font 'sans,9' offset character 0,-3"
 
-      write(fid_script,*)" plot '",trim(adjustl(gnucoastfile)),"' with filledcurves linetype rgb '#dddddd' , \"
+      write(fid_script,*)" plot '",trim(adjustl(coastfile)),"' with filledcurves linetype rgb '#dddddd' , \"
       write(fid_script,*)"   'outvar.con' using 1:2 with l lc rgb '#888888' , \"
       write(fid_script,*)"   '' every 1000 with labels font ',6' , \"
       write(fid_script,*)"   'cities.xy' using 1:2 , \"
@@ -520,8 +547,8 @@
 
       close(fid_script)
 
-      write(gnucom,'(a11,a14)')'gnuplot -p ',filename_script
-      call execute_command_line(gnucom,exitstat=iostatus)
+      write(plotcom,'(a11,a14)')'gnuplot -p ',filename_script
+      call execute_command_line(plotcom,exitstat=iostatus)
 
       if(writeContours)then
 
@@ -627,9 +654,9 @@
                 write(errlog(io),*)"       Please increase CONTOUR_MAXPOINTS and recompile."
                 write(errlog(io),*)"  Output_Vars.f90:CONTOUR_MAXPOINTS"
               endif;enddo
-              stop 1 
+              stop 1
             endif
-            ipt = ContourDataNpoints(ilev,icurve) 
+            ipt = ContourDataNpoints(ilev,icurve)
             read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) &
                        ContourDataX(ilev,icurve,ipt),ContourDataY(ilev,icurve,ipt)
             linebuffer050 = "Reading line from contour file, x,y"
@@ -723,7 +750,7 @@
       integer           :: fid_outdata  = 54
       integer           :: dp_pngfileID  = 53
       character(len=26) :: coord_str
-      character(len=25) :: gnucom
+      character(len=25) :: plotcom
       integer :: k,i
       integer :: ioerr,iw,iwf
       character(len=200) :: cmd
@@ -819,8 +846,8 @@
 
       close(fid_script)
 
-      write(gnucom,'(a11,a14)')'gnuplot -p ',filename_script
-      call execute_command_line(gnucom)
+      write(plotcom,'(a11,a14)')'gnuplot -p ',filename_script
+      call execute_command_line(plotcom)
 
       ! Clean up
       if (CleanScripts_gnuplot) then
@@ -865,7 +892,7 @@
       character(len=14) :: dp_pngfile
       integer           :: fid_outdata  = 54
       integer           :: fid_script  = 55
-      character(len=25) :: gnucom
+      character(len=25) :: plotcom
       integer,save      :: plot_index = 0
       character(len=200) :: cmd
 
@@ -915,8 +942,8 @@
                nint(ymaxpl),"] '",filename_outdata,"' with filledcurve x1 ls 1"
       close(fid_script)
 
-      write(gnucom,'(a11,a14)')'gnuplot -p ',filename_script
-      call execute_command_line(gnucom)
+      write(plotcom,'(a11,a14)')'gnuplot -p ',filename_script
+      call execute_command_line(plotcom)
 
       ! Clean up
       if (CleanScripts_gnuplot) then

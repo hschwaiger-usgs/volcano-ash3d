@@ -219,7 +219,6 @@
       elseif(iprod.eq.8)then    ! ashfall arrival at airports/POI (mm)
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: No map shapefile output option for airport arrival time data."
-          write(errlog(io),*)"       Should not be in write_2Dmap_PNG_dislin"
         endif;enddo
         stop 1
       elseif(iprod.eq.9)then    ! ash-cloud concentration
@@ -260,7 +259,6 @@
       elseif(iprod.eq.16)then   ! profile plots
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: No map shapefile output option for vertical profile data."
-          write(errlog(io),*)"       Should not be in write_2Dmap_PNG_dislin"
         endif;enddo
         stop 1
       else

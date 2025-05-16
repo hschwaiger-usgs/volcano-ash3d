@@ -263,6 +263,7 @@
 !      = 2 : PLPLOT
 !      = 3 : GNUPLOT
 !      = 4 : GMT
+!      = 5 : matlab/octave
 !  Next, details of the system state are logged, including OS type (Linux, Mac, Windows),
 !  endian flavor of hardware, fortran compiler version and flags, command-line arguments,
 !  and date/time of the run.  Additionally, if PII=ON was set in the makefile when this
@@ -626,15 +627,15 @@
           endif;enddo
           stop 1
         endif
-        if(iplotpref.le.0.or.iplotpref.gt.4)then
+        if(iplotpref.le.0.or.iplotpref.gt.5)then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: ASH3DPLOT must be any of:"
             write(errlog(io),*)"         1 = dislin"
             write(errlog(io),*)"         2 = plplot"
             write(errlog(io),*)"         3 = gnuplot"
             write(errlog(io),*)"         4 = GMT"
+            write(errlog(io),*)"         5 = matlab/octave"
             ! Placeholders for other post-processing graphics packages
-            !write(errlog(io),*)"         5 = matlab"
             !write(errlog(io),*)"         6 = cartopy"
             !write(errlog(io),*)"         7 = R"
             write(errlog(io),*)"       Currently set to ",iplotpref
@@ -651,6 +652,8 @@
               write(outlog(io),*)"           Using gnuplot if available."
             elseif(iplotpref.eq.4)then
               write(outlog(io),*)"           Using GMT if available."
+            elseif(iplotpref.eq.5)then
+              write(outlog(io),*)"           Using matlab/octave if available."
             endif
           endif;enddo
         endif
