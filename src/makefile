@@ -98,7 +98,7 @@ FASTFPPFLAG = -DFAST_DT -DFAST_SUBGRID
 #  below to 'T' if you want to build with these libraries.
     # Set to F if you do not have zip installed (verify below that zippath=/usr/bin/zip)
 USEZIP     = T
-    # Set to F if you do not have gnuplot installed (verify below that zippath=/usr/bin/gnuplot)
+    # Set to F if you do not have gnuplot installed (verify below that gnupath=/usr/bin/gnuplot)
 USEGNUPLOT = T
     # Set to T if you want ploplot included (verify local paths below)
 USEPLPLOT  = F
@@ -106,6 +106,9 @@ USEPLPLOT  = F
 USEDISLIN  = F
     # Set to T only if using the API, otherwise scripts will be written
 USEGMT     = F
+    # Set to F if you do not have matlab+mapping-toolbox installed; octave can separately be turned off
+USEMATLAB  = T
+USEOCTAVE  = T
 
 MFILE=makefile
 
@@ -483,7 +486,7 @@ Ash3d_PostProc_cities.o: Ash3d_PostProc_cities.f90 $(MFILE) $(SYSINC) Ash3d_Vari
 write_Shapefile.o: write_Shapefile.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o write_BINARY.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/write_Shapefile.f90
 
-tools: ascii_check
+tools: ascii_check ascii_dep gen_ctr
 
 ascii_check: $(ASH3DCCSRC)/tools/Ash3d_ASCII_check.f90 Ash3d_VariableModules.o write_ASCII.o $(MFILE) $(SYSINC)
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/tools/Ash3d_ASCII_check.f90
@@ -502,6 +505,13 @@ ascii_dep: $(ASH3DCCSRC)/tools/Ash3d_ASCII_DepThin.f90 Ash3d_VariableModules.o w
 	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d_ASCII_DepThin.o $(LIBS) -o Ash3d_ASCII_DepThin
 	mkdir -p ../bin/tools
 	mv Ash3d_ASCII_DepThin ../bin/tools/Ash3d_ASCII_DepThin
+ifeq ($(USENETCDF), T)
+gen_ctr: $(ASH3DCCSRC)/tools/Ash3d_ASCII_DepThin.f90 Ash3d_VariableModules.o write_NETCDF.o $(MFILE) $(SYSINC)
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/tools/Ash3d_NetCDF_GenCTR.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d_NetCDF_GenCTR.o $(LIBS) -o Ash3d_NetCDF_GenCTR
+	mkdir -p ../bin/tools
+	mv Ash3d_NetCDF_GenCTR ../bin/tools/Ash3d_NetCDF_GenCTR
+endif
 
 check: ascii_check Ash3d $(MFILE) $(SYSINC)
 	bash run_tests.sh
