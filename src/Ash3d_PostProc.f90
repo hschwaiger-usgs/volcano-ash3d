@@ -103,9 +103,6 @@
            Allocate_Output_Vars, &
            Set_OutVar_ContourLevel
 
-      use help,          only : &
-           help_postproc
-
       use Ash3d_ASCII_IO,  only : &
          A_nx,A_ny,A_XY,A_XYZ,A_xll,A_yll,A_dx,A_dy, &
            deallocate_ASCII, &
@@ -206,6 +203,8 @@
 #endif
 
       INTERFACE
+        subroutine help_postproc
+        end subroutine help_postproc
         subroutine alloc_arrays
         end subroutine alloc_arrays
         subroutine calc_mesh_params

@@ -13,6 +13,8 @@
 !      subroutine xyChecker
 !      subroutine vprofchecker
 !      subroutine Read_PostProc_Control_File
+!      subroutine Write_input_block_header
+!      subroutine SetWrite_input_block_1
 !
 !##############################################################################
 
@@ -28,10 +30,12 @@
       private
 
         ! Publicly available subroutines/functions
-      public Parse_Command_Line, &
-             Set_OS_Env,         &
-             Read_Control_File,  &
-             Read_PostProc_Control_File
+      public Parse_Command_Line,         &
+             Set_OS_Env,                 &
+             Read_Control_File,          &
+             Read_PostProc_Control_File, &
+             Write_input_block_header,   &
+             SetWrite_input_block_1
 
       contains
       !------------------------------------------------------------------------
@@ -63,14 +67,6 @@
       use io_data,       only : &
          concenfile,infile,LoadConcen
 
-      use help,          only : &
-             help_general,   &
-             help_make,      &
-             help_run,       &
-             help_input,     &
-             help_inputfile, &
-             help_postproc
-
 #ifdef USENETCDF
       use Ash3d_Netcdf_IO
 #endif
@@ -88,6 +84,19 @@
       character, dimension(1:130) :: fc_inputfile
       ! Size matches length of infile (specified in module io_data)
       integer fc_len
+
+      INTERFACE
+        subroutine help_general
+        end subroutine help_general
+        subroutine help_make
+        end subroutine help_make
+        subroutine help_run
+        end subroutine help_run
+        subroutine help_input
+        end subroutine help_input
+        subroutine help_postproc
+        end subroutine help_postproc
+      END INTERFACE
 
       ! Since we haven't opened a logfile yet, only write out to stdout if not a
       ! control file case.
@@ -1093,9 +1102,6 @@
          diffusivity_horz,diffusivity_vert,Imp_fac,Imp_DT_fac, &
            Allocate_Diff
 
-      use help,          only : &
-             help_inputfile
-
       use projection,    only : &
          PJ_iprojflag,PJ_k0,PJ_lam0,PJ_lam1,PJ_lam2,PJ_phi0,PJ_phi1,PJ_phi2,PJ_Re,&
            PJ_Set_Proj_Params
@@ -1111,6 +1117,11 @@
 #ifdef USENETCDF
       use Ash3d_Netcdf_IO
 #endif
+
+      INTERFACE
+        subroutine help_input
+        end subroutine help_input
+      END INTERFACE
 
       integer           :: i,k,ii,isize
 
@@ -5599,6 +5610,511 @@
       stop 1
 
       end subroutine Read_PostProc_Control_File
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Write_input_block_header(blockID)
+!
+!  Called from: help_inputfile
+!  Arguments:
+!    blockID = block number of the control file to print
+!
+!  This subroutine writes an example header of the requested block of the
+!  control file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine Write_input_block_header(blockID)
+
+      use io_units
+
+      integer,intent(in) :: blockID
+
+      ! The idea with the blockID is that help for only a particular block is
+      ! called if there is an error reading something in the input file or if
+      ! the user requests it.
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_input_block_header"
+      endif;enddo
+
+      io = 1
+
+      select case (blockID)
+        case(1) ! BLOCK 1: GRID INFO
+      write(outlog(io),1)'# The following is an input file to the model Ash3d, v1.0 https://code.usgs.gov/vsc/ash3d/volcano-ash3d'
+      write(outlog(io),1)'# Created by L.G. Mastin, R.P. Denlinger and H.F. Schwaiger, U.S. Geological Survey, 2009.             '
+      write(outlog(io),1)'#                                                                                                      '
+      write(outlog(io),1)'# GENERAL SOURCE PARAMETERS. DO NOT DELETE ANY NON-COMMENT LINES                                       '
+      write(outlog(io),1)'#  The first line of this block identifies the volcano by name.                                        '
+      write(outlog(io),1)'#  If the volcano name begins with either 0 or 1, then the volcano                                     '
+      write(outlog(io),1)'#  is assumed to be in the Smithonian database and default values for                                  '
+      write(outlog(io),1)'#  Plume Height, Duration, Mass Flux Rate, Volume, and mass fraction of                                '
+      write(outlog(io),1)'#  fines are loaded.  These can be over-written by entering non-negative                               '
+      write(outlog(io),1)'#  values in the appropriate locations in this input file.                                             '
+      write(outlog(io),1)'#                                                                                                      '
+      write(outlog(io),1)'#  The second line of this block identifies the projection used and the form of                        '
+      write(outlog(io),1)'#  the input coordinates and is of the following format:                                               '
+      write(outlog(io),1)'#    latlonflag, projflag,  followed by a variable list of projection parameters                       '
+      write(outlog(io),1)'#  projflag describes the projection used for the Ash3d run. Windfiles can have a                      '
+      write(outlog(io),1)'#  different projection.                                                                               '
+      write(outlog(io),1)'#  For a particular projflag, additional values are read defining the projection.                      '
+      write(outlog(io),1)'#    latlonflag = 0 if computational grid is projected                                                 '
+      write(outlog(io),1)'#               = 1 if computational grid is lat/lon (all subsequent projection parameters ignored.)   '
+      write(outlog(io),1)'#    projflag   = 1 -- polar stereographic projection                                                  '
+      write(outlog(io),1)'#           lambda0 -- longitude of projection point                                                   '
+      write(outlog(io),1)'#           phi0    -- latitude of projection point                                                    '
+      write(outlog(io),1)'#           k0      -- scale factor at projection point                                                '
+      write(outlog(io),1)'#           radius  -- earth radius for spherical earth                                                '
+      write(outlog(io),1)'#     e.g. for NAM 104,198, 216: 0 1 -105.0 90.0 0.933 6371.229                                        '
+      write(outlog(io),1)'#               = 2 -- Alberts Equal Area ( not yet implemented)                                       '
+      write(outlog(io),1)'#               = 3 -- UTM ( not yet implemented)                                                      '
+      write(outlog(io),1)'#               = 4 -- Lambert conformal conic                                                         '
+      write(outlog(io),1)'#           lambda0 -- longitude of origin                                                             '
+      write(outlog(io),1)'#              phi0 -- latitude of origin                                                              '
+      write(outlog(io),1)'#              phi1 -- latitude of secant1                                                             '
+      write(outlog(io),1)'#              phi2 -- latitude of secant2                                                             '
+      write(outlog(io),1)'#            radius -- earth radius for a spherical earth                                              '
+      write(outlog(io),1)'#     e.g. for NAM 212: 0 4 265.0 25.0 25.0 25.0 6371.22                                               '
+      write(outlog(io),1)'#               = 5 -- Mercator                                                                        '
+      write(outlog(io),1)'#           lambda0 -- longitude of origin                                                             '
+      write(outlog(io),1)'#              phi0 -- latitude of origin                                                              '
+      write(outlog(io),1)'#            radius -- earth radius for a spherical earth                                              '
+      write(outlog(io),1)'#     e.g. for NAM 196: 0 5 198.475 20.0 6371.229                                                      '
+      write(outlog(io),1)'#                                                                                                      '
+      write(outlog(io),1)'# On line 3, the vent coordinates can optionally include a third value for elevation in km.            '
+      write(outlog(io),1)'# If the vent elevation is not given, 0 is used if topography is turned off.                           '
+      write(outlog(io),1)'#                                                                                                      '
+      write(outlog(io),1)'# Line 4 is the width and height of the computational grid in km (if projected) or degrees.            '
+      write(outlog(io),1)'# Line 5 is the vent x,y (or lon, lat) coordinates.                                                    '
+      write(outlog(io),1)'# Line 6, DX and DY resolution in km or degrees (for projected or lon/lat grid, respectively)          '
+      write(outlog(io),1)'# Line 7, DZ can be given as a real number, indicating the vertical spacing in km.                     '
+      write(outlog(io),1)'# Alternatively, it can be given as dz_plin (piece-wise linear), dz_clog (constant-                    '
+      write(outlog(io),1)'# logarithmic), or dz_cust (custom specification)                                                      '
+      write(outlog(io),1)'# If dz_plin, then a second line is read containing:                                                   '
+      write(outlog(io),1)'#   number of line segments (N) followed by the steps and step-size of each segment                    '
+      write(outlog(io),1)'#   e.g. 4 6 0.25 5 0.5 5 1.0 10 2.0                                                                   '
+      write(outlog(io),1)'#         This corresponds to 4 line segments with 6 cells of 0.25, then 5 cells of 0.5,               '
+      write(outlog(io),1)'#         5 cells of 1.0, and finally 10 cells of 2.0                                                  '
+      write(outlog(io),1)'# If dz_clog, then a second line is read containing:                                                   '
+      write(outlog(io),1)'#   maximum z and number of steps of constant dlogz                                                    '
+      write(outlog(io),1)'#   e.g. 30.0 30                                                                                       '
+      write(outlog(io),1)'#         This corresponds to 30 steps from 0-30km with constant log-spacing                           '
+      write(outlog(io),1)'# If dz_cust, then a second line is read containing:                                                   '
+      write(outlog(io),1)'#   the number of dz values to read (ndz), followed by dz(1:ndz)                                       '
+      write(outlog(io),1)'#   e.g. 20 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 5.5            '
+      write(outlog(io),1)'#         This corresponds to 10 steps of 0.5, 9 steps of 1.5, followed by 1 step of 5.5               '
+      write(outlog(io),1)'#                                                                                                      '
+      write(outlog(io),1)'#                                                                                                      '
+      write(outlog(io),1)'# Line 8 is the the diffusivity (m2/s) followed by the eruption specifier.  The                        '
+      write(outlog(io),1)'# eruption specifier can be a real number, in which case it is assumed to be the                       '
+      write(outlog(io),1)'# positive constant specifying the Suzuki distribution.  Alternatively, it can be                      '
+      write(outlog(io),1)'#  umbrella     : Suzuki (const. = 12) with radial spreading of the plume                              '
+      write(outlog(io),1)'#  umbrella_air : Suzuki (const. = 12) with radial spreading of the plume scaled to 5% of vol.         '
+      write(outlog(io),1)'#  point        : all mass inserted in cell containing PlmH                                            '
+      write(outlog(io),1)'#  linear       : mass uniformly distributed from z-vent to PlmH                                       '
+      write(outlog(io),1)'# Line 9 : number of pulses to be read in BLOCK 2                                                      '
+      write(outlog(io),1)'#                                                                                                      '
+        case(2) ! BLOCK 2: ERUPTION PARAMETERS
+      write(outlog(io),1)'# ERUPTION LINES (number = neruptions)                                                                 '
+      write(outlog(io),1)'# In the following line, each line represents one eruptive pulse.                                      '
+      write(outlog(io),1)'# Parameters are (1-4) start time (yyyy mm dd h.hh (UT)); (5) duration (hrs);                          '
+      write(outlog(io),1)'#                  (6) plume height;                      (7) erupted volume (km3 DRE)                 '
+      write(outlog(io),1)'# If neruptions=1 and the year is 0, then the model run in forecast mode where mm dd h.hh are          '
+      write(outlog(io),1)'# interpreted as the time after the start of the windfile.  In this case, duration, plume              '
+      write(outlog(io),1)'# height and erupted volume are replaced with ESP if the values are negative.                          '
+      write(outlog(io),1)'# This applies to source types: suzuki, point, line, umbrella and umbrella_air.                        '
+      write(outlog(io),1)'# For profile sources, an additional two values are read: dz and nz                                    '
+      write(outlog(io),1)'# 2010 04 14   0.00   1.0     18.0  0.16 1.0 18                                                        '
+      write(outlog(io),1)'# 0.01 0.02 0.03 0.03 0.04 0.04 0.05 0.06 0.06 0.070 0.08 0.08 0.09 0.09 0.09 0.08 0.06 0.02           '
+        case(3) ! BLOCK 3: WIND PARAMETERS
+      write(outlog(io),1)'*******************************************************************************                        '
+      write(outlog(io),1)'# WIND OPTIONS                                                                                         '
+      write(outlog(io),1)'# Ash3d will read from either a single 1-D wind sounding, or gridded, time-                            '
+      write(outlog(io),1)'# dependent 3-D wind data, depending on the value of the parameter iwind.                              '
+      write(outlog(io),1)'# For iwind = 1, read from a 1-D wind sounding                                                         '
+      write(outlog(io),1)'#             2, read from 3D gridded ASCII files                                                      '
+      write(outlog(io),1)'#             3/4, read directly from a single or multiple NetCDF files.                               '
+      write(outlog(io),1)'#             5, read directly from multiple multi-timestep NetCDF files.                              '
+      write(outlog(io),1)'# The parameter iwindformat specifies the format of the wind files, as follows:                        '
+      write(outlog(io),1)'#  iwindformat =  0: User-defined via template                                                         '
+      write(outlog(io),1)'#                 1: User-specified ASCII files                                                        '
+      write(outlog(io),1)'#                 2: Global radiosonde data                                                            '
+      write(outlog(io),1)'#                 3: NARR 221 Reanalysis (32 km)                                                       '
+      write(outlog(io),1)'#                 4: NAM Regional North America 221 Forecast (32 km)                                   '
+      write(outlog(io),1)'#                 5: NAM 216 Regional Alaska Forecast (45 km)                                          '
+      write(outlog(io),1)'#                 6: NAM 104 Northern Hemisphere Forecast (90 km)                                      '
+      write(outlog(io),1)'#                 7: NAM 212 40km Cont. US Forecast (40 km)                                            '
+      write(outlog(io),1)'#                 8: NAM 218 12km Cont. US Forecast (12 km)                                            '
+      write(outlog(io),1)'#                 9: NAM 227 Cont. US Forecast (5.08 km)                                               '
+      write(outlog(io),1)'#                10: NAM 242 11km Regional Alaska Forecast (11.25 km)                                  '
+      write(outlog(io),1)'#                11: NAM 196 Regional Hawaii Forecast (2.5 km)                                         '
+      write(outlog(io),1)'#                12: NAM 198 Regional Alaska Forecast (5.953 km)                                       '
+      write(outlog(io),1)'#                13: NAM 91 Regional Alaska Forecast (2.976 km)                                        '
+      write(outlog(io),1)'#                14: NAM Regional Cont. US Forecast (3.0 km)                                           '
+      write(outlog(io),1)'#                20: GFS 0.5 degree files Forecast                                                     '
+      write(outlog(io),1)'#                21: GFS 1.0 degree files Forecast                                                     '
+      write(outlog(io),1)'#                22: GFS 0.25 degree files Forecast                                                    '
+      write(outlog(io),1)'#                23: NCEP DOE Reanalysis 2.5 degree                                                    '
+      write(outlog(io),1)'#                24: NASA MERRA-2 Reanalysis                                                           '
+      write(outlog(io),1)'#                25: NCEP1 2.5 global Reanalysis (1948-pres)                                           '
+      write(outlog(io),1)'#                      Note: use nWindFiles=1 for iwindformat=25                                       '
+      write(outlog(io),1)'#                26: JRA-55 Reanalysis                                                                 '
+      write(outlog(io),1)'#                27: NOAA-CIRES II 2-deg global Reanalysis (1870-2010)                                 '
+      write(outlog(io),1)'#                28: ECMWF ERA-Interim Reanalysis                                                      '
+      write(outlog(io),1)'#                29: ECMWA ERA-5 Reanalysis                                                            '
+      write(outlog(io),1)'#                30: ECMWA ERA-20C Reanalysis                                                          '
+      write(outlog(io),1)'#                32: Air Force Weather Agency                                                          '
+      write(outlog(io),1)'#                33: CCSM 3.0 Community Atmospheric Model                                              '
+      write(outlog(io),1)'#                34: ECMWF 0.25-degree forecast                                                        '
+      write(outlog(io),1)'#                40: NASA GEOS-5 Cp                                                                    '
+      write(outlog(io),1)'#                41: NASA GEOS-5 Np                                                                    '
+      write(outlog(io),1)'#                50: Weather Research and Forecast (WRF) output                                        '
+      write(outlog(io),1)'#                                                                                                      '
+      write(outlog(io),1)'# igrid (optional, defaults to that associated with iwindformat) is the NCEP grid ID,                  '
+      write(outlog(io),1)'# if a NWP product is used, or the number of stations of sonde data, if iwind = 1.                     '
+      write(outlog(io),1)'# idata (optional, defaults to 2) is a flag for data type (1=ASCII, 2=netcdf, 3=grib).                 '
+      write(outlog(io),1)'#                                                                                                      '
+      write(outlog(io),1)'# Many plumes extend higher than the maximum height of mesoscale models.                               '
+      write(outlog(io),1)'# Ash3d handles this as determined by the parameter iHeightHandler, as follows:                        '
+      write(outlog(io),1)'# for iHeightHandler = 1, stop the program if the plume height exceeds mesoscale height                '
+      write(outlog(io),1)'#                      2, wind velocity at levels above the highest node                               '
+      write(outlog(io),1)'#                         equal that of the highest node.  Temperatures in the                         '
+      write(outlog(io),1)'#                         upper nodes do not change between 11 and 20 km; above                        '
+      write(outlog(io),1)'#                         20 km they increase by 2 C/km, as in the Standard                            '
+      write(outlog(io),1)'#                         atmosphere.  A warning is written to the log file.                           '
+      write(outlog(io),1)'# Simulation time in hours is the maximal length of the simulation.                                    '
+      write(outlog(io),1)'# Ash3d can end the simulation early if desired, once 99% of the ash has deposited.                    '
+      write(outlog(io),1)'# The last line of this block is the number of windfiles listed in block 5 below.  If                  '
+      write(outlog(io),1)'# iwind=5 and one of the NWP products is used that require a special file structure,                   '
+      write(outlog(io),1)'# then nWindFiles should be set to 1 and only the root folder of the windfiles listed.                 '
+        case(4) ! BLOCK 4: OUTPUT OPTIONS
+      write(outlog(io),1)'*******************************************************************************                        '
+      write(outlog(io),1)'# OUTPUT OPTIONS:                                                                                      '
+      write(outlog(io),1)'# The list below allows users to specify the output options                                            '
+      write(outlog(io),1)'# All but the final deposit file can be written out at specified                                       '
+      write(outlog(io),1)'# times using the following parameters:                                                                '
+      write(outlog(io),1)'# Line 15 asks for 3d output (yes/no) followed by an optional output format code;                      '
+      write(outlog(io),1)'#   1 = (default) output all the normal 2d products to the output file as well as the 3d concentrations'
+      write(outlog(io),1)'#   2 = only output the 2d products                                                                    '
+      write(outlog(io),1)'# nWriteTimes   = if >0,  number of times output are to be written. The following                      '
+      write(outlog(io),1)'#                  line contains nWriteTimes numbers specifying the times of output                    '
+      write(outlog(io),1)'#                 if =-1, it specifies that the following line gives a constant time                   '
+      write(outlog(io),1)'#                  interval in hours between write times.                                              '
+      write(outlog(io),1)'# WriteTimes    = Hours between output (if nWritetimes=-1), or                                         '
+      write(outlog(io),1)'#                 Times (hours since start of first eruption) for each output                          '
+      write(outlog(io),1)'#                (if nWriteTimes >1)                                                                   '
+        case(5) ! BLOCK 5: INPUT WIND FILES
+      write(outlog(io),1)'*******************************************************************************                        '
+      write(outlog(io),1)'# WIND INPUT FILES                                                                                     '
+      write(outlog(io),1)'# The following block of data contains names of wind files. There should be one line for               '
+      write(outlog(io),1)'# each of nWindFiles (from Block 3 Line 5) windfiles. Files should be given in                         '
+      write(outlog(io),1)'# chronological order, should have names with only letters and numbers (no spaces)                     '
+      write(outlog(io),1)'# and should not exceed 130 characters in length.                                                      '
+      write(outlog(io),1)'# For iwind=5 (files with hard-coded paths), just provide the directory with the                       '
+      write(outlog(io),1)'# windfiles or the root of the dataset (if files are sorted by year).                                  '
+      write(outlog(io),1)'# For example, iwind=5, iwindformat=25 for NCEP reanalysis, data might look like:                      '
+      write(outlog(io),1)'# /data/WindFiles/NCEP                                                                                 '
+      write(outlog(io),1)'# |-- 2016                                                                                             '
+      write(outlog(io),1)'# |   |-- air.2016.nc                                                                                  '
+      write(outlog(io),1)'# |   |-- hgt.2016.nc                                                                                  '
+      write(outlog(io),1)'# |   |-- omega.2016.nc                                                                                '
+      write(outlog(io),1)'# |   |-- uwnd.2016.nc                                                                                 '
+      write(outlog(io),1)'# |   `-- vwnd.2016.nc                                                                                 '
+      write(outlog(io),1)'# |-- 2017                                                                                             '
+      write(outlog(io),1)'#     |-- air.2017.nc                                                                                  '
+      write(outlog(io),1)'# In this case, Block 5 will just contain one line: /data/WindFiles/NCEP or just NCEP                  '
+      write(outlog(io),1)'# if you have a soft link in the run directory.                                                        '
+      write(outlog(io),1)'# For a network of radiosonde data, please see the MetReader documentation for                         '
+      write(outlog(io),1)'# the input specification https://code.usgs.gov/vsc/ash3d/volcano-ash3d-metreader.                     '
+        case(6) ! BLOCK 6: AIRPORT FILE
+      write(outlog(io),1)'*******************************************************************************                        '
+      write(outlog(io),1)'# AIRPORT LOCATION FILE                                                                                '
+      write(outlog(io),1)'# The following lines allow the user to specify whether times of ash arrival                           '
+      write(outlog(io),1)'# at airports and other locations will be written out, and which file                                  '
+      write(outlog(io),1)'# to read for a list of airport locations.                                                             '
+      write(outlog(io),1)'# PLEASE NOTE:  Each line in the airport location file should contain the                              '
+      write(outlog(io),1)'#               airport latitude, longitude, projected x and y coordinates,                            '
+      write(outlog(io),1)'#               and airport name.  If you are using a projected grid,                                  '
+      write(outlog(io),1)'#               THE X AND Y MUST BE IN THE SAME PROJECTION as the computational grid.                  '
+      write(outlog(io),1)'#               Alternatively, coordinates can be projected via libprojection                          '
+      write(outlog(io),1)'#               by typing "yes" to the last parameter                                                  '
+        case(7) ! BLOCK 7: GRAIN-SIZE BINS, SETTLING VELOCITY
+      write(outlog(io),1)'*******************************************************************************                        '
+      write(outlog(io),1)'# GRAIN SIZE GROUPS                                                                                    '
+      write(outlog(io),1)'# The first line must contain the number of settling velocity groups, but                              '
+      write(outlog(io),1)'# can optionally also include a flag for the fall velocity model to be used.                           '
+      write(outlog(io),1)'#    FV_ID = 1, Wilson and Huang                                                                       '
+      write(outlog(io),1)'#          = 2, Wilson and Huang + Cunningham slip                                                     '
+      write(outlog(io),1)'#          = 3, Wilson and Huang + Mod by Pfeiffer Et al.                                              '
+      write(outlog(io),1)'#          = 4, Ganser (assuming prolate ellipsoids)                                                   '
+      write(outlog(io),1)'#          = 5, Stokes flow for spherical particles + slip                                             '
+      write(outlog(io),1)'# If no fall model is specified, FV_ID = 1, by default                                                 '
+      write(outlog(io),1)'# The first line can also optionally contain the Shape_ID code where 1= Wilson and Huang (F,G),        '
+      write(outlog(io),1)'# and 2 = sphericity                                                                                   '
+      write(outlog(io),1)'# The grain size bins can be enters with 2, 3, or 4 parameters.                                        '
+      write(outlog(io),1)'# If TWO are given, they are read as:   FallVel (in m/s), mass fraction                                '
+      write(outlog(io),1)'# If THREE are given, they are read as: diameter (mm), mass fraction, density (kg/m3)                  '
+      write(outlog(io),1)'# For Shape_ID = 1:                                                                                    '
+      write(outlog(io),1)'# If FOUR are given, they are read as:  diameter (mm), mass fraction, density (kg/m3), Shape F         '
+      write(outlog(io),1)'# The shape factor is given as in Wilson and Huang: F=(b+c)/(2*a), but converted                       '
+      write(outlog(io),1)'# to sphericity (assuming b=c) for the Ganser model.                                                   '
+      write(outlog(io),1)'# If a shape factor is not given, a default value of F=0.4 is used.                                    '
+      write(outlog(io),1)'# If FIVE are given, they are read as:  diameter (mm), mass fraction, density (kg/m3), Shape F, G      '
+      write(outlog(io),1)'#  where G is an additional minor axis ratio shape factor equal to c/b                                 '
+      write(outlog(io),1)'# For Shape_ID = 2:                                                                                    '
+      write(outlog(io),1)'# If FOUR are given, they are read as:  diameter (mm), mass fraction, density (kg/m3), Sphericity      '
+      write(outlog(io),1)'#                                                                                                      '
+      write(outlog(io),1)'# If the last grain size bin has a negative diameter, then the remaining mass fraction                 '
+      write(outlog(io),1)'# will be distributed over the previous bins via a log-normal distribution in phi.                     '
+      write(outlog(io),1)'# The last bin would be interpreted as:                                                                '
+      write(outlog(io),1)'# diam (neg value) , phi_mean, phi_stddev                                                              '
+        case(8) ! BLOCK 8: VERTICAL PROFILES
+      write(outlog(io),1)'*******************************************************************************                        '
+      write(outlog(io),1)'# Options for writing vertical profiles                                                                '
+      write(outlog(io),1)'# The first line below gives the number of locations (nlocs) where vertical                            '
+      write(outlog(io),1)'# profiles are to be written.  That is followed by nlocs lines, each of which                          '
+      write(outlog(io),1)'# contain the location, in the same coordinates as the computational grid.                             '
+      write(outlog(io),1)'# Optionally, a site name can be provided in after the location.                                       '
+        case(9) ! BLOCK 9: (Optional): NETCDF ANNOTATIONS
+      write(outlog(io),1)'*******************************************************************************                        '
+      write(outlog(io),1)'# netCDF output options                                                                                '
+      write(outlog(io),1)'# This last block is optional.                                                                         '
+      write(outlog(io),1)'# The output file name can be give, but will default to 3d_tephra_fall.nc if absent                    '
+      write(outlog(io),1)'# The title and comment lines are passed through to the netcdf header of the                           '
+      write(outlog(io),1)'# output file.                                                                                         '
+        case(10) ! BLOCK 10 (OPTMOD): Optional module blocks
+                 !   First RESETPARAMS
+      write(outlog(io),1)'*******************************************************************************                        '
+      write(outlog(io),1)'# Optional Modules are identified by the text string at the top of the block                           '
+      write(outlog(io),1)'# OPTMOD=[module name]                                                                                 '
+      write(outlog(io),1)'# There will need to be a custom block reader in the module to read this section                       '
+      write(outlog(io),1)'# section of the input file.  Below is the built-in example for resetting parameters.                  '
+      write(outlog(io),1)'# You only need to include the line(s) for the parameters you want to reset. All                       '
+      write(outlog(io),1)'# options are listed below.                                                                            '
+        case(11) ! BLOCK 10+1 (OPTMOD):
+                 !   TOPO
+      write(outlog(io),1)'*******************************************************************************                        '
+      write(outlog(io),1)'# Topography                                                                                           '
+      write(outlog(io),1)'# Line 1 indicates whether or not to use topography followed by the integer flag                       '
+      write(outlog(io),1)'#        describing how topography will modify the vertical grid.                                      '
+      write(outlog(io),1)'#          0 = no vertical modification; z-grid remains 0-> top throughout the domain                  '
+      write(outlog(io),1)'#          1 = shifted; s = z-z_surf; computational grid is uniformly shifted upward                   '
+      write(outlog(io),1)'#              everywhere by topography                                                                '
+      write(outlog(io),1)'#          2 = sigma-altitude; s=z_top(z-z_surf)/(z_top-z_surf); topography has decaying               '
+      write(outlog(io),1)'#              influence with height                                                                   '
+      write(outlog(io),1)'# Line 2 indicates the topography data format followed by the smoothing radius in km                   '
+      write(outlog(io),1)'# Topofile format must be one of                                                                       '
+      write(outlog(io),1)'#   1 : Gridded lon/lat (netcdf): ETOPO, GEBCO                                                         '
+      write(outlog(io),1)'#   2 : Gridded Binary: NOAA GLOBE, GTOPO30                                                            '
+      write(outlog(io),1)'#   3 : ESRI ASCII                                                                                     '
+      write(outlog(io),1)'#  Line 3 is the file name of the topography data.                                                     '
+      write(outlog(io),1)'#                                                                                                      '
+        case(12) ! BLOCK 10+2 (OPTMOD):
+                 !   VARDIFF
+      write(outlog(io),1)'*******************************************************************************                        '
+      write(outlog(io),1)'# Variable Diffusivity                                                                                 '
+      write(outlog(io),1)'#   Line 1 indicates whether or not to use horizontal diffusivity followed by the                      '
+      write(outlog(io),1)'#          type ID and value with                                                                      '
+      write(outlog(io),1)'#             1  500.0 # constant horizontal diffusivity with specified value (m2/s)                   '
+      write(outlog(io),1)'#             2  0.2   # Smagorinsky model with coefficient C ()                                       '
+      write(outlog(io),1)'#             3  0.2   # Pielke model with coefficient C ()                                            '
+      write(outlog(io),1)'#   Line 2 indicates whether or not to use vertical diffusivity                                        '
+      write(outlog(io),1)'#   Line 3 indicates the boundary layer model and value (if model requires)                            '
+      write(outlog(io),1)'#             1 500.0         # BL model 1=const ; value (m2/s)                                        '
+      write(outlog(io),1)'#             2               #          2=none (Use Free-air throughout)                              '
+      write(outlog(io),1)'#             3               #          3=Troen and Mahrt                                             '
+      write(outlog(io),1)'#             4               #          4=Ulke                                                        '
+      write(outlog(io),1)'#             5               #          5=Shir / Businger,Ayer                                        '
+      write(outlog(io),1)'#   Line 4 indicates the Free-Air model and value (if model requires)                                  '
+      write(outlog(io),1)'#             1 500.0         # Free-Air 1=const ; value (m2/s)                                        '
+      write(outlog(io),1)'#             2               #          2=F(Ri)=Jacobson                                              '
+      write(outlog(io),1)'#             3               #          3=F(Ri)=Collin                                                '
+      write(outlog(io),1)'#             4               #          4=F(Ri)=Piedelievre                                           '
+      write(outlog(io),1)'#   Line 5 contains the von Karman constant                                                            '
+      write(outlog(io),1)'#   Line 6 contains the free-air mixing length (m)                                                     '
+      write(outlog(io),1)'#   Line 7 is the critical Richardson number used in calculating atmospheric stability.                '
+      write(outlog(io),1)'#                                                                                                      '
+
+!        case default
+      end select
+
+ 1    format(a103)
+
+      end subroutine Write_input_block_header
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  SetWrite_input_block_01
+!
+!  Called from: help_inputfile
+!  Arguments:
+!    
+!  This subroutine writes the content of block 1 of the Ash3d control file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine SetWrite_input_block_1(WriteBlock,vname,projline,LLx,LLy,widthx,widthy,&
+                                        x_in,y_in,z_in,dx_in,dy_in,dz_in,kdiff,Suzk,nerup,   &
+                                        dz_type,dz_line,src_type)
+
+      ! This module requires Fortran 2003 or later
+      use iso_fortran_env, only : &
+         output_unit
+
+      use io_units
+
+      use io_data,       only : &
+         VolcanoName
+
+      use mesh,          only : &
+         lonLL,latLL,gridwidth_e,gridwidth_n,xLL,yLL,gridwidth_x,gridwidth_y, &
+         IsLatLon,de,dn,dx,dy,VarDzType,dz_const
+
+      use Source,        only : &
+         lat_volcano,lon_volcano,x_volcano,y_volcano,z_volcano,Suzuki_A,      &
+         neruptions,SourceType
+
+      use Diffusion,     only : &
+         diffusivity_horz
+
+      logical           ,intent(in) :: WriteBlock
+      character(len=30) ,intent(in) :: vname
+      character(len=80) ,intent(in) :: projline
+      real(kind=ip)     ,intent(in) :: LLx
+      real(kind=ip)     ,intent(in) :: LLy
+      real(kind=ip)     ,intent(in) :: widthx
+      real(kind=ip)     ,intent(in) :: widthy
+      real(kind=ip)     ,intent(in) :: x_in
+      real(kind=ip)     ,intent(in) :: y_in
+      real(kind=ip)     ,intent(in) :: z_in
+      real(kind=ip)     ,intent(in) :: dx_in
+      real(kind=ip)     ,intent(in) :: dy_in
+      real(kind=ip)     ,intent(in) :: dz_in
+      real(kind=ip)     ,intent(in) :: kdiff
+      real(kind=ip)     ,intent(in) :: SuzK  ! These might not be needed, but must be included even with dummy values
+      integer           ,intent(in) :: nerup
+       ! Some extra bits for dz and source options
+      integer           ,intent(in) :: dz_type  ! 1=const, 2=dz_plin, 3=dz_clog, 4=dz_cust
+      character(len=130),intent(in) :: dz_line
+      integer           ,intent(in) :: src_type ! 1=Suz, 2=point, 3=linear, 4=profile, 5=umb, 6=umb_a
+
+      integer :: ilatlonflag
+
+      VolcanoName          = adjustl(trim(vname))
+
+      read(projline,*)ilatlonflag
+      if(ilatlonflag.eq.0) then
+        ! expecting input variables to be in the same projection as
+        ! specified by iprojflag and parameters
+        IsLatLon          = .false.
+      else
+        ! expecting input variables to be in lat/lon
+       IsLatLon          = .true.
+      endif
+
+      if(IsLatLon)then
+        lonLL       = LLx
+        latLL       = LLy
+        gridwidth_e = widthx
+        gridwidth_n = widthy
+        lon_volcano = x_in
+        lat_volcano = y_in
+        z_volcano   = z_in
+        de          = dx_in
+        dn          = dy_in
+      else
+        xLL         = LLx
+        yLL         = LLy
+        gridwidth_x = widthx
+        gridwidth_y = widthy
+        x_volcano   = x_in
+        y_volcano   = y_in
+        z_volcano   = z_in
+        dx          = dx_in
+        dy          = dy_in
+      endif
+
+      if(dz_type.eq.1)then
+        VarDzType = "dz_cons"
+        dz_const  = dz_in
+      elseif(dz_type.eq.2)then
+        VarDzType = 'dz_plin'
+        !   number of line segments (N) followed by the steps and step-size of each segment                    
+        !   e.g. 4 6 0.25 5 0.5 5 1.0 10 2.0                                                                   
+        !         This corresponds to 4 line segments with 6 cells of 0.25, then 5 cells of 0.5,               
+        !         5 cells of 1.0, and finally 10 cells of 2.0   
+        ! dz_line should contain this      
+      elseif(dz_type.eq.3)then
+        VarDzType = 'dz_clog'
+        !   maximum z and number of steps of constant dlogz                                                    
+        !   e.g. 30.0 30                                                                                       
+        !         This corresponds to 30 steps from 0-30km with constant log-spacing        
+        ! dz_line should contain this      
+      elseif(dz_type.eq.4)then
+        VarDzType = 'dz_cust'
+        !   the number of dz values to read (ndz), followed by dz(1:ndz)                                       
+        !   e.g. 20 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 5.5            
+        !         This corresponds to 10 steps of 0.5, 9 steps of 1.5, followed by 1 step of 5.5               
+        ! dz_line should contain this      
+      endif
+      diffusivity_horz = kdiff
+      if(src_type.eq.1)then
+        SourceType='suzuki'
+        Suzuki_A = SuzK
+      elseif(src_type.eq.2)then
+        SourceType='point'
+      elseif(src_type.eq.3)then
+        SourceType='line'
+      elseif(src_type.eq.4)then
+        SourceType='profile'
+      elseif(src_type.eq.5)then
+        SourceType='umbrella'
+      elseif(src_type.eq.6)then
+        SourceType='umbrella_air'
+      endif
+      neruptions = nerup
+
+      if(WriteBlock)then
+        write(output_unit,1)&
+         '******************* BLOCK 1 ****************************************************'
+        write(output_unit,2)VolcanoName
+        write(output_unit,3)adjustl(trim(projline))
+        write(output_unit,4)LLx,LLy
+        write(output_unit,5)widthx,widthy
+        write(output_unit,6)x_in,y_in,z_in
+        write(output_unit,7)dx_in,dy_in
+        if(dz_type.eq.1)then
+          write(output_unit,8)dz_const
+        else
+          write(output_unit,9)VarDzType
+          write(output_unit,10)dz_line
+        endif
+        if(src_type.eq.1)then
+          write(output_unit,11)diffusivity_horz,Suzuki_A
+        else
+          write(output_unit,12)diffusivity_horz,SourceType
+        endif
+        write(output_unit,13)neruptions
+        write(output_unit,1)&
+         '********************************************************************************'
+      endif
+
+ 1    format(a80)
+ 2    format(a30       ,' # Volcano name (character*30)')
+ 3    format(a30       ,' # Proj flags and params; first term (LLflag) is 1, so all else ignored')
+ 4    format(2f15.5    ,' # x, y of LL corner of grid (km, or deg. if latlongflag=1)')
+ 5    format(2f15.5    ,' # grid width and height (km, or deg. if latlonflag=1)')
+ 6    format(3f15.5    ,' # vent location         (km, or deg. if latlonflag=1)')
+ 7    format(2f15.5    ,' # DX, DY of grid cells  (km, or deg. if latlonflag=1)')
+ 8    format(1f15.5,15x,' # DZ of grid cells      (always km)')
+ 9    format(a7        ,' # DZ of grid cells      (always km)')
+ 10   format(a80)
+ 11   format(2f15.5    ,' # diffusion coefficient (m2/s), Suzuki constant')
+ 12   format(1f15.5,a12,' # diffusion coefficient (m2/s), Suzuki constant')
+ 13   format(i5,25x    ,' # neruptions, number of eruptions or pulses')
+
+      end subroutine SetWrite_input_block_1
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
