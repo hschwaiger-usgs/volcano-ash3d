@@ -1040,7 +1040,7 @@
          useDiffusion,useCN,useVz_rhoG,M2PS_2_KM2PHR,MAXNUM_OPTMODS
 
       use io_data,       only : &
-         cdf_b1l1,cdf_b1l2,cdf_b1l3,cdf_b1l4,cdf_b1l5,cdf_b1l6,cdf_b1l7,cdf_b1l8,cdf_b1l9,&
+         cdf_b1l1,cdf_b1l2,cdf_b1l3,cdf_b1l4,cdf_b1l5,cdf_b1l6,cdf_b1l7,cdf_vardz,cdf_b1l8,cdf_b1l9,&
          cdf_b3l1,cdf_b3l2,cdf_b3l3,cdf_b3l4,cdf_b3l5,cdf_b4l1,cdf_b4l2,cdf_b4l3,cdf_b4l4,&
          cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,cdf_b4l11,cdf_b4l12,cdf_b4l13,&
          cdf_b4l14,cdf_b4l15,cdf_b4l16,cdf_b4l17,cdf_b4l18,cdf_b6l1,cdf_b6l2,cdf_b6l3,cdf_b6l4,&
@@ -1072,10 +1072,10 @@
 
       use Source,        only : &
          neruptions,e_Duration,e_Volume,e_PlumeHeight,e_prof_Volume,e_prof_dz,&
-         e_prof_nzpoints,e_StartTime,&
+         e_prof_maxpoints,e_prof_nzpoints,e_StartTime,&
          ESP_duration,ESP_height,ESP_Vol,&
          lat_volcano,lon_volcano,x_volcano,y_volcano,z_volcano,Suzuki_A,&
-         IsCustom_SourceType,SourceType,&
+         IsCustom_SourceType,SourceType,SourceType_idx,&
            Allocate_Source_eruption, &
            HandDUR_2_EVol
 
@@ -1607,11 +1607,11 @@
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"z is piecewise linear:  Now reading the segments."
           endif;enddo
-          ! Block 1 Line 7+1 (Reading the next line into cdf_b1l7)
+          ! Block 1 Line 7+1 (Reading the next line into cdf_vardz)
           read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
           linebuffer050 = "Reading control file, Block 1, Line 7+ (dz_plin)."
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-          cdf_b1l7 = linebuffer080
+          cdf_vardz = linebuffer080
           read(linebuffer080,*,err=9107,iostat=iostatus,iomsg=iomessage) nsegments
           if(nsegments.lt.1)then
             do io=1,2;if(VB(io).le.verbosity_error)then
@@ -1659,11 +1659,11 @@
             write(outlog(io),*)"Logrithmic z (constant steps of dlog(z))"
             write(outlog(io),*)"Now reading the clog_zmax and number of steps."
           endif;enddo
-          ! Block 1 Line 7+1 (Reading the next line into cdf_b1l7)
+          ! Block 1 Line 7+1 (Reading the next line into cdf_vardz)
           read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
           linebuffer050 = "Reading control file, Block 1, Line 7+ (dz_clog)."
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-          cdf_b1l7 = linebuffer080
+          cdf_vardz = linebuffer080
           read(linebuffer080,*,err=9107,iostat=iostatus,iomsg=iomessage) clog_zmax, clog_nsteps
           if(clog_zmax.le.0.0)then
             do io=1,2;if(VB(io).le.verbosity_error)then
@@ -1701,11 +1701,11 @@
             write(outlog(io),*)"Custom dz"
             write(outlog(io),*)"Now reading number of steps (ndz) followed by values(1:ndz)"
           endif;enddo
-          ! Block 1 Line 7+1 (Reading the next line into cdf_b1l7)
+          ! Block 1 Line 7+1 (Reading the next line into cdf_vardz)
           read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
           linebuffer050 = "Reading control file, Block 1, Line 7+ (cust)."
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-          cdf_b1l7 = linebuffer080
+          cdf_vardz = linebuffer080
           read(linebuffer080,*,err=9107,iostat=iostatus,iomsg=iomessage) cust_nsteps
           if(cust_nsteps.le.1)then
             do io=1,2;if(VB(io).le.verbosity_error)then
@@ -1761,7 +1761,8 @@
       ! Now try both diffusivity and a Suzuki coefficient
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) diffusivity_horz, Suzuki_A
       if(iostatus.eq.0)then
-        SourceType='suzuki'
+        SourceType     = 'suzuki'
+        SourceType_idx = 1
       else
         ! if the second item is not a number, read SourceType
         do io=1,2;if(VB(io).le.verbosity_info)then
@@ -1772,19 +1773,23 @@
         if((SourceType.eq.'point').or. &
             (SourceType.eq.'Point').or. &
             (SourceType.eq.'POINT')) then
-            SourceType='point'
+            SourceType     = 'point'
+            SourceType_idx = 2
         elseif((SourceType.eq.'line').or. &
                    (SourceType.eq.'Line').or. &
                    (SourceType.eq.'LINE')) then
-            SourceType='line'
+            SourceType     = 'line'
+            SourceType_idx = 3
         elseif((SourceType.eq.'profile').or. &
                    (SourceType.eq.'Profile').or. &
                    (SourceType.eq.'PROFILE')) then
-            SourceType='profile'
+            SourceType     = 'profile'
+            SourceType_idx = 4
         elseif((SourceType.eq.'umbrella').or. &
                    (SourceType.eq.'Umbrella').or. &
                    (SourceType.eq.'UMBRELLA')) then
-            SourceType='umbrella'
+            SourceType     = 'umbrella'
+            SourceType_idx = 5
             Suzuki_A = SuzK_umb
         elseif((SourceType.eq.'umbrella_air').or. &
                    (SourceType.eq.'Umbrella_air').or. &
@@ -1793,7 +1798,8 @@
             ! but it is assumed to be an airborne run.
             ! Thus if gsbins=1, the MER is multiplied by 20
             ! to obtain the right rate of umbrella growth.
-            SourceType='umbrella_air'
+            SourceType     = 'umbrella_air'
+            SourceType_idx = 6
             Suzuki_A = SuzK_umb
         else
           do io=1,2;if(VB(io).le.verbosity_info)then
@@ -2009,6 +2015,7 @@
             e_PlumeHeight(i) = tmp_ip
           endif
           e_prof_Volume(i,1:e_prof_nzpoints(i))=dum_prof(1:e_prof_nzpoints(i))*e_Volume(i)
+          if(e_prof_nzpoints(i).gt.e_prof_maxpoints)e_prof_nzpoints(i)=e_prof_maxpoints
           deallocate(dum_prof)
         else
           ! This is the custom source.  A special call to a source reader
@@ -5972,8 +5979,8 @@
          IsLatLon,de,dn,dx,dy,VarDzType,dz_const
 
       use Source,        only : &
-         lat_volcano,lon_volcano,x_volcano,y_volcano,z_volcano,Suzuki_A,      &
-         neruptions,SourceType
+         lon_volcano,lat_volcano,x_volcano,y_volcano,z_volcano,Suzuki_A,      &
+         neruptions,SourceType,SourceType_idx
 
       use Diffusion,     only : &
          diffusivity_horz
@@ -6059,6 +6066,7 @@
         ! dz_line should contain this      
       endif
       diffusivity_horz = kdiff
+      SourceType_idx = src_type
       if(src_type.eq.1)then
         SourceType='suzuki'
         Suzuki_A = SuzK

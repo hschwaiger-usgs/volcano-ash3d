@@ -466,6 +466,7 @@
       character (len=80) :: cdf_b1l5
       character (len=80) :: cdf_b1l6
       character (len=80) :: cdf_b1l7
+      character (len=80) :: cdf_vardz
       character (len=80) :: cdf_b1l8
       character (len=80) :: cdf_b1l9
       character (len=80) :: cdf_b3l1

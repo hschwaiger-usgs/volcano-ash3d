@@ -46,6 +46,7 @@
       integer :: z_dim_id     = 0 ! Z
       integer :: bn_dim_id    = 0 ! Full generalized species class ID 1:nsmax
       integer :: er_dim_id    = 0 ! eruption number
+      integer :: ep_dim_id    = 0 ! eruption profile length
       integer :: wf_dim_id    = 0 ! windfile number
       integer :: sl_dim_id    = 0 ! string length
       integer :: pt_dim_id    = 0 ! point output number (airport or POI)
@@ -69,6 +70,7 @@
       integer :: s_var_id              = 0 ! shifted (or sigma) altitude
       integer :: bn_var_id             = 0 ! index for species (grain-size bin, gas, water, etc.)
       integer :: er_var_id             = 0 ! eruption index
+      integer :: ep_var_id             = 0 ! eruption profile length index
       integer :: wf_var_id             = 0 ! wind file index
       integer :: pt_var_id             = 0 ! point (airport/POI) index
       integer :: pr_var_id             = 0 ! profile output index
@@ -105,10 +107,14 @@
       integer :: gsG_var_id            = 0 ! Grain shape fac G
       integer :: gsP_var_id            = 0 ! Grain shape fac Phi
 
+      integer :: er_type_var_id        = 0 ! eruption type (Suz,point,line,profile,umb,umb_air)
       integer :: er_stime_var_id       = 0 ! eruption start time
       integer :: er_duration_var_id    = 0 ! eruption duration
       integer :: er_plumeheight_var_id = 0 ! eruption plume height
       integer :: er_volume_var_id      = 0 ! eruption volume
+      integer :: er_prof_nz_var_id     = 0 ! erpution profile nzpoints (func of er_dim_id)
+      integer :: er_prof_dz_var_id     = 0 ! erpution profile dz  (func of er_dim_id)
+      integer :: er_prof_frac_var_id   = 0 ! erpution profile normalized (func of er_dim_id,ep_dim_id)
       integer :: wf_name_var_id        = 0 ! wind file name
 
       ! Airport / POI variables
@@ -176,7 +182,7 @@
 
       use io_data,       only : &
          nvprofiles,Site_vprofile,x_vprofile,y_vprofile, &
-         cdf_b1l1,cdf_b1l2,cdf_b1l3,cdf_b1l4,cdf_b1l5,cdf_b1l6,cdf_b1l7,cdf_b1l8,cdf_b1l9,&
+         cdf_b1l1,cdf_b1l2,cdf_b1l3,cdf_b1l4,cdf_b1l5,cdf_b1l6,cdf_b1l7,cdf_vardz,cdf_b1l8,cdf_b1l9,&
          cdf_b3l1,cdf_b3l2,cdf_b3l3,cdf_b3l4,cdf_b3l5,cdf_b4l1,cdf_b4l2,cdf_b4l3,cdf_b4l4,&
          cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,cdf_b4l11,cdf_b6l1,cdf_b6l2,&
          cdf_b6l3,cdf_b6l4,cdf_b6l5,cdf_conventions,&
@@ -189,7 +195,7 @@
          nxmax,nymax,nzmax,nsmax,x_cc_pd,y_cc_pd,z_cc_pd,lon_cc_pd,lat_cc_pd,s_cc_pd,&
          sigma_nz_pd,dx,dy,dz_vec_pd,IsLatLon,ts1,&
          A3d_iprojflag,A3d_k0,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
-         A3d_phi2,A3d_Re,ZPADDING,ZScaling_ID,Ztop
+         A3d_phi2,A3d_Re,ZPADDING,ZScaling_ID,Ztop,VarDzType,dz_const
 
       use solution,      only : &
           vx_pd,vy_pd,vz_pd,vf_pd,concen_pd,DepositGranularity,SpeciesID,SpeciesSubID
@@ -229,7 +235,9 @@
          MagmaDensity,DepositDensity,LAM_GS_THRESH,AIRBORNE_THRESH
 
       use Source,        only : &
-         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
+         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight, &
+         SourceType,SourceType_idx,Suzuki_A,                       &
+         e_prof_maxpoints,e_prof_nzpoints,e_prof_dz,e_prof_Volume
 
       use Source_Umbrella, only : &
          VelMod_umb,k_entrainment_umb,lambda_umb,N_BV_umb,SuzK_umb
@@ -243,9 +251,9 @@
 
       integer :: nSTAT
 
-      character(len=32)              :: time_units
+      character(len=32)  :: time_units
 
-      character (len=20)  :: cdf_WindStartTime
+      character(len=20)  :: cdf_WindStartTime
 
       character(len=3 ),dimension(11) :: dim_names
       character(len=30),dimension(11) :: dim_lnames
@@ -321,16 +329,18 @@
       dim_lnames(5) = "Bin index"
       dim_names(6)  = "er" ! eruption index
       dim_lnames(6) = "Eruption number"
-      dim_names(7)  = "wf" ! windfile index
-      dim_lnames(7) = "Wind file number"
-      dim_names(8)  = "sl" ! string length
-      dim_lnames(8) = "string length"
-      dim_names(9)  = "pt" ! point index for airport or POI points
-      dim_lnames(9) = "Airport/POI point number"
-      dim_names(10) = "pr" ! profile index
-      dim_lnames(10)= "Profile number"
-      dim_names(11) = "tn" ! time (native)
-      dim_lnames(11)= "Time native"
+      dim_names(7)  = "ep" ! eruption profile length index
+      dim_lnames(7) = "Erup. profile length"
+      dim_names(8)  = "wf" ! windfile index
+      dim_lnames(8) = "Wind file number"
+      dim_names(9)  = "sl" ! string length
+      dim_lnames(9) = "string length"
+      dim_names(10)  = "pt" ! point index for airport or POI points
+      dim_lnames(10) = "Airport/POI point number"
+      dim_names(11) = "pr" ! profile index
+      dim_lnames(11)= "Profile number"
+      dim_names(12) = "tn" ! time (native)
+      dim_lnames(12)= "Time native"
 
       var_lnames(8) = "Wind velocity (x)"
       var_lnames(9) = "Wind velocity (y)"
@@ -620,6 +630,7 @@
         !  or record, level, y, x
         ! and bn (particle bin)
         ! er (eruption index)
+        ! ep (eruption profile length index)
         ! wf (wind file index)
         ! sl (string length for storing windfile names)
         ! pt (point output index: e.g. airport/POI)
@@ -647,6 +658,9 @@
       ! er
       nSTAT = nf90_def_dim(ncid,dim_names(6),neruptions,er_dim_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_dim er:")
+      ! ep
+      nSTAT = nf90_def_dim(ncid,dim_names(6),neruptions,ep_dim_id)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_dim ep:")
       ! wf
       nSTAT = nf90_def_dim(ncid,dim_names(7),MR_iwindfiles,wf_dim_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_dim wf:")
@@ -654,7 +668,6 @@
       nSTAT = nf90_def_dim(ncid,dim_names(8),130,sl_dim_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_dim sl:")
       ! pt
-      !if (nairports.gt.0)then
       if (Write_PT_Data)then
         nSTAT = nf90_def_dim(ncid,dim_names(9),nairports,pt_dim_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_dim pt:")
@@ -742,6 +755,15 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att z positive")
       nSTAT = nf90_put_att(ncid,z_var_id,"axis","Z")
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att axis z:")
+      nSTAT = nf90_put_att(ncid,z_var_id,"type",VarDzType)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att type z:")
+      if(VarDzType.eq.'dz_cons')then
+        nSTAT = nf90_put_att(ncid,z_var_id,"specification",dz_const)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att specification z:")
+      else
+        nSTAT = nf90_put_att(ncid,z_var_id,"specification",cdf_vardz)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att specification z:")
+      endif
 
          ! Y
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -867,16 +889,30 @@
       !nSTAT = nf90_put_att(ncid,er_var_id,"units","index")
       !if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er units")
 
+         ! EP (Eruption profile lenth index)
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"     ER: ",dim_names(6)
+      endif;enddo
+      nSTAT = nf90_def_var(ncid,dim_names(7),&
+                           NF90_INT,&
+                           (/ep_dim_id/),&
+                           ep_var_id)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var ep")
+      nSTAT = nf90_put_att(ncid,ep_var_id,"long_name",dim_lnames(7))
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att ep long_name")
+      !nSTAT = nf90_put_att(ncid,ep_var_id,"units","index")
+      !if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att ep units")
+
          ! WF (Wind file index)
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"     WF: ",dim_names(7)
       endif;enddo
-      nSTAT = nf90_def_var(ncid,dim_names(7),&
+      nSTAT = nf90_def_var(ncid,dim_names(8),&
                            NF90_INT,&
                            (/wf_dim_id/),&
                            wf_var_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var wf")
-      nSTAT = nf90_put_att(ncid,wf_var_id,"long_name",dim_lnames(7))
+      nSTAT = nf90_put_att(ncid,wf_var_id,"long_name",dim_lnames(8))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att wf long_name")
       !nSTAT = nf90_put_att(ncid,wf_var_id,"units","index")
       !if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att wf units")
@@ -888,14 +924,14 @@
       !if (nairports.gt.0)then
       if (Write_PT_Data)then
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"     PT: ",dim_names(9)
+          write(outlog(io),*)"     PT: ",dim_names(10)
        endif;enddo
         nSTAT = nf90_def_var(ncid,dim_names(9),&
                              NF90_INT,&
                              (/pt_dim_id/),&
                              pt_var_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var pt")
-        nSTAT = nf90_put_att(ncid,pt_var_id,"long_name",dim_lnames(9))
+        nSTAT = nf90_put_att(ncid,pt_var_id,"long_name",dim_lnames(10))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pt long_name")
         !nSTAT = nf90_put_att(ncid,pt_var_id,"units","index")
         !if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pt units")
@@ -906,12 +942,12 @@
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"     PR: ",dim_names(10)
         endif;enddo
-        nSTAT = nf90_def_var(ncid,dim_names(10),&
+        nSTAT = nf90_def_var(ncid,dim_names(11),&
                              NF90_INT,&
                              (/pr_dim_id/),&
                              pr_var_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var pr")
-        nSTAT = nf90_put_att(ncid,pr_var_id,"long_name",dim_lnames(10))
+        nSTAT = nf90_put_att(ncid,pr_var_id,"long_name",dim_lnames(11))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr long_name")
         !nSTAT = nf90_put_att(ncid,pr_var_id,"units","index")
         !if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr units")
@@ -1392,6 +1428,34 @@
       endif
 
       !   Now a few other variables that are a function of ER
+         ! er_type
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"     er_type: Eruption type"
+      endif;enddo
+      nSTAT = nf90_def_var(ncid,"er_type",&
+                           NF90_INT,&
+                           (/er_dim_id/),&
+                           er_type_var_id)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var er_type")
+      nSTAT = nf90_put_att(ncid,er_type_var_id,"long_name","Eruption source type")
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er_type long_name")
+      nSTAT = nf90_put_att(ncid,er_type_var_id,"units","index")
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er_type units")
+      nSTAT = nf90_put_att(ncid,er_type_var_id,"type",SourceType)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er_type type")
+      if(SourceType_idx.eq.1)then
+        ! Suzuki
+        nSTAT = nf90_put_att(ncid,er_type_var_id,"specification",Suzuki_A)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er_type specification")
+!      elseif(SourceType_idx.eq.4)then
+!        ! profile
+!        nSTAT = nf90_put_att(ncid,er_type_var_id,"specification",Suzuki_A)
+!        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er_type specification")
+      else
+        ! point, line, umbrella, or umbrella_air, or possibly custom
+        nSTAT = nf90_put_att(ncid,er_type_var_id,"specification","none")
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er_type specification")
+      endif
          ! er_stime (Start time of eruption)
       ! Time variables should always be doubles to match with libhourssince
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -1465,6 +1529,65 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er_volume long_name")
       nSTAT = nf90_put_att(ncid,er_volume_var_id,"units","km3")
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er_volume units")
+
+      if (SourceType_idx.eq.4) then
+        ! erpution profile nzpoints (func of er_dim_id)
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"     er_type: Eruption profile nz"
+        endif;enddo
+        nSTAT = nf90_def_var(ncid,"er_prof_nz",&
+                             NF90_INT,&
+                             (/er_dim_id/),&
+                             er_prof_nz_var_id)
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var er_prof_nz")
+        nSTAT = nf90_put_att(ncid,er_prof_nz_var_id,"long_name","Eruption profile nz")
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er_type long_name")
+        nSTAT = nf90_put_att(ncid,er_prof_nz_var_id,"units","none")
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er_type units")
+
+        ! erpution profile dz  (func of er_dim_id)
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"     area: eruption profile dz"
+        endif;enddo
+        if(op.eq.8)then
+          nSTAT = nf90_def_var(ncid,"er_prof_dz",&
+                               NF90_DOUBLE, &
+                               (/er_dim_id/),                &
+                               er_prof_dz_var_id)
+        else
+          nSTAT = nf90_def_var(ncid,"er_prof_dz",&
+                               NF90_FLOAT,  &
+                               (/er_dim_id/),                &
+                               er_prof_dz_var_id)
+        endif
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var er_prof_dz")
+        nSTAT = nf90_put_att(ncid,er_prof_dz_var_id,"long_name","Eruption profile dz")
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att area long_name")
+        nSTAT = nf90_put_att(ncid,er_prof_dz_var_id,"units","km")
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att area units")
+
+        ! erpution profile normalized (func of er_dim_id,ep_dim_id)
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"     area: eruption profile fraction"
+        endif;enddo
+        if(op.eq.8)then
+          nSTAT = nf90_def_var(ncid,"er_prof_frac",&
+                               NF90_DOUBLE, &
+                               (/er_dim_id,ep_dim_id/),                &
+                               er_prof_frac_var_id)
+        else
+          nSTAT = nf90_def_var(ncid,"er_prof_frac",&
+                               NF90_FLOAT,  &
+                               (/er_dim_id,ep_dim_id/),                &
+                               er_prof_frac_var_id)
+        endif
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var er_prof_frac")
+        nSTAT = nf90_put_att(ncid,er_prof_frac_var_id,"long_name","Eruption profile fraction")
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att area long_name")
+        nSTAT = nf90_put_att(ncid,er_prof_frac_var_id,"units","none")
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att area units")
+
+      endif
 
          ! Now define the other (non-time-dependent) variables
          ! wf_name (Name of windfile)
@@ -2580,6 +2703,9 @@
         nSTAT=nf90_put_var(ncid,gsmf_var_id,dum1d_out,(/1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_massfrac")
          ! gs_dens (Density of grain)
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
+          write(outlog(io),*)"     Fill GS Density"
+        endif;enddo
         if(useCalcFallVel)then
           dum1d_out(1:n_gs_max) = real(Tephra_rho_m(1:n_gs_max),kind=op)
         else
@@ -2588,6 +2714,9 @@
         nSTAT=nf90_put_var(ncid,gsdens_var_id,dum1d_out,(/1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_dens")
          ! gs_F (Shape factor of grain F)
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
+          write(outlog(io),*)"     Fill GS shape F"
+        endif;enddo
         if(useCalcFallVel)then
           dum1d_out(1:n_gs_max) = real(Tephra_gsF(1:n_gs_max),kind=op)
         else
@@ -2597,6 +2726,9 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_F")
 
          ! gs_G (Shape factor of grain G
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
+          write(outlog(io),*)"     Fill GS shape G"
+        endif;enddo
         if(useCalcFallVel)then
           dum1d_out(1:n_gs_max) = real(Tephra_gsG(1:n_gs_max),kind=op)
         else
@@ -2605,6 +2737,9 @@
         nSTAT=nf90_put_var(ncid,gsG_var_id,dum1d_out,(/1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_G")
          ! gs_Phi (Shape factor of grain Phi)
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
+          write(outlog(io),*)"     Fill GS shape Psi"
+        endif;enddo
         if(useCalcFallVel)then
           dum1d_out(1:n_gs_max) = real(Tephra_gsPhi(1:n_gs_max),kind=op)
         else
@@ -2618,23 +2753,71 @@
       !   Now fill a few other variables that are a function of ER
         ! er_stime (Start time of eruption)
       allocate(dum1d_out(neruptions))
-      !dum1d_out = real(e_StartTime + SimStartHour,kind=op)
+      ! We are not using the dum1d_out array for time variables since they muxt be dp
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Fill ER stime"
+      endif;enddo
       nSTAT=nf90_put_var(ncid,er_stime_var_id,&
                          real(e_StartTime + SimStartHour,kind=dp) ,(/1/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var er_stime")
         ! er_duration (Duration of eruption)
-      !dum1d_out = real(e_Duration,kind=op)
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Fill ER duration"
+      endif;enddo
       nSTAT=nf90_put_var(ncid,er_duration_var_id,real(e_Duration,kind=dp),(/1/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var er_duration")
         ! er_plumeheight (Plume height of eruption)
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Fill ER plumeheight"
+      endif;enddo
       dum1d_out = real(e_PlumeHeight,kind=op)
       nSTAT=nf90_put_var(ncid,er_plumeheight_var_id,dum1d_out,(/1/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var er_plumeheight")
         ! er_volume (Volume of eruption)
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Fill ER volume"
+      endif;enddo
       dum1d_out = real(e_Volume,kind=op)
       nSTAT=nf90_put_var(ncid,er_volume_var_id,dum1d_out,(/1/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var er_volume")
       deallocate(dum1d_out)
+
+      if(SourceType_idx.eq.4)then
+        ! erpution profile nzpoints (func of er_dim_id)
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
+          write(outlog(io),*)"     Fill Eruption profile nz"
+        endif;enddo
+        allocate(dum1dint_out(neruptions))
+        dum1dint_out(1:neruptions) = e_prof_nzpoints(1:neruptions)
+        nSTAT=nf90_put_var(ncid,er_prof_nz_var_id,dum1dint_out,(/1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var er_prof_nz")
+        deallocate(dum1dint_out)
+        ! erpution profile dz  (func of er_dim_id)
+        allocate(dum1d_out(neruptions))
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
+          write(outlog(io),*)"     Fill Eruption profile dz"
+        endif;enddo
+        ! er_volume (Volume of eruption)
+        dum1d_out = real(e_prof_dz,kind=op)
+        nSTAT=nf90_put_var(ncid,er_prof_dz_var_id,dum1d_out,(/1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var er_prof_dz")
+        deallocate(dum1d_out)
+
+        ! erpution profile normalized (func of er_dim_id,ep_dim_id)
+        allocate(dum1d_out(e_prof_maxpoints))
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
+          write(outlog(io),*)"     Fill Eruption profile fraction"
+        endif;enddo
+        do i=1,neruptions
+          ! Loop over all eruption profiles and write to file
+          dum1d_out = 0.0_op
+          dum1d_out(1:e_prof_nzpoints(i)) = &
+            real(e_prof_Volume(i,1:e_prof_nzpoints(i))/e_Volume(i),kind=op)
+          nSTAT=nf90_put_var(ncid,er_prof_frac_var_id,dum1d_out(1:e_prof_maxpoints),(/1,i/))
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var er_prof_frac")
+        enddo
+        deallocate(dum1d_out)
+      endif
 
       ! And a few variables that are not functions of any dimensions
         ! projection flag (name and attributes already defind this)
@@ -3847,7 +4030,7 @@
 
       use io_data,           only : &
          concenfile,init_tstep,nWriteTimes,WriteTimes,cdf_b1l1,cdf_b1l5,cdf_b3l1, &
-         cdf_b1l2,cdf_b3l3,VolcanoName,Write_PT_Data,isFinal_TS,&
+         cdf_b1l2,cdf_b1l8,cdf_b3l3,cdf_vardz,VolcanoName,Write_PT_Data,isFinal_TS,&
          cdf_run_class,cdf_url,cdf_institution,&
          Write_PR_Data,nvprofiles,x_vprofile,y_vprofile,Site_vprofile,&
          nvar_User2d_static_XY,nvar_User2d_XY
@@ -3856,7 +4039,7 @@
          nxmax,nymax,nsmax,nzmax,x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd,z_cc_pd, &
          dx,dy,de,dn,dz_const,IsLatLon,latLL,lonLL,latUR,lonUR,xLL,yLL,xUR,yUR,&
          A3d_iprojflag,A3d_k0,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
-         A3d_phi2,A3d_Re,ZPADDING
+         A3d_phi2,A3d_Re,ZPADDING,VarDzType,dz_const
 
       use solution,      only : &
          SpeciesID
@@ -3895,6 +4078,9 @@
          PJ_iprojflag,PJ_k0,PJ_lam0,PJ_lam1,PJ_lam2,PJ_phi0,PJ_phi1,PJ_phi2,PJ_Re,&
            PJ_Set_Proj_Params,PJ_proj_for,PJ_proj_inv
 
+      use diffusion,     only : &
+         diffusivity_horz
+
       integer, intent(in), optional :: timestep
 
       logical,save :: first_time = .true.
@@ -3920,6 +4106,7 @@
       real(kind=dp) :: lat_in,lon_in
       real(kind=ip) :: xnow,ynow
       real(kind=dp) :: xout,yout
+      integer       :: xtype, length, attnum
 
       INTERFACE
         real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
@@ -4029,7 +4216,7 @@
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),2501)"lon",x_len
           endif;enddo
-        else
+        else ! start of non-LonLat branch
           ! Get projection information
           nSTAT = nf90_get_att(ncid,nf90_global,"b1l2",cdf_b1l2)
           if(nSTAT.ne.0)then
@@ -4259,7 +4446,26 @@
           z_cc_pd(1:nzmax) = real(dum1d_dp(1:nzmax),kind=ip)
           deallocate(dum1d_dp)
         endif
+        
+        nSTAT = nf90_inq_varid(ncid,"z",z_var_id)
+        nSTAT = nf90_Inquire_Attribute(ncid, z_var_id,&
+                                           "type",xtype, length, attnum)
+        if(nSTAT.eq.0)then
+          nSTAT = nf90_get_att(ncid, z_var_id,"type",VarDzType)
+        else
+          VarDzType = 'dz_cons'
+        endif
+        nSTAT = nf90_Inquire_Attribute(ncid, z_var_id,&
+                                           "specification",xtype, length, attnum)
         dz_const  = z_cc_pd(2)-z_cc_pd(1)
+        if(nSTAT.eq.0)then
+          if(VarDzType.eq.'dz_cons')then
+            nSTAT = nf90_get_att(ncid, z_var_id,"specification",dz_const)
+          else
+            nSTAT = nf90_get_att(ncid, z_var_id,"specification",cdf_vardz)
+          endif
+        endif
+
         z_cc_pd(0)  = z_cc_pd(1) - dz_const
         z_cc_pd(-1) = z_cc_pd(0) - dz_const
         z_cc_pd(nzmax+1) = z_cc_pd(nzmax  ) + dz_const
@@ -4364,6 +4570,21 @@
         endif;enddo
 
         ! Now get the expected global attributes
+          ! Input file line with 
+        nSTAT = nf90_get_att(ncid,nf90_global,"b1l8",cdf_b1l8)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att b1l8:")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Did not find att bil8:"
+          endif;enddo
+          !stop 1
+        endif
+        read(cdf_b1l8,*,iostat=iostatus,iomsg=iomessage) diffusivity_horz
+
+        ! HFS Add check on source type
+
+
+
         nSTAT = nf90_get_att(ncid,nf90_global,"BaseYear",BaseYear)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att BaseYear:")

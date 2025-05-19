@@ -448,7 +448,7 @@ write_ASCII.o: $(ASH3DCCSRC)/write_ASCII.f90 $(MFILE) $(SYSINC) Ash3d_VariableMo
 write_BINARY.o: $(ASH3DCCSRC)/write_BINARY.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/write_BINARY.f90
 ifeq ($(USENETCDF), T)
-write_NETCDF.o: $(ASH3DCCSRC)/write_NETCDF.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Output_Vars.o Airports.o Tephra.o Source.o Source_Umbrella.o
+write_NETCDF.o: $(ASH3DCCSRC)/write_NETCDF.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Output_Vars.o Airports.o Tephra.o Source.o Source_Umbrella.o Diffusion.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/write_NETCDF.f90
 endif
 #ifeq ($(USEGRIB), T)
@@ -506,7 +506,7 @@ ascii_dep: $(ASH3DCCSRC)/tools/Ash3d_ASCII_DepThin.f90 Ash3d_VariableModules.o w
 	mkdir -p ../bin/tools
 	mv Ash3d_ASCII_DepThin ../bin/tools/Ash3d_ASCII_DepThin
 ifeq ($(USENETCDF), T)
-gen_ctr: $(ASH3DCCSRC)/tools/Ash3d_ASCII_DepThin.f90 Ash3d_VariableModules.o write_NETCDF.o $(MFILE) $(SYSINC)
+gen_ctr: $(ASH3DCCSRC)/tools/Ash3d_ASCII_DepThin.f90 Ash3d_VariableModules.o write_NETCDF.o Input_Data.o $(MFILE) $(SYSINC)
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/tools/Ash3d_NetCDF_GenCTR.f90
 	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d_NetCDF_GenCTR.o $(LIBS) -o Ash3d_NetCDF_GenCTR
 	mkdir -p ../bin/tools

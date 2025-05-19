@@ -78,8 +78,10 @@
 
       integer,          public :: neruptions            ! number of eruptions or eruptive pulses
       character(len=12),public :: SourceType            ! may be 'point', 'line', or 'Suzuki' 
+      integer          ,public :: SourceType_idx        ! 1=Suz,2=point,3=line,4=profile,5=umb,6=umb_air
       real(kind=ip),    public :: Suzuki_A
       logical,          public :: IsCustom_SourceType = .false.
+      integer,          public :: e_prof_maxpoints    = 0
 
 #ifdef USEPOINTERS
       real(kind=ip), dimension(:,:)  ,pointer,public :: NormSourceColumn    => null()
