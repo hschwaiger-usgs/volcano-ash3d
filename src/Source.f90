@@ -130,6 +130,8 @@
       real(kind=ip), public :: ESP_Vol           = 0.0_ip
       real(kind=ip), public :: ESP_massfracfine  = 0.0_ip
 
+      integer,public,parameter :: MAX_ER_PROFPOINTS = 50 
+
       integer, parameter :: MAXCUSTSRC = 10    ! The maximum number of custom
                                                ! source types that we will check for
       character(len=30),dimension(MAXCUSTSRC) :: SourceType_Custom = ""
@@ -170,8 +172,8 @@
         allocate(e_prof_dz(neruptions));             e_prof_dz       = 0.0_ip
         allocate(e_prof_nzpoints(neruptions));       e_prof_nzpoints = 0
           ! for profiles, assume 50 points
-        allocate(e_prof_Volume(neruptions,50));      e_prof_Volume   = 0.0_ip
-        allocate(e_prof_MassFluxRate(neruptions,50));e_prof_MassFluxRate = 0.0_ip
+        allocate(e_prof_Volume(neruptions,MAX_ER_PROFPOINTS));      e_prof_Volume       = 0.0_ip
+        allocate(e_prof_MassFluxRate(neruptions,MAX_ER_PROFPOINTS));e_prof_MassFluxRate = 0.0_ip
       endif
 
       ieruption = 1 ! Initialize eruption for the start of this dt to the starting eruption

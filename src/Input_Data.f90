@@ -1072,7 +1072,7 @@
 
       use Source,        only : &
          neruptions,e_Duration,e_Volume,e_PlumeHeight,e_prof_Volume,e_prof_dz,&
-         e_prof_maxpoints,e_prof_nzpoints,e_StartTime,&
+         e_prof_maxpoints,e_prof_nzpoints,e_StartTime,MAX_ER_PROFPOINTS,&
          ESP_duration,ESP_height,ESP_Vol,&
          lat_volcano,lon_volcano,x_volcano,y_volcano,z_volcano,Suzuki_A,&
          IsCustom_SourceType,SourceType,SourceType_idx,&
@@ -1608,11 +1608,11 @@
             write(outlog(io),*)"z is piecewise linear:  Now reading the segments."
           endif;enddo
           ! Block 1 Line 7+1 (Reading the next line into cdf_vardz)
-          read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+          read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer130
           linebuffer050 = "Reading control file, Block 1, Line 7+ (dz_plin)."
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-          cdf_vardz = linebuffer080
-          read(linebuffer080,*,err=9107,iostat=iostatus,iomsg=iomessage) nsegments
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
+          cdf_vardz = linebuffer130
+          read(linebuffer130,*,err=9107,iostat=iostatus,iomsg=iomessage) nsegments
           if(nsegments.lt.1)then
             do io=1,2;if(VB(io).le.verbosity_error)then
               write(errlog(io),*)"ERROR: ",&
@@ -1629,7 +1629,7 @@
           allocate(nz_plin_segments(nsegments))
           allocate(dz_plin_segments(nsegments))
           allocate(values(1+2*nsegments))
-          read(linebuffer080,*,err=9107,iostat=iostatus,iomsg=iomessage)values(1:1+2*nsegments)
+          read(linebuffer130,*,err=9107,iostat=iostatus,iomsg=iomessage)values(1:1+2*nsegments)
           do i=1,nsegments
             nz_plin_segments(i) = nint(values(1+(i-1)*2 + 1))
             dz_plin_segments(i) = values(1+(i-1)*2 + 2)
@@ -1660,11 +1660,11 @@
             write(outlog(io),*)"Now reading the clog_zmax and number of steps."
           endif;enddo
           ! Block 1 Line 7+1 (Reading the next line into cdf_vardz)
-          read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+          read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer130
           linebuffer050 = "Reading control file, Block 1, Line 7+ (dz_clog)."
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-          cdf_vardz = linebuffer080
-          read(linebuffer080,*,err=9107,iostat=iostatus,iomsg=iomessage) clog_zmax, clog_nsteps
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
+          cdf_vardz = linebuffer130
+          read(linebuffer130,*,err=9107,iostat=iostatus,iomsg=iomessage) clog_zmax, clog_nsteps
           if(clog_zmax.le.0.0)then
             do io=1,2;if(VB(io).le.verbosity_error)then
               write(errlog(io),*)"ERROR: ",&
@@ -1702,11 +1702,11 @@
             write(outlog(io),*)"Now reading number of steps (ndz) followed by values(1:ndz)"
           endif;enddo
           ! Block 1 Line 7+1 (Reading the next line into cdf_vardz)
-          read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+          read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer130
           linebuffer050 = "Reading control file, Block 1, Line 7+ (cust)."
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-          cdf_vardz = linebuffer080
-          read(linebuffer080,*,err=9107,iostat=iostatus,iomsg=iomessage) cust_nsteps
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
+          cdf_vardz = linebuffer130
+          read(linebuffer130,*,err=9107,iostat=iostatus,iomsg=iomessage) cust_nsteps
           if(cust_nsteps.le.1)then
             do io=1,2;if(VB(io).le.verbosity_error)then
               write(errlog(io),*)"ERROR: ",&
@@ -1717,7 +1717,7 @@
             stop 1
           endif
           allocate(values(cust_nsteps))
-          read(linebuffer080,*,err=9107,iostat=iostatus,iomsg=iomessage) cust_nsteps, values(1:cust_nsteps)
+          read(linebuffer130,*,err=9107,iostat=iostatus,iomsg=iomessage) cust_nsteps, values(1:cust_nsteps)
           nz_init = cust_nsteps
           allocate(z_vec_init(0:nz_init))
           z_vec_init = 0.0_ip
@@ -1980,6 +1980,9 @@
                                 e_iyear(i),e_imonth(i),e_iday(i),e_hour(i), &
                                 e_Duration(i), e_PlumeHeight(i), e_Volume(i),&
                                 e_prof_dz(i),e_prof_nzpoints(i)
+          if(e_prof_nzpoints(i).gt.MAX_ER_PROFPOINTS)then
+
+          endif
           allocate(dum_prof(e_prof_nzpoints(i)))
           read(fid_ctrlfile,*,iostat=iostatus,iomsg=iomessage)dum_prof(1:e_prof_nzpoints(i))
           linebuffer080="Direct read of profile points; no line buffer"
@@ -2015,7 +2018,7 @@
             e_PlumeHeight(i) = tmp_ip
           endif
           e_prof_Volume(i,1:e_prof_nzpoints(i))=dum_prof(1:e_prof_nzpoints(i))*e_Volume(i)
-          if(e_prof_nzpoints(i).gt.e_prof_maxpoints)e_prof_nzpoints(i)=e_prof_maxpoints
+          if(e_prof_nzpoints(i).gt.e_prof_maxpoints)e_prof_maxpoints=e_prof_nzpoints(i)
           deallocate(dum_prof)
         else
           ! This is the custom source.  A special call to a source reader
@@ -6009,6 +6012,21 @@
       integer :: ilatlonflag
 
       VolcanoName          = adjustl(trim(vname))
+
+      write(*,*)WriteBlock
+      write(*,*)vname
+      write(*,*)projline
+      write(*,*)LLx,LLy
+      write(*,*)widthx,widthy
+      write(*,*)x_in,y_in,z_in
+      write(*,*)dz_in
+      write(*,*)kdiff
+      write(*,*)Suzk
+      write(*,*)nerup
+      write(*,*)dz_type
+      write(*,*)dz_line
+      write(*,*)src_type
+
 
       read(projline,*)ilatlonflag
       if(ilatlonflag.eq.0) then

@@ -16,7 +16,7 @@
 
       use Source,        only : &
          lon_volcano,lat_volcano,x_volcano,y_volcano,z_volcano,Suzuki_A,      &
-         neruptions,SourceType
+         neruptions,SourceType,SourceType_idx
 
       use Diffusion,     only : &
          diffusivity_horz
@@ -47,6 +47,7 @@
       real(kind=ip) :: z_in
       real(kind=ip) :: dx_in
       real(kind=ip) :: dy_in
+      integer       :: dz_type
 
       write(*,*)"In Ash3d_NetCDF_GenCTR"
 
@@ -108,7 +109,7 @@
           write(errlog(io),*)"WARNING: Input file already exists"
         endif;enddo
       endif
-      open(unit=fid_ctrlfile,file=infile,status='new',action='write')
+      open(unit=fid_ctrlfile,file=infile,action='write')
 
       if(IsLatLon)then
         LLx    = lonLL
@@ -131,6 +132,18 @@
         dx_in  = dx
         dy_in  = dy
       endif
+      if(VarDzType.eq.'dz_cons')then
+        dz_type = 1
+      elseif(VarDzType.eq.'dz_plin')then
+        dz_type = 2
+      elseif(VarDzType.eq.'dz_clog')then
+        dz_type = 3
+      elseif(VarDzType.eq.'dz_cust')then
+        dz_type = 4
+      else
+        dz_type = 1
+
+      endif
 
       call SetWrite_input_block_1(WriteBlock                       ,&  ! indicates that write to stdout as well as set vars
                                    VolcanoName                     ,&  ! volcano name
@@ -140,10 +153,10 @@
                                    x_in,y_in,z_in                  ,&  ! vent x,y,z
                                    dx_in,dy_in                     ,&  ! dx, dy
                                    dz_const                        ,&  ! dz
-                                  0.0_ip,4.0_ip                    ,&  ! Kx, Suz param
-                                  9                                ,&  ! # of eruptions
-                                  1,cdf_vardz                      ,&  ! dz_type + bonus line
-                                  1)                                   ! source_type
+                                   diffusivity_horz,Suzuki_A       ,&  ! Kx, Suz param
+                                   neruptions                      ,&  ! # of eruptions
+                                   dz_type,cdf_vardz               ,&  ! dz_type + bonus line
+                                   SourceType_idx)                     ! source_type
 
 
 

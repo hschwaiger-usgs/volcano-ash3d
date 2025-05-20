@@ -255,8 +255,8 @@
 
       character(len=20)  :: cdf_WindStartTime
 
-      character(len=3 ),dimension(11) :: dim_names
-      character(len=30),dimension(11) :: dim_lnames
+      character(len=3 ),dimension(12) :: dim_names
+      character(len=30),dimension(12) :: dim_lnames
       character(len=30),dimension(40) :: var_lnames
       character(len=13)  :: reftimestr
       character(len=16)  :: outstring
@@ -659,23 +659,23 @@
       nSTAT = nf90_def_dim(ncid,dim_names(6),neruptions,er_dim_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_dim er:")
       ! ep
-      nSTAT = nf90_def_dim(ncid,dim_names(6),neruptions,ep_dim_id)
+      nSTAT = nf90_def_dim(ncid,dim_names(7),e_prof_maxpoints,ep_dim_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_dim ep:")
       ! wf
-      nSTAT = nf90_def_dim(ncid,dim_names(7),MR_iwindfiles,wf_dim_id)
+      nSTAT = nf90_def_dim(ncid,dim_names(8),MR_iwindfiles,wf_dim_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_dim wf:")
       ! sl
-      nSTAT = nf90_def_dim(ncid,dim_names(8),130,sl_dim_id)
+      nSTAT = nf90_def_dim(ncid,dim_names(9),130,sl_dim_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_dim sl:")
       ! pt
       if (Write_PT_Data)then
-        nSTAT = nf90_def_dim(ncid,dim_names(9),nairports,pt_dim_id)
+        nSTAT = nf90_def_dim(ncid,dim_names(10),nairports,pt_dim_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_dim pt:")
       endif
 
        ! pr
       if (Write_PR_Data)then
-        nSTAT = nf90_def_dim(ncid,dim_names(10),nvprofiles,pr_dim_id)
+        nSTAT = nf90_def_dim(ncid,dim_names(11),nvprofiles,pr_dim_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_dim pr:")
       endif
 
@@ -891,7 +891,7 @@
 
          ! EP (Eruption profile lenth index)
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),*)"     ER: ",dim_names(6)
+        write(outlog(io),*)"     ER: ",dim_names(7)
       endif;enddo
       nSTAT = nf90_def_var(ncid,dim_names(7),&
                            NF90_INT,&
@@ -1428,7 +1428,8 @@
       endif
 
       !   Now a few other variables that are a function of ER
-         ! er_type
+         ! er_type: note that this is currently a function of er, but they type (e.g. line)
+         ! should apply to all eruptions. The specification should apply to each er
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"     er_type: Eruption type"
       endif;enddo
@@ -1447,12 +1448,17 @@
         ! Suzuki
         nSTAT = nf90_put_att(ncid,er_type_var_id,"specification",Suzuki_A)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er_type specification")
-!      elseif(SourceType_idx.eq.4)then
-!        ! profile
-!        nSTAT = nf90_put_att(ncid,er_type_var_id,"specification",Suzuki_A)
-!        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er_type specification")
+      elseif(SourceType_idx.eq.2.or. &  ! point
+             SourceType_idx.eq.3.or. &  ! line
+             SourceType_idx.eq.4.or. &  ! profile
+             SourceType_idx.eq.5.or. &  ! umbrella
+             SourceType_idx.eq.6)then   ! umbrella_air
+        nSTAT = nf90_put_att(ncid,er_type_var_id,"specification","none")
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er_type specification")
       else
-        ! point, line, umbrella, or umbrella_air, or possibly custom
+        ! All custom sources should have one additional line per source that gives
+        ! the full specification. That line is written here.
+        !  HFS: need to code this
         nSTAT = nf90_put_att(ncid,er_type_var_id,"specification","none")
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er_type specification")
       endif
@@ -1573,12 +1579,12 @@
         if(op.eq.8)then
           nSTAT = nf90_def_var(ncid,"er_prof_frac",&
                                NF90_DOUBLE, &
-                               (/er_dim_id,ep_dim_id/),                &
+                               (/ep_dim_id,er_dim_id/),                &
                                er_prof_frac_var_id)
         else
           nSTAT = nf90_def_var(ncid,"er_prof_frac",&
                                NF90_FLOAT,  &
-                               (/er_dim_id,ep_dim_id/),                &
+                               (/ep_dim_id,er_dim_id/),                &
                                er_prof_frac_var_id)
         endif
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var er_prof_frac")
@@ -2610,6 +2616,19 @@
       nSTAT=nf90_put_var(ncid,er_var_id,dum1dint_out,(/1/))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var er")
       deallocate(dum1dint_out)
+        ! EP
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Fill EP"
+      endif;enddo
+      allocate(dum1dint_out(e_prof_maxpoints))
+      ! This is variable associated with the dimension for eruptions ID
+      ! This only contains the index starting with 1
+      do i=1,e_prof_maxpoints
+        dum1dint_out(i) = i
+      enddo
+      nSTAT=nf90_put_var(ncid,ep_var_id,dum1dint_out,(/1/))
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var ep")
+      deallocate(dum1dint_out)
         ! WF
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Fill WF"
@@ -2751,6 +2770,17 @@
       endif
 
       !   Now fill a few other variables that are a function of ER
+        ! er_type (eruption type code)
+      allocate(dum1dint_out(neruptions))
+      ! We are not using the dum1d_out array for time variables since they muxt be dp
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Fill ER type"
+      endif;enddo
+      dum1dint_out = SourceType_idx
+      nSTAT=nf90_put_var(ncid,er_type_var_id,&
+                         dum1dint_out ,(/1/))
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var er_type")
+      deallocate(dum1dint_out)
         ! er_stime (Start time of eruption)
       allocate(dum1d_out(neruptions))
       ! We are not using the dum1d_out array for time variables since they muxt be dp
@@ -4029,7 +4059,7 @@
          GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH
 
       use io_data,           only : &
-         concenfile,init_tstep,nWriteTimes,WriteTimes,cdf_b1l1,cdf_b1l5,cdf_b3l1, &
+         concenfile,init_tstep,nWriteTimes,WriteTimes,cdf_b1l1,cdf_b1l4,cdf_b1l5,cdf_b3l1, &
          cdf_b1l2,cdf_b1l8,cdf_b3l3,cdf_vardz,VolcanoName,Write_PT_Data,isFinal_TS,&
          cdf_run_class,cdf_url,cdf_institution,&
          Write_PR_Data,nvprofiles,x_vprofile,y_vprofile,Site_vprofile,&
@@ -4039,7 +4069,8 @@
          nxmax,nymax,nsmax,nzmax,x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd,z_cc_pd, &
          dx,dy,de,dn,dz_const,IsLatLon,latLL,lonLL,latUR,lonUR,xLL,yLL,xUR,yUR,&
          A3d_iprojflag,A3d_k0,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
-         A3d_phi2,A3d_Re,ZPADDING,VarDzType,dz_const
+         A3d_phi2,A3d_Re,ZPADDING,VarDzType,dz_const,gridwidth_e,gridwidth_n,&
+         gridwidth_x,gridwidth_y
 
       use solution,      only : &
          SpeciesID
@@ -4049,8 +4080,10 @@
           Simtime_in_hours,ntmax
 
       use Source,        only : &
-         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight, &
-         lat_volcano,lon_volcano,x_volcano,y_volcano
+         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight,Suzuki_A, &
+         SourceType,SourceType_idx,MAX_ER_PROFPOINTS, &
+         e_prof_maxpoints,e_prof_nzpoints,e_prof_dz,e_prof_Volume, &
+         lat_volcano,lon_volcano,x_volcano,y_volcano,z_volcano
 
       use Output_Vars,   only : &
          DepositThickness,DepArrivalTime,CloudArrivalTime,pr_ash,Mask_Deposit,&
@@ -4090,6 +4123,7 @@
       integer :: fop  ! output precision used for Ash3d output file being read in (4 or 8)
       character(len=NF90_MAX_NAME)  :: invar
       real(kind=op) :: dumscal_out
+      real(kind=ip) :: dum1,dum2
       real(kind=sp), dimension(:),allocatable :: dum1d_sp
       real(kind=dp), dimension(:),allocatable :: dum1d_dp
       character(len=32) :: time_units
@@ -4167,7 +4201,26 @@
         ! continue reading x or lon
         nSTAT = nf90_Inquire_Dimension(ncid,x_dim_id,len=x_len)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"Inquire_Dimension x")
+
+        ! Get projection information
+        nSTAT = nf90_get_att(ncid,nf90_global,"b1l2",cdf_b1l2)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att b1l2:")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Did not find att b1l2: Projection parameters"
+          endif;enddo
+        endif
+        ! Get grid widths
+        nSTAT = nf90_get_att(ncid,nf90_global,"b1l4",cdf_b1l4)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att b1l4:")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Did not find att b1l4: grid widths"
+          endif;enddo
+        endif
+
         if(IsLatLon)then
+          read(cdf_b1l4,*)gridwidth_e,gridwidth_n
           ! Get variable id for this dimension
           nSTAT = nf90_inq_varid(ncid,"lon",x_var_id)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid x")
@@ -4217,14 +4270,16 @@
             write(outlog(io),2501)"lon",x_len
           endif;enddo
         else ! start of non-LonLat branch
-          ! Get projection information
-          nSTAT = nf90_get_att(ncid,nf90_global,"b1l2",cdf_b1l2)
-          if(nSTAT.ne.0)then
-            call NC_check_status(nSTAT,0,"get_att b1l2:")
-            do io=1,2;if(VB(io).le.verbosity_info)then
-              write(outlog(io),*)"Did not find att b1l2: Projection parameters"
-            endif;enddo
-          endif
+          read(cdf_b1l4,*)gridwidth_x,gridwidth_y
+
+!          ! Get projection information
+!          nSTAT = nf90_get_att(ncid,nf90_global,"b1l2",cdf_b1l2)
+!          if(nSTAT.ne.0)then
+!            call NC_check_status(nSTAT,0,"get_att b1l2:")
+!            do io=1,2;if(VB(io).le.verbosity_info)then
+!              write(outlog(io),*)"Did not find att b1l2: Projection parameters"
+!            endif;enddo
+!          endif
           call PJ_Set_Proj_Params(cdf_b1l2)
           A3d_iprojflag  = PJ_iprojflag
           A3d_k0   = PJ_k0
@@ -4458,13 +4513,23 @@
         nSTAT = nf90_Inquire_Attribute(ncid, z_var_id,&
                                            "specification",xtype, length, attnum)
         dz_const  = z_cc_pd(2)-z_cc_pd(1)
-        if(nSTAT.eq.0)then
-          if(VarDzType.eq.'dz_cons')then
-            nSTAT = nf90_get_att(ncid, z_var_id,"specification",dz_const)
-          else
-            nSTAT = nf90_get_att(ncid, z_var_id,"specification",cdf_vardz)
-          endif
-        endif
+!        if(nSTAT.eq.0)then
+!          if(VarDzType.eq.'dz_cons')then
+!            dz_type = 1
+!            nSTAT = nf90_get_att(ncid, z_var_id,"specification",dz_const)
+!          else
+!            nSTAT = nf90_get_att(ncid, z_var_id,"specification",cdf_vardz)
+!            if(VarDzType.eq.'dz_plin')then
+!              dz_type = 2
+!            elseif(VarDzType.eq.'dz_clog')then
+!              dz_type = 3
+!            elseif(VarDzType.eq.'dz_dust')then
+!              dz_type = 4
+!            else
+!              dz_type = 1
+!            endif
+!          endif
+!        endif
 
         z_cc_pd(0)  = z_cc_pd(1) - dz_const
         z_cc_pd(-1) = z_cc_pd(0) - dz_const
@@ -4569,6 +4634,23 @@
           write(outlog(io),2501)" er",neruptions
         endif;enddo
 
+        !!!!!!  EP !!!!!!!!!!!
+        ! Identify dimension for ep (and note size)
+        nSTAT = nf90_inq_dimid(ncid,"ep",ep_dim_id)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"inq_dimid ep")
+          e_prof_maxpoints = 0
+        else
+          nSTAT = nf90_Inquire_Dimension(ncid,ep_dim_id,len=e_prof_maxpoints)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"Inquire_Dimension ep")
+          ! Get variable id for this dimension
+          nSTAT = nf90_inq_varid(ncid,"ep",ep_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid ep")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),2501)" ep",e_prof_maxpoints
+          endif;enddo
+        endif
+
         ! Now get the expected global attributes
           ! Input file line with 
         nSTAT = nf90_get_att(ncid,nf90_global,"b1l8",cdf_b1l8)
@@ -4580,10 +4662,6 @@
           !stop 1
         endif
         read(cdf_b1l8,*,iostat=iostatus,iomsg=iomessage) diffusivity_horz
-
-        ! HFS Add check on source type
-
-
 
         nSTAT = nf90_get_att(ncid,nf90_global,"BaseYear",BaseYear)
         if(nSTAT.ne.0)then
@@ -4761,7 +4839,6 @@
           DBZ_THRESH = -2.0e+1_ip
         endif
 
-
         ! Now get all the other variable info:
         ! Species class variable is needed to verify that nsmax = n_gs_max
         nSTAT = nf90_inq_varid(ncid,"spec_class",spec_var_id)
@@ -4770,6 +4847,7 @@
           spec_var_id = 0
           call NC_check_status(nSTAT,0,"inq_varid spec_class")
         endif
+
         !!!! Time-series vars
         ! Vx
         nSTAT = nf90_inq_varid(ncid,"vx",vx_var_id)
@@ -5214,11 +5292,11 @@
         nSTAT = nf90_get_att(ncid,nf90_global,"b1l5",cdf_b1l5)
         if (IsLatLon) then                        !get lon_volcano and lat_volcano
           read(cdf_b1l5,*,iostat=iostatus,iomsg=iomessage)lon_volcano, lat_volcano
-          linebuffer050 = "Reading vlon,vlat from cdf_b3l5"
+          linebuffer050 = "Reading vlon,vlat from cdf_b1l5"
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,cdf_b1l5,iomessage)
         else
           read(cdf_b1l5,*,iostat=iostatus,iomsg=iomessage)x_volcano, y_volcano
-          linebuffer050 = "Reading vx,vy from cdf_b3l5"
+          linebuffer050 = "Reading vx,vy from cdf_b1l5"
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,cdf_b1l5,iomessage)
           call PJ_proj_inv(real(x_volcano,kind=dp),real(y_volcano,kind=dp), &
                      A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
@@ -5227,6 +5305,8 @@
           lon_volcano = real(lon_in,kind=ip)
           lat_volcano = real(lat_in,kind=ip)
         endif
+        read(cdf_b1l5,*,iostat=iostatus,iomsg=iomessage)dum1, dum2, z_volcano
+        if(iostatus.ne.0)z_volcano=0.0_ip
 
         nSTAT = nf90_get_att(ncid,nf90_global,"institution",cdf_institution)
         if(nSTAT.ne.0)then
@@ -5287,6 +5367,36 @@
 #endif
           allocate(e_Volume(neruptions))
           e_Volume(:) = 0.0_ip
+        endif
+
+        nSTAT = nf90_inq_varid(ncid,"er_type",er_type_var_id)
+        if(nSTAT.ne.0)then
+          er_type_var_id = 0
+          call NC_check_status(nSTAT,0,"inq_varid er_type")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"   Variable er_type not found."
+            write(outlog(io),*)"   Recovering type for b1l8."
+          endif;enddo
+          read(cdf_b1l8,*,iostat=iostatus,iomsg=iomessage) diffusivity_horz,Suzuki_A
+          if(iostatus.eq.0)then
+            SourceType     = 'suzuki'
+            SourceType_idx = 1
+          else
+            ! if the second item is not a number, read SourceType
+            Suzuki_A = 4.0_ip
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)&
+                "Source type is not suzuki. Trying to read another standard type"
+            endif;enddo
+            read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) diffusivity_horz, SourceType
+          endif
+        else
+          allocate(dum1dint_out(1:neruptions))
+          nSTAT=nf90_get_var(ncid,er_type_var_id,dum1dint_out,(/1/))
+          SourceType_idx  = dum1dint_out(1)
+          deallocate(dum1dint_out)
+          nSTAT = nf90_get_att(ncid,er_type_var_id,"type",SourceType)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er_type type")
         endif
 
         ! Double-checking float vs double for er_stime
@@ -5350,6 +5460,69 @@
         nSTAT=nf90_get_var(ncid,er_volume_var_id,dum1d_out,(/1/))
         e_Volume = real(dum1d_out,kind=ip)
         deallocate(dum1d_out)
+
+        if(e_prof_maxpoints.gt.0)then
+          ! Need to get the profile source bonus variables: nz, dz, frac
+          !  e_prof_nzpoints,e_prof_dz,e_prof_Volume
+
+#ifdef USEPOINTERS
+          if(.not.associated(e_prof_nzpoints))then
+#else
+          if(.not.allocated(e_prof_nzpoints))then
+#endif
+            allocate(e_prof_nzpoints(neruptions))
+            e_prof_nzpoints(:) = 0
+          endif
+#ifdef USEPOINTERS
+          if(.not.associated(e_prof_dz))then
+#else
+          if(.not.allocated(e_prof_dz))then
+#endif
+            allocate(e_prof_dz(neruptions))
+            e_prof_dz(:) = 0.0_ip
+          endif
+#ifdef USEPOINTERS
+          if(.not.associated(e_prof_Volume))then
+#else
+          if(.not.allocated(e_prof_Volume))then
+#endif
+            allocate(e_prof_Volume(neruptions,MAX_ER_PROFPOINTS))
+            e_prof_Volume(:,:) = 0.0_ip
+          endif
+
+          allocate(dum1dint_out(1:neruptions))
+          nSTAT = nf90_inq_varid(ncid,"er_prof_nz",er_prof_nz_var_id)
+          if(nSTAT.ne.0)then
+            er_prof_dz_var_id = 0
+            call NC_check_status(nSTAT,1,"inq_varid er_prof_nz")
+          endif
+          nSTAT=nf90_get_var(ncid,er_prof_nz_var_id,dum1dint_out,(/1/))
+          e_prof_nzpoints = dum1dint_out
+          deallocate(dum1dint_out)
+
+          allocate(dum1d_out(1:neruptions))
+          nSTAT = nf90_inq_varid(ncid,"er_prof_dz",er_prof_dz_var_id)
+          if(nSTAT.ne.0)then
+            er_prof_dz_var_id = 0
+            call NC_check_status(nSTAT,1,"inq_varid er_prof_dz")
+          endif
+          nSTAT=nf90_get_var(ncid,er_prof_dz_var_id,dum1d_out,(/1/))
+          e_prof_dz = real(dum1d_out,kind=ip)
+          deallocate(dum1d_out)
+
+          allocate(dum1d_out(1:e_prof_maxpoints))
+          nSTAT = nf90_inq_varid(ncid,"er_prof_frac",er_prof_frac_var_id)
+          if(nSTAT.ne.0)then
+            er_prof_frac_var_id = 0
+            call NC_check_status(nSTAT,1,"inq_varid er_prof_dfrac")
+          endif
+          do i=1,neruptions
+            nSTAT=nf90_get_var(ncid,er_prof_frac_var_id,dum1d_out,(/1,i/))
+            e_prof_Volume(i,1:e_prof_maxpoints) = real(dum1d_out,kind=ip)
+          enddo
+          deallocate(dum1d_out)
+
+        endif
 
         first_time = .false.
 
