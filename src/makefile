@@ -507,7 +507,7 @@ ascii_dep: $(ASH3DCCSRC)/tools/Ash3d_ASCII_DepThin.f90 Ash3d_VariableModules.o w
 	mv Ash3d_ASCII_DepThin ../bin/tools/Ash3d_ASCII_DepThin
 ifeq ($(USENETCDF), T)
 gen_ctr: $(ASH3DCCSRC)/tools/Ash3d_ASCII_DepThin.f90 Ash3d_VariableModules.o write_NETCDF.o Input_Data.o $(MFILE) $(SYSINC)
-	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/tools/Ash3d_NetCDF_GenCTR.f90
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/tools/Ash3d_NetCDF_GenCTR.f90
 	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d_NetCDF_GenCTR.o $(LIBS) -o Ash3d_NetCDF_GenCTR
 	mkdir -p ../bin/tools
 	mv Ash3d_NetCDF_GenCTR ../bin/tools/Ash3d_NetCDF_GenCTR

@@ -14,7 +14,18 @@
 !      subroutine vprofchecker
 !      subroutine Read_PostProc_Control_File
 !      subroutine Write_input_block_header
-!      subroutine SetWrite_input_block_1
+!      subroutine SetWrite_input_block_01
+!      subroutine SetWrite_input_block_02
+!      subroutine SetWrite_input_block_03
+!      subroutine SetWrite_input_block_04
+!      subroutine SetWrite_input_block_05
+!      subroutine SetWrite_input_block_06
+!      subroutine SetWrite_input_block_07
+!      subroutine SetWrite_input_block_08
+!      subroutine SetWrite_input_block_09
+!      subroutine SetWrite_input_block_ResetParam
+!      subroutine SetWrite_input_block_Topo
+!      subroutine SetWrite_input_block_VarDiff
 !
 !##############################################################################
 
@@ -35,7 +46,18 @@
              Read_Control_File,          &
              Read_PostProc_Control_File, &
              Write_input_block_header,   &
-             SetWrite_input_block_1
+             SetWrite_input_block_01,    &
+             SetWrite_input_block_02,    &
+             SetWrite_input_block_03,    &
+             SetWrite_input_block_04,    &
+             SetWrite_input_block_05,    &
+             SetWrite_input_block_06,    &
+             SetWrite_input_block_07,    &
+             SetWrite_input_block_08,    &
+             SetWrite_input_block_09,    &
+             SetWrite_input_block_ResetParam,    &
+             SetWrite_input_block_Topo,  &
+             SetWrite_input_block_VarDiff
 
       contains
       !------------------------------------------------------------------------
@@ -1065,7 +1087,7 @@
          A3d_phi2,A3d_Re,IsLatLon,IsPeriodic,ZPADDING,Ztop
 
       use solution,      only : &
-         StopValue_FracAshDep,imin,imax,jmin,jmax,kmin,kmax
+         StopWhenDeposited,StopValue_FracAshDep,imin,imax,jmin,jmax,kmin,kmax
 
       use time_data,     only : &
          BaseYear,useLeap,time,SimStartHour,Simtime_in_hours,xmlSimStartTime
@@ -1173,7 +1195,7 @@
       integer           :: substr_pos1
       integer           :: substr_pos2
       logical           :: IsThere
-      logical           :: StopWhenDeposited   ! If true, StopValue_FracAshDep=0.99, else StopValue_FracAshDep=1e5.
+      !logical           :: StopWhenDeposited   ! If true, StopValue_FracAshDep=0.99, else StopValue_FracAshDep=1e5.
       logical           :: runAsForecast       = .false.  ! This will be changed if year=0
       real(kind=dp)     :: FC_Offset = 0.0_dp
       real(kind=ip)     :: Davg,Aaxis,Baxis,Caxis
@@ -1205,6 +1227,9 @@
         subroutine MR_Set_Gen_Index_GRIB(grib_file)
           character(len=130),intent(in)  :: grib_file
         end subroutine MR_Set_Gen_Index_GRIB
+        subroutine help_inputfile(blockID)
+          integer,intent(in) :: blockID
+        end subroutine help_inputfile
       END INTERFACE
 
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -5959,12 +5984,27 @@
 !
 !  Called from: help_inputfile
 !  Arguments:
+!    WriteBlock      = logical: indicates that write to stdout as well as set vars
+!    vname           = volcano name
+!    projline        = projection specification
+!    LLx,LLy         = coordinates of lower-left corner of computational grid
+!    widthx,widthy   = width (in x,y) of computational grid
+!    x_in,y_in,z_in  = source coordinates
+!    dx_in,dy_in     = cell width in x,y
+!    dz_in           = dz, which may be over-written
+!    kdiff           = diffusivity
+!    Suzk            = Susuki parameter
+!    nerup           = # of eruptions
+!    dz_type         = index of dz class 1=const, 2= plin, 3=clog, 4=custom
+!    dz_line         = bonus line for dz specification
+!    src_type        = source_type 1=Suz,2=point,3=line,4=profile,5=umb,6=umb_air
 !    
-!  This subroutine writes the content of block 1 of the Ash3d control file.
+!  This subroutine writes the content of block 1 (Grid/Src info) of the Ash3d
+!  control file.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine SetWrite_input_block_1(WriteBlock,vname,projline,LLx,LLy,widthx,widthy,&
+      subroutine SetWrite_input_block_01(WriteBlock,vname,projline,LLx,LLy,widthx,widthy,&
                                         x_in,y_in,z_in,dx_in,dy_in,dz_in,kdiff,Suzk,nerup,   &
                                         dz_type,dz_line,src_type)
 
@@ -6012,21 +6052,6 @@
       integer :: ilatlonflag
 
       VolcanoName          = adjustl(trim(vname))
-
-      write(*,*)WriteBlock
-      write(*,*)vname
-      write(*,*)projline
-      write(*,*)LLx,LLy
-      write(*,*)widthx,widthy
-      write(*,*)x_in,y_in,z_in
-      write(*,*)dz_in
-      write(*,*)kdiff
-      write(*,*)Suzk
-      write(*,*)nerup
-      write(*,*)dz_type
-      write(*,*)dz_line
-      write(*,*)src_type
-
 
       read(projline,*)ilatlonflag
       if(ilatlonflag.eq.0) then
@@ -6127,20 +6152,416 @@
       endif
 
  1    format(a80)
- 2    format(a30       ,' # Volcano name (character*30)')
- 3    format(a30       ,' # Proj flags and params; first term (LLflag) is 1, so all else ignored')
- 4    format(2f15.5    ,' # x, y of LL corner of grid (km, or deg. if latlongflag=1)')
- 5    format(2f15.5    ,' # grid width and height (km, or deg. if latlonflag=1)')
- 6    format(3f15.5    ,' # vent location         (km, or deg. if latlonflag=1)')
- 7    format(2f15.5    ,' # DX, DY of grid cells  (km, or deg. if latlonflag=1)')
- 8    format(1f15.5,15x,' # DZ of grid cells      (always km)')
- 9    format(a7        ,' # DZ of grid cells      (always km)')
+ 2    format(a30          ,' # Volcano name (character*30)')
+ 3    format(a30          ,' # Proj flags and params; first term (LLflag) is 1, so all else ignored')
+ 4    format(2f15.5       ,' # x, y of LL corner of grid (km, or deg. if latlongflag=1)')
+ 5    format(2f15.5       ,' # grid width and height (km, or deg. if latlonflag=1)')
+ 6    format(3f15.5       ,' # vent location         (km, or deg. if latlonflag=1)')
+ 7    format(2f15.5       ,' # DX, DY of grid cells  (km, or deg. if latlonflag=1)')
+ 8    format(1f15.5,15x   ,' # DZ of grid cells      (always km)')
+ 9    format(a7           ,' # DZ of grid cells      (always km)')
  10   format(a80)
- 11   format(2f15.5    ,' # diffusion coefficient (m2/s), Suzuki constant')
- 12   format(1f15.5,a12,' # diffusion coefficient (m2/s), Suzuki constant')
- 13   format(i5,25x    ,' # neruptions, number of eruptions or pulses')
+ 11   format(2f15.5       ,' # diffusion coefficient (m2/s), Suzuki constant')
+ 12   format(1f15.5,5x,a12,' # diffusion coefficient (m2/s), Suzuki constant')
+ 13   format(i5,25x       ,' # neruptions, number of eruptions or pulses')
 
-      end subroutine SetWrite_input_block_1
+      end subroutine SetWrite_input_block_01
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  SetWrite_input_block_02
+!
+!  Called from: help_inputfile
+!  Arguments:
+!    WriteBlock = logical: indicates that write to stdout as well as set vars
+!    nerup      = # of eruptions
+!    src_type   = source_type 1=Suz,2=point,3=line,4=profile,5=umb,6=umb_air
+!    e_ST       = eruption start times given as hourssince BaseYear
+!    e_Dur      = eruption durations
+!    e_PmH      = eruption plume heights
+!    e_Vol      = eruption volumes
+!    ep_dz      = dz of eruption profile
+!    ep_nz      = nz of eruption profile
+!    ep_Vol     = normalized volume of eruption profile
+!    
+!
+!  This subroutine writes the content of block 2 (Eruption Parameters) of the
+!  Ash3d control file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine SetWrite_input_block_02(WriteBlock,nerup,src_type,     &
+                                        e_ST,e_Dur,e_PmH,e_Vol,         &
+                                        ep_dz,ep_nz,ep_Vol)
+
+
+      ! This module requires Fortran 2003 or later
+      use iso_fortran_env, only : &
+         output_unit
+
+      use io_units
+
+      use time_data,     only : &
+          BaseYear,useLeap
+
+      logical           ,intent(in) :: WriteBlock
+      integer           ,intent(in) :: nerup
+      integer           ,intent(in) :: src_type
+      real(kind=dp),dimension(nerup),intent(in) :: e_ST
+      real(kind=dp),dimension(nerup),intent(in) :: e_Dur
+      real(kind=ip),dimension(nerup),intent(in) :: e_PmH
+      real(kind=ip),dimension(nerup),intent(in) :: e_Vol
+      real(kind=ip),dimension(nerup),intent(in) :: ep_dz
+      integer      ,dimension(nerup),intent(in) :: ep_nz
+      real(kind=ip),dimension(nerup,50),intent(in) :: ep_Vol
+
+      integer :: i
+      integer :: iyear
+      integer :: imonth
+      integer :: iday
+      real(kind=dp) :: hour
+
+      INTERFACE
+        real(kind=8)  function HS_HourOfDay(HoursSince,byear,useLeaps)
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
+        end function HS_HourOfDay
+        integer function HS_YearOfEvent(HoursSince,byear,useLeaps)
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
+        end function HS_YearOfEvent
+        integer function HS_MonthOfEvent(HoursSince,byear,useLeaps)
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
+        end function HS_MonthOfEvent
+        integer function HS_DayOfEvent(HoursSince,byear,useLeaps)
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
+        end function HS_DayOfEvent
+      END INTERFACE
+
+      if(WriteBlock)then
+        write(output_unit,1)&
+         '******************* BLOCK 2 ****************************************************'
+        do i=1,nerup
+          iyear = HS_YearOfEvent(e_ST(i),BaseYear,useLeap)
+          imonth= HS_MonthOfEvent(e_ST(i),BaseYear,useLeap)
+          iday  = HS_DayOfEvent(e_ST(i),BaseYear,useLeap)
+          hour  = HS_HourOfDay(e_ST(i),BaseYear,useLeap)
+          if(src_type.eq.1.or.&
+             src_type.eq.2.or.&
+             src_type.eq.3.or.&
+             src_type.eq.5.or.&
+             src_type.eq.6)then
+            write(output_unit,2)iyear,imonth,iday,hour,e_Dur(i),e_PmH(i),e_Vol(i)
+          else
+            ! src_type = 4 (profile)
+            write(output_unit,3)iyear,imonth,iday,hour,e_Dur(i),e_PmH(i),e_Vol(i),ep_dz(i),ep_nz(i)
+            write(output_unit,4)real(ep_Vol(i,1:ep_nz(i)),kind=4)
+          endif
+        enddo
+        write(output_unit,1)&
+         '********************************************************************************'
+      endif
+
+ 1    format(a80)
+ 2    format(3i5,1x,1f8.3,3f15.5)
+ 3    format(3i5,1x,1f8.3,3f15.5,1f8.2,i5)
+ 4    format(*(f7.4))
+
+      end subroutine SetWrite_input_block_02
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  SetWrite_input_block_03
+!
+!  Called from: help_inputfile  
+!  Arguments:
+!    WriteBlock = logical: indicates that write to stdout as well as set vars
+!
+!  This subroutine writes the content of block 3 (Wind Parameters) of the Ash3d
+!  control file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine SetWrite_input_block_03(WriteBlock,iw,iwf,igrid,idf,iHH,&
+                                         sim_time,comp_stop,nwindfiles)
+
+      ! This module requires Fortran 2003 or later
+      use iso_fortran_env, only : &
+         output_unit
+
+      use io_units
+
+      logical           ,intent(in) :: WriteBlock
+      integer           ,intent(in) :: iw
+      integer           ,intent(in) :: iwf
+      integer           ,intent(in) :: igrid
+      integer           ,intent(in) :: idf
+      integer           ,intent(in) :: iHH
+      real(kind=dp)     ,intent(in) :: sim_time
+      logical           ,intent(in) :: comp_stop
+      integer           ,intent(in) :: nwindfiles
+
+      if(WriteBlock)then
+        write(output_unit,1)&
+         '******************* BLOCK 3 ****************************************************'
+        if(igrid.eq.0)then
+          write(output_unit,2)iw,iwf
+        else
+          write(output_unit,3)iw,iwf,igrid,idf
+        endif
+        write(output_unit,4)iHH
+        write(output_unit,5)sim_time
+        if(comp_stop)then
+          write(output_unit,6)
+        else
+          write(output_unit,7)
+        endif
+        write(output_unit,8)nwindfiles
+        write(output_unit,1)&
+         '********************************************************************************'
+      endif
+
+ 1    format(a80)
+ 2    format(2i5,20x,'# iwind, iwindformat, [igrid, idata]')
+ 3    format(4i5,10x,'# iwind, iwindformat, [igrid, idata]')
+ 4    format(1i5,25x,'# iHeightHandler')
+ 5    format(f15.3,15x,'# Simulation time in hours')
+ 6    format('yes                           # stop computation when 99% of erupted mass has deposited?')
+ 7    format('no                            # stop computation when 99% of erupted mass has deposited?')
+ 8    format(1i5,25x,'# nWindFiles, number of gridded wind files (used if iwind>1)')
+
+      end subroutine SetWrite_input_block_03
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  SetWrite_input_block_04
+!
+!  Called from: help_inputfile  
+!  Arguments:
+!    WriteBlock = logical: indicates that write to stdout as well as set vars
+!    
+!  This subroutine writes the content of block 4 (Output Options) of the Ash3d
+!  control file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine SetWrite_input_block_04(WriteBlock)
+
+      ! This module requires Fortran 2003 or later
+      use iso_fortran_env, only : &
+         output_unit
+
+      use io_units
+
+      logical           ,intent(in) :: WriteBlock
+
+      end subroutine SetWrite_input_block_04
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  SetWrite_input_block_05
+!
+!  Called from: help_inputfile  
+!  Arguments:
+!    WriteBlock = logical: indicates that write to stdout as well as set vars
+!    
+!  This subroutine writes the content of block 5 (Wind file list) of the Ash3d
+!  control file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine SetWrite_input_block_05(WriteBlock)
+
+      ! This module requires Fortran 2003 or later
+      use iso_fortran_env, only : &
+         output_unit
+
+      use io_units
+
+      logical           ,intent(in) :: WriteBlock
+
+      end subroutine SetWrite_input_block_05
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  SetWrite_input_block_06
+!
+!  Called from: help_inputfile  
+!  Arguments:
+!    WriteBlock = logical: indicates that write to stdout as well as set vars
+!    
+!  This subroutine writes the content of block 6 (Airport/POI info.) of the
+!  Ash3d control file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine SetWrite_input_block_06(WriteBlock)
+
+      ! This module requires Fortran 2003 or later
+      use iso_fortran_env, only : &
+         output_unit
+
+      use io_units
+
+      logical           ,intent(in) :: WriteBlock
+
+      end subroutine SetWrite_input_block_06
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  SetWrite_input_block_07
+!    WriteBlock = logical: indicates that write to stdout as well as set vars
+!
+!  Called from: help_inputfile  
+!  Arguments:
+!    
+!  This subroutine writes the content of block 7 (GSD specification) of the
+!  Ash3d control file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine SetWrite_input_block_07(WriteBlock)
+
+      ! This module requires Fortran 2003 or later
+      use iso_fortran_env, only : &
+         output_unit
+
+      use io_units
+
+      logical           ,intent(in) :: WriteBlock
+
+      end subroutine SetWrite_input_block_07
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  SetWrite_input_block_08
+!
+!  Called from: help_inputfile  
+!  Arguments:
+!    WriteBlock = logical: indicates that write to stdout as well as set vars
+!    
+!  This subroutine writes the content of block 8 (Vertical profile info.) of
+!  the Ash3d control file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine SetWrite_input_block_08(WriteBlock)
+
+      ! This module requires Fortran 2003 or later
+      use iso_fortran_env, only : &
+         output_unit
+
+      use io_units
+
+      logical           ,intent(in) :: WriteBlock
+
+      end subroutine SetWrite_input_block_08
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  SetWrite_input_block_09
+!
+!  Called from: help_inputfile  
+!  Arguments:
+!    WriteBlock = logical: indicates that write to stdout as well as set vars
+!    
+!  This subroutine writes the content of block 9 (NetCDF annotations) of the
+!  Ash3d control file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine SetWrite_input_block_09(WriteBlock)
+
+      ! This module requires Fortran 2003 or later
+      use iso_fortran_env, only : &
+         output_unit
+
+      use io_units
+
+      logical           ,intent(in) :: WriteBlock
+
+      end subroutine SetWrite_input_block_09
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  SetWrite_input_block_ResetParam
+!
+!  Called from: help_inputfile  
+!  Arguments:
+!    WriteBlock = logical: indicates that write to stdout as well as set vars
+!    
+!  This subroutine writes the content of block 10+ (OPTMOD=RESETPARAMS) of the
+!  Ash3d control file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine SetWrite_input_block_ResetParam(WriteBlock)
+
+      ! This module requires Fortran 2003 or later
+      use iso_fortran_env, only : &
+         output_unit
+
+      use io_units
+
+      logical           ,intent(in) :: WriteBlock
+
+      end subroutine SetWrite_input_block_ResetParam
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  SetWrite_input_block_Topo
+!
+!  Called from: help_inputfile  
+!  Arguments:
+!    WriteBlock = logical: indicates that write to stdout as well as set vars
+!    
+!  This subroutine writes the content of block 10+ (OPTMOD=TOPO) of the Ash3d
+!  control file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine SetWrite_input_block_Topo(WriteBlock)
+
+      ! This module requires Fortran 2003 or later
+      use iso_fortran_env, only : &
+         output_unit
+
+      use io_units
+
+      logical           ,intent(in) :: WriteBlock
+
+      end subroutine SetWrite_input_block_Topo
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  SetWrite_input_block_VarDiff
+!
+!  Called from: help_inputfile  
+!  Arguments:
+!    WriteBlock = logical: indicates that write to stdout as well as set vars
+!    
+!  This subroutine writes the content of block 10+ (OPTMOD=VARDIFF) of the
+!  Ash3d control file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine SetWrite_input_block_VarDiff(WriteBlock)
+
+      ! This module requires Fortran 2003 or later
+      use iso_fortran_env, only : &
+         output_unit
+
+      use io_units
+
+      logical           ,intent(in) :: WriteBlock
+
+      end subroutine SetWrite_input_block_VarDiff
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

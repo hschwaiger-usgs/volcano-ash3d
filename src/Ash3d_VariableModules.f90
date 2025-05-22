@@ -7,7 +7,6 @@
 !   mesh
 !   solution
 !   time_data
-!   time_data
 !   wind_grid
 ! Because these are just data modules, all variables are set to public by default.
 ! A few of these modules have allocate/deallocate subroutines.
@@ -883,7 +882,8 @@
 #endif
       real(kind=ip)      :: dep_percent_accumulated = 0.0_ip
       real(kind=ip)      :: aloft_percent_remaining = 0.0_ip
-      real(kind=ip)      :: StopValue_FracAshDep = 0.0_ip   ! program stops when percent_accumulated>StopValue_FracAshDep
+      logical            :: StopWhenDeposited
+      real(kind=ip)      :: StopValue_FracAshDep    = 0.0_ip   ! program stops when percent_accumulated>StopValue_FracAshDep
       real(kind=ip)      :: dep_vol                 = 0.0_ip
       real(kind=ip)      :: aloft_vol               = 0.0_ip
       real(kind=ip)      :: outflow_vol             = 0.0_ip
@@ -1116,6 +1116,12 @@ subroutine Allocate_solution
         ! Set everything to public by default
       public
 
+!      integer            :: iWind
+!      integer            :: iWindFiles
+!      integer            :: iGrid
+!      integer            :: iDataFormat
+!      integer            :: nWindFiles
+!      integer            :: iHeightHandler
         ! toggle used for moving pointers between last and next
       integer            :: Meso_toggle
           ! Each *_meso_[1,2]_sp holds a regridded variable at the last and next

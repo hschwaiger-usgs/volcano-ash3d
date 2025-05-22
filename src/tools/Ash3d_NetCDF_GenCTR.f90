@@ -14,9 +14,16 @@
          lonLL,latLL,gridwidth_e,gridwidth_n,xLL,yLL,gridwidth_x,gridwidth_y, &
          IsLatLon,de,dn,dx,dy,VarDzType,dz_const
 
+      use solution,      only : &
+         StopWhenDeposited
+
+      use time_data,     only : &
+         Simtime_in_hours
+
       use Source,        only : &
          lon_volcano,lat_volcano,x_volcano,y_volcano,z_volcano,Suzuki_A,      &
-         neruptions,SourceType,SourceType_idx
+         neruptions,SourceType,SourceType_idx,e_StartTime,e_Duration,         &
+         e_PlumeHeight,e_Volume,e_prof_dz,e_prof_nzpoints,e_prof_Volume
 
       use Diffusion,     only : &
          diffusivity_horz
@@ -28,7 +35,21 @@
 
       use Ash3d_Program_Control, only : &
          Write_input_block_header,      &
-         SetWrite_input_block_1
+         SetWrite_input_block_01,       &
+         SetWrite_input_block_02,       &
+         SetWrite_input_block_03,       &
+         SetWrite_input_block_04,       &
+         SetWrite_input_block_05,       &
+         SetWrite_input_block_06,       &
+         SetWrite_input_block_07,       &
+         SetWrite_input_block_08,       &
+         SetWrite_input_block_09,       &
+         SetWrite_input_block_ResetParam,&
+         SetWrite_input_block_Topo,      &
+         SetWrite_input_block_VarDiff
+
+      use MetReader,     only : &
+         MR_iWind,MR_iWindFormat,MR_iGridCode,MR_iDataFormat,MR_iHeightHandler,MR_iWindFiles
 
       implicit none
 
@@ -142,10 +163,9 @@
         dz_type = 4
       else
         dz_type = 1
-
       endif
 
-      call SetWrite_input_block_1(WriteBlock                       ,&  ! indicates that write to stdout as well as set vars
+      call SetWrite_input_block_01(WriteBlock                      ,&  ! indicates that write to stdout as well as set vars
                                    VolcanoName                     ,&  ! volcano name
                                    cdf_b1l2                        ,&  ! projection line
                                    LLx,LLy                         ,&  ! x, y of LL corner
@@ -156,8 +176,38 @@
                                    diffusivity_horz,Suzuki_A       ,&  ! Kx, Suz param
                                    neruptions                      ,&  ! # of eruptions
                                    dz_type,cdf_vardz               ,&  ! dz_type + bonus line
-                                   SourceType_idx)                     ! source_type
+                                   SourceType_idx)                     ! source_type 1=Suz,2=point,3=line,4=profile,5=umb,6=umb_air
 
+      call SetWrite_input_block_02(WriteBlock                      ,&  ! indicates that write to stdout as well as set vars
+                                   neruptions                      ,&  ! # of eruptions
+                                   SourceType_idx                  ,&  ! source_type 1=Suz,2=point,3=line,4=profile,5=umb,6=umb_air
+                                   e_StartTime                     ,&
+                                   e_Duration                      ,&
+                                   e_PlumeHeight                   ,&
+                                   e_Volume                        ,&
+                                   e_prof_dz                       ,&
+                                   e_prof_nzpoints                 ,&
+                                   e_prof_Volume)
+
+      call SetWrite_input_block_03(WriteBlock                      ,&  ! indicates that write to stdout as well as set vars
+                                   MR_iWind                        ,&
+                                   MR_iWindFormat                  ,&
+                                   MR_iGridCode                    ,&
+                                   MR_iDataFormat                  ,&
+                                   MR_iHeightHandler               ,&
+                                   Simtime_in_hours                ,&
+                                   StopWhenDeposited               ,&
+                                   MR_iWindFiles)
+
+      call SetWrite_input_block_04(WriteBlock           ) !           ,&  ! indicates that write to stdout as well as set vars
+      call SetWrite_input_block_05(WriteBlock           ) !           ,&  ! indicates that write to stdout as well as set vars
+      call SetWrite_input_block_06(WriteBlock           ) !           ,&  ! indicates that write to stdout as well as set vars
+      call SetWrite_input_block_07(WriteBlock           ) !           ,&  ! indicates that write to stdout as well as set vars
+      call SetWrite_input_block_08(WriteBlock           ) !           ,&  ! indicates that write to stdout as well as set vars
+      call SetWrite_input_block_09(WriteBlock           ) !           ,&  ! indicates that write to stdout as well as set vars
+      call SetWrite_input_block_ResetParam(WriteBlock   ) !           ,&  ! indicates that write to stdout as well as set vars
+      call SetWrite_input_block_Topo(WriteBlock         ) !           ,&  ! indicates that write to stdout as well as set vars
+      call SetWrite_input_block_VarDiff(WriteBlock      ) !           ,&  ! indicates that write to stdout as well as set vars
 
 
       close(fid_ctrlfile)

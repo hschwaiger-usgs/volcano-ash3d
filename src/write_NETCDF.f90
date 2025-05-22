@@ -178,14 +178,15 @@
       use global_param,  only : &
          EPS_SMALL,KM2_2_M2,M_2_MM,useCalcFallVel,&
          GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH,Ash3d_GitComID,os_cwd,os_host,os_user,&
-         useVz_rhoG,version
+         useVz_rhoG,useMoistureVars,version
 
       use io_data,       only : &
          nvprofiles,Site_vprofile,x_vprofile,y_vprofile, &
          cdf_b1l1,cdf_b1l2,cdf_b1l3,cdf_b1l4,cdf_b1l5,cdf_b1l6,cdf_b1l7,cdf_vardz,cdf_b1l8,cdf_b1l9,&
-         cdf_b3l1,cdf_b3l2,cdf_b3l3,cdf_b3l4,cdf_b3l5,cdf_b4l1,cdf_b4l2,cdf_b4l3,cdf_b4l4,&
-         cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,cdf_b4l11,cdf_b6l1,cdf_b6l2,&
-         cdf_b6l3,cdf_b6l4,cdf_b6l5,cdf_conventions,&
+         cdf_b3l1,cdf_b3l2,cdf_b3l3,cdf_b3l4,cdf_b3l5,   &
+         cdf_b4l1,cdf_b4l2,cdf_b4l3,cdf_b4l4,cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,&
+         cdf_b4l11,cdf_b4l12,cdf_b4l13,cdf_b4l14,cdf_b4l15,cdf_b4l16,cdf_b4l17,cdf_b4l18,           &
+         cdf_b6l1,cdf_b6l2,cdf_b6l3,cdf_b6l4,cdf_b6l5,cdf_conventions,&
          cdf_comment,cdf_title,cdf_institution,cdf_source,cdf_source_url,cdf_history,cdf_references,&
          cdf_run_class,cdf_url,infile,concenfile,&
          nvar_User2d_static_XY,nvar_User2d_XY,nvar_User3d_XYGs,nvar_User3d_XYZ,&
@@ -557,6 +558,20 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment b4l10:")
       nSTAT = nf90_put_att(ncid,nf90_global,"b4l11",cdf_b4l11)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment b4l11:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"b4l12",cdf_b4l12)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment b4l12:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"b4l13",cdf_b4l13)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment b4l13:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"b4l14",cdf_b4l14)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment b4l14:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"b4l15",cdf_b4l15)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment b4l15:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"b4l16",cdf_b4l16)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment b4l16:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"b4l17",cdf_b4l17)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment b4l17:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"b4l18",cdf_b4l18)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment b4l18:")
 
       nSTAT = nf90_put_att(ncid,nf90_global,"b6l1",cdf_b6l1)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment b6l1:")
@@ -592,12 +607,8 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment ZPADDING:")
       nSTAT = nf90_put_att(ncid,nf90_global,"ZScaling_ID",ZScaling_ID)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment ZScaling_ID:")
-      if(useVz_rhoG)then
-        nSTAT = nf90_put_att(ncid,nf90_global,"useVz_rhoG","true")
-      else
-        nSTAT = nf90_put_att(ncid,nf90_global,"useVz_rhoG","false")
-      endif
-      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment useVz_rhoG:")
+
+      ! Threshholds used in output products
       nSTAT = nf90_put_att(ncid,nf90_global,"DEPO_THRESH",DEPO_THRESH)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment DEPO_THRESH:")
       nSTAT = nf90_put_att(ncid,nf90_global,"DEPRATE_THRESH",DEPRATE_THRESH)
@@ -623,6 +634,34 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment k_entrainment_umb:")
       nSTAT = nf90_put_att(ncid,nf90_global,"SuzK_umb",SuzK_umb)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment SuzK_umb:")
+      ! Parameters for program flow
+      if(useMoistureVars)then
+        nSTAT = nf90_put_att(ncid,nf90_global,"useMoistureVars","true")
+      else
+        nSTAT = nf90_put_att(ncid,nf90_global,"useMoistureVars","false")
+      endif
+      if(useWindVars)then
+        nSTAT = nf90_put_att(ncid,nf90_global,"useWindVars","true")
+      else
+        nSTAT = nf90_put_att(ncid,nf90_global,"useWindVars","false")
+      endif
+      if(useOutprodVars)then
+        nSTAT = nf90_put_att(ncid,nf90_global,"useOutprodVars","true")
+      else
+        nSTAT = nf90_put_att(ncid,nf90_global,"useOutprodVars","false")
+      endif
+      if(useRestartVars)then
+        nSTAT = nf90_put_att(ncid,nf90_global,"useRestartVars","true")
+      else
+        nSTAT = nf90_put_att(ncid,nf90_global,"useRestartVars","false")
+      endif
+      if(useVz_rhoG)then
+        nSTAT = nf90_put_att(ncid,nf90_global,"useVz_rhoG","true")
+      else
+        nSTAT = nf90_put_att(ncid,nf90_global,"useVz_rhoG","false")
+      endif
+
+
 
       ! Define dimensions
         ! t,z,y,x
@@ -4056,11 +4095,15 @@
       subroutine NC_Read_Output_Products(timestep)
 
       use global_param,  only : &
-         GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH
+         GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH,useMoistureVars,useVz_rhoG
 
       use io_data,           only : &
-         concenfile,init_tstep,nWriteTimes,WriteTimes,cdf_b1l1,cdf_b1l4,cdf_b1l5,cdf_b3l1, &
-         cdf_b1l2,cdf_b1l8,cdf_b3l3,cdf_vardz,VolcanoName,Write_PT_Data,isFinal_TS,&
+         concenfile,init_tstep,nWriteTimes,WriteTimes, &
+         cdf_b1l1,cdf_b1l2,cdf_b1l4,cdf_b1l5,cdf_b1l8,cdf_vardz, &
+         cdf_b3l1,cdf_b3l2,cdf_b3l3,cdf_b3l4,cdf_b3l5, &
+         cdf_b4l1,cdf_b4l2,cdf_b4l3,cdf_b4l4,cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,&
+         cdf_b4l11,cdf_b4l12,cdf_b4l13,cdf_b4l14,cdf_b4l15,cdf_b4l16,cdf_b4l17,cdf_b4l18,  &
+         VolcanoName,Write_PT_Data,isFinal_TS,&
          cdf_run_class,cdf_url,cdf_institution,&
          Write_PR_Data,nvprofiles,x_vprofile,y_vprofile,Site_vprofile,&
          nvar_User2d_static_XY,nvar_User2d_XY
@@ -4073,7 +4116,7 @@
          gridwidth_x,gridwidth_y
 
       use solution,      only : &
-         SpeciesID
+         StopWhenDeposited,StopValue_FracAshDep,SpeciesID
 
       use time_data,     only : &
           BaseYear,useLeap,os_time_log,time,time_native,SimStartHour,xmlSimStartTime, &
@@ -4085,12 +4128,16 @@
          e_prof_maxpoints,e_prof_nzpoints,e_prof_dz,e_prof_Volume, &
          lat_volcano,lon_volcano,x_volcano,y_volcano,z_volcano
 
+      use Source_Umbrella, only : &
+         k_entrainment_umb,lambda_umb,N_BV_umb,SuzK_umb ,&
+         VelMod_umb
+
       use Output_Vars,   only : &
          DepositThickness,DepArrivalTime,CloudArrivalTime,pr_ash,Mask_Deposit,&
          MaxConcentration,MaxHeight,CloudLoad,dbZCol,MinHeight,Mask_Cloud,&
          CLOUDCON_GRID_THRESH,CLOUDCON_THRESH,THICKNESS_THRESH, &
          CLOUDLOAD_THRESH,DBZ_THRESH,DEPO_THRESH,DEPRATE_THRESH,ashcon_tot, &
-         useRestartVars,Extra2dVar,Extra2dVarName, &
+         useRestartVars,useOutprodVars,useWindVars,Extra2dVar,Extra2dVarName, &
            dbZCalculator, &
            Allocate_NTime, &
            Allocate_Profile, &
@@ -4112,7 +4159,11 @@
            PJ_Set_Proj_Params,PJ_proj_for,PJ_proj_inv
 
       use diffusion,     only : &
-         diffusivity_horz
+         diffusivity_horz,Imp_fac,Imp_DT_fac
+
+      use MetReader,     only : &
+         MR_iWind,MR_iWindFormat,MR_iGridCode,MR_iDataFormat,MR_iWindFiles,MR_iHeightHandler,&
+         MR_windfiles
 
       integer, intent(in), optional :: timestep
 
@@ -4128,7 +4179,7 @@
       real(kind=dp), dimension(:),allocatable :: dum1d_dp
       character(len=32) :: time_units
       integer           :: iendstr
-      integer           :: iostatus
+      integer           :: iostatus,iostatus2,iostatus3
       character(len=120):: iomessage
       character(len= 50):: linebuffer050 
       character(len= 80):: linebuffer080
@@ -4137,6 +4188,8 @@
       integer :: itstart_hour,itstart_min,itstart_sec
       real(kind=ip) :: filestart_hour
       integer :: tmp_int
+      character(len=5) :: tmp_str
+      character(len=3) :: answer
       real(kind=dp) :: lat_in,lon_in
       real(kind=ip) :: xnow,ynow
       real(kind=dp) :: xout,yout
@@ -4657,7 +4710,7 @@
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att b1l8:")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att bil8:"
+            write(outlog(io),*)"Did not find att b1l8:"
           endif;enddo
           !stop 1
         endif
@@ -4837,6 +4890,153 @@
             write(outlog(io),*)"Did not find att DBZ_THRESH: Assuming DBZ_THRESH=-2.0e+1"
           endif;enddo
           DBZ_THRESH = -2.0e+1_ip
+        endif
+
+        nSTAT = nf90_get_att(ncid,nf90_global,"StopValue_FracAshDep",StopValue_FracAshDep)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att Comment StopValue_FracAshDep:")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Did not find att StopValue_FracAshDep: Assuming StopValue_FracAshDep=0.99"
+          endif;enddo
+          StopValue_FracAshDep = 0.99_ip
+        endif
+
+        nSTAT = nf90_get_att(ncid,nf90_global,"Imp_fac",Imp_fac)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att Comment Imp_fac:")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Did not find att Imp_fac: Assuming Imp_fac=0.5"
+          endif;enddo
+          Imp_fac = 0.5_ip
+        endif
+
+        nSTAT = nf90_get_att(ncid,nf90_global,"Imp_DT_fac",Imp_DT_fac)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att Comment :Imp_DT_fac")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Did not find att : Imp_DT_fac =4.0"
+          endif;enddo
+          Imp_DT_fac = 4.0_ip
+        endif
+
+        nSTAT = nf90_get_att(ncid,nf90_global,"VelMod_umb",VelMod_umb)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att Comment :VelMod_umb")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Did not find att : Assuming VelMod_umb=1"
+          endif;enddo
+          VelMod_umb = 1
+        endif
+
+        nSTAT = nf90_get_att(ncid,nf90_global,"lambda_umb",lambda_umb)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att Comment :lambda_umb")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Did not find att : Assuming lambda_umb=0.2"
+          endif;enddo
+          lambda_umb = 0.2_ip
+        endif
+
+        nSTAT = nf90_get_att(ncid,nf90_global,"N_BV_umb",N_BV_umb)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att Comment :N_BV_umb")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Did not find att : Assuming N_BV_umb=0.02"
+          endif;enddo
+          N_BV_umb= 0.02_ip
+        endif
+
+        nSTAT = nf90_get_att(ncid,nf90_global,"k_entrainment_umb",k_entrainment_umb)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att Comment :k_entrainment_umb")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Did not find att : Assuming k_entrainment_umb=0.1"
+          endif;enddo
+          k_entrainment_umb= 0.1_ip
+        endif
+
+        nSTAT = nf90_get_att(ncid,nf90_global,"SuzK_umb",SuzK_umb)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att Comment :SuzK_umb")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Did not find att : Assuming SuzK_umb=12.0"
+          endif;enddo
+          SuzK_umb= 12.0_ip
+        endif
+
+        nSTAT = nf90_get_att(ncid,nf90_global,"useMoistureVars",tmp_str)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att Comment :useMoistureVars")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Did not find att : Assuming useMoistureVars=.false."
+          endif;enddo
+          useMoistureVars= .false.
+        else
+          if(trim(adjustl(tmp_str)).eq.'true')then
+            useMoistureVars= .true.
+          else
+            useMoistureVars= .false.
+          endif
+        endif
+
+        nSTAT = nf90_get_att(ncid,nf90_global,"useWindVars",tmp_str)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att Comment :useWindVars")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Did not find att : Assuming useWindVars=.false."
+          endif;enddo
+          useWindVars= .false.
+        else
+          if(trim(adjustl(tmp_str)).eq.'true')then
+            useWindVars= .true.
+          else
+            useWindVars= .false.
+          endif
+        endif
+
+        nSTAT = nf90_get_att(ncid,nf90_global,"useOutprodVars",tmp_str)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att Comment :useOutprodVars")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Did not find att : Assuming useOutprodVars=.true."
+          endif;enddo
+          useOutprodVars= .true.
+        else
+          if(trim(adjustl(tmp_str)).eq.'true')then
+            useOutprodVars = .false.
+          else
+            useOutprodVars = .true.
+          endif
+        endif
+
+        nSTAT = nf90_get_att(ncid,nf90_global,"useRestartVars",tmp_str)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att Comment :useRestartVars")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Did not find att : Assuming useRestartVars=.false."
+          endif;enddo
+          useRestartVars= .false.
+        else
+          if(trim(adjustl(tmp_str)).eq.'true')then
+            useRestartVars= .true.
+          else
+            useRestartVars= .false.
+          endif
+        endif
+
+        nSTAT = nf90_get_att(ncid,nf90_global,"useVz_rhoG",tmp_str)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att Comment :useVz_rhoG")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Did not find att : Assuming useVz_rhoG=.false."
+          endif;enddo
+          useVz_rhoG= .false.
+        else
+          if(trim(adjustl(tmp_str)).eq.'true')then
+            useVz_rhoG= .true.
+          else
+            useVz_rhoG= .false.
+          endif
         endif
 
         ! Now get all the other variable info:
@@ -5268,6 +5468,7 @@
 
         ! Now populate a few of the header values needed for
         ! post-processing/annotation
+        ! First, Block 1 info:
         ! Get volcano name
         nSTAT = nf90_get_att(ncid,nf90_global,"b1l1",cdf_b1l1)
         iendstr = SCAN(cdf_b1l1, "#")
@@ -5278,16 +5479,6 @@
           stop 1
         endif
         VolcanoName = trim(adjustl(cdf_b1l1(1:iendstr-1)))
-
-        ! Get date of run
-        nSTAT = nf90_get_att(ncid,nf90_global,"date",os_time_log)
-        ! Get windfile info
-        nSTAT = nf90_get_att(ncid,nf90_global,"b3l1",cdf_b3l1)
-        ! Get Simulation time info
-        nSTAT = nf90_get_att(ncid,nf90_global,"b3l3",cdf_b3l3)
-        read(cdf_b3l3,*,iostat=iostatus,iomsg=iomessage) Simtime_in_hours        ! simulated transport time
-        linebuffer050 = "Reading simtime from cdf_b3l3"
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,cdf_b3l3,iomessage)
         ! Get vent location
         nSTAT = nf90_get_att(ncid,nf90_global,"b1l5",cdf_b1l5)
         if (IsLatLon) then                        !get lon_volcano and lat_volcano
@@ -5307,6 +5498,78 @@
         endif
         read(cdf_b1l5,*,iostat=iostatus,iomsg=iomessage)dum1, dum2, z_volcano
         if(iostatus.ne.0)z_volcano=0.0_ip
+        ! get diffusion and source type
+        diffusivity_horz = 0.0_ip
+        SourceType       = 'suzuki'
+        SourceType_idx   = 1
+        Suzuki_A         = 4.0_ip
+        nSTAT = nf90_inq_varid(ncid,"er_type",er_type_var_id)
+        if(nSTAT.ne.0)then
+          er_type_var_id = 0
+          call NC_check_status(nSTAT,0,"inq_varid er_type")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"   Variable er_type not found."
+            write(outlog(io),*)"   Recovering type for b1l8."
+          endif;enddo
+          read(cdf_b1l8,*,iostat=iostatus,iomsg=iomessage) diffusivity_horz,Suzuki_A
+          if(iostatus.eq.0)then
+            SourceType     = 'suzuki'
+            SourceType_idx = 1
+          else
+            ! read failed to load a float; reset Suzuki_A and read text for source type
+            Suzuki_A = 4.0_ip
+            ! if the second item is not a number, read SourceType
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)&
+                "Source type is not suzuki. Trying to read another standard type"
+            endif;enddo
+            read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) diffusivity_horz, SourceType
+          endif
+        else
+          allocate(dum1dint_out(1:neruptions))
+          nSTAT=nf90_get_var(ncid,er_type_var_id,dum1dint_out,(/1/))
+          SourceType_idx  = dum1dint_out(1)
+          deallocate(dum1dint_out)
+          nSTAT = nf90_get_att(ncid,er_type_var_id,"type",SourceType)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er_type type")
+        endif
+
+
+
+        ! Get date of run
+        nSTAT = nf90_get_att(ncid,nf90_global,"date",os_time_log)
+        ! Get windfile info
+        nSTAT = nf90_get_att(ncid,nf90_global,"b3l1",cdf_b3l1)
+        read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage)MR_iWind,MR_iWindFiles
+        MR_iGridCode   = 0
+        MR_iDataFormat = 2
+        if(iostatus.eq.0)then
+          ! try to read the igrid
+          read(cdf_b3l1,*,iostat=iostatus2,iomsg=iomessage)MR_iWind,MR_iWindFormat,MR_iGridCode
+          if(iostatus2.eq.0)then
+            ! try to read the igrid and idf
+            read(cdf_b3l1,*,iostat=iostatus3,iomsg=iomessage)MR_iWind,MR_iWindFormat,MR_iGridCode,MR_iDataFormat
+          endif
+        endif
+
+        ! Get iHeightHandler
+        nSTAT = nf90_get_att(ncid,nf90_global,"b3l2",cdf_b3l2)
+        read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage)MR_iHeightHandler
+
+        ! Get Simulation time info
+        nSTAT = nf90_get_att(ncid,nf90_global,"b3l3",cdf_b3l3)
+        read(cdf_b3l3,*,iostat=iostatus,iomsg=iomessage) Simtime_in_hours        ! simulated transport time
+        linebuffer050 = "Reading simtime from cdf_b3l3"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,cdf_b3l3,iomessage)
+
+        ! Get Stop condition
+        nSTAT = nf90_get_att(ncid,nf90_global,"b3l4",cdf_b3l4)
+        read(cdf_b3l4,'(a3)',iostat=iostatus,iomsg=iomessage) answer
+        if(adjustl(trim(answer)).eq.'yes') then
+          StopWhenDeposited = .true.
+         else if(adjustl(trim(answer(1:2))).eq.'no') then
+          StopWhenDeposited = .false.
+        endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"institution",cdf_institution)
         if(nSTAT.ne.0)then
@@ -5367,36 +5630,6 @@
 #endif
           allocate(e_Volume(neruptions))
           e_Volume(:) = 0.0_ip
-        endif
-
-        nSTAT = nf90_inq_varid(ncid,"er_type",er_type_var_id)
-        if(nSTAT.ne.0)then
-          er_type_var_id = 0
-          call NC_check_status(nSTAT,0,"inq_varid er_type")
-          do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"   Variable er_type not found."
-            write(outlog(io),*)"   Recovering type for b1l8."
-          endif;enddo
-          read(cdf_b1l8,*,iostat=iostatus,iomsg=iomessage) diffusivity_horz,Suzuki_A
-          if(iostatus.eq.0)then
-            SourceType     = 'suzuki'
-            SourceType_idx = 1
-          else
-            ! if the second item is not a number, read SourceType
-            Suzuki_A = 4.0_ip
-            do io=1,2;if(VB(io).le.verbosity_info)then
-              write(outlog(io),*)&
-                "Source type is not suzuki. Trying to read another standard type"
-            endif;enddo
-            read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) diffusivity_horz, SourceType
-          endif
-        else
-          allocate(dum1dint_out(1:neruptions))
-          nSTAT=nf90_get_var(ncid,er_type_var_id,dum1dint_out,(/1/))
-          SourceType_idx  = dum1dint_out(1)
-          deallocate(dum1dint_out)
-          nSTAT = nf90_get_att(ncid,er_type_var_id,"type",SourceType)
-          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er_type type")
         endif
 
         ! Double-checking float vs double for er_stime

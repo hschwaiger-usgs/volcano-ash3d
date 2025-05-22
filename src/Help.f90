@@ -404,7 +404,18 @@
 
       use Ash3d_Program_Control, only : &
          Write_input_block_header,      &
-         SetWrite_input_block_1
+         SetWrite_input_block_01,       &
+         SetWrite_input_block_02,       &
+         SetWrite_input_block_03,       &
+         SetWrite_input_block_04,       &
+         SetWrite_input_block_05,       &
+         SetWrite_input_block_06,       &
+         SetWrite_input_block_07,       &
+         SetWrite_input_block_08,       &
+         SetWrite_input_block_09,       &
+         SetWrite_input_block_ResetParam, &
+         SetWrite_input_block_Topo,     &
+         SetWrite_input_block_VarDiff
 
       integer,intent(in) :: blockID
 
@@ -430,7 +441,7 @@
           call Write_input_block_header(blockID)
           vname =  "Eyjafjallajokull             "
           projline = '1 1 0.0 90.0 0.933 6367.470                                                    '
-          !call SetWrite_input_block_1(WriteBlock                       ,&  ! indicates that write to stdout as well as set vars
+          !call SetWrite_input_block_01(WriteBlock                       ,&  ! indicates that write to stdout as well as set vars
           !                             vname                           ,&  ! volcano name
           !                             projline                        ,&  ! projection line
           !                            -2500.0_ip,-4500.0_ip            ,&  ! x, y of LL corner
@@ -455,6 +466,7 @@
       write(outlog(io),1)'*******************************************************************************                        '
         case(2) ! BLOCK 2: ERUPTION PARAMETERS
           call Write_input_block_header(blockID)
+          !call SetWrite_input_block_02(WriteBlock)
       write(outlog(io),1)'******************* BLOCK 2 ***************************************************                        '
       write(outlog(io),1)'2010 4 14  9.0  3.0 7.4 8.46E-004                                                                      '
       write(outlog(io),1)'2010 4 14 12.0  3.0 8.4 1.38E-003                                                                      '
@@ -467,6 +479,7 @@
       write(outlog(io),1)'2010 4 15  9.0  3.0 5.7 3.09E-004                                                                      '
         case(3) ! BLOCK 3: WIND PARAMETERS
           call Write_input_block_header(blockID)
+          !call SetWrite_input_block_03(WriteBlock)
       write(outlog(io),1)'******************* BLOCK 3 ***************************************************                        '
       write(outlog(io),1)'4  20               # iwind, iwindformat, [igrid, idata]                                               '
       write(outlog(io),1)'2                   # iHeightHandler                                                                   '
@@ -475,6 +488,7 @@
       write(outlog(io),1)'16                  # nWindFiles, number of gridded wind files (used if iwind>1)                       '
         case(4) ! BLOCK 4: OUTPUT OPTIONS
           call Write_input_block_header(blockID)
+          !call SetWrite_input_block_04(WriteBlock)
       write(outlog(io),1)'******************* BLOCK 4 ***************************************************                        '
       write(outlog(io),1)'no      # Write out ESRI ASCII file of final deposit thickness?                                        '
       write(outlog(io),1)'yes     # Write out        KML file of final deposit thickness?                                        '
@@ -496,6 +510,7 @@
       write(outlog(io),1)'1       # WriteTimes (hours since eruption start)                                                      '
         case(5) ! BLOCK 5: INPUT WIND FILES
           call Write_input_block_header(blockID)
+          !call SetWrite_input_block_05(WriteBlock)
       write(outlog(io),1)'******************* BLOCK 5 ***************************************************                        '
       write(outlog(io),1)'Wind_nc/gfs/gfs.2010041400/2010041400.f000.nc                                                          '
       write(outlog(io),1)'Wind_nc/gfs/gfs.2010041400/2010041400.f003.nc                                                          '
@@ -515,6 +530,7 @@
       write(outlog(io),1)'Wind_nc/gfs/gfs.2010041400/2010041400.f045.nc                                                          '
         case(6) ! BLOCK 6: AIRPORT FILE
           call Write_input_block_header(blockID)
+          !call SetWrite_input_block_06(WriteBlock)
       write(outlog(io),1)'******************* BLOCK 6 ***************************************************                        '
       write(outlog(io),1)'no                            # Write out ash arrival times at airports to ASCII FILE?                 '
       write(outlog(io),1)'no                            # Write out grain-size distribution to ASCII airports file?              '
@@ -523,6 +539,7 @@
       write(outlog(io),1)'yes                           # Defer to Lon/Lat coordinates? ("no" defers to projected)               '
         case(7) ! BLOCK 7: GRAIN-SIZE BINS, SETTLING VELOCITY
           call Write_input_block_header(blockID)
+          !call SetWrite_input_block_07(WriteBlock)
       write(outlog(io),1)'******************* BLOCK 7 ***************************************************                        '
       write(outlog(io),1)'15                                 # Number of grain-size bins. FV_ID not given; defaults to 1         '
       write(outlog(io),1)'2.000      0.0208  2003.   0.44    # grain size (mm), mass fraction, density (kg/m3), [F=0.44]         '
@@ -542,6 +559,7 @@
       write(outlog(io),1)'0.1649     0.0714  600.    1.00                                                                        '
         case(8) ! BLOCK 8: VERTICAL PROFILES
           call Write_input_block_header(blockID)
+          !call SetWrite_input_block_08(WriteBlock)
       write(outlog(io),1)'******************* BLOCK 8 ***************************************************                        '
       write(outlog(io),1)'4                             # number of locations for vertical profiles (nlocs)                      '
       write(outlog(io),1)'12.4  51.4  Leipzig           # x,y (or lon/lat) [Site name]                                           '
@@ -550,12 +568,14 @@
       write(outlog(io),1)'11.0  47.8  Hohenpeissenberg  # Hohenpeissenberg                                                       '
         case(9) ! BLOCK 9: (Optional): NETCDF ANNOTATIONS
           call Write_input_block_header(blockID)
+          !call SetWrite_input_block_09(WriteBlock)
       write(outlog(io),1)'******************* BLOCK 9 ***************************************************                        '
       write(outlog(io),1)'3d_tephra_fall.nc             # Name of output file                                                    '
       write(outlog(io),1)'Eyjafjallajokull              # Title of simulation                                                    '
       write(outlog(io),1)'no comment                    # Comment                                                                '
         case(10) ! BLOCK 10 (OPTMOD): Optional module blocks
           call Write_input_block_header(blockID)
+          !call SetWrite_input_block_ResetParam(WriteBlock)
                  !   First RESETPARAMS
       write(outlog(io),1)'******************* BLOCK 10+ *************************************************                        '
       write(outlog(io),1)'OPTMOD=RESETPARAMS                                                                                     '
@@ -594,6 +614,7 @@
       write(outlog(io),1)' cdf_url              = https://vsc-ash.wr.usgs.gov/ash3d-gui                                          '
                  !   TOPO
           call Write_input_block_header(blockID+1)
+          !call SetWrite_input_block_Topo(WriteBlock)
       write(outlog(io),1)'******************* BLOCK 10+ *************************************************                        '
       write(outlog(io),1)'OPTMOD=TOPO                                                                                            '
       write(outlog(io),1)'yes 2                         # use topography?; z-mod (0=none,1=shift,2=sigma)                        '
@@ -602,6 +623,7 @@
 
                  !   VARDIFF
           call Write_input_block_header(blockID+2)
+          !call SetWrite_input_block_VarDiff(WriteBlock)
       write(outlog(io),1)'******************* BLOCK 10+ *************************************************                        '
       write(outlog(io),1)'OPTMOD=VARDIFF                                                                                         '
       write(outlog(io),1)'yes 2 0.2                   # use horizontal variable diffusivity                                      '
