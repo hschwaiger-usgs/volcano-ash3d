@@ -5571,6 +5571,44 @@
           StopWhenDeposited = .false.
         endif
 
+        ! Read all of block 4 into cdf_b4l* for later analysis if needed
+        nSTAT = nf90_get_att(ncid,nf90_global,"b4l1",cdf_b4l1)
+        if(nSTAT.ne.0)cdf_b4l1 = ""
+        nSTAT = nf90_get_att(ncid,nf90_global,"b4l2",cdf_b4l2)
+        if(nSTAT.ne.0)cdf_b4l2 = ""
+        nSTAT = nf90_get_att(ncid,nf90_global,"b4l3",cdf_b4l3)
+        if(nSTAT.ne.0)cdf_b4l3 = ""
+        nSTAT = nf90_get_att(ncid,nf90_global,"b4l4",cdf_b4l4)
+        if(nSTAT.ne.0)cdf_b4l4 = ""
+        nSTAT = nf90_get_att(ncid,nf90_global,"b4l5",cdf_b4l5)
+        if(nSTAT.ne.0)cdf_b4l5 = ""
+        nSTAT = nf90_get_att(ncid,nf90_global,"b4l6",cdf_b4l6)
+        if(nSTAT.ne.0)cdf_b4l6 = ""
+        nSTAT = nf90_get_att(ncid,nf90_global,"b4l7",cdf_b4l7)
+        if(nSTAT.ne.0)cdf_b4l7 = ""
+        nSTAT = nf90_get_att(ncid,nf90_global,"b4l8",cdf_b4l8)
+        if(nSTAT.ne.0)cdf_b4l8 = ""
+        nSTAT = nf90_get_att(ncid,nf90_global,"b4l9",cdf_b4l9)
+        if(nSTAT.ne.0)cdf_b4l9 = ""
+        nSTAT = nf90_get_att(ncid,nf90_global,"b4l10",cdf_b4l10)
+        if(nSTAT.ne.0)cdf_b4l10 = ""
+        nSTAT = nf90_get_att(ncid,nf90_global,"b4l11",cdf_b4l11)
+        if(nSTAT.ne.0)cdf_b4l11 = ""
+        nSTAT = nf90_get_att(ncid,nf90_global,"b4l12",cdf_b4l12)
+        if(nSTAT.ne.0)cdf_b4l12 = ""
+        nSTAT = nf90_get_att(ncid,nf90_global,"b4l13",cdf_b4l13)
+        if(nSTAT.ne.0)cdf_b4l13 = ""
+        nSTAT = nf90_get_att(ncid,nf90_global,"b4l14",cdf_b4l14)
+        if(nSTAT.ne.0)cdf_b4l14 = ""
+        nSTAT = nf90_get_att(ncid,nf90_global,"b4l15",cdf_b4l15)
+        if(nSTAT.ne.0)cdf_b4l15 = ""
+        nSTAT = nf90_get_att(ncid,nf90_global,"b4l16",cdf_b4l16)
+        if(nSTAT.ne.0)cdf_b4l16 = ""
+        nSTAT = nf90_get_att(ncid,nf90_global,"b4l17",cdf_b4l17)
+        if(nSTAT.ne.0)cdf_b4l17 = ""
+        nSTAT = nf90_get_att(ncid,nf90_global,"b4l18",cdf_b4l18)
+        if(nSTAT.ne.0)cdf_b4l18 = ""
+
         nSTAT = nf90_get_att(ncid,nf90_global,"institution",cdf_institution)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att institution:")

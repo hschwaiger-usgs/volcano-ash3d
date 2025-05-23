@@ -3019,7 +3019,7 @@
       endif
       
       ! Block 4 Line 17
-      ! Read number of files to write out
+      ! Read number of output steps to write out
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage) linebuffer080
       linebuffer050 = "Reading control file Blk 4, line 17"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
@@ -6344,14 +6344,41 @@
 !
 !  Called from: help_inputfile  
 !  Arguments:
-!    WriteBlock = logical: indicates that write to stdout as well as set vars
-!    
+!    WriteBlock                      = logical: indicates that write to stdout as well as set vars
+!    WriteDepositFinal_ASCII_c       = char:  B4L1 n/y Write out ESRI ASCII file of final deposit thickness?
+!    WriteDepositFinal_KML_c         = char:  B4L2 n/y Write out        KML file of final deposit thickness?
+!    WriteDepositTS_ASCII_c          = char:  B4L3 Write out ESRI ASCII deposit files at specified times?
+!    WriteDepositTS_KML_c            = char:  B4L4 Write out        KML deposit files at specified times?
+!    WriteCloudConcentration_ASCII_c = char:  B4L5 Write out ESRI ASCII files of ash-cloud concentration?
+!    WriteCloudConcentration_KML_c   = char:  B4L6 Write out        KML files of ash-cloud concentration?
+!    WriteCloudHeight_ASCII_c        = char:  B4L7 Write out ESRI ASCII files of ash-cloud height?
+!    WriteCloudHeight_KML_c          = char:  B4L8 Write out        KML files of ash-cloud height?
+!    WriteCloudLoad_ASCII_c          = char:  B4L9 Write out ESRI ASCII files of ash-cloud load (T/km2) at specified times? 
+!    WriteCloudLoad_KML_c            = char:  B4L10 Write out        KML files of ash-cloud load (T/km2) at specified times?
+!    WriteDepositTime_ASCII_c        = char:  B4L11 Write out ESRI ASCII file of deposit arrival times?
+!    WriteDepositTime_KML_c          = char:  B4L12 Write out        KML file of deposit arrival times?
+!    WriteCloudTime_ASCII_c          = char:  B4L13 Write out ESRI ASCII file of cloud arrival times
+!    WriteCloudTime_KML_c            = char:  B4L14 Write out        KML file of cloud arrival times?
+!    Write3dFiles_c                  = char:  B4L15 Write out 3-D ash concentration at specified times?
+!    ifm                             = integer : B4L15+ output code: 1=2d+concen,2=2d only]
+!    ofm                             = integer : B4L16 format of ash concentration files (1=ascii, 2=binary, or 3=netcdf)
+!    nwt                             = integer : B4L17 nWriteTimes
+!    wts)                            = real(8),dim(nwt) : B4L18 WriteTimes(1:nWriteTimes)
+
 !  This subroutine writes the content of block 4 (Output Options) of the Ash3d
 !  control file.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine SetWrite_input_block_04(WriteBlock)
+      subroutine SetWrite_input_block_04(WriteBlock,                                                    &
+                                         WriteDepositFinal_ASCII_c,WriteDepositFinal_KML_c,             &
+                                         WriteDepositTS_ASCII_c,WriteDepositTS_KML_c,                   &
+                                         WriteCloudConcentration_ASCII_c,WriteCloudConcentration_KML_c, &
+                                         WriteCloudHeight_ASCII_c,WriteCloudHeight_KML_c,               &
+                                         WriteCloudLoad_ASCII_c,WriteCloudLoad_KML_c,                   &
+                                         WriteDepositTime_ASCII_c,WriteDepositTime_KML_c,               &
+                                         WriteCloudTime_ASCII_c,WriteCloudTime_KML_c,                   &
+                                         Write3dFiles_c,ifm,ofm,nwt,wts)
 
       ! This module requires Fortran 2003 or later
       use iso_fortran_env, only : &
@@ -6360,6 +6387,52 @@
       use io_units
 
       logical           ,intent(in) :: WriteBlock
+      character(len=1)  ,intent(in) :: WriteDepositFinal_ASCII_c
+      character(len=1)  ,intent(in) :: WriteDepositFinal_KML_c
+      character(len=1)  ,intent(in) :: WriteDepositTS_ASCII_c
+      character(len=1)  ,intent(in) :: WriteDepositTS_KML_c
+      character(len=1)  ,intent(in) :: WriteCloudConcentration_ASCII_c
+      character(len=1)  ,intent(in) :: WriteCloudConcentration_KML_c
+      character(len=1)  ,intent(in) :: WriteCloudHeight_ASCII_c
+      character(len=1)  ,intent(in) :: WriteCloudHeight_KML_c
+      character(len=1)  ,intent(in) :: WriteCloudLoad_ASCII_c
+      character(len=1)  ,intent(in) :: WriteCloudLoad_KML_c
+      character(len=1)  ,intent(in) :: WriteDepositTime_ASCII_c
+      character(len=1)  ,intent(in) :: WriteDepositTime_KML_c
+      character(len=1)  ,intent(in) :: WriteCloudTime_ASCII_c
+      character(len=1)  ,intent(in) :: WriteCloudTime_KML_c
+      character(len=1)  ,intent(in) :: Write3dFiles_c
+      integer           ,intent(in) :: ifm
+      integer           ,intent(in) :: ofm
+      integer           ,intent(in) :: nwt
+      real(kind=dp),dimension(nwt),intent(in) :: wts
+
+      if(WriteBlock)then
+        write(output_unit,1)&
+         '******************* BLOCK 3 ****************************************************'
+        write(output_unit,1)&
+         '********************************************************************************'
+      endif
+
+
+!no      # Write out ESRI ASCII file of final deposit thickness?                                        
+!no      # Write out        KML file of final deposit thickness?                                        
+!no      # Write out ESRI ASCII deposit files at specified times?                                       
+!no      # Write out        KML deposit files at specified times?                                       
+!no      # Write out ESRI ASCII files of ash-cloud concentration?                                       
+!no      # Write out        KML files of ash-cloud concentration?                                       
+!no      # Write out ESRI ASCII files of ash-cloud height?                                              
+!no      # Write out        KML files of ash-cloud height?                                              
+!no      # Write out ESRI ASCII files of ash-cloud load (T/km2) at specified times?                     
+!no      # Write out        KML files of ash-cloud load (T/km2) at specified times?                     
+!no      # Write out ESRI ASCII file of deposit arrival times?                                          
+!no      # Write out        KML file of deposit arrival times?                                          
+!no      # write out ESRI ASCII file of cloud arrival times?                                            
+!no      # Write out        KML file of cloud arrival times?                                            
+!yes 2   # Write out 3-D ash concentration at specified times? / [output code: 1=2d+concen,2=2d only]   
+!netcdf  # format of ash concentration files     (ascii, binary, or netcdf)                             
+!8       # nWriteTimes
+
 
       end subroutine SetWrite_input_block_04
 

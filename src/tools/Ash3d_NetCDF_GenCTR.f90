@@ -8,7 +8,10 @@
 
       use io_data,       only : &
          infile,concenfile,VolcanoName, &
-         cdf_b1l2,cdf_vardz
+         nWriteTimes,WriteTimes,cdf_b1l2,cdf_vardz, &
+         cdf_b4l1,cdf_b4l2,cdf_b4l3,cdf_b4l4,cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,&
+         cdf_b4l11,cdf_b4l12,cdf_b4l13,cdf_b4l14,cdf_b4l15,cdf_b4l16,cdf_b4l17,cdf_b4l18
+
 
       use mesh,          only : &
          lonLL,latLL,gridwidth_e,gridwidth_n,xLL,yLL,gridwidth_x,gridwidth_y, &
@@ -69,6 +72,31 @@
       real(kind=ip) :: dx_in
       real(kind=ip) :: dy_in
       integer       :: dz_type
+
+      ! Block 4 variables
+      integer           :: iostatus
+      character(len=50) :: iomessage
+      character(len=3) :: answer
+      character(len=1) :: WriteDepositFinal_ASCII_c        ! n/y Write out ESRI ASCII file of final deposit thickness?
+      character(len=1) :: WriteDepositFinal_KML_c          ! n/y Write out        KML file of final deposit thickness?
+      character(len=1) :: WriteDepositTS_ASCII_c           ! Write out ESRI ASCII deposit files at specified times?
+      character(len=1) :: WriteDepositTS_KML_c             ! Write out        KML deposit files at specified times?
+      character(len=1) :: WriteCloudConcentration_ASCII_c  ! Write out ESRI ASCII files of ash-cloud concentration?
+      character(len=1) :: WriteCloudConcentration_KML_c    ! Write out        KML files of ash-cloud concentration?
+      character(len=1) :: WriteCloudHeight_ASCII_c         ! Write out ESRI ASCII files of ash-cloud height?
+      character(len=1) :: WriteCloudHeight_KML_c           ! Write out        KML files of ash-cloud height?
+      character(len=1) :: WriteCloudLoad_ASCII_c           ! Write out ESRI ASCII files of ash-cloud load (T/km2) at specified times? 
+      character(len=1) :: WriteCloudLoad_KML_c             ! Write out        KML files of ash-cloud load (T/km2) at specified times?
+      character(len=1) :: WriteDepositTime_ASCII_c         ! Write out ESRI ASCII file of deposit arrival times?
+      character(len=1) :: WriteDepositTime_KML_c           ! Write out        KML file of deposit arrival times?
+      character(len=1) :: WriteCloudTime_ASCII_c           ! Write out ESRI ASCII file of cloud arrival times
+      character(len=1) :: WriteCloudTime_KML_c             ! Write out        KML file of cloud arrival times?
+      character(len=1) :: Write3dFiles_c                   ! Write out 3-D ash concentration at specified times?
+      integer          :: ifm                              ! output code: 1=2d+concen,2=2d only]
+      integer          :: ofm                              ! format of ash concentration files (1=ascii, 2=binary, or 3=netcdf)
+      integer          :: nwt                              ! nWriteTimes
+      real(kind=dp),dimension(:),allocatable :: wts        ! WriteTimes(1:nWriteTimes)
+
 
       write(*,*)"In Ash3d_NetCDF_GenCTR"
 
@@ -199,8 +227,84 @@
                                    StopWhenDeposited               ,&
                                    MR_iWindFiles)
 
-      call SetWrite_input_block_04(WriteBlock           ) !           ,&  ! indicates that write to stdout as well as set vars
-      call SetWrite_input_block_05(WriteBlock           ) !           ,&  ! indicates that write to stdout as well as set vars
+      WriteDepositFinal_ASCII_c = 'n'
+      read(cdf_b4l1,'(a3)',iostat=iostatus,iomsg=iomessage) answer
+      if(adjustl(trim(answer)).eq.'yes') WriteDepositFinal_ASCII_c = 'y'
+      WriteDepositFinal_KML_c = 'n'
+      read(cdf_b4l2,'(a3)',iostat=iostatus,iomsg=iomessage) answer
+      if(adjustl(trim(answer)).eq.'yes') WriteDepositFinal_KML_c = 'y'
+      WriteDepositTS_ASCII_c = 'n'
+      read(cdf_b4l3,'(a3)',iostat=iostatus,iomsg=iomessage) answer
+      if(adjustl(trim(answer)).eq.'yes') WriteDepositTS_ASCII_c = 'y'
+      WriteDepositTS_KML_c = 'n'
+      read(cdf_b4l4,'(a3)',iostat=iostatus,iomsg=iomessage) answer
+      if(adjustl(trim(answer)).eq.'yes') WriteDepositTS_KML_c = 'y'
+      WriteCloudConcentration_ASCII_c= 'n'
+      read(cdf_b4l5,'(a3)',iostat=iostatus,iomsg=iomessage) answer
+      if(adjustl(trim(answer)).eq.'yes') WriteCloudConcentration_ASCII_c = 'y'
+      WriteCloudConcentration_KML_c= 'n'
+      read(cdf_b4l6,'(a3)',iostat=iostatus,iomsg=iomessage) answer
+      if(adjustl(trim(answer)).eq.'yes') WriteCloudConcentration_KML_c = 'y'
+      WriteCloudHeight_ASCII_c = 'n'
+      read(cdf_b4l7,'(a3)',iostat=iostatus,iomsg=iomessage) answer
+      if(adjustl(trim(answer)).eq.'yes') WriteCloudHeight_ASCII_c = 'y'
+      WriteCloudHeight_KML_c = 'n'
+      read(cdf_b4l8,'(a3)',iostat=iostatus,iomsg=iomessage) answer
+      if(adjustl(trim(answer)).eq.'yes') WriteCloudHeight_KML_c = 'y'
+      WriteCloudLoad_ASCII_c = 'n'
+      read(cdf_b4l9,'(a3)',iostat=iostatus,iomsg=iomessage) answer
+      if(adjustl(trim(answer)).eq.'yes') WriteCloudLoad_ASCII_c = 'y'
+      WriteCloudLoad_KML_c = 'n'
+      read(cdf_b4l10,'(a3)',iostat=iostatus,iomsg=iomessage) answer
+      if(adjustl(trim(answer)).eq.'yes') WriteCloudLoad_KML_c = 'y'
+      WriteDepositTime_ASCII_c= 'n'
+      read(cdf_b4l11,'(a3)',iostat=iostatus,iomsg=iomessage) answer
+      if(adjustl(trim(answer)).eq.'yes') WriteDepositTime_ASCII_c = 'y'
+      WriteDepositTime_KML_c= 'n'
+      read(cdf_b4l12,'(a3)',iostat=iostatus,iomsg=iomessage) answer
+      if(adjustl(trim(answer)).eq.'yes') WriteDepositTime_KML_c = 'y'
+      WriteCloudTime_ASCII_c = 'n'
+      read(cdf_b4l13,'(a3)',iostat=iostatus,iomsg=iomessage) answer
+      if(adjustl(trim(answer)).eq.'yes') WriteCloudTime_ASCII_c = 'y'
+      WriteCloudTime_KML_c = 'n'
+      read(cdf_b4l14,'(a3)',iostat=iostatus,iomsg=iomessage) answer
+      if(adjustl(trim(answer)).eq.'yes') WriteCloudTime_KML_c = 'y'
+      Write3dFiles_c = 'y' ! This is obviously true if we are reading the netcdf file
+      ifm = 2
+      read(cdf_b4l15,'(a3)',iostat=iostatus,iomsg=iomessage) answer, ifm
+      if(iostatus.ne.0)then ! if read fails, then make sure we set these
+        Write3dFiles_c = 'y'
+        ifm = 2
+      endif
+      ofm = 3 ! This should be 3 since we are reading a netcdf file
+      nwt = nWriteTimes
+      allocate(wts(nwt))
+      wts = WriteTimes
+
+      call SetWrite_input_block_04(WriteBlock                      ,&  ! indicates that write to stdout as well as set vars
+                                   WriteDepositFinal_ASCII_c       ,&  ! B4L1 n/y Write out ESRI ASCII file of final deposit thickness?
+                                   WriteDepositFinal_KML_c         ,&  ! B4L2 n/y Write out        KML file of final deposit thickness?
+                                   WriteDepositTS_ASCII_c          ,&  ! B4L3 Write out ESRI ASCII deposit files at specified times?
+                                   WriteDepositTS_KML_c            ,&  ! B4L4 Write out        KML deposit files at specified times?
+                                   WriteCloudConcentration_ASCII_c ,&  ! B4L5 Write out ESRI ASCII files of ash-cloud concentration?
+                                   WriteCloudConcentration_KML_c   ,&  ! B4L6 Write out        KML files of ash-cloud concentration?
+                                   WriteCloudHeight_ASCII_c        ,&  ! B4L7 Write out ESRI ASCII files of ash-cloud height?
+                                   WriteCloudHeight_KML_c          ,&  ! B4L8 Write out        KML files of ash-cloud height?
+                                   WriteCloudLoad_ASCII_c          ,&  ! B4L9 Write out ESRI ASCII files of ash-cloud load (T/km2) at specified times? 
+                                   WriteCloudLoad_KML_c            ,&  ! B4L10 Write out        KML files of ash-cloud load (T/km2) at specified times?
+                                   WriteDepositTime_ASCII_c        ,&  ! B4L11 Write out ESRI ASCII file of deposit arrival times?
+                                   WriteDepositTime_KML_c          ,&  ! B4L12 Write out        KML file of deposit arrival times?
+                                   WriteCloudTime_ASCII_c          ,&  ! B4L13 Write out ESRI ASCII file of cloud arrival times
+                                   WriteCloudTime_KML_c            ,&  ! B4L14 Write out        KML file of cloud arrival times?
+                                   Write3dFiles_c                  ,&  ! B4L15 Write out 3-D ash concentration at specified times?
+                                   ifm                             ,&  ! B4L15+ output code: 1=2d+concen,2=2d only]
+                                   ofm                             ,&  ! B4L16 format of ash concentration files (1=ascii, 2=binary, or 3=netcdf)
+                                   nwt                             ,&  ! B4L17 nWriteTimes
+                                   wts)                                ! B4L18 WriteTimes(1:nWriteTimes)
+
+!      call SetWrite_input_block_05(WriteBlock                      ,&  ! indicates that write to stdout as well as set vars
+!                                   MR_iWindFiles                   ,&
+
       call SetWrite_input_block_06(WriteBlock           ) !           ,&  ! indicates that write to stdout as well as set vars
       call SetWrite_input_block_07(WriteBlock           ) !           ,&  ! indicates that write to stdout as well as set vars
       call SetWrite_input_block_08(WriteBlock           ) !           ,&  ! indicates that write to stdout as well as set vars
