@@ -185,7 +185,7 @@
          cdf_b1l1,cdf_b1l2,cdf_b1l3,cdf_b1l4,cdf_b1l5,cdf_b1l6,cdf_b1l7,cdf_vardz,cdf_b1l8,cdf_b1l9,&
          cdf_b3l1,cdf_b3l2,cdf_b3l3,cdf_b3l4,cdf_b3l5,   &
          cdf_b4l1,cdf_b4l2,cdf_b4l3,cdf_b4l4,cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,&
-         cdf_b4l11,cdf_b4l12,cdf_b4l13,cdf_b4l14,cdf_b4l15,cdf_b4l16,cdf_b4l17,cdf_b4l18,           &
+         cdf_b4l11,cdf_b4l12,cdf_b4l13,cdf_b4l14,cdf_b4l15,cdf_b4l16,cdf_b4l17,cdf_b4l18,cdf_b5l1,  &
          cdf_b6l1,cdf_b6l2,cdf_b6l3,cdf_b6l4,cdf_b6l5,cdf_conventions,&
          cdf_comment,cdf_title,cdf_institution,cdf_source,cdf_source_url,cdf_history,cdf_references,&
          cdf_run_class,cdf_url,infile,concenfile,&
@@ -244,7 +244,7 @@
          VelMod_umb,k_entrainment_umb,lambda_umb,N_BV_umb,SuzK_umb
 
       use MetReader,     only : &
-         MR_iwindfiles,MR_windfiles,MR_GitComID,&
+         MR_iWindFiles,MR_WindFiles,MR_GitComID,&
          MR_MetStep_findex,MR_windfile_starthour,Met_proj4,Comp_proj4
 
       use projection,      only : &
@@ -572,6 +572,8 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment b4l17:")
       nSTAT = nf90_put_att(ncid,nf90_global,"b4l18",cdf_b4l18)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment b4l18:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"b5l1",cdf_b5l1)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment b5l1:")
 
       nSTAT = nf90_put_att(ncid,nf90_global,"b6l1",cdf_b6l1)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment b6l1:")
@@ -701,7 +703,7 @@
       nSTAT = nf90_def_dim(ncid,dim_names(7),e_prof_maxpoints,ep_dim_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_dim ep:")
       ! wf
-      nSTAT = nf90_def_dim(ncid,dim_names(8),MR_iwindfiles,wf_dim_id)
+      nSTAT = nf90_def_dim(ncid,dim_names(8),MR_iWindFiles,wf_dim_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_dim wf:")
       ! sl
       nSTAT = nf90_def_dim(ncid,dim_names(9),130,sl_dim_id)
@@ -2672,10 +2674,10 @@
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Fill WF"
       endif;enddo
-      allocate(dum1dint_out(MR_iwindfiles))
+      allocate(dum1dint_out(MR_iWindFiles))
       ! This is variable associated with the dimension for windfile ID
       ! This only contains the index starting with 1
-      do i=1,MR_iwindfiles
+      do i=1,MR_iWindFiles
         dum1dint_out(i) = i
       enddo
       nSTAT=nf90_put_var(ncid,wf_var_id,dum1dint_out,(/1/))
@@ -2898,9 +2900,9 @@
 
          ! Now fill the other (non-time-dependent) variables
          ! wf_name (Name of windfile)
-      do i=1,MR_iwindfiles
-        write(linebuffer130,'(130a)')trim(adjustl(MR_windfiles(i)))
-        strlen = len(trim(adjustl(MR_windfiles(i))))
+      do i=1,MR_iWindFiles
+        write(linebuffer130,'(130a)')trim(adjustl(MR_WindFiles(i)))
+        strlen = len(trim(adjustl(MR_WindFiles(i))))
         do j=1,strlen
           nSTAT=nf90_put_var(ncid,wf_name_var_id,linebuffer130(j:j),(/j,i/))
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var wf_name")
@@ -4103,6 +4105,7 @@
          cdf_b3l1,cdf_b3l2,cdf_b3l3,cdf_b3l4,cdf_b3l5, &
          cdf_b4l1,cdf_b4l2,cdf_b4l3,cdf_b4l4,cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,&
          cdf_b4l11,cdf_b4l12,cdf_b4l13,cdf_b4l14,cdf_b4l15,cdf_b4l16,cdf_b4l17,cdf_b4l18,  &
+         cdf_b5l1,cdf_b6l1,cdf_b6l2,cdf_b6l3,cdf_b6l4,cdf_b6l5, &
          VolcanoName,Write_PT_Data,isFinal_TS,&
          cdf_run_class,cdf_url,cdf_institution,&
          Write_PR_Data,nvprofiles,x_vprofile,y_vprofile,Site_vprofile,&
@@ -4163,7 +4166,7 @@
 
       use MetReader,     only : &
          MR_iWind,MR_iWindFormat,MR_iGridCode,MR_iDataFormat,MR_iWindFiles,MR_iHeightHandler,&
-         MR_windfiles
+         MR_WindFiles
 
       integer, intent(in), optional :: timestep
 
@@ -4704,6 +4707,30 @@
           endif;enddo
         endif
 
+        !!!!!!  WF !!!!!!!!!!!
+        ! Identify dimension for WF (and note size)
+        nSTAT = nf90_inq_dimid(ncid,"wf",wf_dim_id)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"inq_dimid wf")
+          MR_iWindFiles = 0
+        else
+          nSTAT = nf90_Inquire_Dimension(ncid,wf_dim_id,len=MR_iWindFiles)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"Inquire_Dimension wf")
+          ! Get variable id for this dimension
+          nSTAT = nf90_inq_varid(ncid,"wf",wf_var_id)
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid wf")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),2501)" wf",MR_iWindFiles
+          endif;enddo
+        endif
+
+        !!!!!!  SL !!!!!!!!!!!
+        ! Identify dimension for SL (and note size)
+        nSTAT = nf90_inq_dimid(ncid,"sl",sl_dim_id)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"inq_dimid sl")
+        endif
+
         ! Now get the expected global attributes
           ! Input file line with 
         nSTAT = nf90_get_att(ncid,nf90_global,"b1l8",cdf_b1l8)
@@ -4912,7 +4939,7 @@
 
         nSTAT = nf90_get_att(ncid,nf90_global,"Imp_DT_fac",Imp_DT_fac)
         if(nSTAT.ne.0)then
-          call NC_check_status(nSTAT,0,"get_att Comment :Imp_DT_fac")
+          call NC_check_status(nSTAT,0,"get_att Comment Imp_DT_fac")
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"Did not find att : Imp_DT_fac =4.0"
           endif;enddo
@@ -5534,13 +5561,11 @@
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er_type type")
         endif
 
-
-
         ! Get date of run
         nSTAT = nf90_get_att(ncid,nf90_global,"date",os_time_log)
         ! Get windfile info
         nSTAT = nf90_get_att(ncid,nf90_global,"b3l1",cdf_b3l1)
-        read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage)MR_iWind,MR_iWindFiles
+        read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage)MR_iWind,MR_iWindFormat
         MR_iGridCode   = 0
         MR_iDataFormat = 2
         if(iostatus.eq.0)then
@@ -5570,6 +5595,9 @@
          else if(adjustl(trim(answer(1:2))).eq.'no') then
           StopWhenDeposited = .false.
         endif
+
+        ! Load file with MR_iWindfiles
+        nSTAT = nf90_get_att(ncid,nf90_global,"b3l5",cdf_b3l5)
 
         ! Read all of block 4 into cdf_b4l* for later analysis if needed
         nSTAT = nf90_get_att(ncid,nf90_global,"b4l1",cdf_b4l1)
@@ -5608,6 +5636,18 @@
         if(nSTAT.ne.0)cdf_b4l17 = ""
         nSTAT = nf90_get_att(ncid,nf90_global,"b4l18",cdf_b4l18)
         if(nSTAT.ne.0)cdf_b4l18 = ""
+        nSTAT = nf90_get_att(ncid,nf90_global,"b5l1",cdf_b5l1)
+        if(nSTAT.ne.0)cdf_b5l1 = ""
+        nSTAT = nf90_get_att(ncid,nf90_global,"b6l1",cdf_b6l1)
+        if(nSTAT.ne.0)cdf_b6l1 = ""
+        nSTAT = nf90_get_att(ncid,nf90_global,"b6l2",cdf_b6l2)
+        if(nSTAT.ne.0)cdf_b6l2 = ""
+        nSTAT = nf90_get_att(ncid,nf90_global,"b6l3",cdf_b6l3)
+        if(nSTAT.ne.0)cdf_b6l3 = ""
+        nSTAT = nf90_get_att(ncid,nf90_global,"b6l4",cdf_b6l4)
+        if(nSTAT.ne.0)cdf_b6l4 = ""
+        nSTAT = nf90_get_att(ncid,nf90_global,"b6l5",cdf_b6l5)
+        if(nSTAT.ne.0)cdf_b6l5 = ""
 
         nSTAT = nf90_get_att(ncid,nf90_global,"institution",cdf_institution)
         if(nSTAT.ne.0)then
@@ -5792,6 +5832,17 @@
             e_prof_Volume(i,1:e_prof_maxpoints) = real(dum1d_out,kind=ip)
           enddo
           deallocate(dum1d_out)
+
+          ! Wind file names
+          allocate (MR_windfiles(MR_iwindfiles))
+          nSTAT = nf90_inq_varid(ncid,"wf_name",wf_name_var_id)
+          if(nSTAT.ne.0)then
+            wf_name_var_id = 0
+            call NC_check_status(nSTAT,1,"inq_varid wf_name")
+          endif
+          do i=1,MR_iWindFiles
+            nSTAT=nf90_get_var(ncid,wf_name_var_id,MR_windfiles,(/1,i/))
+          enddo
 
         endif
 

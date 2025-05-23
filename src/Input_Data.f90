@@ -1065,7 +1065,7 @@
          cdf_b1l1,cdf_b1l2,cdf_b1l3,cdf_b1l4,cdf_b1l5,cdf_b1l6,cdf_b1l7,cdf_vardz,cdf_b1l8,cdf_b1l9,&
          cdf_b3l1,cdf_b3l2,cdf_b3l3,cdf_b3l4,cdf_b3l5,cdf_b4l1,cdf_b4l2,cdf_b4l3,cdf_b4l4,&
          cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,cdf_b4l11,cdf_b4l12,cdf_b4l13,&
-         cdf_b4l14,cdf_b4l15,cdf_b4l16,cdf_b4l17,cdf_b4l18,cdf_b6l1,cdf_b6l2,cdf_b6l3,cdf_b6l4,&
+         cdf_b4l14,cdf_b4l15,cdf_b4l16,cdf_b4l17,cdf_b4l18,cdf_b5l1,cdf_b6l1,cdf_b6l2,cdf_b6l3,cdf_b6l4,&
          cdf_b6l5,cdf_comment,cdf_title,cdf_institution,cdf_source_url,cdf_history,cdf_references,&
          concenfile,VolcanoName,WriteTimes,nWriteTimes,cdf_conventions,cdf_run_class,cdf_url,&
          x_vprofile,y_vprofile,i_vprofile,j_vprofile,Site_vprofile,&
@@ -1129,9 +1129,9 @@
            PJ_Set_Proj_Params
 
       use MetReader,     only : &
-         MR_iwindfiles,MR_windfiles,MR_BaseYear,MR_useLeap,MR_Comp_StartHour,&
-         MR_windfiles_GRIB_index,MR_windfiles_Have_GRIB_index,MR_Comp_Time_in_hours,&
-         MR_windfile_starthour,MR_windfile_stephour,MR_iHeightHandler,&
+         MR_iWindFiles,MR_WindFiles,MR_BaseYear,MR_useLeap,MR_Comp_StartHour,&
+         MR_WindFiles_GRIB_index,MR_WindFiles_Have_GRIB_index,MR_Comp_Time_in_hours,&
+         MR_WindFile_starthour,MR_windfile_stephour,MR_iHeightHandler,&
          MR_iwf_template,MR_iwind,MR_Comp_StartYear,MR_Comp_StartMonth,MR_ztop,&
            MR_Allocate_FullMetFileList, &
            MR_Read_Met_DimVars
@@ -3174,7 +3174,7 @@
 
       !************************************************************************
       ! BLOCK 5: INPUT WIND FILES
-      if(MR_iwindfiles.gt.0)then
+      if(MR_iWindFiles.gt.0)then
         read(fid_ctrlfile,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
         linebuffer050 = "Reading ctr file, past Blk 4, looking for Blk 5."
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
@@ -3212,9 +3212,10 @@
         if(MR_iwind.eq.5)then
           ! For NCEP 2.5 degree (25), NOAA product (27), ERA5 (29), or ERA-20C (30)
           ! just read the path to the files
-          read(linebuffer130,'(a130)',err=9501,iostat=iostatus,iomsg=iomessage) MR_windfiles(1)
+          read(linebuffer130,'(a130)',err=9501,iostat=iostatus,iomsg=iomessage) MR_WindFiles(1)
+          cdf_b5l1(1:80) = linebuffer130(1:80)
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),1034) 1,trim(adjustl(MR_windfiles(1)))
+            write(outlog(io),1034) 1,trim(adjustl(MR_WindFiles(1)))
           endif;enddo
           read(fid_ctrlfile,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
           linebuffer050 = "Reading control file Blk 5, line 1"
@@ -3234,9 +3235,9 @@
               endif;enddo
               stop 1
             endif
-            read(linebuffer130,'(a130)',err=9501,iostat=iostatus,iomsg=iomessage) MR_windfiles(i)
+            read(linebuffer130,'(a130)',err=9501,iostat=iostatus,iomsg=iomessage) MR_WindFiles(i)
             do io=1,2;if(VB(io).le.verbosity_info)then
-              write(outlog(io),1034) i,trim(adjustl(MR_windfiles(i)))
+              write(outlog(io),1034) i,trim(adjustl(MR_WindFiles(i)))
             endif;enddo
             if(idf.eq.3)then
               ! If we are reading grib files, check that the index file has been
@@ -3254,9 +3255,9 @@
               endif;enddo
               stop 1
 #else
-              MR_windfiles_GRIB_index(i) = trim(adjustl(MR_windfiles(i))) // ".index"
-              inquire( file=MR_windfiles_GRIB_index(i), exist=IsThere )
-              MR_windfiles_Have_GRIB_index(i) = IsThere
+              MR_WindFiles_GRIB_index(i) = trim(adjustl(MR_WindFiles(i))) // ".index"
+              inquire( file=MR_WindFiles_GRIB_index(i), exist=IsThere )
+              MR_WindFiles_Have_GRIB_index(i) = IsThere
               if(.not.IsThere)then
                 ! Grib index file is not there, Try to generate it.
                 ! Note, we might have some permission problems here and we should
@@ -3264,7 +3265,7 @@
                 do io=1,2;if(VB(io).le.verbosity_info)then
                   write(outlog(io),*)" Grib index file not found; attempting to create it."
                 endif;enddo
-                call MR_Set_Gen_Index_GRIB(MR_windfiles(i))
+                call MR_Set_Gen_Index_GRIB(MR_WindFiles(i))
               endif
 #endif
             endif
@@ -3273,11 +3274,11 @@
             if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
           enddo
         endif
-1034    format(' i=',i3,'  MR_windfiles(i) = ',a)
+1034    format(' i=',i3,'  MR_WindFiles(i) = ',a)
       else
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
-                "MR_iwindfiles = 0"
+                "MR_iWindFiles = 0"
           write(errlog(io),*)&
                 "       Either the number of windfiles specified = 0, or"
           write(errlog(io),*)&
@@ -5683,7 +5684,7 @@
       write(outlog(io),1)'# GENERAL SOURCE PARAMETERS. DO NOT DELETE ANY NON-COMMENT LINES                                       '
       write(outlog(io),1)'#  The first line of this block identifies the volcano by name.                                        '
       write(outlog(io),1)'#  If the volcano name begins with either 0 or 1, then the volcano                                     '
-      write(outlog(io),1)'#  is assumed to be in the Smithonian database and default values for                                  '
+      write(outlog(io),1)'#  is assumed to be in the Smithsonian database and default values for                                 '
       write(outlog(io),1)'#  Plume Height, Duration, Mass Flux Rate, Volume, and mass fraction of                                '
       write(outlog(io),1)'#  fines are loaded.  These can be over-written by entering non-negative                               '
       write(outlog(io),1)'#  values in the appropriate locations in this input file.                                             '
@@ -5702,7 +5703,7 @@
       write(outlog(io),1)'#           k0      -- scale factor at projection point                                                '
       write(outlog(io),1)'#           radius  -- earth radius for spherical earth                                                '
       write(outlog(io),1)'#     e.g. for NAM 104,198, 216: 0 1 -105.0 90.0 0.933 6371.229                                        '
-      write(outlog(io),1)'#               = 2 -- Alberts Equal Area ( not yet implemented)                                       '
+      write(outlog(io),1)'#               = 2 -- Albers Equal Area ( not yet implemented)                                        '
       write(outlog(io),1)'#               = 3 -- UTM ( not yet implemented)                                                      '
       write(outlog(io),1)'#               = 4 -- Lambert conformal conic                                                         '
       write(outlog(io),1)'#           lambda0 -- longitude of origin                                                             '
@@ -5749,7 +5750,6 @@
       write(outlog(io),1)'#  point        : all mass inserted in cell containing PlmH                                            '
       write(outlog(io),1)'#  linear       : mass uniformly distributed from z-vent to PlmH                                       '
       write(outlog(io),1)'# Line 9 : number of pulses to be read in BLOCK 2                                                      '
-      write(outlog(io),1)'#                                                                                                      '
         case(2) ! BLOCK 2: ERUPTION PARAMETERS
       write(outlog(io),1)'# ERUPTION LINES (number = neruptions)                                                                 '
       write(outlog(io),1)'# In the following line, each line represents one eruptive pulse.                                      '
@@ -5763,7 +5763,6 @@
       write(outlog(io),1)'# 2010 04 14   0.00   1.0     18.0  0.16 1.0 18                                                        '
       write(outlog(io),1)'# 0.01 0.02 0.03 0.03 0.04 0.04 0.05 0.06 0.06 0.070 0.08 0.08 0.09 0.09 0.09 0.08 0.06 0.02           '
         case(3) ! BLOCK 3: WIND PARAMETERS
-      write(outlog(io),1)'*******************************************************************************                        '
       write(outlog(io),1)'# WIND OPTIONS                                                                                         '
       write(outlog(io),1)'# Ash3d will read from either a single 1-D wind sounding, or gridded, time-                            '
       write(outlog(io),1)'# dependent 3-D wind data, depending on the value of the parameter iwind.                              '
@@ -5824,7 +5823,6 @@
       write(outlog(io),1)'# iwind=5 and one of the NWP products is used that require a special file structure,                   '
       write(outlog(io),1)'# then nWindFiles should be set to 1 and only the root folder of the windfiles listed.                 '
         case(4) ! BLOCK 4: OUTPUT OPTIONS
-      write(outlog(io),1)'*******************************************************************************                        '
       write(outlog(io),1)'# OUTPUT OPTIONS:                                                                                      '
       write(outlog(io),1)'# The list below allows users to specify the output options                                            '
       write(outlog(io),1)'# All but the final deposit file can be written out at specified                                       '
@@ -5840,7 +5838,6 @@
       write(outlog(io),1)'#                 Times (hours since start of first eruption) for each output                          '
       write(outlog(io),1)'#                (if nWriteTimes >1)                                                                   '
         case(5) ! BLOCK 5: INPUT WIND FILES
-      write(outlog(io),1)'*******************************************************************************                        '
       write(outlog(io),1)'# WIND INPUT FILES                                                                                     '
       write(outlog(io),1)'# The following block of data contains names of wind files. There should be one line for               '
       write(outlog(io),1)'# each of nWindFiles (from Block 3 Line 5) windfiles. Files should be given in                         '
@@ -5863,7 +5860,6 @@
       write(outlog(io),1)'# For a network of radiosonde data, please see the MetReader documentation for                         '
       write(outlog(io),1)'# the input specification https://code.usgs.gov/vsc/ash3d/volcano-ash3d-metreader.                     '
         case(6) ! BLOCK 6: AIRPORT FILE
-      write(outlog(io),1)'*******************************************************************************                        '
       write(outlog(io),1)'# AIRPORT LOCATION FILE                                                                                '
       write(outlog(io),1)'# The following lines allow the user to specify whether times of ash arrival                           '
       write(outlog(io),1)'# at airports and other locations will be written out, and which file                                  '
@@ -5875,7 +5871,6 @@
       write(outlog(io),1)'#               Alternatively, coordinates can be projected via libprojection                          '
       write(outlog(io),1)'#               by typing "yes" to the last parameter                                                  '
         case(7) ! BLOCK 7: GRAIN-SIZE BINS, SETTLING VELOCITY
-      write(outlog(io),1)'*******************************************************************************                        '
       write(outlog(io),1)'# GRAIN SIZE GROUPS                                                                                    '
       write(outlog(io),1)'# The first line must contain the number of settling velocity groups, but                              '
       write(outlog(io),1)'# can optionally also include a flag for the fall velocity model to be used.                           '
@@ -5905,14 +5900,12 @@
       write(outlog(io),1)'# The last bin would be interpreted as:                                                                '
       write(outlog(io),1)'# diam (neg value) , phi_mean, phi_stddev                                                              '
         case(8) ! BLOCK 8: VERTICAL PROFILES
-      write(outlog(io),1)'*******************************************************************************                        '
       write(outlog(io),1)'# Options for writing vertical profiles                                                                '
       write(outlog(io),1)'# The first line below gives the number of locations (nlocs) where vertical                            '
       write(outlog(io),1)'# profiles are to be written.  That is followed by nlocs lines, each of which                          '
       write(outlog(io),1)'# contain the location, in the same coordinates as the computational grid.                             '
       write(outlog(io),1)'# Optionally, a site name can be provided in after the location.                                       '
         case(9) ! BLOCK 9: (Optional): NETCDF ANNOTATIONS
-      write(outlog(io),1)'*******************************************************************************                        '
       write(outlog(io),1)'# netCDF output options                                                                                '
       write(outlog(io),1)'# This last block is optional.                                                                         '
       write(outlog(io),1)'# The output file name can be give, but will default to 3d_tephra_fall.nc if absent                    '
@@ -5920,7 +5913,6 @@
       write(outlog(io),1)'# output file.                                                                                         '
         case(10) ! BLOCK 10 (OPTMOD): Optional module blocks
                  !   First RESETPARAMS
-      write(outlog(io),1)'*******************************************************************************                        '
       write(outlog(io),1)'# Optional Modules are identified by the text string at the top of the block                           '
       write(outlog(io),1)'# OPTMOD=[module name]                                                                                 '
       write(outlog(io),1)'# There will need to be a custom block reader in the module to read this section                       '
@@ -5929,7 +5921,6 @@
       write(outlog(io),1)'# options are listed below.                                                                            '
         case(11) ! BLOCK 10+1 (OPTMOD):
                  !   TOPO
-      write(outlog(io),1)'*******************************************************************************                        '
       write(outlog(io),1)'# Topography                                                                                           '
       write(outlog(io),1)'# Line 1 indicates whether or not to use topography followed by the integer flag                       '
       write(outlog(io),1)'#        describing how topography will modify the vertical grid.                                      '
@@ -5947,7 +5938,6 @@
       write(outlog(io),1)'#                                                                                                      '
         case(12) ! BLOCK 10+2 (OPTMOD):
                  !   VARDIFF
-      write(outlog(io),1)'*******************************************************************************                        '
       write(outlog(io),1)'# Variable Diffusivity                                                                                 '
       write(outlog(io),1)'#   Line 1 indicates whether or not to use horizontal diffusivity followed by the                      '
       write(outlog(io),1)'#          type ID and value with                                                                      '
@@ -6152,18 +6142,18 @@
       endif
 
  1    format(a80)
- 2    format(a30          ,' # Volcano name (character*30)')
- 3    format(a30          ,' # Proj flags and params; first term (LLflag) is 1, so all else ignored')
- 4    format(2f15.5       ,' # x, y of LL corner of grid (km, or deg. if latlongflag=1)')
- 5    format(2f15.5       ,' # grid width and height (km, or deg. if latlonflag=1)')
- 6    format(3f15.5       ,' # vent location         (km, or deg. if latlonflag=1)')
- 7    format(2f15.5       ,' # DX, DY of grid cells  (km, or deg. if latlonflag=1)')
- 8    format(1f15.5,15x   ,' # DZ of grid cells      (always km)')
- 9    format(a7           ,' # DZ of grid cells      (always km)')
+ 2    format(a30   ,10x,' # Volcano name (character*30)')
+ 3    format(a40       ,' # Proj flags and params; first term (LLflag) is 1, so all else ignored')
+ 4    format(2f13.3,14x,' # x, y of LL corner of grid (km, or deg. if latlongflag=1)')
+ 5    format(2f13.3,14x,' # grid width and height (km, or deg. if latlonflag=1)')
+ 6    format(3f13.3, 1x,' # vent location         (km, or deg. if latlonflag=1)')
+ 7    format(2f13.3,14x,' # DX, DY of grid cells  (km, or deg. if latlonflag=1)')
+ 8    format(1f13.3,27x,' # DZ of grid cells      (always km)')
+ 9    format(a7    ,33x,' # DZ of grid cells      (always km)')
  10   format(a80)
- 11   format(2f15.5       ,' # diffusion coefficient (m2/s), Suzuki constant')
- 12   format(1f15.5,5x,a12,' # diffusion coefficient (m2/s), Suzuki constant')
- 13   format(i5,25x       ,' # neruptions, number of eruptions or pulses')
+ 11   format(2f13.3,14x,' # diffusion coefficient (m2/s), Suzuki constant')
+ 12   format(1f13.3,5x,a12,' # diffusion coefficient (m2/s), Suzuki constant')
+ 13   format(i5    ,35x,' # neruptions, number of eruptions or pulses')
 
       end subroutine SetWrite_input_block_01
 
@@ -6269,8 +6259,8 @@
       endif
 
  1    format(a80)
- 2    format(3i5,1x,1f8.3,3f15.5)
- 3    format(3i5,1x,1f8.3,3f15.5,1f8.2,i5)
+ 2    format(3i5,1x,1f8.3,2f15.5,g15.5)
+ 3    format(3i5,1x,1f8.3,2f15.5,g15.5,1f8.2,i5)
  4    format(*(f7.4))
 
       end subroutine SetWrite_input_block_02
@@ -6282,6 +6272,14 @@
 !  Called from: help_inputfile  
 !  Arguments:
 !    WriteBlock = logical: indicates that write to stdout as well as set vars
+!    iw         = iwind        (windfile class)
+!    iwf        = iwindformat  (windfile product)
+!    igrid      = NCEP grid ID
+!    idf        = data format
+!    iHH        = iHeightHandler
+!    sim_time   = Simulation time
+!    comp_stop  = y/n on whether to stop the simulation early
+!    nwindfiles = number of windfiles
 !
 !  This subroutine writes the content of block 3 (Wind Parameters) of the Ash3d
 !  control file.
@@ -6331,7 +6329,7 @@
  2    format(2i5,20x,'# iwind, iwindformat, [igrid, idata]')
  3    format(4i5,10x,'# iwind, iwindformat, [igrid, idata]')
  4    format(1i5,25x,'# iHeightHandler')
- 5    format(f15.3,15x,'# Simulation time in hours')
+ 5    format(f13.2,17x,'# Simulation time in hours')
  6    format('yes                           # stop computation when 99% of erupted mass has deposited?')
  7    format('no                            # stop computation when 99% of erupted mass has deposited?')
  8    format(1i5,25x,'# nWindFiles, number of gridded wind files (used if iwind>1)')
@@ -6409,30 +6407,70 @@
 
       if(WriteBlock)then
         write(output_unit,1)&
-         '******************* BLOCK 3 ****************************************************'
+         '******************* BLOCK 4 ****************************************************'
+        if(WriteDepositFinal_ASCII_c      .eq.'n')write(output_unit,11)'no '
+        if(WriteDepositFinal_ASCII_c      .eq.'y')write(output_unit,11)'yes'
+        if(WriteDepositFinal_KML_c        .eq.'n')write(output_unit,21)'no '
+        if(WriteDepositFinal_KML_c        .eq.'y')write(output_unit,21)'yes'
+        if(WriteDepositTS_ASCII_c         .eq.'n')write(output_unit,31)'no '
+        if(WriteDepositTS_ASCII_c         .eq.'y')write(output_unit,31)'yes'
+        if(WriteDepositTS_KML_c           .eq.'n')write(output_unit,41)'no '
+        if(WriteDepositTS_KML_c           .eq.'y')write(output_unit,41)'eys'
+        if(WriteCloudConcentration_ASCII_c.eq.'n')write(output_unit,51)'no '
+        if(WriteCloudConcentration_ASCII_c.eq.'y')write(output_unit,51)'yes'
+        if(WriteCloudConcentration_KML_c  .eq.'n')write(output_unit,61)'no '
+        if(WriteCloudConcentration_KML_c  .eq.'y')write(output_unit,61)'yes'
+        if(WriteCloudHeight_ASCII_c       .eq.'n')write(output_unit,71)'no '
+        if(WriteCloudHeight_ASCII_c       .eq.'y')write(output_unit,71)'yes'
+        if(WriteCloudHeight_KML_c         .eq.'n')write(output_unit,81)'no '
+        if(WriteCloudHeight_KML_c         .eq.'y')write(output_unit,81)'yes'
+        if(WriteCloudLoad_ASCII_c         .eq.'n')write(output_unit,91)'no '
+        if(WriteCloudLoad_ASCII_c         .eq.'y')write(output_unit,91)'yes'
+        if(WriteCloudLoad_KML_c           .eq.'n')write(output_unit,101)'no '
+        if(WriteCloudLoad_KML_c           .eq.'y')write(output_unit,101)'yes'
+        if(WriteDepositTime_ASCII_c       .eq.'n')write(output_unit,111)'no '
+        if(WriteDepositTime_ASCII_c       .eq.'y')write(output_unit,111)'yes'
+        if(WriteDepositTime_KML_c         .eq.'n')write(output_unit,121)'no '
+        if(WriteDepositTime_KML_c         .eq.'y')write(output_unit,121)'yes'
+        if(WriteCloudTime_ASCII_c         .eq.'n')write(output_unit,131)'no '
+        if(WriteCloudTime_ASCII_c         .eq.'y')write(output_unit,131)'yes'
+        if(WriteCloudTime_KML_c           .eq.'n')write(output_unit,141)'no '
+        if(WriteCloudTime_KML_c           .eq.'y')write(output_unit,141)'yes'
+        if(Write3dFiles_c                 .eq.'n')write(output_unit,151)'no ',ifm
+        if(Write3dFiles_c                 .eq.'y')write(output_unit,151)'yes',ifm
+        if(ofm.eq.1)then
+          write(output_unit,161)'ascii '
+        elseif(ofm.eq.2)then
+          write(output_unit,161)'binary'
+        elseif(ofm.eq.3)then
+          write(output_unit,161)'netcdf'
+        endif
+        write(output_unit,171)nwt
+        write(output_unit,181)wts(1:nwt)
         write(output_unit,1)&
          '********************************************************************************'
       endif
 
 
-!no      # Write out ESRI ASCII file of final deposit thickness?                                        
-!no      # Write out        KML file of final deposit thickness?                                        
-!no      # Write out ESRI ASCII deposit files at specified times?                                       
-!no      # Write out        KML deposit files at specified times?                                       
-!no      # Write out ESRI ASCII files of ash-cloud concentration?                                       
-!no      # Write out        KML files of ash-cloud concentration?                                       
-!no      # Write out ESRI ASCII files of ash-cloud height?                                              
-!no      # Write out        KML files of ash-cloud height?                                              
-!no      # Write out ESRI ASCII files of ash-cloud load (T/km2) at specified times?                     
-!no      # Write out        KML files of ash-cloud load (T/km2) at specified times?                     
-!no      # Write out ESRI ASCII file of deposit arrival times?                                          
-!no      # Write out        KML file of deposit arrival times?                                          
-!no      # write out ESRI ASCII file of cloud arrival times?                                            
-!no      # Write out        KML file of cloud arrival times?                                            
-!yes 2   # Write out 3-D ash concentration at specified times? / [output code: 1=2d+concen,2=2d only]   
-!netcdf  # format of ash concentration files     (ascii, binary, or netcdf)                             
-!8       # nWriteTimes
-
+ 1    format(a80)
+ 11   format(a3,'     # Write out ESRI ASCII file of final deposit thickness?')
+ 21   format(a3,'     # Write out        KML file of final deposit thickness?')
+ 31   format(a3,'     # Write out ESRI ASCII deposit files at specified times?')
+ 41   format(a3,'     # Write out        KML deposit files at specified times?')
+ 51   format(a3,'     # Write out ESRI ASCII files of ash-cloud concentration?')
+ 61   format(a3,'     # Write out        KML files of ash-cloud concentration?')
+ 71   format(a3,'     # Write out ESRI ASCII files of ash-cloud height?')
+ 81   format(a3,'     # Write out        KML files of ash-cloud height?')
+ 91   format(a3,'     # Write out ESRI ASCII files of ash-cloud load (T/km2) at specified times?')
+ 101  format(a3,'     # Write out        KML files of ash-cloud load (T/km2) at specified times?')
+ 111  format(a3,'     # Write out ESRI ASCII file of deposit arrival times?')
+ 121  format(a3,'     # Write out        KML file of deposit arrival times?')
+ 131  format(a3,'     # Write out ESRI ASCII file of cloud arrival times?')
+ 141  format(a3,'     # Write out        KML file of cloud arrival times?')
+ 151  format(a3,2x,i1,'  # Write out 3-D ash concentration at specified times?')
+ 161  format(a6,3x,'# format of ash concentration files     (ascii, binary, or netcdf)')
+ 171  format(i3,6x,'# nWriteTimes')
+ 181  format(*(f7.2))
 
       end subroutine SetWrite_input_block_04
 
@@ -6443,13 +6481,17 @@
 !  Called from: help_inputfile  
 !  Arguments:
 !    WriteBlock = logical: indicates that write to stdout as well as set vars
-!    
+!    nwindfiles = number of windfiles
+!    windfiles  = names of windfiles
+!
 !  This subroutine writes the content of block 5 (Wind file list) of the Ash3d
 !  control file.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine SetWrite_input_block_05(WriteBlock)
+      subroutine SetWrite_input_block_05(WriteBlock,                                                    &
+                                         nwindfiles,                                                    &
+                                         windfiles)
 
       ! This module requires Fortran 2003 or later
       use iso_fortran_env, only : &
@@ -6458,6 +6500,24 @@
       use io_units
 
       logical           ,intent(in) :: WriteBlock
+      integer           ,intent(in) :: nwindfiles
+      character(len=130),dimension(nwindfiles),intent(in) :: windfiles
+
+      integer :: i
+
+      if(WriteBlock)then
+        write(output_unit,1)&
+         '******************* BLOCK 4 ****************************************************'
+        do i=1,nwindfiles
+          write(output_unit,2)windfiles(i)
+        enddo
+        write(output_unit,1)&
+         '********************************************************************************'
+      endif
+
+ 1    format(a80)
+ 2    format(a130)
+
 
       end subroutine SetWrite_input_block_05
 
@@ -6468,13 +6528,21 @@
 !  Called from: help_inputfile  
 !  Arguments:
 !    WriteBlock = logical: indicates that write to stdout as well as set vars
+!    WriteAirportFile_ASCII_c  = Write out ash arrival times at airports to ASCII FILE?
+!    WriteGSD_c                = Write out grain-size distribution to ASCII airport file?
+!    WriteAirportFile_KML_c    = Write out ash arrival times to kml file?
+!    b6l4                      = Name of file containing airport locations
+!    ProjectAirportLocations_c = Defer to Lon/Lat coordinates? ("no" defers to projected)
 !    
 !  This subroutine writes the content of block 6 (Airport/POI info.) of the
 !  Ash3d control file.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine SetWrite_input_block_06(WriteBlock)
+      subroutine SetWrite_input_block_06(WriteBlock,  &
+                                         WriteAirportFile_ASCII_c,WriteGSD_c, &
+                                         WriteAirportFile_KML_c,b6l4, &
+                                         ProjectAirportLocations_c)
 
       ! This module requires Fortran 2003 or later
       use iso_fortran_env, only : &
@@ -6483,6 +6551,40 @@
       use io_units
 
       logical           ,intent(in) :: WriteBlock
+      character(len=1)  ,intent(in) :: WriteAirportFile_ASCII_c
+      character(len=1)  ,intent(in) :: WriteGSD_c
+      character(len=1)  ,intent(in) :: WriteAirportFile_KML_c
+      character(len=80) ,intent(in) :: b6l4
+      character(len=1)  ,intent(in) :: ProjectAirportLocations_c
+
+
+      if(WriteBlock)then
+        write(output_unit,1)&
+         '******************* BLOCK 6 ****************************************************'
+        if(WriteAirportFile_ASCII_c.eq.'n')write(output_unit,11)'no '
+        if(WriteAirportFile_ASCII_c.eq.'y')write(output_unit,11)'yes'
+
+        if(WriteGSD_c.eq.'n')write(output_unit,21)'no '
+        if(WriteGSD_c.eq.'y')write(output_unit,21)'yes'
+
+        if(WriteAirportFile_KML_c.eq.'n')write(output_unit,31)'no '
+        if(WriteAirportFile_KML_c.eq.'y')write(output_unit,31)'yes'
+
+        write(output_unit,41)b6l4(1:30)
+
+        if(ProjectAirportLocations_c.eq.'n')write(output_unit,51)'no '
+        if(ProjectAirportLocations_c.eq.'y')write(output_unit,51)'yes'
+
+        write(output_unit,1)&
+         '********************************************************************************'
+      endif
+
+ 1    format(a80)
+ 11   format(a3,'     # Write out ash arrival times at airports to ASCII FILE?')
+ 21   format(a3,'     # Write out grain-size distribution to ASCII airport file?')
+ 31   format(a3,'     # Write out ash arrival times to kml file?')
+ 41   format(a3,'     # Name of file containing airport locations')
+ 51   format(a3,'     # Defer to Lon/Lat coordinates? ("no" defers to projected)')
 
       end subroutine SetWrite_input_block_06
 

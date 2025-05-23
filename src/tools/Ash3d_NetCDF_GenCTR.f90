@@ -8,10 +8,10 @@
 
       use io_data,       only : &
          infile,concenfile,VolcanoName, &
-         nWriteTimes,WriteTimes,cdf_b1l2,cdf_vardz, &
+         nWriteTimes,WriteTimes,cdf_b1l2,cdf_vardz,cdf_b3l5, &
          cdf_b4l1,cdf_b4l2,cdf_b4l3,cdf_b4l4,cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,&
-         cdf_b4l11,cdf_b4l12,cdf_b4l13,cdf_b4l14,cdf_b4l15,cdf_b4l16,cdf_b4l17,cdf_b4l18
-
+         cdf_b4l11,cdf_b4l12,cdf_b4l13,cdf_b4l14,cdf_b4l15,cdf_b4l16,cdf_b4l17,cdf_b4l18,cdf_b5l1,  &
+         cdf_b6l1,cdf_b6l2,cdf_b6l3,cdf_b6l4,cdf_b6l5
 
       use mesh,          only : &
          lonLL,latLL,gridwidth_e,gridwidth_n,xLL,yLL,gridwidth_x,gridwidth_y, &
@@ -21,7 +21,7 @@
          StopWhenDeposited
 
       use time_data,     only : &
-         Simtime_in_hours
+         SimStartHour,Simtime_in_hours
 
       use Source,        only : &
          lon_volcano,lat_volcano,x_volcano,y_volcano,z_volcano,Suzuki_A,      &
@@ -52,7 +52,8 @@
          SetWrite_input_block_VarDiff
 
       use MetReader,     only : &
-         MR_iWind,MR_iWindFormat,MR_iGridCode,MR_iDataFormat,MR_iHeightHandler,MR_iWindFiles
+         MR_iWind,MR_iWindFormat,MR_iGridCode,MR_iDataFormat,MR_iHeightHandler,MR_iWindFiles,&
+         MR_WindFiles
 
       implicit none
 
@@ -73,9 +74,12 @@
       real(kind=ip) :: dy_in
       integer       :: dz_type
 
+      ! Block 3 variabls
+      integer          :: nwindfiles
+
       ! Block 4 variables
-      integer           :: iostatus
-      character(len=50) :: iomessage
+      integer          :: iostatus
+      character(len=50):: iomessage
       character(len=3) :: answer
       character(len=1) :: WriteDepositFinal_ASCII_c        ! n/y Write out ESRI ASCII file of final deposit thickness?
       character(len=1) :: WriteDepositFinal_KML_c          ! n/y Write out        KML file of final deposit thickness?
@@ -97,6 +101,11 @@
       integer          :: nwt                              ! nWriteTimes
       real(kind=dp),dimension(:),allocatable :: wts        ! WriteTimes(1:nWriteTimes)
 
+      ! Block 6 variables
+      character(len=1) :: WriteAirportFile_ASCII_c
+      character(len=1) :: WriteGSD_c
+      character(len=1) :: WriteAirportFile_KML_c
+      character(len=1) :: ProjectAirportLocations_c
 
       write(*,*)"In Ash3d_NetCDF_GenCTR"
 
@@ -193,6 +202,7 @@
         dz_type = 1
       endif
 
+      call Write_input_block_header(1)
       call SetWrite_input_block_01(WriteBlock                      ,&  ! indicates that write to stdout as well as set vars
                                    VolcanoName                     ,&  ! volcano name
                                    cdf_b1l2                        ,&  ! projection line
@@ -206,10 +216,11 @@
                                    dz_type,cdf_vardz               ,&  ! dz_type + bonus line
                                    SourceType_idx)                     ! source_type 1=Suz,2=point,3=line,4=profile,5=umb,6=umb_air
 
+      call Write_input_block_header(2)
       call SetWrite_input_block_02(WriteBlock                      ,&  ! indicates that write to stdout as well as set vars
                                    neruptions                      ,&  ! # of eruptions
                                    SourceType_idx                  ,&  ! source_type 1=Suz,2=point,3=line,4=profile,5=umb,6=umb_air
-                                   e_StartTime                     ,&
+                                   e_StartTime+SimStartHour        ,&
                                    e_Duration                      ,&
                                    e_PlumeHeight                   ,&
                                    e_Volume                        ,&
@@ -217,6 +228,10 @@
                                    e_prof_nzpoints                 ,&
                                    e_prof_Volume)
 
+      call Write_input_block_header(3)
+
+      ! for iwind=5 cases, the number is windfiles is modifies, so read from cdf_b3l5
+      read(cdf_b3l5,'(i2)',iostat=iostatus,iomsg=iomessage) nwindfiles
       call SetWrite_input_block_03(WriteBlock                      ,&  ! indicates that write to stdout as well as set vars
                                    MR_iWind                        ,&
                                    MR_iWindFormat                  ,&
@@ -225,7 +240,7 @@
                                    MR_iHeightHandler               ,&
                                    Simtime_in_hours                ,&
                                    StopWhenDeposited               ,&
-                                   MR_iWindFiles)
+                                   nwindfiles)
 
       WriteDepositFinal_ASCII_c = 'n'
       read(cdf_b4l1,'(a3)',iostat=iostatus,iomsg=iomessage) answer
@@ -280,7 +295,8 @@
       nwt = nWriteTimes
       allocate(wts(nwt))
       wts = WriteTimes
-
+ 
+      call Write_input_block_header(4)
       call SetWrite_input_block_04(WriteBlock                      ,&  ! indicates that write to stdout as well as set vars
                                    WriteDepositFinal_ASCII_c       ,&  ! B4L1 n/y Write out ESRI ASCII file of final deposit thickness?
                                    WriteDepositFinal_KML_c         ,&  ! B4L2 n/y Write out        KML file of final deposit thickness?
@@ -294,7 +310,7 @@
                                    WriteCloudLoad_KML_c            ,&  ! B4L10 Write out        KML files of ash-cloud load (T/km2) at specified times?
                                    WriteDepositTime_ASCII_c        ,&  ! B4L11 Write out ESRI ASCII file of deposit arrival times?
                                    WriteDepositTime_KML_c          ,&  ! B4L12 Write out        KML file of deposit arrival times?
-                                   WriteCloudTime_ASCII_c          ,&  ! B4L13 Write out ESRI ASCII file of cloud arrival times
+                                   WriteCloudTime_ASCII_c          ,&  ! B4L13 Write out ESRI ASCII file of cloud arrival times?
                                    WriteCloudTime_KML_c            ,&  ! B4L14 Write out        KML file of cloud arrival times?
                                    Write3dFiles_c                  ,&  ! B4L15 Write out 3-D ash concentration at specified times?
                                    ifm                             ,&  ! B4L15+ output code: 1=2d+concen,2=2d only]
@@ -302,16 +318,54 @@
                                    nwt                             ,&  ! B4L17 nWriteTimes
                                    wts)                                ! B4L18 WriteTimes(1:nWriteTimes)
 
-!      call SetWrite_input_block_05(WriteBlock                      ,&  ! indicates that write to stdout as well as set vars
-!                                   MR_iWindFiles                   ,&
+      if(MR_iWind.eq.5)then
+        read(cdf_b5l1,*)MR_WindFiles(1)
+      endif
 
-      call SetWrite_input_block_06(WriteBlock           ) !           ,&  ! indicates that write to stdout as well as set vars
-      call SetWrite_input_block_07(WriteBlock           ) !           ,&  ! indicates that write to stdout as well as set vars
-      call SetWrite_input_block_08(WriteBlock           ) !           ,&  ! indicates that write to stdout as well as set vars
-      call SetWrite_input_block_09(WriteBlock           ) !           ,&  ! indicates that write to stdout as well as set vars
-      call SetWrite_input_block_ResetParam(WriteBlock   ) !           ,&  ! indicates that write to stdout as well as set vars
-      call SetWrite_input_block_Topo(WriteBlock         ) !           ,&  ! indicates that write to stdout as well as set vars
-      call SetWrite_input_block_VarDiff(WriteBlock      ) !           ,&  ! indicates that write to stdout as well as set vars
+      call Write_input_block_header(5)
+      call SetWrite_input_block_05(WriteBlock                      ,&  ! indicates that write to stdout as well as set vars
+                                   nwindfiles                      ,&
+                                   MR_WindFiles(1:nwindfiles))
+
+      WriteAirportFile_ASCII_c = 'n'
+      read(cdf_b6l1,'(a3)',iostat=iostatus,iomsg=iomessage) answer
+      if(adjustl(trim(answer)).eq.'yes') WriteAirportFile_ASCII_c = 'y'
+      WriteGSD_c = 'n'
+      read(cdf_b6l2,'(a3)',iostat=iostatus,iomsg=iomessage) answer
+      if(adjustl(trim(answer)).eq.'yes') WriteGSD_c = 'y'
+      WriteAirportFile_KML_c = 'n'
+      read(cdf_b6l3,'(a3)',iostat=iostatus,iomsg=iomessage) answer
+      if(adjustl(trim(answer)).eq.'yes') WriteAirportFile_KML_c = 'y'
+      !cdf_b6l4
+      ProjectAirportLocations_c = 'n'
+      read(cdf_b6l5,'(a3)',iostat=iostatus,iomsg=iomessage) answer
+      if(adjustl(trim(answer)).eq.'yes') ProjectAirportLocations_c = 'y'
+
+      call Write_input_block_header(6)
+      call SetWrite_input_block_06(WriteBlock                      ,&  ! indicates that write to stdout as well as set vars
+                                   WriteAirportFile_ASCII_c        ,&  ! Write out ash arrival times at airports to ASCII FILE?
+                                   WriteGSD_c                      ,&  ! Write out grain-size distribution to ASCII airport file?
+                                   WriteAirportFile_KML_c          ,&  ! Write out ash arrival times to kml file?
+                                   cdf_b6l4(1:80)                  ,&  ! Name of file containing airport locations
+                                   ProjectAirportLocations_c)          ! Defer to Lon/Lat coordinates? ("no" defers to projected)
+
+!      call Write_input_block_header(7)
+!      call SetWrite_input_block_07(WriteBlock           ) !           ,&  ! indicates that write to stdout as well as set vars
+!
+!      call Write_input_block_header(8)
+!      call SetWrite_input_block_08(WriteBlock           ) !           ,&  ! indicates that write to stdout as well as set vars
+!
+!      call Write_input_block_header(9)
+!      call SetWrite_input_block_09(WriteBlock           ) !           ,&  ! indicates that write to stdout as well as set vars
+!
+!      call Write_input_block_header(10)
+!      call SetWrite_input_block_ResetParam(WriteBlock   ) !           ,&  ! indicates that write to stdout as well as set vars
+!
+!      call Write_input_block_header(11)
+!      call SetWrite_input_block_Topo(WriteBlock         ) !           ,&  ! indicates that write to stdout as well as set vars
+!
+!      call Write_input_block_header(12)
+!      call SetWrite_input_block_VarDiff(WriteBlock      ) !           ,&  ! indicates that write to stdout as well as set vars
 
 
       close(fid_ctrlfile)

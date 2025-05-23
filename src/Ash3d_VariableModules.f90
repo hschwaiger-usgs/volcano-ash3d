@@ -491,6 +491,7 @@
       character (len=80) :: cdf_b4l16
       character (len=80) :: cdf_b4l17
       character (len=80) :: cdf_b4l18
+      character (len=80) :: cdf_b5l1   ! Store at least the first line of the windfile list
       character (len=80) :: cdf_b6l1
       character (len=80) :: cdf_b6l2
       character (len=80) :: cdf_b6l3
