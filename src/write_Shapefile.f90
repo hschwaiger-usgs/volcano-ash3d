@@ -280,7 +280,7 @@
         endif
       enddo
 
-      ! We allocate variables here to hold the contour data mainly so ensure that
+      ! We allocate variables here to hold the contour data mainly to ensure that
       ! the variables we write to the shapefile have exactly the kind values expected.
       allocate(NumParts(nrec))
       allocate(NumPoints(nrec))
@@ -323,7 +323,7 @@
                        4*8 + & ! Box        : 4-Double  : Little
                        1*4 + & ! NumParts   : 1-Integer : Little
                        1*4 + & ! NumPoints  : 1-Integer : Little
-                       NumParts(irec)*4 + &  ! Parts      : NumParts-Integers : Little
+                       NumParts(irec)*4 + & ! Parts      : NumParts-Integers : Little
                        NumPoints(irec)*2*8  ! Points     : 2-Double          : Little
         reclen(irec) = reclen(irec) / 2     ! total record length in 16-bit words
       enddo
@@ -348,7 +348,7 @@
       ! First, writing the main .shp file which contains the contour (polyline) data.
       ! The specification has a mess of little-endian and big-endian writes with non-integer
       ! record offsets (e.g. 8-byte reals written to addres byte-36), so we open the file with
-      ! access='stream' and use the functions [Lit,Big}End_[4int,8real] to write the correct
+      ! access='stream' and use the functions [Lit,Big]End_[4int,8real] to write the correct
       ! bits.  For all the details, see
       ! https://www.esri.com/content/dam/esrisites/sitecore-archive/Files/Pdfs/library/whitepapers/pdfs/shapefile.pdf
       !  All writes of real*8 will use transfer() to write the correct bits in 4-byte packets

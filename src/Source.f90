@@ -321,8 +321,8 @@
       real(kind=ip) :: sclfac1,sclfac2,cmpsclfac1,cmpsclfac2
       real(kind=ip),dimension(:),allocatable :: s_PlumeHeight
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
-        write(outlog(io),*)"     Entered Subroutine Calc_Normalized_SourceCol"
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"     Now building normalized source columns above vent."
       endif;enddo
 
       NormSourceColumn     = 0.0_ip
@@ -344,6 +344,25 @@
         s_volcano = Ztop*(z_volcano-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
         s_PlumeHeight(:) = Ztop*(e_PlumeHeight(:)-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
       endif
+      
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*) "  As a guide on erupted volumes, below are the entered values along"
+        write(outlog(io),*) "  with that predicted by the Mastin relation. Note, it can only be"
+        write(outlog(io),*) "  a meaningful comparison if the entered values correspond to the full"
+        write(outlog(io),*) "  erupted grain-size distribution for full plume sources (i.e. point"
+        write(outlog(io),*) "  sources or fine-fraction only will not be a valid comparison)."
+        write(outlog(io),*) "  If topography is activated, efective plume height above topography"
+        write(outlog(io),*) "  will also be given."
+        write(outlog(io),*)"Using a vent height (in km) of: ",z_volcano
+        write(outlog(io),87)
+      endif;enddo
+      do i=1,neruptions
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),88)i,e_Volume(i),HandDUR_2_EVol(e_PlumeHeight(i)-z_volcano,e_Duration(i))
+        endif;enddo
+      enddo
+87    format('    number     EVol (given)     EVol (Mastin)')
+88    format(4x,i6,6x,g12.5,6x,g12.5)
 
       do i=1,neruptions
         ! Get the cell containing the bottom of the source

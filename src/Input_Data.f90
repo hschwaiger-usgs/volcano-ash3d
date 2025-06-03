@@ -1098,8 +1098,7 @@
          ESP_duration,ESP_height,ESP_Vol,&
          lat_volcano,lon_volcano,x_volcano,y_volcano,z_volcano,Suzuki_A,&
          IsCustom_SourceType,SourceType,SourceType_idx,&
-           Allocate_Source_eruption, &
-           HandDUR_2_EVol
+           Allocate_Source_eruption
 
       use Source_Umbrella, only : &
          SuzK_umb
@@ -2368,22 +2367,6 @@
         write(outlog(io),'(a32,g12.5,a8)')"Total volume of all eruptions = ",&
                             sum(e_volume)," km3 DRE"
       endif;enddo
-
-      do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),*) "As a guide on erupted volumes, below are the entered values along"
-        write(outlog(io),*) "with that predicted by the Mastin relation. Note, it can only be"
-        write(outlog(io),*) "a meaningful comparison if the entered values correspond to the full"
-        write(outlog(io),*) "erupted grain-size distribution for full plume sources (i.e. point"
-        write(outlog(io),*) "sources or fine-fraction only will not be a valid comparison)."
-        write(outlog(io),87)
-      endif;enddo
-      do i=1,neruptions
-        do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),88)i,e_Volume(i),HandDUR_2_EVol(e_PlumeHeight(i),e_Duration(i))
-        endif;enddo
-      enddo
-87    format('    number     EVol (given)     EVol (Mastin)')
-88    format(4x,i6,6x,g12.5,6x,g12.5)
 
       ! Now that we know the requested dz profile and the plume heights, we can
       ! set up the z-grid for computation

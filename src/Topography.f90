@@ -497,14 +497,14 @@
 
       subroutine Deallocate_Topo
 
-      deallocate(topo_comp)
-      deallocate(dhdx_comp)
-      deallocate(dhdy_comp)
-      deallocate(DelDxonD_cc)
-      deallocate(DelDyonD_cc)
-      deallocate(IsWater_subgrid)
-      deallocate(lon_topo_fullgrid)
-      deallocate(lat_topo_fullgrid)
+      if(allocated(topo_comp))        deallocate(topo_comp)
+      if(allocated(dhdx_comp))        deallocate(dhdx_comp)
+      if(allocated(dhdy_comp))        deallocate(dhdy_comp)
+      if(allocated(DelDxonD_cc))      deallocate(DelDxonD_cc)
+      if(allocated(DelDyonD_cc))      deallocate(DelDyonD_cc)
+      if(allocated(IsWater_subgrid))  deallocate(IsWater_subgrid)
+      if(allocated(lon_topo_fullgrid))deallocate(lon_topo_fullgrid)
+      if(allocated(lat_topo_fullgrid))deallocate(lat_topo_fullgrid)
 
       end subroutine Deallocate_Topo
 
