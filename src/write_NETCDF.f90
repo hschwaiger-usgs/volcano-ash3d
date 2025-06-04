@@ -100,7 +100,7 @@
       integer :: ashcloudBot_var_id    = 0 ! Height of bottom of ash cloud
 
       integer :: area_var_id           = 0 ! area of cell (km2)
-      integer :: gssd_var_id           = 0 ! Grain diameter
+      integer :: gsdm_var_id           = 0 ! Grain diameter
       integer :: gsmf_var_id           = 0 ! Grain mass fraction
       integer :: gsdens_var_id         = 0 ! Grain density
       integer :: gsF_var_id            = 0 ! Grain shape fac F
@@ -199,7 +199,8 @@
          A3d_phi2,A3d_Re,ZPADDING,ZScaling_ID,Ztop,VarDzType,dz_const
 
       use solution,      only : &
-          vx_pd,vy_pd,vz_pd,vf_pd,concen_pd,DepositGranularity,SpeciesID,SpeciesSubID
+          vx_pd,vy_pd,vz_pd,vf_pd,concen_pd,DepositGranularity,SpeciesID,SpeciesSubID,&
+          StopValue_FracAshDep
 
       use time_data,     only : &
           BaseYear,useLeap,os_time_log,time,SimStartHour,xmlSimStartTime,OutputOffset
@@ -242,6 +243,9 @@
 
       use Source_Umbrella, only : &
          VelMod_umb,k_entrainment_umb,lambda_umb,N_BV_umb,SuzK_umb
+
+      use diffusion,     only : &
+         Imp_fac,Imp_DT_fac
 
       use MetReader,     only : &
          MR_iWindFiles,MR_WindFiles,MR_GitComID,&
@@ -623,8 +627,15 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment CLOUDLOAD_THRESH:")
       nSTAT = nf90_put_att(ncid,nf90_global,"THICKNESS_THRESH",THICKNESS_THRESH)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment THICKNESS_THRESH:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"StopValue_FracAshDep",StopValue_FracAshDep)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment StopValue_FracAshDep:")
       nSTAT = nf90_put_att(ncid,nf90_global,"DBZ_THRESH",DBZ_THRESH)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment DBZ_THRESH:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"Imp_fac",Imp_fac)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment Imp_fac:")
+      nSTAT = nf90_put_att(ncid,nf90_global,"Imp_DT_fac",Imp_DT_fac)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment Imp_DT_fac:")
+
       ! Parameters for umbrella clouds
       nSTAT = nf90_put_att(ncid,nf90_global,"VelMod_umb",VelMod_umb)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Comment VelMod_umb:")
@@ -966,8 +977,8 @@
       if (Write_PT_Data)then
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"     PT: ",dim_names(10)
-       endif;enddo
-        nSTAT = nf90_def_var(ncid,dim_names(9),&
+        endif;enddo
+        nSTAT = nf90_def_var(ncid,dim_names(10),&
                              NF90_INT,&
                              (/pt_dim_id/),&
                              pt_var_id)
@@ -1279,6 +1290,7 @@
         nSTAT = nf90_put_att(ncid,FV_var_id,&
                              "doi","10.1016/0012-821X(79)90179-1")
       end select
+      nSTAT = nf90_put_att(ncid,FV_var_id,'Shape_ID',Shape_ID)
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !   Now a few other variables that are a function of BN
@@ -1323,17 +1335,17 @@
         nSTAT = nf90_def_var(ncid,"gs_diameter",&
                              NF90_DOUBLE,&
                              (/bn_dim_id/),&
-                             gssd_var_id)
+                             gsdm_var_id)
       else
         nSTAT = nf90_def_var(ncid,"gs_diameter",&
                              NF90_FLOAT,&
                              (/bn_dim_id/), &
-                             gssd_var_id)
+                             gsdm_var_id)
       endif
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var gs_diameter")
-      nSTAT = nf90_put_att(ncid,gssd_var_id,"long_name",var_lnames(13))
+      nSTAT = nf90_put_att(ncid,gsdm_var_id,"long_name",var_lnames(13))
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_diameter long_name")
-      nSTAT = nf90_put_att(ncid,gssd_var_id,"units","mm")
+      nSTAT = nf90_put_att(ncid,gsdm_var_id,"units","mm")
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_diameter units")
 
          ! gs_massfrac (Mass fraction of grain size)
@@ -2094,6 +2106,10 @@
       ! Point output (Airport/POI)
       !if (nairports.gt.0)then
       if (Write_PT_Data)then
+
+
+
+
         ! x coordinate of point
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"     pt_x: x (or lon) of Airport/POI data"
@@ -2752,7 +2768,7 @@
             dum1d_out(isize) = real(isize,kind=op)
           enddo
         endif
-        nSTAT=nf90_put_var(ncid,gssd_var_id,dum1d_out,(/1/))
+        nSTAT=nf90_put_var(ncid,gsdm_var_id,dum1d_out,(/1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_diameter")
            ! gs_massfrac (Mass fraction of grain size)
         do io=1,2;if(VB(io).le.verbosity_debug1)then
@@ -4155,7 +4171,9 @@
            Allocate_Airports
 
       use Tephra,        only : &
-         n_gs_max,MagmaDensity,DepositDensity,LAM_GS_THRESH,AIRBORNE_THRESH
+         n_gs_max,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,FV_ID,&
+         Tephra_gsF,Tephra_gsG,Tephra_gsPhi,Shape_ID,&
+         MagmaDensity,DepositDensity,LAM_GS_THRESH,AIRBORNE_THRESH
 
       use projection,    only : &
          PJ_iprojflag,PJ_k0,PJ_lam0,PJ_lam1,PJ_lam2,PJ_phi0,PJ_phi1,PJ_phi2,PJ_Re,&
@@ -4171,7 +4189,7 @@
       integer, intent(in), optional :: timestep
 
       logical,save :: first_time = .true.
-      integer :: nSTAT
+      integer :: nSTAT,nSTAT2
       integer :: it,i,j,isize
       integer :: var_xtype
       integer :: fop  ! output precision used for Ash3d output file being read in (4 or 8)
@@ -5772,7 +5790,7 @@
         e_Volume = real(dum1d_out,kind=ip)
         deallocate(dum1d_out)
 
-        if(e_prof_maxpoints.gt.0)then
+!        if(e_prof_maxpoints.gt.0)then
           ! Need to get the profile source bonus variables: nz, dz, frac
           !  e_prof_nzpoints,e_prof_dz,e_prof_Volume
 
@@ -5803,7 +5821,7 @@
 
           allocate(dum1dint_out(1:neruptions))
           nSTAT = nf90_inq_varid(ncid,"er_prof_nz",er_prof_nz_var_id)
-          if(nSTAT.ne.0)then
+          if(nSTAT.ne.0.and.e_prof_maxpoints.gt.0)then
             er_prof_dz_var_id = 0
             call NC_check_status(nSTAT,1,"inq_varid er_prof_nz")
           endif
@@ -5813,7 +5831,7 @@
 
           allocate(dum1d_out(1:neruptions))
           nSTAT = nf90_inq_varid(ncid,"er_prof_dz",er_prof_dz_var_id)
-          if(nSTAT.ne.0)then
+          if(nSTAT.ne.0.and.e_prof_maxpoints.gt.0)then
             er_prof_dz_var_id = 0
             call NC_check_status(nSTAT,1,"inq_varid er_prof_dz")
           endif
@@ -5823,7 +5841,7 @@
 
           allocate(dum1d_out(1:e_prof_maxpoints))
           nSTAT = nf90_inq_varid(ncid,"er_prof_frac",er_prof_frac_var_id)
-          if(nSTAT.ne.0)then
+          if(nSTAT.ne.0.and.e_prof_maxpoints.gt.0)then
             er_prof_frac_var_id = 0
             call NC_check_status(nSTAT,1,"inq_varid er_prof_dfrac")
           endif
@@ -5832,6 +5850,117 @@
             e_prof_Volume(i,1:e_prof_maxpoints) = real(dum1d_out,kind=ip)
           enddo
           deallocate(dum1d_out)
+!        endif
+
+          ! Now load grainsize distribution info
+          ! We already have n_gs_max
+          !  Variables to fill:
+          !    FV_ID, Shape_ID
+          !    Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,
+          !    Tephra_gsF,Tephra_gsG,Tephra_gsPhi
+
+!      integer :: gsdens_var_id         = 0 ! Grain density
+!      integer :: gsF_var_id            = 0 ! Grain shape fac F
+!      integer :: gsG_var_id            = 0 ! Grain shape fac G
+!      integer :: gsP_var_id            = 0 ! Grain shape fac Phi
+
+          allocate(dum1d_out(1:n_gs_max))
+          nSTAT = nf90_inq_varid(ncid,"Fall_Model",FV_var_id)
+          if(nSTAT.eq.0)then
+            nSTAT=nf90_get_var(ncid,FV_var_id,FV_ID,(/1/))
+            ! Check for shape specification
+            nSTAT2 = nf90_get_att(ncid,FV_var_id,"Shape_ID",Shape_ID)
+            if(nSTAT2.ne.0)Shape_ID=1
+          else
+            FV_ID = 1
+          endif
+
+          ! Grain diameter
+#ifdef USEPOINTERS
+          if(.not.associated(Tephra_gsdiam))then
+#else
+          if(.not.allocated(Tephra_gsdiam))then
+#endif
+            allocate(Tephra_gsdiam(n_gs_max))
+            Tephra_gsdiam(:) = 0.0_ip
+          endif
+          nSTAT = nf90_inq_varid(ncid,"gs_diameter",gsdm_var_id)
+          nSTAT = nf90_get_var(ncid,gsdm_var_id,dum1d_out,(/1/))
+          Tephra_gsdiam(1:n_gs_max) = dum1d_out(1:n_gs_max)
+
+          ! Grain mass fraction
+#ifdef USEPOINTERS
+          if(.not.associated(Tephra_bin_mass))then
+#else
+          if(.not.allocated(Tephra_bin_mass))then
+#endif
+            allocate(Tephra_bin_mass(n_gs_max))
+            Tephra_bin_mass(:) = 0.0_ip
+          endif
+          nSTAT = nf90_inq_varid(ncid,"gs_massfrac",gsmf_var_id)
+          nSTAT = nf90_get_var(ncid,gsmf_var_id,dum1d_out,(/1/))
+          Tephra_bin_mass(1:n_gs_max) = dum1d_out(1:n_gs_max)
+
+          ! Grain density
+#ifdef USEPOINTERS
+          if(.not.associated(Tephra_rho_m))then
+#else
+          if(.not.allocated(Tephra_rho_m))then
+#endif
+            allocate(Tephra_rho_m(n_gs_max))
+            Tephra_rho_m(:) = 0.0_ip
+          endif
+          nSTAT = nf90_inq_varid(ncid,"gs_dens",gsdens_var_id)
+          nSTAT = nf90_get_var(ncid,gsdens_var_id,dum1d_out,(/1/))
+          Tephra_rho_m(1:n_gs_max) = dum1d_out(1:n_gs_max)
+
+          ! Grain shape fac F
+#ifdef USEPOINTERS
+          if(.not.associated(Tephra_gsF))then
+#else
+          if(.not.allocated(Tephra_gsF))then
+#endif
+            allocate(Tephra_gsF(n_gs_max))
+            Tephra_gsF(:) = 0.0_ip
+          endif
+          nSTAT = nf90_inq_varid(ncid,"gs_F",gsF_var_id)
+          nSTAT = nf90_get_var(ncid,gsF_var_id,dum1d_out,(/1/))
+          Tephra_gsF(1:n_gs_max) = dum1d_out(1:n_gs_max)
+
+          ! Grain shape fac G
+#ifdef USEPOINTERS
+          if(.not.associated(Tephra_gsG))then
+#else
+          if(.not.allocated(Tephra_gsG))then
+#endif
+            allocate(Tephra_gsG(n_gs_max))
+            Tephra_gsG(:) = 0.0_ip
+          endif
+          nSTAT = nf90_inq_varid(ncid,"gs_G",gsG_var_id)
+          nSTAT = nf90_get_var(ncid,gsG_var_id,dum1d_out,(/1/))
+          Tephra_gsG(1:n_gs_max) = dum1d_out(1:n_gs_max)
+
+          ! Grain shape fac Phi
+#ifdef USEPOINTERS
+          if(.not.associated(Tephra_gsPhi))then
+#else
+          if(.not.allocated(Tephra_gsPhi))then
+#endif
+            allocate(Tephra_gsPhi(n_gs_max))
+            Tephra_gsPhi(:) = 0.0_ip
+          endif
+          nSTAT = nf90_inq_varid(ncid,"gs_Phi",gsP_var_id)
+          nSTAT = nf90_get_var(ncid,gsP_var_id,dum1d_out,(/1/))
+          Tephra_gsPhi(1:n_gs_max) = dum1d_out(1:n_gs_max)
+
+          !do i=1,n_gs_max
+          !  write(*,*)i,real(Tephra_gsdiam(i),kind=4),&
+          !              real(Tephra_bin_mass(i),kind=4),&
+          !              real(Tephra_rho_m(i),kind=4),&
+          !              real(Tephra_gsF(i),kind=4),&
+          !              real(Tephra_gsG(i),kind=4),&
+          !              real(Tephra_gsPhi(i),kind=4)
+          !enddo
 
           ! Wind file names
           allocate (MR_windfiles(MR_iwindfiles))
@@ -5844,7 +5973,7 @@
             nSTAT=nf90_get_var(ncid,wf_name_var_id,MR_windfiles,(/1,i/))
           enddo
 
-        endif
+        !endif
 
         first_time = .false.
 

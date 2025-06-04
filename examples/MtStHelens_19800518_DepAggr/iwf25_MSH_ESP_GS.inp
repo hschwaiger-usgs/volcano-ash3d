@@ -259,6 +259,8 @@ yes                           # Defer to Lon/Lat coordinates? ("no" defers to pr
 #          = 5, Ganser + Cunningham slip                                                               
 #          = 6, Stokes flow for spherical particles + slip                                             
 # If no fall model is specified, FV_ID = 1, by default                                                 
+# The first line can also optionally contain the Shape_ID code where 1= Wilson and Huang (F,G),        '
+# write(outlog(io),1)'# and 2 = sphericity 
 # The grain size bins can be enters with 2, 3, or 4 parameters.                                        
 # If TWO are given, they are read as:   FallVel (in m/s), mass fraction                                
 # If THREE are given, they are read as: diameter (mm), mass fraction, density (kg/m3)                  

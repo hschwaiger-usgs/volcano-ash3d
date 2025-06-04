@@ -70,16 +70,16 @@
 #  point        : all mass inserted in cell containing PlmH                                            
 #  linear       : mass uniformly distributed from z-vent to PlmH                                       
 # Line 9 : number of pulses to be read in BLOCK 2                                                      
-******************* BLOCK 1 ***************************************************
-Kasatochi                          # Volcano name (character*30)
-1 4 -107.0 50.0 50.0 50.0 6367.470 # Proj flags and params; first term (LLflag) is 1, so all else ignored
--179.0 35.0                        # x, y of LL corner of grid (km, or deg. if latlongflag=1)
- 45.0  25.0                        # grid width and height (km, or deg. if latlonflag=1)
--175.508 52.177                    # vent location         (km, or deg. if latlonflag=1)
-0.25      0.25                     # DX, DY of grid cells  (km, or deg. if latlonflag=1)
-1.0                                # DZ of grid cells      (always km)
-0.0      profile                   # diffusion coefficient (m2/s), Suzuki constant
-18                                 # neruptions, number of eruptions or pulses
+******************* BLOCK 1 ****************************************************
+Kasatochi                               # Volcano name (character*30)
+1 4 -107.0 50.0 50.0 50.0 6367.470      # Proj flags and params; first term (LLflag) is 1, so all else ignored
+-179.0 35.0                             # x, y of LL corner of grid (km, or deg. if latlongflag=1)
+ 45.0  25.0                             # grid width and height (km, or deg. if latlonflag=1)
+-175.508 52.177                         # vent location         (km, or deg. if latlonflag=1)
+0.25      0.25                          # DX, DY of grid cells  (km, or deg. if latlonflag=1)
+1.0                                     # DZ of grid cells      (always km)
+0.0      profile                        # diffusion coefficient (m2/s), Suzuki constant
+18                                      # neruptions, number of eruptions or pulses
 *******************************************************************************
 # ERUPTION LINES (number = neruptions)                                                                 
 # In the following line, each line represents one eruptive pulse.                                      
@@ -167,7 +167,7 @@ Kasatochi                          # Volcano name (character*30)
 #                30: ECMWA ERA-20C Reanalysis                                                          
 #                32: Air Force Weather Agency                                                          
 #                33: CCSM 3.0 Community Atmospheric Model                                              
-#                34: ECMWF 0.25-degree forecast
+#                34: ECMWF 0.25-degree forecast                                                        
 #                40: NASA GEOS-5 Cp                                                                    
 #                41: NASA GEOS-5 Np                                                                    
 #                50: Weather Research and Forecast (WRF) output                                        
@@ -223,7 +223,7 @@ no      # Write out ESRI ASCII files of ash-cloud load (T/km2) at specified time
 no      # Write out        KML files of ash-cloud load (T/km2) at specified times?                     
 no      # Write out ESRI ASCII file of deposit arrival times?                                          
 no      # Write out        KML file of deposit arrival times?                                          
-no      # write out ESRI ASCII file of cloud arrival times?                                            
+no      # Write out ESRI ASCII file of cloud arrival times?                                            
 no      # Write out        KML file of cloud arrival times?                                            
 yes 2   # Write out 3-D ash concentration at specified times? / [output code: 1=2d+concen,2=2d only]   
 netcdf  # format of ash concentration files     (ascii, binary, or netcdf)                             
@@ -281,6 +281,8 @@ yes                           # Defer to Lon/Lat coordinates? ("no" defers to pr
 #          = 5, Ganser + Cunningham slip                                                               
 #          = 6, Stokes flow for spherical particles + slip                                             
 # If no fall model is specified, FV_ID = 1, by default                                                 
+# The first line can also optionally contain the Shape_ID code where 1= Wilson and Huang (F,G),        '
+# write(outlog(io),1)'# and 2 = sphericity 
 # The grain size bins can be enters with 2, 3, or 4 parameters.                                        
 # If TWO are given, they are read as:   FallVel (in m/s), mass fraction                                
 # If THREE are given, they are read as: diameter (mm), mass fraction, density (kg/m3)                  

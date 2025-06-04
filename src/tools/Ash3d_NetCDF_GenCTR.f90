@@ -349,7 +349,7 @@
                                    cdf_b6l4(1:80)                  ,&  ! Name of file containing airport locations
                                    ProjectAirportLocations_c)          ! Defer to Lon/Lat coordinates? ("no" defers to projected)
 
-!      call Write_input_block_header(7)
+      call Write_input_block_header(7)
 !      call SetWrite_input_block_07(WriteBlock           ) !           ,&  ! indicates that write to stdout as well as set vars
 !
 !      call Write_input_block_header(8)
