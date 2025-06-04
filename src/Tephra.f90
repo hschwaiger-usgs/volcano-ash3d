@@ -114,8 +114,9 @@
       real(kind=sp),dimension(:,:,:,:),allocatable,public :: vf_meso_next_step_MetP_sp
 #endif
 
-      real(kind=ip),public :: phi_mean
-      real(kind=ip),public :: phi_stddev
+      real(kind=ip),public :: LN_phi_mean
+      real(kind=ip),public :: LN_phi_stddev
+      real(kind=ip),public :: LN_massfrac
       real(kind=ip),parameter :: vset_ConvCrit = 0.001_ip
 
       contains
@@ -605,7 +606,7 @@
         Tephra_gsF_fac(i+1,:)= temp_a
       enddo
 
-      if (useLogNormGSbins) call partition_gsbins(phi_mean,phi_stddev)
+      if (useLogNormGSbins) call partition_gsbins(LN_phi_mean,LN_phi_stddev)
 
       end subroutine Sort_Tephra_Size
 

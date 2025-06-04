@@ -1105,7 +1105,7 @@
 
       use Tephra,        only : &
          DepositDensity,Tephra_v_s,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,Tephra_gsPhi,&
-         Tephra_gsF,Tephra_gsG,FV_ID,Shape_ID,phi_mean,phi_stddev,n_gs_max,n_gs_aloft,&
+         Tephra_gsF,Tephra_gsG,FV_ID,Shape_ID,LN_phi_mean,LN_phi_stddev,LN_massfrac,n_gs_max,n_gs_aloft,&
            Calculate_Tephra_Shape,&
            Allocate_Tephra, &
            Sort_Tephra_Size
@@ -3534,7 +3534,7 @@
       ! Note: This might be one greater than what is calculated if the last bin
       !       has a negative diameter.  In this case, the remaining mass fraction
       !       neglecting the last bin is distributed over the previous bins with
-      !       a gaussian distribution given by a phi_mean and phi_stdev
+      !       a gaussian distribution given by a LN_phi_mean and LN_phi_stdev
       !    e.g.  -1 4 2
       !       Also note that the number of tephra bins can be zero if the species
       !       will be defined in optional modules such as gas, aggregates, etc.
@@ -3594,6 +3594,9 @@
         n_gs_max = init_n_gs_max
       else
         ! This is the normal case with actual grain size bins specified
+        LN_phi_mean   = 0.0_ip
+        LN_phi_stddev = 0.0_ip
+        LN_massfrac   = 0.0_ip
         do isize=1,init_n_gs_max
           value1 = -1.99_ip
           value2 = -1.99_ip
@@ -3658,19 +3661,20 @@
                 endif;enddo
                 stop 1
               else
-                phi_mean   = value2
-                phi_stddev = value3
+                LN_phi_mean   = value2
+                LN_phi_stddev = value3
+                LN_massfrac   = 1.0_ip-sum(temp_bin_mass(1:init_n_gs_max-1))
                 do io=1,2;if(VB(io).le.verbosity_info)then
                   write(outlog(io),*) &
                         "Last grain-size bin will be partitioned across all previous."
                   write(outlog(io),*)"Volume fraction partitioned = ",&
-                        1.0_ip-sum(temp_bin_mass(1:init_n_gs_max-1))
+                        LN_massfrac
                   write(outlog(io),*)&
                         "  Assuming remainder is Gaussian in phi"
                   write(outlog(io),*)&
-                        "    phi_mean   = ", phi_mean
+                        "    LN_phi_mean   = ", LN_phi_mean
                   write(outlog(io),*)&
-                        "    phi_stddev = ", phi_stddev
+                        "    LN_phi_stddev = ", LN_phi_stddev
                 endif;enddo
                 useLogNormGSbins = .true.
               endif
@@ -5882,7 +5886,7 @@
       write(outlog(io),1)'# If the last grain size bin has a negative diameter, then the remaining mass fraction                 '
       write(outlog(io),1)'# will be distributed over the previous bins via a log-normal distribution in phi.                     '
       write(outlog(io),1)'# The last bin would be interpreted as:                                                                '
-      write(outlog(io),1)'# diam (neg value) , phi_mean, phi_stddev                                                              '
+      write(outlog(io),1)'# diam (neg value) , LN_phi_mean, LN_phi_stddev                                                        '
         case(8) ! BLOCK 8: VERTICAL PROFILES
       write(outlog(io),1)'# Options for writing vertical profiles                                                                '
       write(outlog(io),1)'# The first line below gives the number of locations (nlocs) where vertical                            '

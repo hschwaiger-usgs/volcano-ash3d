@@ -234,6 +234,7 @@
       use Tephra,        only : &
          n_gs_max,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,FV_ID,&
          Tephra_gsF,Tephra_gsG,Tephra_gsPhi,Shape_ID,&
+         LN_massfrac,LN_phi_mean,LN_phi_stddev, &
          MagmaDensity,DepositDensity,LAM_GS_THRESH,AIRBORNE_THRESH
 
       use Source,        only : &
@@ -1368,6 +1369,13 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_massfrac long_name")
       nSTAT = nf90_put_att(ncid,gsmf_var_id,"units","fraction")
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_massfrac units")
+
+      nSTAT = nf90_put_att(ncid,gsmf_var_id,"LN_massfrac",LN_massfrac)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_massfrac LN_massfrac")
+      nSTAT = nf90_put_att(ncid,gsmf_var_id,"LN_phi_mean",LN_phi_mean)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_massfrac LN_phi_mean")
+      nSTAT = nf90_put_att(ncid,gsmf_var_id,"LN_phi_stddev",LN_phi_stddev)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_massfrac LN_phi_stddev")
 
          ! gs_dens (Density of grain)
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -4173,6 +4181,7 @@
       use Tephra,        only : &
          n_gs_max,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,FV_ID,&
          Tephra_gsF,Tephra_gsG,Tephra_gsPhi,Shape_ID,&
+         LN_massfrac,LN_phi_mean,LN_phi_stddev, &
          MagmaDensity,DepositDensity,LAM_GS_THRESH,AIRBORNE_THRESH
 
       use projection,    only : &
@@ -5858,12 +5867,6 @@
           !    FV_ID, Shape_ID
           !    Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,
           !    Tephra_gsF,Tephra_gsG,Tephra_gsPhi
-
-!      integer :: gsdens_var_id         = 0 ! Grain density
-!      integer :: gsF_var_id            = 0 ! Grain shape fac F
-!      integer :: gsG_var_id            = 0 ! Grain shape fac G
-!      integer :: gsP_var_id            = 0 ! Grain shape fac Phi
-
           allocate(dum1d_out(1:n_gs_max))
           nSTAT = nf90_inq_varid(ncid,"Fall_Model",FV_var_id)
           if(nSTAT.eq.0)then
@@ -5900,6 +5903,22 @@
           nSTAT = nf90_inq_varid(ncid,"gs_massfrac",gsmf_var_id)
           nSTAT = nf90_get_var(ncid,gsmf_var_id,dum1d_out,(/1/))
           Tephra_bin_mass(1:n_gs_max) = dum1d_out(1:n_gs_max)
+          ! Try to read attributes describing any supplemental log-normal GSD
+          nSTAT = nf90_get_att(ncid,gsmf_var_id,"LN_massfrac",LN_massfrac)
+          if(nSTAT.ne.0)then
+            call NC_check_status(nSTAT,0,"get_att gs_massfrac LN_massfrac")
+            LN_massfrac = 0.0_ip
+          endif
+          nSTAT = nf90_get_att(ncid,gsmf_var_id,"LN_phi_mean",LN_phi_mean)
+          if(nSTAT.ne.0)then
+            call NC_check_status(nSTAT,1,"get_att gs_massfrac LN_phi_mean")
+            LN_phi_mean = 0.0_ip
+          endif
+          nSTAT = nf90_get_att(ncid,gsmf_var_id,"LN_phi_stddev",LN_phi_stddev)
+          if(nSTAT.ne.0)then
+            call NC_check_status(nSTAT,1,"get_att gs_massfrac LN_phi_stddev")
+            LN_phi_stddev = 0.0_ip
+          endif
 
           ! Grain density
 #ifdef USEPOINTERS
@@ -5953,14 +5972,14 @@
           nSTAT = nf90_get_var(ncid,gsP_var_id,dum1d_out,(/1/))
           Tephra_gsPhi(1:n_gs_max) = dum1d_out(1:n_gs_max)
 
-          !do i=1,n_gs_max
-          !  write(*,*)i,real(Tephra_gsdiam(i),kind=4),&
-          !              real(Tephra_bin_mass(i),kind=4),&
-          !              real(Tephra_rho_m(i),kind=4),&
-          !              real(Tephra_gsF(i),kind=4),&
-          !              real(Tephra_gsG(i),kind=4),&
-          !              real(Tephra_gsPhi(i),kind=4)
-          !enddo
+!          do i=1,n_gs_max
+!            write(*,*)i,real(Tephra_gsdiam(i),kind=4),&
+!                        real(Tephra_bin_mass(i),kind=4),&
+!                        real(Tephra_rho_m(i),kind=4),&
+!                        real(Tephra_gsF(i),kind=4),&
+!                        real(Tephra_gsG(i),kind=4),&
+!                        real(Tephra_gsPhi(i),kind=4)
+!          enddo
 
           ! Wind file names
           allocate (MR_windfiles(MR_iwindfiles))

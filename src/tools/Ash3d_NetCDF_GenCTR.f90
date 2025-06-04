@@ -202,6 +202,8 @@
         dz_type = 1
       endif
 
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !  BLOCK 1: GRID INFO
       call Write_input_block_header(1)
       call SetWrite_input_block_01(WriteBlock                      ,&  ! indicates that write to stdout as well as set vars
                                    VolcanoName                     ,&  ! volcano name
@@ -216,6 +218,7 @@
                                    dz_type,cdf_vardz               ,&  ! dz_type + bonus line
                                    SourceType_idx)                     ! source_type 1=Suz,2=point,3=line,4=profile,5=umb,6=umb_air
 
+      ! BLOCK 2: ERUPTION PARAMETERS
       call Write_input_block_header(2)
       call SetWrite_input_block_02(WriteBlock                      ,&  ! indicates that write to stdout as well as set vars
                                    neruptions                      ,&  ! # of eruptions
@@ -228,8 +231,8 @@
                                    e_prof_nzpoints                 ,&
                                    e_prof_Volume)
 
+      ! BLOCK 3: WIND PARAMETERS
       call Write_input_block_header(3)
-
       ! for iwind=5 cases, the number is windfiles is modifies, so read from cdf_b3l5
       read(cdf_b3l5,'(i2)',iostat=iostatus,iomsg=iomessage) nwindfiles
       call SetWrite_input_block_03(WriteBlock                      ,&  ! indicates that write to stdout as well as set vars
@@ -242,6 +245,7 @@
                                    StopWhenDeposited               ,&
                                    nwindfiles)
 
+      ! BLOCK 4: OUTPUT OPTIONS
       WriteDepositFinal_ASCII_c = 'n'
       read(cdf_b4l1,'(a3)',iostat=iostatus,iomsg=iomessage) answer
       if(adjustl(trim(answer)).eq.'yes') WriteDepositFinal_ASCII_c = 'y'
@@ -318,6 +322,7 @@
                                    nwt                             ,&  ! B4L17 nWriteTimes
                                    wts)                                ! B4L18 WriteTimes(1:nWriteTimes)
 
+      ! BLOCK 5: INPUT WIND FILES
       if(MR_iWind.eq.5)then
         read(cdf_b5l1,*)MR_WindFiles(1)
       endif
@@ -327,6 +332,7 @@
                                    nwindfiles                      ,&
                                    MR_WindFiles(1:nwindfiles))
 
+      ! BLOCK 6: AIRPORT FILE
       WriteAirportFile_ASCII_c = 'n'
       read(cdf_b6l1,'(a3)',iostat=iostatus,iomsg=iomessage) answer
       if(adjustl(trim(answer)).eq.'yes') WriteAirportFile_ASCII_c = 'y'
@@ -349,21 +355,40 @@
                                    cdf_b6l4(1:80)                  ,&  ! Name of file containing airport locations
                                    ProjectAirportLocations_c)          ! Defer to Lon/Lat coordinates? ("no" defers to projected)
 
+      ! BLOCK 7: GRAIN-SIZE BINS, SETTLING VELOCITY
       call Write_input_block_header(7)
-!      call SetWrite_input_block_07(WriteBlock           ) !           ,&  ! indicates that write to stdout as well as set vars
+!      call SetWrite_input_block_07(WriteBlock                      ,&  ! indicates that write to stdout as well as set vars
+!                                   n_gs_max                        ,&  ! number of actual grain-size bins 
+!                                   FV_ID                           ,&  !
+!                                   Shape_ID                        ,&
+!                                   LN_massfrac                     ,&
+!                                   LN_phi_mean                     ,&
+!                                   LN_phi_stddev                   ,&
+!                                   Tephra_gsdiam                   ,&
+!                                   Tephra_bin_mass                 ,&
+!                                   Tephra_rho_m                    ,&
+!                                   Tephra_gsF                      ,&
+!                                   Tephra_gsG                      ,&
+!                                   Tephra_gsPhi)
 !
+
+!      ! BLOCK 8: VERTICAL PROFILES
 !      call Write_input_block_header(8)
 !      call SetWrite_input_block_08(WriteBlock           ) !           ,&  ! indicates that write to stdout as well as set vars
-!
+
+!      ! BLOCK 9 (Optional): NETCDF ANNOTATIONS
 !      call Write_input_block_header(9)
 !      call SetWrite_input_block_09(WriteBlock           ) !           ,&  ! indicates that write to stdout as well as set vars
 !
+!      ! BLOCK 10+: OPTIONAL MODULES (RESETPARAMS)
 !      call Write_input_block_header(10)
 !      call SetWrite_input_block_ResetParam(WriteBlock   ) !           ,&  ! indicates that write to stdout as well as set vars
 !
+!      ! BLOCK 10+: OPTIONAL MODULES (TOPO)
 !      call Write_input_block_header(11)
 !      call SetWrite_input_block_Topo(WriteBlock         ) !           ,&  ! indicates that write to stdout as well as set vars
 !
+!      ! BLOCK 10+: OPTIONAL MODULES (VARDIFF)
 !      call Write_input_block_header(12)
 !      call SetWrite_input_block_VarDiff(WriteBlock      ) !           ,&  ! indicates that write to stdout as well as set vars
 
