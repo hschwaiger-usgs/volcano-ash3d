@@ -5636,10 +5636,11 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!  Write_input_block_header(blockID)
+!  Write_input_block_header(outunit,blockID)
 !
 !  Called from: help_inputfile
 !  Arguments:
+!    outunit = output unit for write stream (6 for stdout, etc.)
 !    blockID = block number of the control file to print
 !
 !  This subroutine writes an example header of the requested block of the
@@ -5647,10 +5648,11 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine Write_input_block_header(blockID)
+      subroutine Write_input_block_header(outunit,blockID)
 
       use io_units
 
+      integer,intent(in) :: outunit
       integer,intent(in) :: blockID
 
       ! The idea with the blockID is that help for only a particular block is
@@ -5661,293 +5663,291 @@
         write(outlog(io),*)"     Entered Subroutine write_input_block_header"
       endif;enddo
 
-      io = 1
-
       select case (blockID)
         case(1) ! BLOCK 1: GRID INFO
-      write(outlog(io),1)'# The following is an input file to the model Ash3d, v1.0 https://code.usgs.gov/vsc/ash3d/volcano-ash3d'
-      write(outlog(io),1)'# Created by L.G. Mastin, R.P. Denlinger and H.F. Schwaiger, U.S. Geological Survey, 2009.             '
-      write(outlog(io),1)'#                                                                                                      '
-      write(outlog(io),1)'# GENERAL SOURCE PARAMETERS. DO NOT DELETE ANY NON-COMMENT LINES                                       '
-      write(outlog(io),1)'#  The first line of this block identifies the volcano by name.                                        '
-      write(outlog(io),1)'#  If the volcano name begins with either 0 or 1, then the volcano                                     '
-      write(outlog(io),1)'#  is assumed to be in the Smithsonian database and default values for                                 '
-      write(outlog(io),1)'#  Plume Height, Duration, Mass Flux Rate, Volume, and mass fraction of                                '
-      write(outlog(io),1)'#  fines are loaded.  These can be over-written by entering non-negative                               '
-      write(outlog(io),1)'#  values in the appropriate locations in this input file.                                             '
-      write(outlog(io),1)'#                                                                                                      '
-      write(outlog(io),1)'#  The second line of this block identifies the projection used and the form of                        '
-      write(outlog(io),1)'#  the input coordinates and is of the following format:                                               '
-      write(outlog(io),1)'#    latlonflag, projflag,  followed by a variable list of projection parameters                       '
-      write(outlog(io),1)'#  projflag describes the projection used for the Ash3d run. Windfiles can have a                      '
-      write(outlog(io),1)'#  different projection.                                                                               '
-      write(outlog(io),1)'#  For a particular projflag, additional values are read defining the projection.                      '
-      write(outlog(io),1)'#    latlonflag = 0 if computational grid is projected                                                 '
-      write(outlog(io),1)'#               = 1 if computational grid is lat/lon (all subsequent projection parameters ignored.)   '
-      write(outlog(io),1)'#    projflag   = 1 -- polar stereographic projection                                                  '
-      write(outlog(io),1)'#           lambda0 -- longitude of projection point                                                   '
-      write(outlog(io),1)'#           phi0    -- latitude of projection point                                                    '
-      write(outlog(io),1)'#           k0      -- scale factor at projection point                                                '
-      write(outlog(io),1)'#           radius  -- earth radius for spherical earth                                                '
-      write(outlog(io),1)'#     e.g. for NAM 104,198, 216: 0 1 -105.0 90.0 0.933 6371.229                                        '
-      write(outlog(io),1)'#               = 2 -- Albers Equal Area ( not yet implemented)                                        '
-      write(outlog(io),1)'#               = 3 -- UTM ( not yet implemented)                                                      '
-      write(outlog(io),1)'#               = 4 -- Lambert conformal conic                                                         '
-      write(outlog(io),1)'#           lambda0 -- longitude of origin                                                             '
-      write(outlog(io),1)'#              phi0 -- latitude of origin                                                              '
-      write(outlog(io),1)'#              phi1 -- latitude of secant1                                                             '
-      write(outlog(io),1)'#              phi2 -- latitude of secant2                                                             '
-      write(outlog(io),1)'#            radius -- earth radius for a spherical earth                                              '
-      write(outlog(io),1)'#     e.g. for NAM 212: 0 4 265.0 25.0 25.0 25.0 6371.22                                               '
-      write(outlog(io),1)'#               = 5 -- Mercator                                                                        '
-      write(outlog(io),1)'#           lambda0 -- longitude of origin                                                             '
-      write(outlog(io),1)'#              phi0 -- latitude of origin                                                              '
-      write(outlog(io),1)'#            radius -- earth radius for a spherical earth                                              '
-      write(outlog(io),1)'#     e.g. for NAM 196: 0 5 198.475 20.0 6371.229                                                      '
-      write(outlog(io),1)'#                                                                                                      '
-      write(outlog(io),1)'# On line 3, the vent coordinates can optionally include a third value for elevation in km.            '
-      write(outlog(io),1)'# If the vent elevation is not given, 0 is used if topography is turned off.                           '
-      write(outlog(io),1)'#                                                                                                      '
-      write(outlog(io),1)'# Line 4 is the width and height of the computational grid in km (if projected) or degrees.            '
-      write(outlog(io),1)'# Line 5 is the vent x,y (or lon, lat) coordinates.                                                    '
-      write(outlog(io),1)'# Line 6, DX and DY resolution in km or degrees (for projected or lon/lat grid, respectively)          '
-      write(outlog(io),1)'# Line 7, DZ can be given as a real number, indicating the vertical spacing in km.                     '
-      write(outlog(io),1)'# Alternatively, it can be given as dz_plin (piece-wise linear), dz_clog (constant-                    '
-      write(outlog(io),1)'# logarithmic), or dz_cust (custom specification)                                                      '
-      write(outlog(io),1)'# If dz_plin, then a second line is read containing:                                                   '
-      write(outlog(io),1)'#   number of line segments (N) followed by the steps and step-size of each segment                    '
-      write(outlog(io),1)'#   e.g. 4 6 0.25 5 0.5 5 1.0 10 2.0                                                                   '
-      write(outlog(io),1)'#         This corresponds to 4 line segments with 6 cells of 0.25, then 5 cells of 0.5,               '
-      write(outlog(io),1)'#         5 cells of 1.0, and finally 10 cells of 2.0                                                  '
-      write(outlog(io),1)'# If dz_clog, then a second line is read containing:                                                   '
-      write(outlog(io),1)'#   maximum z and number of steps of constant dlogz                                                    '
-      write(outlog(io),1)'#   e.g. 30.0 30                                                                                       '
-      write(outlog(io),1)'#         This corresponds to 30 steps from 0-30km with constant log-spacing                           '
-      write(outlog(io),1)'# If dz_cust, then a second line is read containing:                                                   '
-      write(outlog(io),1)'#   the number of dz values to read (ndz), followed by dz(1:ndz)                                       '
-      write(outlog(io),1)'#   e.g. 20 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 5.5            '
-      write(outlog(io),1)'#         This corresponds to 10 steps of 0.5, 9 steps of 1.5, followed by 1 step of 5.5               '
-      write(outlog(io),1)'#                                                                                                      '
-      write(outlog(io),1)'#                                                                                                      '
-      write(outlog(io),1)'# Line 8 is the the diffusivity (m2/s) followed by the eruption specifier.  The                        '
-      write(outlog(io),1)'# eruption specifier can be a real number, in which case it is assumed to be the                       '
-      write(outlog(io),1)'# positive constant specifying the Suzuki distribution.  Alternatively, it can be                      '
-      write(outlog(io),1)'#  umbrella     : Suzuki (const. = 12) with radial spreading of the plume                              '
-      write(outlog(io),1)'#  umbrella_air : Suzuki (const. = 12) with radial spreading of the plume scaled to 5% of vol.         '
-      write(outlog(io),1)'#  point        : all mass inserted in cell containing PlmH                                            '
-      write(outlog(io),1)'#  linear       : mass uniformly distributed from z-vent to PlmH                                       '
-      write(outlog(io),1)'# Line 9 : number of pulses to be read in BLOCK 2                                                      '
+      write(outunit,1)'# The following is an input file to the model Ash3d, v1.0 https://code.usgs.gov/vsc/ash3d/volcano-ash3d'
+      write(outunit,1)'# Created by L.G. Mastin, R.P. Denlinger and H.F. Schwaiger, U.S. Geological Survey, 2009.             '
+      write(outunit,1)'#                                                                                                      '
+      write(outunit,1)'# GENERAL SOURCE PARAMETERS. DO NOT DELETE ANY NON-COMMENT LINES                                       '
+      write(outunit,1)'#  The first line of this block identifies the volcano by name.                                        '
+      write(outunit,1)'#  If the volcano name begins with either 0 or 1, then the volcano                                     '
+      write(outunit,1)'#  is assumed to be in the Smithsonian database and default values for                                 '
+      write(outunit,1)'#  Plume Height, Duration, Mass Flux Rate, Volume, and mass fraction of                                '
+      write(outunit,1)'#  fines are loaded.  These can be over-written by entering non-negative                               '
+      write(outunit,1)'#  values in the appropriate locations in this input file.                                             '
+      write(outunit,1)'#                                                                                                      '
+      write(outunit,1)'#  The second line of this block identifies the projection used and the form of                        '
+      write(outunit,1)'#  the input coordinates and is of the following format:                                               '
+      write(outunit,1)'#    latlonflag, projflag,  followed by a variable list of projection parameters                       '
+      write(outunit,1)'#  projflag describes the projection used for the Ash3d run. Windfiles can have a                      '
+      write(outunit,1)'#  different projection.                                                                               '
+      write(outunit,1)'#  For a particular projflag, additional values are read defining the projection.                      '
+      write(outunit,1)'#    latlonflag = 0 if computational grid is projected                                                 '
+      write(outunit,1)'#               = 1 if computational grid is lat/lon (all subsequent projection parameters ignored.)   '
+      write(outunit,1)'#    projflag   = 1 -- polar stereographic projection                                                  '
+      write(outunit,1)'#           lambda0 -- longitude of projection point                                                   '
+      write(outunit,1)'#           phi0    -- latitude of projection point                                                    '
+      write(outunit,1)'#           k0      -- scale factor at projection point                                                '
+      write(outunit,1)'#           radius  -- earth radius for spherical earth                                                '
+      write(outunit,1)'#     e.g. for NAM 104,198, 216: 0 1 -105.0 90.0 0.933 6371.229                                        '
+      write(outunit,1)'#               = 2 -- Albers Equal Area ( not yet implemented)                                        '
+      write(outunit,1)'#               = 3 -- UTM ( not yet implemented)                                                      '
+      write(outunit,1)'#               = 4 -- Lambert conformal conic                                                         '
+      write(outunit,1)'#           lambda0 -- longitude of origin                                                             '
+      write(outunit,1)'#              phi0 -- latitude of origin                                                              '
+      write(outunit,1)'#              phi1 -- latitude of secant1                                                             '
+      write(outunit,1)'#              phi2 -- latitude of secant2                                                             '
+      write(outunit,1)'#            radius -- earth radius for a spherical earth                                              '
+      write(outunit,1)'#     e.g. for NAM 212: 0 4 265.0 25.0 25.0 25.0 6371.22                                               '
+      write(outunit,1)'#               = 5 -- Mercator                                                                        '
+      write(outunit,1)'#           lambda0 -- longitude of origin                                                             '
+      write(outunit,1)'#              phi0 -- latitude of origin                                                              '
+      write(outunit,1)'#            radius -- earth radius for a spherical earth                                              '
+      write(outunit,1)'#     e.g. for NAM 196: 0 5 198.475 20.0 6371.229                                                      '
+      write(outunit,1)'#                                                                                                      '
+      write(outunit,1)'# On line 3, the vent coordinates can optionally include a third value for elevation in km.            '
+      write(outunit,1)'# If the vent elevation is not given, 0 is used if topography is turned off.                           '
+      write(outunit,1)'#                                                                                                      '
+      write(outunit,1)'# Line 4 is the width and height of the computational grid in km (if projected) or degrees.            '
+      write(outunit,1)'# Line 5 is the vent x,y (or lon, lat) coordinates.                                                    '
+      write(outunit,1)'# Line 6, DX and DY resolution in km or degrees (for projected or lon/lat grid, respectively)          '
+      write(outunit,1)'# Line 7, DZ can be given as a real number, indicating the vertical spacing in km.                     '
+      write(outunit,1)'# Alternatively, it can be given as dz_plin (piece-wise linear), dz_clog (constant-                    '
+      write(outunit,1)'# logarithmic), or dz_cust (custom specification)                                                      '
+      write(outunit,1)'# If dz_plin, then a second line is read containing:                                                   '
+      write(outunit,1)'#   number of line segments (N) followed by the steps and step-size of each segment                    '
+      write(outunit,1)'#   e.g. 4 6 0.25 5 0.5 5 1.0 10 2.0                                                                   '
+      write(outunit,1)'#         This corresponds to 4 line segments with 6 cells of 0.25, then 5 cells of 0.5,               '
+      write(outunit,1)'#         5 cells of 1.0, and finally 10 cells of 2.0                                                  '
+      write(outunit,1)'# If dz_clog, then a second line is read containing:                                                   '
+      write(outunit,1)'#   maximum z and number of steps of constant dlogz                                                    '
+      write(outunit,1)'#   e.g. 30.0 30                                                                                       '
+      write(outunit,1)'#         This corresponds to 30 steps from 0-30km with constant log-spacing                           '
+      write(outunit,1)'# If dz_cust, then a second line is read containing:                                                   '
+      write(outunit,1)'#   the number of dz values to read (ndz), followed by dz(1:ndz)                                       '
+      write(outunit,1)'#   e.g. 20 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 5.5            '
+      write(outunit,1)'#         This corresponds to 10 steps of 0.5, 9 steps of 1.5, followed by 1 step of 5.5               '
+      write(outunit,1)'#                                                                                                      '
+      write(outunit,1)'#                                                                                                      '
+      write(outunit,1)'# Line 8 is the the diffusivity (m2/s) followed by the eruption specifier.  The                        '
+      write(outunit,1)'# eruption specifier can be a real number, in which case it is assumed to be the                       '
+      write(outunit,1)'# positive constant specifying the Suzuki distribution.  Alternatively, it can be                      '
+      write(outunit,1)'#  umbrella     : Suzuki (const. = 12) with radial spreading of the plume                              '
+      write(outunit,1)'#  umbrella_air : Suzuki (const. = 12) with radial spreading of the plume scaled to 5% of vol.         '
+      write(outunit,1)'#  point        : all mass inserted in cell containing PlmH                                            '
+      write(outunit,1)'#  linear       : mass uniformly distributed from z-vent to PlmH                                       '
+      write(outunit,1)'# Line 9 : number of pulses to be read in BLOCK 2                                                      '
         case(2) ! BLOCK 2: ERUPTION PARAMETERS
-      write(outlog(io),1)'# ERUPTION LINES (number = neruptions)                                                                 '
-      write(outlog(io),1)'# In the following line, each line represents one eruptive pulse.                                      '
-      write(outlog(io),1)'# Parameters are (1-4) start time (yyyy mm dd h.hh (UT)); (5) duration (hrs);                          '
-      write(outlog(io),1)'#                  (6) plume height;                      (7) erupted volume (km3 DRE)                 '
-      write(outlog(io),1)'# If neruptions=1 and the year is 0, then the model run in forecast mode where mm dd h.hh are          '
-      write(outlog(io),1)'# interpreted as the time after the start of the windfile.  In this case, duration, plume              '
-      write(outlog(io),1)'# height and erupted volume are replaced with ESP if the values are negative.                          '
-      write(outlog(io),1)'# This applies to source types: suzuki, point, line, umbrella and umbrella_air.                        '
-      write(outlog(io),1)'# For profile sources, an additional two values are read: dz and nz                                    '
-      write(outlog(io),1)'# 2010 04 14   0.00   1.0     18.0  0.16 1.0 18                                                        '
-      write(outlog(io),1)'# 0.01 0.02 0.03 0.03 0.04 0.04 0.05 0.06 0.06 0.070 0.08 0.08 0.09 0.09 0.09 0.08 0.06 0.02           '
+      write(outunit,1)'# ERUPTION LINES (number = neruptions)                                                                 '
+      write(outunit,1)'# In the following line, each line represents one eruptive pulse.                                      '
+      write(outunit,1)'# Parameters are (1-4) start time (yyyy mm dd h.hh (UT)); (5) duration (hrs);                          '
+      write(outunit,1)'#                  (6) plume height;                      (7) erupted volume (km3 DRE)                 '
+      write(outunit,1)'# If neruptions=1 and the year is 0, then the model run in forecast mode where mm dd h.hh are          '
+      write(outunit,1)'# interpreted as the time after the start of the windfile.  In this case, duration, plume              '
+      write(outunit,1)'# height and erupted volume are replaced with ESP if the values are negative.                          '
+      write(outunit,1)'# This applies to source types: suzuki, point, line, umbrella and umbrella_air.                        '
+      write(outunit,1)'# For profile sources, an additional two values are read: dz and nz                                    '
+      write(outunit,1)'# 2010 04 14   0.00   1.0     18.0  0.16 1.0 18                                                        '
+      write(outunit,1)'# 0.01 0.02 0.03 0.03 0.04 0.04 0.05 0.06 0.06 0.070 0.08 0.08 0.09 0.09 0.09 0.08 0.06 0.02           '
         case(3) ! BLOCK 3: WIND PARAMETERS
-      write(outlog(io),1)'# WIND OPTIONS                                                                                         '
-      write(outlog(io),1)'# Ash3d will read from either a single 1-D wind sounding, or gridded, time-                            '
-      write(outlog(io),1)'# dependent 3-D wind data, depending on the value of the parameter iwind.                              '
-      write(outlog(io),1)'# For iwind = 1, read from a 1-D wind sounding                                                         '
-      write(outlog(io),1)'#             2, read from 3D gridded ASCII files                                                      '
-      write(outlog(io),1)'#             3/4, read directly from a single or multiple NetCDF files.                               '
-      write(outlog(io),1)'#             5, read directly from multiple multi-timestep NetCDF files.                              '
-      write(outlog(io),1)'# The parameter iwindformat specifies the format of the wind files, as follows:                        '
-      write(outlog(io),1)'#  iwindformat =  0: User-defined via template                                                         '
-      write(outlog(io),1)'#                 1: User-specified ASCII files                                                        '
-      write(outlog(io),1)'#                 2: Global radiosonde data                                                            '
-      write(outlog(io),1)'#                 3: NARR 221 Reanalysis (32 km)                                                       '
-      write(outlog(io),1)'#                 4: NAM Regional North America 221 Forecast (32 km)                                   '
-      write(outlog(io),1)'#                 5: NAM 216 Regional Alaska Forecast (45 km)                                          '
-      write(outlog(io),1)'#                 6: NAM 104 Northern Hemisphere Forecast (90 km)                                      '
-      write(outlog(io),1)'#                 7: NAM 212 40km Cont. US Forecast (40 km)                                            '
-      write(outlog(io),1)'#                 8: NAM 218 12km Cont. US Forecast (12 km)                                            '
-      write(outlog(io),1)'#                 9: NAM 227 Cont. US Forecast (5.08 km)                                               '
-      write(outlog(io),1)'#                10: NAM 242 11km Regional Alaska Forecast (11.25 km)                                  '
-      write(outlog(io),1)'#                11: NAM 196 Regional Hawaii Forecast (2.5 km)                                         '
-      write(outlog(io),1)'#                12: NAM 198 Regional Alaska Forecast (5.953 km)                                       '
-      write(outlog(io),1)'#                13: NAM 91 Regional Alaska Forecast (2.976 km)                                        '
-      write(outlog(io),1)'#                14: NAM Regional Cont. US Forecast (3.0 km)                                           '
-      write(outlog(io),1)'#                20: GFS 0.5 degree files Forecast                                                     '
-      write(outlog(io),1)'#                21: GFS 1.0 degree files Forecast                                                     '
-      write(outlog(io),1)'#                22: GFS 0.25 degree files Forecast                                                    '
-      write(outlog(io),1)'#                23: NCEP DOE Reanalysis 2.5 degree                                                    '
-      write(outlog(io),1)'#                24: NASA MERRA-2 Reanalysis                                                           '
-      write(outlog(io),1)'#                25: NCEP1 2.5 global Reanalysis (1948-pres)                                           '
-      write(outlog(io),1)'#                      Note: use nWindFiles=1 for iwindformat=25                                       '
-      write(outlog(io),1)'#                26: JRA-55 Reanalysis                                                                 '
-      write(outlog(io),1)'#                27: NOAA-CIRES II 2-deg global Reanalysis (1870-2010)                                 '
-      write(outlog(io),1)'#                28: ECMWF ERA-Interim Reanalysis                                                      '
-      write(outlog(io),1)'#                29: ECMWA ERA-5 Reanalysis                                                            '
-      write(outlog(io),1)'#                30: ECMWA ERA-20C Reanalysis                                                          '
-      write(outlog(io),1)'#                32: Air Force Weather Agency                                                          '
-      write(outlog(io),1)'#                33: CCSM 3.0 Community Atmospheric Model                                              '
-      write(outlog(io),1)'#                34: ECMWF 0.25-degree forecast                                                        '
-      write(outlog(io),1)'#                40: NASA GEOS-5 Cp                                                                    '
-      write(outlog(io),1)'#                41: NASA GEOS-5 Np                                                                    '
-      write(outlog(io),1)'#                50: Weather Research and Forecast (WRF) output                                        '
-      write(outlog(io),1)'#                                                                                                      '
-      write(outlog(io),1)'# igrid (optional, defaults to that associated with iwindformat) is the NCEP grid ID,                  '
-      write(outlog(io),1)'# if a NWP product is used, or the number of stations of sonde data, if iwind = 1.                     '
-      write(outlog(io),1)'# idata (optional, defaults to 2) is a flag for data type (1=ASCII, 2=netcdf, 3=grib).                 '
-      write(outlog(io),1)'#                                                                                                      '
-      write(outlog(io),1)'# Many plumes extend higher than the maximum height of mesoscale models.                               '
-      write(outlog(io),1)'# Ash3d handles this as determined by the parameter iHeightHandler, as follows:                        '
-      write(outlog(io),1)'# for iHeightHandler = 1, stop the program if the plume height exceeds mesoscale height                '
-      write(outlog(io),1)'#                      2, wind velocity at levels above the highest node                               '
-      write(outlog(io),1)'#                         equal that of the highest node.  Temperatures in the                         '
-      write(outlog(io),1)'#                         upper nodes do not change between 11 and 20 km; above                        '
-      write(outlog(io),1)'#                         20 km they increase by 2 C/km, as in the Standard                            '
-      write(outlog(io),1)'#                         atmosphere.  A warning is written to the log file.                           '
-      write(outlog(io),1)'# Simulation time in hours is the maximal length of the simulation.                                    '
-      write(outlog(io),1)'# Ash3d can end the simulation early if desired, once 99% of the ash has deposited.                    '
-      write(outlog(io),1)'# The last line of this block is the number of windfiles listed in block 5 below.  If                  '
-      write(outlog(io),1)'# iwind=5 and one of the NWP products is used that require a special file structure,                   '
-      write(outlog(io),1)'# then nWindFiles should be set to 1 and only the root folder of the windfiles listed.                 '
+      write(outunit,1)'# WIND OPTIONS                                                                                         '
+      write(outunit,1)'# Ash3d will read from either a single 1-D wind sounding, or gridded, time-                            '
+      write(outunit,1)'# dependent 3-D wind data, depending on the value of the parameter iwind.                              '
+      write(outunit,1)'# For iwind = 1, read from a 1-D wind sounding                                                         '
+      write(outunit,1)'#             2, read from 3D gridded ASCII files                                                      '
+      write(outunit,1)'#             3/4, read directly from a single or multiple NetCDF files.                               '
+      write(outunit,1)'#             5, read directly from multiple multi-timestep NetCDF files.                              '
+      write(outunit,1)'# The parameter iwindformat specifies the format of the wind files, as follows:                        '
+      write(outunit,1)'#  iwindformat =  0: User-defined via template                                                         '
+      write(outunit,1)'#                 1: User-specified ASCII files                                                        '
+      write(outunit,1)'#                 2: Global radiosonde data                                                            '
+      write(outunit,1)'#                 3: NARR 221 Reanalysis (32 km)                                                       '
+      write(outunit,1)'#                 4: NAM Regional North America 221 Forecast (32 km)                                   '
+      write(outunit,1)'#                 5: NAM 216 Regional Alaska Forecast (45 km)                                          '
+      write(outunit,1)'#                 6: NAM 104 Northern Hemisphere Forecast (90 km)                                      '
+      write(outunit,1)'#                 7: NAM 212 40km Cont. US Forecast (40 km)                                            '
+      write(outunit,1)'#                 8: NAM 218 12km Cont. US Forecast (12 km)                                            '
+      write(outunit,1)'#                 9: NAM 227 Cont. US Forecast (5.08 km)                                               '
+      write(outunit,1)'#                10: NAM 242 11km Regional Alaska Forecast (11.25 km)                                  '
+      write(outunit,1)'#                11: NAM 196 Regional Hawaii Forecast (2.5 km)                                         '
+      write(outunit,1)'#                12: NAM 198 Regional Alaska Forecast (5.953 km)                                       '
+      write(outunit,1)'#                13: NAM 91 Regional Alaska Forecast (2.976 km)                                        '
+      write(outunit,1)'#                14: NAM Regional Cont. US Forecast (3.0 km)                                           '
+      write(outunit,1)'#                20: GFS 0.5 degree files Forecast                                                     '
+      write(outunit,1)'#                21: GFS 1.0 degree files Forecast                                                     '
+      write(outunit,1)'#                22: GFS 0.25 degree files Forecast                                                    '
+      write(outunit,1)'#                23: NCEP DOE Reanalysis 2.5 degree                                                    '
+      write(outunit,1)'#                24: NASA MERRA-2 Reanalysis                                                           '
+      write(outunit,1)'#                25: NCEP1 2.5 global Reanalysis (1948-pres)                                           '
+      write(outunit,1)'#                      Note: use nWindFiles=1 for iwindformat=25                                       '
+      write(outunit,1)'#                26: JRA-55 Reanalysis                                                                 '
+      write(outunit,1)'#                27: NOAA-CIRES II 2-deg global Reanalysis (1870-2010)                                 '
+      write(outunit,1)'#                28: ECMWF ERA-Interim Reanalysis                                                      '
+      write(outunit,1)'#                29: ECMWA ERA-5 Reanalysis                                                            '
+      write(outunit,1)'#                30: ECMWA ERA-20C Reanalysis                                                          '
+      write(outunit,1)'#                32: Air Force Weather Agency                                                          '
+      write(outunit,1)'#                33: CCSM 3.0 Community Atmospheric Model                                              '
+      write(outunit,1)'#                34: ECMWF 0.25-degree forecast                                                        '
+      write(outunit,1)'#                40: NASA GEOS-5 Cp                                                                    '
+      write(outunit,1)'#                41: NASA GEOS-5 Np                                                                    '
+      write(outunit,1)'#                50: Weather Research and Forecast (WRF) output                                        '
+      write(outunit,1)'#                                                                                                      '
+      write(outunit,1)'# igrid (optional, defaults to that associated with iwindformat) is the NCEP grid ID,                  '
+      write(outunit,1)'# if a NWP product is used, or the number of stations of sonde data, if iwind = 1.                     '
+      write(outunit,1)'# idata (optional, defaults to 2) is a flag for data type (1=ASCII, 2=netcdf, 3=grib).                 '
+      write(outunit,1)'#                                                                                                      '
+      write(outunit,1)'# Many plumes extend higher than the maximum height of mesoscale models.                               '
+      write(outunit,1)'# Ash3d handles this as determined by the parameter iHeightHandler, as follows:                        '
+      write(outunit,1)'# for iHeightHandler = 1, stop the program if the plume height exceeds mesoscale height                '
+      write(outunit,1)'#                      2, wind velocity at levels above the highest node                               '
+      write(outunit,1)'#                         equal that of the highest node.  Temperatures in the                         '
+      write(outunit,1)'#                         upper nodes do not change between 11 and 20 km; above                        '
+      write(outunit,1)'#                         20 km they increase by 2 C/km, as in the Standard                            '
+      write(outunit,1)'#                         atmosphere.  A warning is written to the log file.                           '
+      write(outunit,1)'# Simulation time in hours is the maximal length of the simulation.                                    '
+      write(outunit,1)'# Ash3d can end the simulation early if desired, once 99% of the ash has deposited.                    '
+      write(outunit,1)'# The last line of this block is the number of windfiles listed in block 5 below.  If                  '
+      write(outunit,1)'# iwind=5 and one of the NWP products is used that require a special file structure,                   '
+      write(outunit,1)'# then nWindFiles should be set to 1 and only the root folder of the windfiles listed.                 '
         case(4) ! BLOCK 4: OUTPUT OPTIONS
-      write(outlog(io),1)'# OUTPUT OPTIONS:                                                                                      '
-      write(outlog(io),1)'# The list below allows users to specify the output options                                            '
-      write(outlog(io),1)'# All but the final deposit file can be written out at specified                                       '
-      write(outlog(io),1)'# times using the following parameters:                                                                '
-      write(outlog(io),1)'# Line 15 asks for 3d output (yes/no) followed by an optional output format code;                      '
-      write(outlog(io),1)'#   1 = (default) output all the normal 2d products to the output file as well as the 3d concentrations'
-      write(outlog(io),1)'#   2 = only output the 2d products                                                                    '
-      write(outlog(io),1)'# nWriteTimes   = if >0,  number of times output are to be written. The following                      '
-      write(outlog(io),1)'#                  line contains nWriteTimes numbers specifying the times of output                    '
-      write(outlog(io),1)'#                 if =-1, it specifies that the following line gives a constant time                   '
-      write(outlog(io),1)'#                  interval in hours between write times.                                              '
-      write(outlog(io),1)'# WriteTimes    = Hours between output (if nWritetimes=-1), or                                         '
-      write(outlog(io),1)'#                 Times (hours since start of first eruption) for each output                          '
-      write(outlog(io),1)'#                (if nWriteTimes >1)                                                                   '
+      write(outunit,1)'# OUTPUT OPTIONS:                                                                                      '
+      write(outunit,1)'# The list below allows users to specify the output options                                            '
+      write(outunit,1)'# All but the final deposit file can be written out at specified                                       '
+      write(outunit,1)'# times using the following parameters:                                                                '
+      write(outunit,1)'# Line 15 asks for 3d output (yes/no) followed by an optional output format code;                      '
+      write(outunit,1)'#   1 = (default) output all the normal 2d products to the output file as well as the 3d concentrations'
+      write(outunit,1)'#   2 = only output the 2d products                                                                    '
+      write(outunit,1)'# nWriteTimes   = if >0,  number of times output are to be written. The following                      '
+      write(outunit,1)'#                  line contains nWriteTimes numbers specifying the times of output                    '
+      write(outunit,1)'#                 if =-1, it specifies that the following line gives a constant time                   '
+      write(outunit,1)'#                  interval in hours between write times.                                              '
+      write(outunit,1)'# WriteTimes    = Hours between output (if nWritetimes=-1), or                                         '
+      write(outunit,1)'#                 Times (hours since start of first eruption) for each output                          '
+      write(outunit,1)'#                (if nWriteTimes >1)                                                                   '
         case(5) ! BLOCK 5: INPUT WIND FILES
-      write(outlog(io),1)'# WIND INPUT FILES                                                                                     '
-      write(outlog(io),1)'# The following block of data contains names of wind files. There should be one line for               '
-      write(outlog(io),1)'# each of nWindFiles (from Block 3 Line 5) windfiles. Files should be given in                         '
-      write(outlog(io),1)'# chronological order, should have names with only letters and numbers (no spaces)                     '
-      write(outlog(io),1)'# and should not exceed 130 characters in length.                                                      '
-      write(outlog(io),1)'# For iwind=5 (files with hard-coded paths), just provide the directory with the                       '
-      write(outlog(io),1)'# windfiles or the root of the dataset (if files are sorted by year).                                  '
-      write(outlog(io),1)'# For example, iwind=5, iwindformat=25 for NCEP reanalysis, data might look like:                      '
-      write(outlog(io),1)'# /data/WindFiles/NCEP                                                                                 '
-      write(outlog(io),1)'# |-- 2016                                                                                             '
-      write(outlog(io),1)'# |   |-- air.2016.nc                                                                                  '
-      write(outlog(io),1)'# |   |-- hgt.2016.nc                                                                                  '
-      write(outlog(io),1)'# |   |-- omega.2016.nc                                                                                '
-      write(outlog(io),1)'# |   |-- uwnd.2016.nc                                                                                 '
-      write(outlog(io),1)'# |   `-- vwnd.2016.nc                                                                                 '
-      write(outlog(io),1)'# |-- 2017                                                                                             '
-      write(outlog(io),1)'#     |-- air.2017.nc                                                                                  '
-      write(outlog(io),1)'# In this case, Block 5 will just contain one line: /data/WindFiles/NCEP or just NCEP                  '
-      write(outlog(io),1)'# if you have a soft link in the run directory.                                                        '
-      write(outlog(io),1)'# For a network of radiosonde data, please see the MetReader documentation for                         '
-      write(outlog(io),1)'# the input specification https://code.usgs.gov/vsc/ash3d/volcano-ash3d-metreader.                     '
+      write(outunit,1)'# WIND INPUT FILES                                                                                     '
+      write(outunit,1)'# The following block of data contains names of wind files. There should be one line for               '
+      write(outunit,1)'# each of nWindFiles (from Block 3 Line 5) windfiles. Files should be given in                         '
+      write(outunit,1)'# chronological order, should have names with only letters and numbers (no spaces)                     '
+      write(outunit,1)'# and should not exceed 130 characters in length.                                                      '
+      write(outunit,1)'# For iwind=5 (files with hard-coded paths), just provide the directory with the                       '
+      write(outunit,1)'# windfiles or the root of the dataset (if files are sorted by year).                                  '
+      write(outunit,1)'# For example, iwind=5, iwindformat=25 for NCEP reanalysis, data might look like:                      '
+      write(outunit,1)'# /data/WindFiles/NCEP                                                                                 '
+      write(outunit,1)'# |-- 2016                                                                                             '
+      write(outunit,1)'# |   |-- air.2016.nc                                                                                  '
+      write(outunit,1)'# |   |-- hgt.2016.nc                                                                                  '
+      write(outunit,1)'# |   |-- omega.2016.nc                                                                                '
+      write(outunit,1)'# |   |-- uwnd.2016.nc                                                                                 '
+      write(outunit,1)'# |   `-- vwnd.2016.nc                                                                                 '
+      write(outunit,1)'# |-- 2017                                                                                             '
+      write(outunit,1)'#     |-- air.2017.nc                                                                                  '
+      write(outunit,1)'# In this case, Block 5 will just contain one line: /data/WindFiles/NCEP or just NCEP                  '
+      write(outunit,1)'# if you have a soft link in the run directory.                                                        '
+      write(outunit,1)'# For a network of radiosonde data, please see the MetReader documentation for                         '
+      write(outunit,1)'# the input specification https://code.usgs.gov/vsc/ash3d/volcano-ash3d-metreader.                     '
         case(6) ! BLOCK 6: AIRPORT FILE
-      write(outlog(io),1)'# AIRPORT LOCATION FILE                                                                                '
-      write(outlog(io),1)'# The following lines allow the user to specify whether times of ash arrival                           '
-      write(outlog(io),1)'# at airports and other locations will be written out, and which file                                  '
-      write(outlog(io),1)'# to read for a list of airport locations.                                                             '
-      write(outlog(io),1)'# PLEASE NOTE:  Each line in the airport location file should contain the                              '
-      write(outlog(io),1)'#               airport latitude, longitude, projected x and y coordinates,                            '
-      write(outlog(io),1)'#               and airport name.  If you are using a projected grid,                                  '
-      write(outlog(io),1)'#               THE X AND Y MUST BE IN THE SAME PROJECTION as the computational grid.                  '
-      write(outlog(io),1)'#               Alternatively, coordinates can be projected via libprojection                          '
-      write(outlog(io),1)'#               by typing "yes" to the last parameter                                                  '
+      write(outunit,1)'# AIRPORT LOCATION FILE                                                                                '
+      write(outunit,1)'# The following lines allow the user to specify whether times of ash arrival                           '
+      write(outunit,1)'# at airports and other locations will be written out, and which file                                  '
+      write(outunit,1)'# to read for a list of airport locations.                                                             '
+      write(outunit,1)'# PLEASE NOTE:  Each line in the airport location file should contain the                              '
+      write(outunit,1)'#               airport latitude, longitude, projected x and y coordinates,                            '
+      write(outunit,1)'#               and airport name.  If you are using a projected grid,                                  '
+      write(outunit,1)'#               THE X AND Y MUST BE IN THE SAME PROJECTION as the computational grid.                  '
+      write(outunit,1)'#               Alternatively, coordinates can be projected via libprojection                          '
+      write(outunit,1)'#               by typing "yes" to the last parameter                                                  '
         case(7) ! BLOCK 7: GRAIN-SIZE BINS, SETTLING VELOCITY
-      write(outlog(io),1)'# GRAIN SIZE GROUPS                                                                                    '
-      write(outlog(io),1)'# The first line must contain the number of settling velocity groups, but                              '
-      write(outlog(io),1)'# can optionally also include a flag for the fall velocity model to be used.                           '
-      write(outlog(io),1)'#    FV_ID = 1, Wilson and Huang                                                                       '
-      write(outlog(io),1)'#          = 2, Wilson and Huang + Cunningham slip                                                     '
-      write(outlog(io),1)'#          = 3, Wilson and Huang + Mod by Pfeiffer Et al.                                              '
-      write(outlog(io),1)'#          = 4, Ganser (assuming prolate ellipsoids)                                                   '
-      write(outlog(io),1)'#          = 5, Ganser + Cunningham slip                                                               '
-      write(outlog(io),1)'#          = 6, Stokes flow for spherical particles + slip                                             '
-      write(outlog(io),1)'# If no fall model is specified, FV_ID = 1, by default                                                 '
-      write(outlog(io),1)'# The first line can also optionally contain the Shape_ID code where 1= Wilson and Huang (F,G),        '
-      write(outlog(io),1)'# and 2 = sphericity                                                                                   '
-      write(outlog(io),1)'# The grain size bins can be enters with 2, 3, or 4 parameters.                                        '
-      write(outlog(io),1)'# If TWO are given, they are read as:   FallVel (in m/s), mass fraction                                '
-      write(outlog(io),1)'# If THREE are given, they are read as: diameter (mm), mass fraction, density (kg/m3)                  '
-      write(outlog(io),1)'# For Shape_ID = 1:                                                                                    '
-      write(outlog(io),1)'# If FOUR are given, they are read as:  diameter (mm), mass fraction, density (kg/m3), Shape F         '
-      write(outlog(io),1)'# The shape factor is given as in Wilson and Huang: F=(b+c)/(2*a), but converted                       '
-      write(outlog(io),1)'# to sphericity (assuming b=c) for the Ganser model.                                                   '
-      write(outlog(io),1)'# If a shape factor is not given, a default value of F=0.4 is used.                                    '
-      write(outlog(io),1)'# If FIVE are given, they are read as:  diameter (mm), mass fraction, density (kg/m3), Shape F, G      '
-      write(outlog(io),1)'#  where G is an additional minor axis ratio shape factor equal to c/b                                 '
-      write(outlog(io),1)'# For Shape_ID = 2:                                                                                    '
-      write(outlog(io),1)'# If FOUR are given, they are read as:  diameter (mm), mass fraction, density (kg/m3), Sphericity      '
-      write(outlog(io),1)'#                                                                                                      '
-      write(outlog(io),1)'# If the last grain size bin has a negative diameter, then the remaining mass fraction                 '
-      write(outlog(io),1)'# will be distributed over the previous bins via a log-normal distribution in phi.                     '
-      write(outlog(io),1)'# The last bin would be interpreted as:                                                                '
-      write(outlog(io),1)'# diam (neg value) , LN_phi_mean, LN_phi_stddev                                                        '
+      write(outunit,1)'# GRAIN SIZE GROUPS                                                                                    '
+      write(outunit,1)'# The first line must contain the number of settling velocity groups, but                              '
+      write(outunit,1)'# can optionally also include a flag for the fall velocity model to be used.                           '
+      write(outunit,1)'#    FV_ID = 1, Wilson and Huang                                                                       '
+      write(outunit,1)'#          = 2, Wilson and Huang + Cunningham slip                                                     '
+      write(outunit,1)'#          = 3, Wilson and Huang + Mod by Pfeiffer Et al.                                              '
+      write(outunit,1)'#          = 4, Ganser (assuming prolate ellipsoids)                                                   '
+      write(outunit,1)'#          = 5, Ganser + Cunningham slip                                                               '
+      write(outunit,1)'#          = 6, Stokes flow for spherical particles + slip                                             '
+      write(outunit,1)'# If no fall model is specified, FV_ID = 1, by default                                                 '
+      write(outunit,1)'# The first line can also optionally contain the Shape_ID code where 1= Wilson and Huang (F,G),        '
+      write(outunit,1)'# and 2 = sphericity                                                                                   '
+      write(outunit,1)'# The grain size bins can be enters with 2, 3, or 4 parameters.                                        '
+      write(outunit,1)'# If TWO are given, they are read as:   FallVel (in m/s), mass fraction                                '
+      write(outunit,1)'# If THREE are given, they are read as: diameter (mm), mass fraction, density (kg/m3)                  '
+      write(outunit,1)'# For Shape_ID = 1:                                                                                    '
+      write(outunit,1)'# If FOUR are given, they are read as:  diameter (mm), mass fraction, density (kg/m3), Shape F         '
+      write(outunit,1)'# The shape factor is given as in Wilson and Huang: F=(b+c)/(2*a), but converted                       '
+      write(outunit,1)'# to sphericity (assuming b=c) for the Ganser model.                                                   '
+      write(outunit,1)'# If a shape factor is not given, a default value of F=0.4 is used.                                    '
+      write(outunit,1)'# If FIVE are given, they are read as:  diameter (mm), mass fraction, density (kg/m3), Shape F, G      '
+      write(outunit,1)'#  where G is an additional minor axis ratio shape factor equal to c/b                                 '
+      write(outunit,1)'# For Shape_ID = 2:                                                                                    '
+      write(outunit,1)'# If FOUR are given, they are read as:  diameter (mm), mass fraction, density (kg/m3), Sphericity      '
+      write(outunit,1)'#                                                                                                      '
+      write(outunit,1)'# If the last grain size bin has a negative diameter, then the remaining mass fraction                 '
+      write(outunit,1)'# will be distributed over the previous bins via a log-normal distribution in phi.                     '
+      write(outunit,1)'# The last bin would be interpreted as:                                                                '
+      write(outunit,1)'# diam (neg value) , LN_phi_mean, LN_phi_stddev                                                        '
         case(8) ! BLOCK 8: VERTICAL PROFILES
-      write(outlog(io),1)'# Options for writing vertical profiles                                                                '
-      write(outlog(io),1)'# The first line below gives the number of locations (nlocs) where vertical                            '
-      write(outlog(io),1)'# profiles are to be written.  That is followed by nlocs lines, each of which                          '
-      write(outlog(io),1)'# contain the location, in the same coordinates as the computational grid.                             '
-      write(outlog(io),1)'# Optionally, a site name can be provided in after the location.                                       '
+      write(outunit,1)'# Options for writing vertical profiles                                                                '
+      write(outunit,1)'# The first line below gives the number of locations (nlocs) where vertical                            '
+      write(outunit,1)'# profiles are to be written.  That is followed by nlocs lines, each of which                          '
+      write(outunit,1)'# contain the location, in the same coordinates as the computational grid.                             '
+      write(outunit,1)'# Optionally, a site name can be provided in after the location.                                       '
         case(9) ! BLOCK 9: (Optional): NETCDF ANNOTATIONS
-      write(outlog(io),1)'# netCDF output options                                                                                '
-      write(outlog(io),1)'# This last block is optional.                                                                         '
-      write(outlog(io),1)'# The output file name can be give, but will default to 3d_tephra_fall.nc if absent                    '
-      write(outlog(io),1)'# The title and comment lines are passed through to the netcdf header of the                           '
-      write(outlog(io),1)'# output file.                                                                                         '
+      write(outunit,1)'# netCDF output options                                                                                '
+      write(outunit,1)'# This last block is optional.                                                                         '
+      write(outunit,1)'# The output file name can be give, but will default to 3d_tephra_fall.nc if absent                    '
+      write(outunit,1)'# The title and comment lines are passed through to the netcdf header of the                           '
+      write(outunit,1)'# output file.                                                                                         '
         case(10) ! BLOCK 10 (OPTMOD): Optional module blocks
                  !   First RESETPARAMS
-      write(outlog(io),1)'# Optional Modules are identified by the text string at the top of the block                           '
-      write(outlog(io),1)'# OPTMOD=[module name]                                                                                 '
-      write(outlog(io),1)'# There will need to be a custom block reader in the module to read this section                       '
-      write(outlog(io),1)'# section of the input file.  Below is the built-in example for resetting parameters.                  '
-      write(outlog(io),1)'# You only need to include the line(s) for the parameters you want to reset. All                       '
-      write(outlog(io),1)'# options are listed below.                                                                            '
+      write(outunit,1)'# Optional Modules are identified by the text string at the top of the block                           '
+      write(outunit,1)'# OPTMOD=[module name]                                                                                 '
+      write(outunit,1)'# There will need to be a custom block reader in the module to read this section                       '
+      write(outunit,1)'# section of the input file.  Below is the built-in example for resetting parameters.                  '
+      write(outunit,1)'# You only need to include the line(s) for the parameters you want to reset. All                       '
+      write(outunit,1)'# options are listed below.                                                                            '
         case(11) ! BLOCK 10+1 (OPTMOD):
                  !   TOPO
-      write(outlog(io),1)'# Topography                                                                                           '
-      write(outlog(io),1)'# Line 1 indicates whether or not to use topography followed by the integer flag                       '
-      write(outlog(io),1)'#        describing how topography will modify the vertical grid.                                      '
-      write(outlog(io),1)'#          0 = no vertical modification; z-grid remains 0-> top throughout the domain                  '
-      write(outlog(io),1)'#          1 = shifted; s = z-z_surf; computational grid is uniformly shifted upward                   '
-      write(outlog(io),1)'#              everywhere by topography                                                                '
-      write(outlog(io),1)'#          2 = sigma-altitude; s=z_top(z-z_surf)/(z_top-z_surf); topography has decaying               '
-      write(outlog(io),1)'#              influence with height                                                                   '
-      write(outlog(io),1)'# Line 2 indicates the topography data format followed by the smoothing radius in km                   '
-      write(outlog(io),1)'# Topofile format must be one of                                                                       '
-      write(outlog(io),1)'#   1 : Gridded lon/lat (netcdf): ETOPO, GEBCO                                                         '
-      write(outlog(io),1)'#   2 : Gridded Binary: NOAA GLOBE, GTOPO30                                                            '
-      write(outlog(io),1)'#   3 : ESRI ASCII                                                                                     '
-      write(outlog(io),1)'#  Line 3 is the file name of the topography data.                                                     '
-      write(outlog(io),1)'#                                                                                                      '
+      write(outunit,1)'# Topography                                                                                           '
+      write(outunit,1)'# Line 1 indicates whether or not to use topography followed by the integer flag                       '
+      write(outunit,1)'#        describing how topography will modify the vertical grid.                                      '
+      write(outunit,1)'#          0 = no vertical modification; z-grid remains 0-> top throughout the domain                  '
+      write(outunit,1)'#          1 = shifted; s = z-z_surf; computational grid is uniformly shifted upward                   '
+      write(outunit,1)'#              everywhere by topography                                                                '
+      write(outunit,1)'#          2 = sigma-altitude; s=z_top(z-z_surf)/(z_top-z_surf); topography has decaying               '
+      write(outunit,1)'#              influence with height                                                                   '
+      write(outunit,1)'# Line 2 indicates the topography data format followed by the smoothing radius in km                   '
+      write(outunit,1)'# Topofile format must be one of                                                                       '
+      write(outunit,1)'#   1 : Gridded lon/lat (netcdf): ETOPO, GEBCO                                                         '
+      write(outunit,1)'#   2 : Gridded Binary: NOAA GLOBE, GTOPO30                                                            '
+      write(outunit,1)'#   3 : ESRI ASCII                                                                                     '
+      write(outunit,1)'#  Line 3 is the file name of the topography data.                                                     '
+      write(outunit,1)'#                                                                                                      '
         case(12) ! BLOCK 10+2 (OPTMOD):
                  !   VARDIFF
-      write(outlog(io),1)'# Variable Diffusivity                                                                                 '
-      write(outlog(io),1)'#   Line 1 indicates whether or not to use horizontal diffusivity followed by the                      '
-      write(outlog(io),1)'#          type ID and value with                                                                      '
-      write(outlog(io),1)'#             1  500.0 # constant horizontal diffusivity with specified value (m2/s)                   '
-      write(outlog(io),1)'#             2  0.2   # Smagorinsky model with coefficient C ()                                       '
-      write(outlog(io),1)'#             3  0.2   # Pielke model with coefficient C ()                                            '
-      write(outlog(io),1)'#   Line 2 indicates whether or not to use vertical diffusivity                                        '
-      write(outlog(io),1)'#   Line 3 indicates the boundary layer model and value (if model requires)                            '
-      write(outlog(io),1)'#             1 500.0         # BL model 1=const ; value (m2/s)                                        '
-      write(outlog(io),1)'#             2               #          2=none (Use Free-air throughout)                              '
-      write(outlog(io),1)'#             3               #          3=Troen and Mahrt                                             '
-      write(outlog(io),1)'#             4               #          4=Ulke                                                        '
-      write(outlog(io),1)'#             5               #          5=Shir / Businger,Ayer                                        '
-      write(outlog(io),1)'#   Line 4 indicates the Free-Air model and value (if model requires)                                  '
-      write(outlog(io),1)'#             1 500.0         # Free-Air 1=const ; value (m2/s)                                        '
-      write(outlog(io),1)'#             2               #          2=F(Ri)=Jacobson                                              '
-      write(outlog(io),1)'#             3               #          3=F(Ri)=Collin                                                '
-      write(outlog(io),1)'#             4               #          4=F(Ri)=Piedelievre                                           '
-      write(outlog(io),1)'#   Line 5 contains the von Karman constant                                                            '
-      write(outlog(io),1)'#   Line 6 contains the free-air mixing length (m)                                                     '
-      write(outlog(io),1)'#   Line 7 is the critical Richardson number used in calculating atmospheric stability.                '
-      write(outlog(io),1)'#                                                                                                      '
+      write(outunit,1)'# Variable Diffusivity                                                                                 '
+      write(outunit,1)'#   Line 1 indicates whether or not to use horizontal diffusivity followed by the                      '
+      write(outunit,1)'#          type ID and value with                                                                      '
+      write(outunit,1)'#             1  500.0 # constant horizontal diffusivity with specified value (m2/s)                   '
+      write(outunit,1)'#             2  0.2   # Smagorinsky model with coefficient C ()                                       '
+      write(outunit,1)'#             3  0.2   # Pielke model with coefficient C ()                                            '
+      write(outunit,1)'#   Line 2 indicates whether or not to use vertical diffusivity                                        '
+      write(outunit,1)'#   Line 3 indicates the boundary layer model and value (if model requires)                            '
+      write(outunit,1)'#             1 500.0         # BL model 1=const ; value (m2/s)                                        '
+      write(outunit,1)'#             2               #          2=none (Use Free-air throughout)                              '
+      write(outunit,1)'#             3               #          3=Troen and Mahrt                                             '
+      write(outunit,1)'#             4               #          4=Ulke                                                        '
+      write(outunit,1)'#             5               #          5=Shir / Businger,Ayer                                        '
+      write(outunit,1)'#   Line 4 indicates the Free-Air model and value (if model requires)                                  '
+      write(outunit,1)'#             1 500.0         # Free-Air 1=const ; value (m2/s)                                        '
+      write(outunit,1)'#             2               #          2=F(Ri)=Jacobson                                              '
+      write(outunit,1)'#             3               #          3=F(Ri)=Collin                                                '
+      write(outunit,1)'#             4               #          4=F(Ri)=Piedelievre                                           '
+      write(outunit,1)'#   Line 5 contains the von Karman constant                                                            '
+      write(outunit,1)'#   Line 6 contains the free-air mixing length (m)                                                     '
+      write(outunit,1)'#   Line 7 is the critical Richardson number used in calculating atmospheric stability.                '
+      write(outunit,1)'#                                                                                                      '
 
 !        case default
       end select
@@ -5962,7 +5962,8 @@
 !
 !  Called from: help_inputfile
 !  Arguments:
-!    WriteBlock      = logical: indicates that write to stdout as well as set vars
+!    outunit         = output stream ID or 0 for Set Vars only with no output
+!!!!    WriteBlock      = logical: indicates that write to stdout as well as set vars
 !    vname           = volcano name
 !    projline        = projection specification
 !    LLx,LLy         = coordinates of lower-left corner of computational grid
@@ -5982,13 +5983,13 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine SetWrite_input_block_01(WriteBlock,vname,projline,LLx,LLy,widthx,widthy,&
+      subroutine SetWrite_input_block_01(outunit,vname,projline,LLx,LLy,widthx,widthy,&
                                         x_in,y_in,z_in,dx_in,dy_in,dz_in,kdiff,Suzk,nerup,   &
                                         dz_type,dz_line,src_type)
 
-      ! This module requires Fortran 2003 or later
-      use iso_fortran_env, only : &
-         output_unit
+!      ! This module requires Fortran 2003 or later
+!      use iso_fortran_env, only : &
+!         output_unit
 
       use io_units
 
@@ -6006,7 +6007,8 @@
       use Diffusion,     only : &
          diffusivity_horz
 
-      logical           ,intent(in) :: WriteBlock
+!      logical           ,intent(in) :: WriteBlock
+      integer           ,intent(in) :: outunit
       character(len=30) ,intent(in) :: vname
       character(len=80) ,intent(in) :: projline
       real(kind=ip)     ,intent(in) :: LLx
@@ -6104,28 +6106,28 @@
       endif
       neruptions = nerup
 
-      if(WriteBlock)then
-        write(output_unit,1)&
+      if(outunit.gt.0)then
+        write(outunit,1)&
          '******************* BLOCK 1 ****************************************************'
-        write(output_unit,2)VolcanoName
-        write(output_unit,3)adjustl(trim(projline))
-        write(output_unit,4)LLx,LLy
-        write(output_unit,5)widthx,widthy
-        write(output_unit,6)x_in,y_in,z_in
-        write(output_unit,7)dx_in,dy_in
+        write(outunit,2)VolcanoName
+        write(outunit,3)adjustl(trim(projline))
+        write(outunit,4)LLx,LLy
+        write(outunit,5)widthx,widthy
+        write(outunit,6)x_in,y_in,z_in
+        write(outunit,7)dx_in,dy_in
         if(dz_type.eq.1)then
-          write(output_unit,8)dz_const
+          write(outunit,8)dz_const
         else
-          write(output_unit,9)VarDzType
-          write(output_unit,10)dz_line
+          write(outunit,9)VarDzType
+          write(outunit,10)dz_line
         endif
         if(src_type.eq.1)then
-          write(output_unit,11)diffusivity_horz,Suzuki_A
+          write(outunit,11)diffusivity_horz,Suzuki_A
         else
-          write(output_unit,12)diffusivity_horz,SourceType
+          write(outunit,12)diffusivity_horz,SourceType
         endif
-        write(output_unit,13)neruptions
-        write(output_unit,1)&
+        write(outunit,13)neruptions
+        write(outunit,1)&
          '********************************************************************************'
       endif
 
@@ -6151,7 +6153,8 @@
 !
 !  Called from: help_inputfile
 !  Arguments:
-!    WriteBlock = logical: indicates that write to stdout as well as set vars
+!    outunit         = output stream ID or 0 for Set Vars only with no output
+!!!!    WriteBlock = logical: indicates that write to stdout as well as set vars
 !    nerup      = # of eruptions
 !    src_type   = source_type 1=Suz,2=point,3=line,4=profile,5=umb,6=umb_air
 !    e_ST       = eruption start times given as hourssince BaseYear
@@ -6168,21 +6171,22 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine SetWrite_input_block_02(WriteBlock,nerup,src_type,     &
+      subroutine SetWrite_input_block_02(outunit,nerup,src_type,     &
                                         e_ST,e_Dur,e_PmH,e_Vol,         &
                                         ep_dz,ep_nz,ep_Vol)
 
 
-      ! This module requires Fortran 2003 or later
-      use iso_fortran_env, only : &
-         output_unit
+!      ! This module requires Fortran 2003 or later
+!      use iso_fortran_env, only : &
+!         output_unit
 
       use io_units
 
       use time_data,     only : &
           BaseYear,useLeap
 
-      logical           ,intent(in) :: WriteBlock
+      !logical           ,intent(in) :: WriteBlock
+      integer           ,intent(in) :: outunit
       integer           ,intent(in) :: nerup
       integer           ,intent(in) :: src_type
       real(kind=dp),dimension(nerup),intent(in) :: e_ST
@@ -6222,8 +6226,8 @@
         end function HS_DayOfEvent
       END INTERFACE
 
-      if(WriteBlock)then
-        write(output_unit,1)&
+      if(outunit.gt.0)then
+        write(outunit,1)&
          '******************* BLOCK 2 ****************************************************'
         do i=1,nerup
           iyear = HS_YearOfEvent(e_ST(i),BaseYear,useLeap)
@@ -6235,14 +6239,14 @@
              src_type.eq.3.or.&
              src_type.eq.5.or.&
              src_type.eq.6)then
-            write(output_unit,2)iyear,imonth,iday,hour,e_Dur(i),e_PmH(i),e_Vol(i)
+            write(outunit,2)iyear,imonth,iday,hour,e_Dur(i),e_PmH(i),e_Vol(i)
           else
             ! src_type = 4 (profile)
-            write(output_unit,3)iyear,imonth,iday,hour,e_Dur(i),e_PmH(i),e_Vol(i),ep_dz(i),ep_nz(i)
-            write(output_unit,4)real(ep_Vol(i,1:ep_nz(i)),kind=4)
+            write(outunit,3)iyear,imonth,iday,hour,e_Dur(i),e_PmH(i),e_Vol(i),ep_dz(i),ep_nz(i)
+            write(outunit,4)real(ep_Vol(i,1:ep_nz(i)),kind=4)
           endif
         enddo
-        write(output_unit,1)&
+        write(outunit,1)&
          '********************************************************************************'
       endif
 
@@ -6259,7 +6263,8 @@
 !
 !  Called from: help_inputfile  
 !  Arguments:
-!    WriteBlock = logical: indicates that write to stdout as well as set vars
+!    outunit         = output stream ID or 0 for Set Vars only with no output
+!!!!    WriteBlock = logical: indicates that write to stdout as well as set vars
 !    iw         = iwind        (windfile class)
 !    iwf        = iwindformat  (windfile product)
 !    igrid      = NCEP grid ID
@@ -6274,16 +6279,17 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine SetWrite_input_block_03(WriteBlock,iw,iwf,igrid,idf,iHH,&
+      subroutine SetWrite_input_block_03(outunit,iw,iwf,igrid,idf,iHH,&
                                          sim_time,comp_stop,nwindfiles)
 
-      ! This module requires Fortran 2003 or later
-      use iso_fortran_env, only : &
-         output_unit
+!      ! This module requires Fortran 2003 or later
+!      use iso_fortran_env, only : &
+!         output_unit
 
       use io_units
 
-      logical           ,intent(in) :: WriteBlock
+      !logical           ,intent(in) :: WriteBlock
+      integer           ,intent(in) :: outunit
       integer           ,intent(in) :: iw
       integer           ,intent(in) :: iwf
       integer           ,intent(in) :: igrid
@@ -6293,23 +6299,23 @@
       logical           ,intent(in) :: comp_stop
       integer           ,intent(in) :: nwindfiles
 
-      if(WriteBlock)then
-        write(output_unit,1)&
+      if(outunit.gt.0)then
+        write(outunit,1)&
          '******************* BLOCK 3 ****************************************************'
         if(igrid.eq.0)then
-          write(output_unit,2)iw,iwf
+          write(outunit,2)iw,iwf
         else
-          write(output_unit,3)iw,iwf,igrid,idf
+          write(outunit,3)iw,iwf,igrid,idf
         endif
-        write(output_unit,4)iHH
-        write(output_unit,5)sim_time
+        write(outunit,4)iHH
+        write(outunit,5)sim_time
         if(comp_stop)then
-          write(output_unit,6)
+          write(outunit,6)
         else
-          write(output_unit,7)
+          write(outunit,7)
         endif
-        write(output_unit,8)nwindfiles
-        write(output_unit,1)&
+        write(outunit,8)nwindfiles
+        write(outunit,1)&
          '********************************************************************************'
       endif
 
@@ -6330,7 +6336,8 @@
 !
 !  Called from: help_inputfile  
 !  Arguments:
-!    WriteBlock                      = logical: indicates that write to stdout as well as set vars
+!    outunit         = output stream ID or 0 for Set Vars only with no output
+!!!!    WriteBlock                      = logical: indicates that write to stdout as well as set vars
 !    WriteDepositFinal_ASCII_c       = char:  B4L1 n/y Write out ESRI ASCII file of final deposit thickness?
 !    WriteDepositFinal_KML_c         = char:  B4L2 n/y Write out        KML file of final deposit thickness?
 !    WriteDepositTS_ASCII_c          = char:  B4L3 Write out ESRI ASCII deposit files at specified times?
@@ -6356,7 +6363,7 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine SetWrite_input_block_04(WriteBlock,                                                    &
+      subroutine SetWrite_input_block_04(outunit,                                                       &
                                          WriteDepositFinal_ASCII_c,WriteDepositFinal_KML_c,             &
                                          WriteDepositTS_ASCII_c,WriteDepositTS_KML_c,                   &
                                          WriteCloudConcentration_ASCII_c,WriteCloudConcentration_KML_c, &
@@ -6366,13 +6373,14 @@
                                          WriteCloudTime_ASCII_c,WriteCloudTime_KML_c,                   &
                                          Write3dFiles_c,ifm,ofm,nwt,wts)
 
-      ! This module requires Fortran 2003 or later
-      use iso_fortran_env, only : &
-         output_unit
+!      ! This module requires Fortran 2003 or later
+!      use iso_fortran_env, only : &
+!         output_unit
 
       use io_units
 
-      logical           ,intent(in) :: WriteBlock
+!      logical           ,intent(in) :: WriteBlock
+      integer           ,intent(in) :: outunit
       character(len=1)  ,intent(in) :: WriteDepositFinal_ASCII_c
       character(len=1)  ,intent(in) :: WriteDepositFinal_KML_c
       character(len=1)  ,intent(in) :: WriteDepositTS_ASCII_c
@@ -6393,49 +6401,49 @@
       integer           ,intent(in) :: nwt
       real(kind=dp),dimension(nwt),intent(in) :: wts
 
-      if(WriteBlock)then
-        write(output_unit,1)&
+      if(outunit.gt.0)then
+        write(outunit,1)&
          '******************* BLOCK 4 ****************************************************'
-        if(WriteDepositFinal_ASCII_c      .eq.'n')write(output_unit,11)'no '
-        if(WriteDepositFinal_ASCII_c      .eq.'y')write(output_unit,11)'yes'
-        if(WriteDepositFinal_KML_c        .eq.'n')write(output_unit,21)'no '
-        if(WriteDepositFinal_KML_c        .eq.'y')write(output_unit,21)'yes'
-        if(WriteDepositTS_ASCII_c         .eq.'n')write(output_unit,31)'no '
-        if(WriteDepositTS_ASCII_c         .eq.'y')write(output_unit,31)'yes'
-        if(WriteDepositTS_KML_c           .eq.'n')write(output_unit,41)'no '
-        if(WriteDepositTS_KML_c           .eq.'y')write(output_unit,41)'eys'
-        if(WriteCloudConcentration_ASCII_c.eq.'n')write(output_unit,51)'no '
-        if(WriteCloudConcentration_ASCII_c.eq.'y')write(output_unit,51)'yes'
-        if(WriteCloudConcentration_KML_c  .eq.'n')write(output_unit,61)'no '
-        if(WriteCloudConcentration_KML_c  .eq.'y')write(output_unit,61)'yes'
-        if(WriteCloudHeight_ASCII_c       .eq.'n')write(output_unit,71)'no '
-        if(WriteCloudHeight_ASCII_c       .eq.'y')write(output_unit,71)'yes'
-        if(WriteCloudHeight_KML_c         .eq.'n')write(output_unit,81)'no '
-        if(WriteCloudHeight_KML_c         .eq.'y')write(output_unit,81)'yes'
-        if(WriteCloudLoad_ASCII_c         .eq.'n')write(output_unit,91)'no '
-        if(WriteCloudLoad_ASCII_c         .eq.'y')write(output_unit,91)'yes'
-        if(WriteCloudLoad_KML_c           .eq.'n')write(output_unit,101)'no '
-        if(WriteCloudLoad_KML_c           .eq.'y')write(output_unit,101)'yes'
-        if(WriteDepositTime_ASCII_c       .eq.'n')write(output_unit,111)'no '
-        if(WriteDepositTime_ASCII_c       .eq.'y')write(output_unit,111)'yes'
-        if(WriteDepositTime_KML_c         .eq.'n')write(output_unit,121)'no '
-        if(WriteDepositTime_KML_c         .eq.'y')write(output_unit,121)'yes'
-        if(WriteCloudTime_ASCII_c         .eq.'n')write(output_unit,131)'no '
-        if(WriteCloudTime_ASCII_c         .eq.'y')write(output_unit,131)'yes'
-        if(WriteCloudTime_KML_c           .eq.'n')write(output_unit,141)'no '
-        if(WriteCloudTime_KML_c           .eq.'y')write(output_unit,141)'yes'
-        if(Write3dFiles_c                 .eq.'n')write(output_unit,151)'no ',ifm
-        if(Write3dFiles_c                 .eq.'y')write(output_unit,151)'yes',ifm
+        if(WriteDepositFinal_ASCII_c      .eq.'n')write(outunit,11)'no '
+        if(WriteDepositFinal_ASCII_c      .eq.'y')write(outunit,11)'yes'
+        if(WriteDepositFinal_KML_c        .eq.'n')write(outunit,21)'no '
+        if(WriteDepositFinal_KML_c        .eq.'y')write(outunit,21)'yes'
+        if(WriteDepositTS_ASCII_c         .eq.'n')write(outunit,31)'no '
+        if(WriteDepositTS_ASCII_c         .eq.'y')write(outunit,31)'yes'
+        if(WriteDepositTS_KML_c           .eq.'n')write(outunit,41)'no '
+        if(WriteDepositTS_KML_c           .eq.'y')write(outunit,41)'eys'
+        if(WriteCloudConcentration_ASCII_c.eq.'n')write(outunit,51)'no '
+        if(WriteCloudConcentration_ASCII_c.eq.'y')write(outunit,51)'yes'
+        if(WriteCloudConcentration_KML_c  .eq.'n')write(outunit,61)'no '
+        if(WriteCloudConcentration_KML_c  .eq.'y')write(outunit,61)'yes'
+        if(WriteCloudHeight_ASCII_c       .eq.'n')write(outunit,71)'no '
+        if(WriteCloudHeight_ASCII_c       .eq.'y')write(outunit,71)'yes'
+        if(WriteCloudHeight_KML_c         .eq.'n')write(outunit,81)'no '
+        if(WriteCloudHeight_KML_c         .eq.'y')write(outunit,81)'yes'
+        if(WriteCloudLoad_ASCII_c         .eq.'n')write(outunit,91)'no '
+        if(WriteCloudLoad_ASCII_c         .eq.'y')write(outunit,91)'yes'
+        if(WriteCloudLoad_KML_c           .eq.'n')write(outunit,101)'no '
+        if(WriteCloudLoad_KML_c           .eq.'y')write(outunit,101)'yes'
+        if(WriteDepositTime_ASCII_c       .eq.'n')write(outunit,111)'no '
+        if(WriteDepositTime_ASCII_c       .eq.'y')write(outunit,111)'yes'
+        if(WriteDepositTime_KML_c         .eq.'n')write(outunit,121)'no '
+        if(WriteDepositTime_KML_c         .eq.'y')write(outunit,121)'yes'
+        if(WriteCloudTime_ASCII_c         .eq.'n')write(outunit,131)'no '
+        if(WriteCloudTime_ASCII_c         .eq.'y')write(outunit,131)'yes'
+        if(WriteCloudTime_KML_c           .eq.'n')write(outunit,141)'no '
+        if(WriteCloudTime_KML_c           .eq.'y')write(outunit,141)'yes'
+        if(Write3dFiles_c                 .eq.'n')write(outunit,151)'no ',ifm
+        if(Write3dFiles_c                 .eq.'y')write(outunit,151)'yes',ifm
         if(ofm.eq.1)then
-          write(output_unit,161)'ascii '
+          write(outunit,161)'ascii '
         elseif(ofm.eq.2)then
-          write(output_unit,161)'binary'
+          write(outunit,161)'binary'
         elseif(ofm.eq.3)then
-          write(output_unit,161)'netcdf'
+          write(outunit,161)'netcdf'
         endif
-        write(output_unit,171)nwt
-        write(output_unit,181)wts(1:nwt)
-        write(output_unit,1)&
+        write(outunit,171)nwt
+        write(outunit,181)wts(1:nwt)
+        write(outunit,1)&
          '********************************************************************************'
       endif
 
@@ -6468,7 +6476,8 @@
 !
 !  Called from: help_inputfile  
 !  Arguments:
-!    WriteBlock = logical: indicates that write to stdout as well as set vars
+!    outunit         = output stream ID or 0 for Set Vars only with no output
+!!!!    WriteBlock = logical: indicates that write to stdout as well as set vars
 !    nwindfiles = number of windfiles
 !    windfiles  = names of windfiles
 !
@@ -6477,35 +6486,35 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine SetWrite_input_block_05(WriteBlock,                                                    &
+      subroutine SetWrite_input_block_05(outunit,                                                       &
                                          nwindfiles,                                                    &
                                          windfiles)
 
-      ! This module requires Fortran 2003 or later
-      use iso_fortran_env, only : &
-         output_unit
+!      ! This module requires Fortran 2003 or later
+!      use iso_fortran_env, only : &
+!         output_unit
 
       use io_units
 
-      logical           ,intent(in) :: WriteBlock
+!      logical           ,intent(in) :: WriteBlock
+      integer           ,intent(in) :: outunit
       integer           ,intent(in) :: nwindfiles
       character(len=130),dimension(nwindfiles),intent(in) :: windfiles
 
       integer :: i
 
-      if(WriteBlock)then
-        write(output_unit,1)&
+      if(outunit.gt.0)then
+        write(outunit,1)&
          '******************* BLOCK 4 ****************************************************'
         do i=1,nwindfiles
-          write(output_unit,2)windfiles(i)
+          write(outunit,2)windfiles(i)
         enddo
-        write(output_unit,1)&
+        write(outunit,1)&
          '********************************************************************************'
       endif
 
  1    format(a80)
  2    format(a130)
-
 
       end subroutine SetWrite_input_block_05
 
@@ -6515,7 +6524,8 @@
 !
 !  Called from: help_inputfile  
 !  Arguments:
-!    WriteBlock = logical: indicates that write to stdout as well as set vars
+!    outunit         = output stream ID or 0 for Set Vars only with no output
+!!!!    WriteBlock = logical: indicates that write to stdout as well as set vars
 !    WriteAirportFile_ASCII_c  = Write out ash arrival times at airports to ASCII FILE?
 !    WriteGSD_c                = Write out grain-size distribution to ASCII airport file?
 !    WriteAirportFile_KML_c    = Write out ash arrival times to kml file?
@@ -6527,18 +6537,19 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine SetWrite_input_block_06(WriteBlock,  &
+      subroutine SetWrite_input_block_06(outunit,  &
                                          WriteAirportFile_ASCII_c,WriteGSD_c, &
                                          WriteAirportFile_KML_c,b6l4, &
                                          ProjectAirportLocations_c)
 
-      ! This module requires Fortran 2003 or later
-      use iso_fortran_env, only : &
-         output_unit
+!      ! This module requires Fortran 2003 or later
+!      use iso_fortran_env, only : &
+!         output_unit
 
       use io_units
 
-      logical           ,intent(in) :: WriteBlock
+!      logical           ,intent(in) :: WriteBlock
+      integer           ,intent(in) :: outunit
       character(len=1)  ,intent(in) :: WriteAirportFile_ASCII_c
       character(len=1)  ,intent(in) :: WriteGSD_c
       character(len=1)  ,intent(in) :: WriteAirportFile_KML_c
@@ -6546,24 +6557,24 @@
       character(len=1)  ,intent(in) :: ProjectAirportLocations_c
 
 
-      if(WriteBlock)then
-        write(output_unit,1)&
+      if(outunit.gt.0)then
+        write(outunit,1)&
          '******************* BLOCK 6 ****************************************************'
-        if(WriteAirportFile_ASCII_c.eq.'n')write(output_unit,11)'no '
-        if(WriteAirportFile_ASCII_c.eq.'y')write(output_unit,11)'yes'
+        if(WriteAirportFile_ASCII_c.eq.'n')write(outunit,11)'no '
+        if(WriteAirportFile_ASCII_c.eq.'y')write(outunit,11)'yes'
 
-        if(WriteGSD_c.eq.'n')write(output_unit,21)'no '
-        if(WriteGSD_c.eq.'y')write(output_unit,21)'yes'
+        if(WriteGSD_c.eq.'n')write(outunit,21)'no '
+        if(WriteGSD_c.eq.'y')write(outunit,21)'yes'
 
-        if(WriteAirportFile_KML_c.eq.'n')write(output_unit,31)'no '
-        if(WriteAirportFile_KML_c.eq.'y')write(output_unit,31)'yes'
+        if(WriteAirportFile_KML_c.eq.'n')write(outunit,31)'no '
+        if(WriteAirportFile_KML_c.eq.'y')write(outunit,31)'yes'
 
-        write(output_unit,41)b6l4(1:30)
+        write(outunit,41)b6l4(1:30)
 
-        if(ProjectAirportLocations_c.eq.'n')write(output_unit,51)'no '
-        if(ProjectAirportLocations_c.eq.'y')write(output_unit,51)'yes'
+        if(ProjectAirportLocations_c.eq.'n')write(outunit,51)'no '
+        if(ProjectAirportLocations_c.eq.'y')write(outunit,51)'yes'
 
-        write(output_unit,1)&
+        write(outunit,1)&
          '********************************************************************************'
       endif
 
@@ -6579,7 +6590,8 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  SetWrite_input_block_07
-!    WriteBlock = logical: indicates that write to stdout as well as set vars
+!    outunit         = output stream ID or 0 for Set Vars only with no output
+!!!!    WriteBlock = logical: indicates that write to stdout as well as set vars
 !
 !  Called from: help_inputfile  
 !  Arguments:
@@ -6589,15 +6601,100 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine SetWrite_input_block_07(WriteBlock)
+      subroutine SetWrite_input_block_07(outunit                   ,&
+                                         ns                        ,&  ! number of actual grain-size bins 
+                                         fv_idx                    ,&  ! 
+                                         shape_idx                 ,&  ! 
+                                         mf                        ,&  ! 
+                                         phim                      ,&  ! 
+                                         phisig                    ,&  ! 
+                                         T_diam                    ,&  ! 
+                                         T_mf                      ,&  ! 
+                                         T_rho                     ,&  ! 
+                                         T_F                       ,&  ! 
+                                         T_G                       ,&  ! 
+                                         T_phi)                        ! 
 
-      ! This module requires Fortran 2003 or later
-      use iso_fortran_env, only : &
-         output_unit
+
+!      ! This module requires Fortran 2003 or later
+!      use iso_fortran_env, only : &
+!         output_unit
 
       use io_units
 
-      logical           ,intent(in) :: WriteBlock
+      use Tephra,        only : &
+         n_gs_max,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,FV_ID,&
+         Tephra_gsF,Tephra_gsG,Tephra_gsPhi,Shape_ID,&
+         LN_massfrac,LN_phi_mean,LN_phi_stddev
+
+      integer                    ,intent(in) :: outunit
+      integer                    ,intent(in) :: ns
+      integer                    ,intent(in) :: fv_idx
+      integer                    ,intent(in) :: shape_idx
+      real(kind=ip)              ,intent(in) :: mf
+      real(kind=ip)              ,intent(in) :: phim
+      real(kind=ip)              ,intent(in) :: phisig
+      real(kind=ip),dimension(ns),intent(in) :: T_diam
+      real(kind=ip),dimension(ns),intent(in) :: T_mf
+      real(kind=ip),dimension(ns),intent(in) :: T_rho
+      real(kind=ip),dimension(ns),intent(in) :: T_F
+      real(kind=ip),dimension(ns),intent(in) :: T_G
+      real(kind=ip),dimension(ns),intent(in) :: T_phi
+
+      n_gs_max        = ns
+      FV_ID           = fv_idx
+      Shape_ID        = shape_idx
+      LN_massfrac     = mf
+      LN_phi_mean     = phim
+      LN_phi_stddev   = phisig
+#ifdef USEPOINTERS
+      if(.not.associated(Tephra_gsdiam))then
+#else
+      if(.not.allocated(Tephra_gsdiam))then
+#endif
+        allocate(Tephra_gsdiam(n_gs_max))
+      endif
+      Tephra_gsdiam(1:ns)   = T_diam(1:ns)
+#ifdef USEPOINTERS
+      if(.not.associated(Tephra_bin_mass))then
+#else
+      if(.not.allocated(Tephra_bin_mass))then
+#endif
+        allocate(Tephra_bin_mass(n_gs_max))
+      endif
+      Tephra_bin_mass(1:ns) = T_mf(1:ns)
+#ifdef USEPOINTERS
+      if(.not.associated(Tephra_rho_m))then
+#else
+      if(.not.allocated(Tephra_rho_m))then
+#endif
+        allocate(Tephra_rho_m(n_gs_max))
+      endif
+      Tephra_rho_m(1:ns)    = T_rho(1:ns)
+#ifdef USEPOINTERS
+      if(.not.associated(Tephra_gsF))then
+#else
+      if(.not.allocated(Tephra_gsF))then
+#endif
+        allocate(Tephra_gsF(n_gs_max))
+      endif
+      Tephra_gsF(1:ns)      = T_F(1:ns)
+#ifdef USEPOINTERS
+      if(.not.associated(Tephra_gsG))then
+#else
+      if(.not.allocated(Tephra_gsG))then
+#endif
+        allocate(Tephra_gsG(n_gs_max))
+      endif
+      Tephra_gsG(1:ns)      = T_G(1:ns)
+#ifdef USEPOINTERS
+      if(.not.associated(Tephra_gsPhi))then
+#else
+      if(.not.allocated(Tephra_gsPhi))then
+#endif
+        allocate(Tephra_gsPhi(n_gs_max))
+      endif
+      Tephra_gsPhi(1:ns)    = T_phi(1:ns)
 
       end subroutine SetWrite_input_block_07
 
@@ -6607,22 +6704,24 @@
 !
 !  Called from: help_inputfile  
 !  Arguments:
-!    WriteBlock = logical: indicates that write to stdout as well as set vars
+!    outunit         = output stream ID or 0 for Set Vars only with no output
+!!!!    WriteBlock = logical: indicates that write to stdout as well as set vars
 !    
 !  This subroutine writes the content of block 8 (Vertical profile info.) of
 !  the Ash3d control file.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine SetWrite_input_block_08(WriteBlock)
+      subroutine SetWrite_input_block_08(outunit)
 
-      ! This module requires Fortran 2003 or later
-      use iso_fortran_env, only : &
-         output_unit
+!      ! This module requires Fortran 2003 or later
+!      use iso_fortran_env, only : &
+!         output_unit
 
       use io_units
 
-      logical           ,intent(in) :: WriteBlock
+!      logical           ,intent(in) :: WriteBlock
+      integer           ,intent(in) :: outunit
 
       end subroutine SetWrite_input_block_08
 
@@ -6632,22 +6731,24 @@
 !
 !  Called from: help_inputfile  
 !  Arguments:
-!    WriteBlock = logical: indicates that write to stdout as well as set vars
+!    outunit         = output stream ID or 0 for Set Vars only with no output
+!!!!    WriteBlock = logical: indicates that write to stdout as well as set vars
 !    
 !  This subroutine writes the content of block 9 (NetCDF annotations) of the
 !  Ash3d control file.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine SetWrite_input_block_09(WriteBlock)
+      subroutine SetWrite_input_block_09(outunit)
 
-      ! This module requires Fortran 2003 or later
-      use iso_fortran_env, only : &
-         output_unit
+!      ! This module requires Fortran 2003 or later
+!      use iso_fortran_env, only : &
+!         output_unit
 
       use io_units
 
-      logical           ,intent(in) :: WriteBlock
+!      logical           ,intent(in) :: WriteBlock
+      integer           ,intent(in) :: outunit
 
       end subroutine SetWrite_input_block_09
 
@@ -6657,22 +6758,24 @@
 !
 !  Called from: help_inputfile  
 !  Arguments:
-!    WriteBlock = logical: indicates that write to stdout as well as set vars
+!    outunit         = output stream ID or 0 for Set Vars only with no output
+!!!!    WriteBlock = logical: indicates that write to stdout as well as set vars
 !    
 !  This subroutine writes the content of block 10+ (OPTMOD=RESETPARAMS) of the
 !  Ash3d control file.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine SetWrite_input_block_ResetParam(WriteBlock)
+      subroutine SetWrite_input_block_ResetParam(outunit)
 
-      ! This module requires Fortran 2003 or later
-      use iso_fortran_env, only : &
-         output_unit
+!      ! This module requires Fortran 2003 or later
+!      use iso_fortran_env, only : &
+!         output_unit
 
       use io_units
 
-      logical           ,intent(in) :: WriteBlock
+!      logical           ,intent(in) :: WriteBlock
+      integer           ,intent(in) :: outunit
 
       end subroutine SetWrite_input_block_ResetParam
 
@@ -6682,22 +6785,24 @@
 !
 !  Called from: help_inputfile  
 !  Arguments:
-!    WriteBlock = logical: indicates that write to stdout as well as set vars
+!    outunit         = output stream ID or 0 for Set Vars only with no output
+!!!!    WriteBlock = logical: indicates that write to stdout as well as set vars
 !    
 !  This subroutine writes the content of block 10+ (OPTMOD=TOPO) of the Ash3d
 !  control file.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine SetWrite_input_block_Topo(WriteBlock)
+      subroutine SetWrite_input_block_Topo(outunit)
 
-      ! This module requires Fortran 2003 or later
-      use iso_fortran_env, only : &
-         output_unit
+!      ! This module requires Fortran 2003 or later
+!      use iso_fortran_env, only : &
+!         output_unit
 
       use io_units
 
-      logical           ,intent(in) :: WriteBlock
+!      logical           ,intent(in) :: WriteBlock
+      integer           ,intent(in) :: outunit
 
       end subroutine SetWrite_input_block_Topo
 
@@ -6707,22 +6812,24 @@
 !
 !  Called from: help_inputfile  
 !  Arguments:
-!    WriteBlock = logical: indicates that write to stdout as well as set vars
+!    outunit         = output stream ID or 0 for Set Vars only with no output
+!!!!    WriteBlock = logical: indicates that write to stdout as well as set vars
 !    
 !  This subroutine writes the content of block 10+ (OPTMOD=VARDIFF) of the
 !  Ash3d control file.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine SetWrite_input_block_VarDiff(WriteBlock)
+      subroutine SetWrite_input_block_VarDiff(outunit)
 
-      ! This module requires Fortran 2003 or later
-      use iso_fortran_env, only : &
-         output_unit
+!      ! This module requires Fortran 2003 or later
+!      use iso_fortran_env, only : &
+!         output_unit
 
       use io_units
 
-      logical           ,intent(in) :: WriteBlock
+!      logical           ,intent(in) :: WriteBlock
+      integer           ,intent(in) :: outunit
 
       end subroutine SetWrite_input_block_VarDiff
 

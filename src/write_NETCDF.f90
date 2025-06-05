@@ -5911,12 +5911,12 @@
           endif
           nSTAT = nf90_get_att(ncid,gsmf_var_id,"LN_phi_mean",LN_phi_mean)
           if(nSTAT.ne.0)then
-            call NC_check_status(nSTAT,1,"get_att gs_massfrac LN_phi_mean")
+            call NC_check_status(nSTAT,0,"get_att gs_massfrac LN_phi_mean")
             LN_phi_mean = 0.0_ip
           endif
           nSTAT = nf90_get_att(ncid,gsmf_var_id,"LN_phi_stddev",LN_phi_stddev)
           if(nSTAT.ne.0)then
-            call NC_check_status(nSTAT,1,"get_att gs_massfrac LN_phi_stddev")
+            call NC_check_status(nSTAT,0,"get_att gs_massfrac LN_phi_stddev")
             LN_phi_stddev = 0.0_ip
           endif
 

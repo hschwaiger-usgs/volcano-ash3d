@@ -28,6 +28,11 @@
          neruptions,SourceType,SourceType_idx,e_StartTime,e_Duration,         &
          e_PlumeHeight,e_Volume,e_prof_dz,e_prof_nzpoints,e_prof_Volume
 
+      use Tephra,        only : &
+         n_gs_max,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,FV_ID,&
+         Tephra_gsF,Tephra_gsG,Tephra_gsPhi,Shape_ID,&
+         LN_massfrac,LN_phi_mean,LN_phi_stddev
+
       use Diffusion,     only : &
          diffusivity_horz
 
@@ -62,7 +67,8 @@
       character(len=80) :: linebuffer080
 
       logical       :: IsThere
-      logical       :: WriteBlock = .true.
+!      integer       :: outunit
+!      character(len=30) :: outname
       real(kind=ip) :: LLx
       real(kind=ip) :: LLy
       real(kind=ip) :: widthx
@@ -107,7 +113,13 @@
       character(len=1) :: WriteAirportFile_KML_c
       character(len=1) :: ProjectAirportLocations_c
 
+      ! Reset verbosity so we only are using stdout (no log file)
+      VB = (/3,10/)
+
       write(*,*)"In Ash3d_NetCDF_GenCTR"
+!      outunit = 15
+!      outname = 'Ash3d_control.inp'
+!      open(unit=outunit,file=outname,status='replace',action='write')
 
       nargs = command_argument_count()
       if (nargs.eq.0) then
@@ -154,8 +166,14 @@
       endif
 
 #ifdef USENETCDF
-      !call NC_Read_Output_Products(-1)
+      ! Just read step 1. This brings in all the header info needed for the control file
       call NC_Read_Output_Products(1)
+#else
+     do io=1,nio;if(VB(io).le.verbosity_info)then
+       write(errlog(io),*)'ERROR: NetCDF libraries not linked.'
+       write(errlog(io),*)'       Please recompile linking NetCDF libraries.'
+     endif;enddo
+     stop 1
 #endif  
 
       ! Now that we have loaded the data from the NetCDF file, start writing
@@ -204,8 +222,8 @@
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !  BLOCK 1: GRID INFO
-      call Write_input_block_header(1)
-      call SetWrite_input_block_01(WriteBlock                      ,&  ! indicates that write to stdout as well as set vars
+      call Write_input_block_header(fid_ctrlfile,1)
+      call SetWrite_input_block_01(fid_ctrlfile                    ,&  ! output stream ID
                                    VolcanoName                     ,&  ! volcano name
                                    cdf_b1l2                        ,&  ! projection line
                                    LLx,LLy                         ,&  ! x, y of LL corner
@@ -219,8 +237,8 @@
                                    SourceType_idx)                     ! source_type 1=Suz,2=point,3=line,4=profile,5=umb,6=umb_air
 
       ! BLOCK 2: ERUPTION PARAMETERS
-      call Write_input_block_header(2)
-      call SetWrite_input_block_02(WriteBlock                      ,&  ! indicates that write to stdout as well as set vars
+      call Write_input_block_header(fid_ctrlfile,2)
+      call SetWrite_input_block_02(fid_ctrlfile                    ,&  ! output stream ID
                                    neruptions                      ,&  ! # of eruptions
                                    SourceType_idx                  ,&  ! source_type 1=Suz,2=point,3=line,4=profile,5=umb,6=umb_air
                                    e_StartTime+SimStartHour        ,&
@@ -232,10 +250,10 @@
                                    e_prof_Volume)
 
       ! BLOCK 3: WIND PARAMETERS
-      call Write_input_block_header(3)
+      call Write_input_block_header(fid_ctrlfile,3)
       ! for iwind=5 cases, the number is windfiles is modifies, so read from cdf_b3l5
       read(cdf_b3l5,'(i2)',iostat=iostatus,iomsg=iomessage) nwindfiles
-      call SetWrite_input_block_03(WriteBlock                      ,&  ! indicates that write to stdout as well as set vars
+      call SetWrite_input_block_03(fid_ctrlfile                    ,&  ! output stream ID
                                    MR_iWind                        ,&
                                    MR_iWindFormat                  ,&
                                    MR_iGridCode                    ,&
@@ -300,8 +318,8 @@
       allocate(wts(nwt))
       wts = WriteTimes
  
-      call Write_input_block_header(4)
-      call SetWrite_input_block_04(WriteBlock                      ,&  ! indicates that write to stdout as well as set vars
+      call Write_input_block_header(fid_ctrlfile,4)
+      call SetWrite_input_block_04(fid_ctrlfile                    ,&  ! output stream ID
                                    WriteDepositFinal_ASCII_c       ,&  ! B4L1 n/y Write out ESRI ASCII file of final deposit thickness?
                                    WriteDepositFinal_KML_c         ,&  ! B4L2 n/y Write out        KML file of final deposit thickness?
                                    WriteDepositTS_ASCII_c          ,&  ! B4L3 Write out ESRI ASCII deposit files at specified times?
@@ -327,8 +345,8 @@
         read(cdf_b5l1,*)MR_WindFiles(1)
       endif
 
-      call Write_input_block_header(5)
-      call SetWrite_input_block_05(WriteBlock                      ,&  ! indicates that write to stdout as well as set vars
+      call Write_input_block_header(fid_ctrlfile,5)
+      call SetWrite_input_block_05(fid_ctrlfile                    ,&  ! output stream ID
                                    nwindfiles                      ,&
                                    MR_WindFiles(1:nwindfiles))
 
@@ -347,8 +365,8 @@
       read(cdf_b6l5,'(a3)',iostat=iostatus,iomsg=iomessage) answer
       if(adjustl(trim(answer)).eq.'yes') ProjectAirportLocations_c = 'y'
 
-      call Write_input_block_header(6)
-      call SetWrite_input_block_06(WriteBlock                      ,&  ! indicates that write to stdout as well as set vars
+      call Write_input_block_header(fid_ctrlfile,6)
+      call SetWrite_input_block_06(fid_ctrlfile                    ,&  ! output stream ID
                                    WriteAirportFile_ASCII_c        ,&  ! Write out ash arrival times at airports to ASCII FILE?
                                    WriteGSD_c                      ,&  ! Write out grain-size distribution to ASCII airport file?
                                    WriteAirportFile_KML_c          ,&  ! Write out ash arrival times to kml file?
@@ -356,41 +374,41 @@
                                    ProjectAirportLocations_c)          ! Defer to Lon/Lat coordinates? ("no" defers to projected)
 
       ! BLOCK 7: GRAIN-SIZE BINS, SETTLING VELOCITY
-      call Write_input_block_header(7)
-!      call SetWrite_input_block_07(WriteBlock                      ,&  ! indicates that write to stdout as well as set vars
-!                                   n_gs_max                        ,&  ! number of actual grain-size bins 
-!                                   FV_ID                           ,&  !
-!                                   Shape_ID                        ,&
-!                                   LN_massfrac                     ,&
-!                                   LN_phi_mean                     ,&
-!                                   LN_phi_stddev                   ,&
-!                                   Tephra_gsdiam                   ,&
-!                                   Tephra_bin_mass                 ,&
-!                                   Tephra_rho_m                    ,&
-!                                   Tephra_gsF                      ,&
-!                                   Tephra_gsG                      ,&
-!                                   Tephra_gsPhi)
-!
+      call Write_input_block_header(fid_ctrlfile,7)
+      call SetWrite_input_block_07(fid_ctrlfile                    ,&  ! output stream ID
+                                   n_gs_max                        ,&  ! number of actual grain-size bins 
+                                   FV_ID                           ,&  !
+                                   Shape_ID                        ,&
+                                   LN_massfrac                     ,&
+                                   LN_phi_mean                     ,&
+                                   LN_phi_stddev                   ,&
+                                   Tephra_gsdiam                   ,&
+                                   Tephra_bin_mass                 ,&
+                                   Tephra_rho_m                    ,&
+                                   Tephra_gsF                      ,&
+                                   Tephra_gsG                      ,&
+                                   Tephra_gsPhi)
+
 
 !      ! BLOCK 8: VERTICAL PROFILES
-!      call Write_input_block_header(8)
-!      call SetWrite_input_block_08(WriteBlock           ) !           ,&  ! indicates that write to stdout as well as set vars
+!      call Write_input_block_header(fid_ctrlfile,8)
+!      call SetWrite_input_block_08(fid_ctrlfile           ) !           ,&  ! output stream ID
 
 !      ! BLOCK 9 (Optional): NETCDF ANNOTATIONS
-!      call Write_input_block_header(9)
-!      call SetWrite_input_block_09(WriteBlock           ) !           ,&  ! indicates that write to stdout as well as set vars
+!      call Write_input_block_header(fid_ctrlfile,9)
+!      call SetWrite_input_block_09(fid_ctrlfile           ) !           ,&  ! output stream ID
 !
 !      ! BLOCK 10+: OPTIONAL MODULES (RESETPARAMS)
-!      call Write_input_block_header(10)
-!      call SetWrite_input_block_ResetParam(WriteBlock   ) !           ,&  ! indicates that write to stdout as well as set vars
+!      call Write_input_block_header(fid_ctrlfile,10)
+!      call SetWrite_input_block_ResetParam(fid_ctrlfile   ) !           ,&  ! output stream ID
 !
 !      ! BLOCK 10+: OPTIONAL MODULES (TOPO)
-!      call Write_input_block_header(11)
-!      call SetWrite_input_block_Topo(WriteBlock         ) !           ,&  ! indicates that write to stdout as well as set vars
+!      call Write_input_block_header(fid_ctrlfile,11)
+!      call SetWrite_input_block_Topo(fid_ctrlfile         ) !           ,&  ! output stream ID
 !
 !      ! BLOCK 10+: OPTIONAL MODULES (VARDIFF)
-!      call Write_input_block_header(12)
-!      call SetWrite_input_block_VarDiff(WriteBlock      ) !           ,&  ! indicates that write to stdout as well as set vars
+!      call Write_input_block_header(fid_ctrlfile,12)
+!      call SetWrite_input_block_VarDiff(fid_ctrlfile      ) !           ,&  ! output stream ID
 
 
       close(fid_ctrlfile)
