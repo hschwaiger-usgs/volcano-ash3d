@@ -5963,7 +5963,6 @@
 !  Called from: help_inputfile
 !  Arguments:
 !    outunit         = output stream ID or 0 for Set Vars only with no output
-!!!!    WriteBlock      = logical: indicates that write to stdout as well as set vars
 !    vname           = volcano name
 !    projline        = projection specification
 !    LLx,LLy         = coordinates of lower-left corner of computational grid
@@ -5987,10 +5986,6 @@
                                         x_in,y_in,z_in,dx_in,dy_in,dz_in,kdiff,Suzk,nerup,   &
                                         dz_type,dz_line,src_type)
 
-!      ! This module requires Fortran 2003 or later
-!      use iso_fortran_env, only : &
-!         output_unit
-
       use io_units
 
       use io_data,       only : &
@@ -6007,7 +6002,6 @@
       use Diffusion,     only : &
          diffusivity_horz
 
-!      logical           ,intent(in) :: WriteBlock
       integer           ,intent(in) :: outunit
       character(len=30) ,intent(in) :: vname
       character(len=80) ,intent(in) :: projline
@@ -6153,8 +6147,7 @@
 !
 !  Called from: help_inputfile
 !  Arguments:
-!    outunit         = output stream ID or 0 for Set Vars only with no output
-!!!!    WriteBlock = logical: indicates that write to stdout as well as set vars
+!    outunit    = output stream ID or 0 for Set Vars only with no output
 !    nerup      = # of eruptions
 !    src_type   = source_type 1=Suz,2=point,3=line,4=profile,5=umb,6=umb_air
 !    e_ST       = eruption start times given as hourssince BaseYear
@@ -6164,7 +6157,6 @@
 !    ep_dz      = dz of eruption profile
 !    ep_nz      = nz of eruption profile
 !    ep_Vol     = normalized volume of eruption profile
-!    
 !
 !  This subroutine writes the content of block 2 (Eruption Parameters) of the
 !  Ash3d control file.
@@ -6175,17 +6167,11 @@
                                         e_ST,e_Dur,e_PmH,e_Vol,         &
                                         ep_dz,ep_nz,ep_Vol)
 
-
-!      ! This module requires Fortran 2003 or later
-!      use iso_fortran_env, only : &
-!         output_unit
-
       use io_units
 
       use time_data,     only : &
           BaseYear,useLeap
 
-      !logical           ,intent(in) :: WriteBlock
       integer           ,intent(in) :: outunit
       integer           ,intent(in) :: nerup
       integer           ,intent(in) :: src_type
@@ -6263,8 +6249,7 @@
 !
 !  Called from: help_inputfile  
 !  Arguments:
-!    outunit         = output stream ID or 0 for Set Vars only with no output
-!!!!    WriteBlock = logical: indicates that write to stdout as well as set vars
+!    outunit    = output stream ID or 0 for Set Vars only with no output
 !    iw         = iwind        (windfile class)
 !    iwf        = iwindformat  (windfile product)
 !    igrid      = NCEP grid ID
@@ -6282,13 +6267,8 @@
       subroutine SetWrite_input_block_03(outunit,iw,iwf,igrid,idf,iHH,&
                                          sim_time,comp_stop,nwindfiles)
 
-!      ! This module requires Fortran 2003 or later
-!      use iso_fortran_env, only : &
-!         output_unit
-
       use io_units
 
-      !logical           ,intent(in) :: WriteBlock
       integer           ,intent(in) :: outunit
       integer           ,intent(in) :: iw
       integer           ,intent(in) :: iwf
@@ -6336,8 +6316,7 @@
 !
 !  Called from: help_inputfile  
 !  Arguments:
-!    outunit         = output stream ID or 0 for Set Vars only with no output
-!!!!    WriteBlock                      = logical: indicates that write to stdout as well as set vars
+!    outunit                         = output stream ID or 0 for Set Vars only with no output
 !    WriteDepositFinal_ASCII_c       = char:  B4L1 n/y Write out ESRI ASCII file of final deposit thickness?
 !    WriteDepositFinal_KML_c         = char:  B4L2 n/y Write out        KML file of final deposit thickness?
 !    WriteDepositTS_ASCII_c          = char:  B4L3 Write out ESRI ASCII deposit files at specified times?
@@ -6373,13 +6352,8 @@
                                          WriteCloudTime_ASCII_c,WriteCloudTime_KML_c,                   &
                                          Write3dFiles_c,ifm,ofm,nwt,wts)
 
-!      ! This module requires Fortran 2003 or later
-!      use iso_fortran_env, only : &
-!         output_unit
-
       use io_units
 
-!      logical           ,intent(in) :: WriteBlock
       integer           ,intent(in) :: outunit
       character(len=1)  ,intent(in) :: WriteDepositFinal_ASCII_c
       character(len=1)  ,intent(in) :: WriteDepositFinal_KML_c
@@ -6476,8 +6450,7 @@
 !
 !  Called from: help_inputfile  
 !  Arguments:
-!    outunit         = output stream ID or 0 for Set Vars only with no output
-!!!!    WriteBlock = logical: indicates that write to stdout as well as set vars
+!    outunit    = output stream ID or 0 for Set Vars only with no output
 !    nwindfiles = number of windfiles
 !    windfiles  = names of windfiles
 !
@@ -6490,13 +6463,8 @@
                                          nwindfiles,                                                    &
                                          windfiles)
 
-!      ! This module requires Fortran 2003 or later
-!      use iso_fortran_env, only : &
-!         output_unit
-
       use io_units
 
-!      logical           ,intent(in) :: WriteBlock
       integer           ,intent(in) :: outunit
       integer           ,intent(in) :: nwindfiles
       character(len=130),dimension(nwindfiles),intent(in) :: windfiles
@@ -6524,8 +6492,7 @@
 !
 !  Called from: help_inputfile  
 !  Arguments:
-!    outunit         = output stream ID or 0 for Set Vars only with no output
-!!!!    WriteBlock = logical: indicates that write to stdout as well as set vars
+!    outunit                   = output stream ID or 0 for Set Vars only with no output
 !    WriteAirportFile_ASCII_c  = Write out ash arrival times at airports to ASCII FILE?
 !    WriteGSD_c                = Write out grain-size distribution to ASCII airport file?
 !    WriteAirportFile_KML_c    = Write out ash arrival times to kml file?
@@ -6542,13 +6509,8 @@
                                          WriteAirportFile_KML_c,b6l4, &
                                          ProjectAirportLocations_c)
 
-!      ! This module requires Fortran 2003 or later
-!      use iso_fortran_env, only : &
-!         output_unit
-
       use io_units
 
-!      logical           ,intent(in) :: WriteBlock
       integer           ,intent(in) :: outunit
       character(len=1)  ,intent(in) :: WriteAirportFile_ASCII_c
       character(len=1)  ,intent(in) :: WriteGSD_c
@@ -6591,7 +6553,6 @@
 !
 !  SetWrite_input_block_07
 !    outunit         = output stream ID or 0 for Set Vars only with no output
-!!!!    WriteBlock = logical: indicates that write to stdout as well as set vars
 !
 !  Called from: help_inputfile  
 !  Arguments:
@@ -6615,10 +6576,6 @@
                                          T_G                       ,&  ! 
                                          T_phi)                        ! 
 
-
-!      ! This module requires Fortran 2003 or later
-!      use iso_fortran_env, only : &
-!         output_unit
 
       use io_units
 
@@ -6705,7 +6662,6 @@
 !  Called from: help_inputfile  
 !  Arguments:
 !    outunit         = output stream ID or 0 for Set Vars only with no output
-!!!!    WriteBlock = logical: indicates that write to stdout as well as set vars
 !    
 !  This subroutine writes the content of block 8 (Vertical profile info.) of
 !  the Ash3d control file.
@@ -6714,13 +6670,8 @@
 
       subroutine SetWrite_input_block_08(outunit)
 
-!      ! This module requires Fortran 2003 or later
-!      use iso_fortran_env, only : &
-!         output_unit
-
       use io_units
 
-!      logical           ,intent(in) :: WriteBlock
       integer           ,intent(in) :: outunit
 
       end subroutine SetWrite_input_block_08
@@ -6732,7 +6683,6 @@
 !  Called from: help_inputfile  
 !  Arguments:
 !    outunit         = output stream ID or 0 for Set Vars only with no output
-!!!!    WriteBlock = logical: indicates that write to stdout as well as set vars
 !    
 !  This subroutine writes the content of block 9 (NetCDF annotations) of the
 !  Ash3d control file.
@@ -6741,13 +6691,8 @@
 
       subroutine SetWrite_input_block_09(outunit)
 
-!      ! This module requires Fortran 2003 or later
-!      use iso_fortran_env, only : &
-!         output_unit
-
       use io_units
 
-!      logical           ,intent(in) :: WriteBlock
       integer           ,intent(in) :: outunit
 
       end subroutine SetWrite_input_block_09
@@ -6759,7 +6704,6 @@
 !  Called from: help_inputfile  
 !  Arguments:
 !    outunit         = output stream ID or 0 for Set Vars only with no output
-!!!!    WriteBlock = logical: indicates that write to stdout as well as set vars
 !    
 !  This subroutine writes the content of block 10+ (OPTMOD=RESETPARAMS) of the
 !  Ash3d control file.
@@ -6768,13 +6712,8 @@
 
       subroutine SetWrite_input_block_ResetParam(outunit)
 
-!      ! This module requires Fortran 2003 or later
-!      use iso_fortran_env, only : &
-!         output_unit
-
       use io_units
 
-!      logical           ,intent(in) :: WriteBlock
       integer           ,intent(in) :: outunit
 
       end subroutine SetWrite_input_block_ResetParam
@@ -6786,7 +6725,6 @@
 !  Called from: help_inputfile  
 !  Arguments:
 !    outunit         = output stream ID or 0 for Set Vars only with no output
-!!!!    WriteBlock = logical: indicates that write to stdout as well as set vars
 !    
 !  This subroutine writes the content of block 10+ (OPTMOD=TOPO) of the Ash3d
 !  control file.
@@ -6795,13 +6733,8 @@
 
       subroutine SetWrite_input_block_Topo(outunit)
 
-!      ! This module requires Fortran 2003 or later
-!      use iso_fortran_env, only : &
-!         output_unit
-
       use io_units
 
-!      logical           ,intent(in) :: WriteBlock
       integer           ,intent(in) :: outunit
 
       end subroutine SetWrite_input_block_Topo
@@ -6813,7 +6746,6 @@
 !  Called from: help_inputfile  
 !  Arguments:
 !    outunit         = output stream ID or 0 for Set Vars only with no output
-!!!!    WriteBlock = logical: indicates that write to stdout as well as set vars
 !    
 !  This subroutine writes the content of block 10+ (OPTMOD=VARDIFF) of the
 !  Ash3d control file.
@@ -6822,13 +6754,8 @@
 
       subroutine SetWrite_input_block_VarDiff(outunit)
 
-!      ! This module requires Fortran 2003 or later
-!      use iso_fortran_env, only : &
-!         output_unit
-
       use io_units
 
-!      logical           ,intent(in) :: WriteBlock
       integer           ,intent(in) :: outunit
 
       end subroutine SetWrite_input_block_VarDiff
