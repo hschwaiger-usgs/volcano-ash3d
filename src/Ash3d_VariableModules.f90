@@ -448,6 +448,10 @@
       logical            :: LoadConcen =.false.
       character (len=80) :: concenfile = ""
       integer            :: init_tstep
+      logical            :: Have_Block_NetCDF  = .false.
+      logical            :: Have_Block_ResParm = .false.
+      logical            :: Have_Block_Topo    = .false.
+      logical            :: Have_Block_VarDiff = .false.
       character (len=130):: cdf_title       = "test"
       character (len=80) :: cdf_institution = "USGS"
       character (len=80) :: cdf_source      = "Ash3d v"   ! This is rewritten in Input_Data.f90

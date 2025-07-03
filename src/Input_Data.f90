@@ -347,7 +347,7 @@
       integer            :: cstat
       character(len=120) :: iomessage
 
-      character(len=130)   :: tmp_str
+      character(len=130) :: tmp_str
         ! variables to hold results of date_and_time
       character(len=8)  :: date
       character(len=10) :: time2
@@ -1066,10 +1066,10 @@
          cdf_b3l1,cdf_b3l2,cdf_b3l3,cdf_b3l4,cdf_b3l5,cdf_b4l1,cdf_b4l2,cdf_b4l3,cdf_b4l4,&
          cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,cdf_b4l11,cdf_b4l12,cdf_b4l13,&
          cdf_b4l14,cdf_b4l15,cdf_b4l16,cdf_b4l17,cdf_b4l18,cdf_b5l1,cdf_b6l1,cdf_b6l2,cdf_b6l3,cdf_b6l4,&
-         cdf_b6l5,cdf_comment,cdf_title,cdf_institution,cdf_source_url,cdf_history,cdf_references,&
+         cdf_b6l5,Have_Block_NetCDF,cdf_comment,cdf_title,cdf_institution,cdf_source_url,cdf_history,cdf_references,&
          concenfile,VolcanoName,WriteTimes,nWriteTimes,cdf_conventions,cdf_run_class,cdf_url,&
          x_vprofile,y_vprofile,i_vprofile,j_vprofile,Site_vprofile,&
-         infile,ioutputFormat,LoadConcen,log_step,NextWriteTime,&
+         infile,ioutputFormat,LoadConcen,log_step,NextWriteTime,Have_Block_ResParm,&
          AppendExtAirportFile,WriteInterval,WriteGSD,WriteDepositTS_KML,WriteDepositTS_ASCII,&
          WriteDepositTime_KML,WriteDepositTime_ASCII,WriteDepositFinal_KML,&
          WriteDepositFinal_ASCII,WriteCloudTime_KML,WriteCloudTime_ASCII,&
@@ -1104,7 +1104,7 @@
          SuzK_umb
 
       use Tephra,        only : &
-         DepositDensity,Tephra_v_s,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,Tephra_gsPhi,&
+         DepositDensity,Tephra_Ncols,Tephra_v_s,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,Tephra_gsPhi,&
          Tephra_gsF,Tephra_gsG,FV_ID,Shape_ID,LN_phi_mean,LN_phi_stddev,LN_massfrac,n_gs_max,n_gs_aloft,&
            Calculate_Tephra_Shape,&
            Allocate_Tephra, &
@@ -1328,6 +1328,7 @@
           do io=1,2;if(VB(io).le.verbosity_essential)then
             write(outlog(io),*)"  Reading input block for RESETPARAMS"
           endif;enddo
+          Have_Block_ResParm = .true.
           call input_data_ResetParams
         endif
       enddo
@@ -1478,7 +1479,7 @@
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         cdf_b1l5 = linebuffer080
         read(linebuffer080,*,err=9105,iostat=iostatus,iomsg=iomessage) value1, value2   ! First read two values and flag
-        read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) value1, value2, value3 ! Try for 3
+        read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) value1, value2, value3 ! Try for three
         if(iostatus.eq.0)then
           ! Successfully read 3 values; third is interpreted as elevation (in km)
           lon_volcano = value1
@@ -1565,7 +1566,7 @@
         cdf_b1l5 = linebuffer080
         read(linebuffer080,*,err=9105,iostat=iostatus,iomsg=iomessage) value1, value2   ! First read two values and flag
                                                    ! an error if unable
-        read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) value1, value2, value3 ! Try for 3
+        read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) value1, value2, value3 ! Try for three
         if(iostatus.eq.0)then
           x_volcano = value1
           y_volcano = value2
@@ -2896,20 +2897,6 @@
         goto 9414
       endif
 
-      !If IsLatLon=false, KML files can't be written out until they're re-projected.
-      !if((WriteDepositFinal_KML.or.WriteDepositTS_KML.or.WriteCloudConcentration_KML).and. &
-      !    (.not.IsLatLon)) then
-      !  do io=1,2;if(VB(io).le.verbosity_info)then
-      !    write(outlog(io),38)
-      !    write(outlog(io),39)
-      !  endif;enddo
-      !  read(input_unit,'(a1)',iostat=iostatus,iomsg=iomessage) answer
-      !  if(answer.ne.'y') stop 1
-      !  WriteCloudConcentration_KML = .false.
-      !  WriteDepositFinal_KML    = .false.
-      !  WriteDepositTS_KML   = .false.
-      !endif
-
       ! Block 4 Line 15
       ! Read whether to write out 3D files of ash concentration
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
@@ -3621,6 +3608,7 @@
           endif
           ! Read at least two values or throw an error
           read(linebuffer080,*,err=9702,iostat=iostatus,iomsg=iomessage) value1, value2
+          if(isize.eq.1) Tephra_Ncols = 2
           ! Two values successfully read; try for three
           read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) value1, value2, value3
           if(iostatus.eq.0)then
@@ -3628,6 +3616,7 @@
             ! grain-size, mass fraction, density
             ! W&H suggest 800 kg/m3 for d>300um and 2000 for d<88um for pumice
             ! fragments
+            if(isize.eq.1) Tephra_Ncols = 3
             useCalcFallVel = .true. 
             useTemperature = .true. ! When calculating Fall Vel. we need T
             temp_gsdiam(isize) = value1
@@ -3638,11 +3627,13 @@
             if(iostatus.eq.0)then
               ! Fourth value was successfully read, interpret as W/H shape
               ! parameter
+              if(isize.eq.1) Tephra_Ncols = 4
               temp_gsF(isize) = value4
               ! Try for a fifth value for ratio of minor axies of ellipsoid
               read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) value1, value2, value3, value4, value5
               if(iostatus.eq.0)then
-                ! Fourth value was successfully read, interpret as c/b
+                ! Fifth value was successfully read, interpret as c/b
+                if(isize.eq.1) Tephra_Ncols = 5
                 temp_gsG(isize) = value5
               else
                 temp_gsG(isize) = 1.0_ip
@@ -3655,7 +3646,7 @@
             temp_v_s(isize) = 0.0_ip
             if(temp_gsdiam(isize).lt.0.0_ip)then
               if(isize.lt.init_n_gs_max)then
-              do io=1,2;if(VB(io).le.verbosity_error)then
+                do io=1,2;if(VB(io).le.verbosity_error)then
                   write(errlog(io),*)"ERROR: ",&
                         "diameter must be positive",isize,init_n_gs_max,temp_gsdiam(isize)
                 endif;enddo
@@ -4073,6 +4064,7 @@
       ! Here are the default output file name and comments if Block 9 is not given
       concenfile  = "3d_tephra_fall.nc"
       cdf_title   = infile
+      cdf_comment = ""
       if(iostatus.ne.0)then
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)'  Setting outfile to: 3d_tephra_fall.nc'
@@ -4087,13 +4079,14 @@
         ! Start reading annotation info
 
         ! First line is the output file name
+        Have_Block_NetCDF = .true.
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) concenfile
         linebuffer050 = "Reading control file, blk9, line 1"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         concenfile = trim(adjustl(concenfile))
 
         ! We only really need the name of the output concentration file. If we don't
-        ! have the next two lines, error in reading will sent control to lable 2010,
+        ! have the next two lines, error in reading will sent control to label 2010,
         ! which just allows continuation of code.
 
         ! Next line is the title of the job
@@ -6303,7 +6296,7 @@
  2    format(2i5,20x,'# iwind, iwindformat, [igrid, idata]')
  3    format(4i5,10x,'# iwind, iwindformat, [igrid, idata]')
  4    format(1i5,25x,'# iHeightHandler')
- 5    format(f13.2,17x,'# Simulation time in hours')
+ 5    format(f13.3,17x,'# Simulation time in hours')
  6    format('yes                           # stop computation when 99% of erupted mass has deposited?')
  7    format('no                            # stop computation when 99% of erupted mass has deposited?')
  8    format(1i5,25x,'# nWindFiles, number of gridded wind files (used if iwind>1)')
@@ -6350,7 +6343,7 @@
                                          WriteCloudLoad_ASCII_c,WriteCloudLoad_KML_c,                   &
                                          WriteDepositTime_ASCII_c,WriteDepositTime_KML_c,               &
                                          WriteCloudTime_ASCII_c,WriteCloudTime_KML_c,                   &
-                                         Write3dFiles_c,ifm,ofm,nwt,wts)
+                                         Write3dFiles_c,ifm,ofm,nwt,intflg,wts)
 
       use io_units
 
@@ -6373,6 +6366,7 @@
       integer           ,intent(in) :: ifm
       integer           ,intent(in) :: ofm
       integer           ,intent(in) :: nwt
+      logical           ,intent(in) :: intflg
       real(kind=dp),dimension(nwt),intent(in) :: wts
 
       if(outunit.gt.0)then
@@ -6385,7 +6379,7 @@
         if(WriteDepositTS_ASCII_c         .eq.'n')write(outunit,31)'no '
         if(WriteDepositTS_ASCII_c         .eq.'y')write(outunit,31)'yes'
         if(WriteDepositTS_KML_c           .eq.'n')write(outunit,41)'no '
-        if(WriteDepositTS_KML_c           .eq.'y')write(outunit,41)'eys'
+        if(WriteDepositTS_KML_c           .eq.'y')write(outunit,41)'yes'
         if(WriteCloudConcentration_ASCII_c.eq.'n')write(outunit,51)'no '
         if(WriteCloudConcentration_ASCII_c.eq.'y')write(outunit,51)'yes'
         if(WriteCloudConcentration_KML_c  .eq.'n')write(outunit,61)'no '
@@ -6415,12 +6409,17 @@
         elseif(ofm.eq.3)then
           write(outunit,161)'netcdf'
         endif
-        write(outunit,171)nwt
-        write(outunit,181)wts(1:nwt)
+        if(intflg)then
+          ! Output steps are interval-based
+          write(outunit,171)-1
+          write(outunit,181)wts(1)
+        else
+          write(outunit,171)nwt
+          write(outunit,181)wts(1:nwt)
+        endif
         write(outunit,1)&
          '********************************************************************************'
       endif
-
 
  1    format(a80)
  11   format(a3,'     # Write out ESRI ASCII file of final deposit thickness?')
@@ -6440,7 +6439,7 @@
  151  format(a3,2x,i1,'  # Write out 3-D ash concentration at specified times?')
  161  format(a6,3x,'# format of ash concentration files     (ascii, binary, or netcdf)')
  171  format(i3,6x,'# nWriteTimes')
- 181  format(*(f7.2))
+ 181  format(*(f8.3))
 
       end subroutine SetWrite_input_block_04
 
@@ -6473,9 +6472,9 @@
 
       if(outunit.gt.0)then
         write(outunit,1)&
-         '******************* BLOCK 4 ****************************************************'
+         '******************* BLOCK 5 ****************************************************'
         do i=1,nwindfiles
-          write(outunit,2)windfiles(i)
+          write(outunit,2)adjustl(windfiles(i))
         enddo
         write(outunit,1)&
          '********************************************************************************'
@@ -6544,7 +6543,7 @@
  11   format(a3,'     # Write out ash arrival times at airports to ASCII FILE?')
  21   format(a3,'     # Write out grain-size distribution to ASCII airport file?')
  31   format(a3,'     # Write out ash arrival times to kml file?')
- 41   format(a3,'     # Name of file containing airport locations')
+ 41   format(a30,'    # Name of file containing airport locations')
  51   format(a3,'     # Defer to Lon/Lat coordinates? ("no" defers to projected)')
 
       end subroutine SetWrite_input_block_06
@@ -6571,18 +6570,21 @@
                                          phisig                    ,&  ! 
                                          T_diam                    ,&  ! 
                                          T_mf                      ,&  ! 
+                                         T_fv                      ,&  !
                                          T_rho                     ,&  ! 
                                          T_F                       ,&  ! 
                                          T_G                       ,&  ! 
-                                         T_phi)                        ! 
-
+                                         T_phi)                        !
 
       use io_units
 
+      use global_param,  only : &
+         useLogNormGSbins
+
       use Tephra,        only : &
-         n_gs_max,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,FV_ID,&
-         Tephra_gsF,Tephra_gsG,Tephra_gsPhi,Shape_ID,&
-         LN_massfrac,LN_phi_mean,LN_phi_stddev
+         n_gs_max,Tephra_gsdiam,Tephra_v_s,Tephra_bin_mass,Tephra_rho_m,FV_ID,&
+         Tephra_gsF,Tephra_gsG,Tephra_gsPhi,Shape_ID,Tephra_Ncols,&
+         LN_massfrac,LN_phi_mean,LN_phi_stddev,LN_suppl_frac
 
       integer                    ,intent(in) :: outunit
       integer                    ,intent(in) :: ns
@@ -6593,10 +6595,13 @@
       real(kind=ip)              ,intent(in) :: phisig
       real(kind=ip),dimension(ns),intent(in) :: T_diam
       real(kind=ip),dimension(ns),intent(in) :: T_mf
+      real(kind=ip),dimension(ns),intent(in) :: T_fv
       real(kind=ip),dimension(ns),intent(in) :: T_rho
       real(kind=ip),dimension(ns),intent(in) :: T_F
       real(kind=ip),dimension(ns),intent(in) :: T_G
       real(kind=ip),dimension(ns),intent(in) :: T_phi
+
+      integer :: isize
 
       n_gs_max        = ns
       FV_ID           = fv_idx
@@ -6620,6 +6625,15 @@
         allocate(Tephra_bin_mass(n_gs_max))
       endif
       Tephra_bin_mass(1:ns) = T_mf(1:ns)
+      if(useLogNormGSbins)then
+        ! If a Log-normal supplement was used, recover the original list.
+        ! Note, this may have been sorted by size and in a different order than originally
+        ! given.
+        do isize = 1,n_gs_max
+          Tephra_bin_mass(isize) = Tephra_bin_mass(isize) - LN_suppl_frac(isize)*LN_massfrac
+        enddo
+      endif
+
 #ifdef USEPOINTERS
       if(.not.associated(Tephra_rho_m))then
 #else
@@ -6653,6 +6667,71 @@
       endif
       Tephra_gsPhi(1:ns)    = T_phi(1:ns)
 
+      ! Finally, write out block
+      if(outunit.gt.0)then
+        write(outunit,1)&
+         '******************* BLOCK 7 ****************************************************'
+        if(useLogNormGSbins)then
+          ! For the log-normal supplemental line, we need to bump n_gs_max by one
+          write(outunit,11)n_gs_max+1,FV_ID,Shape_ID
+        else
+          write(outunit,11)n_gs_max,FV_ID,Shape_ID
+        endif
+        if(Tephra_Ncols.eq.2)then
+          ! 2-columns is just: fall-velocity (m/s), mass-fraction
+          do isize = 1,n_gs_max
+            write(outunit,12)Tephra_v_s(isize),Tephra_bin_mass(isize)
+          enddo        
+        elseif(Tephra_Ncols.eq.3)then
+          ! 3-columns is: diameter (mm), mass fraction, density (kg/m3)
+          do isize = 1,n_gs_max
+            write(outunit,13)Tephra_gsdiam(isize),Tephra_bin_mass(isize),Tephra_rho_m(isize)
+          enddo
+        elseif(Tephra_Ncols.eq.4)then
+          ! 4-columns is: diameter (mm), mass fraction, density (kg/m3), Shape F (or Psi)
+          do isize = 1,n_gs_max  
+            if(Shape_ID.eq.2)then
+              write(outunit,14)Tephra_gsdiam(isize),Tephra_bin_mass(isize),Tephra_rho_m(isize),&
+                               Tephra_gsPhi(isize)
+            else
+              write(outunit,14)Tephra_gsdiam(isize),Tephra_bin_mass(isize),Tephra_rho_m(isize),&
+                               Tephra_gsF(isize)
+            endif
+          enddo
+        elseif(Tephra_Ncols.eq.5)then
+          ! 5-columns is: diameter (mm), mass fraction, density (kg/m3), Shape F, G
+          do isize = 1,n_gs_max
+            write(outunit,15)Tephra_gsdiam(isize),Tephra_bin_mass(isize),Tephra_rho_m(isize),&
+                             Tephra_gsF(isize),Tephra_gsG(isize)
+          enddo
+        else
+          ! Number of columns of original control file not recorded in this NetCDF file, assume 4
+          do isize = 1,n_gs_max
+            if(Shape_ID.eq.2)then
+              write(outunit,14)Tephra_gsdiam(isize),Tephra_bin_mass(isize),Tephra_rho_m(isize),&
+                               Tephra_gsPhi(isize)
+            else
+              write(outunit,14)Tephra_gsdiam(isize),Tephra_bin_mass(isize),Tephra_rho_m(isize),&
+                               Tephra_gsF(isize)
+            endif
+          enddo
+        endif
+  
+        if(useLogNormGSbins)then
+          write(outunit,16)-1,LN_phi_mean,LN_phi_stddev
+        endif
+        write(outunit,1)&
+         '********************************************************************************'
+      endif
+
+ 1    format(a80)
+ 11   format(i2,2x,i1,2x,i1,24x,'# Number of grain-size bins. FV_ID not given; defaults to 1')
+ 12   format(f8.5,1x,f8.5)
+ 13   format(f8.5,1x,f8.5,1x,f8.1)
+ 14   format(f8.5,1x,f8.5,1x,f8.1,1x,f8.3)
+ 15   format(f8.5,1x,f8.5,1x,f8.1,1x,f8.3,1x,f8.3)
+ 16   format(i2,1x,f8.5,1x,f8.1)
+
       end subroutine SetWrite_input_block_07
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -6668,11 +6747,65 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine SetWrite_input_block_08(outunit)
+      subroutine SetWrite_input_block_08(outunit,nprof,x_prof,y_prof,name_prof)
 
       use io_units
 
-      integer           ,intent(in) :: outunit
+      use io_data,       only : &
+         nvprofiles,Site_vprofile,x_vprofile, y_vprofile
+
+      integer                           ,intent(in) :: outunit
+      integer                           ,intent(in) :: nprof
+      real(kind=ip)    ,dimension(nprof),intent(in) :: x_prof
+      real(kind=ip)    ,dimension(nprof),intent(in) :: y_prof
+      character(len=50),dimension(nprof),intent(in) :: name_prof
+
+      integer :: iprof
+
+      nvprofiles   = nprof
+
+#ifdef USEPOINTERS
+      if(.not.associated(x_vprofile))then
+#else
+      if(.not.allocated(x_vprofile))then
+#endif
+        allocate(x_vprofile(nvprofiles))
+      endif
+      x_vprofile(1:nvprofiles) = x_prof(1:nvprofiles)
+
+#ifdef USEPOINTERS
+      if(.not.associated(y_vprofile))then
+#else
+      if(.not.allocated(y_vprofile))then
+#endif
+        allocate(y_vprofile(nvprofiles))
+      endif
+      y_vprofile(1:nvprofiles) = y_prof(1:nvprofiles)
+
+#ifdef USEPOINTERS
+      if(.not.associated(Site_vprofile))then
+#else
+      if(.not.allocated(Site_vprofile))then
+#endif
+        allocate(Site_vprofile(nvprofiles))
+      endif
+      Site_vprofile(1:nvprofiles) = name_prof(1:nvprofiles)
+
+      ! Finally, write out block
+      if(outunit.gt.0)then
+        write(outunit,1)&
+         '******************* BLOCK 8 ****************************************************'
+          write(outunit,11)nvprofiles
+          do iprof = 1,nvprofiles
+            write(outunit,12)x_vprofile(iprof),y_vprofile(iprof),Site_vprofile(iprof)
+          enddo
+        write(outunit,1)&
+         '********************************************************************************'
+      endif
+
+ 1    format(a80)
+ 11   format(i3,27x,'# number of locations for vertical profiles (nlocs)')
+ 12   format(f13.5,2x,f13.5,2x,a50)
 
       end subroutine SetWrite_input_block_08
 
@@ -6689,11 +6822,34 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine SetWrite_input_block_09(outunit)
+      subroutine SetWrite_input_block_09(outunit,ofilename,title,comment)
 
       use io_units
 
+      use io_data,       only : &
+         concenfile,cdf_title,cdf_comment
+
       integer           ,intent(in) :: outunit
+      character(len=80) ,intent(in) :: ofilename
+      character(len=130),intent(in) :: title
+      character(len=80) ,intent(in) :: comment
+
+      concenfile  = ofilename
+      cdf_title   = title
+      cdf_comment = comment
+
+      if(outunit.gt.0)then
+        write(outunit,1)&
+         '******************* BLOCK 9 ****************************************************'
+        write(outunit,1)adjustl(concenfile)
+        write(outunit,2)adjustl(cdf_title)
+        write(outunit,1)adjustl(cdf_comment)
+        write(outunit,1)&
+         '********************************************************************************'
+      endif
+
+ 1    format(a80)
+ 2    format(a130)
 
       end subroutine SetWrite_input_block_09
 

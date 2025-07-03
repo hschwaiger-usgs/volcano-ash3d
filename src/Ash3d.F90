@@ -65,6 +65,7 @@
            FirstAsh
 
       use io_data,       only : &
+         Have_Block_Topo,Have_Block_VarDiff, &
          Called_Gen_Output_Vars,isFinal_TS,LoadConcen,log_step,&
          Output_at_logsteps,Output_at_WriteTimes,Output_every_TS,&
          NextWriteTime,iTimeNext,nvprofiles,nWriteTimes,&
@@ -218,12 +219,14 @@
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"  Reading input block for TOPO"
           endif;enddo
+          Have_Block_Topo = .true.
           call input_data_Topo
         endif
         if(OPTMOD_names(i).eq.'VARDIFF')then
           do io=1,2;if(VB(io).le.verbosity_info)then    
             write(outlog(io),*)"  Reading input block for VARDIFF"
           endif;enddo
+          Have_Block_VarDiff = .true.
           call input_data_VarDiff
         endif
       enddo

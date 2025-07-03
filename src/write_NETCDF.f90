@@ -101,6 +101,7 @@
 
       integer :: area_var_id           = 0 ! area of cell (km2)
       integer :: gsdm_var_id           = 0 ! Grain diameter
+      integer :: gsfv_var_id           = 0 ! Grain prescribed fall-velocity
       integer :: gsmf_var_id           = 0 ! Grain mass fraction
       integer :: gsdens_var_id         = 0 ! Grain density
       integer :: gsF_var_id            = 0 ! Grain shape fac F
@@ -182,6 +183,7 @@
 
       use io_data,       only : &
          nvprofiles,Site_vprofile,x_vprofile,y_vprofile, &
+         Have_Block_NetCDF,Have_Block_ResParm,Have_Block_Topo,Have_Block_VarDiff,&
          cdf_b1l1,cdf_b1l2,cdf_b1l3,cdf_b1l4,cdf_b1l5,cdf_b1l6,cdf_b1l7,cdf_vardz,cdf_b1l8,cdf_b1l9,&
          cdf_b3l1,cdf_b3l2,cdf_b3l3,cdf_b3l4,cdf_b3l5,   &
          cdf_b4l1,cdf_b4l2,cdf_b4l3,cdf_b4l4,cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,&
@@ -233,8 +235,8 @@
 
       use Tephra,        only : &
          n_gs_max,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,FV_ID,&
-         Tephra_gsF,Tephra_gsG,Tephra_gsPhi,Shape_ID,&
-         LN_massfrac,LN_phi_mean,LN_phi_stddev, &
+         Tephra_Ncols,Tephra_gsF,Tephra_gsG,Tephra_gsPhi,Shape_ID,&
+         Tephra_v_s,LN_massfrac,LN_phi_mean,LN_phi_stddev, &
          MagmaDensity,DepositDensity,LAM_GS_THRESH,AIRBORNE_THRESH
 
       use Source,        only : &
@@ -452,6 +454,27 @@
 
       nSTAT = nf90_put_att(ncid,nf90_global,"control_file",infile)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att control_file:")
+      if(Have_Block_NetCDF)then
+        nSTAT = nf90_put_att(ncid,nf90_global,"Block_NC","T")
+      else
+        nSTAT = nf90_put_att(ncid,nf90_global,"Block_NC","F")
+      endif
+      if(Have_Block_ResParm)then
+        nSTAT = nf90_put_att(ncid,nf90_global,"Block_RP","T")
+      else
+        nSTAT = nf90_put_att(ncid,nf90_global,"Block_RP","F")
+      endif
+      if(Have_Block_Topo)then
+        nSTAT = nf90_put_att(ncid,nf90_global,"Block_TP","T")
+      else
+        nSTAT = nf90_put_att(ncid,nf90_global,"Block_TP","F")
+      endif
+      if(Have_Block_VarDiff)then
+        nSTAT = nf90_put_att(ncid,nf90_global,"Block_VD","T")
+      else
+        nSTAT = nf90_put_att(ncid,nf90_global,"Block_VD","F")
+      endif
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att Block_NC:")
       nSTAT = nf90_put_att(ncid,nf90_global,"title",cdf_title)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att title:")
       nSTAT = nf90_put_att(ncid,nf90_global,"comment",cdf_comment)
@@ -1349,6 +1372,29 @@
       nSTAT = nf90_put_att(ncid,gsdm_var_id,"units","mm")
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_diameter units")
 
+         ! Prescribed fall-velocity (zero if fall velocity is calculated)
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"     gs_fallvel: grain prescribed fall-velocity"
+      endif;enddo
+      if(op.eq.8)then
+        nSTAT = nf90_def_var(ncid,"gs_fv",&
+                             NF90_DOUBLE,&
+                             (/bn_dim_id/),&
+                             gsfv_var_id)
+      else
+        nSTAT = nf90_def_var(ncid,"gs_fv",&
+                             NF90_FLOAT,&
+                             (/bn_dim_id/), &
+                             gsfv_var_id)
+      endif
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var gs_fv")
+      nSTAT = nf90_put_att(ncid,gsfv_var_id,"long_name",'Prescribed Fall Velocity')
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_fv long_name")
+      nSTAT = nf90_put_att(ncid,gsfv_var_id,"units","m/s")
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_fv units")
+      nSTAT = nf90_put_att(ncid,gsfv_var_id,"note","Only non-zero if specified in control file.")
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_fv note")
+
          ! gs_massfrac (Mass fraction of grain size)
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"     gs_massfrac: grain mass fraction"
@@ -1369,6 +1415,12 @@
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_massfrac long_name")
       nSTAT = nf90_put_att(ncid,gsmf_var_id,"units","fraction")
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_massfrac units")
+      ! Since massfrac is the only GS variable guarenteed to be provided, include the
+      ! number of columns used in the input file here. This records the way the
+      ! GS specification was provided. e.g. 2-columns = just FV and mass frac, up to
+      ! 5-columns specifying all parameters with 2 shape measures.
+      nSTAT = nf90_put_att(ncid,gsmf_var_id,"input_columns",Tephra_Ncols)
+      if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_massfrac input_columns")
 
       nSTAT = nf90_put_att(ncid,gsmf_var_id,"LN_massfrac",LN_massfrac)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att gs_massfrac LN_massfrac")
@@ -2414,10 +2466,8 @@
                              (/sl_dim_id,pr_dim_id/), &
                              pr_name_var_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var pr_name")
-        nSTAT = nf90_put_att(ncid,pr_y_var_id,"long_name","Name of prof point")
+        nSTAT = nf90_put_att(ncid,pr_name_var_id,"long_name","Name of site of profile point")
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_name long_name")
-        !nSTAT = nf90_put_att(ncid,pr_name_var_id,"units","text")
-        !if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att pr_name units")
 
         ! Profile data
         ! Variable for profile data (pr_ash) will be defined in NC_append_to_netcdf
@@ -2778,6 +2828,15 @@
         endif
         nSTAT=nf90_put_var(ncid,gsdm_var_id,dum1d_out,(/1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_diameter")
+
+        if(useCalcFallVel)then
+          dum1d_out(1:n_gs_max) = 0.0_op
+        else
+          dum1d_out(1:n_gs_max) = Tephra_v_s(1:n_gs_max)
+        endif
+        nSTAT=nf90_put_var(ncid,gsfv_var_id,dum1d_out,(/1/))
+        if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_fv")
+
            ! gs_massfrac (Mass fraction of grain size)
         do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"     Fill GS MassFrac"
@@ -4121,10 +4180,11 @@
       subroutine NC_Read_Output_Products(timestep)
 
       use global_param,  only : &
-         GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH,useMoistureVars,useVz_rhoG
+         GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH,useMoistureVars,useVz_rhoG,useLogNormGSbins
 
       use io_data,           only : &
-         concenfile,init_tstep,nWriteTimes,WriteTimes, &
+         Have_Block_NetCDF,Have_Block_ResParm,Have_Block_Topo,Have_Block_VarDiff,&
+         concenfile,cdf_title,cdf_comment,init_tstep,nWriteTimes,WriteTimes, &
          cdf_b1l1,cdf_b1l2,cdf_b1l4,cdf_b1l5,cdf_b1l8,cdf_vardz, &
          cdf_b3l1,cdf_b3l2,cdf_b3l3,cdf_b3l4,cdf_b3l5, &
          cdf_b4l1,cdf_b4l2,cdf_b4l3,cdf_b4l4,cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,&
@@ -4179,10 +4239,11 @@
            Allocate_Airports
 
       use Tephra,        only : &
-         n_gs_max,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,FV_ID,&
-         Tephra_gsF,Tephra_gsG,Tephra_gsPhi,Shape_ID,&
-         LN_massfrac,LN_phi_mean,LN_phi_stddev, &
-         MagmaDensity,DepositDensity,LAM_GS_THRESH,AIRBORNE_THRESH
+         n_gs_max,Tephra_gsdiam,Tephra_v_s,Tephra_bin_mass,Tephra_rho_m,FV_ID,&
+         Tephra_Ncols,Tephra_gsF,Tephra_gsG,Tephra_gsPhi,Shape_ID,&
+         LN_massfrac,LN_phi_mean,LN_phi_stddev,LN_suppl_frac, &
+         MagmaDensity,DepositDensity,LAM_GS_THRESH,AIRBORNE_THRESH, &
+           partition_gsbins
 
       use projection,    only : &
          PJ_iprojflag,PJ_k0,PJ_lam0,PJ_lam1,PJ_lam2,PJ_phi0,PJ_phi1,PJ_phi2,PJ_Re,&
@@ -4220,6 +4281,7 @@
       integer :: tmp_int
       character(len=5) :: tmp_str
       character(len=3) :: answer
+      character(len=1) :: testchar
       real(kind=dp) :: lat_in,lon_in
       real(kind=ip) :: xnow,ynow
       real(kind=dp) :: xout,yout
@@ -4355,17 +4417,10 @@
         else ! start of non-LonLat branch
           read(cdf_b1l4,*)gridwidth_x,gridwidth_y
 
-!          ! Get projection information
-!          nSTAT = nf90_get_att(ncid,nf90_global,"b1l2",cdf_b1l2)
-!          if(nSTAT.ne.0)then
-!            call NC_check_status(nSTAT,0,"get_att b1l2:")
-!            do io=1,2;if(VB(io).le.verbosity_info)then
-!              write(outlog(io),*)"Did not find att b1l2: Projection parameters"
-!            endif;enddo
-!          endif
+!          ! Get projection information from previously read cdf_b1l2
           call PJ_Set_Proj_Params(cdf_b1l2)
           A3d_iprojflag  = PJ_iprojflag
-          A3d_k0   = PJ_k0
+          A3d_k0         = PJ_k0
           A3d_Re         = PJ_Re
           A3d_lam0       = PJ_lam0
           A3d_lam1       = PJ_lam1
@@ -4759,14 +4814,13 @@
         endif
 
         ! Now get the expected global attributes
-          ! Input file line with 
+          ! Input file line with diffusion and source type
         nSTAT = nf90_get_att(ncid,nf90_global,"b1l8",cdf_b1l8)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att b1l8:")
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"Did not find att b1l8:"
           endif;enddo
-          !stop 1
         endif
         read(cdf_b1l8,*,iostat=iostatus,iomsg=iomessage) diffusivity_horz
 
@@ -4793,6 +4847,79 @@
           useLeap = .false.
         endif
 
+        nSTAT = nf90_get_att(ncid,nf90_global,"Block_NC",testchar)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att Block_NC:")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Did not find att Block_NC"
+          endif;enddo
+        else
+          if(testchar.eq.'T')then
+            Have_Block_NetCDF = .true.
+          else
+            Have_Block_NetCDF = .false.
+          endif
+        endif
+
+        nSTAT = nf90_get_att(ncid,nf90_global,"Block_RP",testchar)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att Block_RP:")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Did not find att Block_RP"
+          endif;enddo
+        else
+          if(testchar.eq.'T')then
+            Have_Block_ResParm = .true.
+          else
+            Have_Block_ResParm = .false.
+          endif
+        endif
+
+        nSTAT = nf90_get_att(ncid,nf90_global,"Block_TP",testchar)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att Block_TP:")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Did not find att Block_TP"
+          endif;enddo
+        else
+          if(testchar.eq.'T')then
+            Have_Block_Topo = .true.
+          else
+            Have_Block_Topo = .false.
+          endif
+        endif
+
+        nSTAT = nf90_get_att(ncid,nf90_global,"Block_VD",testchar)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att Block_VD:")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Did not find att Block_VD"
+          endif;enddo
+        else
+          if(testchar.eq.'T')then
+            Have_Block_VarDiff = .true.
+          else
+            Have_Block_VarDiff = .false.
+          endif
+        endif
+
+        nSTAT = nf90_get_att(ncid,nf90_global,"title",cdf_title)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att title:")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Did not find att title"
+          endif;enddo
+        endif
+
+        nSTAT = nf90_get_att(ncid,nf90_global,"comment",cdf_comment)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att comment:")
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Did not find att comment"
+          endif;enddo
+        endif
+
+        ! Resettable parameters
         nSTAT = nf90_get_att(ncid,nf90_global,"MagmaDensity",MagmaDensity)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment MagmaDensity:")
@@ -5454,6 +5581,11 @@
         time_native(1:tn_len) = real(dum1d_dp(1:tn_len),kind=dp)
         deallocate(dum1d_dp)
 
+        ! Allocate profile variables, even if nvprofiles=0
+        allocate(x_vprofile(nvprofiles))
+        allocate(y_vprofile(nvprofiles))
+        allocate(Site_vprofile(nvprofiles))
+
         if(Write_PR_Data)then
           ! pr_x
           nSTAT = nf90_inq_varid(ncid,"pr_x",pr_x_var_id)
@@ -5482,9 +5614,6 @@
 
           ! Allocate profile variables
           call Allocate_Profile(nzmax,tn_len,nvprofiles)
-          allocate(x_vprofile(nvprofiles))
-          allocate(y_vprofile(nvprofiles))
-          allocate(Site_vprofile(nvprofiles))
 
           if(fop.eq.4)then
             ! Read x,y at profile point locations
@@ -5557,27 +5686,33 @@
         SourceType       = 'suzuki'
         SourceType_idx   = 1
         Suzuki_A         = 4.0_ip
+        read(cdf_b1l8,*,iostat=iostatus,iomsg=iomessage) diffusivity_horz
         nSTAT = nf90_inq_varid(ncid,"er_type",er_type_var_id)
         if(nSTAT.ne.0)then
+          ! If er_type doesn't exist as a variable, then look for cdf_b1l8 and parse
           er_type_var_id = 0
           call NC_check_status(nSTAT,0,"inq_varid er_type")
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"   Variable er_type not found."
             write(outlog(io),*)"   Recovering type for b1l8."
           endif;enddo
-          read(cdf_b1l8,*,iostat=iostatus,iomsg=iomessage) diffusivity_horz,Suzuki_A
+          read(cdf_b1l8,*,iostat=iostatus,iomsg=iomessage) dum1, Suzuki_A
           if(iostatus.eq.0)then
             SourceType     = 'suzuki'
             SourceType_idx = 1
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)&
+                "Source type is suzuki as determined from b1l8"
+            endif;enddo
           else
-            ! read failed to load a float; reset Suzuki_A and read text for source type
+            ! read failed to load a float; reread diff, reset Suzuki_A and read text for source type
             Suzuki_A = 4.0_ip
             ! if the second item is not a number, read SourceType
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)&
                 "Source type is not suzuki. Trying to read another standard type"
             endif;enddo
-            read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) diffusivity_horz, SourceType
+            read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) dum1, SourceType
           endif
         else
           allocate(dum1dint_out(1:neruptions))
@@ -5585,7 +5720,15 @@
           SourceType_idx  = dum1dint_out(1)
           deallocate(dum1dint_out)
           nSTAT = nf90_get_att(ncid,er_type_var_id,"type",SourceType)
-          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att er_type type")
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_att er_type type")
+          if(SourceType_idx.eq.1)then
+            ! If Suzuki, then read Suzuki_A
+            nSTAT = nf90_get_att(ncid,er_type_var_id,"specification",Suzuki_A)
+            if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_att er_type specification")
+          else
+            ! We won't need this, but make sure this has the default value
+            Suzuki_A         = 4.0_ip
+          endif
         endif
 
         ! Get date of run
@@ -5606,7 +5749,7 @@
 
         ! Get iHeightHandler
         nSTAT = nf90_get_att(ncid,nf90_global,"b3l2",cdf_b3l2)
-        read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage)MR_iHeightHandler
+        read(cdf_b3l2,*,iostat=iostatus,iomsg=iomessage)MR_iHeightHandler
 
         ! Get Simulation time info
         nSTAT = nf90_get_att(ncid,nf90_global,"b3l3",cdf_b3l3)
@@ -5799,200 +5942,214 @@
         e_Volume = real(dum1d_out,kind=ip)
         deallocate(dum1d_out)
 
-!        if(e_prof_maxpoints.gt.0)then
-          ! Need to get the profile source bonus variables: nz, dz, frac
-          !  e_prof_nzpoints,e_prof_dz,e_prof_Volume
+        ! Need to get the profile source bonus variables: nz, dz, frac
+        !  e_prof_nzpoints,e_prof_dz,e_prof_Volume
 
 #ifdef USEPOINTERS
-          if(.not.associated(e_prof_nzpoints))then
+        if(.not.associated(e_prof_nzpoints))then
 #else
-          if(.not.allocated(e_prof_nzpoints))then
+        if(.not.allocated(e_prof_nzpoints))then
 #endif
-            allocate(e_prof_nzpoints(neruptions))
-            e_prof_nzpoints(:) = 0
-          endif
+          allocate(e_prof_nzpoints(neruptions))
+          e_prof_nzpoints(:) = 0
+        endif
 #ifdef USEPOINTERS
-          if(.not.associated(e_prof_dz))then
+        if(.not.associated(e_prof_dz))then
 #else
-          if(.not.allocated(e_prof_dz))then
+        if(.not.allocated(e_prof_dz))then
 #endif
-            allocate(e_prof_dz(neruptions))
-            e_prof_dz(:) = 0.0_ip
-          endif
+          allocate(e_prof_dz(neruptions))
+          e_prof_dz(:) = 0.0_ip
+        endif
 #ifdef USEPOINTERS
-          if(.not.associated(e_prof_Volume))then
+        if(.not.associated(e_prof_Volume))then
 #else
-          if(.not.allocated(e_prof_Volume))then
+        if(.not.allocated(e_prof_Volume))then
 #endif
-            allocate(e_prof_Volume(neruptions,MAX_ER_PROFPOINTS))
-            e_prof_Volume(:,:) = 0.0_ip
-          endif
+          allocate(e_prof_Volume(neruptions,MAX_ER_PROFPOINTS))
+          e_prof_Volume(:,:) = 0.0_ip
+        endif
 
-          allocate(dum1dint_out(1:neruptions))
-          nSTAT = nf90_inq_varid(ncid,"er_prof_nz",er_prof_nz_var_id)
-          if(nSTAT.ne.0.and.e_prof_maxpoints.gt.0)then
-            er_prof_dz_var_id = 0
-            call NC_check_status(nSTAT,1,"inq_varid er_prof_nz")
-          endif
-          nSTAT=nf90_get_var(ncid,er_prof_nz_var_id,dum1dint_out,(/1/))
-          e_prof_nzpoints = dum1dint_out
-          deallocate(dum1dint_out)
+        allocate(dum1dint_out(1:neruptions))
+        nSTAT = nf90_inq_varid(ncid,"er_prof_nz",er_prof_nz_var_id)
+        if(nSTAT.ne.0.and.e_prof_maxpoints.gt.0)then
+          er_prof_dz_var_id = 0
+          call NC_check_status(nSTAT,1,"inq_varid er_prof_nz")
+        endif
+        nSTAT=nf90_get_var(ncid,er_prof_nz_var_id,dum1dint_out,(/1/))
+        e_prof_nzpoints = dum1dint_out
+        deallocate(dum1dint_out)
 
-          allocate(dum1d_out(1:neruptions))
-          nSTAT = nf90_inq_varid(ncid,"er_prof_dz",er_prof_dz_var_id)
-          if(nSTAT.ne.0.and.e_prof_maxpoints.gt.0)then
-            er_prof_dz_var_id = 0
-            call NC_check_status(nSTAT,1,"inq_varid er_prof_dz")
-          endif
-          nSTAT=nf90_get_var(ncid,er_prof_dz_var_id,dum1d_out,(/1/))
-          e_prof_dz = real(dum1d_out,kind=ip)
-          deallocate(dum1d_out)
+        allocate(dum1d_out(1:neruptions))
+        nSTAT = nf90_inq_varid(ncid,"er_prof_dz",er_prof_dz_var_id)
+        if(nSTAT.ne.0.and.e_prof_maxpoints.gt.0)then
+          er_prof_dz_var_id = 0
+          call NC_check_status(nSTAT,1,"inq_varid er_prof_dz")
+        endif
+        nSTAT=nf90_get_var(ncid,er_prof_dz_var_id,dum1d_out,(/1/))
+        e_prof_dz = real(dum1d_out,kind=ip)
+        deallocate(dum1d_out)
 
-          allocate(dum1d_out(1:e_prof_maxpoints))
-          nSTAT = nf90_inq_varid(ncid,"er_prof_frac",er_prof_frac_var_id)
-          if(nSTAT.ne.0.and.e_prof_maxpoints.gt.0)then
-            er_prof_frac_var_id = 0
-            call NC_check_status(nSTAT,1,"inq_varid er_prof_dfrac")
-          endif
-          do i=1,neruptions
-            nSTAT=nf90_get_var(ncid,er_prof_frac_var_id,dum1d_out,(/1,i/))
-            e_prof_Volume(i,1:e_prof_maxpoints) = real(dum1d_out,kind=ip)
-          enddo
-          deallocate(dum1d_out)
-!        endif
+        allocate(dum1d_out(1:e_prof_maxpoints))
+        nSTAT = nf90_inq_varid(ncid,"er_prof_frac",er_prof_frac_var_id)
+        if(nSTAT.ne.0.and.e_prof_maxpoints.gt.0)then
+          er_prof_frac_var_id = 0
+          call NC_check_status(nSTAT,1,"inq_varid er_prof_dfrac")
+        endif
+        do i=1,neruptions
+          nSTAT=nf90_get_var(ncid,er_prof_frac_var_id,dum1d_out,(/1,i/))
+          e_prof_Volume(i,1:e_prof_maxpoints) = real(dum1d_out,kind=ip)
+        enddo
+        deallocate(dum1d_out)
 
-          ! Now load grainsize distribution info
-          ! We already have n_gs_max
-          !  Variables to fill:
-          !    FV_ID, Shape_ID
-          !    Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,
-          !    Tephra_gsF,Tephra_gsG,Tephra_gsPhi
-          allocate(dum1d_out(1:n_gs_max))
-          nSTAT = nf90_inq_varid(ncid,"Fall_Model",FV_var_id)
-          if(nSTAT.eq.0)then
-            nSTAT=nf90_get_var(ncid,FV_var_id,FV_ID,(/1/))
-            ! Check for shape specification
-            nSTAT2 = nf90_get_att(ncid,FV_var_id,"Shape_ID",Shape_ID)
-            if(nSTAT2.ne.0)Shape_ID=1
-          else
-            FV_ID = 1
-          endif
+        ! Now load grainsize distribution info
+        ! We already have n_gs_max
+        !  Variables to fill:
+        !    FV_ID, Shape_ID
+        !    Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,
+        !    Tephra_gsF,Tephra_gsG,Tephra_gsPhi
+        allocate(dum1d_out(1:n_gs_max))
+        nSTAT = nf90_inq_varid(ncid,"Fall_Model",FV_var_id)
+        if(nSTAT.eq.0)then
+          nSTAT=nf90_get_var(ncid,FV_var_id,FV_ID,(/1/))
+          ! Check for shape specification
+          nSTAT2 = nf90_get_att(ncid,FV_var_id,"Shape_ID",Shape_ID)
+          if(nSTAT2.ne.0) Shape_ID = 1 ! Default is WH style shape is not specifiec
+        else
+          FV_ID    = 1
+          Shape_ID = 1
+        endif
 
-          ! Grain diameter
+        ! Grain diameter
 #ifdef USEPOINTERS
-          if(.not.associated(Tephra_gsdiam))then
+        if(.not.associated(Tephra_gsdiam))then
 #else
-          if(.not.allocated(Tephra_gsdiam))then
+        if(.not.allocated(Tephra_gsdiam))then
 #endif
-            allocate(Tephra_gsdiam(n_gs_max))
-            Tephra_gsdiam(:) = 0.0_ip
-          endif
-          nSTAT = nf90_inq_varid(ncid,"gs_diameter",gsdm_var_id)
-          nSTAT = nf90_get_var(ncid,gsdm_var_id,dum1d_out,(/1/))
-          Tephra_gsdiam(1:n_gs_max) = dum1d_out(1:n_gs_max)
-
-          ! Grain mass fraction
+          allocate(Tephra_gsdiam(n_gs_max))
+          Tephra_gsdiam(:) = 0.0_ip
+        endif
+        nSTAT = nf90_inq_varid(ncid,"gs_diameter",gsdm_var_id)
+        nSTAT = nf90_get_var(ncid,gsdm_var_id,dum1d_out,(/1/))
+        Tephra_gsdiam(1:n_gs_max) = dum1d_out(1:n_gs_max)
+          
+        ! Grain prescribed fall velocity
 #ifdef USEPOINTERS
-          if(.not.associated(Tephra_bin_mass))then
+        if(.not.associated(Tephra_v_s))then
 #else
-          if(.not.allocated(Tephra_bin_mass))then
+        if(.not.allocated(Tephra_v_s))then
 #endif
-            allocate(Tephra_bin_mass(n_gs_max))
-            Tephra_bin_mass(:) = 0.0_ip
-          endif
-          nSTAT = nf90_inq_varid(ncid,"gs_massfrac",gsmf_var_id)
-          nSTAT = nf90_get_var(ncid,gsmf_var_id,dum1d_out,(/1/))
-          Tephra_bin_mass(1:n_gs_max) = dum1d_out(1:n_gs_max)
-          ! Try to read attributes describing any supplemental log-normal GSD
-          nSTAT = nf90_get_att(ncid,gsmf_var_id,"LN_massfrac",LN_massfrac)
-          if(nSTAT.ne.0)then
-            call NC_check_status(nSTAT,0,"get_att gs_massfrac LN_massfrac")
-            LN_massfrac = 0.0_ip
-          endif
-          nSTAT = nf90_get_att(ncid,gsmf_var_id,"LN_phi_mean",LN_phi_mean)
-          if(nSTAT.ne.0)then
-            call NC_check_status(nSTAT,0,"get_att gs_massfrac LN_phi_mean")
-            LN_phi_mean = 0.0_ip
-          endif
-          nSTAT = nf90_get_att(ncid,gsmf_var_id,"LN_phi_stddev",LN_phi_stddev)
-          if(nSTAT.ne.0)then
-            call NC_check_status(nSTAT,0,"get_att gs_massfrac LN_phi_stddev")
-            LN_phi_stddev = 0.0_ip
-          endif
+          allocate(Tephra_v_s(n_gs_max))
+          Tephra_v_s(:) = 0.0_ip
+        endif
 
-          ! Grain density
+        nSTAT = nf90_inq_varid(ncid,"gs_fv",gsfv_var_id)
+        if(nSTAT.eq.0)then
+          nSTAT2 = nf90_get_var(ncid,gsfv_var_id,dum1d_out,(/1/))
+          Tephra_v_s(1:n_gs_max) = dum1d_out(1:n_gs_max)
+        endif
+
+        ! Grain mass fraction
 #ifdef USEPOINTERS
-          if(.not.associated(Tephra_rho_m))then
+        if(.not.associated(Tephra_bin_mass))then
 #else
-          if(.not.allocated(Tephra_rho_m))then
+        if(.not.allocated(Tephra_bin_mass))then
 #endif
-            allocate(Tephra_rho_m(n_gs_max))
-            Tephra_rho_m(:) = 0.0_ip
-          endif
-          nSTAT = nf90_inq_varid(ncid,"gs_dens",gsdens_var_id)
-          nSTAT = nf90_get_var(ncid,gsdens_var_id,dum1d_out,(/1/))
-          Tephra_rho_m(1:n_gs_max) = dum1d_out(1:n_gs_max)
+          allocate(Tephra_bin_mass(n_gs_max))
+          Tephra_bin_mass(:) = 0.0_ip
+        endif
+        nSTAT = nf90_inq_varid(ncid,"gs_massfrac",gsmf_var_id)
+        nSTAT = nf90_get_var(ncid,gsmf_var_id,dum1d_out,(/1/))
+        Tephra_bin_mass(1:n_gs_max) = dum1d_out(1:n_gs_max)
+        nSTAT = nf90_get_att(ncid,gsmf_var_id,"input_columns",Tephra_Ncols)
+        if(nSTAT.ne.0)then
+          Tephra_Ncols = 3
+        endif
+        ! Try to read attributes describing any supplemental log-normal GSD
+        nSTAT = nf90_get_att(ncid,gsmf_var_id,"LN_massfrac",LN_massfrac)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att gs_massfrac LN_massfrac")
+          LN_massfrac = 0.0_ip
+        endif
+        nSTAT = nf90_get_att(ncid,gsmf_var_id,"LN_phi_mean",LN_phi_mean)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att gs_massfrac LN_phi_mean")
+          LN_phi_mean = 0.0_ip
+        endif
+        nSTAT = nf90_get_att(ncid,gsmf_var_id,"LN_phi_stddev",LN_phi_stddev)
+        if(nSTAT.ne.0)then
+          call NC_check_status(nSTAT,0,"get_att gs_massfrac LN_phi_stddev")
+          LN_phi_stddev = 0.0_ip
+        endif
+        if(LN_massfrac.gt.0.01)then
+          useLogNormGSbins = .true.
+          allocate(LN_suppl_frac(n_gs_max))
+          LN_suppl_frac = 0.0_ip
+          call partition_gsbins(LN_phi_mean,LN_phi_stddev)
+        endif
 
-          ! Grain shape fac F
+        ! Grain density
 #ifdef USEPOINTERS
-          if(.not.associated(Tephra_gsF))then
+        if(.not.associated(Tephra_rho_m))then
 #else
-          if(.not.allocated(Tephra_gsF))then
+        if(.not.allocated(Tephra_rho_m))then
 #endif
-            allocate(Tephra_gsF(n_gs_max))
-            Tephra_gsF(:) = 0.0_ip
-          endif
-          nSTAT = nf90_inq_varid(ncid,"gs_F",gsF_var_id)
-          nSTAT = nf90_get_var(ncid,gsF_var_id,dum1d_out,(/1/))
-          Tephra_gsF(1:n_gs_max) = dum1d_out(1:n_gs_max)
+          allocate(Tephra_rho_m(n_gs_max))
+          Tephra_rho_m(:) = 0.0_ip
+        endif
+        nSTAT = nf90_inq_varid(ncid,"gs_dens",gsdens_var_id)
+        nSTAT = nf90_get_var(ncid,gsdens_var_id,dum1d_out,(/1/))
+        Tephra_rho_m(1:n_gs_max) = dum1d_out(1:n_gs_max)
 
-          ! Grain shape fac G
+        ! Grain shape fac F
 #ifdef USEPOINTERS
-          if(.not.associated(Tephra_gsG))then
+        if(.not.associated(Tephra_gsF))then
 #else
-          if(.not.allocated(Tephra_gsG))then
+        if(.not.allocated(Tephra_gsF))then
 #endif
-            allocate(Tephra_gsG(n_gs_max))
-            Tephra_gsG(:) = 0.0_ip
-          endif
-          nSTAT = nf90_inq_varid(ncid,"gs_G",gsG_var_id)
-          nSTAT = nf90_get_var(ncid,gsG_var_id,dum1d_out,(/1/))
-          Tephra_gsG(1:n_gs_max) = dum1d_out(1:n_gs_max)
+          allocate(Tephra_gsF(n_gs_max))
+          Tephra_gsF(:) = 0.0_ip
+        endif
+        nSTAT = nf90_inq_varid(ncid,"gs_F",gsF_var_id)
+        nSTAT = nf90_get_var(ncid,gsF_var_id,dum1d_out,(/1/))
+        Tephra_gsF(1:n_gs_max) = dum1d_out(1:n_gs_max)
 
-          ! Grain shape fac Phi
+        ! Grain shape fac G
 #ifdef USEPOINTERS
-          if(.not.associated(Tephra_gsPhi))then
+        if(.not.associated(Tephra_gsG))then
 #else
-          if(.not.allocated(Tephra_gsPhi))then
+        if(.not.allocated(Tephra_gsG))then
 #endif
-            allocate(Tephra_gsPhi(n_gs_max))
-            Tephra_gsPhi(:) = 0.0_ip
-          endif
-          nSTAT = nf90_inq_varid(ncid,"gs_Phi",gsP_var_id)
-          nSTAT = nf90_get_var(ncid,gsP_var_id,dum1d_out,(/1/))
-          Tephra_gsPhi(1:n_gs_max) = dum1d_out(1:n_gs_max)
+          allocate(Tephra_gsG(n_gs_max))
+          Tephra_gsG(:) = 0.0_ip
+        endif
+        nSTAT = nf90_inq_varid(ncid,"gs_G",gsG_var_id)
+        nSTAT = nf90_get_var(ncid,gsG_var_id,dum1d_out,(/1/))
+        Tephra_gsG(1:n_gs_max) = dum1d_out(1:n_gs_max)
 
-!          do i=1,n_gs_max
-!            write(*,*)i,real(Tephra_gsdiam(i),kind=4),&
-!                        real(Tephra_bin_mass(i),kind=4),&
-!                        real(Tephra_rho_m(i),kind=4),&
-!                        real(Tephra_gsF(i),kind=4),&
-!                        real(Tephra_gsG(i),kind=4),&
-!                        real(Tephra_gsPhi(i),kind=4)
-!          enddo
+        ! Grain shape fac Phi
+#ifdef USEPOINTERS
+        if(.not.associated(Tephra_gsPhi))then
+#else
+        if(.not.allocated(Tephra_gsPhi))then
+#endif
+          allocate(Tephra_gsPhi(n_gs_max))
+          Tephra_gsPhi(:) = 0.0_ip
+        endif
+        nSTAT = nf90_inq_varid(ncid,"gs_Phi",gsP_var_id)
+        nSTAT = nf90_get_var(ncid,gsP_var_id,dum1d_out,(/1/))
+        Tephra_gsPhi(1:n_gs_max) = dum1d_out(1:n_gs_max)
 
-          ! Wind file names
-          allocate (MR_windfiles(MR_iwindfiles))
-          nSTAT = nf90_inq_varid(ncid,"wf_name",wf_name_var_id)
-          if(nSTAT.ne.0)then
-            wf_name_var_id = 0
-            call NC_check_status(nSTAT,1,"inq_varid wf_name")
-          endif
-          do i=1,MR_iWindFiles
-            nSTAT=nf90_get_var(ncid,wf_name_var_id,MR_windfiles,(/1,i/))
-          enddo
-
-        !endif
+        ! Wind file names
+        allocate (MR_windfiles(MR_iwindfiles))
+        nSTAT = nf90_inq_varid(ncid,"wf_name",wf_name_var_id)
+        if(nSTAT.ne.0)then
+          wf_name_var_id = 0
+          call NC_check_status(nSTAT,1,"inq_varid wf_name")
+        endif
+        do i=1,MR_iWindFiles
+          nSTAT=nf90_get_var(ncid,wf_name_var_id,MR_windfiles(i),(/1,i/))
+        enddo
 
         first_time = .false.
 

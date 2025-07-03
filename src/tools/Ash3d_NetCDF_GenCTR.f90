@@ -7,11 +7,13 @@
       use io_units
 
       use io_data,       only : &
-         infile,concenfile,VolcanoName, &
+         infile,concenfile,cdf_title,cdf_comment,VolcanoName, &
+         Have_Block_NetCDF,Have_Block_ResParm,Have_Block_Topo,Have_Block_VarDiff,&
          nWriteTimes,WriteTimes,cdf_b1l2,cdf_vardz,cdf_b3l5, &
          cdf_b4l1,cdf_b4l2,cdf_b4l3,cdf_b4l4,cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,&
          cdf_b4l11,cdf_b4l12,cdf_b4l13,cdf_b4l14,cdf_b4l15,cdf_b4l16,cdf_b4l17,cdf_b4l18,cdf_b5l1,  &
-         cdf_b6l1,cdf_b6l2,cdf_b6l3,cdf_b6l4,cdf_b6l5
+         cdf_b6l1,cdf_b6l2,cdf_b6l3,cdf_b6l4,cdf_b6l5, &
+         nvprofiles,Site_vprofile,x_vprofile, y_vprofile
 
       use mesh,          only : &
          lonLL,latLL,gridwidth_e,gridwidth_n,xLL,yLL,gridwidth_x,gridwidth_y, &
@@ -21,7 +23,7 @@
          StopWhenDeposited
 
       use time_data,     only : &
-         SimStartHour,Simtime_in_hours
+         SimStartHour,Simtime_in_hours,BaseYear,useLeap
 
       use Source,        only : &
          lon_volcano,lat_volcano,x_volcano,y_volcano,z_volcano,Suzuki_A,      &
@@ -29,7 +31,7 @@
          e_PlumeHeight,e_Volume,e_prof_dz,e_prof_nzpoints,e_prof_Volume
 
       use Tephra,        only : &
-         n_gs_max,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,FV_ID,&
+         n_gs_max,Tephra_gsdiam,Tephra_bin_mass,Tephra_v_s,Tephra_rho_m,FV_ID,&
          Tephra_gsF,Tephra_gsG,Tephra_gsPhi,Shape_ID,&
          LN_massfrac,LN_phi_mean,LN_phi_stddev
 
@@ -105,6 +107,7 @@
       integer          :: ifm                              ! output code: 1=2d+concen,2=2d only]
       integer          :: ofm                              ! format of ash concentration files (1=ascii, 2=binary, or 3=netcdf)
       integer          :: nwt                              ! nWriteTimes
+      logical          :: interval_flag                    ! indicates if nWriteTimes is actually specifying WriteTimes is interval-based
       real(kind=dp),dimension(:),allocatable :: wts        ! WriteTimes(1:nWriteTimes)
 
       ! Block 6 variables
@@ -112,6 +115,19 @@
       character(len=1) :: WriteGSD_c
       character(len=1) :: WriteAirportFile_KML_c
       character(len=1) :: ProjectAirportLocations_c
+
+      integer           :: iyear
+      integer           :: idx
+      character(len=4)  :: yearstr
+      character(len=50) :: tmpstr
+
+      INTERFACE
+        integer function HS_YearOfEvent(HoursSince,byear,useLeaps)
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
+        end function HS_YearOfEvent
+      END INTERFACE
 
       ! Reset verbosity so we only are using stdout (no log file)
       VB = (/3,10/)
@@ -308,16 +324,24 @@
       if(adjustl(trim(answer)).eq.'yes') WriteCloudTime_KML_c = 'y'
       Write3dFiles_c = 'y' ! This is obviously true if we are reading the netcdf file
       ifm = 2
-      read(cdf_b4l15,'(a3)',iostat=iostatus,iomsg=iomessage) answer, ifm
+      read(cdf_b4l15,*,iostat=iostatus,iomsg=iomessage) answer, ifm
       if(iostatus.ne.0)then ! if read fails, then make sure we set these
         Write3dFiles_c = 'y'
-        ifm = 2
+        ifm = 1
       endif
       ofm = 3 ! This should be 3 since we are reading a netcdf file
-      nwt = nWriteTimes
-      allocate(wts(nwt))
-      wts = WriteTimes
- 
+      read(cdf_b4l17,*)nwt
+      if(nwt.gt.0)then
+        interval_flag = .false.
+        allocate(wts(nwt))
+        read(cdf_b4l18,*)wts(1:nwt)
+      else
+        nwt = 1
+        interval_flag = .true.
+        allocate(wts(nwt))
+        read(cdf_b4l18,*)wts(1)
+      endif
+
       call Write_input_block_header(fid_ctrlfile,4)
       call SetWrite_input_block_04(fid_ctrlfile                    ,&  ! output stream ID
                                    WriteDepositFinal_ASCII_c       ,&  ! B4L1 n/y Write out ESRI ASCII file of final deposit thickness?
@@ -338,11 +362,22 @@
                                    ifm                             ,&  ! B4L15+ output code: 1=2d+concen,2=2d only]
                                    ofm                             ,&  ! B4L16 format of ash concentration files (1=ascii, 2=binary, or 3=netcdf)
                                    nwt                             ,&  ! B4L17 nWriteTimes
+                                   interval_flag                   ,&  ! true if nwt sould really be -1 (e.g. write time = interval)
                                    wts)                                ! B4L18 WriteTimes(1:nWriteTimes)
 
       ! BLOCK 5: INPUT WIND FILES
       if(MR_iWind.eq.5)then
-        read(cdf_b5l1,*)MR_WindFiles(1)
+        nwindfiles = 1
+        if(len(adjustl(trim(cdf_b5l1))).eq.0)then
+          ! NetCDF file didn't have cdf_b5l1. Need to get windfile directory from MR_windfiles
+          iyear = HS_YearOfEvent(SimStartHour,BaseYear,useLeap)
+          write(yearstr,'(i4)')iyear
+          idx=index(MR_windfiles(1),yearstr)
+          write(tmpstr,*)MR_windfiles(1)(1:idx-2)
+          write(MR_windfiles(1),*)adjustl(trim(tmpstr))
+        else
+          read(cdf_b5l1,*)MR_WindFiles(1)
+        endif
       endif
 
       call Write_input_block_header(fid_ctrlfile,5)
@@ -384,31 +419,47 @@
                                    LN_phi_stddev                   ,&
                                    Tephra_gsdiam                   ,&
                                    Tephra_bin_mass                 ,&
+                                   Tephra_v_s                      ,&                   
                                    Tephra_rho_m                    ,&
                                    Tephra_gsF                      ,&
                                    Tephra_gsG                      ,&
                                    Tephra_gsPhi)
 
+      ! BLOCK 8: VERTICAL PROFILES
+      call Write_input_block_header(fid_ctrlfile,8)
+      call SetWrite_input_block_08(fid_ctrlfile                    ,&  ! output stream ID
+                                   nvprofiles                      ,&  ! number of profiles
+                                   x_vprofile                      ,&  ! x coordinate of profile point
+                                   y_vprofile                      ,&  ! y coordinate of profile point
+                                   Site_vprofile)                      ! name of site
 
-!      ! BLOCK 8: VERTICAL PROFILES
-!      call Write_input_block_header(fid_ctrlfile,8)
-!      call SetWrite_input_block_08(fid_ctrlfile           ) !           ,&  ! output stream ID
 
-!      ! BLOCK 9 (Optional): NETCDF ANNOTATIONS
-!      call Write_input_block_header(fid_ctrlfile,9)
-!      call SetWrite_input_block_09(fid_ctrlfile           ) !           ,&  ! output stream ID
-!
-!      ! BLOCK 10+: OPTIONAL MODULES (RESETPARAMS)
-!      call Write_input_block_header(fid_ctrlfile,10)
-!      call SetWrite_input_block_ResetParam(fid_ctrlfile   ) !           ,&  ! output stream ID
-!
-!      ! BLOCK 10+: OPTIONAL MODULES (TOPO)
-!      call Write_input_block_header(fid_ctrlfile,11)
-!      call SetWrite_input_block_Topo(fid_ctrlfile         ) !           ,&  ! output stream ID
-!
-!      ! BLOCK 10+: OPTIONAL MODULES (VARDIFF)
-!      call Write_input_block_header(fid_ctrlfile,12)
-!      call SetWrite_input_block_VarDiff(fid_ctrlfile      ) !           ,&  ! output stream ID
+      ! BLOCK 9 (Optional): NETCDF ANNOTATIONS
+      if(Have_Block_NetCDF)then
+        call Write_input_block_header(fid_ctrlfile,9)
+        call SetWrite_input_block_09(fid_ctrlfile                    ,&  ! output stream ID
+                                     concenfile                      ,&  ! name of netcdf file
+                                     cdf_title                       ,&  ! title of simulation
+                                     cdf_comment)                        ! comment
+      endif
+
+      ! BLOCK 10+: OPTIONAL MODULES (RESETPARAMS)
+      if(Have_Block_ResParm)then
+        call Write_input_block_header(fid_ctrlfile,10)
+        call SetWrite_input_block_ResetParam(fid_ctrlfile   ) !           ,&  ! output stream ID
+      endif
+
+      ! BLOCK 10+: OPTIONAL MODULES (TOPO)
+      if(Have_Block_Topo)then
+        call Write_input_block_header(fid_ctrlfile,11)
+        call SetWrite_input_block_Topo(fid_ctrlfile         ) !           ,&  ! output stream ID
+      endif
+
+      ! BLOCK 10+: OPTIONAL MODULES (VARDIFF)
+      if(Have_Block_VarDiff)then
+        call Write_input_block_header(fid_ctrlfile,12)
+        call SetWrite_input_block_VarDiff(fid_ctrlfile      ) !           ,&  ! output stream ID
+      endif
 
 
       close(fid_ctrlfile)
