@@ -52,12 +52,17 @@
 
         ! Publicly available variables
 
-      real(kind=ip),public :: MagmaDensity   = 2500.0_ip  !density of magma, in kg/m3
-      real(kind=ip),public :: DepositDensity = 1000.0_ip  !deposit density, in kg/m3
-      real(kind=ip),public :: LAM_GS_THRESH  =  250.0_ip  ! Invokes Cslip once effect is 1%
+      real(kind=ip),parameter,public :: MagmaDensity_Default    = 2500.0_ip !density of magma, in kg/m3
+      real(kind=ip),parameter,public :: DepositDensity_Default  = 1000.0_ip !deposit density, in kg/m3
+      real(kind=ip),parameter,public :: LAM_GS_THRESH_Default   = 250.0_ip  ! Invokes Cslip once effect is 1%
                                      !=  125.0_ip  ! Invokes Cslip once effect is 2%
                                      !=   50.0_ip  ! Invokes Cslip once effect is 5%
-      real(kind=ip),public :: AIRBORNE_THRESH = 1.0e-3_ip ! Mass threshold for flagging bin as empty (kg)
+      real(kind=ip),parameter,public :: AIRBORNE_THRESH_Default = 1.0e-3_ip ! Mass threshold for flagging bin as empty (kg)
+
+      real(kind=ip),public :: MagmaDensity    = MagmaDensity_Default
+      real(kind=ip),public :: DepositDensity  = DepositDensity_Default
+      real(kind=ip),public :: LAM_GS_THRESH   = LAM_GS_THRESH_Default
+      real(kind=ip),public :: AIRBORNE_THRESH = AIRBORNE_THRESH_Default
 
       integer,public :: n_gs_max                      ! # size classes of particles 
       integer,public :: n_gs_aloft                    ! max gs bin still aloft

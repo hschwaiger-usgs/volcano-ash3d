@@ -35,6 +35,9 @@
              DiffuseHorz,               &
              DiffuseVert
 
+      real(kind=ip), parameter,public :: Imp_fac_Default    = 0.5_ip
+      real(kind=ip), parameter,public :: Imp_DT_fac_Default = 4.0_ip
+
         ! Publicly available variables
       real(kind=ip),public :: diffusivity_horz    ! horizontal diffusion coefficient (km2/hr)
       real(kind=ip),public :: diffusivity_vert    ! vertical diffusion coefficient (km2/hr)
@@ -50,8 +53,8 @@
          !       explicit solver.  If either Imp_fac = 0.5 or 1.0, then the
          !       method is unconditionally stable, but accuracy requires a
          !       Imp_DT_fac to be around 1.0 - 4.0
-      real(kind=ip),public  :: Imp_fac     = 0.5_ip    
-      real(kind=ip),public  :: Imp_DT_fac  = 4.0_ip
+      real(kind=ip),public  :: Imp_fac     = Imp_fac_Default
+      real(kind=ip),public  :: Imp_DT_fac  = Imp_DT_fac_Default
 
 
 #ifdef USEPOINTERS

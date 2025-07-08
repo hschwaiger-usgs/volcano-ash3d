@@ -292,13 +292,19 @@
       real(kind=ip), parameter :: MPS_2_KMPHR= 3.6_ip          ! m/s to km/hr
       real(kind=ip), parameter :: M2PS_2_KM2PHR = 3.6e-3_ip    ! m2/s to km2/hr
       real(kind=ip), parameter :: HR_2_S     = 3.6e+3_ip       ! hour to seconds
+      real(kind=ip), parameter :: GRAV_Default      = 9.81_ip     ! Gravitational acceleration m/s^2
+      real(kind=ip), parameter :: RAD_EARTH_Default = 6371.229_ip ! Radius of Earth in km (used for cell
+                                                                  ! geometry calculations: area, volume)
+                                                                  !  Note: a particular projection might
+                                                                  !        use a different radius
+      real(kind=ip), parameter :: CFL_Default      = 0.8_ip
+      real(kind=ip), parameter :: DT_MIN_Default   = 1.0e-5_dp  ! Minimum DT in hours
+      real(kind=ip), parameter :: DT_MAX_Default   = 1.0e0_dp   ! Maximum DT in hours
+      logical      , parameter :: useVz_rhoG_Default      = .true.
+      logical      , parameter :: useMoistureVars_Default = .false.
 
-
-      real(kind=ip) :: GRAV       = 9.81_ip     ! Gravitational acceleration m/s^2
-      real(kind=ip) :: RAD_EARTH  = 6371.229_ip ! Radius of Earth in km (used for cell
-                                                ! geometry calculations: area, volume)
-                                                !  Note: a particular projection might
-                                                !        use a different radius
+      real(kind=ip) :: GRAV       = GRAV_Default
+      real(kind=ip) :: RAD_EARTH  = RAD_EARTH_Default
 
       integer,       parameter :: MAXNUM_OPTMODS   = 10   ! used just to preallocate block array
       character(len=20),dimension(MAXNUM_OPTMODS) :: OPTMOD_names
@@ -357,24 +363,20 @@
       logical                  :: useTemperature   = .false. 
       logical                  :: useLogNormGSbins = .false.
 
-
       ! The variables below can be reset via OPTMOD=RESETPARAMS
         ! Vertical velocities come from Vertical_Velocity_Pressure (in Pa s)
         ! This can be converted to m/s by dividing by dp/dz.  We have two
         ! ways we can calculate dp/dz: using -rho g, or calculating a finite
         ! difference approximation using p and GPH variable
-      logical                  :: useVz_rhoG      = .true.   ! using  -rho g
-      !logical                  :: useVz_rhoG      = .false. ! using  finite-differences
+      logical                  :: useVz_rhoG         = useVz_rhoG_Default
 
         ! Only load temperature and water content data if needed
         ! This must be turned on in optional modules if needed
-      logical                  :: useMoistureVars    = .false.
+      logical                  :: useMoistureVars    = useMoistureVars_Default
 
-      real(kind=ip)            :: CFL = 0.80_ip       ! courant number
-                                                      ! Note: CFL can be reset via environment
-                                                      !       variables or via the input file
-      real(kind=dp)            :: DT_MIN = 1.0e-5_dp  ! Minimum DT in hours
-      real(kind=dp)            :: DT_MAX = 1.0e0_dp   ! Maximum DT in hours
+      real(kind=ip)            :: CFL    = CFL_Default
+      real(kind=dp)            :: DT_MIN = DT_MIN_Default
+      real(kind=dp)            :: DT_MAX = DT_MAX_Default
 
       ! Stop conditions
       !  1 = check if amount aloft is too little
@@ -434,6 +436,10 @@
         ! Set everything to public by default
       public
 
+      character (len=80),parameter :: cdf_institution_Default = "USGS"
+      character (len=80),parameter :: cdf_run_class_Default   = "Analysis"  ! Forecast, Hypothetical, Analysis
+      character (len=80),parameter :: cdf_url_Default         = "https://vsc-ash.wr.usgs.gov/ash3d-gui"
+
       integer            :: log_step = 1
 
       integer            :: iout3d          ! index for output timestep of 3d/2d data
@@ -453,13 +459,13 @@
       logical            :: Have_Block_Topo    = .false.
       logical            :: Have_Block_VarDiff = .false.
       character (len=130):: cdf_title       = "test"
-      character (len=80) :: cdf_institution = "USGS"
+      character (len=80) :: cdf_institution = cdf_institution_Default
       character (len=80) :: cdf_source      = "Ash3d v"   ! This is rewritten in Input_Data.f90
       character (len=80) :: cdf_source_url  = "https://code.usgs.gov/vsc/ash3d/volcano-ash3d"
       character (len=80) :: cdf_history     = ""
       character (len=80) :: cdf_references  = "https://pubs.usgs.gov/of/2013/1122/ofr20131122.pdf"
-      character (len=80) :: cdf_run_class   = "Analysis"  ! Forecast, Hypothetical, Analysis
-      character (len=80) :: cdf_url         = "https://vsc-ash.wr.usgs.gov/ash3d-gui"
+      character (len=80) :: cdf_run_class   = cdf_run_class_Default
+      character (len=80) :: cdf_url         = cdf_url_Default
       character (len=80) :: cdf_comment     = "None"
       character (len=80) :: cdf_conventions = "CF-1.5"
       character (len=80) :: cdf_b1l1       ! character strings containing parameters for netcdf file
@@ -619,6 +625,7 @@
         ! Set everything to public by default
       public
 
+      real(kind=ip), parameter :: ZPADDING_Default     = 1.3_ip
       integer, parameter :: ts0 = 0
       integer, parameter :: ts1 = 1
 
@@ -638,7 +645,7 @@
       real(kind=dp)      :: A3d_Re
 
       logical            :: IsPeriodic   = .false.
-      real(kind=ip)      :: ZPADDING     = 1.3_ip
+      real(kind=ip)      :: ZPADDING     = ZPADDING_Default
       real(kind=ip)      :: Ztop
       character(len=7)   :: VarDzType
       real(kind=ip)      :: dz_const                  ! z nodal spacing (always km)
@@ -836,6 +843,8 @@
         ! Set everything to public by default
       public
 
+      real(kind=ip), parameter     :: StopValue_FracAshDep_Default    = 0.99_ip 
+
 #ifdef USEPOINTERS
       real(kind=ip),dimension(:,:,:)    ,pointer :: vx_pd => null() ! u (E) component of wind
       real(kind=ip),dimension(:,:,:)    ,pointer :: vy_pd => null() ! v (N) component of wind
@@ -888,7 +897,7 @@
       real(kind=ip)      :: dep_percent_accumulated = 0.0_ip
       real(kind=ip)      :: aloft_percent_remaining = 0.0_ip
       logical            :: StopWhenDeposited
-      real(kind=ip)      :: StopValue_FracAshDep    = 0.0_ip   ! program stops when percent_accumulated>StopValue_FracAshDep
+      real(kind=ip)      :: StopValue_FracAshDep    = StopValue_FracAshDep_Default
       real(kind=ip)      :: dep_vol                 = 0.0_ip
       real(kind=ip)      :: aloft_vol               = 0.0_ip
       real(kind=ip)      :: outflow_vol             = 0.0_ip

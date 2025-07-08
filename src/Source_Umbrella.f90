@@ -30,6 +30,12 @@
              SourceVolInc_Umbrella,     &
              AvgCon_Umbrella
 
+      integer      ,parameter,public :: VelMod_umb_Default         = 1       ! Velocity model to use (1=default)
+      real(kind=ip),parameter,public :: k_entrainment_umb_Default  = 0.1_ip  ! entrainment coefficient
+      real(kind=ip),parameter,public :: lambda_umb_Default         = 0.2_ip  ! umbrella cloud shape factor
+      real(kind=ip),parameter,public :: N_BV_umb_Default           = 0.02_ip ! Brunt-Vaisala frequency, 1/s
+      real(kind=ip),parameter,public :: SuzK_umb_Default           = 12.0_ip ! Suzuki parameter used for umb clouds
+
       !components of the wind field used for umbrella clouds
 #ifdef USEPOINTERS
       real(kind=ip),dimension(:,:,:,:),pointer,public :: SourceNodeFlux_Umbrella =>null()
@@ -46,11 +52,11 @@
       integer,public :: itop      ! z index of highest node in the umbrella cloud
 
       ! These are only public since we want to write these to the ouput file
-      integer      ,public :: VelMod_umb         = 1       ! Velocity model to use (1=default)
-      real(kind=ip),public :: k_entrainment_umb  = 0.1_ip  ! entrainment coefficient
-      real(kind=ip),public :: lambda_umb         = 0.2_ip  ! umbrella cloud shape factor
-      real(kind=ip),public :: N_BV_umb           = 0.02_ip ! Brunt-Vaisala frequency, 1/s
-      real(kind=ip),public :: SuzK_umb           = 12.0_ip ! Suzuki parameter used for umb clouds
+      integer      ,public :: VelMod_umb         = VelMod_umb_Default
+      real(kind=ip),public :: k_entrainment_umb  = k_entrainment_umb_Default
+      real(kind=ip),public :: lambda_umb         = lambda_umb_Default
+      real(kind=ip),public :: N_BV_umb           = N_BV_umb_Default
+      real(kind=ip),public :: SuzK_umb           = SuzK_umb_Default
 
        !width & height of source nodes in km
       real(kind=ip) :: SourceNodeWidth_km

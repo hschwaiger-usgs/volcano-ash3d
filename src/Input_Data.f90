@@ -1087,7 +1087,7 @@
          A3d_phi2,A3d_Re,IsLatLon,IsPeriodic,ZPADDING,Ztop
 
       use solution,      only : &
-         StopWhenDeposited,StopValue_FracAshDep,imin,imax,jmin,jmax,kmin,kmax
+         StopWhenDeposited,StopValue_FracAshDep,StopValue_FracAshDep_Default,imin,imax,jmin,jmax,kmin,kmax
 
       use time_data,     only : &
          BaseYear,useLeap,time,SimStartHour,Simtime_in_hours,xmlSimStartTime
@@ -1194,7 +1194,6 @@
       integer           :: substr_pos1
       integer           :: substr_pos2
       logical           :: IsThere
-      !logical           :: StopWhenDeposited   ! If true, StopValue_FracAshDep=0.99, else StopValue_FracAshDep=1e5.
       logical           :: runAsForecast       = .false.  ! This will be changed if year=0
       real(kind=dp)     :: FC_Offset = 0.0_dp
       real(kind=ip)     :: Davg,Aaxis,Baxis,Caxis
@@ -2291,7 +2290,7 @@
       read(linebuffer080,'(a3)',err=9304,iostat=iostatus,iomsg=iomessage) answer
       if(adjustl(trim(answer)).eq.'yes') then
         StopWhenDeposited = .true.
-        StopValue_FracAshDep = 0.99_ip
+        StopValue_FracAshDep = StopValue_FracAshDep_Default
        else if(adjustl(trim(answer(1:2))).eq.'no') then
         StopWhenDeposited = .false.
         StopValue_FracAshDep = 1.0e2_ip

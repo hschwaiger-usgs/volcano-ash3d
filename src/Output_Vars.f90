@@ -103,6 +103,17 @@
         ! iprod = 15:ivar =  10 :: topography                   : km     : (x,y)       : Topography.kml
         ! iprod = 16:ivar =     :: profiles concentration?      :
 
+      real(kind=ip), parameter,public :: DEPO_THRESH_Default         = 1.0e-2_ip
+      real(kind=ip), parameter,public :: DEPRATE_THRESH_Default      = 1.0e-2_ip
+      real(kind=ip), parameter,public :: CLOUDCON_THRESH_Default     = 1.0e-3_ip
+      real(kind=ip), parameter,public :: CLOUDCON_GRID_THRESH_Default= 1.0e-7_ip
+      real(kind=ip), parameter,public :: CLOUDLOAD_THRESH_Default    = 2.0e-1_ip
+      real(kind=ip), parameter,public :: THICKNESS_THRESH_Default    = 1.0e-2_ip
+      real(kind=ip), parameter,public :: DBZ_THRESH_Default          =-2.0e+1_ip
+      logical      , parameter,public :: useWindVars_Default    = .false.
+      logical      , parameter,public :: useOutprodVars_Default = .true.
+      logical      , parameter,public :: useRestartVars_Default = .false.
+
         ! Publicly available variables
         !  Variable threshold values
         !  The deposit and cloudload thresholds are special in that they are used
@@ -110,17 +121,17 @@
         !  are written to the output netcdf file if post-processing required
         !  thresholding (if flooded contours are to be suppressed below the
         !  threshold, for example).
-      real(kind=ip),public    :: DEPO_THRESH           = 1.0e-2_ip  ! threshold deposit thickness (mm)
-      real(kind=ip),public    :: CLOUDLOAD_THRESH      = 2.0e-1_ip  ! threshold cloud load (t/km2)
+      real(kind=ip),public    :: DEPO_THRESH           = DEPO_THRESH_Default      ! threshold deposit thickness (mm)
+      real(kind=ip),public    :: CLOUDLOAD_THRESH      = CLOUDLOAD_THRESH_Default ! threshold cloud load (t/km2)
                                        ! 0.2 T/km2 is roughly the detection
                                        ! limit of Pavolonis's SEVIRI satellite retrievals
 
-      real(kind=ip),public    :: DEPRATE_THRESH        = 1.0e-2_ip  ! threshold deposition rate (mm/hr)
-      real(kind=ip),public    :: CLOUDCON_THRESH       = 1.0e-3_ip  ! threshold cloud concentration (kg/km3) for output
-      real(kind=ip),public    :: CLOUDCON_GRID_THRESH  = 1.0e-7_ip  ! threshold cloud concentration (kg/km3) for subgrid
+      real(kind=ip),public    :: DEPRATE_THRESH        = DEPRATE_THRESH_Default  ! threshold deposition rate (mm/hr)
+      real(kind=ip),public    :: CLOUDCON_THRESH       = CLOUDCON_THRESH_Default ! threshold cloud concentration (kg/km3) for output
+      real(kind=ip),public    :: CLOUDCON_GRID_THRESH  = CLOUDCON_GRID_THRESH_Default  ! threshold cloud concentration (kg/km3) for subgrid
 
-      real(kind=ip),public    :: THICKNESS_THRESH      = 1.0e-2_ip  ! threshold thickness for start of deposition (mm)
-      real(kind=ip),public    :: DBZ_THRESH            =-2.0e+1_ip  ! threshold dbZ
+      real(kind=ip),public    :: THICKNESS_THRESH      = THICKNESS_THRESH_Default  ! threshold thickness for start of deposition (mm)
+      real(kind=ip),public    :: DBZ_THRESH            = DBZ_THRESH_Default  ! threshold dbZ
 
       ! These are the initialized values
       real(kind=op),public    :: DepositThickness_FillValue   = -9999.0_op
@@ -136,7 +147,7 @@
       logical,public          :: Calculated_Cloud_Load
       logical,public          :: Calculated_AshThickness
         ! Set this parameter if you want to include velocities in the output file
-      logical,public          :: useWindVars  = .false.
+      logical,public          :: useWindVars  = useWindVars_Default
 
         ! Set this to true if you want the extra output variables defined in the
         ! optional modules
@@ -151,14 +162,14 @@
 
         ! This variable is set to true indicating that the output file should include
         ! the standard derived variables in the output file.
-      logical,public :: useOutprodVars = .true.
+      logical,public :: useOutprodVars = useOutprodVars_Default
 
         ! This variable will be set to false if you do not want raw concentration
         ! values exported (only derived products and deposits) if indicated
         ! in the input file on block 5/line 15
         ! yes 2   # Write out 3-D ash concentration at specified times? / [output code: 1=2d+concen,2=2d only]
         ! Can also be reset in RESETPARAMS
-      logical,public :: useRestartVars = .false.
+      logical,public :: useRestartVars = useRestartVars_Default
 
       real(kind=ip),public :: CloudArea                ! area of ash cloud at a given time
       real(kind=ip),public :: LoadVal(5)               ! 5 threshold values for area calculations

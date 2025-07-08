@@ -4180,11 +4180,15 @@
       subroutine NC_Read_Output_Products(timestep)
 
       use global_param,  only : &
-         GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH,useMoistureVars,useVz_rhoG,useLogNormGSbins
+         GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH,useMoistureVars,useVz_rhoG,useLogNormGSbins,&
+         GRAV_Default,RAD_EARTH_Default,CFL_Default,DT_MIN_Default,DT_MAX_Default,&
+         useVz_rhoG_Default,useMoistureVars_Default
 
       use io_data,           only : &
          Have_Block_NetCDF,Have_Block_ResParm,Have_Block_Topo,Have_Block_VarDiff,&
          concenfile,cdf_title,cdf_comment,init_tstep,nWriteTimes,WriteTimes, &
+         cdf_institution,cdf_institution_Default,cdf_run_class,cdf_run_class_Default,&
+         cdf_url,cdf_url_Default, &
          cdf_b1l1,cdf_b1l2,cdf_b1l4,cdf_b1l5,cdf_b1l8,cdf_vardz, &
          cdf_b3l1,cdf_b3l2,cdf_b3l3,cdf_b3l4,cdf_b3l5, &
          cdf_b4l1,cdf_b4l2,cdf_b4l3,cdf_b4l4,cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,&
@@ -4200,10 +4204,10 @@
          dx,dy,de,dn,dz_const,IsLatLon,latLL,lonLL,latUR,lonUR,xLL,yLL,xUR,yUR,&
          A3d_iprojflag,A3d_k0,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
          A3d_phi2,A3d_Re,ZPADDING,VarDzType,dz_const,gridwidth_e,gridwidth_n,&
-         gridwidth_x,gridwidth_y
+         gridwidth_x,gridwidth_y,ZPADDING_Default
 
       use solution,      only : &
-         StopWhenDeposited,StopValue_FracAshDep,SpeciesID
+         StopWhenDeposited,StopValue_FracAshDep,StopValue_FracAshDep_Default,SpeciesID
 
       use time_data,     only : &
           BaseYear,useLeap,os_time_log,time,time_native,SimStartHour,xmlSimStartTime, &
@@ -4216,15 +4220,19 @@
          lat_volcano,lon_volcano,x_volcano,y_volcano,z_volcano
 
       use Source_Umbrella, only : &
-         k_entrainment_umb,lambda_umb,N_BV_umb,SuzK_umb ,&
-         VelMod_umb
+         k_entrainment_umb,lambda_umb,N_BV_umb,SuzK_umb,VelMod_umb,&
+         k_entrainment_umb_Default,lambda_umb_Default,N_BV_umb_Default,&
+         SuzK_umb_Default,VelMod_umb_Default
 
       use Output_Vars,   only : &
          DepositThickness,DepArrivalTime,CloudArrivalTime,pr_ash,Mask_Deposit,&
          MaxConcentration,MaxHeight,CloudLoad,dbZCol,MinHeight,Mask_Cloud,&
          CLOUDCON_GRID_THRESH,CLOUDCON_THRESH,THICKNESS_THRESH, &
          CLOUDLOAD_THRESH,DBZ_THRESH,DEPO_THRESH,DEPRATE_THRESH,ashcon_tot, &
+         CLOUDCON_GRID_THRESH_Default,CLOUDLOAD_THRESH_Default,CLOUDCON_THRESH_Default,&
+         DEPO_THRESH_Default,DEPRATE_THRESH_Default,THICKNESS_THRESH_Default,DBZ_THRESH_Default,&
          useRestartVars,useOutprodVars,useWindVars,Extra2dVar,Extra2dVarName, &
+         useWindVars_Default,useOutprodVars_Default,useRestartVars_Default,&
            dbZCalculator, &
            Allocate_NTime, &
            Allocate_Profile, &
@@ -4242,7 +4250,8 @@
          n_gs_max,Tephra_gsdiam,Tephra_v_s,Tephra_bin_mass,Tephra_rho_m,FV_ID,&
          Tephra_Ncols,Tephra_gsF,Tephra_gsG,Tephra_gsPhi,Shape_ID,&
          LN_massfrac,LN_phi_mean,LN_phi_stddev,LN_suppl_frac, &
-         MagmaDensity,DepositDensity,LAM_GS_THRESH,AIRBORNE_THRESH, &
+         MagmaDensity,DepositDensity,LAM_GS_THRESH,AIRBORNE_THRESH,MagmaDensity_Default, &
+         DepositDensity_Default,LAM_GS_THRESH_Default,AIRBORNE_THRESH_Default,&
            partition_gsbins
 
       use projection,    only : &
@@ -4250,7 +4259,7 @@
            PJ_Set_Proj_Params,PJ_proj_for,PJ_proj_inv
 
       use diffusion,     only : &
-         diffusivity_horz,Imp_fac,Imp_DT_fac
+         diffusivity_horz,Imp_fac,Imp_DT_fac,Imp_fac_Default,Imp_DT_fac_Default
 
       use MetReader,     only : &
          MR_iWind,MR_iWindFormat,MR_iGridCode,MR_iDataFormat,MR_iWindFiles,MR_iHeightHandler,&
@@ -5079,7 +5088,7 @@
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"Did not find att StopValue_FracAshDep: Assuming StopValue_FracAshDep=0.99"
           endif;enddo
-          StopValue_FracAshDep = 0.99_ip
+          StopValue_FracAshDep = StopValue_FracAshDep_Default
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"Imp_fac",Imp_fac)
