@@ -5193,9 +5193,9 @@
           useOutprodVars= .true.
         else
           if(trim(adjustl(tmp_str)).eq.'true')then
-            useOutprodVars = .false.
-          else
             useOutprodVars = .true.
+          else
+            useOutprodVars = .false.
           endif
         endif
 

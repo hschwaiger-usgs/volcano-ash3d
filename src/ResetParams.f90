@@ -11,6 +11,11 @@
 !  An example block with all the variables availalbe to reset is given here. Not
 !  all variables need to be listed; only those changed from the defaults shown below.
 !
+!  Note: If you want to add a variable to this list, make sure to add a bit in write_Netcdf.f90
+!  to write out the new parameter to the global attributes list in NC_create_netcdf_file. You also
+!  might want to add reading of the parameter in NC_Read_Output_Products and handling of the
+!  new paramter in tools/Ash3d_NetCDF_GenCTR.f90.
+!
 !***********************
 !# Reset parameters
 !***********************

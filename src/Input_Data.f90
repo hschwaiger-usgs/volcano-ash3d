@@ -6869,7 +6869,207 @@
 
       use io_units
 
+      use global_param,  only : &
+         GRAV,GRAV_Default,RAD_EARTH,RAD_EARTH_Default,CFL,CFL_Default,DT_MIN,DT_MIN_Default,&
+         DT_MAX,DT_MAX_Default,useVz_rhoG,useVz_rhoG_Default,useMoistureVars,useMoistureVars_Default
+
+      use io_data,       only : &
+         cdf_institution,cdf_institution_Default,cdf_run_class,cdf_run_class_Default,&
+         cdf_url,cdf_url_Default
+
+      use mesh,          only : &
+         ZPADDING,ZPADDING_Default
+
+      use Tephra,        only : &
+         MagmaDensity,MagmaDensity_Default,DepositDensity,DepositDensity_Default,&
+         LAM_GS_THRESH,LAM_GS_THRESH_Default,AIRBORNE_THRESH,AIRBORNE_THRESH_Default
+
+      use Output_Vars,   only : &
+         DEPO_THRESH,DEPO_THRESH_Default,DEPRATE_THRESH,DEPRATE_THRESH_Default,&
+         CLOUDCON_THRESH,CLOUDCON_THRESH_Default,CLOUDCON_GRID_THRESH,CLOUDCON_GRID_THRESH_Default,&
+         CLOUDLOAD_THRESH,CLOUDLOAD_THRESH_Default,THICKNESS_THRESH,THICKNESS_THRESH_Default,&
+         DBZ_THRESH,DBZ_THRESH_Default,useWindVars,useWindVars_Default,useOutprodVars,useOutprodVars_Default,&
+         useRestartVars,useRestartVars_Default
+
+      use Diffusion,     only : &
+         Imp_fac,Imp_fac_Default,Imp_DT_fac,Imp_DT_fac_Default
+
+      use Source_Umbrella,only : &
+         VelMod_umb,VelMod_umb_Default,k_entrainment_umb,k_entrainment_umb_Default,&
+         lambda_umb,lambda_umb_Default,N_BV_umb,N_BV_umb_Default,&
+         SuzK_umb,SuzK_umb_Default
+
       integer           ,intent(in) :: outunit
+
+      real(kind=ip) :: tmp1,tmp2,rerr
+      integer       :: dumint1,dumint2
+
+      if(outunit.gt.0)then
+        write(outunit,1)&
+         '******************* BLOCK 10+ **************************************************'
+        write(outunit,'(a18)')'OPTMOD=RESETPARAMS'
+        ! Parameters from Tephra
+        tmp1=MagmaDensity
+        tmp2=MagmaDensity_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'MagmaDensity        ',tmp1
+        tmp1=DepositDensity
+        tmp2=DepositDensity_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'DepositDensity      ',tmp1
+        tmp1=LAM_GS_THRESH
+        tmp2=LAM_GS_THRESH_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'LAM_GS_THRESH       ',tmp1
+        tmp1=AIRBORNE_THRESH
+        tmp2=AIRBORNE_THRESH_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'AIRBORNE_THRESH     ',tmp1
+        ! Parameters from global_param
+        tmp1=GRAV
+        tmp2=GRAV_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'GRAV                ',tmp1
+        tmp1=CFL
+        tmp2=CFL_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'CFL                 ',tmp1
+        tmp1=RAD_EARTH
+        tmp2=RAD_EARTH_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'RAD_EARTH           ',tmp1
+        tmp1=DT_MIN
+        tmp2=DT_MIN_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'DT_MIN              ',tmp1
+        tmp1=DT_MAX
+        tmp2=DT_MAX_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'DT_MAX               ',tmp1
+        if(useVz_rhoG)then
+          dumint1 = 1
+        else
+          dumint1 = 0
+        endif
+        if(useVz_rhoG.neqv.useVz_rhoG_Default) &
+                          write(outunit,3)'useVz_rhoG           ',dumint1
+        if(useMoistureVars)then
+          dumint1 = 1
+        else
+          dumint1 = 0
+        endif
+        if(useMoistureVars.neqv.useMoistureVars_Default) &
+                          write(outunit,3)'useMoistureVars      ',dumint1
+        ! Parameters from mesh
+        tmp1=ZPADDING
+        tmp2=ZPADDING_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'ZPADDING             ',tmp1
+
+        ! Parameters from Output_Vars
+        tmp1=DEPO_THRESH
+        tmp2=DEPO_THRESH_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'DEPO_THRESH         ',tmp1
+        tmp1=DEPRATE_THRESH
+        tmp2=DEPRATE_THRESH_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'DEPRATE_THRESH      ',tmp1
+        tmp1=CLOUDCON_THRESH
+        tmp2=CLOUDCON_THRESH_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'CLOUDCON_THRESH     ',tmp1
+        tmp1=CLOUDCON_GRID_THRESH
+        tmp2=CLOUDCON_GRID_THRESH_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'CLOUDCON_GRID_THRESH',tmp1
+        tmp1=CLOUDLOAD_THRESH
+        tmp2=CLOUDLOAD_THRESH_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'CLOUDLOAD_THRESH    ',tmp1
+        tmp1=THICKNESS_THRESH
+        tmp2=THICKNESS_THRESH_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'THICKNESS_THRESH    ',tmp1
+        tmp1=DBZ_THRESH
+        tmp2=DBZ_THRESH_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'DBZ_THRESH          ',tmp1
+        if(useWindVars)then
+          dumint1 = 1
+        else
+          dumint1 = 0
+        endif
+        if(useWindVars.neqv.useWindVars_Default) &
+                          write(outunit,3)'useWindVars         ',dumint1
+        if(useOutprodVars)then
+          dumint1 = 1
+        else
+          dumint1 = 0
+        endif
+        if(useOutprodVars.neqv.useOutprodVars_Default) &
+                          write(outunit,3)'useOutprodVars       ',dumint1
+        if(useRestartVars)then
+          dumint1 = 1
+        else
+          dumint1 = 0
+        endif
+        if(useRestartVars.neqv.useRestartVars_Default) &
+                          write(outunit,3)'useRestartVars       ',dumint1
+
+        ! Parameters from Diffusion
+        tmp1=Imp_fac
+        tmp2=Imp_fac_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'Imp_fac              ',tmp1
+        tmp1=Imp_DT_fac
+        tmp2=Imp_DT_fac_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'Imp_DT_fac          ',tmp1
+
+        ! Parameters from Source_Umbrella
+        if(VelMod_umb.ne.VelMod_umb_Default) &
+                          write(outunit,3)'VelMod_umb           ',tmp1
+        tmp1=k_entrainment_umb
+        tmp2=k_entrainment_umb_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'k_entrainment_umb    ',tmp1
+        tmp1=lambda_umb
+        tmp2=lambda_umb_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'lambda_umb           ',tmp1
+        tmp1=N_BV_umb
+        tmp2=N_BV_umb_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'N_BV_umb             ',tmp1
+        tmp1=SuzK_umb
+        tmp2=SuzK_umb_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'SuzK_umb             ',tmp1
+
+        ! Parameters from io_data
+        dumint1=index(cdf_institution,cdf_institution_Default)
+        dumint2=index(cdf_institution_Default,cdf_institution)
+        if(dumint1.gt.0.and.dumint2.gt.0.and.dumint1.ne.dumint2)&
+                          write(outunit,4)'cdf_institution      ',trim(adjustl(cdf_institution))
+        dumint1=index(cdf_run_class,cdf_run_class_Default)
+        dumint2=index(cdf_run_class_Default,cdf_run_class)
+        if(dumint1.gt.0.and.dumint2.gt.0.and.dumint1.ne.dumint2)&
+                          write(outunit,4)'cdf_run_class        ',trim(adjustl(cdf_run_class))
+
+        dumint1=index(cdf_url,cdf_url_Default)
+        dumint2=index(cdf_url_Default,cdf_url)
+        if(dumint1.gt.0.and.dumint2.gt.0.and.dumint1.ne.dumint2)&
+                          write(outunit,4)'cdf_url              ',trim(adjustl(cdf_url))
+
+        write(outunit,1)&
+         '********************************************************************************'
+      endif
+
+ 1    format(a80)
+ 2    format(a20,' = ',g10.3)
+ 3    format(a20,' = ',i1)
+ 4    format(a20,' = ',g0)
 
       end subroutine SetWrite_input_block_ResetParam
 
