@@ -312,17 +312,52 @@ OPTMOD=RESETPARAMS
 useWindVars          = 1
 *******************************************************************************
 # Topography
+# Line 1 indicates whether or not to use topography followed by the integer flag
+#        describing how topography will modify the vertical grid.
+#          0 = no vertical modification; z-grid remains 0-> top throughout the domain
+#          1 = shifted; s = z-z_surf; computational grid is uniformly shifted upward
+#              everywhere by topography
+#          2 = sigma-altitude; s=z_top(z-z_surf)/(z_top-z_surf); topography has decaying
+#              influence with height
+# Line 2 indicates the topography data format followed by the smoothing radius in km
+# Topofile format must be one of
+#   1 : Gridded lon/lat (netcdf): ETOPO, GEBCO
+#   2 : Gridded Binary: NOAA GLOBE, GTOPO30
+#   3 : ESRI ASCII
+#  Line 3 is the file name of the topography data.
 *******************************************************************************
 OPTMOD=TOPO
 yes 2                          # use topography?
-1 12.0                         # Topofile format, smoothing radius
+1 6.0                          # Topofile format, smoothing radius
 GEBCO_2023.nc                  # topofile name
+*******************************************************************************
+# Variable Diffusivity
+#   Line 1 indicates whether or not to use horizontal diffusivity followed by the
+#          type ID and value with
+#             1  500.0 # constant horizontal diffusivity with specified value (m2/s)
+#             2  0.2   # Smagorinsky model with coefficient C ()
+#             3  0.2   # Pielke model with coefficient C ()
+#   Line 2 indicates whether or not to use vertical diffusivity
+#   Line 3 indicates the boundary layer model and value (if model requires)
+#             1 500.0         # BL model 1=const ; value (m2/s)
+#             2               #          2=none (Use Free-air throughout)
+#             3               #          3=Troen and Mahrt
+#             4               #          4=Ulke
+#             5               #          5=Shir / Businger,Ayer
+#   Line 4 indicates the Free-Air model and value (if model requires)
+#             1 500.0         # Free-Air 1=const ; value (m2/s)
+#             2               #          2=F(Ri)=Jacobson
+#             3               #          3=F(Ri)=Collins
+#             4               #          4=F(Ri,L,z)=Piedelievre
+#   Line 5 contains the von Karman constant
+#   Line 6 contains the free-air mixing length (m)
+#   Line 7 is the critical Richardson number used in calculating atmospheric stability. 
 *******************************************************************************
 OPTMOD=VARDIFF
 yes 2 0.2        # use horizontal variable diffusivity
 yes              # use vertical variable diffusivity
 5                # boundary layer model
-3                # free-air model
+2                # free-air model
 0.4              # vonKarman
 150.0            # LambdaC
 0.25             # RI_CRIT

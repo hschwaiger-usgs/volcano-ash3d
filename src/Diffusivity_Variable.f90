@@ -24,7 +24,7 @@
 !      subroutine Calc_Monin_Length
 !      subroutine Calc_PBLH
 !      function Fc_Jac
-!      function Fc_Collin
+!      function Fc_Collins
 !      function Fc_PMB
 !      function MixLen
 !      function Phi_WindShear_Similarity
@@ -45,8 +45,8 @@
 !  5               #          5=Shir / Businger,Ayer
 !  1 500.0         # Free-Air 1=const ; value
 !  2               #          2=F(Ri)=Jacobson
-!  3               #          3=F(Ri)=Collin
-!  4               #          4=F(Ri)=Piedelievre
+!  3               #          3=F(Ri)=Collins
+!  4               #          4=F(Ri,L,z)=Piedelievre
 !0.4                         # vonKarman
 !30.0                        # LambdaC
 !0.25                        # RI_CRIT
@@ -79,7 +79,7 @@
       !   source              alpha   beta   gamma
       ! Businger-Dyer (1971)  -1/4    5.0    -16.0
       ! Carl (1973)           -1/3    5.0    -15.0
-      ! Troen-Mahrt (1986)    -1/3    4.7     -7.0
+      ! Troen-Mahrt (1986)    -1/3    4.7     -7.0 ** Default
       ! Ulke (2000)           -1/2    9.2    -13.0
       real(kind=ip) :: phi_alpha = -0.33333_ip   ! Exponent in unstable term
       real(kind=ip) :: phi_beta  =  4.7_ip       ! Coefficient in stable term (pretty much always 4.7->5.2
@@ -330,7 +330,7 @@
             write(outlog(io),*)"    Using boundary layer vertical diffusivity as outlined by Ulke (2000)."
           endif;enddo
         elseif(KvBL_model_ID.eq.5)then
-          ! Model from Shir / Businger,Ayer outlined in Seinfeld and Pandis
+          ! Model from Shir / Businger,Ayer outlined in Seinfeld and Pandis Eq 18.125
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"    Using boundary layer vertical diffusivity as outlined by in Seinfeld and Pandis."
           endif;enddo
@@ -356,7 +356,7 @@
         elseif(KvFA_model_ID.eq.3)then
           ! Mixing length model with Fc from Collin et al
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"    Using free-air vertical diffusivity with stability function from Collin et al."
+            write(outlog(io),*)"    Using free-air vertical diffusivity with stability function from Collins et al."
           endif;enddo
         elseif(KvFA_model_ID.eq.4)then
           ! Mixing length model with Fc from Piedelievre et al
@@ -366,7 +366,7 @@
         else
           KvFA_model_ID = 3
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"    Using free-air vertical diffusivity with stability function from Collin et al."
+            write(outlog(io),*)"    Using free-air vertical diffusivity with stability function from Collins et al."
           endif;enddo
         endif
 
@@ -835,10 +835,12 @@
       real(kind=ip) :: L_MonOb
       real(kind=ip) :: PBLz
       real(kind=ip) :: Phi
+      real(kind=ip) :: Fc
       real(kind=ip) :: PBL_profile_fac
       real(kind=ip) :: Kv_FreeAir, Kv_BL
       real(kind=ip) :: Lc
       real(kind=ip) :: EckF
+      real(kind=ip) :: EckL
       real(kind=ip) :: lat
 
       ! Even if we are not using a BL, we need Ri
@@ -885,27 +887,51 @@
                 ! calculate eq 8
                 ! The Ri-term seems to zero out anything above the PBL
                 ! since Ri is too high
+              if(KvFA_model_ID.eq.1)then
+                Kv_FreeAir = diffusivity_vert
+              elseif(KvFA_model_ID.eq.2)then
+                ! use scaling from Jacobson
+                Fc = Fc_Jac(Ri_col(k))
+              elseif(KvFA_model_ID.eq.2)then
+                ! use scaling from Collins
+                Fc = Fc_Collins(Ri_col(k))
+              elseif(KvFA_model_ID.eq.2)then
+                ! use scaling from Piedelievre et al
+                Fc = Fc_PMB(Ri_col(k),L_MonOb,z_col(k))
+              endif
               Kv_FreeAir = Lc*Lc*abs(dv_dz_col(k))!*Fc(Ri_col_windp(k))
 
               if(useBoundaryLayer.and.z_col(k).lt.PBLz)then
                 ! Within the PBL, use similarity theory
-                  ! if PBL_exp=1; linear taper profile factor for Kv between 0 and PBL
-                PBL_profile_fac = (1.0_sp-z_col(k)/PBLz)**PBL_exp
-
-                if(IsLatLon_MetGrid)then
-                  lat = real(y_submet_sp(j),kind=ip)
+                if(KvBL_model_ID.eq.1)then
+                  ! Kv constant and specified in BL
+                  Kv_BL = diffusivity_BL
+                elseif(KvBL_model_ID.eq.2)then
+                  ! No BL model; set to zero and Kv will default to Free-Air
+                  Kv_BL = 0.0_ip
                 else
-                  lat = real(MR_xy2ll_ylat(i,j),kind=ip)
+                  if(KvBL_model_ID.eq.3.or.KvBL_model_ID.eq.4)then
+                    ! These are two polynomial models to taper profile for Kv between 0 and PBL
+                    ! 3=> Toen-Mahrt: PBL_exp=2; quadratic taper
+                    ! 4=> Ulke:       PBL_exp=1; linear taper
+                    PBL_profile_fac = (1.0_sp-z_col(k)/PBLz)**PBL_exp
+                  elseif(KvBL_model_ID.eq.5)then
+
+                    if(IsLatLon_MetGrid)then
+                      lat = real(y_submet_sp(j),kind=ip)
+                    else
+                      lat = real(MR_xy2ll_ylat(i,j),kind=ip)
+                    endif
+                    lat = max(20.0_ip,abs(lat));
+                    EckF= 2.0_ip*7.292e-5_ip*sin(lat*DEG2RAD);
+                    EckL= (FricVel/EckF)/8.0_ip
+                    PBL_profile_fac = exp(-z_col(k)/EckL);
+                  endif
+                  Phi = Phi_WindShear_Similarity(z_col(k)/L_MonOb)
+                  ! Kv from similarity theory (Eq. 8.48 of Jacobson)
+                  Kv_BL = z_col(k)*vonKarman*FricVel*PBL_profile_fac/Phi
                 endif
-                lat = max(20.0_ip,abs(lat));
-                EckF= 2.0_ip*7.292e-5_ip*sin(lat*DEG2RAD);
-!                PBL_profile_fac = exp(-8.0_ip*EckF*z_col(k)/FricVel);
-
-                Phi = Phi_WindShear_Similarity(z_col(k)/L_MonOb)
-                ! Kv from similarity theory (Eq. 8.48 of Jacobson)
-                Kv_BL = z_col(k)*vonKarman*FricVel*PBL_profile_fac/Phi
               endif
-
             endif
     
             ! assign to array and convert from m2/s to km2/hr
@@ -1686,8 +1712,7 @@
       function Fc_Jac(Ri)
 
       ! Stability function for vertical diffusion in the free atmosphere above the PBL
-      ! Originally from Collins et al, NCAR TN-464, 2004
-      ! http://www.cesm.ucar.edu/models/atm-cam/docs/description/description.pdf
+      ! Described in Jacobson
 
       implicit none
 
@@ -1708,7 +1733,7 @@
 
 !!******************************************************************************
 
-      function Fc_Collin(Ri)
+      function Fc_Collins(Ri)
 
       ! Stability function for vertical diffusion in the free atmosphere above the PBL
       ! Originally from Collins et al, NCAR TN-464, 2004
@@ -1716,20 +1741,20 @@
 
       implicit none
 
-      real(kind=ip) :: Fc_Collin ! dimensionless
+      real(kind=ip) :: Fc_Collins ! dimensionless
       real(kind=ip) :: Ri ! dimensionless
 
       if(Ri.ge.0.0_ip)then
           ! Eq. 4.465  : Stable atmosphere
-        Fc_Collin = 1.0_ip/(1.0_ip+10.0_ip*Ri*(1.0_ip+8.0_ip*Ri))
+        Fc_Collins = 1.0_ip/(1.0_ip+10.0_ip*Ri*(1.0_ip+8.0_ip*Ri))
       else
           ! Eq. 4.464  : unstable
-        Fc_Collin = sqrt(1.0_ip-18.0_ip*Ri)
+        Fc_Collins = sqrt(1.0_ip-18.0_ip*Ri)
       endif
 
       return
 
-      end function Fc_Collin
+      end function Fc_Collins
 
 !!******************************************************************************
 

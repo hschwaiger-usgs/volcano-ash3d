@@ -12,7 +12,7 @@ if [[ "$rc" -gt 0 ]] ; then
   echo "/opt/USGS/bin/autorun_scripts/autorun_scripts/get_NCEP_50YearReanalysis.sh 1992"
   exit
 fi
-YYYYMMDD=`echo "${WINDROOT}/NWP_testfiles/lastdownload.txt"`
+YYYYMMDD=`cat "${WINDROOT}/NWP_testfiles/lastdownload.txt"`
 ln -s ${WINDROOT}/NWP_testfiles/Forecasts/GRIB/${YYYYMMDD} WindGrib
 ln -s /data/TOPO/GEBCO/GEBCO_23/GEBCO_2023.nc .
 ln -s ../../bin/Ash3d Ash3d
