@@ -317,7 +317,6 @@
       Load_MesoSteps = .true.
       Interval_Frac  = 0.0_8
       call MesoInterpolater(time , Load_MesoSteps , Interval_Frac)
-
       ! Calculate the fall time of each grain size
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),5020)
@@ -422,7 +421,6 @@
 
           ! find the wind field at the current time
         call MesoInterpolater(time , Load_MesoSteps , Interval_Frac)
-
         if(useTopo) call Calc_Vmod_Topo
 
 !------------------------------------------------------------------------------
@@ -580,6 +578,7 @@
             ! Generate output variables if we haven't already
           if(.not.Called_Gen_Output_Vars)then
             call Gen_Output_Vars
+          endif
 !------------------------------------------------------------------------------
 !       OPTIONAL MODULES
 !         Insert calls output routines (every output-step) here
@@ -591,7 +590,7 @@
             call Prep_output_VarDiff
           endif
 !------------------------------------------------------------------------------
-          endif
+
           call output_results
           !if ((WriteAirportFile_ASCII.or.WriteAirportFile_KML).and. &
           if (Write_PT_Data.and. &

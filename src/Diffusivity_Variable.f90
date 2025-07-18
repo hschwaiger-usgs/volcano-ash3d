@@ -23,9 +23,11 @@
 !      subroutine Calc_SurfaceFrictionVelocity
 !      subroutine Calc_Monin_Length
 !      subroutine Calc_PBLH
+!      function Fc_Louis
 !      function Fc_Jac
+!      function Fc_Betts
+!      function Fc_Hong
 !      function Fc_Collins
-!      function Fc_PMB
 !      function MixLen
 !      function Phi_WindShear_Similarity
 !      function Psi_WindShear_Similarity
@@ -44,9 +46,11 @@
 !  4               #          4=Ulke
 !  5               #          5=Shir / Businger,Ayer
 !  1 500.0         # Free-Air 1=const ; value
-!  2               #          2=F(Ri)=Jacobson
-!  3               #          3=F(Ri)=Collins
-!  4               #          4=F(Ri,L,z)=Piedelievre
+!  2               #          2=F(Ri)=Louis 1979
+!  3               #          3=F(Ri)=Stull 1988
+!  4               #          4=F(Ri)=Betts 1996
+!  5               #          5=F(Ri)=Hong 1996
+!  6               #          6=F(Ri,z)=Collins 2004
 !0.4                         # vonKarman
 !30.0                        # LambdaC
 !0.25                        # RI_CRIT
@@ -75,10 +79,13 @@
       real(kind=ip) :: LambdaC      ! Asymptotic length scale (around 30 m)
       real(kind=ip) :: RI_CRIT      ! Critical Richardson number (0.25)
 
+      real(kind=ip) :: USTAR_MIN = 0.1_ip   ! Minimum Friction Velocity (m/s)
+
       !    These are the values controlling the stability function Phi (lots of models out there)
       !   source              alpha   beta   gamma
       ! Businger-Dyer (1971)  -1/4    5.0    -16.0
       ! Carl (1973)           -1/3    5.0    -15.0
+      ! Businger-Arya (1974)          4.7
       ! Troen-Mahrt (1986)    -1/3    4.7     -7.0 ** Default
       ! Ulke (2000)           -1/2    9.2    -13.0
       real(kind=ip) :: phi_alpha = -0.33333_ip   ! Exponent in unstable term
@@ -127,7 +134,6 @@
       real(kind=sp),dimension(:,:,:)  ,allocatable :: dv_dx_MetP_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: dv_dy_MetP_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: dV_dz_MetP_sp
-      real(kind=sp),dimension(:,:)    ,allocatable :: SurfRoughLen_Met_sp
 
       ! HFS: Consider moving Ri, PBLH, L_MonOb, FricVel, TropoH,
       !      SurfRoughLen, displacement height to Atmosphere.f90
@@ -142,6 +148,7 @@
       real(kind=sp),dimension(:,:,:)  ,allocatable :: Kv_meso_next_step_MetP_sp
 
       ! 2d variables needed at meso steps on Met grid
+      real(kind=sp),dimension(:,:)    ,allocatable :: SurfRoughLen_Met_sp
       real(kind=sp),dimension(:,:)    ,allocatable :: PBLH_meso_last_step_Met_sp
       real(kind=sp),dimension(:,:)    ,allocatable :: PBLH_meso_next_step_Met_sp
       real(kind=sp),dimension(:,:)    ,allocatable :: L_MonOb_meso_last_step_Met_sp
@@ -827,6 +834,7 @@
       integer, intent(in) :: last_or_next
 
       integer :: i,j,k
+      real(kind=ip) :: z0
       real(kind=ip) :: Ri_col(np_fullmet)
       real(kind=ip) :: z_col(np_fullmet)
       real(kind=ip) :: dv_dz_col(np_fullmet)
@@ -848,6 +856,7 @@
         do j=1,ny_submet
           ! For the calculations, we need:
           !  PBLz, L_MonOb, FricVel, Ri, dv_dz, and z
+          z0 = SurfRoughLen_Met_sp(i,j)
           if(last_or_next.eq.0)then
               Ri_col(:) = real(Ri_meso_last_step_MetP_sp(i,j,:),kind=ip)    ! dimensionless
                z_col(:) = real(MR_geoH_metP_last(i,j,:),kind=ip)*KM_2_M     ! m
@@ -890,14 +899,20 @@
               if(KvFA_model_ID.eq.1)then
                 Kv_FreeAir = diffusivity_vert
               elseif(KvFA_model_ID.eq.2)then
-                ! use scaling from Jacobson
+                ! use scaling from Louis 1979
+                Fc = Fc_Louis(Ri_col(k),z_col(k)/z0)
+              elseif(KvFA_model_ID.eq.3)then
+                ! use scaling from Jacobson (given earlier in Stull 1988)
                 Fc = Fc_Jac(Ri_col(k))
-              elseif(KvFA_model_ID.eq.2)then
-                ! use scaling from Collins
+              elseif(KvFA_model_ID.eq.4)then
+                ! use scaling from Betts 1996
+                Fc = Fc_Betts(Ri_col(k))
+              elseif(KvFA_model_ID.eq.5)then
+                ! use scaling from Hong (1996)
+                Fc = Fc_Hong(Ri_col(k))
+              elseif(KvFA_model_ID.eq.6)then
+                ! use scaling from Collins (2004)
                 Fc = Fc_Collins(Ri_col(k))
-              elseif(KvFA_model_ID.eq.2)then
-                ! use scaling from Piedelievre et al
-                Fc = Fc_PMB(Ri_col(k),L_MonOb,z_col(k))
               endif
               Kv_FreeAir = Lc*Lc*abs(dv_dz_col(k))!*Fc(Ri_col_windp(k))
 
@@ -1706,24 +1721,67 @@
       enddo
 
       end subroutine Calc_Monin_Length
-!
-!!******************************************************************************
+
+!      function Fc_Betts
+!      function Fc_Hong
+!      function Fc_Collins
+
+!******************************************************************************
+
+      function Fc_Louis(Ri,zonz0)
+
+      ! Stability function for vertical diffusion in the free atmosphere above the PBL
+      ! Described in Louis 1979
+
+      implicit none
+
+      real(kind=ip) :: Fc_Louis ! dimensionless
+      real(kind=ip) :: Ri       ! dimensionless
+      real(kind=ip) :: zonz0    ! dimensionless
+
+      real(kind=ip) :: a,b,c
+
+      a = vonKarman/log(zonz0)    ! Eq. 13
+      b = 9.4_ip
+      c = 7.4*a*a*b*sqrt(zonz0)   ! Eq. 20
+
+      if(Ri.le.0.0_ip)then
+          ! Unstable atmosphere
+          ! Eq. 14
+        Fc_Louis = 1.0_ip - b*Ri/(1.0_ip+c*sqrt(abs(Ri)))
+      else
+          ! Stable atmosphere
+          ! Eq. 15
+        Fc_Louis = (1.0_ip + 0.5_ip*b*Ri)**(-2.0_ip)
+      endif
+
+      return
+
+      end function Fc_Louis
+
+!******************************************************************************
 
       function Fc_Jac(Ri)
 
       ! Stability function for vertical diffusion in the free atmosphere above the PBL
-      ! Described in Jacobson
+      ! Described in Jacobson (p251 Eq.8.70)
+      ! An earlier reference is Stull (1988) Table 6.4 of Chap 6 Turbulence Closure
 
       implicit none
 
       real(kind=ip) :: Fc_Jac ! dimensionless
       real(kind=ip) :: Ri ! dimensionless
 
-      if(Ri.ge.0.0_ip)then
-          ! Eq. 8.70  : Stable atmosphere
+      if(Ri.le.0.0_ip)then
+          ! Unstable atmosphere
+          ! Tab 6.4 of Stull (unstable, line 2)
+        Fc_Jac = sqrt(1.0_ip-18.0_ip*Ri)
+      elseif(Ri.ge.0.0_ip.and.Ri.le.RI_CRIT)then
+          ! Weakly unstable atmosphere
+          ! Jacobson Eq. 8.70 or Table 6.4 of Stull (unstable, line 1)
         Fc_Jac = (RI_CRIT-Ri)/Ri
       else
-          ! unstable
+          ! Stable atmosphere
         Fc_Jac = 0.0_ip
       endif
 
@@ -1731,7 +1789,59 @@
 
       end function Fc_Jac
 
-!!******************************************************************************
+!******************************************************************************
+
+      function Fc_Betts(Ri)
+
+      ! Stability function for vertical diffusion in the free atmosphere above the PBL
+      ! Originally from Betts et al, 1996
+
+      implicit none
+
+      real(kind=ip) :: Fc_Betts ! dimensionless
+      real(kind=ip) :: Ri ! dimensionless
+
+      if(Ri.le.0.0_ip)then
+          ! Unstable atmosphere
+          ! Eq. A20b
+        Fc_Betts = 1.0_ip-8.0_ip*Ri/(1.0_ip+1.746_ip*sqrt(-Ri))
+      else
+          ! Stable atmosphere
+          ! Eq. A18
+        Fc_Betts = (1.0_ip + 5.0_ip*Ri)**(-2.0_ip)
+      endif
+
+      return
+
+      end function Fc_Betts
+
+!******************************************************************************
+
+      function Fc_Hong(Ri)
+
+      ! Stability function for vertical diffusion in the free atmosphere above the PBL
+      ! Originally from Hong and Pan, 1996
+
+      implicit none
+
+      real(kind=ip) :: Fc_Hong ! dimensionless
+      real(kind=ip) :: Ri ! dimensionless
+
+      if(Ri.le.0.0_ip)then
+          ! Unstable atmosphere
+          ! Eq. 5
+        Fc_Hong = (1.0_ip-1.6_ip*Ri)**(-0.25_ip)
+      else
+          ! Stable atmosphere
+          ! Eq. 13
+        Fc_Hong = exp(-8.5_ip*Ri) + 0.15_ip/(Ri+3.0_ip)
+      endif
+
+      return
+
+      end function Fc_Hong
+
+!******************************************************************************
 
       function Fc_Collins(Ri)
 
@@ -1744,12 +1854,14 @@
       real(kind=ip) :: Fc_Collins ! dimensionless
       real(kind=ip) :: Ri ! dimensionless
 
-      if(Ri.ge.0.0_ip)then
-          ! Eq. 4.465  : Stable atmosphere
-        Fc_Collins = 1.0_ip/(1.0_ip+10.0_ip*Ri*(1.0_ip+8.0_ip*Ri))
-      else
-          ! Eq. 4.464  : unstable
+      if(Ri.le.0.0_ip)then
+          ! Unstable atmosphere
+          ! Eq. 4.464  (Also Tab 6.4 of Stull)
         Fc_Collins = sqrt(1.0_ip-18.0_ip*Ri)
+      else
+          ! Stable atmosphere
+          ! Eq. 4.465 
+        Fc_Collins = 1.0_ip/(1.0_ip+10.0_ip*Ri*(1.0_ip+8.0_ip*Ri))
       endif
 
       return
@@ -1765,7 +1877,8 @@
       ! MEDIA—An Eulerian Model of Atmospheric Dispersion: First Validation on
       ! the Chernobyl Release. J. Appl. Meteor., 29, 1205–1220.
       ! doi: http://dx.doi.org/10.1175/1520-0450(1990)029<1205:MEMOAD>2.0.CO;2 
-      ! This is the model used by MDLP0 (also used in EMERRAUDE or PERIDOT)
+      ! This is the model used by MDLP0 (also used in EMERRAUDE or PERIDOT).
+      ! It also actually used a subsequent F form from Louis (1980).
 
       implicit none
 
@@ -1780,11 +1893,14 @@
       real(kind=ip),parameter :: d = 5.0_ip
       real(kind=ip),parameter :: f = 5.19615242270663_ip ! = sqrt(27)
 
-      if(Ri.ge.0.0_ip)then
-        Fc_PMB = 1.0_ip/(1.0_ip+3.0_ip*b*Ri*sqrt(1.0_ip+d*Ri))
-      else
+      if(Ri.le.0.0_ip)then
+          ! Unstable atmosphere
         Fc_PMB = 1.0_ip/(1.0_ip+3.0_ip*b*c*(ml*ml*sqrt(Ri)/(z*z*f)))
+      else
+          ! Stable atmosphere
+        Fc_PMB = 1.0_ip/(1.0_ip+3.0_ip*b*Ri*sqrt(1.0_ip+d*Ri))
       endif
+
 
       return
 
