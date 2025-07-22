@@ -39,11 +39,12 @@
 !  yes 2 0.2       # 2=Smagorinsky ; C
 !  yes 3 0.2       # 3=Pielke      ; C
 ! Vertical diff
-!  yes 
+!  yes
+!  0 B, alpha, beta, gamma, pexp
 !  1 500.0         # BL model 1=const ; value
 !  2               #          2=no BL, only free-air throughout
-!  3               #          3=Troen and Mahrt
-!  4               #          4=Ulke
+!  3 [1,2]         #          3=Troen and Mahrt
+!  4 [1,2]         #          4=Ulke
 !  5               #          5=Shir / Businger,Ayer
 !  1 500.0         # Free-Air 1=const ; value
 !  2               #          2=F(Ri)=Louis 1979
@@ -88,11 +89,12 @@
       ! Businger-Arya (1974)          4.7
       ! Troen-Mahrt (1986)    -1/3    4.7     -7.0 ** Default
       ! Ulke (2000)           -1/2    9.2    -13.0
+      real(kind=ip) :: phi_prefac = 1.0_ip       ! typically 1 for momentum and Pr (<1) for heat
       real(kind=ip) :: phi_alpha = -0.33333_ip   ! Exponent in unstable term
       real(kind=ip) :: phi_beta  =  4.7_ip       ! Coefficient in stable term (pretty much always 4.7->5.2
       real(kind=ip) :: phi_gamma = -7.0_ip       ! Coefficient in unstable term
-
-      real(kind=ip) :: PBL_exp = 1.0_ip
+      integer       :: PBL_exp_int = 1
+      real(kind=ip) :: PBL_exp
 
       logical       :: useBoundaryLayer = .true.
       real(kind=ip) :: diffusivity_BL
@@ -323,7 +325,8 @@
           phi_alpha = -0.33333_ip   ! Exponent in unstable term
           phi_beta  =  4.7_ip       ! Coefficient in stable term (pretty much always 4.7->5.2
           phi_gamma = -7.0_ip       ! Coefficient in unstable term
-          PBL_exp   = 2.0_ip
+          PBL_exp_int = 2
+          PBL_exp     = real(PBL_exp_int,kind=ip)
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"    Using boundary layer vertical diffusivity as outlined by Troen and Mahrt (1973)."
           endif;enddo
@@ -332,7 +335,8 @@
           phi_alpha = -0.5_ip   ! Exponent in unstable term
           phi_beta  =  9.2_ip       ! Coefficient in stable term (pretty much always 4.7->5.2
           phi_gamma = -13.0_ip       ! Coefficient in unstable term
-          PBL_exp   = 1.0_ip
+          PBL_exp_int = 1
+          PBL_exp     = real(PBL_exp_int,kind=ip)
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"    Using boundary layer vertical diffusivity as outlined by Ulke (2000)."
           endif;enddo
@@ -340,6 +344,12 @@
           ! Model from Shir / Businger,Ayer outlined in Seinfeld and Pandis Eq 18.125
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"    Using boundary layer vertical diffusivity as outlined by in Seinfeld and Pandis."
+          endif;enddo
+          PBL_exp_int = 0
+        elseif(KvBL_model_ID.eq.0)then
+          ! Coefficients of phi model specified in control file
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"    Using boundary layer vertical diffusivity with generalized phi."
           endif;enddo
         else
           KvBL_model_ID = 2
@@ -827,7 +837,8 @@
 
       use MetReader,     only : &
         nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,MR_geoH_metP_next,y_submet_sp,&
-        MR_xy2ll_ylat,IsLatLon_MetGrid
+        MR_xy2ll_ylat,IsLatLon_MetGrid,&
+        x_submet_sp,MR_xy2ll_xlon
 
       implicit none
 
@@ -840,7 +851,7 @@
       real(kind=ip) :: dv_dz_col(np_fullmet)
       real(kind=ip) :: FricVel
       real(kind=ip) :: Kv_col(np_fullmet)
-      real(kind=ip) :: L_MonOb
+!      real(kind=ip) :: L_MonOb
       real(kind=ip) :: PBLz
       real(kind=ip) :: Phi
       real(kind=ip) :: Fc
@@ -850,6 +861,7 @@
       real(kind=ip) :: EckF
       real(kind=ip) :: EckL
       real(kind=ip) :: lat
+      real(kind=ip) :: zeta
 
       ! Even if we are not using a BL, we need Ri
       do i=1,nx_submet
@@ -862,14 +874,14 @@
                z_col(:) = real(MR_geoH_metP_last(i,j,:),kind=ip)*KM_2_M     ! m
            dv_dz_col(:) = real(dV_dz_MetP_sp(i,j,:),kind=ip)                ! 1/s
                 PBLz    = real(PBLH_meso_last_step_Met_sp(i,j),kind=ip)     ! m
-             L_MonOb    = real(L_MonOb_meso_last_step_Met_sp(i,j),kind=ip)  ! m
+!             L_MonOb    = real(L_MonOb_meso_last_step_Met_sp(i,j),kind=ip)  ! m
              FricVel    = real(FricVel_meso_last_step_Met_sp(i,j),kind=ip)  ! m/s
           else
               Ri_col(:) = real(Ri_meso_next_step_MetP_sp(i,j,:),kind=ip)    ! dimensionless
                z_col(:) = real(MR_geoH_metP_next(i,j,:),kind=ip)*KM_2_M     ! m
            dv_dz_col(:) = real(dV_dz_MetP_sp(i,j,:),kind=ip)                ! 1/s
                 PBLz    = real(PBLH_meso_next_step_Met_sp(i,j),kind=ip)     ! m
-             L_MonOb    = real(L_MonOb_meso_next_step_Met_sp(i,j),kind=ip)  ! m
+!             L_MonOb    = real(L_MonOb_meso_next_step_Met_sp(i,j),kind=ip)  ! m
              FricVel    = real(FricVel_meso_next_step_Met_sp(i,j),kind=ip)  ! m/s
           endif
 
@@ -914,40 +926,56 @@
                 ! use scaling from Collins (2004)
                 Fc = Fc_Collins(Ri_col(k))
               endif
-              Kv_FreeAir = Lc*Lc*abs(dv_dz_col(k))!*Fc(Ri_col_windp(k))
+              Kv_FreeAir = Lc*Lc*abs(dv_dz_col(k))*Fc
 
-              if(useBoundaryLayer.and.z_col(k).lt.PBLz)then
-                ! Within the PBL, use similarity theory
-                if(KvBL_model_ID.eq.1)then
+              if(useBoundaryLayer)then
+                if(KvBL_model_ID.eq.1.and.z_col(k).lt.PBLz)then
                   ! Kv constant and specified in BL
                   Kv_BL = diffusivity_BL
                 elseif(KvBL_model_ID.eq.2)then
                   ! No BL model; set to zero and Kv will default to Free-Air
                   Kv_BL = 0.0_ip
                 else
-                  if(KvBL_model_ID.eq.3.or.KvBL_model_ID.eq.4)then
-                    ! These are two polynomial models to taper profile for Kv between 0 and PBL
-                    ! 3=> Toen-Mahrt: PBL_exp=2; quadratic taper
-                    ! 4=> Ulke:       PBL_exp=1; linear taper
-                    PBL_profile_fac = (1.0_sp-z_col(k)/PBLz)**PBL_exp
-                  elseif(KvBL_model_ID.eq.5)then
+                  ! For this case, we need the stability function and the PBL taper
+                  PBL_profile_fac = 0.0_ip
+                  if(PBL_exp_int.eq.0.and.z_col(k).lt.3.0_ip*PBLz)then
+                    ! PBL_exp_int = 0 indicates that we will be using the exponential taper
+                    ! either because KvBL_model_ID = 5 (Businger-Arya) or 0 (custom) with exponential
+                    ! selected. In either case, extend Kv zone above the PBLz (~3x)
+                      PBL_profile_fac = exp(-2.0_ip*z_col(k)/PBLz);
+                  elseif(z_col(k).lt.PBLz)then
+                    ! All polynomial tapers are only valid below the PBLz
 
-                    if(IsLatLon_MetGrid)then
-                      lat = real(y_submet_sp(j),kind=ip)
-                    else
-                      lat = real(MR_xy2ll_ylat(i,j),kind=ip)
+                    ! Within the PBL, use similarity theory
+                    if(KvBL_model_ID.eq.3.or.KvBL_model_ID.eq.4.or.&
+                      (KvBL_model_ID.eq.0.and.PBL_exp_int.gt.0))then
+                      ! These are two polynomial models to taper profile for Kv between 0 and PBL
+                      ! 3=> Troen-Mahrt: PBL_exp=2; quadratic taper
+                      ! 4=> Ulke:        PBL_exp=1; linear taper
+                      PBL_profile_fac = (1.0_sp-z_col(k)/PBLz)**PBL_exp
                     endif
-                    lat = max(20.0_ip,abs(lat));
-                    EckF= 2.0_ip*7.292e-5_ip*sin(lat*DEG2RAD);
-                    EckL= (FricVel/EckF)/8.0_ip
-                    PBL_profile_fac = exp(-z_col(k)/EckL);
                   endif
-                  Phi = Phi_WindShear_Similarity(z_col(k)/L_MonOb)
+
+                  ! Now calculate stability function; get zeta using formula from Panofsky Eq. 6.7.1-2
+                  if(Ri_col(k).lt.0.0_ip)then
+                    zeta = Ri_col(k)
+                  else
+                    zeta = Ri_col(k)/(1.0_ip - 5.0_ip*Ri_col(k))
+                  endif
+                  Phi = Phi_WindShear_Similarity(zeta)
                   ! Kv from similarity theory (Eq. 8.48 of Jacobson)
                   Kv_BL = z_col(k)*vonKarman*FricVel*PBL_profile_fac/Phi
+
+                  if(i.eq.159.and.j.eq.146)then
+                    !write(*,*)z0,FricVel,L_MonOb,PBLz
+                    !do k = 1,np_fullmet
+                      write(*,*)k,z_col(k),Ri_col(k),PBL_profile_fac,Phi,Kv_BL,Kv_FreeAir
+                    !enddo
+                  endif
+
                 endif
-              endif
-            endif
+              endif ! useBoundaryLayer
+            endif ! test on if this is a valid zone for Kv
     
             ! assign to array and convert from m2/s to km2/hr
             Kv_col(k) = max(Kv_BL,Kv_FreeAir) * HR_2_S/KM_2_M/KM_2_M
@@ -958,6 +986,7 @@
           else
             Kv_meso_next_step_MetP_sp(i,j,:) = real(Kv_col(:),kind=sp)
           endif
+
         enddo
       enddo
 
@@ -1140,7 +1169,7 @@
           !  Populate values for the 'last' step
           call Set_VirtPotenTemp(0)
           call Calc_Ri(0)
-          call Calc_Monin_Length(0)
+!          call Calc_Monin_Length(0)
           call Calc_SurfaceRoughnessLength
           call Calc_SurfaceFrictionVelocity(0)
           call Calc_PBLH(0)
@@ -1169,7 +1198,7 @@
           ! Populate Ri for the 'next' step
         call Set_VirtPotenTemp(1)
         call Calc_Ri(1)                           ! sets Ri_meso_next_step_MetP_sp
-        call Calc_Monin_Length(1)
+!        call Calc_Monin_Length(1)
         call Calc_SurfaceFrictionVelocity(1)      ! sets FricVel_meso_next_step_Met_sp
         call Calc_PBLH(1)
                                                   !  and L_MonOb_meso_next_step_Met_sp
@@ -1651,80 +1680,76 @@
 
 
 !******************************************************************************
-
-      subroutine Calc_Monin_Length(last_or_next)
-
-      use global_param,  only : &
-         EPS_SMALL,KM_2_M
-
-      use MetReader,     only : &
-         nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,MR_geoH_metP_next,&
-           MR_Read_2d_Met_Variable
-
-      implicit none
-
-      integer, intent(in) :: last_or_next
-
-      !integer :: ivar
-      integer :: i,j,k_L
-      !real(kind=ip) :: tmp
-      real(kind=ip) :: Ri
-      real(kind=ip) :: Ri_col(np_fullmet)
-      real(kind=ip) :: z_col(np_fullmet)
-      real(kind=ip) :: L_MonOb
-
-      ! Get Monin-Obukhov length from the
-      ! Businger-Dyer-Pandolfo empirical result 
-      ! using z and Ri at k=2
-        ! Eq 6.7.1 and 6.7 2 of "Atmospheric Turbulence";
-        ! Panofsky and Dutton,1984
-        ! also Eq 11.24 of "Introduction to Micrometeorology";
-        ! Arya, 1988
-      do i=1,nx_submet
-        do j=1,ny_submet
-          if(last_or_next.eq.0)then
-            Ri_col(:) = Ri_meso_last_step_MetP_sp(i,j,:)
-            z_col(:)  = MR_geoH_metP_last(i,j,:)*KM_2_M
-          else
-            Ri_col(:) = Ri_meso_next_step_MetP_sp(i,j,:)
-            z_col(:)  = MR_geoH_metP_next(i,j,:)*KM_2_M
-          endif
-
-          ! Pick the bottom (non-zero) z
-          do k_L=1,np_fullmet
-            if(z_col(k_L).gt.0.0_ip)then
-              exit
-            endif
-          enddo
-          ! For the purpuse of calculating L, don't let Ri get too close to 0
-          Ri = sign(max(abs(Ri_col(k_L)),1.0e-2_ip),Ri_col(k_L))
-          if(Ri_col(k_L).lt.RI_CRIT)then
-            ! Test for special case of neutrally stable case, L->Inf ; set to 1 km
-            if (abs(Ri_col(k_L)).lt.EPS_SMALL)then
-              L_MonOb = sign(abs(L_MonOb),100.0_ip)
-            else
-              ! Unstable (negative L)
-              L_MonOb = z_col(k_L)/Ri
-            endif
-          elseif(Ri_col(k_L).gt.RI_CRIT)then
-              ! Stable (positive L)
-            L_MonOb = z_col(k_L)/Ri * (1.0_ip - 5.0_ip*Ri)
-          endif
-          L_MonOb = sign(min(abs(L_MonOb),100.0_ip),L_MonOb)
-
-          if(last_or_next.eq.0)then
-            L_MonOb_meso_last_step_Met_sp(i,j) = real(L_MonOb,kind=sp)
-          else
-            L_MonOb_meso_next_step_Met_sp(i,j) = real(L_MonOb,kind=sp)
-          endif
-        enddo
-      enddo
-
-      end subroutine Calc_Monin_Length
-
-!      function Fc_Betts
-!      function Fc_Hong
-!      function Fc_Collins
+!
+!      subroutine Calc_Monin_Length(last_or_next)
+!
+!      use global_param,  only : &
+!         EPS_SMALL,KM_2_M
+!
+!      use MetReader,     only : &
+!         nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,MR_geoH_metP_next,&
+!           MR_Read_2d_Met_Variable
+!
+!      implicit none
+!
+!      integer, intent(in) :: last_or_next
+!
+!      !integer :: ivar
+!      integer :: i,j,k_L
+!      !real(kind=ip) :: tmp
+!      real(kind=ip) :: Ri
+!      real(kind=ip) :: Ri_col(np_fullmet)
+!      real(kind=ip) :: z_col(np_fullmet)
+!      real(kind=ip) :: L_MonOb
+!
+!      ! Get Monin-Obukhov length from the
+!      ! Businger-Dyer-Pandolfo empirical result 
+!      ! using z and Ri at k=2
+!        ! Eq 6.7.1 and 6.7 2 of "Atmospheric Turbulence";
+!        ! Panofsky and Dutton,1984
+!        ! also Eq 11.24 of "Introduction to Micrometeorology";
+!        ! Arya, 1988
+!      do i=1,nx_submet
+!        do j=1,ny_submet
+!          if(last_or_next.eq.0)then
+!            Ri_col(:) = Ri_meso_last_step_MetP_sp(i,j,:)
+!            z_col(:)  = MR_geoH_metP_last(i,j,:)*KM_2_M
+!          else
+!            Ri_col(:) = Ri_meso_next_step_MetP_sp(i,j,:)
+!            z_col(:)  = MR_geoH_metP_next(i,j,:)*KM_2_M
+!          endif
+!
+!          ! Pick the bottom (non-zero) z
+!          do k_L=1,np_fullmet
+!            if(z_col(k_L).gt.0.0_ip)then
+!              exit
+!            endif
+!          enddo
+!          ! For the purpuse of calculating L, don't let Ri get too close to 0
+!          Ri = sign(max(abs(Ri_col(k_L)),1.0e-2_ip),Ri_col(k_L))
+!          if(Ri_col(k_L).lt.RI_CRIT)then
+!            ! Test for special case of neutrally stable case, L->Inf ; set to 1 km
+!            if (abs(Ri_col(k_L)).lt.EPS_SMALL)then
+!              L_MonOb = sign(abs(L_MonOb),100.0_ip)
+!            else
+!              ! Unstable (negative L)
+!              L_MonOb = z_col(k_L)/Ri
+!            endif
+!          elseif(Ri_col(k_L).gt.RI_CRIT)then
+!              ! Stable (positive L)
+!            L_MonOb = z_col(k_L)/Ri * (1.0_ip - 5.0_ip*Ri)
+!          endif
+!          L_MonOb = sign(min(abs(L_MonOb),100.0_ip),L_MonOb)
+!
+!          if(last_or_next.eq.0)then
+!            L_MonOb_meso_last_step_Met_sp(i,j) = real(L_MonOb,kind=sp)
+!          else
+!            L_MonOb_meso_next_step_Met_sp(i,j) = real(L_MonOb,kind=sp)
+!          endif
+!        enddo
+!      enddo
+!
+!      end subroutine Calc_Monin_Length
 
 !******************************************************************************
 
