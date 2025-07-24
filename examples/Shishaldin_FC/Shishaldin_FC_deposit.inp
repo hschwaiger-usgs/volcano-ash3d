@@ -77,7 +77,7 @@ Shishaldin                         # Volcano name (character*30)
 6.0      6.20                      # grid width and height (km, or deg. if latlonflag=1)
 196.033  54.756                    # vent location         (km, or deg. if latlonflag=1)
 0.1      0.1                       # DX, DY of grid cells  (km, or deg. if latlonflag=1)
-0.2                               # DZ of grid cells      (always km)
+0.2                                # DZ of grid cells      (always km)
 0.0      4.0                       # diffusion coefficient (m2/s), Suzuki constant
 1                                  # neruptions, number of eruptions or pulses
 ********************************************************************************
@@ -157,7 +157,7 @@ Shishaldin                         # Volcano name (character*30)
 ******************* BLOCK 3 ****************************************************
 4 13 91 3           # iwind, iwindformat, [igrid, idata]
 2                   # iHeightHandler
-1.5                 # Simulation time in hours
+6.0                 # Simulation time in hours
 yes                 # stop computation when 99% of erupted mass has deposited?
 7                   # nWindFiles, number of gridded wind files (used if iwind>1)
 ********************************************************************************
@@ -327,7 +327,7 @@ useWindVars          = 1
 #  Line 3 is the file name of the topography data.
 *******************************************************************************
 OPTMOD=TOPO
-no 0                          # use topography?
+yes 2                          # use topography?
 1 6.0                          # Topofile format, smoothing radius
 GEBCO_2023.nc                  # topofile name
 *******************************************************************************
@@ -346,9 +346,11 @@ GEBCO_2023.nc                  # topofile name
 #             5               #          5=Shir / Businger,Ayer
 #   Line 4 indicates the Free-Air model and value (if model requires)
 #             1 500.0         # Free-Air 1=const ; value (m2/s)
-#             2               #          2=F(Ri)=Jacobson
-#             3               #          3=F(Ri)=Collins
-#             4               #          4=F(Ri,L,z)=Piedelievre
+#             2               #          2=F(Ri)=Louis
+#             3               #          3=F(Ri)=Stull
+#             4               #          4=F(Ri)=Betts
+#             5               #          5=F(Ri)=Hong
+#             6               #          6=F(Ri,z)=Collins
 #   Line 5 contains the von Karman constant
 #   Line 6 contains the free-air mixing length (m)
 #   Line 7 is the critical Richardson number used in calculating atmospheric stability. 
@@ -356,7 +358,7 @@ GEBCO_2023.nc                  # topofile name
 OPTMOD=VARDIFF
 yes 2 0.2        # use horizontal variable diffusivity
 yes              # use vertical variable diffusivity
-5                # boundary layer model
+5 2              # boundary layer model
 4                # free-air model
 0.4              # vonKarman
 150.0            # LambdaC

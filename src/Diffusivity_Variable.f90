@@ -1027,15 +1027,6 @@
       real(kind=ip) :: lat
       real(kind=ip) :: zeta
 
-!      real(kind=ip) :: tmp,rng
-!      rng = 10.0_ip
-!      do i = 1,101
-!        tmp = -0.5*rng + 0.01_ip*real((i-1),kind=ip)*rng
-!        write(*,*)tmp,Fc_Louis(tmp,100.0_ip/0.1_ip),Fc_Jac(tmp), &
-!                  Fc_Betts(tmp),Fc_Hong(tmp),Fc_Collins(tmp)
-!      enddo
-!      stop 150
-
       ! Even if we are not using a BL, we need Ri
       do i=1,nx_submet
         do j=1,ny_submet
@@ -1043,7 +1034,7 @@
           !  PBLz, L_MonOb, FricVel, Ri, dv_dz, and z
           ! We need to set a minimum for z0 since some NWP files set this to 0
           ! Table 6.1 of Panofsky and Dutton giv 1.0e-4 for water.
-          z0 = max(SurfRoughLen_Met_sp(i,j),1.0e-3_ip) ! We need to set a minimum for z0
+          z0 = max(SurfRoughLen_Met_sp(i,j),1.0e-3_sp) ! We need to set a minimum for z0
           if(last_or_next.eq.0)then
               Ri_col(:) = real(Ri_meso_last_step_MetP_sp(i,j,:),kind=ip)    ! dimensionless
                z_col(:) = real(MR_geoH_metP_last(i,j,:),kind=ip)*KM_2_M     ! m
@@ -1140,31 +1131,10 @@
                   Phi = Phi_WindShear_Similarity(zeta)
                   ! Kv from similarity theory (Eq. 8.48 of Jacobson)
                   Kv_BL = z_col(k)*vonKarman*FricVel*PBL_profile_fac/Phi
-
-!                  if(i.eq.159.and.j.eq.146)then
-!                    !write(*,*)z0,FricVel,L_MonOb,PBLz
-!                    !do k = 1,np_fullmet
-!                      write(*,*)k,z_col(k),Ri_col(k),PBL_profile_fac,Phi,Kv_BL,Kv_FreeAir
-!                    !enddo
-!                  endif
-
                 endif
               endif ! useBoundaryLayer
             endif ! test on if this is a valid zone for Kv
    
-!            if(i.eq.159.and.j.eq.146)then
-!            if(Kv_BL.gt.2000.0_ip)then
-              !write(*,*)z0,FricVel,L_MonOb,PBLz
-              !do k = 1,np_fullmet
-!                write(*,*)i,j,k,z_col(k),Ri_col(k),PBL_profile_fac,Phi,Kv_BL,Kv_FreeAir
-              !enddo
-!            endif
-
-            ! HFS
-!            if(k.eq.1)then
-!              write(*,*)i,j,Ri_col(k),Phi,z_col(k),Kv_BL,Kv_FreeAir,Fc
-!            endif
- 
             ! assign to array and convert from m2/s to km2/hr
             Kv_col(k) = max(Kv_BL,Kv_FreeAir) * HR_2_S/KM_2_M/KM_2_M
           enddo
@@ -1177,8 +1147,6 @@
 
         enddo
       enddo
-
-!      stop 77
 
       return
 
