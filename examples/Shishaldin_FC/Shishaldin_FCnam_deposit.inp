@@ -72,11 +72,11 @@
 # Line 9 : number of pulses to be read in BLOCK 2                                                      
 ******************* BLOCK 1 ****************************************************
 Shishaldin                         # Volcano name (character*30)
-1 1 -135.0 90.0 0.933 6371.229     # Proj flags and params; first term (LLflag) is 1, so all else ignored
-193.0    52.0                      # x, y of LL corner of grid (km, or deg. if latlongflag=1)
-6.0      6.20                      # grid width and height (km, or deg. if latlonflag=1)
-196.033  54.756                    # vent location         (km, or deg. if latlonflag=1)
-0.1      0.1                       # DX, DY of grid cells  (km, or deg. if latlonflag=1)
+0 1 -150.0 90.0 0.9330127 6371.229
+-1197.0 -3915.0                      # x, y of LL corner of grid (km, or deg. if latlongflag=1)
+491.04      297.6                      # grid width and height (km, or deg. if latlonflag=1)
+-911.48 -3664.75                    # vent location         (km, or deg. if latlonflag=1)
+2.976  2.976                       # DX, DY of grid cells  (km, or deg. if latlonflag=1)
 0.2                               # DZ of grid cells      (always km)
 0.0      4.0                       # diffusion coefficient (m2/s), Suzuki constant
 1                                  # neruptions, number of eruptions or pulses
@@ -291,10 +291,7 @@ yes                           # Defer to Lon/Lat coordinates? ("no" defers to pr
 # contain the location, in the same coordinates as the computational grid.                             
 # Optionally, a site name can be provided in after the location.                                       
 ******************* BLOCK 8 ****************************************************
-3                             # number of locations for vertical profiles (nlocs)                      
--163.40917 54.84917  False Pass
--162.71972 55.19972  Cold Bay
--162.31333 55.05500  King Cove
+0                             # number of locations for vertical profiles (nlocs)                      
 ********************************************************************************
 # netCDF output options                                                                                
 # This last block is optional.                                                                         
@@ -346,9 +343,11 @@ GEBCO_2023.nc                  # topofile name
 #             5               #          5=Shir / Businger,Ayer
 #   Line 4 indicates the Free-Air model and value (if model requires)
 #             1 500.0         # Free-Air 1=const ; value (m2/s)
-#             2               #          2=F(Ri)=Jacobson
-#             3               #          3=F(Ri)=Collins
-#             4               #          4=F(Ri,L,z)=Piedelievre
+#             2               #          2=F(Ri)=Louis
+#             3               #          3=F(Ri)=Stull
+#             4               #          4=F(Ri)=Betts
+#             5               #          5=F(Ri)=Hong
+#             6               #          6=F(Ri,z)=Collins
 #   Line 5 contains the von Karman constant
 #   Line 6 contains the free-air mixing length (m)
 #   Line 7 is the critical Richardson number used in calculating atmospheric stability. 
@@ -356,7 +355,7 @@ GEBCO_2023.nc                  # topofile name
 OPTMOD=VARDIFF
 yes 2 0.2        # use horizontal variable diffusivity
 yes              # use vertical variable diffusivity
-5                # boundary layer model
+5 2              # boundary layer model
 4                # free-air model
 0.4              # vonKarman
 150.0            # LambdaC

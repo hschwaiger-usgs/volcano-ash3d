@@ -69,8 +69,9 @@
 
       integer :: Kh_model_ID     ! [1] = Smagorinsky (1963); 2 = Pielke (1974)
       integer :: Phi_model_ID    ! 
-      integer :: KvBL_model_ID
-      integer :: KvFA_model_ID
+      integer :: KvBL_model_ID   ! 
+      integer :: KvBL_MomHeat    !  
+      integer :: KvFA_model_ID   ! 
 
       !  These are the parameters that control the diffusivity calculations
       !    C from Smagorinsky model of horizontal diffusivity
@@ -197,7 +198,7 @@
 
       character(len=3 )  :: answer
       character(len=80)  :: linebuffer080
-      integer            :: ios,ioerr
+      integer            :: ios,ios2,ioerr
       character(len=20)  :: mod_name
       integer            :: substr_pos
       real(kind=ip)      :: tmp
@@ -237,7 +238,7 @@
         useVarDiffH = .true.  ! might be changed back below if we are holding Kh constant:w
 
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"    Using horizontal variable diffusivity"
+          write(outlog(io),*)"    Horizontal variable diffusivity:  ON"
         endif;enddo
         ! Try to read the horizontal model ID
         read(linebuffer080(4:),*,iostat=ios)Kh_model_ID,tmp
@@ -245,53 +246,70 @@
           if(Kh_model_ID.eq.1)then
             useVarDiffH = .false.
             diffusivity_horz = tmp
+            ! Error-checking diffusivity
+            if(diffusivity_horz.lt.0.0_ip)then
+              do io=1,2;if(VB(io).le.verbosity_error)then
+                write(errlog(io),*)"ERROR: diffusivity_horz must be >0"
+              endif;enddo
+              stop 1
+            endif
             do io=1,2;if(VB(io).le.verbosity_info)then
-              write(outlog(io),*)"    Horizontal diffusivity model ID = 1: Constant"
-              write(outlog(io),*)"                            with Kh (in m2/s) = ",real(diffusivity_horz,kind=4)
+              write(outlog(io),*)"        Kh model ID       = 1: Constant"
+              write(outlog(io),*)"        with Kh (in m2/s) = ",real(diffusivity_horz,kind=4)
             endif;enddo
           elseif(Kh_model_ID.eq.2)then
             KH_SmagC = tmp
             do io=1,2;if(VB(io).le.verbosity_info)then
-              write(outlog(io),*)"    Horizontal diffusivity model ID = 2: Smagorinsky (1963)"
-              write(outlog(io),*)"                             with C = ",real(KH_SmagC,kind=4)
+              write(outlog(io),*)"        Kh model ID  = 2: Smagorinsky (1963)"
+              write(outlog(io),*)"              with C = ",real(KH_SmagC,kind=4)
             endif;enddo
           elseif(Kh_model_ID.eq.3)then
             KH_SmagC = tmp
             do io=1,2;if(VB(io).le.verbosity_info)then
-              write(outlog(io),*)"    Horizontal diffusivity model ID = 3: Pielke (1974)"
-              write(outlog(io),*)"                             with C = ",real(KH_SmagC,kind=4)
+              write(outlog(io),*)"        Kh model ID  = 3: Pielke (1974)"
+              write(outlog(io),*)"              with C = ",real(KH_SmagC,kind=4)
             endif;enddo
           else
             KH_SmagC = 0.2_ip
             do io=1,2;if(VB(io).le.verbosity_info)then
-              write(outlog(io),*)"    Horizontal diffusivity model ID not recognized."
-              write(outlog(io),*)"    Using model ID = 2: Smagorinsky (1963)"
-              write(outlog(io),*)"                             with C = ",real(KH_SmagC,kind=4)
+              write(outlog(io),*)"        Horizontal diffusivity model ID not recognized."
+              write(outlog(io),*)"        Using Kh model ID = 2: Smagorinsky (1963)"
+              write(outlog(io),*)"                   with C = ",real(KH_SmagC,kind=4)
             endif;enddo
           endif
         else
+          KH_SmagC = 0.2_ip
           Kh_model_ID = 2
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"        Error reading Kh model ID and/or parameter."
+            write(outlog(io),*)"        Offending line:",linebuffer080
+            write(outlog(io),*)"        Horizontal diffusivity model ID not recognized."
+            write(outlog(io),*)"        Using Kh model ID = 2: Smagorinsky (1963)"
+            write(outlog(io),*)"                   with C = ",real(KH_SmagC,kind=4)
+          endif;enddo
         endif
       elseif(answer(1:2).eq.'no') then
         useVarDiffH = .false.
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"    Not using horizontal variable diffusivity"
+          write(outlog(io),*)"    Horizontal variable diffusivity:  OFF"
         endif;enddo
       else
         goto 2011
       endif
+
+      ! Vertical variable diffusivity
       read(10,'(a80)',iostat=ios,err=2010)linebuffer080
       read(linebuffer080,'(a3)',err=2011) answer
       if (answer.eq.'yes') then
-        useVarDiffV = .true.
+        useVarDiffV    = .true.
         useTemperature = .true.
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"    Using vertical variable diffusivity"
+          write(outlog(io),*)"    Vertical variable diffusivity:    ON"
         endif;enddo
       elseif(answer(1:2).eq.'no') then
         useVarDiffV = .false.
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"    Not using vertical variable diffusivity"
+          write(outlog(io),*)"    Vertical variable diffusivity:    OFF"
         endif;enddo
       else
         goto 2011
@@ -300,6 +318,13 @@
         ! Need to read two more lines defining first the Boundary Layer model, then the Free-Air model
         read(10,'(a80)',iostat=ios,err=2010)linebuffer080
         read(linebuffer080,*,iostat=ios)KvBL_model_ID
+        if(ios.ne.0)then
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: ",&
+                  'Boundary Layer model ID not provided.'
+          endif;enddo
+          stop 1
+        endif
         if(KvBL_model_ID.eq.1)then
           ! Diffusivity is constant in the BL
           do io=1,2;if(VB(io).le.verbosity_info)then
@@ -313,6 +338,14 @@
                     'Constant diffusivity in BL specified, but diffusivity value not provided.'
             endif;enddo
             stop 1
+          else
+            ! Error-checking diffusivity
+            if(diffusivity_BL.lt.0.0_ip)then
+              do io=1,2;if(VB(io).le.verbosity_error)then
+                write(errlog(io),*)"ERROR: diffusivity_BL must be >0"
+              endif;enddo
+              stop 1
+            endif
           endif
         elseif(KvBL_model_ID.eq.2)then
           ! Boundary Layer is turned off and vertical diffusivity will just be from the free-air equation
@@ -322,6 +355,7 @@
           endif;enddo
         elseif(KvBL_model_ID.eq.3)then
           ! Model from Troen and Mahrt, 1973
+          phi_prefac = 1.0_ip
           phi_alpha = -0.33333_ip   ! Exponent in unstable term
           phi_beta  =  4.7_ip       ! Coefficient in stable term (pretty much always 4.7->5.2
           phi_gamma = -7.0_ip       ! Coefficient in unstable term
@@ -332,11 +366,33 @@
           endif;enddo
         elseif(KvBL_model_ID.eq.4)then
           ! Model from Ulke (2000)
-          phi_alpha = -0.5_ip   ! Exponent in unstable term
-          phi_beta  =  9.2_ip       ! Coefficient in stable term (pretty much always 4.7->5.2
-          phi_gamma = -13.0_ip       ! Coefficient in unstable term
-          PBL_exp_int = 1
-          PBL_exp     = real(PBL_exp_int,kind=ip)
+          ! Try for KvBL_MomHeat specifying Momentum vs Heat
+          read(linebuffer080,*,iostat=ios2)KvBL_model_ID,KvBL_MomHeat
+          if(ios2.eq.0)then
+            if(KvBL_MomHeat.ne.2)then
+              ! 2 specifies heat version; if it is anything but, then default to 1
+              KvBL_MomHeat = 1
+            endif
+          else
+            KvBL_MomHeat = 1
+          endif
+          if(KvBL_MomHeat.eq.1)then
+            ! Momentum values
+            phi_prefac = 1.0_ip
+            phi_alpha = -0.25_ip  ! Exponent in unstable term
+            phi_beta  =  6.9_ip   ! Coefficient in stable term (pretty much always 4.7->5.2
+            phi_gamma = -22.0_ip  ! Coefficient in unstable term
+            PBL_exp_int = 1
+            PBL_exp     = real(PBL_exp_int,kind=ip)
+          else
+            ! Heat values
+            phi_prefac = 1.0_ip
+            phi_alpha = -0.5_ip   ! Exponent in unstable term
+            phi_beta  =  9.2_ip   ! Coefficient in stable term (pretty much always 4.7->5.2
+            phi_gamma = -13.0_ip  ! Coefficient in unstable term
+            PBL_exp_int = 1
+            PBL_exp     = real(PBL_exp_int,kind=ip)
+          endif
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"    Using boundary layer vertical diffusivity as outlined by Ulke (2000)."
           endif;enddo
@@ -345,45 +401,153 @@
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"    Using boundary layer vertical diffusivity as outlined by in Seinfeld and Pandis."
           endif;enddo
-          PBL_exp_int = 0
+          ! Try for KvBL_MomHeat specifying Momentum vs Heat
+          read(linebuffer080,*,iostat=ios2)KvBL_model_ID,KvBL_MomHeat
+          if(ios2.eq.0)then
+            if(KvBL_MomHeat.ne.2)then
+              ! 2 specifies heat version; if it is anything but, then default to 1
+              KvBL_MomHeat = 1
+            endif
+          else
+            KvBL_MomHeat = 1
+          endif
+          if(KvBL_MomHeat.eq.1)then
+            ! Momentum values
+            phi_prefac = 1.0_ip   
+            phi_alpha = -0.25_ip  ! Exponent in unstable term
+            phi_beta  =  5.0_ip   ! Coefficient in stable term (pretty much always 4.7->5.2
+            phi_gamma = -16.0_ip  ! Coefficient in unstable term
+            PBL_exp_int = 0
+          else
+            ! Heat values
+            ! Momentum values
+            phi_prefac = 0.74_ip
+            phi_alpha = -0.5_ip   ! Exponent in unstable term
+            phi_beta  =  4.7_ip   ! Coefficient in stable term (pretty much always 4.7->5.2
+            phi_gamma = -9.0_ip   ! Coefficient in unstable term
+            PBL_exp_int = 0
+          endif
         elseif(KvBL_model_ID.eq.0)then
           ! Coefficients of phi model specified in control file
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"    Using boundary layer vertical diffusivity with generalized phi."
           endif;enddo
+          ! Try to read all the parameters
+          read(linebuffer080,*,iostat=ios)KvBL_model_ID,phi_prefac,phi_alpha,phi_beta,phi_gamma,PBL_exp_int
+          if(ios.ne.0)then
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: ",&
+                    'Custom BL model selected (KvBL_model_ID=0), but expected parameters could not be read.'
+              write(errlog(io),*)"Expected format = "
+              write(errlog(io),*)" KvBL_model_ID phi_prefac phi_alpha phi_beta phi_gamma PBL_exp_int"
+            endif;enddo
+            stop 1
+          endif
+          ! Some error-checking on values
+          if(phi_prefac.le.0.0_ip.or.phi_prefac.gt.1.0_ip)then
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: phi_prefac must be in range (0,1]"
+            endif;enddo
+            stop 1
+          endif
+          if(phi_alpha.ge.0.0_ip.or.phi_alpha.lt.-1.0_ip)then
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: phi_alpha must be in range [-1,0)"
+            endif;enddo
+            stop 1
+          endif
+          if(phi_beta.lt.0.0_ip)then
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: phi_beta must be >0"
+            endif;enddo
+            stop 1
+          endif
+          if(phi_gamma.gt.0.0_ip)then
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: phi_gamma must be <0"
+            endif;enddo
+            stop 1
+          endif
+          if(PBL_exp_int.lt.0)then
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: PBL_exp_int must be a positive integer"
+              write(errlog(io),*)"         or = 0 to signify useing an exponential taper/"
+            endif;enddo
+            stop 1
+          endif
         else
           KvBL_model_ID = 2
-         do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"    Using boundary layer vertical diffusivity as outlined by Troen and Mahrt (1973)."
           endif;enddo
         endif
-
-        read(linebuffer080(4:),*,iostat=ios)KvFA_model_ID
-        if(KvFA_model_ID.eq.1)then
-          ! Diffusivity is constant in the BL; read the value
-          read(linebuffer080,*,iostat=ios)KvFA_model_ID,diffusivity_vert
+        if(KvBL_model_ID.eq.0.or.&
+           KvBL_model_ID.eq.3.or.&
+           KvBL_model_ID.eq.4.or.&
+           KvBL_model_ID.eq.5)then
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"    Using constant vertical diffusivity above the boundary layer."
+            write(outlog(io),*)"    Using Phi with the following paramters:"
+            write(outlog(io),*)"      phi_prefac  = ",real(phi_prefac,kind=4)
+            write(outlog(io),*)"      phi_alpha   = ",real(phi_alpha,kind=4)
+            write(outlog(io),*)"      phi_beta    = ",real(phi_beta,kind=4)
+            write(outlog(io),*)"      phi_gamma   = ",real(phi_gamma,kind=4)
+            write(outlog(io),*)"      PBL_exp_int = ",PBL_exp_int
           endif;enddo
+        endif
+        ! Free-air model: essentially, which scaling factor F(Ri) to use.
+        read(10,'(a80)',iostat=ios,err=2010)linebuffer080
+        read(linebuffer080,*,iostat=ios)KvFA_model_ID
+        if(KvFA_model_ID.eq.1)then
+          ! Diffusivity is constant in the FA; read the value
+          read(linebuffer080,*,iostat=ios)KvFA_model_ID,diffusivity_vert
+          if(ios.eq.0)then
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"    Using constant vertical diffusivity above the boundary layer."
+            endif;enddo
+          else
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: Constant diffusivity specified in free-atmosphere, but no"
+              write(errlog(io),*)"       diffusivity given."
+            endif;enddo
+            stop 1
+          endif
+          ! Error-checking diffusivity
+          if(diffusivity_vert.lt.0.0_ip)then
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: diffusivity_FA must be >0"
+            endif;enddo
+            stop 1
+          endif
         elseif(KvFA_model_ID.eq.2)then
-          ! Mixing length model with Fc from Jacobson
+          ! Mixing length model with Fc from Louis (1979)
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"    Using free-air vertical diffusivity with stability function from Jacobson."
+            write(outlog(io),*)"    Using free-air vertical diffusivity with stability function from Louis (1979)."
           endif;enddo
         elseif(KvFA_model_ID.eq.3)then
-          ! Mixing length model with Fc from Collin et al
+          ! Mixing length model with Fc from Stull (1988)
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"    Using free-air vertical diffusivity with stability function from Collins et al."
+            write(outlog(io),*)"    Using free-air vertical diffusivity with stability function from Stull (1988)"
           endif;enddo
         elseif(KvFA_model_ID.eq.4)then
-          ! Mixing length model with Fc from Piedelievre et al
+          ! Mixing length model with Fc from Betts (1996)
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"    Using free-air vertical diffusivity with stability function from Piedelievre et al."
+            write(outlog(io),*)"    Using free-air vertical diffusivity with stability function from Betts et al (1996)"
+          endif;enddo
+        elseif(KvFA_model_ID.eq.5)then
+          ! Mixing length model with Fc from Hong (1996)
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"    Using free-air vertical diffusivity with stability function from Hong and Pan (1996)"
+          endif;enddo
+        elseif(KvFA_model_ID.eq.6)then
+          ! Mixing length model with Fc from Collins et al. (2004)
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"    Using free-air vertical diffusivity with stability function from Collins et al (2004)"
           endif;enddo
         else
-          KvFA_model_ID = 3
+          KvFA_model_ID = 4
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"    Using free-air vertical diffusivity with stability function from Collins et al."
+            write(outlog(io),*)"    WARNING: free-air model not read correctly. Setting to default."
+            write(outlog(io),*)"    Using free-air vertical diffusivity with stability function from Betts et al (1996)"
           endif;enddo
         endif
 
@@ -412,7 +576,7 @@
 
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"von Karman constant = ",real(vonKarman,kind=4)
-          write(outlog(io),*)"     Mixinng Length = ",real(LambdaC,kind=4)
+          write(outlog(io),*)"      Mixing Length = ",real(LambdaC,kind=4)
           write(outlog(io),*)"        Critical Ri = ",real(RI_CRIT,kind=4)
         endif;enddo
 
@@ -863,12 +1027,23 @@
       real(kind=ip) :: lat
       real(kind=ip) :: zeta
 
+!      real(kind=ip) :: tmp,rng
+!      rng = 10.0_ip
+!      do i = 1,101
+!        tmp = -0.5*rng + 0.01_ip*real((i-1),kind=ip)*rng
+!        write(*,*)tmp,Fc_Louis(tmp,100.0_ip/0.1_ip),Fc_Jac(tmp), &
+!                  Fc_Betts(tmp),Fc_Hong(tmp),Fc_Collins(tmp)
+!      enddo
+!      stop 150
+
       ! Even if we are not using a BL, we need Ri
       do i=1,nx_submet
         do j=1,ny_submet
           ! For the calculations, we need:
           !  PBLz, L_MonOb, FricVel, Ri, dv_dz, and z
-          z0 = SurfRoughLen_Met_sp(i,j)
+          ! We need to set a minimum for z0 since some NWP files set this to 0
+          ! Table 6.1 of Panofsky and Dutton giv 1.0e-4 for water.
+          z0 = max(SurfRoughLen_Met_sp(i,j),1.0e-3_ip) ! We need to set a minimum for z0
           if(last_or_next.eq.0)then
               Ri_col(:) = real(Ri_meso_last_step_MetP_sp(i,j,:),kind=ip)    ! dimensionless
                z_col(:) = real(MR_geoH_metP_last(i,j,:),kind=ip)*KM_2_M     ! m
@@ -966,17 +1141,30 @@
                   ! Kv from similarity theory (Eq. 8.48 of Jacobson)
                   Kv_BL = z_col(k)*vonKarman*FricVel*PBL_profile_fac/Phi
 
-                  if(i.eq.159.and.j.eq.146)then
-                    !write(*,*)z0,FricVel,L_MonOb,PBLz
-                    !do k = 1,np_fullmet
-                      write(*,*)k,z_col(k),Ri_col(k),PBL_profile_fac,Phi,Kv_BL,Kv_FreeAir
-                    !enddo
-                  endif
+!                  if(i.eq.159.and.j.eq.146)then
+!                    !write(*,*)z0,FricVel,L_MonOb,PBLz
+!                    !do k = 1,np_fullmet
+!                      write(*,*)k,z_col(k),Ri_col(k),PBL_profile_fac,Phi,Kv_BL,Kv_FreeAir
+!                    !enddo
+!                  endif
 
                 endif
               endif ! useBoundaryLayer
             endif ! test on if this is a valid zone for Kv
-    
+   
+!            if(i.eq.159.and.j.eq.146)then
+!            if(Kv_BL.gt.2000.0_ip)then
+              !write(*,*)z0,FricVel,L_MonOb,PBLz
+              !do k = 1,np_fullmet
+!                write(*,*)i,j,k,z_col(k),Ri_col(k),PBL_profile_fac,Phi,Kv_BL,Kv_FreeAir
+              !enddo
+!            endif
+
+            ! HFS
+!            if(k.eq.1)then
+!              write(*,*)i,j,Ri_col(k),Phi,z_col(k),Kv_BL,Kv_FreeAir,Fc
+!            endif
+ 
             ! assign to array and convert from m2/s to km2/hr
             Kv_col(k) = max(Kv_BL,Kv_FreeAir) * HR_2_S/KM_2_M/KM_2_M
           enddo
@@ -989,6 +1177,8 @@
 
         enddo
       enddo
+
+!      stop 77
 
       return
 
@@ -1018,8 +1208,6 @@
 
       logical,save  :: first_time = .true.
       real(kind=sp) :: M_2_KM = 1.0e-3_sp
-
-      !integer :: i
 
       if(Load_MesoSteps)then
         if(first_time)then
@@ -1169,7 +1357,7 @@
           !  Populate values for the 'last' step
           call Set_VirtPotenTemp(0)
           call Calc_Ri(0)
-!          call Calc_Monin_Length(0)
+          call Calc_Monin_Length(0)
           call Calc_SurfaceRoughnessLength
           call Calc_SurfaceFrictionVelocity(0)
           call Calc_PBLH(0)
@@ -1198,7 +1386,7 @@
           ! Populate Ri for the 'next' step
         call Set_VirtPotenTemp(1)
         call Calc_Ri(1)                           ! sets Ri_meso_next_step_MetP_sp
-!        call Calc_Monin_Length(1)
+        call Calc_Monin_Length(1)
         call Calc_SurfaceFrictionVelocity(1)      ! sets FricVel_meso_next_step_Met_sp
         call Calc_PBLH(1)
                                                   !  and L_MonOb_meso_next_step_Met_sp
@@ -1552,8 +1740,6 @@
         endif
       endif
 
-      PBL_override = .true.
-
       if(.not.Met_var_IsAvailable(ivar).or.PBL_override)then
         ! If PBLH is not provided by the NWP file or is corrupted, then
         ! we need to calculate PBLH internally.  There are many more involved
@@ -1680,76 +1866,76 @@
 
 
 !******************************************************************************
-!
-!      subroutine Calc_Monin_Length(last_or_next)
-!
-!      use global_param,  only : &
-!         EPS_SMALL,KM_2_M
-!
-!      use MetReader,     only : &
-!         nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,MR_geoH_metP_next,&
-!           MR_Read_2d_Met_Variable
-!
-!      implicit none
-!
-!      integer, intent(in) :: last_or_next
-!
-!      !integer :: ivar
-!      integer :: i,j,k_L
-!      !real(kind=ip) :: tmp
-!      real(kind=ip) :: Ri
-!      real(kind=ip) :: Ri_col(np_fullmet)
-!      real(kind=ip) :: z_col(np_fullmet)
-!      real(kind=ip) :: L_MonOb
-!
-!      ! Get Monin-Obukhov length from the
-!      ! Businger-Dyer-Pandolfo empirical result 
-!      ! using z and Ri at k=2
-!        ! Eq 6.7.1 and 6.7 2 of "Atmospheric Turbulence";
-!        ! Panofsky and Dutton,1984
-!        ! also Eq 11.24 of "Introduction to Micrometeorology";
-!        ! Arya, 1988
-!      do i=1,nx_submet
-!        do j=1,ny_submet
-!          if(last_or_next.eq.0)then
-!            Ri_col(:) = Ri_meso_last_step_MetP_sp(i,j,:)
-!            z_col(:)  = MR_geoH_metP_last(i,j,:)*KM_2_M
-!          else
-!            Ri_col(:) = Ri_meso_next_step_MetP_sp(i,j,:)
-!            z_col(:)  = MR_geoH_metP_next(i,j,:)*KM_2_M
-!          endif
-!
-!          ! Pick the bottom (non-zero) z
-!          do k_L=1,np_fullmet
-!            if(z_col(k_L).gt.0.0_ip)then
-!              exit
-!            endif
-!          enddo
-!          ! For the purpuse of calculating L, don't let Ri get too close to 0
-!          Ri = sign(max(abs(Ri_col(k_L)),1.0e-2_ip),Ri_col(k_L))
-!          if(Ri_col(k_L).lt.RI_CRIT)then
-!            ! Test for special case of neutrally stable case, L->Inf ; set to 1 km
-!            if (abs(Ri_col(k_L)).lt.EPS_SMALL)then
-!              L_MonOb = sign(abs(L_MonOb),100.0_ip)
-!            else
-!              ! Unstable (negative L)
-!              L_MonOb = z_col(k_L)/Ri
-!            endif
-!          elseif(Ri_col(k_L).gt.RI_CRIT)then
-!              ! Stable (positive L)
-!            L_MonOb = z_col(k_L)/Ri * (1.0_ip - 5.0_ip*Ri)
-!          endif
-!          L_MonOb = sign(min(abs(L_MonOb),100.0_ip),L_MonOb)
-!
-!          if(last_or_next.eq.0)then
-!            L_MonOb_meso_last_step_Met_sp(i,j) = real(L_MonOb,kind=sp)
-!          else
-!            L_MonOb_meso_next_step_Met_sp(i,j) = real(L_MonOb,kind=sp)
-!          endif
-!        enddo
-!      enddo
-!
-!      end subroutine Calc_Monin_Length
+
+      subroutine Calc_Monin_Length(last_or_next)
+
+      use global_param,  only : &
+         EPS_SMALL,KM_2_M
+
+      use MetReader,     only : &
+         nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,MR_geoH_metP_next,&
+           MR_Read_2d_Met_Variable
+
+      implicit none
+
+      integer, intent(in) :: last_or_next
+
+      !integer :: ivar
+      integer :: i,j,k_L
+      !real(kind=ip) :: tmp
+      real(kind=ip) :: Ri
+      real(kind=ip) :: Ri_col(np_fullmet)
+      real(kind=ip) :: z_col(np_fullmet)
+      real(kind=ip) :: L_MonOb
+
+      ! Get Monin-Obukhov length from the
+      ! Businger-Dyer-Pandolfo empirical result 
+      ! using z and Ri at k=2
+        ! Eq 6.7.1 and 6.7 2 of "Atmospheric Turbulence";
+        ! Panofsky and Dutton,1984
+        ! also Eq 11.24 of "Introduction to Micrometeorology";
+        ! Arya, 1988
+      do i=1,nx_submet
+        do j=1,ny_submet
+          if(last_or_next.eq.0)then
+            Ri_col(:) = Ri_meso_last_step_MetP_sp(i,j,:)
+            z_col(:)  = MR_geoH_metP_last(i,j,:)*KM_2_M
+          else
+            Ri_col(:) = Ri_meso_next_step_MetP_sp(i,j,:)
+            z_col(:)  = MR_geoH_metP_next(i,j,:)*KM_2_M
+          endif
+
+          ! Pick the bottom (non-zero) z
+          do k_L=1,np_fullmet
+            if(z_col(k_L).gt.0.0_ip)then
+              exit
+            endif
+          enddo
+          ! For the purpuse of calculating L, don't let Ri get too close to 0
+          Ri = sign(max(abs(Ri_col(k_L)),1.0e-2_ip),Ri_col(k_L))
+          if(Ri_col(k_L).lt.RI_CRIT)then
+            ! Test for special case of neutrally stable case, L->Inf ; set to 1 km
+            if (abs(Ri_col(k_L)).lt.EPS_SMALL)then
+              L_MonOb = sign(abs(L_MonOb),100.0_ip)
+            else
+              ! Unstable (negative L)
+              L_MonOb = z_col(k_L)/Ri
+            endif
+          elseif(Ri_col(k_L).gt.RI_CRIT)then
+              ! Stable (positive L)
+            L_MonOb = z_col(k_L)/Ri * (1.0_ip - 5.0_ip*Ri)
+          endif
+          L_MonOb = sign(min(abs(L_MonOb),100.0_ip),L_MonOb)
+
+          if(last_or_next.eq.0)then
+            L_MonOb_meso_last_step_Met_sp(i,j) = real(L_MonOb,kind=sp)
+          else
+            L_MonOb_meso_next_step_Met_sp(i,j) = real(L_MonOb,kind=sp)
+          endif
+        enddo
+      enddo
+
+      end subroutine Calc_Monin_Length
 
 !******************************************************************************
 
@@ -1764,10 +1950,11 @@
       real(kind=ip) :: Ri       ! dimensionless
       real(kind=ip) :: zonz0    ! dimensionless
 
-      real(kind=ip) :: a,b,c
+      real(kind=ip) :: a,b,c,bprime
 
       a = vonKarman/log(zonz0)    ! Eq. 13
       b = 9.4_ip
+      bprime = 0.5_ip*b
       c = 7.4*a*a*b*sqrt(zonz0)   ! Eq. 20
 
       if(Ri.le.0.0_ip)then
@@ -1777,7 +1964,7 @@
       else
           ! Stable atmosphere
           ! Eq. 15
-        Fc_Louis = (1.0_ip + 0.5_ip*b*Ri)**(-2.0_ip)
+        Fc_Louis = (1.0_ip + bprime*Ri)**(-2.0_ip)
       endif
 
       return
@@ -1804,7 +1991,7 @@
       elseif(Ri.ge.0.0_ip.and.Ri.le.RI_CRIT)then
           ! Weakly unstable atmosphere
           ! Jacobson Eq. 8.70 or Table 6.4 of Stull (unstable, line 1)
-        Fc_Jac = (RI_CRIT-Ri)/Ri
+        Fc_Jac = (RI_CRIT-Ri)/RI_CRIT
       else
           ! Stable atmosphere
         Fc_Jac = 0.0_ip
