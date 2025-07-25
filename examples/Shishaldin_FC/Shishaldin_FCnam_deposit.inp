@@ -74,7 +74,7 @@
 Shishaldin                         # Volcano name (character*30)
 0 1 -150.0 90.0 0.9330127 6371.229
 -1200.0 -3800.0                    # x, y of LL corner of grid (km, or deg. if latlongflag=1)
-500.0     250.0                    # grid width and height (km, or deg. if latlonflag=1)
+500.0     350.0                    # grid width and height (km, or deg. if latlonflag=1)
 -911.48 -3664.75                   # vent location         (km, or deg. if latlonflag=1)
 2.5       2.5                      # DX, DY of grid cells  (km, or deg. if latlonflag=1)
 0.2                                # DZ of grid cells      (always km)
@@ -291,7 +291,10 @@ yes                           # Defer to Lon/Lat coordinates? ("no" defers to pr
 # contain the location, in the same coordinates as the computational grid.                             
 # Optionally, a site name can be provided in after the location.                                       
 ******************* BLOCK 8 ****************************************************
-0                             # number of locations for vertical profiles (nlocs)                      
+3                             # number of locations for vertical profiles (nlocs)                      
+-873.29 -3663.10  False Pass
+-820.35 -3634.34  Cold Bay
+-798.07 -3656.19  King Cove
 ********************************************************************************
 # netCDF output options                                                                                
 # This last block is optional.                                                                         
@@ -299,7 +302,7 @@ yes                           # Defer to Lon/Lat coordinates? ("no" defers to pr
 # The title and comment lines are passed through to the netcdf header of the                           
 # output file.                                                                                         
 ******************* BLOCK 9 ****************************************************
-3d_tephra_fallnam.nc             # Name of output file
+3d_tephra_fallPJ.nc             # Name of output file
 ShishaldinFC                  # Title of simulation
 Ash3d validation test         # Comment
 *******************************************************************************
