@@ -292,6 +292,8 @@
       real(kind=op),     dimension(:),    pointer,public :: var_User4d_XYZGs_FillVal   => null()
       real(kind=op), dimension(:,:,:,:,:),pointer,public :: var_User4d_XYZGs           => null()
       real(kind=ip),     dimension(:,:),  pointer,public :: Extra2dVar                 => null()
+        ! User-defined character lines (used for logging optional block data)
+      character(len=80), dimension(:),    pointer,public :: var_User_charlines         => null()
 #else
         ! 2-D variables (in x,y)
       logical,       dimension(:,:)  ,allocatable,public :: Mask_Cloud
@@ -348,6 +350,8 @@
       real(kind=op),     dimension(:),    allocatable,public :: var_User4d_XYZGs_FillVal
       real(kind=op), dimension(:,:,:,:,:),allocatable,public :: var_User4d_XYZGs
       real(kind=ip),     dimension(:,:),  allocatable,public :: Extra2dVar
+        ! User-defined character lines (used for logging optional block data)
+      character(len=80), dimension(:),    allocatable,public :: var_User_charlines
 #endif
       character(len=30)                       ,public :: Extra2dVarName
 

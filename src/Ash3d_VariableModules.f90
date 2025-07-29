@@ -574,6 +574,7 @@
       integer            :: nvar_User3d_XYGs       = 0
       integer            :: nvar_User3d_XYZ        = 0
       integer            :: nvar_User4d_XYZGs      = 0
+      integer            :: nvar_User_charlines    = 0
 
       contains
 

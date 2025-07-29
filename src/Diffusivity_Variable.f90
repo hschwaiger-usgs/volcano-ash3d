@@ -8,7 +8,19 @@
 !  Horizontal diffusivity is calculated using spatial derivatives of the
 !  horizontal velocities using either the model of Smagorinsky (1963) or
 !  from Pielke (1974). This LES approach uses the area of the NWP cells
-!  to scale 
+!  to scale.
+!
+!  Vertical diffusivity is calculated using vertical derivatives of horizontal
+!  velocities, scaled by a function of the stability parameter Ri (itself a
+!  function of horizontal velocities and potential temperature). Additionally,
+!  a separate calculation of diffusivities in the planetary boundary layer can
+!  be invoked. This requires Ri as well, but also the thickness of the planetary
+!  boundary layer (provided by the NWP, calculated from Ri, T inversion, or
+!  Eckman Layer thickness), and the surface friction velocity. Several
+!  options for characterizing the diffusivity in this boundary layer are
+!  available through the specification of the similarity function Phi, as
+!  well as the functional form of the extension from the surface layer throughout
+!  the boundary layer.
 !
 !      subroutine input_data_VarDiff
 !      subroutine Allocate_VarDiff_Met
@@ -34,11 +46,11 @@
 !
 !
 ! OPTMOD=VARDIFF
-! Horizontal diff
+! Line 1: Horizontal diff
 !  yes 1 500.0     # 1=const ; value in m2/s
 !  yes 2 0.2       # 2=Smagorinsky ; C
 !  yes 3 0.2       # 3=Pielke      ; C
-! Vertical diff
+! Line 2: Vertical diff
 !  yes
 !  0 B, alpha, beta, gamma, pexp
 !  1 500.0         # BL model 1=const ; value
@@ -78,7 +90,7 @@
       real(kind=ip) :: KH_SmagC     ! Smagorinsky (1993) constant for LES horizontal diffusivity (0.2 - 0.9)
       !    These next three are needed for the vertical diffusivity
       real(kind=ip) :: vonKarman    ! von Karman constant (around 0.4)
-      real(kind=ip) :: LambdaC      ! Asymptotic length scale (around 30 m)
+      real(kind=ip) :: LambdaC      ! Asymptotic length scale (around 30-150 m)
       real(kind=ip) :: RI_CRIT      ! Critical Richardson number (0.25)
 
       real(kind=ip) :: USTAR_MIN = 0.1_ip   ! Minimum Friction Velocity (m/s)
@@ -98,7 +110,7 @@
       real(kind=ip) :: PBL_exp
 
       logical       :: useBoundaryLayer = .true.
-      real(kind=ip) :: diffusivity_BL
+      real(kind=ip) :: diffusivity_BL            ! This is used if Kv is constant in BL
       ! Set the number of output variables for this module
       ! This depends on settings from the input block
       logical :: use_Output_Vars_VarDiff       = .true.
@@ -107,6 +119,7 @@
       integer :: nvar_User3d_XYGs_VarDiff      = 0
       integer :: nvar_User3d_XYZ_VarDiff       = 0 ! If using Kh, then =1 khorz; if also Kz, then =3 kvert, Ri
       integer :: nvar_User4d_XYZGs_VarDiff     = 0
+      integer :: nvar_User_charlines_VarDiff   = 8
 
       character(len=30),dimension(:),allocatable :: temp_2d_name_VarDiff
       character(len=30),dimension(:),allocatable :: temp_2d_unit_VarDiff
@@ -119,6 +132,8 @@
       character(len=30),dimension(:),allocatable :: temp_3d_lname_VarDiff
       real(kind=op),    dimension(:),allocatable :: temp_3d_MissVal_VarDiff
       real(kind=op),    dimension(:),allocatable :: temp_3d_FillVal_VarDiff
+      character(len=80),dimension(:),allocatable :: var_User_charlines_VarDiff
+
 
       ! These are used to keep track of which index in the global list, this
       ! modules output vars corespond to
@@ -143,30 +158,30 @@
       !       These would still be allocated here if needed here
 
         ! and at both meso steps (also MetP)
-      real(kind=sp),dimension(:,:,:)  ,allocatable :: Ri_meso_last_step_MetP_sp
-      real(kind=sp),dimension(:,:,:)  ,allocatable :: Ri_meso_next_step_MetP_sp
+!      real(kind=sp),dimension(:,:,:)  ,allocatable :: Ri_meso_last_step_MetP_sp
+!      real(kind=sp),dimension(:,:,:)  ,allocatable :: Ri_meso_next_step_MetP_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: Khz_meso_last_step_MetP_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: Khz_meso_next_step_MetP_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: Kv_meso_last_step_MetP_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: Kv_meso_next_step_MetP_sp
-
-      ! 2d variables needed at meso steps on Met grid
+!
+!      ! 2d variables needed at meso steps on Met grid
       real(kind=sp),dimension(:,:)    ,allocatable :: SurfRoughLen_Met_sp
-      real(kind=sp),dimension(:,:)    ,allocatable :: PBLH_meso_last_step_Met_sp
-      real(kind=sp),dimension(:,:)    ,allocatable :: PBLH_meso_next_step_Met_sp
-      real(kind=sp),dimension(:,:)    ,allocatable :: L_MonOb_meso_last_step_Met_sp
-      real(kind=sp),dimension(:,:)    ,allocatable :: L_MonOb_meso_next_step_Met_sp
-      real(kind=sp),dimension(:,:)    ,allocatable :: FricVel_meso_last_step_Met_sp
-      real(kind=sp),dimension(:,:)    ,allocatable :: FricVel_meso_next_step_Met_sp
-      real(kind=sp),dimension(:,:)    ,allocatable :: v10x_meso_last_step_MetP_sp
-      real(kind=sp),dimension(:,:)    ,allocatable :: v10y_meso_last_step_MetP_sp
-      real(kind=sp),dimension(:,:)    ,allocatable :: v10x_meso_next_step_MetP_sp
-      real(kind=sp),dimension(:,:)    ,allocatable :: v10y_meso_next_step_MetP_sp
+!      real(kind=sp),dimension(:,:)    ,allocatable :: PBLH_meso_last_step_Met_sp
+!      real(kind=sp),dimension(:,:)    ,allocatable :: PBLH_meso_next_step_Met_sp
+!      real(kind=sp),dimension(:,:)    ,allocatable :: L_MonOb_meso_last_step_Met_sp
+!      real(kind=sp),dimension(:,:)    ,allocatable :: L_MonOb_meso_next_step_Met_sp
+!      real(kind=sp),dimension(:,:)    ,allocatable :: FricVel_meso_last_step_Met_sp
+!      real(kind=sp),dimension(:,:)    ,allocatable :: FricVel_meso_next_step_Met_sp
+!      real(kind=sp),dimension(:,:)    ,allocatable :: v10x_meso_last_step_MetP_sp
+!      real(kind=sp),dimension(:,:)    ,allocatable :: v10y_meso_last_step_MetP_sp
+!      real(kind=sp),dimension(:,:)    ,allocatable :: v10x_meso_next_step_MetP_sp
+!      real(kind=sp),dimension(:,:)    ,allocatable :: v10y_meso_next_step_MetP_sp
 
       ! Variables needed on Comp grid (kx,y,z are already allocated)
-      real(kind=sp),dimension(:,:)    ,allocatable :: FricVel_meso_last_step_sp
-      real(kind=sp),dimension(:,:)    ,allocatable :: FricVel_meso_next_step_sp
-      real(kind=ip),dimension(:,:)    ,allocatable :: FricVel_ip
+!      real(kind=sp),dimension(:,:)    ,allocatable :: FricVel_meso_last_step_sp
+!      real(kind=sp),dimension(:,:)    ,allocatable :: FricVel_meso_next_step_sp
+!      real(kind=ip),dimension(:,:)    ,allocatable :: FricVel_ip
       real(kind=sp),dimension(:,:,:)  ,allocatable :: Khz_meso_last_step_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: Khz_meso_next_step_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: Kv_meso_last_step_sp
@@ -180,8 +195,21 @@
       real(kind=sp),dimension(:,:,:)  ,allocatable :: vy_meso_next_step_MetP_sp
 
       contains
+      !------------------------------------------------------------------------
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  input_data_VarDiff
+!
+!  Called from: Ash3d.f90
+!  Arguments: None
+!    none
+!
+!  This subroutine reopens the Ash3d control file, searches for the optional
+!  module identifier OPTMOD=VARDIFF then parses the block for user-specified
+!  Variable Diffisivity options/parameters.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine input_data_VarDiff
 
@@ -618,9 +646,19 @@
 
       end subroutine input_data_VarDiff
 
-!******************************************************************************
-
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Allocate_VarDiff_Met
+!
+!  Called from: Ash3d.F90
+!  Arguments:
+!    none
+!
+!  This subroutine allocates all the variables needed for calculating Kv and Kh
+!  on the MetP grid. This includes some variables that are part of the Atmosphere
+!  module, and might have been allocated elsewhere, but are needed here.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Allocate_VarDiff_Met
 
@@ -629,10 +667,18 @@
 
       use io_data,       only : &
          nvar_User2d_static_XY,nvar_User3d_XYGs,nvar_User2d_XY,&
-         nvar_User4d_XYZGs,nvar_User3d_XYZ
+         nvar_User4d_XYZGs,nvar_User3d_XYZ,nvar_User_charlines
 
       use mesh,          only : &
          nxmax,nymax,nzmax
+
+      use Atmosphere,    only : &
+         Ri_meso_last_step_MetP_sp,     Ri_meso_next_step_MetP_sp,       &
+         PBLH_meso_last_step_Met_sp,    PBLH_meso_next_step_Met_sp,      &
+         L_MonOb_meso_last_step_Met_sp, L_MonOb_meso_next_step_Met_sp,   &
+         FricVel_meso_last_step_Met_sp, FricVel_meso_next_step_Met_sp,   &
+         v10x_meso_last_step_MetP_sp,   v10x_meso_next_step_MetP_sp,     &
+         v10y_meso_last_step_MetP_sp,   v10y_meso_next_step_MetP_sp
 
       use MetReader,     only : &
          nx_submet,ny_submet,np_fullmet
@@ -648,40 +694,121 @@
       endif;enddo
 
       ! HFS only allocate the bits needed for Kh vs Kv
+#ifdef USEPOINTERS
+      if(.not.(dVel_dz_MetP_sp)) &
+               allocate(dVel_dz_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.(du_dx_MetP_sp))   &
+               allocate(du_dx_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.(du_dy_MetP_sp))   &
+               allocate(du_dy_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.(dv_dx_MetP_sp))   &
+               allocate(dv_dx_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.(dv_dx_MetP_sp))   &
+               allocate(dv_dy_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.(dV_dz_MetP_sp))   &
+               allocate(dV_dz_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.(SurfRoughLen_Met_sp)) &
+               allocate(SurfRoughLen_Met_sp(nx_submet,ny_submet))
+      if(.not.(Ri_meso_last_step_MetP_sp))  &
+               allocate(Ri_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.(Ri_meso_next_step_MetP_sp))  &
+               allocate(Ri_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.(Khz_meso_last_step_MetP_sp)) &
+               allocate(Khz_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.(Khz_meso_next_step_MetP_sp)) &
+               allocate(Khz_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.(Kv_meso_last_step_MetP_sp))  &
+               allocate(Kv_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.(Kv_meso_next_step_MetP_sp))  &
+               allocate(Kv_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.(PBLH_meso_last_step_Met_sp)) &
+               allocate(PBLH_meso_last_step_Met_sp(nx_submet,ny_submet))
+      if(.not.(PBLH_meso_next_step_Met_sp)) &
+               allocate(PBLH_meso_next_step_Met_sp(nx_submet,ny_submet))
+      if(.not.(L_MonOb_meso_last_step_Met_sp)) &
+               allocate(L_MonOb_meso_last_step_Met_sp(nx_submet,ny_submet))
+      if(.not.(L_MonOb_meso_next_step_Met_sp)) &
+               allocate(L_MonOb_meso_next_step_Met_sp(nx_submet,ny_submet))
+      if(.not.(FricVel_meso_last_step_Met_sp)) &
+               allocate(FricVel_meso_last_step_Met_sp(nx_submet,ny_submet))
+      if(.not.(FricVel_meso_next_step_Met_sp)) &
+               allocate(FricVel_meso_next_step_Met_sp(nx_submet,ny_submet))
 
-      allocate(dVel_dz_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      allocate(du_dx_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      allocate(du_dy_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      allocate(dv_dx_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      allocate(dv_dy_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      allocate(dV_dz_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      allocate(SurfRoughLen_Met_sp(nx_submet,ny_submet))
-      allocate(Ri_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      allocate(Ri_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      allocate(Khz_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      allocate(Khz_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      allocate(Kv_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      allocate(Kv_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      allocate(PBLH_meso_last_step_Met_sp(nx_submet,ny_submet))
-      allocate(PBLH_meso_next_step_Met_sp(nx_submet,ny_submet))
-      allocate(L_MonOb_meso_last_step_Met_sp(nx_submet,ny_submet))
-      allocate(L_MonOb_meso_next_step_Met_sp(nx_submet,ny_submet))
-      allocate(FricVel_meso_last_step_Met_sp(nx_submet,ny_submet))
-      allocate(FricVel_meso_next_step_Met_sp(nx_submet,ny_submet))
+      if(.not.(Khz_meso_last_step_sp))   &
+               allocate(Khz_meso_last_step_sp(nxmax,nymax,nzmax))
+      if(.not.(Khz_meso_next_step_sp))   &
+               allocate(Khz_meso_next_step_sp(nxmax,nymax,nzmax))
+      if(.not.(Kv_meso_last_step_sp))    &
+               allocate(Kv_meso_last_step_sp(nxmax,nymax,nzmax))
+      if(.not.(Kv_meso_next_step_sp))    &
+               allocate(Kv_meso_next_step_sp(nxmax,nymax,nzmax))
 
-      allocate(FricVel_meso_last_step_sp(nxmax,nymax))
-      allocate(FricVel_meso_next_step_sp(nxmax,nymax))
-      allocate(FricVel_ip(nxmax,nymax))
+      if(.not.(vx_meso_last_step_MetP_sp))   &
+               allocate(vx_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.(vy_meso_last_step_MetP_sp))   &
+               allocate(vy_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.(vx_meso_next_step_MetP_sp))   &
+               allocate(vx_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.(vy_meso_next_step_MetP_sp))   &
+               allocate(vy_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+#else
+      if(.not.allocated(dVel_dz_MetP_sp)) &
+               allocate(dVel_dz_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.allocated(du_dx_MetP_sp))   &
+               allocate(du_dx_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.allocated(du_dy_MetP_sp))   &
+               allocate(du_dy_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.allocated(dv_dx_MetP_sp))   &
+               allocate(dv_dx_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.allocated(dv_dx_MetP_sp))   &
+               allocate(dv_dy_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.allocated(dV_dz_MetP_sp))   &
+               allocate(dV_dz_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.allocated(SurfRoughLen_Met_sp)) &
+               allocate(SurfRoughLen_Met_sp(nx_submet,ny_submet))
+      if(.not.allocated(Ri_meso_last_step_MetP_sp))  &
+               allocate(Ri_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.allocated(Ri_meso_next_step_MetP_sp))  &
+               allocate(Ri_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.allocated(Khz_meso_last_step_MetP_sp)) &
+               allocate(Khz_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.allocated(Khz_meso_next_step_MetP_sp)) &
+               allocate(Khz_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.allocated(Kv_meso_last_step_MetP_sp))  &
+               allocate(Kv_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.allocated(Kv_meso_next_step_MetP_sp))  &
+               allocate(Kv_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.allocated(PBLH_meso_last_step_Met_sp)) &
+               allocate(PBLH_meso_last_step_Met_sp(nx_submet,ny_submet))
+      if(.not.allocated(PBLH_meso_next_step_Met_sp)) &
+               allocate(PBLH_meso_next_step_Met_sp(nx_submet,ny_submet))
+      if(.not.allocated(L_MonOb_meso_last_step_Met_sp)) &
+               allocate(L_MonOb_meso_last_step_Met_sp(nx_submet,ny_submet))
+      if(.not.allocated(L_MonOb_meso_next_step_Met_sp)) &
+               allocate(L_MonOb_meso_next_step_Met_sp(nx_submet,ny_submet))
+      if(.not.allocated(FricVel_meso_last_step_Met_sp)) &
+               allocate(FricVel_meso_last_step_Met_sp(nx_submet,ny_submet))
+      if(.not.allocated(FricVel_meso_next_step_Met_sp)) &
+               allocate(FricVel_meso_next_step_Met_sp(nx_submet,ny_submet))
 
-      allocate(Khz_meso_last_step_sp(nxmax,nymax,nzmax))
-      allocate(Khz_meso_next_step_sp(nxmax,nymax,nzmax))
-      allocate(Kv_meso_last_step_sp(nxmax,nymax,nzmax))
-      allocate(Kv_meso_next_step_sp(nxmax,nymax,nzmax))
+      if(.not.allocated(Khz_meso_last_step_sp))   &
+               allocate(Khz_meso_last_step_sp(nxmax,nymax,nzmax))
+      if(.not.allocated(Khz_meso_next_step_sp))   &
+               allocate(Khz_meso_next_step_sp(nxmax,nymax,nzmax))
+      if(.not.allocated(Kv_meso_last_step_sp))    &
+               allocate(Kv_meso_last_step_sp(nxmax,nymax,nzmax))
+      if(.not.allocated(Kv_meso_next_step_sp))    &
+               allocate(Kv_meso_next_step_sp(nxmax,nymax,nzmax))
 
-      allocate(vx_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      allocate(vy_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      allocate(vx_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      allocate(vy_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.allocated(vx_meso_last_step_MetP_sp))   &
+               allocate(vx_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.allocated(vy_meso_last_step_MetP_sp))   &
+               allocate(vy_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.allocated(vx_meso_next_step_MetP_sp))   &
+               allocate(vx_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.allocated(vy_meso_next_step_MetP_sp))   &
+               allocate(vy_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+#endif
 
         ! Precalculate the LES term
       LES_L2ScaleCoeff = (KH_SmagC*KH_SmagC/(PI*PI))
@@ -694,17 +821,29 @@
       indx_User4d_XYZGs_VarDiff     = nvar_User4d_XYZGs
 
       ! Allocate output variables if needed
-      if(.not.allocated(temp_2d_name_VarDiff))allocate(temp_2d_name_VarDiff(nvar_User2d_XY_VarDiff))
-      if(.not.allocated(temp_2d_unit_VarDiff))allocate(temp_2d_unit_VarDiff(nvar_User2d_XY_VarDiff))
-      if(.not.allocated(temp_2d_lname_VarDiff))allocate(temp_2d_lname_VarDiff(nvar_User2d_XY_VarDiff))
-      if(.not.allocated(temp_2d_MissVal_VarDiff))allocate(temp_2d_MissVal_VarDiff(nvar_User2d_XY_VarDiff))
-      if(.not.allocated(temp_2d_FillVal_VarDiff))allocate(temp_2d_FillVal_VarDiff(nvar_User2d_XY_VarDiff))
+      if(.not.allocated(temp_2d_name_VarDiff))    &
+               allocate(temp_2d_name_VarDiff(nvar_User2d_XY_VarDiff))
+      if(.not.allocated(temp_2d_unit_VarDiff))    &
+               allocate(temp_2d_unit_VarDiff(nvar_User2d_XY_VarDiff))
+      if(.not.allocated(temp_2d_lname_VarDiff))   &
+               allocate(temp_2d_lname_VarDiff(nvar_User2d_XY_VarDiff))
+      if(.not.allocated(temp_2d_MissVal_VarDiff)) &
+               allocate(temp_2d_MissVal_VarDiff(nvar_User2d_XY_VarDiff))
+      if(.not.allocated(temp_2d_FillVal_VarDiff)) &
+               allocate(temp_2d_FillVal_VarDiff(nvar_User2d_XY_VarDiff))
 
-      if(.not.allocated(temp_3d_name_VarDiff))allocate(temp_3d_name_VarDiff(nvar_User3d_XYZ_VarDiff))
-      if(.not.allocated(temp_3d_unit_VarDiff))allocate(temp_3d_unit_VarDiff(nvar_User3d_XYZ_VarDiff))
-      if(.not.allocated(temp_3d_lname_VarDiff))allocate(temp_3d_lname_VarDiff(nvar_User3d_XYZ_VarDiff))
-      if(.not.allocated(temp_3d_MissVal_VarDiff))allocate(temp_3d_MissVal_VarDiff(nvar_User3d_XYZ_VarDiff))
-      if(.not.allocated(temp_3d_FillVal_VarDiff))allocate(temp_3d_FillVal_VarDiff(nvar_User3d_XYZ_VarDiff))
+      if(.not.allocated(temp_3d_name_VarDiff))    &
+               allocate(temp_3d_name_VarDiff(nvar_User3d_XYZ_VarDiff))
+      if(.not.allocated(temp_3d_unit_VarDiff))    &
+               allocate(temp_3d_unit_VarDiff(nvar_User3d_XYZ_VarDiff))
+      if(.not.allocated(temp_3d_lname_VarDiff))   &
+               allocate(temp_3d_lname_VarDiff(nvar_User3d_XYZ_VarDiff))
+      if(.not.allocated(temp_3d_MissVal_VarDiff)) &
+               allocate(temp_3d_MissVal_VarDiff(nvar_User3d_XYZ_VarDiff))
+      if(.not.allocated(temp_3d_FillVal_VarDiff)) &
+               allocate(temp_3d_FillVal_VarDiff(nvar_User3d_XYZ_VarDiff))
+      if(.not.allocated(var_User_charlines_VarDiff)) &
+               allocate(var_User_charlines_VarDiff(nvar_User_charlines_VarDiff))
 
       i = 0 
       if(use_Output_Vars_VarDiff.and.useVarDiffH)then
@@ -749,10 +888,24 @@
       nvar_User3d_XYGs      = nvar_User3d_XYGs      + nvar_User3d_XYGs_VarDiff
       nvar_User3d_XYZ       = nvar_User3d_XYZ       + nvar_User3d_XYZ_VarDiff
       nvar_User4d_XYZGs     = nvar_User4d_XYZGs     + nvar_User4d_XYZGs_VarDiff
+      nvar_User_charlines   = nvar_User_charlines   + nvar_User_charlines_VarDiff
 
       end subroutine Allocate_VarDiff_Met
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Prep_output_VarDiff
+!
+!  Called from: Ash3d.F90
+!  Arguments:
+!    none
+!
+!  This subroutine fills the module output variables. The output variables that
+!  are part of the atmospheric stability metrics (Ustar, PBLH, Ri) are only on 
+!  the Met steps since they are only needed on those intervals to get Kv, Kh.
+!  Kv and Kh are interpolated to each time-step so will vary smoothly.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Prep_output_VarDiff
 
@@ -770,6 +923,11 @@
          var_User2d_XY_MissVal,var_User2d_XY_FillVal,var_User2d_XY, &
          var_User3d_XYZ_name,var_User3d_XYZ_unit,var_User3d_XYZ_lname,&
          var_User3d_XYZ_MissVal,var_User3d_XYZ_FillVal,var_User3d_XYZ
+
+      use Atmosphere,    only : &
+         FricVel_meso_next_step_Met_sp, &
+         PBLH_meso_next_step_Met_sp, &
+         Ri_meso_next_step_MetP_sp
 
       use MetReader,     only : &
          MR_dum2d_met,MR_dum2d_comp,MR_dum3d_compH,MR_dum3d_metP,MR_iMetStep_Now,&
@@ -881,9 +1039,25 @@
 
       end subroutine Prep_output_VarDiff
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Deallocate_VarDiff_Met
+!
+!  Called from: Ash3d.F90
+!  Arguments:
+!    none
+!
+!  This subroutine deallocates the variables allocated in Allocate_VarDiff_Met
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Deallocate_VarDiff_Met
+
+      use Atmosphere,    only : &
+         Ri_meso_last_step_MetP_sp,Ri_meso_next_step_MetP_sp, &
+         PBLH_meso_last_step_Met_sp,PBLH_meso_next_step_Met_sp,&
+         L_MonOb_meso_last_step_Met_sp,L_MonOb_meso_next_step_Met_sp,&
+         FricVel_meso_last_step_Met_sp,FricVel_meso_next_step_Met_sp
 
       implicit none
 
@@ -907,9 +1081,9 @@
       if(allocated(FricVel_meso_last_step_Met_sp)) deallocate(FricVel_meso_last_step_Met_sp)
       if(allocated(FricVel_meso_next_step_Met_sp)) deallocate(FricVel_meso_next_step_Met_sp)
 
-      if(allocated(FricVel_meso_last_step_sp))     deallocate(FricVel_meso_last_step_sp)
-      if(allocated(FricVel_meso_next_step_sp))     deallocate(FricVel_meso_next_step_sp)
-      if(allocated(FricVel_ip))                    deallocate(FricVel_ip)
+!      if(allocated(FricVel_meso_last_step_sp))     deallocate(FricVel_meso_last_step_sp)
+!      if(allocated(FricVel_meso_next_step_sp))     deallocate(FricVel_meso_next_step_sp)
+!      if(allocated(FricVel_ip))                    deallocate(FricVel_ip)
 
       if(allocated(Khz_meso_last_step_sp))         deallocate(Khz_meso_last_step_sp)
       if(allocated(Khz_meso_next_step_sp))         deallocate(Khz_meso_next_step_sp)
@@ -923,8 +1097,18 @@
 
       end subroutine Deallocate_VarDiff_Met
 
-!******************************************************************************
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Eddy_diff
+!
+!  Called from: Set_VarDiffH_Meso
+!  Arguments:
+!    none
+!
+!  This subroutine calculates the horizontal diffusivity based on the specified
+!  model at the 'next' Met step.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Eddy_diff
 
@@ -982,8 +1166,7 @@
   
           ! Diffusivity in km2/hr
         Khz_meso_next_step_MetP_sp(i,j,k) = real(KH_SmagC*LES_LengthScale*LES_TimeScale,kind=sp)
-  
-            enddo !k
+              enddo !k
           enddo !j
         enddo !i
       endif
@@ -992,12 +1175,30 @@
 
       end subroutine Eddy_diff
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Calc_Vert_Diff
+!
+!  Called from: Set_VarDiffV_Meso
+!  Arguments: last_or_next
+!    none
+!
+!  This subroutine loops through all the nodes of the NWP subgrid and calculates
+!  the vertical and horizontal diffusivities based on the atmospheric layer and
+!  on the model specifications. This subroutine will work on either the next
+!  or the last Met step.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Calc_Vert_Diff(last_or_next)
 
       use global_param,  only : &
          KM_2_M,HR_2_S,KM_2_M,DEG2RAD
+
+      use Atmosphere,    only : &
+         Ri_meso_last_step_MetP_sp,Ri_meso_next_step_MetP_sp, &
+         PBLH_meso_last_step_Met_sp,PBLH_meso_next_step_Met_sp,&
+         FricVel_meso_last_step_Met_sp,FricVel_meso_next_step_Met_sp
 
       use MetReader,     only : &
         nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,MR_geoH_metP_next,y_submet_sp,&
@@ -1015,7 +1216,6 @@
       real(kind=ip) :: dv_dz_col(np_fullmet)
       real(kind=ip) :: FricVel
       real(kind=ip) :: Kv_col(np_fullmet)
-!      real(kind=ip) :: L_MonOb
       real(kind=ip) :: PBLz
       real(kind=ip) :: Phi
       real(kind=ip) :: Fc
@@ -1152,7 +1352,19 @@
 
       end subroutine Calc_Vert_Diff
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Set_VarDiffH_Meso
+!
+!  Called from: Ash3d.F90
+!  Arguments: 
+!    Load_MesoSteps,Interval_Frac
+!
+!  This subroutine calls MetReader routines to calculate velocity gradiants, then
+!  calls Eddy_diff to get Kh at the Met steps. Finally, it interpolates Kh from the
+!  Met steps to kx,ky on the time step in question.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Set_VarDiffH_Meso(Load_MesoSteps,Interval_Frac)
 
@@ -1279,7 +1491,17 @@
 
       end subroutine Set_VarDiffH_Meso
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Set_VarDiffV_Meso
+!
+!  Called from: Ash3d.F90
+!  Arguments: 
+!    Load_MesoSteps,Interval_Frac
+!
+!  This subroutine 
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Set_VarDiffV_Meso(Load_MesoSteps,Interval_Frac)
 
@@ -1293,7 +1515,11 @@
          kz
 
       use Atmosphere,    only : &
-           Set_VirtPotenTemp
+         Set_VirtPotenTemp, &
+         Ri_meso_last_step_MetP_sp,Ri_meso_next_step_MetP_sp, &
+         FricVel_meso_last_step_Met_sp,FricVel_meso_next_step_Met_sp,  &
+         PBLH_meso_last_step_Met_sp,    PBLH_meso_next_step_Met_sp,      &
+         L_MonOb_meso_last_step_Met_sp, L_MonOb_meso_next_step_Met_sp
 
       use MetReader,     only : &
          MR_iMetStep_Now,MR_dum3d_MetP,MR_dum3d_compH,&
@@ -1385,8 +1611,17 @@
 
       end subroutine Set_VarDiffV_Meso
 
-!******************************************************************************
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Calc_Ri
+!
+!  Called from: 
+!  Arguments: last_or_next
+!    none
+!
+!  This subroutine 
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Calc_Ri(last_or_next)
 
@@ -1396,6 +1631,7 @@
       use Atmosphere,    only : &
 !         AirSH_meso_last_step_MetP_sp,AirSH_meso_next_step_MetP_sp,&
 !         AirTemp_meso_last_step_MetP_sp,AirTemp_meso_next_step_MetP_sp,&
+         Ri_meso_last_step_MetP_sp,Ri_meso_next_step_MetP_sp,&
          AirVPTemp_meso_last_step_MetP_sp,AirVPTemp_meso_next_step_MetP_sp
 !         R_GAS_DRYAIR,CP_AIR,R_GAS_WATVAP
 
@@ -1490,7 +1726,17 @@
 
       end subroutine Calc_Ri
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Calc_SurfaceRoughnessLength
+!
+!  Called from: 
+!  Arguments: None
+!    none
+!
+!  This subroutine 
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Calc_SurfaceRoughnessLength
 
@@ -1514,12 +1760,28 @@
 
       end subroutine Calc_SurfaceRoughnessLength
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Calc_SurfaceFrictionVelocity
+!
+!  Called from: 
+!  Arguments: last_or_next
+!    none
+!
+!  This subroutine 
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Calc_SurfaceFrictionVelocity(last_or_next)
 
       use global_param,  only : &
          EPS_SMALL,KM_2_M
+
+      use Atmosphere,    only : &
+         Ri_meso_last_step_MetP_sp,Ri_meso_next_step_MetP_sp, &
+         PBLH_meso_last_step_Met_sp,PBLH_meso_next_step_Met_sp,&
+         FricVel_meso_last_step_Met_sp,FricVel_meso_next_step_Met_sp, &
+         L_MonOb_meso_last_step_Met_sp,L_MonOb_meso_next_step_Met_sp
 
       use MetReader,     only : &
          Met_var_IsAvailable,MR_iMetStep_Now,np_fullmet,MR_iMetStep_Now,MR_Topo_met,&
@@ -1651,7 +1913,17 @@
 
       end subroutine Calc_SurfaceFrictionVelocity
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Calc_PBLH
+!
+!  Called from: 
+!  Arguments: last_or_next
+!    none
+!
+!  This subroutine 
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Calc_PBLH(last_or_next)
 
@@ -1659,7 +1931,11 @@
          EPS_SMALL,KM_2_M,DEG2RAD
 
       use Atmosphere,    only : &
-         AirVPTemp_meso_last_step_MetP_sp,AirVPTemp_meso_next_step_MetP_sp
+         AirVPTemp_meso_last_step_MetP_sp,AirVPTemp_meso_next_step_MetP_sp, &
+         Ri_meso_last_step_MetP_sp,Ri_meso_next_step_MetP_sp, &
+         PBLH_meso_last_step_Met_sp,PBLH_meso_next_step_Met_sp ,&
+         L_MonOb_meso_last_step_Met_sp,L_MonOb_meso_next_step_Met_sp, &
+         FricVel_meso_last_step_Met_sp,FricVel_meso_next_step_Met_sp
 
       use MetReader,     only : &
          nx_submet,ny_submet,np_fullmet,Met_var_IsAvailable,&
@@ -1830,15 +2106,26 @@
 
       end subroutine Calc_PBLH
 
-!!******************************************************************************
-
-
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Calc_Monin_Length
+!
+!  Called from: 
+!  Arguments: last_or_next
+!    none
+!
+!  This subroutine 
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Calc_Monin_Length(last_or_next)
 
       use global_param,  only : &
          EPS_SMALL,KM_2_M
+
+      use Atmosphere,    only : &
+         Ri_meso_last_step_MetP_sp,Ri_meso_next_step_MetP_sp,&
+         L_MonOb_meso_last_step_Met_sp,L_MonOb_meso_next_step_Met_sp
 
       use MetReader,     only : &
          nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,MR_geoH_metP_next,&
@@ -1905,7 +2192,17 @@
 
       end subroutine Calc_Monin_Length
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Fc_Louis
+!
+!  Called from: 
+!  Arguments: Ri
+!    none
+!
+!  This function 
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function Fc_Louis(Ri,zonz0)
 
@@ -1939,7 +2236,17 @@
 
       end function Fc_Louis
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Fc_Jac
+!
+!  Called from: 
+!  Arguments: Ri
+!    none
+!
+!  This function
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function Fc_Jac(Ri)
 
@@ -1969,7 +2276,17 @@
 
       end function Fc_Jac
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Fc_Betts
+!
+!  Called from: 
+!  Arguments: Ri
+!    none
+!
+!  This function
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function Fc_Betts(Ri)
 
@@ -1995,7 +2312,17 @@
 
       end function Fc_Betts
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Fc_Hong
+!
+!  Called from: 
+!  Arguments: Ri
+!    none
+!
+!  This function
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function Fc_Hong(Ri)
 
@@ -2021,7 +2348,17 @@
 
       end function Fc_Hong
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Fc_Collins
+!
+!  Called from: 
+!  Arguments: Ri
+!    none
+!
+!  This function
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function Fc_Collins(Ri)
 
@@ -2048,7 +2385,17 @@
 
       end function Fc_Collins
 
-!!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Fc_PMB
+!
+!  Called from: 
+!  Arguments: Ri,ml,z
+!    none
+!
+!  This function
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function Fc_PMB(Ri,ml,z)
 
@@ -2086,7 +2433,17 @@
 
       end function Fc_PMB
 
-!!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  MixLen
+!
+!  Called from: 
+!  Arguments: z
+!    none
+!
+!  This function
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function MixLen(z)
 
@@ -2113,7 +2470,17 @@
 
       end function MixLen
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Phi_WindShear_Similarity
+!
+!  Called from: 
+!  Arguments: z_on_L
+!    none
+!
+!  This function
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function Phi_WindShear_Similarity(z_on_L)
 
@@ -2138,7 +2505,17 @@
 
       end function Phi_WindShear_Similarity
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Psi_WindShear_Similarity
+!
+!  Called from: 
+!  Arguments: z_on_L
+!    none
+!
+!  This function
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function Psi_WindShear_Similarity(z_on_L)
 
@@ -2170,6 +2547,8 @@
 
       end function Psi_WindShear_Similarity
 
-!******************************************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       end module Diffusivity_Variable
+
+!##############################################################################

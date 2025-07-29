@@ -46,32 +46,60 @@
       real(kind=sp),dimension(:,:,:),pointer,public :: AirDens_meso_last_step_MetP_sp   => null()
       real(kind=sp),dimension(:,:,:),pointer,public :: AirVisc_meso_last_step_MetP_sp   => null()
       real(kind=sp),dimension(:,:,:),pointer,public :: AirLamb_meso_last_step_MetP_sp   => null()
-      real(kind=sp),dimension(:,:,:),pointer,public :: AirDens_meso_next_step_MetP_sp   => null()
-      real(kind=sp),dimension(:,:,:),pointer,public :: AirVisc_meso_next_step_MetP_sp   => null()
-      real(kind=sp),dimension(:,:,:),pointer,public :: AirLamb_meso_next_step_MetP_sp   => null()
       real(kind=sp),dimension(:,:,:),pointer,public :: AirTemp_meso_last_step_MetP_sp   => null()
       real(kind=sp),dimension(:,:,:),pointer,public :: AirVPTemp_meso_last_step_MetP_sp => null()
       real(kind=sp),dimension(:,:,:),pointer,public :: AirRelH_meso_last_step_MetP_sp   => null()
       real(kind=sp),dimension(:,:,:),pointer,public :: AirSH_meso_last_step_MetP_sp     => null()
+       ! Boundary Layer variables are not needed for most runs, but may be needed by optional modules
+      real(kind=sp),dimension(:,:,:),pointer,public :: Ri_meso_last_step_MetP_sp        => null()
+      real(kind=sp),dimension(:,:)  ,pointer,public :: PBLH_meso_last_step_Met_sp       => null()
+      real(kind=sp),dimension(:,:)  ,pointer,public :: L_MonOb_meso_last_step_Met_sp    => null()
+      real(kind=sp),dimension(:,:)  ,pointer,public :: FricVel_meso_last_step_Met_sp    => null()
+      real(kind=sp),dimension(:,:)  ,pointer,public :: v10x_meso_last_step_MetP_sp      => null()
+      real(kind=sp),dimension(:,:)  ,pointer,public :: v10y_meso_last_step_MetP_sp      => null()
+
+      real(kind=sp),dimension(:,:,:),pointer,public :: AirDens_meso_next_step_MetP_sp   => null()
+      real(kind=sp),dimension(:,:,:),pointer,public :: AirVisc_meso_next_step_MetP_sp   => null()
+      real(kind=sp),dimension(:,:,:),pointer,public :: AirLamb_meso_next_step_MetP_sp   => null()
       real(kind=sp),dimension(:,:,:),pointer,public :: AirTemp_meso_next_step_MetP_sp   => null()
       real(kind=sp),dimension(:,:,:),pointer,public :: AirVPTemp_meso_next_step_MetP_sp => null()
       real(kind=sp),dimension(:,:,:),pointer,public :: AirRelH_meso_next_step_MetP_sp   => null()
       real(kind=sp),dimension(:,:,:),pointer,public :: AirSH_meso_next_step_MetP_sp     => null()
+      real(kind=sp),dimension(:,:,:),pointer,public :: Ri_meso_next_step_MetP_sp        => null()
+      real(kind=sp),dimension(:,:)  ,pointer,public :: PBLH_meso_next_step_Met_sp       => null()
+      real(kind=sp),dimension(:,:)  ,pointer,public :: L_MonOb_meso_next_step_Met_sp    => null()
+      real(kind=sp),dimension(:,:)  ,pointer,public :: FricVel_meso_next_step_Met_sp    => null()
+      real(kind=sp),dimension(:,:)  ,pointer,public :: v10x_meso_next_step_MetP_sp      => null()
+      real(kind=sp),dimension(:,:)  ,pointer,public :: v10y_meso_next_step_MetP_sp      => null()
 #else
       real(kind=sp),dimension(:,:,:),allocatable,public :: AirDens_meso_last_step_MetP_sp
       real(kind=sp),dimension(:,:,:),allocatable,public :: AirVisc_meso_last_step_MetP_sp
       real(kind=sp),dimension(:,:,:),allocatable,public :: AirLamb_meso_last_step_MetP_sp
-      real(kind=sp),dimension(:,:,:),allocatable,public :: AirDens_meso_next_step_MetP_sp
-      real(kind=sp),dimension(:,:,:),allocatable,public :: AirVisc_meso_next_step_MetP_sp
-      real(kind=sp),dimension(:,:,:),allocatable,public :: AirLamb_meso_next_step_MetP_sp
       real(kind=sp),dimension(:,:,:),allocatable,public :: AirTemp_meso_last_step_MetP_sp
       real(kind=sp),dimension(:,:,:),allocatable,public :: AirVPTemp_meso_last_step_MetP_sp
       real(kind=sp),dimension(:,:,:),allocatable,public :: AirRelH_meso_last_step_MetP_sp
       real(kind=sp),dimension(:,:,:),allocatable,public :: AirSH_meso_last_step_MetP_sp
+       ! Boundary Layer variables are not needed for most runs, but may be needed by optional modules
+      real(kind=sp),dimension(:,:,:),allocatable,public :: Ri_meso_last_step_MetP_sp
+      real(kind=sp),dimension(:,:)  ,allocatable,public :: PBLH_meso_last_step_Met_sp
+      real(kind=sp),dimension(:,:)  ,allocatable,public :: L_MonOb_meso_last_step_Met_sp
+      real(kind=sp),dimension(:,:)  ,allocatable,public :: FricVel_meso_last_step_Met_sp
+      real(kind=sp),dimension(:,:)  ,allocatable,public :: v10x_meso_last_step_MetP_sp
+      real(kind=sp),dimension(:,:)  ,allocatable,public :: v10y_meso_last_step_MetP_sp
+
+      real(kind=sp),dimension(:,:,:),allocatable,public :: AirDens_meso_next_step_MetP_sp
+      real(kind=sp),dimension(:,:,:),allocatable,public :: AirVisc_meso_next_step_MetP_sp
+      real(kind=sp),dimension(:,:,:),allocatable,public :: AirLamb_meso_next_step_MetP_sp
       real(kind=sp),dimension(:,:,:),allocatable,public :: AirTemp_meso_next_step_MetP_sp
       real(kind=sp),dimension(:,:,:),allocatable,public :: AirVPTemp_meso_next_step_MetP_sp
       real(kind=sp),dimension(:,:,:),allocatable,public :: AirRelH_meso_next_step_MetP_sp
       real(kind=sp),dimension(:,:,:),allocatable,public :: AirSH_meso_next_step_MetP_sp
+      real(kind=sp),dimension(:,:,:),allocatable,public :: Ri_meso_next_step_MetP_sp
+      real(kind=sp),dimension(:,:)  ,allocatable,public :: PBLH_meso_next_step_Met_sp
+      real(kind=sp),dimension(:,:)  ,allocatable,public :: L_MonOb_meso_next_step_Met_sp
+      real(kind=sp),dimension(:,:)  ,allocatable,public :: FricVel_meso_next_step_Met_sp
+      real(kind=sp),dimension(:,:)  ,allocatable,public :: v10x_meso_next_step_MetP_sp
+      real(kind=sp),dimension(:,:)  ,allocatable,public :: v10y_meso_next_step_MetP_sp
 #endif
 
       real(kind=ip), parameter,public :: R_GAS_DRYAIR = 286.98_ip       ! Specific dry air gas constant of R=286.98 J /(kg K)

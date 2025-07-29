@@ -207,7 +207,7 @@
 !  Arguments:
 !    none
 !
-!  This subroutine reads the input block specifying how topography shoule be
+!  This subroutine reads the input block specifying how topography should be
 !  loaded and used.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
