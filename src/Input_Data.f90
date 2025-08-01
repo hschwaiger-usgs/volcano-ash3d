@@ -1120,8 +1120,7 @@
            get_ESP
 
       use Diffusion,     only : &
-         diffusivity_horz,diffusivity_vert,Imp_fac,Imp_DT_fac, &
-           Allocate_Diff
+         diffusivity_horz,diffusivity_vert,Imp_fac,Imp_DT_fac
 
       use projection,    only : &
          PJ_iprojflag,PJ_k0,PJ_lam0,PJ_lam1,PJ_lam2,PJ_phi0,PJ_phi1,PJ_phi2,PJ_Re,&
@@ -1848,6 +1847,7 @@
         useDiffusion = .false.
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"Not using turbulent diffusivity."
+          write(outlog(io),*)"Note: Diffusivity might be reactivated in an optional module block below."
         endif;enddo
       elseif(diffusivity_horz.lt.0.0)then
         do io=1,2;if(VB(io).le.verbosity_error)then
@@ -4200,7 +4200,7 @@
    
         ! Write out Vz calculation scheme used
         if(useVz_rhoG)then
-          write(outlog(io),*)"useVz_rhoG=.true. : Vz calculated PVV (if avail.) and density"
+          write(outlog(io),*)"useVz_rhoG=.true. : Vz calculated via PVV (if avail.) and density"
         else
           write(outlog(io),*)"Vz calculated via PVV and finite-differencing dp/dz"
         endif

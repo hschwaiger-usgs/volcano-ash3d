@@ -162,8 +162,8 @@
         subroutine MesoInterpolater(TimeNow,Load_MesoSteps,Interval_Frac)
           integer,parameter  :: dp         = 8 ! Double precision
           real(kind=dp),intent(in)    :: TimeNow
-          real(kind=dp),intent(out)   :: Interval_Frac
           logical      ,intent(inout) :: Load_MesoSteps
+          real(kind=dp),intent(out)   :: Interval_Frac
         end subroutine MesoInterpolater
         subroutine output_results
         end subroutine output_results
@@ -315,7 +315,7 @@
       ! interpolated on the start time
       time           = 0.0_ip
       Load_MesoSteps = .true.
-      Interval_Frac  = 0.0_8
+      Interval_Frac  = 0.0_8  ! Interval_Frac is calculated and returned by MesoInterpolater
       call MesoInterpolater(time , Load_MesoSteps , Interval_Frac)
       ! Calculate the fall time of each grain size
       do io=1,2;if(VB(io).le.verbosity_info)then

@@ -1026,7 +1026,8 @@
         endif
         if(i.eq.ii+1)then
           ! Vertical diffusivity is already on the comp grid
-          var_User3d_XYZ(1:nxmax,1:nymax,1:nzmax,indx) = kz(1:nxmax,1:nymax,1:nzmax)*KM_2_M*KM_2_M/HR_2_S
+          !var_User3d_XYZ(1:nxmax,1:nymax,1:nzmax,indx) = kz(1:nxmax,1:nymax,1:nzmax)*KM_2_M*KM_2_M/HR_2_S
+          var_User3d_XYZ(1:nxmax,1:nymax,1:nzmax,indx) = kz(1:nxmax,1:nymax,1:nzmax)/M2PS_2_KM2PHR
         endif
         if(i.eq.ii+2)then
            ! Ri just exists on the MetP grid for output
@@ -1368,6 +1369,9 @@
 
       subroutine Set_VarDiffH_Meso(Load_MesoSteps,Interval_Frac)
 
+      use global_param,  only : &
+         useDiffusion
+
       use mesh,          only : &
          nxmax,nymax,nzmax
 
@@ -1388,6 +1392,8 @@
 
       logical,save  :: first_time = .true.
       real(kind=sp) :: M_2_KM = 1.0e-3_sp
+
+      if(.not.useDiffusion)useDiffusion = .true.
 
       if(Load_MesoSteps)then
         if(first_time)then
@@ -1506,7 +1512,7 @@
       subroutine Set_VarDiffV_Meso(Load_MesoSteps,Interval_Frac)
 
       use global_param,  only : &
-         M2PS_2_KM2PHR
+         M2PS_2_KM2PHR,useDiffusion
 
       use mesh,          only : &
          nxmax,nymax,nzmax
@@ -1516,6 +1522,8 @@
 
       use Atmosphere,    only : &
          Set_VirtPotenTemp, &
+         AirTemp_meso_last_step_MetP_sp,AirTemp_meso_next_step_MetP_sp,&
+         AirVPTemp_meso_last_step_MetP_sp,AirVPTemp_meso_next_step_MetP_sp, &
          Ri_meso_last_step_MetP_sp,Ri_meso_next_step_MetP_sp, &
          FricVel_meso_last_step_Met_sp,FricVel_meso_next_step_Met_sp,  &
          PBLH_meso_last_step_Met_sp,    PBLH_meso_next_step_Met_sp,      &
@@ -1523,6 +1531,7 @@
 
       use MetReader,     only : &
          MR_iMetStep_Now,MR_dum3d_MetP,MR_dum3d_compH,&
+         nx_submet,ny_submet,np_fullmet,p_fullmet_sp, &
            MR_Regrid_MetP_to_CompH
 
       implicit none
@@ -1531,6 +1540,8 @@
       real(kind=dp),intent(in) :: Interval_Frac
 
       logical,save :: first_time = .true.
+
+      integer :: i,j
 
       ! To set the vertical diffusivity, we need to:
       !  1. Calculate the Richardson Number on MetP grid
@@ -1546,15 +1557,19 @@
       ! to evaluate everything on the computational grid at each time, but this
       ! is probably overkill.
 
+      if(.not.useDiffusion)useDiffusion = .true.
+
       if(Load_MesoSteps)then
         if(first_time)then
+          call Calc_SurfaceRoughnessLength
           !  Populate values for the 'last' step
           call Set_VirtPotenTemp(0)
           call Calc_Ri(0)
           call Calc_Monin_Length(0)
-          call Calc_SurfaceRoughnessLength
           call Calc_SurfaceFrictionVelocity(0)
           call Calc_PBLH(0)
+
+!          write(115,*)PBLH_meso_next_step_Met_sp
 
           call Calc_Vert_Diff(0)
           MR_dum3d_MetP = Kv_meso_last_step_MetP_sp
@@ -1562,11 +1577,11 @@
           Kv_meso_last_step_sp = MR_dum3d_compH
 
           ! The calls above with parameter 0 sets _last_ directly
-          Ri_meso_next_step_MetP_sp     = Ri_meso_last_step_MetP_sp
-          L_MonOb_meso_next_step_Met_sp = L_MonOb_meso_last_step_Met_sp
-          FricVel_meso_next_step_Met_sp = FricVel_meso_last_step_Met_sp
-          PBLH_meso_next_step_Met_sp    = PBLH_meso_last_step_Met_sp
-          Kv_meso_next_step_sp          = Kv_meso_last_step_sp
+!          Ri_meso_next_step_MetP_sp     = Ri_meso_last_step_MetP_sp
+!          L_MonOb_meso_next_step_Met_sp = L_MonOb_meso_last_step_Met_sp
+!          FricVel_meso_next_step_Met_sp = FricVel_meso_last_step_Met_sp
+!          PBLH_meso_next_step_Met_sp    = PBLH_meso_last_step_Met_sp
+!          Kv_meso_next_step_sp          = Kv_meso_last_step_sp
 
           first_time = .false.
         else
@@ -1577,24 +1592,44 @@
           PBLH_meso_last_step_Met_sp    = PBLH_meso_next_step_Met_sp
           Kv_meso_last_step_sp          = Kv_meso_next_step_sp
         endif ! first_time
+
+        ! For all subsequent calls, copy 'next' to 'last'
+!        Ri_meso_last_step_MetP_sp     = Ri_meso_next_step_MetP_sp
+!        L_MonOb_meso_last_step_Met_sp = L_MonOb_meso_next_step_Met_sp
+!        FricVel_meso_last_step_Met_sp = FricVel_meso_next_step_Met_sp
+!        PBLH_meso_last_step_Met_sp    = PBLH_meso_next_step_Met_sp
+!        Kv_meso_last_step_sp          = Kv_meso_next_step_sp
+
           ! Populate Ri for the 'next' step
         call Set_VirtPotenTemp(1)
         call Calc_Ri(1)                           ! sets Ri_meso_next_step_MetP_sp
-        call Calc_Monin_Length(1)
+        call Calc_Monin_Length(1)                 !  and L_MonOb_meso_next_step_Met_sp
         call Calc_SurfaceFrictionVelocity(1)      ! sets FricVel_meso_next_step_Met_sp
         call Calc_PBLH(1)
-                                                  !  and L_MonOb_meso_next_step_Met_sp
+
         call Calc_Vert_Diff(1)
-        MR_dum3d_MetP = Kv_meso_next_step_MetP_sp
+        MR_dum3d_MetP = Kv_meso_next_step_MetP_sp * M2PS_2_KM2PHR
         call MR_Regrid_MetP_to_CompH(MR_iMetStep_Now+1)
         Kv_meso_next_step_sp = MR_dum3d_compH
 
+!        do i=1,nx_submet
+!         do j=1,ny_submet
+!          write(115,*)i,j,PBLH_meso_last_step_Met_sp(i,j),PBLH_meso_next_step_Met_sp(i,j)
+!          write(115,*)i,j,FricVel_meso_last_step_Met_sp(i,j),FricVel_meso_next_step_Met_sp(i,j)
+
+!          write(115,*)i,j,AirTemp_meso_last_step_MetP_sp(i,j,1),AirTemp_meso_next_step_MetP_sp(i,j,1)
+!          write(115,*)i,j,Ri_meso_last_step_MetP_sp(i,j,1),Ri_meso_next_step_MetP_sp(i,j,1)
+!          write(115,*)i,j,L_MonOb_meso_last_step_Met_sp(i,j,1),L_MonOb_meso_next_step_Met_sp(i,j,1)
+!          write(115,*)i,j,Kv_meso_last_step_sp(i,j,1),Kv_meso_next_step_sp(i,j,1)
+!         enddo
+!        enddo
+
       endif
 
-      kz(1:nxmax,1:nymax,1:nzmax) = real(Kv_meso_last_step_sp(:,:,:),kind=ip) + &
+      kz(1:nxmax,1:nymax,1:nzmax) = real( Kv_meso_last_step_sp(:,:,:),kind=ip) + &
                                     real((Kv_meso_next_step_sp(:,:,:) - &
                                           Kv_meso_last_step_sp(:,:,:)),kind=ip) * &
-                                    real(Interval_Frac,kind=ip) * M2PS_2_KM2PHR
+                                    real(Interval_Frac,kind=ip)
       ! Set boundary kz
         ! Bottom
       kz(0:nxmax+1,0:nymax+1,0) = kz(0:nxmax+1,0:nymax+1,1)

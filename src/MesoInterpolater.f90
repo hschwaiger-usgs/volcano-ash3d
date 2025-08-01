@@ -34,7 +34,8 @@
       use io_units
 
       use global_param,    only : &
-         EPS_SMALL,useFastDt,FastDt_suppress,MPS_2_KMPHR,useCalcFallVel
+         EPS_SMALL,useFastDt,FastDt_suppress,MPS_2_KMPHR, &
+         useTemperature,useCalcFallVel
 
       use mesh,            only : &
          nxmax,nymax,nzmax
@@ -66,7 +67,7 @@
            umbrella_winds
 
       use Atmosphere,      only : &
-           Set_Atmosphere_Meso
+           Read_Next_MesoStep_TQ
 
       use MetReader,       only : &
          MR_iMetStep_Now,&
@@ -81,8 +82,8 @@
       implicit none
 
       real(kind=dp),intent(in)    :: TimeNow                ! current time, in hours since start of simulation
-      real(kind=dp),intent(out)   :: Interval_Frac
       logical      ,intent(inout) :: Load_MesoSteps
+      real(kind=dp),intent(out)   :: Interval_Frac
 
       integer           :: i,j,k
       character(len=1)  :: answer
@@ -101,16 +102,15 @@
         subroutine Adjust_DT(mesostep)
           logical, intent(in), optional :: mesostep
         end subroutine Adjust_DT
-        subroutine Read_NextMesoStep(Load_MesoSteps)
-          logical, intent(inout) :: Load_MesoSteps
-        end subroutine Read_NextMesoStep
+        subroutine Read_Next_MesoStep_HUVW
+        end subroutine Read_Next_MesoStep_HUVW
       END INTERFACE
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine MesoInterpolator"
       endif;enddo
 
-      TimeNow_fromRefTime = SimStartHour+TimeNow  ! hours since reference time (1-1-1900)
+      TimeNow_fromRefTime = SimStartHour+TimeNow  ! hours since reference time (1-1-BaseYear)
       ! MesoInterpolater is called once before the time loop in order to
       ! initilize velocities on the computational grid and to determine the
       ! start time relative to the MetSteps
@@ -134,7 +134,10 @@
         endif;enddo
 
         call cpu_time(tw1)
-        call Read_NextMesoStep(Load_MesoSteps)
+        if(useTemperature)then
+          call Read_Next_MesoStep_TQ(.true.)
+        endif
+        call Read_Next_MesoStep_HUVW
         call cpu_time(tw2)
         tw_tot = tw_tot + (tw2-tw1)
 
@@ -183,7 +186,10 @@
         ! Copy the timestep from next to last
         dt_meso_last = dt_meso_next
         call cpu_time(tw1)
-        call Read_NextMesoStep(Load_MesoSteps)
+        if(useTemperature)then
+          call Read_Next_MesoStep_TQ
+        endif
+        call Read_Next_MesoStep_HUVW
         call cpu_time(tw2)
         tw_tot = tw_tot + (tw2-tw1)
 
@@ -359,7 +365,7 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!  Read_NextMesoStep(Load_MesoSteps)
+!  Read_Next_MesoStep_HUVW
 !
 !  Called from: MesoInterpolater
 !  Arguments:
@@ -374,7 +380,7 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine Read_NextMesoStep(Load_MesoSteps)
+      subroutine Read_Next_MesoStep_HUVW
 
       use precis_param
 
@@ -402,7 +408,7 @@
 
       use Atmosphere,      only : &
          AirDens_meso_next_step_MetP_sp, &
-           Set_Atmosphere_Meso
+           Read_Next_MesoStep_TQ
 
       use MetReader,       only : &
          MR_dum3d_compH,MR_dum3d_compH_2,MR_iMetStep_Now,&
@@ -417,7 +423,7 @@
 
       implicit none
 
-      logical      ,intent(inout) :: Load_MesoSteps
+      !logical      ,intent(inout) :: Load_MesoSteps
 
       logical,save :: first_time = .true.
 
@@ -426,7 +432,7 @@
       integer           :: istep
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
-        write(outlog(io),*)"     Entered Subroutine Read_NextMesoStep"
+        write(outlog(io),*)"     Entered Subroutine Read_Next_MesoStep_HUVW"
       endif;enddo
 
         ! Before reading state variables, we need to load the height grid
@@ -509,15 +515,17 @@
 
       vf_meso_last_step_sp = vf_meso_next_step_sp
       ! Only bother getting Vz if it is available in the wind files
-      if(useTemperature)then
-        call Set_Atmosphere_Meso(Load_MesoSteps,1.0_ip,first_time)
-      endif
+!      if(useTemperature)then
+!        !call Set_Atmosphere_Meso(Load_MesoSteps,1.0_ip,first_time)
+!        call Read_NextMesoStep_T
+!      endif
       if(Met_var_IsAvailable(4))then
         if(useTemperature.and.useVz_rhoG)then
           ! Now that we have temperature and density, we can get a better Vz
           ivar = 7 ! Pressure Vertical Velocity
           if(Met_var_IsAvailable(ivar))then
             call MR_Read_3d_MetP_Variable(ivar,istep)
+            ! HFS: We need to be careful here that we apply the right air density for Pre-steps
             MR_dum3d_MetP = MR_dum3d_MetP/      &
              real((-AirDens_meso_next_step_MetP_sp*GRAV),kind=sp)
             call MR_Regrid_MetP_to_CompH(istep)
@@ -577,6 +585,6 @@
 
       return
 
-      end subroutine Read_NextMesoStep
+      end subroutine Read_Next_MesoStep_HUVW
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
