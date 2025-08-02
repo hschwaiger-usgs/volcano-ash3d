@@ -192,7 +192,7 @@
          cdf_comment,cdf_title,cdf_institution,cdf_source,cdf_source_url,cdf_history,cdf_references,&
          cdf_run_class,cdf_url,infile,concenfile,&
          nvar_User2d_static_XY,nvar_User2d_XY,nvar_User3d_XYGs,nvar_User3d_XYZ,&
-         nvar_User4d_XYZGs,Write_PT_Data,Write_PR_Data
+         nvar_User4d_XYZGs,nvar_User_charlines,Write_PT_Data,Write_PR_Data
 
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,x_cc_pd,y_cc_pd,z_cc_pd,lon_cc_pd,lat_cc_pd,s_cc_pd,&
@@ -222,6 +222,7 @@
          var_User3d_XYZ_MissVal,var_User3d_XYZ_FillVal,var_User3d_XYZ,&
          var_User4d_XYZGs_name,var_User4d_XYZGs_unit,var_User4d_XYZGs_lname,&
          var_User4d_XYZGs_MissVal,var_User4d_XYZGs_FillVal,var_User4d_XYZGs,&
+         var_User_charlines, &
          DEPO_THRESH,DEPRATE_THRESH,CLOUDCON_THRESH,CLOUDLOAD_THRESH,&
          THICKNESS_THRESH,DBZ_THRESH,CLOUDCON_GRID_THRESH,&
          DBZ_THRESH,USE_OPTMOD_VARS,useRestartVars,&
@@ -278,6 +279,7 @@
       !character(len=3)  :: answer
       integer           :: iostatus
       character(len=120):: iomessage
+      character(len=6)  :: blkstr
 
       INTERFACE
         character (len=13) function HS_yyyymmddhhmm_since(HoursSince,byear,useLeaps)
@@ -697,8 +699,11 @@
       else
         nSTAT = nf90_put_att(ncid,nf90_global,"useVz_rhoG","false")
       endif
-
-
+      ! Add optional block lines
+      do i=1,nvar_User_charlines
+        write(blkstr,'(a4,i2.2)')'BKLN',i
+        nSTAT = nf90_put_att(ncid,nf90_global,blkstr,var_User_charlines(i))
+      enddo
 
       ! Define dimensions
         ! t,z,y,x
@@ -2832,7 +2837,7 @@
         if(useCalcFallVel)then
           dum1d_out(1:n_gs_max) = 0.0_op
         else
-          dum1d_out(1:n_gs_max) = Tephra_v_s(1:n_gs_max)
+          dum1d_out(1:n_gs_max) = real(Tephra_v_s(1:n_gs_max),kind=op)
         endif
         nSTAT=nf90_put_var(ncid,gsfv_var_id,dum1d_out,(/1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var gs_fv")

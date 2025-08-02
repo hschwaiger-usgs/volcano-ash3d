@@ -20,7 +20,7 @@ ASH3DPLOT=4 ./Ash3d_PostProc ${infile1} 5 3
 mv Ash3d_Deposit____final.png Ash3d_Deposit____final_LL.png
 
 # Generate vertical profile plots using plplot (change to ASH3DPLOT=3 for gnuplot)
-ASH3DPLOT=2 ./Ash3d_PostProc ${infile1} 16 3
+ASH3DPLOT=2 ./Ash3d_PostProc ${infile2} 16 3
 mv gnupl_0001.png gnupl_0001_PJ.png
 mv gnupl_0002.png gnupl_0002_PJ.png
 mv gnupl_0003.png gnupl_0003_PJ.png

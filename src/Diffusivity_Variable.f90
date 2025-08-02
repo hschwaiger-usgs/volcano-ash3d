@@ -45,27 +45,35 @@
 !      function Psi_WindShear_Similarity
 !
 !
+! Line 1: Optional module specifier
 ! OPTMOD=VARDIFF
-! Line 1: Horizontal diff
+! Line 2: indicates whether or not to write VarDiff variables to the output file
+!  yes
+! Line 3: Horizontal diff
 !  yes 1 500.0     # 1=const ; value in m2/s
 !  yes 2 0.2       # 2=Smagorinsky ; C
 !  yes 3 0.2       # 3=Pielke      ; C
-! Line 2: Vertical diff
+! Line 4: Vertical diff
 !  yes
+! Line 5: Kv BL parameters
 !  0 B, alpha, beta, gamma, pexp
 !  1 500.0         # BL model 1=const ; value
 !  2               #          2=no BL, only free-air throughout
 !  3 [1,2]         #          3=Troen and Mahrt
 !  4 [1,2]         #          4=Ulke
 !  5               #          5=Shir / Businger,Ayer
+! Line 6: Kv Free-air parameters
 !  1 500.0         # Free-Air 1=const ; value
 !  2               #          2=F(Ri)=Louis 1979
 !  3               #          3=F(Ri)=Stull 1988
 !  4               #          4=F(Ri)=Betts 1996
 !  5               #          5=F(Ri)=Hong 1996
 !  6               #          6=F(Ri,z)=Collins 2004
+! Line 7: 
 !0.4                         # vonKarman
+! Line 8: 
 !30.0                        # LambdaC
+! Line 9:
 !0.25                        # RI_CRIT
 ! 
 !##############################################################################
@@ -119,7 +127,7 @@
       integer :: nvar_User3d_XYGs_VarDiff      = 0
       integer :: nvar_User3d_XYZ_VarDiff       = 0 ! If using Kh, then =1 khorz; if also Kz, then =3 kvert, Ri
       integer :: nvar_User4d_XYZGs_VarDiff     = 0
-      integer :: nvar_User_charlines_VarDiff   = 8
+      integer :: nvar_User_charlines_VarDiff   = 9
 
       character(len=30),dimension(:),allocatable :: temp_2d_name_VarDiff
       character(len=30),dimension(:),allocatable :: temp_2d_unit_VarDiff
@@ -134,7 +142,6 @@
       real(kind=op),    dimension(:),allocatable :: temp_3d_FillVal_VarDiff
       character(len=80),dimension(:),allocatable :: var_User_charlines_VarDiff
 
-
       ! These are used to keep track of which index in the global list, this
       ! modules output vars corespond to
       integer :: indx_User2d_static_XY_VarDiff
@@ -142,53 +149,34 @@
       integer :: indx_User3d_XYGs_VarDiff
       integer :: indx_User3d_XYZ_VarDiff
       integer :: indx_User4d_XYZGs_VarDiff
+      integer :: indx_User_charlines_VarDiff
 
       real(kind=ip) :: LES_L2ScaleCoeff
 
       ! 3d Variables needed on MetP grid
-      real(kind=sp),dimension(:,:,:)  ,allocatable :: dVel_dz_MetP_sp
+!      real(kind=sp),dimension(:,:,:)  ,allocatable :: dVel_dz_MetP_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: du_dx_MetP_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: du_dy_MetP_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: dv_dx_MetP_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: dv_dy_MetP_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: dV_dz_MetP_sp
-
-      ! HFS: Consider moving Ri, PBLH, L_MonOb, FricVel, TropoH,
-      !      SurfRoughLen, displacement height to Atmosphere.f90
-      !       These would still be allocated here if needed here
-
-        ! and at both meso steps (also MetP)
-!      real(kind=sp),dimension(:,:,:)  ,allocatable :: Ri_meso_last_step_MetP_sp
-!      real(kind=sp),dimension(:,:,:)  ,allocatable :: Ri_meso_next_step_MetP_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: Khz_meso_last_step_MetP_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: Khz_meso_next_step_MetP_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: Kv_meso_last_step_MetP_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: Kv_meso_next_step_MetP_sp
-!
-!      ! 2d variables needed at meso steps on Met grid
+
+      ! 2d variables needed at meso steps on Met grid
       real(kind=sp),dimension(:,:)    ,allocatable :: SurfRoughLen_Met_sp
-!      real(kind=sp),dimension(:,:)    ,allocatable :: PBLH_meso_last_step_Met_sp
-!      real(kind=sp),dimension(:,:)    ,allocatable :: PBLH_meso_next_step_Met_sp
-!      real(kind=sp),dimension(:,:)    ,allocatable :: L_MonOb_meso_last_step_Met_sp
-!      real(kind=sp),dimension(:,:)    ,allocatable :: L_MonOb_meso_next_step_Met_sp
-!      real(kind=sp),dimension(:,:)    ,allocatable :: FricVel_meso_last_step_Met_sp
-!      real(kind=sp),dimension(:,:)    ,allocatable :: FricVel_meso_next_step_Met_sp
-!      real(kind=sp),dimension(:,:)    ,allocatable :: v10x_meso_last_step_MetP_sp
-!      real(kind=sp),dimension(:,:)    ,allocatable :: v10y_meso_last_step_MetP_sp
-!      real(kind=sp),dimension(:,:)    ,allocatable :: v10x_meso_next_step_MetP_sp
-!      real(kind=sp),dimension(:,:)    ,allocatable :: v10y_meso_next_step_MetP_sp
 
       ! Variables needed on Comp grid (kx,y,z are already allocated)
-!      real(kind=sp),dimension(:,:)    ,allocatable :: FricVel_meso_last_step_sp
-!      real(kind=sp),dimension(:,:)    ,allocatable :: FricVel_meso_next_step_sp
-!      real(kind=ip),dimension(:,:)    ,allocatable :: FricVel_ip
       real(kind=sp),dimension(:,:,:)  ,allocatable :: Khz_meso_last_step_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: Khz_meso_next_step_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: Kv_meso_last_step_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: Kv_meso_next_step_sp
 
-      ! Both Khz adn Kv need U and V values on MetP grid so store local copies
-      ! Note: The core Ash3d code reads directly into the computational grid
+      ! Both Khz and Kv need U and V values on MetP grid so store local copies
+      ! Note: The core Ash3d code reads directly into the computational grid, bypassing
+      !       the MetP grid
       real(kind=sp),dimension(:,:,:)  ,allocatable :: vx_meso_last_step_MetP_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: vy_meso_last_step_MetP_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: vx_meso_next_step_MetP_sp
@@ -231,6 +219,13 @@
       integer            :: substr_pos
       real(kind=ip)      :: tmp
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine input_data_VarDiff"
+      endif;enddo
+
+      if(.not.allocated(var_User_charlines_VarDiff)) &
+               allocate(var_User_charlines_VarDiff(nvar_User_charlines_VarDiff))
+
       open(unit=10,file=infile,status='old',err=1900)
 
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -252,6 +247,8 @@
         endif
 1104    format(7x,a20)
       enddo
+      ! Found Line 1:
+      var_User_charlines_VarDiff(1) = trim(adjustl(linebuffer080))
 
       useVarDiffH = .false.
       useVarDiffV = .false.
@@ -259,11 +256,24 @@
         write(outlog(io),*)"    Continue reading input file for VarDiff block"
       endif;enddo
 
-      !Check if we're going to use variable diffusivity
+      ! Check if variables from the VarDiff module will be written to output file
       read(10,'(a80)',iostat=ios,err=2010)linebuffer080
+      ! Line 2:
+      var_User_charlines_VarDiff(2) = trim(adjustl(linebuffer080))
       read(linebuffer080,'(a3)',err=2011) answer
       if (answer.eq.'yes') then
-        useVarDiffH = .true.  ! might be changed back below if we are holding Kh constant:w
+        use_Output_Vars_VarDiff = .true.
+      else
+        use_Output_Vars_VarDiff = .false.
+      endif
+
+      !Check if we're going to use variable diffusivity
+      read(10,'(a80)',iostat=ios,err=2010)linebuffer080
+      ! Line 3:
+      var_User_charlines_VarDiff(3) = trim(adjustl(linebuffer080))
+      read(linebuffer080,'(a3)',err=2011) answer
+      if (answer.eq.'yes') then
+        useVarDiffH = .true.  ! might be changed back below if we are holding Kh constant
 
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"    Horizontal variable diffusivity:  ON"
@@ -327,6 +337,8 @@
 
       ! Vertical variable diffusivity
       read(10,'(a80)',iostat=ios,err=2010)linebuffer080
+      ! Line 4:
+      var_User_charlines_VarDiff(4) = trim(adjustl(linebuffer080))
       read(linebuffer080,'(a3)',err=2011) answer
       if (answer.eq.'yes') then
         useVarDiffV    = .true.
@@ -345,6 +357,8 @@
       if(useVarDiffV)then
         ! Need to read two more lines defining first the Boundary Layer model, then the Free-Air model
         read(10,'(a80)',iostat=ios,err=2010)linebuffer080
+        ! Line 5:
+        var_User_charlines_VarDiff(5) = trim(adjustl(linebuffer080))
         read(linebuffer080,*,iostat=ios)KvBL_model_ID
         if(ios.ne.0)then
           do io=1,2;if(VB(io).le.verbosity_error)then
@@ -524,6 +538,8 @@
         endif
         ! Free-air model: essentially, which scaling factor F(Ri) to use.
         read(10,'(a80)',iostat=ios,err=2010)linebuffer080
+        ! Line 6:
+        var_User_charlines_VarDiff(6) = trim(adjustl(linebuffer080))
         read(linebuffer080,*,iostat=ios)KvFA_model_ID
         if(KvFA_model_ID.eq.1)then
           ! Diffusivity is constant in the FA; read the value
@@ -596,10 +612,16 @@
       if (useVarDiffH.or.useVarDiffV) then
         ! Check if we're using variable diffusivity, then get the constants
         read(10,'(a80)',iostat=ios,err=2010)linebuffer080
+        ! Line 7:
+        var_User_charlines_VarDiff(7) = trim(adjustl(linebuffer080))
         read(linebuffer080,*,iostat=ioerr) vonKarman
         read(10,'(a80)',iostat=ios,err=2010)linebuffer080
+        ! Line 8:
+        var_User_charlines_VarDiff(8) = trim(adjustl(linebuffer080))
         read(linebuffer080,*,iostat=ioerr) LambdaC
         read(10,'(a80)',iostat=ios,err=2010)linebuffer080
+        ! Line 9:
+        var_User_charlines_VarDiff(9) = trim(adjustl(linebuffer080))
         read(linebuffer080,*,iostat=ioerr) RI_CRIT
 
         do io=1,2;if(VB(io).le.verbosity_info)then
@@ -608,9 +630,8 @@
           write(outlog(io),*)"        Critical Ri = ",real(RI_CRIT,kind=4)
         endif;enddo
 
-        ! We will want to reuse velocities on the metP grid for this module
+        ! We will want to reuse velocities on the MetP grid for this module
         MR_Save_Velocities = .true.
-
       endif
 
       ! Now set up output variable options
@@ -676,9 +697,7 @@
          Ri_meso_last_step_MetP_sp,     Ri_meso_next_step_MetP_sp,       &
          PBLH_meso_last_step_Met_sp,    PBLH_meso_next_step_Met_sp,      &
          L_MonOb_meso_last_step_Met_sp, L_MonOb_meso_next_step_Met_sp,   &
-         FricVel_meso_last_step_Met_sp, FricVel_meso_next_step_Met_sp,   &
-         v10x_meso_last_step_MetP_sp,   v10x_meso_next_step_MetP_sp,     &
-         v10y_meso_last_step_MetP_sp,   v10y_meso_next_step_MetP_sp
+         FricVel_meso_last_step_Met_sp, FricVel_meso_next_step_Met_sp
 
       use MetReader,     only : &
          nx_submet,ny_submet,np_fullmet
@@ -693,112 +712,113 @@
         write(outlog(io),*)"--------------------------------------------------"
       endif;enddo
 
-      ! HFS only allocate the bits needed for Kh vs Kv
 #ifdef USEPOINTERS
-      if(.not.(dVel_dz_MetP_sp)) &
-               allocate(dVel_dz_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.(du_dx_MetP_sp))   &
-               allocate(du_dx_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.(du_dy_MetP_sp))   &
-               allocate(du_dy_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.(dv_dx_MetP_sp))   &
-               allocate(dv_dx_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.(dv_dx_MetP_sp))   &
-               allocate(dv_dy_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.(dV_dz_MetP_sp))   &
-               allocate(dV_dz_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.(SurfRoughLen_Met_sp)) &
-               allocate(SurfRoughLen_Met_sp(nx_submet,ny_submet))
-      if(.not.(Ri_meso_last_step_MetP_sp))  &
-               allocate(Ri_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.(Ri_meso_next_step_MetP_sp))  &
-               allocate(Ri_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.(Khz_meso_last_step_MetP_sp)) &
-               allocate(Khz_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.(Khz_meso_next_step_MetP_sp)) &
-               allocate(Khz_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.(Kv_meso_last_step_MetP_sp))  &
-               allocate(Kv_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.(Kv_meso_next_step_MetP_sp))  &
-               allocate(Kv_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.(PBLH_meso_last_step_Met_sp)) &
-               allocate(PBLH_meso_last_step_Met_sp(nx_submet,ny_submet))
-      if(.not.(PBLH_meso_next_step_Met_sp)) &
-               allocate(PBLH_meso_next_step_Met_sp(nx_submet,ny_submet))
-      if(.not.(L_MonOb_meso_last_step_Met_sp)) &
-               allocate(L_MonOb_meso_last_step_Met_sp(nx_submet,ny_submet))
-      if(.not.(L_MonOb_meso_next_step_Met_sp)) &
-               allocate(L_MonOb_meso_next_step_Met_sp(nx_submet,ny_submet))
-      if(.not.(FricVel_meso_last_step_Met_sp)) &
-               allocate(FricVel_meso_last_step_Met_sp(nx_submet,ny_submet))
-      if(.not.(FricVel_meso_next_step_Met_sp)) &
-               allocate(FricVel_meso_next_step_Met_sp(nx_submet,ny_submet))
+      if(useVarDiffH)then
+        if(.not.associated(du_dx_MetP_sp))   &
+                  allocate(du_dx_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.associated(du_dy_MetP_sp))   &
+                  allocate(du_dy_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.associated(dv_dx_MetP_sp))   &
+                  allocate(dv_dx_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.associated(dv_dx_MetP_sp))   &
+                  allocate(dv_dy_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.associated(Khz_meso_last_step_sp))   &
+                  allocate(Khz_meso_last_step_sp(nxmax,nymax,nzmax))
+        if(.not.associated(Khz_meso_next_step_sp))   &
+                  allocate(Khz_meso_next_step_sp(nxmax,nymax,nzmax))
+      endif
+      if(useVarDiffV)then
+        if(.not.associated(dV_dz_MetP_sp))   &
+                  allocate(dV_dz_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.associated(SurfRoughLen_Met_sp)) &
+                  allocate(SurfRoughLen_Met_sp(nx_submet,ny_submet))
+        if(.not.associated(Ri_meso_last_step_MetP_sp))  &
+                  allocate(Ri_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.associated(Ri_meso_next_step_MetP_sp))  &
+                  allocate(Ri_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.associated(Khz_meso_last_step_MetP_sp)) &
+                  allocate(Khz_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.associated(Khz_meso_next_step_MetP_sp)) &
+                  allocate(Khz_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.associated(Kv_meso_last_step_MetP_sp))  &
+                  allocate(Kv_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.associated(Kv_meso_next_step_MetP_sp))  &
+                  allocate(Kv_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.associated(PBLH_meso_last_step_Met_sp)) &
+                  allocate(PBLH_meso_last_step_Met_sp(nx_submet,ny_submet))
+        if(.not.associated(PBLH_meso_next_step_Met_sp)) &
+                  allocate(PBLH_meso_next_step_Met_sp(nx_submet,ny_submet))
+        if(.not.associated(L_MonOb_meso_last_step_Met_sp)) &
+                  allocate(L_MonOb_meso_last_step_Met_sp(nx_submet,ny_submet))
+        if(.not.associated(L_MonOb_meso_next_step_Met_sp)) &
+                  allocate(L_MonOb_meso_next_step_Met_sp(nx_submet,ny_submet))
+        if(.not.associated(FricVel_meso_last_step_Met_sp)) &
+                  allocate(FricVel_meso_last_step_Met_sp(nx_submet,ny_submet))
+        if(.not.associated(FricVel_meso_next_step_Met_sp)) &
+                  allocate(FricVel_meso_next_step_Met_sp(nx_submet,ny_submet))
+        if(.not.associated(Kv_meso_last_step_sp))    &
+                  allocate(Kv_meso_last_step_sp(nxmax,nymax,nzmax))
+        if(.not.associated(Kv_meso_next_step_sp))    &
+                  allocate(Kv_meso_next_step_sp(nxmax,nymax,nzmax))
+      endif
 
-      if(.not.(Khz_meso_last_step_sp))   &
-               allocate(Khz_meso_last_step_sp(nxmax,nymax,nzmax))
-      if(.not.(Khz_meso_next_step_sp))   &
-               allocate(Khz_meso_next_step_sp(nxmax,nymax,nzmax))
-      if(.not.(Kv_meso_last_step_sp))    &
-               allocate(Kv_meso_last_step_sp(nxmax,nymax,nzmax))
-      if(.not.(Kv_meso_next_step_sp))    &
-               allocate(Kv_meso_next_step_sp(nxmax,nymax,nzmax))
-
-      if(.not.(vx_meso_last_step_MetP_sp))   &
-               allocate(vx_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.(vy_meso_last_step_MetP_sp))   &
-               allocate(vy_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.(vx_meso_next_step_MetP_sp))   &
-               allocate(vx_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.(vy_meso_next_step_MetP_sp))   &
+      if(.not.associated(vx_meso_last_step_MetP_sp))   &
+              associated allocate(vx_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.associated(vy_meso_last_step_MetP_sp))   &
+              associated allocate(vy_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.associated(vx_meso_next_step_MetP_sp))   &
+              associated allocate(vx_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.associated(vy_meso_next_step_MetP_sp))   &
                allocate(vy_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
 #else
-      if(.not.allocated(dVel_dz_MetP_sp)) &
-               allocate(dVel_dz_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.allocated(du_dx_MetP_sp))   &
-               allocate(du_dx_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.allocated(du_dy_MetP_sp))   &
-               allocate(du_dy_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.allocated(dv_dx_MetP_sp))   &
-               allocate(dv_dx_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.allocated(dv_dx_MetP_sp))   &
-               allocate(dv_dy_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.allocated(dV_dz_MetP_sp))   &
-               allocate(dV_dz_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.allocated(SurfRoughLen_Met_sp)) &
-               allocate(SurfRoughLen_Met_sp(nx_submet,ny_submet))
-      if(.not.allocated(Ri_meso_last_step_MetP_sp))  &
-               allocate(Ri_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.allocated(Ri_meso_next_step_MetP_sp))  &
-               allocate(Ri_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.allocated(Khz_meso_last_step_MetP_sp)) &
-               allocate(Khz_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.allocated(Khz_meso_next_step_MetP_sp)) &
-               allocate(Khz_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.allocated(Kv_meso_last_step_MetP_sp))  &
-               allocate(Kv_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.allocated(Kv_meso_next_step_MetP_sp))  &
-               allocate(Kv_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(.not.allocated(PBLH_meso_last_step_Met_sp)) &
-               allocate(PBLH_meso_last_step_Met_sp(nx_submet,ny_submet))
-      if(.not.allocated(PBLH_meso_next_step_Met_sp)) &
-               allocate(PBLH_meso_next_step_Met_sp(nx_submet,ny_submet))
-      if(.not.allocated(L_MonOb_meso_last_step_Met_sp)) &
-               allocate(L_MonOb_meso_last_step_Met_sp(nx_submet,ny_submet))
-      if(.not.allocated(L_MonOb_meso_next_step_Met_sp)) &
-               allocate(L_MonOb_meso_next_step_Met_sp(nx_submet,ny_submet))
-      if(.not.allocated(FricVel_meso_last_step_Met_sp)) &
-               allocate(FricVel_meso_last_step_Met_sp(nx_submet,ny_submet))
-      if(.not.allocated(FricVel_meso_next_step_Met_sp)) &
-               allocate(FricVel_meso_next_step_Met_sp(nx_submet,ny_submet))
-
-      if(.not.allocated(Khz_meso_last_step_sp))   &
-               allocate(Khz_meso_last_step_sp(nxmax,nymax,nzmax))
-      if(.not.allocated(Khz_meso_next_step_sp))   &
-               allocate(Khz_meso_next_step_sp(nxmax,nymax,nzmax))
-      if(.not.allocated(Kv_meso_last_step_sp))    &
-               allocate(Kv_meso_last_step_sp(nxmax,nymax,nzmax))
-      if(.not.allocated(Kv_meso_next_step_sp))    &
-               allocate(Kv_meso_next_step_sp(nxmax,nymax,nzmax))
+      if(useVarDiffH)then
+        if(.not.allocated(du_dx_MetP_sp))   &
+                 allocate(du_dx_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.allocated(du_dy_MetP_sp))   &
+                 allocate(du_dy_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.allocated(dv_dx_MetP_sp))   &
+                 allocate(dv_dx_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.allocated(dv_dx_MetP_sp))   &
+                 allocate(dv_dy_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.allocated(dV_dz_MetP_sp))   &
+                 allocate(dV_dz_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.allocated(Khz_meso_last_step_sp))   &
+                 allocate(Khz_meso_last_step_sp(nxmax,nymax,nzmax))
+        if(.not.allocated(Khz_meso_next_step_sp))   &
+                 allocate(Khz_meso_next_step_sp(nxmax,nymax,nzmax))
+      endif
+      if(useVarDiffV)then
+        if(.not.allocated(SurfRoughLen_Met_sp)) &
+                 allocate(SurfRoughLen_Met_sp(nx_submet,ny_submet))
+        if(.not.allocated(Ri_meso_last_step_MetP_sp))  &
+                 allocate(Ri_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.allocated(Ri_meso_next_step_MetP_sp))  &
+                 allocate(Ri_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.allocated(Khz_meso_last_step_MetP_sp)) &
+                 allocate(Khz_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.allocated(Khz_meso_next_step_MetP_sp)) &
+                 allocate(Khz_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.allocated(Kv_meso_last_step_MetP_sp))  &
+                 allocate(Kv_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.allocated(Kv_meso_next_step_MetP_sp))  &
+                 allocate(Kv_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.allocated(PBLH_meso_last_step_Met_sp)) &
+                 allocate(PBLH_meso_last_step_Met_sp(nx_submet,ny_submet))
+        if(.not.allocated(PBLH_meso_next_step_Met_sp)) &
+                 allocate(PBLH_meso_next_step_Met_sp(nx_submet,ny_submet))
+        if(.not.allocated(L_MonOb_meso_last_step_Met_sp)) &
+                 allocate(L_MonOb_meso_last_step_Met_sp(nx_submet,ny_submet))
+        if(.not.allocated(L_MonOb_meso_next_step_Met_sp)) &
+                 allocate(L_MonOb_meso_next_step_Met_sp(nx_submet,ny_submet))
+        if(.not.allocated(FricVel_meso_last_step_Met_sp)) &
+                 allocate(FricVel_meso_last_step_Met_sp(nx_submet,ny_submet))
+        if(.not.allocated(FricVel_meso_next_step_Met_sp)) &
+                 allocate(FricVel_meso_next_step_Met_sp(nx_submet,ny_submet))
+        if(.not.allocated(Kv_meso_last_step_sp))    &
+                 allocate(Kv_meso_last_step_sp(nxmax,nymax,nzmax))
+        if(.not.allocated(Kv_meso_next_step_sp))    &
+                 allocate(Kv_meso_next_step_sp(nxmax,nymax,nzmax))
+      endif
 
       if(.not.allocated(vx_meso_last_step_MetP_sp))   &
                allocate(vx_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
@@ -819,6 +839,7 @@
       indx_User3d_XYGs_VarDiff      = nvar_User3d_XYGs
       indx_User3d_XYZ_VarDiff       = nvar_User3d_XYZ
       indx_User4d_XYZGs_VarDiff     = nvar_User4d_XYZGs
+      indx_User_charlines_VarDiff   = nvar_User_charlines
 
       ! Allocate output variables if needed
       if(.not.allocated(temp_2d_name_VarDiff))    &
@@ -842,8 +863,6 @@
                allocate(temp_3d_MissVal_VarDiff(nvar_User3d_XYZ_VarDiff))
       if(.not.allocated(temp_3d_FillVal_VarDiff)) &
                allocate(temp_3d_FillVal_VarDiff(nvar_User3d_XYZ_VarDiff))
-      if(.not.allocated(var_User_charlines_VarDiff)) &
-               allocate(var_User_charlines_VarDiff(nvar_User_charlines_VarDiff))
 
       i = 0 
       if(use_Output_Vars_VarDiff.and.useVarDiffH)then
@@ -910,7 +929,7 @@
       subroutine Prep_output_VarDiff
 
       use global_param,  only : &
-         useVarDiffH,KM_2_M,HR_2_S,M2PS_2_KM2PHR
+         useVarDiffH,KM_2_M,M2PS_2_KM2PHR
 
       use mesh,          only : &
          nxmax,nymax,nzmax !,lon_cc_pd,lat_cc_pd
@@ -922,46 +941,28 @@
          var_User2d_XY_name,var_User2d_XY_unit,var_User2d_XY_lname,&
          var_User2d_XY_MissVal,var_User2d_XY_FillVal,var_User2d_XY, &
          var_User3d_XYZ_name,var_User3d_XYZ_unit,var_User3d_XYZ_lname,&
-         var_User3d_XYZ_MissVal,var_User3d_XYZ_FillVal,var_User3d_XYZ
+         var_User3d_XYZ_MissVal,var_User3d_XYZ_FillVal,var_User3d_XYZ,&
+         var_User_charlines
 
       use Atmosphere,    only : &
-         FricVel_meso_next_step_Met_sp, &
-         PBLH_meso_next_step_Met_sp, &
-         Ri_meso_next_step_MetP_sp
+         FricVel_meso_last_step_Met_sp, &
+         PBLH_meso_last_step_Met_sp, &
+         Ri_meso_last_step_MetP_sp, &
+         SolZen_meso_next_step_Met_sp, &
+           Set_SolarZenith
 
       use MetReader,     only : &
          MR_dum2d_met,MR_dum2d_comp,MR_dum3d_compH,MR_dum3d_metP,MR_iMetStep_Now,&
            MR_Regrid_MetP_to_CompH,&
            MR_Regrid_Met2d_to_Comp2D
 
-!      use Atmosphere,    only : &
-!           solar_zenith
-
-!      use time_data,     only : &
-!         time,Simtime_in_hours,useLeap
-
       implicit none
 
       integer :: i,ii,indx
 
-      !integer :: iii,jjj,kkk
-      !real(kind=ip) :: tmp
-      !real(kind=8) :: hour
-      !integer :: jday
-      !integer :: iyear,imonth,iday,idoy
-
-      INTERFACE
-        integer function HS_DayOfYear(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in)   ::  HoursSince
-          integer     ,intent(in)   ::  byear
-          logical     ,intent(in)   ::  useLeaps
-        end function HS_DayOfYear
-        real(kind=8) function HS_HourOfDay(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in)   ::  HoursSince
-          integer     ,intent(in)   ::  byear
-          logical     ,intent(in)   ::  useLeaps
-        end function HS_HourOfDay
-      END INTERFACE
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Prep_output_VarDiff"
+      endif;enddo
 
       ! Might have to build in some logic for Kh vs Kv
 
@@ -976,12 +977,19 @@
         var_User2d_XY_FillVal(indx)= temp_2d_FillVal_VarDiff(i)
         if(i.eq.1)then
            ! Now resample onto computational grid
-          MR_dum2d_met = PBLH_meso_next_step_Met_sp/real(KM_2_M,kind=sp)
+          MR_dum2d_met = PBLH_meso_last_step_Met_sp/real(KM_2_M,kind=sp)
           call MR_Regrid_Met2d_to_Comp2D
           var_User2d_XY(1:nxmax,1:nymax,indx) = MR_dum2d_comp(1:nxmax,1:nymax)
+
+          ! Uncomment these lines to export Solar Zenith to the PBLH slot
+          !call Set_SolarZenith(MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now))
+          !MR_dum2d_met = SolZen_meso_next_step_Met_sp
+          !call MR_Regrid_Met2d_to_Comp2D
+          !var_User2d_XY(1:nxmax,1:nymax,indx) = MR_dum2d_comp(1:nxmax,1:nymax)
+
         elseif(i.eq.2)then
            ! Now resample onto computational grid
-          MR_dum2d_met = FricVel_meso_next_step_Met_sp
+          MR_dum2d_met = FricVel_meso_last_step_Met_sp
           call MR_Regrid_Met2d_to_Comp2D
           var_User2d_XY(1:nxmax,1:nymax,indx) = MR_dum2d_comp(1:nxmax,1:nymax)
         endif
@@ -1003,26 +1011,7 @@
           ! Horizontal diffusivity is already on the comp grid
           ! This branch is unused if useVarDiffH = .false. since ii=0
           ! Note that the native units are km2/hr, but we need to convert to m2/s
-          !var_User3d_XYZ(1:nxmax,1:nymax,1:nzmax,indx) = kx(1:nxmax,1:nymax,1:nzmax)*KM_2_M*KM_2_M/HR_2_S
           var_User3d_XYZ(1:nxmax,1:nymax,1:nzmax,indx) = kx(1:nxmax,1:nymax,1:nzmax)/M2PS_2_KM2PHR
-
-!          jday = HS_DayOfYear(SimStartHour+time,BaseYear,useLeap)
-!          hour = HS_HourOfDay(SimStartHour+time,BaseYear,useLeap)
-!          hh   = floor(hour)
-!          mm   = floor((hour-hh)*60.0_ip)
-!          do iii=1,nxmax
-!            do jjj=1,nymax
-!              tmp = min(solar_zenith(lon_cc_pd(iii),lat_cc_pd(jjj),jday,hh,mm),90.0_ip)
-!              var_User3d_XYZ(iii,jjj,1:nzmax,indx) = 361.0*cos(tmp*DEG2RAD)
-!              var_User3d_XYZ(iii,jjj,1:nzmax,indx) = L_MonOb_meso_last_step_Met_sp(i)
-!            enddo
-!          enddo
-           ! Now resample L_Mon onto computational grid
-!          MR_dum2d_met = L_MonOb_meso_last_step_Met_sp
-!          call MR_Regrid_Met2d_to_Comp2D
-!          do kkk=1,nzmax
-!            var_User3d_XYZ(1:nxmax,1:nymax,kkk,indx) = MR_dum2d_comp(1:nxmax,1:nymax)
-!          enddo
         endif
         if(i.eq.ii+1)then
           ! Vertical diffusivity is already on the comp grid
@@ -1032,10 +1021,15 @@
         if(i.eq.ii+2)then
            ! Ri just exists on the MetP grid for output
            ! Now resample onto computational grid
-          MR_dum3d_metP = Ri_meso_next_step_MetP_sp
+          MR_dum3d_metP = Ri_meso_last_step_MetP_sp
           call MR_Regrid_MetP_to_CompH(MR_iMetStep_Now)
           var_User3d_XYZ(1:nxmax,1:nymax,1:nzmax,indx) = MR_dum3d_compH(1:nxmax,1:nymax,1:nzmax)
         endif
+      enddo
+
+      do i=1,nvar_User_charlines_VarDiff
+        indx = indx_User_charlines_VarDiff+i
+        var_User_charlines(indx) = var_User_charlines_VarDiff(i)
       enddo
 
       end subroutine Prep_output_VarDiff
@@ -1062,7 +1056,11 @@
 
       implicit none
 
-      if(allocated(dVel_dz_MetP_sp))               deallocate(dVel_dz_MetP_sp)
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Deallocate_VarDiff_Met"
+      endif;enddo
+
+!      if(allocated(dVel_dz_MetP_sp))               deallocate(dVel_dz_MetP_sp)
       if(allocated(du_dx_MetP_sp))                 deallocate(du_dx_MetP_sp)
       if(allocated(du_dy_MetP_sp))                 deallocate(du_dy_MetP_sp)
       if(allocated(dv_dx_MetP_sp))                 deallocate(dv_dx_MetP_sp)
@@ -1081,10 +1079,6 @@
       if(allocated(L_MonOb_meso_next_step_Met_sp)) deallocate(L_MonOb_meso_next_step_Met_sp)
       if(allocated(FricVel_meso_last_step_Met_sp)) deallocate(FricVel_meso_last_step_Met_sp)
       if(allocated(FricVel_meso_next_step_Met_sp)) deallocate(FricVel_meso_next_step_Met_sp)
-
-!      if(allocated(FricVel_meso_last_step_sp))     deallocate(FricVel_meso_last_step_sp)
-!      if(allocated(FricVel_meso_next_step_sp))     deallocate(FricVel_meso_next_step_sp)
-!      if(allocated(FricVel_ip))                    deallocate(FricVel_ip)
 
       if(allocated(Khz_meso_last_step_sp))         deallocate(Khz_meso_last_step_sp)
       if(allocated(Khz_meso_next_step_sp))         deallocate(Khz_meso_next_step_sp)
@@ -1127,6 +1121,10 @@
       real(kind=ip) :: D2_tension,D2_strain
       real(kind=ip) :: LES_TimeScale
       real(kind=ip) :: LES_LengthScale
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Eddy_diff"
+      endif;enddo
 
       if(Kh_model_ID.eq.1)then
         Khz_meso_next_step_MetP_sp(:,:,:) = real(diffusivity_vert*M2PS_2_KM2PHR,kind=sp)
@@ -1194,7 +1192,7 @@
       subroutine Calc_Vert_Diff(last_or_next)
 
       use global_param,  only : &
-         KM_2_M,HR_2_S,KM_2_M,DEG2RAD
+         KM_2_M,HR_2_S,KM_2_M
 
       use Atmosphere,    only : &
          Ri_meso_last_step_MetP_sp,Ri_meso_next_step_MetP_sp, &
@@ -1202,9 +1200,7 @@
          FricVel_meso_last_step_Met_sp,FricVel_meso_next_step_Met_sp
 
       use MetReader,     only : &
-        nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,MR_geoH_metP_next,y_submet_sp,&
-        MR_xy2ll_ylat,IsLatLon_MetGrid,&
-        x_submet_sp,MR_xy2ll_xlon
+        nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,MR_geoH_metP_next
 
       implicit none
 
@@ -1223,10 +1219,11 @@
       real(kind=ip) :: PBL_profile_fac
       real(kind=ip) :: Kv_FreeAir, Kv_BL
       real(kind=ip) :: Lc
-      real(kind=ip) :: EckF
-      real(kind=ip) :: EckL
-      real(kind=ip) :: lat
       real(kind=ip) :: zeta
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Calc_Vert_Diff"
+      endif;enddo
 
       ! Even if we are not using a BL, we need Ri
       do i=1,nx_submet
@@ -1393,6 +1390,10 @@
       logical,save  :: first_time = .true.
       real(kind=sp) :: M_2_KM = 1.0e-3_sp
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Set_VarDiffH_Meso"
+      endif;enddo
+
       if(.not.useDiffusion)useDiffusion = .true.
 
       if(Load_MesoSteps)then
@@ -1401,25 +1402,17 @@
           !  First fill next step so that outside this 'first_time' loop, the
           !  'next' can be copied to the 'last'
           ! Load U winds on MetP
-          !ivar = 2 ! U winds
-          !call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now)
-          !vx_meso_next_step_MetP_sp = MR_dum3d_metP
           vx_meso_next_step_MetP_sp = MR_vx_metP_last
           MR_dum3d_metP             = MR_vx_metP_last
-
             ! Now differentiate
             ! Note: velocities are in m/s, but the dx and dy are in km
             !       We want du_dx to be in 1/s
           call MR_DelMetP_Dx
           du_dx_MetP_sp = MR_dum3d2_metP * M_2_KM
-
           call MR_DelMetP_Dy
           du_dy_MetP_sp = MR_dum3d2_metP * M_2_KM
 
           ! Load V winds on MetP
-          !ivar = 3 ! V winds
-          !call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now)
-          !vy_meso_next_step_MetP_sp = MR_dum3d_metP
           vy_meso_next_step_MetP_sp = MR_vy_metP_last
           MR_dum3d_metP             = MR_vy_metP_last
             ! Now differentiate
@@ -1452,8 +1445,6 @@
         call MR_DelMetP_Dy
         du_dy_MetP_sp = MR_dum3d2_metP * M_2_KM
         ! Load V winds on MetP
-        !ivar = 3 ! V winds
-        !call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now+1)
         vy_meso_next_step_MetP_sp = MR_vy_metP_next
         MR_dum3d_metP             = MR_vy_metP_next
           ! Now differentiate
@@ -1466,7 +1457,6 @@
         MR_dum3d_metP = Khz_meso_next_step_MetP_sp
         call MR_Regrid_MetP_to_CompH(MR_iMetStep_Now+1)
         Khz_meso_next_step_sp = MR_dum3d_compH
-
       endif
 
       kx(1:nxmax,1:nymax,1:nzmax) = real( Khz_meso_last_step_sp(:,:,:),kind=ip) + &
@@ -1505,7 +1495,11 @@
 !  Arguments: 
 !    Load_MesoSteps,Interval_Frac
 !
-!  This subroutine 
+!  This subroutine calculates kz for the current time. Kv_meso_ is calculated
+!  on the MetP grid from the virtual potential temperature, Ri, Monin-Length,
+!  Ustar, and the planetary boundary layer height. Function calls are used to
+!  populate those values on the NWP steps so that Kv_meso can be calculated,
+!  then interpolated onto the compH grid at the current time.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -1522,8 +1516,6 @@
 
       use Atmosphere,    only : &
          Set_VirtPotenTemp, &
-         AirTemp_meso_last_step_MetP_sp,AirTemp_meso_next_step_MetP_sp,&
-         AirVPTemp_meso_last_step_MetP_sp,AirVPTemp_meso_next_step_MetP_sp, &
          Ri_meso_last_step_MetP_sp,Ri_meso_next_step_MetP_sp, &
          FricVel_meso_last_step_Met_sp,FricVel_meso_next_step_Met_sp,  &
          PBLH_meso_last_step_Met_sp,    PBLH_meso_next_step_Met_sp,      &
@@ -1531,7 +1523,6 @@
 
       use MetReader,     only : &
          MR_iMetStep_Now,MR_dum3d_MetP,MR_dum3d_compH,&
-         nx_submet,ny_submet,np_fullmet,p_fullmet_sp, &
            MR_Regrid_MetP_to_CompH
 
       implicit none
@@ -1541,7 +1532,9 @@
 
       logical,save :: first_time = .true.
 
-      integer :: i,j
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Set_VarDiffV_Meso"
+      endif;enddo
 
       ! To set the vertical diffusivity, we need to:
       !  1. Calculate the Richardson Number on MetP grid
@@ -1563,25 +1556,16 @@
         if(first_time)then
           call Calc_SurfaceRoughnessLength
           !  Populate values for the 'last' step
-          call Set_VirtPotenTemp(0)
-          call Calc_Ri(0)
-          call Calc_Monin_Length(0)
-          call Calc_SurfaceFrictionVelocity(0)
-          call Calc_PBLH(0)
-
-!          write(115,*)PBLH_meso_next_step_Met_sp
+          call Set_VirtPotenTemp(.true.)         ! True indicates load prestep
+          call Calc_Ri(.true.)
+          call Calc_Monin_Length(.true.)
+          call Calc_SurfaceFrictionVelocity(.true.)
+          call Calc_PBLH(.true.)
 
           call Calc_Vert_Diff(0)
           MR_dum3d_MetP = Kv_meso_last_step_MetP_sp
           call MR_Regrid_MetP_to_CompH(MR_iMetStep_Now)
           Kv_meso_last_step_sp = MR_dum3d_compH
-
-          ! The calls above with parameter 0 sets _last_ directly
-!          Ri_meso_next_step_MetP_sp     = Ri_meso_last_step_MetP_sp
-!          L_MonOb_meso_next_step_Met_sp = L_MonOb_meso_last_step_Met_sp
-!          FricVel_meso_next_step_Met_sp = FricVel_meso_last_step_Met_sp
-!          PBLH_meso_next_step_Met_sp    = PBLH_meso_last_step_Met_sp
-!          Kv_meso_next_step_sp          = Kv_meso_last_step_sp
 
           first_time = .false.
         else
@@ -1593,43 +1577,24 @@
           Kv_meso_last_step_sp          = Kv_meso_next_step_sp
         endif ! first_time
 
-        ! For all subsequent calls, copy 'next' to 'last'
-!        Ri_meso_last_step_MetP_sp     = Ri_meso_next_step_MetP_sp
-!        L_MonOb_meso_last_step_Met_sp = L_MonOb_meso_next_step_Met_sp
-!        FricVel_meso_last_step_Met_sp = FricVel_meso_next_step_Met_sp
-!        PBLH_meso_last_step_Met_sp    = PBLH_meso_next_step_Met_sp
-!        Kv_meso_last_step_sp          = Kv_meso_next_step_sp
-
           ! Populate Ri for the 'next' step
-        call Set_VirtPotenTemp(1)
-        call Calc_Ri(1)                           ! sets Ri_meso_next_step_MetP_sp
-        call Calc_Monin_Length(1)                 !  and L_MonOb_meso_next_step_Met_sp
-        call Calc_SurfaceFrictionVelocity(1)      ! sets FricVel_meso_next_step_Met_sp
-        call Calc_PBLH(1)
+        call Set_VirtPotenTemp
+        call Calc_Ri                              ! sets Ri_meso_next_step_MetP_sp
+        call Calc_Monin_Length                    !  and L_MonOb_meso_next_step_Met_sp
+        call Calc_SurfaceFrictionVelocity         ! sets FricVel_meso_next_step_Met_sp
+        call Calc_PBLH
 
         call Calc_Vert_Diff(1)
-        MR_dum3d_MetP = Kv_meso_next_step_MetP_sp * M2PS_2_KM2PHR
+        MR_dum3d_MetP = Kv_meso_next_step_MetP_sp
         call MR_Regrid_MetP_to_CompH(MR_iMetStep_Now+1)
         Kv_meso_next_step_sp = MR_dum3d_compH
-
-!        do i=1,nx_submet
-!         do j=1,ny_submet
-!          write(115,*)i,j,PBLH_meso_last_step_Met_sp(i,j),PBLH_meso_next_step_Met_sp(i,j)
-!          write(115,*)i,j,FricVel_meso_last_step_Met_sp(i,j),FricVel_meso_next_step_Met_sp(i,j)
-
-!          write(115,*)i,j,AirTemp_meso_last_step_MetP_sp(i,j,1),AirTemp_meso_next_step_MetP_sp(i,j,1)
-!          write(115,*)i,j,Ri_meso_last_step_MetP_sp(i,j,1),Ri_meso_next_step_MetP_sp(i,j,1)
-!          write(115,*)i,j,L_MonOb_meso_last_step_Met_sp(i,j,1),L_MonOb_meso_next_step_Met_sp(i,j,1)
-!          write(115,*)i,j,Kv_meso_last_step_sp(i,j,1),Kv_meso_next_step_sp(i,j,1)
-!         enddo
-!        enddo
 
       endif
 
       kz(1:nxmax,1:nymax,1:nzmax) = real( Kv_meso_last_step_sp(:,:,:),kind=ip) + &
                                     real((Kv_meso_next_step_sp(:,:,:) - &
                                           Kv_meso_last_step_sp(:,:,:)),kind=ip) * &
-                                    real(Interval_Frac,kind=ip)
+                                    real(Interval_Frac,kind=ip) * M2PS_2_KM2PHR
       ! Set boundary kz
         ! Bottom
       kz(0:nxmax+1,0:nymax+1,0) = kz(0:nxmax+1,0:nymax+1,1)
@@ -1648,36 +1613,34 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!  Calc_Ri
+!  Calc_Ri(Load_Prestep)
 !
-!  Called from: 
-!  Arguments: last_or_next
-!    none
+!  Called from: Set_VarDiffV_Meso
+!  Arguments:
+!    Load_Prestep   = logical, optional; triggers loading 'last' only
 !
-!  This subroutine 
+!  This subroutine calculates the Richardson number, given the virtual potential
+!  temperature. The 'next' data array is populated unless 'Load_Prestep' is given
+!  and is .true.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine Calc_Ri(last_or_next)
+      subroutine Calc_Ri(Load_Prestep)
 
       use global_param,  only : &
-         GRAV,KM_2_M !,useMoistureVars,EPS_SMALL
+         GRAV,KM_2_M
 
       use Atmosphere,    only : &
-!         AirSH_meso_last_step_MetP_sp,AirSH_meso_next_step_MetP_sp,&
-!         AirTemp_meso_last_step_MetP_sp,AirTemp_meso_next_step_MetP_sp,&
          Ri_meso_last_step_MetP_sp,Ri_meso_next_step_MetP_sp,&
          AirVPTemp_meso_last_step_MetP_sp,AirVPTemp_meso_next_step_MetP_sp
-!         R_GAS_DRYAIR,CP_AIR,R_GAS_WATVAP
 
       use MetReader,     only : &
          nx_submet,ny_submet,np_fullmet,p_fullmet_sp,&
-         !x_submet_sp,y_submet_sp,&
          MR_geoH_metP_last,MR_geoH_MetP_next
 
       implicit none
 
-      integer, intent(in) :: last_or_next
+      logical, intent(in), optional :: Load_Prestep
 
       real(kind=ip),parameter :: MIN_DVDZ = 3.0e-2_ip ! The minimum vertical shear assumed
                                                       ! No min leads to singular Ri
@@ -1691,12 +1654,23 @@
 
       integer       :: i,j,k,k1,k2
       real(kind=ip) :: refP
-      !real(kind=ip) :: mixrat
       real(kind=ip) :: del_z
       real(kind=ip) :: dudz,dvdz,dtdz
       real(kind=ip) :: dveldz2
       real(kind=ip) :: temp_term,mech_term
       real(kind=ip) :: Ri
+
+      logical      :: first_time
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Calc_Ri"
+      endif;enddo
+
+      if(present(Load_Prestep))then
+        first_time = Load_Prestep
+      else
+        first_time = .false.
+      endif
 
       allocate(z(np_fullmet))
       allocate(u(np_fullmet))
@@ -1707,57 +1681,83 @@
       refP = 1.0e5_ip   ! reference pressure for potential temperature
 
       p(1:np_fullmet) = p_fullmet_sp(1:np_fullmet)
-      do i=1,nx_submet
-        do j=1,ny_submet
-          
-          if(last_or_next.eq.0)then
+      if(first_time)then
+        do i=1,nx_submet
+          do j=1,ny_submet
             z(1:np_fullmet) = MR_geoH_metP_last(i,j,1:np_fullmet) * KM_2_M
             u(1:np_fullmet) = vx_meso_last_step_MetP_sp(i,j,1:np_fullmet)
             v(1:np_fullmet) = vy_meso_last_step_MetP_sp(i,j,1:np_fullmet)
             Tpoten(1:np_fullmet) = AirVPTemp_meso_last_step_MetP_sp(i,j,1:np_fullmet)
-          else
+            do k=1,np_fullmet
+              ! We need vertical derivatives of theta_v and u
+              !  Use one-sided differences
+              if(k.lt.np_fullmet)then
+                k1 = k
+                k2 = k+1
+              elseif(k.eq.np_fullmet)then
+                k1 = k-1
+                k2 = k
+              endif
+              del_z  = z(k2)- z(k1)
+              dtdz   = (Tpoten(k2)-Tpoten(k1)) / del_z
+              dudz   = (u(k2)-u(k1)) / del_z
+              dvdz   = (v(k2)-v(k1)) / del_z
+
+              ! Only need magnitudes and nothing too close to 0 (leads to singular Ri)
+              dudz   = max(abs(dudz),MIN_DVDZ)
+              dvdz   = max(abs(dvdz),MIN_DVDZ)
+
+              temp_term = dtdz/Tpoten(k)
+              dveldz2   = dudz*dudz + dvdz*dvdz
+              mech_term = dveldz2/GRAV
+              Ri = real(temp_term / mech_term,kind=sp)
+
+              ! Log this term since we will need it later when calculating free-air Kz
+              dV_dz_MetP_sp(i,j,k) = real(sqrt(dveldz2),kind=sp)
+
+              Ri_meso_last_step_MetP_sp(i,j,k) = real(Ri,kind=sp)
+            enddo ! k
+          enddo ! j
+        enddo ! i
+      else
+        do i=1,nx_submet
+          do j=1,ny_submet
             z(1:np_fullmet) = MR_geoH_MetP_next(i,j,1:np_fullmet) * KM_2_M
             u(1:np_fullmet) = vx_meso_next_step_MetP_sp(i,j,1:np_fullmet)
             v(1:np_fullmet) = vy_meso_next_step_MetP_sp(i,j,1:np_fullmet)
             Tpoten(1:np_fullmet) = AirVPTemp_meso_next_step_MetP_sp(i,j,1:np_fullmet)
-          endif
+            do k=1,np_fullmet
+              ! We need vertical derivatives of theta_v and u
+              !  Use one-sided differences
+              if(k.lt.np_fullmet)then
+                k1 = k
+                k2 = k+1
+              elseif(k.eq.np_fullmet)then
+                k1 = k-1
+                k2 = k
+              endif
+              del_z  = z(k2)- z(k1)
+              dtdz   = (Tpoten(k2)-Tpoten(k1)) / del_z
+              dudz   = (u(k2)-u(k1)) / del_z
+              dvdz   = (v(k2)-v(k1)) / del_z
 
-          do k=1,np_fullmet
-            ! We need vertical derivatives of theta_v and u
-            !  Use one-sided differences
-            if(k.lt.np_fullmet)then
-              k1 = k
-              k2 = k+1
-            elseif(k.eq.np_fullmet)then
-              k1 = k-1
-              k2 = k
-            endif
-            del_z  = z(k2)- z(k1)
-            dtdz   = (Tpoten(k2)-Tpoten(k1)) / del_z
-            dudz   = (u(k2)-u(k1)) / del_z
-            dvdz   = (v(k2)-v(k1)) / del_z
+              ! Only need magnitudes and nothing too close to 0 (leads to singular Ri)
+              dudz   = max(abs(dudz),MIN_DVDZ)
+              dvdz   = max(abs(dvdz),MIN_DVDZ)
 
-            ! Only need magnitudes and nothing too close to 0 (leads to singular Ri)
-            dudz   = max(abs(dudz),MIN_DVDZ)
-            dvdz   = max(abs(dvdz),MIN_DVDZ)
+              temp_term = dtdz/Tpoten(k)
+              dveldz2   = dudz*dudz + dvdz*dvdz
+              mech_term = dveldz2/GRAV
+              Ri = real(temp_term / mech_term,kind=sp)
 
-            temp_term = dtdz/Tpoten(k)
-            dveldz2   = dudz*dudz + dvdz*dvdz
-            mech_term = dveldz2/GRAV
-            Ri = real(temp_term / mech_term,kind=sp)
+              ! Log this term since we will need it later when calculating free-air Kz
+              dV_dz_MetP_sp(i,j,k) = real(sqrt(dveldz2),kind=sp)
 
-            ! Log this term since we will need it later when calculating free-air Kz
-            dV_dz_MetP_sp(i,j,k) = real(sqrt(dveldz2),kind=sp)
-
-            if(last_or_next.eq.0)then
-              Ri_meso_last_step_MetP_sp(i,j,k) = real(Ri,kind=sp)
-            else
               Ri_meso_next_step_MetP_sp(i,j,k) = real(Ri,kind=sp)
-            endif
-
-          enddo ! k
-        enddo ! j
-      enddo ! i
+            enddo ! k
+          enddo ! j
+        enddo ! i
+      endif
 
       end subroutine Calc_Ri
 
@@ -1765,11 +1765,13 @@
 !
 !  Calc_SurfaceRoughnessLength
 !
-!  Called from: 
+!  Called from: Set_VarDiffV_Meso
 !  Arguments: None
 !    none
 !
-!  This subroutine 
+!  This subroutine loads the surface roughness variable from the first NWP file,
+!  if available, and initializes to 0.1 if the variable is not provided by
+!  the NWP file.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -1781,6 +1783,10 @@
            MR_Read_2d_Met_Variable
 
       integer :: ivar
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Calc_SurfaceRoughnessLength"
+      endif;enddo
 
       ! Check if the windfile being used provides surface roughness
       ivar = 17 ! Surface_roughness_surface
@@ -1797,24 +1803,26 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!  Calc_SurfaceFrictionVelocity
+!  Calc_SurfaceFrictionVelocity(Load_Prestep)
 !
-!  Called from: 
-!  Arguments: last_or_next
-!    none
+!  Called from: Set_VarDiffV_Meso
+!  Arguments:
+!    Load_Prestep   = logical, optional; triggers loading 'last' only
 !
-!  This subroutine 
+!  This subroutine sets the surface friction velocity on the Met grid for the
+!  'last' (if Load_Prestep is provided) and 'next' data arrays. If Ustar is
+!  provided by the NWP file, it is read and checked for validity. If it is not
+!  provided by the NWP file (or if is contains invalid values), then Ustar is
+!  calculated using the lowesti-level velocities available (10m or highest p).
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine Calc_SurfaceFrictionVelocity(last_or_next)
+      subroutine Calc_SurfaceFrictionVelocity(Load_Prestep)
 
       use global_param,  only : &
          EPS_SMALL,KM_2_M
 
       use Atmosphere,    only : &
-         Ri_meso_last_step_MetP_sp,Ri_meso_next_step_MetP_sp, &
-         PBLH_meso_last_step_Met_sp,PBLH_meso_next_step_Met_sp,&
          FricVel_meso_last_step_Met_sp,FricVel_meso_next_step_Met_sp, &
          L_MonOb_meso_last_step_Met_sp,L_MonOb_meso_next_step_Met_sp
 
@@ -1825,7 +1833,7 @@
 
       implicit none
 
-      integer, intent(in) :: last_or_next
+      logical, intent(in), optional :: Load_Prestep
 
       real(kind=ip) :: U_mag
       real(kind=ip) :: denom1,denom2
@@ -1839,11 +1847,23 @@
       integer :: ivar
       logical :: FV_override = .false.
 
+      logical      :: first_time
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Calc_SurfaceFrictionVelocity"
+      endif;enddo
+
+      if(present(Load_Prestep))then
+        first_time = Load_Prestep
+      else
+        first_time = .false.
+      endif
+
       ! Check if the windfile being used provides friction velocity
       ivar = 13 ! Friction_velocity_surface
       if(Met_var_IsAvailable(ivar))then
-        ! Friction velocity is provided, read it from the met file
-        if(last_or_next.eq.0)then
+        if(first_time)then
+          ! Friction velocity is provided, read it from the met file
           call MR_Read_2d_Met_Variable(ivar,MR_iMetStep_Now)
             FricVel_meso_last_step_Met_sp = MR_dum2d_Met
           if(maxval(MR_dum2d_Met(:,:)).lt.EPS_SMALL)then
@@ -1871,22 +1891,14 @@
 
         ! First check if we can get the 10m wind (both x and y)
         if(Met_var_IsAvailable(11).and.Met_var_IsAvailable(12))then
-          if(last_or_next.eq.0)then
+          if(first_time)then
             call MR_Read_2d_Met_Variable(11,MR_iMetStep_Now)
               SurfVelx_meso_Met_sp = MR_dum2d_Met
-!            if(maxval(MR_dum2d_Met(:,:)).lt.EPS_SMALL)then
-!              ! variable was present in file, but filled with nonsense
-!              FV_override = .true.
-!            endif
             call MR_Read_2d_Met_Variable(12,MR_iMetStep_Now)
               SurfVely_meso_Met_sp = MR_dum2d_Met
           else
             call MR_Read_2d_Met_Variable(11,MR_iMetStep_Now+1)
               SurfVelx_meso_Met_sp = MR_dum2d_Met
-!            if(maxval(MR_dum2d_Met(:,:)).lt.EPS_SMALL)then
-!              ! variable was present in file, but filled with nonsense
-!              FV_override = .true.
-!            endif
             call MR_Read_2d_Met_Variable(12,MR_iMetStep_Now+1)
               SurfVely_meso_Met_sp = MR_dum2d_Met
           endif
@@ -1896,7 +1908,7 @@
           do i=1,nx_submet
             do j=1,ny_submet
               z0 = SurfRoughLen_Met_sp(i,j)
-              if(last_or_next.eq.0)then
+              if(first_time)then
                 do k=1,np_fullmet
                   if(MR_geoH_metP_last(i,j,k)*KM_2_M.gt.1000.0_ip*MR_Topo_met(i,j)+z0)then
                     exit
@@ -1926,7 +1938,7 @@
             U_mag = sqrt(SurfVelx_meso_Met_sp(i,j)**2.0_sp + &
                          SurfVely_meso_Met_sp(i,j)**2.0_sp)! / MPS_2_KMPHR
             denom1 = log(SurfVelh_meso_Met_sp(i,j)/z0)
-            if(last_or_next.eq.0)then
+            if(first_time)then
               L_MonOb   = real(L_MonOb_meso_last_step_Met_sp(i,j),kind=ip)
               zonL = SurfVelh_meso_Met_sp(i,j)/L_MonOb
               denom2 = Phi_WindShear_Similarity(zonL)
@@ -1950,17 +1962,21 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!  Calc_PBLH
+!  Calc_PBLH(Load_Prestep)
 !
-!  Called from: 
-!  Arguments: last_or_next
-!    none
+!  Called from: Set_VarDiffV_Meso
+!  Arguments:
+!    Load_Prestep   = logical, optional; triggers loading 'last' only
 !
-!  This subroutine 
+!  This subroutine sets the planetary boundary layer height for the Met grid
+!  at the 'last' (if Load_Prestep is provided) and 'next' data arrays. If
+!  PBLH is not provided by the NWP file, then it is calculated by examining
+!  the Eckman thickness (requires lat and Ustar), the temperature profile
+!  for the lowest inversion, and the Richardson number.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine Calc_PBLH(last_or_next)
+      subroutine Calc_PBLH(Load_Prestep)
 
       use global_param,  only : &
          EPS_SMALL,KM_2_M,DEG2RAD
@@ -1980,7 +1996,7 @@
 
       implicit none
 
-      integer, intent(in) :: last_or_next
+      logical, intent(in), optional :: Load_Prestep
 
       integer :: ivar
       integer :: i,j,k,kk
@@ -1998,11 +2014,23 @@
       real(kind=ip),dimension(:,:,:),allocatable :: PBLtmp
       logical :: PBL_override = .false.
 
+      logical      :: first_time
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Calc_PBLH"
+      endif;enddo
+
+      if(present(Load_Prestep))then
+        first_time = Load_Prestep
+      else
+        first_time = .false.
+      endif
+
       ! Check if the windfile being used provides PBLH
       ivar = 10 ! Planetary Boundary Level Height
       if(Met_var_IsAvailable(ivar))then
         ! PBLH is provided, read it from the met file
-        if(last_or_next.eq.0)then
+        if(first_time)then
           call MR_Read_2d_Met_Variable(ivar,MR_iMetStep_Now)
             PBLH_meso_last_step_Met_sp = MR_dum2d_Met
           if(maxval(MR_dum2d_Met(:,:)).lt.0.0_sp)then
@@ -2043,7 +2071,7 @@
 
         do i=1,nx_submet
           do j=1,ny_submet
-            if(last_or_next.eq.0)then
+            if(first_time)then
               Ri_col(:) = Ri_meso_last_step_MetP_sp(i,j,:)
               z_col(:)  = MR_geoH_metP_last(i,j,:)*KM_2_M
               vpt_col(:)= AirVPTemp_meso_last_step_MetP_sp(i,j,:)
@@ -2128,7 +2156,7 @@
 
             PBLz = maxval(PBLtmp(i,j,1:3))
 
-            if(last_or_next.eq.0)then
+            if(first_time)then
               PBLH_meso_last_step_Met_sp(i,j) = real(PBLz,kind=sp)
             else
               PBLH_meso_next_step_Met_sp(i,j) = real(PBLz,kind=sp)
@@ -2138,22 +2166,26 @@
         deallocate(PBLtmp)
       endif
 
+      return
 
       end subroutine Calc_PBLH
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!  Calc_Monin_Length
+!  Calc_Monin_Length(Load_Prestep)
 !
-!  Called from: 
-!  Arguments: last_or_next
-!    none
+!  Called from: Set_VarDiffV_Meso
+!  Arguments:
+!    Load_Prestep   = logical, optional; triggers loading 'last' only
 !
-!  This subroutine 
+!  This subroutine Monin-Obukhov length to be used in surface-layer calculations.
+!  The equation for L can be used throughout, but we are only interested in the
+!  lowest layer (surface) so this subroutine returns a 2d array, either 'last'
+!  (if Load_Prestep is provided) or the 'next' data array.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine Calc_Monin_Length(last_or_next)
+      subroutine Calc_Monin_Length(Load_Prestep)
 
       use global_param,  only : &
          EPS_SMALL,KM_2_M
@@ -2168,15 +2200,25 @@
 
       implicit none
 
-      integer, intent(in) :: last_or_next
+      logical, intent(in), optional :: Load_Prestep
 
-      !integer :: ivar
       integer :: i,j,k_L
-      !real(kind=ip) :: tmp
       real(kind=ip) :: Ri
       real(kind=ip) :: Ri_col(np_fullmet)
       real(kind=ip) :: z_col(np_fullmet)
       real(kind=ip) :: L_MonOb
+
+      logical      :: first_time
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Calc_Monin_Length"
+      endif;enddo
+
+      if(present(Load_Prestep))then
+        first_time = Load_Prestep
+      else
+        first_time = .false.
+      endif
 
       ! Get Monin-Obukhov length from the
       ! Businger-Dyer-Pandolfo empirical result 
@@ -2185,45 +2227,69 @@
         ! Panofsky and Dutton,1984
         ! also Eq 11.24 of "Introduction to Micrometeorology";
         ! Arya, 1988
-      do i=1,nx_submet
-        do j=1,ny_submet
-          if(last_or_next.eq.0)then
+      if(first_time)then
+        do i=1,nx_submet
+          do j=1,ny_submet
             Ri_col(:) = Ri_meso_last_step_MetP_sp(i,j,:)
             z_col(:)  = MR_geoH_metP_last(i,j,:)*KM_2_M
-          else
+            ! Pick the bottom (non-zero) z
+            do k_L=1,np_fullmet
+              if(z_col(k_L).gt.0.0_ip)then
+                exit
+              endif
+            enddo
+            ! For the purpuse of calculating L, don't let Ri get too close to 0
+            Ri = sign(max(abs(Ri_col(k_L)),1.0e-2_ip),Ri_col(k_L))
+            if(Ri_col(k_L).lt.RI_CRIT)then
+              ! Test for special case of neutrally stable case, L->Inf ; set to 1 km
+              if (abs(Ri_col(k_L)).lt.EPS_SMALL)then
+                L_MonOb = sign(abs(L_MonOb),100.0_ip)
+              else
+                ! Unstable (negative L)
+                L_MonOb = z_col(k_L)/Ri
+              endif
+            elseif(Ri_col(k_L).gt.RI_CRIT)then
+                ! Stable (positive L)
+              L_MonOb = z_col(k_L)/Ri * (1.0_ip - 5.0_ip*Ri)
+            endif
+            L_MonOb = sign(min(abs(L_MonOb),100.0_ip),L_MonOb)
+
+            L_MonOb_meso_last_step_Met_sp(i,j) = real(L_MonOb,kind=sp)
+          enddo
+        enddo
+      else
+        do i=1,nx_submet
+          do j=1,ny_submet
             Ri_col(:) = Ri_meso_next_step_MetP_sp(i,j,:)
             z_col(:)  = MR_geoH_metP_next(i,j,:)*KM_2_M
-          endif
-
-          ! Pick the bottom (non-zero) z
-          do k_L=1,np_fullmet
-            if(z_col(k_L).gt.0.0_ip)then
-              exit
+            ! Pick the bottom (non-zero) z
+            do k_L=1,np_fullmet
+              if(z_col(k_L).gt.0.0_ip)then
+                exit
+              endif
+            enddo
+            ! For the purpuse of calculating L, don't let Ri get too close to 0
+            Ri = sign(max(abs(Ri_col(k_L)),1.0e-2_ip),Ri_col(k_L))
+            if(Ri_col(k_L).lt.RI_CRIT)then
+              ! Test for special case of neutrally stable case, L->Inf ; set to 1 km
+              if (abs(Ri_col(k_L)).lt.EPS_SMALL)then
+                L_MonOb = sign(abs(L_MonOb),100.0_ip)
+              else
+                ! Unstable (negative L)
+                L_MonOb = z_col(k_L)/Ri
+              endif
+            elseif(Ri_col(k_L).gt.RI_CRIT)then
+                ! Stable (positive L)
+              L_MonOb = z_col(k_L)/Ri * (1.0_ip - 5.0_ip*Ri)
             endif
-          enddo
-          ! For the purpuse of calculating L, don't let Ri get too close to 0
-          Ri = sign(max(abs(Ri_col(k_L)),1.0e-2_ip),Ri_col(k_L))
-          if(Ri_col(k_L).lt.RI_CRIT)then
-            ! Test for special case of neutrally stable case, L->Inf ; set to 1 km
-            if (abs(Ri_col(k_L)).lt.EPS_SMALL)then
-              L_MonOb = sign(abs(L_MonOb),100.0_ip)
-            else
-              ! Unstable (negative L)
-              L_MonOb = z_col(k_L)/Ri
-            endif
-          elseif(Ri_col(k_L).gt.RI_CRIT)then
-              ! Stable (positive L)
-            L_MonOb = z_col(k_L)/Ri * (1.0_ip - 5.0_ip*Ri)
-          endif
-          L_MonOb = sign(min(abs(L_MonOb),100.0_ip),L_MonOb)
+            L_MonOb = sign(min(abs(L_MonOb),100.0_ip),L_MonOb)
 
-          if(last_or_next.eq.0)then
-            L_MonOb_meso_last_step_Met_sp(i,j) = real(L_MonOb,kind=sp)
-          else
             L_MonOb_meso_next_step_Met_sp(i,j) = real(L_MonOb,kind=sp)
-          endif
+          enddo
         enddo
-      enddo
+      endif
+
+      return
 
       end subroutine Calc_Monin_Length
 
@@ -2231,11 +2297,13 @@
 !
 !  Fc_Louis
 !
-!  Called from: 
-!  Arguments: Ri
-!    none
+!  Called from: Calc_Vert_Diff
+!  Arguments:
+!    Ri    : Richardson #
+!    zonz0 : z / z0
 !
-!  This function 
+!  This function is the dimensionless stability function for free-air calculations
+!  of Kv.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -2251,6 +2319,10 @@
       real(kind=ip) :: zonz0    ! dimensionless
 
       real(kind=ip) :: a,b,c,bprime
+
+      do io=1,2;if(VB(io).le.verbosity_debug2)then
+        write(outlog(io),*)"     Entered function Fc_Louis"
+      endif;enddo
 
       a = vonKarman/log(zonz0)    ! Eq. 13
       b = 9.4_ip
@@ -2275,11 +2347,12 @@
 !
 !  Fc_Jac
 !
-!  Called from: 
-!  Arguments: Ri
-!    none
+!  Called from: Calc_Vert_Diff
+!  Arguments:
+!    Ri    : Richardson #
 !
-!  This function
+!  This function is the dimensionless stability function for free-air calculations
+!  of Kv.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -2293,6 +2366,10 @@
 
       real(kind=ip) :: Fc_Jac ! dimensionless
       real(kind=ip) :: Ri ! dimensionless
+
+      do io=1,2;if(VB(io).le.verbosity_debug2)then
+        write(outlog(io),*)"     Entered function Fc_Jac"
+      endif;enddo
 
       if(Ri.le.0.0_ip)then
           ! Unstable atmosphere
@@ -2315,11 +2392,12 @@
 !
 !  Fc_Betts
 !
-!  Called from: 
-!  Arguments: Ri
-!    none
+!  Called from: Calc_Vert_Diff
+!  Arguments:
+!    Ri    : Richardson #
 !
-!  This function
+!  This function is the dimensionless stability function for free-air calculations
+!  of Kv.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -2332,6 +2410,10 @@
 
       real(kind=ip) :: Fc_Betts ! dimensionless
       real(kind=ip) :: Ri ! dimensionless
+
+      do io=1,2;if(VB(io).le.verbosity_debug2)then
+        write(outlog(io),*)"     Entered function Fc_Betts"
+      endif;enddo
 
       if(Ri.le.0.0_ip)then
           ! Unstable atmosphere
@@ -2351,11 +2433,12 @@
 !
 !  Fc_Hong
 !
-!  Called from: 
-!  Arguments: Ri
-!    none
+!  Called from: Calc_Vert_Diff
+!  Arguments:
+!    Ri    : Richardson #
 !
-!  This function
+!  This function is the dimensionless stability function for free-air calculations
+!  of Kv.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -2368,6 +2451,10 @@
 
       real(kind=ip) :: Fc_Hong ! dimensionless
       real(kind=ip) :: Ri ! dimensionless
+
+      do io=1,2;if(VB(io).le.verbosity_debug2)then
+        write(outlog(io),*)"     Entered function Fc_Hong"
+      endif;enddo
 
       if(Ri.le.0.0_ip)then
           ! Unstable atmosphere
@@ -2387,11 +2474,12 @@
 !
 !  Fc_Collins
 !
-!  Called from: 
-!  Arguments: Ri
-!    none
+!  Called from: Calc_Vert_Diff
+!  Arguments:
+!    Ri    : Richardson #
 !
-!  This function
+!  This function is the dimensionless stability function for free-air calculations
+!  of Kv.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -2405,6 +2493,10 @@
 
       real(kind=ip) :: Fc_Collins ! dimensionless
       real(kind=ip) :: Ri ! dimensionless
+
+      do io=1,2;if(VB(io).le.verbosity_debug2)then
+        write(outlog(io),*)"     Entered function Fc_Collins"
+      endif;enddo
 
       if(Ri.le.0.0_ip)then
           ! Unstable atmosphere
@@ -2424,11 +2516,14 @@
 !
 !  Fc_PMB
 !
-!  Called from: 
-!  Arguments: Ri,ml,z
-!    none
+!  Called from: No called (since it isn't working), but would be called from Calc_Vert_Diff
+!  Arguments:
+!    Ri    : Richardson #
+!    ml    : mixing length
+!    z     : altitude
 !
-!  This function
+!  This function is the dimensionless stability function for free-air calculations
+!  of Kv.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -2455,6 +2550,10 @@
       real(kind=ip),parameter :: d = 5.0_ip
       real(kind=ip),parameter :: f = 5.19615242270663_ip ! = sqrt(27)
 
+      do io=1,2;if(VB(io).le.verbosity_debug2)then
+        write(outlog(io),*)"     Entered function Fc_PMB"
+      endif;enddo
+
       if(Ri.le.0.0_ip)then
           ! Unstable atmosphere
         Fc_PMB = 1.0_ip/(1.0_ip+3.0_ip*b*c*(ml*ml*sqrt(Ri)/(z*z*f)))
@@ -2462,7 +2561,6 @@
           ! Stable atmosphere
         Fc_PMB = 1.0_ip/(1.0_ip+3.0_ip*b*Ri*sqrt(1.0_ip+d*Ri))
       endif
-
 
       return
 
@@ -2472,11 +2570,12 @@
 !
 !  MixLen
 !
-!  Called from: 
-!  Arguments: z
-!    none
+!  Called from: Calc_Vert_Diff
+!  Arguments:
+!    z   : altitude
 !
-!  This function
+!  This function calculates the mixing legth for free-air Kv using the asymptotic
+!  mixing length LambdaC.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -2498,6 +2597,10 @@
       real(kind=ip) :: MixLen  ! m
       real(kind=ip) :: z       ! m
 
+      do io=1,2;if(VB(io).le.verbosity_debug2)then
+        write(outlog(io),*)"     Entered function MixLen"
+      endif;enddo
+
       !MixLen = 1.0_ip/(1.0_ip/(z*vonKarman) + 1.0_ip/LambdaC)
       MixLen = (z*vonKarman)/(1.0_ip+(z*vonKarman/LambdaC))
 
@@ -2509,11 +2612,13 @@
 !
 !  Phi_WindShear_Similarity
 !
-!  Called from: 
-!  Arguments: z_on_L
-!    none
+!  Called from: Calc_Vert_Diff
+!  Arguments:
+!    z_on_L
 !
-!  This function
+!  This function calculates the stability function from Monin similarity theory
+!  for surface layers. It assumes that the function is a general form with
+!  parameters alpha, beta, gamma, set in the input block.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -2527,6 +2632,10 @@
       real(kind=ip) :: Phi_WindShear_Similarity
 
       real(kind=ip) :: z_on_L
+
+      do io=1,2;if(VB(io).le.verbosity_debug2)then
+        write(outlog(io),*)"     Entered function Phi_WindShear_Similarity"
+      endif;enddo
 
       if(z_on_L.le.0.0_ip)then
           ! Unstable
@@ -2544,11 +2653,11 @@
 !
 !  Psi_WindShear_Similarity
 !
-!  Called from: 
-!  Arguments: z_on_L
-!    none
+!  Called from: Currently not called
+!  Arguments:
+!    z_on_L
 !
-!  This function
+!  This function calculates the Psi from Monin similarity theory.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -2566,6 +2675,10 @@
       real(kind=ip) :: z_on_L
 
       real(kind=ip) :: x,tmp1,tmp2
+
+      do io=1,2;if(VB(io).le.verbosity_debug2)then
+        write(outlog(io),*)"     Entered function Psi_WindShear_Similarity"
+      endif;enddo
 
       if(z_on_L.le.0.0_ip)then
           ! Unstable

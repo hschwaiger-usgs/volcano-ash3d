@@ -63,7 +63,7 @@
       use io_units
 
       use global_param,  only : &
-         nmods,GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH,EPS_SMALL,&
+         GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH,EPS_SMALL,&
          useMoistureVars, useVz_rhoG
 
       use io_data,       only : &

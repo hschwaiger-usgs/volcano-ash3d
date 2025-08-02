@@ -486,7 +486,7 @@
       use io_data,       only : &
          nvar_User2d_static_XY,nvar_User2d_XY,&
          nvar_User3d_XYGs,nvar_User3d_XYZ,    &
-         nvar_User4d_XYZGs
+         nvar_User4d_XYZGs,nvar_User_charlines
 
       integer,intent(in) :: nx
       integer,intent(in) :: ny
@@ -547,6 +547,7 @@
       allocate(var_User4d_XYZGs_MissVal(nvar_User4d_XYZGs));     var_User4d_XYZGs_MissVal= 0.0_op
       allocate(var_User4d_XYZGs_FillVal(nvar_User4d_XYZGs));     var_User4d_XYZGs_FillVal= 0.0_op
       allocate(var_User4d_XYZGs(nx,ny,nz,ns,nvar_User4d_XYZGs)); var_User4d_XYZGs        = 0.0_op
+      allocate(var_User_charlines(nvar_User_charlines));         var_User_charlines      = ''
 
       end subroutine Allocate_Output_UserVars
 
