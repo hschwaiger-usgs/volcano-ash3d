@@ -2265,6 +2265,8 @@
           if(olam.gt. 180.0_ip.and.&
              loncc_topo_subgrid(nlon_topo_subgrid).lt.180.0_ip)olam=olam-360.0_ip
           if(olam.lt.-180.0_ip)olam=olam+360.0_ip
+          if(abs(olam-loncl_topo_subgrid(1)).lt.0.001_ip)olam=loncl_topo_subgrid(1)
+          if(abs(olam-loncl_topo_subgrid(nlon_topo_subgrid+1)).lt.0.001_ip)olam=loncl_topo_subgrid(nlon_topo_subgrid+1)
 
           ! Double-check that olam,ophi maps onto the computation grid
           if(olam.lt.loncl_topo_subgrid(1).or.&

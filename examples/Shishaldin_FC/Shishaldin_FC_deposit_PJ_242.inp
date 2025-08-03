@@ -323,7 +323,7 @@ useWindVars          = 1
 #  Line 3 is the file name of the topography data.
 *******************************************************************************
 OPTMOD=TOPO
-no 2                          # use topography?
+yes 2                          # use topography?
 1 6.0                          # Topofile format, smoothing radius
 GEBCO_2023.nc                  # topofile name
 *******************************************************************************
