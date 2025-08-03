@@ -122,12 +122,12 @@
       ! Set the number of output variables for this module
       ! This depends on settings from the input block
       logical :: use_Output_Vars_VarDiff       = .true.
-      integer :: nvar_User2d_static_XY_VarDiff = 0
-      integer :: nvar_User2d_XY_VarDiff        = 0 ! If using Kz, then =1 : Pbl
-      integer :: nvar_User3d_XYGs_VarDiff      = 0
-      integer :: nvar_User3d_XYZ_VarDiff       = 0 ! If using Kh, then =1 khorz; if also Kz, then =3 kvert, Ri
-      integer :: nvar_User4d_XYZGs_VarDiff     = 0
-      integer :: nvar_User_charlines_VarDiff   = 9
+      integer, parameter :: nvar_User2d_static_XY_VarDiff = 0
+      integer            :: nvar_User2d_XY_VarDiff        = 0 ! If using Kz, then =2 : Pblh, Ust
+      integer, parameter :: nvar_User3d_XYGs_VarDiff      = 0
+      integer            :: nvar_User3d_XYZ_VarDiff       = 0 ! If using Kh, then =1 khorz; if also Kz, then =3 kvert, Ri
+      integer, parameter :: nvar_User4d_XYZGs_VarDiff     = 0
+      integer, parameter :: nvar_User_charlines_VarDiff   = 9 ! number of line of the special block of control file
 
       character(len=30),dimension(:),allocatable :: temp_2d_name_VarDiff
       character(len=30),dimension(:),allocatable :: temp_2d_unit_VarDiff
@@ -140,7 +140,7 @@
       character(len=30),dimension(:),allocatable :: temp_3d_lname_VarDiff
       real(kind=op),    dimension(:),allocatable :: temp_3d_MissVal_VarDiff
       real(kind=op),    dimension(:),allocatable :: temp_3d_FillVal_VarDiff
-      character(len=80),dimension(:),allocatable :: var_User_charlines_VarDiff
+      character(len=80),dimension(nvar_User_charlines_VarDiff) :: var_User_charlines_VarDiff = ''
 
       ! These are used to keep track of which index in the global list, this
       ! modules output vars corespond to
@@ -222,9 +222,6 @@
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine input_data_VarDiff"
       endif;enddo
-
-      if(.not.allocated(var_User_charlines_VarDiff)) &
-               allocate(var_User_charlines_VarDiff(nvar_User_charlines_VarDiff))
 
       open(unit=10,file=infile,status='old',err=1900)
 
@@ -938,10 +935,10 @@
          kx,kz
 
       use Output_Vars,   only : &
-         var_User2d_XY_name,var_User2d_XY_unit,var_User2d_XY_lname,&
-         var_User2d_XY_MissVal,var_User2d_XY_FillVal,var_User2d_XY, &
-         var_User3d_XYZ_name,var_User3d_XYZ_unit,var_User3d_XYZ_lname,&
-         var_User3d_XYZ_MissVal,var_User3d_XYZ_FillVal,var_User3d_XYZ,&
+         var_User2d_XY_name,var_User2d_XY_unit,var_User2d_XY_lname,            &
+         var_User2d_XY_MissVal,var_User2d_XY_FillVal,var_User2d_XY,            &
+         var_User3d_XYZ_name,var_User3d_XYZ_unit,var_User3d_XYZ_lname,         &
+         var_User3d_XYZ_MissVal,var_User3d_XYZ_FillVal,var_User3d_XYZ,         &
          var_User_charlines
 
       use Atmosphere,    only : &

@@ -93,7 +93,7 @@ FASTFPPFLAG = -DFAST_DT -DFAST_SUBGRID
 # PLOTTING LIBRARIES
 #  The default plotting utility for Ash3d_PostProc is gnuplot with plots generated
 #  through system calls to that external program.  Alternatively, you can use either
-#  the plplot, dislin or GMT plotting packages.  Currently, shapefile require contour to
+#  the plplot, dislin, GMT, or MatLab plotting packages.  Currently, shapefile require contour to
 #  be generated either with gnuplot, dislin or GMT.  Set the corresponding variable
 #  below to 'T' if you want to build with these libraries.
     # Set to F if you do not have zip installed (verify below that zippath=/usr/bin/zip)
@@ -141,7 +141,7 @@ OPTMODS_FPP=
 OPTMODS_OBJ=
 
 # Ash3d can log some useful information about a run such as the username of 
-# account that ran the case, then hostname of the system and run directory
+# account that ran the case, the hostname of the system and run directory
 # (or current working directory).  Although this is useful for record-keeping,
 # this can be considered sensitive information.  To disable this logging,
 # set PII=OFF
@@ -306,6 +306,7 @@ endif
 #  GNU Fortran Compiler
 #  Intel Fortran Compiler
 #  AMD Optimizing C/C++/Fortran Compiler (aocc)
+#  Nvidia Fortran Compiler (nvhpc)
 include $(SYSINC)
 ###############################################################################
 

@@ -149,20 +149,23 @@
       integer, parameter :: nvar_User3d_XYGs_Topo      = 0
       integer, parameter :: nvar_User3d_XYZ_Topo       = 0
       integer, parameter :: nvar_User4d_XYZGs_Topo     = 0
+      integer, parameter :: nvar_User_charlines_Topo   = 4 ! number of line of the special block of control file
 
       character(len=30),dimension(nvar_User2d_static_XY_Topo) :: temp_2ds_name_Topo
       character(len=30),dimension(nvar_User2d_static_XY_Topo) :: temp_2ds_unit_Topo
       character(len=30),dimension(nvar_User2d_static_XY_Topo) :: temp_2ds_lname_Topo
       real(kind=op),    dimension(nvar_User2d_static_XY_Topo) :: temp_2ds_MissVal_Topo
       real(kind=op),    dimension(nvar_User2d_static_XY_Topo) :: temp_2ds_FillVal_Topo
+      character(len=80),dimension(nvar_User_charlines_Topo)   :: var_User_charlines_Topo = ''
 
       ! These are used to keep track of which index in the global list, this
-      ! modules output vars correspond to
+      ! modulei's output vars correspond to
       integer :: indx_User2d_static_XY_Topo
       integer :: indx_User2d_XY_Topo
       integer :: indx_User3d_XYGs_Topo
       integer :: indx_User3d_XYZ_Topo
       integer :: indx_User4d_XYZGs_Topo
+      integer :: indx_User_charlines_Topo
 
       integer :: nlat_topo_fullgrid
       integer :: nlon_topo_fullgrid
@@ -255,6 +258,8 @@
         endif
 1104    format(7x,a20)
       enddo
+      ! Found Line 1:
+      var_User_charlines_Topo(1) = trim(adjustl(linebuffer080))
 
       useTopo = .false.
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -263,6 +268,9 @@
 
       ! Check if we're going to use topography
       read(10,'(a80)',iostat=ios,err=2010)linebuffer080
+      ! Line 2:
+      var_User_charlines_Topo(2) = trim(adjustl(linebuffer080))
+
       read(linebuffer080,'(a3)') answer
       if (answer.eq.'yes') then
         useTopo = .true.
@@ -301,6 +309,8 @@
       if (useTopo) then
         ! Check if we're using topography, then get the format code
         read(10,'(a80)',iostat=ios,err=2010)linebuffer080
+        ! Line 3:
+        var_User_charlines_Topo(3) = trim(adjustl(linebuffer080))
         read(linebuffer080,*,iostat=ioerr) topoFormat,rad_smooth
         if(topoFormat.eq.1)then
           do io=1,2;if(VB(io).le.verbosity_info)then
@@ -345,6 +355,8 @@
         endif
         ! And read the file name
         read(10,'(a80)',iostat=ios,err=2010)linebuffer080
+        ! Line 4:
+        var_User_charlines_Topo(4) = trim(adjustl(linebuffer080))
         read(linebuffer080,*) file_topo
         file_topo = trim(adjustl(file_topo))
         do io=1,2;if(VB(io).le.verbosity_info)then           
@@ -398,7 +410,7 @@
 
       use io_data,       only : &
          nvar_User3d_XYZ,nvar_User3d_XYGs,nvar_User2d_XY,nvar_User2d_static_XY,&
-         nvar_User4d_XYZGs
+         nvar_User4d_XYZGs,nvar_User_charlines
 
       integer           ,intent(in) :: nx
       integer           ,intent(in) :: ny
@@ -423,6 +435,7 @@
       indx_User3d_XYGs_Topo      = nvar_User3d_XYGs
       indx_User3d_XYZ_Topo       = nvar_User3d_XYZ
       indx_User4d_XYZGs_Topo     = nvar_User4d_XYZGs
+      indx_User_charlines_Topo   = nvar_User_charlines
 
       temp_2ds_name_Topo(1)  = "Topography"
       temp_2ds_lname_Topo(1) = "Elevation of surface"
@@ -438,6 +451,7 @@
       nvar_User3d_XYGs      = nvar_User3d_XYGs      + nvar_User3d_XYGs_Topo
       nvar_User3d_XYZ       = nvar_User3d_XYZ       + nvar_User3d_XYZ_Topo
       nvar_User4d_XYZGs     = nvar_User4d_XYZGs     + nvar_User4d_XYZGs_Topo
+      nvar_User_charlines   = nvar_User_charlines   + nvar_User_charlines_Topo
 
       end subroutine Allocate_Topo
 
@@ -463,9 +477,9 @@
          nxmax,nymax
 
       use Output_Vars,   only : &
-         var_User2d_static_XY_name,var_User2d_static_XY_unit,var_User2d_static_XY_lname,&
-         var_User2d_static_XY_MissVal,var_User2d_static_XY_FillVal,&
-         var_User2d_static_XY
+         var_User2d_static_XY_name,var_User2d_static_XY_unit,                  &
+         var_User2d_static_XY_lname,var_User2d_static_XY_MissVal,              &
+         var_User2d_static_XY_FillVal,var_User2d_static_XY,var_User_charlines
 
       integer :: i,indx
 
@@ -479,6 +493,11 @@
         if(i.eq.1) &
           var_User2d_static_XY(1:nxmax,1:nymax,indx) = &
            real(topo_comp(1:nxmax,1:nymax)*KM_2_M,kind=op)
+      enddo
+
+      do i=1,nvar_User_charlines_Topo
+        indx = indx_User_charlines_Topo+i
+        var_User_charlines(indx) = var_User_charlines_Topo(i)
       enddo
 
       end subroutine Prep_output_Topo

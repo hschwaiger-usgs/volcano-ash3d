@@ -369,7 +369,7 @@
               AirVisc_meso_next_step_MetP_sp(i,j,k) = &
                 Visc_Sutherland(temp)
               AirLamb_meso_next_step_MetP_sp(i,j,k) = &
-                lambda_MeanFreePath(AirVisc_meso_last_step_MetP_sp(i,j,k),&
+                lambda_MeanFreePath(AirVisc_meso_next_step_MetP_sp(i,j,k),&
                                     pres,temp)
             enddo
           enddo
@@ -753,7 +753,6 @@
       do io=1,2;if(VB(io).le.verbosity_debug2)then
         write(outlog(io),*)"     Entered function lambda_MeanFreePath"
       endif;enddo
-
         ! Mean-free-path of dry air : Eq. 9.6 of Seinfeld and Pandis
       lambda_MeanFreePath = (2.0_sp*visc)/ &
              (pres*sqrt(8.0_sp*real(MB_DRY_AIR/(PI*R_GAS_IDEAL*temp),kind=sp)))
