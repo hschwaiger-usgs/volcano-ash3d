@@ -73,7 +73,7 @@
 ******************* BLOCK 1 ****************************************************
 Shishaldin                         # Volcano name (character*30)
 0 1 -135.0 90.0 0.933 6371.229
--2198.02 -3384.65                  # x, y of LL corner of grid (km, or deg. if latlongflag=1)
+-2078.93 -3478.97                  # x, y of LL corner of grid (km, or deg. if latlongflag=1)
 500.0     350.0                    # grid width and height (km, or deg. if latlonflag=1)
 -1828.93 -3303.97                  # vent location         (km, or deg. if latlonflag=1)
 2.5       2.5                      # DX, DY of grid cells  (km, or deg. if latlonflag=1)
@@ -298,14 +298,14 @@ yes                           # Defer to Lon/Lat coordinates? ("no" defers to pr
 # The title and comment lines are passed through to the netcdf header of the                           
 # output file.                                                                                         
 ******************* BLOCK 9 ****************************************************
-3d_tephra_fallPJ.nc             # Name of output file
+3d_tephra_fall_PJ_242.nc      # Name of output file
 ShishaldinFC                  # Title of simulation
 Ash3d validation test         # Comment
 *******************************************************************************
 # Reset parameters
 *******************************************************************************
 OPTMOD=RESETPARAMS
-useWindVars          = 1
+useWindVars          = 0
 *******************************************************************************
 # Topography
 # Line 1 indicates whether or not to use topography followed by the integer flag
