@@ -6476,15 +6476,15 @@
       if(outunit.gt.0)then
         write(outunit,1)&
          '******************* BLOCK 5 ****************************************************'
+        write(*,*)"looping over windfiles: ",nwindfiles
         do i=1,nwindfiles
-          write(outunit,2)adjustl(trim(windfiles(i)))
+          write(outunit,'(a)')trim(windfiles(i))
         enddo
         write(outunit,1)&
          '********************************************************************************'
       endif
 
  1    format(a80)
- 2    format(a130)
 
       end subroutine SetWrite_input_block_05
 

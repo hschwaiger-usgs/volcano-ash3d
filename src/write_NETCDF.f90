@@ -5739,7 +5739,7 @@
           nSTAT = nf90_get_var(ncid,pr_ash_var_id,dum3d_out)
           pr_ash(:,:,:) = real(dum3d_out(:,:,:),kind=ip)
           deallocate(dum3d_out)
-          if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"get_var pr_ash:")
+          if(nSTAT.ne.0)call NC_check_status(nSTAT,0,"get_var pr_ash:")
         endif
 
         ! Now populate a few of the header values needed for
@@ -6242,9 +6242,7 @@
         endif
         do i=1,MR_iWindFiles
           nSTAT=nf90_get_var(ncid,wf_name_var_id,MR_windfiles(i),(/1,i/))
-          MR_windfiles(i) = adjustl(trim(MR_windfiles(i)))
         enddo
-
         first_time = .false.
 
       endif ! first_time

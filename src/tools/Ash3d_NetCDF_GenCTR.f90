@@ -70,9 +70,10 @@
 
       implicit none
 
-      integer           :: nargs
-      integer           :: stat
-      character(len=80) :: linebuffer080
+      integer            :: nargs
+      integer            :: stat
+      character(len= 80) :: linebuffer080
+!      character(len=130) :: linebuffer130
 
       logical       :: IsThere
 !      integer       :: outunit
@@ -126,6 +127,7 @@
       integer           :: idx
       character(len=4)  :: yearstr
       character(len=50) :: tmpstr
+      integer           :: i,il
 
       INTERFACE
         integer function HS_YearOfEvent(HoursSince,byear,useLeaps)
@@ -274,7 +276,7 @@
       ! BLOCK 3: WIND PARAMETERS
       call Write_input_block_header(fid_ctrlfile,3)
       ! for iwind=5 cases, the number is windfiles is modifies, so read from cdf_b3l5
-      read(cdf_b3l5,'(i2)',iostat=iostatus,iomsg=iomessage) nwindfiles
+      read(cdf_b3l5,*,iostat=iostatus,iomsg=iomessage) nwindfiles
       call SetWrite_input_block_03(fid_ctrlfile                    ,&  ! output stream ID
                                    MR_iWind                        ,&
                                    MR_iWindFormat                  ,&
@@ -385,7 +387,6 @@
           read(cdf_b5l1,*)MR_WindFiles(1)
         endif
       endif
-
       call Write_input_block_header(fid_ctrlfile,5)
       call SetWrite_input_block_05(fid_ctrlfile                    ,&  ! output stream ID
                                    nwindfiles                      ,&
