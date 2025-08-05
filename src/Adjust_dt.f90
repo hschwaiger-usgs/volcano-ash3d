@@ -206,8 +206,6 @@
           !         3-d: both
           !       Current implementation assume 3-d diffusion with non-zero diffusivities
           time_diffuse = DT_MAX
-          write(*,*)allocated(kx)
-          write(*,*)maxval(kx)
   
           do i=1,nxmax
             do j=1,nymax

@@ -72,7 +72,7 @@
 # Line 9 : number of pulses to be read in BLOCK 2                                                      
 ******************* BLOCK 1 ****************************************************
 Shishaldin                         # Volcano name (character*30)
-0 1 -150.0 90.0 0.9330127 6371.229
+0 1 -150.0 90.0 0.9330127 6371.229 # Proj flags and params; first term (LLflag) is 1, so all else ignored
 -1161.48 -3839.75                  # x, y of LL corner of grid (km, or deg. if latlongflag=1)
 500.0     350.0                    # grid width and height (km, or deg. if latlonflag=1)
 -911.48 -3664.75                   # vent location         (km, or deg. if latlonflag=1)

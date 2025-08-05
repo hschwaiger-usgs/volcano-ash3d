@@ -397,10 +397,11 @@
         allocate(xy2ll_xlon(-1:nxmax+2,-1:nymax+2)); xy2ll_xlon(:,:) = 0.0_ip
       endif
       ! This block calculates the lon/lat for each computational grid point
-      ! Note:  All we need here is just the min/max for lat/lon so that we
+      ! Note:  Sometimes, all we need here is just the min/max for lat/lon so that we
       !        can generate our own, regular lat/lon grid filled with
-      !        interpolated values.
-      !     HFS: change this to just calculate the edge inverse-projection
+      !        interpolated values. We would only need to inverse-project the edge
+      !        values. Often (e.g interpolating topography), we do need the lon/lat
+      !        for every point.
       latmax =  -90.0_8
       latmin =   90.0_8
       lonmin =  360.0_8

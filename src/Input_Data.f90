@@ -4478,7 +4478,7 @@
       !                Write out ESRI ASCII files of ash-cloud concentration?
 9405  do io=1,2;if(VB(io).le.verbosity_error)then
         write(errlog(io),*)'Error reading whether to print out ESRI ASCII files of',&
-                  ' cloud concentration at specifiied times.'
+                  ' cloud concentration at specified times.'
         write(errlog(io),*)'The first characters on this line should be ''yes'' or',&
                   ' ''no''.  Program stopped'
         write(errlog(io),*) '------------------------------'
@@ -5919,28 +5919,30 @@
         case(12) ! BLOCK 10+2 (OPTMOD):
                  !   VARDIFF
       write(outunit,1)'# Variable Diffusivity                                                                                 '
-      write(outunit,1)'#   Line 1 indicates whether or not to use horizontal diffusivity followed by the                      '
+      write(outunit,1)'#   Line 1 indicates whether or not to write VarDiff variables to the output file                      '
+      write(outunit,1)'#   Line 2 Specifies the optional module                                                               '
+      write(outunit,1)'#   Line 3 indicates whether or not to use horizontal diffusivity followed by the                      '
       write(outunit,1)'#          type ID and value with                                                                      '
       write(outunit,1)'#             1  500.0 # constant horizontal diffusivity with specified value (m2/s)                   '
       write(outunit,1)'#             2  0.2   # Smagorinsky model with coefficient C ()                                       '
       write(outunit,1)'#             3  0.2   # Pielke model with coefficient C ()                                            '
-      write(outunit,1)'#   Line 2 indicates whether or not to use vertical diffusivity                                        '
-      write(outunit,1)'#   Line 3 indicates the boundary layer model and value (if model requires)                            '
+      write(outunit,1)'#   Line 4 indicates whether or not to use vertical diffusivity                                        '
+      write(outunit,1)'#   Line 5 indicates the boundary layer model and value (if model requires)                            '
       write(outunit,1)'#             1 500.0         # BL model 1=const ; value (m2/s)                                        '
       write(outunit,1)'#             2               #          2=none (Use Free-air throughout)                              '
       write(outunit,1)'#             3               #          3=Troen and Mahrt                                             '
       write(outunit,1)'#             4               #          4=Ulke                                                        '
       write(outunit,1)'#             5               #          5=Shir / Businger,Ayer                                        '
-      write(outunit,1)'#   Line 4 indicates the Free-Air model and value (if model requires)                                  '
+      write(outunit,1)'#   Line 6 indicates the Free-Air model and value (if model requires)                                  '
       write(outunit,1)'#             1 500.0         # Free-Air 1=const ; value (m2/s)                                        '
       write(outunit,1)'#             2               #          2=F(Ri)=Louis                                                 '
       write(outunit,1)'#             3               #          3=F(Ri)=Jacobson/Stull                                        '
       write(outunit,1)'#             4               #          4=F(Ri)=Betts                                                 '
       write(outunit,1)'#             5               #          5=F(Ri)=Hong                                                  '
       write(outunit,1)'#             6               #          6=F(Ri)=Collins                                               '
-      write(outunit,1)'#   Line 5 contains the von Karman constant                                                            '
-      write(outunit,1)'#   Line 6 contains the free-air mixing length (m)                                                     '
-      write(outunit,1)'#   Line 7 is the critical Richardson number used in calculating atmospheric stability.                '
+      write(outunit,1)'#   Line 7 contains the von Karman constant                                                            '
+      write(outunit,1)'#   Line 8 contains the free-air mixing length (m)                                                     '
+      write(outunit,1)'#   Line 9 is the critical Richardson number used in calculating atmospheric stability.                '
       write(outunit,1)'#                                                                                                      '
 
 !        case default
@@ -6325,7 +6327,7 @@
 !    WriteDepositTime_KML_c          = char:  B4L12 Write out        KML file of deposit arrival times?
 !    WriteCloudTime_ASCII_c          = char:  B4L13 Write out ESRI ASCII file of cloud arrival times
 !    WriteCloudTime_KML_c            = char:  B4L14 Write out        KML file of cloud arrival times?
-!    Write3dFiles_c                  = char:  B4L15 Write out 3-D ash concentration at specified times?
+!    Write3dFiles_c                  = char:  B4L15 Write out 3-D ash concentration at specified times? / [output code: 1=2d+concen,2=2d only]
 !    ifm                             = integer : B4L15+ output code: 1=2d+concen,2=2d only]
 !    ofm                             = integer : B4L16 format of ash concentration files (1=ascii, 2=binary, or 3=netcdf)
 !    nwt                             = integer : B4L17 nWriteTimes
@@ -6437,7 +6439,7 @@
  121  format(a3,'     # Write out        KML file of deposit arrival times?')
  131  format(a3,'     # Write out ESRI ASCII file of cloud arrival times?')
  141  format(a3,'     # Write out        KML file of cloud arrival times?')
- 151  format(a3,2x,i1,'  # Write out 3-D ash concentration at specified times?')
+ 151  format(a3,2x,i1,'  # Write out 3-D ash concentration at specified times? / [output code: 1=2d+concen,2=2d only]')
  161  format(a6,3x,'# format of ash concentration files     (ascii, binary, or netcdf)')
  171  format(i3,6x,'# nWriteTimes')
  181  format(*(f8.3))
@@ -6475,7 +6477,7 @@
         write(outunit,1)&
          '******************* BLOCK 5 ****************************************************'
         do i=1,nwindfiles
-          write(outunit,2)adjustl(windfiles(i))
+          write(outunit,2)adjustl(trim(windfiles(i)))
         enddo
         write(outunit,1)&
          '********************************************************************************'
@@ -7088,11 +7090,36 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine SetWrite_input_block_Topo(outunit)
+      subroutine SetWrite_input_block_Topo(outunit,line1,line2,line3,line4)
 
       use io_units
 
+      use Topography,  only : &
+         var_User_charlines_Topo,nvar_User_charlines_Topo
+
       integer           ,intent(in) :: outunit
+      character(len=80) ,intent(in) :: line1
+      character(len=80) ,intent(in) :: line2
+      character(len=80) ,intent(in) :: line3
+      character(len=80) ,intent(in) :: line4
+
+      var_User_charlines_Topo(1) = line1
+      var_User_charlines_Topo(2) = line2
+      var_User_charlines_Topo(3) = line3
+      var_User_charlines_Topo(4) = line4
+
+      if(outunit.gt.0)then
+        write(outunit,1)&
+         '********************************************************************************'
+        write(outunit,1)adjustl(line1)
+        write(outunit,1)adjustl(line2)
+        write(outunit,1)adjustl(line3)
+        write(outunit,1)adjustl(line4)
+        write(outunit,1)&
+         '********************************************************************************'
+      endif
+
+ 1    format(a80)
 
       end subroutine SetWrite_input_block_Topo
 
@@ -7109,11 +7136,52 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine SetWrite_input_block_VarDiff(outunit)
+      subroutine SetWrite_input_block_VarDiff(outunit,line1,line2,line3,line4,line5, &
+                                              line6,line7,line8,line9)
 
       use io_units
 
+      use Diffusivity_Variable,  only : &
+         var_User_charlines_VarDiff
+
       integer           ,intent(in) :: outunit
+      character(len=80) ,intent(in) :: line1
+      character(len=80) ,intent(in) :: line2
+      character(len=80) ,intent(in) :: line3
+      character(len=80) ,intent(in) :: line4
+      character(len=80) ,intent(in) :: line5
+      character(len=80) ,intent(in) :: line6
+      character(len=80) ,intent(in) :: line7
+      character(len=80) ,intent(in) :: line8
+      character(len=80) ,intent(in) :: line9
+
+      var_User_charlines_VarDiff(1) = line1
+      var_User_charlines_VarDiff(2) = line2
+      var_User_charlines_VarDiff(3) = line3
+      var_User_charlines_VarDiff(4) = line4
+      var_User_charlines_VarDiff(5) = line5
+      var_User_charlines_VarDiff(6) = line6
+      var_User_charlines_VarDiff(7) = line7
+      var_User_charlines_VarDiff(8) = line8
+      var_User_charlines_VarDiff(9) = line9
+
+      if(outunit.gt.0)then
+        write(outunit,1)&
+         '********************************************************************************'
+        write(outunit,1)adjustl(line1)
+        write(outunit,1)adjustl(line2)
+        write(outunit,1)adjustl(line3)
+        write(outunit,1)adjustl(line4)
+        write(outunit,1)adjustl(line5)
+        write(outunit,1)adjustl(line6)
+        write(outunit,1)adjustl(line7)
+        write(outunit,1)adjustl(line8)
+        write(outunit,1)adjustl(line9)
+        write(outunit,1)&
+         '********************************************************************************'
+      endif
+
+ 1    format(a80)
 
       end subroutine SetWrite_input_block_VarDiff
 

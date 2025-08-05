@@ -272,7 +272,7 @@
       character(len= 50) :: linebuffer050
       character(len=130) :: linebuffer130
       integer :: strlen
-      integer :: i,j,k,isize
+      integer :: i,j,k,isize,idx
       integer :: ivar
       integer,dimension(5) :: chunksizes5
       logical :: IsThere
@@ -280,6 +280,8 @@
       integer           :: iostatus
       character(len=120):: iomessage
       character(len=6)  :: blkstr
+      integer           :: OPTMOD_pos,BLKID_pos
+      character(len=2)  :: OMstr
 
       INTERFACE
         character (len=13) function HS_yyyymmddhhmm_since(HoursSince,byear,useLeaps)
@@ -700,8 +702,31 @@
         nSTAT = nf90_put_att(ncid,nf90_global,"useVz_rhoG","false")
       endif
       ! Add optional block lines
+      idx = 100
       do i=1,nvar_User_charlines
-        write(blkstr,'(a4,i2.2)')'BKLN',i
+        idx = idx + 1
+        OPTMOD_pos = index(var_User_charlines(i),"OPTMOD")
+        if(OPTMOD_pos.gt.0)then
+          ! line contains the OPTMOD flag; check which one (only check TOPO or VARDIFF
+          ! since RESETPARAMS is fully documented already)
+          BLKID_pos = index(var_User_charlines(i),"TOPO")
+          if(BLKID_pos.gt.0)then
+            OMstr='TP'
+            idx = 1
+          endif
+          BLKID_pos = index(var_User_charlines(i),"VARDIFF")
+          if(BLKID_pos.gt.0)then
+            OMstr='VD'
+            idx = 1
+          endif
+        endif
+        if(idx.gt.100)then
+          ! first line of the optional module comments does not contain OPTMOD
+          OMstr="XX"
+          write(blkstr,'(a2,a2,i2.2)')'BK',OMstr,i
+        else
+          write(blkstr,'(a2,a2,i2.2)')'BK',OMstr,idx
+        endif
         nSTAT = nf90_put_att(ncid,nf90_global,blkstr,var_User_charlines(i))
       enddo
 
@@ -4215,8 +4240,8 @@
          StopWhenDeposited,StopValue_FracAshDep,StopValue_FracAshDep_Default,SpeciesID
 
       use time_data,     only : &
-          BaseYear,useLeap,os_time_log,time,time_native,SimStartHour,xmlSimStartTime, &
-          Simtime_in_hours,ntmax
+         BaseYear,useLeap,os_time_log,time,time_native,SimStartHour,xmlSimStartTime, &
+         Simtime_in_hours,ntmax
 
       use Source,        only : &
          neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight,Suzuki_A, &
@@ -4265,6 +4290,12 @@
 
       use diffusion,     only : &
          diffusivity_horz,Imp_fac,Imp_DT_fac,Imp_fac_Default,Imp_DT_fac_Default
+
+      use Topography,    only : &
+         var_User_charlines_Topo
+
+      use Diffusivity_Variable, only : &
+         var_User_charlines_VarDiff
 
       use MetReader,     only : &
          MR_iWind,MR_iWindFormat,MR_iGridCode,MR_iDataFormat,MR_iWindFiles,MR_iHeightHandler,&
@@ -4938,160 +4969,163 @@
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment MagmaDensity:")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att MagmaDensity: Assuming MagmaDensity=2500.0"
+            write(outlog(io),*)"Did not find att MagmaDensity: Assuming MagmaDensity=",MagmaDensity_Default
           endif;enddo
-          MagmaDensity = 2500.0_ip
+          MagmaDensity = MagmaDensity_Default
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"DepositDensity",DepositDensity)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment DepositDensity:")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att DepositDensity: Assuming DepositDensity=1000.0"
+            write(outlog(io),*)"Did not find att DepositDensity: Assuming DepositDensity=",DepositDensity_Default
           endif;enddo
-          DepositDensity = 1000.0_ip
+          DepositDensity = DepositDensity_Default
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"LAM_GS_THRESH",LAM_GS_THRESH)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment LAM_GS_THRESH:")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att LAM_GS_THRESH: Assuming LAM_GS_THRESH=250.0"
+            write(outlog(io),*)"Did not find att LAM_GS_THRESH: Assuming LAM_GS_THRESH=",LAM_GS_THRESH_Default
           endif;enddo
-          LAM_GS_THRESH = 250.0_ip
+          LAM_GS_THRESH = LAM_GS_THRESH_Default
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"AIRBORNE_THRESH",AIRBORNE_THRESH)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment AIRBORNE_THRESH:")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att AIRBORNE_THRESH: Assuming AIRBORNE_THRESH=1.0e-3"
+            write(outlog(io),*)"Did not find att AIRBORNE_THRESH: Assuming AIRBORNE_THRESH=",AIRBORNE_THRESH_Default
           endif;enddo
-          AIRBORNE_THRESH = 1.0e-3_ip
+          AIRBORNE_THRESH = AIRBORNE_THRESH_Default
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"GRAV",GRAV)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment GRAV:")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att GRAV: Assuming GRAV=9.81"
+            write(outlog(io),*)"Did not find att GRAV: Assuming GRAV=",GRAV_Default
           endif;enddo
-          GRAV = 9.81_ip
+          GRAV = GRAV_Default
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"RAD_EARTH",RAD_EARTH)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment RAD_EARTH:")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att RAD_EARTH: Assuming RAD_EARTH=6371.229"
+            write(outlog(io),*)"Did not find att RAD_EARTH: Assuming RAD_EARTH=RAD_EARTH_Default"
           endif;enddo
-          RAD_EARTH = 6371.229_ip
+          RAD_EARTH = RAD_EARTH_Default
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"CFL",CFL)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment CFL:")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att CFL: Assuming CFL=0.8"
+            write(outlog(io),*)"Did not find att CFL: Assuming CFL=",CFL_Default
           endif;enddo
-          CFL = 0.80_ip
+          CFL = CFL_Default
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"DT_MIN",DT_MIN)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment DT_MIN:")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att DT_MIN: Assuming DT_MIN=1.0e-5"
+            write(outlog(io),*)"Did not find att DT_MIN: Assuming DT_MIN=",DT_MIN_Default
           endif;enddo
-          DT_MIN = 1.0e-5_ip
+          DT_MIN = DT_MIN_Default
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"DT_MAX",DT_MAX)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment DT_MAX:")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att DT_MAX: Assuming DT_MAX=1.0"
+            write(outlog(io),*)"Did not find att DT_MAX: Assuming DT_MAX=",DT_MAX_Default
           endif;enddo
-          DT_MAX = 1.0e0_ip
+          DT_MAX = DT_MAX_Default
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"ZPADDING",ZPADDING)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment ZPADDING:")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att ZPADDING Assuming ZPADDING=1.3"
+            write(outlog(io),*)"Did not find att ZPADDING Assuming ZPADDING=",ZPADDING_Default
           endif;enddo
-          ZPADDING = 1.3_ip
+          ZPADDING = ZPADDING_Default
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"DEPO_THRESH",DEPO_THRESH)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment DEPO_THRESH:")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att DEPO_THRESH: Assuming DEPO_THRESH=1.0e-2"
+            write(outlog(io),*)"Did not find att DEPO_THRESH: Assuming DEPO_THRESH=",DEPO_THRESH_Default
           endif;enddo
-          DEPO_THRESH = 1.0e-2_ip
+          DEPO_THRESH = DEPO_THRESH_Default
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"DEPRATE_THRESH",DEPRATE_THRESH)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment DEPRATE_THRESH:")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att DEPRATE_THRESH: Assuming DEPRATE_THRESH=1.0e-2"
+            write(outlog(io),*)"Did not find att DEPRATE_THRESH: Assuming DEPRATE_THRESH=",DEPRATE_THRESH_Default
           endif;enddo
-          DEPRATE_THRESH = 1.0e-2_ip
+          DEPRATE_THRESH = DEPRATE_THRESH_Default
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"CLOUDCON_THRESH",CLOUDCON_THRESH)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment CLOUDCON_THRESH:")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att CLOUDCON_THRESH: Assuming CLOUDCON_THRESH=1.0e-3"
+            write(outlog(io),*)"Did not find att CLOUDCON_THRESH: Assuming CLOUDCON_THRESH=",&
+                                CLOUDCON_THRESH_Default
           endif;enddo
-          CLOUDCON_THRESH = 1.0e-3_ip
+          CLOUDCON_THRESH = CLOUDCON_THRESH_Default
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"CLOUDCON_GRID_THRESH",CLOUDCON_GRID_THRESH)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment CLOUDCON_GRID_THRESH:")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att CLOUDCON_GRID_THRESH: Assuming CLOUDCON_GRID_THRESH=1.0e-7"
+            write(outlog(io),*)"Did not find att CLOUDCON_GRID_THRESH: Assuming CLOUDCON_GRID_THRESH=",&
+                                CLOUDCON_GRID_THRESH_Default
           endif;enddo
-          CLOUDCON_GRID_THRESH = 1.0e-7_ip
+          CLOUDCON_GRID_THRESH = CLOUDCON_GRID_THRESH_Default
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"CLOUDLOAD_THRESH",CLOUDLOAD_THRESH)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment CLOUDLOAD_THRESH:")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att CLOUDLOAD_THRESH: Assuming CLOUDLOAD_THRESH=2.0e-1"
+            write(outlog(io),*)"Did not find att CLOUDLOAD_THRESH: Assuming CLOUDLOAD_THRESH=",CLOUDLOAD_THRESH_Default
           endif;enddo
-          CLOUDLOAD_THRESH = 2.0e-1_ip
+          CLOUDLOAD_THRESH = CLOUDLOAD_THRESH_Default
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"THICKNESS_THRESH",THICKNESS_THRESH)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment THICKNESS_THRESH:")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att THICKNESS_THRESH: Assuming THICKNESS_THRESH=1.0e-2"
+            write(outlog(io),*)"Did not find att THICKNESS_THRESH: Assuming THICKNESS_THRESH=",THICKNESS_THRESH_Default
           endif;enddo
-          THICKNESS_THRESH = 1.0e-2_ip
+          THICKNESS_THRESH = THICKNESS_THRESH_Default
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"DBZ_THRESH",DBZ_THRESH)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment DBZ_THRESH:")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att DBZ_THRESH: Assuming DBZ_THRESH=-2.0e+1"
+            write(outlog(io),*)"Did not find att DBZ_THRESH: Assuming DBZ_THRESH=",DBZ_THRESH_Default
           endif;enddo
-          DBZ_THRESH = -2.0e+1_ip
+          DBZ_THRESH = DBZ_THRESH_Default
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"StopValue_FracAshDep",StopValue_FracAshDep)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment StopValue_FracAshDep:")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att StopValue_FracAshDep: Assuming StopValue_FracAshDep=0.99"
+            write(outlog(io),*)"Did not find att StopValue_FracAshDep: Assuming StopValue_FracAshDep=",&
+                                StopValue_FracAshDep_Default
           endif;enddo
           StopValue_FracAshDep = StopValue_FracAshDep_Default
         endif
@@ -5100,72 +5134,72 @@
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment Imp_fac:")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att Imp_fac: Assuming Imp_fac=0.5"
+            write(outlog(io),*)"Did not find att Imp_fac: Assuming Imp_fac=",Imp_fac_Default
           endif;enddo
-          Imp_fac = 0.5_ip
+          Imp_fac = Imp_fac_Default
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"Imp_DT_fac",Imp_DT_fac)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment Imp_DT_fac")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att : Imp_DT_fac =4.0"
+            write(outlog(io),*)"Did not find att : Imp_DT_fac =",Imp_DT_fac_Default
           endif;enddo
-          Imp_DT_fac = 4.0_ip
+          Imp_DT_fac = Imp_DT_fac_Default
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"VelMod_umb",VelMod_umb)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment :VelMod_umb")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att : Assuming VelMod_umb=1"
+            write(outlog(io),*)"Did not find att : Assuming VelMod_umb=",VelMod_umb_Default
           endif;enddo
-          VelMod_umb = 1
+          VelMod_umb = VelMod_umb_Default
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"lambda_umb",lambda_umb)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment :lambda_umb")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att : Assuming lambda_umb=0.2"
+            write(outlog(io),*)"Did not find att : Assuming lambda_umb=",lambda_umb_Default
           endif;enddo
-          lambda_umb = 0.2_ip
+          lambda_umb = lambda_umb_Default
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"N_BV_umb",N_BV_umb)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment :N_BV_umb")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att : Assuming N_BV_umb=0.02"
+            write(outlog(io),*)"Did not find att : Assuming N_BV_umb=",N_BV_umb_Default
           endif;enddo
-          N_BV_umb= 0.02_ip
+          N_BV_umb= N_BV_umb_Default
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"k_entrainment_umb",k_entrainment_umb)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment :k_entrainment_umb")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att : Assuming k_entrainment_umb=0.1"
+            write(outlog(io),*)"Did not find att : Assuming k_entrainment_umb=",k_entrainment_umb_Default
           endif;enddo
-          k_entrainment_umb= 0.1_ip
+          k_entrainment_umb=k_entrainment_umb_Default
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"SuzK_umb",SuzK_umb)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment :SuzK_umb")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att : Assuming SuzK_umb=12.0"
+            write(outlog(io),*)"Did not find att : Assuming SuzK_umb=",SuzK_umb_Default
           endif;enddo
-          SuzK_umb= 12.0_ip
+          SuzK_umb= SuzK_umb_Default
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"useMoistureVars",tmp_str)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment :useMoistureVars")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att : Assuming useMoistureVars=.false."
+            write(outlog(io),*)"Did not find att : Assuming useMoistureVars=",useMoistureVars_Default
           endif;enddo
-          useMoistureVars= .false.
+          useMoistureVars= useMoistureVars_Default
         else
           if(trim(adjustl(tmp_str)).eq.'true')then
             useMoistureVars= .true.
@@ -5178,9 +5212,9 @@
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment :useWindVars")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att : Assuming useWindVars=.false."
+            write(outlog(io),*)"Did not find att : Assuming useWindVars=",useWindVars_Default
           endif;enddo
-          useWindVars= .false.
+          useWindVars= useWindVars_Default
         else
           if(trim(adjustl(tmp_str)).eq.'true')then
             useWindVars= .true.
@@ -5193,9 +5227,9 @@
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment :useOutprodVars")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att : Assuming useOutprodVars=.true."
+            write(outlog(io),*)"Did not find att : Assuming useOutprodVars=",useOutprodVars_Default
           endif;enddo
-          useOutprodVars= .true.
+          useOutprodVars= useOutprodVars_Default
         else
           if(trim(adjustl(tmp_str)).eq.'true')then
             useOutprodVars = .true.
@@ -5208,9 +5242,9 @@
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment :useRestartVars")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att : Assuming useRestartVars=.false."
+            write(outlog(io),*)"Did not find att : Assuming useRestartVars=",useRestartVars_Default
           endif;enddo
-          useRestartVars= .false.
+          useRestartVars= useRestartVars_Default
         else
           if(trim(adjustl(tmp_str)).eq.'true')then
             useRestartVars= .true.
@@ -5223,15 +5257,60 @@
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att Comment :useVz_rhoG")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att : Assuming useVz_rhoG=.false."
+            write(outlog(io),*)"Did not find att : Assuming useVz_rhoG=",useVz_rhoG_Default
           endif;enddo
-          useVz_rhoG= .false.
+          useVz_rhoG= useVz_rhoG_Default
         else
           if(trim(adjustl(tmp_str)).eq.'true')then
             useVz_rhoG= .true.
           else
             useVz_rhoG= .false.
           endif
+        endif
+
+        nSTAT = nf90_get_att(ncid,nf90_global,"Block_NC",tmp_str)
+        if(tmp_str.eq."T")then
+          Have_Block_NetCDF = .true.
+        else
+          Have_Block_NetCDF = .false.
+        endif
+
+        nSTAT = nf90_get_att(ncid,nf90_global,"Block_RP",tmp_str)
+        if(tmp_str.eq."T")then
+          Have_Block_ResParm = .true.
+        else
+          Have_Block_ResParm = .false.
+        endif
+
+        nSTAT = nf90_get_att(ncid,nf90_global,"Block_TP",tmp_str)
+        if(tmp_str.eq."T")then
+          Have_Block_Topo = .true.
+        else
+          Have_Block_Topo = .false.
+        endif
+        if(Have_Block_Topo)then
+          nSTAT = nf90_get_att(ncid,nf90_global,"BKTP01",var_User_charlines_Topo(1))
+          nSTAT = nf90_get_att(ncid,nf90_global,"BKTP02",var_User_charlines_Topo(2))
+          nSTAT = nf90_get_att(ncid,nf90_global,"BKTP03",var_User_charlines_Topo(3))
+          nSTAT = nf90_get_att(ncid,nf90_global,"BKTP04",var_User_charlines_Topo(4))
+        endif
+
+        nSTAT = nf90_get_att(ncid,nf90_global,"Block_VD",tmp_str)
+        if(tmp_str.eq."T")then
+          Have_Block_VarDiff = .true.
+        else
+          Have_Block_VarDiff = .false.
+        endif
+        if(Have_Block_VarDiff)then
+          nSTAT = nf90_get_att(ncid,nf90_global,"BKVD01",var_User_charlines_VarDiff(1))
+          nSTAT = nf90_get_att(ncid,nf90_global,"BKVD02",var_User_charlines_VarDiff(2))
+          nSTAT = nf90_get_att(ncid,nf90_global,"BKVD03",var_User_charlines_VarDiff(3))
+          nSTAT = nf90_get_att(ncid,nf90_global,"BKVD04",var_User_charlines_VarDiff(4))
+          nSTAT = nf90_get_att(ncid,nf90_global,"BKVD05",var_User_charlines_VarDiff(5))
+          nSTAT = nf90_get_att(ncid,nf90_global,"BKVD06",var_User_charlines_VarDiff(6))
+          nSTAT = nf90_get_att(ncid,nf90_global,"BKVD07",var_User_charlines_VarDiff(7))
+          nSTAT = nf90_get_att(ncid,nf90_global,"BKVD08",var_User_charlines_VarDiff(8))
+          nSTAT = nf90_get_att(ncid,nf90_global,"BKVD09",var_User_charlines_VarDiff(9))
         endif
 
         ! Now get all the other variable info:
@@ -5837,27 +5916,27 @@
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att institution:")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att institution: Assuming institution=N/A"
+            write(outlog(io),*)"Did not find att institution: Assuming institution=",cdf_institution_Default
           endif;enddo
-          cdf_institution="N/A"
+          cdf_institution=cdf_institution_Default
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"run_class",cdf_run_class)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att run_class:")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att institution: Assuming run class=Analysis"
+            write(outlog(io),*)"Did not find att institution: Assuming run class=",cdf_run_class_Default
           endif;enddo
-          cdf_run_class="Analysis"
+          cdf_run_class=cdf_run_class_Default
         endif
 
         nSTAT = nf90_get_att(ncid,nf90_global,"url",cdf_url)
         if(nSTAT.ne.0)then
           call NC_check_status(nSTAT,0,"get_att url:")
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Did not find att url: Assuming url=https://vsc-ash.wr.usgs.gov/ash3d-gui"
+            write(outlog(io),*)"Did not find att url: Assuming url=",cdf_url_Default
           endif;enddo
-          cdf_url="https://vsc-ash.wr.usgs.gov/ash3d-gui"
+          cdf_url=cdf_url_Default
         endif
 
         ! Get eruptions ESPs
@@ -6163,6 +6242,7 @@
         endif
         do i=1,MR_iWindFiles
           nSTAT=nf90_get_var(ncid,wf_name_var_id,MR_windfiles(i),(/1,i/))
+          MR_windfiles(i) = adjustl(trim(MR_windfiles(i)))
         enddo
 
         first_time = .false.

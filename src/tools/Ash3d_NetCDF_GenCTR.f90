@@ -38,6 +38,12 @@
       use Diffusion,     only : &
          diffusivity_horz
 
+      use Topography,    only : &
+         var_User_charlines_Topo
+
+      use Diffusivity_Variable, only : &
+         var_User_charlines_VarDiff
+
 #ifdef USENETCDF
       use Ash3d_Netcdf_IO,  only : &
            NC_Read_Output_Products
@@ -452,13 +458,26 @@
       ! BLOCK 10+: OPTIONAL MODULES (TOPO)
       if(Have_Block_Topo)then
         call Write_input_block_header(fid_ctrlfile,11)
-        call SetWrite_input_block_Topo(fid_ctrlfile         ) !           ,&  ! output stream ID
+        call SetWrite_input_block_Topo(fid_ctrlfile                  ,&  ! output stream ID
+                                       var_User_charlines_Topo(1)    ,& 
+                                       var_User_charlines_Topo(2)    ,&
+                                       var_User_charlines_Topo(3)    ,&
+                                       var_User_charlines_Topo(4))
       endif
 
       ! BLOCK 10+: OPTIONAL MODULES (VARDIFF)
       if(Have_Block_VarDiff)then
         call Write_input_block_header(fid_ctrlfile,12)
-        call SetWrite_input_block_VarDiff(fid_ctrlfile      ) !           ,&  ! output stream ID
+        call SetWrite_input_block_VarDiff(fid_ctrlfile                  ,&  ! output stream ID
+                                       var_User_charlines_VarDiff(1)    ,&
+                                       var_User_charlines_VarDiff(2)    ,&
+                                       var_User_charlines_VarDiff(3)    ,&
+                                       var_User_charlines_VarDiff(4)    ,&
+                                       var_User_charlines_VarDiff(5)    ,&
+                                       var_User_charlines_VarDiff(6)    ,&
+                                       var_User_charlines_VarDiff(7)    ,&
+                                       var_User_charlines_VarDiff(8)    ,&
+                                       var_User_charlines_VarDiff(9))
       endif
 
 

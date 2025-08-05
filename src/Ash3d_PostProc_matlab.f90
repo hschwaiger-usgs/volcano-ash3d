@@ -456,8 +456,7 @@
           IsRegGrid = .false.
         endif
       endif
-!      write(*,*)dn,de,abs(dn-de),IsRegGrid
-!      stop 66
+
       if(IsRegGrid)then
         ! If the grid is regular (dx=dy) then we can write an ESRI ASCII file and convert to grd
         ! via gmt grdconvert outvar.dat=ef out.grd
@@ -833,7 +832,7 @@
          KG_2_MG,KM3_2_M3
 
       use mesh,          only : &
-         nzmax,z_cc_pd
+         IsLatLon,nzmax,z_cc_pd
 
       use Output_Vars,   only : &
          pr_ash,CLOUDCON_THRESH
@@ -902,8 +901,13 @@
 !      enddo
 !      close(fid_outdata)
 !
-!      write(coord_str,101)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
+!      if(IsLatLon)then
+!        write(coord_str,101)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
+!      else
+!        write(coord_str,102)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
+!      endif
 ! 101  format(' (lon=',f7.2,', lat=',f6.2,')')
+! 102  format(' (x=',f9.3,', y=',f9.3,')')
 !      ! Set up to plot via matlab script
 !      open(fid_script,file=filename_script,status='replace')
 !      write(fid_script,*)"set terminal pngcairo font 'sans,12' size 854,603"   ! Set the image size

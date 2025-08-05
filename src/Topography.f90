@@ -149,14 +149,14 @@
       integer, parameter :: nvar_User3d_XYGs_Topo      = 0
       integer, parameter :: nvar_User3d_XYZ_Topo       = 0
       integer, parameter :: nvar_User4d_XYZGs_Topo     = 0
-      integer, parameter :: nvar_User_charlines_Topo   = 4 ! number of line of the special block of control file
+      integer, parameter,public :: nvar_User_charlines_Topo   = 4 ! number of line of the special block of control file
 
       character(len=30),dimension(nvar_User2d_static_XY_Topo) :: temp_2ds_name_Topo
       character(len=30),dimension(nvar_User2d_static_XY_Topo) :: temp_2ds_unit_Topo
       character(len=30),dimension(nvar_User2d_static_XY_Topo) :: temp_2ds_lname_Topo
       real(kind=op),    dimension(nvar_User2d_static_XY_Topo) :: temp_2ds_MissVal_Topo
       real(kind=op),    dimension(nvar_User2d_static_XY_Topo) :: temp_2ds_FillVal_Topo
-      character(len=80),dimension(nvar_User_charlines_Topo)   :: var_User_charlines_Topo = ''
+      character(len=80),dimension(nvar_User_charlines_Topo),public :: var_User_charlines_Topo = ''
 
       ! These are used to keep track of which index in the global list, this
       ! modulei's output vars correspond to
@@ -442,9 +442,6 @@
       temp_2ds_unit_Topo(1)  = "m"
       temp_2ds_MissVal_Topo(1) = -9999.0_op
       temp_2ds_FillVal_Topo(1) = -9999.0_op
-      ! HFS: Should add notes to netcdf attributes
-      !       source = GEBCO_2023.nc
-      !       smoothing length = 1.0
 
       nvar_User2d_static_XY = nvar_User2d_static_XY + nvar_User2d_static_XY_Topo
       nvar_User2d_XY        = nvar_User2d_XY        + nvar_User2d_XY_Topo
@@ -679,8 +676,6 @@
 
       use netcdf
 
-      use Ash3d_Netcdf_IO
-
       integer :: nSTAT
       integer :: ncid
       integer :: var_ndims
@@ -727,13 +722,13 @@
       endif;enddo
 
       nSTAT = nf90_open(adjustl(trim(file_topo)),NF90_NOWRITE,ncid)
-      if(nSTAT.ne.NF90_NOERR)call NC_check_status(nSTAT,1,"nf90_open topofile")
+      if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"nf90_open topofile")
 
       ! First look up the varaible containing the topographic data
       invar = 'elevation'  ! This is the default for GEBCO
       nSTAT = nf90_inq_varid(ncid,invar,topo_var_id)
       if(nSTAT.ne.NF90_NOERR)then
-        call NC_check_status(nSTAT,0,"inq_varid elevation")
+        call MR_NC_check_status(nSTAT,0,"inq_varid elevation")
         do io=1,nio;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)'  Cannot find variable ',trim(adjustl(invar))
           write(outlog(io),*)'  Testing for known synonyms'
@@ -741,7 +736,7 @@
         invar = 'z'
         nSTAT = nf90_inq_varid(ncid,invar,topo_var_id)  ! get the var_id for topo
         if(nSTAT.ne.NF90_NOERR)then
-          call NC_check_status(nSTAT,0,"inq_varid z")
+          call MR_NC_check_status(nSTAT,0,"inq_varid z")
           do io=1,nio;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)'  Cannot find variable elevation or z'
             write(errlog(io),*)'  Unknown topography format'
@@ -759,11 +754,11 @@
                     xtype = var_xtype, &
                     ndims = var_ndims)   ! get the number of dimensions
 
-      if(nSTAT.ne.NF90_NOERR)call NC_check_status(nSTAT,1,"inq_variable")
+      if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"inq_variable")
       if(.not.allocated(var_dimIDs))allocate(var_dimIDs(var_ndims))
       nSTAT = nf90_inquire_variable(ncid, topo_var_id, invar, &
                 dimids = var_dimIDs(:var_ndims))
-      if(nSTAT.ne.NF90_NOERR)call NC_check_status(nSTAT,1,"inq_variable")
+      if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"inq_variable")
 
       if(var_ndims.eq.1)then
         ! The deprecated GEBCO 08 data stores elevation in one long array
@@ -782,21 +777,21 @@
       nSTAT = nf90_inquire_dimension(ncid,var_dimIDs(i_dim), &
                    name =  dimname, &
                    len = dimlen)
-      if(nSTAT.ne.NF90_NOERR)call NC_check_status(nSTAT,1,"nf90_inquire_dimension X")
+      if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"nf90_inquire_dimension X")
       nlon_topo_fullgrid = dimlen
       lon_dim_id    = var_dimIDs(i_dim)
 
       nSTAT = nf90_inq_varid(ncid,dimname,var_id) ! get the variable associated with this dim
-      if(nSTAT.ne.NF90_NOERR)call NC_check_status(nSTAT,1,"inq_variable X")
+      if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"inq_variable X")
       ! Check what temporary array to use
       nSTAT = nf90_inquire_variable(ncid, var_id, dimname, xtype = dim_xtype)
-      if(nSTAT.ne.NF90_NOERR)call NC_check_status(nSTAT,1,"nf90_inquire_variable X")
+      if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"nf90_inquire_variable X")
       allocate(lon_topo_fullgrid(1:nlon_topo_fullgrid))
       if(dim_xtype.eq.NF90_FLOAT)then
         allocate(temp1d_sp(dimlen))
         nSTAT = nf90_get_var(ncid,var_id,temp1d_sp, &
                        start = (/1/),count = (/dimlen/))
-        if(nSTAT.ne.NF90_NOERR)call NC_check_status(nSTAT,1,"get_var X flt")
+        if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"get_var X flt")
         ! copy to local variable
         lon_topo_fullgrid(1:nlon_topo_fullgrid) = real(temp1d_sp(1:nlon_topo_fullgrid),kind=dp)
         deallocate(temp1d_sp)
@@ -804,7 +799,7 @@
         allocate(temp1d_dp(dimlen))
         nSTAT = nf90_get_var(ncid,var_id,temp1d_dp, &
                        start = (/1/),count = (/dimlen/))
-        if(nSTAT.ne.NF90_NOERR)call NC_check_status(nSTAT,1,"get_var X dbl")
+        if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"get_var X dbl")
         ! copy to local variable
         lon_topo_fullgrid(1:nlon_topo_fullgrid) = temp1d_dp(1:nlon_topo_fullgrid)
         deallocate(temp1d_dp)
@@ -837,21 +832,21 @@
       nSTAT = nf90_inquire_dimension(ncid,var_dimIDs(i_dim), &
                    name =  dimname, &
                    len = dimlen)
-      if(nSTAT.ne.NF90_NOERR)call NC_check_status(nSTAT,1,"nf90_inquire_dimension Y")
+      if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"nf90_inquire_dimension Y")
       nlat_topo_fullgrid = dimlen
       lat_dim_id    = var_dimIDs(i_dim)
 
       nSTAT = nf90_inq_varid(ncid,dimname,var_id) ! get the variable associated with this dim
-      if(nSTAT.ne.NF90_NOERR)call NC_check_status(nSTAT,1,"inq_variable Y")
+      if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"inq_variable Y")
       ! Check what temporary array to use
       nSTAT = nf90_inquire_variable(ncid, var_id, dimname, xtype = dim_xtype)
-      if(nSTAT.ne.NF90_NOERR)call NC_check_status(nSTAT,1,"nf90_inquire_variable Y")
+      if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"nf90_inquire_variable Y")
       allocate(lat_topo_fullgrid(1:nlat_topo_fullgrid))
       if(dim_xtype.eq.NF90_FLOAT)then
         allocate(temp1d_sp(dimlen))
         nSTAT = nf90_get_var(ncid,var_id,temp1d_sp, &
                        start = (/1/),count = (/dimlen/))
-        if(nSTAT.ne.NF90_NOERR)call NC_check_status(nSTAT,1,"get_var Y flt")
+        if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"get_var Y flt")
         ! copy to local variable
         lat_topo_fullgrid(1:nlat_topo_fullgrid) = real(temp1d_sp(1:nlat_topo_fullgrid),kind=dp)
         deallocate(temp1d_sp)
@@ -859,7 +854,7 @@
         allocate(temp1d_dp(dimlen))
         nSTAT = nf90_get_var(ncid,var_id,temp1d_dp, &
                        start = (/1/),count = (/dimlen/))
-        if(nSTAT.ne.NF90_NOERR)call NC_check_status(nSTAT,1,"get_var Y dbl")
+        if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"get_var Y dbl")
         ! copy to local variable
         lat_topo_fullgrid(1:nlat_topo_fullgrid) = temp1d_dp(1:nlat_topo_fullgrid)
         deallocate(temp1d_dp)
@@ -1030,7 +1025,7 @@
       nSTAT = nf90_inquire_variable(ncid, topo_var_id, invar, &
                     xtype = var_xtype, &
                     ndims = var_ndims)   ! get the number of dimensions
-      if(nSTAT.ne.NF90_NOERR)call NC_check_status(nSTAT,1,"nf90_inquire_variable topo")
+      if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"nf90_inquire_variable topo")
 
       ! Check what temporary array to use; this shoult be short, but to keep things
       ! general, check int, float and double too.
@@ -1064,7 +1059,7 @@
           nSTAT = nf90_get_var(ncid,topo_var_id,temp2d_sp(:,:), &
                          start = (/iistart(i),start_lat_idx/), &
                          count = (/iicount(i),nlat_topo_subgrid/))
-          if(nSTAT.ne.NF90_NOERR)call NC_check_status(nSTAT,1,"get_var Y flt")
+          if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"get_var Y flt")
           ! copy to local variable
           topo_subgrid(ileft(i):iright(i),1:nlat_topo_subgrid) = &
                   real(temp2d_sp(1:iicount(i),1:nlat_topo_subgrid),kind=sp)
@@ -1076,7 +1071,7 @@
           nSTAT = nf90_get_var(ncid,topo_var_id,temp2d_dp(:,:), &
                          start = (/iistart(i),start_lat_idx/), &
                          count = (/iicount(i),nlat_topo_subgrid/))
-          if(nSTAT.ne.NF90_NOERR)call NC_check_status(nSTAT,1,"get_var Y dbl")
+          if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"get_var Y dbl")
           ! copy to local variable
           topo_subgrid(ileft(i):iright(i),1:nlat_topo_subgrid) = &
                   real(temp2d_dp(1:iicount(i),1:nlat_topo_subgrid),kind=sp)

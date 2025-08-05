@@ -127,7 +127,7 @@
       integer, parameter :: nvar_User3d_XYGs_VarDiff      = 0
       integer            :: nvar_User3d_XYZ_VarDiff       = 0 ! If using Kh, then =1 khorz; if also Kz, then =3 kvert, Ri
       integer, parameter :: nvar_User4d_XYZGs_VarDiff     = 0
-      integer, parameter :: nvar_User_charlines_VarDiff   = 9 ! number of line of the special block of control file
+      integer, parameter,public :: nvar_User_charlines_VarDiff   = 9 ! number of line of the special block of control file
 
       character(len=30),dimension(:),allocatable :: temp_2d_name_VarDiff
       character(len=30),dimension(:),allocatable :: temp_2d_unit_VarDiff
@@ -140,7 +140,7 @@
       character(len=30),dimension(:),allocatable :: temp_3d_lname_VarDiff
       real(kind=op),    dimension(:),allocatable :: temp_3d_MissVal_VarDiff
       real(kind=op),    dimension(:),allocatable :: temp_3d_FillVal_VarDiff
-      character(len=80),dimension(nvar_User_charlines_VarDiff) :: var_User_charlines_VarDiff = ''
+      character(len=80),dimension(nvar_User_charlines_VarDiff),public :: var_User_charlines_VarDiff = ''
 
       ! These are used to keep track of which index in the global list, this
       ! modules output vars corespond to

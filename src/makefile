@@ -47,10 +47,10 @@ SYSINC = make_$(SYSTEM).inc
 #      OMPOPT   : includes optimizations flags for fastest runtime and OpenMP directives
 #                 To run, enter: env OMP_NUM_THREADS=4 Ash3d input_file.inp
 #    This variable cannot be left blank
-#RUN = DEBUG
+RUN = DEBUG
 #RUN = DEBUGOMP
 #RUN = PROF
-RUN = OPT
+#RUN = OPT
 #RUN = OMPOPT
 
 #    This variable cannot be left blank
@@ -358,6 +358,8 @@ PPOBJS = Ash3d_VariableModules.o        \
          write_BINARY.o                 \
          write_Shapefile.o              \
          Ash3d_PostProc_cities.o        \
+         Topography.o                   \
+         Diffusivity_Variable.o         \
          ResetParams.o
 
 GRAFOBJ = Ash3d_PostProc_gnuplot.o $(plplotOBJ) $(dislinOBJ) Ash3d_PostProc_GMT.o $(gmtOBJ) Ash3d_PostProc_matlab.o
@@ -449,7 +451,7 @@ write_ASCII.o: $(ASH3DCCSRC)/write_ASCII.f90 $(MFILE) $(SYSINC) Ash3d_VariableMo
 write_BINARY.o: $(ASH3DCCSRC)/write_BINARY.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/write_BINARY.f90
 ifeq ($(USENETCDF), T)
-write_NETCDF.o: $(ASH3DCCSRC)/write_NETCDF.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Output_Vars.o Airports.o Tephra.o Source.o Source_Umbrella.o Diffusion.o
+write_NETCDF.o: $(ASH3DCCSRC)/write_NETCDF.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Output_Vars.o Airports.o Tephra.o Source.o Source_Umbrella.o Diffusion.o Diffusivity_Variable.o Topography.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/write_NETCDF.f90
 endif
 #ifeq ($(USEGRIB), T)
@@ -507,7 +509,7 @@ ascii_dep: $(ASH3DCCSRC)/tools/Ash3d_ASCII_DepThin.f90 Ash3d_VariableModules.o w
 	mkdir -p ../bin/tools
 	mv Ash3d_ASCII_DepThin ../bin/tools/Ash3d_ASCII_DepThin
 ifeq ($(USENETCDF), T)
-gen_ctr: $(ASH3DCCSRC)/tools/Ash3d_ASCII_DepThin.f90 Ash3d_VariableModules.o write_NETCDF.o Input_Data.o $(MFILE) $(SYSINC)
+gen_ctr: $(ASH3DCCSRC)/tools/Ash3d_ASCII_DepThin.f90 Ash3d_VariableModules.o write_NETCDF.o Input_Data.o Source.o Tephra.o Diffusion.o Diffusivity_Variable.o Topography.o $(MFILE) $(SYSINC)
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/tools/Ash3d_NetCDF_GenCTR.f90
 	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d_NetCDF_GenCTR.o $(LIBS) -o Ash3d_NetCDF_GenCTR
 	mkdir -p ../bin/tools

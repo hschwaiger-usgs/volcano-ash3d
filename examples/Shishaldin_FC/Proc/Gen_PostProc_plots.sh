@@ -4,10 +4,10 @@
 rm depothik.* Ash3d_CloudLoad_t0*png Ash3d_Deposit____final.png plplt_000*png
 
 ln -s ../../../bin/Ash3d_PostProc .
-ln -s ../3d_tephra_fallLL.nc .
-infile1=3d_tephra_fallLL.nc
-ln -s ../3d_tephra_fallPJ.nc .
-infile2=3d_tephra_fallPJ.nc
+ln -s ../3d_tephra_fall_LL_091.nc .
+infile1=3d_tephra_fall_LL_091.nc
+ln -s ../3d_tephra_fall_PJ_091.nc .
+infile2=3d_tephra_fall_PJ_091.nc
 
 # Generate vertical profile plots using plplot (change to ASH3DPLOT=3 for gnuplot)
 ASH3DPLOT=2 ./Ash3d_PostProc ${infile1} 16 3

@@ -669,7 +669,7 @@
          KG_2_MG,KM3_2_M3
 
       use mesh,          only : &
-         nzmax,z_cc_pd
+         IsLatLon,nzmax,z_cc_pd
 
       use Output_Vars,   only : &
          pr_ash,CLOUDCON_THRESH
@@ -803,8 +803,14 @@
         enddo
       enddo
 
-      write(coord_str,101)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
+      if(IsLatLon)then
+        write(coord_str,101)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
+      else
+        write(coord_str,102)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
+      endif
  101  format(' (lon=',f7.2,', lat=',f6.2,')')
+ 102  format(' (x=',f9.3,', y=',f9.3,')')
+
       write(title_str,*)trim(adjustl(Site_vprofile(vprof_ID))),coord_str
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
