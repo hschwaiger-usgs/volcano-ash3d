@@ -118,6 +118,9 @@
         end subroutine help_input
         subroutine help_postproc
         end subroutine help_postproc
+        subroutine help_inputfile(blockID)
+          integer,intent(in) :: blockID
+        end subroutine help_inputfile
       END INTERFACE
 
       ! Since we haven't opened a logfile yet, only write out to stdout if not a
@@ -1066,8 +1069,8 @@
          cdf_b3l1,cdf_b3l2,cdf_b3l3,cdf_b3l4,cdf_b3l5,cdf_b4l1,cdf_b4l2,cdf_b4l3,cdf_b4l4,&
          cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,cdf_b4l11,cdf_b4l12,cdf_b4l13,&
          cdf_b4l14,cdf_b4l15,cdf_b4l16,cdf_b4l17,cdf_b4l18,cdf_b5l1,cdf_b6l1,cdf_b6l2,cdf_b6l3,cdf_b6l4,&
-         cdf_b6l5,Have_Block_NetCDF,cdf_comment,cdf_title,cdf_institution,cdf_source_url,cdf_history,cdf_references,&
-         concenfile,VolcanoName,WriteTimes,nWriteTimes,cdf_conventions,cdf_run_class,cdf_url,&
+         cdf_b6l5,Have_Block_NetCDF,cdf_comment,cdf_title,&
+         concenfile,VolcanoName,WriteTimes,nWriteTimes,&
          x_vprofile,y_vprofile,i_vprofile,j_vprofile,Site_vprofile,&
          infile,ioutputFormat,LoadConcen,log_step,NextWriteTime,Have_Block_ResParm,&
          AppendExtAirportFile,WriteInterval,WriteGSD,WriteDepositTS_KML,WriteDepositTS_ASCII,&
@@ -7095,7 +7098,7 @@
       use io_units
 
       use Topography,  only : &
-         var_User_charlines_Topo,nvar_User_charlines_Topo
+         var_User_charlines_Topo
 
       integer           ,intent(in) :: outunit
       character(len=80) ,intent(in) :: line1

@@ -748,7 +748,7 @@
       character(len=14) :: dp_pngfile
       integer           :: fid_script  = 55
       integer           :: fid_outdata  = 54
-      integer           :: dp_pngfileID  = 53
+      !integer           :: dp_pngfileID  = 53
       character(len=26) :: coord_str
       character(len=25) :: plotcom
       integer :: k,i

@@ -353,7 +353,7 @@
         ! User-defined character lines (used for logging optional block data)
       character(len=80), dimension(:),    allocatable,public :: var_User_charlines
 #endif
-      character(len=30)                       ,public :: Extra2dVarName
+      character(len=20)                       ,public :: Extra2dVarName
 
       contains
       !------------------------------------------------------------------------

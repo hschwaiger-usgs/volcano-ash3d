@@ -9,9 +9,9 @@
       use io_data,       only : &
          infile,concenfile,cdf_title,cdf_comment,VolcanoName, &
          Have_Block_NetCDF,Have_Block_ResParm,Have_Block_Topo,Have_Block_VarDiff,&
-         nWriteTimes,WriteTimes,cdf_b1l2,cdf_vardz,cdf_b3l5, &
+         cdf_b1l2,cdf_vardz,cdf_b3l5, &
          cdf_b4l1,cdf_b4l2,cdf_b4l3,cdf_b4l4,cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,&
-         cdf_b4l11,cdf_b4l12,cdf_b4l13,cdf_b4l14,cdf_b4l15,cdf_b4l16,cdf_b4l17,cdf_b4l18,cdf_b5l1,  &
+         cdf_b4l11,cdf_b4l12,cdf_b4l13,cdf_b4l14,cdf_b4l15,cdf_b4l17,cdf_b4l18,cdf_b5l1,  &
          cdf_b6l1,cdf_b6l2,cdf_b6l3,cdf_b6l4,cdf_b6l5, &
          nvprofiles,Site_vprofile,x_vprofile, y_vprofile
 
@@ -27,7 +27,7 @@
 
       use Source,        only : &
          lon_volcano,lat_volcano,x_volcano,y_volcano,z_volcano,Suzuki_A,      &
-         neruptions,SourceType,SourceType_idx,e_StartTime,e_Duration,         &
+         neruptions,SourceType_idx,e_StartTime,e_Duration,         &
          e_PlumeHeight,e_Volume,e_prof_dz,e_prof_nzpoints,e_prof_Volume
 
       use Tephra,        only : &
@@ -65,8 +65,7 @@
          SetWrite_input_block_VarDiff
 
       use MetReader,     only : &
-         MR_iWind,MR_iWindFormat,MR_iGridCode,MR_iDataFormat,MR_iHeightHandler,MR_iWindFiles,&
-         MR_WindFiles
+         MR_iWind,MR_iWindFormat,MR_iGridCode,MR_iDataFormat,MR_iHeightHandler,MR_WindFiles
 
       implicit none
 
@@ -127,7 +126,6 @@
       integer           :: idx
       character(len=4)  :: yearstr
       character(len=50) :: tmpstr
-      integer           :: i,il
 
       INTERFACE
         integer function HS_YearOfEvent(HoursSince,byear,useLeaps)

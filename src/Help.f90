@@ -31,6 +31,11 @@
 
       use io_units
 
+      INTERFACE
+        subroutine help_run
+        end subroutine help_run
+      END INTERFACE
+
 #ifdef WINDOWS
       integer           :: iostatus
       character(len=120):: iomessage
@@ -306,6 +311,12 @@
       subroutine help_input
 
       use io_units
+
+      INTERFACE
+        subroutine help_inputfile(blockID)
+          integer,intent(in) :: blockID
+        end subroutine help_inputfile
+      END INTERFACE
 
       character(len=3)  :: answer
       character(len=50) :: linebuffer050 

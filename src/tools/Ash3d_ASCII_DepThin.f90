@@ -32,20 +32,18 @@
       real(kind=8),dimension(:),allocatable :: lat_1
       real(kind=8),dimension(:,:),allocatable :: XY_1
       integer :: i,j,ii
-      real(kind=8) :: err
 
       real(kind=8) :: srcx,srcy
       real(kind=8) :: lon1,lat1     ! Input coords in rad for point 1
       real(kind=8) :: dlon,dlat
-      real(kind=8) :: Az,Rng,Rngmax
+      real(kind=8) :: Rng,Rngmax
       real(kind=8) :: a,c
       real(kind=8) :: dx,dy,dxbin
       real(kind=8),dimension(:),allocatable :: Rngvec
       real(kind=8),dimension(:),allocatable :: Thickvec
-      real(kind=8) :: tmp_8
 
-      character(len=14) :: filename_script
-      character(len=14) :: filename_outdata
+!      character(len=14) :: filename_script
+!      character(len=14) :: filename_outdata
 !      integer           :: fid_outdata  = 54
 !      integer           :: fid_script  = 55
       character(len=25) :: gnucom

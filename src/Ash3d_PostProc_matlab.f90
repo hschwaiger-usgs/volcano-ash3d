@@ -532,29 +532,6 @@
 
       if(lon_volcano.gt.xmax)lon_volcano=lon_volcano-360.0_ip
 
-      ! write out the data in a form that matlab can read
-!      open(unit=fid_outdata,file=filename_outdata,status='replace')
-!      do i = 1,nx
-!        do j = 1,ny
-!          if(lon_cc_pd(1).lt.180.0_ip)then
-!            tmp_ip = lon_cc_pd(i)
-!          else
-!            tmp_ip = lon_cc_pd(i)-360.0_ip
-!          endif
-!          if(abs(OutVar(i,j)-Fill_Value).lt.EPS_SMALL)then
-!            write(fid_outdata,*)tmp_ip,lat_cc_pd(j),"NaN"
-!          else
-!            write(fid_outdata,*)tmp_ip,lat_cc_pd(j),OutVar(i,j)
-!          endif
-!        enddo
-!        write(fid_outdata,*)""
-!      enddo
-!      close(fid_outdata)
-!
-!      open(unit=fid_misc,file="volc.dat",status='replace')
-!      write(fid_misc,*)real(lon_volcano,kind=4),real(lat_volcano,kind=4),'""'
-!      close(fid_misc)
-
       ! Set up to plot via matlab script
       open(unit=fid_script,file=filename_script,status='replace')
       write(fid_script,*)"clear all;"
@@ -564,57 +541,19 @@
       write(fid_script,*)"lonlim = R.LongitudeLimits;"
       write(fid_script,*)" "
       write(fid_script,*)"figure"
-      !write(fid_script,*)"set(gca, 'Units', 'pixels', 'Position', [1,1,854,603])"
       write(fid_script,*)"worldmap(latlim,lonlim);hold on;"
       write(fid_script,*)"geoshow(land,'FaceColor',[0.9 0.9 0.9])"
       write(fid_script,*)"colormap(jet)"
-!      write(fid_script,*)"levels = [0.01 0.03 0.1 0.3 1.0 3.0 10.0 30.0 100.0 300.0];"
       write(fid_script,*)"levels = [",real(ContourLev(1:nConLev-1),kind=4),"];"
       write(fid_script,*)"colormap lines;"
       write(fid_script,*)"[C,h]=contourm(A,R,levels,'-');"
       write(fid_script,*)"xlabel('Longitude');"
       write(fid_script,*)"ylabel('Latitude');"
-!      write(fid_script,*)"title('Final Deposit Thickness (mm)');"
       write(fid_script,*)"title('",adjustl(trim(title_plot)),"');"
       write(fid_script,*)"leg = clegendm(C,h,-1);"
       write(fid_script,*)"leg.Title.String = '",adjustl(trim(title_legend)),"';"
       write(fid_script,*)"print -dpng ",adjustl(trim(outfile_name))
       write(fid_script,*)"exit"
-
-!      write(fid_script,*)"set terminal pngcairo font 'sans,12' size 854,603"   ! Set the image size
-!      write(fid_script,*)"set origin 0.05, .20"
-!      write(fid_script,*)"set size 0.85, 0.8"              ! Set x and y scale for plot
-!      write(fid_script,*)"set ylabel 'Latitude'"
-!      write(fid_script,*)"set xlabel 'Longitude'"
-!      write(fid_script,*)"set output '",trim(adjustl(outfile_name)),"'"
-!      write(fid_script,*)"set title '",trim(adjustl(title_plot)),units,"'"
-!      write(fid_script,*)"set datafile missing 'NaN'"
-!      write(fid_script,*)"XMIN = ",real(xmin,kind=4)
-!      write(fid_script,*)"YMIN = ",real(ymin,kind=4)
-!      write(fid_script,*)"XMAX = ",real(xmax,kind=4)
-!      write(fid_script,*)"YMAX = ",real(ymax,kind=4)
-!
-!      write(fid_script,*)"set xrange [XMIN:XMAX]"
-!      write(fid_script,*)"set yrange [YMIN:YMAX]"
-!      write(fid_script,*)"set contour base"
-!      write(fid_script,*)"set cntrparam bspline"
-!      write(fid_script,*)"set cntrparam levels discrete \"
-!      do i=1,nConLev-1
-!        write(fid_script,*)real(ContourLev(i),kind=4),', \'
-!      enddo
-!      write(fid_script,*)real(ContourLev(nConLev),kind=4)
-!      write(fid_script,*)"unset surface"
-!      ! Now write out the contours to a datafile
-!      write(fid_script,*)"set table 'outvar.con'"
-!      write(fid_script,*)"splot 'outvar.dat' using 1:2:3"
-!      write(fid_script,*)"unset table"
-!      write(fid_script,*)"set style line 2 lc rgb '#808080' lt 0 lw 1"
-!      write(fid_script,*)"set grid front ls 2"
-!      write(fid_script,*)"unset key"
-!
-!      write(fid_script,*)"XVAL = XMIN-(XMAX-XMIN)*0.1"
-!      write(fid_script,*)"YVAL = YMIN-(YMAX-YMIN)*0.25"
-!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
@@ -656,135 +595,6 @@
       call execute_command_line(plotcom,exitstat=iostatus)
 
 !      if(writeContours)then
-!
-!        ! Read outvar.con
-!        do io=1,2;if(VB(io).le.verbosity_info)then
-!          write(outlog(io),*)"Now reading outvar.con and loading contour data."
-!        endif;enddo
-!        open(unit=fid_contourdata,file=filename_contourdata,status='old',err=9001)
-!        ! In the matlab contour file, all contours of a certain level have a header
-!        ! in the following format:
-!        !# Contour 0, label:      300
-!        ! Each curve for that level is separated by a blank line
-!        ! Gnuplot writes the contour data to file starting with the highest level
-!        ! so we will need to check with zlev(:) to make sure we populate ContourDat
-!        ! correctly.
-!        ilev = -1
-!        ignulev = -1
-!        read(fid_contourdata,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-!
-!        linebuffer050 = "Reading line from contour file"
-!        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-!        do while(iostatus.eq.0)
-!          ! Check if this is a header line
-!          read(linebuffer080,*,iostat=ioerr,iomsg=iomessage)testkey
-!          if(ioerr.lt.0)then
-!            ! if there was an error trying to read a character, then this is a blank
-!            ! line; check if we are in a contour block or still in the file header
-!            if(ignulev.eq.-1)then
-!              ! Still in file header
-!              ! Read the next line and cycle
-!              read(fid_contourdata,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-!              !if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-!              cycle
-!            else
-!              ! Blank line in a contour block means we are starting another curve
-!              ! Increment the number of curves for this level
-!              ContourDataNcurves(ilev) = ContourDataNcurves(ilev) + 1
-!              if(ContourDataNcurves(ilev).gt.CONTOUR_MAXCURVES)then
-!                do io=1,2;if(VB(io).le.verbosity_error)then
-!                  write(errlog(io),*)"ERROR: Maximum number of curves for this level exceeded by matlab"
-!                  write(errlog(io),*)"       Current maximum set to CONTOUR_MAXCURVES = ",CONTOUR_MAXCURVES
-!                  write(errlog(io),*)"       Please increase CONTOUR_MAXCURVES and recompile."
-!                  write(errlog(io),*)"  Output_Vars.f90:CONTOUR_MAXCURVES"
-!                endif;enddo
-!                stop 1
-!              endif
-!              ! This is an easier index to used
-!              icurve = ContourDataNcurves(ilev)
-!            endif
-!          elseif(testkey.eq.'#')then
-!            ! This is a header line
-!            ! There are two possibilities:
-!            !  (1) a line of the file header
-!            !  (2) the start of a contour block
-!            !   if (2), then it will have this format:# Contour 0, label:      300
-!            substr_pos1 = index(linebuffer080,'Contour')
-!
-!            if(substr_pos1.eq.0)then
-!              ! This is a file header line
-!              read(fid_contourdata,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-!              cycle
-!            else
-!              ! Here is the expected format, so start reading from character 10
-!              !# Contour 10, label:        2
-!              read(linebuffer080(10:),*,iostat=ioerr,iomsg=iomessage)ignulev
-!              linebuffer050 = "Reading line from contour file, ignulev"
-!              if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-!              ! Now read the level. Look for the ':' to isolate the last bit
-!              substr_pos1 = index(linebuffer080,':')
-!              ! Also look for a '.' or an 'e' to see if the level value is written as a real or int
-!              substr_pos2 = index(linebuffer080,'.')
-!              substr_pos3 = index(linebuffer080(substr_pos1:),'e')
-!              if(substr_pos2.gt.0.or.substr_pos3.gt.0)then
-!                ! level is written as real
-!                read(linebuffer080(substr_pos1+1:),*,iostat=iostatus,iomsg=iomessage)lev_r4
-!                linebuffer050 = "Reading line from contour file, lev_r4"
-!                if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-!              else
-!                read(linebuffer080(substr_pos1+1:),*,iostat=iostatus,iomsg=iomessage)lev_i
-!                linebuffer050 = "Reading line from contour file, lev_i"
-!                if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-!                lev_r4 = real(lev_i,kind=4)
-!              endif
-!              ! The value for this new level ignulev is lev_r4, but we need to find which
-!              ! ContourLev this corresponds to
-!              do ii = 1,nConLev
-!                if(abs(lev_r4-real(ContourLev(ii),kind=4)).lt.EPS_SMALL)then
-!                  ilev=ii
-!                endif
-!              enddo
-!              ! When we have a new level, initialize the curve index for this level to 1
-!              ContourDataNcurves(ilev) = 1
-!              icurve = ContourDataNcurves(ilev)
-!            endif
-!          else
-!            ! This is the data section
-!            ! Increment the number of points
-!            ContourDataNpoints(ilev,icurve) = ContourDataNpoints(ilev,icurve) + 1
-!            if(ContourDataNpoints(ilev,icurve).gt.CONTOUR_MAXPOINTS)then
-!              do io=1,2;if(VB(io).le.verbosity_error)then
-!                write(errlog(io),*)"ERROR: Maximum number of points for this curve exceeded by GMT"
-!                write(errlog(io),*)"       Current maximum set to CONTOUR_MAXPOINTS = ",CONTOUR_MAXPOINTS
-!                write(errlog(io),*)"       Please increase CONTOUR_MAXPOINTS and recompile."
-!                write(errlog(io),*)"  Output_Vars.f90:CONTOUR_MAXPOINTS"
-!              endif;enddo
-!              stop 1 
-!            endif
-!            ipt = ContourDataNpoints(ilev,icurve) 
-!            read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) &
-!                       ContourDataX(ilev,icurve,ipt),ContourDataY(ilev,icurve,ipt)
-!            linebuffer050 = "Reading line from contour file, x,y"
-!            if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-!          endif
-!
-!          ! Try to read the next line
-!          read(fid_contourdata,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-!        enddo
-!        close(unit=fid_contourdata)
-!
-!        ! Loop through all the levels and curves and trim any curves with zero length
-!        do i=1,nConLev
-!          icurve = CONTOUR_MAXCURVES + 1
-!          do ii = CONTOUR_MAXCURVES,1,-1
-!            if(ContourDataNpoints(i,ii).le.0)then
-!              ! log each curve number with no points
-!              icurve = ii
-!            endif
-!          enddo
-!          ContourDataNcurves(i) = max(0,icurve-1)
-!        enddo
-!
 !      endif
 
       ! Clean up
@@ -828,23 +638,23 @@
 
       subroutine write_2Dprof_PNG_matlab(vprof_ID)
 
-      use global_param,  only : &
-         KG_2_MG,KM3_2_M3
-
-      use mesh,          only : &
-         IsLatLon,nzmax,z_cc_pd
-
-      use Output_Vars,   only : &
-         pr_ash,CLOUDCON_THRESH
-
-      use io_data,       only : &
-         Site_vprofile,x_vprofile,y_vprofile,cdf_b3l1,VolcanoName
-
-      use Source,        only : &
-         e_Volume,e_Duration,e_StartTime,e_PlumeHeight
-
-      use time_data,     only : &
-         os_time_log,SimStartHour,BaseYear,useLeap,ntmax,time_native
+!      use global_param,  only : &
+!         KG_2_MG,KM3_2_M3
+!
+!      use mesh,          only : &
+!         IsLatLon,nzmax,z_cc_pd
+!
+!      use Output_Vars,   only : &
+!         pr_ash,CLOUDCON_THRESH
+!
+!      use io_data,       only : &
+!         Site_vprofile,x_vprofile,y_vprofile,cdf_b3l1,VolcanoName
+!
+!      use Source,        only : &
+!         e_Volume,e_Duration,e_StartTime,e_PlumeHeight
+!
+!      use time_data,     only : &
+!         os_time_log,SimStartHour,BaseYear,useLeap,ntmax,time_native
 
       integer, intent (in) :: vprof_ID
 
@@ -982,17 +792,17 @@
 
       subroutine write_DepPOI_TS_PNG_matlab(pt_indx)
 
-      use Output_Vars,   only : &
-         THICKNESS_THRESH
-
-      use Airports,      only : &
-         Airport_Name,Airport_Thickness_TS
-
-      use io_data,       only : &
-         nWriteTimes,WriteTimes
-
-      use time_data,     only : &
-         Simtime_in_hours
+!      use Output_Vars,   only : &
+!         THICKNESS_THRESH
+!
+!      use Airports,      only : &
+!         Airport_Name,Airport_Thickness_TS
+!
+!      use io_data,       only : &
+!         nWriteTimes,WriteTimes
+!
+!      use time_data,     only : &
+!         Simtime_in_hours
 
       integer :: pt_indx,i
 
