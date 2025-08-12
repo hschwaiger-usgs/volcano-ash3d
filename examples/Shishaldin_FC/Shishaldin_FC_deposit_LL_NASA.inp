@@ -155,11 +155,11 @@ Shishaldin                         # Volcano name (character*30)
 # iwind=5 and one of the NWP products is used that require a special file structure,                   
 # then nWindFiles should be set to 1 and only the root folder of the windfiles listed.                 
 ******************* BLOCK 3 ****************************************************
-4 22 193 3          # iwind, iwindformat, [igrid, idata]
+4 41                # iwind, iwindformat, [igrid, idata]
 2                   # iHeightHandler
 6.0                 # Simulation time in hours
 yes                 # stop computation when 99% of erupted mass has deposited?
-7                   # nWindFiles, number of gridded wind files (used if iwind>1)
+3                   # nWindFiles, number of gridded wind files (used if iwind>1)
 ********************************************************************************
 # OUTPUT OPTIONS:                                                                                      
 # The list below allows users to specify the output options                                            
@@ -217,13 +217,9 @@ netcdf   # format of ash concentration files     (ascii, binary, or netcdf)
 # For a network of radiosonde data, please see the MetReader documentation for                         
 # the input specification https://code.usgs.gov/vsc/ash3d/volcano-ash3d-metreader.                     
 ******************* BLOCK 5 ****************************************************
-WindGribFC/nam.t00z.alaskanest.hiresf00.tm00.grib2
-WindGribFC/nam.t00z.alaskanest.hiresf01.tm00.grib2
-WindGribFC/nam.t00z.alaskanest.hiresf02.tm00.grib2
-WindGribFC/nam.t00z.alaskanest.hiresf03.tm00.grib2
-WindGribFC/nam.t00z.alaskanest.hiresf04.tm00.grib2
-WindGribFC/nam.t00z.alaskanest.hiresf05.tm00.grib2
-WindGribFC/nam.t00z.alaskanest.hiresf06.tm00.grib2
+WindNetcdfFC/GEOS.fp.fcst.inst3_3d_asm_Np.20250509_00+20250509_0000.V01.nc4
+WindNetcdfFC/GEOS.fp.fcst.inst3_3d_asm_Np.20250509_00+20250509_0300.V01.nc4
+WindNetcdfFC/GEOS.fp.fcst.inst3_3d_asm_Np.20250509_00+20250509_0600.V01.nc4
 ********************************************************************************
 # AIRPORT LOCATION FILE                                                                                
 # The following lines allow the user to specify whether times of ash arrival                           
