@@ -217,14 +217,15 @@ netcdf   # format of ash concentration files     (ascii, binary, or netcdf)
 # For a network of radiosonde data, please see the MetReader documentation for                         
 # the input specification https://code.usgs.gov/vsc/ash3d/volcano-ash3d-metreader.                     
 ******************* BLOCK 5 ****************************************************
-WindGrib/nam.t00z.alaskanest.hiresf00.tm00.grib2
-WindGrib/nam.t00z.alaskanest.hiresf01.tm00.grib2
-WindGrib/nam.t00z.alaskanest.hiresf02.tm00.grib2
-WindGrib/nam.t00z.alaskanest.hiresf03.tm00.grib2
-WindGrib/nam.t00z.alaskanest.hiresf04.tm00.grib2
-WindGrib/nam.t00z.alaskanest.hiresf05.tm00.grib2
-WindGrib/nam.t00z.alaskanest.hiresf06.tm00.grib2
-********************************************************************************
+WindGribFC/gfs.t00z.pgrb2.0p25.f000
+WindGribFC/gfs.t00z.pgrb2.0p25.f001
+WindGribFC/gfs.t00z.pgrb2.0p25.f002
+WindGribFC/gfs.t00z.pgrb2.0p25.f003
+WindGribFC/gfs.t00z.pgrb2.0p25.f004
+WindGribFC/gfs.t00z.pgrb2.0p25.f005
+WindGribFC/gfs.t00z.pgrb2.0p25.f006
+WindGribFC/gfs.t00z.pgrb2.0p25.f007
+**********************************6*********************************************
 # AIRPORT LOCATION FILE                                                                                
 # The following lines allow the user to specify whether times of ash arrival                           
 # at airports and other locations will be written out, and which file                                  

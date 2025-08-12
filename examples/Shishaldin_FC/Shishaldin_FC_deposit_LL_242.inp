@@ -217,9 +217,9 @@ netcdf   # format of ash concentration files     (ascii, binary, or netcdf)
 # For a network of radiosonde data, please see the MetReader documentation for                         
 # the input specification https://code.usgs.gov/vsc/ash3d/volcano-ash3d-metreader.                     
 ******************* BLOCK 5 ****************************************************
-WindGrib/nam.t00z.awak3d00.tm00.grib2
-WindGrib/nam.t00z.awak3d03.tm00.grib2
-WindGrib/nam.t00z.awak3d06.tm00.grib2
+WindGribFC/nam.t00z.awak3d00.tm00.grib2
+WindGribFC/nam.t00z.awak3d03.tm00.grib2
+WindGribFC/nam.t00z.awak3d06.tm00.grib2
 ********************************************************************************
 # AIRPORT LOCATION FILE                                                                                
 # The following lines allow the user to specify whether times of ash arrival                           
