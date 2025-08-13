@@ -72,11 +72,11 @@
 # Line 9 : number of pulses to be read in BLOCK 2                                                      
 ******************* BLOCK 1 ****************************************************
 Shishaldin                         # Volcano name (character*30)
-0 4 -107.0 50.0 50.0 50.0 6367.47  # Proj flags and params; first term (LLflag) is 1, so all else ignored
--3574.02  1685.32                  # x, y of LL corner of grid (km, or deg. if latlongflag=1)
-500.0     350.0                    # grid width and height (km, or deg. if latlonflag=1)
--3322.06	1859.22            # vent location         (km, or deg. if latlonflag=1)
-2.5       2.5                      # DX, DY of grid cells  (km, or deg. if latlonflag=1)
+1 4 -107.0 50.0 50.0 50.0 6367.47  # Proj flags and params; first term (LLflag) is 1, so all else ignored
+193.0    52.5                      # x, y of LL corner of grid (km, or deg. if latlongflag=1)
+7.0       5.0                      # grid width and height (km, or deg. if latlonflag=1)
+196.033  54.756                    # vent location         (km, or deg. if latlonflag=1)
+0.05      0.05                     # DX, DY of grid cells  (km, or deg. if latlonflag=1)
 0.2                                # DZ of grid cells      (always km)
 0.0      4.0                       # diffusion coefficient (m2/s), Suzuki constant
 1                                  # neruptions, number of eruptions or pulses
@@ -286,9 +286,9 @@ yes                           # Defer to Lon/Lat coordinates? ("no" defers to pr
 # Optionally, a site name can be provided in after the location.                                       
 ******************* BLOCK 8 ****************************************************
 3                             # number of locations for vertical profiles (nlocs)                      
--3288.87 1842.12  False Pass
--3229.94 1840.70  Cold Bay
--3221.75 1811.27  King Cove
+-163.40917 54.84917  False Pass
+-162.71972 55.19972  Cold Bay
+-162.31333 55.05500  King Cove
 ********************************************************************************
 # netCDF output options                                                                                
 # This last block is optional.                                                                         
@@ -296,7 +296,7 @@ yes                           # Defer to Lon/Lat coordinates? ("no" defers to pr
 # The title and comment lines are passed through to the netcdf header of the                           
 # output file.                                                                                         
 ******************* BLOCK 9 ****************************************************
-3d_tephra_fall_PJ_NARR.nc     # Name of output file
+3d_tephra_fall_LL_NARR.nc     # Name of output file
 ShishaldinFC                  # Title of simulation
 Ash3d validation test         # Comment
 *******************************************************************************
