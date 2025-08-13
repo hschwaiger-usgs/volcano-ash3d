@@ -93,7 +93,7 @@ Shishaldin                         # Volcano name (character*30)
 # 2010 04 14   0.00   1.0     18.0  0.16 1.0 18                                                        
 # 0.01 0.02 0.03 0.03 0.04 0.04 0.05 0.06 0.06 0.070 0.08 0.08 0.09 0.09 0.09 0.08 0.06 0.02           
 ******************* BLOCK 2 ****************************************************
-0 0 0   0.0    1.0     10.0   0.001
+2025 5 9   0.0    1.0     10.0   0.001
 ********************************************************************************
 # WIND OPTIONS                                                                                         
 # Ash3d will read from either a single 1-D wind sounding, or gridded, time-                            
@@ -155,11 +155,11 @@ Shishaldin                         # Volcano name (character*30)
 # iwind=5 and one of the NWP products is used that require a special file structure,                   
 # then nWindFiles should be set to 1 and only the root folder of the windfiles listed.                 
 ******************* BLOCK 3 ****************************************************
-4 22 193 3          # iwind, iwindformat, [igrid, idata]
+4 29                # iwind, iwindformat, [igrid, idata]
 2                   # iHeightHandler
 6.0                 # Simulation time in hours
 yes                 # stop computation when 99% of erupted mass has deposited?
-7                   # nWindFiles, number of gridded wind files (used if iwind>1)
+1                   # nWindFiles, number of gridded wind files (used if iwind>1)
 ********************************************************************************
 # OUTPUT OPTIONS:                                                                                      
 # The list below allows users to specify the output options                                            
@@ -217,13 +217,7 @@ netcdf   # format of ash concentration files     (ascii, binary, or netcdf)
 # For a network of radiosonde data, please see the MetReader documentation for                         
 # the input specification https://code.usgs.gov/vsc/ash3d/volcano-ash3d-metreader.                     
 ******************* BLOCK 5 ****************************************************
-WindGribFC/nam.t00z.alaskanest.hiresf00.tm00.grib2
-WindGribFC/nam.t00z.alaskanest.hiresf01.tm00.grib2
-WindGribFC/nam.t00z.alaskanest.hiresf02.tm00.grib2
-WindGribFC/nam.t00z.alaskanest.hiresf03.tm00.grib2
-WindGribFC/nam.t00z.alaskanest.hiresf04.tm00.grib2
-WindGribFC/nam.t00z.alaskanest.hiresf05.tm00.grib2
-WindGribFC/nam.t00z.alaskanest.hiresf06.tm00.grib2
+WindNetcdfRN/ERA5.grib.nc
 ********************************************************************************
 # AIRPORT LOCATION FILE                                                                                
 # The following lines allow the user to specify whether times of ash arrival                           
@@ -302,7 +296,7 @@ yes                           # Defer to Lon/Lat coordinates? ("no" defers to pr
 # The title and comment lines are passed through to the netcdf header of the                           
 # output file.                                                                                         
 ******************* BLOCK 9 ****************************************************
-3d_tephra_fall_LL_gfs.nc      # Name of output file
+3d_tephra_fall_LL_ERA5.nc     # Name of output file
 ShishaldinFC                  # Title of simulation
 Ash3d validation test         # Comment
 *******************************************************************************

@@ -749,7 +749,7 @@
       integer           :: fid_script  = 55
       integer           :: fid_outdata  = 54
       !integer           :: dp_pngfileID  = 53
-      character(len=26) :: coord_str
+      character(len=27) :: coord_str
       character(len=25) :: plotcom
       integer :: k,i
       integer :: ioerr,iw,iwf
@@ -801,7 +801,7 @@
       else
         write(coord_str,102)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
       endif
- 101  format(' (lon=',f7.2,', lat=',f6.2,')')
+ 101  format(' (lon=',f7.2,',  lat=',f6.2,')')
  102  format(' (x=',f9.3,', y=',f9.3,')')
       ! Set up to plot via gnuplot script
       open(fid_script,file=filename_script,status='replace')

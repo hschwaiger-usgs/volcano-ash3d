@@ -298,7 +298,7 @@ yes                           # Defer to Lon/Lat coordinates? ("no" defers to pr
 # The title and comment lines are passed through to the netcdf header of the                           
 # output file.                                                                                         
 ******************* BLOCK 9 ****************************************************
-3d_tephra_fall_LL_gfs.nc      # Name of output file
+3d_tephra_fall_LL_NASA.nc     # Name of output file
 ShishaldinFC                  # Title of simulation
 Ash3d validation test         # Comment
 *******************************************************************************

@@ -194,7 +194,7 @@
       real(kind=8) :: minlat_Topo_comp,maxlat_Topo_comp
       real(kind=8) :: minlon_Topo_Met,maxlon_Topo_Met
       real(kind=8) :: minlat_Topo_Met,maxlat_Topo_Met
-      logical       :: Topo_UseCompGrid      = .false.
+      logical      :: Topo_UseCompGrid      = .false.
 
       contains
 
@@ -924,12 +924,7 @@
         endif
         cleft = cright
       enddo
-      if(Topo_UseCompGrid)then
-        nlon_topo_subgrid = floor((maxlon_Topo_comp-minlon_Topo_comp)/dlon_topo)+1
-        nlat_topo_subgrid = floor((maxlat_Topo_comp-minlat_Topo_comp)/dlat_topo)+1
-      else
-        nlon_topo_subgrid = floor((maxlon_Topo_Met-minlon_Topo_Met)/dlon_topo)+1
-      endif
+      nlon_topo_subgrid = floor((topolonmax-topolonmin)/dlon_topo)+1
 
       if(start_lon_idx.lt.1.or.start_lon_idx.gt.nlon_topo_fullgrid)then
         ! Couldn't find start x
@@ -2260,8 +2255,8 @@
           if(olam.gt. 180.0_ip.and.&
              loncc_topo_subgrid(nlon_topo_subgrid).lt.180.0_ip)olam=olam-360.0_ip
           if(olam.lt.-180.0_ip)olam=olam+360.0_ip
-          if(abs(olam-loncl_topo_subgrid(1)).lt.0.001_ip)olam=loncl_topo_subgrid(1)
-          if(abs(olam-loncl_topo_subgrid(nlon_topo_subgrid+1)).lt.0.001_ip)olam=loncl_topo_subgrid(nlon_topo_subgrid+1)
+          if(abs(olam-loncl_topo_subgrid(1)).lt.0.005_ip)olam=loncl_topo_subgrid(1)
+          if(abs(olam-loncl_topo_subgrid(nlon_topo_subgrid+1)).lt.0.005_ip)olam=loncl_topo_subgrid(nlon_topo_subgrid+1)
 
           ! Double-check that olam,ophi maps onto the computation grid
           if(olam.lt.loncl_topo_subgrid(1).or.&

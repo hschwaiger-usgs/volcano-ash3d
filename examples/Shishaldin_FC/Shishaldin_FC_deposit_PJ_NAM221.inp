@@ -73,9 +73,9 @@
 ******************* BLOCK 1 ****************************************************
 Shishaldin                         # Volcano name (character*30)
 0 4 -107.0 50.0 50.0 50.0 6371.229 # Proj flags and params; first term (LLflag) is 1, so all else ignored
--2078.93 -3478.97                  # x, y of LL corner of grid (km, or deg. if latlongflag=1)
+-3574.02  1685.32                  # x, y of LL corner of grid (km, or deg. if latlongflag=1)
 500.0     350.0                    # grid width and height (km, or deg. if latlonflag=1)
--1828.93 -3303.97                  # vent location         (km, or deg. if latlonflag=1)
+-3324.02  1860.32                  # vent location         (km, or deg. if latlonflag=1)
 2.5       2.5                      # DX, DY of grid cells  (km, or deg. if latlonflag=1)
 0.2                                # DZ of grid cells      (always km)
 0.0      4.0                       # diffusion coefficient (m2/s), Suzuki constant
@@ -217,9 +217,9 @@ netcdf   # format of ash concentration files     (ascii, binary, or netcdf)
 # For a network of radiosonde data, please see the MetReader documentation for                         
 # the input specification https://code.usgs.gov/vsc/ash3d/volcano-ash3d-metreader.                     
 ******************* BLOCK 5 ****************************************************
-WindGribFC/nam.t00z.awipak00.tm00.grib2
-WindGribFC/nam.t00z.awipak03.tm00.grib2
-WindGribFC/nam.t00z.awipak06.tm00.grib2
+WindGribFC/nam.t00z.awip3200.tm00.grib2
+WindGribFC/nam.t00z.awip3203.tm00.grib2
+WindGribFC/nam.t00z.awip3206.tm00.grib2
 ********************************************************************************
 # AIRPORT LOCATION FILE                                                                                
 # The following lines allow the user to specify whether times of ash arrival                           
@@ -287,7 +287,10 @@ yes                           # Defer to Lon/Lat coordinates? ("no" defers to pr
 # contain the location, in the same coordinates as the computational grid.                             
 # Optionally, a site name can be provided in after the location.                                       
 ******************* BLOCK 8 ****************************************************
-0                             # number of locations for vertical profiles (nlocs)                      
+3                             # number of locations for vertical profiles (nlocs)                      
+-3290.81 1843.20  False Pass
+-3231.85 1841.79  Cold Bay
+-3223.65 1812.34  King Cove
 ********************************************************************************
 # netCDF output options                                                                                
 # This last block is optional.                                                                         
@@ -295,7 +298,7 @@ yes                           # Defer to Lon/Lat coordinates? ("no" defers to pr
 # The title and comment lines are passed through to the netcdf header of the                           
 # output file.                                                                                         
 ******************* BLOCK 9 ****************************************************
-3d_tephra_fall_PJ_242.nc      # Name of output file
+3d_tephra_fall_PJ_221.nc      # Name of output file
 ShishaldinFC                  # Title of simulation
 Ash3d validation test         # Comment
 *******************************************************************************

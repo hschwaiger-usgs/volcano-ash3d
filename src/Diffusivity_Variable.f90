@@ -96,6 +96,7 @@
       !  These are the parameters that control the diffusivity calculations
       !    C from Smagorinsky model of horizontal diffusivity
       real(kind=ip) :: KH_SmagC     ! Smagorinsky (1993) constant for LES horizontal diffusivity (0.2 - 0.9)
+      real(kind=ip),parameter :: MAX_LES_LengthScale2 = 100.0_ip ! Maximum area that will be used for scaling
       !    These next three are needed for the vertical diffusivity
       real(kind=ip) :: vonKarman    ! von Karman constant (around 0.4)
       real(kind=ip) :: LambdaC      ! Asymptotic length scale (around 30-150 m)
@@ -599,7 +600,7 @@
             write(outlog(io),*)"      Ash3d will search for a low-level temperature inversion, inspect Ri(z)"
             write(outlog(io),*)"      relative to Ri_crit, and calculate the Eckman layer thickness from the"
             write(outlog(io),*)"      latitude and friction velocity. If the atmospheric data is too coarse"
-            write(outlog(io),*)"      to determine the bondary layer, the free-air mixing-length will be used"
+            write(outlog(io),*)"      to determine the boundary layer, the free-air mixing-length will be used"
             write(outlog(io),*)"      for vertical diffusivity calculations throughout the domain."
           endif;enddo
         endif
@@ -1117,7 +1118,7 @@
       real(kind=ip) :: E11,E12,E21,E22
       real(kind=ip) :: D2_tension,D2_strain
       real(kind=ip) :: LES_TimeScale
-      real(kind=ip) :: LES_LengthScale
+      real(kind=ip) :: LES_LengthScale2
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Eddy_diff"
@@ -1158,10 +1159,10 @@
           ! in units of 1/hr
         LES_TimeScale = LES_TimeScale * HR_2_S
           ! length scale^2 in km^2
-        LES_LengthScale = MR_sigma_nz_submet(i,j)
+        LES_LengthScale2 = min(MR_sigma_nz_submet(i,j),MAX_LES_LengthScale2)
   
           ! Diffusivity in km2/hr
-        Khz_meso_next_step_MetP_sp(i,j,k) = real(KH_SmagC*LES_LengthScale*LES_TimeScale,kind=sp)
+        Khz_meso_next_step_MetP_sp(i,j,k) = real(KH_SmagC*LES_LengthScale2*LES_TimeScale,kind=sp)
               enddo !k
           enddo !j
         enddo !i
@@ -1876,6 +1877,15 @@
           endif
         endif
       endif
+      if(first_time)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          if(.not.Met_var_IsAvailable(ivar).or.FV_override)then
+            write(outlog(io),*)"     Friction Velocity will be calculated."
+          else
+            write(outlog(io),*)"     Friction Velocity will be loaded from NWP file."
+          endif
+        endif;enddo
+      endif
 
       if(.not.Met_var_IsAvailable(ivar).or.FV_override)then
         ! friction velocity is not provided by the met file (or is not valid)
@@ -1900,8 +1910,20 @@
               SurfVely_meso_Met_sp = MR_dum2d_Met
           endif
           SurfVelh_meso_Met_sp = 10.0_sp
+          if(first_time)then
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"       Found surface winds in NWP file. Using these for"
+              write(outlog(io),*)"       U* calculation."
+            endif;enddo
+          endif
         else
           ! If the 10m winds are not available, then use the lower levels of the 3d winds
+          if(first_time)then
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"       No surface winds found in NWP file. Using lowest-level"
+              write(outlog(io),*)"       winds for U* calculation."
+            endif;enddo
+          endif
           do i=1,nx_submet
             do j=1,ny_submet
               z0 = SurfRoughLen_Met_sp(i,j)
@@ -2042,6 +2064,15 @@
             PBL_override = .true.
           endif
         endif
+      endif
+      if(first_time)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          if(.not.Met_var_IsAvailable(ivar).or.PBL_override)then
+            write(outlog(io),*)"     Planetary Boundary Layer will be calculated."
+          else
+            write(outlog(io),*)"     Planetary Boundary Layer will be loaded from NWP file."
+          endif
+        endif;enddo
       endif
 
       if(.not.Met_var_IsAvailable(ivar).or.PBL_override)then

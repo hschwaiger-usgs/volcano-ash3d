@@ -287,7 +287,10 @@ yes                           # Defer to Lon/Lat coordinates? ("no" defers to pr
 # contain the location, in the same coordinates as the computational grid.                             
 # Optionally, a site name can be provided in after the location.                                       
 ******************* BLOCK 8 ****************************************************
-0                             # number of locations for vertical profiles (nlocs)                      
+3                             # number of locations for vertical profiles (nlocs)                      
+-1791.62 -3312.26 False Pass
+-1733.03 -3298.19 Cold Bay
+-1717.17 -3325.05 King Cove
 ********************************************************************************
 # netCDF output options                                                                                
 # This last block is optional.                                                                         
@@ -295,7 +298,7 @@ yes                           # Defer to Lon/Lat coordinates? ("no" defers to pr
 # The title and comment lines are passed through to the netcdf header of the                           
 # output file.                                                                                         
 ******************* BLOCK 9 ****************************************************
-3d_tephra_fall_PJ_242.nc      # Name of output file
+3d_tephra_fall_PJ_216.nc      # Name of output file
 ShishaldinFC                  # Title of simulation
 Ash3d validation test         # Comment
 *******************************************************************************
