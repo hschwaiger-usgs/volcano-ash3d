@@ -95,8 +95,8 @@
 
       !  These are the parameters that control the diffusivity calculations
       !    C from Smagorinsky model of horizontal diffusivity
-      real(kind=ip) :: KH_SmagC     ! Smagorinsky (1993) constant for LES horizontal diffusivity (0.2 - 0.9)
-      real(kind=ip),parameter :: MAX_LES_LengthScale2 = 100.0_ip ! Maximum area that will be used for scaling
+      real(kind=sp) :: KH_SmagC     ! Smagorinsky (1993) constant for LES horizontal diffusivity (0.2 - 0.9)
+      real(kind=sp),parameter :: MAX_LES_LengthScale2 = 100.0_sp ! Maximum area that will be used for scaling
       !    These next three are needed for the vertical diffusivity
       real(kind=ip) :: vonKarman    ! von Karman constant (around 0.4)
       real(kind=ip) :: LambdaC      ! Asymptotic length scale (around 30-150 m)
@@ -1115,10 +1115,10 @@
 
       integer :: i,j,k
 
-      real(kind=ip) :: E11,E12,E21,E22
-      real(kind=ip) :: D2_tension,D2_strain
-      real(kind=ip) :: LES_TimeScale
-      real(kind=ip) :: LES_LengthScale2
+      real(kind=sp) :: E11,E12,E21,E22
+      real(kind=sp) :: D2_tension,D2_strain
+      real(kind=sp) :: LES_TimeScale
+      real(kind=sp) :: LES_LengthScale2
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Eddy_diff"
@@ -1143,11 +1143,11 @@
         E21 = dv_dx_MetP_sp(i,j,k)
         E22 = dv_dy_MetP_sp(i,j,k)
   
-        D2_strain  = (E12+E21)**2.0_ip
+        D2_strain  = (E12+E21)**2.0_sp
         if(Kh_model_ID.eq.2)then
-          D2_tension = (E11-E22)**2.0_ip          ! Smagorinsky (1963, 1993)
+          D2_tension = (E11-E22)**2.0_sp          ! Smagorinsky (1963, 1993)
         elseif(Kh_model_ID.eq.3)then
-          D2_tension = 0.5_ip*(E11*E11+E22*E22)   ! Pielke (1974)
+          D2_tension = 0.5_sp*(E11*E11+E22*E22)   ! Pielke (1974)
         else
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)  'error: currently only Smagorinsky and Pielke models allowed.'
