@@ -75,7 +75,7 @@ Shishaldin                         # Volcano name (character*30)
 0 4 -107.0 50.0 50.0 50.0 6367.47  # Proj flags and params; first term (LLflag) is 1, so all else ignored
 -3574.02  1685.32                  # x, y of LL corner of grid (km, or deg. if latlongflag=1)
 500.0     350.0                    # grid width and height (km, or deg. if latlonflag=1)
--3322.06	1859.22            # vent location         (km, or deg. if latlonflag=1)
+-3322.06  1859.22                  # vent location         (km, or deg. if latlonflag=1)
 2.5       2.5                      # DX, DY of grid cells  (km, or deg. if latlonflag=1)
 0.2                                # DZ of grid cells      (always km)
 0.0      4.0                       # diffusion coefficient (m2/s), Suzuki constant

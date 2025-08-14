@@ -446,11 +446,12 @@
         call MR_Read_HGT_arrays(MR_iMetStep_Now)
         istep = MR_iMetStep_Now+1
       endif
-      if(Map_Case.eq.1.or.Map_Case.eq.2)then
-        ! Either both the comp and met grids are LL (Map_Case = 1)
-        ! or they are both the same projection (Map_Case = 2) so
-        ! we can read the velocity components individually and interpolate onto
-        ! the computational grid
+      if(Map_Case.eq.1.or. &
+        (Map_Case.eq.2.and.IsGridRelative))then
+        ! Either (Map_Case = 1) both the comp and met grids are LL 
+        ! or (Map_Case = 2) they are both the same projection excluding the NARR case.
+        ! We can read the velocity components individually and interpolate directly
+        ! onto the computational grid
 
          ! Fill array from the step prior/equal to current time
         ivar = 2 ! U winds
@@ -473,11 +474,16 @@
           vy_meso_next_step_sp = vy_meso_2_sp
         endif
       else
+        if(Map_Case.eq.2.and..not.IsGridRelative)then
+          ! This is essentially just for the NARR case where wind speeds are provided
+          ! on a projected grid, but given as easterly and northerly (Earth-relative) speeds
+          call MR_Rotate_UV_GR2ER_Met(istep,.true.,.true.)
+
         ! Grids are different, we will need to rotate vectors
         ! In all these cases, we need:
         !    MR_dum3d_compH   holding U
         !    MR_dum3d_compH_2 holding V
-        if(Map_Case.eq.3)then
+        elseif(Map_Case.eq.3)then
             ! Met grid is natively LL and Comp grid is projected
           call MR_Rotate_UV_ER2GR_Comp(istep)
         elseif(Map_Case.eq.4)then
