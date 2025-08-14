@@ -333,8 +333,8 @@ GEBCO_2023.nc                  # topofile name
 #   Line 3 indicates whether or not to use horizontal diffusivity followed by the
 #          type ID and value with
 #             1  500.0 # constant horizontal diffusivity with specified value (m2/s)
-#             2  0.2   # Smagorinsky model with coefficient C ()
-#             3  0.2   # Pielke model with coefficient C ()
+#             2  0.2 [Amax]  # Smagorinsky model with coefficient C and max cell area
+#             3  0.2 [Amax]  # Pielke model with coefficient C and max cell area
 #   Line 4 indicates whether or not to use vertical diffusivity
 #   Line 5 indicates the boundary layer model and value (if model requires)
 #             1 500.0         # BL model 1=const ; value (m2/s)
@@ -355,10 +355,10 @@ GEBCO_2023.nc                  # topofile name
 *******************************************************************************
 OPTMOD=VARDIFF
 yes              # output VarDiff variables to output file
-yes 2 0.2        # use horizontal variable diffusivity
+yes 2 0.2 100.0  # use horizontal variable diffusivity
 yes              # use vertical variable diffusivity
 5 2              # boundary layer model
 4                # free-air model
 0.4              # vonKarman
-150.0            # LambdaC
+50.0             # LambdaC
 0.25             # RI_CRIT

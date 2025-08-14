@@ -487,10 +487,10 @@
           else
             ! if the projected data is already Earth-relative (NARR), then just read it
             ivar = 3 ! Vy
-            call MR_Read_3d_Met_Variable_to_CompH(ivar,istep)
+            call MR_Read_3d_Met_Variable_to_CompH(ivar,istep,.true.)
             MR_dum3d_compH_2 = MR_dum3d_compH
             ivar = 2 ! Vx
-            call MR_Read_3d_Met_Variable_to_CompH(ivar,istep)
+            call MR_Read_3d_Met_Variable_to_CompH(ivar,istep,.true.)
           endif
         elseif(Map_Case.eq.5)then
           ! Both comp and met grids are projected, but with different projections

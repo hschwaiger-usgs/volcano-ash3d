@@ -51,8 +51,8 @@
 !  yes
 ! Line 3: Horizontal diff
 !  yes 1 500.0     # 1=const ; value in m2/s
-!  yes 2 0.2       # 2=Smagorinsky ; C
-!  yes 3 0.2       # 3=Pielke      ; C
+!  yes 2 0.2 [Amax]# 2=Smagorinsky ; C , max cell area in km2
+!  yes 3 0.2 [Amax]# 3=Pielke      ; C , max cell area in km2
 ! Line 4: Vertical diff
 !  yes
 ! Line 5: Kv BL parameters
@@ -96,7 +96,7 @@
       !  These are the parameters that control the diffusivity calculations
       !    C from Smagorinsky model of horizontal diffusivity
       real(kind=sp) :: KH_SmagC     ! Smagorinsky (1993) constant for LES horizontal diffusivity (0.2 - 0.9)
-      real(kind=sp),parameter :: MAX_LES_LengthScale2 = 100.0_sp ! Maximum area that will be used for scaling
+      real(kind=sp) :: MAX_LES_LengthScale2 = 100.0_sp ! Maximum area that will be used for scaling
       !    These next three are needed for the vertical diffusivity
       real(kind=ip) :: vonKarman    ! von Karman constant (around 0.4)
       real(kind=ip) :: LambdaC      ! Asymptotic length scale (around 30-150 m)
@@ -218,7 +218,7 @@
       integer            :: ios,ios2,ioerr
       character(len=20)  :: mod_name
       integer            :: substr_pos
-      real(kind=ip)      :: tmp
+      real(kind=sp)      :: tmp,tmp2
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine input_data_VarDiff"
@@ -295,33 +295,48 @@
             endif;enddo
           elseif(Kh_model_ID.eq.2)then
             KH_SmagC = tmp
+            ! Try to read the optional max cell area value
+            read(linebuffer080(4:),*,iostat=ios2)Kh_model_ID,tmp,tmp2
+            if(ios2.eq.0)then
+              if(tmp2.gt.0.0_sp.and.tmp2.lt.1.0e4_sp)MAX_LES_LengthScale2 = tmp2
+            endif
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"        Kh model ID  = 2: Smagorinsky (1963)"
-              write(outlog(io),*)"              with C = ",real(KH_SmagC,kind=4)
+              write(outlog(io),*)"              with C = ",KH_SmagC
+              write(outlog(io),*)"                Amax = ",MAX_LES_LengthScale2
             endif;enddo
           elseif(Kh_model_ID.eq.3)then
             KH_SmagC = tmp
+            ! Try to read the optional max cell area value
+            read(linebuffer080(4:),*,iostat=ios2)Kh_model_ID,tmp,tmp2
+            if(ios2.eq.0)then
+              if(tmp2.gt.0.0_sp.and.tmp2.lt.1.0e4_sp)MAX_LES_LengthScale2 = tmp2
+            endif
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"        Kh model ID  = 3: Pielke (1974)"
-              write(outlog(io),*)"              with C = ",real(KH_SmagC,kind=4)
+              write(outlog(io),*)"              with C = ",KH_SmagC
+              write(outlog(io),*)"                Amax = ",MAX_LES_LengthScale2
             endif;enddo
           else
             KH_SmagC = 0.2_ip
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"        Horizontal diffusivity model ID not recognized."
               write(outlog(io),*)"        Using Kh model ID = 2: Smagorinsky (1963)"
-              write(outlog(io),*)"                   with C = ",real(KH_SmagC,kind=4)
+              write(outlog(io),*)"                   with C = ",KH_SmagC
+              write(outlog(io),*)"                     Amax = ",MAX_LES_LengthScale2
             endif;enddo
           endif
         else
           KH_SmagC = 0.2_ip
+          MAX_LES_LengthScale2 = 100.0_sp
           Kh_model_ID = 2
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"        Error reading Kh model ID and/or parameter."
             write(outlog(io),*)"        Offending line:",linebuffer080
             write(outlog(io),*)"        Horizontal diffusivity model ID not recognized."
             write(outlog(io),*)"        Using Kh model ID = 2: Smagorinsky (1963)"
-            write(outlog(io),*)"                   with C = ",real(KH_SmagC,kind=4)
+            write(outlog(io),*)"                   with C = ",KH_SmagC
+            write(outlog(io),*)"                     Amax = ",MAX_LES_LengthScale2
           endif;enddo
         endif
       elseif(answer(1:2).eq.'no') then
