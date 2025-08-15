@@ -735,6 +735,10 @@
                   allocate(dv_dx_MetP_sp(nx_submet,ny_submet,np_fullmet))
         if(.not.associated(dv_dx_MetP_sp))   &
                   allocate(dv_dy_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.associated(Khz_meso_last_step_MetP_sp)) &
+                  allocate(Khz_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.associated(Khz_meso_next_step_MetP_sp)) &
+                  allocate(Khz_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
         if(.not.associated(Khz_meso_last_step_sp))   &
                   allocate(Khz_meso_last_step_sp(nxmax,nymax,nzmax))
         if(.not.associated(Khz_meso_next_step_sp))   &
@@ -749,10 +753,6 @@
                   allocate(Ri_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
         if(.not.associated(Ri_meso_next_step_MetP_sp))  &
                   allocate(Ri_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-        if(.not.associated(Khz_meso_last_step_MetP_sp)) &
-                  allocate(Khz_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-        if(.not.associated(Khz_meso_next_step_MetP_sp)) &
-                  allocate(Khz_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
         if(.not.associated(Kv_meso_last_step_MetP_sp))  &
                   allocate(Kv_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
         if(.not.associated(Kv_meso_next_step_MetP_sp))  &
@@ -795,6 +795,10 @@
                  allocate(dv_dy_MetP_sp(nx_submet,ny_submet,np_fullmet))
         if(.not.allocated(dV_dz_MetP_sp))   &
                  allocate(dV_dz_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.allocated(Khz_meso_last_step_MetP_sp)) &
+                 allocate(Khz_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.allocated(Khz_meso_next_step_MetP_sp)) &
+                 allocate(Khz_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
         if(.not.allocated(Khz_meso_last_step_sp))   &
                  allocate(Khz_meso_last_step_sp(nxmax,nymax,nzmax))
         if(.not.allocated(Khz_meso_next_step_sp))   &
@@ -807,10 +811,6 @@
                  allocate(Ri_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
         if(.not.allocated(Ri_meso_next_step_MetP_sp))  &
                  allocate(Ri_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-        if(.not.allocated(Khz_meso_last_step_MetP_sp)) &
-                 allocate(Khz_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-        if(.not.allocated(Khz_meso_next_step_MetP_sp)) &
-                 allocate(Khz_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
         if(.not.allocated(Kv_meso_last_step_MetP_sp))  &
                  allocate(Kv_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
         if(.not.allocated(Kv_meso_next_step_MetP_sp))  &
@@ -1073,6 +1073,38 @@
         write(outlog(io),*)"     Entered Subroutine Deallocate_VarDiff_Met"
       endif;enddo
 
+#ifdef USEPOINTERS
+!      if(associated(dVel_dz_MetP_sp))               deallocate(dVel_dz_MetP_sp)
+      if(associated(du_dx_MetP_sp))                 deallocate(du_dx_MetP_sp)
+      if(associated(du_dy_MetP_sp))                 deallocate(du_dy_MetP_sp)
+      if(associated(dv_dx_MetP_sp))                 deallocate(dv_dx_MetP_sp)
+      if(associated(dv_dy_MetP_sp))                 deallocate(dv_dy_MetP_sp)
+      if(associated(dV_dz_MetP_sp))                 deallocate(dV_dz_MetP_sp)
+      if(associated(SurfRoughLen_Met_sp))           deallocate(SurfRoughLen_Met_sp)
+      if(associated(Ri_meso_last_step_MetP_sp))     deallocate(Ri_meso_last_step_MetP_sp)
+      if(associated(Ri_meso_next_step_MetP_sp))     deallocate(Ri_meso_next_step_MetP_sp)
+      if(associated(Khz_meso_last_step_MetP_sp))    deallocate(Khz_meso_last_step_MetP_sp)
+      if(associated(Khz_meso_next_step_MetP_sp))    deallocate(Khz_meso_next_step_MetP_sp)
+      if(associated(Kv_meso_last_step_MetP_sp))     deallocate(Kv_meso_last_step_MetP_sp)
+      if(associated(Kv_meso_next_step_MetP_sp))     deallocate(Kv_meso_next_step_MetP_sp)
+      if(associated(PBLH_meso_last_step_Met_sp))    deallocate(PBLH_meso_last_step_Met_sp)
+      if(associated(PBLH_meso_next_step_Met_sp))    deallocate(PBLH_meso_next_step_Met_sp)
+      if(associated(L_MonOb_meso_last_step_Met_sp)) deallocate(L_MonOb_meso_last_step_Met_sp)
+      if(associated(L_MonOb_meso_next_step_Met_sp)) deallocate(L_MonOb_meso_next_step_Met_sp)
+      if(associated(FricVel_meso_last_step_Met_sp)) deallocate(FricVel_meso_last_step_Met_sp)
+      if(associated(FricVel_meso_next_step_Met_sp)) deallocate(FricVel_meso_next_step_Met_sp)
+
+      if(associated(Khz_meso_last_step_sp))         deallocate(Khz_meso_last_step_sp)
+      if(associated(Khz_meso_next_step_sp))         deallocate(Khz_meso_next_step_sp)
+      if(associated(Kv_meso_last_step_sp))          deallocate(Kv_meso_last_step_sp)
+      if(associated(Kv_meso_next_step_sp))          deallocate(Kv_meso_next_step_sp)
+
+      if(associated(vx_meso_last_step_MetP_sp))     deallocate(vx_meso_last_step_MetP_sp)
+      if(associated(vy_meso_last_step_MetP_sp))     deallocate(vy_meso_last_step_MetP_sp)
+      if(associated(vx_meso_next_step_MetP_sp))     deallocate(vx_meso_next_step_MetP_sp)
+      if(associated(vy_meso_next_step_MetP_sp))     deallocate(vy_meso_next_step_MetP_sp)
+
+#else
 !      if(allocated(dVel_dz_MetP_sp))               deallocate(dVel_dz_MetP_sp)
       if(allocated(du_dx_MetP_sp))                 deallocate(du_dx_MetP_sp)
       if(allocated(du_dy_MetP_sp))                 deallocate(du_dy_MetP_sp)
@@ -1102,7 +1134,7 @@
       if(allocated(vy_meso_last_step_MetP_sp))     deallocate(vy_meso_last_step_MetP_sp)
       if(allocated(vx_meso_next_step_MetP_sp))     deallocate(vx_meso_next_step_MetP_sp)
       if(allocated(vy_meso_next_step_MetP_sp))     deallocate(vy_meso_next_step_MetP_sp)
-
+#endif
       end subroutine Deallocate_VarDiff_Met
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
