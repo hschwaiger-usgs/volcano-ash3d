@@ -1062,7 +1062,7 @@
       use global_param,  only : &
          EPS_SMALL,EPS_TINY,nmods,OPTMOD_names,limiter,&
          useDS,useTemperature,useCalcFallVel,useLogNormGSbins,&
-         useDiffusion,useCN,useVz_rhoG,M2PS_2_KM2PHR,MAXNUM_OPTMODS
+         useDiffusion,useCN,useVz_rhoG,M_2_MM,M2PS_2_KM2PHR,MAXNUM_OPTMODS
 
       use io_data,       only : &
          cdf_b1l1,cdf_b1l2,cdf_b1l3,cdf_b1l4,cdf_b1l5,cdf_b1l6,cdf_b1l7,cdf_vardz,cdf_b1l8,cdf_b1l9,&
@@ -3740,8 +3740,9 @@
         ! bins are sorted by size (smallest first)
         if(useLogNormGSbins) call Sort_Tephra_Size
         temp_phi = -log(Tephra_gsdiam)/log(2.0)
-
-        if(useCalcFallVel) Tephra_gsdiam = Tephra_gsdiam/1000.0_ip   ! convert diameter from mm to m
+        ! Now that we have completed the phi calculations (which expect units of mm), convert
+        ! to m for use in fall velocity functions
+        if(useCalcFallVel) Tephra_gsdiam = Tephra_gsdiam/M_2_MM   ! convert diameter from mm to m
 
         ! Find the fraction of fine (<= phi4, 63um)
         fracfine = 0.0_ip
@@ -6585,7 +6586,7 @@
       use io_units
 
       use global_param,  only : &
-         useLogNormGSbins
+         useLogNormGSbins,M_2_MM
 
       use Tephra,        only : &
          n_gs_max,Tephra_gsdiam,Tephra_v_s,Tephra_bin_mass,Tephra_rho_m,FV_ID,&
@@ -6622,6 +6623,7 @@
 #endif
         allocate(Tephra_gsdiam(n_gs_max))
       endif
+      ! Assign Tephra_gsdiam in m
       Tephra_gsdiam(1:ns)   = T_diam(1:ns)
 #ifdef USEPOINTERS
       if(.not.associated(Tephra_bin_mass))then
@@ -6691,33 +6693,33 @@
         elseif(Tephra_Ncols.eq.3)then
           ! 3-columns is: diameter (mm), mass fraction, density (kg/m3)
           do isize = 1,n_gs_max
-            write(outunit,13)Tephra_gsdiam(isize),Tephra_bin_mass(isize),Tephra_rho_m(isize)
+            write(outunit,13)Tephra_gsdiam(isize)*M_2_MM,Tephra_bin_mass(isize),Tephra_rho_m(isize)
           enddo
         elseif(Tephra_Ncols.eq.4)then
           ! 4-columns is: diameter (mm), mass fraction, density (kg/m3), Shape F (or Psi)
           do isize = 1,n_gs_max  
             if(Shape_ID.eq.2)then
-              write(outunit,14)Tephra_gsdiam(isize),Tephra_bin_mass(isize),Tephra_rho_m(isize),&
+              write(outunit,14)Tephra_gsdiam(isize)*M_2_MM,Tephra_bin_mass(isize),Tephra_rho_m(isize),&
                                Tephra_gsPhi(isize)
             else
-              write(outunit,14)Tephra_gsdiam(isize),Tephra_bin_mass(isize),Tephra_rho_m(isize),&
+              write(outunit,14)Tephra_gsdiam(isize)*M_2_MM,Tephra_bin_mass(isize),Tephra_rho_m(isize),&
                                Tephra_gsF(isize)
             endif
           enddo
         elseif(Tephra_Ncols.eq.5)then
           ! 5-columns is: diameter (mm), mass fraction, density (kg/m3), Shape F, G
           do isize = 1,n_gs_max
-            write(outunit,15)Tephra_gsdiam(isize),Tephra_bin_mass(isize),Tephra_rho_m(isize),&
+            write(outunit,15)Tephra_gsdiam(isize)*M_2_MM,Tephra_bin_mass(isize),Tephra_rho_m(isize),&
                              Tephra_gsF(isize),Tephra_gsG(isize)
           enddo
         else
           ! Number of columns of original control file not recorded in this NetCDF file, assume 4
           do isize = 1,n_gs_max
             if(Shape_ID.eq.2)then
-              write(outunit,14)Tephra_gsdiam(isize),Tephra_bin_mass(isize),Tephra_rho_m(isize),&
+              write(outunit,14)Tephra_gsdiam(isize)*M_2_MM,Tephra_bin_mass(isize),Tephra_rho_m(isize),&
                                Tephra_gsPhi(isize)
             else
-              write(outunit,14)Tephra_gsdiam(isize),Tephra_bin_mass(isize),Tephra_rho_m(isize),&
+              write(outunit,14)Tephra_gsdiam(isize)*M_2_MM,Tephra_bin_mass(isize),Tephra_rho_m(isize),&
                                Tephra_gsF(isize)
             endif
           enddo

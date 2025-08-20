@@ -4212,7 +4212,7 @@
       use global_param,  only : &
          GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH,useMoistureVars,useVz_rhoG,useLogNormGSbins,&
          GRAV_Default,RAD_EARTH_Default,CFL_Default,DT_MIN_Default,DT_MAX_Default,&
-         useVz_rhoG_Default,useMoistureVars_Default
+         useVz_rhoG_Default,useMoistureVars_Default,M_2_MM
 
       use io_data,           only : &
          Have_Block_NetCDF,Have_Block_ResParm,Have_Block_Topo,Have_Block_VarDiff,&
@@ -6123,8 +6123,9 @@
           Tephra_gsdiam(:) = 0.0_ip
         endif
         nSTAT = nf90_inq_varid(ncid,"gs_diameter",gsdm_var_id)
+        ! read grain diameter in mm
         nSTAT = nf90_get_var(ncid,gsdm_var_id,dum1d_out,(/1/))
-        Tephra_gsdiam(1:n_gs_max) = dum1d_out(1:n_gs_max)
+        Tephra_gsdiam(1:n_gs_max) = dum1d_out(1:n_gs_max)/M_2_MM ! convert to m
           
         ! Grain prescribed fall velocity
 #ifdef USEPOINTERS

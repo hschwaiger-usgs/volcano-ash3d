@@ -42,10 +42,6 @@
       real(kind=8),dimension(:),allocatable :: Rngvec
       real(kind=8),dimension(:),allocatable :: Thickvec
 
-!      character(len=14) :: filename_script
-!      character(len=14) :: filename_outdata
-!      integer           :: fid_outdata  = 54
-!      integer           :: fid_script  = 55
       character(len=25) :: gnucom
 
       nio = 1  ! Turn off logging by setting output streams to stdout/stderr only

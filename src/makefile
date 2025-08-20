@@ -489,7 +489,7 @@ Ash3d_PostProc_cities.o: Ash3d_PostProc_cities.f90 $(MFILE) $(SYSINC) Ash3d_Vari
 write_Shapefile.o: write_Shapefile.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o write_BINARY.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/write_Shapefile.f90
 
-tools: ascii_check ascii_dep gen_ctr
+tools: ascii_check ascii_dep NCgen_ctr ASCIIgen_ctr
 
 ascii_check: $(ASH3DCCSRC)/tools/Ash3d_ASCII_check.f90 Ash3d_VariableModules.o write_ASCII.o $(MFILE) $(SYSINC)
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/tools/Ash3d_ASCII_check.f90
@@ -508,13 +508,20 @@ ascii_dep: $(ASH3DCCSRC)/tools/Ash3d_ASCII_DepThin.f90 Ash3d_VariableModules.o w
 	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d_ASCII_DepThin.o $(LIBS) -o Ash3d_ASCII_DepThin
 	mkdir -p ../bin/tools
 	mv Ash3d_ASCII_DepThin ../bin/tools/Ash3d_ASCII_DepThin
+
 ifeq ($(USENETCDF), T)
-gen_ctr: $(ASH3DCCSRC)/tools/Ash3d_ASCII_DepThin.f90 Ash3d_VariableModules.o write_NETCDF.o Input_Data.o Source.o Tephra.o Diffusion.o Diffusivity_Variable.o Topography.o $(MFILE) $(SYSINC)
+NCgen_ctr: $(ASH3DCCSRC)/tools/Ash3d_NetCDF_GenCTR.f90 Ash3d_VariableModules.o write_NETCDF.o Input_Data.o Source.o Tephra.o Diffusion.o Diffusivity_Variable.o Topography.o $(MFILE) $(SYSINC)
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/tools/Ash3d_NetCDF_GenCTR.f90
 	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d_NetCDF_GenCTR.o $(LIBS) -o Ash3d_NetCDF_GenCTR
 	mkdir -p ../bin/tools
 	mv Ash3d_NetCDF_GenCTR ../bin/tools/Ash3d_NetCDF_GenCTR
 endif
+
+ASCIIgen_ctr: $(ASH3DCCSRC)/tools/Ash3d_ASCII_GenCTR.f90 Ash3d_VariableModules.o write_NETCDF.o Input_Data.o Source.o Tephra.o Diffusion.o Diffusivity_Variable.o Topography.o $(MFILE) $(SYSINC)
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/tools/Ash3d_ASCII_GenCTR.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d_ASCII_GenCTR.o $(LIBS) -o Ash3d_ASCII_GenCTR
+	mkdir -p ../bin/tools
+	mv Ash3d_ASCII_GenCTR ../bin/tools/Ash3d_ASCII_GenCTR
 
 check: ascii_check Ash3d $(MFILE) $(SYSINC)
 	bash run_tests.sh
@@ -531,6 +538,8 @@ install:
 	install -m 755 ../bin/Ash3d $(INSTALLDIR)/bin/Ash3d
 	install -m 755 ../bin/Ash3d_PostProc $(INSTALLDIR)/bin/Ash3d_PostProc
 	install -m 755 ../bin/tools/Ash3d_ASCII_check $(INSTALLDIR)/bin/tools/Ash3d_ASCII_check
+	install -m 755 ../bin/tools/Ash3d_ASCII_DepThin $(INSTALLDIR)/bin/tools/Ash3d_ASCII_DepThin
+	install -m 755 ../bin/tools/Ash3d_NetCDF_GenCTR $(INSTALLDIR)/bin/tools/Ash3d_NetCDF_GenCTR
 	install -m 644 ../share/GlobalAirports_ewert.txt $(INSTALLDIR)/share/
 	install -m 644 ../share/VotW_ESP_v12_csv.txt  $(INSTALLDIR)/share/
 	install -m 644 ../share/post_proc/*png $(INSTALLDIR)/share/post_proc/
@@ -541,6 +550,8 @@ uninstall:
 	rm -f $(INSTALLDIR)/bin/Ash3d
 	rm -f $(INSTALLDIR)/bin/Ash3d_PostProc
 	rm -f $(INSTALLDIR)/bin/tools/Ash3d_ASCII_check
+	rm -f $(INSTALLDIR)/bin/tools/Ash3d_ASCII_DepThin
+	rm -f $(INSTALLDIR)/bin/tools/Ash3d_NetCDF_GenCTR
 	rm -f $(INSTALLDIR)/share/GlobalAirports_ewert.txt
 	rm -f $(INSTALLDIR)/share/VotW_ESP_v12_csv.txt
 	rm -f $(INSTALLDIR)/share/post_proc/CloudLoad_hsv.png

@@ -1,19 +1,22 @@
-! Ash3d_NetCDF_GenCTR
+! Ash3d_ASCII_GenCTR
 
-      program Ash3d_NetCDF_GenCTR
+      program Ash3d_ASCII_GenCTR
 
       use precis_param
 
       use io_units
 
       use io_data,       only : &
-         infile,concenfile,cdf_title,cdf_comment,VolcanoName, &
+         infile,concenfile,datafileIn,cdf_title,cdf_comment,VolcanoName, &
          Have_Block_NetCDF,Have_Block_ResParm,Have_Block_Topo,Have_Block_VarDiff,&
          cdf_b1l2,cdf_vardz,cdf_b3l5, &
          cdf_b4l1,cdf_b4l2,cdf_b4l3,cdf_b4l4,cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,&
          cdf_b4l11,cdf_b4l12,cdf_b4l13,cdf_b4l14,cdf_b4l15,cdf_b4l17,cdf_b4l18,cdf_b5l1,  &
          cdf_b6l1,cdf_b6l2,cdf_b6l3,cdf_b6l4,cdf_b6l5, &
          nvprofiles,Site_vprofile,x_vprofile, y_vprofile
+
+      use Ash3d_Program_Control, only : &
+           Read_Control_File
 
       use mesh,          only : &
          lonLL,latLL,gridwidth_e,gridwidth_n,xLL,yLL,gridwidth_x,gridwidth_y, &
@@ -44,10 +47,10 @@
       use Diffusivity_Variable, only : &
          var_User_charlines_VarDiff
 
-#ifdef USENETCDF
-      use Ash3d_Netcdf_IO,  only : &
-           NC_Read_Output_Products
-#endif
+!#ifdef USENETCDF
+!      use Ash3d_Netcdf_IO,  only : &
+!           NC_Read_Output_Products
+!#endif
 
       use Ash3d_Program_Control, only : &
          Write_input_block_header,      &
@@ -72,6 +75,7 @@
       integer            :: nargs
       integer            :: stat
       character(len= 80) :: linebuffer080
+      integer            :: RunID
 
       logical       :: IsThere
       real(kind=ip) :: LLx
@@ -135,10 +139,7 @@
       ! Reset verbosity so we only are using stdout (no log file)
       VB = (/3,10/)
 
-      write(*,*)"In Ash3d_NetCDF_GenCTR"
-!      outunit = 15
-!      outname = 'Ash3d_control.inp'
-!      open(unit=outunit,file=outname,status='replace',action='write')
+      write(*,*)"In Ash3d_ASCII_GenCTR"
 
       nargs = command_argument_count()
       if (nargs.eq.0) then
@@ -150,14 +151,25 @@
           stop 1
         else
           do io=1,nio;if(VB(io).le.verbosity_production)then
-            write(outlog(io),*)'Enter name of the Ash3d netcdf output file'
+            write(outlog(io),*)'Enter name of the template Ash3d control file'
           endif;enddo
         endif
-        read(input_unit,*) concenfile
-      elseif (nargs.gt.1) then
+        read(input_unit,*) infile
+
+        do io=1,nio;if(VB(io).le.verbosity_production)then
+          write(outlog(io),*)'Enter name of the run table file'
+        endif;enddo
+        read(input_unit,*)datafileIn
+
+        do io=1,nio;if(VB(io).le.verbosity_production)then
+          write(outlog(io),*)'Enter name of the run number.'
+        endif;enddo
+        read(input_unit,*)RunID
+
+      elseif (nargs.gt.3) then
         do io=1,nio;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)'ERROR: Too many command-line arguments.'
-          write(errlog(io),*)'  Usage: Ash3d_NetCDF_GenCTR output_file'
+          write(errlog(io),*)'  Usage: Ash3d_ASCII_GenCTR template.inp table.dat runID'
         endif;enddo
         stop 1
       else
@@ -174,29 +186,79 @@
           endif;enddo
           stop 1
         endif
-        concenfile=trim(adjustl(linebuffer080))
-        inquire( file=adjustl(trim(concenfile)), exist=IsThere )
+        infile=trim(adjustl(linebuffer080))
+        inquire( file=adjustl(trim(infile)), exist=IsThere )
         if (.not.IsThere)then
           do io=1,nio;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)'ERROR: Input file 1 could not be found'
           endif;enddo
           stop 1
         endif
+
+        call get_command_argument(2, linebuffer080, status=stat)
+        if(stat.gt.0)then
+          do io=1,nio;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)'ERROR: Could not parse argument 1'
+          endif;enddo
+          stop 1
+        elseif (stat.lt.0)then
+          do io=1,nio;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)'ERROR: Argument 2 has been truncated.'
+            write(errlog(io),*)'       File name length is limited to 80 char.'
+          endif;enddo
+          stop 1
+        endif
+        datafileIn=trim(adjustl(linebuffer080))
+        inquire( file=adjustl(trim(datafileIn)), exist=IsThere )
+        if (.not.IsThere)then
+          do io=1,nio;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)'ERROR: Input file 2 could not be found'
+          endif;enddo
+          stop 1
+        endif
+
+        call get_command_argument(3, linebuffer080, status=stat)
+        if(stat.gt.0)then
+          do io=1,nio;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)'ERROR: Could not parse argument 1'
+          endif;enddo
+          stop 1
+        endif
+        read(linebuffer080,*)RunID
+
       endif
 
-#ifdef USENETCDF
-      ! Just read step 1. This brings in all the header info needed for the control file
-      call NC_Read_Output_Products(1)
-#else
-     do io=1,nio;if(VB(io).le.verbosity_info)then
-       write(errlog(io),*)'ERROR: NetCDF libraries not linked.'
-       write(errlog(io),*)'       Please recompile linking NetCDF libraries.'
-     endif;enddo
-     stop 1
-#endif  
+      call Read_Control_File
 
-      ! Now that we have loaded the data from the NetCDF file, start writing
-      ! to a control file
+      ! Template control file has been loaded into memory
+      ! Note: any blocks for optional modules have not been read at this point
+
+      ! Next step is to read and parse the table file. This will indicate how the
+      ! output control file will be modified from the base configuration. This
+      ! will mean replacing variables such as the start time, plume height, volumne,
+      ! vent location, etc.
+
+
+!SUMMARY OF INPUT VALUES USED IN RUNS OF TUNGUSKA
+!run #     year      DRE           dxy      latitude       longitude     lonLL     latLL     width     height    Location
+!                                  deg.       deg.            deg.        deg.      deg.      deg.      deg.
+!    1       2010    00.0004     0.050      025.156        -111.375     -112.879    023.402     05.012   03.508    MWG2_01
+!    2       2010    00.0004     0.050      027.150        -107.973     -109.477    025.396     05.012   03.508    MWG2_02
+!    3       2010    00.0004     0.050      029.054        -104.428     -105.932    027.300     05.012   03.508    MWG2_03
+!    4       2010    00.0004     0.050      030.828        -100.775     -102.279    029.074     05.012   03.508    MWG2_04
+!    5       2010    00.0004     0.050      032.486        -096.944     -098.447    030.732     05.012   03.508    MWG2_05
+!    6       2010    00.0004     0.050      033.986        -092.969     -094.472    032.232     05.012   03.508    MWG2_06
+!    7       2010    00.0004     0.050      035.303        -088.851     -090.354    033.548     05.012   03.508    MWG2_07
+!    8       2010    00.0004     0.050      036.420        -084.553     -086.057    034.666     05.012   03.508    MWG2_08
+
+
+
+
+
+
+
+      ! Now that we have loaded the data from the template file, start writing
+      ! to a new control file
       infile = "temp.inp"
       inquire( file=infile, exist=IsThere )
       if(IsThere)then
@@ -479,5 +541,5 @@
 
       close(fid_ctrlfile)
 
-      end program Ash3d_NetCDF_GenCTR
+      end program Ash3d_ASCII_GenCTR
 
