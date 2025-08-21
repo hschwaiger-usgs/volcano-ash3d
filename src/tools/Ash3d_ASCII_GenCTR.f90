@@ -235,27 +235,10 @@
 
       ! Next step is to read and parse the table file. This will indicate how the
       ! output control file will be modified from the base configuration. This
-      ! will mean replacing variables such as the start time, plume height, volumne,
+      ! will mean replacing variables such as the start time, plume height, volume,
       ! vent location, etc.
 
-
-!SUMMARY OF INPUT VALUES USED IN RUNS OF TUNGUSKA
-!run #     year      DRE           dxy      latitude       longitude     lonLL     latLL     width     height    Location
-!                                  deg.       deg.            deg.        deg.      deg.      deg.      deg.
-!    1       2010    00.0004     0.050      025.156        -111.375     -112.879    023.402     05.012   03.508    MWG2_01
-!    2       2010    00.0004     0.050      027.150        -107.973     -109.477    025.396     05.012   03.508    MWG2_02
-!    3       2010    00.0004     0.050      029.054        -104.428     -105.932    027.300     05.012   03.508    MWG2_03
-!    4       2010    00.0004     0.050      030.828        -100.775     -102.279    029.074     05.012   03.508    MWG2_04
-!    5       2010    00.0004     0.050      032.486        -096.944     -098.447    030.732     05.012   03.508    MWG2_05
-!    6       2010    00.0004     0.050      033.986        -092.969     -094.472    032.232     05.012   03.508    MWG2_06
-!    7       2010    00.0004     0.050      035.303        -088.851     -090.354    033.548     05.012   03.508    MWG2_07
-!    8       2010    00.0004     0.050      036.420        -084.553     -086.057    034.666     05.012   03.508    MWG2_08
-
-
-
-
-
-
+      call Read_RunParam_Table(RunID)
 
       ! Now that we have loaded the data from the template file, start writing
       ! to a new control file
@@ -542,4 +525,402 @@
       close(fid_ctrlfile)
 
       end program Ash3d_ASCII_GenCTR
+
+!##############################################################################
+
+      subroutine Read_RunParam_Table(ir)
+
+      use io_units
+
+      use io_data,       only : &
+         datafileIn
+
+      implicit none
+
+      integer,intent(in) :: ir
+
+      character(len=50) :: linebuffer050
+      character(len=80) :: linebuffer080
+      character(len=130):: linebuffer130
+      integer           :: iostatus
+      character(len=120):: iomessage
+
+                                 ! Kind of variable
+      integer :: icol_runnum       =-1 ! integer          : Run ID
+      integer :: ipos_runnum       =-1
+      integer :: icol_year         =-1 ! integer          : Erup. start year  (year, Year, YYYY)
+      integer :: ipos_year         =-1
+      integer :: icol_month        =-1 ! integer          : Erup. start month (month, MM)
+      integer :: ipos_month        =-1
+      integer :: icol_day          =-1 ! integer          : Erup. start day   (day, DD)
+      integer :: ipos_day          =-1
+      integer :: icol_hour         =-1 ! real, kind=dp    : Erup. start hour  (hour, HH.H)
+      integer :: ipos_hour         =-1
+      integer :: icol_starttime    =-1 ! character(len=20): Erup. start time in "DD-Mon-YYYY HH:MM:SS"
+      integer :: ipos_starttime    =-1
+      integer :: icol_Site         =-1 ! character(len=20): Site label (Location)
+      integer :: ipos_Site         =-1
+      integer :: icol_lonLL        =-1 ! real, kind=ip    : Grid lower-left longitude (lonLL)
+      integer :: ipos_lonLL        =-1
+      integer :: icol_latLL        =-1 ! real, kind=ip    : Grid lower-left latitude (latLL)
+      integer :: ipos_latLL        =-1
+      integer :: icol_width        =-1 ! real, kind=ip    : Grid width (width, gridwidth_e)
+      integer :: ipos_width        =-1
+      integer :: icol_height       =-1 ! real, kind=ip    : Grid height (height, gridwidth_n)
+      integer :: ipos_height       =-1
+      integer :: icol_dxy          =-1 ! real, kind=ip    : Grid spacing, horizontal (dxy)
+      integer :: ipos_dxy          =-1
+      integer :: icol_dz           =-1 ! real, kind=ip    : Grid spacing, vertical (dz)
+      integer :: ipos_dz           =-1
+      integer :: icol_longitude    =-1 ! real, kind=ip    : Source longitude (longitude, srcx, lon_volcano)
+      integer :: ipos_longitude    =-1
+      integer :: icol_latitude     =-1 ! real, kind=ip    : Source latitude (latitude, srcy, lat_volcano)
+      integer :: ipos_latitude     =-1
+      integer :: icol_duration     =-1 ! real, kind=ip    : Erup. duration (duration, EDur)
+      integer :: ipos_duration     =-1
+      integer :: icol_plume_height =-1 ! real, kind=ip    : Erup. Plume height (plume height, EPlmH)
+      integer :: ipos_plume_height =-1
+      integer :: icol_volume       =-1 ! real, kind=ip    : Erup. volume (volume, DRE, EVol)
+      integer :: ipos_volume       =-1
+      integer :: icol_m_fines      =-1 ! real, kind=ip    : percent fines of GSD (m_fines)
+      integer :: ipos_m_fines      =-1
+      integer :: icol_mu_agg       =-1 ! real, kind=ip    : avg. of aggregate Log-Norm GSD in phi (mu_agg)
+      integer :: ipos_mu_agg       =-1
+
+      integer :: itmp1,itmp2,itmp3,itmp4
+
+      write(*,*)"*******************************************"
+      write(*,*)"Now reading input table:"
+
+      open(unit=fid_misc,file=datafileIn,status='old',action='read',err=9001)
+
+      ! Reading the first header line. Should be something link: SUMMARY OF INPUT VALUES ...
+      read(fid_misc,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
+      linebuffer050 = "Reading table file for Line 1: header line"
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
+      write(*,*)linebuffer130
+
+      ! Now read line two, which contains the column headers
+      read(fid_misc,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
+      linebuffer050 = "Reading table file for Line 2: column headers"
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
+      write(*,*)linebuffer130
+
+      ! Now read line three, which contains the column units
+      read(fid_misc,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer080
+      linebuffer050 = "Reading table file for Line 3: column units"
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080(1:80),iomessage)
+      write(*,*)linebuffer080
+
+      ! Parse the column header line
+      ! Looking for ipos_runnum: run or Run
+      itmp1 = index(linebuffer130,'run')
+      itmp2 = index(linebuffer130,'Run')
+      if (itmp1.gt.0) then
+        ipos_runnum = itmp1
+      elseif (itmp2.gt.0) then
+        ipos_runnum = itmp2
+      endif
+      if(ipos_runnum.gt.0)then
+        write(*,*)"Found runID column at position", ipos_runnum
+      else
+        write(*,*)"     Column with 'Run' or 'run' not found."
+        write(*,*)"     Using line number for run ID"
+      endif
+
+      ! Looking for ipos_year: year or Year or YYYY
+      itmp1 = index(linebuffer130,'year')
+      itmp2 = index(linebuffer130,'Year')
+      itmp3 = index(linebuffer130,'YYYY')
+      if (itmp1.gt.0) then
+        ipos_year = itmp1
+      elseif (itmp2.gt.0) then
+        ipos_year = itmp2
+      elseif (itmp3.gt.0) then
+        ipos_year = itmp3
+      endif
+      if(ipos_year.gt.0)then
+        write(*,*)"Found year column at position", ipos_year
+      else
+        write(*,*)"    Column with 'year', 'Year', or 'YYYY' not found."
+      endif
+
+      ! Looking for ipos_month        : month or MM
+      itmp1 = index(linebuffer130,'month')
+      itmp2 = index(linebuffer130,'MM')
+      if (itmp1.gt.0) then
+        ipos_month = itmp1
+      elseif (itmp2.gt.0) then
+        ipos_month = itmp2
+      endif
+      if(ipos_month.gt.0)then
+        write(*,*)"Found month column at position", ipos_month
+      else
+        write(*,*)"    Column with 'month' or 'MM' not found."
+      endif
+
+      ! Looking for ipos_day          : day or DD
+      itmp1 = index(linebuffer130,'day')
+      itmp2 = index(linebuffer130,'DD')
+      if (itmp1.gt.0) then
+        ipos_day = itmp1
+      elseif (itmp2.gt.0) then
+        ipos_day = itmp2
+      endif
+      if(ipos_day.gt.0)then
+        write(*,*)"Found day column at position", ipos_day
+      else
+        write(*,*)"    Column with 'day' or 'DD' not found."
+      endif
+
+      ! Looking for ipos_hour         : hour or HH.H
+      itmp1 = index(linebuffer130,'hour')
+      itmp2 = index(linebuffer130,'HH.H')
+      if (itmp1.gt.0) then
+        ipos_hour = itmp1
+      elseif (itmp2.gt.0) then
+        ipos_hour = itmp2
+      endif
+      if(ipos_hour.gt.0)then
+        write(*,*)"Found hour column at position", ipos_hour
+      else
+        write(*,*)"    Column with 'hour' or 'HH.H' not found."
+      endif
+
+      ! Looking for ipos_starttime    : start time
+      itmp1 = index(linebuffer130,'start time')
+      if (itmp1.gt.0) then
+        ipos_starttime = itmp1
+      endif
+      if(ipos_starttime.gt.0)then
+        write(*,*)"Found start time column at position", ipos_starttime
+      else
+        write(*,*)"    Column with 'start time' not found."
+      endif
+
+      ! Looking for ipos_Site         : Location
+      itmp1 = index(linebuffer130,'Location')
+      if (itmp1.gt.0) then
+        ipos_Site = itmp1
+      endif
+      if(ipos_Site.gt.0)then
+        write(*,*)"Found Location column at position", ipos_Site
+      else
+        write(*,*)"    Column with 'Location' not found."
+      endif
+
+      ! Looking for ipos_lonLL        : lonLL
+      itmp1 = index(linebuffer130,'lonLL')
+      if (itmp1.gt.0) then
+        ipos_lonLL = itmp1
+      endif
+      if(ipos_lonLL.gt.0)then
+        write(*,*)"Found lonLL column at position", ipos_lonLL
+      else
+        write(*,*)"    Column with 'lonLL' not found."
+      endif
+
+      ! Looking for ipos_latLL        : latLL
+      itmp1 = index(linebuffer130,'latLL')
+      if (itmp1.gt.0) then
+        ipos_latLL = itmp1
+      endif
+      if(ipos_latLL.gt.0)then
+        write(*,*)"Found latLL column at position", ipos_latLL
+      else
+        write(*,*)"    Column with 'latLL' not found."
+      endif
+
+      ! Looking for ipos_dxy          : dxy
+      itmp1 = index(linebuffer130,'dxy')
+      if (itmp1.gt.0) then
+        ipos_dxy = itmp1
+      endif
+      if(ipos_dxy.gt.0)then
+        write(*,*)"Found dxy column at position", ipos_dxy
+      else
+        write(*,*)"    Column with 'dxy' not found."
+      endif
+
+      ! Looking for ipos_dz           : dz
+      itmp1 = index(linebuffer130,'dz')
+      if (itmp1.gt.0) then
+        ipos_dz = itmp1
+      endif
+      if(ipos_dz.gt.0)then
+        write(*,*)"Found dz column at position", ipos_dz
+      else
+        write(*,*)"    Column with 'dz' not found."
+      endif
+
+      ! Looking for ipos_longitude    : longitude or srcx or lon_volcano
+      itmp1 = index(linebuffer130,'longitude')
+      itmp2 = index(linebuffer130,'srcx')
+      itmp3 = index(linebuffer130,'lon_volcano')
+      if (itmp1.gt.0) then
+        ipos_longitude= itmp1
+      elseif (itmp2.gt.0) then
+        ipos_longitude = itmp2
+      elseif (itmp3.gt.0) then
+        ipos_longitude = itmp3
+      endif
+      if(ipos_longitude.gt.0)then
+        write(*,*)"Found longitude column at position", ipos_longitude
+      else
+        write(*,*)"    Column with 'longitude', 'srcx', or 'lon_volcano' not found."
+      endif
+
+      ! Looking for ipos_latitude     : latitude or srcy or lat_volcano
+      itmp1 = index(linebuffer130,'latitude')
+      itmp2 = index(linebuffer130,'srcy')
+      itmp3 = index(linebuffer130,'lat_volcano')
+      if (itmp1.gt.0) then
+        ipos_latitude = itmp1
+      elseif (itmp2.gt.0) then
+        ipos_latitude = itmp2
+      elseif (itmp3.gt.0) then
+        ipos_latitude = itmp3
+      endif
+      if(ipos_latitude.gt.0)then
+        write(*,*)"Found latitude column at position", ipos_latitude
+      else
+        write(*,*)"    Column with 'latitude', 'srcy', or 'lat_volcano' not found."
+      endif
+
+      ! Looking for ipos_duration     : duration or EDur
+      itmp1 = index(linebuffer130,'duration')
+      itmp2 = index(linebuffer130,'EDur')
+      if (itmp1.gt.0) then
+        ipos_duration = itmp1
+      elseif (itmp2.gt.0) then
+        ipos_duration = itmp2
+      endif
+      if(ipos_duration.gt.0)then
+        write(*,*)"Found duration column at position", ipos_duration
+      else
+        write(*,*)"    Column with 'duration' or 'EDur' not found."
+      endif
+
+      ! Looking for ipos_plume_height : plume height or EPlmH
+      itmp1 = index(linebuffer130,'plume height')
+      itmp2 = index(linebuffer130,'EPlmH')
+      if (itmp1.gt.0) then
+        ipos_plume_height = itmp1
+      elseif (itmp2.gt.0) then
+        ipos_plume_height = itmp2
+      endif
+      if(ipos_plume_height.gt.0)then
+        write(*,*)"Found plume height column at position", ipos_plume_height
+      else
+        write(*,*)"    Column with 'plume height' or 'EPlmH' not found."
+      endif
+
+      ! Looking for ipos_volume       : volume or DRE or EVol
+      itmp1 = index(linebuffer130,'volume')
+      itmp2 = index(linebuffer130,'DRE')
+      itmp3 = index(linebuffer130,'EVol')
+      if (itmp1.gt.0) then
+        ipos_volume = itmp1
+      elseif (itmp2.gt.0) then
+        ipos_volume = itmp2
+      elseif (itmp3.gt.0) then
+        ipos_volume = itmp3
+      endif
+      if(ipos_volume.gt.0)then
+        write(*,*)"Found volume column at position", ipos_volume
+      else
+        write(*,*)"    Column with 'volume', 'DRE', or 'EVol' not found."
+      endif
+
+      ! Looking for ipos_m_fines      : m_fines
+      itmp1 = index(linebuffer130,'m_fines')
+      if (itmp1.gt.0) then
+        ipos_m_fines = itmp1
+      endif
+      if(ipos_m_fines.gt.0)then
+        write(*,*)"Found m_fines column at position", ipos_m_fines
+      else
+        write(*,*)"    Column with 'm_fines' not found."
+      endif
+
+      ! Looking for ipos_mu_agg       : mu_agg
+      itmp1 = index(linebuffer130,'mu_agg')
+      if (itmp1.gt.0) then
+        ipos_mu_agg = itmp1
+      endif
+      if(ipos_mu_agg.gt.0)then
+        write(*,*)"Found mu_agg column at position", ipos_mu_agg
+      else
+        write(*,*)"    Column with 'mu_agg' not found."
+      endif
+
+      ! Looking for ipos_width        : width or gridwidth_e
+      itmp1 = index(linebuffer130,'width')
+      itmp2 = index(linebuffer130,'gridwidth_e')
+      if (itmp1.gt.0) then
+        ipos_width = itmp1
+      elseif (itmp2.gt.0) then
+        ipos_width = itmp2
+      endif
+      if(ipos_width.gt.0)then
+        write(*,*)"Found width column at position", ipos_width
+      else
+        write(*,*)"    Column with 'width' or 'gridwidth_e' not found."
+      endif
+
+      ! Looking for ipos_height       : height or gridwidth_n
+      itmp1 = index(linebuffer130,'height')
+      itmp2 = index(linebuffer130,'gridwidth_n')
+      itmp3 = index(linebuffer130,'plume height') ! we might find height, but its part of 'plume height'
+      if (itmp1.gt.0) then
+        if(itmp1-itmp3.eq.6)then ! the 'height' we found is a part of 'plume height'; look again
+          itmp4 = index(linebuffer130(itmp1+1:),'height')
+          if (itmp4.gt.0)ipos_height = itmp4
+        else
+          ipos_height = itmp1
+        endif
+      elseif (itmp2.gt.0) then
+        ipos_height = itmp2
+      endif
+      if(ipos_height.gt.0)then
+        write(*,*)"Found height column at position", ipos_height
+      else
+        write(*,*)"    Column with 'height' or 'gridwidth_n' not found."
+      endif
+
+
+      ! Start reading the 
+
+      close(fid_misc)
+
+      stop 77
+      return
+
+9001  do io=1,2;if(VB(io).le.verbosity_error)then
+        write(errlog(io),*)  'error: cannot open table file: ',datafileIn
+        write(errlog(io),*)  'Program stopped'
+      endif;enddo
+      stop 1
+
+      end subroutine Read_RunParam_Table
+
+!##############################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
