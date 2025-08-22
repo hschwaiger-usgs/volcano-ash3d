@@ -530,6 +530,8 @@
 
       subroutine Read_RunParam_Table(ir)
 
+      use precis_param
+
       use io_units
 
       use io_data,       only : &
@@ -545,49 +547,45 @@
       integer           :: iostatus
       character(len=120):: iomessage
 
-                                 ! Kind of variable
-      integer :: icol_runnum       =-1 ! integer          : Run ID
-      integer :: ipos_runnum       =-1
-      integer :: icol_year         =-1 ! integer          : Erup. start year  (year, Year, YYYY)
-      integer :: ipos_year         =-1
-      integer :: icol_month        =-1 ! integer          : Erup. start month (month, MM)
-      integer :: ipos_month        =-1
-      integer :: icol_day          =-1 ! integer          : Erup. start day   (day, DD)
-      integer :: ipos_day          =-1
-      integer :: icol_hour         =-1 ! real, kind=dp    : Erup. start hour  (hour, HH.H)
-      integer :: ipos_hour         =-1
-      integer :: icol_starttime    =-1 ! character(len=20): Erup. start time in "DD-Mon-YYYY HH:MM:SS"
-      integer :: ipos_starttime    =-1
-      integer :: icol_Site         =-1 ! character(len=20): Site label (Location)
-      integer :: ipos_Site         =-1
-      integer :: icol_lonLL        =-1 ! real, kind=ip    : Grid lower-left longitude (lonLL)
-      integer :: ipos_lonLL        =-1
-      integer :: icol_latLL        =-1 ! real, kind=ip    : Grid lower-left latitude (latLL)
-      integer :: ipos_latLL        =-1
-      integer :: icol_width        =-1 ! real, kind=ip    : Grid width (width, gridwidth_e)
-      integer :: ipos_width        =-1
-      integer :: icol_height       =-1 ! real, kind=ip    : Grid height (height, gridwidth_n)
-      integer :: ipos_height       =-1
-      integer :: icol_dxy          =-1 ! real, kind=ip    : Grid spacing, horizontal (dxy)
-      integer :: ipos_dxy          =-1
-      integer :: icol_dz           =-1 ! real, kind=ip    : Grid spacing, vertical (dz)
-      integer :: ipos_dz           =-1
-      integer :: icol_longitude    =-1 ! real, kind=ip    : Source longitude (longitude, srcx, lon_volcano)
-      integer :: ipos_longitude    =-1
-      integer :: icol_latitude     =-1 ! real, kind=ip    : Source latitude (latitude, srcy, lat_volcano)
-      integer :: ipos_latitude     =-1
-      integer :: icol_duration     =-1 ! real, kind=ip    : Erup. duration (duration, EDur)
-      integer :: ipos_duration     =-1
-      integer :: icol_plume_height =-1 ! real, kind=ip    : Erup. Plume height (plume height, EPlmH)
-      integer :: ipos_plume_height =-1
-      integer :: icol_volume       =-1 ! real, kind=ip    : Erup. volume (volume, DRE, EVol)
-      integer :: ipos_volume       =-1
-      integer :: icol_m_fines      =-1 ! real, kind=ip    : percent fines of GSD (m_fines)
-      integer :: ipos_m_fines      =-1
-      integer :: icol_mu_agg       =-1 ! real, kind=ip    : avg. of aggregate Log-Norm GSD in phi (mu_agg)
-      integer :: ipos_mu_agg       =-1
-
+      integer,parameter :: MAX_COLVARS = 20
+      integer,dimension(MAX_COLVARS) :: ivar_pos               = -1  ! position of variable in string
+      integer,dimension(MAX_COLVARS) :: ivar_col               = -1  ! column number of variable in string
+      integer,dimension(MAX_COLVARS) :: icol_var               = -1  ! variable ID for a given column
+      integer           :: Ncols
+      character(len=12),dimension(MAX_COLVARS) :: ivar_name1
+      character(len=12),dimension(MAX_COLVARS) :: ivar_name2
+      character(len=12),dimension(MAX_COLVARS) :: ivar_name3
+      integer,dimension(MAX_COLVARS) :: ivar_Nnames
+      integer,dimension(3)           :: itmp
+      integer :: i,iv,iiv,ic,icol,iline,irun,nvals
       integer :: itmp1,itmp2,itmp3,itmp4
+      integer :: pos_cur,pos_diff
+      logical :: HaveRunID,HaveST,HaveLoc
+      real(kind=ip),dimension(MAX_COLVARS) :: values
+      character(len=21) :: tmp_str
+
+      ! List the colome header variable names and synonyms
+      ivar_Nnames( 1) = 2; ivar_name1( 1) = "run";          ivar_name2( 1) = "Run"
+      ivar_Nnames( 2) = 3; ivar_name1( 2) = "year";         ivar_name2( 2) = "Year"; ivar_name3( 2) = "YYYY"
+      ivar_Nnames( 3) = 2; ivar_name1( 3) = "month";        ivar_name2( 3) = "MM"
+      ivar_Nnames( 4) = 2; ivar_name1( 4) = "day";          ivar_name2( 4) = "DD"
+      ivar_Nnames( 5) = 2; ivar_name1( 5) = "hour";         ivar_name2( 5) = "HH.H"
+      ivar_Nnames( 6) = 1; ivar_name1( 6) = "start time"
+      ivar_Nnames( 7) = 1; ivar_name1( 7) = "Location"
+      ivar_Nnames( 8) = 1; ivar_name1( 8) = "lonLL"
+      ivar_Nnames( 9) = 2; ivar_name1( 9) = "latLL"
+      ivar_Nnames(10) = 1; ivar_name1(10) = "dxy"
+      ivar_Nnames(11) = 1; ivar_name1(11) = "dz"
+      ivar_Nnames(12) = 3; ivar_name1(12) = "longitude";    ivar_name2(12) = "srcx"; ivar_name3(12) = "lon_volcano"
+      ivar_Nnames(13) = 3; ivar_name1(13) = "latitude";     ivar_name2(13) = "srcy"; ivar_name3(13) = "lat_volcano"
+      ivar_Nnames(14) = 2; ivar_name1(14) = "duration";     ivar_name2(14) = "EDur"
+      ivar_Nnames(15) = 2; ivar_name1(15) = "plume height"; ivar_name2(15) = "EPlmH"
+      ivar_Nnames(16) = 3; ivar_name1(16) = "volume";       ivar_name2(16) = "DRE";  ivar_name3(16) = "EVol"
+      ivar_Nnames(17) = 2; ivar_name1(17) = "width";        ivar_name2(17) = "gridwidth_e"
+      ivar_Nnames(18) = 2; ivar_name1(18) = "height";       ivar_name2(18) = "gridwidth_n"  ! Note: this must be listed after 'plume height'
+      ivar_Nnames(19) = 1; ivar_name1(19) = "m_fines"
+      ivar_Nnames(20) = 1; ivar_name1(20) = "mu_agg"
+
 
       write(*,*)"*******************************************"
       write(*,*)"Now reading input table:"
@@ -598,298 +596,195 @@
       read(fid_misc,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
       linebuffer050 = "Reading table file for Line 1: header line"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
-      write(*,*)linebuffer130
 
       ! Now read line two, which contains the column headers
       read(fid_misc,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
       linebuffer050 = "Reading table file for Line 2: column headers"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
-      write(*,*)linebuffer130
 
       ! Now read line three, which contains the column units
       read(fid_misc,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading table file for Line 3: column units"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080(1:80),iomessage)
-      write(*,*)linebuffer080
 
       ! Parse the column header line
-      ! Looking for ipos_runnum: run or Run
-      itmp1 = index(linebuffer130,'run')
-      itmp2 = index(linebuffer130,'Run')
-      if (itmp1.gt.0) then
-        ipos_runnum = itmp1
-      elseif (itmp2.gt.0) then
-        ipos_runnum = itmp2
-      endif
-      if(ipos_runnum.gt.0)then
-        write(*,*)"Found runID column at position", ipos_runnum
-      else
-        write(*,*)"     Column with 'Run' or 'run' not found."
-        write(*,*)"     Using line number for run ID"
-      endif
-
-      ! Looking for ipos_year: year or Year or YYYY
-      itmp1 = index(linebuffer130,'year')
-      itmp2 = index(linebuffer130,'Year')
-      itmp3 = index(linebuffer130,'YYYY')
-      if (itmp1.gt.0) then
-        ipos_year = itmp1
-      elseif (itmp2.gt.0) then
-        ipos_year = itmp2
-      elseif (itmp3.gt.0) then
-        ipos_year = itmp3
-      endif
-      if(ipos_year.gt.0)then
-        write(*,*)"Found year column at position", ipos_year
-      else
-        write(*,*)"    Column with 'year', 'Year', or 'YYYY' not found."
-      endif
-
-      ! Looking for ipos_month        : month or MM
-      itmp1 = index(linebuffer130,'month')
-      itmp2 = index(linebuffer130,'MM')
-      if (itmp1.gt.0) then
-        ipos_month = itmp1
-      elseif (itmp2.gt.0) then
-        ipos_month = itmp2
-      endif
-      if(ipos_month.gt.0)then
-        write(*,*)"Found month column at position", ipos_month
-      else
-        write(*,*)"    Column with 'month' or 'MM' not found."
-      endif
-
-      ! Looking for ipos_day          : day or DD
-      itmp1 = index(linebuffer130,'day')
-      itmp2 = index(linebuffer130,'DD')
-      if (itmp1.gt.0) then
-        ipos_day = itmp1
-      elseif (itmp2.gt.0) then
-        ipos_day = itmp2
-      endif
-      if(ipos_day.gt.0)then
-        write(*,*)"Found day column at position", ipos_day
-      else
-        write(*,*)"    Column with 'day' or 'DD' not found."
-      endif
-
-      ! Looking for ipos_hour         : hour or HH.H
-      itmp1 = index(linebuffer130,'hour')
-      itmp2 = index(linebuffer130,'HH.H')
-      if (itmp1.gt.0) then
-        ipos_hour = itmp1
-      elseif (itmp2.gt.0) then
-        ipos_hour = itmp2
-      endif
-      if(ipos_hour.gt.0)then
-        write(*,*)"Found hour column at position", ipos_hour
-      else
-        write(*,*)"    Column with 'hour' or 'HH.H' not found."
-      endif
-
-      ! Looking for ipos_starttime    : start time
-      itmp1 = index(linebuffer130,'start time')
-      if (itmp1.gt.0) then
-        ipos_starttime = itmp1
-      endif
-      if(ipos_starttime.gt.0)then
-        write(*,*)"Found start time column at position", ipos_starttime
-      else
-        write(*,*)"    Column with 'start time' not found."
-      endif
-
-      ! Looking for ipos_Site         : Location
-      itmp1 = index(linebuffer130,'Location')
-      if (itmp1.gt.0) then
-        ipos_Site = itmp1
-      endif
-      if(ipos_Site.gt.0)then
-        write(*,*)"Found Location column at position", ipos_Site
-      else
-        write(*,*)"    Column with 'Location' not found."
-      endif
-
-      ! Looking for ipos_lonLL        : lonLL
-      itmp1 = index(linebuffer130,'lonLL')
-      if (itmp1.gt.0) then
-        ipos_lonLL = itmp1
-      endif
-      if(ipos_lonLL.gt.0)then
-        write(*,*)"Found lonLL column at position", ipos_lonLL
-      else
-        write(*,*)"    Column with 'lonLL' not found."
-      endif
-
-      ! Looking for ipos_latLL        : latLL
-      itmp1 = index(linebuffer130,'latLL')
-      if (itmp1.gt.0) then
-        ipos_latLL = itmp1
-      endif
-      if(ipos_latLL.gt.0)then
-        write(*,*)"Found latLL column at position", ipos_latLL
-      else
-        write(*,*)"    Column with 'latLL' not found."
-      endif
-
-      ! Looking for ipos_dxy          : dxy
-      itmp1 = index(linebuffer130,'dxy')
-      if (itmp1.gt.0) then
-        ipos_dxy = itmp1
-      endif
-      if(ipos_dxy.gt.0)then
-        write(*,*)"Found dxy column at position", ipos_dxy
-      else
-        write(*,*)"    Column with 'dxy' not found."
-      endif
-
-      ! Looking for ipos_dz           : dz
-      itmp1 = index(linebuffer130,'dz')
-      if (itmp1.gt.0) then
-        ipos_dz = itmp1
-      endif
-      if(ipos_dz.gt.0)then
-        write(*,*)"Found dz column at position", ipos_dz
-      else
-        write(*,*)"    Column with 'dz' not found."
-      endif
-
-      ! Looking for ipos_longitude    : longitude or srcx or lon_volcano
-      itmp1 = index(linebuffer130,'longitude')
-      itmp2 = index(linebuffer130,'srcx')
-      itmp3 = index(linebuffer130,'lon_volcano')
-      if (itmp1.gt.0) then
-        ipos_longitude= itmp1
-      elseif (itmp2.gt.0) then
-        ipos_longitude = itmp2
-      elseif (itmp3.gt.0) then
-        ipos_longitude = itmp3
-      endif
-      if(ipos_longitude.gt.0)then
-        write(*,*)"Found longitude column at position", ipos_longitude
-      else
-        write(*,*)"    Column with 'longitude', 'srcx', or 'lon_volcano' not found."
-      endif
-
-      ! Looking for ipos_latitude     : latitude or srcy or lat_volcano
-      itmp1 = index(linebuffer130,'latitude')
-      itmp2 = index(linebuffer130,'srcy')
-      itmp3 = index(linebuffer130,'lat_volcano')
-      if (itmp1.gt.0) then
-        ipos_latitude = itmp1
-      elseif (itmp2.gt.0) then
-        ipos_latitude = itmp2
-      elseif (itmp3.gt.0) then
-        ipos_latitude = itmp3
-      endif
-      if(ipos_latitude.gt.0)then
-        write(*,*)"Found latitude column at position", ipos_latitude
-      else
-        write(*,*)"    Column with 'latitude', 'srcy', or 'lat_volcano' not found."
-      endif
-
-      ! Looking for ipos_duration     : duration or EDur
-      itmp1 = index(linebuffer130,'duration')
-      itmp2 = index(linebuffer130,'EDur')
-      if (itmp1.gt.0) then
-        ipos_duration = itmp1
-      elseif (itmp2.gt.0) then
-        ipos_duration = itmp2
-      endif
-      if(ipos_duration.gt.0)then
-        write(*,*)"Found duration column at position", ipos_duration
-      else
-        write(*,*)"    Column with 'duration' or 'EDur' not found."
-      endif
-
-      ! Looking for ipos_plume_height : plume height or EPlmH
-      itmp1 = index(linebuffer130,'plume height')
-      itmp2 = index(linebuffer130,'EPlmH')
-      if (itmp1.gt.0) then
-        ipos_plume_height = itmp1
-      elseif (itmp2.gt.0) then
-        ipos_plume_height = itmp2
-      endif
-      if(ipos_plume_height.gt.0)then
-        write(*,*)"Found plume height column at position", ipos_plume_height
-      else
-        write(*,*)"    Column with 'plume height' or 'EPlmH' not found."
-      endif
-
-      ! Looking for ipos_volume       : volume or DRE or EVol
-      itmp1 = index(linebuffer130,'volume')
-      itmp2 = index(linebuffer130,'DRE')
-      itmp3 = index(linebuffer130,'EVol')
-      if (itmp1.gt.0) then
-        ipos_volume = itmp1
-      elseif (itmp2.gt.0) then
-        ipos_volume = itmp2
-      elseif (itmp3.gt.0) then
-        ipos_volume = itmp3
-      endif
-      if(ipos_volume.gt.0)then
-        write(*,*)"Found volume column at position", ipos_volume
-      else
-        write(*,*)"    Column with 'volume', 'DRE', or 'EVol' not found."
-      endif
-
-      ! Looking for ipos_m_fines      : m_fines
-      itmp1 = index(linebuffer130,'m_fines')
-      if (itmp1.gt.0) then
-        ipos_m_fines = itmp1
-      endif
-      if(ipos_m_fines.gt.0)then
-        write(*,*)"Found m_fines column at position", ipos_m_fines
-      else
-        write(*,*)"    Column with 'm_fines' not found."
-      endif
-
-      ! Looking for ipos_mu_agg       : mu_agg
-      itmp1 = index(linebuffer130,'mu_agg')
-      if (itmp1.gt.0) then
-        ipos_mu_agg = itmp1
-      endif
-      if(ipos_mu_agg.gt.0)then
-        write(*,*)"Found mu_agg column at position", ipos_mu_agg
-      else
-        write(*,*)"    Column with 'mu_agg' not found."
-      endif
-
-      ! Looking for ipos_width        : width or gridwidth_e
-      itmp1 = index(linebuffer130,'width')
-      itmp2 = index(linebuffer130,'gridwidth_e')
-      if (itmp1.gt.0) then
-        ipos_width = itmp1
-      elseif (itmp2.gt.0) then
-        ipos_width = itmp2
-      endif
-      if(ipos_width.gt.0)then
-        write(*,*)"Found width column at position", ipos_width
-      else
-        write(*,*)"    Column with 'width' or 'gridwidth_e' not found."
-      endif
-
-      ! Looking for ipos_height       : height or gridwidth_n
-      itmp1 = index(linebuffer130,'height')
-      itmp2 = index(linebuffer130,'gridwidth_n')
-      itmp3 = index(linebuffer130,'plume height') ! we might find height, but its part of 'plume height'
-      if (itmp1.gt.0) then
-        if(itmp1-itmp3.eq.6)then ! the 'height' we found is a part of 'plume height'; look again
-          itmp4 = index(linebuffer130(itmp1+1:),'height')
-          if (itmp4.gt.0)ipos_height = itmp4
-        else
-          ipos_height = itmp1
+      Ncols = 0
+      do iv = 1,MAX_COLVARS
+        itmp(:) = -1
+        itmp(1) = index(linebuffer130,trim(adjustl(ivar_name1(iv))))
+        if(ivar_Nnames(iv).ge.2) itmp(2) = index(linebuffer130,trim(adjustl(ivar_name2(iv))))
+        if(ivar_Nnames(iv).ge.3) itmp(3) = index(linebuffer130,trim(adjustl(ivar_name3(iv))))
+        if(iv.eq.18)then ! Need to do an extra check if var=height since 'plume height' will catch it
+          itmp1 = index(linebuffer130,'plume height')
+          if (itmp(1).gt.0) then ! 'height' was found, but double-check
+            if(itmp(1)-itmp1.eq.6)then ! the 'height' we found is a part of 'plume height'; look again
+              itmp2 = index(linebuffer130(itmp(1)+1:),'height')
+              if (itmp2.gt.0)ivar_pos(18) = itmp2
+            else
+              ivar_pos(18) = itmp(1)
+            endif
+          elseif (itmp(2).gt.0) then
+            ivar_pos(18) = itmp(2) ! column found (gridwidth_n)
+          endif
+          if (ivar_pos(iv).gt.0) Ncols=Ncols+1
+          cycle
         endif
-      elseif (itmp2.gt.0) then
-        ipos_height = itmp2
-      endif
-      if(ipos_height.gt.0)then
-        write(*,*)"Found height column at position", ipos_height
-      else
-        write(*,*)"    Column with 'height' or 'gridwidth_n' not found."
-      endif
+        if (itmp(1).gt.0) then
+          ivar_pos(iv) = itmp(1)
+        elseif (itmp(2).gt.0) then
+          ivar_pos(iv) = itmp(2)
+        elseif (itmp(3).gt.0) then
+          ivar_pos(iv) = itmp(3)
+        endif
+        if(ivar_pos(iv).gt.0)then
+          write(*,*)"Found column at position: ", ivar_pos(iv), trim(adjustl(ivar_name1(iv)))
+        else
+          if(iv.eq.1)then ! Run ID
+            write(*,*)"     Column not found with: ",ivar_name1(iv)
+            write(*,*)"     Using line number for run ID"
+          endif
+        endif
+        if (ivar_pos(iv).gt.0) Ncols=Ncols+1
+      enddo
+      write(*,*)"Found n columns",Ncols
 
+      ! We've sorted out which variables are provided by the input table and the start position of
+      ! variable name in the header. From this, we need to sort on this position and determine the
+      ! order of variables. Since we only have maybe a dozen columns and only 20 variables to test,
+      ! we'll use an N^2 algorithm.  Sorting aficionados should avert their eyes.
+
+      ivar_col(:) = -1
+      pos_cur  = 0   ! current position
+      pos_diff = 130 ! set large initial difference
+      ! Loop through variables and find the one with the closest next position
+      do ic=1,Ncols
+        do iiv=1,MAX_COLVARS
+          if (ivar_pos(iiv).gt.pos_cur.and.&  ! if this is a var found in table and not yet flagged
+              ivar_pos(iiv)-pos_cur.lt.pos_diff)then
+            ivar_col(iiv) = ic
+            icol_var(ic)  = iiv
+            pos_diff = ivar_pos(iiv)-pos_cur
+          endif
+        enddo
+        ! reset the start position and position difference
+        pos_cur = ivar_pos(icol_var(ic))+1
+        pos_diff = 130
+      enddo
+
+      do iv=1,Ncols
+        write(*,*)iv,icol_var(iv),ivar_name1(icol_var(iv))
+      enddo
+
+      ! Error-checking of columns
+      ! We have requirements:
+      !  1 ) if RunID is present, it must be in the first column
+      !  2 ) if start_time is present, it must be either after RunID (col 2) or
+      !      in col 1 using up to position 29 of the string. Remaining cols with be in 30+
+      !  3 ) if Location is present, it must be the last column of the file
+      ! Check if RunID exists and make sure it is in the first column
+      HaveRunID = .false.
+      if(ivar_pos(1).gt.0)then
+        HaveRunID=.true.
+        if(icol_var(1).eq.1)then
+          ! RunID is found and in the first column
+          write(*,*)"Requested run number will be identified from column 1 of table."
+        else
+          ! RunID is found but not in the first column
+          write(*,*)"Run number is not in the first column. This will cause problems in reading"
+          write(*,*)"the column, unfortunately. Please move or remove the 'run #' column."
+          stop 1
+        endif
+      else
+        ! RunID is not found. Use the line number as a proxy for run #
+        write(*,*)"Requested run number will be identified from the line number of the table."
+      endif
+      ! Check if start_time is provided
+      HaveST = .false.
+      if(ivar_pos(6).gt.0)then
+        if(HaveRunID)then
+          if(ivar_col(6).ne.2)then
+            write(*,*)"ERROR: start_time is present but not in col 2 after RunID."
+            stop 1
+          else
+            HaveST = .true.
+          endif
+        else
+          HaveST = .true.
+          write(*,*)"start_time is present and in col 1."
+        endif
+      endif
+      ! Check if Location is provided
+      HaveLoc = .false.
+      if(ivar_pos(7).gt.0)then
+        HaveLoc = .true.
+        if(ivar_col(7).ne.Ncols)then
+          write(*,*)"ERROR: Location is present but not in last column."
+          write(*,*)"       This will break the current line parsing."
+          stop 1
+        endif
+      endif
 
       ! Start reading the 
+      read(fid_misc,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
+      linebuffer050 = "Reading table file for Line 1: header line"
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
+      iline = 0
+      irun  = 0
+      do while(iostatus.eq.0)
+        iline = iline + 1
+        if(ivar_pos(1).gt.0)then
+          ! If the RunID from the table is what we want, exit do loop
+          read(linebuffer130,*)irun
+          if(irun.eq.ir) exit
+        else
+          ! It the line number (as a proxy for RunID is what we want, exit do loop
+          if(iline.eq.ir) exit
+        endif
+        read(fid_misc,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
+      enddo
+      if(ir.gt.iline.and.ir.gt.irun)then
+        ! Too large of a RunID was requested
+        write(*,*)"Could not find the requested run ID"
+        stop 1
+      endif
+
+      write(*,*)linebuffer130
+      if(HaveRunID)then
+        if(HaveST)then
+          nvals = Ncols-2
+          write(*,*)"Reading irun start_time + other columns"
+          read(linebuffer130,'(i8,a21)')irun,tmp_str
+          read(linebuffer130(30:),*)values(1:nvals)
+        else
+          nvals = Ncols-2
+          write(*,*)"Reading irun + other columns"
+          read(linebuffer130,*)irun,values(1:nvals)
+        endif
+!      else
+
+      endif
+
+      write(*,*)"irun         = ", irun
+      !write(*,*)"year         = ",
+      !write(*,*)"month        = ",
+      !write(*,*)"day          = ",
+      !write(*,*)"hour         = ",
+      write(*,*)"start time   = ",tmp_str
+      !write(*,*)"Location     = ",
+      !write(*,*)"lonLL        = ",
+      !write(*,*)"latLL        = ",
+      !write(*,*)"dxy          = ",
+      !write(*,*)"dz           = ",
+      !write(*,*)"longitude    = ",
+      !write(*,*)"latitude     = ",
+      !write(*,*)"duration     = ",
+      !write(*,*)"plume height = ",
+      !write(*,*)"volume       = ",
+      !write(*,*)"width        = ",
+      !write(*,*)"height       = ",
+      !write(*,*)"m_fines      = ",
+      !write(*,*)"mu_agg       = ",
+      write(*,*)values(1:nvals)
 
       close(fid_misc)
 
