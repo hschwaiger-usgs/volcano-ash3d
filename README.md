@@ -65,12 +65,12 @@ Ubunto). For some of these packages and for some distributions, you might need t
 extra repositories, such as epel and powertools/CRB (for Red Hat systems)
 
 On RedHat-based systems, these can be installed with:  
-`sudo yum install lapack lapack-devel blas blas-devel`  
-`sudo yum install netcdf netcdf-devel netcdf-fortran netcdf-fortran-devel`  
-`sudo yum install eccodes eccodes-devel`  
-`sudo yum install zip`  
-`sudo yum install gnuplot`  
-`sudo yum install plplot`  
+`sudo dnf install lapack lapack-devel blas blas-devel`  
+`sudo dnf install netcdf netcdf-devel netcdf-fortran netcdf-fortran-devel`  
+`sudo dnf install eccodes eccodes-devel`  
+`sudo dnf install zip`  
+`sudo dnf install gnuplot`  
+`sudo dnf install plplot`  
 
 On Ubuntu-based systems:  
 `sudo apt install liblapack64-3 liblapack64-dev libblas64-3 libblas64-dev`  

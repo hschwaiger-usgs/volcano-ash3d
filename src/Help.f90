@@ -430,7 +430,7 @@
 
       integer,intent(in) :: blockID
 
-      logical            :: WriteBlock = .true.
+      !logical            :: WriteBlock = .true.
       character(len= 30) :: vname
       character(len=130) :: dz_line
       character(len= 80) :: projline

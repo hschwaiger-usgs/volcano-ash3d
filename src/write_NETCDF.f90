@@ -4696,23 +4696,13 @@
         nSTAT = nf90_Inquire_Attribute(ncid, z_var_id,&
                                            "specification",xtype, length, attnum)
         dz_const  = z_cc_pd(2)-z_cc_pd(1)
-!        if(nSTAT.eq.0)then
-!          if(VarDzType.eq.'dz_cons')then
-!            dz_type = 1
-!            nSTAT = nf90_get_att(ncid, z_var_id,"specification",dz_const)
-!          else
-!            nSTAT = nf90_get_att(ncid, z_var_id,"specification",cdf_vardz)
-!            if(VarDzType.eq.'dz_plin')then
-!              dz_type = 2
-!            elseif(VarDzType.eq.'dz_clog')then
-!              dz_type = 3
-!            elseif(VarDzType.eq.'dz_dust')then
-!              dz_type = 4
-!            else
-!              dz_type = 1
-!            endif
-!          endif
-!        endif
+        if(nSTAT.eq.0)then
+          if(VarDzType.eq.'dz_cons')then
+            nSTAT = nf90_get_att(ncid, z_var_id,"specification",dz_const)
+          else
+            nSTAT = nf90_get_att(ncid, z_var_id,"specification",cdf_vardz)
+          endif
+        endif
 
         z_cc_pd(0)  = z_cc_pd(1) - dz_const
         z_cc_pd(-1) = z_cc_pd(0) - dz_const

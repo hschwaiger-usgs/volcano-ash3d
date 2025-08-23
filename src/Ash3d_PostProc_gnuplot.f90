@@ -74,7 +74,8 @@
          x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd
 
       use Output_Vars,   only : &
-         ContourFilled,Con_Cust,Con_Cust_N,Con_Cust_RGB,Con_Cust_Lev,&
+         !ContourFilled, &
+         Con_Cust,Con_Cust_N,Con_Cust_RGB,Con_Cust_Lev,&
          Con_DepThick_mm_N,Con_DepThick_mm_Lev,Con_DepThick_mm_RGB, &
          Con_DepThick_in_N,Con_DepThick_in_Lev,Con_DepThick_in_RGB, &
          Con_DepTime_N,Con_DepTime_Lev,Con_DepTime_RGB, &
@@ -85,7 +86,7 @@
          Con_CloudRef_N,Con_CloudRef_RGB,Con_CloudRef_Lev, &
          Con_CloudTime_N,Con_CloudTime_RGB,Con_CloudTime_Lev, &
          ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
-         CloudArrivalTime,Mask_Deposit,Mask_Cloud,&
+         !CloudArrivalTime,Mask_Deposit,Mask_Cloud,&
          CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS,ContourLev,nConLev
 
       use io_units,      only : &

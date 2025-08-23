@@ -77,11 +77,13 @@
       subroutine write_2Dmap_PNG_matlab(nx,ny,iprod,itime,OutVar,Fill_Value,writeContours)
 
       use mesh,          only : &
-         IsLatLon,lon_cc_pd,lat_cc_pd,de,dn,latLL,lonLL,latUR,lonUR, &
-         x_cc_pd,y_cc_pd,dx,dy,xLL,yLL,xUR,yUR
+         IsLatLon,lon_cc_pd,lat_cc_pd,de,dn, &
+         x_cc_pd,y_cc_pd,dx,dy !,&
+         !latLL,lonLL,latUR,lonUR,xLL,yLL,xUR,yUR
 
       use Output_Vars,   only : &
-         ContourFilled,Con_Cust,Con_Cust_N,Con_Cust_RGB,Con_Cust_Lev,&
+         !ContourFilled, &
+         Con_Cust,Con_Cust_N,Con_Cust_RGB,Con_Cust_Lev,&
          Con_DepThick_mm_N,Con_DepThick_mm_Lev,Con_DepThick_mm_RGB, &
          Con_DepThick_in_N,Con_DepThick_in_Lev,Con_DepThick_in_RGB, &
          Con_DepTime_N,Con_DepTime_Lev,Con_DepTime_RGB, &
@@ -95,20 +97,21 @@
          CloudArrivalTime,Mask_Deposit,Mask_Cloud,&
          CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS,ContourLev,nConLev
 
-      use io_units,      only : &
-         fid_script,fid_outdata,fid_contourdata,fid_misc
+!      use io_units,      only : &
+!         fid_script,fid_outdata,fid_contourdata,fid_misc
 
-      use time_data,     only : &
-         os_time_log,SimStartHour,BaseYear,useLeap
+!      use time_data,     only : &
+!         os_time_log,SimStartHour,BaseYear,useLeap
 
       use io_data,       only : &
-         WriteTimes,cdf_b3l1,VolcanoName
+         WriteTimes !,cdf_b3l1 ,VolcanoName
 
       use Ash3d_ASCII_IO,  only : &
            write_2D_ASCII
 
       use Source,        only : &
-         e_Volume,e_Duration,e_StartTime,e_PlumeHeight,lon_volcano,lat_volcano
+         lon_volcano !,lat_volcano,  &
+         !e_Volume,e_Duration,e_StartTime,e_PlumeHeight,lat_volcano
 
       use citywriter
 
@@ -124,7 +127,7 @@
       character(len=6)   :: Fill_Value_str
       character(len=200) :: cmd
 
-      integer :: i,j,ii
+      integer :: i,j!,ii
       real(kind=ip) :: tmp_ip
       integer     , dimension(:,:),allocatable :: zrgb
       character(len=40) :: title_plot
@@ -145,24 +148,24 @@
 
       !character(len=26) :: coord_str
       character(len=40) :: plotcom
-      character(len=80) :: coastfile
-      integer           :: ioerr
+      !character(len=80) :: coastfile
+      !integer           :: ioerr
       integer           :: iostatus
-      character(len=120):: iomessage
-      integer           :: iw,iwf
+      !character(len=120):: iomessage
+      !integer           :: iw,iwf
 
       integer :: ncities
       real(kind=ip),dimension(:),allocatable     :: lon_cities
       real(kind=ip),dimension(:),allocatable     :: lat_cities
       character(len=26),dimension(:),allocatable :: name_cities
-      logical           :: IsThere1,IsThere2
-      character(len=50) :: linebuffer050 
-      character(len=80) :: linebuffer080
-      character         :: testkey
-      integer           :: ilev,imatlev
-      integer           :: lev_i,substr_pos1,substr_pos2,substr_pos3
-      real(kind=4)      :: lev_r4
-      integer           :: icurve,ipt
+      !logical           :: IsThere1,IsThere2
+      !character(len=50) :: linebuffer050 
+      !character(len=80) :: linebuffer080
+      !character         :: testkey
+      !integer           :: ilev,imatlev
+      !integer           :: lev_i,substr_pos1,substr_pos2,substr_pos3
+      !real(kind=4)      :: lev_r4
+      !integer           :: icurve,ipt
 
       character(len=20) :: varname
       logical           :: IsRegGrid
@@ -614,11 +617,11 @@
       ! Error traps (starting with 9000)
       ! For this subroutine, the 100's position refers to block # of control file
 
-9001  do io=1,2;if(VB(io).le.verbosity_error)then
-        write(errlog(io),*)  'error: cannot open file: ',filename_contourdata
-        write(errlog(io),*)  'Program stopped'
-      endif;enddo
-      stop 1
+!9001  do io=1,2;if(VB(io).le.verbosity_error)then
+!        write(errlog(io),*)  'error: cannot open file: ',filename_contourdata
+!        write(errlog(io),*)  'Program stopped'
+!      endif;enddo
+!      stop 1
 
       end subroutine write_2Dmap_PNG_matlab
 
@@ -804,7 +807,7 @@
 !      use time_data,     only : &
 !         Simtime_in_hours
 
-      integer :: pt_indx,i
+      integer :: pt_indx
 
 !      real(kind=dp) :: ymaxpl
 !      character(len=14) :: filename_script

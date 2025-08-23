@@ -47,11 +47,6 @@
       use Diffusivity_Variable, only : &
          var_User_charlines_VarDiff
 
-!#ifdef USENETCDF
-!      use Ash3d_Netcdf_IO,  only : &
-!           NC_Read_Output_Products
-!#endif
-
       use Ash3d_Program_Control, only : &
          Write_input_block_header,      &
          SetWrite_input_block_01,       &
@@ -68,7 +63,8 @@
          SetWrite_input_block_VarDiff
 
       use MetReader,     only : &
-         MR_iWind,MR_iWindFormat,MR_iGridCode,MR_iDataFormat,MR_iHeightHandler,MR_WindFiles
+         MR_iWind,MR_iWindFormat,MR_iGridCode,MR_iDataFormat,MR_iHeightHandler,&
+         MR_WindFiles,MR_VERB
 
       implicit none
 
@@ -129,6 +125,9 @@
       character(len=50) :: tmpstr
 
       INTERFACE
+        subroutine Read_RunParam_Table(ir)
+          integer,intent(in) :: ir
+        end subroutine Read_RunParam_Table
         integer function HS_YearOfEvent(HoursSince,byear,useLeaps)
           real(kind=8),intent(in) :: HoursSince
           integer     ,intent(in) :: byear
@@ -138,8 +137,7 @@
 
       ! Reset verbosity so we only are using stdout (no log file)
       VB = (/3,10/)
-
-      write(*,*)"In Ash3d_ASCII_GenCTR"
+      MR_VERB = VB(1)
 
       nargs = command_argument_count()
       if (nargs.eq.0) then
@@ -229,6 +227,15 @@
       endif
 
       call Read_Control_File
+
+      ! Some error-checking
+      if(neruptions.ne.1)then
+        do io=1,nio;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)'ERROR: neruptions>1'
+            write(errlog(io),*)'       For now, this tool only applies to control files with a single eruptive pulse.'
+        endif;enddo
+        stop 1
+      endif
 
       ! Template control file has been loaded into memory
       ! Note: any blocks for optional modules have not been read at this point
@@ -535,7 +542,17 @@
       use io_units
 
       use io_data,       only : &
-         datafileIn
+         datafileIn,VolcanoName
+
+      use time_data,     only : &
+         SimStartHour,BaseYear,useLeap
+
+      use mesh,          only : &
+         lonLL,latLL,gridwidth_e,gridwidth_n,de,dn,dz_const
+
+      use Source,        only : &
+         lon_volcano,lat_volcano,      &
+         e_StartTime,e_Duration,e_PlumeHeight,e_Volume
 
       implicit none
 
@@ -544,6 +561,8 @@
       character(len=50) :: linebuffer050
       character(len=80) :: linebuffer080
       character(len=130):: linebuffer130
+      character(len=130):: headerline
+      character(len=130):: dataline
       integer           :: iostatus
       character(len=120):: iomessage
 
@@ -557,12 +576,48 @@
       character(len=12),dimension(MAX_COLVARS) :: ivar_name3
       integer,dimension(MAX_COLVARS) :: ivar_Nnames
       integer,dimension(3)           :: itmp
-      integer :: i,iv,iiv,ic,icol,iline,irun,nvals
-      integer :: itmp1,itmp2,itmp3,itmp4
+      integer :: i,iv,iiv,ic,iline,irun
+      integer :: itmp1,itmp2
       integer :: pos_cur,pos_diff
       logical :: HaveRunID,HaveST,HaveLoc
       real(kind=ip),dimension(MAX_COLVARS) :: values
-      character(len=21) :: tmp_str
+      character(len=21) :: tmp_str1  ! Used to read start_time in 06-Sep-1996 15:37:36 format
+      character(len=30) :: tmp_str2  ! Used to read location name (30 chars since VolcanoName has that length)
+
+      integer :: iyear,imonth,iday,ihour,imin,isec
+      character(len=3) :: monstr
+      real(kind=8) :: hour
+
+      INTERFACE
+        real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
+          integer     ,intent(in) :: iyear
+          integer     ,intent(in) :: imonth
+          integer     ,intent(in) :: iday
+          real(kind=8),intent(in) :: hours
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
+        end function HS_hours_since_baseyear
+        real(kind=8)  function HS_HourOfDay(HoursSince,byear,useLeaps)
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
+        end function HS_HourOfDay
+        integer function HS_YearOfEvent(HoursSince,byear,useLeaps)
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
+        end function HS_YearOfEvent
+        integer function HS_MonthOfEvent(HoursSince,byear,useLeaps)
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
+        end function HS_MonthOfEvent
+        integer function HS_DayOfEvent(HoursSince,byear,useLeaps)
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
+        end function HS_DayOfEvent
+      END INTERFACE
 
       ! List the colome header variable names and synonyms
       ivar_Nnames( 1) = 2; ivar_name1( 1) = "run";          ivar_name2( 1) = "Run"
@@ -587,8 +642,10 @@
       ivar_Nnames(20) = 1; ivar_name1(20) = "mu_agg"
 
 
-      write(*,*)"*******************************************"
-      write(*,*)"Now reading input table:"
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"*******************************************"
+        write(outlog(io),*)"Now reading input table:"
+      endif;enddo
 
       open(unit=fid_misc,file=datafileIn,status='old',action='read',err=9001)
 
@@ -601,6 +658,7 @@
       read(fid_misc,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
       linebuffer050 = "Reading table file for Line 2: column headers"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
+      headerline = linebuffer130
 
       ! Now read line three, which contains the column units
       read(fid_misc,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer080
@@ -637,16 +695,22 @@
           ivar_pos(iv) = itmp(3)
         endif
         if(ivar_pos(iv).gt.0)then
-          write(*,*)"Found column at position: ", ivar_pos(iv), trim(adjustl(ivar_name1(iv)))
+          do io=1,2;if(VB(io).le.verbosity_debug1)then
+            write(outlog(io),*)"Found column at position: ", ivar_pos(iv), trim(adjustl(ivar_name1(iv)))
+          endif;enddo
         else
           if(iv.eq.1)then ! Run ID
-            write(*,*)"     Column not found with: ",ivar_name1(iv)
-            write(*,*)"     Using line number for run ID"
+            do io=1,2;if(VB(io).le.verbosity_debug1)then
+              write(outlog(io),*)"     Column not found with: ",ivar_name1(iv)
+              write(outlog(io),*)"     Using line number for run ID"
+            endif;enddo
           endif
         endif
         if (ivar_pos(iv).gt.0) Ncols=Ncols+1
       enddo
-      write(*,*)"Found n columns",Ncols
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"Found n columns",Ncols
+      endif;enddo
 
       ! We've sorted out which variables are provided by the input table and the start position of
       ! variable name in the header. From this, we need to sort on this position and determine the
@@ -671,9 +735,11 @@
         pos_diff = 130
       enddo
 
-      do iv=1,Ncols
-        write(*,*)iv,icol_var(iv),ivar_name1(icol_var(iv))
-      enddo
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        do iv=1,Ncols
+          write(outlog(io),*)iv,icol_var(iv),ivar_name1(icol_var(iv))
+        enddo
+      endif;enddo
 
       ! Error-checking of columns
       ! We have requirements:
@@ -687,30 +753,40 @@
         HaveRunID=.true.
         if(icol_var(1).eq.1)then
           ! RunID is found and in the first column
-          write(*,*)"Requested run number will be identified from column 1 of table."
+          do io=1,2;if(VB(io).le.verbosity_debug1)then
+            write(outlog(io),*)"Requested run number will be identified from column 1 of table."
+          endif;enddo
         else
           ! RunID is found but not in the first column
-          write(*,*)"Run number is not in the first column. This will cause problems in reading"
-          write(*,*)"the column, unfortunately. Please move or remove the 'run #' column."
-          stop 1
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"Run number is not in the first column. This will cause problems in reading"
+            write(errlog(io),*)"the column, unfortunately. Please move or remove the 'run #' column."
+            stop 1
+          endif;enddo
         endif
       else
         ! RunID is not found. Use the line number as a proxy for run #
-        write(*,*)"Requested run number will be identified from the line number of the table."
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Requested run number will be identified from the line number of the table."
+        endif;enddo
       endif
       ! Check if start_time is provided
       HaveST = .false.
       if(ivar_pos(6).gt.0)then
         if(HaveRunID)then
           if(ivar_col(6).ne.2)then
-            write(*,*)"ERROR: start_time is present but not in col 2 after RunID."
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: start_time is present but not in col 2 after RunID."
+            endif;enddo
             stop 1
           else
             HaveST = .true.
           endif
         else
           HaveST = .true.
-          write(*,*)"start_time is present and in col 1."
+          do io=1,2;if(VB(io).le.verbosity_debug1)then
+            write(outlog(io),*)"start_time is present and in col 1."
+          endif;enddo
         endif
       endif
       ! Check if Location is provided
@@ -718,8 +794,10 @@
       if(ivar_pos(7).gt.0)then
         HaveLoc = .true.
         if(ivar_col(7).ne.Ncols)then
-          write(*,*)"ERROR: Location is present but not in last column."
-          write(*,*)"       This will break the current line parsing."
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: Location is present but not in last column."
+            write(errlog(io),*)"       This will break the current line parsing."
+          endif;enddo
           stop 1
         endif
       endif
@@ -737,58 +815,221 @@
           read(linebuffer130,*)irun
           if(irun.eq.ir) exit
         else
-          ! It the line number (as a proxy for RunID is what we want, exit do loop
+          ! If the line number (as a proxy for RunID) is what we want, exit do loop
           if(iline.eq.ir) exit
         endif
         read(fid_misc,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
       enddo
       if(ir.gt.iline.and.ir.gt.irun)then
         ! Too large of a RunID was requested
-        write(*,*)"Could not find the requested run ID"
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"Could not find the requested run ID"
+        endif;enddo
         stop 1
       endif
+      dataline = linebuffer130
 
-      write(*,*)linebuffer130
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)headerline
+        write(outlog(io),*)dataline
+      endif;enddo
       if(HaveRunID)then
         if(HaveST)then
-          nvals = Ncols-2
-          write(*,*)"Reading irun start_time + other columns"
-          read(linebuffer130,'(i8,a21)')irun,tmp_str
-          read(linebuffer130(30:),*)values(1:nvals)
+          do io=1,2;if(VB(io).le.verbosity_debug1)then
+            write(outlog(io),*)"Reading irun start_time + other columns"
+          endif;enddo
+          ! First read the run # and then the start time in character format. We will
+          ! have to interpret that later.
+          read(dataline,'(i8,a21)')irun,tmp_str1
+          ! For the rest of the values, we will read as reals starting from position 30
+          if(HaveLoc)then
+            read(dataline(30:),*)values(3:Ncols-1)
+          else
+            read(dataline(30:),*)values(3:Ncols)
+          endif
         else
-          nvals = Ncols-2
-          write(*,*)"Reading irun + other columns"
-          read(linebuffer130,*)irun,values(1:nvals)
+          ! No start_time string so we can read everything as reals except a possible site label
+          do io=1,2;if(VB(io).le.verbosity_debug1)then
+            write(outlog(io),*)"Reading irun + other columns",2,Ncols-1
+          endif;enddo
+          if(HaveLoc)then
+            read(dataline,*)irun,values(2:Ncols-1)
+          else
+            read(dataline,*)irun,values(2:Ncols)
+          endif
         endif
-!      else
-
+      else
+        irun = iline
+        if(HaveST)then
+          do io=1,2;if(VB(io).le.verbosity_debug1)then
+            write(outlog(io),*)"Reading start_time + other columns"
+          endif;enddo
+          ! First read the run # and then the start time in character format. We will
+          ! have to interpret that later.
+          read(dataline,'(a21)')tmp_str1
+          ! For the rest of the values, we will read as reals starting from position 30
+          if(HaveLoc)then
+            read(dataline(30:),*)values(2:Ncols-1)
+          else
+            read(dataline(30:),*)values(2:Ncols)
+          endif
+        else
+          ! No start_time string so we can read everything as reals except a possible site label
+          do io=1,2;if(VB(io).le.verbosity_debug1)then
+            write(outlog(io),*)"Reading other columns",2,Ncols-1
+          endif;enddo
+          if(HaveLoc)then
+            read(dataline,*)values(1:Ncols-1)
+          else
+            read(dataline,*)values(1:Ncols)
+          endif
+        endif
       endif
 
-      write(*,*)"irun         = ", irun
-      !write(*,*)"year         = ",
-      !write(*,*)"month        = ",
-      !write(*,*)"day          = ",
-      !write(*,*)"hour         = ",
-      write(*,*)"start time   = ",tmp_str
-      !write(*,*)"Location     = ",
-      !write(*,*)"lonLL        = ",
-      !write(*,*)"latLL        = ",
-      !write(*,*)"dxy          = ",
-      !write(*,*)"dz           = ",
-      !write(*,*)"longitude    = ",
-      !write(*,*)"latitude     = ",
-      !write(*,*)"duration     = ",
-      !write(*,*)"plume height = ",
-      !write(*,*)"volume       = ",
-      !write(*,*)"width        = ",
-      !write(*,*)"height       = ",
-      !write(*,*)"m_fines      = ",
-      !write(*,*)"mu_agg       = ",
-      write(*,*)values(1:nvals)
+      ! Finally, read the Site label if present
+      if(HaveLoc)then
+        ! We need the start position of the data column, but we only have the start position of the label.
+        ! The strategy here is the test the label position in the data string for a space. If so, start reading
+        ! from that point. Otherwise, march backwards up to five positions until a space is found.
+        itmp1=ivar_pos(7)
+        if(dataline(itmp1:itmp1).eq.' ')then
+          read(dataline(itmp1:),*)tmp_str2
+        else
+          do i=1,5
+            itmp1 = itmp1-1
+            if(dataline(itmp1:itmp1).eq.' ')exit
+          enddo
+          read(dataline(itmp1:),*)tmp_str2
+        endif
+      endif
+
+      ! Get start year as specified in the template file
+      iyear = HS_YearOfEvent(e_StartTime(1)+SimStartHour,BaseYear,useLeap)
+      imonth= HS_MonthOfEvent(e_StartTime(1)+SimStartHour,BaseYear,useLeap)
+      iday  = HS_DayOfEvent(e_StartTime(1)+SimStartHour,BaseYear,useLeap)
+      hour  = HS_HourOfDay(e_StartTime(1)+SimStartHour,BaseYear,useLeap)
+
+      if(ivar_pos( 1).gt.0) write(*,*)"irun         : ",ivar_name1( 1),irun
+      if(ivar_pos( 2).gt.0)then
+        iyear = int(values(ivar_col( 2)))
+        write(*,*)"year         : ",ivar_name1( 2),values(ivar_col( 2))
+      endif
+      if(ivar_pos( 3).gt.0)then
+        imonth = int(values(ivar_col( 3)))
+        write(*,*)"month        : ",ivar_name1( 3),values(ivar_col( 3))
+      endif
+      if(ivar_pos( 4).gt.0)then
+        iday = int(values(ivar_col( 4)))
+        write(*,*)"day          : ",ivar_name1( 4),values(ivar_col( 4))
+      endif
+      if(ivar_pos( 5).gt.0)then
+        hour = values(ivar_col( 5))
+        write(*,*)"hour         : ",ivar_name1( 5),values(ivar_col( 5))
+      endif
+      if(ivar_pos( 6).gt.0)then
+        write(*,*)"start time   : ",ivar_name1( 6),trim(adjustl(tmp_str1))
+        tmp_str1=trim(adjustl(tmp_str1))
+        read(tmp_str1,51)iday,monstr,iyear,ihour,imin,isec
+ 51     format(i2,1x,a3,1x,i4,1x,i2,1x,i2,1x,i2)
+        if(monstr.eq.'Jan')then
+          imonth = 1
+        elseif(monstr.eq.'Feb')then
+          imonth = 2
+        elseif(monstr.eq.'Mar')then
+          imonth = 3
+        elseif(monstr.eq.'Apr')then
+          imonth = 4
+        elseif(monstr.eq.'May')then
+          imonth = 5
+        elseif(monstr.eq.'Jun')then
+          imonth = 6
+        elseif(monstr.eq.'Jul')then
+          imonth = 7
+        elseif(monstr.eq.'Aug')then
+          imonth = 8
+        elseif(monstr.eq.'Sep')then
+          imonth = 9
+        elseif(monstr.eq.'Oct')then
+          imonth = 10
+        elseif(monstr.eq.'Nov')then
+          imonth = 11
+        elseif(monstr.eq.'Dec')then
+          imonth = 12
+        else
+          do io=1,2;if(VB(io).le.verbosity_error)then
+            write(errlog(io),*)"ERROR: Cannot parse month of start_time"
+          endif;enddo
+          stop 1
+        endif
+        hour = real(ihour,kind=8) + real(imin,kind=8)/60.0_8 + real(isec,kind=8)/3600.0_8
+      endif
+      ! Check if we need to reset the start time by checking if any time value was reset
+      if(ivar_pos( 2).gt.0.or.&
+         ivar_pos( 3).gt.0.or.&
+         ivar_pos( 4).gt.0.or.&
+         ivar_pos( 5).gt.0.or.&
+         ivar_pos( 6).gt.0)then
+        SimStartHour   = HS_hours_since_baseyear(iyear,imonth,iday,hour,BaseYear,useLeap)
+        e_StartTime(1) = 0.0_8
+      endif
+      if(ivar_pos( 7).gt.0)then
+        write(*,*)"Location     : ",ivar_name1( 7),trim(adjustl(tmp_str2))
+        VolcanoName = trim(adjustl(tmp_str2))
+      endif
+      if(ivar_pos( 8).gt.0)then
+        lonLL = values(ivar_col( 8))
+        write(*,*)"lonLL        : ",ivar_name1( 8),values(ivar_col( 8))
+      endif
+      if(ivar_pos( 9).gt.0)then
+        latLL = values(ivar_col( 9))
+        write(*,*)"latLL        : ",ivar_name1( 9),values(ivar_col( 9))
+      endif
+      if(ivar_pos(10).gt.0)then
+        de = values(ivar_col(10))
+        dn = values(ivar_col(10))
+        write(*,*)"dxy          : ",ivar_name1(10),values(ivar_col(10))
+      endif
+      if(ivar_pos(11).gt.0)then
+        dz_const = values(ivar_col(11))
+        write(*,*)"dz           : ",ivar_name1(11),values(ivar_col(11))
+      endif
+      if(ivar_pos(12).gt.0)then
+        lon_volcano = values(ivar_col(12))
+        write(*,*)"longitude    : ",ivar_name1(12),values(ivar_col(12))
+      endif
+      if(ivar_pos(13).gt.0)then
+        lat_volcano = values(ivar_col(13))
+        write(*,*)"latitude     : ",ivar_name1(13),values(ivar_col(13))
+      endif
+      if(ivar_pos(14).gt.0)then
+        e_Duration(1) = values(ivar_col(14))
+        write(*,*)"duration     : ",ivar_name1(14),values(ivar_col(14))
+      endif
+      if(ivar_pos(15).gt.0)then
+        e_PlumeHeight(1) = values(ivar_col(15))
+        write(*,*)"plume height : ",ivar_name1(15),values(ivar_col(15))
+      endif
+      if(ivar_pos(16).gt.0)then
+        e_Volume(1) = values(ivar_col(16))
+        write(*,*)"volume       : ",ivar_name1(16),values(ivar_col(16))
+      endif
+      if(ivar_pos(17).gt.0)then
+        gridwidth_e = values(ivar_col(17))
+        write(*,*)"width        : ",ivar_name1(17),values(ivar_col(17))
+      endif
+      if(ivar_pos(18).gt.0)then
+        gridwidth_n = values(ivar_col(18))
+        write(*,*)"height       : ",ivar_name1(18),values(ivar_col(18))
+      endif
+      if(ivar_pos(19).gt.0)then
+        write(*,*)"m_fines      : ",ivar_name1(19),values(ivar_col(19))
+      endif
+      if(ivar_pos(20).gt.0)then
+        write(*,*)"mu_agg       : ",ivar_name1(20),values(ivar_col(20))
+      endif
 
       close(fid_misc)
 
-      stop 77
       return
 
 9001  do io=1,2;if(VB(io).le.verbosity_error)then
@@ -800,22 +1041,4 @@
       end subroutine Read_RunParam_Table
 
 !##############################################################################
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

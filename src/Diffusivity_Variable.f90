@@ -318,7 +318,7 @@
               write(outlog(io),*)"                Amax = ",MAX_LES_LengthScale2
             endif;enddo
           else
-            KH_SmagC = 0.2_ip
+            KH_SmagC = 0.2_sp
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"        Horizontal diffusivity model ID not recognized."
               write(outlog(io),*)"        Using Kh model ID = 2: Smagorinsky (1963)"
@@ -327,7 +327,7 @@
             endif;enddo
           endif
         else
-          KH_SmagC = 0.2_ip
+          KH_SmagC = 0.2_sp
           MAX_LES_LengthScale2 = 100.0_sp
           Kh_model_ID = 2
           do io=1,2;if(VB(io).le.verbosity_info)then
@@ -961,7 +961,7 @@
          FricVel_meso_last_step_Met_sp, &
          PBLH_meso_last_step_Met_sp, &
          Ri_meso_last_step_MetP_sp, &
-         SolZen_meso_next_step_Met_sp, &
+         !SolZen_meso_next_step_Met_sp, &
            Set_SolarZenith
 
       use MetReader,     only : &
@@ -1204,7 +1204,7 @@
           ! in units of 1/s
         LES_TimeScale = sqrt(D2_tension+D2_strain)
           ! in units of 1/hr
-        LES_TimeScale = LES_TimeScale * HR_2_S
+        LES_TimeScale = LES_TimeScale * real(HR_2_S,kind=4)
           ! length scale^2 in km^2
         LES_LengthScale2 = min(MR_sigma_nz_submet(i,j),MAX_LES_LengthScale2)
   

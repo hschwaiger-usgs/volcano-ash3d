@@ -6643,6 +6643,15 @@
       endif
 
 #ifdef USEPOINTERS
+      if(.not.associated(Tephra_v_s))then
+#else
+      if(.not.allocated(Tephra_v_s))then
+#endif
+        allocate(Tephra_v_s(n_gs_max))
+      endif
+      Tephra_v_s(1:ns) = T_fv(1:ns)
+
+#ifdef USEPOINTERS
       if(.not.associated(Tephra_rho_m))then
 #else
       if(.not.allocated(Tephra_rho_m))then
