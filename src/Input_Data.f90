@@ -6471,6 +6471,12 @@
 
       use io_units
 
+      use io_data,       only : &
+         cdf_b5l1
+
+      use MetReader,     only : &
+         MR_iwind
+
       integer           ,intent(in) :: outunit
       integer           ,intent(in) :: nwindfiles
       character(len=130),dimension(nwindfiles),intent(in) :: windfiles
@@ -6480,10 +6486,15 @@
       if(outunit.gt.0)then
         write(outunit,1)&
          '******************* BLOCK 5 ****************************************************'
-        write(*,*)"looping over windfiles: ",nwindfiles
-        do i=1,nwindfiles
-          write(outunit,'(a)')trim(windfiles(i))
-        enddo
+        if(MR_iwind.eq.5)then
+          ! For the NWP products with hardwired paths, we need to use the original one-line
+          ! entry in the input file stored in cdf_b5l1
+          write(outunit,'(a)')trim(cdf_b5l1)
+        else
+          do i=1,nwindfiles
+            write(outunit,'(a)')trim(windfiles(i))
+          enddo
+        endif
         write(outunit,1)&
          '********************************************************************************'
       endif

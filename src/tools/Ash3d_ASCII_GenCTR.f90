@@ -165,9 +165,9 @@
         endif;enddo
         read(input_unit,*) RunID
 
-      elseif (nargs.gt.3) then
+      elseif (nargs.ne.3) then
         do io=1,nio;if(VB(io).le.verbosity_error)then
-          write(errlog(io),*)'ERROR: Too many command-line arguments.'
+          write(errlog(io),*)'ERROR: Too many or too few command-line arguments.'
           write(errlog(io),*)'  Usage: Ash3d_ASCII_GenCTR template.inp table.dat runID'
         endif;enddo
         stop 1
@@ -219,7 +219,7 @@
         call get_command_argument(3, linebuffer080, status=stat)
         if(stat.gt.0)then
           do io=1,nio;if(VB(io).le.verbosity_error)then
-            write(errlog(io),*)'ERROR: Could not parse argument 1'
+            write(errlog(io),*)'ERROR: Could not parse argument 3'
           endif;enddo
           stop 1
         endif
@@ -228,9 +228,6 @@
       endif
 
       call Read_Control_File
-      write(*,*)MR_windfiles
-
-      stop 99
 
       ! Some error-checking
       if(neruptions.ne.1)then
