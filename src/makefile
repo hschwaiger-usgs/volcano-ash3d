@@ -539,6 +539,7 @@ install:
 	install -m 755 ../bin/Ash3d_PostProc $(INSTALLDIR)/bin/Ash3d_PostProc
 	install -m 755 ../bin/tools/Ash3d_ASCII_check $(INSTALLDIR)/bin/tools/Ash3d_ASCII_check
 	install -m 755 ../bin/tools/Ash3d_ASCII_DepThin $(INSTALLDIR)/bin/tools/Ash3d_ASCII_DepThin
+	install -m 755 ../bin/tools/Ash3d_ASCII_GenCTR $(INSTALLDIR)/bin/tools/Ash3d_ASCII_GenCTR
 	install -m 755 ../bin/tools/Ash3d_NetCDF_GenCTR $(INSTALLDIR)/bin/tools/Ash3d_NetCDF_GenCTR
 	install -m 644 ../share/GlobalAirports_ewert.txt $(INSTALLDIR)/share/
 	install -m 644 ../share/VotW_ESP_v12_csv.txt  $(INSTALLDIR)/share/
@@ -551,6 +552,7 @@ uninstall:
 	rm -f $(INSTALLDIR)/bin/Ash3d_PostProc
 	rm -f $(INSTALLDIR)/bin/tools/Ash3d_ASCII_check
 	rm -f $(INSTALLDIR)/bin/tools/Ash3d_ASCII_DepThin
+	rm -f $(INSTALLDIR)/bin/tools/Ash3d_ASCII_GenCTR
 	rm -f $(INSTALLDIR)/bin/tools/Ash3d_NetCDF_GenCTR
 	rm -f $(INSTALLDIR)/share/GlobalAirports_ewert.txt
 	rm -f $(INSTALLDIR)/share/VotW_ESP_v12_csv.txt

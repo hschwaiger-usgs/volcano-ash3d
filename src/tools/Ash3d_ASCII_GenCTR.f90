@@ -7,7 +7,7 @@
       use io_units
 
       use io_data,       only : &
-         infile,concenfile,datafileIn,cdf_title,cdf_comment,VolcanoName, &
+         infile,concenfile,PP_infile,datafileIn,cdf_title,cdf_comment,VolcanoName, &
          Have_Block_NetCDF,Have_Block_ResParm,Have_Block_Topo,Have_Block_VarDiff,&
          cdf_b1l2,cdf_vardz,cdf_b3l5, &
          cdf_b4l1,cdf_b4l2,cdf_b4l3,cdf_b4l4,cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,&
@@ -71,6 +71,7 @@
       integer            :: nargs
       integer            :: stat
       character(len= 80) :: linebuffer080
+      character(len=130) :: linebuffer130
       integer            :: RunID
 
       logical       :: IsThere
@@ -157,12 +158,12 @@
         do io=1,nio;if(VB(io).le.verbosity_production)then
           write(outlog(io),*)'Enter name of the run table file'
         endif;enddo
-        read(input_unit,*)datafileIn
+        read(input_unit,*) PP_infile 
 
         do io=1,nio;if(VB(io).le.verbosity_production)then
           write(outlog(io),*)'Enter name of the run number.'
         endif;enddo
-        read(input_unit,*)RunID
+        read(input_unit,*) RunID
 
       elseif (nargs.gt.3) then
         do io=1,nio;if(VB(io).le.verbosity_error)then
@@ -171,7 +172,7 @@
         endif;enddo
         stop 1
       else
-        call get_command_argument(1, linebuffer080, status=stat)
+        call get_command_argument(1, linebuffer130, status=stat)
         if(stat.gt.0)then
           do io=1,nio;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)'ERROR: Could not parse argument 1'
@@ -180,11 +181,11 @@
         elseif (stat.lt.0)then
           do io=1,nio;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)'ERROR: Argument 1 has been truncated.'
-            write(errlog(io),*)'       File name length is limited to 80 char.'
+            write(errlog(io),*)'       File name length is limited to 130 char.'
           endif;enddo
           stop 1
         endif
-        infile=trim(adjustl(linebuffer080))
+        infile=trim(adjustl(linebuffer130))
         inquire( file=adjustl(trim(infile)), exist=IsThere )
         if (.not.IsThere)then
           do io=1,nio;if(VB(io).le.verbosity_error)then
@@ -193,21 +194,21 @@
           stop 1
         endif
 
-        call get_command_argument(2, linebuffer080, status=stat)
+        call get_command_argument(2, linebuffer130, status=stat)
         if(stat.gt.0)then
           do io=1,nio;if(VB(io).le.verbosity_error)then
-            write(errlog(io),*)'ERROR: Could not parse argument 1'
+            write(errlog(io),*)'ERROR: Could not parse argument 2'
           endif;enddo
           stop 1
         elseif (stat.lt.0)then
           do io=1,nio;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)'ERROR: Argument 2 has been truncated.'
-            write(errlog(io),*)'       File name length is limited to 80 char.'
+            write(errlog(io),*)'       File name length is limited to 130 char.'
           endif;enddo
           stop 1
         endif
-        datafileIn=trim(adjustl(linebuffer080))
-        inquire( file=adjustl(trim(datafileIn)), exist=IsThere )
+        PP_infile=trim(adjustl(linebuffer130))
+        inquire( file=adjustl(trim(PP_infile)), exist=IsThere )
         if (.not.IsThere)then
           do io=1,nio;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)'ERROR: Input file 2 could not be found'
@@ -227,6 +228,9 @@
       endif
 
       call Read_Control_File
+      write(*,*)MR_windfiles
+
+      stop 99
 
       ! Some error-checking
       if(neruptions.ne.1)then
@@ -249,7 +253,7 @@
 
       ! Now that we have loaded the data from the template file, start writing
       ! to a new control file
-      infile = "temp.inp"
+      infile = "ash3d_input.inp"
       inquire( file=infile, exist=IsThere )
       if(IsThere)then
         do io=1,2;if(VB(io).le.verbosity_info)then
@@ -542,7 +546,7 @@
       use io_units
 
       use io_data,       only : &
-         datafileIn,VolcanoName
+         infile,PP_infile,VolcanoName
 
       use time_data,     only : &
          SimStartHour,BaseYear,useLeap
@@ -628,7 +632,7 @@
       ivar_Nnames( 6) = 1; ivar_name1( 6) = "start time"
       ivar_Nnames( 7) = 1; ivar_name1( 7) = "Location"
       ivar_Nnames( 8) = 1; ivar_name1( 8) = "lonLL"
-      ivar_Nnames( 9) = 2; ivar_name1( 9) = "latLL"
+      ivar_Nnames( 9) = 1; ivar_name1( 9) = "latLL"
       ivar_Nnames(10) = 1; ivar_name1(10) = "dxy"
       ivar_Nnames(11) = 1; ivar_name1(11) = "dz"
       ivar_Nnames(12) = 3; ivar_name1(12) = "longitude";    ivar_name2(12) = "srcx"; ivar_name3(12) = "lon_volcano"
@@ -647,7 +651,7 @@
         write(outlog(io),*)"Now reading input table:"
       endif;enddo
 
-      open(unit=fid_misc,file=datafileIn,status='old',action='read',err=9001)
+      open(unit=fid_misc,file=PP_infile,status='old',action='read',err=9001)
 
       ! Reading the first header line. Should be something link: SUMMARY OF INPUT VALUES ...
       read(fid_misc,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
@@ -670,6 +674,9 @@
       do iv = 1,MAX_COLVARS
         itmp(:) = -1
         itmp(1) = index(linebuffer130,trim(adjustl(ivar_name1(iv))))
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
+          write(*,*)"Searching for ",trim(adjustl(ivar_name1(iv))), itmp(1)
+        endif;enddo
         if(ivar_Nnames(iv).ge.2) itmp(2) = index(linebuffer130,trim(adjustl(ivar_name2(iv))))
         if(ivar_Nnames(iv).ge.3) itmp(3) = index(linebuffer130,trim(adjustl(ivar_name3(iv))))
         if(iv.eq.18)then ! Need to do an extra check if var=height since 'plume height' will catch it
@@ -1033,7 +1040,7 @@
       return
 
 9001  do io=1,2;if(VB(io).le.verbosity_error)then
-        write(errlog(io),*)  'error: cannot open table file: ',datafileIn
+        write(errlog(io),*)  'error: cannot open table file: ',PP_infile
         write(errlog(io),*)  'Program stopped'
       endif;enddo
       stop 1
