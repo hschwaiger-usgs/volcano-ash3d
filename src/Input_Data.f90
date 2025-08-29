@@ -3720,7 +3720,7 @@
         enddo
 25311        format('Error: mass of bin ',i2,' is less than zero.  Program stopped')
 
-!       Send error message if sum(bin_mass(1:n_gs_max)) does not equal 1
+!       Send error message if sum(bin_mass(1:n_gs_max)) is no where near 1 (off by >2%)
         sum_bins=sum(Tephra_bin_mass(1:n_gs_max))
         if(abs(sum_bins-1.0_ip).gt.0.02_ip) then
           do io=1,2;if(VB(io).le.verbosity_error)then
@@ -3737,11 +3737,11 @@
 2534      format(3x,f7.4,'  total',/,'Program stopped')
           stop 1
             ! If it differs just slightly from 1, adjust automatically
-        else if(abs(sum_bins-1.0_ip).gt.0.001_ip) then
+        else if(abs(sum_bins-1.0_ip).gt.EPS_SMALL) then
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),2535) sum_bins
           endif;enddo
-2535      format('Warning: sum(bin_mass(1:n_gs_max))=',f10.5,/, &
+2535      format('Warning: sum(bin_mass(1:n_gs_max))=',f10.8,/, &
                  'This differs slightly from 1.0',/, &
                  'adjusting bin masses automatically.')
           do isize=1,n_gs_max
