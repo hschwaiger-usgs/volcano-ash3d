@@ -28,6 +28,9 @@
       use time_data,     only : &
          SimStartHour,Simtime_in_hours,BaseYear,useLeap
 
+      use wind_grid,     only : &
+         Load_Windfiles
+
       use Source,        only : &
          lon_volcano,lat_volcano,x_volcano,y_volcano,z_volcano,Suzuki_A,      &
          neruptions,SourceType_idx,e_StartTime,e_Duration,         &
@@ -227,6 +230,7 @@
 
       endif
 
+      Load_Windfiles = .false.
       call Read_Control_File
 
       ! Some error-checking

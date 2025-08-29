@@ -90,6 +90,9 @@
       use time_data,     only : &
          ntmax,time,time_native,BaseYear,useLeap,SimStartHour
 
+      use wind_grid,     only : &
+         Load_Windfiles
+
       use Ash3d_Program_Control, only : &
            Set_OS_Env,                &
            Read_Control_File,         &
@@ -863,6 +866,8 @@
 
       ! Before we do anything, we need to set up as much as we can of the grid
       ! and populate auxilary variable.
+      Load_Windfiles = .false.  ! This deactivates reading actual windfiles, which
+                                ! might not be available
       if(informat.eq.3)then ! netcdf
         ! call routine to read the netcdf file, populate
         ! the dimensions so we can see what we are dealing with.

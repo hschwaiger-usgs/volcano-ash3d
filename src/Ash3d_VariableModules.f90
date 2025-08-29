@@ -1131,6 +1131,9 @@ subroutine Allocate_solution
         ! Set everything to public by default
       public
 
+      logical  :: Load_Windfiles  = .true.       ! Default is to read and build wind grid
+                                                 ! Sometimes, we need to read the control file, but do
+                                                 ! not need to actually read the windfiles -> .false.
 !      integer            :: iWind
 !      integer            :: iWindFiles
 !      integer            :: iGrid

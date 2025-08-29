@@ -43,6 +43,9 @@
       use time_data,     only : &
          SimStartHour,Simtime_in_hours
 
+      use wind_grid,     only : &
+         Load_Windfiles
+
       use Source,        only : &
          lat_volcano
 
@@ -198,7 +201,7 @@
         dumy_sp(1:nymax) = real(  y_cc_pd(1:nymax),kind=sp)
         dumz_sp(1:nzmax) = real(  z_cc_pd(1:nzmax),kind=sp)
       endif
-      call MR_Initialize_Met_Grids(nxmax,nymax,nzmax,             &
+      if(Load_Windfiles)call MR_Initialize_Met_Grids(nxmax,nymax,nzmax,             &
                               dumx_sp,dumy_sp,dumz_sp,            &
                               IsPeriodic)
 
@@ -212,7 +215,7 @@
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Now determining which NWP files and steps needed."
       endif;enddo
-      call MR_Set_Met_Times(SimStartHour, Simtime_in_hours)
+      if(Load_Windfiles)call MR_Set_Met_Times(SimStartHour, Simtime_in_hours)
 
 30    format(/,4x,'Calculating the locations of each cell-centered node in the grid.')
   

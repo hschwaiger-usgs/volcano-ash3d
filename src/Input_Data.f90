@@ -1022,7 +1022,11 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!  Subroutine Read_Control_File()
+!  Subroutine Read_Control_File
+!
+!  Called from: Ash3d.F90, but also Ash3d_ASCII_GenCTR, Ash3d_PostProc
+!  Arguments:
+!    None
 !
 ! This subroutine sets up the parameters for the Ash3d run.
 ! 
@@ -1094,6 +1098,9 @@
 
       use time_data,     only : &
          BaseYear,useLeap,time,SimStartHour,Simtime_in_hours,xmlSimStartTime
+
+      use wind_grid,     only : &
+         Load_Windfiles
 
       use Source,        only : &
          neruptions,e_Duration,e_Volume,e_PlumeHeight,e_prof_Volume,e_prof_dz,&
@@ -3276,7 +3283,7 @@
       !************************************************************************
 
         ! Check for existance and compatibility with simulation time requirements
-      call MR_Read_Met_DimVars(e_iyear(1))
+      if(Load_Windfiles) call MR_Read_Met_DimVars(e_iyear(1))
       if(MR_BaseYear.ne.BaseYear)then
         ! Base year was reset, probably because a windfile had an old base year
         useLeap  = MR_useLeap

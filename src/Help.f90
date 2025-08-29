@@ -588,8 +588,8 @@
                  !   First RESETPARAMS
       write(output_unit,1)'******************* BLOCK 10+ *************************************************                        '
       write(output_unit,1)'OPTMOD=RESETPARAMS                                                                                     '
-      write(output_unit,1)' MagmaDensity         = 3500.0                                                                         '
-      write(output_unit,1)' DepositDensity       = 1300.0                                                                         '
+      write(output_unit,1)' MagmaDensity         = 2500.0                                                                         '
+      write(output_unit,1)' DepositDensity       = 1000.0                                                                         '
       write(output_unit,1)' LAM_GS_THRESH        = 250.0                                                                          '
       write(output_unit,1)' AIRBORNE_THRESH      = 1.0e-3                                                                         '
       write(output_unit,1)' GRAV                 = 9.81                                                                           '
