@@ -102,7 +102,11 @@
       real(kind=ip) :: LambdaC      ! Asymptotic length scale (around 30-150 m)
       real(kind=ip) :: RI_CRIT      ! Critical Richardson number (0.25)
 
-      real(kind=ip) :: USTAR_MIN = 0.1_ip   ! Minimum Friction Velocity (m/s)
+      real(kind=ip) :: USTAR_MIN = 0.1_ip    ! Minimum Friction Velocity (m/s)
+      real(kind=ip) :: KV_MIN    = 5.0_ip    ! Minimum vertical diffusivity (m/s)
+      real(kind=ip) :: KH_MIN    = 5.0_ip    ! Minimum horizontal diffusivity (m/s)
+      real(kind=ip) :: KV_MAX    = 1.0e5_ip  ! Maximum vertical diffusivity (m/s)
+      real(kind=ip) :: KH_MAX    = 1.0e5_ip  ! Maximum horizontal diffusivity (m/s)
 
       !    These are the values controlling the stability function Phi (lots of models out there)
       !   source              alpha   beta   gamma
@@ -1153,7 +1157,7 @@
       subroutine Eddy_diff
 
       use global_param,  only : &
-         HR_2_S,M2PS_2_KM2PHR
+         HR_2_S,M2PS_2_KM2PHR,KM_2_M
 
       use MetReader,     only : &
          nx_submet,ny_submet,np_fullmet,MR_sigma_nz_submet
@@ -1166,6 +1170,12 @@
       real(kind=sp) :: D2_tension,D2_strain
       real(kind=sp) :: LES_TimeScale
       real(kind=sp) :: LES_LengthScale2
+
+      real(kind=sp) :: KH_MIN_km2hr  ! min and max for Kh, but converted to km2/hr
+      real(kind=sp) :: KH_MAX_km2hr
+
+      KH_MIN_km2hr = KH_MIN * HR_2_S/KM_2_M/KM_2_M
+      KH_MAX_km2hr = KH_MAX * HR_2_S/KM_2_M/KM_2_M
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Eddy_diff"
@@ -1210,6 +1220,10 @@
   
           ! Diffusivity in km2/hr
         Khz_meso_next_step_MetP_sp(i,j,k) = real(KH_SmagC*LES_LengthScale2*LES_TimeScale,kind=sp)
+          ! And apply the limits to make sure we are not too close to 0 or anything too big
+        Khz_meso_next_step_MetP_sp(i,j,k) = max(Khz_meso_next_step_MetP_sp(i,j,k),KH_MIN_km2hr)
+        Khz_meso_next_step_MetP_sp(i,j,k) = min(Khz_meso_next_step_MetP_sp(i,j,k),KH_MAX_km2hr)
+
               enddo !k
           enddo !j
         enddo !i
@@ -1378,8 +1392,14 @@
               endif ! useBoundaryLayer
             endif ! test on if this is a valid zone for Kv
    
-            ! assign to array and convert from m2/s to km2/hr
-            Kv_col(k) = max(Kv_BL,Kv_FreeAir) * HR_2_S/KM_2_M/KM_2_M
+            ! assign to array
+            Kv_col(k) = max(Kv_BL,Kv_FreeAir)
+            ! and apply the max/min limnits on the diff
+            Kv_col(k) = max(Kv_col(k),KV_MIN)
+            Kv_col(k) = min(Kv_col(k),KV_MAX)
+            ! finally, convert from m2/s to km2/hr
+            Kv_col(k) = Kv_col(k) * HR_2_S/KM_2_M/KM_2_M
+
           enddo
 
           if(last_or_next.eq.0)then
@@ -1575,6 +1595,8 @@
       logical      ,intent(in) :: Load_MesoSteps
       real(kind=dp),intent(in) :: Interval_Frac
 
+      integer :: i,j,k
+
       logical,save :: first_time = .true.
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
@@ -1639,7 +1661,8 @@
       kz(1:nxmax,1:nymax,1:nzmax) = real( Kv_meso_last_step_sp(:,:,:),kind=ip) + &
                                     real((Kv_meso_next_step_sp(:,:,:) - &
                                           Kv_meso_last_step_sp(:,:,:)),kind=ip) * &
-                                    real(Interval_Frac,kind=ip) * M2PS_2_KM2PHR
+                                    real(Interval_Frac,kind=ip)
+
       ! Set boundary kz
         ! Bottom
       kz(0:nxmax+1,0:nymax+1,0) = kz(0:nxmax+1,0:nymax+1,1)
