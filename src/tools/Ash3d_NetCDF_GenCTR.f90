@@ -1,4 +1,7 @@
 ! Ash3d_NetCDF_GenCTR
+! This tool with recover the control file that was used (or could be used) from
+! an Ash3d NetCDF output file. This tool relies on some recent additions to
+! the NetCDF output file and my not work for older files.
 
       program Ash3d_NetCDF_GenCTR
 
@@ -135,11 +138,6 @@
       ! Reset verbosity so we only are using stdout (no log file)
       VB = (/3,10/)
 
-      write(*,*)"In Ash3d_NetCDF_GenCTR"
-!      outunit = 15
-!      outname = 'Ash3d_control.inp'
-!      open(unit=outunit,file=outname,status='replace',action='write')
-
       nargs = command_argument_count()
       if (nargs.eq.0) then
           ! If no command-line arguments are given, then prompt user
@@ -150,6 +148,13 @@
           stop 1
         else
           do io=1,nio;if(VB(io).le.verbosity_production)then
+            write(outlog(io),*)'Ash3d_NetCDF_GenCTR is a tool used to read an Ash3d output NetCDF'
+            write(outlog(io),*)'and recreate the ASCII control file used in generating that output'
+            write(outlog(io),*)'file. This tool take a single argument and writes out temp.inp.'
+            write(outlog(io),*)'  Usage: Ash3d_NetCDF_GenCTR 3d_tephra_fall.nc'
+            write(outlog(io),*)' '
+            write(outlog(io),*)'No command-line arguments were provided, now entering interactive mode.'
+            write(outlog(io),*)' '
             write(outlog(io),*)'Enter name of the Ash3d netcdf output file'
           endif;enddo
         endif

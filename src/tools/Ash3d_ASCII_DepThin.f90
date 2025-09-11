@@ -1,4 +1,12 @@
 ! Ash3d_ASCII_DepThin calculates the deposit thickness as a function of vent distance
+! In calculating the Thick v Dist function, the distance from each cell-center
+! to the vent is calculated via the Haversine formula. The distance axis is binned
+! with bin-width of 1.4*dx. If a cell has a greater thickness than previously tested,
+! the T(d) value is replace so the final table represents the maximum thickness for
+! a given distance bin. The mas thickness vs. distance data are written out to the file
+! Tvd.dat and a gnuplot script written to Tvd.gnu. If gnuplot is found on the system,
+! a plot is automatically created to display the results (DepoThick_vs_distance.png).
+
 
       program Ash3d_ASCII_DepThin
 
@@ -50,6 +58,16 @@
       if (nargs.eq.0) then
           ! If no command-line arguments are given, then prompt user
           ! interactively for the ASCII file name and source coordinate
+        write(outlog(io),*)'Ash3d_ASCII_DepThin calculates the deposit thickness as a function'
+        write(outlog(io),*)'of distance from the vent. The expected usage is non-interactive via'
+        write(outlog(io),*)'command-line arguments.'
+        write(errlog(io),*)'  Usage: Ash3d_ASCII_DepThin file1 srcx srcy'
+        write(outlog(io),*)'where file1 is a ESRI ASCII deposit file and srcx, srcy are the'
+        write(outlog(io),*)'longitude and latitude of the vent. If gnuplot is available on the system'
+        write(outlog(io),*)'the data are plotted to file DepoThick_vs_distance.png'
+        write(outlog(io),*)' '
+        write(outlog(io),*)'No command-line arguments were provided, now entering interactive mode.'
+        write(outlog(io),*)' '
         write(output_unit,*)'Enter name of the ESRI ASCII deposit file:'
         read(input_unit,*) file1
         do io=1,nio;if(VB(io).le.verbosity_production)then
@@ -156,6 +174,7 @@
             lat1 = DEG2RAD * lat_1(j)
             dlon = srcx - lon1
             dlat = srcy - lat1
+            ! Use Haversine formula
             a = sin(0.5_8*dlat)**2.0_8 + cos(lat1)*cos(srcy)*sin(0.5_8*dlon)**2.0_8
             c = 2.0_8*atan2(sqrt(a),sqrt(1.0_8-a))
             Rng = Re * c

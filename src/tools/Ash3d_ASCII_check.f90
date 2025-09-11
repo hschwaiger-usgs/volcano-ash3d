@@ -48,6 +48,18 @@
           stop 1
         else
           do io=1,nio;if(VB(io).le.verbosity_production)then
+            write(outlog(io),*)'Ash3d_ASCII_check calculates the L2 norm of the difference between'
+            write(outlog(io),*)'two ESRI ASCII files. The expected usage is non-interactive via'
+            write(outlog(io),*)'command-line arguments.'
+            write(outlog(io),*)'  Usage: Ash3d_ASCII_check file1 file2 (tol.; default=1.0e-7)'
+            write(outlog(io),*)'When used in this manner, output can be interpreted in shell scripts'
+            write(outlog(io),*)'and will look something like:'
+            write(outlog(io),*)'PASS :    0.0000000000000000     '
+            write(outlog(io),*)' or '
+            write(outlog(io),*)'FAIL :    8.1745926288664429E-003'
+            write(outlog(io),*)' '
+            write(outlog(io),*)'No command-line arguments were provided, now entering interactive mode.'
+            write(outlog(io),*)' '
             write(outlog(io),*)'Enter name of the first ESRI ASCII file:'
           endif;enddo
         endif

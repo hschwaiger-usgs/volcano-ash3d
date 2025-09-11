@@ -489,7 +489,13 @@ Ash3d_PostProc_cities.o: Ash3d_PostProc_cities.f90 $(MFILE) $(SYSINC) Ash3d_Vari
 write_Shapefile.o: write_Shapefile.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o write_BINARY.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/write_Shapefile.f90
 
-tools: ascii_check ascii_dep NCgen_ctr ASCIIgen_ctr
+tools: ascii_check ascii_dep NCgen_ctr ASCIIgen_ctr tab2ascii
+
+tab2ascii: $(ASH3DCCSRC)/tools/Ash3d_GenASCII_from_table.f90 Ash3d_VariableModules.o write_ASCII.o $(MFILE) $(SYSINC)
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/tools/Ash3d_GenASCII_from_table.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d_GenASCII_from_table.o $(LIBS) -o Ash3d_GenASCII_from_table
+	mkdir -p ../bin/tools
+	mv Ash3d_GenASCII_from_table ../bin/tools/Ash3d_GenASCII_from_table
 
 ascii_check: $(ASH3DCCSRC)/tools/Ash3d_ASCII_check.f90 Ash3d_VariableModules.o write_ASCII.o $(MFILE) $(SYSINC)
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/tools/Ash3d_ASCII_check.f90
