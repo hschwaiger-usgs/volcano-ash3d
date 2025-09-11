@@ -8,6 +8,8 @@
 !      subroutine vprofilewriter(itime)
 !      subroutine vprofilecloser
 !      subroutine write_2D_ASCII(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
+!      subroutine write_2D_ASCII_flt(nx,ny,IsLL,x1,y1,IsCC,dx,dy,Fill_Value,OutVar,filename)
+!      subroutine write_2D_ASCII_int(nx,ny,IsLL,x1,y1,IsCC,dx,dy,Fill_Value,OutVar,filename)
 !      subroutine read_2D_ASCII(filename)
 !      subroutine write_3D_ASCII(cio)
 !      subroutine read_3D_ASCII(filename)
@@ -32,6 +34,8 @@
              vprofilewriter,    &
              vprofilecloser,    &
              write_2D_ASCII,    &
+             write_2D_ASCII_flt,&
+             !write_2D_ASCII_int,&
              read_2D_ASCII,     &
              write_3D_ASCII,    &
              read_3D_ASCII,     &
@@ -252,8 +256,10 @@
 !    Fill_Value    = number used for No-data
 !    filename_root = root name of file (20 characters)
 !
-!  Subroutine that writes out 2-D arrays in ESRI ASCII raster format.
-!  Format specification is given at the following web sites:
+!  Subroutine that writes out 2-D arrays in ESRI ASCII raster format in the style of Ash3d.
+!  This style includes: corner-specification, file-naming, 10-float columns with rows separated
+!  by a newline.
+!  Full format specification is given at the following web sites:
 !   https://help.arcgis.com/en/arcgisdesktop/10.0/help/index.html#/ESRI_ASCII_raster_format/009t0000000z000000/
 !   https://en.wikipedia.org/wiki/Esri_grid
 !  This format can be post-processed with gmt converting to grid files with
@@ -380,6 +386,128 @@
       stop 1
       
       end subroutine write_2D_ASCII
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  write_2D_ASCII_flt
+!
+!  Called from: topography and some auxilary tools
+!  Arguments:
+!    nx            = x length of output array OutVar
+!    ny            = y length of output array OutVar
+!    IsLL          = logical flag for Lon/Lat vs projected
+!    x1            = x (or lon) coordinate of Lower-left cell
+!    y1            = y (or lat) coordinate of Lower-left cell
+!    IsCC          = logical flag for cell-centered vs corner grid registration
+!    dx            = cell length in x
+!    dy            = cell length in y
+!    Fill_Value    = number used for No-data (given as 6-char)
+!    OutVar        = 2-d array to be written to ASCII file
+!    filename      = name of output file (20 characters)
+!
+!  Subroutine that writes out 2-D arrays in ESRI ASCII raster format.
+!  Full format specification is given at the following web sites:
+!   https://help.arcgis.com/en/arcgisdesktop/10.0/help/index.html#/ESRI_ASCII_raster_format/009t0000000z000000/
+!   https://en.wikipedia.org/wiki/Esri_grid
+!  This format can be post-processed with gmt converting to grid files with
+!   gmt grdconvert out.dat=ef out.grd
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine write_2D_ASCII_flt(nx,ny,IsLL,x1,y1,IsCC,dx,dy,Fill_Value,OutVar,filename)
+
+      use global_param,  only  : &
+         KM_2_M
+
+      integer          ,intent(in) :: nx,ny
+      logical          ,intent(in) :: IsLL
+      real(kind=ip)    ,intent(in) :: x1,y1
+      logical          ,intent(in) :: IsCC
+      real(kind=ip)    ,intent(in) :: dx,dy
+      character(len=6) ,intent(in) :: Fill_Value
+      real(kind=ip)    ,intent(in) :: OutVar(nx,ny)
+      character(len=20),intent(in) :: filename
+
+      real(kind=op)  :: OVar(nx,ny)
+      real(kind=op)  :: FValue
+      integer :: i,j
+      character(len=50)  :: filename_out
+      integer            :: iostatus
+      character(len=120) :: iomessage
+      character(len= 50) :: linebuffer050
+      character(len= 80) :: linebuffer080
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_2D_ASCII_flt"
+      endif;enddo
+
+      read(Fill_Value,*,iostat=iostatus,iomsg=iomessage)FValue
+      linebuffer080 = Fill_Value
+      linebuffer050 = "Reading FValue from ASCII file"
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+
+      write(filename_out,*)trim(adjustl(filename))
+
+      open(unit=fid_ascii2dout,file=trim(adjustl(filename_out)), status='replace',action='write',err=2500)
+
+      write(fid_ascii2dout,3000) nx        ! write header values
+      write(fid_ascii2dout,3001) ny
+      if (IsLL) then
+        if (x1.gt.180.0_ip)then
+          ! GIS software seem to prefer the domain -180->180
+          if(IsCC)then
+            write(fid_ascii2dout,3012) x1 -360.0_ip
+          else
+            write(fid_ascii2dout,3002) x1 -360.0_ip
+          endif
+        else
+          write(fid_ascii2dout,3002) x1
+        endif
+        if(IsCC)then
+          write(fid_ascii2dout,3013) y1
+        else
+          write(fid_ascii2dout,3003) y1
+        endif
+        write(fid_ascii2dout,3004) dx,dy
+      else
+        if(IsCC)then
+          write(fid_ascii2dout,3012) x1*KM_2_M    ! convert xLL from km to meters so ArcMap can read it
+          write(fid_ascii2dout,3013) y1*KM_2_M    ! same with yLL
+        else
+          write(fid_ascii2dout,3002) x1*KM_2_M    ! convert xLL from km to meters so ArcMap can read it
+          write(fid_ascii2dout,3003) y1*KM_2_M    ! same with yLL
+        endif
+        write(fid_ascii2dout,3004) dx*KM_2_M,dy*KM_2_M    ! and with dx and dy
+      endif
+      write(fid_ascii2dout,3005)Fill_Value
+
+      ! Write out arrays
+      do j=ny,1,-1
+        write(fid_ascii2dout,*) (OVar(i,j), i=1,nx)
+      enddo
+
+      close(fid_ascii2dout)
+
+!     format statements
+3000  format('NCOLS ',i5)
+3001  format('NROWS ',i5)
+3002  format('XLLCORNER ',f15.3)
+3003  format('YLLCORNER ',f15.3)
+3012  format('XLLCENTER ',f15.3)
+3013  format('YLLCENTER ',f15.3)
+3004  format('CELLSIZE ',2f15.3)
+3005  format('NODATA_VALUE ',a6)
+!3006  format(10f15.3)               ! Older ASCII output file from Ash3d used this format
+3006  format(10f18.6)
+      return
+
+!     Error traps
+2500  do io=1,2;if(VB(io).le.verbosity_error)then
+        write(errlog(io),*) 'Error opening output file ASCII_output_file.txt.  Program stopped'
+      endif;enddo
+      stop 1
+
+      end subroutine write_2D_ASCII_flt
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !

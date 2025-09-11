@@ -11,15 +11,9 @@
       use global_param,   only : &
         EPS_TINY
 
-      use io_data,       only : &
-         isFinal_TS
-
-      use mesh,          only : &
-         de,dn,IsLatLon,latLL,lonLL
-
       use Ash3d_ASCII_IO,  only : &
 !        A_XY,A_nx,A_ny,A_xll,A_yll,A_dx,A_dy,A_Fill, &
-          write_2D_ASCII
+          write_2D_ASCII_flt
 
       implicit none
 
@@ -32,17 +26,18 @@
 
       integer :: nx
       integer :: ny
-!      real(kind=ip) :: xll
-!      real(kind=ip) :: yll
-!      real(kind=ip) :: dx
-!      real(kind=ip) :: dy
+      logical :: IsCC
+      logical :: IsLL
+      real(kind=ip) :: xll
+      real(kind=ip) :: yll
+      real(kind=ip) :: dx
+      real(kind=ip) :: dy
       real(kind=ip),dimension(:)  ,allocatable :: X_dim
       real(kind=ip),dimension(:)  ,allocatable :: Y_dim
       real(kind=ip),dimension(:,:),allocatable :: OutVar
-      logical,dimension(:,:),allocatable :: VarMask
-      character(len=20) :: filename_root =       'coord_table___values'
+      character(len=20) :: filename =       'coord_tab_values.dat'
       integer :: i,j
-      real(kind=ip) :: inlon,inlat,value1
+      real(kind=ip)    :: inlon,inlat,value1
       integer          :: iostatus
       character(len=50):: iomessage
       character(len=6) :: Fill_Value = '-9999.'
@@ -81,19 +76,19 @@
         do io=1,nio;if(VB(io).le.verbosity_production)then
           write(outlog(io),*)'Enter the longitude of the lower-left corner'
         endif;enddo
-        read(input_unit,*) lonLL
+        read(input_unit,*) xLL
         do io=1,nio;if(VB(io).le.verbosity_production)then
           write(outlog(io),*)'Enter the latitude of the lower-left corner'
         endif;enddo
-        read(input_unit,*) latLL
+        read(input_unit,*) yLL
         do io=1,nio;if(VB(io).le.verbosity_production)then
           write(outlog(io),*)'Enter the dx of the cells.'
         endif;enddo
-        read(input_unit,*) de
+        read(input_unit,*) dx
         do io=1,nio;if(VB(io).le.verbosity_production)then
           write(outlog(io),*)'Enter the dy of the cells.'
         endif;enddo
-        read(input_unit,*) dn
+        read(input_unit,*) dy
 
       elseif (nargs.ne.7) then
         do io=1,nio;if(VB(io).le.verbosity_error)then
@@ -143,7 +138,7 @@
           endif;enddo
           stop 1
         endif
-        read(linebuffer080,*)lonLL
+        read(linebuffer080,*)xLL
 
         call get_command_argument(5, linebuffer080, status=stat)
         if(stat.ne.0)then
@@ -152,7 +147,7 @@
           endif;enddo
           stop 1
         endif
-        read(linebuffer080,*)latLL
+        read(linebuffer080,*)yLL
 
         call get_command_argument(6, linebuffer080, status=stat)
         if(stat.ne.0)then
@@ -161,7 +156,7 @@
           endif;enddo
           stop 1
         endif
-        read(linebuffer080,*)de
+        read(linebuffer080,*)dx
 
         call get_command_argument(7, linebuffer080, status=stat)
         if(stat.ne.0)then
@@ -170,7 +165,7 @@
           endif;enddo
           stop 1
         endif
-        read(linebuffer080,*)dn
+        read(linebuffer080,*)dy
 
         if (.not.IsThere1)then
           do io=1,nio;if(VB(io).le.verbosity_error)then
@@ -180,25 +175,14 @@
         endif
       endif
 
-      !call read_2D_ASCII(file1)
-!      A_nx  = nx
-!      A_ny  = ny
-!      A_xll = xll
-!      A_yll = yll
-!      A_dx  = dx
-!      A_dy  = dy
-      isFinal_TS = .true.
-      IsLatLon   = .true.
       allocate(X_dim(nx))
       do i=1,nx
-        X_dim(i) = lonLL + (i-1)*de
+        X_dim(i) = xLL + (i-1)*dx
       enddo
       allocate(Y_dim(ny))
       do i=1,ny
-        Y_dim(i) = latLL + (i-1)*dn
+        Y_dim(i) = yLL + (i-1)*dy
       enddo
-      allocate(VarMask(nx,ny))
-      VarMask(:,:) = .true.
       allocate(OutVar(nx,ny))
       OutVar(:,:) = -9999.0_ip
 
@@ -206,14 +190,17 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       do while (iostatus.eq.0)
         read(linebuffer080,*)inlon,inlat,value1
-        i=nint((inlon-lonLL)/de) + 1
-        j=nint((inlat-latLL)/dn) + 1
+        i=nint((inlon-xLL)/dx) + 1
+        j=nint((inlat-yLL)/dy) + 1
         OutVar(i,j) = value1
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       enddo
       close(fid_ctrlfile)
 
-      call write_2D_ASCII(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
+      IsLL = .true.
+      IsCC = .false.
+      call write_2D_ASCII_flt(nx,ny,IsLL,xLL,yLL,IsCC,dx,dy,Fill_Value,OutVar,filename)
+
 
       end program Ash3d_GenASCII_from_table
 
