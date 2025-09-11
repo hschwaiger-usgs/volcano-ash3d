@@ -1,4 +1,40 @@
 ! Ash3d_ASCII_GenCTR
+! This tool reads a template Ash3d control file and a table of values, then
+! writes a new control file with the new values from the input table (identified
+! by run number) then writes a new control file.
+! The input file with the tablular values has the form:
+!
+!Table of run-dependent values used in the Nome mystery ash
+!run #    longitude  latitude
+!            deg.       deg.
+! 1     160.0      50.0
+! 2     160.0      52.0
+!
+! where the columns are labled in line 2 and must be a subset of:
+!   run          Run
+!   year         Year YYYY
+!   month        MM
+!   day          DD
+!   hour         HH.H
+!   start time
+!   Location
+!   lonLL
+!   latLL
+!   dxy
+!   dz
+!   longitude    srcx lon_volcano
+!   latitude     srcy lat_volcano
+!   duration     EDur
+!   plume height EPlmH
+!   volume       DRE  EVol
+!   width        gridwidth_e
+!   height       gridwidth_n
+!   m_fines
+!   mu_agg
+!
+!   Usage: Ash3d_ASCII_GenCTR template.inp table.dat runID'
+!   Output: ash3d_input.inp
+
 
       program Ash3d_ASCII_GenCTR
 
@@ -153,6 +189,46 @@
           stop 1
         else
           do io=1,nio;if(VB(io).le.verbosity_production)then
+            write(outlog(io),*)'Ash3d_ASCII_GenCTR is a tool used to modify an Ash3d control file'
+            write(outlog(io),*)'using a table of parameter and a line number. This tool is normally'
+            write(outlog(io),*)'run with command-line arguments.'
+            write(outlog(io),*)'  Usage: Ash3d_ASCII_GenCTR template.inp input_table.txt runID'
+            write(outlog(io),*)'where template.inp is a Ash3d control file with 1 source term'
+            write(outlog(io),*)'      input_table.txt is a table of substitutions for a particular run'
+            write(outlog(io),*)'      runID is the identifying line of the input table.'
+            write(outlog(io),*)'input_table.txt shoule have the following format:'
+            write(outlog(io),*)'Table of run-dependent values used in the Nome mystery ash'
+            write(outlog(io),*)'run #    longitude  latitude'
+            write(outlog(io),*)'            deg.       deg.'
+            write(outlog(io),*)' 1     160.0      50.0'
+            write(outlog(io),*)' 2     160.0      52.0'
+            write(outlog(io),*)' '
+            write(outlog(io),*)' where the columns are labled in line 2 and must be a subset of:'
+            write(outlog(io),*)'   run          Run'
+            write(outlog(io),*)'   year         Year YYYY'
+            write(outlog(io),*)'   month        MM'
+            write(outlog(io),*)'   day          DD'
+            write(outlog(io),*)'   hour         HH.H'
+            write(outlog(io),*)'   start time'
+            write(outlog(io),*)'   Location'
+            write(outlog(io),*)'   lonLL'
+            write(outlog(io),*)'   latLL'
+            write(outlog(io),*)'   dxy'
+            write(outlog(io),*)'   dz'
+            write(outlog(io),*)'   longitude    srcx lon_volcano'
+            write(outlog(io),*)'   latitude     srcy lat_volcano'
+            write(outlog(io),*)'   duration     EDur'
+            write(outlog(io),*)'   plume height EPlmH'
+            write(outlog(io),*)'   volume       DRE  EVol'
+            write(outlog(io),*)'   width        gridwidth_e'
+            write(outlog(io),*)'   height       gridwidth_n'
+            write(outlog(io),*)'   m_fines'
+            write(outlog(io),*)'   mu_agg'
+            write(outlog(io),*)' '
+            write(outlog(io),*)'This tool with create a new control file: ash3d_input.inp'
+            write(outlog(io),*)' '
+            write(outlog(io),*)'No command-line arguments were provided, now entering interactive mode.'
+            write(outlog(io),*)' '
             write(outlog(io),*)'Enter name of the template Ash3d control file'
           endif;enddo
         endif

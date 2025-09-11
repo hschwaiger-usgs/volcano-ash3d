@@ -5244,7 +5244,7 @@
 
       ! Line 3:
       !  The name of the input file used for this run. If the datafile is the
-      !  netcdf concentratiln file, then the contents of the input file are
+      !  netcdf concentration file, then the contents of the input file are
       !  already available and this line will be ignored.  However, ASCII and
       !  binary files can use the additional information from the input file
       !  for the output products.

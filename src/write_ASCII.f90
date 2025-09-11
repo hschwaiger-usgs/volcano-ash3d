@@ -406,6 +406,7 @@
       character(len=120):: iomessage
       character(len=20) :: tst_str
       integer           :: substr_pos1
+      logical           :: IsAsh3dASCII = .true.
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine read_2D_ASCII"
@@ -470,8 +471,33 @@
         allocate(A_XY(A_nx,A_ny))
         do j=A_ny,1,-1
           ! This format ID directs to read 10 floats at a time, matching the Ash3d ASCII output format
-          read(fid_ascii2din,3006,err=2600,iostat=iostatus,iomsg=iomessage) (A_XY(i,j), i=1,A_nx)
-          read(fid_ascii2din,*,iostat=iostatus,iomsg=iomessage)
+          read(fid_ascii2din,3006,iostat=iostatus,iomsg=iomessage) (A_XY(i,j), i=1,A_nx)
+          if(iostatus.ne.0)then
+            ! If there is an error, then the ESRI ASCII file might not be an Ash3d-generated file.
+            ! Try reading the whole line of A_nx values without the blank-line separator
+            IsAsh3dASCII = .false.
+            exit
+          endif
+          read(fid_ascii2din,*,iostat=iostatus,iomsg=iomessage) (A_XY(i,j), i=1,A_nx)
+          if(iostatus.ne.0)then
+            IsAsh3dASCII = .false.
+            exit
+          endif
+        enddo
+      endif
+
+      if(.not.IsAsh3dASCII)then
+        ! Run this part only if the above loop fails (non-Ash3d-type of ASCII file)
+        ! First rewind and zip past the 6 header lines
+        rewind(fid_ascii2din)
+        read(fid_ascii2din,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+        read(fid_ascii2din,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+        read(fid_ascii2din,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+        read(fid_ascii2din,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+        read(fid_ascii2din,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+        read(fid_ascii2din,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+        do j=A_ny,1,-1
+          read(fid_ascii2din,*,err=2600,iostat=iostatus,iomsg=iomessage) (A_XY(i,j), i=1,A_nx)
         enddo
       endif
 
