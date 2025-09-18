@@ -311,6 +311,11 @@
         endif
       endif ! time.eq.0.0_ip
 
+
+      ! HFS : Add check for the maximal radius for this eruptive pulse and make sure
+      !       the source location is far enough from the boundaries.
+
+
       !convert from  hours to seconds
       if(.not.first_time)then
         ! For the first time step, time=0 -> cloudrad=0 and uR=Inf

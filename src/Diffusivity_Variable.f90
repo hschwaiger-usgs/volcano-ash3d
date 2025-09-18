@@ -1174,8 +1174,8 @@
       real(kind=sp) :: KH_MIN_km2hr  ! min and max for Kh, but converted to km2/hr
       real(kind=sp) :: KH_MAX_km2hr
 
-      KH_MIN_km2hr = KH_MIN * HR_2_S/KM_2_M/KM_2_M
-      KH_MAX_km2hr = KH_MAX * HR_2_S/KM_2_M/KM_2_M
+      KH_MIN_km2hr = real(KH_MIN * HR_2_S/KM_2_M/KM_2_M,kind=sp)
+      KH_MAX_km2hr = real(KH_MAX * HR_2_S/KM_2_M/KM_2_M,kind=sp)
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Eddy_diff"
@@ -1571,7 +1571,7 @@
       subroutine Set_VarDiffV_Meso(Load_MesoSteps,Interval_Frac)
 
       use global_param,  only : &
-         M2PS_2_KM2PHR,useDiffusion
+         useDiffusion
 
       use mesh,          only : &
          nxmax,nymax,nzmax
@@ -1594,8 +1594,6 @@
 
       logical      ,intent(in) :: Load_MesoSteps
       real(kind=dp),intent(in) :: Interval_Frac
-
-      integer :: i,j,k
 
       logical,save :: first_time = .true.
 

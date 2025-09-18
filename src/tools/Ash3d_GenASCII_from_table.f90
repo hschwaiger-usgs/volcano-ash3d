@@ -28,16 +28,16 @@
       integer :: ny
       logical :: IsCC
       logical :: IsLL
-      real(kind=ip) :: xll
-      real(kind=ip) :: yll
-      real(kind=ip) :: dx
-      real(kind=ip) :: dy
-      real(kind=ip),dimension(:)  ,allocatable :: X_dim
-      real(kind=ip),dimension(:)  ,allocatable :: Y_dim
-      real(kind=ip),dimension(:,:),allocatable :: OutVar
+      real(kind=sp) :: xll
+      real(kind=sp) :: yll
+      real(kind=sp) :: dx
+      real(kind=sp) :: dy
+      real(kind=sp),dimension(:)  ,allocatable :: X_dim
+      real(kind=sp),dimension(:)  ,allocatable :: Y_dim
+      real(kind=sp),dimension(:,:),allocatable :: OutVar
       character(len=20) :: filename =       'coord_tab_values.dat'
       integer :: i,j
-      real(kind=ip)    :: inlon,inlat,value1
+      real(kind=sp)    :: inlon,inlat,value1
       integer          :: iostatus
       character(len=50):: iomessage
       character(len=6) :: Fill_Value = '-9999.'
@@ -184,7 +184,7 @@
         Y_dim(i) = yLL + (i-1)*dy
       enddo
       allocate(OutVar(nx,ny))
-      OutVar(:,:) = -9999.0_ip
+      OutVar(:,:) = -9999.0_sp
 
       open(unit=fid_ctrlfile,file=file1,action='read')
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080

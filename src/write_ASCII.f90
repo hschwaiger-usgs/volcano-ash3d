@@ -421,14 +421,13 @@
 
       integer          ,intent(in) :: nx,ny
       logical          ,intent(in) :: IsLL
-      real(kind=ip)    ,intent(in) :: x1,y1
+      real(kind=sp)    ,intent(in) :: x1,y1
       logical          ,intent(in) :: IsCC
-      real(kind=ip)    ,intent(in) :: dx,dy
+      real(kind=sp)    ,intent(in) :: dx,dy
       character(len=6) ,intent(in) :: Fill_Value
-      real(kind=ip)    ,intent(in) :: OutVar(nx,ny)
+      real(kind=sp)    ,intent(in) :: OutVar(nx,ny)
       character(len=20),intent(in) :: filename
 
-      real(kind=op)  :: OVar(nx,ny)
       real(kind=op)  :: FValue
       integer :: i,j
       character(len=50)  :: filename_out
@@ -456,9 +455,9 @@
         if (x1.gt.180.0_ip)then
           ! GIS software seem to prefer the domain -180->180
           if(IsCC)then
-            write(fid_ascii2dout,3012) x1 -360.0_ip
+            write(fid_ascii2dout,3012) x1 -360.0_sp
           else
-            write(fid_ascii2dout,3002) x1 -360.0_ip
+            write(fid_ascii2dout,3002) x1 -360.0_sp
           endif
         else
           write(fid_ascii2dout,3002) x1
@@ -483,7 +482,7 @@
 
       ! Write out arrays
       do j=ny,1,-1
-        write(fid_ascii2dout,*) (OVar(i,j), i=1,nx)
+        write(fid_ascii2dout,*) (OutVar(i,j), i=1,nx)
       enddo
 
       close(fid_ascii2dout)
@@ -497,8 +496,7 @@
 3013  format('YLLCENTER ',f15.3)
 3004  format('CELLSIZE ',2f15.3)
 3005  format('NODATA_VALUE ',a6)
-!3006  format(10f15.3)               ! Older ASCII output file from Ash3d used this format
-3006  format(10f18.6)
+
       return
 
 !     Error traps
