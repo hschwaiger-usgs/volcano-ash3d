@@ -145,6 +145,8 @@
 
       use Ash3d_PostProc_GMT
 
+      use Ash3d_PostProc_python
+
       implicit none
 
       integer             :: nargs
@@ -185,7 +187,8 @@
         !  3 = gnuplot
         !  4 = GMT
         !  5 = matlab/octave
-      integer, parameter  :: Nplot_libs = 5
+        !  6 = python/cartopy
+      integer, parameter  :: Nplot_libs = 6
       logical,dimension(Nplot_libs) :: plotlib_avail
                                                      !   -- First preference code 
                                                      !   | - Second
@@ -194,15 +197,15 @@
                                                      !   V V V V
 #ifdef WINDOWS
       ! For Windows systems, dislin is working; others not yet.
-      integer,dimension(Nplot_libs) :: plot_pref_map = (/1,2,3,4,5/) ! plot preference for maps
-      integer,dimension(Nplot_libs) :: plot_pref_shp = (/1,2,3,4,5/) ! plot preference for contours
-      integer,dimension(Nplot_libs) :: plot_pref_vpr = (/1,2,3,4,5/) ! plot preference for vert profs.
-      integer,dimension(Nplot_libs) :: plot_pref_aTS = (/1,2,3,4,5/) ! plot preference for Airport TS
+      integer,dimension(Nplot_libs) :: plot_pref_map = (/1,2,3,4,5,6/) ! plot preference for maps
+      integer,dimension(Nplot_libs) :: plot_pref_shp = (/1,2,3,4,5,6/) ! plot preference for contours
+      integer,dimension(Nplot_libs) :: plot_pref_vpr = (/1,2,3,4,5,6/) ! plot preference for vert profs.
+      integer,dimension(Nplot_libs) :: plot_pref_aTS = (/1,2,3,4,5,6/) ! plot preference for Airport TS
 #else
-      integer,dimension(Nplot_libs) :: plot_pref_map = (/2,1,3,4,5/) ! plot preference for maps
-      integer,dimension(Nplot_libs) :: plot_pref_shp = (/3,1,2,4,5/) ! plot preference for contours
-      integer,dimension(Nplot_libs) :: plot_pref_vpr = (/1,2,3,4,5/) ! plot preference for vert profs.
-      integer,dimension(Nplot_libs) :: plot_pref_aTS = (/2,3,1,4,5/) ! plot preference for Airport TS
+      integer,dimension(Nplot_libs) :: plot_pref_map = (/2,1,3,4,5,6/) ! plot preference for maps
+      integer,dimension(Nplot_libs) :: plot_pref_shp = (/3,1,2,4,5,6/) ! plot preference for contours
+      integer,dimension(Nplot_libs) :: plot_pref_vpr = (/1,2,3,4,5,6/) ! plot preference for vert profs.
+      integer,dimension(Nplot_libs) :: plot_pref_aTS = (/2,3,1,4,5,6/) ! plot preference for Airport TS
 #endif
 
       INTERFACE
@@ -349,12 +352,42 @@
         plotlib_avail(5) = .false.
       endif
 
+      ! Test for python
+#ifdef LINUX
+        ! On a linux system, just try to execute python
+      istat = 0
+      call execute_command_line("echo 'exit' | python",exitstat=istat)
+#endif
+#ifdef MACOS
+      ! On a MacOS system, not sure how to test yet
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),*)"Dislin       ",plotlib_avail(1)
-        write(outlog(io),*)"Plplot       ",plotlib_avail(2)
-        write(outlog(io),*)"Gnuplot      ",plotlib_avail(3)
-        write(outlog(io),*)"GMT          ",plotlib_avail(4)
-        write(outlog(io),*)"matlab/octave",plotlib_avail(5)
+        write(outlog(io),*)"Cannot test for python on MacOS for now."
+        write(outlog(io),*)"Disabling python."
+      endif;enddo
+      istat = 1
+#endif
+#ifdef WINDOWS
+      ! On a Windows system, not sure how to test yet
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"Cannot test for python on Windows for now."
+        write(outlog(io),*)"Disabling python."
+      endif;enddo
+      istat = 1
+#endif
+      if (istat.eq.0)then
+        CleanScripts_python = CleanScripts
+        plotlib_avail(6) = .true.
+      else
+        plotlib_avail(6) = .false.
+      endif
+
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"Dislin        ",plotlib_avail(1)
+        write(outlog(io),*)"Plplot        ",plotlib_avail(2)
+        write(outlog(io),*)"Gnuplot       ",plotlib_avail(3)
+        write(outlog(io),*)"GMT           ",plotlib_avail(4)
+        write(outlog(io),*)"matlab/octave ",plotlib_avail(5)
+        write(outlog(io),*)"python/cartopy",plotlib_avail(6)
       endif;enddo
 
       ! Initialize all output logicals to false
@@ -850,6 +883,10 @@
             write(outlog(io),*)"           Using gnuplot if available."
           elseif(iplotpref.eq.4)then
             write(outlog(io),*)"           Using GMT if available."
+          elseif(iplotpref.eq.5)then
+            write(outlog(io),*)"           Using MatLAB if available."
+          elseif(iplotpref.eq.6)then
+            write(outlog(io),*)"           Using python/cartopy if available."
           endif
         endif;enddo
         if(plotlib_avail(iplotpref))then
@@ -959,7 +996,7 @@
           write(outlog(io),*)'using the GMT plotting option.'
         endif;enddo
         if(plotlib_avail(4))then
-          plot_pref_map = (/4,1,2,3,5/)
+          plot_pref_map = (/4,1,2,3,5,6/)
         else
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(outlog(io),*)'Mapping/shapefiles of projected grids requested, but GMT is not available.'
@@ -1476,6 +1513,8 @@
           call write_2Dmap_PNG_GMT(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
         case(5)
           call write_2Dmap_PNG_matlab(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
+        case(6)
+          call write_2Dmap_PNG_python(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
         case default
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: Plots requested but no plotting package is installed"
@@ -1538,6 +1577,8 @@
           call write_2Dmap_PNG_GMT(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
         case(5)
           call write_2Dmap_PNG_matlab(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
+        case(6)
+          call write_2Dmap_PNG_python(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
         case default
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: Plots requested but no plotting package is installed"

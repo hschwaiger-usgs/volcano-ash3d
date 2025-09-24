@@ -38,7 +38,7 @@
       implicit none
 
         ! Set everything to private by default
-      private
+      !private
 
         ! Publicly available subroutines/functions
       public Parse_Command_Line,         &
@@ -298,6 +298,7 @@
 !      = 3 : GNUPLOT
 !      = 4 : GMT
 !      = 5 : matlab/octave
+!      = 6 : python/cartopy
 !  Next, details of the system state are logged, including OS type (Linux, Mac, Windows),
 !  endian flavor of hardware, fortran compiler version and flags, command-line arguments,
 !  and date/time of the run.  Additionally, if PII=ON was set in the makefile when this
@@ -661,7 +662,7 @@
           endif;enddo
           stop 1
         endif
-        if(iplotpref.le.0.or.iplotpref.gt.5)then
+        if(iplotpref.le.0.or.iplotpref.gt.6)then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: ASH3DPLOT must be any of:"
             write(errlog(io),*)"         1 = dislin"
@@ -669,8 +670,8 @@
             write(errlog(io),*)"         3 = gnuplot"
             write(errlog(io),*)"         4 = GMT"
             write(errlog(io),*)"         5 = matlab/octave"
+            write(errlog(io),*)"         6 = python/cartopy"
             ! Placeholders for other post-processing graphics packages
-            !write(errlog(io),*)"         6 = cartopy"
             !write(errlog(io),*)"         7 = R"
             write(errlog(io),*)"       Currently set to ",iplotpref
           endif;enddo

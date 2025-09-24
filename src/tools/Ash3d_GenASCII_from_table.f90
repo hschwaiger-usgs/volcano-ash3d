@@ -12,7 +12,6 @@
         EPS_TINY
 
       use Ash3d_ASCII_IO,  only : &
-!        A_XY,A_nx,A_ny,A_xll,A_yll,A_dx,A_dy,A_Fill, &
           write_2D_ASCII_flt
 
       implicit none

@@ -362,7 +362,7 @@ PPOBJS = Ash3d_VariableModules.o        \
          Diffusivity_Variable.o         \
          ResetParams.o
 
-GRAFOBJ = Ash3d_PostProc_gnuplot.o $(plplotOBJ) $(dislinOBJ) Ash3d_PostProc_GMT.o $(gmtOBJ) Ash3d_PostProc_matlab.o
+GRAFOBJ = Ash3d_PostProc_gnuplot.o $(plplotOBJ) $(dislinOBJ) Ash3d_PostProc_GMT.o $(gmtOBJ) Ash3d_PostProc_matlab.o Ash3d_PostProc_python.o
 
 TOOLOBJ = Ash3d_ASCII_check.o
 
@@ -470,6 +470,8 @@ Ash3d_PostProc_gnuplot.o: Ash3d_PostProc_gnuplot.f90 $(MFILE) $(SYSINC) Ash3d_Po
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3DCCSRC)/Ash3d_PostProc_gnuplot.f90
 Ash3d_PostProc_matlab.o: Ash3d_PostProc_matlab.f90 $(MFILE) $(SYSINC) Ash3d_PostProc_cities.o write_ASCII.o Ash3d_VariableModules.o Output_Vars.o Airports.o Source.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3DCCSRC)/Ash3d_PostProc_matlab.f90
+Ash3d_PostProc_python.o: Ash3d_PostProc_python.f90 $(MFILE) $(SYSINC) Ash3d_PostProc_cities.o write_ASCII.o Ash3d_VariableModules.o Output_Vars.o Airports.o Source.o
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3DCCSRC)/Ash3d_PostProc_python.f90
 ifeq ($(USEPLPLOT), T)
 Ash3d_PostProc_plplot.o: Ash3d_PostProc_plplot.f90 $(MFILE) $(SYSINC) Ash3d_PostProc_cities.o Ash3d_VariableModules.o Output_Vars.o Airports.o Source.o
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3DCCSRC)/Ash3d_PostProc_plplot.f90

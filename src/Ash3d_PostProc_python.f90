@@ -70,7 +70,7 @@
       subroutine write_2Dmap_PNG_python(nx,ny,iprod,itime,OutVar,Fill_Value,writeContours)
 
       use mesh,          only : &
-         IsLatLon,lon_cc_pd,lat_cc_pd , &
+         IsLatLon,lon_cc_pd,lat_cc_pd,de,dn, &
          x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd
 
       use Output_Vars,   only : &
@@ -103,6 +103,9 @@
 
       use citywriter
 
+      use Ash3d_ASCII_IO,  only : &
+          write_2D_ASCII_flt
+
       integer      ,intent(in) :: nx
       integer      ,intent(in) :: ny
       integer      ,intent(in) :: iprod
@@ -129,8 +132,8 @@
       real(kind=ip)  :: ymin
       real(kind=ip)  :: ymax
 
-      character(len=10) :: filename_script
-      character(len=10) :: filename_outdata
+      character(len=9)  :: filename_script
+      character(len=20) :: filename_outdata
       character(len=10) :: filename_contourdata
 
       !character(len=26) :: coord_str
@@ -413,7 +416,7 @@
 
       if(writeContours)then
         do io=1,2;if(VB(io).le.verbosity_error)then
-          write(outlog(io),*)"Running Gnuplot to calculate contours lines"
+          write(outlog(io),*)"Running python to calculate contours lines"
         endif;enddo
         write(outfile_name,'(a14)')'tmp.png'
         allocate(ContourDataNcurves(nConLev))
@@ -426,14 +429,17 @@
         ContourDataY(:,:,:)     = 0.0_ip
       else
         do io=1,2;if(VB(io).le.verbosity_error)then
-          write(outlog(io),*)"Running Gnuplot to generate contour plot"
+          write(outlog(io),*)"Running python to generate contour plot"
         endif;enddo
       endif
 
-      write(filename_outdata,53) "outvar.dat"
+      write(filename_outdata,52) "          outvar.dat"
       write(filename_contourdata,53) "outvar.con"
-      write(filename_script,53) "outvar.gpi"
+      write(filename_script,54) "outvar.py"
+ 52   format(a20)
  53   format(a10)
+ 54   format(a9)
+
 
       if(IsLatLon)then
         xmin = minval(lon_cc_pd(1:nx))
@@ -460,23 +466,27 @@
       if(lon_volcano.gt.xmax)lon_volcano=lon_volcano-360.0_ip
 
       ! write out the data in a form that python can read
-      open(unit=fid_outdata,file=filename_outdata,status='replace')
-      do i = 1,nx
-        do j = 1,ny
-          if(lon_cc_pd(1).lt.180.0_ip)then
-            tmp_ip = lon_cc_pd(i)
-          else
-            tmp_ip = lon_cc_pd(i)-360.0_ip
-          endif
-          if(abs(OutVar(i,j)-Fill_Value).lt.EPS_SMALL)then
-            write(fid_outdata,*)tmp_ip,lat_cc_pd(j),"NaN"
-          else
-            write(fid_outdata,*)tmp_ip,lat_cc_pd(j),OutVar(i,j)
-          endif
-        enddo
-        write(fid_outdata,*)""
-      enddo
-      close(fid_outdata)
+      ! Python script expects an ESRI ASCII data file
+      call write_2D_ASCII_flt(nx,ny,IsLatLon,real(xmin,kind=sp),real(ymin,kind=sp),.true., &
+                         real(de,kind=sp),real(dn,kind=sp),Fill_Value_str,&
+                         real(OutVar,kind=sp),filename_outdata)
+      !open(unit=fid_outdata,file=filename_outdata,status='replace')
+      !do i = 1,nx
+      !  do j = 1,ny
+      !    if(lon_cc_pd(1).lt.180.0_ip)then
+      !      tmp_ip = lon_cc_pd(i)
+      !    else
+      !      tmp_ip = lon_cc_pd(i)-360.0_ip
+      !    endif
+      !    if(abs(OutVar(i,j)-Fill_Value).lt.EPS_SMALL)then
+      !      write(fid_outdata,*)tmp_ip,lat_cc_pd(j),"NaN"
+      !    else
+      !      write(fid_outdata,*)tmp_ip,lat_cc_pd(j),OutVar(i,j)
+      !    endif
+      !  enddo
+      !  write(fid_outdata,*)""
+      !enddo
+      !close(fid_outdata)
 
       open(unit=fid_misc,file="volc.dat",status='replace')
       write(fid_misc,*)real(lon_volcano,kind=4),real(lat_volcano,kind=4),'""'
@@ -484,460 +494,459 @@
 
       ! Set up to plot via python script
       open(unit=fid_script,file=filename_script,status='replace')
-      write(fid_script,*)"set terminal pngcairo font 'sans,12' size 854,603"   ! Set the image size
-      write(fid_script,*)"set origin 0.05, .20"
-      write(fid_script,*)"set size 0.85, 0.8"              ! Set x and y scale for plot
-      write(fid_script,*)"set ylabel 'Latitude'"
-      write(fid_script,*)"set xlabel 'Longitude'"
-      write(fid_script,*)"set output '",trim(adjustl(outfile_name)),"'"
-      write(fid_script,*)"set title '",trim(adjustl(title_plot)),units,"'"
-      write(fid_script,*)"set datafile missing 'NaN'"
-      write(fid_script,*)"XMIN = ",real(xmin,kind=4)
-      write(fid_script,*)"YMIN = ",real(ymin,kind=4)
-      write(fid_script,*)"XMAX = ",real(xmax,kind=4)
-      write(fid_script,*)"YMAX = ",real(ymax,kind=4)
-
-      write(fid_script,*)"set xrange [XMIN:XMAX]"
-      write(fid_script,*)"set yrange [YMIN:YMAX]"
-      write(fid_script,*)"set contour base"
-      write(fid_script,*)"set cntrparam bspline"
-      write(fid_script,*)"set cntrparam levels discrete \"
-      do i=1,nConLev-1
-        write(fid_script,*)real(ContourLev(i),kind=4),', \'
-      enddo
-      write(fid_script,*)real(ContourLev(nConLev),kind=4)
-      write(fid_script,*)"unset surface"
-      ! Now write out the contours to a datafile
-      write(fid_script,*)"set table 'outvar.con'"
-      write(fid_script,*)"splot 'outvar.dat' using 1:2:3"
-      write(fid_script,*)"unset table"
-      write(fid_script,*)"set style line 2 lc rgb '#808080' lt 0 lw 1"
-      write(fid_script,*)"set grid front ls 2"
-      write(fid_script,*)"unset key"
-
-      write(fid_script,*)"XVAL = XMIN-(XMAX-XMIN)*0.1"
-      write(fid_script,*)"YVAL = YMIN-(YMAX-YMIN)*0.25"
-
-      write(fid_script,*)"set label 'Volcano: " ,VolcanoName,&
-                            "' at XVAL, YVAL font 'sans,9'"
-      write(fid_script,*)"set label 'Run Date: ",os_time_log,&
-                  "' at XVAL, YVAL font 'sans,9' offset character 0,-1"
-      read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
-      linebuffer050 = "Reading iw,iwf from cdf_b3l1"
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,cdf_b3l1,iomessage)
-      write(fid_script,*)"set label 'Windfile: ",iwf,&
-                            "' at XVAL, YVAL font 'sans,9' offset character 0,-2"
-
-      write(fid_script,*)"XVAL = XMIN+(XMAX-XMIN)*0.4"
-      write(fid_script,*)"set label 'Erup. Start Time: ",HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap),&
-                            "' at XVAL, YVAL font 'sans,9'"
-      write(fid_script,*)"set label 'Erup. Plume Height: ",real(e_PlumeHeight(1),kind=4),&
-                            " km' at XVAL, YVAL font 'sans,9' offset character 0,-1"
-      write(fid_script,*)"set label 'Erup. Duration: ",real(e_Duration(1),kind=4),&
-                            " hours' at XVAL, YVAL font 'sans,9' offset character 0,-2"
-      write(fid_script,*)"set label 'Erup. Volume: ",real(e_Volume(1),kind=4),&
-                            " km3 (DRE)' at XVAL, YVAL font 'sans,9' offset character 0,-3"
-
-      write(fid_script,*)" plot '",trim(adjustl(coastfile)),"' with filledcurves linetype rgb '#dddddd' , \"
-      write(fid_script,*)"   'outvar.con' using 1:2 with l lc rgb '#888888' , \"
-      write(fid_script,*)"   '' every 1000 with labels font ',6' , \"
-      write(fid_script,*)"   'cities.xy' using 1:2 , \"
-      write(fid_script,*)"   '' using 1:2:3 with labels font ',10' point pointtype 7 offset char 1,1, \"
-      write(fid_script,*)"   'volc.dat' using 1:2 , \"
-      write(fid_script,*)"   '' using 1:2:3 with labels point pointtype 22 pointsize 2 lt rgb 'red'"
-
-
-(1) Download anaconda:
-  curl -O https://repo.anaconda.com/archive/Anaconda3-2025.06-0-Linux-x86_64.sh
-
-(2) Install:
-  bash ~/Anaconda3-2025.06-0-Linux-x86_64.sh
- Accept terms of service.
- Accept default install location: ~/anaconda3
- Choose 'no' when asked about editing start-up scripts.
-
-(3) Initialize anaconda manually.
-  export PATH="/home/hschwaiger/anaconda3/bin:$PATH"
-  conda init
-
-(4) Install the packages your script needs:
-  conda install -c scitools cartopy
-  conda install -c conda-forge gdal
-
-----------------------------------------------------------------
-import cartopy.feature as cfeature
-import cartopy.crs as ccrs
-import matplotlib.pyplot as plt
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-import matplotlib.image as mpimg
-from matplotlib.colors import LinearSegmentedColormap
-from matplotlib.offsetbox import OffsetImage, AnnotationBbox, TextArea
-import numpy as np
-from osgeo import gdal, osr
-import linecache
-
-def get_extent(gdal_ds, A3D_input_fn):
-    Xsize = gdal_ds.RasterXSize
-    Ysize = gdal_ds.RasterYSize
-    cellsize = gdal_ds.GetGeoTransform()[1]
-    xcorner, ycorner = get_proj_info(A3D_input_fn)
-    minx = xcorner+cellsize
-    miny = ycorner+cellsize
-    maxx = minx + (cellsize*Xsize)
-    maxy = miny + (cellsize*Ysize)
-    return [minx, maxx, miny, maxy]
-
-def get_proj_info(fn):
-    xl_corner = linecache.getline(fn, 3)
-    yl_corner = linecache.getline(fn, 4)
-    return float(xl_corner.split()[1]), float(yl_corner.split()[1])
-
-def draw_logo(ax,fn):
-    # Create background box
-    ax_inset = inset_axes(
-        ax,
-        width="18%",
-        height="7%",
-        borderpad=.5,
-        loc="upper right"
-    )
-
-    img = mpimg.imread(fn)
-
-    # ax.patch.set_alpha(0.5)
-    # Remove axis borders
-    # ax_inset.set_axis_off()
-    ax_inset.set_xticks([])
-    ax_inset.set_yticks([])
-    ax_inset.set_facecolor([1,1,1,0.8])
-
-    ax_logo = inset_axes(
-        ax_inset,
-        width="90%",
-        height="90%",
-        loc="center"
-    )
-
-    ax_logo.imshow(img)
-    ax_logo.set_axis_off()
-
-    return None
-
-# USGS logo
-logo_file = '/opt/USGS/Ash3d/share/post_proc/logo.png'
-
-# Run values
-srcx=-152.240
-srcy=61.265
-
-#######################################
-# Product values
-grid_file="DepositFile_____final.dat"
-title_plot="Final Deposit Thickness"
-title_legend="Dep.Thick.(mm)"
-clevels=[0.01, 0.03, 0.1, 0.3, 1.0, 3.0, 10.0, 30.0, 100.0, 300.0]
-ccolors=[( 0.84,0.87,0.41 ),
-         ( 0.98,0.65,0.44 ),
-         ( 0.50,0.00,0.50 ),
-         ( 0.00,0.00,1.00 ),
-         ( 0.00,0.50,1.00 ),
-         ( 0.00,1.00,0.50 ),
-         ( 0.76,0.76,0.00 ),
-         ( 1.00,0.50,0.00 ),
-         ( 1.00,0.00,0.00 ),
-         ( 0.50,0.00,0.00 )]
-tlevels=['0.01', '0.03', '0.1', '0.3', '1.0', '3.0', '10.0', '30.0', '100.0', '300.0']
-
-txt_vname_dat="Crater Lake"
-txt_RunDate_dat="2023-11-15T01:07:00Z"
-txt_Windfile_dat="25"
-txt_ESrtTime_dat="1980-05-18T17:28:00Z"
-txt_EPlmH_dat="40.00"
-txt_EDur_dat="24.00"
-txt_EVol_dat="40.00"
-
-#######################################
-txt_vname="Volcano: "
-txt_RunDate="Run Date: "
-txt_Windfile="Windfile: "
-txt_ESrtTime="Erup. Start Time: "
-txt_EPlmH="Erup Plume Height: "
-txt_EDur="Erup. Duration: "
-txt_EVol="Erup. Volume: "
-txt_EPlmH_unit=" km"
-txt_EDur_unit=" hours"
-txt_EVol_unit=" km3 (DRE)"
+!      write(fid_script,*)"set terminal pngcairo font 'sans,12' size 854,603"   ! Set the image size
+!      write(fid_script,*)"set origin 0.05, .20"
+!      write(fid_script,*)"set size 0.85, 0.8"              ! Set x and y scale for plot
+!      write(fid_script,*)"set ylabel 'Latitude'"
+!      write(fid_script,*)"set xlabel 'Longitude'"
+!      write(fid_script,*)"set output '",trim(adjustl(outfile_name)),"'"
+!      write(fid_script,*)"set title '",trim(adjustl(title_plot)),units,"'"
+!      write(fid_script,*)"set datafile missing 'NaN'"
+!      write(fid_script,*)"XMIN = ",real(xmin,kind=4)
+!      write(fid_script,*)"YMIN = ",real(ymin,kind=4)
+!      write(fid_script,*)"XMAX = ",real(xmax,kind=4)
+!      write(fid_script,*)"YMAX = ",real(ymax,kind=4)
+!
+!      write(fid_script,*)"set xrange [XMIN:XMAX]"
+!      write(fid_script,*)"set yrange [YMIN:YMAX]"
+!      write(fid_script,*)"set contour base"
+!      write(fid_script,*)"set cntrparam bspline"
+!      write(fid_script,*)"set cntrparam levels discrete \"
+!      do i=1,nConLev-1
+!        write(fid_script,*)real(ContourLev(i),kind=4),', \'
+!      enddo
+!      write(fid_script,*)real(ContourLev(nConLev),kind=4)
+!      write(fid_script,*)"unset surface"
+!      ! Now write out the contours to a datafile
+!      write(fid_script,*)"set table 'outvar.con'"
+!      write(fid_script,*)"splot 'outvar.dat' using 1:2:3"
+!      write(fid_script,*)"unset table"
+!      write(fid_script,*)"set style line 2 lc rgb '#808080' lt 0 lw 1"
+!      write(fid_script,*)"set grid front ls 2"
+!      write(fid_script,*)"unset key"
+!
+!      write(fid_script,*)"XVAL = XMIN-(XMAX-XMIN)*0.1"
+!      write(fid_script,*)"YVAL = YMIN-(YMAX-YMIN)*0.25"
+!
+!      write(fid_script,*)"set label 'Volcano: " ,VolcanoName,&
+!                            "' at XVAL, YVAL font 'sans,9'"
+!      write(fid_script,*)"set label 'Run Date: ",os_time_log,&
+!                  "' at XVAL, YVAL font 'sans,9' offset character 0,-1"
+!      read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
+!      linebuffer050 = "Reading iw,iwf from cdf_b3l1"
+!      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,cdf_b3l1,iomessage)
+!      write(fid_script,*)"set label 'Windfile: ",iwf,&
+!                            "' at XVAL, YVAL font 'sans,9' offset character 0,-2"
+!
+!      write(fid_script,*)"XVAL = XMIN+(XMAX-XMIN)*0.4"
+!      write(fid_script,*)"set label 'Erup. Start Time: ",HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap),&
+!                            "' at XVAL, YVAL font 'sans,9'"
+!      write(fid_script,*)"set label 'Erup. Plume Height: ",real(e_PlumeHeight(1),kind=4),&
+!                            " km' at XVAL, YVAL font 'sans,9' offset character 0,-1"
+!      write(fid_script,*)"set label 'Erup. Duration: ",real(e_Duration(1),kind=4),&
+!                            " hours' at XVAL, YVAL font 'sans,9' offset character 0,-2"
+!      write(fid_script,*)"set label 'Erup. Volume: ",real(e_Volume(1),kind=4),&
+!                            " km3 (DRE)' at XVAL, YVAL font 'sans,9' offset character 0,-3"
+!
+!      write(fid_script,*)" plot '",trim(adjustl(coastfile)),"' with filledcurves linetype rgb '#dddddd' , \"
+!      write(fid_script,*)"   'outvar.con' using 1:2 with l lc rgb '#888888' , \"
+!      write(fid_script,*)"   '' every 1000 with labels font ',6' , \"
+!      write(fid_script,*)"   'cities.xy' using 1:2 , \"
+!      write(fid_script,*)"   '' using 1:2:3 with labels font ',10' point pointtype 7 offset char 1,1, \"
+!      write(fid_script,*)"   'volc.dat' using 1:2 , \"
+!      write(fid_script,*)"   '' using 1:2:3 with labels point pointtype 22 pointsize 2 lt rgb 'red'"
 
 
-annotation_text1 = txt_vname    + txt_vname_dat   + "\n" + \
-                   txt_RunDate  + txt_RunDate_dat + "\n" + \
-                   txt_Windfile + txt_Windfile_dat
-annotation_text2 = txt_ESrtTime + txt_ESrtTime_dat + "\n" + \
-                   txt_EPlmH    + txt_EPlmH_dat    + txt_EPlmH_unit + "\n" + \
-                   txt_EDur     + txt_EDur_dat     + txt_EDur_unit  + "\n" + \
-                   txt_EVol     + txt_EVol_dat     + txt_EVol_unit
-
-###################### OPEN ASH DATA FILE AND GET GEOTRANSFORM #######################
-# Open raster with GDAL
-raster = gdal.Open(grid_file)
-# Get lat/lon extent of raster
-extent = get_extent(raster, grid_file)
-
-############################# PLOT ######################################
-# Create figure
-main_fig = plt.figure(figsize=(8.5, 6))
-# Create geospatial matplotlib axes with CartoPy.
-# Use a PlateCarree projection for now
-cen_lon=extent[2] - extent[1]
-img_extent = extent
-projection = ccrs.PlateCarree(central_longitude=cen_lon)  # this is the Cartopy bit
-map_ax = main_fig.add_subplot(projection=projection)      # create the matplotlib mapping with this projection
-map_ax.set_extent(img_extent)
-
-# Add coastlines and water
-map_ax.add_feature(cfeature.LAND, facecolor='lightgrey')
-map_ax.coastlines()
-
-# Add gridlines
-gl = map_ax.gridlines(draw_labels=True,
-                      x_inline=False,
-                      y_inline=False,
-                      color='black',
-                      alpha=0.5,
-                      linestyle='--')
-# Get rid of top and right side labels
-gl.top_labels = False
-gl.right_labels = False
-# Get grided data from GDAL dataset
-data = raster.GetRasterBand(1).ReadAsArray()
-# Mask out any values that are = to fill_value
-Fill_Value=0
-data_masked = np.ma.masked_where(data==Fill_Value, data)
-# Plot filled contours onto axes
-filled_contours = map_ax.contourf(data_masked,
-                                  extent=extent,
-                                  origin='upper',
-                                  transform=ccrs.PlateCarree(),
-                                  levels=clevels,
-                                  colors=ccolors,
-                                  alpha=0.6)
-# Also add line contours
-custom_cmap = LinearSegmentedColormap.from_list("my_cmap", ccolors)
-line_contours = map_ax.contour(data_masked,
-                               extent=extent,
-                               origin='upper',
-                               levels=clevels,
-                               #colors=ccolors,
-                               colors='black',
-                               linewidths=0.5,
-                               transform=ccrs.PlateCarree())
-
-# Create proxies for contour colors for legend later on
-proxy = [plt.Rectangle((0,0),1,1,fc = pc.get_facecolor()[0])
-    for pc in filled_contours.collections]
-# Plot source location as red triangle
-volc_map = map_ax.scatter(srcx,srcy,
-                          s=60,
-                          color = 'm',
-                          marker='^',
-                          transform=ccrs.PlateCarree(),
-                          edgecolors='black',
-                          zorder=3)
-city_x=[]
-city_y=[]
-city_n=[]
-try:
-  with open('cities.xy','r') as f:
-    for line in f:
-      parts = line.strip().split()
-      if len(parts) == 3:
-        city_x.append(float(parts[0]))
-        city_y.append(float(parts[1]))
-        city_n.append(parts[2])
-except FileNotFoundError:
-    print("Error: cities.xy not found.")
-    exit()
-
-city_map = map_ax.scatter(city_x,city_y,
-                          s=40,
-                          color = 'k',
-                          marker='o',
-                          transform=ccrs.PlateCarree(),
-                          edgecolors='black',
-                          zorder=3)
-
-for i, label in enumerate(city_n):
-    city_name=label.replace("\"", "")
-    map_ax.annotate(city_name,
-                    xy=(city_x[i], city_y[i]),
-                    xytext=(3, 3),
-                    textcoords="offset points",
-                    transform=ccrs.PlateCarree(),
-                    annotation_clip=True,
-                    fontsize=10,
-                    fontweight=300,
-                    color="black")
-# Draw legend
-map_ax.legend(proxy,tlevels,loc='center left', bbox_to_anchor=(1.05, 0.5),
-                framealpha=0.9,title=title_legend)
-
-# Draw USGS logo
-logo = mpimg.imread(logo_file)
-main_fig.figimage(logo, 700, 50, zorder=3, alpha=0.7) # Adjust position, zorder, and alpha as needed
-
-# Annotations
-map_ax.annotate(annotation_text1,
-            xy=(-0.1, -0.75),xycoords='axes fraction',xytext=(20, 20),
-            textcoords='offset points',va='bottom',ha='left')
-map_ax.annotate(annotation_text2,
-            xy=(0.4, -0.75),xycoords='axes fraction',xytext=(20, 20),
-            textcoords='offset points',va='bottom',ha='left')
-
-main_fig.tight_layout()
-
-# main_fig.savefig('ash_prob_map_'+date.strftime(format='%-m_%-d_%Y')+'.pdf',dpi=300)
-plt.title(title_plot)
-main_fig.savefig(f'temp'+'.png',dpi=100)
+      ! (1) Download anaconda:
+      !   curl -O https://repo.anaconda.com/archive/Anaconda3-2025.06-0-Linux-x86_64.sh
+      ! 
+      ! (2) Install:
+      !   bash ~/Anaconda3-2025.06-0-Linux-x86_64.sh
+      !  Accept terms of service.
+      !  Accept default install location: ~/anaconda3
+      !  Choose 'no' when asked about editing start-up scripts.
+      ! 
+      ! (3) Initialize anaconda manually.
+      !   export PATH="/home/hschwaiger/anaconda3/bin:$PATH"
+      !   conda init
+      ! 
+      ! (4) Install the packages your script needs:
+      !   conda install -c scitools cartopy
+      !   conda install -c conda-forge gdal
 
 
+      write(fid_script,*)"import cartopy.feature as cfeature"
+      write(fid_script,*)"import cartopy.crs as ccrs"
+      write(fid_script,*)"import matplotlib.pyplot as plt"
+      write(fid_script,*)"from mpl_toolkits.axes_grid1.inset_locator import inset_axes"
+      write(fid_script,*)"import matplotlib.image as mpimg"
+      write(fid_script,*)"from matplotlib.colors import LinearSegmentedColormap"
+      write(fid_script,*)"from matplotlib.offsetbox import OffsetImage, AnnotationBbox, TextArea"
+      write(fid_script,*)"import numpy as np"
+      write(fid_script,*)"from osgeo import gdal, osr"
+      write(fid_script,*)"import linecache"
+      write(fid_script,*)" "
+      write(fid_script,*)"def get_extent(gdal_ds, A3D_input_fn):"
+      write(fid_script,*)"    Xsize = gdal_ds.RasterXSize"
+      write(fid_script,*)"    Ysize = gdal_ds.RasterYSize"
+      write(fid_script,*)"    cellsize = gdal_ds.GetGeoTransform()[1]"
+      write(fid_script,*)"    xcorner, ycorner = get_proj_info(A3D_input_fn)"
+      write(fid_script,*)"    minx = xcorner+cellsize"
+      write(fid_script,*)"    miny = ycorner+cellsize"
+      write(fid_script,*)"    maxx = minx + (cellsize*Xsize)"
+      write(fid_script,*)"    maxy = miny + (cellsize*Ysize)"
+      write(fid_script,*)"    return [minx, maxx, miny, maxy]"
+      write(fid_script,*)" "
+      write(fid_script,*)"def get_proj_info(fn):"
+      write(fid_script,*)"    xl_corner = linecache.getline(fn, 3)"
+      write(fid_script,*)"    yl_corner = linecache.getline(fn, 4)"
+      write(fid_script,*)"    return float(xl_corner.split()[1]), float(yl_corner.split()[1])"
+      write(fid_script,*)" "
+      write(fid_script,*)"def draw_logo(ax,fn):"
+      write(fid_script,*)"    # Create background box"
+      write(fid_script,*)"    ax_inset = inset_axes("
+      write(fid_script,*)"        ax,"
+      write(fid_script,*)'        width="18%",'
+      write(fid_script,*)'        height="7%",'
+      write(fid_script,*)"        borderpad=.5,"
+      write(fid_script,*)'        loc="upper right"'
+      write(fid_script,*)"    )"
+      write(fid_script,*)" "
+      write(fid_script,*)"    img = mpimg.imread(fn)"
+      write(fid_script,*)" "
+      write(fid_script,*)"    # ax.patch.set_alpha(0.5)"
+      write(fid_script,*)"    # Remove axis borders"
+      write(fid_script,*)"    # ax_inset.set_axis_off()"
+      write(fid_script,*)"    ax_inset.set_xticks([])"
+      write(fid_script,*)"    ax_inset.set_yticks([])"
+      write(fid_script,*)"    ax_inset.set_facecolor([1,1,1,0.8])"
+      write(fid_script,*)" "
+      write(fid_script,*)"    ax_logo = inset_axes("
+      write(fid_script,*)"        ax_inset,"
+      write(fid_script,*)'        width="90%",'
+      write(fid_script,*)'        height="90%",'
+      write(fid_script,*)'        loc="center"'
+      write(fid_script,*)"    )"
+      write(fid_script,*)" "
+      write(fid_script,*)"    ax_logo.imshow(img)"
+      write(fid_script,*)"    ax_logo.set_axis_off()"
+      write(fid_script,*)" "
+      write(fid_script,*)"    return None"
+      write(fid_script,*)" "
+      write(fid_script,*)"# USGS logo"
+      write(fid_script,*)"logo_file = '/opt/USGS/Ash3d/share/post_proc/logo.png'"
+      write(fid_script,*)" "
+      write(fid_script,*)"# Run values"
+      write(fid_script,*)"srcx=",lon_volcano
+      write(fid_script,*)"srcy=",lat_volcano
+      write(fid_script,*)" "
+      write(fid_script,*)"#######################################"
+      write(fid_script,*)"# Product values"
+      write(fid_script,*)'grid_file="outvar.dat"'
+      write(fid_script,*)'title_plot="',title_plot,'"'
+      write(fid_script,*)'title_legend="',title_legend,'"'
+      write(fid_script,*)"clevels=[0.01, 0.03, 0.1, 0.3, 1.0, 3.0, 10.0, 30.0, 100.0, 300.0]"
+      write(fid_script,*)"ccolors=[( 0.84,0.87,0.41 ),"
+      write(fid_script,*)"         ( 0.98,0.65,0.44 ),"
+      write(fid_script,*)"         ( 0.50,0.00,0.50 ),"
+      write(fid_script,*)"         ( 0.00,0.00,1.00 ),"
+      write(fid_script,*)"         ( 0.00,0.50,1.00 ),"
+      write(fid_script,*)"         ( 0.00,1.00,0.50 ),"
+      write(fid_script,*)"         ( 0.76,0.76,0.00 ),"
+      write(fid_script,*)"         ( 1.00,0.50,0.00 ),"
+      write(fid_script,*)"         ( 1.00,0.00,0.00 ),"
+      write(fid_script,*)"         ( 0.50,0.00,0.00 )]"
+      write(fid_script,*)"tlevels=['0.01', '0.03', '0.1', '0.3', '1.0', '3.0', '10.0', '30.0', '100.0', '300.0']"
+      write(fid_script,*)" "
+      write(fid_script,*)'txt_vname_dat="',VolcanoName,'"'
+      write(fid_script,*)'txt_RunDate_dat="',os_time_log,'"'
+      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
 
+      write(fid_script,*)'txt_Windfile_dat="',iwf,'"'
+      write(fid_script,*)'txt_ESrtTime_dat="',HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap),'"'
+      write(fid_script,*)'txt_EPlmH_dat="',real(e_PlumeHeight(1),kind=4),'"'
+      write(fid_script,*)'txt_EDur_dat="',real(e_Duration(1),kind=4),'"'
+      write(fid_script,*)'txt_EVol_dat="',real(e_Volume(1),kind=4),'"'
+      write(fid_script,*)" "
+      write(fid_script,*)"#######################################"
+      write(fid_script,*)'txt_vname="Volcano: "'
+      write(fid_script,*)'txt_RunDate="Run Date: "'
+      write(fid_script,*)'txt_Windfile="Windfile: "'
+      write(fid_script,*)'txt_ESrtTime="Erup. Start Time: "'
+      write(fid_script,*)'txt_EPlmH="Erup Plume Height: "'
+      write(fid_script,*)'txt_EDur="Erup. Duration: "'
+      write(fid_script,*)'txt_EVol="Erup. Volume: "'
+      write(fid_script,*)'txt_EPlmH_unit=" km"'
+      write(fid_script,*)'txt_EDur_unit=" hours"'
+      write(fid_script,*)'txt_EVol_unit=" km3 (DRE)"'
+      write(fid_script,*)" "
+      write(fid_script,*)'annotation_text1 = txt_vname    + txt_vname_dat   + "\n" + \'
+      write(fid_script,*)'                   txt_RunDate  + txt_RunDate_dat + "\n" + \'
+      write(fid_script,*)'                   txt_Windfile + txt_Windfile_dat'
+      write(fid_script,*)'annotation_text2 = txt_ESrtTime + txt_ESrtTime_dat + "\n" + \'
+      write(fid_script,*)'                   txt_EPlmH    + txt_EPlmH_dat    + txt_EPlmH_unit + "\n" + \'
+      write(fid_script,*)'                   txt_EDur     + txt_EDur_dat     + txt_EDur_unit  + "\n" + \'
+      write(fid_script,*)'                   txt_EVol     + txt_EVol_dat     + txt_EVol_unit'
+      write(fid_script,*)" "
+      write(fid_script,*)"###################### OPEN ASH DATA FILE AND GET GEOTRANSFORM #######################"
+      write(fid_script,*)"# Open raster with GDAL"
+      write(fid_script,*)"raster = gdal.Open(grid_file)"
+      write(fid_script,*)"# Get lat/lon extent of raster"
+      write(fid_script,*)"extent = get_extent(raster, grid_file)"
+      write(fid_script,*)" "
+      write(fid_script,*)"############################# PLOT ######################################"
+      write(fid_script,*)"# Create figure"
+      write(fid_script,*)"main_fig = plt.figure(figsize=(8.5, 6))"
+      write(fid_script,*)"# Create geospatial matplotlib axes with CartoPy."
+      write(fid_script,*)"# Use a PlateCarree projection for now"
+      write(fid_script,*)"cen_lon=extent[2] - extent[1]"
+      write(fid_script,*)"img_extent = extent"
+      write(fid_script,*)"projection = ccrs.PlateCarree(central_longitude=cen_lon)  ",&
+                         "# this is the Cartopy bit"
+      write(fid_script,*)"map_ax = main_fig.add_subplot(projection=projection)      ",&
+                         "# create the matplotlib mapping with this projection"
+      write(fid_script,*)"map_ax.set_extent(img_extent)"
+      write(fid_script,*)" "
+      write(fid_script,*)"# Add coastlines and water"
+      write(fid_script,*)"map_ax.add_feature(cfeature.LAND, facecolor='lightgrey')"
+      write(fid_script,*)"map_ax.coastlines()"
+      write(fid_script,*)" "
+      write(fid_script,*)"# Add gridlines"
+      write(fid_script,*)"gl = map_ax.gridlines(draw_labels=True,"
+      write(fid_script,*)"                      x_inline=False,"
+      write(fid_script,*)"                      y_inline=False,"
+      write(fid_script,*)"                      color='black',"
+      write(fid_script,*)"                      alpha=0.5,"
+      write(fid_script,*)"                      linestyle='--')"
+      write(fid_script,*)"# Get rid of top and right side labels"
+      write(fid_script,*)"gl.top_labels = False"
+      write(fid_script,*)"gl.right_labels = False"
+      write(fid_script,*)"# Get grided data from GDAL dataset"
+      write(fid_script,*)"data = raster.GetRasterBand(1).ReadAsArray()"
+      write(fid_script,*)"# Mask out any values that are = to fill_value"
+      write(fid_script,*)"Fill_Value=0"
+      write(fid_script,*)"data_masked = np.ma.masked_where(data==Fill_Value, data)"
+      write(fid_script,*)"# Plot filled contours onto axes"
+      write(fid_script,*)"filled_contours = map_ax.contourf(data_masked,"
+      write(fid_script,*)"                                  extent=extent,"
+      write(fid_script,*)"                                  origin='upper',"
+      write(fid_script,*)"                                  transform=ccrs.PlateCarree(),"
+      write(fid_script,*)"                                  levels=clevels,"
+      write(fid_script,*)"                                  colors=ccolors,"
+      write(fid_script,*)"                                  alpha=0.6)"
+      write(fid_script,*)"# Also add line contours"
+      write(fid_script,*)'custom_cmap = LinearSegmentedColormap.from_list("my_cmap", ccolors)'
+      write(fid_script,*)"line_contours = map_ax.contour(data_masked,"
+      write(fid_script,*)"                               extent=extent,"
+      write(fid_script,*)"                               origin='upper',"
+      write(fid_script,*)"                               levels=clevels,"
+      write(fid_script,*)"                               colors='black',"
+      write(fid_script,*)"                               linewidths=0.5,"
+      write(fid_script,*)"                               transform=ccrs.PlateCarree())"
+      write(fid_script,*)" "
+      write(fid_script,*)"# Create proxies for contour colors for legend later on"
+      write(fid_script,*)"proxy = [plt.Rectangle((0,0),1,1,fc = pc.get_facecolor()[0])"
+      write(fid_script,*)"    for pc in filled_contours.collections]"
+      write(fid_script,*)"# Plot source location as red triangle"
+      write(fid_script,*)"volc_map = map_ax.scatter(srcx,srcy,"
+      write(fid_script,*)"                          s=60,"
+      write(fid_script,*)"                          color = 'm',"
+      write(fid_script,*)"                          marker='^',"
+      write(fid_script,*)"                          transform=ccrs.PlateCarree(),"
+      write(fid_script,*)"                          edgecolors='black',"
+      write(fid_script,*)"                          zorder=3)"
+      write(fid_script,*)"city_x=[]"
+      write(fid_script,*)"city_y=[]"
+      write(fid_script,*)"city_n=[]"
+      write(fid_script,*)"try:"
+      write(fid_script,*)"  with open('cities.xy','r') as f:"
+      write(fid_script,*)"    for line in f:"
+      write(fid_script,*)"      parts = line.strip().split()"
+      write(fid_script,*)"      if len(parts) == 3:"
+      write(fid_script,*)"        city_x.append(float(parts[0]))"
+      write(fid_script,*)"        city_y.append(float(parts[1]))"
+      write(fid_script,*)"        city_n.append(parts[2])"
+      write(fid_script,*)"except FileNotFoundError:"
+      write(fid_script,*)'    print("Error: cities.xy not found.")'
+      write(fid_script,*)"    exit()"
+      write(fid_script,*)" "
+      write(fid_script,*)"city_map = map_ax.scatter(city_x,city_y,"
+      write(fid_script,*)"                          s=40,"
+      write(fid_script,*)"                          color = 'k',"
+      write(fid_script,*)"                          marker='o',"
+      write(fid_script,*)"                          transform=ccrs.PlateCarree(),"
+      write(fid_script,*)"                          edgecolors='black',"
+      write(fid_script,*)"                          zorder=3)"
+      write(fid_script,*)" "
+      write(fid_script,*)"for i, label in enumerate(city_n):"
+      write(fid_script,*)'    city_name=label.replace("\"", "")'
+      write(fid_script,*)"    map_ax.annotate(city_name,"
+      write(fid_script,*)"                    xy=(city_x[i], city_y[i]),"
+      write(fid_script,*)"                    xytext=(3, 3),"
+      write(fid_script,*)'                    textcoords="offset points",'
+      write(fid_script,*)"                    transform=ccrs.PlateCarree(),"
+      write(fid_script,*)"                    annotation_clip=True,"
+      write(fid_script,*)"                    fontsize=10,"
+      write(fid_script,*)"                    fontweight=300,"
+      write(fid_script,*)'                    color="black")'
+      write(fid_script,*)"# Draw legend"
+      write(fid_script,*)"map_ax.legend(proxy,tlevels,loc='center left', bbox_to_anchor=(1.05, 0.5),"
+      write(fid_script,*)"                framealpha=0.9,title=title_legend)"
+      write(fid_script,*)" "
+      write(fid_script,*)"# Draw USGS logo"
+      write(fid_script,*)"logo = mpimg.imread(logo_file)"
+      write(fid_script,*)"main_fig.figimage(logo, 700, 50, zorder=3, alpha=0.7) ",&
+                         "# Adjust position, zorder, and alpha as needed"
+      write(fid_script,*)" "
+      write(fid_script,*)"# Annotations"
+      write(fid_script,*)"map_ax.annotate(annotation_text1,"
+      write(fid_script,*)"            xy=(-0.1, -0.75),xycoords='axes fraction',xytext=(20, 20),"
+      write(fid_script,*)"            textcoords='offset points',va='bottom',ha='left')"
+      write(fid_script,*)"map_ax.annotate(annotation_text2,"
+      write(fid_script,*)"            xy=(0.4, -0.75),xycoords='axes fraction',xytext=(20, 20),"
+      write(fid_script,*)"            textcoords='offset points',va='bottom',ha='left')"
+      write(fid_script,*)" "
+      write(fid_script,*)"main_fig.tight_layout()"
+      write(fid_script,*)" "
+      write(fid_script,*)"plt.title(title_plot)"
+      write(fid_script,*)"main_fig.savefig(f'temp'+'.png',dpi=100)"
 
       close(fid_script)
 
-      write(plotcom,'(a11,a14)')'python -p ',filename_script
+      write(plotcom,'(a11,a14)')'python ',filename_script
       call execute_command_line(plotcom,exitstat=iostatus)
 
-      if(writeContours)then
-
-        ! Read outvar.con
-        do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"Now reading outvar.con and loading contour data."
-        endif;enddo
-        open(unit=fid_contourdata,file=filename_contourdata,status='old',err=9001)
-        ! In the python contour file, all contours of a certain level have a header
-        ! in the following format:
-        !# Contour 0, label:      300
-        ! Each curve for that level is separated by a blank line
-        ! Gnuplot writes the contour data to file starting with the highest level
-        ! so we will need to check with zlev(:) to make sure we populate ContourDat
-        ! correctly.
-        ilev = -1
-        ignulev = -1
-        read(fid_contourdata,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-
-        linebuffer050 = "Reading line from contour file"
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-        do while(iostatus.eq.0)
-          ! Check if this is a header line
-          read(linebuffer080,*,iostat=ioerr,iomsg=iomessage)testkey
-          if(ioerr.lt.0)then
-            ! if there was an error trying to read a character, then this is a blank
-            ! line; check if we are in a contour block or still in the file header
-            if(ignulev.eq.-1)then
-              ! Still in file header
-              ! Read the next line and cycle
-              read(fid_contourdata,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-              !if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-              cycle
-            else
-              ! Blank line in a contour block means we are starting another curve
-              ! Increment the number of curves for this level
-              ContourDataNcurves(ilev) = ContourDataNcurves(ilev) + 1
-              if(ContourDataNcurves(ilev).gt.CONTOUR_MAXCURVES)then
-                do io=1,2;if(VB(io).le.verbosity_error)then
-                  write(errlog(io),*)"ERROR: Maximum number of curves for this level exceeded by python"
-                  write(errlog(io),*)"       Current maximum set to CONTOUR_MAXCURVES = ",CONTOUR_MAXCURVES
-                  write(errlog(io),*)"       Please increase CONTOUR_MAXCURVES and recompile."
-                  write(errlog(io),*)"  Output_Vars.f90:CONTOUR_MAXCURVES"
-                endif;enddo
-                stop 1
-              endif
-              ! This is an easier index to used
-              icurve = ContourDataNcurves(ilev)
-            endif
-          elseif(testkey.eq.'#')then
-            ! This is a header line
-            ! There are two possibilities:
-            !  (1) a line of the file header
-            !  (2) the start of a contour block
-            !   if (2), then it will have this format:# Contour 0, label:      300
-            substr_pos1 = index(linebuffer080,'Contour')
-
-            if(substr_pos1.eq.0)then
-              ! This is a file header line
-              read(fid_contourdata,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-              cycle
-            else
-              ! Here is the expected format, so start reading from character 10
-              !# Contour 10, label:        2
-              read(linebuffer080(10:),*,iostat=ioerr,iomsg=iomessage)ignulev
-              linebuffer050 = "Reading line from contour file, ignulev"
-              if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-              ! Now read the level. Look for the ':' to isolate the last bit
-              substr_pos1 = index(linebuffer080,':')
-              ! Also look for a '.' or an 'e' to see if the level value is written as a real or int
-              substr_pos2 = index(linebuffer080,'.')
-              substr_pos3 = index(linebuffer080(substr_pos1:),'e')
-              if(substr_pos2.gt.0.or.substr_pos3.gt.0)then
-                ! level is written as real
-                read(linebuffer080(substr_pos1+1:),*,iostat=iostatus,iomsg=iomessage)lev_r4
-                linebuffer050 = "Reading line from contour file, lev_r4"
-                if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-              else
-                read(linebuffer080(substr_pos1+1:),*,iostat=iostatus,iomsg=iomessage)lev_i
-                linebuffer050 = "Reading line from contour file, lev_i"
-                if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-                lev_r4 = real(lev_i,kind=4)
-              endif
-              ! The value for this new level ignulev is lev_r4, but we need to find which
-              ! ContourLev this corresponds to
-              do ii = 1,nConLev
-                if(abs(lev_r4-real(ContourLev(ii),kind=4)).lt.EPS_SMALL)then
-                  ilev=ii
-                endif
-              enddo
-              ! When we have a new level, initialize the curve index for this level to 1
-              ContourDataNcurves(ilev) = 1
-              icurve = ContourDataNcurves(ilev)
-            endif
-          else
-            ! This is the data section
-            ! Increment the number of points
-            ContourDataNpoints(ilev,icurve) = ContourDataNpoints(ilev,icurve) + 1
-            if(ContourDataNpoints(ilev,icurve).gt.CONTOUR_MAXPOINTS)then
-              do io=1,2;if(VB(io).le.verbosity_error)then
-                write(errlog(io),*)"ERROR: Maximum number of points for this curve exceeded by GMT"
-                write(errlog(io),*)"       Current maximum set to CONTOUR_MAXPOINTS = ",CONTOUR_MAXPOINTS
-                write(errlog(io),*)"       Please increase CONTOUR_MAXPOINTS and recompile."
-                write(errlog(io),*)"  Output_Vars.f90:CONTOUR_MAXPOINTS"
-              endif;enddo
-              stop 1
-            endif
-            ipt = ContourDataNpoints(ilev,icurve)
-            read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) &
-                       ContourDataX(ilev,icurve,ipt),ContourDataY(ilev,icurve,ipt)
-            linebuffer050 = "Reading line from contour file, x,y"
-            if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-          endif
-
-          ! Try to read the next line
-          read(fid_contourdata,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-        enddo
-        close(unit=fid_contourdata)
-
-        ! Loop through all the levels and curves and trim any curves with zero length
-        do i=1,nConLev
-          icurve = CONTOUR_MAXCURVES + 1
-          do ii = CONTOUR_MAXCURVES,1,-1
-            if(ContourDataNpoints(i,ii).le.0)then
-              ! log each curve number with no points
-              icurve = ii
-            endif
-          enddo
-          ContourDataNcurves(i) = max(0,icurve-1)
-        enddo
-
-      endif
+!      if(writeContours)then
+!
+!        ! Read outvar.con
+!        do io=1,2;if(VB(io).le.verbosity_info)then
+!          write(outlog(io),*)"Now reading outvar.con and loading contour data."
+!        endif;enddo
+!        open(unit=fid_contourdata,file=filename_contourdata,status='old',err=9001)
+!        ! In the python contour file, all contours of a certain level have a header
+!        ! in the following format:
+!        !# Contour 0, label:      300
+!        ! Each curve for that level is separated by a blank line
+!        ! Gnuplot writes the contour data to file starting with the highest level
+!        ! so we will need to check with zlev(:) to make sure we populate ContourDat
+!        ! correctly.
+!        ilev = -1
+!        ignulev = -1
+!        read(fid_contourdata,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+!
+!        linebuffer050 = "Reading line from contour file"
+!        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+!        do while(iostatus.eq.0)
+!          ! Check if this is a header line
+!          read(linebuffer080,*,iostat=ioerr,iomsg=iomessage)testkey
+!          if(ioerr.lt.0)then
+!            ! if there was an error trying to read a character, then this is a blank
+!            ! line; check if we are in a contour block or still in the file header
+!            if(ignulev.eq.-1)then
+!              ! Still in file header
+!              ! Read the next line and cycle
+!              read(fid_contourdata,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+!              !if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+!              cycle
+!            else
+!              ! Blank line in a contour block means we are starting another curve
+!              ! Increment the number of curves for this level
+!              ContourDataNcurves(ilev) = ContourDataNcurves(ilev) + 1
+!              if(ContourDataNcurves(ilev).gt.CONTOUR_MAXCURVES)then
+!                do io=1,2;if(VB(io).le.verbosity_error)then
+!                  write(errlog(io),*)"ERROR: Maximum number of curves for this level exceeded by python"
+!                  write(errlog(io),*)"       Current maximum set to CONTOUR_MAXCURVES = ",CONTOUR_MAXCURVES
+!                  write(errlog(io),*)"       Please increase CONTOUR_MAXCURVES and recompile."
+!                  write(errlog(io),*)"  Output_Vars.f90:CONTOUR_MAXCURVES"
+!                endif;enddo
+!                stop 1
+!              endif
+!              ! This is an easier index to used
+!              icurve = ContourDataNcurves(ilev)
+!            endif
+!          elseif(testkey.eq.'#')then
+!            ! This is a header line
+!            ! There are two possibilities:
+!            !  (1) a line of the file header
+!            !  (2) the start of a contour block
+!            !   if (2), then it will have this format:# Contour 0, label:      300
+!            substr_pos1 = index(linebuffer080,'Contour')
+!
+!            if(substr_pos1.eq.0)then
+!              ! This is a file header line
+!              read(fid_contourdata,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+!              cycle
+!            else
+!              ! Here is the expected format, so start reading from character 10
+!              !# Contour 10, label:        2
+!              read(linebuffer080(10:),*,iostat=ioerr,iomsg=iomessage)ignulev
+!              linebuffer050 = "Reading line from contour file, ignulev"
+!              if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+!              ! Now read the level. Look for the ':' to isolate the last bit
+!              substr_pos1 = index(linebuffer080,':')
+!              ! Also look for a '.' or an 'e' to see if the level value is written as a real or int
+!              substr_pos2 = index(linebuffer080,'.')
+!              substr_pos3 = index(linebuffer080(substr_pos1:),'e')
+!              if(substr_pos2.gt.0.or.substr_pos3.gt.0)then
+!                ! level is written as real
+!                read(linebuffer080(substr_pos1+1:),*,iostat=iostatus,iomsg=iomessage)lev_r4
+!                linebuffer050 = "Reading line from contour file, lev_r4"
+!                if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+!              else
+!                read(linebuffer080(substr_pos1+1:),*,iostat=iostatus,iomsg=iomessage)lev_i
+!                linebuffer050 = "Reading line from contour file, lev_i"
+!                if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+!                lev_r4 = real(lev_i,kind=4)
+!              endif
+!              ! The value for this new level ignulev is lev_r4, but we need to find which
+!              ! ContourLev this corresponds to
+!              do ii = 1,nConLev
+!                if(abs(lev_r4-real(ContourLev(ii),kind=4)).lt.EPS_SMALL)then
+!                  ilev=ii
+!                endif
+!              enddo
+!              ! When we have a new level, initialize the curve index for this level to 1
+!              ContourDataNcurves(ilev) = 1
+!              icurve = ContourDataNcurves(ilev)
+!            endif
+!          else
+!            ! This is the data section
+!            ! Increment the number of points
+!            ContourDataNpoints(ilev,icurve) = ContourDataNpoints(ilev,icurve) + 1
+!            if(ContourDataNpoints(ilev,icurve).gt.CONTOUR_MAXPOINTS)then
+!              do io=1,2;if(VB(io).le.verbosity_error)then
+!                write(errlog(io),*)"ERROR: Maximum number of points for this curve exceeded by GMT"
+!                write(errlog(io),*)"       Current maximum set to CONTOUR_MAXPOINTS = ",CONTOUR_MAXPOINTS
+!                write(errlog(io),*)"       Please increase CONTOUR_MAXPOINTS and recompile."
+!                write(errlog(io),*)"  Output_Vars.f90:CONTOUR_MAXPOINTS"
+!              endif;enddo
+!              stop 1
+!            endif
+!            ipt = ContourDataNpoints(ilev,icurve)
+!            read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) &
+!                       ContourDataX(ilev,icurve,ipt),ContourDataY(ilev,icurve,ipt)
+!            linebuffer050 = "Reading line from contour file, x,y"
+!            if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+!          endif
+!
+!          ! Try to read the next line
+!          read(fid_contourdata,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+!        enddo
+!        close(unit=fid_contourdata)
+!
+!        ! Loop through all the levels and curves and trim any curves with zero length
+!        do i=1,nConLev
+!          icurve = CONTOUR_MAXCURVES + 1
+!          do ii = CONTOUR_MAXCURVES,1,-1
+!            if(ContourDataNpoints(i,ii).le.0)then
+!              ! log each curve number with no points
+!              icurve = ii
+!            endif
+!          enddo
+!          ContourDataNcurves(i) = max(0,icurve-1)
+!        enddo
+!
+!      endif
 
       ! Clean up
       if (CleanScripts_python) then
@@ -1000,123 +1009,123 @@ main_fig.savefig(f'temp'+'.png',dpi=100)
 
       integer, intent (in) :: vprof_ID
 
-      character(len=14) :: filename_script
-      character(len=14) :: filename_outdata
-      character(len=14) :: dp_pngfile
-      integer           :: fid_script  = 55
-      integer           :: fid_outdata  = 54
-      !integer           :: dp_pngfileID  = 53
-      character(len=27) :: coord_str
-      character(len=25) :: plotcom
-      integer :: k,i
-      integer :: ioerr,iw,iwf
-      character(len=200) :: cmd
-
-      real(kind=ip)  :: tmin
-      real(kind=ip)  :: tmax
-      real(kind=ip)  :: zmin
-      real(kind=ip)  :: zmax
-      real(kind=ip)  :: cloudcon_thresh_mgm3
-      real(kind=ip)  :: cmin
-      real(kind=ip)  :: cmax
-
-      INTERFACE
-        character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
-        end function HS_xmltime
-      END INTERFACE
-
-      write(filename_outdata,53) vprof_ID,".dat"
-      write(filename_script,53) vprof_ID,".gpi"
-      write(dp_pngfile,54) vprof_ID,".png"
- 53   format('vprof_',i4.4,a4)
- 54   format('gnupl_',i4.4,a4)
-
-      cloudcon_thresh_mgm3 = CLOUDCON_THRESH * KG_2_MG / KM3_2_M3 !convert from kg/km3 to mg/m3
-
-      tmin=real(0.0,kind=ip)
-      tmax=real(ceiling(time_native(ntmax)),kind=ip)
-      zmin=real(0.0,kind=ip)
-      zmax=real(z_cc_pd(nzmax),kind=ip)
-      cmin=real(0.0,kind=ip)
-      cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=ip)       ! Get the max value for this profile
-      cmax=real(max(cmax,cloudcon_thresh_mgm3),kind=ip)  ! Do not let cmax drop below the threshold
-
-      open(fid_outdata,file=filename_outdata,status='replace')
-      do i = 1,ntmax
-        do k = 1,nzmax
-          write(fid_outdata,*)time_native(i),z_cc_pd(k),pr_ash(k,i,vprof_ID)
-        enddo
-        write(fid_outdata,*)""
-      enddo
-      close(fid_outdata)
-
-      if(IsLatLon)then
-        write(coord_str,101)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
-      else
-        write(coord_str,102)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
-      endif
- 101  format(' (lon=',f7.2,',  lat=',f6.2,')')
- 102  format(' (x=',f9.3,', y=',f9.3,')')
-      ! Set up to plot via python script
-      open(fid_script,file=filename_script,status='replace')
-      write(fid_script,*)"set terminal pngcairo font 'sans,12' size 854,603"   ! Set the image size
-      write(fid_script,*)"set origin 0, .10"
-      write(fid_script,*)"set size 0.85, 0.9"              ! Set x and y scale for plot
-      write(fid_script,*)"set ylabel 'Height (km)'"
-      write(fid_script,*)"set xlabel 'Time (hours after eruption)'"
-      write(fid_script,*)"set output '",dp_pngfile,"'"
-      write(fid_script,*)"set title '",&
-                           trim(adjustl(Site_vprofile(vprof_ID))),&
-                           coord_str,"'"
-      write(fid_script,*)"set isosamples 50"
-      write(fid_script,*)"set pm3d"
-      write(fid_script,*)"set palette cubehelix negative"
-      write(fid_script,*)"unset surface"
-      write(fid_script,*)"set view map"
-      write(fid_script,*)"set key off"
-
-      write(fid_script,*)"XMIN = 0.0"
-      write(fid_script,*)"YMIN = 0.0"
-      write(fid_script,*)"XMAX = ",time_native(ntmax)
-      write(fid_script,*)"YMAX = ",z_cc_pd(nzmax)
-      write(fid_script,*)"XVAL = -XMAX*0.1"
-      write(fid_script,*)"YVAL = -YMAX*0.25"
-      
-      write(fid_script,*)"set label 'Volcano: " ,VolcanoName,&
-                           "' at XVAL, YVAL font 'sans,9'"
-      write(fid_script,*)"set label 'Run Date: ",os_time_log,&
-                  "' at XVAL, YVAL font 'sans,9' offset character 0,-1"
-      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
-      write(fid_script,*)"set label 'Windfile: ",iwf,&
-                "' at XVAL, YVAL font 'sans,9' offset character 0,-2"
-
-      write(fid_script,*)"XVAL = XMAX*0.4"
-      write(fid_script,*)"set label 'Erup. Start Time: ",HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap),&
-                "' at XVAL, YVAL font 'sans,9'"
-      write(fid_script,*)"set label 'Erup. Plume Height: ",real(e_PlumeHeight(1),kind=4),&
-                " km' at XVAL, YVAL font 'sans,9' offset character 0,-1"
-      write(fid_script,*)"set label 'Erup. Duration: ",real(e_Duration(1),kind=4),&
-                " hours' at XVAL, YVAL font 'sans,9' offset character 0,-2"
-      write(fid_script,*)"set label 'Erup. Volume: ",real(e_Volume(1),kind=4),&
-                " km3 (DRE)' at XVAL, YVAL font 'sans,9' offset character 0,-3"
-
-      write(fid_script,*)"set cblabel 'Ash con. in mg/m3'"
-      write(fid_script,*)"splot '",filename_outdata,"'"
-
-      close(fid_script)
-
-      write(plotcom,'(a11,a14)')'python -p ',filename_script
-      call execute_command_line(plotcom)
-
-      ! Clean up
-      if (CleanScripts_python) then
-        cmd = "rm -f outvar.* volc.dat vprof_*dat vprof_*gpi"
-        call execute_command_line(trim(adjustl(cmd)))
-      endif
-
+!      character(len=14) :: filename_script
+!      character(len=14) :: filename_outdata
+!      character(len=14) :: dp_pngfile
+!      integer           :: fid_script  = 55
+!      integer           :: fid_outdata  = 54
+!      !integer           :: dp_pngfileID  = 53
+!      character(len=27) :: coord_str
+!      character(len=25) :: plotcom
+!      integer :: k,i
+!      integer :: ioerr,iw,iwf
+!      character(len=200) :: cmd
+!
+!      real(kind=ip)  :: tmin
+!      real(kind=ip)  :: tmax
+!      real(kind=ip)  :: zmin
+!      real(kind=ip)  :: zmax
+!      real(kind=ip)  :: cloudcon_thresh_mgm3
+!      real(kind=ip)  :: cmin
+!      real(kind=ip)  :: cmax
+!
+!      INTERFACE
+!        character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
+!          real(kind=8),intent(in) :: HoursSince
+!          integer     ,intent(in) :: byear
+!          logical     ,intent(in) :: useLeaps
+!        end function HS_xmltime
+!      END INTERFACE
+!
+!      write(filename_outdata,53) vprof_ID,".dat"
+!      write(filename_script,53) vprof_ID,".gpi"
+!      write(dp_pngfile,54) vprof_ID,".png"
+! 53   format('vprof_',i4.4,a4)
+! 54   format('gnupl_',i4.4,a4)
+!
+!      cloudcon_thresh_mgm3 = CLOUDCON_THRESH * KG_2_MG / KM3_2_M3 !convert from kg/km3 to mg/m3
+!
+!      tmin=real(0.0,kind=ip)
+!      tmax=real(ceiling(time_native(ntmax)),kind=ip)
+!      zmin=real(0.0,kind=ip)
+!      zmax=real(z_cc_pd(nzmax),kind=ip)
+!      cmin=real(0.0,kind=ip)
+!      cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=ip)       ! Get the max value for this profile
+!      cmax=real(max(cmax,cloudcon_thresh_mgm3),kind=ip)  ! Do not let cmax drop below the threshold
+!
+!      open(fid_outdata,file=filename_outdata,status='replace')
+!      do i = 1,ntmax
+!        do k = 1,nzmax
+!          write(fid_outdata,*)time_native(i),z_cc_pd(k),pr_ash(k,i,vprof_ID)
+!        enddo
+!        write(fid_outdata,*)""
+!      enddo
+!      close(fid_outdata)
+!
+!      if(IsLatLon)then
+!        write(coord_str,101)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
+!      else
+!        write(coord_str,102)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
+!      endif
+! 101  format(' (lon=',f7.2,',  lat=',f6.2,')')
+! 102  format(' (x=',f9.3,', y=',f9.3,')')
+!      ! Set up to plot via python script
+!      open(fid_script,file=filename_script,status='replace')
+!      write(fid_script,*)"set terminal pngcairo font 'sans,12' size 854,603"   ! Set the image size
+!      write(fid_script,*)"set origin 0, .10"
+!      write(fid_script,*)"set size 0.85, 0.9"              ! Set x and y scale for plot
+!      write(fid_script,*)"set ylabel 'Height (km)'"
+!      write(fid_script,*)"set xlabel 'Time (hours after eruption)'"
+!      write(fid_script,*)"set output '",dp_pngfile,"'"
+!      write(fid_script,*)"set title '",&
+!                           trim(adjustl(Site_vprofile(vprof_ID))),&
+!                           coord_str,"'"
+!      write(fid_script,*)"set isosamples 50"
+!      write(fid_script,*)"set pm3d"
+!      write(fid_script,*)"set palette cubehelix negative"
+!      write(fid_script,*)"unset surface"
+!      write(fid_script,*)"set view map"
+!      write(fid_script,*)"set key off"
+!
+!      write(fid_script,*)"XMIN = 0.0"
+!      write(fid_script,*)"YMIN = 0.0"
+!      write(fid_script,*)"XMAX = ",time_native(ntmax)
+!      write(fid_script,*)"YMAX = ",z_cc_pd(nzmax)
+!      write(fid_script,*)"XVAL = -XMAX*0.1"
+!      write(fid_script,*)"YVAL = -YMAX*0.25"
+!      
+!      write(fid_script,*)"set label 'Volcano: " ,VolcanoName,&
+!                           "' at XVAL, YVAL font 'sans,9'"
+!      write(fid_script,*)"set label 'Run Date: ",os_time_log,&
+!                  "' at XVAL, YVAL font 'sans,9' offset character 0,-1"
+!      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
+!      write(fid_script,*)"set label 'Windfile: ",iwf,&
+!                "' at XVAL, YVAL font 'sans,9' offset character 0,-2"
+!
+!      write(fid_script,*)"XVAL = XMAX*0.4"
+!      write(fid_script,*)"set label 'Erup. Start Time: ",HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap),&
+!                "' at XVAL, YVAL font 'sans,9'"
+!      write(fid_script,*)"set label 'Erup. Plume Height: ",real(e_PlumeHeight(1),kind=4),&
+!                " km' at XVAL, YVAL font 'sans,9' offset character 0,-1"
+!      write(fid_script,*)"set label 'Erup. Duration: ",real(e_Duration(1),kind=4),&
+!                " hours' at XVAL, YVAL font 'sans,9' offset character 0,-2"
+!      write(fid_script,*)"set label 'Erup. Volume: ",real(e_Volume(1),kind=4),&
+!                " km3 (DRE)' at XVAL, YVAL font 'sans,9' offset character 0,-3"
+!
+!      write(fid_script,*)"set cblabel 'Ash con. in mg/m3'"
+!      write(fid_script,*)"splot '",filename_outdata,"'"
+!
+!      close(fid_script)
+!
+!      write(plotcom,'(a11,a14)')'python -p ',filename_script
+!      call execute_command_line(plotcom)
+!
+!      ! Clean up
+!      if (CleanScripts_python) then
+!        cmd = "rm -f outvar.* volc.dat vprof_*dat vprof_*gpi"
+!        call execute_command_line(trim(adjustl(cmd)))
+!      endif
+!
       end subroutine write_2Dprof_PNG_python
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1158,61 +1167,61 @@ main_fig.savefig(f'temp'+'.png',dpi=100)
       integer,save      :: plot_index = 0
       character(len=200) :: cmd
 
-      if(Airport_Thickness_TS(pt_indx,nWriteTimes).lt.THICKNESS_THRESH)then
-        return
-      else
-        plot_index = plot_index + 1
-      endif
-
-      write(filename_outdata,53) plot_index,".dat"
-      write(filename_script,53) plot_index,".gpi"
-      write(dp_pngfile,54) plot_index,".png"
- 53   format('depTS_',i4.4,a4)
- 54   format('gnupl_',i4.4,a4)
-
-      open(fid_outdata,file=filename_outdata,status='replace')
-      do i = 1,nWriteTimes
-        write(fid_outdata,*)WriteTimes(i),Airport_Thickness_TS(pt_indx,i)
-      enddo
-      close(fid_outdata)
-
-      if(Airport_Thickness_TS(plot_index,nWriteTimes).lt.THICKNESS_THRESH)then
-        ymaxpl = 1.0_dp
-      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.1.0_dp)then
-        ymaxpl = 1.0_dp
-      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.5.0_dp)then
-        ymaxpl = 5.0_dp
-      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.25.0_dp)then
-        ymaxpl = 25.0_dp
-      else
-        ymaxpl = 100.0_dp
-      endif
-
-      ! Set up to plot via python script
-      open(fid_script,file=filename_script,status='replace')
-      write(fid_script,*)"set terminal png size 400,300"
-      write(fid_script,*)"set key bmargin left horizontal Right noreverse enhanced ",&
-               "autotitles box linetype -1 linewidth 1.000"
-      write(fid_script,*)"set border 31 lw 2.0 lc rgb '#000000'"
-      write(fid_script,*)"set style line 1 linecolor rgbcolor '#888888' linewidth 2.0 pt 7"
-      write(fid_script,*)"set ylabel 'Deposit Thickeness (mm)'"
-      write(fid_script,*)"set xlabel 'Time (hours after eruption)'"
-      write(fid_script,*)"set nokey"
-      write(fid_script,*)"set output '",dp_pngfile,"'"
-      write(fid_script,*)"set title '",Airport_Name(pt_indx),"'"
-      write(fid_script,*)"plot [0:",ceiling(Simtime_in_hours),"][0:",&
-               nint(ymaxpl),"] '",filename_outdata,"' with filledcurve x1 ls 1"
-      close(fid_script)
-
-      write(plotcom,'(a11,a14)')'python -p ',filename_script
-      call execute_command_line(plotcom)
-
-      ! Clean up
-      if (CleanScripts_python) then
-        cmd = "rm -f outvar.* cities.xy volc.dat"
-        call execute_command_line(trim(adjustl(cmd)))
-      endif
-
+!      if(Airport_Thickness_TS(pt_indx,nWriteTimes).lt.THICKNESS_THRESH)then
+!        return
+!      else
+!        plot_index = plot_index + 1
+!      endif
+!
+!      write(filename_outdata,53) plot_index,".dat"
+!      write(filename_script,53) plot_index,".gpi"
+!      write(dp_pngfile,54) plot_index,".png"
+! 53   format('depTS_',i4.4,a4)
+! 54   format('gnupl_',i4.4,a4)
+!
+!      open(fid_outdata,file=filename_outdata,status='replace')
+!      do i = 1,nWriteTimes
+!        write(fid_outdata,*)WriteTimes(i),Airport_Thickness_TS(pt_indx,i)
+!      enddo
+!      close(fid_outdata)
+!
+!      if(Airport_Thickness_TS(plot_index,nWriteTimes).lt.THICKNESS_THRESH)then
+!        ymaxpl = 1.0_dp
+!      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.1.0_dp)then
+!        ymaxpl = 1.0_dp
+!      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.5.0_dp)then
+!        ymaxpl = 5.0_dp
+!      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.25.0_dp)then
+!        ymaxpl = 25.0_dp
+!      else
+!        ymaxpl = 100.0_dp
+!      endif
+!
+!      ! Set up to plot via python script
+!      open(fid_script,file=filename_script,status='replace')
+!      write(fid_script,*)"set terminal png size 400,300"
+!      write(fid_script,*)"set key bmargin left horizontal Right noreverse enhanced ",&
+!               "autotitles box linetype -1 linewidth 1.000"
+!      write(fid_script,*)"set border 31 lw 2.0 lc rgb '#000000'"
+!      write(fid_script,*)"set style line 1 linecolor rgbcolor '#888888' linewidth 2.0 pt 7"
+!      write(fid_script,*)"set ylabel 'Deposit Thickeness (mm)'"
+!      write(fid_script,*)"set xlabel 'Time (hours after eruption)'"
+!      write(fid_script,*)"set nokey"
+!      write(fid_script,*)"set output '",dp_pngfile,"'"
+!      write(fid_script,*)"set title '",Airport_Name(pt_indx),"'"
+!      write(fid_script,*)"plot [0:",ceiling(Simtime_in_hours),"][0:",&
+!               nint(ymaxpl),"] '",filename_outdata,"' with filledcurve x1 ls 1"
+!      close(fid_script)
+!
+!      write(plotcom,'(a11,a14)')'python -p ',filename_script
+!      call execute_command_line(plotcom)
+!
+!      ! Clean up
+!      if (CleanScripts_python) then
+!        cmd = "rm -f outvar.* cities.xy volc.dat"
+!        call execute_command_line(trim(adjustl(cmd)))
+!      endif
+!
       end subroutine write_DepPOI_TS_PNG_python
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
