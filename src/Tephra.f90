@@ -31,7 +31,7 @@
       use io_units
 
       use global_param,  only : &
-         useCalcFallVel,useLogNormGSbins,PI,GRAV
+         useCalcFallVel,useLogNormGSbins,PI,GRAV,M_2_MM
 
       implicit none
 
@@ -688,7 +688,7 @@
 
       ! Get the phi of the other bins
       do isize = 1,n_gs_max
-        phi(isize) = -log(Tephra_gsdiam(isize))/log(2.0_ip)
+        phi(isize) = -log(Tephra_gsdiam(isize)*M_2_MM)/log(2.0_ip)
       enddo
 
       ! boundary between bins is the average phi

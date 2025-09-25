@@ -3694,8 +3694,8 @@
             endif
             temp_bin_mass(isize)= value2
               ! Initialize these
-            temp_gsdiam(isize)  = 0.1_ip
-            temp_rho_m(isize)   = 2000.0_ip
+            temp_gsdiam(isize)  = 0.1_ip        ! Still in mm
+            temp_rho_m(isize)   = 2000.0_ip     ! kg/m3
             temp_gsF(isize)     = 0.44_ip
             temp_gsG(isize)     = 1.0_ip
           endif
@@ -3723,7 +3723,7 @@
 
         Tephra_v_s(1:n_gs_max)      = -1.0_ip * temp_v_s(1:n_gs_max) ! make sure 'fall velocity'
                                                                      ! is in the -z direction
-        Tephra_gsdiam(1:n_gs_max)   = temp_gsdiam(1:n_gs_max)
+        Tephra_gsdiam(1:n_gs_max)   = temp_gsdiam(1:n_gs_max)/M_2_MM ! convert diameter from mm to m
         Tephra_bin_mass(1:n_gs_max) = temp_bin_mass(1:n_gs_max)
         Tephra_rho_m(1:n_gs_max)    = temp_rho_m(1:n_gs_max)
         if(Shape_ID.eq.1)then
@@ -3747,10 +3747,10 @@
         ! If a log-normal distribution is to be added, make sure the grainsize
         ! bins are sorted by size (smallest first)
         if(useLogNormGSbins) call Sort_Tephra_Size
-        temp_phi = -log(Tephra_gsdiam)/log(2.0)
+        temp_phi = -log(Tephra_gsdiam*M_2_MM)/log(2.0)
         ! Now that we have completed the phi calculations (which expect units of mm), convert
         ! to m for use in fall velocity functions
-        if(useCalcFallVel) Tephra_gsdiam = Tephra_gsdiam/M_2_MM   ! convert diameter from mm to m
+        !if(useCalcFallVel) Tephra_gsdiam = Tephra_gsdiam/M_2_MM   ! convert diameter from mm to m
 
         ! Find the fraction of fine (<= phi4, 63um)
         fracfine = 0.0_ip

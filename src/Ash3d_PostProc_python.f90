@@ -442,7 +442,6 @@
  53   format(a10)
  54   format(a9)
 
-
       if(IsLatLon)then
         xmin = minval(lon_cc_pd(1:nx))
         ! Make sure xmin is in the range -180->180
@@ -467,7 +466,6 @@
 
       if(lon_volcano.gt.xmax)lon_volcano=lon_volcano-360.0_ip
 
-
       !  Local Logo
       !   First check is a local logo in installed on this system
       Instit_IconFile= trim(Ash3dHome) // &
@@ -491,23 +489,6 @@
       call write_2D_ASCII_flt(nx,ny,IsLatLon,real(xmin,kind=sp),real(ymin,kind=sp),.true., &
                          real(de,kind=sp),real(dn,kind=sp),Fill_Value_str,&
                          real(OutVar,kind=sp),filename_outdata)
-      !open(unit=fid_outdata,file=filename_outdata,status='replace')
-      !do i = 1,nx
-      !  do j = 1,ny
-      !    if(lon_cc_pd(1).lt.180.0_ip)then
-      !      tmp_ip = lon_cc_pd(i)
-      !    else
-      !      tmp_ip = lon_cc_pd(i)-360.0_ip
-      !    endif
-      !    if(abs(OutVar(i,j)-Fill_Value).lt.EPS_SMALL)then
-      !      write(fid_outdata,*)tmp_ip,lat_cc_pd(j),"NaN"
-      !    else
-      !      write(fid_outdata,*)tmp_ip,lat_cc_pd(j),OutVar(i,j)
-      !    endif
-      !  enddo
-      !  write(fid_outdata,*)""
-      !enddo
-      !close(fid_outdata)
 
       open(unit=fid_misc,file="volc.dat",status='replace')
       write(fid_misc,*)real(lon_volcano,kind=4),real(lat_volcano,kind=4),'""'
@@ -515,69 +496,11 @@
 
       ! Set up to plot via python script
       open(unit=fid_script,file=filename_script,status='replace')
-!      write(fid_script,*)"set terminal pngcairo font 'sans,12' size 854,603"   ! Set the image size
-!      write(fid_script,*)"set origin 0.05, .20"
-!      write(fid_script,*)"set size 0.85, 0.8"              ! Set x and y scale for plot
-!      write(fid_script,*)"set ylabel 'Latitude'"
-!      write(fid_script,*)"set xlabel 'Longitude'"
-!      write(fid_script,*)"set output '",trim(adjustl(outfile_name)),"'"
-!      write(fid_script,*)"set title '",trim(adjustl(title_plot)),units,"'"
-!      write(fid_script,*)"set datafile missing 'NaN'"
-!      write(fid_script,*)"XMIN = ",real(xmin,kind=4)
-!      write(fid_script,*)"YMIN = ",real(ymin,kind=4)
-!      write(fid_script,*)"XMAX = ",real(xmax,kind=4)
-!      write(fid_script,*)"YMAX = ",real(ymax,kind=4)
-!
-!      write(fid_script,*)"set xrange [XMIN:XMAX]"
-!      write(fid_script,*)"set yrange [YMIN:YMAX]"
-!      write(fid_script,*)"set contour base"
-!      write(fid_script,*)"set cntrparam bspline"
-!      write(fid_script,*)"set cntrparam levels discrete \"
-!      do i=1,nConLev-1
-!        write(fid_script,*)real(ContourLev(i),kind=4),', \'
-!      enddo
-!      write(fid_script,*)real(ContourLev(nConLev),kind=4)
-!      write(fid_script,*)"unset surface"
-!      ! Now write out the contours to a datafile
-!      write(fid_script,*)"set table 'outvar.con'"
-!      write(fid_script,*)"splot 'outvar.dat' using 1:2:3"
-!      write(fid_script,*)"unset table"
-!      write(fid_script,*)"set style line 2 lc rgb '#808080' lt 0 lw 1"
-!      write(fid_script,*)"set grid front ls 2"
-!      write(fid_script,*)"unset key"
-!
-!      write(fid_script,*)"XVAL = XMIN-(XMAX-XMIN)*0.1"
-!      write(fid_script,*)"YVAL = YMIN-(YMAX-YMIN)*0.25"
-!
-!      write(fid_script,*)"set label 'Volcano: " ,VolcanoName,&
-!                            "' at XVAL, YVAL font 'sans,9'"
-!      write(fid_script,*)"set label 'Run Date: ",os_time_log,&
-!                  "' at XVAL, YVAL font 'sans,9' offset character 0,-1"
-!      read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
-!      linebuffer050 = "Reading iw,iwf from cdf_b3l1"
-!      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,cdf_b3l1,iomessage)
-!      write(fid_script,*)"set label 'Windfile: ",iwf,&
-!                            "' at XVAL, YVAL font 'sans,9' offset character 0,-2"
-!
-!      write(fid_script,*)"XVAL = XMIN+(XMAX-XMIN)*0.4"
-!      write(fid_script,*)"set label 'Erup. Start Time: ",HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap),&
-!                            "' at XVAL, YVAL font 'sans,9'"
-!      write(fid_script,*)"set label 'Erup. Plume Height: ",real(e_PlumeHeight(1),kind=4),&
-!                            " km' at XVAL, YVAL font 'sans,9' offset character 0,-1"
-!      write(fid_script,*)"set label 'Erup. Duration: ",real(e_Duration(1),kind=4),&
-!                            " hours' at XVAL, YVAL font 'sans,9' offset character 0,-2"
-!      write(fid_script,*)"set label 'Erup. Volume: ",real(e_Volume(1),kind=4),&
-!                            " km3 (DRE)' at XVAL, YVAL font 'sans,9' offset character 0,-3"
-!
-!      write(fid_script,*)" plot '",trim(adjustl(coastfile)),"' with filledcurves linetype rgb '#dddddd' , \"
-!      write(fid_script,*)"   'outvar.con' using 1:2 with l lc rgb '#888888' , \"
-!      write(fid_script,*)"   '' every 1000 with labels font ',6' , \"
-!      write(fid_script,*)"   'cities.xy' using 1:2 , \"
-!      write(fid_script,*)"   '' using 1:2:3 with labels font ',10' point pointtype 7 offset char 1,1, \"
-!      write(fid_script,*)"   'volc.dat' using 1:2 , \"
-!      write(fid_script,*)"   '' using 1:2:3 with labels point pointtype 22 pointsize 2 lt rgb 'red'"
 
-
+      ! Python mapping expects matplotlib and cartopy for geographic mapping.
+      ! Additinoally, gdal and geopandas are needed for loading ASCII files
+      ! and handling geospatial data. We recommend using Anaconda:
+      !
       ! (1) Download anaconda:
       !   curl -O https://repo.anaconda.com/archive/Anaconda3-2025.06-0-Linux-x86_64.sh
       ! 
@@ -588,7 +511,7 @@
       !  Choose 'no' when asked about editing start-up scripts.
       ! 
       ! (3) Initialize anaconda manually.
-      !   export PATH="/home/hschwaiger/anaconda3/bin:$PATH"
+      !   export PATH="$HOME/anaconda3/bin:$PATH"
       !   conda init
       ! 
       ! (4) Install the packages your script needs:
@@ -864,8 +787,14 @@
       write(fid_script,'(g0)')" "
       write(fid_script,'(g0)')"plt.title(title_plot)"
       linebuffer080 = "main_fig.savefig(f'" // trim(adjustl(outfile_name)) // "',dpi=100)"
-      !write(fid_script,'(g0)')"main_fig.savefig(f'temp'+'.png',dpi=100)"
       write(fid_script,'(g0)')linebuffer080
+
+      ! before exiting the script, write out contour data if needed.
+!for c in range(len(contours)):
+!    n_contour = contours[c]
+!    for d in range(len(n_contour)):
+!        XY_Coordinates = n_contour[d]
+!        print(XY_Coordinates)
 
       close(fid_script)
 
