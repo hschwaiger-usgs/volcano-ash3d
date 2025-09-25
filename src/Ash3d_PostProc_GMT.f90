@@ -782,6 +782,10 @@
 
       ! Set up to plot via GMT script
       write(fid_script,*)'#!/bin/bash'
+      write(fid_script,'(g0)')"##########################################################################"
+      write(fid_script,'(g0)')"# Temporary GMT script for producing 2d maps for Ash3d_PostProc"
+      write(fid_script,'(g0)')"# Adjust to suit your needs."
+      write(fid_script,'(g0)')"##########################################################################"
       if(.not.writeContours)write(fid_script,*)'gmt gmtset PROJ_ELLIPSOID Sphere'
       cmd = 'gmt psbasemap -X1.5i -Y2i'  // " " // &
               trim(adjustl(area_str))    // " " // &

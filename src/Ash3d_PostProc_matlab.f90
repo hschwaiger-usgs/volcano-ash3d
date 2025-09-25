@@ -537,6 +537,11 @@
 
       ! Set up to plot via matlab script
       open(unit=fid_script,file=filename_script,status='replace')
+      write(fid_script,'(g0)')"##########################################################################"
+      write(fid_script,'(g0)')"# Temporary matlab script for producing 2d maps for Ash3d_PostProc"
+      write(fid_script,'(g0)')"# Adjust to suit your needs."
+      write(fid_script,'(g0)')"# You will need the mapping toolbox installed as well as the base MatLab."
+      write(fid_script,'(g0)')"##########################################################################"
       write(fid_script,*)"clear all;"
       write(fid_script,*)"land   = readgeotable('landareas.shp');"
       write(fid_script,*)"[A,R]=readgeoraster('outvar.dat','CoordinateSystemType','geographic','OutputType','double');"

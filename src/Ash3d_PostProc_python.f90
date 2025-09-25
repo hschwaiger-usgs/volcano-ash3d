@@ -38,7 +38,7 @@
 
         ! Publicly available variables
 
-!      character(100) :: Instit_IconFile
+      character(100) :: Instit_IconFile
       logical, public :: CleanScripts_python
 
       contains
@@ -149,8 +149,10 @@
       real(kind=ip),dimension(:),allocatable     :: lat_cities
       character(len=26),dimension(:),allocatable :: name_cities
       logical           :: IsThere1,IsThere2
-      character(len=50) :: linebuffer050 
-      character(len=80) :: linebuffer080
+      character(len= 50):: linebuffer050 
+      character(len= 80):: linebuffer080
+      character(len=130):: linebuffer130,linebuffer130_2
+      character(len=8)  :: outstr
       character         :: testkey
       integer           :: ilev,ignulev
       integer           :: lev_i,substr_pos1,substr_pos2,substr_pos3
@@ -167,35 +169,35 @@
         end function HS_xmltime
       END INTERFACE
 
-      write(coastfile,'(a13)')"world_50m.txt"
-      inquire(file=coastfile,exist=IsThere1)
-      if(.not.IsThere1)then
-        coastfile = trim(Ash3dHome) // &
-                          DirDelim // 'share' // &
-                          DirDelim // 'post_proc' // &
-                          DirDelim // 'world_50m.txt'
-        inquire(file=coastfile,exist=IsThere2)
-        if(.not.IsThere2)then
-          do io=1,2;if(VB(io).le.verbosity_error)then
-            write(errlog(io),*)"Could not find required file world_50m.txt"
-            write(errlog(io),*)"This file is available at:"
-            write(errlog(io),*)"  http://www.pythonting.org/data/world_50m.txt"
-            write(errlog(io),*)"Please download this file to the current working directory or"
-#ifdef LINUX
-            write(errlog(io),*)"copy to ${ASH3DHOME}/share/post_proc/"
-            write(errlog(io),*)" e.g. /opt/USGS/Ash3d/share/post_proc/"
-#endif
-#ifdef MACOS
-            write(errlog(io),*)"copy to ${ASH3DHOME}/share/post_proc/"
-            write(errlog(io),*)" e.g. /opt/USGS/Ash3d/share/post_proc/"
-#endif
-#ifdef WINDOWS
-            write(errlog(io),*)"copy to C:\opt\USGS\Ash3d\share\post_proc\"
-#endif
-          endif;enddo
-          stop 1
-        endif
-      endif
+      !write(coastfile,'(a13)')"world_50m.txt"
+      !inquire(file=coastfile,exist=IsThere1)
+      !if(.not.IsThere1)then
+      !  coastfile = trim(Ash3dHome) // &
+      !                    DirDelim // 'share' // &
+      !                    DirDelim // 'post_proc' // &
+      !                    DirDelim // 'world_50m.txt'
+      !  inquire(file=coastfile,exist=IsThere2)
+      !  if(.not.IsThere2)then
+      !    do io=1,2;if(VB(io).le.verbosity_error)then
+      !      write(errlog(io),*)"Could not find required file world_50m.txt"
+      !      write(errlog(io),*)"This file is available at:"
+      !      write(errlog(io),*)"  http://www.pythonting.org/data/world_50m.txt"
+      !      write(errlog(io),*)"Please download this file to the current working directory or"
+!#ifdef! LINUX
+      !      write(errlog(io),*)"copy to ${ASH3DHOME}/share/post_proc/"
+      !      write(errlog(io),*)" e.g. /opt/USGS/Ash3d/share/post_proc/"
+!#endif!
+!#ifdef! MACOS
+      !      write(errlog(io),*)"copy to ${ASH3DHOME}/share/post_proc/"
+      !      write(errlog(io),*)" e.g. /opt/USGS/Ash3d/share/post_proc/"
+!#endif!
+!#ifdef! WINDOWS
+      !      write(errlog(io),*)"copy to C:\opt\USGS\Ash3d\share\post_proc\"
+!#endif!
+      !    endif;enddo
+      !    stop 1
+      !  endif
+      !endif
 
       ncities = 20
       allocate(lon_cities(ncities))
@@ -465,6 +467,25 @@
 
       if(lon_volcano.gt.xmax)lon_volcano=lon_volcano-360.0_ip
 
+
+      !  Local Logo
+      !   First check is a local logo in installed on this system
+      Instit_IconFile= trim(Ash3dHome) // &
+                        DirDelim // 'share' // &
+                        DirDelim // 'post_proc' // &
+                        DirDelim // 'logo.png'
+      inquire( file=trim(adjustl(Instit_IconFile)), exist=IsThere1)
+
+      if (.not.IsThere1) then
+        !  USGS Logo (130x49)
+        !   No local logo, open the USGS version
+        Instit_IconFile= trim(Ash3dHome) // &
+                          DirDelim // 'share' // &
+                          DirDelim // 'post_proc' // &
+                          DirDelim // 'USGSvid.png'
+        inquire( file=trim(adjustl(Instit_IconFile)), exist=IsThere1)
+      endif
+
       ! write out the data in a form that python can read
       ! Python script expects an ESRI ASCII data file
       call write_2D_ASCII_flt(nx,ny,IsLatLon,real(xmin,kind=sp),real(ymin,kind=sp),.true., &
@@ -571,245 +592,280 @@
       !   conda init
       ! 
       ! (4) Install the packages your script needs:
+      !   conda install -c conda-forge geopandas
       !   conda install -c scitools cartopy
-      !   conda install -c conda-forge gdal
+      !   conda install -c gdal
 
+      write(fid_script,'(g0)')"##########################################################################"
+      write(fid_script,'(g0)')"# Temporary python/cartopy script for producing 2d maps for Ash3d_PostProc"
+      write(fid_script,'(g0)')"# Adjust to suit your needs."
+      write(fid_script,'(g0)')"# This script draws heavily from scripts created by Tyler Paladino."
+      write(fid_script,'(g0)')"# You will need the packages conda-forge, geopandas, scitools, cartopy, gdal"
+      write(fid_script,'(g0)')"##########################################################################"
+      write(fid_script,'(g0)')"import cartopy.feature as cfeature"
+      write(fid_script,'(g0)')"import cartopy.crs as ccrs"
+      write(fid_script,'(g0)')"import matplotlib.pyplot as plt"
+      write(fid_script,'(g0)')"from mpl_toolkits.axes_grid1.inset_locator import inset_axes"
+      write(fid_script,'(g0)')"import matplotlib.image as mpimg"
+      write(fid_script,'(g0)')"from matplotlib.colors import LinearSegmentedColormap"
+      write(fid_script,'(g0)')"from matplotlib.offsetbox import OffsetImage, AnnotationBbox, TextArea"
+      write(fid_script,'(g0)')"import numpy as np"
+      write(fid_script,'(g0)')"from osgeo import gdal, osr"
+      write(fid_script,'(g0)')"import linecache"
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"def get_extent(gdal_ds, A3D_input_fn):"
+      write(fid_script,'(g0)')"    Xsize = gdal_ds.RasterXSize"
+      write(fid_script,'(g0)')"    Ysize = gdal_ds.RasterYSize"
+      write(fid_script,'(g0)')"    cellsize = gdal_ds.GetGeoTransform()[1]"
+      write(fid_script,'(g0)')"    xcorner, ycorner = get_proj_info(A3D_input_fn)"
+      write(fid_script,'(g0)')"    minx = xcorner+cellsize"
+      write(fid_script,'(g0)')"    miny = ycorner+cellsize"
+      write(fid_script,'(g0)')"    maxx = minx + (cellsize*Xsize)"
+      write(fid_script,'(g0)')"    maxy = miny + (cellsize*Ysize)"
+      write(fid_script,'(g0)')"    return [minx, maxx, miny, maxy]"
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"def get_proj_info(fn):"
+      write(fid_script,'(g0)')"    xl_corner = linecache.getline(fn, 3)"
+      write(fid_script,'(g0)')"    yl_corner = linecache.getline(fn, 4)"
+      write(fid_script,'(g0)')"    return float(xl_corner.split()[1]), float(yl_corner.split()[1])"
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"def draw_logo(ax,fn):"
+      write(fid_script,'(g0)')"    # Create background box"
+      write(fid_script,'(g0)')"    ax_inset = inset_axes("
+      write(fid_script,'(g0)')"        ax,"
+      write(fid_script,'(g0)')'        width="18%",'
+      write(fid_script,'(g0)')'        height="7%",'
+      write(fid_script,'(g0)')"        borderpad=.5,"
+      write(fid_script,'(g0)')'        loc="upper right"'
+      write(fid_script,'(g0)')"    )"
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"    img = mpimg.imread(fn)"
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"    # ax.patch.set_alpha(0.5)"
+      write(fid_script,'(g0)')"    # Remove axis borders"
+      write(fid_script,'(g0)')"    # ax_inset.set_axis_off()"
+      write(fid_script,'(g0)')"    ax_inset.set_xticks([])"
+      write(fid_script,'(g0)')"    ax_inset.set_yticks([])"
+      write(fid_script,'(g0)')"    ax_inset.set_facecolor([1,1,1,0.8])"
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"    ax_logo = inset_axes("
+      write(fid_script,'(g0)')"        ax_inset,"
+      write(fid_script,'(g0)')'        width="90%",'
+      write(fid_script,'(g0)')'        height="90%",'
+      write(fid_script,'(g0)')'        loc="center"'
+      write(fid_script,'(g0)')"    )"
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"    ax_logo.imshow(img)"
+      write(fid_script,'(g0)')"    ax_logo.set_axis_off()"
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"    return None"
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"# Institutional logo (Defaults to USGS)"
+      linebuffer080 = "logo_file = '" // trim(adjustl(Instit_IconFile)) // "'"
+      write(fid_script,'(g0)')linebuffer080
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"# Run values"
+      write(fid_script,'(g0,f10.3)')"srcx=",lon_volcano
+      write(fid_script,'(g0,f10.3)')"srcy=",lat_volcano
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"#######################################"
+      write(fid_script,'(g0)')"# Product values"
+      write(fid_script,'(g0)')'grid_file="outvar.dat"'
+      linebuffer080 = 'title_plot="'// trim(adjustl(title_plot)) // '"'
+      write(fid_script,'(g0)')linebuffer080
+      linebuffer080 = 'title_legend="' // trim(adjustl(title_legend)) // '"'
+      write(fid_script,'(g0)')linebuffer080
 
-      write(fid_script,*)"import cartopy.feature as cfeature"
-      write(fid_script,*)"import cartopy.crs as ccrs"
-      write(fid_script,*)"import matplotlib.pyplot as plt"
-      write(fid_script,*)"from mpl_toolkits.axes_grid1.inset_locator import inset_axes"
-      write(fid_script,*)"import matplotlib.image as mpimg"
-      write(fid_script,*)"from matplotlib.colors import LinearSegmentedColormap"
-      write(fid_script,*)"from matplotlib.offsetbox import OffsetImage, AnnotationBbox, TextArea"
-      write(fid_script,*)"import numpy as np"
-      write(fid_script,*)"from osgeo import gdal, osr"
-      write(fid_script,*)"import linecache"
-      write(fid_script,*)" "
-      write(fid_script,*)"def get_extent(gdal_ds, A3D_input_fn):"
-      write(fid_script,*)"    Xsize = gdal_ds.RasterXSize"
-      write(fid_script,*)"    Ysize = gdal_ds.RasterYSize"
-      write(fid_script,*)"    cellsize = gdal_ds.GetGeoTransform()[1]"
-      write(fid_script,*)"    xcorner, ycorner = get_proj_info(A3D_input_fn)"
-      write(fid_script,*)"    minx = xcorner+cellsize"
-      write(fid_script,*)"    miny = ycorner+cellsize"
-      write(fid_script,*)"    maxx = minx + (cellsize*Xsize)"
-      write(fid_script,*)"    maxy = miny + (cellsize*Ysize)"
-      write(fid_script,*)"    return [minx, maxx, miny, maxy]"
-      write(fid_script,*)" "
-      write(fid_script,*)"def get_proj_info(fn):"
-      write(fid_script,*)"    xl_corner = linecache.getline(fn, 3)"
-      write(fid_script,*)"    yl_corner = linecache.getline(fn, 4)"
-      write(fid_script,*)"    return float(xl_corner.split()[1]), float(yl_corner.split()[1])"
-      write(fid_script,*)" "
-      write(fid_script,*)"def draw_logo(ax,fn):"
-      write(fid_script,*)"    # Create background box"
-      write(fid_script,*)"    ax_inset = inset_axes("
-      write(fid_script,*)"        ax,"
-      write(fid_script,*)'        width="18%",'
-      write(fid_script,*)'        height="7%",'
-      write(fid_script,*)"        borderpad=.5,"
-      write(fid_script,*)'        loc="upper right"'
-      write(fid_script,*)"    )"
-      write(fid_script,*)" "
-      write(fid_script,*)"    img = mpimg.imread(fn)"
-      write(fid_script,*)" "
-      write(fid_script,*)"    # ax.patch.set_alpha(0.5)"
-      write(fid_script,*)"    # Remove axis borders"
-      write(fid_script,*)"    # ax_inset.set_axis_off()"
-      write(fid_script,*)"    ax_inset.set_xticks([])"
-      write(fid_script,*)"    ax_inset.set_yticks([])"
-      write(fid_script,*)"    ax_inset.set_facecolor([1,1,1,0.8])"
-      write(fid_script,*)" "
-      write(fid_script,*)"    ax_logo = inset_axes("
-      write(fid_script,*)"        ax_inset,"
-      write(fid_script,*)'        width="90%",'
-      write(fid_script,*)'        height="90%",'
-      write(fid_script,*)'        loc="center"'
-      write(fid_script,*)"    )"
-      write(fid_script,*)" "
-      write(fid_script,*)"    ax_logo.imshow(img)"
-      write(fid_script,*)"    ax_logo.set_axis_off()"
-      write(fid_script,*)" "
-      write(fid_script,*)"    return None"
-      write(fid_script,*)" "
-      write(fid_script,*)"# USGS logo"
-      write(fid_script,*)"logo_file = '/opt/USGS/Ash3d/share/post_proc/logo.png'"
-      write(fid_script,*)" "
-      write(fid_script,*)"# Run values"
-      write(fid_script,*)"srcx=",lon_volcano
-      write(fid_script,*)"srcy=",lat_volcano
-      write(fid_script,*)" "
-      write(fid_script,*)"#######################################"
-      write(fid_script,*)"# Product values"
-      write(fid_script,*)'grid_file="outvar.dat"'
-      write(fid_script,*)'title_plot="',title_plot,'"'
-      write(fid_script,*)'title_legend="',title_legend,'"'
-      write(fid_script,*)"clevels=[0.01, 0.03, 0.1, 0.3, 1.0, 3.0, 10.0, 30.0, 100.0, 300.0]"
-      write(fid_script,*)"ccolors=[( 0.84,0.87,0.41 ),"
-      write(fid_script,*)"         ( 0.98,0.65,0.44 ),"
-      write(fid_script,*)"         ( 0.50,0.00,0.50 ),"
-      write(fid_script,*)"         ( 0.00,0.00,1.00 ),"
-      write(fid_script,*)"         ( 0.00,0.50,1.00 ),"
-      write(fid_script,*)"         ( 0.00,1.00,0.50 ),"
-      write(fid_script,*)"         ( 0.76,0.76,0.00 ),"
-      write(fid_script,*)"         ( 1.00,0.50,0.00 ),"
-      write(fid_script,*)"         ( 1.00,0.00,0.00 ),"
-      write(fid_script,*)"         ( 0.50,0.00,0.00 )]"
-      write(fid_script,*)"tlevels=['0.01', '0.03', '0.1', '0.3', '1.0', '3.0', '10.0', '30.0', '100.0', '300.0']"
-      write(fid_script,*)" "
-      write(fid_script,*)'txt_vname_dat="',VolcanoName,'"'
-      write(fid_script,*)'txt_RunDate_dat="',os_time_log,'"'
+      linebuffer130  ="clevels=["
+      linebuffer130_2="tlevels=['"
+      do i=1,nConLev
+        write(outstr,'(e8.3)')ContourLev(i)
+        linebuffer130 = trim(adjustl(linebuffer130)) // outstr
+        if(i.lt.nConLev) linebuffer130 = trim(adjustl(linebuffer130)) // ','
+        linebuffer130_2 = trim(adjustl(linebuffer130_2)) // outstr
+        if(i.lt.nConLev) then
+          linebuffer130_2 = trim(adjustl(linebuffer130_2)) // "','"
+        else
+          linebuffer130_2 = trim(adjustl(linebuffer130_2)) // "']"
+        endif
+      enddo
+      linebuffer130 = trim(adjustl(linebuffer130)) // ']'
+      write(fid_script,'(g0)')trim(adjustl(linebuffer130))
+      do i=1,nConLev
+        if (i.eq.1)then
+          write(linebuffer080,101)real(zrgb(i,1:3)/255.0,kind=4)
+        elseif(i.eq.nConLev)then
+          write(linebuffer080,103)real(zrgb(i,1:3)/255.0,kind=4)
+        else
+          write(linebuffer080,102)real(zrgb(i,1:3)/255.0,kind=4)
+        endif
+        write(fid_script,'(g0)')linebuffer080
+      enddo
+ 101  format('ccolors=[( ',f5.2,',',f5.2,',',f5.2,'),' )
+ 102  format('         ( ',f5.2,',',f5.2,',',f5.2,'),' )
+ 103  format('         ( ',f5.2,',',f5.2,',',f5.2,')]' )
+      write(fid_script,'(g0)')trim(adjustl(linebuffer130_2))
+      write(fid_script,'(g0)')" "
+      linebuffer080 = 'txt_vname_dat="' // trim(adjustl(VolcanoName)) // '"'
+      write(fid_script,'(g0)')linebuffer080
+      linebuffer080 = 'txt_RunDate_dat="' // trim(adjustl(os_time_log)) // '"'
+      write(fid_script,'(g0)')linebuffer080
       read(cdf_b3l1,*,iostat=ioerr) iw,iwf
-
-      write(fid_script,*)'txt_Windfile_dat="',iwf,'"'
-      write(fid_script,*)'txt_ESrtTime_dat="',HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap),'"'
-      write(fid_script,*)'txt_EPlmH_dat="',real(e_PlumeHeight(1),kind=4),'"'
-      write(fid_script,*)'txt_EDur_dat="',real(e_Duration(1),kind=4),'"'
-      write(fid_script,*)'txt_EVol_dat="',real(e_Volume(1),kind=4),'"'
-      write(fid_script,*)" "
-      write(fid_script,*)"#######################################"
-      write(fid_script,*)'txt_vname="Volcano: "'
-      write(fid_script,*)'txt_RunDate="Run Date: "'
-      write(fid_script,*)'txt_Windfile="Windfile: "'
-      write(fid_script,*)'txt_ESrtTime="Erup. Start Time: "'
-      write(fid_script,*)'txt_EPlmH="Erup Plume Height: "'
-      write(fid_script,*)'txt_EDur="Erup. Duration: "'
-      write(fid_script,*)'txt_EVol="Erup. Volume: "'
-      write(fid_script,*)'txt_EPlmH_unit=" km"'
-      write(fid_script,*)'txt_EDur_unit=" hours"'
-      write(fid_script,*)'txt_EVol_unit=" km3 (DRE)"'
-      write(fid_script,*)" "
-      write(fid_script,*)'annotation_text1 = txt_vname    + txt_vname_dat   + "\n" + \'
-      write(fid_script,*)'                   txt_RunDate  + txt_RunDate_dat + "\n" + \'
-      write(fid_script,*)'                   txt_Windfile + txt_Windfile_dat'
-      write(fid_script,*)'annotation_text2 = txt_ESrtTime + txt_ESrtTime_dat + "\n" + \'
-      write(fid_script,*)'                   txt_EPlmH    + txt_EPlmH_dat    + txt_EPlmH_unit + "\n" + \'
-      write(fid_script,*)'                   txt_EDur     + txt_EDur_dat     + txt_EDur_unit  + "\n" + \'
-      write(fid_script,*)'                   txt_EVol     + txt_EVol_dat     + txt_EVol_unit'
-      write(fid_script,*)" "
-      write(fid_script,*)"###################### OPEN ASH DATA FILE AND GET GEOTRANSFORM #######################"
-      write(fid_script,*)"# Open raster with GDAL"
-      write(fid_script,*)"raster = gdal.Open(grid_file)"
-      write(fid_script,*)"# Get lat/lon extent of raster"
-      write(fid_script,*)"extent = get_extent(raster, grid_file)"
-      write(fid_script,*)" "
-      write(fid_script,*)"############################# PLOT ######################################"
-      write(fid_script,*)"# Create figure"
-      write(fid_script,*)"main_fig = plt.figure(figsize=(8.5, 6))"
-      write(fid_script,*)"# Create geospatial matplotlib axes with CartoPy."
-      write(fid_script,*)"# Use a PlateCarree projection for now"
-      write(fid_script,*)"cen_lon=extent[2] - extent[1]"
-      write(fid_script,*)"img_extent = extent"
-      write(fid_script,*)"projection = ccrs.PlateCarree(central_longitude=cen_lon)  ",&
-                         "# this is the Cartopy bit"
-      write(fid_script,*)"map_ax = main_fig.add_subplot(projection=projection)      ",&
-                         "# create the matplotlib mapping with this projection"
-      write(fid_script,*)"map_ax.set_extent(img_extent)"
-      write(fid_script,*)" "
-      write(fid_script,*)"# Add coastlines and water"
-      write(fid_script,*)"map_ax.add_feature(cfeature.LAND, facecolor='lightgrey')"
-      write(fid_script,*)"map_ax.coastlines()"
-      write(fid_script,*)" "
-      write(fid_script,*)"# Add gridlines"
-      write(fid_script,*)"gl = map_ax.gridlines(draw_labels=True,"
-      write(fid_script,*)"                      x_inline=False,"
-      write(fid_script,*)"                      y_inline=False,"
-      write(fid_script,*)"                      color='black',"
-      write(fid_script,*)"                      alpha=0.5,"
-      write(fid_script,*)"                      linestyle='--')"
-      write(fid_script,*)"# Get rid of top and right side labels"
-      write(fid_script,*)"gl.top_labels = False"
-      write(fid_script,*)"gl.right_labels = False"
-      write(fid_script,*)"# Get grided data from GDAL dataset"
-      write(fid_script,*)"data = raster.GetRasterBand(1).ReadAsArray()"
-      write(fid_script,*)"# Mask out any values that are = to fill_value"
-      write(fid_script,*)"Fill_Value=0"
-      write(fid_script,*)"data_masked = np.ma.masked_where(data==Fill_Value, data)"
-      write(fid_script,*)"# Plot filled contours onto axes"
-      write(fid_script,*)"filled_contours = map_ax.contourf(data_masked,"
-      write(fid_script,*)"                                  extent=extent,"
-      write(fid_script,*)"                                  origin='upper',"
-      write(fid_script,*)"                                  transform=ccrs.PlateCarree(),"
-      write(fid_script,*)"                                  levels=clevels,"
-      write(fid_script,*)"                                  colors=ccolors,"
-      write(fid_script,*)"                                  alpha=0.6)"
-      write(fid_script,*)"# Also add line contours"
-      write(fid_script,*)'custom_cmap = LinearSegmentedColormap.from_list("my_cmap", ccolors)'
-      write(fid_script,*)"line_contours = map_ax.contour(data_masked,"
-      write(fid_script,*)"                               extent=extent,"
-      write(fid_script,*)"                               origin='upper',"
-      write(fid_script,*)"                               levels=clevels,"
-      write(fid_script,*)"                               colors='black',"
-      write(fid_script,*)"                               linewidths=0.5,"
-      write(fid_script,*)"                               transform=ccrs.PlateCarree())"
-      write(fid_script,*)" "
-      write(fid_script,*)"# Create proxies for contour colors for legend later on"
-      write(fid_script,*)"proxy = [plt.Rectangle((0,0),1,1,fc = pc.get_facecolor()[0])"
-      write(fid_script,*)"    for pc in filled_contours.collections]"
-      write(fid_script,*)"# Plot source location as red triangle"
-      write(fid_script,*)"volc_map = map_ax.scatter(srcx,srcy,"
-      write(fid_script,*)"                          s=60,"
-      write(fid_script,*)"                          color = 'm',"
-      write(fid_script,*)"                          marker='^',"
-      write(fid_script,*)"                          transform=ccrs.PlateCarree(),"
-      write(fid_script,*)"                          edgecolors='black',"
-      write(fid_script,*)"                          zorder=3)"
-      write(fid_script,*)"city_x=[]"
-      write(fid_script,*)"city_y=[]"
-      write(fid_script,*)"city_n=[]"
-      write(fid_script,*)"try:"
-      write(fid_script,*)"  with open('cities.xy','r') as f:"
-      write(fid_script,*)"    for line in f:"
-      write(fid_script,*)"      parts = line.strip().split()"
-      write(fid_script,*)"      if len(parts) == 3:"
-      write(fid_script,*)"        city_x.append(float(parts[0]))"
-      write(fid_script,*)"        city_y.append(float(parts[1]))"
-      write(fid_script,*)"        city_n.append(parts[2])"
-      write(fid_script,*)"except FileNotFoundError:"
-      write(fid_script,*)'    print("Error: cities.xy not found.")'
-      write(fid_script,*)"    exit()"
-      write(fid_script,*)" "
-      write(fid_script,*)"city_map = map_ax.scatter(city_x,city_y,"
-      write(fid_script,*)"                          s=40,"
-      write(fid_script,*)"                          color = 'k',"
-      write(fid_script,*)"                          marker='o',"
-      write(fid_script,*)"                          transform=ccrs.PlateCarree(),"
-      write(fid_script,*)"                          edgecolors='black',"
-      write(fid_script,*)"                          zorder=3)"
-      write(fid_script,*)" "
-      write(fid_script,*)"for i, label in enumerate(city_n):"
-      write(fid_script,*)'    city_name=label.replace("\"", "")'
-      write(fid_script,*)"    map_ax.annotate(city_name,"
-      write(fid_script,*)"                    xy=(city_x[i], city_y[i]),"
-      write(fid_script,*)"                    xytext=(3, 3),"
-      write(fid_script,*)'                    textcoords="offset points",'
-      write(fid_script,*)"                    transform=ccrs.PlateCarree(),"
-      write(fid_script,*)"                    annotation_clip=True,"
-      write(fid_script,*)"                    fontsize=10,"
-      write(fid_script,*)"                    fontweight=300,"
-      write(fid_script,*)'                    color="black")'
-      write(fid_script,*)"# Draw legend"
-      write(fid_script,*)"map_ax.legend(proxy,tlevels,loc='center left', bbox_to_anchor=(1.05, 0.5),"
-      write(fid_script,*)"                framealpha=0.9,title=title_legend)"
-      write(fid_script,*)" "
-      write(fid_script,*)"# Draw USGS logo"
-      write(fid_script,*)"logo = mpimg.imread(logo_file)"
-      write(fid_script,*)"main_fig.figimage(logo, 700, 50, zorder=3, alpha=0.7) ",&
-                         "# Adjust position, zorder, and alpha as needed"
-      write(fid_script,*)" "
-      write(fid_script,*)"# Annotations"
-      write(fid_script,*)"map_ax.annotate(annotation_text1,"
-      write(fid_script,*)"            xy=(-0.1, -0.75),xycoords='axes fraction',xytext=(20, 20),"
-      write(fid_script,*)"            textcoords='offset points',va='bottom',ha='left')"
-      write(fid_script,*)"map_ax.annotate(annotation_text2,"
-      write(fid_script,*)"            xy=(0.4, -0.75),xycoords='axes fraction',xytext=(20, 20),"
-      write(fid_script,*)"            textcoords='offset points',va='bottom',ha='left')"
-      write(fid_script,*)" "
-      write(fid_script,*)"main_fig.tight_layout()"
-      write(fid_script,*)" "
-      write(fid_script,*)"plt.title(title_plot)"
-      write(fid_script,*)"main_fig.savefig(f'temp'+'.png',dpi=100)"
+      write(linebuffer080,'(a18,i2,a1)')'txt_Windfile_dat="' , iwf , '"'
+      write(fid_script,'(g0)')linebuffer080
+      write(linebuffer080,'(a18,a20,a1)')'txt_ESrtTime_dat="',HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap),'"'
+      write(fid_script,'(g0)')linebuffer080
+      write(linebuffer080,'(a15,g10.5,a1)')'txt_EPlmH_dat="',real(e_PlumeHeight(1),kind=4),'"'
+      write(fid_script,'(g0)')linebuffer080
+      write(linebuffer080,'(a14,g10.5,a1)')'txt_EDur_dat="',real(e_Duration(1),kind=4),'"'
+      write(fid_script,'(g0)')linebuffer080
+      write(linebuffer080,'(a14,g10.5,a1)')'txt_EVol_dat="',real(e_Volume(1),kind=4),'"'
+      write(fid_script,'(g0)')linebuffer080
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"#######################################"
+      write(fid_script,'(g0)')'txt_vname="Volcano: "'
+      write(fid_script,'(g0)')'txt_RunDate="Run Date: "'
+      write(fid_script,'(g0)')'txt_Windfile="Windfile: "'
+      write(fid_script,'(g0)')'txt_ESrtTime="Erup. Start Time: "'
+      write(fid_script,'(g0)')'txt_EPlmH="Erup Plume Height: "'
+      write(fid_script,'(g0)')'txt_EDur="Erup. Duration: "'
+      write(fid_script,'(g0)')'txt_EVol="Erup. Volume: "'
+      write(fid_script,'(g0)')'txt_EPlmH_unit=" km"'
+      write(fid_script,'(g0)')'txt_EDur_unit=" hours"'
+      write(fid_script,'(g0)')'txt_EVol_unit=" km3 (DRE)"'
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')'annotation_text1 = txt_vname    + txt_vname_dat   + "\n" + \'
+      write(fid_script,'(g0)')'                   txt_RunDate  + txt_RunDate_dat + "\n" + \'
+      write(fid_script,'(g0)')'                   txt_Windfile + txt_Windfile_dat'
+      write(fid_script,'(g0)')'annotation_text2 = txt_ESrtTime + txt_ESrtTime_dat + "\n" + \'
+      write(fid_script,'(g0)')'                   txt_EPlmH    + txt_EPlmH_dat    + txt_EPlmH_unit + "\n" + \'
+      write(fid_script,'(g0)')'                   txt_EDur     + txt_EDur_dat     + txt_EDur_unit  + "\n" + \'
+      write(fid_script,'(g0)')'                   txt_EVol     + txt_EVol_dat     + txt_EVol_unit'
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"###################### OPEN ASH DATA FILE AND GET GEOTRANSFORM #######################"
+      write(fid_script,'(g0)')"# Open raster with GDAL"
+      write(fid_script,'(g0)')"raster = gdal.Open(grid_file)"
+      write(fid_script,'(g0)')"# Get lat/lon extent of raster"
+      write(fid_script,'(g0)')"extent = get_extent(raster, grid_file)"
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"############################# PLOT ######################################"
+      write(fid_script,'(g0)')"# Create figure"
+      write(fid_script,'(g0)')"main_fig = plt.figure(figsize=(8.5, 6))"
+      write(fid_script,'(g0)')"# Create geospatial matplotlib axes with CartoPy."
+      write(fid_script,'(g0)')"# Use a PlateCarree projection for now"
+      write(fid_script,'(g0)')"cen_lon=extent[2] - extent[1]"
+      write(fid_script,'(g0)')"img_extent = extent"
+      write(fid_script,'(g0)')"projection = ccrs.PlateCarree(central_longitude=cen_lon)  ",&
+                        "# this is the Cartopy bit"
+      write(fid_script,'(g0)')"map_ax = main_fig.add_subplot(projection=projection)      ",&
+                        "# create the matplotlib mapping with this projection"
+      write(fid_script,'(g0)')"map_ax.set_extent(img_extent)"
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"# Add coastlines and water"
+      write(fid_script,'(g0)')"map_ax.add_feature(cfeature.LAND, facecolor='lightgrey')"
+      write(fid_script,'(g0)')"map_ax.coastlines()"
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"# Add gridlines"
+      write(fid_script,'(g0)')"gl = map_ax.gridlines(draw_labels=True,"
+      write(fid_script,'(g0)')"                      x_inline=False,"
+      write(fid_script,'(g0)')"                      y_inline=False,"
+      write(fid_script,'(g0)')"                      color='black',"
+      write(fid_script,'(g0)')"                      alpha=0.5,"
+      write(fid_script,'(g0)')"                      linestyle='--')"
+      write(fid_script,'(g0)')"# Get rid of top and right side labels"
+      write(fid_script,'(g0)')"gl.top_labels = False"
+      write(fid_script,'(g0)')"gl.right_labels = False"
+      write(fid_script,'(g0)')"# Get grided data from GDAL dataset"
+      write(fid_script,'(g0)')"data = raster.GetRasterBand(1).ReadAsArray()"
+      write(fid_script,'(g0)')"# Mask out any values that are = to fill_value"
+      write(fid_script,'(g0)')"Fill_Value=0"
+      write(fid_script,'(g0)')"data_masked = np.ma.masked_where(data==Fill_Value, data)"
+      write(fid_script,'(g0)')"# Plot filled contours onto axes"
+      write(fid_script,'(g0)')"filled_contours = map_ax.contourf(data_masked,"
+      write(fid_script,'(g0)')"                                  extent=extent,"
+      write(fid_script,'(g0)')"                                  origin='upper',"
+      write(fid_script,'(g0)')"                                  transform=ccrs.PlateCarree(),"
+      write(fid_script,'(g0)')"                                  levels=clevels,"
+      write(fid_script,'(g0)')"                                  colors=ccolors,"
+      write(fid_script,'(g0)')"                                  alpha=0.6)"
+      write(fid_script,'(g0)')"# Also add line contours"
+      write(fid_script,'(g0)')'custom_cmap = LinearSegmentedColormap.from_list("my_cmap", ccolors)'
+      write(fid_script,'(g0)')"line_contours = map_ax.contour(data_masked,"
+      write(fid_script,'(g0)')"                               extent=extent,"
+      write(fid_script,'(g0)')"                               origin='upper',"
+      write(fid_script,'(g0)')"                               levels=clevels,"
+      write(fid_script,'(g0)')"                               colors='black',"
+      write(fid_script,'(g0)')"                               linewidths=0.5,"
+      write(fid_script,'(g0)')"                               transform=ccrs.PlateCarree())"
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"# Create proxies for contour colors for legend later on"
+      write(fid_script,'(g0)')"proxy = [plt.Rectangle((0,0),1,1,fc = pc.get_facecolor()[0])"
+      write(fid_script,'(g0)')"    for pc in filled_contours.collections]"
+      write(fid_script,'(g0)')"# Plot source location as red triangle"
+      write(fid_script,'(g0)')"volc_map = map_ax.scatter(srcx,srcy,"
+      write(fid_script,'(g0)')"                          s=60,"
+      write(fid_script,'(g0)')"                          color = 'm',"
+      write(fid_script,'(g0)')"                          marker='^',"
+      write(fid_script,'(g0)')"                          transform=ccrs.PlateCarree(),"
+      write(fid_script,'(g0)')"                          edgecolors='black',"
+      write(fid_script,'(g0)')"                          zorder=3)"
+      write(fid_script,'(g0)')"city_x=[]"
+      write(fid_script,'(g0)')"city_y=[]"
+      write(fid_script,'(g0)')"city_n=[]"
+      write(fid_script,'(g0)')"try:"
+      write(fid_script,'(g0)')"  with open('cities.xy','r') as f:"
+      write(fid_script,'(g0)')"    for line in f:"
+      write(fid_script,'(g0)')"      parts = line.strip().split()"
+      write(fid_script,'(g0)')"      if len(parts) == 3:"
+      write(fid_script,'(g0)')"        city_x.append(float(parts[0]))"
+      write(fid_script,'(g0)')"        city_y.append(float(parts[1]))"
+      write(fid_script,'(g0)')"        city_n.append(parts[2])"
+      write(fid_script,'(g0)')"except FileNotFoundError:"
+      write(fid_script,'(g0)')'    print("Error: cities.xy not found.")'
+      write(fid_script,'(g0)')"    exit()"
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"city_map = map_ax.scatter(city_x,city_y,"
+      write(fid_script,'(g0)')"                          s=40,"
+      write(fid_script,'(g0)')"                          color = 'k',"
+      write(fid_script,'(g0)')"                          marker='o',"
+      write(fid_script,'(g0)')"                          transform=ccrs.PlateCarree(),"
+      write(fid_script,'(g0)')"                          edgecolors='black',"
+      write(fid_script,'(g0)')"                          zorder=3)"
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"for i, label in enumerate(city_n):"
+      write(fid_script,'(g0)')'    city_name=label.replace("\"", "")'
+      write(fid_script,'(g0)')"    map_ax.annotate(city_name,"
+      write(fid_script,'(g0)')"                    xy=(city_x[i], city_y[i]),"
+      write(fid_script,'(g0)')"                    xytext=(3, 3),"
+      write(fid_script,'(g0)')'                    textcoords="offset points",'
+      write(fid_script,'(g0)')"                    transform=ccrs.PlateCarree(),"
+      write(fid_script,'(g0)')"                    annotation_clip=True,"
+      write(fid_script,'(g0)')"                    fontsize=10,"
+      write(fid_script,'(g0)')"                    fontweight=300,"
+      write(fid_script,'(g0)')'                    color="black")'
+      write(fid_script,'(g0)')"# Draw legend"
+      write(fid_script,'(g0)')"map_ax.legend(proxy,tlevels,loc='center left', bbox_to_anchor=(1.05, 0.5),"
+      write(fid_script,'(g0)')"                framealpha=0.9,title=title_legend)"
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"# Draw USGS logo"
+      write(fid_script,'(g0)')"logo = mpimg.imread(logo_file)"
+      write(fid_script,'(g0)')"main_fig.figimage(logo, 700, 50, zorder=3, alpha=0.7) ",&
+                        "# Adjust position, zorder, and alpha as needed"
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"# Annotations"
+      write(fid_script,'(g0)')"map_ax.annotate(annotation_text1,"
+      write(fid_script,'(g0)')"            xy=(-0.1, -0.75),xycoords='axes fraction',xytext=(20, 20),"
+      write(fid_script,'(g0)')"            textcoords='offset points',va='bottom',ha='left')"
+      write(fid_script,'(g0)')"map_ax.annotate(annotation_text2,"
+      write(fid_script,'(g0)')"            xy=(0.4, -0.75),xycoords='axes fraction',xytext=(20, 20),"
+      write(fid_script,'(g0)')"            textcoords='offset points',va='bottom',ha='left')"
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"main_fig.tight_layout()"
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"plt.title(title_plot)"
+      linebuffer080 = "main_fig.savefig(f'" // trim(adjustl(outfile_name)) // "',dpi=100)"
+      !write(fid_script,'(g0)')"main_fig.savefig(f'temp'+'.png',dpi=100)"
+      write(fid_script,'(g0)')linebuffer080
 
       close(fid_script)
 

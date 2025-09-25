@@ -484,6 +484,12 @@
 
       ! Set up to plot via gnuplot script
       open(unit=fid_script,file=filename_script,status='replace')
+      write(fid_script,'(g0)')"##########################################################################"
+      write(fid_script,'(g0)')"# Temporary gnuplot script for producing 2d maps for Ash3d_PostProc"
+      write(fid_script,'(g0)')"# Adjust to suit your needs."
+      write(fid_script,'(g0)')"# You will need the coastline file http://www.gnuplotting.org/data/world_50m.txt"
+      write(fid_script,'(g0)')"# copied to the cwd or ${ASH3DHOME}/share/post_proc/"
+      write(fid_script,'(g0)')"##########################################################################"
       write(fid_script,*)"set terminal pngcairo font 'sans,12' size 854,603"   ! Set the image size
       write(fid_script,*)"set origin 0.05, .20"
       write(fid_script,*)"set size 0.85, 0.8"              ! Set x and y scale for plot
@@ -806,6 +812,10 @@
  102  format(' (x=',f9.3,', y=',f9.3,')')
       ! Set up to plot via gnuplot script
       open(fid_script,file=filename_script,status='replace')
+      write(fid_script,'(g0)')"##########################################################################"
+      write(fid_script,'(g0)')"# Temporary gnuplot script for producing 2d maps for Ash3d_PostProc"
+      write(fid_script,'(g0)')"# Adjust to suit your needs."
+      write(fid_script,'(g0)')"##########################################################################"
       write(fid_script,*)"set terminal pngcairo font 'sans,12' size 854,603"   ! Set the image size
       write(fid_script,*)"set origin 0, .10"
       write(fid_script,*)"set size 0.85, 0.9"              ! Set x and y scale for plot
@@ -934,6 +944,10 @@
 
       ! Set up to plot via gnuplot script
       open(fid_script,file=filename_script,status='replace')
+      write(fid_script,'(g0)')"##########################################################################"
+      write(fid_script,'(g0)')"# Temporary gnuplot script for producing 2d maps for Ash3d_PostProc"
+      write(fid_script,'(g0)')"# Adjust to suit your needs."
+      write(fid_script,'(g0)')"##########################################################################"
       write(fid_script,*)"set terminal png size 400,300"
       write(fid_script,*)"set key bmargin left horizontal Right noreverse enhanced ",&
                "autotitles box linetype -1 linewidth 1.000"
