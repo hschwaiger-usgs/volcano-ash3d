@@ -356,7 +356,19 @@
 #ifdef LINUX
         ! On a linux system, just try to execute python
       istat = 0
-      call execute_command_line("echo 'exit' | python",exitstat=istat)
+      call execute_command_line("which python",exitstat=istat)
+      if(istat.ne.0)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Python not found on this system."
+        endif;enddo
+      else
+        call execute_command_line("echo 'exit' | python",exitstat=istat)
+        if(istat.ne.0)then
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Python not found on this system."
+          endif;enddo
+        endif
+      endif
 #endif
 #ifdef MACOS
       ! On a MacOS system, not sure how to test yet
