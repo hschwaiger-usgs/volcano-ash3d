@@ -680,7 +680,7 @@
       write(fid_script,'(g0)')"img_extent = extent"
       write(fid_script,'(g0)')"projection = ccrs.PlateCarree(central_longitude=cen_lon)  ",&
                         "# this is the Cartopy bit"
-      write(fid_script,'(g0)')"map_ax = main_fig.add_subplot(4,1,(1,3)projection=projection) ",&
+      write(fid_script,'(g0)')"map_ax = main_fig.add_subplot(4,1,(1,3),projection=projection) ",&
                         "# create the matplotlib mapping with this projection"
       write(fid_script,'(g0)')"map_ax.set_extent(img_extent)"
       write(fid_script,'(g0)')" "
