@@ -680,7 +680,7 @@
       write(fid_script,'(g0)')"img_extent = extent"
       write(fid_script,'(g0)')"projection = ccrs.PlateCarree(central_longitude=cen_lon)  ",&
                         "# this is the Cartopy bit"
-      write(fid_script,'(g0)')"map_ax = main_fig.add_subplot(projection=projection)      ",&
+      write(fid_script,'(g0)')"map_ax = main_fig.add_subplot(4,1,(1,3)projection=projection) ",&
                         "# create the matplotlib mapping with this projection"
       write(fid_script,'(g0)')"map_ax.set_extent(img_extent)"
       write(fid_script,'(g0)')" "
@@ -777,10 +777,10 @@
       write(fid_script,'(g0)')" "
       write(fid_script,'(g0)')"# Annotations"
       write(fid_script,'(g0)')"map_ax.annotate(annotation_text1,"
-      write(fid_script,'(g0)')"            xy=(-0.1, -0.75),xycoords='axes fraction',xytext=(20, 20),"
+      write(fid_script,'(g0)')"            xy=(0.1, 0.05),xycoords='figure fraction',xytext=(20, 20),"
       write(fid_script,'(g0)')"            textcoords='offset points',va='bottom',ha='left')"
       write(fid_script,'(g0)')"map_ax.annotate(annotation_text2,"
-      write(fid_script,'(g0)')"            xy=(0.4, -0.75),xycoords='axes fraction',xytext=(20, 20),"
+      write(fid_script,'(g0)')"            xy=(0.4, 0.05),xycoords='figure fraction',xytext=(20, 20),"
       write(fid_script,'(g0)')"            textcoords='offset points',va='bottom',ha='left')"
       write(fid_script,'(g0)')" "
       write(fid_script,'(g0)')"main_fig.tight_layout()"
