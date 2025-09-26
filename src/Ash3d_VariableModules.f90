@@ -310,10 +310,16 @@
       character(len=20),dimension(MAXNUM_OPTMODS) :: OPTMOD_names
       integer                  :: nmods
 
-      logical                  :: usezip = .false.
-      character(len=50)        :: zippath = ''
-      logical                  :: usegnuplot = .false.
+      logical                  :: usezip      = .false.
+      character(len=50)        :: zippath     = ''
+      logical                  :: usegnuplot  = .false.
       character(len=50)        :: gnuplotpath = ''
+      logical                  :: useGMT      = .false.
+      character(len=50)        :: GMTpath     = ''
+      logical                  :: usematlab   = .false.
+      character(len=50)        :: matlabpath  = ''
+      logical                  :: usepython   = .false.
+      character(len=50)        :: pythonpath  = ''
 
       ! Some variables determined by preprocessor flags at compilation time
 #ifdef LIM_NONE

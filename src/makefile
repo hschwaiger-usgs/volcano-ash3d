@@ -92,9 +92,17 @@ FASTFPPFLAG = -DFAST_DT -DFAST_SUBGRID
 
 # PLOTTING LIBRARIES
 #  The default plotting utility for Ash3d_PostProc is gnuplot with plots generated
-#  through system calls to that external program.  Alternatively, you can use either
-#  the plplot, dislin, GMT, or MatLab plotting packages.  Currently, shapefile require contour to
-#  be generated either with gnuplot, dislin or GMT.  Set the corresponding variable
+#  through system calls to that external program.  Alternatively, you can use any of
+#  the following plotting packages:
+#    plplot
+#    dislin
+#    GMT
+#    MatLab + mapping toolbox / octave
+#    python / matplotlib / cartopy
+#  Three graphics products are expected: 2d contour maps, 2d vert. profile plots, timeseries deposit
+#  accumulation plots for the kmz files.
+#  Currently, shapefile require contour data to be available either internally via
+#  dislin, or through files as with gnuplot or GMT.  Set the corresponding variable
 #  below to 'T' if you want to build with these libraries.
     # Set to F if you do not have zip installed (verify below that zippath=/usr/bin/zip)
 USEZIP     = T
@@ -104,11 +112,11 @@ USEGNUPLOT = T
 USEPLPLOT  = F
     # Set to T if you want dislin included (verify local paths below)
 USEDISLIN  = F
-    # Set to T only if using the API, otherwise scripts will be written
+    # The following are place-holders for API bindings. Set to 'F', scripting will still work
 USEGMT     = F
-    # Set to F if you do not have matlab+mapping-toolbox installed; octave can separately be turned off
-USEMATLAB  = T
-USEOCTAVE  = T
+USEMATLAB  = F  # MatLab required the mapping toolbox as well for maps
+USEOCTAVE  = F  # Octave mapping is not yet set up
+USEPYTHON  = F  # python expects matplotlib and cartopy
 
 MFILE=makefile
 

@@ -689,6 +689,8 @@
               write(outlog(io),*)"           Using GMT if available."
             elseif(iplotpref.eq.5)then
               write(outlog(io),*)"           Using matlab/octave if available."
+            elseif(iplotpref.eq.6)then
+              write(outlog(io),*)"           Using python/cartopy if available."
             endif
           endif;enddo
         endif
@@ -5151,7 +5153,7 @@
 ! 0.0 0.0                 dx dy [dz] Needed if not a part of the data file
 ! 0.0 0.0                 srtx srty         Start x and y
 ! 3                       output format     (1=ascii, 2=KML 3=image, 4=binary, 5=shapefile 6=grib, 7=tecplot, 8=vtk)
-! 3                       plot_pref         (1=dislin, 2=plplot, 3=gnuplot, 4=GMT)
+! 3                       plot_pref         (1=dislin, 2=plplot, 3=gnuplot, 4=GMT, 5=matlab, 6=python)
 ! -1                      time_step         Only needed if input file is multi-timestep (eg netcdf) (0 for static, -1 for final, -2 for all)
 ! 0                       Filled contour flag (1 for filled, 0 for lines)
 ! 1 5                     custom contour flag (1 for true, 0 for false), number of contours

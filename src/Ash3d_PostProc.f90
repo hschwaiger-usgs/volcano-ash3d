@@ -67,7 +67,8 @@
       use io_units
 
       use global_param,  only : &
-         MM_2_IN,EPS_SMALL
+         MM_2_IN,EPS_SMALL,&
+         usegnuplot,useGMT,usematlab,usepython
 
       use io_data,       only : &
          iTimeNext,PP_infile,datafileIn,HaveInfile, &
@@ -152,6 +153,7 @@
       integer             :: nargs
       integer             :: istat
       integer             :: iostatus
+      integer             :: cstat
       integer             :: arglen
       character(len=120)  :: iomessage
       character(len=50)   :: linebuffer050
@@ -267,9 +269,30 @@
 #endif
       ! Test for gnuplot
 #ifdef LINUX
-        ! On a linux system, just try to execute gnuplot
-      istat = 0
-      call execute_command_line("echo 'exit' | gnuplot",exitstat=istat)
+        ! On a linux system, test for gnuplot
+      usegnuplot = .true.
+      call execute_command_line('which gnuplot',wait=.true.,exitstat=istat)
+      if(istat.ne.0)then
+        write(outlog(io),*)"Error: 'which gnuplot' failed. No gnuplot executable in default path"
+        write(outlog(io),*)"       Deactivating gnuplot"
+        usegnuplot = .false.
+      endif
+      if(usegnuplot)then
+        ! Finally, do a test run of the gnuplot executable
+        write(outlog(io),*)"                  Checking if gnuplot executes."
+        call execute_command_line("echo 'exit' | gnuplot",&
+                                  wait=.true., exitstat=istat, cmdstat=cstat, cmdmsg=iomessage)
+        if(istat.eq.0)then
+          write(outlog(io),*)"                  Success"
+        else
+          write(outlog(io),*)"Error: Something is wrong with the gnuplot executable."
+          write(outlog(io),*)"       gnuplot is returing an error code",istat
+          write(outlog(io),*)"       execute_command_line command status = ",cstat
+          write(outlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
+          write(outlog(io),*)"       Deactivating gnuplot"
+          usegnuplot = .false.
+        endif
+      endif
 #endif
 #ifdef MACOS
       ! On a MacOS system, not sure how to test yet
@@ -277,7 +300,7 @@
         write(outlog(io),*)"Cannot test for gnuplot on MacOS for now."
         write(outlog(io),*)"Disabling gnuplot."
       endif;enddo
-      istat = 1
+      usegnuplot = .false.
 #endif
 #ifdef WINDOWS
       ! On a Windows system, not sure how to test yet
@@ -285,19 +308,40 @@
         write(outlog(io),*)"Cannot test for gnuplot on Windows for now."
         write(outlog(io),*)"Disabling gnuplot."
       endif;enddo
-      istat = 1
+      usegnuplot = .false.
 #endif
-      if (istat.eq.0)then
+      if (usegnuplot)then
         CleanScripts_gnuplot = CleanScripts
         plotlib_avail(3) = .true.
       else
         plotlib_avail(3) = .false.
       endif
+
       ! Test for GMT
 #ifdef LINUX
-        ! On a linux system, just try to execute gmt
-      istat = 0
-      call execute_command_line("gmt --version > /dev/null",exitstat=istat)
+      useGMT = .true.
+      call execute_command_line('which gmt',wait=.true.,exitstat=istat)
+      if(istat.ne.0)then
+        write(outlog(io),*)"Error: 'which gmt' failed. No gmt executable in default path"
+        write(outlog(io),*)"       Deactivating gmt"
+        useGMT = .false.
+      endif
+      if(useGMT)then
+        ! Finally, do a test run of the gmt executable
+        write(outlog(io),*)"                  Checking if gmt executes."
+        call execute_command_line("gmt --version > /dev/null",&
+                                  wait=.true., exitstat=istat, cmdstat=cstat, cmdmsg=iomessage)
+        if(istat.eq.0)then
+          write(outlog(io),*)"                  Success"
+        else
+          write(outlog(io),*)"Error: Something is wrong with the gmt executable."
+          write(outlog(io),*)"       gmt is returing an error code",istat
+          write(outlog(io),*)"       execute_command_line command status = ",cstat
+          write(outlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
+          write(outlog(io),*)"       Deactivating gmt"
+          useGMT = .false.
+        endif
+      endif
 #endif
 #ifdef MACOS
         ! On a MacOS system, not sure how to test yet
@@ -305,7 +349,7 @@
           write(outlog(io),*)"Cannot test for gmt on MacOS for now."
           write(outlog(io),*)"Disabling gmt."
         endif;enddo
-        istat = 1
+        useGMT = .false.
 #endif
 #ifdef WINDOWS
         ! On a Windows system, not sure how to test yet
@@ -313,21 +357,43 @@
           write(outlog(io),*)"Cannot test for gmt on Windows for now."
           write(outlog(io),*)"Disabling gmt."
         endif;enddo
-        istat = 1
+        useGMT = .false.
 #endif
-      if (istat.eq.0)then
+      if (useGMT)then
         CleanScripts_GMT = CleanScripts
         plotlib_avail(4) = .true.
       else
         plotlib_avail(4) = .false.
       endif
+
       ! Test for matlab/octave
 #ifdef LINUX
         ! On a linux system, we could just try to execute matlab
         ! but this takes heaps of time to load. Just test if matlab in on path.
-      istat = 0
-      call execute_command_line("which matlab",exitstat=istat)
-      !call execute_command_line("echo 'exit' | matlab",exitstat=istat)
+      usematlab = .true.
+      call execute_command_line('which matlab',wait=.true.,exitstat=istat)
+      if(istat.ne.0)then
+        write(outlog(io),*)"Error: 'which matlab' failed. No matlab executable in default path"
+        write(outlog(io),*)"       Deactivating matlab"
+        usematlab = .false.
+      endif
+      ! We are skipping this test since it takes so long to launch matlab
+      !if(usematlab)then
+      !  ! Finally, do a test run of the matlab executable
+      !  write(outlog(io),*)"                  Checking if matlab executes."
+      !  call execute_command_line("echo 'exit' | matlab",&
+      !                            wait=.true., exitstat=istat, cmdstat=cstat, cmdmsg=iomessage)
+      !  if(istat.eq.0)then
+      !    write(outlog(io),*)"                  Success"
+      !  else
+      !    write(outlog(io),*)"Error: Something is wrong with the matlab executable."
+      !    write(outlog(io),*)"       matlab is returing an error code",istat
+      !    write(outlog(io),*)"       execute_command_line command status = ",cstat
+      !    write(outlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
+      !    write(outlog(io),*)"       Deactivating matlab"
+      !    usematlab = .false.
+      !  endif
+      !endif
 #endif
 #ifdef MACOS
       ! On a MacOS system, not sure how to test yet
@@ -335,7 +401,7 @@
         write(outlog(io),*)"Cannot test for matlab on MacOS for now."
         write(outlog(io),*)"Disabling matlab."
       endif;enddo
-      istat = 1
+      usematlab = .false.
 #endif
 #ifdef WINDOWS
       ! On a Windows system, not sure how to test yet
@@ -343,9 +409,9 @@
         write(outlog(io),*)"Cannot test for matlab on Windows for now."
         write(outlog(io),*)"Disabling matlab."
       endif;enddo
-      istat = 1
+      usematlab = .false.
 #endif
-      if (istat.eq.0)then
+      if (usematlab)then
         CleanScripts_matlab = CleanScripts
         plotlib_avail(5) = .true.
       else
@@ -355,18 +421,30 @@
       ! Test for python
 #ifdef LINUX
         ! On a linux system, just try to execute python
-      istat = 0
-      call execute_command_line("which python",exitstat=istat)
+      !istat = 0
+      !call execute_command_line("echo 'exit' | python",exitstat=istat)
+
+      usepython = .true.
+      call execute_command_line('which python',wait=.true.,exitstat=istat)
       if(istat.ne.0)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"Python not found on this system."
-        endif;enddo
-      else
-        call execute_command_line("echo 'exit' | python",exitstat=istat)
-        if(istat.ne.0)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"Python not found on this system."
-          endif;enddo
+        write(outlog(io),*)"Error: 'which python' failed. No python executable in default path"
+        write(outlog(io),*)"       Deactivating python"
+        usepython = .false.
+      endif
+      if(usepython)then
+        ! Finally, do a test run of the python executable
+        write(outlog(io),*)"                  Checking if python executes."
+        call execute_command_line("echo 'exit' | python",&
+                                  wait=.true., exitstat=istat, cmdstat=cstat, cmdmsg=iomessage)
+        if(istat.eq.0)then
+          write(outlog(io),*)"                  Success; at least for python base."
+        else
+          write(outlog(io),*)"Error: Something is wrong with the python executable."
+          write(outlog(io),*)"       python is returing an error code",istat
+          write(outlog(io),*)"       execute_command_line command status = ",cstat
+          write(outlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
+          write(outlog(io),*)"       Deactivating python"
+          usepython = .false.
         endif
       endif
 #endif
@@ -376,7 +454,7 @@
         write(outlog(io),*)"Cannot test for python on MacOS for now."
         write(outlog(io),*)"Disabling python."
       endif;enddo
-      istat = 1
+      usepython = .false.
 #endif
 #ifdef WINDOWS
       ! On a Windows system, not sure how to test yet
@@ -384,9 +462,9 @@
         write(outlog(io),*)"Cannot test for python on Windows for now."
         write(outlog(io),*)"Disabling python."
       endif;enddo
-      istat = 1
+      usepython = .false.
 #endif
-      if (istat.eq.0)then
+      if (usepython)then
         CleanScripts_python = CleanScripts
         plotlib_avail(6) = .true.
       else
