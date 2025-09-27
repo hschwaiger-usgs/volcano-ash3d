@@ -676,7 +676,7 @@
       write(fid_script,'(g0)')"main_fig = plt.figure(figsize=(8.5, 6))"
       write(fid_script,'(g0)')"# Create geospatial matplotlib axes with CartoPy."
       write(fid_script,'(g0)')"# Use a PlateCarree projection for now"
-      write(fid_script,'(g0)')"cen_lon=extent[2] - extent[1]"
+      write(fid_script,'(g0)')"cen_lon=0.5*(sum(extent))"
       write(fid_script,'(g0)')"img_extent = extent"
       write(fid_script,'(g0)')"projection = ccrs.PlateCarree(central_longitude=cen_lon)  ",&
                         "# this is the Cartopy bit"
