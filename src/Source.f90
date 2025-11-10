@@ -361,6 +361,7 @@
           write(outlog(io),88)i,e_Volume(i),HandDUR_2_EVol(e_PlumeHeight(i)-z_volcano,e_Duration(i))
         endif;enddo
       enddo
+
 87    format('    number     EVol (given)     EVol (Mastin)')
 88    format(4x,i6,6x,g12.5,6x,g12.5)
 
@@ -879,26 +880,26 @@
       use global_param,  only : &
          HR_2_S,KM3_2_M3
 
-      real(kind=ip) :: PlmH
-      real(kind=dp) :: EDur  ! Time is always in dp
+      real(kind=8) :: PlmH
+      real(kind=8) :: EDur  ! Time is always in dp
 
-      real(kind=ip) :: HandDUR_2_EVol
+      real(kind=8) :: HandDUR_2_EVol
 
       ! From Mastin doi:10.1016/j.jvolgeores.2009.01.008
-      real(kind=ip), parameter :: Coeff = 2.0_ip
-      real(kind=ip), parameter :: Expo  = 0.241_ip
+      real(kind=8), parameter :: Coeff = 2.0_8
+      real(kind=8), parameter :: Expo  = 0.241_8
 
       ! From Sparks et al; Volcanic Plumes Eq. 5.1
-      !real(kind=ip), parameter :: Coeff = 1.67_ip
-      !real(kind=ip), parameter :: Expo  = 0.259_ip
+      !real(kind=8), parameter :: Coeff = 1.67_8
+      !real(kind=8), parameter :: Expo  = 0.259_8
 
       ! The equation from these references is H = Coeff * Q^(Expo)
       ! where H is in km and Q is m^3/sec
       ! Now solving for Q in km^3/hr and using EDur to get EVol
 
-        HandDUR_2_EVol = real(EDur,kind=ip)*HR_2_S * &
-                          (PlmH/Coeff)**(1.0_ip/Expo) / KM3_2_M3
-
+      HandDUR_2_EVol = real(EDur,kind=8)*HR_2_S * &
+                        (PlmH/Coeff)**(1.0_8/Expo) / KM3_2_M3
+ 
       end function HandDUR_2_EVol
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

@@ -997,7 +997,7 @@
 
          ! EP (Eruption profile lenth index)
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),*)"     ER: ",dim_names(7)
+        write(outlog(io),*)"     EP: ",dim_names(7)
       endif;enddo
       nSTAT = nf90_def_var(ncid,dim_names(7),&
                            NF90_INT,&
@@ -1011,7 +1011,7 @@
 
          ! WF (Wind file index)
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),*)"     WF: ",dim_names(7)
+        write(outlog(io),*)"     WF: ",dim_names(8)
       endif;enddo
       nSTAT = nf90_def_var(ncid,dim_names(8),&
                            NF90_INT,&

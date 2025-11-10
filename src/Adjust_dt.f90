@@ -128,7 +128,7 @@
               !       will always be dominated by the large grain sizes with the
               !       highest fall velocities
               tmp3 =   (real(abs(vz_meso_next_step_sp(i,j,k)) + &
-                     maxval(abs(vf_meso_next_step_sp(i,j,k,1:nsmax))),kind=ip)) &
+                        maxval(abs(vf_meso_next_step_sp(i,j,k,1:nsmax))),kind=ip)) &
                        *MPS_2_KMPHR / dz_vec_pd(k)
               if(tmp3.gt.vzmax_dz) vzmax_dz = tmp3
             enddo
@@ -166,8 +166,8 @@
               !       species that are flushed out of the system. Otherwise, this
               !       will always be dominated by the large grain sizes with the
               !       highest fall velocities.  This is done in Set_Vf_Meso.
-              tmp3 =       (abs(vz_pd(i,j,k)) + &
-                    maxval(abs(vf_pd(i,j,k,1:nsmax))))/dz_vec_pd(k)
+              tmp3 =(      (abs(vz_pd(i,j,k        ))) +   &
+                     maxval(abs(vf_pd(i,j,k,1:nsmax))) ) / dz_vec_pd(k)
               if(tmp3.gt.vzmax_dz) vzmax_dz = tmp3
             enddo
           enddo
@@ -177,7 +177,10 @@
       ! is present (between eruptive pulses, resuspension cases where source hasn't been activated)
       ! Reset vzmaz_dz if this case is special.
       if(n_gs_aloft.eq.0)vzmax_dz = 0.0_ip
+      ! When dimensions are split, choose the most restrictive time step
       time_advect = 1.0_ip/max(vxmax_dx,vymax_dy,vzmax_dz)
+      ! For a full, multi-dimensional case:
+      !time_advect = 1.0_ip/(vxmax_dx + vymax_dy + vzmax_dz)
 
       !-------------------------------------------------------
       !  DIFFUSION

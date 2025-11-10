@@ -575,16 +575,20 @@
       close(fid_misc)
 
       if(IsLatLon)then
-        xmin = minval(lon_cc_pd(1:nx))
-        ! Make sure xmin is in the range -180->180
-        if (xmin.gt.180.0_ip)then
-          xmin = minval(lon_cc_pd(1:nx))-360.0_ip
-          xmax = maxval(lon_cc_pd(1:nx))-360.0_ip
-        else
-          xmax = maxval(lon_cc_pd(1:nx))
+!        xmin = minval(lon_cc_pd(1:nx))
+!        ! Make sure xmin is in the range -180->180
+!        if (xmin.gt.180.0_ip)then
+!          xmin = minval(lon_cc_pd(1:nx))-360.0_ip
+!          xmax = maxval(lon_cc_pd(1:nx))-360.0_ip
+!        else
+!          xmax = maxval(lon_cc_pd(1:nx))
+!        endif
+!        ymin = minval(lat_cc_pd(1:ny))
+!        ymax = maxval(lat_cc_pd(1:ny))
+        if(lonUR-lonLL.ge.360.0_ip)then
+          lonLL = 0.0_ip
+          lonUR = 360.0_ip
         endif
-        ymin = minval(lat_cc_pd(1:ny))
-        ymax = maxval(lat_cc_pd(1:ny))
         xmin = lonLL
         xmax = lonUR
         ymin = latLL
@@ -635,6 +639,9 @@
       elseif(lonUR-lonLL.le.40.0_ip)then
         write(base_str,*)"-Ba10"
         write(detail_str,*)"-Dl"
+      elseif(lonUR-lonLL.le.100.0_ip)then
+        write(base_str,*)"-Ba20"
+        write(detail_str,*)"-Dl"
       else
         write(base_str,*)"-Ba20"
         write(detail_str,*)"-Dl"
@@ -653,10 +660,21 @@
       area_str = trim(area_str) // "/" // trim(adjustl(flt_str)) // "r"
       area2_str = " -R"
       if(IsLatLon)then
-        write(flt_str,'(f8.3)')lonLL+de*0.5_ip
-        area2_str = trim(area2_str) // trim(adjustl(flt_str))
-        write(flt_str,'(f8.3)')latLL+dn*0.5_ip
-        area2_str = trim(area2_str) // "/" // trim(adjustl(flt_str))
+        if(lonUR-lonLL.le.100.0_ip)then
+          write(flt_str,'(f8.3)')lonLL+de*0.5_ip
+          area2_str = trim(area2_str) // trim(adjustl(flt_str))
+          write(flt_str,'(f8.3)')latLL+dn*0.5_ip
+          area2_str = trim(area2_str) // "/" // trim(adjustl(flt_str))
+          write(flt_str,'(f8.3)')lonUR-de*0.5_ip
+          area2_str = trim(area2_str) // "/" // trim(adjustl(flt_str))
+        else
+          write(flt_str,'(f8.3)')0.0_4
+          area2_str = trim(area2_str) // trim(adjustl(flt_str))
+          write(flt_str,'(f8.3)')latLL+dn*0.5_ip
+          area2_str = trim(area2_str) // "/" // trim(adjustl(flt_str))
+          write(flt_str,'(f8.3)')360.0_4
+          area2_str = trim(area2_str) // "/" // trim(adjustl(flt_str))
+        endif
         write(flt_str,'(f8.3)')lonUR-de*0.5_ip
         area2_str = trim(area2_str) // "/" // trim(adjustl(flt_str))
         write(flt_str,'(f8.3)')latUR-dn*0.5_ip
@@ -689,7 +707,11 @@
       if (IsLatLon) then
         ! For lon/lat grids, default to a Mercator projection
         ! PROJ string:    PROJ="-JM${VCLON}/${VCLAT}/20"
-        proj_str = " -JM"
+        if(lonUR-lonLL.le.100.0_ip)then
+          proj_str = " -JM"
+        else
+          proj_str = " -JQ"
+        endif
         write(flt_str,'(f8.3)')lon_volcano
         proj_str = trim(proj_str) // trim(adjustl(flt_str))
         write(flt_str,'(f8.3)')lat_volcano
