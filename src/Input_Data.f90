@@ -1067,7 +1067,7 @@
          input_unit
 
       use global_param,  only : &
-         EPS_SMALL,EPS_TINY,nmods,OPTMOD_names,limiter,&
+         EPS_SMALL,EPS_TINY,nmods,OPTMOD_names,limiter,KM_2_M,&
          useDS,useTemperature,useCalcFallVel,useLogNormGSbins,&
          useDiffusion,useCN,useVz_rhoG,M_2_MM,M2PS_2_KM2PHR,MAXNUM_OPTMODS
 
@@ -1496,6 +1496,14 @@
           lon_volcano = value1
           lat_volcano = value2
           z_volcano   = value3
+          if(z_volcano.gt.10.0_ip)then
+            ! Height should be in km, but this is too high. Maybe it was entered as meters
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"WARNING: vent elevation is too hight: ",z_volcano
+              write(outlog(io),*)"         Converting from m to km."
+            endif;enddo
+            z_volcano = z_volcano / KM_2_M
+          endif
         else
           ! third value unsuccessful, assign vent elevation to 0
           lon_volcano = value1
@@ -1582,6 +1590,14 @@
           x_volcano = value1
           y_volcano = value2
           z_volcano = value3
+          if(z_volcano.gt.10.0_ip)then
+            ! Height should be in km, but this is too high. Maybe it was entered as meters
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"WARNING: vent elevation is too hight: ",z_volcano
+              write(outlog(io),*)"         Converting from m to km."
+            endif;enddo
+            z_volcano = z_volcano / KM_2_M
+          endif
         else
           x_volcano = value1
           y_volcano = value2

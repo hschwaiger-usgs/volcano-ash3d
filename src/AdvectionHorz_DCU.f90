@@ -297,13 +297,18 @@
             if(rmax.eq.nxmax.and..not.IsPeriodic) &
               ! Flux out the + side of advection row  (E)
               outflow_yz2_pd(j,k,n) = outflow_yz2_pd(j,k,n) + update_cc(nxmax+1)
-            if(update_cc(0).le.-EPS_TINY)then
-              write(*,*)"ERROR! Update to outflow_yz1_pd negative at: ",j,k,n,update_cc(0)
-            endif
-            if(update_cc(nxmax+1).le.-EPS_TINY)then
-              write(*,*)"ERROR! Update to outflow_yz2_pd negative at: ",j,k,n,update_cc(nxmax+1)
-            endif
-
+            !if(update_cc(0).le.-EPS_TINY)then
+            !  do io=1,2;if(VB(io).le.verbosity_error)then
+            !    write(errlog(io),*)"ERROR: ",&
+            !               "Update to outflow_yz1_pd negative at: ",j,k,n,update_cc(0)
+            !  endif;enddo
+            !endif
+            !if(update_cc(nxmax+1).le.-EPS_TINY)then
+            !  do io=1,2;if(VB(io).le.verbosity_error)then
+            !    write(errlog(io),*)"ERROR: ",&
+            !               "Update to outflow_yz2_pd negative at: ",j,k,n,update_cc(nxmax+1)
+            !  endif;enddo
+            !endif
           enddo ! loop over j=jmin,jmax
         enddo ! loop over k=kmin,kmax
       !$OMP END PARALLEL DO
@@ -560,12 +565,18 @@
             if(rmax.eq.nymax) &
               ! Flux out the + side of advection row  (S)
               outflow_xz2_pd(i,k,n) = outflow_xz2_pd(i,k,n) + update_cc(nymax+1)
-            if(update_cc(0).le.-EPS_TINY)then
-              write(*,*)"ERROR! Update to outflow_xz1_pd negative at: ",i,k,n,update_cc(0)
-            endif
-            if(update_cc(nymax+1).le.-EPS_TINY)then
-              write(*,*)"ERROR! Update to outflow_xz2_pd negative at: ",i,k,n,update_cc(nymax+1)
-            endif
+            !if(update_cc(0).le.-EPS_TINY)then
+            !  do io=1,2;if(VB(io).le.verbosity_error)then
+            !    write(errlog(io),*)"ERROR: ",&
+            !               "Update to outflow_xz1_pd negative at: ",i,k,n,update_cc(0)
+            !  endif;enddo
+            !endif
+            !if(update_cc(nymax+1).le.-EPS_TINY)then
+            !  do io=1,2;if(VB(io).le.verbosity_error)then
+            !    write(errlog(io),*)"ERROR: ",&
+            !               "Update to outflow_xz2_pd negative at: ",i,k,n,update_cc(nymax+1)
+            !  endif;enddo
+            !endif
           enddo ! loop over i=imin,imax
         enddo ! loop over k=kmin,kmax
       !$OMP END PARALLEL DO

@@ -622,6 +622,7 @@
         read(fid_ascii2din,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         read(fid_ascii2din,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         read(fid_ascii2din,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+        ! read the raster file from the top down as per the ESRI ASCII specification
         do j=A_ny,1,-1
           read(fid_ascii2din,*,err=2600,iostat=iostatus,iomsg=iomessage) (A_XY(i,j), i=1,A_nx)
         enddo

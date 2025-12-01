@@ -227,7 +227,7 @@
 !    none
 !
 !  This subroutine calls the vertical diffusion routines. This subroutine uses
-!  the parameter useCN (set via preprocesso flag in global_param) to determine
+!  the parameter useCN (set via preprocessor flag in global_param) to determine
 !  if implicit or explicit solvers should be used.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

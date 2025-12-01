@@ -315,18 +315,17 @@
               if(rmax.eq.nzmax) &
                 ! Flux out the + side of advection row  (top of domain)
                 outflow_xy2_pd(i,j,n) = outflow_xy2_pd(i,j,n) + update_cc(nzmax+1)
-            if(update_cc(0).le.-EPS_TINY)then
-              write(*,*)"ERROR! Update to outflow_xy1_pd negative at: ",i,j,n,update_cc(0)
-            endif
-            if(update_cc(nzmax+1).le.-EPS_TINY)then
-              write(*,*)"ERROR! Update to outflow_xy2_pd negative at: ",i,j,n,update_cc(nzmax+1)
-              write(*,*)rmin,rmax,ncells
-              do ii=-1,nzmax+2
-                write(*,*)ii,vel_cc(ii),dt_vol_cc(ii),concen_pd(i,j,ii,n,ts0:ts1)
-              enddo
-              stop 77
-            endif
-
+            !if(update_cc(0).le.-EPS_TINY)then
+            !  do io=1,2;if(VB(io).le.verbosity_error)then
+            !    write(errlog(io),*)"ERROR: ",&
+            !               "Update to outflow_xy1_pd negative at: ",i,j,n,update_cc(0)
+            !  endif;enddo
+            !endif
+            !if(update_cc(nzmax+1).le.-EPS_TINY)then
+            !  do io=1,2;if(VB(io).le.verbosity_error)then
+            !    write(errlog(io),*)"ERROR! Update to outflow_xy2_pd negative at: ",i,j,n,update_cc(nzmax+1)
+            !  endif;enddo
+            !endif
           enddo ! loop over i=imin,imax
         enddo ! loop over j=jmin,jmax
         !$OMP END PARALLEL DO

@@ -4,13 +4,39 @@
 !
 ! This module provides the subroutines that use python for creating 2d maps,
 ! 2d vertical profiles, and the little deposit accumulation plots linked to
-! the airport arrival kml (ash_arrivaltimes_airports.kml).  Although a few
-! third party API's are available, these subroutines create temporary script
-! files that are run if python/matplotlib/cartopy are installed on the local system.
+! the airport arrival kml (ash_arrivaltimes_airports.kml).  These subroutines
+! create temporary script files that are run if python/matplotlib/cartopy are
+! installed on the local system.
 !
 !      subroutine write_2Dmap_PNG_python
 !      subroutine write_2Dprof_PNG_python
 !      subroutine write_DepPOI_TS_PNG_python
+!
+! Python mapping expects matplotlib and cartopy for geographic mapping.
+! Additinoally, gdal and geopandas are needed for loading ASCII files
+! and handling geospatial data. We recommend using Anaconda:
+!
+! (1) Download anaconda:
+!   curl -O https://repo.anaconda.com/archive/Anaconda3-2025.06-0-Linux-x86_64.sh
+! 
+! (2) Install:
+!   bash ~/Anaconda3-2025.06-0-Linux-x86_64.sh
+!  Accept terms of service.
+!  Accept default install location: ~/anaconda3
+!  Choose 'no' when asked about editing start-up scripts.
+! 
+! (3) Initialize anaconda manually.
+!   export PATH="$HOME/anaconda3/bin:$PATH"
+!   conda init
+! 
+! (4) Install the packages your script needs:
+!   conda install -c conda-forge geopandas
+!   conda install -c scitools cartopy
+!   conda install -c gdal
+!
+! conda create --name geo_env
+! conda activate geo_env
+!
 !
 !##############################################################################
 
