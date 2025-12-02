@@ -284,12 +284,12 @@
         endif ! conditional for when external file is read
       endif;enddo
 
-      allocate(AirportFullLat(MAXAIRPORTS))
-      allocate(AirportFullLon(MAXAIRPORTS))
-      allocate(AirportFullX(MAXAIRPORTS))
-      allocate(AirportFullY(MAXAIRPORTS))
-      allocate(AirportFullCode(MAXAIRPORTS))
-      allocate(AirportFullName(MAXAIRPORTS))
+      if(.not.allocated(AirportFullLat))  allocate(AirportFullLat(MAXAIRPORTS))
+      if(.not.allocated(AirportFullLon))  allocate(AirportFullLon(MAXAIRPORTS))
+      if(.not.allocated(AirportFullX))    allocate(AirportFullX(MAXAIRPORTS))
+      if(.not.allocated(AirportFullY))    allocate(AirportFullY(MAXAIRPORTS))
+      if(.not.allocated(AirportFullCode)) allocate(AirportFullCode(MAXAIRPORTS))
+      if(.not.allocated(AirportFullName)) allocate(AirportFullName(MAXAIRPORTS))
 
       if(.not.ReadExtAirportFile.or.AppendExtAirportFile)then
         ! Populate the global list if needed. Note that we might supplement this list.
@@ -375,17 +375,17 @@
         xnow      = AirportFullX(i)
         ynow      = AirportFullY(i)
         if (IsLatLon) then
-          if ((longitude.ge.lonLL+de) .and. &
-              (longitude.le.lonUR-de) .and. &
-              (latitude.ge.latLL+dn)  .and. &
-              (latitude.le.latUR-dn)) then
+          if ((longitude.ge.lonLL) .and. &
+              (longitude.le.lonUR) .and. &
+              (latitude.ge.latLL)  .and. &
+              (latitude.le.latUR)) then
             nairports = nairports+1
           endif
         else
-          if ((xnow.ge.xLL+dx) .and. &
-              (xnow.le.xUR-dx) .and. &
-              (ynow.ge.yLL+dy) .and. &
-              (ynow.le.yUR-dy)) then
+          if ((xnow.ge.xLL) .and. &
+              (xnow.le.xUR) .and. &
+              (ynow.ge.yLL) .and. &
+              (ynow.le.yUR)) then
             nairports = nairports+1
           endif
         endif
@@ -404,10 +404,10 @@
         xnow      = AirportFullX(i)
         ynow      = AirportFullY(i)
         if (IsLatLon) then
-          if ((longitude.ge.lonLL+de) .and. &
-              (longitude.le.lonUR-de) .and. &
-              (latitude.ge.latLL+dn)  .and. &
-              (latitude.le.latUR-dn)) then
+          if ((longitude.ge.lonLL) .and. &
+              (longitude.le.lonUR) .and. &
+              (latitude.ge.latLL)  .and. &
+              (latitude.le.latUR)) then
             ind = ind + 1
             Airport_Code(ind) = CodeNow
             Airport_Name(ind) = NameNow
@@ -433,10 +433,10 @@
             endif
           endif
         else
-          if ((xnow.ge.xLL+dx) .and. &
-              (xnow.le.xUR-dx) .and. &
-              (ynow.ge.yLL+dy) .and. &
-              (ynow.le.yUR-dy)) then
+          if ((xnow.ge.xLL) .and. &
+              (xnow.le.xUR) .and. &
+              (ynow.ge.yLL) .and. &
+              (ynow.le.yUR)) then
             ind = ind + 1
             Airport_Name(ind) = NameNow
             Airport_x(ind) = xnow
@@ -871,12 +871,12 @@
         write(outlog(io),*)"     Entered Subroutine Read_GlobalAirports"
       endif;enddo
 
-      allocate(AirportFullLat(MAXAIRPORTS))
-      allocate(AirportFullLon(MAXAIRPORTS))
-      allocate(AirportFullX(MAXAIRPORTS))
-      allocate(AirportFullY(MAXAIRPORTS))
-      allocate(AirportFullCode(MAXAIRPORTS))
-      allocate(AirportFullName(MAXAIRPORTS))
+      if(.not.allocated(AirportFullLat))  allocate(AirportFullLat(MAXAIRPORTS))
+      if(.not.allocated(AirportFullLon))  allocate(AirportFullLon(MAXAIRPORTS))
+      if(.not.allocated(AirportFullX))    allocate(AirportFullX(MAXAIRPORTS))
+      if(.not.allocated(AirportFullY))    allocate(AirportFullY(MAXAIRPORTS))
+      if(.not.allocated(AirportFullCode)) allocate(AirportFullCode(MAXAIRPORTS))
+      if(.not.allocated(AirportFullName)) allocate(AirportFullName(MAXAIRPORTS))
 
       ! WARNING: if you add airports to this internal master list, you need to make
       !          sure you do not add too many and exceed MAXAIRPORTS

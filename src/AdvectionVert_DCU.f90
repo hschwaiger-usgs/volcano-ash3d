@@ -103,7 +103,6 @@
       integer       :: i_I    ! This is the index along interfaces in the particular advection direction
       integer       :: i_cc   ! This is the index along cell-centers in the particular advection direction
       integer       :: ncells
-      integer       :: ii
 
        ! arrays that live on cell-centers: Note that we have 2 ghost cells
       real(kind=ip),dimension(-1:nzmax+2)               :: update_cc

@@ -372,7 +372,7 @@ PPOBJS = Ash3d_VariableModules.o        \
 
 GRAFOBJ = Ash3d_PostProc_gnuplot.o $(plplotOBJ) $(dislinOBJ) Ash3d_PostProc_GMT.o $(gmtOBJ) Ash3d_PostProc_matlab.o Ash3d_PostProc_python.o
 
-TOOLOBJ = Ash3d_ASCII_check.o
+TOOLOBJ = Ash3d_ASCII_check.o Ash3d_ASCII_DepThin.o Ash3d_ASCII_GenCTR.o Ash3d_GenASCII_from_table.o Ash3d_NetCDF_GenCTR.o
 
 ifeq ($(USENETCDF), T)
   DATAOBJ = write_NETCDF.o

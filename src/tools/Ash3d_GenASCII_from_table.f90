@@ -8,9 +8,6 @@
 
       use io_units
 
-      use global_param,   only : &
-        EPS_TINY
-
       use Ash3d_ASCII_IO,  only : &
           write_2D_ASCII_flt
 
@@ -20,8 +17,8 @@
       integer           :: stat
       character(len=80) :: linebuffer080
 
-      character(len=80) :: file1,file2
-      logical :: IsThere1, IsThere2
+      character(len=80) :: file1
+      logical :: IsThere1
 
       integer :: nx
       integer :: ny

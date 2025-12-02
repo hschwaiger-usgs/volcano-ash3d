@@ -1,5 +1,5 @@
 ! Ash3d_NetCDF_GenCTR
-! This tool with recover the control file that was used (or could be used) from
+! This tool will recover the control file that was used (or could be used) from
 ! an Ash3d NetCDF output file. This tool relies on some recent additions to
 ! the NetCDF output file and my not work for older files.
 

@@ -143,8 +143,8 @@
       character(len=6)   :: Fill_Value_str
       character(len=200) :: cmd
 
-      integer :: i,j,ii
-      real(kind=ip) :: tmp_ip
+      integer :: i
+!      real(kind=ip) :: tmp_ip
       integer     , dimension(:,:),allocatable :: zrgb
       character(len=40) :: title_plot
       character(len=15) :: title_legend
@@ -160,30 +160,30 @@
 
       character(len=9)  :: filename_script
       character(len=20) :: filename_outdata
-      character(len=10) :: filename_contourdata
+!      character(len=10) :: filename_contourdata
 
       !character(len=26) :: coord_str
       character(len=25) :: plotcom
-      character(len=80) :: coastfile
+!      character(len=80) :: coastfile
       integer           :: ioerr
       integer           :: iostatus
-      character(len=120):: iomessage
+!      character(len=120):: iomessage
       integer           :: iw,iwf
 
       integer :: ncities
       real(kind=ip),dimension(:),allocatable     :: lon_cities
       real(kind=ip),dimension(:),allocatable     :: lat_cities
       character(len=26),dimension(:),allocatable :: name_cities
-      logical           :: IsThere1,IsThere2
-      character(len= 50):: linebuffer050 
+      logical           :: IsThere1
+!      character(len= 50):: linebuffer050 
       character(len= 80):: linebuffer080
       character(len=130):: linebuffer130,linebuffer130_2
       character(len=8)  :: outstr
-      character         :: testkey
-      integer           :: ilev,ignulev
-      integer           :: lev_i,substr_pos1,substr_pos2,substr_pos3
-      real(kind=4)      :: lev_r4
-      integer           :: icurve,ipt
+!      character         :: testkey
+!      integer           :: ilev,ignulev
+!      integer           :: lev_i,substr_pos1,substr_pos2,substr_pos3
+!      real(kind=4)      :: lev_r4
+!      integer           :: icurve
 
       character(len=20) :: varname
 
@@ -462,10 +462,10 @@
       endif
 
       write(filename_outdata,52) "          outvar.dat"
-      write(filename_contourdata,53) "outvar.con"
+!      write(filename_contourdata,53) "outvar.con"
       write(filename_script,54) "outvar.py"
  52   format(a20)
- 53   format(a10)
+! 53   format(a10)
  54   format(a9)
 
       if(IsLatLon)then
@@ -827,6 +827,18 @@
       write(plotcom,'(a11,a14)')'python ',filename_script
       call execute_command_line(plotcom,exitstat=iostatus)
 
+      if(iostatus.ne.0)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"WARNING: python command is returing a non-zero error code:", iostatus
+          write(errlog(io),*)"         Maybe your python installation is incomplete"
+          write(errlog(io),*)"         Make sure you install the following in your conda environment:"
+          write(errlog(io),*)"           conda install -c conda-forge geopandas"
+          write(errlog(io),*)"           conda install -c scitools cartopy"
+          write(errlog(io),*)"           conda install -c gdal"
+        endif;enddo
+        stop 1
+      endif
+
 !      if(writeContours)then
 !
 !        ! Read outvar.con
@@ -976,11 +988,11 @@
       ! Error traps (starting with 9000)
       ! For this subroutine, the 100's position refers to block # of control file
 
-9001  do io=1,2;if(VB(io).le.verbosity_error)then
-        write(errlog(io),*)  'error: cannot open file: ',filename_contourdata
-        write(errlog(io),*)  'Program stopped'
-      endif;enddo
-      stop 1
+!9001  do io=1,2;if(VB(io).le.verbosity_error)then
+!        write(errlog(io),*)  'error: cannot open file: ',filename_contourdata
+!        write(errlog(io),*)  'Program stopped'
+!      endif;enddo
+!      stop 1
 
       end subroutine write_2Dmap_PNG_python
 
@@ -1000,23 +1012,23 @@
 
       subroutine write_2Dprof_PNG_python(vprof_ID)
 
-      use global_param,  only : &
-         KG_2_MG,KM3_2_M3
+      !use global_param,  only : &
+      !   KG_2_MG,KM3_2_M3
 
-      use mesh,          only : &
-         IsLatLon,nzmax,z_cc_pd
+      !use mesh,          only : &
+      !   IsLatLon,nzmax,z_cc_pd
 
-      use Output_Vars,   only : &
-         pr_ash,CLOUDCON_THRESH
+      !use Output_Vars,   only : &
+      !   pr_ash,CLOUDCON_THRESH
 
-      use io_data,       only : &
-         Site_vprofile,x_vprofile,y_vprofile,cdf_b3l1,VolcanoName
+      !use io_data,       only : &
+      !   Site_vprofile,x_vprofile,y_vprofile,cdf_b3l1,VolcanoName
 
-      use Source,        only : &
-         e_Volume,e_Duration,e_StartTime,e_PlumeHeight
+      !use Source,        only : &
+      !   e_Volume,e_Duration,e_StartTime,e_PlumeHeight
 
-      use time_data,     only : &
-         os_time_log,SimStartHour,BaseYear,useLeap,ntmax,time_native
+      !use time_data,     only : &
+      !   os_time_log,SimStartHour,BaseYear,useLeap,ntmax,time_native
 
       integer, intent (in) :: vprof_ID
 
@@ -1154,29 +1166,29 @@
 
       subroutine write_DepPOI_TS_PNG_python(pt_indx)
 
-      use Output_Vars,   only : &
-         THICKNESS_THRESH
+!      use Output_Vars,   only : &
+!         THICKNESS_THRESH
+!
+!      use Airports,      only : &
+!         Airport_Name,Airport_Thickness_TS
+!
+!      use io_data,       only : &
+!         nWriteTimes,WriteTimes
+!
+!      use time_data,     only : &
+!         Simtime_in_hours
 
-      use Airports,      only : &
-         Airport_Name,Airport_Thickness_TS
+      integer :: pt_indx
 
-      use io_data,       only : &
-         nWriteTimes,WriteTimes
-
-      use time_data,     only : &
-         Simtime_in_hours
-
-      integer :: pt_indx,i
-
-      real(kind=dp) :: ymaxpl
-      character(len=14) :: filename_script
-      character(len=14) :: filename_outdata
-      character(len=14) :: dp_pngfile
-      integer           :: fid_outdata  = 54
-      integer           :: fid_script  = 55
-      character(len=25) :: plotcom
-      integer,save      :: plot_index = 0
-      character(len=200) :: cmd
+!      real(kind=dp) :: ymaxpl
+!      character(len=14) :: filename_script
+!      character(len=14) :: filename_outdata
+!      character(len=14) :: dp_pngfile
+!      integer           :: fid_outdata  = 54
+!      integer           :: fid_script  = 55
+!      character(len=25) :: plotcom
+!      integer,save      :: plot_index = 0
+!      character(len=200) :: cmd
 
 !      if(Airport_Thickness_TS(pt_indx,nWriteTimes).lt.THICKNESS_THRESH)then
 !        return

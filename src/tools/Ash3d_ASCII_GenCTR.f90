@@ -43,7 +43,7 @@
       use io_units
 
       use io_data,       only : &
-         infile,concenfile,PP_infile,datafileIn,cdf_title,cdf_comment,VolcanoName, &
+         infile,concenfile,PP_infile,cdf_title,cdf_comment,VolcanoName, &
          Have_Block_NetCDF,Have_Block_ResParm,Have_Block_Topo,Have_Block_VarDiff,&
          cdf_b1l2,cdf_vardz,cdf_b3l5, &
          cdf_b4l1,cdf_b4l2,cdf_b4l3,cdf_b4l4,cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,&
@@ -623,7 +623,7 @@
       use io_units
 
       use io_data,       only : &
-         infile,PP_infile,VolcanoName
+         PP_infile,VolcanoName
 
       use time_data,     only : &
          SimStartHour,BaseYear,useLeap

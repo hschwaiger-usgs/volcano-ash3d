@@ -361,7 +361,7 @@
       real(kind=dp)     :: StartHour
       real(kind=dp)     :: RunStartHour    ! Start time of model run, in hours since BaseYear
       character(len=100):: CompVer
-      character(len=608):: CompOpt
+      character(len=669):: CompOpt
       logical           :: IsThere
 
       INTERFACE
