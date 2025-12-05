@@ -97,7 +97,7 @@
 
       use mesh,          only : &
          IsLatLon,lon_cc_pd,lat_cc_pd,de,dn, &
-         x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd
+         x_cc_pd,y_cc_pd,dx,dy
 
       use Output_Vars,   only : &
          !ContourFilled, &
@@ -130,7 +130,8 @@
       use citywriter
 
       use Ash3d_ASCII_IO,  only : &
-          write_2D_ASCII_flt
+          write_2D_ASCII_flt,     &
+          write_2D_ASCII_flt_regular
 
       integer      ,intent(in) :: nx
       integer      ,intent(in) :: ny
@@ -140,10 +141,11 @@
       real(kind=ip),intent(in) :: Fill_Value
       logical      ,intent(in) :: writeContours
 
+!      logical            :: mask(nx,ny)
       character(len=6)   :: Fill_Value_str
       character(len=200) :: cmd
 
-      integer :: i
+      integer :: i,j
 !      real(kind=ip) :: tmp_ip
       integer     , dimension(:,:),allocatable :: zrgb
       character(len=40) :: title_plot
@@ -186,6 +188,7 @@
 !      integer           :: icurve
 
       character(len=20) :: varname
+      logical           :: IsRegGrid
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
@@ -442,31 +445,46 @@
         stop 1
       endif
 
-      if(writeContours)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
-          write(outlog(io),*)"Running python to calculate contours lines"
-        endif;enddo
-        write(outfile_name,'(a14)')'tmp.png'
-        allocate(ContourDataNcurves(nConLev))
-        allocate(ContourDataNpoints(nConLev,CONTOUR_MAXCURVES))
-        allocate(ContourDataX(nConLev,CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS))
-        allocate(ContourDataY(nConLev,CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS))
-        ContourDataNcurves(:)   = 0
-        ContourDataNpoints(:,:) = 0
-        ContourDataX(:,:,:)     = 0.0_ip
-        ContourDataY(:,:,:)     = 0.0_ip
-      else
-        do io=1,2;if(VB(io).le.verbosity_error)then
-          write(outlog(io),*)"Running python to generate contour plot"
-        endif;enddo
-      endif
-
-      write(filename_outdata,52) "          outvar.dat"
+      write(filename_outdata,53) "outvar.dat"
 !      write(filename_contourdata,53) "outvar.con"
-      write(filename_script,54) "outvar.py"
- 52   format(a20)
-! 53   format(a10)
- 54   format(a9)
+      write(filename_script,54) "outvar.m"
+ 53   format(a10)
+ 54   format(a8)
+
+      ! When we run this subroutine via a matlab script (as opposed to the API), we
+      ! write out OutVar to an ESRI ASCII file to be read by the script
+      ! Now mask out non-cloud values
+!      if(iprod.eq.10.or.&  ! CloudHeight
+!         iprod.eq.11)then  ! CloudHeightBot
+!        mask(1:nx,1:ny) = Mask_Cloud(1:nx,1:ny)
+!      elseif(iprod.eq.7)then ! DepArrivalTime
+!        mask(1:nx,1:ny) = Mask_Deposit(1:nx,1:ny)
+!      elseif(iprod.eq.14)then
+!        ! cloud mask based on cloud load does not work in this case the cloud load mask
+!        ! is a function of time
+!        mask(1:nx,1:ny) = .true.
+!        do i=1,nx
+!          do j=1,ny
+!            if(CloudArrivalTime(i,j).lt.0.0_ip)mask(i,j) = .false.
+!          enddo
+!        enddo
+!      else
+!        mask = .true.
+!      endif
+
+      if(IsLatLon)then
+        if(abs(dn-de).lt.1.0e-4_ip)then
+          IsRegGrid = .true.
+        else
+          IsRegGrid = .false.
+        endif
+      else
+        if(abs(dx-dy).lt.1.0e-4_ip)then
+          IsRegGrid = .true.
+        else
+          IsRegGrid = .false.
+        endif
+      endif
 
       if(IsLatLon)then
         xmin = minval(lon_cc_pd(1:nx))
@@ -485,6 +503,41 @@
         ymin = minval(y_cc_pd(1:ny))
         ymax = maxval(y_cc_pd(1:ny))
       endif
+
+      ! write out the data in a form that python can read
+      ! Python script expects an ESRI ASCII data file
+      if(IsRegGrid)then
+        ! If the grid is regular (dx=dy) then we can write an ESRI ASCII file and convert to grd
+        varname = "outvar"
+        call write_2D_ASCII_flt(nx,ny,IsLatLon,real(xmin,kind=sp),real(ymin,kind=sp),.true., &
+                           real(de,kind=sp),real(dn,kind=sp),Fill_Value_str,&
+                           real(OutVar,kind=sp),filename_outdata)
+      else
+        ! Irregular grids are problematic, call special ASCII interpolator
+        call write_2D_ASCII_flt_regular(nx,ny,IsLatLon,real(xmin,kind=sp),real(ymin,kind=sp),.true., &
+                           real(de,kind=sp),real(dn,kind=sp),Fill_Value_str,&
+                           real(OutVar,kind=sp),filename_outdata)
+      endif
+
+      if(writeContours)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Running python to calculate contours lines"
+        endif;enddo
+        write(outfile_name,'(a14)')'tmp.png'
+        allocate(ContourDataNcurves(nConLev))
+        allocate(ContourDataNpoints(nConLev,CONTOUR_MAXCURVES))
+        allocate(ContourDataX(nConLev,CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS))
+        allocate(ContourDataY(nConLev,CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS))
+        ContourDataNcurves(:)   = 0
+        ContourDataNpoints(:,:) = 0
+        ContourDataX(:,:,:)     = 0.0_ip
+        ContourDataY(:,:,:)     = 0.0_ip
+      else
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Running python to generate contour plot"
+        endif;enddo
+      endif
+
       call citylist(2,xmin,xmax,ymin,ymax, &
                       ncities,                        &
                       lon_cities,lat_cities,          &
@@ -509,12 +562,6 @@
                           DirDelim // 'USGSvid.png'
         inquire( file=trim(adjustl(Instit_IconFile)), exist=IsThere1)
       endif
-
-      ! write out the data in a form that python can read
-      ! Python script expects an ESRI ASCII data file
-      call write_2D_ASCII_flt(nx,ny,IsLatLon,real(xmin,kind=sp),real(ymin,kind=sp),.true., &
-                         real(de,kind=sp),real(dn,kind=sp),Fill_Value_str,&
-                         real(OutVar,kind=sp),filename_outdata)
 
       open(unit=fid_misc,file="volc.dat",status='replace')
       write(fid_misc,*)real(lon_volcano,kind=4),real(lat_volcano,kind=4),'""'

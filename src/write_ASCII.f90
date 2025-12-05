@@ -9,6 +9,7 @@
 !      subroutine vprofilecloser
 !      subroutine write_2D_ASCII(nx,ny,OutVar,VarMask,Fill_Value,filename_root)
 !      subroutine write_2D_ASCII_flt(nx,ny,IsLL,x1,y1,IsCC,dx,dy,Fill_Value,OutVar,filename)
+!      subroutine write_2D_ASCII_flt_regular(nx,ny,IsLL,x1,y1,IsCC,dx,dy,Fill_Value,OutVar,filename)
 !      subroutine write_2D_ASCII_int(nx,ny,IsLL,x1,y1,IsCC,dx,dy,Fill_Value,OutVar,filename)
 !      subroutine read_2D_ASCII(filename)
 !      subroutine write_3D_ASCII(cio)
@@ -35,6 +36,7 @@
              vprofilecloser,    &
              write_2D_ASCII,    &
              write_2D_ASCII_flt,&
+             write_2D_ASCII_flt_regular,&
              !write_2D_ASCII_int,&
              read_2D_ASCII,     &
              write_3D_ASCII,    &
@@ -506,6 +508,206 @@
       stop 1
 
       end subroutine write_2D_ASCII_flt
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  write_2D_ASCII_flt_regular
+!
+!  Called from: write_2Dmap_PNG_python
+!  Arguments:
+!    nx            = x length of output array OutVar
+!    ny            = y length of output array OutVar
+!    IsLL          = logical flag for Lon/Lat vs projected
+!    x1            = x (or lon) coordinate of Lower-left cell
+!    y1            = y (or lat) coordinate of Lower-left cell
+!    IsCC          = logical flag for cell-centered vs corner grid registration
+!    dx            = cell length in x
+!    dy            = cell length in y
+!    Fill_Value    = number used for No-data (given as 6-char)
+!    OutVar        = 2-d array to be written to ASCII file
+!    filename      = name of output file (20 characters)
+!
+!  Subroutine that writes out 2-D arra`ys in ESRI ASCII raster format, resampling onto a regular grid.
+!  Full format specification is given at the following web sites:
+!   https://help.arcgis.com/en/arcgisdesktop/10.0/help/index.html#/ESRI_ASCII_raster_format/009t0000000z000000/
+!   https://en.wikipedia.org/wiki/Esri_grid
+!  This format can be post-processed with gmt converting to grid files with
+!   gmt grdconvert out.dat=ef out.grd
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine write_2D_ASCII_flt_regular(nx,ny,IsLL,x1,y1,IsCC,dx,dy,Fill_Value,OutVar,filename)
+
+      use global_param,  only  : &
+         KM_2_M
+
+      integer          ,intent(in) :: nx,ny
+      logical          ,intent(in) :: IsLL
+      real(kind=sp)    ,intent(in) :: x1,y1
+      logical          ,intent(in) :: IsCC
+      real(kind=sp)    ,intent(in) :: dx,dy
+      character(len=6) ,intent(in) :: Fill_Value
+      real(kind=sp)    ,intent(in) :: OutVar(nx,ny)
+      character(len=20),intent(in) :: filename
+
+      real(kind=op)  :: FValue
+      integer :: i,j
+      character(len=50)  :: filename_out
+      integer            :: iostatus
+      character(len=120) :: iomessage
+      character(len= 50) :: linebuffer050
+      character(len= 80) :: linebuffer080
+      integer             :: nx_loc, ny_loc
+      real(kind=sp)       :: dx_loc,x_width,y_width
+      real(kind=sp),dimension(nx) :: x_in  ! cell-center coordinate of input grid
+      real(kind=sp),dimension(ny) :: y_in
+      real(kind=sp),dimension(:),allocatable    :: x_loc ! cell-center coordinate of output grid
+      real(kind=sp),dimension(:),allocatable    :: y_loc
+      real(kind=sp),dimension(:,:),allocatable  :: OutVar_loc
+      real(kind=sp)       :: A11,A12,A21,A22
+      real(kind=sp)       :: z11,z12,z21,z22
+      real(kind=sp)       :: xl,xr,yl,yr
+      real(kind=sp)       :: AREA
+      integer             :: ix,iy
+      real(kind=sp)       :: xnow,ynow,znow
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_2D_ASCII_flt_regular"
+      endif;enddo
+
+      read(Fill_Value,*,iostat=iostatus,iomsg=iomessage)FValue
+      linebuffer080 = Fill_Value
+      linebuffer050 = "Reading FValue from ASCII file"
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+
+      write(filename_out,*)trim(adjustl(filename))
+
+      open(unit=fid_ascii2dout,file=trim(adjustl(filename_out)), status='replace',action='write',err=2500)
+
+      ! Find the smaller of dx,dy
+      dx_loc = min(dx,dy)
+      do i=1,nx
+        x_in(i) = x1+0.5_sp*dx + (i-1)*dx
+      enddo
+      do j=1,ny
+        y_in(j) = y1+0.5_sp*dy + (j-1)*dy
+      enddo
+      x_width = nx*dx
+      y_width = ny*dy
+      nx_loc = floor(x_width/dx_loc)
+      ny_loc = floor(y_width/dx_loc)
+      allocate(x_loc(nx_loc))
+      allocate(y_loc(ny_loc))
+      allocate(OutVar_loc(nx_loc,ny_loc))
+      do i=1,nx_loc
+        x_loc(i) = x1+0.5_sp*dx_loc + (i-1)*dx_loc
+      enddo
+      do j=1,ny_loc
+        y_loc(j) = y1+0.5_sp*dx_loc + (j-1)*dx_loc
+      enddo
+
+      ! Loop over all points of the new grid and interpolate
+      do i=1,nx_loc
+        xnow = x_loc(i)
+        ix = floor((xnow-x1)/dx)
+        ix = min(max(ix,0),nx-1)
+        xl = x_in(ix)
+        xr = x_in(ix+1)
+        do j=1,ny_loc
+          ynow = y_loc(j)
+          iy = floor((ynow-y1)/dy)
+          iy = min(max(iy,0),ny-1)
+          yl = y_in(iy)
+          yr = y_in(iy+1)
+
+        ! The bilinear interpolation is the sum of the values in the four corners
+        ! that surround the point in question, weighted by the areas of the rectangles
+        ! to the upper left, upper right, lower left, and lower right of the point in
+        ! question, divided by the area of the entire square in which the point sits.
+        A11  = (xnow-  xl) * (ynow -   yl)    !area of lower  left rectangle
+        A21  = (xr  -xnow) * (ynow -   yl)    !area of lower right rectangle
+        A12  = (xnow-  xl) * (yr   - ynow)    !area of upper  left rectangle
+        A22  = (xr  -xnow) * (yr   - ynow)    !area of upper right rectangle
+        AREA = (yr  -  yl) * (xr   -   xl)    !total area of node
+
+        ! values at corners of the rectangle
+        z11 = OutVar(ix-1,iy-1)
+        z21 = OutVar(ix  ,iy-1)
+        z12 = OutVar(ix-1,iy  )
+        z22 = OutVar(ix  ,iy  )
+
+        ! Thickness at the airport
+        znow = (1.0_sp/AREA) * &  !reciprocal of area of large rectangle
+           (z22 * A11    + &  !z22 times area in lower left
+            z12 * A21    + &  !z12 times area in lower right
+            z21 * A12    + &  !z21 times area in upper left
+            z11 * A22)        !z11 times area in upper right
+        OutVar_loc(i,j) = znow
+        enddo
+      enddo
+
+      write(fid_ascii2dout,3000) nx_loc        ! write header values
+      write(fid_ascii2dout,3001) ny_loc
+      if (IsLL) then
+        if (x1.gt.180.0_ip)then
+          ! GIS software seem to prefer the domain -180->180
+          if(IsCC)then
+            write(fid_ascii2dout,3012) x1 -360.0_sp
+          else
+            write(fid_ascii2dout,3002) x1 -360.0_sp
+          endif
+        else
+          write(fid_ascii2dout,3002) x1
+        endif
+        if(IsCC)then
+          write(fid_ascii2dout,3013) y1
+        else
+          write(fid_ascii2dout,3003) y1
+        endif
+        write(fid_ascii2dout,3004) dx_loc,dx_loc
+      else
+        if(IsCC)then
+          write(fid_ascii2dout,3012) x1*KM_2_M    ! convert xLL from km to meters so ArcMap can read it
+          write(fid_ascii2dout,3013) y1*KM_2_M    ! same with yLL
+        else
+          write(fid_ascii2dout,3002) x1*KM_2_M    ! convert xLL from km to meters so ArcMap can read it
+          write(fid_ascii2dout,3003) y1*KM_2_M    ! same with yLL
+        endif
+        write(fid_ascii2dout,3004) dx_loc*KM_2_M,dx_loc*KM_2_M    ! and with dx and dy
+      endif
+      write(fid_ascii2dout,3005)Fill_Value
+
+      ! Write out arrays
+      do j=ny_loc,1,-1
+        write(fid_ascii2dout,*) (OutVar_loc(i,j), i=1,nx_loc)
+      enddo
+
+      deallocate(x_loc)
+      deallocate(y_loc)
+      deallocate(OutVar_loc)
+
+      close(fid_ascii2dout)
+
+!     format statements
+3000  format('NCOLS ',i5)
+3001  format('NROWS ',i5)
+3002  format('XLLCORNER ',f15.3)
+3003  format('YLLCORNER ',f15.3)
+3012  format('XLLCENTER ',f15.3)
+3013  format('YLLCENTER ',f15.3)
+3004  format('CELLSIZE ',2f15.3)
+3005  format('NODATA_VALUE ',a6)
+
+      return
+
+!     Error traps
+2500  do io=1,2;if(VB(io).le.verbosity_error)then
+        write(errlog(io),*) 'Error opening output file ASCII_output_file.txt.  Program stopped'
+      endif;enddo
+      stop 1
+
+      end subroutine write_2D_ASCII_flt_regular
+
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
