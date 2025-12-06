@@ -1,8 +1,0 @@
-[extend]
-path = "/gitleaks.toml"
-
-[[rules]]
-id = "us_phone_number"
-description = "US Phone Number"
-regex = '''\([0-9]{3}\) [0-9]{3}-[0-9]{4}'''
-keywords = ["phone", "contact"]
