@@ -318,6 +318,8 @@
       character(len=50)        :: GMTpath     = ''
       logical                  :: usematlab   = .false.
       character(len=50)        :: matlabpath  = ''
+      logical                  :: useoctave   = .false.
+      character(len=50)        :: octavepath  = ''
       logical                  :: usepython   = .false.
       character(len=50)        :: pythonpath  = ''
 

@@ -813,7 +813,7 @@
       ! Set up to plot via gnuplot script
       open(fid_script,file=filename_script,status='replace')
       write(fid_script,'(g0)')"##########################################################################"
-      write(fid_script,'(g0)')"# Temporary gnuplot script for producing 2d maps for Ash3d_PostProc"
+      write(fid_script,'(g0)')"# Temporary gnuplot script for producing vertical profiles for Ash3d_PostProc"
       write(fid_script,'(g0)')"# Adjust to suit your needs."
       write(fid_script,'(g0)')"##########################################################################"
       write(fid_script,*)"set terminal pngcairo font 'sans,12' size 854,603"   ! Set the image size

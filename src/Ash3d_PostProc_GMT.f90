@@ -469,7 +469,6 @@
               write(fid_outdata,*)tmp_ip,lat_cc_pd(j),OutVar(i,j)
             endif
           enddo
-          !write(fid_outdata,*)""
         enddo
         close(fid_outdata)
       endif
@@ -518,7 +517,6 @@
       ! Write annotations to several legends
       !  Left panel
       open( fid_misc,file="leg1.txt",status='replace')
-      write(fid_misc,'(a1)')"P"
       write(fid_misc,'(a11,a30)')"T Volcano: ",VolcanoName
       write(fid_misc,'(a5)')"G0.2i"
       write(fid_misc,'(a12,a20)')"T Run Date: ",os_time_log
@@ -927,7 +925,6 @@
               trim(adjustl(area_str)) // " " // &
               trim(adjustl(proj_str)) // " " // &
               "-Dx-1.0i/-1.5i/3.0i/1.0i/BL " // &
-              "-Dx-1.0i/-1.5i/3.0i/1.0i/BL " // &
               trim(adjustl(contn_ps))
       if(.not.writeContours)write(fid_script,*) trim(adjustl(cmd))
 
@@ -1133,31 +1130,289 @@
 
       subroutine write_2Dprof_PNG_GMT(vprof_ID)
 
-      use precis_param
+      use global_param,  only : &
+         KG_2_MG,KM3_2_M3
 
-!      use mesh,          only : &
-!         nzmax,z_cc_pd
-!
-!      use Output_Vars,   only : &
-!         pr_ash
-!
-!      use io_data,       only : &
-!         Site_vprofile,x_vprofile,y_vprofile,cdf_b3l1,VolcanoName
-!
-!      use Source,        only : &
-!         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
-!
-!      use time_data,     only : &
-!         os_time_log,BaseYear,useLeap,ntmax,time_native
+      use mesh,          only : &
+         IsLatLon,nzmax,z_cc_pd
+
+      use Output_Vars,   only : &
+         pr_ash,CLOUDCON_THRESH
+
+      use io_data,       only : &
+         Site_vprofile,x_vprofile,y_vprofile,cdf_b3l1,VolcanoName
+
+      use Source,        only : &
+         e_Volume,e_Duration,e_StartTime,e_PlumeHeight
+
+      use time_data,     only : &
+         os_time_log,SimStartHour,BaseYear,useLeap,ntmax,time_native
 
       integer, intent (in) :: vprof_ID
 
-      do io=1,2;if(VB(io).le.verbosity_error)then
-        write(errlog(io),*)"ERROR: Trying to write GMT vertical profile: ",vprof_ID
-        write(errlog(io),*)"       but write_2Dprof_PNG_GMT is not yet implemented."
-        write(errlog(io),*)"       Please choose a different plotting package for profiles"
+
+      character(len=14) :: filename_script
+      character(len=14) :: filename_outdata
+      character(len=14) :: dp_pngfile
+      integer           :: fid_script  = 55
+      integer           :: fid_outdata  = 54
+      !integer           :: dp_pngfileID  = 53
+      character(len=27) :: coord_str
+      character(len=25) :: plotcom
+      integer :: k,i
+      character(len=50) :: linebuffer050
+      character(len=80) :: linebuffer080
+
+      real(kind=ip)  :: tmin
+      real(kind=ip)  :: tmax
+      real(kind=ip)  :: zmin
+      real(kind=ip)  :: zmax
+      real(kind=ip)  :: cloudcon_thresh_mgm3
+      real(kind=ip)  :: cmin
+      real(kind=ip)  :: cmax
+      real(kind=ip)  :: dtg
+      real(kind=ip)  :: dzg
+
+      character(len=8)  :: flt_str
+      character(len=50) :: base_str
+      character(len=50) :: title_str
+      character(len=4 ) :: detail_str
+      character(len=50) :: proj_str
+      character(len=50) :: projX_str
+      character(len=50) :: area_str
+      character(len=50) :: start_ps
+      character(len=50) :: contn_ps
+      character(len=50) :: incr_str
+      character(len=50) :: end_ps
+      character(len=40) :: title_plot
+
+      integer           :: ioerr
+      integer           :: iostatus
+      character(len=120):: iomessage
+      integer           :: iw,iwf
+      logical           :: IsThere
+      character(len=16)  :: fileps  = "temp.ps"
+      character(len=200) :: cmd
+
+
+
+      INTERFACE
+        character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
+        end function HS_xmltime
+      END INTERFACE
+
+      write(filename_outdata,53) vprof_ID,".dat"
+      write(filename_script,53) vprof_ID,".gmt"
+      write(dp_pngfile,54) vprof_ID,".png"
+ 53   format('vprof_',i4.4,a4)
+ 54   format('gmtpl_',i4.4,a4)
+
+      cloudcon_thresh_mgm3 = CLOUDCON_THRESH * KG_2_MG / KM3_2_M3 !convert from kg/km3 to mg/m3
+
+      tmin=real(0.0,kind=ip)
+      tmax=real(ceiling(time_native(ntmax)),kind=ip)
+      zmin=real(0.0,kind=ip)
+      zmax=real(z_cc_pd(nzmax),kind=ip)
+      cmin=real(0.0,kind=ip)
+      cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=ip)       ! Get the max value for this profile
+      cmax=real(max(cmax,cloudcon_thresh_mgm3),kind=ip)  ! Do not let cmax drop below the threshold
+      dtg = (tmax-tmin)/100.0_ip
+      dzg = (zmax-zmin)/100.0_ip
+
+      open(fid_outdata,file=filename_outdata,status='replace')
+      do i = 1,ntmax
+        do k = 1,nzmax
+          write(fid_outdata,*)time_native(i),z_cc_pd(k),pr_ash(k,i,vprof_ID)
+        enddo
+        write(fid_outdata,*)""
+      enddo
+      close(fid_outdata)
+
+      if(IsLatLon)then
+        write(coord_str,101)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
+      else
+        write(coord_str,102)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
+      endif
+ 101  format(' (lon=',f7.2,',  lat=',f6.2,')')
+ 102  format(' (x=',f9.3,', y=',f9.3,')')
+
+      ! Write annotations to several legends
+      !  Left panel
+      open( fid_misc,file="leg1.txt",status='replace')
+      write(fid_misc,'(a11,a30)')"T Volcano: ",VolcanoName
+      write(fid_misc,'(a5)')"G0.2i"
+      write(fid_misc,'(a12,a20)')"T Run Date: ",os_time_log
+      write(fid_misc,'(a5)')"G0.2i"
+      read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
+      linebuffer080 = cdf_b3l1
+      linebuffer050 = "Reading iw,iwf from cdf_b3l1"
+      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      write(fid_misc,'(a12,i3)')"T Windfile: ",iwf
+      close(fid_misc)
+
+      !  Right panel
+      open( fid_misc,file="leg2.txt",status='replace')
+      write(fid_misc,'(a20,a20)')"T Erup. Start Time: ",HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap)
+      write(fid_misc,'(a5)')"G0.2i"
+      write(fid_misc,'(a22,f5.2,a3)')"T Erup. Plume Height: ",real(e_PlumeHeight(1),kind=4)," km"
+      write(fid_misc,'(a)')"G0.2i"
+      write(fid_misc,'(a18,f5.2,a6)')"T Erup. Duration: ",real(e_Duration(1),kind=4)," hours"
+      write(fid_misc,'(a5)')"G0.2i"
+      write(fid_misc,'(a16,f5.2,a9)')"T Erup. Volume: ",real(e_Volume(1),kind=4)," km3(DRE)"
+      close(fid_misc)
+
+      !  Local Logo
+      !   First check is a local logo in installed on this system
+      Instit_IconFile= trim(Ash3dHome) // &
+                        DirDelim // 'share' // &
+                        DirDelim // 'post_proc' // &
+                        DirDelim // 'logo.png'
+      inquire( file=trim(adjustl(Instit_IconFile)), exist=IsThere)
+
+      if (.not.IsThere) then
+        !  USGS Logo (130x49)
+        !   No local logo, open the USGS version
+        Instit_IconFile= trim(Ash3dHome) // &
+                          DirDelim // 'share' // &
+                          DirDelim // 'post_proc' // &
+                          DirDelim // 'USGSvid.png'
+        inquire( file=trim(adjustl(Instit_IconFile)), exist=IsThere)
+      endif
+      if(IsThere)then
+        open( fid_misc,file="leg3.txt",status='replace')
+        write(fid_misc,'(g0)')"I " // trim(adjustl(Instit_IconFile)) // " 2i C"
+        close(fid_misc)
+      endif
+
+      ! Set up to plot via GMT script
+      open(fid_script,file=filename_script,status='replace')
+
+      ! AREA string:    AREA="-R$lonmin/$lonmax/$latmin/$latmax"
+      area_str = "-R0/"
+      write(flt_str,'(f8.3)')tmax
+      area_str = trim(area_str) // trim(adjustl(flt_str)) // "/0/"
+      write(flt_str,'(f8.3)')zmax
+      area_str = trim(area_str) // trim(adjustl(flt_str))
+
+          ! Non-geographic projection, (x,y) only
+      proj_str = " -JX5i/4i"
+
+      ! Initial pscoast command to start the ps file
+      start_ps = "-K > "     // trim(adjustl(fileps))
+      contn_ps = "-K -O >> " // trim(adjustl(fileps))
+      end_ps   = "-O >> "    // trim(adjustl(fileps))
+
+      ! Set up to plot via GMT script
+      write(fid_script,*)'#!/bin/bash'
+      write(fid_script,'(g0)')"##########################################################################"
+      write(fid_script,'(g0)')"# Temporary GMT script for producing 2d maps for Ash3d_PostProc"
+      write(fid_script,'(g0)')"# Adjust to suit your needs."
+      write(fid_script,'(g0)')"##########################################################################"
+      ! write out to CPT.
+      write(flt_str,'(f7.1)')cmax
+      cmd = 'gmt makecpt -Cjet -T0/' // trim(adjustl(flt_str)) // "/0.25 > my.cpt"
+      write(fid_script,*)trim(adjustl(cmd))
+
+      ! Resample profile data to regular grid
+      incr_str = " -I"
+      write(flt_str,'(f8.3)')dtg
+      incr_str = trim(incr_str) // trim(adjustl(flt_str)) // "/"
+      write(flt_str,'(f8.3)')dzg
+      cmd = 'gmt surface'                     // " " // &
+              trim(adjustl(filename_outdata)) // " " // &
+              trim(adjustl(area_str))         // " " // &
+              trim(adjustl(incr_str))         // " " // &
+              '-Gout.grd'
+      write(fid_script,*)trim(adjustl(cmd))
+
+      ! Make sure there are no negative concentrations (might happen from regridding)
+      cmd = 'gmt grdmath out.grd 0 MAX = out.grd'
+      write(fid_script,*)trim(adjustl(cmd))
+
+      ! Write basemap
+      write(title_plot,*) trim(adjustl(Site_vprofile(vprof_ID))),&
+                           coord_str,'"'
+      write(title_str,*)'-B+t"',trim(adjustl(title_plot))
+      cmd = 'gmt psbasemap -X3i -Y3i'    // " " // &
+              trim(adjustl(area_str))    // " " // &
+              trim(adjustl(proj_str))    // " " // &
+              trim(adjustl(title_str))   // " " // &
+              trim(adjustl(start_ps))
+      write(fid_script,*)trim(adjustl(cmd))
+
+      ! Contour data
+      write(base_str,*)'-Bxa2+l"Time (hours)" -Bya2+l"Height (km)" -BWS'
+      cmd = "gmt grdimage out.grd -Cmy.cpt " // " " // &
+              trim(adjustl(area_str))   // " " // &
+              trim(adjustl(proj_str))   // " " // &
+              trim(adjustl(base_str))    // " " // &
+              trim(adjustl(contn_ps))
+      write(fid_script,*)trim(adjustl(cmd))
+
+      ! Plot scalebar
+      cmd = 'gmt psscale -Cmy.cpt -DDR+o1c/0c+w10c/0.5c -Baf+l"Ash con. in (mg/m3)"' // " " // &
+            '-J -R -X0.5i -Y0.0i -DJMR' // " " // &
+            trim(adjustl(contn_ps))
+      write(fid_script,*)trim(adjustl(cmd))
+
+      ! Add descriptive footer here
+      !gmt pslegend leg1.txt -R-134.500/-97.500/33.500/52.500  -JM-122.117/42.933/7i -Dx-1.0i/-1.5i/3.0i/1.0i/BL -K -O  >> temp.ps
+      cmd = "gmt pslegend leg1.txt"   // " " // &
+              trim(adjustl(area_str)) // " " // &
+              trim(adjustl(proj_str)) // " " // &
+              "-Dx-2.0i/-2.0i/3.0i/1.0i/BL " // &
+              trim(adjustl(contn_ps))
+      write(fid_script,*) trim(adjustl(cmd))
+
+      !gmt pslegend leg2.txt -R-134.500/-97.500/33.500/52.500  -JM-122.117/42.933/7i -Dx2.0i/-1.5i/4.0i/1.0i/BL -K -O  >> temp.ps
+      cmd = "gmt pslegend leg2.txt"   // " " // &
+              trim(adjustl(area_str)) // " " // &
+              trim(adjustl(proj_str)) // " " // &
+              "-Dx1.0i/-2.0i/4.0i/1.0i/BL "  // &
+              trim(adjustl(contn_ps))
+      write(fid_script,*) trim(adjustl(cmd))
+
+      !gmt pslegend leg3.txt -R-134.500/-97.500/33.500/52.500  -JM-122.117/42.933/7i -Dx6.0i/-2.3i/2.0i/1.0i/BL -K -O  >> temp.ps
+      inquire( file="leg3.txt", exist=IsThere)
+      if(IsThere)then
+        cmd = "gmt pslegend leg3.txt"        // " " // &
+                trim(adjustl(area_str))      // " " // &
+                trim(adjustl(proj_str))      // " " // &
+                "-Dx5.0i/-2.7i/2.0i/1.0i/BL" // " " // &
+                trim(adjustl(end_ps))
+        write(fid_script,*)trim(adjustl(cmd))
+      endif
+
+      ! This command converts temp.ps to temp.png
+      cmd = "gmt psconvert temp.ps -A -Tg"
+      write(fid_script,*)trim(adjustl(cmd))
+
+      cmd = "convert temp.png -resize 850x600 -alpha off temp.png"
+      write(fid_script,*)trim(adjustl(cmd))
+
+      ! Move this png to the final filename
+      cmd = "mv temp.png " // dp_pngfile
+      write(fid_script,*)trim(adjustl(cmd))
+
+      close(fid_script)
+      write(plotcom,'(a3,a14)')'sh ',filename_script
+      call execute_command_line(plotcom,exitstat=iostatus)
+
+
+      ! Clean up
+      if (CleanScripts_GMT) then
+        cmd = "rm -f gmt.history leg*.txt my.cpt out.grd temp.ps vprof_0001.gmt vprof_0001.dat"
+        call execute_command_line(trim(adjustl(cmd)),exitstat=iostatus)
+      endif
+
+      ! GMT script has been run, now we need to read the contour lines if we want
+      ! to write a shapefile
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)'Finished running GMT script. Now processing contour files if necessary.'
       endif;enddo
-      stop 1
 
       end subroutine write_2Dprof_PNG_GMT
 

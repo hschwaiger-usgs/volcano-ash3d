@@ -68,7 +68,7 @@
 
       use global_param,  only : &
          MM_2_IN,EPS_SMALL,&
-         usegnuplot,useGMT,usematlab,usepython
+         usegnuplot,useGMT,usematlab,useoctave,usepython
 
       use io_data,       only : &
          iTimeNext,PP_infile,datafileIn,HaveInfile, &
@@ -395,41 +395,59 @@
         endif;enddo
         usematlab = .false.
       endif
-      ! We are skipping this test since it takes so long to launch matlab
-      !if(usematlab)then
-      !  ! Finally, do a test run of the matlab executable
-      !  write(outlog(io),*)"                  Checking if matlab executes."
-      !  call execute_command_line("echo 'exit' | matlab",&
-      !                            wait=.true., exitstat=istat, cmdstat=cstat, cmdmsg=iomessage)
-      !  if(istat.eq.0)then
-      !    write(outlog(io),*)"                  Success"
-      !  else
-      !    write(outlog(io),*)"Error: Something is wrong with the matlab executable."
-      !    write(outlog(io),*)"       matlab is returing an error code",istat
-      !    write(outlog(io),*)"       execute_command_line command status = ",cstat
-      !    write(outlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
-      !    write(outlog(io),*)"       Deactivating matlab"
-      !    usematlab = .false.
-      !  endif
-      !endif
+      ! We are skipping this test for successful execution since it takes so long to launch matlab
+      ! Now test for octave
+      useoctave = .true.
+      call execute_command_line('which octave',wait=.true.,exitstat=istat)
+      if(istat.ne.0)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Error: 'which octave' failed. No octave executable in default path"
+          write(outlog(io),*)"       Deactivating octave"
+        endif;enddo
+        useoctave = .false.
+      endif
+      if(useoctave)then
+        ! Finally, do a test run of the octave executable
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"                  Checking if octave executes."
+        endif;enddo
+        call execute_command_line("echo 'exit' | octave",&
+                                  wait=.true., exitstat=istat, cmdstat=cstat, cmdmsg=iomessage)
+        if(istat.eq.0)then
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"                  Success"
+          endif;enddo
+        else
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Error: Something is wrong with the octave executable."
+            write(outlog(io),*)"       octave is returing an error code",istat
+            write(outlog(io),*)"       execute_command_line command status = ",cstat
+            write(outlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
+            write(outlog(io),*)"       Deactivating octave"
+          endif;enddo
+          useoctave = .false.
+        endif
+      endif
 #endif
 #ifdef MACOS
       ! On a MacOS system, not sure how to test yet
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),*)"Cannot test for matlab on MacOS for now."
-        write(outlog(io),*)"Disabling matlab."
+        write(outlog(io),*)"Cannot test for matlab/octave on MacOS for now."
+        write(outlog(io),*)"Disabling matlab/octave."
       endif;enddo
       usematlab = .false.
+      useoctave = .false.
 #endif
 #ifdef WINDOWS
       ! On a Windows system, not sure how to test yet
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),*)"Cannot test for matlab on Windows for now."
-        write(outlog(io),*)"Disabling matlab."
+        write(outlog(io),*)"Cannot test for matlab/octave on Windows for now."
+        write(outlog(io),*)"Disabling matlab/octave."
       endif;enddo
       usematlab = .false.
+      useoctave = .false.
 #endif
-      if (usematlab)then
+      if (usematlab.or.useoctave) then
         CleanScripts_matlab = CleanScripts
         plotlib_avail(5) = .true.
       else
@@ -1595,6 +1613,10 @@
               call write_2Dprof_PNG_gnuplot(i)
             case(4)
               call write_2Dprof_PNG_GMT(i)
+            case(5)
+              call write_2Dprof_PNG_matlab(i)
+            case(6)
+              call write_2Dprof_PNG_python(i)
             case default
               do io=1,2;if(VB(io).le.verbosity_error)then
                 write(errlog(io),*)"ERROR: Plots requested but no plotting package is installed"

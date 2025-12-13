@@ -21,7 +21,7 @@
       use io_units
 
       use global_param,  only : &
-         DirDelim,EPS_SMALL
+         DirDelim,EPS_SMALL,usematlab,useoctave
 
       use io_data,       only : &
          Ash3dHome
@@ -40,6 +40,8 @@
 
 !      character(100) :: Instit_IconFile
       logical, public :: CleanScripts_matlab
+        ! Sometimes, you need to over-ride the default graphics driver used by octave
+      logical, public :: SetOctaveGraphics = .true.
 
       contains
       !------------------------------------------------------------------------
@@ -78,8 +80,7 @@
 
       use mesh,          only : &
          IsLatLon,lon_cc_pd,lat_cc_pd,de,dn, &
-         x_cc_pd,y_cc_pd,dx,dy !,&
-         !latLL,lonLL,latUR,lonUR,xLL,yLL,xUR,yUR
+         x_cc_pd,y_cc_pd,dx,dy
 
       use Output_Vars,   only : &
          !ContourFilled, &
@@ -106,14 +107,15 @@
       use io_data,       only : &
          WriteTimes !,cdf_b3l1 ,VolcanoName
 
-      use Ash3d_ASCII_IO,  only : &
-           write_2D_ASCII
-
       use Source,        only : &
-         lon_volcano !,lat_volcano,  &
-         !e_Volume,e_Duration,e_StartTime,e_PlumeHeight,lat_volcano
+         e_Volume,e_Duration,e_StartTime,e_PlumeHeight,lon_volcano,lat_volcano
 
       use citywriter
+
+      use Ash3d_ASCII_IO,  only : &
+          write_2D_ASCII,         &
+          write_2D_ASCII_flt,     &
+          write_2D_ASCII_flt_regular
 
       integer      ,intent(in) :: nx
       integer      ,intent(in) :: ny
@@ -127,7 +129,7 @@
       character(len=6)   :: Fill_Value_str
       character(len=200) :: cmd
 
-      integer :: i,j!,ii
+      integer :: i,j
       real(kind=ip) :: tmp_ip
       integer     , dimension(:,:),allocatable :: zrgb
       character(len=40) :: title_plot
@@ -143,7 +145,7 @@
       real(kind=ip)  :: ymax
 
       character(len=8)  :: filename_script
-      character(len=10) :: filename_outdata
+      character(len=20) :: filename_outdata
       character(len=10) :: filename_contourdata
 
       !character(len=26) :: coord_str
@@ -208,6 +210,17 @@
 !exit
 
 ! syscall = matlab -nodisplay -nosplash -r tmp
+
+      if(useoctave.and..not.usematlab)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)'Map plotting with matlab/octave requires MatLab with the'
+          write(errlog(io),*)'mapping toolbox. Currently, the mapping script for octave'
+          write(errlog(io),*)'is not functional. Please rerun program sppecifying a different'
+          write(errlog(io),*)'plotting package.'
+          write(errlog(io),*)'e.g. ./ASH3DPLOT=4 ./Ash3d_postProx 3d_tephra_fall.nc 6 3'
+        endif;enddo
+        stop 1
+      endif
 
       ncities = 20
       allocate(lon_cities(ncities))
@@ -356,11 +369,12 @@
           zrgb(1:nConLev,1:3) = Con_CloudBot_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.12)then   ! ash-cloud load
+        varname = "cloud_load"
         write(outfile_name,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
         write(title_plot,'(a17,f5.2,a6)')'Ash-cloud load t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Load(T/km2)'
-        Fill_Value_str = '-9999.'
         units = " (T/km2)"
+        Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
           nConLev = Con_CloudLoad_N
           allocate(zrgb(nConLev,3))
@@ -425,26 +439,32 @@
         stop 1
       endif
 
-      ! When we run this subroutine via a GMT script (as opposed to the API), we
+      write(filename_outdata,53) "outvar.dat"
+!      write(filename_contourdata,53) "outvar.con"
+      write(filename_script,54) "outvar.m"
+ 53   format(a10)
+ 54   format(a8)
+
+      ! When we run this subroutine via a matlab script (as opposed to the API), we
       ! write out OutVar to an ESRI ASCII file to be read by the script
       ! Now mask out non-cloud values
-      if(iprod.eq.10.or.&  ! CloudHeight
-         iprod.eq.11)then  ! CloudHeightBot
-        mask(1:nx,1:ny) = Mask_Cloud(1:nx,1:ny)
-      elseif(iprod.eq.7)then ! DepArrivalTime
-        mask(1:nx,1:ny) = Mask_Deposit(1:nx,1:ny)
-      elseif(iprod.eq.14)then
-        ! cloud mask based on cloud load does not work in this case the cloud load mask
-        ! is a function of time
-        mask(1:nx,1:ny) = .true.
-        do i=1,nx
-          do j=1,ny
-            if(CloudArrivalTime(i,j).lt.0.0_ip)mask(i,j) = .false.
-          enddo
-        enddo
-      else
-        mask = .true.
-      endif
+!      if(iprod.eq.10.or.&  ! CloudHeight
+!         iprod.eq.11)then  ! CloudHeightBot
+!        mask(1:nx,1:ny) = Mask_Cloud(1:nx,1:ny)
+!      elseif(iprod.eq.7)then ! DepArrivalTime
+!        mask(1:nx,1:ny) = Mask_Deposit(1:nx,1:ny)
+!      elseif(iprod.eq.14)then
+!        ! cloud mask based on cloud load does not work in this case the cloud load mask
+!        ! is a function of time
+!        mask(1:nx,1:ny) = .true.
+!        do i=1,nx
+!          do j=1,ny
+!            if(CloudArrivalTime(i,j).lt.0.0_ip)mask(i,j) = .false.
+!          enddo
+!        enddo
+!      else
+!        mask = .true.
+!      endif
 
       if(IsLatLon)then
         if(abs(dn-de).lt.1.0e-4_ip)then
@@ -459,57 +479,6 @@
           IsRegGrid = .false.
         endif
       endif
-
-      if(IsRegGrid)then
-        ! If the grid is regular (dx=dy) then we can write an ESRI ASCII file and convert to grd
-        ! via gmt grdconvert outvar.dat=ef out.grd
-        varname = "outvar"
-        call write_2D_ASCII(nx,ny,OutVar,mask,Fill_Value_str,varname)
-      else
-        write(filename_outdata,53) "outvar.dat"
-        open(fid_outdata,file=filename_outdata,status='replace')
-        do i = 1,nx
-          do j = 1,ny
-            if(lon_cc_pd(1).lt.180.0_ip)then
-              tmp_ip = lon_cc_pd(i)
-            else
-              tmp_ip = lon_cc_pd(i)-360.0_ip
-            endif
-            if(abs(OutVar(i,j)-Fill_Value).lt.EPS_SMALL)then
-              write(fid_outdata,*)tmp_ip,lat_cc_pd(j),"NaN"
-            else
-              write(fid_outdata,*)tmp_ip,lat_cc_pd(j),OutVar(i,j)
-            endif
-          enddo
-          !write(fid_outdata,*)""
-        enddo
-        close(fid_outdata)
-      endif
-
-      if(writeContours)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
-          write(outlog(io),*)"Running matlab to calculate contours lines"
-        endif;enddo
-        write(outfile_name,'(a14)')'tmp.png'
-        allocate(ContourDataNcurves(nConLev))
-        allocate(ContourDataNpoints(nConLev,CONTOUR_MAXCURVES))
-        allocate(ContourDataX(nConLev,CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS))
-        allocate(ContourDataY(nConLev,CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS))
-        ContourDataNcurves(:)   = 0
-        ContourDataNpoints(:,:) = 0
-        ContourDataX(:,:,:)     = 0.0_ip
-        ContourDataY(:,:,:)     = 0.0_ip
-      else
-        do io=1,2;if(VB(io).le.verbosity_error)then
-          write(outlog(io),*)"Running matlab to generate contour plot"
-        endif;enddo
-      endif
-
-      write(filename_outdata,53) "outvar.dat"
-      write(filename_contourdata,53) "outvar.con"
-      write(filename_script,54) "outvar.m"
- 53   format(a10)
- 54   format(a8)
 
       if(IsLatLon)then
         xmin = minval(lon_cc_pd(1:nx))
@@ -528,6 +497,43 @@
         ymin = minval(y_cc_pd(1:ny))
         ymax = maxval(y_cc_pd(1:ny))
       endif
+
+      ! write out the data in a form that matlab can read
+      ! matlab script expects an ESRI ASCII data file
+      if(IsRegGrid)then
+        ! If the grid is regular (dx=dy) then we can write an ESRI ASCII file and convert to grd
+        varname = "outvar"
+!        call write_2D_ASCII(nx,ny,OutVar,mask,Fill_Value_str,varname)
+        call write_2D_ASCII_flt(nx,ny,IsLatLon,real(xmin,kind=sp),real(ymin,kind=sp),.true., &
+                           real(de,kind=sp),real(dn,kind=sp),Fill_Value_str,&
+                           real(OutVar,kind=sp),filename_outdata)
+      else
+        ! MatLab expects GeoTIFF, Esri Binary Grid, GRIB, or DTED
+        ! Irregular grids are problematic
+        call write_2D_ASCII_flt_regular(nx,ny,IsLatLon,real(xmin,kind=sp),real(ymin,kind=sp),.true., &
+                           real(de,kind=sp),real(dn,kind=sp),Fill_Value_str,&
+                           real(OutVar,kind=sp),filename_outdata)
+      endif
+
+      if(writeContours)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Running matlab to calculate contours lines"
+        endif;enddo
+        write(outfile_name,'(a14)')'tmp.png'
+        allocate(ContourDataNcurves(nConLev))
+        allocate(ContourDataNpoints(nConLev,CONTOUR_MAXCURVES))
+        allocate(ContourDataX(nConLev,CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS))
+        allocate(ContourDataY(nConLev,CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS))
+        ContourDataNcurves(:)   = 0
+        ContourDataNpoints(:,:) = 0
+        ContourDataX(:,:,:)     = 0.0_ip
+        ContourDataY(:,:,:)     = 0.0_ip
+      else
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Running matlab to generate contour plot"
+        endif;enddo
+      endif
+
       call citylist(2,xmin,xmax,ymin,ymax, &
                       ncities,                        &
                       lon_cities,lat_cities,          &
@@ -619,15 +625,6 @@
 
       return
 
-      ! Error traps (starting with 9000)
-      ! For this subroutine, the 100's position refers to block # of control file
-
-!9001  do io=1,2;if(VB(io).le.verbosity_error)then
-!        write(errlog(io),*)  'error: cannot open file: ',filename_contourdata
-!        write(errlog(io),*)  'Program stopped'
-!      endif;enddo
-!      stop 1
-
       end subroutine write_2Dmap_PNG_matlab
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -639,118 +636,134 @@
 !    vprof_ID        = ID of the profile (number in list from Ash3d control file)
 !
 !  This subroutine creates a png plot of the transient vertical profile of ash
-!  concentration above the profile point (vprof_ID) using the matlab graphics
+!  concentration above the profile point (vprof_ID) using the matlab or octave graphics
 !  package.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine write_2Dprof_PNG_matlab(vprof_ID)
 
-!      use global_param,  only : &
-!         KG_2_MG,KM3_2_M3
-!
-!      use mesh,          only : &
-!         IsLatLon,nzmax,z_cc_pd
-!
-!      use Output_Vars,   only : &
-!         pr_ash,CLOUDCON_THRESH
-!
-!      use io_data,       only : &
-!         Site_vprofile,x_vprofile,y_vprofile,cdf_b3l1,VolcanoName
-!
-!      use Source,        only : &
-!         e_Volume,e_Duration,e_StartTime,e_PlumeHeight
-!
-!      use time_data,     only : &
-!         os_time_log,SimStartHour,BaseYear,useLeap,ntmax,time_native
+      use global_param,  only : &
+         KG_2_MG,KM3_2_M3
+
+      use mesh,          only : &
+         IsLatLon,nzmax,z_cc_pd
+
+      use Output_Vars,   only : &
+         pr_ash,CLOUDCON_THRESH
+
+      use io_data,       only : &
+         Site_vprofile,x_vprofile,y_vprofile,cdf_b3l1,VolcanoName
+
+      use Source,        only : &
+         e_Volume,e_Duration,e_StartTime,e_PlumeHeight
+
+      use time_data,     only : &
+         os_time_log,SimStartHour,BaseYear,useLeap,ntmax,time_native
 
       integer, intent (in) :: vprof_ID
 
-!      character(len=14) :: filename_script
-!      character(len=14) :: filename_outdata
-!      character(len=14) :: dp_pngfile
-!      integer           :: fid_script  = 55
-!      integer           :: fid_outdata  = 54
-!      integer           :: dp_pngfileID  = 53
-!      character(len=26) :: coord_str
-!      character(len=25) :: plotcom
-!      integer :: k,i
-!      integer :: ioerr,iw,iwf
-!      character(len=200) :: cmd
-!
-!      real(kind=ip)  :: tmin
-!      real(kind=ip)  :: tmax
-!      real(kind=ip)  :: zmin
-!      real(kind=ip)  :: zmax
-!      real(kind=ip)  :: cloudcon_thresh_mgm3
-!      real(kind=ip)  :: cmin
-!      real(kind=ip)  :: cmax
-!
-!      INTERFACE
-!        character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-!          real(kind=8),intent(in) :: HoursSince
-!          integer     ,intent(in) :: byear
-!          logical     ,intent(in) :: useLeaps
-!        end function HS_xmltime
-!      END INTERFACE
-!
-!      write(filename_outdata,53) vprof_ID,".dat"
-!      write(filename_script,53) vprof_ID,".gpi"
-!      write(dp_pngfile,54) vprof_ID,".png"
-! 53   format('vprof_',i4.4,a4)
-! 54   format('gnupl_',i4.4,a4)
-!
-!      cloudcon_thresh_mgm3 = CLOUDCON_THRESH * KG_2_MG / KM3_2_M3 !convert from kg/km3 to mg/m3
-!
-!      tmin=real(0.0,kind=ip)
-!      tmax=real(ceiling(time_native(ntmax)),kind=ip)
-!      zmin=real(0.0,kind=ip)
-!      zmax=real(z_cc_pd(nzmax),kind=ip)
-!      cmin=real(0.0,kind=ip)
-!      cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=ip)       ! Get the max value for this profile
-!      cmax=real(max(cmax,cloudcon_thresh_mgm3),kind=ip)  ! Do not let cmax drop below the threshold
-!
-!      open(fid_outdata,file=filename_outdata,status='replace')
-!      do i = 1,ntmax
-!        do k = 1,nzmax
-!          write(fid_outdata,*)time_native(i),z_cc_pd(k),pr_ash(k,i,vprof_ID)
-!        enddo
-!        write(fid_outdata,*)""
-!      enddo
-!      close(fid_outdata)
-!
-!      if(IsLatLon)then
-!        write(coord_str,101)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
-!      else
-!        write(coord_str,102)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
-!      endif
-! 101  format(' (lon=',f7.2,', lat=',f6.2,')')
-! 102  format(' (x=',f9.3,', y=',f9.3,')')
-!      ! Set up to plot via matlab script
-!      open(fid_script,file=filename_script,status='replace')
-!      write(fid_script,*)"set terminal pngcairo font 'sans,12' size 854,603"   ! Set the image size
-!      write(fid_script,*)"set origin 0, .10"
-!      write(fid_script,*)"set size 0.85, 0.9"              ! Set x and y scale for plot
-!      write(fid_script,*)"set ylabel 'Height (km)'"
-!      write(fid_script,*)"set xlabel 'Time (hours after eruption)'"
-!      write(fid_script,*)"set output '",dp_pngfile,"'"
-!      write(fid_script,*)"set title '",&
-!                           trim(adjustl(Site_vprofile(vprof_ID))),&
-!                           coord_str,"'"
-!      write(fid_script,*)"set isosamples 50"
-!      write(fid_script,*)"set pm3d"
-!      write(fid_script,*)"set palette cubehelix negative"
-!      write(fid_script,*)"unset surface"
-!      write(fid_script,*)"set view map"
-!      write(fid_script,*)"set key off"
-!
-!      write(fid_script,*)"XMIN = 0.0"
-!      write(fid_script,*)"YMIN = 0.0"
-!      write(fid_script,*)"XMAX = ",time_native(ntmax)
-!      write(fid_script,*)"YMAX = ",z_cc_pd(nzmax)
-!      write(fid_script,*)"XVAL = -XMAX*0.1"
-!      write(fid_script,*)"YVAL = -YMAX*0.25"
-!      
+      character(len=12) :: filename_script
+      character(len=14) :: filename_outdata
+      character(len=14) :: dp_pngfile
+      integer           :: fid_script  = 55
+      integer           :: fid_outdata  = 54
+      integer           :: dp_pngfileID  = 53
+      character(len=26) :: coord_str
+      character(len=25) :: plotcom
+      integer :: k,i
+      integer :: ioerr,iw,iwf
+      integer           :: iostatus
+      character(len= 80) :: linubuffer080
+      character(len=200) :: cmd
+
+      real(kind=ip)  :: tmin
+      real(kind=ip)  :: tmax
+      real(kind=ip)  :: zmin
+      real(kind=ip)  :: zmax
+      real(kind=ip)  :: cloudcon_thresh_mgm3
+      real(kind=ip)  :: cmin
+      real(kind=ip)  :: cmax
+
+      INTERFACE
+        character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
+        end function HS_xmltime
+      END INTERFACE
+
+      write(filename_outdata,53) vprof_ID,".dat"
+      write(filename_script,55) vprof_ID,".m"
+      write(dp_pngfile,54) vprof_ID,".png"
+ 53   format('vprof_',i4.4,a4)
+ 54   format('mtlab_',i4.4,a4)
+ 55   format('vprof_',i4.4,a2)
+
+      cloudcon_thresh_mgm3 = CLOUDCON_THRESH * KG_2_MG / KM3_2_M3 !convert from kg/km3 to mg/m3
+
+      tmin=real(0.0,kind=ip)
+      tmax=real(ceiling(time_native(ntmax)),kind=ip)
+      zmin=real(0.0,kind=ip)
+      zmax=real(z_cc_pd(nzmax),kind=ip)
+      cmin=real(0.0,kind=ip)
+      cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=ip)       ! Get the max value for this profile
+      cmax=real(max(cmax,cloudcon_thresh_mgm3),kind=ip)  ! Do not let cmax drop below the threshold
+
+      open(fid_outdata,file=filename_outdata,status='replace')
+      do i = 1,ntmax
+        do k = 1,nzmax
+          write(fid_outdata,*)time_native(i),z_cc_pd(k),pr_ash(k,i,vprof_ID)
+        enddo
+      enddo
+      close(fid_outdata)
+
+      ! 
+      if(IsLatLon)then
+        write(coord_str,101)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
+      else
+        write(coord_str,102)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
+      endif
+ 101  format(' (lon=',f7.2,', lat=',f6.2,')')
+ 102  format(' (x=',f9.3,', y=',f9.3,')')
+      ! Set up to plot via matlab script
+      open(fid_script,file=filename_script,status='replace')
+      write(fid_script,'(g0)')"##########################################################################"
+      write(fid_script,'(g0)')"# Temporary matlab/octave script for producing vertical profiles for Ash3d_PostProc"
+      write(fid_script,'(g0)')"# Adjust to suit your needs."
+      write(fid_script,'(g0)')"##########################################################################"
+      write(fid_script,'(g0)')"clear all;"
+      if(SetOctaveGraphics)then
+        write(fid_script,'(g0)')"graphics_toolkit('gnuplot')"
+      else
+        write(fid_script,'(g0)')"%graphics_toolkit('gnuplot')"
+      endif
+      linubuffer080 = "titstr='" // trim(adjustl(Site_vprofile(vprof_ID))) // coord_str // "';"
+      write(fid_script,'(g0)')trim(adjustl(linubuffer080))
+      linubuffer080 = "vp=load('" // trim(adjustl(filename_outdata)) // "');"
+      write(fid_script,'(g0)')trim(adjustl(linubuffer080))
+      write(fid_script,'(g0)')"ns=max(size(vp));"
+      write(fid_script,'(g0)')"% Time will be irregular, so we need to regrid the data."
+      write(fid_script,'(g0)')"t_reg = linspace(0, vp(ns,1), 101);"
+      write(fid_script,'(g0)')"z_reg = linspace(0, vp(ns,2), 101);"
+      write(fid_script,'(g0)')"[T_reg, Z_reg] = meshgrid(t_reg, z_reg);"
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"% Interpolate the data onto the regular grid"
+      write(fid_script,'(g0)')"C_reg = griddata(vp(:,1), vp(:,2), vp(:,3), T_reg, Z_reg);"
+      write(fid_script,'(g0)')"Cmask=C_reg(:,:)<0.001;"
+      write(fid_script,'(g0)')"C_reg(Cmask)=NaN;"
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"colormap jet"
+      write(fid_script,'(g0)')"contourf(T_reg, Z_reg, C_reg);"
+      write(fid_script,'(g0)')"xlabel('Time (hours after eruption)','FontSize',16);"
+      write(fid_script,'(g0)')"ylabel('Height (km)','FontSize',16);"
+      write(fid_script,'(g0)')"title(titstr,'FontSize',12);"
+      write(fid_script,'(g0)')"cb = colorbar();"
+      write(fid_script,'(g0)')"ylabel(cb,'Ash con. in (mg/m3)','FontSize',16,'Rotation',90)"
+
+      write(fid_script,*)"print -dpng ",adjustl(trim(dp_pngfile))
+      write(fid_script,*)"exit"
+
 !      write(fid_script,*)"set label 'Volcano: " ,VolcanoName,&
 !                           "' at XVAL, YVAL font 'sans,9'"
 !      write(fid_script,*)"set label 'Run Date: ",os_time_log,&
@@ -773,15 +786,20 @@
 !      write(fid_script,*)"splot '",filename_outdata,"'"
 !
 !      close(fid_script)
-!
-!      write(gnucom,'(a11,a14)')'matlab -p ',filename_script
-!      call execute_command_line(gnucom)
-!
-!      ! Clean up
-!      if (CleanScripts_matlab) then
-!        cmd = "rm -f outvar.* volc.dat vprof_*dat vprof_*gpi"
-!        call execute_command_line(trim(adjustl(cmd)))
-!      endif
+
+      if(usematlab)then
+        write(plotcom,'(a31,a12)')'matlab -nodisplay -nosplash -r ',filename_script
+        call execute_command_line(plotcom,exitstat=iostatus)
+      elseif(useoctave)then
+        write(plotcom,'(a11,a14)')'octave ',filename_script
+        call execute_command_line(plotcom)
+      endif
+
+      ! Clean up
+      if (CleanScripts_matlab) then
+        cmd = "rm -f vprof_*.m vprof_*.dat"
+        call execute_command_line(trim(adjustl(cmd)))
+      endif
 
       end subroutine write_2Dprof_PNG_matlab
 
