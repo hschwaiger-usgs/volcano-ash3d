@@ -454,6 +454,7 @@
       integer            :: ioutputFormat   ! determines the format of the output
                                             ! (1=ASCII, 2=raw binary, 3=NetCDF)
       character (len=130):: Ash3dHome       ! path to Ash3d installation
+      character (len=130):: Instit_IconFile ! path to Institution logo png
       character (len=130):: infile          ! input control file name for Ash3d
       logical            :: HaveInfile =.false. ! True if the input file is provided to Ash3d_PostProc
       character (len=130):: PP_infile       ! input control file name for Ash3d_PostProc

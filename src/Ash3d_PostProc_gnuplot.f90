@@ -4,9 +4,11 @@
 !
 ! This module provides the subroutines that use gnuplot for creating 2d maps,
 ! 2d vertical profiles, and the little deposit accumulation plots linked to
-! the airport arrival kml (ash_arrivaltimes_airports.kml).  Although a few
-! third party API's are available, these subroutines create temporary script
-! files that are run if gnuplot is installed on the local system.
+! the airport arrival kml (ash_arrivaltimes_airports.kml).
+! These subroutines create temporary script files that are run if gnuplot is
+! installed on the local system.
+!   http://www.gnuplot.info
+! Third party fortran API is available with ogpf, gnuplotfortran, fplot, gnufor
 !
 !      subroutine write_2Dmap_PNG_gnuplot
 !      subroutine write_2Dprof_PNG_gnuplot
@@ -24,7 +26,7 @@
          DirDelim,EPS_SMALL
 
       use io_data,       only : &
-         Ash3dHome
+         Instit_IconFile,Ash3dHome
 
       implicit none
 
@@ -37,8 +39,6 @@
              write_DepPOI_TS_PNG_gnuplot
 
         ! Publicly available variables
-
-!      character(100) :: Instit_IconFile
       logical, public :: CleanScripts_gnuplot
 
       contains
@@ -70,8 +70,10 @@
       subroutine write_2Dmap_PNG_gnuplot(nx,ny,iprod,itime,OutVar,Fill_Value,writeContours)
 
       use mesh,          only : &
-         IsLatLon,lon_cc_pd,lat_cc_pd , &
-         x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd
+         IsLatLon,lon_cc_pd,lat_cc_pd,de,dn, &
+         x_cc_pd,y_cc_pd,dx,dy,              &
+         latLL,lonLL,latUR,lonUR,            &
+         xLL,yLL,xUR,yUR
 
       use Output_Vars,   only : &
          !ContourFilled, &
@@ -89,9 +91,6 @@
          !CloudArrivalTime,Mask_Deposit,Mask_Cloud,&
          CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS,ContourLev,nConLev
 
-      use io_units,      only : &
-         fid_script,fid_outdata,fid_contourdata,fid_misc
-
       use time_data,     only : &
          os_time_log,SimStartHour,BaseYear,useLeap
 
@@ -99,7 +98,7 @@
          WriteTimes,cdf_b3l1,VolcanoName
 
       use Source,        only : &
-         e_Volume,e_Duration,e_StartTime,e_PlumeHeight,lon_volcano,lat_volcano
+         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight,lon_volcano,lat_volcano
 
       use citywriter
 
@@ -111,50 +110,74 @@
       real(kind=ip),intent(in) :: Fill_Value
       logical      ,intent(in) :: writeContours
 
+      !logical            :: mask(nx,ny)
       character(len=6)   :: Fill_Value_str
       character(len=200) :: cmd
 
-      integer :: i,j,ii
+      integer :: ii,jj,iii
       real(kind=ip) :: tmp_ip
-      integer     , dimension(:,:),allocatable :: zrgb
+      integer,dimension(:,:),allocatable :: zrgb
       character(len=40) :: title_plot
       character(len=15) :: title_legend
-      character(len=40) :: outfile_name
+      character(len=30) :: cstr_volcname
+      character(len=30) :: cstr_run_date
+      character(len=30) :: cstr_windfile
+      character(len=40) :: cstr_ErStartT
+      character(len=27) :: cstr_ErHeight
+      character(len=30) :: cstr_ErDuratn
+      character(len=38) :: cstr_ErVolume
+      character(len=45) :: cstr_note
+      character(len=20) :: varname
       character(len= 9) :: cio
       character(len= 4) :: outfile_ext = '.png'
       character(len=10) :: units
+      integer           :: ioerr
+      integer           :: iostatus
+      integer           :: cstat
+      character(len=120):: iomessage
+      integer           :: iw,iwf
+      logical           :: IsThere1,IsThere2
+      logical           :: HaveIconFile
+      character(len=50) :: linebuffer050
+      character(len=80) :: linebuffer080
+      character(len=130):: linebuffer130,linebuffer130_2
+      character         :: testkey
 
+      ! Plot dimensions
       real(kind=ip)  :: xmin
       real(kind=ip)  :: xmax
       real(kind=ip)  :: ymin
       real(kind=ip)  :: ymax
+      logical        :: IsRegGrid
 
+      ! Aux. File names
+      character(len= 8) :: filename_root
       character(len=10) :: filename_script
       character(len=10) :: filename_outdata
+      character(len=40) :: filename_png
       character(len=10) :: filename_contourdata
+      character(len=80) :: filename_coastline
 
-      !character(len=26) :: coord_str
-      character(len=25) :: plotcom
-      character(len=80) :: coastfile
-      integer           :: ioerr
-      integer           :: iostatus
-      character(len=120):: iomessage
-      integer           :: iw,iwf
-
+      ! Citywriter variables
+      integer :: icty
       integer :: ncities
+      integer :: cityname_offset_px = 30
       real(kind=ip),dimension(:),allocatable     :: lon_cities
       real(kind=ip),dimension(:),allocatable     :: lat_cities
       character(len=26),dimension(:),allocatable :: name_cities
-      logical           :: IsThere1,IsThere2
-      character(len=50) :: linebuffer050 
-      character(len=80) :: linebuffer080
-      character         :: testkey
-      integer           :: ilev,ignulev
-      integer           :: lev_i,substr_pos1,substr_pos2,substr_pos3
-      real(kind=4)      :: lev_r4
-      integer           :: icurve,ipt
 
-      character(len=20) :: varname
+      ! Contour variables
+      integer           :: lev_i,substr_pos1,substr_pos2,substr_pos3 ! for parsing contour text files
+      real(kind=4)      :: lev_r4       ! used for testing contour levels from file
+      integer           :: ilev         ! number of contour levels
+      integer           :: ignulev      ! level index from gnuplot file
+      integer           :: icurve      ! number of curves for level ilev
+      integer           :: npts        ! number of points in curve ilev,icurve
+
+      ! Plotting variables
+
+      ! Gnuplot variables
+      character(len=25) :: plotcom
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
@@ -164,14 +187,18 @@
         end function HS_xmltime
       END INTERFACE
 
-      write(coastfile,'(a13)')"world_50m.txt"
-      inquire(file=coastfile,exist=IsThere1)
+      ! Test for icon file
+      inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
+
+      ! Test for coastline file
+      write(filename_coastline,'(a13)')"world_50m.txt"
+      inquire(file=filename_coastline,exist=IsThere1)
       if(.not.IsThere1)then
-        coastfile = trim(Ash3dHome) // &
+        filename_coastline = trim(Ash3dHome) // &
                           DirDelim // 'share' // &
                           DirDelim // 'post_proc' // &
                           DirDelim // 'world_50m.txt'
-        inquire(file=coastfile,exist=IsThere2)
+        inquire(file=filename_coastline,exist=IsThere2)
         if(.not.IsThere2)then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"Could not find required file world_50m.txt"
@@ -199,6 +226,12 @@
       allocate(lat_cities(ncities))
       allocate(name_cities(ncities))
 
+      filename_root        = "outvar"
+      filename_outdata     = trim(adjustl(filename_root)) // ".dat"
+      filename_script      = trim(adjustl(filename_root)) // ".gpi"
+      filename_contourdata = trim(adjustl(filename_root)) // ".con"
+
+
       if(iprod.eq.5.or.iprod.eq.6)then
         cio='____final'
       else
@@ -224,7 +257,7 @@
 
       if(iprod.eq.3)then       ! deposit at specified times (mm)
         varname = "depothick"
-        write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
+        write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
         title_legend = 'Dep.Thick.(mm)'
         units = " (mm)"
@@ -238,7 +271,7 @@
         endif
       elseif(iprod.eq.4)then   ! deposit at specified times (inches)
         varname = "depothick"
-        write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
+        write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
         title_legend = 'Dep.Thick.(in)'
         units = " (in)"
@@ -252,7 +285,7 @@
         endif
       elseif(iprod.eq.5)then       ! deposit at final time (mm)
         varname = "depothickFin"
-        write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
+        write(filename_png,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
         title_legend = 'Dep.Thick.(mm)'
         units = " (mm)"
@@ -266,7 +299,7 @@
         endif
       elseif(iprod.eq.6)then   ! deposit at final time (inches)
         varname = "depothickFin"
-        write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
+        write(filename_png,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
         title_legend = 'Dep.Thick.(in)'
         units = " (in)"
@@ -280,7 +313,7 @@
         endif
       elseif(iprod.eq.7)then   ! ashfall arrival time (hours)
         varname = "depotime"
-        write(outfile_name,'(a22)')'DepositArrivalTime.png'
+        write(filename_png,'(a22)')'DepositArrivalTime.png'
         write(title_plot,'(a20)')'Ashfall arrival time'
         title_legend = 'Time (hours)'
         units = " (hours)"
@@ -300,7 +333,7 @@
         stop 1
       elseif(iprod.eq.9)then   ! ash-cloud concentration
         varname = "ashcon_max"
-        write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
+        write(filename_png,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
         write(title_plot,'(a26,f5.2,a6)')'Ash-cloud concentration t=',WriteTimes(itime),' hours'
         title_legend = 'Max.Con.(mg/m3)'
         units = " (mg/m3)"
@@ -314,7 +347,7 @@
         endif
       elseif(iprod.eq.10)then   ! ash-cloud height
         varname = "cloud_height"
-        write(outfile_name,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
+        write(filename_png,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud height t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Height(km)'
         units = " (km)"
@@ -328,7 +361,7 @@
         endif
       elseif(iprod.eq.11)then   ! ash-cloud bottom
         varname = "cloud_bottom"
-        write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
+        write(filename_png,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud bottom t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Bot.(km)'
         units = " (km)"
@@ -342,7 +375,7 @@
         endif
       elseif(iprod.eq.12)then   ! ash-cloud load
         varname = "cloud_load"
-        write(outfile_name,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
+        write(filename_png,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
         write(title_plot,'(a17,f5.2,a6)')'Ash-cloud load t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Load(T/km2)'
         units = " (T/km2)"
@@ -356,7 +389,7 @@
         endif
       elseif(iprod.eq.13)then  ! radar reflectivity
         varname = "radar_reflectivity"
-        write(outfile_name,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
+        write(filename_png,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
         write(title_plot,'(a24,f5.2,a6)')'Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Refl.(dBz)'
         units = " (dBz)"
@@ -370,7 +403,7 @@
         endif
       elseif(iprod.eq.14)then   ! ashcloud arrival time (hours)
         varname = "ash_arrival_time"
-        write(outfile_name,'(a20)')'CloudArrivalTime.png'
+        write(filename_png,'(a20)')'CloudArrivalTime.png'
         write(title_plot,'(a22)')'Ash-cloud arrival time'
         title_legend = 'Time (hours)'
         units = " (hours)"
@@ -384,7 +417,7 @@
         endif
       elseif(iprod.eq.15)then   ! topography
         varname = "topography"
-        write(outfile_name,'(a14)')'Topography.png'
+        write(filename_png,'(a14)')'Topography.png'
         write(title_plot,'(a10)')'Topography'
         title_legend = 'Elevation (km)'
         units = " (hours)"
@@ -410,12 +443,13 @@
         endif;enddo
         stop 1
       endif
+      ! Now have string vars (varname,title_legend, etc.) and contour info (nConLev,zrgb,ContourLev)
 
       if(writeContours)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"Running Gnuplot to calculate contours lines"
         endif;enddo
-        write(outfile_name,'(a14)')'tmp.png'
+        write(filename_png,'(a14)')'tmp.png'
         allocate(ContourDataNcurves(nConLev))
         allocate(ContourDataNpoints(nConLev,CONTOUR_MAXCURVES))
         allocate(ContourDataX(nConLev,CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS))
@@ -425,62 +459,103 @@
         ContourDataX(:,:,:)     = 0.0_ip
         ContourDataY(:,:,:)     = 0.0_ip
       else
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"Running Gnuplot to generate contour plot"
         endif;enddo
       endif
 
-      write(filename_outdata,53) "outvar.dat"
-      write(filename_contourdata,53) "outvar.con"
-      write(filename_script,53) "outvar.gpi"
- 53   format(a10)
-
+      ! This is the section where we actually start plotting the map
+      ! Evaluate grid
       if(IsLatLon)then
-        xmin = minval(lon_cc_pd(1:nx))
+        if(lonUR-lonLL.ge.360.0_ip)then
+          lonLL = 0.0_ip
+          lonUR = 360.0_ip
+        endif
+        xmin = lonLL
         ! Make sure xmin is in the range -180->180
         if (xmin.gt.180.0_ip)then
-          xmin = minval(lon_cc_pd(1:nx))-360.0_ip
-          xmax = maxval(lon_cc_pd(1:nx))-360.0_ip
+          xmin = lonLL-360.0_ip
+          xmax = lonUR-360.0_ip
         else
-          xmax = maxval(lon_cc_pd(1:nx))
+          xmax = lonUR
         endif
-        ymin = minval(lat_cc_pd(1:ny))
-        ymax = maxval(lat_cc_pd(1:ny))
+        ymin = latLL
+        ymax = latUR
+        if(abs(dn-de).lt.1.0e-4_ip)then
+          IsRegGrid = .true.
+        else
+          IsRegGrid = .false.
+        endif
       else
-        xmin = minval(x_cc_pd(1:nx))
-        xmax = maxval(x_cc_pd(1:nx))
-        ymin = minval(y_cc_pd(1:ny))
-        ymax = maxval(y_cc_pd(1:ny))
+        xmin = xLL
+        xmax = xUR
+        ymin = yLL
+        ymax = yUR
+        if(abs(dx-dy).lt.1.0e-4_ip)then
+          IsRegGrid = .true.
+        else
+          IsRegGrid = .false.
+        endif
+        !do io=1,2;if(VB(io).le.verbosity_error)then
+        !  write(errlog(io),*)"ERROR: Currenntly, plotting with gnuplot only enabled for lon/lat grids."
+        !  write(errlog(io),*)"       Please use GMT to plot projected maps."
+        !  write(errlog(io),*)"       ./ASH3DPLOT=4 ./Ash3d_PostProc ...."
+        !endif;enddo
+        !stop 1
       endif
-      call citylist(2,xmin,xmax,ymin,ymax, &
-                      ncities,                        &
-                      lon_cities,lat_cities,          &
-                      name_cities)
-
-      if(lon_volcano.gt.xmax)lon_volcano=lon_volcano-360.0_ip
 
       ! write out the data in a form that gnuplot can read
+      ! 3-column data
       open(unit=fid_outdata,file=filename_outdata,status='replace')
-      do i = 1,nx
-        do j = 1,ny
+      do ii = 1,nx
+        do jj = 1,ny
           if(lon_cc_pd(1).lt.180.0_ip)then
-            tmp_ip = lon_cc_pd(i)
+            tmp_ip = lon_cc_pd(ii)
           else
-            tmp_ip = lon_cc_pd(i)-360.0_ip
+            tmp_ip = lon_cc_pd(ii)-360.0_ip
           endif
-          if(abs(OutVar(i,j)-Fill_Value).lt.EPS_SMALL)then
-            write(fid_outdata,*)tmp_ip,lat_cc_pd(j),"NaN"
+          if(abs(OutVar(ii,jj)-Fill_Value).lt.EPS_SMALL)then
+            write(fid_outdata,*)tmp_ip,lat_cc_pd(jj),"NaN"
           else
-            write(fid_outdata,*)tmp_ip,lat_cc_pd(j),OutVar(i,j)
+            write(fid_outdata,*)tmp_ip,lat_cc_pd(jj),OutVar(ii,jj)
           endif
         enddo
         write(fid_outdata,*)""
       enddo
       close(fid_outdata)
+      ! Finished temporary data file
 
+      call citylist(2,                        & ! 2 is for external file in gnuplot format
+                    xmin,xmax,ymin,ymax,      &
+                    ncities,                  &
+                    lon_cities,               &
+                    lat_cities,               &
+                    name_cities)
+      if(lon_volcano.gt.xmax)lon_volcano=lon_volcano-360.0_ip
       open(unit=fid_misc,file="volc.dat",status='replace')
       write(fid_misc,*)real(lon_volcano,kind=4),real(lat_volcano,kind=4),'""'
       close(fid_misc)
+
+      ! Build strings with run info for legend
+      ! Volcano:     Erup.start:
+      ! Run date:    Plm Height:
+      ! Windfile:    Duration:
+      !              Volume:
+      write(cstr_volcname,'(a10,a20)')'Volcano:  ' ,VolcanoName
+      write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
+      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
+      write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
+      if(neruptions.gt.1)then
+        write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'
+      endif
+
+      !e_StartTime,e_PlumeHeight,e_Duration,e_Volume
+      write(cstr_ErStartT,'(a20,a20)')'Erup. Start Time:   ',&
+            HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap)
+      write(cstr_ErHeight,'(a20,f4.1,a3)')'Erup. Plume Height: ',e_PlumeHeight(1),' km'
+      write(cstr_ErDuratn,'(a20,f4.1,a6)')'Erup. Duration:     ',e_Duration(1),' hours'
+      write(cstr_ErVolume,'(a20,f8.5,a10)')'Erup. Volume:       ',e_Volume(1),' km3 (DRE)'
+
 
       ! Set up to plot via gnuplot script
       open(unit=fid_script,file=filename_script,status='replace')
@@ -491,11 +566,37 @@
       write(fid_script,'(g0)')"# copied to the cwd or ${ASH3DHOME}/share/post_proc/"
       write(fid_script,'(g0)')"##########################################################################"
       write(fid_script,*)"set terminal pngcairo font 'sans,12' size 854,603"   ! Set the image size
+      write(fid_script,*)"set output '",trim(adjustl(filename_png)),"'"
+      if(HaveIconFile)then
+        write(fid_script,'(g0)')"set multiplot"
+        write(fid_script,'(g0)')" "
+        write(fid_script,'(g0)')"# Set logo plot"
+        write(fid_script,'(g0)')"set size 0.2, 0.2"
+        write(fid_script,'(g0)')"set origin 0.78, 0.0"
+        write(fid_script,'(g0)')"unset key"
+        write(fid_script,'(g0)')"unset tics"
+        write(fid_script,'(g0)')"unset xlabel"
+        write(fid_script,'(g0)')"unset ylabel"
+        write(fid_script,'(g0)')"unset title"
+        write(fid_script,'(g0)')"#unset border"
+        write(fid_script,'(g0)')"unset label"
+        write(fid_script,'(g0)')"set size ratio -1"
+        linebuffer080 = 'plot "' // trim(adjustl(Instit_IconFile)) // '" binary filetype=png with rgbalpha'
+        write(fid_script,'(g0)')trim(adjustl(linebuffer080))
+        write(fid_script,'(g0)')" "
+      else
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Institution Logo not found."
+          write(outlog(io),*)"If you would like your logo on these maps, copy a"
+          write(outlog(io),*)"small image (130x50) to ASH3DHOME/share/post_proc/logo.png"
+        endif;enddo
+      endif
+
+      write(fid_script,'(g0)')"# Now main plot"
       write(fid_script,*)"set origin 0.05, .20"
       write(fid_script,*)"set size 0.85, 0.8"              ! Set x and y scale for plot
       write(fid_script,*)"set ylabel 'Latitude'"
       write(fid_script,*)"set xlabel 'Longitude'"
-      write(fid_script,*)"set output '",trim(adjustl(outfile_name)),"'"
       write(fid_script,*)"set title '",trim(adjustl(title_plot)),units,"'"
       write(fid_script,*)"set datafile missing 'NaN'"
       write(fid_script,*)"XMIN = ",real(xmin,kind=4)
@@ -508,8 +609,8 @@
       write(fid_script,*)"set contour base"
       write(fid_script,*)"set cntrparam bspline"
       write(fid_script,*)"set cntrparam levels discrete \"
-      do i=1,nConLev-1
-        write(fid_script,*)real(ContourLev(i),kind=4),', \'
+      do ilev=1,nConLev-1
+        write(fid_script,*)real(ContourLev(ilev),kind=4),', \'
       enddo
       write(fid_script,*)real(ContourLev(nConLev),kind=4)
       write(fid_script,*)"unset surface"
@@ -524,39 +625,36 @@
       write(fid_script,*)"XVAL = XMIN-(XMAX-XMIN)*0.1"
       write(fid_script,*)"YVAL = YMIN-(YMAX-YMIN)*0.25"
 
-      write(fid_script,*)"set label 'Volcano: " ,VolcanoName,&
-                            "' at XVAL, YVAL font 'sans,9'"
-      write(fid_script,*)"set label 'Run Date: ",os_time_log,&
-                  "' at XVAL, YVAL font 'sans,9' offset character 0,-1"
-      read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
-      linebuffer050 = "Reading iw,iwf from cdf_b3l1"
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,cdf_b3l1,iomessage)
-      write(fid_script,*)"set label 'Windfile: ",iwf,&
-                            "' at XVAL, YVAL font 'sans,9' offset character 0,-2"
+      write(fid_script,*)"set label '",trim(adjustl(cstr_volcname)),"' at XVAL, YVAL font 'sans,9' offset character 0,2"
+      write(fid_script,*)"set label '",trim(adjustl(cstr_run_date)),"' at XVAL, YVAL font 'sans,9' offset character 0,1"
+      write(fid_script,*)"set label '",trim(adjustl(cstr_windfile)),"' at XVAL, YVAL font 'sans,9' offset character 0,0"
+      if(neruptions.gt.1)then
+        write(fid_script,*)"set label '",trim(adjustl(cstr_note)),"' at XVAL, YVAL font 'sans,9' offset character 0,-1"
+      endif
 
       write(fid_script,*)"XVAL = XMIN+(XMAX-XMIN)*0.4"
-      write(fid_script,*)"set label 'Erup. Start Time: ",HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap),&
-                            "' at XVAL, YVAL font 'sans,9'"
-      write(fid_script,*)"set label 'Erup. Plume Height: ",real(e_PlumeHeight(1),kind=4),&
-                            " km' at XVAL, YVAL font 'sans,9' offset character 0,-1"
-      write(fid_script,*)"set label 'Erup. Duration: ",real(e_Duration(1),kind=4),&
-                            " hours' at XVAL, YVAL font 'sans,9' offset character 0,-2"
-      write(fid_script,*)"set label 'Erup. Volume: ",real(e_Volume(1),kind=4),&
-                            " km3 (DRE)' at XVAL, YVAL font 'sans,9' offset character 0,-3"
+      write(fid_script,*)"set label '",trim(adjustl(cstr_ErStartT)),"' at XVAL, YVAL font 'sans,9' offset character 0,2"
+      write(fid_script,*)"set label '",trim(adjustl(cstr_ErHeight)),"' at XVAL, YVAL font 'sans,9' offset character 0,1"
+      write(fid_script,*)"set label '",trim(adjustl(cstr_ErDuratn)),"' at XVAL, YVAL font 'sans,9' offset character 0,0"
+      write(fid_script,*)"set label '",trim(adjustl(cstr_ErVolume)),"' at XVAL, YVAL font 'sans,9' offset character 0,-1"
 
-      write(fid_script,*)" plot '",trim(adjustl(coastfile)),"' with filledcurves linetype rgb '#dddddd' , \"
+      write(fid_script,*)" plot '",trim(adjustl(filename_coastline)),"' with filledcurves linetype rgb '#dddddd' , \"
       write(fid_script,*)"   'outvar.con' using 1:2 with l lc rgb '#888888' , \"
       write(fid_script,*)"   '' every 1000 with labels font ',6' , \"
       write(fid_script,*)"   'cities.xy' using 1:2 , \"
       write(fid_script,*)"   '' using 1:2:3 with labels font ',10' point pointtype 7 offset char 1,1, \"
       write(fid_script,*)"   'volc.dat' using 1:2 , \"
       write(fid_script,*)"   '' using 1:2:3 with labels point pointtype 22 pointsize 2 lt rgb 'red'"
+      if(HaveIconFile)then
+        ! If we are including a logo via multiplot, close out multiplot environment
+        write(fid_script,*)"unset multiplot"
+      endif
 
       close(fid_script)
 
       write(plotcom,'(a11,a14)')'gnuplot -p ',filename_script
-      call execute_command_line(plotcom,exitstat=iostatus)
-
+      call execute_command_line(plotcom,&
+                                  wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       if(writeContours)then
 
         ! Read outvar.con
@@ -602,7 +700,7 @@
                 endif;enddo
                 stop 1
               endif
-              ! This is an easier index to used
+              ! This is an easier index to use
               icurve = ContourDataNcurves(ilev)
             endif
           elseif(testkey.eq.'#')then
@@ -663,9 +761,9 @@
               endif;enddo
               stop 1
             endif
-            ipt = ContourDataNpoints(ilev,icurve)
+            npts = ContourDataNpoints(ilev,icurve)
             read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) &
-                       ContourDataX(ilev,icurve,ipt),ContourDataY(ilev,icurve,ipt)
+                       ContourDataX(ilev,icurve,npts),ContourDataY(ilev,icurve,npts)
             linebuffer050 = "Reading line from contour file, x,y"
             if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
           endif
@@ -676,23 +774,28 @@
         close(unit=fid_contourdata)
 
         ! Loop through all the levels and curves and trim any curves with zero length
-        do i=1,nConLev
+        do ilev=1,nConLev
           icurve = CONTOUR_MAXCURVES + 1
           do ii = CONTOUR_MAXCURVES,1,-1
-            if(ContourDataNpoints(i,ii).le.0)then
+            if(ContourDataNpoints(ilev,ii).le.0)then
               ! log each curve number with no points
               icurve = ii
             endif
           enddo
-          ContourDataNcurves(i) = max(0,icurve-1)
+          ContourDataNcurves(ilev) = max(0,icurve-1)
         enddo
 
       endif
 
       ! Clean up
       if (CleanScripts_gnuplot) then
-        cmd = "rm -f outvar.* cities.xy volc.dat"
-        call execute_command_line(trim(adjustl(cmd)))
+        cmd = "rm -f outvar.dat outvar.gpi cities.xy volc.dat"
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Cleaning up temporary files with command:"
+          write(outlog(io),*)trim(adjustl(cmd))
+        endif;enddo
+        call execute_command_line(trim(adjustl(cmd)),&
+                                  wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       endif
 
       ! clean up memory
@@ -704,7 +807,6 @@
       return
 
       ! Error traps (starting with 9000)
-      ! For this subroutine, the 100's position refers to block # of control file
 
 9001  do io=1,2;if(VB(io).le.verbosity_error)then
         write(errlog(io),*)  'error: cannot open file: ',filename_contourdata
@@ -743,32 +845,53 @@
          Site_vprofile,x_vprofile,y_vprofile,cdf_b3l1,VolcanoName
 
       use Source,        only : &
-         e_Volume,e_Duration,e_StartTime,e_PlumeHeight
+         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
 
       use time_data,     only : &
          os_time_log,SimStartHour,BaseYear,useLeap,ntmax,time_native
 
       integer, intent (in) :: vprof_ID
 
+      logical           :: HaveIconFile
+      character(len=76) :: title_plot
+      character(len=30) :: cstr_xlabel = 'Time (hours after eruption)'
+      character(len=30) :: cstr_ylabel = 'Height (km)'
+      character(len=30) :: cstr_zlabel = 'Ash conc. mg/m3'
+      character(len=30) :: cstr_volcname
+      character(len=30) :: cstr_run_date
+      character(len=30) :: cstr_windfile
+      character(len=40) :: cstr_ErStartT
+      character(len=27) :: cstr_ErHeight
+      character(len=30) :: cstr_ErDuratn
+      character(len=38) :: cstr_ErVolume
+      character(len=45) :: cstr_note
+
+      character(len=10) :: filename_root
       character(len=14) :: filename_script
       character(len=14) :: filename_outdata
-      character(len=14) :: dp_pngfile
+      character(len=14) :: filename_png
       integer           :: fid_script  = 55
       integer           :: fid_outdata  = 54
-      !integer           :: dp_pngfileID  = 53
       character(len=27) :: coord_str
-      character(len=25) :: plotcom
-      integer :: k,i
-      integer :: ioerr,iw,iwf
-      character(len=200) :: cmd
+      character(len=80) :: plotcom
+      integer           :: i,k
+      integer           :: ioerr
+      integer           :: iostatus
+      integer           :: cstat
+      character(len=120):: iomessage
+      integer           :: iw,iwf
+      character(len= 80):: linebuffer080
+      character(len=200):: cmd
 
-      real(kind=ip)  :: tmin
-      real(kind=ip)  :: tmax
-      real(kind=ip)  :: zmin
-      real(kind=ip)  :: zmax
-      real(kind=ip)  :: cloudcon_thresh_mgm3
-      real(kind=ip)  :: cmin
-      real(kind=ip)  :: cmax
+      ! Plotting variables
+
+      real(kind=ip) :: tmin    , zmin    , cmin     ! graph minima
+      real(kind=ip) :: tmax    , zmax    , cmax     ! graph maxima
+      real(kind=ip) :: tlab1   , zlab1   , clab1    ! graph first label
+      real(kind=ip) :: tlabstep, zlabstep, clabstep ! graph label increment
+      real(kind=ip) :: cloudcon_thresh_mgm3
+
+      ! Gnuplot variables
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
@@ -778,23 +901,95 @@
         end function HS_xmltime
       END INTERFACE
 
-      write(filename_outdata,53) vprof_ID,".dat"
-      write(filename_script,53) vprof_ID,".gpi"
-      write(dp_pngfile,54) vprof_ID,".png"
- 53   format('vprof_',i4.4,a4)
- 54   format('gnupl_',i4.4,a4)
+      ! Test for icon file
+      inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
+
+      ! Build strings with run info for legend
+      ! Volcano:     Erup.start:
+      ! Run date:    Plm Height:
+      ! Windfile:    Duration:
+      !              Volume:
+      write(cstr_volcname,'(a10,a20)')'Volcano:  ' ,VolcanoName
+      write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
+      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
+      write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
+      if(neruptions.gt.1)then
+        write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'
+      endif
+
+      !e_StartTime,e_PlumeHeight,e_Duration,e_Volume
+      write(cstr_ErStartT,'(a20,a20)')'Erup. Start Time:   ',&
+            HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap)
+      write(cstr_ErHeight,'(a20,f4.1,a3)')'Erup. Plume Height: ',e_PlumeHeight(1),' km'
+      write(cstr_ErDuratn,'(a20,f4.1,a6)')'Erup. Duration:     ',e_Duration(1),' hours'
+      write(cstr_ErVolume,'(a20,f8.5,a10)')'Erup. Volume:       ',e_Volume(1),' km3 (DRE)'
+
+      write(filename_root,52)vprof_ID
+ 52   format('vprof_',i4.4)
+      filename_outdata = trim(adjustl(filename_root)) // ".dat"
+      filename_script  = trim(adjustl(filename_root)) // ".gpi"
+      filename_png     = trim(adjustl(filename_root)) // ".png"
+
+      ! Get min/max and label interval for all three axies.
+      tmin=real(0,kind=ip)
+      tmax=real(ceiling(time_native(ntmax)),kind=ip)
+      tlab1    = 0.0_ip
+      if(tmax.gt.240.0_ip)then
+        tlabstep = 48.0_ip
+      elseif(tmax.gt.120.0_ip)then
+        tlabstep = 24.0_ip
+      elseif(tmax.gt.30.0_ip)then
+        tlabstep = 10.0_ip
+      elseif(tmax.gt.15.0_ip)then
+        tlabstep = 5.0_ip
+      elseif(tmax.gt.6.0_ip)then
+        tlabstep = 2.0_ip
+      else
+        tlabstep = 1.0_ip
+      endif
+
+      zmin=real(0,kind=ip)
+      zmax=real(z_cc_pd(nzmax),kind=ip)
+      zlab1    = 0.0_ip
+      if(zmax.gt.30.0_ip)then
+        zlabstep = 10.0_ip
+      elseif(zmax.gt.15.0_ip)then
+        zlabstep = 5.0_ip
+      elseif(zmax.gt.6.0_ip)then
+        zlabstep = 2.0_ip
+      else
+        zlabstep = 1.0_ip
+      endif
 
       cloudcon_thresh_mgm3 = CLOUDCON_THRESH * KG_2_MG / KM3_2_M3 !convert from kg/km3 to mg/m3
+      cmin=real(0,kind=ip)
+      cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=ip)    ! Get the max value for this profile
+      cmin=real(min(cmin,cloudcon_thresh_mgm3),kind=ip)  ! Do not let cmax drop below the threshold
+      if    (cmax.gt.4.0e4_ip)then
+          clabstep = 5.0e3_ip
+      elseif(cmax.gt.1.0e4_ip)then
+          clabstep = 2.0e3_ip
+      elseif(cmax.gt.4.0e3_ip)then
+          clabstep = 5.0e2_ip
+      elseif(cmax.gt.1.0e3_ip)then
+          clabstep = 2.0e2_ip
+      elseif(cmax.gt.4.0e2_ip)then
+          clabstep = 5.0e1_ip
+      elseif(cmax.gt.1.0e2_ip)then
+          clabstep = 2.0e1_ip
+      elseif(cmax.gt.4.0e1_ip)then
+          clabstep = 5.0e0_ip
+      elseif(cmax.gt.1.0e1_ip)then
+          clabstep = 2.0e0_ip
+      elseif(cmax.gt.1.0e0_ip)then
+          clabstep = 5.0e-1_ip
+      else
+          clabstep = 1.0e-1_ip
+      endif
+      clab1    = 0.0_ip
 
-      tmin=real(0.0,kind=ip)
-      tmax=real(ceiling(time_native(ntmax)),kind=ip)
-      zmin=real(0.0,kind=ip)
-      zmax=real(z_cc_pd(nzmax),kind=ip)
-      cmin=real(0.0,kind=ip)
-      cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=ip)       ! Get the max value for this profile
-      cmax=real(max(cmax,cloudcon_thresh_mgm3),kind=ip)  ! Do not let cmax drop below the threshold
-
-      open(fid_outdata,file=filename_outdata,status='replace')
+      ! Prep data: gnuplot will load x y z data in column format
+      open(unit=fid_outdata,file=filename_outdata,status='replace')
       do i = 1,ntmax
         do k = 1,nzmax
           write(fid_outdata,*)time_native(i),z_cc_pd(k),pr_ash(k,i,vprof_ID)
@@ -803,72 +998,114 @@
       enddo
       close(fid_outdata)
 
+      ! Build the plot title
       if(IsLatLon)then
         write(coord_str,101)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
       else
         write(coord_str,102)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
       endif
- 101  format(' (lon=',f7.2,',  lat=',f6.2,')')
+ 101  format(' (lon=',f7.2,', lat=',f6.2,')')
  102  format(' (x=',f9.3,', y=',f9.3,')')
+      write(title_plot,*)trim(adjustl(Site_vprofile(vprof_ID))),coord_str
+
       ! Set up to plot via gnuplot script
-      open(fid_script,file=filename_script,status='replace')
+      open(unit=fid_script,file=filename_script,status='replace')
       write(fid_script,'(g0)')"##########################################################################"
       write(fid_script,'(g0)')"# Temporary gnuplot script for producing vertical profiles for Ash3d_PostProc"
       write(fid_script,'(g0)')"# Adjust to suit your needs."
       write(fid_script,'(g0)')"##########################################################################"
       write(fid_script,*)"set terminal pngcairo font 'sans,12' size 854,603"   ! Set the image size
-      write(fid_script,*)"set origin 0, .10"
-      write(fid_script,*)"set size 0.85, 0.9"              ! Set x and y scale for plot
-      write(fid_script,*)"set ylabel 'Height (km)'"
-      write(fid_script,*)"set xlabel 'Time (hours after eruption)'"
-      write(fid_script,*)"set output '",dp_pngfile,"'"
-      write(fid_script,*)"set title '",&
-                           trim(adjustl(Site_vprofile(vprof_ID))),&
-                           coord_str,"'"
-      write(fid_script,*)"set isosamples 50"
-      write(fid_script,*)"set pm3d"
-      write(fid_script,*)"set palette cubehelix negative"
-      write(fid_script,*)"unset surface"
-      write(fid_script,*)"set view map"
-      write(fid_script,*)"set key off"
+      write(fid_script,*)"set output '",filename_png,"'"
+      if(HaveIconFile)then
+        write(fid_script,'(g0)')"set multiplot"
+        write(fid_script,'(g0)')" "
+        write(fid_script,'(g0)')"# Set logo plot"
+        write(fid_script,'(g0)')"set size 0.2, 0.2"
+        write(fid_script,'(g0)')"set origin 0.78, 0.0"
+        write(fid_script,'(g0)')"unset key"
+        write(fid_script,'(g0)')"unset tics"
+        write(fid_script,'(g0)')"unset xlabel"
+        write(fid_script,'(g0)')"unset ylabel"
+        write(fid_script,'(g0)')"unset title"
+        write(fid_script,'(g0)')"#unset border"
+        write(fid_script,'(g0)')"unset label"
+        write(fid_script,'(g0)')"set size ratio -1"
+        linebuffer080 = 'plot "' // trim(adjustl(Instit_IconFile)) // '" binary filetype=png with rgbalpha'
+        write(fid_script,'(g0)')trim(adjustl(linebuffer080))
+        write(fid_script,'(g0)')" "
+      else
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Institution Logo not found."
+          write(outlog(io),*)"If you would like your logo on these maps, copy a"
+          write(outlog(io),*)"small image (130x50) to ASH3DHOME/share/post_proc/logo.png"
+        endif;enddo
+      endif
 
-      write(fid_script,*)"XMIN = 0.0"
-      write(fid_script,*)"YMIN = 0.0"
+      write(fid_script,'(g0)')"set origin 0, .15"
+      write(fid_script,'(g0)')"set size 0.85, 0.9"              ! Set x and y scale for plot
+      write(fid_script,'(g0)')"set size ratio 0.75"
+      write(fid_script,'(g0)')"set tics"
+      !write(fid_script,'(g0)')"set ylabel 'Height (km)'"
+      linebuffer080 = "set ylabel '" // trim(adjustl(cstr_ylabel)) // "'"
+      write(fid_script,'(g0)')linebuffer080
+      linebuffer080 = "set xlabel '" // trim(adjustl(cstr_xlabel)) // "'"
+      write(fid_script,'(g0)')linebuffer080
+      !write(fid_script,'(g0)')"set xlabel 'Time (hours after eruption)'"
+      linebuffer080 = "set title '" // trim(adjustl(title_plot)) // "'"
+!      linebuffer080 = "set title '" // &
+!                              trim(adjustl(Site_vprofile(vprof_ID))) // &
+!                              coord_str // "'"
+      write(fid_script,'(g0)')linebuffer080
+      write(fid_script,'(g0)')"set isosamples 50"
+      write(fid_script,'(g0)')"set pm3d"
+      write(fid_script,'(g0)')"set palette cubehelix negative"
+      write(fid_script,'(g0)')"unset surface"
+      write(fid_script,'(g0)')"set view map"
+      write(fid_script,'(g0)')"set key off"
+
+      write(fid_script,'(g0)')"XMIN = 0.0"
+      write(fid_script,'(g0)')"YMIN = 0.0"
       write(fid_script,*)"XMAX = ",time_native(ntmax)
       write(fid_script,*)"YMAX = ",z_cc_pd(nzmax)
-      write(fid_script,*)"XVAL = -XMAX*0.1"
-      write(fid_script,*)"YVAL = -YMAX*0.25"
-      
-      write(fid_script,*)"set label 'Volcano: " ,VolcanoName,&
-                           "' at XVAL, YVAL font 'sans,9'"
-      write(fid_script,*)"set label 'Run Date: ",os_time_log,&
-                  "' at XVAL, YVAL font 'sans,9' offset character 0,-1"
-      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
-      write(fid_script,*)"set label 'Windfile: ",iwf,&
-                "' at XVAL, YVAL font 'sans,9' offset character 0,-2"
+      write(fid_script,'(g0)')"XVAL = -XMAX*0.2"
+      write(fid_script,'(g0)')"YVAL = -YMAX*0.35"
 
-      write(fid_script,*)"XVAL = XMAX*0.4"
-      write(fid_script,*)"set label 'Erup. Start Time: ",HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap),&
-                "' at XVAL, YVAL font 'sans,9'"
-      write(fid_script,*)"set label 'Erup. Plume Height: ",real(e_PlumeHeight(1),kind=4),&
-                " km' at XVAL, YVAL font 'sans,9' offset character 0,-1"
-      write(fid_script,*)"set label 'Erup. Duration: ",real(e_Duration(1),kind=4),&
-                " hours' at XVAL, YVAL font 'sans,9' offset character 0,-2"
-      write(fid_script,*)"set label 'Erup. Volume: ",real(e_Volume(1),kind=4),&
-                " km3 (DRE)' at XVAL, YVAL font 'sans,9' offset character 0,-3"
+      write(fid_script,*)"set label '",trim(adjustl(cstr_volcname)),"' at XVAL, YVAL font 'sans,9' offset character 0,2"
+      write(fid_script,*)"set label '",trim(adjustl(cstr_run_date)),"' at XVAL, YVAL font 'sans,9' offset character 0,1"
+      write(fid_script,*)"set label '",trim(adjustl(cstr_windfile)),"' at XVAL, YVAL font 'sans,9' offset character 0,0"
+      if(neruptions.gt.1)then
+        write(fid_script,*)"set label '",trim(adjustl(cstr_note)),"' at XVAL, YVAL font 'sans,9' offset character 0,-1"
+      endif
 
-      write(fid_script,*)"set cblabel 'Ash con. in mg/m3'"
+      write(fid_script,*)"XVAL = XMIN+(XMAX-XMIN)*0.4"
+      write(fid_script,*)"set label '",trim(adjustl(cstr_ErStartT)),"' at XVAL, YVAL font 'sans,9' offset character 0,2"
+      write(fid_script,*)"set label '",trim(adjustl(cstr_ErHeight)),"' at XVAL, YVAL font 'sans,9' offset character 0,1"
+      write(fid_script,*)"set label '",trim(adjustl(cstr_ErDuratn)),"' at XVAL, YVAL font 'sans,9' offset character 0,0"
+      write(fid_script,*)"set label '",trim(adjustl(cstr_ErVolume)),"' at XVAL, YVAL font 'sans,9' offset character 0,-1"
+
+      linebuffer080 = "set cblabel '" // trim(adjustl(cstr_zlabel)) // "'"
+      write(fid_script,'(g0)')linebuffer080
+      !write(fid_script,*)"set cblabel 'Ash con. in mg/m3'"
       write(fid_script,*)"splot '",filename_outdata,"'"
+      if(HaveIconFile)then
+        ! If we are including a logo via multiplot, close out multiplot environment
+        write(fid_script,*)"unset multiplot"
+      endif
 
       close(fid_script)
 
       write(plotcom,'(a11,a14)')'gnuplot -p ',filename_script
-      call execute_command_line(plotcom)
-
+      call execute_command_line(plotcom,&
+                                wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       ! Clean up
       if (CleanScripts_gnuplot) then
-        cmd = "rm -f outvar.* volc.dat vprof_*dat vprof_*gpi"
-        call execute_command_line(trim(adjustl(cmd)))
+        cmd = "rm -f vprof_*dat vprof_*gpi"
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Cleaning up temporary files with command:"
+          write(outlog(io),*)trim(adjustl(cmd))
+        endif;enddo
+        call execute_command_line(trim(adjustl(cmd)),&
+                                  wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       endif
 
       end subroutine write_2Dprof_PNG_gnuplot
@@ -905,12 +1142,16 @@
       real(kind=dp) :: ymaxpl
       character(len=14) :: filename_script
       character(len=14) :: filename_outdata
-      character(len=14) :: dp_pngfile
+      character(len=14) :: filename_png
       integer           :: fid_outdata  = 54
       integer           :: fid_script  = 55
       character(len=25) :: plotcom
       integer,save      :: plot_index = 0
-      character(len=200) :: cmd
+      integer           :: ioerr
+      integer           :: iostatus
+      integer           :: cstat
+      character(len=120):: iomessage
+      character(len=200):: cmd
 
       if(Airport_Thickness_TS(pt_indx,nWriteTimes).lt.THICKNESS_THRESH)then
         return
@@ -920,11 +1161,11 @@
 
       write(filename_outdata,53) plot_index,".dat"
       write(filename_script,53) plot_index,".gpi"
-      write(dp_pngfile,54) plot_index,".png"
+      write(filename_png,54) plot_index,".png"
  53   format('depTS_',i4.4,a4)
  54   format('gnupl_',i4.4,a4)
 
-      open(fid_outdata,file=filename_outdata,status='replace')
+      open(unit=fid_outdata,file=filename_outdata,status='replace')
       do i = 1,nWriteTimes
         write(fid_outdata,*)WriteTimes(i),Airport_Thickness_TS(pt_indx,i)
       enddo
@@ -943,7 +1184,7 @@
       endif
 
       ! Set up to plot via gnuplot script
-      open(fid_script,file=filename_script,status='replace')
+      open(unit=fid_script,file=filename_script,status='replace')
       write(fid_script,'(g0)')"##########################################################################"
       write(fid_script,'(g0)')"# Temporary gnuplot script for producing 2d maps for Ash3d_PostProc"
       write(fid_script,'(g0)')"# Adjust to suit your needs."
@@ -956,19 +1197,21 @@
       write(fid_script,*)"set ylabel 'Deposit Thickeness (mm)'"
       write(fid_script,*)"set xlabel 'Time (hours after eruption)'"
       write(fid_script,*)"set nokey"
-      write(fid_script,*)"set output '",dp_pngfile,"'"
+      write(fid_script,*)"set output '",filename_png,"'"
       write(fid_script,*)"set title '",Airport_Name(pt_indx),"'"
       write(fid_script,*)"plot [0:",ceiling(Simtime_in_hours),"][0:",&
                nint(ymaxpl),"] '",filename_outdata,"' with filledcurve x1 ls 1"
       close(fid_script)
 
       write(plotcom,'(a11,a14)')'gnuplot -p ',filename_script
-      call execute_command_line(plotcom)
+      call execute_command_line(plotcom,&
+                                wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
 
       ! Clean up
       if (CleanScripts_gnuplot) then
         cmd = "rm -f outvar.* cities.xy volc.dat"
-        call execute_command_line(trim(adjustl(cmd)))
+        call execute_command_line(trim(adjustl(cmd)),&
+                                  wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       endif
 
       end subroutine write_DepPOI_TS_PNG_gnuplot

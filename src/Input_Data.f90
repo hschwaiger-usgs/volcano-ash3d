@@ -330,7 +330,7 @@
         usezip,zippath,usegnuplot,gnuplotpath
 
       use io_data,       only : &
-        Ash3dHome,cdf_source
+        Ash3dHome,Instit_IconFile,cdf_source
 
       use time_data,     only : &
         BaseYear,useLeap,os_time_log, &
@@ -601,6 +601,10 @@
           write(errlog(io),*)"         or set the environment variable ASH3DHOME"
         endif;enddo
       endif
+      ! Set path to Institution Icon
+      ! USGS icon is at /opt/USGS/Ash3d/share/post_proc/USGSvid.png linked to logo.png
+      ! Local institutions can overwrite logo.png
+      Instit_IconFile = trim(adjustl(Ash3dHome)) // '/share/post_proc/logo.png'
 
       ! Now, check for environment variables ASH3DCFL
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -809,7 +813,8 @@
                              trim(adjustl(zippath))
           ! First check if zip is actually in the path
           write(outlog(io),*)"                  Checking for default path for zip"
-          call execute_command_line('which zip',wait=.true.,exitstat=iostatus)
+          call execute_command_line('which zip',&
+                                    wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
           if(iostatus.ne.0)then
             write(outlog(io),*)"Error: 'which zip' failed. No zip executable in default path"
             write(outlog(io),*)"       Deactivating zip"
@@ -830,7 +835,7 @@
             ! Finally, do a test run of the zip executable
             write(outlog(io),*)"                  Checking if zip executes."
             call execute_command_line("echo 'exit' | zip --version > /dev/null",&
-                                      WAIT=.true., EXITSTAT=iostatus, CMDSTAT=cstat, CMDMSG=iomessage)
+                                      wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
             if(iostatus.eq.0)then
               write(outlog(io),*)"                  Success"
             else
@@ -862,7 +867,8 @@
           write(outlog(io),*)"    USEGNUPLOT: gnuplot plotting package is installed"
           ! First check if gnuplot is actually in the path
           write(outlog(io),*)"                  Checking for default path for gnuplot"
-          call execute_command_line('which gnuplot',wait=.true.,exitstat=iostatus)
+          call execute_command_line('which gnuplot',&
+                                    wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
           if(iostatus.ne.0)then
             write(outlog(io),*)"Error: 'which gnuplot' failed. No gnuplot executable in default path"
             write(outlog(io),*)"       Deactivating gnuplot"
@@ -883,7 +889,7 @@
             ! Finally, do a test run of the gnuplot executable
             write(outlog(io),*)"                  Checking if gnuplot executes."
             call execute_command_line("echo 'exit' | gnuplot",&
-                                      WAIT=.true., EXITSTAT=iostatus, CMDSTAT=cstat, CMDMSG=iomessage)
+                                      wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
             if(iostatus.eq.0)then
               write(outlog(io),*)"                  Success"
             else

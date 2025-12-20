@@ -352,10 +352,10 @@
       ! bits.  For all the details, see
       ! https://www.esri.com/content/dam/esrisites/sitecore-archive/Files/Pdfs/library/whitepapers/pdfs/shapefile.pdf
       !  All writes of real*8 will use transfer() to write the correct bits in 4-byte packets
-      open(ov_mainID, file=trim(adjustl(ov_mainfile)), access='stream', form='unformatted', status='replace')
+      open(unit=ov_mainID, file=trim(adjustl(ov_mainfile)), access='stream', form='unformatted', status='replace')
       ! Note: The index file (.shx) has the same head as the .shp file (except the file length field)
       !       So duplicate all the writes
-      open(ov_indxID, file=trim(adjustl(ov_indxfile)), access='stream', form='unformatted', status='replace')
+      open(unit=ov_indxID, file=trim(adjustl(ov_indxfile)), access='stream', form='unformatted', status='replace')
 
       ! File header is 100 bytes
       file_code = 9994_4
@@ -540,7 +540,7 @@
       !  3. The record order must be the same as the order of shape features in the main file
       !  4. The year value in the dBASE header must be the year since 1900.
       ! Note: We will write dBASE V – MS-Windows (Level 5) format since we know that works.
-      open(ov_dbasID, file=trim(adjustl(ov_dbasfile)), access='stream', form='unformatted', status='replace')
+      open(unit=ov_dbasID, file=trim(adjustl(ov_dbasfile)), access='stream', form='unformatted', status='replace')
 
       ! Populate each of the TableRecData fields with dummy values so we can get lengths to put
       ! in the header
@@ -762,7 +762,7 @@
       close(ov_dbasID)
 
       if (IsLatLon)then
-        open(ov_projID, file=trim(adjustl(ov_projfile)), access='stream', form='unformatted', status='replace')
+        open(unit=ov_projID, file=trim(adjustl(ov_projfile)), access='stream', form='unformatted', status='replace')
         write(ov_projID)'GEOGCS["GCS_WGS_1984",'
         write(ov_projID)'DATUM["D_WGS_1984",'
         write(ov_projID)'SPHEROID["WGS_1984",'
@@ -775,12 +775,12 @@
         case(0)
           ! Non-geographic projection, (x,y) only
           !  Just create a file with no content
-          open(ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
+          open(unit=ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
           write(ov_projID,*)' '
           close(ov_projID)
         case(1)
           ! Polar stereographic
-          open(ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
+          open(unit=ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
           write(ov_projID,501)A3d_lam0,A3d_k0,A3d_phi1
 501       format('PROJECTION["Polar_Stereographic"],',          &
                  'PARAMETER["False_Easting",500000.0],',        &
@@ -792,7 +792,7 @@
           close(ov_projID)
         case(2)
           ! Albers Equal Area
-          open(ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
+          open(unit=ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
           write(ov_projID,502)A3d_lam0,A3d_phi1,A3d_phi2,A3d_phi0
 502       format('PROJECTION["Albers_Equal_Area"],',            &
                  'PARAMETER["False_Easting",500000.0],',        &
@@ -805,7 +805,7 @@
           close(ov_projID)
         case(3)
           ! UTM
-          open(ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
+          open(unit=ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
           write(ov_projID,503)A3d_lam0,A3d_phi0,A3d_k0
 503       format('PROJECTION["Transverse_Mercator"],',      &
                  'PARAMETER["False_Easting",500000.0],',        &
@@ -817,7 +817,7 @@
           close(ov_projID)
         case(4)
           ! Lambert conformal conic 
-          open(ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
+          open(unit=ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
           write(ov_projID,504)A3d_lam0,A3d_phi1,A3d_phi2,A3d_phi0
 504       format('PROJECTION["Lambert_Conformal_Conic"],',      &
                  'PARAMETER["False_Easting",500000.0],',        &
@@ -830,7 +830,7 @@
           close(ov_projID)
         case(5)
           ! Mercator
-          open(ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
+          open(unit=ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
           write(ov_projID,505)A3d_lam0,A3d_phi0,A3d_k0
 505       format('PROJECTION["Transverse_Mercator"],',          &
                  'PARAMETER["False_Easting",500000.0],',        &

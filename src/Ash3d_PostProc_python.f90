@@ -4,8 +4,8 @@
 !
 ! This module provides the subroutines that use python for creating 2d maps,
 ! 2d vertical profiles, and the little deposit accumulation plots linked to
-! the airport arrival kml (ash_arrivaltimes_airports.kml).  These subroutines
-! create temporary script files that are run if python/matplotlib/cartopy are
+! the airport arrival kml (ash_arrivaltimes_airports.kml).
+! These subroutines create temporary script files that are run if python/matplotlib/cartopy are
 ! installed on the local system.
 !
 !      subroutine write_2Dmap_PNG_python
@@ -37,7 +37,6 @@
 ! conda create --name geo_env
 ! conda activate geo_env
 !
-!
 !##############################################################################
 
       module Ash3d_PostProc_python
@@ -47,10 +46,10 @@
       use io_units
 
       use global_param,  only : &
-         DirDelim,EPS_SMALL
+         EPS_SMALL
 
       use io_data,       only : &
-         Ash3dHome
+         Instit_IconFile
 
       implicit none
 
@@ -63,8 +62,6 @@
              write_DepPOI_TS_PNG_python
 
         ! Publicly available variables
-
-      character(100) :: Instit_IconFile
       logical, public :: CleanScripts_python
 
       contains
@@ -97,7 +94,9 @@
 
       use mesh,          only : &
          IsLatLon,lon_cc_pd,lat_cc_pd,de,dn, &
-         x_cc_pd,y_cc_pd,dx,dy
+         x_cc_pd,y_cc_pd,dx,dy,              &
+         latLL,lonLL,latUR,lonUR,            &
+         xLL,yLL,xUR,yUR
 
       use Output_Vars,   only : &
          !ContourFilled, &
@@ -115,9 +114,6 @@
          !CloudArrivalTime,Mask_Deposit,Mask_Cloud,&
          CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS,ContourLev,nConLev
 
-      use io_units,      only : &
-         fid_script,fid_outdata,fid_contourdata,fid_misc
-
       use time_data,     only : &
          os_time_log,SimStartHour,BaseYear,useLeap
 
@@ -125,7 +121,7 @@
          WriteTimes,cdf_b3l1,VolcanoName
 
       use Source,        only : &
-         e_Volume,e_Duration,e_StartTime,e_PlumeHeight,lon_volcano,lat_volcano
+         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight,lon_volcano,lat_volcano
 
       use citywriter
 
@@ -141,54 +137,67 @@
       real(kind=ip),intent(in) :: Fill_Value
       logical      ,intent(in) :: writeContours
 
-!      logical            :: mask(nx,ny)
+      !logical            :: mask(nx,ny)
       character(len=6)   :: Fill_Value_str
       character(len=200) :: cmd
 
-      integer :: i,j
-!      real(kind=ip) :: tmp_ip
-      integer     , dimension(:,:),allocatable :: zrgb
+      !real(kind=ip) :: tmp_ip
+      integer,dimension(:,:),allocatable :: zrgb
       character(len=40) :: title_plot
       character(len=15) :: title_legend
-      character(len=40) :: outfile_name
+      character(len=30) :: cstr_volcname
+      character(len=30) :: cstr_run_date
+      character(len=30) :: cstr_windfile
+      character(len=40) :: cstr_ErStartT
+      character(len=27) :: cstr_ErHeight
+      character(len=30) :: cstr_ErDuratn
+      character(len=38) :: cstr_ErVolume
+      character(len=45) :: cstr_note
+      character(len=20) :: varname
       character(len= 9) :: cio
       character(len= 4) :: outfile_ext = '.png'
       character(len=10) :: units
+      integer           :: ioerr
+      integer           :: iostatus
+      integer           :: cstat
+      character(len=120):: iomessage
+      integer           :: iw,iwf
+      logical           :: HaveIconFile
+      character(len=  8):: linebuffer008
+      character(len= 80):: linebuffer080
+      character(len=130):: linebuffer130,linebuffer130_2
 
+      ! Plot dimensions
       real(kind=ip)  :: xmin
       real(kind=ip)  :: xmax
       real(kind=ip)  :: ymin
       real(kind=ip)  :: ymax
+      logical        :: IsRegGrid
 
+      ! Aux. File names
+      character(len=10) :: filename_root
       character(len=9)  :: filename_script
       character(len=20) :: filename_outdata
-!      character(len=10) :: filename_contourdata
+      character(len=40) :: filename_png
+      !character(len=10) :: filename_contourdata
+      !character(len=80) :: filename_coastline
 
-      !character(len=26) :: coord_str
-      character(len=25) :: plotcom
-!      character(len=80) :: coastfile
-      integer           :: ioerr
-      integer           :: iostatus
-!      character(len=120):: iomessage
-      integer           :: iw,iwf
-
+      ! Citywriter variables
+      !integer :: icty
       integer :: ncities
+      !integer :: cityname_offset_px = 30
       real(kind=ip),dimension(:),allocatable     :: lon_cities
       real(kind=ip),dimension(:),allocatable     :: lat_cities
       character(len=26),dimension(:),allocatable :: name_cities
-      logical           :: IsThere1
-!      character(len= 50):: linebuffer050 
-      character(len= 80):: linebuffer080
-      character(len=130):: linebuffer130,linebuffer130_2
-      character(len=8)  :: outstr
-!      character         :: testkey
-!      integer           :: ilev,ignulev
-!      integer           :: lev_i,substr_pos1,substr_pos2,substr_pos3
-!      real(kind=4)      :: lev_r4
-!      integer           :: icurve
 
-      character(len=20) :: varname
-      logical           :: IsRegGrid
+      ! Contour variables
+      integer           :: ilev
+      !integer           :: lev_i,substr_pos1,substr_pos2,substr_pos3
+      !real(kind=4)      :: lev_r4
+      !integer           :: icurve,ipt
+
+      ! Python/Cartopy variables
+      character(len=25) :: plotcom
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
@@ -198,40 +207,19 @@
         end function HS_xmltime
       END INTERFACE
 
-      !write(coastfile,'(a13)')"world_50m.txt"
-      !inquire(file=coastfile,exist=IsThere1)
-      !if(.not.IsThere1)then
-      !  coastfile = trim(Ash3dHome) // &
-      !                    DirDelim // 'share' // &
-      !                    DirDelim // 'post_proc' // &
-      !                    DirDelim // 'world_50m.txt'
-      !  inquire(file=coastfile,exist=IsThere2)
-      !  if(.not.IsThere2)then
-      !    do io=1,2;if(VB(io).le.verbosity_error)then
-      !      write(errlog(io),*)"Could not find required file world_50m.txt"
-      !      write(errlog(io),*)"This file is available at:"
-      !      write(errlog(io),*)"  http://www.pythonting.org/data/world_50m.txt"
-      !      write(errlog(io),*)"Please download this file to the current working directory or"
-!#ifdef! LINUX
-      !      write(errlog(io),*)"copy to ${ASH3DHOME}/share/post_proc/"
-      !      write(errlog(io),*)" e.g. /opt/USGS/Ash3d/share/post_proc/"
-!#endif!
-!#ifdef! MACOS
-      !      write(errlog(io),*)"copy to ${ASH3DHOME}/share/post_proc/"
-      !      write(errlog(io),*)" e.g. /opt/USGS/Ash3d/share/post_proc/"
-!#endif!
-!#ifdef! WINDOWS
-      !      write(errlog(io),*)"copy to C:\opt\USGS\Ash3d\share\post_proc\"
-!#endif!
-      !    endif;enddo
-      !    stop 1
-      !  endif
-      !endif
+      ! Test for icon file
+      inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
 
       ncities = 20
       allocate(lon_cities(ncities))
       allocate(lat_cities(ncities))
       allocate(name_cities(ncities))
+
+      filename_root        = "outvar"
+      filename_outdata     = trim(adjustl(filename_root)) // ".dat"
+      filename_script      = trim(adjustl(filename_root)) // ".py"
+      !filename_contourdata = trim(adjustl(filename_root)) // ".con"
+
 
       if(iprod.eq.5.or.iprod.eq.6)then
         cio='____final'
@@ -258,7 +246,7 @@
 
       if(iprod.eq.3)then       ! deposit at specified times (mm)
         varname = "depothick"
-        write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
+        write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
         title_legend = 'Dep.Thick.(mm)'
         units = " (mm)"
@@ -272,7 +260,7 @@
         endif
       elseif(iprod.eq.4)then   ! deposit at specified times (inches)
         varname = "depothick"
-        write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
+        write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
         title_legend = 'Dep.Thick.(in)'
         units = " (in)"
@@ -286,7 +274,7 @@
         endif
       elseif(iprod.eq.5)then       ! deposit at final time (mm)
         varname = "depothickFin"
-        write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
+        write(filename_png,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
         title_legend = 'Dep.Thick.(mm)'
         units = " (mm)"
@@ -300,7 +288,7 @@
         endif
       elseif(iprod.eq.6)then   ! deposit at final time (inches)
         varname = "depothickFin"
-        write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
+        write(filename_png,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
         title_legend = 'Dep.Thick.(in)'
         units = " (in)"
@@ -314,7 +302,7 @@
         endif
       elseif(iprod.eq.7)then   ! ashfall arrival time (hours)
         varname = "depotime"
-        write(outfile_name,'(a22)')'DepositArrivalTime.png'
+        write(filename_png,'(a22)')'DepositArrivalTime.png'
         write(title_plot,'(a20)')'Ashfall arrival time'
         title_legend = 'Time (hours)'
         units = " (hours)"
@@ -334,7 +322,7 @@
         stop 1
       elseif(iprod.eq.9)then   ! ash-cloud concentration
         varname = "ashcon_max"
-        write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
+        write(filename_png,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
         write(title_plot,'(a26,f5.2,a6)')'Ash-cloud concentration t=',WriteTimes(itime),' hours'
         title_legend = 'Max.Con.(mg/m3)'
         units = " (mg/m3)"
@@ -348,7 +336,7 @@
         endif
       elseif(iprod.eq.10)then   ! ash-cloud height
         varname = "cloud_height"
-        write(outfile_name,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
+        write(filename_png,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud height t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Height(km)'
         units = " (km)"
@@ -362,7 +350,7 @@
         endif
       elseif(iprod.eq.11)then   ! ash-cloud bottom
         varname = "cloud_bottom"
-        write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
+        write(filename_png,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud bottom t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Bot.(km)'
         units = " (km)"
@@ -376,7 +364,7 @@
         endif
       elseif(iprod.eq.12)then   ! ash-cloud load
         varname = "cloud_load"
-        write(outfile_name,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
+        write(filename_png,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
         write(title_plot,'(a17,f5.2,a6)')'Ash-cloud load t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Load(T/km2)'
         units = " (T/km2)"
@@ -390,7 +378,7 @@
         endif
       elseif(iprod.eq.13)then  ! radar reflectivity
         varname = "radar_reflectivity"
-        write(outfile_name,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
+        write(filename_png,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
         write(title_plot,'(a24,f5.2,a6)')'Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Refl.(dBz)'
         units = " (dBz)"
@@ -404,7 +392,7 @@
         endif
       elseif(iprod.eq.14)then   ! ashcloud arrival time (hours)
         varname = "ash_arrival_time"
-        write(outfile_name,'(a20)')'CloudArrivalTime.png'
+        write(filename_png,'(a20)')'CloudArrivalTime.png'
         write(title_plot,'(a22)')'Ash-cloud arrival time'
         title_legend = 'Time (hours)'
         units = " (hours)"
@@ -418,7 +406,7 @@
         endif
       elseif(iprod.eq.15)then   ! topography
         varname = "topography"
-        write(outfile_name,'(a14)')'Topography.png'
+        write(filename_png,'(a14)')'Topography.png'
         write(title_plot,'(a10)')'Topography'
         title_legend = 'Elevation (km)'
         units = " (hours)"
@@ -444,68 +432,65 @@
         endif;enddo
         stop 1
       endif
+      ! Now have string vars (varname,title_legend, etc.) and contour info (nConLev,zrgb,ContourLev)
+      
+      if(writeContours)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"Running cartopy to calculate contours lines"
+          write(errlog(io),*)"Not sure yet how to save contour data with cartopy"
+          write(errlog(io),*)"If you want shapefiles, recompile without cartopy or"
+          write(errlog(io),*)" reset the plot_pref_shp variable."
+          write(errlog(io),*)"Exiting"
+        endif;enddo
+        stop 1
+      else
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Running cartopy to generate contour plot"
+        endif;enddo
+      endif
 
-      write(filename_outdata,53) "outvar.dat"
-!      write(filename_contourdata,53) "outvar.con"
-      write(filename_script,54) "outvar.m"
- 53   format(a10)
- 54   format(a8)
-
-      ! When we run this subroutine via a matlab script (as opposed to the API), we
-      ! write out OutVar to an ESRI ASCII file to be read by the script
-      ! Now mask out non-cloud values
-!      if(iprod.eq.10.or.&  ! CloudHeight
-!         iprod.eq.11)then  ! CloudHeightBot
-!        mask(1:nx,1:ny) = Mask_Cloud(1:nx,1:ny)
-!      elseif(iprod.eq.7)then ! DepArrivalTime
-!        mask(1:nx,1:ny) = Mask_Deposit(1:nx,1:ny)
-!      elseif(iprod.eq.14)then
-!        ! cloud mask based on cloud load does not work in this case the cloud load mask
-!        ! is a function of time
-!        mask(1:nx,1:ny) = .true.
-!        do i=1,nx
-!          do j=1,ny
-!            if(CloudArrivalTime(i,j).lt.0.0_ip)mask(i,j) = .false.
-!          enddo
-!        enddo
-!      else
-!        mask = .true.
-!      endif
-
+      ! This is the section where we actually start plotting the map
+      ! Evaluate grid
       if(IsLatLon)then
+        if(lonUR-lonLL.ge.360.0_ip)then
+          lonLL = 0.0_ip
+          lonUR = 360.0_ip
+        endif
+        xmin = lonLL
+        ! Make sure xmin is in the range -180->180
+        if (xmin.gt.180.0_ip)then
+          xmin = lonLL-360.0_ip
+          xmax = lonUR-360.0_ip
+        else
+          xmax = lonUR
+        endif
+        ymin = latLL
+        ymax = latUR
         if(abs(dn-de).lt.1.0e-4_ip)then
           IsRegGrid = .true.
         else
           IsRegGrid = .false.
         endif
       else
+        xmin = xLL
+        xmax = xUR
+        ymin = yLL
+        ymax = yUR
         if(abs(dx-dy).lt.1.0e-4_ip)then
           IsRegGrid = .true.
         else
           IsRegGrid = .false.
         endif
-      endif
-
-      if(IsLatLon)then
-        xmin = minval(lon_cc_pd(1:nx))
-        ! Make sure xmin is in the range -180->180
-        if (xmin.gt.180.0_ip)then
-          xmin = minval(lon_cc_pd(1:nx))-360.0_ip
-          xmax = maxval(lon_cc_pd(1:nx))-360.0_ip
-        else
-          xmax = maxval(lon_cc_pd(1:nx))
-        endif
-        ymin = minval(lat_cc_pd(1:ny))
-        ymax = maxval(lat_cc_pd(1:ny))
-      else
-        xmin = minval(x_cc_pd(1:nx))
-        xmax = maxval(x_cc_pd(1:nx))
-        ymin = minval(y_cc_pd(1:ny))
-        ymax = maxval(y_cc_pd(1:ny))
+        !do io=1,2;if(VB(io).le.verbosity_error)then
+        !  write(errlog(io),*)"ERROR: Currenntly, plotting with cartopy only enabled for lon/lat grids."
+        !  write(errlog(io),*)"       Please use GMT to plot projected maps."
+        !  write(errlog(io),*)"       ./ASH3DPLOT=4 ./Ash3d_PostProc ...."
+        !endif;enddo
+        !stop 1
       endif
 
       ! write out the data in a form that python can read
-      ! Python script expects an ESRI ASCII data file
+      ! Python script expects an ESRI ASCII data file; force regular
       if(IsRegGrid)then
         ! If the grid is regular (dx=dy) then we can write an ESRI ASCII file and convert to grd
         varname = "outvar"
@@ -518,12 +503,42 @@
                            real(de,kind=sp),real(dn,kind=sp),Fill_Value_str,&
                            real(OutVar,kind=sp),filename_outdata)
       endif
+      ! Finished temporary data file
+
+      call citylist(2,                        & ! 2 is for external file in gnuplot format
+                    xmin,xmax,ymin,ymax,      &
+                    ncities,                  &
+                    lon_cities,               &
+                    lat_cities,               &
+                    name_cities)
+      if(lon_volcano.gt.xmax)lon_volcano=lon_volcano-360.0_ip
+
+      ! Build strings with run info for legend
+      ! Volcano:     Erup.start:
+      ! Run date:    Plm Height:
+      ! Windfile:    Duration:
+      !              Volume:
+      write(cstr_volcname,'(a10,a20)')'Volcano:  ' ,VolcanoName
+      write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
+      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
+      write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
+      if(neruptions.gt.1)then
+        write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'
+      endif
+
+      !e_StartTime,e_PlumeHeight,e_Duration,e_Volume
+      write(cstr_ErStartT,'(a20,a20)')'Erup. Start Time:   ',&
+            HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap)
+      write(cstr_ErHeight,'(a20,f4.1,a3)')'Erup. Plume Height: ',e_PlumeHeight(1),' km'
+      write(cstr_ErDuratn,'(a20,f4.1,a6)')'Erup. Duration:     ',e_Duration(1),' hours'
+      write(cstr_ErVolume,'(a20,f8.5,a10)')'Erup. Volume:       ',e_Volume(1),' km3 (DRE)'
+
 
       if(writeContours)then
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"Running python to calculate contours lines"
         endif;enddo
-        write(outfile_name,'(a14)')'tmp.png'
+        write(filename_png,'(a14)')'tmp.png'
         allocate(ContourDataNcurves(nConLev))
         allocate(ContourDataNpoints(nConLev,CONTOUR_MAXCURVES))
         allocate(ContourDataX(nConLev,CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS))
@@ -537,35 +552,6 @@
           write(outlog(io),*)"Running python to generate contour plot"
         endif;enddo
       endif
-
-      call citylist(2,xmin,xmax,ymin,ymax, &
-                      ncities,                        &
-                      lon_cities,lat_cities,          &
-                      name_cities)
-
-      if(lon_volcano.gt.xmax)lon_volcano=lon_volcano-360.0_ip
-
-      !  Local Logo
-      !   First check is a local logo in installed on this system
-      Instit_IconFile= trim(Ash3dHome) // &
-                        DirDelim // 'share' // &
-                        DirDelim // 'post_proc' // &
-                        DirDelim // 'logo.png'
-      inquire( file=trim(adjustl(Instit_IconFile)), exist=IsThere1)
-
-      if (.not.IsThere1) then
-        !  USGS Logo (130x49)
-        !   No local logo, open the USGS version
-        Instit_IconFile= trim(Ash3dHome) // &
-                          DirDelim // 'share' // &
-                          DirDelim // 'post_proc' // &
-                          DirDelim // 'USGSvid.png'
-        inquire( file=trim(adjustl(Instit_IconFile)), exist=IsThere1)
-      endif
-
-      open(unit=fid_misc,file="volc.dat",status='replace')
-      write(fid_misc,*)real(lon_volcano,kind=4),real(lat_volcano,kind=4),'""'
-      close(fid_misc)
 
       ! Set up to plot via python script
       open(unit=fid_script,file=filename_script,status='replace')
@@ -674,12 +660,12 @@
 
       linebuffer130  ="clevels=["
       linebuffer130_2="tlevels=['"
-      do i=1,nConLev
-        write(outstr,'(e8.3)')ContourLev(i)
-        linebuffer130 = trim(adjustl(linebuffer130)) // outstr
-        if(i.lt.nConLev) linebuffer130 = trim(adjustl(linebuffer130)) // ','
-        linebuffer130_2 = trim(adjustl(linebuffer130_2)) // outstr
-        if(i.lt.nConLev) then
+      do ilev=1,nConLev
+        write(linebuffer008,'(e8.3)')ContourLev(ilev)
+        linebuffer130 = trim(adjustl(linebuffer130)) // linebuffer008
+        if(ilev.lt.nConLev) linebuffer130 = trim(adjustl(linebuffer130)) // ','
+        linebuffer130_2 = trim(adjustl(linebuffer130_2)) // linebuffer008
+        if(ilev.lt.nConLev) then
           linebuffer130_2 = trim(adjustl(linebuffer130_2)) // "','"
         else
           linebuffer130_2 = trim(adjustl(linebuffer130_2)) // "']"
@@ -687,13 +673,13 @@
       enddo
       linebuffer130 = trim(adjustl(linebuffer130)) // ']'
       write(fid_script,'(g0)')trim(adjustl(linebuffer130))
-      do i=1,nConLev
-        if (i.eq.1)then
-          write(linebuffer080,101)real(zrgb(i,1:3)/255.0,kind=4)
-        elseif(i.eq.nConLev)then
-          write(linebuffer080,103)real(zrgb(i,1:3)/255.0,kind=4)
+      do ilev=1,nConLev
+        if(ilev.eq.1)then
+          write(linebuffer080,101)real(zrgb(ilev,1:3)/255.0,kind=4)
+        elseif(ilev.eq.nConLev)then
+          write(linebuffer080,103)real(zrgb(ilev,1:3)/255.0,kind=4)
         else
-          write(linebuffer080,102)real(zrgb(i,1:3)/255.0,kind=4)
+          write(linebuffer080,102)real(zrgb(ilev,1:3)/255.0,kind=4)
         endif
         write(fid_script,'(g0)')linebuffer080
       enddo
@@ -702,41 +688,32 @@
  103  format('         ( ',f5.2,',',f5.2,',',f5.2,')]' )
       write(fid_script,'(g0)')trim(adjustl(linebuffer130_2))
       write(fid_script,'(g0)')" "
-      linebuffer080 = 'txt_vname_dat="' // trim(adjustl(VolcanoName)) // '"'
-      write(fid_script,'(g0)')linebuffer080
-      linebuffer080 = 'txt_RunDate_dat="' // trim(adjustl(os_time_log)) // '"'
-      write(fid_script,'(g0)')linebuffer080
-      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
-      write(linebuffer080,'(a18,i2,a1)')'txt_Windfile_dat="' , iwf , '"'
-      write(fid_script,'(g0)')linebuffer080
-      write(linebuffer080,'(a18,a20,a1)')'txt_ESrtTime_dat="',HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap),'"'
-      write(fid_script,'(g0)')linebuffer080
-      write(linebuffer080,'(a15,g10.5,a1)')'txt_EPlmH_dat="',real(e_PlumeHeight(1),kind=4),'"'
-      write(fid_script,'(g0)')linebuffer080
-      write(linebuffer080,'(a14,g10.5,a1)')'txt_EDur_dat="',real(e_Duration(1),kind=4),'"'
-      write(fid_script,'(g0)')linebuffer080
-      write(linebuffer080,'(a14,g10.5,a1)')'txt_EVol_dat="',real(e_Volume(1),kind=4),'"'
-      write(fid_script,'(g0)')linebuffer080
-      write(fid_script,'(g0)')" "
       write(fid_script,'(g0)')"#######################################"
-      write(fid_script,'(g0)')'txt_vname="Volcano: "'
-      write(fid_script,'(g0)')'txt_RunDate="Run Date: "'
-      write(fid_script,'(g0)')'txt_Windfile="Windfile: "'
-      write(fid_script,'(g0)')'txt_ESrtTime="Erup. Start Time: "'
-      write(fid_script,'(g0)')'txt_EPlmH="Erup Plume Height: "'
-      write(fid_script,'(g0)')'txt_EDur="Erup. Duration: "'
-      write(fid_script,'(g0)')'txt_EVol="Erup. Volume: "'
-      write(fid_script,'(g0)')'txt_EPlmH_unit=" km"'
-      write(fid_script,'(g0)')'txt_EDur_unit=" hours"'
-      write(fid_script,'(g0)')'txt_EVol_unit=" km3 (DRE)"'
+
+      linebuffer080 ='txt_vname="'    // trim(adjustl(cstr_volcname)) // '"'
+      write(fid_script,'(g0)')linebuffer080
+      linebuffer080 ='txt_RunDate="'  // trim(adjustl(cstr_run_date)) // '"'
+      write(fid_script,'(g0)')linebuffer080
+      linebuffer080 ='txt_Windfile="' // trim(adjustl(cstr_windfile)) // '"'
+      write(fid_script,'(g0)')linebuffer080
+      linebuffer080 ='txt_ESrtTime="' // trim(adjustl(cstr_ErStartT)) // '"'
+      write(fid_script,'(g0)')linebuffer080
+      linebuffer080 ='txt_EPlmH="'    // trim(adjustl(cstr_ErHeight)) // '"'
+      write(fid_script,'(g0)')linebuffer080
+      linebuffer080 ='txt_EDur="'     // trim(adjustl(cstr_ErDuratn)) // '"'
+      write(fid_script,'(g0)')linebuffer080
+      linebuffer080 ='txt_EVol="'     // trim(adjustl(cstr_ErVolume)) // '"'
+      write(fid_script,'(g0)')linebuffer080
+
       write(fid_script,'(g0)')" "
-      write(fid_script,'(g0)')'annotation_text1 = txt_vname    + txt_vname_dat   + "\n" + \'
-      write(fid_script,'(g0)')'                   txt_RunDate  + txt_RunDate_dat + "\n" + \'
-      write(fid_script,'(g0)')'                   txt_Windfile + txt_Windfile_dat'
-      write(fid_script,'(g0)')'annotation_text2 = txt_ESrtTime + txt_ESrtTime_dat + "\n" + \'
-      write(fid_script,'(g0)')'                   txt_EPlmH    + txt_EPlmH_dat    + txt_EPlmH_unit + "\n" + \'
-      write(fid_script,'(g0)')'                   txt_EDur     + txt_EDur_dat     + txt_EDur_unit  + "\n" + \'
-      write(fid_script,'(g0)')'                   txt_EVol     + txt_EVol_dat     + txt_EVol_unit'
+      write(fid_script,'(g0)')'annotation_text1 = txt_vname    + "\n" + \'
+      write(fid_script,'(g0)')'                   txt_RunDate  + "\n" + \'
+      write(fid_script,'(g0)')'                   txt_Windfile' 
+      write(fid_script,'(g0)')'annotation_text2 = txt_ESrtTime + "\n" + \'
+      write(fid_script,'(g0)')'                   txt_EPlmH    + "\n" + \'
+      write(fid_script,'(g0)')'                   txt_EDur     + "\n" + \'
+      write(fid_script,'(g0)')'                   txt_EVol'
+
       write(fid_script,'(g0)')" "
       write(fid_script,'(g0)')"###################### OPEN ASH DATA FILE AND GET GEOTRANSFORM #######################"
       write(fid_script,'(g0)')"# Open raster with GDAL"
@@ -859,20 +836,14 @@
       write(fid_script,'(g0)')"main_fig.tight_layout()"
       write(fid_script,'(g0)')" "
       write(fid_script,'(g0)')"plt.title(title_plot)"
-      linebuffer080 = "main_fig.savefig(f'" // trim(adjustl(outfile_name)) // "',dpi=100)"
+      linebuffer080 = "main_fig.savefig(f'" // trim(adjustl(filename_png)) // "',dpi=100)"
       write(fid_script,'(g0)')linebuffer080
-
-      ! before exiting the script, write out contour data if needed.
-!for c in range(len(contours)):
-!    n_contour = contours[c]
-!    for d in range(len(n_contour)):
-!        XY_Coordinates = n_contour[d]
-!        print(XY_Coordinates)
 
       close(fid_script)
 
       write(plotcom,'(a11,a14)')'python ',filename_script
-      call execute_command_line(plotcom,exitstat=iostatus)
+      call execute_command_line(plotcom,&
+                                wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
 
       if(iostatus.ne.0)then
         do io=1,2;if(VB(io).le.verbosity_error)then
@@ -882,146 +853,22 @@
           write(errlog(io),*)"           conda install -c conda-forge geopandas"
           write(errlog(io),*)"           conda install -c scitools cartopy"
           write(errlog(io),*)"           conda install -c gdal"
+          write(errlog(io),*)"         Then activate your environment:"
+          write(errlog(io),*)"           conda create --name geo_env"
+          write(errlog(io),*)"           conda activate geo_env"
         endif;enddo
         stop 1
       endif
 
-!      if(writeContours)then
-!
-!        ! Read outvar.con
-!        do io=1,2;if(VB(io).le.verbosity_info)then
-!          write(outlog(io),*)"Now reading outvar.con and loading contour data."
-!        endif;enddo
-!        open(unit=fid_contourdata,file=filename_contourdata,status='old',err=9001)
-!        ! In the python contour file, all contours of a certain level have a header
-!        ! in the following format:
-!        !# Contour 0, label:      300
-!        ! Each curve for that level is separated by a blank line
-!        ! Gnuplot writes the contour data to file starting with the highest level
-!        ! so we will need to check with zlev(:) to make sure we populate ContourDat
-!        ! correctly.
-!        ilev = -1
-!        ignulev = -1
-!        read(fid_contourdata,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-!
-!        linebuffer050 = "Reading line from contour file"
-!        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-!        do while(iostatus.eq.0)
-!          ! Check if this is a header line
-!          read(linebuffer080,*,iostat=ioerr,iomsg=iomessage)testkey
-!          if(ioerr.lt.0)then
-!            ! if there was an error trying to read a character, then this is a blank
-!            ! line; check if we are in a contour block or still in the file header
-!            if(ignulev.eq.-1)then
-!              ! Still in file header
-!              ! Read the next line and cycle
-!              read(fid_contourdata,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-!              !if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-!              cycle
-!            else
-!              ! Blank line in a contour block means we are starting another curve
-!              ! Increment the number of curves for this level
-!              ContourDataNcurves(ilev) = ContourDataNcurves(ilev) + 1
-!              if(ContourDataNcurves(ilev).gt.CONTOUR_MAXCURVES)then
-!                do io=1,2;if(VB(io).le.verbosity_error)then
-!                  write(errlog(io),*)"ERROR: Maximum number of curves for this level exceeded by python"
-!                  write(errlog(io),*)"       Current maximum set to CONTOUR_MAXCURVES = ",CONTOUR_MAXCURVES
-!                  write(errlog(io),*)"       Please increase CONTOUR_MAXCURVES and recompile."
-!                  write(errlog(io),*)"  Output_Vars.f90:CONTOUR_MAXCURVES"
-!                endif;enddo
-!                stop 1
-!              endif
-!              ! This is an easier index to used
-!              icurve = ContourDataNcurves(ilev)
-!            endif
-!          elseif(testkey.eq.'#')then
-!            ! This is a header line
-!            ! There are two possibilities:
-!            !  (1) a line of the file header
-!            !  (2) the start of a contour block
-!            !   if (2), then it will have this format:# Contour 0, label:      300
-!            substr_pos1 = index(linebuffer080,'Contour')
-!
-!            if(substr_pos1.eq.0)then
-!              ! This is a file header line
-!              read(fid_contourdata,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-!              cycle
-!            else
-!              ! Here is the expected format, so start reading from character 10
-!              !# Contour 10, label:        2
-!              read(linebuffer080(10:),*,iostat=ioerr,iomsg=iomessage)ignulev
-!              linebuffer050 = "Reading line from contour file, ignulev"
-!              if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-!              ! Now read the level. Look for the ':' to isolate the last bit
-!              substr_pos1 = index(linebuffer080,':')
-!              ! Also look for a '.' or an 'e' to see if the level value is written as a real or int
-!              substr_pos2 = index(linebuffer080,'.')
-!              substr_pos3 = index(linebuffer080(substr_pos1:),'e')
-!              if(substr_pos2.gt.0.or.substr_pos3.gt.0)then
-!                ! level is written as real
-!                read(linebuffer080(substr_pos1+1:),*,iostat=iostatus,iomsg=iomessage)lev_r4
-!                linebuffer050 = "Reading line from contour file, lev_r4"
-!                if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-!              else
-!                read(linebuffer080(substr_pos1+1:),*,iostat=iostatus,iomsg=iomessage)lev_i
-!                linebuffer050 = "Reading line from contour file, lev_i"
-!                if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-!                lev_r4 = real(lev_i,kind=4)
-!              endif
-!              ! The value for this new level ignulev is lev_r4, but we need to find which
-!              ! ContourLev this corresponds to
-!              do ii = 1,nConLev
-!                if(abs(lev_r4-real(ContourLev(ii),kind=4)).lt.EPS_SMALL)then
-!                  ilev=ii
-!                endif
-!              enddo
-!              ! When we have a new level, initialize the curve index for this level to 1
-!              ContourDataNcurves(ilev) = 1
-!              icurve = ContourDataNcurves(ilev)
-!            endif
-!          else
-!            ! This is the data section
-!            ! Increment the number of points
-!            ContourDataNpoints(ilev,icurve) = ContourDataNpoints(ilev,icurve) + 1
-!            if(ContourDataNpoints(ilev,icurve).gt.CONTOUR_MAXPOINTS)then
-!              do io=1,2;if(VB(io).le.verbosity_error)then
-!                write(errlog(io),*)"ERROR: Maximum number of points for this curve exceeded by GMT"
-!                write(errlog(io),*)"       Current maximum set to CONTOUR_MAXPOINTS = ",CONTOUR_MAXPOINTS
-!                write(errlog(io),*)"       Please increase CONTOUR_MAXPOINTS and recompile."
-!                write(errlog(io),*)"  Output_Vars.f90:CONTOUR_MAXPOINTS"
-!              endif;enddo
-!              stop 1
-!            endif
-!            ipt = ContourDataNpoints(ilev,icurve)
-!            read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) &
-!                       ContourDataX(ilev,icurve,ipt),ContourDataY(ilev,icurve,ipt)
-!            linebuffer050 = "Reading line from contour file, x,y"
-!            if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-!          endif
-!
-!          ! Try to read the next line
-!          read(fid_contourdata,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-!        enddo
-!        close(unit=fid_contourdata)
-!
-!        ! Loop through all the levels and curves and trim any curves with zero length
-!        do i=1,nConLev
-!          icurve = CONTOUR_MAXCURVES + 1
-!          do ii = CONTOUR_MAXCURVES,1,-1
-!            if(ContourDataNpoints(i,ii).le.0)then
-!              ! log each curve number with no points
-!              icurve = ii
-!            endif
-!          enddo
-!          ContourDataNcurves(i) = max(0,icurve-1)
-!        enddo
-!
-!      endif
-
       ! Clean up
       if (CleanScripts_python) then
-        cmd = "rm -f outvar.* cities.xy volc.dat"
-        call execute_command_line(trim(adjustl(cmd)))
+        cmd = "rm -f outvar.dat outvar.py cities.xy"
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Cleaning up temporary files with command:"
+          write(outlog(io),*)trim(adjustl(cmd))
+        endif;enddo
+        call execute_command_line(trim(adjustl(cmd)),&
+                                  wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       endif
 
       ! clean up memory
@@ -1031,15 +878,6 @@
       if(allocated(zrgb))               deallocate(zrgb)
 
       return
-
-      ! Error traps (starting with 9000)
-      ! For this subroutine, the 100's position refers to block # of control file
-
-!9001  do io=1,2;if(VB(io).le.verbosity_error)then
-!        write(errlog(io),*)  'error: cannot open file: ',filename_contourdata
-!        write(errlog(io),*)  'Program stopped'
-!      endif;enddo
-!      stop 1
 
       end subroutine write_2Dmap_PNG_python
 
@@ -1059,143 +897,345 @@
 
       subroutine write_2Dprof_PNG_python(vprof_ID)
 
-      !use global_param,  only : &
-      !   KG_2_MG,KM3_2_M3
+      use global_param,  only : &
+         KG_2_MG,KM3_2_M3
 
-      !use mesh,          only : &
-      !   IsLatLon,nzmax,z_cc_pd
+      use mesh,          only : &
+         IsLatLon,nzmax,z_cc_pd
 
-      !use Output_Vars,   only : &
-      !   pr_ash,CLOUDCON_THRESH
+      use Output_Vars,   only : &
+         pr_ash,CLOUDCON_THRESH
 
-      !use io_data,       only : &
-      !   Site_vprofile,x_vprofile,y_vprofile,cdf_b3l1,VolcanoName
+      use io_data,       only : &
+         Site_vprofile,x_vprofile,y_vprofile,cdf_b3l1,VolcanoName
 
-      !use Source,        only : &
-      !   e_Volume,e_Duration,e_StartTime,e_PlumeHeight
+      use Source,        only : &
+         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
 
-      !use time_data,     only : &
-      !   os_time_log,SimStartHour,BaseYear,useLeap,ntmax,time_native
+      use time_data,     only : &
+         os_time_log,SimStartHour,BaseYear,useLeap,ntmax,time_native
 
       integer, intent (in) :: vprof_ID
 
-!      character(len=14) :: filename_script
-!      character(len=14) :: filename_outdata
-!      character(len=14) :: dp_pngfile
-!      integer           :: fid_script  = 55
-!      integer           :: fid_outdata  = 54
-!      !integer           :: dp_pngfileID  = 53
-!      character(len=27) :: coord_str
-!      character(len=25) :: plotcom
-!      integer :: k,i
-!      integer :: ioerr,iw,iwf
-!      character(len=200) :: cmd
-!
-!      real(kind=ip)  :: tmin
-!      real(kind=ip)  :: tmax
-!      real(kind=ip)  :: zmin
-!      real(kind=ip)  :: zmax
-!      real(kind=ip)  :: cloudcon_thresh_mgm3
-!      real(kind=ip)  :: cmin
-!      real(kind=ip)  :: cmax
-!
-!      INTERFACE
-!        character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-!          real(kind=8),intent(in) :: HoursSince
-!          integer     ,intent(in) :: byear
-!          logical     ,intent(in) :: useLeaps
-!        end function HS_xmltime
-!      END INTERFACE
-!
-!      write(filename_outdata,53) vprof_ID,".dat"
-!      write(filename_script,53) vprof_ID,".gpi"
-!      write(dp_pngfile,54) vprof_ID,".png"
-! 53   format('vprof_',i4.4,a4)
-! 54   format('gnupl_',i4.4,a4)
-!
-!      cloudcon_thresh_mgm3 = CLOUDCON_THRESH * KG_2_MG / KM3_2_M3 !convert from kg/km3 to mg/m3
-!
-!      tmin=real(0.0,kind=ip)
-!      tmax=real(ceiling(time_native(ntmax)),kind=ip)
-!      zmin=real(0.0,kind=ip)
-!      zmax=real(z_cc_pd(nzmax),kind=ip)
-!      cmin=real(0.0,kind=ip)
-!      cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=ip)       ! Get the max value for this profile
-!      cmax=real(max(cmax,cloudcon_thresh_mgm3),kind=ip)  ! Do not let cmax drop below the threshold
-!
-!      open(fid_outdata,file=filename_outdata,status='replace')
-!      do i = 1,ntmax
-!        do k = 1,nzmax
-!          write(fid_outdata,*)time_native(i),z_cc_pd(k),pr_ash(k,i,vprof_ID)
-!        enddo
-!        write(fid_outdata,*)""
-!      enddo
-!      close(fid_outdata)
-!
-!      if(IsLatLon)then
-!        write(coord_str,101)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
-!      else
-!        write(coord_str,102)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
-!      endif
-! 101  format(' (lon=',f7.2,',  lat=',f6.2,')')
-! 102  format(' (x=',f9.3,', y=',f9.3,')')
-!      ! Set up to plot via python script
-!      open(fid_script,file=filename_script,status='replace')
-!      write(fid_script,*)"set terminal pngcairo font 'sans,12' size 854,603"   ! Set the image size
-!      write(fid_script,*)"set origin 0, .10"
-!      write(fid_script,*)"set size 0.85, 0.9"              ! Set x and y scale for plot
-!      write(fid_script,*)"set ylabel 'Height (km)'"
-!      write(fid_script,*)"set xlabel 'Time (hours after eruption)'"
-!      write(fid_script,*)"set output '",dp_pngfile,"'"
-!      write(fid_script,*)"set title '",&
-!                           trim(adjustl(Site_vprofile(vprof_ID))),&
-!                           coord_str,"'"
-!      write(fid_script,*)"set isosamples 50"
-!      write(fid_script,*)"set pm3d"
-!      write(fid_script,*)"set palette cubehelix negative"
-!      write(fid_script,*)"unset surface"
-!      write(fid_script,*)"set view map"
-!      write(fid_script,*)"set key off"
-!
-!      write(fid_script,*)"XMIN = 0.0"
-!      write(fid_script,*)"YMIN = 0.0"
-!      write(fid_script,*)"XMAX = ",time_native(ntmax)
-!      write(fid_script,*)"YMAX = ",z_cc_pd(nzmax)
-!      write(fid_script,*)"XVAL = -XMAX*0.1"
-!      write(fid_script,*)"YVAL = -YMAX*0.25"
-!      
-!      write(fid_script,*)"set label 'Volcano: " ,VolcanoName,&
-!                           "' at XVAL, YVAL font 'sans,9'"
-!      write(fid_script,*)"set label 'Run Date: ",os_time_log,&
-!                  "' at XVAL, YVAL font 'sans,9' offset character 0,-1"
-!      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
-!      write(fid_script,*)"set label 'Windfile: ",iwf,&
-!                "' at XVAL, YVAL font 'sans,9' offset character 0,-2"
-!
-!      write(fid_script,*)"XVAL = XMAX*0.4"
-!      write(fid_script,*)"set label 'Erup. Start Time: ",HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap),&
-!                "' at XVAL, YVAL font 'sans,9'"
-!      write(fid_script,*)"set label 'Erup. Plume Height: ",real(e_PlumeHeight(1),kind=4),&
-!                " km' at XVAL, YVAL font 'sans,9' offset character 0,-1"
-!      write(fid_script,*)"set label 'Erup. Duration: ",real(e_Duration(1),kind=4),&
-!                " hours' at XVAL, YVAL font 'sans,9' offset character 0,-2"
-!      write(fid_script,*)"set label 'Erup. Volume: ",real(e_Volume(1),kind=4),&
-!                " km3 (DRE)' at XVAL, YVAL font 'sans,9' offset character 0,-3"
-!
-!      write(fid_script,*)"set cblabel 'Ash con. in mg/m3'"
-!      write(fid_script,*)"splot '",filename_outdata,"'"
-!
-!      close(fid_script)
-!
-!      write(plotcom,'(a11,a14)')'python -p ',filename_script
-!      call execute_command_line(plotcom)
-!
-!      ! Clean up
-!      if (CleanScripts_python) then
-!        cmd = "rm -f outvar.* volc.dat vprof_*dat vprof_*gpi"
-!        call execute_command_line(trim(adjustl(cmd)))
-!      endif
-!
+      logical           :: HaveIconFile
+      character(len=76) :: title_plot
+      character(len=30) :: cstr_xlabel = 'Time (hours after eruption)'
+      character(len=30) :: cstr_ylabel = 'Height (km)'
+      character(len=30) :: cstr_zlabel = 'Ash conc. mg/m3'
+      character(len=30) :: cstr_volcname
+      character(len=30) :: cstr_run_date
+      character(len=30) :: cstr_windfile
+      character(len=40) :: cstr_ErStartT
+      character(len=27) :: cstr_ErHeight
+      character(len=30) :: cstr_ErDuratn
+      character(len=38) :: cstr_ErVolume
+      character(len=45) :: cstr_note
+
+      character(len=10) :: filename_root
+      character(len=13) :: filename_script
+      character(len=14) :: filename_outdata
+      character(len=14) :: filename_png
+      integer           :: fid_script  = 55
+      integer           :: fid_outdata  = 54
+      character(len=27) :: coord_str
+      character(len=80) :: plotcom
+      integer           :: i,k
+      integer           :: ioerr
+      integer           :: iostatus
+      integer           :: cstat
+      character(len=120):: iomessage
+      integer           :: iw,iwf
+      character(len= 80):: linebuffer080
+      character(len=200):: cmd
+
+      ! Plotting variables
+
+      real(kind=ip) :: tmin    , zmin    , cmin     ! graph minima
+      real(kind=ip) :: tmax    , zmax    , cmax     ! graph maxima
+      real(kind=ip) :: tlab1   , zlab1   , clab1    ! graph first label
+      real(kind=ip) :: tlabstep, zlabstep, clabstep ! graph label increment
+      real(kind=ip) :: cloudcon_thresh_mgm3
+      real(kind=ip)  :: dtg
+      real(kind=ip)  :: dzg
+
+      ! Python variables
+
+      INTERFACE
+        character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
+        end function HS_xmltime
+      END INTERFACE
+
+      ! Test for icon file
+      inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
+
+      ! Build strings with run info for legend
+      ! Volcano:     Erup.start:
+      ! Run date:    Plm Height:
+      ! Windfile:    Duration:
+      !              Volume:
+      write(cstr_volcname,'(a10,a20)')'Volcano:  ' ,VolcanoName
+      write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
+      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
+      write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
+      if(neruptions.gt.1)then
+        write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'
+      endif
+
+      !e_StartTime,e_PlumeHeight,e_Duration,e_Volume
+      write(cstr_ErStartT,'(a20,a20)')'Erup. Start Time:   ',&
+            HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap)
+      write(cstr_ErHeight,'(a20,f4.1,a3)')'Erup. Plume Height: ',e_PlumeHeight(1),' km'
+      write(cstr_ErDuratn,'(a20,f4.1,a6)')'Erup. Duration:     ',e_Duration(1),' hours'
+      write(cstr_ErVolume,'(a20,f8.5,a10)')'Erup. Volume:       ',e_Volume(1),' km3 (DRE)'
+
+      write(filename_root,52)vprof_ID
+ 52   format('vprof_',i4.4)
+      filename_outdata = trim(adjustl(filename_root)) // ".dat"
+      filename_script  = trim(adjustl(filename_root)) // ".py"
+      filename_png     = trim(adjustl(filename_root)) // ".png"
+
+      ! Get min/max and label interval for all three axies.
+      tmin=real(0,kind=ip)
+      tmax=real(ceiling(time_native(ntmax)),kind=ip)
+      tlab1    = 0.0_ip
+      if(tmax.gt.240.0_ip)then
+        tlabstep = 48.0_ip
+      elseif(tmax.gt.120.0_ip)then
+        tlabstep = 24.0_ip
+      elseif(tmax.gt.30.0_ip)then
+        tlabstep = 10.0_ip
+      elseif(tmax.gt.15.0_ip)then
+        tlabstep = 5.0_ip
+      elseif(tmax.gt.6.0_ip)then
+        tlabstep = 2.0_ip
+      else
+        tlabstep = 1.0_ip
+      endif
+
+      zmin=real(0,kind=ip)
+      zmax=real(z_cc_pd(nzmax),kind=ip)
+      zlab1    = 0.0_ip
+      if(zmax.gt.30.0_ip)then
+        zlabstep = 10.0_ip
+      elseif(zmax.gt.15.0_ip)then
+        zlabstep = 5.0_ip
+      elseif(zmax.gt.6.0_ip)then
+        zlabstep = 2.0_ip
+      else
+        zlabstep = 1.0_ip
+      endif
+
+      cloudcon_thresh_mgm3 = CLOUDCON_THRESH * KG_2_MG / KM3_2_M3 !convert from kg/km3 to mg/m3
+      cmin=real(0,kind=ip)
+      cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=ip)    ! Get the max value for this profile
+      cmin=real(min(cmin,cloudcon_thresh_mgm3),kind=ip)  ! Do not let cmax drop below the threshold
+      if    (cmax.gt.4.0e4_ip)then
+          clabstep = 5.0e3_ip
+      elseif(cmax.gt.1.0e4_ip)then
+          clabstep = 2.0e3_ip
+      elseif(cmax.gt.4.0e3_ip)then
+          clabstep = 5.0e2_ip
+      elseif(cmax.gt.1.0e3_ip)then
+          clabstep = 2.0e2_ip
+      elseif(cmax.gt.4.0e2_ip)then
+          clabstep = 5.0e1_ip
+      elseif(cmax.gt.1.0e2_ip)then
+          clabstep = 2.0e1_ip
+      elseif(cmax.gt.4.0e1_ip)then
+          clabstep = 5.0e0_ip
+      elseif(cmax.gt.1.0e1_ip)then
+          clabstep = 2.0e0_ip
+      elseif(cmax.gt.1.0e0_ip)then
+          clabstep = 5.0e-1_ip
+      else
+          clabstep = 1.0e-1_ip
+      endif
+      clab1    = 0.0_ip
+
+      dtg = (tmax-tmin)/100.0_ip
+      dzg = (zmax-zmin)/100.0_ip
+
+      ! Prep data: python uses a csv file with one header line
+      open(unit=fid_outdata,file=filename_outdata,status='replace')
+      write(fid_outdata,*)'Time                   ,  Height                 ,    Concen'
+      do i = 1,ntmax
+        do k = 1,nzmax
+          write(fid_outdata,*)time_native(i),', ',z_cc_pd(k),', ',pr_ash(k,i,vprof_ID)
+        enddo
+        write(fid_outdata,*)""
+      enddo
+      close(fid_outdata)
+
+      ! Build the plot title
+      if(IsLatLon)then
+        write(coord_str,101)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
+      else
+        write(coord_str,102)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
+      endif
+ 101  format(' (lon=',f7.2,',  lat=',f6.2,')')
+ 102  format(' (x=',f9.3,', y=',f9.3,')')
+      write(title_plot,*)trim(adjustl(Site_vprofile(vprof_ID))),coord_str
+
+      ! Set up to plot via python script
+      open(unit=fid_script,file=filename_script,status='replace')
+      write(fid_script,'(g0)')"##########################################################################"
+      write(fid_script,'(g0)')"# Temporary python script for producing vertical profiles for Ash3d_PostProc"
+      write(fid_script,'(g0)')"# Adjust to suit your needs."
+      write(fid_script,'(g0)')"# You will need the packages conda-forge, geopandas, matplotlib"
+      write(fid_script,'(g0)')"##########################################################################"
+      write(fid_script,'(g0)')"import pandas as pd"
+      write(fid_script,'(g0)')"import matplotlib.image as mpimg"
+      write(fid_script,'(g0)')"import matplotlib.pyplot as plt"
+      write(fid_script,'(g0)')"import numpy as np"
+      write(fid_script,'(g0)')"import matplotlib.tri as tri"
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"# Institutional logo (Defaults to USGS)"
+      linebuffer080 = "logo_file = '" // trim(adjustl(Instit_IconFile)) // "'"
+      write(fid_script,'(g0)')trim(adjustl(linebuffer080))
+      write(fid_script,'(g0)')" "
+
+      linebuffer080 = 'data_file="' // trim(adjustl(filename_outdata)) // '"'
+      write(fid_script,'(g0)')trim(adjustl(linebuffer080))
+      linebuffer080 = 'fig_name="' // trim(adjustl(filename_png)) // '"'
+      write(fid_script,'(g0)')trim(adjustl(linebuffer080))
+      linebuffer080 = 'title_plot="' // trim(adjustl(title_plot)) // '"'
+      write(fid_script,'(g0)')trim(adjustl(linebuffer080))
+
+      write(fid_script,'(g0)')" "
+      linebuffer080 = 'txt_vname_dat="' // trim(adjustl(VolcanoName)) // '"'
+      write(fid_script,'(g0)')trim(adjustl(linebuffer080))
+      linebuffer080 = 'txt_RunDate_dat="' // trim(adjustl(os_time_log)) // '"'
+      write(fid_script,'(g0)')trim(adjustl(linebuffer080))
+      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
+      write(linebuffer080,'(a18,i2,a1)')'txt_Windfile_dat="' , iwf , '"'
+      write(fid_script,'(g0)')trim(adjustl(linebuffer080))
+      write(linebuffer080,'(a18,a20,a1)')'txt_ESrtTime_dat="',HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap),'"'
+      write(fid_script,'(g0)')trim(adjustl(linebuffer080))
+      write(linebuffer080,'(a15,g10.5,a1)')'txt_EPlmH_dat="',real(e_PlumeHeight(1),kind=4),'"'
+      write(fid_script,'(g0)')trim(adjustl(linebuffer080))
+      write(linebuffer080,'(a14,g10.5,a1)')'txt_EDur_dat="',real(e_Duration(1),kind=4),'"'
+      write(fid_script,'(g0)')trim(adjustl(linebuffer080))
+      write(linebuffer080,'(a14,g10.5,a1)')'txt_EVol_dat="',real(e_Volume(1),kind=4),'"'
+      write(fid_script,'(g0)')trim(adjustl(linebuffer080))
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"#######################################"
+
+      linebuffer080 ='txt_vname="'    // trim(adjustl(cstr_volcname)) // '"'
+      write(fid_script,'(g0)')linebuffer080
+      linebuffer080 ='txt_RunDate="'  // trim(adjustl(cstr_run_date)) // '"'
+      write(fid_script,'(g0)')linebuffer080
+      linebuffer080 ='txt_Windfile="' // trim(adjustl(cstr_windfile)) // '"'
+      write(fid_script,'(g0)')linebuffer080
+      linebuffer080 ='txt_ESrtTime="' // trim(adjustl(cstr_ErStartT)) // '"'
+      write(fid_script,'(g0)')linebuffer080
+      linebuffer080 ='txt_EPlmH="'    // trim(adjustl(cstr_ErHeight)) // '"'
+      write(fid_script,'(g0)')linebuffer080
+      linebuffer080 ='txt_EDur="'     // trim(adjustl(cstr_ErDuratn)) // '"'
+      write(fid_script,'(g0)')linebuffer080
+      linebuffer080 ='txt_EVol="'     // trim(adjustl(cstr_ErVolume)) // '"'
+      write(fid_script,'(g0)')linebuffer080
+
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')'annotation_text1 = txt_vname    + "\n" + \'
+      write(fid_script,'(g0)')'                   txt_RunDate  + "\n" + \'
+      write(fid_script,'(g0)')'                   txt_Windfile'
+      write(fid_script,'(g0)')'annotation_text2 = txt_ESrtTime + "\n" + \'
+      write(fid_script,'(g0)')'                   txt_EPlmH    + "\n" + \'
+      write(fid_script,'(g0)')'                   txt_EDur     + "\n" + \'
+      write(fid_script,'(g0)')'                   txt_EVol'
+      write(fid_script,'(g0)')' '
+
+      write(fid_script,'(g0)')'####################### OPEN ASH DATA FILE #######################'
+      write(fid_script,'(g0)')'## Open data file'
+      write(fid_script,'(g0)')'df = pd.read_csv(data_file)'
+      write(fid_script,'(g0)')'t_column = df.iloc[:, 0]'
+      write(fid_script,'(g0)')'z_column = df.iloc[:, 1]'
+      write(fid_script,'(g0)')'c_column = df.iloc[:, 2]'
+      write(fid_script,'(g0)')' '
+      write(fid_script,'(a7,i6)')'npts = ',ntmax*nzmax
+      write(fid_script,'(g0)')'ngridt = 100'
+      write(fid_script,'(g0)')'ngridz = 100'
+      write(fid_script,'(g0)')' '
+      write(fid_script,'(g0)')'# Create grid values first.'
+      write(fid_script,'(g0)')'ti = np.linspace(0, 10, ngridt)'
+      write(fid_script,'(g0)')'zi = np.linspace(0, 10, ngridz)'
+      write(fid_script,'(g0)')' '
+      write(fid_script,'(g0)')'# Linearly interpolate the data (x, y) on a grid defined by (ti, zi).'
+      write(fid_script,'(g0)')'triang = tri.Triangulation(t_column, z_column)'
+      write(fid_script,'(g0)')'interpolator = tri.LinearTriInterpolator(triang, c_column)'
+      write(fid_script,'(g0)')'Ti, Zi = np.meshgrid(ti, zi)'
+      write(fid_script,'(g0)')'coni = interpolator(Ti, Zi)'
+      write(fid_script,'(g0)')'# '
+      write(fid_script,'(g0)')'############################## PLOT ######################################'
+      write(fid_script,'(g0)')'## Create figure'
+      write(fid_script,'(g0)')'main_fig = plt.figure(figsize=(8.5, 6))'
+      write(fid_script,'(g0)')'ax1 = main_fig.add_subplot(4,1,(1,3))'
+      write(fid_script,'(g0)')"ax1.contour(ti, zi, coni, levels=10, linewidths=0.5, colors='k')"
+      write(fid_script,'(g0)')"cntr1 = ax1.contourf(ti, zi, coni, levels=8, cmap='jet')"
+      linebuffer080 = "main_fig.colorbar(cntr1, ax=ax1, label='" // cstr_zlabel // "')"
+      write(fid_script,'(g0)')linebuffer080
+      !write(fid_script,'(g0)')"main_fig.colorbar(cntr1, ax=ax1, label='Ash con. (mg/m3)')"
+      write(fid_script,'(g0)')'ax1.set(xlim=(0, 10), ylim=(0, 10))'
+      linebuffer080 = "ax1.set_xlabel('" // cstr_xlabel // "')"
+      write(fid_script,'(g0)')linebuffer080
+      !write(fid_script,'(g0)')"ax1.set_xlabel('Time (hours after eruption')"
+      linebuffer080 = "ax1.set_xlabel('" // cstr_ylabel // "')"
+      write(fid_script,'(g0)')linebuffer080
+      !write(fid_script,'(g0)')"ax1.set_ylabel('Height (km)')"
+      write(fid_script,'(g0)')''
+      write(fid_script,'(g0)')''
+      write(fid_script,'(g0)')'# Draw USGS logo'
+      write(fid_script,'(g0)')'logo = mpimg.imread(logo_file)'
+      write(fid_script,'(g0)')'main_fig.figimage(logo, 700, 50, zorder=3, alpha=0.7)'
+      write(fid_script,'(g0)')'# Adjust position, zorder, and alpha as needed'
+      write(fid_script,'(g0)')' '
+      write(fid_script,'(g0)')'# Annotations'
+      write(fid_script,'(g0)')"ax1.annotate(annotation_text1,"
+      write(fid_script,'(g0)')"            xy=(0.1, 0.05),xycoords='figure fraction',xytext=(20, 20),"
+      write(fid_script,'(g0)')"            textcoords='offset points',va='bottom',ha='left')"
+      write(fid_script,'(g0)')"ax1.annotate(annotation_text2,"
+      write(fid_script,'(g0)')"            xy=(0.4, 0.05),xycoords='figure fraction',xytext=(20, 20),"
+      write(fid_script,'(g0)')"            textcoords='offset points',va='bottom',ha='left')"
+      write(fid_script,'(g0)')' '
+      write(fid_script,'(g0)')'main_fig.tight_layout()'
+      write(fid_script,'(g0)')' '
+      write(fid_script,'(g0)')'plt.title(title_plot)'
+      linebuffer080 = "main_fig.savefig(f'" // trim(adjustl(filename_png)) // "',dpi=100)"
+      write(fid_script,'(g0)')trim(adjustl(linebuffer080))
+
+      write(plotcom,'(a11,a14)')'python ',filename_script
+      call execute_command_line(plotcom,&
+                                wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
+
+      if(iostatus.ne.0)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"WARNING: python command is returing a non-zero error code:", iostatus
+          write(errlog(io),*)"         Maybe your python installation is incomplete"
+          write(errlog(io),*)"         Make sure you install the following in your conda environment:"
+          write(errlog(io),*)"           conda install -c conda-forge geopandas"
+          write(errlog(io),*)"           conda install -c scitools cartopy"
+          write(errlog(io),*)"           conda install -c gdal"
+          write(errlog(io),*)"         Then activate your environment:"
+          write(errlog(io),*)"           conda create --name geo_env"
+          write(errlog(io),*)"           conda activate geo_env"
+        endif;enddo
+        stop 1
+      endif
+
+      ! Clean up
+      if (CleanScripts_python) then
+        cmd = "rm -f vprof_*.dat vprof_*.py"
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Cleaning up temporary files with command:"
+          write(outlog(io),*)trim(adjustl(cmd))
+        endif;enddo
+        call execute_command_line(trim(adjustl(cmd)),&
+                                  wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
+      endif
+
       end subroutine write_2Dprof_PNG_python
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1230,7 +1270,7 @@
 !      real(kind=dp) :: ymaxpl
 !      character(len=14) :: filename_script
 !      character(len=14) :: filename_outdata
-!      character(len=14) :: dp_pngfile
+!      character(len=14) :: filename_png
 !      integer           :: fid_outdata  = 54
 !      integer           :: fid_script  = 55
 !      character(len=25) :: plotcom
@@ -1245,11 +1285,11 @@
 !
 !      write(filename_outdata,53) plot_index,".dat"
 !      write(filename_script,53) plot_index,".gpi"
-!      write(dp_pngfile,54) plot_index,".png"
+!      write(filename_png,54) plot_index,".png"
 ! 53   format('depTS_',i4.4,a4)
 ! 54   format('gnupl_',i4.4,a4)
 !
-!      open(fid_outdata,file=filename_outdata,status='replace')
+!      open(unit=fid_outdata,file=filename_outdata,status='replace')
 !      do i = 1,nWriteTimes
 !        write(fid_outdata,*)WriteTimes(i),Airport_Thickness_TS(pt_indx,i)
 !      enddo
@@ -1268,7 +1308,7 @@
 !      endif
 !
 !      ! Set up to plot via python script
-!      open(fid_script,file=filename_script,status='replace')
+!      open(unit=fid_script,file=filename_script,status='replace')
 !      write(fid_script,*)"set terminal png size 400,300"
 !      write(fid_script,*)"set key bmargin left horizontal Right noreverse enhanced ",&
 !               "autotitles box linetype -1 linewidth 1.000"
@@ -1277,7 +1317,7 @@
 !      write(fid_script,*)"set ylabel 'Deposit Thickeness (mm)'"
 !      write(fid_script,*)"set xlabel 'Time (hours after eruption)'"
 !      write(fid_script,*)"set nokey"
-!      write(fid_script,*)"set output '",dp_pngfile,"'"
+!      write(fid_script,*)"set output '",filename_png,"'"
 !      write(fid_script,*)"set title '",Airport_Name(pt_indx),"'"
 !      write(fid_script,*)"plot [0:",ceiling(Simtime_in_hours),"][0:",&
 !               nint(ymaxpl),"] '",filename_outdata,"' with filledcurve x1 ls 1"

@@ -484,7 +484,7 @@
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Opening KML file ",trim(adjustl(filename))
       endif;enddo
-      open(fid,file=trim(adjustl(filename)),status='replace',action='write',err=2500)
+      open(unit=fid,file=trim(adjustl(filename)),status='replace',action='write',err=2500)
 
       write(fid,1)                 ! write file header (35 lines)
 
@@ -1112,6 +1112,7 @@
       integer            :: stat
       real(kind=dp)      :: olam,ophi ! using precision needed by libprojection
       integer            :: iostatus
+      integer            :: cstat
       character(len=120) :: iomessage
       character(len= 50) :: linebuffer050 
       character(len= 80) :: linebuffer080
@@ -1161,7 +1162,7 @@
         write(filename_png,53) plt_indx,".png"
  53     format('depTS_',i4.4,a4)
 
-        open(fid_script,file=filename_script,status='replace',action='write')
+        open(unit=fid_script,file=filename_script,status='replace',action='write')
         write(fid_script,*)"set terminal png size 400,300"
         write(fid_script,*)"set key bmargin left horizontal Right noreverse enhanced ",&
                               "autotitles box linetype -1 linewidth 1.000"
@@ -1176,7 +1177,7 @@
                               nint(ymaxpl),"] '",filename_outdata,"' with filledcurve x1 ls 1"
         close(fid_script)
         ! Writing the data file the gnuplot script will plot
-        open(fid_outdata,file=filename_outdata,status='replace',action='write')
+        open(unit=fid_outdata,file=filename_outdata,status='replace',action='write')
         do i = 1,nWriteTimes
            write(fid_outdata,*)WriteTimes(i),Airport_Thickness_TS(ai,i)
         enddo
@@ -1185,7 +1186,8 @@
         if(usegnuplot)then
           ! if we have gnuplot installed, just create the plots now
           write(gnucom,*)trim(adjustl(gnuplotpath)),' -p ',filename_script
-          call execute_command_line(gnucom)
+          call execute_command_line(gnucom,&
+                                    wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
           ! Now delete the script and data files
           open(unit=fid_outdata, iostat=stat, file=filename_outdata, status='old',action='write')
           if (stat.eq.0) close(fid_outdata, status='delete')
@@ -1359,7 +1361,8 @@
       if(usezip)then
         write(zipcom,'(a77)')&
           'zip -r ash_arrivaltimes_airports.kmz ash_arrivaltimes_airports.kml depTS*.png'
-        call execute_command_line(zipcom)
+        call execute_command_line(zipcom,&
+                                  wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       endif
 
       return

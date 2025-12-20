@@ -4,9 +4,12 @@
 !
 ! This module provides the subroutines that use GMT for creating 2d maps,
 ! 2d vertical profiles, and the little deposit accumulation plots linked to
-! the airport arrival kml (ash_arrivaltimes_airports.kml). Although a
-! third party API is available, these subroutines create temporary script
-! files that are run if GMT is installed on the local system.
+! the airport arrival kml (ash_arrivaltimes_airports.kml).
+! These subroutines create temporary script files that are run if GMT is
+! installed on the local system.
+!   https://www.generic-mapping-tools.org/
+! Third party fortran API is available with gmt-fortran
+!   https://github.com/GenericMappingTools/gmt-fortran
 !
 !      subroutine write_2Dmap_PNG_GMT
 !      subroutine write_2Dprof_PNG_GMT
@@ -21,10 +24,10 @@
       use io_units
 
       use global_param,  only : &
-         DirDelim,EPS_SMALL
+         EPS_SMALL
 
       use io_data,       only : &
-         Ash3dHome
+         Instit_IconFile
 
 #if USEGMT
       ! This is only for the experimental GMT API
@@ -42,9 +45,7 @@
              write_DepPOI_TS_PNG_GMT
 
         ! Publicly available variables
-
-      character(100)  :: Instit_IconFile
-      logical, public :: CleanScripts_GMT = .false.
+      logical, public :: CleanScripts_GMT
 
       contains
       !------------------------------------------------------------------------
@@ -75,12 +76,15 @@
       subroutine write_2Dmap_PNG_GMT(nx,ny,iprod,itime,OutVar,Fill_Value,writeContours)
 
       use mesh,          only : &
-         IsLatLon,lon_cc_pd,lat_cc_pd,de,dn,latLL,lonLL,latUR,lonUR, &
-         dx,dy,xLL,yLL,xUR,yUR, &
+         IsLatLon,lon_cc_pd,lat_cc_pd,de,dn, &
+         x_cc_pd,y_cc_pd,dx,dy,              &
+         latLL,lonLL,latUR,lonUR,            &
+         xLL,yLL,xUR,yUR,                    &
          A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0,A3d_Re
 
       use Output_Vars,   only : &
-         ContourFilled,Con_Cust,Con_Cust_N,Con_Cust_RGB,Con_Cust_Lev,&
+         ContourFilled, &
+         Con_Cust,Con_Cust_N,Con_Cust_RGB,Con_Cust_Lev,&
          Con_DepThick_mm_N,Con_DepThick_mm_Lev,Con_DepThick_mm_RGB, &
          Con_DepThick_in_N,Con_DepThick_in_Lev,Con_DepThick_in_RGB, &
          Con_DepTime_N,Con_DepTime_Lev,Con_DepTime_RGB, &
@@ -94,9 +98,6 @@
          CloudArrivalTime,Mask_Deposit,Mask_Cloud,&
          CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS,ContourLev,nConLev
 
-      use io_units,      only : &
-         fid_script,fid_outdata,fid_contourdata,fid_misc
-
       use time_data,     only : &
          os_time_log,SimStartHour,BaseYear,useLeap
 
@@ -104,12 +105,12 @@
          WriteTimes,cdf_b3l1,VolcanoName
 
       use Source,        only : &
-         e_Volume,e_Duration,e_StartTime,e_PlumeHeight,lon_volcano,lat_volcano
+         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight,lon_volcano,lat_volcano
+
+      use citywriter
 
       use Ash3d_ASCII_IO,  only : &
            write_2D_ASCII
-
-      use citywriter
 
       use projection,    only : &
            PJ_proj_inv
@@ -124,48 +125,74 @@
 
       logical            :: mask(nx,ny)
       character(len=6)   :: Fill_Value_str
-      character(len=16)  :: fileps  = "temp.ps"
       character(len=200) :: cmd
 
-      integer :: i,j,ii
-      integer     , dimension(:,:),allocatable :: zrgb
+      integer :: ii,jj
+      real(kind=ip) :: tmp_ip
+      integer,dimension(:,:),allocatable :: zrgb
       character(len=40) :: title_plot
       character(len=15) :: title_legend
-      character(len=40) :: outfile_name
+      character(len=30) :: cstr_volcname
+      character(len=30) :: cstr_run_date
+      character(len=30) :: cstr_windfile
+      character(len=40) :: cstr_ErStartT
+      character(len=27) :: cstr_ErHeight
+      character(len=30) :: cstr_ErDuratn
+      character(len=38) :: cstr_ErVolume
+      character(len=45) :: cstr_note
+      character(len=20) :: varname
       character(len= 9) :: cio
       character(len= 4) :: outfile_ext = '.png'
       character(len=10) :: units
+      integer           :: ioerr
+      integer           :: iostatus
+      integer           :: cstat
+      character(len=120):: iomessage
+      integer           :: iw,iwf
+      logical           :: IsThere1,IsThere2
+      logical           :: HaveIconFile
+      character(len=50) :: linebuffer050
+      character(len=80) :: linebuffer080
+      character(len=130):: linebuffer130,linebuffer130_2
+      character         :: testkey
 
+      ! Plot dimensions
       real(kind=ip)  :: xmin
       real(kind=ip)  :: xmax
       real(kind=ip)  :: ymin
       real(kind=ip)  :: ymax
+      logical        :: IsRegGrid
+
+      ! Aux. File names
+      character(len= 8) :: filename_root
+      character(len=10) :: filename_script
+      character(len=10) :: filename_outdata
+      character(len=40) :: filename_png
+      character(len=10) :: filename_contourdata
+      !character(len=80) :: filename_coastline
+      character(len=16) :: filename_ps  = "temp.ps"
+
+      ! Citywriter variables
+      integer :: icty
+      integer :: ncities
+      integer :: cityname_offset_px = 30
+      real(kind=ip),dimension(:),allocatable     :: lon_cities
+      real(kind=ip),dimension(:),allocatable     :: lat_cities
+      character(len=26),dimension(:),allocatable :: name_cities
+
+      ! Contour variables
+      integer           :: substr_pos1 ! for parsing contour text files
+      integer           :: ilev        ! number of contour levels
+      integer           :: icurve      ! number of curves for level ilev
+      integer           :: npts        ! number of points in curve ilev,icurve
+
+      ! Plotting variables
       real(kind=ip)  :: plotw  = 7.0_ip
       real(kind=ip)  :: ploth
       real(kind=ip)  :: asprat
 
-      character(len=10) :: filename_script
-      character(len=10) :: filename_outdata
-      character(len=10) :: filename_contourdata
-
+      ! GMT variables
       character(len=25) :: plotcom
-      integer           :: ioerr
-      integer           :: iostatus
-      character(len=120):: iomessage
-      integer           :: iw,iwf
-
-      integer :: ncities
-      real(kind=ip),dimension(:),allocatable     :: lon_cities
-      real(kind=ip),dimension(:),allocatable     :: lat_cities
-      character(len=26),dimension(:),allocatable :: name_cities
-      character(len=50) :: linebuffer050
-      character(len=80) :: linebuffer080
-      character         :: testkey
-      integer           :: ilev
-      integer           :: substr_pos1
-      integer           :: icurve,ipt
-
-      character(len=20) :: varname
       character(len=20),dimension(20) :: penstr
       character(len=80),dimension(20) :: legpenstr
       character(len=17) :: dumstr17
@@ -184,9 +211,7 @@
       character(len=50) :: contn_ps
       character(len=50) :: incr_str
       character(len=50) :: end_ps
-      logical           :: IsThere
-      logical           :: IsRegGrid
-      real(kind=ip)     :: tmp_ip
+
       real(kind=dp)     :: olam,ophi ! using precision needed by libprojection
 
       INTERFACE
@@ -197,10 +222,20 @@
         end function HS_xmltime
       END INTERFACE
 
+      ! Test for icon file
+      inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
+      ! Assume coastline file is present if gmt is installed
+
       ncities = 20
       allocate(lon_cities(ncities))
       allocate(lat_cities(ncities))
       allocate(name_cities(ncities))
+
+      filename_root        = "outvar"
+      filename_outdata     = trim(adjustl(filename_root)) // ".dat"
+      filename_script      = trim(adjustl(filename_root)) // ".gmt"
+      filename_contourdata = trim(adjustl(filename_root)) // ".con"
+
 
       if(iprod.eq.5.or.iprod.eq.6)then
         cio='____final'
@@ -227,7 +262,7 @@
 
       if(iprod.eq.3)then       ! deposit at specified times (mm)
         varname = "depothick"
-        write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
+        write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
         title_legend = 'Dep.Thick.(mm)'
         units = " (mm)"
@@ -241,7 +276,7 @@
         endif
       elseif(iprod.eq.4)then   ! deposit at specified times (inches)
         varname = "depothick"
-        write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
+        write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
         title_legend = 'Dep.Thick.(in)'
         units = " (in)"
@@ -255,7 +290,7 @@
         endif
       elseif(iprod.eq.5)then       ! deposit at final time (mm)
         varname = "depothickFin"
-        write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
+        write(filename_png,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
         title_legend = 'Dep.Thick.(mm)'
         units = " (mm)"
@@ -269,7 +304,7 @@
         endif
       elseif(iprod.eq.6)then   ! deposit at final time (inches)
         varname = "depothickFin"
-        write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
+        write(filename_png,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
         title_legend = 'Dep.Thick.(in)'
         units = " (in)"
@@ -283,7 +318,7 @@
         endif
       elseif(iprod.eq.7)then   ! ashfall arrival time (hours)
         varname = "depotime"
-        write(outfile_name,'(a22)')'DepositArrivalTime.png'
+        write(filename_png,'(a22)')'DepositArrivalTime.png'
         write(title_plot,'(a20)')'Ashfall arrival time'
         title_legend = 'Time (hours)'
         units = " (hours)"
@@ -303,7 +338,7 @@
         stop 1
       elseif(iprod.eq.9)then   ! ash-cloud concentration
         varname = "ashcon_max"
-        write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
+        write(filename_png,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
         write(title_plot,'(a26,f5.2,a6)')'Ash-cloud concentration t=',WriteTimes(itime),' hours'
         title_legend = 'Max.Con.(mg/m3)'
         units = " (mg/m3)"
@@ -317,7 +352,7 @@
         endif
       elseif(iprod.eq.10)then   ! ash-cloud height
         varname = "cloud_height"
-        write(outfile_name,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
+        write(filename_png,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud height t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Height(km)'
         units = " (km)"
@@ -331,7 +366,7 @@
         endif
       elseif(iprod.eq.11)then   ! ash-cloud bottom
         varname = "cloud_bottom"
-        write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
+        write(filename_png,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud bottom t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Bot.(km)'
         units = " (km)"
@@ -345,7 +380,7 @@
         endif
       elseif(iprod.eq.12)then   ! ash-cloud load
         varname = "cloud_load"
-        write(outfile_name,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
+        write(filename_png,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
         write(title_plot,'(a17,f5.2,a6)')'Ash-cloud load t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Load(T/km2)'
         units = " (T/km2)"
@@ -359,7 +394,7 @@
         endif
       elseif(iprod.eq.13)then  ! radar reflectivity
         varname = "radar_reflectivity"
-        write(outfile_name,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
+        write(filename_png,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
         write(title_plot,'(a24,f5.2,a6)')'Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
         title_legend = 'Cld.Refl.(dBz)'
         units = " (dBz)"
@@ -373,7 +408,7 @@
         endif
       elseif(iprod.eq.14)then   ! ashcloud arrival time (hours)
         varname = "ash_arrival_time"
-        write(outfile_name,'(a20)')'CloudArrivalTime.png'
+        write(filename_png,'(a20)')'CloudArrivalTime.png'
         write(title_plot,'(a22)')'Ash-cloud arrival time'
         title_legend = 'Time (hours)'
         units = " (hours)"
@@ -387,7 +422,7 @@
         endif
       elseif(iprod.eq.15)then   ! topography
         varname = "topography"
-        write(outfile_name,'(a14)')'Topography.png'
+        write(filename_png,'(a14)')'Topography.png'
         write(title_plot,'(a10)')'Topography'
         title_legend = 'Elevation (km)'
         units = " (hours)"
@@ -413,6 +448,7 @@
         endif;enddo
         stop 1
       endif
+      ! Now have string vars (varname,title_legend, etc.) and contour info (nConLev,zrgb,ContourLev)
 
       ! When we run this subroutine via a GMT script (as opposed to the API), we
       ! write out OutVar to an ESRI ASCII file to be read by the script
@@ -426,163 +462,28 @@
         ! cloud mask based on cloud load does not work in this case the cloud load mask
         ! is a function of time
         mask(1:nx,1:ny) = .true.
-        do i=1,nx
-          do j=1,ny
-            if(CloudArrivalTime(i,j).lt.0.0_ip)mask(i,j) = .false.
+        do ii=1,nx
+          do jj=1,ny
+            if(CloudArrivalTime(ii,jj).lt.0.0_ip)mask(ii,jj) = .false.
           enddo
         enddo
       else
         mask = .true.
       endif
 
-      if(IsLatLon)then
-        if(abs(dn-de).lt.EPS_SMALL)then
-          IsRegGrid = .true.
-        else
-          IsRegGrid = .false.
-        endif
-      else
-        if(abs(dx-dy).lt.EPS_SMALL)then
-          IsRegGrid = .true.
-        else
-          IsRegGrid = .false.
-        endif
-      endif
-      if(IsRegGrid)then
-        ! If the grid is regular (dx=dy) then we can write an ESRI ASCII file and convert to grd
-        ! via gmt grdconvert outvar.dat=ef out.grd
-        varname = "outvar"
-        call write_2D_ASCII(nx,ny,OutVar,mask,Fill_Value_str,varname)
-      else
-        write(filename_outdata,53) "outvar.dat"
-        open(fid_outdata,file=filename_outdata,status='replace')
-        do i = 1,nx
-          do j = 1,ny
-            if(lon_cc_pd(1).lt.180.0_ip)then
-              tmp_ip = lon_cc_pd(i)
-            else
-              tmp_ip = lon_cc_pd(i)-360.0_ip
-            endif
-            if(abs(OutVar(i,j)-Fill_Value).lt.EPS_SMALL)then
-              write(fid_outdata,*)tmp_ip,lat_cc_pd(j),"NaN"
-            else
-              write(fid_outdata,*)tmp_ip,lat_cc_pd(j),OutVar(i,j)
-            endif
-          enddo
-        enddo
-        close(fid_outdata)
-      endif
-
-      ! write contour pen specifications to strings
-      do i=1,nConLev
-        write(flt_str,'(i3)')zrgb(i,1)
-        penstr(i)="-W3," // trim(adjustl(flt_str))
-        legpenstr(i)="S 0.1i - 0.15i black 3.0p," // trim(adjustl(flt_str))
-        write(flt_str,'(i3)')zrgb(i,2)
-        penstr(i)= trim(penstr(i)) // "/" // trim(adjustl(flt_str))
-        legpenstr(i)=trim(legpenstr(i)) // "/" // trim(adjustl(flt_str))
-        write(flt_str,'(i3)')zrgb(i,3)
-        penstr(i)= trim(penstr(i)) // "/" // trim(adjustl(flt_str))
-        legpenstr(i)=trim(legpenstr(i)) // "/" // trim(adjustl(flt_str))
-        write(flt_str,'(g8.3)')ContourLev(i)
-        legpenstr(i)=trim(legpenstr(i)) // " 0.3i " // trim(adjustl(flt_str))
-      enddo
-
       if(writeContours)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"Running GMT to calculate contours lines"
         endif;enddo
-        write(outfile_name,'(a14)')'tmp.png'
-        allocate(ContourDataNcurves(nConLev))
-        allocate(ContourDataNpoints(nConLev,CONTOUR_MAXCURVES))
-        allocate(ContourDataX(nConLev,CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS))
-        allocate(ContourDataY(nConLev,CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS))
-        ContourDataNcurves(:)   = 0
-        ContourDataNpoints(:,:) = 0
-        ContourDataX(:,:,:)     = 0.0_ip
-        ContourDataY(:,:,:)     = 0.0_ip
       else
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"Running GMT to generate contour plot"
         endif;enddo
       endif
 
-      write(filename_contourdata,53) "outvar.con"
-      write(filename_script,53) "outvar.gmt"
- 53   format(a10)
-
-      ! Set up to plot via GMT script
-      open(fid_script,file=filename_script,status='replace')
-
-      ! Write annotations to several legends
-      !  Left panel
-      open( fid_misc,file="leg1.txt",status='replace')
-      write(fid_misc,'(a11,a30)')"T Volcano: ",VolcanoName
-      write(fid_misc,'(a5)')"G0.2i"
-      write(fid_misc,'(a12,a20)')"T Run Date: ",os_time_log
-      write(fid_misc,'(a5)')"G0.2i"
-      read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
-      linebuffer080 = cdf_b3l1
-      linebuffer050 = "Reading iw,iwf from cdf_b3l1"
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      write(fid_misc,'(a12,i3)')"T Windfile: ",iwf
-      close(fid_misc)
-
-      !  Right panel
-      open( fid_misc,file="leg2.txt",status='replace')
-      write(fid_misc,'(a20,a20)')"T Erup. Start Time: ",HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap)
-      write(fid_misc,'(a5)')"G0.2i"
-      write(fid_misc,'(a22,f5.2,a3)')"T Erup. Plume Height: ",real(e_PlumeHeight(1),kind=4)," km"
-      write(fid_misc,'(a)')"G0.2i"
-      write(fid_misc,'(a18,f5.2,a6)')"T Erup. Duration: ",real(e_Duration(1),kind=4)," hours"
-      write(fid_misc,'(a5)')"G0.2i"
-      write(fid_misc,'(a16,f5.2,a9)')"T Erup. Volume: ",real(e_Volume(1),kind=4)," km3(DRE)"
-      close(fid_misc)
-
-      !  Local Logo
-      !   First check is a local logo in installed on this system
-      Instit_IconFile= trim(Ash3dHome) // &
-                        DirDelim // 'share' // &
-                        DirDelim // 'post_proc' // &
-                        DirDelim // 'logo.png'
-      inquire( file=trim(adjustl(Instit_IconFile)), exist=IsThere)
-
-      if (.not.IsThere) then
-        !  USGS Logo (130x49)
-        !   No local logo, open the USGS version
-        Instit_IconFile= trim(Ash3dHome) // &
-                          DirDelim // 'share' // &
-                          DirDelim // 'post_proc' // &
-                          DirDelim // 'USGSvid.png'
-        inquire( file=trim(adjustl(Instit_IconFile)), exist=IsThere)
-      endif
-      if(IsThere)then
-        open( fid_misc,file="leg3.txt",status='replace')
-        write(fid_misc,'(g0)')"I " // trim(adjustl(Instit_IconFile)) // " 2i C"
-        close(fid_misc)
-      endif
-
-      !  Contour legend
-      open( fid_misc,file="leg4.txt",status='replace')
-      write(fid_misc,'(a7)')"C black"
-      write(fid_misc,'(g0)')"H 12 1 " // trim(adjustl(units))
-      write(fid_misc,'(a3)')"N 1"
-      do i=1,nConLev
-        write(fid_misc,'(g0)')trim(adjustl(legpenstr(i)))
-      enddo
-      close(fid_misc)
-
+      ! This is the section where we actually start plotting the map
+      ! Evaluate grid
       if(IsLatLon)then
-!        xmin = minval(lon_cc_pd(1:nx))
-!        ! Make sure xmin is in the range -180->180
-!        if (xmin.gt.180.0_ip)then
-!          xmin = minval(lon_cc_pd(1:nx))-360.0_ip
-!          xmax = maxval(lon_cc_pd(1:nx))-360.0_ip
-!        else
-!          xmax = maxval(lon_cc_pd(1:nx))
-!        endif
-!        ymin = minval(lat_cc_pd(1:ny))
-!        ymax = maxval(lat_cc_pd(1:ny))
         if(lonUR-lonLL.ge.360.0_ip)then
           lonLL = 0.0_ip
           lonUR = 360.0_ip
@@ -592,13 +493,22 @@
         ymin = latLL
         ymax = latUR
         asprat = (ymax-ymin)/(xmax-xmin)
+        if(abs(dn-de).lt.1.0e-4_ip)then
+          IsRegGrid = .true.
+        else
+          IsRegGrid = .false.
+        endif
       else
         xmin = xLL
         xmax = xUR
         ymin = yLL
         ymax = yUR
         asprat = (ymax-ymin)/(xmax-xmin)
-
+        if(abs(dx-dy).lt.1.0e-4_ip)then
+          IsRegGrid = .true.
+        else
+          IsRegGrid = .false.
+        endif
         call PJ_proj_inv(real(xmin,kind=dp), real(ymin,kind=dp),  &
                       A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
                       A3d_k0,A3d_Re, &
@@ -613,12 +523,151 @@
         latUR = real(ophi,kind=ip)
       endif
 
-      ! Note, this subroutine requires lon/lat for input values.
-      call citylist(2,lonLL,lonUR,latLL,latUR, &
-                      ncities,                        &
-                      lon_cities,lat_cities,          &
-                      name_cities)
-      if(lon_volcano.gt.lonUR)lon_volcano=lon_volcano-360.0_ip
+      ! write out the data in a form that GMT can read
+      ! ESRI ASCII for reg grids, 3-column for irregular
+      if(IsRegGrid)then
+        ! If the grid is regular (dx=dy) then we can write an ESRI ASCII file and convert to grd
+        ! via gmt grdconvert outvar.dat=ef out.grd
+        varname = "outvar"
+        call write_2D_ASCII(nx,ny,OutVar,mask,Fill_Value_str,varname)
+      else
+        ! Irregular grids are problematic, call special ASCII interpolator
+        !call write_2D_ASCII_flt_regular(nx,ny,IsLatLon,real(xmin,kind=sp),real(ymin,kind=sp),.true., &
+        !                   real(de,kind=sp),real(dn,kind=sp),Fill_Value_str,&
+        !                   real(OutVar,kind=sp),filename_outdata)
+        ! Alternatively, write out data in column format and have GMT handle it
+!        write(filename_outdata,53) "outvar.dat"
+        open(unit=fid_outdata,file=filename_outdata,status='replace')
+        do ii = 1,nx
+          do jj = 1,ny
+            if(lon_cc_pd(1).lt.180.0_ip)then
+              tmp_ip = lon_cc_pd(ii)
+            else
+              tmp_ip = lon_cc_pd(ii)-360.0_ip
+            endif
+            if(abs(OutVar(ii,jj)-Fill_Value).lt.EPS_SMALL)then
+              write(fid_outdata,*)tmp_ip,lat_cc_pd(jj),"NaN"
+            else
+              write(fid_outdata,*)tmp_ip,lat_cc_pd(jj),OutVar(ii,jj)
+            endif
+          enddo
+        enddo
+        close(fid_outdata)
+      endif
+      ! Finished temporary data file
+
+      call citylist(1,                        & ! 1 is for external file in GMT format
+                    xmin,xmax,ymin,ymax,      &
+                    ncities,                  &
+                    lon_cities,               &
+                    lat_cities,               &
+                    name_cities)
+      if(lon_volcano.gt.xmax)lon_volcano=lon_volcano-360.0_ip
+
+      ! Build strings with run info for legend
+      ! Volcano:     Erup.start:
+      ! Run date:    Plm Height:
+      ! Windfile:    Duration:
+      !              Volume:
+      write(cstr_volcname,'(a10,a20)')'Volcano:  ' ,VolcanoName
+      write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
+      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
+      write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
+      if(neruptions.gt.1)then
+        write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'
+      endif
+
+      !e_StartTime,e_PlumeHeight,e_Duration,e_Volume
+      write(cstr_ErStartT,'(a20,a20)')'Erup. Start Time:   ',&
+            HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap)
+      write(cstr_ErHeight,'(a20,f4.1,a3)')'Erup. Plume Height: ',e_PlumeHeight(1),' km'
+      write(cstr_ErDuratn,'(a20,f4.1,a6)')'Erup. Duration:     ',e_Duration(1),' hours'
+      write(cstr_ErVolume,'(a20,f8.5,a10)')'Erup. Volume:       ',e_Volume(1),' km3 (DRE)'
+
+      ! write contour pen specifications to strings
+      do ilev=1,nConLev
+        write(flt_str,'(i3)')zrgb(ilev,1)
+        penstr(ilev)="-W3," // trim(adjustl(flt_str))
+        legpenstr(ilev)="S 0.1i - 0.15i black 3.0p," // trim(adjustl(flt_str))
+        write(flt_str,'(i3)')zrgb(ilev,2)
+        penstr(ilev)= trim(penstr(ilev)) // "/" // trim(adjustl(flt_str))
+        legpenstr(ilev)=trim(legpenstr(ilev)) // "/" // trim(adjustl(flt_str))
+        write(flt_str,'(i3)')zrgb(ilev,3)
+        penstr(ilev)= trim(penstr(ilev)) // "/" // trim(adjustl(flt_str))
+        legpenstr(ilev)=trim(legpenstr(ilev)) // "/" // trim(adjustl(flt_str))
+        write(flt_str,'(g8.3)')ContourLev(ilev)
+        legpenstr(ilev)=trim(legpenstr(ilev)) // " 0.3i " // trim(adjustl(flt_str))
+      enddo
+
+      if(writeContours)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(outlog(io),*)"Running GMT to calculate contours lines"
+        endif;enddo
+        write(filename_png,'(a14)')'tmp.png'
+        allocate(ContourDataNcurves(nConLev))
+        allocate(ContourDataNpoints(nConLev,CONTOUR_MAXCURVES))
+        allocate(ContourDataX(nConLev,CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS))
+        allocate(ContourDataY(nConLev,CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS))
+        ContourDataNcurves(:)   = 0
+        ContourDataNpoints(:,:) = 0
+        ContourDataX(:,:,:)     = 0.0_ip
+        ContourDataY(:,:,:)     = 0.0_ip
+      else
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(outlog(io),*)"Running GMT to generate contour plot"
+        endif;enddo
+      endif
+
+!      write(filename_contourdata,53) "outvar.con"
+!      write(filename_script,53) "outvar.gmt"
+! 53   format(a10)
+
+      ! Set up to plot via GMT script
+      open(unit=fid_script,file=filename_script,status='replace')
+
+      ! Write annotations to several legends
+      !  Left panel
+      open(unit=fid_misc,file="leg1.txt",status='replace')
+      linebuffer080 = "T " // trim(adjustl(cstr_volcname))
+      write(fid_misc,'(g0)')linebuffer080
+      write(fid_misc,'(a5)')"G0.2i"
+      linebuffer080 = "T " // trim(adjustl(cstr_run_date))
+      write(fid_misc,'(g0)')linebuffer080
+      write(fid_misc,'(a5)')"G0.2i"
+      linebuffer080 = "T " // trim(adjustl(cstr_windfile))
+      write(fid_misc,'(g0)')linebuffer080
+      close(fid_misc)
+
+      !  Right panel
+      open(unit=fid_misc,file="leg2.txt",status='replace')
+      linebuffer080 = "T " // trim(adjustl(cstr_ErStartT))
+      write(fid_misc,'(g0)')linebuffer080
+      write(fid_misc,'(a5)')"G0.2i"
+      linebuffer080 = "T " // trim(adjustl(cstr_ErHeight))
+      write(fid_misc,'(g0)')linebuffer080
+      write(fid_misc,'(a)')"G0.2i"
+      linebuffer080 = "T " // trim(adjustl(cstr_ErDuratn))
+      write(fid_misc,'(g0)')linebuffer080
+      write(fid_misc,'(a5)')"G0.2i"
+      linebuffer080 = "T " // trim(adjustl(cstr_ErVolume))
+      write(fid_misc,'(g0)')linebuffer080
+      close(fid_misc)
+
+      if(HaveIconFile)then
+        open(unit=fid_misc,file="leg3.txt",status='replace')
+        write(fid_misc,'(g0)')"I " // trim(adjustl(Instit_IconFile)) // " 2i C"
+        close(fid_misc)
+      endif
+
+      !  Contour legend
+      open(unit=fid_misc,file="leg4.txt",status='replace')
+      write(fid_misc,'(a7)')"C black"
+      write(fid_misc,'(g0)')"H 12 1 " // trim(adjustl(units))
+      write(fid_misc,'(a3)')"N 1"
+      do ilev=1,nConLev
+        write(fid_misc,'(g0)')trim(adjustl(legpenstr(ilev)))
+      enddo
+      close(fid_misc)
 
       ! Start writing the gmt bits
       ! BASE string:
@@ -796,9 +845,9 @@
       !endif
 
       ! Initial pscoast command to start the ps file
-      start_ps = "-K > "     // trim(adjustl(fileps))
-      contn_ps = "-K -O >> " // trim(adjustl(fileps))
-      end_ps   = "-O >> "    // trim(adjustl(fileps))
+      start_ps = "-K > "     // trim(adjustl(filename_ps))
+      contn_ps = "-K -O >> " // trim(adjustl(filename_ps))
+      end_ps   = "-O >> "    // trim(adjustl(filename_ps))
 
       ! Set up to plot via GMT script
       write(fid_script,*)'#!/bin/bash'
@@ -827,9 +876,9 @@
       ! Get grid to contour, converting the ASCII file generated above
       ! We need this line regardless of if we are just making contours or not
       if(IsRegGrid)then
-        cmd = "gmt grdconvert outvar.dat=ef out.grd"
+        cmd = "gmt grdconvert " // trim(adjustl(filename_outdata)) // "=ef out.grd"
       else
-        cmd = "gmt xyz2grd outvar.dat" // " " // &
+        cmd = "gmt xyz2grd " // trim(adjustl(filename_outdata)) // " " // &
               trim(adjustl(area2_str)) // " " // &
               trim(adjustl(incr_str))   // " " // &
               trim(adjustl(" -Gout.grd"))
@@ -890,8 +939,8 @@
       endif
 
       ! Add cities.
-      do i=1,ncities
-        write(dumstr17,'(f8.3,1x,f8.3)')lon_cities(i),lat_cities(i)
+      do icty=1,ncities
+        write(dumstr17,'(f8.3,1x,f8.3)')lon_cities(icty),lat_cities(icty)
         cmd = "echo " // dumstr17 // " '1.0' | gmt psxy " // &
                 trim(adjustl(area_str))        // " " // &
                 trim(adjustl(proj_str))        // " " // &
@@ -900,7 +949,7 @@
         if(.not.writeContours)write(fid_script,*)trim(adjustl(cmd))
 
         write(dumstr48,'(a1,f8.3,1x,f8.3,1x,a1,a26,a1,a1)')'"',&
-               lon_cities(i),lat_cities(i),"'",trim(adjustl(name_cities(i))),"'",'"'
+               lon_cities(icty),lat_cities(icty),"'",trim(adjustl(name_cities(icty))),"'",'"'
         cmd = "echo " // trim(adjustl(dumstr48)) // " | gmt pstext " // &
               trim(adjustl(area_str))  // " " // &
               trim(adjustl(proj_str))  // " " // &
@@ -937,8 +986,8 @@
       if(.not.writeContours)write(fid_script,*) trim(adjustl(cmd))
 
       !gmt pslegend leg3.txt -R-134.500/-97.500/33.500/52.500  -JM-122.117/42.933/7i -Dx6.0i/-2.3i/2.0i/1.0i/BL -K -O  >> temp.ps
-      inquire( file="leg3.txt", exist=IsThere)
-      if(IsThere)then
+      inquire( file="leg3.txt", exist=IsThere1)
+      if(IsThere1)then
         cmd = "gmt pslegend leg3.txt"        // " " // &
                 trim(adjustl(area_str))      // " " // &
                 trim(adjustl(proj_str))      // " " // &
@@ -969,17 +1018,23 @@
       if(.not.writeContours)write(fid_script,*)trim(adjustl(cmd))
 
       ! Move this png to the final filename
-      cmd = "mv temp.png " // outfile_name
+      cmd = "mv temp.png " // filename_png
       if(.not.writeContours)write(fid_script,*)trim(adjustl(cmd))
 
       close(fid_script)
       write(plotcom,'(a3,a14)')'sh ',filename_script
-      call execute_command_line(plotcom,exitstat=iostatus)
+      call execute_command_line(plotcom,&
+                                wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
 
       ! Clean up
       if (CleanScripts_GMT) then
-        cmd = "rm -f c.lev out.grd temp.* leg*.txt outvar.* cities.xy gmt.*"
-        call execute_command_line(trim(adjustl(cmd)),exitstat=iostatus)
+        cmd = "rm -f c.lev out.grd temp.ps leg*.txt outvar.dat outvar.gmt cities.xy gmt.history gmt.conf"
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Cleaning up temporary files with command:"
+          write(outlog(io),*)trim(adjustl(cmd))
+        endif;enddo
+        call execute_command_line(trim(adjustl(cmd)),&
+                                  wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       endif
 
       ! GMT script has been run, now we need to read the contour lines if we want
@@ -997,9 +1052,9 @@
             write(outlog(io),*)"Now trying to read contour file and loading contour data.",&
                 trim(adjustl(filename_contourdata))
           endif;enddo
-          inquire( file=trim(adjustl(filename_contourdata)), exist=IsThere)
-          if(IsThere)then
-            open(fid_contourdata,file=filename_contourdata,status='old')
+          inquire( file=trim(adjustl(filename_contourdata)), exist=IsThere1)
+          if(IsThere1)then
+            open(unit=fid_contourdata,file=filename_contourdata,status='old')
           else
             ! File does not exist; try next contour level
             cycle
@@ -1061,14 +1116,15 @@
               endif;enddo
               stop 1
             endif
-            ipt = ContourDataNpoints(ilev,icurve)
-            read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)ContourDataX(ilev,icurve,ipt),ContourDataY(ilev,icurve,ipt)
+            npts = ContourDataNpoints(ilev,icurve)
+            read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) &
+                 ContourDataX(ilev,icurve,npts),ContourDataY(ilev,icurve,npts)
           endif
 
           ! Try to read the next line
           read(fid_contourdata,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
           enddo    ! iostatus.ge.0
-          close(fid_contourdata)  ! Close this contour file and open the next
+        close(unit=fid_contourdata)
         enddo    ! ilev=1,nConLev
 
         ! Loop through all the levels and curves and trim any curves with zero length
@@ -1087,22 +1143,22 @@
 
 
       ! This is a test section that uses the GMT API
-      !character(16) filedat,fileps
+      !character(16) filedat,filename_ps
       !character(200) cmd
       !
       !filedat="ex01-xy.dat"
-      !fileps="ex01.ps"
+      !filename_ps="ex01.ps"
       !
       !! create GMT session
       !call sGMT_Create_Session("Test")
       !
       !! call psxy
-      !cmd="psxy "//trim(filedat)//" -JX16c/24c -R0/11/0/110 -Bx2+lx -By20+ly -BWS+tFig. -Sa1c -N -P ->"//trim(fileps)
+      !cmd="psxy "//trim(filedat)//" -JX16c/24c -R0/11/0/110 -Bx2+lx -By20+ly -BWS+tFig. -Sa1c -N -P ->"//trim(filename_ps)
       !call sGMT(cmd)
       !print *,trim(cmd)
       !
       !! call ps2raster
-      !cmd="ps2raster "//trim(fileps)//" -Tg"
+      !cmd="ps2raster "//trim(filename_ps)//" -Tg"
       !call sGMT(cmd)
       !print *,trim(cmd)
       !
@@ -1110,9 +1166,6 @@
       !call sGMT_Destroy_Session()
 
       end subroutine write_2Dmap_PNG_GMT
-
-
-!     All subroutines below are placeholder copies of the gnuplot subroutines.
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
@@ -1143,38 +1196,58 @@
          Site_vprofile,x_vprofile,y_vprofile,cdf_b3l1,VolcanoName
 
       use Source,        only : &
-         e_Volume,e_Duration,e_StartTime,e_PlumeHeight
+         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
 
       use time_data,     only : &
          os_time_log,SimStartHour,BaseYear,useLeap,ntmax,time_native
 
       integer, intent (in) :: vprof_ID
 
+      logical           :: HaveIconFile
+      character(len=76) :: title_plot
+      character(len=30) :: cstr_xlabel = 'Time (hours after eruption)'
+      character(len=30) :: cstr_ylabel = 'Height (km)'
+      character(len=30) :: cstr_zlabel = 'Ash conc. mg/m3'
+      character(len=30) :: cstr_volcname
+      character(len=30) :: cstr_run_date
+      character(len=30) :: cstr_windfile
+      character(len=40) :: cstr_ErStartT
+      character(len=27) :: cstr_ErHeight
+      character(len=30) :: cstr_ErDuratn
+      character(len=38) :: cstr_ErVolume
+      character(len=45) :: cstr_note
 
+      character(len=10) :: filename_root
       character(len=14) :: filename_script
       character(len=14) :: filename_outdata
-      character(len=14) :: dp_pngfile
+      character(len=14) :: filename_png
       integer           :: fid_script  = 55
       integer           :: fid_outdata  = 54
-      !integer           :: dp_pngfileID  = 53
       character(len=27) :: coord_str
-      character(len=25) :: plotcom
-      integer :: k,i
-      character(len=50) :: linebuffer050
-      character(len=80) :: linebuffer080
+      character(len=80) :: plotcom
+      integer           :: i,k
+      integer           :: ioerr
+      integer           :: iostatus
+      integer           :: cstat
+      character(len=120):: iomessage
+      integer           :: iw,iwf
+      character(len= 50):: linebuffer050
+      character(len= 80):: linebuffer080
+      character(len=200):: cmd
 
-      real(kind=ip)  :: tmin
-      real(kind=ip)  :: tmax
-      real(kind=ip)  :: zmin
-      real(kind=ip)  :: zmax
-      real(kind=ip)  :: cloudcon_thresh_mgm3
-      real(kind=ip)  :: cmin
-      real(kind=ip)  :: cmax
+      ! Plotting variables
+
+      real(kind=ip) :: tmin    , zmin    , cmin     ! graph minima
+      real(kind=ip) :: tmax    , zmax    , cmax     ! graph maxima
+      real(kind=ip) :: tlab1   , zlab1   , clab1    ! graph first label
+      real(kind=ip) :: tlabstep, zlabstep, clabstep ! graph label increment
+      real(kind=ip) :: cloudcon_thresh_mgm3
       real(kind=ip)  :: dtg
       real(kind=ip)  :: dzg
 
+      ! GMT variables
       character(len=8)  :: flt_str
-      character(len=50) :: base_str
+      character(len=70) :: base_str
       character(len=50) :: title_str
       character(len=4 ) :: detail_str
       character(len=50) :: proj_str
@@ -1184,17 +1257,10 @@
       character(len=50) :: contn_ps
       character(len=50) :: incr_str
       character(len=50) :: end_ps
-      character(len=40) :: title_plot
 
-      integer           :: ioerr
-      integer           :: iostatus
-      character(len=120):: iomessage
-      integer           :: iw,iwf
-      logical           :: IsThere
-      character(len=16)  :: fileps  = "temp.ps"
-      character(len=200) :: cmd
+      logical           :: IsThere1
 
-
+      character(len=16)  :: filename_ps  = "temp.ps"
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
@@ -1204,25 +1270,97 @@
         end function HS_xmltime
       END INTERFACE
 
-      write(filename_outdata,53) vprof_ID,".dat"
-      write(filename_script,53) vprof_ID,".gmt"
-      write(dp_pngfile,54) vprof_ID,".png"
- 53   format('vprof_',i4.4,a4)
- 54   format('gmtpl_',i4.4,a4)
+      ! Test for icon file
+      inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
+
+      ! Build strings with run info for legend
+      ! Volcano:     Erup.start:
+      ! Run date:    Plm Height:
+      ! Windfile:    Duration:
+      !              Volume:
+      write(cstr_volcname,'(a10,a20)')'Volcano:  ' ,VolcanoName
+      write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
+      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
+      write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
+      if(neruptions.gt.1)then
+        write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'
+      endif
+
+      !e_StartTime,e_PlumeHeight,e_Duration,e_Volume
+      write(cstr_ErStartT,'(a20,a20)')'Erup. Start Time:   ',&
+            HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap)
+      write(cstr_ErHeight,'(a20,f4.1,a3)')'Erup. Plume Height: ',e_PlumeHeight(1),' km'
+      write(cstr_ErDuratn,'(a20,f4.1,a6)')'Erup. Duration:     ',e_Duration(1),' hours'
+      write(cstr_ErVolume,'(a20,f8.5,a10)')'Erup. Volume:       ',e_Volume(1),' km3 (DRE)'
+
+      write(filename_root,52)vprof_ID
+ 52   format('vprof_',i4.4)
+      filename_outdata = trim(adjustl(filename_root)) // ".dat"
+      filename_script  = trim(adjustl(filename_root)) // ".gmt"
+      filename_png     = trim(adjustl(filename_root)) // ".png"
+
+      ! Get min/max and label interval for all three axies.
+      tmin=real(0,kind=ip)
+      tmax=real(ceiling(time_native(ntmax)),kind=ip)
+      tlab1    = 0.0_ip
+      if(tmax.gt.240.0_ip)then
+        tlabstep = 48.0_ip
+      elseif(tmax.gt.120.0_ip)then
+        tlabstep = 24.0_ip
+      elseif(tmax.gt.30.0_ip)then
+        tlabstep = 10.0_ip
+      elseif(tmax.gt.15.0_ip)then
+        tlabstep = 5.0_ip
+      elseif(tmax.gt.6.0_ip)then
+        tlabstep = 2.0_ip
+      else
+        tlabstep = 1.0_ip
+      endif
+
+      zmin=real(0,kind=ip)
+      zmax=real(z_cc_pd(nzmax),kind=ip)
+      zlab1    = 0.0_ip
+      if(zmax.gt.30.0_ip)then
+        zlabstep = 10.0_ip
+      elseif(zmax.gt.15.0_ip)then
+        zlabstep = 5.0_ip
+      elseif(zmax.gt.6.0_ip)then
+        zlabstep = 2.0_ip
+      else
+        zlabstep = 1.0_ip
+      endif
 
       cloudcon_thresh_mgm3 = CLOUDCON_THRESH * KG_2_MG / KM3_2_M3 !convert from kg/km3 to mg/m3
-
-      tmin=real(0.0,kind=ip)
-      tmax=real(ceiling(time_native(ntmax)),kind=ip)
-      zmin=real(0.0,kind=ip)
-      zmax=real(z_cc_pd(nzmax),kind=ip)
-      cmin=real(0.0,kind=ip)
-      cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=ip)       ! Get the max value for this profile
-      cmax=real(max(cmax,cloudcon_thresh_mgm3),kind=ip)  ! Do not let cmax drop below the threshold
+      cmin=real(0,kind=ip)
+      cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=ip)    ! Get the max value for this profile
+      cmin=real(min(cmin,cloudcon_thresh_mgm3),kind=ip)  ! Do not let cmax drop below the threshold
+      if    (cmax.gt.4.0e4_ip)then
+          clabstep = 5.0e3_ip
+      elseif(cmax.gt.1.0e4_ip)then
+          clabstep = 2.0e3_ip
+      elseif(cmax.gt.4.0e3_ip)then
+          clabstep = 5.0e2_ip
+      elseif(cmax.gt.1.0e3_ip)then
+          clabstep = 2.0e2_ip
+      elseif(cmax.gt.4.0e2_ip)then
+          clabstep = 5.0e1_ip
+      elseif(cmax.gt.1.0e2_ip)then
+          clabstep = 2.0e1_ip
+      elseif(cmax.gt.4.0e1_ip)then
+          clabstep = 5.0e0_ip
+      elseif(cmax.gt.1.0e1_ip)then
+          clabstep = 2.0e0_ip
+      elseif(cmax.gt.1.0e0_ip)then
+          clabstep = 5.0e-1_ip
+      else
+          clabstep = 1.0e-1_ip
+      endif
+      clab1    = 0.0_ip
       dtg = (tmax-tmin)/100.0_ip
       dzg = (zmax-zmin)/100.0_ip
 
-      open(fid_outdata,file=filename_outdata,status='replace')
+      ! Prep data: GMT will load x y z data in column format
+      open(unit=fid_outdata,file=filename_outdata,status='replace')
       do i = 1,ntmax
         do k = 1,nzmax
           write(fid_outdata,*)time_native(i),z_cc_pd(k),pr_ash(k,i,vprof_ID)
@@ -1231,64 +1369,52 @@
       enddo
       close(fid_outdata)
 
+      ! Build the plot title
       if(IsLatLon)then
         write(coord_str,101)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
       else
         write(coord_str,102)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
       endif
- 101  format(' (lon=',f7.2,',  lat=',f6.2,')')
+ 101  format(' (lon=',f7.2,', lat=',f6.2,')')
  102  format(' (x=',f9.3,', y=',f9.3,')')
+      write(title_plot,*)trim(adjustl(Site_vprofile(vprof_ID))),coord_str
 
       ! Write annotations to several legends
       !  Left panel
-      open( fid_misc,file="leg1.txt",status='replace')
-      write(fid_misc,'(a11,a30)')"T Volcano: ",VolcanoName
+      open(unit=fid_misc,file="leg1.txt",status='replace')
+      linebuffer080 = "T " // trim(adjustl(cstr_volcname))
+      write(fid_misc,'(g0)')linebuffer080
       write(fid_misc,'(a5)')"G0.2i"
-      write(fid_misc,'(a12,a20)')"T Run Date: ",os_time_log
+      linebuffer080 = "T " // trim(adjustl(cstr_run_date))
+      write(fid_misc,'(g0)')linebuffer080
       write(fid_misc,'(a5)')"G0.2i"
-      read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
-      linebuffer080 = cdf_b3l1
-      linebuffer050 = "Reading iw,iwf from cdf_b3l1"
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      write(fid_misc,'(a12,i3)')"T Windfile: ",iwf
+      linebuffer080 = "T " // trim(adjustl(cstr_windfile))
+      write(fid_misc,'(g0)')linebuffer080
       close(fid_misc)
 
       !  Right panel
-      open( fid_misc,file="leg2.txt",status='replace')
-      write(fid_misc,'(a20,a20)')"T Erup. Start Time: ",HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap)
+      open(unit=fid_misc,file="leg2.txt",status='replace')
+      linebuffer080 = "T " // trim(adjustl(cstr_ErStartT))
+      write(fid_misc,'(g0)')linebuffer080
       write(fid_misc,'(a5)')"G0.2i"
-      write(fid_misc,'(a22,f5.2,a3)')"T Erup. Plume Height: ",real(e_PlumeHeight(1),kind=4)," km"
+      linebuffer080 = "T " // trim(adjustl(cstr_ErHeight))
+      write(fid_misc,'(g0)')linebuffer080
       write(fid_misc,'(a)')"G0.2i"
-      write(fid_misc,'(a18,f5.2,a6)')"T Erup. Duration: ",real(e_Duration(1),kind=4)," hours"
+      linebuffer080 = "T " // trim(adjustl(cstr_ErDuratn))
+      write(fid_misc,'(g0)')linebuffer080
       write(fid_misc,'(a5)')"G0.2i"
-      write(fid_misc,'(a16,f5.2,a9)')"T Erup. Volume: ",real(e_Volume(1),kind=4)," km3(DRE)"
+      linebuffer080 = "T " // trim(adjustl(cstr_ErVolume))
+      write(fid_misc,'(g0)')linebuffer080
       close(fid_misc)
 
-      !  Local Logo
-      !   First check is a local logo in installed on this system
-      Instit_IconFile= trim(Ash3dHome) // &
-                        DirDelim // 'share' // &
-                        DirDelim // 'post_proc' // &
-                        DirDelim // 'logo.png'
-      inquire( file=trim(adjustl(Instit_IconFile)), exist=IsThere)
-
-      if (.not.IsThere) then
-        !  USGS Logo (130x49)
-        !   No local logo, open the USGS version
-        Instit_IconFile= trim(Ash3dHome) // &
-                          DirDelim // 'share' // &
-                          DirDelim // 'post_proc' // &
-                          DirDelim // 'USGSvid.png'
-        inquire( file=trim(adjustl(Instit_IconFile)), exist=IsThere)
-      endif
-      if(IsThere)then
-        open( fid_misc,file="leg3.txt",status='replace')
+      if(HaveIconFile)then
+        open(unit=fid_misc,file="leg3.txt",status='replace')
         write(fid_misc,'(g0)')"I " // trim(adjustl(Instit_IconFile)) // " 2i C"
         close(fid_misc)
       endif
 
       ! Set up to plot via GMT script
-      open(fid_script,file=filename_script,status='replace')
+      open(unit=fid_script,file=filename_script,status='replace')
 
       ! AREA string:    AREA="-R$lonmin/$lonmax/$latmin/$latmax"
       area_str = "-R0/"
@@ -1301,14 +1427,14 @@
       proj_str = " -JX5i/4i"
 
       ! Initial pscoast command to start the ps file
-      start_ps = "-K > "     // trim(adjustl(fileps))
-      contn_ps = "-K -O >> " // trim(adjustl(fileps))
-      end_ps   = "-O >> "    // trim(adjustl(fileps))
+      start_ps = "-K > "     // trim(adjustl(filename_ps))
+      contn_ps = "-K -O >> " // trim(adjustl(filename_ps))
+      end_ps   = "-O >> "    // trim(adjustl(filename_ps))
 
       ! Set up to plot via GMT script
       write(fid_script,*)'#!/bin/bash'
       write(fid_script,'(g0)')"##########################################################################"
-      write(fid_script,'(g0)')"# Temporary GMT script for producing 2d maps for Ash3d_PostProc"
+      write(fid_script,'(g0)')"# Temporary GMT script for producing vertical profiles for Ash3d_PostProc"
       write(fid_script,'(g0)')"# Adjust to suit your needs."
       write(fid_script,'(g0)')"##########################################################################"
       ! write out to CPT.
@@ -1344,7 +1470,8 @@
       write(fid_script,*)trim(adjustl(cmd))
 
       ! Contour data
-      write(base_str,*)'-Bxa2+l"Time (hours)" -Bya2+l"Height (km)" -BWS'
+      base_str = '-Bxa2+l"' // trim(adjustl(cstr_xlabel)) // &
+                     '" -Bya2+l"' // trim(adjustl(cstr_ylabel)) // '" -BWS'
       cmd = "gmt grdimage out.grd -Cmy.cpt " // " " // &
               trim(adjustl(area_str))   // " " // &
               trim(adjustl(proj_str))   // " " // &
@@ -1353,7 +1480,8 @@
       write(fid_script,*)trim(adjustl(cmd))
 
       ! Plot scalebar
-      cmd = 'gmt psscale -Cmy.cpt -DDR+o1c/0c+w10c/0.5c -Baf+l"Ash con. in (mg/m3)"' // " " // &
+      cmd = 'gmt psscale -Cmy.cpt -DDR+o1c/0c+w10c/0.5c -Baf+l"' // &
+             trim(adjustl(cstr_zlabel)) // '" ' // &
             '-J -R -X0.5i -Y0.0i -DJMR' // " " // &
             trim(adjustl(contn_ps))
       write(fid_script,*)trim(adjustl(cmd))
@@ -1376,8 +1504,8 @@
       write(fid_script,*) trim(adjustl(cmd))
 
       !gmt pslegend leg3.txt -R-134.500/-97.500/33.500/52.500  -JM-122.117/42.933/7i -Dx6.0i/-2.3i/2.0i/1.0i/BL -K -O  >> temp.ps
-      inquire( file="leg3.txt", exist=IsThere)
-      if(IsThere)then
+      inquire( file="leg3.txt", exist=IsThere1)
+      if(IsThere1)then
         cmd = "gmt pslegend leg3.txt"        // " " // &
                 trim(adjustl(area_str))      // " " // &
                 trim(adjustl(proj_str))      // " " // &
@@ -1394,18 +1522,23 @@
       write(fid_script,*)trim(adjustl(cmd))
 
       ! Move this png to the final filename
-      cmd = "mv temp.png " // dp_pngfile
+      cmd = "mv temp.png " // filename_png
       write(fid_script,*)trim(adjustl(cmd))
 
       close(fid_script)
       write(plotcom,'(a3,a14)')'sh ',filename_script
-      call execute_command_line(plotcom,exitstat=iostatus)
-
+      call execute_command_line(plotcom,&
+                                wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
 
       ! Clean up
       if (CleanScripts_GMT) then
-        cmd = "rm -f gmt.history leg*.txt my.cpt out.grd temp.ps vprof_0001.gmt vprof_0001.dat"
-        call execute_command_line(trim(adjustl(cmd)),exitstat=iostatus)
+        cmd = "rm -f gmt.history leg*.txt my.cpt out.grd temp.ps vprof_*.gmt vprof_*.dat"
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Cleaning up temporary files with command:"
+          write(outlog(io),*)trim(adjustl(cmd))
+        endif;enddo
+        call execute_command_line(trim(adjustl(cmd)),&
+                                  wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       endif
 
       ! GMT script has been run, now we need to read the contour lines if we want
