@@ -76,7 +76,7 @@
 
       use mesh,          only : &
          IsLatLon,lon_cc_pd,lat_cc_pd,de,dn, &
-         x_cc_pd,y_cc_pd,dx,dy,              &
+         dx,dy,                              &
          latLL,lonLL,latUR,lonUR,            &
          xLL,yLL,xUR,yUR
 
@@ -131,20 +131,13 @@
       character(len=38) :: cstr_ErVolume
       character(len=45) :: cstr_note
       character(len=20) :: varname
-      character(len=40) :: outfile_name
       character(len= 9) :: cio
       character(len= 4) :: outfile_ext = '.png'
       character(len=10) :: units
-      integer           :: ioerr
       integer           :: iostatus
       character(len=120):: iomessage
       integer           :: iw,iwf
-      logical           :: IsThere1,IsThere2
       logical           :: HaveIconFile
-      character(len=50) :: linebuffer050
-      character(len=80) :: linebuffer080
-      character(len=130):: linebuffer130,linebuffer130_2
-      character         :: testkey
 
       ! Plot dimensions
       real(kind=ip)  :: xmin
@@ -154,8 +147,10 @@
       logical        :: IsRegGrid
 
       ! Aux. File names
+      character(len= 8) :: filename_root
       !character(len=10) :: filename_script
       !character(len=10) :: filename_outdata
+      character(len=40) :: filename_png
       !character(len=10) :: filename_contourdata
       !character(len=80) :: filename_coastline
 
@@ -163,6 +158,7 @@
       integer :: icty
       integer :: ncities
       !integer :: cityname_offset_px = 30
+      real(kind=ip) :: cityname_offset_dx
       real(kind=ip),dimension(:),allocatable     :: lon_cities
       real(kind=ip),dimension(:),allocatable     :: lat_cities
       character(len=26),dimension(:),allocatable :: name_cities
@@ -252,6 +248,7 @@
       allocate(lon_cities(ncities))
       allocate(lat_cities(ncities))
       allocate(name_cities(ncities))
+      filename_root        = "outvar"
 
       if(iprod.eq.5.or.iprod.eq.6)then
         cio='____final'
@@ -277,7 +274,8 @@
       endif
 
       if(iprod.eq.3)then       ! deposit at specified times (mm)
-        write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
+        varname = "depothick"
+        write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Dep.Thick.(mm)'
         units = " (mm)"
@@ -289,7 +287,8 @@
           zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.4)then   ! deposit at specified times (inches)
-        write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
+        varname = "depothick"
+        write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Dep.Thick.(in)'
         units = " (in)"
@@ -301,7 +300,8 @@
           zrgb(1:nConLev,1:3) = Con_DepThick_in_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.5)then       ! deposit at final time (mm)
-        write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
+        varname = "depothickFin"
+        write(filename_png,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
         cstr_zlabel = 'Dep.Thick.(mm)'
         units = " (mm)"
@@ -313,7 +313,8 @@
           zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.6)then   ! deposit at final time (inches)
-        write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
+        varname = "depothickFin"
+        write(filename_png,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
         cstr_zlabel = 'Dep.Thick.(in)'
         units = " (in)"
@@ -325,7 +326,8 @@
           zrgb(1:nConLev,1:3) = Con_DepThick_in_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.7)then   ! ashfall arrival time (hours)
-        write(outfile_name,'(a22)')'DepositArrivalTime.png'
+        varname = "depotime"
+        write(filename_png,'(a22)')'DepositArrivalTime.png'
         write(title_plot,'(a20)')'Ashfall arrival time'
         cstr_zlabel = 'Time (hours)'
         units = " (hours)"
@@ -343,7 +345,8 @@
         endif;enddo
         stop 1
       elseif(iprod.eq.9)then   ! ash-cloud concentration
-        write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
+        varname = "ashcon_max"
+        write(filename_png,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
         write(title_plot,'(a26,f5.2,a6)')'Ash-cloud concentration t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Max.Con.(mg/m3)'
         units = " (mg/m3)"
@@ -355,7 +358,8 @@
           zrgb(1:nConLev,1:3) = Con_CloudCon_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.10)then   ! ash-cloud height
-        write(outfile_name,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
+        varname = "cloud_height"
+        write(filename_png,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud height t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Cld.Height(km)'
         units = " (km)"
@@ -367,7 +371,8 @@
           zrgb(1:nConLev,1:3) = Con_CloudTop_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.11)then   ! ash-cloud bottom
-        write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
+        varname = "cloud_bottom"
+        write(filename_png,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud bottom t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Cld.Bot.(km)'
         units = " (km)"
@@ -379,7 +384,8 @@
           zrgb(1:nConLev,1:3) = Con_CloudBot_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.12)then   ! ash-cloud load
-        write(outfile_name,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
+        varname = "cloud_load"
+        write(filename_png,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
         write(title_plot,'(a17,f5.2,a6)')'Ash-cloud load t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Cld.Load(T/km2)'
         units = " (T/km2)"
@@ -391,7 +397,8 @@
           zrgb(1:nConLev,1:3) = Con_CloudLoad_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.13)then  ! radar reflectivity
-        write(outfile_name,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
+        varname = "radar_reflectivity"
+        write(filename_png,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
         write(title_plot,'(a24,f5.2,a6)')'Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Cld.Refl.(dBz)'
         units = " (dBz)"
@@ -403,7 +410,8 @@
           zrgb(1:nConLev,1:3) = Con_CloudRef_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.14)then   ! ashcloud arrival time (hours)
-        write(outfile_name,'(a20)')'CloudArrivalTime.png'
+        varname = "ash_arrival_time"
+        write(filename_png,'(a20)')'CloudArrivalTime.png'
         write(title_plot,'(a22)')'Ash-cloud arrival time'
         cstr_zlabel = 'Time (hours)'
         units = " (hours)"
@@ -415,7 +423,8 @@
           zrgb(1:nConLev,1:3) = Con_CloudTime_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.15)then   ! topography
-        write(outfile_name,'(a14)')'Topography.png'
+        varname = "topography"
+        write(filename_png,'(a14)')'Topography.png'
         write(title_plot,'(a10)')'Topography'
         cstr_zlabel = 'Elevation (km)'
         units = " (hours)"
@@ -491,7 +500,7 @@
       yminPL = real(ymin,kind=plflt)
       ymaxPL = real(ymax,kind=plflt)
 
-      ! Now prep needed for the data in a form that plplot can read since it is internal
+      ! No prep needed for the data in a form that plplot can read since it is internal
 
       call citylist(0,                        &  ! 0 is for internal list only (no file)
                     xmin,xmax,ymin,ymax,      &
@@ -507,7 +516,7 @@
       !              Volume:
       write(cstr_volcname,'(a10,a20)')'Volcano:  ' ,VolcanoName
       write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
-      read(cdf_b3l1,*,iostat=ioerr,iomsg=iomessage) iw,iwf
+      read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
       write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
       if(neruptions.gt.1)then
         write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'
@@ -534,7 +543,7 @@
 
       ! Set up for plplot
       call plsdev("pngcairo")      ! Set output device (png, pdf, etc.)
-      call plsfnam (outfile_name)  ! Set output filename
+      call plsfnam (filename_png)  ! Set output filename
 
       ! set image size via command-line options tool plsetopt
       if(lib_ver_minor.lt.12)then
@@ -574,6 +583,7 @@
       call plmap('usaglobe', xminPL, xmaxPL, yminPL, ymaxPL)
 
       ! Add cities
+      cityname_offset_dx = 0.1_ip
       do icty=1,ncities
         if(lon_cities(icty).lt.xmin) lon_cities(icty)=lon_cities(icty)+360.0_ip
           ! plssym: Set symbol size : default, scale
@@ -587,9 +597,10 @@
         call plschr( 0.0_plflt, 0.7_plflt )
 
           ! plptex : Write text inside the viewport (x,y,dx,dy,just,strin)
-        call plptex( real(lon_cities(icty)+1.0,kind=plflt),real(lat_cities(icty),kind=plflt), &
-             0.0_plflt, 0.0_plflt, 0.0_plflt, &
-             adjustl(trim(name_cities(icty))))
+        call plptex( real(lon_cities(icty)+cityname_offset_dx,kind=plflt),&
+                     real(lat_cities(icty),kind=plflt), &
+                     0.0_plflt, 0.0_plflt, 0.0_plflt, &
+                     adjustl(trim(name_cities(icty))))
       enddo
       call plschr( 0.0_plflt, 1.0_plflt )
 
@@ -863,11 +874,9 @@
       character(len=26) :: coord_str
       !character(len=80) :: plotcom
       integer           :: i,k
-      integer           :: ioerr
       integer           :: iostatus
       character(len=120):: iomessage
       integer           :: iw,iwf
-      !character(len= 80):: linebuffer080
       !character(len=200):: cmd
 
       integer,parameter :: NUM_AXES   = 1
@@ -923,7 +932,7 @@
       !              Volume:
       write(cstr_volcname,'(a10,a20)')'Volcano:  ' ,VolcanoName
       write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
-      read(cdf_b3l1,*,iostat=ioerr,iomsg=iomessage) iw,iwf
+      read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
       write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
       if(neruptions.gt.1)then
         write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'

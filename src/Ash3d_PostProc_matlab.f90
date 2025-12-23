@@ -80,7 +80,7 @@
 
       use mesh,          only : &
          IsLatLon,lon_cc_pd,lat_cc_pd,de,dn, &
-         x_cc_pd,y_cc_pd,dx,dy,              &
+         dx,dy,                              &
          latLL,lonLL,latUR,lonUR,            &
          xLL,yLL,xUR,yUR
 
@@ -147,7 +147,6 @@
       character(len= 9) :: cio
       character(len= 4) :: outfile_ext = '.png'
       character(len=10) :: units
-      integer           :: ioerr
       integer           :: iostatus
       integer           :: cstat
       character(len=120):: iomessage
@@ -226,6 +225,10 @@
 !title('Final Deposit Thickness (mm)');
 !leg = clegendm(C,h,-1);
 !leg.Title.String = 'mm';
+!annstr = sprintf('blah blah\nblah'); % annotation text
+!annpos = [0.1 0.1 0.1 0.1]; % annotation position in figure coordinates
+!ha = annotation('textbox',annpos,'string',annstr);
+!ha.HorizontalAlignment = 'center';
 !print -dpng out.png
 !exit
 
@@ -554,10 +557,12 @@
       !              Volume:
       write(cstr_volcname,'(a10,a20)')'Volcano:  ' ,VolcanoName
       write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
-      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
+      read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
       write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
       if(neruptions.gt.1)then
         write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'
+      else
+        write(cstr_note,'(a1)')" "
       endif
 
       !e_StartTime,e_PlumeHeight,e_Duration,e_Volume
@@ -611,6 +616,25 @@
       write(fid_script,*)"title('",adjustl(trim(title_plot)),"');"
       write(fid_script,*)"leg = clegendm(C,h,-1);"
       write(fid_script,*)"leg.Title.String = '",adjustl(trim(title_legend)),"';"
+      ! Annotation box 1
+      cmd = trim(adjustl(cstr_volcname)) // '\n' // &
+            trim(adjustl(cstr_run_date)) // '\n' // &
+            trim(adjustl(cstr_windfile)) // '\n' // &
+            trim(adjustl(cstr_note))
+      write(fid_script,*)"annstr1 = sprintf('",trim(adjustl(cmd)),"'); % annotation text"
+      write(fid_script,*)"annpos1 = [0.1 0.075 0.1 0.1]; % annotation position in figure coordinates"
+      write(fid_script,*)"ha1 = annotation('textbox',annpos1,'string',annstr1);"
+      write(fid_script,*)"ha1.HorizontalAlignment = 'left';"
+      ! Annotation box 2
+      cmd = trim(adjustl(cstr_ErStartT)) // '\n' // &
+            trim(adjustl(cstr_ErHeight)) // '\n' // &
+            trim(adjustl(cstr_ErDuratn)) // '\n' // &
+            trim(adjustl(cstr_ErVolume))
+      write(fid_script,*)"annstr2 = sprintf('",trim(adjustl(cmd)),"'); % annotation text"
+      write(fid_script,*)"annpos2 = [0.4 0.075 0.1 0.1]; % annotation position in figure coordinates"
+      write(fid_script,*)"ha2 = annotation('textbox',annpos2,'string',annstr2);"
+      write(fid_script,*)"ha2.HorizontalAlignment = 'left';"
+
       write(fid_script,*)"print -dpng ",adjustl(trim(filename_png))
       write(fid_script,*)"exit"
 
@@ -706,7 +730,6 @@
       character(len=27) :: coord_str
       character(len=80) :: plotcom
       integer           :: i,k
-      integer           :: ioerr
       integer           :: iostatus
       integer           :: cstat
       character(len=120):: iomessage
@@ -742,10 +765,12 @@
       !              Volume:
       write(cstr_volcname,'(a10,a20)')'Volcano:  ' ,VolcanoName
       write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
-      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
+      read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
       write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
       if(neruptions.gt.1)then
         write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'
+      else
+        write(cstr_note,'(a1)')" "
       endif
 
       !e_StartTime,e_PlumeHeight,e_Duration,e_Volume
@@ -877,8 +902,28 @@
       write(fid_script,'(g0)')"xlabel(xstr,'FontSize',16);"
       write(fid_script,'(g0)')"ylabel(ystr,'FontSize',16);"
       write(fid_script,'(g0)')"title(titstr,'FontSize',12);"
-      write(fid_script,'(g0)')"cb = colorbar();"
-      write(fid_script,'(g0)')"ylabel(cb,zstr,'FontSize',16,'Rotation',90)"
+
+!      ! Annotation box 1
+!      cmd = trim(adjustl(cstr_volcname)) // '\n' // &
+!            trim(adjustl(cstr_run_date)) // '\n' // &
+!            trim(adjustl(cstr_windfile)) // '\n' // &
+!            trim(adjustl(cstr_note))
+!      write(fid_script,*)"annstr1 = sprintf('",trim(adjustl(cmd)),"'); % annotation text"
+!      write(fid_script,*)"annpos1 = [0.1 0.075 0.1 0.1]; % annotation position in figure coordinates"
+!      write(fid_script,*)"ha1 = annotation('textbox',annpos1,'string',annstr1);"
+!      write(fid_script,*)"ha1.HorizontalAlignment = 'left';"
+!      ! Annotation box 2
+!      cmd = trim(adjustl(cstr_ErStartT)) // '\n' // &
+!            trim(adjustl(cstr_ErHeight)) // '\n' // &
+!            trim(adjustl(cstr_ErDuratn)) // '\n' // &
+!            trim(adjustl(cstr_ErVolume))
+!      write(fid_script,*)"annstr2 = sprintf('",trim(adjustl(cmd)),"'); % annotation text"
+!      write(fid_script,*)"annpos2 = [0.4 0.075 0.1 0.1]; % annotation position in figure coordinates"
+!      write(fid_script,*)"ha2 = annotation('textbox',annpos2,'string',annstr2);"
+!      write(fid_script,*)"ha2.HorizontalAlignment = 'left';"
+!
+!      write(fid_script,'(g0)')"cb = colorbar();"
+!      write(fid_script,'(g0)')"ylabel(cb,zstr,'FontSize',16,'Rotation',90)"
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !

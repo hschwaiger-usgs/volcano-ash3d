@@ -72,7 +72,7 @@
 
       use mesh,          only : &
          IsLatLon,lon_cc_pd,lat_cc_pd,de,dn, &
-         x_cc_pd,y_cc_pd,dx,dy,              &
+         dx,dy,                              &
          latLL,lonLL,latUR,lonUR,            &
          xLL,yLL,xUR,yUR
 
@@ -127,20 +127,14 @@
       character(len=38) :: cstr_ErVolume
       character(len=45) :: cstr_note
       character(len=20) :: varname
-      character(len=40) :: outfile_name
       character(len= 9) :: cio
       character(len= 4) :: outfile_ext = '.png'
       character(len=10) :: units
-      integer           :: ioerr
       integer           :: iostatus
       character(len=120):: iomessage
       integer           :: iw,iwf
-      logical           :: IsThere1,IsThere2
       logical           :: HaveIconFile
-      character(len=50) :: linebuffer050
       character(len=80) :: linebuffer080
-      character(len=130):: linebuffer130,linebuffer130_2
-      character         :: testkey
 
       ! Plot dimensions
       real(kind=ip)  :: xmin
@@ -150,11 +144,8 @@
       logical        :: IsRegGrid
 
       ! Aux. File names
-      !character(len=10) :: filename_script
-      !character(len=10) :: filename_outdata
-      !character(len=10) :: filename_contourdata
-      !character(len=80) :: filename_coastline
-
+      character(len= 8) :: filename_root
+      character(len=40) :: filename_png
       ! Citywriter variables
       integer :: icty
       integer :: ncities
@@ -219,6 +210,7 @@
       allocate(lon_cities(ncities))
       allocate(lat_cities(ncities))
       allocate(name_cities(ncities))
+      filename_root        = "outvar"
 
       if(iprod.eq.5.or.iprod.eq.6)then
         cio='____final'
@@ -244,7 +236,8 @@
       endif
 
       if(iprod.eq.3)then       ! deposit at specified times (mm)
-        write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
+        varname = "depothick"
+        write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Dep.Thick.(mm)'
         units = " (mm)"
@@ -256,7 +249,8 @@
           zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.4)then   ! deposit at specified times (inches)
-        write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
+        varname = "depothick"
+        write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Dep.Thick.(in)'
         units = " (in)"
@@ -268,7 +262,8 @@
           zrgb(1:nConLev,1:3) = Con_DepThick_in_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.5)then       ! deposit at final time (mm)
-        write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
+        varname = "depothickFin"
+        write(filename_png,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
         cstr_zlabel = 'Dep.Thick.(mm)'
         units = " (mm)"
@@ -280,7 +275,8 @@
           zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.6)then   ! deposit at final time (inches)
-        write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
+        varname = "depothickFin"
+        write(filename_png,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
         cstr_zlabel = 'Dep.Thick.(in)'
         units = " (in)"
@@ -292,7 +288,8 @@
           zrgb(1:nConLev,1:3) = Con_DepThick_in_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.7)then   ! ashfall arrival time (hours)
-        write(outfile_name,'(a22)')'DepositArrivalTime.png'
+        varname = "depotime"
+        write(filename_png,'(a22)')'DepositArrivalTime.png'
         write(title_plot,'(a20)')'Ashfall arrival time'
         cstr_zlabel = 'Time (hours)'
         units = " (hours)"
@@ -310,7 +307,8 @@
         endif;enddo
         stop 1
       elseif(iprod.eq.9)then   ! ash-cloud concentration
-        write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
+        varname = "ashcon_max"
+        write(filename_png,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
         write(title_plot,'(a26,f5.2,a6)')'Ash-cloud concentration t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Max.Con.(mg/m3)'
         units = " (mg/m3)"
@@ -322,7 +320,8 @@
           zrgb(1:nConLev,1:3) = Con_CloudCon_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.10)then   ! ash-cloud height
-        write(outfile_name,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
+        varname = "cloud_height"
+        write(filename_png,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud height t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Cld.Height(km)'
         units = " (km)"
@@ -334,7 +333,8 @@
           zrgb(1:nConLev,1:3) = Con_CloudTop_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.11)then   ! ash-cloud bottom
-        write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
+        varname = "cloud_bottom"
+        write(filename_png,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud bottom t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Cld.Bot.(km)'
         units = " (km)"
@@ -346,7 +346,8 @@
           zrgb(1:nConLev,1:3) = Con_CloudBot_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.12)then   ! ash-cloud load
-        write(outfile_name,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
+        varname = "cloud_load"
+        write(filename_png,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
         write(title_plot,'(a17,f5.2,a6)')'Ash-cloud load t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Cld.Load(T/km2)'
         units = " (T/km2)"
@@ -358,7 +359,8 @@
           zrgb(1:nConLev,1:3) = Con_CloudLoad_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.13)then  ! radar reflectivity
-        write(outfile_name,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
+        varname = "radar_reflectivity"
+        write(filename_png,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
         write(title_plot,'(a24,f5.2,a6)')'Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Cld.Refl.(dBz)'
         units = " (dBz)"
@@ -370,7 +372,8 @@
           zrgb(1:nConLev,1:3) = Con_CloudRef_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.14)then   ! ashcloud arrival time (hours)
-        write(outfile_name,'(a20)')'CloudArrivalTime.png'
+        varname = "ash_arrival_time"
+        write(filename_png,'(a20)')'CloudArrivalTime.png'
         write(title_plot,'(a22)')'Ash-cloud arrival time'
         cstr_zlabel = 'Time (hours)'
         units = " (hours)"
@@ -382,7 +385,8 @@
           zrgb(1:nConLev,1:3) = Con_CloudTime_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.15)then   ! topography
-        write(outfile_name,'(a14)')'Topography.png'
+        varname = "topography"
+        write(filename_png,'(a14)')'Topography.png'
         write(title_plot,'(a10)')'Topography'
         cstr_zlabel = 'Elevation (km)'
         units = " (hours)"
@@ -407,7 +411,7 @@
         endif;enddo
         stop 1
       endif
-      ! Now have string vars (varname,legend title, etc.) and contour info (nConLev,zrgb,ContourLev)
+      ! Now have string vars (varname,cstr_zlabel, etc.) and contour info (nConLev,zrgb,ContourLev)
 
       ! Dislin allows us to directly generate contours from OutVar, whereas the
       ! scripted graphics packages require building a script, 'plotting', then
@@ -525,7 +529,7 @@
       !              Volume:
       write(cstr_volcname,'(a10,a20)')'Volcano:  ' ,VolcanoName
       write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
-      read(cdf_b3l1,*,iostat=ioerr,iomsg=iomessage) iw,iwf
+      read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
       write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
       if(neruptions.gt.1)then
         write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'
@@ -571,12 +575,12 @@
       !  Dislin Level 0:  before initialization or after termination
       call metafl(cfmt) ! set output driver/file-format (PNG); this is a 4-char string
       call setpag(cfsz) ! Set pagesize to US A Landscape (2790 x 2160)
-      call setfil(trim(adjustl(outfile_name))) ! Set output filename
+      call setfil(trim(adjustl(filename_png))) ! Set output filename
       call scrmod('REVERSE')  ! Default background is black; reverse to white
 
       !  Dislin Level 1:  after initialization or a call to ENDGRF
       call disini()       ! initialize plot (set to level 1)
-
+      call bmpfnt('HELVE')
         ! Set the color table : SPEC,RAIN,GREY,TEMP
       call setvlt('RAIN')
 
@@ -594,7 +598,9 @@
       endif
 
        ! setting of plot parameters
-      call triplx()  ! set font to triple stroke
+      !call triplx()  ! set font to triple stroke
+      call bmpfnt('HELVE')
+
       call axspos(plotposx_px,plotposy_px)  ! determine the position of the axis system
       call axslen(plotx_px,ploty_px)        ! defines the size of the axis system
       call name(cstr_xlabel,'X') ! Set x-axis title
@@ -769,20 +775,12 @@
       character(len=45) :: cstr_note
 
       character(len=10) :: filename_root
-      !character(len=13) :: filename_script
-      !character(len=14) :: filename_outdata
       character(len=14) :: filename_png
-      !integer           :: fid_script   = 55
-      !integer           :: fid_outdata  = 54
       character(len=26) :: coord_str
-      !character(len=80) :: plotcom
       integer           :: i,k
-      integer           :: ioerr
       integer           :: iostatus
       character(len=120):: iomessage
       integer           :: iw,iwf
-      character(len= 80):: linebuffer080
-      !character(len=200):: cmd
 
       ! Plotting variables
       integer :: plotx_px       = 1800
@@ -825,7 +823,7 @@
       !              Volume:
       write(cstr_volcname,'(a10,a20)')'Volcano:  ' ,VolcanoName
       write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
-      read(cdf_b3l1,*,iostat=ioerr,iomsg=iomessage) iw,iwf
+      read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
       write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
       if(neruptions.gt.1)then
         write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'
@@ -1092,7 +1090,9 @@
       call disini()       ! initialize plot (set to level 1)
         ! setting of plot parameters
       call pagera()       ! plot a border around the page
-      call triplx()  ! set font to triple stroke
+      !call triplx()  ! set font to triple stroke
+      call bmpfnt('HELVE')
+
       call axspos(450,1800)  ! determine the position of the axis system
       call axslen(2200,1200) ! defines the size of the axis system
       call name('Time (hours after eruption)','X') ! Set x-axis title

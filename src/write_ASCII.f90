@@ -608,15 +608,15 @@
 
       ! Loop over all points of the new grid and interpolate
       do i=1,nx_loc
-        xnow = x_loc(i)
+        xnow = min(max(x_loc(i),x_in(1)),x_in(nx)) ! make sure the point is within domain of x_in
         ix = floor((xnow-x1)/dx)
-        ix = min(max(ix,0),nx-1)
+        ix = min(max(ix,1),nx-1)  ! make sure ix is between 1 and nx-1
         xl = x_in(ix)
         xr = x_in(ix+1)
         do j=1,ny_loc
-          ynow = y_loc(j)
+          ynow = min(max(y_loc(j),y_in(1)),y_in(ny)) ! make sure the point is within domain of y_in
           iy = floor((ynow-y1)/dy)
-          iy = min(max(iy,0),ny-1)
+          iy = min(max(iy,1),ny-1)  ! make sure iy is between 1 and ny-1
           yl = y_in(iy)
           yr = y_in(iy+1)
 
@@ -631,10 +631,10 @@
         AREA = (yr  -  yl) * (xr   -   xl)    !total area of node
 
         ! values at corners of the rectangle
-        z11 = OutVar(ix-1,iy-1)
-        z21 = OutVar(ix  ,iy-1)
-        z12 = OutVar(ix-1,iy  )
-        z22 = OutVar(ix  ,iy  )
+        z11 = OutVar(ix  ,iy  )
+        z21 = OutVar(ix+1,iy  )
+        z12 = OutVar(ix  ,iy+1)
+        z22 = OutVar(ix+1,iy+1)
 
         ! Thickness at the airport
         znow = (1.0_sp/AREA) * &  !reciprocal of area of large rectangle

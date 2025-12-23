@@ -71,7 +71,7 @@
 
       use mesh,          only : &
          IsLatLon,lon_cc_pd,lat_cc_pd,de,dn, &
-         x_cc_pd,y_cc_pd,dx,dy,              &
+         dx,dy,                              &
          latLL,lonLL,latUR,lonUR,            &
          xLL,yLL,xUR,yUR
 
@@ -114,7 +114,7 @@
       character(len=6)   :: Fill_Value_str
       character(len=200) :: cmd
 
-      integer :: ii,jj,iii
+      integer :: ii,jj
       real(kind=ip) :: tmp_ip
       integer,dimension(:,:),allocatable :: zrgb
       character(len=40) :: title_plot
@@ -140,7 +140,6 @@
       logical           :: HaveIconFile
       character(len=50) :: linebuffer050
       character(len=80) :: linebuffer080
-      character(len=130):: linebuffer130,linebuffer130_2
       character         :: testkey
 
       ! Plot dimensions
@@ -159,7 +158,6 @@
       character(len=80) :: filename_coastline
 
       ! Citywriter variables
-      integer :: icty
       integer :: ncities
       integer :: cityname_offset_px = 30
       real(kind=ip),dimension(:),allocatable     :: lon_cities
@@ -543,7 +541,7 @@
       !              Volume:
       write(cstr_volcname,'(a10,a20)')'Volcano:  ' ,VolcanoName
       write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
-      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
+      read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
       write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
       if(neruptions.gt.1)then
         write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'
@@ -875,7 +873,6 @@
       character(len=27) :: coord_str
       character(len=80) :: plotcom
       integer           :: i,k
-      integer           :: ioerr
       integer           :: iostatus
       integer           :: cstat
       character(len=120):: iomessage
@@ -911,7 +908,7 @@
       !              Volume:
       write(cstr_volcname,'(a10,a20)')'Volcano:  ' ,VolcanoName
       write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
-      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
+      read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
       write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
       if(neruptions.gt.1)then
         write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'
@@ -1147,7 +1144,6 @@
       integer           :: fid_script  = 55
       character(len=25) :: plotcom
       integer,save      :: plot_index = 0
-      integer           :: ioerr
       integer           :: iostatus
       integer           :: cstat
       character(len=120):: iomessage

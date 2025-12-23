@@ -94,7 +94,7 @@
 
       use mesh,          only : &
          IsLatLon,lon_cc_pd,lat_cc_pd,de,dn, &
-         x_cc_pd,y_cc_pd,dx,dy,              &
+         dx,dy,                              &
          latLL,lonLL,latUR,lonUR,            &
          xLL,yLL,xUR,yUR
 
@@ -157,7 +157,6 @@
       character(len= 9) :: cio
       character(len= 4) :: outfile_ext = '.png'
       character(len=10) :: units
-      integer           :: ioerr
       integer           :: iostatus
       integer           :: cstat
       character(len=120):: iomessage
@@ -198,6 +197,9 @@
 
       ! Python/Cartopy variables
       character(len=25) :: plotcom
+      real(kind=ip)     :: zoomfac = 0.5_ip ! zoom factor for resampling the data with
+                                            ! a cubic spline interpolant. Can smooth rough
+                                            ! contours
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
@@ -520,7 +522,7 @@
       !              Volume:
       write(cstr_volcname,'(a10,a20)')'Volcano:  ' ,VolcanoName
       write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
-      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
+      read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
       write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
       if(neruptions.gt.1)then
         write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'
@@ -592,6 +594,7 @@
       write(fid_script,'(g0)')"from matplotlib.colors import LinearSegmentedColormap"
       write(fid_script,'(g0)')"from matplotlib.offsetbox import OffsetImage, AnnotationBbox, TextArea"
       write(fid_script,'(g0)')"import numpy as np"
+      write(fid_script,'(g0)')"import scipy.ndimage"
       write(fid_script,'(g0)')"from osgeo import gdal, osr"
       write(fid_script,'(g0)')"import linecache"
       write(fid_script,'(g0)')" "
@@ -750,6 +753,7 @@
       write(fid_script,'(g0)')"gl.right_labels = False"
       write(fid_script,'(g0)')"# Get grided data from GDAL dataset"
       write(fid_script,'(g0)')"data = raster.GetRasterBand(1).ReadAsArray()"
+      write(fid_script,'(a31,f5.2,a1)')"data = scipy.ndimage.zoom(data,",zoomfac,")"
       write(fid_script,'(g0)')"# Mask out any values that are = to fill_value"
       write(fid_script,'(g0)')"Fill_Value=0"
       write(fid_script,'(g0)')"data_masked = np.ma.masked_where(data==Fill_Value, data)"
@@ -940,7 +944,6 @@
       character(len=27) :: coord_str
       character(len=80) :: plotcom
       integer           :: i,k
-      integer           :: ioerr
       integer           :: iostatus
       integer           :: cstat
       character(len=120):: iomessage
@@ -978,7 +981,7 @@
       !              Volume:
       write(cstr_volcname,'(a10,a20)')'Volcano:  ' ,VolcanoName
       write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
-      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
+      read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
       write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
       if(neruptions.gt.1)then
         write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'
@@ -1109,7 +1112,7 @@
       write(fid_script,'(g0)')trim(adjustl(linebuffer080))
       linebuffer080 = 'txt_RunDate_dat="' // trim(adjustl(os_time_log)) // '"'
       write(fid_script,'(g0)')trim(adjustl(linebuffer080))
-      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
+      read(cdf_b3l1,*,iostat=iostatus) iw,iwf
       write(linebuffer080,'(a18,i2,a1)')'txt_Windfile_dat="' , iwf , '"'
       write(fid_script,'(g0)')trim(adjustl(linebuffer080))
       write(linebuffer080,'(a18,a20,a1)')'txt_ESrtTime_dat="',HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap),'"'

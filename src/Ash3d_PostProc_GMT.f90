@@ -77,7 +77,7 @@
 
       use mesh,          only : &
          IsLatLon,lon_cc_pd,lat_cc_pd,de,dn, &
-         x_cc_pd,y_cc_pd,dx,dy,              &
+         dx,dy,                              &
          latLL,lonLL,latUR,lonUR,            &
          xLL,yLL,xUR,yUR,                    &
          A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0,A3d_Re
@@ -131,7 +131,9 @@
       real(kind=ip) :: tmp_ip
       integer,dimension(:,:),allocatable :: zrgb
       character(len=40) :: title_plot
-      character(len=15) :: title_legend
+      !character(len=30) :: cstr_xlabel = 'Longitude'
+      !character(len=30) :: cstr_ylabel = 'Latitude'
+      character(len=30) :: cstr_zlabel
       character(len=30) :: cstr_volcname
       character(len=30) :: cstr_run_date
       character(len=30) :: cstr_windfile
@@ -149,11 +151,9 @@
       integer           :: cstat
       character(len=120):: iomessage
       integer           :: iw,iwf
-      logical           :: IsThere1,IsThere2
+      logical           :: IsThere1
       logical           :: HaveIconFile
-      character(len=50) :: linebuffer050
       character(len=80) :: linebuffer080
-      character(len=130):: linebuffer130,linebuffer130_2
       character         :: testkey
 
       ! Plot dimensions
@@ -264,7 +264,7 @@
         varname = "depothick"
         write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
-        title_legend = 'Dep.Thick.(mm)'
+        cstr_zlabel = 'Dep.Thick.(mm)'
         units = " (mm)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -278,7 +278,7 @@
         varname = "depothick"
         write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
-        title_legend = 'Dep.Thick.(in)'
+        cstr_zlabel = 'Dep.Thick.(in)'
         units = " (in)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -292,7 +292,7 @@
         varname = "depothickFin"
         write(filename_png,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
-        title_legend = 'Dep.Thick.(mm)'
+        cstr_zlabel = 'Dep.Thick.(mm)'
         units = " (mm)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -306,7 +306,7 @@
         varname = "depothickFin"
         write(filename_png,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
-        title_legend = 'Dep.Thick.(in)'
+        cstr_zlabel = 'Dep.Thick.(in)'
         units = " (in)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -320,7 +320,7 @@
         varname = "depotime"
         write(filename_png,'(a22)')'DepositArrivalTime.png'
         write(title_plot,'(a20)')'Ashfall arrival time'
-        title_legend = 'Time (hours)'
+        cstr_zlabel = 'Time (hours)'
         units = " (hours)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -340,7 +340,7 @@
         varname = "ashcon_max"
         write(filename_png,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
         write(title_plot,'(a26,f5.2,a6)')'Ash-cloud concentration t=',WriteTimes(itime),' hours'
-        title_legend = 'Max.Con.(mg/m3)'
+        cstr_zlabel = 'Max.Con.(mg/m3)'
         units = " (mg/m3)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -354,7 +354,7 @@
         varname = "cloud_height"
         write(filename_png,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud height t=',WriteTimes(itime),' hours'
-        title_legend = 'Cld.Height(km)'
+        cstr_zlabel = 'Cld.Height(km)'
         units = " (km)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -368,7 +368,7 @@
         varname = "cloud_bottom"
         write(filename_png,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud bottom t=',WriteTimes(itime),' hours'
-        title_legend = 'Cld.Bot.(km)'
+        cstr_zlabel = 'Cld.Bot.(km)'
         units = " (km)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -382,7 +382,7 @@
         varname = "cloud_load"
         write(filename_png,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
         write(title_plot,'(a17,f5.2,a6)')'Ash-cloud load t=',WriteTimes(itime),' hours'
-        title_legend = 'Cld.Load(T/km2)'
+        cstr_zlabel = 'Cld.Load(T/km2)'
         units = " (T/km2)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -396,7 +396,7 @@
         varname = "radar_reflectivity"
         write(filename_png,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
         write(title_plot,'(a24,f5.2,a6)')'Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
-        title_legend = 'Cld.Refl.(dBz)'
+        cstr_zlabel = 'Cld.Refl.(dBz)'
         units = " (dBz)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -410,7 +410,7 @@
         varname = "ash_arrival_time"
         write(filename_png,'(a20)')'CloudArrivalTime.png'
         write(title_plot,'(a22)')'Ash-cloud arrival time'
-        title_legend = 'Time (hours)'
+        cstr_zlabel = 'Time (hours)'
         units = " (hours)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -424,7 +424,7 @@
         varname = "topography"
         write(filename_png,'(a14)')'Topography.png'
         write(title_plot,'(a10)')'Topography'
-        title_legend = 'Elevation (km)'
+        cstr_zlabel = 'Elevation (km)'
         units = " (hours)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -448,7 +448,7 @@
         endif;enddo
         stop 1
       endif
-      ! Now have string vars (varname,title_legend, etc.) and contour info (nConLev,zrgb,ContourLev)
+      ! Now have string vars (varname,cstr_zlabel, etc.) and contour info (nConLev,zrgb,ContourLev)
 
       ! When we run this subroutine via a GMT script (as opposed to the API), we
       ! write out OutVar to an ESRI ASCII file to be read by the script
@@ -571,7 +571,7 @@
       !              Volume:
       write(cstr_volcname,'(a10,a20)')'Volcano:  ' ,VolcanoName
       write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
-      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
+      read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
       write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
       if(neruptions.gt.1)then
         write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'
@@ -947,16 +947,20 @@
                 "-Sc0.05i -Gblack -Wthinnest"  // " " // &
                 trim(adjustl(contn_ps))
         if(.not.writeContours)write(fid_script,*)trim(adjustl(cmd))
-
-        write(dumstr48,'(a1,f8.3,1x,f8.3,1x,a1,a26,a1,a1)')'"',&
-               lon_cities(icty),lat_cities(icty),"'",trim(adjustl(name_cities(icty))),"'",'"'
-        cmd = "echo " // trim(adjustl(dumstr48)) // " | gmt pstext " // &
+      enddo
+      cmd = "gmt pstext cities.xy " // &
               trim(adjustl(area_str))  // " " // &
               trim(adjustl(proj_str))  // " " // &
               "-D0.1/0.1 -V"           // " " // &
               trim(adjustl(contn_ps))
+      ! cities.xy has the following format for each line:
+      !     -99.1276   19.4270  10  0  9  BL    Mexico City
+      ! if this file doesn't exist for some reason, we should write equivalent commands
+      ! to the script
+      inquire( file="cities.xy", exist=IsThere1)
+      if(IsThere1)then
         if(.not.writeContours)write(fid_script,*)trim(adjustl(cmd))
-      enddo
+      endif
 
       ! Last gmt command is to plot the volcano and close out the ps file
       ! echo $VCLON $VCLAT '1.0' | ${GMTpre[GMTv]} psxy $AREA $PROJ -St0.1i -Gblack -Wthinnest -O >> temp.ps
@@ -1226,12 +1230,10 @@
       character(len=27) :: coord_str
       character(len=80) :: plotcom
       integer           :: i,k
-      integer           :: ioerr
       integer           :: iostatus
       integer           :: cstat
       character(len=120):: iomessage
       integer           :: iw,iwf
-      character(len= 50):: linebuffer050
       character(len= 80):: linebuffer080
       character(len=200):: cmd
 
@@ -1249,9 +1251,7 @@
       character(len=8)  :: flt_str
       character(len=70) :: base_str
       character(len=50) :: title_str
-      character(len=4 ) :: detail_str
       character(len=50) :: proj_str
-      character(len=50) :: projX_str
       character(len=50) :: area_str
       character(len=50) :: start_ps
       character(len=50) :: contn_ps
@@ -1280,7 +1280,7 @@
       !              Volume:
       write(cstr_volcname,'(a10,a20)')'Volcano:  ' ,VolcanoName
       write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
-      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
+      read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
       write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
       if(neruptions.gt.1)then
         write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'
