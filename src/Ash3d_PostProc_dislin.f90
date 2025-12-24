@@ -41,6 +41,9 @@
         ! Publicly available variables
 
       integer,parameter :: DS = 8
+      integer :: lib_ver_major = 5
+      integer :: lib_ver_minor = 14
+      integer :: lib_ver_patch = 0
       
       contains
       !------------------------------------------------------------------------
@@ -412,6 +415,20 @@
         stop 1
       endif
       ! Now have string vars (varname,cstr_zlabel, etc.) and contour info (nConLev,zrgb,ContourLev)
+
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      ! DISLIN block
+      ! https://www.dislin.de/
+      ! wget https://www.dislin.de/downloads/linux/i586_64/dislin-11.5.linux.i586_64.tar.gz
+      !(1)    setting of page format, file format and filename
+      !(2)    initialization
+      !(3)    setting of plot parameters
+      !(4)    plotting of the axis system
+      !(5)    plotting the title
+      !(6)    plotting data points
+      !(7)    termination.
+
+      call get_version_dislin
 
       ! Dislin allows us to directly generate contours from OutVar, whereas the
       ! scripted graphics packages require building a script, 'plotting', then
@@ -929,6 +946,8 @@
       !(6)    plotting data points
       !(7)    termination.
 
+      call get_version_dislin
+
       !  Dislin Level 0:  before initialization or after termination
       call metafl(cfmt) ! set output driver/file-format (PNG); this is a 4-char string
       call setpag(cfsz) ! Set pagesize to US A Landscape (2790 x 2160)
@@ -1073,8 +1092,7 @@
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ! DISLIN block
       ! https://www.dislin.de/
-      ! wget
-      ! https://ftp.gwdg.de/pub/grafik/dislin/linux/i586_64/dislin-11.4.linux.i586_64.tar.gz
+      ! wget https://www.dislin.de/downloads/linux/i586_64/dislin-11.5.linux.i586_64.tar.gz
       !(1)    setting of page format, file format and filename
       !(2)    initialization
       !(3)    setting of plot parameters
@@ -1082,6 +1100,8 @@
       !(5)    plotting the title
       !(6)    plotting data points
       !(7)    termination.
+
+      call get_version_dislin
 
       !  Dislin Level 0:  before initialization or after termination
       call metafl(cfmt)   ! set output driver/file-format (PNG); this is a 4-char string
@@ -1120,6 +1140,43 @@
       if(allocated(y))      deallocate(y)
 
       end subroutine write_DepPOI_TS_PNG_dislin
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  get_version_dislin
+!
+!  Called from: All subroutine in this module that plot
+!  Arguments:
+!    None
+!
+!  This subroutine set the module variables corresponding to the library version
+!  of dislin linked. This module is written for v11.5 or greater.
+!
+!   Sets:
+!     lib_ver_major = [ 5]
+!     lib_ver_minor = [10]
+!     lib_ver_patch = [ 0]
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine get_version_dislin
+
+      character(len=80) :: linebuffer080
+      character(len=50) :: linebuffer050
+      integer           :: dec1str
+      integer           :: dec2str
+      integer           :: tmp_int
+      real(kind=DS)  :: xver
+      integer        :: iplv
+
+      call getver(xver)   ! XVER will contain the version number (e.g., 11.0)
+      call getplv(iplv)
+
+      lib_ver_major = floor(xver)
+      lib_ver_minor = int(10*(xver-lib_ver_major))
+      lib_ver_patch = iplv
+
+      end subroutine get_version_dislin
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
