@@ -1335,6 +1335,13 @@
 !        call execute_command_line(trim(adjustl(cmd)))
 !      endif
 !
+      do io=1,2;if(VB(io).le.verbosity_error)then
+        write(errlog(io),*)"ERROR: Trying to write python deposit TS: ",pt_indx
+        write(errlog(io),*)"       but write_DepPOI_TS_PNG_python is not yet implemented."
+        write(errlog(io),*)"       Please choose a different plotting package for POI dep."
+      endif;enddo
+      stop 1
+
       end subroutine write_DepPOI_TS_PNG_python
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

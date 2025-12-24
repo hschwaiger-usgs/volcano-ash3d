@@ -107,6 +107,9 @@
            Allocate_Output_Vars, &
            Set_OutVar_ContourLevel
 
+      use Airports,      only : &
+         nairports
+
       use Ash3d_ASCII_IO,  only : &
          A_nx,A_ny,A_XY,A_XYZ,A_xll,A_yll,A_dx,A_dy, &
            deallocate_ASCII, &
@@ -167,7 +170,7 @@
       integer             :: TS_Flag
       integer             :: height_flag
       integer             :: itime = -1       ! initialize time step to the last step
-      integer             :: i,j,ii
+      integer             :: i,j,ii,ia
       integer             :: tmp_int
       integer             :: icase
       real(kind=ip),dimension(:,:),allocatable :: OutVar
@@ -1308,6 +1311,9 @@
             DepArrivalTime(1:nxmax,1:nymax)   = OutVar(1:nxmax,1:nymax)
           endif
           if(iprod.eq. 8)then
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: Requested output format is not available variable selected."
+            endif;enddo
             stop 1
           endif
           if(iprod.eq. 9)then
@@ -1457,7 +1463,41 @@
 #endif
           call output_results
         elseif(iprod.eq.8)then  ! ashfall at airports
-          call Write_PointData_Airports_KML
+          icase = 0
+          do ii=1,Nplot_libs
+            ! Check each preference in series and see if the library is available
+            if(plotlib_avail(plot_pref_aTS(ii)))then
+              icase = plot_pref_aTS(ii)
+              exit
+            endif
+          enddo
+
+          do ia=1,nairports
+            select case (icase)
+            case(1)
+#ifdef USEDISLIN
+              call write_DepPOI_TS_PNG_dislin(ia)
+#endif
+            case(2)
+#ifdef USEPLPLOT
+              call write_DepPOI_TS_PNG_plplot(ia)
+#endif
+            case(3)
+              call write_DepPOI_TS_PNG_gnuplot(ia)
+            case(4)
+              call write_DepPOI_TS_PNG_GMT(ia)
+            case(5)
+              call write_DepPOI_TS_PNG_matlab(ia)
+            case(6)
+              call write_DepPOI_TS_PNG_python(ia)
+            case default
+              do io=1,2;if(VB(io).le.verbosity_error)then
+                write(errlog(io),*)"ERROR: Plots requested but no plotting package is installed"
+              endif;enddo
+              stop 1
+            end select
+          enddo
+          call Write_PointData_Airports_KML(.false.)
         elseif(iprod.eq.16)then  ! vertical profile plots
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: KML versions of vertical profiles not implemented."

@@ -1052,11 +1052,11 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine Write_PointData_Airports_KML
+      subroutine Write_PointData_Airports_KML(HavePlots)
 
       use global_param,  only : &
          IsLinux,IsWindows,IsMacOS,usezip,zippath,&
-         usegnuplot,gnuplotpath
+         usegnuplot,gnuplotpath,plotting_ID
 
       use io_data,       only : &
          nWriteTimes,VolcanoName,WriteTimes
@@ -1088,6 +1088,9 @@
       use projection,    only : &
            PJ_proj_inv
 
+      logical, intent(in), optional :: HavePlots
+
+      logical             :: useGnuplotTS
       integer             :: i
       integer             :: nWrittenOut
       character (len=13)  :: yyyymmddhh
@@ -1134,6 +1137,12 @@
         write(outlog(io),*)"     Entered Subroutine Write_PointData_Airports_KML"
       endif;enddo
 
+      if(present(HavePlots))then
+        useGnuplotTS = HavePlots
+      else
+        useGnuplotTS = .true.
+      endif
+
       ! Loop of all airports in the computational domain and build list of
       ! impacted airports, incrementing a plot index and logging those airport
       ! in Airport_TS_plotindex by noting the polot index.
@@ -1156,44 +1165,48 @@
         plt_indx = plt_indx +1
         Airport_TS_plotindex(ai) = plt_indx
 
-        ! Writing a gnuplot script for this airport
-        write(filename_outdata,53) plt_indx,".dat"
-        write(filename_script,53) plt_indx,".gnu"
-        write(filename_png,53) plt_indx,".png"
- 53     format('depTS_',i4.4,a4)
+        if(useGnuplotTS)then
+          ! Writing a gnuplot script for this airport
+          write(filename_outdata,53) plt_indx,".dat"
+          write(filename_script,53) plt_indx,".gnu"
+          write(filename_png,53) plt_indx,".png"
+ 53       format('depTS_',i4.4,a4)
 
-        open(unit=fid_script,file=filename_script,status='replace',action='write')
-        write(fid_script,*)"set terminal png size 400,300"
-        write(fid_script,*)"set key bmargin left horizontal Right noreverse enhanced ",&
-                              "autotitles box linetype -1 linewidth 1.000"
-        write(fid_script,*)"set border 31 lw 2.0 lc rgb '#000000'"
-        write(fid_script,*)"set style line 1 linecolor rgbcolor '#888888' linewidth 2.0 pt 7"
-        write(fid_script,*)"set ylabel 'Deposit Thickeness (mm)'"
-        write(fid_script,*)"set xlabel 'Time (hours after eruption)'"
-        write(fid_script,*)"set nokey"
-        write(fid_script,*)"set output '",filename_png,"'"
-        write(fid_script,*)"set title '",Airport_Name(ai),"'"
-        write(fid_script,*)"plot [0:",ceiling(Simtime_in_hours),"][0:",&
-                              nint(ymaxpl),"] '",filename_outdata,"' with filledcurve x1 ls 1"
-        close(fid_script)
-        ! Writing the data file the gnuplot script will plot
-        open(unit=fid_outdata,file=filename_outdata,status='replace',action='write')
-        do i = 1,nWriteTimes
-           write(fid_outdata,*)WriteTimes(i),Airport_Thickness_TS(ai,i)
-        enddo
-        close(fid_outdata)
-        ! Test if gnuplot is installed
-        if(usegnuplot)then
-          ! if we have gnuplot installed, just create the plots now
-          write(gnucom,*)trim(adjustl(gnuplotpath)),' -p ',filename_script
-          call execute_command_line(gnucom,&
-                                    wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-          ! Now delete the script and data files
-          open(unit=fid_outdata, iostat=stat, file=filename_outdata, status='old',action='write')
-          if (stat.eq.0) close(fid_outdata, status='delete')
-          open(unit=fid_script, iostat=stat, file=filename_script, status='old',action='write')
-          if (stat.eq.0) close(fid_script, status='delete')
+          open(unit=fid_script,file=filename_script,status='replace',action='write')
+          write(fid_script,*)"set terminal png size 400,300"
+          write(fid_script,*)"set key bmargin left horizontal Right noreverse enhanced ",&
+                                "autotitles box linetype -1 linewidth 1.000"
+          write(fid_script,*)"set border 31 lw 2.0 lc rgb '#000000'"
+          write(fid_script,*)"set style line 1 linecolor rgbcolor '#888888' linewidth 2.0 pt 7"
+          write(fid_script,*)"set ylabel 'Deposit Thickeness (mm)'"
+          write(fid_script,*)"set xlabel 'Time (hours after eruption)'"
+          write(fid_script,*)"set nokey"
+          write(fid_script,*)"set output '",filename_png,"'"
+          write(fid_script,*)"set title '",Airport_Name(ai),"'"
+          write(fid_script,*)"plot [0:",ceiling(Simtime_in_hours),"][0:",&
+                                nint(ymaxpl),"] '",filename_outdata,"' with filledcurve x1 ls 1"
+          close(fid_script)
+          ! Writing the data file the gnuplot script will plot
+          open(unit=fid_outdata,file=filename_outdata,status='replace',action='write')
+          do i = 1,nWriteTimes
+             write(fid_outdata,*)WriteTimes(i),Airport_Thickness_TS(ai,i)
+          enddo
+          close(fid_outdata)
+          ! Test if gnuplot is installed
+          if(usegnuplot)then
+            ! if we have gnuplot installed, just create the plots now
+            write(gnucom,*)trim(adjustl(gnuplotpath)),' -p ',filename_script
+            call execute_command_line(gnucom,&
+                                      wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
+            ! Now delete the script and data files
+            open(unit=fid_outdata, iostat=stat, file=filename_outdata, status='old',action='write')
+            if (stat.eq.0) close(fid_outdata, status='delete')
+            open(unit=fid_script, iostat=stat, file=filename_script, status='old',action='write')
+            if (stat.eq.0) close(fid_script, status='delete')
+          endif
         endif
+      !else
+        ! Note: if not useGnuplotTS, then we are assuming that the time-series plots already exist
       enddo
 
       ! Now starting the kml file

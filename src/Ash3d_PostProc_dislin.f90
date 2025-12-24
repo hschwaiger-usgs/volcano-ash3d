@@ -580,10 +580,8 @@
 
       !  Dislin Level 1:  after initialization or a call to ENDGRF
       call disini()       ! initialize plot (set to level 1)
-      call bmpfnt('HELVE')
         ! Set the color table : SPEC,RAIN,GREY,TEMP
       call setvlt('RAIN')
-
       call paghdr('Ash3d Simulation plotted on ','---',4,0)
 
       if(HaveIconFile)then
@@ -598,7 +596,6 @@
       endif
 
        ! setting of plot parameters
-      !call triplx()  ! set font to triple stroke
       call bmpfnt('HELVE')
 
       call axspos(plotposx_px,plotposy_px)  ! determine the position of the axis system
@@ -940,6 +937,9 @@
 
       !  Dislin Level 1:  after initialization or a call to ENDGRF
       call disini()       ! initialize plot (set to level 1)
+        ! Set the color table : SPEC,RAIN,GREY,TEMP
+      call setvlt('RAIN')
+      call paghdr('Ash3d Simulation plotted on ','---',4,0)
 
       if(HaveIconFile)then
         call filbox(x_leg3_px,y_footer_px,130,49)
@@ -954,7 +954,10 @@
 
         ! setting of plot parameters
       !call pagera()       ! plot a border around the page
-      call helves()
+      !call triplx()  ! set font to triple stroke
+      call bmpfnt('HELVE')
+
+      !call helves()
       call titlin(title_plot,2)
       call name(cstr_xlabel,'X')
       call name(cstr_ylabel,'Y')
@@ -1044,7 +1047,7 @@
       endif
 
       write(filename_png,55) plot_index,".png"
- 55   format('dslin_',i4.4,a4)
+ 55   format('depTS_',i4.4,a4)
 
       if(Airport_Thickness_TS(plot_index,nWriteTimes).lt.0.01_ip)then
         ymax = 1.0_DS
@@ -1082,19 +1085,16 @@
 
       !  Dislin Level 0:  before initialization or after termination
       call metafl(cfmt)   ! set output driver/file-format (PNG); this is a 4-char string
-      call setpag('USAL') ! Set pagesize to US A Landscape (2790 x 2160)
+      call winsiz(400, 300) ! Set window size to 400 x 300
+      call sclmod("FULL")
       call setfil(trim(adjustl(filename_png))) ! Set output filename
       call scrmod('REVERSE')  ! Default background is black; reverse to white
 
       !  Dislin Level 1:  after initialization or a call to ENDGRF
       call disini()       ! initialize plot (set to level 1)
-        ! setting of plot parameters
-      call pagera()       ! plot a border around the page
-      !call triplx()  ! set font to triple stroke
       call bmpfnt('HELVE')
 
-      call axspos(450,1800)  ! determine the position of the axis system
-      call axslen(2200,1200) ! defines the size of the axis system
+        ! setting of plot parameters
       call name('Time (hours after eruption)','X') ! Set x-axis title
       call name('Deposit Thickeness (mm)','Y') ! Set y-axis title
       call labdig(-1,'X') ! set number of decimal places for x label (-1 means no decimal)

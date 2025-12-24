@@ -322,6 +322,7 @@
       character(len=50)        :: octavepath  = ''
       logical                  :: usepython   = .false.
       character(len=50)        :: pythonpath  = ''
+      integer                  :: plotting_ID = 3    ! default is gnuplot
 
       ! Some variables determined by preprocessor flags at compilation time
 #ifdef LIM_NONE

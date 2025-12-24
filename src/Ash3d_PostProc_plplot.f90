@@ -179,8 +179,8 @@
       real(kind=plflt)  :: vmax
       real(kind=plflt), dimension(:),   allocatable :: x, y
       real(kind=plflt), dimension(:,:), allocatable :: var
-      real(kind=plflt)   :: tr(6)
-      real(kind=plflt)   :: clevel(1)
+      real(kind=plflt)  :: tr(6)
+      real(kind=plflt)  :: clevel(1)
       integer(kind=4):: opt
 
       !integer, parameter :: MAX_NLEGEND = 11       ! max number of legend entries
@@ -207,9 +207,6 @@
       integer(kind=4)   ,dimension(:),allocatable :: line_styles
       integer(kind=4)   ,dimension(:),allocatable :: symbol_numbers
       integer(kind=4)   ,dimension(:),allocatable :: symbol_colors
-      integer(kind=4)   ,dimension(:),allocatable :: red
-      integer(kind=4)   ,dimension(:),allocatable :: green
-      integer(kind=4)   ,dimension(:),allocatable :: blue
       character(len=200),dimension(:),allocatable :: text
       character(len=3)  ,dimension(:),allocatable :: symbols
       real(kind=plflt)  ,dimension(:),allocatable :: box_scales
@@ -617,13 +614,15 @@
                   real(lat_cities(icty:icty),kind=plflt),&
                   7) ! code 7 is a triangle
                        ! (https://plplot.sourceforge.net/examples.php?demo=06&lbind=Fortran)
-
+      call pllab(cstr_xlabel,cstr_ylabel,title_plot)
+      call plscmap1(zrgb(:,1),zrgb(:,2),zrgb(:,3))
       do ilev=1,nConLev
-        call plcol1(real(dble(ilev)/dble(nConLev),kind=plflt))
         clevel(1) = real(ContourLev(ilev),kind=plflt)
+        ! From colormap
+        call plcol1(real(dble(ilev-1)/dble(nConLev),kind=plflt))
         call plcont(var,1,nx,1,ny,clevel, tr)
       enddo
-      call pllab(cstr_xlabel,cstr_ylabel,title_plot)
+      !call pllab(cstr_xlabel,cstr_ylabel,title_plot)
       if(lib_ver_minor.lt.12)then
         ! prior to v5.12, the second argument was an integer
 !        call plstransform( 0 )
@@ -637,10 +636,10 @@
       ! Set the color we will use for the legend background (index 15)
       call plscol0a( 15, 255, 255, 255, 1.0_plflt )
       allocate(opt_array(nConLev))
+      !color_array
       allocate(text_colors(nConLev))
       allocate(box_colors(nConLev))
       allocate(box_patterns(nConLev))
-      allocate(line_colors(nConLev))
       allocate(line_styles(nConLev))
       allocate(symbol_numbers(nConLev))
       allocate(symbol_colors(nConLev))
@@ -648,30 +647,27 @@
       allocate(symbols(nConLev))
       allocate(box_scales(nConLev))
       allocate(box_line_widths(nConLev))
+      allocate(line_colors(nConLev))
       allocate(line_widths(nConLev))
       allocate(symbol_scales(nConLev))
-      allocate(red(nConLev))
-      allocate(green(nConLev))
-      allocate(blue(nConLev))
       allocate(alpha(nConLev))
       do ilev=1,nConLev
         pos_opt = PL_POSITION_RIGHT + PL_POSITION_OUTSIDE
         opt = PL_LEGEND_BACKGROUND + PL_LEGEND_BOUNDING_BOX
-        text_colors(ilev)   = 1 + mod( ilev-1, nConLev )
-        line_colors(ilev)   = 1 + mod( ilev-1, nConLev )
-        !call plcol1(real(dble(i)/dble(nConLev),kind=plflt))
-        red(ilev)   = ilev
-        green(ilev) = ilev
-        blue(ilev)  = ilev
+        text_colors(ilev)   = 1
+        line_colors(ilev)   = ilev + 1 ! we want black in slot 1 so set index starting at 2
+        ! Need to get RGB from colormap
+        ! Set the ilev+1 index of the col0 palette
+        call plscol0(ilev+1,zrgb(ilev,1),zrgb(ilev,2),zrgb(ilev,3))
         alpha(ilev) = 1.0_plflt
-
         line_styles(ilev)    = 1
         line_widths(ilev)    = 1
-        symbol_colors(ilev)  = 1 + mod( ilev-1, nConLev )
-        box_colors(ilev)     = 2
+        symbol_colors(ilev)  = 1 !+ mod( ilev-1, nConLev )
+        box_colors(ilev)     = 0
         box_patterns(ilev)   = 3
         box_scales(ilev)     = 0.8_plflt
         box_line_widths(ilev)= 1
+        call plcol0(1)
         if(abs(ContourLev(ilev)).lt.0.01_ip.or.abs(ContourLev(ilev)).ge.1000.0_ip)then
           write( text(ilev), '(e7.2)' ) real(ContourLev(ilev),kind=4)
         else
@@ -692,15 +688,6 @@
         text_justification = 0.0_plflt
         symbols(ilev)      = '*'
       enddo
-      ! Now set the RGB values from above tothe cmap0
-      !call plscmap0a(red, green, blue, alpha)
-        ! pladv: Advance the (sub-)page
-!      call pladv(1)
-!        ! plvpor: Specify viewport using normalized subpage coordinates
-!      call plvpor(0.75_plflt, 1.0_plflt, 0.6_plflt, 0.7_plflt)
-!        ! plwind: Specify window 
-!      call plwind(0.0_plflt, 1.0_plflt, 0.0_plflt, 1.0_plflt )
-!      call plschr( 0.0_plflt, 0.7_plflt )
 
       call pllegend(    &
           legend_width, &  ! these are output vars
@@ -805,10 +792,6 @@
       if(allocated(box_line_widths)) deallocate(box_line_widths)
       if(allocated(line_widths))     deallocate(line_widths)
       if(allocated(symbol_scales))   deallocate(symbol_scales)
-      if(allocated(red))             deallocate(red)
-      if(allocated(green))           deallocate(green)
-      if(allocated(blue))            deallocate(blue)
-      if(allocated(alpha))           deallocate(alpha)
 
       end subroutine write_2Dmap_PNG_plplot
 
@@ -1172,7 +1155,7 @@
       endif
 
         ! pladv: Advance the (sub-)page
-      call pladv(2)
+      call pladv(1)
         ! plvpor: Specify viewport using normalized subpage coordinates
       call plvpor(0.4_plflt, 0.75_plflt, 0.05_plflt, 0.2_plflt)
         ! plwind: Specify window 
@@ -1247,7 +1230,7 @@
       endif
 
       write(filename_png,55) plot_index,".png"
- 55   format('plplt_',i4.4,a4)
+ 55   format('depTS_',i4.4,a4)
 
       if(Airport_Thickness_TS(plot_index,nWriteTimes).lt.0.01)then
         ymaxpl = 1.0

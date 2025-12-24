@@ -1134,8 +1134,9 @@
       use time_data,     only : &
          Simtime_in_hours
 
-      integer :: pt_indx,i
+      integer,intent(in) :: pt_indx
 
+      integer :: i
       real(kind=dp) :: ymaxpl
       character(len=14) :: filename_script
       character(len=14) :: filename_outdata
@@ -1157,9 +1158,8 @@
 
       write(filename_outdata,53) plot_index,".dat"
       write(filename_script,53) plot_index,".gpi"
-      write(filename_png,54) plot_index,".png"
+      write(filename_png,53) plot_index,".png"
  53   format('depTS_',i4.4,a4)
- 54   format('gnupl_',i4.4,a4)
 
       open(unit=fid_outdata,file=filename_outdata,status='replace')
       do i = 1,nWriteTimes
