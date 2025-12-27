@@ -1182,7 +1182,7 @@
       ! Set up to plot via gnuplot script
       open(unit=fid_script,file=filename_script,status='replace')
       write(fid_script,'(g0)')"##########################################################################"
-      write(fid_script,'(g0)')"# Temporary gnuplot script for producing 2d maps for Ash3d_PostProc"
+      write(fid_script,'(g0)')"# Temporary gnuplot script for producing deposit time-series plots for Ash3d_PostProc"
       write(fid_script,'(g0)')"# Adjust to suit your needs."
       write(fid_script,'(g0)')"##########################################################################"
       write(fid_script,*)"set terminal png size 400,300"

@@ -989,77 +989,110 @@
 
       integer :: pt_indx
 
-!      real(kind=dp) :: ymaxpl
-!      character(len=14) :: filename_script
-!      character(len=14) :: filename_outdata
-!      character(len=14) :: filename_png
-!      integer           :: fid_outdata  = 54
-!      integer           :: fid_script  = 55
-!      character(len=25) :: gnucom
-!      integer,save      :: plot_index = 0
-!      character(len=200) :: cmd
-!
-!      if(Airport_Thickness_TS(pt_indx,nWriteTimes).lt.THICKNESS_THRESH)then
-!        return
-!      else
-!        plot_index = plot_index + 1
-!      endif
-!
-!      write(filename_outdata,53) plot_index,".dat"
-!      write(filename_script,53) plot_index,".gpi"
-!      write(filename_png,54) plot_index,".png"
-! 53   format('depTS_',i4.4,a4)
-! 54   format('gnupl_',i4.4,a4)
-!
-!      open(unit=fid_outdata,file=filename_outdata,status='replace')
-!      do i = 1,nWriteTimes
-!        write(fid_outdata,*)WriteTimes(i),Airport_Thickness_TS(pt_indx,i)
-!      enddo
-!      close(fid_outdata)
-!
-!      if(Airport_Thickness_TS(plot_index,nWriteTimes).lt.THICKNESS_THRESH)then
-!        ymaxpl = 1.0_dp
-!      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.1.0_dp)then
-!        ymaxpl = 1.0_dp
-!      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.5.0_dp)then
-!        ymaxpl = 5.0_dp
-!      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.25.0_dp)then
-!        ymaxpl = 25.0_dp
-!      else
-!        ymaxpl = 100.0_dp
-!      endif
-!
-!      ! Set up to plot via matlab script
-!      open(unit=fid_script,file=filename_script,status='replace')
-!      write(fid_script,*)"set terminal png size 400,300"
-!      write(fid_script,*)"set key bmargin left horizontal Right noreverse enhanced ",&
-!               "autotitles box linetype -1 linewidth 1.000"
-!      write(fid_script,*)"set border 31 lw 2.0 lc rgb '#000000'"
-!      write(fid_script,*)"set style line 1 linecolor rgbcolor '#888888' linewidth 2.0 pt 7"
-!      write(fid_script,*)"set ylabel 'Deposit Thickeness (mm)'"
-!      write(fid_script,*)"set xlabel 'Time (hours after eruption)'"
-!      write(fid_script,*)"set nokey"
-!      write(fid_script,*)"set output '",filename_png,"'"
-!      write(fid_script,*)"set title '",Airport_Name(pt_indx),"'"
-!      write(fid_script,*)"plot [0:",ceiling(Simtime_in_hours),"][0:",&
-!               nint(ymaxpl),"] '",filename_outdata,"' with filledcurve x1 ls 1"
-!      close(fid_script)
-!
-!      write(gnucom,'(a11,a14)')'matlab -p ',filename_script
-!      call execute_command_line(gnucom)
-!
-!      ! Clean up
-!      if (CleanScripts_matlab) then
-!        cmd = "rm -f outvar.* cities.xy volc.dat"
-!        call execute_command_line(trim(adjustl(cmd)))
-!      endif
+      real(kind=dp) :: ymaxpl
+      character(len=14) :: filename_script
+      character(len=14) :: filename_outdata
+      character(len=14) :: filename_png
+      integer           :: fid_outdata  = 54
+      integer           :: fid_script  = 55
+      character(len=80) :: plotcom
+      integer,save      :: plot_index = 0
+      character(len=200) :: cmd
 
-      do io=1,2;if(VB(io).le.verbosity_error)then
-        write(errlog(io),*)"ERROR: Trying to write matlab/octave deposit TS: ",pt_indx
-        write(errlog(io),*)"       but write_DepPOI_TS_PNG_matlab is not yet implemented."
-        write(errlog(io),*)"       Please choose a different plotting package for POI dep."
-      endif;enddo
-      stop 1
+      if(Airport_Thickness_TS(pt_indx,nWriteTimes).lt.THICKNESS_THRESH)then
+        return
+      else
+        plot_index = plot_index + 1
+      endif
+
+      write(filename_outdata,54) plot_index,".dat"
+      write(filename_script,53) plot_index,".m"
+      write(filename_png,54) plot_index,".png"
+ 53   format('depTS_',i4.4,a2)
+ 54   format('depTS_',i4.4,a4)
+
+      open(unit=fid_outdata,file=filename_outdata,status='replace')
+      do i = 1,nWriteTimes
+        write(fid_outdata,*)WriteTimes(i),Airport_Thickness_TS(pt_indx,i)
+      enddo
+      close(fid_outdata)
+
+      if(Airport_Thickness_TS(plot_index,nWriteTimes).lt.THICKNESS_THRESH)then
+        ymaxpl = 1.0_dp
+      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.1.0_dp)then
+        ymaxpl = 1.0_dp
+      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.5.0_dp)then
+        ymaxpl = 5.0_dp
+      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.25.0_dp)then
+        ymaxpl = 25.0_dp
+      else
+        ymaxpl = 100.0_dp
+      endif
+
+      write(title_plot,*)Airport_Name(pt_indx)
+
+
+      ! Set up to plot via matlab script
+      open(unit=fid_script,file=filename_script,status='replace')
+      write(fid_script,*)"set terminal png size 400,300"
+      write(fid_script,*)"set key bmargin left horizontal Right noreverse enhanced ",&
+      write(fid_script,*)"set border 31 lw 2.0 lc rgb '#000000'"
+      write(fid_script,*)"set style line 1 linecolor rgbcolor '#888888' linewidth 2.0 pt 7"
+      write(fid_script,*)"set ylabel 'Deposit Thickeness (mm)'"
+      write(fid_script,*)"set xlabel 'Time (hours after eruption)'"
+      write(fid_script,*)"set nokey"
+      write(fid_script,*)"set output '",filename_png,"'"
+      write(fid_script,*)"plot [0:",ceiling(Simtime_in_hours),"][0:",&
+               nint(ymaxpl),"] '",filename_outdata,"' with filledcurve x1 ls 1"
+
+
+
+
+      ! Set up to plot via matlab script
+      open(unit=fid_script,file=filename_script,status='replace')
+      write(fid_script,'(g0)')"%##########################################################################"
+      write(fid_script,'(g0)')"%# Temporary matlab/octave script for producing deposit time-series plots for Ash3d_PostProc"
+      write(fid_script,'(g0)')"%# Adjust to suit your needs."
+      write(fid_script,'(g0)')"%##########################################################################"
+      write(fid_script,'(g0)')"clear all;"
+      if(SetOctaveGraphics)then
+        write(fid_script,'(g0)')"graphics_toolkit('gnuplot')"
+      else
+        write(fid_script,'(g0)')"%graphics_toolkit('gnuplot')"
+      endif
+      !linebuffer080 = "titstr='" // trim(adjustl(Site_vprofile(vprof_ID))) // coord_str // "';"
+      linebuffer080 = "titstr='" // trim(adjustl(Airport_Name(pt_indx))) // "';"
+      write(fid_script,'(g0)')trim(adjustl(linebuffer080))
+      linebuffer080 = "dp=load('" // trim(adjustl(filename_outdata)) // "');"
+      write(fid_script,'(g0)')trim(adjustl(linebuffer080))
+      write(fid_script,'(g0)')"ns=max(size(dp));"
+      write(fid_script,'(g0)')"x=dp(:,1);"
+      write(fid_script,'(g0)')"y=dp(:,2);"
+      write(fid_script,*)'area (x, y, "FaceColor", [0.5, 0.5, 0.5]);'
+      write(fid_script,*)'axis([0.0,',ceiling(Simtime_in_hours), '0.0, ',nint(ymaxpl),'])'
+      write(fid_script,*)"xlabel('Time (hours after eruption)','FontSize',16);"
+      write(fid_script,*)"ylabel('Deposit Thickness (mm)','FontSize',16);"
+      write(fid_script,*)"title(titstr,'FontSize',12);"
+      write(fid_script,*)"print -dpng '",filename_png,"'"
+      write(fid_script,*)"exit"
+
+      close(fid_script)
+
+      write(plotcom,'(a11,a14)')'matlab -p ',filename_script
+      call execute_command_line(plotcom)
+
+      ! Clean up
+      if (CleanScripts_matlab) then
+        cmd = "rm -f outvar.* cities.xy volc.dat"
+        call execute_command_line(trim(adjustl(cmd)))
+      endif
+
+!      do io=1,2;if(VB(io).le.verbosity_error)then
+!        write(errlog(io),*)"ERROR: Trying to write matlab/octave deposit TS: ",pt_indx
+!        write(errlog(io),*)"       but write_DepPOI_TS_PNG_matlab is not yet implemented."
+!        write(errlog(io),*)"       Please choose a different plotting package for POI dep."
+!      endif;enddo
+!      stop 1
 
       end subroutine write_DepPOI_TS_PNG_matlab
 

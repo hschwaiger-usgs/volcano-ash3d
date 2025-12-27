@@ -1587,6 +1587,28 @@
       endif;enddo
       stop 1
 
+
+!#!/bin/bash
+!##########################################################################
+!# Temporary GMT script for producing 2d maps for Ash3d_PostProc
+!# Adjust to suit your needs.
+!##########################################################################
+!gmt gmtset PS_MEDIA=300x400
+!xmin=0.5
+!xmax=25.0
+!ymin=0.0
+!ymax=1.0
+!dx=5
+!dy=0.2
+!AREA="-R$xmin/$xmax/$ymin/$ymax"
+!PROJ="-JX4.0i/2.5i"
+!gmt psbasemap $AREA $PROJ -B+t"Cuernavaca, Mexico" -K > temp.ps
+!gmt psbasemap $AREA $PROJ -Bxa$dx+l"Time (hours after eruption)" -Bya$dy+l"Deposit Thickness (mm)" -BWS -K -O >> temp.ps
+!gmt psxy $AREA $PROJ -Ggrey -L+yb depTS_0001.dat -W0.5p -BWS -X0.0i -Y0.0i -O >> temp.ps
+!gmt psconvert temp.ps -Tg
+!convert temp.png -rotate 90 -resize 400x300 -alpha off temp.png
+
+
       end subroutine write_DepPOI_TS_PNG_GMT
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
