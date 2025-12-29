@@ -144,9 +144,7 @@
       !real(kind=ip) :: tmp_ip
       integer,dimension(:,:),allocatable :: zrgb
       character(len=40) :: title_plot
-      !character(len=30) :: cstr_xlabel = 'Longitude'
-      !character(len=30) :: cstr_ylabel = 'Latitude'
-      character(len=30) :: cstr_zlabel
+      character(len=15) :: title_legend
       character(len=30) :: cstr_volcname
       character(len=30) :: cstr_run_date
       character(len=30) :: cstr_windfile
@@ -199,9 +197,6 @@
 
       ! Python/Cartopy variables
       character(len=25) :: plotcom
-      real(kind=ip)     :: zoomfac = 0.5_ip ! zoom factor for resampling the data with
-                                            ! a cubic spline interpolant. Can smooth rough
-                                            ! contours
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
@@ -252,7 +247,7 @@
         varname = "depothick"
         write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
-        cstr_zlabel = 'Dep.Thick.(mm)'
+        title_legend = 'Dep.Thick.(mm)'
         units = " (mm)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -266,7 +261,7 @@
         varname = "depothick"
         write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
-        cstr_zlabel = 'Dep.Thick.(in)'
+        title_legend = 'Dep.Thick.(in)'
         units = " (in)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -280,7 +275,7 @@
         varname = "depothickFin"
         write(filename_png,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
-        cstr_zlabel = 'Dep.Thick.(mm)'
+        title_legend = 'Dep.Thick.(mm)'
         units = " (mm)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -294,7 +289,7 @@
         varname = "depothickFin"
         write(filename_png,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
-        cstr_zlabel = 'Dep.Thick.(in)'
+        title_legend = 'Dep.Thick.(in)'
         units = " (in)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -308,7 +303,7 @@
         varname = "depotime"
         write(filename_png,'(a22)')'DepositArrivalTime.png'
         write(title_plot,'(a20)')'Ashfall arrival time'
-        cstr_zlabel = 'Time (hours)'
+        title_legend = 'Time (hours)'
         units = " (hours)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -328,7 +323,7 @@
         varname = "ashcon_max"
         write(filename_png,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
         write(title_plot,'(a26,f5.2,a6)')'Ash-cloud concentration t=',WriteTimes(itime),' hours'
-        cstr_zlabel = 'Max.Con.(mg/m3)'
+        title_legend = 'Max.Con.(mg/m3)'
         units = " (mg/m3)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -342,7 +337,7 @@
         varname = "cloud_height"
         write(filename_png,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud height t=',WriteTimes(itime),' hours'
-        cstr_zlabel = 'Cld.Height(km)'
+        title_legend = 'Cld.Height(km)'
         units = " (km)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -356,7 +351,7 @@
         varname = "cloud_bottom"
         write(filename_png,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
         write(title_plot,'(a19,f5.2,a6)')'Ash-cloud bottom t=',WriteTimes(itime),' hours'
-        cstr_zlabel = 'Cld.Bot.(km)'
+        title_legend = 'Cld.Bot.(km)'
         units = " (km)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -370,7 +365,7 @@
         varname = "cloud_load"
         write(filename_png,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
         write(title_plot,'(a17,f5.2,a6)')'Ash-cloud load t=',WriteTimes(itime),' hours'
-        cstr_zlabel = 'Cld.Load(T/km2)'
+        title_legend = 'Cld.Load(T/km2)'
         units = " (T/km2)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -384,7 +379,7 @@
         varname = "radar_reflectivity"
         write(filename_png,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
         write(title_plot,'(a24,f5.2,a6)')'Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
-        cstr_zlabel = 'Cld.Refl.(dBz)'
+        title_legend = 'Cld.Refl.(dBz)'
         units = " (dBz)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -398,7 +393,7 @@
         varname = "ash_arrival_time"
         write(filename_png,'(a20)')'CloudArrivalTime.png'
         write(title_plot,'(a22)')'Ash-cloud arrival time'
-        cstr_zlabel = 'Time (hours)'
+        title_legend = 'Time (hours)'
         units = " (hours)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -412,7 +407,7 @@
         varname = "topography"
         write(filename_png,'(a14)')'Topography.png'
         write(title_plot,'(a10)')'Topography'
-        cstr_zlabel = 'Elevation (km)'
+        title_legend = 'Elevation (km)'
         units = " (hours)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -436,8 +431,8 @@
         endif;enddo
         stop 1
       endif
-      ! Now have string vars (varname,cstr_zlabel, etc.) and contour info (nConLev,zrgb,ContourLev)
-
+      ! Now have string vars (varname,title_legend, etc.) and contour info (nConLev,zrgb,ContourLev)
+      
       if(writeContours)then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"Running cartopy to calculate contours lines"
@@ -460,7 +455,9 @@
           lonLL = 0.0_ip
           lonUR = 360.0_ip
         endif
+        write(*,*)lonLL
         xmin = lonLL
+        write(*,*)xmin,lonLL
         ! Make sure xmin is in the range -180->180
         if (xmin.gt.180.0_ip)then
           xmin = lonLL-360.0_ip
@@ -492,7 +489,8 @@
         !endif;enddo
         !stop 1
       endif
-
+        write(*,*)xmin,lonLL
+      stop 7878
       ! write out the data in a form that python can read
       ! Python script expects an ESRI ASCII data file; force regular
       if(IsRegGrid)then
@@ -503,6 +501,9 @@
                            real(OutVar,kind=sp),filename_outdata)
       else
         ! Irregular grids are problematic, call special ASCII interpolator
+        write(*,*)nx,ny,IsLatLon,real(xmin,kind=sp),real(ymin,kind=sp)
+        write(*,*)real(de,kind=sp),real(dn,kind=sp)
+        stop 88
         call write_2D_ASCII_flt_regular(nx,ny,IsLatLon,real(xmin,kind=sp),real(ymin,kind=sp),.true., &
                            real(de,kind=sp),real(dn,kind=sp),Fill_Value_str,&
                            real(OutVar,kind=sp),filename_outdata)
@@ -596,7 +597,6 @@
       write(fid_script,'(g0)')"from matplotlib.colors import LinearSegmentedColormap"
       write(fid_script,'(g0)')"from matplotlib.offsetbox import OffsetImage, AnnotationBbox, TextArea"
       write(fid_script,'(g0)')"import numpy as np"
-      write(fid_script,'(g0)')"import scipy.ndimage"
       write(fid_script,'(g0)')"from osgeo import gdal, osr"
       write(fid_script,'(g0)')"import linecache"
       write(fid_script,'(g0)')" "
@@ -660,7 +660,7 @@
       write(fid_script,'(g0)')'grid_file="outvar.dat"'
       linebuffer080 = 'title_plot="'// trim(adjustl(title_plot)) // '"'
       write(fid_script,'(g0)')linebuffer080
-      linebuffer080 = 'title_legend="' // trim(adjustl(cstr_zlabel)) // '"'
+      linebuffer080 = 'title_legend="' // trim(adjustl(title_legend)) // '"'
       write(fid_script,'(g0)')linebuffer080
 
       linebuffer130  ="clevels=["
@@ -755,7 +755,6 @@
       write(fid_script,'(g0)')"gl.right_labels = False"
       write(fid_script,'(g0)')"# Get grided data from GDAL dataset"
       write(fid_script,'(g0)')"data = raster.GetRasterBand(1).ReadAsArray()"
-      write(fid_script,'(a31,f5.2,a1)')"data = scipy.ndimage.zoom(data,",zoomfac,")"
       write(fid_script,'(g0)')"# Mask out any values that are = to fill_value"
       write(fid_script,'(g0)')"Fill_Value=0"
       write(fid_script,'(g0)')"data_masked = np.ma.masked_where(data==Fill_Value, data)"
@@ -921,7 +920,7 @@
       use time_data,     only : &
          os_time_log,SimStartHour,BaseYear,useLeap,ntmax,time_native
 
-      integer,intent (in) :: vprof_ID
+      integer, intent (in) :: vprof_ID
 
       logical           :: HaveIconFile
       character(len=76) :: title_plot
@@ -1080,7 +1079,7 @@
       else
         write(coord_str,102)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
       endif
- 101  format(' (lon=',f7.2,', lat=',f6.2,')')
+ 101  format(' (lon=',f7.2,',  lat=',f6.2,')')
  102  format(' (x=',f9.3,', y=',f9.3,')')
       write(title_plot,*)trim(adjustl(Site_vprofile(vprof_ID))),coord_str
 
@@ -1165,8 +1164,8 @@
       write(fid_script,'(g0)')'ngridz = 100'
       write(fid_script,'(g0)')' '
       write(fid_script,'(g0)')'# Create grid values first.'
-      write(fid_script,'(a20,f8.3,a9)')'ti = np.linspace(0, ',tmax,', ngridt)'
-      write(fid_script,'(a20,f8.3,a9)')'zi = np.linspace(0, ',zmax,', ngridz)'
+      write(fid_script,'(g0)')'ti = np.linspace(0, 10, ngridt)'
+      write(fid_script,'(g0)')'zi = np.linspace(0, 10, ngridz)'
       write(fid_script,'(g0)')' '
       write(fid_script,'(g0)')'# Linearly interpolate the data (x, y) on a grid defined by (ti, zi).'
       write(fid_script,'(g0)')'triang = tri.Triangulation(t_column, z_column)'
@@ -1182,12 +1181,14 @@
       write(fid_script,'(g0)')"cntr1 = ax1.contourf(ti, zi, coni, levels=8, cmap='jet')"
       linebuffer080 = "main_fig.colorbar(cntr1, ax=ax1, label='" // cstr_zlabel // "')"
       write(fid_script,'(g0)')linebuffer080
-      write(linebuffer080,'(a17,f8.3,a12,f8.3,a2)')'ax1.set(xlim=(0, ',tmax,'), ylim=(0, ',zmax,'))'
-      write(fid_script,'(g0)')linebuffer080
+      !write(fid_script,'(g0)')"main_fig.colorbar(cntr1, ax=ax1, label='Ash con. (mg/m3)')"
+      write(fid_script,'(g0)')'ax1.set(xlim=(0, 10), ylim=(0, 10))'
       linebuffer080 = "ax1.set_xlabel('" // cstr_xlabel // "')"
       write(fid_script,'(g0)')linebuffer080
+      !write(fid_script,'(g0)')"ax1.set_xlabel('Time (hours after eruption')"
       linebuffer080 = "ax1.set_xlabel('" // cstr_ylabel // "')"
       write(fid_script,'(g0)')linebuffer080
+      !write(fid_script,'(g0)')"ax1.set_ylabel('Height (km)')"
       write(fid_script,'(g0)')''
       write(fid_script,'(g0)')''
       write(fid_script,'(g0)')'# Draw USGS logo'
@@ -1256,159 +1257,85 @@
 
       subroutine write_DepPOI_TS_PNG_python(pt_indx)
 
-      use Output_Vars,   only : &
-         THICKNESS_THRESH
+!      use Output_Vars,   only : &
+!         THICKNESS_THRESH
+!
+!      use Airports,      only : &
+!         Airport_Name,Airport_Thickness_TS
+!
+!      use io_data,       only : &
+!         nWriteTimes,WriteTimes
+!
+!      use time_data,     only : &
+!         Simtime_in_hours
 
-      use Airports,      only : &
-         Airport_Name,Airport_Thickness_TS
+      integer :: pt_indx
 
-      use io_data,       only : &
-         nWriteTimes,WriteTimes
+!      real(kind=dp) :: ymaxpl
+!      character(len=14) :: filename_script
+!      character(len=14) :: filename_outdata
+!      character(len=14) :: filename_png
+!      integer           :: fid_outdata  = 54
+!      integer           :: fid_script  = 55
+!      character(len=25) :: plotcom
+!      integer,save      :: plot_index = 0
+!      character(len=200) :: cmd
 
-      use time_data,     only : &
-         Simtime_in_hours
-
-      integer,intent(in) :: pt_indx
-
-      real(kind=dp) :: ymaxpl
-      character(len=40) :: title_plot
-      character(len=10) :: filename_root
-      character(len=14) :: filename_script
-      character(len=14) :: filename_outdata
-      character(len=14) :: filename_png
-      integer           :: fid_outdata  = 54
-      integer           :: fid_script  = 55
-      integer           :: i
-      character(len=25) :: plotcom
-      integer,save      :: plot_index = 0
-      integer           :: iostatus
-      integer           :: cstat
-      character(len=120):: iomessage
-      character(len=200):: cmd
-
-      if(Airport_Thickness_TS(pt_indx,nWriteTimes).lt.THICKNESS_THRESH)then
-        return
-      else
-        plot_index = plot_index + 1
-      endif
-
-      write(filename_root,52)plot_index
- 52   format('depTS_',i4.4)
-      filename_outdata = trim(adjustl(filename_root)) // ".dat"
-      filename_script  = trim(adjustl(filename_root)) // ".py"
-      filename_png     = trim(adjustl(filename_root)) // ".png"
-
-      open(unit=fid_outdata,file=filename_outdata,status='replace')
-      write(fid_outdata,*)'Time                   ,  Deposit         '
-      do i = 1,nWriteTimes
-        write(fid_outdata,*)WriteTimes(i),', ',Airport_Thickness_TS(pt_indx,i)
-      enddo
-      close(fid_outdata)
-
-      if(Airport_Thickness_TS(plot_index,nWriteTimes).lt.THICKNESS_THRESH)then
-        ymaxpl = 1.0_dp
-      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.1.0_dp)then
-        ymaxpl = 1.0_dp
-      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.5.0_dp)then
-        ymaxpl = 5.0_dp
-      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.25.0_dp)then
-        ymaxpl = 25.0_dp
-      else
-        ymaxpl = 100.0_dp
-      endif
-      title_plot = Airport_Name(pt_indx)
-
-
-      ! Set up to plot via python script
-      open(unit=fid_script,file=filename_script,status='replace')
-      write(fid_script,'(g0)')"##########################################################################"
-      write(fid_script,'(g0)')"# Temporary python script for producing deposit time-series plots for Ash3d_PostProc"
-      write(fid_script,'(g0)')"# Adjust to suit your needs."
-      write(fid_script,'(g0)')"# You will need the packages conda-forge, geopandas, matplotlib"
-      write(fid_script,'(g0)')"##########################################################################"
-      write(fid_script,'(g0)')"import pandas as pd"
-      write(fid_script,'(g0)')"import matplotlib.pyplot as plt"
-      write(fid_script,'(g0)')"import numpy as np"
-      write(fid_script,'(g0)')" "
-      cmd = 'data_file="' // trim(adjustl(filename_outdata)) // '"'
-      write(fid_script,'(g0)')trim(adjustl(cmd))
-      cmd = 'fig_name="' // trim(adjustl(filename_png)) // '"'
-      write(fid_script,'(g0)')trim(adjustl(cmd))
-      cmd = 'title_plot="' // trim(adjustl(title_plot)) // '"'
-      write(fid_script,'(g0)')trim(adjustl(cmd))
-
-      write(fid_script,'(g0)')'plt.title(title_plot)'
-
-      cmd = "####################### OPEN ASH DATA FILE #######################"
-      write(fid_script,'(g0)')trim(adjustl(cmd))
-      cmd = "## Open data file"
-      write(fid_script,'(g0)')trim(adjustl(cmd))
-      cmd = "df = pd.read_csv(data_file)"
-      write(fid_script,'(g0)')trim(adjustl(cmd))
-      cmd = "t_column = df.iloc[:, 0]"
-      write(fid_script,'(g0)')trim(adjustl(cmd))
-      cmd = "z_column = df.iloc[:, 1]"
-      write(fid_script,'(g0)')trim(adjustl(cmd))
-      cmd = " "
-      write(fid_script,'(g0)')trim(adjustl(cmd))
-      cmd = "############################## PLOT ######################################"
-      write(fid_script,'(g0)')trim(adjustl(cmd))
-      cmd = "## Create figure"
-      write(fid_script,'(g0)')trim(adjustl(cmd))
-      cmd = "main_fig = plt.figure(figsize=(4, 3))"
-      write(fid_script,'(g0)')trim(adjustl(cmd))
-      cmd = "ax1 = main_fig.add_subplot(4,1,(1,3))"
-      write(fid_script,'(g0)')trim(adjustl(cmd))
-      cmd = "plt.plot(t_column, z_column, color='grey') # Plot the line"
-      write(fid_script,'(g0)')trim(adjustl(cmd))
-      cmd = "plt.fill_between(t_column, z_column, color='grey', alpha=0.7)"
-      write(fid_script,'(g0)')trim(adjustl(cmd))
-      write(cmd,*)"ax1.set(xlim=(0,",ceiling(Simtime_in_hours),"), ylim=(0,", &
-                               nint(ymaxpl),"))"
-      write(fid_script,'(g0)')trim(adjustl(cmd))
-      cmd = "ax1.set_xlabel('Time (hours after eruption)   ')"
-      write(fid_script,'(g0)')trim(adjustl(cmd))
-      cmd = "ax1.set_ylabel('Deposit (mm)                   ')"
-      write(fid_script,'(g0)')trim(adjustl(cmd))
-      cmd = "main_fig.tight_layout()"
-      write(fid_script,'(g0)')trim(adjustl(cmd))
-      cmd = "plt.title(title_plot)"
-      write(fid_script,'(g0)')trim(adjustl(cmd))
-
-      cmd = "main_fig.savefig(f'" // trim(adjustl(filename_png)) // "',dpi=100)"
-      write(fid_script,'(g0)')trim(adjustl(cmd))
-
-      write(plotcom,'(a11,a14)')'python ',filename_script
-      call execute_command_line(plotcom,&
-                                wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-
-      if(iostatus.ne.0)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
-          write(errlog(io),*)"WARNING: python command is returing a non-zero error code:", iostatus
-          write(errlog(io),*)"         Maybe your python installation is incomplete"
-          write(errlog(io),*)"         Make sure you install the following in your conda environment:"
-          write(errlog(io),*)"           conda install -c conda-forge geopandas"
-          write(errlog(io),*)"           conda install -c scitools cartopy"
-          write(errlog(io),*)"           conda install -c gdal"
-          write(errlog(io),*)"         Then activate your environment:"
-          write(errlog(io),*)"           conda create --name geo_env"
-          write(errlog(io),*)"           conda activate geo_env"
-        endif;enddo
-        stop 1
-      endif
-
-      ! Clean up
-      if (CleanScripts_python) then
-        cmd = "rm -f depTS_*.dat depTS_*.py"
-        do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"Cleaning up temporary files with command:"
-          write(outlog(io),*)trim(adjustl(cmd))
-        endif;enddo
-        call execute_command_line(trim(adjustl(cmd)),&
-                                  wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-      endif
-
-
+!      if(Airport_Thickness_TS(pt_indx,nWriteTimes).lt.THICKNESS_THRESH)then
+!        return
+!      else
+!        plot_index = plot_index + 1
+!      endif
+!
+!      write(filename_outdata,53) plot_index,".dat"
+!      write(filename_script,53) plot_index,".gpi"
+!      write(filename_png,54) plot_index,".png"
+! 53   format('depTS_',i4.4,a4)
+! 54   format('gnupl_',i4.4,a4)
+!
+!      open(unit=fid_outdata,file=filename_outdata,status='replace')
+!      do i = 1,nWriteTimes
+!        write(fid_outdata,*)WriteTimes(i),Airport_Thickness_TS(pt_indx,i)
+!      enddo
+!      close(fid_outdata)
+!
+!      if(Airport_Thickness_TS(plot_index,nWriteTimes).lt.THICKNESS_THRESH)then
+!        ymaxpl = 1.0_dp
+!      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.1.0_dp)then
+!        ymaxpl = 1.0_dp
+!      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.5.0_dp)then
+!        ymaxpl = 5.0_dp
+!      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.25.0_dp)then
+!        ymaxpl = 25.0_dp
+!      else
+!        ymaxpl = 100.0_dp
+!      endif
+!
+!      ! Set up to plot via python script
+!      open(unit=fid_script,file=filename_script,status='replace')
+!      write(fid_script,*)"set terminal png size 400,300"
+!      write(fid_script,*)"set key bmargin left horizontal Right noreverse enhanced ",&
+!               "autotitles box linetype -1 linewidth 1.000"
+!      write(fid_script,*)"set border 31 lw 2.0 lc rgb '#000000'"
+!      write(fid_script,*)"set style line 1 linecolor rgbcolor '#888888' linewidth 2.0 pt 7"
+!      write(fid_script,*)"set ylabel 'Deposit Thickeness (mm)'"
+!      write(fid_script,*)"set xlabel 'Time (hours after eruption)'"
+!      write(fid_script,*)"set nokey"
+!      write(fid_script,*)"set output '",filename_png,"'"
+!      write(fid_script,*)"set title '",Airport_Name(pt_indx),"'"
+!      write(fid_script,*)"plot [0:",ceiling(Simtime_in_hours),"][0:",&
+!               nint(ymaxpl),"] '",filename_outdata,"' with filledcurve x1 ls 1"
+!      close(fid_script)
+!
+!      write(plotcom,'(a11,a14)')'python -p ',filename_script
+!      call execute_command_line(plotcom)
+!
+!      ! Clean up
+!      if (CleanScripts_python) then
+!        cmd = "rm -f outvar.* cities.xy volc.dat"
+!        call execute_command_line(trim(adjustl(cmd)))
+!      endif
+!
       end subroutine write_DepPOI_TS_PNG_python
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

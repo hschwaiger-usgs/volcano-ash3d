@@ -43,8 +43,8 @@
         ! Publicly available variables
 
       integer :: lib_ver_major = 5
+      !integer :: lib_ver_minor = 10
       integer :: lib_ver_minor = 14
-      integer :: lib_ver_patch = 0
 
       contains
       !------------------------------------------------------------------------
@@ -97,14 +97,14 @@
 !         ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
 !         CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS
 
-      use time_data,     only : &
-         os_time_log,SimStartHour,BaseYear,useLeap
-
       use io_data,       only : &
          WriteTimes,cdf_b3l1,VolcanoName
 
       use Source,        only : &
          neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight,lon_volcano,lat_volcano
+
+      use time_data,     only : &
+         os_time_log,SimStartHour,BaseYear,useLeap
 
       use citywriter
 
@@ -226,7 +226,7 @@
       integer(kind=4):: bg_color,bb_color,bb_style
       integer(kind=4):: pos_opt
 
-!      real(kind=plflt)  :: y_footer
+      real(kind=plflt)  :: y_footer
       real(kind=plflt)  :: dy_newline
       integer :: plsetopt_rc
 
@@ -538,8 +538,6 @@
       tr = (/ (xmaxPL-xminPL)/real(nx-1,kind=plflt), 0.0_plflt, xminPL, &
               0.0_plflt, (ymaxPL-yminPL)/real(ny-1,kind=plflt), yminPL /)
 
-      call get_version_plplot
-
       ! Set up for plplot
       call plsdev("pngcairo")      ! Set output device (png, pdf, etc.)
       call plsfnam (filename_png)  ! Set output filename
@@ -822,6 +820,9 @@
       use Output_Vars,   only : &
          pr_ash,CLOUDCON_THRESH,CONTOUR_MAXCURVES
 
+      use time_data,     only : &
+         ntmax,time_native
+
       use io_data,       only : &
          Site_vprofile,x_vprofile,y_vprofile,cdf_b3l1,VolcanoName
 
@@ -829,9 +830,9 @@
          neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
 
       use time_data,     only : &
-         os_time_log,SimStartHour,BaseYear,useLeap,ntmax,time_native
+         os_time_log,SimStartHour,BaseYear,useLeap
 
-      integer,intent (in) :: vprof_ID
+      integer,intent(in) :: vprof_ID
 
       logical           :: HaveIconFile
       character(len=76) :: title_plot
@@ -1043,8 +1044,6 @@
       label_opts(1) = PL_COLORBAR_LABEL_RIGHT
       labels(1) = trim(adjustl(cstr_zlabel))
 
-      call get_version_plplot
-
       ! Set up for plplot
       call plsdev("pngcairo")      ! Set output device (png, pdf, etc.)
       call plsfnam ( filename_png )  ! Set output filename
@@ -1052,8 +1051,8 @@
       ! set image size and background color via command-line options tool plsetopt
       if(lib_ver_minor.lt.12)then
         ! prior to v5.12, this was a subroutine call
-        !call plsetopt("geometry","854x603, 854x603")
-        !call plsetopt("bg","FFFFFF")                  ! Set background color to white
+!        call plsetopt("geometry","854x603, 854x603")
+!        call plsetopt("bg","FFFFFF")                  ! Set background color to white
       else
         ! after v5.12, this is a function call returing an error code plsetopt_rc
         plsetopt_rc = plsetopt("geometry","854x603, 854x603")
@@ -1065,7 +1064,7 @@
       ! sets cmap1 palette via pal file for continuous elements
       if(lib_ver_minor.lt.12)then
         ! prior to v5.12, the second argument was an integer
-        !call plspal1('cmap1_blue_yellow.pal',1)
+!        call plspal1('cmap1_blue_yellow.pal',1)
       else
         ! after v5.12, this needs to be a logical
         call plspal1('cmap1_blue_yellow.pal',.true.)
@@ -1211,7 +1210,6 @@
       character(len=14) :: filename_png
       integer,save      :: plot_index = 0
       integer           :: plsetopt_rc
-      character(len=15) :: geometry_master
 
       real(kind=plflt) :: xmin
       real(kind=plflt) :: xmax
@@ -1263,25 +1261,20 @@
       y0(1:nWriteTimes)=y(1:nWriteTimes)
       y0(nWriteTimes+1)=0.0_plflt
 
-      call get_version_plplot
-
       ! Set up for plplot
       call plsdev("pngcairo")      ! Set output device (png, pdf, etc.)
       call plsfnam ( filename_png )  ! Set output filename
-      geometry_master = '400x300'
 
-      ! set image size and background color via command-line options tool plsetopt
+      ! set image size and background colog via command-line options tool plsetopt
       if(lib_ver_minor.lt.12)then
         ! prior to v5.12, this was a subroutine call
-        !call plsetopt("geometry","400x300, 400x300")
-        !call plsetopt("bg","FFFFFF")
-      elseif(lib_ver_major.ge.5.and.lib_ver_minor.ge.12)then
+!        call plsetopt("geometry","400x300, 400x300")
+!        call plsetopt("bg","FFFFFF")
+      elseif(lib_ver_major.le.5.and.lib_ver_minor.eq.15)then
         ! after v5.12, this is a function call returing an error code plsetopt_rc
-        plsetopt_rc = plsetopt('-geometry', geometry_master)
+        plsetopt_rc = plsetopt("geometry","400x300, 400x300")  ! Set image size
         plsetopt_rc = plsetopt("bg","FFFFFF")                  ! Set background color to white
       endif
-      ! sets cmap0 palette via pal file for discrete elements
-      call plspal0('cmap0_black_on_white.pal')
 
       ! Initialize plplot
       call plinit()
@@ -1308,84 +1301,6 @@
       if(allocated(y0)) deallocate(y0)
 
       end subroutine write_DepPOI_TS_PNG_plplot
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!
-!  get_version_plplot
-!
-!  Called from: All subroutine in this module that plot
-!  Arguments:
-!    None
-!
-!  This subroutine set the module variables corresponding to the library version
-!  of plplot linked. If the major version is less than 5, then this file will
-!  probably not work. If the minor version is less thatn 12, then the default
-!  code will be incompatible and a warning will be issued with instructions on
-!  how to recompile
-!
-!   Sets:
-!     lib_ver_major = [ 5]
-!     lib_ver_minor = [10]
-!     lib_ver_patch = [ 0]
-!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-      subroutine get_version_plplot
-
-      character(len=80) :: linebuffer080
-      character(len=50) :: linebuffer050
-      integer           :: dec1str
-      integer           :: dec2str
-      integer           :: tmp_int
-
-      call plgver(linebuffer080)
-
-      dec1str = scan(linebuffer080, ".")
-
-      if(dec1str.gt.0)then
-        read(linebuffer080(1:dec1str-1),*)tmp_int
-        lib_ver_major = tmp_int
-      else
-        do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"WARNING: PLPLOT major version not detected."
-          write(outlog(io),*)"         Asssuming v5.14 or greater"
-        endif;enddo
-        return
-      endif
-
-      linebuffer050 = trim(adjustl(linebuffer080(dec1str+1:)))
-      dec2str = scan(linebuffer050, ".")
-      if(dec2str.gt.0)then
-        read(linebuffer050(1:dec2str-1),*)tmp_int
-        lib_ver_minor = tmp_int
-      else
-        do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"WARNING: PLPLOT minor version not detected."
-          write(outlog(io),*)"         Asssuming v5.14 or greater"
-        endif;enddo
-        return
-      endif
-
-      read(linebuffer050(dec2str+1:),*)tmp_int
-      lib_ver_patch = tmp_int
-
-      if(lib_ver_major.lt.5)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"WARNING: PLPLOT major version is earlier than v5."
-          write(outlog(io),*)"         These plotting routines will likely not work"
-          write(outlog(io),*)"         Try recompiling toggling the comments on <v5.12 routines"
-        endif;enddo
-      else
-        if(lib_ver_major.lt.5)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),*)"WARNING: PLPLOT major.minor version is earlier than v5.12."
-            write(outlog(io),*)"         These plotting routines will likely not work"
-            write(outlog(io),*)"         Try recompiling toggling the comments on <v5.12 routines"
-          endif;enddo
-        endif
-      endif
-
-      end subroutine get_version_plplot
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

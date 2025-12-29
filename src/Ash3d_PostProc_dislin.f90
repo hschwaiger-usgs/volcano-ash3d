@@ -44,7 +44,7 @@
       integer :: lib_ver_major = 5
       integer :: lib_ver_minor = 14
       integer :: lib_ver_patch = 0
-      
+
       contains
       !------------------------------------------------------------------------
 
@@ -95,15 +95,14 @@
          ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
          CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS
 
+      use time_data,     only : &
+         os_time_log,SimStartHour,BaseYear,useLeap
+
       use io_data,       only : &
          WriteTimes,cdf_b3l1,VolcanoName
 
       use Source,        only : &
          neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight,lon_volcano,lat_volcano
-
-
-      use time_data,     only : &
-         os_time_log,SimStartHour,BaseYear,useLeap
 
       use citywriter
 
@@ -184,7 +183,7 @@
 
       character(len=4) :: cfmt = "PNG " ! output driver/file-format (PNG); this is a 4-char string
       character(len=4) :: cfsz = "USAL" ! US A Landscape (2790 x 2160)
-      character(len=3) :: cmode = "ON " ! Plotting mode; can be off if just calc. contours
+!      character(len=3) :: cmode = "ON " ! Plotting mode; can be off if just calc. contours
       integer          :: nclr          ! color index
       integer          :: nmaxln        ! number of characters in the longest line of text
       character(len=7) :: zlevlab       ! legend level label
@@ -760,9 +759,6 @@
       use Output_Vars,   only : &
          pr_ash,CLOUDCON_THRESH
 
-      use time_data,     only : &
-         ntmax,time_native
-
       use io_data,       only : &
          Site_vprofile,x_vprofile,y_vprofile,cdf_b3l1,VolcanoName
 
@@ -770,9 +766,9 @@
          neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
 
       use time_data,     only : &
-         os_time_log,SimStartHour,BaseYear,useLeap
+         os_time_log,SimStartHour,BaseYear,useLeap,ntmax,time_native
 
-      integer,intent(in) :: vprof_ID
+      integer,intent (in) :: vprof_ID
 
       logical           :: HaveIconFile
       character(len=76) :: title_plot
@@ -1161,11 +1157,6 @@
 
       subroutine get_version_dislin
 
-      character(len=80) :: linebuffer080
-      character(len=50) :: linebuffer050
-      integer           :: dec1str
-      integer           :: dec2str
-      integer           :: tmp_int
       real(kind=DS)  :: xver
       integer        :: iplv
 

@@ -97,7 +97,7 @@
          Con_CloudRef_N,Con_CloudRef_RGB,Con_CloudRef_Lev, &
          Con_CloudTime_N,Con_CloudTime_RGB,Con_CloudTime_Lev, &
          ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
-         CloudArrivalTime,Mask_Deposit,Mask_Cloud,&
+!         CloudArrivalTime,Mask_Deposit,Mask_Cloud,&
          CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS,ContourLev,nConLev
 
 !      use io_units,      only : &
@@ -127,11 +127,11 @@
       real(kind=ip),intent(in) :: Fill_Value
       logical      ,intent(in) :: writeContours
 
-      logical            :: mask(nx,ny)
+!      logical            :: mask(nx,ny)
       character(len=6)   :: Fill_Value_str
       character(len=200) :: cmd
 
-      real(kind=ip) :: tmp_ip
+      !real(kind=ip) :: tmp_ip
       integer,dimension(:,:),allocatable :: zrgb
       character(len=40) :: title_plot
       character(len=15) :: title_legend
@@ -151,12 +151,12 @@
       integer           :: cstat
       character(len=120):: iomessage
       integer           :: iw,iwf
-      logical           :: IsThere1,IsThere2
+!      logical           :: IsThere1,IsThere2
       logical           :: HaveIconFile
-      character(len=50) :: linebuffer050
-      character(len=80) :: linebuffer080
-      character(len=130):: linebuffer130,linebuffer130_2
-      character         :: testkey
+!      character(len=50) :: linebuffer050
+!      character(len=80) :: linebuffer080
+!      character(len=130):: linebuffer130,linebuffer130_2
+      !character         :: testkey
 
       ! Plot dimensions
       real(kind=ip)  :: xmin
@@ -175,9 +175,9 @@
       !character(len=80) :: filename_coastline
 
       ! Citywriter variables
-      integer :: icty
+!      integer :: icty
       integer :: ncities
-      integer :: cityname_offset_px = 30
+!      integer :: cityname_offset_px = 30
       real(kind=ip),dimension(:),allocatable     :: lon_cities
       real(kind=ip),dimension(:),allocatable     :: lat_cities
       character(len=26),dimension(:),allocatable :: name_cities
@@ -705,7 +705,7 @@
       use time_data,     only : &
          os_time_log,SimStartHour,BaseYear,useLeap,ntmax,time_native
 
-      integer, intent (in) :: vprof_ID
+      integer,intent (in) :: vprof_ID
 
       logical           :: HaveIconFile
       character(len=76) :: title_plot
@@ -734,7 +734,7 @@
       integer           :: cstat
       character(len=120):: iomessage
       integer           :: iw,iwf
-      character(len= 80):: linebuffer080
+!      character(len= 80):: linebuffer080
       character(len=200):: cmd
 
       ! Plotting variables
@@ -875,17 +875,17 @@
       else
         write(fid_script,'(g0)')"%graphics_toolkit('gnuplot')"
       endif
-      !linebuffer080 = "titstr='" // trim(adjustl(Site_vprofile(vprof_ID))) // coord_str // "';"
-      linebuffer080 = "titstr='" // trim(adjustl(title_plot)) // "';"
-      write(fid_script,'(g0)')trim(adjustl(linebuffer080))
-      linebuffer080 = "xstr='" // trim(adjustl(cstr_xlabel)) // "';"
-      write(fid_script,'(g0)')trim(adjustl(linebuffer080))
-      linebuffer080 = "ystr='" // trim(adjustl(cstr_ylabel)) // "';"
-      write(fid_script,'(g0)')trim(adjustl(linebuffer080))
-      linebuffer080 = "zstr='" // trim(adjustl(cstr_zlabel)) // "';"
-      write(fid_script,'(g0)')trim(adjustl(linebuffer080))
-      linebuffer080 = "vp=load('" // trim(adjustl(filename_outdata)) // "');"
-      write(fid_script,'(g0)')trim(adjustl(linebuffer080))
+      !cmd = "titstr='" // trim(adjustl(Site_vprofile(vprof_ID))) // coord_str // "';"
+      cmd = "titstr='" // trim(adjustl(title_plot)) // "';"
+      write(fid_script,'(g0)')trim(adjustl(cmd))
+      cmd = "xstr='" // trim(adjustl(cstr_xlabel)) // "';"
+      write(fid_script,'(g0)')trim(adjustl(cmd))
+      cmd = "ystr='" // trim(adjustl(cstr_ylabel)) // "';"
+      write(fid_script,'(g0)')trim(adjustl(cmd))
+      cmd = "zstr='" // trim(adjustl(cstr_zlabel)) // "';"
+      write(fid_script,'(g0)')trim(adjustl(cmd))
+      cmd = "vp=load('" // trim(adjustl(filename_outdata)) // "');"
+      write(fid_script,'(g0)')trim(adjustl(cmd))
       write(fid_script,'(g0)')"ns=max(size(vp));"
       write(fid_script,'(g0)')"% Time will be irregular, so we need to regrid the data."
       write(fid_script,'(g0)')"t_reg = linspace(0, vp(ns,1), 101);"
@@ -975,29 +975,36 @@
 
       subroutine write_DepPOI_TS_PNG_matlab(pt_indx)
 
-!      use Output_Vars,   only : &
-!         THICKNESS_THRESH
-!
-!      use Airports,      only : &
-!         Airport_Name,Airport_Thickness_TS
-!
-!      use io_data,       only : &
-!         nWriteTimes,WriteTimes
-!
-!      use time_data,     only : &
-!         Simtime_in_hours
+      use Output_Vars,   only : &
+         THICKNESS_THRESH
 
-      integer :: pt_indx
+      use Airports,      only : &
+         Airport_Name,Airport_Thickness_TS
+
+      use io_data,       only : &
+         nWriteTimes,WriteTimes
+
+      use time_data,     only : &
+         Simtime_in_hours
+
+      integer,intent(in) :: pt_indx
 
       real(kind=dp) :: ymaxpl
+!      character(len=40) :: title_plot
+      character(len=10) :: filename_root
       character(len=14) :: filename_script
       character(len=14) :: filename_outdata
       character(len=14) :: filename_png
       integer           :: fid_outdata  = 54
       integer           :: fid_script  = 55
-      character(len=80) :: plotcom
+      integer           :: i
+      character(len=25) :: plotcom
+      integer           :: iostatus
+      integer           :: cstat
+      character(len=120):: iomessage
+      character(len=200):: cmd
+
       integer,save      :: plot_index = 0
-      character(len=200) :: cmd
 
       if(Airport_Thickness_TS(pt_indx,nWriteTimes).lt.THICKNESS_THRESH)then
         return
@@ -1005,11 +1012,11 @@
         plot_index = plot_index + 1
       endif
 
-      write(filename_outdata,54) plot_index,".dat"
-      write(filename_script,53) plot_index,".m"
-      write(filename_png,54) plot_index,".png"
- 53   format('depTS_',i4.4,a2)
- 54   format('depTS_',i4.4,a4)
+      write(filename_root,52)plot_index
+ 52   format('depTS_',i4.4)
+      filename_outdata = trim(adjustl(filename_root)) // ".dat"
+      filename_script  = trim(adjustl(filename_root)) // ".m"
+      filename_png     = trim(adjustl(filename_root)) // ".png"
 
       open(unit=fid_outdata,file=filename_outdata,status='replace')
       do i = 1,nWriteTimes
@@ -1029,25 +1036,6 @@
         ymaxpl = 100.0_dp
       endif
 
-      write(title_plot,*)Airport_Name(pt_indx)
-
-
-      ! Set up to plot via matlab script
-      open(unit=fid_script,file=filename_script,status='replace')
-      write(fid_script,*)"set terminal png size 400,300"
-      write(fid_script,*)"set key bmargin left horizontal Right noreverse enhanced ",&
-      write(fid_script,*)"set border 31 lw 2.0 lc rgb '#000000'"
-      write(fid_script,*)"set style line 1 linecolor rgbcolor '#888888' linewidth 2.0 pt 7"
-      write(fid_script,*)"set ylabel 'Deposit Thickeness (mm)'"
-      write(fid_script,*)"set xlabel 'Time (hours after eruption)'"
-      write(fid_script,*)"set nokey"
-      write(fid_script,*)"set output '",filename_png,"'"
-      write(fid_script,*)"plot [0:",ceiling(Simtime_in_hours),"][0:",&
-               nint(ymaxpl),"] '",filename_outdata,"' with filledcurve x1 ls 1"
-
-
-
-
       ! Set up to plot via matlab script
       open(unit=fid_script,file=filename_script,status='replace')
       write(fid_script,'(g0)')"%##########################################################################"
@@ -1060,11 +1048,11 @@
       else
         write(fid_script,'(g0)')"%graphics_toolkit('gnuplot')"
       endif
-      !linebuffer080 = "titstr='" // trim(adjustl(Site_vprofile(vprof_ID))) // coord_str // "';"
-      linebuffer080 = "titstr='" // trim(adjustl(Airport_Name(pt_indx))) // "';"
-      write(fid_script,'(g0)')trim(adjustl(linebuffer080))
-      linebuffer080 = "dp=load('" // trim(adjustl(filename_outdata)) // "');"
-      write(fid_script,'(g0)')trim(adjustl(linebuffer080))
+      !cmd = "titstr='" // trim(adjustl(Site_vprofile(vprof_ID))) // coord_str // "';"
+      cmd = "titstr='" // trim(adjustl(Airport_Name(pt_indx))) // "';"
+      write(fid_script,'(g0)')trim(adjustl(cmd))
+      cmd = "dp=load('" // trim(adjustl(filename_outdata)) // "');"
+      write(fid_script,'(g0)')trim(adjustl(cmd))
       write(fid_script,'(g0)')"ns=max(size(dp));"
       write(fid_script,'(g0)')"x=dp(:,1);"
       write(fid_script,'(g0)')"y=dp(:,2);"
@@ -1078,21 +1066,26 @@
 
       close(fid_script)
 
-      write(plotcom,'(a11,a14)')'matlab -p ',filename_script
-      call execute_command_line(plotcom)
+      if(useoctave.and..not.usematlab)then
+        ! This is the case where we prefer octave over matlab
+        write(plotcom,'(a11,a14)')'octave ',filename_script
+      elseif(usematlab.and.useoctave.and..not.SetOctaveGraphics)then
+        ! This is the case where both are installed, but we prefer matlab
+        write(plotcom,'(a31,a12)')'matlab -nodisplay -nosplash -r ',filename_root
+      else
+        ! This is the case where we prefer octave over matlab, but need extra graphics directives
+        write(plotcom,'(a11,a14)')'octave ',filename_script
+      endif
+
+      call execute_command_line(plotcom,&
+                                wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
 
       ! Clean up
       if (CleanScripts_matlab) then
-        cmd = "rm -f outvar.* cities.xy volc.dat"
-        call execute_command_line(trim(adjustl(cmd)))
+        cmd = "rm -f depTS_*.dat depTS_*.m"
+        call execute_command_line(trim(adjustl(cmd)),&
+                                  wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       endif
-
-!      do io=1,2;if(VB(io).le.verbosity_error)then
-!        write(errlog(io),*)"ERROR: Trying to write matlab/octave deposit TS: ",pt_indx
-!        write(errlog(io),*)"       but write_DepPOI_TS_PNG_matlab is not yet implemented."
-!        write(errlog(io),*)"       Please choose a different plotting package for POI dep."
-!      endif;enddo
-!      stop 1
 
       end subroutine write_DepPOI_TS_PNG_matlab
 
