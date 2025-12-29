@@ -462,7 +462,11 @@
             write(fid_ascii2dout,3002) x1 -360.0_sp
           endif
         else
-          write(fid_ascii2dout,3002) x1
+          if(IsCC)then
+            write(fid_ascii2dout,3012) x1
+          else
+            write(fid_ascii2dout,3002) x1
+          endif
         endif
         if(IsCC)then
           write(fid_ascii2dout,3013) y1
