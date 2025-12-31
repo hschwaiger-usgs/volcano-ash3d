@@ -9,7 +9,8 @@ and a kml/kmz file showing the transient ash accumulation at airports or point-o
 interest. Additionally, 3d transient data can be written in ASCII, binary
 or NetCDF formats. NetCDF is the preferred output format as the full content of the
 Ash3d run is written to this file, including all the information necessary to
-recreate the input file, the state of all environment variables controlling the
+recreate the input file (via the tool `Ash3d_NetCDF_GenCTR`), the state of all
+environment variables controlling the
 run, as well as additional information about the run (date, time, user,
 path, hostname, etc.).
 This NetCDF file also contains all the data needed to recreate any of the
@@ -24,8 +25,9 @@ plotting software. Both `dislin` and `plplot` are available as libraries and can
 be linked to `Ash3d_PostProc` at compilation time. `dislin` includes the feature
 where contour data can be accessed by `Ash3d_PostProc` and used to generate
 shapefiles. This is the preferred means of generating shapefiles on a Microsoft
-Windows system. `Ash3d_PostProc` can also generate maps using `gnuplot` and
-Generic Mapping Tools (`GMT`) via the writing and execution of temporary scripts.
+Windows system. `Ash3d_PostProc` can also generate maps using `gnuplot`,
+Generic Mapping Tools (`GMT`), MatLab/Octave or python/cartopy via the
+writing and execution of temporary scripts.
 
 ## Running Ash3d_PostProc with command-line options
 
@@ -38,10 +40,12 @@ Minimal instructions
 for running this tool are available by running the program with a `-h` as
 the only argument  
 `Ash3d_PostProc -h`  
-` Dislin   T`  
-` Plplot   T`  
-` Gnuplot  T`  
-` GMT      T`  
+` Dislin         T`  
+` Plplot         T`  
+` Gnuplot        T`  
+` GMT            T`  
+` matlab/octave  T`  
+` python/cartopy T`  
 `                                                             `  
 ` Ash3d post-processing tool: Ash3d_PostProc                  `  
 `                                                             `  
@@ -83,12 +87,15 @@ and the availability of the libraries. These can alway be overwritten at
 run-time with the environment variable `ASH3DPLOT`,
 where: 1=[dislin](Figs/Ash3d_Deposit____final_dislin.png), 2=[plplot](Figs/Ash3d_Deposit____final_plplot.png),
 3=[gnuplot](Figs/Ash3d_Deposit____final_gnuplot.png),
-and 4=[GMT](Figs/Ash3d_Deposit____final_gmt.png).  
+4=[GMT](Figs/Ash3d_Deposit____final_gmt.png), 5=[MatLab](Figs/Ash3d_Deposit____final_matlab.png),
+and 6=[python/cartopy](Figs/Ash3d_Deposit____final_python.png).  
 
 `ASH3DPLOT=3 Ash3d_PostProc 3d_tephra_fall.nc 5 3`  
 
-To generate a shapefile of the cloud load at step 3 of the output file, enter:  
+To generate a shapefile (output format=5) of the cloud load (var=12) at step 3 of the output file, enter:  
 `Ash3d_PostProc 3d_tephra_fall.nc 12 5 3`  
+
+Note that currently, shapefile can only be generated if using dislin, gnuplot or GMT.
 
 ## Running Ash3d_PostProc with a control file
 
@@ -150,4 +157,6 @@ Line 13 contains the `nlev` floating point values for the contour levels in the
 default units of the output variable.  
 Lines 14, 15, and 16 are the `nlev` integer values of the RGB components of the colors (0-255).
 
+An example of usage of `Ash3d_PostPproc` is provided in
+`examples/Spurr_19920818/Proc/Gen_PostProc_plots.sh`.  
 

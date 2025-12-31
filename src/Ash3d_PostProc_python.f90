@@ -199,7 +199,7 @@
 
       ! Python/Cartopy variables
       character(len=25) :: plotcom
-      real(kind=ip)     :: zoomfac = 0.5_ip ! zoom factor for resampling the data with
+      real(kind=ip)     :: zoomfac = 1.0_ip ! zoom factor for resampling the data with
                                             ! a cubic spline interpolant. Can smooth rough
                                             ! contours
 

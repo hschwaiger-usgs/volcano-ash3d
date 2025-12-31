@@ -597,7 +597,7 @@
       write(fid_script,*)"set size 0.85, 0.8"              ! Set x and y scale for plot
       write(fid_script,*)"set ylabel '",trim(adjustl(cstr_ylabel)),"'"
       write(fid_script,*)"set xlabel '",trim(adjustl(cstr_xlabel)),"'"
-      write(fid_script,*)"set title '",trim(adjustl(cstr_zlabel)),units,"'"
+      write(fid_script,*)"set title '",trim(adjustl(title_plot)),units,"'"
       write(fid_script,*)"set datafile missing 'NaN'"
       write(fid_script,*)"XMIN = ",real(xmin,kind=4)
       write(fid_script,*)"YMIN = ",real(ymin,kind=4)

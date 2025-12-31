@@ -74,6 +74,8 @@
 !   pkg install "https://downloads.sourceforge.net/project/octave/Octave%20Forge%20Packages/Individual%20Package%20Releases/io-2.7.0.tar.gz"
 !   pkg install "https://downloads.sourceforge.net/project/octave/Octave%20Forge%20Packages/Individual%20Package%20Releases/mapping-1.4.3.tar.gz"
 !
+! http//www.naturalearthdata.com/download/50m/physical/ne_50m_land.zip
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine write_2Dmap_PNG_matlab(nx,ny,iprod,itime,OutVar,Fill_Value,writeContours)
@@ -573,9 +575,6 @@
       write(cstr_ErVolume,'(a20,f8.5,a10)')'Erup. Volume:       ',e_Volume(1),' km3 (DRE)'
 
       if(writeContours)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"Running matlab to calculate contours lines"
-        endif;enddo
         write(filename_png,'(a14)')'tmp.png'
         allocate(ContourDataNcurves(nConLev))
         allocate(ContourDataNpoints(nConLev,CONTOUR_MAXCURVES))
@@ -585,10 +584,6 @@
         ContourDataNpoints(:,:) = 0
         ContourDataX(:,:,:)     = 0.0_ip
         ContourDataY(:,:,:)     = 0.0_ip
-      else
-        do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"Running matlab to generate contour plot"
-        endif;enddo
       endif
 
       ! Set up to plot via matlab script
@@ -622,7 +617,7 @@
             trim(adjustl(cstr_windfile)) // '\n' // &
             trim(adjustl(cstr_note))
       write(fid_script,*)"annstr1 = sprintf('",trim(adjustl(cmd)),"'); % annotation text"
-      write(fid_script,*)"annpos1 = [0.1 0.075 0.1 0.1]; % annotation position in figure coordinates"
+      write(fid_script,*)"annpos1 = [0.05 0.025 0.1 0.1]; % annotation position in figure coordinates"
       write(fid_script,*)"ha1 = annotation('textbox',annpos1,'string',annstr1);"
       write(fid_script,*)"ha1.HorizontalAlignment = 'left';"
       ! Annotation box 2
@@ -631,7 +626,7 @@
             trim(adjustl(cstr_ErDuratn)) // '\n' // &
             trim(adjustl(cstr_ErVolume))
       write(fid_script,*)"annstr2 = sprintf('",trim(adjustl(cmd)),"'); % annotation text"
-      write(fid_script,*)"annpos2 = [0.4 0.075 0.1 0.1]; % annotation position in figure coordinates"
+      write(fid_script,*)"annpos2 = [0.65 0.025 0.1 0.1]; % annotation position in figure coordinates"
       write(fid_script,*)"ha2 = annotation('textbox',annpos2,'string',annstr2);"
       write(fid_script,*)"ha2.HorizontalAlignment = 'left';"
 

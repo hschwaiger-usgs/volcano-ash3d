@@ -422,12 +422,12 @@ value). Only the parameters to be reset need to be listed.
 `k_entrainment_umb    = 0.1`  
 `SuzK_umb             = 12.0`  
 `useMoistureVars      = F`  
-`useVz_rhoG           = T`  
 `useWindVars          = 0`  
 `useOutprodVars       = 1`  
 `useRestartVars       = 0`  
+`useVz_rhoG           = T`
 `cdf_institution      = USGS`  
-`cdf_run_class        = Analysis`  
+`cdf_run_class        = 1`  
 `cdf_url              = https://vsc-ash.wr.usgs.gov/ash3d-gui`  
 `*******************************************************************************`  
 
@@ -437,7 +437,7 @@ Topography can be included in Ash3d by including the following optional block.
 `OPTMOD=TOPO`  
 `yes 2                         # use topography?; z-mod (0=none,1=shift,2=sigma)`  
 `1 1.0                         # Topofile format, smoothing radius`  
-`GEBCO_08.nc                   # Topofile name`  
+`GEBCO_2023.nc                 # Topofile name`  
 `*******************************************************************************`  
 
 Line 1 indicates whether or not to use topography followed by the integer flag
@@ -468,6 +468,7 @@ conditions (wind shear, boundary layer processes), can be included with the foll
 optional block.  
 `******************* BLOCK 10+ *************************************************`  
 `OPTMOD=VARDIFF`  
+`yes                         # indicates whether or not to write VarDiff variables to the output file`
 `yes 2 0.2                   # use horizontal variable diffusivity`  
 `yes                         # use vertical variable diffusivity`  
 `4                           # boundary layer model`  
@@ -477,28 +478,32 @@ optional block.
 `0.25                        # RI_CRIT`  
 `*******************************************************************************`  
 
-Line 1 indicates whether or not to use horizontal diffusivity followed by the type ID and value.  
+Line 1 indicates whether or not to write VarDiff variables to the output file.
+
+Line 2 indicates whether or not to use horizontal diffusivity followed by the type ID and value.  
 1. Constant horizontal diffusivity with specified value (m2/s)  
 2. Smagorinsky model with coefficient C (~0.2)  
 3. Pielke model with coefficient C (~0.2)  
 
-Line 2 indicates whether or not to use vertical diffusivity.  
-Line 3 indicates the boundary layer model and value (if model requires).  
+Line 3 indicates whether or not to use vertical diffusivity.  
+Line 4 indicates the boundary layer model and value (if model requires).  
 1. Vertical diffusivity constant in boundary layer  
 2. No boundary layer is identified; Free-air vertical diffusivity used throughout  
 3. Troen and Mahrt  
 4. Ulke  
 5. Shir / Businger,Ayer  
 
-Line 4 indicates the Free-Air model and value (if model requires).  
+Line 5 indicates the Free-Air model and value (if model requires).  
 1. Vertical diffusivity constant in region above boundary layer (Free-Air).  
-2. F(Ri)=Jacobson  
-3. F(Ri)=Collin  
-4. F(Ri)=Piedelievre  
+2. F(Ri)=Louis  
+3. F(Ri)=Stull  
+4. F(Ri)=Betts  
+5. F(Ri)=Hong
+6. F(Ri)=Collins
 
-Line 5 contains the von Karman constant  
-Line 6 contains the free-air mixing length (m)  
-Line 7 is the critical Richardson number used in calculating atmospheric stability.  
+Line 6 contains the von Karman constant  
+Line 7 contains the free-air mixing length (m)  
+Line 8 is the critical Richardson number used in calculating atmospheric stability.  
 
 
 

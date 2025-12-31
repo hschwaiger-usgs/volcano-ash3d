@@ -662,7 +662,7 @@
       !  Contour legend
       open(unit=fid_misc,file="leg4.txt",status='replace')
       write(fid_misc,'(a7)')"C black"
-      write(fid_misc,'(g0)')"H 12 1 " // trim(adjustl(units))
+      write(fid_misc,'(g0)')"H 12 1 " // trim(adjustl(cstr_zlabel))
       write(fid_misc,'(a3)')"N 1"
       do ilev=1,nConLev
         write(fid_misc,'(g0)')trim(adjustl(legpenstr(ilev)))
