@@ -159,6 +159,35 @@
       real(kind=ip) :: LES_L2ScaleCoeff
 
       ! 3d Variables needed on MetP grid
+#ifdef USEPOINTERS
+!      real(kind=sp),dimension(:,:,:)  ,pointer :: dVel_dz_MetP_sp  => null()
+      real(kind=sp),dimension(:,:,:)  ,pointer :: du_dx_MetP_sp              => null()
+      real(kind=sp),dimension(:,:,:)  ,pointer :: du_dy_MetP_sp              => null()
+      real(kind=sp),dimension(:,:,:)  ,pointer :: dv_dx_MetP_sp              => null()
+      real(kind=sp),dimension(:,:,:)  ,pointer :: dv_dy_MetP_sp              => null()
+      real(kind=sp),dimension(:,:,:)  ,pointer :: dV_dz_MetP_sp              => null()
+      real(kind=sp),dimension(:,:,:)  ,pointer :: Khz_meso_last_step_MetP_sp => null()
+      real(kind=sp),dimension(:,:,:)  ,pointer :: Khz_meso_next_step_MetP_sp => null()
+      real(kind=sp),dimension(:,:,:)  ,pointer :: Kv_meso_last_step_MetP_sp  => null()
+      real(kind=sp),dimension(:,:,:)  ,pointer :: Kv_meso_next_step_MetP_sp  => null()
+
+      ! 2d variables needed at meso steps on Met grid
+      real(kind=sp),dimension(:,:)    ,pointer :: SurfRoughLen_Met_sp => null()
+
+      ! Variables needed on Comp grid (kx,y,z are already allocated)
+      real(kind=sp),dimension(:,:,:)  ,pointer :: Khz_meso_last_step_sp      => null()
+      real(kind=sp),dimension(:,:,:)  ,pointer :: Khz_meso_next_step_sp      => null()
+      real(kind=sp),dimension(:,:,:)  ,pointer :: Kv_meso_last_step_sp       => null()
+      real(kind=sp),dimension(:,:,:)  ,pointer :: Kv_meso_next_step_sp       => null()
+
+      ! Both Khz and Kv need U and V values on MetP grid so store local copies
+      ! Note: The core Ash3d code reads directly into the computational grid, bypassing
+      !       the MetP grid
+      real(kind=sp),dimension(:,:,:)  ,pointer :: vx_meso_last_step_MetP_sp  => null()
+      real(kind=sp),dimension(:,:,:)  ,pointer :: vy_meso_last_step_MetP_sp  => null()
+      real(kind=sp),dimension(:,:,:)  ,pointer :: vx_meso_next_step_MetP_sp  => null()
+      real(kind=sp),dimension(:,:,:)  ,pointer :: vy_meso_next_step_MetP_sp  => null()
+#else
 !      real(kind=sp),dimension(:,:,:)  ,allocatable :: dVel_dz_MetP_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: du_dx_MetP_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: du_dy_MetP_sp
@@ -186,6 +215,7 @@
       real(kind=sp),dimension(:,:,:)  ,allocatable :: vy_meso_last_step_MetP_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: vx_meso_next_step_MetP_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable :: vy_meso_next_step_MetP_sp
+#endif
 
       contains
       !------------------------------------------------------------------------
@@ -780,13 +810,13 @@
       endif
 
       if(.not.associated(vx_meso_last_step_MetP_sp))   &
-              associated allocate(vx_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+                  allocate(vx_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
       if(.not.associated(vy_meso_last_step_MetP_sp))   &
-              associated allocate(vy_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+                  allocate(vy_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
       if(.not.associated(vx_meso_next_step_MetP_sp))   &
-              associated allocate(vx_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+                  allocate(vx_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
       if(.not.associated(vy_meso_next_step_MetP_sp))   &
-               allocate(vy_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+                  allocate(vy_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
 #else
       if(useVarDiffH)then
         if(.not.allocated(du_dx_MetP_sp))   &
