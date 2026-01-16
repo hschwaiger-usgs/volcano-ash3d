@@ -1098,9 +1098,9 @@ subroutine Allocate_solution
       real(kind=dp)      :: SimStartHour     ! Simulation start time, in hours since 1900
       real(kind=dp)      :: time             ! physical time simulated by this model
 
-      real(kind=ip)      :: t0,t1,t2         ! CPU time indicators
-      real(kind=ip)      :: tw1,tw2          ! CPU time indicators for reading wind data
-      real(kind=ip)      :: tw_tot  = 0.0_ip ! total CPU time reading wind data
+      real(kind=dp)      :: t0,t1,t2         ! CPU time indicators
+      real(kind=dp)      :: tw1,tw2          ! CPU time indicators for reading wind data
+      real(kind=dp)      :: tw_tot  = 0.0_dp ! total CPU time reading wind data
       integer            :: tcount1,tcount2,tcount_rate,tcount_max ! system time indicators
       real(kind=ip)      :: dt_ip
       real(kind=dp)      :: dt              ! dt used for actual integration

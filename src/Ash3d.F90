@@ -178,6 +178,7 @@
       END INTERFACE
 
       ! Start time logging
+      ! Note: with gfortran, this triggers IEEE_INEXACT_FLAG
       call cpu_time(t0) !time is a scaler real
       call system_clock(tcount1,tcount_rate,tcount_max)
 
@@ -190,7 +191,6 @@
       aloft_percent_remaining = 1.0_ip
       SourceCumulativeVol     = 0.0_ip
       MassConsErr             = 0.0_ip
-
 
         ! input data for ash transport
       call Read_Control_File

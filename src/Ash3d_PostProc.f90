@@ -273,7 +273,7 @@
 #ifdef LINUX
         ! On a linux system, test for gnuplot
       usegnuplot = .true.
-      call execute_command_line('which gnuplot',&
+      call execute_command_line('which gnuplot > /dev/null',&
                                 wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       if(iostatus.ne.0)then
         do io=1,2;if(VB(io).le.verbosity_info)then
@@ -331,7 +331,7 @@
       ! Test for GMT
 #ifdef LINUX
       useGMT = .true.
-      call execute_command_line('which gmt',&
+      call execute_command_line('which gmt > /dev/null',&
                                 wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       if(iostatus.ne.0)then
         do io=1,2;if(VB(io).le.verbosity_info)then
@@ -391,7 +391,7 @@
         ! On a linux system, we could just try to execute matlab
         ! but this takes heaps of time to load. Just test if matlab in on path.
       usematlab = .true.
-      call execute_command_line('which matlab',&
+      call execute_command_line('which matlab > /dev/null',&
                                 wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       if(iostatus.ne.0)then
         do io=1,2;if(VB(io).le.verbosity_info)then
@@ -403,7 +403,7 @@
       ! We are skipping this test for successful execution since it takes so long to launch matlab
       ! Now test for octave
       useoctave = .true.
-      call execute_command_line('which octave',&
+      call execute_command_line('which octave > /dev/null',&
                                 wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       if(iostatus.ne.0)then
         do io=1,2;if(VB(io).le.verbosity_info)then
@@ -469,7 +469,7 @@
       !call execute_command_line("echo 'exit' | python",exitstat=iostatus)
 
       usepython = .true.
-      call execute_command_line('which python',&
+      call execute_command_line('which python > /dev/null',&
                                 wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       if(iostatus.ne.0)then
         do io=1,2;if(VB(io).le.verbosity_info)then

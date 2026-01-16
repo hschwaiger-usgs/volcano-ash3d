@@ -340,7 +340,7 @@
          iplotpref
 
       use MetReader,     only : &
-         MR_OS_TYPE,MR_DirPrefix,MR_DirDelim,MR_VERB,MR_nio
+         MR_OS_TYPE,MR_DirPrefix,MR_DirDelim,MR_VERB,MR_nio,MR_VB
 
       ! This module requires Fortran 2003 or later
       use iso_fortran_env, only : &
@@ -542,6 +542,7 @@
       endif
       ! Harmonizing verbosity levels with MetReader
       MR_VERB = VB(1)
+      MR_VB(1:2) = (/MR_VERB,MR_VERB/)
       MR_nio  = 2    ! Ash3d uses a logfile so set the output streams to 2 for stdin/stderr + logfile
 
       ! Next, check for environment variables ASH3DHOME
