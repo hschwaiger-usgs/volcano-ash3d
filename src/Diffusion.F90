@@ -55,6 +55,10 @@
          !       Imp_DT_fac to be around 1.0 - 4.0
       real(kind=ip),public  :: Imp_fac     = Imp_fac_Default
       real(kind=ip),public  :: Imp_DT_fac  = Imp_DT_fac_Default
+      real(kind=ip),public  :: KV_MIN      = 5.0_ip    ! Minimum vertical diffusivity (m/s)
+      real(kind=ip),public  :: KH_MIN      = 5.0_ip    ! Minimum horizontal diffusivity (m/s)
+      real(kind=ip),public  :: KV_MAX      = 1.0e5_ip  ! Maximum vertical diffusivity (m/s)
+      real(kind=ip),public  :: KH_MAX      = 1.0e5_ip  ! Maximum horizontal diffusivity (m/s)
 
 
 #ifdef USEPOINTERS

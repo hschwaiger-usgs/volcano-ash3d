@@ -1073,9 +1073,10 @@
          input_unit
 
       use global_param,  only : &
-         EPS_SMALL,EPS_TINY,nmods,OPTMOD_names,limiter,KM_2_M,&
-         useDS,useTemperature,useCalcFallVel,useLogNormGSbins,&
-         useDiffusion,useCN,useVz_rhoG,M_2_MM,M2PS_2_KM2PHR,MAXNUM_OPTMODS
+         EPS_SMALL,EPS_TINY,nmods,OPTMOD_names,limiter,KM_2_M,  &
+         useDS,useTemperature,useCalcFallVel,useLogNormGSbins,  &
+         useDiffusion,useVarDiffH,useVarDiffV,useCN,useVz_rhoG, &
+         M_2_MM,M2PS_2_KM2PHR,MAXNUM_OPTMODS
 
       use io_data,       only : &
          cdf_b1l1,cdf_b1l2,cdf_b1l3,cdf_b1l4,cdf_b1l5,cdf_b1l6,cdf_b1l7,cdf_vardz,cdf_b1l8,cdf_b1l9,&
@@ -1139,7 +1140,7 @@
            get_ESP
 
       use Diffusion,     only : &
-         diffusivity_horz,diffusivity_vert,Imp_fac,Imp_DT_fac
+         diffusivity_horz,diffusivity_vert,Imp_fac,Imp_DT_fac,KV_MIN,KH_MIN
 
       use projection,    only : &
          PJ_iprojflag,PJ_k0,PJ_lam0,PJ_lam1,PJ_lam2,PJ_phi0,PJ_phi1,PJ_phi2,PJ_Re,&
@@ -1148,7 +1149,7 @@
       use MetReader,     only : &
          MR_iWindFiles,MR_WindFiles,MR_BaseYear,MR_useLeap,MR_Comp_StartHour,&
          MR_WindFiles_GRIB_index,MR_WindFiles_Have_GRIB_index,MR_Comp_Time_in_hours,&
-         MR_WindFile_starthour,MR_windfile_stephour,MR_iHeightHandler,&
+         MR_WindFile_starthour,MR_windfile_stephour,MR_iHeightHandler,MR_useTopo,&
          MR_iwf_template,MR_iwind,MR_Comp_StartYear,MR_Comp_StartMonth,MR_ztop,&
            MR_Allocate_FullMetFileList, &
            MR_Read_Met_DimVars
@@ -1874,10 +1875,8 @@
           write(outlog(io),*)"  SourceType = ",SourceType
         endif;enddo
       endif
-      ! convert diffusion coefficient from m2/s to km2/hr
-      diffusivity_horz = diffusivity_horz*M2PS_2_KM2PHR
-      diffusivity_vert = diffusivity_horz
 
+      diffusivity_vert = diffusivity_horz
       if(abs(diffusivity_horz).lt.EPS_SMALL)then
         useDiffusion = .false.
         do io=1,2;if(VB(io).le.verbosity_info)then
@@ -1885,18 +1884,32 @@
           write(outlog(io),*)"Note: Diffusivity might be reactivated in an optional module block below."
         endif;enddo
       elseif(diffusivity_horz.lt.0.0)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
-          write(errlog(io),*)"ERROR: ",&
-                     "Diffusivity must be non-negative."
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"WARNING: Negative diffusivity provided."
+          write(outlog(io),*)"         Variable diffusivity as determined from atmospheric conditions,"
+          write(outlog(io),*)"         will be turned on using default parameters unless parameters"
+          write(outlog(io),*)"         are reset in a VARDIFF optional block."
         endif;enddo
-        stop 1
+        diffusivity_horz = KH_MIN
+        diffusivity_vert = KV_MIN
+
+        useDiffusion = .true.
+        useVarDiffH  = .true.
+        useVarDiffV  = .true.
+        MR_useTopo   = .true. ! If we use a boundary-layer schemee, we will need the topography
+                              ! on the met grid. If the TOPO optional block is not provided, then
+                              ! variable we need is initialized to 0.
       else
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),'(a39,f10.3,a5)')"Using constant turbulent diffusivity:  ",&
-                  diffusivity_horz/M2PS_2_KM2PHR," m2/s"
+                  diffusivity_horz," m2/s"
         endif;enddo
         useDiffusion = .true.
       endif
+      ! convert diffusion coefficient from m2/s to km2/hr
+      diffusivity_horz = diffusivity_horz*M2PS_2_KM2PHR
+      diffusivity_vert = diffusivity_vert*M2PS_2_KM2PHR
+
 
       ! Block 1 Line 9
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080

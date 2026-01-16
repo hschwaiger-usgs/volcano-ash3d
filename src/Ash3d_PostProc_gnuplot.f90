@@ -191,6 +191,10 @@
       inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
 
       ! Test for coastline file
+      ! The expected file is made available from http://gnuplotting.org/plotting-the-world-revisited/index.html
+      ! The author converted coastline shapefiles from http://www.naturalearthdata.com/downloads/
+      ! and provided contour files at three resolutions (110m, 50m, 10m). We only search for
+      ! http://www.gnuplotting.org/data/world_50m.txt
       write(filename_coastline,'(a13)')"world_50m.txt"
       inquire(file=filename_coastline,exist=IsThere1)
       if(.not.IsThere1)then

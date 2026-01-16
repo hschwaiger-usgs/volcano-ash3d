@@ -23,6 +23,7 @@
 !  the boundary layer.
 !
 !      subroutine input_data_VarDiff
+!      subroutine Summarize_Params_VarDiff
 !      subroutine Allocate_VarDiff_Met
 !      subroutine Prep_output_VarDiff
 !      subroutine Deallocate_VarDiff_Met
@@ -72,7 +73,7 @@
 ! Line 7: 
 !0.4                         # vonKarman
 ! Line 8: 
-!30.0                        # LambdaC
+!100.0                       # LambdaC
 ! Line 9:
 !0.25                        # RI_CRIT
 ! 
@@ -85,28 +86,24 @@
       use io_units
 
       use Diffusion,     only : &
-         diffusivity_horz,diffusivity_vert
+         diffusivity_horz,diffusivity_vert,KV_MIN,KH_MIN,KV_MAX,KH_MAX
 
-      integer :: Kh_model_ID     ! [1] = Smagorinsky (1963); 2 = Pielke (1974)
-      integer :: Phi_model_ID    ! 
-      integer :: KvBL_model_ID   ! 
-      integer :: KvBL_MomHeat    !  
-      integer :: KvFA_model_ID   ! 
+      integer :: Kh_model_ID     = 2 ! 1=constant; [2]=Smagorinsky (1963); 3=Pielke (1974)
+!      integer :: Phi_model_ID    ! 
+      integer :: KvBL_model_ID   = 4 ! default is 4: Ulke
+      integer :: KvBL_MomHeat    = 1 ! default is to use the momentum form [1] 
+      integer :: KvFA_model_ID   = 4 ! default is 4: Betts
 
       !  These are the parameters that control the diffusivity calculations
       !    C from Smagorinsky model of horizontal diffusivity
-      real(kind=sp) :: KH_SmagC     ! Smagorinsky (1993) constant for LES horizontal diffusivity (0.2 - 0.9)
+      real(kind=sp) :: KH_SmagC             = 0.2_sp ! Smagorinsky (1993) constant for LES horizontal diffusivity (0.2 - 0.9)
       real(kind=sp) :: MAX_LES_LengthScale2 = 100.0_sp ! Maximum area that will be used for scaling
       !    These next three are needed for the vertical diffusivity
-      real(kind=ip) :: vonKarman    ! von Karman constant (around 0.4)
-      real(kind=ip) :: LambdaC      ! Asymptotic length scale (around 30-150 m)
-      real(kind=ip) :: RI_CRIT      ! Critical Richardson number (0.25)
+      real(kind=ip) :: vonKarman    = 0.4_ip   ! von Karman constant (around 0.4)
+      real(kind=ip) :: LambdaC      = 100.0_ip ! Asymptotic length scale (around 30-150 m)
+      real(kind=ip) :: RI_CRIT      = 0.25_ip  ! Critical Richardson number (0.25)
 
       real(kind=ip) :: USTAR_MIN = 0.1_ip    ! Minimum Friction Velocity (m/s)
-      real(kind=ip) :: KV_MIN    = 5.0_ip    ! Minimum vertical diffusivity (m/s)
-      real(kind=ip) :: KH_MIN    = 5.0_ip    ! Minimum horizontal diffusivity (m/s)
-      real(kind=ip) :: KV_MAX    = 1.0e5_ip  ! Maximum vertical diffusivity (m/s)
-      real(kind=ip) :: KH_MAX    = 1.0e5_ip  ! Maximum horizontal diffusivity (m/s)
 
       !    These are the values controlling the stability function Phi (lots of models out there)
       !   source              alpha   beta   gamma
@@ -115,18 +112,23 @@
       ! Businger-Arya (1974)          4.7
       ! Troen-Mahrt (1986)    -1/3    4.7     -7.0 ** Default
       ! Ulke (2000)           -1/2    9.2    -13.0
-      real(kind=ip) :: phi_prefac = 1.0_ip       ! typically 1 for momentum and Pr (<1) for heat
-      real(kind=ip) :: phi_alpha = -0.33333_ip   ! Exponent in unstable term
-      real(kind=ip) :: phi_beta  =  4.7_ip       ! Coefficient in stable term (pretty much always 4.7->5.2
-      real(kind=ip) :: phi_gamma = -7.0_ip       ! Coefficient in unstable term
+      real(kind=ip) :: phi_prefac  = 1.0_ip        ! typically 1 for momentum and Pr (<1) for heat
+      real(kind=ip) :: phi_alpha   = -0.33333_ip   ! Exponent in unstable term
+      real(kind=ip) :: phi_beta    =  4.7_ip       ! Coefficient in stable term (pretty much always 4.7->5.2
+      real(kind=ip) :: phi_gamma   = -7.0_ip       ! Coefficient in unstable term
       integer       :: PBL_exp_int = 1
-      real(kind=ip) :: PBL_exp
+      real(kind=ip) :: PBL_exp     = 1.0_ip
 
+      real(kind=ip), parameter :: BL_MAX_MET_AREA = 3000.0_ip  ! Maximum acceptable cell-size for BL calculation (km2)
+      real(kind=ip), parameter :: BL_MAX_Pres     = 95000.0_ip ! The maximum pressure in Pa of the second pres lev.
+                                                               ! This ensures adaquate resolution of BL
+      logical       :: BL_unresolved    = .false.
       logical       :: useBoundaryLayer = .true.
       real(kind=ip) :: diffusivity_BL            ! This is used if Kv is constant in BL
       ! Set the number of output variables for this module
       ! This depends on settings from the input block
       logical :: use_Output_Vars_VarDiff       = .true.
+      logical :: AddedVarCount                 = .false.
       integer, parameter :: nvar_User2d_static_XY_VarDiff = 0
       integer            :: nvar_User2d_XY_VarDiff        = 0 ! If using Kz, then =2 : Pblh, Ust
       integer, parameter :: nvar_User3d_XYGs_VarDiff      = 0
@@ -243,7 +245,7 @@
          infile
 
       use MetReader,     only : &
-         MR_Save_Velocities
+         MR_Save_Velocities,min_cell_area_met,max_cell_area_met,p_fullmet_sp
 
       implicit none
 
@@ -299,7 +301,7 @@
         use_Output_Vars_VarDiff = .false.
       endif
 
-      !Check if we're going to use variable diffusivity
+      ! Check if we're going to use variable diffusivity
       read(10,'(a80)',iostat=ios,err=2010)linebuffer080
       ! Line 3:
       var_User_charlines_VarDiff(3) = trim(adjustl(linebuffer080))
@@ -683,6 +685,7 @@
 
       ! Now set up output variable options
       if(use_Output_Vars_VarDiff.and.useVarDiffH)then
+        AddedVarCount = .true.
         nvar_User3d_XYZ_VarDiff = nvar_User3d_XYZ_VarDiff + 1  ! for Kh
       endif
 
@@ -713,6 +716,186 @@
       stop 1
 
       end subroutine input_data_VarDiff
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Summarize_Params_VarDiff
+!
+!  Called from: Ash3d.F90
+!  Arguments:
+!    none
+!
+!  This subroutine summarizes the settings that will be used in the variable
+!  diffusivity calculation. This is called after the control file is fully
+!  read and after the wind files are tested.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine Summarize_Params_VarDiff
+
+      use global_param,  only : &
+         nmods,useVarDiffH,useVarDiffV
+
+      use MetReader,     only : &
+         MR_Save_Velocities,min_cell_area_met,max_cell_area_met,p_fullmet_sp,&
+         MR_vx_metP_last,MR_vx_metP_next,MR_vy_metP_last,MR_vy_metP_next,&
+         nx_submet,ny_submet,np_fullmet
+
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"  Double-checking diffusivity specifications."
+      endif;enddo
+
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        ! Horizontal diffusivity
+        ! Relevant part of VARDIFF block
+        !  yes 1 500.0     # 1=const ; value in m2/s
+        !  yes 2 0.2 [Amax]# 2=Smagorinsky ; C , max cell area in km2
+        !  yes 3 0.2 [Amax]# 3=Pielke      ; C , max cell area in km2
+        write(outlog(io),*)"  Using horizontal diffusivity with the following specifications:"
+        if(Kh_model_ID.eq.1)then
+          write(outlog(io),*)"        Kh model ID       = 1: Constant"
+          write(outlog(io),*)"        with Kh (in m2/s) = ",real(diffusivity_horz,kind=4)
+        elseif(Kh_model_ID.eq.2)then
+          write(outlog(io),*)"        Kh model ID  = 2: Smagorinsky (1963)"
+          write(outlog(io),*)"              with C = ",KH_SmagC
+          write(outlog(io),*)"                Amax = ",MAX_LES_LengthScale2
+        elseif(Kh_model_ID.eq.3)then
+          write(outlog(io),*)"        Kh model ID  = 3: Pielke (1974)"
+          write(outlog(io),*)"              with C = ",KH_SmagC
+          write(outlog(io),*)"                Amax = ",MAX_LES_LengthScale2
+        endif
+      endif;enddo
+
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        ! Vertical diffusivity
+        ! Relevant part of VARDIFF block for free-air
+        ! Line 6: Kv Free-air parameters
+        !  1 500.0         # Free-Air 1=const ; value
+        !  2               #          2=F(Ri)=Louis 1979
+        !  3               #          3=F(Ri)=Stull 1988
+        !  4               #          4=F(Ri)=Betts 1996
+        !  5               #          5=F(Ri)=Hong 1996
+        !  6               #          6=F(Ri,z)=Collins 2004
+        write(outlog(io),*)"  Using vertical diffusivity with the following specifications:"
+        write(outlog(io),*)"    For the free-air region above the boundary layer:"
+        if(KvFA_model_ID.eq.1)then
+          write(outlog(io),*)"        Kv free-air model ID       = 1: Constant"
+          write(outlog(io),*)"        with Kv (in m2/s) = ",real(diffusivity_vert,kind=4)
+        elseif(KvFA_model_ID.eq.2)then
+          ! Mixing length model with Fc from Louis (1979)
+          write(outlog(io),*)"      Using free-air vertical diffusivity with stability function from Louis (1979)."
+        elseif(KvFA_model_ID.eq.3)then
+          ! Mixing length model with Fc from Stull (1988)
+          write(outlog(io),*)"      Using free-air vertical diffusivity with stability function from Stull (1988)"
+        elseif(KvFA_model_ID.eq.4)then
+          ! Mixing length model with Fc from Betts (1996)
+          write(outlog(io),*)"      Using free-air vertical diffusivity with stability function from Betts et al (1996)"
+        elseif(KvFA_model_ID.eq.5)then
+          ! Mixing length model with Fc from Hong (1996)
+          write(outlog(io),*)"      Using free-air vertical diffusivity with stability function from Hong and Pan (1996)"
+        elseif(KvFA_model_ID.eq.6)then
+          ! Mixing length model with Fc from Collins et al. (2004)
+          write(outlog(io),*)"      Using free-air vertical diffusivity with stability function from Collins et al (2004)"
+        endif
+      endif;enddo
+
+        ! Relevant part of VARDIFF block for boundary-layer
+        ! Line 5: Kv BL parameters
+        !  0 B, alpha, beta, gamma, pexp
+        !  1 500.0         # BL model 1=const ; value
+        !  2               #          2=no BL, only free-air throughout
+        !  3 [1,2]         #          3=Troen and Mahrt
+        !  4 [1,2]         #          4=Ulke
+        !  5               #          5=Shir / Businger,Ayer
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"    For the boundary layer region:"
+      endif;enddo
+      ! First check if the windfile can support a boundary-layer
+      if(max_cell_area_met.gt.BL_MAX_MET_AREA.or.&
+           p_fullmet_sp(2).lt.BL_MAX_Pres)then
+        ! Wind files cannot support boundary-layer calculations, either because the cell size is too
+        ! big, or there is inadaquate vertical resolution
+        useBoundaryLayer = .false.
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"      WARNING: Selected windfiles cannot support boundary-layer calculations."
+          if(max_cell_area_met.gt.BL_MAX_MET_AREA)then
+            write(outlog(io),*)"               Cell-size of met grid is too coarse."
+            write(outlog(io),*)"                 Maximum area tolerated (in km2) = ",real(BL_MAX_MET_AREA,kind=sp)
+            write(outlog(io),*)"                 Maximum area in domain (in km2) = ",real(max_cell_area_met,kind=sp)
+          endif
+          if(p_fullmet_sp(2).lt.BL_MAX_Pres)then
+            BL_unresolved = .true.
+            write(outlog(io),*)"               Vertical resolution of met grid is too coarse."
+            write(outlog(io),*)"                 Expected pressure (in Pa) for slot 2 >= ",real(BL_MAX_Pres,kind=sp)
+            write(outlog(io),*)"                 Pressure (in Pa) for first 2 slots = ",real(p_fullmet_sp(1:2),kind=sp)
+          endif
+        endif;enddo
+        if(KvBL_model_ID.ge.3)then
+          ! Constant or free-air only are kept as specified, but anything else gets set to free-air
+          KvBL_model_ID = 2
+        endif
+      endif
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        if(KvBL_model_ID.eq.1)then
+          ! Diffusivity is constant in the BL
+          write(outlog(io),*)"      Using constant vertical diffusivity in the boundary layer."
+          write(outlog(io),*)"          Kv B-L model ID       = 1: Constant"
+          write(outlog(io),*)"          with Kv (in m2/s) = ",real(diffusivity_BL,kind=4)
+        elseif(KvBL_model_ID.eq.2)then
+          ! Boundary Layer is turned off and vertical diffusivity will just be from the free-air equation
+          write(outlog(io),*)"      Using free-air expression for vertical diffusivity throughout domain."
+          write(outlog(io),*)"        i.e. boundary-layer calculations are turned off."
+        elseif(KvBL_model_ID.eq.3)then
+          ! Model from Troen and Mahrt, 1973
+          write(outlog(io),*)"      Using boundary layer vertical diffusivity as outlined by Troen and Mahrt (1973)."
+        elseif(KvBL_model_ID.eq.4)then
+          ! Model from Ulke, 2000
+          write(outlog(io),*)"      Using boundary layer vertical diffusivity as outlined by Ulke (2000)."
+          if(KvBL_MomHeat.eq.2)write(outlog(io),*)"      using paramters for the heat stability function."
+        elseif(KvBL_model_ID.eq.5)then
+          ! Model from Shir / Businger,Ayer outlined in Seinfeld and Pandis Eq 18.125
+          write(outlog(io),*)"      Using boundary layer vertical diffusivity as outlined by in Seinfeld and Pandis."
+          if(KvBL_MomHeat.eq.2)write(outlog(io),*)"      using paramters for the heat stability function."
+        elseif(KvBL_model_ID.eq.0)then
+          ! Coefficients of phi model specified in control file
+          write(outlog(io),*)"      Using boundary layer vertical diffusivity with generalized phi."
+        endif
+
+        if(useBoundaryLayer)then
+          write(outlog(io),*)"      The planetary boundary layer will be identified, if possible, first by"
+          write(outlog(io),*)"      trying to read PBLH from the Met files. If that is unavailable, then"
+          write(outlog(io),*)"      Ash3d will search for a low-level temperature inversion, inspect Ri(z)"
+          write(outlog(io),*)"      relative to Ri_crit, and calculate the Eckman layer thickness from the"
+          write(outlog(io),*)"      latitude and friction velocity. If the atmospheric data is too coarse"
+          write(outlog(io),*)"      to determine the boundary layer, the free-air mixing-length will be used"
+          write(outlog(io),*)"      for vertical diffusivity calculations throughout the domain."
+        endif
+
+      endif;enddo
+
+      if (useVarDiffH.or.useVarDiffV) then
+        ! We will want to reuse velocities on the MetP grid for this module
+        MR_Save_Velocities = .true.
+        if(.not.allocated(MR_vx_metP_last))allocate(MR_vx_metP_last(nx_submet,ny_submet,np_fullmet));MR_vx_metP_last(:,:,:)=0.0_sp
+        if(.not.allocated(MR_vx_metP_next))allocate(MR_vx_metP_next(nx_submet,ny_submet,np_fullmet));MR_vx_metP_next(:,:,:)=0.0_sp
+        if(.not.allocated(MR_vy_metP_last))allocate(MR_vy_metP_last(nx_submet,ny_submet,np_fullmet));MR_vy_metP_last(:,:,:)=0.0_sp
+        if(.not.allocated(MR_vy_metP_next))allocate(MR_vy_metP_next(nx_submet,ny_submet,np_fullmet));MR_vy_metP_next(:,:,:)=0.0_sp
+      endif
+
+      ! Now set up output variable options
+      if(.not.AddedVarCount)then
+        if(use_Output_Vars_VarDiff.and.useVarDiffH)then
+          nvar_User3d_XYZ_VarDiff = nvar_User3d_XYZ_VarDiff + 1  ! for Kh
+        endif
+        if(use_Output_Vars_VarDiff.and.useVarDiffV)then
+          nvar_User2d_XY_VarDiff  = nvar_User2d_XY_VarDiff  + 1  ! for Pbl
+          nvar_User2d_XY_VarDiff  = nvar_User2d_XY_VarDiff  + 1  ! for U*
+          nvar_User3d_XYZ_VarDiff = nvar_User3d_XYZ_VarDiff + 1  ! for Kv
+          nvar_User3d_XYZ_VarDiff = nvar_User3d_XYZ_VarDiff + 1  ! for Ri
+        endif
+      endif
+
+      end subroutine Summarize_Params_VarDiff
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
@@ -2212,19 +2395,23 @@
             endif
 
             ! (1) temperature inversion
-            kk = 0
-            do k = 2,np_fullmet
-              lapse = -(vpt_col(k) - vpt_col(k-1)) / &
-                       (z_col(k)   - z_col(k-1))
-              if(lapse.le.-0.005_ip)then
-                kk = k
-                exit
-              endif
-            enddo
-            if(kk.gt.0)then
-              PBLz = z_col(kk) - 2.0_ip/lapse
-            else
+            if(BL_unresolved)then
               PBLz = EPS_SMALL
+            else
+              kk = 0
+              do k = 2,np_fullmet
+                lapse = -(vpt_col(k) - vpt_col(k-1)) / &
+                         (z_col(k)   - z_col(k-1))
+                if(lapse.le.-0.005_ip)then
+                  kk = k
+                  exit
+                endif
+              enddo
+              if(kk.gt.0)then
+                PBLz = z_col(kk) - 2.0_ip/lapse
+              else
+                PBLz = EPS_SMALL
+              endif
             endif
             PBLtmp(i,j,1) = PBLz
 
@@ -2249,29 +2436,33 @@
             ! (3) evaluate Ri crit
               ! Initialize boundary layer height to sea level
             PBLz = EPS_SMALL
-            do k = 2,np_fullmet-1
-              if(Ri_col(k).gt.RI_CRIT.and.Ri_col(k-1).le.RI_CRIT &
-                 .and.z_col(k).lt.3000.0_ip)then ! We need this upper limit of 3km to avoid
-                                                 ! missing the PBL and flagging the tropopause
+            if(BL_unresolved)then
+              PBLz = EPS_SMALL
+            else
+              do k = 2,np_fullmet-1
+                if(Ri_col(k).gt.RI_CRIT.and.Ri_col(k-1).le.RI_CRIT &
+                   .and.z_col(k).lt.3000.0_ip)then ! We need this upper limit of 3km to avoid
+                                                   ! missing the PBL and flagging the tropopause
 
-                ! This height is above the PBL; interpolate back to
-                ! k-1 to get PBLz
-                if(abs(Ri_col(k)-Ri_col(k-1)).lt.EPS_SMALL)cycle
-                denom = (Ri_col(k)-Ri_col(k-1))
-                if(abs(denom).lt.1.0e-3_ip)then
-                  tmp = 1.0_ip
-                else
-                  tmp = (RI_CRIT-Ri_col(k-1)) / denom
-                  tmp = min(tmp,1.0_ip)
+                  ! This height is above the PBL; interpolate back to
+                  ! k-1 to get PBLz
+                  if(abs(Ri_col(k)-Ri_col(k-1)).lt.EPS_SMALL)cycle
+                  denom = (Ri_col(k)-Ri_col(k-1))
+                  if(abs(denom).lt.1.0e-3_ip)then
+                    tmp = 1.0_ip
+                  else
+                    tmp = (RI_CRIT-Ri_col(k-1)) / denom
+                    tmp = min(tmp,1.0_ip)
+                  endif
+                  PBLz = z_col(k-1)+tmp*(z_col(k)-z_col(k-1))
+                  ! if we have a PBLz, then exit the do loop
+                  exit
                 endif
-                PBLz = z_col(k-1)+tmp*(z_col(k)-z_col(k-1))
-                ! if we have a PBLz, then exit the do loop
-                exit
-              endif
-            enddo
-    
-            ! Make sure that PBLz is not negative
-            PBLtmp(i,j,3) = max(PBLz,EPS_SMALL)
+              enddo
+            endif
+
+            ! Make sure that PBLz is not negative (at least 50 m)
+            PBLtmp(i,j,3) = max(PBLz,50.0_ip)
 
             ! Set PBLH to temperature inversion height
             !PBLz = PBLtmp(i,j,1)

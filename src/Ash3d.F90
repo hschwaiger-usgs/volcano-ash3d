@@ -254,6 +254,11 @@
       ! Now that we potentially have topography, we can build the s_cc_pd array
       call calc_s_mesh
 
+      ! Set VARDIFF defaults if block is absent and Write out parameters
+      if(useVarDiffH.or.useVarDiffV)then
+        call Summarize_Params_VarDiff
+      endif
+
       if(((SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')))then
         call Allocate_Source_Umbrella(nxmax,nymax,nzmax)
       endif
