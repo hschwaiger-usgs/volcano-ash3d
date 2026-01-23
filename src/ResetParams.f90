@@ -95,6 +95,7 @@
       integer           :: i
       character(len=50) :: linebuffer050 
       character(len=80) :: linebuffer080
+      integer           :: strlen
       character         :: testkey
       integer           :: iostatus
       integer           :: ioerr
@@ -148,6 +149,7 @@
       linebuffer050 = "Reading testkey from linebuffer, RESETPARAMS"
       !if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
       iparam = 0
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       do while(iostatus.eq.0.and. &
                testkey.ne.'#'.and.testkey.ne.'*')
         iparam = iparam + 1
@@ -164,6 +166,7 @@
         endif
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         if(iostatus.ne.0) exit
+        call FileIO_CleanLine(.false.,strlen,linebuffer080)
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
         linebuffer050 = "Reading testkey from linebuffer, RESETPARAMS"
         !if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)

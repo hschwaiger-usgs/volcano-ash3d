@@ -232,6 +232,7 @@
       character(len=3)  :: answer
       integer           :: dum_int
       character(len=80) :: linebuffer080
+      integer           :: strlen
       integer           :: ios,ioerr
       character(len=20) :: mod_name
       integer           :: substr_pos
@@ -243,9 +244,9 @@
         write(outlog(io),*)"    Searching for OPTMOD=TOPO"
       endif;enddo
       nmods = 0
-      read(10,'(a80)',iostat=ios)linebuffer080
+      read(fid_ctrlfile,'(a80)',iostat=ios)linebuffer080
       do while(ios.eq.0)
-        read(10,'(a80)',iostat=ios)linebuffer080
+        read(fid_ctrlfile,'(a80)',iostat=ios)linebuffer080
 
         substr_pos = index(linebuffer080,'OPTMOD')
         if(substr_pos.eq.1)then
@@ -259,6 +260,7 @@
 1104    format(7x,a20)
       enddo
       ! Found Line 1:
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       var_User_charlines_Topo(1) = trim(adjustl(linebuffer080))
 
       useTopo = .false.
@@ -267,8 +269,9 @@
       endif;enddo
 
       ! Check if we're going to use topography
-      read(10,'(a80)',iostat=ios,err=2010)linebuffer080
+      read(fid_ctrlfile,'(a80)',iostat=ios,err=2010)linebuffer080
       ! Line 2:
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       var_User_charlines_Topo(2) = trim(adjustl(linebuffer080))
 
       read(linebuffer080,'(a3)') answer
@@ -308,8 +311,9 @@
 
       if (useTopo) then
         ! Check if we're using topography, then get the format code
-        read(10,'(a80)',iostat=ios,err=2010)linebuffer080
+        read(fid_ctrlfile,'(a80)',iostat=ios,err=2010)linebuffer080
         ! Line 3:
+        call FileIO_CleanLine(.false.,strlen,linebuffer080)
         var_User_charlines_Topo(3) = trim(adjustl(linebuffer080))
         read(linebuffer080,*,iostat=ioerr) topoFormat,rad_smooth
         if(topoFormat.eq.1)then
@@ -354,8 +358,9 @@
           stop 1
         endif
         ! And read the file name
-        read(10,'(a80)',iostat=ios,err=2010)linebuffer080
+        read(fid_ctrlfile,'(a80)',iostat=ios,err=2010)linebuffer080
         ! Line 4:
+        call FileIO_CleanLine(.false.,strlen,linebuffer080)
         var_User_charlines_Topo(4) = trim(adjustl(linebuffer080))
         read(linebuffer080,*) file_topo
         file_topo = trim(adjustl(file_topo))

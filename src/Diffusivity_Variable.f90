@@ -251,6 +251,7 @@
 
       character(len=3 )  :: answer
       character(len=80)  :: linebuffer080
+      integer            :: strlen
       integer            :: ios,ios2,ioerr
       character(len=20)  :: mod_name
       integer            :: substr_pos
@@ -266,9 +267,11 @@
         write(outlog(io),*)"    Searching for OPTMOD=VARDIFF"
       endif;enddo
       nmods = 0
-      read(10,'(a80)',iostat=ios)linebuffer080
+      read(fid_ctrlfile,'(a80)',iostat=ios)linebuffer080
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       do while(ios.eq.0)
-        read(10,'(a80)',iostat=ios)linebuffer080
+        read(fid_ctrlfile,'(a80)',iostat=ios)linebuffer080
+        call FileIO_CleanLine(.false.,strlen,linebuffer080)
 
         substr_pos = index(linebuffer080,'OPTMOD')
         if(substr_pos.eq.1)then
@@ -291,7 +294,8 @@
       endif;enddo
 
       ! Check if variables from the VarDiff module will be written to output file
-      read(10,'(a80)',iostat=ios,err=2010)linebuffer080
+      read(fid_ctrlfile,'(a80)',iostat=ios,err=2010)linebuffer080
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       ! Line 2:
       var_User_charlines_VarDiff(2) = trim(adjustl(linebuffer080))
       read(linebuffer080,'(a3)',err=2011) answer
@@ -302,7 +306,8 @@
       endif
 
       ! Check if we're going to use variable diffusivity
-      read(10,'(a80)',iostat=ios,err=2010)linebuffer080
+      read(fid_ctrlfile,'(a80)',iostat=ios,err=2010)linebuffer080
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       ! Line 3:
       var_User_charlines_VarDiff(3) = trim(adjustl(linebuffer080))
       read(linebuffer080,'(a3)',err=2011) answer
@@ -385,7 +390,8 @@
       endif
 
       ! Vertical variable diffusivity
-      read(10,'(a80)',iostat=ios,err=2010)linebuffer080
+      read(fid_ctrlfile,'(a80)',iostat=ios,err=2010)linebuffer080
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       ! Line 4:
       var_User_charlines_VarDiff(4) = trim(adjustl(linebuffer080))
       read(linebuffer080,'(a3)',err=2011) answer
@@ -405,7 +411,8 @@
       endif
       if(useVarDiffV)then
         ! Need to read two more lines defining first the Boundary Layer model, then the Free-Air model
-        read(10,'(a80)',iostat=ios,err=2010)linebuffer080
+        read(fid_ctrlfile,'(a80)',iostat=ios,err=2010)linebuffer080
+        call FileIO_CleanLine(.false.,strlen,linebuffer080)
         ! Line 5:
         var_User_charlines_VarDiff(5) = trim(adjustl(linebuffer080))
         read(linebuffer080,*,iostat=ios)KvBL_model_ID
@@ -586,7 +593,8 @@
           endif;enddo
         endif
         ! Free-air model: essentially, which scaling factor F(Ri) to use.
-        read(10,'(a80)',iostat=ios,err=2010)linebuffer080
+        read(fid_ctrlfile,'(a80)',iostat=ios,err=2010)linebuffer080
+        call FileIO_CleanLine(.false.,strlen,linebuffer080)
         ! Line 6:
         var_User_charlines_VarDiff(6) = trim(adjustl(linebuffer080))
         read(linebuffer080,*,iostat=ios)KvFA_model_ID
@@ -660,15 +668,18 @@
 
       if (useVarDiffH.or.useVarDiffV) then
         ! Check if we're using variable diffusivity, then get the constants
-        read(10,'(a80)',iostat=ios,err=2010)linebuffer080
+        read(fid_ctrlfile,'(a80)',iostat=ios,err=2010)linebuffer080
+        call FileIO_CleanLine(.false.,strlen,linebuffer080)
         ! Line 7:
         var_User_charlines_VarDiff(7) = trim(adjustl(linebuffer080))
         read(linebuffer080,*,iostat=ioerr) vonKarman
-        read(10,'(a80)',iostat=ios,err=2010)linebuffer080
+        read(fid_ctrlfile,'(a80)',iostat=ios,err=2010)linebuffer080
+        call FileIO_CleanLine(.false.,strlen,linebuffer080)
         ! Line 8:
         var_User_charlines_VarDiff(8) = trim(adjustl(linebuffer080))
         read(linebuffer080,*,iostat=ioerr) LambdaC
-        read(10,'(a80)',iostat=ios,err=2010)linebuffer080
+        read(fid_ctrlfile,'(a80)',iostat=ios,err=2010)linebuffer080
+        call FileIO_CleanLine(.false.,strlen,linebuffer080)
         ! Line 9:
         var_User_charlines_VarDiff(9) = trim(adjustl(linebuffer080))
         read(linebuffer080,*,iostat=ioerr) RI_CRIT

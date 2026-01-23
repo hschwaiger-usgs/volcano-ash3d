@@ -159,10 +159,14 @@
         if(ios.lt.0)then
           write(errlog(io),*)'ERROR Reading from file:  EOF encountered'
           write(errlog(io),*)'  error code: ',ios
-        else
+        elseif(ios.gt.0)then
           write(errlog(io),*)'ERROR Reading line from file:  input line format error'
           write(errlog(io),*)'  error code: ',ios
           write(errlog(io),*)'  Offending line: ',linebuffer080
+        else
+          write(outlog(io),*)'WARNING: FileIO_Error_Handler called with success return code.'
+          write(outlog(io),*)'         Returning to calling routine.'
+          return
         endif
         write(errlog(io),*)'  Ash3d diagnostics: ',linebuffer050
         write(errlog(io),*)'  System Message: ',trim(adjustl(iomessage))
@@ -242,6 +246,134 @@
       endif
 
       end subroutine FileIO_Check_testkey
+
+!##############################################################################
+!
+!    FileIO_CleanLine
+!
+!    Subroutine called to remove all control characters from the line.
+!    If the input line starts with '*' or '#', then subroutine exits.
+!    Leading spaces are removed.
+!    Each tab is converted to a single space (9 replaced with 32).
+!    Acceptable characters in stings:
+!     useUnicode=.false. :: include only (in decimal)
+!                                 32 = space
+!                                 45 = -
+!                                 46 = .
+!                                 47 = /
+!                              48-57 = 0-9
+!                                 58 = :
+!                              65-90 = A-Z
+!                                 92 = \
+!                                 95 = _
+!                             97-122 = a-z
+!     useUnicode=.true.  :: exclude (in decimal) 0-31 control chars (with 9 mapped to 32)
+!                                               33-43 punctuation
+!                                               59-64 more punctuation
+!                                                  91 [
+!                                               93-94 ] and ^
+!                                                  96 `
+!                                             123-127 braces and punctuation
+!
+! Note: ASCII table can be found at https://www.ascii-code.com/
+!
+!##############################################################################
+
+      subroutine FileIO_CleanLine(useUnicode,strlen,linebuffer)
+
+      logical          ,intent(in )   :: useUnicode
+      integer          ,intent(out)   :: strlen
+      character(len=*) ,intent(inout) :: linebuffer
+
+      integer :: asciicode
+      logical :: IsComment    = .false.
+      logical :: IsAcceptable = .true.
+
+      integer :: input_strlen
+      integer :: strpos_end
+      integer :: i,ii
+      character :: ch
+      character(len=:),allocatable :: tmpstr
+
+      ! Get input string length (likely either 80 or 130, but is arbitrary)
+      input_strlen = len(linebuffer)
+      strpos_end   = input_strlen
+
+      !tmpstr = linebuffer ! initialize to same length as input string
+      allocate(character(len=input_strlen) :: tmpstr)
+
+      i =1 ! start of input string
+      ii=1 ! start of output string
+      ch = linebuffer(i:i)
+      asciicode = ichar(ch)
+      if(asciicode.eq.35.or.asciicode.eq.42) IsComment = .true.
+      if (IsComment) return ! if the first character of the line is a comment, exit the subroutine
+        ! Now loop through the input string and filter
+      do while (i.le.input_strlen.and..not.IsComment)
+        ch = linebuffer(i:i)
+        asciicode = ichar(ch)
+
+        if(asciicode.eq.35.or.& ! '#' ! Check character against comment chars
+           asciicode.eq.42)then ! '*'
+          IsComment  = .true.
+          strpos_end = i-1     ! If we find a comment character, mark the new end position
+        endif
+        if(asciicode.eq.9)then         ! If we find a tab, replace with a space
+          ch = ' '
+          asciicode = 32
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)'   WARNING: line from file contained a tab which was replaced with a space.'
+          endif;enddo
+
+        endif
+
+        if(useUnicode)then
+          ! If using unicode, then only exclude certain values
+          if((                    asciicode.le.31) .or. &  ! 0-31 control chars
+             (asciicode.ge.33.and.asciicode.le.43) .or. &  ! punctuation
+             (asciicode.ge.59.and.asciicode.le.64) .or. &  ! punctuation
+             (        asciicode.eq.91            ) .or. &  ! [
+             (        asciicode.eq.93            ) .or. &  ! ]
+             (        asciicode.eq.94            ) .or. &  ! ^
+             (        asciicode.eq.96            ) .or. &  ! `
+             (asciicode.ge.123.and.asciicode.le.127))then  ! braces and punctuation
+            IsAcceptable = .false.
+          else
+            IsAcceptable = .true.
+          endif
+        else
+          ! If using traditional ASCII, then only allow certain characters
+          if((        asciicode.eq.32            ) .or. &  ! ' ' = space
+             (        asciicode.eq.45            ) .or. &  ! '-' = hyphen
+             (        asciicode.eq.46            ) .or. &  ! '.' = full-stop
+             (        asciicode.eq.47            ) .or. &  ! '/' = slash
+             (asciicode.ge.48.and.asciicode.le.57) .or. &  ! 0-9 = digits
+             (        asciicode.eq.58            ) .or. &  ! ':' = colon
+             (        asciicode.eq.61            ) .or. &  ! '=' = equals
+             (asciicode.ge.65.and.asciicode.le.90) .or. &  ! A-Z = Uppercase letters
+             (        asciicode.eq.92            ) .or. &  ! '/' = backslash
+             (        asciicode.eq.95            ) .or. &  ! '_' = underscore
+             (asciicode.ge.97.and.asciicode.le.122))then   ! a-z = lowercase letters
+            IsAcceptable = .true.
+          else
+            IsAcceptable = .false.
+          endif
+        endif
+
+        if(IsAcceptable)then
+          tmpstr(ii:ii) = ch
+          strlen = ii
+        endif
+        i=i+1
+        if(IsAcceptable) ii=ii+1
+      enddo
+
+      tmpstr = trim(adjustl(tmpstr(1:strlen)))
+      strlen = len(tmpstr)
+      linebuffer = tmpstr
+
+      end subroutine FileIO_CleanLine
+
 
 !##############################################################################
 
@@ -346,13 +478,8 @@
 #ifdef LIM_MC
       character(len=11)        :: limiter = 'MC'
 #endif
-
-#ifdef CRANKNIC
-      logical, parameter       :: useCN   = .true.
-#endif
-#ifdef EXPLDIFF
-      logical, parameter       :: useCN   = .false.
-#endif
+      ! Set explicit diffusion by default; this is changed in Set_OS_Env
+      logical :: useCN   = .false.
 
       logical :: useFastDt        ! These are set in Set_OS_Env and control when
       logical :: FastDt_suppress  ! time step restrictions need to be calculated
