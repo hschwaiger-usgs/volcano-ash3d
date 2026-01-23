@@ -2157,7 +2157,7 @@
         call FileIO_CleanLine(.false.,strlen,linebuffer130)
       enddo
 
-      !Error trap if more pulses are entered than are specified
+      ! Error trap if more pulses are entered than are specified
       if(IsCustom_SourceType)then
         ! If we are using custom sources, suppress the error-checking
         ! since we don't know the number of lines of input we need and
@@ -3236,6 +3236,7 @@
       ! BLOCK 5: INPUT WIND FILES
       if(MR_iWindFiles.gt.0)then
         read(fid_ctrlfile,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
+        call FileIO_CleanLine(.false.,strlen,linebuffer130)
         linebuffer050 = "Reading ctr file, past Blk 4, looking for Blk 5."
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
         read(linebuffer130,*,iostat=iostatus,iomsg=iomessage)testkey
@@ -3261,7 +3262,9 @@
           linebuffer050 = "Reading testkey from linebuffer (Blk5)"
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
           call FileIO_Check_testkey(testkey,linebuffer130(1:80),IsComment)
+          call FileIO_CleanLine(.false.,strlen,linebuffer130)
         enddo
+
         call FileIO_CleanLine(.false.,strlen,linebuffer130)
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)' *****************************************'

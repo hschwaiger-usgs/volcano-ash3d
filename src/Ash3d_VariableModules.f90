@@ -286,8 +286,8 @@
       character(len=*) ,intent(inout) :: linebuffer
 
       integer :: asciicode
-      logical :: IsComment    = .false.
-      logical :: IsAcceptable = .true.
+      logical :: IsComment
+      logical :: IsAcceptable 
 
       integer :: input_strlen
       integer :: strpos_end
@@ -298,8 +298,9 @@
       ! Get input string length (likely either 80 or 130, but is arbitrary)
       input_strlen = len(linebuffer)
       strpos_end   = input_strlen
+      IsComment    = .false.
+      IsAcceptable = .true.
 
-      !tmpstr = linebuffer ! initialize to same length as input string
       allocate(character(len=input_strlen) :: tmpstr)
 
       i =1 ! start of input string
@@ -324,7 +325,6 @@
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)'   WARNING: line from file contained a tab which was replaced with a space.'
           endif;enddo
-
         endif
 
         if(useUnicode)then
@@ -363,6 +363,10 @@
         if(IsAcceptable)then
           tmpstr(ii:ii) = ch
           strlen = ii
+        else
+          do io=1,2;if(VB(io).le.verbosity_debug1)then
+            write(outlog(io),*)"   WARNING: Removing asciicode from line: ",asciicode
+          endif;enddo
         endif
         i=i+1
         if(IsAcceptable) ii=ii+1

@@ -247,6 +247,7 @@ ifeq ($(USEDISLIN), T)
  dislinOBJ  = Ash3d_PostProc_dislin.o
 else
  dislinFPPFLAG = 
+ dislinOBJ =
 endif
 ifeq ($(USEPLPLOT), T)
  plplotFPPFLAG = -DUSEPLPLOT
@@ -262,6 +263,7 @@ ifeq ($(USEPLPLOT), T)
  plplotOBJ  = Ash3d_PostProc_plplot.o
 else
  plplotFPPFLAG =
+ plplotOBJ =
 endif
 ifeq ($(USEGNUPLOT), T)
  gnuplotFPPFLAG = -DUSEGNUPLOT
@@ -280,6 +282,7 @@ else
  gmtFPPFLAG = 
  gmtOBJ =
 endif
+PLOTOBJS = $(dislinOBJ) $(plplotOBJ) Ash3d_PostProc_gnuplot.o Ash3d_PostProc_GMT.o Ash3d_PostProc_matlab.o Ash3d_PostProc_python.o
 PLOTFPPFLAG = $(zipFPPFLAG) $(gnuplotFPPFLAG) $(plplotFPPFLAG) $(dislinFPPFLAG) $(gmtFPPFLAG)
 PLOTLIBS= $(plplotLIBS) $(dislinLIBS) $(gmtLIBS)
 PLOTINC=$(plplotINC) $(dislinINC) $(gmtINC)
@@ -401,7 +404,7 @@ Ash3d_VariableModules.o: $(ASH3DCCSRC)/Ash3d_VariableModules.f90 $(MFILE) $(SYSI
 	echo "        zippath = $(zippath)" > zippath.h
 	echo "        gnuplotpath = $(gnuplotpath)" > gnuplotpath.h
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/Ash3d_VariableModules.f90
-Input_Data.o: $(ASH3DCCSRC)/Input_Data.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Tephra.o VotW.o Diffusion.o Airports.o $(DATAOBJ) Output_Vars.o Source.o Source_Umbrella.o ResetParams.o Diffusivity_Variable.o
+Input_Data.o: $(ASH3DCCSRC)/Input_Data.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Tephra.o VotW.o Diffusion.o Airports.o $(DATAOBJ) Output_Vars.o Source.o Source_Umbrella.o ResetParams.o Diffusivity_Variable.o Topography.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/Input_Data.f90
 ResetParams.o: $(ASH3DCCSRC)/ResetParams.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Tephra.o Output_Vars.o Source_Umbrella.o Diffusion.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/ResetParams.f90
@@ -452,7 +455,7 @@ Set_BC.o: $(ASH3DCCSRC)/Set_BC.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
 # Output
 Output_Vars.o: $(ASH3DCCSRC)/Output_Vars.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Airports.o Tephra.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/Output_Vars.f90
-Output_Results.o: $(ASH3DCCSRC)/Output_Results.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Output_Vars.o write_BINARY.o write_ASCII.o write_KML.o $(DATAOBJ)
+Output_Results.o: $(ASH3DCCSRC)/Output_Results.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Output_Vars.o write_BINARY.o write_ASCII.o write_KML.o $(DATAOBJ) $(PLOTOBJS)
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/Output_Results.f90
 write_ASCII.o: $(ASH3DCCSRC)/write_ASCII.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Output_Vars.o Airports.o Tephra.o Source.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/write_ASCII.f90
@@ -531,9 +534,12 @@ NCgen_ctr: $(ASH3DCCSRC)/tools/Ash3d_NetCDF_GenCTR.f90 Ash3d_VariableModules.o w
 	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d_NetCDF_GenCTR.o $(LIBS) -o Ash3d_NetCDF_GenCTR
 	mkdir -p ../bin/tools
 	mv Ash3d_NetCDF_GenCTR ../bin/tools/Ash3d_NetCDF_GenCTR
+else
+NCgen_ctr:
+	echo "NCgen_ctr is only built if NetCDF libraries are linked."
 endif
 
-ASCIIgen_ctr: $(ASH3DCCSRC)/tools/Ash3d_ASCII_GenCTR.f90 Ash3d_VariableModules.o write_NETCDF.o Input_Data.o Source.o Tephra.o Diffusion.o Diffusivity_Variable.o Topography.o $(MFILE) $(SYSINC)
+ASCIIgen_ctr: $(ASH3DCCSRC)/tools/Ash3d_ASCII_GenCTR.f90 Ash3d_VariableModules.o Input_Data.o Source.o Tephra.o Diffusion.o Diffusivity_Variable.o Topography.o $(MFILE) $(SYSINC)
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/tools/Ash3d_ASCII_GenCTR.f90
 	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d_ASCII_GenCTR.o $(LIBS) -o Ash3d_ASCII_GenCTR
 	mkdir -p ../bin/tools
