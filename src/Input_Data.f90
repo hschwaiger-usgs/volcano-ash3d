@@ -327,7 +327,7 @@
         version,version_major,version_minor,version_patch,&
         CFL,OS_TYPE,OS_Flavor,os_full_command_line,os_cwd,os_host,os_user,&
         Comp_Code,Comp_Flavor,useFastDt,FastDt_suppress, &
-        usezip,zippath,usegnuplot,gnuplotpath,useCN
+        usezip,zippath,usegnuplot,gnuplotpath,useCN,limiter
 
       use io_data,       only : &
         Ash3dHome,Instit_IconFile,cdf_source
@@ -937,24 +937,31 @@
         write(outlog(io),*)"      CRANKNIC: Diffusion will be calculated implicitly (via Crank-Nicolson)"
 #endif
 #ifdef LIM_NONE
+        limiter = 'No'
         write(outlog(io),*)"      LIM_NONE: Advection routines use no limiters"
 #endif
 #ifdef LIM_LAXWEN
+        limiter = 'LaxWendroff'
         write(outlog(io),*)"    LIM_LAXWEN: Advection routines use a Lax-Wendroff limiter"
 #endif
 #ifdef LIM_BW
+        limiter = 'BeamWarm'
         write(outlog(io),*)"        LIM_BW: Advection routines use a Beam-Warming limiter"
 #endif
 #ifdef LIM_FROMM
+        limiter = 'Fromm'
         write(outlog(io),*)"     LIM_FROMM: Advection routines use a Fromm limiter"
 #endif
 #ifdef LIM_MINMOD
+        limiter = 'Minmod'
         write(outlog(io),*)"    LIM_MINMOD: Advection routines use a minmod limiter"
 #endif
 #ifdef LIM_SUPERBEE
+        limiter = 'Superbee'
         write(outlog(io),*)"  LIM_SUPERBEE: Advection routines use a superbee limiter"
 #endif
 #ifdef LIM_MC
+        limiter = 'MC'
         write(outlog(io),*)"        LIM_MC: Advection routines use a MC limiter"
 #endif
 #ifdef USENETCDF

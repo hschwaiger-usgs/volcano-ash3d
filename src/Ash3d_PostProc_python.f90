@@ -711,12 +711,12 @@
       write(fid_script,'(g0)')linebuffer080
 
       write(fid_script,'(g0)')" "
-      write(fid_script,'(g0)')'annotation_text1 = txt_vname    + "\n" + \'
-      write(fid_script,'(g0)')'                   txt_RunDate  + "\n" + \'
+      write(fid_script,'(g0)')'annotation_text1 = txt_vname    + "\n" + \' ! fails with nvhpc
+      write(fid_script,'(g0)')'                   txt_RunDate  + "\n" + \' ! fails with nvhpc
       write(fid_script,'(g0)')'                   txt_Windfile' 
-      write(fid_script,'(g0)')'annotation_text2 = txt_ESrtTime + "\n" + \'
-      write(fid_script,'(g0)')'                   txt_EPlmH    + "\n" + \'
-      write(fid_script,'(g0)')'                   txt_EDur     + "\n" + \'
+      write(fid_script,'(g0)')'annotation_text2 = txt_ESrtTime + "\n" + \' ! fails with nvhpc
+      write(fid_script,'(g0)')'                   txt_EPlmH    + "\n" + \' ! fails with nvhpc
+      write(fid_script,'(g0)')'                   txt_EDur     + "\n" + \' ! fails with nvhpc
       write(fid_script,'(g0)')'                   txt_EVol'
 
       write(fid_script,'(g0)')" "
@@ -1144,12 +1144,12 @@
       write(fid_script,'(g0)')linebuffer080
 
       write(fid_script,'(g0)')" "
-      write(fid_script,'(g0)')'annotation_text1 = txt_vname    + "\n" + \'
-      write(fid_script,'(g0)')'                   txt_RunDate  + "\n" + \'
+      write(fid_script,'(g0)')'annotation_text1 = txt_vname    + "\n" + \' ! fails with nvhpc
+      write(fid_script,'(g0)')'                   txt_RunDate  + "\n" + \' ! fails with nvhpc
       write(fid_script,'(g0)')'                   txt_Windfile'
-      write(fid_script,'(g0)')'annotation_text2 = txt_ESrtTime + "\n" + \'
-      write(fid_script,'(g0)')'                   txt_EPlmH    + "\n" + \'
-      write(fid_script,'(g0)')'                   txt_EDur     + "\n" + \'
+      write(fid_script,'(g0)')'annotation_text2 = txt_ESrtTime + "\n" + \' ! fails with nvhpc
+      write(fid_script,'(g0)')'                   txt_EPlmH    + "\n" + \' ! fails with nvhpc
+      write(fid_script,'(g0)')'                   txt_EDur     + "\n" + \' ! fails with nvhpc
       write(fid_script,'(g0)')'                   txt_EVol'
       write(fid_script,'(g0)')' '
 

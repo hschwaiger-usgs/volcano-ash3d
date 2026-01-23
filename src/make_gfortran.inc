@@ -22,6 +22,7 @@ ifeq ($(RUN), DEBUG)
     #    and     -Wextra = -Wcompare-reals, -Wunused-parameter -Wdo-subscript
     FFLAGS = -O0 -g3 -Wall -Wextra -Wcharacter-truncation -Wimplicit-interface -Wunderflow -Wuninitialized -Wmaybe-uninitialized -Wno-surprising -fimplicit-none -fwhole-file -fcheck=all -std=f2008 -pedantic -fbacktrace -ffpe-trap=invalid,zero,overflow -ffpe-summary=all -finit-integer=-2147483647 -finit-real=snan -fno-unsafe-math-optimizations -fsignaling-nans -frounding-math
 endif
+
 ifeq ($(RUN), DEBUGOMP)
     FFLAGS = -O0 -g3 -Wall -Wextra -Wcharacter-truncation -Wimplicit-interface -Wunderflow -Wuninitialized -Wmaybe-uninitialized -Wno-surprising -fimplicit-none -fwhole-file -fcheck=all -std=f2008 -pedantic -fbacktrace -ffpe-trap=invalid,zero,overflow -ffpe-summary=all -finit-integer=-2147483647 -finit-real=snan -fno-unsafe-math-optimizations -fsignaling-nans -frounding-math -fopenmp -lgomp
 endif
@@ -35,8 +36,10 @@ endif
 ifeq ($(RUN), OPT)
     FFLAGS = -O3 -w -fno-math-errno -funsafe-math-optimizations -fno-trapping-math -fno-signaling-nans -fcx-limited-range -fno-rounding-math -ftree-vectorize -funroll-loops -finline-functions
 endif
-ifeq ($(RUN), OMPOPT)
-    FFLAGS = -O3 -w -fno-math-errno -funsafe-math-optimizations -fno-trapping-math -fno-signaling-nans -fcx-limited-range -fno-rounding-math -ftree-vectorize -funroll-loops -finline-functions -fopenmp -lgomp
+
+ifeq ($(RUN), OPTOMP)
+    FFLAGS = -O4 -fast -Mipa=fast,inline
+    #FFLAGS = -O3 -w -fno-math-errno -funsafe-math-optimizations -fno-trapping-math -fno-signaling-nans -fcx-limited-range -fno-rounding-math -ftree-vectorize -funroll-loops -finline-functions -mp
 endif
 
   # Preprocessing flags

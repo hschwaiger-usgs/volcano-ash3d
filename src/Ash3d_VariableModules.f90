@@ -461,27 +461,8 @@
       integer                  :: plotting_ID = 3    ! default is gnuplot
 
       ! Some variables determined by preprocessor flags at compilation time
-#ifdef LIM_NONE
       character(len=11)        :: limiter = 'No'
-#endif
-#ifdef LIM_LAXWEN
-      character(len=11)        :: limiter = 'LaxWendroff'
-#endif
-#ifdef LIM_BW
-      character(len=11)        :: limiter = 'BeamWarm'
-#endif
-#ifdef LIM_FROMM
-      character(len=11)        :: limiter = 'Fromm'
-#endif
-#ifdef LIM_MINMOD
-      character(len=11)        :: limiter = 'Minmod'
-#endif
-#ifdef LIM_SUPERBEE
-      character(len=11)        :: limiter = 'Superbee'
-#endif
-#ifdef LIM_MC
-      character(len=11)        :: limiter = 'MC'
-#endif
+
       ! Set explicit diffusion by default; this is changed in Set_OS_Env
       logical :: useCN   = .false.
 

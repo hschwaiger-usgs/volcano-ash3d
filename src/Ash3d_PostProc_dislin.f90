@@ -768,7 +768,7 @@
       use time_data,     only : &
          os_time_log,SimStartHour,BaseYear,useLeap,ntmax,time_native
 
-      integer,intent (in) :: vprof_ID
+      integer,intent(in) :: vprof_ID
 
       logical           :: HaveIconFile
       character(len=76) :: title_plot

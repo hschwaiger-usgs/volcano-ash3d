@@ -612,9 +612,9 @@
       write(fid_script,*)"set yrange [YMIN:YMAX]"
       write(fid_script,*)"set contour base"
       write(fid_script,*)"set cntrparam bspline"
-      write(fid_script,*)"set cntrparam levels discrete \"
+      write(fid_script,*)"set cntrparam levels discrete \" ! fails with nvhpc
       do ilev=1,nConLev-1
-        write(fid_script,*)real(ContourLev(ilev),kind=4),', \'
+        write(fid_script,*)real(ContourLev(ilev),kind=4),', \' ! fails with nvhpc
       enddo
       write(fid_script,*)real(ContourLev(nConLev),kind=4)
       write(fid_script,*)"unset surface"
@@ -642,6 +642,7 @@
       write(fid_script,*)"set label '",trim(adjustl(cstr_ErDuratn)),"' at XVAL, YVAL font 'sans,9' offset character 0,0"
       write(fid_script,*)"set label '",trim(adjustl(cstr_ErVolume)),"' at XVAL, YVAL font 'sans,9' offset character 0,-1"
 
+       ! fails with nvhpc
       write(fid_script,*)" plot '",trim(adjustl(filename_coastline)),"' with filledcurves linetype rgb '#dddddd' , \"
       write(fid_script,*)"   'outvar.con' using 1:2 with l lc rgb '#888888' , \"
       write(fid_script,*)"   '' every 1000 with labels font ',6' , \"
