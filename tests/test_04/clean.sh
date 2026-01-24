@@ -11,3 +11,8 @@ rm -f DepositArrivalTime.dat
 rm -f DepositFile_*.dat
 rm -f DepositFile_____final.dat
 rm -f Wind_nc
+rm -f Ash3d_pp.log
+rm -f outvar.con 
+rm -f fort.9
+rm -f Tvd.dat
+rm -f Tvd.gnu

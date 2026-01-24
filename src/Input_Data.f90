@@ -5621,7 +5621,7 @@
       linebuffer050 = "Reading iplotpref from linebuffer"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
       ! Error-checking iplotpref
-      if(iplotpref.lt.0.or.iplotpref.gt.4)then
+      if(iplotpref.lt.1.or.iplotpref.gt.6)then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: Invalid code for plotting library."
         endif;enddo

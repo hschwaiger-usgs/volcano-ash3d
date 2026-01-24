@@ -4,6 +4,8 @@ echo "RUNNING TEST CASE 4: MSH with NCEP winds"
 echo     "-----------------------------------------------------------"
 Ash3d="../../bin/Ash3d"
 Ash3d_ASCII_check="../../bin/tools/Ash3d_ASCII_check"
+Ash3d_PP="../../bin/Ash3d_PostProc"
+GenPlots=0
 tol=0.01
 n2Dfiles=11
 ascii2Doutfiles=("CloudHeight_008.00hrs.dat" "CloudHeight_016.00hrs.dat" "CloudLoad_008.00hrs.dat" "CloudLoad_016.00hrs.dat" "CloudConcentration_008.00hrs.dat" "CloudConcentration_016.00hrs.dat" "CloudArrivalTime.dat" "DepositFile_008.00hrs.dat" "DepositFile_016.00hrs.dat" "DepositFile_____final.dat" "DepositArrivalTime.dat")
@@ -47,6 +49,21 @@ do
     echo "Error: Ash3d returned error code"
     exit 1
   fi
+  if [[ "$GenPlots" -gt 0 ]] ; then
+    # Post-processing
+    if [[ "$s" -eq 2 ]] ; then
+      ../../bin/tools/Ash3d_ASCII_DepThin DepositFile_____final.dat -122.117  42.933
+      mv DepoThick_vs_distance.png TC4_SC${s}_DepoThick_vs_distance.png
+    fi
+    ASH3DHOME=../../ ${Ash3d_PP} 3d_tephra_fall.nc 5 3 > /dev/null 2>&1
+    mv Ash3d_Deposit____final.png TC4_SC${s}_Ash3d_Deposit____final.png
+    ASH3DHOME=../../ ${Ash3d_PP} 3d_tephra_fall.nc 16 3 > /dev/null 2>&1
+    mv vprof_0002.png TC4_SC${s}_vprof_0002.png
+    rm -f vprof_0001.png
+    ASH3DHOME=../../ ${Ash3d_PP} 3d_tephra_fall.nc 12 3 2 > /dev/null 2>&1
+    mv Ash3d_CloudLoad_t016.00hrs.png TC4_SC${s}_Ash3d_CloudLoad_t016.00hrs.png
+  fi
+
   grep "useVz_rhoG=.true." Ash3d.lst > /dev/null
   rc=$((rc + $?))
   if [[ "$rc" -gt 0 ]] ; then

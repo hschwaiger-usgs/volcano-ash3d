@@ -4,6 +4,8 @@ echo "RUNNING TEST CASE 2: 2D-DIFFUSION"
 echo     "-----------------------------------------------------------"
 Ash3d="../../bin/Ash3d"
 Ash3d_ASCII_check="../../bin/tools/Ash3d_ASCII_check"
+Ash3d_PP="../../bin/Ash3d_PostProc"
+GenPlots=0
 tol=0.1
 n2Dfiles=4
 ascii2Doutfiles=("CloudHeight_002.00hrs.dat" "CloudHeight_004.00hrs.dat" "CloudLoad_002.00hrs.dat" "CloudLoad_004.00hrs.dat")
@@ -19,6 +21,14 @@ rc=$((rc + $?))
 if [[ "$rc" -gt 0 ]] ; then
   echo "Error: Ash3d returned error code"
   exit 1
+fi
+
+if [[ "$GenPlots" -gt 0 ]] ; then
+  # Post-processing
+  ASH3DHOME=../../ ${Ash3d_PP} TC2_pp_CL2.ctr > /dev/null 2>&1
+  mv Ash3d_CloudLoad_t002.00hrs.png TC2_Ash3d_CloudLoad_t002.00hrs.png
+  ASH3DHOME=../../ ${Ash3d_PP} TC2_pp_CL4.ctr > /dev/null 2>&1
+  mv Ash3d_CloudLoad_t004.00hrs.png TC2_Ash3d_CloudLoad_t004.00hrs.png
 fi
 
 for (( i=0;i<n2Dfiles;i++))

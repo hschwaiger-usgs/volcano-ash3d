@@ -753,19 +753,22 @@
           endif
 
           call Read_PostProc_Control_File(informat,iiprod,iprod,ndims,outformat,iplotpref,itime)
-!          ! Reset plotting preference if need be
-!          if(iplotpref.gt.0)then
-!            if(plotlib_avail(iplotpref))then
-!              plot_pref_map(1:Nplot_libs) = iplotpref ! plot preference for maps
-!              plot_pref_shp(1:Nplot_libs) = iplotpref ! plot preference for contours
-!              plot_pref_vpr(1:Nplot_libs) = iplotpref ! plot preference for vert profs.
-!              plot_pref_aTS(1:Nplot_libs) = iplotpref ! plot preference for Airport TS
-!            else
-!              do io=1,2;if(VB(io).le.verbosity_error)then
-!                write(errlog(io),*)"WARNING: Preferred plotting library is not available."
-!              endif;enddo
-!            endif
-!          endif
+          ! Reset plotting preference if need be
+          if(iplotpref.gt.0)then
+            if(plotlib_avail(iplotpref))then
+              do io=1,2;if(VB(io).le.verbosity_info)then
+                write(outlog(io),*)" Resetting plotting package to ",iplotpref
+              endif;enddo
+              plot_pref_map(1:Nplot_libs) = iplotpref ! plot preference for maps
+              plot_pref_shp(1:Nplot_libs) = iplotpref ! plot preference for contours
+              plot_pref_vpr(1:Nplot_libs) = iplotpref ! plot preference for vert profs.
+              plot_pref_aTS(1:Nplot_libs) = iplotpref ! plot preference for Airport TS
+            else
+              do io=1,2;if(VB(io).le.verbosity_error)then
+                write(errlog(io),*)"WARNING: Preferred plotting library is not available."
+              endif;enddo
+            endif
+          endif
         endif
 !120
       elseif (nargs.ge.3) then

@@ -58,16 +58,18 @@
       if (nargs.eq.0) then
           ! If no command-line arguments are given, then prompt user
           ! interactively for the ASCII file name and source coordinate
-        write(outlog(io),*)'Ash3d_ASCII_DepThin calculates the deposit thickness as a function'
-        write(outlog(io),*)'of distance from the vent. The expected usage is non-interactive via'
-        write(outlog(io),*)'command-line arguments.'
-        write(errlog(io),*)'  Usage: Ash3d_ASCII_DepThin file1 srcx srcy'
-        write(outlog(io),*)'where file1 is a ESRI ASCII deposit file and srcx, srcy are the'
-        write(outlog(io),*)'longitude and latitude of the vent. If gnuplot is available on the system'
-        write(outlog(io),*)'the data are plotted to file DepoThick_vs_distance.png'
-        write(outlog(io),*)' '
-        write(outlog(io),*)'No command-line arguments were provided, now entering interactive mode.'
-        write(outlog(io),*)' '
+        do io=1,2;if(VB(io).le.verbosity_production)then
+          write(outlog(io),*)'Ash3d_ASCII_DepThin calculates the deposit thickness as a function'
+          write(outlog(io),*)'of distance from the vent. The expected usage is non-interactive via'
+          write(outlog(io),*)'command-line arguments.'
+          write(errlog(io),*)'  Usage: Ash3d_ASCII_DepThin file1 srcx srcy'
+          write(outlog(io),*)'where file1 is a ESRI ASCII deposit file and srcx, srcy are the'
+          write(outlog(io),*)'longitude and latitude of the vent. If gnuplot is available on the system'
+          write(outlog(io),*)'the data are plotted to file DepoThick_vs_distance.png'
+          write(outlog(io),*)' '
+          write(outlog(io),*)'No command-line arguments were provided, now entering interactive mode.'
+          write(outlog(io),*)' '
+        endif;enddo
         write(output_unit,*)'Enter name of the ESRI ASCII deposit file:'
         read(input_unit,*) file1
         do io=1,nio;if(VB(io).le.verbosity_production)then

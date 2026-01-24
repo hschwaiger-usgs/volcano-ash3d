@@ -4,6 +4,8 @@ echo "RUNNING TEST CASE 3: Simple sources and fall models"
 echo     "-----------------------------------------------------------"
 Ash3d="../../bin/Ash3d"
 Ash3d_ASCII_check="../../bin/tools/Ash3d_ASCII_check"
+Ash3d_PP="../../bin/Ash3d_PostProc"
+GenPlots=0
 tol=0.01
 n2Dfiles=8
 ascii2Doutfiles=("CloudHeight_005.00hrs.dat" "CloudHeight_010.00hrs.dat" "CloudLoad_005.00hrs.dat" "CloudLoad_010.00hrs.dat" "CloudConcentration_005.00hrs.dat" "CloudConcentration_010.00hrs.dat" "CloudArrivalTime.dat" "DepositFile_005.00hrs.dat" "DepositFile_010.00hrs.dat" "DepositFile_____final.dat" "DepositArrivalTime.dat")
@@ -22,12 +24,23 @@ do
   echo "   Sub-case ${s} : ${SubCaseLabels[s]}"
   outdir="output${s}"
 
-  ASH3DHOME=../../ ${Ash3d} TC3_XY_MSH_SC${s}.inp > /dev/null 2>&1
+  ASH3DHOME=../../
+  ${Ash3d} TC3_XY_MSH_SC${s}.inp > /dev/null 2>&1
   rc=$((rc + $?))
   if [[ "$rc" -gt 0 ]] ; then
     echo "Error: Ash3d returned error code"
     exit 1
   fi
+  if [[ "$GenPlots" -gt 0 ]] ; then
+    # Post-processing
+    ASH3DHOME=../../ ${Ash3d_PP} TC3_pp_CL05.ctr > /dev/null 2>&1
+    mv Ash3d_CloudLoad_t005.00hrs.png TC3-SC${s}_Ash3d_CloudLoad_t005.00hrs.png
+    ASH3DHOME=../../ ${Ash3d_PP} TC3_pp_CL10.ctr > /dev/null 2>&1
+    mv Ash3d_CloudLoad_t010.00hrs.png TC3-SC${s}_Ash3d_CloudLoad_t010.00hrs.png
+    ASH3DHOME=../../ ${Ash3d_PP} TC3_pp_DpFin.ctr > /dev/null 2>&1
+    mv Ash3d_Deposit____final.png TC3-SC${s}_Ash3d_Deposit____final.png
+  fi
+
   for (( i=0;i<n2Dfiles;i++))
   do
     echo Checking 2d ASCII file "${ascii2Doutfiles[i]}"
