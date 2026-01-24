@@ -124,7 +124,7 @@
       integer,parameter :: verbosity_silent       = 9  ! No logging to stdout,stderr. Logfile written as normal
       integer,parameter :: verbosity_dark         = 10 ! No logging to stdout,stderr or logfile
 
-      character, parameter :: bs = '\' ! Some scripts need a backslash, but some compilers interprete it as an escape.
+      character :: bs ! Some scripts need a backslash, but some compilers interprete it as an escape. 92='\'
 
       contains
 

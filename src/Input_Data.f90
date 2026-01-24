@@ -389,6 +389,8 @@
         write(outlog(io),*)"     Entered Subroutine Set_OS_Env"
       endif;enddo
 
+      bs = achar(92)  ! assign the backslash character by its ASCII value 92
+
       ! Reset OS varibles based on PP flags set in the makefile
 #ifdef LINUX
       OS_TYPE = 1
