@@ -76,6 +76,44 @@
 !
 ! http//www.naturalearthdata.com/download/50m/physical/ne_50m_land.zip
 !
+!  To invoke:
+!   ASH3DPLOT=5 ./Ash3d_PostProc 3d_tephra_fall.nc 5 3
+!
+!   Example script:
+!      %##########################################################################
+!      %# Temporary matlab script for producing 2d maps for Ash3d_PostProc
+!      %# Adjust to suit your needs.
+!      %# You will need the mapping toolbox installed as well as the base MatLab.
+!      %##########################################################################
+!      clear all;
+!      land   = readgeotable('landareas.shp');
+!      [A,R]=readgeoraster('outvar.dat','CoordinateSystemType','geographic','OutputType','double');
+!      latlim = R.LatitudeLimits;
+!      lonlim = R.LongitudeLimits;
+!      
+!      figure
+!      worldmap(latlim,lonlim);hold on;
+!      geoshow(land,'FaceColor',[0.9 0.9 0.9])
+!      colormap(jet)
+!       levels = [   9.99999978E-03   2.99999993E-02  0.100000001      0.300000012       1.00000000       3.00000000       10.0000000       30.0000000       100.000000     ];
+!      colormap lines;
+!      [C,h]=contourm(A,R,levels,'-');
+!      xlabel('Longitude');
+!      ylabel('Latitude');
+!      title('Final Deposit Thickness');
+!      leg = clegendm(C,h,-1);
+!      leg.Title.String = 'Dep.Thick.(mm)';
+!      annstr1 = sprintf('Volcano:  Popocatépetl\nRun Date: 2026-01-16T21:49:00Z\nWindfile:    25\n'); % annotation text
+!      annpos1 = [0.05 0.025 0.1 0.1]; % annotation position in figure coordinates
+!      ha1 = annotation('textbox',annpos1,'string',annstr1);
+!      ha1.HorizontalAlignment = 'left';
+!      annstr2 = sprintf('Erup. Start Time:   2015-04-04T04:00:00Z\nErup. Plume Height: 12.0 km\nErup. Duration:      6.0 hours\nErup. Volume:        0.03000 km3 (DRE)'); % annotation text
+!      annpos2 = [0.65 0.025 0.1 0.1]; % annotation position in figure coordinates
+!      ha2 = annotation('textbox',annpos2,'string',annstr2);
+!      ha2.HorizontalAlignment = 'left';
+!      print -dpng Ash3d_Deposit____final.png
+!      exit
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine write_2Dmap_PNG_matlab(nx,ny,iprod,itime,OutVar,Fill_Value,writeContours)
@@ -156,8 +194,9 @@
 !      logical           :: IsThere1,IsThere2
       logical           :: HaveIconFile
 !      character(len=50) :: linebuffer050
-!      character(len=80) :: linebuffer080
-!      character(len=130):: linebuffer130,linebuffer130_2
+      character(len=80) :: linebuffer080
+      character(len=130):: linebuffer130
+      character(len=400):: linebuffer400
       !character         :: testkey
 
       ! Plot dimensions
@@ -201,43 +240,6 @@
         end function HS_xmltime
       END INTERFACE
 
-!clear all;
-!% Read mapping toolbox land file
-!land   = readgeotable('landareas.shp');
-!%rivers = readgeotable('worldrivers.shp');
-!%cities = readgeotable('worldcities.shp');
-!
-![A,R]=readgeoraster('Run00001.txt','CoordinateSystemType','geographic','OutputType','double');
-!latlim = R.LatitudeLimits;
-!lonlim = R.LongitudeLimits;
-!
-!% axesm-based map
-!figure
-!worldmap(latlim,lonlim);hold on;
-!geoshow(land,'FaceColor',[0.9 0.9 0.9])
-!%geoshow(rivers,'Color',[0 0.4470 0.7410])
-!%geoshow(cities,'Marker','.','MarkerEdgeColor',[0.6350 0.0780 0.1840])
-!
-!colormap(jet)
-!levels = [0.01 0.03 0.1 0.3 1.0 3.0 10.0 30.0 100.0 300.0];
-!colormap lines;
-![C,h]=contourm(A,R,levels,'-');
-!xlabel('Longitude');
-!ylabel('Latitude');
-!title('Final Deposit Thickness (mm)');
-!leg = clegendm(C,h,-1);
-!leg.Title.String = 'mm';
-!annstr = sprintf('blah blah\nblah'); % annotation text
-!annpos = [0.1 0.1 0.1 0.1]; % annotation position in figure coordinates
-!ha = annotation('textbox',annpos,'string',annstr);
-!ha.HorizontalAlignment = 'center';
-!print -dpng out.png
-!exit
-
-!im = imread(filename,'png');
-
-! syscall = matlab -nodisplay -nosplash -r tmp
-
       ! Test for icon file
       inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
 
@@ -261,7 +263,6 @@
       filename_outdata     = trim(adjustl(filename_root)) // ".dat"
       filename_script      = trim(adjustl(filename_root)) // ".m"
       !filename_contourdata = trim(adjustl(filename_root)) // ".con"
-
 
       if(iprod.eq.5.or.iprod.eq.6)then
         cio='____final'
@@ -593,45 +594,50 @@
       write(fid_script,'(g0)')"%# Adjust to suit your needs."
       write(fid_script,'(g0)')"%# You will need the mapping toolbox installed as well as the base MatLab."
       write(fid_script,'(g0)')"%##########################################################################"
-      write(fid_script,*)"clear all;"
-      write(fid_script,*)"land   = readgeotable('landareas.shp');"
-      write(fid_script,*)"[A,R]=readgeoraster('outvar.dat','CoordinateSystemType','geographic','OutputType','double');"
-      write(fid_script,*)"latlim = R.LatitudeLimits;"
-      write(fid_script,*)"lonlim = R.LongitudeLimits;"
-      write(fid_script,*)" "
-      write(fid_script,*)"figure"
-      write(fid_script,*)"worldmap(latlim,lonlim);hold on;"
-      write(fid_script,*)"geoshow(land,'FaceColor',[0.9 0.9 0.9])"
-      write(fid_script,*)"colormap(jet)"
+      write(fid_script,'(g0)')"clear all;"
+      write(fid_script,'(g0)')"land   = readgeotable('landareas.shp');"
+      write(fid_script,'(g0)')"[A,R]=readgeoraster('outvar.dat','CoordinateSystemType','geographic','OutputType','double');"
+      write(fid_script,'(g0)')"latlim = R.LatitudeLimits;"
+      write(fid_script,'(g0)')"lonlim = R.LongitudeLimits;"
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"figure"
+      write(fid_script,'(g0)')"worldmap(latlim,lonlim);hold on;"
+      write(fid_script,'(g0)')"geoshow(land,'FaceColor',[0.9 0.9 0.9])"
+      write(fid_script,'(g0)')"colormap(jet)"
+      !write(fid_script,'(a10,f15.5,a2)')"levels = [",real(ContourLev(1:nConLev-1),kind=4),"];"
       write(fid_script,*)"levels = [",real(ContourLev(1:nConLev-1),kind=4),"];"
-      write(fid_script,*)"colormap lines;"
-      write(fid_script,*)"[C,h]=contourm(A,R,levels,'-');"
-      write(fid_script,*)"xlabel('Longitude');"
-      write(fid_script,*)"ylabel('Latitude');"
-      write(fid_script,*)"title('",adjustl(trim(title_plot)),"');"
-      write(fid_script,*)"leg = clegendm(C,h,-1);"
-      write(fid_script,*)"leg.Title.String = '",adjustl(trim(title_legend)),"';"
+      write(fid_script,'(g0)')"colormap lines;"
+      write(fid_script,'(g0)')"[C,h]=contourm(A,R,levels,'-');"
+      write(fid_script,'(g0)')"xlabel('Longitude');"
+      write(fid_script,'(g0)')"ylabel('Latitude');"
+      linebuffer080 = "title('" // adjustl(trim(title_plot)) // "');"
+      write(fid_script,'(g0)')trim(adjustl(linebuffer080))
+      write(fid_script,'(g0)')"leg = clegendm(C,h,-1);"
+      linebuffer080 = "leg.Title.String = '" // adjustl(trim(title_legend)) // "';"
+      write(fid_script,'(g0)')trim(adjustl(linebuffer080))
       ! Annotation box 1
       cmd = trim(adjustl(cstr_volcname)) // '\n' // &
             trim(adjustl(cstr_run_date)) // '\n' // &
             trim(adjustl(cstr_windfile)) // '\n' // &
             trim(adjustl(cstr_note))
-      write(fid_script,*)"annstr1 = sprintf('",trim(adjustl(cmd)),"'); % annotation text"
-      write(fid_script,*)"annpos1 = [0.05 0.025 0.1 0.1]; % annotation position in figure coordinates"
-      write(fid_script,*)"ha1 = annotation('textbox',annpos1,'string',annstr1);"
-      write(fid_script,*)"ha1.HorizontalAlignment = 'left';"
+      linebuffer130 = "annstr1 = sprintf('" // trim(adjustl(cmd)) // "'); % annotation text"
+      write(fid_script,'(g0)')trim(adjustl(linebuffer130))
+      write(fid_script,'(g0)')"annpos1 = [0.05 0.025 0.1 0.1]; % annotation position in figure coordinates"
+      write(fid_script,'(g0)')"ha1 = annotation('textbox',annpos1,'string',annstr1);"
+      write(fid_script,'(g0)')"ha1.HorizontalAlignment = 'left';"
       ! Annotation box 2
       cmd = trim(adjustl(cstr_ErStartT)) // '\n' // &
             trim(adjustl(cstr_ErHeight)) // '\n' // &
             trim(adjustl(cstr_ErDuratn)) // '\n' // &
             trim(adjustl(cstr_ErVolume))
-      write(fid_script,*)"annstr2 = sprintf('",trim(adjustl(cmd)),"'); % annotation text"
-      write(fid_script,*)"annpos2 = [0.65 0.025 0.1 0.1]; % annotation position in figure coordinates"
-      write(fid_script,*)"ha2 = annotation('textbox',annpos2,'string',annstr2);"
-      write(fid_script,*)"ha2.HorizontalAlignment = 'left';"
-
-      write(fid_script,*)"print -dpng ",adjustl(trim(filename_png))
-      write(fid_script,*)"exit"
+      linebuffer400 = "annstr2 = sprintf('" // trim(adjustl(cmd)) // "'); % annotation text"
+      write(fid_script,'(g0)')trim(adjustl(linebuffer400))
+      write(fid_script,'(g0)')"annpos2 = [0.65 0.025 0.1 0.1]; % annotation position in figure coordinates"
+      write(fid_script,'(g0)')"ha2 = annotation('textbox',annpos2,'string',annstr2);"
+      write(fid_script,'(g0)')"ha2.HorizontalAlignment = 'left';"
+      linebuffer130 = "print -dpng " // adjustl(trim(filename_png))
+      write(fid_script,'(g0)')trim(adjustl(linebuffer130))
+      write(fid_script,'(g0)')"exit"
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !
@@ -641,6 +647,7 @@
 
       close(fid_script)
 
+      ! syscall = matlab -nodisplay -nosplash -r tmp
       write(plotcom,'(a37)')'matlab -nodisplay -nosplash -r outvar'
       call execute_command_line(plotcom,&
                                 wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
@@ -677,6 +684,40 @@
 !  This subroutine creates a png plot of the transient vertical profile of ash
 !  concentration above the profile point (vprof_ID) using the matlab or octave graphics
 !  package.
+!
+!  To invoke:
+!   ASH3DPLOT=5 ./Ash3d_PostProc 3d_tephra_fall.nc 16 3
+!
+!   Example script:
+!      %##########################################################################
+!      %# Temporary matlab/octave script for producing vertical profiles for Ash3d_PostProc
+!      %# Adjust to suit your needs.
+!      %##########################################################################
+!      clear all;
+!      graphics_toolkit('gnuplot')
+!      titstr='Cuernavaca (lon= -99.26, lat= 18.83)';
+!      xstr='Time (hours after eruption)';
+!      ystr='Height (km)';
+!      zstr='Ash conc. mg/m3';
+!      vp=load('vprof_0001.dat');
+!      ns=max(size(vp));
+!      % Time will be irregular, so we need to regrid the data.
+!      t_reg = linspace(0, vp(ns,1), 101);
+!      z_reg = linspace(0, vp(ns,2), 101);
+!      [T_reg, Z_reg] = meshgrid(t_reg, z_reg);
+!      
+!      % Interpolate the data onto the regular grid
+!      C_reg = griddata(vp(:,1), vp(:,2), vp(:,3), T_reg, Z_reg);
+!      Cmask=C_reg(:,:)<0.001;
+!      C_reg(Cmask)=NaN;
+!      
+!      colormap jet
+!      contourf(T_reg, Z_reg, C_reg);
+!      xlabel(xstr,'FontSize',16);
+!      ylabel(ystr,'FontSize',16);
+!      title(titstr,'FontSize',12);
+!      print -dpng vprof_0001.png
+!      exit
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -729,7 +770,7 @@
       integer           :: cstat
       character(len=120):: iomessage
       integer           :: iw,iwf
-!      character(len= 80):: linebuffer080
+      character(len= 80):: linebuffer080
       character(len=200):: cmd
 
       ! Plotting variables
@@ -856,7 +897,8 @@
       endif
  101  format(' (lon=',f7.2,', lat=',f6.2,')')
  102  format(' (x=',f9.3,', y=',f9.3,')')
-      write(title_plot,*)trim(adjustl(Site_vprofile(vprof_ID))),coord_str
+      title_plot = trim(adjustl(Site_vprofile(vprof_ID))) // coord_str
+      !write(title_plot,*)trim(adjustl(Site_vprofile(vprof_ID))),coord_str
 
       ! Set up to plot via matlab script
       open(unit=fid_script,file=filename_script,status='replace')
@@ -926,8 +968,9 @@
       !
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      write(fid_script,*)"print -dpng ",adjustl(trim(filename_png))
-      write(fid_script,*)"exit"
+      linebuffer080 = "print -dpng " // adjustl(trim(filename_png))
+      write(fid_script,'(g0)')trim(adjustl(linebuffer080))
+      write(fid_script,'(g0)')"exit"
 
       if(useoctave.and..not.usematlab)then
         ! This is the case where we prefer octave over matlab
@@ -966,6 +1009,29 @@
 !  This subroutine creates a png plot of the transient deposit accumulation at
 !  the airport/POI given by pt_index using the matlab graphics package.
 !
+!  To invoke:
+!   ASH3DPLOT=5 ./Ash3d_PostProc 3d_tephra_fall.nc 8 2
+!
+!   Example script:
+!      %##########################################################################
+!      %# Temporary matlab/octave script for producing deposit time-series plots for Ash3d_PostProc
+!      %# Adjust to suit your needs.
+!      %##########################################################################
+!      clear all;
+!      graphics_toolkit('gnuplot')
+!      titstr='Cuernavaca, Mexico';
+!      dp=load('depTS_0001.dat');
+!      ns=max(size(dp));
+!      x=dp(:,1);
+!      y=dp(:,2);
+!      area (x, y, "FaceColor", [0.5, 0.5, 0.5]);
+!      axis([0.0,  25,0.0,   1])
+!      xlabel('Time (hours after eruption)','FontSize',16);
+!      ylabel('Deposit Thickness (mm)','FontSize',16);
+!      title(titstr,'FontSize',12);
+!      print -dpng 'depTS_0001.png'
+!      exit
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine write_DepPOI_TS_PNG_matlab(pt_indx)
@@ -998,6 +1064,7 @@
       integer           :: cstat
       character(len=120):: iomessage
       character(len=200):: cmd
+      character(len=080):: linebuffer080
 
       integer,save      :: plot_index = 0
 
@@ -1051,13 +1118,14 @@
       write(fid_script,'(g0)')"ns=max(size(dp));"
       write(fid_script,'(g0)')"x=dp(:,1);"
       write(fid_script,'(g0)')"y=dp(:,2);"
-      write(fid_script,*)'area (x, y, "FaceColor", [0.5, 0.5, 0.5]);'
-      write(fid_script,*)'axis([0.0,',ceiling(Simtime_in_hours), '0.0, ',nint(ymaxpl),'])'
-      write(fid_script,*)"xlabel('Time (hours after eruption)','FontSize',16);"
-      write(fid_script,*)"ylabel('Deposit Thickness (mm)','FontSize',16);"
-      write(fid_script,*)"title(titstr,'FontSize',12);"
-      write(fid_script,*)"print -dpng '",filename_png,"'"
-      write(fid_script,*)"exit"
+      write(fid_script,'(g0)')'area (x, y, "FaceColor", [0.5, 0.5, 0.5]);'
+      write(fid_script,'(a11,i3,a6,i3,a2)')'axis([0.0, ',ceiling(Simtime_in_hours), ',0.0, ',nint(ymaxpl),'])'
+      write(fid_script,'(g0)')"xlabel('Time (hours after eruption)','FontSize',16);"
+      write(fid_script,'(g0)')"ylabel('Deposit Thickness (mm)','FontSize',16);"
+      write(fid_script,'(g0)')"title(titstr,'FontSize',12);"
+      linebuffer080 = "print -dpng '" // filename_png // "'"
+      write(fid_script,'(g0)')trim(adjustl(linebuffer080))
+      write(fid_script,'(g0)')"exit"
 
       close(fid_script)
 

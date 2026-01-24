@@ -95,7 +95,6 @@
       integer,parameter :: fid_contourdata= 620
       integer,parameter :: fid_misc       = 630
 
-
       ! Initialize these with the defaults, but we will reset these in the subroutine
       integer :: nio  = 1                    ! number of output streams (stdout and logfile)
       integer :: io                          ! index over out-streams
@@ -124,6 +123,8 @@
       integer,parameter :: verbosity_error        = 8  ! No logging to stdout, only stderr (and logfile)
       integer,parameter :: verbosity_silent       = 9  ! No logging to stdout,stderr. Logfile written as normal
       integer,parameter :: verbosity_dark         = 10 ! No logging to stdout,stderr or logfile
+
+      character, parameter :: bs = '\' ! Some scripts need a backslash, but some compilers interprete it as an escape.
 
       contains
 
