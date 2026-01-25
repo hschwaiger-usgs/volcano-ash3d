@@ -156,6 +156,12 @@
       allocate(uvx_pd(-1:nx+2,-1:ny+2,ibase:itop));     uvx_pd = 0.0_ip
       allocate(uvy_pd(-1:nx+2,-1:ny+2,ibase:itop));     uvy_pd = 0.0_ip
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_Source_Umbrella"
+      endif;enddo
+
+      return
+
       end subroutine Allocate_Source_Umbrella
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -189,6 +195,12 @@
         if(allocated(AvgStenc_Umbrella))       deallocate(AvgStenc_Umbrella)
         if(allocated(ScaleFac_Umbrella))       deallocate(ScaleFac_Umbrella)
 #endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_Source_Umbrella"
+      endif;enddo
+
+      return
 
       end subroutine Deallocate_Source_Umbrella
 
@@ -311,10 +323,8 @@
         endif
       endif ! time.eq.0.0_ip
 
-
       ! HFS : Add check for the maximal radius for this eruptive pulse and make sure
       !       the source location is far enough from the boundaries.
-
 
       !convert from  hours to seconds
       if(.not.first_time)then
@@ -400,6 +410,10 @@
         endif
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine umbrella_winds"
+      endif;enddo
+
       return
 
       end subroutine umbrella_winds
@@ -453,6 +467,10 @@
           SourceNodeFlux_Umbrella(2,2,k,1:n_gs_max) = 0.0_ip
         endif
       enddo
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine TephraSouceNodes_Umbrella"
+      endif;enddo
 
       return
 
@@ -527,6 +545,10 @@
       enddo
 
       SourceVolInc_Umbrella = tmp
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine SourceVolInc_Umbrella"
+      endif;enddo
 
       return
 

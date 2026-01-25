@@ -3382,6 +3382,12 @@
         write(outlog(io),*)"Created netcdf file"
       endif;enddo
 
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"     Exited Subroutine NC_create_netcdf_file"
+      endif;enddo
+
+      return
+
       end subroutine NC_create_netcdf_file
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -3960,6 +3966,12 @@
       deallocate(ashcon)
       deallocate(depocon)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine NC_append_to_netcdf"
+      endif;enddo
+
+      return
+
       end subroutine NC_append_to_netcdf
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -4049,6 +4061,12 @@
 
       deallocate(t_list)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine NC_RestartFile_ReadTimes"
+      endif;enddo
+
+      return
+
       end subroutine NC_RestartFile_ReadTimes
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -4137,6 +4155,12 @@
         write(outlog(io),*)"Read concentrations from time ",dumscal_out
       endif;enddo
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine NC)_RestartFile_LoadConcen"
+      endif;enddo
+
+      return
+
       end subroutine NC_RestartFile_LoadConcen
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -4187,6 +4211,12 @@
       ! otherwise do a hard stop
       !if (icode.ne.0) stop icode
       if (icode.ne.0) stop 1
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine NC_check_status"
+      endif;enddo
+
+      return
 
       end subroutine NC_check_status
 
@@ -6627,6 +6657,12 @@
       endif;enddo 
       nSTAT = nf90_close(ncid)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"nf90_close")
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine NC_Read_Output_Products"
+      endif;enddo
+
+      return
 
       end subroutine NC_Read_Output_Products
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

@@ -81,9 +81,13 @@
 
       OutputStep_Marker = ' ' 
 
-2     format(6x,i6,a1,f11.3,3x,a,5f12.5,f13.1)
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine TimeStepTotals"
+      endif;enddo
 
       return
+
+2     format(6x,i6,a1,f11.3,3x,a,5f12.5,f13.1)
 
       end subroutine TimeStepTotals
 

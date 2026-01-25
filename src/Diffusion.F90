@@ -108,6 +108,12 @@
       if(.not.allocated(kz))allocate(kz(0:nxmax+1,0:nymax+1,0:nzmax+1)); kz = diffusivity_vert
 #endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_Diff"
+      endif;enddo
+
+      return
+
       end subroutine Allocate_Diff
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -137,6 +143,12 @@
       if(allocated(ky)) deallocate(ky)
       if(allocated(kz)) deallocate(kz)
 #endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_Diff"
+      endif;enddo
+
+      return
 
       end subroutine Deallocate_Diff
 
@@ -220,6 +232,12 @@
         endif
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine DiffuseHorz"
+      endif;enddo
+
+      return
+
       end subroutine DiffuseHorz
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -250,6 +268,12 @@
       else
         call diff_z
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine DiffuseVert"
+      endif;enddo
+
+      return
 
       end subroutine DiffuseVert
 
@@ -392,6 +416,12 @@
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine diff_x"
+      endif;enddo
+
+      return
+
       end subroutine diff_x
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -521,6 +551,12 @@
 
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine diff_y"
+      endif;enddo
+
+      return
 
       end subroutine diff_y
 
@@ -653,6 +689,12 @@
 
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine diff_z"
+      endif;enddo
+
+      return
 
       end subroutine diff_z
 
@@ -918,6 +960,12 @@
 
       endif ! ncells.gt.1
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine diffCN_x"
+      endif;enddo
+
+      return
+
       end subroutine diffCN_x
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1175,6 +1223,12 @@
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
 
       endif ! ncells.gt.1
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine diffCN_y"
+      endif;enddo
+
+      return
 
       end subroutine diffCN_y
 
@@ -1438,6 +1492,12 @@
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
 
       endif ! ncells.gt.1
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine diffCN_z"
+      endif;enddo
+
+      return
 
       end subroutine diffCN_z
 

@@ -139,6 +139,10 @@
       use MetReader,     only : &
          nx_submet,ny_submet,np_fullmet
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Allocate_Atmosphere_Met"
+      endif;enddo
+
       do io=1,2;if(VB(io).le.verbosity_production)then
         write(outlog(io),*)"--------------------------------------------------"
         write(outlog(io),*)"---------- ALLOCATE_ATMOSPHERE_MET ---------------"
@@ -212,6 +216,11 @@
           allocate(AirSH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
       endif
 #endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_Atmosphere_Met"
+      endif;enddo
+
       return
 
       end subroutine Allocate_Atmosphere_Met
@@ -274,6 +283,11 @@
         if(allocated(AirSH_meso_next_step_MetP_sp))deallocate(AirSH_meso_next_step_MetP_sp)
       endif
 #endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_Atmosphere_Met"
+      endif;enddo
+
       return
 
       end subroutine Deallocate_Atmosphere_Met
@@ -437,6 +451,10 @@
         enddo
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Read_Next_MesoStep_TQ"
+      endif;enddo
+
       return
 
       end subroutine Read_Next_MesoStep_TQ
@@ -556,6 +574,10 @@
         enddo ! i
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Set_VirtPotenTemp"
+      endif;enddo
+
       return
 
       end subroutine Set_VirtPotenTemp
@@ -660,6 +682,10 @@
           enddo
         enddo
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Set_SolarZenith"
+      endif;enddo
 
       return
 
@@ -842,6 +868,10 @@
       ! Solar zenith angle : angle the suns rays hit the surface
       szenithR = acos(sin(latR)*sin(declR)+cos(latR)*cos(declR)*cos(haR))
       solar_zenith = szenithR/DEG2RAD
+
+      do io=1,2;if(VB(io).le.verbosity_debug2)then
+        write(outlog(io),*)"     Exited function solar_zenith"
+      endif;enddo
 
       return
 

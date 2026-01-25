@@ -884,6 +884,12 @@
       if(allocated(ContourDataY))       deallocate(ContourDataY)
 #endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_ShapeFile_Polyline"
+      endif;enddo
+
+      return
+
       end subroutine write_ShapeFile_Polyline
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -965,6 +971,12 @@
       do i=1,8
         write(ov_dbasID)DBASE_zero
       enddo
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine writeShapFileFieldDesArr"
+      endif;enddo
+
+      return
 
       end subroutine writeShapFileFieldDesArr
 

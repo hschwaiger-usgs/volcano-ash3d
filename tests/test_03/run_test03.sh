@@ -5,7 +5,7 @@ echo     "-----------------------------------------------------------"
 Ash3d="../../bin/Ash3d"
 Ash3d_ASCII_check="../../bin/tools/Ash3d_ASCII_check"
 Ash3d_PP="../../bin/Ash3d_PostProc"
-GenPlots=0
+GenPlots=1
 tol=0.01
 n2Dfiles=8
 ascii2Doutfiles=("CloudHeight_005.00hrs.dat" "CloudHeight_010.00hrs.dat" "CloudLoad_005.00hrs.dat" "CloudLoad_010.00hrs.dat" "CloudConcentration_005.00hrs.dat" "CloudConcentration_010.00hrs.dat" "CloudArrivalTime.dat" "DepositFile_005.00hrs.dat" "DepositFile_010.00hrs.dat" "DepositFile_____final.dat" "DepositArrivalTime.dat")

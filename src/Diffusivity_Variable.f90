@@ -710,6 +710,10 @@
 2010  continue
       close(10)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine input_data_VarDiff"
+      endif;enddo
+
       return
 
 1900  do io=1,2;if(VB(io).le.verbosity_error)then
@@ -751,6 +755,10 @@
          MR_Save_Velocities,min_cell_area_met,max_cell_area_met,p_fullmet_sp,&
          MR_vx_metP_last,MR_vx_metP_next,MR_vy_metP_last,MR_vy_metP_next,&
          nx_submet,ny_submet,np_fullmet
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Summarize_Params_VarDiff"
+      endif;enddo
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"  Double-checking diffusivity specifications."
@@ -906,6 +914,12 @@
         endif
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Summarize_Params_VarDiff"
+      endif;enddo
+
+      return
+
       end subroutine Summarize_Params_VarDiff
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -946,6 +960,10 @@
       implicit none
 
       integer :: i
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Allocate_VarDiff_Met"
+      endif;enddo
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"--------------------------------------------------"
@@ -1150,6 +1168,12 @@
       nvar_User4d_XYZGs     = nvar_User4d_XYZGs     + nvar_User4d_XYZGs_VarDiff
       nvar_User_charlines   = nvar_User_charlines   + nvar_User_charlines_VarDiff
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_VarDiff_Met"
+      endif;enddo
+
+      return
+
       end subroutine Allocate_VarDiff_Met
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1273,6 +1297,12 @@
         var_User_charlines(indx) = var_User_charlines_VarDiff(i)
       enddo
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Prep_output_VarDiff"
+      endif;enddo
+
+      return
+
       end subroutine Prep_output_VarDiff
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1363,6 +1393,13 @@
       if(allocated(vx_meso_next_step_MetP_sp))     deallocate(vx_meso_next_step_MetP_sp)
       if(allocated(vy_meso_next_step_MetP_sp))     deallocate(vy_meso_next_step_MetP_sp)
 #endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_VarDiff_Met"
+      endif;enddo
+
+      return
+
       end subroutine Deallocate_VarDiff_Met
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1397,6 +1434,10 @@
 
       real(kind=sp) :: KH_MIN_km2hr  ! min and max for Kh, but converted to km2/hr
       real(kind=sp) :: KH_MAX_km2hr
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Eddy_diff"
+      endif;enddo
 
       KH_MIN_km2hr = real(KH_MIN * HR_2_S/KM_2_M/KM_2_M,kind=sp)
       KH_MAX_km2hr = real(KH_MAX * HR_2_S/KM_2_M/KM_2_M,kind=sp)
@@ -1452,6 +1493,10 @@
           enddo !j
         enddo !i
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Eddy_diff"
+      endif;enddo
 
       return
 
@@ -1635,6 +1680,10 @@
         enddo
       enddo
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Calc_Vert_Diff"
+      endif;enddo
+
       return
 
       end subroutine Calc_Vert_Diff
@@ -1774,6 +1823,12 @@
       kx(0:nxmax+1,nymax+1,0:nzmax+1) = kx(0:nxmax+1,nymax,0:nzmax+1)
       ky(0:nxmax+1,nymax+1,0:nzmax+1) = ky(0:nxmax+1,nymax,0:nzmax+1)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Set_VarDiffH_Meso"
+      endif;enddo
+
+      return
+
       end subroutine Set_VarDiffH_Meso
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1898,6 +1953,12 @@
       kz(0:nxmax+1,0,0:nzmax+1) = kz(0:nxmax+1,1,0:nzmax+1)
         ! +y (North)
       kz(0:nxmax+1,nymax+1,0:nzmax+1) = kz(0:nxmax+1,nymax,0:nzmax+1)
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Set_VarDiffV_Meso"
+      endif;enddo
+
+      return
 
       end subroutine Set_VarDiffV_Meso
 
@@ -2049,6 +2110,12 @@
         enddo ! i
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Calc_Ri"
+      endif;enddo
+
+      return
+
       end subroutine Calc_Ri
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2088,6 +2155,12 @@
         ! Set SurfRoughLen_Met_sp by assumption
           SurfRoughLen_Met_sp(1:nx_submet,1:ny_submet)  = 0.1_sp
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Calc_SurfaceRoughnessLength"
+      endif;enddo
+
+      return
 
       end subroutine Calc_SurfaceRoughnessLength
 
@@ -2268,6 +2341,12 @@
         deallocate(SurfVelh_meso_Met_sp)
 
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Calc_SurfaceFrictionVelocity"
+      endif;enddo
+
+      return
 
       end subroutine Calc_SurfaceFrictionVelocity
 
@@ -2494,6 +2573,10 @@
         deallocate(PBLtmp)
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Calc_PBLH"
+      endif;enddo
+
       return
 
       end subroutine Calc_PBLH
@@ -2616,6 +2699,10 @@
           enddo
         enddo
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Calc_Monin_Length"
+      endif;enddo
 
       return
 

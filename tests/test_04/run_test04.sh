@@ -37,6 +37,17 @@ if [[ "$rc" -gt 0 ]] ; then
   exit
 fi
 
+# Check to see if the coastline data is present
+ls -1r ../..//share/post_proc/world_50m.txt
+rc=$((rc + $?))
+if [[ "$rc" -gt 0 ]] ; then
+  echo "Error: Could not find coastline data"
+  echo "To download the coastline data, run:"
+  echo "wget http://www.gnuplotting.org/data/world_50m.txt"
+  echo "and move the file to ASH3DHOME/share/post_proc"
+  echo "Cases will still run, but no gnuplot maps will be created."
+fi
+
 for (( s=0;s<nSubCases;s++))
 do
   echo     "-----------------------------------------------------------"

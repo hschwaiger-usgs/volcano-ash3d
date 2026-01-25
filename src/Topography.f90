@@ -238,6 +238,10 @@
       integer           :: substr_pos
       logical           :: IsThere
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine input_data_Topo"
+      endif;enddo
+
       open(unit=10,file=infile,status='old',err=1900)
 
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -385,6 +389,10 @@
 2010  continue
       close(10)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine input_data_Topo"
+      endif;enddo
+
       return
 
 1900  do io=1,2;if(VB(io).le.verbosity_error)then             
@@ -419,6 +427,10 @@
 
       integer           ,intent(in) :: nx
       integer           ,intent(in) :: ny
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Allocate_Topo"
+      endif;enddo
 
       do io=1,2;if(VB(io).le.verbosity_info)then             
         write(outlog(io),*)"--------------------------------------------------"
@@ -455,6 +467,12 @@
       nvar_User4d_XYZGs     = nvar_User4d_XYZGs     + nvar_User4d_XYZGs_Topo
       nvar_User_charlines   = nvar_User_charlines   + nvar_User_charlines_Topo
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_Topo"
+      endif;enddo
+
+      return
+
       end subroutine Allocate_Topo
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -485,6 +503,10 @@
 
       integer :: i,indx
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Prep_output_Topo"
+      endif;enddo
+
       do i=1,nvar_User2d_static_XY_Topo
         indx = indx_User2d_static_XY_Topo+i
         var_User2d_static_XY_name(indx) = temp_2ds_name_Topo(i)
@@ -502,6 +524,12 @@
         var_User_charlines(indx) = var_User_charlines_Topo(i)
       enddo
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Prep_output_Topo"
+      endif;enddo
+
+      return
+
       end subroutine Prep_output_Topo
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -518,6 +546,10 @@
 
       subroutine Deallocate_Topo
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Deallocate_Topo"
+      endif;enddo
+
       if(allocated(topo_comp))        deallocate(topo_comp)
       if(allocated(dhdx_comp))        deallocate(dhdx_comp)
       if(allocated(dhdy_comp))        deallocate(dhdy_comp)
@@ -526,6 +558,12 @@
       if(allocated(IsWater_subgrid))  deallocate(IsWater_subgrid)
       if(allocated(lon_topo_fullgrid))deallocate(lon_topo_fullgrid)
       if(allocated(lat_topo_fullgrid))deallocate(lat_topo_fullgrid)
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_Topo"
+      endif;enddo
+
+      return
 
       end subroutine Deallocate_Topo
 
@@ -563,6 +601,10 @@
           real(kind=8),intent(out) :: latmax
         end subroutine 
       END INTERFACE
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Get_Topo"
+      endif;enddo
 
       ! First we need to get the extents of the computational grid
       if(IsLatLon)then
@@ -653,6 +695,12 @@
         j_cc_pd(-1:nxmax+2,-1:nymax+2) = (Ztop - Zsurf(-1:nxmax+2,-1:nymax+2))/Ztop
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Get_Topo"
+      endif;enddo
+
+      return
+
       end subroutine Get_Topo
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -721,6 +769,10 @@
           character(len=*), intent(in) :: operation
         end subroutine MR_NC_check_status
       END INTERFACE
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Load_Topo_Gridded_NC"
+      endif;enddo
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Reading topography data in NetCDF format via Load_Topo_Gridded_NC"
@@ -1098,6 +1150,12 @@
 
       nSTAT = nf90_close(ncid)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Load_Topo_Gridded_NC"
+      endif;enddo
+
+      return
+
       end subroutine Load_Topo_Gridded_NC
 #endif
 
@@ -1136,6 +1194,10 @@
       integer :: ilat,ilon,idx
       real(kind=dp) :: topolonmin,topolonmax
       real(kind=dp) :: topolatmin,topolatmax
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Load_Topo_Gridded_NC_GEBCO08"
+      endif;enddo
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Reading topography data in NetCDF format."
@@ -1239,6 +1301,12 @@
       deallocate(dum1d_short)
       nSTAT = nf90_close(ncid)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Load_Topo_Gridded_NC_GEBCO08"
+      endif;enddo
+
+      return
+
       end subroutine Load_Topo_Gridded_NC_GEBCO08
 #endif
 
@@ -1309,6 +1377,10 @@
       integer :: nodata_int
       real(kind=sp) :: nodata_sp
       logical :: key_found
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Load_Topo_Gridded_bin"
+      endif;enddo
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Reading topography data in gridded binary format."
@@ -1888,6 +1960,10 @@
 
       close(fid_datfile)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Load_Topo_Gridded_bin"
+      endif;enddo
+
       return
 
       ! Error traps (starting with 9000)
@@ -1932,6 +2008,10 @@
       integer :: ilat,ilon
       real(kind=dp) :: topolonmin,topolonmax
       real(kind=dp) :: topolatmin,topolatmax
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Load_Topo_Gridded_ASCII"
+      endif;enddo
 
       ! We have already checked for the existance of the topo file, so now just
       ! read it
@@ -2098,6 +2178,12 @@
       topo_subgrid(1:nlon_topo_subgrid,nlat_topo_subgrid  ) = topo_subgrid(1:nlon_topo_subgrid,nlat_topo_subgrid-4)
       topo_subgrid(1:nlon_topo_subgrid,nlat_topo_subgrid-1) = topo_subgrid(1:nlon_topo_subgrid,nlat_topo_subgrid-4)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Load_Topo_Gridded_ASCII"
+      endif;enddo
+
+      return
+
       end subroutine Load_Topo_Gridded_ASCII
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2127,6 +2213,10 @@
 
       integer :: i,j
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine RemoveBath_Topo"
+      endif;enddo
+
       do i = -1,nxmax+2
         do j = -1,nymax+2
           if(topo_comp(i,j).lt.0.0_ip)then
@@ -2141,6 +2231,12 @@
           if (MR_Topo_met(i,j).lt.0.0_sp) MR_Topo_met(i,j) = 0.0_sp
         enddo
       enddo
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine RemoveBath_Topo"
+      endif;enddo
+
+      return
 
       end subroutine RemoveBath_Topo
 
@@ -2170,6 +2266,10 @@
 
       integer :: i,j
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Calc_Vmod_Topo"
+      endif;enddo
+
       ! Set the supplemental vertical velocity
       if(ZScaling_ID.eq.0)then
         vh_pd = 0.0_ip
@@ -2187,6 +2287,12 @@
           enddo
         enddo
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Calc_Vmod_Topo"
+      endif;enddo
+
+      return
 
       end subroutine Calc_Vmod_Topo
 
@@ -2229,6 +2335,10 @@
       integer       :: ilon,ilat
       real(kind=dp), dimension(:)    ,allocatable :: latcl_topo_subgrid
       real(kind=dp), dimension(:)    ,allocatable :: loncl_topo_subgrid
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Interp_Topo"
+      endif;enddo
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Interpolating topographic data"
@@ -2465,6 +2575,12 @@
         deallocate(xy2ll_ylat,xy2ll_xlon)
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Interp_Topo"
+      endif;enddo
+
+      return
+
       end subroutine Interp_Topo
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2495,6 +2611,10 @@
       integer :: i,j
       real(kind=ip) :: ds
       real(kind=ip) :: D1,D2,D3
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Calc_FDGrad_Topo"
+      endif;enddo
 
       ! Now calculate derivitives of topo
       do i=-1,nxmax+2
@@ -2554,6 +2674,12 @@
         enddo
       enddo
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Calc_FDGrad_Topo"
+      endif;enddo
+
+      return
+
       end subroutine Calc_FDGrad_Topo
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2606,6 +2732,10 @@
       ! is too noisy tobe useful near boundaries
       !real(kind=ip),dimension(2) :: topo_grad,ijDel_X,GradW
       !real(kind=ip) :: wg2
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Smooth_Topo"
+      endif;enddo
 
       ! We smooth the topographic data for both the computational grid
       ! as well as the met grid since it probably doesn't make sense to use
@@ -2768,6 +2898,10 @@
       MR_Topo_comp(-1:nxmax+2,-1:nymax+2) = real(topo_smooth_comp(-1:nxmax+2,-1:nymax+2),kind=sp)
 
       call RemoveBath_Topo
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Smooth_Topo"
+      endif;enddo
 
       return
 

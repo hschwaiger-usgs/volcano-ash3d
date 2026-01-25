@@ -66,6 +66,10 @@
       real(kind=ip) :: phi_bot,phi_top,phi
       real(kind=sp),allocatable,dimension(:) :: dumx_sp,dumy_sp,dumz_sp
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine calc_mesh_params"
+      endif;enddo
+
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"--------------------------------------------------"
         write(outlog(io),*)"---------- CALC_MESH_PARAMS ----------------------"
@@ -217,6 +221,12 @@
       endif;enddo
       if(Load_Windfiles)call MR_Set_Met_Times(SimStartHour, Simtime_in_hours)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine calc_mesh_params"
+      endif;enddo
+
+      return
+
 30    format(/,4x,'Calculating the locations of each cell-centered node in the grid.')
   
       end subroutine calc_mesh_params
@@ -265,6 +275,10 @@
       real(kind=sp),allocatable,dimension(:) :: dums_sp
       integer       :: i,j
       real(kind=ip) :: j_max
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine calc_s_mesh"
+      endif;enddo
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"--------------------------------------------------"
@@ -337,6 +351,12 @@
         enddo
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine calc_s_mesh"
+      endif;enddo
+
+      return
+
       end subroutine calc_s_mesh
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -382,9 +402,10 @@
       real(kind=8)  :: xin,yin
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
-        write(outlog(io),*)"Inside get_minmax_lonlat"
-        write(outlog(io),*)"Allocating of size: ",nxmax+2,nymax+2
+        write(outlog(io),*)"     Entered Subroutine get_minmax_lonlat"
+        write(outlog(io),*)"      Allocating of size: ",nxmax+2,nymax+2
       endif;enddo
+
 #ifdef USEPOINTERS
       if(.not.associated(xy2ll_ylat))then
 #else
@@ -426,6 +447,12 @@
           xy2ll_ylat(i,j) = real(ophi,kind=ip)
         enddo
       enddo
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine get_minmax_lonlat"
+      endif;enddo
+
+      return
 
       end subroutine get_minmax_lonlat
 
@@ -555,6 +582,12 @@
         kmax = min(kmax+1,nzmax)
         kmin = kmax-2
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine get_minmax_index"
+      endif;enddo
+
+      return
 
       end subroutine get_minmax_index
 

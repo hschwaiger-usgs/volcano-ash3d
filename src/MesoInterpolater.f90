@@ -359,6 +359,10 @@
 
       first_time = .false.
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine MesoInterpolator"
+      endif;enddo
+
       return
 
       end subroutine MesoInterpolater
@@ -588,6 +592,10 @@
       endif
 
       first_time = .false.
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Read_Next_MesoStep_HUVW"
+      endif;enddo
 
       return
 

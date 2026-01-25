@@ -179,6 +179,12 @@
       ieruption = 1 ! Initialize eruption for the start of this dt to the starting eruption
       jeruption = 1 ! Initialize eruption for the end of this dt to the starting eruption
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_Source_eruption"
+      endif;enddo
+
+      return
+
       end subroutine Allocate_Source_eruption
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -201,6 +207,7 @@
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Allocate_Source_grid"
       endif;enddo
+
       if(nsmax.eq.0)then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"     Trying to allocate SourceNodeFlux but nsmax=0"
@@ -211,6 +218,12 @@
       allocate(NormSourceColumn(neruptions,1:nzmax));    NormSourceColumn = 0.0_ip
       allocate(SourceNodeFlux(0:nzmax+1,1:nsmax));       SourceNodeFlux   = 0.0_ip
       allocate(TephraFluxRate(nzmax));                   TephraFluxRate   = 0.0_ip
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_Source_grid"
+      endif;enddo
+
+      return
 
       end subroutine Allocate_Source_grid
 
@@ -273,6 +286,10 @@
       if(allocated(TephraFluxRate))      deallocate(TephraFluxRate)
 #endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_Source"
+      endif;enddo
+
       end subroutine Deallocate_Source
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -320,6 +337,10 @@
       real(kind=ip) :: fac1,fac2
       real(kind=ip) :: sclfac1,sclfac2,cmpsclfac1,cmpsclfac2
       real(kind=ip),dimension(:),allocatable :: s_PlumeHeight
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Calc_Normalized_SourceCol"
+      endif;enddo
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"     Now building normalized source columns above vent."
@@ -513,6 +534,12 @@
 
       enddo ! neruptions
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Calc_Normalized_SourceCol"
+      endif;enddo
+
+      return
+
       end subroutine Calc_Normalized_SourceCol
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -607,6 +634,11 @@
         endif;enddo
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine EruptivePulse_MassFluxRate"
+      endif;enddo
+
+      return
 
 1024  format('   Total Duration (hrs)   = ',f6.3,/, &
              '   Total volume (km3 DRE) = ',f8.4,/,&
@@ -705,6 +737,12 @@
         return
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine CheckEruptivePulses"
+      endif;enddo
+
+      return
+
 !     Format statements
  1     format(4x,'Warning.  Eruption ',i3,' is shorter than time steps dt.')
 
@@ -800,6 +838,12 @@
       ! Now that we have prepared the contributions, update the eruption index
       ! for the start of the next step
       ieruption = jeruption
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine TephraSourceNodes"
+      endif;enddo
+
+      return
 
 !     Format statements
 2     format(4x,'Source Node Flux does not agree with calculations.',/, &

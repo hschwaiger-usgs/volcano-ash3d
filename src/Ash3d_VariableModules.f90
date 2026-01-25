@@ -246,6 +246,8 @@
         stop 1
       endif
 
+      return
+
       end subroutine FileIO_Check_testkey
 
 !##############################################################################
@@ -366,7 +368,7 @@
           strlen = ii
         else
           do io=1,2;if(VB(io).le.verbosity_debug1)then
-            write(outlog(io),*)"   WARNING: Removing asciicode from line: ",asciicode
+            write(outlog(io),*)"   WARNING: Removing character from line with asciicode= ",asciicode
           endif;enddo
         endif
         i=i+1
@@ -377,8 +379,9 @@
       strlen = len(tmpstr)
       linebuffer = tmpstr
 
-      end subroutine FileIO_CleanLine
+      return
 
+      end subroutine FileIO_CleanLine
 
 !##############################################################################
 
@@ -553,6 +556,8 @@
       
       use precis_param
 
+      use io_units
+
       implicit none
 
         ! Set everything to public by default
@@ -710,6 +715,10 @@
 
       subroutine Deallocate_io_data
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Deallocate_io_data"
+      endif;enddo
+
 #ifdef USEPOINTERS
       if(associated(WriteTimes))   deallocate(WriteTimes)
       if(associated(i_vprofile))   deallocate(i_vprofile)
@@ -725,6 +734,12 @@
       if(allocated(y_vprofile))   deallocate(y_vprofile)
       if(allocated(Site_vprofile))deallocate(Site_vprofile)
 #endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Deallocate_io_data"
+      endif;enddo
+
+      return
 
       end subroutine Deallocate_io_data
       !------------------------------------------------------------------------
@@ -743,7 +758,9 @@
       module mesh
 
       use precis_param
-  
+
+      use io_units
+
       implicit none
 
         ! Set everything to public by default
@@ -850,6 +867,10 @@
         !   Input_Data.f90:Read_Control_File
         !    z_vec_init
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Allocate_mesh"
+      endif;enddo
+
 #ifdef USEPOINTERS
       if (IsLatLon) then
         if(.not.associated(lon_cc_pd))allocate(lon_cc_pd(-1:nxmax+2));                            lon_cc_pd = 0.0_ip
@@ -896,10 +917,20 @@
       if(.not.allocated(Zsurf))      allocate(Zsurf(-1:nxmax+2,-1:nymax+2));                   Zsurf       = 0.0_ip
 #endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_mesh"
+      endif;enddo
+
+      return
+
       end subroutine Allocate_mesh
       !------------------------------------------------------------------------
 
       subroutine Deallocate_mesh
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Deallocate_mesh"
+      endif;enddo
 
 #ifdef USEPOINTERS
       if(associated(z_vec_init))    deallocate(z_vec_init)
@@ -943,6 +974,12 @@
       if(allocated(Zsurf))         deallocate(Zsurf)
 #endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_mesh"
+      endif;enddo
+
+      return
+
       end subroutine Deallocate_mesh
       !------------------------------------------------------------------------
 
@@ -961,6 +998,8 @@
       module solution
 
       use precis_param
+
+      use io_units
 
       implicit none
 
@@ -1041,6 +1080,10 @@ subroutine Allocate_solution
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,ts0,ts1
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Allocate_solution"
+      endif;enddo
+
 #ifdef USEPOINTERS
       if(.not.associated(vx_pd))         allocate(vx_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2))
       if(.not.associated(vy_pd))         allocate(vy_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2))
@@ -1114,10 +1157,20 @@ subroutine Allocate_solution
       IsAloft = .true.
       DepositGranularity = 0.0_ip
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_solution"
+      endif;enddo
+
+      return
+
       end subroutine Allocate_solution
       !------------------------------------------------------------------------
 
       subroutine Deallocate_solution
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Deallocate_solution"
+      endif;enddo
 
 #ifdef USEPOINTERS
       if(associated(vx_pd))              deallocate(vx_pd)
@@ -1164,6 +1217,12 @@ subroutine Allocate_solution
       if(allocated(IsAloft))            deallocate(IsAloft)
       if(allocated(DepositGranularity)) deallocate(DepositGranularity)
 #endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_solution"
+      endif;enddo
+
+      return
 
       end subroutine Deallocate_solution
       !------------------------------------------------------------------------
@@ -1249,6 +1308,8 @@ subroutine Allocate_solution
 
       use precis_param
 
+      use io_units
+
       implicit none
 
         ! Set everything to public by default
@@ -1310,6 +1371,10 @@ subroutine Allocate_solution
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Allocate_wind_grid"
+      endif;enddo
+
 #ifdef USEPOINTERS
       if(.not.associated(vx_meso_last_step_sp))allocate(vx_meso_last_step_sp(nxmax,nymax,nzmax))
       if(.not.associated(vx_meso_next_step_sp))allocate(vx_meso_next_step_sp(nxmax,nymax,nzmax))
@@ -1356,10 +1421,20 @@ subroutine Allocate_solution
       vf_meso_last_step_sp = 0.0_sp
       vf_meso_next_step_sp = 0.0_sp
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_wind_grid"
+      endif;enddo
+
+      return
+
       end subroutine Allocate_wind_grid
       !------------------------------------------------------------------------
 
       subroutine Deallocate_wind_grid
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Deallocate_wind_grid"
+      endif;enddo
 
 #ifdef USEPOINTERS
       if(associated(vx_meso_last_step_sp)) deallocate(vx_meso_last_step_sp)
@@ -1392,6 +1467,12 @@ subroutine Allocate_solution
       if(allocated(vf_meso_last_step_sp)) deallocate(vf_meso_last_step_sp)
       if(allocated(vf_meso_next_step_sp)) deallocate(vf_meso_next_step_sp)
 #endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_wind_grid"
+      endif;enddo
+
+      return
 
       end subroutine Deallocate_wind_grid
       !------------------------------------------------------------------------

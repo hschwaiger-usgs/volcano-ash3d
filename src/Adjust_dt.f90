@@ -69,6 +69,10 @@
       real(kind=dp),save :: time_diffuse
       logical      ,save :: have_DT_diffus = .false.
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Adjust_DT"
+      endif;enddo
+
       !-------------------------------------------------------
       !  ADVECTION
       !-------------------------------------------------------
@@ -340,6 +344,12 @@
       if(CheckMesoVel)then
         dt_meso_next = dt
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Adjust_DT"
+      endif;enddo
+
+      return
 
       end subroutine Adjust_DT
 

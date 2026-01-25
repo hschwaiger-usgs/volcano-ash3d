@@ -388,6 +388,12 @@
       KML_sizeY(ivar)         = '305'
       KML_AltMode(ivar)       = 'clampToGround'
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Set_OutVar_Specs"
+      endif;enddo
+
+      return
+
       end subroutine Set_OutVar_Specs
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -570,6 +576,10 @@
       endif
 
       deallocate(iyear,imonth,iday,StartHour)
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine OpenFile_KML"
+      endif;enddo
 
       return
 
@@ -936,6 +946,10 @@
       enddo
 
       write(fid,3)   ! close folder
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Write_2D_KML"
+      endif;enddo
 
       return
       
@@ -1378,6 +1392,10 @@
                                   wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Write_PointData_Airports_KML"
+      endif;enddo
+
       return
 
       ! Error traps
@@ -1637,6 +1655,12 @@
       endif
       close(fid)      !close kml file
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Close_KML"
+      endif;enddo
+
+      return
+
 15    format(/,5x,'Closing kml file ',a30)
 11    format('   </Folder>',/,'</Document>',/,'</kml>')
 12    format(/,'</Document>',/,'</kml>')
@@ -1718,6 +1742,12 @@
       ! Write out the polygon
       write(fid,5) (lonplot(ict),latplot(ict), ict=0,40)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine PlotModelBoundary"
+      endif;enddo
+
+      return
+
       ! Format statements
 3     format('	  <Style id="boundary_style">',/, &             ! style for model boundary
              '		<PolyStyle>',/, &
@@ -1782,8 +1812,6 @@
             '           </outerBoundaryIs>',/, &
             '		</Polygon>',/, &
             '	</Placemark>')
-
-      return
 
       end subroutine PlotModelBoundary
 

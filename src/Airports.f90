@@ -144,6 +144,12 @@
       allocate(Airport_Thickness_TS(nair,nWT)) ;     Airport_Thickness_TS = 0.0_ip
       allocate(Airport_TS_plotindex(nair))     ;     Airport_TS_plotindex = 0
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_Airports"
+      endif;enddo
+
+      return
+
       end subroutine Allocate_Airports
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -193,6 +199,12 @@
       if(allocated(Airport_ThicknessLast))     deallocate(Airport_ThicknessLast)
       if(allocated(Airport_Thickness_TS))      deallocate(Airport_Thickness_TS)
       if(allocated(Airport_TS_plotindex))      deallocate(Airport_TS_plotindex)
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_Airports"
+      endif;enddo
+
+      return
 
       end subroutine Deallocate_Airports
 
@@ -472,6 +484,10 @@
       if(allocated(AirportFullCode)) deallocate(AirportFullCode)
       if(allocated(AirportFullName)) deallocate(AirportFullName)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine ReadAirports"
+      endif;enddo
+
       return       
 
       ! format statements
@@ -718,6 +734,11 @@
       close(fid_airport)
 
       n_ext_airports = isite     !number of external airports read
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine ReadExtAirports"
+      endif;enddo
+
       return
 
       end subroutine ReadExtAirports
@@ -841,6 +862,10 @@
         write(outlog(io),*)&
           " Successfully read default global airport file: ",trim(adjustl(AirportMasterFile))
         write(outlog(io),*)" Number of airports read = ",num_GlobAirports
+      endif;enddo
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Read_GlobalAirports"
       endif;enddo
 
       return
@@ -13163,7 +13188,13 @@
       ! return the number of airports in this global list.
 
       num_GlobAirports = i
-      
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Read_GlobalAirports"
+      endif;enddo
+
+      return
+
       end subroutine Read_GlobalAirports
 #endif
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -13196,6 +13227,10 @@
       integer            :: isite
       real(kind=dp)      :: lat_in,lon_in,xout,yout
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Project_GlobalAirports"
+      endif;enddo
+
       do isite=1,NAIRPORTS_EWERT
         ! convert lat/lon to the projected values.
         ! Note that we convert the internal list regardless of the status of
@@ -13211,6 +13246,12 @@
           AirportFullY(isite) = real(yout,kind=ip)
         endif
       end do
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Project_GlobalAirports"
+      endif;enddo
+
+      return
 
       end subroutine Project_GlobalAirports
 

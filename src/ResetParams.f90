@@ -771,10 +771,14 @@
 
       !close(fid_ctrlfile)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine input_data_ResetParams"
+      endif;enddo
+
       return
 
 9001  do io=1,2;if(VB(io).le.verbosity_error)then
-        write(errlog(io),*)  'error: cannot open input file: ',infile
+        write(errlog(io),*)  'ERROR: cannot open input file: ',infile
         write(errlog(io),*)  'Program stopped'
       endif;enddo
       stop 1

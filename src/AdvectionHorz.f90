@@ -14,6 +14,8 @@
 
       use precis_param
 
+      use io_units
+
       implicit none
 
         ! Set everything to private by default
@@ -65,8 +67,16 @@
         end subroutine get_minmax_index
       END INTERFACE
 
+      do io=1,2;if(VB(io).le.verbosity_debug2)then
+        write(outlog(io),*)"     Entered Subroutine AdvectHorz"
+      endif;enddo
+
       call get_minmax_index
 #else
+      do io=1,2;if(VB(io).le.verbosity_debug2)then
+        write(outlog(io),*)"     Entered Subroutine AdvectHorz"
+      endif;enddo
+
       imin = 1
       imax = nxmax
       jmin = 1
@@ -83,6 +93,12 @@
         call advect_x
         call advect_y
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug2)then
+        write(outlog(io),*)"     Exited Subroutine AdvectHorz"
+      endif;enddo
+
+      return
 
       end subroutine AdvectHorz
 

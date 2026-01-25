@@ -157,6 +157,12 @@
       allocate(Tephra_gsPhi(n_gs_max));     Tephra_gsPhi    = 0.0_ip
       allocate(Tephra_gsF_fac(n_gs_max,5)); Tephra_gsF_fac  = 0.0_ip
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_Tephra"
+      endif;enddo
+
+      return
+
       end subroutine Allocate_Tephra
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -188,6 +194,12 @@
 
       allocate(vf_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet,n_gs_max))
       allocate(vf_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet,n_gs_max))
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_Tephra_Met"
+      endif;enddo
+
+      return
 
       end subroutine Allocate_Tephra_Met
 
@@ -229,6 +241,12 @@
       if(allocated(Tephra_gsF_fac))    deallocate(Tephra_gsF_fac)
 #endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_Tephra"
+      endif;enddo
+
+      return
+
       end subroutine Deallocate_Tephra
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -256,6 +274,12 @@
       if(allocated(vf_meso_last_step_MetP_sp)) deallocate(vf_meso_last_step_MetP_sp)
       if(allocated(vf_meso_next_step_MetP_sp)) deallocate(vf_meso_next_step_MetP_sp)
 #endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_Tephra_Met"
+      endif;enddo
+
+      return
 
       end subroutine Deallocate_Tephra_Met
 
@@ -423,6 +447,12 @@
         enddo
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Set_Vf_Meso"
+      endif;enddo
+
+      return
+
       end subroutine Set_Vf_Meso
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -542,6 +572,12 @@
         endif
       enddo
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Calculate_Tephra_Shape"
+      endif;enddo
+
+      return
+
       end subroutine Calculate_Tephra_Shape
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -622,6 +658,12 @@
           Tephra_bin_mass(isize) = Tephra_bin_mass(isize) + LN_suppl_frac(isize)*LN_massfrac
         enddo
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Sort_Tephra_Size"
+      endif;enddo
+
+      return
 
       end subroutine Sort_Tephra_Size
 
@@ -771,6 +813,12 @@
         LN_suppl_frac(mid_bin) = mid_bin_pos_half + mid_bin_neg_half
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine partition_gsbins"
+      endif;enddo
+
+      return
+
       end subroutine partition_gsbins
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -817,6 +865,12 @@
           n_gs_aloft = n_gs_aloft + 1
         endif
       enddo
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Prune_GS"
+      endif;enddo
+
+      return
 
       end subroutine Prune_GS
 

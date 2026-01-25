@@ -359,6 +359,10 @@
       ! This is an output step, so toggle on the marker for the output log
       OutputStep_Marker = '*'
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine output_results"
+      endif;enddo
+
       return
 
       end subroutine output_results
