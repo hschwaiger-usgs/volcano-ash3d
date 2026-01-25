@@ -446,6 +446,10 @@
         end function HS_xmltime
       END INTERFACE
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_2Dmap_PNG_python"
+      endif;enddo
+
       ! Test for icon file
       inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
 
@@ -1124,6 +1128,10 @@
       if(allocated(name_cities))        deallocate(name_cities)
       if(allocated(zrgb))               deallocate(zrgb)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_2Dmap_PNG_python"
+      endif;enddo
+
       return
 
       end subroutine write_2Dmap_PNG_python
@@ -1218,6 +1226,10 @@
           logical     ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_2Dprof_PNG_python"
+      endif;enddo
 
       ! Test for icon file
       inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
@@ -1492,6 +1504,11 @@
                                   wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_2Dprof_PNG_python"
+      endif;enddo
+
+      return
       end subroutine write_2Dprof_PNG_python
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1574,6 +1591,10 @@
       integer           :: cstat
       character(len=120):: iomessage
       character(len=200):: cmd
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_DepPOI_TS_PNG_python"
+      endif;enddo
 
       if(Airport_Thickness_TS(pt_indx,nWriteTimes).lt.THICKNESS_THRESH)then
         return
@@ -1696,6 +1717,11 @@
                                   wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_DepPOI_TS_PNG_python"
+      endif;enddo
+
+      return
       end subroutine write_DepPOI_TS_PNG_python
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

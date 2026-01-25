@@ -5,7 +5,7 @@ echo     "-----------------------------------------------------------"
 Ash3d="../../bin/Ash3d"
 Ash3d_ASCII_check="../../bin/tools/Ash3d_ASCII_check"
 Ash3d_PP="../../bin/Ash3d_PostProc"
-GenPlots=0
+GenPlots=1
 tol=0.01
 n2Dfiles=11
 ascii2Doutfiles=("CloudHeight_008.00hrs.dat" "CloudHeight_016.00hrs.dat" "CloudLoad_008.00hrs.dat" "CloudLoad_016.00hrs.dat" "CloudConcentration_008.00hrs.dat" "CloudConcentration_016.00hrs.dat" "CloudArrivalTime.dat" "DepositFile_008.00hrs.dat" "DepositFile_016.00hrs.dat" "DepositFile_____final.dat" "DepositArrivalTime.dat")
@@ -98,6 +98,12 @@ ascii2Doutfiles2=("CloudHeight_120.00hrs.dat" "CloudHeight_240.00hrs.dat" "Cloud
 ln -s ${WINDROOT}/NCEP Wind_nc
 
 ASH3DHOME=../../ ${Ash3d} TC4_LL_MSH_SC${s}.inp > /dev/null 2>&1
+if [[ "$GenPlots" -gt 0 ]] ; then
+  # Post-processing
+  ASH3DHOME=../../ ${Ash3d_PP} 3d_tephra_fall.nc 12 3 2 > /dev/null 2>&1
+  mv Ash3d_CloudLoad_t240.00hrs.png TC4_SC${s}_Ash3d_CloudLoad_t240.00hrs.png
+fi
+
 for (( i=0;i<n2Dfiles;i++))
 do
   echo Checking 2d ASCII file "${ascii2Doutfiles2[i]}"

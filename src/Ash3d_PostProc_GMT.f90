@@ -286,6 +286,10 @@
         end function HS_xmltime
       END INTERFACE
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_2Dmap_PNG_GMT"
+      endif;enddo
+
       ! Test for icon file
       inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
       ! Assume coastline file is present if gmt is installed
@@ -1234,6 +1238,12 @@
       !! clean up
       !call sGMT_Destroy_Session()
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_2Dmap_PNG_GMT"
+      endif;enddo
+
+      return
+
       end subroutine write_2Dmap_PNG_GMT
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1293,37 +1303,38 @@
       use time_data,     only : &
          os_time_log,SimStartHour,BaseYear,useLeap,ntmax,time_native
 
-      integer,intent (in) :: vprof_ID
+      integer,intent(in) :: vprof_ID
 
-      logical           :: HaveIconFile
-      character(len=76) :: title_plot
-      character(len=30) :: cstr_xlabel = 'Time (hours after eruption)'
-      character(len=30) :: cstr_ylabel = 'Height (km)'
-      character(len=30) :: cstr_zlabel = 'Ash conc. mg/m3'
-      character(len=30) :: cstr_volcname
-      character(len=30) :: cstr_run_date
-      character(len=30) :: cstr_windfile
-      character(len=40) :: cstr_ErStartT
-      character(len=27) :: cstr_ErHeight
-      character(len=30) :: cstr_ErDuratn
-      character(len=38) :: cstr_ErVolume
-      character(len=45) :: cstr_note
+      logical            :: HaveIconFile
+      character(len=76)  :: title_plot
+      character(len=30)  :: cstr_xlabel = 'Time (hours after eruption)'
+      character(len=30)  :: cstr_ylabel = 'Height (km)'
+      character(len=30)  :: cstr_zlabel = 'Ash conc. mg/m3'
+      character(len=30)  :: cstr_volcname
+      character(len=30)  :: cstr_run_date
+      character(len=30)  :: cstr_windfile
+      character(len=40)  :: cstr_ErStartT
+      character(len=27)  :: cstr_ErHeight
+      character(len=30)  :: cstr_ErDuratn
+      character(len=38)  :: cstr_ErVolume
+      character(len=45)  :: cstr_note
 
-      character(len=10) :: filename_root
-      character(len=14) :: filename_script
-      character(len=14) :: filename_outdata
-      character(len=14) :: filename_png
-      integer           :: fid_script  = 55
-      integer           :: fid_outdata  = 54
-      character(len=27) :: coord_str
-      character(len=80) :: plotcom
-      integer           :: i,k
-      integer           :: iostatus
-      integer           :: cstat
-      character(len=120):: iomessage
-      integer           :: iw,iwf
-      character(len= 80):: linebuffer080
-      character(len=200):: cmd
+      character(len=10)  :: filename_root
+      character(len=14)  :: filename_script
+      character(len=14)  :: filename_outdata
+      character(len=14)  :: filename_png
+      integer            :: fid_script   = 55
+      integer            :: fid_outdata  = 54
+      character(len=27)  :: coord_str
+      character(len=80)  :: plotcom
+      integer            :: i,k
+      integer            :: iostatus
+      integer            :: cstat
+      character(len=120) :: iomessage
+      integer            :: iw,iwf
+      character(len= 80) :: linebuffer080
+      !character(len=130) :: linebuffer130
+      character(len=200) :: cmd
 
       ! Plotting variables
 
@@ -1357,6 +1368,10 @@
           logical     ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_2Dprof_PNG_GMT"
+      endif;enddo
 
       ! Test for icon file
       inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
@@ -1629,6 +1644,12 @@
                                   wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_2Dprof_PNG_GMT"
+      endif;enddo
+
+      return
+
       end subroutine write_2Dprof_PNG_GMT
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1705,6 +1726,10 @@
       character(len=200):: cmd
 
       integer,save      :: plot_index = 0
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_DepPOI_TS_PNG_GMT"
+      endif;enddo
 
       if(Airport_Thickness_TS(pt_indx,nWriteTimes).lt.THICKNESS_THRESH)then
         return
@@ -1829,6 +1854,12 @@
         call execute_command_line(trim(adjustl(cmd)),&
                                   wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_DepPOI_TS_PNG_GMT"
+      endif;enddo
+
+      return
 
       end subroutine write_DepPOI_TS_PNG_GMT
 

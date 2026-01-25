@@ -240,6 +240,10 @@
         end function HS_xmltime
       END INTERFACE
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_2Dmap_PNG_matlab"
+      endif;enddo
+
       ! Test for icon file
       inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
 
@@ -669,6 +673,10 @@
       if(allocated(name_cities))        deallocate(name_cities)
       if(allocated(zrgb))               deallocate(zrgb)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_2Dmap_PNG_matlab"
+      endif;enddo
+
       return
 
       end subroutine write_2Dmap_PNG_matlab
@@ -790,6 +798,10 @@
           logical     ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_2Dprof_PNG_matlab"
+      endif;enddo
 
       ! Test for icon file
       inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
@@ -996,6 +1008,11 @@
                                   wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_2Dprof_PNG_matlab"
+      endif;enddo
+
+      return
       end subroutine write_2Dprof_PNG_matlab
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1067,6 +1084,10 @@
       character(len=080):: linebuffer080
 
       integer,save      :: plot_index = 0
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_DepPOI_TS_PNG_matlab"
+      endif;enddo
 
       if(Airport_Thickness_TS(pt_indx,nWriteTimes).lt.THICKNESS_THRESH)then
         return
@@ -1150,6 +1171,11 @@
                                   wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_DepPOI_TS_PNG_matlab"
+      endif;enddo
+
+      return
       end subroutine write_DepPOI_TS_PNG_matlab
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

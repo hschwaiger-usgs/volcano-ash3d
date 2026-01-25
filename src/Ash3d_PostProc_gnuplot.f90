@@ -266,6 +266,10 @@
         end function HS_xmltime
       END INTERFACE
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_2Dmap_PNG_gnuplot"
+      endif;enddo
+
       ! Test for icon file
       inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
 
@@ -907,6 +911,10 @@
       if(allocated(name_cities))        deallocate(name_cities)
       if(allocated(zrgb))               deallocate(zrgb)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_2Dmap_PNG_gnuplot"
+      endif;enddo
+
       return
 
       ! Error traps (starting with 9000)
@@ -1059,6 +1067,10 @@
           logical     ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_2Dprof_PNG_gnuplot"
+      endif;enddo
 
       ! Test for icon file
       inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
@@ -1274,6 +1286,12 @@
                                   wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_2Dprof_PNG_gnuplot"
+      endif;enddo
+
+      return
+
       end subroutine write_2Dprof_PNG_gnuplot
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1342,6 +1360,10 @@
 
       integer,save      :: plot_index = 0
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_DepPOI_TS_PNG_gnuplot"
+      endif;enddo
+
       if(Airport_Thickness_TS(pt_indx,nWriteTimes).lt.THICKNESS_THRESH)then
         return
       else
@@ -1408,6 +1430,12 @@
         call execute_command_line(trim(adjustl(cmd)),&
                                   wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_DepPOI_TS_PNG_gnuplot"
+      endif;enddo
+
+      return
 
       end subroutine write_DepPOI_TS_PNG_gnuplot
 

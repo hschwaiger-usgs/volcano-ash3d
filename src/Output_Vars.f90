@@ -406,6 +406,12 @@
       allocate(dbZ(nxmax,nymax,nzmax))                              ! radar reflectivity (dbZ)
       dbZ = 0.0_ip
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exiting Subroutine Allocate_Output_Vars"
+      endif;enddo
+
+      return
+
       end subroutine Allocate_Output_Vars
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -430,6 +436,12 @@
       endif;enddo
 
       allocate(time_native(nt)); time_native = 0.0_dp
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_NTime"
+      endif;enddo
+
+      return
 
       end subroutine Allocate_NTime
 
@@ -462,6 +474,12 @@
         allocate(pr_ash(nz,nt,nv))                       ! vertical ash profile
         pr_ash = 0.0_op
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_Profile"
+      endif;enddo
+
+      return
 
       end subroutine Allocate_Profile
 
@@ -549,6 +567,12 @@
       allocate(var_User4d_XYZGs(nx,ny,nz,ns,nvar_User4d_XYZGs)); var_User4d_XYZGs        = 0.0_op
       allocate(var_User_charlines(nvar_User_charlines));         var_User_charlines      = ''
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_Output_UserVars"
+      endif;enddo
+
+      return
+
       end subroutine Allocate_Output_UserVars
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -601,6 +625,12 @@
       if(allocated(Con_Cust_Lev))     deallocate(Con_Cust_Lev)
 #endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_Output_Vars"
+      endif;enddo
+
+      return
+
       end subroutine Deallocate_Output_Vars
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -627,6 +657,12 @@
       if(allocated(time_native))deallocate(time_native)
 #endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_NTime"
+      endif;enddo
+
+      return
+
       end subroutine Deallocate_NTime
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -652,6 +688,12 @@
 #else
       if(allocated(pr_ash))deallocate(pr_ash)                       ! vertical ash profile
 #endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_Profile"
+      endif;enddo
+
+      return
 
       end subroutine Deallocate_Profile
 
@@ -736,6 +778,12 @@
       if(allocated(var_User4d_XYZGs_FillVal))     deallocate(var_User4d_XYZGs_FillVal)
       if(allocated(var_User4d_XYZGs))             deallocate(var_User4d_XYZGs)
 #endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_Output_UserVars"
+      endif;enddo
+
+      return
 
       end subroutine Deallocate_Output_UserVars
 
@@ -851,6 +899,12 @@
       Con_CloudTime_Lev(1:Con_CloudTime_N) = Con_DepTime_Lev(1:Con_CloudTime_N)
       Con_CloudTime_RGB( 1:9,1:3) = Con_CloudTop_RGB( 1:9,1:3)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Set_OutVar_ContourLevel"
+      endif;enddo
+
+      return
+
       end subroutine Set_OutVar_ContourLevel
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -906,6 +960,12 @@
 
       Calculated_AshThickness = .true.
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine AshThicknessCalculator"
+      endif;enddo
+
+      return
+
       end subroutine AshThicknessCalculator
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -947,6 +1007,12 @@
            real(concen_pd(1:nxmax,1:nymax,1:nzmax,isize,ts1),kind=op)
         enddo
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine AshTotalCalculator"
+      endif;enddo
+
+      return
 
       end subroutine AshTotalCalculator
 
@@ -1019,6 +1085,12 @@
           enddo
         enddo
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine dbZCalculator"
+      endif;enddo
+
+      return
 
       end subroutine dbZCalculator      
 
@@ -1134,6 +1206,12 @@
 
       Calculated_Cloud_Load = .true.
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine ConcentrationCalculator"
+      endif;enddo
+
+      return
+
       end subroutine ConcentrationCalculator      
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1187,6 +1265,12 @@
           enddo
         enddo
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine CloudAreaCalculator"
+      endif;enddo
+
+      return
 
       end subroutine CloudAreaCalculator      
 
@@ -1251,6 +1335,12 @@
 
       Called_Gen_Output_Vars = .true.
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Gen_Output_Vars"
+      endif;enddo
+
+      return
+
       end subroutine Gen_Output_Vars
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1303,6 +1393,12 @@
 
         enddo
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Calc_AshVol_Aloft"
+      endif;enddo
+
+      return
 
       end subroutine Calc_AshVol_Aloft
 
@@ -1369,6 +1465,10 @@
         enddo
       enddo
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Calc_vprofile"
+      endif;enddo
+
       return
 
       end subroutine Calc_vprofile
@@ -1414,6 +1514,12 @@
                       KM3_2_M3                                          ! convert to km3
         enddo
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Calc_AshVol_Deposit"
+      endif;enddo
+
+      return
 
       end subroutine Calc_AshVol_Deposit
 
@@ -1469,6 +1575,12 @@
 
         enddo
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Calc_AshVol_Outflow"
+      endif;enddo
+
+      return
 
       end subroutine Calc_AshVol_Outflow
 
@@ -1562,6 +1674,10 @@
           endif
         endif
       enddo
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine FirstAsh"
+      endif;enddo
 
       return
 

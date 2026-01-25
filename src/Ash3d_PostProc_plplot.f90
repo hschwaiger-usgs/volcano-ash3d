@@ -238,6 +238,10 @@
         end function HS_xmltime
       END INTERFACE
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_2Dmap_PNG_plplot"
+      endif;enddo
+
       ! Test for icon file
       inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
 
@@ -795,6 +799,12 @@
       if(allocated(line_widths))     deallocate(line_widths)
       if(allocated(symbol_scales))   deallocate(symbol_scales)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_2Dmap_PNG_plplot"
+      endif;enddo
+
+      return
+
       end subroutine write_2Dmap_PNG_plplot
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -831,7 +841,7 @@
       use time_data,     only : &
          os_time_log,SimStartHour,BaseYear,useLeap,ntmax,time_native
 
-      integer,intent (in) :: vprof_ID
+      integer,intent(in) :: vprof_ID
 
       logical           :: HaveIconFile
       character(len=76) :: title_plot
@@ -903,6 +913,10 @@
           logical     ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_2Dprof_PNG_plplot"
+      endif;enddo
 
       ! Test for icon file
       inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
@@ -1178,6 +1192,12 @@
       if(allocated(z))      deallocate(z)
       if(allocated(conc))   deallocate(conc)
       if(allocated(shedge)) deallocate(shedge)
+ 
+     do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_2Dprof_PNG_plplot"
+      endif;enddo
+
+      return
 
       end subroutine write_2Dprof_PNG_plplot
 
@@ -1225,6 +1245,10 @@
       integer(kind=4) :: g2 = 136
       integer(kind=4) :: b2 = 136
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_DepPOI_TS_PNG_plplot"
+      endif;enddo
+      
       if(Airport_Thickness_TS(pt_indx,nWriteTimes).lt.0.01_ip)then
         return
       else
@@ -1307,6 +1331,11 @@
       if(allocated(x0)) deallocate(x0)
       if(allocated(y0)) deallocate(y0)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_DepPOI_TS_PNG_plplot"
+      endif;enddo
+
+      return
       end subroutine write_DepPOI_TS_PNG_plplot
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1337,6 +1366,10 @@
       integer           :: dec1str
       integer           :: dec2str
       integer           :: tmp_int
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine get_version_plplot"
+      endif;enddo
 
       call plgver(linebuffer080)
 
@@ -1384,6 +1417,12 @@
           endif;enddo
         endif
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     ExitedSubroutine get_version_plplot"
+      endif;enddo
+
+      return
 
       end subroutine get_version_plplot
 

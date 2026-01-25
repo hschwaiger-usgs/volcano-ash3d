@@ -38,7 +38,7 @@ ifeq ($(RUN), OPTOMP)
 endif
 
   # Preprocessing flags
-FPPFLAGS = -x f95-cpp-input
+FPPFLAGS = -x f95-cpp-input $(OSFPPFLAG) $(DATAFPPFLAG) $(LIMFPPFLAG) $(DIFFFPPFLAG) $(memFPPFLAG) $(extdatFPPFLAG) $(FASTFPPFLAG) $(PIIFPPFLAG) $(SYSFPPFLAG) $(PLOTFPPFLAG)
   # Extra flags
 EXFLAGS =
 

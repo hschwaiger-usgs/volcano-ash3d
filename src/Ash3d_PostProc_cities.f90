@@ -55,6 +55,10 @@
 
       character(len=130)             :: CityMasterFile
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine citylist"
+      endif;enddo
+
       CityName_out = ''           ! set default values
       CityLon_out  = 0.0_ip
       CityLat_out  = 0.0_ip
@@ -79,7 +83,7 @@
 
       dlat = latUR - latLL
       dlon = lonUR - lonLL
-      cell_width = dlon/resolution
+      cell_width  = dlon/resolution
       cell_height = dlat/resolution
       minspace_x  = 3.0_ip*cell_width
       minspace_y  = 3.0_ip*cell_height
@@ -104,6 +108,10 @@
           return
         endif
       endif
+      do io=1,2;if(VB(io).le.verbosity_debug2)then
+        write(outlog(io),*)"Opening world cities file for mapping: ",&
+                            trim(adjustl(CityMasterFile))
+      endif;enddo
       open(unit=fid_cities,file=trim(adjustl(CityMasterFile)),status='old',action='read')
 
       ! skip the first line
@@ -155,6 +163,7 @@
         nread=nread+1
       enddo
       close(fid_cities)
+        ! All cities in the domain have been logged, now sort by size and position
       if(outCode.gt.0)then
         if(ncities.gt.0) then
           open(unit=fid_citiesxy,file='cities.xy',status='replace',action='write')
@@ -180,6 +189,12 @@
         endif
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine citylist"
+      endif;enddo
+
+      return
+
       end subroutine citylist
          
 !***************************************************************************************
@@ -202,6 +217,10 @@
 
       integer            :: icity
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine space_checker"
+      endif;enddo
+
       do icity=1,ncities
         if ((abs(CityLon_out(icity)-CityLon).lt.minspace_x).and. &
             (abs(CityLat_out(icity)-CityLat).lt.minspace_y)) then
@@ -209,6 +228,10 @@
           exit
         endif
       enddo
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine space_checker"
+      endif;enddo
 
       return
 

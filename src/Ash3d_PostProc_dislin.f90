@@ -205,6 +205,10 @@
         end function HS_xmltime
       END INTERFACE
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_2Dmap_PNG_dislin"
+      endif;enddo
+
       ! Test for icon file
       inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
 
@@ -732,6 +736,11 @@
       if(allocated(name_cities))        deallocate(name_cities)
       if(allocated(zrgb))               deallocate(zrgb)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_2Dmap_PNG_dislin"
+      endif;enddo
+
+      return
       end subroutine write_2Dmap_PNG_dislin
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -822,6 +831,10 @@
           logical     ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_2Dprof_PNG_dislin"
+      endif;enddo
 
       ! Test for icon file
       inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
@@ -1014,6 +1027,12 @@
       if(allocated(z))      deallocate(z)
       if(allocated(conc))   deallocate(conc)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_2Dprof_PNG_dislin"
+      endif;enddo
+
+      return
+
       end subroutine write_2Dprof_PNG_dislin
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1055,6 +1074,10 @@
       ! https://www.dislin.de/
       character(len=4) :: cfmt = "PNG "
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_DepPOI_TS_PNG_dislin"
+      endif;enddo
+      
       if(Airport_Thickness_TS(pt_indx,nWriteTimes).lt.0.01_ip)then
         return
       else
@@ -1135,6 +1158,12 @@
       if(allocated(x))      deallocate(x)
       if(allocated(y))      deallocate(y)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_DepPOI_TS_PNG_dislin"
+      endif;enddo
+
+      return
+
       end subroutine write_DepPOI_TS_PNG_dislin
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1160,12 +1189,22 @@
       real(kind=DS)  :: xver
       integer        :: iplv
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine get_version_dislin"
+      endif;enddo
+
       call getver(xver)   ! XVER will contain the version number (e.g., 11.0)
       call getplv(iplv)
 
       lib_ver_major = floor(xver)
       lib_ver_minor = int(10*(xver-lib_ver_major))
       lib_ver_patch = iplv
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine get_version_dislin"
+      endif;enddo
+
+      return
 
       end subroutine get_version_dislin
 

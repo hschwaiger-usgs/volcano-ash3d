@@ -86,6 +86,12 @@
       if(allocated(A_XY_int)) deallocate(A_XY_int)
       if(allocated(A_XYZ))    deallocate(A_XYZ)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine deallocate_ASCII"
+      endif;enddo
+
+      return
+
       end subroutine deallocate_ASCII
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -146,6 +152,10 @@
         write(ionumber,4) (z_cc_pd(j), j=1,nzmax)
 4       format(50f16.3)
       enddo
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine vprofileopener"
+      endif;enddo
 
       return
 
@@ -209,6 +219,10 @@
 1       format(a13,',',f10.3,',',50(e15.3,','))
       enddo
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine vprofilewriter"
+      endif;enddo
+
       return
 
       end subroutine vprofilewriter
@@ -240,6 +254,10 @@
         ionumber = fid_vprofbase + i-1
         close(ionumber)
       enddo
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine vprofilecloser"
+      endif;enddo
 
       return
 
@@ -379,6 +397,11 @@
 3005  format('NODATA_VALUE ',a6)
 !3006  format(10f15.3)               ! Older ASCII output file from Ash3d used this format
 3006  format(10f18.6)
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_2D_ASCII"
+      endif;enddo
+
       return
 
 !     Error traps
@@ -502,6 +525,10 @@
 3013  format('YLLCENTER ',f15.3)
 3004  format('CELLSIZE ',2f15.3)
 3005  format('NODATA_VALUE ',a6)
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_2D_ASCII_flt"
+      endif;enddo
 
       return
 
@@ -706,6 +733,10 @@
 3004  format('CELLSIZE ',2f15.3)
 3005  format('NODATA_VALUE ',a6)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_2D_ASCII_flt_regular"
+      endif;enddo
+
       return
 
 !     Error traps
@@ -844,6 +875,10 @@
 !3006  format(10f15.3)               ! Older ASCII output file from Ash3d used this format
 3006  format(10f18.6)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine read_2D_ASCII"
+      endif;enddo
+
       return
 
 !     Error traps
@@ -913,7 +948,15 @@
           enddo
         enddo
       enddo
+
       close(fid_ascii3dout)
+
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_3D_ASCII"
+      endif;enddo
+
+      return
 
 !     format statements
 3000  format(a9,i5,a5,i5,a5,i5)
@@ -988,10 +1031,15 @@
         enddo
         if(k.eq.2) A_dz = value3 - A_zll
       enddo
+
       close(fid_ascii3din)
 
 !     format statements
 3000  format(9x,i5,5x,i5,5x,i5)
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine read_3D_ASCII"
+      endif;enddo
 
       return
 
@@ -1172,6 +1220,10 @@
         write(fid_asharrive,120)                        ! write footnotes & caveats
         close(fid_asharrive)
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Write_PointData_Airports_ASCII"
+      endif;enddo
 
       return
 
