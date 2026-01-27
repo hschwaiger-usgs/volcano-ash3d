@@ -1,4 +1,4 @@
-MSH-topo
+MZM-topo
 0    5   5  1 2 3 0 5  #wind time, number of levels, nvar ivars(1:nvar)
 -122.117  42.933 1 4 265.0 25.0 25.0 25.0 6371.229 # (-120.0   46.20) in LCC grid 212 coords
 0       0.0    0.0 1000.0  10.0

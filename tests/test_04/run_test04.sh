@@ -1,10 +1,11 @@
 #!/bin/bash
 echo     "-----------------------------------------------------------"
-echo "RUNNING TEST CASE 4: MSH with NCEP winds"
+echo "RUNNING TEST CASE 4: MZM with NCEP winds"
 echo     "-----------------------------------------------------------"
 Ash3d="../../bin/Ash3d"
 Ash3d_ASCII_check="../../bin/tools/Ash3d_ASCII_check"
 Ash3d_PP="../../bin/Ash3d_PostProc"
+AP=3  # default uses gnuplot for plotting
 GenPlots=1
 tol=0.01
 n2Dfiles=11
@@ -41,11 +42,13 @@ fi
 ls -1r ../..//share/post_proc/world_50m.txt
 rc=$((rc + $?))
 if [[ "$rc" -gt 0 ]] ; then
-  echo "Error: Could not find coastline data"
+  echo "Warning: Could not find coastline data for gnuplot plotting."
   echo "To download the coastline data, run:"
   echo "wget http://www.gnuplotting.org/data/world_50m.txt"
   echo "and move the file to ASH3DHOME/share/post_proc"
   echo "Cases will still run, but no gnuplot maps will be created."
+  AP=4  # if the coastline file is absent, try using GMT
+  rc=0
 fi
 
 for (( s=0;s<nSubCases;s++))
@@ -54,7 +57,7 @@ do
   echo "   Sub-case ${s} : ${SubCaseLabels[s]}"
   outdir="output${s}"
   ln -s ${WINDROOT}/NCEP Wind_nc
-  ASH3DHOME=../../ ${Ash3d} TC4_LL_MSH_SC${s}.inp > /dev/null 2>&1
+  ASH3DHOME=../../ ${Ash3d} TC4_LL_MZM_SC${s}.inp > /dev/null 2>&1
   rc=$((rc + $?))
   if [[ "$rc" -gt 0 ]] ; then
     echo "Error: Ash3d returned error code"
@@ -66,12 +69,12 @@ do
       ../../bin/tools/Ash3d_ASCII_DepThin DepositFile_____final.dat -122.117  42.933
       mv DepoThick_vs_distance.png TC4_SC${s}_DepoThick_vs_distance.png
     fi
-    ASH3DHOME=../../ ${Ash3d_PP} 3d_tephra_fall.nc 5 3 > /dev/null 2>&1
+    ASH3DPLOT=$AP ASH3DHOME=../../ ${Ash3d_PP} 3d_tephra_fall.nc 5 3 > /dev/null 2>&1
     mv Ash3d_Deposit____final.png TC4_SC${s}_Ash3d_Deposit____final.png
-    ASH3DHOME=../../ ${Ash3d_PP} 3d_tephra_fall.nc 16 3 > /dev/null 2>&1
+    ASH3DPLOT=$AP ASH3DHOME=../../ ${Ash3d_PP} 3d_tephra_fall.nc 16 3 > /dev/null 2>&1
     mv vprof_0002.png TC4_SC${s}_vprof_0002.png
     rm -f vprof_0001.png
-    ASH3DHOME=../../ ${Ash3d_PP} 3d_tephra_fall.nc 12 3 2 > /dev/null 2>&1
+    ASH3DPLOT=$AP ASH3DHOME=../../ ${Ash3d_PP} 3d_tephra_fall.nc 12 3 2 > /dev/null 2>&1
     mv Ash3d_CloudLoad_t016.00hrs.png TC4_SC${s}_Ash3d_CloudLoad_t016.00hrs.png
   fi
 
@@ -108,10 +111,10 @@ ascii2Doutfiles2=("CloudHeight_120.00hrs.dat" "CloudHeight_240.00hrs.dat" "Cloud
 
 ln -s ${WINDROOT}/NCEP Wind_nc
 
-ASH3DHOME=../../ ${Ash3d} TC4_LL_MSH_SC${s}.inp > /dev/null 2>&1
+ASH3DHOME=../../ ${Ash3d} TC4_LL_MZM_SC${s}.inp > /dev/null 2>&1
 if [[ "$GenPlots" -gt 0 ]] ; then
   # Post-processing
-  ASH3DHOME=../../ ${Ash3d_PP} 3d_tephra_fall.nc 12 3 2 > /dev/null 2>&1
+  ASH3DPLOT=$AP ASH3DHOME=../../  ${Ash3d_PP} 3d_tephra_fall.nc 12 3 2 > /dev/null 2>&1
   mv Ash3d_CloudLoad_t240.00hrs.png TC4_SC${s}_Ash3d_CloudLoad_t240.00hrs.png
 fi
 
@@ -139,7 +142,7 @@ do
   echo     "-----------------------------------------------------------"
   echo "   Sub-case ${s} : ${SubCaseLabels[s]}"
   outdir="output${s}"
-  ASH3DHOME=../../ ${Ash3d} TC4_LL_MSH_SC${s}.inp > /dev/null 2>&1
+  ASH3DHOME=../../ ${Ash3d} TC4_LL_MZM_SC${s}.inp > /dev/null 2>&1
   rc=$((rc + $?))
   if [[ "$rc" -gt 0 ]] ; then
     echo "Error: Ash3d returned error code"

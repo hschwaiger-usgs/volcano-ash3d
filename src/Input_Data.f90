@@ -6613,9 +6613,11 @@
 
       integer           ,intent(in) :: outunit
       integer           ,intent(in) :: nwindfiles
-      character(len=130),dimension(nwindfiles),intent(in) :: windfiles
+      character(len=*),dimension(nwindfiles),intent(in) :: windfiles
 
       integer :: i
+      integer :: ilen
+      character(len=130) :: linebuffer130
 
       if(outunit.gt.0)then
         write(outunit,1)&
@@ -6626,7 +6628,9 @@
           write(outunit,'(a)')trim(cdf_b5l1)
         else
           do i=1,nwindfiles
-            write(outunit,'(a)')trim(windfiles(i))
+            linebuffer130 = windfiles(i)
+            call FileIO_CleanLine(.false.,ilen,linebuffer130)
+            write(outunit,'(a)')trim(adjustl(linebuffer130))
           enddo
         endif
         write(outunit,1)&
@@ -6918,9 +6922,9 @@
 
       integer                           ,intent(in) :: outunit
       integer                           ,intent(in) :: nprof
-      real(kind=ip)    ,dimension(nprof),intent(in) :: x_prof
-      real(kind=ip)    ,dimension(nprof),intent(in) :: y_prof
-      character(len=50),dimension(nprof),intent(in) :: name_prof
+      real(kind=ip)    ,dimension(*),intent(in) :: x_prof
+      real(kind=ip)    ,dimension(*),intent(in) :: y_prof
+      character(len=50),dimension(*),intent(in) :: name_prof
 
       integer :: iprof
 
@@ -6958,9 +6962,11 @@
         write(outunit,1)&
          '******************* BLOCK 8 ****************************************************'
           write(outunit,11)nvprofiles
-          do iprof = 1,nvprofiles
-            write(outunit,12)x_vprofile(iprof),y_vprofile(iprof),Site_vprofile(iprof)
-          enddo
+          if(nvprofiles.gt.0)then
+            do iprof = 1,nvprofiles
+              write(outunit,12)x_vprofile(iprof),y_vprofile(iprof),Site_vprofile(iprof)
+            enddo
+          endif
         write(outunit,1)&
          '********************************************************************************'
       endif

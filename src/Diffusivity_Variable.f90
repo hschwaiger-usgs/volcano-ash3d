@@ -245,7 +245,7 @@
          infile
 
       use MetReader,     only : &
-         MR_Save_Velocities,min_cell_area_met,max_cell_area_met,p_fullmet_sp
+         MR_Save_Velocities
 
       implicit none
 
@@ -752,7 +752,7 @@
          nmods,useVarDiffH,useVarDiffV
 
       use MetReader,     only : &
-         MR_Save_Velocities,min_cell_area_met,max_cell_area_met,p_fullmet_sp,&
+         MR_Save_Velocities,max_cell_area_met,p_fullmet_sp,&
          MR_vx_metP_last,MR_vx_metP_next,MR_vy_metP_last,MR_vy_metP_next,&
          nx_submet,ny_submet,np_fullmet
 

@@ -345,7 +345,7 @@
       if(iprod.eq.3)then       ! deposit at specified times (mm)
         varname = "depothick"
         write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
-        write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
+        write(title_plot,'(a20,f7.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Dep.Thick.(mm)'
         units = " (mm)"
         Fill_Value_str = '-9999.'
@@ -359,7 +359,7 @@
       elseif(iprod.eq.4)then   ! deposit at specified times (inches)
         varname = "depothick"
         write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
-        write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
+        write(title_plot,'(a20,f7.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Dep.Thick.(in)'
         units = " (in)"
         Fill_Value_str = '-9999.'
@@ -421,7 +421,7 @@
       elseif(iprod.eq.9)then   ! ash-cloud concentration
         varname = "ashcon_max"
         write(filename_png,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
-        write(title_plot,'(a26,f5.2,a6)')'Ash-cloud concentration t=',WriteTimes(itime),' hours'
+        write(title_plot,'(a26,f7.2,a6)')'Ash-cloud concentration t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Max.Con.(mg/m3)'
         units = " (mg/m3)"
         Fill_Value_str = '-9999.'
@@ -435,7 +435,7 @@
       elseif(iprod.eq.10)then   ! ash-cloud height
         varname = "cloud_height"
         write(filename_png,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
-        write(title_plot,'(a19,f5.2,a6)')'Ash-cloud height t=',WriteTimes(itime),' hours'
+        write(title_plot,'(a19,f7.2,a6)')'Ash-cloud height t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Cld.Height(km)'
         units = " (km)"
         Fill_Value_str = '-9999.'
@@ -449,7 +449,7 @@
       elseif(iprod.eq.11)then   ! ash-cloud bottom
         varname = "cloud_bottom"
         write(filename_png,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
-        write(title_plot,'(a19,f5.2,a6)')'Ash-cloud bottom t=',WriteTimes(itime),' hours'
+        write(title_plot,'(a19,f7.2,a6)')'Ash-cloud bottom t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Cld.Bot.(km)'
         units = " (km)"
         Fill_Value_str = '-9999.'
@@ -463,7 +463,7 @@
       elseif(iprod.eq.12)then   ! ash-cloud load
         varname = "cloud_load"
         write(filename_png,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
-        write(title_plot,'(a17,f5.2,a6)')'Ash-cloud load t=',WriteTimes(itime),' hours'
+        write(title_plot,'(a17,f7.2,a6)')'Ash-cloud load t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Cld.Load(T/km2)'
         units = " (T/km2)"
         Fill_Value_str = '-9999.'
@@ -477,7 +477,7 @@
       elseif(iprod.eq.13)then  ! radar reflectivity
         varname = "radar_reflectivity"
         write(filename_png,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
-        write(title_plot,'(a24,f5.2,a6)')'Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
+        write(title_plot,'(a24,f7.2,a6)')'Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Cld.Refl.(dBz)'
         units = " (dBz)"
         Fill_Value_str = '-9999.'

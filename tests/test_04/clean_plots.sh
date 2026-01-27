@@ -9,6 +9,9 @@ rm -f TC4_SC1_vprof_0002.png
 rm -f TC4_SC2_Ash3d_CloudLoad_t016.00hrs.png
 rm -f TC4_SC2_Ash3d_Deposit____final.png
 rm -f TC4_SC2_vprof_0002.png
+rm -f TC4_SC2_DepoThick_vs_distance.png
 rm -f TC4_SC3_Ash3d_CloudLoad_t016.00hrs.png
 rm -f TC4_SC3_Ash3d_Deposit____final.png
 rm -f TC4_SC3_vprof_0002.png
+rm -f TC4_SC4_Ash3d_CloudLoad_t240.00hrs.png
+

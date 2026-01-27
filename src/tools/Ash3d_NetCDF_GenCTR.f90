@@ -127,6 +127,9 @@
       character(len=4)  :: yearstr
       character(len=50) :: tmpstr
 
+      integer :: i
+      character(len=130) :: linebuffer130
+
       INTERFACE
         integer function HS_YearOfEvent(HoursSince,byear,useLeaps)
           real(kind=8),intent(in) :: HoursSince
@@ -388,6 +391,9 @@
         endif
       endif
       call Write_input_block_header(fid_ctrlfile,5)
+      do i=1,nwindfiles
+        linebuffer130 = MR_WindFiles(i)
+      enddo
       call SetWrite_input_block_05(fid_ctrlfile                    ,&  ! output stream ID
                                    nwindfiles                      ,&
                                    MR_WindFiles(1:nwindfiles))

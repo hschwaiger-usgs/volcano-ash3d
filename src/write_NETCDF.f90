@@ -5773,8 +5773,11 @@
             write(errlog(io),*)"ERROR: ","Volcano name cannot start with #"
           endif;enddo
           stop 1
+        elseif(iendstr.eq.0)then
+          VolcanoName = trim(adjustl(cdf_b1l1))
+        else
+          VolcanoName = trim(adjustl(cdf_b1l1(1:iendstr-1)))
         endif
-        VolcanoName = trim(adjustl(cdf_b1l1(1:iendstr-1)))
         ! Get vent location
         nSTAT = nf90_get_att(ncid,nf90_global,"b1l5",cdf_b1l5)
         if (IsLatLon) then                        !get lon_volcano and lat_volcano
