@@ -1161,7 +1161,16 @@
         iTimeNext = 0
         isFinal_TS = .false.
       endif
-
+      if(itime.gt.0)then
+        time = WriteTimes(itime)
+      elseif(itime.eq.-1)then
+        time = WriteTimes(nWriteTimes)
+      else
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(outlog(io),*)'itime is an unexpected value: ',itime
+        endif;enddo
+        stop 1
+      endif
       cio = HS_yyyymmddhh_since(SimStartHour+time,BaseYear,useLeap)
 
       if(    iprod.eq.1 )then ! full concentration array

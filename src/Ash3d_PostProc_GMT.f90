@@ -630,8 +630,9 @@
                     lon_cities,               &
                     lat_cities,               &
                     name_cities)
-      if(lon_volcano.gt.xmax)lon_volcano=lon_volcano-360.0_ip
-
+      if(IsLatLon)then
+        if(lon_volcano.gt.xmax)lon_volcano=lon_volcano-360.0_ip
+      endif
       ! Build strings with run info for legend
       ! Volcano:     Erup.start:
       ! Run date:    Plm Height:
