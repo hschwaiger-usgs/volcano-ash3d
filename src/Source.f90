@@ -313,7 +313,7 @@
          EPS_SMALL
 
       use mesh,            only : &
-         nzmax,&
+         nzmax,z_cc_pd,&
          ds_vec_pd,s_cc_pd,s_lb_pd,Zsurf,Ztop,ivent,jvent,ZScaling_ID
 
       integer :: i
@@ -533,6 +533,16 @@
         NormSourceColumn(i,:) = NormSourceColumn(i,:)/tot
 
       enddo ! neruptions
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exporting volume of each eruptive pulse"
+        write(outlog(io),*)e_Volume(1:neruptions)
+        write(outlog(io),*)"-----------------------------------------------"
+        write(outlog(io),*)"     Exporting Normalized eruption column data"
+        do k=nzmax,1,-1
+          write(outlog(io),*)k,z_cc_pd(k),NormSourceColumn(1:neruptions,k)
+        enddo
+      endif;enddo
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Calc_Normalized_SourceCol"
