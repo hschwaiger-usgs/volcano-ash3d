@@ -5279,12 +5279,12 @@
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"Did not find att : Assuming useVz_rhoG=",useVz_rhoG_Default
           endif;enddo
-          useVz_rhoG= useVz_rhoG_Default
+          useVz_rhoG = useVz_rhoG_Default
         else
           if(trim(adjustl(tmp_str)).eq.'true')then
-            useVz_rhoG= .true.
+            useVz_rhoG = .true.
           else
-            useVz_rhoG= .false.
+            useVz_rhoG = .false.
           endif
         endif
 

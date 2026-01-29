@@ -4321,7 +4321,7 @@
         if(useVz_rhoG)then
           write(outlog(io),*)"useVz_rhoG=.true. : Vz calculated via PVV (if avail.) and density"
         else
-          write(outlog(io),*)"Vz calculated via PVV and finite-differencing dp/dz"
+          write(outlog(io),*)"Vz calculated via PVV and finite-differencing of dp/dz"
         endif
       endif;enddo
 

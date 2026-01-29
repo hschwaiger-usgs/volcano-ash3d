@@ -417,7 +417,7 @@
       use MetReader,       only : &
          MR_dum3d_compH,MR_dum3d_compH_2,MR_iMetStep_Now,&
          Met_var_IsAvailable,isGridRelative,Map_Case,&
-         MR_dum3d_metP,Met_var_GRIB_names,&
+         MR_dum3d_metP,Met_var_GRIB_names,MR_iwindformat,&
            MR_Read_HGT_arrays,&
            MR_Read_3d_Met_Variable_to_CompH,&
            MR_Rotate_UV_GR2ER_Met,&
@@ -529,9 +529,40 @@
 !        !call Set_Atmosphere_Meso(Load_MesoSteps,1.0_ip,first_time)
 !        call Read_NextMesoStep_T
 !      endif
-      if(Met_var_IsAvailable(4))then
+      if( (Met_var_IsAvailable(4).and..not.useVz_rhoG) .or.&! MetReader returns Vz from PVV
+          MR_iwindformat.eq.50                       )then  ! WRF files provide Vz directly
+        ! Here we are asking MetReader to return Vertical velocities directly (in m/s)
+        ! This will either be if the windfile provides Vz directly or
+        ! we want MetReader to convert from PresVertVel via a FD approximation of the pressure gradient
+        ivar = 4 ! W winds
+        if(useVz_rhoG.and.MR_iwindformat.eq.50)then
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Ignoring useVz_rhoG and reading Vz directly from WRF file."
+          endif;enddo
+        endif
+        if(Met_var_IsAvailable(ivar))then
+          call MR_Read_3d_Met_Variable_to_CompH(ivar,istep)
+        else
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Tried to read variable, but it's not available: ",ivar,&
+                    Met_var_GRIB_names(ivar)
+          endif;enddo
+          MR_dum3d_compH = 0.0_sp
+          stop 1
+        endif
+        if(Meso_toggle.eq.0)then
+          vz_meso_1_sp = MR_dum3d_compH
+          vz_meso_next_step_sp = vz_meso_1_sp
+        else
+          vz_meso_2_sp = MR_dum3d_compH
+          vz_meso_next_step_sp = vz_meso_2_sp
+        endif
+      elseif(Met_var_IsAvailable(7).and.useVz_rhoG)then
+        ! Vertical velocities are provided indirectly as Pressure Vertical Velocity (in Pa s)
+        ! These will need to convert to velocity using Vz = PVV / (rho g)
+        ! Here we are requesting that MetReader return PVV and we will convert to Vz here.
         if(useTemperature.and.useVz_rhoG)then
-          ! Now that we have temperature and density, we can get a better Vz
+          ! If we have temperature and density, we can get a better Vz
           ivar = 7 ! Pressure Vertical Velocity
           if(Met_var_IsAvailable(ivar))then
             call MR_Read_3d_MetP_Variable(ivar,istep)
@@ -555,6 +586,7 @@
             vz_meso_next_step_sp = vz_meso_2_sp
           endif
         else
+          ! Temperature is deactivated, reverting to FD within MetReader
           ivar = 4 ! W winds
           if(Met_var_IsAvailable(ivar))then
             call MR_Read_3d_Met_Variable_to_CompH(ivar,istep)
@@ -575,6 +607,7 @@
           endif
         endif
       else
+        ! We have insufficient data to get Vz
         vz_meso_next_step_sp = 0.0_sp
       endif
 
