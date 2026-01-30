@@ -261,6 +261,7 @@
 !    Acceptable characters in stings:
 !     useUnicode=.false. :: include only (in decimal)
 !                                 32 = space
+!                                 43 = +
 !                                 45 = -
 !                                 46 = .
 !                                 47 = /
@@ -271,7 +272,7 @@
 !                                 95 = _
 !                             97-122 = a-z
 !     useUnicode=.true.  :: exclude (in decimal) 0-31 control chars (with 9 mapped to 32)
-!                                               33-43 punctuation
+!                                               33-42 punctuation
 !                                               59-64 more punctuation
 !                                                  91 [
 !                                               93-94 ] and ^
@@ -333,7 +334,7 @@
         if(useUnicode)then
           ! If using unicode, then only exclude certain values
           if((                    asciicode.le.31) .or. &  ! 0-31 control chars
-             (asciicode.ge.33.and.asciicode.le.43) .or. &  ! punctuation
+             (asciicode.ge.33.and.asciicode.le.42) .or. &  ! punctuation
              (asciicode.ge.59.and.asciicode.le.64) .or. &  ! punctuation
              (        asciicode.eq.91            ) .or. &  ! [
              (        asciicode.eq.93            ) .or. &  ! ]
@@ -347,6 +348,7 @@
         else
           ! If using traditional ASCII, then only allow certain characters
           if((        asciicode.eq.32            ) .or. &  ! ' ' = space
+             (        asciicode.eq.43            ) .or. &  ! '+' = plus
              (        asciicode.eq.45            ) .or. &  ! '-' = hyphen
              (        asciicode.eq.46            ) .or. &  ! '.' = full-stop
              (        asciicode.eq.47            ) .or. &  ! '/' = slash

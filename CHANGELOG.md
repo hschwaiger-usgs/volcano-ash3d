@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [1.1.0] - 2025-12-30
+## [1.1.0] - 2026-01-30
 
 **Approved Release** - [doi:10.5066/P144K2NA](https://doi.org/10.5066/P144K2NA)
 

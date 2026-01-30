@@ -15,9 +15,9 @@ infile=intemp.nc
 
 # Generate vertical profile plots using plplot (change to ASH3DPLOT=3 for gnuplot)
 ASH3DPLOT=3 ./Ash3d_PostProc ${infile} 16 3
-mv gnupl_0001.png ${RunClass}/gnupl_0001.png
-mv gnupl_0002.png ${RunClass}/gnupl_0002.png
-mv gnupl_0003.png ${RunClass}/gnupl_0003.png
+mv vprof_0001.png ${RunClass}/vprof_0001.png
+mv vprof_0002.png ${RunClass}/vprof_0002.png
+mv vprof_0003.png ${RunClass}/vprof_0003.png
 
 # Generate png output of deposit thickness in mm
 ASH3DPLOT=4 ./Ash3d_PostProc ${infile} 5 3

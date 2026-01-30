@@ -344,7 +344,7 @@ Citation
 
 If you would like to reference Ash3d in your paper, please cite the software as follows.  
 
-Schwaiger, H.F. et al. (2024) Ash3d (Version 1.1.0), U.S. Geological Survey Software Release,
+Schwaiger, H.F. et al. (2026) Ash3d (Version 1.1.0), U.S. Geological Survey Software Release,
 [doi:10.5066/P144K2NA](https://doi.org/10.5066/P144K2NA).  
 
 or you can cite the journal article describing the software given in reference 6 above.
