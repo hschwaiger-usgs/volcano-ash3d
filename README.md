@@ -57,7 +57,7 @@ installed, if possible:
 7. plplot : Another alternate graphics package for creating plots from Ash3d (also works on Windows).
 8. GMT    : This mapping package is also optionally used in post-processing.
 
-All of these packages (except dislin) are available on Red Hat and Ubuntu systems and can be installed
+All of these packages (except dislin) are available on Red Hat, Ubuntu, and Mac systems and can be installed
 using the standard distribution software installer (yum/dnf for RedHat systems or apt for
 Ubunto). For some of these packages and for some distributions, you might need to enable
 extra repositories, such as epel and powertools/CRB (for Red Hat systems).  
@@ -78,6 +78,16 @@ On Ubuntu-based systems:
 `sudo apt install gnuplot`  
 `sudo apt install plplot`  
 
+On Mac OSX-based systems (install the [Homebrew package](https://brew.sh/) manager first):  
+`brew install gcc`  
+`brew install netcdf-fortran`  
+`brew install lapack`  
+`brew install openblas`  
+`brew install eecodes`  
+`brew install gnuplot`  
+`brew install plplot`  
+
+
 Note that these particular package names are the distribution packages for the latest versions of RedHat and Ubuntu
 at the time of writing. There may be slight variations to these names for older or newer
 systems. If you prefer managing libraries either within a conda environment or via modules, you will likely have
@@ -86,6 +96,18 @@ you are using), in order for the compiler to find the needed libraries and inclu
 If you use modules, you will need to make sure that netcdf package you load (as well as eccodes, if desired)
 is built with the compiler you plan to use.
 
+### For Mac OSX only
+
+Makefiles will need to be updated to the following to reflect using the homebrew package manager. 
+
+In `volcano-ash3d/src/make_gfortran.inc`:
+
+- Change the `FCHOME` variable to `/opt/homebrew` 
+- Change the `LAPACKLIB` variable to `-L$(FCHOME)/lib -L$(FCHOME)/lib/x86_64-linux-gnu -llapack`  
+- Change the `COMPINC` variable to `-I./ -I$(FCHOME)/include -I$(FCHOME)/lib/gfortran/modules`  
+- Change the `COMPLIBS` variable to `-L$(FCHOME)/lib`.  
+
+Note: The `FCHOME` change will also need to be done to successfully compile [HoursSince](https://code.usgs.gov/vsc/ash3d/volcano-ash3d-hourssince), [projection](https://code.usgs.gov/vsc/ash3d/volcano-ash3d-projection), and [MetReader](https://code.usgs.gov/vsc/ash3d/volcano-ash3d-metreader) on OSX.
 ### Compiling Ash3d with the default settings
 Once the necessary USGS libraries and optional distribution packages are installed, Ash3d can
 be built. The makefile in `volcano-ash3d/src` can be edited to suit your system.
