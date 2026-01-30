@@ -9,3 +9,4 @@ rm -f vprofile*txt
 rm -f CloudConcentration_*.dat
 rm -f DepositArrivalTime.dat
 rm -f DepositFile_*.dat
+rm -f Ash3d_pp.log

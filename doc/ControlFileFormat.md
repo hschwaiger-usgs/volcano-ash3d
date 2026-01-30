@@ -156,6 +156,11 @@ The parameter iwindformat specifies the format of the wind files, as follows:
 12. NAM 198 Regional Alaska Forecast (5.953 km)                                       
 13. NAM 91 Regional Alaska Forecast (2.976 km)                                        
 14. NAM Regional Cont. US Forecast (3.0 km)                                           
+15. Unused  
+16. Unused  
+17. Unused  
+18. Unused  
+19. Unused  
 20. GFS 0.5 degree files Forecast                                                     
 21. GFS 1.0 degree files Forecast                                                     
 22. GFS 0.25 degree files Forecast                                                    
@@ -167,10 +172,26 @@ The parameter iwindformat specifies the format of the wind files, as follows:
 28. ECMWF ERA-Interim Reanalysis                                                      
 29. ECMWA ERA-5 Reanalysis                                                            
 30. ECMWA ERA-20C Reanalysis                                                          
+31. NAM Caribbean 181 (0.108 deg)  
 32. Air Force Weather Agency                                                          
 33. CCSM 3.0 Community Atmospheric Model                                              
+34. ECMWF 0.25-degree forecast                                                        
+35.  Unused  
+36.  Unused  
+37.  Unused  
+38.  Unused  
+39.  Unused  
 40. NASA GEOS-5 Cp                                                                    
 41. NASA GEOS-5 Np                                                                    
+45. Unused  
+45. Unused  
+45. Unused  
+45. Unused  
+45. Unused  
+46. Unused  
+47. Unused  
+48. Unused  
+49. Unused  
 50. Weather Research and Forecast (WRF) output                                        
   
 `igrid` is the NCEP grid ID. If a NWP product is used, or the number of stations of
@@ -366,8 +387,8 @@ can be included to invoke features of the program other than the default
 behavior. These additional input blocks allow a means for controlling user-provided
 features such as non-standard source terms or physical processes.
 There will need to be a custom block reader in the module to read this section
-section of the input file.  There are two optional modules built in to the
-main Ash3d code: RESTETPARAMS and TOPO.  
+section of the input file.  There are three optional modules built in to the
+main Ash3d code: RESTETPARAMS, TOPO, and VARDIFF.  
 
 
 Below is the built-in example for resetting parameters.
@@ -393,18 +414,20 @@ value). Only the parameters to be reset need to be listed.
 `THICKNESS_THRESH     = 1.0e-3`  
 `StopValue_FracAshDep = 0.99`  
 `DBZ_THRESH           = -2.0e+1`  
+`Imp_fac              = 0.5`  
+`Imp_DT_fac           = 4.0`  
 `VelMod_umb           = 1`  
 `lambda_umb           = 0.2`  
 `N_BV_umb             = 0.02`  
 `k_entrainment_umb    = 0.1`  
 `SuzK_umb             = 12.0`  
 `useMoistureVars      = F`  
-`useVz_rhoG           = T`  
 `useWindVars          = 0`  
 `useOutprodVars       = 1`  
 `useRestartVars       = 0`  
+`useVz_rhoG           = T`
 `cdf_institution      = USGS`  
-`cdf_run_class        = Analysis`  
+`cdf_run_class        = 1`  
 `cdf_url              = https://vsc-ash.wr.usgs.gov/ash3d-gui`  
 `*******************************************************************************`  
 
@@ -414,7 +437,7 @@ Topography can be included in Ash3d by including the following optional block.
 `OPTMOD=TOPO`  
 `yes 2                         # use topography?; z-mod (0=none,1=shift,2=sigma)`  
 `1 1.0                         # Topofile format, smoothing radius`  
-`GEBCO_08.nc                   # Topofile name`  
+`GEBCO_2023.nc                 # Topofile name`  
 `*******************************************************************************`  
 
 Line 1 indicates whether or not to use topography followed by the integer flag
@@ -422,6 +445,7 @@ describing how topography will modify the vertical grid.
 0. = no vertical modification; z-grid remains 0-> top throughout the domain  
 1. = shifted; s = z-z_s; computational grid is uniformly shifted upward everywhere by topography  
 2. = sigma-altitude; s=z_t(z-z_s)/(z_t-z_s); topography has decaying influence with height  
+
 Line 2 indicates the topography data format followed by the smoothing radius in km.
 Topofile format must be one of:  
 1. Gridded lon/lat (netcdf)  
@@ -437,4 +461,57 @@ computational domain, but also a 2-ghost-cell boundary. Note,
 this format can also be used to import smoothed topographic data from a prior Ash3d run,
 exported with the command:  
 `Ash3d_PostProc 3d_tephra_fall.nc 15 1`
+Line 3 contains the file name for the topographic data. Currently, only one file is allowed.
+
+Variable diffusivity, in which the local diffusivity is determined by local atmospheric
+conditions (wind shear, boundary layer processes), can be included with the following 
+optional block.  
+`******************* BLOCK 10+ *************************************************`  
+`OPTMOD=VARDIFF`  
+`yes                         # indicates whether or not to write VarDiff variables to the output file`
+`yes 2 0.2                   # use horizontal variable diffusivity`  
+`yes                         # use vertical variable diffusivity`  
+`4                           # boundary layer model`  
+`3                           # free-air model`  
+`0.4                         # vonKarman`  
+`150.0                       # LambdaC`  
+`0.25                        # RI_CRIT`  
+`*******************************************************************************`  
+
+Line 1 indicates whether or not to write VarDiff variables to the output file.
+
+Line 2 indicates whether or not to use horizontal diffusivity followed by the type ID and value.  
+1. Constant horizontal diffusivity with specified value (m2/s)  
+2. Smagorinsky model with coefficient C (~0.2)  
+3. Pielke model with coefficient C (~0.2)  
+
+Line 3 indicates whether or not to use vertical diffusivity.  
+Line 4 indicates the boundary layer model and value (if model requires).  
+1. Vertical diffusivity constant in boundary layer  
+2. No boundary layer is identified; Free-air vertical diffusivity used throughout  
+3. Troen and Mahrt  
+4. Ulke  
+5. Shir / Businger,Ayer  
+
+Line 5 indicates the Free-Air model and value (if model requires).  
+1. Vertical diffusivity constant in region above boundary layer (Free-Air).  
+2. F(Ri)=Louis  
+3. F(Ri)=Stull  
+4. F(Ri)=Betts  
+5. F(Ri)=Hong
+6. F(Ri)=Collins
+
+Line 6 contains the von Karman constant  
+Line 7 contains the free-air mixing length (m)  
+Line 8 is the critical Richardson number used in calculating atmospheric stability.  
+
+
+
+
+
+
+
+
+
+
 

@@ -34,7 +34,8 @@
       use io_units
 
       use global_param,    only : &
-         EPS_SMALL,useFastDt,FastDt_suppress,MPS_2_KMPHR,useCalcFallVel
+         EPS_SMALL,useFastDt,FastDt_suppress,MPS_2_KMPHR, &
+         useTemperature,useCalcFallVel
 
       use mesh,            only : &
          nxmax,nymax,nzmax
@@ -66,7 +67,7 @@
            umbrella_winds
 
       use Atmosphere,      only : &
-           Set_Atmosphere_Meso
+           Read_Next_MesoStep_TQ
 
       use MetReader,       only : &
          MR_iMetStep_Now,&
@@ -74,7 +75,6 @@
          MR_MetStep_Hour_since_baseyear,MR_MetStep_Interval,&
            MR_Read_HGT_arrays,&
            MR_Read_3d_Met_Variable_to_CompH,&
-           MR_Rotate_UV_GR2ER_Met,&
            MR_Rotate_UV_ER2GR_Comp,&
            MR_Regrid_MetP_to_CompH,&
            MR_Read_3d_MetP_Variable
@@ -82,8 +82,8 @@
       implicit none
 
       real(kind=dp),intent(in)    :: TimeNow                ! current time, in hours since start of simulation
-      real(kind=dp),intent(out)   :: Interval_Frac
       logical      ,intent(inout) :: Load_MesoSteps
+      real(kind=dp),intent(out)   :: Interval_Frac
 
       integer           :: i,j,k
       character(len=1)  :: answer
@@ -102,16 +102,15 @@
         subroutine Adjust_DT(mesostep)
           logical, intent(in), optional :: mesostep
         end subroutine Adjust_DT
-        subroutine Read_NextMesoStep(Load_MesoSteps)
-          logical      ,intent(inout) :: Load_MesoSteps
-        end subroutine Read_NextMesoStep
+        subroutine Read_Next_MesoStep_HUVW
+        end subroutine Read_Next_MesoStep_HUVW
       END INTERFACE
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine MesoInterpolator"
       endif;enddo
 
-      TimeNow_fromRefTime = SimStartHour+TimeNow  ! hours since reference time (1-1-1900)
+      TimeNow_fromRefTime = SimStartHour+TimeNow  ! hours since reference time (1-1-BaseYear)
       ! MesoInterpolater is called once before the time loop in order to
       ! initilize velocities on the computational grid and to determine the
       ! start time relative to the MetSteps
@@ -135,7 +134,10 @@
         endif;enddo
 
         call cpu_time(tw1)
-        call Read_NextMesoStep(Load_MesoSteps)
+        if(useTemperature)then
+          call Read_Next_MesoStep_TQ(.true.)
+        endif
+        call Read_Next_MesoStep_HUVW
         call cpu_time(tw2)
         tw_tot = tw_tot + (tw2-tw1)
 
@@ -184,7 +186,10 @@
         ! Copy the timestep from next to last
         dt_meso_last = dt_meso_next
         call cpu_time(tw1)
-        call Read_NextMesoStep(Load_MesoSteps)
+        if(useTemperature)then
+          call Read_Next_MesoStep_TQ
+        endif
+        call Read_Next_MesoStep_HUVW
         call cpu_time(tw2)
         tw_tot = tw_tot + (tw2-tw1)
 
@@ -354,13 +359,17 @@
 
       first_time = .false.
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine MesoInterpolator"
+      endif;enddo
+
       return
 
       end subroutine MesoInterpolater
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!  Read_NextMesoStep(Load_MesoSteps)
+!  Read_Next_MesoStep_HUVW
 !
 !  Called from: MesoInterpolater
 !  Arguments:
@@ -375,7 +384,7 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine Read_NextMesoStep(Load_MesoSteps)
+      subroutine Read_Next_MesoStep_HUVW
 
       use precis_param
 
@@ -403,12 +412,12 @@
 
       use Atmosphere,      only : &
          AirDens_meso_next_step_MetP_sp, &
-           Set_Atmosphere_Meso
+           Read_Next_MesoStep_TQ
 
       use MetReader,       only : &
          MR_dum3d_compH,MR_dum3d_compH_2,MR_iMetStep_Now,&
          Met_var_IsAvailable,isGridRelative,Map_Case,&
-         MR_dum3d_metP,Met_var_GRIB_names,&
+         MR_dum3d_metP,Met_var_GRIB_names,MR_iwindformat,&
            MR_Read_HGT_arrays,&
            MR_Read_3d_Met_Variable_to_CompH,&
            MR_Rotate_UV_GR2ER_Met,&
@@ -418,7 +427,7 @@
 
       implicit none
 
-      logical      ,intent(inout) :: Load_MesoSteps
+      !logical      ,intent(inout) :: Load_MesoSteps
 
       logical,save :: first_time = .true.
 
@@ -427,7 +436,7 @@
       integer           :: istep
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
-        write(outlog(io),*)"     Entered Subroutine Read_NextMesoStep"
+        write(outlog(io),*)"     Entered Subroutine Read_Next_MesoStep_HUVW"
       endif;enddo
 
         ! Before reading state variables, we need to load the height grid
@@ -441,11 +450,12 @@
         call MR_Read_HGT_arrays(MR_iMetStep_Now)
         istep = MR_iMetStep_Now+1
       endif
-      if(Map_Case.eq.1.or.Map_Case.eq.2)then
-        ! Either both the comp and met grids are LL (Map_Case = 1)
-        ! or they are both the same projection (Map_Case = 2) so
-        ! we can read the velocity components individually and interpolate onto
-        ! the computational grid
+      if(Map_Case.eq.1.or. &
+        (Map_Case.eq.2.and.IsGridRelative))then
+        ! Either (Map_Case = 1) both the comp and met grids are LL 
+        ! or (Map_Case = 2) they are both the same projection excluding the NARR case.
+        ! We can read the velocity components individually and interpolate directly
+        ! onto the computational grid
 
          ! Fill array from the step prior/equal to current time
         ivar = 2 ! U winds
@@ -468,24 +478,29 @@
           vy_meso_next_step_sp = vy_meso_2_sp
         endif
       else
+        if(Map_Case.eq.2.and..not.IsGridRelative)then
+          ! This is essentially just for the NARR case where wind speeds are provided
+          ! on a projected grid, but given as easterly and northerly (Earth-relative) speeds
+          call MR_Rotate_UV_GR2ER_Met(istep,.true.,.true.)
+
         ! Grids are different, we will need to rotate vectors
         ! In all these cases, we need:
         !    MR_dum3d_compH   holding U
         !    MR_dum3d_compH_2 holding V
-        if(Map_Case.eq.3)then
+        elseif(Map_Case.eq.3)then
             ! Met grid is natively LL and Comp grid is projected
           call MR_Rotate_UV_ER2GR_Comp(istep)
         elseif(Map_Case.eq.4)then
             ! Met grid is projected and comp grid is LL
           if(isGridRelative)then
-            call MR_Rotate_UV_GR2ER_Met(istep,.true.) ! optional argument returns data on compH
+            call MR_Rotate_UV_GR2ER_Met(istep,.true.,.true.) ! optional argument returns data on compH
           else
             ! if the projected data is already Earth-relative (NARR), then just read it
             ivar = 3 ! Vy
-            call MR_Read_3d_Met_Variable_to_CompH(ivar,istep)
+            call MR_Read_3d_Met_Variable_to_CompH(ivar,istep,.true.)
             MR_dum3d_compH_2 = MR_dum3d_compH
             ivar = 2 ! Vx
-            call MR_Read_3d_Met_Variable_to_CompH(ivar,istep)
+            call MR_Read_3d_Met_Variable_to_CompH(ivar,istep,.true.)
           endif
         elseif(Map_Case.eq.5)then
           ! Both comp and met grids are projected, but with different projections
@@ -510,15 +525,48 @@
 
       vf_meso_last_step_sp = vf_meso_next_step_sp
       ! Only bother getting Vz if it is available in the wind files
-      if(useTemperature)then
-        call Set_Atmosphere_Meso(Load_MesoSteps,1.0_ip,first_time)
-      endif
-      if(Met_var_IsAvailable(4))then
+!      if(useTemperature)then
+!        !call Set_Atmosphere_Meso(Load_MesoSteps,1.0_ip,first_time)
+!        call Read_NextMesoStep_T
+!      endif
+      if( (Met_var_IsAvailable(4).and..not.useVz_rhoG) .or.&! MetReader returns Vz from PVV
+          MR_iwindformat.eq.50                       )then  ! WRF files provide Vz directly
+        ! Here we are asking MetReader to return Vertical velocities directly (in m/s)
+        ! This will either be if the windfile provides Vz directly or
+        ! we want MetReader to convert from PresVertVel via a FD approximation of the pressure gradient
+        ivar = 4 ! W winds
+        if(useVz_rhoG.and.MR_iwindformat.eq.50)then
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Ignoring useVz_rhoG and reading Vz directly from WRF file."
+          endif;enddo
+        endif
+        if(Met_var_IsAvailable(ivar))then
+          call MR_Read_3d_Met_Variable_to_CompH(ivar,istep)
+        else
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Tried to read variable, but it's not available: ",ivar,&
+                    Met_var_GRIB_names(ivar)
+          endif;enddo
+          MR_dum3d_compH = 0.0_sp
+          stop 1
+        endif
+        if(Meso_toggle.eq.0)then
+          vz_meso_1_sp = MR_dum3d_compH
+          vz_meso_next_step_sp = vz_meso_1_sp
+        else
+          vz_meso_2_sp = MR_dum3d_compH
+          vz_meso_next_step_sp = vz_meso_2_sp
+        endif
+      elseif(Met_var_IsAvailable(7).and.useVz_rhoG)then
+        ! Vertical velocities are provided indirectly as Pressure Vertical Velocity (in Pa s)
+        ! These will need to convert to velocity using Vz = PVV / (rho g)
+        ! Here we are requesting that MetReader return PVV and we will convert to Vz here.
         if(useTemperature.and.useVz_rhoG)then
-          ! Now that we have temperature and density, we can get a better Vz
+          ! If we have temperature and density, we can get a better Vz
           ivar = 7 ! Pressure Vertical Velocity
           if(Met_var_IsAvailable(ivar))then
             call MR_Read_3d_MetP_Variable(ivar,istep)
+            ! HFS: We need to be careful here that we apply the right air density for Pre-steps
             MR_dum3d_MetP = MR_dum3d_MetP/      &
              real((-AirDens_meso_next_step_MetP_sp*GRAV),kind=sp)
             call MR_Regrid_MetP_to_CompH(istep)
@@ -538,6 +586,7 @@
             vz_meso_next_step_sp = vz_meso_2_sp
           endif
         else
+          ! Temperature is deactivated, reverting to FD within MetReader
           ivar = 4 ! W winds
           if(Met_var_IsAvailable(ivar))then
             call MR_Read_3d_Met_Variable_to_CompH(ivar,istep)
@@ -558,6 +607,7 @@
           endif
         endif
       else
+        ! We have insufficient data to get Vz
         vz_meso_next_step_sp = 0.0_sp
       endif
 
@@ -576,8 +626,12 @@
 
       first_time = .false.
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Read_Next_MesoStep_HUVW"
+      endif;enddo
+
       return
 
-      end subroutine Read_NextMesoStep
+      end subroutine Read_Next_MesoStep_HUVW
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

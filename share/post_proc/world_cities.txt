@@ -1432,7 +1432,6 @@ POINT_X         POINT_Y        CITY_NAME                 FIPS_CNTRYCNTRY_NAME   
          73.8180        15.4920Panaji                    IN        India                        65586         650,000 to 99,999
          31.7340        -0.3350Masaka                    UG        Uganda                       65373         650,000 to 99,999
          21.1010        46.6720Bekescsaba                HU        Hungary                      65206         650,000 to 99,999
-
          68.8000        37.8333Qurghonteppa              TI        Tajikistan                   65000         650,000 to 99,999
         106.4130        10.5310Tan An                    VM        Vietnam                      64801         650,000 to 99,999
          35.2833        32.7000Nazareth                  IS        Israel                       64800         650,000 to 99,999

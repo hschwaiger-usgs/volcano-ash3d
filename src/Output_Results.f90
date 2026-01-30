@@ -85,14 +85,14 @@
 
       INTERFACE
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
-          real(kind=8)               ::  HoursSince
-          integer                    ::  byear
-          logical                    ::  useLeaps
+          real(kind=8),intent(in) ::  HoursSince
+          integer     ,intent(in) ::  byear
+          logical     ,intent(in) ::  useLeaps
         end function HS_yyyymmddhh_since
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8)              :: HoursSince
-          integer                   :: byear
-          logical                   :: useLeaps
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
 
@@ -358,6 +358,10 @@
 
       ! This is an output step, so toggle on the marker for the output log
       OutputStep_Marker = '*'
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine output_results"
+      endif;enddo
 
       return
 

@@ -144,6 +144,12 @@
       allocate(Airport_Thickness_TS(nair,nWT)) ;     Airport_Thickness_TS = 0.0_ip
       allocate(Airport_TS_plotindex(nair))     ;     Airport_TS_plotindex = 0
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_Airports"
+      endif;enddo
+
+      return
+
       end subroutine Allocate_Airports
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -194,6 +200,12 @@
       if(allocated(Airport_Thickness_TS))      deallocate(Airport_Thickness_TS)
       if(allocated(Airport_TS_plotindex))      deallocate(Airport_TS_plotindex)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_Airports"
+      endif;enddo
+
+      return
+
       end subroutine Deallocate_Airports
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -232,8 +244,6 @@
       use mesh,          only : &
          IsLatLon,de,dn,dx,dy,xLL,yLL,xUR,yUR,latLL,lonLL,latUR,lonUR
 
-      use projection,    only : &
-         PJ_proj_for
 
       integer :: i,ind
       real(kind=ip)      :: xnow, ynow
@@ -286,12 +296,12 @@
         endif ! conditional for when external file is read
       endif;enddo
 
-      allocate(AirportFullLat(MAXAIRPORTS))
-      allocate(AirportFullLon(MAXAIRPORTS))
-      allocate(AirportFullX(MAXAIRPORTS))
-      allocate(AirportFullY(MAXAIRPORTS))
-      allocate(AirportFullCode(MAXAIRPORTS))
-      allocate(AirportFullName(MAXAIRPORTS))
+      if(.not.allocated(AirportFullLat))  allocate(AirportFullLat(MAXAIRPORTS))
+      if(.not.allocated(AirportFullLon))  allocate(AirportFullLon(MAXAIRPORTS))
+      if(.not.allocated(AirportFullX))    allocate(AirportFullX(MAXAIRPORTS))
+      if(.not.allocated(AirportFullY))    allocate(AirportFullY(MAXAIRPORTS))
+      if(.not.allocated(AirportFullCode)) allocate(AirportFullCode(MAXAIRPORTS))
+      if(.not.allocated(AirportFullName)) allocate(AirportFullName(MAXAIRPORTS))
 
       if(.not.ReadExtAirportFile.or.AppendExtAirportFile)then
         ! Populate the global list if needed. Note that we might supplement this list.
@@ -377,17 +387,17 @@
         xnow      = AirportFullX(i)
         ynow      = AirportFullY(i)
         if (IsLatLon) then
-          if ((longitude.ge.lonLL+de) .and. &
-              (longitude.le.lonUR-de) .and. &
-              (latitude.ge.latLL+dn)  .and. &
-              (latitude.le.latUR-dn)) then
+          if ((longitude.ge.lonLL) .and. &
+              (longitude.le.lonUR) .and. &
+              (latitude.ge.latLL)  .and. &
+              (latitude.le.latUR)) then
             nairports = nairports+1
           endif
         else
-          if ((xnow.ge.xLL+dx) .and. &
-              (xnow.le.xUR-dx) .and. &
-              (ynow.ge.yLL+dy) .and. &
-              (ynow.le.yUR-dy)) then
+          if ((xnow.ge.xLL) .and. &
+              (xnow.le.xUR) .and. &
+              (ynow.ge.yLL) .and. &
+              (ynow.le.yUR)) then
             nairports = nairports+1
           endif
         endif
@@ -406,10 +416,10 @@
         xnow      = AirportFullX(i)
         ynow      = AirportFullY(i)
         if (IsLatLon) then
-          if ((longitude.ge.lonLL+de) .and. &
-              (longitude.le.lonUR-de) .and. &
-              (latitude.ge.latLL+dn)  .and. &
-              (latitude.le.latUR-dn)) then
+          if ((longitude.ge.lonLL) .and. &
+              (longitude.le.lonUR) .and. &
+              (latitude.ge.latLL)  .and. &
+              (latitude.le.latUR)) then
             ind = ind + 1
             Airport_Code(ind) = CodeNow
             Airport_Name(ind) = NameNow
@@ -435,10 +445,10 @@
             endif
           endif
         else
-          if ((xnow.ge.xLL+dx) .and. &
-              (xnow.le.xUR-dx) .and. &
-              (ynow.ge.yLL+dy) .and. &
-              (ynow.le.yUR-dy)) then
+          if ((xnow.ge.xLL) .and. &
+              (xnow.le.xUR) .and. &
+              (ynow.ge.yLL) .and. &
+              (ynow.le.yUR)) then
             ind = ind + 1
             Airport_Name(ind) = NameNow
             Airport_x(ind) = xnow
@@ -473,6 +483,10 @@
       if(allocated(AirportFullY))    deallocate(AirportFullY)
       if(allocated(AirportFullCode)) deallocate(AirportFullCode)
       if(allocated(AirportFullName)) deallocate(AirportFullName)
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine ReadAirports"
+      endif;enddo
 
       return       
 
@@ -605,8 +619,8 @@
       subroutine ReadExtAirports
 
       use mesh,          only : &
-         A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,&
-         A3d_Re
+         A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0,&
+         A3d_Re,IsLatLon
 
       use projection,    only : &
          PJ_proj_for,PJ_proj_inv
@@ -692,25 +706,27 @@
           ExtAirportLon(isite) = ExtAirportLon(isite)+360.0_ip
 
         ! convert lat/lon to the projected values.
-        if (ProjectAirportLocations) then
-          ! For this branch, we are trusting the lon/lat coordinates from columns 1,2
-          lon_in = ExtAirportLon(isite)
-          lat_in = ExtAirportLat(isite)
-          call PJ_proj_for(lon_in,lat_in, A3d_iprojflag, &
-                     A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,A3d_Re, &
-                     xout,yout)
-          ExtAirportX(isite) = real(xout,kind=ip)
-          ExtAirportY(isite) = real(yout,kind=ip)
-        else
-          ! For this branch, we are trusting the projected coordinates from columns 3,4 and inverse-projecting
-          ! to get the lon/lat
-          x_in = ExtAirportX(isite)
-          y_in = ExtAirportY(isite)
-          call PJ_proj_inv(x_in,y_in, A3d_iprojflag, &
-                     A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,A3d_Re, &
-                     xout,yout)
-          ExtAirportLon(isite) = real(xout,kind=ip)
-          ExtAirportLat(isite) = real(yout,kind=ip)
+        if (.not.IsLatLon) then
+          if (ProjectAirportLocations) then
+            ! For this branch, we are trusting the lon/lat coordinates from columns 1,2
+            lon_in = ExtAirportLon(isite)
+            lat_in = ExtAirportLat(isite)
+            call PJ_proj_for(lon_in,lat_in, A3d_iprojflag, &
+                       A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0,A3d_Re, &
+                       xout,yout)
+            ExtAirportX(isite) = real(xout,kind=ip)
+            ExtAirportY(isite) = real(yout,kind=ip)
+          else
+            ! For this branch, we are trusting the projected coordinates from columns 3,4 and inverse-projecting
+            ! to get the lon/lat
+            x_in = ExtAirportX(isite)
+            y_in = ExtAirportY(isite)
+            call PJ_proj_inv(x_in,y_in, A3d_iprojflag, &
+                       A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0,A3d_Re, &
+                       xout,yout)
+            ExtAirportLon(isite) = real(xout,kind=ip)
+            ExtAirportLat(isite) = real(yout,kind=ip)
+          endif
         endif
 
       enddo
@@ -718,6 +734,11 @@
       close(fid_airport)
 
       n_ext_airports = isite     !number of external airports read
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine ReadExtAirports"
+      endif;enddo
+
       return
 
       end subroutine ReadExtAirports
@@ -843,6 +864,10 @@
         write(outlog(io),*)" Number of airports read = ",num_GlobAirports
       endif;enddo
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Read_GlobalAirports"
+      endif;enddo
+
       return
 
       ! Error traps
@@ -871,12 +896,12 @@
         write(outlog(io),*)"     Entered Subroutine Read_GlobalAirports"
       endif;enddo
 
-      allocate(AirportFullLat(MAXAIRPORTS))
-      allocate(AirportFullLon(MAXAIRPORTS))
-      allocate(AirportFullX(MAXAIRPORTS))
-      allocate(AirportFullY(MAXAIRPORTS))
-      allocate(AirportFullCode(MAXAIRPORTS))
-      allocate(AirportFullName(MAXAIRPORTS))
+      if(.not.allocated(AirportFullLat))  allocate(AirportFullLat(MAXAIRPORTS))
+      if(.not.allocated(AirportFullLon))  allocate(AirportFullLon(MAXAIRPORTS))
+      if(.not.allocated(AirportFullX))    allocate(AirportFullX(MAXAIRPORTS))
+      if(.not.allocated(AirportFullY))    allocate(AirportFullY(MAXAIRPORTS))
+      if(.not.allocated(AirportFullCode)) allocate(AirportFullCode(MAXAIRPORTS))
+      if(.not.allocated(AirportFullName)) allocate(AirportFullName(MAXAIRPORTS))
 
       ! WARNING: if you add airports to this internal master list, you need to make
       !          sure you do not add too many and exceed MAXAIRPORTS
@@ -13163,7 +13188,13 @@
       ! return the number of airports in this global list.
 
       num_GlobAirports = i
-      
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Read_GlobalAirports"
+      endif;enddo
+
+      return
+
       end subroutine Read_GlobalAirports
 #endif
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -13187,7 +13218,7 @@
       subroutine Project_GlobalAirports
 
       use mesh,          only : &
-         IsLatLon,A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,&
+         IsLatLon,A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0,&
          A3d_Re
 
       use projection,    only : &
@@ -13195,6 +13226,10 @@
 
       integer            :: isite
       real(kind=dp)      :: lat_in,lon_in,xout,yout
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Project_GlobalAirports"
+      endif;enddo
 
       do isite=1,NAIRPORTS_EWERT
         ! convert lat/lon to the projected values.
@@ -13205,12 +13240,18 @@
           lon_in = AirportFullLon(isite)
           lat_in = AirportFullLat(isite)
           call PJ_proj_for(lon_in,lat_in, A3d_iprojflag, &
-                     A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0_scale,A3d_Re, &
+                     A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,A3d_k0,A3d_Re, &
                      xout,yout)
           AirportFullX(isite) = real(xout,kind=ip)
           AirportFullY(isite) = real(yout,kind=ip)
         endif
       end do
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Project_GlobalAirports"
+      endif;enddo
+
+      return
 
       end subroutine Project_GlobalAirports
 

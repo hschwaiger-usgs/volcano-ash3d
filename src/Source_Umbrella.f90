@@ -30,6 +30,12 @@
              SourceVolInc_Umbrella,     &
              AvgCon_Umbrella
 
+      integer      ,parameter,public :: VelMod_umb_Default         = 1       ! Velocity model to use (1=default)
+      real(kind=ip),parameter,public :: k_entrainment_umb_Default  = 0.1_ip  ! entrainment coefficient
+      real(kind=ip),parameter,public :: lambda_umb_Default         = 0.2_ip  ! umbrella cloud shape factor
+      real(kind=ip),parameter,public :: N_BV_umb_Default           = 0.02_ip ! Brunt-Vaisala frequency, 1/s
+      real(kind=ip),parameter,public :: SuzK_umb_Default           = 12.0_ip ! Suzuki parameter used for umb clouds
+
       !components of the wind field used for umbrella clouds
 #ifdef USEPOINTERS
       real(kind=ip),dimension(:,:,:,:),pointer,public :: SourceNodeFlux_Umbrella =>null()
@@ -46,11 +52,11 @@
       integer,public :: itop      ! z index of highest node in the umbrella cloud
 
       ! These are only public since we want to write these to the ouput file
-      integer      ,public :: VelMod_umb         = 1       ! Velocity model to use (1=default)
-      real(kind=ip),public :: k_entrainment_umb  = 0.1_ip  ! entrainment coefficient
-      real(kind=ip),public :: lambda_umb         = 0.2_ip  ! umbrella cloud shape factor
-      real(kind=ip),public :: N_BV_umb           = 0.02_ip ! Brunt-Vaisala frequency, 1/s
-      real(kind=ip),public :: SuzK_umb           = 12.0_ip ! Suzuki parameter used for umb clouds
+      integer      ,public :: VelMod_umb         = VelMod_umb_Default
+      real(kind=ip),public :: k_entrainment_umb  = k_entrainment_umb_Default
+      real(kind=ip),public :: lambda_umb         = lambda_umb_Default
+      real(kind=ip),public :: N_BV_umb           = N_BV_umb_Default
+      real(kind=ip),public :: SuzK_umb           = SuzK_umb_Default
 
        !width & height of source nodes in km
       real(kind=ip) :: SourceNodeWidth_km
@@ -150,6 +156,12 @@
       allocate(uvx_pd(-1:nx+2,-1:ny+2,ibase:itop));     uvx_pd = 0.0_ip
       allocate(uvy_pd(-1:nx+2,-1:ny+2,ibase:itop));     uvy_pd = 0.0_ip
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_Source_Umbrella"
+      endif;enddo
+
+      return
+
       end subroutine Allocate_Source_Umbrella
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -183,6 +195,12 @@
         if(allocated(AvgStenc_Umbrella))       deallocate(AvgStenc_Umbrella)
         if(allocated(ScaleFac_Umbrella))       deallocate(ScaleFac_Umbrella)
 #endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_Source_Umbrella"
+      endif;enddo
+
+      return
 
       end subroutine Deallocate_Source_Umbrella
 
@@ -305,6 +323,9 @@
         endif
       endif ! time.eq.0.0_ip
 
+      ! HFS : Add check for the maximal radius for this eruptive pulse and make sure
+      !       the source location is far enough from the boundaries.
+
       !convert from  hours to seconds
       if(.not.first_time)then
         ! For the first time step, time=0 -> cloudrad=0 and uR=Inf
@@ -389,6 +410,10 @@
         endif
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine umbrella_winds"
+      endif;enddo
+
       return
 
       end subroutine umbrella_winds
@@ -443,6 +468,10 @@
         endif
       enddo
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine TephraSouceNodes_Umbrella"
+      endif;enddo
+
       return
 
       end subroutine TephraSourceNodes_Umbrella
@@ -479,7 +508,7 @@
       real(kind=dp) :: dt
 
       real(kind=ip) :: tmp
-      integer :: i,j,ii,jj,k,isize
+      integer :: i,j,k,isize
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine SourceVolInc_Umbrella"
@@ -499,9 +528,9 @@
       enddo
 
       do i=1,3
-        ii=ivent-2+i
+        !ii=ivent-2+i
         do j=1,3
-          jj=jvent-2+j
+          !jj=jvent-2+j
           do k=ibase,itop
             do isize=1,n_gs_max
               tmp= tmp                                           + & ! final units is km3
@@ -516,6 +545,10 @@
       enddo
 
       SourceVolInc_Umbrella = tmp
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine SourceVolInc_Umbrella"
+      endif;enddo
 
       return
 

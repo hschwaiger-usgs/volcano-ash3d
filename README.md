@@ -16,9 +16,6 @@ duration. Multiple eruptions separated in time may be included in a single simul
 For larger events, an umbrella source can be used to account for the radial spreading
 of the cloud.
 
-The software is written in Fortran 2008 and is designed for a Linux system, although we
-have had no trouble building the software on MacOS or Microsoft Windows.
-
 For details on usage, please see the [User's Guide](doc/UsersGuide.md)
 and look through the example programs.
 
@@ -56,21 +53,22 @@ installed, if possible:
             shapefile output.
 5. gnuplot: This is the default graphics package for creating plots directly from Ash3d.
 6. dislin : This is an alternate graphics package for creating plots from Ash3d (preferred for Windows),
-   available from `https://www.dislin.de`
+            available from `https://www.dislin.de`.
 7. plplot : Another alternate graphics package for creating plots from Ash3d (also works on Windows).
+8. GMT    : This mapping package is also optionally used in post-processing.
 
-All of these packages (except dislin) are available on Red Hat and Ubuntu systems and can be installed
+All of these packages (except dislin) are available on Red Hat, Ubuntu, and Mac systems and can be installed
 using the standard distribution software installer (yum/dnf for RedHat systems or apt for
 Ubunto). For some of these packages and for some distributions, you might need to enable
-extra repositories, such as epel and powertools/CRB (for Red Hat systems)
+extra repositories, such as epel and powertools/CRB (for Red Hat systems).  
 
 On RedHat-based systems, these can be installed with:  
-`sudo yum install lapack lapack-devel blas blas-devel`  
-`sudo yum install netcdf netcdf-devel netcdf-fortran netcdf-fortran-devel`  
-`sudo yum install eccodes eccodes-devel`  
-`sudo yum install zip`  
-`sudo yum install gnuplot`  
-`sudo yum install plplot`  
+`sudo dnf install lapack lapack-devel blas blas-devel`  
+`sudo dnf install netcdf netcdf-devel netcdf-fortran netcdf-fortran-devel`  
+`sudo dnf install eccodes eccodes-devel`  
+`sudo dnf install zip`  
+`sudo dnf install gnuplot`  
+`sudo dnf install plplot`  
 
 On Ubuntu-based systems:  
 `sudo apt install liblapack64-3 liblapack64-dev libblas64-3 libblas64-dev`  
@@ -80,6 +78,16 @@ On Ubuntu-based systems:
 `sudo apt install gnuplot`  
 `sudo apt install plplot`  
 
+On Mac OSX-based systems (install the [Homebrew package](https://brew.sh/) manager first):  
+`brew install gcc`  
+`brew install netcdf-fortran`  
+`brew install lapack`  
+`brew install openblas`  
+`brew install eecodes`  
+`brew install gnuplot`  
+`brew install plplot`  
+
+
 Note that these particular package names are the distribution packages for the latest versions of RedHat and Ubuntu
 at the time of writing. There may be slight variations to these names for older or newer
 systems. If you prefer managing libraries either within a conda environment or via modules, you will likely have
@@ -88,6 +96,18 @@ you are using), in order for the compiler to find the needed libraries and inclu
 If you use modules, you will need to make sure that netcdf package you load (as well as eccodes, if desired)
 is built with the compiler you plan to use.
 
+### For Mac OSX only
+
+Makefiles will need to be updated to the following to reflect using the homebrew package manager. 
+
+In `volcano-ash3d/src/make_gfortran.inc`:
+
+- Change the `FCHOME` variable to `/opt/homebrew` 
+- Change the `LAPACKLIB` variable to `-L$(FCHOME)/lib -L$(FCHOME)/lib/x86_64-linux-gnu -llapack`  
+- Change the `COMPINC` variable to `-I./ -I$(FCHOME)/include -I$(FCHOME)/lib/gfortran/modules`  
+- Change the `COMPLIBS` variable to `-L$(FCHOME)/lib`.  
+
+Note: The `FCHOME` change will also need to be done to successfully compile [HoursSince](https://code.usgs.gov/vsc/ash3d/volcano-ash3d-hourssince), [projection](https://code.usgs.gov/vsc/ash3d/volcano-ash3d-projection), and [MetReader](https://code.usgs.gov/vsc/ash3d/volcano-ash3d-metreader) on OSX.
 ### Compiling Ash3d with the default settings
 Once the necessary USGS libraries and optional distribution packages are installed, Ash3d can
 be built. The makefile in `volcano-ash3d/src` can be edited to suit your system.
@@ -105,7 +125,7 @@ resulting ASCII output files, reporting PASS or FAIL. These tests are described 
 output. The test cases in 
 `tests/test_04` require that the NCEP 50-year reanalysis data files for the year 1980
 be stored in `/data/WindFiles/NCEP/1980`. Assuming MetReader was installed in the default
-location, these reanayalsis files can be downloaded by running the following script
+location, these reanalysis files can be downloaded by running the following script
 installed when MetReader was installed.  
 `/opt/USGS/bin/autorun_scripts/get_NCEP_50YearReanalysis.sh 1980`  
 This script expects that the directories `/data/WindFiles/NCEP` and
@@ -149,7 +169,7 @@ are compared with cloud outlines from satellite observations presented in
 [Mastin and Van Eaton, 2020](https://doi.org/10.3390/atmos11101038).
 
 The validation tests above demonstrate the utility of Ash3d in modeling volcanic
-ash cloud transport and deposition for a variety of erpution scenarios, compared
+ash cloud transport and deposition for a variety of eruption scenarios, compared
 with several types of observations. Verification tests, which demonstrate that
 Ash3d solves the equations described in [Schwaiger et al.](https://doi.org/10.1029/2011JB008968),
 can be found in the repository
@@ -170,9 +190,9 @@ variables to edit are in the top block of the makefile up to the lines:
 
 The following are the variables available to edit:  
 
-- `SYSTEM      = [gfortran] or ifort`  
+- `SYSTEM      = [gfortran], ifort, aocc, or nvhpc`  
               This controls which compiler to use and which libraries to link.
-              If you use a different compiler than these two, you will have to
+              If you use a different compiler than these, you will have to
               edit the variables in the `SYSTEM` blocks to suit your system.  
 - `RUN         = DEBUG, PROF, [OPT], or OMPOPT`  
               This variable sets which set of compiler flags will be used for
@@ -218,7 +238,7 @@ The following are the variables available to edit:
                min/max in x,y,z of the region where ash concentration exceeds
                some threshold.  
 - `USEZIP      = T or [F]`  
-              Zip is used to convert kml to kml and to bundle linked graphics,
+              Zip is used to convert kml to kmz and to bundle linked graphics,
               such as time-series ash accumulation plots, together with the kml
               file. Set this to F if zip is not installed on this system.
 - `USEPLPLOT   = T or [F]`  
@@ -262,11 +282,15 @@ all the information of these output products along with 3-D variables for transi
 concentrations. If this netcdf file is written, the post-processing tool `Ash3d_PostProc`,
 can be used to write ASCII, binary, kml, shapefiles, or png images of output variables.
 
-To compile this tool, make sure the makefile variables `USEPLPLOT` and `USEDISLIN`
+To compile this tool, and if you are using the dislin and/or the plplot packages,
+make sure the makefile variables `USEPLPLOT` and `USEDISLIN`
 match your system and that the paths of the include directories and libraries are correct
 for your system.
 Then type:  
 `make postproc`  
+
+If you do not use dislin or plplot, several alternative packages will be built in case the
+needed packages are on your system, including: gnuplot, GMT, matlab/octave, python/cartopy.
 
 Usage
 -----
@@ -320,8 +344,8 @@ Citation
 
 If you would like to reference Ash3d in your paper, please cite the software as follows.  
 
-Schwaiger, H.F. et al. (2024) Ash3d (Version 1.0.0), U.S. Geological Survey Software Release,
-[doi:10.5066/P1SJWAKZ](https://doi.org/10.5066/P1SJWAKZ).  
+Schwaiger, H.F. et al. (2026) Ash3d (Version 1.1.0), U.S. Geological Survey Software Release,
+[doi:10.5066/P144K2NA](https://doi.org/10.5066/P144K2NA).  
 
 or you can cite the journal article describing the software given in reference 6 above.
 

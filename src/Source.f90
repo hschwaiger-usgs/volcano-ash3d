@@ -15,6 +15,7 @@
 !      subroutine CheckEruptivePulses
 !      subroutine TephraSourceNodes
 !      function SourceVolInc
+!      function HandDUR_2_EVol
 !
 !  Note: source type is given on line 8 of block 1 of the control file
 !        For a Suzuki source, we would have just the Suzuki constant:
@@ -66,7 +67,8 @@
              EruptivePulse_MassFluxRate,&
              CheckEruptivePulses,       &
              TephraSourceNodes,         &
-             SourceVolInc
+             SourceVolInc,              &
+             HandDUR_2_EVol
 
         ! Publicly available variables
 
@@ -76,8 +78,10 @@
 
       integer,          public :: neruptions            ! number of eruptions or eruptive pulses
       character(len=12),public :: SourceType            ! may be 'point', 'line', or 'Suzuki' 
+      integer          ,public :: SourceType_idx        ! 1=Suz,2=point,3=line,4=profile,5=umb,6=umb_air
       real(kind=ip),    public :: Suzuki_A
       logical,          public :: IsCustom_SourceType = .false.
+      integer,          public :: e_prof_maxpoints    = 0
 
 #ifdef USEPOINTERS
       real(kind=ip), dimension(:,:)  ,pointer,public :: NormSourceColumn    => null()
@@ -126,6 +130,8 @@
       real(kind=ip), public :: ESP_Vol           = 0.0_ip
       real(kind=ip), public :: ESP_massfracfine  = 0.0_ip
 
+      integer,public,parameter :: MAX_ER_PROFPOINTS = 50 
+
       integer, parameter :: MAXCUSTSRC = 10    ! The maximum number of custom
                                                ! source types that we will check for
       character(len=30),dimension(MAXCUSTSRC) :: SourceType_Custom = ""
@@ -166,12 +172,18 @@
         allocate(e_prof_dz(neruptions));             e_prof_dz       = 0.0_ip
         allocate(e_prof_nzpoints(neruptions));       e_prof_nzpoints = 0
           ! for profiles, assume 50 points
-        allocate(e_prof_Volume(neruptions,50));      e_prof_Volume   = 0.0_ip
-        allocate(e_prof_MassFluxRate(neruptions,50));e_prof_MassFluxRate = 0.0_ip
+        allocate(e_prof_Volume(neruptions,MAX_ER_PROFPOINTS));      e_prof_Volume       = 0.0_ip
+        allocate(e_prof_MassFluxRate(neruptions,MAX_ER_PROFPOINTS));e_prof_MassFluxRate = 0.0_ip
       endif
 
       ieruption = 1 ! Initialize eruption for the start of this dt to the starting eruption
       jeruption = 1 ! Initialize eruption for the end of this dt to the starting eruption
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_Source_eruption"
+      endif;enddo
+
+      return
 
       end subroutine Allocate_Source_eruption
 
@@ -195,6 +207,7 @@
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Allocate_Source_grid"
       endif;enddo
+
       if(nsmax.eq.0)then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"     Trying to allocate SourceNodeFlux but nsmax=0"
@@ -205,6 +218,12 @@
       allocate(NormSourceColumn(neruptions,1:nzmax));    NormSourceColumn = 0.0_ip
       allocate(SourceNodeFlux(0:nzmax+1,1:nsmax));       SourceNodeFlux   = 0.0_ip
       allocate(TephraFluxRate(nzmax));                   TephraFluxRate   = 0.0_ip
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_Source_grid"
+      endif;enddo
+
+      return
 
       end subroutine Allocate_Source_grid
 
@@ -267,6 +286,10 @@
       if(allocated(TephraFluxRate))      deallocate(TephraFluxRate)
 #endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_Source"
+      endif;enddo
+
       end subroutine Deallocate_Source
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -290,7 +313,7 @@
          EPS_SMALL
 
       use mesh,            only : &
-         nzmax,&
+         nzmax,z_cc_pd,&
          ds_vec_pd,s_cc_pd,s_lb_pd,Zsurf,Ztop,ivent,jvent,ZScaling_ID
 
       integer :: i
@@ -319,6 +342,10 @@
         write(outlog(io),*)"     Entered Subroutine Calc_Normalized_SourceCol"
       endif;enddo
 
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"     Now building normalized source columns above vent."
+      endif;enddo
+
       NormSourceColumn     = 0.0_ip
 
       ! Convert z_volcano to s-coordinate
@@ -338,6 +365,26 @@
         s_volcano = Ztop*(z_volcano-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
         s_PlumeHeight(:) = Ztop*(e_PlumeHeight(:)-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
       endif
+      
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*) "  As a guide on erupted volumes, below are the entered values along"
+        write(outlog(io),*) "  with that predicted by the Mastin relation. Note, it can only be"
+        write(outlog(io),*) "  a meaningful comparison if the entered values correspond to the full"
+        write(outlog(io),*) "  erupted grain-size distribution for full plume sources (i.e. point"
+        write(outlog(io),*) "  sources or fine-fraction only will not be a valid comparison)."
+        write(outlog(io),*) "  If topography is activated, efective plume height above topography"
+        write(outlog(io),*) "  will also be given."
+        write(outlog(io),*)"Using a vent height (in km) of: ",z_volcano
+        write(outlog(io),87)
+      endif;enddo
+      do i=1,neruptions
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),88)i,e_Volume(i),HandDUR_2_EVol(e_PlumeHeight(i)-z_volcano,e_Duration(i))
+        endif;enddo
+      enddo
+
+87    format('    number     EVol (given)     EVol (Mastin)')
+88    format(4x,i6,6x,g12.5,6x,g12.5)
 
       do i=1,neruptions
         ! Get the cell containing the bottom of the source
@@ -487,6 +534,22 @@
 
       enddo ! neruptions
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exporting volume of each eruptive pulse"
+        write(outlog(io),*)e_Volume(1:neruptions)
+        write(outlog(io),*)"-----------------------------------------------"
+        write(outlog(io),*)"     Exporting Normalized eruption column data"
+        do k=nzmax,1,-1
+          write(outlog(io),*)k,z_cc_pd(k),NormSourceColumn(1:neruptions,k)
+        enddo
+      endif;enddo
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Calc_Normalized_SourceCol"
+      endif;enddo
+
+      return
+
       end subroutine Calc_Normalized_SourceCol
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -581,13 +644,18 @@
         endif;enddo
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine EruptivePulse_MassFluxRate"
+      endif;enddo
 
-1024  format('  Total Duration (hrs) = ',f6.3,/, &
-             '  Total volume (km3 DRE) = ',f8.4,/,&
-             '  Total ash mass (Tg) = ',f16.8)
+      return
 
-1025  format('  Total Duration (hrs) = ',f6.3,/, &
-             '  Total ash mass (Tg) = ',f16.8)
+1024  format('   Total Duration (hrs)   = ',f6.3,/, &
+             '   Total volume (km3 DRE) = ',f8.4,/,&
+             '   Total ash mass (Tg)    = ',f16.8)
+
+1025  format('   Total Duration (hrs)   = ',f6.3,/, &
+             '   Total ash mass (Tg)    = ',f16.8)
 
       end subroutine EruptivePulse_MassFluxRate
 
@@ -678,6 +746,12 @@
         dt_pulse_frac(:) = 0.0_dp
         return
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine CheckEruptivePulses"
+      endif;enddo
+
+      return
 
 !     Format statements
  1     format(4x,'Warning.  Eruption ',i3,' is shorter than time steps dt.')
@@ -775,6 +849,12 @@
       ! for the start of the next step
       ieruption = jeruption
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine TephraSourceNodes"
+      endif;enddo
+
+      return
+
 !     Format statements
 2     format(4x,'Source Node Flux does not agree with calculations.',/, &
               4x,'(Sum(SourceNodeFlux)/MassFluxRate)-1=',e12.5,/, &
@@ -834,6 +914,47 @@
       return
 
       end function SourceVolInc
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  HandDUR_2_EVol(PlmH,EDur)
+!
+!  Called from: 
+!  Arguments:
+!    PlmH = height of plume in km
+!    EDur = duration in hours
+!
+!  This function calculates the expected eruptive volume (DRE) given the plume
+!  height and duration from the Mastin relation.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      function HandDUR_2_EVol(PlmH,EDur)
+
+      use global_param,  only : &
+         HR_2_S,KM3_2_M3
+
+      real(kind=8) :: PlmH
+      real(kind=8) :: EDur  ! Time is always in dp
+
+      real(kind=8) :: HandDUR_2_EVol
+
+      ! From Mastin doi:10.1016/j.jvolgeores.2009.01.008
+      real(kind=8), parameter :: Coeff = 2.0_8
+      real(kind=8), parameter :: Expo  = 0.241_8
+
+      ! From Sparks et al; Volcanic Plumes Eq. 5.1
+      !real(kind=8), parameter :: Coeff = 1.67_8
+      !real(kind=8), parameter :: Expo  = 0.259_8
+
+      ! The equation from these references is H = Coeff * Q^(Expo)
+      ! where H is in km and Q is m^3/sec
+      ! Now solving for Q in km^3/hr and using EDur to get EVol
+
+      HandDUR_2_EVol = real(EDur,kind=8)*HR_2_S * &
+                        (PlmH/Coeff)**(1.0_8/Expo) / KM3_2_M3
+ 
+      end function HandDUR_2_EVol
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

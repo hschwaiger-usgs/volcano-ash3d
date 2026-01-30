@@ -35,6 +35,9 @@
              DiffuseHorz,               &
              DiffuseVert
 
+      real(kind=ip), parameter,public :: Imp_fac_Default    = 0.5_ip
+      real(kind=ip), parameter,public :: Imp_DT_fac_Default = 4.0_ip
+
         ! Publicly available variables
       real(kind=ip),public :: diffusivity_horz    ! horizontal diffusion coefficient (km2/hr)
       real(kind=ip),public :: diffusivity_vert    ! vertical diffusion coefficient (km2/hr)
@@ -50,8 +53,12 @@
          !       explicit solver.  If either Imp_fac = 0.5 or 1.0, then the
          !       method is unconditionally stable, but accuracy requires a
          !       Imp_DT_fac to be around 1.0 - 4.0
-      real(kind=ip),public  :: Imp_fac     = 0.5_ip    
-      real(kind=ip),public  :: Imp_DT_fac  = 4.0_ip
+      real(kind=ip),public  :: Imp_fac     = Imp_fac_Default
+      real(kind=ip),public  :: Imp_DT_fac  = Imp_DT_fac_Default
+      real(kind=ip),public  :: KV_MIN      = 5.0_ip    ! Minimum vertical diffusivity (m/s)
+      real(kind=ip),public  :: KH_MIN      = 5.0_ip    ! Minimum horizontal diffusivity (m/s)
+      real(kind=ip),public  :: KV_MAX      = 1.0e5_ip  ! Maximum vertical diffusivity (m/s)
+      real(kind=ip),public  :: KH_MAX      = 1.0e5_ip  ! Maximum horizontal diffusivity (m/s)
 
 
 #ifdef USEPOINTERS
@@ -101,6 +108,12 @@
       if(.not.allocated(kz))allocate(kz(0:nxmax+1,0:nymax+1,0:nzmax+1)); kz = diffusivity_vert
 #endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_Diff"
+      endif;enddo
+
+      return
+
       end subroutine Allocate_Diff
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -130,6 +143,12 @@
       if(allocated(ky)) deallocate(ky)
       if(allocated(kz)) deallocate(kz)
 #endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_Diff"
+      endif;enddo
+
+      return
 
       end subroutine Deallocate_Diff
 
@@ -213,6 +232,12 @@
         endif
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine DiffuseHorz"
+      endif;enddo
+
+      return
+
       end subroutine DiffuseHorz
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -224,7 +249,7 @@
 !    none
 !
 !  This subroutine calls the vertical diffusion routines. This subroutine uses
-!  the parameter useCN (set via preprocesso flag in global_param) to determine
+!  the parameter useCN (set via preprocessor flag in global_param) to determine
 !  if implicit or explicit solvers should be used.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -243,6 +268,12 @@
       else
         call diff_z
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine DiffuseVert"
+      endif;enddo
+
+      return
 
       end subroutine DiffuseVert
 
@@ -385,6 +416,12 @@
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine diff_x"
+      endif;enddo
+
+      return
+
       end subroutine diff_x
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -514,6 +551,12 @@
 
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine diff_y"
+      endif;enddo
+
+      return
 
       end subroutine diff_y
 
@@ -647,6 +690,12 @@
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine diff_z"
+      endif;enddo
+
+      return
+
       end subroutine diff_z
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -710,6 +759,7 @@
       real(kind=ip),dimension( 1:nxmax+1)     :: k_ds_I  ! k/ds
 
       integer :: rmin, rmax     ! min and max indices of the row
+
 #ifdef CRANKNIC
       ! Note: The only reason not to use Crank-Nicolson is if you
       !       don't have blas and lapack installed.  This pre-proc.
@@ -878,6 +928,8 @@
                     info)      !o
               concen_pd(rmin:rmin-1+ncells,j,k,n,ts1) = B_s(:,1)
             elseif(ip.eq.8)then
+              ! NOTE: if you are here because the compiler complained about conversion from REAL(8) to REAL(4)
+              !       when using ip=4, rest assured that this branch will not be executed when ip=4
               call dgtsv(     &
                     nlineq, &  !i The order of the matrix A.  N >= 0.
                     nrhs,   &  !i The number of right hand sides
@@ -907,6 +959,12 @@
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
 
       endif ! ncells.gt.1
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine diffCN_x"
+      endif;enddo
+
+      return
 
       end subroutine diffCN_x
 
@@ -1133,6 +1191,8 @@
                     info)      !o
               concen_pd(i,rmin:rmin-1+ncells,k,n,ts1) = B_s(:,1)
             elseif(ip.eq.8)then
+              ! NOTE: if you are here because the compiler complained about conversion from REAL(8) to REAL(4)
+              !       when using ip=4, rest assured that this branch will not be executed when ip=4
               call dgtsv(     &
                     nlineq, &  !i The order of the matrix A.  N >= 0.
                     nrhs,   &  !i The number of right hand sides
@@ -1163,6 +1223,12 @@
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
 
       endif ! ncells.gt.1
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine diffCN_y"
+      endif;enddo
+
+      return
 
       end subroutine diffCN_y
 
@@ -1223,7 +1289,7 @@
        !        We only need the interfaces up to the boundary of the domain
        !        (not the ghost cells)
            ! These should be only from 1 to ncells + 1
-      real(kind=ip),dimension( 1:nzmax+1)     :: sig_I        ! area of interface
+      real(kind=ip),dimension( 1:nzmax+1)     :: sig_I   ! area of interface
       real(kind=ip),dimension( 1:nzmax+1)     :: ds_I    ! length measure used at interface
       real(kind=ip),dimension( 1:nzmax+1)     :: vavg_I
       real(kind=ip),dimension( 1:nzmax+1)     :: kavg_I
@@ -1393,6 +1459,8 @@
                     info)      !o
               concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = B_s(:,1)
             elseif(ip.eq.8)then
+              ! NOTE: if you are here because the compiler complained about conversion from REAL(8) to REAL(4)
+              !       when using ip=4, rest assured that this branch will not be executed when ip=4
               call dgtsv(     &
                     nlineq, &  !i The order of the matrix A.  N >= 0.
                     nrhs,   &  !i The number of right hand sides
@@ -1424,6 +1492,12 @@
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
 
       endif ! ncells.gt.1
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine diffCN_z"
+      endif;enddo
+
+      return
 
       end subroutine diffCN_z
 

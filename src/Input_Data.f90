@@ -13,6 +13,19 @@
 !      subroutine xyChecker
 !      subroutine vprofchecker
 !      subroutine Read_PostProc_Control_File
+!      subroutine Write_input_block_header
+!      subroutine SetWrite_input_block_01
+!      subroutine SetWrite_input_block_02
+!      subroutine SetWrite_input_block_03
+!      subroutine SetWrite_input_block_04
+!      subroutine SetWrite_input_block_05
+!      subroutine SetWrite_input_block_06
+!      subroutine SetWrite_input_block_07
+!      subroutine SetWrite_input_block_08
+!      subroutine SetWrite_input_block_09
+!      subroutine SetWrite_input_block_ResetParam
+!      subroutine SetWrite_input_block_Topo
+!      subroutine SetWrite_input_block_VarDiff
 !
 !##############################################################################
 
@@ -25,13 +38,26 @@
       implicit none
 
         ! Set everything to private by default
-      private
+      !private
 
         ! Publicly available subroutines/functions
-      public Parse_Command_Line, &
-             Set_OS_Env,         &
-             Read_Control_File,  &
-             Read_PostProc_Control_File
+      public Parse_Command_Line,         &
+             Set_OS_Env,                 &
+             Read_Control_File,          &
+             Read_PostProc_Control_File, &
+             Write_input_block_header,   &
+             SetWrite_input_block_01,    &
+             SetWrite_input_block_02,    &
+             SetWrite_input_block_03,    &
+             SetWrite_input_block_04,    &
+             SetWrite_input_block_05,    &
+             SetWrite_input_block_06,    &
+             SetWrite_input_block_07,    &
+             SetWrite_input_block_08,    &
+             SetWrite_input_block_09,    &
+             SetWrite_input_block_ResetParam,    &
+             SetWrite_input_block_Topo,  &
+             SetWrite_input_block_VarDiff
 
       contains
       !------------------------------------------------------------------------
@@ -63,14 +89,6 @@
       use io_data,       only : &
          concenfile,infile,LoadConcen
 
-      use help,          only : &
-             help_general,   &
-             help_make,      &
-             help_run,       &
-             help_input,     &
-             help_inputfile, &
-             help_postproc
-
 #ifdef USENETCDF
       use Ash3d_Netcdf_IO
 #endif
@@ -88,6 +106,22 @@
       character, dimension(1:130) :: fc_inputfile
       ! Size matches length of infile (specified in module io_data)
       integer fc_len
+
+      INTERFACE
+        subroutine help_general
+        end subroutine help_general
+        subroutine help_make
+        end subroutine help_make
+        subroutine help_run
+        end subroutine help_run
+        subroutine help_input
+        end subroutine help_input
+        subroutine help_postproc
+        end subroutine help_postproc
+        subroutine help_inputfile(blockID)
+          integer,intent(in) :: blockID
+        end subroutine help_inputfile
+      END INTERFACE
 
       ! Since we haven't opened a logfile yet, only write out to stdout if not a
       ! control file case.
@@ -263,6 +297,8 @@
 !      = 2 : PLPLOT
 !      = 3 : GNUPLOT
 !      = 4 : GMT
+!      = 5 : matlab/octave
+!      = 6 : python/cartopy
 !  Next, details of the system state are logged, including OS type (Linux, Mac, Windows),
 !  endian flavor of hardware, fortran compiler version and flags, command-line arguments,
 !  and date/time of the run.  Additionally, if PII=ON was set in the makefile when this
@@ -288,13 +324,13 @@
 
       use global_param,  only : &
         DirPrefix,DirDelim,IsLitEnd,IsLinux,IsWindows,IsMacOS, &
-        version_major,version_minor,version_patch,&
+        version,version_major,version_minor,version_patch,&
         CFL,OS_TYPE,OS_Flavor,os_full_command_line,os_cwd,os_host,os_user,&
         Comp_Code,Comp_Flavor,useFastDt,FastDt_suppress, &
-        usezip,zippath,usegnuplot,gnuplotpath
+        usezip,zippath,usegnuplot,gnuplotpath,useCN,limiter
 
       use io_data,       only : &
-        Ash3dHome,cdf_source
+        Ash3dHome,Instit_IconFile,cdf_source
 
       use time_data,     only : &
         BaseYear,useLeap,os_time_log, &
@@ -304,7 +340,7 @@
          iplotpref
 
       use MetReader,     only : &
-         MR_OS_TYPE,MR_DirPrefix,MR_DirDelim,MR_VERB,MR_nio
+         MR_OS_TYPE,MR_DirPrefix,MR_DirDelim,MR_VERB,MR_nio,MR_VB
 
       ! This module requires Fortran 2003 or later
       use iso_fortran_env, only : &
@@ -315,7 +351,7 @@
       integer            :: cstat
       character(len=120) :: iomessage
 
-      character(len=130)   :: tmp_str
+      character(len=130) :: tmp_str
         ! variables to hold results of date_and_time
       character(len=8)  :: date
       character(len=10) :: time2
@@ -325,34 +361,35 @@
       real(kind=dp)     :: StartHour
       real(kind=dp)     :: RunStartHour    ! Start time of model run, in hours since BaseYear
       character(len=100):: CompVer
-      character(len=604):: CompOpt
+      character(len=669):: CompOpt
       logical           :: IsThere
-      character(len=8)  :: version         ! Text string of the Ash3d version number
 
       INTERFACE
         real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
-          integer            :: iyear
-          integer            :: imonth
-          integer            :: iday
-          real(kind=8)       :: hours
-          integer            :: byear
-          logical            :: useLeaps
+          integer     ,intent(in) :: iyear
+          integer     ,intent(in) :: imonth
+          integer     ,intent(in) :: iday
+          real(kind=8),intent(in) :: hours
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
         end function HS_hours_since_baseyear
         character (len=13) function HS_yyyymmddhhmm_since(HoursSince,byear,useLeaps)
-          real(kind=8)               ::  HoursSince
-          integer                    ::  byear
-          logical                    ::  useLeaps
+          real(kind=8),intent(in) ::  HoursSince
+          integer     ,intent(in) ::  byear
+          logical     ,intent(in) ::  useLeaps
         end function HS_yyyymmddhhmm_since
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8)              :: HoursSince
-          integer                   :: byear
-          logical                   :: useLeaps
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Set_OS_Env"
       endif;enddo
+
+      bs = achar(92)  ! assign the backslash character by its ASCII value 92
 
       ! Reset OS varibles based on PP flags set in the makefile
 #ifdef LINUX
@@ -389,10 +426,10 @@
 #endif
 
 !#ifdef USEDISLIN
-!  For now, nor Dislin-specific varibles are set
+!  For now, no Dislin-specific varibles are set
 !#endif
 !#ifdef USEPLPLOT
-!  For now, nor plplot-specific varibles are set
+!  For now, no plplot-specific varibles are set
 !#endif
 #ifdef USEGNUPLOT
       !gnuplotpath = '/usr/bin/gnuplot'
@@ -507,6 +544,7 @@
       endif
       ! Harmonizing verbosity levels with MetReader
       MR_VERB = VB(1)
+      MR_VB(1:2) = (/MR_VERB,MR_VERB/)
       MR_nio  = 2    ! Ash3d uses a logfile so set the output streams to 2 for stdin/stderr + logfile
 
       ! Next, check for environment variables ASH3DHOME
@@ -566,6 +604,10 @@
           write(errlog(io),*)"         or set the environment variable ASH3DHOME"
         endif;enddo
       endif
+      ! Set path to Institution Icon
+      ! USGS icon is at /opt/USGS/Ash3d/share/post_proc/USGSvid.png linked to logo.png
+      ! Local institutions can overwrite logo.png
+      Instit_IconFile = trim(adjustl(Ash3dHome)) // '/share/post_proc/logo.png'
 
       ! Now, check for environment variables ASH3DCFL
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -627,16 +669,16 @@
           endif;enddo
           stop 1
         endif
-        if(iplotpref.le.0.or.iplotpref.gt.4)then
+        if(iplotpref.le.0.or.iplotpref.gt.6)then
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: ASH3DPLOT must be any of:"
             write(errlog(io),*)"         1 = dislin"
             write(errlog(io),*)"         2 = plplot"
             write(errlog(io),*)"         3 = gnuplot"
             write(errlog(io),*)"         4 = GMT"
+            write(errlog(io),*)"         5 = matlab/octave"
+            write(errlog(io),*)"         6 = python/cartopy"
             ! Placeholders for other post-processing graphics packages
-            !write(errlog(io),*)"         5 = matlab"
-            !write(errlog(io),*)"         6 = cartopy"
             !write(errlog(io),*)"         7 = R"
             write(errlog(io),*)"       Currently set to ",iplotpref
           endif;enddo
@@ -652,6 +694,10 @@
               write(outlog(io),*)"           Using gnuplot if available."
             elseif(iplotpref.eq.4)then
               write(outlog(io),*)"           Using GMT if available."
+            elseif(iplotpref.eq.5)then
+              write(outlog(io),*)"           Using matlab/octave if available."
+            elseif(iplotpref.eq.6)then
+              write(outlog(io),*)"           Using python/cartopy if available."
             endif
           endif;enddo
         endif
@@ -770,7 +816,8 @@
                              trim(adjustl(zippath))
           ! First check if zip is actually in the path
           write(outlog(io),*)"                  Checking for default path for zip"
-          call execute_command_line('which zip',wait=.true.,exitstat=iostatus)
+          call execute_command_line('which zip',&
+                                    wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
           if(iostatus.ne.0)then
             write(outlog(io),*)"Error: 'which zip' failed. No zip executable in default path"
             write(outlog(io),*)"       Deactivating zip"
@@ -791,7 +838,7 @@
             ! Finally, do a test run of the zip executable
             write(outlog(io),*)"                  Checking if zip executes."
             call execute_command_line("echo 'exit' | zip --version > /dev/null",&
-                                      WAIT=.true., EXITSTAT=iostatus, CMDSTAT=cstat, CMDMSG=iomessage)
+                                      wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
             if(iostatus.eq.0)then
               write(outlog(io),*)"                  Success"
             else
@@ -823,7 +870,8 @@
           write(outlog(io),*)"    USEGNUPLOT: gnuplot plotting package is installed"
           ! First check if gnuplot is actually in the path
           write(outlog(io),*)"                  Checking for default path for gnuplot"
-          call execute_command_line('which gnuplot',wait=.true.,exitstat=iostatus)
+          call execute_command_line('which gnuplot',&
+                                    wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
           if(iostatus.ne.0)then
             write(outlog(io),*)"Error: 'which gnuplot' failed. No gnuplot executable in default path"
             write(outlog(io),*)"       Deactivating gnuplot"
@@ -844,7 +892,7 @@
             ! Finally, do a test run of the gnuplot executable
             write(outlog(io),*)"                  Checking if gnuplot executes."
             call execute_command_line("echo 'exit' | gnuplot",&
-                                      WAIT=.true., EXITSTAT=iostatus, CMDSTAT=cstat, CMDMSG=iomessage)
+                                      wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
             if(iostatus.eq.0)then
               write(outlog(io),*)"                  Success"
             else
@@ -887,27 +935,35 @@
         write(outlog(io),*)"      EXPLDIFF: Diffusion will be calculated via the explicit solver."
 #endif
 #ifdef CRANKNIC
+        useCN   = .true.
         write(outlog(io),*)"      CRANKNIC: Diffusion will be calculated implicitly (via Crank-Nicolson)"
 #endif
 #ifdef LIM_NONE
+        limiter = 'No'
         write(outlog(io),*)"      LIM_NONE: Advection routines use no limiters"
 #endif
 #ifdef LIM_LAXWEN
+        limiter = 'LaxWendroff'
         write(outlog(io),*)"    LIM_LAXWEN: Advection routines use a Lax-Wendroff limiter"
 #endif
 #ifdef LIM_BW
+        limiter = 'BeamWarm'
         write(outlog(io),*)"        LIM_BW: Advection routines use a Beam-Warming limiter"
 #endif
 #ifdef LIM_FROMM
+        limiter = 'Fromm'
         write(outlog(io),*)"     LIM_FROMM: Advection routines use a Fromm limiter"
 #endif
 #ifdef LIM_MINMOD
+        limiter = 'Minmod'
         write(outlog(io),*)"    LIM_MINMOD: Advection routines use a minmod limiter"
 #endif
 #ifdef LIM_SUPERBEE
+        limiter = 'Superbee'
         write(outlog(io),*)"  LIM_SUPERBEE: Advection routines use a superbee limiter"
 #endif
 #ifdef LIM_MC
+        limiter = 'MC'
         write(outlog(io),*)"        LIM_MC: Advection routines use a MC limiter"
 #endif
 #ifdef USENETCDF
@@ -986,7 +1042,11 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!  Subroutine Read_Control_File()
+!  Subroutine Read_Control_File
+!
+!  Called from: Ash3d.F90, but also Ash3d_ASCII_GenCTR, Ash3d_PostProc
+!  Arguments:
+!    None
 !
 ! This subroutine sets up the parameters for the Ash3d run.
 ! 
@@ -1024,19 +1084,20 @@
          input_unit
 
       use global_param,  only : &
-         EPS_SMALL,EPS_TINY,nmods,OPTMOD_names,limiter,&
-         useDS,useTemperature,useCalcFallVel,useLogNormGSbins,&
-         useDiffusion,useCN,useVz_rhoG,M2PS_2_KM2PHR,MAXNUM_OPTMODS
+         EPS_SMALL,EPS_TINY,nmods,OPTMOD_names,limiter,KM_2_M,  &
+         useDS,useTemperature,useCalcFallVel,useLogNormGSbins,  &
+         useDiffusion,useVarDiffH,useVarDiffV,useCN,useVz_rhoG, &
+         M_2_MM,M2PS_2_KM2PHR,MAXNUM_OPTMODS
 
       use io_data,       only : &
-         cdf_b1l1,cdf_b1l2,cdf_b1l3,cdf_b1l4,cdf_b1l5,cdf_b1l6,cdf_b1l7,cdf_b1l8,cdf_b1l9,&
+         cdf_b1l1,cdf_b1l2,cdf_b1l3,cdf_b1l4,cdf_b1l5,cdf_b1l6,cdf_b1l7,cdf_vardz,cdf_b1l8,cdf_b1l9,&
          cdf_b3l1,cdf_b3l2,cdf_b3l3,cdf_b3l4,cdf_b3l5,cdf_b4l1,cdf_b4l2,cdf_b4l3,cdf_b4l4,&
          cdf_b4l5,cdf_b4l6,cdf_b4l7,cdf_b4l8,cdf_b4l9,cdf_b4l10,cdf_b4l11,cdf_b4l12,cdf_b4l13,&
-         cdf_b4l14,cdf_b4l15,cdf_b4l16,cdf_b4l17,cdf_b4l18,cdf_b6l1,cdf_b6l2,cdf_b6l3,cdf_b6l4,&
-         cdf_b6l5,cdf_comment,cdf_title,cdf_institution,cdf_source_url,cdf_history,cdf_references,&
-         concenfile,VolcanoName,WriteTimes,nWriteTimes,cdf_conventions,cdf_run_class,cdf_url,&
+         cdf_b4l14,cdf_b4l15,cdf_b4l16,cdf_b4l17,cdf_b4l18,cdf_b5l1,cdf_b6l1,cdf_b6l2,cdf_b6l3,cdf_b6l4,&
+         cdf_b6l5,Have_Block_NetCDF,cdf_comment,cdf_title,&
+         concenfile,VolcanoName,WriteTimes,nWriteTimes,&
          x_vprofile,y_vprofile,i_vprofile,j_vprofile,Site_vprofile,&
-         infile,ioutputFormat,LoadConcen,log_step,NextWriteTime,&
+         infile,ioutputFormat,LoadConcen,log_step,NextWriteTime,Have_Block_ResParm,&
          AppendExtAirportFile,WriteInterval,WriteGSD,WriteDepositTS_KML,WriteDepositTS_ASCII,&
          WriteDepositTime_KML,WriteDepositTime_ASCII,WriteDepositFinal_KML,&
          WriteDepositFinal_ASCII,WriteCloudTime_KML,WriteCloudTime_ASCII,&
@@ -1050,29 +1111,32 @@
          de,dn,dx,dy,z_vec_init,dz_const,nxmax,nymax,nzmax,nsmax,VarDzType,ivent,jvent,kvent,&
          gridwidth_e,gridwidth_n,gridwidth_x,gridwidth_y,&
          lonLL,latLL,lonUR,latUR,xLL,yLL,xUR,yUR,&
-         A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
+         A3d_iprojflag,A3d_k0,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
          A3d_phi2,A3d_Re,IsLatLon,IsPeriodic,ZPADDING,Ztop
 
       use solution,      only : &
-         StopValue_FracAshDep,imin,imax,jmin,jmax,kmin,kmax
+         StopWhenDeposited,StopValue_FracAshDep,StopValue_FracAshDep_Default,imin,imax,jmin,jmax,kmin,kmax
 
       use time_data,     only : &
          BaseYear,useLeap,time,SimStartHour,Simtime_in_hours,xmlSimStartTime
 
+      use wind_grid,     only : &
+         Load_Windfiles
+
       use Source,        only : &
          neruptions,e_Duration,e_Volume,e_PlumeHeight,e_prof_Volume,e_prof_dz,&
-         e_prof_nzpoints,e_StartTime,&
+         e_prof_maxpoints,e_prof_nzpoints,e_StartTime,MAX_ER_PROFPOINTS,&
          ESP_duration,ESP_height,ESP_Vol,&
          lat_volcano,lon_volcano,x_volcano,y_volcano,z_volcano,Suzuki_A,&
-         IsCustom_SourceType,SourceType,&
+         IsCustom_SourceType,SourceType,SourceType_idx,&
            Allocate_Source_eruption
 
       use Source_Umbrella, only : &
          SuzK_umb
 
       use Tephra,        only : &
-         DepositDensity,Tephra_v_s,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,Tephra_gsPhi,&
-         Tephra_gsF,Tephra_gsG,FV_ID,Shape_ID,phi_mean,phi_stddev,n_gs_max,n_gs_aloft,&
+         DepositDensity,Tephra_Ncols,Tephra_v_s,Tephra_gsdiam,Tephra_bin_mass,Tephra_rho_m,Tephra_gsPhi,&
+         Tephra_gsF,Tephra_gsG,FV_ID,Shape_ID,LN_phi_mean,LN_phi_stddev,LN_massfrac,n_gs_max,n_gs_aloft,&
            Calculate_Tephra_Shape,&
            Allocate_Tephra, &
            Sort_Tephra_Size
@@ -1087,20 +1151,16 @@
            get_ESP
 
       use Diffusion,     only : &
-         diffusivity_horz,diffusivity_vert,Imp_fac,Imp_DT_fac, &
-           Allocate_Diff
-
-      use help,          only : &
-             help_inputfile
+         diffusivity_horz,diffusivity_vert,Imp_fac,Imp_DT_fac,KV_MIN,KH_MIN
 
       use projection,    only : &
          PJ_iprojflag,PJ_k0,PJ_lam0,PJ_lam1,PJ_lam2,PJ_phi0,PJ_phi1,PJ_phi2,PJ_Re,&
            PJ_Set_Proj_Params
 
       use MetReader,     only : &
-         MR_iwindfiles,MR_windfiles,MR_BaseYear,MR_useLeap,MR_Comp_StartHour,&
-         MR_windfiles_GRIB_index,MR_windfiles_Have_GRIB_index,MR_Comp_Time_in_hours,&
-         MR_windfile_starthour,MR_windfile_stephour,MR_iHeightHandler,&
+         MR_iWindFiles,MR_WindFiles,MR_BaseYear,MR_useLeap,MR_Comp_StartHour,&
+         MR_WindFiles_GRIB_index,MR_WindFiles_Have_GRIB_index,MR_Comp_Time_in_hours,&
+         MR_WindFile_starthour,MR_windfile_stephour,MR_iHeightHandler,MR_useTopo,&
          MR_iwf_template,MR_iwind,MR_Comp_StartYear,MR_Comp_StartMonth,MR_ztop,&
            MR_Allocate_FullMetFileList, &
            MR_Read_Met_DimVars
@@ -1109,17 +1169,23 @@
       use Ash3d_Netcdf_IO
 #endif
 
+      INTERFACE
+        subroutine help_input
+        end subroutine help_input
+      END INTERFACE
+
       integer           :: i,k,ii,isize
 
-      integer,       allocatable, dimension(:) :: iyear  ! time data read from files
-      integer,       allocatable, dimension(:) :: imonth
-      integer,       allocatable, dimension(:) :: iday
-      real(kind=dp), allocatable, dimension(:) :: hour   ! Start time of eruption in
-                                                         !  hour (UT)
+      integer,       allocatable, dimension(:) :: e_iyear  ! time data read from files
+      integer,       allocatable, dimension(:) :: e_imonth
+      integer,       allocatable, dimension(:) :: e_iday
+      real(kind=dp), allocatable, dimension(:) :: e_hour   ! Start time of eruption in
+                                                           !  hour (UT)
       character(len=50) :: linebuffer050 
       character(len=80) :: linebuffer080
       character(len=130):: linebuffer130
       character(len=400):: linebuffer400 ! Used for reading line lists of values (write times, etc)
+      integer           :: strlen
       character(len=3)  :: answer
       character(len=6)  :: formatanswer
       character(len=20) :: mod_name
@@ -1159,7 +1225,6 @@
       integer           :: substr_pos1
       integer           :: substr_pos2
       logical           :: IsThere
-      logical           :: StopWhenDeposited   ! If true, StopValue_FracAshDep=0.99, else StopValue_FracAshDep=1e5.
       logical           :: runAsForecast       = .false.  ! This will be changed if year=0
       real(kind=dp)     :: FC_Offset = 0.0_dp
       real(kind=ip)     :: Davg,Aaxis,Baxis,Caxis
@@ -1171,26 +1236,29 @@
         subroutine input_data_ResetParams
         end subroutine input_data_ResetParams
         real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
-          integer            :: iyear
-          integer            :: imonth
-          integer            :: iday
-          real(kind=8)       :: hours
-          integer            :: byear
-          logical            :: useLeaps
+          integer     ,intent(in) :: iyear
+          integer     ,intent(in) :: imonth
+          integer     ,intent(in) :: iday
+          real(kind=8),intent(in) :: hours
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
         end function HS_hours_since_baseyear
         character (len=13) function HS_yyyymmddhhmm_since(HoursSince,byear,useLeaps)
-          real(kind=8)               ::  HoursSince
-          integer                    ::  byear
-          logical                    ::  useLeaps
+          real(kind=8),intent(in) ::  HoursSince
+          integer     ,intent(in) ::  byear
+          logical     ,intent(in) ::  useLeaps
         end function HS_yyyymmddhhmm_since
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8)              :: HoursSince
-          integer                   :: byear
-          logical                   :: useLeaps
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
         end function HS_xmltime
         subroutine MR_Set_Gen_Index_GRIB(grib_file)
           character(len=130),intent(in)  :: grib_file
         end subroutine MR_Set_Gen_Index_GRIB
+        subroutine help_inputfile(blockID)
+          integer,intent(in) :: blockID
+        end subroutine help_inputfile
       END INTERFACE
 
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -1290,6 +1358,7 @@
           do io=1,2;if(VB(io).le.verbosity_essential)then
             write(outlog(io),*)"  Reading input block for RESETPARAMS"
           endif;enddo
+          Have_Block_ResParm = .true.
           call input_data_ResetParams
         endif
       enddo
@@ -1341,6 +1410,7 @@
 
       ! Block 1 Line 1
       ! Read volcano name
+      call FileIO_CleanLine(.true.,strlen,linebuffer080)
       cdf_b1l1 = linebuffer080
       iendstr = scan(linebuffer080, "#")
       if(iendstr.eq.1)then
@@ -1379,6 +1449,7 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage) linebuffer080
       linebuffer050 = "Reading control file, Block 1, Line 2."
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b1l2 = linebuffer080
       Comp_projection_line = linebuffer080
       read(Comp_projection_line,*,iostat=iostatus,iomsg=iomessage)ilatlonflag
@@ -1409,7 +1480,7 @@
       if(IsLatLon.eqv..false.)then
         call PJ_Set_Proj_Params(Comp_projection_line)
         A3d_iprojflag  = PJ_iprojflag
-        A3d_k0_scale   = PJ_k0
+        A3d_k0         = PJ_k0
         A3d_Re         = PJ_Re
         A3d_lam0       = PJ_lam0
         A3d_lam1       = PJ_lam1
@@ -1426,26 +1497,37 @@
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         linebuffer050 = "Reading control file, Block 1, Line 3."
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        call FileIO_CleanLine(.false.,strlen,linebuffer080)
         cdf_b1l3 = linebuffer080
         read(linebuffer080,*,err=9103,iostat=iostatus,iomsg=iomessage) lonLL, latLL            ! lat/lon of LL corner
         ! Block 1 Line 4
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         linebuffer050 = "Reading control file, Block 1, Line 4."
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        call FileIO_CleanLine(.false.,strlen,linebuffer080)
         cdf_b1l4 = linebuffer080
         read(linebuffer080,*,err=9104,iostat=iostatus,iomsg=iomessage) gridwidth_e, gridwidth_n   ! Dimensions (in degrees) of the grid
         ! Block 1 Line 5
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage) linebuffer080
         linebuffer050 = "Reading control file, Block 1, Line 5."
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        call FileIO_CleanLine(.false.,strlen,linebuffer080)
         cdf_b1l5 = linebuffer080
         read(linebuffer080,*,err=9105,iostat=iostatus,iomsg=iomessage) value1, value2   ! First read two values and flag
-        read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) value1, value2, value3 ! Try for 3
+        read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) value1, value2, value3 ! Try for three
         if(iostatus.eq.0)then
           ! Successfully read 3 values; third is interpreted as elevation (in km)
           lon_volcano = value1
           lat_volcano = value2
           z_volcano   = value3
+          if(z_volcano.gt.10.0_ip)then
+            ! Height should be in km, but this is too high. Maybe it was entered as meters
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"WARNING: vent elevation is too hight: ",z_volcano
+              write(outlog(io),*)"         Converting from m to km."
+            endif;enddo
+            z_volcano = z_volcano / KM_2_M
+          endif
         else
           ! third value unsuccessful, assign vent elevation to 0
           lon_volcano = value1
@@ -1456,6 +1538,7 @@
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         linebuffer050 = "Reading control file, Block 1, Line 6."
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        call FileIO_CleanLine(.false.,strlen,linebuffer080)
         cdf_b1l6 = linebuffer080
         read(linebuffer080,*,err=9106,iostat=iostatus,iomsg=iomessage) de, dn                 ! cell size in degrees 
 
@@ -1509,12 +1592,14 @@
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         linebuffer050 = "Reading control file, Block 1, Line 3."
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        call FileIO_CleanLine(.false.,strlen,linebuffer080)
         cdf_b1l3 = linebuffer080
         read(linebuffer080,*,err=9103,iostat=iostatus,iomsg=iomessage) xLL, yLL                ! LL corner in km 
         ! Block 1 Line 4
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         linebuffer050 = "Reading control file, Block 1, Line 4."
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        call FileIO_CleanLine(.false.,strlen,linebuffer080)
         cdf_b1l4 = linebuffer080
         read(linebuffer080,*,err=9104,iostat=iostatus,iomsg=iomessage) gridwidth_x, gridwidth_y ! width and height of simulation area in km
         xUR = xLL + gridwidth_x
@@ -1524,14 +1609,23 @@
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         linebuffer050 = "Reading control file, Block 1, Line 5."
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        call FileIO_CleanLine(.false.,strlen,linebuffer080)
         cdf_b1l5 = linebuffer080
         read(linebuffer080,*,err=9105,iostat=iostatus,iomsg=iomessage) value1, value2   ! First read two values and flag
                                                    ! an error if unable
-        read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) value1, value2, value3 ! Try for 3
+        read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) value1, value2, value3 ! Try for three
         if(iostatus.eq.0)then
           x_volcano = value1
           y_volcano = value2
           z_volcano = value3
+          if(z_volcano.gt.10.0_ip)then
+            ! Height should be in km, but this is too high. Maybe it was entered as meters
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"WARNING: vent elevation is too hight: ",z_volcano
+              write(outlog(io),*)"         Converting from m to km."
+            endif;enddo
+            z_volcano = z_volcano / KM_2_M
+          endif
         else
           x_volcano = value1
           y_volcano = value2
@@ -1541,6 +1635,7 @@
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         linebuffer050 = "Reading control file, Block 1, Line 6."
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        call FileIO_CleanLine(.false.,strlen,linebuffer080)
         cdf_b1l6 = linebuffer080
         read(linebuffer080,*,err=9106,iostat=iostatus,iomsg=iomessage) dx, dy                 ! cell size in horizontal, vertical, in km
         do io=1,2;if(VB(io).le.verbosity_info)then
@@ -1562,6 +1657,7 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading control file, Block 1, Line 7."
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b1l7 = linebuffer080
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) dz_const    ! nodal spacing in z (always km)
       if(iostatus.eq.0)then
@@ -1593,12 +1689,12 @@
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"z is piecewise linear:  Now reading the segments."
           endif;enddo
-          ! Block 1 Line 7+1 (Reading the next line into cdf_b1l7)
-          read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+          ! Block 1 Line 7+1 (Reading the next line into cdf_vardz)
+          read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer130
           linebuffer050 = "Reading control file, Block 1, Line 7+ (dz_plin)."
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-          cdf_b1l7 = linebuffer080
-          read(linebuffer080,*,err=9107,iostat=iostatus,iomsg=iomessage) nsegments
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
+          cdf_vardz = linebuffer130
+          read(linebuffer130,*,err=9107,iostat=iostatus,iomsg=iomessage) nsegments
           if(nsegments.lt.1)then
             do io=1,2;if(VB(io).le.verbosity_error)then
               write(errlog(io),*)"ERROR: ",&
@@ -1615,7 +1711,7 @@
           allocate(nz_plin_segments(nsegments))
           allocate(dz_plin_segments(nsegments))
           allocate(values(1+2*nsegments))
-          read(linebuffer080,*,err=9107,iostat=iostatus,iomsg=iomessage)values(1:1+2*nsegments)
+          read(linebuffer130,*,err=9107,iostat=iostatus,iomsg=iomessage)values(1:1+2*nsegments)
           do i=1,nsegments
             nz_plin_segments(i) = nint(values(1+(i-1)*2 + 1))
             dz_plin_segments(i) = values(1+(i-1)*2 + 2)
@@ -1645,12 +1741,12 @@
             write(outlog(io),*)"Logrithmic z (constant steps of dlog(z))"
             write(outlog(io),*)"Now reading the clog_zmax and number of steps."
           endif;enddo
-          ! Block 1 Line 7+1 (Reading the next line into cdf_b1l7)
-          read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+          ! Block 1 Line 7+1 (Reading the next line into cdf_vardz)
+          read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer130
           linebuffer050 = "Reading control file, Block 1, Line 7+ (dz_clog)."
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-          cdf_b1l7 = linebuffer080
-          read(linebuffer080,*,err=9107,iostat=iostatus,iomsg=iomessage) clog_zmax, clog_nsteps
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
+          cdf_vardz = linebuffer130
+          read(linebuffer130,*,err=9107,iostat=iostatus,iomsg=iomessage) clog_zmax, clog_nsteps
           if(clog_zmax.le.0.0)then
             do io=1,2;if(VB(io).le.verbosity_error)then
               write(errlog(io),*)"ERROR: ",&
@@ -1687,12 +1783,12 @@
             write(outlog(io),*)"Custom dz"
             write(outlog(io),*)"Now reading number of steps (ndz) followed by values(1:ndz)"
           endif;enddo
-          ! Block 1 Line 7+1 (Reading the next line into cdf_b1l7)
-          read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+          ! Block 1 Line 7+1 (Reading the next line into cdf_vardz)
+          read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer130
           linebuffer050 = "Reading control file, Block 1, Line 7+ (cust)."
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-          cdf_b1l7 = linebuffer080
-          read(linebuffer080,*,err=9107,iostat=iostatus,iomsg=iomessage) cust_nsteps
+          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
+          cdf_vardz = linebuffer130
+          read(linebuffer130,*,err=9107,iostat=iostatus,iomsg=iomessage) cust_nsteps
           if(cust_nsteps.le.1)then
             do io=1,2;if(VB(io).le.verbosity_error)then
               write(errlog(io),*)"ERROR: ",&
@@ -1703,7 +1799,7 @@
             stop 1
           endif
           allocate(values(cust_nsteps))
-          read(linebuffer080,*,err=9107,iostat=iostatus,iomsg=iomessage) cust_nsteps, values(1:cust_nsteps)
+          read(linebuffer130,*,err=9107,iostat=iostatus,iomsg=iomessage) cust_nsteps, values(1:cust_nsteps)
           nz_init = cust_nsteps
           allocate(z_vec_init(0:nz_init))
           z_vec_init = 0.0_ip
@@ -1731,6 +1827,7 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading control file, Block 1, Line 8."
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b1l8 = linebuffer080
       ! First read the diffusivity
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) diffusivity_horz
@@ -1747,7 +1844,8 @@
       ! Now try both diffusivity and a Suzuki coefficient
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) diffusivity_horz, Suzuki_A
       if(iostatus.eq.0)then
-        SourceType='suzuki'
+        SourceType     = 'suzuki'
+        SourceType_idx = 1
       else
         ! if the second item is not a number, read SourceType
         do io=1,2;if(VB(io).le.verbosity_info)then
@@ -1758,19 +1856,23 @@
         if((SourceType.eq.'point').or. &
             (SourceType.eq.'Point').or. &
             (SourceType.eq.'POINT')) then
-            SourceType='point'
+            SourceType     = 'point'
+            SourceType_idx = 2
         elseif((SourceType.eq.'line').or. &
                    (SourceType.eq.'Line').or. &
                    (SourceType.eq.'LINE')) then
-            SourceType='line'
+            SourceType     = 'line'
+            SourceType_idx = 3
         elseif((SourceType.eq.'profile').or. &
                    (SourceType.eq.'Profile').or. &
                    (SourceType.eq.'PROFILE')) then
-            SourceType='profile'
+            SourceType     = 'profile'
+            SourceType_idx = 4
         elseif((SourceType.eq.'umbrella').or. &
                    (SourceType.eq.'Umbrella').or. &
                    (SourceType.eq.'UMBRELLA')) then
-            SourceType='umbrella'
+            SourceType     = 'umbrella'
+            SourceType_idx = 5
             Suzuki_A = SuzK_umb
         elseif((SourceType.eq.'umbrella_air').or. &
                    (SourceType.eq.'Umbrella_air').or. &
@@ -1779,7 +1881,8 @@
             ! but it is assumed to be an airborne run.
             ! Thus if gsbins=1, the MER is multiplied by 20
             ! to obtain the right rate of umbrella growth.
-            SourceType='umbrella_air'
+            SourceType     = 'umbrella_air'
+            SourceType_idx = 6
             Suzuki_A = SuzK_umb
         else
           do io=1,2;if(VB(io).le.verbosity_info)then
@@ -1796,33 +1899,47 @@
           write(outlog(io),*)"  SourceType = ",SourceType
         endif;enddo
       endif
-      ! convert diffusion coefficient from m2/s to km2/hr
-      diffusivity_horz = diffusivity_horz*M2PS_2_KM2PHR
-      diffusivity_vert = diffusivity_horz
 
+      diffusivity_vert = diffusivity_horz
       if(abs(diffusivity_horz).lt.EPS_SMALL)then
         useDiffusion = .false.
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"Not using turbulent diffusivity."
+          write(outlog(io),*)"Note: Diffusivity might be reactivated in an optional module block below."
         endif;enddo
       elseif(diffusivity_horz.lt.0.0)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
-          write(errlog(io),*)"ERROR: ",&
-                     "Diffusivity must be non-negative."
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"WARNING: Negative diffusivity provided."
+          write(outlog(io),*)"         Variable diffusivity as determined from atmospheric conditions,"
+          write(outlog(io),*)"         will be turned on using default parameters unless parameters"
+          write(outlog(io),*)"         are reset in a VARDIFF optional block."
         endif;enddo
-        stop 1
+        diffusivity_horz = KH_MIN
+        diffusivity_vert = KV_MIN
+
+        useDiffusion = .true.
+        useVarDiffH  = .true.
+        useVarDiffV  = .true.
+        MR_useTopo   = .true. ! If we use a boundary-layer schemee, we will need the topography
+                              ! on the met grid. If the TOPO optional block is not provided, then
+                              ! variable we need is initialized to 0.
       else
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),'(a39,f10.3,a5)')"Using constant turbulent diffusivity:  ",&
-                  diffusivity_horz/M2PS_2_KM2PHR," m2/s"
+                  diffusivity_horz," m2/s"
         endif;enddo
         useDiffusion = .true.
       endif
+      ! convert diffusion coefficient from m2/s to km2/hr
+      diffusivity_horz = diffusivity_horz*M2PS_2_KM2PHR
+      diffusivity_vert = diffusivity_vert*M2PS_2_KM2PHR
+
 
       ! Block 1 Line 9
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading control file, Block 1, Line 9."
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b1l9 = linebuffer080
       read(linebuffer080,*,err=9109,iostat=iostatus,iomsg=iomessage) neruptions  ! read in number of eruptions or pulses
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -1867,10 +1984,10 @@
       ! Allocate arrays of eruptive properties
       call Allocate_Source_eruption
 
-      allocate (iyear(neruptions))
-      allocate (imonth(neruptions))
-      allocate (iday(neruptions))
-      allocate (hour(neruptions))
+      allocate (e_iyear(neruptions))
+      allocate (e_imonth(neruptions))
+      allocate (e_iday(neruptions))
+      allocate (e_hour(neruptions))
       !************************************************************************
       ! BLOCK 2: ERUPTION PARAMETERS
       ! Again, assuming there is a variable length
@@ -1898,7 +2015,7 @@
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
         read(linebuffer130,*,iostat=iostatus,iomsg=iomessage)testkey
         linebuffer050 = "Reading testkey from linebuffer"
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130,iomessage)
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
         call FileIO_Check_testkey(testkey,linebuffer130(1:80),IsComment)
       enddo
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -1924,18 +2041,19 @@
           endif;enddo
           stop 1
         endif
+        call FileIO_CleanLine(.false.,strlen,linebuffer130)
         if(i.eq.1)then
-          read(linebuffer130,*,err=9201,iostat=iostatus,iomsg=iomessage) iyear(i),imonth(i)
-          if(iyear(i).ne.0.and.iyear(i).lt.BaseYear.or.iyear(i)-BaseYear.gt.100)then
+          read(linebuffer130,*,err=9201,iostat=iostatus,iomsg=iomessage) e_iyear(i),e_imonth(i)
+          if(e_iyear(i).ne.0.and.e_iyear(i).lt.BaseYear.or.e_iyear(i)-BaseYear.gt.100)then
             ! Reset BaseYear to the start of the century containing the eruption year
-            MR_Comp_StartYear  = iyear(i)
-            MR_Comp_StartMonth = imonth(i)
-            BaseYear = iyear(i) - mod(iyear(i),100)
+            MR_Comp_StartYear  = e_iyear(i)
+            MR_Comp_StartMonth = e_imonth(i)
+            BaseYear = e_iyear(i) - mod(e_iyear(i),100)
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"WARNING: Resetting BaseYear to ",BaseYear
             endif;enddo
           endif
-          if(iyear(i).eq.0)then
+          if(e_iyear(i).eq.0)then
             runAsForecast = .true.
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"Year = 0; Running as forecast."
@@ -1949,7 +2067,7 @@
            SourceType.eq.'umbrella_air')then
           ! read start time, duration, plume height, volume of each pulse
           read(linebuffer130,*,err=9201,iostat=iostatus,iomsg=iomessage) &
-                                iyear(i),imonth(i),iday(i),hour(i), &
+                                e_iyear(i),e_imonth(i),e_iday(i),e_hour(i), &
                                 e_Duration(i), e_PlumeHeight(i), e_Volume(i)
         elseif(SourceType.eq.'profile')then
           do io=1,2;if(VB(io).le.verbosity_info)then
@@ -1957,9 +2075,12 @@
           endif;enddo
           ! read start time, duration, plume height, volume of each pulse
           read(linebuffer130,*,err=9201,iostat=iostatus,iomsg=iomessage) &
-                                iyear(i),imonth(i),iday(i),hour(i), &
+                                e_iyear(i),e_imonth(i),e_iday(i),e_hour(i), &
                                 e_Duration(i), e_PlumeHeight(i), e_Volume(i),&
                                 e_prof_dz(i),e_prof_nzpoints(i)
+          if(e_prof_nzpoints(i).gt.MAX_ER_PROFPOINTS)then
+
+          endif
           allocate(dum_prof(e_prof_nzpoints(i)))
           read(fid_ctrlfile,*,iostat=iostatus,iomsg=iomessage)dum_prof(1:e_prof_nzpoints(i))
           linebuffer080="Direct read of profile points; no line buffer"
@@ -1995,13 +2116,14 @@
             e_PlumeHeight(i) = tmp_ip
           endif
           e_prof_Volume(i,1:e_prof_nzpoints(i))=dum_prof(1:e_prof_nzpoints(i))*e_Volume(i)
+          if(e_prof_nzpoints(i).gt.e_prof_maxpoints)e_prof_maxpoints=e_prof_nzpoints(i)
           deallocate(dum_prof)
         else
           ! This is the custom source.  A special call to a source reader
           ! will need to made from Ash3d_??.F90.  For now, just read the
           ! start time, duration, and plume height
           read(linebuffer130,*,err=9201,iostat=iostatus,iomsg=iomessage)&
-                                       iyear(i),imonth(i),iday(i),hour(i),&
+                                       e_iyear(i),e_imonth(i),e_iday(i),e_hour(i),&
                                        e_Duration(i), e_PlumeHeight(i)
           e_Volume(i)    = 0.0_ip
           if(neruptions.gt.1)then
@@ -2010,10 +2132,10 @@
             ! For now, copy slot 1 to all the others and break out of the do loop.
             ! The full source list must be populated by the user-provided custom source
             ! readers.
-            iyear(2:neruptions)         = iyear(1)
-            imonth(2:neruptions)        = imonth(1)
-            iday(2:neruptions)          = iday(1)
-            hour(2:neruptions)          = hour(1)
+            e_iyear(2:neruptions)       = e_iyear(1)
+            e_imonth(2:neruptions)      = e_imonth(1)
+            e_iday(2:neruptions)        = e_iday(1)
+            e_hour(2:neruptions)        = e_hour(1)
             e_Duration(2:neruptions)    = e_Duration(1)
             e_PlumeHeight(2:neruptions) = e_PlumeHeight(1)
             e_Volume(2:neruptions)      = e_Volume(1)
@@ -2028,10 +2150,10 @@
         ! considered 'days after start of wind file', then we need to
         ! add 1 so that the hours are calculated properly.
         if(runAsForecast)then
-          iyear(i) = BaseYear
-          imonth(i) = 1
-          iday(i) = iday(i) + 1
-          FC_Offset = real(hour(1),sp)
+          e_iyear(i)  = BaseYear
+          e_imonth(i) = 1
+          e_iday(i)   = e_iday(i) + 1
+          FC_Offset   = real(e_hour(1),sp)
         endif
         if(e_Duration(i).lt.0.0_ip)    e_Duration(i)    = ESP_duration
         if(e_PlumeHeight(i).lt.0.0_ip) e_PlumeHeight(i) = ESP_height
@@ -2041,9 +2163,10 @@
         read(fid_ctrlfile,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
         linebuffer050 = "Reading control file, next line of Blk2"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
+        call FileIO_CleanLine(.false.,strlen,linebuffer130)
       enddo
 
-      !Error trap if more pulses are entered than are specified
+      ! Error trap if more pulses are entered than are specified
       if(IsCustom_SourceType)then
         ! If we are using custom sources, suppress the error-checking
         ! since we don't know the number of lines of input we need and
@@ -2088,6 +2211,7 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading control file, Blk3 Line 1"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk3)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
@@ -2117,6 +2241,7 @@
         write(outlog(io),*)' *******************************************'
       endif;enddo
       ! Block 3 Line 1
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b3l1 = linebuffer080
       ! Try to read at least two integers (iwind and iwindformat) or throw and error
       read(linebuffer080,*,err=9301,iostat=iostatus,iomsg=iomessage) iw,iwf
@@ -2169,6 +2294,7 @@
           endif;enddo
           stop 1
         endif
+        call FileIO_CleanLine(.false.,strlen,linebuffer080)
         read(linebuffer080,'(a80)',err=93011,iostat=iostatus,iomsg=iomessage) MR_iwf_template
       else
         ! iwf is a known format.
@@ -2196,6 +2322,7 @@
         stop 1
       endif
       ! Block 3 Line 2
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b3l2 = linebuffer080
       read(linebuffer080,*,err=9302,iostat=iostatus,iomsg=iomessage)&
                       MR_iHeightHandler ! parameter that determines what to do if the
@@ -2216,6 +2343,7 @@
         stop 1
       endif
       ! Block 3 Line 3
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b3l3 = linebuffer080
       read(linebuffer080,*,err=9303,iostat=iostatus,iomsg=iomessage)&
                                      Simtime_in_hours   ! simulated transport time
@@ -2238,11 +2366,12 @@
         stop 1
       endif
       ! Block 3 Line 4
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b3l4 = linebuffer080
       read(linebuffer080,'(a3)',err=9304,iostat=iostatus,iomsg=iomessage) answer
       if(adjustl(trim(answer)).eq.'yes') then
         StopWhenDeposited = .true.
-        StopValue_FracAshDep = 0.99_ip
+        StopValue_FracAshDep = StopValue_FracAshDep_Default
        else if(adjustl(trim(answer(1:2))).eq.'no') then
         StopWhenDeposited = .false.
         StopValue_FracAshDep = 1.0e2_ip
@@ -2265,6 +2394,7 @@
         stop 1
       endif
       ! Block 3 Line 5
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b3l5 = linebuffer080
       read(linebuffer080,*,err=9305,iostat=iostatus,iomsg=iomessage) iwfiles      ! number of wind files to read
 
@@ -2275,14 +2405,14 @@
         ! Note: This will be updated for forecast runs once we know the start
         !       time of the windfiles
         if(i.eq.1) then
-          SimStartHour = HS_hours_since_baseyear(iyear(i),imonth(i),  &
-                        iday(i),hour(i),BaseYear,useLeap)
+          SimStartHour = HS_hours_since_baseyear(e_iyear(i),e_imonth(i),  &
+                        e_iday(i),e_hour(i),BaseYear,useLeap)
           xmlSimStartTime = HS_xmltime(SimStartHour,BaseYear,useLeap)
           MR_Comp_StartHour     = SimStartHour
           MR_Comp_Time_in_hours = Simtime_in_hours
         endif
-        e_StartTime(i) = HS_hours_since_baseyear(iyear(i),imonth(i),  &
-                                iday(i),hour(i),BaseYear,useLeap) - SimStartHour
+        e_StartTime(i) = HS_hours_since_baseyear(e_iyear(i),e_imonth(i),  &
+                                e_iday(i),e_hour(i),BaseYear,useLeap) - SimStartHour
         ! error trap if eruptions are not in chronological order
         if(.not.IsCustom_SourceType)then
           ! relax the chronological requirement for custom sources
@@ -2300,8 +2430,8 @@
       endif;enddo
       do i=1,neruptions
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),8) i, e_PlumeHeight(i), iyear(i), imonth(i), &
-                     iday(i), hour(i), e_Duration(i), e_Volume(i)
+          write(outlog(io),8) i, e_PlumeHeight(i), e_iyear(i), e_imonth(i), &
+                     e_iday(i), e_hour(i), e_Duration(i), e_Volume(i)
         endif;enddo
         if(SourceType.eq.'profile')then
           do io=1,2;if(VB(io).le.verbosity_info)then
@@ -2361,8 +2491,8 @@
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"Change in calandar; resetting e_StartTime"
         endif;enddo
-        tmp_dp = HS_hours_since_baseyear(iyear(1),imonth(1),  &
-                         iday(1),hour(1),BaseYear,useLeap)
+        tmp_dp = HS_hours_since_baseyear(e_iyear(1),e_imonth(1),  &
+                         e_iday(1),e_hour(1),BaseYear,useLeap)
         tmp_dp = tmp_dp - SimStartHour   ! Recast tmp_dp as the difference in calandars
         SimStartHour = SimStartHour + tmp_dp
         xmlSimStartTime = HS_xmltime(SimStartHour,BaseYear,useLeap)
@@ -2450,8 +2580,9 @@
       WriteAirportFile_KML          = .false.
       Write_PT_Data                 = .false.
       Write_PR_Data                 = .false.
-      cdf_b4l1 = linebuffer080
       ! Block 4 Line 1
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
+      cdf_b4l1 = linebuffer080
       ! Read whether to write out final ESRI ASCII deposit file
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk4)"
@@ -2493,6 +2624,7 @@
         endif;enddo
         stop 1
       endif
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       read(linebuffer080,'(a3)',err=9402,iostat=iostatus,iomsg=iomessage) answer
       linebuffer050 = "Reading control file Blk 4, line 2"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
@@ -2522,6 +2654,7 @@
         endif;enddo
         stop 1
       endif
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b4l3 = linebuffer080
       read(linebuffer080,'(a3)',err=9403,iostat=iostatus,iomsg=iomessage) answer
       linebuffer050 = "Reading control file Blk 4, line 3"
@@ -2550,6 +2683,7 @@
         endif;enddo
         stop 1
       endif
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b4l4 = linebuffer080
       read(linebuffer080,'(a3)',err=9404,iostat=iostatus,iomsg=iomessage) answer
       linebuffer050 = "Reading control file Blk 4, line 4"
@@ -2579,6 +2713,7 @@
         endif;enddo
         stop 1
       endif
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b4l5 = linebuffer080
       read(linebuffer080,'(a3)',err=9405,iostat=iostatus,iomsg=iomessage) answer
       linebuffer050 = "Reading control file Blk 4, line 5"
@@ -2608,6 +2743,7 @@
         endif;enddo
         stop 1
       endif
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b4l6 = linebuffer080
       read(linebuffer080,'(a3)',err=9406,iostat=iostatus,iomsg=iomessage) answer
       if(adjustl(trim(answer)).eq.'yes') then
@@ -2635,6 +2771,7 @@
         endif;enddo
         stop 1
       endif
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b4l7 = linebuffer080
       read(linebuffer080,'(a3)',err=9407,iostat=iostatus,iomsg=iomessage) answer
       linebuffer050 = "Reading control file Blk 4, line 7"
@@ -2664,6 +2801,7 @@
         endif;enddo
         stop 1
       endif
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b4l8 = linebuffer080
       read(linebuffer080,'(a3)',err=9408,iostat=iostatus,iomsg=iomessage) answer
       linebuffer050 = "Reading control file Blk 4, line 8"
@@ -2693,6 +2831,7 @@
         endif;enddo
         stop 1
       endif
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b4l9 = linebuffer080
       read(linebuffer080,'(a3)',err=9409,iostat=iostatus,iomsg=iomessage) answer
       linebuffer050 = "Reading control file Blk 4, line 9"
@@ -2721,6 +2860,7 @@
         endif;enddo
         stop 1
       endif
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b4l10 = linebuffer080
       read(linebuffer080,'(a3)',err=9410,iostat=iostatus,iomsg=iomessage) answer
       linebuffer050 = "Reading control file Blk 4, line 10"
@@ -2750,6 +2890,7 @@
         endif;enddo
         stop 1
       endif
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b4l11 = linebuffer080
       read(linebuffer080,'(a3)',err=9411,iostat=iostatus,iomsg=iomessage) answer
       linebuffer050 = "Reading control file Blk 4, line 11"
@@ -2779,6 +2920,7 @@
         endif;enddo
         stop 1
       endif
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b4l12 = linebuffer080
       read(linebuffer080,'(a3)',err=9412,iostat=iostatus,iomsg=iomessage) answer
       linebuffer050 = "Reading control file Blk 4, line 12"
@@ -2808,6 +2950,7 @@
         endif;enddo
         stop 1
       endif
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b4l13 = linebuffer080
       read(linebuffer080,'(a3)',err=9413,iostat=iostatus,iomsg=iomessage) answer
       linebuffer050 = "Reading control file Blk 4, line 13"
@@ -2836,6 +2979,7 @@
         endif;enddo
         stop 1
       endif
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b4l14 = linebuffer080
       read(linebuffer080,'(a3)',err=9414,iostat=iostatus,iomsg=iomessage) answer
       linebuffer050 = "Reading control file Blk 4, line 14"
@@ -2847,20 +2991,6 @@
        else
         goto 9414
       endif
-
-      !If IsLatLon=false, KML files can't be written out until they're re-projected.
-      !if((WriteDepositFinal_KML.or.WriteDepositTS_KML.or.WriteCloudConcentration_KML).and. &
-      !    (.not.IsLatLon)) then
-      !  do io=1,2;if(VB(io).le.verbosity_info)then
-      !    write(outlog(io),38)
-      !    write(outlog(io),39)
-      !  endif;enddo
-      !  read(input_unit,'(a1)',iostat=iostatus,iomsg=iomessage) answer
-      !  if(answer.ne.'y') stop 1
-      !  WriteCloudConcentration_KML = .false.
-      !  WriteDepositFinal_KML    = .false.
-      !  WriteDepositTS_KML   = .false.
-      !endif
 
       ! Block 4 Line 15
       ! Read whether to write out 3D files of ash concentration
@@ -2878,6 +3008,7 @@
         endif;enddo
         stop 1
       endif
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b4l15 = linebuffer080
       read(linebuffer080,'(a3)',err=9415,iostat=iostatus,iomsg=iomessage) answer
       linebuffer050 = "Reading control file Blk 4, line 15"
@@ -2936,6 +3067,7 @@
         endif;enddo
         stop 1
       endif
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b4l16 = linebuffer080
       linebuffer080=adjustl(linebuffer080)
       if(Write3dFiles) then
@@ -2954,7 +3086,7 @@
       endif
       
       ! Block 4 Line 17
-      ! Read number of files to write out
+      ! Read number of output steps to write out
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage) linebuffer080
       linebuffer050 = "Reading control file Blk 4, line 17"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
@@ -2969,6 +3101,7 @@
         endif;enddo
         stop 1
       endif
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b4l17 = linebuffer080
 
       ! Block 4 Line 18
@@ -2987,6 +3120,7 @@
         endif;enddo
         stop 1
       endif
+      call FileIO_CleanLine(.false.,strlen,linebuffer400)
       cdf_b4l18 = linebuffer400(1:80)
       if(WriteDepositFinal_ASCII      .or. &
           WriteDepositFinal_KML        .or. &
@@ -2998,7 +3132,7 @@
           WriteCloudHeight_ASCII       .or. &
           WriteCloudHeight_KML         .or. &
           WriteCloudLoad_KML) then
-        read(linebuffer080,*,err=9417,iostat=iostatus,iomsg=iomessage) nWriteTimes
+        read(cdf_b4l17,*,err=9417,iostat=iostatus,iomsg=iomessage) nWriteTimes
           ! Check how to interpret nWriteTimes
         if(nWriteTimes.gt.0) then
           ! If a positive number, then we're reading an array of times
@@ -3109,8 +3243,9 @@
 
       !************************************************************************
       ! BLOCK 5: INPUT WIND FILES
-      if(MR_iwindfiles.gt.0)then
+      if(MR_iWindFiles.gt.0)then
         read(fid_ctrlfile,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
+        call FileIO_CleanLine(.false.,strlen,linebuffer130)
         linebuffer050 = "Reading ctr file, past Blk 4, looking for Blk 5."
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
         read(linebuffer130,*,iostat=iostatus,iomsg=iomessage)testkey
@@ -3136,7 +3271,10 @@
           linebuffer050 = "Reading testkey from linebuffer (Blk5)"
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
           call FileIO_Check_testkey(testkey,linebuffer130(1:80),IsComment)
+          call FileIO_CleanLine(.false.,strlen,linebuffer130)
         enddo
+
+        call FileIO_CleanLine(.false.,strlen,linebuffer130)
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)' *****************************************'
           write(outlog(io),*)' Reading Block 5: Windfile names'
@@ -3147,13 +3285,15 @@
         if(MR_iwind.eq.5)then
           ! For NCEP 2.5 degree (25), NOAA product (27), ERA5 (29), or ERA-20C (30)
           ! just read the path to the files
-          read(linebuffer130,'(a130)',err=9501,iostat=iostatus,iomsg=iomessage) MR_windfiles(1)
+          read(linebuffer130,'(a130)',err=9501,iostat=iostatus,iomsg=iomessage) MR_WindFiles(1)
+          cdf_b5l1(1:80) = linebuffer130(1:80)
           do io=1,2;if(VB(io).le.verbosity_info)then
-            write(outlog(io),1034) 1,trim(adjustl(MR_windfiles(1)))
+            write(outlog(io),1034) 1,trim(adjustl(MR_WindFiles(1)))
           endif;enddo
           read(fid_ctrlfile,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
           linebuffer050 = "Reading control file Blk 5, line 1"
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
+          call FileIO_CleanLine(.false.,strlen,linebuffer130)
         else
           ! For all other iwf (MR_iwindformats), read the full list
           do i=1,iwfiles
@@ -3169,9 +3309,9 @@
               endif;enddo
               stop 1
             endif
-            read(linebuffer130,'(a130)',err=9501,iostat=iostatus,iomsg=iomessage) MR_windfiles(i)
+            read(linebuffer130,'(a130)',err=9501,iostat=iostatus,iomsg=iomessage) MR_WindFiles(i)
             do io=1,2;if(VB(io).le.verbosity_info)then
-              write(outlog(io),1034) i,trim(adjustl(MR_windfiles(i)))
+              write(outlog(io),1034) i,trim(adjustl(MR_WindFiles(i)))
             endif;enddo
             if(idf.eq.3)then
               ! If we are reading grib files, check that the index file has been
@@ -3189,9 +3329,9 @@
               endif;enddo
               stop 1
 #else
-              MR_windfiles_GRIB_index(i) = trim(adjustl(MR_windfiles(i))) // ".index"
-              inquire( file=MR_windfiles_GRIB_index(i), exist=IsThere )
-              MR_windfiles_Have_GRIB_index(i) = IsThere
+              MR_WindFiles_GRIB_index(i) = trim(adjustl(MR_WindFiles(i))) // ".index"
+              inquire( file=MR_WindFiles_GRIB_index(i), exist=IsThere )
+              MR_WindFiles_Have_GRIB_index(i) = IsThere
               if(.not.IsThere)then
                 ! Grib index file is not there, Try to generate it.
                 ! Note, we might have some permission problems here and we should
@@ -3199,20 +3339,21 @@
                 do io=1,2;if(VB(io).le.verbosity_info)then
                   write(outlog(io),*)" Grib index file not found; attempting to create it."
                 endif;enddo
-                call MR_Set_Gen_Index_GRIB(MR_windfiles(i))
+                call MR_Set_Gen_Index_GRIB(MR_WindFiles(i))
               endif
 #endif
             endif
             read(fid_ctrlfile,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
             linebuffer050 = "Reading next windfile of blk5"
             if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
+            call FileIO_CleanLine(.false.,strlen,linebuffer130)
           enddo
         endif
-1034    format(' i=',i3,'  MR_windfiles(i) = ',a)
+1034    format(' i=',i3,'  MR_WindFiles(i) = ',a)
       else
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
-                "MR_iwindfiles = 0"
+                "MR_iWindFiles = 0"
           write(errlog(io),*)&
                 "       Either the number of windfiles specified = 0, or"
           write(errlog(io),*)&
@@ -3238,7 +3379,7 @@
       !************************************************************************
 
         ! Check for existance and compatibility with simulation time requirements
-      call MR_Read_Met_DimVars(iyear(1))
+      if(Load_Windfiles) call MR_Read_Met_DimVars(e_iyear(1))
       if(MR_BaseYear.ne.BaseYear)then
         ! Base year was reset, probably because a windfile had an old base year
         useLeap  = MR_useLeap
@@ -3246,8 +3387,8 @@
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"Change in calandar; resetting e_StartTime"
         endif;enddo
-        tmp_dp = HS_hours_since_baseyear(iyear(1),imonth(1),  &
-                         iday(1),hour(1),BaseYear,useLeap)
+        tmp_dp = HS_hours_since_baseyear(e_iyear(1),e_imonth(1),  &
+                         e_iday(1),e_hour(1),BaseYear,useLeap)
         tmp_dp = tmp_dp - SimStartHour   ! Recast tmp_dp as the difference in calandars
         SimStartHour = SimStartHour + tmp_dp
         xmlSimStartTime = HS_xmltime(SimStartHour,BaseYear,useLeap)
@@ -3266,6 +3407,7 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading ctr file, past Blk 5, looking for Blk 6."
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk6)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
@@ -3295,6 +3437,7 @@
       endif;enddo
       ! Block 6 Line 1
       ! Read whether to write out ASCII airport file
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b6l1 = linebuffer080
       read(linebuffer080,'(a3)',err=9601,iostat=iostatus,iomsg=iomessage) answer
       linebuffer050 = "Reading control file, blk6 line 1"
@@ -3331,6 +3474,7 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage) linebuffer080
       linebuffer050 = "Reading control file, blk6 line 3"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b6l3 = linebuffer080
       read(linebuffer080,'(a3)',err=9603,iostat=iostatus,iomsg=iomessage) answer
       linebuffer050 = "Reading answer from linebuffer"
@@ -3349,6 +3493,7 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage) linebuffer080
       linebuffer050 = "Reading control file, blk6 line 4"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b6l4 = linebuffer080
       AirportInFile = cdf_b6l4(1:scan(cdf_b6l4,' ')-1)     !Read to the first blank space
 
@@ -3388,6 +3533,7 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage) linebuffer080
       linebuffer050 = "Reading control file, blk6 line 5"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b6l5 = linebuffer080
       read(linebuffer080,'(a3)',err=9605,iostat=iostatus,iomsg=iomessage) answer
       linebuffer050 = "Reading answer from linebuffer"
@@ -3485,12 +3631,13 @@
       ! Note: This might be one greater than what is calculated if the last bin
       !       has a negative diameter.  In this case, the remaining mass fraction
       !       neglecting the last bin is distributed over the previous bins with
-      !       a gaussian distribution given by a phi_mean and phi_stdev
+      !       a gaussian distribution given by a LN_phi_mean and LN_phi_stdev
       !    e.g.  -1 4 2
       !       Also note that the number of tephra bins can be zero if the species
       !       will be defined in optional modules such as gas, aggregates, etc.
       ! Block 7 Line 1
       ! We at least need the number of tephra bins
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       read(linebuffer080,*,err=9701,iostat=iostatus,iomsg=iomessage) ivalue1
       init_n_gs_max = ivalue1
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) ivalue1, ivalue2
@@ -3545,6 +3692,9 @@
         n_gs_max = init_n_gs_max
       else
         ! This is the normal case with actual grain size bins specified
+        LN_phi_mean   = 0.0_ip
+        LN_phi_stddev = 0.0_ip
+        LN_massfrac   = 0.0_ip
         do isize=1,init_n_gs_max
           value1 = -1.99_ip
           value2 = -1.99_ip
@@ -3567,8 +3717,10 @@
             endif;enddo
             stop 1
           endif
+          call FileIO_CleanLine(.false.,strlen,linebuffer080)
           ! Read at least two values or throw an error
           read(linebuffer080,*,err=9702,iostat=iostatus,iomsg=iomessage) value1, value2
+          if(isize.eq.1) Tephra_Ncols = 2
           ! Two values successfully read; try for three
           read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) value1, value2, value3
           if(iostatus.eq.0)then
@@ -3576,6 +3728,7 @@
             ! grain-size, mass fraction, density
             ! W&H suggest 800 kg/m3 for d>300um and 2000 for d<88um for pumice
             ! fragments
+            if(isize.eq.1) Tephra_Ncols = 3
             useCalcFallVel = .true. 
             useTemperature = .true. ! When calculating Fall Vel. we need T
             temp_gsdiam(isize) = value1
@@ -3586,11 +3739,13 @@
             if(iostatus.eq.0)then
               ! Fourth value was successfully read, interpret as W/H shape
               ! parameter
+              if(isize.eq.1) Tephra_Ncols = 4
               temp_gsF(isize) = value4
               ! Try for a fifth value for ratio of minor axies of ellipsoid
               read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) value1, value2, value3, value4, value5
               if(iostatus.eq.0)then
-                ! Fourth value was successfully read, interpret as c/b
+                ! Fifth value was successfully read, interpret as c/b
+                if(isize.eq.1) Tephra_Ncols = 5
                 temp_gsG(isize) = value5
               else
                 temp_gsG(isize) = 1.0_ip
@@ -3603,25 +3758,26 @@
             temp_v_s(isize) = 0.0_ip
             if(temp_gsdiam(isize).lt.0.0_ip)then
               if(isize.lt.init_n_gs_max)then
-              do io=1,2;if(VB(io).le.verbosity_error)then
+                do io=1,2;if(VB(io).le.verbosity_error)then
                   write(errlog(io),*)"ERROR: ",&
                         "diameter must be positive",isize,init_n_gs_max,temp_gsdiam(isize)
                 endif;enddo
                 stop 1
               else
-                phi_mean   = value2
-                phi_stddev = value3
+                LN_phi_mean   = value2
+                LN_phi_stddev = value3
+                LN_massfrac   = 1.0_ip-sum(temp_bin_mass(1:init_n_gs_max-1))
                 do io=1,2;if(VB(io).le.verbosity_info)then
                   write(outlog(io),*) &
                         "Last grain-size bin will be partitioned across all previous."
                   write(outlog(io),*)"Volume fraction partitioned = ",&
-                        1.0_ip-sum(temp_bin_mass(1:init_n_gs_max-1))
+                        LN_massfrac
                   write(outlog(io),*)&
                         "  Assuming remainder is Gaussian in phi"
                   write(outlog(io),*)&
-                        "    phi_mean   = ", phi_mean
+                        "    LN_phi_mean   = ", LN_phi_mean
                   write(outlog(io),*)&
-                        "    phi_stddev = ", phi_stddev
+                        "    LN_phi_stddev = ", LN_phi_stddev
                 endif;enddo
                 useLogNormGSbins = .true.
               endif
@@ -3640,8 +3796,8 @@
             endif
             temp_bin_mass(isize)= value2
               ! Initialize these
-            temp_gsdiam(isize)  = 0.1_ip
-            temp_rho_m(isize)   = 2000.0_ip
+            temp_gsdiam(isize)  = 0.1_ip        ! Still in mm
+            temp_rho_m(isize)   = 2000.0_ip     ! kg/m3
             temp_gsF(isize)     = 0.44_ip
             temp_gsG(isize)     = 1.0_ip
           endif
@@ -3669,7 +3825,7 @@
 
         Tephra_v_s(1:n_gs_max)      = -1.0_ip * temp_v_s(1:n_gs_max) ! make sure 'fall velocity'
                                                                      ! is in the -z direction
-        Tephra_gsdiam(1:n_gs_max)   = temp_gsdiam(1:n_gs_max)
+        Tephra_gsdiam(1:n_gs_max)   = temp_gsdiam(1:n_gs_max)/M_2_MM ! convert diameter from mm to m
         Tephra_bin_mass(1:n_gs_max) = temp_bin_mass(1:n_gs_max)
         Tephra_rho_m(1:n_gs_max)    = temp_rho_m(1:n_gs_max)
         if(Shape_ID.eq.1)then
@@ -3693,9 +3849,10 @@
         ! If a log-normal distribution is to be added, make sure the grainsize
         ! bins are sorted by size (smallest first)
         if(useLogNormGSbins) call Sort_Tephra_Size
-        temp_phi = -log(Tephra_gsdiam)/log(2.0)
-
-        if(useCalcFallVel) Tephra_gsdiam = Tephra_gsdiam/1000.0_ip   ! convert diameter from mm to m
+        temp_phi = -log(Tephra_gsdiam*M_2_MM)/log(2.0)
+        ! Now that we have completed the phi calculations (which expect units of mm), convert
+        ! to m for use in fall velocity functions
+        !if(useCalcFallVel) Tephra_gsdiam = Tephra_gsdiam/M_2_MM   ! convert diameter from mm to m
 
         ! Find the fraction of fine (<= phi4, 63um)
         fracfine = 0.0_ip
@@ -3753,26 +3910,26 @@
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),9) n_gs_max, FV_ID
           if(FV_ID.eq.0)then
-            write(outlog(io),*)"Fall Model = None (tracer)"
+            write(outlog(io),*)"               None (tracer)"
           elseif(FV_ID.eq.1)then
-            write(outlog(io),*)"Fall Model = Wilson and Huang"
+            write(outlog(io),*)"               Wilson and Huang"
             write(outlog(io),*)"     Input particle sizes are interpreted to be the mean; Da=(A+B+C)/3"
           elseif(FV_ID.eq.2)then
-            write(outlog(io),*)"Fall Model = Wilson and Huang + Cunningham slip"
+            write(outlog(io),*)"               Wilson and Huang + Cunningham slip"
             write(outlog(io),*)"     Input particle sizes are interpreted to be the mean; Da=(A+B+C)/3"
           elseif(FV_ID.eq.3)then
-            write(outlog(io),*)"Fall Model = Wilson and Huang + Mod by PCM"
+            write(outlog(io),*)"               Wilson and Huang + Mod by PCM"
             write(outlog(io),*)"     Input particle sizes are interpreted to be the mean; Da=(A+B+C)/3"
           elseif(FV_ID.eq.4)then
-            write(outlog(io),*)"Fall Model = Ganser"
+            write(outlog(io),*)"               Ganser"
             write(outlog(io),*)"     Input particle sizes are interpreted to be the geometric mean; Dv=(ABC)^0.33"
             write(outlog(io),*)"     which is also the diameter of a volume-equivalent sphere."
           elseif(FV_ID.eq.5)then
-            write(outlog(io),*)"Fall Model = Ganser + Cunningham slip"
+            write(outlog(io),*)"               Ganser + Cunningham slip"
             write(outlog(io),*)"     Input particle sizes are interpreted to be the geometric mean; Dv=(ABC)^0.33"
             write(outlog(io),*)"     which is also the diameter of a volume-equivalent sphere."
           elseif(FV_ID.eq.6)then
-            write(outlog(io),*)"Fall Model = Stokes flow + slip"
+            write(outlog(io),*)"               Stokes flow + slip"
           else
             write(outlog(io),*)"Default Fall Model = Wilson and Huang"
             write(outlog(io),*)"     Input particle sizes are interpreted to be the mean; Da=(A+B+C)/3"
@@ -3923,6 +4080,7 @@
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*) 'Reading vertical profile information'
       endif;enddo
+      call FileIO_CleanLine(.true.,strlen,linebuffer080)
       read(linebuffer080,*,err=9801,iostat=iostatus,iomsg=iomessage) nvprofiles
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*) 'number of vertical profiles=',nvprofiles
@@ -3961,6 +4119,7 @@
           endif
 
           ! Block 8 Line 2+
+          call FileIO_CleanLine(.true.,strlen,linebuffer080)
           read(linebuffer080,*,err=9802,iostat=iostatus,iomsg=iomessage) value1, value2
           x_vprofile(i) = value1
           y_vprofile(i) = value2
@@ -4020,6 +4179,7 @@
       ! Here are the default output file name and comments if Block 9 is not given
       concenfile  = "3d_tephra_fall.nc"
       cdf_title   = infile
+      cdf_comment = ""
       if(iostatus.ne.0)then
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)'  Setting outfile to: 3d_tephra_fall.nc'
@@ -4034,18 +4194,21 @@
         ! Start reading annotation info
 
         ! First line is the output file name
+        Have_Block_NetCDF = .true.
+        call FileIO_CleanLine(.false.,strlen,linebuffer080)
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) concenfile
         linebuffer050 = "Reading control file, blk9, line 1"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         concenfile = trim(adjustl(concenfile))
 
         ! We only really need the name of the output concentration file. If we don't
-        ! have the next two lines, error in reading will sent control to lable 2010,
+        ! have the next two lines, error in reading will sent control to label 2010,
         ! which just allows continuation of code.
 
         ! Next line is the title of the job
           ! Read title line up until the first '#', then truncate
         read(fid_ctrlfile,'(a80)',err=2010,iostat=iostatus,iomsg=iomessage)linebuffer080
+        call FileIO_CleanLine(.false.,strlen,linebuffer080)
         iendstr = scan(linebuffer080, "#")
         if(iendstr.eq.0)then
              ! '#' not found, just copy linebuffer080 to title
@@ -4058,6 +4221,7 @@
           ! Read comment line up until the first '#', then truncate
         read(fid_ctrlfile,'(a80)',err=2010,iostat=iostatus,iomsg=iomessage)linebuffer080
         if(iostatus.ne.0)goto 2010
+        call FileIO_CleanLine(.false.,strlen,linebuffer080)
         iendstr = scan(linebuffer080, "#")
         if(iendstr.eq.0)then
              ! '#' not found, just copy linebuffer080 to comment
@@ -4155,9 +4319,9 @@
    
         ! Write out Vz calculation scheme used
         if(useVz_rhoG)then
-          write(outlog(io),*)"useVz_rhoG=.true. : Vz calculated PVV (if avail.) and density"
+          write(outlog(io),*)"useVz_rhoG=.true. : Vz calculated via PVV (if avail.) and density"
         else
-          write(outlog(io),*)"Vz calculated via PVV and finite-differencing dp/dz"
+          write(outlog(io),*)"Vz calculated via PVV and finite-differencing of dp/dz"
         endif
       endif;enddo
 
@@ -4182,10 +4346,10 @@
         write(outlog(io),*)
       endif;enddo
 
-      deallocate(iyear)
-      deallocate(imonth)
-      deallocate(iday)
-      deallocate(hour)
+      deallocate(e_iyear)
+      deallocate(e_imonth)
+      deallocate(e_iday)
+      deallocate(e_hour)
 
       ! Set up logging logical values
         ! First check for output requests that require evaluating every time step
@@ -4312,7 +4476,7 @@
 
 
 9202  do io=1,2;if(VB(io).le.verbosity_error)then
-        write(errlog(io),5678)  i,e_StartTime(i),e_StartTime(i-1)+e_Duration(i-1),hour(i)
+        write(errlog(io),5678)  i,e_StartTime(i),e_StartTime(i-1)+e_Duration(i-1),e_hour(i)
       endif;enddo
 5678  format(4x,'error: eruption pulses are not in chronological order.',/, &
              4x,'e_StartTime(i)<(e_StartTime(i-1)+e_Duration(i-1))',/, &
@@ -4433,7 +4597,7 @@
       !                Write out ESRI ASCII files of ash-cloud concentration?
 9405  do io=1,2;if(VB(io).le.verbosity_error)then
         write(errlog(io),*)'Error reading whether to print out ESRI ASCII files of',&
-                  ' cloud concentration at specifiied times.'
+                  ' cloud concentration at specified times.'
         write(errlog(io),*)'The first characters on this line should be ''yes'' or',&
                   ' ''no''.  Program stopped'
         write(errlog(io),*) '------------------------------'
@@ -4590,7 +4754,7 @@
       !Block 4/Line 17: 
       !
 9417  do io=1,2;if(VB(io).le.verbosity_error)then
-        write(errlog(io),*)'Error reading the number of files to be written out.',&
+        write(errlog(io),*)'Error reading the number of time steps to be written out.',&
                   '  This should be a positive integer, or -1.'
         write(errlog(io),*)'You gave: ',nWriteTimes
         write(errlog(io),*) 'Program stopped.'
@@ -5094,7 +5258,7 @@
 ! 0.0 0.0                 dx dy [dz] Needed if not a part of the data file
 ! 0.0 0.0                 srtx srty         Start x and y
 ! 3                       output format     (1=ascii, 2=KML 3=image, 4=binary, 5=shapefile 6=grib, 7=tecplot, 8=vtk)
-! 3                       plot_pref         (1=dislin, 2=plplot, 3=gnuplot, 4=GMT)
+! 3                       plot_pref         (1=dislin, 2=plplot, 3=gnuplot, 4=GMT, 5=matlab, 6=python)
 ! -1                      time_step         Only needed if input file is multi-timestep (eg netcdf) (0 for static, -1 for final, -2 for all)
 ! 0                       Filled contour flag (1 for filled, 0 for lines)
 ! 1 5                     custom contour flag (1 for true, 0 for false), number of contours
@@ -5109,13 +5273,15 @@
       subroutine Read_PostProc_Control_File(informat,iprod1,iprod2,ndims,outformat,iplotpref,itime)
 
       use io_data,       only : &
-         PP_infile,concenfile,datafileIn,infile,HaveInfile
+         PP_infile,concenfile,datafileIn,infile,HaveInfile,&
+         nvar_User2d_static_XY,nvar_User2d_XY
 
       use mesh,          only : &
          nxmax,nymax,nzmax,dx,dy,dz_const,xLL,yLL,IsLatLon,lonLL,latLL,de,dn
 
       use Output_Vars,   only : &
-         ContourFilled,Con_Cust,Con_Cust_N,Con_Cust_RGB,Con_Cust_Lev
+         ContourFilled,Con_Cust,Con_Cust_N,Con_Cust_RGB,Con_Cust_Lev, &
+         Extra2dVarName
 
       integer, intent(out) :: informat
       integer, intent(out) :: iprod1
@@ -5127,6 +5293,8 @@
 
       character(len=50)  :: linebuffer050 
       character(len=80)  :: linebuffer080
+      integer            :: strlen
+      character(len=10)  :: tmpstr
       integer            :: iostatus
       character(len=120) :: iomessage
       integer            :: ivalue
@@ -5148,6 +5316,7 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading line 1 of post-proc control file"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) datafileIn
       linebuffer050 = "Reading datafileIn from linebuffer"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
@@ -5160,19 +5329,23 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading line 2 of post-proc control file"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) informat
       linebuffer050 = "Reading informat from linebuffer"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
       if(informat.ne.1.and.&
-          informat.ne.2.and.&
-          informat.ne.3)then
+         informat.ne.2.and.&
+         informat.ne.3)then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: Invalid format code for data file."
         endif;enddo
         stop 1
       else
+        if(informat.eq.1)tmpstr="ASCII"
+        if(informat.eq.2)tmpstr="Binary"
+        if(informat.eq.3)tmpstr="NetCDF"
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"File format of input data = ",informat
+          write(outlog(io),*)"File format of input data    = ",informat,tmpstr
         endif;enddo
       endif
       ! If this is a netcdf file, copy name to 
@@ -5182,13 +5355,14 @@
 
       ! Line 3:
       !  The name of the input file used for this run. If the datafile is the
-      !  netcdf concentratiln file, then the contents of the input file are
+      !  netcdf concentration file, then the contents of the input file are
       !  already available and this line will be ignored.  However, ASCII and
       !  binary files can use the additional information from the input file
       !  for the output products.
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading line 3 of post-proc control file"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) infile
       linebuffer050 = "Reading infile from linebuffer"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
@@ -5201,20 +5375,39 @@
 
       ! Line 4:
       !  The code for the variable to read and optionally an output code.
-      !  Normally, the variable read with be what is written out, but you
+      !  Normally, the variable read wil be what is written out, but you
       !  could have a binary 3d concentration and want cloud_load or have
       !  an ASCII deposit (in mm) and want a plot of deposit in inches.
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading line 4 of post-proc control file"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) iprod1
       linebuffer050 = "Reading iprod` from linebuffer"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) iprod1, ivalue
       if(iostatus.eq.0)then
-        iprod2 = ivalue
+        if(iprod1.eq.0)then
+          ! If we are reading in a non-standard product, then interpret the second integer
+          ! to be the TS or no flag
+          iprod2 = iprod1
+          if(ivalue.eq.1)then
+            nvar_User2d_static_XY = 1
+          else
+            nvar_User2d_XY = 1
+          endif
+        else
+          ! If this is a standard product code, then second int is the outproduct
+          iprod2 = ivalue
+        endif
       else
-        iprod2 = iprod1
+        if(iprod1.eq.0)then
+          ! non-standard product given, but no TS code, assume TS
+          nvar_User2d_XY = 1
+        else
+          ! standard product 1, but no product 2; assume the same
+          iprod2 = iprod1
+        endif
       endif
       ! Error-checking these values
       if(iprod1.lt.0.or.iprod1.gt.16)then
@@ -5224,25 +5417,33 @@
         stop 1
       else
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"Variable code of input data = ",iprod1
+          write(outlog(io),*)"Variable code of input data  = ",iprod1
         endif;enddo
       endif
-      if(iprod2.lt.1.or.iprod2.gt.16)then
+      if(iprod2.lt.0.or.iprod2.gt.16)then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: Invalid format code output variable type."
         endif;enddo
         stop 1
       else
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"Variable code of output data = ",iprod2
+          write(outlog(io),*)"Variable code of output data  = ",iprod2
         endif;enddo
       endif
         ! Now the bonus line if the user requests a custom variable
       if(iprod1.eq.0)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
-          write(errlog(io),*)"ERROR: Need to code custom variables in control file"
-        endif;enddo
-        stop 1
+
+        read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
+        linebuffer050 = "Reading custom variable name from control file"
+        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        call FileIO_CleanLine(.false.,strlen,linebuffer080)
+        read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) Extra2dVarName
+        linebuffer050 = "Reading datafileIn from linebuffer"
+
+        !do io=1,2;if(VB(io).le.verbosity_error)then
+        !  write(errlog(io),*)"ERROR: Need to code custom variables in control file"
+        !endif;enddo
+        !stop 1
       endif
 
       ! Line 5:
@@ -5250,6 +5451,7 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading line 5 of post-proc control file"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) ndims, ilatlonflag
       linebuffer050 = "Reading ndims,ilatlonfalg from linebuffer"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
@@ -5279,6 +5481,7 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading line 6 of post-proc control file"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) nxmax,nymax
       linebuffer050 = "Reading nx,ny from linebuffer"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
@@ -5318,6 +5521,7 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading line 7 of post-proc control file"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) dx,dy
       linebuffer050 = "Reading dx,dy from linebuffer"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
@@ -5357,6 +5561,7 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading line 8 of post-proc control file"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) xLL,yLL
       linebuffer050 = "Reading xLL,yLL from linebuffer"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
@@ -5387,6 +5592,7 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading line 9 of post-proc control file"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)outformat
       linebuffer050 = "Reading outformat from linebuffer"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
@@ -5410,11 +5616,12 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading line 10 of post-proc control file"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) iplotpref
       linebuffer050 = "Reading iplotpref from linebuffer"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
       ! Error-checking iplotpref
-      if(iplotpref.lt.0.or.iplotpref.gt.4)then
+      if(iplotpref.lt.1.or.iplotpref.gt.6)then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: Invalid code for plotting library."
         endif;enddo
@@ -5430,6 +5637,7 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading line 11 of post-proc control file"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) itime
       linebuffer050 = "Reading itime from linebuffer"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
@@ -5450,6 +5658,7 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading line 12 of post-proc control file"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) ivalue
       linebuffer050 = "Reading ivalue from linebuffer"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
@@ -5465,6 +5674,7 @@
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading line 13 of post-proc control file"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) ivalue
       linebuffer050 = "Reading ivalue from linebuffer"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
@@ -5499,6 +5709,7 @@
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         linebuffer050 = "Reading line 14 of post-proc control file"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        call FileIO_CleanLine(.false.,strlen,linebuffer080)
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)Con_Cust_Lev(1:Con_Cust_N)
         linebuffer050 = "Reading Con_Cust_Lev from linebuffer"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
@@ -5507,6 +5718,7 @@
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         linebuffer050 = "Reading line 15 of post-proc control file"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        call FileIO_CleanLine(.false.,strlen,linebuffer080)
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)Con_Cust_RGB(1:Con_Cust_N,1)
         linebuffer050 = "Reading Con_Cust_RGB from linebuffer"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
@@ -5514,6 +5726,7 @@
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         linebuffer050 = "Reading line 16 of post-proc control file"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        call FileIO_CleanLine(.false.,strlen,linebuffer080)
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)Con_Cust_RGB(1:Con_Cust_N,2)
         linebuffer050 = "Reading Con_Cust_RGB from linebuffer"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
@@ -5521,6 +5734,7 @@
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         linebuffer050 = "Reading line 17 of post-proc control file"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        call FileIO_CleanLine(.false.,strlen,linebuffer080)
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)Con_Cust_RGB(1:Con_Cust_N,3)
         linebuffer050 = "Reading Con_Cust_RGB from linebuffer"
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
@@ -5549,6 +5763,1592 @@
       stop 1
 
       end subroutine Read_PostProc_Control_File
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Write_input_block_header(outunit,blockID)
+!
+!  Called from: help_inputfile
+!  Arguments:
+!    outunit = output unit for write stream (6 for stdout, etc.)
+!    blockID = block number of the control file to print
+!
+!  This subroutine writes an example header of the requested block of the
+!  control file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine Write_input_block_header(outunit,blockID)
+
+      use io_units
+
+      integer,intent(in) :: outunit
+      integer,intent(in) :: blockID
+
+      ! The idea with the blockID is that help for only a particular block is
+      ! called if there is an error reading something in the input file or if
+      ! the user requests it.
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_input_block_header"
+      endif;enddo
+
+      select case (blockID)
+        case(1) ! BLOCK 1: GRID INFO
+      write(outunit,1)'# The following is an input file to the model Ash3d, v1.0 https://code.usgs.gov/vsc/ash3d/volcano-ash3d'
+      write(outunit,1)'# Created by L.G. Mastin, R.P. Denlinger and H.F. Schwaiger, U.S. Geological Survey, 2009.             '
+      write(outunit,1)'#                                                                                                      '
+      write(outunit,1)'# GENERAL SOURCE PARAMETERS. DO NOT DELETE ANY NON-COMMENT LINES                                       '
+      write(outunit,1)'#  The first line of this block identifies the volcano by name.                                        '
+      write(outunit,1)'#  If the volcano name begins with either 0 or 1, then the volcano                                     '
+      write(outunit,1)'#  is assumed to be in the Smithsonian database and default values for                                 '
+      write(outunit,1)'#  Plume Height, Duration, Mass Flux Rate, Volume, and mass fraction of                                '
+      write(outunit,1)'#  fines are loaded.  These can be over-written by entering non-negative                               '
+      write(outunit,1)'#  values in the appropriate locations in this input file.                                             '
+      write(outunit,1)'#                                                                                                      '
+      write(outunit,1)'#  The second line of this block identifies the projection used and the form of                        '
+      write(outunit,1)'#  the input coordinates and is of the following format:                                               '
+      write(outunit,1)'#    latlonflag, projflag,  followed by a variable list of projection parameters                       '
+      write(outunit,1)'#  projflag describes the projection used for the Ash3d run. Windfiles can have a                      '
+      write(outunit,1)'#  different projection.                                                                               '
+      write(outunit,1)'#  For a particular projflag, additional values are read defining the projection.                      '
+      write(outunit,1)'#    latlonflag = 0 if computational grid is projected                                                 '
+      write(outunit,1)'#               = 1 if computational grid is lat/lon (all subsequent projection parameters ignored.)   '
+      write(outunit,1)'#    projflag   = 1 -- polar stereographic projection                                                  '
+      write(outunit,1)'#           lambda0 -- longitude of projection point                                                   '
+      write(outunit,1)'#           phi0    -- latitude of projection point                                                    '
+      write(outunit,1)'#           k0      -- scale factor at projection point                                                '
+      write(outunit,1)'#           radius  -- earth radius for spherical earth                                                '
+      write(outunit,1)'#     e.g. for NAM 104,198, 216: 0 1 -105.0 90.0 0.933 6371.229                                        '
+      write(outunit,1)'#               = 2 -- Albers Equal Area ( not yet implemented)                                        '
+      write(outunit,1)'#               = 3 -- UTM ( not yet implemented)                                                      '
+      write(outunit,1)'#               = 4 -- Lambert conformal conic                                                         '
+      write(outunit,1)'#           lambda0 -- longitude of origin                                                             '
+      write(outunit,1)'#              phi0 -- latitude of origin                                                              '
+      write(outunit,1)'#              phi1 -- latitude of secant1                                                             '
+      write(outunit,1)'#              phi2 -- latitude of secant2                                                             '
+      write(outunit,1)'#            radius -- earth radius for a spherical earth                                              '
+      write(outunit,1)'#     e.g. for NAM 212: 0 4 265.0 25.0 25.0 25.0 6371.22                                               '
+      write(outunit,1)'#               = 5 -- Mercator                                                                        '
+      write(outunit,1)'#           lambda0 -- longitude of origin                                                             '
+      write(outunit,1)'#              phi0 -- latitude of origin                                                              '
+      write(outunit,1)'#            radius -- earth radius for a spherical earth                                              '
+      write(outunit,1)'#     e.g. for NAM 196: 0 5 198.475 20.0 6371.229                                                      '
+      write(outunit,1)'#                                                                                                      '
+      write(outunit,1)'# On line 3, the vent coordinates can optionally include a third value for elevation in km.            '
+      write(outunit,1)'# If the vent elevation is not given, 0 is used if topography is turned off.                           '
+      write(outunit,1)'#                                                                                                      '
+      write(outunit,1)'# Line 4 is the width and height of the computational grid in km (if projected) or degrees.            '
+      write(outunit,1)'# Line 5 is the vent x,y (or lon, lat) coordinates.                                                    '
+      write(outunit,1)'# Line 6, DX and DY resolution in km or degrees (for projected or lon/lat grid, respectively)          '
+      write(outunit,1)'# Line 7, DZ can be given as a real number, indicating the vertical spacing in km.                     '
+      write(outunit,1)'# Alternatively, it can be given as dz_plin (piece-wise linear), dz_clog (constant-                    '
+      write(outunit,1)'# logarithmic), or dz_cust (custom specification)                                                      '
+      write(outunit,1)'# If dz_plin, then a second line is read containing:                                                   '
+      write(outunit,1)'#   number of line segments (N) followed by the steps and step-size of each segment                    '
+      write(outunit,1)'#   e.g. 4 6 0.25 5 0.5 5 1.0 10 2.0                                                                   '
+      write(outunit,1)'#         This corresponds to 4 line segments with 6 cells of 0.25, then 5 cells of 0.5,               '
+      write(outunit,1)'#         5 cells of 1.0, and finally 10 cells of 2.0                                                  '
+      write(outunit,1)'# If dz_clog, then a second line is read containing:                                                   '
+      write(outunit,1)'#   maximum z and number of steps of constant dlogz                                                    '
+      write(outunit,1)'#   e.g. 30.0 30                                                                                       '
+      write(outunit,1)'#         This corresponds to 30 steps from 0-30km with constant log-spacing                           '
+      write(outunit,1)'# If dz_cust, then a second line is read containing:                                                   '
+      write(outunit,1)'#   the number of dz values to read (ndz), followed by dz(1:ndz)                                       '
+      write(outunit,1)'#   e.g. 20 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 5.5            '
+      write(outunit,1)'#         This corresponds to 10 steps of 0.5, 9 steps of 1.5, followed by 1 step of 5.5               '
+      write(outunit,1)'#                                                                                                      '
+      write(outunit,1)'#                                                                                                      '
+      write(outunit,1)'# Line 8 is the the diffusivity (m2/s) followed by the eruption specifier.  The                        '
+      write(outunit,1)'# eruption specifier can be a real number, in which case it is assumed to be the                       '
+      write(outunit,1)'# positive constant specifying the Suzuki distribution.  Alternatively, it can be                      '
+      write(outunit,1)'#  umbrella     : Suzuki (const. = 12) with radial spreading of the plume                              '
+      write(outunit,1)'#  umbrella_air : Suzuki (const. = 12) with radial spreading of the plume scaled to 5% of vol.         '
+      write(outunit,1)'#  point        : all mass inserted in cell containing PlmH                                            '
+      write(outunit,1)'#  linear       : mass uniformly distributed from z-vent to PlmH                                       '
+      write(outunit,1)'# Line 9 : number of pulses to be read in BLOCK 2                                                      '
+        case(2) ! BLOCK 2: ERUPTION PARAMETERS
+      write(outunit,1)'# ERUPTION LINES (number = neruptions)                                                                 '
+      write(outunit,1)'# In the following line, each line represents one eruptive pulse.                                      '
+      write(outunit,1)'# Parameters are (1-4) start time (yyyy mm dd h.hh (UT)); (5) duration (hrs);                          '
+      write(outunit,1)'#                  (6) plume height;                      (7) erupted volume (km3 DRE)                 '
+      write(outunit,1)'# If neruptions=1 and the year is 0, then the model run in forecast mode where mm dd h.hh are          '
+      write(outunit,1)'# interpreted as the time after the start of the windfile.  In this case, duration, plume              '
+      write(outunit,1)'# height and erupted volume are replaced with ESP if the values are negative.                          '
+      write(outunit,1)'# This applies to source types: suzuki, point, line, umbrella and umbrella_air.                        '
+      write(outunit,1)'# For profile sources, an additional two values are read: dz and nz                                    '
+      write(outunit,1)'# 2010 04 14   0.00   1.0     18.0  0.16 1.0 18                                                        '
+      write(outunit,1)'# 0.01 0.02 0.03 0.03 0.04 0.04 0.05 0.06 0.06 0.070 0.08 0.08 0.09 0.09 0.09 0.08 0.06 0.02           '
+        case(3) ! BLOCK 3: WIND PARAMETERS
+      write(outunit,1)'# WIND OPTIONS                                                                                         '
+      write(outunit,1)'# Ash3d will read from either a single 1-D wind sounding, or gridded, time-                            '
+      write(outunit,1)'# dependent 3-D wind data, depending on the value of the parameter iwind.                              '
+      write(outunit,1)'# For iwind = 1, read from a 1-D wind sounding                                                         '
+      write(outunit,1)'#             2, read from 3D gridded ASCII files                                                      '
+      write(outunit,1)'#             3/4, read directly from a single or multiple NetCDF files.                               '
+      write(outunit,1)'#             5, read directly from multiple multi-timestep NetCDF files.                              '
+      write(outunit,1)'# The parameter iwindformat specifies the format of the wind files, as follows:                        '
+      write(outunit,1)'#  iwindformat =  0: User-defined via template                                                         '
+      write(outunit,1)'#                 1: User-specified ASCII files                                                        '
+      write(outunit,1)'#                 2: Global radiosonde data                                                            '
+      write(outunit,1)'#                 3: NARR 221 Reanalysis (32 km)                                                       '
+      write(outunit,1)'#                 4: NAM Regional North America 221 Forecast (32 km)                                   '
+      write(outunit,1)'#                 5: NAM 216 Regional Alaska Forecast (45 km)                                          '
+      write(outunit,1)'#                 6: NAM 104 Northern Hemisphere Forecast (90 km)                                      '
+      write(outunit,1)'#                 7: NAM 212 40km Cont. US Forecast (40 km)                                            '
+      write(outunit,1)'#                 8: NAM 218 12km Cont. US Forecast (12 km)                                            '
+      write(outunit,1)'#                 9: NAM 227 Cont. US Forecast (5.08 km)                                               '
+      write(outunit,1)'#                10: NAM 242 11km Regional Alaska Forecast (11.25 km)                                  '
+      write(outunit,1)'#                11: NAM 196 Regional Hawaii Forecast (2.5 km)                                         '
+      write(outunit,1)'#                12: NAM 198 Regional Alaska Forecast (5.953 km)                                       '
+      write(outunit,1)'#                13: NAM 91 Regional Alaska Forecast (2.976 km)                                        '
+      write(outunit,1)'#                14: NAM Regional Cont. US Forecast (3.0 km)                                           '
+      write(outunit,1)'#                20: GFS 0.5 degree files Forecast                                                     '
+      write(outunit,1)'#                21: GFS 1.0 degree files Forecast                                                     '
+      write(outunit,1)'#                22: GFS 0.25 degree files Forecast                                                    '
+      write(outunit,1)'#                23: NCEP DOE Reanalysis 2.5 degree                                                    '
+      write(outunit,1)'#                24: NASA MERRA-2 Reanalysis                                                           '
+      write(outunit,1)'#                25: NCEP1 2.5 global Reanalysis (1948-pres)                                           '
+      write(outunit,1)'#                      Note: use nWindFiles=1 for iwindformat=25                                       '
+      write(outunit,1)'#                26: JRA-55 Reanalysis                                                                 '
+      write(outunit,1)'#                27: NOAA-CIRES II 2-deg global Reanalysis (1870-2010)                                 '
+      write(outunit,1)'#                28: ECMWF ERA-Interim Reanalysis                                                      '
+      write(outunit,1)'#                29: ECMWA ERA-5 Reanalysis                                                            '
+      write(outunit,1)'#                30: ECMWA ERA-20C Reanalysis                                                          '
+      write(outunit,1)'#                32: Air Force Weather Agency                                                          '
+      write(outunit,1)'#                33: CCSM 3.0 Community Atmospheric Model                                              '
+      write(outunit,1)'#                34: ECMWF 0.25-degree forecast                                                        '
+      write(outunit,1)'#                40: NASA GEOS-5 Cp                                                                    '
+      write(outunit,1)'#                41: NASA GEOS-5 Np                                                                    '
+      write(outunit,1)'#                50: Weather Research and Forecast (WRF) output                                        '
+      write(outunit,1)'#                                                                                                      '
+      write(outunit,1)'# igrid (optional, defaults to that associated with iwindformat) is the NCEP grid ID,                  '
+      write(outunit,1)'# if a NWP product is used, or the number of stations of sonde data, if iwind = 1.                     '
+      write(outunit,1)'# idata (optional, defaults to 2) is a flag for data type (1=ASCII, 2=netcdf, 3=grib).                 '
+      write(outunit,1)'#                                                                                                      '
+      write(outunit,1)'# Many plumes extend higher than the maximum height of mesoscale models.                               '
+      write(outunit,1)'# Ash3d handles this as determined by the parameter iHeightHandler, as follows:                        '
+      write(outunit,1)'# for iHeightHandler = 1, stop the program if the plume height exceeds mesoscale height                '
+      write(outunit,1)'#                      2, wind velocity at levels above the highest node                               '
+      write(outunit,1)'#                         equal that of the highest node.  Temperatures in the                         '
+      write(outunit,1)'#                         upper nodes do not change between 11 and 20 km; above                        '
+      write(outunit,1)'#                         20 km they increase by 2 C/km, as in the Standard                            '
+      write(outunit,1)'#                         atmosphere.  A warning is written to the log file.                           '
+      write(outunit,1)'# Simulation time in hours is the maximal length of the simulation.                                    '
+      write(outunit,1)'# Ash3d can end the simulation early if desired, once 99% of the ash has deposited.                    '
+      write(outunit,1)'# The last line of this block is the number of windfiles listed in block 5 below.  If                  '
+      write(outunit,1)'# iwind=5 and one of the NWP products is used that require a special file structure,                   '
+      write(outunit,1)'# then nWindFiles should be set to 1 and only the root folder of the windfiles listed.                 '
+        case(4) ! BLOCK 4: OUTPUT OPTIONS
+      write(outunit,1)'# OUTPUT OPTIONS:                                                                                      '
+      write(outunit,1)'# The list below allows users to specify the output options                                            '
+      write(outunit,1)'# All but the final deposit file can be written out at specified                                       '
+      write(outunit,1)'# times using the following parameters:                                                                '
+      write(outunit,1)'# Line 15 asks for 3d output (yes/no) followed by an optional output format code;                      '
+      write(outunit,1)'#   1 = (default) output all the normal 2d products to the output file as well as the 3d concentrations'
+      write(outunit,1)'#   2 = only output the 2d products                                                                    '
+      write(outunit,1)'# nWriteTimes   = if >0,  number of times output are to be written. The following                      '
+      write(outunit,1)'#                  line contains nWriteTimes numbers specifying the times of output                    '
+      write(outunit,1)'#                 if =-1, it specifies that the following line gives a constant time                   '
+      write(outunit,1)'#                  interval in hours between write times.                                              '
+      write(outunit,1)'# WriteTimes    = Hours between output (if nWritetimes=-1), or                                         '
+      write(outunit,1)'#                 Times (hours since start of first eruption) for each output                          '
+      write(outunit,1)'#                (if nWriteTimes >1)                                                                   '
+        case(5) ! BLOCK 5: INPUT WIND FILES
+      write(outunit,1)'# WIND INPUT FILES                                                                                     '
+      write(outunit,1)'# The following block of data contains names of wind files. There should be one line for               '
+      write(outunit,1)'# each of nWindFiles (from Block 3 Line 5) windfiles. Files should be given in                         '
+      write(outunit,1)'# chronological order, should have names with only letters and numbers (no spaces)                     '
+      write(outunit,1)'# and should not exceed 130 characters in length.                                                      '
+      write(outunit,1)'# For iwind=5 (files with hard-coded paths), just provide the directory with the                       '
+      write(outunit,1)'# windfiles or the root of the dataset (if files are sorted by year).                                  '
+      write(outunit,1)'# For example, iwind=5, iwindformat=25 for NCEP reanalysis, data might look like:                      '
+      write(outunit,1)'# /data/WindFiles/NCEP                                                                                 '
+      write(outunit,1)'# |-- 2016                                                                                             '
+      write(outunit,1)'# |   |-- air.2016.nc                                                                                  '
+      write(outunit,1)'# |   |-- hgt.2016.nc                                                                                  '
+      write(outunit,1)'# |   |-- omega.2016.nc                                                                                '
+      write(outunit,1)'# |   |-- uwnd.2016.nc                                                                                 '
+      write(outunit,1)'# |   `-- vwnd.2016.nc                                                                                 '
+      write(outunit,1)'# |-- 2017                                                                                             '
+      write(outunit,1)'#     |-- air.2017.nc                                                                                  '
+      write(outunit,1)'# In this case, Block 5 will just contain one line: /data/WindFiles/NCEP or just NCEP                  '
+      write(outunit,1)'# if you have a soft link in the run directory.                                                        '
+      write(outunit,1)'# For a network of radiosonde data, please see the MetReader documentation for                         '
+      write(outunit,1)'# the input specification https://code.usgs.gov/vsc/ash3d/volcano-ash3d-metreader.                     '
+        case(6) ! BLOCK 6: AIRPORT FILE
+      write(outunit,1)'# AIRPORT LOCATION FILE                                                                                '
+      write(outunit,1)'# The following lines allow the user to specify whether times of ash arrival                           '
+      write(outunit,1)'# at airports and other locations will be written out, and which file                                  '
+      write(outunit,1)'# to read for a list of airport locations.                                                             '
+      write(outunit,1)'# PLEASE NOTE:  Each line in the airport location file should contain the                              '
+      write(outunit,1)'#               airport latitude, longitude, projected x and y coordinates,                            '
+      write(outunit,1)'#               and airport name.  If you are using a projected grid,                                  '
+      write(outunit,1)'#               THE X AND Y MUST BE IN THE SAME PROJECTION as the computational grid.                  '
+      write(outunit,1)'#               Alternatively, coordinates can be projected via libprojection                          '
+      write(outunit,1)'#               by typing "yes" to the last parameter                                                  '
+        case(7) ! BLOCK 7: GRAIN-SIZE BINS, SETTLING VELOCITY
+      write(outunit,1)'# GRAIN SIZE GROUPS                                                                                    '
+      write(outunit,1)'# The first line must contain the number of settling velocity groups, but                              '
+      write(outunit,1)'# can optionally also include a flag for the fall velocity model to be used.                           '
+      write(outunit,1)'#    FV_ID = 1, Wilson and Huang                                                                       '
+      write(outunit,1)'#          = 2, Wilson and Huang + Cunningham slip                                                     '
+      write(outunit,1)'#          = 3, Wilson and Huang + Mod by Pfeiffer Et al.                                              '
+      write(outunit,1)'#          = 4, Ganser (assuming prolate ellipsoids)                                                   '
+      write(outunit,1)'#          = 5, Ganser + Cunningham slip                                                               '
+      write(outunit,1)'#          = 6, Stokes flow for spherical particles + slip                                             '
+      write(outunit,1)'# If no fall model is specified, FV_ID = 1, by default                                                 '
+      write(outunit,1)'# The first line can also optionally contain the Shape_ID code where 1= Wilson and Huang (F,G),        '
+      write(outunit,1)'# and 2 = sphericity                                                                                   '
+      write(outunit,1)'# The grain size bins can be enters with 2, 3, or 4 parameters.                                        '
+      write(outunit,1)'# If TWO are given, they are read as:   FallVel (in m/s), mass fraction                                '
+      write(outunit,1)'# If THREE are given, they are read as: diameter (mm), mass fraction, density (kg/m3)                  '
+      write(outunit,1)'# For Shape_ID = 1:                                                                                    '
+      write(outunit,1)'# If FOUR are given, they are read as:  diameter (mm), mass fraction, density (kg/m3), Shape F         '
+      write(outunit,1)'# The shape factor is given as in Wilson and Huang: F=(b+c)/(2*a), but converted                       '
+      write(outunit,1)'# to sphericity (assuming b=c) for the Ganser model.                                                   '
+      write(outunit,1)'# If a shape factor is not given, a default value of F=0.4 is used.                                    '
+      write(outunit,1)'# If FIVE are given, they are read as:  diameter (mm), mass fraction, density (kg/m3), Shape F, G      '
+      write(outunit,1)'#  where G is an additional minor axis ratio shape factor equal to c/b                                 '
+      write(outunit,1)'# For Shape_ID = 2:                                                                                    '
+      write(outunit,1)'# If FOUR are given, they are read as:  diameter (mm), mass fraction, density (kg/m3), Sphericity      '
+      write(outunit,1)'#                                                                                                      '
+      write(outunit,1)'# If the last grain size bin has a negative diameter, then the remaining mass fraction                 '
+      write(outunit,1)'# will be distributed over the previous bins via a log-normal distribution in phi.                     '
+      write(outunit,1)'# The last bin would be interpreted as:                                                                '
+      write(outunit,1)'# diam (neg value) , LN_phi_mean, LN_phi_stddev                                                        '
+        case(8) ! BLOCK 8: VERTICAL PROFILES
+      write(outunit,1)'# Options for writing vertical profiles                                                                '
+      write(outunit,1)'# The first line below gives the number of locations (nlocs) where vertical                            '
+      write(outunit,1)'# profiles are to be written.  That is followed by nlocs lines, each of which                          '
+      write(outunit,1)'# contain the location, in the same coordinates as the computational grid.                             '
+      write(outunit,1)'# Optionally, a site name can be provided in after the location.                                       '
+        case(9) ! BLOCK 9: (Optional): NETCDF ANNOTATIONS
+      write(outunit,1)'# netCDF output options                                                                                '
+      write(outunit,1)'# This last block is optional.                                                                         '
+      write(outunit,1)'# The output file name can be give, but will default to 3d_tephra_fall.nc if absent                    '
+      write(outunit,1)'# The title and comment lines are passed through to the netcdf header of the                           '
+      write(outunit,1)'# output file.                                                                                         '
+        case(10) ! BLOCK 10 (OPTMOD): Optional module blocks
+                 !   First RESETPARAMS
+      write(outunit,1)'# Optional Modules are identified by the text string at the top of the block                           '
+      write(outunit,1)'# OPTMOD=[module name]                                                                                 '
+      write(outunit,1)'# There will need to be a custom block reader in the module to read this section                       '
+      write(outunit,1)'# section of the input file.  Below is the built-in example for resetting parameters.                  '
+      write(outunit,1)'# You only need to include the line(s) for the parameters you want to reset. All                       '
+      write(outunit,1)'# options are listed below.                                                                            '
+        case(11) ! BLOCK 10+1 (OPTMOD):
+                 !   TOPO
+      write(outunit,1)'# Topography                                                                                           '
+      write(outunit,1)'# Line 1 indicates whether or not to use topography followed by the integer flag                       '
+      write(outunit,1)'#        describing how topography will modify the vertical grid.                                      '
+      write(outunit,1)'#          0 = no vertical modification; z-grid remains 0-> top throughout the domain                  '
+      write(outunit,1)'#          1 = shifted; s = z-z_surf; computational grid is uniformly shifted upward                   '
+      write(outunit,1)'#              everywhere by topography                                                                '
+      write(outunit,1)'#          2 = sigma-altitude; s=z_top(z-z_surf)/(z_top-z_surf); topography has decaying               '
+      write(outunit,1)'#              influence with height                                                                   '
+      write(outunit,1)'# Line 2 indicates the topography data format followed by the smoothing radius in km                   '
+      write(outunit,1)'# Topofile format must be one of                                                                       '
+      write(outunit,1)'#   1 : Gridded lon/lat (netcdf): ETOPO, GEBCO                                                         '
+      write(outunit,1)'#   2 : Gridded Binary: NOAA GLOBE, GTOPO30                                                            '
+      write(outunit,1)'#   3 : ESRI ASCII                                                                                     '
+      write(outunit,1)'#  Line 3 is the file name of the topography data.                                                     '
+      write(outunit,1)'#                                                                                                      '
+        case(12) ! BLOCK 10+2 (OPTMOD):
+                 !   VARDIFF
+      write(outunit,1)'# Variable Diffusivity                                                                                 '
+      write(outunit,1)'#   Line 1 indicates whether or not to write VarDiff variables to the output file                      '
+      write(outunit,1)'#   Line 2 Specifies the optional module                                                               '
+      write(outunit,1)'#   Line 3 indicates whether or not to use horizontal diffusivity followed by the                      '
+      write(outunit,1)'#          type ID and value with                                                                      '
+      write(outunit,1)'#             1  500.0 # constant horizontal diffusivity with specified value (m2/s)                   '
+      write(outunit,1)'#             2  0.2   # Smagorinsky model with coefficient C ()                                       '
+      write(outunit,1)'#             3  0.2   # Pielke model with coefficient C ()                                            '
+      write(outunit,1)'#   Line 4 indicates whether or not to use vertical diffusivity                                        '
+      write(outunit,1)'#   Line 5 indicates the boundary layer model and value (if model requires)                            '
+      write(outunit,1)'#             1 500.0         # BL model 1=const ; value (m2/s)                                        '
+      write(outunit,1)'#             2               #          2=none (Use Free-air throughout)                              '
+      write(outunit,1)'#             3               #          3=Troen and Mahrt                                             '
+      write(outunit,1)'#             4               #          4=Ulke                                                        '
+      write(outunit,1)'#             5               #          5=Shir / Businger,Ayer                                        '
+      write(outunit,1)'#   Line 6 indicates the Free-Air model and value (if model requires)                                  '
+      write(outunit,1)'#             1 500.0         # Free-Air 1=const ; value (m2/s)                                        '
+      write(outunit,1)'#             2               #          2=F(Ri)=Louis                                                 '
+      write(outunit,1)'#             3               #          3=F(Ri)=Jacobson/Stull                                        '
+      write(outunit,1)'#             4               #          4=F(Ri)=Betts                                                 '
+      write(outunit,1)'#             5               #          5=F(Ri)=Hong                                                  '
+      write(outunit,1)'#             6               #          6=F(Ri)=Collins                                               '
+      write(outunit,1)'#   Line 7 contains the von Karman constant                                                            '
+      write(outunit,1)'#   Line 8 contains the free-air mixing length (m)                                                     '
+      write(outunit,1)'#   Line 9 is the critical Richardson number used in calculating atmospheric stability.                '
+      write(outunit,1)'#                                                                                                      '
+
+!        case default
+      end select
+
+ 1    format(a103)
+
+      end subroutine Write_input_block_header
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  SetWrite_input_block_01
+!
+!  Called from: help_inputfile
+!  Arguments:
+!    outunit         = output stream ID or 0 for Set Vars only with no output
+!    vname           = volcano name
+!    projline        = projection specification
+!    LLx,LLy         = coordinates of lower-left corner of computational grid
+!    widthx,widthy   = width (in x,y) of computational grid
+!    x_in,y_in,z_in  = source coordinates
+!    dx_in,dy_in     = cell width in x,y
+!    dz_in           = dz, which may be over-written
+!    kdiff           = diffusivity
+!    Suzk            = Susuki parameter
+!    nerup           = # of eruptions
+!    dz_type         = index of dz class 1=const, 2= plin, 3=clog, 4=custom
+!    dz_line         = bonus line for dz specification
+!    src_type        = source_type 1=Suz,2=point,3=line,4=profile,5=umb,6=umb_air
+!    
+!  This subroutine writes the content of block 1 (Grid/Src info) of the Ash3d
+!  control file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine SetWrite_input_block_01(outunit,vname,projline,LLx,LLy,widthx,widthy,&
+                                        x_in,y_in,z_in,dx_in,dy_in,dz_in,kdiff,Suzk,nerup,   &
+                                        dz_type,dz_line,src_type)
+
+      use io_units
+
+      use io_data,       only : &
+         VolcanoName
+
+      use mesh,          only : &
+         lonLL,latLL,gridwidth_e,gridwidth_n,xLL,yLL,gridwidth_x,gridwidth_y, &
+         IsLatLon,de,dn,dx,dy,VarDzType,dz_const
+
+      use Source,        only : &
+         lon_volcano,lat_volcano,x_volcano,y_volcano,z_volcano,Suzuki_A,      &
+         neruptions,SourceType,SourceType_idx
+
+      use Diffusion,     only : &
+         diffusivity_horz
+
+      integer           ,intent(in) :: outunit
+      character(len=30) ,intent(in) :: vname
+      character(len=80) ,intent(in) :: projline
+      real(kind=ip)     ,intent(in) :: LLx
+      real(kind=ip)     ,intent(in) :: LLy
+      real(kind=ip)     ,intent(in) :: widthx
+      real(kind=ip)     ,intent(in) :: widthy
+      real(kind=ip)     ,intent(in) :: x_in
+      real(kind=ip)     ,intent(in) :: y_in
+      real(kind=ip)     ,intent(in) :: z_in
+      real(kind=ip)     ,intent(in) :: dx_in
+      real(kind=ip)     ,intent(in) :: dy_in
+      real(kind=ip)     ,intent(in) :: dz_in
+      real(kind=ip)     ,intent(in) :: kdiff
+      real(kind=ip)     ,intent(in) :: SuzK  ! These might not be needed, but must be included even with dummy values
+      integer           ,intent(in) :: nerup
+       ! Some extra bits for dz and source options
+      integer           ,intent(in) :: dz_type  ! 1=const, 2=dz_plin, 3=dz_clog, 4=dz_cust
+      character(len=130),intent(in) :: dz_line
+      integer           ,intent(in) :: src_type ! 1=Suz, 2=point, 3=linear, 4=profile, 5=umb, 6=umb_a
+
+      integer :: ilatlonflag
+
+      VolcanoName          = adjustl(trim(vname))
+
+      read(projline,*)ilatlonflag
+      if(ilatlonflag.eq.0) then
+        ! expecting input variables to be in the same projection as
+        ! specified by iprojflag and parameters
+        IsLatLon          = .false.
+      else
+        ! expecting input variables to be in lat/lon
+       IsLatLon          = .true.
+      endif
+
+      if(IsLatLon)then
+        lonLL       = LLx
+        latLL       = LLy
+        gridwidth_e = widthx
+        gridwidth_n = widthy
+        lon_volcano = x_in
+        lat_volcano = y_in
+        z_volcano   = z_in
+        de          = dx_in
+        dn          = dy_in
+      else
+        xLL         = LLx
+        yLL         = LLy
+        gridwidth_x = widthx
+        gridwidth_y = widthy
+        x_volcano   = x_in
+        y_volcano   = y_in
+        z_volcano   = z_in
+        dx          = dx_in
+        dy          = dy_in
+      endif
+
+      if(dz_type.eq.1)then
+        VarDzType = "dz_cons"
+        dz_const  = dz_in
+      elseif(dz_type.eq.2)then
+        VarDzType = 'dz_plin'
+        !   number of line segments (N) followed by the steps and step-size of each segment                    
+        !   e.g. 4 6 0.25 5 0.5 5 1.0 10 2.0                                                                   
+        !         This corresponds to 4 line segments with 6 cells of 0.25, then 5 cells of 0.5,               
+        !         5 cells of 1.0, and finally 10 cells of 2.0   
+        ! dz_line should contain this      
+      elseif(dz_type.eq.3)then
+        VarDzType = 'dz_clog'
+        !   maximum z and number of steps of constant dlogz                                                    
+        !   e.g. 30.0 30                                                                                       
+        !         This corresponds to 30 steps from 0-30km with constant log-spacing        
+        ! dz_line should contain this      
+      elseif(dz_type.eq.4)then
+        VarDzType = 'dz_cust'
+        !   the number of dz values to read (ndz), followed by dz(1:ndz)                                       
+        !   e.g. 20 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 5.5            
+        !         This corresponds to 10 steps of 0.5, 9 steps of 1.5, followed by 1 step of 5.5               
+        ! dz_line should contain this      
+      endif
+      diffusivity_horz = kdiff
+      SourceType_idx = src_type
+      if(src_type.eq.1)then
+        SourceType='suzuki'
+        Suzuki_A = SuzK
+      elseif(src_type.eq.2)then
+        SourceType='point'
+      elseif(src_type.eq.3)then
+        SourceType='line'
+      elseif(src_type.eq.4)then
+        SourceType='profile'
+      elseif(src_type.eq.5)then
+        SourceType='umbrella'
+      elseif(src_type.eq.6)then
+        SourceType='umbrella_air'
+      endif
+      neruptions = nerup
+
+      if(outunit.gt.0)then
+        write(outunit,1)&
+         '******************* BLOCK 1 ****************************************************'
+        write(outunit,2)VolcanoName
+        write(outunit,3)adjustl(trim(projline))
+        write(outunit,4)LLx,LLy
+        write(outunit,5)widthx,widthy
+        write(outunit,6)x_in,y_in,z_in
+        write(outunit,7)dx_in,dy_in
+        if(dz_type.eq.1)then
+          write(outunit,8)dz_const
+        else
+          write(outunit,9)VarDzType
+          write(outunit,10)dz_line
+        endif
+        if(src_type.eq.1)then
+          write(outunit,11)diffusivity_horz,Suzuki_A
+        else
+          write(outunit,12)diffusivity_horz,SourceType
+        endif
+        write(outunit,13)neruptions
+        write(outunit,1)&
+         '********************************************************************************'
+      endif
+
+ 1    format(a80)
+ 2    format(a30   ,10x,' # Volcano name (character*30)')
+ 3    format(a40       ,' # Proj flags and params; first term (LLflag) is 1, so all else ignored')
+ 4    format(2f13.3,14x,' # x, y of LL corner of grid (km, or deg. if latlongflag=1)')
+ 5    format(2f13.3,14x,' # grid width and height (km, or deg. if latlonflag=1)')
+ 6    format(3f13.3, 1x,' # vent location         (km, or deg. if latlonflag=1)')
+ 7    format(2f13.3,14x,' # DX, DY of grid cells  (km, or deg. if latlonflag=1)')
+ 8    format(1f13.3,27x,' # DZ of grid cells      (always km)')
+ 9    format(a7    ,33x,' # DZ of grid cells      (always km)')
+ 10   format(a80)
+ 11   format(2f13.3,14x,' # diffusion coefficient (m2/s), Suzuki constant')
+ 12   format(1f13.3,5x,a12,' # diffusion coefficient (m2/s), Suzuki constant')
+ 13   format(i5    ,35x,' # neruptions, number of eruptions or pulses')
+
+      end subroutine SetWrite_input_block_01
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  SetWrite_input_block_02
+!
+!  Called from: help_inputfile
+!  Arguments:
+!    outunit    = output stream ID or 0 for Set Vars only with no output
+!    nerup      = # of eruptions
+!    src_type   = source_type 1=Suz,2=point,3=line,4=profile,5=umb,6=umb_air
+!    e_ST       = eruption start times given as hourssince BaseYear
+!    e_Dur      = eruption durations
+!    e_PmH      = eruption plume heights
+!    e_Vol      = eruption volumes
+!    ep_dz      = dz of eruption profile
+!    ep_nz      = nz of eruption profile
+!    ep_Vol     = normalized volume of eruption profile
+!
+!  This subroutine writes the content of block 2 (Eruption Parameters) of the
+!  Ash3d control file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine SetWrite_input_block_02(outunit,nerup,src_type,     &
+                                        e_ST,e_Dur,e_PmH,e_Vol,         &
+                                        ep_dz,ep_nz,ep_Vol)
+
+      use io_units
+
+      use time_data,     only : &
+          BaseYear,useLeap
+
+      integer           ,intent(in) :: outunit
+      integer           ,intent(in) :: nerup
+      integer           ,intent(in) :: src_type
+      real(kind=dp),dimension(nerup),intent(in) :: e_ST
+      real(kind=dp),dimension(nerup),intent(in) :: e_Dur
+      real(kind=ip),dimension(nerup),intent(in) :: e_PmH
+      real(kind=ip),dimension(nerup),intent(in) :: e_Vol
+      real(kind=ip),dimension(nerup),intent(in) :: ep_dz
+      integer      ,dimension(nerup),intent(in) :: ep_nz
+      real(kind=ip),dimension(nerup,50),intent(in) :: ep_Vol
+
+      integer :: i
+      integer :: iyear
+      integer :: imonth
+      integer :: iday
+      real(kind=dp) :: hour
+
+      INTERFACE
+        real(kind=8)  function HS_HourOfDay(HoursSince,byear,useLeaps)
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
+        end function HS_HourOfDay
+        integer function HS_YearOfEvent(HoursSince,byear,useLeaps)
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
+        end function HS_YearOfEvent
+        integer function HS_MonthOfEvent(HoursSince,byear,useLeaps)
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
+        end function HS_MonthOfEvent
+        integer function HS_DayOfEvent(HoursSince,byear,useLeaps)
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
+        end function HS_DayOfEvent
+      END INTERFACE
+
+      if(outunit.gt.0)then
+        write(outunit,1)&
+         '******************* BLOCK 2 ****************************************************'
+        do i=1,nerup
+          iyear = HS_YearOfEvent(e_ST(i),BaseYear,useLeap)
+          imonth= HS_MonthOfEvent(e_ST(i),BaseYear,useLeap)
+          iday  = HS_DayOfEvent(e_ST(i),BaseYear,useLeap)
+          hour  = HS_HourOfDay(e_ST(i),BaseYear,useLeap)
+          if(src_type.eq.1.or.&
+             src_type.eq.2.or.&
+             src_type.eq.3.or.&
+             src_type.eq.5.or.&
+             src_type.eq.6)then
+            write(outunit,2)iyear,imonth,iday,hour,e_Dur(i),e_PmH(i),e_Vol(i)
+          else
+            ! src_type = 4 (profile)
+            write(outunit,3)iyear,imonth,iday,hour,e_Dur(i),e_PmH(i),e_Vol(i),ep_dz(i),ep_nz(i)
+            write(outunit,4)real(ep_Vol(i,1:ep_nz(i)),kind=4)
+          endif
+        enddo
+        write(outunit,1)&
+         '********************************************************************************'
+      endif
+
+ 1    format(a80)
+ 2    format(3i5,1x,1f8.3,2f15.5,g15.5)
+ 3    format(3i5,1x,1f8.3,2f15.5,g15.5,1f8.2,i5)
+ 4    format(*(f7.4))
+
+      end subroutine SetWrite_input_block_02
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  SetWrite_input_block_03
+!
+!  Called from: help_inputfile  
+!  Arguments:
+!    outunit    = output stream ID or 0 for Set Vars only with no output
+!    iw         = iwind        (windfile class)
+!    iwf        = iwindformat  (windfile product)
+!    igrid      = NCEP grid ID
+!    idf        = data format
+!    iHH        = iHeightHandler
+!    sim_time   = Simulation time
+!    comp_stop  = y/n on whether to stop the simulation early
+!    nwindfiles = number of windfiles
+!
+!  This subroutine writes the content of block 3 (Wind Parameters) of the Ash3d
+!  control file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine SetWrite_input_block_03(outunit,iw,iwf,igrid,idf,iHH,&
+                                         sim_time,comp_stop,nwindfiles)
+
+      use io_units
+
+      integer           ,intent(in) :: outunit
+      integer           ,intent(in) :: iw
+      integer           ,intent(in) :: iwf
+      integer           ,intent(in) :: igrid
+      integer           ,intent(in) :: idf
+      integer           ,intent(in) :: iHH
+      real(kind=dp)     ,intent(in) :: sim_time
+      logical           ,intent(in) :: comp_stop
+      integer           ,intent(in) :: nwindfiles
+
+      if(outunit.gt.0)then
+        write(outunit,1)&
+         '******************* BLOCK 3 ****************************************************'
+        if(igrid.eq.0)then
+          write(outunit,2)iw,iwf
+        else
+          write(outunit,3)iw,iwf,igrid,idf
+        endif
+        write(outunit,4)iHH
+        write(outunit,5)sim_time
+        if(comp_stop)then
+          write(outunit,6)
+        else
+          write(outunit,7)
+        endif
+        write(outunit,8)nwindfiles
+        write(outunit,1)&
+         '********************************************************************************'
+      endif
+
+ 1    format(a80)
+ 2    format(2i5,20x,'# iwind, iwindformat, [igrid, idata]')
+ 3    format(4i5,10x,'# iwind, iwindformat, [igrid, idata]')
+ 4    format(1i5,25x,'# iHeightHandler')
+ 5    format(f13.3,17x,'# Simulation time in hours')
+ 6    format('yes                           # stop computation when 99% of erupted mass has deposited?')
+ 7    format('no                            # stop computation when 99% of erupted mass has deposited?')
+ 8    format(1i5,25x,'# nWindFiles, number of gridded wind files (used if iwind>1)')
+
+      end subroutine SetWrite_input_block_03
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  SetWrite_input_block_04
+!
+!  Called from: help_inputfile  
+!  Arguments:
+!    outunit                         = output stream ID or 0 for Set Vars only with no output
+!    WriteDepositFinal_ASCII_c       = char:  B4L1 n/y Write out ESRI ASCII file of final deposit thickness?
+!    WriteDepositFinal_KML_c         = char:  B4L2 n/y Write out        KML file of final deposit thickness?
+!    WriteDepositTS_ASCII_c          = char:  B4L3 Write out ESRI ASCII deposit files at specified times?
+!    WriteDepositTS_KML_c            = char:  B4L4 Write out        KML deposit files at specified times?
+!    WriteCloudConcentration_ASCII_c = char:  B4L5 Write out ESRI ASCII files of ash-cloud concentration?
+!    WriteCloudConcentration_KML_c   = char:  B4L6 Write out        KML files of ash-cloud concentration?
+!    WriteCloudHeight_ASCII_c        = char:  B4L7 Write out ESRI ASCII files of ash-cloud height?
+!    WriteCloudHeight_KML_c          = char:  B4L8 Write out        KML files of ash-cloud height?
+!    WriteCloudLoad_ASCII_c          = char:  B4L9 Write out ESRI ASCII files of ash-cloud load (T/km2) at specified times? 
+!    WriteCloudLoad_KML_c            = char:  B4L10 Write out        KML files of ash-cloud load (T/km2) at specified times?
+!    WriteDepositTime_ASCII_c        = char:  B4L11 Write out ESRI ASCII file of deposit arrival times?
+!    WriteDepositTime_KML_c          = char:  B4L12 Write out        KML file of deposit arrival times?
+!    WriteCloudTime_ASCII_c          = char:  B4L13 Write out ESRI ASCII file of cloud arrival times
+!    WriteCloudTime_KML_c            = char:  B4L14 Write out        KML file of cloud arrival times?
+!    Write3dFiles_c                  = char:  B4L15 Write out 3-D ash concentration at specified times? / [output code: 1=2d+concen,2=2d only]
+!    ifm                             = integer : B4L15+ output code: 1=2d+concen,2=2d only]
+!    ofm                             = integer : B4L16 format of ash concentration files (1=ascii, 2=binary, or 3=netcdf)
+!    nwt                             = integer : B4L17 nWriteTimes
+!    wts)                            = real(8),dim(nwt) : B4L18 WriteTimes(1:nWriteTimes)
+
+!  This subroutine writes the content of block 4 (Output Options) of the Ash3d
+!  control file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine SetWrite_input_block_04(outunit,                                                       &
+                                         WriteDepositFinal_ASCII_c,WriteDepositFinal_KML_c,             &
+                                         WriteDepositTS_ASCII_c,WriteDepositTS_KML_c,                   &
+                                         WriteCloudConcentration_ASCII_c,WriteCloudConcentration_KML_c, &
+                                         WriteCloudHeight_ASCII_c,WriteCloudHeight_KML_c,               &
+                                         WriteCloudLoad_ASCII_c,WriteCloudLoad_KML_c,                   &
+                                         WriteDepositTime_ASCII_c,WriteDepositTime_KML_c,               &
+                                         WriteCloudTime_ASCII_c,WriteCloudTime_KML_c,                   &
+                                         Write3dFiles_c,ifm,ofm,nwt,intflg,wts)
+
+      use io_units
+
+      integer           ,intent(in) :: outunit
+      character(len=1)  ,intent(in) :: WriteDepositFinal_ASCII_c
+      character(len=1)  ,intent(in) :: WriteDepositFinal_KML_c
+      character(len=1)  ,intent(in) :: WriteDepositTS_ASCII_c
+      character(len=1)  ,intent(in) :: WriteDepositTS_KML_c
+      character(len=1)  ,intent(in) :: WriteCloudConcentration_ASCII_c
+      character(len=1)  ,intent(in) :: WriteCloudConcentration_KML_c
+      character(len=1)  ,intent(in) :: WriteCloudHeight_ASCII_c
+      character(len=1)  ,intent(in) :: WriteCloudHeight_KML_c
+      character(len=1)  ,intent(in) :: WriteCloudLoad_ASCII_c
+      character(len=1)  ,intent(in) :: WriteCloudLoad_KML_c
+      character(len=1)  ,intent(in) :: WriteDepositTime_ASCII_c
+      character(len=1)  ,intent(in) :: WriteDepositTime_KML_c
+      character(len=1)  ,intent(in) :: WriteCloudTime_ASCII_c
+      character(len=1)  ,intent(in) :: WriteCloudTime_KML_c
+      character(len=1)  ,intent(in) :: Write3dFiles_c
+      integer           ,intent(in) :: ifm
+      integer           ,intent(in) :: ofm
+      integer           ,intent(in) :: nwt
+      logical           ,intent(in) :: intflg
+      real(kind=dp),dimension(nwt),intent(in) :: wts
+
+      if(outunit.gt.0)then
+        write(outunit,1)&
+         '******************* BLOCK 4 ****************************************************'
+        if(WriteDepositFinal_ASCII_c      .eq.'n')write(outunit,11)'no '
+        if(WriteDepositFinal_ASCII_c      .eq.'y')write(outunit,11)'yes'
+        if(WriteDepositFinal_KML_c        .eq.'n')write(outunit,21)'no '
+        if(WriteDepositFinal_KML_c        .eq.'y')write(outunit,21)'yes'
+        if(WriteDepositTS_ASCII_c         .eq.'n')write(outunit,31)'no '
+        if(WriteDepositTS_ASCII_c         .eq.'y')write(outunit,31)'yes'
+        if(WriteDepositTS_KML_c           .eq.'n')write(outunit,41)'no '
+        if(WriteDepositTS_KML_c           .eq.'y')write(outunit,41)'yes'
+        if(WriteCloudConcentration_ASCII_c.eq.'n')write(outunit,51)'no '
+        if(WriteCloudConcentration_ASCII_c.eq.'y')write(outunit,51)'yes'
+        if(WriteCloudConcentration_KML_c  .eq.'n')write(outunit,61)'no '
+        if(WriteCloudConcentration_KML_c  .eq.'y')write(outunit,61)'yes'
+        if(WriteCloudHeight_ASCII_c       .eq.'n')write(outunit,71)'no '
+        if(WriteCloudHeight_ASCII_c       .eq.'y')write(outunit,71)'yes'
+        if(WriteCloudHeight_KML_c         .eq.'n')write(outunit,81)'no '
+        if(WriteCloudHeight_KML_c         .eq.'y')write(outunit,81)'yes'
+        if(WriteCloudLoad_ASCII_c         .eq.'n')write(outunit,91)'no '
+        if(WriteCloudLoad_ASCII_c         .eq.'y')write(outunit,91)'yes'
+        if(WriteCloudLoad_KML_c           .eq.'n')write(outunit,101)'no '
+        if(WriteCloudLoad_KML_c           .eq.'y')write(outunit,101)'yes'
+        if(WriteDepositTime_ASCII_c       .eq.'n')write(outunit,111)'no '
+        if(WriteDepositTime_ASCII_c       .eq.'y')write(outunit,111)'yes'
+        if(WriteDepositTime_KML_c         .eq.'n')write(outunit,121)'no '
+        if(WriteDepositTime_KML_c         .eq.'y')write(outunit,121)'yes'
+        if(WriteCloudTime_ASCII_c         .eq.'n')write(outunit,131)'no '
+        if(WriteCloudTime_ASCII_c         .eq.'y')write(outunit,131)'yes'
+        if(WriteCloudTime_KML_c           .eq.'n')write(outunit,141)'no '
+        if(WriteCloudTime_KML_c           .eq.'y')write(outunit,141)'yes'
+        if(Write3dFiles_c                 .eq.'n')write(outunit,151)'no ',ifm
+        if(Write3dFiles_c                 .eq.'y')write(outunit,151)'yes',ifm
+        if(ofm.eq.1)then
+          write(outunit,161)'ascii '
+        elseif(ofm.eq.2)then
+          write(outunit,161)'binary'
+        elseif(ofm.eq.3)then
+          write(outunit,161)'netcdf'
+        endif
+        if(intflg)then
+          ! Output steps are interval-based
+          write(outunit,171)-1
+          write(outunit,181)wts(1)
+        else
+          write(outunit,171)nwt
+          write(outunit,181)wts(1:nwt)
+        endif
+        write(outunit,1)&
+         '********************************************************************************'
+      endif
+
+ 1    format(a80)
+ 11   format(a3,'     # Write out ESRI ASCII file of final deposit thickness?')
+ 21   format(a3,'     # Write out        KML file of final deposit thickness?')
+ 31   format(a3,'     # Write out ESRI ASCII deposit files at specified times?')
+ 41   format(a3,'     # Write out        KML deposit files at specified times?')
+ 51   format(a3,'     # Write out ESRI ASCII files of ash-cloud concentration?')
+ 61   format(a3,'     # Write out        KML files of ash-cloud concentration?')
+ 71   format(a3,'     # Write out ESRI ASCII files of ash-cloud height?')
+ 81   format(a3,'     # Write out        KML files of ash-cloud height?')
+ 91   format(a3,'     # Write out ESRI ASCII files of ash-cloud load (T/km2) at specified times?')
+ 101  format(a3,'     # Write out        KML files of ash-cloud load (T/km2) at specified times?')
+ 111  format(a3,'     # Write out ESRI ASCII file of deposit arrival times?')
+ 121  format(a3,'     # Write out        KML file of deposit arrival times?')
+ 131  format(a3,'     # Write out ESRI ASCII file of cloud arrival times?')
+ 141  format(a3,'     # Write out        KML file of cloud arrival times?')
+ 151  format(a3,2x,i1,'  # Write out 3-D ash concentration at specified times? / [output code: 1=2d+concen,2=2d only]')
+ 161  format(a6,3x,'# format of ash concentration files     (ascii, binary, or netcdf)')
+ 171  format(i3,6x,'# nWriteTimes')
+ 181  format(*(f8.3))
+
+      end subroutine SetWrite_input_block_04
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  SetWrite_input_block_05
+!
+!  Called from: help_inputfile  
+!  Arguments:
+!    outunit    = output stream ID or 0 for Set Vars only with no output
+!    nwindfiles = number of windfiles
+!    windfiles  = names of windfiles
+!
+!  This subroutine writes the content of block 5 (Wind file list) of the Ash3d
+!  control file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine SetWrite_input_block_05(outunit,                                                       &
+                                         nwindfiles,                                                    &
+                                         windfiles)
+
+      use io_units
+
+      use io_data,       only : &
+         cdf_b5l1
+
+      use MetReader,     only : &
+         MR_iwind
+
+      integer           ,intent(in) :: outunit
+      integer           ,intent(in) :: nwindfiles
+      character(len=*),dimension(nwindfiles),intent(in) :: windfiles
+
+      integer :: i
+      integer :: ilen
+      character(len=130) :: linebuffer130
+
+      if(outunit.gt.0)then
+        write(outunit,1)&
+         '******************* BLOCK 5 ****************************************************'
+        if(MR_iwind.eq.5)then
+          ! For the NWP products with hardwired paths, we need to use the original one-line
+          ! entry in the input file stored in cdf_b5l1
+          write(outunit,'(a)')trim(cdf_b5l1)
+        else
+          do i=1,nwindfiles
+            linebuffer130 = windfiles(i)
+            call FileIO_CleanLine(.false.,ilen,linebuffer130)
+            write(outunit,'(a)')trim(adjustl(linebuffer130))
+          enddo
+        endif
+        write(outunit,1)&
+         '********************************************************************************'
+      endif
+
+ 1    format(a80)
+
+      end subroutine SetWrite_input_block_05
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  SetWrite_input_block_06
+!
+!  Called from: help_inputfile  
+!  Arguments:
+!    outunit                   = output stream ID or 0 for Set Vars only with no output
+!    WriteAirportFile_ASCII_c  = Write out ash arrival times at airports to ASCII FILE?
+!    WriteGSD_c                = Write out grain-size distribution to ASCII airport file?
+!    WriteAirportFile_KML_c    = Write out ash arrival times to kml file?
+!    b6l4                      = Name of file containing airport locations
+!    ProjectAirportLocations_c = Defer to Lon/Lat coordinates? ("no" defers to projected)
+!    
+!  This subroutine writes the content of block 6 (Airport/POI info.) of the
+!  Ash3d control file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine SetWrite_input_block_06(outunit,  &
+                                         WriteAirportFile_ASCII_c,WriteGSD_c, &
+                                         WriteAirportFile_KML_c,b6l4, &
+                                         ProjectAirportLocations_c)
+
+      use io_units
+
+      integer           ,intent(in) :: outunit
+      character(len=1)  ,intent(in) :: WriteAirportFile_ASCII_c
+      character(len=1)  ,intent(in) :: WriteGSD_c
+      character(len=1)  ,intent(in) :: WriteAirportFile_KML_c
+      character(len=80) ,intent(in) :: b6l4
+      character(len=1)  ,intent(in) :: ProjectAirportLocations_c
+
+
+      if(outunit.gt.0)then
+        write(outunit,1)&
+         '******************* BLOCK 6 ****************************************************'
+        if(WriteAirportFile_ASCII_c.eq.'n')write(outunit,11)'no '
+        if(WriteAirportFile_ASCII_c.eq.'y')write(outunit,11)'yes'
+
+        if(WriteGSD_c.eq.'n')write(outunit,21)'no '
+        if(WriteGSD_c.eq.'y')write(outunit,21)'yes'
+
+        if(WriteAirportFile_KML_c.eq.'n')write(outunit,31)'no '
+        if(WriteAirportFile_KML_c.eq.'y')write(outunit,31)'yes'
+
+        write(outunit,41)b6l4(1:30)
+
+        if(ProjectAirportLocations_c.eq.'n')write(outunit,51)'no '
+        if(ProjectAirportLocations_c.eq.'y')write(outunit,51)'yes'
+
+        write(outunit,1)&
+         '********************************************************************************'
+      endif
+
+ 1    format(a80)
+ 11   format(a3,'     # Write out ash arrival times at airports to ASCII FILE?')
+ 21   format(a3,'     # Write out grain-size distribution to ASCII airport file?')
+ 31   format(a3,'     # Write out ash arrival times to kml file?')
+ 41   format(a30,'    # Name of file containing airport locations')
+ 51   format(a3,'     # Defer to Lon/Lat coordinates? ("no" defers to projected)')
+
+      end subroutine SetWrite_input_block_06
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  SetWrite_input_block_07
+!    outunit         = output stream ID or 0 for Set Vars only with no output
+!
+!  Called from: help_inputfile  
+!  Arguments:
+!    
+!  This subroutine writes the content of block 7 (GSD specification) of the
+!  Ash3d control file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine SetWrite_input_block_07(outunit                   ,&
+                                         ns                        ,&  ! number of actual grain-size bins 
+                                         fv_idx                    ,&  ! 
+                                         shape_idx                 ,&  ! 
+                                         mf                        ,&  ! 
+                                         phim                      ,&  ! 
+                                         phisig                    ,&  ! 
+                                         T_diam                    ,&  ! 
+                                         T_mf                      ,&  ! 
+                                         T_fv                      ,&  !
+                                         T_rho                     ,&  ! 
+                                         T_F                       ,&  ! 
+                                         T_G                       ,&  ! 
+                                         T_phi)                        !
+
+      use io_units
+
+      use global_param,  only : &
+         useLogNormGSbins,M_2_MM
+
+      use Tephra,        only : &
+         n_gs_max,Tephra_gsdiam,Tephra_v_s,Tephra_bin_mass,Tephra_rho_m,FV_ID,&
+         Tephra_gsF,Tephra_gsG,Tephra_gsPhi,Shape_ID,Tephra_Ncols,&
+         LN_massfrac,LN_phi_mean,LN_phi_stddev,LN_suppl_frac
+
+      integer                    ,intent(in) :: outunit
+      integer                    ,intent(in) :: ns
+      integer                    ,intent(in) :: fv_idx
+      integer                    ,intent(in) :: shape_idx
+      real(kind=ip)              ,intent(in) :: mf
+      real(kind=ip)              ,intent(in) :: phim
+      real(kind=ip)              ,intent(in) :: phisig
+      real(kind=ip),dimension(ns),intent(in) :: T_diam
+      real(kind=ip),dimension(ns),intent(in) :: T_mf
+      real(kind=ip),dimension(ns),intent(in) :: T_fv
+      real(kind=ip),dimension(ns),intent(in) :: T_rho
+      real(kind=ip),dimension(ns),intent(in) :: T_F
+      real(kind=ip),dimension(ns),intent(in) :: T_G
+      real(kind=ip),dimension(ns),intent(in) :: T_phi
+
+      integer :: isize
+
+      n_gs_max        = ns
+      FV_ID           = fv_idx
+      Shape_ID        = shape_idx
+      LN_massfrac     = mf
+      LN_phi_mean     = phim
+      LN_phi_stddev   = phisig
+#ifdef USEPOINTERS
+      if(.not.associated(Tephra_gsdiam))then
+#else
+      if(.not.allocated(Tephra_gsdiam))then
+#endif
+        allocate(Tephra_gsdiam(n_gs_max))
+      endif
+      ! Assign Tephra_gsdiam in m
+      Tephra_gsdiam(1:ns)   = T_diam(1:ns)
+#ifdef USEPOINTERS
+      if(.not.associated(Tephra_bin_mass))then
+#else
+      if(.not.allocated(Tephra_bin_mass))then
+#endif
+        allocate(Tephra_bin_mass(n_gs_max))
+      endif
+      Tephra_bin_mass(1:ns) = T_mf(1:ns)
+      if(useLogNormGSbins)then
+        ! If a Log-normal supplement was used, recover the original list.
+        ! Note, this may have been sorted by size and in a different order than originally
+        ! given.
+        do isize = 1,n_gs_max
+          Tephra_bin_mass(isize) = Tephra_bin_mass(isize) - LN_suppl_frac(isize)*LN_massfrac
+        enddo
+      endif
+
+#ifdef USEPOINTERS
+      if(.not.associated(Tephra_v_s))then
+#else
+      if(.not.allocated(Tephra_v_s))then
+#endif
+        allocate(Tephra_v_s(n_gs_max))
+      endif
+      Tephra_v_s(1:ns) = T_fv(1:ns)
+
+#ifdef USEPOINTERS
+      if(.not.associated(Tephra_rho_m))then
+#else
+      if(.not.allocated(Tephra_rho_m))then
+#endif
+        allocate(Tephra_rho_m(n_gs_max))
+      endif
+      Tephra_rho_m(1:ns)    = T_rho(1:ns)
+#ifdef USEPOINTERS
+      if(.not.associated(Tephra_gsF))then
+#else
+      if(.not.allocated(Tephra_gsF))then
+#endif
+        allocate(Tephra_gsF(n_gs_max))
+      endif
+      Tephra_gsF(1:ns)      = T_F(1:ns)
+#ifdef USEPOINTERS
+      if(.not.associated(Tephra_gsG))then
+#else
+      if(.not.allocated(Tephra_gsG))then
+#endif
+        allocate(Tephra_gsG(n_gs_max))
+      endif
+      Tephra_gsG(1:ns)      = T_G(1:ns)
+#ifdef USEPOINTERS
+      if(.not.associated(Tephra_gsPhi))then
+#else
+      if(.not.allocated(Tephra_gsPhi))then
+#endif
+        allocate(Tephra_gsPhi(n_gs_max))
+      endif
+      Tephra_gsPhi(1:ns)    = T_phi(1:ns)
+
+      ! Finally, write out block
+      if(outunit.gt.0)then
+        write(outunit,1)&
+         '******************* BLOCK 7 ****************************************************'
+        if(useLogNormGSbins)then
+          ! For the log-normal supplemental line, we need to bump n_gs_max by one
+          write(outunit,11)n_gs_max+1,FV_ID,Shape_ID
+        else
+          write(outunit,11)n_gs_max,FV_ID,Shape_ID
+        endif
+        if(Tephra_Ncols.eq.2)then
+          ! 2-columns is just: fall-velocity (m/s), mass-fraction
+          do isize = 1,n_gs_max
+            write(outunit,12)Tephra_v_s(isize),Tephra_bin_mass(isize)
+          enddo        
+        elseif(Tephra_Ncols.eq.3)then
+          ! 3-columns is: diameter (mm), mass fraction, density (kg/m3)
+          do isize = 1,n_gs_max
+            write(outunit,13)Tephra_gsdiam(isize)*M_2_MM,Tephra_bin_mass(isize),Tephra_rho_m(isize)
+          enddo
+        elseif(Tephra_Ncols.eq.4)then
+          ! 4-columns is: diameter (mm), mass fraction, density (kg/m3), Shape F (or Psi)
+          do isize = 1,n_gs_max  
+            if(Shape_ID.eq.2)then
+              write(outunit,14)Tephra_gsdiam(isize)*M_2_MM,Tephra_bin_mass(isize),Tephra_rho_m(isize),&
+                               Tephra_gsPhi(isize)
+            else
+              write(outunit,14)Tephra_gsdiam(isize)*M_2_MM,Tephra_bin_mass(isize),Tephra_rho_m(isize),&
+                               Tephra_gsF(isize)
+            endif
+          enddo
+        elseif(Tephra_Ncols.eq.5)then
+          ! 5-columns is: diameter (mm), mass fraction, density (kg/m3), Shape F, G
+          do isize = 1,n_gs_max
+            write(outunit,15)Tephra_gsdiam(isize)*M_2_MM,Tephra_bin_mass(isize),Tephra_rho_m(isize),&
+                             Tephra_gsF(isize),Tephra_gsG(isize)
+          enddo
+        else
+          ! Number of columns of original control file not recorded in this NetCDF file, assume 4
+          do isize = 1,n_gs_max
+            if(Shape_ID.eq.2)then
+              write(outunit,14)Tephra_gsdiam(isize)*M_2_MM,Tephra_bin_mass(isize),Tephra_rho_m(isize),&
+                               Tephra_gsPhi(isize)
+            else
+              write(outunit,14)Tephra_gsdiam(isize)*M_2_MM,Tephra_bin_mass(isize),Tephra_rho_m(isize),&
+                               Tephra_gsF(isize)
+            endif
+          enddo
+        endif
+  
+        if(useLogNormGSbins)then
+          write(outunit,16)-1,LN_phi_mean,LN_phi_stddev
+        endif
+        write(outunit,1)&
+         '********************************************************************************'
+      endif
+
+ 1    format(a80)
+ 11   format(i2,2x,i1,2x,i1,24x,'# Number of grain-size bins. FV_ID not given; defaults to 1')
+ 12   format(f8.5,1x,f8.5)
+ 13   format(f8.5,1x,f8.5,1x,f8.1)
+ 14   format(f8.5,1x,f8.5,1x,f8.1,1x,f8.3)
+ 15   format(f8.5,1x,f8.5,1x,f8.1,1x,f8.3,1x,f8.3)
+ 16   format(i2,1x,f8.5,1x,f8.1)
+
+      end subroutine SetWrite_input_block_07
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  SetWrite_input_block_08
+!
+!  Called from: help_inputfile  
+!  Arguments:
+!    outunit         = output stream ID or 0 for Set Vars only with no output
+!    
+!  This subroutine writes the content of block 8 (Vertical profile info.) of
+!  the Ash3d control file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine SetWrite_input_block_08(outunit,nprof,x_prof,y_prof,name_prof)
+
+      use io_units
+
+      use io_data,       only : &
+         nvprofiles,Site_vprofile,x_vprofile, y_vprofile
+
+      integer                           ,intent(in) :: outunit
+      integer                           ,intent(in) :: nprof
+      real(kind=ip)    ,dimension(*),intent(in) :: x_prof
+      real(kind=ip)    ,dimension(*),intent(in) :: y_prof
+      character(len=50),dimension(*),intent(in) :: name_prof
+
+      integer :: iprof
+
+      nvprofiles   = nprof
+
+#ifdef USEPOINTERS
+      if(.not.associated(x_vprofile))then
+#else
+      if(.not.allocated(x_vprofile))then
+#endif
+        allocate(x_vprofile(nvprofiles))
+      endif
+      x_vprofile(1:nvprofiles) = x_prof(1:nvprofiles)
+
+#ifdef USEPOINTERS
+      if(.not.associated(y_vprofile))then
+#else
+      if(.not.allocated(y_vprofile))then
+#endif
+        allocate(y_vprofile(nvprofiles))
+      endif
+      y_vprofile(1:nvprofiles) = y_prof(1:nvprofiles)
+
+#ifdef USEPOINTERS
+      if(.not.associated(Site_vprofile))then
+#else
+      if(.not.allocated(Site_vprofile))then
+#endif
+        allocate(Site_vprofile(nvprofiles))
+      endif
+      Site_vprofile(1:nvprofiles) = name_prof(1:nvprofiles)
+
+      ! Finally, write out block
+      if(outunit.gt.0)then
+        write(outunit,1)&
+         '******************* BLOCK 8 ****************************************************'
+          write(outunit,11)nvprofiles
+          if(nvprofiles.gt.0)then
+            do iprof = 1,nvprofiles
+              write(outunit,12)x_vprofile(iprof),y_vprofile(iprof),Site_vprofile(iprof)
+            enddo
+          endif
+        write(outunit,1)&
+         '********************************************************************************'
+      endif
+
+ 1    format(a80)
+ 11   format(i3,27x,'# number of locations for vertical profiles (nlocs)')
+ 12   format(f13.5,2x,f13.5,2x,a50)
+
+      end subroutine SetWrite_input_block_08
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  SetWrite_input_block_09
+!
+!  Called from: help_inputfile  
+!  Arguments:
+!    outunit         = output stream ID or 0 for Set Vars only with no output
+!    
+!  This subroutine writes the content of block 9 (NetCDF annotations) of the
+!  Ash3d control file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine SetWrite_input_block_09(outunit,ofilename,title,comment)
+
+      use io_units
+
+      use io_data,       only : &
+         concenfile,cdf_title,cdf_comment
+
+      integer           ,intent(in) :: outunit
+      character(len=80) ,intent(in) :: ofilename
+      character(len=130),intent(in) :: title
+      character(len=80) ,intent(in) :: comment
+
+      concenfile  = ofilename
+      cdf_title   = title
+      cdf_comment = comment
+
+      if(outunit.gt.0)then
+        write(outunit,1)&
+         '******************* BLOCK 9 ****************************************************'
+        write(outunit,1)adjustl(concenfile)
+        write(outunit,2)adjustl(cdf_title)
+        write(outunit,1)adjustl(cdf_comment)
+        write(outunit,1)&
+         '********************************************************************************'
+      endif
+
+ 1    format(a80)
+ 2    format(a130)
+
+      end subroutine SetWrite_input_block_09
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  SetWrite_input_block_ResetParam
+!
+!  Called from: help_inputfile  
+!  Arguments:
+!    outunit         = output stream ID or 0 for Set Vars only with no output
+!    
+!  This subroutine writes the content of block 10+ (OPTMOD=RESETPARAMS) of the
+!  Ash3d control file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine SetWrite_input_block_ResetParam(outunit)
+
+      use io_units
+
+      use global_param,  only : &
+         GRAV,GRAV_Default,RAD_EARTH,RAD_EARTH_Default,CFL,CFL_Default,DT_MIN,DT_MIN_Default,&
+         DT_MAX,DT_MAX_Default,useVz_rhoG,useVz_rhoG_Default,useMoistureVars,useMoistureVars_Default
+
+      use io_data,       only : &
+         cdf_institution,cdf_institution_Default,cdf_run_class,cdf_run_class_Default,&
+         cdf_url,cdf_url_Default
+
+      use mesh,          only : &
+         ZPADDING,ZPADDING_Default
+
+      use Tephra,        only : &
+         MagmaDensity,MagmaDensity_Default,DepositDensity,DepositDensity_Default,&
+         LAM_GS_THRESH,LAM_GS_THRESH_Default,AIRBORNE_THRESH,AIRBORNE_THRESH_Default
+
+      use Output_Vars,   only : &
+         DEPO_THRESH,DEPO_THRESH_Default,DEPRATE_THRESH,DEPRATE_THRESH_Default,&
+         CLOUDCON_THRESH,CLOUDCON_THRESH_Default,CLOUDCON_GRID_THRESH,CLOUDCON_GRID_THRESH_Default,&
+         CLOUDLOAD_THRESH,CLOUDLOAD_THRESH_Default,THICKNESS_THRESH,THICKNESS_THRESH_Default,&
+         DBZ_THRESH,DBZ_THRESH_Default,useWindVars,useWindVars_Default,useOutprodVars,useOutprodVars_Default,&
+         useRestartVars,useRestartVars_Default
+
+      use Diffusion,     only : &
+         Imp_fac,Imp_fac_Default,Imp_DT_fac,Imp_DT_fac_Default
+
+      use Source_Umbrella,only : &
+         VelMod_umb,VelMod_umb_Default,k_entrainment_umb,k_entrainment_umb_Default,&
+         lambda_umb,lambda_umb_Default,N_BV_umb,N_BV_umb_Default,&
+         SuzK_umb,SuzK_umb_Default
+
+      integer           ,intent(in) :: outunit
+
+      real(kind=ip) :: tmp1,tmp2,rerr
+      integer       :: dumint1,dumint2
+
+      if(outunit.gt.0)then
+        write(outunit,1)&
+         '******************* BLOCK 10+ **************************************************'
+        write(outunit,'(a18)')'OPTMOD=RESETPARAMS'
+        ! Parameters from Tephra
+        tmp1=MagmaDensity
+        tmp2=MagmaDensity_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'MagmaDensity        ',tmp1
+        tmp1=DepositDensity
+        tmp2=DepositDensity_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'DepositDensity      ',tmp1
+        tmp1=LAM_GS_THRESH
+        tmp2=LAM_GS_THRESH_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'LAM_GS_THRESH       ',tmp1
+        tmp1=AIRBORNE_THRESH
+        tmp2=AIRBORNE_THRESH_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'AIRBORNE_THRESH     ',tmp1
+        ! Parameters from global_param
+        tmp1=GRAV
+        tmp2=GRAV_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'GRAV                ',tmp1
+        tmp1=CFL
+        tmp2=CFL_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'CFL                 ',tmp1
+        tmp1=RAD_EARTH
+        tmp2=RAD_EARTH_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'RAD_EARTH           ',tmp1
+        tmp1=DT_MIN
+        tmp2=DT_MIN_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'DT_MIN              ',tmp1
+        tmp1=DT_MAX
+        tmp2=DT_MAX_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'DT_MAX               ',tmp1
+        if(useVz_rhoG)then
+          dumint1 = 1
+        else
+          dumint1 = 0
+        endif
+        if(useVz_rhoG.neqv.useVz_rhoG_Default) &
+                          write(outunit,3)'useVz_rhoG           ',dumint1
+        if(useMoistureVars)then
+          dumint1 = 1
+        else
+          dumint1 = 0
+        endif
+        if(useMoistureVars.neqv.useMoistureVars_Default) &
+                          write(outunit,3)'useMoistureVars      ',dumint1
+        ! Parameters from mesh
+        tmp1=ZPADDING
+        tmp2=ZPADDING_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'ZPADDING             ',tmp1
+
+        ! Parameters from Output_Vars
+        tmp1=DEPO_THRESH
+        tmp2=DEPO_THRESH_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'DEPO_THRESH         ',tmp1
+        tmp1=DEPRATE_THRESH
+        tmp2=DEPRATE_THRESH_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'DEPRATE_THRESH      ',tmp1
+        tmp1=CLOUDCON_THRESH
+        tmp2=CLOUDCON_THRESH_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'CLOUDCON_THRESH     ',tmp1
+        tmp1=CLOUDCON_GRID_THRESH
+        tmp2=CLOUDCON_GRID_THRESH_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'CLOUDCON_GRID_THRESH',tmp1
+        tmp1=CLOUDLOAD_THRESH
+        tmp2=CLOUDLOAD_THRESH_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'CLOUDLOAD_THRESH    ',tmp1
+        tmp1=THICKNESS_THRESH
+        tmp2=THICKNESS_THRESH_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'THICKNESS_THRESH    ',tmp1
+        tmp1=DBZ_THRESH
+        tmp2=DBZ_THRESH_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'DBZ_THRESH          ',tmp1
+        if(useWindVars)then
+          dumint1 = 1
+        else
+          dumint1 = 0
+        endif
+        if(useWindVars.neqv.useWindVars_Default) &
+                          write(outunit,3)'useWindVars         ',dumint1
+        if(useOutprodVars)then
+          dumint1 = 1
+        else
+          dumint1 = 0
+        endif
+        if(useOutprodVars.neqv.useOutprodVars_Default) &
+                          write(outunit,3)'useOutprodVars       ',dumint1
+        if(useRestartVars)then
+          dumint1 = 1
+        else
+          dumint1 = 0
+        endif
+        if(useRestartVars.neqv.useRestartVars_Default) &
+                          write(outunit,3)'useRestartVars       ',dumint1
+
+        ! Parameters from Diffusion
+        tmp1=Imp_fac
+        tmp2=Imp_fac_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'Imp_fac              ',tmp1
+        tmp1=Imp_DT_fac
+        tmp2=Imp_DT_fac_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'Imp_DT_fac          ',tmp1
+
+        ! Parameters from Source_Umbrella
+        if(VelMod_umb.ne.VelMod_umb_Default) &
+                          write(outunit,3)'VelMod_umb           ',tmp1
+        tmp1=k_entrainment_umb
+        tmp2=k_entrainment_umb_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'k_entrainment_umb    ',tmp1
+        tmp1=lambda_umb
+        tmp2=lambda_umb_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'lambda_umb           ',tmp1
+        tmp1=N_BV_umb
+        tmp2=N_BV_umb_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'N_BV_umb             ',tmp1
+        tmp1=SuzK_umb
+        tmp2=SuzK_umb_Default
+        rerr=abs(tmp1-tmp2)/tmp1
+        if(rerr.gt.1.0e-3)write(outunit,2)'SuzK_umb             ',tmp1
+
+        ! Parameters from io_data
+        dumint1=index(cdf_institution,cdf_institution_Default)
+        dumint2=index(cdf_institution_Default,cdf_institution)
+        if(dumint1.gt.0.and.dumint2.gt.0.and.dumint1.ne.dumint2)&
+                          write(outunit,4)'cdf_institution      ',trim(adjustl(cdf_institution))
+        dumint1=index(cdf_run_class,cdf_run_class_Default)
+        dumint2=index(cdf_run_class_Default,cdf_run_class)
+        if(dumint1.gt.0.and.dumint2.gt.0.and.dumint1.ne.dumint2)&
+                          write(outunit,4)'cdf_run_class        ',trim(adjustl(cdf_run_class))
+
+        dumint1=index(cdf_url,cdf_url_Default)
+        dumint2=index(cdf_url_Default,cdf_url)
+        if(dumint1.gt.0.and.dumint2.gt.0.and.dumint1.ne.dumint2)&
+                          write(outunit,4)'cdf_url              ',trim(adjustl(cdf_url))
+
+        write(outunit,1)&
+         '********************************************************************************'
+      endif
+
+ 1    format(a80)
+ 2    format(a20,' = ',g10.3)
+ 3    format(a20,' = ',i1)
+ 4    format(a20,' = ',g0)
+
+      end subroutine SetWrite_input_block_ResetParam
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  SetWrite_input_block_Topo
+!
+!  Called from: help_inputfile  
+!  Arguments:
+!    outunit         = output stream ID or 0 for Set Vars only with no output
+!    
+!  This subroutine writes the content of block 10+ (OPTMOD=TOPO) of the Ash3d
+!  control file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine SetWrite_input_block_Topo(outunit,line1,line2,line3,line4)
+
+      use io_units
+
+      use Topography,  only : &
+         var_User_charlines_Topo
+
+      integer           ,intent(in) :: outunit
+      character(len=80) ,intent(in) :: line1
+      character(len=80) ,intent(in) :: line2
+      character(len=80) ,intent(in) :: line3
+      character(len=80) ,intent(in) :: line4
+
+      var_User_charlines_Topo(1) = line1
+      var_User_charlines_Topo(2) = line2
+      var_User_charlines_Topo(3) = line3
+      var_User_charlines_Topo(4) = line4
+
+      if(outunit.gt.0)then
+        write(outunit,1)&
+         '********************************************************************************'
+        write(outunit,1)adjustl(line1)
+        write(outunit,1)adjustl(line2)
+        write(outunit,1)adjustl(line3)
+        write(outunit,1)adjustl(line4)
+        write(outunit,1)&
+         '********************************************************************************'
+      endif
+
+ 1    format(a80)
+
+      end subroutine SetWrite_input_block_Topo
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  SetWrite_input_block_VarDiff
+!
+!  Called from: help_inputfile  
+!  Arguments:
+!    outunit         = output stream ID or 0 for Set Vars only with no output
+!    
+!  This subroutine writes the content of block 10+ (OPTMOD=VARDIFF) of the
+!  Ash3d control file.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine SetWrite_input_block_VarDiff(outunit,line1,line2,line3,line4,line5, &
+                                              line6,line7,line8,line9)
+
+      use io_units
+
+      use Diffusivity_Variable,  only : &
+         var_User_charlines_VarDiff
+
+      integer           ,intent(in) :: outunit
+      character(len=80) ,intent(in) :: line1
+      character(len=80) ,intent(in) :: line2
+      character(len=80) ,intent(in) :: line3
+      character(len=80) ,intent(in) :: line4
+      character(len=80) ,intent(in) :: line5
+      character(len=80) ,intent(in) :: line6
+      character(len=80) ,intent(in) :: line7
+      character(len=80) ,intent(in) :: line8
+      character(len=80) ,intent(in) :: line9
+
+      var_User_charlines_VarDiff(1) = line1
+      var_User_charlines_VarDiff(2) = line2
+      var_User_charlines_VarDiff(3) = line3
+      var_User_charlines_VarDiff(4) = line4
+      var_User_charlines_VarDiff(5) = line5
+      var_User_charlines_VarDiff(6) = line6
+      var_User_charlines_VarDiff(7) = line7
+      var_User_charlines_VarDiff(8) = line8
+      var_User_charlines_VarDiff(9) = line9
+
+      if(outunit.gt.0)then
+        write(outunit,1)&
+         '********************************************************************************'
+        write(outunit,1)adjustl(line1)
+        write(outunit,1)adjustl(line2)
+        write(outunit,1)adjustl(line3)
+        write(outunit,1)adjustl(line4)
+        write(outunit,1)adjustl(line5)
+        write(outunit,1)adjustl(line6)
+        write(outunit,1)adjustl(line7)
+        write(outunit,1)adjustl(line8)
+        write(outunit,1)adjustl(line9)
+        write(outunit,1)&
+         '********************************************************************************'
+      endif
+
+ 1    format(a80)
+
+      end subroutine SetWrite_input_block_VarDiff
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

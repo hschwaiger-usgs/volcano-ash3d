@@ -37,11 +37,14 @@
          z_lb_pd,z_cc_pd,dz_vec_pd,z_vec_init, &
          sigma_nx_pd,sigma_ny_pd,sigma_nz_pd,kappa_pd,&
          xLL,yLL,latLL,lonLL, &
-         A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_phi1,&
+         A3d_iprojflag,A3d_k0,A3d_phi0,A3d_lam0,A3d_phi1,&
          A3d_phi2,A3d_Re,IsLatLon,IsPeriodic
 
       use time_data,     only : &
          SimStartHour,Simtime_in_hours
+
+      use wind_grid,     only : &
+         Load_Windfiles
 
       use Source,        only : &
          lat_volcano
@@ -56,12 +59,16 @@
 
       integer :: i,j,k
 
-      real(kind=ip) :: r_1,r_2,rr_2,rr_1,drr,drrr
+      real(kind=ip) :: r_1,r_2,rr_1,drr,drrr
       real(kind=ip) :: phi_1,phi_2
       real(kind=ip) :: theta_1,theta_2,del_theta,del_costheta
       real(kind=ip) :: del_lam
       real(kind=ip) :: phi_bot,phi_top,phi
       real(kind=sp),allocatable,dimension(:) :: dumx_sp,dumy_sp,dumz_sp
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine calc_mesh_params"
+      endif;enddo
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"--------------------------------------------------"
@@ -115,7 +122,6 @@
           r_2  = RAD_EARTH+z_cc_pd(k)+0.5_ip*dz_vec_pd(k)  ! r at top of cell
 
           rr_1 =      r_1*r_1
-          rr_2 =      r_2*r_2
           drr  = (    r_2*r_2 -     r_1*r_1)  ! difference of squares
           drrr = (r_2*r_2*r_2 - r_1*r_1*r_1)  ! difference of cubes
           do j=-1,nymax+2
@@ -186,7 +192,7 @@
         ! Initialize the grids needed for met data
       call MR_Set_CompProjection(IsLatLon,A3d_iprojflag,A3d_lam0, &
                                  A3d_phi0,A3d_phi1,A3d_phi2,       &
-                                 A3d_k0_scale,A3d_Re)
+                                 A3d_k0,A3d_Re)
       allocate(dumx_sp(nxmax))
       allocate(dumy_sp(nymax))
       allocate(dumz_sp(nzmax))
@@ -199,7 +205,7 @@
         dumy_sp(1:nymax) = real(  y_cc_pd(1:nymax),kind=sp)
         dumz_sp(1:nzmax) = real(  z_cc_pd(1:nzmax),kind=sp)
       endif
-      call MR_Initialize_Met_Grids(nxmax,nymax,nzmax,             &
+      if(Load_Windfiles)call MR_Initialize_Met_Grids(nxmax,nymax,nzmax,             &
                               dumx_sp,dumy_sp,dumz_sp,            &
                               IsPeriodic)
 
@@ -213,7 +219,13 @@
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Now determining which NWP files and steps needed."
       endif;enddo
-      call MR_Set_Met_Times(SimStartHour, Simtime_in_hours)
+      if(Load_Windfiles)call MR_Set_Met_Times(SimStartHour, Simtime_in_hours)
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine calc_mesh_params"
+      endif;enddo
+
+      return
 
 30    format(/,4x,'Calculating the locations of each cell-centered node in the grid.')
   
@@ -241,6 +253,9 @@
 
       use precis_param
 
+      use global_param,  only : &
+         CFL
+
       use io_units
 
       use mesh,          only : &
@@ -259,6 +274,11 @@
 
       real(kind=sp),allocatable,dimension(:) :: dums_sp
       integer       :: i,j
+      real(kind=ip) :: j_max
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine calc_s_mesh"
+      endif;enddo
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"--------------------------------------------------"
@@ -308,6 +328,16 @@
       ! the scaled coordinates. Note: these variables are in km2 and km3
       ! since the jacobian for all cases is unitless
       if(ZScaling_ID.eq.2)then
+        ! The Jacobian measures the change in volumen of the cell which is
+        ! accommodated by a change in thickness. We have to scale the CFL to
+        ! be stable with these squeezed cells
+        j_max = maxval(j_cc_pd(:,:))
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Cells are thinned by up to ",real(j_max,kind=4)
+          write(outlog(io),*)"Resetting CFL from ",real(CFL,kind=4)
+          write(outlog(io),*)"  to ",real(CFL * j_max,kind=4)
+        endif;enddo
+        CFL = CFL * j_max
         do i=-1,nxmax+2
           do j=-1,nymax+2
             ! Note that sigma_nz_pd is unaffected
@@ -320,6 +350,12 @@
           enddo
         enddo
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine calc_s_mesh"
+      endif;enddo
+
+      return
 
       end subroutine calc_s_mesh
 
@@ -348,7 +384,7 @@
 
       use mesh,              only : &
          nxmax,nymax,x_cc_pd,y_cc_pd,xy2ll_xlon,xy2ll_ylat,&
-         A3d_iprojflag,A3d_k0_scale,A3d_phi0,A3d_lam0,A3d_phi1,&
+         A3d_iprojflag,A3d_k0,A3d_phi0,A3d_lam0,A3d_phi1,&
          A3d_phi2,A3d_Re
 
       use projection,        only : &
@@ -366,9 +402,10 @@
       real(kind=8)  :: xin,yin
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
-        write(outlog(io),*)"Inside get_minmax_lonlat"
-        write(outlog(io),*)"Allocating of size: ",nxmax+2,nymax+2
+        write(outlog(io),*)"     Entered Subroutine get_minmax_lonlat"
+        write(outlog(io),*)"      Allocating of size: ",nxmax+2,nymax+2
       endif;enddo
+
 #ifdef USEPOINTERS
       if(.not.associated(xy2ll_ylat))then
 #else
@@ -384,10 +421,11 @@
         allocate(xy2ll_xlon(-1:nxmax+2,-1:nymax+2)); xy2ll_xlon(:,:) = 0.0_ip
       endif
       ! This block calculates the lon/lat for each computational grid point
-      ! Note:  All we need here is just the min/max for lat/lon so that we
+      ! Note:  Sometimes, all we need here is just the min/max for lat/lon so that we
       !        can generate our own, regular lat/lon grid filled with
-      !        interpolated values.
-      !     HFS: change this to just calculate the edge inverse-projection
+      !        interpolated values. We would only need to inverse-project the edge
+      !        values. Often (e.g interpolating topography), we do need the lon/lat
+      !        for every point.
       latmax =  -90.0_8
       latmin =   90.0_8
       lonmin =  360.0_8
@@ -398,7 +436,7 @@
           yin = real(y_cc_pd(j),kind=dp)
           call PJ_proj_inv(xin,yin, &
                          A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                         A3d_k0_scale,A3d_Re, &
+                         A3d_k0,A3d_Re, &
                          olam,ophi)
           if(olam.lt.lonmin)lonmin=olam
           if(olam.gt.lonmax)lonmax=olam
@@ -409,6 +447,12 @@
           xy2ll_ylat(i,j) = real(ophi,kind=ip)
         enddo
       enddo
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine get_minmax_lonlat"
+      endif;enddo
+
+      return
 
       end subroutine get_minmax_lonlat
 
@@ -538,6 +582,12 @@
         kmax = min(kmax+1,nzmax)
         kmin = kmax-2
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine get_minmax_index"
+      endif;enddo
+
+      return
 
       end subroutine get_minmax_index
 

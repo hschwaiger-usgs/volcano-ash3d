@@ -8,10 +8,13 @@
 !
 !      subroutine Allocate_Atmosphere_Met
 !      subroutine Deallocate_Atmosphere_Met
-!      subroutine Set_Atmosphere_Meso(Load_MesoSteps,Interval_Frac,first_time)
+!      subroutine Read_Next_MesoStep_TQ(Load_Prestep)
+!      subroutine Set_VirtPotenTemp(Load_Prestep)
+!      subroutine Set_SolarZenith(Load_Prestep)
 !      function Dens_IdealGasLaw(pres,temp)
 !      function Visc_Sutherland(temp)
 !      function lambda_MeanFreePath(visc,pres,temp)
+!      function solar_zenith(lon,lat,jday,hh,mm)
 !
 !##############################################################################
 
@@ -29,45 +32,85 @@
         ! Publicly available subroutines/functions
       public Allocate_Atmosphere_Met,   &
              Deallocate_Atmosphere_Met, &
-             Set_Atmosphere_Meso
+             Read_Next_MesoStep_TQ,     &
+             Set_VirtPotenTemp,         &
+             Set_SolarZenith,           &
+             solar_zenith
 
         ! Publicly available variables
-        ! Define atmospheric variables only needed on the native Met grid
+        ! Define atmospheric variables only needed on the native MetP grid
         !  Physical Properties of air
         !  meso means grid of the met. file
 #ifdef USEPOINTERS
         ! Density is in kg/m^3
         ! Viscosity is in kg/(m s)
         ! Mean free path (lambda) is in m
-      real(kind=sp),dimension(:,:,:),pointer,public :: AirDens_meso_last_step_MetP_sp => null()
-      real(kind=sp),dimension(:,:,:),pointer,public :: AirVisc_meso_last_step_MetP_sp => null()
-      real(kind=sp),dimension(:,:,:),pointer,public :: AirLamb_meso_last_step_MetP_sp => null()
-      real(kind=sp),dimension(:,:,:),pointer,public :: AirDens_meso_next_step_MetP_sp => null()
-      real(kind=sp),dimension(:,:,:),pointer,public :: AirVisc_meso_next_step_MetP_sp => null()
-      real(kind=sp),dimension(:,:,:),pointer,public :: AirLamb_meso_next_step_MetP_sp => null()
-      real(kind=sp),dimension(:,:,:),pointer,public :: AirTemp_meso_last_step_MetP_sp => null()
-      real(kind=sp),dimension(:,:,:),pointer,public :: AirRelH_meso_last_step_MetP_sp => null()
-      real(kind=sp),dimension(:,:,:),pointer,public :: AirSH_meso_last_step_MetP_sp   => null()
-      real(kind=sp),dimension(:,:,:),pointer,public :: AirTemp_meso_next_step_MetP_sp => null()
-      real(kind=sp),dimension(:,:,:),pointer,public :: AirRelH_meso_next_step_MetP_sp => null()
-      real(kind=sp),dimension(:,:,:),pointer,public :: AirSH_meso_next_step_MetP_sp   => null()
+      real(kind=sp),dimension(:,:,:),pointer,public :: AirDens_meso_last_step_MetP_sp   => null()
+      real(kind=sp),dimension(:,:,:),pointer,public :: AirVisc_meso_last_step_MetP_sp   => null()
+      real(kind=sp),dimension(:,:,:),pointer,public :: AirLamb_meso_last_step_MetP_sp   => null()
+      real(kind=sp),dimension(:,:,:),pointer,public :: AirTemp_meso_last_step_MetP_sp   => null()
+      real(kind=sp),dimension(:,:,:),pointer,public :: AirVPTemp_meso_last_step_MetP_sp => null()
+!      real(kind=sp),dimension(:,:,:),pointer,public :: AirRelH_meso_last_step_MetP_sp   => null()
+      real(kind=sp),dimension(:,:,:),pointer,public :: AirSH_meso_last_step_MetP_sp     => null()
+       ! Boundary Layer variables are not needed for most runs, but may be needed by optional modules
+      real(kind=sp),dimension(:,:,:),pointer,public :: Ri_meso_last_step_MetP_sp        => null()
+      real(kind=sp),dimension(:,:)  ,pointer,public :: SolZen_meso_last_step_Met_sp     => null()
+      real(kind=sp),dimension(:,:)  ,pointer,public :: PBLH_meso_last_step_Met_sp       => null()
+      real(kind=sp),dimension(:,:)  ,pointer,public :: L_MonOb_meso_last_step_Met_sp    => null()
+      real(kind=sp),dimension(:,:)  ,pointer,public :: FricVel_meso_last_step_Met_sp    => null()
+      real(kind=sp),dimension(:,:)  ,pointer,public :: v10x_meso_last_step_MetP_sp      => null()
+      real(kind=sp),dimension(:,:)  ,pointer,public :: v10y_meso_last_step_MetP_sp      => null()
+
+      real(kind=sp),dimension(:,:,:),pointer,public :: AirDens_meso_next_step_MetP_sp   => null()
+      real(kind=sp),dimension(:,:,:),pointer,public :: AirVisc_meso_next_step_MetP_sp   => null()
+      real(kind=sp),dimension(:,:,:),pointer,public :: AirLamb_meso_next_step_MetP_sp   => null()
+      real(kind=sp),dimension(:,:,:),pointer,public :: AirTemp_meso_next_step_MetP_sp   => null()
+      real(kind=sp),dimension(:,:,:),pointer,public :: AirVPTemp_meso_next_step_MetP_sp => null()
+!      real(kind=sp),dimension(:,:,:),pointer,public :: AirRelH_meso_next_step_MetP_sp   => null()
+      real(kind=sp),dimension(:,:,:),pointer,public :: AirSH_meso_next_step_MetP_sp     => null()
+      real(kind=sp),dimension(:,:,:),pointer,public :: Ri_meso_next_step_MetP_sp        => null()
+      real(kind=sp),dimension(:,:)  ,pointer,public :: SolZen_meso_next_step_Met_sp     => null()
+      real(kind=sp),dimension(:,:)  ,pointer,public :: PBLH_meso_next_step_Met_sp       => null()
+      real(kind=sp),dimension(:,:)  ,pointer,public :: L_MonOb_meso_next_step_Met_sp    => null()
+      real(kind=sp),dimension(:,:)  ,pointer,public :: FricVel_meso_next_step_Met_sp    => null()
+      real(kind=sp),dimension(:,:)  ,pointer,public :: v10x_meso_next_step_MetP_sp      => null()
+      real(kind=sp),dimension(:,:)  ,pointer,public :: v10y_meso_next_step_MetP_sp      => null()
 #else
       real(kind=sp),dimension(:,:,:),allocatable,public :: AirDens_meso_last_step_MetP_sp
       real(kind=sp),dimension(:,:,:),allocatable,public :: AirVisc_meso_last_step_MetP_sp
       real(kind=sp),dimension(:,:,:),allocatable,public :: AirLamb_meso_last_step_MetP_sp
+      real(kind=sp),dimension(:,:,:),allocatable,public :: AirTemp_meso_last_step_MetP_sp
+      real(kind=sp),dimension(:,:,:),allocatable,public :: AirVPTemp_meso_last_step_MetP_sp
+!      real(kind=sp),dimension(:,:,:),allocatable,public :: AirRelH_meso_last_step_MetP_sp
+      real(kind=sp),dimension(:,:,:),allocatable,public :: AirSH_meso_last_step_MetP_sp
+       ! Boundary Layer variables are not needed for most runs, but may be needed by optional modules
+      real(kind=sp),dimension(:,:,:),allocatable,public :: Ri_meso_last_step_MetP_sp
+      real(kind=sp),dimension(:,:)  ,allocatable,public :: SolZen_meso_last_step_Met_sp
+      real(kind=sp),dimension(:,:)  ,allocatable,public :: PBLH_meso_last_step_Met_sp
+      real(kind=sp),dimension(:,:)  ,allocatable,public :: L_MonOb_meso_last_step_Met_sp
+      real(kind=sp),dimension(:,:)  ,allocatable,public :: FricVel_meso_last_step_Met_sp
+      real(kind=sp),dimension(:,:)  ,allocatable,public :: v10x_meso_last_step_MetP_sp
+      real(kind=sp),dimension(:,:)  ,allocatable,public :: v10y_meso_last_step_MetP_sp
+
       real(kind=sp),dimension(:,:,:),allocatable,public :: AirDens_meso_next_step_MetP_sp
       real(kind=sp),dimension(:,:,:),allocatable,public :: AirVisc_meso_next_step_MetP_sp
       real(kind=sp),dimension(:,:,:),allocatable,public :: AirLamb_meso_next_step_MetP_sp
-      real(kind=sp),dimension(:,:,:),allocatable,public :: AirTemp_meso_last_step_MetP_sp
-      real(kind=sp),dimension(:,:,:),allocatable,public :: AirRelH_meso_last_step_MetP_sp
-      real(kind=sp),dimension(:,:,:),allocatable,public :: AirSH_meso_last_step_MetP_sp
       real(kind=sp),dimension(:,:,:),allocatable,public :: AirTemp_meso_next_step_MetP_sp
-      real(kind=sp),dimension(:,:,:),allocatable,public :: AirRelH_meso_next_step_MetP_sp
+      real(kind=sp),dimension(:,:,:),allocatable,public :: AirVPTemp_meso_next_step_MetP_sp
+!      real(kind=sp),dimension(:,:,:),allocatable,public :: AirRelH_meso_next_step_MetP_sp
       real(kind=sp),dimension(:,:,:),allocatable,public :: AirSH_meso_next_step_MetP_sp
+      real(kind=sp),dimension(:,:,:),allocatable,public :: Ri_meso_next_step_MetP_sp
+      real(kind=sp),dimension(:,:)  ,allocatable,public :: SolZen_meso_next_step_Met_sp
+      real(kind=sp),dimension(:,:)  ,allocatable,public :: PBLH_meso_next_step_Met_sp
+      real(kind=sp),dimension(:,:)  ,allocatable,public :: L_MonOb_meso_next_step_Met_sp
+      real(kind=sp),dimension(:,:)  ,allocatable,public :: FricVel_meso_next_step_Met_sp
+      real(kind=sp),dimension(:,:)  ,allocatable,public :: v10x_meso_next_step_MetP_sp
+      real(kind=sp),dimension(:,:)  ,allocatable,public :: v10y_meso_next_step_MetP_sp
 #endif
 
-      real(kind=ip), parameter,public :: R_GAS_DRYAIR = 286.98_ip       ! Specific gas constant of R=286.98 J /(kg K)
+      real(kind=ip), parameter,public :: R_GAS_DRYAIR = 286.98_ip       ! Specific dry air gas constant of R=286.98 J /(kg K)
       real(kind=ip), parameter,public :: R_GAS_IDEAL  = 8.3144621_ip    ! Ideal gas constant (J /(kg K))
+      real(kind=ip), parameter,public :: R_GAS_WATVAP = 461.5_ip        ! Specific water vapor gas constant of R=461.98 J /(kg K)
       real(kind=ip), parameter,public :: CP_AIR       = 1.004e3_ip      ! Specific heat capacity at p (J /kg K)
       real(kind=ip), parameter,public :: MB_DRY_AIR   = 0.028966_ip     ! Molecular weight of dry air in kg/mol
       real(kind=ip), parameter,public :: BoltzK       = 1.380658e-23_ip ! Boltzmann's constant kg m2 s-2 K-1 molec-1
@@ -96,6 +139,10 @@
       use MetReader,     only : &
          nx_submet,ny_submet,np_fullmet
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Allocate_Atmosphere_Met"
+      endif;enddo
+
       do io=1,2;if(VB(io).le.verbosity_production)then
         write(outlog(io),*)"--------------------------------------------------"
         write(outlog(io),*)"---------- ALLOCATE_ATMOSPHERE_MET ---------------"
@@ -108,23 +155,35 @@
       !       values as best it can (SH,RH = 0 above levels given, T interpolated)
 
 #ifdef USEPOINTERS
-      allocate(AirTemp_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      allocate(AirDens_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      allocate(AirVisc_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      allocate(AirLamb_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.associated(AirTemp_meso_last_step_MetP_sp))&
+        allocate(AirTemp_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.associated(AirDens_meso_last_step_MetP_sp))&
+        allocate(AirDens_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.associated(AirVisc_meso_last_step_MetP_sp))&
+        allocate(AirVisc_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.associated(AirLamb_meso_last_step_MetP_sp))&
+        allocate(AirLamb_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
 
-      if(useMoistureVars)THEN
-        allocate(AirRelH_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-        allocate(AirSH_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(useMoistureVars)then
+!        if(.not.associated(AirRelH_meso_last_step_MetP_sp))&
+!          allocate(AirRelH_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.associated(AirSH_meso_last_step_MetP_sp))&
+          allocate(AirSH_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
       endif
 
-      allocate(AirTemp_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      allocate(AirDens_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      allocate(AirVisc_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      allocate(AirLamb_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if (useMoistureVars) THEN
-        allocate(AirRelH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-        allocate(AirSH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.associated(AirTemp_meso_next_step_MetP_sp))&
+        allocate(AirTemp_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.associated(AirDens_meso_next_step_MetP_sp))&
+        allocate(AirDens_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.associated(AirVisc_meso_next_step_MetP_sp))&
+        allocate(AirVisc_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.associated(AirLamb_meso_next_step_MetP_sp))&
+        allocate(AirLamb_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if (useMoistureVars) then
+!        if(.not.associated(AirRelH_meso_next_step_MetP_sp))&
+!          allocate(AirRelH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+        if(.not.associated(AirSH_meso_next_step_MetP_sp))&
+          allocate(AirSH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
       endif
 #else
       if(.not.allocated(AirTemp_meso_last_step_MetP_sp))&
@@ -135,9 +194,9 @@
         allocate(AirVisc_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
       if(.not.allocated(AirLamb_meso_last_step_MetP_sp))&
         allocate(AirLamb_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(useMoistureVars)THEN
-        if(.not.allocated(AirRelH_meso_last_step_MetP_sp))&
-          allocate(AirRelH_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(useMoistureVars)then
+!        if(.not.allocated(AirRelH_meso_last_step_MetP_sp))&
+!          allocate(AirRelH_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
         if(.not.allocated(AirSH_meso_last_step_MetP_sp))&
           allocate(AirSH_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
       endif
@@ -150,13 +209,19 @@
         allocate(AirVisc_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
       if(.not.allocated(AirLamb_meso_next_step_MetP_sp))&
         allocate(AirLamb_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
-      if(useMoistureVars)THEN
-        if(.not.allocated(AirRelH_meso_next_step_MetP_sp))&
-          allocate(AirRelH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(useMoistureVars)then
+!        if(.not.allocated(AirRelH_meso_next_step_MetP_sp))&
+!          allocate(AirRelH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
         if(.not.allocated(AirSH_meso_next_step_MetP_sp))&
           allocate(AirSH_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
       endif
 #endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_Atmosphere_Met"
+      endif;enddo
+
+      return
 
       end subroutine Allocate_Atmosphere_Met
 
@@ -186,8 +251,8 @@
       if(associated(AirDens_meso_last_step_MetP_sp))deallocate(AirDens_meso_last_step_MetP_sp)
       if(associated(AirVisc_meso_last_step_MetP_sp))deallocate(AirVisc_meso_last_step_MetP_sp)
       if(associated(AirLamb_meso_last_step_MetP_sp))deallocate(AirLamb_meso_last_step_MetP_sp)
-      if(useMoistureVars)THEN
-        if(associated(AirRelH_meso_last_step_MetP_sp))deallocate(AirRelH_meso_last_step_MetP_sp)
+      if(useMoistureVars)then
+!        if(associated(AirRelH_meso_last_step_MetP_sp))deallocate(AirRelH_meso_last_step_MetP_sp)
         if(associated(AirSH_meso_last_step_MetP_sp))deallocate(AirSH_meso_last_step_MetP_sp)
       endif
 
@@ -195,8 +260,8 @@
       if(associated(AirDens_meso_next_step_MetP_sp))deallocate(AirDens_meso_next_step_MetP_sp)
       if(associated(AirVisc_meso_next_step_MetP_sp))deallocate(AirVisc_meso_next_step_MetP_sp)
       if(associated(AirLamb_meso_next_step_MetP_sp))deallocate(AirLamb_meso_next_step_MetP_sp)
-      if(useMoistureVars)THEN
-        if(associated(AirRelH_meso_next_step_MetP_sp))deallocate(AirRelH_meso_next_step_MetP_sp)
+      if(useMoistureVars)then
+!        if(associated(AirRelH_meso_next_step_MetP_sp))deallocate(AirRelH_meso_next_step_MetP_sp)
         if(associated(AirSH_meso_next_step_MetP_sp))deallocate(AirSH_meso_next_step_MetP_sp)
       endif
 #else
@@ -204,8 +269,8 @@
       if(allocated(AirDens_meso_last_step_MetP_sp))deallocate(AirDens_meso_last_step_MetP_sp)
       if(allocated(AirVisc_meso_last_step_MetP_sp))deallocate(AirVisc_meso_last_step_MetP_sp)
       if(allocated(AirLamb_meso_last_step_MetP_sp))deallocate(AirLamb_meso_last_step_MetP_sp)
-      if(useMoistureVars)THEN
-        if(allocated(AirRelH_meso_last_step_MetP_sp))deallocate(AirRelH_meso_last_step_MetP_sp)
+      if(useMoistureVars)then
+!        if(allocated(AirRelH_meso_last_step_MetP_sp))deallocate(AirRelH_meso_last_step_MetP_sp)
         if(allocated(AirSH_meso_last_step_MetP_sp))deallocate(AirSH_meso_last_step_MetP_sp)
       endif
 
@@ -213,23 +278,27 @@
       if(allocated(AirDens_meso_next_step_MetP_sp))deallocate(AirDens_meso_next_step_MetP_sp)
       if(allocated(AirVisc_meso_next_step_MetP_sp))deallocate(AirVisc_meso_next_step_MetP_sp)
       if(allocated(AirLamb_meso_next_step_MetP_sp))deallocate(AirLamb_meso_next_step_MetP_sp)
-      if(useMoistureVars)THEN
-        if(allocated(AirRelH_meso_next_step_MetP_sp))deallocate(AirRelH_meso_next_step_MetP_sp)
+      if(useMoistureVars)then
+!        if(allocated(AirRelH_meso_next_step_MetP_sp))deallocate(AirRelH_meso_next_step_MetP_sp)
         if(allocated(AirSH_meso_next_step_MetP_sp))deallocate(AirSH_meso_next_step_MetP_sp)
       endif
 #endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_Atmosphere_Met"
+      endif;enddo
+
+      return
 
       end subroutine Deallocate_Atmosphere_Met
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!  Set_Atmosphere_Meso(Load_MesoSteps,Interval_Frac,first_time)
+!  Read_Next_MesoStep_TQ(Load_Prestep)
 !
 !  Called from: MesoInterpolater
 !  Arguments:
-!    Load_MesoSteps = logical; triggers loading the next step
-!    Interval_Frac  = fraction of the time between last and next met steps
-!    first_time     = logical
+!    Load_Prestep   = logical, optional; triggers loading 'last' only
 !
 !  Most []_Meso() subroutine interpolates data onto the current time and computational
 !  grid.  For the atmospheric data, we only use data on the met steps and on the 
@@ -240,7 +309,7 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine Set_Atmosphere_Meso(Load_MesoSteps,Interval_Frac,first_time)
+      subroutine Read_Next_MesoStep_TQ(Load_Prestep)
       !Fclaw subroutine Set_Atmosphere_Meso(Load_MesoSteps,Interval_Frac,first_time)
 
       use global_param,  only : &
@@ -251,60 +320,90 @@
          Met_var_IsAvailable, &
            MR_Read_3d_MetP_Variable
 
-      logical      ,intent(in) :: Load_MesoSteps
-      real(kind=ip),intent(in) :: Interval_Frac     ! This is a placeholder in cases where
-                                                    ! atmospheric variables are interpolated
-                                                    ! onto local time steps
-      logical      ,intent(in) :: first_time
+      logical, intent(in), optional :: Load_Prestep
 
       integer :: ivar
       integer :: i,j,k
       real(kind=sp) :: temp,pres
+      logical       :: first_time
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
-        write(outlog(io),*)"     Entered Subroutine Set_Atmosphere_Meso"
+        write(outlog(io),*)"     Entered Subroutine Read_Next_MesoStep_TQ"
       endif;enddo
 
-      if(Load_MesoSteps)THEN
-        if(first_time)THEN
-          ivar = 5 ! Temperature
-          call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now)
-            AirTemp_meso_next_step_MetP_sp = MR_dum3d_MetP
-          if(useMoistureVars)THEN
-            if(Met_var_IsAvailable(31))then
-              ! Read Specific humidity if it is available
-              ivar = 31
-              call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now)
-              AirSH_meso_last_step_MetP_sp = MR_dum3d_MetP
-            elseif(Met_var_IsAvailable(30))then
-              ! Otherwise, read Rel Humidity and convert
-              ivar = 30
-              call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now)
-                ! need to convert RH to SH
-              !AirSH_meso_last_step_MetP_sp = MR_dum3d_MetP
-              do io=1,2;if(VB(io).le.verbosity_info)then
-                write(outlog(io),*)"WARNING: Specific Humidity requested but is unavailable."
-                write(outlog(io),*)"         Setting to zero."
-              endif;enddo
-              AirSH_meso_last_step_MetP_sp = 0.0_sp
-            else
-              do io=1,2;if(VB(io).le.verbosity_error)then
-                write(errlog(io),*)"ERROR: Neither SH nor RH are available"
-              endif;enddo
-              stop 1
-            endif
+      if(present(Load_Prestep))then
+        first_time = Load_Prestep
+      else
+        first_time = .false.
+      endif
+
+      if(first_time)then
+        ivar = 5 ! Temperature
+        call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now)
+          AirTemp_meso_next_step_MetP_sp = MR_dum3d_MetP
+        if(useMoistureVars)then
+          if(Met_var_IsAvailable(31))then
+            ! Read Specific humidity if it is available
+            ivar = 31
+            call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now)
+            AirSH_meso_next_step_MetP_sp = MR_dum3d_MetP
+          elseif(Met_var_IsAvailable(30))then
+            ! Otherwise, read Rel Humidity and convert
+            ivar = 30
+            call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now)
+              ! need to convert RH to SH
+            !AirSH_meso_nxet_step_MetP_sp = MR_dum3d_MetP
+            do io=1,2;if(VB(io).le.verbosity_info)then
+              write(outlog(io),*)"WARNING: Specific Humidity requested but is unavailable."
+              write(outlog(io),*)"         Setting to zero."
+            endif;enddo
+            AirSH_meso_next_step_MetP_sp = 0.0_sp
+          else
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: Neither SH nor RH are available"
+            endif;enddo
+            stop 1
           endif
-        endif ! first_time
+        endif
+
         AirTemp_meso_last_step_MetP_sp = AirTemp_meso_next_step_MetP_sp
-        if(useMoistureVars)THEN
-          AirRelH_meso_last_step_MetP_sp = AirRelH_meso_next_step_MetP_sp
+        if(useMoistureVars)then
+          !AirRelH_meso_last_step_MetP_sp = AirRelH_meso_next_step_MetP_sp
+          AirSH_meso_last_step_MetP_sp   = AirSH_meso_next_step_MetP_sp
+        endif
+
+        do k=1,np_fullmet
+          ! Note: this needs to be fixed for WRF data
+          pres = p_fullmet_sp(k)
+          do i=1,nx_submet
+            do j=1,ny_submet
+              temp = AirTemp_meso_next_step_MetP_sp(i,j,k)
+              AirDens_meso_next_step_MetP_sp(i,j,k) = &
+                Dens_IdealGasLaw(pres,temp)
+              AirVisc_meso_next_step_MetP_sp(i,j,k) = &
+                Visc_Sutherland(temp)
+              AirLamb_meso_next_step_MetP_sp(i,j,k) = &
+                lambda_MeanFreePath(AirVisc_meso_next_step_MetP_sp(i,j,k),&
+                                    pres,temp)
+            enddo
+          enddo
+        enddo
+        AirDens_meso_last_step_MetP_sp = AirDens_meso_next_step_MetP_sp
+        AirVisc_meso_last_step_MetP_sp = AirVisc_meso_next_step_MetP_sp
+        AirLamb_meso_last_step_MetP_sp = AirLamb_meso_next_step_MetP_sp
+
+      else ! first_time
+
+        AirTemp_meso_last_step_MetP_sp = AirTemp_meso_next_step_MetP_sp
+        if(useMoistureVars)then
+          !AirRelH_meso_last_step_MetP_sp = AirRelH_meso_next_step_MetP_sp
           AirSH_meso_last_step_MetP_sp   = AirSH_meso_next_step_MetP_sp
         endif
 
         ivar = 5 ! Temperature
         call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now+1)
         AirTemp_meso_next_step_MetP_sp = MR_dum3d_MetP
-        if(useMoistureVars)THEN
+        if(useMoistureVars)then
           if(Met_var_IsAvailable(31))then
             ! Read Specific humidity if it is available
             ivar = 31
@@ -328,19 +427,16 @@
             stop 1
           endif
         endif
+
+        AirDens_meso_last_step_MetP_sp = AirDens_meso_next_step_MetP_sp
+        AirVisc_meso_last_step_MetP_sp = AirVisc_meso_next_step_MetP_sp
+        AirLamb_meso_last_step_MetP_sp = AirLamb_meso_next_step_MetP_sp
+
         do k=1,np_fullmet
           ! Note: this needs to be fixed for WRF data
           pres = p_fullmet_sp(k)
           do i=1,nx_submet
             do j=1,ny_submet
-              temp = AirTemp_meso_last_step_MetP_sp(i,j,k)
-              AirDens_meso_last_step_MetP_sp(i,j,k) = &
-                Dens_IdealGasLaw(pres,temp)
-              AirVisc_meso_last_step_MetP_sp(i,j,k) = &
-                Visc_Sutherland(temp)
-              AirLamb_meso_last_step_MetP_sp(i,j,k) = &
-                lambda_MeanFreePath(AirVisc_meso_last_step_MetP_sp(i,j,k),&
-                                    pres,temp)
 
               temp = AirTemp_meso_next_step_MetP_sp(i,j,k)
               AirDens_meso_next_step_MetP_sp(i,j,k) = &
@@ -353,26 +449,247 @@
             enddo
           enddo
         enddo
-      else
-        ! Currently, this subroutine is only called if Load_MesoSteps=.true.
-        ! so we shouldn't be here
-        do io=1,2;if(VB(io).le.verbosity_error)then              
-          write(errlog(io),*)"Calling Set_Atmosphere_Meso outside of a Load_MesoSteps=.true."
-          write(errlog(io),*)"case for Interval_Frac = ",Interval_Frac
-          write(errlog(io),*)"This is a place-holder for interpolating temperatures to the"
-          write(errlog(io),*)"current time.  Not yet implemented."
-        endif;enddo
-        stop 1
-        ! If we were to call this subroutine when Load_MesoSteps=.false., we would interpolate
-        ! values as follows.
-
-        !Temperature(:,:,:) = real( Temp_meso_last_step_sp(:,:,:),kind=ip) + &
-        !                     real((Temp_meso_next_step_sp(:,:,:) - &
-        !                           Temp_meso_last_step_sp(:,:,:)),kind=ip) * &
-        !                     Interval_Frac
       endif
 
-      end subroutine Set_Atmosphere_Meso
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Read_Next_MesoStep_TQ"
+      endif;enddo
+
+      return
+
+      end subroutine Read_Next_MesoStep_TQ
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Set_VirtPotenTemp(Load_Prestep)
+!
+!  Called from: 
+!  Arguments:
+!    Load_Prestep   = logical, optional; triggers loading 'last' only
+!
+!  Most []_Meso() subroutine interpolates data onto the current time and computational
+!  grid.  For the atmospheric data, we only use data on the met steps and on the 
+!  subgrid of the NWP grid.  These are used for calculating fall velocities at these
+!  met grid nodes, which are then interpolated onto the computational grid. So this
+!  subroutine is only called when a new met step needs to be loaded, populating density,
+!  viscosity and mean-free path on those met nodes.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine Set_VirtPotenTemp(Load_Prestep)
+
+      use global_param,  only : &
+         useMoistureVars
+
+      use MetReader,     only : &
+         nx_submet,ny_submet,np_fullmet,p_fullmet_sp,&
+           MR_Read_3d_MetP_Variable
+
+      logical, intent(in), optional :: Load_Prestep
+
+      real(kind=sp),dimension(:),allocatable :: p ! in Pa
+      real(kind=sp),dimension(:),allocatable :: T ! in K
+      real(kind=sp),dimension(:),allocatable :: Q ! in kg/kg
+      real(kind=sp),dimension(:),allocatable :: Tpoten
+
+      integer :: i,j,k
+      real(kind=sp) :: refP
+      real(kind=sp) :: mixrat
+      logical       :: first_time
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Set_VirtPotenTemp"
+      endif;enddo
+
+      if(present(Load_Prestep))then
+        first_time = Load_Prestep
+      else
+        first_time = .false.
+      endif
+
+      allocate(p(np_fullmet))
+      allocate(T(np_fullmet))
+      allocate(Q(np_fullmet))
+      allocate(Tpoten(np_fullmet))
+
+#ifdef USEPOINTERS
+      if(.not.associated(AirVPTemp_meso_last_step_MetP_sp))&
+        allocate(AirVPTemp_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.associated(AirVPTemp_meso_next_step_MetP_sp))&
+        allocate(AirVPTemp_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+#else
+      if(.not.allocated(AirVPTemp_meso_last_step_MetP_sp))&
+        allocate(AirVPTemp_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+      if(.not.allocated(AirVPTemp_meso_next_step_MetP_sp))&
+        allocate(AirVPTemp_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
+#endif
+      refP = 1.0e5_sp   ! reference pressure for potential temperature
+
+      p(1:np_fullmet) = p_fullmet_sp(1:np_fullmet)
+      if(first_time)then
+        do i=1,nx_submet
+          do j=1,ny_submet
+            T(1:np_fullmet) = AirTemp_meso_last_step_MetP_sp(i,j,1:np_fullmet)
+            if(useMoistureVars)then
+                ! If moisture is enabled, use virtual potential temperatrue
+              Q(1:np_fullmet) = AirSH_meso_last_step_MetP_sp(i,j,1:np_fullmet)
+            else
+                ! Otherwise, we will just use potential temperature
+              Q(1:np_fullmet) = 0.0_sp
+            endif
+            do k=1,np_fullmet
+              ! First get the potential temperature, i.e. the temperature an air parcel would have
+              ! if it were taken adiabaticlly to refP
+              Tpoten(k) = real((T(k)*(refP/p(k))**(R_GAS_DRYAIR/CP_AIR)),kind=sp)   ! Potential temperature
+              ! Now convert to virtual potential temperature is there is some Spec.Hum. around
+              ! Note: this moisture bit makes practically no difference
+              mixrat = Q(k)/(1.0_sp-Q(k))   ! Water mixing ratio from Spec.Hum
+              Tpoten(k) = real(Tpoten(k) *(1.0_sp + (R_GAS_WATVAP/R_GAS_DRYAIR-1.0_sp)*mixrat),kind=sp)
+            enddo
+            AirVPTemp_meso_last_step_MetP_sp(i,j,1:np_fullmet)=Tpoten(1:np_fullmet)
+          enddo ! j
+        enddo ! i
+      else
+        do i=1,nx_submet
+          do j=1,ny_submet
+            T(1:np_fullmet) = AirTemp_meso_next_step_MetP_sp(i,j,1:np_fullmet)
+            if(useMoistureVars)then
+                ! If moisture is enabled, use virtual potential temperatrue
+              Q(1:np_fullmet) = AirSH_meso_next_step_MetP_sp(i,j,1:np_fullmet)
+            else
+                ! Otherwise, we will just use potential temperature
+              Q(1:np_fullmet) = 0.0_sp
+            endif
+            do k=1,np_fullmet
+              ! First get the potential temperature, i.e. the temperature an air parcel would have
+              ! if it were taken adiabaticlly to refP
+              Tpoten(k) = real((T(k)*(refP/p(k))**(R_GAS_DRYAIR/CP_AIR)),kind=sp)   ! Potential temperature
+              ! Now convert to virtual potential temperature is there is some Spec.Hum. around
+              ! Note: this moisture bit makes practically no difference
+              mixrat = Q(k)/(1.0_sp-Q(k))   ! Water mixing ratio from Spec.Hum
+              Tpoten(k) = real(Tpoten(k) *(1.0_sp + (R_GAS_WATVAP/R_GAS_DRYAIR-1.0_sp)*mixrat),kind=sp)
+            enddo
+            AirVPTemp_meso_next_step_MetP_sp(i,j,1:np_fullmet)=Tpoten(1:np_fullmet)
+          enddo ! j
+        enddo ! i
+      endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Set_VirtPotenTemp"
+      endif;enddo
+
+      return
+
+      end subroutine Set_VirtPotenTemp
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Set_SolarZenith(Load_Prestep)
+!
+!  Called from: 
+!  Arguments:
+!    Load_Prestep   = logical, optional; triggers loading 'last' only
+!
+!  This subroutine calculates the solar zenith angle over the Met subgrid. This
+!  is useful for calculating incident radiation as well as local sunrise/sunset.
+!  The later can be used to inform boundary layer processes.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine Set_SolarZenith(inhoursince,Load_Prestep)
+
+      use global_param,  only : &
+         DEG2RAD
+
+      use time_data,     only : &
+        BaseYear,useLeap
+
+      use MetReader,     only : &
+         nx_submet,ny_submet,MR_xy2ll_xlon,MR_xy2ll_ylat,&
+           MR_Read_3d_MetP_Variable
+
+      real(kind=8) :: inhoursince
+      logical, intent(in), optional :: Load_Prestep
+
+      integer :: i,j
+      real(kind=dp) :: lon,lat
+      real(kind=ip) :: tmp
+      real(kind=8)  :: hour
+      integer :: jday
+      integer :: hh,mm
+      logical :: first_time
+
+      INTERFACE
+        integer function HS_DayOfYear(HoursSince,byear,useLeaps)
+          real(kind=8),intent(in)   ::  HoursSince
+          integer     ,intent(in)   ::  byear
+          logical     ,intent(in)   ::  useLeaps
+        end function HS_DayOfYear
+        real(kind=8) function HS_HourOfDay(HoursSince,byear,useLeaps)
+          real(kind=8),intent(in)   ::  HoursSince
+          integer     ,intent(in)   ::  byear
+          logical     ,intent(in)   ::  useLeaps
+        end function HS_HourOfDay
+      END INTERFACE
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Set_SolarZenith"
+      endif;enddo
+
+      if(present(Load_Prestep))then
+        first_time = Load_Prestep
+      else
+        first_time = .false.
+      endif
+
+#ifdef USEPOINTERS
+      if(.not.associated(SolZen_meso_last_step_Met_sp))&
+        allocate(SolZen_meso_last_step_Met_sp(nx_submet,ny_submet))
+      if(.not.associated(SolZen_meso_next_step_Met_sp))&
+        allocate(SolZen_meso_next_step_Met_sp(nx_submet,ny_submet))
+#else
+      if(.not.allocated(SolZen_meso_last_step_Met_sp))&
+        allocate(SolZen_meso_last_step_Met_sp(nx_submet,ny_submet))
+      if(.not.allocated(SolZen_meso_next_step_Met_sp))&
+        allocate(SolZen_meso_next_step_Met_sp(nx_submet,ny_submet))
+#endif
+
+      jday = HS_DayOfYear(inhoursince,BaseYear,useLeap)
+      hour = HS_HourOfDay(inhoursince,BaseYear,useLeap)
+      hh   = floor(hour)
+      mm   = floor((hour-hh)*60.0_ip)
+
+      if(first_time)then
+        ! Note: we can have an arbitrary input hour, but if Load_Prestep is set, then
+        !       we assume a MR_MetStep_Hour_since_baseyear() is provided and we copy
+        !       to the 'last' data array.
+        do i=1,nx_submet
+          do j=1,ny_submet
+            lat = MR_xy2ll_ylat(i,j)
+            lon = MR_xy2ll_xlon(i,j)
+            tmp = min(solar_zenith(lon,lat,jday,hh,mm),90.0_ip)
+            SolZen_meso_last_step_Met_sp(i,j) = 360.0_sp*real(cos(tmp*DEG2RAD),kind=sp)
+          enddo
+        enddo
+      else
+        ! Note: Here, any arbitrary time get utilizes the 'next' data array.
+        do i=1,nx_submet
+          do j=1,ny_submet
+            lat = MR_xy2ll_ylat(i,j)
+            lon = MR_xy2ll_xlon(i,j)
+            tmp = min(solar_zenith(lon,lat,jday,hh,mm),90.0_ip)
+            SolZen_meso_next_step_Met_sp(i,j) = 360.0_sp*real(cos(tmp*DEG2RAD),kind=sp)
+          enddo
+        enddo
+      endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Set_SolarZenith"
+      endif;enddo
+
+      return
+
+      end subroutine Set_SolarZenith
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
@@ -462,7 +779,6 @@
       do io=1,2;if(VB(io).le.verbosity_debug2)then
         write(outlog(io),*)"     Entered function lambda_MeanFreePath"
       endif;enddo
-
         ! Mean-free-path of dry air : Eq. 9.6 of Seinfeld and Pandis
       lambda_MeanFreePath = (2.0_sp*visc)/ &
              (pres*sqrt(8.0_sp*real(MB_DRY_AIR/(PI*R_GAS_IDEAL*temp),kind=sp)))
@@ -470,6 +786,96 @@
       return
 
       end function lambda_MeanFreePath
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  solar_zenith(lond,latd,jday,hh,mm)
+!
+!  Called when day/night info is needed for boundary layer processes
+!  Arguments:
+!    lond = longitude in degrees
+!    latd = latitude in degrees
+!    jday = day of year
+!    hh   = hour of day
+!    mm   = minute of hour
+!
+!  Function that calculates the solar zenith (angle between the sun's ray and
+!  the local vertical) in degrees. This varies with position and time of year.
+!  Sunrise and sunset times (in UTC) can be determined from when the zenith
+!  crosses 90 degrees. The formulea in this subroutine are largely from this
+!  document: https://gml.noaa.gov/grad/solcalc/solareqns.PDF
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      function solar_zenith(lonD,latD,jday,hh,mm)
+
+      use global_param,  only : &
+         PI,DEG2RAD
+
+      real(kind=ip) :: solar_zenith   ! solar zenith in degrees
+      real(kind=ip) :: lonD           ! longitude in degrees
+      real(kind=ip) :: latD           ! latitude in degrees
+      integer       :: jday           ! day of year
+      integer       :: hh             ! hour of day
+      integer       :: mm             ! minute of hour
+
+!      real(kind=ip) :: lonR           ! longitude in radians
+      real(kind=ip) :: latR           ! latitude in radians
+      integer       :: ss             ! seconds of minute, used in Eqs, but not in function
+      integer       :: tzone          ! time zone offset (assumed 0 for UTC)
+
+      real(kind=ip) :: declR          ! declination in radians
+      real(kind=ip) :: fyr            ! fractional year
+      real(kind=ip) :: eqtime         ! 
+      real(kind=ip) :: th             ! in radians
+      real(kind=ip) :: haR,haD        ! in radians/degrees
+      real(kind=ip) :: timeoffset     ! 
+      real(kind=ip) :: tst            ! 
+      real(kind=ip) :: szenithR       ! solar zenith in radians
+
+      do io=1,2;if(VB(io).le.verbosity_debug2)then
+        write(outlog(io),*)"     Entered function solar_zenith"
+      endif;enddo
+
+      tzone = 0
+      ss    = 0
+      latR  = latD*DEG2RAD
+!      lonR  = lonD*DEG2RAD
+
+      ! Fractional year
+      fyr = (jday-1 + (hh-12 + mm/60.0_ip)/24.0_ip)/365.0_ip
+
+      th = 2.0_ip*PI*fyr
+      ! Solar equation of time: describes the descrepency between apparent and mean solar time
+      eqtime = 229.18_ip *(0.000075_ip + 0.001868_ip*cos(th) -0.032077_ip*sin(th) - &
+               0.01461_ip*cos(2.0_ip*th)-0.040849_ip*sin(2.0_ip*th))
+      ! Solar declination : angle between equatorial plane and line to the sun
+      declR  = 0.006918_ip-0.399912_ip*cos(th)+0.070257_ip*sin(th)- &
+               0.006758_ip*cos(2.0_ip*th)+0.000907_ip*sin(2.0_ip*th)-&
+               0.002697_ip*cos(3.0_ip*th)+0.00148_ip*sin(3.0_ip*th)
+      
+      ! time offset is how far off local solar noon is from GMT solar noon in minutes
+      ! The 4*lon is because the earth rotates 15 degrees/hour
+      timeoffset = eqtime + 4.0_ip*lonD - 60.0_ip*tzone
+      
+      ! True solar time in minutes
+      tst = hh*60.0_ip + mm + ss/60.0_ip + timeoffset
+      
+      ! Solar hour angle: angular position of the sun from solar noon
+      haD = tst/4.0_ip - 180.0_ip;
+      haR = haD*DEG2RAD
+      
+      ! Solar zenith angle : angle the suns rays hit the surface
+      szenithR = acos(sin(latR)*sin(declR)+cos(latR)*cos(declR)*cos(haR))
+      solar_zenith = szenithR/DEG2RAD
+
+      do io=1,2;if(VB(io).le.verbosity_debug2)then
+        write(outlog(io),*)"     Exited function solar_zenith"
+      endif;enddo
+
+      return
+
+      end function solar_zenith
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

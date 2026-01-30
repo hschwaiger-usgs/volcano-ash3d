@@ -6,8 +6,7 @@ FCHOME = /opt/nvidia/hpc_sdk/Linux_x86_64/24.7/compilers
 FC = $(FCHOME)/bin/nvfortran
 COMPINC = -I./ -I$(FCHOME)/include
 COMPLIBS = -L./ -L$(FCHOME)/lib
-
-LIBS = $(COMPLIBS) $(COMPINC)
+LIBS = $(LAPACKLIB) $(COMPLIBS) $(USGSLIBDIR) $(USGSINC) $(COMPINC) $(USGSLIB) $(DATALIBS)
 
 # Debugging flags
 ifeq ($(RUN), DEBUG)
@@ -39,7 +38,7 @@ ifeq ($(RUN), OPTOMP)
 endif
 
   # Preprocessing flags
-FPPFLAGS = -x f95-cpp-input
+FPPFLAGS = -x f95-cpp-input $(OSFPPFLAG) $(DATAFPPFLAG) $(LIMFPPFLAG) $(DIFFFPPFLAG) $(memFPPFLAG) $(extdatFPPFLAG) $(FASTFPPFLAG) $(PIIFPPFLAG) $(SYSFPPFLAG) $(PLOTFPPFLAG)
   # Extra flags
 EXFLAGS =
 

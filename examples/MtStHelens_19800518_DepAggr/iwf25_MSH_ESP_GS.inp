@@ -1,4 +1,4 @@
-# The following is an input file to the model Ash3d, v.1.0                                             
+# The following is an input file to the model Ash3d, v1.0 https://code.usgs.gov/vsc/ash3d/volcano-ash3d
 # Created by L.G. Mastin, R.P. Denlinger and H.F. Schwaiger, U.S. Geological Survey, 2009.             
 #                                                                                                      
 # GENERAL SOURCE PARAMETERS. DO NOT DELETE ANY NON-COMMENT LINES                                       
@@ -70,7 +70,7 @@
 #  point        : all mass inserted in cell containing PlmH                                            
 #  linear       : mass uniformly distributed from z-vent to PlmH                                       
 # Line 9 : number of pulses to be read in BLOCK 2                                                      
-******************* BLOCK 1 ***************************************************
+******************* BLOCK 1 ****************************************************
 St. Helens 1980                    # Volcano name (character*30)
 1 4 -107.0 50.0 50.0 50.0 6367.470 # Proj flags and params; first term (LLflag) is 1, so all else ignored
 -124.0     42.0                    # x, y of LL corner of grid (km, or deg. if latlongflag=1)
@@ -80,7 +80,7 @@ St. Helens 1980                    # Volcano name (character*30)
 1.0                                # DZ of grid cells      (always km)
 0.0     8.0                        # diffusion coefficient (m2/s), Suzuki constant
 14                                 # neruptions, number of eruptions or pulses
-*******************************************************************************
+********************************************************************************
 # ERUPTION LINES (number = neruptions)                                                                 
 # In the following line, each line represents one eruptive pulse.                                      
 # Parameters are (1-4) start time (yyyy mm dd h.hh (UT)); (5) duration (hrs);                          
@@ -92,7 +92,7 @@ St. Helens 1980                    # Volcano name (character*30)
 # For profile sources, an additional two values are read: dz and nz                                    
 # 2010 04 14   0.00   1.0     18.0  0.16 1.0 18                                                        
 # 0.01 0.02 0.03 0.03 0.04 0.04 0.05 0.06 0.06 0.070 0.08 0.08 0.09 0.09 0.09 0.08 0.06 0.02           
-******************* BLOCK 2 *************************************************** 
+******************* BLOCK 2 ****************************************************
 1980 05 18 15.50        0.50    25.0    0.0649
 1980 05 18 16.00        0.11    15.3    0.0015
 1980 05 18 16.60        0.90    13.7    0.0071
@@ -107,7 +107,7 @@ St. Helens 1980                    # Volcano name (character*30)
 1980 05 18 23.50        1.00    19.2    0.0389
 1980 05 19 00.50        1.00    7.7     0.0004
 1980 05 19 01.50        1.00    6.2     0.0001
-*******************************************************************************
+********************************************************************************
 # WIND OPTIONS                                                                                         
 # Ash3d will read from either a single 1-D wind sounding, or gridded, time-                            
 # dependent 3-D wind data, depending on the value of the parameter iwind.                              
@@ -145,6 +145,7 @@ St. Helens 1980                    # Volcano name (character*30)
 #                30: ECMWA ERA-20C Reanalysis                                                          
 #                32: Air Force Weather Agency                                                          
 #                33: CCSM 3.0 Community Atmospheric Model                                              
+#                34: ECMWF 0.25-degree forecast                                                        
 #                40: NASA GEOS-5 Cp                                                                    
 #                41: NASA GEOS-5 Np                                                                    
 #                50: Weather Research and Forecast (WRF) output                                        
@@ -166,13 +167,13 @@ St. Helens 1980                    # Volcano name (character*30)
 # The last line of this block is the number of windfiles listed in block 5 below.  If                  
 # iwind=5 and one of the NWP products is used that require a special file structure,                   
 # then nWindFiles should be set to 1 and only the root folder of the windfiles listed.                 
-******************* BLOCK 3 *************************************************** 
+******************* BLOCK 3 ****************************************************
 5  25               # iwind, iwindformat, [igrid, idata]
 2                   # iHeightHandler
 12.0                # Simulation time in hours
 yes                 # stop computation when 99% of erupted mass has deposited?
 1                   # nWindFiles, number of gridded wind files (used if iwind>1)
-*******************************************************************************
+********************************************************************************
 # OUTPUT OPTIONS:                                                                                      
 # The list below allows users to specify the output options                                            
 # All but the final deposit file can be written out at specified                                       
@@ -187,37 +188,50 @@ yes                 # stop computation when 99% of erupted mass has deposited?
 # WriteTimes    = Hours between output (if nWritetimes=-1), or                                         
 #                 Times (hours since start of first eruption) for each output                          
 #                (if nWriteTimes >1)                                                                   
-******************* BLOCK 4 ***************************************************
-yes     # Write out ESRI ASCII file of final deposit thickness?                                        
-no      # Write out        KML file of final deposit thickness?                                        
-no      # Write out ESRI ASCII deposit files at specified times?                                       
-no      # Write out        KML deposit files at specified times?                                       
-no      # Write out ESRI ASCII files of ash-cloud concentration?                                       
-no      # Write out        KML files of ash-cloud concentration?                                       
-no      # Write out ESRI ASCII files of ash-cloud height?                                              
-no      # Write out        KML files of ash-cloud height?                                              
-no      # Write out ESRI ASCII files of ash-cloud load (T/km2) at specified times?                     
-no      # Write out        KML files of ash-cloud load (T/km2) at specified times?                     
-no      # Write out ESRI ASCII file of deposit arrival times?                                          
-no      # Write out        KML file of deposit arrival times?                                          
-yes     # write out ESRI ASCII file of cloud arrival times?                                            
-no      # Write out        KML file of cloud arrival times?                                            
-no      # Write out 3-D ash concentration at specified times? / [output code: 1=2d+concen,2=2d only]   
-netcdf  # format of ash concentration files     (ascii, binary, or netcdf)                             
+******************* BLOCK 4 ****************************************************
+yes     # Write out ESRI ASCII file of final deposit thickness?
+no      # Write out        KML file of final deposit thickness?
+no      # Write out ESRI ASCII deposit files at specified times?
+no      # Write out        KML deposit files at specified times?
+no      # Write out ESRI ASCII files of ash-cloud concentration?
+no      # Write out        KML files of ash-cloud concentration?
+no      # Write out ESRI ASCII files of ash-cloud height?
+no      # Write out        KML files of ash-cloud height?
+no      # Write out ESRI ASCII files of ash-cloud load (T/km2) at specified times?
+no      # Write out        KML files of ash-cloud load (T/km2) at specified times?
+no      # Write out ESRI ASCII file of deposit arrival times?
+no      # Write out        KML file of deposit arrival times?
+yes     # Write out ESRI ASCII file of cloud arrival times?
+no      # Write out        KML file of cloud arrival times?
+yes     # Write out 3-D ash concentration at specified times? / [output code: 1=2d+concen,2=2d only]   
+netcdf   # format of ash concentration files     (ascii, binary, or netcdf)
 8       # nWriteTimes
 9.1 20.2 32.3 43.3 55.2 64.6 78.2 89.5
-*******************************************************************************
+********************************************************************************
 # WIND INPUT FILES                                                                                     
-# The following block of data contains names of wind files.                                            
-# If we are reading from a 1-D wind sounding (i.e. iwind=1) then there should                          
-# be only one wind file.                                                                               
-# If we are reading gridded data there should be iWinNum wind files, each having                       
-# the format volcano_name_yyyymmddhh_FHhh.win                                                          
-# For iwindformat=25 (continuous wind data from 1948-pres), just give                                  
-# the directory with the windfiles (e.g. Wind_nc)                                                      
-******************* BLOCK 5 ***************************************************
+# The following block of data contains names of wind files. There should be one line for               
+# each of nWindFiles (from Block 3 Line 5) windfiles. Files should be given in                         
+# chronological order, should have names with only letters and numbers (no spaces)                     
+# and should not exceed 130 characters in length.                                                      
+# For iwind=5 (files with hard-coded paths), just provide the directory with the                       
+# windfiles or the root of the dataset (if files are sorted by year).                                  
+# For example, iwind=5, iwindformat=25 for NCEP reanalysis, data might look like:                      
+# /data/WindFiles/NCEP                                                                                 
+# |-- 2016                                                                                             
+# |   |-- air.2016.nc                                                                                  
+# |   |-- hgt.2016.nc                                                                                  
+# |   |-- omega.2016.nc                                                                                
+# |   |-- uwnd.2016.nc                                                                                 
+# |   `-- vwnd.2016.nc                                                                                 
+# |-- 2017                                                                                             
+#     |-- air.2017.nc                                                                                  
+# In this case, Block 5 will just contain one line: /data/WindFiles/NCEP or just NCEP                  
+# if you have a soft link in the run directory.                                                        
+# For a network of radiosonde data, please see the MetReader documentation for                         
+# the input specification https://code.usgs.gov/vsc/ash3d/volcano-ash3d-metreader.                     
+******************* BLOCK 5 ****************************************************
 NCEP
-*******************************************************************************
+********************************************************************************
 # AIRPORT LOCATION FILE                                                                                
 # The following lines allow the user to specify whether times of ash arrival                           
 # at airports and other locations will be written out, and which file                                  
@@ -226,16 +240,16 @@ NCEP
 #               airport latitude, longitude, projected x and y coordinates,                            
 #               and airport name.  If you are using a projected grid,                                  
 #               THE X AND Y MUST BE IN THE SAME PROJECTION as the computational grid.                  
-#               Alternatively, if coordinates can be projected via libprojection                       
+#               Alternatively, coordinates can be projected via libprojection                          
 #               by typing "yes" to the last parameter                                                  
-******************* BLOCK 6 ***************************************************
+******************* BLOCK 6 ****************************************************
 yes                           # Write out ash arrival times at airports to ASCII FILE?
 no                            # Write out grain-size distribution to ASCII airport file?
 no                            # Write out ash arrival times to kml file?
 MSH_sample_locations.txt      # Name of file containing airport locations
 yes                           # Defer to Lon/Lat coordinates? ("no" defers to projected)
-*******************************************************************************
-# GRAIN SIZE GROUPS
+********************************************************************************
+# GRAIN SIZE GROUPS                                                                                    
 # The first line must contain the number of settling velocity groups, but                              
 # can optionally also include a flag for the fall velocity model to be used.                           
 #    FV_ID = 1, Wilson and Huang                                                                       
@@ -245,39 +259,43 @@ yes                           # Defer to Lon/Lat coordinates? ("no" defers to pr
 #          = 5, Ganser + Cunningham slip                                                               
 #          = 6, Stokes flow for spherical particles + slip                                             
 # If no fall model is specified, FV_ID = 1, by default                                                 
+# The first line can also optionally contain the Shape_ID code where 1= Wilson and Huang (F,G),        
+# and 2 = sphericity                                                                                   
 # The grain size bins can be enters with 2, 3, or 4 parameters.                                        
 # If TWO are given, they are read as:   FallVel (in m/s), mass fraction                                
 # If THREE are given, they are read as: diameter (mm), mass fraction, density (kg/m3)                  
+# For Shape_ID = 1:                                                                                    
 # If FOUR are given, they are read as:  diameter (mm), mass fraction, density (kg/m3), Shape F         
 # The shape factor is given as in Wilson and Huang: F=(b+c)/(2*a), but converted                       
 # to sphericity (assuming b=c) for the Ganser model.                                                   
 # If a shape factor is not given, a default value of F=0.4 is used.                                    
 # If FIVE are given, they are read as:  diameter (mm), mass fraction, density (kg/m3), Shape F, G      
-#  where G is an additional Ganser shape factor equal to c/b                                           
+#  where G is an additional minor axis ratio shape factor equal to c/b                                 
+# For Shape_ID = 2:                                                                                    
+# If FOUR are given, they are read as:  diameter (mm), mass fraction, density (kg/m3), Sphericity      
 #                                                                                                      
 # If the last grain size bin has a negative diameter, then the remaining mass fraction                 
 # will be distributed over the previous bins via a log-normal distribution in phi.                     
 # The last bin would be interpreted as:                                                                
-# diam (neg value) , phi_mean, phi_stddev                                                              
-#                              # nsmax FV_ID 
-******************* BLOCK 7 ***************************************************
+# diam (neg value) , LN_phi_mean, LN_phi_stddev                                                        
+******************* BLOCK 7 ****************************************************
 1                              # Number of grain-size bins. FV_ID not given; defaults to 1
 0.5000     1.0000  2624.0      # grain size (mm), mass fraction, density (kg/m3), [F=0.44]
-*******************************************************************************
+********************************************************************************
 # Options for writing vertical profiles                                                                
 # The first line below gives the number of locations (nlocs) where vertical                            
 # profiles are to be written.  That is followed by nlocs lines, each of which                          
-# contain the location, in the same coordinate as the computational grid.                              
+# contain the location, in the same coordinates as the computational grid.                             
 # Optionally, a site name can be provided in after the location.                                       
-******************* BLOCK 8 ***************************************************                        
+******************* BLOCK 8 ****************************************************
 0                             # number of locations for vertical profiles (nlocs)                      
-*******************************************************************************
+********************************************************************************
 # netCDF output options                                                                                
 # This last block is optional.                                                                         
 # The output file name can be give, but will default to 3d_tephra_fall.nc if absent                    
 # The title and comment lines are passed through to the netcdf header of the                           
 # output file.                                                                                         
-******************* BLOCK 9 ***************************************************
+******************* BLOCK 9 ****************************************************
 3d_tephra_fall.nc             # Name of output file
 Mount St. Helens 1980         # Title of simulation
 no comment                    # Comment

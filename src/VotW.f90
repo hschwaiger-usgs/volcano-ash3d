@@ -256,6 +256,10 @@
         endif;enddo
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine get_ESP"
+      endif;enddo
+
       return
 
       end subroutine get_ESP
@@ -408,6 +412,10 @@
       enddo
 
       close(fid_votw)
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine VotW_v12"
+      endif;enddo
 
       return
 
@@ -3513,6 +3521,12 @@
              volcESP_Code(i)="S0"; volcID(i)="1900-13="; volcName(i)="Zavodovski                     "; 
       i=i+1; volcLat(i)=-55.920; volcLon(i)=331.920; volcElev(i)=  -27;  volcLoc(i)="Antarctica                    "; 
              volcESP_Code(i)="S0"; volcID(i)="1900-14-"; volcName(i)="Protector Shoal                "; 
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine VotW_v12"
+      endif;enddo
+
+      return
 
       end subroutine VotW_v12
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

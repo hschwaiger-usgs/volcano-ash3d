@@ -103,6 +103,17 @@
         ! iprod = 15:ivar =  10 :: topography                   : km     : (x,y)       : Topography.kml
         ! iprod = 16:ivar =     :: profiles concentration?      :
 
+      real(kind=ip), parameter,public :: DEPO_THRESH_Default         = 1.0e-2_ip
+      real(kind=ip), parameter,public :: DEPRATE_THRESH_Default      = 1.0e-2_ip
+      real(kind=ip), parameter,public :: CLOUDCON_THRESH_Default     = 1.0e-3_ip
+      real(kind=ip), parameter,public :: CLOUDCON_GRID_THRESH_Default= 1.0e-7_ip
+      real(kind=ip), parameter,public :: CLOUDLOAD_THRESH_Default    = 2.0e-1_ip
+      real(kind=ip), parameter,public :: THICKNESS_THRESH_Default    = 1.0e-2_ip
+      real(kind=ip), parameter,public :: DBZ_THRESH_Default          =-2.0e+1_ip
+      logical      , parameter,public :: useWindVars_Default    = .false.
+      logical      , parameter,public :: useOutprodVars_Default = .true.
+      logical      , parameter,public :: useRestartVars_Default = .false.
+
         ! Publicly available variables
         !  Variable threshold values
         !  The deposit and cloudload thresholds are special in that they are used
@@ -110,17 +121,17 @@
         !  are written to the output netcdf file if post-processing required
         !  thresholding (if flooded contours are to be suppressed below the
         !  threshold, for example).
-      real(kind=ip),public    :: DEPO_THRESH           = 1.0e-2_ip  ! threshold deposit thickness (mm)
-      real(kind=ip),public    :: CLOUDLOAD_THRESH      = 2.0e-1_ip  ! threshold cloud load (t/km2)
+      real(kind=ip),public    :: DEPO_THRESH           = DEPO_THRESH_Default      ! threshold deposit thickness (mm)
+      real(kind=ip),public    :: CLOUDLOAD_THRESH      = CLOUDLOAD_THRESH_Default ! threshold cloud load (t/km2)
                                        ! 0.2 T/km2 is roughly the detection
                                        ! limit of Pavolonis's SEVIRI satellite retrievals
 
-      real(kind=ip),public    :: DEPRATE_THRESH        = 1.0e-2_ip  ! threshold deposition rate (mm/hr)
-      real(kind=ip),public    :: CLOUDCON_THRESH       = 1.0e-3_ip  ! threshold cloud concentration (kg/km3) for output
-      real(kind=ip),public    :: CLOUDCON_GRID_THRESH  = 1.0e-7_ip  ! threshold cloud concentration (kg/km3) for subgrid
+      real(kind=ip),public    :: DEPRATE_THRESH        = DEPRATE_THRESH_Default  ! threshold deposition rate (mm/hr)
+      real(kind=ip),public    :: CLOUDCON_THRESH       = CLOUDCON_THRESH_Default ! threshold cloud concentration (kg/km3) for output
+      real(kind=ip),public    :: CLOUDCON_GRID_THRESH  = CLOUDCON_GRID_THRESH_Default  ! threshold cloud concentration (kg/km3) for subgrid
 
-      real(kind=ip),public    :: THICKNESS_THRESH = 1.0e-2_ip  ! threshold thickness for start of deposition (mm)
-      real(kind=ip),public    :: DBZ_THRESH       =-2.0e+1_ip  ! threshold dbZ
+      real(kind=ip),public    :: THICKNESS_THRESH      = THICKNESS_THRESH_Default  ! threshold thickness for start of deposition (mm)
+      real(kind=ip),public    :: DBZ_THRESH            = DBZ_THRESH_Default  ! threshold dbZ
 
       ! These are the initialized values
       real(kind=op),public    :: DepositThickness_FillValue   = -9999.0_op
@@ -136,7 +147,7 @@
       logical,public          :: Calculated_Cloud_Load
       logical,public          :: Calculated_AshThickness
         ! Set this parameter if you want to include velocities in the output file
-      logical,public          :: useWindVars  = .false.
+      logical,public          :: useWindVars  = useWindVars_Default
 
         ! Set this to true if you want the extra output variables defined in the
         ! optional modules
@@ -151,14 +162,14 @@
 
         ! This variable is set to true indicating that the output file should include
         ! the standard derived variables in the output file.
-      logical,public :: useOutprodVars = .true.
+      logical,public :: useOutprodVars = useOutprodVars_Default
 
         ! This variable will be set to false if you do not want raw concentration
         ! values exported (only derived products and deposits) if indicated
         ! in the input file on block 5/line 15
         ! yes 2   # Write out 3-D ash concentration at specified times? / [output code: 1=2d+concen,2=2d only]
         ! Can also be reset in RESETPARAMS
-      logical,public :: useRestartVars = .false.
+      logical,public :: useRestartVars = useRestartVars_Default
 
       real(kind=ip),public :: CloudArea                ! area of ash cloud at a given time
       real(kind=ip),public :: LoadVal(5)               ! 5 threshold values for area calculations
@@ -183,8 +194,8 @@
       integer      ,dimension(:)    ,pointer ,public:: ContourDataNcurves => null() ! num of curves for each level (some = 0)
       integer      ,dimension(:,:)  ,pointer ,public:: ContourDataNpoints => null() ! num of pts for ilev and icurve
         ! User-specified contour interval and colors
-      integer      ,dimension(:,:)  ,pointer,public:: Con_Cust_RGB        => null()
-      real(kind=ip),dimension(:)    ,pointer,public:: Con_Cust_Lev        => null()
+      integer      ,dimension(:,:)  ,pointer ,public:: Con_Cust_RGB       => null()
+      real(kind=ip),dimension(:)    ,pointer ,public:: Con_Cust_Lev       => null()
 #else
       real(kind=ip),dimension(:)    ,allocatable  ,public:: ContourLev
       real(kind=ip),dimension(:,:,:),allocatable  ,public:: ContourDataX        ! x curve data with dims: ilev, icurve, ipnt
@@ -195,8 +206,6 @@
       integer      ,dimension(:,:)  ,allocatable  ,public:: Con_Cust_RGB
       real(kind=ip),dimension(:)    ,allocatable  ,public:: Con_Cust_Lev
 #endif
-
-
 
         ! Fixed size arrays for output products
       integer,parameter                           ,public:: Con_DepThick_mm_N   = 10
@@ -283,6 +292,8 @@
       real(kind=op),     dimension(:),    pointer,public :: var_User4d_XYZGs_FillVal   => null()
       real(kind=op), dimension(:,:,:,:,:),pointer,public :: var_User4d_XYZGs           => null()
       real(kind=ip),     dimension(:,:),  pointer,public :: Extra2dVar                 => null()
+        ! User-defined character lines (used for logging optional block data)
+      character(len=80), dimension(:),    pointer,public :: var_User_charlines         => null()
 #else
         ! 2-D variables (in x,y)
       logical,       dimension(:,:)  ,allocatable,public :: Mask_Cloud
@@ -339,8 +350,10 @@
       real(kind=op),     dimension(:),    allocatable,public :: var_User4d_XYZGs_FillVal
       real(kind=op), dimension(:,:,:,:,:),allocatable,public :: var_User4d_XYZGs
       real(kind=ip),     dimension(:,:),  allocatable,public :: Extra2dVar
+        ! User-defined character lines (used for logging optional block data)
+      character(len=80), dimension(:),    allocatable,public :: var_User_charlines
 #endif
-      character(len=30)                       ,public :: Extra2dVarName
+      character(len=20)                       ,public :: Extra2dVarName
 
       contains
       !------------------------------------------------------------------------
@@ -393,6 +406,12 @@
       allocate(dbZ(nxmax,nymax,nzmax))                              ! radar reflectivity (dbZ)
       dbZ = 0.0_ip
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exiting Subroutine Allocate_Output_Vars"
+      endif;enddo
+
+      return
+
       end subroutine Allocate_Output_Vars
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -417,6 +436,12 @@
       endif;enddo
 
       allocate(time_native(nt)); time_native = 0.0_dp
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_NTime"
+      endif;enddo
+
+      return
 
       end subroutine Allocate_NTime
 
@@ -450,6 +475,12 @@
         pr_ash = 0.0_op
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_Profile"
+      endif;enddo
+
+      return
+
       end subroutine Allocate_Profile
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -473,7 +504,7 @@
       use io_data,       only : &
          nvar_User2d_static_XY,nvar_User2d_XY,&
          nvar_User3d_XYGs,nvar_User3d_XYZ,    &
-         nvar_User4d_XYZGs
+         nvar_User4d_XYZGs,nvar_User_charlines
 
       integer,intent(in) :: nx
       integer,intent(in) :: ny
@@ -534,6 +565,13 @@
       allocate(var_User4d_XYZGs_MissVal(nvar_User4d_XYZGs));     var_User4d_XYZGs_MissVal= 0.0_op
       allocate(var_User4d_XYZGs_FillVal(nvar_User4d_XYZGs));     var_User4d_XYZGs_FillVal= 0.0_op
       allocate(var_User4d_XYZGs(nx,ny,nz,ns,nvar_User4d_XYZGs)); var_User4d_XYZGs        = 0.0_op
+      allocate(var_User_charlines(nvar_User_charlines));         var_User_charlines      = ''
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_Output_UserVars"
+      endif;enddo
+
+      return
 
       end subroutine Allocate_Output_UserVars
 
@@ -587,6 +625,12 @@
       if(allocated(Con_Cust_Lev))     deallocate(Con_Cust_Lev)
 #endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_Output_Vars"
+      endif;enddo
+
+      return
+
       end subroutine Deallocate_Output_Vars
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -613,6 +657,12 @@
       if(allocated(time_native))deallocate(time_native)
 #endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_NTime"
+      endif;enddo
+
+      return
+
       end subroutine Deallocate_NTime
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -638,6 +688,12 @@
 #else
       if(allocated(pr_ash))deallocate(pr_ash)                       ! vertical ash profile
 #endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_Profile"
+      endif;enddo
+
+      return
 
       end subroutine Deallocate_Profile
 
@@ -722,6 +778,12 @@
       if(allocated(var_User4d_XYZGs_FillVal))     deallocate(var_User4d_XYZGs_FillVal)
       if(allocated(var_User4d_XYZGs))             deallocate(var_User4d_XYZGs)
 #endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_Output_UserVars"
+      endif;enddo
+
+      return
 
       end subroutine Deallocate_Output_UserVars
 
@@ -837,6 +899,12 @@
       Con_CloudTime_Lev(1:Con_CloudTime_N) = Con_DepTime_Lev(1:Con_CloudTime_N)
       Con_CloudTime_RGB( 1:9,1:3) = Con_CloudTop_RGB( 1:9,1:3)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Set_OutVar_ContourLevel"
+      endif;enddo
+
+      return
+
       end subroutine Set_OutVar_ContourLevel
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -892,6 +960,12 @@
 
       Calculated_AshThickness = .true.
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine AshThicknessCalculator"
+      endif;enddo
+
+      return
+
       end subroutine AshThicknessCalculator
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -933,6 +1007,12 @@
            real(concen_pd(1:nxmax,1:nymax,1:nzmax,isize,ts1),kind=op)
         enddo
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine AshTotalCalculator"
+      endif;enddo
+
+      return
 
       end subroutine AshTotalCalculator
 
@@ -1006,6 +1086,12 @@
         enddo
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine dbZCalculator"
+      endif;enddo
+
+      return
+
       end subroutine dbZCalculator      
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1035,7 +1121,7 @@
          n_gs_max
 
       integer :: i,j,k
-      real(kind=ip) :: CellArea
+      !real(kind=ip) :: CellArea
 
       ! Both these concentration variables are in the 'natural' units of kg/km3
       real(kind=ip),dimension(nzmax) :: TotalConcentration ! concentration from all grain sizes as a vertical column
@@ -1059,7 +1145,7 @@
       if(n_gs_max.gt.0)then
         do i=imin,imax
           do j=jmin,jmax
-            CellArea = sigma_nz_pd(i,j,1)
+            !CellArea = sigma_nz_pd(i,j,1)
             TotalConcentration = 0.0_ip
             do k=1,nzmax
                ! Increment the cloud load for this column
@@ -1120,6 +1206,12 @@
 
       Calculated_Cloud_Load = .true.
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine ConcentrationCalculator"
+      endif;enddo
+
+      return
+
       end subroutine ConcentrationCalculator      
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1173,6 +1265,12 @@
           enddo
         enddo
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine CloudAreaCalculator"
+      endif;enddo
+
+      return
 
       end subroutine CloudAreaCalculator      
 
@@ -1237,6 +1335,12 @@
 
       Called_Gen_Output_Vars = .true.
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Gen_Output_Vars"
+      endif;enddo
+
+      return
+
       end subroutine Gen_Output_Vars
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1289,6 +1393,12 @@
 
         enddo
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Calc_AshVol_Aloft"
+      endif;enddo
+
+      return
 
       end subroutine Calc_AshVol_Aloft
 
@@ -1355,6 +1465,10 @@
         enddo
       enddo
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Calc_vprofile"
+      endif;enddo
+
       return
 
       end subroutine Calc_vprofile
@@ -1400,6 +1514,12 @@
                       KM3_2_M3                                          ! convert to km3
         enddo
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Calc_AshVol_Deposit"
+      endif;enddo
+
+      return
 
       end subroutine Calc_AshVol_Deposit
 
@@ -1455,6 +1575,12 @@
 
         enddo
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Calc_AshVol_Outflow"
+      endif;enddo
+
+      return
 
       end subroutine Calc_AshVol_Outflow
 
@@ -1548,6 +1674,10 @@
           endif
         endif
       enddo
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine FirstAsh"
+      endif;enddo
 
       return
 

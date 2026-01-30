@@ -43,9 +43,9 @@
 
       INTERFACE
         character (len=13) function HS_yyyymmddhhmm_since(HoursSince,byear,useLeaps)
-          real(kind=8)               ::  HoursSince
-          integer                    ::  byear
-          logical                    ::  useLeaps
+          real(kind=8),intent(in) ::  HoursSince
+          integer     ,intent(in) ::  byear
+          logical     ,intent(in) ::  useLeaps
         end function HS_yyyymmddhhmm_since
       END INTERFACE
 
@@ -81,9 +81,13 @@
 
       OutputStep_Marker = ' ' 
 
-2     format(6x,i6,a1,f11.3,3x,a,5f12.5,f13.1)
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine TimeStepTotals"
+      endif;enddo
 
       return
+
+2     format(6x,i6,a1,f11.3,3x,a,5f12.5,f13.1)
 
       end subroutine TimeStepTotals
 

@@ -31,7 +31,7 @@
       use io_units
 
       use global_param,  only : &
-         useCalcFallVel,useLogNormGSbins,PI,GRAV
+         useCalcFallVel,useLogNormGSbins,PI,GRAV,M_2_MM
 
       implicit none
 
@@ -45,18 +45,24 @@
              Deallocate_Tephra_Met,     &
              Calculate_Tephra_Shape,    &
              Sort_Tephra_Size,          &
+             partition_gsbins,          &
              Set_Vf_Meso,               &
              Prune_GS,                  &
              vset_WH                        ! This is only public for test cases
 
         ! Publicly available variables
 
-      real(kind=ip),public :: MagmaDensity   = 2500.0_ip  !density of magma, in kg/m3
-      real(kind=ip),public :: DepositDensity = 1000.0_ip  !deposit density, in kg/m3
-      real(kind=ip),public :: LAM_GS_THRESH  =  250.0_ip  ! Invokes Cslip once effect is 1%
+      real(kind=ip),parameter,public :: MagmaDensity_Default    = 2500.0_ip !density of magma, in kg/m3
+      real(kind=ip),parameter,public :: DepositDensity_Default  = 1000.0_ip !deposit density, in kg/m3
+      real(kind=ip),parameter,public :: LAM_GS_THRESH_Default   = 250.0_ip  ! Invokes Cslip once effect is 1%
                                      !=  125.0_ip  ! Invokes Cslip once effect is 2%
                                      !=   50.0_ip  ! Invokes Cslip once effect is 5%
-      real(kind=ip),public :: AIRBORNE_THRESH = 1.0e-3_ip ! Mass threshold for flagging bin as empty (kg)
+      real(kind=ip),parameter,public :: AIRBORNE_THRESH_Default = 1.0e-3_ip ! Mass threshold for flagging bin as empty (kg)
+
+      real(kind=ip),public :: MagmaDensity    = MagmaDensity_Default
+      real(kind=ip),public :: DepositDensity  = DepositDensity_Default
+      real(kind=ip),public :: LAM_GS_THRESH   = LAM_GS_THRESH_Default
+      real(kind=ip),public :: AIRBORNE_THRESH = AIRBORNE_THRESH_Default
 
       integer,public :: n_gs_max                      ! # size classes of particles 
       integer,public :: n_gs_aloft                    ! max gs bin still aloft
@@ -74,6 +80,7 @@
               !   1 = Wilson and Huang: F = (b+c)/2a maybe also with G = c/b
               !   2 = Sphericity
       integer,public                                    :: Shape_ID
+      integer,public                                    :: Tephra_Ncols           ! Number of columns specifying GS in input file
 
 #ifdef USEPOINTERS
       real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_v_s     =>null()    ! Settling vel (m/s)
@@ -114,9 +121,11 @@
       real(kind=sp),dimension(:,:,:,:),allocatable,public :: vf_meso_next_step_MetP_sp
 #endif
 
-      real(kind=ip),public :: phi_mean
-      real(kind=ip),public :: phi_stddev
-      real(kind=ip),parameter :: vset_ConvCrit = 0.001_ip
+      real(kind=ip),public :: LN_phi_mean
+      real(kind=ip),public :: LN_phi_stddev
+      real(kind=ip),public :: LN_massfrac
+      real(kind=ip),dimension(:),allocatable,public :: LN_suppl_frac
+      real(kind=ip),parameter :: vset_ConvCrit = 0.001_ip  ! Convergence criterion for iterative vset
 
       contains
       !------------------------------------------------------------------------
@@ -147,6 +156,12 @@
       allocate(Tephra_gsG(n_gs_max));       Tephra_gsG      = 0.0_ip
       allocate(Tephra_gsPhi(n_gs_max));     Tephra_gsPhi    = 0.0_ip
       allocate(Tephra_gsF_fac(n_gs_max,5)); Tephra_gsF_fac  = 0.0_ip
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_Tephra"
+      endif;enddo
+
+      return
 
       end subroutine Allocate_Tephra
 
@@ -179,6 +194,12 @@
 
       allocate(vf_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet,n_gs_max))
       allocate(vf_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet,n_gs_max))
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_Tephra_Met"
+      endif;enddo
+
+      return
 
       end subroutine Allocate_Tephra_Met
 
@@ -220,6 +241,12 @@
       if(allocated(Tephra_gsF_fac))    deallocate(Tephra_gsF_fac)
 #endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_Tephra"
+      endif;enddo
+
+      return
+
       end subroutine Deallocate_Tephra
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -247,6 +274,12 @@
       if(allocated(vf_meso_last_step_MetP_sp)) deallocate(vf_meso_last_step_MetP_sp)
       if(allocated(vf_meso_next_step_MetP_sp)) deallocate(vf_meso_next_step_MetP_sp)
 #endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_Tephra_Met"
+      endif;enddo
+
+      return
 
       end subroutine Deallocate_Tephra_Met
 
@@ -414,6 +447,12 @@
         enddo
       endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Set_Vf_Meso"
+      endif;enddo
+
+      return
+
       end subroutine Set_Vf_Meso
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -533,6 +572,12 @@
         endif
       enddo
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Calculate_Tephra_Shape"
+      endif;enddo
+
+      return
+
       end subroutine Calculate_Tephra_Shape
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -605,7 +650,20 @@
         Tephra_gsF_fac(i+1,:)= temp_a
       enddo
 
-      if (useLogNormGSbins) call partition_gsbins(phi_mean,phi_stddev)
+      if (useLogNormGSbins) then
+        allocate(LN_suppl_frac(n_gs_max))
+        LN_suppl_frac = 0.0_ip
+        call partition_gsbins(LN_phi_mean,LN_phi_stddev)
+        do isize = 1,n_gs_max
+          Tephra_bin_mass(isize) = Tephra_bin_mass(isize) + LN_suppl_frac(isize)*LN_massfrac
+        enddo
+      endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Sort_Tephra_Size"
+      endif;enddo
+
+      return
 
       end subroutine Sort_Tephra_Size
 
@@ -622,7 +680,7 @@
 !  in the variable phi) according to the input parameters for the mean and
 !  standard distribution in phi-space (mu, sigma).  The phi-value of bin
 !  boudaries is assumed to be the average of neighboring phi values, so this
-!  works best if bins are equally spaced in phi and that the bins comfortably
+!  works best if bins are equally spaced in phi and when the bins comfortably
 !  span the distribution.  Values for the upper and lower bins are calculated
 !  by integration the tails to the far boundary phi-value.  This log-normal
 !  distribution will only be applied to the mass-fraction not already specified.
@@ -640,20 +698,18 @@
 
       real(kind=ip),dimension(n_gs_max)   :: phi
       real(kind=ip),dimension(n_gs_max-1) :: phi_boundaries
-      real(kind=ip),dimension(n_gs_max)   :: suppl_frac
       integer       :: mid_bin
       real(kind=ip) :: mid_bin_neg_half
       real(kind=ip) :: mid_bin_pos_half
       real(kind=ip) :: erf_at_a,erf_at_b
-      real(kind=ip) :: fac1,frac_to_distrib
+      real(kind=ip) :: fac1
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine partition_gsbins"
       endif;enddo
 
-      suppl_frac = 0.0_ip
-      mid_bin = 1
-      fac1 = 0.5_ip
+      mid_bin    = 1
+      fac1       = 0.5_ip
 
       !Note: This subroutine assumes that the grainsmax bins have been
       !      sorted from smallest to largest
@@ -674,7 +730,7 @@
 
       ! Get the phi of the other bins
       do isize = 1,n_gs_max
-        phi(isize) = -log(Tephra_gsdiam(isize))/log(2.0_ip)
+        phi(isize) = -log(Tephra_gsdiam(isize)*M_2_MM)/log(2.0_ip)
       enddo
 
       ! boundary between bins is the average phi
@@ -688,7 +744,7 @@
         endif;enddo
         stop 1
       else if (n_gs_max.eq.1)then
-        suppl_frac(1)=1.0_ip
+        LN_suppl_frac(1)=1.0_ip
       else
         ! Convert boundaries between grainsmaxs given to locations on a
         ! standard normal Gaussian, given mu and sigma
@@ -714,11 +770,11 @@
           ! We're dividing the surplus into two bins
            erf_at_a = 0.5_ip - fac1*erf(abs(phi_boundaries(1)))
            if(phi_boundaries(1).lt.0.0_ip)then
-             suppl_frac(1) = erf_at_a
-             suppl_frac(2) = 1.0_ip - erf_at_a
+             LN_suppl_frac(1) = erf_at_a
+             LN_suppl_frac(2) = 1.0_ip - erf_at_a
            else
-             suppl_frac(2) = erf_at_a
-             suppl_frac(1) = 1.0_ip - erf_at_a
+             LN_suppl_frac(2) = erf_at_a
+             LN_suppl_frac(1) = 1.0_ip - erf_at_a
            endif
         else if(n_gs_max.ge.3)then
           do isize = 2,n_gs_max-1
@@ -732,35 +788,36 @@
         ! Integrating the positive half (lower index) of phi
         !   integrate from zero to the first boundary
         mid_bin_pos_half = fac1*erf(abs(phi_boundaries(mid_bin-1)))
-        suppl_frac(mid_bin) = mid_bin_pos_half
+        LN_suppl_frac(mid_bin) = mid_bin_pos_half
         ! Now integrate the remaining bins on the positive side of mu
         do isize = mid_bin-1,2,-1
           erf_at_a = fac1*erf(abs(phi_boundaries(isize)))
           erf_at_b = fac1*erf(abs(phi_boundaries(isize-1)))
-          suppl_frac(isize) = erf_at_b - erf_at_a
+          LN_suppl_frac(isize) = erf_at_b - erf_at_a
         enddo
         ! The last positive bin is from phi_boundaries(1) to Inf
-        suppl_frac(1) = 0.5_ip - fac1*erf(abs(phi_boundaries(1)))
+        LN_suppl_frac(1) = 0.5_ip - fac1*erf(abs(phi_boundaries(1)))
 
         ! Now integrate the negative side
         mid_bin_neg_half = fac1*erf(abs(phi_boundaries(mid_bin)))
-        suppl_frac(mid_bin) = mid_bin_neg_half
+        LN_suppl_frac(mid_bin) = mid_bin_neg_half
         ! Now integrate the remaining bins on the negative side of mu
         do isize = mid_bin+1,n_gs_max-1
           erf_at_a = fac1*erf(abs(phi_boundaries(isize-1)))
           erf_at_b = fac1*erf(abs(phi_boundaries(isize)))
-          suppl_frac(isize) = erf_at_b - erf_at_a
+          LN_suppl_frac(isize) = erf_at_b - erf_at_a
         enddo
           ! The last negative bin is from phi_boundaries(1) to -Inf
-        suppl_frac(n_gs_max) = 0.5_ip - fac1*erf(abs(phi_boundaries(n_gs_max-1)))
+        LN_suppl_frac(n_gs_max) = 0.5_ip - fac1*erf(abs(phi_boundaries(n_gs_max-1)))
           ! Reconstruct middle bin from the two one-sided integrations
-        suppl_frac(mid_bin) = mid_bin_pos_half + mid_bin_neg_half
+        LN_suppl_frac(mid_bin) = mid_bin_pos_half + mid_bin_neg_half
       endif
 
-      frac_to_distrib = 1.0_ip - sum(Tephra_bin_mass(1:n_gs_max))
-      do isize = 1,n_gs_max
-        Tephra_bin_mass(isize) = Tephra_bin_mass(isize) + suppl_frac(isize)*frac_to_distrib
-      enddo
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine partition_gsbins"
+      endif;enddo
+
+      return
 
       end subroutine partition_gsbins
 
@@ -808,6 +865,12 @@
           n_gs_aloft = n_gs_aloft + 1
         endif
       enddo
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Prune_GS"
+      endif;enddo
+
+      return
 
       end subroutine Prune_GS
 

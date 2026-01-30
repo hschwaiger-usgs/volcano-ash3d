@@ -92,20 +92,31 @@ FASTFPPFLAG = -DFAST_DT -DFAST_SUBGRID
 
 # PLOTTING LIBRARIES
 #  The default plotting utility for Ash3d_PostProc is gnuplot with plots generated
-#  through system calls to that external program.  Alternatively, you can use either
-#  the plplot, dislin or GMT plotting packages.  Currently, shapefile require contour to
-#  be generated either with gnuplot, dislin or GMT.  Set the corresponding variable
+#  through system calls to that external program.  Alternatively, you can use any of
+#  the following plotting packages:
+#    plplot
+#    dislin
+#    GMT
+#    MatLab + mapping toolbox / octave
+#    python / matplotlib / cartopy
+#  Three graphics products are expected: 2d contour maps, 2d vert. profile plots, timeseries deposit
+#  accumulation plots for the kmz files.
+#  Currently, shapefile require contour data to be available either internally via
+#  dislin, or through files as with gnuplot or GMT.  Set the corresponding variable
 #  below to 'T' if you want to build with these libraries.
     # Set to F if you do not have zip installed (verify below that zippath=/usr/bin/zip)
 USEZIP     = T
-    # Set to F if you do not have gnuplot installed (verify below that zippath=/usr/bin/gnuplot)
+    # Set to F if you do not have gnuplot installed (verify below that gnupath=/usr/bin/gnuplot)
 USEGNUPLOT = T
     # Set to T if you want ploplot included (verify local paths below)
 USEPLPLOT  = F
     # Set to T if you want dislin included (verify local paths below)
 USEDISLIN  = F
-    # Set to T only if using the API, otherwise scripts will be written
+    # The following are place-holders for API bindings. Set to 'F', scripting will still work
 USEGMT     = F
+USEMATLAB  = F  # MatLab required the mapping toolbox as well for maps
+USEOCTAVE  = F  # Octave mapping is not yet set up
+USEPYTHON  = F  # python expects matplotlib and cartopy
 
 MFILE=makefile
 
@@ -138,7 +149,7 @@ OPTMODS_FPP=
 OPTMODS_OBJ=
 
 # Ash3d can log some useful information about a run such as the username of 
-# account that ran the case, then hostname of the system and run directory
+# account that ran the case, the hostname of the system and run directory
 # (or current working directory).  Although this is useful for record-keeping,
 # this can be considered sensitive information.  To disable this logging,
 # set PII=OFF
@@ -236,6 +247,7 @@ ifeq ($(USEDISLIN), T)
  dislinOBJ  = Ash3d_PostProc_dislin.o
 else
  dislinFPPFLAG = 
+ dislinOBJ =
 endif
 ifeq ($(USEPLPLOT), T)
  plplotFPPFLAG = -DUSEPLPLOT
@@ -251,6 +263,7 @@ ifeq ($(USEPLPLOT), T)
  plplotOBJ  = Ash3d_PostProc_plplot.o
 else
  plplotFPPFLAG =
+ plplotOBJ =
 endif
 ifeq ($(USEGNUPLOT), T)
  gnuplotFPPFLAG = -DUSEGNUPLOT
@@ -269,6 +282,7 @@ else
  gmtFPPFLAG = 
  gmtOBJ =
 endif
+PLOTOBJS = $(dislinOBJ) $(plplotOBJ) Ash3d_PostProc_gnuplot.o Ash3d_PostProc_GMT.o Ash3d_PostProc_matlab.o Ash3d_PostProc_python.o
 PLOTFPPFLAG = $(zipFPPFLAG) $(gnuplotFPPFLAG) $(plplotFPPFLAG) $(dislinFPPFLAG) $(gmtFPPFLAG)
 PLOTLIBS= $(plplotLIBS) $(dislinLIBS) $(gmtLIBS)
 PLOTINC=$(plplotINC) $(dislinINC) $(gmtINC)
@@ -303,6 +317,7 @@ endif
 #  GNU Fortran Compiler
 #  Intel Fortran Compiler
 #  AMD Optimizing C/C++/Fortran Compiler (aocc)
+#  Nvidia Fortran Compiler (nvhpc)
 include $(SYSINC)
 ###############################################################################
 
@@ -332,6 +347,7 @@ write_ASCII.o            \
 write_BINARY.o           \
 write_KML.o              \
 Topography.o             \
+Diffusivity_Variable.o   \
 ResetParams.o
 
 PPOBJS = Ash3d_VariableModules.o        \
@@ -353,17 +369,26 @@ PPOBJS = Ash3d_VariableModules.o        \
          write_BINARY.o                 \
          write_Shapefile.o              \
          Ash3d_PostProc_cities.o        \
+         Topography.o                   \
+         Diffusivity_Variable.o         \
          ResetParams.o
 
-GRAFOBJ = Ash3d_PostProc_gnuplot.o $(plplotOBJ) $(dislinOBJ) Ash3d_PostProc_GMT.o $(gmtOBJ)
+GRAFOBJ = Ash3d_PostProc_gnuplot.o $(plplotOBJ) $(dislinOBJ) Ash3d_PostProc_GMT.o $(gmtOBJ) Ash3d_PostProc_matlab.o Ash3d_PostProc_python.o
 
-TOOLOBJ = Ash3d_ASCII_check.o
+TOOLOBJ = Ash3d_ASCII_check.o Ash3d_ASCII_DepThin.o Ash3d_ASCII_GenCTR.o Ash3d_GenASCII_from_table.o Ash3d_NetCDF_GenCTR.o
 
 ifeq ($(USENETCDF), T)
   DATAOBJ = write_NETCDF.o
 endif
 
 all: Ash3d tools postproc
+	$(info -------------------------------------)
+	$(info  Before running 'make check', set the WINDROOT and USGSROOT environment variables.)
+	$(info  e.g. execute: )
+	$(info  export WINDROOT="${WINDROOT}")
+	$(info  export USGSROOT="${USGSROOT}")
+	$(info            or: source set_Ash3d.env)
+	$(info -------------------------------------)
 
 Ash3d:  $(OBJECTS) $(DATAOBJ) Ash3d.F90 $(MFILE) $(SYSINC)
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c Ash3d.F90 
@@ -379,13 +404,15 @@ Ash3d_VariableModules.o: $(ASH3DCCSRC)/Ash3d_VariableModules.f90 $(MFILE) $(SYSI
 	echo "        zippath = $(zippath)" > zippath.h
 	echo "        gnuplotpath = $(gnuplotpath)" > gnuplotpath.h
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/Ash3d_VariableModules.f90
-Input_Data.o: $(ASH3DCCSRC)/Input_Data.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Help.o Tephra.o VotW.o Diffusion.o Airports.o $(DATAOBJ) Output_Vars.o Source.o Source_Umbrella.o ResetParams.o
+Input_Data.o: $(ASH3DCCSRC)/Input_Data.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Tephra.o VotW.o Diffusion.o Airports.o $(DATAOBJ) Output_Vars.o Source.o Source_Umbrella.o ResetParams.o Diffusivity_Variable.o Topography.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/Input_Data.f90
 ResetParams.o: $(ASH3DCCSRC)/ResetParams.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Tephra.o Output_Vars.o Source_Umbrella.o Diffusion.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/ResetParams.f90
-Topography.o: Topography.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Tephra.o Calc_Mesh.o $(DATAOBJ) write_BINARY.o write_ASCII.o
-	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c Topography.f90
-Help.o: $(ASH3DCCSRC)/Help.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
+Topography.o: $(ASH3DCCSRC)/Topography.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Tephra.o Calc_Mesh.o $(DATAOBJ) write_BINARY.o write_ASCII.o
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/Topography.f90
+Diffusivity_Variable.o: $(ASH3DCCSRC)/Diffusivity_Variable.f90 $(MFILE) Ash3d_VariableModules.o Output_Vars.o Tephra.o Diffusion.o Atmosphere.o
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/Diffusivity_Variable.f90
+Help.o: $(ASH3DCCSRC)/Help.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Input_Data.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) -c $(ASH3DCCSRC)/Help.f90
 VotW.o: $(ASH3DCCSRC)/VotW.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Source.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/VotW.f90
@@ -428,14 +455,14 @@ Set_BC.o: $(ASH3DCCSRC)/Set_BC.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
 # Output
 Output_Vars.o: $(ASH3DCCSRC)/Output_Vars.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Airports.o Tephra.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/Output_Vars.f90
-Output_Results.o: $(ASH3DCCSRC)/Output_Results.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Output_Vars.o write_BINARY.o write_ASCII.o write_KML.o $(DATAOBJ)
+Output_Results.o: $(ASH3DCCSRC)/Output_Results.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Output_Vars.o write_BINARY.o write_ASCII.o write_KML.o $(DATAOBJ) $(PLOTOBJS)
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/Output_Results.f90
 write_ASCII.o: $(ASH3DCCSRC)/write_ASCII.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Output_Vars.o Airports.o Tephra.o Source.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/write_ASCII.f90
 write_BINARY.o: $(ASH3DCCSRC)/write_BINARY.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/write_BINARY.f90
 ifeq ($(USENETCDF), T)
-write_NETCDF.o: $(ASH3DCCSRC)/write_NETCDF.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Output_Vars.o Airports.o Tephra.o Source.o Source_Umbrella.o
+write_NETCDF.o: $(ASH3DCCSRC)/write_NETCDF.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o Output_Vars.o Airports.o Tephra.o Source.o Source_Umbrella.o Diffusion.o Diffusivity_Variable.o Topography.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/write_NETCDF.f90
 endif
 #ifeq ($(USEGRIB), T)
@@ -452,6 +479,10 @@ postproc: $(ASH3DCCSRC)/Ash3d_PostProc.f90 $(PPOBJS) $(GRAFOBJ) $(DATAOBJ) $(MFI
 # We always compile the gnuplot subroutine since these will just throw an error if gnuplot is not installed
 Ash3d_PostProc_gnuplot.o: Ash3d_PostProc_gnuplot.f90 $(MFILE) $(SYSINC) Ash3d_PostProc_cities.o Ash3d_VariableModules.o Output_Vars.o Airports.o Source.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3DCCSRC)/Ash3d_PostProc_gnuplot.f90
+Ash3d_PostProc_matlab.o: Ash3d_PostProc_matlab.f90 $(MFILE) $(SYSINC) Ash3d_PostProc_cities.o write_ASCII.o Ash3d_VariableModules.o Output_Vars.o Airports.o Source.o
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3DCCSRC)/Ash3d_PostProc_matlab.f90
+Ash3d_PostProc_python.o: Ash3d_PostProc_python.f90 $(MFILE) $(SYSINC) Ash3d_PostProc_cities.o write_ASCII.o Ash3d_VariableModules.o Output_Vars.o Airports.o Source.o
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3DCCSRC)/Ash3d_PostProc_python.f90
 ifeq ($(USEPLPLOT), T)
 Ash3d_PostProc_plplot.o: Ash3d_PostProc_plplot.f90 $(MFILE) $(SYSINC) Ash3d_PostProc_cities.o Ash3d_VariableModules.o Output_Vars.o Airports.o Source.o
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) $(PLOTINC) $(PLOTLIBS) -c $(ASH3DCCSRC)/Ash3d_PostProc_plplot.f90
@@ -471,7 +502,13 @@ Ash3d_PostProc_cities.o: Ash3d_PostProc_cities.f90 $(MFILE) $(SYSINC) Ash3d_Vari
 write_Shapefile.o: write_Shapefile.f90 $(MFILE) $(SYSINC) Ash3d_VariableModules.o write_BINARY.o
 	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/write_Shapefile.f90
 
-tools: ascii_check
+tools: ascii_check ascii_dep NCgen_ctr ASCIIgen_ctr tab2ascii
+
+tab2ascii: $(ASH3DCCSRC)/tools/Ash3d_GenASCII_from_table.f90 Ash3d_VariableModules.o write_ASCII.o $(MFILE) $(SYSINC)
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/tools/Ash3d_GenASCII_from_table.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d_GenASCII_from_table.o $(LIBS) -o Ash3d_GenASCII_from_table
+	mkdir -p ../bin/tools
+	mv Ash3d_GenASCII_from_table ../bin/tools/Ash3d_GenASCII_from_table
 
 ascii_check: $(ASH3DCCSRC)/tools/Ash3d_ASCII_check.f90 Ash3d_VariableModules.o write_ASCII.o $(MFILE) $(SYSINC)
 	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/tools/Ash3d_ASCII_check.f90
@@ -484,6 +521,29 @@ ascii_stats: $(ASH3DCCSRC)/tools/Ash3d_ASCII_stats.f90 Ash3d_VariableModules.o w
 	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d_ASCII_stats.o $(LIBS) -o Ash3d_ASCII_stats
 	mkdir -p ../bin/tools
 	mv Ash3d_ASCII_stats ../bin/tools/Ash3d_ASCII_stats
+
+ascii_dep: $(ASH3DCCSRC)/tools/Ash3d_ASCII_DepThin.f90 Ash3d_VariableModules.o write_ASCII.o $(MFILE) $(SYSINC)
+	$(FC) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/tools/Ash3d_ASCII_DepThin.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d_ASCII_DepThin.o $(LIBS) -o Ash3d_ASCII_DepThin
+	mkdir -p ../bin/tools
+	mv Ash3d_ASCII_DepThin ../bin/tools/Ash3d_ASCII_DepThin
+
+ifeq ($(USENETCDF), T)
+NCgen_ctr: $(ASH3DCCSRC)/tools/Ash3d_NetCDF_GenCTR.f90 Ash3d_VariableModules.o write_NETCDF.o Input_Data.o Source.o Tephra.o Diffusion.o Diffusivity_Variable.o Topography.o $(MFILE) $(SYSINC)
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/tools/Ash3d_NetCDF_GenCTR.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d_NetCDF_GenCTR.o $(LIBS) -o Ash3d_NetCDF_GenCTR
+	mkdir -p ../bin/tools
+	mv Ash3d_NetCDF_GenCTR ../bin/tools/Ash3d_NetCDF_GenCTR
+else
+NCgen_ctr:
+	echo "NCgen_ctr is only built if NetCDF libraries are linked."
+endif
+
+ASCIIgen_ctr: $(ASH3DCCSRC)/tools/Ash3d_ASCII_GenCTR.f90 Ash3d_VariableModules.o Input_Data.o Source.o Tephra.o Diffusion.o Diffusivity_Variable.o Topography.o $(MFILE) $(SYSINC)
+	$(FC) $(FPPFLAGS) $(FFLAGS) $(EXFLAGS) $(LIBS) -c $(ASH3DCCSRC)/tools/Ash3d_ASCII_GenCTR.f90
+	$(FC) $(FFLAGS) $(EXFLAGS) $(OBJECTS) $(DATAOBJ) Ash3d_ASCII_GenCTR.o $(LIBS) -o Ash3d_ASCII_GenCTR
+	mkdir -p ../bin/tools
+	mv Ash3d_ASCII_GenCTR ../bin/tools/Ash3d_ASCII_GenCTR
 
 check: ascii_check Ash3d $(MFILE) $(SYSINC)
 	bash run_tests.sh
@@ -500,6 +560,10 @@ install:
 	install -m 755 ../bin/Ash3d $(INSTALLDIR)/bin/Ash3d
 	install -m 755 ../bin/Ash3d_PostProc $(INSTALLDIR)/bin/Ash3d_PostProc
 	install -m 755 ../bin/tools/Ash3d_ASCII_check $(INSTALLDIR)/bin/tools/Ash3d_ASCII_check
+	install -m 755 ../bin/tools/Ash3d_ASCII_DepThin $(INSTALLDIR)/bin/tools/Ash3d_ASCII_DepThin
+	install -m 755 ../bin/tools/Ash3d_ASCII_GenCTR $(INSTALLDIR)/bin/tools/Ash3d_ASCII_GenCTR
+	install -m 755 ../bin/tools/Ash3d_NetCDF_GenCTR $(INSTALLDIR)/bin/tools/Ash3d_NetCDF_GenCTR
+	install -m 755 ../bin/tools/Ash3d_GenASCII_from_table $(INSTALLDIR)/bin/tools/Ash3d_GenASCII_from_table
 	install -m 644 ../share/GlobalAirports_ewert.txt $(INSTALLDIR)/share/
 	install -m 644 ../share/VotW_ESP_v12_csv.txt  $(INSTALLDIR)/share/
 	install -m 644 ../share/post_proc/*png $(INSTALLDIR)/share/post_proc/
@@ -510,6 +574,10 @@ uninstall:
 	rm -f $(INSTALLDIR)/bin/Ash3d
 	rm -f $(INSTALLDIR)/bin/Ash3d_PostProc
 	rm -f $(INSTALLDIR)/bin/tools/Ash3d_ASCII_check
+	rm -f $(INSTALLDIR)/bin/tools/Ash3d_ASCII_DepThin
+	rm -f $(INSTALLDIR)/bin/tools/Ash3d_ASCII_GenCTR
+	rm -f $(INSTALLDIR)/bin/tools/Ash3d_NetCDF_GenCTR
+	rm -f $(INSTALLDIR)/bin/tools/Ash3d_GenASCII_from_table
 	rm -f $(INSTALLDIR)/share/GlobalAirports_ewert.txt
 	rm -f $(INSTALLDIR)/share/VotW_ESP_v12_csv.txt
 	rm -f $(INSTALLDIR)/share/post_proc/CloudLoad_hsv.png

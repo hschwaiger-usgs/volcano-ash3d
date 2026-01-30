@@ -7,7 +7,6 @@
 !   mesh
 !   solution
 !   time_data
-!   time_data
 !   wind_grid
 ! Because these are just data modules, all variables are set to public by default.
 ! A few of these modules have allocate/deallocate subroutines.
@@ -88,8 +87,13 @@
       !   For KLM output, start file numbers at 500
       integer,parameter :: fid_kmlbase    = 500
       integer,parameter :: fid_kmlPOI     = 550
-      integer,parameter :: fid_kmlgnuscr  = 555
-      integer,parameter :: fid_kmlgnudat  = 556
+      !   For graphics scripts and files, start file numbers at 600
+      !integer,parameter :: fid_kmlgnuscr  = 555
+      !integer,parameter :: fid_kmlgnudat  = 556
+      integer,parameter :: fid_script     = 600
+      integer,parameter :: fid_outdata    = 610
+      integer,parameter :: fid_contourdata= 620
+      integer,parameter :: fid_misc       = 630
 
       ! Initialize these with the defaults, but we will reset these in the subroutine
       integer :: nio  = 1                    ! number of output streams (stdout and logfile)
@@ -119,6 +123,8 @@
       integer,parameter :: verbosity_error        = 8  ! No logging to stdout, only stderr (and logfile)
       integer,parameter :: verbosity_silent       = 9  ! No logging to stdout,stderr. Logfile written as normal
       integer,parameter :: verbosity_dark         = 10 ! No logging to stdout,stderr or logfile
+
+      character :: bs ! Some scripts need a backslash, but some compilers interprete it as an escape. 92='\'
 
       contains
 
@@ -154,10 +160,14 @@
         if(ios.lt.0)then
           write(errlog(io),*)'ERROR Reading from file:  EOF encountered'
           write(errlog(io),*)'  error code: ',ios
-        else
+        elseif(ios.gt.0)then
           write(errlog(io),*)'ERROR Reading line from file:  input line format error'
           write(errlog(io),*)'  error code: ',ios
           write(errlog(io),*)'  Offending line: ',linebuffer080
+        else
+          write(outlog(io),*)'WARNING: FileIO_Error_Handler called with success return code.'
+          write(outlog(io),*)'         Returning to calling routine.'
+          return
         endif
         write(errlog(io),*)'  Ash3d diagnostics: ',linebuffer050
         write(errlog(io),*)'  System Message: ',trim(adjustl(iomessage))
@@ -236,7 +246,144 @@
         stop 1
       endif
 
+      return
+
       end subroutine FileIO_Check_testkey
+
+!##############################################################################
+!
+!    FileIO_CleanLine
+!
+!    Subroutine called to remove all control characters from the line.
+!    If the input line starts with '*' or '#', then subroutine exits.
+!    Leading spaces are removed.
+!    Each tab is converted to a single space (9 replaced with 32).
+!    Acceptable characters in stings:
+!     useUnicode=.false. :: include only (in decimal)
+!                                 32 = space
+!                                 43 = +
+!                                 45 = -
+!                                 46 = .
+!                                 47 = /
+!                              48-57 = 0-9
+!                                 58 = :
+!                              65-90 = A-Z
+!                                 92 = \
+!                                 95 = _
+!                             97-122 = a-z
+!     useUnicode=.true.  :: exclude (in decimal) 0-31 control chars (with 9 mapped to 32)
+!                                               33-42 punctuation
+!                                               59-64 more punctuation
+!                                                  91 [
+!                                               93-94 ] and ^
+!                                                  96 `
+!                                             123-127 braces and punctuation
+!
+! Note: ASCII table can be found at https://www.ascii-code.com/
+!
+!##############################################################################
+
+      subroutine FileIO_CleanLine(useUnicode,strlen,linebuffer)
+
+      logical          ,intent(in )   :: useUnicode
+      integer          ,intent(out)   :: strlen
+      character(len=*) ,intent(inout) :: linebuffer
+
+      integer :: asciicode
+      logical :: IsComment
+      logical :: IsAcceptable 
+
+      integer :: input_strlen
+      integer :: strpos_end
+      integer :: i,ii
+      character :: ch
+      character(len=:),allocatable :: tmpstr
+
+      ! Get input string length (likely either 80 or 130, but is arbitrary)
+      input_strlen = len(linebuffer)
+      strpos_end   = input_strlen
+      IsComment    = .false.
+      IsAcceptable = .true.
+
+      allocate(character(len=input_strlen) :: tmpstr)
+
+      i =1 ! start of input string
+      ii=1 ! start of output string
+      ch = linebuffer(i:i)
+      asciicode = ichar(ch)
+      if(asciicode.eq.35.or.asciicode.eq.42) IsComment = .true.
+      if (IsComment) return ! if the first character of the line is a comment, exit the subroutine
+        ! Now loop through the input string and filter
+      do while (i.le.input_strlen.and..not.IsComment)
+        ch = linebuffer(i:i)
+        asciicode = ichar(ch)
+
+        if(asciicode.eq.35.or.& ! '#' ! Check character against comment chars
+           asciicode.eq.42)then ! '*'
+          IsComment  = .true.
+          strpos_end = i-1     ! If we find a comment character, mark the new end position
+        endif
+        if(asciicode.eq.9)then         ! If we find a tab, replace with a space
+          ch = ' '
+          asciicode = 32
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)'   WARNING: line from file contained a tab which was replaced with a space.'
+          endif;enddo
+        endif
+
+        if(useUnicode)then
+          ! If using unicode, then only exclude certain values
+          if((                    asciicode.le.31) .or. &  ! 0-31 control chars
+             (asciicode.ge.33.and.asciicode.le.42) .or. &  ! punctuation
+             (asciicode.ge.59.and.asciicode.le.64) .or. &  ! punctuation
+             (        asciicode.eq.91            ) .or. &  ! [
+             (        asciicode.eq.93            ) .or. &  ! ]
+             (        asciicode.eq.94            ) .or. &  ! ^
+             (        asciicode.eq.96            ) .or. &  ! `
+             (asciicode.ge.123.and.asciicode.le.127))then  ! braces and punctuation
+            IsAcceptable = .false.
+          else
+            IsAcceptable = .true.
+          endif
+        else
+          ! If using traditional ASCII, then only allow certain characters
+          if((        asciicode.eq.32            ) .or. &  ! ' ' = space
+             (        asciicode.eq.43            ) .or. &  ! '+' = plus
+             (        asciicode.eq.45            ) .or. &  ! '-' = hyphen
+             (        asciicode.eq.46            ) .or. &  ! '.' = full-stop
+             (        asciicode.eq.47            ) .or. &  ! '/' = slash
+             (asciicode.ge.48.and.asciicode.le.57) .or. &  ! 0-9 = digits
+             (        asciicode.eq.58            ) .or. &  ! ':' = colon
+             (        asciicode.eq.61            ) .or. &  ! '=' = equals
+             (asciicode.ge.65.and.asciicode.le.90) .or. &  ! A-Z = Uppercase letters
+             (        asciicode.eq.92            ) .or. &  ! '/' = backslash
+             (        asciicode.eq.95            ) .or. &  ! '_' = underscore
+             (asciicode.ge.97.and.asciicode.le.122))then   ! a-z = lowercase letters
+            IsAcceptable = .true.
+          else
+            IsAcceptable = .false.
+          endif
+        endif
+
+        if(IsAcceptable)then
+          tmpstr(ii:ii) = ch
+          strlen = ii
+        else
+          do io=1,2;if(VB(io).le.verbosity_debug1)then
+            write(outlog(io),*)"   WARNING: Removing character from line with asciicode= ",asciicode
+          endif;enddo
+        endif
+        i=i+1
+        if(IsAcceptable) ii=ii+1
+      enddo
+
+      tmpstr = trim(adjustl(tmpstr(1:strlen)))
+      strlen = len(tmpstr)
+      linebuffer = tmpstr
+
+      return
+
+      end subroutine FileIO_CleanLine
 
 !##############################################################################
 
@@ -268,6 +415,7 @@
       integer      , parameter :: version_major = 1
       integer      , parameter :: version_minor = 0
       integer      , parameter :: version_patch = 0
+      character(len=8)         :: version         ! Text string of the Ash3d version number
       real(kind=ip), parameter :: EPS_SMALL  = 1.0e-6_ip       ! Small number
       real(kind=ip), parameter :: EPS_TINY   = 1.0e-12_ip      ! Very small number
       real(kind=ip), parameter :: EPS_THRESH = 1.0e-10_ip      ! Threshold for Riemann solver
@@ -286,52 +434,43 @@
       real(kind=ip), parameter :: MPS_2_KMPHR= 3.6_ip          ! m/s to km/hr
       real(kind=ip), parameter :: M2PS_2_KM2PHR = 3.6e-3_ip    ! m2/s to km2/hr
       real(kind=ip), parameter :: HR_2_S     = 3.6e+3_ip       ! hour to seconds
+      real(kind=ip), parameter :: GRAV_Default      = 9.81_ip     ! Gravitational acceleration m/s^2
+      real(kind=ip), parameter :: RAD_EARTH_Default = 6371.229_ip ! Radius of Earth in km (used for cell
+                                                                  ! geometry calculations: area, volume)
+                                                                  !  Note: a particular projection might
+                                                                  !        use a different radius
+      real(kind=ip), parameter :: CFL_Default      = 0.8_ip
+      real(kind=ip), parameter :: DT_MIN_Default   = 1.0e-5_dp  ! Minimum DT in hours
+      real(kind=ip), parameter :: DT_MAX_Default   = 1.0e0_dp   ! Maximum DT in hours
+      logical      , parameter :: useVz_rhoG_Default      = .true.
+      logical      , parameter :: useMoistureVars_Default = .false.
 
-
-      real(kind=ip) :: GRAV       = 9.81_ip     ! Gravitational acceleration m/s^2
-      real(kind=ip) :: RAD_EARTH  = 6371.229_ip ! Radius of Earth in km (used for cell
-                                                ! geometry calculations: area, volume)
-                                                !  Note: a particular projection might
-                                                !        use a different radius
+      real(kind=ip) :: GRAV       = GRAV_Default
+      real(kind=ip) :: RAD_EARTH  = RAD_EARTH_Default
 
       integer,       parameter :: MAXNUM_OPTMODS   = 10   ! used just to preallocate block array
       character(len=20),dimension(MAXNUM_OPTMODS) :: OPTMOD_names
       integer                  :: nmods
 
-      logical                  :: usezip = .false.
-      character(len=50)        :: zippath = ''
-      logical                  :: usegnuplot = .false.
+      logical                  :: usezip      = .false.
+      character(len=50)        :: zippath     = ''
+      logical                  :: usegnuplot  = .false.
       character(len=50)        :: gnuplotpath = ''
+      logical                  :: useGMT      = .false.
+      character(len=50)        :: GMTpath     = ''
+      logical                  :: usematlab   = .false.
+      character(len=50)        :: matlabpath  = ''
+      logical                  :: useoctave   = .false.
+      character(len=50)        :: octavepath  = ''
+      logical                  :: usepython   = .false.
+      character(len=50)        :: pythonpath  = ''
+      integer                  :: plotting_ID = 3    ! default is gnuplot
 
       ! Some variables determined by preprocessor flags at compilation time
-#ifdef LIM_NONE
       character(len=11)        :: limiter = 'No'
-#endif
-#ifdef LIM_LAXWEN
-      character(len=11)        :: limiter = 'LaxWendroff'
-#endif
-#ifdef LIM_BW
-      character(len=11)        :: limiter = 'BeamWarm'
-#endif
-#ifdef LIM_FROMM
-      character(len=11)        :: limiter = 'Fromm'
-#endif
-#ifdef LIM_MINMOD
-      character(len=11)        :: limiter = 'Minmod'
-#endif
-#ifdef LIM_SUPERBEE
-      character(len=11)        :: limiter = 'Superbee'
-#endif
-#ifdef LIM_MC
-      character(len=11)        :: limiter = 'MC'
-#endif
 
-#ifdef CRANKNIC
-      logical, parameter       :: useCN   = .true.
-#endif
-#ifdef EXPLDIFF
-      logical, parameter       :: useCN   = .false.
-#endif
+      ! Set explicit diffusion by default; this is changed in Set_OS_Env
+      logical :: useCN   = .false.
 
       logical :: useFastDt        ! These are set in Set_OS_Env and control when
       logical :: FastDt_suppress  ! time step restrictions need to be calculated
@@ -351,24 +490,20 @@
       logical                  :: useTemperature   = .false. 
       logical                  :: useLogNormGSbins = .false.
 
-
       ! The variables below can be reset via OPTMOD=RESETPARAMS
         ! Vertical velocities come from Vertical_Velocity_Pressure (in Pa s)
         ! This can be converted to m/s by dividing by dp/dz.  We have two
         ! ways we can calculate dp/dz: using -rho g, or calculating a finite
         ! difference approximation using p and GPH variable
-      logical                  :: useVz_rhoG      = .true.   ! using  -rho g
-      !logical                  :: useVz_rhoG      = .false. ! using  finite-differences
+      logical                  :: useVz_rhoG         = useVz_rhoG_Default
 
         ! Only load temperature and water content data if needed
         ! This must be turned on in optional modules if needed
-      logical                  :: useMoistureVars    = .false.
+      logical                  :: useMoistureVars    = useMoistureVars_Default
 
-      real(kind=ip)            :: CFL = 0.80_ip       ! courant number
-                                                      ! Note: CFL can be reset via environment
-                                                      !       variables or via the input file
-      real(kind=dp)            :: DT_MIN = 1.0e-5_dp  ! Minimum DT in hours
-      real(kind=dp)            :: DT_MAX = 1.0e0_dp   ! Maximum DT in hours
+      real(kind=ip)            :: CFL    = CFL_Default
+      real(kind=dp)            :: DT_MIN = DT_MIN_Default
+      real(kind=dp)            :: DT_MAX = DT_MAX_Default
 
       ! Stop conditions
       !  1 = check if amount aloft is too little
@@ -423,10 +558,16 @@
       
       use precis_param
 
+      use io_units
+
       implicit none
 
         ! Set everything to public by default
       public
+
+      character (len=80),parameter :: cdf_institution_Default = "USGS"
+      character (len=80),parameter :: cdf_run_class_Default   = "Analysis"  ! Forecast, Hypothetical, Analysis
+      character (len=80),parameter :: cdf_url_Default         = "https://vsc-ash.wr.usgs.gov/ash3d-gui"
 
       integer            :: log_step = 1
 
@@ -434,22 +575,27 @@
       integer            :: ioutputFormat   ! determines the format of the output
                                             ! (1=ASCII, 2=raw binary, 3=NetCDF)
       character (len=130):: Ash3dHome       ! path to Ash3d installation
+      character (len=130):: Instit_IconFile ! path to Institution logo png
       character (len=130):: infile          ! input control file name for Ash3d
       logical            :: HaveInfile =.false. ! True if the input file is provided to Ash3d_PostProc
       character (len=130):: PP_infile       ! input control file name for Ash3d_PostProc
       character (len=50) :: datafileOut
       character (len=80) :: datafileIn
       logical            :: LoadConcen =.false.
-      character (len=80) :: concenfile
+      character (len=80) :: concenfile = ""
       integer            :: init_tstep
+      logical            :: Have_Block_NetCDF  = .false.
+      logical            :: Have_Block_ResParm = .false.
+      logical            :: Have_Block_Topo    = .false.
+      logical            :: Have_Block_VarDiff = .false.
       character (len=130):: cdf_title       = "test"
-      character (len=80) :: cdf_institution = "USGS"
+      character (len=80) :: cdf_institution = cdf_institution_Default
       character (len=80) :: cdf_source      = "Ash3d v"   ! This is rewritten in Input_Data.f90
       character (len=80) :: cdf_source_url  = "https://code.usgs.gov/vsc/ash3d/volcano-ash3d"
       character (len=80) :: cdf_history     = ""
       character (len=80) :: cdf_references  = "https://pubs.usgs.gov/of/2013/1122/ofr20131122.pdf"
-      character (len=80) :: cdf_run_class   = "Analysis"  ! Forecast, Hypothetical, Analysis
-      character (len=80) :: cdf_url         = "https://vsc-ash.wr.usgs.gov/ash3d-gui"
+      character (len=80) :: cdf_run_class   = cdf_run_class_Default
+      character (len=80) :: cdf_url         = cdf_url_Default
       character (len=80) :: cdf_comment     = "None"
       character (len=80) :: cdf_conventions = "CF-1.5"
       character (len=80) :: cdf_b1l1       ! character strings containing parameters for netcdf file
@@ -459,6 +605,7 @@
       character (len=80) :: cdf_b1l5
       character (len=80) :: cdf_b1l6
       character (len=80) :: cdf_b1l7
+      character (len=130):: cdf_vardz
       character (len=80) :: cdf_b1l8
       character (len=80) :: cdf_b1l9
       character (len=80) :: cdf_b3l1
@@ -484,6 +631,7 @@
       character (len=80) :: cdf_b4l16
       character (len=80) :: cdf_b4l17
       character (len=80) :: cdf_b4l18
+      character (len=80) :: cdf_b5l1   ! Store at least the first line of the windfile list
       character (len=80) :: cdf_b6l1
       character (len=80) :: cdf_b6l2
       character (len=80) :: cdf_b6l3
@@ -556,6 +704,7 @@
       integer            :: nvar_User3d_XYGs       = 0
       integer            :: nvar_User3d_XYZ        = 0
       integer            :: nvar_User4d_XYZGs      = 0
+      integer            :: nvar_User_charlines    = 0
 
       contains
 
@@ -567,6 +716,10 @@
       !------------------------------------------------------------------------
 
       subroutine Deallocate_io_data
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Deallocate_io_data"
+      endif;enddo
 
 #ifdef USEPOINTERS
       if(associated(WriteTimes))   deallocate(WriteTimes)
@@ -583,6 +736,12 @@
       if(allocated(y_vprofile))   deallocate(y_vprofile)
       if(allocated(Site_vprofile))deallocate(Site_vprofile)
 #endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Deallocate_io_data"
+      endif;enddo
+
+      return
 
       end subroutine Deallocate_io_data
       !------------------------------------------------------------------------
@@ -601,12 +760,15 @@
       module mesh
 
       use precis_param
-  
+
+      use io_units
+
       implicit none
 
         ! Set everything to public by default
       public
 
+      real(kind=ip), parameter :: ZPADDING_Default     = 1.3_ip
       integer, parameter :: ts0 = 0
       integer, parameter :: ts1 = 1
 
@@ -618,7 +780,7 @@
       ! different from the projection of the NWP files, or it might be ignored
       ! if the Ash3d mesh is lon/lat
       integer            :: A3d_iprojflag
-      real(kind=dp)      :: A3d_k0_scale
+      real(kind=dp)      :: A3d_k0
       real(kind=dp)      :: A3d_phi0
       real(kind=dp)      :: A3d_lam0
       real(kind=dp)      :: A3d_lam1,A3d_phi1
@@ -626,7 +788,7 @@
       real(kind=dp)      :: A3d_Re
 
       logical            :: IsPeriodic   = .false.
-      real(kind=ip)      :: ZPADDING     = 1.3_ip
+      real(kind=ip)      :: ZPADDING     = ZPADDING_Default
       real(kind=ip)      :: Ztop
       character(len=7)   :: VarDzType
       real(kind=ip)      :: dz_const                  ! z nodal spacing (always km)
@@ -707,6 +869,10 @@
         !   Input_Data.f90:Read_Control_File
         !    z_vec_init
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Allocate_mesh"
+      endif;enddo
+
 #ifdef USEPOINTERS
       if (IsLatLon) then
         if(.not.associated(lon_cc_pd))allocate(lon_cc_pd(-1:nxmax+2));                            lon_cc_pd = 0.0_ip
@@ -753,10 +919,20 @@
       if(.not.allocated(Zsurf))      allocate(Zsurf(-1:nxmax+2,-1:nymax+2));                   Zsurf       = 0.0_ip
 #endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_mesh"
+      endif;enddo
+
+      return
+
       end subroutine Allocate_mesh
       !------------------------------------------------------------------------
 
       subroutine Deallocate_mesh
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Deallocate_mesh"
+      endif;enddo
 
 #ifdef USEPOINTERS
       if(associated(z_vec_init))    deallocate(z_vec_init)
@@ -800,6 +976,12 @@
       if(allocated(Zsurf))         deallocate(Zsurf)
 #endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_mesh"
+      endif;enddo
+
+      return
+
       end subroutine Deallocate_mesh
       !------------------------------------------------------------------------
 
@@ -819,10 +1001,14 @@
 
       use precis_param
 
+      use io_units
+
       implicit none
 
         ! Set everything to public by default
       public
+
+      real(kind=ip), parameter     :: StopValue_FracAshDep_Default    = 0.99_ip 
 
 #ifdef USEPOINTERS
       real(kind=ip),dimension(:,:,:)    ,pointer :: vx_pd => null() ! u (E) component of wind
@@ -875,7 +1061,8 @@
 #endif
       real(kind=ip)      :: dep_percent_accumulated = 0.0_ip
       real(kind=ip)      :: aloft_percent_remaining = 0.0_ip
-      real(kind=ip)      :: StopValue_FracAshDep = 0.0_ip   ! program stops when percent_accumulated>StopValue_FracAshDep
+      logical            :: StopWhenDeposited
+      real(kind=ip)      :: StopValue_FracAshDep    = StopValue_FracAshDep_Default
       real(kind=ip)      :: dep_vol                 = 0.0_ip
       real(kind=ip)      :: aloft_vol               = 0.0_ip
       real(kind=ip)      :: outflow_vol             = 0.0_ip
@@ -894,6 +1081,10 @@ subroutine Allocate_solution
 
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,ts0,ts1
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Allocate_solution"
+      endif;enddo
 
 #ifdef USEPOINTERS
       if(.not.associated(vx_pd))         allocate(vx_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2))
@@ -968,10 +1159,20 @@ subroutine Allocate_solution
       IsAloft = .true.
       DepositGranularity = 0.0_ip
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_solution"
+      endif;enddo
+
+      return
+
       end subroutine Allocate_solution
       !------------------------------------------------------------------------
 
       subroutine Deallocate_solution
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Deallocate_solution"
+      endif;enddo
 
 #ifdef USEPOINTERS
       if(associated(vx_pd))              deallocate(vx_pd)
@@ -1019,6 +1220,12 @@ subroutine Allocate_solution
       if(allocated(DepositGranularity)) deallocate(DepositGranularity)
 #endif
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_solution"
+      endif;enddo
+
+      return
+
       end subroutine Deallocate_solution
       !------------------------------------------------------------------------
 
@@ -1065,9 +1272,9 @@ subroutine Allocate_solution
       real(kind=dp)      :: SimStartHour     ! Simulation start time, in hours since 1900
       real(kind=dp)      :: time             ! physical time simulated by this model
 
-      real(kind=ip)      :: t0,t1,t2         ! CPU time indicators
-      real(kind=ip)      :: tw1,tw2          ! CPU time indicators for reading wind data
-      real(kind=ip)      :: tw_tot  = 0.0_ip ! total CPU time reading wind data
+      real(kind=dp)      :: t0,t1,t2         ! CPU time indicators
+      real(kind=dp)      :: tw1,tw2          ! CPU time indicators for reading wind data
+      real(kind=dp)      :: tw_tot  = 0.0_dp ! total CPU time reading wind data
       integer            :: tcount1,tcount2,tcount_rate,tcount_max ! system time indicators
       real(kind=ip)      :: dt_ip
       real(kind=dp)      :: dt              ! dt used for actual integration
@@ -1103,11 +1310,22 @@ subroutine Allocate_solution
 
       use precis_param
 
+      use io_units
+
       implicit none
 
         ! Set everything to public by default
       public
 
+      logical  :: Load_Windfiles  = .true.       ! Default is to read and build wind grid
+                                                 ! Sometimes, we need to read the control file, but do
+                                                 ! not need to actually read the windfiles -> .false.
+!      integer            :: iWind
+!      integer            :: iWindFiles
+!      integer            :: iGrid
+!      integer            :: iDataFormat
+!      integer            :: nWindFiles
+!      integer            :: iHeightHandler
         ! toggle used for moving pointers between last and next
       integer            :: Meso_toggle
           ! Each *_meso_[1,2]_sp holds a regridded variable at the last and next
@@ -1155,6 +1373,10 @@ subroutine Allocate_solution
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Allocate_wind_grid"
+      endif;enddo
+
 #ifdef USEPOINTERS
       if(.not.associated(vx_meso_last_step_sp))allocate(vx_meso_last_step_sp(nxmax,nymax,nzmax))
       if(.not.associated(vx_meso_next_step_sp))allocate(vx_meso_next_step_sp(nxmax,nymax,nzmax))
@@ -1201,10 +1423,20 @@ subroutine Allocate_solution
       vf_meso_last_step_sp = 0.0_sp
       vf_meso_next_step_sp = 0.0_sp
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Allocate_wind_grid"
+      endif;enddo
+
+      return
+
       end subroutine Allocate_wind_grid
       !------------------------------------------------------------------------
 
       subroutine Deallocate_wind_grid
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Deallocate_wind_grid"
+      endif;enddo
 
 #ifdef USEPOINTERS
       if(associated(vx_meso_last_step_sp)) deallocate(vx_meso_last_step_sp)
@@ -1237,6 +1469,12 @@ subroutine Allocate_solution
       if(allocated(vf_meso_last_step_sp)) deallocate(vf_meso_last_step_sp)
       if(allocated(vf_meso_next_step_sp)) deallocate(vf_meso_next_step_sp)
 #endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Deallocate_wind_grid"
+      endif;enddo
+
+      return
 
       end subroutine Deallocate_wind_grid
       !------------------------------------------------------------------------

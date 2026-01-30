@@ -6,3 +6,4 @@ rm -f CloudArrivalTime.dat
 rm -f CloudLoad*dat
 rm -f progress.txt
 rm -f CloudConcentration_*.dat
+rm -f Ash3d_pp.log

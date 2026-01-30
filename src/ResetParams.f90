@@ -11,6 +11,11 @@
 !  An example block with all the variables availalbe to reset is given here. Not
 !  all variables need to be listed; only those changed from the defaults shown below.
 !
+!  Note: If you want to add a variable to this list, make sure to add a bit in write_Netcdf.f90
+!  to write out the new parameter to the global attributes list in NC_create_netcdf_file. You also
+!  might want to add reading of the parameter in NC_Read_Output_Products and handling of the
+!  new paramter in tools/Ash3d_NetCDF_GenCTR.f90.
+!
 !***********************
 !# Reset parameters
 !***********************
@@ -41,10 +46,10 @@
 ! k_entrainment_umb    = 0.1
 ! SuzK_umb             = 12.0
 ! useMoistureVars      = 0
-! useVz_rhoG           = 1
 ! useWindVars          = 0
 ! useOutprodVars       = 1
 ! useRestartVars       = 0
+! useVz_rhoG           = 1
 ! cdf_institution      = USGS
 ! cdf_run_class        = 1         (1=Analysis,2=Hypothetical,3=Forecast)
 ! cdf_url              = https://vsc-ash.wr.usgs.gov/ash3d-gui
@@ -58,7 +63,7 @@
       use io_units
 
       use global_param,  only : &
-         nmods,GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH,EPS_SMALL,&
+         GRAV,CFL,DT_MIN,DT_MAX,RAD_EARTH,EPS_SMALL,&
          useMoistureVars, useVz_rhoG
 
       use io_data,       only : &
@@ -90,6 +95,7 @@
       integer           :: i
       character(len=50) :: linebuffer050 
       character(len=80) :: linebuffer080
+      integer           :: strlen
       character         :: testkey
       integer           :: iostatus
       integer           :: ioerr
@@ -143,6 +149,7 @@
       linebuffer050 = "Reading testkey from linebuffer, RESETPARAMS"
       !if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
       iparam = 0
+      call FileIO_CleanLine(.false.,strlen,linebuffer080)
       do while(iostatus.eq.0.and. &
                testkey.ne.'#'.and.testkey.ne.'*')
         iparam = iparam + 1
@@ -159,6 +166,7 @@
         endif
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         if(iostatus.ne.0) exit
+        call FileIO_CleanLine(.false.,strlen,linebuffer080)
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
         linebuffer050 = "Reading testkey from linebuffer, RESETPARAMS"
         !if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
@@ -763,10 +771,14 @@
 
       !close(fid_ctrlfile)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine input_data_ResetParams"
+      endif;enddo
+
       return
 
 9001  do io=1,2;if(VB(io).le.verbosity_error)then
-        write(errlog(io),*)  'error: cannot open input file: ',infile
+        write(errlog(io),*)  'ERROR: cannot open input file: ',infile
         write(errlog(io),*)  'Program stopped'
       endif;enddo
       stop 1

@@ -5,10 +5,10 @@
 !  This software is written in Fortran 2003 and is designed for use on a Linux
 !  operating system.
 !  
-!  This software, along with auxillary USGS libraries and related repositories,
-!  can be found at https://code.usgs.gov/vsc/volcano-ash3d
+!  This software, along with auxiliary USGS libraries and related repositories,
+!  can be found at https://code.usgs.gov/vsc/ash3d/volcano-ash3d
 !
-!  To cite for this software, please see https://code.usgs.gov/vsc/volcano-ash3d/CHANGELOG.md
+!  To cite for this software, please see https://code.usgs.gov/vsc/ash3d/volcano-ash3d/CHANGELOG.md
 !  for the doi for each release version. Version 1.0.0 can be referenced by:
 !   Schwaiger, H.F. et al. (2024) Ash3d (Version 1.0.0), U.S. Geological Survey Software Release,
 !     [doi:10.5066/P1SJWAKZ](https://doi.org/10.5066/P1SJWAKZ)
@@ -44,7 +44,8 @@
       use global_param,  only : &
          useCalcFallVel,useDiffusion,useHorzAdvect,useVertAdvect,&
          useTemperature,DT_MIN,EPS_TINY,EPS_SMALL,&
-         nmods,OPTMOD_names,StopConditions,CheckConditions      
+         nmods,OPTMOD_names,StopConditions,CheckConditions, &
+         useVarDiffH,useVarDiffV
 
       use mesh,          only : &
          ivent,jvent,nxmax,nymax,nzmax,nsmax,ts0,ts1,ZPADDING,dz_vec_pd,&
@@ -64,6 +65,7 @@
            FirstAsh
 
       use io_data,       only : &
+         Have_Block_Topo,Have_Block_VarDiff, &
          Called_Gen_Output_Vars,isFinal_TS,LoadConcen,log_step,&
          Output_at_logsteps,Output_at_WriteTimes,Output_every_TS,&
          NextWriteTime,iTimeNext,nvprofiles,nWriteTimes,&
@@ -133,6 +135,9 @@
 !         Insert 'use' statements here
 !
       use Topography
+      
+      use Diffusivity_Variable
+      
 !------------------------------------------------------------------------------
 
       implicit none
@@ -157,8 +162,8 @@
         subroutine MesoInterpolater(TimeNow,Load_MesoSteps,Interval_Frac)
           integer,parameter  :: dp         = 8 ! Double precision
           real(kind=dp),intent(in)    :: TimeNow
-          real(kind=dp),intent(out)   :: Interval_Frac
           logical      ,intent(inout) :: Load_MesoSteps
+          real(kind=dp),intent(out)   :: Interval_Frac
         end subroutine MesoInterpolater
         subroutine output_results
         end subroutine output_results
@@ -173,6 +178,7 @@
       END INTERFACE
 
       ! Start time logging
+      ! Note: with gfortran, this triggers IEEE_INEXACT_FLAG
       call cpu_time(t0) !time is a scaler real
       call system_clock(tcount1,tcount_rate,tcount_max)
 
@@ -202,6 +208,7 @@
 !
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Now looping through optional modules found in input file"
+        write(outlog(io),*)"Found ",nmods," optional modules"
       endif;enddo
       do i=1,nmods
         do io=1,2;if(VB(io).le.verbosity_essential)then
@@ -212,7 +219,15 @@
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"  Reading input block for TOPO"
           endif;enddo
+          Have_Block_Topo = .true.
           call input_data_Topo
+        endif
+        if(OPTMOD_names(i).eq.'VARDIFF')then
+          do io=1,2;if(VB(io).le.verbosity_info)then    
+            write(outlog(io),*)"  Reading input block for VARDIFF"
+          endif;enddo
+          Have_Block_VarDiff = .true.
+          call input_data_VarDiff
         endif
       enddo
       do io=1,2;if(VB(io).le.verbosity_info)then    
@@ -238,6 +253,11 @@
       endif
       ! Now that we potentially have topography, we can build the s_cc_pd array
       call calc_s_mesh
+
+      ! Set VARDIFF defaults if block is absent and Write out parameters
+      if(useVarDiffH.or.useVarDiffV)then
+        call Summarize_Params_VarDiff
+      endif
 
       if(((SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')))then
         call Allocate_Source_Umbrella(nxmax,nymax,nzmax)
@@ -289,6 +309,9 @@
 !       OPTIONAL MODULES
 !         Insert calls to optional variable allocation subroutines here
 !
+      if(useVarDiffV)                  call Allocate_Atmosphere_Met
+      if(useVarDiffH.or.useVarDiffV)   call Allocate_VarDiff_Met
+
 !------------------------------------------------------------------------------
       ! Allocate all the output variables
       call Allocate_Output_UserVars(nxmax,nymax,nzmax,nsmax)
@@ -297,9 +320,8 @@
       ! interpolated on the start time
       time           = 0.0_ip
       Load_MesoSteps = .true.
-      Interval_Frac  = 0.0_8
+      Interval_Frac  = 0.0_8  ! Interval_Frac is calculated and returned by MesoInterpolater
       call MesoInterpolater(time , Load_MesoSteps , Interval_Frac)
-
       ! Calculate the fall time of each grain size
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),5020)
@@ -328,6 +350,9 @@
 !       OPTIONAL MODULES
 !         Insert calls to special MesoInterpolaters subroutines here
 !
+        if(useVarDiffH)     call Set_VarDiffH_Meso(Load_MesoSteps,Interval_Frac)
+        if(useVarDiffV)     call Set_VarDiffV_Meso(Load_MesoSteps,Interval_Frac)
+
 !------------------------------------------------------------------------------
 
 !------------------------------------------------------------------------------
@@ -335,6 +360,13 @@
 !         Insert calls to prep user-specified output
 !
       if(useTopo) call Prep_output_Topo
+      
+      if(useVarDiffH.or.useVarDiffV)then
+        do io=1,2;if(VB(io).le.verbosity_debug1)then
+          write(outlog(io),*)"Calling Prep_output_VarDiff."
+        endif;enddo
+        call Prep_output_VarDiff
+      endif
 !------------------------------------------------------------------------------
 
         ! Call output_results before time loop to create output files
@@ -394,13 +426,15 @@
 
           ! find the wind field at the current time
         call MesoInterpolater(time , Load_MesoSteps , Interval_Frac)
-
         if(useTopo) call Calc_Vmod_Topo
 
 !------------------------------------------------------------------------------
 !       OPTIONAL MODULES
 !         Insert calls to special MesoInterpolaters subroutines here
 !
+        if(useVarDiffH)     call Set_VarDiffH_Meso(Load_MesoSteps,Interval_Frac)
+        if(useVarDiffV)     call Set_VarDiffV_Meso(Load_MesoSteps,Interval_Frac)
+
 !------------------------------------------------------------------------------
 
           ! Determine if (and which) eruptive pulses are active in the current dt
@@ -531,7 +565,7 @@
 
             ! See whether the ash has hit any airports/POI
           if (Write_PT_Data) &
-          call FirstAsh
+            call FirstAsh
 
             ! Track ash on vertical profiles
           if (Write_PR_Data)then
@@ -554,7 +588,14 @@
 !       OPTIONAL MODULES
 !         Insert calls output routines (every output-step) here
 !
+          if(useVarDiffH.or.useVarDiffV)then
+            do io=1,2;if(VB(io).le.verbosity_debug1)then
+              write(outlog(io),*)"Calling Prep_output_VarDiff."
+            endif;enddo
+            call Prep_output_VarDiff
+          endif
 !------------------------------------------------------------------------------
+
           call output_results
           !if ((WriteAirportFile_ASCII.or.WriteAirportFile_KML).and. &
           if (Write_PT_Data.and. &
@@ -781,6 +822,7 @@
 !         Insert calls deallocation routines here
 !
       if(useTopo)                     call Deallocate_Topo
+      if(useVarDiffH.or.useVarDiffV)  call Deallocate_VarDiff_Met
 !------------------------------------------------------------------------------
 
       close(fid_logfile)       !close log file 

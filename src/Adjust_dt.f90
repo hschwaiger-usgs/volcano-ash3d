@@ -69,6 +69,10 @@
       real(kind=dp),save :: time_diffuse
       logical      ,save :: have_DT_diffus = .false.
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine Adjust_DT"
+      endif;enddo
+
       !-------------------------------------------------------
       !  ADVECTION
       !-------------------------------------------------------
@@ -86,6 +90,7 @@
       else
         CheckMesoVel = .false.
       endif
+
       vxmax_dx = 0.0_ip
       vymax_dy = 0.0_ip
       vzmax_dz = 0.0_ip
@@ -127,7 +132,7 @@
               !       will always be dominated by the large grain sizes with the
               !       highest fall velocities
               tmp3 =   (real(abs(vz_meso_next_step_sp(i,j,k)) + &
-                     maxval(abs(vf_meso_next_step_sp(i,j,k,1:nsmax))),kind=ip)) &
+                        maxval(abs(vf_meso_next_step_sp(i,j,k,1:nsmax))),kind=ip)) &
                        *MPS_2_KMPHR / dz_vec_pd(k)
               if(tmp3.gt.vzmax_dz) vzmax_dz = tmp3
             enddo
@@ -165,8 +170,8 @@
               !       species that are flushed out of the system. Otherwise, this
               !       will always be dominated by the large grain sizes with the
               !       highest fall velocities.  This is done in Set_Vf_Meso.
-              tmp3 =       (abs(vz_pd(i,j,k)) + &
-                    maxval(abs(vf_pd(i,j,k,1:nsmax))))/dz_vec_pd(k)
+              tmp3 =(      (abs(vz_pd(i,j,k        ))) +   &
+                     maxval(abs(vf_pd(i,j,k,1:nsmax))) ) / dz_vec_pd(k)
               if(tmp3.gt.vzmax_dz) vzmax_dz = tmp3
             enddo
           enddo
@@ -176,7 +181,10 @@
       ! is present (between eruptive pulses, resuspension cases where source hasn't been activated)
       ! Reset vzmaz_dz if this case is special.
       if(n_gs_aloft.eq.0)vzmax_dz = 0.0_ip
+      ! When dimensions are split, choose the most restrictive time step
       time_advect = 1.0_ip/max(vxmax_dx,vymax_dy,vzmax_dz)
+      ! For a full, multi-dimensional case:
+      !time_advect = 1.0_ip/(vxmax_dx + vymax_dy + vzmax_dz)
 
       !-------------------------------------------------------
       !  DIFFUSION
@@ -205,6 +213,7 @@
           !         3-d: both
           !       Current implementation assume 3-d diffusion with non-zero diffusivities
           time_diffuse = DT_MAX
+  
           do i=1,nxmax
             do j=1,nymax
               do k=1,nzmax
@@ -335,6 +344,12 @@
       if(CheckMesoVel)then
         dt_meso_next = dt
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Adjust_DT"
+      endif;enddo
+
+      return
 
       end subroutine Adjust_DT
 

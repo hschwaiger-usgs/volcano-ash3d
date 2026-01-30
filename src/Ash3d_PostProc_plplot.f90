@@ -4,10 +4,10 @@
 !
 ! This module provides the subroutines that use PLplot for creating 2d maps,
 ! 2d vertical profiles, and the little deposit accumulation plots linked to
-! the airport arrival kml (ash_arrivaltimes_airports.kml). The PLplot
-! library is linked at compile-time.
-! PLplot is available at https://plplot.sourceforge.net or can be installed via:
-!  yum install plplot plplot-devel plplot-fortran-devel
+! the airport arrival kml (ash_arrivaltimes_airports.kml).
+! The PLplot library is linked at compile-time. PLplot is available from
+!   https://plplot.sourceforge.net or can be installed via:
+!  dnf install plplot plplot-devel plplot-fortran-devel
 !
 !      subroutine write_2Dmap_PNG_plplot
 !      subroutine write_2Dprof_PNG_plplot
@@ -23,9 +23,9 @@
 
 !      use global_param,  only : &
 !         DirDelim
-!
-!      use io_data,       only : &
-!         Ash3dHome
+
+      use io_data,       only : &
+         Instit_IconFile
 
       use plplot
       use iso_c_binding, only: c_ptr, c_loc, c_f_pointer
@@ -37,15 +37,14 @@
 
         ! Publicly available subroutines/functions
       public write_2Dmap_PNG_plplot,    &
-             write_2Dprof_PNG_plplot
+             write_2Dprof_PNG_plplot,   &
+             write_DepPOI_TS_PNG_plplot
 
         ! Publicly available variables
 
       integer :: lib_ver_major = 5
-      !integer :: lib_ver_minor = 10
       integer :: lib_ver_minor = 14
-
-!      character(100) :: Instit_IconFile
+      integer :: lib_ver_patch = 0
 
       contains
       !------------------------------------------------------------------------
@@ -61,6 +60,7 @@
 !    iprod         = product ID
 !    itime         = time index from netcdf data file
 !    OutVar        = 2-d array to be written to ASCII file
+!    Fill_Value    = NaN value
 !    writeContours = logical
 !
 !  This subroutine creates a png map of the variable in OutVar using the plplot
@@ -68,18 +68,21 @@
 !  product ID (iprod).  If writeContours is set to true, then this subroutine
 !  is only used for generating and storing the contours (for plplot, this
 !  throws an error since contour data is not available) with no png written.
-!  If timestep = -1, then use the last step in file
+!  If timestep = -1, then use the last step in file.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine write_2Dmap_PNG_plplot(nx,ny,iprod,itime,OutVar,writeContours)
+      subroutine write_2Dmap_PNG_plplot(nx,ny,iprod,itime,OutVar,Fill_Value,writeContours)
 
       use mesh,          only : &
-         x_cc_pd,y_cc_pd,lon_cc_pd,lat_cc_pd, &
-         IsLatLon
+         IsLatLon,lon_cc_pd,lat_cc_pd,de,dn, &
+         dx,dy,                              &
+         latLL,lonLL,latUR,lonUR,            &
+         xLL,yLL,xUR,yUR
 
       use Output_Vars,   only : &
-         ContourFilled,Con_Cust,Con_Cust_N,Con_Cust_RGB,Con_Cust_Lev,&
+         ContourFilled, &
+         Con_Cust,Con_Cust_N,Con_Cust_RGB,Con_Cust_Lev,&
          Con_DepThick_mm_N,Con_DepThick_mm_Lev,Con_DepThick_mm_RGB, &
          Con_DepThick_in_N,Con_DepThick_in_Lev,Con_DepThick_in_RGB, &
          Con_DepTime_N,Con_DepTime_Lev,Con_DepTime_RGB, &
@@ -94,14 +97,14 @@
 !         ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
 !         CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS
 
+      use time_data,     only : &
+         os_time_log,SimStartHour,BaseYear,useLeap
+
       use io_data,       only : &
          WriteTimes,cdf_b3l1,VolcanoName
 
       use Source,        only : &
-         e_Volume,e_Duration,e_StartTime,e_PlumeHeight,lon_volcano,lat_volcano
-
-      use time_data,     only : &
-         os_time_log,SimStartHour,BaseYear,useLeap
+         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight,lon_volcano,lat_volcano
 
       use citywriter
 
@@ -110,30 +113,74 @@
       integer      ,intent(in) :: iprod
       integer      ,intent(in) :: itime
       real(kind=ip),intent(in) :: OutVar(nx,ny)
+      real(kind=ip),intent(in) :: Fill_Value
       logical      ,intent(in) :: writeContours
 
-      integer :: i
-      integer      ,dimension(:,:),allocatable :: zrgb
+      !integer :: tmp_int
+      integer,dimension(:,:),allocatable :: zrgb
       character(len=40) :: title_plot
-      character(len=15) :: title_legend
-      character(len=40) :: outfile_name
+      character(len=30) :: cstr_xlabel = 'Longitude'
+      character(len=30) :: cstr_ylabel = 'Latitude'
+      character(len=30) :: cstr_zlabel
+      character(len=30) :: cstr_volcname
+      character(len=30) :: cstr_run_date
+      character(len=30) :: cstr_windfile
+      character(len=40) :: cstr_ErStartT
+      character(len=27) :: cstr_ErHeight
+      character(len=30) :: cstr_ErDuratn
+      character(len=38) :: cstr_ErVolume
+      character(len=45) :: cstr_note
+      character(len=20) :: varname
       character(len= 9) :: cio
       character(len= 4) :: outfile_ext = '.png'
       character(len=10) :: units
-      character(len=80) :: outstring
-      integer :: ioerr,iw,iwf
+      integer           :: iostatus
+      character(len=120):: iomessage
+      integer           :: iw,iwf
+      logical           :: HaveIconFile
+
+      ! Plot dimensions
+      real(kind=ip)  :: xmin
+      real(kind=ip)  :: xmax
+      real(kind=ip)  :: ymin
+      real(kind=ip)  :: ymax
+      logical        :: IsRegGrid
+
+      ! Aux. File names
+      character(len= 8) :: filename_root
+      !character(len=10) :: filename_script
+      !character(len=10) :: filename_outdata
+      character(len=40) :: filename_png
+      !character(len=10) :: filename_contourdata
+      !character(len=80) :: filename_coastline
+
+      ! Citywriter variables
+      integer :: icty
+      integer :: ncities
+      !integer :: cityname_offset_px = 30
+      real(kind=ip) :: cityname_offset_dx
+      real(kind=ip),dimension(:),allocatable     :: lon_cities
+      real(kind=ip),dimension(:),allocatable     :: lat_cities
+      character(len=26),dimension(:),allocatable :: name_cities
+
+      ! Contour variables
+      integer           :: ilev        ! number of contour levels
+      !integer           :: icurve      ! number of curves for level ilev
+      !integer           :: npts        ! number of points in curve ilev,icurve
+
+      ! Plotting variables
 
       ! PLPLOT variables
-      real(kind=plflt)  :: xmin
-      real(kind=plflt)  :: xmax
-      real(kind=plflt)  :: ymin
-      real(kind=plflt)  :: ymax
+      real(kind=plflt)  :: xminPL
+      real(kind=plflt)  :: xmaxPL
+      real(kind=plflt)  :: yminPL
+      real(kind=plflt)  :: ymaxPL
       real(kind=plflt)  :: vmin
       real(kind=plflt)  :: vmax
       real(kind=plflt), dimension(:),   allocatable :: x, y
       real(kind=plflt), dimension(:,:), allocatable :: var
-      real(kind=plflt)   :: tr(6)
-      real(kind=plflt)   :: clevel(1)
+      real(kind=plflt)  :: tr(6)
+      real(kind=plflt)  :: clevel(1)
       integer(kind=4):: opt
 
       !integer, parameter :: MAX_NLEGEND = 11       ! max number of legend entries
@@ -160,9 +207,6 @@
       integer(kind=4)   ,dimension(:),allocatable :: line_styles
       integer(kind=4)   ,dimension(:),allocatable :: symbol_numbers
       integer(kind=4)   ,dimension(:),allocatable :: symbol_colors
-      integer(kind=4)   ,dimension(:),allocatable :: red
-      integer(kind=4)   ,dimension(:),allocatable :: green
-      integer(kind=4)   ,dimension(:),allocatable :: blue
       character(len=200),dimension(:),allocatable :: text
       character(len=3)  ,dimension(:),allocatable :: symbols
       real(kind=plflt)  ,dimension(:),allocatable :: box_scales
@@ -182,39 +226,30 @@
       integer(kind=4):: bg_color,bb_color,bb_style
       integer(kind=4):: pos_opt
 
+!      real(kind=plflt)  :: y_footer
       real(kind=plflt)  :: dy_newline
       integer :: plsetopt_rc
 
-      integer :: ncities
-      real(kind=ip),dimension(:),allocatable     :: lon_cities
-      real(kind=ip),dimension(:),allocatable     :: lat_cities
-      character(len=26),dimension(:),allocatable :: name_cities
-
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8)              :: HoursSince
-          integer                   :: byear
-          logical                   :: useLeaps
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
 
-      if(writeContours)then
-        write(errlog(io),*)"Running plplot to calculate contours lines"
-        write(errlog(io),*)"Not sure yet how to save contour data with plplot"
-        write(errlog(io),*)"If you want shapefiles, recompile without plplot or"
-        write(errlog(io),*)" reset the plot_pref_shp variable."
-        write(errlog(io),*)"Exiting"
-        stop 1
-      else
-        do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*)"Running plplot to generate contour plot"
-        endif;enddo
-      endif
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_2Dmap_PNG_plplot"
+      endif;enddo
+
+      ! Test for icon file
+      inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
 
       ncities = 20
       allocate(lon_cities(ncities))
       allocate(lat_cities(ncities))
       allocate(name_cities(ncities))
+      filename_root        = "outvar"
 
       if(iprod.eq.5.or.iprod.eq.6)then
         cio='____final'
@@ -240,9 +275,10 @@
       endif
 
       if(iprod.eq.3)then       ! deposit at specified times (mm)
-        write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
-        write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
-        title_legend = 'Dep.Thick.(mm)'
+        varname = "depothick"
+        write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
+        write(title_plot,'(a20,f7.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
+        cstr_zlabel = 'Dep.Thick.(mm)'
         units = " (mm)"
         if(.not.Con_Cust)then
           nConLev = Con_DepThick_mm_N
@@ -252,9 +288,10 @@
           zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.4)then   ! deposit at specified times (inches)
-        write(outfile_name,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
-        write(title_plot,'(a20,f5.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
-        title_legend = 'Dep.Thick.(in)'
+        varname = "depothick"
+        write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
+        write(title_plot,'(a20,f7.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
+        cstr_zlabel = 'Dep.Thick.(in)'
         units = " (in)"
         if(.not.Con_Cust)then
           nConLev = Con_DepThick_in_N
@@ -264,9 +301,10 @@
           zrgb(1:nConLev,1:3) = Con_DepThick_in_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.5)then       ! deposit at final time (mm)
-        write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
+        varname = "depothickFin"
+        write(filename_png,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
-        title_legend = 'Dep.Thick.(mm)'
+        cstr_zlabel = 'Dep.Thick.(mm)'
         units = " (mm)"
         if(.not.Con_Cust)then
           nConLev = Con_DepThick_mm_N
@@ -276,9 +314,10 @@
           zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.6)then   ! deposit at final time (inches)
-        write(outfile_name,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
+        varname = "depothickFin"
+        write(filename_png,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
-        title_legend = 'Dep.Thick.(in)'
+        cstr_zlabel = 'Dep.Thick.(in)'
         units = " (in)"
         if(.not.Con_Cust)then
           nConLev = Con_DepThick_in_N
@@ -288,9 +327,10 @@
           zrgb(1:nConLev,1:3) = Con_DepThick_in_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.7)then   ! ashfall arrival time (hours)
-        write(outfile_name,'(a22)')'DepositArrivalTime.png'
+        varname = "depotime"
+        write(filename_png,'(a22)')'DepositArrivalTime.png'
         write(title_plot,'(a20)')'Ashfall arrival time'
-        title_legend = 'Time (hours)'
+        cstr_zlabel = 'Time (hours)'
         units = " (hours)"
         if(.not.Con_Cust)then
           nConLev = Con_DepTime_N
@@ -302,13 +342,14 @@
       elseif(iprod.eq.8)then   ! ashfall arrival at airports/POI (mm)
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: No map PNG output option for airport arrival time data."
-          write(errlog(io),*)"       Should not be in write_2Dmap_PNG_dislin"
+          write(errlog(io),*)"       Should not be in write_2Dmap_PNG_plplot"
         endif;enddo
         stop 1
       elseif(iprod.eq.9)then   ! ash-cloud concentration
-        write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
-        write(title_plot,'(a26,f5.2,a6)')'Ash-cloud concentration t=',WriteTimes(itime),' hours'
-        title_legend = 'Max.Con.(mg/m3)'
+        varname = "ashcon_max"
+        write(filename_png,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
+        write(title_plot,'(a26,f7.2,a6)')'Ash-cloud concentration t=',WriteTimes(itime),' hours'
+        cstr_zlabel = 'Max.Con.(mg/m3)'
         units = " (mg/m3)"
         if(.not.Con_Cust)then
           nConLev = Con_CloudCon_N
@@ -318,9 +359,10 @@
           zrgb(1:nConLev,1:3) = Con_CloudCon_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.10)then   ! ash-cloud height
-        write(outfile_name,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
-        write(title_plot,'(a19,f5.2,a6)')'Ash-cloud height t=',WriteTimes(itime),' hours'
-        title_legend = 'Cld.Height(km)'
+        varname = "cloud_height"
+        write(filename_png,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
+        write(title_plot,'(a19,f7.2,a6)')'Ash-cloud height t=',WriteTimes(itime),' hours'
+        cstr_zlabel = 'Cld.Height(km)'
         units = " (km)"
         if(.not.Con_Cust)then
           nConLev = Con_CloudTop_N
@@ -330,9 +372,10 @@
           zrgb(1:nConLev,1:3) = Con_CloudTop_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.11)then   ! ash-cloud bottom
-        write(outfile_name,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
-        write(title_plot,'(a19,f5.2,a6)')'Ash-cloud bottom t=',WriteTimes(itime),' hours'
-        title_legend = 'Cld.Bot.(km)'
+        varname = "cloud_bottom"
+        write(filename_png,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
+        write(title_plot,'(a19,f7.2,a6)')'Ash-cloud bottom t=',WriteTimes(itime),' hours'
+        cstr_zlabel = 'Cld.Bot.(km)'
         units = " (km)"
         if(.not.Con_Cust)then
           nConLev = Con_CloudBot_N
@@ -342,9 +385,10 @@
           zrgb(1:nConLev,1:3) = Con_CloudBot_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.12)then   ! ash-cloud load
-        write(outfile_name,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
-        write(title_plot,'(a17,f5.2,a6)')'Ash-cloud load t=',WriteTimes(itime),' hours'
-        title_legend = 'Cld.Load(T/km2)'
+        varname = "cloud_load"
+        write(filename_png,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
+        write(title_plot,'(a17,f7.2,a6)')'Ash-cloud load t=',WriteTimes(itime),' hours'
+        cstr_zlabel = 'Cld.Load(T/km2)'
         units = " (T/km2)"
         if(.not.Con_Cust)then
           nConLev = Con_CloudLoad_N
@@ -354,9 +398,10 @@
           zrgb(1:nConLev,1:3) = Con_CloudLoad_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.13)then  ! radar reflectivity
-        write(outfile_name,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
-        write(title_plot,'(a24,f5.2,a6)')'Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
-        title_legend = 'Cld.Refl.(dBz)'
+        varname = "radar_reflectivity"
+        write(filename_png,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
+        write(title_plot,'(a24,f7.2,a6)')'Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
+        cstr_zlabel = 'Cld.Refl.(dBz)'
         units = " (dBz)"
         if(.not.Con_Cust)then
           nConLev = Con_CloudRef_N
@@ -366,9 +411,10 @@
           zrgb(1:nConLev,1:3) = Con_CloudRef_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.14)then   ! ashcloud arrival time (hours)
-        write(outfile_name,'(a20)')'CloudArrivalTime.png'
+        varname = "ash_arrival_time"
+        write(filename_png,'(a20)')'CloudArrivalTime.png'
         write(title_plot,'(a22)')'Ash-cloud arrival time'
-        title_legend = 'Time (hours)'
+        cstr_zlabel = 'Time (hours)'
         units = " (hours)"
         if(.not.Con_Cust)then
           nConLev = Con_CloudTime_N
@@ -378,9 +424,10 @@
           zrgb(1:nConLev,1:3) = Con_CloudTime_RGB(1:nConLev,1:3)
         endif
       elseif(iprod.eq.15)then   ! topography
-        write(outfile_name,'(a14)')'Topography.png'
+        varname = "topography"
+        write(filename_png,'(a14)')'Topography.png'
         write(title_plot,'(a10)')'Topography'
-        title_legend = 'Elevation (km)'
+        cstr_zlabel = 'Elevation (km)'
         units = " (hours)"
         if(.not.Con_Cust)then
           nConLev = 8
@@ -392,33 +439,97 @@
       elseif(iprod.eq.16)then   ! profile plots
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: No map PNG output option for vertical profile data."
-          write(errlog(io),*)"       Should not be in write_2Dmap_PNG_dislin"
+          write(errlog(io),*)"       Should not be in write_2Dmap_PNG_plplot"
         endif;enddo
         stop 1
       else
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: unexpected variable"
+          write(errlog(io),*)"         iprod = ",iprod
+          write(errlog(io),*)"       Cannot map this variable."
         endif;enddo
         stop 1
       endif
+      ! Now have string vars (varname,cstr_zlabel, etc.) and contour info (nConLev,zrgb,ContourLev)
 
-      if(IsLatLon)then
-        xmin = real(minval(lon_cc_pd(1:nx)),kind=plflt)
-        xmax = real(maxval(lon_cc_pd(1:nx)),kind=plflt)
-        ymin = real(minval(lat_cc_pd(1:ny)),kind=plflt)
-        ymax = real(maxval(lat_cc_pd(1:ny)),kind=plflt)
+      if(writeContours)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"Running plplot to calculate contours lines"
+          write(errlog(io),*)"Not sure yet how to save contour data with plplot"
+          write(errlog(io),*)"If you want shapefiles, recompile without plplot or"
+          write(errlog(io),*)" reset the plot_pref_shp variable."
+          write(errlog(io),*)"Exiting"
+        endif;enddo
+        stop 1
       else
-        xmin = real(minval(x_cc_pd(1:nx)),kind=plflt)
-        xmax = real(maxval(x_cc_pd(1:nx)),kind=plflt)
-        ymin = real(minval(y_cc_pd(1:ny)),kind=plflt)
-        ymax = real(maxval(y_cc_pd(1:ny)),kind=plflt)
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Running plplot to generate contour plot"
+        endif;enddo
       endif
-      call citylist(0,real(xmin,kind=ip),real(xmax,kind=ip),&
-                      real(ymin,kind=ip),real(ymax,kind=ip),&
-                      ncities,                            &
-                      lon_cities, &
-                      lat_cities, &
-                      name_cities)
+
+      ! This is the section where we actually start plotting the map
+      ! Evaluate grid
+      if(IsLatLon)then
+        xmin = lonLL
+        xmax = lonUR
+        ymin = latLL
+        ymax = latUR
+        if(abs(dn-de).lt.1.0e-4_ip)then
+          IsRegGrid = .true.
+        else
+          IsRegGrid = .false.
+        endif
+      else
+        xmin = xLL
+        xmax = xUR
+        ymin = yLL
+        ymax = yUR
+        if(abs(dx-dy).lt.1.0e-4_ip)then
+          IsRegGrid = .true.
+        else
+          IsRegGrid = .false.
+        endif
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: Currenntly, plotting with plplot only enabled for lon/lat grids."
+          write(errlog(io),*)"       Please use GMT to plot projected maps."
+          write(errlog(io),*)"       ./ASH3DPLOT=4 ./Ash3d_PostProc ...."
+        endif;enddo
+        stop 1
+      endif
+      xminPL = real(xmin,kind=plflt)
+      xmaxPL = real(xmax,kind=plflt)
+      yminPL = real(ymin,kind=plflt)
+      ymaxPL = real(ymax,kind=plflt)
+
+      ! No prep needed for the data in a form that plplot can read since it is internal
+
+      call citylist(0,                        &  ! 0 is for internal list only (no file)
+                    xmin,xmax,ymin,ymax,      &
+                    ncities,                  &
+                    lon_cities,               &
+                    lat_cities,               &
+                    name_cities)
+
+      ! Build strings with run info for legend
+      ! Volcano:     Erup.start:
+      ! Run date:    Plm Height:
+      ! Windfile:    Duration:
+      !              Volume:
+      write(cstr_volcname,'(a10,a20)')'Volcano:  ' ,VolcanoName
+      write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
+      read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
+      write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
+      if(neruptions.gt.1)then
+        write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'
+      endif
+
+      !e_StartTime,e_PlumeHeight,e_Duration,e_Volume
+      write(cstr_ErStartT,'(a20,a20)')'Erup. Start Time:   ',&
+            HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap)
+      write(cstr_ErHeight,'(a20,f4.1,a3)')'Erup. Plume Height: ',e_PlumeHeight(1),' km'
+      write(cstr_ErDuratn,'(a20,f4.1,a6)')'Erup. Duration:     ',e_Duration(1),' hours'
+      write(cstr_ErVolume,'(a20,f8.5,a10)')'Erup. Volume:       ',e_Volume(1),' km3 (DRE)'
+
       allocate(x(nx))
       allocate(y(ny))
       allocate(var(nx,ny))
@@ -428,12 +539,14 @@
       vmin=real(minval(var(:,:)),kind=plflt)
       vmax=real(maxval(var(:,:)),kind=plflt)
 
-      tr = (/ (xmax-xmin)/real(nx-1,kind=plflt), 0.0_plflt, xmin, &
-              0.0_plflt, (ymax-ymin)/real(ny-1,kind=plflt), ymin /)
+      tr = (/ (xmaxPL-xminPL)/real(nx-1,kind=plflt), 0.0_plflt, xminPL, &
+              0.0_plflt, (ymaxPL-yminPL)/real(ny-1,kind=plflt), yminPL /)
+
+      call get_version_plplot
 
       ! Set up for plplot
       call plsdev("pngcairo")      ! Set output device (png, pdf, etc.)
-      call plsfnam (outfile_name)  ! Set output filename
+      call plsfnam (filename_png)  ! Set output filename
 
       ! set image size via command-line options tool plsetopt
       if(lib_ver_minor.lt.12)then
@@ -466,29 +579,31 @@
         ! plvpor: Specify viewport using normalized subpage coordinates
       call plvpor(0.1_plflt, 0.8_plflt, 0.3_plflt, 0.8_plflt)
         ! plwind: Specify window 
-      call plwind(xmin,xmax,ymin,ymax)
+      call plwind(xminPL,xmaxPL,yminPL,ymaxPL)
       call plbox('bcnst', 0.0_plflt, 0, 'bcnstv', 0.0_plflt, 0)
 
       call plcol0(1)
-      call plmap('usaglobe', xmin, xmax, ymin, ymax)
+      call plmap('usaglobe', xminPL, xmaxPL, yminPL, ymaxPL)
 
       ! Add cities
-      do i=1,ncities
-        if(lon_cities(i).lt.xmin)lon_cities(i)=lon_cities(i)+360.0_ip
+      cityname_offset_dx = 0.1_ip
+      do icty=1,ncities
+        if(lon_cities(icty).lt.xmin) lon_cities(icty)=lon_cities(icty)+360.0_ip
           ! plssym: Set symbol size : default, scale
         call plssym( 0.0_plflt, 2.0_plflt )
           ! plpoin: Plot a glyph at the specified points 
-        call plpoin(real(lon_cities(i:i),kind=plflt),&
-                      real(lat_cities(i:i),kind=plflt),&
-                      17) ! code 17 is a black dot
+        call plpoin(real(lon_cities(icty:icty),kind=plflt),&
+                    real(lat_cities(icty:icty),kind=plflt),&
+                    17) ! code 17 is a black dot
           ! plssym: Set symbol size : default, scale
         call plssym( 0.0_plflt, 0.5_plflt )
         call plschr( 0.0_plflt, 0.7_plflt )
 
           ! plptex : Write text inside the viewport (x,y,dx,dy,just,strin)
-        call plptex( real(lon_cities(i)+1.0,kind=plflt),real(lat_cities(i),kind=plflt), &
-             0.0_plflt, 0.0_plflt, 0.0_plflt, &
-             adjustl(trim(name_cities(i))))
+        call plptex( real(lon_cities(icty)+cityname_offset_dx,kind=plflt),&
+                     real(lat_cities(icty),kind=plflt), &
+                     0.0_plflt, 0.0_plflt, 0.0_plflt, &
+                     adjustl(trim(name_cities(icty))))
       enddo
       call plschr( 0.0_plflt, 1.0_plflt )
 
@@ -500,18 +615,20 @@
         lon_cities(1)=lon_volcano
       endif
       lat_cities(1)=lat_volcano
-      i=1
-      call plpoin(real(lon_cities(i:i),kind=plflt),&
-                    real(lat_cities(i:i),kind=plflt),&
-                    7) ! code 7 is a triangle
+      icty=1
+      call plpoin(real(lon_cities(icty:icty),kind=plflt),&
+                  real(lat_cities(icty:icty),kind=plflt),&
+                  7) ! code 7 is a triangle
                        ! (https://plplot.sourceforge.net/examples.php?demo=06&lbind=Fortran)
-
-      do i=1,nConLev
-        call plcol1(real(dble(i)/dble(nConLev),kind=plflt))
-        clevel(1) = real(ContourLev(i),kind=plflt)
+      call pllab(cstr_xlabel,cstr_ylabel,title_plot)
+      call plscmap1(zrgb(:,1),zrgb(:,2),zrgb(:,3))
+      do ilev=1,nConLev
+        clevel(1) = real(ContourLev(ilev),kind=plflt)
+        ! From colormap
+        call plcol1(real(dble(ilev-1)/dble(nConLev),kind=plflt))
         call plcont(var,1,nx,1,ny,clevel, tr)
       enddo
-      call pllab("Longitude", "Latitude", title_plot)
+      !call pllab(cstr_xlabel,cstr_ylabel,title_plot)
       if(lib_ver_minor.lt.12)then
         ! prior to v5.12, the second argument was an integer
 !        call plstransform( 0 )
@@ -525,10 +642,10 @@
       ! Set the color we will use for the legend background (index 15)
       call plscol0a( 15, 255, 255, 255, 1.0_plflt )
       allocate(opt_array(nConLev))
+      !color_array
       allocate(text_colors(nConLev))
       allocate(box_colors(nConLev))
       allocate(box_patterns(nConLev))
-      allocate(line_colors(nConLev))
       allocate(line_styles(nConLev))
       allocate(symbol_numbers(nConLev))
       allocate(symbol_colors(nConLev))
@@ -536,59 +653,47 @@
       allocate(symbols(nConLev))
       allocate(box_scales(nConLev))
       allocate(box_line_widths(nConLev))
+      allocate(line_colors(nConLev))
       allocate(line_widths(nConLev))
       allocate(symbol_scales(nConLev))
-      allocate(red(nConLev))
-      allocate(green(nConLev))
-      allocate(blue(nConLev))
       allocate(alpha(nConLev))
-      do i=1,nConLev
+      do ilev=1,nConLev
         pos_opt = PL_POSITION_RIGHT + PL_POSITION_OUTSIDE
         opt = PL_LEGEND_BACKGROUND + PL_LEGEND_BOUNDING_BOX
-        text_colors(i)   = 1 + mod( i-1, nConLev )
-        line_colors(i)   = 1 + mod( i-1, nConLev )
-        !call plcol1(real(dble(i)/dble(nConLev),kind=plflt))
-        red(i)   = i
-        green(i) = i
-        blue(i)  = i
-        alpha(i) = 1.0_plflt
-
-        line_styles(i)   = 1
-        line_widths(i)   = 1
-        symbol_colors(i) = 1 + mod( i-1, nConLev )
-        box_colors(i)     = 2
-        box_patterns(i)   = 3
-        box_scales(i)     = 0.8_plflt
-        box_line_widths(i)= 1
-        if(abs(ContourLev(i)).lt.0.01_ip.or.abs(ContourLev(i)).ge.1000.0_ip)then
-          write( text(i), '(e7.2)' ) real(ContourLev(i),kind=4)
+        text_colors(ilev)   = 1
+        line_colors(ilev)   = ilev + 1 ! we want black in slot 1 so set index starting at 2
+        ! Need to get RGB from colormap
+        ! Set the ilev+1 index of the col0 palette
+        call plscol0(ilev+1,zrgb(ilev,1),zrgb(ilev,2),zrgb(ilev,3))
+        alpha(ilev) = 1.0_plflt
+        line_styles(ilev)    = 1
+        line_widths(ilev)    = 1
+        symbol_colors(ilev)  = 1 !+ mod( ilev-1, nConLev )
+        box_colors(ilev)     = 0
+        box_patterns(ilev)   = 3
+        box_scales(ilev)     = 0.8_plflt
+        box_line_widths(ilev)= 1
+        call plcol0(1)
+        if(abs(ContourLev(ilev)).lt.0.01_ip.or.abs(ContourLev(ilev)).ge.1000.0_ip)then
+          write( text(ilev), '(e7.2)' ) real(ContourLev(ilev),kind=4)
         else
-          write( text(i), '(f7.2)' ) real(ContourLev(i),kind=4)
+          write( text(ilev), '(f7.2)' ) real(ContourLev(ilev),kind=4)
         endif
-        x_offset       = 0.05_plflt
-        y_offset       = 0.0_plflt
-        plot_width     = 0.05_plflt
-        bg_color       = 15
-        bb_color       = 1
-        bb_style       = 1
-        nrow           = nConLev
-        ncolumn        = 1    ! Note: nlegend=nrow * ncolumn
-        opt_array(i)   = PL_LEGEND_LINE
+        x_offset           = 0.05_plflt
+        y_offset           = 0.0_plflt
+        plot_width         = 0.05_plflt
+        bg_color           = 15
+        bb_color           = 1
+        bb_style           = 1
+        nrow               = nConLev
+        ncolumn            = 1    ! Note: nlegend=nrow * ncolumn
+        opt_array(ilev)    = PL_LEGEND_LINE
         text_offset        = 1.0_plflt
         text_scale         = 0.75_plflt
         text_spacing       = 1.5_plflt
         text_justification = 0.0_plflt
-        symbols(i)        = '*'
+        symbols(ilev)      = '*'
       enddo
-      ! Now set the RGB values from above tothe cmap0
-      !call plscmap0a(red, green, blue, alpha)
-        ! pladv: Advance the (sub-)page
-!      call pladv(1)
-!        ! plvpor: Specify viewport using normalized subpage coordinates
-!      call plvpor(0.75_plflt, 1.0_plflt, 0.6_plflt, 0.7_plflt)
-!        ! plwind: Specify window 
-!      call plwind(0.0_plflt, 1.0_plflt, 0.0_plflt, 1.0_plflt )
-!      call plschr( 0.0_plflt, 0.7_plflt )
 
       call pllegend(    &
           legend_width, &  ! these are output vars
@@ -627,12 +732,11 @@
       call plvpor(0.8_plflt, 1.0_plflt, 0.7_plflt, 0.8_plflt)
         ! plwind: Specify window 
       call plwind(0.0_plflt, 1.0_plflt, 0.0_plflt, 1.0_plflt )
-      write(outstring,*)trim(adjustl(title_legend))
       call plschr( 0.0_plflt, 0.8_plflt )
-      call plptex(0.1_plflt, 0.5_plflt,& ! x,y
+      call plptex(0.1_plflt, 0.5_plflt, & ! x,y
                   1.0_plflt, 0.0_plflt, & ! dx,dy
                   0.0_plflt,            & ! just
-                  outstring )             ! text
+                  cstr_zlabel )          ! text
       ! And the boxes below
         ! pladv: Advance the (sub-)page
       call pladv(1)
@@ -648,16 +752,12 @@
       call plschr( 0.0_plflt, 0.7_plflt )
       dy_newline = 0.13_plflt
         ! plptex: Write text inside the viewport
-      write(outstring,*)"Volcano: ",trim(adjustl(VolcanoName))
-      call plptex(0.02_plflt, 1.0_plflt-1.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, &
-                  0.0_plflt, outstring )
-      write(outstring,*)"Run Date: ",trim(adjustl(os_time_log))
-      call plptex(0.02_plflt, 1.0_plflt-2.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, &
-                  0.0_plflt, outstring )
-      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
-      write(outstring,*)"Windfile: ",iwf
-      call plptex(0.02_plflt, 1.0_plflt-3.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, &
-                  0.0_plflt, outstring )
+      call plptex(0.02_plflt, 1.0_plflt-1.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, 0.0_plflt, cstr_volcname )
+      call plptex(0.02_plflt, 1.0_plflt-2.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, 0.0_plflt, cstr_run_date )
+      call plptex(0.02_plflt, 1.0_plflt-3.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, 0.0_plflt, cstr_windfile )
+      if(neruptions.gt.1)then
+        call plptex(0.02_plflt, 1.0_plflt-4.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, 0.0_plflt, cstr_note )
+      endif
 
         ! pladv: Advance the (sub-)page
       !call pladv(2)
@@ -669,21 +769,10 @@
         !       (xopt, xtick, nxsub, yopt, ytick, nysub)
       !call plbox('bc', 0.0_plflt, 0, 'bc', 0.0_plflt, 0 )
 
-      write(outstring,*)"Erup. Start Time: ",HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap)
-      call plptex(0.02_plflt, 1.0_plflt-1.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, &
-                  0.0_plflt, outstring )
-      write(outstring,111)e_PlumeHeight(1)
- 111  format(' Erup. Plume Height: ',f7.2,' km')
-      call plptex(0.02_plflt, 1.0_plflt-2.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, &
-                  0.0_plflt, outstring )
-      write(outstring,121)e_Duration(1)
- 121  format(' Erup. Duration: ',f7.2,' hours')
-      call plptex(0.02_plflt, 1.0_plflt-3.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, &
-                  0.0_plflt, outstring )
-      write(outstring,131)e_Volume(1)
- 131  format(' Erup. Volume: ',f10.5,' km3 (DRE)')
-      call plptex(0.02_plflt, 1.0_plflt-4.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, &
-                  0.0_plflt, outstring )
+      call plptex(0.02_plflt, 1.0_plflt-1.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, 0.0_plflt, cstr_ErStartT )
+      call plptex(0.02_plflt, 1.0_plflt-2.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, 0.0_plflt, cstr_ErHeight )
+      call plptex(0.02_plflt, 1.0_plflt-3.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, 0.0_plflt, cstr_ErDuratn )
+      call plptex(0.02_plflt, 1.0_plflt-4.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, 0.0_plflt, cstr_ErVolume )
 
       call plend()
 
@@ -709,10 +798,12 @@
       if(allocated(box_line_widths)) deallocate(box_line_widths)
       if(allocated(line_widths))     deallocate(line_widths)
       if(allocated(symbol_scales))   deallocate(symbol_scales)
-      if(allocated(red))             deallocate(red)
-      if(allocated(green))           deallocate(green)
-      if(allocated(blue))            deallocate(blue)
-      if(allocated(alpha))           deallocate(alpha)
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_2Dmap_PNG_plplot"
+      endif;enddo
+
+      return
 
       end subroutine write_2Dmap_PNG_plplot
 
@@ -736,44 +827,62 @@
          KG_2_MG,KM3_2_M3
 
       use mesh,          only : &
-         nzmax,z_cc_pd
+         IsLatLon,nzmax,z_cc_pd
 
       use Output_Vars,   only : &
          pr_ash,CLOUDCON_THRESH,CONTOUR_MAXCURVES
-
-      use time_data,     only : &
-         ntmax,time_native
 
       use io_data,       only : &
          Site_vprofile,x_vprofile,y_vprofile,cdf_b3l1,VolcanoName
 
       use Source,        only : &
-         e_Volume,e_Duration,e_StartTime,e_PlumeHeight
+         neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight
 
       use time_data,     only : &
-         os_time_log,SimStartHour,BaseYear,useLeap
+         os_time_log,SimStartHour,BaseYear,useLeap,ntmax,time_native
 
       integer,intent(in) :: vprof_ID
 
-      !integer,parameter :: NLEVEL     = 11
-      !integer,parameter :: NLEVEL     = 30
+      logical           :: HaveIconFile
+      character(len=76) :: title_plot
+      character(len=30) :: cstr_xlabel = 'Time (hours after eruption)'
+      character(len=30) :: cstr_ylabel = 'Height (km)'
+      character(len=30) :: cstr_zlabel = 'Ash conc. mg/m3'
+      character(len=30) :: cstr_volcname
+      character(len=30) :: cstr_run_date
+      character(len=30) :: cstr_windfile
+      character(len=40) :: cstr_ErStartT
+      character(len=27) :: cstr_ErHeight
+      character(len=30) :: cstr_ErDuratn
+      character(len=38) :: cstr_ErVolume
+      character(len=45) :: cstr_note
+
+      character(len=10) :: filename_root
+      !character(len=12) :: filename_script
+      !character(len=14) :: filename_outdata
+      character(len=14) :: filename_png
+      !integer           :: fid_script   = 55
+      !integer           :: fid_outdata  = 54
+      character(len=26) :: coord_str
+      !character(len=80) :: plotcom
+      integer           :: i,k
+      integer           :: iostatus
+      character(len=120):: iomessage
+      integer           :: iw,iwf
+      !character(len=200):: cmd
+
       integer,parameter :: NUM_AXES   = 1
       integer,parameter :: NUM_LABELS = 1
 
-      character(len=14) :: dp_pngfile
-      character(len=26) :: coord_str
-      character(len=76) :: title_str
-      character(len=80) :: outstring
-      integer :: k,i
-      integer :: ioerr,iw,iwf
-
       ! PLPLOT variables
-      real(kind=plflt)  :: tmin
-      real(kind=plflt)  :: tmax
-      real(kind=plflt)  :: zmin
-      real(kind=plflt)  :: zmax
-      real(kind=plflt)  :: cmin
-      real(kind=plflt)  :: cmax
+      ! Plotting variables
+
+      real(kind=plflt) :: tmin    , zmin    , cmin     ! graph minima
+      real(kind=plflt) :: tmax    , zmax    , cmax     ! graph maxima
+      real(kind=plflt) :: tlab1   , zlab1   , clab1    ! graph first label
+      real(kind=plflt) :: tlabstep, zlabstep, clabstep ! graph label increment
+      real(kind=plflt) :: cloudcon_thresh_mgm3
+
       real(kind=plflt), dimension(:),   allocatable :: t, z
       real(kind=plflt), dimension(:,:), allocatable :: conc
       real(kind=plflt), dimension(:),   allocatable :: shedge
@@ -791,51 +900,139 @@
       integer           :: axis_subticks(NUM_AXES)
       character(len=100):: labels(NUM_LABELS)
       integer           :: label_opts(NUM_LABELS)
-      real(kind=plflt)  :: cloudcon_thresh_mgm3
       integer :: plsetopt_rc
 
       real(kind=plflt)   :: tr(6)
       real(kind=plflt)   :: clevel(1)
-      character(len=1)  :: defined     ! if lib_ver_minor.lt.12
+      !character(len=1)  :: defined     ! if lib_ver_minor.lt.12
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8)              :: HoursSince
-          integer                   :: byear
-          logical                   :: useLeaps
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_2Dprof_PNG_plplot"
+      endif;enddo
+
+      ! Test for icon file
+      inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
+
+      ! Build strings with run info for legend
+      ! Volcano:     Erup.start:
+      ! Run date:    Plm Height:
+      ! Windfile:    Duration:
+      !              Volume:
+      write(cstr_volcname,'(a10,a20)')'Volcano:  ' ,VolcanoName
+      write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
+      read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
+      write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
+      if(neruptions.gt.1)then
+        write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'
+      endif
+
+      !e_StartTime,e_PlumeHeight,e_Duration,e_Volume
+      write(cstr_ErStartT,'(a20,a20)')'Erup. Start Time:   ',&
+            HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap)
+      write(cstr_ErHeight,'(a20,f4.1,a3)')'Erup. Plume Height: ',e_PlumeHeight(1),' km'
+      write(cstr_ErDuratn,'(a20,f4.1,a6)')'Erup. Duration:     ',e_Duration(1),' hours'
+      write(cstr_ErVolume,'(a20,f8.5,a10)')'Erup. Volume:       ',e_Volume(1),' km3 (DRE)'
 
       cloudcon_thresh_mgm3 = CLOUDCON_THRESH * KG_2_MG / KM3_2_M3 !convert from kg/km3 to mg/m3
 
       clevel(1) = cloudcon_thresh_mgm3
 
-      write(dp_pngfile,54) vprof_ID,".png"
- 54   format('plplt_',i4.4,a4)
+      write(filename_root,52)vprof_ID
+ 52   format('vprof_',i4.4)
+      filename_png     = trim(adjustl(filename_root)) // ".png"
 
+      ! Get min/max and label interval for all three axies.
       tmin=real(0,kind=plflt)
       tmax=real(ceiling(time_native(ntmax)),kind=plflt)
+      tlab1    = 0.0_ip
+      if(tmax.gt.240.0_ip)then
+        tlabstep = 48.0_ip
+      elseif(tmax.gt.120.0_ip)then
+        tlabstep = 24.0_ip
+      elseif(tmax.gt.30.0_ip)then
+        tlabstep = 10.0_ip
+      elseif(tmax.gt.15.0_ip)then
+        tlabstep = 5.0_ip
+      elseif(tmax.gt.6.0_ip)then
+        tlabstep = 2.0_ip
+      else
+        tlabstep = 1.0_ip
+      endif
+
       zmin=real(0,kind=plflt)
       zmax=real(z_cc_pd(nzmax),kind=plflt)
+      zlab1    = 0.0_ip
+      if(zmax.gt.30.0_ip)then
+        zlabstep = 10.0_ip
+      elseif(zmax.gt.15.0_ip)then
+        zlabstep = 5.0_ip
+      elseif(zmax.gt.6.0_ip)then
+        zlabstep = 2.0_ip
+      else
+        zlabstep = 1.0_ip
+      endif
+
+      cloudcon_thresh_mgm3 = CLOUDCON_THRESH * KG_2_MG / KM3_2_M3 !convert from kg/km3 to mg/m3
       cmin=real(0,kind=plflt)
       cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=plflt)    ! Get the max value for this profile
-      cmax=real(max(cmax,cloudcon_thresh_mgm3),kind=plflt)  ! Do not let cmax drop below the threshold
+      cmin=real(min(cmin,cloudcon_thresh_mgm3),kind=plflt)  ! Do not let cmax drop below the threshold
+      if    (cmax.gt.4.0e4_ip)then
+          clabstep = 5.0e3_ip
+      elseif(cmax.gt.1.0e4_ip)then
+          clabstep = 2.0e3_ip
+      elseif(cmax.gt.4.0e3_ip)then
+          clabstep = 5.0e2_ip
+      elseif(cmax.gt.1.0e3_ip)then
+          clabstep = 2.0e2_ip
+      elseif(cmax.gt.4.0e2_ip)then
+          clabstep = 5.0e1_ip
+      elseif(cmax.gt.1.0e2_ip)then
+          clabstep = 2.0e1_ip
+      elseif(cmax.gt.4.0e1_ip)then
+          clabstep = 5.0e0_ip
+      elseif(cmax.gt.1.0e1_ip)then
+          clabstep = 2.0e0_ip
+      elseif(cmax.gt.1.0e0_ip)then
+          clabstep = 5.0e-1_ip
+      else
+          clabstep = 1.0e-1_ip
+      endif
+      clab1    = 0.0_ip
 
       tr = (/ tmax/real(ntmax-1,kind=plflt), 0.0_plflt, 0.0_plflt, &
               0.0_plflt, zmax/real(nzmax-1,kind=plflt), 0.0_plflt /)
 
+      ! Prep data: plplot stores a 2d array internally
       allocate(t(ntmax))
       allocate(z(nzmax))
       allocate(conc(ntmax,nzmax))
-
       t = real(time_native(1:ntmax),kind=plflt)
       z = real(z_cc_pd(1:nzmax),kind=plflt)
       do i=1,ntmax
         do k=1,nzmax
-          conc(i,k) = pr_ash(k,i,vprof_ID)
+          conc(i,k) = real(pr_ash(k,i,vprof_ID),kind=plflt)
         enddo
       enddo
 
+      ! Build the plot title
+      if(IsLatLon)then
+        write(coord_str,101)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
+      else
+        write(coord_str,102)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
+      endif
+ 101  format(' (lon=',f7.2,', lat=',f6.2,')')
+ 102  format(' (x=',f9.3,', y=',f9.3,')')
+      write(title_plot,*)trim(adjustl(Site_vprofile(vprof_ID))),coord_str
+
+      ! Now plplot-specific bits
 !      allocate(shedge(NLEVEL+1))
       allocate(shedge(CONTOUR_MAXCURVES+1))
       ! Here we linearly interpolate color levels to the min/max of the data
@@ -858,21 +1055,19 @@
       axis_ticks(1) = 0.0_plflt
       axis_subticks(1) = 0
       label_opts(1) = PL_COLORBAR_LABEL_RIGHT
-      labels(1) = 'Ash conc. mg/m3'
+      labels(1) = trim(adjustl(cstr_zlabel))
 
-      write(coord_str,101)x_vprofile(vprof_ID),y_vprofile(vprof_ID)
- 101  format(' (lon=',f7.2,', lat=',f6.2,')')
-      write(title_str,*)trim(adjustl(Site_vprofile(vprof_ID))),coord_str
+      call get_version_plplot
 
       ! Set up for plplot
       call plsdev("pngcairo")      ! Set output device (png, pdf, etc.)
-      call plsfnam ( dp_pngfile )  ! Set output filename
+      call plsfnam ( filename_png )  ! Set output filename
 
       ! set image size and background color via command-line options tool plsetopt
       if(lib_ver_minor.lt.12)then
         ! prior to v5.12, this was a subroutine call
-!        call plsetopt("geometry","854x603, 854x603")
-!        call plsetopt("bg","FFFFFF")                  ! Set background color to white
+        !call plsetopt("geometry","854x603, 854x603")
+        !call plsetopt("bg","FFFFFF")                  ! Set background color to white
       else
         ! after v5.12, this is a function call returing an error code plsetopt_rc
         plsetopt_rc = plsetopt("geometry","854x603, 854x603")
@@ -884,7 +1079,7 @@
       ! sets cmap1 palette via pal file for continuous elements
       if(lib_ver_minor.lt.12)then
         ! prior to v5.12, the second argument was an integer
-!        call plspal1('cmap1_blue_yellow.pal',1)
+        !call plspal1('cmap1_blue_yellow.pal',1)
       else
         ! after v5.12, this needs to be a logical
         call plspal1('cmap1_blue_yellow.pal',.true.)
@@ -929,7 +1124,7 @@
       call plbox('bcnst', 0.0_plflt, 0, 'bcnstv', 0.0_plflt, 0)
       call plcol0(2)
       call plschr(0.0_plflt,1.0_plflt)  ! Change font scale
-      call pllab("Time (hours after eruption)", "Height (km)", trim(adjustl(title_str)))
+      call pllab(trim(adjustl(cstr_xlabel)),trim(adjustl(cstr_ylabel)),trim(adjustl(title_plot)))
 
 !      num_values(1) = NLEVEL + 1;
       num_values(1) = CONTOUR_MAXCURVES + 1;
@@ -967,19 +1162,15 @@
       call plschr( 0.0_plflt, 0.7_plflt )
       dy_newline = 0.13_plflt
         ! plptex: Write text inside the viewport
-      write(outstring,*)"Volcano: ",trim(adjustl(VolcanoName))
-      call plptex(0.02_plflt, 1.0_plflt-1.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, &
-                  0.0_plflt, outstring )
-      write(outstring,*)"Run Date: ",trim(adjustl(os_time_log))
-      call plptex(0.02_plflt, 1.0_plflt-2.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, &
-                  0.0_plflt, outstring )
-      read(cdf_b3l1,*,iostat=ioerr) iw,iwf
-      write(outstring,*)"Windfile: ",iwf
-      call plptex(0.02_plflt, 1.0_plflt-3.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, &
-                  0.0_plflt, outstring )
+      call plptex(0.02_plflt, 1.0_plflt-1.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, 0.0_plflt, cstr_volcname )
+      call plptex(0.02_plflt, 1.0_plflt-2.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, 0.0_plflt, cstr_run_date )
+      call plptex(0.02_plflt, 1.0_plflt-3.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, 0.0_plflt, cstr_windfile )
+      if(neruptions.gt.1)then
+        call plptex(0.02_plflt, 1.0_plflt-4.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, 0.0_plflt, cstr_note )
+      endif
 
         ! pladv: Advance the (sub-)page
-      call pladv(2)
+      call pladv(1)
         ! plvpor: Specify viewport using normalized subpage coordinates
       call plvpor(0.4_plflt, 0.75_plflt, 0.05_plflt, 0.2_plflt)
         ! plwind: Specify window 
@@ -988,22 +1179,10 @@
         !       (xopt, xtick, nxsub, yopt, ytick, nysub)
       !call plbox('bc', 0.0_plflt, 0, 'bc', 0.0_plflt, 0 )
 
-      write(outstring,*)"Erup. Start Time: ",HS_xmltime(SimStartHour+e_StartTime(1),BaseYear,useLeap)
-      call plptex(0.02_plflt, 1.0_plflt-1.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, &
-                  0.0_plflt, outstring )
-      write(outstring,111)e_PlumeHeight(1)
- 111  format(' Erup. Plume Height: ',f7.2,' km')
-      call plptex(0.02_plflt, 1.0_plflt-2.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, &
-                  0.0_plflt, outstring )
-      write(outstring,121)e_Duration(1)
- 121  format(' Erup. Duration: ',f7.2,' hours')
-      call plptex(0.02_plflt, 1.0_plflt-3.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, &
-                  0.0_plflt, outstring )
-      write(outstring,131)e_Volume(1)
- 131  format(' Erup. Volume: ',f10.5,' km3 (DRE)')
-      call plptex(0.02_plflt, 1.0_plflt-4.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, &
-                  0.0_plflt, outstring )
-
+      call plptex(0.02_plflt, 1.0_plflt-1.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, 0.0_plflt, cstr_ErStartT )
+      call plptex(0.02_plflt, 1.0_plflt-2.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, 0.0_plflt, cstr_ErHeight )
+      call plptex(0.02_plflt, 1.0_plflt-3.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, 0.0_plflt, cstr_ErDuratn )
+      call plptex(0.02_plflt, 1.0_plflt-4.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, 0.0_plflt, cstr_ErVolume )
 
       ! Close PLplot library
       call plend
@@ -1013,6 +1192,12 @@
       if(allocated(z))      deallocate(z)
       if(allocated(conc))   deallocate(conc)
       if(allocated(shedge)) deallocate(shedge)
+ 
+     do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_2Dprof_PNG_plplot"
+      endif;enddo
+
+      return
 
       end subroutine write_2Dprof_PNG_plplot
 
@@ -1043,9 +1228,10 @@
       integer,intent(in) :: pt_indx
 
       real(kind=dp)     :: ymaxpl
-      character(len=14) :: dp_pngfile
+      character(len=14) :: filename_png
       integer,save      :: plot_index = 0
       integer           :: plsetopt_rc
+      character(len=15) :: geometry_master
 
       real(kind=plflt) :: xmin
       real(kind=plflt) :: xmax
@@ -1059,14 +1245,18 @@
       integer(kind=4) :: g2 = 136
       integer(kind=4) :: b2 = 136
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_DepPOI_TS_PNG_plplot"
+      endif;enddo
+      
       if(Airport_Thickness_TS(pt_indx,nWriteTimes).lt.0.01_ip)then
         return
       else
         plot_index = plot_index + 1
       endif
 
-      write(dp_pngfile,55) plot_index,".png"
- 55   format('plplt_',i4.4,a4)
+      write(filename_png,55) plot_index,".png"
+ 55   format('depTS_',i4.4,a4)
 
       if(Airport_Thickness_TS(plot_index,nWriteTimes).lt.0.01)then
         ymaxpl = 1.0
@@ -1097,21 +1287,25 @@
       y0(1:nWriteTimes)=y(1:nWriteTimes)
       y0(nWriteTimes+1)=0.0_plflt
 
+      call get_version_plplot
+
       ! Set up for plplot
       call plsdev("pngcairo")      ! Set output device (png, pdf, etc.)
-      call plsfnam ( dp_pngfile )  ! Set output filename
+      call plsfnam ( filename_png )  ! Set output filename
+      geometry_master = '400x300'
 
-      ! set image size and background colog via command-line options tool plsetopt
+      ! set image size and background color via command-line options tool plsetopt
       if(lib_ver_minor.lt.12)then
         ! prior to v5.12, this was a subroutine call
-!        call plsetopt("geometry","400x300, 400x300")
-!        call plsetopt("bg","FFFFFF")
-      elseif(lib_ver_major.le.5.and.lib_ver_minor.eq.15)then
+        !call plsetopt("geometry","400x300, 400x300")
+        !call plsetopt("bg","FFFFFF")
+      elseif(lib_ver_major.ge.5.and.lib_ver_minor.ge.12)then
         ! after v5.12, this is a function call returing an error code plsetopt_rc
-        plsetopt_rc = plsetopt("geometry","400x300, 400x300")  ! Set image size
+        plsetopt_rc = plsetopt('-geometry', geometry_master)
         plsetopt_rc = plsetopt("bg","FFFFFF")                  ! Set background color to white
       endif
-
+      ! sets cmap0 palette via pal file for discrete elements
+      call plspal0('cmap0_black_on_white.pal')
 
       ! Initialize plplot
       call plinit()
@@ -1137,7 +1331,100 @@
       if(allocated(x0)) deallocate(x0)
       if(allocated(y0)) deallocate(y0)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_DepPOI_TS_PNG_plplot"
+      endif;enddo
+
+      return
       end subroutine write_DepPOI_TS_PNG_plplot
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  get_version_plplot
+!
+!  Called from: All subroutine in this module that plot
+!  Arguments:
+!    None
+!
+!  This subroutine set the module variables corresponding to the library version
+!  of plplot linked. If the major version is less than 5, then this file will
+!  probably not work. If the minor version is less thatn 12, then the default
+!  code will be incompatible and a warning will be issued with instructions on
+!  how to recompile
+!
+!   Sets:
+!     lib_ver_major = [ 5]
+!     lib_ver_minor = [10]
+!     lib_ver_patch = [ 0]
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine get_version_plplot
+
+      character(len=80) :: linebuffer080
+      character(len=50) :: linebuffer050
+      integer           :: dec1str
+      integer           :: dec2str
+      integer           :: tmp_int
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine get_version_plplot"
+      endif;enddo
+
+      call plgver(linebuffer080)
+
+      dec1str = scan(linebuffer080, ".")
+
+      if(dec1str.gt.0)then
+        read(linebuffer080(1:dec1str-1),*)tmp_int
+        lib_ver_major = tmp_int
+      else
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"WARNING: PLPLOT major version not detected."
+          write(outlog(io),*)"         Asssuming v5.14 or greater"
+        endif;enddo
+        return
+      endif
+
+      linebuffer050 = trim(adjustl(linebuffer080(dec1str+1:)))
+      dec2str = scan(linebuffer050, ".")
+      if(dec2str.gt.0)then
+        read(linebuffer050(1:dec2str-1),*)tmp_int
+        lib_ver_minor = tmp_int
+      else
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"WARNING: PLPLOT minor version not detected."
+          write(outlog(io),*)"         Asssuming v5.14 or greater"
+        endif;enddo
+        return
+      endif
+
+      read(linebuffer050(dec2str+1:),*)tmp_int
+      lib_ver_patch = tmp_int
+
+      if(lib_ver_major.lt.5)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"WARNING: PLPLOT major version is earlier than v5."
+          write(outlog(io),*)"         These plotting routines will likely not work"
+          write(outlog(io),*)"         Try recompiling toggling the comments on <v5.12 routines"
+        endif;enddo
+      else
+        if(lib_ver_major.lt.5)then
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"WARNING: PLPLOT major.minor version is earlier than v5.12."
+            write(outlog(io),*)"         These plotting routines will likely not work"
+            write(outlog(io),*)"         Try recompiling toggling the comments on <v5.12 routines"
+          endif;enddo
+        endif
+      endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     ExitedSubroutine get_version_plplot"
+      endif;enddo
+
+      return
+
+      end subroutine get_version_plplot
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

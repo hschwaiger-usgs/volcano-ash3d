@@ -39,7 +39,50 @@
     },
 
     "date": {
-      "metadataLastUpdated": "2024-12-19"
+      "metadataLastUpdated": "2026-01-30"
+    }
+  },
+  {
+    "name": "volcano-ash3d",
+    "organization": "U.S. Geological Survey",
+    "description": "Ash3d: Volcanic ash advection/dispersion/sedimentation model",
+    "version": "1.1.0",
+    "status": "Production",
+
+    "permissions": {
+      "usageType": "openSource",
+      "licenses": [
+        {
+          "name": "Public Domain, CC0-1.0",
+          "URL": "https://code.usgs.gov/vsc/ash3d/volcano-ash3d/-/raw/1.1.0/LICENSE.md"
+        }
+      ]
+    },
+
+    "homepageURL": "https://code.usgs.gov/vsc/ash3d/volcano-ash3d",
+    "downloadURL": "https://code.usgs.gov/vsc/ash3d/volcano-ash3d/-/archive/1.1.0/volcano-ash3d-1.1.0.zip",
+    "disclaimerURL": "https://code.usgs.gov/vsc/ash3d/volcano-ash3d/-/raw/1.1.0/DISCLAIMER.md",
+    "repositoryURL": "https://code.usgs.gov/vsc/ash3d/volcano-ash3d.git",
+    "vcs": "git",
+
+    "laborHours": 0,
+
+    "tags": [
+      "USGS",
+      "Ash3d"
+    ],
+
+    "languages": [
+      "Fortran 2008"
+    ],
+
+    "contact": {
+      "name": "Hans F. Schwaiger",
+      "email": "hschwaiger@usgs.gov"
+    },
+
+    "date": {
+      "metadataLastUpdated": "2026-01-30"
     }
   },
   {

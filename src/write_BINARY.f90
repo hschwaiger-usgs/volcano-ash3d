@@ -65,6 +65,12 @@
 
       if(allocated(B_XY)) deallocate(B_XY)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine deallocate_Binary"
+      endif;enddo
+
+      return
+
       end subroutine deallocate_Binary
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -159,6 +165,12 @@
       write(fid_bin2dout,rec=1)((OVar(i,j),i=1,nx),j=1,ny)
       close(fid_bin2dout)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_2D_Binary"
+      endif;enddo
+
+      return
+
       end subroutine write_2D_Binary
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -210,6 +222,12 @@
       if(.not.allocated(B_XY)) allocate(B_XY(1:nx,1:ny))
       B_XY(1:nx,1:ny) = real(OVar(1:nx,1:ny),kind=ip)
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine read_2D_Binary"
+      endif;enddo
+
+      return
+
       end subroutine read_2D_Binary
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -257,6 +275,12 @@
       endif
       write(fid_bin3dout,rec=1)(((ashcon_tot(i,j,k),i=1,nx),j=1,ny),k=1,nz)
       close(fid_bin3dout)
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_3D_Binary"
+      endif;enddo
+
+      return
 
       end subroutine write_3D_Binary
 
@@ -312,6 +336,12 @@
 
       if(.not.allocated(B_XYZ)) allocate(B_XYZ(1:nx,1:ny,1:nz))
       B_XYZ(1:nx,1:ny,1:nz) = real(OVar3d(1:nx,1:ny,1:nz),kind=ip)
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine read_3D_Binary"
+      endif;enddo
+
+      return
 
       end subroutine read_3D_Binary
 

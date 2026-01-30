@@ -61,7 +61,7 @@
 
       use mesh,          only : &
          A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-         A3d_k0_scale,IsLatLon
+         A3d_k0,IsLatLon
 
       use Ash3d_Binary_IO, only : &
          BigEnd_4int,   &
@@ -166,17 +166,17 @@
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8)              :: HoursSince
-          integer                   :: byear
-          logical                   :: useLeaps
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
         end function HS_xmltime
         subroutine writeShapFileFieldDesArr(ov_dbasID,fldlen,DBASE_FieldName,&
                                             DBASE_FieldTyp,DBASE_FieldLen)
-          integer,intent(in)               :: ov_dbasID
-          integer,intent(in)               :: fldlen
+          integer              ,intent(in) :: ov_dbasID
+          integer              ,intent(in) :: fldlen
           character(len=fldlen),intent(in) :: DBASE_FieldName
-          character(len=1),intent(in)      :: DBASE_FieldTyp
-          integer(kind=1),intent(in)       :: DBASE_FieldLen
+          character(len=1)     ,intent(in) :: DBASE_FieldTyp
+          integer(kind=1)      ,intent(in) :: DBASE_FieldLen
         end subroutine writeShapFileFieldDesArr
       END INTERFACE
 
@@ -219,7 +219,6 @@
       elseif(iprod.eq.8)then    ! ashfall arrival at airports/POI (mm)
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: No map shapefile output option for airport arrival time data."
-          write(errlog(io),*)"       Should not be in write_2Dmap_PNG_dislin"
         endif;enddo
         stop 1
       elseif(iprod.eq.9)then    ! ash-cloud concentration
@@ -260,7 +259,6 @@
       elseif(iprod.eq.16)then   ! profile plots
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: No map shapefile output option for vertical profile data."
-          write(errlog(io),*)"       Should not be in write_2Dmap_PNG_dislin"
         endif;enddo
         stop 1
       else
@@ -282,7 +280,7 @@
         endif
       enddo
 
-      ! We allocate variables here to hold the contour data mainly so ensure that
+      ! We allocate variables here to hold the contour data mainly to ensure that
       ! the variables we write to the shapefile have exactly the kind values expected.
       allocate(NumParts(nrec))
       allocate(NumPoints(nrec))
@@ -325,7 +323,7 @@
                        4*8 + & ! Box        : 4-Double  : Little
                        1*4 + & ! NumParts   : 1-Integer : Little
                        1*4 + & ! NumPoints  : 1-Integer : Little
-                       NumParts(irec)*4 + &  ! Parts      : NumParts-Integers : Little
+                       NumParts(irec)*4 + & ! Parts      : NumParts-Integers : Little
                        NumPoints(irec)*2*8  ! Points     : 2-Double          : Little
         reclen(irec) = reclen(irec) / 2     ! total record length in 16-bit words
       enddo
@@ -350,14 +348,14 @@
       ! First, writing the main .shp file which contains the contour (polyline) data.
       ! The specification has a mess of little-endian and big-endian writes with non-integer
       ! record offsets (e.g. 8-byte reals written to addres byte-36), so we open the file with
-      ! access='stream' and use the functions [Lit,Big}End_[4int,8real] to write the correct
+      ! access='stream' and use the functions [Lit,Big]End_[4int,8real] to write the correct
       ! bits.  For all the details, see
       ! https://www.esri.com/content/dam/esrisites/sitecore-archive/Files/Pdfs/library/whitepapers/pdfs/shapefile.pdf
       !  All writes of real*8 will use transfer() to write the correct bits in 4-byte packets
-      open(ov_mainID, file=trim(adjustl(ov_mainfile)), access='stream', form='unformatted', status='replace')
+      open(unit=ov_mainID, file=trim(adjustl(ov_mainfile)), access='stream', form='unformatted', status='replace')
       ! Note: The index file (.shx) has the same head as the .shp file (except the file length field)
       !       So duplicate all the writes
-      open(ov_indxID, file=trim(adjustl(ov_indxfile)), access='stream', form='unformatted', status='replace')
+      open(unit=ov_indxID, file=trim(adjustl(ov_indxfile)), access='stream', form='unformatted', status='replace')
 
       ! File header is 100 bytes
       file_code = 9994_4
@@ -542,7 +540,7 @@
       !  3. The record order must be the same as the order of shape features in the main file
       !  4. The year value in the dBASE header must be the year since 1900.
       ! Note: We will write dBASE V – MS-Windows (Level 5) format since we know that works.
-      open(ov_dbasID, file=trim(adjustl(ov_dbasfile)), access='stream', form='unformatted', status='replace')
+      open(unit=ov_dbasID, file=trim(adjustl(ov_dbasfile)), access='stream', form='unformatted', status='replace')
 
       ! Populate each of the TableRecData fields with dummy values so we can get lengths to put
       ! in the header
@@ -764,7 +762,7 @@
       close(ov_dbasID)
 
       if (IsLatLon)then
-        open(ov_projID, file=trim(adjustl(ov_projfile)), access='stream', form='unformatted', status='replace')
+        open(unit=ov_projID, file=trim(adjustl(ov_projfile)), access='stream', form='unformatted', status='replace')
         write(ov_projID)'GEOGCS["GCS_WGS_1984",'
         write(ov_projID)'DATUM["D_WGS_1984",'
         write(ov_projID)'SPHEROID["WGS_1984",'
@@ -777,13 +775,13 @@
         case(0)
           ! Non-geographic projection, (x,y) only
           !  Just create a file with no content
-          open(ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
+          open(unit=ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
           write(ov_projID,*)' '
           close(ov_projID)
         case(1)
           ! Polar stereographic
-          open(ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
-          write(ov_projID,501)A3d_lam0,A3d_k0_scale,A3d_phi1
+          open(unit=ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
+          write(ov_projID,501)A3d_lam0,A3d_k0,A3d_phi1
 501       format('PROJECTION["Polar_Stereographic"],',          &
                  'PARAMETER["False_Easting",500000.0],',        &
                  'PARAMETER["False_Northing",0.0],',            &
@@ -794,7 +792,7 @@
           close(ov_projID)
         case(2)
           ! Albers Equal Area
-          open(ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
+          open(unit=ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
           write(ov_projID,502)A3d_lam0,A3d_phi1,A3d_phi2,A3d_phi0
 502       format('PROJECTION["Albers_Equal_Area"],',            &
                  'PARAMETER["False_Easting",500000.0],',        &
@@ -807,8 +805,8 @@
           close(ov_projID)
         case(3)
           ! UTM
-          open(ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
-          write(ov_projID,503)A3d_lam0,A3d_phi0,A3d_k0_scale
+          open(unit=ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
+          write(ov_projID,503)A3d_lam0,A3d_phi0,A3d_k0
 503       format('PROJECTION["Transverse_Mercator"],',      &
                  'PARAMETER["False_Easting",500000.0],',        &
                  'PARAMETER["False_Northing",0.0],',            &
@@ -819,7 +817,7 @@
           close(ov_projID)
         case(4)
           ! Lambert conformal conic 
-          open(ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
+          open(unit=ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
           write(ov_projID,504)A3d_lam0,A3d_phi1,A3d_phi2,A3d_phi0
 504       format('PROJECTION["Lambert_Conformal_Conic"],',      &
                  'PARAMETER["False_Easting",500000.0],',        &
@@ -832,8 +830,8 @@
           close(ov_projID)
         case(5)
           ! Mercator
-          open(ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
-          write(ov_projID,505)A3d_lam0,A3d_phi0,A3d_k0_scale
+          open(unit=ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
+          write(ov_projID,505)A3d_lam0,A3d_phi0,A3d_k0
 505       format('PROJECTION["Transverse_Mercator"],',          &
                  'PARAMETER["False_Easting",500000.0],',        &
                  'PARAMETER["False_Northing",0.0],',            &
@@ -885,6 +883,12 @@
       if(allocated(ContourDataX))       deallocate(ContourDataX)
       if(allocated(ContourDataY))       deallocate(ContourDataY)
 #endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_ShapeFile_Polyline"
+      endif;enddo
+
+      return
 
       end subroutine write_ShapeFile_Polyline
 
@@ -967,6 +971,12 @@
       do i=1,8
         write(ov_dbasID)DBASE_zero
       enddo
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine writeShapFileFieldDesArr"
+      endif;enddo
+
+      return
 
       end subroutine writeShapFileFieldDesArr
 

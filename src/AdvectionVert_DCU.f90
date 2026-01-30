@@ -18,7 +18,7 @@
       use io_units
 
       use global_param,  only : &
-         EPS_THRESH
+         EPS_TINY,EPS_THRESH
 
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,dx,dy,dz_vec_pd,ts0,ts1,&
@@ -147,7 +147,12 @@
       rmin = kmin
       rmax = kmax
       ncells = rmax - rmin + 1
-
+      update_cc(:) = 0.0_ip
+      q_cc(:)      = 0.0_ip
+      vel_cc(:)    = 0.0_ip
+      sig_I(:)     = 0.0_ip
+      kap_cc(:)    = 0.0_ip
+      dt_vol_cc    = 0.0_ip
       concen_pd(:,:,:,:,ts1) = 0.0_ip
 
       do n=1,nsmax
@@ -308,8 +313,18 @@
                 outflow_xy1_pd(i,j,n) = outflow_xy1_pd(i,j,n) + update_cc(0)
               if(rmax.eq.nzmax) &
                 ! Flux out the + side of advection row  (top of domain)
-                outflow_xy2_pd(i,j,n) = outflow_xy2_pd(i,j,n) + update_cc(ncells+1)
-
+                outflow_xy2_pd(i,j,n) = outflow_xy2_pd(i,j,n) + update_cc(nzmax+1)
+            !if(update_cc(0).le.-EPS_TINY)then
+            !  do io=1,2;if(VB(io).le.verbosity_error)then
+            !    write(errlog(io),*)"ERROR: ",&
+            !               "Update to outflow_xy1_pd negative at: ",i,j,n,update_cc(0)
+            !  endif;enddo
+            !endif
+            !if(update_cc(nzmax+1).le.-EPS_TINY)then
+            !  do io=1,2;if(VB(io).le.verbosity_error)then
+            !    write(errlog(io),*)"ERROR! Update to outflow_xy2_pd negative at: ",i,j,n,update_cc(nzmax+1)
+            !  endif;enddo
+            !endif
           enddo ! loop over i=imin,imax
         enddo ! loop over j=jmin,jmax
         !$OMP END PARALLEL DO

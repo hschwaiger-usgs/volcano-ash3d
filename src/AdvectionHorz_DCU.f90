@@ -17,7 +17,7 @@
       use io_units
 
       use global_param,  only : &
-         EPS_THRESH
+         EPS_TINY,EPS_THRESH
 
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,dx,dy,dz_vec_pd,ts0,ts1,&
@@ -82,7 +82,6 @@
       real(kind=ip),dimension(-1:nxmax+2)               :: kap_cc    ! cell volume
       real(kind=ip),dimension(-1:nxmax+2)               :: dt_vol_cc ! dt on local cell volume
       real(kind=ip),dimension(-1:nxmax+2)               :: DelDonD_cc
-
        ! arrays that live on cell interfaces
        !  Note: interface I for cell i is at (i-1/2); i.e. the left or negative side of i
        !        We only need the interfaces up to the boundary of the domain (not the ghost cells)
@@ -118,7 +117,13 @@
       rmin = imin
       rmax = imax
       ncells = rmax - rmin + 1
-
+      update_cc(:) = 0.0_ip
+      q_cc(:)      = 0.0_ip
+      vel_cc(:)    = 0.0_ip
+      sig_I(:)     = 0.0_ip
+      kap_cc(:)    = 0.0_ip
+      dt_vol_cc    = 0.0_ip
+      DelDonD_cc   = 0.0_ip
       concen_pd(:,:,:,:,ts1) = 0.0_ip
 
       do n=1,nsmax
@@ -292,7 +297,18 @@
             if(rmax.eq.nxmax.and..not.IsPeriodic) &
               ! Flux out the + side of advection row  (E)
               outflow_yz2_pd(j,k,n) = outflow_yz2_pd(j,k,n) + update_cc(nxmax+1)
-
+            !if(update_cc(0).le.-EPS_TINY)then
+            !  do io=1,2;if(VB(io).le.verbosity_error)then
+            !    write(errlog(io),*)"ERROR: ",&
+            !               "Update to outflow_yz1_pd negative at: ",j,k,n,update_cc(0)
+            !  endif;enddo
+            !endif
+            !if(update_cc(nxmax+1).le.-EPS_TINY)then
+            !  do io=1,2;if(VB(io).le.verbosity_error)then
+            !    write(errlog(io),*)"ERROR: ",&
+            !               "Update to outflow_yz2_pd negative at: ",j,k,n,update_cc(nxmax+1)
+            !  endif;enddo
+            !endif
           enddo ! loop over j=jmin,jmax
         enddo ! loop over k=kmin,kmax
       !$OMP END PARALLEL DO
@@ -369,7 +385,13 @@
       rmin = jmin
       rmax = jmax
       ncells = rmax - rmin + 1
-
+      update_cc(:) = 0.0_ip
+      q_cc(:)      = 0.0_ip
+      vel_cc(:)    = 0.0_ip
+      sig_I(:)     = 0.0_ip
+      kap_cc(:)    = 0.0_ip
+      dt_vol_cc    = 0.0_ip
+      DelDonD_cc   = 0.0_ip
       concen_pd(:,:,:,:,ts1) = 0.0_ip
 
       do n=1,nsmax
@@ -543,7 +565,18 @@
             if(rmax.eq.nymax) &
               ! Flux out the + side of advection row  (S)
               outflow_xz2_pd(i,k,n) = outflow_xz2_pd(i,k,n) + update_cc(nymax+1)
-
+            !if(update_cc(0).le.-EPS_TINY)then
+            !  do io=1,2;if(VB(io).le.verbosity_error)then
+            !    write(errlog(io),*)"ERROR: ",&
+            !               "Update to outflow_xz1_pd negative at: ",i,k,n,update_cc(0)
+            !  endif;enddo
+            !endif
+            !if(update_cc(nymax+1).le.-EPS_TINY)then
+            !  do io=1,2;if(VB(io).le.verbosity_error)then
+            !    write(errlog(io),*)"ERROR: ",&
+            !               "Update to outflow_xz2_pd negative at: ",i,k,n,update_cc(nymax+1)
+            !  endif;enddo
+            !endif
           enddo ! loop over i=imin,imax
         enddo ! loop over k=kmin,kmax
       !$OMP END PARALLEL DO

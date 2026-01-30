@@ -5,9 +5,13 @@ Please see [README.md](../README.md) for instructions on installing Ash3d.
 
 Once the Ash3d software is built and installed, the following executables are
 copied to `$(INSTALLDIR)/bin/`:  
- `Ash3d`                   : main Ash3d program  
- `Ash3d_PostProc`          : Post-processing program for netcdf output.  
- `tools/Ash3d_ASCII_check` : program for calculating L2 norm of two ASCII output files.  
+ `Ash3d`                           : main Ash3d program  
+ `Ash3d_PostProc`                  : Post-processing program for netcdf output.  
+ `tools/Ash3d_ASCII_check`         : program for calculating L2 norm of two ASCII output files.  
+ `tools/Ash3d_ASCII_DepThin`       : program for calculating L2 norm of two ASCII output files.
+ `tools/Ash3d_NetCDF_GenCTR`       : program for calculating L2 norm of two ASCII output files.
+ `tools/Ash3d_ASCII_GenCTR`        : program for calculating L2 norm of two ASCII output files.
+ `tools/Ash3d_GenASCII_from_table` : program for calculating L2 norm of two ASCII output files.
 
 ## Running Ash3d on the command line
 

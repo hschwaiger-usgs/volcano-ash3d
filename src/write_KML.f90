@@ -388,6 +388,12 @@
       KML_sizeY(ivar)         = '305'
       KML_AltMode(ivar)       = 'clampToGround'
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Set_OutVar_Specs"
+      endif;enddo
+
+      return
+
       end subroutine Set_OutVar_Specs
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -409,7 +415,7 @@
 
       use mesh,          only : &
          A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-         A3d_k0_scale,A3d_Re,IsLatLon, &
+         A3d_k0,A3d_Re,IsLatLon, &
          latLL,lonLL,latUR,lonUR,xLL,yLL,xUR,yUR !,de,dn,dx,dy
 
       use time_data,     only : &
@@ -456,9 +462,9 @@
 
       INTERFACE
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
-          real(kind=8)               ::  HoursSince
-          integer                    ::  byear
-          logical                    ::  useLeaps
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
         end function HS_yyyymmddhh_since
       END INTERFACE
 
@@ -484,7 +490,7 @@
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Opening KML file ",trim(adjustl(filename))
       endif;enddo
-      open(fid,file=trim(adjustl(filename)),status='replace',action='write',err=2500)
+      open(unit=fid,file=trim(adjustl(filename)),status='replace',action='write',err=2500)
 
       write(fid,1)                 ! write file header (35 lines)
 
@@ -548,7 +554,7 @@
       if (.not.IsLatLon) then                        !get lon_volcano and lat_volcano
         call PJ_proj_inv(real(x_volcano,kind=dp),real(y_volcano,kind=dp), &
                    A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                   A3d_k0_scale,A3d_Re, &
+                   A3d_k0,A3d_Re, &
                    olam,ophi)
         lon_volcano = real(olam,kind=ip)
         lat_volcano = real(ophi,kind=ip)
@@ -570,6 +576,10 @@
       endif
 
       deallocate(iyear,imonth,iday,StartHour)
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine OpenFile_KML"
+      endif;enddo
 
       return
 
@@ -741,7 +751,7 @@
       
       use mesh,          only : &
          nxmax,nymax,A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,&
-         A3d_k0_scale,A3d_Re,de,dn,dx,dy,IsLatLon,&
+         A3d_k0,A3d_Re,de,dn,dx,dy,IsLatLon,&
          lon_cc_pd,lat_cc_pd,x_cc_pd,y_cc_pd
 
       use time_data,     only : &
@@ -783,9 +793,9 @@
 
       INTERFACE
         character(len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8)              :: HoursSince
-          integer                   :: byear
-          logical                   :: useLeaps
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
 
@@ -839,31 +849,31 @@
             ytop    = y_cc_pd(j) + dy/2.0_ip
             call PJ_proj_inv(real(xleft,kind=dp), real(ybottom,kind=dp),  &
                         A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                        A3d_k0_scale,A3d_Re, &
+                        A3d_k0,A3d_Re, &
                            olam,ophi)
             longLL = real(olam,kind=ip)
             lattLL = real(ophi,kind=ip)
             call PJ_proj_inv(real(xleft,kind=dp),    real(ytop,kind=dp),  &
                         A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                        A3d_k0_scale,A3d_Re, &
+                        A3d_k0,A3d_Re, &
                            olam,ophi)
             longUL = real(olam,kind=ip)
             lattUL = real(ophi,kind=ip)
             call PJ_proj_inv(real(xright,kind=dp),   real(ytop,kind=dp),  &
                         A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                        A3d_k0_scale,A3d_Re, &
+                        A3d_k0,A3d_Re, &
                            olam,ophi)
             longUR = real(olam,kind=ip)
             lattUR = real(ophi,kind=ip)
             call PJ_proj_inv(real(xright,kind=dp),real(ybottom,kind=dp),  &
                         A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                        A3d_k0_scale,A3d_Re, &
+                        A3d_k0,A3d_Re, &
                            olam,ophi)
             longLR = real(olam,kind=ip)
             lattLR = real(ophi,kind=ip)
             call PJ_proj_inv(real(x_cc_pd(i),kind=dp),real(y_cc_pd(j),kind=dp),  &
                         A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                        A3d_k0_scale,A3d_Re, &
+                        A3d_k0,A3d_Re, &
                            olam,ophi)
             longCC = real(olam,kind=ip)
             lattCC = real(ophi,kind=ip)
@@ -936,6 +946,10 @@
       enddo
 
       write(fid,3)   ! close folder
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Write_2D_KML"
+      endif;enddo
 
       return
       
@@ -1052,18 +1066,18 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine Write_PointData_Airports_KML
+      subroutine Write_PointData_Airports_KML(HavePlots)
 
       use global_param,  only : &
          IsLinux,IsWindows,IsMacOS,usezip,zippath,&
-         usegnuplot,gnuplotpath
+         usegnuplot,gnuplotpath,plotting_ID
 
       use io_data,       only : &
          nWriteTimes,VolcanoName,WriteTimes
 
       use mesh,          only : &
          A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,&
-         A3d_k0_scale,A3d_Re,IsLatLon
+         A3d_k0,A3d_Re,IsLatLon
 
       use time_data,     only : &
          time,BaseYear,useLeap,SimStartHour,Simtime_in_hours,OutputOffset
@@ -1088,6 +1102,9 @@
       use projection,    only : &
            PJ_proj_inv
 
+      logical, intent(in), optional :: HavePlots
+
+      logical             :: useGnuplotTS
       integer             :: i
       integer             :: nWrittenOut
       character (len=13)  :: yyyymmddhh
@@ -1101,9 +1118,9 @@
       integer :: ierup
       integer :: ai
       integer :: plt_indx
-      character(len=14) :: dp_outfile
-      character(len=14) :: dp_gnufile
-      character(len=14) :: dp_pngfile
+      character(len=14) :: filename_script
+      character(len=14) :: filename_outdata
+      character(len=14) :: filename_png
       character(len=80) :: gnucom
       character(len=77) :: zipcom
 
@@ -1112,26 +1129,33 @@
       integer            :: stat
       real(kind=dp)      :: olam,ophi ! using precision needed by libprojection
       integer            :: iostatus
+      integer            :: cstat
       character(len=120) :: iomessage
       character(len= 50) :: linebuffer050 
       character(len= 80) :: linebuffer080
 
       INTERFACE
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
-          real(kind=8)               ::  HoursSince
-          integer                    ::  byear
-          logical                    ::  useLeaps
+          real(kind=8),intent(in) ::  HoursSince
+          integer     ,intent(in) ::  byear
+          logical     ,intent(in) ::  useLeaps
         end function HS_yyyymmddhh_since
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8)              :: HoursSince
-          integer                   :: byear
-          logical                   :: useLeaps
+          real(kind=8),intent(in) :: HoursSince
+          integer     ,intent(in) :: byear
+          logical     ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Write_PointData_Airports_KML"
       endif;enddo
+
+      if(present(HavePlots))then
+        useGnuplotTS = HavePlots
+      else
+        useGnuplotTS = .true.
+      endif
 
       ! Loop of all airports in the computational domain and build list of
       ! impacted airports, incrementing a plot index and logging those airport
@@ -1155,43 +1179,48 @@
         plt_indx = plt_indx +1
         Airport_TS_plotindex(ai) = plt_indx
 
-        ! Writing a gnuplot script for this airport
-        write(dp_outfile,53) plt_indx,".dat"
-        write(dp_gnufile,53) plt_indx,".gnu"
-        write(dp_pngfile,53) plt_indx,".png"
- 53     format('depTS_',i4.4,a4)
+        if(useGnuplotTS)then
+          ! Writing a gnuplot script for this airport
+          write(filename_outdata,53) plt_indx,".dat"
+          write(filename_script,53) plt_indx,".gnu"
+          write(filename_png,53) plt_indx,".png"
+ 53       format('depTS_',i4.4,a4)
 
-        open(fid_kmlgnuscr,file=dp_gnufile,status='replace',action='write')
-        write(fid_kmlgnuscr,*)"set terminal png size 400,300"
-        write(fid_kmlgnuscr,*)"set key bmargin left horizontal Right noreverse enhanced ",&
-                              "autotitles box linetype -1 linewidth 1.000"
-        write(fid_kmlgnuscr,*)"set border 31 lw 2.0 lc rgb '#000000'"
-        write(fid_kmlgnuscr,*)"set style line 1 linecolor rgbcolor '#888888' linewidth 2.0 pt 7"
-        write(fid_kmlgnuscr,*)"set ylabel 'Deposit Thickeness (mm)'"
-        write(fid_kmlgnuscr,*)"set xlabel 'Time (hours after eruption)'"
-        write(fid_kmlgnuscr,*)"set nokey"
-        write(fid_kmlgnuscr,*)"set output '",dp_pngfile,"'"
-        write(fid_kmlgnuscr,*)"set title '",Airport_Name(ai),"'"
-        write(fid_kmlgnuscr,*)"plot [0:",ceiling(Simtime_in_hours),"][0:",&
-                              nint(ymaxpl),"] '",dp_outfile,"' with filledcurve x1 ls 1"
-        close(fid_kmlgnuscr)
-        ! Writing the data file the gnuplot script will plot
-        open(fid_kmlgnudat,file=dp_outfile,status='replace',action='write')
-        do i = 1,nWriteTimes
-           write(fid_kmlgnudat,*)WriteTimes(i),Airport_Thickness_TS(ai,i)
-        enddo
-        close(fid_kmlgnudat)
-        ! Test if gnuplot is installed
-        if(usegnuplot)then
-          ! if we have gnuplot installed, just create the plots now
-          write(gnucom,*)trim(adjustl(gnuplotpath)),' -p ',dp_gnufile
-          call execute_command_line(gnucom)
-          ! Now delete the script and data files
-          open(unit=fid_kmlgnudat, iostat=stat, file=dp_outfile, status='old',action='write')
-          if (stat.eq.0) close(fid_kmlgnudat, status='delete')
-          open(unit=fid_kmlgnuscr, iostat=stat, file=dp_gnufile, status='old',action='write')
-          if (stat.eq.0) close(fid_kmlgnuscr, status='delete')
+          open(unit=fid_script,file=filename_script,status='replace',action='write')
+          write(fid_script,*)"set terminal png size 400,300"
+          write(fid_script,*)"set key bmargin left horizontal Right noreverse enhanced ",&
+                                "autotitles box linetype -1 linewidth 1.000"
+          write(fid_script,*)"set border 31 lw 2.0 lc rgb '#000000'"
+          write(fid_script,*)"set style line 1 linecolor rgbcolor '#888888' linewidth 2.0 pt 7"
+          write(fid_script,*)"set ylabel 'Deposit Thickeness (mm)'"
+          write(fid_script,*)"set xlabel 'Time (hours after eruption)'"
+          write(fid_script,*)"set nokey"
+          write(fid_script,*)"set output '",filename_png,"'"
+          write(fid_script,*)"set title '",Airport_Name(ai),"'"
+          write(fid_script,*)"plot [0:",ceiling(Simtime_in_hours),"][0:",&
+                                nint(ymaxpl),"] '",filename_outdata,"' with filledcurve x1 ls 1"
+          close(fid_script)
+          ! Writing the data file the gnuplot script will plot
+          open(unit=fid_outdata,file=filename_outdata,status='replace',action='write')
+          do i = 1,nWriteTimes
+             write(fid_outdata,*)WriteTimes(i),Airport_Thickness_TS(ai,i)
+          enddo
+          close(fid_outdata)
+          ! Test if gnuplot is installed
+          if(usegnuplot)then
+            ! if we have gnuplot installed, just create the plots now
+            write(gnucom,*)trim(adjustl(gnuplotpath)),' -p ',filename_script
+            call execute_command_line(gnucom,&
+                                      wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
+            ! Now delete the script and data files
+            open(unit=fid_outdata, iostat=stat, file=filename_outdata, status='old',action='write')
+            if (stat.eq.0) close(fid_outdata, status='delete')
+            open(unit=fid_script, iostat=stat, file=filename_script, status='old',action='write')
+            if (stat.eq.0) close(fid_script, status='delete')
+          endif
         endif
+      !else
+        ! Note: if not useGnuplotTS, then we are assuming that the time-series plots already exist
       enddo
 
       ! Now starting the kml file
@@ -1225,7 +1254,7 @@
           endif
           if (Airport_Longitude(ai).gt.180.0_ip) airlon=airlon-360.0_ip
           if (Airport_TS_plotindex(ai).gt.0)then
-            write(dp_pngfile,53) Airport_TS_plotindex(ai),".png"
+            write(filename_png,53) Airport_TS_plotindex(ai),".png"
 
             ! A cumulative deposit plot exists for this point since it has a plot index
             ! Write out a placemark which includes the png of the deposit time-series
@@ -1238,7 +1267,7 @@
                         Airport_AshDuration(ai),       &
                         Airport_Thickness(ai),         &
                         Airport_Thickness(ai)/25.4_ip, &
-                        dp_pngfile,                    &
+                        filename_png,                    &
                         xmlTimeStart,                  &
                         airlon,                        &
                         airlat
@@ -1292,7 +1321,7 @@
       if (IsLatLon.eqv..False.) then      ! Put a placemark at the location of the volcano
         call PJ_proj_inv(real(x_volcano,kind=dp), real(y_volcano,kind=dp),  &
                       A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                      A3d_k0_scale,A3d_Re, &
+                      A3d_k0,A3d_Re, &
                       olam,ophi)
         lon_volcano = real(olam,kind=ip)
         lat_volcano = real(ophi,kind=ip)
@@ -1349,11 +1378,23 @@
       else
         IsThere = .false.
       endif
+      if(.not.IsThere)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: ",&
+           "The zippath provided in the makefile seems to be invalid. Cannot find zip."
+        endif;enddo
+        !stop 1
+      endif
       if(usezip)then
         write(zipcom,'(a77)')&
           'zip -r ash_arrivaltimes_airports.kmz ash_arrivaltimes_airports.kml depTS*.png'
-        call execute_command_line(zipcom)
+        call execute_command_line(zipcom,&
+                                  wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       endif
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Write_PointData_Airports_KML"
+      endif;enddo
 
       return
 
@@ -1614,6 +1655,12 @@
       endif
       close(fid)      !close kml file
 
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine Close_KML"
+      endif;enddo
+
+      return
+
 15    format(/,5x,'Closing kml file ',a30)
 11    format('   </Folder>',/,'</Document>',/,'</kml>')
 12    format(/,'</Document>',/,'</kml>')
@@ -1637,7 +1684,7 @@
 
       use mesh,          only : &
          A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,&
-         A3d_k0_scale,A3d_Re,IsLatLon
+         A3d_k0,A3d_Re,IsLatLon
 
       use projection,    only : &
            PJ_proj_inv
@@ -1679,7 +1726,7 @@
         do ict=0,40
           call PJ_proj_inv(real(xplot(ict),kind=dp),real(yplot(ict),kind=dp),  &
                         A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
-                        A3d_k0_scale,A3d_Re, &
+                        A3d_k0,A3d_Re, &
                         olam,ophi)
           lonplot(ict) = real(olam,kind=ip)
           latplot(ict) = real(ophi,kind=ip)
@@ -1694,6 +1741,12 @@
 
       ! Write out the polygon
       write(fid,5) (lonplot(ict),latplot(ict), ict=0,40)
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine PlotModelBoundary"
+      endif;enddo
+
+      return
 
       ! Format statements
 3     format('	  <Style id="boundary_style">',/, &             ! style for model boundary
@@ -1759,8 +1812,6 @@
             '           </outerBoundaryIs>',/, &
             '		</Polygon>',/, &
             '	</Placemark>')
-
-      return
 
       end subroutine PlotModelBoundary
 

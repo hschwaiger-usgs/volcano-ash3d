@@ -67,7 +67,8 @@
       use io_units
 
       use global_param,  only : &
-         MM_2_IN,EPS_SMALL
+         MM_2_IN,EPS_SMALL,&
+         usegnuplot,useGMT,usematlab,useoctave,usepython
 
       use io_data,       only : &
          iTimeNext,PP_infile,datafileIn,HaveInfile, &
@@ -90,6 +91,9 @@
       use time_data,     only : &
          ntmax,time,time_native,BaseYear,useLeap,SimStartHour
 
+      use wind_grid,     only : &
+         Load_Windfiles
+
       use Ash3d_Program_Control, only : &
            Set_OS_Env,                &
            Read_Control_File,         &
@@ -103,8 +107,8 @@
            Allocate_Output_Vars, &
            Set_OutVar_ContourLevel
 
-      use help,          only : &
-           help_postproc
+      use Airports,      only : &
+         nairports
 
       use Ash3d_ASCII_IO,  only : &
          A_nx,A_ny,A_XY,A_XYZ,A_xll,A_yll,A_dx,A_dy, &
@@ -127,7 +131,8 @@
            read_3D_Binary
 
 #ifdef USENETCDF
-      use Ash3d_Netcdf_IO
+      use Ash3d_Netcdf_IO,  only : &
+           NC_Read_Output_Products
 #endif
 
       use Ash3d_KML_IO
@@ -140,13 +145,17 @@
 #endif
       use Ash3d_PostProc_gnuplot
 
+      use Ash3d_PostProc_matlab
+
       use Ash3d_PostProc_GMT
+
+      use Ash3d_PostProc_python
 
       implicit none
 
       integer             :: nargs
-      integer             :: istat
       integer             :: iostatus
+      integer             :: cstat
       integer             :: arglen
       character(len=120)  :: iomessage
       character(len=50)   :: linebuffer050
@@ -161,7 +170,7 @@
       integer             :: TS_Flag
       integer             :: height_flag
       integer             :: itime = -1       ! initialize time step to the last step
-      integer             :: i,j,ii
+      integer             :: i,j,ii,ia
       integer             :: tmp_int
       integer             :: icase
       real(kind=ip),dimension(:,:),allocatable :: OutVar
@@ -169,7 +178,7 @@
       real(kind=ip),dimension(:,:),allocatable :: Topography
       real(kind=ip)       :: OutFillValue
       logical             :: IsThere
-      character(len=6)    :: Fill_Value
+      character(len=6)    :: Fill_Value_str
       character(len=20)   :: filename_root
       character(len=70)   :: comd
       character(len=13)   :: cio
@@ -181,7 +190,9 @@
         !  2 = plplot
         !  3 = gnuplot
         !  4 = GMT
-      integer, parameter  :: Nplot_libs = 4
+        !  5 = matlab/octave
+        !  6 = python/cartopy
+      integer, parameter  :: Nplot_libs = 6
       logical,dimension(Nplot_libs) :: plotlib_avail
                                                      !   -- First preference code 
                                                      !   | - Second
@@ -190,18 +201,20 @@
                                                      !   V V V V
 #ifdef WINDOWS
       ! For Windows systems, dislin is working; others not yet.
-      integer,dimension(Nplot_libs) :: plot_pref_map = (/1,2,3,4/) ! plot preference for maps
-      integer,dimension(Nplot_libs) :: plot_pref_shp = (/1,2,3,4/) ! plot preference for contours
-      integer,dimension(Nplot_libs) :: plot_pref_vpr = (/1,2,3,4/) ! plot preference for vert profs.
-      integer,dimension(Nplot_libs) :: plot_pref_aTS = (/1,2,3,4/) ! plot preference for Airport TS
+      integer,dimension(Nplot_libs) :: plot_pref_map = (/1,2,3,4,5,6/) ! plot preference for maps
+      integer,dimension(Nplot_libs) :: plot_pref_shp = (/1,2,3,4,5,6/) ! plot preference for contours
+      integer,dimension(Nplot_libs) :: plot_pref_vpr = (/1,2,3,4,5,6/) ! plot preference for vert profs.
+      integer,dimension(Nplot_libs) :: plot_pref_aTS = (/1,2,3,4,5,6/) ! plot preference for Airport TS
 #else
-      integer,dimension(Nplot_libs) :: plot_pref_map = (/2,1,3,4/) ! plot preference for maps
-      integer,dimension(Nplot_libs) :: plot_pref_shp = (/3,1,2,4/) ! plot preference for contours
-      integer,dimension(Nplot_libs) :: plot_pref_vpr = (/1,2,3,4/) ! plot preference for vert profs.
-      integer,dimension(Nplot_libs) :: plot_pref_aTS = (/2,3,1,4/) ! plot preference for Airport TS
+      integer,dimension(Nplot_libs) :: plot_pref_map = (/2,1,3,4,5,6/) ! plot preference for maps
+      integer,dimension(Nplot_libs) :: plot_pref_shp = (/3,1,2,4,5,6/) ! plot preference for contours
+      integer,dimension(Nplot_libs) :: plot_pref_vpr = (/1,2,3,4,5,6/) ! plot preference for vert profs.
+      integer,dimension(Nplot_libs) :: plot_pref_aTS = (/2,3,1,4,5,6/) ! plot preference for Airport TS
 #endif
 
       INTERFACE
+        subroutine help_postproc
+        end subroutine help_postproc
         subroutine alloc_arrays
         end subroutine alloc_arrays
         subroutine calc_mesh_params
@@ -243,6 +256,7 @@
       endif
       CleanScripts_gnuplot = CleanScripts
       CleanScripts_GMT     = CleanScripts
+      CleanScripts_matlab  = CleanScripts
 
       ! Checking to see which plotting packages we have
 #ifdef USEDISLIN
@@ -257,9 +271,39 @@
 #endif
       ! Test for gnuplot
 #ifdef LINUX
-        ! On a linux system, just try to execute gnuplot
-      istat = 0
-      call execute_command_line("echo 'exit' | gnuplot",exitstat=istat)
+        ! On a linux system, test for gnuplot
+      usegnuplot = .true.
+      call execute_command_line('which gnuplot > /dev/null',&
+                                wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
+      if(iostatus.ne.0)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Warning: 'which gnuplot' failed. No gnuplot executable in default path"
+          write(outlog(io),*)"          Deactivating gnuplot"
+        endif;enddo
+        usegnuplot = .false.
+      endif
+      if(usegnuplot)then
+        ! Finally, do a test run of the gnuplot executable
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"                  Checking if gnuplot executes."
+        endif;enddo
+        call execute_command_line("echo 'exit' | gnuplot",&
+                                  wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
+        if(iostatus.eq.0)then
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"                  Success"
+          endif;enddo
+        else
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Error: Something is wrong with the gnuplot executable."
+            write(outlog(io),*)"       gnuplot is returing an error code",iostatus
+            write(outlog(io),*)"       execute_command_line command status = ",cstat
+            write(outlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
+            write(outlog(io),*)"       Deactivating gnuplot"
+          endif;enddo
+          usegnuplot = .false.
+        endif
+      endif
 #endif
 #ifdef MACOS
       ! On a MacOS system, not sure how to test yet
@@ -267,7 +311,7 @@
         write(outlog(io),*)"Cannot test for gnuplot on MacOS for now."
         write(outlog(io),*)"Disabling gnuplot."
       endif;enddo
-      istat = 1
+      usegnuplot = .false.
 #endif
 #ifdef WINDOWS
       ! On a Windows system, not sure how to test yet
@@ -275,19 +319,49 @@
         write(outlog(io),*)"Cannot test for gnuplot on Windows for now."
         write(outlog(io),*)"Disabling gnuplot."
       endif;enddo
-      istat = 1
+      usegnuplot = .false.
 #endif
-      if (istat.eq.0)then
+      if (usegnuplot)then
         CleanScripts_gnuplot = CleanScripts
         plotlib_avail(3) = .true.
       else
         plotlib_avail(3) = .false.
       endif
+
       ! Test for GMT
 #ifdef LINUX
-        ! On a linux system, just try to execute gmt
-      istat = 0
-      call execute_command_line("gmt --version > /dev/null",exitstat=istat)
+      useGMT = .true.
+      call execute_command_line('which gmt > /dev/null',&
+                                wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
+      if(iostatus.ne.0)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Warning: 'which gmt' failed. No gmt executable in default path"
+          write(outlog(io),*)"          Deactivating gmt"
+        endif;enddo
+        useGMT = .false.
+      endif
+      if(useGMT)then
+        ! Finally, do a test run of the gmt executable
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"                  Checking if gmt executes."
+        endif;enddo
+        call execute_command_line("gmt --version > /dev/null",&
+                                  wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
+        if(iostatus.eq.0)then
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"                  Success"
+          endif;enddo
+        else
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Error: Something is wrong with the gmt executable."
+            write(outlog(io),*)"       gmt is returing an error code",iostatus
+            write(outlog(io),*)"       execute_command_line command status = ",cstat
+            write(outlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
+            write(outlog(io),*)"       Deactivating gmt"
+          endif;enddo
+          useGMT = .false.
+        endif
+      endif
 #endif
 #ifdef MACOS
         ! On a MacOS system, not sure how to test yet
@@ -295,7 +369,7 @@
           write(outlog(io),*)"Cannot test for gmt on MacOS for now."
           write(outlog(io),*)"Disabling gmt."
         endif;enddo
-        istat = 1
+        useGMT = .false.
 #endif
 #ifdef WINDOWS
         ! On a Windows system, not sure how to test yet
@@ -303,20 +377,161 @@
           write(outlog(io),*)"Cannot test for gmt on Windows for now."
           write(outlog(io),*)"Disabling gmt."
         endif;enddo
-        istat = 1
+        useGMT = .false.
 #endif
-      if (istat.eq.0)then
+      if (useGMT)then
         CleanScripts_GMT = CleanScripts
         plotlib_avail(4) = .true.
       else
         plotlib_avail(4) = .false.
       endif
 
+      ! Test for matlab/octave
+#ifdef LINUX
+        ! On a linux system, we could just try to execute matlab
+        ! but this takes heaps of time to load. Just test if matlab in on path.
+      usematlab = .true.
+      call execute_command_line('which matlab > /dev/null',&
+                                wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
+      if(iostatus.ne.0)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Warning: 'which matlab' failed. No matlab executable in default path"
+          write(outlog(io),*)"          Deactivating matlab"
+        endif;enddo
+        usematlab = .false.
+      endif
+      ! We are skipping this test for successful execution since it takes so long to launch matlab
+      ! Now test for octave
+      useoctave = .true.
+      call execute_command_line('which octave > /dev/null',&
+                                wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
+      if(iostatus.ne.0)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Warning: 'which octave' failed. No octave executable in default path"
+          write(outlog(io),*)"          Deactivating octave"
+        endif;enddo
+        useoctave = .false.
+      endif
+      if(useoctave)then
+        SetOctaveGraphics = .true.  ! This sets octave to default over MatLab (for speed), when neededd
+                                    ! Also inserts octave-specific graphics directives
+        ! Finally, do a test run of the octave executable
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"                  Checking if octave executes."
+        endif;enddo
+        call execute_command_line("echo 'exit' | octave",&
+                                  wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
+        if(iostatus.eq.0)then
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"                  Success"
+          endif;enddo
+        else
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"Error: Something is wrong with the octave executable."
+            write(outlog(io),*)"       octave is returing an error code",iostatus
+            write(outlog(io),*)"       execute_command_line command status = ",cstat
+            write(outlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
+            write(outlog(io),*)"       Deactivating octave"
+          endif;enddo
+          useoctave = .false.
+        endif
+      endif
+#endif
+#ifdef MACOS
+      ! On a MacOS system, not sure how to test yet
       do io=1,2;if(VB(io).le.verbosity_info)then
-        write(outlog(io),*)"Dislin  ",plotlib_avail(1)
-        write(outlog(io),*)"Plplot  ",plotlib_avail(2)
-        write(outlog(io),*)"Gnuplot ",plotlib_avail(3)
-        write(outlog(io),*)"GMT     ",plotlib_avail(4)
+        write(outlog(io),*)"Cannot test for matlab/octave on MacOS for now."
+        write(outlog(io),*)"Disabling matlab/octave."
+      endif;enddo
+      usematlab = .false.
+      useoctave = .false.
+#endif
+#ifdef WINDOWS
+      ! On a Windows system, not sure how to test yet
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"Cannot test for matlab/octave on Windows for now."
+        write(outlog(io),*)"Disabling matlab/octave."
+      endif;enddo
+      usematlab = .false.
+      useoctave = .false.
+#endif
+      if (usematlab.or.useoctave) then
+        CleanScripts_matlab = CleanScripts
+        plotlib_avail(5) = .true.
+      else
+        plotlib_avail(5) = .false.
+      endif
+
+      ! Test for python
+#ifdef LINUX
+        ! On a linux system, just try to execute python
+      !iostatus = 0
+      !call execute_command_line("echo 'exit' | python",exitstat=iostatus)
+
+      usepython = .true.
+      call execute_command_line('which python > /dev/null',&
+                                wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
+      if(iostatus.ne.0)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"Warning: 'which python' failed. No python executable in default path"
+          write(outlog(io),*)"          Deactivating python"
+        endif;enddo
+        usepython = .false.
+      endif
+      if(usepython)then
+        ! Finally, do a test run of the python executable
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"                  Checking if python executes."
+        endif;enddo
+        call execute_command_line("echo 'exit' | python",&
+                                  wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
+        if(iostatus.eq.0)then
+          do io=1,2;if(VB(io).le.verbosity_info)then
+            write(outlog(io),*)"                  Success; at least for python base."
+            write(outlog(io),*)"                  cartopy is needed for mapping"
+          endif;enddo
+        else
+          do io=1,2;if(VB(io).le.verbosity_info)then   
+            write(outlog(io),*)"Error: Something is wrong with the python executable."
+            write(outlog(io),*)"       python is returing an error code",iostatus
+            write(outlog(io),*)"       execute_command_line command status = ",cstat
+            write(outlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
+            write(outlog(io),*)"       Deactivating python"
+          endif;enddo
+          usepython = .false.
+        endif
+      endif
+#endif
+#ifdef MACOS
+      ! On a MacOS system, not sure how to test yet
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"Cannot test for python on MacOS for now."
+        write(outlog(io),*)"Disabling python."
+      endif;enddo
+      usepython = .false.
+#endif
+#ifdef WINDOWS
+      ! On a Windows system, not sure how to test yet
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"Cannot test for python on Windows for now."
+        write(outlog(io),*)"Disabling python."
+      endif;enddo
+      usepython = .false.
+#endif
+      if (usepython)then
+        CleanScripts_python = CleanScripts
+        plotlib_avail(6) = .true.
+      else
+        plotlib_avail(6) = .false.
+      endif
+
+      do io=1,2;if(VB(io).le.verbosity_info)then
+        write(outlog(io),*)"Dislin        ",plotlib_avail(1)
+        write(outlog(io),*)"Plplot        ",plotlib_avail(2)
+        write(outlog(io),*)"Gnuplot       ",plotlib_avail(3)
+        write(outlog(io),*)"GMT           ",plotlib_avail(4)
+        write(outlog(io),*)"matlab/octave ",plotlib_avail(5)
+        write(outlog(io),*)"python/cartopy",plotlib_avail(6)
       endif;enddo
 
       ! Initialize all output logicals to false
@@ -458,9 +673,10 @@
         ! If itime=-1 (for the final step), then
         !   We want to call this subroutine silently, so reset the verbosity
         tmp_int = VB(1)
-        VB(1)   = verbosity_silent
+        !VB(1)   = verbosity_silent
 #ifdef USENETCDF
-        call NC_Read_Output_Products(-1)
+        !call NC_Read_Output_Products(-1)
+        call NC_Read_Output_Products(1)
 #endif  
         VB(1)   = tmp_int
 
@@ -488,12 +704,17 @@
                iprod.eq.10.or.&
                iprod.eq.11.or.&
                iprod.eq.12.or.&
-               iprod.eq.13)then
+               iprod.eq.13.or.&
+               (iprod.eq.0.and.nvar_User2d_XY.eq.1))then  ! Last line is for custom var(t)
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)'Select time step:'
             do i=1,nWriteTimes
-              write(outlog(io),*)i,real(WriteTimes(i),kind=sp),&
-                                 HS_xmltime(SimStartHour+WriteTimes(i),BaseYear,useLeap)
+              if(WriteTimes(i).lt.1.0e10)then
+                write(outlog(io),*)i,real(WriteTimes(i),kind=sp),&
+                                   HS_xmltime(SimStartHour+WriteTimes(i),BaseYear,useLeap)
+              else
+                write(outlog(io),*)i,"step appears corrupt. Do not select this step."
+              endif
             enddo
             write(outlog(io),*)'Enter index for time step:'
           endif;enddo
@@ -532,22 +753,25 @@
           endif
 
           call Read_PostProc_Control_File(informat,iiprod,iprod,ndims,outformat,iplotpref,itime)
-!          ! Reset plotting preference if need be
-!          if(iplotpref.gt.0)then
-!            if(plotlib_avail(iplotpref))then
-!              plot_pref_map(1:Nplot_libs) = iplotpref ! plot preference for maps
-!              plot_pref_shp(1:Nplot_libs) = iplotpref ! plot preference for contours
-!              plot_pref_vpr(1:Nplot_libs) = iplotpref ! plot preference for vert profs.
-!              plot_pref_aTS(1:Nplot_libs) = iplotpref ! plot preference for Airport TS
-!            else
-!              do io=1,2;if(VB(io).le.verbosity_error)then
-!                write(errlog(io),*)"WARNING: Preferred plotting library is not available."
-!              endif;enddo
-!            endif
-!          endif
+          ! Reset plotting preference if need be
+          if(iplotpref.gt.0)then
+            if(plotlib_avail(iplotpref))then
+              do io=1,2;if(VB(io).le.verbosity_info)then
+                write(outlog(io),*)" Resetting plotting package to ",iplotpref
+              endif;enddo
+              plot_pref_map(1:Nplot_libs) = iplotpref ! plot preference for maps
+              plot_pref_shp(1:Nplot_libs) = iplotpref ! plot preference for contours
+              plot_pref_vpr(1:Nplot_libs) = iplotpref ! plot preference for vert profs.
+              plot_pref_aTS(1:Nplot_libs) = iplotpref ! plot preference for Airport TS
+            else
+              do io=1,2;if(VB(io).le.verbosity_error)then
+                write(errlog(io),*)"WARNING: Preferred plotting library is not available."
+              endif;enddo
+            endif
+          endif
         endif
 !120
-          elseif (nargs.ge.3) then
+      elseif (nargs.ge.3) then
         ! If we are doing command line only, then we need at least the netcdf filename, the output
         ! product code and the format.  Optionally, we can add the timestep.  If there is an
         ! inconsistency with iprod and outformat, an error message is issued before stopping.
@@ -768,7 +992,7 @@
       if(itime.eq.-1)then
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)'itime = -1 (Final time step)'
-          write(outlog(io),*)'  This signifiies one of two conditions:'
+          write(outlog(io),*)'  This signifies one of two conditions:'
           write(outlog(io),*)'   1. No time step provided (e.g. variable is not at time-series)'
           write(outlog(io),*)'   2. The final time step should be used'
         endif;enddo
@@ -806,6 +1030,10 @@
             write(outlog(io),*)"           Using gnuplot if available."
           elseif(iplotpref.eq.4)then
             write(outlog(io),*)"           Using GMT if available."
+          elseif(iplotpref.eq.5)then
+            write(outlog(io),*)"           Using MatLAB if available."
+          elseif(iplotpref.eq.6)then
+            write(outlog(io),*)"           Using python/cartopy if available."
           endif
         endif;enddo
         if(plotlib_avail(iplotpref))then
@@ -822,6 +1050,8 @@
 
       ! Before we do anything, we need to set up as much as we can of the grid
       ! and populate auxilary variable.
+      Load_Windfiles = .false.  ! This deactivates reading actual windfiles, which
+                                ! might not be available
       if(informat.eq.3)then ! netcdf
         ! call routine to read the netcdf file, populate
         ! the dimensions so we can see what we are dealing with.
@@ -913,7 +1143,7 @@
           write(outlog(io),*)'using the GMT plotting option.'
         endif;enddo
         if(plotlib_avail(4))then
-          plot_pref_map = (/4,1,2,3/)
+          plot_pref_map = (/4,1,2,3,5,6/)
         else
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(outlog(io),*)'Mapping/shapefiles of projected grids requested, but GMT is not available.'
@@ -931,7 +1161,16 @@
         iTimeNext = 0
         isFinal_TS = .false.
       endif
-
+      if(itime.gt.0)then
+        time = WriteTimes(itime)
+      elseif(itime.eq.-1)then
+        time = WriteTimes(nWriteTimes)
+      else
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(outlog(io),*)'itime is an unexpected value: ',itime
+        endif;enddo
+        stop 1
+      endif
       cio = HS_yyyymmddhh_since(SimStartHour+time,BaseYear,useLeap)
 
       if(    iprod.eq.1 )then ! full concentration array
@@ -1084,6 +1323,9 @@
             DepArrivalTime(1:nxmax,1:nymax)   = OutVar(1:nxmax,1:nymax)
           endif
           if(iprod.eq. 8)then
+            do io=1,2;if(VB(io).le.verbosity_error)then
+              write(errlog(io),*)"ERROR: Requested output format is not available variable selected."
+            endif;enddo
             stop 1
           endif
           if(iprod.eq. 9)then
@@ -1197,7 +1439,8 @@
           endif;enddo
           write(comd,*)"zip ",trim(adjustl(KMZ_filename(ivar))),' ',&
                               trim(adjustl(KML_filename(ivar)))
-          call execute_command_line (comd, exitstat=istat)
+          call execute_command_line(comd, &
+                                    wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
         elseif(iprod.eq.3.or.iprod.eq.5.or. &  ! Deposit thickness mm (kml versions is TS + final)
                iprod.eq.4.or.iprod.eq.6.or. &  ! Deposit thickness inches (kml versions is TS + final)
                iprod.eq.9.or.               &  ! ash-cloud concentration
@@ -1232,7 +1475,41 @@
 #endif
           call output_results
         elseif(iprod.eq.8)then  ! ashfall at airports
-          call Write_PointData_Airports_KML
+          icase = 0
+          do ii=1,Nplot_libs
+            ! Check each preference in series and see if the library is available
+            if(plotlib_avail(plot_pref_aTS(ii)))then
+              icase = plot_pref_aTS(ii)
+              exit
+            endif
+          enddo
+
+          do ia=1,nairports
+            select case (icase)
+            case(1)
+#ifdef USEDISLIN
+              call write_DepPOI_TS_PNG_dislin(ia)
+#endif
+            case(2)
+#ifdef USEPLPLOT
+              call write_DepPOI_TS_PNG_plplot(ia)
+#endif
+            case(3)
+              call write_DepPOI_TS_PNG_gnuplot(ia)
+            case(4)
+              call write_DepPOI_TS_PNG_GMT(ia)
+            case(5)
+              call write_DepPOI_TS_PNG_matlab(ia)
+            case(6)
+              call write_DepPOI_TS_PNG_python(ia)
+            case default
+              do io=1,2;if(VB(io).le.verbosity_error)then
+                write(errlog(io),*)"ERROR: Plots requested but no plotting package is installed"
+              endif;enddo
+              stop 1
+            end select
+          enddo
+          call Write_PointData_Airports_KML(.false.)
         elseif(iprod.eq.16)then  ! vertical profile plots
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: KML versions of vertical profiles not implemented."
@@ -1252,19 +1529,21 @@
       OutFillValue = 0.0_ip
       if(iprod.eq.3.or.iprod.eq.5)then
         OutVar = DepositThickness
-        Fill_Value = '-9999.'
-        OutFillValue = 0.0_ip
+        Fill_Value_str= '-9999.'
+        OutFillValue  = 0.0_ip
+        OutFillValue  = -9999.0_ip
         filename_root = 'DepositFile_        '
       elseif(iprod.eq.4.or.iprod.eq.6)then
         OutVar = DepositThickness*MM_2_IN
-        Fill_Value = '-9999.'
-        OutFillValue = 0.0_ip
+        Fill_Value_str= '-9999.'
+        OutFillValue  = 0.0_ip
+        OutFillValue  = -9999.0_ip
         filename_root = 'DepositFile_        '
       elseif(iprod.eq.7)then
         OutVar = real(DepArrivalTime,kind=ip)
         !OutVar = DepArrivalTime * merge(1.0_ip,0.0_ip,Mask_Deposit)
-        Fill_Value = '-9999.'
-        OutFillValue = -1.0_ip
+        Fill_Value_str= '-9999.'
+        OutFillValue  = -9999.0_ip
         filename_root = 'DepositArrivalTime  '
       elseif(iprod.eq.8)then
          ! ashfall at airports/POI
@@ -1272,44 +1551,57 @@
       elseif(iprod.eq.9)then
         OutVar = MaxConcentration
         !OutVar = MaxConcentration * merge(1.0_ip,0.0_ip,Mask_Cloud)
-        Fill_Value = '-9999.'
-        OutFillValue = 0.0_ip
+        Fill_Value_str= '-9999.'
+        OutFillValue  = 0.0_ip
+        OutFillValue  = -9999.0_ip
         filename_root = 'CloudConcentration_ '
       elseif(iprod.eq.10)then
         OutVar = MaxHeight
         !OutVar = MaxHeight * merge(1.0_ip,0.0_ip,Mask_Cloud)
-        Fill_Value = '-9999.'
-        OutFillValue = 0.0_ip
+        Fill_Value_str= '-9999.'
+        OutFillValue  = 0.0_ip
+        OutFillValue  = -9999.0_ip
         filename_root = 'CloudHeight_        '
       elseif(iprod.eq.11)then
         OutVar = MinHeight
         !OutVar = MinHeight * merge(1.0_ip,0.0_ip,Mask_Cloud)
-        Fill_Value = '-9999.'
-        OutFillValue = 0.0_ip
+        Fill_Value_str= '-9999.'
+        OutFillValue  = 0.0_ip
+        OutFillValue  = -9999.0_ip
         filename_root = 'CloudHeightBot_     '
       elseif(iprod.eq.12)then
         OutVar = CloudLoad
         !OutVar = CloudLoad * merge(1.0_ip,0.0_ip,Mask_Cloud)
-        Fill_Value = '-9999.'
-        OutFillValue = 0.0_ip
+        Fill_Value_str= '-9999.'
+        OutFillValue  = 0.0_ip
+        OutFillValue  = -9999.0_ip
         filename_root = 'CloudLoad_          '
       elseif(iprod.eq.13)then
         OutVar = dbZCol
         !OutVar = dbZCol * merge(1.0_ip,0.0_ip,Mask_Cloud)
-        Fill_Value = '-9999.'
-        OutFillValue = 0.0_ip
+        Fill_Value_str= '-9999.'
+        OutFillValue  = 0.0_ip
+        OutFillValue  = -9999.0_ip
         filename_root = 'ClouddbZC_          '
       elseif(iprod.eq.14)then
         OutVar = real(CloudArrivalTime,kind=ip)
         !OutVar = CloudArrivalTime * merge(1.0_ip,0.0_ip,Mask_Cloud)
-        Fill_Value = '-9999.'
-        OutFillValue = -1.0_ip
+        Fill_Value_str= '-9999.'
+        OutFillValue  = -1.0_ip
+        OutFillValue  = -9999.0_ip
         filename_root = 'CloudArrivalTime    '
       elseif(iprod.eq.15)then
         OutVar = real(Extra2dVar,kind=ip)
-        Fill_Value = '-9999.'
-        OutFillValue = -1.0_ip
+        Fill_Value_str= '-9999.'
+        OutFillValue  = -1.0_ip
+        OutFillValue  = -9999.0_ip
         filename_root = 'Topography          '
+      elseif(iprod.eq.0)then
+        OutVar = real(Extra2dVar,kind=ip)
+        Fill_Value_str = '-9999.'
+        OutFillValue  = -9999.0_ip
+        !filename_root = 'UserVar             '
+        filename_root = Extra2dVarName
       endif
       ! Now mask out non-cloud values
       if(iprod.eq.10.or.&  ! CloudHeight
@@ -1324,6 +1616,8 @@
             if(CloudArrivalTime(i,j).lt.0.0_ip)mask(i,j) = .false.
           enddo
         enddo
+      else
+        mask(1:nxmax,1:nymax) = .true.
       endif
 
       if(outformat.eq.1)then  ! ASCII
@@ -1344,7 +1638,7 @@
           call vprofilecloser
         else
           ! All other ESRI/ASCII 2d grids
-          call write_2D_ASCII(nxmax,nymax,OutVar,mask,Fill_Value,filename_root)
+          call write_2D_ASCII(nxmax,nymax,OutVar,mask,Fill_Value_str,filename_root)
         endif
       elseif(outformat.eq.2)then ! KML
         ! All the KML routines were called above
@@ -1379,6 +1673,10 @@
               call write_2Dprof_PNG_gnuplot(i)
             case(4)
               call write_2Dprof_PNG_GMT(i)
+            case(5)
+              call write_2Dprof_PNG_matlab(i)
+            case(6)
+              call write_2Dprof_PNG_python(i)
             case default
               do io=1,2;if(VB(io).le.verbosity_error)then
                 write(errlog(io),*)"ERROR: Plots requested but no plotting package is installed"
@@ -1397,19 +1695,24 @@
             exit
           endif
         enddo
+
         select case (icase)
         case(1)
 #ifdef USEDISLIN
-          call write_2Dmap_PNG_dislin(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
+          call write_2Dmap_PNG_dislin(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
 #endif
         case(2)
 #ifdef USEPLPLOT
-          call write_2Dmap_PNG_plplot(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
+          call write_2Dmap_PNG_plplot(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
 #endif
         case(3)
-          call write_2Dmap_PNG_gnuplot(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
+          call write_2Dmap_PNG_gnuplot(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
         case(4)
-          call write_2Dmap_PNG_GMT(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
+          call write_2Dmap_PNG_GMT(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
+        case(5)
+          call write_2Dmap_PNG_matlab(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
+        case(6)
+          call write_2Dmap_PNG_python(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
         case default
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: Plots requested but no plotting package is installed"
@@ -1441,7 +1744,7 @@
           endif;enddo
           stop 1
         else
-          call write_2D_Binary(nxmax,nymax,OutVar,mask,Fill_Value,filename_root)
+          call write_2D_Binary(nxmax,nymax,OutVar,mask,Fill_Value_str,filename_root)
         endif
       elseif(outformat.eq.5)then ! Shapefile
         ! For 2d contours exported from dislin, gnuplot, gmt
@@ -1460,16 +1763,20 @@
         select case (icase)
         case(1)
 #ifdef USEDISLIN
-          call write_2Dmap_PNG_dislin(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
+          call write_2Dmap_PNG_dislin(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
 #endif
         case(2)
 #ifdef USEPLPLOT
-          call write_2Dmap_PNG_plplot(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
+          call write_2Dmap_PNG_plplot(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
 #endif
         case(3)
-          call write_2Dmap_PNG_gnuplot(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
+          call write_2Dmap_PNG_gnuplot(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
         case(4)
-          call write_2Dmap_PNG_GMT(nxmax,nymax,iprod,iout3d,OutVar,writeContours)
+          call write_2Dmap_PNG_GMT(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
+        case(5)
+          call write_2Dmap_PNG_matlab(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
+        case(6)
+          call write_2Dmap_PNG_python(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
         case default
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"ERROR: Plots requested but no plotting package is installed"
@@ -1499,7 +1806,7 @@
       call deallocate_Binary
 
       ! Close log file
-      close(fid_logfile)
+      close(unit=fid_logfile)
 
       end program Ash3d_PostProc
 
