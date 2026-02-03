@@ -413,7 +413,7 @@
 #include "Ash3d_version.h"
 
       integer      , parameter :: version_major = 1
-      integer      , parameter :: version_minor = 0
+      integer      , parameter :: version_minor = 1
       integer      , parameter :: version_patch = 0
       character(len=8)         :: version         ! Text string of the Ash3d version number
       real(kind=ip), parameter :: EPS_SMALL  = 1.0e-6_ip       ! Small number
