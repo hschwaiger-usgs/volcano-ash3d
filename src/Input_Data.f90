@@ -851,6 +851,8 @@
             endif
           endif
         endif
+#else
+        usezip = .false.  ! this is initialized to .false. in Ash3d_VariableModules.f90, but reiterated here
 #endif
 
 #ifdef USEDISLIN

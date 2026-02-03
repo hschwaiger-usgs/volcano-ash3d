@@ -748,7 +748,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine Write_2D_KML(ivar,OutVar,height_flag,TS_flag)
-      
+
       use mesh,          only : &
          nxmax,nymax,A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2,&
          A3d_k0,A3d_Re,de,dn,dx,dy,IsLatLon,&
@@ -1369,8 +1369,8 @@
 
       ! Test if zip is installed
       IsThere = .false.
-      if(usezip.or.IsLinux.or.IsMacOS)then
-        ! double-check that zip is installed
+      if(usezip.and.(IsLinux.or.IsMacOS))then
+        ! double-check that zip is installed if zip requested (linux and mac only)
         inquire( file=trim(adjustl(zippath)), exist=IsThere)
       elseif(IsWindows)then
         ! this is a placeholder for now
@@ -1386,6 +1386,9 @@
         !stop 1
       endif
       if(usezip)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"  Zipping up ash_arrivaltimes_airports.kmz"
+        endif;enddo
         write(zipcom,'(a77)')&
           'zip -r ash_arrivaltimes_airports.kmz ash_arrivaltimes_airports.kml depTS*.png'
         call execute_command_line(zipcom,&
@@ -1633,10 +1636,18 @@
 
       subroutine Close_KML(ivar,TS_flag)
 
+      use global_param,  only : &
+         usezip,zippath,IsLinux,IsMacOS,IsWindows
+
       integer,intent(in) :: ivar
       integer,intent(in) :: TS_flag
 
-      integer :: fid
+      integer            :: fid
+      logical            :: IsThere
+      character(len=77)  :: zipcom
+      integer            :: iostatus
+      integer            :: cstat
+      character(len=120) :: iomessage
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Close_KML"
@@ -1654,6 +1665,34 @@
         write(fid,12)
       endif
       close(fid)      !close kml file
+
+      ! If we are using zip, we can run it now to compress the kml files
+      ! but first test if zip is installed
+      IsThere = .false.
+      if(usezip.and.(IsLinux.or.IsMacOS))then
+        ! double-check that zip is installed if zip requested (linux and mac only)
+        inquire( file=trim(adjustl(zippath)), exist=IsThere)
+      elseif(IsWindows)then
+        ! this is a placeholder for now
+        IsThere = .false.
+      else
+        IsThere = .false.
+      endif
+      if(.not.IsThere)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: ",&
+           "The zippath provided in the makefile seems to be invalid. Cannot find zip."
+        endif;enddo
+        !stop 1
+      endif
+      if(usezip)then
+        do io=1,2;if(VB(io).le.verbosity_info)then
+          write(outlog(io),*)"  Zipping up ",KMZ_filename(ivar)
+        endif;enddo
+        zipcom =  'zip -r ' // KMZ_filename(ivar) // ' '  // KML_filename(ivar)
+        call execute_command_line(zipcom,&
+                                  wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
+      endif
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Close_KML"
