@@ -11,6 +11,7 @@
 !      subroutine write_2D_ASCII_flt(nx,ny,IsLL,x1,y1,IsCC,dx,dy,Fill_Value,OutVar,filename)
 !      subroutine write_2D_ASCII_flt_regular(nx,ny,IsLL,x1,y1,IsCC,dx,dy,Fill_Value,OutVar,filename)
 !      subroutine write_2D_ASCII_int(nx,ny,IsLL,x1,y1,IsCC,dx,dy,Fill_Value,OutVar,filename)
+!      subroutine write_2D_ASCII_csv(nx,ny,IsLL,x1,y1,IsCC,dx,dy,Fill_Value,OutVar,filename)
 !      subroutine read_2D_ASCII(filename)
 !      subroutine write_3D_ASCII(cio)
 !      subroutine read_3D_ASCII(filename)
@@ -38,6 +39,7 @@
              write_2D_ASCII_flt,&
              write_2D_ASCII_flt_regular,&
              !write_2D_ASCII_int,&
+             write_2D_ASCII_csv,&
              read_2D_ASCII,     &
              write_3D_ASCII,    &
              read_3D_ASCII,     &
@@ -558,7 +560,7 @@
 !    OutVar        = 2-d array to be written to ASCII file
 !    filename      = name of output file (20 characters)
 !
-!  Subroutine that writes out 2-D arra`ys in ESRI ASCII raster format, resampling onto a regular grid.
+!  Subroutine that writes out 2-D arrays in ESRI ASCII raster format, resampling onto a regular grid.
 !  Full format specification is given at the following web sites:
 !   https://help.arcgis.com/en/arcgisdesktop/10.0/help/index.html#/ESRI_ASCII_raster_format/009t0000000z000000/
 !   https://en.wikipedia.org/wiki/Esri_grid
@@ -746,6 +748,82 @@
       stop 1
 
       end subroutine write_2D_ASCII_flt_regular
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  write_2D_ASCII_csv
+!
+!  Called from: 
+!  Arguments:
+!    nx            = x length of output array OutVar
+!    ny            = y length of output array OutVar
+!    x1            = x (or lon) coordinate of Lower-left cell
+!    y1            = y (or lat) coordinate of Lower-left cell
+!    dx            = cell length in x
+!    dy            = cell length in y
+!    OutVar        = 2-d array to be written to ASCII file
+!    filename      = name of output file (20 characters)
+!
+!  Subroutine that writes out 2-D data as a comma-separated-values file: x,y,OutVar(:,:)
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine write_2D_ASCII_csv(nx,ny,x1,y1,dx,dy,OutVar,filename)
+
+      use global_param,  only  : &
+         KM_2_M
+
+      integer          ,intent(in) :: nx,ny
+      real(kind=sp)    ,intent(in) :: x1,y1
+      real(kind=sp)    ,intent(in) :: dx,dy
+      real(kind=sp)    ,intent(in) :: OutVar(nx,ny)
+      character(len=20),intent(in) :: filename
+
+      integer :: i,j
+      character(len=50)  :: filename_out
+      integer            :: iostatus
+      character(len=120) :: iomessage
+      character(len= 50) :: linebuffer050
+      character(len= 80) :: linebuffer080
+      real(kind=sp),dimension(nx) :: x_in  ! cell-center coordinate of input grid
+      real(kind=sp),dimension(ny) :: y_in
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Entered Subroutine write_2D_ASCII_csv"
+      endif;enddo
+
+      write(filename_out,*)trim(adjustl(filename)),'.csv'
+
+      open(unit=fid_ascii2dout,file=trim(adjustl(filename_out)), status='replace',action='write',err=2500)
+
+      do i=1,nx
+        x_in(i) = x1+0.5_sp*dx + (i-1)*dx
+      enddo
+      do j=1,ny
+        y_in(j) = y1+0.5_sp*dy + (j-1)*dy
+      enddo
+
+      do j=1,ny
+        do i=1,nx
+          write(fid_ascii2dout,'(f10.4,a3,f10.4,a3,g15.5)')x_in(i),' , ',y_in(j),' , ',OutVar(i,j)
+        enddo
+      enddo
+
+      close(fid_ascii2dout)
+
+      do io=1,2;if(VB(io).le.verbosity_debug1)then
+        write(outlog(io),*)"     Exited Subroutine write_2D_ASCII_csv"
+      endif;enddo
+
+      return
+
+!     Error traps
+2500  do io=1,2;if(VB(io).le.verbosity_error)then
+        write(errlog(io),*) 'Error opening output file ASCII_output_file.txt.  Program stopped'
+      endif;enddo
+      stop 1
+
+      end subroutine write_2D_ASCII_csv
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

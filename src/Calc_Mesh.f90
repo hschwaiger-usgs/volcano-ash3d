@@ -582,6 +582,24 @@
         kmax = min(kmax+1,nzmax)
         kmin = kmax-2
       endif
+      if(imin.le.0)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: imin<1 in get_minmax_index"
+        endif;enddo
+        stop 1
+      endif
+      if(jmin.le.0)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: jmin<1 in get_minmax_index"
+        endif;enddo
+        stop 1
+      endif
+      if(kmin.le.0)then
+        do io=1,2;if(VB(io).le.verbosity_error)then
+          write(errlog(io),*)"ERROR: kmin<1 in get_minmax_index"
+        endif;enddo
+        stop 1
+      endif
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine get_minmax_index"

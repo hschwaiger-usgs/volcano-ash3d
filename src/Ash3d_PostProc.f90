@@ -82,7 +82,8 @@
          nvprofiles,nvar_User2d_static_XY,nvar_User2d_XY
 
       use mesh,          only : &
-         nxmax,nymax,nzmax,nsmax,IsLatLon,dx,dy,xLL,yLL,ts0,ts1, &
+         nxmax,nymax,nzmax,nsmax,IsLatLon,de,dn,dx,dy,xLL,yLL,ts0,ts1, &
+         lon_cc_pd,lat_cc_pd,x_cc_pd,y_cc_pd,&
            Allocate_mesh
 
       use solution,      only : &
@@ -112,14 +113,15 @@
 
       use Ash3d_ASCII_IO,  only : &
          A_nx,A_ny,A_XY,A_XYZ,A_xll,A_yll,A_dx,A_dy, &
-           deallocate_ASCII, &
-           write_2D_ASCII,   &
-           read_2D_ASCII,    &
-           write_3D_ASCII,   &
-           read_3D_ASCII,    &
-           vprofileopener,   &
-           vprofilewriter,   &
-           vprofilecloser,   &
+           deallocate_ASCII,  &
+           write_2D_ASCII,    &
+           write_2D_ASCII_csv,&
+           read_2D_ASCII,     &
+           write_3D_ASCII,    &
+           read_3D_ASCII,     &
+           vprofileopener,    &
+           vprofilewriter,    &
+           vprofilecloser,    &
            Write_PointData_Airports_ASCII
 
       use Ash3d_Binary_IO, only : &
@@ -1639,6 +1641,23 @@
         else
           ! All other ESRI/ASCII 2d grids
           call write_2D_ASCII(nxmax,nymax,OutVar,mask,Fill_Value_str,filename_root)
+          if(IsLatLon)then
+            call write_2D_ASCII_csv(nxmax,nymax,                &
+                                    real(lon_cc_pd(1),kind=sp), &
+                                    real(lat_cc_pd(1),kind=sp), &
+                                    real(de,kind=sp),           &
+                                    real(dn,kind=sp),           &
+                                    real(OutVar,kind=sp),       &
+                                    "outvar              ")
+          else
+            call write_2D_ASCII_csv(nxmax,nymax,                &
+                                    real(x_cc_pd(1),kind=sp),   &
+                                    real(y_cc_pd(1),kind=sp),   &
+                                    real(dx,kind=sp),           &
+                                    real(dy,kind=sp),           &
+                                    real(OutVar,kind=sp),       &
+                                    "outvar              ")
+          endif
         endif
       elseif(outformat.eq.2)then ! KML
         ! All the KML routines were called above
