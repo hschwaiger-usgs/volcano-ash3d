@@ -12,7 +12,7 @@
 !yes 2                         # use topography?; z-mod (0=none,1=shift,2=sigma)
 !1 1.0                         # Topofile format, smoothing radius
 !GEBCO_2023.nc                 # topofile name
-! 
+!
 !  Line 1 indicates whether or not to use topography followed by the integer flag
 !         describing how topography will modify the vertical grid.
 !           0 = no vertical modification; z-grid remains 0-> top throughout the domain
@@ -81,7 +81,7 @@
 !                https://www.usgs.gov/centers/eros/science/usgs-eros-archive-digital-elevation-shuttle-radar-topography-mission-srtm-1
 !                 hgt as signed 16 bit integer binary
 !
-!    3 : ESRI ASCII 
+!    3 : ESRI ASCII
 !        This is set up as a generic ESRI ASCII input, but tested with ASCII files
 !        from OpenTopography and from gebco.com. Either integers or floats are
 !        read based on the variable type for NODATA_value. This reader can also read
@@ -190,11 +190,11 @@
       ! Note: Should first map all topo points onto computational grid, average those values,
       !       then apply a smoothing of the comp grid
 
-      real(kind=8) :: minlon_Topo_comp,maxlon_Topo_comp
-      real(kind=8) :: minlat_Topo_comp,maxlat_Topo_comp
-      real(kind=8) :: minlon_Topo_Met,maxlon_Topo_Met
-      real(kind=8) :: minlat_Topo_Met,maxlat_Topo_Met
-      logical      :: Topo_UseCompGrid      = .false.
+      real(kind=dp) :: minlon_Topo_comp,maxlon_Topo_comp
+      real(kind=dp) :: minlat_Topo_comp,maxlat_Topo_comp
+      real(kind=dp) :: minlon_Topo_Met,maxlon_Topo_Met
+      real(kind=dp) :: minlat_Topo_Met,maxlat_Topo_Met
+      logical       :: Topo_UseCompGrid      = .false.
 
       contains
 
@@ -324,7 +324,7 @@
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"Read topoFormat = 1 (NetCDF gridded)"
             write(outlog(io),*)"    Read smoothing radius = ",&
-                               real(rad_smooth,kind=4)
+                               real(rad_smooth,kind=sp)
           endif;enddo
 #ifndef USENETCDF
           ! If we are here, then we expect to read the netcdf topography file.  If netcdf
@@ -340,13 +340,13 @@
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"Read topoFormat = 2 (Gridded binary)"
             write(outlog(io),*)"    Read smoothing radius = ",&
-                               real(rad_smooth,kind=4)
+                               real(rad_smooth,kind=sp)
           endif;enddo
         elseif(topoFormat.eq.3)then
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"Read topoFormat = 3 (ESRI ASCII)"
             write(outlog(io),*)"    Read smoothing radius = ",&
-                               real(rad_smooth,kind=4)
+                               real(rad_smooth,kind=sp)
           endif;enddo
         elseif(topoFormat.eq.4)then
           do io=1,2;if(VB(io).le.verbosity_error)then
@@ -368,7 +368,7 @@
         var_User_charlines_Topo(4) = trim(adjustl(linebuffer080))
         read(linebuffer080,*) file_topo
         file_topo = trim(adjustl(file_topo))
-        do io=1,2;if(VB(io).le.verbosity_info)then           
+        do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"    Read file_topo = ",file_topo
         endif;enddo
 
@@ -395,7 +395,7 @@
 
       return
 
-1900  do io=1,2;if(VB(io).le.verbosity_error)then             
+1900  do io=1,2;if(VB(io).le.verbosity_error)then
         write(errlog(io),*)  'Error: cannot find input file: ',infile
         write(errlog(io),*)  'Program stopped'
       endif;enddo
@@ -432,7 +432,7 @@
         write(outlog(io),*)"     Entered Subroutine Allocate_Topo"
       endif;enddo
 
-      do io=1,2;if(VB(io).le.verbosity_info)then             
+      do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"--------------------------------------------------"
         write(outlog(io),*)"---------- ALLOCATE_TOPO -------------------------"
         write(outlog(io),*)"--------------------------------------------------"
@@ -595,11 +595,14 @@
 
       INTERFACE
         subroutine get_minmax_lonlat(lonmin,lonmax,latmin,latmax)
-          real(kind=8),intent(out) :: lonmin
-          real(kind=8),intent(out) :: lonmax
-          real(kind=8),intent(out) :: latmin
-          real(kind=8),intent(out) :: latmax
-        end subroutine 
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter   :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(out) :: lonmin
+          real(kind=dp)  ,intent(out) :: lonmax
+          real(kind=dp)  ,intent(out) :: latmin
+          real(kind=dp)  ,intent(out) :: latmax
+        end subroutine
       END INTERFACE
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
@@ -646,13 +649,13 @@
       endif
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Minimun/maximum longitide of computational grid = ",&
-                             real(minlon_Topo_comp,kind=4),real(maxlon_Topo_comp,kind=4)
+                             real(minlon_Topo_comp,kind=sp),real(maxlon_Topo_comp,kind=sp)
         write(outlog(io),*)"Minimun/maximum latitide of computational grid = ",&
-                             real(minlat_Topo_comp,kind=4),real(maxlat_Topo_comp,kind=4)
+                             real(minlat_Topo_comp,kind=sp),real(maxlat_Topo_comp,kind=sp)
         write(outlog(io),*)"Minimun/maximum longitide of Met grid = ",&
-                             real(minlon_Topo_Met,kind=4),real(maxlon_Topo_Met,kind=4)
+                             real(minlon_Topo_Met,kind=sp),real(maxlon_Topo_Met,kind=sp)
         write(outlog(io),*)"Minimun/maximum latitide of Met grid = ",&
-                             real(minlat_Topo_Met,kind=4),real(maxlat_Topo_Met,kind=4)
+                             real(minlat_Topo_Met,kind=sp),real(maxlat_Topo_Met,kind=sp)
       endif;enddo
 
       if(topoFormat.eq.1)then
@@ -755,10 +758,10 @@
       logical :: y_inverted     = .false.
       logical :: wrapgrid       = .false.
 
-      integer(kind=2) ,dimension(:,:) ,allocatable :: temp2d_intS
-      integer(kind=4) ,dimension(:,:) ,allocatable :: temp2d_intL
-      real(kind=sp)   ,dimension(:,:) ,allocatable :: temp2d_sp
-      real(kind=dp)   ,dimension(:,:) ,allocatable :: temp2d_dp
+      integer(kind=int16) ,dimension(:,:) ,allocatable :: temp2d_intS
+      integer(kind=int32) ,dimension(:,:) ,allocatable :: temp2d_intL
+      real(kind=sp)       ,dimension(:,:) ,allocatable :: temp2d_sp
+      real(kind=dp)       ,dimension(:,:) ,allocatable :: temp2d_dp
       integer :: i,ict, ileft(2),iright(2)   !if wrapgrid=.true. ict=2 and left & iright have 2 values, otherwise 1
       integer :: iistart(2),iicount(2)     !if (wrapgrid), iistart(1)=istart, iistart(2)=1
 
@@ -1187,7 +1190,7 @@
 
       integer :: topo_var_id       = 0
 
-      integer(kind=2), dimension(:)   ,allocatable :: dum1d_short
+      integer(kind=int16), dimension(:)   ,allocatable :: dum1d_short
 
       integer :: lon_shift_flag
       integer :: start_lat_idx,start_lon_idx,end_lon_idx
@@ -1343,9 +1346,9 @@
 
       integer :: str_pos,substr_pos1,substr_pos2,substr_pos3,space_pos
 
-      integer(kind=2) :: temp1_short,temp2_short
-      integer(kind=2), dimension(:)   ,allocatable :: temp1dfull_short
-      integer(kind=2), dimension(:)   ,allocatable :: temp1dsub_short
+      integer(kind=int16) :: temp1_short,temp2_short
+      integer(kind=int16), dimension(:)   ,allocatable :: temp1dfull_short
+      integer(kind=int16), dimension(:)   ,allocatable :: temp1dsub_short
 
       real(kind=sp)   :: temp1_sp,temp2_sp
       real(kind=sp)   ,dimension(:)   ,allocatable :: temp1dfull_sp
@@ -1458,7 +1461,7 @@
           endif
         endif
         read(fid_hdrfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-      enddo    
+      enddo
 
       ! NROWS
       rewind(fid_hdrfile)
@@ -1731,7 +1734,7 @@
 
       close(fid_hdrfile)
 
-      ! Now set up grids 
+      ! Now set up grids
       allocate(lon_topo_fullgrid(1:nlon_topo_fullgrid))
       allocate(lat_topo_fullgrid(1:nlat_topo_fullgrid))
       do ilon=1,nlon_topo_fullgrid
@@ -2031,7 +2034,7 @@
       nlon_topo_fullgrid = A_nx + 4
       nlat_topo_fullgrid = A_ny + 4
       dlon_topo = A_dx
-      dlat_topo = A_dy      
+      dlat_topo = A_dy
 
       allocate(lon_topo_fullgrid(1:nlon_topo_fullgrid))
       allocate(lat_topo_fullgrid(1:nlat_topo_fullgrid))
@@ -2499,7 +2502,7 @@
       enddo
 
       ! Now do the same thing for the met grid
-      ! Loop over all the NWP file grid points and pick corresponding the topo point 
+      ! Loop over all the NWP file grid points and pick corresponding the topo point
       ! We need topography on the met grid since we will use this for recovering real-world
       ! altitudes when using a sigma coordinate system. It would be better to use
       ! the smoothed topography on the computational grid, but some met points will be
@@ -2511,7 +2514,7 @@
             olam = real(x_submet_sp(i),kind=ip)
             ophi = real(y_submet_sp(j),kind=ip)
           else
-            xin = real(x_submet_sp(i),kind=dp)  ! Projection routines use kind=8
+            xin = real(x_submet_sp(i),kind=dp)  ! Projection routines use kind=dp
             yin = real(y_submet_sp(j),kind=dp)
             call PJ_proj_inv(xin,yin, &
                            Met_iprojflag, Met_lam0,Met_phi0,Met_phi1,Met_phi2, &
@@ -2774,8 +2777,8 @@
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)" WARNING: Width of smoothing kernel (4x radius) is less than"
               write(outlog(io),*)"          the grid size of Met data."
-              write(outlog(io),*)"    Smoothing radius (km)         = ",real(rad,kind=4)
-              write(outlog(io),*)"    Shortest met grid length (km) = ",real(MR_minlen,kind=4)
+              write(outlog(io),*)"    Smoothing radius (km)         = ",real(rad,kind=sp)
+              write(outlog(io),*)"    Shortest met grid length (km) = ",real(MR_minlen,kind=sp)
             endif;enddo
           elseif(rad.gt.cell_len*12.5_ip)then
             ! Conversely, issue a warning if it is too big since this will choke up the smoothing kernel
@@ -2783,16 +2786,16 @@
             do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)" WARNING: Width of smoothing kernel (4x radius) greater than"
               write(outlog(io),*)"          50x the grid size of computational data."
-              write(outlog(io),*)"    Smoothing radius (km)          = ",real(rad,kind=4)
-              write(outlog(io),*)"    Kernel width (km)              = ",real(4.0_ip*rad,kind=4)
-              write(outlog(io),*)"    Shortest comp grid length (km) = ",real(cell_len,kind=4)
+              write(outlog(io),*)"    Smoothing radius (km)          = ",real(rad,kind=sp)
+              write(outlog(io),*)"    Kernel width (km)              = ",real(4.0_ip*rad,kind=sp)
+              write(outlog(io),*)"    Shortest comp grid length (km) = ",real(cell_len,kind=sp)
             endif;enddo
           else
             ! Report on the smoothing length relative to the comp and met grids
             do io=1,2;if(VB(io).le.verbosity_info)then
-              write(outlog(io),*)"    Smoothing radius (km)          = ",real(rad,kind=4)
-              write(outlog(io),*)"    Shortest met grid length (km)  = ",real(MR_minlen,kind=4)
-              write(outlog(io),*)"    Shortest comp grid length (km) = ",real(cell_len,kind=4)
+              write(outlog(io),*)"    Smoothing radius (km)          = ",real(rad,kind=sp)
+              write(outlog(io),*)"    Shortest met grid length (km)  = ",real(MR_minlen,kind=sp)
+              write(outlog(io),*)"    Shortest comp grid length (km) = ",real(cell_len,kind=sp)
             endif;enddo
           endif
         endif
@@ -2864,7 +2867,7 @@
 
                 if(dist.le.rad)then
                   ncells = ncells + 1
-                    ! Here is cubic spline weighting                
+                    ! Here is cubic spline weighting
                   char_len = 0.5_ip*rad
                   r = dist/char_len
                   fac_1 = Const1_2d/(char_len*char_len)

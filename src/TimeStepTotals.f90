@@ -39,13 +39,16 @@
 
       integer, intent(in) :: itime
 
-      character(len=13) :: DateTime  !function that calculates date string given hours since base year (1900)
+      character (len= 13) :: DateTime  !function that calculates date string given hours since base year (1900)
 
       INTERFACE
-        character (len=13) function HS_yyyymmddhhmm_since(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) ::  HoursSince
-          integer     ,intent(in) ::  byear
-          logical     ,intent(in) ::  useLeaps
+        character (len= 13) function HS_yyyymmddhhmm_since(HoursSince,byear,useLeaps)
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter   :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in)  ::  HoursSince
+          integer        ,intent(in)  ::  byear
+          logical        ,intent(in)  ::  useLeaps
         end function HS_yyyymmddhhmm_since
       END INTERFACE
 
@@ -55,7 +58,7 @@
 
       ! Sum up the total ash aloft, on the ground and that left the domain
       tot_vol     = 0.0_ip
-      dep_vol     = 0.0_ip 
+      dep_vol     = 0.0_ip
       aloft_vol   = 0.0_ip
       outflow_vol = 0.0_ip
 
@@ -79,7 +82,7 @@
       write(fid_progress,*)real(time/Simtime_in_hours,kind=4)
       close(fid_progress)
 
-      OutputStep_Marker = ' ' 
+      OutputStep_Marker = ' '
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine TimeStepTotals"

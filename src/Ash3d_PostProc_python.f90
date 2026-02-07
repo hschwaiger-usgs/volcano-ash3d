@@ -18,17 +18,17 @@
 !
 ! (1) Download anaconda:
 !   curl -O https://repo.anaconda.com/archive/Anaconda3-2025.06-0-Linux-x86_64.sh
-! 
+!
 ! (2) Install:
 !   bash ~/Anaconda3-2025.06-0-Linux-x86_64.sh
 !  Accept terms of service.
 !  Accept default install location: ~/anaconda3
 !  Choose 'no' when asked about editing start-up scripts.
-! 
+!
 ! (3) Initialize anaconda manually.
 !   export PATH="$HOME/anaconda3/bin:$PATH"
 !   conda init
-! 
+!
 ! (4) Install the packages your script needs:
 !   conda install -c conda-forge geopandas
 !   conda install -c scitools cartopy
@@ -109,7 +109,7 @@
 !     import scipy.ndimage
 !     from osgeo import gdal, osr
 !     import linecache
-!     
+!
 !     def get_extent(gdal_ds, A3D_input_fn):
 !         Xsize = gdal_ds.RasterXSize
 !         Ysize = gdal_ds.RasterYSize
@@ -120,12 +120,12 @@
 !         maxx = minx + (cellsize*Xsize)
 !         maxy = miny + (cellsize*Ysize)
 !         return [minx, maxx, miny, maxy]
-!     
+!
 !     def get_proj_info(fn):
 !         xl_corner = linecache.getline(fn, 3)
 !         yl_corner = linecache.getline(fn, 4)
 !         return float(xl_corner.split()[1]), float(yl_corner.split()[1])
-!     
+!
 !     def draw_logo(ax,fn):
 !         # Create background box
 !         ax_inset = inset_axes(
@@ -135,35 +135,35 @@
 !             borderpad=.5,
 !             loc="upper right"
 !         )
-!     
+!
 !         img = mpimg.imread(fn)
-!     
+!
 !         # ax.patch.set_alpha(0.5)
 !         # Remove axis borders
 !         # ax_inset.set_axis_off()
 !         ax_inset.set_xticks([])
 !         ax_inset.set_yticks([])
 !         ax_inset.set_facecolor([1,1,1,0.8])
-!     
+!
 !         ax_logo = inset_axes(
 !             ax_inset,
 !             width="90%",
 !             height="90%",
 !             loc="center"
 !         )
-!     
+!
 !         ax_logo.imshow(img)
 !         ax_logo.set_axis_off()
-!     
+!
 !         return None
-!     
+!
 !     # Institutional logo (Defaults to USGS)
 !     logo_file = '/opt/USGS/Ash3d/share/post_proc/logo.png'
-!     
+!
 !     # Run values
 !     srcx=   -98.622
 !     srcy=    19.023
-!     
+!
 !     #######################################
 !     # Product values
 !     grid_file="outvar.dat"
@@ -181,7 +181,7 @@
 !              (  1.00, 0.00, 0.00),
 !              (  0.50, 0.00, 0.00)]
 !     tlevels=['.100E-01','.300E-01','.100E+00','.300E+00','.100E+01','.300E+01','.100E+02','.300E+02','.100E+03','.300E+03']
-!     
+!
 !     #######################################
 !     txt_vname="Volcano:  Popocatépetl"
 !     txt_RunDate="Run Date: 2026-01-16T21:49:00Z"
@@ -190,7 +190,7 @@
 !     txt_EPlmH="Erup. Plume Height: 12.0 km"
 !     txt_EDur="Erup. Duration:      6.0 hours"
 !     txt_EVol="Erup. Volume:        0.03000 km3 (DRE)"
-!     
+!
 !     annotation_text1 = txt_vname    + "\n" + \
 !     txt_RunDate  + "\n" + \
 !     txt_Windfile
@@ -198,13 +198,13 @@
 !     txt_EPlmH    + "\n" + \
 !     txt_EDur     + "\n" + \
 !     txt_EVol
-!     
+!
 !     ###################### OPEN ASH DATA FILE AND GET GEOTRANSFORM #######################
 !     # Open raster with GDAL
 !     raster = gdal.Open(grid_file)
 !     # Get lat/lon extent of raster
 !     extent = get_extent(raster, grid_file)
-!     
+!
 !     ############################# PLOT ######################################
 !     # Create figure
 !     main_fig = plt.figure(figsize=(8.5, 6))
@@ -217,11 +217,11 @@
 !     map_ax = main_fig.add_subplot(4,1,(1,3),projection=projection)
 !     # create the matplotlib mapping with this projection
 !     map_ax.set_extent(img_extent)
-!     
+!
 !     # Add coastlines and water
 !     map_ax.add_feature(cfeature.LAND, facecolor='lightgrey')
 !     map_ax.coastlines()
-!     
+!
 !     # Add gridlines
 !     gl = map_ax.gridlines(draw_labels=True,
 !                           x_inline=False,
@@ -255,7 +255,7 @@
 !                                    colors='black',
 !                                    linewidths=0.5,
 !                                    transform=ccrs.PlateCarree())
-!     
+!
 !     # Create proxies for contour colors for legend later on
 !     proxy = [plt.Rectangle((0,0),1,1,fc = pc.get_facecolor()[0])
 !         for pc in filled_contours.collections]
@@ -281,7 +281,7 @@
 !     except FileNotFoundError:
 !         print("Error: cities.xy not found.")
 !         exit()
-!     
+!
 !     city_map = map_ax.scatter(city_x,city_y,
 !                               s=40,
 !                               color = 'k',
@@ -289,7 +289,7 @@
 !                               transform=ccrs.PlateCarree(),
 !                               edgecolors='black',
 !                               zorder=3)
-!     
+!
 !     for i, label in enumerate(city_n):
 !         city_name=label.replace("\"", "")
 !         map_ax.annotate(city_name,
@@ -304,12 +304,12 @@
 !     # Draw legend
 !     map_ax.legend(proxy,tlevels,loc='center left', bbox_to_anchor=(1.05, 0.5),
 !                     framealpha=0.9,title=title_legend)
-!     
+!
 !     # Draw USGS logo
 !     logo = mpimg.imread(logo_file)
 !     main_fig.figimage(logo, 700, 50, zorder=3, alpha=0.7)
 !     # Adjust position, zorder, and alpha as needed
-!     
+!
 !     # Annotations
 !     map_ax.annotate(annotation_text1,
 !                 xy=(0.1, 0.05),xycoords='figure fraction',xytext=(20, 20),
@@ -317,9 +317,9 @@
 !     map_ax.annotate(annotation_text2,
 !                 xy=(0.4, 0.05),xycoords='figure fraction',xytext=(20, 20),
 !                 textcoords='offset points',va='bottom',ha='left')
-!     
+!
 !     main_fig.tight_layout()
-!     
+!
 !     plt.title(title_plot)
 !     main_fig.savefig(f'Ash3d_Deposit____final.png',dpi=100)
 !
@@ -440,9 +440,12 @@
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in) :: HoursSince
+          integer        ,intent(in) :: byear
+          logical        ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
 
@@ -805,17 +808,17 @@
       !
       ! (1) Download anaconda:
       !   curl -O https://repo.anaconda.com/archive/Anaconda3-2025.06-0-Linux-x86_64.sh
-      ! 
+      !
       ! (2) Install:
       !   bash ~/Anaconda3-2025.06-0-Linux-x86_64.sh
       !  Accept terms of service.
       !  Accept default install location: ~/anaconda3
       !  Choose 'no' when asked about editing start-up scripts.
-      ! 
+      !
       ! (3) Initialize anaconda manually.
       !   export PATH="$HOME/anaconda3/bin:$PATH"
       !   conda init
-      ! 
+      !
       ! (4) Install the packages your script needs:
       !   conda install -c conda-forge geopandas
       !   conda install -c scitools cartopy
@@ -1221,9 +1224,12 @@
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in) :: HoursSince
+          integer        ,intent(in) :: byear
+          logical        ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
 
@@ -1534,7 +1540,7 @@
 !      import pandas as pd
 !      import matplotlib.pyplot as plt
 !      import numpy as np
-!      
+!
 !      data_file="depTS_0001.dat"
 !      fig_name="depTS_0001.png"
 !      title_plot="Cuernavaca, Mexico"
@@ -1544,7 +1550,7 @@
 !      df = pd.read_csv(data_file)
 !      t_column = df.iloc[:, 0]
 !      z_column = df.iloc[:, 1]
-!      
+!
 !      ############################## PLOT ######################################
 !      ## Create figure
 !      main_fig = plt.figure(figsize=(4, 3))

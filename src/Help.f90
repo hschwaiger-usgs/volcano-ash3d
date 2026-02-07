@@ -319,7 +319,7 @@
       END INTERFACE
 
       character(len=3)  :: answer
-      character(len=50) :: linebuffer050 
+      character(len=50) :: linebuffer050
       character(len=80) :: linebuffer080
       integer           :: blockID
       integer           :: iostatus
@@ -381,7 +381,7 @@
           linebuffer050 = "Reading from stdin, answer"
           if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         endif
-      enddo 
+      enddo
 
       ! For windows systems, allow the console to remain on the screen before exiting.
 #ifdef WINDOWS

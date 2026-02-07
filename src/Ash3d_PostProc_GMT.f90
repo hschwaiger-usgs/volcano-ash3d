@@ -280,9 +280,12 @@
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in) :: HoursSince
+          integer        ,intent(in) :: byear
+          logical        ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
 
@@ -784,11 +787,11 @@
           write(flt_str,'(f8.3)')lonUR-de*0.5_ip
           area2_str = trim(area2_str) // "/" // trim(adjustl(flt_str))
         else
-          write(flt_str,'(f8.3)')0.0_4
+          write(flt_str,'(f8.3)')0.0_sp
           area2_str = trim(area2_str) // trim(adjustl(flt_str))
           write(flt_str,'(f8.3)')latLL+dn*0.5_ip
           area2_str = trim(area2_str) // "/" // trim(adjustl(flt_str))
-          write(flt_str,'(f8.3)')360.0_4
+          write(flt_str,'(f8.3)')360.0_sp
           area2_str = trim(area2_str) // "/" // trim(adjustl(flt_str))
         endif
         write(flt_str,'(f8.3)')lonUR-de*0.5_ip
@@ -831,7 +834,7 @@
         write(flt_str,'(f8.3)')lon_volcano
         proj_str = trim(proj_str) // trim(adjustl(flt_str))
         write(flt_str,'(f8.3)')lat_volcano
-        proj_str = trim(proj_str) // "/" // trim(adjustl(flt_str)) 
+        proj_str = trim(proj_str) // "/" // trim(adjustl(flt_str))
         write(flt_str,'(f3.1)')plotw
         proj_str = trim(proj_str) // "/" // trim(adjustl(flt_str)) // "i"
       else
@@ -870,7 +873,7 @@
         case(3)
           ! UTM
         case(4)
-          ! Lambert conformal conic 
+          ! Lambert conformal conic
           ! e.g.  -JM198.475/20.0/12c
           proj_str= " -JL"
           write(flt_str,'(f8.1)')A3d_lam0
@@ -993,7 +996,7 @@
               cmd = "gmt grdcontour out.grd"      // " " // &
                       trim(adjustl(area_str))     // " " // &
                       trim(adjustl(proj_str))     // " " // &
-                      "-Cc.lev -A-"               // " " // & 
+                      "-Cc.lev -A-"               // " " // &
                       trim(adjustl(penstr(ilev))) // " " // &
                       trim(adjustl(contn_ps))
             else
@@ -1364,9 +1367,12 @@
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in) :: HoursSince
+          integer        ,intent(in) :: byear
+          logical        ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
 

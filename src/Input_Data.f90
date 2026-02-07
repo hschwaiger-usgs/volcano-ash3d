@@ -131,7 +131,7 @@
       nargs = command_argument_count()
       if(nargs.eq.0) then
           ! If no command-line arguments are given, then prompt user
-          ! interactively for the command file name and possible a 
+          ! interactively for the command file name and possible a
           ! restart file
         if(VB(1).ge.verbosity_silent)then
           write(errlog(io),*)"Stdout is suppressed via ASH3DVERB=9, but interactive input is expected."
@@ -141,7 +141,7 @@
         else
           write(outlog(io),*)'Enter name of ESP input file:'
         endif
-        read(input_unit,*,iostat=iostatus,iomsg=iomessage) infile 
+        read(input_unit,*,iostat=iostatus,iomsg=iomessage) infile
         write(outlog(io),*)'Load concentration file?'
         read(input_unit,'(a3)',iostat=iostatus,iomsg=iomessage) answer
         if(adjustl(trim(answer)).eq.'y'.or.adjustl(trim(answer)).eq.'yes') then
@@ -269,7 +269,7 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!  Subroutine Set_OS_Env 
+!  Subroutine Set_OS_Env
 !
 !  This subroutine evaluates the state of all aspect of the run.
 !  It is called from Ash3d.F90, or the help subroutine help_make
@@ -366,22 +366,31 @@
 
       INTERFACE
         real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
-          integer     ,intent(in) :: iyear
-          integer     ,intent(in) :: imonth
-          integer     ,intent(in) :: iday
-          real(kind=8),intent(in) :: hours
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,intent(in) :: iyear
+          integer        ,intent(in) :: imonth
+          integer        ,intent(in) :: iday
+          real(kind=dp)  ,intent(in) :: hours
+          integer        ,intent(in) :: byear
+          logical        ,intent(in) :: useLeaps
         end function HS_hours_since_baseyear
         character (len=13) function HS_yyyymmddhhmm_since(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) ::  HoursSince
-          integer     ,intent(in) ::  byear
-          logical     ,intent(in) ::  useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in) :: HoursSince
+          integer        ,intent(in) :: byear
+          logical        ,intent(in) :: useLeaps
         end function HS_yyyymmddhhmm_since
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in) :: HoursSince
+          integer        ,intent(in) :: byear
+          logical        ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
 
@@ -754,7 +763,7 @@
       ! Find time in UTC
       StartHour = real(values(5)-timezone,kind=ip) + real(values(6)/60.0,kind=ip)    ! add offset to UTC
         ! find time in HoursSinceBaseYear
-        !  Note: This will be relative to the BaseYear in time_data (default is 1900). 
+        !  Note: This will be relative to the BaseYear in time_data (default is 1900).
         !        That BaseYear might be changed if the eruption start time is
         !        before BaseYear
       RunStartHour    = HS_hours_since_baseyear(values(1),values(2),values(3), &
@@ -1019,14 +1028,14 @@
 !  Subroutine CHECK_ENDIAN checks if the local system uses Big-Endian
 !  or Little-Endian byte ordering.  Returns the logical value
 !  IsLitEnd = .true. if the system is Little-Endian, .false. otherwise.
-! 
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine check_endian(IsLitEnd)
 
       logical,intent(inout)  :: IsLitEnd
 
-      integer(kind=2)  :: s = 1
+      integer(kind=int16)    :: s = 1
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine check_endian"
@@ -1051,7 +1060,7 @@
 !    None
 !
 ! This subroutine sets up the parameters for the Ash3d run.
-! 
+!
 ! The control file is opened and read block-by-block.
 !       ! BLOCK 1: GRID INFO
 !       ! BLOCK 2: ERUPTION PARAMETERS
@@ -1183,7 +1192,7 @@
       integer,       allocatable, dimension(:) :: e_iday
       real(kind=dp), allocatable, dimension(:) :: e_hour   ! Start time of eruption in
                                                            !  hour (UT)
-      character(len=50) :: linebuffer050 
+      character(len=50) :: linebuffer050
       character(len=80) :: linebuffer080
       character(len=130):: linebuffer130
       character(len=400):: linebuffer400 ! Used for reading line lists of values (write times, etc)
@@ -1238,22 +1247,31 @@
         subroutine input_data_ResetParams
         end subroutine input_data_ResetParams
         real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
-          integer     ,intent(in) :: iyear
-          integer     ,intent(in) :: imonth
-          integer     ,intent(in) :: iday
-          real(kind=8),intent(in) :: hours
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,intent(in) :: iyear
+          integer        ,intent(in) :: imonth
+          integer        ,intent(in) :: iday
+          real(kind=dp)  ,intent(in) :: hours
+          integer        ,intent(in) :: byear
+          logical        ,intent(in) :: useLeaps
         end function HS_hours_since_baseyear
         character (len=13) function HS_yyyymmddhhmm_since(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) ::  HoursSince
-          integer     ,intent(in) ::  byear
-          logical     ,intent(in) ::  useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in) :: HoursSince
+          integer        ,intent(in) :: byear
+          logical        ,intent(in) :: useLeaps
         end function HS_yyyymmddhhmm_since
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in) :: HoursSince
+          integer        ,intent(in) :: byear
+          logical        ,intent(in) :: useLeaps
         end function HS_xmltime
         subroutine MR_Set_Gen_Index_GRIB(grib_file)
           character(len=130),intent(in)  :: grib_file
@@ -1479,7 +1497,7 @@
       endif
 
       ! Set Projection Parameters
-      if(IsLatLon.eqv..false.)then
+      if(.not.IsLatLon)then
         call PJ_Set_Proj_Params(Comp_projection_line)
         A3d_iprojflag  = PJ_iprojflag
         A3d_k0         = PJ_k0
@@ -1542,7 +1560,7 @@
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         call FileIO_CleanLine(.false.,strlen,linebuffer080)
         cdf_b1l6 = linebuffer080
-        read(linebuffer080,*,err=9106,iostat=iostatus,iomsg=iomessage) de, dn                 ! cell size in degrees 
+        read(linebuffer080,*,err=9106,iostat=iostatus,iomsg=iomessage) de, dn                 ! cell size in degrees
 
         !Make sure longitudes are between 0 and 360 degrees
         if(lonLL.lt.-360.0_ip) then
@@ -1596,7 +1614,7 @@
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         call FileIO_CleanLine(.false.,strlen,linebuffer080)
         cdf_b1l3 = linebuffer080
-        read(linebuffer080,*,err=9103,iostat=iostatus,iomsg=iomessage) xLL, yLL                ! LL corner in km 
+        read(linebuffer080,*,err=9103,iostat=iostatus,iomsg=iomessage) xLL, yLL                ! LL corner in km
         ! Block 1 Line 4
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         linebuffer050 = "Reading control file, Block 1, Line 4."
@@ -1824,7 +1842,7 @@
       endif ! dz vs VarDzType
 
       ! Block 1 Line 8
-      ! Read this line looking for diffusion coefficient and either a Suzuki constant, 
+      ! Read this line looking for diffusion coefficient and either a Suzuki constant,
       ! or a plume type ('line', 'point', 'profile', 'umbrella', or 'umbrella_air')
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading control file, Block 1, Line 8."
@@ -2026,7 +2044,7 @@
         write(outlog(io),*)' *******************************************'
       endif;enddo
       ! Begin reading times of eruptive pulses
-      do i=1,neruptions  
+      do i=1,neruptions
         ! Always check if we have overshot the block
         read(linebuffer130,*,iostat=iostatus,iomsg=iomessage)testkey
         linebuffer050 = "Reading control file, Blk2, Line 1+."
@@ -2387,7 +2405,7 @@
       read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
       linebuffer050 = "Reading testkey from linebuffer (Blk3)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      call FileIO_Check_testkey(testkey,linebuffer080,IsComment) 
+      call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
       if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
@@ -2593,7 +2611,7 @@
       if (IsComment) then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
-                "Trying to read WriteDepositFinal_ASCII and detecting",& 
+                "Trying to read WriteDepositFinal_ASCII and detecting",&
                 " comment line"
         endif;enddo
         stop 1
@@ -3086,7 +3104,7 @@
           goto 9416
         endif
       endif
-      
+
       ! Block 4 Line 17
       ! Read number of output steps to write out
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage) linebuffer080
@@ -3261,7 +3279,7 @@
             write(errlog(io),*)'       Check that Block 4 is correct.'
           endif;enddo
           stop 1
-        endif      
+        endif
         do while (IsComment)
            ! Line is a comment, read next line
           !iostatus=0
@@ -3489,7 +3507,7 @@
       else
         goto 9603
       endif
-            
+
       ! Block 6 Line 4
       ! Read name of input file containing airport locations
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage) linebuffer080
@@ -3731,7 +3749,7 @@
             ! W&H suggest 800 kg/m3 for d>300um and 2000 for d<88um for pumice
             ! fragments
             if(isize.eq.1) Tephra_Ncols = 3
-            useCalcFallVel = .true. 
+            useCalcFallVel = .true.
             useTemperature = .true. ! When calculating Fall Vel. we need T
             temp_gsdiam(isize) = value1
             temp_bin_mass(isize) = value2
@@ -4006,8 +4024,8 @@
           write(outlog(io),*)
           write(outlog(io),'(a45,f10.3)')"Using a mass-fraction of fines (< 63um) of : ",fracfine
         endif;enddo
-        ! if bin masses sum up close to 1 (within 1%), adjust automatically      
-        if((abs(sum(Tephra_bin_mass)-1.0_ip).gt.1.0e-5_ip).and. &  
+        ! if bin masses sum up close to 1 (within 1%), adjust automatically
+        if((abs(sum(Tephra_bin_mass)-1.0_ip).gt.1.0e-5_ip).and. &
             (abs(sum(Tephra_bin_mass)-1.0_ip).le.1.0e-02_ip)) then
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),1001) sum(Tephra_bin_mass)
@@ -4166,7 +4184,7 @@
           write(errlog(io),*)'       Check that Block 8 is correct.'
         endif;enddo
         stop 1
-      endif      
+      endif
       do while(iostatus.eq.0.and.IsComment)
          ! Line is a comment, read next line
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
@@ -4243,7 +4261,7 @@
       ! subroutine.
       !************************************************************************
 
-     ! close input file 
+     ! close input file
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),25) infile
       endif;enddo
@@ -4318,7 +4336,7 @@
         else
           write(outlog(io),*)"Diffusion is calculated explicitly."
         endif
-   
+
         ! Write out Vz calculation scheme used
         if(useVz_rhoG)then
           write(outlog(io),*)"useVz_rhoG=.true. : Vz calculated via PVV (if avail.) and density"
@@ -4331,7 +4349,7 @@
       if(IsLatLon) then
         nxmax = ceiling((lonUR-lonLL)/de)     ! number of x nodes
         nymax = ceiling((latUR-latLL)/dn)     ! number of y nodes
-      else      
+      else
         nxmax = ceiling((xUR-xLL)/dx)         ! number of x nodes
         nymax = ceiling((yUR-yLL)/dy)         ! number of y nodes
       endif
@@ -4438,7 +4456,7 @@
 9107  do io=1,2;if(VB(io).le.verbosity_error)then
         write(errlog(io),*)  'error reading dz or dz type.'
         write(errlog(io),*)  'You gave: ',cdf_b1l7
-        write(errlog(io),*)  'Program stopped.'      
+        write(errlog(io),*)  'Program stopped.'
         write(errlog(io),*) '------------------------------'
       endif;enddo
       call help_inputfile(1)
@@ -4465,7 +4483,7 @@
         write(errlog(io),*) '------------------------------'
       endif;enddo
       call help_inputfile(1)
-      stop 1      
+      stop 1
 
       !Block 2: ERUPTION PARAMETERS
 9201  do io=1,2;if(VB(io).le.verbosity_error)then
@@ -4474,7 +4492,7 @@
         write(errlog(io),*) '------------------------------'
       endif;enddo
       call help_inputfile(2)
-      stop 1 
+      stop 1
 
 
 9202  do io=1,2;if(VB(io).le.verbosity_error)then
@@ -4489,7 +4507,7 @@
              4x,'Program stopped')
       stop 1
 
-      !Block 3/Line 1: wind file specifications 
+      !Block 3/Line 1: wind file specifications
 9301  do io=1,2;if(VB(io).le.verbosity_error)then
         write(errlog(io),*)  'error reading iwind, iwindformat.  Program stopped'
         write(errlog(io),*) '------------------------------'
@@ -4518,12 +4536,12 @@
       !Block 3/Line 3: Simulation time in hours
 9303  do io=1,2;if(VB(io).le.verbosity_error)then
         write(errlog(io),*)  'error reading simulation time in hours.',&
-                    '  Program stopped'        
+                    '  Program stopped'
         write(errlog(io),*) '------------------------------'
       endif;enddo
       call help_inputfile(3)
       stop 1
-        
+
       !Block 3/Line 4: stop computation when 99% of erupted mass has deposited? (yes/no)
 9304  do io=1,2;if(VB(io).le.verbosity_error)then
         write(errlog(io),*)  'Error reading whether to stop simulation when'
@@ -4545,7 +4563,7 @@
         write(errlog(io),*) '------------------------------'
       endif;enddo
       call help_inputfile(3)
-      stop 1 
+      stop 1
 
       !Block 4/Line 1: WriteDepositFinal_ASCII
       !                Write out ESRI ASCII file of final deposit thickness?
@@ -4654,7 +4672,7 @@
       endif;enddo
       call help_inputfile(4)
       stop 1
-   
+
       !Block 4/Line 10: WriteCloudLoad_KML
       !                 Write out KML files of ash-cloud load (T/km2) at specified times?
 9410  do io=1,2;if(VB(io).le.verbosity_error)then
@@ -4753,7 +4771,7 @@
       call help_inputfile(4)
       stop 1
 
-      !Block 4/Line 17: 
+      !Block 4/Line 17:
       !
 9417  do io=1,2;if(VB(io).le.verbosity_error)then
         write(errlog(io),*)'Error reading the number of time steps to be written out.',&
@@ -4800,7 +4818,7 @@
       !Block 4/Line 18: Check on non-increasing write times
 94183  do io=1,2;if(VB(io).le.verbosity_error)then
         write(errlog(io),*)'Error: some write times are not in chronological',&
-                  ' order.  Program stopped.'      
+                  ' order.  Program stopped.'
         write(errlog(io),*) '------------------------------'
       endif;enddo
       call help_inputfile(4)
@@ -4813,7 +4831,7 @@
       endif;enddo
       call help_inputfile(5)
       stop 1
-       
+
       !Block 6/Line 1: WriteAirportFile_ASCII
 9601  do io=1,2;if(VB(io).le.verbosity_error)then
         write(errlog(io),*) 'Error reading whether to write out ASCII airport file.'
@@ -4857,7 +4875,7 @@
       ! This is not an error with a stop point, program flow continues down to prompt user
       ! for the internal list of airports.
 
-      !Block 6/Line 4: 
+      !Block 6/Line 4:
       !               Name of file containing airport locations
 96041 do io=1,2;if(VB(io).le.verbosity_error)then
         write(errlog(io),*) 'Would you like Ash3d to use the internal airports database instead (y/n)?'
@@ -5057,7 +5075,7 @@
         endif;enddo
         stop 1
       endif
-      
+
       ! Make sure that longitude of left side of grid is between -360 and 360.
       if(abs(lonLL).gt.360.0_ip.or.abs(lon_volcano).gt.360.0_ip)then
         do io=1,2;if(VB(io).le.verbosity_error)then
@@ -5082,7 +5100,7 @@
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR:  Latitude at the top of the grid > 90."
         endif;enddo
-        stop 1        
+        stop 1
       endif
 
       ! Make sure that lon_volcano > lonLL
@@ -5109,9 +5127,9 @@
       endif
 
       return
-      
+
       end subroutine LatLonChecker
-      
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !     xyChecker
@@ -5174,7 +5192,7 @@
              4x,'deposit file is dx, dy, but ArcMap will only read dx.')
 
       end subroutine xyChecker
-      
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !    vprofchecker
@@ -5293,7 +5311,7 @@
       integer, intent(out) :: iplotpref
       integer, intent(out) :: itime
 
-      character(len=50)  :: linebuffer050 
+      character(len=50)  :: linebuffer050
       character(len=80)  :: linebuffer080
       integer            :: strlen
       character(len=10)  :: tmpstr
@@ -5350,7 +5368,7 @@
           write(outlog(io),*)"File format of input data    = ",informat,tmpstr
         endif;enddo
       endif
-      ! If this is a netcdf file, copy name to 
+      ! If this is a netcdf file, copy name to
       if(informat.eq.3)then
         concenfile = adjustl(trim(datafileIn))
       endif
@@ -5669,7 +5687,7 @@
       endif
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Draw flooded/filled contours = ",ContourFilled
-      endif;enddo 
+      endif;enddo
 
      ! Line 13+:
       !  Custom contours
@@ -6112,7 +6130,7 @@
 !    dz_type         = index of dz class 1=const, 2= plin, 3=clog, 4=custom
 !    dz_line         = bonus line for dz specification
 !    src_type        = source_type 1=Suz,2=point,3=line,4=profile,5=umb,6=umb_air
-!    
+!
 !  This subroutine writes the content of block 1 (Grid/Src info) of the Ash3d
 !  control file.
 !
@@ -6200,23 +6218,23 @@
         dz_const  = dz_in
       elseif(dz_type.eq.2)then
         VarDzType = 'dz_plin'
-        !   number of line segments (N) followed by the steps and step-size of each segment                    
-        !   e.g. 4 6 0.25 5 0.5 5 1.0 10 2.0                                                                   
-        !         This corresponds to 4 line segments with 6 cells of 0.25, then 5 cells of 0.5,               
-        !         5 cells of 1.0, and finally 10 cells of 2.0   
-        ! dz_line should contain this      
+        !   number of line segments (N) followed by the steps and step-size of each segment
+        !   e.g. 4 6 0.25 5 0.5 5 1.0 10 2.0
+        !         This corresponds to 4 line segments with 6 cells of 0.25, then 5 cells of 0.5,
+        !         5 cells of 1.0, and finally 10 cells of 2.0
+        ! dz_line should contain this
       elseif(dz_type.eq.3)then
         VarDzType = 'dz_clog'
-        !   maximum z and number of steps of constant dlogz                                                    
-        !   e.g. 30.0 30                                                                                       
-        !         This corresponds to 30 steps from 0-30km with constant log-spacing        
-        ! dz_line should contain this      
+        !   maximum z and number of steps of constant dlogz
+        !   e.g. 30.0 30
+        !         This corresponds to 30 steps from 0-30km with constant log-spacing
+        ! dz_line should contain this
       elseif(dz_type.eq.4)then
         VarDzType = 'dz_cust'
-        !   the number of dz values to read (ndz), followed by dz(1:ndz)                                       
-        !   e.g. 20 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 5.5            
-        !         This corresponds to 10 steps of 0.5, 9 steps of 1.5, followed by 1 step of 5.5               
-        ! dz_line should contain this      
+        !   the number of dz values to read (ndz), followed by dz(1:ndz)
+        !   e.g. 20 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 1.5 5.5
+        !         This corresponds to 10 steps of 0.5, 9 steps of 1.5, followed by 1 step of 5.5
+        ! dz_line should contain this
       endif
       diffusivity_horz = kdiff
       SourceType_idx = src_type
@@ -6327,24 +6345,36 @@
 
       INTERFACE
         real(kind=8)  function HS_HourOfDay(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in) :: HoursSince
+          integer        ,intent(in) :: byear
+          logical        ,intent(in) :: useLeaps
         end function HS_HourOfDay
         integer function HS_YearOfEvent(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in) :: HoursSince
+          integer        ,intent(in) :: byear
+          logical        ,intent(in) :: useLeaps
         end function HS_YearOfEvent
         integer function HS_MonthOfEvent(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in) :: HoursSince
+          integer        ,intent(in) :: byear
+          logical        ,intent(in) :: useLeaps
         end function HS_MonthOfEvent
         integer function HS_DayOfEvent(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in) :: HoursSince
+          integer        ,intent(in) :: byear
+          logical        ,intent(in) :: useLeaps
         end function HS_DayOfEvent
       END INTERFACE
 
@@ -6383,7 +6413,7 @@
 !
 !  SetWrite_input_block_03
 !
-!  Called from: help_inputfile  
+!  Called from: help_inputfile
 !  Arguments:
 !    outunit    = output stream ID or 0 for Set Vars only with no output
 !    iw         = iwind        (windfile class)
@@ -6450,7 +6480,7 @@
 !
 !  SetWrite_input_block_04
 !
-!  Called from: help_inputfile  
+!  Called from: help_inputfile
 !  Arguments:
 !    outunit                         = output stream ID or 0 for Set Vars only with no output
 !    WriteDepositFinal_ASCII_c       = char:  B4L1 n/y Write out ESRI ASCII file of final deposit thickness?
@@ -6461,7 +6491,7 @@
 !    WriteCloudConcentration_KML_c   = char:  B4L6 Write out        KML files of ash-cloud concentration?
 !    WriteCloudHeight_ASCII_c        = char:  B4L7 Write out ESRI ASCII files of ash-cloud height?
 !    WriteCloudHeight_KML_c          = char:  B4L8 Write out        KML files of ash-cloud height?
-!    WriteCloudLoad_ASCII_c          = char:  B4L9 Write out ESRI ASCII files of ash-cloud load (T/km2) at specified times? 
+!    WriteCloudLoad_ASCII_c          = char:  B4L9 Write out ESRI ASCII files of ash-cloud load (T/km2) at specified times?
 !    WriteCloudLoad_KML_c            = char:  B4L10 Write out        KML files of ash-cloud load (T/km2) at specified times?
 !    WriteDepositTime_ASCII_c        = char:  B4L11 Write out ESRI ASCII file of deposit arrival times?
 !    WriteDepositTime_KML_c          = char:  B4L12 Write out        KML file of deposit arrival times?
@@ -6590,7 +6620,7 @@
 !
 !  SetWrite_input_block_05
 !
-!  Called from: help_inputfile  
+!  Called from: help_inputfile
 !  Arguments:
 !    outunit    = output stream ID or 0 for Set Vars only with no output
 !    nwindfiles = number of windfiles
@@ -6647,7 +6677,7 @@
 !
 !  SetWrite_input_block_06
 !
-!  Called from: help_inputfile  
+!  Called from: help_inputfile
 !  Arguments:
 !    outunit                   = output stream ID or 0 for Set Vars only with no output
 !    WriteAirportFile_ASCII_c  = Write out ash arrival times at airports to ASCII FILE?
@@ -6655,7 +6685,7 @@
 !    WriteAirportFile_KML_c    = Write out ash arrival times to kml file?
 !    b6l4                      = Name of file containing airport locations
 !    ProjectAirportLocations_c = Defer to Lon/Lat coordinates? ("no" defers to projected)
-!    
+!
 !  This subroutine writes the content of block 6 (Airport/POI info.) of the
 !  Ash3d control file.
 !
@@ -6711,27 +6741,27 @@
 !  SetWrite_input_block_07
 !    outunit         = output stream ID or 0 for Set Vars only with no output
 !
-!  Called from: help_inputfile  
+!  Called from: help_inputfile
 !  Arguments:
-!    
+!
 !  This subroutine writes the content of block 7 (GSD specification) of the
 !  Ash3d control file.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine SetWrite_input_block_07(outunit                   ,&
-                                         ns                        ,&  ! number of actual grain-size bins 
-                                         fv_idx                    ,&  ! 
-                                         shape_idx                 ,&  ! 
-                                         mf                        ,&  ! 
-                                         phim                      ,&  ! 
-                                         phisig                    ,&  ! 
-                                         T_diam                    ,&  ! 
-                                         T_mf                      ,&  ! 
+                                         ns                        ,&  ! number of actual grain-size bins
+                                         fv_idx                    ,&  !
+                                         shape_idx                 ,&  !
+                                         mf                        ,&  !
+                                         phim                      ,&  !
+                                         phisig                    ,&  !
+                                         T_diam                    ,&  !
+                                         T_mf                      ,&  !
                                          T_fv                      ,&  !
-                                         T_rho                     ,&  ! 
-                                         T_F                       ,&  ! 
-                                         T_G                       ,&  ! 
+                                         T_rho                     ,&  !
+                                         T_F                       ,&  !
+                                         T_G                       ,&  !
                                          T_phi)                        !
 
       use io_units
@@ -6849,7 +6879,7 @@
           ! 2-columns is just: fall-velocity (m/s), mass-fraction
           do isize = 1,n_gs_max
             write(outunit,12)Tephra_v_s(isize),Tephra_bin_mass(isize)
-          enddo        
+          enddo
         elseif(Tephra_Ncols.eq.3)then
           ! 3-columns is: diameter (mm), mass fraction, density (kg/m3)
           do isize = 1,n_gs_max
@@ -6857,7 +6887,7 @@
           enddo
         elseif(Tephra_Ncols.eq.4)then
           ! 4-columns is: diameter (mm), mass fraction, density (kg/m3), Shape F (or Psi)
-          do isize = 1,n_gs_max  
+          do isize = 1,n_gs_max
             if(Shape_ID.eq.2)then
               write(outunit,14)Tephra_gsdiam(isize)*M_2_MM,Tephra_bin_mass(isize),Tephra_rho_m(isize),&
                                Tephra_gsPhi(isize)
@@ -6884,7 +6914,7 @@
             endif
           enddo
         endif
-  
+
         if(useLogNormGSbins)then
           write(outunit,16)-1,LN_phi_mean,LN_phi_stddev
         endif
@@ -6906,10 +6936,10 @@
 !
 !  SetWrite_input_block_08
 !
-!  Called from: help_inputfile  
+!  Called from: help_inputfile
 !  Arguments:
 !    outunit         = output stream ID or 0 for Set Vars only with no output
-!    
+!
 !  This subroutine writes the content of block 8 (Vertical profile info.) of
 !  the Ash3d control file.
 !
@@ -6983,10 +7013,10 @@
 !
 !  SetWrite_input_block_09
 !
-!  Called from: help_inputfile  
+!  Called from: help_inputfile
 !  Arguments:
 !    outunit         = output stream ID or 0 for Set Vars only with no output
-!    
+!
 !  This subroutine writes the content of block 9 (NetCDF annotations) of the
 !  Ash3d control file.
 !
@@ -7027,10 +7057,10 @@
 !
 !  SetWrite_input_block_ResetParam
 !
-!  Called from: help_inputfile  
+!  Called from: help_inputfile
 !  Arguments:
 !    outunit         = output stream ID or 0 for Set Vars only with no output
-!    
+!
 !  This subroutine writes the content of block 10+ (OPTMOD=RESETPARAMS) of the
 !  Ash3d control file.
 !
@@ -7248,10 +7278,10 @@
 !
 !  SetWrite_input_block_Topo
 !
-!  Called from: help_inputfile  
+!  Called from: help_inputfile
 !  Arguments:
 !    outunit         = output stream ID or 0 for Set Vars only with no output
-!    
+!
 !  This subroutine writes the content of block 10+ (OPTMOD=TOPO) of the Ash3d
 !  control file.
 !
@@ -7294,10 +7324,10 @@
 !
 !  SetWrite_input_block_VarDiff
 !
-!  Called from: help_inputfile  
+!  Called from: help_inputfile
 !  Arguments:
 !    outunit         = output stream ID or 0 for Set Vars only with no output
-!    
+!
 !  This subroutine writes the content of block 10+ (OPTMOD=VARDIFF) of the
 !  Ash3d control file.
 !

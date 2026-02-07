@@ -9,7 +9,7 @@
 ! corner-transport-upwind (CTU) or semi-Lagrange.
 !
 !##############################################################################
- 
+
       module AdvectionHorz
 
       use precis_param
@@ -42,7 +42,7 @@
 !  the diffusion routines.  The default scheme is DCU, provided by the
 !  module AdvectionHorz_DCU with x and y advection treated separately.  A
 !  toggle variable is provided to determine which advection direction to
-!  apply first (even-> y then x; odd-> x then y). 
+!  apply first (even-> y then x; odd-> x then y).
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

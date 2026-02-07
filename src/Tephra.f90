@@ -64,7 +64,7 @@
       real(kind=ip),public :: LAM_GS_THRESH   = LAM_GS_THRESH_Default
       real(kind=ip),public :: AIRBORNE_THRESH = AIRBORNE_THRESH_Default
 
-      integer,public :: n_gs_max                      ! # size classes of particles 
+      integer,public :: n_gs_max                      ! # size classes of particles
       integer,public :: n_gs_aloft                    ! max gs bin still aloft
 
               ! Fall velocity model
@@ -84,7 +84,7 @@
 
 #ifdef USEPOINTERS
       real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_v_s     =>null()    ! Settling vel (m/s)
-      real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_gsdiam  =>null()    ! Grain-size diameter 
+      real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_gsdiam  =>null()    ! Grain-size diameter
                                                                                   !  (read in mm, stored in m)
       real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_bin_mass=>null()    ! mass    (kg)
       real(kind=ip), dimension(:)  ,pointer,public  :: Tephra_rho_m   =>null()    ! density (kg/m3)
@@ -103,7 +103,7 @@
       real(kind=sp),dimension(:,:,:,:),pointer,public :: vf_meso_next_step_MetP_sp => null()
 #else
       real(kind=ip), dimension(:)  ,allocatable,public  :: Tephra_v_s         ! Settling vel (m/s)
-      real(kind=ip), dimension(:)  ,allocatable,public  :: Tephra_gsdiam      ! Grain-size diameter 
+      real(kind=ip), dimension(:)  ,allocatable,public  :: Tephra_gsdiam      ! Grain-size diameter
                                                                               !  (read in mm, stored in m)
       real(kind=ip), dimension(:)  ,allocatable,public  :: Tephra_bin_mass    ! mass    (kg)
       real(kind=ip), dimension(:)  ,allocatable,public  :: Tephra_rho_m       ! density (kg/m3)
@@ -116,7 +116,7 @@
                                                                               !  i=3 Gans Stokes fac
                                                                               !  i=4 Gans Newton fac
                                                                               !  i=5 slip adjustment to diameter
-      !real(kind=ip),dimension(:,:,:)  ,allocatable :: DepositGranularity ! accumulated ash mass on ground 
+      !real(kind=ip),dimension(:,:,:)  ,allocatable :: DepositGranularity ! accumulated ash mass on ground
       real(kind=sp),dimension(:,:,:,:),allocatable,public :: vf_meso_last_step_MetP_sp
       real(kind=sp),dimension(:,:,:,:),allocatable,public :: vf_meso_next_step_MetP_sp
 #endif
@@ -848,7 +848,7 @@
       endif;enddo
 
       ! Loop through all the grain sizes and check if any have completely
-      ! flushed out.  If so, then 
+      ! flushed out.  If so, then
       ! modify the max index of the grain-size loop (n_gs_aloft)
       ! The threshold for collapsing GS array is if there is less than a gram in
       ! that size bin aloft
@@ -910,7 +910,7 @@
       ! Wilson and Huang (1979)
       !  EPSL v. 44, pp. 311-324: https://doi.org/10.1016/0012-821X(79)90179-1
       ! This model gives the drag coefficient
-      ! of tephra as a function of its shape by defining tephra fragments as 
+      ! of tephra as a function of its shape by defining tephra fragments as
       ! ellipsoidal with axes a, b, and c. they also define F=(b+c)/2a, and give the
       ! drag coefficient as:
       !   Cd = (24/Re)*F**(-0.828) + 2*sqrt(1.07-F)
@@ -990,7 +990,7 @@
       real(kind=ip) :: diam      ! diameter of the particle in m
       real(kind=ip) :: Ffac1     ! = F**(-0.828)
       real(kind=ip) :: Ffac2     ! = sqrt(1.07-F)
-      real(kind=ip) :: Kna       ! adjusted Knudsen number 
+      real(kind=ip) :: Kna       ! adjusted Knudsen number
 
       real(kind=ip) :: vnew, vold, Re            ! old and new settling velocity
       real(kind=ip) :: Cd                        ! drag coefficient

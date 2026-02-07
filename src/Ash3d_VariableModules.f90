@@ -21,19 +21,20 @@
 
       module precis_param
 
-      implicit none
+      use, intrinsic :: iso_fortran_env, only : &
+         int8,int16,int32,int64,real32,real64,real128
 
-        ! Set everything to public by default
-      public
+      implicit none
+      !implicit none (type, external)
+
+        ! These single and double precision parameters should be 4 and 8
+      integer, parameter,public :: sp = real32  ! selected_real_kind( 6,   37) ! single precision
+      integer, parameter,public :: dp = real64  ! selected_real_kind(15,  307) ! double precision
+      integer, parameter,public :: qp = real128 ! selected_real_kind(33, 4931) ! quad precision
 
         ! The first two precision parameters can be changed to meet your needs
       integer, parameter,public :: op         = 4 ! Output precision
       integer, parameter,public :: ip         = 8 ! Internal precision
-
-        ! These single and double precision parameters should be 4 and 8
-      integer, parameter,public :: sp = selected_real_kind( 6,   37) ! single precision
-      integer, parameter,public :: dp = selected_real_kind(15,  307) ! double precision
-      integer, parameter,public :: qp = selected_real_kind(33, 4931) ! quad precision
 
       end module precis_param
 
@@ -100,7 +101,7 @@
       integer :: io                          ! index over out-streams
       integer,dimension(2) :: outlog = (/output_unit,fid_logfile/)
       integer,dimension(2) :: errlog = (/ error_unit,fid_logfile/)
-      integer :: errcode = 1 
+      integer :: errcode = 1
 
       character(9) :: logfile = 'Ash3d.lst'  ! This is the default Ash3d logfile
 
@@ -291,7 +292,7 @@
 
       integer :: asciicode
       logical :: IsComment
-      logical :: IsAcceptable 
+      logical :: IsAcceptable
 
       integer :: input_strlen
       integer :: strpos_end
@@ -423,7 +424,7 @@
       real(kind=ip), parameter :: PI         = 3.141592653589793_ip
       ! Unit conversions
       real(kind=ip), parameter :: DEG2RAD    = 1.7453292519943295e-2_ip
-      real(kind=ip), parameter :: DEG2KMLAT  = 111.0_ip        ! km/degree latitude 
+      real(kind=ip), parameter :: DEG2KMLAT  = 111.0_ip        ! km/degree latitude
       real(kind=ip), parameter :: DEG2KMLON  = 111.321_ip      ! km/degree longitude at equator
       real(kind=ip), parameter :: KM_2_M     = 1.0e3_ip        ! km to m
       real(kind=ip), parameter :: M_2_MM     = 1.0e3_ip        ! m to mm
@@ -487,7 +488,7 @@
 
         ! These are determined when reading Reading Block 7: Grain Size Groups
       logical                  :: useCalcFallVel   = .false. ! Turned on in Read_Control_File if needed
-      logical                  :: useTemperature   = .false. 
+      logical                  :: useTemperature   = .false.
       logical                  :: useLogNormGSbins = .false.
 
       ! The variables below can be reset via OPTMOD=RESETPARAMS
@@ -550,12 +551,12 @@
 !  logged in the output netcdf file (if netcdf is requested).  Also, many
 !  logical variables are set in Read_Control_File that specify whether point,
 !  profile, 3d output are requested, whether KML or ASCII files are requested,
-!  etc.  
+!  etc.
 !
 !##############################################################################
 
       module io_data
-      
+
       use precis_param
 
       use io_units
@@ -622,7 +623,7 @@
       character (len=80) :: cdf_b4l7
       character (len=80) :: cdf_b4l8
       character (len=80) :: cdf_b4l9
-      character (len=80) :: cdf_b4l10      
+      character (len=80) :: cdf_b4l10
       character (len=80) :: cdf_b4l11
       character (len=80) :: cdf_b4l12
       character (len=80) :: cdf_b4l13
@@ -658,13 +659,13 @@
       logical            :: WriteAirportFile_KML
       logical            :: Write_PT_Data                =.false. ! .true. if either of the above is true (writes to netcdf)
       logical            :: Write_PR_Data                =.false. ! .true. if writing profile data
-      logical            :: ReadExtAirportFile           =.false. ! .true. if external airport file is to be read 
+      logical            :: ReadExtAirportFile           =.false. ! .true. if external airport file is to be read
       logical            :: AppendExtAirportFile         =.false. ! .true. if external airports in external file are appended
 
       logical            :: Write3dFiles                 =.false. ! .true. if 3d files are to be written
       logical            :: WriteGSD                     =.false. ! .true. if grain-size distribution is to be written to airport file
       logical            :: isFinal_TS                   =.false. ! .true. if we're writing out the final deposit file
-      
+
       logical            :: Output_every_TS              =.false. !
       logical            :: Output_at_WriteTimes         =.false. !
       logical            :: Output_at_logsteps           =.false. !
@@ -797,7 +798,7 @@
                                                       !  1=shifted s=z-Zsurf
                                                       !  2=sigma   s=(z-Zsurf)/(Ztop-Zsurf) (J=Ztop-Zsurf)
 
-      ! Dimensional parameters in km, used if IsLatLon=.False.        
+      ! Dimensional parameters in km, used if IsLatLon=.False.
       real(kind=ip)      :: gridwidth_x, gridwidth_y  ! Dimensions (in km) of the grid
       real(kind=ip)      :: xLL,yLL                   ! coordinate of lower-left point of grid
       real(kind=ip)      :: xUR,yUR                   ! coordinate of upper-right points of grid
@@ -810,7 +811,7 @@
                             !  i.e. all ash bins + anything else (aggs, water, chem)
 
 ! *****************************************************************************
-!     Dimensional parameters in degrees, used if IsLatLon=.True.
+!     Dimensional parameters in degrees, used if IsLatLon=.true.
       real(kind=ip)      :: gridwidth_e, gridwidth_n  ! Dimensions (in km) of the grid
       real(kind=ip)      :: lonLL,latLL               ! lon/lat of lower-left corner
       real(kind=ip)      :: lonUR,latUR               ! lon/lat of upper-right corner
@@ -859,7 +860,7 @@
       real(kind=ip),dimension(:,:,:),allocatable :: sigma_nz_pd ! area of z face at i,j,k-1/2
 #endif
 
-! ********************************************************************************* 
+!*********************************************************************************
 
       contains
 
@@ -877,7 +878,7 @@
       if (IsLatLon) then
         if(.not.associated(lon_cc_pd))allocate(lon_cc_pd(-1:nxmax+2));                            lon_cc_pd = 0.0_ip
         if(.not.associated(lat_cc_pd))allocate(lat_cc_pd(-1:nymax+2));                            lat_cc_pd = 0.0_ip
-      else 
+      else
         if(.not.associated(x_cc_pd))allocate(x_cc_pd(-1:nxmax+2));                                  x_cc_pd = 0.0_ip
         if(.not.associated(y_cc_pd))allocate(y_cc_pd(-1:nymax+2));                                  y_cc_pd = 0.0_ip
       endif
@@ -992,7 +993,7 @@
 !  solution module
 !
 !  This module stores all the variables associated with the PDE such as concentration,
-!  velocities (on Ash3d grid), outflow, as well as the aspect of the solution needed for 
+!  velocities (on Ash3d grid), outflow, as well as the aspect of the solution needed for
 !  evaluating stop conditions.
 !
 !##############################################################################
@@ -1008,7 +1009,7 @@
         ! Set everything to public by default
       public
 
-      real(kind=ip), parameter     :: StopValue_FracAshDep_Default    = 0.99_ip 
+      real(kind=ip), parameter     :: StopValue_FracAshDep_Default    = 0.99_ip
 
 #ifdef USEPOINTERS
       real(kind=ip),dimension(:,:,:)    ,pointer :: vx_pd => null() ! u (E) component of wind
@@ -1029,7 +1030,7 @@
                                                                 ! 2 = aggregate
                                                                 ! 3 = chem species
       integer      ,dimension(:)        ,pointer :: SpeciesSubID ! categorization within the class
-      real(kind=ip),dimension(:)        ,pointer :: v_s         ! Settling vel 
+      real(kind=ip),dimension(:)        ,pointer :: v_s         ! Settling vel
       real(kind=ip),dimension(:)        ,pointer :: gsdiam      ! diameter (m)
       real(kind=ip),dimension(:)        ,pointer :: bin_mass    ! mass
       real(kind=ip),dimension(:)        ,pointer :: rho_m       ! density (kg/m3)
@@ -1047,13 +1048,13 @@
       real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_yz2_pd  ! outflow concentration in y,z,gs
       real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_xy1_pd  ! outflow concentration in x,y,gs
       real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_xy2_pd  ! outflow concentration in x,y,gs
-      real(kind=ip),dimension(:,:,:)    ,allocatable :: DepositGranularity ! accumulated ash mass on ground 
+      real(kind=ip),dimension(:,:,:)    ,allocatable :: DepositGranularity ! accumulated ash mass on ground
       real(kind=ip),dimension(:)        ,allocatable :: mass_aloft
       integer      ,dimension(:)        ,allocatable :: SpeciesID   ! 1 = ash gs bin
                                                                     ! 2 = aggregate
                                                                     ! 3 = chem species
       integer      ,dimension(:)        ,allocatable :: SpeciesSubID ! categorization within the class
-      real(kind=ip),dimension(:)        ,allocatable :: v_s         ! Settling vel 
+      real(kind=ip),dimension(:)        ,allocatable :: v_s         ! Settling vel
       real(kind=ip),dimension(:)        ,allocatable :: gsdiam      ! diameter (m)
       real(kind=ip),dimension(:)        ,allocatable :: bin_mass    ! mass
       real(kind=ip),dimension(:)        ,allocatable :: rho_m       ! density (kg/m3)
@@ -1268,7 +1269,7 @@ subroutine Allocate_solution
       ! Note: Hours should must be stored at kind=8 since forecast runs to work with HoursSince
       !       If kind=4 were used, the current year with a BaseYear=0 will cause
       !       overflows and tricky failures
-      real(kind=dp)      :: Simtime_in_hours ! simulated time for ash cloud transport      
+      real(kind=dp)      :: Simtime_in_hours ! simulated time for ash cloud transport
       real(kind=dp)      :: SimStartHour     ! Simulation start time, in hours since 1900
       real(kind=dp)      :: time             ! physical time simulated by this model
 
@@ -1361,7 +1362,7 @@ subroutine Allocate_solution
       real(kind=sp),dimension(:,:,:)  ,allocatable      :: vy_meso_2_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable      :: vz_meso_1_sp
       real(kind=sp),dimension(:,:,:)  ,allocatable      :: vz_meso_2_sp
-      real(kind=sp),dimension(:,:,:,:),allocatable      :: vf_meso_last_step_sp 
+      real(kind=sp),dimension(:,:,:,:),allocatable      :: vf_meso_last_step_sp
       real(kind=sp),dimension(:,:,:,:),allocatable      :: vf_meso_next_step_sp
 #endif
 

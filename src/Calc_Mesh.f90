@@ -228,7 +228,7 @@
       return
 
 30    format(/,4x,'Calculating the locations of each cell-centered node in the grid.')
-  
+
       end subroutine calc_mesh_params
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -244,7 +244,7 @@
 !
 !  Assigns:
 !    s_cc_pd,s_lb_pd,ds_vec_pd and Met variables through MR_Set_SigmaAlt_Scaling
-!    
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine calc_s_mesh
@@ -392,14 +392,14 @@
 
       implicit none
 
-      real(kind=8),intent(out) :: lonmin
-      real(kind=8),intent(out) :: lonmax
-      real(kind=8),intent(out) :: latmin
-      real(kind=8),intent(out) :: latmax
+      real(kind=dp),intent(out) :: lonmin
+      real(kind=dp),intent(out) :: lonmax
+      real(kind=dp),intent(out) :: latmin
+      real(kind=dp),intent(out) :: latmax
 
-      integer       :: i,j
-      real(kind=8)  :: olam,ophi ! using precision needed by libprojection
-      real(kind=8)  :: xin,yin
+      integer        :: i,j
+      real(kind=dp)  :: olam,ophi ! using precision needed by libprojection
+      real(kind=dp)  :: xin,yin
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine get_minmax_lonlat"
@@ -426,13 +426,13 @@
       !        interpolated values. We would only need to inverse-project the edge
       !        values. Often (e.g interpolating topography), we do need the lon/lat
       !        for every point.
-      latmax =  -90.0_8
-      latmin =   90.0_8
-      lonmin =  360.0_8
-      lonmax = -360.0_8
+      latmax =  -90.0_dp
+      latmin =   90.0_dp
+      lonmin =  360.0_dp
+      lonmax = -360.0_dp
       do i=-1,nxmax+2
         do j=-1,nymax+2
-          xin = real(x_cc_pd(i),kind=dp)  ! Projection routines use kind=8
+          xin = real(x_cc_pd(i),kind=dp)  ! Projection routines use kind=dp
           yin = real(y_cc_pd(j),kind=dp)
           call PJ_proj_inv(xin,yin, &
                          A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
@@ -487,7 +487,7 @@
 
       use Output_Vars,  only : &
          CLOUDCON_GRID_THRESH
- 
+
       implicit none
 
       integer :: i,j,k

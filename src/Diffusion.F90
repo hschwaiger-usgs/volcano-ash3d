@@ -62,14 +62,14 @@
 
 
 #ifdef USEPOINTERS
-      real(kind=ip),dimension(:,:,:),pointer,public :: kx  => null() 
-      real(kind=ip),dimension(:,:,:),pointer,public :: ky  => null() 
-      real(kind=ip),dimension(:,:,:),pointer,public :: kz  => null() 
+      real(kind=ip),dimension(:,:,:),pointer,public :: kx  => null()
+      real(kind=ip),dimension(:,:,:),pointer,public :: ky  => null()
+      real(kind=ip),dimension(:,:,:),pointer,public :: kz  => null()
 #else
       real(kind=ip),dimension(:,:,:),allocatable,public :: kx
       real(kind=ip),dimension(:,:,:),allocatable,public :: ky
       real(kind=ip),dimension(:,:,:),allocatable,public :: kz
-#endif      
+#endif
 
       contains
       !------------------------------------------------------------------------
@@ -92,7 +92,7 @@
       use mesh,          only : &
          nxmax,nymax,nzmax
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Allocate_Diff"
       endif;enddo
 
@@ -108,7 +108,7 @@
       if(.not.allocated(kz))allocate(kz(0:nxmax+1,0:nymax+1,0:nzmax+1)); kz = diffusivity_vert
 #endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Allocate_Diff"
       endif;enddo
 
@@ -130,7 +130,7 @@
 
       subroutine Deallocate_Diff
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Deallocate_Diff"
       endif;enddo
 
@@ -144,7 +144,7 @@
       if(allocated(kz)) deallocate(kz)
 #endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Deallocate_Diff"
       endif;enddo
 
@@ -164,7 +164,7 @@
 !  as an argument is only used to toggle between x-first and y-first.  This
 !  subroutine uses the parameter useCN (set via preprocesso flag in global_param)
 !  to determine if implicit or explicit solvers should be used.
-! 
+!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine DiffuseHorz(i)
@@ -180,7 +180,7 @@
 
       integer :: i
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine DiffuseHorz"
       endif;enddo
 
@@ -203,28 +203,28 @@
 #endif
 
       if(useCN)then
-        if(mod(i,2).eq.0) then
-          do io=1,2;if(VB(io).le.verbosity_debug1)then
+        if(mod(i,2) == 0) then
+          do io=1,2;if(VB(io) <= verbosity_debug1)then
             write(outlog(io),*)"Ash3d: Calling diffCN_zxy"
           endif;enddo
           call diffCN_x
           call diffCN_y
         else
-          do io=1,2;if(VB(io).le.verbosity_debug1)then
+          do io=1,2;if(VB(io) <= verbosity_debug1)then
             write(outlog(io),*)"Ash3d: Calling diffCN_zyx"
           endif;enddo
           call diffCN_y
           call diffCN_x
         endif
       else
-        if(mod(i,2).eq.0) then
-          do io=1,2;if(VB(io).le.verbosity_debug1)then
+        if(mod(i,2) == 0) then
+          do io=1,2;if(VB(io) <= verbosity_debug1)then
             write(outlog(io),*)"Ash3d: Calling diff_zxy"
           endif;enddo
           call diff_x
           call diff_y
         else
-          do io=1,2;if(VB(io).le.verbosity_debug1)then
+          do io=1,2;if(VB(io) <= verbosity_debug1)then
             write(outlog(io),*)"Ash3d: Calling diff_zyx"
           endif;enddo
           call diff_y
@@ -232,7 +232,7 @@
         endif
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine DiffuseHorz"
       endif;enddo
 
@@ -259,7 +259,7 @@
       use global_param,  only : &
          useCN
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine DiffuseVert"
       endif;enddo
 
@@ -269,7 +269,7 @@
         call diff_z
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine DiffuseVert"
       endif;enddo
 
@@ -330,7 +330,7 @@
       real(kind=ip) :: LFluct_Rbound,RFluct_Lbound
       integer :: rmin, rmax     ! min and max indices of the row
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine diff_x"
       endif;enddo
 
@@ -416,7 +416,7 @@
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine diff_x"
       endif;enddo
 
@@ -476,7 +476,7 @@
       real(kind=ip) :: LFluct_Rbound,RFluct_Lbound
       integer :: rmin, rmax     ! min and max indices of the row
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine diff_y"
       endif;enddo
 
@@ -544,7 +544,7 @@
                concen_pd(i,rmin:rmin-1+ncells,k,n,ts0) + &
                update_cc(  rmin:rmin-1+ncells)
 
-          enddo ! 
+          enddo !
         enddo ! loop over j=1,nymax
 
       enddo ! loop over idx_dum
@@ -552,7 +552,7 @@
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine diff_y"
       endif;enddo
 
@@ -569,7 +569,7 @@
 !    none
 !
 !  This subroutine calculates diffusion in z for heterogeneous diffusivity using
-!  an explicit solver (Eq 4.11 LeVeque02). 
+!  an explicit solver (Eq 4.11 LeVeque02).
 !  The concentration array is updated in concen_pd(:,:,:,:,t=2) then copied back
 !  to concen_pd(:,:,:,:,t=1).  This subroutine has the equivalent structure as
 !  diff_x and diff_y.
@@ -612,7 +612,7 @@
       real(kind=ip) :: LFluct_Rbound,RFluct_Lbound
       integer :: rmin, rmax     ! min and max indices of the row
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine diff_z"
       endif;enddo
 
@@ -682,7 +682,7 @@
                concen_pd(i,j,rmin:rmin-1+ncells,n,ts0) + &
                update_cc(rmin:rmin-1+ncells)
 
-          enddo ! 
+          enddo !
         enddo ! loop over j=1,nymax
 
       enddo ! loop over idx_dum
@@ -690,7 +690,7 @@
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine diff_z"
       endif;enddo
 
@@ -788,7 +788,7 @@
       END INTERFACE
 #endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine diffCN_x"
       endif;enddo
 
@@ -817,11 +817,11 @@
         concen_pd(nxmax+2,:,:,:,ts0) = concen_pd(2      ,:,:,:,ts0)
       endif
 
-      if(ncells.gt.1)then
+      if(ncells > 1)then
 
       nlineq = ncells
       ldb = nlineq  ! leading dimension of b is num of equations
-      if (ip.eq.4)then
+      if (ip == 4)then
         allocate(DL_s(nlineq-1));
         allocate(D_s(nlineq));
         allocate(DU_s(nlineq-1));
@@ -860,7 +860,7 @@
               RightFac   = dt_ip*k_ds_I(rmin-1+l_I+1)*sig_I(rmin-1+l_I+1)/kap_cc(rmin-1+l_cc)
               CenterFac = LeftFac + RightFac
 
-              if(l_cc.eq.1) then
+              if(l_cc == 1) then
                 !DL_d = nothing     :: No lower diagonal for first row
                 D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac & ! This is part of the normal stencil
                                      -(Imp_fac)*LeftFac     ! This line is the BC that ensures
@@ -875,7 +875,7 @@
                 B_d(l_cc,1)  =      (1.0_ip-Imp_fac)*LeftFac    * BC_left_t0 + &
                           (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(rmin-1+l_cc) + &
                                     (1.0_ip-Imp_fac)*RightFac   * q_cc(rmin-1+l_cc+1)
-              elseif(l_cc.lt.ncells)then
+              elseif(l_cc < ncells)then
                 DL_d(l_cc-1) =         - (Imp_fac)*LeftFac
                 D_d(l_cc)    =  1.0_ip + (Imp_fac)*CenterFac
                 DU_d(l_cc)   =         - (Imp_fac)*RightFac
@@ -883,7 +883,7 @@
                 B_d(l_cc,1)  =           (1.0_ip-Imp_fac)*LeftFac    * q_cc(rmin-1+l_cc-1) + &
                                (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(rmin-1+l_cc  ) + &
                                          (1.0_ip-Imp_fac)*RightFac   * q_cc(rmin-1+l_cc+1)
-              elseif(l_cc.eq.ncells)then
+              elseif(l_cc == ncells)then
                 DL_d(l_cc-1) =      - (Imp_fac)*LeftFac
                 D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac  & ! This is part of the normal stencil
                                      -(Imp_fac)*RightFac     ! This line is the BC that ensures
@@ -899,7 +899,7 @@
                                (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(rmin-1+l_cc ) + &
                                          (1.0_ip-Imp_fac)*RightFac   * BC_right_t0
               endif
- 
+
             enddo
 #ifdef CRANKNIC
       ! Note: The only reason not to use Crank-Nicolson is if you
@@ -912,11 +912,11 @@
             ! precision general tridiagonal Ax=b
             ! Note: This is the function to call if kx or vol is spatially
             ! variable
-            if(ip.eq.4)then
-              DL_s = real(DL_d,kind=4)
-              D_s  = real(D_d ,kind=4)
-              DU_s = real(DU_d,kind=4)
-              B_s  = real(B_d ,kind=4)
+            if(ip == 4)then
+              DL_s = real(DL_d,kind=sp)
+              D_s  = real(D_d ,kind=sp)
+              DU_s = real(DU_d,kind=sp)
+              B_s  = real(B_d ,kind=sp)
               call sgtsv(     &
                     nlineq, &  !i The order of the matrix A.  N >= 0.
                     nrhs,   &  !i The number of right hand sides
@@ -927,7 +927,7 @@
                     ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                     info)      !o
               concen_pd(rmin:rmin-1+ncells,j,k,n,ts1) = B_s(:,1)
-            elseif(ip.eq.8)then
+            elseif(ip == 8)then
               ! NOTE: if you are here because the compiler complained about conversion from REAL(8) to REAL(4)
               !       when using ip=4, rest assured that this branch will not be executed when ip=4
               call dgtsv(     &
@@ -958,9 +958,9 @@
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
 
-      endif ! ncells.gt.1
+      endif ! ncells > 1
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine diffCN_x"
       endif;enddo
 
@@ -1058,7 +1058,7 @@
       END INTERFACE
 #endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine diffCN_y"
       endif;enddo
 
@@ -1078,11 +1078,11 @@
       concen_pd(:,nymax+1,:,:,ts0) = concen_pd(:,nymax,:,:,ts0)
       concen_pd(:,nymax+2,:,:,ts0) = concen_pd(:,nymax,:,:,ts0)
 
-      if(ncells.gt.1)then
+      if(ncells > 1)then
 
       nlineq = ncells
       ldb = nlineq  ! leading dimension of b is num of equations
-      if (ip.eq.4)then
+      if (ip == 4)then
         allocate(DL_s(nlineq-1));
         allocate(D_s(nlineq));
         allocate(DU_s(nlineq-1));
@@ -1121,7 +1121,7 @@
               RightFac   = dt_ip*k_ds_I(rmin-1+l_I+1)*sig_I(rmin-1+l_I+1)/kap_cc(rmin-1+l_cc)
               CenterFac = LeftFac + RightFac
 
-              if(l_cc.eq.1) then
+              if(l_cc == 1) then
                 !DL_d = nothing     :: No lower diagonal for first row
                 D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac & ! This is part of the normal stencil
                                      -(Imp_fac)*LeftFac     ! This line is the BC that ensures
@@ -1138,7 +1138,7 @@
                                (1.0_ip-Imp_fac)*RightFac   * q_cc(rmin-1+l_cc+1)
 
 
-              elseif(l_cc.lt.ncells)then
+              elseif(l_cc < ncells)then
                 DL_d(l_cc-1) =      - (Imp_fac)*LeftFac
                 D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac
                 DU_d(l_cc)   =      - (Imp_fac)*RightFac
@@ -1146,7 +1146,7 @@
                 B_d(l_cc,1)  = (1.0_ip-Imp_fac)*LeftFac    * q_cc(rmin-1+l_cc-1) + &
                      (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(rmin-1+l_cc  ) + &
                                (1.0_ip-Imp_fac)*RightFac   * q_cc(rmin-1+l_cc+1)
-              elseif(l_cc.eq.ncells)then
+              elseif(l_cc == ncells)then
                 DL_d(l_cc-1) =      - (Imp_fac)*LeftFac
                 D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac  & ! This is part of the normal stencil
                                      -(Imp_fac)*RightFac     ! This line is the BC that ensures
@@ -1175,11 +1175,11 @@
             ! precision general tridiagonal Ax=b
             ! Note: This is the function to call if ky or vol is spatially
             ! variable
-            if(ip.eq.4)then
-              DL_s = real(DL_d,kind=4)
-              D_s  = real(D_d ,kind=4)
-              DU_s = real(DU_d,kind=4)
-              B_s  = real(B_d ,kind=4)
+            if(ip == 4)then
+              DL_s = real(DL_d,kind=sp)
+              D_s  = real(D_d ,kind=sp)
+              DU_s = real(DU_d,kind=sp)
+              B_s  = real(B_d ,kind=sp)
               call sgtsv(     &
                     nlineq, &  !i The order of the matrix A.  N >= 0.
                     nrhs,   &  !i The number of right hand sides
@@ -1190,7 +1190,7 @@
                     ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                     info)      !o
               concen_pd(i,rmin:rmin-1+ncells,k,n,ts1) = B_s(:,1)
-            elseif(ip.eq.8)then
+            elseif(ip == 8)then
               ! NOTE: if you are here because the compiler complained about conversion from REAL(8) to REAL(4)
               !       when using ip=4, rest assured that this branch will not be executed when ip=4
               call dgtsv(     &
@@ -1222,9 +1222,9 @@
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
 
-      endif ! ncells.gt.1
+      endif ! ncells > 1
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine diffCN_y"
       endif;enddo
 
@@ -1325,7 +1325,7 @@
       END INTERFACE
 #endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine diffCN_z"
       endif;enddo
 
@@ -1345,11 +1345,11 @@
       concen_pd(:,:,nzmax+1,:,ts0) = concen_pd(:,:,nzmax,:,ts0)
       concen_pd(:,:,nzmax+2,:,ts0) = concen_pd(:,:,nzmax,:,ts0)
 
-      if(ncells.gt.1)then
+      if(ncells > 1)then
 
       nlineq = ncells
       ldb = nlineq  ! leading dimension of b is num of equations
-      if (ip.eq.4)then
+      if (ip == 4)then
         allocate(DL_s(nlineq-1));
         allocate(D_s(nlineq));
         allocate(DU_s(nlineq-1));
@@ -1389,7 +1389,7 @@
               RightFac   = dt_ip*k_ds_I(rmin-1+l_I+1)*sig_I(rmin-1+l_I+1)/kap_cc(rmin-1+l_cc)
               CenterFac = LeftFac + RightFac
 
-              if(l_cc.eq.1) then
+              if(l_cc == 1) then
                 !DL_d = nothing     :: No lower diagonal for first row
                 D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac & ! This is part of the normal stencil
                                      -(Imp_fac)*LeftFac     ! This line is the BC that ensures
@@ -1406,7 +1406,7 @@
                                     (1.0_ip-Imp_fac)*RightFac   * q_cc(rmin-1+l_cc+1)
 
 
-              elseif(l_cc.lt.ncells)then
+              elseif(l_cc < ncells)then
                 DL_d(l_cc-1) =        - (Imp_fac)*LeftFac
                 D_d(l_cc)    = 1.0_ip + (Imp_fac)*CenterFac
                 DU_d(l_cc)   =        - (Imp_fac)*RightFac
@@ -1414,7 +1414,7 @@
                 B_d(l_cc,1)  =           (1.0_ip-Imp_fac)*LeftFac    * q_cc(rmin-1+l_cc-1) + &
                                (1.0_ip - (1.0_ip-Imp_fac)*CenterFac) * q_cc(rmin-1+l_cc  ) + &
                                          (1.0_ip-Imp_fac)*RightFac   * q_cc(rmin-1+l_cc+1)
-              elseif(l_cc.eq.ncells)then
+              elseif(l_cc == ncells)then
                 DL_d(l_cc-1) =        - (Imp_fac)*LeftFac
                 D_d(l_cc)    = 1.0_ip + (Imp_fac)*CenterFac  & ! This is part of the normal stencil
                                        -(Imp_fac)*RightFac     ! This line is the BC that ensures
@@ -1443,11 +1443,11 @@
             ! dptsv), but this is both not really useful, nor faster.
             ! Note: This is the function to call if kz or vol is spatially
             ! variable
-            if(ip.eq.4)then
-              DL_s = real(DL_d,kind=4)
-              D_s  = real(D_d ,kind=4)
-              DU_s = real(DU_d,kind=4)
-              B_s  = real(B_d ,kind=4)
+            if(ip == 4)then
+              DL_s = real(DL_d,kind=sp)
+              D_s  = real(D_d ,kind=sp)
+              DU_s = real(DU_d,kind=sp)
+              B_s  = real(B_d ,kind=sp)
               call sgtsv(     &
                     nlineq, &  !i The order of the matrix A.  N >= 0.
                     nrhs,   &  !i The number of right hand sides
@@ -1458,7 +1458,7 @@
                     ldb,    &  !i The leading dimension of the array B. LDB >= max(1,N)
                     info)      !o
               concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = B_s(:,1)
-            elseif(ip.eq.8)then
+            elseif(ip == 8)then
               ! NOTE: if you are here because the compiler complained about conversion from REAL(8) to REAL(4)
               !       when using ip=4, rest assured that this branch will not be executed when ip=4
               call dgtsv(     &
@@ -1491,9 +1491,9 @@
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
 
-      endif ! ncells.gt.1
+      endif ! ncells > 1
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine diffCN_z"
       endif;enddo
 

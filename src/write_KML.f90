@@ -457,14 +457,17 @@
       character(len=3)   :: sizeY
       integer            :: iostatus
       character(len=120) :: iomessage
-      character(len= 50) :: linebuffer050 
+      character(len= 50) :: linebuffer050
       character(len= 80) :: linebuffer080
 
       INTERFACE
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter   :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in)  :: HoursSince
+          integer        ,intent(in)  :: byear
+          logical        ,intent(in)  :: useLeaps
         end function HS_yyyymmddhh_since
       END INTERFACE
 
@@ -793,9 +796,12 @@
 
       INTERFACE
         character(len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter   :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in)  :: HoursSince
+          integer        ,intent(in)  :: byear
+          logical        ,intent(in)  :: useLeaps
         end function HS_xmltime
       END INTERFACE
 
@@ -819,7 +825,7 @@
         write(fid,1) xmlArrivalTime, xmlArrivalTime,  &
                  xmlTimeSpanStart, xmlTimeSpanEnd
       else
-        write(fid,15) 
+        write(fid,15)
       endif
       ! close folder if this is the final deposit in a deposit file
 
@@ -952,7 +958,7 @@
       endif;enddo
 
       return
-      
+
       ! format statements
 1     format('      <Folder>',/, &
              '        <name>',a20,'</name>',/, &
@@ -1131,19 +1137,25 @@
       integer            :: iostatus
       integer            :: cstat
       character(len=120) :: iomessage
-      character(len= 50) :: linebuffer050 
+      character(len= 50) :: linebuffer050
       character(len= 80) :: linebuffer080
 
       INTERFACE
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) ::  HoursSince
-          integer     ,intent(in) ::  byear
-          logical     ,intent(in) ::  useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter   :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in)  ::  HoursSince
+          integer        ,intent(in)  ::  byear
+          logical        ,intent(in)  ::  useLeaps
         end function HS_yyyymmddhh_since
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter   :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in)  :: HoursSince
+          integer        ,intent(in)  :: byear
+          logical        ,intent(in)  :: useLeaps
         end function HS_xmltime
       END INTERFACE
 
@@ -1318,7 +1330,7 @@
           nWrittenOut = nWrittenOut + 1
         endif
       enddo ! ai=1,nairports
-      if (IsLatLon.eqv..False.) then      ! Put a placemark at the location of the volcano
+      if (.not.IsLatLon) then      ! Put a placemark at the location of the volcano
         call PJ_proj_inv(real(x_volcano,kind=dp), real(y_volcano,kind=dp),  &
                       A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
                       A3d_k0,A3d_Re, &
@@ -1625,7 +1637,7 @@
 !
 ! Close_KML
 !
-!  Called from: 
+!  Called from:
 !  Arguments:
 !    ivar        = ID of variable to process
 !    TS_flag     = 0 = not a time-series, 1 = time-series

@@ -77,7 +77,7 @@
       real(kind=ip),public :: z_volcano                 ! vent elevation (km)
 
       integer,          public :: neruptions            ! number of eruptions or eruptive pulses
-      character(len=12),public :: SourceType            ! may be 'point', 'line', or 'Suzuki' 
+      character(len=12),public :: SourceType            ! may be 'point', 'line', or 'Suzuki'
       integer          ,public :: SourceType_idx        ! 1=Suz,2=point,3=line,4=profile,5=umb,6=umb_air
       real(kind=ip),    public :: Suzuki_A
       logical,          public :: IsCustom_SourceType = .false.
@@ -109,8 +109,8 @@
       real(kind=ip), dimension(:)    ,allocatable,public :: e_PlumeHeight
       real(kind=ip), dimension(:)    ,allocatable,public :: e_Volume
       real(kind=dp), dimension(:)    ,allocatable,public :: e_Duration   ! Time needs to be dp
-      real(kind=dp), dimension(:)    ,allocatable,public :: e_StartTime  ! 
-      real(kind=dp), dimension(:)    ,allocatable,public :: e_EndTime    ! 
+      real(kind=dp), dimension(:)    ,allocatable,public :: e_StartTime  !
+      real(kind=dp), dimension(:)    ,allocatable,public :: e_EndTime    !
       real(kind=ip), dimension(:)    ,allocatable,public :: e_prof_dz
       integer      , dimension(:)    ,allocatable,public :: e_prof_nzpoints
       real(kind=ip), dimension(:,:)  ,allocatable,public :: e_prof_Volume
@@ -130,7 +130,7 @@
       real(kind=ip), public :: ESP_Vol           = 0.0_ip
       real(kind=ip), public :: ESP_massfracfine  = 0.0_ip
 
-      integer,public,parameter :: MAX_ER_PROFPOINTS = 50 
+      integer,public,parameter :: MAX_ER_PROFPOINTS = 50
 
       integer, parameter :: MAXCUSTSRC = 10    ! The maximum number of custom
                                                ! source types that we will check for
@@ -365,7 +365,7 @@
         s_volcano = Ztop*(z_volcano-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
         s_PlumeHeight(:) = Ztop*(e_PlumeHeight(:)-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
       endif
-      
+
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*) "  As a guide on erupted volumes, below are the entered values along"
         write(outlog(io),*) "  with that predicted by the Mastin relation. Note, it can only be"
@@ -425,7 +425,7 @@
               (SourceType.eq.'umbrella')    .or. &
               (SourceType.eq.'umbrella_air')) then
             ! For Suzuki plumes and umbrella clouds
-            ! It uses an equation obtained by integrating the 
+            ! It uses an equation obtained by integrating the
             ! Suzuki equation given in Hurst.
             ! Find the bit in this cell by integrating from bottom to top.
               ! Scale factor for top/bottom of cell relative to total height
@@ -710,7 +710,7 @@
              (tstart.lt.e_EndTime(i)))then     ! beginning of time step is before same pulse ends
             ! This catches all pulses that touch the start of dt
             Pulse_contributes = .true.
-            jeruption = i                      ! Make sure jeruption is at least 
+            jeruption = i                      ! Make sure jeruption is at least
           elseif((tend.gt.e_StartTime(i)).and. & ! end of time step at or after pulse start
                  (tend.le.e_EndTime(i)))then     ! end of time step is before same pulse ends
             ! This catches all pulses that touch the end of dt
@@ -840,7 +840,7 @@
            write(errlog(io),*)"SourceType          = ",SourceType
            write(errlog(io),*)"MassFluxRate_now    = ",MassFluxRate_now
            write(errlog(io),*)"n_gs_max            = ",n_gs_max
-           write(errlog(io),*)"SourceNodeFlux(1:nz)=",real(SourceNodeFlux(:,1),kind=4)
+           write(errlog(io),*)"SourceNodeFlux(1:nz)=",real(SourceNodeFlux(:,1),kind=sp)
          endif;enddo
         stop 1
       endif
@@ -919,7 +919,7 @@
 !
 !  HandDUR_2_EVol(PlmH,EDur)
 !
-!  Called from: 
+!  Called from:
 !  Arguments:
 !    PlmH = height of plume in km
 !    EDur = duration in hours
@@ -934,26 +934,26 @@
       use global_param,  only : &
          HR_2_S,KM3_2_M3
 
-      real(kind=8) :: PlmH
-      real(kind=8) :: EDur  ! Time is always in dp
+      real(kind=dp) :: PlmH
+      real(kind=dp) :: EDur  ! Time is always in dp
 
-      real(kind=8) :: HandDUR_2_EVol
+      real(kind=dp) :: HandDUR_2_EVol
 
       ! From Mastin doi:10.1016/j.jvolgeores.2009.01.008
-      real(kind=8), parameter :: Coeff = 2.0_8
-      real(kind=8), parameter :: Expo  = 0.241_8
+      real(kind=dp), parameter :: Coeff = 2.0_dp
+      real(kind=dp), parameter :: Expo  = 0.241_dp
 
       ! From Sparks et al; Volcanic Plumes Eq. 5.1
-      !real(kind=8), parameter :: Coeff = 1.67_8
-      !real(kind=8), parameter :: Expo  = 0.259_8
+      !real(kind=dp), parameter :: Coeff = 1.67_dp
+      !real(kind=dp), parameter :: Expo  = 0.259_dp
 
       ! The equation from these references is H = Coeff * Q^(Expo)
       ! where H is in km and Q is m^3/sec
       ! Now solving for Q in km^3/hr and using EDur to get EVol
 
-      HandDUR_2_EVol = real(EDur,kind=8)*HR_2_S * &
-                        (PlmH/Coeff)**(1.0_8/Expo) / KM3_2_M3
- 
+      HandDUR_2_EVol = real(EDur,kind=dp)*HR_2_S * &
+                        (PlmH/Coeff)**(1.0_dp/Expo) / KM3_2_M3
+
       end function HandDUR_2_EVol
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

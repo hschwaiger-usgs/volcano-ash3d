@@ -11,7 +11,7 @@
 !     This subroutine is called at the end of MesoInterpolator.  The first
 !     call to MesoInterpolator (and therefore to Adjust_DT) is before the time
 !     loop to anticipate the total number of steps the simulation
-!     might need, and then once within the time loop after new velocities are 
+!     might need, and then once within the time loop after new velocities are
 !     determined
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -42,7 +42,7 @@
       use wind_grid,     only : &
          vx_meso_next_step_sp,vy_meso_next_step_sp,vz_meso_next_step_sp, &
          vf_meso_next_step_sp
-         
+
       use Tephra,        only : &
          n_gs_aloft
 
@@ -197,7 +197,7 @@
           ! do this once.
           have_DT_diffus = .false.
         endif
-  
+
         if (.not.have_DT_diffus)then  ! If we don't have dt precalculated, enter this branch
           ! Recall that dx and dy are set in Calc_Mesh to be the most restrictive
           !   -- it is better to test cell-by-cell with the same ds measure as
@@ -213,7 +213,7 @@
           !         3-d: both
           !       Current implementation assume 3-d diffusion with non-zero diffusivities
           time_diffuse = DT_MAX
-  
+
           do i=1,nxmax
             do j=1,nymax
               do k=1,nzmax
@@ -326,7 +326,7 @@
       else
         dt = real(min(1.0_ip,CFL),kind=dp) * dt_tmp
       endif
-      
+
       ! Reset dt to be an integer multiple of DT_MIN
       fac = int(dt/DT_MIN)
       dt = DT_MIN*fac

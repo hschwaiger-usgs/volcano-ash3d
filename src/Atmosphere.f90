@@ -200,7 +200,7 @@
         if(.not.allocated(AirSH_meso_last_step_MetP_sp))&
           allocate(AirSH_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
       endif
-        
+
       if(.not.allocated(AirTemp_meso_next_step_MetP_sp))&
         allocate(AirTemp_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet))
       if(.not.allocated(AirDens_meso_next_step_MetP_sp))&
@@ -301,7 +301,7 @@
 !    Load_Prestep   = logical, optional; triggers loading 'last' only
 !
 !  Most []_Meso() subroutine interpolates data onto the current time and computational
-!  grid.  For the atmospheric data, we only use data on the met steps and on the 
+!  grid.  For the atmospheric data, we only use data on the met steps and on the
 !  subgrid of the NWP grid.  These are used for calculating fall velocities at these
 !  met grid nodes, which are then interpolated onto the computational grid. So this
 !  subroutine is only called when a new met step needs to be loaded, populating density,
@@ -421,7 +421,7 @@
             endif;enddo
             AirSH_meso_last_step_MetP_sp = 0.0_sp
           else
-            do io=1,2;if(VB(io).le.verbosity_error)then  
+            do io=1,2;if(VB(io).le.verbosity_error)then
               write(errlog(io),*)"ERROR: Neither SH nor RH are available"
             endif;enddo
             stop 1
@@ -463,12 +463,12 @@
 !
 !  Set_VirtPotenTemp(Load_Prestep)
 !
-!  Called from: 
+!  Called from:
 !  Arguments:
 !    Load_Prestep   = logical, optional; triggers loading 'last' only
 !
 !  Most []_Meso() subroutine interpolates data onto the current time and computational
-!  grid.  For the atmospheric data, we only use data on the met steps and on the 
+!  grid.  For the atmospheric data, we only use data on the met steps and on the
 !  subgrid of the NWP grid.  These are used for calculating fall velocities at these
 !  met grid nodes, which are then interpolated onto the computational grid. So this
 !  subroutine is only called when a new met step needs to be loaded, populating density,
@@ -586,7 +586,7 @@
 !
 !  Set_SolarZenith(Load_Prestep)
 !
-!  Called from: 
+!  Called from:
 !  Arguments:
 !    Load_Prestep   = logical, optional; triggers loading 'last' only
 !
@@ -608,27 +608,33 @@
          nx_submet,ny_submet,MR_xy2ll_xlon,MR_xy2ll_ylat,&
            MR_Read_3d_MetP_Variable
 
-      real(kind=8) :: inhoursince
+      real(kind=dp)                 :: inhoursince
       logical, intent(in), optional :: Load_Prestep
 
-      integer :: i,j
+      integer       :: i,j
       real(kind=dp) :: lon,lat
       real(kind=ip) :: tmp
-      real(kind=8)  :: hour
+      real(kind=dp) :: hour
       integer :: jday
       integer :: hh,mm
       logical :: first_time
 
       INTERFACE
         integer function HS_DayOfYear(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in)   ::  HoursSince
-          integer     ,intent(in)   ::  byear
-          logical     ,intent(in)   ::  useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in) ::  HoursSince
+          integer        ,intent(in) ::  byear
+          logical        ,intent(in) ::  useLeaps
         end function HS_DayOfYear
         real(kind=8) function HS_HourOfDay(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in)   ::  HoursSince
-          integer     ,intent(in)   ::  byear
-          logical     ,intent(in)   ::  useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in) ::  HoursSince
+          integer        ,intent(in) ::  byear
+          logical        ,intent(in) ::  useLeaps
         end function HS_HourOfDay
       END INTERFACE
 
@@ -826,11 +832,11 @@
 
       real(kind=ip) :: declR          ! declination in radians
       real(kind=ip) :: fyr            ! fractional year
-      real(kind=ip) :: eqtime         ! 
+      real(kind=ip) :: eqtime         !
       real(kind=ip) :: th             ! in radians
       real(kind=ip) :: haR,haD        ! in radians/degrees
-      real(kind=ip) :: timeoffset     ! 
-      real(kind=ip) :: tst            ! 
+      real(kind=ip) :: timeoffset     !
+      real(kind=ip) :: tst            !
       real(kind=ip) :: szenithR       ! solar zenith in radians
 
       do io=1,2;if(VB(io).le.verbosity_debug2)then
@@ -853,18 +859,18 @@
       declR  = 0.006918_ip-0.399912_ip*cos(th)+0.070257_ip*sin(th)- &
                0.006758_ip*cos(2.0_ip*th)+0.000907_ip*sin(2.0_ip*th)-&
                0.002697_ip*cos(3.0_ip*th)+0.00148_ip*sin(3.0_ip*th)
-      
+
       ! time offset is how far off local solar noon is from GMT solar noon in minutes
       ! The 4*lon is because the earth rotates 15 degrees/hour
       timeoffset = eqtime + 4.0_ip*lonD - 60.0_ip*tzone
-      
+
       ! True solar time in minutes
       tst = hh*60.0_ip + mm + ss/60.0_ip + timeoffset
-      
+
       ! Solar hour angle: angular position of the sun from solar noon
       haD = tst/4.0_ip - 180.0_ip;
       haR = haD*DEG2RAD
-      
+
       ! Solar zenith angle : angle the suns rays hit the surface
       szenithR = acos(sin(latR)*sin(declR)+cos(latR)*cos(declR)*cos(haR))
       solar_zenith = szenithR/DEG2RAD

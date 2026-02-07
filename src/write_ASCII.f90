@@ -200,9 +200,12 @@
 
       INTERFACE
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter   :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in)  :: HoursSince
+          integer        ,intent(in)  :: byear
+          logical        ,intent(in)  :: useLeaps
         end function HS_yyyymmddhh_since
       END INTERFACE
 
@@ -313,7 +316,7 @@
       character(len=50)  :: filename_out
       integer            :: iostatus
       character(len=120) :: iomessage
-      character(len= 50) :: linebuffer050 
+      character(len= 50) :: linebuffer050
       character(len= 80) :: linebuffer080
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
@@ -362,7 +365,7 @@
         else
           write(fid_ascii2dout,3002) lonLL
         endif
-        write(fid_ascii2dout,3003) latLL    
+        write(fid_ascii2dout,3003) latLL
         write(fid_ascii2dout,3004) de,dn
       else
         write(fid_ascii2dout,3002) xLL*KM_2_M    ! convert xLL from km to meters so ArcMap can read it
@@ -387,11 +390,11 @@
         write(fid_ascii2dout,3006) (OVar(i,j), i=1,nx)
         write(fid_ascii2dout,*)" "               ! make a blank line between rows
       enddo
-      
+
       close(fid_ascii2dout)
 
 !     format statements
-3000  format('NCOLS ',i5)      
+3000  format('NCOLS ',i5)
 3001  format('NROWS ',i5)
 3002  format('XLLCORNER ',f15.3)
 3003  format('YLLCORNER ',f15.3)
@@ -411,7 +414,7 @@
         write(errlog(io),*) 'Error opening output file ASCII_output_file.txt.  Program stopped'
       endif;enddo
       stop 1
-      
+
       end subroutine write_2D_ASCII
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -753,7 +756,7 @@
 !
 !  write_2D_ASCII_csv
 !
-!  Called from: 
+!  Called from:
 !  Arguments:
 !    nx            = x length of output array OutVar
 !    ny            = y length of output array OutVar
@@ -1063,7 +1066,7 @@
       integer :: i,j,k
       integer :: iostatus
       character(len=120) :: iomessage
-      character(len= 50) :: linebuffer050 
+      character(len= 50) :: linebuffer050
       character(len=130) :: linebuffer130
       real(kind=ip) :: value1,value2,value3
 
@@ -1192,9 +1195,12 @@
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter   :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in)  :: HoursSince
+          integer        ,intent(in)  :: byear
+          logical        ,intent(in)  :: useLeaps
         end function HS_xmltime
       END INTERFACE
 

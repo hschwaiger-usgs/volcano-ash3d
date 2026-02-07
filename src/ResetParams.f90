@@ -2,7 +2,7 @@
 !
 !  Subroutine input_data_ResetParams()
 !
-!  Called from: 
+!  Called from:
 !  Arguments:
 !    none
 !
@@ -93,7 +93,7 @@
       integer, parameter :: MAXPARAMS = 50
 
       integer           :: i
-      character(len=50) :: linebuffer050 
+      character(len=50) :: linebuffer050
       character(len=80) :: linebuffer080
       integer           :: strlen
       character         :: testkey
@@ -209,7 +209,7 @@
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"  Resetting DepositDensity from ",DepositDensity,&
                               "to ",pvalue(i)
-          endif;enddo 
+          endif;enddo
           DepositDensity = pvalue(i)
         elseif (pname(i).eq.'LAM_GS_THRESH') then
           ! error-checking
@@ -278,7 +278,7 @@
               write(outlog(io),*)"         Units should be km"
             endif;enddo
           endif
-          do io=1,2;if(VB(io).le.verbosity_info)then          
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"  Resetting RAD_EARTH from ",RAD_EARTH,&
                               "to ",pvalue(i)
           endif;enddo
@@ -296,10 +296,10 @@
             endif;enddo
             stop 1
           endif
-          do io=1,2;if(VB(io).le.verbosity_info)then            
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"  Resetting CFL from ",CFL,&
                               "to ",pvalue(i)
-          endif;enddo 
+          endif;enddo
           CFL = pvalue(i)
         elseif (pname(i).eq.'DT_MIN') then
           ! error-checking
@@ -309,15 +309,15 @@
             endif;enddo
             stop 1
           elseif (pvalue(i).gt.1.0_ip)then
-            do io=1,2;if(VB(io).le.verbosity_info)then            
+            do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"WARNING: DT_MIN seems high."
               write(outlog(io),*)"         Units should be hours"
             endif;enddo
           endif
-          do io=1,2;if(VB(io).le.verbosity_info)then         
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"  Resetting DT_MIN from ",DT_MIN,&
                               "to ",pvalue(i)
-          endif;enddo 
+          endif;enddo
           DT_MIN = pvalue(i)
         elseif (pname(i).eq.'DT_MAX') then
           ! error-checking
@@ -332,12 +332,12 @@
             endif;enddo
             stop 1
           elseif (pvalue(i).gt.10.0_ip)then
-            do io=1,2;if(VB(io).le.verbosity_info)then         
+            do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"WARNING: DT_MAX seems high."
               write(outlog(io),*)"         Units should be hours"
             endif;enddo
           endif
-          do io=1,2;if(VB(io).le.verbosity_info)then         
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"  Resetting DT_MAX from ",DT_MAX,&
                               "to ",pvalue(i)
           endif;enddo
@@ -350,12 +350,12 @@
             endif;enddo
             stop 1
           elseif (pvalue(i).gt.5.0_ip)then
-            do io=1,2;if(VB(io).le.verbosity_info)then         
+            do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"WARNING: ZPADDING seems high."
               write(outlog(io),*)"         This is the factor times the plume height (~1.3)"
             endif;enddo
           endif
-          do io=1,2;if(VB(io).le.verbosity_info)then         
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"  Resetting ZPADDING from ",ZPADDING,&
                               "to ",pvalue(i)
           endif;enddo
@@ -368,13 +368,13 @@
             endif;enddo
             stop 1
           elseif (pvalue(i).gt.5.0_ip)then
-            do io=1,2;if(VB(io).le.verbosity_info)then         
+            do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"WARNING: DEPO_THRESH seems high."
               write(outlog(io),*)&
                 "         This is the threshold to track deposit (mm)"
             endif;enddo
           endif
-          do io=1,2;if(VB(io).le.verbosity_info)then         
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"  Resetting DEPO_THRESH from ",DEPO_THRESH,&
                               "to ",pvalue(i)
           endif;enddo
@@ -393,7 +393,7 @@
                 "         This is the threshold to track deposit rate (mm/hr)"
             endif;enddo
           endif
-          do io=1,2;if(VB(io).le.verbosity_info)then         
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"  Resetting DEPRATE_THRESH from ",DEPRATE_THRESH,&
                               "to ",pvalue(i)
           endif;enddo
@@ -406,13 +406,13 @@
             endif;enddo
             stop 1
           elseif (pvalue(i).gt.5.0_ip)then
-            do io=1,2;if(VB(io).le.verbosity_info)then         
+            do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"WARNING: CLOUDCON_THRESH seems high."
               write(outlog(io),*)&
                 "         This is the threshold to track cloud concentration (t/km3)"
             endif;enddo
           endif
-          do io=1,2;if(VB(io).le.verbosity_info)then         
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"  Resetting CLOUDCON_THRESH from ",CLOUDCON_THRESH,&
                               "to ",pvalue(i)
           endif;enddo
@@ -425,13 +425,13 @@
             endif;enddo
             stop 1
           elseif (pvalue(i).gt.1.0e-1_ip)then
-            do io=1,2;if(VB(io).le.verbosity_info)then         
+            do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"WARNING: CLOUDCON_GRID_THRESH seems high."
               write(outlog(io),*)&
                 "         This is the concentration threshold to identify regions to calculate (t/km3)"
              endif;enddo
           endif
-          do io=1,2;if(VB(io).le.verbosity_info)then         
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"  Resetting CLOUDCON_GRID_THRESH from ",CLOUDCON_GRID_THRESH,&
                               "to ",pvalue(i)
           endif;enddo
@@ -444,13 +444,13 @@
             endif;enddo
             stop 1
           elseif (pvalue(i).gt.5.0_ip)then
-            do io=1,2;if(VB(io).le.verbosity_info)then         
+            do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"WARNING: CLOUDLOAD_THRESH seems high."
               write(outlog(io),*)&
                 "         This is the threshold to track cloud load (t/km2)"
             endif;enddo
           endif
-          do io=1,2;if(VB(io).le.verbosity_info)then         
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"  Resetting CLOUDLOAD_THRESH from ",CLOUDLOAD_THRESH,&
                               "to ",pvalue(i)
           endif;enddo
@@ -463,13 +463,13 @@
             endif;enddo
             stop 1
           elseif (pvalue(i).gt.5.0_ip)then
-            do io=1,2;if(VB(io).le.verbosity_info)then         
+            do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"WARNING: THICKNESS_THRESH seems high."
               write(outlog(io),*)&
                 "         This is the threshold to track deposit (mm)"
             endif;enddo
           endif
-          do io=1,2;if(VB(io).le.verbosity_info)then         
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"  Resetting THICKNESS_THRESH from ",THICKNESS_THRESH,&
                               "to ",pvalue(i)
           endif;enddo
@@ -501,13 +501,13 @@
             endif;enddo
             stop 1
           elseif (pvalue(i).lt.-1000.0_ip)then
-            do io=1,2;if(VB(io).le.verbosity_info)then         
+            do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"WARNING: DBZ_THRESH seems low."
               write(outlog(io),*)&
                 "         This is the threshold to reflectivity (db)"
             endif;enddo
           endif
-          do io=1,2;if(VB(io).le.verbosity_info)then         
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"  Resetting DBZ_THRESH from ",DBZ_THRESH,&
                               "to ",pvalue(i)
           endif;enddo
@@ -560,13 +560,13 @@
             endif;enddo
             stop 1
           elseif (pvalue(i).gt.100.0_ip)then
-            do io=1,2;if(VB(io).le.verbosity_info)then         
+            do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"WARNING: lambda_umb seems high."
               write(outlog(io),*)&
                 "         This is the Shape factor for the umbrella cloud"
             endif;enddo
           endif
-          do io=1,2;if(VB(io).le.verbosity_info)then         
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"  Resetting lambda_umb from ",lambda_umb,&
                               "to ",pvalue(i)
           endif;enddo
@@ -579,13 +579,13 @@
             endif;enddo
             stop 1
           elseif (pvalue(i).gt.10.0_ip)then
-            do io=1,2;if(VB(io).le.verbosity_info)then         
+            do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"WARNING: N_BV_umb seems high."
               write(outlog(io),*)&
                 "         This is the Brunt-Vaisala frequency (1/s) for umbrella sources"
             endif;enddo
           endif
-          do io=1,2;if(VB(io).le.verbosity_info)then         
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"  Resetting N_BV_umb from ",N_BV_umb,&
                               "to ",pvalue(i)
           endif;enddo
@@ -598,13 +598,13 @@
             endif;enddo
             stop 1
           elseif (pvalue(i).gt.5.0_ip)then
-            do io=1,2;if(VB(io).le.verbosity_info)then         
+            do io=1,2;if(VB(io).le.verbosity_info)then
               write(outlog(io),*)"WARNING: k_entrainment_umb seems high."
               write(outlog(io),*)&
                 "         This is the umbrella entrainment coefficient"
             endif;enddo
           endif
-          do io=1,2;if(VB(io).le.verbosity_info)then         
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"  Resetting k_entrainment_umb from ",k_entrainment_umb,&
                               "to ",pvalue(i)
           endif;enddo
@@ -623,7 +623,7 @@
                 "         This is the Suzuki parameter for the umbrella"
             endif;enddo
           endif
-          do io=1,2;if(VB(io).le.verbosity_info)then         
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"  Resetting SuzK_umb from ",SuzK_umb,&
                               "to ",pvalue(i)
           endif;enddo
@@ -761,7 +761,7 @@
             write(outlog(io),*)"  Resetting cdf_url to ",trim(adjustl(cdf_url))
           endif;enddo
         else
-          do io=1,2;if(VB(io).le.verbosity_info)then         
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"Found unknown parameter/value: ", &
                                 pname(i),pvalue(i)
             write(outlog(io),*)"No action taken."

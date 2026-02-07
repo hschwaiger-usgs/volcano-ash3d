@@ -67,7 +67,7 @@
          ZScaling_ID
 
         ! Use dimension splitting with donor-cell-upwind (DCU)
-      
+
       select case (ZScaling_ID)
         case(0)
           call advect_z

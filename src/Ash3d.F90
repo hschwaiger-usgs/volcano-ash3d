@@ -4,7 +4,7 @@
 !
 !  This software is written in Fortran 2003 and is designed for use on a Linux
 !  operating system.
-!  
+!
 !  This software, along with auxiliary USGS libraries and related repositories,
 !  can be found at https://code.usgs.gov/vsc/ash3d/volcano-ash3d
 !
@@ -101,7 +101,7 @@
            Allocate_Tephra,&
            Allocate_Tephra_Met,&
            Prune_GS
-   
+
       use Atmosphere,    only : &
            Allocate_Atmosphere_Met
 
@@ -135,9 +135,9 @@
 !         Insert 'use' statements here
 !
       use Topography
-      
+
       use Diffusivity_Variable
-      
+
 !------------------------------------------------------------------------------
 
       implicit none
@@ -223,14 +223,14 @@
           call input_data_Topo
         endif
         if(OPTMOD_names(i).eq.'VARDIFF')then
-          do io=1,2;if(VB(io).le.verbosity_info)then    
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"  Reading input block for VARDIFF"
           endif;enddo
           Have_Block_VarDiff = .true.
           call input_data_VarDiff
         endif
       enddo
-      do io=1,2;if(VB(io).le.verbosity_info)then    
+      do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Finished reading all specialized input blocks"
       endif;enddo
 !
@@ -320,7 +320,7 @@
       ! interpolated on the start time
       time           = 0.0_ip
       Load_MesoSteps = .true.
-      Interval_Frac  = 0.0_8  ! Interval_Frac is calculated and returned by MesoInterpolater
+      Interval_Frac  = 0.0_dp  ! Interval_Frac is calculated and returned by MesoInterpolater
       call MesoInterpolater(time , Load_MesoSteps , Interval_Frac)
       ! Calculate the fall time of each grain size
       do io=1,2;if(VB(io).le.verbosity_info)then
@@ -360,7 +360,7 @@
 !         Insert calls to prep user-specified output
 !
       if(useTopo) call Prep_output_Topo
-      
+
       if(useVarDiffH.or.useVarDiffV)then
         do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"Calling Prep_output_VarDiff."
@@ -401,7 +401,7 @@
         write(outlog(io),*)"Starting time loop."
       endif;enddo
 
-      do while (StopTimeLoop.eqv..false.)
+      do while (.not.StopTimeLoop)
         ! Note: stop conditions are evaluated at the end of the time loop
 
         ! Copy previous t=n+1 to t=n
@@ -606,7 +606,7 @@
           endif
         endif
 
-        if(Output_at_logsteps)then  
+        if(Output_at_logsteps)then
           ! Write summary information on mass conservation every log_step time steps
           if(mod(itime,log_step).eq.0) then
             if(.not.Called_Gen_Output_Vars)then
@@ -662,20 +662,15 @@
                             (outflow_vol.lt.-1.0_ip*EPS_SMALL).or.&
                             (SourceCumulativeVol.lt.-1.0_ip*EPS_SMALL)
 
-        if((CheckConditions(1).eqv..true.).and.&
-           (StopConditions(1).eqv..true.))then
+        if(CheckConditions(1).and.StopConditions(1))then
           StopTimeLoop = .true.
-        elseif((CheckConditions(2).eqv..true.).and.&
-               (StopConditions(2).eqv..true.))then
+        elseif(CheckConditions(2).and.StopConditions(2))then
           StopTimeLoop = .true.
-        elseif((CheckConditions(3).eqv..true.).and.&
-               (StopConditions(3).eqv..true.))then
+        elseif(CheckConditions(3).and.StopConditions(3))then
           StopTimeLoop = .true.
-        elseif((CheckConditions(4).eqv..true.).and.&
-               (StopConditions(4).eqv..true.))then
+        elseif(CheckConditions(4).and.StopConditions(4))then
           StopTimeLoop = .true.
-        elseif((CheckConditions(5).eqv..true.).and.&
-               (StopConditions(5).eqv..true.))then
+        elseif(CheckConditions(5).and.StopConditions(5))then
           StopTimeLoop = .true.
         else
           StopTimeLoop = .false.
@@ -691,15 +686,13 @@
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Time integration completed for the following reason:"
       endif;enddo
-      if((CheckConditions(1).eqv..true.).and.&
-         (StopConditions(1).eqv..true.))then
+      if(CheckConditions(1).and.StopConditions(1))then
         ! Normal stop condition set by user tracking the deposit
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),'(a35,f8.3)')"Percent accumulated/exited exceeds ",StopValue_FracAshDep
         endif;enddo
       endif
-      if((CheckConditions(2).eqv..true.).and.&
-         (StopConditions(2).eqv..true.))then
+      if(CheckConditions(2).and.StopConditions(2))then
         ! Normal stop condition if simulation exceeds alloted time
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),'(a24)')"time.ge.Simtime_in_hours"
@@ -707,15 +700,13 @@
           write(outlog(io),'(a21,f15.3)')"  Simtime_in_hours = ",Simtime_in_hours
         endif;enddo
       endif
-      if((CheckConditions(3).eqv..true.).and.&
-         (StopConditions(3).eqv..true.))then
+      if(CheckConditions(3).and.StopConditions(3))then
         ! Normal stop condition when nothing is left to advect
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"No ash species remain aloft."
         endif;enddo
       endif
-      if((CheckConditions(4).eqv..true.).and.&
-         (StopConditions(4).eqv..true.))then
+      if(CheckConditions(4).and.StopConditions(4))then
         ! Error stop condition if the concen and outflow do not match the source
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"Cummulative source volume does not match aloft + outflow"
@@ -727,8 +718,7 @@
         endif;enddo
         stop 1
       endif
-      if((CheckConditions(5).eqv..true.).and.&
-         (StopConditions(5).eqv..true.))then
+      if(CheckConditions(5).and.StopConditions(5))then
         ! Error stop condition if any volume measure is negative
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"One of the volume measures is negative."
@@ -797,9 +787,9 @@
 5003  format(/,5x,'Set-up time (cpu)         = ',f15.4,' seconds',/&
                5x,'MetReader time (cpu)      = ',f15.4,' seconds',/&
                5x,'Total solver time (cpu)   = ',f15.4,' seconds',/&
-              ,5x,'Wall clock time           = ',f15.4,' seconds') 
-5005  format(  5x,'Ending deposit volume    = ',f15.4,' km3 DRE')       
-5006  format(  5x,'Ending total volume      = ',f15.4,' km3 DRE')       
+              ,5x,'Wall clock time           = ',f15.4,' seconds')
+5005  format(  5x,'Ending deposit volume    = ',f15.4,' km3 DRE')
+5006  format(  5x,'Ending total volume      = ',f15.4,' km3 DRE')
 5007  format(  5x,'Building time array of plume height & eruption rate')
 5009  format(/,5x,'Maximum deposit thickness (mm)   = ',f10.4, &
              /,5x,'Area covered by >0.01 mm (km2)   = ',f10.1,/)
@@ -825,6 +815,6 @@
       if(useVarDiffH.or.useVarDiffV)  call Deallocate_VarDiff_Met
 !------------------------------------------------------------------------------
 
-      close(fid_logfile)       !close log file 
+      close(fid_logfile)       !close log file
 
       end program Ash3d

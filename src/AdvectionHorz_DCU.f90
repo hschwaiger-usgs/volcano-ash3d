@@ -435,7 +435,7 @@
                                                       sig_I(rmin-1:rmin-1+ncells+1)
             DelDonD_cc  = 0.0_ip
             if (ZScaling_ID.eq.2) then
-              DelDonD_cc(rmin-1:rmin-1+ncells+1)=DelDyonD_cc(i,rmin-1:rmin-1+ncells+1) 
+              DelDonD_cc(rmin-1:rmin-1+ncells+1)=DelDyonD_cc(i,rmin-1:rmin-1+ncells+1)
             endif
 
             dq_I(rmin-1:rmin-1+ncells+2) = q_cc(rmin-1:rmin-1+ncells+2) - &

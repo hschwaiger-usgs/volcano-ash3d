@@ -40,7 +40,7 @@
 
         ! Publicly available variables
 
-      integer,parameter :: DS = 8
+      integer,parameter :: DS = 4
       integer :: lib_ver_major = 5
       integer :: lib_ver_minor = 14
       integer :: lib_ver_patch = 0
@@ -199,9 +199,12 @@
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in) :: HoursSince
+          integer        ,intent(in) :: byear
+          logical        ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
 
@@ -484,7 +487,7 @@
                 write(errlog(io),*)"       Please increase CONTOUR_MAXPOINTS and recompile."
                 write(errlog(io),*)"  Output_Vars.f90:CONTOUR_MAXPOINTS"
               endif;enddo
-              stop 1 
+              stop 1
             endif
             npts = iray(icurve)
             !do k=1,iray(icurve)
@@ -623,7 +626,7 @@
       call name(cstr_xlabel,'X') ! Set x-axis title
       call name(cstr_ylabel,'Y') ! Set y-axis title
       call labdig(1,'X') ! set number of decimal places for x label (-1 means no decimal)
-      call labdig(1,'y') 
+      call labdig(1,'y')
       call ticks(1,'xy')  ! set number of ticks between labels
       call titlin(title_plot,4)  ! Set the title
       call incmrk(0) ! selects line (0) or symbol (-1) mode for CURVE
@@ -826,9 +829,12 @@
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in) :: HoursSince
+          integer        ,intent(in) :: byear
+          logical        ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
 
@@ -1077,7 +1083,7 @@
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_DepPOI_TS_PNG_dislin"
       endif;enddo
-      
+
       if(Airport_Thickness_TS(pt_indx,nWriteTimes).lt.0.01_ip)then
         return
       else
@@ -1147,7 +1153,7 @@
       call title() ! Actually write the title to the file
       call setrgb(0.5_DS, 0.5_DS, 0.5_DS)
       !call curve(real(x,kind=4),real(y,kind=4),nWriteTimes)  ! This draws the line
-      call shdpat(16)  ! set shading pattern 
+      call shdpat(16)  ! set shading pattern
       call shdcrv(x,y,nWriteTimes,x,0.0_DS*y,nWriteTimes) ! This fills below curve
       call color('FORE') ! Reset color to defaul foreground color
 

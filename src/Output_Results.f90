@@ -77,22 +77,28 @@
       implicit none
 
       character(len=13) :: cio
-      real(kind=8)      :: timestart
-      real(kind=8)      :: timeend
+      real(kind=dp)     :: timestart
+      real(kind=dp)     :: timeend
       logical           :: Mask(nxmax,nymax)
       integer           :: i,j
       logical,save      :: first_time = .true.
 
       INTERFACE
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) ::  HoursSince
-          integer     ,intent(in) ::  byear
-          logical     ,intent(in) ::  useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in) :: HoursSince
+          integer        ,intent(in) :: byear
+          logical        ,intent(in) :: useLeaps
         end function HS_yyyymmddhh_since
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in) :: HoursSince
+          integer        ,intent(in) :: byear
+          logical        ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
 
@@ -251,7 +257,7 @@
       endif !.not.isFinal_TS
 
       !************************************************************************
-      !  WRITE OUT 3D CONCENTRATION FILES      
+      !  WRITE OUT 3D CONCENTRATION FILES
       if (Write3dFiles) then
         if(ioutputFormat.eq.1)then
           allocate(ashcon_tot(nxmax,nymax,nzmax))

@@ -59,7 +59,7 @@
 
         vz_pd(:,:,     -1)       = vz_pd(:    ,:    ,1)
         vz_pd(:,:,      0)       = vz_pd(:    ,:    ,1)
-        vz_pd(:,:,nzmax+1)       = vz_pd(:    ,:,nzmax)       
+        vz_pd(:,:,nzmax+1)       = vz_pd(:    ,:,nzmax)
         vz_pd(:,:,nzmax+2)       = vz_pd(:    ,:,nzmax)
 
         ! Can't forget to apply the same extrapolation to fall
@@ -72,7 +72,7 @@
         !------------------------------------------------------------------------
         !   CONCENTRATIONS
         !------------------------------------------------------------------------
-        ! Zero the concentration on all ghost cells.  
+        ! Zero the concentration on all ghost cells.
         !***  Left/Right (X)
         concen_pd(     -1:0      ,:,:,:,ts0) = 0.0_ip
         concen_pd(nxmax+1:nxmax+2,:,:,:,ts0) = 0.0_ip

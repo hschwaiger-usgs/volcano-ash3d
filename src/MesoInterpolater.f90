@@ -10,7 +10,7 @@
 !    Interval_Frac  = the fraction of the met step for the current time
 !
 ! This purpose of this subroutine is to interpolate data from the mesoscale NWP
-! files onto the current time of the simulation.  
+! files onto the current time of the simulation.
 ! Initially, if the 'first_time' is set to true, then this is the call from
 ! Ash3d.F90 prior to the time-integration loop.  During the first call, both
 ! braketing time steps need to be loaded, velocities interpolated, then the
@@ -78,7 +78,7 @@
            MR_Rotate_UV_ER2GR_Comp,&
            MR_Regrid_MetP_to_CompH,&
            MR_Read_3d_MetP_Variable
- 
+
       implicit none
 
       real(kind=dp),intent(in)    :: TimeNow                ! current time, in hours since start of simulation
@@ -87,7 +87,7 @@
 
       integer           :: i,j,k
       character(len=1)  :: answer
-      character(len=50) :: linebuffer050 
+      character(len=50) :: linebuffer050
       character(len=80) :: linebuffer080
       logical,save      :: first_time = .true.  ! There is a bit of extra work the first time
                                                 ! this subroutine is called since we need to
@@ -286,7 +286,7 @@
             do j=1,nymax
               if (abs(vx_pd(i,j,k)).gt.5.0e3_ip) then
                 do io=1,2;if(VB(io).le.verbosity_info)then
-                  write(outlog(io),1042) i,j,k,vx_pd(i,j,k), & 
+                  write(outlog(io),1042) i,j,k,vx_pd(i,j,k), &
                               vx_meso_last_step_sp(i,j,k), vx_meso_next_step_sp(i,j,k),&
                               HoursIntoInterval
                 endif;enddo
@@ -331,7 +331,7 @@
             do j=1,nymax
               if (vy_pd(i,j,k).gt.5.0e3_ip) then
                 do io=1,2;if(VB(io).le.verbosity_info)then
-                  write(outlog(io),1044) i,j,k,vy_pd(i,j,k),  & 
+                  write(outlog(io),1044) i,j,k,vy_pd(i,j,k),  &
                               vy_meso_last_step_sp(i,j,k), vy_meso_next_step_sp(i,j,k)
                 endif;enddo
 1044            format(4x,'i=',i4,' j=',i4,' k=',i4,' vy=',e12.4,/, &
@@ -452,7 +452,7 @@
       endif
       if(Map_Case.eq.1.or. &
         (Map_Case.eq.2.and.IsGridRelative))then
-        ! Either (Map_Case = 1) both the comp and met grids are LL 
+        ! Either (Map_Case = 1) both the comp and met grids are LL
         ! or (Map_Case = 2) they are both the same projection excluding the NARR case.
         ! We can read the velocity components individually and interpolate directly
         ! onto the computational grid
@@ -468,7 +468,7 @@
           vx_meso_next_step_sp = vx_meso_2_sp
         endif
 
-        ivar = 3 ! V winds 
+        ivar = 3 ! V winds
         call MR_Read_3d_Met_Variable_to_CompH(ivar,istep,.true.)
         if(Meso_toggle.eq.0)then
           vy_meso_1_sp = MR_dum3d_compH

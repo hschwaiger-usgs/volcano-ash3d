@@ -74,118 +74,121 @@
       integer,intent(in) :: iprod
       integer,intent(in) :: itime
 
-      character(len=8)  :: ov_fileroot = "testfile"
-      character(len=12) :: ov_mainfile
-      character(len=12) :: ov_indxfile
-      character(len=12) :: ov_dbasfile
-      character(len=12) :: ov_projfile
-      character(len=12) :: ov_zipfile
-      character(len=4)  :: ov_mainext = ".shp"
-      character(len=4)  :: ov_indxext = ".shx"
-      character(len=4)  :: ov_dbasext = ".dbf"
-      character(len=4)  :: ov_projext = ".prj"
-      character(len=4)  :: ov_zipext  = ".zip"
-      integer           :: ov_mainID  = 22
-      integer           :: ov_indxID  = 23
-      integer           :: ov_dbasID  = 24
-      integer           :: ov_projID  = 25
+      character (len= 8) :: ov_fileroot = "testfile"
+      character (len=12) :: ov_mainfile
+      character (len=12) :: ov_indxfile
+      character (len=12) :: ov_dbasfile
+      character (len=12) :: ov_projfile
+      character (len=12) :: ov_zipfile
+      character (len= 4) :: ov_mainext = ".shp"
+      character (len= 4) :: ov_indxext = ".shx"
+      character (len= 4) :: ov_dbasext = ".dbf"
+      character (len= 4) :: ov_projext = ".prj"
+      character (len= 4) :: ov_zipext  = ".zip"
+      integer            :: ov_mainID  = 22
+      integer            :: ov_indxID  = 23
+      integer            :: ov_dbasID  = 24
+      integer            :: ov_projID  = 25
 
-      character(len=40) :: title_plot
-      character(len=40) :: plot_variable
-      character(len=15) :: plot_units
+      character (len=40) :: title_plot
+      character (len=40) :: plot_variable
+      character (len=15) :: plot_units
 
       logical           :: debugmode = .false.
 
       integer                                  :: nrec      ! num of records (e.g. contour levels)
-      integer(kind=4),dimension(:),allocatable :: rec2lev   ! mapping of record to contour level index
-      integer(kind=4),dimension(:),allocatable :: NumParts
-      integer(kind=4),dimension(:),allocatable :: NumPoints ! total points
+      integer(kind=int32),dimension(:),allocatable :: rec2lev   ! mapping of record to contour level index
+      integer(kind=int32),dimension(:),allocatable :: NumParts
+      integer(kind=int32),dimension(:),allocatable :: NumPoints ! total points
       integer :: i,ilev,irec,ipart,ipt
       integer,dimension(:),allocatable :: reclen
       integer :: offset
       integer :: iw,iwf
       integer           :: iostatus
       character(len=120):: iomessage
-      character(len= 50):: linebuffer050 
+      character(len= 50):: linebuffer050
 
-      integer(kind=4) :: file_code
-      integer(kind=4) :: tmp4
-      integer(kind=4) :: file_length
-      integer(kind=4) :: version
-      integer(kind=4) :: shape_type
-      real(kind=8),dimension(:),allocatable :: xmin
-      real(kind=8),dimension(:),allocatable :: xmax
-      real(kind=8),dimension(:),allocatable :: ymin
-      real(kind=8),dimension(:),allocatable :: ymax
-      real(kind=8)    :: zmin
-      real(kind=8)    :: zmax
-      real(kind=8)    :: mmin
-      real(kind=8)    :: mmax
+      integer(kind=int32) :: file_code
+      integer(kind=int32) :: tmp4
+      integer(kind=int32) :: file_length
+      integer(kind=int32) :: version
+      integer(kind=int32) :: shape_type
+      real(kind=dp),dimension(:),allocatable :: xmin
+      real(kind=dp),dimension(:),allocatable :: xmax
+      real(kind=dp),dimension(:),allocatable :: ymin
+      real(kind=dp),dimension(:),allocatable :: ymax
+      real(kind=dp)   :: zmin
+      real(kind=dp)   :: zmax
+      real(kind=dp)   :: mmin
+      real(kind=dp)   :: mmax
 
       ! Variables needed for the dBASE file
-      integer(kind=1)  :: DBASE_zero     = 0
-      integer(kind=1)  :: DBASE_v
-      integer(kind=1)  :: DBASE_yy
-      integer(kind=1)  :: DBASE_mm
-      integer(kind=1)  :: DBASE_dd
-      integer(kind=4)  :: DBASE_nrec      ! 1
-      integer(kind=2)  :: DBASE_headlen   ! 129
-      integer(kind=2)  :: DBASE_reclen    ! 115
-      integer(kind=1)  :: DBASE_transflag ! 0
-      integer(kind=1)  :: DBASE_cryptflag ! 0
-      integer(kind=1)  :: DBASE_mdxflag   ! 0
-      integer(kind=1)  :: DBASE_langID    ! 87
+      integer(kind=int8)  :: DBASE_zero     = 0
+      integer(kind=int8)  :: DBASE_v
+      integer(kind=int8)  :: DBASE_yy
+      integer(kind=int8)  :: DBASE_mm
+      integer(kind=int8)  :: DBASE_dd
+      integer(kind=int32) :: DBASE_nrec      ! 1
+      integer(kind=int16) :: DBASE_headlen   ! 129
+      integer(kind=int16) :: DBASE_reclen    ! 115
+      integer(kind=int8)  :: DBASE_transflag ! 0
+      integer(kind=int8)  :: DBASE_cryptflag ! 0
+      integer(kind=int8)  :: DBASE_mdxflag   ! 0
+      integer(kind=int8)  :: DBASE_langID    ! 87
 
-      character(len=11):: DBASE_FieldName ! 'name   '
-      character(len=1) :: DBASE_FieldTyp
-      integer(kind=1)  :: DBASE_FieldLen
-      integer(kind=1)  :: DBASE_FieldDesTerm
-      integer          :: fldlen
-      character(len=1) :: DBASE_RecStart = ' '
-      integer(kind=1)  :: DBASE_EOF      = 26
+      character (len=11):: DBASE_FieldName ! 'name   '
+      character (len= 1):: DBASE_FieldTyp
+      integer(kind=int8):: DBASE_FieldLen
+      integer(kind=int8):: DBASE_FieldDesTerm
+      integer           :: fldlen
+      character (len= 1):: DBASE_RecStart = ' '
+      integer(kind=int8):: DBASE_EOF      = 26
 
-      integer          :: nattr          = 15
-      character(len=10):: DBASE_TableRecData01  ! Organizaion
-      character(len=42):: DBASE_TableRecData02  ! Volcano
-      character(len=20):: DBASE_TableRecData03  ! Run date
-      character(len= 5):: DBASE_TableRecData04  ! iwindformat
-      character(len=20):: DBASE_TableRecData05  ! Run class
-      character(len=20):: DBASE_TableRecData06  ! Erup. Start Time
-      character(len=20):: DBASE_TableRecData07  ! Erup. Plume Height
-      character(len=20):: DBASE_TableRecData08  ! Erup. Duration
-      character(len=20):: DBASE_TableRecData09  ! Erup. Vol
-      character(len=80):: DBASE_TableRecData10  ! URL
-      character(len=24):: DBASE_TableRecData11  ! Variable
-      character(len=24):: DBASE_TableRecData12  ! Value of contour level
-      character(len=10):: DBASE_TableRecData13  ! unit for level
-      character(len=10):: DBASE_TableRecData14  ! index
-      character(len=20):: DBASE_TableRecData15  ! Time of data
+      integer           :: nattr          = 15
+      character (len=10):: DBASE_TableRecData01  ! Organizaion
+      character (len=42):: DBASE_TableRecData02  ! Volcano
+      character (len=20):: DBASE_TableRecData03  ! Run date
+      character (len= 5):: DBASE_TableRecData04  ! iwindformat
+      character (len=20):: DBASE_TableRecData05  ! Run class
+      character (len=20):: DBASE_TableRecData06  ! Erup. Start Time
+      character (len=20):: DBASE_TableRecData07  ! Erup. Plume Height
+      character (len=20):: DBASE_TableRecData08  ! Erup. Duration
+      character (len=20):: DBASE_TableRecData09  ! Erup. Vol
+      character (len=80):: DBASE_TableRecData10  ! URL
+      character (len=24):: DBASE_TableRecData11  ! Variable
+      character (len=24):: DBASE_TableRecData12  ! Value of contour level
+      character (len=10):: DBASE_TableRecData13  ! unit for level
+      character (len=10):: DBASE_TableRecData14  ! index
+      character (len=20):: DBASE_TableRecData15  ! Time of data
 
       logical           :: IsThere
       character(len=71) :: zipcom
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter   :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in)  :: HoursSince
+          integer        ,intent(in)  :: byear
+          logical        ,intent(in)  :: useLeaps
         end function HS_xmltime
         subroutine writeShapFileFieldDesArr(ov_dbasID,fldlen,DBASE_FieldName,&
                                             DBASE_FieldTyp,DBASE_FieldLen)
-          integer              ,intent(in) :: ov_dbasID
-          integer              ,intent(in) :: fldlen
-          character(len=fldlen),intent(in) :: DBASE_FieldName
-          character(len=1)     ,intent(in) :: DBASE_FieldTyp
-          integer(kind=1)      ,intent(in) :: DBASE_FieldLen
+          integer               ,intent(in) :: ov_dbasID
+          integer               ,intent(in) :: fldlen
+          character (len=fldlen),intent(in) :: DBASE_FieldName
+          character (len=  1)   ,intent(in) :: DBASE_FieldTyp
+          integer(kind=1)       ,intent(in) :: DBASE_FieldLen
         end subroutine writeShapFileFieldDesArr
       END INTERFACE
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_ShapeFile_Polyline"
       endif;enddo
 
       if(.not.IsLatLon)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: Currently shapefiles are only tested for lon/lat coordinates."
         endif;enddo
         stop 1
@@ -217,7 +220,7 @@
         ov_fileroot = 'DepAvlTm'
         plot_units = 'hours'
       elseif(iprod.eq.8)then    ! ashfall arrival at airports/POI (mm)
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: No map shapefile output option for airport arrival time data."
         endif;enddo
         stop 1
@@ -257,12 +260,12 @@
         ov_fileroot = 'Topogrph'
         plot_units = 'km'
       elseif(iprod.eq.16)then   ! profile plots
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: No map shapefile output option for vertical profile data."
         endif;enddo
         stop 1
       else
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: unexpected variable"
         endif;enddo
         stop 1
@@ -285,10 +288,10 @@
       allocate(NumParts(nrec))
       allocate(NumPoints(nrec))
       allocate(reclen(nrec))
-      allocate(xmin(nrec)); xmin(:) =  1.0e8_8
-      allocate(xmax(nrec)); xmax(:) = -1.0e8_8
-      allocate(ymin(nrec)); ymin(:) =  1.0e8_8
-      allocate(ymax(nrec)); ymax(:) = -1.0e8_8
+      allocate(xmin(nrec)); xmin(:) =  1.0e8_dp
+      allocate(xmax(nrec)); xmax(:) = -1.0e8_dp
+      allocate(ymin(nrec)); ymin(:) =  1.0e8_dp
+      allocate(ymax(nrec)); ymax(:) = -1.0e8_dp
 
       do irec = 1,nrec  ! This is the loop over the layers (records)
         ilev = rec2lev(irec)
@@ -327,10 +330,10 @@
                        NumPoints(irec)*2*8  ! Points     : 2-Double          : Little
         reclen(irec) = reclen(irec) / 2     ! total record length in 16-bit words
       enddo
-      zmin = 0.0_8
-      zmax = 0.0_8
-      mmin = 0.0_8
-      mmax = 0.0_8
+      zmin = 0.0_dp
+      zmax = 0.0_dp
+      mmin = 0.0_dp
+      mmax = 0.0_dp
 
       ! Note: all data in shapefiles are either
       !        integer : Signed 32-bit integer (4 bytes)
@@ -341,7 +344,7 @@
       ov_projfile = trim(adjustl(ov_fileroot)) // ov_projext
       ov_zipfile  = trim(adjustl(ov_fileroot)) // ov_zipext
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Writing shapefile"
       endif;enddo
 
@@ -358,8 +361,8 @@
       open(unit=ov_indxID, file=trim(adjustl(ov_indxfile)), access='stream', form='unformatted', status='replace')
 
       ! File header is 100 bytes
-      file_code = 9994_4
-      tmp4      = 0_4
+      file_code = 9994_int32
+      tmp4      = 0_int32
       ! shp file
       write(ov_mainID)BigEnd_4int(IsLitEnd,file_code)   !  1-  4 : FH Byte 0 File Code 9994 Integer Big
       write(ov_mainID)BigEnd_4int(IsLitEnd,tmp4)        !  5-  8 : FH Byte 4 Unused 0 Integer Big
@@ -376,7 +379,7 @@
       write(ov_indxID)BigEnd_4int(IsLitEnd,tmp4)
 
       if(debugmode)then
-        do io=1,2;if(VB(io).le.verbosity_debug1)then
+        do io=1,2;if(VB(io) <= verbosity_debug1)then
           write(outlog(io),*)file_code,   " 1-  4 : FH Byte 0 File Code 9994 Integer Big"
           write(outlog(io),*)tmp4,        " 5-  8 : FH Byte 4 Unused 0 Integer Big"
           write(outlog(io),*)tmp4,        " 9- 12 : FH Byte 8 Unused 0 Integer Big"
@@ -389,11 +392,11 @@
       !              -- File Header length
       !              |     -- Record header length for all records
       !              |     |        -- Sum of all length of polyline record contents
-      !              |     |        |    
+      !              |     |        |
       file_length = 50 + (4*nrec) + sum(reclen(1:nrec))  ! total file length in 16-bit words
       write(ov_mainID)BigEnd_4int(IsLitEnd,file_length)          ! 25-28 : FH Byte 24 File Length Integer Big
       if(debugmode)then
-        do io=1,2;if(VB(io).le.verbosity_debug1)then
+        do io=1,2;if(VB(io) <= verbosity_debug1)then
           write(outlog(io),*)file_length,"25-28 : FH Byte 24 File Length Integer Big"
         endif;enddo
       endif
@@ -405,7 +408,7 @@
       version = 1000
       write(ov_mainID)LitEnd_4int(IsLitEnd,version)             ! 29-32 : FH Byte 28 Version 1000 Integer Little
       if(debugmode)then
-        do io=1,2;if(VB(io).le.verbosity_debug1)then
+        do io=1,2;if(VB(io) <= verbosity_debug1)then
           write(outlog(io),*)version,"29-32 : FH Byte 28 Version 1000 Integer Little"
         endif;enddo
       endif
@@ -413,7 +416,7 @@
       shape_type = 3
       write(ov_mainID)LitEnd_4int(IsLitEnd,shape_type)          ! 33-36 : FH Shape Type Integer Little
       if(debugmode)then
-        do io=1,2;if(VB(io).le.verbosity_debug1)then
+        do io=1,2;if(VB(io) <= verbosity_debug1)then
           write(outlog(io),*)shape_type,"33-36 : FH Shape Type Integer Little"
         endif;enddo
       endif
@@ -429,7 +432,7 @@
       write(ov_indxID)LitEnd_8real(IsLitEnd,maxval(xmax(1:nrec)))
       write(ov_indxID)LitEnd_8real(IsLitEnd,maxval(ymax(1:nrec)))
       if(debugmode)then
-        do io=1,2;if(VB(io).le.verbosity_debug1)then
+        do io=1,2;if(VB(io) <= verbosity_debug1)then
           write(outlog(io),*)minval(xmin(1:nrec)),"37- 44 : FH Bounding Box Xmin Double Little"
           write(outlog(io),*)minval(ymin(1:nrec)),"45- 52 : FH Bounding Box Ymin Double Little"
           write(outlog(io),*)maxval(xmax(1:nrec)),"53- 60 : FH Bounding Box Xmax Double Little"
@@ -447,7 +450,7 @@
       write(ov_indxID)LitEnd_8real(IsLitEnd,mmax)
 
       if(debugmode)then
-        do io=1,2;if(VB(io).le.verbosity_debug1)then
+        do io=1,2;if(VB(io) <= verbosity_debug1)then
           write(outlog(io),*)zmin,"69- 76 : FH Bounding Box Zmin Double Little"
           write(outlog(io),*)zmax,"77- 84 : FH Bounding Box Zmax Double Little"
           write(outlog(io),*)mmin,"85- 92 : FH Bounding Box Mmin Double Little"
@@ -465,13 +468,13 @@
         !   Note: content length is the number of 16-bit words
         write(ov_mainID)BigEnd_4int(IsLitEnd,irec)
         if(debugmode)then
-          do io=1,2;if(VB(io).le.verbosity_debug1)then
+          do io=1,2;if(VB(io) <= verbosity_debug1)then
             write(outlog(io),*)irec,"Byte 0 Record Number Record Number Integer Big"
           endif;enddo
         endif
         write(ov_mainID)BigEnd_4int(IsLitEnd,reclen(irec))
         if(debugmode)then
-          do io=1,2;if(VB(io).le.verbosity_debug1)then
+          do io=1,2;if(VB(io) <= verbosity_debug1)then
             write(outlog(io),*)reclen(irec),"Byte 4 Content Length Content Length Integer Big"
           endif;enddo
         endif
@@ -492,7 +495,7 @@
         write(ov_mainID)LitEnd_4int(IsLitEnd,NumPoints(irec))
 
         if(debugmode)then
-          do io=1,2;if(VB(io).le.verbosity_debug1)then
+          do io=1,2;if(VB(io) <= verbosity_debug1)then
             write(outlog(io),*)shape_type,"Byte 0 Shape Type 3 Integer 1 Little"
             write(outlog(io),*)xmin(irec),"Byte 4 xmin Double Little"
             write(outlog(io),*)ymin(irec),"Byte 12 ymin Double Little"
@@ -503,7 +506,7 @@
           endif;enddo
         endif
         ! Address of the start of the first part is 0
-        write(ov_mainID)LitEnd_4int(IsLitEnd,0_4) ! An array of length NumParts with each value
+        write(ov_mainID)LitEnd_4int(IsLitEnd,0_int32) ! An array of length NumParts with each value
                                                   ! the address (zero-offset) of the start of the part
         ilev = rec2lev(irec)
         do i=1,NumParts(irec)-1
@@ -513,8 +516,8 @@
 
         do ipart=1,ContourDataNcurves(ilev)
           do i=1,ContourDataNpoints(ilev,ipart)
-            write(ov_mainID)LitEnd_8real(IsLitEnd,real(ContourDataX(ilev,ipart,i),kind=8))
-            write(ov_mainID)LitEnd_8real(IsLitEnd,real(ContourDataY(ilev,ipart,i),kind=8))
+            write(ov_mainID)LitEnd_8real(IsLitEnd,real(ContourDataX(ilev,ipart,i),kind=dp))
+            write(ov_mainID)LitEnd_8real(IsLitEnd,real(ContourDataY(ilev,ipart,i),kind=dp))
           enddo ! points in part
         enddo ! ipart
 
@@ -545,7 +548,7 @@
       ! Populate each of the TableRecData fields with dummy values so we can get lengths to put
       ! in the header
       if(neruptions.gt.1)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"Multiple eruptions given in netcdf file."
           write(outlog(io),*)"Only writing first eruption to shapefile attributes."
         endif;enddo
@@ -577,9 +580,9 @@
       DBASE_dd   = 26
 
       DBASE_nrec      = nrec
-      DBASE_headlen   = int(32,kind=2) +     &   ! Table File Header length
-                        int(nattr*32,kind=2) &   ! length of field descriptor (attributes)
-                        + int(1,kind=2)
+      DBASE_headlen   = int(32,kind=int16) +        &   ! Table File Header length
+                        int(nattr*32,kind=int16)    &   ! length of field descriptor (attributes)
+                        + int(1,kind=int16)
       DBASE_reclen    = len(DBASE_TableRecData01) + &
                         len(DBASE_TableRecData02) + &
                         len(DBASE_TableRecData03) + &
@@ -595,7 +598,7 @@
                         len(DBASE_TableRecData13) + &
                         len(DBASE_TableRecData14) + &
                         len(DBASE_TableRecData15) &
-                        + int(1,kind=2)
+                        + int(1,kind=int16)
       DBASE_transflag = 0
       DBASE_cryptflag = 0
       DBASE_mdxflag   = 0
@@ -605,13 +608,13 @@
 
       ! 0   :1 byte   : version number
       write(ov_dbasID)DBASE_v
-      ! 1-3 :3 bytes  : Date of last update; in YYMMDD format. 
+      ! 1-3 :3 bytes  : Date of last update; in YYMMDD format.
       write(ov_dbasID)DBASE_yy
       write(ov_dbasID)DBASE_mm
       write(ov_dbasID)DBASE_dd
-      !4-7  : 4 bytes : Number of records in the table. 
+      !4-7  : 4 bytes : Number of records in the table.
       write(ov_dbasID)LitEnd_4int(IsLitEnd,DBASE_nrec)
-      !8-9  : 2 bytes : Number of bytes in the header. 
+      !8-9  : 2 bytes : Number of bytes in the header.
       write(ov_dbasID)LitEnd_2int(IsLitEnd,DBASE_headlen)
       !10-11: 2 bytes : Number of bytes in the record.
       write(ov_dbasID)LitEnd_2int(IsLitEnd,DBASE_reclen)
@@ -816,7 +819,7 @@
                  'UNIT["Meter",1.0]]')
           close(ov_projID)
         case(4)
-          ! Lambert conformal conic 
+          ! Lambert conformal conic
           open(unit=ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
           write(ov_projID,504)A3d_lam0,A3d_phi1,A3d_phi2,A3d_phi0
 504       format('PROJECTION["Lambert_Conformal_Conic"],',      &
@@ -884,7 +887,7 @@
       if(allocated(ContourDataY))       deallocate(ContourDataY)
 #endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine write_ShapeFile_Polyline"
       endif;enddo
 
@@ -911,29 +914,34 @@
       subroutine writeShapFileFieldDesArr(ov_dbasID,fldlen,DBASE_FieldName,&
                                    DBASE_FieldTyp,DBASE_FieldLen)
 
+      use precis_param
+
       use io_units
 
       implicit none
 
       integer,intent(in)               :: ov_dbasID
       integer,intent(in)               :: fldlen
-      character(len=fldlen),intent(in) :: DBASE_FieldName
-      character(len=1),intent(in)      :: DBASE_FieldTyp
-      integer(kind=1),intent(in)       :: DBASE_FieldLen
+      character (len=fldlen),intent(in) :: DBASE_FieldName
+      character (len=  1),intent(in)      :: DBASE_FieldTyp
+      integer(kind=int8),intent(in)       :: DBASE_FieldLen
 
-      integer(kind=1)  :: DBASE_FieldDecCount
-      integer(kind=1)  :: DBASE_FieldSetFieldFlag
-      integer(kind=1)  :: DBASE_FieldWrkArID
-      integer(kind=1)  :: DBASE_zero     = 0
+      integer(kind=int8)  :: DBASE_FieldDecCount
+      integer(kind=int8)  :: DBASE_FieldSetFieldFlag
+      integer(kind=int8)  :: DBASE_FieldWrkArID
+      integer(kind=int8)  :: DBASE_zero
       integer          :: i
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine writeShapFileFieldDesArr"
       endif;enddo
 
+      ! Initialization
+      DBASE_zero = 0
+
       !  Now the fields followed by the field terminator
       !32-n : 32 bytes: Field descriptor array
-      !  0-10  : 11 bytes : Field name in ASCII (zero-filled). 
+      !  0-10  : 11 bytes : Field name in ASCII (zero-filled).
       !DBASE_FieldName ='name'
       !fldlen=len(trim(adjustl(DBASE_FieldName)))
       write(ov_dbasID)trim(adjustl(DBASE_FieldName))
@@ -943,24 +951,24 @@
       !  11    : 1 byte   : Field type in ASCII (C, D, L, M, or N).
       !DBASE_FieldTyp = 'C'
       write(ov_dbasID)DBASE_FieldTyp
-      ! 12-15 : 4 bytes  : Field data address (address is set in memory; not useful on disk). 
+      ! 12-15 : 4 bytes  : Field data address (address is set in memory; not useful on disk).
       do i=1,4
         write(ov_dbasID)DBASE_zero
       enddo
       ! 16    : 1 byte   : Field length in binary.
       !DBASE_FieldLen=len(DBASE_TableRecData01)   ! Should be 80
       write(ov_dbasID)DBASE_FieldLen
-      ! 17    : 1 byte   : Field decimal count in binary. 
+      ! 17    : 1 byte   : Field decimal count in binary.
       DBASE_FieldDecCount = 0
       write(ov_dbasID)DBASE_FieldDecCount
-      ! 18-19 : 2 bytes  : Reserved for dBASE III PLUS on a LAN. 
+      ! 18-19 : 2 bytes  : Reserved for dBASE III PLUS on a LAN.
       do i=1,2
         write(ov_dbasID)DBASE_zero
       enddo
       ! 20    : 1 byte   : Work area ID.
       DBASE_FieldWrkArID = 0
       write(ov_dbasID)DBASE_FieldWrkArID
-      ! 21-22 : 2 bytes  : Reserved for dBASE III PLUS on a LAN. 
+      ! 21-22 : 2 bytes  : Reserved for dBASE III PLUS on a LAN.
       do i=1,2
         write(ov_dbasID)DBASE_zero
       enddo
@@ -972,7 +980,7 @@
         write(ov_dbasID)DBASE_zero
       enddo
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine writeShapFileFieldDesArr"
       endif;enddo
 

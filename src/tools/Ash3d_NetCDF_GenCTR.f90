@@ -92,49 +92,52 @@
       integer          :: nwindfiles
 
       ! Block 4 variables
-      integer          :: iostatus
-      character(len=50):: iomessage
-      character(len=3) :: answer
-      character(len=1) :: WriteDepositFinal_ASCII_c        ! n/y Write out ESRI ASCII file of final deposit thickness?
-      character(len=1) :: WriteDepositFinal_KML_c          ! n/y Write out        KML file of final deposit thickness?
-      character(len=1) :: WriteDepositTS_ASCII_c           ! Write out ESRI ASCII deposit files at specified times?
-      character(len=1) :: WriteDepositTS_KML_c             ! Write out        KML deposit files at specified times?
-      character(len=1) :: WriteCloudConcentration_ASCII_c  ! Write out ESRI ASCII files of ash-cloud concentration?
-      character(len=1) :: WriteCloudConcentration_KML_c    ! Write out        KML files of ash-cloud concentration?
-      character(len=1) :: WriteCloudHeight_ASCII_c         ! Write out ESRI ASCII files of ash-cloud height?
-      character(len=1) :: WriteCloudHeight_KML_c           ! Write out        KML files of ash-cloud height?
-      character(len=1) :: WriteCloudLoad_ASCII_c           ! Write out ESRI ASCII files of ash-cloud load (T/km2) at specified times? 
-      character(len=1) :: WriteCloudLoad_KML_c             ! Write out        KML files of ash-cloud load (T/km2) at specified times?
-      character(len=1) :: WriteDepositTime_ASCII_c         ! Write out ESRI ASCII file of deposit arrival times?
-      character(len=1) :: WriteDepositTime_KML_c           ! Write out        KML file of deposit arrival times?
-      character(len=1) :: WriteCloudTime_ASCII_c           ! Write out ESRI ASCII file of cloud arrival times
-      character(len=1) :: WriteCloudTime_KML_c             ! Write out        KML file of cloud arrival times?
-      character(len=1) :: Write3dFiles_c                   ! Write out 3-D ash concentration at specified times?
-      integer          :: ifm                              ! output code: 1=2d+concen,2=2d only]
-      integer          :: ofm                              ! format of ash concentration files (1=ascii, 2=binary, or 3=netcdf)
-      integer          :: nwt                              ! nWriteTimes
-      logical          :: interval_flag                    ! indicates if nWriteTimes is actually specifying WriteTimes is interval-based
-      real(kind=dp),dimension(:),allocatable :: wts        ! WriteTimes(1:nWriteTimes)
+      integer             :: iostatus
+      character (len= 50) :: iomessage
+      character (len=  3) :: answer
+      character (len=  1) :: WriteDepositFinal_ASCII_c       ! n/y Write out ESRI ASCII file of final deposit thickness?
+      character (len=  1) :: WriteDepositFinal_KML_c         ! n/y Write out        KML file of final deposit thickness?
+      character (len=  1) :: WriteDepositTS_ASCII_c          ! Write out ESRI ASCII deposit files at specified times?
+      character (len=  1) :: WriteDepositTS_KML_c            ! Write out        KML deposit files at specified times?
+      character (len=  1) :: WriteCloudConcentration_ASCII_c ! Write out ESRI ASCII files of ash-cloud concentration?
+      character (len=  1) :: WriteCloudConcentration_KML_c   ! Write out        KML files of ash-cloud concentration?
+      character (len=  1) :: WriteCloudHeight_ASCII_c        ! Write out ESRI ASCII files of ash-cloud height?
+      character (len=  1) :: WriteCloudHeight_KML_c          ! Write out        KML files of ash-cloud height?
+      character (len=  1) :: WriteCloudLoad_ASCII_c          ! Write out ESRI ASCII files of ash-cloud load (T/km2) at spec times?
+      character (len=  1) :: WriteCloudLoad_KML_c            ! Write out        KML files of ash-cloud load (T/km2) at spec times?
+      character (len=  1) :: WriteDepositTime_ASCII_c        ! Write out ESRI ASCII file of deposit arrival times?
+      character (len=  1) :: WriteDepositTime_KML_c          ! Write out        KML file of deposit arrival times?
+      character (len=  1) :: WriteCloudTime_ASCII_c          ! Write out ESRI ASCII file of cloud arrival times
+      character (len=  1) :: WriteCloudTime_KML_c            ! Write out        KML file of cloud arrival times?
+      character (len=  1) :: Write3dFiles_c                  ! Write out 3-D ash concentration at specified times?
+      integer             :: ifm                             ! output code: 1=2d+concen,2=2d only]
+      integer             :: ofm                             ! format of ash concentration files (1=ascii, 2=binary, or 3=netcdf)
+      integer             :: nwt                             ! nWriteTimes
+      logical             :: interval_flag                   ! indicates if nWriteTimes is specifying WriteTimes is interval-based
+      real(kind=dp),dimension(:),allocatable :: wts          ! WriteTimes(1:nWriteTimes)
 
       ! Block 6 variables
-      character(len=1) :: WriteAirportFile_ASCII_c
-      character(len=1) :: WriteGSD_c
-      character(len=1) :: WriteAirportFile_KML_c
-      character(len=1) :: ProjectAirportLocations_c
+      character (len=  1)  :: WriteAirportFile_ASCII_c
+      character (len=  1)  :: WriteGSD_c
+      character (len=  1)  :: WriteAirportFile_KML_c
+      character (len=  1)  :: ProjectAirportLocations_c
 
-      integer           :: iyear
-      integer           :: idx
-      character(len=4)  :: yearstr
-      character(len=50) :: tmpstr
+      integer              :: iyear
+      integer              :: idx
+      character (len=  4)  :: yearstr
+      character (len= 50)  :: tmpstr
 
       integer :: i
-      character(len=130) :: linebuffer130
+      character (len=130) :: linebuffer130
 
       INTERFACE
         integer function HS_YearOfEvent(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter   :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in)  :: HoursSince
+          integer        ,intent(in)  :: byear
+          logical        ,intent(in)  :: useLeaps
         end function HS_YearOfEvent
       END INTERFACE
 
@@ -201,7 +204,7 @@
        write(errlog(io),*)'       Please recompile linking NetCDF libraries.'
      endif;enddo
      stop 1
-#endif  
+#endif
 
       ! Now that we have loaded the data from the NetCDF file, start writing
       ! to a control file
@@ -363,7 +366,7 @@
                                    WriteCloudConcentration_KML_c   ,&  ! B4L6 Write out        KML files of ash-cloud concentration?
                                    WriteCloudHeight_ASCII_c        ,&  ! B4L7 Write out ESRI ASCII files of ash-cloud height?
                                    WriteCloudHeight_KML_c          ,&  ! B4L8 Write out        KML files of ash-cloud height?
-                                   WriteCloudLoad_ASCII_c          ,&  ! B4L9 Write out ESRI ASCII files of ash-cloud load (T/km2) at specified times? 
+                                   WriteCloudLoad_ASCII_c          ,&  ! B4L9 Write out ESRI ASCII files of ash-cloud load (T/km2) at specified times?
                                    WriteCloudLoad_KML_c            ,&  ! B4L10 Write out        KML files of ash-cloud load (T/km2) at specified times?
                                    WriteDepositTime_ASCII_c        ,&  ! B4L11 Write out ESRI ASCII file of deposit arrival times?
                                    WriteDepositTime_KML_c          ,&  ! B4L12 Write out        KML file of deposit arrival times?
@@ -424,15 +427,15 @@
       ! BLOCK 7: GRAIN-SIZE BINS, SETTLING VELOCITY
       call Write_input_block_header(fid_ctrlfile,7)
       call SetWrite_input_block_07(fid_ctrlfile                    ,&  ! output stream ID
-                                   n_gs_max                        ,&  ! number of actual grain-size bins 
-                                   FV_ID                           ,&  !
+                                   n_gs_max                        ,&  ! number of actual grain-size bins
+                                   FV_ID                           ,&
                                    Shape_ID                        ,&
                                    LN_massfrac                     ,&
                                    LN_phi_mean                     ,&
                                    LN_phi_stddev                   ,&
                                    Tephra_gsdiam                   ,&
                                    Tephra_bin_mass                 ,&
-                                   Tephra_v_s                      ,&                   
+                                   Tephra_v_s                      ,&
                                    Tephra_rho_m                    ,&
                                    Tephra_gsF                      ,&
                                    Tephra_gsG                      ,&
@@ -466,7 +469,7 @@
       if(Have_Block_Topo)then
         call Write_input_block_header(fid_ctrlfile,11)
         call SetWrite_input_block_Topo(fid_ctrlfile                  ,&  ! output stream ID
-                                       var_User_charlines_Topo(1)    ,& 
+                                       var_User_charlines_Topo(1)    ,&
                                        var_User_charlines_Topo(2)    ,&
                                        var_User_charlines_Topo(3)    ,&
                                        var_User_charlines_Topo(4))

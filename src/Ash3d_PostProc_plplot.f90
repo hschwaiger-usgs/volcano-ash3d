@@ -181,32 +181,32 @@
       real(kind=plflt), dimension(:,:), allocatable :: var
       real(kind=plflt)  :: tr(6)
       real(kind=plflt)  :: clevel(1)
-      integer(kind=4):: opt
+      integer(kind=int32):: opt
 
       !integer, parameter :: MAX_NLEGEND = 11       ! max number of legend entries
-      !integer(kind=4)    :: opt_array(MAX_NLEGEND)
-      !integer(kind=4)    :: text_colors(MAX_NLEGEND)
-      !integer(kind=4)    :: box_colors(MAX_NLEGEND)
-      !integer(kind=4)    :: box_patterns(MAX_NLEGEND)
+      !integer(kind=int32)    :: opt_array(MAX_NLEGEND)
+      !integer(kind=int32)    :: text_colors(MAX_NLEGEND)
+      !integer(kind=int32)    :: box_colors(MAX_NLEGEND)
+      !integer(kind=int32)    :: box_patterns(MAX_NLEGEND)
       !real(kind=plflt)   :: box_scales(MAX_NLEGEND)
       !real(kind=plflt)   :: box_line_widths(MAX_NLEGEND)
-      !integer(kind=4)    :: line_colors(MAX_NLEGEND)
-      !integer(kind=4)    :: line_styles(MAX_NLEGEND)
+      !integer(kind=int32)    :: line_colors(MAX_NLEGEND)
+      !integer(kind=int32)    :: line_styles(MAX_NLEGEND)
       !real(kind=plflt)   :: line_widths(MAX_NLEGEND)
-      !integer(kind=4)    :: symbol_numbers(MAX_NLEGEND)
-      !integer(kind=4)    :: symbol_colors(MAX_NLEGEND)
+      !integer(kind=int32)    :: symbol_numbers(MAX_NLEGEND)
+      !integer(kind=int32)    :: symbol_colors(MAX_NLEGEND)
       !real(kind=plflt)   :: symbol_scales(MAX_NLEGEND)
       !character(len=200) :: text(MAX_NLEGEND)
       !character(len=3)   :: symbols(MAX_NLEGEND)
 
-      integer(kind=4)   ,dimension(:),allocatable :: opt_array
-      integer(kind=4)   ,dimension(:),allocatable :: text_colors
-      integer(kind=4)   ,dimension(:),allocatable :: box_colors
-      integer(kind=4)   ,dimension(:),allocatable :: box_patterns
-      integer(kind=4)   ,dimension(:),allocatable :: line_colors
-      integer(kind=4)   ,dimension(:),allocatable :: line_styles
-      integer(kind=4)   ,dimension(:),allocatable :: symbol_numbers
-      integer(kind=4)   ,dimension(:),allocatable :: symbol_colors
+      integer(kind=int32)   ,dimension(:),allocatable :: opt_array
+      integer(kind=int32)   ,dimension(:),allocatable :: text_colors
+      integer(kind=int32)   ,dimension(:),allocatable :: box_colors
+      integer(kind=int32)   ,dimension(:),allocatable :: box_patterns
+      integer(kind=int32)   ,dimension(:),allocatable :: line_colors
+      integer(kind=int32)   ,dimension(:),allocatable :: line_styles
+      integer(kind=int32)   ,dimension(:),allocatable :: symbol_numbers
+      integer(kind=int32)   ,dimension(:),allocatable :: symbol_colors
       character(len=200),dimension(:),allocatable :: text
       character(len=3)  ,dimension(:),allocatable :: symbols
       real(kind=plflt)  ,dimension(:),allocatable :: box_scales
@@ -222,9 +222,9 @@
       real(kind=plflt)   :: text_spacing
       real(kind=plflt)   :: text_justification
 
-      integer(kind=4):: nrow, ncolumn
-      integer(kind=4):: bg_color,bb_color,bb_style
-      integer(kind=4):: pos_opt
+      integer(kind=int32):: nrow, ncolumn
+      integer(kind=int32):: bg_color,bb_color,bb_style
+      integer(kind=int32):: pos_opt
 
 !      real(kind=plflt)  :: y_footer
       real(kind=plflt)  :: dy_newline
@@ -232,9 +232,12 @@
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in) :: HoursSince
+          integer        ,intent(in) :: byear
+          logical        ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
 
@@ -578,7 +581,7 @@
       call pladv(0)
         ! plvpor: Specify viewport using normalized subpage coordinates
       call plvpor(0.1_plflt, 0.8_plflt, 0.3_plflt, 0.8_plflt)
-        ! plwind: Specify window 
+        ! plwind: Specify window
       call plwind(xminPL,xmaxPL,yminPL,ymaxPL)
       call plbox('bcnst', 0.0_plflt, 0, 'bcnstv', 0.0_plflt, 0)
 
@@ -591,7 +594,7 @@
         if(lon_cities(icty).lt.xmin) lon_cities(icty)=lon_cities(icty)+360.0_ip
           ! plssym: Set symbol size : default, scale
         call plssym( 0.0_plflt, 2.0_plflt )
-          ! plpoin: Plot a glyph at the specified points 
+          ! plpoin: Plot a glyph at the specified points
         call plpoin(real(lon_cities(icty:icty),kind=plflt),&
                     real(lat_cities(icty:icty),kind=plflt),&
                     17) ! code 17 is a black dot
@@ -608,7 +611,7 @@
       call plschr( 0.0_plflt, 1.0_plflt )
 
       call plssym( 0.0_plflt, 1.0_plflt )
-        ! plpoin: Plot a glyph at the specified points 
+        ! plpoin: Plot a glyph at the specified points
       if(lon_volcano.lt.xmin)then
         lon_cities(1)=lon_volcano+360.0_ip
       else
@@ -707,7 +710,7 @@
           bb_color,    & ! int: bounding box color from cmap0
           bb_style,    & ! int: bounding box line style
           nrow,ncolumn,& ! int: rows and columns of legend
-          opt_array(1:nConLev), & ! int vec: 
+          opt_array(1:nConLev), & ! int vec:
           text_offset, & ! flt: Offset of the text area from the plot
           text_scale,  & ! flt: Character height scale
           text_spacing, &!  flt: Vertical spacing in units of the character height
@@ -723,14 +726,14 @@
           line_widths(1:nConLev),                 &
           symbol_colors(1:nConLev), &
           symbol_scales(1:nConLev), &
-          symbol_numbers(1:nConLev),& 
+          symbol_numbers(1:nConLev),&
           symbols  )
 
       ! Now add the annotation box
         ! First the title of the legend
         ! plvpor: Specify viewport using normalized subpage coordinates
       call plvpor(0.8_plflt, 1.0_plflt, 0.7_plflt, 0.8_plflt)
-        ! plwind: Specify window 
+        ! plwind: Specify window
       call plwind(0.0_plflt, 1.0_plflt, 0.0_plflt, 1.0_plflt )
       call plschr( 0.0_plflt, 0.8_plflt )
       call plptex(0.1_plflt, 0.5_plflt, & ! x,y
@@ -742,7 +745,7 @@
       call pladv(1)
         ! plvpor: Specify viewport using normalized subpage coordinates
       call plvpor(0.05_plflt, 0.35_plflt, 0.05_plflt, 0.2_plflt)
-        ! plwind: Specify window 
+        ! plwind: Specify window
       call plwind(0.0_plflt, 1.0_plflt, 0.0_plflt, 1.0_plflt )
         ! plbox: Draw a box with axes, etc
         !       (xopt, xtick, nxsub, yopt, ytick, nysub)
@@ -763,7 +766,7 @@
       !call pladv(2)
         ! plvpor: Specify viewport using normalized subpage coordinates
       call plvpor(0.4_plflt, 0.75_plflt, 0.05_plflt, 0.2_plflt)
-        ! plwind: Specify window 
+        ! plwind: Specify window
       call plwind(0.0_plflt, 1.0_plflt, 0.0_plflt, 1.0_plflt )
         ! plbox: Draw a box with axes, etc
         !       (xopt, xtick, nxsub, yopt, ytick, nysub)
@@ -908,9 +911,12 @@
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in) :: HoursSince
+          integer        ,intent(in) :: byear
+          logical        ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
 
@@ -1046,7 +1052,7 @@
 
       ! Here we hard-wire the color levels to the same as the kml plot
       !shedge(:) = (/ 0.0_plflt,  0.1_plflt,   0.3_plflt,   1.0_plflt, 2.0_plflt, &
-      !              10.0_plflt, 30.0_plflt, 100.0_plflt, 300.0_plflt, & 
+      !              10.0_plflt, 30.0_plflt, 100.0_plflt, 300.0_plflt, &
       !              1000.0_plflt, 3000.0_plflt, 10000.0_plflt /)
       fill_width = 2
       cont_color = 0
@@ -1094,7 +1100,7 @@
       call pladv(0)
         ! plvpor: Specify viewport using normalized subpage coordinates
       call plvpor(0.12_plflt, 0.75_plflt, 0.3_plflt, 0.8_plflt)
-        ! plwind: Specify window 
+        ! plwind: Specify window
       call plwind(tmin,tmax,zmin,zmax)
         ! plpsty: Select area fill pattern (0 is for solid)
       call plpsty(0)
@@ -1136,8 +1142,8 @@
             0, &                                               ! sets position
             0.015_plflt, 0.1_plflt, 0.0375_plflt, 0.8_plflt, &  ! x,y, dimesions
             0, 1, 1, &                                         ! bg_color,bb_color,bb_style
-            0.0_plflt, shedge(CONTOUR_MAXCURVES+1), & ! low/high 
-!            0.0_plflt, shedge(NLEVEL+1), & ! low/high 
+            0.0_plflt, shedge(CONTOUR_MAXCURVES+1), & ! low/high
+!            0.0_plflt, shedge(NLEVEL+1), & ! low/high
             cont_color, cont_width, &
             label_opts, labels, &
             axis_opts, &
@@ -1152,7 +1158,7 @@
       call pladv(1)
         ! plvpor: Specify viewport using normalized subpage coordinates
       call plvpor(0.05_plflt, 0.35_plflt, 0.05_plflt, 0.2_plflt)
-        ! plwind: Specify window 
+        ! plwind: Specify window
       call plwind(0.0_plflt, 1.0_plflt, 0.0_plflt, 1.0_plflt )
         ! plbox: Draw a box with axes, etc
         !       (xopt, xtick, nxsub, yopt, ytick, nysub)
@@ -1173,7 +1179,7 @@
       call pladv(1)
         ! plvpor: Specify viewport using normalized subpage coordinates
       call plvpor(0.4_plflt, 0.75_plflt, 0.05_plflt, 0.2_plflt)
-        ! plwind: Specify window 
+        ! plwind: Specify window
       call plwind(0.0_plflt, 1.0_plflt, 0.0_plflt, 1.0_plflt )
         ! plbox: Draw a box with axes, etc
         !       (xopt, xtick, nxsub, yopt, ytick, nysub)
@@ -1192,7 +1198,7 @@
       if(allocated(z))      deallocate(z)
       if(allocated(conc))   deallocate(conc)
       if(allocated(shedge)) deallocate(shedge)
- 
+
      do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine write_2Dprof_PNG_plplot"
       endif;enddo
@@ -1238,17 +1244,17 @@
       real(kind=plflt) :: ymin
       real(kind=plflt) :: ymax
       real(kind=plflt), dimension(:), allocatable :: x, y, x0, y0
-      integer(kind=4) :: r1 = 0
-      integer(kind=4) :: g1 = 0
-      integer(kind=4) :: b1 = 0
-      integer(kind=4) :: r2 = 136
-      integer(kind=4) :: g2 = 136
-      integer(kind=4) :: b2 = 136
+      integer(kind=int32) :: r1 = 0
+      integer(kind=int32) :: g1 = 0
+      integer(kind=int32) :: b1 = 0
+      integer(kind=int32) :: r2 = 136
+      integer(kind=int32) :: g2 = 136
+      integer(kind=int32) :: b2 = 136
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_DepPOI_TS_PNG_plplot"
       endif;enddo
-      
+
       if(Airport_Thickness_TS(pt_indx,nWriteTimes).lt.0.01_ip)then
         return
       else

@@ -19,36 +19,37 @@
           read_2D_ASCII
 
       implicit none
+      !implicit none (type, external)
 
-      real(kind=8), parameter :: DEG2RAD   = 1.74532925e-2
-      real(kind=8), parameter :: Re        = 6371.229
+      real(kind=dp), parameter :: DEG2RAD   = 1.74532925e-2_dp
+      real(kind=dp), parameter :: Re        = 6371.229_dp
 
       integer           :: nargs
       integer           :: stat
-      character(len=80) :: linebuffer080
+      character (len= 80) :: linebuffer080
 
-      character(len=80) :: file1
+      character (len= 80) :: file1
       logical :: IsThere1
 
       integer :: nx_1
       integer :: ny_1
-      real(kind=8) :: xll_1
-      real(kind=8) :: yll_1
-      real(kind=8) :: dx_1
-      real(kind=8) :: dy_1
-      real(kind=8),dimension(:),allocatable :: lon_1
-      real(kind=8),dimension(:),allocatable :: lat_1
-      real(kind=8),dimension(:,:),allocatable :: XY_1
+      real(kind=dp) :: xll_1
+      real(kind=dp) :: yll_1
+      real(kind=dp) :: dx_1
+      real(kind=dp) :: dy_1
+      real(kind=dp),dimension(:),allocatable :: lon_1
+      real(kind=dp),dimension(:),allocatable :: lat_1
+      real(kind=dp),dimension(:,:),allocatable :: XY_1
       integer :: i,j,ii
 
-      real(kind=8) :: srcx,srcy
-      real(kind=8) :: lon1,lat1     ! Input coords in rad for point 1
-      real(kind=8) :: dlon,dlat
-      real(kind=8) :: Rng,Rngmax
-      real(kind=8) :: a,c
-      real(kind=8) :: dx,dy,dxbin
-      real(kind=8),dimension(:),allocatable :: Rngvec
-      real(kind=8),dimension(:),allocatable :: Thickvec
+      real(kind=dp) :: srcx,srcy
+      real(kind=dp) :: lon1,lat1     ! Input coords in rad for point 1
+      real(kind=dp) :: dlon,dlat
+      real(kind=dp) :: Rng,Rngmax
+      real(kind=dp) :: a,c
+      real(kind=dp) :: dx,dy,dxbin
+      real(kind=dp),dimension(:),allocatable :: Rngvec
+      real(kind=dp),dimension(:),allocatable :: Thickvec
 
       character(len=25) :: gnucom
 
@@ -142,15 +143,15 @@
       allocate(lat_1(ny_1))
       allocate(XY_1(nx_1,ny_1))
       do i=1,nx_1
-        lon_1(i) = xll_1 + 0.5_8*dx_1 + (i-1)*dx_1
+        lon_1(i) = xll_1 + 0.5_dp*dx_1 + (i-1)*dx_1
       enddo
       do j=1,ny_1
-        lat_1(j) = yll_1 + 0.5_8*dy_1 + (j-1)*dy_1
+        lat_1(j) = yll_1 + 0.5_dp*dy_1 + (j-1)*dy_1
       enddo
       ! zero out any NaN so that it doesn't throw off the error
       do i=1,nx_1
         do j=1,ny_1
-          if(abs(A_XY(i,j)-A_Fill).lt.0.01_8)A_XY(i,j)=0.0_8
+          if(abs(A_XY(i,j)-A_Fill).lt.0.01_dp)A_XY(i,j)=0.0_dp
         enddo
       enddo
       XY_1  = A_XY
@@ -159,26 +160,26 @@
       ! get dx,dy in km
       dx = Re*dx_1*DEG2RAD*cos(DEG2RAD*minval(abs(lat_1(:))))
       dy = Re*dy_1*DEG2RAD
-      dxbin = ceiling(max(dx,dy)*1.4_8)
+      dxbin = ceiling(max(dx,dy)*1.4_dp)
 
       allocate(Rngvec(nx_1+ny_1))
       allocate(Thickvec(nx_1+ny_1))
       do i=1,nx_1+ny_1
         Rngvec(i) = i*dxbin
       enddo
-      Thickvec(:) = 0.0_8
+      Thickvec(:) = 0.0_dp
 
-      Rngmax=0.0_8
+      Rngmax=0.0_dp
       do i=1,nx_1
         do j=1,ny_1
-          if (XY_1(i,j).gt.1.0e-3_8)then
+          if (XY_1(i,j).gt.1.0e-3_dp)then
             lon1 = DEG2RAD * lon_1(i)
             lat1 = DEG2RAD * lat_1(j)
             dlon = srcx - lon1
             dlat = srcy - lat1
             ! Use Haversine formula
-            a = sin(0.5_8*dlat)**2.0_8 + cos(lat1)*cos(srcy)*sin(0.5_8*dlon)**2.0_8
-            c = 2.0_8*atan2(sqrt(a),sqrt(1.0_8-a))
+            a = sin(0.5_dp*dlat)**2.0_dp + cos(lat1)*cos(srcy)*sin(0.5_dp*dlon)**2.0_dp
+            c = 2.0_dp*atan2(sqrt(a),sqrt(1.0_dp-a))
             Rng = Re * c
             if(Rng.gt.Rngmax)Rngmax=Rng
             ii=ceiling(Rng/dxbin)
@@ -192,7 +193,7 @@
       open(fid_outdata,file="Tvd.dat",status='replace')
       do i=1,nx_1+ny_1
         if(Rngvec(i).gt.Rngmax)exit
-        write(fid_outdata,*)Rngvec(i)-0.5_8*dxbin,Thickvec(i)
+        write(fid_outdata,*)Rngvec(i)-0.5_dp*dxbin,Thickvec(i)
       enddo
       close(fid_outdata)
 

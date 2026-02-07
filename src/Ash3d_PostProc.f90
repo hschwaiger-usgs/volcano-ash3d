@@ -9,15 +9,15 @@
 !  output file using this program.  Additionally, this program can create kml,
 !  ASCII, binary, shapefiles or contour maps (in png format) for many 2d variables
 !  not available as options while running Ash3d.
-!  
+!
 !  If no command-line arguments are provided, the program will run interactivley,
 !  prompting the user for the name of the netcdf file to process, followed by
 !  the output variable to process, the output format and the time step (if processing
 !  a transient variable).
-!  
+!
 !  If one command-line argument is provided, it is assumed to be a control file
 !  that defines the input type and output products.  This allows the greatest flexibility.
-!  
+!
 !  If more than one command-line argument is given, this program expects the following:
 !    ./Ash3d_PostProc Ash3d_output.nc output_product_ID format_code [time_step]
 !  where output_product_ID is one of:
@@ -51,10 +51,10 @@
 !  and time_step can optionally be provided for transient variables with -1 denoting
 !  the final time data.  For data products that require contours (shape files or
 !  contour plots), contour levels are defined in the module Output_Vars.
-!  
+!
 !  For example, to produce a contour map of ash-cloud arrival time:
 !   ./Ash3d_PostProc Ash3d_output.nc 14 3
-!  
+!
 !  To produce a shapefile for deposit thickness (in mm) at the second time step:
 !   ./Ash3d_PostProc Ash3d_output.nc 3 5 2
 !
@@ -196,7 +196,7 @@
         !  6 = python/cartopy
       integer, parameter  :: Nplot_libs = 6
       logical,dimension(Nplot_libs) :: plotlib_avail
-                                                     !   -- First preference code 
+                                                     !   -- First preference code
                                                      !   | - Second
                                                      !   | | - Third
                                                      !   | | | - Fourth
@@ -228,14 +228,20 @@
           integer,intent(in) :: itime
         end subroutine write_ShapeFile_Polyline
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
-          real(kind=8)               ::  HoursSince
-          integer                    ::  byear
-          logical                    ::  useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in) ::  HoursSince
+          integer        ,intent(in) ::  byear
+          logical        ,intent(in) ::  useLeaps
         end function HS_yyyymmddhh_since
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8)              :: HoursSince
-          integer                   :: byear
-          logical                   :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in) :: HoursSince
+          integer        ,intent(in) :: byear
+          logical        ,intent(in) :: useLeaps
         end function HS_xmltime
         subroutine dealloc_arrays
         end subroutine dealloc_arrays
@@ -493,7 +499,7 @@
             write(outlog(io),*)"                  cartopy is needed for mapping"
           endif;enddo
         else
-          do io=1,2;if(VB(io).le.verbosity_info)then   
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"Error: Something is wrong with the python executable."
             write(outlog(io),*)"       python is returing an error code",iostatus
             write(outlog(io),*)"       execute_command_line command status = ",cstat
@@ -571,7 +577,7 @@
 !100
       if (nargs.eq.0) then
           ! If no command-line arguments are given, then prompt user
-          ! interactively for the command file name and possible a 
+          ! interactively for the command file name and possible a
           ! restart file
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)'No command-line arguments detected'
@@ -679,7 +685,7 @@
 #ifdef USENETCDF
         !call NC_Read_Output_Products(-1)
         call NC_Read_Output_Products(1)
-#endif  
+#endif
         VB(1)   = tmp_int
 
         do io=1,2;if(VB(io).le.verbosity_info)then
@@ -921,28 +927,28 @@
           TS_flag = 1      ! 1 = time series
           height_flag = 1  ! All the cells should be at cloud height
         elseif(iprod.eq.11)then
-          do io=1,2;if(VB(io).le.verbosity_info)then          
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)'output variable =11 ash-cloud bottom (km)'
           endif;enddo
           ivar = 3
           TS_flag = 1      ! 1 = time series
           height_flag = 1  ! All the cells should be at cloud height
         elseif(iprod.eq.12)then
-          do io=1,2;if(VB(io).le.verbosity_info)then          
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)'output variable =12 ash-cloud load (T/km2)'
           endif;enddo
           ivar = 4
           TS_flag = 1      ! 1 = time series
           height_flag = 1  ! All the cells should be at cloud height
         elseif(iprod.eq.13)then
-          do io=1,2;if(VB(io).le.verbosity_info)then          
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)'output variable =13 ash-cloud radar reflectivity (dBz)'
           endif;enddo
           ivar = 6
           TS_flag = 1      ! 1 = time series
           height_flag = 1  ! All the cells should be at cloud height
         elseif(iprod.eq.14)then
-          do io=1,2;if(VB(io).le.verbosity_info)then          
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)'output variable =14 ash-cloud arrival time (hours)'
           endif;enddo
           ivar = 5
@@ -958,7 +964,7 @@
           TS_flag = 0      ! 1 = not a time series
           height_flag = 0  ! All the cells should be pinned to z=0
         elseif(iprod.eq.16)then
-          do io=1,2;if(VB(io).le.verbosity_info)then          
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)'output variable =16 vertical concentration profile'
           endif;enddo
         endif
@@ -1436,7 +1442,7 @@
           endif
           call Write_2D_KML(ivar,OutVar,height_flag,TS_flag)
           call Close_KML(ivar,TS_flag)
-          do io=1,2;if(VB(io).le.verbosity_info)then          
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"Zipping KML file."
           endif;enddo
           write(comd,*)"zip ",trim(adjustl(KMZ_filename(ivar))),' ',&
@@ -1626,7 +1632,7 @@
         ! First check for the special cases
         if(iprod.eq.8)then
           ! Point data
-          do io=1,2;if(VB(io).le.verbosity_info)then          
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"Calling Write_PointData_Airports_ASCII"
           endif;enddo
           call Write_PointData_Airports_ASCII
@@ -1664,7 +1670,7 @@
       elseif(outformat.eq.3)then ! image/png
         if(iprod.eq.8)then
           ! Point data
-          do io=1,2;if(VB(io).le.verbosity_info)then          
+          do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"No PNG output for point data output"
           endif;enddo
         elseif(iprod.eq.16)then

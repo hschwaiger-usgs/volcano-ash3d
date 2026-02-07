@@ -109,7 +109,7 @@
       character(len=50)  :: filename_out
       integer            :: iostatus
       character(len=120) :: iomessage
-      character(len= 50) :: linebuffer050 
+      character(len= 50) :: linebuffer050
       character(len= 80) :: linebuffer080
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
@@ -198,7 +198,7 @@
       integer            :: i,j
       integer            :: iostatus
       character(len=120) :: iomessage
-      character(len= 50) :: linebuffer050 
+      character(len= 50) :: linebuffer050
       character(len= 80) :: linebuffer080
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
@@ -301,17 +301,17 @@
 
       subroutine read_3D_Binary(nx,ny,nz,filename)
 
-      integer          ,intent(in)  :: nx
-      integer          ,intent(in)  :: ny
-      integer          ,intent(in)  :: nz
-      character(len=80),intent(in)  :: filename
+      integer            ,intent(in)  :: nx
+      integer            ,intent(in)  :: ny
+      integer            ,intent(in)  :: nz
+      character (len= 80),intent(in)  :: filename
 
-      real(kind=op)      :: OVar3d(nx,ny,nz)
-      integer            :: i,j,k
-      integer            :: iostatus
-      character(len=120) :: iomessage
-      character(len= 50) :: linebuffer050 
-      character(len= 80) :: linebuffer080
+      real(kind=op)       :: OVar3d(nx,ny,nz)
+      integer             :: i,j,k
+      integer             :: iostatus
+      character (len=120) :: iomessage
+      character (len= 50) :: linebuffer050
+      character (len= 80) :: linebuffer080
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine read_3D_Binary"
@@ -361,15 +361,23 @@
 
       function BigEnd_2int(isLit,r)
 
+      use, intrinsic :: iso_fortran_env, only : &
+         int16
+
       implicit none
+      !implicit none (type, external)
 
-      integer(kind=2) :: BigEnd_2int
-      logical         :: isLit
-      integer(kind=2) :: r
+        ! These single and double precision parameters should be 4 and 8
+      !integer, parameter :: sp = real32  ! selected_real_kind( 6,   37) ! single precision
+      !integer, parameter :: dp = real64  ! selected_real_kind(15,  307) ! double precision
 
-      integer(kind=2) :: s  = 0
-      integer(kind=2) :: t  = 0
-      integer         :: bl = 8  ! bit length of the move
+      integer(kind=int16) :: BigEnd_2int
+      logical             :: isLit
+      integer(kind=int16) :: r
+
+      integer(kind=int16) :: s  = 0
+      integer(kind=int16) :: t  = 0
+      integer             :: bl = 8  ! bit length of the move
 
       ! Older compilers accepted this equivalence approach, but some newer ones
       ! complained.  The transfer->mvbits->transfer approach seems more accepted,
@@ -422,15 +430,24 @@
 
       function BigEnd_4int(isLit,r)
 
+      use, intrinsic :: iso_fortran_env, only : &
+         int32
+
       implicit none
+      !implicit none (type, external)
 
-      integer(kind=4) :: BigEnd_4int
-      logical         :: isLit
-      integer(kind=4) :: r
+        ! These single and double precision parameters should be 4 and 8
+      !integer, parameter :: sp = real32  ! selected_real_kind( 6,   37) ! single precision
+      !integer, parameter :: dp = real64  ! selected_real_kind(15,  307) ! double precision
 
-      integer(kind=4) :: s  = 0
-      integer(kind=4) :: t  = 0
-      integer         :: bl = 8  ! bit length of the move
+
+      integer(kind=int32) :: BigEnd_4int
+      logical             :: isLit
+      integer(kind=int32) :: r
+
+      integer(kind=int32) :: s  = 0
+      integer(kind=int32) :: t  = 0
+      integer             :: bl = 8  ! bit length of the move
 
       ! Older compilers accepted this equivalence approach, but some newer ones
       ! complained.  The transfer->mvbits->transfer approach seems more accepted,
@@ -487,15 +504,23 @@
 
       function LitEnd_2int(isLit,r)
 
+      use, intrinsic :: iso_fortran_env, only : &
+         int16
+
       implicit none
+      !implicit none (type, external)
 
-      integer(kind=2) :: LitEnd_2int
-      logical         :: isLit
-      integer(kind=2) :: r
+        ! These single and double precision parameters should be 4 and 8
+      !integer, parameter :: sp = real32  ! selected_real_kind( 6,   37) ! single precision
+      !integer, parameter :: dp = real64  ! selected_real_kind(15,  307) ! double precision
 
-      integer(kind=2) :: s  = 0
-      integer(kind=2) :: t  = 0
-      integer         :: bl = 8  ! bit length of the move
+      integer(kind=int16) :: LitEnd_2int
+      logical             :: isLit
+      integer(kind=int16) :: r
+
+      integer(kind=int16) :: s  = 0
+      integer(kind=int16) :: t  = 0
+      integer             :: bl = 8  ! bit length of the move
 
       ! Older compilers accepted this equivalence approach, but some newer ones
       ! complained.  The transfer->mvbits->transfer approach seems more accepted,
@@ -548,15 +573,24 @@
 
       function LitEnd_4int(isLit,r)
 
+      use, intrinsic :: iso_fortran_env, only : &
+         int32
+
       implicit none
+      !implicit none (type, external)
 
-      integer(kind=4) :: LitEnd_4int
-      logical         :: isLit
-      integer(kind=4) :: r
+        ! These single and double precision parameters should be 4 and 8
+      !integer, parameter :: sp = real32  ! selected_real_kind( 6,   37) ! single precision
+      !integer, parameter :: dp = real64  ! selected_real_kind(15,  307) ! double precision
 
-      integer(kind=4) :: s  = 0
-      integer(kind=4) :: t  = 0
-      integer         :: bl = 8  ! bit length of the move
+
+      integer(kind=int32) :: LitEnd_4int
+      logical             :: isLit
+      integer(kind=int32) :: r
+
+      integer(kind=int32) :: s  = 0
+      integer(kind=int32) :: t  = 0
+      integer             :: bl = 8  ! bit length of the move
 
       ! Older compilers accepted this equivalence approach, but some newer ones
       ! complained.  The transfer->mvbits->transfer approach seems more accepted,
@@ -612,15 +646,23 @@
 
       function BigEnd_4real(isLit,r)
 
+      use, intrinsic :: iso_fortran_env, only : &
+         int32,real32
+
       implicit none
+      !implicit none (type, external)
 
-      real(kind=4)    :: BigEnd_4real
-      logical         :: isLit
-      real(kind=4)    :: r
+        ! These single and double precision parameters should be 4 and 8
+      integer, parameter :: sp = real32  ! selected_real_kind( 6,   37) ! single precision
+      !integer, parameter :: dp = real64  ! selected_real_kind(15,  307) ! double precision
 
-      integer(kind=4) :: s  = 0
-      integer(kind=4) :: t  = 0
-      integer         :: bl = 8  ! bit length of the move
+      real(kind=sp)       :: BigEnd_4real
+      logical             :: isLit
+      real(kind=sp)       :: r
+
+      integer(kind=int32) :: s  = 0
+      integer(kind=int32) :: t  = 0
+      integer             :: bl = 8  ! bit length of the move
 
       ! Older compilers accepted this equivalence approach, but some newer ones
       ! complained.  The transfer->mvbits->transfer approach seems more accepted,
@@ -679,15 +721,23 @@
 
       function BigEnd_8real(isLit,r)
 
+      use, intrinsic :: iso_fortran_env, only : &
+         int64,real64
+
       implicit none
+      !implicit none (type, external)
 
-      real(kind=8)    :: BigEnd_8real
-      logical         :: isLit
-      real(kind=8)    :: r
+        ! These single and double precision parameters should be 4 and 8
+      !integer, parameter :: sp = real32  ! selected_real_kind( 6,   37) ! single precision
+      integer, parameter :: dp = real64  ! selected_real_kind(15,  307) ! double precision
 
-      integer(kind=8) :: s  = 0
-      integer(kind=8) :: t  = 0
-      integer         :: bl = 8  ! bit length of the move
+      real(kind=dp)       :: BigEnd_8real
+      logical             :: isLit
+      real(kind=dp)       :: r
+
+      integer(kind=int64) :: s  = 0
+      integer(kind=int64) :: t  = 0
+      integer             :: bl = 8  ! bit length of the move
 
       ! Older compilers accepted this equivalence approach, but some newer ones
       ! complained.  The transfer->mvbits->transfer approach seems more accepted,
@@ -754,15 +804,23 @@
 
       function LitEnd_4real(isLit,r)
 
+      use, intrinsic :: iso_fortran_env, only : &
+         int32,real32
+
       implicit none
+      !implicit none (type, external)
 
-      real(kind=4)    :: LitEnd_4real
-      logical         :: isLit
-      real(kind=4)    :: r
+        ! These single and double precision parameters should be 4 and 8
+      integer, parameter :: sp = real32  ! selected_real_kind( 6,   37) ! single precision
+      !integer, parameter :: dp = real64  ! selected_real_kind(15,  307) ! double precision
 
-      integer(kind=4) :: s  = 0
-      integer(kind=4) :: t  = 0
-      integer         :: bl = 8  ! bit length of the move
+      real(kind=sp)       :: LitEnd_4real
+      logical             :: isLit
+      real(kind=sp)       :: r
+
+      integer(kind=int32) :: s  = 0
+      integer(kind=int32) :: t  = 0
+      integer             :: bl = 8  ! bit length of the move
 
       ! Older compilers accepted this equivalence approach, but some newer ones
       ! complained.  The transfer->mvbits->transfer approach seems more accepted,
@@ -818,15 +876,23 @@
 
       function LitEnd_8real(isLit,r)
 
+      use, intrinsic :: iso_fortran_env, only : &
+         int64,real64
+
       implicit none
+      !implicit none (type, external)
 
-      real(kind=8)    :: LitEnd_8real
-      logical         :: isLit
-      real(kind=8)    :: r
+        ! These single and double precision parameters should be 4 and 8
+      !integer, parameter :: sp = real32  ! selected_real_kind( 6,   37) ! single precision
+      integer, parameter :: dp = real64  ! selected_real_kind(15,  307) ! double precision
 
-      integer(kind=8) :: s  = 0
-      integer(kind=8) :: t  = 0
-      integer         :: bl = 8  ! bit length of the move
+      real(kind=dp)       :: LitEnd_8real
+      logical             :: isLit
+      real(kind=dp)       :: r
+
+      integer(kind=int64) :: s  = 0
+      integer(kind=int64) :: t  = 0
+      integer             :: bl = 8  ! bit length of the move
 
       ! Older compilers accepted this equivalence approach, but some newer ones
       ! complained.  The transfer->mvbits->transfer approach seems more accepted,

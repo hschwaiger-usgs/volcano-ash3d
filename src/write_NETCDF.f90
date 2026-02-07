@@ -1,5 +1,5 @@
 !##############################################################################
-! 
+!
 ! Ash3d_Netcdf_IO module
 !
 ! This module manages all input and output of Ash3d data in netcdf format.
@@ -285,14 +285,20 @@
 
       INTERFACE
         character (len=13) function HS_yyyymmddhhmm_since(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter   :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in)  :: HoursSince
+          integer        ,intent(in)  :: byear
+          logical        ,intent(in)  :: useLeaps
         end function HS_yyyymmddhhmm_since
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter   :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in) :: HoursSince
+          integer        ,intent(in) :: byear
+          logical        ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
 
@@ -800,7 +806,7 @@
       endif;enddo
       ! Time variables should always be doubles to match with libhourssince
       nSTAT = nf90_def_var(ncid,dim_names(1),&
-                           NF90_DOUBLE,& 
+                           NF90_DOUBLE,&
                            (/t_dim_id/),&
                            t_var_id)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var t:")
@@ -1178,7 +1184,7 @@
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1, &
                              "put_att Albers_Equal_Area longitude_of_central_meridian")
           ! false_easting
-          ! false_northing 
+          ! false_northing
 
           nSTAT = nf90_put_att(ncid,proj_var_id,&
                               "earth_radius",A3d_Re*1000.0_ip)
@@ -1187,7 +1193,7 @@
           ! UTM
 
         case(4)
-          ! Lambert conformal conic 
+          ! Lambert conformal conic
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"     Projection : Lambert_Conformal"
           endif;enddo
@@ -1511,7 +1517,7 @@
       endif
 
          ! gs_G (Shape factor of grain: G = B/C)
-      do io=1,2;if(VB(io).le.verbosity_info)then      
+      do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"     gs_G: grain shape factor B/C"
       endif;enddo
       if(op.eq.8)then
@@ -1541,7 +1547,7 @@
       endif
 
          ! gs_Phi (Sphericity of grain: Psi = Area-of-vol.eq.sphere/Area-of-particle)
-      do io=1,2;if(VB(io).le.verbosity_info)then      
+      do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"     gs_Phi: grain sphericity Psi = Area-of-vol.eq.sphere/Area-of-particle"
       endif;enddo
       if(op.eq.8)then
@@ -2164,7 +2170,7 @@
         nSTAT = nf90_put_att(ncid,radrefl_var_id,"_FillValue",dbZCol_FillValue)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att radar_reflectivity _FillValue")
 
-           ! 2d ash cloud bottom 
+           ! 2d ash cloud bottom
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"     cloud_bottom: ",var_lnames(36)
         endif;enddo
@@ -2663,7 +2669,7 @@
       endif  ! USE_OPTMOD_VARS`
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      
+
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -3186,7 +3192,7 @@
         nSTAT=nf90_put_var(ncid,ashcloudBot_var_id,dum2d_out,(/1,1,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var cloud-bottom")
 
-        ! Final time outputs 
+        ! Final time outputs
         !  Note: this may not align with the last output time step since it is
         !  the values at the end of the simulation, not on the last output step
         ! depothickFin
@@ -3657,7 +3663,7 @@
         ! Get variable ids
         nSTAT = nf90_inq_varid(ncid,"t",t_var_id)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"inq_varid t")
-  
+
         do io=1,2;if(VB(io).le.verbosity_debug1)then
           write(outlog(io),*)"Got var IDs, now writing data"
         endif;enddo
@@ -4007,7 +4013,7 @@
       logical           :: IsThere
       integer           :: iostatus
       character(len=120):: iomessage
-      character(len= 50):: linebuffer050 
+      character(len= 50):: linebuffer050
       character(len= 80):: linebuffer080
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
@@ -4138,7 +4144,7 @@
       do i = 1,nsmax
         concen_pd(1:nxmax,1:nymax,1:nzmax,i,ts1) = real(ashcon(:,:,:,i),kind=ip)
         outflow_xy1_pd(1:nxmax,1:nymax,i) = real(depocon(:,:,i),kind=ip)
-        DepositGranularity(1:nxmax,1:nymax,i) = outflow_xy1_pd(1:nxmax,1:nymax,i) 
+        DepositGranularity(1:nxmax,1:nymax,i) = outflow_xy1_pd(1:nxmax,1:nymax,i)
       enddo
 
       concen_pd(:,:,:,:,ts0) = concen_pd(:,:,:,:,ts1)
@@ -4177,7 +4183,7 @@
 !  posted at:
 !    https://climate-cms.org/2018/10/12/create-netcdf.html
 !  This subroutine provides a gracefull handling of errors returned from calls
-!  to the nf90 interface.  
+!  to the nf90 interface.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -4195,7 +4201,7 @@
         write(outlog(io),*)"     Entered Subroutine NC_check_status"
       endif;enddo
 
-      if (icode.eq.0)then 
+      if (icode.eq.0)then
         severity = "WARNING: "
        else
         severity = "ERROR:   "
@@ -4347,7 +4353,7 @@
       integer           :: iendstr
       integer           :: iostatus,iostatus2,iostatus3
       character(len=120):: iomessage
-      character(len= 50):: linebuffer050 
+      character(len= 50):: linebuffer050
       character(len= 80):: linebuffer080
 
       integer :: itstart_year,itstart_month,itstart_day
@@ -4364,12 +4370,15 @@
 
       INTERFACE
         real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
-          integer     ,intent(in) :: iyear
-          integer     ,intent(in) :: imonth
-          integer     ,intent(in) :: iday
-          real(kind=8),intent(in) :: hours
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter   :: dp        = 8 ! double precision
+          integer        ,intent(in)  :: iyear
+          integer        ,intent(in)  :: imonth
+          integer        ,intent(in)  :: iday
+          real(kind=dp)  ,intent(in)  :: hours
+          integer        ,intent(in)  :: byear
+          logical        ,intent(in)  :: useLeaps
         end function HS_hours_since_baseyear
       END INTERFACE
 
@@ -4402,7 +4411,7 @@
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),2501)"  t",t_len
         endif;enddo
- 2501 format(6x,a3,5x,i5) 
+ 2501 format(6x,a3,5x,i5)
 
         !!!!!!  X  !!!!!!!!!!!
         ! Identify dimension for x (and note size)
@@ -4694,7 +4703,7 @@
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),2501)"  z",z_len
         endif;enddo
-        nzmax = z_len 
+        nzmax = z_len
         allocate(z_cc_pd(-1:nzmax+2))
         ! Assume we know fop already from x above
         if(fop.eq.4)then
@@ -4714,7 +4723,7 @@
           z_cc_pd(1:nzmax) = real(dum1d_dp(1:nzmax),kind=ip)
           deallocate(dum1d_dp)
         endif
-        
+
         nSTAT = nf90_inq_varid(ncid,"z",z_var_id)
         nSTAT = nf90_Inquire_Attribute(ncid, z_var_id,&
                                            "type",xtype, length, attnum)
@@ -5424,7 +5433,7 @@
         nSTAT = nf90_inq_varid(ncid,"depothickFin",depothickFin_var_id)
         if(nSTAT.ne.0)then
           depothickFin_var_id = 0
-          call NC_check_status(nSTAT,0,"inq_varid depothickFin") 
+          call NC_check_status(nSTAT,0,"inq_varid depothickFin")
         endif
         ! depotime
         nSTAT = nf90_inq_varid(ncid,"depotime",depotime_var_id)
@@ -5568,7 +5577,7 @@
                              real(itstart_sec,kind=sp)/3600.0_sp
   4314  format(i4,1x,i2,1x,i2,1x,i2,1x,i2,1x,i2,1x)
         SimStartHour = real(HS_hours_since_baseyear(itstart_year,itstart_month, &
-                               itstart_day,real(filestart_hour,kind=8),&
+                               itstart_day,real(filestart_hour,kind=dp),&
                                BaseYear,useLeap),kind=4)
         if(Write_PT_Data.and.&
            nairports.gt.0)then
@@ -5711,19 +5720,19 @@
           if(nSTAT.ne.0)then
             pr_y_var_id = 0
             call NC_check_status(nSTAT,0,"inq_varid pr_y")
-          endif          
+          endif
           ! pr_name
           nSTAT = nf90_inq_varid(ncid,"pr_name",pr_name_var_id)
           if(nSTAT.ne.0)then
             pr_name_var_id = 0
             call NC_check_status(nSTAT,0,"inq_varid pr_name")
-          endif          
+          endif
           ! pr_ash
           nSTAT = nf90_inq_varid(ncid,"pr_ash",pr_ash_var_id)
           if(nSTAT.ne.0)then
             pr_ash_var_id = 0
             call NC_check_status(nSTAT,0,"inq_varid pr_ash")
-          endif          
+          endif
 
           ! Allocate profile variables
           call Allocate_Profile(nzmax,tn_len,nvprofiles)
@@ -6149,7 +6158,7 @@
         ! read grain diameter in mm
         nSTAT = nf90_get_var(ncid,gsdm_var_id,dum1d_out,(/1/))
         Tephra_gsdiam(1:n_gs_max) = dum1d_out(1:n_gs_max)/M_2_MM ! convert to m
-          
+
         ! Grain prescribed fall velocity
 #ifdef USEPOINTERS
         if(.not.associated(Tephra_v_s))then
@@ -6378,7 +6387,7 @@
         endif
         DepositThickness = real(dum2d_out,kind=ip)
       else
-        ! Deposit Thickness (Time-series) 
+        ! Deposit Thickness (Time-series)
         nSTAT=nf90_get_var(ncid,depothick_var_id,dum2d_out,  &
                  start = (/1,1,init_tstep/),       &
                  count = (/x_len,y_len,1/))
@@ -6584,7 +6593,7 @@
       enddo
 
       ! Deposit-mask
-      ! This is no longer stored in the default netcdf file, but can be recreated from 
+      ! This is no longer stored in the default netcdf file, but can be recreated from
       ! Deposit Arrival Time
 #ifdef USEPOINTERS
       if(.not.associated(Mask_Deposit))then
@@ -6657,7 +6666,7 @@
       ! Close file
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"Closing netCDF file."
-      endif;enddo 
+      endif;enddo
       nSTAT = nf90_close(ncid)
       if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"nf90_close")
 

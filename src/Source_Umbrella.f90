@@ -264,8 +264,8 @@
       endif;enddo
 
       uvx_pd(-1:nxmax+2,-1:nymax+2,ibase:itop) = 0.0_ip               !set umbrella winds to zero
-      uvy_pd(-1:nxmax+2,-1:nymax+2,ibase:itop) = 0.0_ip    
- 
+      uvy_pd(-1:nxmax+2,-1:nymax+2,ibase:itop) = 0.0_ip
+
       if(.not.IsLatLon)then
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*) 'Error: umbrella_winds is not yet set up to handle'
@@ -289,7 +289,7 @@
         C_Costa = 0.43e3_ip
       else
           ! m3 kg^(-3/4) s^(-7/8) for non-tropical eruptions
-        C_Costa = 0.87e3_ip 
+        C_Costa = 0.87e3_ip
       endif
 
       ! Here is Eq. 2 of Mastin and Van Eaton, 2020 (m3/s)
@@ -298,7 +298,7 @@
 
       if(time.lt.EPS_SMALL) then
         do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),*) 
+          write(outlog(io),*)
           write(outlog(io),*) 'in Umbrella_winds'
           write(outlog(io),*) '  massfluxnow (kg/s) = ',real(MassFluxRateMKS_now,kind=sp)
           write(outlog(io),*) '             C_Costa = ',real(C_Costa,kind=sp)
@@ -345,7 +345,7 @@
       ! This is the time derivitive of Eq. 1 of Mastin and Van Eaton, 2020
       !cloud expansion rate, m/s
       edge_speed   = (2.0_ip/3.0_ip)*(3.0_ip*lambda_umb*N_BV_umb*qnow/(2.0_ip*PI))**(1.0_ip/3.0_ip) * &
-                    real(etime_s,kind=ip)**(-1.0_ip/3.0_ip)  
+                    real(etime_s,kind=ip)**(-1.0_ip/3.0_ip)
 
       if (cloud_radius.le.max(SourceNodeWidth_km,SourceNodeHeight_km)) then
         return
@@ -395,7 +395,7 @@
                   ! This is Eq. 4
                   windspeedhere = edge_speed  *                          &  ! m/s
                                   MPS_2_KMPHR *                          &  ! km/hr
-                                  (cloud_radius/radnow)**0.5_ip             ! 
+                                  (cloud_radius/radnow)**0.5_ip             !
                 endif
 
                 thetanow = atan2(ns_km,ew_km)     !angle CW from E
@@ -534,7 +534,7 @@
           do k=ibase,itop
             do isize=1,n_gs_max
               tmp= tmp                                           + & ! final units is km3
-                real(dt,kind=ip)                                 * & ! hr      
+                real(dt,kind=ip)                                 * & ! hr
                 SourceNodeFlux(k,isize)*AvgStenc_Umbrella(i,j,k) * & ! kg/km3 hr
                 kappa_pd(ivent,jvent,k)                          / & ! km3
                 MagmaDensity                                     / & ! kg/m3

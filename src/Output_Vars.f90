@@ -3,21 +3,21 @@
 !  Output_Vars module
 !
 !  This module manages data, settings and the calculation of output variables.
-!  
+!
 !
 !    area(lat, lon)
 !    depotime(lat, lon)
 !    ash_arrival_time(lat, lon)
 !    depothickFin(lat, lon)
-!    
-!    
+!
+!
 !    depothick(t, lat, lon)
 !    ashcon_max(t, lat, lon)
 !    cloud_height(t, lat, lon)
-!    cloud_load(t, lat, lon) 
+!    cloud_load(t, lat, lon)
 !    cloud_mask(t, lat, lon)
 !    cloud_bottom(t, lat, lon)
-!    
+!
 !    radar_reflectivity(t, z, lat, lon)
 !    depocon(t, bn, lat, lon)
 !    ashcon(t, bn, z, lat, lon)
@@ -34,9 +34,9 @@
 !      subroutine Set_OutVar_ContourLevel
 !      subroutine AshThicknessCalculator
 !      subroutine AshTotalCalculator
-!      subroutine dbZCalculator      
-!      subroutine ConcentrationCalculator      
-!      subroutine CloudAreaCalculator      
+!      subroutine dbZCalculator
+!      subroutine ConcentrationCalculator
+!      subroutine CloudAreaCalculator
 !      subroutine Gen_Output_Vars
 !      subroutine Calc_AshVol_Aloft
 !      subroutine Calc_vprofile
@@ -1092,7 +1092,7 @@
 
       return
 
-      end subroutine dbZCalculator      
+      end subroutine dbZCalculator
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
@@ -1103,7 +1103,7 @@
 !    none
 !
 !  This subroutine several output variables derived from the airborne ash
-!  concentration: CloudLoad (vertically integrated value), 
+!  concentration: CloudLoad (vertically integrated value),
 !  MaxConcentration (peak value of all z), Min and Max cloud height, the
 !  cloud mask (logical variable) and the CloudArea of the cloud mask.
 !
@@ -1126,7 +1126,7 @@
       ! Both these concentration variables are in the 'natural' units of kg/km3
       real(kind=ip),dimension(nzmax) :: TotalConcentration ! concentration from all grain sizes as a vertical column
       real(kind=ip)                  :: MaxTotalConcentration
- 
+
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine ConcentrationCalculator"
       endif;enddo
@@ -1212,7 +1212,7 @@
 
       return
 
-      end subroutine ConcentrationCalculator      
+      end subroutine ConcentrationCalculator
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
@@ -1272,7 +1272,7 @@
 
       return
 
-      end subroutine CloudAreaCalculator      
+      end subroutine CloudAreaCalculator
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
@@ -1410,7 +1410,7 @@
 !  Arguments:
 !    itime  =  index of time_native (full time array)
 !
-!  This subroutine sums the concentrations over each tephra bin above the 
+!  This subroutine sums the concentrations over each tephra bin above the
 !  profile site and saves is to pr_ash in mg/m3.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1626,7 +1626,7 @@
         write(outlog(io),*)"     Entered Subroutine FirstAsh"
       endif;enddo
 
-        !record thickness & cloud concentration in last time step      
+        !record thickness & cloud concentration in last time step
       Airport_CloudHereLast  = Airport_CloudHere
       Airport_ThicknessLast  = Airport_thickness
       Airport_depRateLast    = Airport_depRate
@@ -1638,7 +1638,7 @@
 
         !For airports where ash has arrived . . .
         !mark fall duration if ash has stopped falling
-        if (Airport_AshArrived(i).eqv..true.) then
+        if (Airport_AshArrived(i)) then
           if ((Airport_depRate(i).lt.DEPRATE_THRESH).and.&
               (Airport_depRateLast(i).ge.DEPRATE_THRESH)) then
             Airport_AshDuration(i) = time-Airport_AshArrivalTime(i)
@@ -1646,7 +1646,7 @@
         endif
 
         !mark cloud duration if cloud has passed
-        if (Airport_CloudArrived(i).eqv..true.) then
+        if (Airport_CloudArrived(i)) then
           if ((Airport_CloudHere(i).le.CLOUDLOAD_THRESH).and.&
               (Airport_CloudHereLast(i).gt.CLOUDLOAD_THRESH)) then
             Airport_CloudDuration(i) = time-Airport_CloudArrivalTime(i)
@@ -1655,20 +1655,20 @@
 
         !For airports where ash has not yet arrived . . .
         !if ash load>CLOUDLOAD_THRESH T/km2 , call it "arrived"
-        if ((Airport_CloudArrived(i).eqv..false.).and.&
+        if (.not.Airport_CloudArrived(i).and.&
             (Airport_CloudHere(i).gt.CLOUDLOAD_THRESH)) then
           Airport_CloudArrived(i) = .true.
           Airport_CloudArrivalTime(i) = time
         endif
         !if ash thickness>THICKNESS_THRESH mm, call it "arrived"
-        if ((Airport_AshArrived(i).eqv..false.).and.&
+        if (.not.Airport_AshArrived(i).and.&
             (Airport_thickness(i).gt.THICKNESS_THRESH)) then
           Airport_AshArrived(i) = .true.
           Airport_AshArrivalTime(i) = time
           ! Some cases with high eruptive volume might have a deposit that
           ! arrived before the 'cloud' is triggered.  Force the cloud to be
           ! marked
-          if (Airport_CloudArrived(i).eqv..false.) then
+          if (.not.Airport_CloudArrived(i)) then
             Airport_CloudArrived(i) = .true.
             Airport_CloudArrivalTime(i) = time
           endif

@@ -78,7 +78,7 @@
 !     set terminal pngcairo font 'sans,12' size 854,603
 !     set output 'Ash3d_Deposit____final.png'
 !     set multiplot
-!     
+!
 !     # Set logo plot
 !     set size 0.2, 0.2
 !     set origin 0.78, 0.0
@@ -91,7 +91,7 @@
 !     unset label
 !     set size ratio -1
 !     plot "/opt/USGS/Ash3d/share/post_proc/logo.png" binary filetype=png with rgbalph
-!     
+!
 !     # Now main plot
 !     set origin 0.05, .20
 !     set size 0.85, 0.8
@@ -189,38 +189,38 @@
       real(kind=ip),intent(in) :: Fill_Value
       logical      ,intent(in) :: writeContours
 
-      character(len=6)   :: Fill_Value_str
-      character(len=200) :: cmd
+      character (len=  6) :: Fill_Value_str
+      character (len=200) :: cmd
 
       integer :: ii,jj
       real(kind=ip) :: tmp_ip
       integer,dimension(:,:),allocatable :: zrgb
-      character(len=40) :: title_plot
-      character(len=30) :: cstr_xlabel = 'Longitude'
-      character(len=30) :: cstr_ylabel = 'Latitude'
-      character(len=30) :: cstr_zlabel
-      character(len=30) :: cstr_volcname
-      character(len=30) :: cstr_run_date
-      character(len=30) :: cstr_windfile
-      character(len=40) :: cstr_ErStartT
-      character(len=27) :: cstr_ErHeight
-      character(len=30) :: cstr_ErDuratn
-      character(len=38) :: cstr_ErVolume
-      character(len=45) :: cstr_note
-      character(len=20) :: varname
-      character(len= 9) :: cio
-      character(len= 4) :: outfile_ext = '.png'
-      character(len=10) :: units
-      integer           :: ioerr
-      integer           :: iostatus
-      integer           :: cstat
-      character(len=120):: iomessage
-      integer           :: iw,iwf
-      logical           :: IsThere1,IsThere2
-      logical           :: HaveIconFile
-      character(len=50) :: linebuffer050
-      character(len=80) :: linebuffer080
-      character(len=130):: linebuffer130
+      character (len= 40) :: title_plot
+      character (len= 30) :: cstr_xlabel = 'Longitude'
+      character (len= 30) :: cstr_ylabel = 'Latitude'
+      character (len= 30) :: cstr_zlabel
+      character (len= 30) :: cstr_volcname
+      character (len= 30) :: cstr_run_date
+      character (len= 30) :: cstr_windfile
+      character (len= 40) :: cstr_ErStartT
+      character (len= 27) :: cstr_ErHeight
+      character (len= 30) :: cstr_ErDuratn
+      character (len= 38) :: cstr_ErVolume
+      character (len= 45) :: cstr_note
+      character (len= 20) :: varname
+      character (len=  9) :: cio
+      character (len=  4) :: outfile_ext = '.png'
+      character (len= 10) :: units
+      integer             :: ioerr
+      integer             :: iostatus
+      integer             :: cstat
+      character (len=120) :: iomessage
+      integer             :: iw,iwf
+      logical             :: IsThere1,IsThere2
+      logical             :: HaveIconFile
+      character (len= 50) :: linebuffer050
+      character (len= 80) :: linebuffer080
+      character (len=130):: linebuffer130
       character         :: testkey
 
       ! Plot dimensions
@@ -231,23 +231,23 @@
       logical        :: IsRegGrid
 
       ! Aux. File names
-      character(len= 8) :: filename_root
-      character(len=10) :: filename_script
-      character(len=10) :: filename_outdata
-      character(len=40) :: filename_png
-      character(len=10) :: filename_contourdata
-      character(len=80) :: filename_coastline
+      character (len=  8) :: filename_root
+      character (len= 10) :: filename_script
+      character (len= 10) :: filename_outdata
+      character (len= 40) :: filename_png
+      character (len= 10) :: filename_contourdata
+      character (len= 80) :: filename_coastline
 
       ! Citywriter variables
       integer :: ncities
 !      integer :: cityname_offset_px = 30
       real(kind=ip),dimension(:),allocatable     :: lon_cities
       real(kind=ip),dimension(:),allocatable     :: lat_cities
-      character(len=26),dimension(:),allocatable :: name_cities
+      character (len= 26),dimension(:),allocatable :: name_cities
 
       ! Contour variables
       integer           :: lev_i,substr_pos1,substr_pos2,substr_pos3 ! for parsing contour text files
-      real(kind=4)      :: lev_r4       ! used for testing contour levels from file
+      real(kind=sp)     :: lev_r4       ! used for testing contour levels from file
       integer           :: ilev         ! number of contour levels
       integer           :: ignulev      ! level index from gnuplot file
       integer           :: icurve      ! number of curves for level ilev
@@ -260,9 +260,12 @@
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in) :: HoursSince
+          integer        ,intent(in) :: byear
+          logical        ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
 
@@ -950,7 +953,7 @@
 !     set terminal pngcairo font 'sans,12' size 854,603
 !     set output 'vprof_0001.png'
 !     set multiplot
-!     
+!
 !     # Set logo plot
 !     set size 0.2, 0.2
 !     set origin 0.78, 0.0
@@ -963,7 +966,7 @@
 !     unset label
 !     set size ratio -1
 !     plot "/opt/USGS/Ash3d/share/post_proc/logo.png" binary filetype=png with rgbalph
-!     
+!
 !     set origin 0, .15
 !     set size 0.85, 0.9
 !     set size ratio 0.75
@@ -1062,9 +1065,12 @@
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in) :: HoursSince
+          integer        ,intent(in) :: byear
+          logical        ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
 

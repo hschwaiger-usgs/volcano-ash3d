@@ -70,13 +70,13 @@
 !  4               #          4=F(Ri)=Betts 1996
 !  5               #          5=F(Ri)=Hong 1996
 !  6               #          6=F(Ri,z)=Collins 2004
-! Line 7: 
+! Line 7:
 !0.4                         # vonKarman
-! Line 8: 
+! Line 8:
 !100.0                       # LambdaC
 ! Line 9:
 !0.25                        # RI_CRIT
-! 
+!
 !##############################################################################
 
       module Diffusivity_Variable
@@ -89,9 +89,9 @@
          diffusivity_horz,diffusivity_vert,KV_MIN,KH_MIN,KV_MAX,KH_MAX
 
       integer :: Kh_model_ID     = 2 ! 1=constant; [2]=Smagorinsky (1963); 3=Pielke (1974)
-!      integer :: Phi_model_ID    ! 
+!      integer :: Phi_model_ID    !
       integer :: KvBL_model_ID   = 4 ! default is 4: Ulke
-      integer :: KvBL_MomHeat    = 1 ! default is to use the momentum form [1] 
+      integer :: KvBL_MomHeat    = 1 ! default is to use the momentum form [1]
       integer :: KvFA_model_ID   = 4 ! default is 4: Betts
 
       !  These are the parameters that control the diffusivity calculations
@@ -511,7 +511,7 @@
           endif
           if(KvBL_MomHeat.eq.1)then
             ! Momentum values
-            phi_prefac = 1.0_ip   
+            phi_prefac = 1.0_ip
             phi_alpha = -0.25_ip  ! Exponent in unstable term
             phi_beta  =  5.0_ip   ! Coefficient in stable term (pretty much always 4.7->5.2
             phi_gamma = -16.0_ip  ! Coefficient in unstable term
@@ -1123,7 +1123,7 @@
       if(.not.allocated(temp_3d_FillVal_VarDiff)) &
                allocate(temp_3d_FillVal_VarDiff(nvar_User3d_XYZ_VarDiff))
 
-      i = 0 
+      i = 0
       if(use_Output_Vars_VarDiff.and.useVarDiffH)then
         i = 1
         temp_3d_name_VarDiff(i) = "Kh"
@@ -1185,7 +1185,7 @@
 !    none
 !
 !  This subroutine fills the module output variables. The output variables that
-!  are part of the atmospheric stability metrics (Ustar, PBLH, Ri) are only on 
+!  are part of the atmospheric stability metrics (Ustar, PBLH, Ri) are only on
 !  the Met steps since they are only needed on those intervals to get Kv, Kh.
 !  Kv and Kh are interpolated to each time-step so will vary smoothly.
 !
@@ -1452,19 +1452,19 @@
         do i=1,nx_submet
           do j=1,ny_submet
             do k=1,np_fullmet
-  
+
         ! Smagorinsky LES horizontal eddy diffusivity is proportional
         ! to sqrt((E12+E21)^2 + (E11-E22)^2) where E is the velocity gradient
         ! tensor (just in x and y)
         ! This is following the description in
         ! Griffies and Hallberg, MWR, 2000 doi:10.1175/1520-0493(2000)128<2935:BFWASL>2.0.CO;2
-  
+
           ! spatial derivatives of velocity (in 1/s)
         E11 = du_dx_MetP_sp(i,j,k)
         E12 = du_dy_MetP_sp(i,j,k)
         E21 = dv_dx_MetP_sp(i,j,k)
         E22 = dv_dy_MetP_sp(i,j,k)
-  
+
         D2_strain  = (E12+E21)**2.0_sp
         if(Kh_model_ID.eq.2)then
           D2_tension = (E11-E22)**2.0_sp          ! Smagorinsky (1963, 1993)
@@ -1482,7 +1482,7 @@
         LES_TimeScale = LES_TimeScale * real(HR_2_S,kind=4)
           ! length scale^2 in km^2
         LES_LengthScale2 = min(MR_sigma_nz_submet(i,j),MAX_LES_LengthScale2)
-  
+
           ! Diffusivity in km2/hr
         Khz_meso_next_step_MetP_sp(i,j,k) = real(KH_SmagC*LES_LengthScale2*LES_TimeScale,kind=sp)
           ! And apply the limits to make sure we are not too close to 0 or anything too big
@@ -1596,7 +1596,7 @@
                 !    length (Randerson, p155, 1984; Monin and Yaglom, v1,
                 !    p409. Collins et al, NCAR TN-464, 2004, eq. 4.461)
               Lc = MixLen(real(z_col(k),kind=ip))
-    
+
                 ! calculate eq 8
                 ! The Ri-term seems to zero out anything above the PBL
                 ! since Ri is too high
@@ -1660,7 +1660,7 @@
                 endif
               endif ! useBoundaryLayer
             endif ! test on if this is a valid zone for Kv
-   
+
             ! assign to array
             Kv_col(k) = max(Kv_BL,Kv_FreeAir)
             ! and apply the max/min limnits on the diff
@@ -1693,7 +1693,7 @@
 !  Set_VarDiffH_Meso
 !
 !  Called from: Ash3d.F90
-!  Arguments: 
+!  Arguments:
 !    Load_MesoSteps,Interval_Frac
 !
 !  This subroutine calls MetReader routines to calculate velocity gradiants, then
@@ -1836,7 +1836,7 @@
 !  Set_VarDiffV_Meso
 !
 !  Called from: Ash3d.F90
-!  Arguments: 
+!  Arguments:
 !    Load_MesoSteps,Interval_Frac
 !
 !  This subroutine calculates kz for the current time. Kv_meso_ is calculated
@@ -1889,7 +1889,7 @@
       !       Monin-Obukhov Length
       !  4. Calculate Kv(Ri,u*,L,PBLz)
       ! We will calculate these values on the MetP grid, then interpolate Kv on
-      ! the compH and then onto the current time.  
+      ! the compH and then onto the current time.
       ! Note: these are all non-linear functions so the better approach would be
       ! to evaluate everything on the computational grid at each time, but this
       ! is probably overkill.
@@ -2632,7 +2632,7 @@
       endif
 
       ! Get Monin-Obukhov length from the
-      ! Businger-Dyer-Pandolfo empirical result 
+      ! Businger-Dyer-Pandolfo empirical result
       ! using z and Ri at k=2
         ! Eq 6.7.1 and 6.7 2 of "Atmospheric Turbulence";
         ! Panofsky and Dutton,1984
@@ -2919,7 +2919,7 @@
         Fc_Collins = sqrt(1.0_ip-18.0_ip*Ri)
       else
           ! Stable atmosphere
-          ! Eq. 4.465 
+          ! Eq. 4.465
         Fc_Collins = 1.0_ip/(1.0_ip+10.0_ip*Ri*(1.0_ip+8.0_ip*Ri))
       endif
 
@@ -2948,7 +2948,7 @@
       ! see Piedelievre, Jean Philippe, Lue Musson-Genon, François Bompay, 1990:
       ! MEDIA—An Eulerian Model of Atmospheric Dispersion: First Validation on
       ! the Chernobyl Release. J. Appl. Meteor., 29, 1205–1220.
-      ! doi: http://dx.doi.org/10.1175/1520-0450(1990)029<1205:MEMOAD>2.0.CO;2 
+      ! doi: http://dx.doi.org/10.1175/1520-0450(1990)029<1205:MEMOAD>2.0.CO;2
       ! This is the model used by MDLP0 (also used in EMERRAUDE or PERIDOT).
       ! It also actually used a subsequent F form from Louis (1980).
 

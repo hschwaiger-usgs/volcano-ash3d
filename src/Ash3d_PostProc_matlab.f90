@@ -90,7 +90,7 @@
 !      [A,R]=readgeoraster('outvar.dat','CoordinateSystemType','geographic','OutputType','double');
 !      latlim = R.LatitudeLimits;
 !      lonlim = R.LongitudeLimits;
-!      
+!
 !      figure
 !      worldmap(latlim,lonlim);hold on;
 !      geoshow(land,'FaceColor',[0.9 0.9 0.9])
@@ -234,9 +234,12 @@
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in) :: HoursSince
+          integer        ,intent(in) :: byear
+          logical        ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
 
@@ -713,12 +716,12 @@
 !      t_reg = linspace(0, vp(ns,1), 101);
 !      z_reg = linspace(0, vp(ns,2), 101);
 !      [T_reg, Z_reg] = meshgrid(t_reg, z_reg);
-!      
+!
 !      % Interpolate the data onto the regular grid
 !      C_reg = griddata(vp(:,1), vp(:,2), vp(:,3), T_reg, Z_reg);
 !      Cmask=C_reg(:,:)<0.001;
 !      C_reg(Cmask)=NaN;
-!      
+!
 !      colormap jet
 !      contourf(T_reg, Z_reg, C_reg);
 !      xlabel(xstr,'FontSize',16);
@@ -793,9 +796,12 @@
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
-          real(kind=8),intent(in) :: HoursSince
-          integer     ,intent(in) :: byear
-          logical     ,intent(in) :: useLeaps
+          implicit none
+          !implicit none (type, external)
+          integer        ,parameter  :: dp        = 8 ! double precision
+          real(kind=dp)  ,intent(in) :: HoursSince
+          integer        ,intent(in) :: byear
+          logical        ,intent(in) :: useLeaps
         end function HS_xmltime
       END INTERFACE
 

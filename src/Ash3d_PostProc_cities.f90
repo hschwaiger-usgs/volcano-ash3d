@@ -123,7 +123,7 @@
         read(fid_cities,'(a133)',iostat=iostatus,iomsg=iomessage) linebuffer133
         if(iostatus.lt.0)then
           exit
-        elseif(iostatus.gt.0)then 
+        elseif(iostatus.gt.0)then
           linebuffer050 = "Reading line from city file"
           call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer133(1:80),iomessage)
         endif
@@ -136,7 +136,7 @@
             (CityLat.gt.latLL).and.(CityLat.lt.latUR)) then
           ! Make sure this city is not near any others
           IsOkay=.true.
-          call space_checker(maxcities,CityLon_out,CityLat_out,ncities, & 
+          call space_checker(maxcities,CityLon_out,CityLat_out,ncities, &
                              CityLon,CityLat, &
                              minspace_x,minspace_y,IsOkay)
           if (IsOkay) then
@@ -150,7 +150,7 @@
                 (CityLat.gt.latLL).and.(CityLat.lt.latUR)) then
           ! Make sure this city is not near any others
           IsOkay=.true.
-          call space_checker(maxcities,CityLon_out,CityLat_out,ncities, & 
+          call space_checker(maxcities,CityLon_out,CityLat_out,ncities, &
                              CityLon,CityLat, &
                              minspace_x,minspace_y,IsOkay)
           if (IsOkay) then
@@ -196,10 +196,10 @@
       return
 
       end subroutine citylist
-         
+
 !***************************************************************************************
 
-      subroutine space_checker(maxcities,CityLon_out,CityLat_out,ncities, & 
+      subroutine space_checker(maxcities,CityLon_out,CityLat_out,ncities, &
                                   CityLon,CityLat, &
                                   minspace_x,minspace_y,IsOkay)
 
