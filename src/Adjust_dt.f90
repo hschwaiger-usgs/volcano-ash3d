@@ -288,12 +288,12 @@
 
             ! Now set logical flag so we don't need to calculate this again
           have_DT_diffus = .true.
-        endif ! .not.have_DT_diffus
+        endif  ! .not.have_DT_diffus
       else
         ! if we are not using diffusion, set the diffusion restriction to the
         ! largest time step allowed.
         time_diffuse   = DT_MAX
-      endif ! useDiffusion
+      endif  ! useDiffusion
       !-------------------------------------------------------
 
       dt_tmp = min(time_advect,time_diffuse)

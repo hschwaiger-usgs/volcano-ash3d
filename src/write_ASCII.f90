@@ -118,7 +118,7 @@
 
       integer :: i,j
 
-      integer  ::  ionumber            !number of output file
+      integer ::  ionumber            ! number of output file
       character(len=14)  :: cio
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
@@ -202,7 +202,7 @@
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter   :: dp        = 8 ! double precision
+          integer        ,parameter   :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in)  :: HoursSince
           integer        ,intent(in)  :: byear
           logical        ,intent(in)  :: useLeaps
@@ -219,7 +219,7 @@
         ionumber = fid_vprofbase + i-1
         cio = HS_yyyymmddhh_since(SimStartHour+time+OutputOffset,&
                                   BaseYear,useLeap)
-        write(ionumber,1) cio, time, (pr_ash(k,itime,i), k=1,nzmax) ! write tot. concen in mg/m3
+        write(ionumber,1) cio, time, (pr_ash(k,itime,i), k=1,nzmax)  ! write tot. concen in mg/m3
 
 1       format(a13,',',f10.3,',',50(e15.3,','))
       enddo
@@ -597,7 +597,7 @@
       real(kind=sp)       :: dx_loc,x_width,y_width
       real(kind=sp),dimension(nx) :: x_in  ! cell-center coordinate of input grid
       real(kind=sp),dimension(ny) :: y_in
-      real(kind=sp),dimension(:),allocatable    :: x_loc ! cell-center coordinate of output grid
+      real(kind=sp),dimension(:),allocatable    :: x_loc  ! cell-center coordinate of output grid
       real(kind=sp),dimension(:),allocatable    :: y_loc
       real(kind=sp),dimension(:,:),allocatable  :: OutVar_loc
       real(kind=sp)       :: A11,A12,A21,A22
@@ -644,15 +644,15 @@
 
       ! Loop over all points of the new grid and interpolate
       do i=1,nx_loc
-        xnow = min(max(x_loc(i),x_in(1)),x_in(nx)) ! make sure the point is within domain of x_in
+        xnow = min(max(x_loc(i),x_in(1)),x_in(nx))  ! make sure the point is within domain of x_in
         ix = floor((xnow-x1)/dx)
-        ix = min(max(ix,1),nx-1)  ! make sure ix is between 1 and nx-1
+        ix = min(max(ix,1),nx-1)                    ! make sure ix is between 1 and nx-1
         xl = x_in(ix)
         xr = x_in(ix+1)
         do j=1,ny_loc
-          ynow = min(max(y_loc(j),y_in(1)),y_in(ny)) ! make sure the point is within domain of y_in
+          ynow = min(max(y_loc(j),y_in(1)),y_in(ny))  ! make sure the point is within domain of y_in
           iy = floor((ynow-y1)/dy)
-          iy = min(max(iy,1),ny-1)  ! make sure iy is between 1 and ny-1
+          iy = min(max(iy,1),ny-1)                    ! make sure iy is between 1 and ny-1
           yl = y_in(iy)
           yr = y_in(iy+1)
 
@@ -1189,7 +1189,7 @@
       integer             :: nWrittenOut
       character (len=20)  :: yyyymmddhh_ash, yyyymmddhh_cloud
       character (len=1)   :: cloud_morethan, deposit_morethan      !equals ">" if cloud is still overhead or ash is still falling
-      character (len=13)  :: nwsthickness                !nwp ashfall  terms (trace, minor, substantial, heavy, severe)
+      character (len=13)  :: nwsthickness                ! nwp ashfall  terms (trace, minor, substantial, heavy, severe)
       integer             :: isize
       real(kind=ip)       :: longitude_now
 
@@ -1197,7 +1197,7 @@
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter   :: dp        = 8 ! double precision
+          integer        ,parameter   :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in)  :: HoursSince
           integer        ,intent(in)  :: byear
           logical        ,intent(in)  :: useLeaps
@@ -1241,7 +1241,7 @@
         do i=1,nairports                      ! write out the airports that are hit.
           if (Airport_AshArrived(i).or.Airport_CloudArrived(i)) then
             ! rank ash thickness in NWS rank
-            Airport_thickness(i) = bilinear_thickness(i,DepositThickness) ! interpolate to find thickness
+            Airport_thickness(i) = bilinear_thickness(i,DepositThickness)  ! interpolate to find thickness
             if (Airport_thickness(i).le.0.7935_ip) then         ! <1/32" thickness
               nwsthickness="trace or less"
             elseif (Airport_thickness(i).le.6.35_ip) then       ! <=1/4"

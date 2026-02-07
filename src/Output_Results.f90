@@ -87,7 +87,7 @@
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,parameter  :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in) :: HoursSince
           integer        ,intent(in) :: byear
           logical        ,intent(in) :: useLeaps
@@ -95,7 +95,7 @@
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,parameter  :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in) :: HoursSince
           integer        ,intent(in) :: byear
           logical        ,intent(in) :: useLeaps
@@ -124,13 +124,13 @@
 
         ! Open KML files
         call Set_OutVar_Specs          ! Initialize variables local to the Output_KML module
-        if (WriteCloudConcentration_KML)  call OpenFile_KML(1) ! Cloud Concentration
-        if (WriteCloudHeight_KML)         call OpenFile_KML(2) ! Cloud Top Height
-        if (WriteCloudLoad_KML)           call OpenFile_KML(4) ! Cloud Load
-        if (WriteReflectivity_KML)        call OpenFile_KML(6) ! Reflectivity
+        if (WriteCloudConcentration_KML)  call OpenFile_KML(1)  ! Cloud Concentration
+        if (WriteCloudHeight_KML)         call OpenFile_KML(2)  ! Cloud Top Height
+        if (WriteCloudLoad_KML)           call OpenFile_KML(4)  ! Cloud Load
+        if (WriteReflectivity_KML)        call OpenFile_KML(6)  ! Reflectivity
         if (WriteDepositTS_KML.or.WriteDepositFinal_KML)  then
-          call OpenFile_KML(7) ! Deposit
-          call OpenFile_KML(8) ! Deposit (NWS)
+          call OpenFile_KML(7)  ! Deposit
+          call OpenFile_KML(8)  ! Deposit (NWS)
         endif
 
         if(Write3dFiles)then
@@ -245,16 +245,16 @@
         endif
 
           ! Now KML files
-        if (WriteCloudConcentration_KML)   call Write_2D_KML(1,MaxConcentration,1,1) ! Cloud Concentration
-        if (WriteCloudHeight_KML)          call Write_2D_KML(2,MaxHeight, 1,1)       ! Cloud Top Height
-        if (WriteCloudLoad_KML)            call Write_2D_KML(4,CloudLoad, 1,1)       ! Cloud Load
-        if (WriteReflectivity_KML)         call Write_2D_KML(6,dbZCol, 1,1)          ! Reflectivity
+        if (WriteCloudConcentration_KML)   call Write_2D_KML(1,MaxConcentration,1,1)  ! Cloud Concentration
+        if (WriteCloudHeight_KML)          call Write_2D_KML(2,MaxHeight, 1,1)        ! Cloud Top Height
+        if (WriteCloudLoad_KML)            call Write_2D_KML(4,CloudLoad, 1,1)        ! Cloud Load
+        if (WriteReflectivity_KML)         call Write_2D_KML(6,dbZCol, 1,1)           ! Reflectivity
         if (WriteDepositTS_KML.or.WriteDepositFinal_KML)  then
-          call Write_2D_KML(7,DepositThickness,0,1)         ! Deposit (mm)
-          call Write_2D_KML(8,DepositThickness*MM_2_IN,0,1) ! Deposit (NWS thresholds in inches)
+          call Write_2D_KML(7,DepositThickness,0,1)          ! Deposit (mm)
+          call Write_2D_KML(8,DepositThickness*MM_2_IN,0,1)  ! Deposit (NWS thresholds in inches)
         endif
 
-      endif !.not.isFinal_TS
+      endif  !.not.isFinal_TS
 
       !************************************************************************
       !  WRITE OUT 3D CONCENTRATION FILES
@@ -296,8 +296,8 @@
 
         !if files of deposit arrival time are to be written out
         if (WriteDepositTime_KML) then
-          call OpenFile_KML(9) ! Deposit Arrival Time
-          call Write_2D_KML(9,real(DepArrivalTime,kind=ip),0,0) ! Deposit
+          call OpenFile_KML(9)  ! Deposit Arrival Time
+          call Write_2D_KML(9,real(DepArrivalTime,kind=ip),0,0)  ! Deposit
           call Close_KML(9,0)
         endif
         if (WriteDepositTime_ASCII)then
@@ -308,8 +308,8 @@
                               '-9999.','DepositArrivalTime  ')
         endif
         if (WriteCloudTime_KML) then
-          call OpenFile_KML(5) ! Cloud Arrival Time
-          call Write_2D_KML(5,real(CloudArrivalTime,kind=ip),0,0) ! Deposit
+          call OpenFile_KML(5)  ! Cloud Arrival Time
+          call Write_2D_KML(5,real(CloudArrivalTime,kind=ip),0,0)  ! Deposit
           call Close_KML(5,0)
         endif
         if (WriteCloudTime_ASCII)then
@@ -338,8 +338,8 @@
                               '-9999.','DepositFile_        ')
         endif
         if (WriteDepositFinal_KML) then
-          call Write_2D_KML(7,DepositThickness,0,0) ! Deposit
-          call Write_2D_KML(8,DepositThickness*MM_2_IN,0,0) ! Deposit (NWS)
+          call Write_2D_KML(7,DepositThickness,0,0)          ! Deposit
+          call Write_2D_KML(8,DepositThickness*MM_2_IN,0,0)  ! Deposit (NWS)
         endif
 
         ! Close KML files

@@ -28,13 +28,13 @@
       !implicit none (type, external)
 
         ! These single and double precision parameters should be 4 and 8
-      integer, parameter,public :: sp = real32  ! selected_real_kind( 6,   37) ! single precision
-      integer, parameter,public :: dp = real64  ! selected_real_kind(15,  307) ! double precision
-      integer, parameter,public :: qp = real128 ! selected_real_kind(33, 4931) ! quad precision
+      integer, parameter,public :: sp = real32   ! selected_real_kind( 6,   37) ! single precision
+      integer, parameter,public :: dp = real64   ! selected_real_kind(15,  307) ! double precision
+      integer, parameter,public :: qp = real128  ! selected_real_kind(33, 4931) ! quad precision
 
         ! The first two precision parameters can be changed to meet your needs
-      integer, parameter,public :: op         = 4 ! Output precision
-      integer, parameter,public :: ip         = 8 ! Internal precision
+      integer, parameter,public :: op         = 4  ! Output precision
+      integer, parameter,public :: ip         = 8  ! Internal precision
 
       end module precis_param
 
@@ -109,23 +109,23 @@
       ! This will write everything from verbosity_log to verbosity_error to both stdout and stdlog
       ! Note that this may be reset in Set_OS_Env is ASH3DVERB is set.
       ! You could set the stdout and log to different velocity levels here is desired.
-      integer,dimension(2) :: VB = (/3,3/) ! Verbosity level for stdout and logfile, respectively
-      character(10)        :: vlevel       ! Text description of verbosity level
+      integer,dimension(2) :: VB = (/3,3/)  ! Verbosity level for stdout and logfile, respectively
+      character(10)        :: vlevel        ! Text description of verbosity level
 
       ! These verbosity levels are for harmonizing with forestclaw
       ! Only write statements verbosity level >= VB(1) will be written
-      integer,parameter :: verbosity_debug2       = 1  ! Additional debugging information only written to stdout
-      integer,parameter :: verbosity_debug1       = 2  ! Debugging information only written to stdout
-      integer,parameter :: verbosity_log          = 3  ! Time step information (this is the limit for writing to logfile)
-      integer,parameter :: verbosity_info         = 4  ! Additional information on run set up and shutdown
-      integer,parameter :: verbosity_statistics   = 5  ! Details on health of run (timing, mass conservation)
-      integer,parameter :: verbosity_production   = 6  ! Major program flow info only
-      integer,parameter :: verbosity_essential    = 7  ! Only start up and shutdown messages
-      integer,parameter :: verbosity_error        = 8  ! No logging to stdout, only stderr (and logfile)
-      integer,parameter :: verbosity_silent       = 9  ! No logging to stdout,stderr. Logfile written as normal
-      integer,parameter :: verbosity_dark         = 10 ! No logging to stdout,stderr or logfile
+      integer,parameter :: verbosity_debug2       = 1   ! Additional debugging information only written to stdout
+      integer,parameter :: verbosity_debug1       = 2   ! Debugging information only written to stdout
+      integer,parameter :: verbosity_log          = 3   ! Time step information (this is the limit for writing to logfile)
+      integer,parameter :: verbosity_info         = 4   ! Additional information on run set up and shutdown
+      integer,parameter :: verbosity_statistics   = 5   ! Details on health of run (timing, mass conservation)
+      integer,parameter :: verbosity_production   = 6   ! Major program flow info only
+      integer,parameter :: verbosity_essential    = 7   ! Only start up and shutdown messages
+      integer,parameter :: verbosity_error        = 8   ! No logging to stdout, only stderr (and logfile)
+      integer,parameter :: verbosity_silent       = 9   ! No logging to stdout,stderr. Logfile written as normal
+      integer,parameter :: verbosity_dark         = 10  ! No logging to stdout,stderr or logfile
 
-      character :: bs ! Some scripts need a backslash, but some compilers interprete it as an escape. 92='\'
+      character :: bs  ! Some scripts need a backslash, but some compilers interprete it as an escape. 92='\'
 
       contains
 
@@ -150,10 +150,10 @@
 
       subroutine FileIO_Error_Handler(ios,linebuffer050,linebuffer080,iomessage)
 
-      integer           ,intent(in) :: ios           ! error code
-      character(len= 50),intent(in) :: linebuffer050 ! Diagnostic from Ash3d
-      character(len= 80),intent(in) :: linebuffer080 ! line from file causing error
-      character(len=120),intent(in) :: iomessage     ! system message
+      integer           ,intent(in) :: ios            ! error code
+      character(len= 50),intent(in) :: linebuffer050  ! Diagnostic from Ash3d
+      character(len= 80),intent(in) :: linebuffer080  ! line from file causing error
+      character(len=120),intent(in) :: iomessage      ! system message
 
       integer :: io
 
@@ -191,9 +191,9 @@
 
       subroutine FileIO_Check_testkey(testkey,linebuffer080,IsComment)
 
-      character        ,intent(in ) :: testkey       ! First character of linebuffer
-      character(len=80),intent(in)  :: linebuffer080 ! String with testkey
-      logical          ,intent(out) :: IsComment     ! Flag set if testkey= # or *
+      character        ,intent(in ) :: testkey        ! First character of linebuffer
+      character(len=80),intent(in)  :: linebuffer080  ! String with testkey
+      logical          ,intent(out) :: IsComment      ! Flag set if testkey= # or *
 
       integer :: asciicode
       logical :: IsNumber,IsUpperCase,IsLowerCase,IsWhiteSpace
@@ -308,21 +308,21 @@
 
       allocate(character(len=input_strlen) :: tmpstr)
 
-      i =1 ! start of input string
-      ii=1 ! start of output string
+      i  = 1  ! start of input string
+      ii = 1  ! start of output string
       ch = linebuffer(i:i)
       asciicode = ichar(ch)
       if(asciicode.eq.35.or.asciicode.eq.42) IsComment = .true.
-      if (IsComment) return ! if the first character of the line is a comment, exit the subroutine
+      if (IsComment) return  ! if the first character of the line is a comment, exit the subroutine
         ! Now loop through the input string and filter
       do while (i.le.input_strlen.and..not.IsComment)
         ch = linebuffer(i:i)
         asciicode = ichar(ch)
 
-        if(asciicode.eq.35.or.& ! '#' ! Check character against comment chars
-           asciicode.eq.42)then ! '*'
+        if(asciicode.eq.35.or.&  ! '#' ! Check character against comment chars
+           asciicode.eq.42)then  ! '*'
           IsComment  = .true.
-          strpos_end = i-1     ! If we find a comment character, mark the new end position
+          strpos_end = i-1       ! If we find a comment character, mark the new end position
         endif
         if(asciicode.eq.9)then         ! If we find a tab, replace with a space
           ch = ' '
@@ -435,11 +435,11 @@
       real(kind=ip), parameter :: MPS_2_KMPHR= 3.6_ip          ! m/s to km/hr
       real(kind=ip), parameter :: M2PS_2_KM2PHR = 3.6e-3_ip    ! m2/s to km2/hr
       real(kind=ip), parameter :: HR_2_S     = 3.6e+3_ip       ! hour to seconds
-      real(kind=ip), parameter :: GRAV_Default      = 9.81_ip     ! Gravitational acceleration m/s^2
-      real(kind=ip), parameter :: RAD_EARTH_Default = 6371.229_ip ! Radius of Earth in km (used for cell
-                                                                  ! geometry calculations: area, volume)
-                                                                  !  Note: a particular projection might
-                                                                  !        use a different radius
+      real(kind=ip), parameter :: GRAV_Default      = 9.81_ip      ! Gravitational acceleration m/s^2
+      real(kind=ip), parameter :: RAD_EARTH_Default = 6371.229_ip  ! Radius of Earth in km (used for cell
+                                                                   ! geometry calculations: area, volume)
+                                                                   !  Note: a particular projection might
+                                                                   !        use a different radius
       real(kind=ip), parameter :: CFL_Default      = 0.8_ip
       real(kind=ip), parameter :: DT_MIN_Default   = 1.0e-5_dp  ! Minimum DT in hours
       real(kind=ip), parameter :: DT_MAX_Default   = 1.0e0_dp   ! Maximum DT in hours
@@ -482,12 +482,12 @@
       logical                  :: useHorzAdvect    = .true.  ! Turns on/off horz. advection
 
         ! This will be reset based on d_coeff (.true. if d_coeff<0.0)
-      logical                  :: useDiffusion     = .false. ! Reset in Read_Control_File by d_coeff
-      logical                  :: useVarDiffH      = .false. ! Turned on in variable diffusion optmod
-      logical                  :: useVarDiffV      = .false. ! Turned on in variable diffusion optmod
+      logical                  :: useDiffusion     = .false.  ! Reset in Read_Control_File by d_coeff
+      logical                  :: useVarDiffH      = .false.  ! Turned on in variable diffusion optmod
+      logical                  :: useVarDiffV      = .false.  ! Turned on in variable diffusion optmod
 
         ! These are determined when reading Reading Block 7: Grain Size Groups
-      logical                  :: useCalcFallVel   = .false. ! Turned on in Read_Control_File if needed
+      logical                  :: useCalcFallVel   = .false.  ! Turned on in Read_Control_File if needed
       logical                  :: useTemperature   = .false.
       logical                  :: useLogNormGSbins = .false.
 
@@ -572,14 +572,14 @@
 
       integer            :: log_step = 1
 
-      integer            :: iout3d          ! index for output timestep of 3d/2d data
-      integer            :: ioutputFormat   ! determines the format of the output
-                                            ! (1=ASCII, 2=raw binary, 3=NetCDF)
-      character (len=130):: Ash3dHome       ! path to Ash3d installation
-      character (len=130):: Instit_IconFile ! path to Institution logo png
-      character (len=130):: infile          ! input control file name for Ash3d
-      logical            :: HaveInfile =.false. ! True if the input file is provided to Ash3d_PostProc
-      character (len=130):: PP_infile       ! input control file name for Ash3d_PostProc
+      integer            :: iout3d               ! index for output timestep of 3d/2d data
+      integer            :: ioutputFormat        ! determines the format of the output
+                                                 ! (1=ASCII, 2=raw binary, 3=NetCDF)
+      character (len=130):: Ash3dHome            ! path to Ash3d installation
+      character (len=130):: Instit_IconFile      ! path to Institution logo png
+      character (len=130):: infile               ! input control file name for Ash3d
+      logical            :: HaveInfile =.false.  ! True if the input file is provided to Ash3d_PostProc
+      character (len=130):: PP_infile            ! input control file name for Ash3d_PostProc
       character (len=50) :: datafileOut
       character (len=80) :: datafileIn
       logical            :: LoadConcen =.false.
@@ -639,46 +639,46 @@
       character (len=80) :: cdf_b6l4
       character (len=80) :: cdf_b6l5
 
-      logical            :: WriteCloudConcentration_ASCII=.false. ! .true. if cloud top files are to be written out
+      logical            :: WriteCloudConcentration_ASCII=.false.  ! .true. if cloud top files are to be written out
       logical            :: WriteCloudConcentration_KML
-      logical            :: WriteCloudHeight_ASCII       =.false. ! .true. if kml file of cloud height (km) is to be written out
+      logical            :: WriteCloudHeight_ASCII       =.false.  ! .true. if kml file of cloud height (km) is to be written out
       logical            :: WriteCloudHeight_KML
-      logical            :: WriteCloudLoad_ASCII         =.false. ! .true. if kml file of cloud load (T/km2) is to be written out
+      logical            :: WriteCloudLoad_ASCII         =.false.  ! .true. if kml file of cloud load (T/km2) is to be written out
       logical            :: WriteCloudLoad_KML
-      logical            :: WriteCloudTime_ASCII         =.false. ! .true. if time of cloud arrival is to be written out
+      logical            :: WriteCloudTime_ASCII         =.false.  ! .true. if time of cloud arrival is to be written out
       logical            :: WriteCloudTime_KML
-      logical            :: WriteReflectivity_ASCII      =.false. ! .true. if radar dbZ is to be calculated
+      logical            :: WriteReflectivity_ASCII      =.false.  ! .true. if radar dbZ is to be calculated
       logical            :: WriteReflectivity_KML
-      logical            :: WriteDepositFinal_ASCII      =.false. ! .true. if final deposit file is to be written out
+      logical            :: WriteDepositFinal_ASCII      =.false.  ! .true. if final deposit file is to be written out
       logical            :: WriteDepositFinal_KML
-      logical            :: WriteDepositTS_ASCII         =.false. ! .true. if time series of deposit files is to be written out
+      logical            :: WriteDepositTS_ASCII         =.false.  ! .true. if time series of deposit files is to be written out
       logical            :: WriteDepositTS_KML
-      logical            :: WriteDepositTime_ASCII       =.false. ! .true. if time of first ash is to be written out
+      logical            :: WriteDepositTime_ASCII       =.false.  ! .true. if time of first ash is to be written out
       logical            :: WriteDepositTime_KML
-      logical            :: WriteAirportFile_ASCII       =.false. ! .true. if ash arrival times at airports is to be written out
+      logical            :: WriteAirportFile_ASCII       =.false.  ! .true. if ash arrival times at airports is to be written out
       logical            :: WriteAirportFile_KML
-      logical            :: Write_PT_Data                =.false. ! .true. if either of the above is true (writes to netcdf)
-      logical            :: Write_PR_Data                =.false. ! .true. if writing profile data
-      logical            :: ReadExtAirportFile           =.false. ! .true. if external airport file is to be read
-      logical            :: AppendExtAirportFile         =.false. ! .true. if external airports in external file are appended
+      logical            :: Write_PT_Data                =.false.  ! .true. if either of the above is true (writes to netcdf)
+      logical            :: Write_PR_Data                =.false.  ! .true. if writing profile data
+      logical            :: ReadExtAirportFile           =.false.  ! .true. if external airport file is to be read
+      logical            :: AppendExtAirportFile         =.false.  ! .true. if external airports in external file are appended
 
-      logical            :: Write3dFiles                 =.false. ! .true. if 3d files are to be written
-      logical            :: WriteGSD                     =.false. ! .true. if grain-size distribution is to be written to airport file
-      logical            :: isFinal_TS                   =.false. ! .true. if we're writing out the final deposit file
+      logical            :: Write3dFiles                 =.false.  ! .true. if 3d files are to be written
+      logical            :: WriteGSD                     =.false.  ! .true. if grain-size distribution is to be written to airport file
+      logical            :: isFinal_TS                   =.false.  ! .true. if we're writing out the final deposit file
 
-      logical            :: Output_every_TS              =.false. !
-      logical            :: Output_at_WriteTimes         =.false. !
-      logical            :: Output_at_logsteps           =.false. !
-      logical            :: Called_Gen_Output_Vars       =.false. !
+      logical            :: Output_every_TS              =.false.
+      logical            :: Output_at_WriteTimes         =.false.
+      logical            :: Output_at_logsteps           =.false.
+      logical            :: Called_Gen_Output_Vars       =.false.
 
-      character (len=30) :: VolcanoName       !name of the volcano, from the ESP input file
-      integer            :: iTimeNext         !index value of next time step to write
-      real(kind=ip)      :: WriteInterval     !time between file writing, used only if nWriteTimes=-1
-      real(kind=ip)      :: NextWriteTime     !time to write the next file
-      character (len=1)  :: OutputStep_Marker !=* if data were written out since the last log_step
-      integer            :: nWriteTimes       !number of deposit files to write
+      character (len=30) :: VolcanoName        ! name of the volcano, from the ESP input file
+      integer            :: iTimeNext          ! index value of next time step to write
+      real(kind=ip)      :: WriteInterval      ! time between file writing, used only if nWriteTimes=-1
+      real(kind=ip)      :: NextWriteTime      ! time to write the next file
+      character (len=1)  :: OutputStep_Marker  ! =* if data were written out since the last log_step
+      integer            :: nWriteTimes        ! number of deposit files to write
 #ifdef USEPOINTERS
-      real(kind=ip), dimension(:), pointer     :: WriteTimes => null() ! times (hrs after first eruption start) to write out files
+      real(kind=ip), dimension(:), pointer     :: WriteTimes => null()  ! times (hrs after first eruption start) to write out files
 #else
       real(kind=ip), dimension(:), allocatable :: WriteTimes      ! times (hrs after first eruption start) to write out files
 #endif
@@ -686,11 +686,11 @@
       integer,parameter :: MAXPROFILES = 99
       integer           :: nvprofiles                             ! number of vertical profiles to write out
 #ifdef USEPOINTERS
-      integer,          dimension(:), pointer :: i_vprofile    => null() ! i value of vertical profiles
-      integer,          dimension(:), pointer :: j_vprofile    => null() ! j value of vertical profiles
-      real(kind=ip),    dimension(:), pointer :: x_vprofile    => null() ! x of vertical profiles
-      real(kind=ip),    dimension(:), pointer :: y_vprofile    => null() ! y of vertical profiles
-      character(len=50),dimension(:), pointer :: Site_vprofile => null() ! name of profile location
+      integer,          dimension(:), pointer :: i_vprofile    => null()  ! i value of vertical profiles
+      integer,          dimension(:), pointer :: j_vprofile    => null()  ! j value of vertical profiles
+      real(kind=ip),    dimension(:), pointer :: x_vprofile    => null()  ! x of vertical profiles
+      real(kind=ip),    dimension(:), pointer :: y_vprofile    => null()  ! y of vertical profiles
+      character(len=50),dimension(:), pointer :: Site_vprofile => null()  ! name of profile location
 #else
       integer,          dimension(:), allocatable :: i_vprofile     ! i value of vertical profiles
       integer,          dimension(:), allocatable :: j_vprofile     ! j value of vertical profiles
@@ -818,46 +818,46 @@
       real(kind=ip)      :: de, dn                    ! nodal spacing east & north, degrees
       real(kind=ip)      :: de_km, dn_km              ! nodal spacing, km, at volcano
 #ifdef USEPOINTERS
-      real(kind=ip),dimension(:)    ,pointer :: z_vec_init  => null()
-      real(kind=ip),dimension(:,:)  ,pointer :: xy2ll_xlon  => null() ! The (projected) computational grid
-      real(kind=ip),dimension(:,:)  ,pointer :: xy2ll_ylat  => null() !   back-projected onto lat/lon
-      real(kind=ip),dimension(:)    ,pointer :: dz_vec_pd   => null() ! used for variable dz cases
-      real(kind=ip),dimension(:)    ,pointer :: x_cc_pd     => null() ! x_component of cell centers
-      real(kind=ip),dimension(:)    ,pointer :: y_cc_pd     => null() ! y_component of cell centers
-      real(kind=ip),dimension(:)    ,pointer :: z_cc_pd     => null() ! z_component of cell centers
-      real(kind=ip),dimension(:)    ,pointer :: z_lb_pd     => null() ! z_component of cell lower-boundary
-      real(kind=ip),dimension(:)    ,pointer :: s_cc_pd     => null() ! s_component of cell centers (z,shifted,sigma)
-      real(kind=ip),dimension(:)    ,pointer :: s_lb_pd     => null() ! s_component of cell lower-boundary
-      real(kind=ip),dimension(:)    ,pointer :: ds_vec_pd   => null() ! used for variable ds cases
-      real(kind=ip),dimension(:,:)  ,pointer :: j_cc_pd     => null() ! Jacobian when using topography
-      real(kind=ip),dimension(:,:)  ,pointer :: Zsurf       => null() ! topography in km
-      real(kind=ip),dimension(:,:,:),pointer :: kappa_pd    => null() ! volume of each node in km3
-      real(kind=ip),dimension(:)    ,pointer :: lat_cc_pd   => null() ! lat of i,j cell centers
-      real(kind=ip),dimension(:)    ,pointer :: lon_cc_pd   => null() ! lon of i,j cell centers
-      real(kind=ip),dimension(:,:,:),pointer :: sigma_nx_pd => null() ! area of x face at i-1/2,j,k
-      real(kind=ip),dimension(:,:,:),pointer :: sigma_ny_pd => null() ! area of y face at i,j-1/2,k
-      real(kind=ip),dimension(:,:,:),pointer :: sigma_nz_pd => null() ! area of z face at i,j,k-1/2
+      real(kind=ip),dimension(:)    ,pointer :: z_vec_init  => null() 
+      real(kind=ip),dimension(:,:)  ,pointer :: xy2ll_xlon  => null()  ! The (projected) computational grid
+      real(kind=ip),dimension(:,:)  ,pointer :: xy2ll_ylat  => null()  !   back-projected onto lat/lon
+      real(kind=ip),dimension(:)    ,pointer :: dz_vec_pd   => null()  ! used for variable dz cases
+      real(kind=ip),dimension(:)    ,pointer :: x_cc_pd     => null()  ! x_component of cell centers
+      real(kind=ip),dimension(:)    ,pointer :: y_cc_pd     => null()  ! y_component of cell centers
+      real(kind=ip),dimension(:)    ,pointer :: z_cc_pd     => null()  ! z_component of cell centers
+      real(kind=ip),dimension(:)    ,pointer :: z_lb_pd     => null()  ! z_component of cell lower-boundary
+      real(kind=ip),dimension(:)    ,pointer :: s_cc_pd     => null()  ! s_component of cell centers (z,shifted,sigma)
+      real(kind=ip),dimension(:)    ,pointer :: s_lb_pd     => null()  ! s_component of cell lower-boundary
+      real(kind=ip),dimension(:)    ,pointer :: ds_vec_pd   => null()  ! used for variable ds cases
+      real(kind=ip),dimension(:,:)  ,pointer :: j_cc_pd     => null()  ! Jacobian when using topography
+      real(kind=ip),dimension(:,:)  ,pointer :: Zsurf       => null()  ! topography in km
+      real(kind=ip),dimension(:,:,:),pointer :: kappa_pd    => null()  ! volume of each node in km3
+      real(kind=ip),dimension(:)    ,pointer :: lat_cc_pd   => null()  ! lat of i,j cell centers
+      real(kind=ip),dimension(:)    ,pointer :: lon_cc_pd   => null()  ! lon of i,j cell centers
+      real(kind=ip),dimension(:,:,:),pointer :: sigma_nx_pd => null()  ! area of x face at i-1/2,j,k
+      real(kind=ip),dimension(:,:,:),pointer :: sigma_ny_pd => null()  ! area of y face at i,j-1/2,k
+      real(kind=ip),dimension(:,:,:),pointer :: sigma_nz_pd => null()  ! area of z face at i,j,k-1/2
 
 #else
       real(kind=ip),dimension(:)    ,allocatable :: z_vec_init
-      real(kind=ip),dimension(:,:)  ,allocatable :: xy2ll_xlon  ! The (projected) computational grid
-      real(kind=ip),dimension(:,:)  ,allocatable :: xy2ll_ylat  !   back-projected onto lat/lon
-      real(kind=ip),dimension(:)    ,allocatable :: dz_vec_pd   ! used for variable dz cases
-      real(kind=ip),dimension(:)    ,allocatable :: x_cc_pd     ! x_component of cell centers
-      real(kind=ip),dimension(:)    ,allocatable :: y_cc_pd     ! y_component of cell centers
-      real(kind=ip),dimension(:)    ,allocatable :: z_cc_pd     ! z_component of cell centers
-      real(kind=ip),dimension(:)    ,allocatable :: z_lb_pd     ! z_component of cell lower-boundary
-      real(kind=ip),dimension(:)    ,allocatable :: s_cc_pd     ! s_component of cell centers (z,shifted,sigma)
-      real(kind=ip),dimension(:)    ,allocatable :: s_lb_pd     ! s_component of cell lower-boundary
-      real(kind=ip),dimension(:)    ,allocatable :: ds_vec_pd   ! used for variable ds cases
-      real(kind=ip),dimension(:,:)  ,allocatable :: j_cc_pd     ! Jacobian when using topography
-      real(kind=ip),dimension(:,:)  ,allocatable :: Zsurf       ! topography in km
-      real(kind=ip),dimension(:,:,:),allocatable :: kappa_pd    ! volume of each node in km3
-      real(kind=ip),dimension(:)    ,allocatable :: lat_cc_pd   ! lat of i,j cell centers
-      real(kind=ip),dimension(:)    ,allocatable :: lon_cc_pd   ! lon of i,j cell centers
-      real(kind=ip),dimension(:,:,:),allocatable :: sigma_nx_pd ! area of x face at i-1/2,j,k
-      real(kind=ip),dimension(:,:,:),allocatable :: sigma_ny_pd ! area of y face at i,j-1/2,k
-      real(kind=ip),dimension(:,:,:),allocatable :: sigma_nz_pd ! area of z face at i,j,k-1/2
+      real(kind=ip),dimension(:,:)  ,allocatable :: xy2ll_xlon   ! The (projected) computational grid
+      real(kind=ip),dimension(:,:)  ,allocatable :: xy2ll_ylat   !   back-projected onto lat/lon
+      real(kind=ip),dimension(:)    ,allocatable :: dz_vec_pd    ! used for variable dz cases
+      real(kind=ip),dimension(:)    ,allocatable :: x_cc_pd      ! x_component of cell centers
+      real(kind=ip),dimension(:)    ,allocatable :: y_cc_pd      ! y_component of cell centers
+      real(kind=ip),dimension(:)    ,allocatable :: z_cc_pd      ! z_component of cell centers
+      real(kind=ip),dimension(:)    ,allocatable :: z_lb_pd      ! z_component of cell lower-boundary
+      real(kind=ip),dimension(:)    ,allocatable :: s_cc_pd      ! s_component of cell centers (z,shifted,sigma)
+      real(kind=ip),dimension(:)    ,allocatable :: s_lb_pd      ! s_component of cell lower-boundary
+      real(kind=ip),dimension(:)    ,allocatable :: ds_vec_pd    ! used for variable ds cases
+      real(kind=ip),dimension(:,:)  ,allocatable :: j_cc_pd      ! Jacobian when using topography
+      real(kind=ip),dimension(:,:)  ,allocatable :: Zsurf        ! topography in km
+      real(kind=ip),dimension(:,:,:),allocatable :: kappa_pd     ! volume of each node in km3
+      real(kind=ip),dimension(:)    ,allocatable :: lat_cc_pd    ! lat of i,j cell centers
+      real(kind=ip),dimension(:)    ,allocatable :: lon_cc_pd    ! lon of i,j cell centers
+      real(kind=ip),dimension(:,:,:),allocatable :: sigma_nx_pd  ! area of x face at i-1/2,j,k
+      real(kind=ip),dimension(:,:,:),allocatable :: sigma_ny_pd  ! area of y face at i,j-1/2,k
+      real(kind=ip),dimension(:,:,:),allocatable :: sigma_nz_pd  ! area of z face at i,j,k-1/2
 #endif
 
 !*********************************************************************************
@@ -1012,35 +1012,35 @@
       real(kind=ip), parameter     :: StopValue_FracAshDep_Default    = 0.99_ip
 
 #ifdef USEPOINTERS
-      real(kind=ip),dimension(:,:,:)    ,pointer :: vx_pd => null() ! u (E) component of wind
-      real(kind=ip),dimension(:,:,:)    ,pointer :: vy_pd => null() ! v (N) component of wind
-      real(kind=ip),dimension(:,:,:)    ,pointer :: vz_pd => null() ! w (up) component of wind
-      real(kind=ip),dimension(:,:,:)    ,pointer :: vh_pd => null() ! supplemental due to topography
-      real(kind=ip),dimension(:,:,:,:)  ,pointer :: vf_pd => null() ! fall velocity (x,y,z,gs) (positive upward)
-      real(kind=ip),dimension(:,:,:,:,:),pointer :: concen_pd      => null() !ash concentration in x,y,z,gs_bin,time
+      real(kind=ip),dimension(:,:,:)    ,pointer :: vx_pd => null()  ! u (E) component of wind
+      real(kind=ip),dimension(:,:,:)    ,pointer :: vy_pd => null()  ! v (N) component of wind
+      real(kind=ip),dimension(:,:,:)    ,pointer :: vz_pd => null()  ! w (up) component of wind
+      real(kind=ip),dimension(:,:,:)    ,pointer :: vh_pd => null()  ! supplemental due to topography
+      real(kind=ip),dimension(:,:,:,:)  ,pointer :: vf_pd => null()  ! fall velocity (x,y,z,gs) (positive upward)
+      real(kind=ip),dimension(:,:,:,:,:),pointer :: concen_pd      => null()  ! ash concentration in x,y,z,gs_bin,time
       real(kind=ip),dimension(:,:,:)    ,pointer :: outflow_xz1_pd => null()
       real(kind=ip),dimension(:,:,:)    ,pointer :: outflow_xz2_pd => null()
       real(kind=ip),dimension(:,:,:)    ,pointer :: outflow_yz1_pd => null()
       real(kind=ip),dimension(:,:,:)    ,pointer :: outflow_yz2_pd => null()
       real(kind=ip),dimension(:,:,:)    ,pointer :: outflow_xy1_pd => null()
       real(kind=ip),dimension(:,:,:)    ,pointer :: outflow_xy2_pd => null()
-      real(kind=ip),dimension(:,:,:)    ,pointer :: DepositGranularity => null() ! accumulated ash mass on ground
+      real(kind=ip),dimension(:,:,:)    ,pointer :: DepositGranularity => null()  ! accumulated ash mass on ground
       real(kind=ip),dimension(:)        ,pointer :: mass_aloft
-      integer      ,dimension(:)        ,pointer :: SpeciesID   ! 1 = ash gs bin
-                                                                ! 2 = aggregate
-                                                                ! 3 = chem species
-      integer      ,dimension(:)        ,pointer :: SpeciesSubID ! categorization within the class
-      real(kind=ip),dimension(:)        ,pointer :: v_s         ! Settling vel
-      real(kind=ip),dimension(:)        ,pointer :: gsdiam      ! diameter (m)
-      real(kind=ip),dimension(:)        ,pointer :: bin_mass    ! mass
-      real(kind=ip),dimension(:)        ,pointer :: rho_m       ! density (kg/m3)
-      logical      ,dimension(:)        ,pointer :: IsAloft    ! T/F indicator remaining airborne concentration
+      integer      ,dimension(:)        ,pointer :: SpeciesID     ! 1 = ash gs bin
+                                                                  ! 2 = aggregate
+                                                                  ! 3 = chem species
+      integer      ,dimension(:)        ,pointer :: SpeciesSubID  ! categorization within the class
+      real(kind=ip),dimension(:)        ,pointer :: v_s           ! Settling vel
+      real(kind=ip),dimension(:)        ,pointer :: gsdiam        ! diameter (m)
+      real(kind=ip),dimension(:)        ,pointer :: bin_mass      ! mass
+      real(kind=ip),dimension(:)        ,pointer :: rho_m         ! density (kg/m3)
+      logical      ,dimension(:)        ,pointer :: IsAloft       ! T/F indicator remaining airborne concentration
 #else
-      real(kind=ip),dimension(:,:,:)    ,allocatable :: vx_pd ! u (E) component of wind
-      real(kind=ip),dimension(:,:,:)    ,allocatable :: vy_pd ! v (N) component of wind
-      real(kind=ip),dimension(:,:,:)    ,allocatable :: vz_pd ! w (up) component of wind
-      real(kind=ip),dimension(:,:,:)    ,allocatable :: vh_pd ! supplemental due to topography
-      real(kind=ip),dimension(:,:,:,:)  ,allocatable :: vf_pd ! fall velocity (x,y,z,gs) (positive upward)
+      real(kind=ip),dimension(:,:,:)    ,allocatable :: vx_pd  ! u (E) component of wind
+      real(kind=ip),dimension(:,:,:)    ,allocatable :: vy_pd  ! v (N) component of wind
+      real(kind=ip),dimension(:,:,:)    ,allocatable :: vz_pd  ! w (up) component of wind
+      real(kind=ip),dimension(:,:,:)    ,allocatable :: vh_pd  ! supplemental due to topography
+      real(kind=ip),dimension(:,:,:,:)  ,allocatable :: vf_pd  ! fall velocity (x,y,z,gs) (positive upward)
       real(kind=ip),dimension(:,:,:,:,:),allocatable :: concen_pd       ! ash concentration in x,y,z,gs_bin,time
       real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_xz1_pd  ! outflow concentration in x,z,gs
       real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_xz2_pd  ! outflow concentration in x,z,gs
@@ -1048,17 +1048,17 @@
       real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_yz2_pd  ! outflow concentration in y,z,gs
       real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_xy1_pd  ! outflow concentration in x,y,gs
       real(kind=ip),dimension(:,:,:)    ,allocatable :: outflow_xy2_pd  ! outflow concentration in x,y,gs
-      real(kind=ip),dimension(:,:,:)    ,allocatable :: DepositGranularity ! accumulated ash mass on ground
+      real(kind=ip),dimension(:,:,:)    ,allocatable :: DepositGranularity  ! accumulated ash mass on ground
       real(kind=ip),dimension(:)        ,allocatable :: mass_aloft
-      integer      ,dimension(:)        ,allocatable :: SpeciesID   ! 1 = ash gs bin
-                                                                    ! 2 = aggregate
-                                                                    ! 3 = chem species
-      integer      ,dimension(:)        ,allocatable :: SpeciesSubID ! categorization within the class
-      real(kind=ip),dimension(:)        ,allocatable :: v_s         ! Settling vel
-      real(kind=ip),dimension(:)        ,allocatable :: gsdiam      ! diameter (m)
-      real(kind=ip),dimension(:)        ,allocatable :: bin_mass    ! mass
-      real(kind=ip),dimension(:)        ,allocatable :: rho_m       ! density (kg/m3)
-      logical      ,dimension(:)        ,allocatable :: IsAloft    ! T/F indicator remaining airborne concentration
+      integer      ,dimension(:)        ,allocatable :: SpeciesID     ! 1 = ash gs bin
+                                                                      ! 2 = aggregate
+                                                                      ! 3 = chem species
+      integer      ,dimension(:)        ,allocatable :: SpeciesSubID  ! categorization within the class
+      real(kind=ip),dimension(:)        ,allocatable :: v_s           ! Settling vel
+      real(kind=ip),dimension(:)        ,allocatable :: gsdiam        ! diameter (m)
+      real(kind=ip),dimension(:)        ,allocatable :: bin_mass      ! mass
+      real(kind=ip),dimension(:)        ,allocatable :: rho_m         ! density (kg/m3)
+      logical      ,dimension(:)        ,allocatable :: IsAloft       ! T/F indicator remaining airborne concentration
 #endif
       real(kind=ip)      :: dep_percent_accumulated = 0.0_ip
       real(kind=ip)      :: aloft_percent_remaining = 0.0_ip
@@ -1269,14 +1269,14 @@ subroutine Allocate_solution
       ! Note: Hours should must be stored at kind=8 since forecast runs to work with HoursSince
       !       If kind=4 were used, the current year with a BaseYear=0 will cause
       !       overflows and tricky failures
-      real(kind=dp)      :: Simtime_in_hours ! simulated time for ash cloud transport
-      real(kind=dp)      :: SimStartHour     ! Simulation start time, in hours since 1900
-      real(kind=dp)      :: time             ! physical time simulated by this model
+      real(kind=dp)      :: Simtime_in_hours  ! simulated time for ash cloud transport
+      real(kind=dp)      :: SimStartHour      ! Simulation start time, in hours since 1900
+      real(kind=dp)      :: time              ! physical time simulated by this model
 
-      real(kind=dp)      :: t0,t1,t2         ! CPU time indicators
-      real(kind=dp)      :: tw1,tw2          ! CPU time indicators for reading wind data
-      real(kind=dp)      :: tw_tot  = 0.0_dp ! total CPU time reading wind data
-      integer            :: tcount1,tcount2,tcount_rate,tcount_max ! system time indicators
+      real(kind=dp)      :: t0,t1,t2          ! CPU time indicators
+      real(kind=dp)      :: tw1,tw2           ! CPU time indicators for reading wind data
+      real(kind=dp)      :: tw_tot  = 0.0_dp  ! total CPU time reading wind data
+      integer            :: tcount1,tcount2,tcount_rate,tcount_max  ! system time indicators
       real(kind=ip)      :: dt_ip
       real(kind=dp)      :: dt              ! dt used for actual integration
       real(kind=dp)      :: dt_meso_last    ! dt as calculated from meso_last
@@ -1284,11 +1284,11 @@ subroutine Allocate_solution
 
       ! Some stings that hold time data used in output files
       character(len=20)  :: os_time_log
-      character(len=20)  :: xmlSimStartTime                     !start time of simulation in xml format
+      character(len=20)  :: xmlSimStartTime                     ! start time of simulation in xml format
       character(len=20)  :: xmlTimeSpanStart
-      character(len=20)  :: xmlTimeSpanEnd    !time periods written to kml files
+      character(len=20)  :: xmlTimeSpanEnd    ! time periods written to kml files
 
-      integer :: ntmax ! The maximum anticipated number of steps
+      integer :: ntmax  ! The maximum anticipated number of steps
 #ifdef USEPOINTERS
       real(kind=dp),dimension(:),pointer :: time_native => null()
 #else

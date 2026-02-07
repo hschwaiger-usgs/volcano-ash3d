@@ -88,20 +88,20 @@
       use Diffusion,     only : &
          diffusivity_horz,diffusivity_vert,KV_MIN,KH_MIN,KV_MAX,KH_MAX
 
-      integer :: Kh_model_ID     = 2 ! 1=constant; [2]=Smagorinsky (1963); 3=Pielke (1974)
+      integer :: Kh_model_ID     = 2  ! 1=constant; [2]=Smagorinsky (1963); 3=Pielke (1974)
 !      integer :: Phi_model_ID    !
-      integer :: KvBL_model_ID   = 4 ! default is 4: Ulke
-      integer :: KvBL_MomHeat    = 1 ! default is to use the momentum form [1]
-      integer :: KvFA_model_ID   = 4 ! default is 4: Betts
+      integer :: KvBL_model_ID   = 4  ! default is 4: Ulke
+      integer :: KvBL_MomHeat    = 1  ! default is to use the momentum form [1]
+      integer :: KvFA_model_ID   = 4  ! default is 4: Betts
 
       !  These are the parameters that control the diffusivity calculations
       !    C from Smagorinsky model of horizontal diffusivity
-      real(kind=sp) :: KH_SmagC             = 0.2_sp ! Smagorinsky (1993) constant for LES horizontal diffusivity (0.2 - 0.9)
-      real(kind=sp) :: MAX_LES_LengthScale2 = 100.0_sp ! Maximum area that will be used for scaling
+      real(kind=sp) :: KH_SmagC             = 0.2_sp    ! Smagorinsky (1993) constant for LES horizontal diffusivity (0.2 - 0.9)
+      real(kind=sp) :: MAX_LES_LengthScale2 = 100.0_sp  ! Maximum area that will be used for scaling
       !    These next three are needed for the vertical diffusivity
-      real(kind=ip) :: vonKarman    = 0.4_ip   ! von Karman constant (around 0.4)
-      real(kind=ip) :: LambdaC      = 100.0_ip ! Asymptotic length scale (around 30-150 m)
-      real(kind=ip) :: RI_CRIT      = 0.25_ip  ! Critical Richardson number (0.25)
+      real(kind=ip) :: vonKarman    = 0.4_ip    ! von Karman constant (around 0.4)
+      real(kind=ip) :: LambdaC      = 100.0_ip  ! Asymptotic length scale (around 30-150 m)
+      real(kind=ip) :: RI_CRIT      = 0.25_ip   ! Critical Richardson number (0.25)
 
       real(kind=ip) :: USTAR_MIN = 0.1_ip    ! Minimum Friction Velocity (m/s)
 
@@ -119,9 +119,9 @@
       integer       :: PBL_exp_int = 1
       real(kind=ip) :: PBL_exp     = 1.0_ip
 
-      real(kind=ip), parameter :: BL_MAX_MET_AREA = 3000.0_ip  ! Maximum acceptable cell-size for BL calculation (km2)
-      real(kind=ip), parameter :: BL_MAX_Pres     = 95000.0_ip ! The maximum pressure in Pa of the second pres lev.
-                                                               ! This ensures adaquate resolution of BL
+      real(kind=ip), parameter :: BL_MAX_MET_AREA = 3000.0_ip   ! Maximum acceptable cell-size for BL calculation (km2)
+      real(kind=ip), parameter :: BL_MAX_Pres     = 95000.0_ip  ! The maximum pressure in Pa of the second pres lev.
+                                                                ! This ensures adaquate resolution of BL
       logical       :: BL_unresolved    = .false.
       logical       :: useBoundaryLayer = .true.
       real(kind=ip) :: diffusivity_BL            ! This is used if Kv is constant in BL
@@ -130,11 +130,11 @@
       logical :: use_Output_Vars_VarDiff       = .true.
       logical :: AddedVarCount                 = .false.
       integer, parameter :: nvar_User2d_static_XY_VarDiff = 0
-      integer            :: nvar_User2d_XY_VarDiff        = 0 ! If using Kz, then =2 : Pblh, Ust
+      integer            :: nvar_User2d_XY_VarDiff        = 0  ! If using Kz, then =2 : Pblh, Ust
       integer, parameter :: nvar_User3d_XYGs_VarDiff      = 0
-      integer            :: nvar_User3d_XYZ_VarDiff       = 0 ! If using Kh, then =1 khorz; if also Kz, then =3 kvert, Ri
+      integer            :: nvar_User3d_XYZ_VarDiff       = 0  ! If using Kh, then =1 khorz; if also Kz, then =3 kvert, Ri
       integer, parameter :: nvar_User4d_XYZGs_VarDiff     = 0
-      integer, parameter,public :: nvar_User_charlines_VarDiff   = 9 ! number of line of the special block of control file
+      integer, parameter,public :: nvar_User_charlines_VarDiff   = 9  ! number of line of the special block of control file
 
       character(len=30),dimension(:),allocatable :: temp_2d_name_VarDiff
       character(len=30),dimension(:),allocatable :: temp_2d_unit_VarDiff
@@ -1197,7 +1197,7 @@
          useVarDiffH,KM_2_M,M2PS_2_KM2PHR
 
       use mesh,          only : &
-         nxmax,nymax,nzmax !,lon_cc_pd,lat_cc_pd
+         nxmax,nymax,nzmax  !,lon_cc_pd,lat_cc_pd
 
       use Diffusion,     only : &
          kx,kz
@@ -1489,9 +1489,9 @@
         Khz_meso_next_step_MetP_sp(i,j,k) = max(Khz_meso_next_step_MetP_sp(i,j,k),KH_MIN_km2hr)
         Khz_meso_next_step_MetP_sp(i,j,k) = min(Khz_meso_next_step_MetP_sp(i,j,k),KH_MAX_km2hr)
 
-              enddo !k
-          enddo !j
-        enddo !i
+              enddo  ! k
+          enddo  ! j
+        enddo  ! i
       endif
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
@@ -1560,7 +1560,7 @@
           !  PBLz, L_MonOb, FricVel, Ri, dv_dz, and z
           ! We need to set a minimum for z0 since some NWP files set this to 0
           ! Table 6.1 of Panofsky and Dutton giv 1.0e-4 for water.
-          z0 = max(SurfRoughLen_Met_sp(i,j),1.0e-3_sp) ! We need to set a minimum for z0
+          z0 = max(SurfRoughLen_Met_sp(i,j),1.0e-3_sp)  ! We need to set a minimum for z0
           if(last_or_next.eq.0)then
               Ri_col(:) = real(Ri_meso_last_step_MetP_sp(i,j,:),kind=ip)    ! dimensionless
                z_col(:) = real(MR_geoH_metP_last(i,j,:),kind=ip)*KM_2_M     ! m
@@ -1658,8 +1658,8 @@
                   ! Kv from similarity theory (Eq. 8.48 of Jacobson)
                   Kv_BL = z_col(k)*vonKarman*FricVel*PBL_profile_fac/Phi
                 endif
-              endif ! useBoundaryLayer
-            endif ! test on if this is a valid zone for Kv
+              endif  ! useBoundaryLayer
+            endif  ! test on if this is a valid zone for Kv
 
             ! assign to array
             Kv_col(k) = max(Kv_BL,Kv_FreeAir)
@@ -1765,7 +1765,7 @@
           call MR_Regrid_MetP_to_CompH(MR_iMetStep_Now)
           Khz_meso_next_step_sp = MR_dum3d_compH
           first_time = .false.
-        endif ! first_time
+        endif  ! first_time
         Khz_meso_last_step_MetP_sp = Khz_meso_next_step_MetP_sp
         Khz_meso_last_step_sp      = Khz_meso_next_step_sp
         vx_meso_last_step_MetP_sp  = vx_meso_next_step_MetP_sp
@@ -1919,7 +1919,7 @@
           FricVel_meso_last_step_Met_sp = FricVel_meso_next_step_Met_sp
           PBLH_meso_last_step_Met_sp    = PBLH_meso_next_step_Met_sp
           Kv_meso_last_step_sp          = Kv_meso_next_step_sp
-        endif ! first_time
+        endif  ! first_time
 
           ! Populate Ri for the 'next' step
         call Set_VirtPotenTemp
@@ -1993,14 +1993,14 @@
 
       logical, intent(in), optional :: Load_Prestep
 
-      real(kind=ip),parameter :: MIN_DVDZ = 3.0e-2_ip ! The minimum vertical shear assumed
-                                                      ! No min leads to singular Ri
-                                                      ! This value is assumed based on comparisons to MERRA
+      real(kind=ip),parameter :: MIN_DVDZ = 3.0e-2_ip  ! The minimum vertical shear assumed
+                                                       ! No min leads to singular Ri
+                                                       ! This value is assumed based on comparisons to MERRA
 
-      real(kind=ip),dimension(:),allocatable :: z ! in m
-      real(kind=ip),dimension(:),allocatable :: u ! in m/s
-      real(kind=ip),dimension(:),allocatable :: v ! in m/s
-      real(kind=ip),dimension(:),allocatable :: p ! in Pa
+      real(kind=ip),dimension(:),allocatable :: z  ! in m
+      real(kind=ip),dimension(:),allocatable :: u  ! in m/s
+      real(kind=ip),dimension(:),allocatable :: v  ! in m/s
+      real(kind=ip),dimension(:),allocatable :: p  ! in Pa
       real(kind=ip),dimension(:),allocatable :: Tpoten
 
       integer       :: i,j,k,k1,k2
@@ -2067,9 +2067,9 @@
               dV_dz_MetP_sp(i,j,k) = real(sqrt(dveldz2),kind=sp)
 
               Ri_meso_last_step_MetP_sp(i,j,k) = real(Ri,kind=sp)
-            enddo ! k
-          enddo ! j
-        enddo ! i
+            enddo  ! k
+          enddo  ! j
+        enddo  ! i
       else
         do i=1,nx_submet
           do j=1,ny_submet
@@ -2105,9 +2105,9 @@
               dV_dz_MetP_sp(i,j,k) = real(sqrt(dveldz2),kind=sp)
 
               Ri_meso_next_step_MetP_sp(i,j,k) = real(Ri,kind=sp)
-            enddo ! k
-          enddo ! j
-        enddo ! i
+            enddo  ! k
+          enddo  ! j
+        enddo  ! i
       endif
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
@@ -2146,7 +2146,7 @@
       endif;enddo
 
       ! Check if the windfile being used provides surface roughness
-      ivar = 17 ! Surface_roughness_surface
+      ivar = 17  ! Surface_roughness_surface
       if(Met_var_IsAvailable(ivar))then
         ! Surface roughness is provided, read it from the met file
         call MR_Read_2d_Met_Variable(ivar,MR_iMetStep_Now)
@@ -2223,7 +2223,7 @@
       endif
 
       ! Check if the windfile being used provides friction velocity
-      ivar = 13 ! Friction_velocity_surface
+      ivar = 13  ! Friction_velocity_surface
       if(Met_var_IsAvailable(ivar))then
         if(first_time)then
           ! Friction velocity is provided, read it from the met file
@@ -2320,7 +2320,7 @@
           do j=1,ny_submet
             z0 = SurfRoughLen_Met_sp(i,j)
             U_mag = sqrt(SurfVelx_meso_Met_sp(i,j)**2.0_sp + &
-                         SurfVely_meso_Met_sp(i,j)**2.0_sp)! / MPS_2_KMPHR
+                         SurfVely_meso_Met_sp(i,j)**2.0_sp)    ! / MPS_2_KMPHR
             denom1 = log(SurfVelh_meso_Met_sp(i,j)/z0)
             if(first_time)then
               L_MonOb   = real(L_MonOb_meso_last_step_Met_sp(i,j),kind=ip)
@@ -2417,7 +2417,7 @@
       endif
 
       ! Check if the windfile being used provides PBLH
-      ivar = 10 ! Planetary Boundary Level Height
+      ivar = 10  ! Planetary Boundary Level Height
       if(Met_var_IsAvailable(ivar))then
         ! PBLH is provided, read it from the met file
         if(first_time)then
@@ -2531,8 +2531,8 @@
             else
               do k = 2,np_fullmet-1
                 if(Ri_col(k).gt.RI_CRIT.and.Ri_col(k-1).le.RI_CRIT &
-                   .and.z_col(k).lt.3000.0_ip)then ! We need this upper limit of 3km to avoid
-                                                   ! missing the PBL and flagging the tropopause
+                   .and.z_col(k).lt.3000.0_ip)then  ! We need this upper limit of 3km to avoid
+                                                    ! missing the PBL and flagging the tropopause
 
                   ! This height is above the PBL; interpolate back to
                   ! k-1 to get PBLz
@@ -2729,9 +2729,9 @@
 
       implicit none
 
-      real(kind=ip) :: Fc_Louis ! dimensionless
-      real(kind=ip) :: Ri       ! dimensionless
-      real(kind=ip) :: zonz0    ! dimensionless
+      real(kind=ip) :: Fc_Louis  ! dimensionless
+      real(kind=ip) :: Ri        ! dimensionless
+      real(kind=ip) :: zonz0     ! dimensionless
 
       real(kind=ip) :: a,b,c,bprime
 
@@ -2779,8 +2779,8 @@
 
       implicit none
 
-      real(kind=ip) :: Fc_Jac ! dimensionless
-      real(kind=ip) :: Ri ! dimensionless
+      real(kind=ip) :: Fc_Jac  ! dimensionless
+      real(kind=ip) :: Ri      ! dimensionless
 
       do io=1,2;if(VB(io).le.verbosity_debug2)then
         write(outlog(io),*)"     Entered function Fc_Jac"
@@ -2823,8 +2823,8 @@
 
       implicit none
 
-      real(kind=ip) :: Fc_Betts ! dimensionless
-      real(kind=ip) :: Ri ! dimensionless
+      real(kind=ip) :: Fc_Betts  ! dimensionless
+      real(kind=ip) :: Ri        ! dimensionless
 
       do io=1,2;if(VB(io).le.verbosity_debug2)then
         write(outlog(io),*)"     Entered function Fc_Betts"
@@ -2864,8 +2864,8 @@
 
       implicit none
 
-      real(kind=ip) :: Fc_Hong ! dimensionless
-      real(kind=ip) :: Ri ! dimensionless
+      real(kind=ip) :: Fc_Hong  ! dimensionless
+      real(kind=ip) :: Ri       ! dimensionless
 
       do io=1,2;if(VB(io).le.verbosity_debug2)then
         write(outlog(io),*)"     Entered function Fc_Hong"
@@ -2906,8 +2906,8 @@
 
       implicit none
 
-      real(kind=ip) :: Fc_Collins ! dimensionless
-      real(kind=ip) :: Ri ! dimensionless
+      real(kind=ip) :: Fc_Collins  ! dimensionless
+      real(kind=ip) :: Ri          ! dimensionless
 
       do io=1,2;if(VB(io).le.verbosity_debug2)then
         write(outlog(io),*)"     Entered function Fc_Collins"
@@ -2963,7 +2963,7 @@
       real(kind=ip),parameter :: b = 5.0_ip
       real(kind=ip),parameter :: c = 5.0_ip
       real(kind=ip),parameter :: d = 5.0_ip
-      real(kind=ip),parameter :: f = 5.19615242270663_ip ! = sqrt(27)
+      real(kind=ip),parameter :: f = 5.19615242270663_ip  ! = sqrt(27)
 
       do io=1,2;if(VB(io).le.verbosity_debug2)then
         write(outlog(io),*)"     Entered function Fc_PMB"

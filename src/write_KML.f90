@@ -97,7 +97,7 @@
         write(outlog(io),*)"     Entered Subroutine Set_OutVar_Specs"
       endif;enddo
 
-      ivar = 1 ! cloud concentration
+      ivar = 1  ! cloud concentration
       KMZ_filename(ivar)      = 'CloudConcentration.kmz       '
       KML_filename(ivar)      = 'CloudConcentration.kml       '
       KML_units(ivar)         = 'mg/m3'
@@ -126,7 +126,7 @@
       KML_sizeY(ivar)         = '305'
       KML_AltMode(ivar)       = 'absolute'
 
-      ivar = 2 ! cloud height (top)
+      ivar = 2  ! cloud height (top)
       KMZ_filename(ivar)      = 'CloudHeight.kmz              '
       KML_filename(ivar)      = 'CloudHeight.kml              '
       KML_units(ivar)         = ' km  '
@@ -155,7 +155,7 @@
       KML_sizeY(ivar)         = '305'
       KML_AltMode(ivar)       = 'absolute'
 
-      ivar = 3 ! cloud height (bot)
+      ivar = 3  ! cloud height (bot)
       KMZ_filename(ivar)      = 'CloudBottom.kmz              '
       KML_filename(ivar)      = 'CloudBottom.kml              '
       KML_units(ivar)         = ' km  '
@@ -184,7 +184,7 @@
       KML_sizeY(ivar)         = '305'
       KML_AltMode(ivar)       = 'absolute'
 
-      ivar = 4 ! cloud load
+      ivar = 4  ! cloud load
       KMZ_filename(ivar)      = 'CloudLoad.kmz                '
       KML_filename(ivar)      = 'CloudLoad.kml                '
       KML_units(ivar)         = 'T/km2'
@@ -213,7 +213,7 @@
       KML_sizeY(ivar)         = '305'
       KML_AltMode(ivar)       = 'absolute'
 
-      ivar = 5 ! cloud arrival time
+      ivar = 5  ! cloud arrival time
       KMZ_filename(ivar)      = 'cloud_arrivaltimes_hours.kmz'
       KML_filename(ivar)      = 'cloud_arrivaltimes_hours.kml'
       KML_units(ivar)         = ' hrs '
@@ -243,7 +243,7 @@
       KML_sizeY(ivar)         = '305'
       KML_AltMode(ivar)       = 'clampToGround'
 
-      ivar = 6 ! cloud reflectivity
+      ivar = 6  ! cloud reflectivity
       KMZ_filename(ivar)      = 'reflectivity.kmz             '
       KML_filename(ivar)      = 'reflectivity.kml             '
       KML_units(ivar)         = ' dBZ '
@@ -272,7 +272,7 @@
       KML_sizeY(ivar)         = '305'
       KML_AltMode(ivar)       = 'absolute'
 
-      ivar = 7 ! deposit
+      ivar = 7  ! deposit
       KMZ_filename(ivar)      = 'deposit_thickness_mm.kmz     '
       KML_filename(ivar)      = 'deposit_thickness_mm.kml     '
       KML_units(ivar)         = '  mm '
@@ -301,7 +301,7 @@
       KML_sizeY(ivar)         = '357'
       KML_AltMode(ivar)       = 'clampToGround'
 
-      ivar = 8 ! deposit (NWS)
+      ivar = 8  ! deposit (NWS)
       KMZ_filename(ivar)      = 'deposit_thickness_inches.kmz  '
       KML_filename(ivar)      = 'deposit_thickness_inches.kml  '
       KML_units(ivar)         = '  in.'
@@ -330,7 +330,7 @@
       KML_sizeY(ivar)         = '316'
       KML_AltMode(ivar)       = 'clampToGround'
 
-      ivar = 9 ! deposit time
+      ivar = 9  ! deposit time
       KMZ_filename(ivar)      = 'ashfall_arrivaltimes_hours.kmz'
       KML_filename(ivar)      = 'ashfall_arrivaltimes_hours.kml'
       KML_units(ivar)         = ' hrs '
@@ -359,7 +359,7 @@
       KML_sizeY(ivar)         = '316'
       KML_AltMode(ivar)       = 'clampToGround'
 
-      ivar = 10 ! topography
+      ivar = 10  ! topography
       KMZ_filename(ivar)      = 'Topography.kmz                '
       KML_filename(ivar)      = 'Topography.kml                '
       KML_units(ivar)         = '  km '
@@ -416,7 +416,7 @@
       use mesh,          only : &
          A3d_iprojflag,A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
          A3d_k0,A3d_Re,IsLatLon, &
-         latLL,lonLL,latUR,lonUR,xLL,yLL,xUR,yUR !,de,dn,dx,dy
+         latLL,lonLL,latUR,lonUR,xLL,yLL,xUR,yUR  !,de,dn,dx,dy
 
       use time_data,     only : &
          BaseYear,useLeap,SimStartHour,OutputOffset
@@ -436,7 +436,7 @@
       real(kind=ip)      :: longLL,longUR
       real(kind=ip)      :: lattLL,lattUR
 
-      real(kind=dp)      :: olam,ophi ! using precision needed by libprojection
+      real(kind=dp)      :: olam,ophi
 
       integer,       dimension(:), allocatable :: iyear, imonth, iday
       real(kind=ip), dimension(:), allocatable :: StartHour
@@ -464,7 +464,7 @@
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter   :: dp        = 8 ! double precision
+          integer        ,parameter   :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in)  :: HoursSince
           integer        ,intent(in)  :: byear
           logical        ,intent(in)  :: useLeaps
@@ -528,7 +528,7 @@
         ybottom = yLL
         ytop    = yUR
         call PlotModelBoundary(xleft,xright,ybottom,ytop,fid)
-      endif ! IsLatLon
+      endif  ! IsLatLon
 
       allocate(iyear(neruptions))
       allocate(imonth(neruptions))
@@ -772,7 +772,7 @@
       integer      ,intent(in)  :: height_flag          ! <0 : min, =0 : ground, >0 : max
       integer      ,intent(in)  :: TS_flag              ! 0 = not a time-series, 1 = time-series
 
-      real(kind=dp)       :: olam,ophi ! using precision needed by libprojection
+      real(kind=dp)       :: olam,ophi
 
       integer             :: i,j
       character(len=9)    :: StyleNow3
@@ -798,7 +798,7 @@
         character(len=20) function HS_xmltime(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter   :: dp        = 8 ! double precision
+          integer        ,parameter   :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in)  :: HoursSince
           integer        ,intent(in)  :: byear
           logical        ,intent(in)  :: useLeaps
@@ -883,7 +883,7 @@
                            olam,ophi)
             longCC = real(olam,kind=ip)
             lattCC = real(ophi,kind=ip)
-          endif ! IsLatLon
+          endif  ! IsLatLon
           if (longLL.gt.180.0_ip) longLL = longLL-360.0_ip
           if (longUL.gt.180.0_ip) longUL = longUL-360.0_ip
           if (longLR.gt.180.0_ip) longLR = longLR-360.0_ip
@@ -1133,7 +1133,7 @@
       real(kind=ip)      :: ymaxpl
       logical            :: IsThere
       integer            :: stat
-      real(kind=dp)      :: olam,ophi ! using precision needed by libprojection
+      real(kind=dp)      :: olam,ophi
       integer            :: iostatus
       integer            :: cstat
       character(len=120) :: iomessage
@@ -1144,7 +1144,7 @@
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter   :: dp        = 8 ! double precision
+          integer        ,parameter   :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in)  ::  HoursSince
           integer        ,intent(in)  ::  byear
           logical        ,intent(in)  ::  useLeaps
@@ -1152,7 +1152,7 @@
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter   :: dp        = 8 ! double precision
+          integer        ,parameter   :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in)  :: HoursSince
           integer        ,intent(in)  :: byear
           logical        ,intent(in)  :: useLeaps
@@ -1329,7 +1329,8 @@
                       airlat
           nWrittenOut = nWrittenOut + 1
         endif
-      enddo ! ai=1,nairports
+      enddo  ! ai=1,nairports
+
       if (.not.IsLatLon) then      ! Put a placemark at the location of the volcano
         call PJ_proj_inv(real(x_volcano,kind=dp), real(y_volcano,kind=dp),  &
                       A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
@@ -1743,13 +1744,13 @@
       real(kind=ip) :: xplot(0:40),yplot(0:40),lonplot(0:40),latplot(0:40)
       real(kind=ip) :: xleft,xright,ybottom,ytop
       integer       :: ict, fid
-      real(kind=dp)  :: olam,ophi ! using precision needed by libprojection
+      real(kind=dp)  :: olam,ophi
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine PlotModelBoundary"
       endif;enddo
 
-      write(fid,3) ! write style for model boundary
+      write(fid,3)  ! write style for model boundary
 
       ! For projected coordinates, plot ten points on each side of the polygon.
       do ict=0,10

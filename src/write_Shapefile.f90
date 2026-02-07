@@ -99,7 +99,7 @@
       integer                                  :: nrec      ! num of records (e.g. contour levels)
       integer(kind=int32),dimension(:),allocatable :: rec2lev   ! mapping of record to contour level index
       integer(kind=int32),dimension(:),allocatable :: NumParts
-      integer(kind=int32),dimension(:),allocatable :: NumPoints ! total points
+      integer(kind=int32),dimension(:),allocatable :: NumPoints  ! total points
       integer :: i,ilev,irec,ipart,ipt
       integer,dimension(:),allocatable :: reclen
       integer :: offset
@@ -128,15 +128,15 @@
       integer(kind=int8)  :: DBASE_yy
       integer(kind=int8)  :: DBASE_mm
       integer(kind=int8)  :: DBASE_dd
-      integer(kind=int32) :: DBASE_nrec      ! 1
-      integer(kind=int16) :: DBASE_headlen   ! 129
-      integer(kind=int16) :: DBASE_reclen    ! 115
-      integer(kind=int8)  :: DBASE_transflag ! 0
-      integer(kind=int8)  :: DBASE_cryptflag ! 0
-      integer(kind=int8)  :: DBASE_mdxflag   ! 0
-      integer(kind=int8)  :: DBASE_langID    ! 87
+      integer(kind=int32) :: DBASE_nrec       ! 1
+      integer(kind=int16) :: DBASE_headlen    ! 129
+      integer(kind=int16) :: DBASE_reclen     ! 115
+      integer(kind=int8)  :: DBASE_transflag  ! 0
+      integer(kind=int8)  :: DBASE_cryptflag  ! 0
+      integer(kind=int8)  :: DBASE_mdxflag    ! 0
+      integer(kind=int8)  :: DBASE_langID     ! 87
 
-      character (len=11):: DBASE_FieldName ! 'name   '
+      character (len=11):: DBASE_FieldName    ! 'name   '
       character (len= 1):: DBASE_FieldTyp
       integer(kind=int8):: DBASE_FieldLen
       integer(kind=int8):: DBASE_FieldDesTerm
@@ -168,7 +168,7 @@
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter   :: dp        = 8 ! double precision
+          integer        ,parameter   :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in)  :: HoursSince
           integer        ,intent(in)  :: byear
           logical        ,intent(in)  :: useLeaps
@@ -322,13 +322,13 @@
 
         ! Calculate the lengths of each record
         ! Polyline content header length
-        reclen(irec) = 1*4 + & ! Shape Type : 1-Integer : Little
-                       4*8 + & ! Box        : 4-Double  : Little
-                       1*4 + & ! NumParts   : 1-Integer : Little
-                       1*4 + & ! NumPoints  : 1-Integer : Little
-                       NumParts(irec)*4 + & ! Parts      : NumParts-Integers : Little
-                       NumPoints(irec)*2*8  ! Points     : 2-Double          : Little
-        reclen(irec) = reclen(irec) / 2     ! total record length in 16-bit words
+        reclen(irec) = 1*4 + &  ! Shape Type : 1-Integer : Little
+                       4*8 + &  ! Box        : 4-Double  : Little
+                       1*4 + &  ! NumParts   : 1-Integer : Little
+                       1*4 + &  ! NumPoints  : 1-Integer : Little
+                       NumParts(irec)*4 + &  ! Parts      : NumParts-Integers : Little
+                       NumPoints(irec)*2*8   ! Points     : 2-Double          : Little
+        reclen(irec) = reclen(irec) / 2      ! total record length in 16-bit words
       enddo
       zmin = 0.0_dp
       zmax = 0.0_dp
@@ -506,11 +506,11 @@
           endif;enddo
         endif
         ! Address of the start of the first part is 0
-        write(ov_mainID)LitEnd_4int(IsLitEnd,0_int32) ! An array of length NumParts with each value
-                                                  ! the address (zero-offset) of the start of the part
+        write(ov_mainID)LitEnd_4int(IsLitEnd,0_int32)  ! An array of length NumParts with each value
+                                                       ! the address (zero-offset) of the start of the part
         ilev = rec2lev(irec)
         do i=1,NumParts(irec)-1
-          tmp4 = sum(ContourDataNpoints(ilev,1:i)) !-1
+          tmp4 = sum(ContourDataNpoints(ilev,1:i))  ! -1
           write(ov_mainID)LitEnd_4int(IsLitEnd,tmp4)
         enddo
 
@@ -518,8 +518,8 @@
           do i=1,ContourDataNpoints(ilev,ipart)
             write(ov_mainID)LitEnd_8real(IsLitEnd,real(ContourDataX(ilev,ipart,i),kind=dp))
             write(ov_mainID)LitEnd_8real(IsLitEnd,real(ContourDataY(ilev,ipart,i),kind=dp))
-          enddo ! points in part
-        enddo ! ipart
+          enddo  ! points in part
+        enddo  ! ipart
 
         ! The offset of the first record is just 50, but for subsequent offsets, we need
         ! to add the length of the previous record (as well as the record header).
@@ -557,21 +557,21 @@
       linebuffer050 = "Reading iw,iwf from cdf_b3l1"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,cdf_b3l1,iomessage)
 
-      write(DBASE_TableRecData01,*)trim(adjustl(cdf_institution))   ! ORG
-      write(DBASE_TableRecData02,*)trim(adjustl(VolcanoName))       ! VOLC
-      write(DBASE_TableRecData03,'(a20)')os_time_log                ! RUN DATE
-      write(DBASE_TableRecData04,'(i2)')iwf                         ! WINDFRMT
-      write(DBASE_TableRecData05,*)trim(adjustl(cdf_run_class))     ! RUN CLASS
-      write(DBASE_TableRecData06,'(a20)')HS_xmltime(SimStartHour,BaseYear,useLeap) ! E_STIME
-      write(DBASE_TableRecData07,'(f10.3)')e_PlumeHeight(1)         ! E_PLMH
-      write(DBASE_TableRecData08,'(f10.3)')e_Duration(1)            ! E_DUR
-      write(DBASE_TableRecData09,'(e10.3)')e_Volume(1)              ! E_VOL
-      write(DBASE_TableRecData10,*)trim(adjustl(cdf_url))           ! URL
-      write(DBASE_TableRecData11,*)trim(adjustl(plot_variable))     ! VAR
-      write(DBASE_TableRecData12,'(a24)')"       0.000000000000000" ! VALUE
-      write(DBASE_TableRecData13,*)trim(adjustl(plot_units))        ! UNITS
-      write(DBASE_TableRecData14,'(a10)')"         0"               ! INDEX
-      write(DBASE_TableRecData15,'(a20)')HS_xmltime(SimStartHour+time,BaseYear,useLeap) ! TIME
+      write(DBASE_TableRecData01,*)trim(adjustl(cdf_institution))    ! ORG
+      write(DBASE_TableRecData02,*)trim(adjustl(VolcanoName))        ! VOLC
+      write(DBASE_TableRecData03,'(a20)')os_time_log                 ! RUN DATE
+      write(DBASE_TableRecData04,'(i2)')iwf                          ! WINDFRMT
+      write(DBASE_TableRecData05,*)trim(adjustl(cdf_run_class))      ! RUN CLASS
+      write(DBASE_TableRecData06,'(a20)')HS_xmltime(SimStartHour,BaseYear,useLeap)  ! E_STIME
+      write(DBASE_TableRecData07,'(f10.3)')e_PlumeHeight(1)          ! E_PLMH
+      write(DBASE_TableRecData08,'(f10.3)')e_Duration(1)             ! E_DUR
+      write(DBASE_TableRecData09,'(e10.3)')e_Volume(1)               ! E_VOL
+      write(DBASE_TableRecData10,*)trim(adjustl(cdf_url))            ! URL
+      write(DBASE_TableRecData11,*)trim(adjustl(plot_variable))      ! VAR
+      write(DBASE_TableRecData12,'(a24)')"       0.000000000000000"  ! VALUE
+      write(DBASE_TableRecData13,*)trim(adjustl(plot_units))         ! UNITS
+      write(DBASE_TableRecData14,'(a10)')"         0"                ! INDEX
+      write(DBASE_TableRecData15,'(a20)')HS_xmltime(SimStartHour+time,BaseYear,useLeap)  ! TIME
 
       DBASE_zero =  0
       DBASE_v    =  3

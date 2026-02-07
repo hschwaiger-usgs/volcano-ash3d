@@ -95,26 +95,26 @@
       integer             :: iostatus
       character (len= 50) :: iomessage
       character (len=  3) :: answer
-      character (len=  1) :: WriteDepositFinal_ASCII_c       ! n/y Write out ESRI ASCII file of final deposit thickness?
-      character (len=  1) :: WriteDepositFinal_KML_c         ! n/y Write out        KML file of final deposit thickness?
-      character (len=  1) :: WriteDepositTS_ASCII_c          ! Write out ESRI ASCII deposit files at specified times?
-      character (len=  1) :: WriteDepositTS_KML_c            ! Write out        KML deposit files at specified times?
-      character (len=  1) :: WriteCloudConcentration_ASCII_c ! Write out ESRI ASCII files of ash-cloud concentration?
-      character (len=  1) :: WriteCloudConcentration_KML_c   ! Write out        KML files of ash-cloud concentration?
-      character (len=  1) :: WriteCloudHeight_ASCII_c        ! Write out ESRI ASCII files of ash-cloud height?
-      character (len=  1) :: WriteCloudHeight_KML_c          ! Write out        KML files of ash-cloud height?
-      character (len=  1) :: WriteCloudLoad_ASCII_c          ! Write out ESRI ASCII files of ash-cloud load (T/km2) at spec times?
-      character (len=  1) :: WriteCloudLoad_KML_c            ! Write out        KML files of ash-cloud load (T/km2) at spec times?
-      character (len=  1) :: WriteDepositTime_ASCII_c        ! Write out ESRI ASCII file of deposit arrival times?
-      character (len=  1) :: WriteDepositTime_KML_c          ! Write out        KML file of deposit arrival times?
-      character (len=  1) :: WriteCloudTime_ASCII_c          ! Write out ESRI ASCII file of cloud arrival times
-      character (len=  1) :: WriteCloudTime_KML_c            ! Write out        KML file of cloud arrival times?
-      character (len=  1) :: Write3dFiles_c                  ! Write out 3-D ash concentration at specified times?
-      integer             :: ifm                             ! output code: 1=2d+concen,2=2d only]
-      integer             :: ofm                             ! format of ash concentration files (1=ascii, 2=binary, or 3=netcdf)
-      integer             :: nwt                             ! nWriteTimes
-      logical             :: interval_flag                   ! indicates if nWriteTimes is specifying WriteTimes is interval-based
-      real(kind=dp),dimension(:),allocatable :: wts          ! WriteTimes(1:nWriteTimes)
+      character (len=  1) :: WriteDepositFinal_ASCII_c        ! n/y Write out ESRI ASCII file of final deposit thickness?
+      character (len=  1) :: WriteDepositFinal_KML_c          ! n/y Write out        KML file of final deposit thickness?
+      character (len=  1) :: WriteDepositTS_ASCII_c           ! Write out ESRI ASCII deposit files at specified times?
+      character (len=  1) :: WriteDepositTS_KML_c             ! Write out        KML deposit files at specified times?
+      character (len=  1) :: WriteCloudConcentration_ASCII_c  ! Write out ESRI ASCII files of ash-cloud concentration?
+      character (len=  1) :: WriteCloudConcentration_KML_c    ! Write out        KML files of ash-cloud concentration?
+      character (len=  1) :: WriteCloudHeight_ASCII_c         ! Write out ESRI ASCII files of ash-cloud height?
+      character (len=  1) :: WriteCloudHeight_KML_c           ! Write out        KML files of ash-cloud height?
+      character (len=  1) :: WriteCloudLoad_ASCII_c           ! Write out ESRI ASCII files of ash-cloud load (T/km2) at spec times?
+      character (len=  1) :: WriteCloudLoad_KML_c             ! Write out        KML files of ash-cloud load (T/km2) at spec times?
+      character (len=  1) :: WriteDepositTime_ASCII_c         ! Write out ESRI ASCII file of deposit arrival times?
+      character (len=  1) :: WriteDepositTime_KML_c           ! Write out        KML file of deposit arrival times?
+      character (len=  1) :: WriteCloudTime_ASCII_c           ! Write out ESRI ASCII file of cloud arrival times
+      character (len=  1) :: WriteCloudTime_KML_c             ! Write out        KML file of cloud arrival times?
+      character (len=  1) :: Write3dFiles_c                   ! Write out 3-D ash concentration at specified times?
+      integer             :: ifm                              ! output code: 1=2d+concen,2=2d only]
+      integer             :: ofm                              ! format of ash concentration files (1=ascii, 2=binary, or 3=netcdf)
+      integer             :: nwt                              ! nWriteTimes
+      logical             :: interval_flag                    ! indicates if nWriteTimes is specifying WriteTimes is interval-based
+      real(kind=dp),dimension(:),allocatable :: wts           ! WriteTimes(1:nWriteTimes)
 
       ! Block 6 variables
       character (len=  1)  :: WriteAirportFile_ASCII_c
@@ -134,7 +134,7 @@
         integer function HS_YearOfEvent(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter   :: dp        = 8 ! double precision
+          integer        ,parameter   :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in)  :: HoursSince
           integer        ,intent(in)  :: byear
           logical        ,intent(in)  :: useLeaps
@@ -336,14 +336,14 @@
       WriteCloudTime_KML_c = 'n'
       read(cdf_b4l14,'(a3)',iostat=iostatus,iomsg=iomessage) answer
       if(adjustl(trim(answer)).eq.'yes') WriteCloudTime_KML_c = 'y'
-      Write3dFiles_c = 'y' ! This is obviously true if we are reading the netcdf file
+      Write3dFiles_c = 'y'   ! This is obviously true if we are reading the netcdf file
       ifm = 2
       read(cdf_b4l15,*,iostat=iostatus,iomsg=iomessage) answer, ifm
-      if(iostatus.ne.0)then ! if read fails, then make sure we set these
+      if(iostatus.ne.0)then  ! if read fails, then make sure we set these
         Write3dFiles_c = 'y'
         ifm = 1
       endif
-      ofm = 3 ! This should be 3 since we are reading a netcdf file
+      ofm = 3  ! This should be 3 since we are reading a netcdf file
       read(cdf_b4l17,*)nwt
       if(nwt.gt.0)then
         interval_flag = .false.
@@ -462,7 +462,7 @@
       ! BLOCK 10+: OPTIONAL MODULES (RESETPARAMS)
       if(Have_Block_ResParm)then
         call Write_input_block_header(fid_ctrlfile,10)
-        call SetWrite_input_block_ResetParam(fid_ctrlfile   ) !           ,&  ! output stream ID
+        call SetWrite_input_block_ResetParam(fid_ctrlfile   )        !,&  ! output stream ID
       endif
 
       ! BLOCK 10+: OPTIONAL MODULES (TOPO)

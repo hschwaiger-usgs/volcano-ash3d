@@ -40,18 +40,18 @@
       integer :: NCversion
       integer :: NCsubversion
       integer :: ncid
-      integer :: t_dim_id     = 0 ! Time
-      integer :: x_dim_id     = 0 ! X
-      integer :: y_dim_id     = 0 ! Y
-      integer :: z_dim_id     = 0 ! Z
-      integer :: bn_dim_id    = 0 ! Full generalized species class ID 1:nsmax
-      integer :: er_dim_id    = 0 ! eruption number
-      integer :: ep_dim_id    = 0 ! eruption profile length
-      integer :: wf_dim_id    = 0 ! windfile number
-      integer :: sl_dim_id    = 0 ! string length
-      integer :: pt_dim_id    = 0 ! point output number (airport or POI)
-      integer :: pr_dim_id    = 0 ! profile output number
-      integer :: tn_dim_id    = 0 ! time on native grid
+      integer :: t_dim_id     = 0  ! Time
+      integer :: x_dim_id     = 0  ! X
+      integer :: y_dim_id     = 0  ! Y
+      integer :: z_dim_id     = 0  ! Z
+      integer :: bn_dim_id    = 0  ! Full generalized species class ID 1:nsmax
+      integer :: er_dim_id    = 0  ! eruption number
+      integer :: ep_dim_id    = 0  ! eruption profile length
+      integer :: wf_dim_id    = 0  ! windfile number
+      integer :: sl_dim_id    = 0  ! string length
+      integer :: pt_dim_id    = 0  ! point output number (airport or POI)
+      integer :: pr_dim_id    = 0  ! profile output number
+      integer :: tn_dim_id    = 0  ! time on native grid
 
       integer :: t_len
       integer :: x_len
@@ -63,82 +63,82 @@
 
       !integer :: pj_dim_id    = 0 ! projection parameter dimension
       !  Coordinate variables
-      integer :: t_var_id              = 0 ! Time
-      integer :: x_var_id              = 0 ! X-distance
-      integer :: y_var_id              = 0 ! Y-distance
-      integer :: z_var_id              = 0 ! Z-distance
-      integer :: s_var_id              = 0 ! shifted (or sigma) altitude
-      integer :: bn_var_id             = 0 ! index for species (grain-size bin, gas, water, etc.)
-      integer :: er_var_id             = 0 ! eruption index
-      integer :: ep_var_id             = 0 ! eruption profile length index
-      integer :: wf_var_id             = 0 ! wind file index
-      integer :: pt_var_id             = 0 ! point (airport/POI) index
-      integer :: pr_var_id             = 0 ! profile output index
-      integer :: tn_var_id             = 0 ! time (native)
+      integer :: t_var_id              = 0  ! Time
+      integer :: x_var_id              = 0  ! X-distance
+      integer :: y_var_id              = 0  ! Y-distance
+      integer :: z_var_id              = 0  ! Z-distance
+      integer :: s_var_id              = 0  ! shifted (or sigma) altitude
+      integer :: bn_var_id             = 0  ! index for species (grain-size bin, gas, water, etc.)
+      integer :: er_var_id             = 0  ! eruption index
+      integer :: ep_var_id             = 0  ! eruption profile length index
+      integer :: wf_var_id             = 0  ! wind file index
+      integer :: pt_var_id             = 0  ! point (airport/POI) index
+      integer :: pr_var_id             = 0  ! profile output index
+      integer :: tn_var_id             = 0  ! time (native)
 
-      integer :: proj_var_id           = 0 ! Projection
-      integer :: FV_var_id             = 0 ! Fall model
-      integer :: spec_var_id           = 0 ! Species class ID
-      integer :: subspec_var_id        = 0 ! Species sub-class ID
+      integer :: proj_var_id           = 0  ! Projection
+      integer :: FV_var_id             = 0  ! Fall model
+      integer :: spec_var_id           = 0  ! Species class ID
+      integer :: subspec_var_id        = 0  ! Species sub-class ID
 
-      integer :: vx_var_id             = 0 ! Vx
-      integer :: vy_var_id             = 0 ! Vy
-      integer :: vz_var_id             = 0 ! Vz
-      integer :: vf_var_id             = 0 ! Vf
-      integer :: ashcon_var_id         = 0 ! Ash concentration
-      integer :: depocon_var_id        = 0 ! Deposit mass/area
+      integer :: vx_var_id             = 0  ! Vx
+      integer :: vy_var_id             = 0  ! Vy
+      integer :: vz_var_id             = 0  ! Vz
+      integer :: vf_var_id             = 0  ! Vf
+      integer :: ashcon_var_id         = 0  ! Ash concentration
+      integer :: depocon_var_id        = 0  ! Deposit mass/area
       !integer :: gencon_var_id         = 0 ! General concentration for any slices of concen abov
       integer :: cloudmask_var_id      = 0
-      integer :: ashconMax_var_id      = 0 ! Max Ash concentration in column
-      integer :: ashheight_var_id      = 0 ! Height of top of ash cloud
-      integer :: ashload_var_id        = 0 ! Vert. integrated load of ash cloud
-      integer :: radrefl_var_id        = 0 ! Radar reflectivity in dbZ
-      integer :: depothick_var_id      = 0 ! Total deposit thickness
-      integer :: depothickFin_var_id   = 0 ! Final total deposit thickness at simulation end
-      integer :: depotime_var_id       = 0 ! Deposit arrival time
-      integer :: ashcloudtime_var_id   = 0 ! Cloud arrival time
-      integer :: ashcloudBot_var_id    = 0 ! Height of bottom of ash cloud
+      integer :: ashconMax_var_id      = 0  ! Max Ash concentration in column
+      integer :: ashheight_var_id      = 0  ! Height of top of ash cloud
+      integer :: ashload_var_id        = 0  ! Vert. integrated load of ash cloud
+      integer :: radrefl_var_id        = 0  ! Radar reflectivity in dbZ
+      integer :: depothick_var_id      = 0  ! Total deposit thickness
+      integer :: depothickFin_var_id   = 0  ! Final total deposit thickness at simulation end
+      integer :: depotime_var_id       = 0  ! Deposit arrival time
+      integer :: ashcloudtime_var_id   = 0  ! Cloud arrival time
+      integer :: ashcloudBot_var_id    = 0  ! Height of bottom of ash cloud
 
-      integer :: area_var_id           = 0 ! area of cell (km2)
-      integer :: gsdm_var_id           = 0 ! Grain diameter
-      integer :: gsfv_var_id           = 0 ! Grain prescribed fall-velocity
-      integer :: gsmf_var_id           = 0 ! Grain mass fraction
-      integer :: gsdens_var_id         = 0 ! Grain density
-      integer :: gsF_var_id            = 0 ! Grain shape fac F
-      integer :: gsG_var_id            = 0 ! Grain shape fac G
-      integer :: gsP_var_id            = 0 ! Grain shape fac Phi
+      integer :: area_var_id           = 0  ! area of cell (km2)
+      integer :: gsdm_var_id           = 0  ! Grain diameter
+      integer :: gsfv_var_id           = 0  ! Grain prescribed fall-velocity
+      integer :: gsmf_var_id           = 0  ! Grain mass fraction
+      integer :: gsdens_var_id         = 0  ! Grain density
+      integer :: gsF_var_id            = 0  ! Grain shape fac F
+      integer :: gsG_var_id            = 0  ! Grain shape fac G
+      integer :: gsP_var_id            = 0  ! Grain shape fac Phi
 
-      integer :: er_type_var_id        = 0 ! eruption type (Suz,point,line,profile,umb,umb_air)
-      integer :: er_stime_var_id       = 0 ! eruption start time
-      integer :: er_duration_var_id    = 0 ! eruption duration
-      integer :: er_plumeheight_var_id = 0 ! eruption plume height
-      integer :: er_volume_var_id      = 0 ! eruption volume
-      integer :: er_prof_nz_var_id     = 0 ! erpution profile nzpoints (func of er_dim_id)
-      integer :: er_prof_dz_var_id     = 0 ! erpution profile dz  (func of er_dim_id)
-      integer :: er_prof_frac_var_id   = 0 ! erpution profile normalized (func of er_dim_id,ep_dim_id)
-      integer :: wf_name_var_id        = 0 ! wind file name
+      integer :: er_type_var_id        = 0  ! eruption type (Suz,point,line,profile,umb,umb_air)
+      integer :: er_stime_var_id       = 0  ! eruption start time
+      integer :: er_duration_var_id    = 0  ! eruption duration
+      integer :: er_plumeheight_var_id = 0  ! eruption plume height
+      integer :: er_volume_var_id      = 0  ! eruption volume
+      integer :: er_prof_nz_var_id     = 0  ! erpution profile nzpoints (func of er_dim_id)
+      integer :: er_prof_dz_var_id     = 0  ! erpution profile dz  (func of er_dim_id)
+      integer :: er_prof_frac_var_id   = 0  ! erpution profile normalized (func of er_dim_id,ep_dim_id)
+      integer :: wf_name_var_id        = 0  ! wind file name
 
       ! Airport / POI variables
-      integer :: pt_x_var_id             = 0 ! x coordinate of point
-      integer :: pt_y_var_id             = 0 ! y coordinate of point
-      integer :: pt_code_var_id          = 0 ! Airport code (or other 3-char label)
-      integer :: pt_name_var_id          = 0 ! Airport name
-      integer :: pt_asharrival_var_id    = 0 ! Arrival time of ashfall
-      integer :: pt_ashduration_var_id   = 0 ! Duration of ashfall
-      integer :: pt_cloudarrival_var_id  = 0 ! Arrival time of ash cloud
-      integer :: pt_cloudduration_var_id = 0 ! Duration of ash cloud
-      integer :: pt_ashthickness_var_id  = 0 ! TS of ash accumulation
-      integer :: pt_ashthicknessFin_var_id  = 0 ! Final ash thickness at point
+      integer :: pt_x_var_id             = 0  ! x coordinate of point
+      integer :: pt_y_var_id             = 0  ! y coordinate of point
+      integer :: pt_code_var_id          = 0  ! Airport code (or other 3-char label)
+      integer :: pt_name_var_id          = 0  ! Airport name
+      integer :: pt_asharrival_var_id    = 0  ! Arrival time of ashfall
+      integer :: pt_ashduration_var_id   = 0  ! Duration of ashfall
+      integer :: pt_cloudarrival_var_id  = 0  ! Arrival time of ash cloud
+      integer :: pt_cloudduration_var_id = 0  ! Duration of ash cloud
+      integer :: pt_ashthickness_var_id  = 0  ! TS of ash accumulation
+      integer :: pt_ashthicknessFin_var_id  = 0  ! Final ash thickness at point
 
       ! Vertical profile variable
-      integer :: pr_x_var_id             = 0 ! x coordinate of point
-      integer :: pr_y_var_id             = 0 ! y coordinate of point
-      integer :: pr_name_var_id          = 0 ! site name of point
-      integer :: pr_ash_var_id           = 0 ! concentration profile
+      integer :: pr_x_var_id             = 0  ! x coordinate of point
+      integer :: pr_y_var_id             = 0  ! y coordinate of point
+      integer :: pr_name_var_id          = 0  ! site name of point
+      integer :: pr_ash_var_id           = 0  ! concentration profile
 
-      integer :: temp1_2d_var_id !,temp2_2d_var_id,temp3_2d_var_id,temp4_2d_var_id
-      integer :: temp1_3d_var_id !,temp2_3d_var_id,temp3_3d_var_id,temp4_3d_var_id
-      integer :: temp1_4d_var_id !,temp2_4d_var_id!,temp3_4d_var_id!,temp4_4d_var_id
+      integer :: temp1_2d_var_id  !,temp2_2d_var_id,temp3_2d_var_id,temp4_2d_var_id
+      integer :: temp1_3d_var_id  !,temp2_3d_var_id,temp3_3d_var_id,temp4_3d_var_id
+      integer :: temp1_4d_var_id  !,temp2_4d_var_id!,temp3_4d_var_id!,temp4_4d_var_id
       integer :: ns_extra
 
       ! work spaces
@@ -287,7 +287,7 @@
         character (len=13) function HS_yyyymmddhhmm_since(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter   :: dp        = 8 ! double precision
+          integer        ,parameter   :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in)  :: HoursSince
           integer        ,intent(in)  :: byear
           logical        ,intent(in)  :: useLeaps
@@ -295,7 +295,7 @@
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter   :: dp        = 8 ! double precision
+          integer        ,parameter   :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in) :: HoursSince
           integer        ,intent(in) :: byear
           logical        ,intent(in) :: useLeaps
@@ -343,21 +343,21 @@
         dim_names(4) = "x"
         dim_lnames(4) = "X (East)"
       endif
-      dim_names(5)  = "bn" ! grainsize bin for 1:n_gs_max, then generalized bin up to nsmax
+      dim_names(5)  = "bn"                        ! grainsize bin for 1:n_gs_max, then generalized bin up to nsmax
       dim_lnames(5) = "Bin index"
-      dim_names(6)  = "er" ! eruption index
+      dim_names(6)  = "er"                        ! eruption index
       dim_lnames(6) = "Eruption number"
-      dim_names(7)  = "ep" ! eruption profile length index
+      dim_names(7)  = "ep"                        ! eruption profile length index
       dim_lnames(7) = "Erup. profile length"
-      dim_names(8)  = "wf" ! windfile index
+      dim_names(8)  = "wf"                        ! windfile index
       dim_lnames(8) = "Wind file number"
-      dim_names(9)  = "sl" ! string length
+      dim_names(9)  = "sl"                        ! string length
       dim_lnames(9) = "string length"
-      dim_names(10)  = "pt" ! point index for airport or POI points
+      dim_names(10)  = "pt"                       ! point index for airport or POI points
       dim_lnames(10) = "Airport/POI point number"
-      dim_names(11) = "pr" ! profile index
+      dim_names(11) = "pr"                        ! profile index
       dim_lnames(11)= "Profile number"
-      dim_names(12) = "tn" ! time (native)
+      dim_names(12) = "tn"                        ! time (native)
       dim_lnames(12)= "Time native"
 
       var_lnames(8) = "Wind velocity (x)"
@@ -1257,7 +1257,7 @@
                               "longitude_of_projection_origin",A3d_lam0)
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1, &
                              "put_att Mercator longitude_of_projection_origin")
-        case default ! Just write all projection parameters to file
+        case default   ! Just write all projection parameters to file
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"     Projection : Not specified"
           endif;enddo
@@ -1907,7 +1907,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att ashcon missing_value")
         nSTAT = nf90_put_att(ncid,ashcon_var_id,"_FillValue",MaxConcentration_FillValue)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att ashcon _FillValue")
-      endif ! useRestartVars
+      endif  ! useRestartVars
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -2090,7 +2090,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var cloud_height")
         nSTAT = nf90_put_att(ncid,ashheight_var_id,"long_name",var_lnames(33))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att cloud_height long_name")
-        nSTAT = nf90_put_att(ncid,ashheight_var_id,"units","km") ! Note the canonical_units are m
+        nSTAT = nf90_put_att(ncid,ashheight_var_id,"units","km")  ! Note the canonical_units are m
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att cloud_height units")
         nSTAT = nf90_put_att(ncid,ashheight_var_id,"standard_name",&
                              "geopotential_height_at_volcanic_ash_cloud_top")
@@ -2119,7 +2119,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var cloud_load")
         nSTAT = nf90_put_att(ncid,ashload_var_id,"long_name",var_lnames(34))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att cloud_load long_name")
-        nSTAT = nf90_put_att(ncid,ashload_var_id,"units","T/km2") ! Note the canonical_units are kg m-2
+        nSTAT = nf90_put_att(ncid,ashload_var_id,"units","T/km2")  ! Note the canonical_units are kg m-2
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att cloud_load units")
         nSTAT = nf90_put_att(ncid,ashload_var_id,"standard_name",&
                              "atmosphere_mass_content_of_volcanic_ash")
@@ -2141,7 +2141,7 @@
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"def_var cloud_mask")
         nSTAT = nf90_put_att(ncid,cloudmask_var_id,"long_name",var_lnames(40))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att cloud_mask long_name")
-        nSTAT = nf90_put_att(ncid,cloudmask_var_id,"units","0 or 1") !
+        nSTAT = nf90_put_att(ncid,cloudmask_var_id,"units","0 or 1")
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att cloud_mask units")
 
            ! 3d radar reflectivity
@@ -2196,7 +2196,7 @@
         nSTAT = nf90_put_att(ncid,ashcloudBot_var_id,"_FillValue",MinHeight_FillValue)
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_att cloud_bottom _FillValue")
 
-      endif ! useOutprodVars
+      endif  ! useOutprodVars
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       ! Point output (Airport/POI)
@@ -3226,7 +3226,7 @@
         nSTAT=nf90_put_var(ncid,ashcloudtime_var_id,dum2d_out,(/1,1/))
         if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var ashcloudtime_")
 
-      endif ! useOutprodVars
+      endif  ! useOutprodVars
 
       if (Write_PT_Data)then
         ! These are variable associated with the dimension for point output
@@ -3262,7 +3262,7 @@
         ! Point/Airport name
         do i=1,nairports
           write(linebuffer130,'(130a)')Airport_Name(i)
-          strlen = len(adjustl(Airport_Name(i))) ! This should be 130
+          strlen = len(adjustl(Airport_Name(i)))  ! This should be 130
           do j=1,strlen
             nSTAT=nf90_put_var(ncid,pt_name_var_id,linebuffer130(j:j),(/j,i/))
             if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var pt_name")
@@ -3279,7 +3279,7 @@
         nSTAT=nf90_put_var(ncid,pt_ashthicknessFin_var_id,dum2dPOI_out(:,1),(/1/))
         deallocate(dum2dPOI_out)
 
-      endif ! Write_PT_Data
+      endif  ! Write_PT_Data
 
       if(Write_PR_Data)then
         ! Profile data
@@ -3300,7 +3300,7 @@
         ! profile name
         do i=1,nvprofiles
           write(linebuffer050,'(50a)')Site_vprofile(i)
-          strlen = len(adjustl(Site_vprofile(i))) ! This should be 50
+          strlen = len(adjustl(Site_vprofile(i)))  ! This should be 50
           do j=1,strlen
             nSTAT=nf90_put_var(ncid,pr_name_var_id,linebuffer050(j:j),(/j,i/))
             if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var pr_name")
@@ -3876,7 +3876,7 @@
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var cloud_bottom")
           deallocate(dum2d_out)
 
-        endif ! useOutprodVars
+        endif  ! useOutprodVars
 
         if (Write_PT_Data)then
           ! Time-series of ash accumulation at points
@@ -3900,7 +3900,7 @@
           if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var pt_depothickFin")
           deallocate(dum1d_out)
 
-        endif ! Write_PT_Data
+        endif  ! Write_PT_Data
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -3954,8 +3954,8 @@
               if(nSTAT.ne.0)call NC_check_status(nSTAT,1,"put_var XYZGs")
             enddo
           endif
-        endif ! USE_OPTMOD_VARS
-      endif ! .not.isFinal_TS
+        endif  ! USE_OPTMOD_VARS
+      endif  ! .not.isFinal_TS
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -4372,7 +4372,7 @@
         real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter   :: dp        = 8 ! double precision
+          integer        ,parameter   :: dp        = 8  ! double precision
           integer        ,intent(in)  :: iyear
           integer        ,intent(in)  :: imonth
           integer        ,intent(in)  :: iday
@@ -4498,10 +4498,10 @@
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),2501)"lon",x_len
           endif;enddo
-        else ! start of non-LonLat branch
+        else  ! start of non-LonLat branch
           read(cdf_b1l4,*)gridwidth_x,gridwidth_y
 
-!          ! Get projection information from previously read cdf_b1l2
+          ! Get projection information from previously read cdf_b1l2
           call PJ_Set_Proj_Params(cdf_b1l2)
           A3d_iprojflag  = PJ_iprojflag
           A3d_k0         = PJ_k0
@@ -6139,7 +6139,7 @@
           nSTAT=nf90_get_var(ncid,FV_var_id,FV_ID,(/1/))
           ! Check for shape specification
           nSTAT2 = nf90_get_att(ncid,FV_var_id,"Shape_ID",Shape_ID)
-          if(nSTAT2.ne.0) Shape_ID = 1 ! Default is WH style shape is not specifiec
+          if(nSTAT2.ne.0) Shape_ID = 1  ! Default is WH style shape is not specifiec
         else
           FV_ID    = 1
           Shape_ID = 1
@@ -6157,7 +6157,7 @@
         nSTAT = nf90_inq_varid(ncid,"gs_diameter",gsdm_var_id)
         ! read grain diameter in mm
         nSTAT = nf90_get_var(ncid,gsdm_var_id,dum1d_out,(/1/))
-        Tephra_gsdiam(1:n_gs_max) = dum1d_out(1:n_gs_max)/M_2_MM ! convert to m
+        Tephra_gsdiam(1:n_gs_max) = dum1d_out(1:n_gs_max)/M_2_MM  ! convert to m
 
         ! Grain prescribed fall velocity
 #ifdef USEPOINTERS
@@ -6278,7 +6278,7 @@
         enddo
         first_time = .false.
 
-      endif ! first_time
+      endif  ! first_time
 
       if (.not.present(timestep))then
         do io=1,2;if(VB(io).le.verbosity_info)then

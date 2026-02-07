@@ -446,7 +446,7 @@
       endif;enddo
 
       select case (blockID)
-        case(1) ! BLOCK 1: GRID INFO
+        case(1)  ! BLOCK 1: GRID INFO
           call Write_input_block_header(output_unit,blockID)
           vname =  "Eyjafjallajokull             "
           projline = '1 1 0.0 90.0 0.933 6367.470                                                    '
@@ -473,7 +473,7 @@
       write(output_unit,1)'0.     4.                      # diffusion coefficient (m2/s), Suzuki constant                         '
       write(output_unit,1)'9                              # neruptions, number of eruptions or pulses                             '
       write(output_unit,1)'*******************************************************************************                        '
-        case(2) ! BLOCK 2: ERUPTION PARAMETERS
+        case(2)  ! BLOCK 2: ERUPTION PARAMETERS
           call Write_input_block_header(output_unit,blockID)
           !call SetWrite_input_block_02(WriteBlock)
       write(output_unit,1)'******************* BLOCK 2 ***************************************************                        '
@@ -486,7 +486,7 @@
       write(output_unit,1)'2010 4 15  3.0  3.0 5.2 2.17E-004                                                                      '
       write(output_unit,1)'2010 4 15  6.0  3.0 5.3 2.33E-004                                                                      '
       write(output_unit,1)'2010 4 15  9.0  3.0 5.7 3.09E-004                                                                      '
-        case(3) ! BLOCK 3: WIND PARAMETERS
+        case(3)  ! BLOCK 3: WIND PARAMETERS
           call Write_input_block_header(output_unit,blockID)
           !call SetWrite_input_block_03(WriteBlock)
       write(output_unit,1)'******************* BLOCK 3 ***************************************************                        '
@@ -495,7 +495,7 @@
       write(output_unit,1)'60                  # Simulation time in hours                                                         '
       write(output_unit,1)'no                  # stop computation when 99% of erupted mass has deposited?                         '
       write(output_unit,1)'16                  # nWindFiles, number of gridded wind files (used if iwind>1)                       '
-        case(4) ! BLOCK 4: OUTPUT OPTIONS
+        case(4)  ! BLOCK 4: OUTPUT OPTIONS
           call Write_input_block_header(output_unit,blockID)
           !call SetWrite_input_block_04(WriteBlock)
       write(output_unit,1)'******************* BLOCK 4 ***************************************************                        '
@@ -517,7 +517,7 @@
       write(output_unit,1)'netcdf  # format of ash concentration files     (ascii, binary, or netcdf)                             '
       write(output_unit,1)'-1      # nWriteTimes                                                                                  '
       write(output_unit,1)'1       # WriteTimes (hours since eruption start)                                                      '
-        case(5) ! BLOCK 5: INPUT WIND FILES
+        case(5)  ! BLOCK 5: INPUT WIND FILES
           call Write_input_block_header(output_unit,blockID)
           !call SetWrite_input_block_05(WriteBlock)
       write(output_unit,1)'******************* BLOCK 5 ***************************************************                        '
@@ -537,7 +537,7 @@
       write(output_unit,1)'Wind_nc/gfs/gfs.2010041400/2010041400.f039.nc                                                          '
       write(output_unit,1)'Wind_nc/gfs/gfs.2010041400/2010041400.f042.nc                                                          '
       write(output_unit,1)'Wind_nc/gfs/gfs.2010041400/2010041400.f045.nc                                                          '
-        case(6) ! BLOCK 6: AIRPORT FILE
+        case(6)  ! BLOCK 6: AIRPORT FILE
           call Write_input_block_header(output_unit,blockID)
           !call SetWrite_input_block_06(WriteBlock)
       write(output_unit,1)'******************* BLOCK 6 ***************************************************                        '
@@ -546,7 +546,7 @@
       write(output_unit,1)'no                            # Write out ash arrival times to kml file?                               '
       write(output_unit,1)'GlobalAirports.txt            # Name of file containing airport locations                              '
       write(output_unit,1)'yes                           # Defer to Lon/Lat coordinates? ("no" defers to projected)               '
-        case(7) ! BLOCK 7: GRAIN-SIZE BINS, SETTLING VELOCITY
+        case(7)  ! BLOCK 7: GRAIN-SIZE BINS, SETTLING VELOCITY
           call Write_input_block_header(output_unit,blockID)
           !call SetWrite_input_block_07(WriteBlock)
       write(output_unit,1)'******************* BLOCK 7 ***************************************************                        '
@@ -566,7 +566,7 @@
       write(output_unit,1)'0.1895     0.2856  600.    1.00                                                                        '
       write(output_unit,1)'0.1768     0.1428  600.    1.00                                                                        '
       write(output_unit,1)'0.1649     0.0714  600.    1.00                                                                        '
-        case(8) ! BLOCK 8: VERTICAL PROFILES
+        case(8)  ! BLOCK 8: VERTICAL PROFILES
           call Write_input_block_header(output_unit,blockID)
           !call SetWrite_input_block_08(WriteBlock)
       write(output_unit,1)'******************* BLOCK 8 ***************************************************                        '
@@ -575,17 +575,17 @@
       write(output_unit,1)'11.3  48.2  Munich            # Munich (Maisach)                                                       '
       write(output_unit,1)'11.0  47.4  Schneefernerhaus  # Schneefernerhaus (Zugspitze)                                           '
       write(output_unit,1)'11.0  47.8  Hohenpeissenberg  # Hohenpeissenberg                                                       '
-        case(9) ! BLOCK 9: (Optional): NETCDF ANNOTATIONS
+        case(9)  ! BLOCK 9: (Optional): NETCDF ANNOTATIONS
           call Write_input_block_header(output_unit,blockID)
           !call SetWrite_input_block_09(WriteBlock)
       write(output_unit,1)'******************* BLOCK 9 ***************************************************                        '
       write(output_unit,1)'3d_tephra_fall.nc             # Name of output file                                                    '
       write(output_unit,1)'Eyjafjallajokull              # Title of simulation                                                    '
       write(output_unit,1)'no comment                    # Comment                                                                '
-        case(10) ! BLOCK 10 (OPTMOD): Optional module blocks
+        case(10)  ! BLOCK 10 (OPTMOD): Optional module blocks
           call Write_input_block_header(output_unit,blockID)
           !call SetWrite_input_block_ResetParam(WriteBlock)
-                 !   First RESETPARAMS
+                  !   First RESETPARAMS
       write(output_unit,1)'******************* BLOCK 10+ *************************************************                        '
       write(output_unit,1)'OPTMOD=RESETPARAMS                                                                                     '
       write(output_unit,1)' MagmaDensity         = 2500.0                                                                         '

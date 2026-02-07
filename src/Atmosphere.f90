@@ -108,12 +108,12 @@
       real(kind=sp),dimension(:,:)  ,allocatable,public :: v10y_meso_next_step_MetP_sp
 #endif
 
-      real(kind=ip), parameter,public :: R_GAS_DRYAIR = 286.98_ip       ! Specific dry air gas constant of R=286.98 J /(kg K)
-      real(kind=ip), parameter,public :: R_GAS_IDEAL  = 8.3144621_ip    ! Ideal gas constant (J /(kg K))
-      real(kind=ip), parameter,public :: R_GAS_WATVAP = 461.5_ip        ! Specific water vapor gas constant of R=461.98 J /(kg K)
-      real(kind=ip), parameter,public :: CP_AIR       = 1.004e3_ip      ! Specific heat capacity at p (J /kg K)
-      real(kind=ip), parameter,public :: MB_DRY_AIR   = 0.028966_ip     ! Molecular weight of dry air in kg/mol
-      real(kind=ip), parameter,public :: BoltzK       = 1.380658e-23_ip ! Boltzmann's constant kg m2 s-2 K-1 molec-1
+      real(kind=ip), parameter,public :: R_GAS_DRYAIR = 286.98_ip        ! Specific dry air gas constant of R=286.98 J /(kg K)
+      real(kind=ip), parameter,public :: R_GAS_IDEAL  = 8.3144621_ip     ! Ideal gas constant (J /(kg K))
+      real(kind=ip), parameter,public :: R_GAS_WATVAP = 461.5_ip         ! Specific water vapor gas constant of R=461.98 J /(kg K)
+      real(kind=ip), parameter,public :: CP_AIR       = 1.004e3_ip       ! Specific heat capacity at p (J /kg K)
+      real(kind=ip), parameter,public :: MB_DRY_AIR   = 0.028966_ip      ! Molecular weight of dry air in kg/mol
+      real(kind=ip), parameter,public :: BoltzK       = 1.380658e-23_ip  ! Boltzmann's constant kg m2 s-2 K-1 molec-1
 
       contains
       !------------------------------------------------------------------------
@@ -338,7 +338,7 @@
       endif
 
       if(first_time)then
-        ivar = 5 ! Temperature
+        ivar = 5  ! Temperature
         call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now)
           AirTemp_meso_next_step_MetP_sp = MR_dum3d_MetP
         if(useMoistureVars)then
@@ -392,7 +392,7 @@
         AirVisc_meso_last_step_MetP_sp = AirVisc_meso_next_step_MetP_sp
         AirLamb_meso_last_step_MetP_sp = AirLamb_meso_next_step_MetP_sp
 
-      else ! first_time
+       else  ! first_time
 
         AirTemp_meso_last_step_MetP_sp = AirTemp_meso_next_step_MetP_sp
         if(useMoistureVars)then
@@ -400,7 +400,7 @@
           AirSH_meso_last_step_MetP_sp   = AirSH_meso_next_step_MetP_sp
         endif
 
-        ivar = 5 ! Temperature
+        ivar = 5  ! Temperature
         call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now+1)
         AirTemp_meso_next_step_MetP_sp = MR_dum3d_MetP
         if(useMoistureVars)then
@@ -487,9 +487,9 @@
 
       logical, intent(in), optional :: Load_Prestep
 
-      real(kind=sp),dimension(:),allocatable :: p ! in Pa
-      real(kind=sp),dimension(:),allocatable :: T ! in K
-      real(kind=sp),dimension(:),allocatable :: Q ! in kg/kg
+      real(kind=sp),dimension(:),allocatable :: p  ! in Pa
+      real(kind=sp),dimension(:),allocatable :: T  ! in K
+      real(kind=sp),dimension(:),allocatable :: Q  ! in kg/kg
       real(kind=sp),dimension(:),allocatable :: Tpoten
 
       integer :: i,j,k
@@ -547,8 +547,8 @@
               Tpoten(k) = real(Tpoten(k) *(1.0_sp + (R_GAS_WATVAP/R_GAS_DRYAIR-1.0_sp)*mixrat),kind=sp)
             enddo
             AirVPTemp_meso_last_step_MetP_sp(i,j,1:np_fullmet)=Tpoten(1:np_fullmet)
-          enddo ! j
-        enddo ! i
+          enddo  ! j
+        enddo  ! i
       else
         do i=1,nx_submet
           do j=1,ny_submet
@@ -570,8 +570,8 @@
               Tpoten(k) = real(Tpoten(k) *(1.0_sp + (R_GAS_WATVAP/R_GAS_DRYAIR-1.0_sp)*mixrat),kind=sp)
             enddo
             AirVPTemp_meso_next_step_MetP_sp(i,j,1:np_fullmet)=Tpoten(1:np_fullmet)
-          enddo ! j
-        enddo ! i
+          enddo  ! j
+        enddo  ! i
       endif
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
@@ -623,7 +623,7 @@
         integer function HS_DayOfYear(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,parameter  :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in) ::  HoursSince
           integer        ,intent(in) ::  byear
           logical        ,intent(in) ::  useLeaps
@@ -631,7 +631,7 @@
         real(kind=8) function HS_HourOfDay(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,parameter  :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in) ::  HoursSince
           integer        ,intent(in) ::  byear
           logical        ,intent(in) ::  useLeaps

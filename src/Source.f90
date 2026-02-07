@@ -91,7 +91,7 @@
         !The following arrays are of length neruptions
       real(kind=ip), dimension(:)    ,pointer,public :: e_PlumeHeight        => null()
       real(kind=ip), dimension(:)    ,pointer,public :: e_Volume             => null()
-      real(kind=dp), dimension(:)    ,pointer,public :: e_Duration           => null() ! Time needs to be dp
+      real(kind=dp), dimension(:)    ,pointer,public :: e_Duration           => null()  ! Time needs to be dp
       real(kind=dp), dimension(:)    ,pointer,public :: e_StartTime          => null()
       real(kind=dp), dimension(:)    ,pointer,public :: e_EndTime            => null()
       real(kind=ip), dimension(:)    ,pointer,public :: e_prof_dz            => null()
@@ -176,8 +176,8 @@
         allocate(e_prof_MassFluxRate(neruptions,MAX_ER_PROFPOINTS));e_prof_MassFluxRate = 0.0_ip
       endif
 
-      ieruption = 1 ! Initialize eruption for the start of this dt to the starting eruption
-      jeruption = 1 ! Initialize eruption for the end of this dt to the starting eruption
+      ieruption = 1  ! Initialize eruption for the start of this dt to the starting eruption
+      jeruption = 1  ! Initialize eruption for the end of this dt to the starting eruption
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Allocate_Source_eruption"
@@ -527,12 +527,12 @@
             NormSourceColumn(i,k) = 0.0_ip
           endif
           ! Done with this k-cell; continue upwards to the top of the plume
-        enddo ! nzmax+1
+        enddo  ! nzmax+1
 
         tot = sum(NormSourceColumn(i,:))
         NormSourceColumn(i,:) = NormSourceColumn(i,:)/tot
 
-      enddo ! neruptions
+      enddo  ! neruptions
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Exporting volume of each eruptive pulse"
@@ -596,9 +596,9 @@
            SourceType.eq.'line'        .or. &
            SourceType.eq.'umbrella'    .or. &
            SourceType.eq.'umbrella_air')then
-          MassFluxRate(i)  = MagmaDensity * & ! kg/m3
-                             e_Volume(i)  * & ! km3
-                             KM3_2_M3     / & ! m3/km3
+          MassFluxRate(i)  = MagmaDensity * &  ! kg/m3
+                             e_Volume(i)  * &  ! km3
+                             KM3_2_M3     / &  ! m3/km3
                              real(e_Duration(i),kind=ip)    ! hours  => kg/hr
           e_EndTime(i) = e_StartTime(i) + e_Duration(i)
 
@@ -609,10 +609,10 @@
 1023      format('   Magma density (kg/m3) = ',f6.1,', Pulse Duration (hrs) = ',f6.3,/, &
                  '   Mass flux (kg/hr) = ',e12.4,', Pulse volume (km3 DRE)=',f8.4)
         elseif(SourceType.eq.'profile')then
-          e_prof_MassFluxRate(i,1:e_prof_nzpoints(i)) =              &
-                         MagmaDensity                          * & ! kg/m3
-                         e_prof_Volume(i,1:e_prof_nzpoints(i)) * & ! km3
-                         KM3_2_M3                              / & ! m3/km3
+          e_prof_MassFluxRate(i,1:e_prof_nzpoints(i)) =          &
+                         MagmaDensity                          * &  ! kg/m3
+                         e_prof_Volume(i,1:e_prof_nzpoints(i)) * &  ! km3
+                         KM3_2_M3                              / &  ! m3/km3
                          real(e_Duration(i),kind=ip)                             ! hours = kg/hr
           MassFluxRate(i) = sum(e_prof_MassFluxRate(i,1:e_prof_nzpoints(i)))
           e_EndTime(i) = e_StartTime(i) + e_Duration(i)
@@ -697,7 +697,7 @@
       Source_in_dt     = .false.
       dt_pulse_frac(:) = 0.0_dp
 
-      if((SourceType.eq.'point')       .or. & ! profile is a branch below
+      if((SourceType.eq.'point')       .or. &  ! profile is a branch below
          (SourceType.eq.'line')        .or. &
          (SourceType.eq.'suzuki')      .or. &
          (SourceType.eq.'umbrella')    .or. &
@@ -706,13 +706,13 @@
 
         do i=ieruption,neruptions
           Pulse_contributes = .false.
-          if((tstart.ge.e_StartTime(i)).and. & ! beginning of time step at or after pulse start
-             (tstart.lt.e_EndTime(i)))then     ! beginning of time step is before same pulse ends
+          if((tstart.ge.e_StartTime(i)).and. &  ! beginning of time step at or after pulse start
+             (tstart.lt.e_EndTime(i)))then      ! beginning of time step is before same pulse ends
             ! This catches all pulses that touch the start of dt
             Pulse_contributes = .true.
-            jeruption = i                      ! Make sure jeruption is at least
-          elseif((tend.gt.e_StartTime(i)).and. & ! end of time step at or after pulse start
-                 (tend.le.e_EndTime(i)))then     ! end of time step is before same pulse ends
+            jeruption = i                         ! Make sure jeruption is at least
+          elseif((tend.gt.e_StartTime(i)).and. &  ! end of time step at or after pulse start
+                 (tend.le.e_EndTime(i)))then      ! end of time step is before same pulse ends
             ! This catches all pulses that touch the end of dt
             Pulse_contributes = .true.
             jeruption = i
@@ -821,14 +821,14 @@
         ! against the total MassFluxRate (i.e. should equal 1.0)
       do k=1,nzmax
         kap = kappa_pd(ivent,jvent,k)
-        SourceNodeFlux(k,1:n_gs_max) =      & ! final units are kg/km3/hr
-              Tephra_bin_mass(1:n_gs_max) * & ! fraction of total in bin
-              TephraFluxRate(k)           / & ! kg/hr
+        SourceNodeFlux(k,1:n_gs_max) =      &  ! final units are kg/km3/hr
+              Tephra_bin_mass(1:n_gs_max) * &  ! fraction of total in bin
+              TephraFluxRate(k)           / &  ! kg/hr
               kap
 
         SumSourceNodeFlux = &
-              SumSourceNodeFlux +        &         ! dimensionless
-              sum(SourceNodeFlux(k,1:n_gs_max) * & ! kg/km3 hr
+              SumSourceNodeFlux +        &          ! dimensionless
+              sum(SourceNodeFlux(k,1:n_gs_max) * &  ! kg/km3 hr
               kap)                     / &
               MassFluxRate_now
       enddo
@@ -900,12 +900,12 @@
 
       do k=1,nzmax+1
         do isize=1,n_gs_max
-          tmp = tmp                             + & ! final units is km3
-                real(dt,kind=ip)                * & ! hr
-                SourceNodeFlux(k,isize)         * & ! kg/km3 hr
-                kappa_pd(ivent,jvent,k)         / & ! km3
-                MagmaDensity                    / & ! kg/m3
-                KM3_2_M3                            ! m3/km3
+          tmp = tmp                             + &  ! final units is km3
+                real(dt,kind=ip)                * &  ! hr
+                SourceNodeFlux(k,isize)         * &  ! kg/km3 hr
+                kappa_pd(ivent,jvent,k)         / &  ! km3
+                MagmaDensity                    / &  ! kg/m3
+                KM3_2_M3                             ! m3/km3
         enddo
       enddo
 

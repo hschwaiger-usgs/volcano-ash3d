@@ -95,7 +95,7 @@
       integer           :: iostatus
       character(len=120):: iomessage
 
-      real(kind=dp) :: HoursIntoInterval ! hours since the last windfile timestep
+      real(kind=dp) :: HoursIntoInterval        ! hours since the last windfile timestep
       real(kind=dp) :: TimeNow_fromRefTime
 
       INTERFACE
@@ -165,7 +165,7 @@
                       MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now)
           endif;enddo
         endif
-      endif !first_time
+      endif  !first_time
 
         ! Now load the next MetStep if needed
       if(Load_MesoSteps)then
@@ -458,7 +458,7 @@
         ! onto the computational grid
 
          ! Fill array from the step prior/equal to current time
-        ivar = 2 ! U winds
+        ivar = 2  ! U winds
         call MR_Read_3d_Met_Variable_to_CompH(ivar,istep,.true.)
         if(Meso_toggle.eq.0)then
           vx_meso_1_sp = MR_dum3d_compH
@@ -468,7 +468,7 @@
           vx_meso_next_step_sp = vx_meso_2_sp
         endif
 
-        ivar = 3 ! V winds
+        ivar = 3  ! V winds
         call MR_Read_3d_Met_Variable_to_CompH(ivar,istep,.true.)
         if(Meso_toggle.eq.0)then
           vy_meso_1_sp = MR_dum3d_compH
@@ -493,13 +493,13 @@
         elseif(Map_Case.eq.4)then
             ! Met grid is projected and comp grid is LL
           if(isGridRelative)then
-            call MR_Rotate_UV_GR2ER_Met(istep,.true.,.true.) ! optional argument returns data on compH
+            call MR_Rotate_UV_GR2ER_Met(istep,.true.,.true.)  ! optional argument returns data on compH
           else
             ! if the projected data is already Earth-relative (NARR), then just read it
-            ivar = 3 ! Vy
+            ivar = 3  ! Vy
             call MR_Read_3d_Met_Variable_to_CompH(ivar,istep,.true.)
             MR_dum3d_compH_2 = MR_dum3d_compH
-            ivar = 2 ! Vx
+            ivar = 2  ! Vx
             call MR_Read_3d_Met_Variable_to_CompH(ivar,istep,.true.)
           endif
         elseif(Map_Case.eq.5)then
@@ -529,12 +529,12 @@
 !        !call Set_Atmosphere_Meso(Load_MesoSteps,1.0_ip,first_time)
 !        call Read_NextMesoStep_T
 !      endif
-      if( (Met_var_IsAvailable(4).and..not.useVz_rhoG) .or.&! MetReader returns Vz from PVV
-          MR_iwindformat.eq.50                       )then  ! WRF files provide Vz directly
+      if( (Met_var_IsAvailable(4).and..not.useVz_rhoG) .or.&  ! MetReader returns Vz from PVV
+          MR_iwindformat.eq.50                       )then    ! WRF files provide Vz directly
         ! Here we are asking MetReader to return Vertical velocities directly (in m/s)
         ! This will either be if the windfile provides Vz directly or
         ! we want MetReader to convert from PresVertVel via a FD approximation of the pressure gradient
-        ivar = 4 ! W winds
+        ivar = 4  ! W winds
         if(useVz_rhoG.and.MR_iwindformat.eq.50)then
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"Ignoring useVz_rhoG and reading Vz directly from WRF file."
@@ -563,7 +563,7 @@
         ! Here we are requesting that MetReader return PVV and we will convert to Vz here.
         if(useTemperature.and.useVz_rhoG)then
           ! If we have temperature and density, we can get a better Vz
-          ivar = 7 ! Pressure Vertical Velocity
+          ivar = 7  ! Pressure Vertical Velocity
           if(Met_var_IsAvailable(ivar))then
             call MR_Read_3d_MetP_Variable(ivar,istep)
             ! HFS: We need to be careful here that we apply the right air density for Pre-steps
@@ -587,7 +587,7 @@
           endif
         else
           ! Temperature is deactivated, reverting to FD within MetReader
-          ivar = 4 ! W winds
+          ivar = 4  ! W winds
           if(Met_var_IsAvailable(ivar))then
             call MR_Read_3d_Met_Variable_to_CompH(ivar,istep)
           else

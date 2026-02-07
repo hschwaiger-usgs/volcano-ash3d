@@ -236,7 +236,7 @@
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,parameter  :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in) :: HoursSince
           integer        ,intent(in) :: byear
           logical        ,intent(in) :: useLeaps
@@ -552,7 +552,7 @@
       endif
       ! Finished temporary data file
 
-      call citylist(2,                        & ! 2 is for external file in gnuplot format
+      call citylist(2,                        &  ! 2 is for external file in gnuplot format
                     xmin,xmax,ymin,ymax,      &
                     ncities,                  &
                     lon_cities,               &
@@ -786,10 +786,10 @@
 
       ! Plotting variables
 
-      real(kind=ip) :: tmin    , zmin    , cmin     ! graph minima
-      real(kind=ip) :: tmax    , zmax    , cmax     ! graph maxima
-      real(kind=ip) :: tlab1   , zlab1   , clab1    ! graph first label
-      real(kind=ip) :: tlabstep, zlabstep, clabstep ! graph label increment
+      real(kind=ip) :: tmin    , zmin    , cmin      ! graph minima
+      real(kind=ip) :: tmax    , zmax    , cmax      ! graph maxima
+      real(kind=ip) :: tlab1   , zlab1   , clab1     ! graph first label
+      real(kind=ip) :: tlabstep, zlabstep, clabstep  ! graph label increment
       real(kind=ip) :: cloudcon_thresh_mgm3
 
       ! Matlab/Octave variables
@@ -798,7 +798,7 @@
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,parameter  :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in) :: HoursSince
           integer        ,intent(in) :: byear
           logical        ,intent(in) :: useLeaps
@@ -871,7 +871,7 @@
         zlabstep = 1.0_ip
       endif
 
-      cloudcon_thresh_mgm3 = CLOUDCON_THRESH * KG_2_MG / KM3_2_M3 !convert from kg/km3 to mg/m3
+      cloudcon_thresh_mgm3 = CLOUDCON_THRESH * KG_2_MG / KM3_2_M3  ! convert from kg/km3 to mg/m3
       cmin=real(0,kind=ip)
       cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=ip)    ! Get the max value for this profile
       cmin=real(min(cmin,cloudcon_thresh_mgm3),kind=ip)  ! Do not let cmax drop below the threshold

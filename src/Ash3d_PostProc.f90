@@ -163,15 +163,15 @@
       character(len=50)   :: linebuffer050
       character(len=80)   :: linebuffer080
       character(len=100)  :: arg
-      integer             :: informat     = 3 ! input format (default = 3 for netcdf)
-      integer             :: outformat        ! output format
-      integer             :: iiprod           ! code for input dataset
-      integer             :: iprod            ! code for output product
-      integer             :: ndims            ! dimensions of the input data file
+      integer             :: informat     = 3  ! input format (default = 3 for netcdf)
+      integer             :: outformat         ! output format
+      integer             :: iiprod            ! code for input dataset
+      integer             :: iprod             ! code for output product
+      integer             :: ndims             ! dimensions of the input data file
       integer             :: ivar
       integer             :: TS_Flag
       integer             :: height_flag
-      integer             :: itime = -1       ! initialize time step to the last step
+      integer             :: itime = -1        ! initialize time step to the last step
       integer             :: i,j,ii,ia
       integer             :: tmp_int
       integer             :: icase
@@ -203,15 +203,15 @@
                                                      !   V V V V
 #ifdef WINDOWS
       ! For Windows systems, dislin is working; others not yet.
-      integer,dimension(Nplot_libs) :: plot_pref_map = (/1,2,3,4,5,6/) ! plot preference for maps
-      integer,dimension(Nplot_libs) :: plot_pref_shp = (/1,2,3,4,5,6/) ! plot preference for contours
-      integer,dimension(Nplot_libs) :: plot_pref_vpr = (/1,2,3,4,5,6/) ! plot preference for vert profs.
-      integer,dimension(Nplot_libs) :: plot_pref_aTS = (/1,2,3,4,5,6/) ! plot preference for Airport TS
+      integer,dimension(Nplot_libs) :: plot_pref_map = (/1,2,3,4,5,6/)  ! plot preference for maps
+      integer,dimension(Nplot_libs) :: plot_pref_shp = (/1,2,3,4,5,6/)  ! plot preference for contours
+      integer,dimension(Nplot_libs) :: plot_pref_vpr = (/1,2,3,4,5,6/)  ! plot preference for vert profs.
+      integer,dimension(Nplot_libs) :: plot_pref_aTS = (/1,2,3,4,5,6/)  ! plot preference for Airport TS
 #else
-      integer,dimension(Nplot_libs) :: plot_pref_map = (/2,1,3,4,5,6/) ! plot preference for maps
-      integer,dimension(Nplot_libs) :: plot_pref_shp = (/3,1,2,4,5,6/) ! plot preference for contours
-      integer,dimension(Nplot_libs) :: plot_pref_vpr = (/1,2,3,4,5,6/) ! plot preference for vert profs.
-      integer,dimension(Nplot_libs) :: plot_pref_aTS = (/2,3,1,4,5,6/) ! plot preference for Airport TS
+      integer,dimension(Nplot_libs) :: plot_pref_map = (/2,1,3,4,5,6/)  ! plot preference for maps
+      integer,dimension(Nplot_libs) :: plot_pref_shp = (/3,1,2,4,5,6/)  ! plot preference for contours
+      integer,dimension(Nplot_libs) :: plot_pref_vpr = (/1,2,3,4,5,6/)  ! plot preference for vert profs.
+      integer,dimension(Nplot_libs) :: plot_pref_aTS = (/2,3,1,4,5,6/)  ! plot preference for Airport TS
 #endif
 
       INTERFACE
@@ -230,7 +230,7 @@
         character (len=13) function HS_yyyymmddhh_since(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,parameter  :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in) ::  HoursSince
           integer        ,intent(in) ::  byear
           logical        ,intent(in) ::  useLeaps
@@ -238,7 +238,7 @@
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,parameter  :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in) :: HoursSince
           integer        ,intent(in) :: byear
           logical        ,intent(in) :: useLeaps
@@ -767,10 +767,10 @@
               do io=1,2;if(VB(io).le.verbosity_info)then
                 write(outlog(io),*)" Resetting plotting package to ",iplotpref
               endif;enddo
-              plot_pref_map(1:Nplot_libs) = iplotpref ! plot preference for maps
-              plot_pref_shp(1:Nplot_libs) = iplotpref ! plot preference for contours
-              plot_pref_vpr(1:Nplot_libs) = iplotpref ! plot preference for vert profs.
-              plot_pref_aTS(1:Nplot_libs) = iplotpref ! plot preference for Airport TS
+              plot_pref_map(1:Nplot_libs) = iplotpref  ! plot preference for maps
+              plot_pref_shp(1:Nplot_libs) = iplotpref  ! plot preference for contours
+              plot_pref_vpr(1:Nplot_libs) = iplotpref  ! plot preference for vert profs.
+              plot_pref_aTS(1:Nplot_libs) = iplotpref  ! plot preference for Airport TS
             else
               do io=1,2;if(VB(io).le.verbosity_error)then
                 write(errlog(io),*)"WARNING: Preferred plotting library is not available."
@@ -1045,10 +1045,10 @@
           endif
         endif;enddo
         if(plotlib_avail(iplotpref))then
-          plot_pref_map(1:Nplot_libs) = iplotpref ! plot preference for maps
-          plot_pref_shp(1:Nplot_libs) = iplotpref ! plot preference for contours
-          plot_pref_vpr(1:Nplot_libs) = iplotpref ! plot preference for vert profs.
-          plot_pref_aTS(1:Nplot_libs) = iplotpref ! plot preference for Airport TS
+          plot_pref_map(1:Nplot_libs) = iplotpref  ! plot preference for maps
+          plot_pref_shp(1:Nplot_libs) = iplotpref  ! plot preference for contours
+          plot_pref_vpr(1:Nplot_libs) = iplotpref  ! plot preference for vert profs.
+          plot_pref_aTS(1:Nplot_libs) = iplotpref  ! plot preference for Airport TS
         else
           do io=1,2;if(VB(io).le.verbosity_error)then
             write(errlog(io),*)"WARNING: Preferred plotting library is not available."
@@ -1060,7 +1060,7 @@
       ! and populate auxilary variable.
       Load_Windfiles = .false.  ! This deactivates reading actual windfiles, which
                                 ! might not be available
-      if(informat.eq.3)then ! netcdf
+      if(informat.eq.3)then  ! netcdf
         ! call routine to read the netcdf file, populate
         ! the dimensions so we can see what we are dealing with.
         ! This call reads the 2d output products for the specified time
@@ -1084,7 +1084,7 @@
           ! volcano name, etc.
           call Read_Control_File
         endif
-        if(informat.eq.1)then ! ASCII
+        if(informat.eq.1)then  ! ASCII
           if(ndims.eq.2)then
             call read_2D_ASCII(datafileIn)
             if(nxmax.ne.A_nx.or.  &
@@ -1123,7 +1123,7 @@
           elseif(ndims.eq.3)then
             call read_3D_ASCII(datafileIn)
           endif
-        elseif(informat.eq.2)then ! BINARY
+        elseif(informat.eq.2)then  ! BINARY
           if(ndims.eq.2)then
             ! We didn't error-check nxmax and nymax on input, so do it now
             if(nxmax.le.0.or.nymax.le.0)then
@@ -1136,7 +1136,7 @@
           elseif(ndims.eq.3)then
             call read_3D_BINARY(nxmax,nymax,nzmax,datafileIn)
           endif
-        endif ! informat = 2 or 3
+        endif  ! informat = 2 or 3
 
         ! Allocate grid
         call Allocate_mesh
@@ -1181,91 +1181,91 @@
       endif
       cio = HS_yyyymmddhh_since(SimStartHour+time,BaseYear,useLeap)
 
-      if(    iprod.eq.1 )then ! full concentration array
+      if(    iprod.eq.1 )then  ! full concentration array
         Write3dFiles = .true.
-      elseif(iprod.eq.2 )then ! deposit granularity
+      elseif(iprod.eq.2 )then  ! deposit granularity
         if(    outformat.eq.1)then
           WriteGSD                      = .true.
         elseif(outformat.eq.2)then
           WriteGSD                      = .true.
         endif
-      elseif(iprod.eq.3 )then ! deposit at specified times (mm)
+      elseif(iprod.eq.3 )then  ! deposit at specified times (mm)
         if(    outformat.eq.1)then
           WriteDepositTS_ASCII          = .true.
         elseif(outformat.eq.2)then
           WriteDepositTS_KML            = .true.
         endif
-      elseif(iprod.eq.4 )then ! deposit at final time (mm)
+      elseif(iprod.eq.4 )then  ! deposit at final time (mm)
         if(    outformat.eq.1)then
           WriteDepositFinal_ASCII       = .true.
         elseif(outformat.eq.2)then
           WriteDepositFinal_KML         = .true.
         endif
-      elseif(iprod.eq.5 )then ! deposit at specified times (inches)
+      elseif(iprod.eq.5 )then  ! deposit at specified times (inches)
         if(    outformat.eq.1)then
           WriteDepositTS_ASCII          = .true.
         elseif(outformat.eq.2)then
           WriteDepositTS_KML            = .true.
         endif
-      elseif(iprod.eq.6 )then ! deposit at final time (inches)
+      elseif(iprod.eq.6 )then  ! deposit at final time (inches)
         if(    outformat.eq.1)then
           WriteDepositFinal_ASCII       = .true.
         elseif(outformat.eq.2)then
           WriteDepositFinal_KML         = .true.
         endif
-      elseif(iprod.eq.7 )then ! ashfall arrival time
+      elseif(iprod.eq.7 )then  ! ashfall arrival time
         if(    outformat.eq.1)then
           WriteDepositTime_ASCII        = .true.
         elseif(outformat.eq.2)then
           WriteDepositTime_KML          = .true.
         endif
-      elseif(iprod.eq.8 )then ! ashfall at airports/POI
+      elseif(iprod.eq.8 )then  ! ashfall at airports/POI
         Write_PR_Data                   = .true.
         if(    outformat.eq.1)then
           WriteAirportFile_ASCII        = .true.
         elseif(outformat.eq.2)then
           WriteAirportFile_KML          = .true.
         endif
-      elseif(iprod.eq.9 )then ! ash-cloud concentration
+      elseif(iprod.eq.9 )then  ! ash-cloud concentration
         if(    outformat.eq.1)then
           WriteCloudConcentration_ASCII = .true.
         elseif(outformat.eq.2)then
           WriteCloudConcentration_KML   = .true.
         endif
-      elseif(iprod.eq.10)then ! ash-cloud height
+      elseif(iprod.eq.10)then  ! ash-cloud height
         if(    outformat.eq.1)then
           WriteCloudHeight_ASCII        = .true.
         elseif(outformat.eq.2)then
           WriteCloudHeight_KML          = .true.
         endif
-      elseif(iprod.eq.11)then ! ash-cloud bottom
+      elseif(iprod.eq.11)then  ! ash-cloud bottom
         if(    outformat.eq.1)then
           WriteCloudHeight_ASCII        = .true.
         elseif(outformat.eq.2)then
           WriteCloudHeight_KML          = .true.
         endif
-      elseif(iprod.eq.12)then ! ash-cloud load
+      elseif(iprod.eq.12)then  ! ash-cloud load
         if(    outformat.eq.1)then
           WriteCloudLoad_ASCII          = .true.
         elseif(outformat.eq.2)then
           WriteCloudLoad_KML            = .true.
         endif
-      elseif(iprod.eq.13)then ! ash-cloud radar reflectivity
+      elseif(iprod.eq.13)then  ! ash-cloud radar reflectivity
         if(    outformat.eq.1)then
           WriteReflectivity_ASCII       = .true.
         elseif(outformat.eq.2)then
           WriteReflectivity_KML         = .true.
         endif
-      elseif(iprod.eq.14)then ! ash-cloud arrival time
+      elseif(iprod.eq.14)then  ! ash-cloud arrival time
         if(    outformat.eq.1)then
           WriteCloudTime_ASCII          = .true.
         elseif(outformat.eq.2)then
           WriteCloudTime_KML            = .true.
         endif
-      elseif(iprod.eq.15)then ! topography
+      elseif(iprod.eq.15)then  ! topography
         nvar_User2d_static_XY = 1
         Extra2dVarName = "Topography"
-      elseif(iprod.eq.16)then ! vertical profiles of concentration
+      elseif(iprod.eq.16)then  ! vertical profiles of concentration
         if(    outformat.eq.1.or.outformat.eq.3)then
           ! ASCII or png
           Write_PR_Data                 = .true.
@@ -1403,19 +1403,19 @@
         elseif(ndims.eq.3)then
           ! For 3d input data, we only have the total 3d ash concentration, so we need
           ! to stop if the requested output product cannot be calculated from this.
-          if(iprod.eq.3.or.iprod.eq.4.or.iprod.eq.5.or.iprod.eq.6.or.  & ! any of the deposit products
-             iprod.eq.7.or.   & ! ashfall arrival time
-             iprod.eq.8.or.   & ! ashfall arrival at airports
-             iprod.eq.13.or.  & ! ash-cloud radar reflectivity
-             iprod.eq.14.or.  & ! ash-cloud arrival time
-             iprod.eq.16)then   ! profile plots
+          if(iprod.eq.3.or.iprod.eq.4.or.iprod.eq.5.or.iprod.eq.6.or.  &  ! any of the deposit products
+             iprod.eq.7.or.   &  ! ashfall arrival time
+             iprod.eq.8.or.   &  ! ashfall arrival at airports
+             iprod.eq.13.or.  &  ! ash-cloud radar reflectivity
+             iprod.eq.14.or.  &  ! ash-cloud arrival time
+             iprod.eq.16)then    ! profile plots
             do io=1,2;if(VB(io).le.verbosity_error)then
               write(errlog(io),*)"ERROR: Requested output is not available from input data."
             endif;enddo
             stop 1
           endif
         endif
-      endif !informat.eq.1.or.informat.eq.2
+      endif  ! informat.eq.1.or.informat.eq.2
 
       ! The main differences in output products will be time-series, vs
       ! time-step output.  Currently, the time-series output will only be for
@@ -1529,7 +1529,7 @@
           endif;enddo
           stop 1
         endif
-      endif ! outformat.eq.2 (KML)
+      endif  ! outformat.eq.2 (KML)
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       ! This is the non-KML section
@@ -1665,9 +1665,9 @@
                                     "outvar              ")
           endif
         endif
-      elseif(outformat.eq.2)then ! KML
+      elseif(outformat.eq.2)then  ! KML
         ! All the KML routines were called above
-      elseif(outformat.eq.3)then ! image/png
+      elseif(outformat.eq.3)then  ! image/png
         if(iprod.eq.8)then
           ! Point data
           do io=1,2;if(VB(io).le.verbosity_info)then
@@ -1746,7 +1746,7 @@
         end select
 
         endif
-      elseif(outformat.eq.4)then ! Binary
+      elseif(outformat.eq.4)then  ! Binary
         if(iprod.eq.1)then
           ! full concentration array but here we only output the total
           call write_3D_Binary(cio,nxmax,nymax,nzmax,ashcon_tot)
@@ -1771,7 +1771,7 @@
         else
           call write_2D_Binary(nxmax,nymax,OutVar,mask,Fill_Value_str,filename_root)
         endif
-      elseif(outformat.eq.5)then ! Shapefile
+      elseif(outformat.eq.5)then  ! Shapefile
         ! For 2d contours exported from dislin, gnuplot, gmt
         ! First call plotting routine, but only get the contours
         writeContours = .true.

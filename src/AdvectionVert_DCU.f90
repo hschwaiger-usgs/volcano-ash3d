@@ -106,23 +106,23 @@
 
        ! arrays that live on cell-centers: Note that we have 2 ghost cells
       real(kind=ip),dimension(-1:nzmax+2)               :: update_cc
-      real(kind=ip),dimension(-1:nzmax+2)               :: q_cc      ! concen
-      real(kind=ip),dimension(-1:nzmax+2)               :: vel_cc    ! vel
-      real(kind=ip),dimension(-1:nzmax+2)               :: sig_I     ! cell area
-      real(kind=ip),dimension(-1:nzmax+2)               :: kap_cc    ! cell volume
-      real(kind=ip),dimension(-1:nzmax+2)               :: dt_vol_cc ! dt on local cell volume
+      real(kind=ip),dimension(-1:nzmax+2)               :: q_cc       ! concen
+      real(kind=ip),dimension(-1:nzmax+2)               :: vel_cc     ! vel
+      real(kind=ip),dimension(-1:nzmax+2)               :: sig_I      ! cell area
+      real(kind=ip),dimension(-1:nzmax+2)               :: kap_cc     ! cell volume
+      real(kind=ip),dimension(-1:nzmax+2)               :: dt_vol_cc  ! dt on local cell volume
        ! arrays that live on cell interfaces
        !  Note: interface I for cell i is at (i-1/2); i.e. the left or negative side of i
        !        We only need the interfaces up to the boundary of the domain (not the ghost cells)
-      real(kind=ip),dimension(-1:nzmax+2)               :: usig_I   ! vel*(interface area)
+      real(kind=ip),dimension(-1:nzmax+2)               :: usig_I     ! vel*(interface area)
 
       ! This block is only needed for the in-line 1-d advection code as
       ! opposed to the function call
       real(kind=ip),dimension( 0:nzmax+2)     :: dq_I
       real(kind=ip),dimension( 0:nzmax+2)     :: fss_I    ! fluctuations (A delQ)+-
       real(kind=ip),dimension( 0:nzmax+2,1:2) :: fs_I     ! second-order term of Taylor S.(~F)
-      real(kind=ip) :: ldq_I ! limited Delta Q
-      real(kind=ip) :: dqu_I ! Delta Q at upwind interface
+      real(kind=ip) :: ldq_I  ! limited Delta Q
+      real(kind=ip) :: dqu_I  ! Delta Q at upwind interface
 
       real(kind=ip) :: aus      ! absolute value of usig at interface
       real(kind=ip) :: theta
@@ -133,7 +133,7 @@
 
       INTERFACE
         subroutine Set_BC(bc_code)
-          integer,intent(in) :: bc_code ! 1 for advection, 2 for diffusion
+          integer,intent(in) :: bc_code  ! 1 for advection, 2 for diffusion
         end subroutine Set_BC
       END INTERFACE
 
@@ -222,9 +222,9 @@
               ! requires it.
               ! Get delta Q at upwind interface relative to interface I
               if(usig_I(i_I).gt.0.0_ip)then
-                dqu_I = dq_I(i_I-1) ! upwind is interface I-1
+                dqu_I = dq_I(i_I-1)  ! upwind is interface I-1
               else
-                dqu_I = dq_I(i_I+1) ! upwind is interface I+1
+                dqu_I = dq_I(i_I+1)  ! upwind is interface I+1
               endif
 
               ! Make sure that theta is not singular
@@ -269,8 +269,8 @@
             do i_I=rmin-1,rmin-1+ncells+1
                 ! Set flux based on upwind velocity for color equation
                 !  (equals conservative form if div.v=0)
-              fs_I(i_I,fluc_r) = max(0.0_ip,usig_I(i_I))*dq_I(i_I) ! flux OUT OF l-1 cell to l cell
-              fs_I(i_I,fluc_l) = min(0.0_ip,usig_I(i_I))*dq_I(i_I) ! flux OUT OF l cell to l-1 cell
+              fs_I(i_I,fluc_r) = max(0.0_ip,usig_I(i_I))*dq_I(i_I)  ! flux OUT OF l-1 cell to l cell
+              fs_I(i_I,fluc_l) = min(0.0_ip,usig_I(i_I))*dq_I(i_I)  ! flux OUT OF l cell to l-1 cell
                 ! Modification for conservative form in
                 ! divergent/convergent velocities
               divu_p = max(0.0_ip,usig_I(i_I  )) - max(0.0_ip,usig_I(i_I-1))
@@ -295,12 +295,12 @@
               ! Building Eq 6.59 of LeVeque
               !   Apply the first- and second-order term of Taylor series
               update_cc(i_cc) = -dt_vol_cc(i_cc)*( &
-                          LFluct_Rbound + & ! leftward fluctuation at right boundary
-                          RFluct_Lbound + & ! rightward fluctuation at left boundary
-                          LimFlux_Rbound- & ! limited flux function at right boundary
-                          LimFlux_Lbound)   ! limited flux function at left boundary
+                          LFluct_Rbound + &  ! leftward fluctuation at right boundary
+                          RFluct_Lbound + &  ! rightward fluctuation at left boundary
+                          LimFlux_Rbound- &  ! limited flux function at right boundary
+                          LimFlux_Lbound)    ! limited flux function at left boundary
 
-            enddo ! loop over l (cell centers)
+            enddo  ! loop over l (cell centers)
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
             ! Now update concentration for all interior cells
@@ -325,10 +325,10 @@
             !    write(errlog(io),*)"ERROR! Update to outflow_xy2_pd negative at: ",i,j,n,update_cc(nzmax+1)
             !  endif;enddo
             !endif
-          enddo ! loop over i=imin,imax
-        enddo ! loop over j=jmin,jmax
+          enddo  ! loop over i=imin,imax
+        enddo  ! loop over j=jmin,jmax
         !$OMP END PARALLEL DO
-      enddo ! loop over n
+      enddo  ! loop over n
 
       concen_pd(  1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
@@ -362,23 +362,23 @@
 
        ! arrays that live on cell-centers: Note that we have 2 ghost cells
       real(kind=ip),dimension(-1:nzmax+2)               :: update_cc
-      real(kind=ip),dimension(-1:nzmax+2)               :: q_cc      ! concen
-      real(kind=ip),dimension(-1:nzmax+2)               :: vel_cc    ! vel
-      real(kind=ip),dimension(-1:nzmax+2)               :: sig_I     ! cell area
-      real(kind=ip),dimension(-1:nzmax+2)               :: kap_cc    ! cell volume
-      real(kind=ip),dimension(-1:nzmax+2)               :: dt_vol_cc ! dt on local cell volume
+      real(kind=ip),dimension(-1:nzmax+2)               :: q_cc       ! concen
+      real(kind=ip),dimension(-1:nzmax+2)               :: vel_cc     ! vel
+      real(kind=ip),dimension(-1:nzmax+2)               :: sig_I      ! cell area
+      real(kind=ip),dimension(-1:nzmax+2)               :: kap_cc     ! cell volume
+      real(kind=ip),dimension(-1:nzmax+2)               :: dt_vol_cc  ! dt on local cell volume
        ! arrays that live on cell interfaces
        !  Note: interface I for cell i is at (i-1/2); i.e. the left or negative side of i
        !        We only need the interfaces up to the boundary of the domain (not the ghost cells)
-      real(kind=ip),dimension(-1:nzmax+2)               :: usig_I   ! vel*(interface area)
+      real(kind=ip),dimension(-1:nzmax+2)               :: usig_I     ! vel*(interface area)
 
       ! This block is only needed for the in-line 1-d advection code as
       ! opposed to the function call
       real(kind=ip),dimension( 0:nzmax+2)     :: dq_I
       real(kind=ip),dimension( 0:nzmax+2)     :: fss_I    ! fluctuations (A delQ)+-
       real(kind=ip),dimension( 0:nzmax+2,1:2) :: fs_I     ! second-order term of Taylor S.(~F)
-      real(kind=ip) :: ldq_I ! limited Delta Q
-      real(kind=ip) :: dqu_I ! Delta Q at upwind interface
+      real(kind=ip) :: ldq_I  ! limited Delta Q
+      real(kind=ip) :: dqu_I  ! Delta Q at upwind interface
 
       real(kind=ip) :: aus      ! absolute value of usig at interface
       real(kind=ip) :: theta
@@ -389,7 +389,7 @@
 
       INTERFACE
         subroutine Set_BC(bc_code)
-          integer,intent(in) :: bc_code ! 1 for advection, 2 for diffusion
+          integer,intent(in) :: bc_code  ! 1 for advection, 2 for diffusion
         end subroutine Set_BC
       END INTERFACE
 
@@ -473,9 +473,9 @@
               ! requires it.
               ! Get delta Q at upwind interface relative to interface I
               if(usig_I(i_I).gt.0.0_ip)then
-                dqu_I = dq_I(i_I-1) ! upwind is interface I-1
+                dqu_I = dq_I(i_I-1)  ! upwind is interface I-1
               else
-                dqu_I = dq_I(i_I+1) ! upwind is interface I+1
+                dqu_I = dq_I(i_I+1)  ! upwind is interface I+1
               endif
 
               ! Make sure that theta is not singular
@@ -520,8 +520,8 @@
             do i_I=rmin-1,rmin-1+ncells+1
                 ! Set flux based on upwind velocity for color equation
                 !  (equals conservative form if div.v=0)
-              fs_I(i_I,fluc_r) = max(0.0_ip,usig_I(i_I))*dq_I(i_I) ! flux OUT OF l-1 cell to l cell
-              fs_I(i_I,fluc_l) = min(0.0_ip,usig_I(i_I))*dq_I(i_I) ! flux OUT OF l cell to l-1 cell
+              fs_I(i_I,fluc_r) = max(0.0_ip,usig_I(i_I))*dq_I(i_I)  ! flux OUT OF l-1 cell to l cell
+              fs_I(i_I,fluc_l) = min(0.0_ip,usig_I(i_I))*dq_I(i_I)  ! flux OUT OF l cell to l-1 cell
                 ! Modification for conservative form in
                 ! divergent/convergent velocities
               divu_p = max(0.0_ip,usig_I(i_I  )) - max(0.0_ip,usig_I(i_I-1))
@@ -546,12 +546,12 @@
               ! Building Eq 6.59 of LeVeque
               !   Apply the first- and second-order term of Taylor series
               update_cc(i_cc) = -dt_vol_cc(i_cc)*( &
-                          LFluct_Rbound + & ! leftward fluctuation at right boundary
-                          RFluct_Lbound + & ! rightward fluctuation at left boundary
-                          LimFlux_Rbound- & ! limited flux function at right boundary
-                          LimFlux_Lbound)   ! limited flux function at left boundary
+                          LFluct_Rbound + &  ! leftward fluctuation at right boundary
+                          RFluct_Lbound + &  ! rightward fluctuation at left boundary
+                          LimFlux_Rbound- &  ! limited flux function at right boundary
+                          LimFlux_Lbound)    ! limited flux function at left boundary
 
-            enddo ! loop over l (cell centers)
+            enddo  ! loop over l (cell centers)
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
             ! Now update concentration for all interior cells
@@ -566,10 +566,10 @@
                 ! Flux out the + side of advection row  (top of domain)
                 outflow_xy2_pd(i,j,n) = outflow_xy2_pd(i,j,n) + update_cc(ncells+1)
 
-          enddo ! loop over i=imin,imax
-        enddo ! loop over j=jmin,jmax
+          enddo  ! loop over i=imin,imax
+        enddo  ! loop over j=jmin,jmax
         !$OMP END PARALLEL DO
-      enddo ! loop over n
+      enddo  ! loop over n
 
       concen_pd(  1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)

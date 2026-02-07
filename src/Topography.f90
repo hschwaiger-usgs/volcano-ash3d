@@ -144,12 +144,12 @@
       integer, parameter  :: fid_datfile     = 601
 
       ! Set the number of output variables for this module
-      integer, parameter :: nvar_User2d_static_XY_Topo = 1 ! topography
+      integer, parameter :: nvar_User2d_static_XY_Topo = 1  ! topography
       integer, parameter :: nvar_User2d_XY_Topo        = 0
       integer, parameter :: nvar_User3d_XYGs_Topo      = 0
       integer, parameter :: nvar_User3d_XYZ_Topo       = 0
       integer, parameter :: nvar_User4d_XYZGs_Topo     = 0
-      integer, parameter,public :: nvar_User_charlines_Topo   = 4 ! number of line of the special block of control file
+      integer, parameter,public :: nvar_User_charlines_Topo   = 4  ! number of line of the special block of control file
 
       character(len=30),dimension(nvar_User2d_static_XY_Topo) :: temp_2ds_name_Topo
       character(len=30),dimension(nvar_User2d_static_XY_Topo) :: temp_2ds_unit_Topo
@@ -159,7 +159,7 @@
       character(len=80),dimension(nvar_User_charlines_Topo),public :: var_User_charlines_Topo = ''
 
       ! These are used to keep track of which index in the global list, this
-      ! modulei's output vars correspond to
+      ! module's output vars correspond to
       integer :: indx_User2d_static_XY_Topo
       integer :: indx_User2d_XY_Topo
       integer :: indx_User3d_XYGs_Topo
@@ -183,7 +183,7 @@
       logical,dimension(:,:)         ,allocatable :: IsWater_subgrid
 
       ! These are on the computational grid
-      real(kind=ip),dimension(:,:)  ,allocatable :: topo_comp ! Used if useTopo=.true.
+      real(kind=ip),dimension(:,:)  ,allocatable :: topo_comp  ! Used if useTopo=.true.
       real(kind=ip),dimension(:,:)  ,allocatable :: dhdx_comp
       real(kind=ip),dimension(:,:)  ,allocatable :: dhdy_comp
 
@@ -597,12 +597,12 @@
         subroutine get_minmax_lonlat(lonmin,lonmax,latmin,latmax)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter   :: dp        = 8 ! double precision
+          integer        ,parameter   :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(out) :: lonmin
           real(kind=dp)  ,intent(out) :: lonmax
           real(kind=dp)  ,intent(out) :: latmin
           real(kind=dp)  ,intent(out) :: latmax
-        end subroutine
+        end subroutine get_minmax_lonlat
       END INTERFACE
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
@@ -841,7 +841,7 @@
       nlon_topo_fullgrid = dimlen
       lon_dim_id    = var_dimIDs(i_dim)
 
-      nSTAT = nf90_inq_varid(ncid,dimname,var_id) ! get the variable associated with this dim
+      nSTAT = nf90_inq_varid(ncid,dimname,var_id)  ! get the variable associated with this dim
       if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"inq_variable X")
       ! Check what temporary array to use
       nSTAT = nf90_inquire_variable(ncid, var_id, dimname, xtype = dim_xtype)
@@ -896,7 +896,7 @@
       nlat_topo_fullgrid = dimlen
       lat_dim_id    = var_dimIDs(i_dim)
 
-      nSTAT = nf90_inq_varid(ncid,dimname,var_id) ! get the variable associated with this dim
+      nSTAT = nf90_inq_varid(ncid,dimname,var_id)  ! get the variable associated with this dim
       if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"inq_variable Y")
       ! Check what temporary array to use
       nSTAT = nf90_inquire_variable(ncid, var_id, dimname, xtype = dim_xtype)
@@ -1954,7 +1954,7 @@
             endif
           endif
         enddo
-      else ! y_inverted
+      else  ! y_inverted
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)  'Topo error: Not yet set up for y_inverted=.false.'
         endif;enddo
@@ -2497,7 +2497,7 @@
                                 a2*topo_subgrid(ilon+1,ilat  ) + &
                                 a3*topo_subgrid(ilon+1,ilat+1) + &
                                 a4*topo_subgrid(ilon  ,ilat+1),kind=sp)
-          topo_comp(i,j) = topo_comp(i,j) / 1000.0_ip ! convert to km
+          topo_comp(i,j) = topo_comp(i,j) / 1000.0_ip  ! convert to km
         enddo
       enddo
 
@@ -2566,7 +2566,7 @@
           ilat = min(ilat,nlat_topo_subgrid)
 
           ! No interp; just lower-left corner
-          MR_Topo_met(i,j) = real(topo_subgrid(ilon,ilat),kind=sp) / 1000.0_sp ! convert to km
+          MR_Topo_met(i,j) = real(topo_subgrid(ilon,ilat),kind=sp) / 1000.0_sp  ! convert to km
 
         enddo
       enddo
@@ -2767,9 +2767,9 @@
           ny = nymax
           rad = rad_smooth  ! Smooth over the radius specified in the input file
           if(IsLatLon)then
-            cell_len = min(de,dn)*DEG2RAD*RAD_EARTH ! in km
+            cell_len = min(de,dn)*DEG2RAD*RAD_EARTH  ! in km
           else
-            cell_len = min(dx,dy)                   ! in km
+            cell_len = min(dx,dy)                    ! in km
           endif
           ! Smoothing radius should smooth over something like the scale of the met grid
           ! Issue a warning if it is much smaller
@@ -2851,7 +2851,7 @@
                     z2=real(cos(0.5_ip*PI-lat_cc_pd(jj)*DEG2RAD),kind=dp)
                     ! Position vectors were normalized so angle is just acos
                     ! of inner product
-                    tmp_dp = max(-1.0_dp,min(x1*x2 + y1*y2 + z1*z2,1.0_dp)) ! cap the ends at =-1
+                    tmp_dp = max(-1.0_dp,min(x1*x2 + y1*y2 + z1*z2,1.0_dp))  ! cap the ends at =-1
                     deltheta = real(acos(tmp_dp),kind=ip)
                     dist = deltheta*RAD_EARTH
                     !ijDel_X(1) = x1-x2
@@ -2889,8 +2889,8 @@
                   !  topo_grad(:) = topo_grad(:) + GradW(:) * topo_comp(ii,jj)
                   !endif
                 endif
-              enddo ! loop over jj
-            enddo ! loop over ii
+              enddo  ! loop over jj
+            enddo  ! loop over ii
             topo_smooth_comp(i,j) = real(topo_avg/norm,kind=sp)
           enddo
         enddo

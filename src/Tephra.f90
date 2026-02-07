@@ -52,12 +52,12 @@
 
         ! Publicly available variables
 
-      real(kind=ip),parameter,public :: MagmaDensity_Default    = 2500.0_ip !density of magma, in kg/m3
-      real(kind=ip),parameter,public :: DepositDensity_Default  = 1000.0_ip !deposit density, in kg/m3
-      real(kind=ip),parameter,public :: LAM_GS_THRESH_Default   = 250.0_ip  ! Invokes Cslip once effect is 1%
-                                     !=  125.0_ip  ! Invokes Cslip once effect is 2%
-                                     !=   50.0_ip  ! Invokes Cslip once effect is 5%
-      real(kind=ip),parameter,public :: AIRBORNE_THRESH_Default = 1.0e-3_ip ! Mass threshold for flagging bin as empty (kg)
+      real(kind=ip),parameter,public :: MagmaDensity_Default    = 2500.0_ip  ! density of magma, in kg/m3
+      real(kind=ip),parameter,public :: DepositDensity_Default  = 1000.0_ip  ! deposit density, in kg/m3
+      real(kind=ip),parameter,public :: LAM_GS_THRESH_Default   = 250.0_ip   !  Invokes Cslip once effect is 1%
+                                     ! =  125.0_ip  ! Invokes Cslip once effect is 2%
+                                     ! =   50.0_ip  ! Invokes Cslip once effect is 5%
+      real(kind=ip),parameter,public :: AIRBORNE_THRESH_Default = 1.0e-3_ip  ! Mass threshold for flagging bin as empty (kg)
 
       real(kind=ip),public :: MagmaDensity    = MagmaDensity_Default
       real(kind=ip),public :: DepositDensity  = DepositDensity_Default
@@ -345,12 +345,12 @@
               ! that is where the atmospheric variables live, then we
               ! interpolate onto the compH grid
                if(is.eq.1)then
-                 dens   = AirDens_meso_last_step_MetP_sp(i,j,k) ! kg/m^3
-                 visc   = AirVisc_meso_last_step_MetP_sp(i,j,k) ! kg/(m s)
+                 dens   = AirDens_meso_last_step_MetP_sp(i,j,k)  ! kg/m^3
+                 visc   = AirVisc_meso_last_step_MetP_sp(i,j,k)  ! kg/(m s)
                  lambda = AirLamb_meso_last_step_MetP_sp(i,j,k)
                else
-                 dens   = AirDens_meso_next_step_MetP_sp(i,j,k) ! kg/m^3
-                 visc   = AirVisc_meso_next_step_MetP_sp(i,j,k) ! kg/(m s)
+                 dens   = AirDens_meso_next_step_MetP_sp(i,j,k)  ! kg/m^3
+                 visc   = AirVisc_meso_next_step_MetP_sp(i,j,k)  ! kg/(m s)
                  lambda = AirLamb_meso_next_step_MetP_sp(i,j,k)
                endif
                  ! Initialize fall velocities too because we will be
@@ -359,9 +359,9 @@
                select case (FV_ID)
                  ! Get settling velocity in m/s (will be converted to
                  ! km/hr and negated later)
-               case (0)  ! No fall
+               case (0)      ! No fall
                  vf_sp(:) = 0.0_ip
-               case (1)  ! Wilson and Huang
+               case (1)      ! Wilson and Huang
                  do isize=1,n_gs_max
                    if(.not.IsAloft(isize)) cycle
                    v_grav_set = vset_WH(dens,Tephra_rho_m(isize),visc, &
@@ -369,7 +369,7 @@
                                  Tephra_gsF_fac(isize,2))
                    vf_sp(isize) = real(v_grav_set,kind=sp)
                  enddo
-               case (2)  ! Wilson and Huang + Cunningham slip
+               case (2)      ! Wilson and Huang + Cunningham slip
                  do isize=1,n_gs_max
                    if(.not.IsAloft(isize)) cycle
                    Kna = 2.0_ip*lambda/(Tephra_gsdiam(isize)*Tephra_gsF_fac(isize,5))
@@ -385,14 +385,14 @@
                    endif
                    vf_sp(isize) = real(v_grav_set,kind=sp)
                  enddo
-               case (3)  ! Wilson and Huang + Mod by Pfeiffer Et al.
+               case (3)      ! Wilson and Huang + Mod by Pfeiffer Et al.
                  do isize=1,n_gs_max
                    if(.not.IsAloft(isize)) cycle
                    v_grav_set = vset_WH_PCM(dens,Tephra_rho_m(isize),visc, &
                                  Tephra_gsdiam(isize),Tephra_gsF_fac(isize,1),Tephra_gsF_fac(isize,2))
                    vf_sp(isize) = real(v_grav_set,kind=sp)
                  enddo
-               case (4)  ! Ganser
+               case (4)      ! Ganser
                  do isize=1,n_gs_max
                    if(.not.IsAloft(isize)) cycle
                    v_grav_set = vset_Gans(dens,Tephra_rho_m(isize),&
@@ -400,7 +400,7 @@
                                           Tephra_gsF_fac(isize,3),Tephra_gsF_fac(isize,4))
                    vf_sp(isize) = real(v_grav_set,kind=sp)
                  enddo
-               case (5)  ! Ganser + Cunningham slip
+               case (5)      ! Ganser + Cunningham slip
                  do isize=1,n_gs_max
                    if(.not.IsAloft(isize)) cycle
                    Kna = 2.0_ip*lambda/(Tephra_gsdiam(isize)*Tephra_gsF_fac(isize,5))
@@ -418,14 +418,14 @@
                    endif
                    vf_sp(isize) = real(v_grav_set,kind=sp)
                  enddo
-               case (6)  ! Stokes flow for spherical particles + slip
+               case (6)      ! Stokes flow for spherical particles + slip
                  do isize=1,n_gs_max
                    if(.not.IsAloft(isize)) cycle
                    Kna = 2.0_ip*lambda/(Tephra_gsdiam(isize))
                    v_grav_set = vset_Stokes_slip(Tephra_rho_m(isize),visc,Tephra_gsdiam(isize),Kna)
                    vf_sp(isize) = real(v_grav_set,kind=sp)
                  enddo
-               case default ! Wilson and Huang
+               case default  ! Wilson and Huang
                  do isize=1,n_gs_max
                    if(.not.IsAloft(isize)) cycle
                    v_grav_set = vset_WH(dens,Tephra_rho_m(isize),visc, &
@@ -434,9 +434,9 @@
                  enddo
                end select
                vf_meso_next_step_MetP_sp(i,j,k,:) = vf_sp(1:n_gs_max)
-            enddo !k
-          enddo !j
-        enddo !i
+            enddo  !k
+          enddo  !j
+        enddo  !i
 
         ! Now need to interpolate vs_meso_last_step_MetP_sp onto vf_meso_1_sp
         do isize=1,n_gs_max
@@ -855,8 +855,8 @@
       ! Note: mass_aloft is calculated for all species in Output_Vars:Calc_AshVol_Aloft
       n_gs_aloft = 0
       do isize = 1,n_gs_max
-        if(IsAloft(isize).and. &                     ! if bin is currently flagged as aloft
-           mass_aloft(isize).lt.AIRBORNE_THRESH)then ! but the mass is less than the thresh
+        if(IsAloft(isize).and. &                      ! if bin is currently flagged as aloft
+           mass_aloft(isize).lt.AIRBORNE_THRESH)then  ! but the mass is less than the thresh
           IsAloft(isize) = .false.
           do io=1,2;if(VB(io).le.verbosity_info)then
             write(outlog(io),*)"Grainsize bin ",isize," has fully deposited or left the domain."
@@ -1129,12 +1129,12 @@
       ! Ganser, Powder Tech., v77,2p143, 1993
       ! DOI:10.1016/0032-5910(93)80051-B
 
-      real(kind=ip) :: vset_Gans ! Settling velocity in m/s
-      real(kind=ip) :: rho_air   ! density of air in kg/m3
-      real(kind=ip) :: rho_m     ! density of the particle in km/m3
-      real(kind=ip) :: eta       ! dynamic viscosity of air in (kg/(m s))
-      real(kind=ip) :: diam      ! diameter of the particle in m
-      real(kind=ip) :: K1,K2     ! Stokes shape factor and Newtons shape factor
+      real(kind=ip) :: vset_Gans  ! Settling velocity in m/s
+      real(kind=ip) :: rho_air    ! density of air in kg/m3
+      real(kind=ip) :: rho_m      ! density of the particle in km/m3
+      real(kind=ip) :: eta        ! dynamic viscosity of air in (kg/(m s))
+      real(kind=ip) :: diam       ! diameter of the particle in m
+      real(kind=ip) :: K1,K2      ! Stokes shape factor and Newtons shape factor
 
       real(kind=ip) :: vnew, vold, Re            ! old and new settling velocity
       real(kind=ip) :: Cd                        ! drag coefficient
@@ -1203,13 +1203,13 @@
       ! Ganser, Powder Tech., v77,2p143, 1993
       ! DOI:10.1016/0032-5910(93)80051-B
 
-      real(kind=ip) :: vset_Gans_slip ! Settling velocity in m/s
-      real(kind=ip) :: rho_air        ! density of air in kg/m3
-      real(kind=ip) :: rho_m          ! density of the particle in km/m3
-      real(kind=ip) :: eta            ! dynamic viscosity of air in (kg/(m s))
-      real(kind=ip) :: diam           ! diameter of the particle in m
-      real(kind=ip) :: K1,K2          ! Stokes shape factor and Newtons shape factor
-      real(kind=ip) :: Kna            ! adjusted Knudsen number
+      real(kind=ip) :: vset_Gans_slip  ! Settling velocity in m/s
+      real(kind=ip) :: rho_air         ! density of air in kg/m3
+      real(kind=ip) :: rho_m           ! density of the particle in km/m3
+      real(kind=ip) :: eta             ! dynamic viscosity of air in (kg/(m s))
+      real(kind=ip) :: diam            ! diameter of the particle in m
+      real(kind=ip) :: K1,K2           ! Stokes shape factor and Newtons shape factor
+      real(kind=ip) :: Kna             ! adjusted Knudsen number
 
       real(kind=ip) :: Cslip                     ! drag coefficient
 

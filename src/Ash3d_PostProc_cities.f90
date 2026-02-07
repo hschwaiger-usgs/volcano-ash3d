@@ -28,7 +28,7 @@
 
       implicit none
 
-      integer      ,intent(in) :: outCode ! 0 for list only, 1 for GMT, 2 for gnuplot
+      integer      ,intent(in) :: outCode  ! 0 for list only, 1 for GMT, 2 for gnuplot
       real(kind=ip),intent(in) :: inlonLL
       real(kind=ip),intent(in) :: inlonUR
       real(kind=ip),intent(in) :: inlatLL

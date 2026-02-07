@@ -121,13 +121,13 @@
         !  are written to the output netcdf file if post-processing required
         !  thresholding (if flooded contours are to be suppressed below the
         !  threshold, for example).
-      real(kind=ip),public    :: DEPO_THRESH           = DEPO_THRESH_Default      ! threshold deposit thickness (mm)
-      real(kind=ip),public    :: CLOUDLOAD_THRESH      = CLOUDLOAD_THRESH_Default ! threshold cloud load (t/km2)
+      real(kind=ip),public    :: DEPO_THRESH           = DEPO_THRESH_Default       ! threshold deposit thickness (mm)
+      real(kind=ip),public    :: CLOUDLOAD_THRESH      = CLOUDLOAD_THRESH_Default  ! threshold cloud load (t/km2)
                                        ! 0.2 T/km2 is roughly the detection
                                        ! limit of Pavolonis's SEVIRI satellite retrievals
 
-      real(kind=ip),public    :: DEPRATE_THRESH        = DEPRATE_THRESH_Default  ! threshold deposition rate (mm/hr)
-      real(kind=ip),public    :: CLOUDCON_THRESH       = CLOUDCON_THRESH_Default ! threshold cloud concentration (kg/km3) for output
+      real(kind=ip),public    :: DEPRATE_THRESH        = DEPRATE_THRESH_Default   ! threshold deposition rate (mm/hr)
+      real(kind=ip),public    :: CLOUDCON_THRESH       = CLOUDCON_THRESH_Default  ! threshold cloud concentration (kg/km3) for output
       real(kind=ip),public    :: CLOUDCON_GRID_THRESH  = CLOUDCON_GRID_THRESH_Default  ! threshold cloud concentration (kg/km3) for subgrid
 
       real(kind=ip),public    :: THICKNESS_THRESH      = THICKNESS_THRESH_Default  ! threshold thickness for start of deposition (mm)
@@ -179,7 +179,7 @@
       integer      ,public :: iplotpref  = 0           ! Used in post-processing to specify plotting package
 
       ! Contour colors and levels
-      logical                                     ,public:: ContourFilled = .false. ! T if using filled contours, F if lines
+      logical                                     ,public:: ContourFilled = .false.  ! T if using filled contours, F if lines
       integer                                     ,public:: nConLev
       integer,parameter                           ,public:: CONTOUR_MAXCURVES  = 40
       integer,parameter                           ,public:: CONTOUR_MAXPOINTS  = 1000
@@ -189,10 +189,10 @@
 
 #ifdef USEPOINTERS
       real(kind=ip),dimension(:)    ,pointer ,public:: ContourLev         => null()
-      real(kind=ip),dimension(:,:,:),pointer ,public:: ContourDataX       => null() ! x curve data with dims: ilev, icurve, ipnt
-      real(kind=ip),dimension(:,:,:),pointer ,public:: ContourDataY       => null() ! x curve data with dims: ilev, icurve, ipnt
-      integer      ,dimension(:)    ,pointer ,public:: ContourDataNcurves => null() ! num of curves for each level (some = 0)
-      integer      ,dimension(:,:)  ,pointer ,public:: ContourDataNpoints => null() ! num of pts for ilev and icurve
+      real(kind=ip),dimension(:,:,:),pointer ,public:: ContourDataX       => null()  ! x curve data with dims: ilev, icurve, ipnt
+      real(kind=ip),dimension(:,:,:),pointer ,public:: ContourDataY       => null()  ! x curve data with dims: ilev, icurve, ipnt
+      integer      ,dimension(:)    ,pointer ,public:: ContourDataNcurves => null()  ! num of curves for each level (some = 0)
+      integer      ,dimension(:,:)  ,pointer ,public:: ContourDataNpoints => null()  ! num of pts for ilev and icurve
         ! User-specified contour interval and colors
       integer      ,dimension(:,:)  ,pointer ,public:: Con_Cust_RGB       => null()
       real(kind=ip),dimension(:)    ,pointer ,public:: Con_Cust_Lev       => null()
@@ -240,17 +240,17 @@
         ! 2-D variables (in x,y)
       logical,       dimension(:,:)  ,pointer,public :: Mask_Cloud       => null()
       logical,       dimension(:,:)  ,pointer,public :: Mask_Deposit     => null()
-      real(kind=ip), dimension(:,:)  ,pointer,public :: DepositThickness => null() ! accumulated ash thickness on ground (mm)
-      real(kind=ip), dimension(:,:)  ,pointer,public :: MaxConcentration => null() ! max concentration in the cloud at any i,j node (mg/m3)
-      real(kind=dp), dimension(:,:)  ,pointer,public :: DepArrivalTime   => null() ! (hours)
-      real(kind=dp), dimension(:,:)  ,pointer,public :: CloudArrivalTime => null() ! (hours)
-      real(kind=ip), dimension(:,:)  ,pointer,public :: CloudLoad        => null() ! Ash load in cloud, (tonnes/km2)
-      real(kind=ip), dimension(:,:)  ,pointer,public :: MaxHeight        => null() ! maximum cloud height (km)
-      real(kind=ip), dimension(:,:)  ,pointer,public :: MinHeight        => null() ! cloud bottom height (km)
-      real(kind=ip), dimension(:,:)  ,pointer,public :: dbZCol           => null() ! max reflectivity in a vertical column (dB)
-      real(kind=op), dimension(:,:,:),pointer,public :: ashcon_tot       => null() ! Total ash concentration (3d)
-      real(kind=ip), dimension(:,:,:),pointer,public :: pr_ash           => null() ! concentration profile
-      real(kind=ip), dimension(:,:)  ,pointer        :: CloudLoadLast    => null() ! Ash load at last time step, (tonnes/km2)
+      real(kind=ip), dimension(:,:)  ,pointer,public :: DepositThickness => null()  ! accumulated ash thickness on ground (mm)
+      real(kind=ip), dimension(:,:)  ,pointer,public :: MaxConcentration => null()  ! max concentration in the cloud at any i,j node (mg/m3)
+      real(kind=dp), dimension(:,:)  ,pointer,public :: DepArrivalTime   => null()  ! (hours)
+      real(kind=dp), dimension(:,:)  ,pointer,public :: CloudArrivalTime => null()  ! (hours)
+      real(kind=ip), dimension(:,:)  ,pointer,public :: CloudLoad        => null()  ! Ash load in cloud, (tonnes/km2)
+      real(kind=ip), dimension(:,:)  ,pointer,public :: MaxHeight        => null()  ! maximum cloud height (km)
+      real(kind=ip), dimension(:,:)  ,pointer,public :: MinHeight        => null()  ! cloud bottom height (km)
+      real(kind=ip), dimension(:,:)  ,pointer,public :: dbZCol           => null()  ! max reflectivity in a vertical column (dB)
+      real(kind=op), dimension(:,:,:),pointer,public :: ashcon_tot       => null()  ! Total ash concentration (3d)
+      real(kind=ip), dimension(:,:,:),pointer,public :: pr_ash           => null()  ! concentration profile
+      real(kind=ip), dimension(:,:)  ,pointer        :: CloudLoadLast    => null()  ! Ash load at last time step, (tonnes/km2)
 
         ! 3-D variables
         !   (in x,y,z)
@@ -1124,7 +1124,7 @@
       !real(kind=ip) :: CellArea
 
       ! Both these concentration variables are in the 'natural' units of kg/km3
-      real(kind=ip),dimension(nzmax) :: TotalConcentration ! concentration from all grain sizes as a vertical column
+      real(kind=ip),dimension(nzmax) :: TotalConcentration  ! concentration from all grain sizes as a vertical column
       real(kind=ip)                  :: MaxTotalConcentration
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
@@ -1150,9 +1150,9 @@
             do k=1,nzmax
                ! Increment the cloud load for this column
               CloudLoad(i,j) = CloudLoad(i,j) + &
-                                sum(concen_pd(i,j,k,1:n_gs_max,ts1)) * & ! in kg/km^3
-                                   dz_vec_pd(k)                      / & ! convert to kg/km^2
-                                1.0e3_ip                                 ! tonnes/km2
+                                sum(concen_pd(i,j,k,1:n_gs_max,ts1)) * &  ! in kg/km^3
+                                   dz_vec_pd(k)                      / &  ! convert to kg/km^2
+                                1.0e3_ip                                  ! tonnes/km2
                ! Pull out column total concentration
               TotalConcentration(k) = sum(concen_pd(i,j,k,1:n_gs_max,ts1))
 
@@ -1367,7 +1367,7 @@
       use Tephra,        only : &
          MagmaDensity,n_gs_max
 
-      real(kind=ip),intent(out) :: vol ! Total volume of ash still airborne
+      real(kind=ip),intent(out) :: vol  ! Total volume of ash still airborne
       integer :: isize
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
@@ -1378,8 +1378,8 @@
 
       ! First calculate mass of all species
       do isize=1,nsmax
-        mass_aloft(isize) = sum(concen_pd(1:nxmax,1:nymax,1:nzmax,isize,ts0) *   & ! in kg/km^3
-                                 kappa_pd(1:nxmax,1:nymax,1:nzmax))                ! convert to kg
+        mass_aloft(isize) = sum(concen_pd(1:nxmax,1:nymax,1:nzmax,isize,ts0) *   &  ! in kg/km^3
+                                 kappa_pd(1:nxmax,1:nymax,1:nzmax))                 ! convert to kg
       enddo
 
       ! Now loop over just the tephra bins (first n_gs_max bins) and
@@ -1387,9 +1387,9 @@
       if(n_gs_max.gt.0)then
         do isize=1,n_gs_max
             ! Increment total ash in air
-          vol = vol + mass_aloft(isize)               /   & ! in kg
-                      MagmaDensity                    /   & ! convert to m3
-                      KM3_2_M3                              ! convert to km3
+          vol = vol + mass_aloft(isize)               /   &  ! in kg
+                      MagmaDensity                    /   &  ! convert to m3
+                      KM3_2_M3                               ! convert to km3
 
         enddo
       endif
@@ -1461,7 +1461,7 @@
         if(totalash.lt.CLOUDCON_THRESH) cycle
         do k=1,nzmax
           pr_ash(k,itime,i) = sum(concen_pd(i_vprofile(i),j_vprofile(i),k,1:n_gs_max,ts1)) &
-                              * KG_2_MG / KM3_2_M3 !convert from kg/km3 to mg/m3
+                              * KG_2_MG / KM3_2_M3  ! convert from kg/km3 to mg/m3
         enddo
       enddo
 
@@ -1497,7 +1497,7 @@
       use Tephra,        only : &
          MagmaDensity,n_gs_max
 
-      real(kind=ip),intent(out) :: vol ! Total volume of ash in deposit
+      real(kind=ip),intent(out) :: vol  ! Total volume of ash in deposit
       integer :: isize
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
@@ -1508,10 +1508,10 @@
 
       if(n_gs_max.gt.0)then
         do isize=1,n_gs_max
-          vol = vol + sum(DepositGranularity(1:nxmax,1:nymax,isize) * & ! in kg/km^3
-                           kappa_pd(1:nxmax,1:nymax,0))             / & ! convert to kg
-                      MagmaDensity                                  / & ! convert to m3
-                      KM3_2_M3                                          ! convert to km3
+          vol = vol + sum(DepositGranularity(1:nxmax,1:nymax,isize) * &  ! in kg/km^3
+                           kappa_pd(1:nxmax,1:nymax,0))             / &  ! convert to kg
+                      MagmaDensity                                  / &  ! convert to m3
+                      KM3_2_M3                                           ! convert to km3
         enddo
       endif
 
@@ -1547,7 +1547,7 @@
       use Tephra,        only : &
          MagmaDensity,n_gs_max
 
-      real(kind=ip),intent(out) :: vol ! Total volume of ash flowing out of gird
+      real(kind=ip),intent(out) :: vol  ! Total volume of ash flowing out of gird
 
       integer :: isize
 
@@ -1569,9 +1569,9 @@
                         sum(outflow_xz2_pd(1:nxmax,        1:nzmax,isize)*   &
                                   kappa_pd(1:nxmax,nymax+1,1:nzmax))     +   &
                         sum(outflow_xy2_pd(1:nxmax,1:nymax        ,isize)*   &
-                                  kappa_pd(1:nxmax,1:nymax,  nzmax+1)) ) /   & ! convert to kg
-                        MagmaDensity                                     /   & ! convert to m3
-                        KM3_2_M3                                               ! convert to km3
+                                  kappa_pd(1:nxmax,1:nymax,  nzmax+1)) ) /   &  ! convert to kg
+                        MagmaDensity                                     /   &  ! convert to m3
+                        KM3_2_M3                                                ! convert to km3
 
         enddo
       endif

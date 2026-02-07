@@ -125,8 +125,8 @@
           drr  = (    r_2*r_2 -     r_1*r_1)  ! difference of squares
           drrr = (r_2*r_2*r_2 - r_1*r_1*r_1)  ! difference of cubes
           do j=-1,nymax+2
-            phi_1 = DEG2RAD*(lat_cc_pd(j)-0.5_ip*dn) ! phi at lower y of cell
-            phi_2 = DEG2RAD*(lat_cc_pd(j)+0.5_ip*dn) ! phi at upper y of cell
+            phi_1 = DEG2RAD*(lat_cc_pd(j)-0.5_ip*dn)  ! phi at lower y of cell
+            phi_2 = DEG2RAD*(lat_cc_pd(j)+0.5_ip*dn)  ! phi at upper y of cell
             theta_1 = 0.5_ip*PI-phi_1
             theta_2 = 0.5_ip*PI-phi_2
             del_theta  = dn*DEG2RAD
@@ -153,7 +153,7 @@
         phi = max(abs(phi_bot),abs(phi_top))
         dx = RAD_EARTH*de*DEG2RAD*cos(phi)
         dy = RAD_EARTH*dn*DEG2RAD
-      else ! This is the .not.IsLatLon case
+      else  ! This is the .not.IsLatLon case
           ! Set up cell-centered coordinates
         do i=-1,nxmax+2
           x_cc_pd(i) = xLL + dx*real(i,kind=ip) - dx*0.5_ip
@@ -172,7 +172,7 @@
           kappa_pd(-1:nxmax+2,-1:nymax+2,k)=dx*dy*dz_vec_pd(k)
         enddo
 
-      endif ! IsLatLon
+      endif  ! IsLatLon
 
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),*)"    Cell-centered computational grid extends from:"
@@ -398,7 +398,7 @@
       real(kind=dp),intent(out) :: latmax
 
       integer        :: i,j
-      real(kind=dp)  :: olam,ophi ! using precision needed by libprojection
+      real(kind=dp)  :: olam,ophi
       real(kind=dp)  :: xin,yin
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then

@@ -18,6 +18,7 @@
       use io_units
 
       implicit none
+      !implicit none (type, external)
 
         ! Set everything to private by default
       private
@@ -364,9 +365,6 @@
       use, intrinsic :: iso_fortran_env, only : &
          int16
 
-      implicit none
-      !implicit none (type, external)
-
         ! These single and double precision parameters should be 4 and 8
       !integer, parameter :: sp = real32  ! selected_real_kind( 6,   37) ! single precision
       !integer, parameter :: dp = real64  ! selected_real_kind(15,  307) ! double precision
@@ -429,17 +427,6 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function BigEnd_4int(isLit,r)
-
-      use, intrinsic :: iso_fortran_env, only : &
-         int32
-
-      implicit none
-      !implicit none (type, external)
-
-        ! These single and double precision parameters should be 4 and 8
-      !integer, parameter :: sp = real32  ! selected_real_kind( 6,   37) ! single precision
-      !integer, parameter :: dp = real64  ! selected_real_kind(15,  307) ! double precision
-
 
       integer(kind=int32) :: BigEnd_4int
       logical             :: isLit
@@ -504,16 +491,6 @@
 
       function LitEnd_2int(isLit,r)
 
-      use, intrinsic :: iso_fortran_env, only : &
-         int16
-
-      implicit none
-      !implicit none (type, external)
-
-        ! These single and double precision parameters should be 4 and 8
-      !integer, parameter :: sp = real32  ! selected_real_kind( 6,   37) ! single precision
-      !integer, parameter :: dp = real64  ! selected_real_kind(15,  307) ! double precision
-
       integer(kind=int16) :: LitEnd_2int
       logical             :: isLit
       integer(kind=int16) :: r
@@ -572,17 +549,6 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function LitEnd_4int(isLit,r)
-
-      use, intrinsic :: iso_fortran_env, only : &
-         int32
-
-      implicit none
-      !implicit none (type, external)
-
-        ! These single and double precision parameters should be 4 and 8
-      !integer, parameter :: sp = real32  ! selected_real_kind( 6,   37) ! single precision
-      !integer, parameter :: dp = real64  ! selected_real_kind(15,  307) ! double precision
-
 
       integer(kind=int32) :: LitEnd_4int
       logical             :: isLit
@@ -645,16 +611,6 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function BigEnd_4real(isLit,r)
-
-      use, intrinsic :: iso_fortran_env, only : &
-         int32,real32
-
-      implicit none
-      !implicit none (type, external)
-
-        ! These single and double precision parameters should be 4 and 8
-      integer, parameter :: sp = real32  ! selected_real_kind( 6,   37) ! single precision
-      !integer, parameter :: dp = real64  ! selected_real_kind(15,  307) ! double precision
 
       real(kind=sp)       :: BigEnd_4real
       logical             :: isLit
@@ -720,16 +676,6 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function BigEnd_8real(isLit,r)
-
-      use, intrinsic :: iso_fortran_env, only : &
-         int64,real64
-
-      implicit none
-      !implicit none (type, external)
-
-        ! These single and double precision parameters should be 4 and 8
-      !integer, parameter :: sp = real32  ! selected_real_kind( 6,   37) ! single precision
-      integer, parameter :: dp = real64  ! selected_real_kind(15,  307) ! double precision
 
       real(kind=dp)       :: BigEnd_8real
       logical             :: isLit
@@ -804,16 +750,6 @@
 
       function LitEnd_4real(isLit,r)
 
-      use, intrinsic :: iso_fortran_env, only : &
-         int32,real32
-
-      implicit none
-      !implicit none (type, external)
-
-        ! These single and double precision parameters should be 4 and 8
-      integer, parameter :: sp = real32  ! selected_real_kind( 6,   37) ! single precision
-      !integer, parameter :: dp = real64  ! selected_real_kind(15,  307) ! double precision
-
       real(kind=sp)       :: LitEnd_4real
       logical             :: isLit
       real(kind=sp)       :: r
@@ -875,16 +811,6 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       function LitEnd_8real(isLit,r)
-
-      use, intrinsic :: iso_fortran_env, only : &
-         int64,real64
-
-      implicit none
-      !implicit none (type, external)
-
-        ! These single and double precision parameters should be 4 and 8
-      !integer, parameter :: sp = real32  ! selected_real_kind( 6,   37) ! single precision
-      integer, parameter :: dp = real64  ! selected_real_kind(15,  307) ! double precision
 
       real(kind=dp)       :: LitEnd_8real
       logical             :: isLit

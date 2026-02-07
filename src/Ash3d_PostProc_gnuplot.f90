@@ -246,12 +246,12 @@
       character (len= 26),dimension(:),allocatable :: name_cities
 
       ! Contour variables
-      integer           :: lev_i,substr_pos1,substr_pos2,substr_pos3 ! for parsing contour text files
+      integer           :: lev_i,substr_pos1,substr_pos2,substr_pos3  ! for parsing contour text files
       real(kind=sp)     :: lev_r4       ! used for testing contour levels from file
       integer           :: ilev         ! number of contour levels
       integer           :: ignulev      ! level index from gnuplot file
-      integer           :: icurve      ! number of curves for level ilev
-      integer           :: npts        ! number of points in curve ilev,icurve
+      integer           :: icurve       ! number of curves for level ilev
+      integer           :: npts         ! number of points in curve ilev,icurve
 
       ! Plotting variables
 
@@ -262,7 +262,7 @@
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,parameter  :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in) :: HoursSince
           integer        ,intent(in) :: byear
           logical        ,intent(in) :: useLeaps
@@ -615,7 +615,7 @@
       close(fid_outdata)
       ! Finished temporary data file
 
-      call citylist(2,                        & ! 2 is for external file in gnuplot format
+      call citylist(2,                        &  ! 2 is for external file in gnuplot format
                     xmin,xmax,ymin,ymax,      &
                     ncities,                  &
                     lon_cities,               &
@@ -705,7 +705,7 @@
       linebuffer080 = "set cntrparam levels discrete " // bs
       write(fid_script,'(g0)')trim(adjustl(linebuffer080))
       do ilev=1,nConLev-1
-        write(fid_script,'(f15.5,a2,a1)')real(ContourLev(ilev),kind=4),', ',bs ! fails with nvhpc
+        write(fid_script,'(f15.5,a2,a1)')real(ContourLev(ilev),kind=4),', ',bs  ! fails with nvhpc
       enddo
       write(fid_script,'(g0)')real(ContourLev(nConLev),kind=4)
       write(fid_script,'(g0)')"unset surface"
@@ -1055,10 +1055,10 @@
 
       ! Plotting variables
 
-      real(kind=ip) :: tmin    , zmin    , cmin     ! graph minima
-      real(kind=ip) :: tmax    , zmax    , cmax     ! graph maxima
-      real(kind=ip) :: tlab1   , zlab1   , clab1    ! graph first label
-      real(kind=ip) :: tlabstep, zlabstep, clabstep ! graph label increment
+      real(kind=ip) :: tmin    , zmin    , cmin      ! graph minima
+      real(kind=ip) :: tmax    , zmax    , cmax      ! graph maxima
+      real(kind=ip) :: tlab1   , zlab1   , clab1     ! graph first label
+      real(kind=ip) :: tlabstep, zlabstep, clabstep  ! graph label increment
       real(kind=ip) :: cloudcon_thresh_mgm3
 
       ! Gnuplot variables
@@ -1067,7 +1067,7 @@
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,parameter  :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in) :: HoursSince
           integer        ,intent(in) :: byear
           logical        ,intent(in) :: useLeaps
@@ -1140,7 +1140,7 @@
         zlabstep = 1.0_ip
       endif
 
-      cloudcon_thresh_mgm3 = CLOUDCON_THRESH * KG_2_MG / KM3_2_M3 !convert from kg/km3 to mg/m3
+      cloudcon_thresh_mgm3 = CLOUDCON_THRESH * KG_2_MG / KM3_2_M3  ! convert from kg/km3 to mg/m3
       cmin=real(0,kind=ip)
       cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=ip)    ! Get the max value for this profile
       cmin=real(min(cmin,cloudcon_thresh_mgm3),kind=ip)  ! Do not let cmax drop below the threshold

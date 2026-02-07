@@ -250,7 +250,7 @@
           write(outlog(io),*)"  Volume (km^3)         : ",ESP_Vol
           write(outlog(io),*)"  Mass frac of fines    : ",ESP_massfracfine
         endif;enddo
-      else ! if (Volcano_ID.gt.0)
+      else  ! if (Volcano_ID.gt.0)
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),*)"Did not find volcano in database"
         endif;enddo

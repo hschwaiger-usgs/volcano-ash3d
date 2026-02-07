@@ -234,7 +234,7 @@
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,parameter  :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in) :: HoursSince
           integer        ,intent(in) :: byear
           logical        ,intent(in) :: useLeaps
@@ -597,7 +597,7 @@
           ! plpoin: Plot a glyph at the specified points
         call plpoin(real(lon_cities(icty:icty),kind=plflt),&
                     real(lat_cities(icty:icty),kind=plflt),&
-                    17) ! code 17 is a black dot
+                    17)  ! code 17 is a black dot
           ! plssym: Set symbol size : default, scale
         call plssym( 0.0_plflt, 0.5_plflt )
         call plschr( 0.0_plflt, 0.7_plflt )
@@ -621,7 +621,7 @@
       icty=1
       call plpoin(real(lon_cities(icty:icty),kind=plflt),&
                   real(lat_cities(icty:icty),kind=plflt),&
-                  7) ! code 7 is a triangle
+                  7)   ! code 7 is a triangle
                        ! (https://plplot.sourceforge.net/examples.php?demo=06&lbind=Fortran)
       call pllab(cstr_xlabel,cstr_ylabel,title_plot)
       call plscmap1(zrgb(:,1),zrgb(:,2),zrgb(:,3))
@@ -664,14 +664,14 @@
         pos_opt = PL_POSITION_RIGHT + PL_POSITION_OUTSIDE
         opt = PL_LEGEND_BACKGROUND + PL_LEGEND_BOUNDING_BOX
         text_colors(ilev)   = 1
-        line_colors(ilev)   = ilev + 1 ! we want black in slot 1 so set index starting at 2
+        line_colors(ilev)   = ilev + 1  ! we want black in slot 1 so set index starting at 2
         ! Need to get RGB from colormap
         ! Set the ilev+1 index of the col0 palette
         call plscol0(ilev+1,zrgb(ilev,1),zrgb(ilev,2),zrgb(ilev,3))
         alpha(ilev) = 1.0_plflt
         line_styles(ilev)    = 1
         line_widths(ilev)    = 1
-        symbol_colors(ilev)  = 1 !+ mod( ilev-1, nConLev )
+        symbol_colors(ilev)  = 1  ! + mod( ilev-1, nConLev )
         box_colors(ilev)     = 0
         box_patterns(ilev)   = 3
         box_scales(ilev)     = 0.8_plflt
@@ -698,32 +698,32 @@
         symbols(ilev)      = '*'
       enddo
 
-      call pllegend(    &
-          legend_width, &  ! these are output vars
-          legend_height,&  ! these are output vars
-          opt,         & ! int: controls overall legend
-          pos_opt,     & ! int: controls legend position
-          x_offset,    & ! flt: legend offset
-          y_offset,    & ! flt: legend offset
-          plot_width,  & ! flt: horz width
-          bg_color,    & ! int: background color from cmap0
-          bb_color,    & ! int: bounding box color from cmap0
-          bb_style,    & ! int: bounding box line style
-          nrow,ncolumn,& ! int: rows and columns of legend
-          opt_array(1:nConLev), & ! int vec:
-          text_offset, & ! flt: Offset of the text area from the plot
-          text_scale,  & ! flt: Character height scale
-          text_spacing, &!  flt: Vertical spacing in units of the character height
-          text_justification, & ! flt: 0., 0.5, or 1.  for L, C, R
+      call pllegend(              &
+          legend_width,           &  ! these are output vars
+          legend_height,          &  ! these are output vars
+          opt,                    &  ! int: controls overall legend
+          pos_opt,                &  ! int: controls legend position
+          x_offset,               &  ! flt: legend offset
+          y_offset,               &  ! flt: legend offset
+          plot_width,             &  ! flt: horz width
+          bg_color,               &  ! int: background color from cmap0
+          bb_color,               &  ! int: bounding box color from cmap0
+          bb_style,               &  ! int: bounding box line style
+          nrow,ncolumn,           &  ! int: rows and columns of legend
+          opt_array(1:nConLev),   &  ! int vec:
+          text_offset,            &  ! flt: Offset of the text area from the plot
+          text_scale,             &  ! flt: Character height scale
+          text_spacing,           &  ! flt: Vertical spacing in units of the character height
+          text_justification,     &  ! flt: 0., 0.5, or 1.  for L, C, R
           text_colors(1:nConLev), &
-          text(1:nConLev),                           &
-          box_colors(1:nConLev), &
+          text(1:nConLev),        &
+          box_colors(1:nConLev),  &
           box_patterns(1:nConLev), &
-          box_scales(1:nConLev), &
+          box_scales(1:nConLev),  &
           box_line_widths(1:nConLev), &
           line_colors(1:nConLev), &
           line_styles(1:nConLev), &
-          line_widths(1:nConLev),                 &
+          line_widths(1:nConLev), &
           symbol_colors(1:nConLev), &
           symbol_scales(1:nConLev), &
           symbol_numbers(1:nConLev),&
@@ -736,10 +736,10 @@
         ! plwind: Specify window
       call plwind(0.0_plflt, 1.0_plflt, 0.0_plflt, 1.0_plflt )
       call plschr( 0.0_plflt, 0.8_plflt )
-      call plptex(0.1_plflt, 0.5_plflt, & ! x,y
-                  1.0_plflt, 0.0_plflt, & ! dx,dy
-                  0.0_plflt,            & ! just
-                  cstr_zlabel )          ! text
+      call plptex(0.1_plflt, 0.5_plflt, &  ! x,y
+                  1.0_plflt, 0.0_plflt, &  ! dx,dy
+                  0.0_plflt,            &  ! just
+                  cstr_zlabel )            ! text
       ! And the boxes below
         ! pladv: Advance the (sub-)page
       call pladv(1)
@@ -880,10 +880,10 @@
       ! PLPLOT variables
       ! Plotting variables
 
-      real(kind=plflt) :: tmin    , zmin    , cmin     ! graph minima
-      real(kind=plflt) :: tmax    , zmax    , cmax     ! graph maxima
-      real(kind=plflt) :: tlab1   , zlab1   , clab1    ! graph first label
-      real(kind=plflt) :: tlabstep, zlabstep, clabstep ! graph label increment
+      real(kind=plflt) :: tmin    , zmin    , cmin      ! graph minima
+      real(kind=plflt) :: tmax    , zmax    , cmax      ! graph maxima
+      real(kind=plflt) :: tlab1   , zlab1   , clab1     ! graph first label
+      real(kind=plflt) :: tlabstep, zlabstep, clabstep  ! graph label increment
       real(kind=plflt) :: cloudcon_thresh_mgm3
 
       real(kind=plflt), dimension(:),   allocatable :: t, z
@@ -913,7 +913,7 @@
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,parameter  :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in) :: HoursSince
           integer        ,intent(in) :: byear
           logical        ,intent(in) :: useLeaps
@@ -947,7 +947,7 @@
       write(cstr_ErDuratn,'(a20,f4.1,a6)')'Erup. Duration:     ',e_Duration(1),' hours'
       write(cstr_ErVolume,'(a20,f8.5,a10)')'Erup. Volume:       ',e_Volume(1),' km3 (DRE)'
 
-      cloudcon_thresh_mgm3 = CLOUDCON_THRESH * KG_2_MG / KM3_2_M3 !convert from kg/km3 to mg/m3
+      cloudcon_thresh_mgm3 = CLOUDCON_THRESH * KG_2_MG / KM3_2_M3  ! convert from kg/km3 to mg/m3
 
       clevel(1) = cloudcon_thresh_mgm3
 
@@ -986,7 +986,7 @@
         zlabstep = 1.0_ip
       endif
 
-      cloudcon_thresh_mgm3 = CLOUDCON_THRESH * KG_2_MG / KM3_2_M3 !convert from kg/km3 to mg/m3
+      cloudcon_thresh_mgm3 = CLOUDCON_THRESH * KG_2_MG / KM3_2_M3  ! convert from kg/km3 to mg/m3
       cmin=real(0,kind=plflt)
       cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=plflt)    ! Get the max value for this profile
       cmin=real(min(cmin,cloudcon_thresh_mgm3),kind=plflt)  ! Do not let cmax drop below the threshold
@@ -1142,7 +1142,7 @@
             0, &                                               ! sets position
             0.015_plflt, 0.1_plflt, 0.0375_plflt, 0.8_plflt, &  ! x,y, dimesions
             0, 1, 1, &                                         ! bg_color,bb_color,bb_style
-            0.0_plflt, shedge(CONTOUR_MAXCURVES+1), & ! low/high
+            0.0_plflt, shedge(CONTOUR_MAXCURVES+1), &  ! low/high
 !            0.0_plflt, shedge(NLEVEL+1), & ! low/high
             cont_color, cont_width, &
             label_opts, labels, &
@@ -1317,15 +1317,15 @@
       call plinit()
 
       ! Create a labelled box to hold the plot.
-      call plscolbg(r1,g1,b1) ! Set color back to black
+      call plscolbg(r1,g1,b1)   ! Set color back to black
       call plcol0(0)
       call plschr(0.0_plflt,1.7_plflt)  ! Chage font scale
       call plenv( xmin, xmax, ymin, ymax, 0, 0 )
       call pllab( "Time (hours after eruption)", "Deposit Thickeness (mm)", Airport_Name(pt_indx))
 
-      call plscolbg(r2,g2,b2) ! Set pen color to grey
+      call plscolbg(r2,g2,b2)  ! Set pen color to grey
       call plcol0(0)
-      call plline( x , y ) ! Simple line plot
+      call plline( x , y )  ! Simple line plot
       call plfill( x0(1:nWriteTimes+1), y0(1:nWriteTimes+1) )
 
       ! Close PLplot library

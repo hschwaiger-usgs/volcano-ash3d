@@ -245,10 +245,10 @@
       character(len=26),dimension(:),allocatable :: name_cities
 
       ! Contour variables
-      integer           :: substr_pos1 ! for parsing contour text files
-      integer           :: ilev        ! number of contour levels
-      integer           :: icurve      ! number of curves for level ilev
-      integer           :: npts        ! number of points in curve ilev,icurve
+      integer           :: substr_pos1  ! for parsing contour text files
+      integer           :: ilev         ! number of contour levels
+      integer           :: icurve       ! number of curves for level ilev
+      integer           :: npts         ! number of points in curve ilev,icurve
 
       ! Plotting variables
       real(kind=ip)  :: plotw  = 7.0_ip
@@ -276,13 +276,13 @@
       character(len=50) :: incr_str
       character(len=50) :: end_ps
 
-      real(kind=dp)     :: olam,ophi ! using precision needed by libprojection
+      real(kind=dp)     :: olam,ophi
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,parameter  :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in) :: HoursSince
           integer        ,intent(in) :: byear
           logical        ,intent(in) :: useLeaps
@@ -527,7 +527,7 @@
       if(iprod.eq.10.or.&  ! CloudHeight
          iprod.eq.11)then  ! CloudHeightBot
         mask(1:nx,1:ny) = Mask_Cloud(1:nx,1:ny)
-      elseif(iprod.eq.7)then ! DepArrivalTime
+      elseif(iprod.eq.7)then  ! DepArrivalTime
         mask(1:nx,1:ny) = Mask_Deposit(1:nx,1:ny)
       elseif(iprod.eq.14)then
         ! cloud mask based on cloud load does not work in this case the cloud load mask
@@ -627,7 +627,7 @@
       endif
       ! Finished temporary data file
 
-      call citylist(1,                        & ! 1 is for external file in GMT format
+      call citylist(1,                        &  ! 1 is for external file in GMT format
                     xmin,xmax,ymin,ymax,      &
                     ncities,                  &
                     lon_cities,               &
@@ -1342,10 +1342,10 @@
 
       ! Plotting variables
 
-      real(kind=ip) :: tmin    , zmin    , cmin     ! graph minima
-      real(kind=ip) :: tmax    , zmax    , cmax     ! graph maxima
-      real(kind=ip) :: tlab1   , zlab1   , clab1    ! graph first label
-      real(kind=ip) :: tlabstep, zlabstep, clabstep ! graph label increment
+      real(kind=ip) :: tmin    , zmin    , cmin      ! graph minima
+      real(kind=ip) :: tmax    , zmax    , cmax      ! graph maxima
+      real(kind=ip) :: tlab1   , zlab1   , clab1     ! graph first label
+      real(kind=ip) :: tlabstep, zlabstep, clabstep  ! graph label increment
       real(kind=ip) :: cloudcon_thresh_mgm3
       real(kind=ip)  :: dtg
       real(kind=ip)  :: dzg
@@ -1369,7 +1369,7 @@
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,parameter  :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in) :: HoursSince
           integer        ,intent(in) :: byear
           logical        ,intent(in) :: useLeaps
@@ -1440,7 +1440,7 @@
         zlabstep = 1.0_ip
       endif
 
-      cloudcon_thresh_mgm3 = CLOUDCON_THRESH * KG_2_MG / KM3_2_M3 !convert from kg/km3 to mg/m3
+      cloudcon_thresh_mgm3 = CLOUDCON_THRESH * KG_2_MG / KM3_2_M3  ! convert from kg/km3 to mg/m3
       cmin=real(0,kind=ip)
       cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=ip)    ! Get the max value for this profile
       cmin=real(min(cmin,cloudcon_thresh_mgm3),kind=ip)  ! Do not let cmax drop below the threshold

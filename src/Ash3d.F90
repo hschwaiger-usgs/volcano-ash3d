@@ -160,7 +160,7 @@
         subroutine calc_s_mesh
         end subroutine calc_s_mesh
         subroutine MesoInterpolater(TimeNow,Load_MesoSteps,Interval_Frac)
-          integer,parameter  :: dp         = 8 ! Double precision
+          integer,parameter  :: dp         = 8  ! Double precision
           real(kind=dp),intent(in)    :: TimeNow
           logical      ,intent(inout) :: Load_MesoSteps
           real(kind=dp),intent(out)   :: Interval_Frac
@@ -168,7 +168,7 @@
         subroutine output_results
         end subroutine output_results
         subroutine Set_BC(bc_code)
-          integer,intent(in) :: bc_code ! 1 for advection, 2 for diffusion
+          integer,intent(in) :: bc_code  ! 1 for advection, 2 for diffusion
         end subroutine Set_BC
         subroutine TimeStepTotals(itime)
           integer, intent(in) :: itime
@@ -179,7 +179,7 @@
 
       ! Start time logging
       ! Note: with gfortran, this triggers IEEE_INEXACT_FLAG
-      call cpu_time(t0) !time is a scaler real
+      call cpu_time(t0)  ! time is a scaler real
       call system_clock(tcount1,tcount_rate,tcount_max)
 
       ! First, parse the command line
@@ -391,7 +391,7 @@
       endif;enddo
 
       ! Get the cpu time for the start of the time loop
-      call cpu_time(t1) !time is a scaler real
+      call cpu_time(t1)  ! time is a scaler real
 
       ! ************************************************************************
       ! ****** begin time simulation *******************************************
@@ -512,7 +512,7 @@
 !
 !------------------------------------------------------------------------------
           endif
-        endif ! MassFluxRate_dt1.gt.0.0_ip
+        endif  ! MassFluxRate_dt1.gt.0.0_ip
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         ! Set Boundary Conditions
@@ -755,7 +755,7 @@
 
       call output_results
       ! Write results to log and standard output
-      call cpu_time(t2) ! time is a scalar real
+      call cpu_time(t2)  ! time is a scalar real
       call system_clock(tcount2,tcount_rate,tcount_max)
       do io=1,2;if(VB(io).le.verbosity_info)then
         write(outlog(io),5003) t1-t0,tw_tot,t2-t1,&

@@ -181,12 +181,12 @@
       real(kind=DS) :: dx_map, dy_map    ! lon and lat grid line increment
       real(kind=DS) :: xgrid_1, ygrid_1  ! gridlines
 
-      character(len=4) :: cfmt = "PNG " ! output driver/file-format (PNG); this is a 4-char string
-      character(len=4) :: cfsz = "USAL" ! US A Landscape (2790 x 2160)
+      character(len=4) :: cfmt = "PNG "  ! output driver/file-format (PNG); this is a 4-char string
+      character(len=4) :: cfsz = "USAL"  ! US A Landscape (2790 x 2160)
 !      character(len=3) :: cmode = "ON " ! Plotting mode; can be off if just calc. contours
-      integer          :: nclr          ! color index
-      integer          :: nmaxln        ! number of characters in the longest line of text
-      character(len=7) :: zlevlab       ! legend level label
+      integer          :: nclr           ! color index
+      integer          :: nmaxln         ! number of characters in the longest line of text
+      character(len=7) :: zlevlab        ! legend level label
 
       integer       :: NCURVS                   ! number of curves for each level: ContourDataNcurves(ilev)
       integer       :: iray(CONTOUR_MAXCURVES)  ! number of point on curve ContourDataNpoints(ilev,icurve)
@@ -201,7 +201,7 @@
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,parameter  :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in) :: HoursSince
           integer        ,intent(in) :: byear
           logical        ,intent(in) :: useLeaps
@@ -596,9 +596,9 @@
 
       !!!!!!!!!!!!!!!!!!!!!!!
       !  Dislin Level 0:  before initialization or after termination
-      call metafl(cfmt) ! set output driver/file-format (PNG); this is a 4-char string
-      call setpag(cfsz) ! Set pagesize to US A Landscape (2790 x 2160)
-      call setfil(trim(adjustl(filename_png))) ! Set output filename
+      call metafl(cfmt)  ! set output driver/file-format (PNG); this is a 4-char string
+      call setpag(cfsz)  ! Set pagesize to US A Landscape (2790 x 2160)
+      call setfil(trim(adjustl(filename_png)))  ! Set output filename
       call scrmod('REVERSE')  ! Default background is black; reverse to white
 
       !  Dislin Level 1:  after initialization or a call to ENDGRF
@@ -623,22 +623,22 @@
 
       call axspos(plotposx_px,plotposy_px)  ! determine the position of the axis system
       call axslen(plotx_px,ploty_px)        ! defines the size of the axis system
-      call name(cstr_xlabel,'X') ! Set x-axis title
-      call name(cstr_ylabel,'Y') ! Set y-axis title
-      call labdig(1,'X') ! set number of decimal places for x label (-1 means no decimal)
+      call name(cstr_xlabel,'X')  ! Set x-axis title
+      call name(cstr_ylabel,'Y')  ! Set y-axis title
+      call labdig(1,'X')  ! set number of decimal places for x label (-1 means no decimal)
       call labdig(1,'y')
       call ticks(1,'xy')  ! set number of ticks between labels
       call titlin(title_plot,4)  ! Set the title
-      call incmrk(0) ! selects line (0) or symbol (-1) mode for CURVE
+      call incmrk(0)  ! selects line (0) or symbol (-1) mode for CURVE
 
       !call LABELS('MAP','xy')
       ! set projection : STER,LAMB,CYLI,MERC
-      call projct('CYLI') ! defines projection
-      call frame(3)       ! bump up frame line thickness
+      call projct('CYLI')  ! defines projection
+      call frame(3)        ! bump up frame line thickness
 
       !  Dislin Level 2: after a call to GRAF, GRAFP or GRAFMP
         ! Now create graph and set to level 2
-       !  The routine GRAFMP plots a geographical axis system.
+        !  The routine GRAFMP plots a geographical axis system.
       call grafmp(xminDS,xmaxDS,xgrid_1,dx_map, &
                   yminDS,ymaxDS,ygrid_1,dy_map)
       call getlev(tmp_int)
@@ -659,8 +659,8 @@
                     xp,yp)
         nxp=nint(xp)
         nyp=nint(yp)
-        call hsymbl(35) ! Set size of city marker
-        call symbol(21,nxp,nyp) ! Symbol #21 is a filled circle
+        call hsymbl(35)  ! Set size of city marker
+        call symbol(21,nxp,nyp)  ! Symbol #21 is a filled circle
         !    These are the city labels, offset in x
         call messag(adjustl(trim(name_cities(icty))),nxp+cityname_offset_px,nyp)
       enddo
@@ -670,13 +670,13 @@
                   xp,yp)
       nxp=nint(xp)
       nyp=nint(yp)
-      call hsymbl(70) ! Set size of volcano marker
+      call hsymbl(70)          ! Set size of volcano marker
       call color('red')
-      call symbol(18,nxp,nyp) ! Symbol #18 is a filled triangle
+      call symbol(18,nxp,nyp)  ! Symbol #18 is a filled triangle
 
       lon_cc_pd(:) = lon_cc_pd(:) - 360.0_ip
       if(ContourFilled)then
-        call shdmod('UPPER', 'CELL') ! This suppresses colors in regions above/below the zlevels pro
+        call shdmod('UPPER', 'CELL')  ! This suppresses colors in regions above/below the zlevels pro
         call conshd(real(lon_cc_pd(1:nx),kind=DS),nx,&
                     real(lat_cc_pd(1:ny),kind=DS),ny,&
                     real(OutVar,kind=DS),real(ContourLev(1:nConLev),kind=DS),nConLev)
@@ -699,13 +699,13 @@
       call setrgb(0.0_DS, 0.0_DS, 0.0_DS)
        ! overlays an axis system with a longitude and latitude grid
       call gridmp(1,1)
-      call height(50) ! Set character height for title
-      call title() ! Actually write the title to the file
+      call height(50)  ! Set character height for title
+      call title()     ! Actually write the title to the file
 
       ! Now write the legend
-      call height(25) ! Reset character height to something smaller
-      nmaxln = 6 ! number of characters in the longest line of text
-      call legini(linebuffer080,nConLev,nmaxln) ! Initialize legend
+      call height(25)  ! Reset character height to something smaller
+      nmaxln = 6  ! number of characters in the longest line of text
+      call legini(linebuffer080,nConLev,nmaxln)  ! Initialize legend
       call legtit(cstr_zlabel)       ! Set legend title
       call legbgd(0)                 ! sets background color
       do ilev=1,nConLev
@@ -817,12 +817,12 @@
       integer :: dy_newline_px  = 40
 
       ! DISLIN variables
-      character(len=4) :: cfmt = "PNG " ! output driver/file-format (PNG); this is a 4-char string
-      character(len=4) :: cfsz = "USAL" ! US A Landscape (2790 x 2160)
-      real(kind=DS) :: tmin    , zmin    , cmin     ! graph minima
-      real(kind=DS) :: tmax    , zmax    , cmax     ! graph maxima
-      real(kind=DS) :: tlab1   , zlab1   , clab1    ! graph first label
-      real(kind=DS) :: tlabstep, zlabstep, clabstep ! graph label increment
+      character(len=4) :: cfmt = "PNG "  ! output driver/file-format (PNG); this is a 4-char string
+      character(len=4) :: cfsz = "USAL"  ! US A Landscape (2790 x 2160)
+      real(kind=DS) :: tmin    , zmin    , cmin      ! graph minima
+      real(kind=DS) :: tmax    , zmax    , cmax      ! graph maxima
+      real(kind=DS) :: tlab1   , zlab1   , clab1     ! graph first label
+      real(kind=DS) :: tlabstep, zlabstep, clabstep  ! graph label increment
       real(kind=DS) :: cloudcon_thresh_mgm3
       real(kind=DS), dimension(:),   allocatable :: t, z
       real(kind=DS), dimension(:,:), allocatable :: conc
@@ -831,7 +831,7 @@
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,parameter  :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in) :: HoursSince
           integer        ,intent(in) :: byear
           logical        ,intent(in) :: useLeaps
@@ -900,7 +900,7 @@
         zlabstep = 1.0_DS
       endif
 
-      cloudcon_thresh_mgm3 = real(CLOUDCON_THRESH * KG_2_MG / KM3_2_M3,kind=DS) !convert from kg/km3 to mg/m3
+      cloudcon_thresh_mgm3 = real(CLOUDCON_THRESH * KG_2_MG / KM3_2_M3,kind=DS)  ! convert from kg/km3 to mg/m3
       cmin=real(0,kind=DS)
       cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=DS)    ! Get the max value for this profile
       cmin=real(min(cmin,cloudcon_thresh_mgm3),kind=DS)  ! Do not let cmax drop below the threshold
@@ -964,9 +964,9 @@
       call get_version_dislin
 
       !  Dislin Level 0:  before initialization or after termination
-      call metafl(cfmt) ! set output driver/file-format (PNG); this is a 4-char string
-      call setpag(cfsz) ! Set pagesize to US A Landscape (2790 x 2160)
-      call setfil(trim(adjustl(filename_png))) ! Set output filename
+      call metafl(cfmt)  ! set output driver/file-format (PNG); this is a 4-char string
+      call setpag(cfsz)       ! Set pagesize to US A Landscape (2790 x 2160)
+      call setfil(trim(adjustl(filename_png)))  ! Set output filename
       call scrmod('REVERSE')  ! Default background is black; reverse to white
 
       !  Dislin Level 1:  after initialization or a call to ENDGRF
@@ -996,22 +996,22 @@
       call name(cstr_xlabel,'X')
       call name(cstr_ylabel,'Y')
       call name(cstr_zlabel,'Z')
-      call rvynam() ! reverse the axis labels
+      call rvynam()  ! reverse the axis labels
 
-      call intax() ! With the routine INTAX, all axes will be labeled with integers.
-      call autres(ntmax,nzmax) !The size of coloured rectangles will be automatically calculated by GRAF3 or CRVMAT
-      call axspos(plotposx_px,plotposy_px)    ! determine the position of the axis system
-      call ax3len(plotx_px,ploty_px,plotz_px) ! defines the size of the axis system : NXL, NYL, NZL
+      call intax()  ! With the routine INTAX, all axes will be labeled with integers.
+      call autres(ntmax,nzmax)  ! The size of coloured rectangles will be automatically calculated by GRAF3 or CRVMAT
+      call axspos(plotposx_px,plotposy_px)     ! determine the position of the axis system
+      call ax3len(plotx_px,ploty_px,plotz_px)  ! defines the size of the axis system : NXL, NYL, NZL
 
-      call graf3(tmin,tmax,tlab1,tlabstep,& ! plots a 3-D axis system where the Z-axis
-                 zmin,zmax,zlab1,zlabstep,& ! is plotted as a colour bar.
+      call graf3(tmin,tmax,tlab1,tlabstep,&    ! plots a 3-D axis system where the Z-axis
+                 zmin,zmax,zlab1,zlabstep,&    ! is plotted as a colour bar.
                  cmin,cmax,clab1,clabstep)
-      call crvmat(conc,ntmax,nzmax,1,1) ! Interpolated data onto grid with spec. interp. points
+      call crvmat(conc,ntmax,nzmax,1,1)        ! Interpolated data onto grid with spec. interp. points
 
-      call height(50) ! Set character height for title
-      call title() ! Actually write the title to the file
+      call height(50)  ! Set character height for title
+      call title()     ! Actually write the title to the file
 
-      call height(30) ! Reset character height to something smaller
+      call height(30)  ! Reset character height to something smaller
 
       ! Add boxes below plot with run info
       call messag(cstr_volcname,x_leg1_px,y_footer_px+0*dy_newline_px)
@@ -1129,10 +1129,10 @@
       call get_version_dislin
 
       !  Dislin Level 0:  before initialization or after termination
-      call metafl(cfmt)   ! set output driver/file-format (PNG); this is a 4-char string
-      call winsiz(400, 300) ! Set window size to 400 x 300
+      call metafl(cfmt)      ! set output driver/file-format (PNG); this is a 4-char string
+      call winsiz(400, 300)  ! Set window size to 400 x 300
       call sclmod("FULL")
-      call setfil(trim(adjustl(filename_png))) ! Set output filename
+      call setfil(trim(adjustl(filename_png)))  ! Set output filename
       call scrmod('REVERSE')  ! Default background is black; reverse to white
 
       !  Dislin Level 1:  after initialization or a call to ENDGRF
@@ -1140,22 +1140,22 @@
       call bmpfnt('HELVE')
 
         ! setting of plot parameters
-      call name('Time (hours after eruption)','X') ! Set x-axis title
-      call name('Deposit Thickeness (mm)','Y') ! Set y-axis title
-      call labdig(-1,'X') ! set number of decimal places for x label (-1 means no decimal)
-      call ticks(10,'XY') ! set number of ticks between labels
+      call name('Time (hours after eruption)','X')  ! Set x-axis title
+      call name('Deposit Thickeness (mm)','Y')      ! Set y-axis title
+      call labdig(-1,'X')  ! set number of decimal places for x label (-1 means no decimal)
+      call ticks(10,'XY')  ! set number of ticks between labels
       call titlin(Airport_Name(pt_indx),4)  ! Set the title to the airport name (4 is the bottom line)
 
       !  Dislin Level 2: after a call to GRAF, GRAFP or GRAFMP
         ! Now create graph and set to level 2
       call graf(xmin, xmax, 0.0_DS, 5.0_DS, &
                 ymin, ymax, 0.0_DS, 1.0_DS)
-      call title() ! Actually write the title to the file
+      call title()  ! Actually write the title to the file
       call setrgb(0.5_DS, 0.5_DS, 0.5_DS)
       !call curve(real(x,kind=4),real(y,kind=4),nWriteTimes)  ! This draws the line
       call shdpat(16)  ! set shading pattern
-      call shdcrv(x,y,nWriteTimes,x,0.0_DS*y,nWriteTimes) ! This fills below curve
-      call color('FORE') ! Reset color to defaul foreground color
+      call shdcrv(x,y,nWriteTimes,x,0.0_DS*y,nWriteTimes)  ! This fills below curve
+      call color('FORE')  ! Reset color to defaul foreground color
 
       !  Dislin Level 0:  before initialization or after termination
       call disfin()

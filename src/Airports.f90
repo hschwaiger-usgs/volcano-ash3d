@@ -40,19 +40,19 @@
       logical,public                        :: ProjectAirportLocations
       integer,           allocatable,public :: Airport_i(:)
       integer,           allocatable,public :: Airport_j(:)
-      real(kind=dp),     allocatable,public :: Airport_AshArrivalTime(:)   ! ash arrival time
-      real(kind=dp),     allocatable,public :: Airport_AshDuration(:)      ! duration of ashfall
-      real(kind=dp),     allocatable,public :: Airport_CloudArrivalTime(:) ! cloud arrival time
-      real(kind=dp),     allocatable,public :: Airport_CloudDuration(:)    ! duration of cloud overhead
-      real(kind=ip),     allocatable,public :: Airport_DepRate(:)          ! deposit thickness change during this time step
-      real(kind=ip),     allocatable,public :: Airport_DepRateLast(:)      ! deposit thickness change during last time step
-      real(kind=ip),     allocatable,public :: Airport_Thickness(:)        ! deposit thickness this time step
-      real(kind=ip),     allocatable,public :: Airport_ThicknessLast(:)    ! deposit thickness last time step
+      real(kind=dp),     allocatable,public :: Airport_AshArrivalTime(:)    ! ash arrival time
+      real(kind=dp),     allocatable,public :: Airport_AshDuration(:)       ! duration of ashfall
+      real(kind=dp),     allocatable,public :: Airport_CloudArrivalTime(:)  ! cloud arrival time
+      real(kind=dp),     allocatable,public :: Airport_CloudDuration(:)     ! duration of cloud overhead
+      real(kind=ip),     allocatable,public :: Airport_DepRate(:)           ! deposit thickness change during this time step
+      real(kind=ip),     allocatable,public :: Airport_DepRateLast(:)       ! deposit thickness change during last time step
+      real(kind=ip),     allocatable,public :: Airport_Thickness(:)         ! deposit thickness this time step
+      real(kind=ip),     allocatable,public :: Airport_ThicknessLast(:)     ! deposit thickness last time step
       real(kind=ip),     allocatable,public :: Airport_Latitude(:)
       real(kind=ip),     allocatable,public :: Airport_Longitude(:)
-      real(kind=ip),     allocatable,public :: Airport_CloudHere(:)        ! cloud load overhead
-      real(kind=ip),     allocatable,public :: Airport_CloudHereLast(:)    ! cloud load overhead in last time step
-      real(kind=ip),     allocatable,public :: Airport_Thickness_TS(:,:)   ! deposit thickness for all output times
+      real(kind=ip),     allocatable,public :: Airport_CloudHere(:)         ! cloud load overhead
+      real(kind=ip),     allocatable,public :: Airport_CloudHereLast(:)     ! cloud load overhead in last time step
+      real(kind=ip),     allocatable,public :: Airport_Thickness_TS(:,:)    ! deposit thickness for all output times
       character(len=130),public             :: AirportInFile
       character(len=35), allocatable,public :: Airport_Name(:)
       character(len=3),  allocatable,public :: Airport_Code(:)
@@ -276,7 +276,7 @@
             write(outlog(io),*)"  Coordinate system is projected; calculating global"
             write(outlog(io),*)"  airport coordinates in local projection using libprojection."
           endif
-        endif ! conditional for when internal list is loaded
+        endif  ! conditional for when internal list is loaded
 
         ! Now comment on the plan for the external file, if provided
         if(ReadExtAirportFile)then
@@ -293,7 +293,7 @@
                                "and 1-2 ignored."
             write(outlog(io),*)"  Lat/Lon values of external file will be calculated from projected coordinates."
           endif
-        endif ! conditional for when external file is read
+        endif  ! conditional for when external file is read
       endif;enddo
 
       if(.not.allocated(AirportFullLat))  allocate(AirportFullLat(MAXAIRPORTS))
@@ -411,8 +411,8 @@
         latitude  = AirportFullLat(i)
         longitude = AirportFullLon(i)
         CodeNow   = AirportFullCode(i)(1:3)
-        NameNow   = AirportFullName(i)(1:35) ! Copy to a temp variable and
-                                             ! truncate to 35 chars
+        NameNow   = AirportFullName(i)(1:35)  ! Copy to a temp variable and
+                                              ! truncate to 35 chars
         xnow      = AirportFullX(i)
         ynow      = AirportFullY(i)
         if (IsLatLon) then

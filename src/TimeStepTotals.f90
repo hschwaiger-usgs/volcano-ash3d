@@ -45,7 +45,7 @@
         character (len= 13) function HS_yyyymmddhhmm_since(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter   :: dp        = 8 ! double precision
+          integer        ,parameter   :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in)  ::  HoursSince
           integer        ,intent(in)  ::  byear
           logical        ,intent(in)  ::  useLeaps

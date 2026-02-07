@@ -402,14 +402,14 @@
 
               update_cc(l_cc) = LFluct_Rbound + RFluct_Lbound
 
-            enddo ! loop over l_cc (cell centers)
+            enddo  ! loop over l_cc (cell centers)
             concen_pd(   rmin:rmin-1+ncells,j,k,n,ts1) = &
                concen_pd(rmin:rmin-1+ncells,j,k,n,ts0) + &
                update_cc(rmin:rmin-1+ncells)
-          enddo !
-        enddo ! loop over j=1,nymax
+          enddo  !
+        enddo  ! loop over j=1,nymax
 
-      enddo ! loop over idx_dum
+      enddo  ! loop over idx_dum
 
       ! Note: need to fix diffusion for periodic grids
 
@@ -539,15 +539,15 @@
                                (sig_I(l_I)/kap_cc(l_cc))
 
               update_cc(l_cc) = LFluct_Rbound + RFluct_Lbound
-            enddo ! loop over l (cell centers)
+            enddo  ! loop over l (cell centers)
             concen_pd(   i,rmin:rmin-1+ncells,k,n,ts1) = &
                concen_pd(i,rmin:rmin-1+ncells,k,n,ts0) + &
                update_cc(  rmin:rmin-1+ncells)
 
-          enddo !
-        enddo ! loop over j=1,nymax
+          enddo  !
+        enddo  ! loop over j=1,nymax
 
-      enddo ! loop over idx_dum
+      enddo  ! loop over idx_dum
 
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
@@ -677,15 +677,15 @@
 
               update_cc(l_cc) = LFluct_Rbound + RFluct_Lbound
 
-            enddo ! loop over l (cell centers)
+            enddo  ! loop over l (cell centers)
             concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = &
                concen_pd(i,j,rmin:rmin-1+ncells,n,ts0) + &
                update_cc(rmin:rmin-1+ncells)
 
-          enddo !
-        enddo ! loop over j=1,nymax
+          enddo  !
+        enddo  ! loop over j=1,nymax
 
-      enddo ! loop over idx_dum
+      enddo  ! loop over idx_dum
 
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
@@ -862,10 +862,10 @@
 
               if(l_cc == 1) then
                 !DL_d = nothing     :: No lower diagonal for first row
-                D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac & ! This is part of the normal stencil
-                                     -(Imp_fac)*LeftFac     ! This line is the BC that ensures
-                                                            ! that q(ncell)=q(ncell+1) at t1
-                                                            ! i.e. no outward flux
+                D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac &  ! This is part of the normal stencil
+                                     -(Imp_fac)*LeftFac      ! This line is the BC that ensures
+                                                             ! that q(ncell)=q(ncell+1) at t1
+                                                             ! i.e. no outward flux
                 DU_d(l_cc) =        - (Imp_fac)*RightFac
 
                   ! RHS contains left boundary term
@@ -885,10 +885,10 @@
                                          (1.0_ip-Imp_fac)*RightFac   * q_cc(rmin-1+l_cc+1)
               elseif(l_cc == ncells)then
                 DL_d(l_cc-1) =      - (Imp_fac)*LeftFac
-                D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac  & ! This is part of the normal stencil
-                                     -(Imp_fac)*RightFac     ! This line is the BC that ensures
-                                                             ! that q(ncell)=q(ncell+1) at t1
-                                                             ! i.e. no outward flux
+                D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac  &  ! This is part of the normal stencil
+                                     -(Imp_fac)*RightFac      ! This line is the BC that ensures
+                                                              ! that q(ncell)=q(ncell+1) at t1
+                                                              ! i.e. no outward flux
                 !DU_d = nothing   :: No upper diagonal for last row
 
                   ! RHS contains right boundary term
@@ -942,9 +942,9 @@
               concen_pd(rmin:rmin-1+ncells,j,k,n,ts1) = B_d(:,1)
             endif
 #endif
-          enddo ! loop over j
-        enddo ! loop over k
-      enddo ! loop over n
+          enddo  ! loop over j
+        enddo  ! loop over k
+      enddo  ! loop over n
 
       if(allocated(DL_s)) deallocate(DL_s)
       if(allocated(D_s))  deallocate(D_s)
@@ -958,7 +958,7 @@
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
 
-      endif ! ncells > 1
+      endif  ! ncells > 1
 
       do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine diffCN_x"
@@ -1123,10 +1123,10 @@
 
               if(l_cc == 1) then
                 !DL_d = nothing     :: No lower diagonal for first row
-                D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac & ! This is part of the normal stencil
-                                     -(Imp_fac)*LeftFac     ! This line is the BC that ensures
-                                                            ! that q(ncell)=q(ncell+1) at t1
-                                                            ! i.e. no outward flux
+                D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac &  ! This is part of the normal stencil
+                                     -(Imp_fac)*LeftFac      ! This line is the BC that ensures
+                                                             ! that q(ncell)=q(ncell+1) at t1
+                                                             ! i.e. no outward flux
                 DU_d(l_cc) =        - (Imp_fac)*RightFac
 
                   ! RHS contains left boundary term
@@ -1148,10 +1148,10 @@
                                (1.0_ip-Imp_fac)*RightFac   * q_cc(rmin-1+l_cc+1)
               elseif(l_cc == ncells)then
                 DL_d(l_cc-1) =      - (Imp_fac)*LeftFac
-                D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac  & ! This is part of the normal stencil
-                                     -(Imp_fac)*RightFac     ! This line is the BC that ensures
-                                                             ! that q(ncell)=q(ncell+1) at t1
-                                                             ! i.e. no outward flux
+                D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac  &  ! This is part of the normal stencil
+                                     -(Imp_fac)*RightFac      ! This line is the BC that ensures
+                                                              ! that q(ncell)=q(ncell+1) at t1
+                                                              ! i.e. no outward flux
                 !DU_d = nothing   :: No upper diagonal for last row
 
                   ! RHS contains right boundary term
@@ -1206,9 +1206,9 @@
             endif
 #endif
 
-          enddo ! loop over i
-        enddo ! loop over k
-      enddo ! loop over n
+          enddo  ! loop over i
+        enddo  ! loop over k
+      enddo  ! loop over n
 
       if(allocated(DL_s)) deallocate(DL_s)
       if(allocated(D_s))  deallocate(D_s)
@@ -1222,7 +1222,7 @@
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
 
-      endif ! ncells > 1
+      endif  ! ncells > 1
 
       do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine diffCN_y"
@@ -1391,10 +1391,10 @@
 
               if(l_cc == 1) then
                 !DL_d = nothing     :: No lower diagonal for first row
-                D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac & ! This is part of the normal stencil
-                                     -(Imp_fac)*LeftFac     ! This line is the BC that ensures
-                                                            ! that q(ncell)=q(ncell+1) at t1
-                                                            ! i.e. no outward flux
+                D_d(l_cc)  = 1.0_ip + (Imp_fac)*CenterFac &  ! This is part of the normal stencil
+                                     -(Imp_fac)*LeftFac      ! This line is the BC that ensures
+                                                             ! that q(ncell)=q(ncell+1) at t1
+                                                             ! i.e. no outward flux
                 DU_d(l_cc) =        - (Imp_fac)*RightFac
 
                   ! RHS contains left boundary term
@@ -1416,10 +1416,10 @@
                                          (1.0_ip-Imp_fac)*RightFac   * q_cc(rmin-1+l_cc+1)
               elseif(l_cc == ncells)then
                 DL_d(l_cc-1) =        - (Imp_fac)*LeftFac
-                D_d(l_cc)    = 1.0_ip + (Imp_fac)*CenterFac  & ! This is part of the normal stencil
-                                       -(Imp_fac)*RightFac     ! This line is the BC that ensures
-                                                               ! that q(ncell)=q(ncell+1) at t1
-                                                               ! i.e. no outward flux
+                D_d(l_cc)    = 1.0_ip + (Imp_fac)*CenterFac  &  ! This is part of the normal stencil
+                                       -(Imp_fac)*RightFac      ! This line is the BC that ensures
+                                                                ! that q(ncell)=q(ncell+1) at t1
+                                                                ! i.e. no outward flux
                 !DU_d = nothing   :: No upper diagonal for last row
 
                   ! RHS contains right boundary term
@@ -1475,9 +1475,9 @@
 #endif
             !concen_pd(i,j,rmin:rmin-1+ncells,n,ts1) = real(B_d,kind=ip)
 
-          enddo ! loop over j
-        enddo ! loop over i
-      enddo ! loop over n
+          enddo  ! loop over j
+        enddo  ! loop over i
+      enddo  ! loop over n
 
       if(allocated(DL_s)) deallocate(DL_s)
       if(allocated(D_s))  deallocate(D_s)
@@ -1491,7 +1491,7 @@
       concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts0) = &
         concen_pd(1:nxmax,1:nymax,1:nzmax,1:nsmax,ts1)
 
-      endif ! ncells > 1
+      endif  ! ncells > 1
 
       do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine diffCN_z"

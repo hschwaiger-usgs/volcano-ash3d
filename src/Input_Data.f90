@@ -105,7 +105,7 @@
       !character(kind=c_char), dimension(1:130) :: fc_inputfile
       character, dimension(1:130) :: fc_inputfile
       ! Size matches length of infile (specified in module io_data)
-      integer fc_len
+      integer :: fc_len
 
       INTERFACE
         subroutine help_general
@@ -368,7 +368,7 @@
         real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,parameter  :: dp        = 8  ! double precision
           integer        ,intent(in) :: iyear
           integer        ,intent(in) :: imonth
           integer        ,intent(in) :: iday
@@ -379,7 +379,7 @@
         character (len=13) function HS_yyyymmddhhmm_since(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,parameter  :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in) :: HoursSince
           integer        ,intent(in) :: byear
           logical        ,intent(in) :: useLeaps
@@ -387,7 +387,7 @@
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,parameter  :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in) :: HoursSince
           integer        ,intent(in) :: byear
           logical        ,intent(in) :: useLeaps
@@ -1195,7 +1195,7 @@
       character(len=50) :: linebuffer050
       character(len=80) :: linebuffer080
       character(len=130):: linebuffer130
-      character(len=400):: linebuffer400 ! Used for reading line lists of values (write times, etc)
+      character(len=400):: linebuffer400  ! Used for reading line lists of values (write times, etc)
       integer           :: strlen
       character(len=3)  :: answer
       character(len=6)  :: formatanswer
@@ -1249,7 +1249,7 @@
         real(kind=8) function HS_hours_since_baseyear(iyear,imonth,iday,hours,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,parameter  :: dp        = 8  ! double precision
           integer        ,intent(in) :: iyear
           integer        ,intent(in) :: imonth
           integer        ,intent(in) :: iday
@@ -1260,7 +1260,7 @@
         character (len=13) function HS_yyyymmddhhmm_since(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,parameter  :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in) :: HoursSince
           integer        ,intent(in) :: byear
           logical        ,intent(in) :: useLeaps
@@ -1268,7 +1268,7 @@
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,parameter  :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in) :: HoursSince
           integer        ,intent(in) :: byear
           logical        ,intent(in) :: useLeaps
@@ -1442,7 +1442,7 @@
         stop 1
       elseif(iendstr.eq.0)then
         ! End-of-string marker is not found
-        iendstr = scan(linebuffer080, " ",.true.) ! rescan for space with back=.true.
+        iendstr = scan(linebuffer080, " ",.true.)  ! rescan for space with back=.true.
       endif
       iendstr = min(iendstr,30)  ! limit string to 30 characters
       VolcanoName = trim(adjustl(linebuffer080(1:iendstr-1)))
@@ -1534,7 +1534,7 @@
         call FileIO_CleanLine(.false.,strlen,linebuffer080)
         cdf_b1l5 = linebuffer080
         read(linebuffer080,*,err=9105,iostat=iostatus,iomsg=iomessage) value1, value2   ! First read two values and flag
-        read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) value1, value2, value3 ! Try for three
+        read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) value1, value2, value3    ! Try for three
         if(iostatus.eq.0)then
           ! Successfully read 3 values; third is interpreted as elevation (in km)
           lon_volcano = value1
@@ -1621,7 +1621,7 @@
         if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         call FileIO_CleanLine(.false.,strlen,linebuffer080)
         cdf_b1l4 = linebuffer080
-        read(linebuffer080,*,err=9104,iostat=iostatus,iomsg=iomessage) gridwidth_x, gridwidth_y ! width and height of simulation area in km
+        read(linebuffer080,*,err=9104,iostat=iostatus,iomsg=iomessage) gridwidth_x, gridwidth_y  ! width and height of simulation area in km
         xUR = xLL + gridwidth_x
         yUR = yLL + gridwidth_y
 
@@ -1633,7 +1633,7 @@
         cdf_b1l5 = linebuffer080
         read(linebuffer080,*,err=9105,iostat=iostatus,iomsg=iomessage) value1, value2   ! First read two values and flag
                                                    ! an error if unable
-        read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) value1, value2, value3 ! Try for three
+        read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) value1, value2, value3  ! Try for three
         if(iostatus.eq.0)then
           x_volcano = value1
           y_volcano = value2
@@ -1693,7 +1693,7 @@
         allocate(z_vec_init(0:nz_init))
         z_vec_init = 0.0_ip
         do k=1,nz_init
-          z_vec_init(k)=dz_const*(k) ! This the top of cell-boundaries (lower bound at 0)
+          z_vec_init(k)=dz_const*(k)  ! This the top of cell-boundaries (lower bound at 0)
         enddo
       else
         ! dz unsucessfully read, try to VarDzType stringg
@@ -1839,7 +1839,7 @@
           endif;enddo
           stop 1
         endif
-      endif ! dz vs VarDzType
+      endif  ! dz vs VarDzType
 
       ! Block 1 Line 8
       ! Read this line looking for diffusion coefficient and either a Suzuki constant,
@@ -1940,9 +1940,9 @@
         useDiffusion = .true.
         useVarDiffH  = .true.
         useVarDiffV  = .true.
-        MR_useTopo   = .true. ! If we use a boundary-layer schemee, we will need the topography
-                              ! on the met grid. If the TOPO optional block is not provided, then
-                              ! variable we need is initialized to 0.
+        MR_useTopo   = .true.  ! If we use a boundary-layer schemee, we will need the topography
+                               ! on the met grid. If the TOPO optional block is not provided, then
+                               ! variable we need is initialized to 0.
       else
         do io=1,2;if(VB(io).le.verbosity_info)then
           write(outlog(io),'(a39,f10.3,a5)')"Using constant turbulent diffusivity:  ",&
@@ -2162,7 +2162,7 @@
             exit
           endif
 
-        endif ! SourceType
+        endif  ! SourceType
 
         ! if we're doing a forecast run, we'll need to add the windfile
         ! reference time to SimStartHour and e_StartTime(i) so
@@ -2236,7 +2236,7 @@
       linebuffer050 = "Reading testkey from linebuffer (Blk3)"
       if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
       call FileIO_Check_testkey(testkey,linebuffer080,IsComment)
-      if(.not.IsCustom_SourceType.and..not.IsComment) then !&  ! only perform this check for standard src
+      if(.not.IsCustom_SourceType.and..not.IsComment) then   ! only perform this check for standard src
         do io=1,2;if(VB(io).le.verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
                 'Expecting a comment line separating blks.'
@@ -2283,9 +2283,9 @@
       if(idf.lt.1)then
         ! Data format is not given, assume netcdf unless ascii specified
         if(iw.eq.1.or.iw.eq.2)then
-          idf = 1 ! ASCII
+          idf = 1  ! ASCII
         else
-          idf = 2 ! Netcdf
+          idf = 2  ! Netcdf
         endif
       endif
 
@@ -2345,8 +2345,8 @@
       call FileIO_CleanLine(.false.,strlen,linebuffer080)
       cdf_b3l2 = linebuffer080
       read(linebuffer080,*,err=9302,iostat=iostatus,iomsg=iomessage)&
-                      MR_iHeightHandler ! parameter that determines what to do if the
-                                        ! plume height exceeds the wind sounding max. height
+                      MR_iHeightHandler  ! parameter that determines what to do if the
+                                         ! plume height exceeds the wind sounding max. height
 
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading from control file, Bloc 3 line 3, SimTime"
@@ -3187,11 +3187,11 @@
                 ! Abort the program
               goto 94182
             elseif(i.gt.1)then
-              if(WriteTimes(i).lt.Writetimes(i-1))then !if times are not in chronological order
+              if(WriteTimes(i).lt.Writetimes(i-1))then  ! if times are not in chronological order
                   ! Abort the program
                 goto 94183
               endif
-            elseif(WriteTimes(i).gt.Simtime_in_hours) then   !if some times exceed the simulation time
+            elseif(WriteTimes(i).gt.Simtime_in_hours) then   ! if some times exceed the simulation time
               do io=1,2;if(VB(io).le.verbosity_info)then
                 write(outlog(io),32)
               endif;enddo
@@ -3676,18 +3676,18 @@
         FV_ID = ivalue2
         if(FV_ID.ne.0.and.FV_ID.ne.1.and.FV_ID.ne.2.and.&
            FV_ID.ne.3.and.FV_ID.ne.4.and.FV_ID.ne.5.and.FV_ID.ne.6)then
-          FV_ID = 1 ! Default to Wilson and Huang
+          FV_ID = 1  ! Default to Wilson and Huang
         endif
         ! Try for a third value which specifies shape factory (F vs phi)
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage) ivalue1, ivalue2, ivalue3
         if(iostatus.eq.0)then
           Shape_ID = ivalue3
           if(Shape_ID.ne.1.and.Shape_ID.ne.2)then
-            Shape_ID = 1 ! Default to Wilson and Huang
+            Shape_ID = 1  ! Default to Wilson and Huang
           endif
         endif
       else
-        FV_ID = 1 ! Wilson and Huang
+        FV_ID = 1  ! Wilson and Huang
       endif
 
       allocate(temp_v_s(init_n_gs_max))
@@ -3750,7 +3750,7 @@
             ! fragments
             if(isize.eq.1) Tephra_Ncols = 3
             useCalcFallVel = .true.
-            useTemperature = .true. ! When calculating Fall Vel. we need T
+            useTemperature = .true.  ! When calculating Fall Vel. we need T
             temp_gsdiam(isize) = value1
             temp_bin_mass(isize) = value2
             temp_rho_m(isize) = value3
@@ -3821,7 +3821,7 @@
             temp_gsF(isize)     = 0.44_ip
             temp_gsG(isize)     = 1.0_ip
           endif
-        enddo ! isize=1,init_n_gs_max
+        enddo  ! isize=1,init_n_gs_max
         ! Set the number of grain-size bins
         if(useLogNormGSbins)then
           ! In this case, the last bin is the remainder to be distributed over the
@@ -3830,7 +3830,7 @@
         else
           n_gs_max = init_n_gs_max
         endif
-      endif ! if init_n_gs_max > 0
+      endif  ! if init_n_gs_max > 0
       ! END OF BLOCK 7
       !************************************************************************
 
@@ -3843,9 +3843,9 @@
         call Allocate_Tephra
         allocate(temp_phi(n_gs_max))
 
-        Tephra_v_s(1:n_gs_max)      = -1.0_ip * temp_v_s(1:n_gs_max) ! make sure 'fall velocity'
-                                                                     ! is in the -z direction
-        Tephra_gsdiam(1:n_gs_max)   = temp_gsdiam(1:n_gs_max)/M_2_MM ! convert diameter from mm to m
+        Tephra_v_s(1:n_gs_max)      = -1.0_ip * temp_v_s(1:n_gs_max)  ! make sure 'fall velocity'
+                                                                      ! is in the -z direction
+        Tephra_gsdiam(1:n_gs_max)   = temp_gsdiam(1:n_gs_max)/M_2_MM  ! convert diameter from mm to m
         Tephra_bin_mass(1:n_gs_max) = temp_bin_mass(1:n_gs_max)
         Tephra_rho_m(1:n_gs_max)    = temp_rho_m(1:n_gs_max)
         if(Shape_ID.eq.1)then
@@ -5061,7 +5061,7 @@
       real(kind=ip), intent(in)    :: latLL
       real(kind=ip), intent(in)    :: lonLL
       real(kind=ip), intent(in)    :: lat_volcano
-      real(kind=ip), intent(inout) :: lon_volcano ! we might need to remap this value
+      real(kind=ip), intent(inout) :: lon_volcano  ! we might need to remap this value
       real(kind=ip), intent(in)    :: gridwidth_e
       real(kind=ip), intent(in)    :: gridwidth_n
 
@@ -5814,7 +5814,7 @@
       endif;enddo
 
       select case (blockID)
-        case(1) ! BLOCK 1: GRID INFO
+        case(1)  ! BLOCK 1: GRID INFO
       write(outunit,1)'# The following is an input file to the model Ash3d, v1.0 https://code.usgs.gov/vsc/ash3d/volcano-ash3d'
       write(outunit,1)'# Created by L.G. Mastin, R.P. Denlinger and H.F. Schwaiger, U.S. Geological Survey, 2009.             '
       write(outunit,1)'#                                                                                                      '
@@ -5887,7 +5887,7 @@
       write(outunit,1)'#  point        : all mass inserted in cell containing PlmH                                            '
       write(outunit,1)'#  linear       : mass uniformly distributed from z-vent to PlmH                                       '
       write(outunit,1)'# Line 9 : number of pulses to be read in BLOCK 2                                                      '
-        case(2) ! BLOCK 2: ERUPTION PARAMETERS
+        case(2)  ! BLOCK 2: ERUPTION PARAMETERS
       write(outunit,1)'# ERUPTION LINES (number = neruptions)                                                                 '
       write(outunit,1)'# In the following line, each line represents one eruptive pulse.                                      '
       write(outunit,1)'# Parameters are (1-4) start time (yyyy mm dd h.hh (UT)); (5) duration (hrs);                          '
@@ -5899,7 +5899,7 @@
       write(outunit,1)'# For profile sources, an additional two values are read: dz and nz                                    '
       write(outunit,1)'# 2010 04 14   0.00   1.0     18.0  0.16 1.0 18                                                        '
       write(outunit,1)'# 0.01 0.02 0.03 0.03 0.04 0.04 0.05 0.06 0.06 0.070 0.08 0.08 0.09 0.09 0.09 0.08 0.06 0.02           '
-        case(3) ! BLOCK 3: WIND PARAMETERS
+        case(3)  ! BLOCK 3: WIND PARAMETERS
       write(outunit,1)'# WIND OPTIONS                                                                                         '
       write(outunit,1)'# Ash3d will read from either a single 1-D wind sounding, or gridded, time-                            '
       write(outunit,1)'# dependent 3-D wind data, depending on the value of the parameter iwind.                              '
@@ -5959,7 +5959,7 @@
       write(outunit,1)'# The last line of this block is the number of windfiles listed in block 5 below.  If                  '
       write(outunit,1)'# iwind=5 and one of the NWP products is used that require a special file structure,                   '
       write(outunit,1)'# then nWindFiles should be set to 1 and only the root folder of the windfiles listed.                 '
-        case(4) ! BLOCK 4: OUTPUT OPTIONS
+        case(4)  ! BLOCK 4: OUTPUT OPTIONS
       write(outunit,1)'# OUTPUT OPTIONS:                                                                                      '
       write(outunit,1)'# The list below allows users to specify the output options                                            '
       write(outunit,1)'# All but the final deposit file can be written out at specified                                       '
@@ -5974,7 +5974,7 @@
       write(outunit,1)'# WriteTimes    = Hours between output (if nWritetimes=-1), or                                         '
       write(outunit,1)'#                 Times (hours since start of first eruption) for each output                          '
       write(outunit,1)'#                (if nWriteTimes >1)                                                                   '
-        case(5) ! BLOCK 5: INPUT WIND FILES
+        case(5)  ! BLOCK 5: INPUT WIND FILES
       write(outunit,1)'# WIND INPUT FILES                                                                                     '
       write(outunit,1)'# The following block of data contains names of wind files. There should be one line for               '
       write(outunit,1)'# each of nWindFiles (from Block 3 Line 5) windfiles. Files should be given in                         '
@@ -5996,7 +5996,7 @@
       write(outunit,1)'# if you have a soft link in the run directory.                                                        '
       write(outunit,1)'# For a network of radiosonde data, please see the MetReader documentation for                         '
       write(outunit,1)'# the input specification https://code.usgs.gov/vsc/ash3d/volcano-ash3d-metreader.                     '
-        case(6) ! BLOCK 6: AIRPORT FILE
+        case(6)  ! BLOCK 6: AIRPORT FILE
       write(outunit,1)'# AIRPORT LOCATION FILE                                                                                '
       write(outunit,1)'# The following lines allow the user to specify whether times of ash arrival                           '
       write(outunit,1)'# at airports and other locations will be written out, and which file                                  '
@@ -6007,7 +6007,7 @@
       write(outunit,1)'#               THE X AND Y MUST BE IN THE SAME PROJECTION as the computational grid.                  '
       write(outunit,1)'#               Alternatively, coordinates can be projected via libprojection                          '
       write(outunit,1)'#               by typing "yes" to the last parameter                                                  '
-        case(7) ! BLOCK 7: GRAIN-SIZE BINS, SETTLING VELOCITY
+        case(7)  ! BLOCK 7: GRAIN-SIZE BINS, SETTLING VELOCITY
       write(outunit,1)'# GRAIN SIZE GROUPS                                                                                    '
       write(outunit,1)'# The first line must contain the number of settling velocity groups, but                              '
       write(outunit,1)'# can optionally also include a flag for the fall velocity model to be used.                           '
@@ -6037,28 +6037,28 @@
       write(outunit,1)'# will be distributed over the previous bins via a log-normal distribution in phi.                     '
       write(outunit,1)'# The last bin would be interpreted as:                                                                '
       write(outunit,1)'# diam (neg value) , LN_phi_mean, LN_phi_stddev                                                        '
-        case(8) ! BLOCK 8: VERTICAL PROFILES
+        case(8)  ! BLOCK 8: VERTICAL PROFILES
       write(outunit,1)'# Options for writing vertical profiles                                                                '
       write(outunit,1)'# The first line below gives the number of locations (nlocs) where vertical                            '
       write(outunit,1)'# profiles are to be written.  That is followed by nlocs lines, each of which                          '
       write(outunit,1)'# contain the location, in the same coordinates as the computational grid.                             '
       write(outunit,1)'# Optionally, a site name can be provided in after the location.                                       '
-        case(9) ! BLOCK 9: (Optional): NETCDF ANNOTATIONS
+        case(9)  ! BLOCK 9: (Optional): NETCDF ANNOTATIONS
       write(outunit,1)'# netCDF output options                                                                                '
       write(outunit,1)'# This last block is optional.                                                                         '
       write(outunit,1)'# The output file name can be give, but will default to 3d_tephra_fall.nc if absent                    '
       write(outunit,1)'# The title and comment lines are passed through to the netcdf header of the                           '
       write(outunit,1)'# output file.                                                                                         '
-        case(10) ! BLOCK 10 (OPTMOD): Optional module blocks
-                 !   First RESETPARAMS
+        case(10)  ! BLOCK 10 (OPTMOD): Optional module blocks
+                  !   First RESETPARAMS
       write(outunit,1)'# Optional Modules are identified by the text string at the top of the block                           '
       write(outunit,1)'# OPTMOD=[module name]                                                                                 '
       write(outunit,1)'# There will need to be a custom block reader in the module to read this section                       '
       write(outunit,1)'# section of the input file.  Below is the built-in example for resetting parameters.                  '
       write(outunit,1)'# You only need to include the line(s) for the parameters you want to reset. All                       '
       write(outunit,1)'# options are listed below.                                                                            '
-        case(11) ! BLOCK 10+1 (OPTMOD):
-                 !   TOPO
+        case(11)  ! BLOCK 10+1 (OPTMOD):
+                  !   TOPO
       write(outunit,1)'# Topography                                                                                           '
       write(outunit,1)'# Line 1 indicates whether or not to use topography followed by the integer flag                       '
       write(outunit,1)'#        describing how topography will modify the vertical grid.                                      '
@@ -6074,8 +6074,8 @@
       write(outunit,1)'#   3 : ESRI ASCII                                                                                     '
       write(outunit,1)'#  Line 3 is the file name of the topography data.                                                     '
       write(outunit,1)'#                                                                                                      '
-        case(12) ! BLOCK 10+2 (OPTMOD):
-                 !   VARDIFF
+        case(12)  ! BLOCK 10+2 (OPTMOD):
+                  !   VARDIFF
       write(outunit,1)'# Variable Diffusivity                                                                                 '
       write(outunit,1)'#   Line 1 indicates whether or not to write VarDiff variables to the output file                      '
       write(outunit,1)'#   Line 2 Specifies the optional module                                                               '
@@ -6173,9 +6173,9 @@
       real(kind=ip)     ,intent(in) :: SuzK  ! These might not be needed, but must be included even with dummy values
       integer           ,intent(in) :: nerup
        ! Some extra bits for dz and source options
-      integer           ,intent(in) :: dz_type  ! 1=const, 2=dz_plin, 3=dz_clog, 4=dz_cust
+      integer           ,intent(in) :: dz_type   ! 1=const, 2=dz_plin, 3=dz_clog, 4=dz_cust
       character(len=130),intent(in) :: dz_line
-      integer           ,intent(in) :: src_type ! 1=Suz, 2=point, 3=linear, 4=profile, 5=umb, 6=umb_a
+      integer           ,intent(in) :: src_type  ! 1=Suz, 2=point, 3=linear, 4=profile, 5=umb, 6=umb_a
 
       integer :: ilatlonflag
 
@@ -6347,7 +6347,7 @@
         real(kind=8)  function HS_HourOfDay(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,parameter  :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in) :: HoursSince
           integer        ,intent(in) :: byear
           logical        ,intent(in) :: useLeaps
@@ -6355,7 +6355,7 @@
         integer function HS_YearOfEvent(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,parameter  :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in) :: HoursSince
           integer        ,intent(in) :: byear
           logical        ,intent(in) :: useLeaps
@@ -6363,7 +6363,7 @@
         integer function HS_MonthOfEvent(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,parameter  :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in) :: HoursSince
           integer        ,intent(in) :: byear
           logical        ,intent(in) :: useLeaps
@@ -6371,7 +6371,7 @@
         integer function HS_DayOfEvent(HoursSince,byear,useLeaps)
           implicit none
           !implicit none (type, external)
-          integer        ,parameter  :: dp        = 8 ! double precision
+          integer        ,parameter  :: dp        = 8  ! double precision
           real(kind=dp)  ,intent(in) :: HoursSince
           integer        ,intent(in) :: byear
           logical        ,intent(in) :: useLeaps

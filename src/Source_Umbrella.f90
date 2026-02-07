@@ -30,21 +30,21 @@
              SourceVolInc_Umbrella,     &
              AvgCon_Umbrella
 
-      integer      ,parameter,public :: VelMod_umb_Default         = 1       ! Velocity model to use (1=default)
-      real(kind=ip),parameter,public :: k_entrainment_umb_Default  = 0.1_ip  ! entrainment coefficient
-      real(kind=ip),parameter,public :: lambda_umb_Default         = 0.2_ip  ! umbrella cloud shape factor
-      real(kind=ip),parameter,public :: N_BV_umb_Default           = 0.02_ip ! Brunt-Vaisala frequency, 1/s
-      real(kind=ip),parameter,public :: SuzK_umb_Default           = 12.0_ip ! Suzuki parameter used for umb clouds
+      integer      ,parameter,public :: VelMod_umb_Default         = 1        ! Velocity model to use (1=default)
+      real(kind=ip),parameter,public :: k_entrainment_umb_Default  = 0.1_ip   ! entrainment coefficient
+      real(kind=ip),parameter,public :: lambda_umb_Default         = 0.2_ip   ! umbrella cloud shape factor
+      real(kind=ip),parameter,public :: N_BV_umb_Default           = 0.02_ip  ! Brunt-Vaisala frequency, 1/s
+      real(kind=ip),parameter,public :: SuzK_umb_Default           = 12.0_ip  ! Suzuki parameter used for umb clouds
 
       !components of the wind field used for umbrella clouds
 #ifdef USEPOINTERS
       real(kind=ip),dimension(:,:,:,:),pointer,public :: SourceNodeFlux_Umbrella =>null()
-      real(kind=ip),dimension(:,:,:)  ,pointer,public :: uvx_pd =>null() ! u (E) component of wind
-      real(kind=ip),dimension(:,:,:)  ,pointer,public :: uvy_pd =>null() ! v (N) component of wind
+      real(kind=ip),dimension(:,:,:)  ,pointer,public :: uvx_pd =>null()  ! u (E) component of wind
+      real(kind=ip),dimension(:,:,:)  ,pointer,public :: uvy_pd =>null()  ! v (N) component of wind
 #else
       real(kind=ip),dimension(:,:,:,:),allocatable,public :: SourceNodeFlux_Umbrella
-      real(kind=ip),dimension(:,:,:)  ,allocatable,public :: uvx_pd ! u (E) component of wind
-      real(kind=ip),dimension(:,:,:)  ,allocatable,public :: uvy_pd ! v (N) component of wind
+      real(kind=ip),dimension(:,:,:)  ,allocatable,public :: uvx_pd       ! u (E) component of wind
+      real(kind=ip),dimension(:,:,:)  ,allocatable,public :: uvy_pd       ! v (N) component of wind
 #endif
 
       !The following are used by Mesointerpolator for umbrella clouds
@@ -241,23 +241,23 @@
 
       logical, intent(in)  :: first_time
 
-      real(kind=ip) :: avg_lat          ! avg latitude between vent & point
-      real(kind=ip) :: C_Costa          ! C constant used in Costa et al., 2013
-      real(kind=ip) :: cloud_radius     ! cloud radius, km
-      real(kind=ip) :: cloudrad_raw     ! cloud radius, km, uncorrected
-      real(kind=ip) :: edge_speed       ! expansion rate of cloud edge, m/s
-      real(kind=dp) :: etime_s          ! time since eruption start, seconds
-      real(kind=ip) :: ew_km,ns_km      ! distances between vent & point
-      real(kind=ip) :: qnow             ! volume flow rate into umbrella cloud, m3/s
-      real(kind=ip) :: radnow           ! radial distance from cloud center, km
-      real(kind=ip) :: thetanow         ! angle of point CW from east
-      real(kind=ip) :: windspeedhere    ! windspeed at this node
-      real(kind=ip) :: rexp             ! exponent in radial vel term
-      integer       :: ii,jj,iz         ! counters
-      integer       :: ew_nodes,ns_nodes! radius of clouds in nodes
+      real(kind=ip) :: avg_lat            ! avg latitude between vent & point
+      real(kind=ip) :: C_Costa            ! C constant used in Costa et al., 2013
+      real(kind=ip) :: cloud_radius       ! cloud radius, km
+      real(kind=ip) :: cloudrad_raw       ! cloud radius, km, uncorrected
+      real(kind=ip) :: edge_speed         ! expansion rate of cloud edge, m/s
+      real(kind=dp) :: etime_s            ! time since eruption start, seconds
+      real(kind=ip) :: ew_km,ns_km        ! distances between vent & point
+      real(kind=ip) :: qnow               ! volume flow rate into umbrella cloud, m3/s
+      real(kind=ip) :: radnow             ! radial distance from cloud center, km
+      real(kind=ip) :: thetanow           ! angle of point CW from east
+      real(kind=ip) :: windspeedhere      ! windspeed at this node
+      real(kind=ip) :: rexp               ! exponent in radial vel term
+      integer       :: ii,jj,iz           ! counters
+      integer       :: ew_nodes,ns_nodes  ! radius of clouds in nodes
       integer       :: west_node,east_node
       integer       :: south_node,north_node
-      real(kind=ip) :: MassFluxRateMKS_now ! current mass flux rate, kg/s
+      real(kind=ip) :: MassFluxRateMKS_now  ! current mass flux rate, kg/s
 
       do io=1,2;if(VB(io).le.verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine umbrella_winds"
@@ -321,7 +321,7 @@
           endif;enddo
           stop 1
         endif
-      endif ! time.eq.0.0_ip
+      endif  ! time.eq.0.0_ip
 
       ! HFS : Add check for the maximal radius for this eruptive pulse and make sure
       !       the source location is far enough from the boundaries.
@@ -390,7 +390,7 @@
                                   MPS_2_KMPHR *                          &  ! km/hr
                                   (3.0_ip/4.0_ip)*(cloud_radius/radnow)* &  ! Start of scaling term
                                   (1.0_ip                              + &  ! Cons. of Vol term
-                                   (1.0_ip/3.0_ip)*(radnow/cloud_radius)**rexp) ! outward spreading,time flattening
+                                   (1.0_ip/3.0_ip)*(radnow/cloud_radius)**rexp)  ! outward spreading,time flattening
                 elseif(VelMod_umb.eq.2)then
                   ! This is Eq. 4
                   windspeedhere = edge_speed  *                          &  ! m/s
@@ -518,12 +518,12 @@
 
       do isize=1,n_gs_max
         do k=1,ibase-1
-          tmp = tmp                             + & ! final units is km3
-                real(dt,kind=ip)                * & ! hr
-                SourceNodeFlux(k,isize)         * & ! kg/km3 hr
-                kappa_pd(ivent,jvent,k)         / & ! km3
-                MagmaDensity                    / & ! kg/m3
-                KM3_2_M3                            ! m3/km3
+          tmp = tmp                             + &  ! final units is km3
+                real(dt,kind=ip)                * &  ! hr
+                SourceNodeFlux(k,isize)         * &  ! kg/km3 hr
+                kappa_pd(ivent,jvent,k)         / &  ! km3
+                MagmaDensity                    / &  ! kg/m3
+                KM3_2_M3                             ! m3/km3
         enddo
       enddo
 
@@ -533,12 +533,12 @@
           !jj=jvent-2+j
           do k=ibase,itop
             do isize=1,n_gs_max
-              tmp= tmp                                           + & ! final units is km3
-                real(dt,kind=ip)                                 * & ! hr
-                SourceNodeFlux(k,isize)*AvgStenc_Umbrella(i,j,k) * & ! kg/km3 hr
-                kappa_pd(ivent,jvent,k)                          / & ! km3
-                MagmaDensity                                     / & ! kg/m3
-                KM3_2_M3                                             ! m3/km3
+              tmp= tmp                                           + &  ! final units is km3
+                real(dt,kind=ip)                                 * &  ! hr
+                SourceNodeFlux(k,isize)*AvgStenc_Umbrella(i,j,k) * &  ! kg/km3 hr
+                kappa_pd(ivent,jvent,k)                          / &  ! km3
+                MagmaDensity                                     / &  ! kg/m3
+                KM3_2_M3                                              ! m3/km3
             enddo
           enddo
         enddo
