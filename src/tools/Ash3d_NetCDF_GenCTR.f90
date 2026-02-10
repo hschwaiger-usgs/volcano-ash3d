@@ -71,6 +71,7 @@
          MR_iWind,MR_iWindFormat,MR_iGridCode,MR_iDataFormat,MR_iHeightHandler,MR_WindFiles
 
       implicit none
+      !implicit none (type, external)
 
       integer            :: nargs
       integer            :: stat
@@ -142,18 +143,18 @@
       END INTERFACE
 
       ! Reset verbosity so we only are using stdout (no log file)
-      VB = (/3,10/)
+      VB = [3,10]
 
       nargs = command_argument_count()
-      if (nargs.eq.0) then
+      if (nargs == 0) then
           ! If no command-line arguments are given, then prompt user
           ! interactively for the input netcdf file
-        if(VB(1).ge.verbosity_silent)then
+        if(VB(1) >= verbosity_silent)then
           write(errlog(1),*)"Stdout is suppressed via VERB=9, but interactive input is expected."
           write(errlog(1),*)"Either recompile with VERB<9 or provide the correct command-line arguments."
           stop 1
         else
-          do io=1,nio;if(VB(io).le.verbosity_production)then
+          do io=1,nio;if(VB(io) <= verbosity_production)then
             write(outlog(io),*)'Ash3d_NetCDF_GenCTR is a tool used to read an Ash3d output NetCDF'
             write(outlog(io),*)'and recreate the ASCII control file used in generating that output'
             write(outlog(io),*)'file. This tool take a single argument and writes out temp.inp.'
@@ -165,21 +166,21 @@
           endif;enddo
         endif
         read(input_unit,*) concenfile
-      elseif (nargs.gt.1) then
-        do io=1,nio;if(VB(io).le.verbosity_error)then
+      elseif (nargs > 1) then
+        do io=1,nio;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)'ERROR: Too many command-line arguments.'
           write(errlog(io),*)'  Usage: Ash3d_NetCDF_GenCTR output_file'
         endif;enddo
         stop 1
       else
         call get_command_argument(1, linebuffer080, status=stat)
-        if(stat.gt.0)then
-          do io=1,nio;if(VB(io).le.verbosity_error)then
+        if(stat > 0)then
+          do io=1,nio;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)'ERROR: Could not parse argument 1'
           endif;enddo
           stop 1
-        elseif (stat.lt.0)then
-          do io=1,nio;if(VB(io).le.verbosity_error)then
+        elseif (stat < 0)then
+          do io=1,nio;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)'ERROR: Argument 1 has been truncated.'
             write(errlog(io),*)'       File name length is limited to 80 char.'
           endif;enddo
@@ -188,7 +189,7 @@
         concenfile=trim(adjustl(linebuffer080))
         inquire( file=adjustl(trim(concenfile)), exist=IsThere )
         if (.not.IsThere)then
-          do io=1,nio;if(VB(io).le.verbosity_error)then
+          do io=1,nio;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)'ERROR: Input file 1 could not be found'
           endif;enddo
           stop 1
@@ -199,7 +200,7 @@
       ! Just read step 1. This brings in all the header info needed for the control file
       call NC_Read_Output_Products(1)
 #else
-     do io=1,nio;if(VB(io).le.verbosity_info)then
+     do io=1,nio;if(VB(io) <= verbosity_info)then
        write(errlog(io),*)'ERROR: NetCDF libraries not linked.'
        write(errlog(io),*)'       Please recompile linking NetCDF libraries.'
      endif;enddo
@@ -211,7 +212,7 @@
       infile = "temp.inp"
       inquire( file=infile, exist=IsThere )
       if(IsThere)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(errlog(io),*)"WARNING: Input file already exists"
         endif;enddo
       endif
@@ -238,13 +239,13 @@
         dx_in  = dx
         dy_in  = dy
       endif
-      if(VarDzType.eq.'dz_cons')then
+      if(VarDzType == 'dz_cons')then
         dz_type = 1
-      elseif(VarDzType.eq.'dz_plin')then
+      elseif(VarDzType == 'dz_plin')then
         dz_type = 2
-      elseif(VarDzType.eq.'dz_clog')then
+      elseif(VarDzType == 'dz_clog')then
         dz_type = 3
-      elseif(VarDzType.eq.'dz_cust')then
+      elseif(VarDzType == 'dz_cust')then
         dz_type = 4
       else
         dz_type = 1
@@ -296,56 +297,56 @@
       ! BLOCK 4: OUTPUT OPTIONS
       WriteDepositFinal_ASCII_c = 'n'
       read(cdf_b4l1,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteDepositFinal_ASCII_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteDepositFinal_ASCII_c = 'y'
       WriteDepositFinal_KML_c = 'n'
       read(cdf_b4l2,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteDepositFinal_KML_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteDepositFinal_KML_c = 'y'
       WriteDepositTS_ASCII_c = 'n'
       read(cdf_b4l3,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteDepositTS_ASCII_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteDepositTS_ASCII_c = 'y'
       WriteDepositTS_KML_c = 'n'
       read(cdf_b4l4,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteDepositTS_KML_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteDepositTS_KML_c = 'y'
       WriteCloudConcentration_ASCII_c= 'n'
       read(cdf_b4l5,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteCloudConcentration_ASCII_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteCloudConcentration_ASCII_c = 'y'
       WriteCloudConcentration_KML_c= 'n'
       read(cdf_b4l6,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteCloudConcentration_KML_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteCloudConcentration_KML_c = 'y'
       WriteCloudHeight_ASCII_c = 'n'
       read(cdf_b4l7,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteCloudHeight_ASCII_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteCloudHeight_ASCII_c = 'y'
       WriteCloudHeight_KML_c = 'n'
       read(cdf_b4l8,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteCloudHeight_KML_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteCloudHeight_KML_c = 'y'
       WriteCloudLoad_ASCII_c = 'n'
       read(cdf_b4l9,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteCloudLoad_ASCII_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteCloudLoad_ASCII_c = 'y'
       WriteCloudLoad_KML_c = 'n'
       read(cdf_b4l10,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteCloudLoad_KML_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteCloudLoad_KML_c = 'y'
       WriteDepositTime_ASCII_c= 'n'
       read(cdf_b4l11,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteDepositTime_ASCII_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteDepositTime_ASCII_c = 'y'
       WriteDepositTime_KML_c= 'n'
       read(cdf_b4l12,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteDepositTime_KML_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteDepositTime_KML_c = 'y'
       WriteCloudTime_ASCII_c = 'n'
       read(cdf_b4l13,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteCloudTime_ASCII_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteCloudTime_ASCII_c = 'y'
       WriteCloudTime_KML_c = 'n'
       read(cdf_b4l14,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteCloudTime_KML_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteCloudTime_KML_c = 'y'
       Write3dFiles_c = 'y'   ! This is obviously true if we are reading the netcdf file
       ifm = 2
       read(cdf_b4l15,*,iostat=iostatus,iomsg=iomessage) answer, ifm
-      if(iostatus.ne.0)then  ! if read fails, then make sure we set these
+      if(iostatus /= 0)then  ! if read fails, then make sure we set these
         Write3dFiles_c = 'y'
         ifm = 1
       endif
       ofm = 3  ! This should be 3 since we are reading a netcdf file
       read(cdf_b4l17,*)nwt
-      if(nwt.gt.0)then
+      if(nwt > 0)then
         interval_flag = .false.
         allocate(wts(nwt))
         read(cdf_b4l18,*)wts(1:nwt)
@@ -380,9 +381,9 @@
                                    wts)                                ! B4L18 WriteTimes(1:nWriteTimes)
 
       ! BLOCK 5: INPUT WIND FILES
-      if(MR_iWind.eq.5)then
+      if(MR_iWind == 5)then
         nwindfiles = 1
-        if(len(adjustl(trim(cdf_b5l1))).eq.0)then
+        if(len(adjustl(trim(cdf_b5l1))) == 0)then
           ! NetCDF file didn't have cdf_b5l1. Need to get windfile directory from MR_windfiles
           iyear = HS_YearOfEvent(SimStartHour,BaseYear,useLeap)
           write(yearstr,'(i4)')iyear
@@ -404,17 +405,17 @@
       ! BLOCK 6: AIRPORT FILE
       WriteAirportFile_ASCII_c = 'n'
       read(cdf_b6l1,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteAirportFile_ASCII_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteAirportFile_ASCII_c = 'y'
       WriteGSD_c = 'n'
       read(cdf_b6l2,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteGSD_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteGSD_c = 'y'
       WriteAirportFile_KML_c = 'n'
       read(cdf_b6l3,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteAirportFile_KML_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteAirportFile_KML_c = 'y'
       !cdf_b6l4
       ProjectAirportLocations_c = 'n'
       read(cdf_b6l5,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') ProjectAirportLocations_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') ProjectAirportLocations_c = 'y'
 
       call Write_input_block_header(fid_ctrlfile,6)
       call SetWrite_input_block_06(fid_ctrlfile                    ,&  ! output stream ID

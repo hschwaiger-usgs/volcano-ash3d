@@ -89,17 +89,17 @@
            TephraSourceNodes,&
            SourceVolInc
 
-      use Source_Umbrella, only : &
+      use Source_Umbrella, only :            &
          ibase,itop,SourceNodeFlux_Umbrella, &
-           Allocate_Source_Umbrella,&
-           TephraSourceNodes_Umbrella,&
-           SourceVolInc_Umbrella,&
+           Allocate_Source_Umbrella,         &
+           TephraSourceNodes_Umbrella,       &
+           SourceVolInc_Umbrella,            &
            AvgCon_Umbrella
 
-      use Tephra,        only : &
-         n_gs_max,n_gs_aloft,Tephra_gsdiam,&
-           Allocate_Tephra,&
-           Allocate_Tephra_Met,&
+      use Tephra,        only :              &
+         n_gs_max,n_gs_aloft,Tephra_gsdiam,  &
+           Allocate_Tephra,                  &
+           Allocate_Tephra_Met,              &
            Prune_GS
 
       use Atmosphere,    only : &
@@ -112,7 +112,7 @@
            AdvectVert
 
       use Diffusion,     only : &
-           DiffuseHorz,&
+           DiffuseHorz,         &
            DiffuseVert
 
       use Airports,      only : &
@@ -141,6 +141,7 @@
 !------------------------------------------------------------------------------
 
       implicit none
+      !implicit none (type, external)
 
       integer               :: itime
       integer               :: i,k,isize
@@ -154,26 +155,42 @@
 !        subroutine input_data_ResetParams
 !        end subroutine input_data_ResetParams
         subroutine alloc_arrays
+          implicit none
+          !implicit none (type, external)
         end subroutine alloc_arrays
         subroutine calc_mesh_params
+          implicit none
+          !implicit none (type, external)
         end subroutine calc_mesh_params
         subroutine calc_s_mesh
+          implicit none
+          !implicit none (type, external)
         end subroutine calc_s_mesh
         subroutine MesoInterpolater(TimeNow,Load_MesoSteps,Interval_Frac)
+          implicit none
+          !implicit none (type, external)
           integer,parameter  :: dp         = 8  ! Double precision
           real(kind=dp),intent(in)    :: TimeNow
           logical      ,intent(inout) :: Load_MesoSteps
           real(kind=dp),intent(out)   :: Interval_Frac
         end subroutine MesoInterpolater
         subroutine output_results
+          implicit none
+          !implicit none (type, external)
         end subroutine output_results
         subroutine Set_BC(bc_code)
+          implicit none
+          !implicit none (type, external)
           integer,intent(in) :: bc_code  ! 1 for advection, 2 for diffusion
         end subroutine Set_BC
         subroutine TimeStepTotals(itime)
+          implicit none
+          !implicit none (type, external)
           integer, intent(in) :: itime
         end subroutine TimeStepTotals
         subroutine dealloc_arrays
+          implicit none
+          !implicit none (type, external)
         end subroutine dealloc_arrays
       END INTERFACE
 
@@ -206,31 +223,31 @@
 !  compiled in this executable and for consistency among modules:
 !  e.g. SRC_RESUSP will require the VARDIFF and LC be set
 !
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Now looping through optional modules found in input file"
         write(outlog(io),*)"Found ",nmods," optional modules"
       endif;enddo
       do i=1,nmods
-        do io=1,2;if(VB(io).le.verbosity_essential)then
+        do io=1,2;if(VB(io) <= verbosity_essential)then
           write(outlog(io),*)"Testing for ",OPTMOD_names(i),i
         endif;enddo
         ! Note that RESETPARAMS is handled in Input_Data.F90::Read_Control_File()
-        if(OPTMOD_names(i).eq.'TOPO')then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        if(OPTMOD_names(i) == 'TOPO')then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"  Reading input block for TOPO"
           endif;enddo
           Have_Block_Topo = .true.
           call input_data_Topo
         endif
-        if(OPTMOD_names(i).eq.'VARDIFF')then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        if(OPTMOD_names(i) == 'VARDIFF')then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"  Reading input block for VARDIFF"
           endif;enddo
           Have_Block_VarDiff = .true.
           call input_data_VarDiff
         endif
       enddo
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Finished reading all specialized input blocks"
       endif;enddo
 !
@@ -259,7 +276,7 @@
         call Summarize_Params_VarDiff
       endif
 
-      if(((SourceType.eq.'umbrella').or.(SourceType.eq.'umbrella_air')))then
+      if(((SourceType == 'umbrella').or.(SourceType == 'umbrella_air')))then
         call Allocate_Source_Umbrella(nxmax,nymax,nzmax)
       endif
 
@@ -277,7 +294,7 @@
 #ifdef USENETCDF
         call NC_RestartFile_LoadConcen
 #else
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: Loading concentration files requires previous netcdf"
           write(errlog(io),*)"       output.  This Ash3d executable was not compiled with"
           write(errlog(io),*)"       netcdf support.  Please recompile Ash3d with"
@@ -323,22 +340,22 @@
       Interval_Frac  = 0.0_dp  ! Interval_Frac is calculated and returned by MesoInterpolater
       call MesoInterpolater(time , Load_MesoSteps , Interval_Frac)
       ! Calculate the fall time of each grain size
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),5020)
       endif;enddo
       do isize = 1,n_gs_max
         falltime = 0.0_ip
         do k = nzmax,1,-1
-          if(z_cc_pd(k)+0.5_ip*dz_vec_pd(k).lt.z_cc_pd(nzmax)/ZPADDING)then
-            if(abs(vf_pd(ivent,jvent,k,isize)).gt.EPS_SMALL)then
+          if(z_cc_pd(k)+0.5_ip*dz_vec_pd(k) < z_cc_pd(nzmax)/ZPADDING)then
+            if(abs(vf_pd(ivent,jvent,k,isize)) > EPS_SMALL)then
               falltime = falltime - dz_vec_pd(k)/vf_pd(ivent,jvent,k,isize)
             else
               falltime = 0.0_ip
             endif
           endif
         enddo
-        do io=1,2;if(VB(io).le.verbosity_info)then
-          if(falltime.lt.EPS_SMALL)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
+          if(falltime < EPS_SMALL)then
             write(outlog(io),*)isize," Tracer particle; no appreciable fall velocity."
           else
             write(outlog(io),5021)isize,Tephra_gsdiam(isize)*1000.0_ip,falltime
@@ -362,7 +379,7 @@
       if(useTopo) call Prep_output_Topo
 
       if(useVarDiffH.or.useVarDiffV)then
-        do io=1,2;if(VB(io).le.verbosity_debug1)then
+        do io=1,2;if(VB(io) <= verbosity_debug1)then
           write(outlog(io),*)"Calling Prep_output_VarDiff."
         endif;enddo
         call Prep_output_VarDiff
@@ -378,7 +395,7 @@
         call Allocate_Profile(nzmax,ntmax,nvprofiles)
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),5007)
       endif;enddo
 
@@ -386,7 +403,7 @@
       call EruptivePulse_MassFluxRate
 
       ! Write out starting volume, max time steps, and headers for the table that follows
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),5001) tot_vol,ntmax
       endif;enddo
 
@@ -397,7 +414,7 @@
       ! ****** begin time simulation *******************************************
       ! ************************************************************************
       itime = 0
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Starting time loop."
       endif;enddo
 
@@ -414,8 +431,8 @@
         Calculated_AshThickness = .false.
 
         itime = itime + 1
-        if(itime.gt.ntmax)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        if(itime > ntmax)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"WARNING: The number of time steps attempted exceeds 3x that anticipated."
             write(outlog(io),*)"         Check that the winds are stable"
             write(outlog(io),*)"        Simtime_in_hours = ",Simtime_in_hours
@@ -449,10 +466,10 @@
         ! Add source term
         if(Source_in_dt) then
           ! Check if the source type is one of the standard types with a 1-node column
-          if ((SourceType.eq.'point')  .or. &
-              (SourceType.eq.'line')   .or. &
-              (SourceType.eq.'profile').or. &
-              (SourceType.eq.'suzuki'))then
+          if ((SourceType == 'point')  .or. &
+              (SourceType == 'line')   .or. &
+              (SourceType == 'profile').or. &
+              (SourceType == 'suzuki'))then
 
             ! Calculating the flux into the vent column
             call TephraSourceNodes
@@ -466,8 +483,8 @@
             ! Keep track of the accumulated source inserted for mass conservation error-checking
             SourceCumulativeVol = SourceCumulativeVol + SourceVolInc(dt)
 
-          elseif (SourceType.eq.'umbrella'.or. &
-                 (SourceType.eq.'umbrella_air')) then
+          elseif (SourceType == 'umbrella'.or. &
+                 (SourceType == 'umbrella_air')) then
             ! Umbrella clouds have a special source insertion with a 3x3 column
 
             ! Umbrella sources still need the Suzuki distribution of mass above the vent
@@ -498,7 +515,7 @@
 
           else
             ! This is not a standard source.
-            do io=1,2;if(VB(io).le.verbosity_info)then
+            do io=1,2;if(VB(io) <= verbosity_info)then
               write(outlog(io),*)"WARNING: source type is non-standard"
             endif;enddo
             stop 1
@@ -512,7 +529,7 @@
 !
 !------------------------------------------------------------------------------
           endif
-        endif  ! MassFluxRate_dt1.gt.0.0_ip
+        endif  ! MassFluxRate_dt1 > 0.0_ip
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         ! Set Boundary Conditions
@@ -579,7 +596,7 @@
         ! DT_MIN, but may be adjusted down so as to land on the next
         ! output time.  time has already been integrated forward so
         ! NextWriteTime-time should be near zero for output steps.
-        if(Output_at_WriteTimes.and.(abs(NextWriteTime-time).lt.DT_MIN))then
+        if(Output_at_WriteTimes.and.(abs(NextWriteTime-time) < DT_MIN))then
             ! Generate output variables if we haven't already
           if(.not.Called_Gen_Output_Vars)then
             call Gen_Output_Vars
@@ -589,7 +606,7 @@
 !         Insert calls output routines (every output-step) here
 !
           if(useVarDiffH.or.useVarDiffV)then
-            do io=1,2;if(VB(io).le.verbosity_debug1)then
+            do io=1,2;if(VB(io) <= verbosity_debug1)then
               write(outlog(io),*)"Calling Prep_output_VarDiff."
             endif;enddo
             call Prep_output_VarDiff
@@ -599,7 +616,7 @@
           call output_results
           !if ((WriteAirportFile_ASCII.or.WriteAirportFile_KML).and. &
           if (Write_PT_Data.and. &
-              (iTimeNext.lt.nWriteTimes)) then
+              (iTimeNext < nWriteTimes)) then
             do i=iTimeNext,nWriteTimes
               Airport_Thickness_TS(1:nairports,i) = Airport_Thickness(1:nairports)
             enddo
@@ -608,7 +625,7 @@
 
         if(Output_at_logsteps)then
           ! Write summary information on mass conservation every log_step time steps
-          if(mod(itime,log_step).eq.0) then
+          if(mod(itime,log_step) == 0) then
             if(.not.Called_Gen_Output_Vars)then
               call Gen_Output_Vars
 !------------------------------------------------------------------------------
@@ -621,7 +638,7 @@
           endif
 
             ! Only consider reducing GS bins at logsteps
-          if(time.gt.e_EndTime_final)then
+          if(time > e_EndTime_final)then
             ! Doesn't make sense to flag bins as flushed out while the eruption is on-going
             if(.not.Called_Gen_Output_Vars)then
               call Gen_Output_Vars
@@ -635,7 +652,7 @@
           tot_vol = 0.0_ip
         endif
 
-        if(tot_vol.gt.EPS_SMALL)then
+        if(tot_vol > EPS_SMALL)then
           aloft_percent_remaining = aloft_vol/tot_vol
         else
           aloft_percent_remaining = 1.0_ip
@@ -644,23 +661,23 @@
         ! Check stop conditions
         !  If any of these is true, then the time loop will stop
            ! Stops if there is less than 1% of ash aloft in the domain
-        StopConditions(1) = (aloft_percent_remaining.lt.(1.0_ip-StopValue_FracAshDep))
+        StopConditions(1) = (aloft_percent_remaining < (1.0_ip-StopValue_FracAshDep))
            ! Normal stop condition if simulation exceeds alloted time
-        StopConditions(2) = (time.ge.Simtime_in_hours)
+        StopConditions(2) = (time >= Simtime_in_hours)
            ! Normal stop condition when nothing is left to advect
-        StopConditions(3) = (n_gs_aloft.eq.0)
-        if(SourceCumulativeVol.gt.EPS_TINY)then
+        StopConditions(3) = (n_gs_aloft == 0)
+        if(SourceCumulativeVol > EPS_TINY)then
           MassConsErr = abs(SourceCumulativeVol-tot_vol)/SourceCumulativeVol
         endif
            ! Error stop condition if the concen and outflow do not match the source,
            ! but only trigger this condition if not a restart case (until outflow is tracked)
         if(.not.LoadConcen) &
-          StopConditions(4) = (MassConsErr.gt.1.0e-3_ip)
+          StopConditions(4) = (MassConsErr > 1.0e-3_ip)
            ! Error stop condition if any volume measure is negative
-        StopConditions(5) = (dep_vol.lt.-1.0_ip*EPS_SMALL).or.&
-                            (aloft_vol.lt.-1.0_ip*EPS_SMALL).or.&
-                            (outflow_vol.lt.-1.0_ip*EPS_SMALL).or.&
-                            (SourceCumulativeVol.lt.-1.0_ip*EPS_SMALL)
+        StopConditions(5) = (dep_vol < -1.0_ip*EPS_SMALL).or.&
+                            (aloft_vol < -1.0_ip*EPS_SMALL).or.&
+                            (outflow_vol < -1.0_ip*EPS_SMALL).or.&
+                            (SourceCumulativeVol < -1.0_ip*EPS_SMALL)
 
         if(CheckConditions(1).and.StopConditions(1))then
           StopTimeLoop = .true.
@@ -676,39 +693,39 @@
           StopTimeLoop = .false.
         endif
       enddo  !loop over itime
-              !  ((dep_percent_accumulated.le.StopValue_FracAshDep).and. &
-              !    (time.lt.Simtime_in_hours)        .and. &
-              !    (n_gs_aloft.gt.0))
+              !  ((dep_percent_accumulated <= StopValue_FracAshDep).and. &
+              !    (time < Simtime_in_hours)        .and. &
+              !    (n_gs_aloft > 0))
 
       ! Reset ntmax to the actual number of time steps
       ntmax = itime
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Time integration completed for the following reason:"
       endif;enddo
       if(CheckConditions(1).and.StopConditions(1))then
         ! Normal stop condition set by user tracking the deposit
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),'(a35,f8.3)')"Percent accumulated/exited exceeds ",StopValue_FracAshDep
         endif;enddo
       endif
       if(CheckConditions(2).and.StopConditions(2))then
         ! Normal stop condition if simulation exceeds alloted time
-        do io=1,2;if(VB(io).le.verbosity_info)then
-          write(outlog(io),'(a24)')"time.ge.Simtime_in_hours"
+        do io=1,2;if(VB(io) <= verbosity_info)then
+          write(outlog(io),'(a24)')"time >= Simtime_in_hours"
           write(outlog(io),'(a21,f15.3)')"              Time = ",time
           write(outlog(io),'(a21,f15.3)')"  Simtime_in_hours = ",Simtime_in_hours
         endif;enddo
       endif
       if(CheckConditions(3).and.StopConditions(3))then
         ! Normal stop condition when nothing is left to advect
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"No ash species remain aloft."
         endif;enddo
       endif
       if(CheckConditions(4).and.StopConditions(4))then
         ! Error stop condition if the concen and outflow do not match the source
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"Cummulative source volume does not match aloft + outflow"
           write(errlog(io),'(a11,f15.5)')" tot_vol = ",tot_vol
           write(errlog(io),'(a11,f15.5)')" SourceCumulativeVol = ",SourceCumulativeVol
@@ -720,7 +737,7 @@
       endif
       if(CheckConditions(5).and.StopConditions(5))then
         ! Error stop condition if any volume measure is negative
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"One of the volume measures is negative."
           write(errlog(io),'(a30,f13.5)')"                    dep_vol = ",dep_vol
           write(errlog(io),'(a30,f13.5)')"                  aloft_vol = ",aloft_vol
@@ -739,7 +756,7 @@
       Calculated_Cloud_Load   = .false.
       Calculated_AshThickness = .false.
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),5012)   ! put footnotes below output table
         write(outlog(io),'(a5,f10.3,a5,f10.3)')'time=',time,', dt=',dt
         write(outlog(io),'(a26,g15.5)')"Mass Conservation Error = ",MassConsErr
@@ -757,12 +774,12 @@
       ! Write results to log and standard output
       call cpu_time(t2)  ! time is a scalar real
       call system_clock(tcount2,tcount_rate,tcount_max)
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),5003) t1-t0,tw_tot,t2-t1,&
                                real(tcount2-tcount1,kind=dp)/real(tcount_rate,kind=dp)
       endif;enddo
       call TimeStepTotals(itime)
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),5005) dep_vol
         write(outlog(io),5006) tot_vol
         write(outlog(io),5009) maxval(DepositThickness), DepositAreaCovered

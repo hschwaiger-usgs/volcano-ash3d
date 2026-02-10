@@ -25,6 +25,7 @@
       use io_units
 
       implicit none
+      !implicit none (type, external)
 
         ! Set everything to private by default
       private
@@ -139,11 +140,11 @@
       use MetReader,     only : &
          nx_submet,ny_submet,np_fullmet
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Allocate_Atmosphere_Met"
       endif;enddo
 
-      do io=1,2;if(VB(io).le.verbosity_production)then
+      do io=1,2;if(VB(io) <= verbosity_production)then
         write(outlog(io),*)"--------------------------------------------------"
         write(outlog(io),*)"---------- ALLOCATE_ATMOSPHERE_MET ---------------"
         write(outlog(io),*)"--------------------------------------------------"
@@ -217,7 +218,7 @@
       endif
 #endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Allocate_Atmosphere_Met"
       endif;enddo
 
@@ -242,7 +243,7 @@
       use global_param,  only : &
          useMoistureVars
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Deallocate_Atmosphere_Met"
       endif;enddo
 
@@ -284,7 +285,7 @@
       endif
 #endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Deallocate_Atmosphere_Met"
       endif;enddo
 
@@ -327,7 +328,7 @@
       real(kind=sp) :: temp,pres
       logical       :: first_time
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Read_Next_MesoStep_TQ"
       endif;enddo
 
@@ -353,13 +354,13 @@
             call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now)
               ! need to convert RH to SH
             !AirSH_meso_nxet_step_MetP_sp = MR_dum3d_MetP
-            do io=1,2;if(VB(io).le.verbosity_info)then
+            do io=1,2;if(VB(io) <= verbosity_info)then
               write(outlog(io),*)"WARNING: Specific Humidity requested but is unavailable."
               write(outlog(io),*)"         Setting to zero."
             endif;enddo
             AirSH_meso_next_step_MetP_sp = 0.0_sp
           else
-            do io=1,2;if(VB(io).le.verbosity_error)then
+            do io=1,2;if(VB(io) <= verbosity_error)then
               write(errlog(io),*)"ERROR: Neither SH nor RH are available"
             endif;enddo
             stop 1
@@ -415,13 +416,13 @@
             call MR_Read_3d_MetP_Variable(ivar,MR_iMetStep_Now+1)
                 ! need to convert RH to SH
             !AirSH_meso_next_step_MetP_sp = MR_dum3d_MetP
-            do io=1,2;if(VB(io).le.verbosity_info)then
+            do io=1,2;if(VB(io) <= verbosity_info)then
               write(outlog(io),*)"WARNING: Specific Humidity requested but is unavailable."
               write(outlog(io),*)"         Setting to zero."
             endif;enddo
             AirSH_meso_last_step_MetP_sp = 0.0_sp
           else
-            do io=1,2;if(VB(io).le.verbosity_error)then
+            do io=1,2;if(VB(io) <= verbosity_error)then
               write(errlog(io),*)"ERROR: Neither SH nor RH are available"
             endif;enddo
             stop 1
@@ -451,7 +452,7 @@
         enddo
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Read_Next_MesoStep_TQ"
       endif;enddo
 
@@ -497,7 +498,7 @@
       real(kind=sp) :: mixrat
       logical       :: first_time
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Set_VirtPotenTemp"
       endif;enddo
 
@@ -574,7 +575,7 @@
         enddo  ! i
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Set_VirtPotenTemp"
       endif;enddo
 
@@ -608,8 +609,8 @@
          nx_submet,ny_submet,MR_xy2ll_xlon,MR_xy2ll_ylat,&
            MR_Read_3d_MetP_Variable
 
-      real(kind=dp)                 :: inhoursince
-      logical, intent(in), optional :: Load_Prestep
+      real(kind=dp),intent(in)           :: inhoursince
+      logical      ,intent(in), optional :: Load_Prestep
 
       integer       :: i,j
       real(kind=dp) :: lon,lat
@@ -638,7 +639,7 @@
         end function HS_HourOfDay
       END INTERFACE
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Set_SolarZenith"
       endif;enddo
 
@@ -689,7 +690,7 @@
         enddo
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Set_SolarZenith"
       endif;enddo
 
@@ -713,10 +714,10 @@
 
       function Dens_IdealGasLaw(pres,temp)
 
-      real(kind=sp) :: Dens_IdealGasLaw
-      real(kind=sp) :: pres,temp
+      real(kind=sp)             :: Dens_IdealGasLaw
+      real(kind=sp) ,intent(in) :: pres,temp
 
-      do io=1,2;if(VB(io).le.verbosity_debug2)then
+      do io=1,2;if(VB(io) <= verbosity_debug2)then
         write(outlog(io),*)"     Entered function Dens_IdealGasLaw"
       endif;enddo
 
@@ -743,10 +744,10 @@
 
       function Visc_Sutherland(temp)
 
-      real(kind=sp) :: Visc_Sutherland
-      real(kind=sp) :: temp
+      real(kind=sp)             :: Visc_Sutherland
+      real(kind=sp) ,intent(in) :: temp
 
-      do io=1,2;if(VB(io).le.verbosity_debug2)then
+      do io=1,2;if(VB(io) <= verbosity_debug2)then
         write(outlog(io),*)"     Entered function Visc_Sutherland"
       endif;enddo
 
@@ -779,10 +780,12 @@
       use global_param,  only : &
          PI
 
-      real(kind=sp) :: lambda_MeanFreePath
-      real(kind=sp) :: visc,pres,temp
+      real(kind=sp)             :: lambda_MeanFreePath
+      real(kind=sp) ,intent(in) :: visc
+      real(kind=sp) ,intent(in) :: pres
+      real(kind=sp) ,intent(in) :: temp
 
-      do io=1,2;if(VB(io).le.verbosity_debug2)then
+      do io=1,2;if(VB(io) <= verbosity_debug2)then
         write(outlog(io),*)"     Entered function lambda_MeanFreePath"
       endif;enddo
         ! Mean-free-path of dry air : Eq. 9.6 of Seinfeld and Pandis
@@ -818,12 +821,12 @@
       use global_param,  only : &
          PI,DEG2RAD
 
-      real(kind=ip) :: solar_zenith   ! solar zenith in degrees
-      real(kind=ip) :: lonD           ! longitude in degrees
-      real(kind=ip) :: latD           ! latitude in degrees
-      integer       :: jday           ! day of year
-      integer       :: hh             ! hour of day
-      integer       :: mm             ! minute of hour
+      real(kind=ip)             :: solar_zenith   ! solar zenith in degrees
+      real(kind=ip) ,intent(in) :: lonD           ! longitude in degrees
+      real(kind=ip) ,intent(in) :: latD           ! latitude in degrees
+      integer       ,intent(in) :: jday           ! day of year
+      integer       ,intent(in) :: hh             ! hour of day
+      integer       ,intent(in) :: mm             ! minute of hour
 
 !      real(kind=ip) :: lonR           ! longitude in radians
       real(kind=ip) :: latR           ! latitude in radians
@@ -839,7 +842,7 @@
       real(kind=ip) :: tst            !
       real(kind=ip) :: szenithR       ! solar zenith in radians
 
-      do io=1,2;if(VB(io).le.verbosity_debug2)then
+      do io=1,2;if(VB(io) <= verbosity_debug2)then
         write(outlog(io),*)"     Entered function solar_zenith"
       endif;enddo
 
@@ -875,7 +878,7 @@
       szenithR = acos(sin(latR)*sin(declR)+cos(latR)*cos(declR)*cos(haR))
       solar_zenith = szenithR/DEG2RAD
 
-      do io=1,2;if(VB(io).le.verbosity_debug2)then
+      do io=1,2;if(VB(io) <= verbosity_debug2)then
         write(outlog(io),*)"     Exited function solar_zenith"
       endif;enddo
 

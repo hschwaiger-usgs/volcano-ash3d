@@ -34,6 +34,7 @@
          useCalcFallVel,useLogNormGSbins,PI,GRAV,M_2_MM
 
       implicit none
+      !implicit none (type, external)
 
         ! Set everything to private by default
       private
@@ -144,7 +145,7 @@
 
       subroutine Allocate_Tephra
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Allocate_Tephra"
       endif;enddo
 
@@ -157,7 +158,7 @@
       allocate(Tephra_gsPhi(n_gs_max));     Tephra_gsPhi    = 0.0_ip
       allocate(Tephra_gsF_fac(n_gs_max,5)); Tephra_gsF_fac  = 0.0_ip
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Allocate_Tephra"
       endif;enddo
 
@@ -182,11 +183,11 @@
       use MetReader,     only : &
          nx_submet,ny_submet,np_fullmet
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Allocate_Tephra_Met"
       endif;enddo
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"--------------------------------------------------"
         write(outlog(io),*)"---------- ALLOCATE_TEPHRA_MET -------------------"
         write(outlog(io),*)"--------------------------------------------------"
@@ -195,7 +196,7 @@
       allocate(vf_meso_last_step_MetP_sp(nx_submet,ny_submet,np_fullmet,n_gs_max))
       allocate(vf_meso_next_step_MetP_sp(nx_submet,ny_submet,np_fullmet,n_gs_max))
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Allocate_Tephra_Met"
       endif;enddo
 
@@ -217,7 +218,7 @@
 
       subroutine Deallocate_Tephra
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Deallocate_Tephra"
       endif;enddo
 
@@ -241,7 +242,7 @@
       if(allocated(Tephra_gsF_fac))    deallocate(Tephra_gsF_fac)
 #endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Deallocate_Tephra"
       endif;enddo
 
@@ -263,7 +264,7 @@
 
       subroutine Deallocate_Tephra_Met
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Deallocate_Tephra_Met"
       endif;enddo
 
@@ -275,7 +276,7 @@
       if(allocated(vf_meso_next_step_MetP_sp)) deallocate(vf_meso_next_step_MetP_sp)
 #endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Deallocate_Tephra_Met"
       endif;enddo
 
@@ -326,7 +327,7 @@
       real(kind=ip) :: v_grav_set
       logical,save  :: first_time = .true.
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Set_Vf_Meso"
       endif;enddo
 
@@ -344,7 +345,7 @@
               ! Note: we solve for the fall velocities on the p-levels since
               ! that is where the atmospheric variables live, then we
               ! interpolate onto the compH grid
-               if(is.eq.1)then
+               if(is == 1)then
                  dens   = AirDens_meso_last_step_MetP_sp(i,j,k)  ! kg/m^3
                  visc   = AirVisc_meso_last_step_MetP_sp(i,j,k)  ! kg/(m s)
                  lambda = AirLamb_meso_last_step_MetP_sp(i,j,k)
@@ -375,7 +376,7 @@
                    Kna = 2.0_ip*lambda/(Tephra_gsdiam(isize)*Tephra_gsF_fac(isize,5))
                    ! The non-continuum effect are > 1% when
                    ! gs<250*lam_col_windp(k)
-                   if(Tephra_gsdiam(isize).gt.LAM_GS_THRESH*lambda)then
+                   if(Tephra_gsdiam(isize) > LAM_GS_THRESH*lambda)then
                      v_grav_set = vset_WH(dens,Tephra_rho_m(isize),visc, &
                                    Tephra_gsdiam(isize),Tephra_gsF_fac(isize,1),Tephra_gsF_fac(isize,2))
                    else
@@ -406,7 +407,7 @@
                    Kna = 2.0_ip*lambda/(Tephra_gsdiam(isize)*Tephra_gsF_fac(isize,5))
                    ! The non-continuum effect are > 1% when
                    ! gs<250*lam_col_windp(k)
-                   if(Tephra_gsdiam(isize).gt.LAM_GS_THRESH*lambda)then
+                   if(Tephra_gsdiam(isize) > LAM_GS_THRESH*lambda)then
                      v_grav_set = vset_Gans(dens,Tephra_rho_m(isize),&
                                             visc,Tephra_gsdiam(isize), &
                                             Tephra_gsF_fac(isize,3),Tephra_gsF_fac(isize,4))
@@ -447,7 +448,7 @@
         enddo
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Set_Vf_Meso"
       endif;enddo
 
@@ -476,7 +477,7 @@
       real(kind=ip) :: tmp_b, tmp_c
       integer       :: Dahni
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Calculate_Tephra_Shape"
       endif;enddo
 
@@ -515,7 +516,7 @@
         Tephra_gsF_fac(isize,2) = sqrt(1.07_ip-Tephra_gsF(isize))  ! WH Newton factor
 
         ! and precalculate the K1 and K2 if we use the Ganser model
-        if(Shape_ID.eq.1)then
+        if(Shape_ID == 1)then
           ! First, if we are using F and G for shape, get sphericity.
           ! Note: sphericity is the ratio of the surface area of a sphere with
           !       equivalent volume to the actual surface area of the particle
@@ -528,7 +529,7 @@
                         ((tmp_b**p_exp + &
                           tmp_c**p_exp + &
                          (tmp_b*tmp_c)**p_exp)/3.0_ip)**(-1.0_ip/p_exp)
-        elseif(Shape_ID.eq.2)then
+        elseif(Shape_ID == 2)then
           ! Shape factor is given as sphericity
           ! Assume prolate ellipsoids with B=C (i.e. G=1.0)
           ! Need to calculate F for logging
@@ -557,10 +558,10 @@
         onF = 1.0_ip/Tephra_gsF(isize)
         Dahni = 0
         do j = 1,12
-          if(onF.ge.Dahneke_LD(j).and.onF.lt.Dahneke_LD(j+1)) Dahni = j
+          if(onF >= Dahneke_LD(j).and.onF < Dahneke_LD(j+1)) Dahni = j
         enddo
-        if(Dahni.eq.0)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        if(Dahni == 0)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"WARNING: Could not determine slip correction factor."
             write(outlog(io),*)"         Setting factor to 1.0"
           endif;enddo
@@ -572,7 +573,7 @@
         endif
       enddo
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Calculate_Tephra_Shape"
       endif;enddo
 
@@ -601,19 +602,19 @@
       real(kind=ip) :: tmp2,tmp3,tmp4,tmp5,tmp6,tmp7
       real(kind=ip) :: temp_a(5)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Sort_Tephra_Size"
       endif;enddo
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*) 'WARNING: Sorting grain-size bins by size'
       endif;enddo
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*) 'GSD before sorting:'
       endif;enddo
       do isize=1,n_gs_max
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)&
              'isize = ',isize,', gsdiam = ',real(Tephra_gsdiam(isize),kind=sp),&
              ', rho_m = ',real(Tephra_rho_m(isize),kind=sp)
@@ -631,7 +632,7 @@
         temp_a = Tephra_gsF_fac(isize,:)
         do i=isize-1,1,-1
             ! sort on grain-size
-          if (Tephra_gsdiam(i).le.tmp2) goto 101
+          if (Tephra_gsdiam(i) <= tmp2) goto 101
           Tephra_gsdiam(i+1)    = Tephra_gsdiam(i)
           Tephra_bin_mass(i+1)  = Tephra_bin_mass(i)
           Tephra_rho_m(i+1)     = Tephra_rho_m(i)
@@ -659,7 +660,7 @@
         enddo
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Sort_Tephra_Size"
       endif;enddo
 
@@ -694,7 +695,8 @@
 
       integer :: isize
 
-      real(kind=ip) :: mu,sigma
+      real(kind=ip) ,intent(in) :: mu
+      real(kind=ip) ,intent(in) :: sigma
 
       real(kind=ip),dimension(n_gs_max)   :: phi
       real(kind=ip),dimension(n_gs_max-1) :: phi_boundaries
@@ -704,7 +706,7 @@
       real(kind=ip) :: erf_at_a,erf_at_b
       real(kind=ip) :: fac1
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine partition_gsbins"
       endif;enddo
 
@@ -720,8 +722,8 @@
       ! redistributed among the first n_gs_max bins with a normal
       ! distribution in phi.
 
-      if(sigma.le.0.0_ip)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
+      if(sigma <= 0.0_ip)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: StdDev <= 0.0 for supplimental GS"
           write(errlog(io),*)"       distribution"
         endif;enddo
@@ -738,12 +740,12 @@
         phi_boundaries(isize) = (phi(isize)+phi(isize+1))*0.5_ip
       enddo
 
-      if (n_gs_max.eq.0)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
-          write(errlog(io),*)"ERROR: Must have n_gs_max.ge.1"
+      if (n_gs_max == 0)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
+          write(errlog(io),*)"ERROR: Must have n_gs_max >= 1"
         endif;enddo
         stop 1
-      else if (n_gs_max.eq.1)then
+      else if (n_gs_max == 1)then
         LN_suppl_frac(1)=1.0_ip
       else
         ! Convert boundaries between grainsmaxs given to locations on a
@@ -751,8 +753,8 @@
         do isize = 1,n_gs_max-1
           phi_boundaries(isize) = (phi_boundaries(isize) - mu)/sigma
         enddo
-        if(phi_boundaries(1).lt.0.0_ip)then
-          do io=1,2;if(VB(io).le.verbosity_error)then
+        if(phi_boundaries(1) < 0.0_ip)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)"ERROR: Mean is not within GS-distribution."
             write(errlog(io),*)&
                "        Bin    :       gsdiam        :",&
@@ -766,20 +768,20 @@
           endif;enddo
           stop 1
         endif
-        if(n_gs_max.eq.2)then
+        if(n_gs_max == 2)then
           ! We're dividing the surplus into two bins
            erf_at_a = 0.5_ip - fac1*erf(abs(phi_boundaries(1)))
-           if(phi_boundaries(1).lt.0.0_ip)then
+           if(phi_boundaries(1) < 0.0_ip)then
              LN_suppl_frac(1) = erf_at_a
              LN_suppl_frac(2) = 1.0_ip - erf_at_a
            else
              LN_suppl_frac(2) = erf_at_a
              LN_suppl_frac(1) = 1.0_ip - erf_at_a
            endif
-        else if(n_gs_max.ge.3)then
+        else if(n_gs_max >= 3)then
           do isize = 2,n_gs_max-1
             ! Find the bin that contains the mean of the distribution
-            if(phi_boundaries(isize).le.0.0_ip.and.phi_boundaries(isize-1).ge.0.0_ip)then
+            if(phi_boundaries(isize) <= 0.0_ip.and.phi_boundaries(isize-1) >= 0.0_ip)then
               mid_bin = isize
             endif
           enddo
@@ -813,7 +815,7 @@
         LN_suppl_frac(mid_bin) = mid_bin_pos_half + mid_bin_neg_half
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine partition_gsbins"
       endif;enddo
 
@@ -843,7 +845,7 @@
 
       integer :: isize
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Prune_GS"
       endif;enddo
 
@@ -856,9 +858,9 @@
       n_gs_aloft = 0
       do isize = 1,n_gs_max
         if(IsAloft(isize).and. &                      ! if bin is currently flagged as aloft
-           mass_aloft(isize).lt.AIRBORNE_THRESH)then  ! but the mass is less than the thresh
+           mass_aloft(isize) < AIRBORNE_THRESH)then  ! but the mass is less than the thresh
           IsAloft(isize) = .false.
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"Grainsize bin ",isize," has fully deposited or left the domain."
           endif;enddo
         else
@@ -866,7 +868,7 @@
         endif
       enddo
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Prune_GS"
       endif;enddo
 
@@ -897,13 +899,13 @@
 
       function vset_WH(rho_air,rho_m,eta,diam,Ffac1,Ffac2)
 
-      real(kind=ip) :: vset_WH   ! Settling velocity in m/s
-      real(kind=ip) :: rho_air   ! density of air in kg/m3
-      real(kind=ip) :: rho_m     ! density of the particle in km/m3
-      real(kind=ip) :: eta       ! dynamic viscosity of air in (kg/(m s))
-      real(kind=ip) :: diam      ! diameter of the particle in m
-      real(kind=ip) :: Ffac1     ! = F**(-0.828)
-      real(kind=ip) :: Ffac2     ! = sqrt(1.07-F)
+      real(kind=ip)             :: vset_WH   ! Settling velocity in m/s
+      real(kind=ip) ,intent(in) :: rho_air   ! density of air in kg/m3
+      real(kind=ip) ,intent(in) :: rho_m     ! density of the particle in km/m3
+      real(kind=ip) ,intent(in) :: eta       ! dynamic viscosity of air in (kg/(m s))
+      real(kind=ip) ,intent(in) :: diam      ! diameter of the particle in m
+      real(kind=ip) ,intent(in) :: Ffac1     ! = F**(-0.828)
+      real(kind=ip) ,intent(in) :: Ffac2     ! = sqrt(1.07-F)
 
       real(kind=ip) :: vset2
 
@@ -943,7 +945,7 @@
       !vset2 = (sqrt(6.)*sqrt(diam**3.*Ffac2*g*rho_air*rho_m + &
       !         54.*eta**2.*Ffac1**2.)-18.*eta*Ffac1)/(diam*Ffac2*rho_air)/3.0
 
-      do io=1,2;if(VB(io).le.verbosity_debug2)then
+      do io=1,2;if(VB(io) <= verbosity_debug2)then
         write(outlog(io),*)"     Entered function vset_WH"
       endif;enddo
 
@@ -983,20 +985,20 @@
       function vset_WH_slip(rho_air,rho_m,eta,diam,Ffac1,Ffac2,Kna)
       ! Modification to Wilson and Huang's with Cunningham slip
 
-      real(kind=ip) :: vset_WH_slip      ! Settling velocity in m/s
-      real(kind=ip) :: rho_air   ! density of air in kg/m3
-      real(kind=ip) :: rho_m     ! density of the particle in km/m3
-      real(kind=ip) :: eta       ! dynamic viscosity of air in (kg/(m s))
-      real(kind=ip) :: diam      ! diameter of the particle in m
-      real(kind=ip) :: Ffac1     ! = F**(-0.828)
-      real(kind=ip) :: Ffac2     ! = sqrt(1.07-F)
-      real(kind=ip) :: Kna       ! adjusted Knudsen number
+      real(kind=ip)             :: vset_WH_slip  ! Settling velocity in m/s
+      real(kind=ip) ,intent(in) :: rho_air       ! density of air in kg/m3
+      real(kind=ip) ,intent(in) :: rho_m         ! density of the particle in km/m3
+      real(kind=ip) ,intent(in) :: eta           ! dynamic viscosity of air in (kg/(m s))
+      real(kind=ip) ,intent(in) :: diam          ! diameter of the particle in m
+      real(kind=ip) ,intent(in) :: Ffac1         ! = F**(-0.828)
+      real(kind=ip) ,intent(in) :: Ffac2         ! = sqrt(1.07-F)
+      real(kind=ip) ,intent(in) :: Kna           ! adjusted Knudsen number
 
       real(kind=ip) :: vnew, vold, Re            ! old and new settling velocity
       real(kind=ip) :: Cd                        ! drag coefficient
       real(kind=ip) :: Cslip                     ! Slip correction
 
-      do io=1,2;if(VB(io).le.verbosity_debug2)then
+      do io=1,2;if(VB(io) <= verbosity_debug2)then
         write(outlog(io),*)"     Entered function vset_WH_slip"
       endif;enddo
 
@@ -1012,7 +1014,7 @@
 
       vnew = sqrt((4.0_ip*rho_m*diam*GRAV)/(3.0_ip*rho_air*Cd))   ! Eq. 15 of WoodsBursik91
 
-      do while ((abs(vold-vnew)/vnew).gt.vset_ConvCrit)
+      do while ((abs(vold-vnew)/vnew) > vset_ConvCrit)
         vold = vnew
         Re = rho_air*vold*diam/eta
         Cd = (24.0_ip/Re)*Ffac1 + Ffac2
@@ -1054,20 +1056,20 @@
       ! T. Pfeiffer and A. Costa and G. Macedonio, JVGR, v140n4p273 2005
       ! DOI:10.1016/j.jvolgeores.2004.09.001
 
-      real(kind=ip) :: vset_WH_PCM      ! Settling velocity in m/s
-      real(kind=ip) :: rho_air   ! density of air in kg/m3
-      real(kind=ip) :: rho_m     ! density of the particle in km/m3
-      real(kind=ip) :: eta       ! dynamic viscosity of air in (kg/(m s))
-      real(kind=ip) :: diam      ! diameter of the particle in m
-      real(kind=ip) :: Ffac1     ! = F**(-0.828)
-      real(kind=ip) :: Ffac2     ! = sqrt(1.07-F)
+      real(kind=ip)             :: vset_WH_PCM   ! Settling velocity in m/s
+      real(kind=ip) ,intent(in) :: rho_air       ! density of air in kg/m3
+      real(kind=ip) ,intent(in) :: rho_m         ! density of the particle in km/m3
+      real(kind=ip) ,intent(in) :: eta           ! dynamic viscosity of air in (kg/(m s))
+      real(kind=ip) ,intent(in) :: diam          ! diameter of the particle in m
+      real(kind=ip) ,intent(in) :: Ffac1         ! = F**(-0.828)
+      real(kind=ip) ,intent(in) :: Ffac2         ! = sqrt(1.07-F)
 
       real(kind=ip) :: vnew, vold, Re            ! old and new settling velocity
       real(kind=ip) :: Cd                        ! drag coefficient
 
       real(kind=ip) :: Cd100
 
-      do io=1,2;if(VB(io).le.verbosity_debug2)then
+      do io=1,2;if(VB(io) <= verbosity_debug2)then
         write(outlog(io),*)"     Entered function vset_WH_PCM"
       endif;enddo
 
@@ -1081,12 +1083,12 @@
       Cd = (24.0_ip/Re)*Ffac1 + Ffac2
       vnew = sqrt((4.0_ip*rho_m*diam*GRAV)/(3.0_ip*rho_air*Cd))   ! Eq. 15 of WoodsBursik91
 
-      do while ((abs(vold-vnew)/vnew).gt.vset_ConvCrit)
+      do while ((abs(vold-vnew)/vnew) > vset_ConvCrit)
         vold = vnew
         Re = rho_air*vold*diam/eta
-        if (Re.lt.100.0_ip)then
+        if (Re < 100.0_ip)then
           Cd = (24.0_ip/Re)*Ffac1 + Ffac2
-        elseif (Re.gt.1000.0_ip)then
+        elseif (Re > 1000.0_ip)then
           Cd = 1.0_ip
         else
           ! interpolate between values at Re=1000 and 100
@@ -1129,19 +1131,19 @@
       ! Ganser, Powder Tech., v77,2p143, 1993
       ! DOI:10.1016/0032-5910(93)80051-B
 
-      real(kind=ip) :: vset_Gans  ! Settling velocity in m/s
-      real(kind=ip) :: rho_air    ! density of air in kg/m3
-      real(kind=ip) :: rho_m      ! density of the particle in km/m3
-      real(kind=ip) :: eta        ! dynamic viscosity of air in (kg/(m s))
-      real(kind=ip) :: diam       ! diameter of the particle in m
-      real(kind=ip) :: K1,K2      ! Stokes shape factor and Newtons shape factor
+      real(kind=ip)             :: vset_Gans  ! Settling velocity in m/s
+      real(kind=ip) ,intent(in) :: rho_air    ! density of air in kg/m3
+      real(kind=ip) ,intent(in) :: rho_m      ! density of the particle in km/m3
+      real(kind=ip) ,intent(in) :: eta        ! dynamic viscosity of air in (kg/(m s))
+      real(kind=ip) ,intent(in) :: diam       ! diameter of the particle in m
+      real(kind=ip) ,intent(in) :: K1,K2      ! Stokes shape factor and Newtons shape factor
 
       real(kind=ip) :: vnew, vold, Re            ! old and new settling velocity
       real(kind=ip) :: Cd                        ! drag coefficient
 
       real(kind=ip) :: Cd1,Cd2
 
-      do io=1,2;if(VB(io).le.verbosity_debug2)then
+      do io=1,2;if(VB(io) <= verbosity_debug2)then
         write(outlog(io),*)"     Entered function vset_Gans"
       endif;enddo
 
@@ -1155,7 +1157,7 @@
       Cd = Cd1+Cd2;
       vnew = sqrt((4.0_ip*rho_m*diam*GRAV)/(3.0_ip*rho_air*Cd))   ! Eq. 15 of WoodsBursik91
 
-      do while ((abs(vold-vnew)/vnew).gt.vset_ConvCrit)
+      do while ((abs(vold-vnew)/vnew) > vset_ConvCrit)
         vold = vnew
         Re = rho_air*vold*diam/eta
         Cd1 = 1.0_ip+0.1118_ip*(Re*K1*K2)**0.6567_ip
@@ -1203,13 +1205,13 @@
       ! Ganser, Powder Tech., v77,2p143, 1993
       ! DOI:10.1016/0032-5910(93)80051-B
 
-      real(kind=ip) :: vset_Gans_slip  ! Settling velocity in m/s
-      real(kind=ip) :: rho_air         ! density of air in kg/m3
-      real(kind=ip) :: rho_m           ! density of the particle in km/m3
-      real(kind=ip) :: eta             ! dynamic viscosity of air in (kg/(m s))
-      real(kind=ip) :: diam            ! diameter of the particle in m
-      real(kind=ip) :: K1,K2           ! Stokes shape factor and Newtons shape factor
-      real(kind=ip) :: Kna             ! adjusted Knudsen number
+      real(kind=ip)             :: vset_Gans_slip  ! Settling velocity in m/s
+      real(kind=ip) ,intent(in) :: rho_air         ! density of air in kg/m3
+      real(kind=ip) ,intent(in) :: rho_m           ! density of the particle in km/m3
+      real(kind=ip) ,intent(in) :: eta             ! dynamic viscosity of air in (kg/(m s))
+      real(kind=ip) ,intent(in) :: diam            ! diameter of the particle in m
+      real(kind=ip) ,intent(in) :: K1,K2           ! Stokes shape factor and Newtons shape factor
+      real(kind=ip) ,intent(in) :: Kna             ! adjusted Knudsen number
 
       real(kind=ip) :: Cslip                     ! drag coefficient
 
@@ -1218,7 +1220,7 @@
 
       real(kind=ip) :: Cd1,Cd2
 
-      do io=1,2;if(VB(io).le.verbosity_debug2)then
+      do io=1,2;if(VB(io) <= verbosity_debug2)then
         write(outlog(io),*)"     Entered function vset_Gans_slip"
       endif;enddo
 
@@ -1235,7 +1237,7 @@
       Cd = Cd1+Cd2;
       vnew = sqrt((4.0_ip*rho_m*diam*GRAV)/(3.0_ip*rho_air*Cd))   ! Eq. 15 of WoodsBursik91
 
-      do while ((abs(vold-vnew)/vnew).gt.vset_ConvCrit)
+      do while ((abs(vold-vnew)/vnew) > vset_ConvCrit)
         vold = vnew
         Re = rho_air*vold*diam/eta
         Cd1 = 1.0_ip+0.1118_ip*(Re*K1*K2)**0.6567_ip
@@ -1277,15 +1279,15 @@
       function vset_Stokes_slip(rho_m,eta,diam,Kna)
       ! Fall velocity as calculated from Stokes flow plus Cunningham slip
 
-      real(kind=ip) :: vset_Stokes_slip  ! Settling velocity in m/s
-      real(kind=ip) :: rho_m             ! density of the particle in km/m3
-      real(kind=ip) :: eta               ! dynamic viscosity of air in (kg/(m s))
-      real(kind=ip) :: diam              ! diameter of the particle in m
-      real(kind=ip) :: Kna               ! adjusted Knudsen number
+      real(kind=ip)             :: vset_Stokes_slip  ! Settling velocity in m/s
+      real(kind=ip) ,intent(in) :: rho_m             ! density of the particle in km/m3
+      real(kind=ip) ,intent(in) :: eta               ! dynamic viscosity of air in (kg/(m s))
+      real(kind=ip) ,intent(in) :: diam              ! diameter of the particle in m
+      real(kind=ip) ,intent(in) :: Kna               ! adjusted Knudsen number
 
       real(kind=ip) :: Cslip                     ! drag coefficient
 
-      do io=1,2;if(VB(io).le.verbosity_debug2)then
+      do io=1,2;if(VB(io) <= verbosity_debug2)then
         write(outlog(io),*)"     Entered function vset_Stokes_slip"
       endif;enddo
 

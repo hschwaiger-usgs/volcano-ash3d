@@ -36,6 +36,7 @@
          Calc_AshVol_Outflow
 
       implicit none
+      !implicit none (type, external)
 
       integer, intent(in) :: itime
 
@@ -52,7 +53,7 @@
         end function HS_yyyymmddhhmm_since
       END INTERFACE
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine TimeStepTotals"
       endif;enddo
 
@@ -72,7 +73,7 @@
 
       DateTime = HS_yyyymmddhhmm_since(time+SimStartHour,BaseYear,useLeap)
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),2) itime,OutputStep_Marker,time,DateTime,&
                          SourceCumulativeVol,dep_vol,aloft_vol,&
                          outflow_vol,tot_vol,CloudArea
@@ -84,7 +85,7 @@
 
       OutputStep_Marker = ' '
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine TimeStepTotals"
       endif;enddo
 

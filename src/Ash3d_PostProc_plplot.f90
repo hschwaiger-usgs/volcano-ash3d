@@ -28,9 +28,11 @@
          Instit_IconFile
 
       use plplot
-      use iso_c_binding, only: c_ptr, c_loc, c_f_pointer
+
+      use, intrinsic :: iso_c_binding, only: c_ptr, c_loc, c_f_pointer
 
       implicit none
+      !implicit none (type, external)
 
         ! Set everything to private by default
       private
@@ -119,8 +121,8 @@
       !integer :: tmp_int
       integer,dimension(:,:),allocatable :: zrgb
       character(len=40) :: title_plot
-      character(len=30) :: cstr_xlabel = 'Longitude'
-      character(len=30) :: cstr_ylabel = 'Latitude'
+      character(len=30) :: cstr_xlabel
+      character(len=30) :: cstr_ylabel
       character(len=30) :: cstr_zlabel
       character(len=30) :: cstr_volcname
       character(len=30) :: cstr_run_date
@@ -132,7 +134,7 @@
       character(len=45) :: cstr_note
       character(len=20) :: varname
       character(len= 9) :: cio
-      character(len= 4) :: outfile_ext = '.png'
+      character(len= 4),parameter :: outfile_ext = '.png'
       character(len=10) :: units
       integer           :: iostatus
       character(len=120):: iomessage
@@ -241,9 +243,13 @@
         end function HS_xmltime
       END INTERFACE
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_2Dmap_PNG_plplot"
       endif;enddo
+
+      ! Initialization
+      cstr_xlabel = 'Longitude'
+      cstr_ylabel = 'Latitude'
 
       ! Test for icon file
       inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
@@ -254,13 +260,13 @@
       allocate(name_cities(ncities))
       filename_root        = "outvar"
 
-      if(iprod.eq.5.or.iprod.eq.6)then
+      if(iprod == 5.or.iprod == 6)then
         cio='____final'
       else
-        if (WriteTimes(itime).lt.10.0_ip) then
+        if (WriteTimes(itime) < 10.0_ip) then
           write(cio,1) WriteTimes(itime)
 1         format('00',f4.2,'hrs')
-        elseif (WriteTimes(itime).lt.100.0_ip) then
+        elseif (WriteTimes(itime) < 100.0_ip) then
           write(cio,2) WriteTimes(itime)
 2         format('0',f5.2,'hrs')
         else
@@ -277,7 +283,7 @@
         zrgb(1:nConLev,1:3) = Con_Cust_RGB(1:nConLev,1:3)
       endif
 
-      if(iprod.eq.3)then       ! deposit at specified times (mm)
+      if(iprod == 3)then       ! deposit at specified times (mm)
         varname = "depothick"
         write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f7.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
@@ -290,7 +296,7 @@
           ContourLev(1:nConLev) = Con_DepThick_mm_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.4)then   ! deposit at specified times (inches)
+      elseif(iprod == 4)then   ! deposit at specified times (inches)
         varname = "depothick"
         write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f7.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
@@ -303,7 +309,7 @@
           ContourLev(1:nConLev) = Con_DepThick_in_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_DepThick_in_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.5)then       ! deposit at final time (mm)
+      elseif(iprod == 5)then       ! deposit at final time (mm)
         varname = "depothickFin"
         write(filename_png,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
@@ -316,7 +322,7 @@
           ContourLev(1:nConLev) = Con_DepThick_mm_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.6)then   ! deposit at final time (inches)
+      elseif(iprod == 6)then   ! deposit at final time (inches)
         varname = "depothickFin"
         write(filename_png,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
@@ -329,7 +335,7 @@
           ContourLev(1:nConLev) = Con_DepThick_in_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_DepThick_in_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.7)then   ! ashfall arrival time (hours)
+      elseif(iprod == 7)then   ! ashfall arrival time (hours)
         varname = "depotime"
         write(filename_png,'(a22)')'DepositArrivalTime.png'
         write(title_plot,'(a20)')'Ashfall arrival time'
@@ -342,13 +348,13 @@
           ContourLev(1:nConLev) = Con_DepTime_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_DepTime_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.8)then   ! ashfall arrival at airports/POI (mm)
-        do io=1,2;if(VB(io).le.verbosity_error)then
+      elseif(iprod == 8)then   ! ashfall arrival at airports/POI (mm)
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: No map PNG output option for airport arrival time data."
           write(errlog(io),*)"       Should not be in write_2Dmap_PNG_plplot"
         endif;enddo
         stop 1
-      elseif(iprod.eq.9)then   ! ash-cloud concentration
+      elseif(iprod == 9)then   ! ash-cloud concentration
         varname = "ashcon_max"
         write(filename_png,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
         write(title_plot,'(a26,f7.2,a6)')'Ash-cloud concentration t=',WriteTimes(itime),' hours'
@@ -361,7 +367,7 @@
           ContourLev(1:nConLev) = Con_CloudCon_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_CloudCon_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.10)then   ! ash-cloud height
+      elseif(iprod == 10)then   ! ash-cloud height
         varname = "cloud_height"
         write(filename_png,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
         write(title_plot,'(a19,f7.2,a6)')'Ash-cloud height t=',WriteTimes(itime),' hours'
@@ -374,7 +380,7 @@
           ContourLev(1:nConLev) = Con_CloudTop_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_CloudTop_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.11)then   ! ash-cloud bottom
+      elseif(iprod == 11)then   ! ash-cloud bottom
         varname = "cloud_bottom"
         write(filename_png,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
         write(title_plot,'(a19,f7.2,a6)')'Ash-cloud bottom t=',WriteTimes(itime),' hours'
@@ -387,7 +393,7 @@
           ContourLev(1:nConLev) = Con_CloudBot_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_CloudBot_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.12)then   ! ash-cloud load
+      elseif(iprod == 12)then   ! ash-cloud load
         varname = "cloud_load"
         write(filename_png,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
         write(title_plot,'(a17,f7.2,a6)')'Ash-cloud load t=',WriteTimes(itime),' hours'
@@ -400,7 +406,7 @@
           ContourLev(1:nConLev) = Con_CloudLoad_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_CloudLoad_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.13)then  ! radar reflectivity
+      elseif(iprod == 13)then  ! radar reflectivity
         varname = "radar_reflectivity"
         write(filename_png,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
         write(title_plot,'(a24,f7.2,a6)')'Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
@@ -413,7 +419,7 @@
           ContourLev(1:nConLev) = Con_CloudRef_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_CloudRef_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.14)then   ! ashcloud arrival time (hours)
+      elseif(iprod == 14)then   ! ashcloud arrival time (hours)
         varname = "ash_arrival_time"
         write(filename_png,'(a20)')'CloudArrivalTime.png'
         write(title_plot,'(a22)')'Ash-cloud arrival time'
@@ -426,7 +432,7 @@
           ContourLev(1:nConLev) = Con_CloudTime_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_CloudTime_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.15)then   ! topography
+      elseif(iprod == 15)then   ! topography
         varname = "topography"
         write(filename_png,'(a14)')'Topography.png'
         write(title_plot,'(a10)')'Topography'
@@ -436,17 +442,17 @@
           nConLev = 8
           allocate(zrgb(nConLev,3))
           allocate(ContourLev(nConLev))
-          ContourLev = (/1.0_ip, 2.0_ip, 3.0_ip, 4.0_ip, &
-                  5.0_ip, 6.0_ip, 7.0_ip, 8.0_ip/)
+          ContourLev = [1.0_ip, 2.0_ip, 3.0_ip, 4.0_ip, &
+                        5.0_ip, 6.0_ip, 7.0_ip, 8.0_ip]
         endif
-      elseif(iprod.eq.16)then   ! profile plots
-        do io=1,2;if(VB(io).le.verbosity_error)then
+      elseif(iprod == 16)then   ! profile plots
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: No map PNG output option for vertical profile data."
           write(errlog(io),*)"       Should not be in write_2Dmap_PNG_plplot"
         endif;enddo
         stop 1
       else
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: unexpected variable"
           write(errlog(io),*)"         iprod = ",iprod
           write(errlog(io),*)"       Cannot map this variable."
@@ -456,7 +462,7 @@
       ! Now have string vars (varname,cstr_zlabel, etc.) and contour info (nConLev,zrgb,ContourLev)
 
       if(writeContours)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"Running plplot to calculate contours lines"
           write(errlog(io),*)"Not sure yet how to save contour data with plplot"
           write(errlog(io),*)"If you want shapefiles, recompile without plplot or"
@@ -465,7 +471,7 @@
         endif;enddo
         stop 1
       else
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"Running plplot to generate contour plot"
         endif;enddo
       endif
@@ -477,7 +483,7 @@
         xmax = lonUR
         ymin = latLL
         ymax = latUR
-        if(abs(dn-de).lt.1.0e-4_ip)then
+        if(abs(dn-de) < 1.0e-4_ip)then
           IsRegGrid = .true.
         else
           IsRegGrid = .false.
@@ -487,12 +493,12 @@
         xmax = xUR
         ymin = yLL
         ymax = yUR
-        if(abs(dx-dy).lt.1.0e-4_ip)then
+        if(abs(dx-dy) < 1.0e-4_ip)then
           IsRegGrid = .true.
         else
           IsRegGrid = .false.
         endif
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: Currenntly, plotting with plplot only enabled for lon/lat grids."
           write(errlog(io),*)"       Please use GMT to plot projected maps."
           write(errlog(io),*)"       ./ASH3DPLOT=4 ./Ash3d_PostProc ...."
@@ -522,7 +528,7 @@
       write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
       read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
       write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
-      if(neruptions.gt.1)then
+      if(neruptions > 1)then
         write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'
       endif
 
@@ -542,8 +548,8 @@
       vmin=real(minval(var(:,:)),kind=plflt)
       vmax=real(maxval(var(:,:)),kind=plflt)
 
-      tr = (/ (xmaxPL-xminPL)/real(nx-1,kind=plflt), 0.0_plflt, xminPL, &
-              0.0_plflt, (ymaxPL-yminPL)/real(ny-1,kind=plflt), yminPL /)
+      tr = [ (xmaxPL-xminPL)/real(nx-1,kind=plflt), 0.0_plflt, xminPL, &
+              0.0_plflt, (ymaxPL-yminPL)/real(ny-1,kind=plflt), yminPL ]
 
       call get_version_plplot
 
@@ -552,7 +558,7 @@
       call plsfnam (filename_png)  ! Set output filename
 
       ! set image size via command-line options tool plsetopt
-      if(lib_ver_minor.lt.12)then
+      if(lib_ver_minor < 12)then
         ! prior to v5.12, this was a subroutine call
 !        call plsetopt("geometry","854x603, 854x603")
       else
@@ -564,7 +570,7 @@
       ! sets cmap0 palette via pal file for discrete elements
       call plspal0('cmap0_black_on_white.pal')
       ! sets cmap1 palette via pal file for continuous elements
-      if(lib_ver_minor.lt.12)then
+      if(lib_ver_minor < 12)then
         ! prior to v5.12, the second argument was an integer
 !        call plspal1('cmap1_blue_yellow.pal',1)
       else
@@ -591,7 +597,7 @@
       ! Add cities
       cityname_offset_dx = 0.1_ip
       do icty=1,ncities
-        if(lon_cities(icty).lt.xmin) lon_cities(icty)=lon_cities(icty)+360.0_ip
+        if(lon_cities(icty) < xmin) lon_cities(icty)=lon_cities(icty)+360.0_ip
           ! plssym: Set symbol size : default, scale
         call plssym( 0.0_plflt, 2.0_plflt )
           ! plpoin: Plot a glyph at the specified points
@@ -612,7 +618,7 @@
 
       call plssym( 0.0_plflt, 1.0_plflt )
         ! plpoin: Plot a glyph at the specified points
-      if(lon_volcano.lt.xmin)then
+      if(lon_volcano < xmin)then
         lon_cities(1)=lon_volcano+360.0_ip
       else
         lon_cities(1)=lon_volcano
@@ -632,7 +638,7 @@
         call plcont(var,1,nx,1,ny,clevel, tr)
       enddo
       !call pllab(cstr_xlabel,cstr_ylabel,title_plot)
-      if(lib_ver_minor.lt.12)then
+      if(lib_ver_minor < 12)then
         ! prior to v5.12, the second argument was an integer
 !        call plstransform( 0 )
       else
@@ -677,7 +683,7 @@
         box_scales(ilev)     = 0.8_plflt
         box_line_widths(ilev)= 1
         call plcol0(1)
-        if(abs(ContourLev(ilev)).lt.0.01_ip.or.abs(ContourLev(ilev)).ge.1000.0_ip)then
+        if(abs(ContourLev(ilev)) < 0.01_ip.or.abs(ContourLev(ilev)) >= 1000.0_ip)then
           write( text(ilev), '(e7.2)' ) real(ContourLev(ilev),kind=4)
         else
           write( text(ilev), '(f7.2)' ) real(ContourLev(ilev),kind=4)
@@ -758,7 +764,7 @@
       call plptex(0.02_plflt, 1.0_plflt-1.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, 0.0_plflt, cstr_volcname )
       call plptex(0.02_plflt, 1.0_plflt-2.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, 0.0_plflt, cstr_run_date )
       call plptex(0.02_plflt, 1.0_plflt-3.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, 0.0_plflt, cstr_windfile )
-      if(neruptions.gt.1)then
+      if(neruptions > 1)then
         call plptex(0.02_plflt, 1.0_plflt-4.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, 0.0_plflt, cstr_note )
       endif
 
@@ -802,7 +808,7 @@
       if(allocated(line_widths))     deallocate(line_widths)
       if(allocated(symbol_scales))   deallocate(symbol_scales)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine write_2Dmap_PNG_plplot"
       endif;enddo
 
@@ -848,9 +854,9 @@
 
       logical           :: HaveIconFile
       character(len=76) :: title_plot
-      character(len=30) :: cstr_xlabel = 'Time (hours after eruption)'
-      character(len=30) :: cstr_ylabel = 'Height (km)'
-      character(len=30) :: cstr_zlabel = 'Ash conc. mg/m3'
+      character(len=30) :: cstr_xlabel
+      character(len=30) :: cstr_ylabel
+      character(len=30) :: cstr_zlabel
       character(len=30) :: cstr_volcname
       character(len=30) :: cstr_run_date
       character(len=30) :: cstr_windfile
@@ -907,7 +913,7 @@
 
       real(kind=plflt)   :: tr(6)
       real(kind=plflt)   :: clevel(1)
-      !character(len=1)  :: defined     ! if lib_ver_minor.lt.12
+      !character(len=1)  :: defined     ! if lib_ver_minor < 12
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
@@ -920,9 +926,14 @@
         end function HS_xmltime
       END INTERFACE
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_2Dprof_PNG_plplot"
       endif;enddo
+
+      ! Initialization
+      cstr_xlabel = 'Time (hours after eruption)'
+      cstr_ylabel = 'Height (km)'
+      cstr_zlabel = 'Ash conc. mg/m3'
 
       ! Test for icon file
       inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
@@ -936,7 +947,7 @@
       write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
       read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
       write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
-      if(neruptions.gt.1)then
+      if(neruptions > 1)then
         write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'
       endif
 
@@ -959,15 +970,15 @@
       tmin=real(0,kind=plflt)
       tmax=real(ceiling(time_native(ntmax)),kind=plflt)
       tlab1    = 0.0_ip
-      if(tmax.gt.240.0_ip)then
+      if(tmax > 240.0_ip)then
         tlabstep = 48.0_ip
-      elseif(tmax.gt.120.0_ip)then
+      elseif(tmax > 120.0_ip)then
         tlabstep = 24.0_ip
-      elseif(tmax.gt.30.0_ip)then
+      elseif(tmax > 30.0_ip)then
         tlabstep = 10.0_ip
-      elseif(tmax.gt.15.0_ip)then
+      elseif(tmax > 15.0_ip)then
         tlabstep = 5.0_ip
-      elseif(tmax.gt.6.0_ip)then
+      elseif(tmax > 6.0_ip)then
         tlabstep = 2.0_ip
       else
         tlabstep = 1.0_ip
@@ -976,11 +987,11 @@
       zmin=real(0,kind=plflt)
       zmax=real(z_cc_pd(nzmax),kind=plflt)
       zlab1    = 0.0_ip
-      if(zmax.gt.30.0_ip)then
+      if(zmax > 30.0_ip)then
         zlabstep = 10.0_ip
-      elseif(zmax.gt.15.0_ip)then
+      elseif(zmax > 15.0_ip)then
         zlabstep = 5.0_ip
-      elseif(zmax.gt.6.0_ip)then
+      elseif(zmax > 6.0_ip)then
         zlabstep = 2.0_ip
       else
         zlabstep = 1.0_ip
@@ -990,31 +1001,31 @@
       cmin=real(0,kind=plflt)
       cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=plflt)    ! Get the max value for this profile
       cmin=real(min(cmin,cloudcon_thresh_mgm3),kind=plflt)  ! Do not let cmax drop below the threshold
-      if    (cmax.gt.4.0e4_ip)then
+      if    (cmax > 4.0e4_ip)then
           clabstep = 5.0e3_ip
-      elseif(cmax.gt.1.0e4_ip)then
+      elseif(cmax > 1.0e4_ip)then
           clabstep = 2.0e3_ip
-      elseif(cmax.gt.4.0e3_ip)then
+      elseif(cmax > 4.0e3_ip)then
           clabstep = 5.0e2_ip
-      elseif(cmax.gt.1.0e3_ip)then
+      elseif(cmax > 1.0e3_ip)then
           clabstep = 2.0e2_ip
-      elseif(cmax.gt.4.0e2_ip)then
+      elseif(cmax > 4.0e2_ip)then
           clabstep = 5.0e1_ip
-      elseif(cmax.gt.1.0e2_ip)then
+      elseif(cmax > 1.0e2_ip)then
           clabstep = 2.0e1_ip
-      elseif(cmax.gt.4.0e1_ip)then
+      elseif(cmax > 4.0e1_ip)then
           clabstep = 5.0e0_ip
-      elseif(cmax.gt.1.0e1_ip)then
+      elseif(cmax > 1.0e1_ip)then
           clabstep = 2.0e0_ip
-      elseif(cmax.gt.1.0e0_ip)then
+      elseif(cmax > 1.0e0_ip)then
           clabstep = 5.0e-1_ip
       else
           clabstep = 1.0e-1_ip
       endif
       clab1    = 0.0_ip
 
-      tr = (/ tmax/real(ntmax-1,kind=plflt), 0.0_plflt, 0.0_plflt, &
-              0.0_plflt, zmax/real(nzmax-1,kind=plflt), 0.0_plflt /)
+      tr = [  tmax/real(ntmax-1,kind=plflt), 0.0_plflt, 0.0_plflt, &
+              0.0_plflt, zmax/real(nzmax-1,kind=plflt), 0.0_plflt ]
 
       ! Prep data: plplot stores a 2d array internally
       allocate(t(ntmax))
@@ -1051,9 +1062,9 @@
       enddo
 
       ! Here we hard-wire the color levels to the same as the kml plot
-      !shedge(:) = (/ 0.0_plflt,  0.1_plflt,   0.3_plflt,   1.0_plflt, 2.0_plflt, &
+      !shedge(:) = [ 0.0_plflt,  0.1_plflt,   0.3_plflt,   1.0_plflt, 2.0_plflt, &
       !              10.0_plflt, 30.0_plflt, 100.0_plflt, 300.0_plflt, &
-      !              1000.0_plflt, 3000.0_plflt, 10000.0_plflt /)
+      !              1000.0_plflt, 3000.0_plflt, 10000.0_plflt ]
       fill_width = 2
       cont_color = 0
       cont_width = 0
@@ -1070,7 +1081,7 @@
       call plsfnam ( filename_png )  ! Set output filename
 
       ! set image size and background color via command-line options tool plsetopt
-      if(lib_ver_minor.lt.12)then
+      if(lib_ver_minor < 12)then
         ! prior to v5.12, this was a subroutine call
         !call plsetopt("geometry","854x603, 854x603")
         !call plsetopt("bg","FFFFFF")                  ! Set background color to white
@@ -1083,7 +1094,7 @@
       ! sets cmap0 palette via pal file for discrete elements
       call plspal0('cmap0_black_on_white.pal')
       ! sets cmap1 palette via pal file for continuous elements
-      if(lib_ver_minor.lt.12)then
+      if(lib_ver_minor < 12)then
         ! prior to v5.12, the second argument was an integer
         !call plspal1('cmap1_blue_yellow.pal',1)
       else
@@ -1106,7 +1117,7 @@
       call plpsty(0)
 
       ! Now plot the data
-      if(lib_ver_minor.lt.12)then
+      if(lib_ver_minor < 12)then
         ! prior to v5.12, plshades assumed coordinate trans. would deform
         ! rectangles
 !        call plshades(conc(:ntmax,:nzmax), defined, &
@@ -1171,7 +1182,7 @@
       call plptex(0.02_plflt, 1.0_plflt-1.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, 0.0_plflt, cstr_volcname )
       call plptex(0.02_plflt, 1.0_plflt-2.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, 0.0_plflt, cstr_run_date )
       call plptex(0.02_plflt, 1.0_plflt-3.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, 0.0_plflt, cstr_windfile )
-      if(neruptions.gt.1)then
+      if(neruptions > 1)then
         call plptex(0.02_plflt, 1.0_plflt-4.0_plflt*dy_newline, 1.0_plflt, 0.0_plflt, 0.0_plflt, cstr_note )
       endif
 
@@ -1199,7 +1210,7 @@
       if(allocated(conc))   deallocate(conc)
       if(allocated(shedge)) deallocate(shedge)
 
-     do io=1,2;if(VB(io).le.verbosity_debug1)then
+     do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine write_2Dprof_PNG_plplot"
       endif;enddo
 
@@ -1244,18 +1255,26 @@
       real(kind=plflt) :: ymin
       real(kind=plflt) :: ymax
       real(kind=plflt), dimension(:), allocatable :: x, y, x0, y0
-      integer(kind=int32) :: r1 = 0
-      integer(kind=int32) :: g1 = 0
-      integer(kind=int32) :: b1 = 0
-      integer(kind=int32) :: r2 = 136
-      integer(kind=int32) :: g2 = 136
-      integer(kind=int32) :: b2 = 136
+      integer(kind=int32) :: r1
+      integer(kind=int32) :: g1
+      integer(kind=int32) :: b1
+      integer(kind=int32) :: r2
+      integer(kind=int32) :: g2
+      integer(kind=int32) :: b2
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_DepPOI_TS_PNG_plplot"
       endif;enddo
 
-      if(Airport_Thickness_TS(pt_indx,nWriteTimes).lt.0.01_ip)then
+      ! Initialization
+      r1 = 0
+      g1 = 0
+      b1 = 0
+      r2 = 136
+      g2 = 136
+      b2 = 136
+
+      if(Airport_Thickness_TS(pt_indx,nWriteTimes) < 0.01_ip)then
         return
       else
         plot_index = plot_index + 1
@@ -1264,13 +1283,13 @@
       write(filename_png,55) plot_index,".png"
  55   format('depTS_',i4.4,a4)
 
-      if(Airport_Thickness_TS(plot_index,nWriteTimes).lt.0.01)then
+      if(Airport_Thickness_TS(plot_index,nWriteTimes) < 0.01)then
         ymaxpl = 1.0
-      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.1.0)then
+      elseif(Airport_Thickness_TS(plot_index,nWriteTimes) < 1.0)then
         ymaxpl = 1.0
-      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.5.0)then
+      elseif(Airport_Thickness_TS(plot_index,nWriteTimes) < 5.0)then
         ymaxpl = 5.0
-      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.25.0)then
+      elseif(Airport_Thickness_TS(plot_index,nWriteTimes) < 25.0)then
         ymaxpl = 25.0
       else
         ymaxpl = 100.0
@@ -1301,11 +1320,11 @@
       geometry_master = '400x300'
 
       ! set image size and background color via command-line options tool plsetopt
-      if(lib_ver_minor.lt.12)then
+      if(lib_ver_minor < 12)then
         ! prior to v5.12, this was a subroutine call
         !call plsetopt("geometry","400x300, 400x300")
         !call plsetopt("bg","FFFFFF")
-      elseif(lib_ver_major.ge.5.and.lib_ver_minor.ge.12)then
+      elseif(lib_ver_major >= 5.and.lib_ver_minor >= 12)then
         ! after v5.12, this is a function call returing an error code plsetopt_rc
         plsetopt_rc = plsetopt('-geometry', geometry_master)
         plsetopt_rc = plsetopt("bg","FFFFFF")                  ! Set background color to white
@@ -1337,7 +1356,7 @@
       if(allocated(x0)) deallocate(x0)
       if(allocated(y0)) deallocate(y0)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine write_DepPOI_TS_PNG_plplot"
       endif;enddo
 
@@ -1373,7 +1392,7 @@
       integer           :: dec2str
       integer           :: tmp_int
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine get_version_plplot"
       endif;enddo
 
@@ -1381,11 +1400,11 @@
 
       dec1str = scan(linebuffer080, ".")
 
-      if(dec1str.gt.0)then
+      if(dec1str > 0)then
         read(linebuffer080(1:dec1str-1),*)tmp_int
         lib_ver_major = tmp_int
       else
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"WARNING: PLPLOT major version not detected."
           write(outlog(io),*)"         Asssuming v5.14 or greater"
         endif;enddo
@@ -1394,11 +1413,11 @@
 
       linebuffer050 = trim(adjustl(linebuffer080(dec1str+1:)))
       dec2str = scan(linebuffer050, ".")
-      if(dec2str.gt.0)then
+      if(dec2str > 0)then
         read(linebuffer050(1:dec2str-1),*)tmp_int
         lib_ver_minor = tmp_int
       else
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"WARNING: PLPLOT minor version not detected."
           write(outlog(io),*)"         Asssuming v5.14 or greater"
         endif;enddo
@@ -1408,15 +1427,15 @@
       read(linebuffer050(dec2str+1:),*)tmp_int
       lib_ver_patch = tmp_int
 
-      if(lib_ver_major.lt.5)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
+      if(lib_ver_major < 5)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"WARNING: PLPLOT major version is earlier than v5."
           write(outlog(io),*)"         These plotting routines will likely not work"
           write(outlog(io),*)"         Try recompiling toggling the comments on <v5.12 routines"
         endif;enddo
       else
-        if(lib_ver_major.lt.5)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        if(lib_ver_major < 5)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"WARNING: PLPLOT major.minor version is earlier than v5.12."
             write(outlog(io),*)"         These plotting routines will likely not work"
             write(outlog(io),*)"         Try recompiling toggling the comments on <v5.12 routines"
@@ -1424,7 +1443,7 @@
         endif
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     ExitedSubroutine get_version_plplot"
       endif;enddo
 

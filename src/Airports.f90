@@ -25,6 +25,7 @@
          Ash3dHome
 
       implicit none
+      !implicit none (type, external)
 
         ! Set everything to private by default
       private
@@ -112,7 +113,7 @@
       integer,intent(in) :: nair
       integer,intent(in) :: nWT
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Allocate_Airports"
       endif;enddo
 
@@ -144,7 +145,7 @@
       allocate(Airport_Thickness_TS(nair,nWT)) ;     Airport_Thickness_TS = 0.0_ip
       allocate(Airport_TS_plotindex(nair))     ;     Airport_TS_plotindex = 0
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Allocate_Airports"
       endif;enddo
 
@@ -170,7 +171,7 @@
 
       subroutine Deallocate_Airports
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Deallocate_Airports"
       endif;enddo
 
@@ -200,7 +201,7 @@
       if(allocated(Airport_Thickness_TS))      deallocate(Airport_Thickness_TS)
       if(allocated(Airport_TS_plotindex))      deallocate(Airport_TS_plotindex)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Deallocate_Airports"
       endif;enddo
 
@@ -252,12 +253,12 @@
       real(kind=ip)      :: latitude, longitude
       integer            :: n_airports_total    ! number of airports in external file
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine ReadAirports"
       endif;enddo
 
       ! Write out what we are about to do
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)" "
         write(outlog(io),*)" Now populating Airport/POI lists"
         if(.not.ReadExtAirportFile.or.AppendExtAirportFile)then
@@ -331,8 +332,8 @@
       elseif (AppendExtAirportFile) then
         ! This is the case where we read a user-supplied list and append to the global list
         n_airports_total = NAIRPORTS_EWERT + n_ext_airports
-        if(n_airports_total.gt.MAXAIRPORTS)then
-          do io=1,2;if(VB(io).le.verbosity_error)then
+        if(n_airports_total > MAXAIRPORTS)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)"ERROR: Too many airports are requested."
             write(errlog(io),*)"       Increase MAXAIRPORTS and recompile"
             write(errlog(io),*)"       Current maximum set to MAXAIRPORTS = ",MAXAIRPORTS
@@ -348,10 +349,10 @@
           AirportFullCode(i) = ExtAirportCode(i-NAIRPORTS_EWERT)
           AirportFullName(i) = ExtAirportName(i-NAIRPORTS_EWERT)
           ! make sure longitude is between 0
-          if (AirportFullLon(i).lt.0.0_ip) &
+          if (AirportFullLon(i) < 0.0_ip) &
             AirportFullLon(i) = AirportFullLon(i)+360.0_ip
         enddo
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*) 'Appending airports below to the internal list.'
           write(outlog(io),*) 'Airport name       lon      lat'
           do i=NAIRPORTS_EWERT+1,n_airports_total
@@ -380,24 +381,24 @@
       nairports = 0
       do i = 1, n_airports_total
         ! make sure longitude is between 0 and 360
-        if (AirportFullLon(i).lt.0.0_ip) &
+        if (AirportFullLon(i) < 0.0_ip) &
           AirportFullLon(i) = AirportFullLon(i)+360.0_ip
         latitude  = AirportFullLat(i)
         longitude = AirportFullLon(i)
         xnow      = AirportFullX(i)
         ynow      = AirportFullY(i)
         if (IsLatLon) then
-          if ((longitude.ge.lonLL) .and. &
-              (longitude.le.lonUR) .and. &
-              (latitude.ge.latLL)  .and. &
-              (latitude.le.latUR)) then
+          if ((longitude >= lonLL) .and. &
+              (longitude <= lonUR) .and. &
+              (latitude >= latLL)  .and. &
+              (latitude <= latUR)) then
             nairports = nairports+1
           endif
         else
-          if ((xnow.ge.xLL) .and. &
-              (xnow.le.xUR) .and. &
-              (ynow.ge.yLL) .and. &
-              (ynow.le.yUR)) then
+          if ((xnow >= xLL) .and. &
+              (xnow <= xUR) .and. &
+              (ynow >= yLL) .and. &
+              (ynow <= yUR)) then
             nairports = nairports+1
           endif
         endif
@@ -416,10 +417,10 @@
         xnow      = AirportFullX(i)
         ynow      = AirportFullY(i)
         if (IsLatLon) then
-          if ((longitude.ge.lonLL) .and. &
-              (longitude.le.lonUR) .and. &
-              (latitude.ge.latLL)  .and. &
-              (latitude.le.latUR)) then
+          if ((longitude >= lonLL) .and. &
+              (longitude <= lonUR) .and. &
+              (latitude >= latLL)  .and. &
+              (latitude <= latUR)) then
             ind = ind + 1
             Airport_Code(ind) = CodeNow
             Airport_Name(ind) = NameNow
@@ -432,23 +433,23 @@
             Airport_j(ind) = int((Airport_Latitude(ind)-latLL)/dn) +1
             ! find inext(i), jnext(i) for bilinear interpolation
             if ((Airport_Longitude(ind)-&
-                 (lonLL+real(Airport_i(ind)-1,kind=ip)*de)).lt.(de/2.0_ip)) then
+                 (lonLL+real(Airport_i(ind)-1,kind=ip)*de)) < (de/2.0_ip)) then
               inext(ind)=Airport_i(ind)
             else
               inext(ind)=Airport_i(ind)+1
             endif
             if ((Airport_Latitude(ind)-&
-                 (latLL+real(Airport_j(ind)-1,kind=ip)*dn)).lt.(dn/2.0_ip)) then
+                 (latLL+real(Airport_j(ind)-1,kind=ip)*dn)) < (dn/2.0_ip)) then
               jnext(ind)=Airport_j(ind)
             else
               jnext(ind)=Airport_j(ind)+1
             endif
           endif
         else
-          if ((xnow.ge.xLL) .and. &
-              (xnow.le.xUR) .and. &
-              (ynow.ge.yLL) .and. &
-              (ynow.le.yUR)) then
+          if ((xnow >= xLL) .and. &
+              (xnow <= xUR) .and. &
+              (ynow >= yLL) .and. &
+              (ynow <= yUR)) then
             ind = ind + 1
             Airport_Name(ind) = NameNow
             Airport_x(ind) = xnow
@@ -458,12 +459,12 @@
             Airport_i(ind) = int((Airport_x(ind)-xLL)/dx) +1
             Airport_j(ind) = int((Airport_y(ind)-yLL)/dy) +1
             ! find inext(i), jnext(i) for bilinear interpolation
-            if ((Airport_x(ind)-(xLL+real(Airport_i(ind)-1,kind=ip)*dx)).lt.(dx/2.0_ip)) then
+            if ((Airport_x(ind)-(xLL+real(Airport_i(ind)-1,kind=ip)*dx)) < (dx/2.0_ip)) then
               inext(ind)=Airport_i(ind)
             else
               inext(ind)=Airport_i(ind)+1
             endif
-            if ((Airport_y(ind)-(yLL+real(Airport_j(ind)-1,kind=ip)*dy)).lt.(dy/2.0_ip)) then
+            if ((Airport_y(ind)-(yLL+real(Airport_j(ind)-1,kind=ip)*dy)) < (dy/2.0_ip)) then
               jnext(ind)=Airport_j(ind)
             else
               jnext(ind)=Airport_j(ind)+1
@@ -473,7 +474,7 @@
       enddo
 
       ! write out airport/POI names to log file
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),3) nairports
       endif;enddo
 
@@ -484,7 +485,7 @@
       if(allocated(AirportFullCode)) deallocate(AirportFullCode)
       if(allocated(AirportFullName)) deallocate(AirportFullName)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine ReadAirports"
       endif;enddo
 
@@ -509,52 +510,52 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      function bilinear_thickness(i,OutVar)
+      function bilinear_thickness(idx,OutVar)
 
       use mesh,          only : &
          IsLatLon,nxmax,nymax,dx,dy,de,dn,yLL,xLL,LatLL,LonLL
 
-      integer       :: i
-      real(kind=ip) :: OutVar(nxmax,nymax)
+      integer      ,intent(in) :: idx
+      real(kind=ip),intent(in) :: OutVar(nxmax,nymax)
 
       real(kind=ip) :: bilinear_thickness
       real(kind=ip) :: xnow, ynow, AREA, A11, A12, A21, A22, x1, x2, y1, y2
       real(kind=ip) :: z11, z12, z21, z22, znow
 
-      do io=1,2;if(VB(io).le.verbosity_debug2)then
+      do io=1,2;if(VB(io) <= verbosity_debug2)then
         write(outlog(io),*)"     Entered Function bilinear_thickness"
       endif;enddo
 
       if (IsLatLon) then
-        xnow = Airport_Longitude(i)
-        ynow = Airport_Latitude(i)
-        x1   = lonLL+real(inext(i)-1,kind=ip)*de - 0.5_ip*de
+        xnow = Airport_Longitude(idx)
+        ynow = Airport_Latitude(idx)
+        x1   = lonLL+real(inext(idx)-1,kind=ip)*de - 0.5_ip*de
         x2   = x1+de
-        y1   = latLL+real(jnext(i)-1,kind=ip)*dn - 0.5_ip*dn
+        y1   = latLL+real(jnext(idx)-1,kind=ip)*dn - 0.5_ip*dn
         y2   = y1+dn
       else
-        xnow = Airport_x(i)
-        ynow = Airport_y(i)
-        x1   = xLL+real(inext(i)-1,kind=ip)*dx - 0.5_ip*dx
+        xnow = Airport_x(idx)
+        ynow = Airport_y(idx)
+        x1   = xLL+real(inext(idx)-1,kind=ip)*dx - 0.5_ip*dx
         x2   = x1+dx
-        y1   = yLL+real(jnext(i)-1,kind=ip)*dy - 0.5_ip*dy
+        y1   = yLL+real(jnext(idx)-1,kind=ip)*dy - 0.5_ip*dy
         y2   = y1+dy
       endif
 
       ! First, see if the airport is on the corner or edge of the model domain
-      if (((inext(i).eq.1).or.(inext(i).eq.(nxmax+1))).and. &
-          ((jnext(i).eq.1).or.(jnext(i).eq.(nymax+1)))) then
+      if (((inext(idx) == 1).or.(inext(idx) == (nxmax+1))).and. &
+          ((jnext(idx) == 1).or.(jnext(idx) == (nymax+1)))) then
         ! We're at a corner.  Don't interpolate
-        znow = OutVar(Airport_i(i),Airport_j(i))
-      elseif ((inext(i).eq.1).or.(inext(i).eq.nxmax+1)) then
+        znow = OutVar(Airport_i(idx),Airport_j(idx))
+      elseif ((inext(idx) == 1).or.(inext(idx) == nxmax+1)) then
         ! We're on the left or right edge.  Do a linear interpolation in y
-        z11 = OutVar(Airport_i(i),jnext(i)-1)
-        z22 = OutVar(Airport_i(i),jnext(i))
+        z11 = OutVar(Airport_i(idx),jnext(idx)-1)
+        z22 = OutVar(Airport_i(idx),jnext(idx))
         znow =  z11 + (z22-z11)*(ynow-y1)/(y2-y1)        !do a linear interpolation in y
-      elseif ((jnext(i).eq.1).or.(jnext(i).eq.nymax+1)) then
+      elseif ((jnext(idx) == 1).or.(jnext(idx) == nymax+1)) then
         ! We're on the top or bottom edge.  Do a linear interpolation in x
-        z11 = OutVar(inext(i)-1,Airport_j(i))
-        z22 = OutVar(inext(i)  ,Airport_j(i))
+        z11 = OutVar(inext(idx)-1,Airport_j(idx))
+        z22 = OutVar(inext(idx)  ,Airport_j(idx))
         znow =  z11 + (z22-z11)*(xnow-x1)/(x2-x1)
       else
         ! The bilinear interpolation is the sum of the values in the four corners
@@ -568,10 +569,10 @@
         AREA = (y2  -  y1) * (x2   -   x1)    !total area of node
 
         ! Thickness values at corners of the rectangle
-        z11 = OutVar(inext(i)-1,jnext(i)-1)
-        z21 = OutVar(inext(i)  ,jnext(i)-1)
-        z12 = OutVar(inext(i)-1,jnext(i)  )
-        z22 = OutVar(inext(i)  ,jnext(i)  )
+        z11 = OutVar(inext(idx)-1,jnext(idx)-1)
+        z21 = OutVar(inext(idx)  ,jnext(idx)-1)
+        z12 = OutVar(inext(idx)-1,jnext(idx)  )
+        z22 = OutVar(inext(idx)  ,jnext(idx)  )
 
         ! Thickness at the airport
         znow = (1.0_ip/AREA) * &  !reciprocal of area of large rectangle
@@ -634,7 +635,7 @@
       real(kind=dp)      :: x_in,y_in
       real(kind=dp)      :: xout,yout
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine ReadExtAirports"
       endif;enddo
 
@@ -654,17 +655,17 @@
       ! Read the header line and set iostatus for the while loop
       read(unit=fid_airport,fmt='(a95)',iostat=iostatus,iomsg=iomessage) linebuffer095
       ! Read airport locations and assign airports in the modeled area to a temporary array
-      do while (iostatus.ge.0)
+      do while (iostatus >= 0)
         read(fid_airport,'(a95)',iostat=iostatus,iomsg=iomessage) linebuffer095
-        if(iostatus.eq.0)then
+        if(iostatus == 0)then
           isite = isite+1
         else
           exit
         endif
         read(linebuffer095,*,iostat=ioerr,iomsg=iomessage) &
                                        ExtAirportLat(isite), ExtAirportLon(isite)
-        if(ioerr.ne.0)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        if(ioerr /= 0)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)'Next line of Airport/POI file loaded without error, however'
             write(outlog(io),*)'could not read lat/lon. Check if your file has trailing'
             write(outlog(io),*)'blank lines.  Ending reading of sites at #',isite-1
@@ -677,22 +678,22 @@
         read(linebuffer095,*,iostat=ioerr,iomsg=iomessage) &
                                        ExtAirportLat(isite), ExtAirportLon(isite), &
                                        ExtAirportX(isite), ExtAirportY(isite)
-        if(ioerr.ne.0)then
+        if(ioerr /= 0)then
           ExtAirportX(isite) = -9999.0_ip
           ExtAirportY(isite) = -9999.0_ip
         endif
         ! Now read the code (char #51-53) and the name (char #56-80)
         read(linebuffer095,2,iostat=ioerr,iomsg=iomessage) ExtAirportCode(isite), ExtAirportName(isite)
 2       format(50x,a3,1x,a35)
-        if(ioerr.ne.0)then
+        if(ioerr /= 0)then
           ExtAirportCode(isite) = "   "
           ExtAirportName(isite) = "          "
         endif
 
         ! make sure latitude is between -90 and 90
-        if (ExtAirportLat(isite).lt.-90.0_ip.or.&
-            ExtAirportLat(isite).gt. 90.0_ip)then
-          do io=1,2;if(VB(io).le.verbosity_error)then
+        if (ExtAirportLat(isite) < -90.0_ip.or.&
+            ExtAirportLat(isite) >  90.0_ip)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)'Latitude of Airport/POI out of range.'
             write(errlog(io),*)'External file format is:'
             write(errlog(io),*)'# Header line'
@@ -702,7 +703,7 @@
         endif
 
         ! make sure longitude is between 0 and 360
-        if (ExtAirportLon(isite).lt.0.0_ip) &
+        if (ExtAirportLon(isite) < 0.0_ip) &
           ExtAirportLon(isite) = ExtAirportLon(isite)+360.0_ip
 
         ! convert lat/lon to the projected values.
@@ -735,7 +736,7 @@
 
       n_ext_airports = isite     !number of external airports read
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine ReadExtAirports"
       endif;enddo
 
@@ -784,7 +785,7 @@
       logical            :: IsThere
       character(len=130) :: AirportMasterFile           !Only needed if USEEXTDATA=T
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Read_GlobalAirports"
       endif;enddo
 
@@ -793,14 +794,14 @@
                           DirDelim // 'GlobalAirports_ewert.txt'
       ! Test for existance of the airport file
       inquire( file=trim(adjustl(AirportMasterFile)), exist=IsThere )
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)&
           "Trying to read installed global airport file in Ash3d home = ",adjustl(trim(Ash3dHome))
         write(outlog(io),*)"Full file name = ",trim(adjustl(AirportMasterFile))
         write(outlog(io),*)"  Exists = ",IsThere
       endif;enddo
       if(.not.IsThere)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: Could not find airport file."
           write(errlog(io),*)"       Please copy file to this location:"
           write(errlog(io),*)AirportMasterFile
@@ -813,12 +814,12 @@
       ! Read first header line
       read(fid_airport,'(a120)',iostat=iostatus,iomsg=iomessage) linebuffer120
       linebuffer050 = "Reading first line of Airport/POI file."
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer120(1:80),iomessage)
+      if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer120(1:80),iomessage)
       ! Read airport locations and assign airports in the modeled area to a temporary array
       isite = 0
-      do while (iostatus.ge.0)
+      do while (iostatus >= 0)
         read(fid_airport,'(a120)',iostat=iostatus,iomsg=iomessage) linebuffer120
-        if(iostatus.eq.0)then
+        if(iostatus == 0)then
           isite = isite+1
         else
           exit
@@ -826,20 +827,20 @@
         read(linebuffer120,*,iostat=ioerr,iomsg=iomessage) inlat, inlon
         ! Here we do not actually do a hard stop if we can't read projected values
         read(linebuffer120,*,iostat=ioerr,iomsg=iomessage) inlat, inlon, inx, iny
-        if(ioerr.ne.0)then
+        if(ioerr /= 0)then
           inx = -9999.0_ip
           iny = -9999.0_ip
         endif
         ! Now read the code (char #51-53) and the name (char #55-89)
         read(linebuffer120,2,iostat=ioerr,iomsg=iomessage) inCode,inName
 2       format(50x,a3,1x,a35)
-        if(ioerr.ne.0)then
+        if(ioerr /= 0)then
           inCode = "   "
           inName = "          "
         endif
 
-        if(isite.gt.MAXAIRPORTS)then
-          do io=1,2;if(VB(io).le.verbosity_error)then
+        if(isite > MAXAIRPORTS)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)"ERROR: ","Airport file contains too many entries"
             write(errlog(io),*)"       Currently limited to ",MAXAIRPORTS
             write(errlog(io),*)"       Increase MAXAIRPORTS and recompile."
@@ -858,20 +859,20 @@
       ! return the number of airports in this global list.
       num_GlobAirports = isite
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)&
           " Successfully read default global airport file: ",trim(adjustl(AirportMasterFile))
         write(outlog(io),*)" Number of airports read = ",num_GlobAirports
       endif;enddo
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Read_GlobalAirports"
       endif;enddo
 
       return
 
       ! Error traps
-2000  do io=1,2;if(VB(io).le.verbosity_error)then
+2000  do io=1,2;if(VB(io) <= verbosity_error)then
         write(errlog(io),5) AirportInFile
       endif;enddo
       stop 1
@@ -892,7 +893,7 @@
 
       integer :: i
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Read_GlobalAirports"
       endif;enddo
 
@@ -13189,7 +13190,7 @@
 
       num_GlobAirports = i
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Read_GlobalAirports"
       endif;enddo
 
@@ -13227,7 +13228,7 @@
       integer            :: isite
       real(kind=dp)      :: lat_in,lon_in,xout,yout
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Project_GlobalAirports"
       endif;enddo
 
@@ -13247,7 +13248,7 @@
         endif
       end do
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Project_GlobalAirports"
       endif;enddo
 

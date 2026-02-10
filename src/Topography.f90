@@ -118,6 +118,7 @@
       use io_units
 
       implicit none
+      !implicit none (type, external)
 
         ! Set everything to private by default
       private
@@ -238,26 +239,26 @@
       integer           :: substr_pos
       logical           :: IsThere
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine input_data_Topo"
       endif;enddo
 
       open(unit=10,file=infile,status='old',err=1900)
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"    Searching for OPTMOD=TOPO"
       endif;enddo
       nmods = 0
       read(fid_ctrlfile,'(a80)',iostat=ios)linebuffer080
-      do while(ios.eq.0)
+      do while(ios == 0)
         read(fid_ctrlfile,'(a80)',iostat=ios)linebuffer080
 
         substr_pos = index(linebuffer080,'OPTMOD')
-        if(substr_pos.eq.1)then
+        if(substr_pos == 1)then
           ! found an optional module
           !  Parse for the keyword
           read(linebuffer080,1104)mod_name
-          if(adjustl(trim(mod_name)).eq.'TOPO')then
+          if(adjustl(trim(mod_name)) == 'TOPO')then
             exit
           endif
         endif
@@ -268,7 +269,7 @@
       var_User_charlines_Topo(1) = trim(adjustl(linebuffer080))
 
       useTopo = .false.
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"    Continue reading input file for topo block"
       endif;enddo
 
@@ -279,32 +280,32 @@
       var_User_charlines_Topo(2) = trim(adjustl(linebuffer080))
 
       read(linebuffer080,'(a3)') answer
-      if (answer.eq.'yes') then
+      if (answer == 'yes') then
         useTopo = .true.
         read(linebuffer080,*,iostat=ios) answer,dum_int
-        if(ios.eq.0)then
+        if(ios == 0)then
           ZScaling_ID=dum_int
         else
           ZScaling_ID=0
         endif
         MR_ZScaling_ID = ZScaling_ID
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"    Using topography"
-          if(ZScaling_ID.eq.0)then
+          if(ZScaling_ID == 0)then
             write(outlog(io),*)"     with altitude coordinates :: s=z"
-          elseif(ZScaling_ID.eq.1)then
+          elseif(ZScaling_ID == 1)then
             write(outlog(io),*)"     with shifted-altitude coordinates :: s=z-Zsurf"
-          elseif(ZScaling_ID.eq.2)then
+          elseif(ZScaling_ID == 2)then
             write(outlog(io),*)"     with sigma-altitude coordinates :: s=Ztop*(z-Zsurf)/(Ztop-Zsurf)"
           endif
         endif;enddo
-      elseif(answer(1:2).eq.'no') then
+      elseif(answer(1:2) == 'no') then
         useTopo = .false.
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"    Not using topography"
         endif;enddo
       else
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*) 'Error reading whether to use topography.'
           write(errlog(io),*) 'Answer must be yes or no.'
           write(errlog(io),*) 'You gave:',linebuffer080
@@ -320,8 +321,8 @@
         call FileIO_CleanLine(.false.,strlen,linebuffer080)
         var_User_charlines_Topo(3) = trim(adjustl(linebuffer080))
         read(linebuffer080,*,iostat=ioerr) topoFormat,rad_smooth
-        if(topoFormat.eq.1)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        if(topoFormat == 1)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"Read topoFormat = 1 (NetCDF gridded)"
             write(outlog(io),*)"    Read smoothing radius = ",&
                                real(rad_smooth,kind=sp)
@@ -329,33 +330,33 @@
 #ifndef USENETCDF
           ! If we are here, then we expect to read the netcdf topography file.  If netcdf
           ! not linked, give an error and exit
-          do io=1,2;if(VB(io).le.verbosity_error)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)'Expecting to read a netcdf topography file, but the netcdf'
             write(errlog(io),*)'library is not linked.  Please recompile, linking to'
             write(errlog(io),*)'netcdf or use gridded binary or ASCII topography data.'
           endif;enddo
           stop 1
 #endif
-        elseif(topoFormat.eq.2)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        elseif(topoFormat == 2)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"Read topoFormat = 2 (Gridded binary)"
             write(outlog(io),*)"    Read smoothing radius = ",&
                                real(rad_smooth,kind=sp)
           endif;enddo
-        elseif(topoFormat.eq.3)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        elseif(topoFormat == 3)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"Read topoFormat = 3 (ESRI ASCII)"
             write(outlog(io),*)"    Read smoothing radius = ",&
                                real(rad_smooth,kind=sp)
           endif;enddo
-        elseif(topoFormat.eq.4)then
-          do io=1,2;if(VB(io).le.verbosity_error)then
+        elseif(topoFormat == 4)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)'Read topoFormat = 4 (Geotiff)'
             write(errlog(io),*)'  Unfortunately, this format is not yet implemented.'
           endif;enddo
           stop 1
         else
-          do io=1,2;if(VB(io).le.verbosity_error)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)'Read topoFormat = ',topoFormat
             write(errlog(io),*)'  Only NetCDF, binary, and ASCII (1,2,3) are currently implemented.'
           endif;enddo
@@ -368,13 +369,13 @@
         var_User_charlines_Topo(4) = trim(adjustl(linebuffer080))
         read(linebuffer080,*) file_topo
         file_topo = trim(adjustl(file_topo))
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"    Read file_topo = ",file_topo
         endif;enddo
 
         inquire( file=file_topo, exist=IsThere )
         if(.not.IsThere)then
-          do io=1,2;if(VB(io).le.verbosity_error)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)"ERROR: Cannot find topography file."
             write(errlog(io),*)"     ",file_topo
           endif;enddo
@@ -389,13 +390,13 @@
 2010  continue
       close(10)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine input_data_Topo"
       endif;enddo
 
       return
 
-1900  do io=1,2;if(VB(io).le.verbosity_error)then
+1900  do io=1,2;if(VB(io) <= verbosity_error)then
         write(errlog(io),*)  'Error: cannot find input file: ',infile
         write(errlog(io),*)  'Program stopped'
       endif;enddo
@@ -428,11 +429,11 @@
       integer           ,intent(in) :: nx
       integer           ,intent(in) :: ny
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Allocate_Topo"
       endif;enddo
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"--------------------------------------------------"
         write(outlog(io),*)"---------- ALLOCATE_TOPO -------------------------"
         write(outlog(io),*)"--------------------------------------------------"
@@ -467,7 +468,7 @@
       nvar_User4d_XYZGs     = nvar_User4d_XYZGs     + nvar_User4d_XYZGs_Topo
       nvar_User_charlines   = nvar_User_charlines   + nvar_User_charlines_Topo
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Allocate_Topo"
       endif;enddo
 
@@ -503,7 +504,7 @@
 
       integer :: i,indx
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Prep_output_Topo"
       endif;enddo
 
@@ -514,7 +515,7 @@
         var_User2d_static_XY_lname(indx)= temp_2ds_lname_Topo(i)
         var_User2d_static_XY_MissVal(indx)= temp_2ds_MissVal_Topo(i)
         var_User2d_static_XY_FillVal(indx)= temp_2ds_FillVal_Topo(i)
-        if(i.eq.1) &
+        if(i == 1) &
           var_User2d_static_XY(1:nxmax,1:nymax,indx) = &
            real(topo_comp(1:nxmax,1:nymax)*KM_2_M,kind=op)
       enddo
@@ -524,7 +525,7 @@
         var_User_charlines(indx) = var_User_charlines_Topo(i)
       enddo
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Prep_output_Topo"
       endif;enddo
 
@@ -546,7 +547,7 @@
 
       subroutine Deallocate_Topo
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Deallocate_Topo"
       endif;enddo
 
@@ -559,7 +560,7 @@
       if(allocated(lon_topo_fullgrid))deallocate(lon_topo_fullgrid)
       if(allocated(lat_topo_fullgrid))deallocate(lat_topo_fullgrid)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Deallocate_Topo"
       endif;enddo
 
@@ -605,7 +606,7 @@
         end subroutine get_minmax_lonlat
       END INTERFACE
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Get_Topo"
       endif;enddo
 
@@ -639,15 +640,15 @@
       endif
 
       ! ETOPO and GEBCO data are provided on -180->180 grid so map to that domain
-      if(minlon_Topo_comp.ge.180_ip)then
+      if(minlon_Topo_comp >= 180_ip)then
         minlon_Topo_comp = minlon_Topo_comp-360.0_ip
         maxlon_Topo_comp = maxlon_Topo_comp-360.0_ip
       endif
-      if(minlon_Topo_Met.ge.180_ip)then
+      if(minlon_Topo_Met >= 180_ip)then
         minlon_Topo_Met  = minlon_Topo_Met -360.0_ip
         maxlon_Topo_Met  = maxlon_Topo_Met -360.0_ip
       endif
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Minimun/maximum longitide of computational grid = ",&
                              real(minlon_Topo_comp,kind=sp),real(maxlon_Topo_comp,kind=sp)
         write(outlog(io),*)"Minimun/maximum latitide of computational grid = ",&
@@ -658,16 +659,16 @@
                              real(minlat_Topo_Met,kind=sp),real(maxlat_Topo_Met,kind=sp)
       endif;enddo
 
-      if(topoFormat.eq.1)then
+      if(topoFormat == 1)then
 #ifdef USENETCDF
         call Load_Topo_Gridded_NC
 #endif
-      elseif(topoFormat.eq.2)then
+      elseif(topoFormat == 2)then
         call Load_Topo_Gridded_bin
-      elseif(topoFormat.eq.3)then
+      elseif(topoFormat == 3)then
         call Load_Topo_Gridded_ASCII
       else
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: Topography input format not recognized."
           write(errlog(io),*)"    Available options:"
           write(errlog(io),*)"      Topo Format ID = 1 : NetCDF"
@@ -684,21 +685,21 @@
       call Calc_FDGrad_Topo
 
       ! Now that we have the topography prepared on the computational grid, set the jacobian
-      if(ZScaling_ID.eq.0)then
+      if(ZScaling_ID == 0)then
         Zsurf(-1:nxmax+2,-1:nymax+2)   = 0.0_ip
         ! No shifting or scaling so Jacobian remains 1 and dimensionless
         j_cc_pd(-1:nxmax+2,-1:nymax+2) = 1.0_ip
-      elseif(ZScaling_ID.eq.1)then
+      elseif(ZScaling_ID == 1)then
         Zsurf(-1:nxmax+2,-1:nymax+2)   = topo_comp(-1:nxmax+2,-1:nymax+2)
         ! Shifted grid: Jacobian remains 1 and dimensionless
         j_cc_pd(-1:nxmax+2,-1:nymax+2) = 1.0_ip
-      elseif(ZScaling_ID.eq.2)then
+      elseif(ZScaling_ID == 2)then
         Zsurf(-1:nxmax+2,-1:nymax+2)   = topo_comp(-1:nxmax+2,-1:nymax+2)
         ! Scaled (sigma-altitude) Jacobian = (Ztop-Zsurf)/Ztop and dimensionless
         j_cc_pd(-1:nxmax+2,-1:nymax+2) = (Ztop - Zsurf(-1:nxmax+2,-1:nymax+2))/Ztop
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Get_Topo"
       endif;enddo
 
@@ -736,9 +737,9 @@
       integer :: ncid
       integer :: var_ndims
 
-      integer :: lat_dim_id        = 0
-      integer :: lon_dim_id        = 0
-      integer :: topo_var_id       = 0
+      integer :: lat_dim_id
+      integer :: lon_dim_id
+      integer :: topo_var_id
 
       character(len=NF90_MAX_NAME)  :: invar,dimname
       integer :: dim_xtype,dimlen,i_dim
@@ -754,9 +755,9 @@
       real(kind=dp) :: topolonmin,topolonmax
       real(kind=dp) :: topolatmin,topolatmax
 
-      logical :: x_inverted     = .false.
-      logical :: y_inverted     = .false.
-      logical :: wrapgrid       = .false.
+      logical :: x_inverted
+      logical :: y_inverted
+      logical :: wrapgrid
 
       integer(kind=int16) ,dimension(:,:) ,allocatable :: temp2d_intS
       integer(kind=int32) ,dimension(:,:) ,allocatable :: temp2d_intL
@@ -767,43 +768,53 @@
 
       INTERFACE
         subroutine MR_NC_check_status(nSTAT, errcode, operation)
-          integer, intent(in) :: nSTAT
-          integer, intent(in) :: errcode
-          character(len=*), intent(in) :: operation
+          implicit none
+          !implicit none (type, external)
+          integer          ,intent(in) :: nSTAT
+          integer          ,intent(in) :: errcode
+          character(len=*) ,intent(in) :: operation
         end subroutine MR_NC_check_status
       END INTERFACE
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Load_Topo_Gridded_NC"
       endif;enddo
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      ! Initialization
+      lat_dim_id        = 0
+      lon_dim_id        = 0
+      topo_var_id       = 0
+      x_inverted     = .false.
+      y_inverted     = .false.
+      wrapgrid       = .false.
+
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Reading topography data in NetCDF format via Load_Topo_Gridded_NC"
       endif;enddo
 
       nSTAT = nf90_open(adjustl(trim(file_topo)),NF90_NOWRITE,ncid)
-      if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"nf90_open topofile")
+      if(nSTAT /= NF90_NOERR)call MR_NC_check_status(nSTAT,1,"nf90_open topofile")
 
       ! First look up the varaible containing the topographic data
       invar = 'elevation'  ! This is the default for GEBCO
       nSTAT = nf90_inq_varid(ncid,invar,topo_var_id)
-      if(nSTAT.ne.NF90_NOERR)then
+      if(nSTAT /= NF90_NOERR)then
         call MR_NC_check_status(nSTAT,0,"inq_varid elevation")
-        do io=1,nio;if(VB(io).le.verbosity_info)then
+        do io=1,nio;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)'  Cannot find variable ',trim(adjustl(invar))
           write(outlog(io),*)'  Testing for known synonyms'
         endif;enddo
         invar = 'z'
         nSTAT = nf90_inq_varid(ncid,invar,topo_var_id)  ! get the var_id for topo
-        if(nSTAT.ne.NF90_NOERR)then
+        if(nSTAT /= NF90_NOERR)then
           call MR_NC_check_status(nSTAT,0,"inq_varid z")
-          do io=1,nio;if(VB(io).le.verbosity_error)then
+          do io=1,nio;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)'  Cannot find variable elevation or z'
             write(errlog(io),*)'  Unknown topography format'
           endif;enddo
           stop 1
         else
-          do io=1,nio;if(VB(io).le.verbosity_info)then
+          do io=1,nio;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)'  Found variable z; all good.'
           endif;enddo
         endif
@@ -814,16 +825,16 @@
                     xtype = var_xtype, &
                     ndims = var_ndims)   ! get the number of dimensions
 
-      if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"inq_variable")
+      if(nSTAT /= NF90_NOERR)call MR_NC_check_status(nSTAT,1,"inq_variable")
       if(.not.allocated(var_dimIDs))allocate(var_dimIDs(var_ndims))
       nSTAT = nf90_inquire_variable(ncid, topo_var_id, invar, &
                 dimids = var_dimIDs(:var_ndims))
-      if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"inq_variable")
+      if(nSTAT /= NF90_NOERR)call MR_NC_check_status(nSTAT,1,"inq_variable")
 
-      if(var_ndims.eq.1)then
+      if(var_ndims == 1)then
         ! The deprecated GEBCO 08 data stores elevation in one long array
         ! Need to use a special reader for this
-        do io=1,nio;if(VB(io).le.verbosity_info)then
+        do io=1,nio;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"This looks like GEBCO_08 which has topography as a 1-D variable z(nx*ny)"
           write(outlog(io),*)"Calling special reader"
         endif;enddo
@@ -837,52 +848,54 @@
       nSTAT = nf90_inquire_dimension(ncid,var_dimIDs(i_dim), &
                    name =  dimname, &
                    len = dimlen)
-      if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"nf90_inquire_dimension X")
+      if(nSTAT /= NF90_NOERR)call MR_NC_check_status(nSTAT,1,"nf90_inquire_dimension X")
       nlon_topo_fullgrid = dimlen
       lon_dim_id    = var_dimIDs(i_dim)
 
       nSTAT = nf90_inq_varid(ncid,dimname,var_id)  ! get the variable associated with this dim
-      if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"inq_variable X")
+      if(nSTAT /= NF90_NOERR)call MR_NC_check_status(nSTAT,1,"inq_variable X")
       ! Check what temporary array to use
       nSTAT = nf90_inquire_variable(ncid, var_id, dimname, xtype = dim_xtype)
-      if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"nf90_inquire_variable X")
+      if(nSTAT /= NF90_NOERR)call MR_NC_check_status(nSTAT,1,"nf90_inquire_variable X")
       allocate(lon_topo_fullgrid(1:nlon_topo_fullgrid))
-      if(dim_xtype.eq.NF90_FLOAT)then
+      if(dim_xtype == NF90_FLOAT)then
         allocate(temp1d_sp(dimlen))
         nSTAT = nf90_get_var(ncid,var_id,temp1d_sp, &
-                       start = (/1/),count = (/dimlen/))
-        if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"get_var X flt")
+                       start = [1     ],            &
+                       count = [dimlen])
+        if(nSTAT /= NF90_NOERR)call MR_NC_check_status(nSTAT,1,"get_var X flt")
         ! copy to local variable
         lon_topo_fullgrid(1:nlon_topo_fullgrid) = real(temp1d_sp(1:nlon_topo_fullgrid),kind=dp)
         deallocate(temp1d_sp)
-      elseif(dim_xtype.eq.NF90_DOUBLE)then
+      elseif(dim_xtype == NF90_DOUBLE)then
         allocate(temp1d_dp(dimlen))
         nSTAT = nf90_get_var(ncid,var_id,temp1d_dp, &
-                       start = (/1/),count = (/dimlen/))
-        if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"get_var X dbl")
+                       start = [1     ],            &
+                       count = [dimlen])
+        if(nSTAT /= NF90_NOERR)call MR_NC_check_status(nSTAT,1,"get_var X dbl")
         ! copy to local variable
         lon_topo_fullgrid(1:nlon_topo_fullgrid) = temp1d_dp(1:nlon_topo_fullgrid)
         deallocate(temp1d_dp)
       else
-        do io=1,nio;if(VB(io).le.verbosity_error)then
+        do io=1,nio;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)'ERROR: Cannot recognize variable type for X'
-          if(dim_xtype.eq.NF90_BYTE)  write(errlog(io),*)"NF90_BYTE = "  ,NF90_BYTE
-          if(dim_xtype.eq.NF90_CHAR)  write(errlog(io),*)"NF90_CHAR = "  ,NF90_CHAR
-          if(dim_xtype.eq.NF90_SHORT) write(errlog(io),*)"NF90_SHORT = " ,NF90_SHORT
-          if(dim_xtype.eq.NF90_INT)   write(errlog(io),*)"NF90_INT = "   ,NF90_INT
-          if(dim_xtype.eq.NF90_FLOAT) write(errlog(io),*)"NF90_FLOAT = " ,NF90_FLOAT
-          if(dim_xtype.eq.NF90_DOUBLE)write(errlog(io),*)"NF90_DOUBLE = ",NF90_DOUBLE
-          if(dim_xtype.eq.NF90_UBYTE) write(errlog(io),*)"NF90_UBYTE = " ,NF90_UBYTE
-          if(dim_xtype.eq.NF90_USHORT)write(errlog(io),*)"NF90_USHORT = ",NF90_USHORT
-          if(dim_xtype.eq.NF90_UINT)  write(errlog(io),*)"NF90_UINT = "  ,NF90_UINT
-          if(dim_xtype.eq.NF90_INT64) write(errlog(io),*)"NF90_INT64 = " ,NF90_INT64
-          if(dim_xtype.eq.NF90_UINT64)write(errlog(io),*)"NF90_UINT64 = ",NF90_UINT64
-          if(dim_xtype.eq.NF90_STRING)write(errlog(io),*)"NF90_STRING = ",NF90_STRING
+          if(dim_xtype == NF90_BYTE)  write(errlog(io),*)"NF90_BYTE = "  ,NF90_BYTE
+          if(dim_xtype == NF90_CHAR)  write(errlog(io),*)"NF90_CHAR = "  ,NF90_CHAR
+          if(dim_xtype == NF90_SHORT) write(errlog(io),*)"NF90_SHORT = " ,NF90_SHORT
+          if(dim_xtype == NF90_INT)   write(errlog(io),*)"NF90_INT = "   ,NF90_INT
+          if(dim_xtype == NF90_FLOAT) write(errlog(io),*)"NF90_FLOAT = " ,NF90_FLOAT
+          if(dim_xtype == NF90_DOUBLE)write(errlog(io),*)"NF90_DOUBLE = ",NF90_DOUBLE
+          if(dim_xtype == NF90_UBYTE) write(errlog(io),*)"NF90_UBYTE = " ,NF90_UBYTE
+          if(dim_xtype == NF90_USHORT)write(errlog(io),*)"NF90_USHORT = ",NF90_USHORT
+          if(dim_xtype == NF90_UINT)  write(errlog(io),*)"NF90_UINT = "  ,NF90_UINT
+          if(dim_xtype == NF90_INT64) write(errlog(io),*)"NF90_INT64 = " ,NF90_INT64
+          if(dim_xtype == NF90_UINT64)write(errlog(io),*)"NF90_UINT64 = ",NF90_UINT64
+          if(dim_xtype == NF90_STRING)write(errlog(io),*)"NF90_STRING = ",NF90_STRING
         endif;enddo
         stop 1
       endif
       dlon_topo = lon_topo_fullgrid(2) - lon_topo_fullgrid(1)
-      if(dlon_topo.lt.0.0_dp)then
+      if(dlon_topo < 0.0_dp)then
         x_inverted = .true.
         dlon_topo = abs(dlon_topo)
       endif
@@ -892,52 +905,54 @@
       nSTAT = nf90_inquire_dimension(ncid,var_dimIDs(i_dim), &
                    name =  dimname, &
                    len = dimlen)
-      if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"nf90_inquire_dimension Y")
+      if(nSTAT /= NF90_NOERR)call MR_NC_check_status(nSTAT,1,"nf90_inquire_dimension Y")
       nlat_topo_fullgrid = dimlen
       lat_dim_id    = var_dimIDs(i_dim)
 
       nSTAT = nf90_inq_varid(ncid,dimname,var_id)  ! get the variable associated with this dim
-      if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"inq_variable Y")
+      if(nSTAT /= NF90_NOERR)call MR_NC_check_status(nSTAT,1,"inq_variable Y")
       ! Check what temporary array to use
       nSTAT = nf90_inquire_variable(ncid, var_id, dimname, xtype = dim_xtype)
-      if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"nf90_inquire_variable Y")
+      if(nSTAT /= NF90_NOERR)call MR_NC_check_status(nSTAT,1,"nf90_inquire_variable Y")
       allocate(lat_topo_fullgrid(1:nlat_topo_fullgrid))
-      if(dim_xtype.eq.NF90_FLOAT)then
+      if(dim_xtype == NF90_FLOAT)then
         allocate(temp1d_sp(dimlen))
         nSTAT = nf90_get_var(ncid,var_id,temp1d_sp, &
-                       start = (/1/),count = (/dimlen/))
-        if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"get_var Y flt")
+                       start = [1     ],            &
+                       count = [dimlen])
+        if(nSTAT /= NF90_NOERR)call MR_NC_check_status(nSTAT,1,"get_var Y flt")
         ! copy to local variable
         lat_topo_fullgrid(1:nlat_topo_fullgrid) = real(temp1d_sp(1:nlat_topo_fullgrid),kind=dp)
         deallocate(temp1d_sp)
-      elseif(dim_xtype.eq.NF90_DOUBLE)then
+      elseif(dim_xtype == NF90_DOUBLE)then
         allocate(temp1d_dp(dimlen))
         nSTAT = nf90_get_var(ncid,var_id,temp1d_dp, &
-                       start = (/1/),count = (/dimlen/))
-        if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"get_var Y dbl")
+                       start = [1     ],            &
+                       count = [dimlen])
+        if(nSTAT /= NF90_NOERR)call MR_NC_check_status(nSTAT,1,"get_var Y dbl")
         ! copy to local variable
         lat_topo_fullgrid(1:nlat_topo_fullgrid) = temp1d_dp(1:nlat_topo_fullgrid)
         deallocate(temp1d_dp)
       else
-        do io=1,nio;if(VB(io).le.verbosity_error)then
+        do io=1,nio;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)'ERROR: Cannot recognize variable type for Y'
-          if(dim_xtype.eq.NF90_BYTE)  write(errlog(io),*)"NF90_BYTE = "  ,NF90_BYTE
-          if(dim_xtype.eq.NF90_CHAR)  write(errlog(io),*)"NF90_CHAR = "  ,NF90_CHAR
-          if(dim_xtype.eq.NF90_SHORT) write(errlog(io),*)"NF90_SHORT = " ,NF90_SHORT
-          if(dim_xtype.eq.NF90_INT)   write(errlog(io),*)"NF90_INT = "   ,NF90_INT
-          if(dim_xtype.eq.NF90_FLOAT) write(errlog(io),*)"NF90_FLOAT = " ,NF90_FLOAT
-          if(dim_xtype.eq.NF90_DOUBLE)write(errlog(io),*)"NF90_DOUBLE = ",NF90_DOUBLE
-          if(dim_xtype.eq.NF90_UBYTE) write(errlog(io),*)"NF90_UBYTE = " ,NF90_UBYTE
-          if(dim_xtype.eq.NF90_USHORT)write(errlog(io),*)"NF90_USHORT = ",NF90_USHORT
-          if(dim_xtype.eq.NF90_UINT)  write(errlog(io),*)"NF90_UINT = "  ,NF90_UINT
-          if(dim_xtype.eq.NF90_INT64) write(errlog(io),*)"NF90_INT64 = " ,NF90_INT64
-          if(dim_xtype.eq.NF90_UINT64)write(errlog(io),*)"NF90_UINT64 = ",NF90_UINT64
-          if(dim_xtype.eq.NF90_STRING)write(errlog(io),*)"NF90_STRING = ",NF90_STRING
+          if(dim_xtype == NF90_BYTE)  write(errlog(io),*)"NF90_BYTE = "  ,NF90_BYTE
+          if(dim_xtype == NF90_CHAR)  write(errlog(io),*)"NF90_CHAR = "  ,NF90_CHAR
+          if(dim_xtype == NF90_SHORT) write(errlog(io),*)"NF90_SHORT = " ,NF90_SHORT
+          if(dim_xtype == NF90_INT)   write(errlog(io),*)"NF90_INT = "   ,NF90_INT
+          if(dim_xtype == NF90_FLOAT) write(errlog(io),*)"NF90_FLOAT = " ,NF90_FLOAT
+          if(dim_xtype == NF90_DOUBLE)write(errlog(io),*)"NF90_DOUBLE = ",NF90_DOUBLE
+          if(dim_xtype == NF90_UBYTE) write(errlog(io),*)"NF90_UBYTE = " ,NF90_UBYTE
+          if(dim_xtype == NF90_USHORT)write(errlog(io),*)"NF90_USHORT = ",NF90_USHORT
+          if(dim_xtype == NF90_UINT)  write(errlog(io),*)"NF90_UINT = "  ,NF90_UINT
+          if(dim_xtype == NF90_INT64) write(errlog(io),*)"NF90_INT64 = " ,NF90_INT64
+          if(dim_xtype == NF90_UINT64)write(errlog(io),*)"NF90_UINT64 = ",NF90_UINT64
+          if(dim_xtype == NF90_STRING)write(errlog(io),*)"NF90_STRING = ",NF90_STRING
         endif;enddo
         stop 1
       endif
       dlat_topo = lat_topo_fullgrid(2) - lat_topo_fullgrid(1)
-      if(dlat_topo.lt.0.0_dp)then
+      if(dlat_topo < 0.0_dp)then
         y_inverted = .true.
         dlat_topo = abs(dlat_topo)
       endif
@@ -947,18 +962,18 @@
       ! Now allocate space for the sub-grid of the topo file at the natural resolution
       ! of the topography data
       if(x_inverted.or.y_inverted)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"Not yet set up for inverted x or y topo dimensions."
         endif;enddo
         stop 1
       endif
 
       ! Check that the computational grid is in the correct periodic mapping to the topo grid
-      if(minlon_Topo_comp.lt.lon_topo_fullgrid(1)-0.5_dp*dlon_topo)then
+      if(minlon_Topo_comp < lon_topo_fullgrid(1)-0.5_dp*dlon_topo)then
         minlon_Topo_comp = minlon_Topo_comp + 360.0_dp
         maxlon_Topo_comp = maxlon_Topo_comp + 360.0_dp
       endif
-      if(minlon_Topo_Met.lt.lon_topo_fullgrid(1)-0.5_dp*dlon_topo)then
+      if(minlon_Topo_Met < lon_topo_fullgrid(1)-0.5_dp*dlon_topo)then
         minlon_Topo_Met  = minlon_Topo_Met  + 360.0_dp
         maxlon_Topo_Met  = maxlon_Topo_Met  + 360.0_dp
       endif
@@ -970,15 +985,15 @@
       cleft = lon_topo_fullgrid(1)-0.5_dp*dlon_topo
       do ilon=1,nlon_topo_fullgrid
         cright = lon_topo_fullgrid(ilon)+0.5_dp*dlon_topo
-        if(minlon_Topo_Met.ge.cleft.and. &
-           minlon_Topo_Met.lt.cright.and.&
+        if(minlon_Topo_Met >= cleft.and. &
+           minlon_Topo_Met < cright.and.&
            .not.Topo_UseCompGrid)then
           start_lon_idx = ilon
         endif
         ! Use extents of computational grid if topo grid does not cover Met grid
-        if(minlon_Topo_comp.ge.cleft.and. &
-           minlon_Topo_comp.lt.cright.and.&
-           start_lon_idx.lt.0)then
+        if(minlon_Topo_comp >= cleft.and. &
+           minlon_Topo_comp < cright.and.&
+           start_lon_idx < 0)then
           start_lon_idx = ilon
           Topo_UseCompGrid = .true.
         endif
@@ -986,16 +1001,16 @@
       enddo
       nlon_topo_subgrid = floor((topolonmax-topolonmin)/dlon_topo)+1
 
-      if(start_lon_idx.lt.1.or.start_lon_idx.gt.nlon_topo_fullgrid)then
+      if(start_lon_idx < 1.or.start_lon_idx > nlon_topo_fullgrid)then
         ! Couldn't find start x
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"Couldn't find start x of topo sub-grid"
           write(errlog(io),*)"start_lon_idx = ",start_lon_idx
         endif;enddo
         stop 1
       endif
 
-      if(start_lon_idx+nlon_topo_subgrid.gt.nlon_topo_fullgrid)then
+      if(start_lon_idx+nlon_topo_subgrid > nlon_topo_fullgrid)then
         wrapgrid = .true.
       endif
       ! Load data variables for just the subgrid defined above
@@ -1023,42 +1038,42 @@
       cleft = lat_topo_fullgrid(1)-0.5_dp*dlat_topo
       do ilat=1,nlat_topo_fullgrid
         cright = lat_topo_fullgrid(ilat)+0.5_dp*dlat_topo
-        if(minlat_Topo_Met.ge.cleft.and. &
-           minlat_Topo_Met.lt.cright.and.&
+        if(minlat_Topo_Met >= cleft.and. &
+           minlat_Topo_Met < cright.and.&
            .not.Topo_UseCompGrid)then
           start_lat_idx = ilat
         endif
         ! Use extents of computational grid if topo grid does not cover Met grid
-        if(minlat_Topo_comp.ge.cleft.and. &
-           minlat_Topo_comp.lt.cright.and.&
-           start_lat_idx.lt.0)then
+        if(minlat_Topo_comp >= cleft.and. &
+           minlat_Topo_comp < cright.and.&
+           start_lat_idx < 0)then
           start_lat_idx = ilat
           Topo_UseCompGrid = .true.
         endif
-        if(maxlat_Topo_Met.gt.cleft.and. &
-           maxlat_Topo_Met.le.cright.and.&
+        if(maxlat_Topo_Met > cleft.and. &
+           maxlat_Topo_Met <= cright.and.&
            .not.Topo_UseCompGrid)then
           end_lat_idx = ilat
         endif
-        if(maxlat_Topo_comp.gt.cleft.and. &
-           maxlat_Topo_comp.le.cright.and.&
-           end_lat_idx.lt.0)then
+        if(maxlat_Topo_comp > cleft.and. &
+           maxlat_Topo_comp <= cright.and.&
+           end_lat_idx < 0)then
           end_lat_idx = ilat
           Topo_UseCompGrid = .true.
         endif
         cleft = cright
       enddo
-      if(start_lat_idx.lt.1.or.start_lat_idx.gt.nlat_topo_fullgrid)then
+      if(start_lat_idx < 1.or.start_lat_idx > nlat_topo_fullgrid)then
         ! Couldn't find start y
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"Couldn't find start y of topo sub-grid."
           write(errlog(io),*)"start_lat_idx = ",start_lat_idx
         endif;enddo
         stop 1
       endif
-      if(end_lat_idx.lt.1.or.end_lat_idx.gt.nlat_topo_fullgrid)then
+      if(end_lat_idx < 1.or.end_lat_idx > nlat_topo_fullgrid)then
         ! Couldn't find end y
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"Couldn't find end y of topo sub-grid."
           write(errlog(io),*)"end_lat_idx = ",end_lat_idx
         endif;enddo
@@ -1080,80 +1095,80 @@
       nSTAT = nf90_inquire_variable(ncid, topo_var_id, invar, &
                     xtype = var_xtype, &
                     ndims = var_ndims)   ! get the number of dimensions
-      if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"nf90_inquire_variable topo")
+      if(nSTAT /= NF90_NOERR)call MR_NC_check_status(nSTAT,1,"nf90_inquire_variable topo")
 
       ! Check what temporary array to use; this shoult be short, but to keep things
       ! general, check int, float and double too.
-      if(var_xtype.eq.NF90_SHORT)then
+      if(var_xtype == NF90_SHORT)then
         do i=1,ict        !read subgrid at current time step
           allocate(temp2d_intS(iicount(i),nlat_topo_subgrid))
-          nSTAT = nf90_get_var(ncid,topo_var_id,temp2d_intS(:,:), &
-                               start = (/iistart(i),start_lat_idx/), &
-                               count = (/iicount(i),nlat_topo_subgrid/))
-          if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"get_var topo short")
+          nSTAT = nf90_get_var(ncid,topo_var_id,temp2d_intS(:,:),      &
+                               start = [iistart(i),start_lat_idx    ], &
+                               count = [iicount(i),nlat_topo_subgrid])
+          if(nSTAT /= NF90_NOERR)call MR_NC_check_status(nSTAT,1,"get_var topo short")
           ! copy to local variable
           topo_subgrid(ileft(i):iright(i),1:nlat_topo_subgrid) = &
                   real(temp2d_intS(1:iicount(i),1:nlat_topo_subgrid),kind=sp)
           deallocate(temp2d_intS)
         enddo
-      elseif(var_xtype.eq.NF90_INT)then
+      elseif(var_xtype == NF90_INT)then
         do i=1,ict        !read subgrid at current time step
           allocate(temp2d_intL(iicount(i),nlat_topo_subgrid))
           nSTAT = nf90_get_var(ncid,topo_var_id,temp2d_intL(:,:), &
-                         start = (/iistart(i),start_lat_idx/), &
-                         count = (/iicount(i),nlat_topo_subgrid/))
-          if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"get_var topo int")
+                         start = [iistart(i),start_lat_idx    ],  &
+                         count = [iicount(i),nlat_topo_subgrid])
+          if(nSTAT /= NF90_NOERR)call MR_NC_check_status(nSTAT,1,"get_var topo int")
           ! copy to local variable
           topo_subgrid(ileft(i):iright(i),1:nlat_topo_subgrid) = &
                   real(temp2d_intL(1:iicount(i),1:nlat_topo_subgrid),kind=sp)
           deallocate(temp2d_intL)
         enddo
-      elseif(var_xtype.eq.NF90_FLOAT)then
+      elseif(var_xtype == NF90_FLOAT)then
         do i=1,ict        !read subgrid at current time step
           allocate(temp2d_sp(iicount(i),nlat_topo_subgrid))
-          nSTAT = nf90_get_var(ncid,topo_var_id,temp2d_sp(:,:), &
-                         start = (/iistart(i),start_lat_idx/), &
-                         count = (/iicount(i),nlat_topo_subgrid/))
-          if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"get_var Y flt")
+          nSTAT = nf90_get_var(ncid,topo_var_id,temp2d_sp(:,:),  &
+                         start = [iistart(i),start_lat_idx    ], &
+                         count = [iicount(i),nlat_topo_subgrid])
+          if(nSTAT /= NF90_NOERR)call MR_NC_check_status(nSTAT,1,"get_var Y flt")
           ! copy to local variable
           topo_subgrid(ileft(i):iright(i),1:nlat_topo_subgrid) = &
                   real(temp2d_sp(1:iicount(i),1:nlat_topo_subgrid),kind=sp)
           deallocate(temp2d_sp)
         enddo
-      elseif(var_xtype.eq.NF90_DOUBLE)then
+      elseif(var_xtype == NF90_DOUBLE)then
         do i=1,ict        !read subgrid at current time step
           allocate(temp2d_dp(iicount(i),nlat_topo_subgrid))
-          nSTAT = nf90_get_var(ncid,topo_var_id,temp2d_dp(:,:), &
-                         start = (/iistart(i),start_lat_idx/), &
-                         count = (/iicount(i),nlat_topo_subgrid/))
-          if(nSTAT.ne.NF90_NOERR)call MR_NC_check_status(nSTAT,1,"get_var Y dbl")
+          nSTAT = nf90_get_var(ncid,topo_var_id,temp2d_dp(:,:),  &
+                         start = [iistart(i),start_lat_idx    ], &
+                         count = [iicount(i),nlat_topo_subgrid])
+          if(nSTAT /= NF90_NOERR)call MR_NC_check_status(nSTAT,1,"get_var Y dbl")
           ! copy to local variable
           topo_subgrid(ileft(i):iright(i),1:nlat_topo_subgrid) = &
                   real(temp2d_dp(1:iicount(i),1:nlat_topo_subgrid),kind=sp)
           deallocate(temp2d_dp)
         enddo
       else
-        do io=1,nio;if(VB(io).le.verbosity_error)then
+        do io=1,nio;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)'ERROR: Cannot recognize variable type for topo'
-          if(dim_xtype.eq.NF90_BYTE)  write(errlog(io),*)"NF90_BYTE = "  ,NF90_BYTE
-          if(dim_xtype.eq.NF90_CHAR)  write(errlog(io),*)"NF90_CHAR = "  ,NF90_CHAR
-          if(dim_xtype.eq.NF90_SHORT) write(errlog(io),*)"NF90_SHORT = " ,NF90_SHORT
-          if(dim_xtype.eq.NF90_INT)   write(errlog(io),*)"NF90_INT = "   ,NF90_INT
-          if(dim_xtype.eq.NF90_FLOAT) write(errlog(io),*)"NF90_FLOAT = " ,NF90_FLOAT
-          if(dim_xtype.eq.NF90_DOUBLE)write(errlog(io),*)"NF90_DOUBLE = ",NF90_DOUBLE
-          if(dim_xtype.eq.NF90_UBYTE) write(errlog(io),*)"NF90_UBYTE = " ,NF90_UBYTE
-          if(dim_xtype.eq.NF90_USHORT)write(errlog(io),*)"NF90_USHORT = ",NF90_USHORT
-          if(dim_xtype.eq.NF90_UINT)  write(errlog(io),*)"NF90_UINT = "  ,NF90_UINT
-          if(dim_xtype.eq.NF90_INT64) write(errlog(io),*)"NF90_INT64 = " ,NF90_INT64
-          if(dim_xtype.eq.NF90_UINT64)write(errlog(io),*)"NF90_UINT64 = ",NF90_UINT64
-          if(dim_xtype.eq.NF90_STRING)write(errlog(io),*)"NF90_STRING = ",NF90_STRING
+          if(dim_xtype == NF90_BYTE)  write(errlog(io),*)"NF90_BYTE = "  ,NF90_BYTE
+          if(dim_xtype == NF90_CHAR)  write(errlog(io),*)"NF90_CHAR = "  ,NF90_CHAR
+          if(dim_xtype == NF90_SHORT) write(errlog(io),*)"NF90_SHORT = " ,NF90_SHORT
+          if(dim_xtype == NF90_INT)   write(errlog(io),*)"NF90_INT = "   ,NF90_INT
+          if(dim_xtype == NF90_FLOAT) write(errlog(io),*)"NF90_FLOAT = " ,NF90_FLOAT
+          if(dim_xtype == NF90_DOUBLE)write(errlog(io),*)"NF90_DOUBLE = ",NF90_DOUBLE
+          if(dim_xtype == NF90_UBYTE) write(errlog(io),*)"NF90_UBYTE = " ,NF90_UBYTE
+          if(dim_xtype == NF90_USHORT)write(errlog(io),*)"NF90_USHORT = ",NF90_USHORT
+          if(dim_xtype == NF90_UINT)  write(errlog(io),*)"NF90_UINT = "  ,NF90_UINT
+          if(dim_xtype == NF90_INT64) write(errlog(io),*)"NF90_INT64 = " ,NF90_INT64
+          if(dim_xtype == NF90_UINT64)write(errlog(io),*)"NF90_UINT64 = ",NF90_UINT64
+          if(dim_xtype == NF90_STRING)write(errlog(io),*)"NF90_STRING = ",NF90_STRING
         endif;enddo
         stop 1
       endif
 
       nSTAT = nf90_close(ncid)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Load_Topo_Gridded_NC"
       endif;enddo
 
@@ -1188,7 +1203,7 @@
       integer :: nSTAT
       integer :: ncid
 
-      integer :: topo_var_id       = 0
+      integer :: topo_var_id
 
       integer(kind=int16), dimension(:)   ,allocatable :: dum1d_short
 
@@ -1198,24 +1213,27 @@
       real(kind=dp) :: topolonmin,topolonmax
       real(kind=dp) :: topolatmin,topolatmax
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Load_Topo_Gridded_NC_GEBCO08"
       endif;enddo
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      ! Initialization
+      topo_var_id       = 0
+
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Reading topography data in NetCDF format."
       endif;enddo
 
         ! Check to see if the domain straddles the anti-meridian
-      if (minlon_Topo_Met.lt.180.0_ip.and.maxlon_Topo_Met.gt.180.0_ip)then
+      if (minlon_Topo_Met < 180.0_ip.and.maxlon_Topo_Met > 180.0_ip)then
         lon_shift_flag = 1
       else
         lon_shift_flag = 0
       endif
 
       nSTAT = nf90_open(adjustl(trim(file_topo)),NF90_NOWRITE,ncid)
-      if(nSTAT.ne.0)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
+      if(nSTAT /= 0)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)'Could not open -',adjustl(trim(file_topo)),'-'
           write(errlog(io),*)NF90_NOWRITE,ncid
           write(errlog(io),*)'Exiting'
@@ -1245,19 +1263,19 @@
       allocate(IsWater_subgrid(nlon_topo_subgrid,nlat_topo_subgrid))
 
       ! GEBCO08 has data that start at -180, so shift 0 accordingly
-!      if(minlon_Topo_Met.lt.0.0_dp)then
+!      if(minlon_Topo_Met < 0.0_dp)then
 !        start_lon_idx = int((minlon_Topo_Met+180.0_dp)/dlon_topo)
-!      elseif(minlon_Topo_Met.ge.0.0_dp.and.minlon_Topo_Met.lt.180.0_dp)then
+!      elseif(minlon_Topo_Met >= 0.0_dp.and.minlon_Topo_Met < 180.0_dp)then
 !        start_lon_idx = int((minlon_Topo_Met+180.0_dp)/dlon_topo)
-!      elseif(minlon_Topo_Met.ge.180.0_dp)then
+!      elseif(minlon_Topo_Met >= 180.0_dp)then
 !        start_lon_idx = int((minlon_Topo_Met-180.0_dp)/dlon_topo)
 !      endif
 
-      if(topolonmin.lt.0.0_dp)then
+      if(topolonmin < 0.0_dp)then
         start_lon_idx = int((topolonmin+180.0_dp)/dlon_topo)
-      elseif(topolonmin.ge.0.0_dp.and.minlon_Topo_Met.lt.180.0_dp)then
+      elseif(topolonmin >= 0.0_dp.and.minlon_Topo_Met < 180.0_dp)then
         start_lon_idx = int((topolonmin+180.0_dp)/dlon_topo)
-      elseif(topolonmin.ge.180.0_dp)then
+      elseif(topolonmin >= 180.0_dp)then
         start_lon_idx = int((topolonmin-180.0_dp)/dlon_topo)
       endif
 
@@ -1267,7 +1285,7 @@
       enddo
       ! now shift the lon values if they start in the western hemisphere
 
-      if(lon_shift_flag.eq.0)then
+      if(lon_shift_flag == 0)then
         end_lon_idx = nlon_topo_subgrid
       else
         end_lon_idx = int((180.0_dp-minlon_Topo_Met)/dlon_topo)
@@ -1286,10 +1304,10 @@
         idx = (start_lat_idx-ilat)*nlon_topo_fullgrid +1
         ! Get the full row of topo values that encircle the globe
         nSTAT = nf90_get_var(ncid,topo_var_id,dum1d_short, &
-                           start = (/idx/),        &
-                           count = (/nlon_topo_fullgrid/))
+                           start = [idx               ],        &
+                           count = [nlon_topo_fullgrid])
         ! Now find just the subset that we need
-        if(lon_shift_flag.eq.0)then
+        if(lon_shift_flag == 0)then
           topo_subgrid(1:nlon_topo_subgrid,ilat) = &
              real(dum1d_short(start_lon_idx:start_lon_idx+nlon_topo_subgrid-1),kind=sp)
         else
@@ -1304,7 +1322,7 @@
       deallocate(dum1d_short)
       nSTAT = nf90_close(ncid)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Load_Topo_Gridded_NC_GEBCO08"
       endif;enddo
 
@@ -1361,8 +1379,8 @@
       real(kind=dp) :: topolatmin,topolatmax
       integer :: irec,i
 
-      logical :: y_inverted     = .false.
-      logical :: wrapgrid       = .false.
+      logical :: y_inverted
+      logical :: wrapgrid
 
       real(kind=dp) :: startx_topo, starty_topo
       real(kind=dp) :: dy
@@ -1381,11 +1399,15 @@
       real(kind=sp) :: nodata_sp
       logical :: key_found
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Load_Topo_Gridded_bin"
       endif;enddo
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      ! Initialization
+      y_inverted     = .false.
+      wrapgrid       = .false.
+
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Reading topography data in gridded binary format."
       endif;enddo
 
@@ -1405,7 +1427,7 @@
       !  One or more delimitors -> strip off extension and test for hdr or HDR
       !  No delimitor  -> add hdr or HDR to root and test
       substr_pos1 = index(file_topo,'.',back=.true.)
-      if(substr_pos1.gt.0)then
+      if(substr_pos1 > 0)then
         file_topo_root = file_topo(1:substr_pos1-1)
       else
         file_topo_root = file_topo
@@ -1416,14 +1438,14 @@
         file_topo_hdr = trim(adjustl(file_topo_root)) // '.HDR'
         inquire( file=file_topo_hdr, exist=IsThere2 )
         if(.not.IsThere2)then
-          do io=1,2;if(VB(io).le.verbosity_error)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)"ERROR: Cannot find topography hdr file, or HDR file"
             write(errlog(io),*)"     ",file_topo_hdr
           endif;enddo
           stop 1
         endif
       endif
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Found header file for binary topo data. ",file_topo_hdr
       endif;enddo
 
@@ -1436,24 +1458,24 @@
       key_name1 = 'BYTEORDER'
       key_found = .false.
       read(fid_hdrfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-      do while(iostatus.eq.0)
+      do while(iostatus == 0)
         substr_pos1 = index(linebuffer080,trim(adjustl(key_name1)))
-        if(substr_pos1.gt.0)then
+        if(substr_pos1 > 0)then
           key_found = .true.
           space_pos = index(linebuffer080(substr_pos1:),' ')
           ! Found key, now read it
           read(linebuffer080(space_pos+1:space_pos+50),'(a50)',iostat=ioerr,iomsg=iomessage)linebuffer050
           linebuffer050 = trim(adjustl(linebuffer050))
           read(linebuffer050,*,iostat=iostatus,iomsg=iomessage)testkey
-          if(testkey.eq.'M'.or.testkey.eq.'B')then
+          if(testkey == 'M'.or.testkey == 'B')then
             ! data is in Motorola or Big-Endian format
             IsLitEnd_topo = .false.
-          elseif(testkey.eq.'I'.or.testkey.eq.'L')then
+          elseif(testkey == 'I'.or.testkey == 'L')then
             ! data is in IBM or Little-Endian format
             IsLitEnd_topo = .true.
           else
             ! Cannot determine endian
-            do io=1,2;if(VB(io).le.verbosity_info)then
+            do io=1,2;if(VB(io) <= verbosity_info)then
               write(outlog(io),*)"Found byteorder, but cannot interpret endian.",linebuffer050
               write(outlog(io),*)"Setting endian-ness to local machine."
             endif;enddo
@@ -1471,9 +1493,9 @@
       key_name1 = 'NROWS'
       key_found = .false.
       read(fid_hdrfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-      do while(iostatus.eq.0)
+      do while(iostatus == 0)
         substr_pos1 = index(linebuffer080,trim(adjustl(key_name1)))
-        if(substr_pos1.gt.0)then
+        if(substr_pos1 > 0)then
           key_found = .true.
           space_pos = index(linebuffer080(substr_pos1:),' ')
           ! Found key, now read it
@@ -1481,7 +1503,7 @@
           linebuffer050 = trim(adjustl(linebuffer050))
           read(linebuffer050,*,iostat=iostatus,iomsg=iomessage)nlat_topo_fullgrid
           linebuffer050 = "Reading line from topo header file, NROWS"
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+          if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         endif
         read(fid_hdrfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       enddo
@@ -1494,9 +1516,9 @@
       key_name1 = 'NCOLS'
       key_found = .false.
       read(fid_hdrfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-      do while(iostatus.eq.0)
+      do while(iostatus == 0)
         substr_pos1 = index(linebuffer080,trim(adjustl(key_name1)))
-        if(substr_pos1.gt.0)then
+        if(substr_pos1 > 0)then
           key_found = .true.
           space_pos = index(linebuffer080(substr_pos1:),' ')
           ! Found key, now read it
@@ -1504,7 +1526,7 @@
           linebuffer050 = trim(adjustl(linebuffer050))
           read(linebuffer050,*,iostat=iostatus,iomsg=iomessage)nlon_topo_fullgrid
           linebuffer050 = "Reading line from topo header file, NCOLS"
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+          if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         endif
         read(fid_hdrfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       enddo
@@ -1517,9 +1539,9 @@
       key_name1 = 'NBITS'
       key_found = .false.
       read(fid_hdrfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-      do while(iostatus.eq.0)
+      do while(iostatus == 0)
         substr_pos1 = index(linebuffer080,trim(adjustl(key_name1)))
-        if(substr_pos1.gt.0)then
+        if(substr_pos1 > 0)then
           key_found = .true.
           space_pos = index(linebuffer080(substr_pos1:),' ')
           ! Found key, now read it
@@ -1527,13 +1549,13 @@
           linebuffer050 = trim(adjustl(linebuffer050))
           read(linebuffer050,*,iostat=iostatus,iomsg=iomessage)nbits
           linebuffer050 = "Reading line from topo header file, NBITS"
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-          if(nbits.eq.16)then
+          if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+          if(nbits == 16)then
             IsInt_topo = .true.
-          elseif(nbits.eq.32)then
+          elseif(nbits == 32)then
             IsInt_topo = .false.
           else
-            do io=1,2;if(VB(io).le.verbosity_error)then
+            do io=1,2;if(VB(io) <= verbosity_error)then
               write(errlog(io),*)"ERROR: Cannot find binary data type of topo file."
               write(errlog(io),*)"       Expecting NBITS = 16 for signed integer or"
               write(errlog(io),*)"                 NBITS = 32 for floating point"
@@ -1555,9 +1577,9 @@
       key_name1 = 'NODATA'
       key_found = .false.
       read(fid_hdrfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-      do while(iostatus.eq.0)
+      do while(iostatus == 0)
         substr_pos1 = index(linebuffer080,trim(adjustl(key_name1)))
-        if(substr_pos1.gt.0)then
+        if(substr_pos1 > 0)then
           key_found = .true.
           space_pos = index(linebuffer080(substr_pos1:),' ')
           ! Found key, now read it
@@ -1569,7 +1591,7 @@
             read(linebuffer050,*,iostat=iostatus,iomsg=iomessage)nodata_sp
           endif
           linebuffer050 = "Reading line from topo header file, NODATA"
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+          if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         endif
         read(fid_hdrfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       enddo
@@ -1584,11 +1606,11 @@
       key_name3 = 'DLON'
       key_found = .false.
       read(fid_hdrfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-      do while(iostatus.eq.0)
+      do while(iostatus == 0)
         substr_pos1 = index(linebuffer080,trim(adjustl(key_name1)))
         substr_pos2 = index(linebuffer080,trim(adjustl(key_name2)))
         substr_pos3 = index(linebuffer080,trim(adjustl(key_name3)))
-        if(substr_pos1.gt.0.or.substr_pos2.gt.0.or.substr_pos3.gt.0)then
+        if(substr_pos1 > 0.or.substr_pos2 > 0.or.substr_pos3 > 0)then
           key_found = .true.
           str_pos = maxval([substr_pos1,substr_pos2,substr_pos3])
           space_pos = index(linebuffer080(str_pos:),' ')
@@ -1597,7 +1619,7 @@
           linebuffer050 = trim(adjustl(linebuffer050))
           read(linebuffer050,*,iostat=iostatus,iomsg=iomessage)dlon_topo
           linebuffer050 = "Reading line from topo header file, XDIM"
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+          if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         endif
         read(fid_hdrfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       enddo
@@ -1612,11 +1634,11 @@
       key_name3 = 'DLAT'
       key_found = .false.
       read(fid_hdrfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-      do while(iostatus.eq.0)
+      do while(iostatus == 0)
         substr_pos1 = index(linebuffer080,trim(adjustl(key_name1)))
         substr_pos2 = index(linebuffer080,trim(adjustl(key_name2)))
         substr_pos3 = index(linebuffer080,trim(adjustl(key_name3)))
-        if(substr_pos1.gt.0.or.substr_pos2.gt.0.or.substr_pos3.gt.0)then
+        if(substr_pos1 > 0.or.substr_pos2 > 0.or.substr_pos3 > 0)then
           key_found = .true.
           str_pos = maxval([substr_pos1,substr_pos2,substr_pos3])
           space_pos = index(linebuffer080(str_pos:),' ')
@@ -1625,7 +1647,7 @@
           linebuffer050 = trim(adjustl(linebuffer050))
           read(linebuffer050,*,iostat=iostatus,iomsg=iomessage)dlat_topo
           linebuffer050 = "Reading line from topo header file, YDIM"
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+          if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         endif
         read(fid_hdrfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       enddo
@@ -1641,11 +1663,11 @@
       key_name3 = 'ULLAT'
       key_found = .false.
       read(fid_hdrfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-      do while(iostatus.eq.0)
+      do while(iostatus == 0)
         substr_pos1 = index(linebuffer080,trim(adjustl(key_name1)))
         substr_pos2 = index(linebuffer080,trim(adjustl(key_name2)))
         substr_pos3 = index(linebuffer080,trim(adjustl(key_name3)))
-        if(substr_pos1.gt.0.or.substr_pos2.gt.0.or.substr_pos3.gt.0)then
+        if(substr_pos1 > 0.or.substr_pos2 > 0.or.substr_pos3 > 0)then
           key_found = .true.
           str_pos = maxval([substr_pos1,substr_pos2,substr_pos3])
           ! If this key has been found, the upper-left is the start coordinate
@@ -1656,7 +1678,7 @@
           linebuffer050 = trim(adjustl(linebuffer050))
           read(linebuffer050,*,iostat=iostatus,iomsg=iomessage)starty_topo
           linebuffer050 = "Reading line from topo header file, ULYMAP"
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+          if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         endif
         read(fid_hdrfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       enddo
@@ -1673,11 +1695,11 @@
         key_name3 = 'LLLAT'
         key_found = .false.
         read(fid_hdrfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-        do while(iostatus.eq.0)
+        do while(iostatus == 0)
           substr_pos1 = index(linebuffer080,trim(adjustl(key_name1)))
           substr_pos2 = index(linebuffer080,trim(adjustl(key_name2)))
           substr_pos3 = index(linebuffer080,trim(adjustl(key_name3)))
-          if(substr_pos1.gt.0.or.substr_pos2.gt.0.or.substr_pos3.gt.0)then
+          if(substr_pos1 > 0.or.substr_pos2 > 0.or.substr_pos3 > 0)then
             key_found = .true.
             str_pos = maxval([substr_pos1,substr_pos2,substr_pos3])
 
@@ -1689,7 +1711,7 @@
             linebuffer050 = trim(adjustl(linebuffer050))
             read(linebuffer050,*,iostat=iostatus,iomsg=iomessage)starty_topo
             linebuffer050 = "Reading line from topo header file, LLYMAP"
-            if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+            if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
           endif
           read(fid_hdrfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         enddo
@@ -1711,11 +1733,11 @@
       endif
       key_found = .false.
       read(fid_hdrfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
-      do while(iostatus.eq.0)
+      do while(iostatus == 0)
         substr_pos1 = index(linebuffer080,trim(adjustl(key_name1)))
         substr_pos2 = index(linebuffer080,trim(adjustl(key_name2)))
         substr_pos3 = index(linebuffer080,trim(adjustl(key_name3)))
-        if(substr_pos1.gt.0.or.substr_pos2.gt.0.or.substr_pos3.gt.0)then
+        if(substr_pos1 > 0.or.substr_pos2 > 0.or.substr_pos3 > 0)then
           key_found = .true.
           str_pos = maxval([substr_pos1,substr_pos2,substr_pos3])
 
@@ -1727,7 +1749,7 @@
           linebuffer050 = trim(adjustl(linebuffer050))
           read(linebuffer050,*,iostat=iostatus,iomsg=iomessage)startx_topo
           linebuffer050 = "Reading line from topo header file, ULXMAP"
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+          if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         endif
         read(fid_hdrfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       enddo
@@ -1750,11 +1772,11 @@
       enddo
 
       ! Check that the computational grid is in the correct periodic mapping to the topo grid
-      if(minlon_Topo_comp.lt.lon_topo_fullgrid(1)-0.5_dp*dlon_topo)then
+      if(minlon_Topo_comp < lon_topo_fullgrid(1)-0.5_dp*dlon_topo)then
         minlon_Topo_comp = minlon_Topo_comp + 360.0_dp
         maxlon_Topo_comp = maxlon_Topo_comp + 360.0_dp
       endif
-      if(minlon_Topo_Met.lt.lon_topo_fullgrid(1)-0.5_dp*dlon_topo)then
+      if(minlon_Topo_Met < lon_topo_fullgrid(1)-0.5_dp*dlon_topo)then
         minlon_Topo_Met  = minlon_Topo_Met  + 360.0_dp
         maxlon_Topo_Met  = maxlon_Topo_Met  + 360.0_dp
       endif
@@ -1767,14 +1789,14 @@
       cleft = lon_topo_fullgrid(1)-0.5_dp*dlon_topo
       do ilon=1,nlon_topo_fullgrid
         cright = lon_topo_fullgrid(ilon)+0.5_dp*dlon_topo
-        if(minlon_Topo_Met.ge.cleft.and. &
-           minlon_Topo_Met.lt.cright.and.&
+        if(minlon_Topo_Met >= cleft.and. &
+           minlon_Topo_Met < cright.and.&
            .not.Topo_UseCompGrid)then
           start_lon_idx = ilon
         endif
-        if(minlon_Topo_comp.ge.cleft.and. &
-           minlon_Topo_comp.lt.cright.and.&
-           start_lon_idx.lt.0)then
+        if(minlon_Topo_comp >= cleft.and. &
+           minlon_Topo_comp < cright.and.&
+           start_lon_idx < 0)then
           start_lon_idx = ilon
           Topo_UseCompGrid = .true.
         endif
@@ -1788,17 +1810,17 @@
         nlat_topo_subgrid = int((maxlat_Topo_Met-minlat_Topo_Met)/dlat_topo)
       endif
 
-      if(start_lon_idx.lt.1.or.start_lon_idx.gt.nlon_topo_fullgrid)then
+      if(start_lon_idx < 1.or.start_lon_idx > nlon_topo_fullgrid)then
         ! Couldn't find start x
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"Couldn't find start x of topo sub-grid"
           write(errlog(io),*)"start_lon_idx = ",start_lon_idx
         endif;enddo
         stop 1
       endif
-      if(start_lon_idx+nlon_topo_subgrid.gt.nlon_topo_fullgrid)then
+      if(start_lon_idx+nlon_topo_subgrid > nlon_topo_fullgrid)then
         wrapgrid = .true.
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: Cannot use grid-wrapping for binary data, at the moment."
         endif;enddo
         stop 1
@@ -1812,62 +1834,62 @@
       do ilat=1,nlat_topo_fullgrid
         cright = lat_topo_fullgrid(ilat)+0.5_dp*dy
         if(y_inverted)then
-          if(minlat_Topo_Met.lt.cleft.and.&
-             minlat_Topo_Met.ge.cright.and.&
+          if(minlat_Topo_Met < cleft.and.&
+             minlat_Topo_Met >= cright.and.&
              .not.Topo_UseCompGrid)then
             start_lat_idx = ilat
           endif
-          if(minlat_Topo_comp.lt.cleft.and.&
-             minlat_Topo_comp.ge.cright.and.&
-             start_lat_idx.lt.0)then
+          if(minlat_Topo_comp < cleft.and.&
+             minlat_Topo_comp >= cright.and.&
+             start_lat_idx < 0)then
             start_lat_idx = ilat
             Topo_UseCompGrid = .true.
           endif
 
-          if(maxlat_Topo_Met.le.cleft.and.&
-             maxlat_Topo_Met.gt.cright)then
+          if(maxlat_Topo_Met <= cleft.and.&
+             maxlat_Topo_Met > cright)then
             end_lat_idx = ilat
           endif
-          if(maxlat_Topo_Met.le.cleft.and.&
-             maxlat_Topo_Met.gt.cright)then
+          if(maxlat_Topo_Met <= cleft.and.&
+             maxlat_Topo_Met > cright)then
             end_lat_idx = ilat
           endif
         else
-          if(minlat_Topo_Met.ge.cleft.and.&
-             minlat_Topo_Met.lt.cright.and.&
+          if(minlat_Topo_Met >= cleft.and.&
+             minlat_Topo_Met < cright.and.&
              .not.Topo_UseCompGrid)then
             start_lat_idx = ilat
           endif
-          if(minlat_Topo_comp.ge.cleft.and.&
-             minlat_Topo_comp.lt.cright.and.&
-             start_lat_idx.lt.0)then
+          if(minlat_Topo_comp >= cleft.and.&
+             minlat_Topo_comp < cright.and.&
+             start_lat_idx < 0)then
             start_lat_idx = ilat
             Topo_UseCompGrid = .true.
           endif
 
-          if(maxlat_Topo_Met.gt.cleft.and.&
-             maxlat_Topo_Met.le.cright)then
+          if(maxlat_Topo_Met > cleft.and.&
+             maxlat_Topo_Met <= cright)then
             end_lat_idx = ilat
           endif
-          if(maxlat_Topo_comp.gt.cleft.and.&
-             maxlat_Topo_comp.le.cright)then
+          if(maxlat_Topo_comp > cleft.and.&
+             maxlat_Topo_comp <= cright)then
             end_lat_idx = ilat
           endif
 
         endif
         cleft = cright
       enddo
-      if(start_lat_idx.lt.1.or.start_lat_idx.gt.nlat_topo_fullgrid)then
+      if(start_lat_idx < 1.or.start_lat_idx > nlat_topo_fullgrid)then
         ! Couldn't find start y
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"Couldn't find start y of topo sub-grid."
           write(errlog(io),*)"start_lat_idx = ",start_lat_idx
         endif;enddo
         stop 1
       endif
-      if(end_lat_idx.lt.1.or.end_lat_idx.gt.nlat_topo_fullgrid)then
+      if(end_lat_idx < 1.or.end_lat_idx > nlat_topo_fullgrid)then
         ! Couldn't find end y
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"Couldn't find end y of topo sub-grid."
           write(errlog(io),*)"end_lat_idx = ",end_lat_idx
         endif;enddo
@@ -1917,7 +1939,7 @@
               ! Loop over ilon so we can replace nodata with 0 for oceans
               do ilon=1,nlon_topo_subgrid
                 temp1_short = temp1dsub_short(ilon)
-                if(temp1_short.eq.nodata_int)temp1_short=0    ! Reset no-data to 0
+                if(temp1_short == nodata_int)temp1_short=0    ! Reset no-data to 0
                 temp1_sp    = real(temp1_short,kind=sp)
                 topo_subgrid(ilon,nlat_topo_subgrid-ilat+1) = temp1_sp
               enddo
@@ -1926,7 +1948,7 @@
               do ilon=1,nlon_topo_subgrid
                 temp1_short = temp1dsub_short(ilon)
                 temp2_short = LitEnd_2int(IsLitEnd_topo,temp1_short)
-                if(temp2_short.eq.nodata_int)temp2_short=0    ! Reset no-data to 0
+                if(temp2_short == nodata_int)temp2_short=0    ! Reset no-data to 0
                 temp1_sp    = real(temp2_short,kind=sp)
                 topo_subgrid(ilon,nlat_topo_subgrid-ilat+1) = temp1_sp
               enddo
@@ -1940,7 +1962,7 @@
               ! Loop over ilon so we can replace nodata with 0 for oceans
               do ilon=1,nlon_topo_subgrid
                 temp1_sp = temp1dsub_sp(ilon)
-                if(abs(temp1_sp-nodata_sp).lt.EPS_SMALL)temp1_sp=0.0_sp    ! Reset no-data to 0
+                if(abs(temp1_sp-nodata_sp) < EPS_SMALL)temp1_sp=0.0_sp    ! Reset no-data to 0
                 topo_subgrid(ilon,nlat_topo_subgrid-ilat+1) = temp1_sp
               enddo
             else
@@ -1948,14 +1970,14 @@
               do ilon=1,nlon_topo_subgrid
                 temp1_sp = temp1dsub_sp(ilon)
                 temp2_sp = LitEnd_4real(IsLitEnd_topo,temp1_sp)
-                if(abs(temp2_sp-nodata_sp).lt.EPS_SMALL)temp2_sp=0.0_sp    ! Reset no-data to 0
+                if(abs(temp2_sp-nodata_sp) < EPS_SMALL)temp2_sp=0.0_sp    ! Reset no-data to 0
                 topo_subgrid(ilon,nlat_topo_subgrid-ilat+1) = temp2_sp
               enddo
             endif
           endif
         enddo
       else  ! y_inverted
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)  'Topo error: Not yet set up for y_inverted=.false.'
         endif;enddo
         stop 1
@@ -1963,7 +1985,7 @@
 
       close(fid_datfile)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Load_Topo_Gridded_bin"
       endif;enddo
 
@@ -1971,7 +1993,7 @@
 
       ! Error traps (starting with 9000)
       ! For this subroutine, the 100's position refers to block # of control file
-9001  do io=1,2;if(VB(io).le.verbosity_error)then
+9001  do io=1,2;if(VB(io) <= verbosity_error)then
         write(errlog(io),*)  'error: cannot open header file: ',file_topo_hdr
         write(errlog(io),*)  'Program stopped'
       endif;enddo
@@ -2012,14 +2034,14 @@
       real(kind=dp) :: topolonmin,topolonmax
       real(kind=dp) :: topolatmin,topolatmax
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Load_Topo_Gridded_ASCII"
       endif;enddo
 
       ! We have already checked for the existance of the topo file, so now just
       ! read it
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Reading topography data in ESRI ASCII format."
       endif;enddo
 
@@ -2051,11 +2073,11 @@
       nlat_topo_subgrid = int((maxlat_Topo_Met-minlat_Topo_Met)/dlat_topo)
 
       ! Check that the computational grid is in the correct periodic mapping to the topo grid
-      if(minlon_Topo_comp.lt.lon_topo_fullgrid(1)-0.5_dp*dlon_topo)then
+      if(minlon_Topo_comp < lon_topo_fullgrid(1)-0.5_dp*dlon_topo)then
         minlon_Topo_comp = minlon_Topo_comp + 360.0_dp
         maxlon_Topo_comp = maxlon_Topo_comp + 360.0_dp
       endif
-      if(minlon_Topo_Met.lt.lon_topo_fullgrid(1)-0.5_dp*dlon_topo)then
+      if(minlon_Topo_Met < lon_topo_fullgrid(1)-0.5_dp*dlon_topo)then
         minlon_Topo_Met  = minlon_Topo_Met  + 360.0_dp
         maxlon_Topo_Met  = maxlon_Topo_Met  + 360.0_dp
       endif
@@ -2068,23 +2090,23 @@
       cleft = lon_topo_fullgrid(1)-0.5_dp*dlon_topo
       do ilon=1,nlon_topo_fullgrid
         cright = lon_topo_fullgrid(ilon)+0.5_dp*dlon_topo
-        if(minlon_Topo_Met.ge.cleft.and. &
-           minlon_Topo_Met.lt.cright.and.&
+        if(minlon_Topo_Met >= cleft.and. &
+           minlon_Topo_Met < cright.and.&
            .not.Topo_UseCompGrid)then
           start_lon_idx = ilon
         endif
-        if(minlon_Topo_comp.ge.cleft.and. &
-           minlon_Topo_comp.lt.cright.and.&
-           start_lon_idx.lt.0)then
+        if(minlon_Topo_comp >= cleft.and. &
+           minlon_Topo_comp < cright.and.&
+           start_lon_idx < 0)then
           start_lon_idx = ilon
           Topo_UseCompGrid = .true.
         endif
         cleft = cright
       enddo
 
-      if(start_lon_idx.lt.1.or.start_lon_idx.gt.nlon_topo_fullgrid)then
+      if(start_lon_idx < 1.or.start_lon_idx > nlon_topo_fullgrid)then
         ! Couldn't find start x
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"Couldn't find start x of topo sub-grid"
           write(errlog(io),*)"start_lon_idx = ",start_lon_idx
         endif;enddo
@@ -2095,9 +2117,9 @@
         nlat_topo_subgrid = int((maxlat_Topo_comp-minlat_Topo_comp)/dlat_topo)
       endif
 
-      if(start_lon_idx+nlon_topo_subgrid-1.gt.nlon_topo_fullgrid)then
+      if(start_lon_idx+nlon_topo_subgrid-1 > nlon_topo_fullgrid)then
         !wrapgrid = .true.
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: Cannot use grid-wrapping for ASCII data, at the moment."
         endif;enddo
         stop 1
@@ -2110,39 +2132,39 @@
       cleft = lat_topo_fullgrid(1)-0.5_dp*dlat_topo
       do ilat=1,nlat_topo_fullgrid
         cright = lat_topo_fullgrid(ilat)+0.5_dp*dlat_topo
-        if(minlat_Topo_Met.ge.cleft.and.&
-           minlat_Topo_Met.lt.cright.and.&
+        if(minlat_Topo_Met >= cleft.and.&
+           minlat_Topo_Met < cright.and.&
            .not.Topo_UseCompGrid)then
           start_lat_idx = ilat
         endif
-        if(minlat_Topo_comp.ge.cleft.and.&
-           minlat_Topo_comp.lt.cright.and.&
-           start_lat_idx.lt.0)then
+        if(minlat_Topo_comp >= cleft.and.&
+           minlat_Topo_comp < cright.and.&
+           start_lat_idx < 0)then
           start_lat_idx = ilat
           Topo_UseCompGrid = .true.
         endif
-        if(maxlat_Topo_Met.gt.cleft.and.&
-           maxlat_Topo_Met.le.cright)then
+        if(maxlat_Topo_Met > cleft.and.&
+           maxlat_Topo_Met <= cright)then
           end_lat_idx = ilat
         endif
-        if(maxlat_Topo_comp.gt.cleft.and.&
-           maxlat_Topo_comp.le.cright.and.&
-           end_lat_idx.lt.0)then
+        if(maxlat_Topo_comp > cleft.and.&
+           maxlat_Topo_comp <= cright.and.&
+           end_lat_idx < 0)then
           end_lat_idx = ilat
         endif
         cleft = cright
       enddo
-      if(start_lat_idx.lt.1.or.start_lat_idx.gt.nlat_topo_fullgrid)then
+      if(start_lat_idx < 1.or.start_lat_idx > nlat_topo_fullgrid)then
         ! Couldn't find start y
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"Couldn't find start y of topo sub-grid."
           write(errlog(io),*)"start_lat_idx = ",start_lat_idx
         endif;enddo
         stop 1
       endif
-      if(end_lat_idx.lt.1.or.end_lat_idx.gt.nlat_topo_fullgrid)then
+      if(end_lat_idx < 1.or.end_lat_idx > nlat_topo_fullgrid)then
         ! Couldn't find end y
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"Couldn't find end y of topo sub-grid."
           write(errlog(io),*)"end_lat_idx = ",end_lat_idx
         endif;enddo
@@ -2181,7 +2203,7 @@
       topo_subgrid(1:nlon_topo_subgrid,nlat_topo_subgrid  ) = topo_subgrid(1:nlon_topo_subgrid,nlat_topo_subgrid-4)
       topo_subgrid(1:nlon_topo_subgrid,nlat_topo_subgrid-1) = topo_subgrid(1:nlon_topo_subgrid,nlat_topo_subgrid-4)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Load_Topo_Gridded_ASCII"
       endif;enddo
 
@@ -2216,13 +2238,13 @@
 
       integer :: i,j
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine RemoveBath_Topo"
       endif;enddo
 
       do i = -1,nxmax+2
         do j = -1,nymax+2
-          if(topo_comp(i,j).lt.0.0_ip)then
+          if(topo_comp(i,j) < 0.0_ip)then
             topo_comp(i,j)    = 0.0_ip
             MR_Topo_comp(i,j) = 0.0_sp
           endif
@@ -2231,11 +2253,11 @@
 
       do i = 1,nx_submet
         do j = 1,ny_submet
-          if (MR_Topo_met(i,j).lt.0.0_sp) MR_Topo_met(i,j) = 0.0_sp
+          if (MR_Topo_met(i,j) < 0.0_sp) MR_Topo_met(i,j) = 0.0_sp
         enddo
       enddo
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine RemoveBath_Topo"
       endif;enddo
 
@@ -2269,20 +2291,20 @@
 
       integer :: i,j
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Calc_Vmod_Topo"
       endif;enddo
 
       ! Set the supplemental vertical velocity
-      if(ZScaling_ID.eq.0)then
+      if(ZScaling_ID == 0)then
         vh_pd = 0.0_ip
-      elseif(ZScaling_ID.eq.1)then
+      elseif(ZScaling_ID == 1)then
         do i=-1,nxmax+2
           do j=-1,nymax+2
             vh_pd(i,j,:)=-1.0_ip*(vx_pd(i,j,:)*dhdx_comp(i,j)+vy_pd(i,j,:)*dhdy_comp(i,j))
           enddo
         enddo
-      elseif(ZScaling_ID.eq.2)then
+      elseif(ZScaling_ID == 2)then
         do i=-1,nxmax+2
           do j=-1,nymax+2
             vh_pd(i,j,:)=(s_cc_pd(:)/Ztop-1.0_ip)* &
@@ -2291,7 +2313,7 @@
         enddo
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Calc_Vmod_Topo"
       endif;enddo
 
@@ -2339,11 +2361,11 @@
       real(kind=dp), dimension(:)    ,allocatable :: latcl_topo_subgrid
       real(kind=dp), dimension(:)    ,allocatable :: loncl_topo_subgrid
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Interp_Topo"
       endif;enddo
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Interpolating topographic data"
       endif;enddo
       allocate(loncl_topo_subgrid(nlon_topo_subgrid+1))
@@ -2370,16 +2392,16 @@
             olam = xy2ll_xlon(i,j)
             ophi = xy2ll_ylat(i,j)
           endif
-          if(olam.gt. 180.0_ip.and.&
-             loncc_topo_subgrid(nlon_topo_subgrid).lt.180.0_ip)olam=olam-360.0_ip
-          if(olam.lt.-180.0_ip)olam=olam+360.0_ip
-          if(abs(olam-loncl_topo_subgrid(1)).lt.0.005_ip)olam=loncl_topo_subgrid(1)
-          if(abs(olam-loncl_topo_subgrid(nlon_topo_subgrid+1)).lt.0.005_ip)olam=loncl_topo_subgrid(nlon_topo_subgrid+1)
+          if(olam >  180.0_ip.and.&
+             loncc_topo_subgrid(nlon_topo_subgrid) < 180.0_ip)olam=olam-360.0_ip
+          if(olam < -180.0_ip)olam=olam+360.0_ip
+          if(abs(olam-loncl_topo_subgrid(1)) < 0.005_ip)olam=loncl_topo_subgrid(1)
+          if(abs(olam-loncl_topo_subgrid(nlon_topo_subgrid+1)) < 0.005_ip)olam=loncl_topo_subgrid(nlon_topo_subgrid+1)
 
           ! Double-check that olam,ophi maps onto the computation grid
-          if(olam.lt.loncl_topo_subgrid(1).or.&
-             olam.gt.loncl_topo_subgrid(nlon_topo_subgrid+1))then
-            do io=1,2;if(VB(io).le.verbosity_error)then
+          if(olam < loncl_topo_subgrid(1).or.&
+             olam > loncl_topo_subgrid(nlon_topo_subgrid+1))then
+            do io=1,2;if(VB(io) <= verbosity_error)then
               write(errlog(io),*)"ERROR: Computational grid point mapping outside of topo grid (lon)."
               write(errlog(io),*)'olam                                   = ',olam
               write(errlog(io),*)'dlon_topo                              = ',dlon_topo
@@ -2388,9 +2410,9 @@
             endif;enddo
             stop 1
           endif
-          if(ophi.lt.latcl_topo_subgrid(1).or.&
-             ophi.gt.latcl_topo_subgrid(nlat_topo_subgrid+1))then
-            do io=1,2;if(VB(io).le.verbosity_error)then
+          if(ophi < latcl_topo_subgrid(1).or.&
+             ophi > latcl_topo_subgrid(nlat_topo_subgrid+1))then
+            do io=1,2;if(VB(io) <= verbosity_error)then
               write(errlog(io),*)"ERROR: Computational grid point mapping outside of topo grid (lat)."
               write(errlog(io),*)'ophi                                   = ',ophi
               write(errlog(io),*)'dlat_topo                              = ',dlat_topo
@@ -2404,21 +2426,21 @@
           ilon = floor((olam-loncl_topo_subgrid(1))/dlon_topo) + 1
           ilat = floor((ophi-latcl_topo_subgrid(1))/dlat_topo) + 1
           ! Adjust for the cases where we have the comp point right on top of the topo point
-          if(olam.lt.loncl_topo_subgrid(ilon))then
+          if(olam < loncl_topo_subgrid(ilon))then
             ilon = ilon-1
-          elseif(olam.gt.loncl_topo_subgrid(ilon+1))then
+          elseif(olam > loncl_topo_subgrid(ilon+1))then
             ilon = ilon+1
           endif
-          if(ophi.lt.latcl_topo_subgrid(ilat))then
+          if(ophi < latcl_topo_subgrid(ilat))then
             ilat = ilat-1
-          elseif(ophi.gt.latcl_topo_subgrid(ilat+1))then
+          elseif(ophi > latcl_topo_subgrid(ilat+1))then
             ilat = ilat+1
           endif
 
           ! Double-check that olam is between left and right sides of cell
-          if(olam.lt.loncl_topo_subgrid(ilon).or.&
-             olam.gt.loncl_topo_subgrid(ilon+1))then
-            do io=1,2;if(VB(io).le.verbosity_error)then
+          if(olam < loncl_topo_subgrid(ilon).or.&
+             olam > loncl_topo_subgrid(ilon+1))then
+            do io=1,2;if(VB(io) <= verbosity_error)then
               write(errlog(io),*)"ERROR: ",ilon,&
                       loncl_topo_subgrid(ilon),&
                       olam,&
@@ -2426,9 +2448,9 @@
             endif;enddo
             stop 1
           endif
-          if(ophi.lt.latcl_topo_subgrid(ilat).or.&
-             ophi.gt.latcl_topo_subgrid(ilat+1))then
-            do io=1,2;if(VB(io).le.verbosity_error)then
+          if(ophi < latcl_topo_subgrid(ilat).or.&
+             ophi > latcl_topo_subgrid(ilat+1))then
+            do io=1,2;if(VB(io) <= verbosity_error)then
               write(errlog(io),*)"ERROR: ",ilat,&
                       latcl_topo_subgrid(ilat),&
                       ophi,&
@@ -2437,14 +2459,14 @@
             stop 1
           endif
 
-          if(olam-loncl_topo_subgrid(ilon).lt.0.0_ip)then
+          if(olam-loncl_topo_subgrid(ilon) < 0.0_ip)then
             ilon=ilon-1
-          elseif(olam-loncl_topo_subgrid(ilon+1).ge.dlon_topo)then
+          elseif(olam-loncl_topo_subgrid(ilon+1) >= dlon_topo)then
             ilon=ilon+1
           endif
-          if(ophi-latcl_topo_subgrid(ilat).lt.0.0_ip)then
+          if(ophi-latcl_topo_subgrid(ilat) < 0.0_ip)then
             ilat=ilat-1
-          elseif(ophi-latcl_topo_subgrid(ilat+1).ge.dlat_topo)then
+          elseif(ophi-latcl_topo_subgrid(ilat+1) >= dlat_topo)then
             ilat=ilat+1
           endif
 
@@ -2452,19 +2474,19 @@
 !          topo_comp(i,j) = topo_subgrid(ilon,ilat) / 1000.0_ip ! convert to km
 
           ! Bilinear interpolation (between cell-centers)
-          if(ilon.eq.0)then
+          if(ilon == 0)then
             ilon=1
             xfrac=0.0_ip
-          elseif(ilon.ge.nlon_topo_subgrid)then
+          elseif(ilon >= nlon_topo_subgrid)then
             ilon=nlon_topo_subgrid-1
             xfrac=1.0_ip
           else
             xfrac=real((olam-loncl_topo_subgrid(ilon))/dlon_topo,kind=ip)
           endif
-          if(ilat.eq.0)then
+          if(ilat == 0)then
             ilat=1
             yfrac=0.0_ip
-          elseif(ilat.ge.nlat_topo_subgrid)then
+          elseif(ilat >= nlat_topo_subgrid)then
             ilat=nlat_topo_subgrid-1
             yfrac=1.0_ip
           else
@@ -2473,17 +2495,17 @@
           xc = 1.0_ip-xfrac
           yc = 1.0_ip-yfrac
           ! Reset these factors if they are just slightly outside of the cell
-          if(xc.gt.1.0_ip)then
+          if(xc > 1.0_ip)then
             xc   =1.0_ip
             xfrac=0.0_ip
-          elseif(xc.lt.0.0_ip)then
+          elseif(xc < 0.0_ip)then
             xc   =0.0_ip
             xfrac=1.0_ip
           endif
-          if(yc.gt.1.0_ip)then
+          if(yc > 1.0_ip)then
             yc   =1.0_ip
             yfrac=0.0_ip
-          elseif(yc.lt.0.0_ip)then
+          elseif(yc < 0.0_ip)then
             yc   =0.0_ip
             yfrac=1.0_ip
           endif
@@ -2523,9 +2545,9 @@
             olam = real(xout,kind=ip)
             ophi = real(yout,kind=ip)
           endif
-          if(olam.gt. 180.0_ip.and.&
-             loncc_topo_subgrid(nlon_topo_subgrid).lt.180.0_ip)olam=olam-360.0_ip
-          if(olam.lt.-180.0_ip)olam=olam+360.0_ip
+          if(olam >  180.0_ip.and.&
+             loncc_topo_subgrid(nlon_topo_subgrid) < 180.0_ip)olam=olam-360.0_ip
+          if(olam < -180.0_ip)olam=olam+360.0_ip
 
           ! Now find the corresponding topo point
           ! We need to find where olam,ophi maps onto the grid defined by the cell-centers
@@ -2539,27 +2561,27 @@
           ilat = min(ilat,nlat_topo_subgrid)
 
           ! Adjust for the cases where we have the comp point right on top of the topo point
-          if(ilon.gt.1.and.olam.lt.loncl_topo_subgrid(ilon))then
+          if(ilon > 1.and.olam < loncl_topo_subgrid(ilon))then
             ilon = ilon-1
-          elseif(ilon.lt.nlon_topo_subgrid)then
-            if(olam.gt.loncl_topo_subgrid(ilon+1))ilon = ilon+1
+          elseif(ilon < nlon_topo_subgrid)then
+            if(olam > loncl_topo_subgrid(ilon+1))ilon = ilon+1
           endif
-          if(ilat.gt.1.and.ophi.lt.latcl_topo_subgrid(ilat))then
+          if(ilat > 1.and.ophi < latcl_topo_subgrid(ilat))then
             ilat = ilat-1
-          elseif(ilat.lt.nlat_topo_subgrid)then
-            if(ophi.gt.latcl_topo_subgrid(ilat+1))ilat = ilat+1
+          elseif(ilat < nlat_topo_subgrid)then
+            if(ophi > latcl_topo_subgrid(ilat+1))ilat = ilat+1
           endif
 
-          if(olam-loncl_topo_subgrid(ilon).lt.0.0_ip)then
+          if(olam-loncl_topo_subgrid(ilon) < 0.0_ip)then
             ilon=ilon-1
-          elseif(olam-loncl_topo_subgrid(ilon+1).ge.dlon_topo)then
+          elseif(olam-loncl_topo_subgrid(ilon+1) >= dlon_topo)then
             ilon=ilon+1
           endif
           ilon = max(ilon,1)
           ilon = min(ilon,nlon_topo_subgrid)
-          if(ophi-latcl_topo_subgrid(ilat).lt.0.0_ip)then
+          if(ophi-latcl_topo_subgrid(ilat) < 0.0_ip)then
             ilat=ilat-1
-          elseif(ophi-latcl_topo_subgrid(ilat+1).ge.dlat_topo)then
+          elseif(ophi-latcl_topo_subgrid(ilat+1) >= dlat_topo)then
             ilat=ilat+1
           endif
           ilat = max(ilat,1)
@@ -2578,7 +2600,7 @@
         deallocate(xy2ll_ylat,xy2ll_xlon)
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Interp_Topo"
       endif;enddo
 
@@ -2615,7 +2637,7 @@
       real(kind=ip) :: ds
       real(kind=ip) :: D1,D2,D3
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Calc_FDGrad_Topo"
       endif;enddo
 
@@ -2623,7 +2645,7 @@
       do i=-1,nxmax+2
         do j=-1,nymax+2
           ! gradient of topo in x
-          if(i.eq.-1)then
+          if(i == -1)then
             ! one-sided FD
             ds = kappa_pd(i,j,1)/sigma_nx_pd(i,j,1)
             dhdx_comp(i,j)   = (topo_comp(i+1,j) - topo_comp(i,j))/ds
@@ -2631,7 +2653,7 @@
             D2 = Ztop-topo_comp(i+1,j)
             D3 = Ztop-topo_comp(i  ,j)
             DelDxonD_cc(i,j) = (D2-D1)/D3
-          elseif(i.eq.nxmax+2)then
+          elseif(i == nxmax+2)then
             ! one-sided FD
             ds = kappa_pd(i,j,1)/sigma_nx_pd(i,j,1)
             dhdx_comp(i,j)   = (topo_comp(i,j) - topo_comp(i-1,j))/ds
@@ -2649,7 +2671,7 @@
             DelDxonD_cc(i,j) = 0.5_ip*(D2-D1)/D3
           endif
           ! gradient of topo in y
-          if(j.eq.-1)then
+          if(j == -1)then
             ! one-sided FD
             ds = kappa_pd(i,j,1)/sigma_ny_pd(i,j,1)
             dhdy_comp(i,j) = (topo_comp(i,j+1) - topo_comp(i,j))/ds
@@ -2657,7 +2679,7 @@
             D2 = Ztop-topo_comp(i,j+1)
             D3 = Ztop-topo_comp(i,j)
             DelDyonD_cc(i,j) = (D2-D1)/D3
-          elseif(j.eq.nymax+2)then
+          elseif(j == nymax+2)then
             ! one-sided FD
             ds = kappa_pd(i,j,1)/sigma_ny_pd(i,j,1)
             dhdy_comp(i,j) = (topo_comp(i,j) - topo_comp(i,j-1))/ds
@@ -2677,7 +2699,7 @@
         enddo
       enddo
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Calc_FDGrad_Topo"
       endif;enddo
 
@@ -2725,18 +2747,18 @@
       real(kind=dp) :: x1,x2,y1,y2,z1,z2  ! these really need to be double-precision
       real(kind=dp) :: tmp_dp
       real(kind=ip) :: rad_smooth_ang
-      real(kind=ip) :: Const1_2d     = 0.6820926132509800_ip
       real(kind=ip) :: fac_1,r,temp1,wg1,char_len,norm
       real(kind=ip) :: rad
       real(kind=ip) :: topo_smooth_comp(-1:nxmax+2,-1:nymax+2)
       integer :: nx,ny
       integer :: ii,ipad,jj,jpad
+      real(kind=ip) ,parameter :: Const1_2d     = 0.6820926132509800_ip
       ! These variables are used for the kernel interpolation of grad h, but this
       ! is too noisy tobe useful near boundaries
       !real(kind=ip),dimension(2) :: topo_grad,ijDel_X,GradW
       !real(kind=ip) :: wg2
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Smooth_Topo"
       endif;enddo
 
@@ -2745,12 +2767,12 @@
       ! relatively coarse met data mapped onto more highly resolved topographic
       ! data.
       do it=1,2
-        if(it.eq.1)then
+        if(it == 1)then
           ! First, smooth topography on the computational grid, but using the cell size
           ! of the met grid as the smoothing length (or half the width as the radius).
           ! This will be mapped to MR_Topo_met by selecting the corresponding cells
           ! of the smoothed computational grid.
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"Smoothing topography on met grid"
           endif;enddo
           nx = nx_submet
@@ -2760,7 +2782,7 @@
         else
           ! Second time, smooth topography on the computational grid using the smoothing
           ! radius provided in the input file
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"Smoothing topography on comp grid"
           endif;enddo
           nx = nxmax
@@ -2773,17 +2795,17 @@
           endif
           ! Smoothing radius should smooth over something like the scale of the met grid
           ! Issue a warning if it is much smaller
-          if(rad.lt.0.25_ip*real(MR_minlen,kind=ip))then
-            do io=1,2;if(VB(io).le.verbosity_info)then
+          if(rad < 0.25_ip*real(MR_minlen,kind=ip))then
+            do io=1,2;if(VB(io) <= verbosity_info)then
               write(outlog(io),*)" WARNING: Width of smoothing kernel (4x radius) is less than"
               write(outlog(io),*)"          the grid size of Met data."
               write(outlog(io),*)"    Smoothing radius (km)         = ",real(rad,kind=sp)
               write(outlog(io),*)"    Shortest met grid length (km) = ",real(MR_minlen,kind=sp)
             endif;enddo
-          elseif(rad.gt.cell_len*12.5_ip)then
+          elseif(rad > cell_len*12.5_ip)then
             ! Conversely, issue a warning if it is too big since this will choke up the smoothing kernel
             ! by having too many topo points
-            do io=1,2;if(VB(io).le.verbosity_info)then
+            do io=1,2;if(VB(io) <= verbosity_info)then
               write(outlog(io),*)" WARNING: Width of smoothing kernel (4x radius) greater than"
               write(outlog(io),*)"          50x the grid size of computational data."
               write(outlog(io),*)"    Smoothing radius (km)          = ",real(rad,kind=sp)
@@ -2792,7 +2814,7 @@
             endif;enddo
           else
             ! Report on the smoothing length relative to the comp and met grids
-            do io=1,2;if(VB(io).le.verbosity_info)then
+            do io=1,2;if(VB(io) <= verbosity_info)then
               write(outlog(io),*)"    Smoothing radius (km)          = ",real(rad,kind=sp)
               write(outlog(io),*)"    Shortest met grid length (km)  = ",real(MR_minlen,kind=sp)
               write(outlog(io),*)"    Shortest comp grid length (km) = ",real(cell_len,kind=sp)
@@ -2802,7 +2824,7 @@
         ! Initialize array for smoothed data with original topo data
         topo_smooth_comp = real(topo_comp,kind=sp)
 
-        if(rad.le.cell_len)then
+        if(rad <= cell_len)then
           useSmoothTopo = .false.
           cycle
         else
@@ -2811,7 +2833,7 @@
 
         ! On first loop, we always smooth to met grid
         ! Second time, exit if smoothing radius is too small
-        if(it.eq.2.and..not.useSmoothTopo)exit
+        if(it == 2.and..not.useSmoothTopo)exit
 
         if(IsLatLon)then
           rad_smooth_ang = rad/RAD_EARTH/DEG2RAD
@@ -2840,7 +2862,7 @@
 
             do ii=max(-1,i-ipad),min(i+ipad,nxmax+2)
               do jj=max(-1,j-jpad),min(j+jpad,nymax+2)
-                if (ii.eq.i.and.jj.eq.j)then
+                if (ii == i.and.jj == j)then
                   dist = 0.0_ip
 !                  ijDel_X = 0.0_ip
                 else
@@ -2865,16 +2887,16 @@
                   endif
                 endif
 
-                if(dist.le.rad)then
+                if(dist <= rad)then
                   ncells = ncells + 1
                     ! Here is cubic spline weighting
                   char_len = 0.5_ip*rad
                   r = dist/char_len
                   fac_1 = Const1_2d/(char_len*char_len)
-                  if (r.gt.2.0_ip) then
+                  if (r > 2.0_ip) then
                     wg1 = 0.0_ip
                     !wg2 = 0.0_ip
-                  else if (r.gt.1.0_ip) then
+                  else if (r > 1.0_ip) then
                     temp1 = 2.0_ip-r
                     wg1 = fac_1*temp1*temp1*temp1/6.0_ip
                     !wg2 = fac_1*(-0.5_ip)*temp1*temp1/char_len
@@ -2884,7 +2906,7 @@
                   endif
                   topo_avg = topo_avg + wg1*topo_comp(ii,jj)
                   norm = norm + wg1
-                  !if(abs(dist).gt.EPS_SMALL)then
+                  !if(abs(dist) > EPS_SMALL)then
                   !  GradW(:) = wg2*ijDel_X(:)/dist
                   !  topo_grad(:) = topo_grad(:) + GradW(:) * topo_comp(ii,jj)
                   !endif
@@ -2902,7 +2924,7 @@
 
       call RemoveBath_Topo
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Smooth_Topo"
       endif;enddo
 

@@ -80,6 +80,7 @@
            MR_Read_3d_MetP_Variable
 
       implicit none
+      !implicit none (type, external)
 
       real(kind=dp),intent(in)    :: TimeNow                ! current time, in hours since start of simulation
       logical      ,intent(inout) :: Load_MesoSteps
@@ -100,13 +101,17 @@
 
       INTERFACE
         subroutine Adjust_DT(mesostep)
+          implicit none
+          !implicit none (type, external)
           logical, intent(in), optional :: mesostep
         end subroutine Adjust_DT
         subroutine Read_Next_MesoStep_HUVW
+          implicit none
+          !implicit none (type, external)
         end subroutine Read_Next_MesoStep_HUVW
       END INTERFACE
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine MesoInterpolator"
       endif;enddo
 
@@ -121,13 +126,13 @@
         Meso_toggle = 0
         ! Find the first MetStep that we need
         do i = 1,MR_MetSteps_Total-1
-          if(TimeNow_fromRefTime.ge.MR_MetStep_Hour_since_baseyear(i).and.&
-             TimeNow_fromRefTime.lt.MR_MetStep_Hour_since_baseyear(i+1))then
+          if(TimeNow_fromRefTime >= MR_MetStep_Hour_since_baseyear(i).and.&
+             TimeNow_fromRefTime < MR_MetStep_Hour_since_baseyear(i+1))then
             MR_iMetStep_Now = i
             cycle
           endif
         enddo
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),'(a18,i4,2f15.3)')"MR_iMetStep_Now = ",MR_iMetStep_Now, &
                     TimeNow_fromRefTime, &
                     MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now)
@@ -155,10 +160,10 @@
         ! if we need to load the next step
         Load_MesoSteps = .false.    ! Initialize
           ! Check if we've crossed the MetStep Boundary
-        if(TimeNow_fromRefTime.gt.MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now+1))then
+        if(TimeNow_fromRefTime > MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now+1))then
           Load_MesoSteps = .true.
           MR_iMetStep_Now = MR_iMetStep_Now+1
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"  Need to load next step"
             write(outlog(io),'(a18,i4,2f15.3)')"MR_iMetStep_Now = ",MR_iMetStep_Now, &
                       TimeNow_fromRefTime, &
@@ -171,7 +176,7 @@
       if(Load_MesoSteps)then
         ! Toggle next to last
           ! Set pointer toggle
-        if(Meso_toggle.eq.0)then
+        if(Meso_toggle == 0)then
           Meso_toggle = 1
           vx_meso_last_step_sp = vx_meso_1_sp
           vy_meso_last_step_sp = vy_meso_1_sp
@@ -236,9 +241,9 @@
       endif
 
       ! if we're calculating an umbrella cloud, add the winds in the cloud
-      if (((SourceType.eq.'umbrella')     .or.   &
-           (SourceType.eq.'umbrella_air')))then
-        if(TimeNow.lt.e_EndTime(1))then
+      if (((SourceType == 'umbrella')     .or.   &
+           (SourceType == 'umbrella_air')))then
+        if(TimeNow < e_EndTime(1))then
           FastDt_suppress = .true.
           call umbrella_winds(first_time)
           vx_pd(1:nxmax,1:nymax,ibase:itop) = vx_pd(1:nxmax,1:nymax,ibase:itop) + &
@@ -254,11 +259,11 @@
 
       if(useFastDt.and..not.FastDt_suppress)then
         dt = dt_meso_last + (dt_meso_next-dt_meso_last)*Interval_Frac
-        if (((NextWriteTime-time).gt.EPS_SMALL).and.(NextWriteTime-time.lt.dt))then
+        if (((NextWriteTime-time) > EPS_SMALL).and.(NextWriteTime-time < dt))then
           ! Don't let time advance past the next output time step
           dt = NextWritetime-time
         endif
-        if(time+dt.gt.Simtime_in_hours)then
+        if(time+dt > Simtime_in_hours)then
           ! Don't let time advance past the requested stop time
           dt = Simtime_in_hours-time
         endif
@@ -269,8 +274,8 @@
 
       ! If vxmax or vymax > 2000 km/hr, send a warning and see which values of vx and vy
       ! are so high.
-      if (abs(maxval(vx_pd(1:nxmax,1:nymax,1:nzmax))).gt.5.0e3_ip) then
-        do io=1,2;if(VB(io).le.verbosity_info)then
+      if (abs(maxval(vx_pd(1:nxmax,1:nymax,1:nzmax))) > 5.0e3_ip) then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),1041) nxmax, nymax, nzmax, SimStartHour, &
                       MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now), &
                       MR_MetStep_Interval(MR_iMetStep_Now)
@@ -284,8 +289,8 @@
         do k=1,nzmax
           do i=1,nxmax
             do j=1,nymax
-              if (abs(vx_pd(i,j,k)).gt.5.0e3_ip) then
-                do io=1,2;if(VB(io).le.verbosity_info)then
+              if (abs(vx_pd(i,j,k)) > 5.0e3_ip) then
+                do io=1,2;if(VB(io) <= verbosity_info)then
                   write(outlog(io),1042) i,j,k,vx_pd(i,j,k), &
                               vx_meso_last_step_sp(i,j,k), vx_meso_next_step_sp(i,j,k),&
                               HoursIntoInterval
@@ -296,25 +301,25 @@
             enddo
           enddo
         enddo
-        if(VB(1).ge.verbosity_silent)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        if(VB(1) >= verbosity_silent)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*) 'Continue (y/n)?'
           endif;enddo
           read(input_unit,'(a1)',iostat=iostatus,iomsg=iomessage) answer
           linebuffer080 = answer
           linebuffer050 = "Reading from stdin, answer"
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-          if (adjustl(trim(answer)).eq.'n') stop 1
+          if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+          if (adjustl(trim(answer)) == 'n') stop 1
         else
-          do io=1,2;if(VB(io).le.verbosity_error)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)"ERROR: velocities seem to be out of expected range."
           endif;enddo
           stop 1
         endif
       endif
 
-      if (abs(maxval(vy_pd(1:nxmax,1:nymax,1:nzmax))).gt.5.0e3_ip) then
-        do io=1,2;if(VB(io).le.verbosity_info)then
+      if (abs(maxval(vy_pd(1:nxmax,1:nymax,1:nzmax))) > 5.0e3_ip) then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),1043) nxmax, nymax, nzmax, SimStartHour, &
                       MR_MetStep_Hour_since_baseyear(MR_iMetStep_Now), &
                       MR_MetStep_Interval(MR_iMetStep_Now)
@@ -329,8 +334,8 @@
         do k=1,nzmax
           do i=1,nxmax
             do j=1,nymax
-              if (vy_pd(i,j,k).gt.5.0e3_ip) then
-                do io=1,2;if(VB(io).le.verbosity_info)then
+              if (vy_pd(i,j,k) > 5.0e3_ip) then
+                do io=1,2;if(VB(io) <= verbosity_info)then
                   write(outlog(io),1044) i,j,k,vy_pd(i,j,k),  &
                               vy_meso_last_step_sp(i,j,k), vy_meso_next_step_sp(i,j,k)
                 endif;enddo
@@ -340,17 +345,17 @@
             enddo
           enddo
         enddo
-        if(VB(1).ge.verbosity_silent)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        if(VB(1) >= verbosity_silent)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*) 'Continue (y/n)?'
           endif;enddo
           read(input_unit,'(a1)',iostat=iostatus,iomsg=iomessage) answer
           linebuffer080 = answer
           linebuffer050 = "Reading from stdin, answer"
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-          if (adjustl(trim(answer)).eq.'n') stop 1
+          if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+          if (adjustl(trim(answer)) == 'n') stop 1
         else
-          do io=1,2;if(VB(io).le.verbosity_error)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)"ERROR: velocities seem to be out of expected range."
           endif;enddo
           stop 1
@@ -359,7 +364,7 @@
 
       first_time = .false.
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine MesoInterpolator"
       endif;enddo
 
@@ -426,6 +431,7 @@
            MR_Read_3d_MetP_Variable
 
       implicit none
+      !implicit none (type, external)
 
       !logical      ,intent(inout) :: Load_MesoSteps
 
@@ -435,7 +441,7 @@
       integer           :: ivar
       integer           :: istep
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Read_Next_MesoStep_HUVW"
       endif;enddo
 
@@ -450,8 +456,8 @@
         call MR_Read_HGT_arrays(MR_iMetStep_Now)
         istep = MR_iMetStep_Now+1
       endif
-      if(Map_Case.eq.1.or. &
-        (Map_Case.eq.2.and.IsGridRelative))then
+      if(Map_Case == 1.or. &
+        (Map_Case == 2.and.IsGridRelative))then
         ! Either (Map_Case = 1) both the comp and met grids are LL
         ! or (Map_Case = 2) they are both the same projection excluding the NARR case.
         ! We can read the velocity components individually and interpolate directly
@@ -460,7 +466,7 @@
          ! Fill array from the step prior/equal to current time
         ivar = 2  ! U winds
         call MR_Read_3d_Met_Variable_to_CompH(ivar,istep,.true.)
-        if(Meso_toggle.eq.0)then
+        if(Meso_toggle == 0)then
           vx_meso_1_sp = MR_dum3d_compH
           vx_meso_next_step_sp = vx_meso_1_sp
         else
@@ -470,7 +476,7 @@
 
         ivar = 3  ! V winds
         call MR_Read_3d_Met_Variable_to_CompH(ivar,istep,.true.)
-        if(Meso_toggle.eq.0)then
+        if(Meso_toggle == 0)then
           vy_meso_1_sp = MR_dum3d_compH
           vy_meso_next_step_sp = vy_meso_1_sp
         else
@@ -478,7 +484,7 @@
           vy_meso_next_step_sp = vy_meso_2_sp
         endif
       else
-        if(Map_Case.eq.2.and..not.IsGridRelative)then
+        if(Map_Case == 2.and..not.IsGridRelative)then
           ! This is essentially just for the NARR case where wind speeds are provided
           ! on a projected grid, but given as easterly and northerly (Earth-relative) speeds
           call MR_Rotate_UV_GR2ER_Met(istep,.true.,.true.)
@@ -487,10 +493,10 @@
         ! In all these cases, we need:
         !    MR_dum3d_compH   holding U
         !    MR_dum3d_compH_2 holding V
-        elseif(Map_Case.eq.3)then
+        elseif(Map_Case == 3)then
             ! Met grid is natively LL and Comp grid is projected
           call MR_Rotate_UV_ER2GR_Comp(istep)
-        elseif(Map_Case.eq.4)then
+        elseif(Map_Case == 4)then
             ! Met grid is projected and comp grid is LL
           if(isGridRelative)then
             call MR_Rotate_UV_GR2ER_Met(istep,.true.,.true.)  ! optional argument returns data on compH
@@ -502,7 +508,7 @@
             ivar = 2  ! Vx
             call MR_Read_3d_Met_Variable_to_CompH(ivar,istep,.true.)
           endif
-        elseif(Map_Case.eq.5)then
+        elseif(Map_Case == 5)then
           ! Both comp and met grids are projected, but with different projections
           ! First, rotate winds from met grid to earth-relative on the met nodes
           call MR_Rotate_UV_GR2ER_Met(istep)
@@ -510,7 +516,7 @@
           call MR_Rotate_UV_ER2GR_Comp(istep)
         endif
 
-        if(Meso_toggle.eq.0)then
+        if(Meso_toggle == 0)then
           vx_meso_1_sp = MR_dum3d_compH
           vx_meso_next_step_sp = vx_meso_1_sp
           vy_meso_1_sp = MR_dum3d_compH_2
@@ -530,27 +536,27 @@
 !        call Read_NextMesoStep_T
 !      endif
       if( (Met_var_IsAvailable(4).and..not.useVz_rhoG) .or.&  ! MetReader returns Vz from PVV
-          MR_iwindformat.eq.50                       )then    ! WRF files provide Vz directly
+          MR_iwindformat == 50                       )then    ! WRF files provide Vz directly
         ! Here we are asking MetReader to return Vertical velocities directly (in m/s)
         ! This will either be if the windfile provides Vz directly or
         ! we want MetReader to convert from PresVertVel via a FD approximation of the pressure gradient
         ivar = 4  ! W winds
-        if(useVz_rhoG.and.MR_iwindformat.eq.50)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        if(useVz_rhoG.and.MR_iwindformat == 50)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"Ignoring useVz_rhoG and reading Vz directly from WRF file."
           endif;enddo
         endif
         if(Met_var_IsAvailable(ivar))then
           call MR_Read_3d_Met_Variable_to_CompH(ivar,istep)
         else
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"Tried to read variable, but it's not available: ",ivar,&
                     Met_var_GRIB_names(ivar)
           endif;enddo
           MR_dum3d_compH = 0.0_sp
           stop 1
         endif
-        if(Meso_toggle.eq.0)then
+        if(Meso_toggle == 0)then
           vz_meso_1_sp = MR_dum3d_compH
           vz_meso_next_step_sp = vz_meso_1_sp
         else
@@ -571,14 +577,14 @@
              real((-AirDens_meso_next_step_MetP_sp*GRAV),kind=sp)
             call MR_Regrid_MetP_to_CompH(istep)
           else
-            do io=1,2;if(VB(io).le.verbosity_info)then
+            do io=1,2;if(VB(io) <= verbosity_info)then
               write(outlog(io),*)"Tried to read variable, but it's not available: ",ivar,&
                         Met_var_GRIB_names(ivar)
             endif;enddo
             MR_dum3d_compH = 0.0_sp
             stop 1
           endif
-          if(Meso_toggle.eq.0)then
+          if(Meso_toggle == 0)then
             vz_meso_1_sp = MR_dum3d_compH
             vz_meso_next_step_sp = vz_meso_1_sp
           else
@@ -591,14 +597,14 @@
           if(Met_var_IsAvailable(ivar))then
             call MR_Read_3d_Met_Variable_to_CompH(ivar,istep)
           else
-            do io=1,2;if(VB(io).le.verbosity_info)then
+            do io=1,2;if(VB(io) <= verbosity_info)then
               write(outlog(io),*)"Tried to read variable, but it's not available: ",ivar,&
                       Met_var_GRIB_names(ivar)
             endif;enddo
             MR_dum3d_compH = 0.0_sp
             stop 1
           endif
-          if(Meso_toggle.eq.0)then
+          if(Meso_toggle == 0)then
             vz_meso_1_sp = MR_dum3d_compH
             vz_meso_next_step_sp = vz_meso_1_sp
           else
@@ -626,7 +632,7 @@
 
       first_time = .false.
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Read_Next_MesoStep_HUVW"
       endif;enddo
 

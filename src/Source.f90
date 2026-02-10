@@ -55,6 +55,7 @@
       use io_units
 
       implicit none
+      !implicit none (type, external)
 
         ! Set everything to private by default
       private
@@ -156,7 +157,7 @@
 
       subroutine Allocate_Source_eruption
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Allocate_Source_eruption"
       endif;enddo
 
@@ -168,7 +169,7 @@
       allocate(e_EndTime(neruptions));              e_EndTime     = 0.0_ip
       allocate(dt_pulse_frac(neruptions));          dt_pulse_frac = 0.0_dp
 
-      if(SourceType.eq.'profile')then
+      if(SourceType == 'profile')then
         allocate(e_prof_dz(neruptions));             e_prof_dz       = 0.0_ip
         allocate(e_prof_nzpoints(neruptions));       e_prof_nzpoints = 0
           ! for profiles, assume 50 points
@@ -179,7 +180,7 @@
       ieruption = 1  ! Initialize eruption for the start of this dt to the starting eruption
       jeruption = 1  ! Initialize eruption for the end of this dt to the starting eruption
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Allocate_Source_eruption"
       endif;enddo
 
@@ -204,12 +205,12 @@
       use mesh,          only : &
          nzmax,nsmax
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Allocate_Source_grid"
       endif;enddo
 
-      if(nsmax.eq.0)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
+      if(nsmax == 0)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"     Trying to allocate SourceNodeFlux but nsmax=0"
         endif;enddo
         stop 1
@@ -219,7 +220,7 @@
       allocate(SourceNodeFlux(0:nzmax+1,1:nsmax));       SourceNodeFlux   = 0.0_ip
       allocate(TephraFluxRate(nzmax));                   TephraFluxRate   = 0.0_ip
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Allocate_Source_grid"
       endif;enddo
 
@@ -242,7 +243,7 @@
 
       subroutine Deallocate_Source
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Deallocate_Source"
       endif;enddo
 
@@ -255,7 +256,7 @@
       if(associated(e_EndTime))        deallocate(e_EndTime)
       if(associated(dt_pulse_frac))    deallocate(dt_pulse_frac)
 
-      ! SourceType.eq.'profile'
+      ! SourceType == 'profile'
       if(associated(e_prof_dz))           deallocate(e_prof_dz)
       if(associated(e_prof_nzpoints))     deallocate(e_prof_nzpoints)
       if(associated(e_prof_Volume))       deallocate(e_prof_Volume)
@@ -274,7 +275,7 @@
       if(allocated(e_EndTime))        deallocate(e_EndTime)
       if(allocated(dt_pulse_frac))    deallocate(dt_pulse_frac)
 
-      ! SourceType.eq.'profile'
+      ! SourceType == 'profile'
       if(allocated(e_prof_dz))           deallocate(e_prof_dz)
       if(allocated(e_prof_nzpoints))     deallocate(e_prof_nzpoints)
       if(allocated(e_prof_Volume))       deallocate(e_prof_Volume)
@@ -286,7 +287,7 @@
       if(allocated(TephraFluxRate))      deallocate(TephraFluxRate)
 #endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Deallocate_Source"
       endif;enddo
 
@@ -338,11 +339,11 @@
       real(kind=ip) :: sclfac1,sclfac2,cmpsclfac1,cmpsclfac2
       real(kind=ip),dimension(:),allocatable :: s_PlumeHeight
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Calc_Normalized_SourceCol"
       endif;enddo
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"     Now building normalized source columns above vent."
       endif;enddo
 
@@ -350,23 +351,23 @@
 
       ! Convert z_volcano to s-coordinate
       allocate(s_PlumeHeight(neruptions))
-      if(ZScaling_ID.eq.0)then
+      if(ZScaling_ID == 0)then
         ! No z-adjustment, just use s=z
         s_volcano = z_volcano
         s_PlumeHeight(:) = e_PlumeHeight(:)
-      elseif(ZScaling_ID.eq.1)then
+      elseif(ZScaling_ID == 1)then
         ! Shifted coordinates, choose the surface or z (if z is higher)
         z_volcano = max(z_volcano,Zsurf(ivent,jvent))
         s_volcano = z_volcano - Zsurf(ivent,jvent)
         s_PlumeHeight(:) = e_PlumeHeight(:) - Zsurf(ivent,jvent)
-      elseif(ZScaling_ID.eq.2)then
+      elseif(ZScaling_ID == 2)then
         ! Scaled coordinates, choose the surface or z (if z is higher)
         z_volcano = max(z_volcano,Zsurf(ivent,jvent))
         s_volcano = Ztop*(z_volcano-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
         s_PlumeHeight(:) = Ztop*(e_PlumeHeight(:)-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*) "  As a guide on erupted volumes, below are the entered values along"
         write(outlog(io),*) "  with that predicted by the Mastin relation. Note, it can only be"
         write(outlog(io),*) "  a meaningful comparison if the entered values correspond to the full"
@@ -378,7 +379,7 @@
         write(outlog(io),87)
       endif;enddo
       do i=1,neruptions
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),88)i,e_Volume(i),HandDUR_2_EVol(e_PlumeHeight(i)-z_volcano,e_Duration(i))
         endif;enddo
       enddo
@@ -392,12 +393,12 @@
         kground   = 1
         kPlumeTop = 0
         do k=1,nzmax
-          if (s_volcano.ge.s_lb_pd(k  ).and. &
-              s_volcano.lt.s_lb_pd(k+1))then
+          if (s_volcano >= s_lb_pd(k  ).and. &
+              s_volcano < s_lb_pd(k+1))then
             kground = k
           endif
-          if(s_PlumeHeight(i).gt.s_lb_pd(k  ).and. &
-             s_PlumeHeight(i).le.s_lb_pd(k+1))then
+          if(s_PlumeHeight(i) > s_lb_pd(k  ).and. &
+             s_PlumeHeight(i) <= s_lb_pd(k+1))then
             kPlumeTop = k
           endif
         enddo
@@ -406,9 +407,9 @@
         sground = s_lb_pd(kground)
         s_PlumeHeight_above_ground = s_PlumeHeight(i)-sground
 
-        if ((SourceType.eq.'suzuki')      .or. &
-            (SourceType.eq.'umbrella')    .or. &
-            (SourceType.eq.'umbrella_air')) then
+        if ((SourceType == 'suzuki')      .or. &
+            (SourceType == 'umbrella')    .or. &
+            (SourceType == 'umbrella_air')) then
           Suzuki_k = Suzuki_A / (1.0_ip -(Suzuki_A+1.0_ip)*exp(-Suzuki_A))
         endif
 
@@ -421,9 +422,9 @@
           s_cell_bot = s_cc_pd(k)-0.5_ip*ds_vec_pd(k)
 
           ! First get the TephraFluxRate in kg/hr (total mass of tephra inserted per hour)
-          if ((SourceType.eq.'suzuki')      .or. &
-              (SourceType.eq.'umbrella')    .or. &
-              (SourceType.eq.'umbrella_air')) then
+          if ((SourceType == 'suzuki')      .or. &
+              (SourceType == 'umbrella')    .or. &
+              (SourceType == 'umbrella_air')) then
             ! For Suzuki plumes and umbrella clouds
             ! It uses an equation obtained by integrating the
             ! Suzuki equation given in Hurst.
@@ -442,20 +443,20 @@
                         (fac1*exp(-1.0_ip*Suzuki_A*cmpsclfac1) - &
                          fac2*exp(-1.0_ip*Suzuki_A*cmpsclfac2) )
 
-          elseif (SourceType.eq.'line') then
+          elseif (SourceType == 'line') then
             ! For line sources, the fractional contribution of the cell
             ! at z is just the height of the cell over the length of the line
             NormSourceColumn(i,k) = (s_cell_top-s_cell_bot) / s_PlumeHeight_above_ground
-          elseif (SourceType.eq.'point') then
+          elseif (SourceType == 'point') then
             !for point sources, put all the contribution into the cell that contains
             ! the point
-            if ((s_cell_top.ge.s_PlumeHeight(i)).and.    &
-                (s_cell_bot.lt.s_PlumeHeight(i))) then
+            if ((s_cell_top >= s_PlumeHeight(i)).and.    &
+                (s_cell_bot < s_PlumeHeight(i))) then
               NormSourceColumn(i,k) = 1.0_ip
             else
               NormSourceColumn(i,k) = 0.0_ip
             endif
-          elseif (SourceType.eq.'profile') then
+          elseif (SourceType == 'profile') then
             ! loop over the points describing the eruption profile. These are always
             ! given from z=0 to the top of the profile (in km).
 
@@ -470,22 +471,22 @@
               zbot_prof = e_prof_dz(i)*(kk-1)
               ztop_prof = e_prof_dz(i)*(kk)
               ! Now convert these z-values to s-coordinates
-              if(ZScaling_ID.eq.0)then
+              if(ZScaling_ID == 0)then
                 sbot_prof = zbot_prof
                 stop_prof = ztop_prof
-              elseif(ZScaling_ID.eq.1)then
+              elseif(ZScaling_ID == 1)then
                 sbot_prof = zbot_prof - Zsurf(ivent,jvent)
                 stop_prof = ztop_prof - Zsurf(ivent,jvent)
-              elseif(ZScaling_ID.eq.2)then
+              elseif(ZScaling_ID == 2)then
                 sbot_prof = Ztop*(zbot_prof-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
                 stop_prof = Ztop*(ztop_prof-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
               endif
 
-              if(stop_prof.lt.sground)then
+              if(stop_prof < sground)then
                 ! If line element is fully below zground
                 frac = 0.0_ip
-                if(e_prof_Volume(i,kk).gt.EPS_SMALL)then
-                  do io=1,2;if(VB(io).le.verbosity_info)then
+                if(e_prof_Volume(i,kk) > EPS_SMALL)then
+                  do io=1,2;if(VB(io) <= verbosity_info)then
                     write(outlog(io),*)&
                       "WARNING: Eruption profile element is below vent elevation."
                     write(outlog(io),*)&
@@ -494,21 +495,21 @@
                 endif
                 cycle
 
-              elseif((sbot_prof.le.s_cell_bot).and.&
-                     (stop_prof.ge.s_cell_bot).and.&
-                     (stop_prof.le.s_cell_top))then
+              elseif((sbot_prof <= s_cell_bot).and.&
+                     (stop_prof >= s_cell_bot).and.&
+                     (stop_prof <= s_cell_top))then
                 ! Add any fractional bit that straddles the bottom part of the z-cell
                 frac = (stop_prof-s_cell_bot)/ds_vec_pd(k)
-              elseif((sbot_prof.ge.s_cell_bot).and.&
-                     (stop_prof.lt.s_cell_top))then
+              elseif((sbot_prof >= s_cell_bot).and.&
+                     (stop_prof < s_cell_top))then
                 ! Add any step fully within the z-cell
                 frac = (stop_prof-sbot_prof)/ds_vec_pd(k)
-              elseif((sbot_prof.ge.s_cell_bot).and.&
-                     (sbot_prof.le.s_cell_top).and.&
-                     (stop_prof.ge.s_cell_top))then
+              elseif((sbot_prof >= s_cell_bot).and.&
+                     (sbot_prof <= s_cell_top).and.&
+                     (stop_prof >= s_cell_top))then
                 ! Add any fractional bit that straddles the top part of the z-cell
                 frac = (s_cell_top-sbot_prof)/ds_vec_pd(k)
-              elseif(sbot_prof.lt.s_cell_bot.and.stop_prof.gt.s_cell_top)then
+              elseif(sbot_prof < s_cell_bot.and.stop_prof > s_cell_top)then
                 ! If the eruption profile step fully encompasses the z-cell, no frac needed
                 frac = 1.0_ip
               else
@@ -534,7 +535,7 @@
 
       enddo  ! neruptions
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exporting volume of each eruptive pulse"
         write(outlog(io),*)e_Volume(1:neruptions)
         write(outlog(io),*)"-----------------------------------------------"
@@ -544,7 +545,7 @@
         enddo
       endif;enddo
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Calc_Normalized_SourceCol"
       endif;enddo
 
@@ -584,31 +585,31 @@
 
       integer :: i
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine EruptivePulse_MassFluxRate"
       endif;enddo
 
       ! Calculate mass flux and end times of each eruptive pulse
       do i=1,neruptions
              !mass flux in kg/hr
-        if(SourceType.eq.'suzuki'      .or. &
-           SourceType.eq.'point'       .or. &
-           SourceType.eq.'line'        .or. &
-           SourceType.eq.'umbrella'    .or. &
-           SourceType.eq.'umbrella_air')then
+        if(SourceType == 'suzuki'      .or. &
+           SourceType == 'point'       .or. &
+           SourceType == 'line'        .or. &
+           SourceType == 'umbrella'    .or. &
+           SourceType == 'umbrella_air')then
           MassFluxRate(i)  = MagmaDensity * &  ! kg/m3
                              e_Volume(i)  * &  ! km3
                              KM3_2_M3     / &  ! m3/km3
                              real(e_Duration(i),kind=ip)    ! hours  => kg/hr
           e_EndTime(i) = e_StartTime(i) + e_Duration(i)
 
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),1023) MagmaDensity, e_Duration(i), &
                                    MassFluxRate(i), e_Volume(i)
           endif;enddo
 1023      format('   Magma density (kg/m3) = ',f6.1,', Pulse Duration (hrs) = ',f6.3,/, &
                  '   Mass flux (kg/hr) = ',e12.4,', Pulse volume (km3 DRE)=',f8.4)
-        elseif(SourceType.eq.'profile')then
+        elseif(SourceType == 'profile')then
           e_prof_MassFluxRate(i,1:e_prof_nzpoints(i)) =          &
                          MagmaDensity                          * &  ! kg/m3
                          e_prof_Volume(i,1:e_prof_nzpoints(i)) * &  ! km3
@@ -618,7 +619,7 @@
           e_EndTime(i) = e_StartTime(i) + e_Duration(i)
         else
           ! Custom source, initializing MassFluxRate and end time
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*) "Custom source: ",i," Initializing mass flux rate to 0"
           endif;enddo
           MassFluxRate(i)  = 0.0_ip
@@ -629,22 +630,22 @@
 
       e_EndTime_final = maxval(e_EndTime)  ! this marks the end of all eruptions
 
-      if(sum(SpeciesID(1:nsmax)).eq.nsmax)then
+      if(sum(SpeciesID(1:nsmax)) == nsmax)then
         ! If all species ID's are '1' (i.e. ash)
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),1024) e_EndTime_final-e_StartTime(1),&
                                  sum(e_Volume(1:neruptions)), &
                                  sum(e_Volume(1:neruptions))*MagmaDensity*KM3_2_M3*1.0e-9
         endif;enddo
       else
         ! Some species are not ash; just print mass
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),1025) e_EndTime_final-e_StartTime(1),&
                                  sum(e_Volume(1:neruptions))*MagmaDensity*KM3_2_M3*1.0e-9
         endif;enddo
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine EruptivePulse_MassFluxRate"
       endif;enddo
 
@@ -687,7 +688,7 @@
       logical          :: Pulse_contributes
       integer          :: i
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine CheckEruptivePulses"
       endif;enddo
 
@@ -697,35 +698,35 @@
       Source_in_dt     = .false.
       dt_pulse_frac(:) = 0.0_dp
 
-      if((SourceType.eq.'point')       .or. &  ! profile is a branch below
-         (SourceType.eq.'line')        .or. &
-         (SourceType.eq.'suzuki')      .or. &
-         (SourceType.eq.'umbrella')    .or. &
-         (SourceType.eq.'umbrella_air').or. &
-         (SourceType.eq.'profile'))then
+      if((SourceType == 'point')       .or. &  ! profile is a branch below
+         (SourceType == 'line')        .or. &
+         (SourceType == 'suzuki')      .or. &
+         (SourceType == 'umbrella')    .or. &
+         (SourceType == 'umbrella_air').or. &
+         (SourceType == 'profile'))then
 
         do i=ieruption,neruptions
           Pulse_contributes = .false.
-          if((tstart.ge.e_StartTime(i)).and. &  ! beginning of time step at or after pulse start
-             (tstart.lt.e_EndTime(i)))then      ! beginning of time step is before same pulse ends
+          if((tstart >= e_StartTime(i)).and. &  ! beginning of time step at or after pulse start
+             (tstart < e_EndTime(i)))then      ! beginning of time step is before same pulse ends
             ! This catches all pulses that touch the start of dt
             Pulse_contributes = .true.
             jeruption = i                         ! Make sure jeruption is at least
-          elseif((tend.gt.e_StartTime(i)).and. &  ! end of time step at or after pulse start
-                 (tend.le.e_EndTime(i)))then      ! end of time step is before same pulse ends
+          elseif((tend > e_StartTime(i)).and. &  ! end of time step at or after pulse start
+                 (tend <= e_EndTime(i)))then      ! end of time step is before same pulse ends
             ! This catches all pulses that touch the end of dt
             Pulse_contributes = .true.
             jeruption = i
             ! if we have found the eruptive pulse that touches the end of dt, then exit the
             ! do loop
             exit
-          elseif(tstart.lt.e_StartTime(i).and.  &
-                (tend.gt.e_EndTime(i)))then
+          elseif(tstart < e_StartTime(i).and.  &
+                (tend > e_EndTime(i)))then
             ! This catches all pulses that are wholely within dt
             ! If we are here, either the dt selected is huge (e.g. no winds) or the
             ! eruption duration is tiny.
             ! Issue a warning, but continue.
-            do io=1,2;if(VB(io).le.verbosity_info)then
+            do io=1,2;if(VB(io) <= verbosity_info)then
               write(outlog(io),1)i
             endif;enddo
             Pulse_contributes = .true.
@@ -747,7 +748,7 @@
         return
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine CheckEruptivePulses"
       endif;enddo
 
@@ -795,7 +796,7 @@
       real(kind=ip) :: MassFluxRate_now
       real(kind=ip) :: kap
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine TephraSourceNodes"
       endif;enddo
 
@@ -834,8 +835,8 @@
       enddo
 
       ! Make sure the sum of the fluxes in all the cells equals the total flux
-      if (abs(SumSourceNodeFlux-1.0_ip).gt.EPS_SMALL) then
-         do io=1,2;if(VB(io).le.verbosity_error)then
+      if (abs(SumSourceNodeFlux-1.0_ip) > EPS_SMALL) then
+         do io=1,2;if(VB(io) <= verbosity_error)then
            write(errlog(io) ,2) SumSourceNodeFlux-1.0_ip
            write(errlog(io),*)"SourceType          = ",SourceType
            write(errlog(io),*)"MassFluxRate_now    = ",MassFluxRate_now
@@ -849,7 +850,7 @@
       ! for the start of the next step
       ieruption = jeruption
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine TephraSourceNodes"
       endif;enddo
 
@@ -886,13 +887,13 @@
       use Tephra,        only : &
          n_gs_max,MagmaDensity
 
-      real(kind=ip) :: SourceVolInc
-      real(kind=dp) :: dt
+      real(kind=ip)             :: SourceVolInc
+      real(kind=dp) ,intent(in) :: dt
 
       real(kind=ip) :: tmp
       integer :: k,isize
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered function SourceVolInc"
       endif;enddo
 
@@ -934,10 +935,9 @@
       use global_param,  only : &
          HR_2_S,KM3_2_M3
 
-      real(kind=dp) :: PlmH
-      real(kind=dp) :: EDur  ! Time is always in dp
-
-      real(kind=dp) :: HandDUR_2_EVol
+      real(kind=dp)             :: HandDUR_2_EVol
+      real(kind=dp) ,intent(in) :: PlmH
+      real(kind=dp) ,intent(in) :: EDur  ! Time is always in dp
 
       ! From Mastin doi:10.1016/j.jvolgeores.2009.01.008
       real(kind=dp), parameter :: Coeff = 2.0_dp

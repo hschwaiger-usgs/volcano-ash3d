@@ -25,6 +25,7 @@
          useVarDiffH,useVarDiffV
 
       implicit none
+      !implicit none (type, external)
 
         ! Set everything to private by default
       private
@@ -158,7 +159,7 @@
 !
 !  Called from: Ash3d.F90
 !  Arguments:
-!    i : time step
+!    it : time step
 !
 !  This subroutine calls the horizontal diffusion routines. The time step passed
 !  as an argument is only used to toggle between x-first and y-first.  This
@@ -167,7 +168,7 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine DiffuseHorz(i)
+      subroutine DiffuseHorz(it)
 
       use global_param,  only : &
          useCN
@@ -178,7 +179,7 @@
       use solution,      only : &
          imin,imax,jmin,jmax,kmin,kmax
 
-      integer :: i
+      integer ,intent(in) :: it
 
       do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine DiffuseHorz"
@@ -203,7 +204,7 @@
 #endif
 
       if(useCN)then
-        if(mod(i,2) == 0) then
+        if(mod(it,2) == 0) then
           do io=1,2;if(VB(io) <= verbosity_debug1)then
             write(outlog(io),*)"Ash3d: Calling diffCN_zxy"
           endif;enddo
@@ -217,7 +218,7 @@
           call diffCN_x
         endif
       else
-        if(mod(i,2) == 0) then
+        if(mod(it,2) == 0) then
           do io=1,2;if(VB(io) <= verbosity_debug1)then
             write(outlog(io),*)"Ash3d: Calling diff_zxy"
           endif;enddo
@@ -766,24 +767,26 @@
       !       directive allows this section to be turned off.
       INTERFACE
         subroutine sgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
-          integer                          :: N
-          integer                          :: NRHS
-          integer                          :: LDB
-          real(kind=4),dimension(N-1)      :: DL
-          real(kind=4),dimension(N)        :: D
-          real(kind=4),dimension(N-1)      :: DU
-          real(kind=4),dimension(ldb,NRHS) :: B
-          integer                          :: INFO
+            ! Note: LDB is the 7th argument, but must be typed before usage in arg 6
+          integer                         ,intent(in)    :: N
+          integer                         ,intent(in)    :: NRHS
+          integer                         ,intent(in)    :: LDB
+          real(kind=4),dimension(N-1)     ,intent(inout) :: DL
+          real(kind=4),dimension(N)       ,intent(inout) :: D
+          real(kind=4),dimension(N-1)     ,intent(inout) :: DU
+          real(kind=4),dimension(ldb,NRHS),intent(inout) :: B
+          integer                         ,intent(out)   :: INFO
         end subroutine sgtsv
         subroutine dgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
-          integer                          :: N
-          integer                          :: NRHS
-          integer                          :: LDB
-          real(kind=8),dimension(N-1)      :: DL
-          real(kind=8),dimension(N)        :: D
-          real(kind=8),dimension(N-1)      :: DU
-          real(kind=8),dimension(ldb,NRHS) :: B
-          integer                          :: INFO
+            ! Note: LDB is the 7th argument, but must be typed before usage in arg 6
+          integer                         ,intent(in)    :: N
+          integer                         ,intent(in)    :: NRHS
+          integer                         ,intent(in)    :: LDB
+          real(kind=8),dimension(N-1)     ,intent(inout) :: DL
+          real(kind=8),dimension(N)       ,intent(inout) :: D
+          real(kind=8),dimension(N-1)     ,intent(inout) :: DU
+          real(kind=8),dimension(ldb,NRHS),intent(inout) :: B
+          integer                         ,intent(out)   :: INFO
         end subroutine dgtsv
       END INTERFACE
 #endif
@@ -1036,24 +1039,26 @@
       !       directive allows this section to be turned off.
       INTERFACE
         subroutine sgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
-          integer                          :: N
-          integer                          :: NRHS
-          integer                          :: LDB
-          real(kind=4),dimension(N-1)      :: DL
-          real(kind=4),dimension(N)        :: D
-          real(kind=4),dimension(N-1)      :: DU
-          real(kind=4),dimension(ldb,NRHS) :: B
-          integer                          :: INFO
+            ! Note: LDB is the 7th argument, but must be typed before usage in arg 6
+          integer                         ,intent(in)    :: N
+          integer                         ,intent(in)    :: NRHS
+          integer                         ,intent(in)    :: LDB
+          real(kind=4),dimension(N-1)     ,intent(inout) :: DL
+          real(kind=4),dimension(N)       ,intent(inout) :: D
+          real(kind=4),dimension(N-1)     ,intent(inout) :: DU
+          real(kind=4),dimension(ldb,NRHS),intent(inout) :: B
+          integer                         ,intent(out)   :: INFO
         end subroutine sgtsv
         subroutine dgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
-          integer                          :: N
-          integer                          :: NRHS
-          integer                          :: LDB
-          real(kind=8),dimension(N-1)      :: DL
-          real(kind=8),dimension(N)        :: D
-          real(kind=8),dimension(N-1)      :: DU
-          real(kind=8),dimension(ldb,NRHS) :: B
-          integer                          :: INFO
+            ! Note: LDB is the 7th argument, but must be typed before usage in arg 6
+          integer                         ,intent(in)    :: N
+          integer                         ,intent(in)    :: NRHS
+          integer                         ,intent(in)    :: LDB
+          real(kind=8),dimension(N-1)     ,intent(inout) :: DL
+          real(kind=8),dimension(N)       ,intent(inout) :: D
+          real(kind=8),dimension(N-1)     ,intent(inout) :: DU
+          real(kind=8),dimension(ldb,NRHS),intent(inout) :: B
+          integer                         ,intent(out)   :: INFO
         end subroutine dgtsv
       END INTERFACE
 #endif
@@ -1303,24 +1308,26 @@
       !       directive allows this section to be turned off.
       INTERFACE
         subroutine sgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
-          integer                          :: N
-          integer                          :: NRHS
-          integer                          :: LDB
-          real(kind=4),dimension(N-1)      :: DL
-          real(kind=4),dimension(N)        :: D
-          real(kind=4),dimension(N-1)      :: DU
-          real(kind=4),dimension(ldb,NRHS) :: B
-          integer                          :: INFO
+            ! Note: LDB is the 7th argument, but must be typed before usage in arg 6
+          integer                         ,intent(in)    :: N
+          integer                         ,intent(in)    :: NRHS
+          integer                         ,intent(in)    :: LDB
+          real(kind=4),dimension(N-1)     ,intent(inout) :: DL
+          real(kind=4),dimension(N)       ,intent(inout) :: D
+          real(kind=4),dimension(N-1)     ,intent(inout) :: DU
+          real(kind=4),dimension(ldb,NRHS),intent(inout) :: B
+          integer                         ,intent(out)   :: INFO
         end subroutine sgtsv
         subroutine dgtsv(N,NRHS,DL,D,DU,B,LDB,INFO)
-          integer                          :: N
-          integer                          :: NRHS
-          integer                          :: LDB
-          real(kind=8),dimension(N-1)      :: DL
-          real(kind=8),dimension(N)        :: D
-          real(kind=8),dimension(N-1)      :: DU
-          real(kind=8),dimension(ldb,NRHS) :: B
-          integer                          :: INFO
+            ! Note: LDB is the 7th argument, but must be typed before usage in arg 6
+          integer                         ,intent(in)    :: N
+          integer                         ,intent(in)    :: NRHS
+          integer                         ,intent(in)    :: LDB
+          real(kind=8),dimension(N-1)     ,intent(inout) :: DL
+          real(kind=8),dimension(N)       ,intent(inout) :: D
+          real(kind=8),dimension(N-1)     ,intent(inout) :: DU
+          real(kind=8),dimension(ldb,NRHS),intent(inout) :: B
+          integer                         ,intent(out)   :: INFO
         end subroutine dgtsv
       END INTERFACE
 #endif

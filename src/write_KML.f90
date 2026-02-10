@@ -20,6 +20,7 @@
       use io_units
 
       implicit none
+      !implicit none (type, external)
 
         ! Set everything to private by default
       private
@@ -93,7 +94,7 @@
 
       integer :: ivar
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Set_OutVar_Specs"
       endif;enddo
 
@@ -103,8 +104,8 @@
       KML_units(ivar)         = 'mg/m3'
       KML_fid(ivar)           = fid_kmlbase + ivar
       KML_n_clrmp(ivar)       = 8
-      KML_color_map(ivar,:) = (/ 0.1_ip,   0.3_ip,   1.0_ip, 2.0_ip, 10.0_ip, &
-                             30.0_ip, 100.0_ip, 300.0_ip, 0.0_ip, 0.0_ip, 0.0_ip/)
+      KML_color_map(ivar,:) = [ 0.1_ip,   0.3_ip,   1.0_ip, 2.0_ip, 10.0_ip, &
+                             30.0_ip, 100.0_ip, 300.0_ip, 0.0_ip, 0.0_ip, 0.0_ip]
       KML_Styles(ivar,1) = 'pale_blue';  KML_Colors(ivar,1) = 'ffe5e5'
       KML_Styles(ivar,2) = 'lite_blue';  KML_Colors(ivar,2) = 'ffcccc'
       KML_Styles(ivar,3) = 'med__blue';  KML_Colors(ivar,3) = 'ffb2b2'
@@ -132,8 +133,8 @@
       KML_units(ivar)         = ' km  '
       KML_fid(ivar)           = fid_kmlbase + ivar
       KML_n_clrmp(ivar)       = 9
-      KML_color_map(ivar,:) = (/0.24_ip,  3.0_ip,  6.0_ip, 10.0_ip, 13.0_ip, &
-                             16.0_ip, 20.0_ip, 25.0_ip, 30.0_ip, 0.0_ip, 0.0_ip/)
+      KML_color_map(ivar,:) = [0.24_ip,  3.0_ip,  6.0_ip, 10.0_ip, 13.0_ip, &
+                             16.0_ip, 20.0_ip, 25.0_ip, 30.0_ip, 0.0_ip, 0.0_ip]
       KML_Styles(ivar,1) = '00.-03.km';  KML_Colors(ivar,1) = '800080'
       KML_Styles(ivar,2) = '03.-06.km';  KML_Colors(ivar,2) = 'ff0000'
       KML_Styles(ivar,3) = '06.-10.km';  KML_Colors(ivar,3) = 'ff8000'
@@ -161,8 +162,8 @@
       KML_units(ivar)         = ' km  '
       KML_fid(ivar)           = fid_kmlbase + ivar
       KML_n_clrmp(ivar)       = 9
-      KML_color_map(ivar,:) = (/0.24_ip,  3.0_ip,  6.0_ip, 10.0_ip, 13.0_ip, &
-                             16.0_ip, 20.0_ip, 25.0_ip, 30.0_ip, 0.0_ip, 0.0_ip/)
+      KML_color_map(ivar,:) = [0.24_ip,  3.0_ip,  6.0_ip, 10.0_ip, 13.0_ip, &
+                             16.0_ip, 20.0_ip, 25.0_ip, 30.0_ip, 0.0_ip, 0.0_ip]
       KML_Styles(ivar,1) = '00.-03.km';  KML_Colors(ivar,1) = '800080'
       KML_Styles(ivar,2) = '03.-06.km';  KML_Colors(ivar,2) = 'ff0000'
       KML_Styles(ivar,3) = '06.-10.km';  KML_Colors(ivar,3) = 'ff8000'
@@ -190,8 +191,8 @@
       KML_units(ivar)         = 'T/km2'
       KML_fid(ivar)           = fid_kmlbase + ivar
       KML_n_clrmp(ivar)       = 9
-      KML_color_map(ivar,:) = (/ 0.2_ip,   1.0_ip,   2.0_ip,    5.0_ip, 10.0_ip, &
-                             30.0_ip, 100.0_ip, 300.0_ip, 1000.0_ip, 0.0_ip, 0.0_ip/)
+      KML_color_map(ivar,:) = [ 0.2_ip,   1.0_ip,   2.0_ip,    5.0_ip, 10.0_ip, &
+                             30.0_ip, 100.0_ip, 300.0_ip, 1000.0_ip, 0.0_ip, 0.0_ip]
       KML_Styles(ivar,1) = '0.20-1.00';  KML_Colors(ivar,1) = '800080'
       KML_Styles(ivar,2) = '1.00-2.00';  KML_Colors(ivar,2) = 'ff0000'
       KML_Styles(ivar,3) = '2.00-5.00';  KML_Colors(ivar,3) = 'ff8000'
@@ -219,8 +220,8 @@
       KML_units(ivar)         = ' hrs '
       KML_fid(ivar)           = fid_kmlbase + ivar
       KML_n_clrmp(ivar)       = 9
-      KML_color_map(ivar,:) = (/ 0.0_ip,  3.0_ip,  6.0_ip,  9.0_ip, 12.0_ip, &
-                             15.0_ip, 18.0_ip, 24.0_ip, 36.0_ip, 0.0_ip, 0.0_ip/)
+      KML_color_map(ivar,:) = [ 0.0_ip,  3.0_ip,  6.0_ip,  9.0_ip, 12.0_ip, &
+                             15.0_ip, 18.0_ip, 24.0_ip, 36.0_ip, 0.0_ip, 0.0_ip]
       KML_Styles(ivar,1) = '00-03_hrs';  KML_Colors(ivar,1) = '800080'
       KML_Styles(ivar,2) = '03-06_hrs';  KML_Colors(ivar,2) = 'ff0000'
       KML_Styles(ivar,3) = '06-09_hrs';  KML_Colors(ivar,3) = 'ff8000'
@@ -249,8 +250,8 @@
       KML_units(ivar)         = ' dBZ '
       KML_fid(ivar)           = fid_kmlbase + ivar
       KML_n_clrmp(ivar)       = 9
-      KML_color_map(ivar,:) = (/-20.0_ip, -10.0_ip,  0.0_ip, 10.0_ip, 20.0_ip, &
-                           30.0_ip,  40.0_ip, 50.0_ip, 60.0_ip, 0.0_ip, 0.0_ip/)
+      KML_color_map(ivar,:) = [-20.0_ip, -10.0_ip,  0.0_ip, 10.0_ip, 20.0_ip, &
+                           30.0_ip,  40.0_ip, 50.0_ip, 60.0_ip, 0.0_ip, 0.0_ip]
       KML_Styles(ivar,1) = '-20_to-10';  KML_Colors(ivar,1) = '800080'
       KML_Styles(ivar,2) = '-10_to000';  KML_Colors(ivar,2) = 'ff0000'
       KML_Styles(ivar,3) = '000_to+10';  KML_Colors(ivar,3) = 'ff8000'
@@ -278,8 +279,8 @@
       KML_units(ivar)         = '  mm '
       KML_fid(ivar)           = fid_kmlbase + ivar
       KML_n_clrmp(ivar)       = 11
-      KML_color_map(ivar,:) = (/ 0.01_ip, 0.03_ip, 0.1_ip,   0.3_ip,   1.0_ip,    3.0_ip, 10.0_ip,&
-                             30.0_ip, 100.0_ip, 300.0_ip, 1000.0_ip/)
+      KML_color_map(ivar,:) = [ 0.01_ip, 0.03_ip, 0.1_ip,   0.3_ip,   1.0_ip,    3.0_ip, 10.0_ip,&
+                             30.0_ip, 100.0_ip, 300.0_ip, 1000.0_ip]
       KML_Styles(ivar,1) = '.01-.03mm';  KML_Colors(ivar,1) = '69ded6'
       KML_Styles(ivar,2) = '.03-0.1mm';  KML_Colors(ivar,2) = '71a7f9'
       KML_Styles(ivar,3) = '0.1-0.3mm';  KML_Colors(ivar,3) = '800080'
@@ -307,8 +308,8 @@
       KML_units(ivar)         = '  in.'
       KML_fid(ivar)           = fid_kmlbase + ivar
       KML_n_clrmp(ivar)       = 3
-      KML_color_map(ivar,:) = (/ 0.00394_ip, 0.0315_ip, 0.236_ip, 0.0_ip, 0.0_ip,&
-                              0.0_ip, 0.0_ip, 0.0_ip, 0.0_ip, 0.0_ip, 0.0_ip/)
+      KML_color_map(ivar,:) = [ 0.00394_ip, 0.0315_ip, 0.236_ip, 0.0_ip, 0.0_ip,&
+                              0.0_ip, 0.0_ip, 0.0_ip, 0.0_ip, 0.0_ip, 0.0_ip]
       KML_Styles(ivar,1) = '0.1-0.8mm';  KML_Colors(ivar,1) = 'ffff00'
       KML_Styles(ivar,2) = '0.8-6.0mm';  KML_Colors(ivar,2) = '00ffff'
       KML_Styles(ivar,3) = '>>>>6.0mm';  KML_Colors(ivar,3) = '0000ff'
@@ -336,8 +337,8 @@
       KML_units(ivar)         = ' hrs '
       KML_fid(ivar)           = fid_kmlbase + ivar
       KML_n_clrmp(ivar)       = 9
-      KML_color_map(ivar,:) = (/ 0.0_ip,  3.0_ip,  6.0_ip,  9.0_ip, 12.0_ip, &
-                             15.0_ip, 18.0_ip, 24.0_ip, 36.0_ip, 0.0_ip, 0.0_ip/)
+      KML_color_map(ivar,:) = [ 0.0_ip,  3.0_ip,  6.0_ip,  9.0_ip, 12.0_ip, &
+                             15.0_ip, 18.0_ip, 24.0_ip, 36.0_ip, 0.0_ip, 0.0_ip]
       KML_Styles(ivar,1) = '00-03_hrs';  KML_Colors(ivar,1) = '800080'
       KML_Styles(ivar,2) = '03-06_hrs';  KML_Colors(ivar,2) = 'ff0000'
       KML_Styles(ivar,3) = '06-09_hrs';  KML_Colors(ivar,3) = 'ff8000'
@@ -365,8 +366,8 @@
       KML_units(ivar)         = '  km '
       KML_fid(ivar)           = fid_kmlbase + ivar
       KML_n_clrmp(ivar)       = 8
-      KML_color_map(ivar,:) = (/ 1.0_ip,   2.0_ip,   3.0_ip,    4.0_ip, 5.0_ip,&
-                                 6.0_ip, 7.0_ip, 8.0_ip, 0.0_ip, 0.0_ip, 0.0_ip/)
+      KML_color_map(ivar,:) = [ 1.0_ip,   2.0_ip,   3.0_ip,    4.0_ip, 5.0_ip,&
+                                 6.0_ip, 7.0_ip, 8.0_ip, 0.0_ip, 0.0_ip, 0.0_ip ]
       KML_Styles(ivar,1) = 'pale_blue';  KML_Colors(ivar,1) = 'ffe5e5'
       KML_Styles(ivar,2) = 'lite_blue';  KML_Colors(ivar,2) = 'ffcccc'
       KML_Styles(ivar,3) = 'med__blue';  KML_Colors(ivar,3) = 'ffb2b2'
@@ -388,7 +389,7 @@
       KML_sizeY(ivar)         = '305'
       KML_AltMode(ivar)       = 'clampToGround'
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Set_OutVar_Specs"
       endif;enddo
 
@@ -471,7 +472,7 @@
         end function HS_yyyymmddhh_since
       END INTERFACE
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine OpenFile_KML"
       endif;enddo
 
@@ -490,7 +491,7 @@
       sizeY       = KML_sizeY(ivar)
 
       opacity = '80'
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Opening KML file ",trim(adjustl(filename))
       endif;enddo
       open(unit=fid,file=trim(adjustl(filename)),status='replace',action='write',err=2500)
@@ -546,7 +547,7 @@
                              StartHour(ierup)
         linebuffer080 = yyyymmddhh
         linebuffer050 = "Reading date from date_string (write_KML)"
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         write(fid,8) ierup,iyear(ierup),imonth(ierup),iday(ierup), &
                              StartHour(ierup), &
                              e_PlumeHeight(ierup),e_Duration(ierup),e_Volume(ierup)
@@ -562,17 +563,17 @@
         lon_volcano = real(olam,kind=ip)
         lat_volcano = real(ophi,kind=ip)
       endif
-      if (lon_volcano.gt.180.0_ip) then
+      if (lon_volcano > 180.0_ip) then
         write(fid,9) lon_volcano-360.0_ip, lat_volcano
       else
         write(fid,9) lon_volcano, lat_volcano
       endif
 
       ! Create forecast folder only for the files that have time steps
-      if ((ivar.eq.5).or. &                                    ! cloud arrival time
-         ((ivar.eq.7).and.(.not.WriteDepositTS_KML)).or. &     ! deposit
-         ((ivar.eq.8).and.(.not.WriteDepositTS_KML)).or. &     ! deposit_NWS
-          (ivar.eq.9)) then                                    ! deposit arrival time
+      if ((ivar == 5).or. &                                    ! cloud arrival time
+         ((ivar == 7).and.(.not.WriteDepositTS_KML)).or. &     ! deposit
+         ((ivar == 8).and.(.not.WriteDepositTS_KML)).or. &     ! deposit_NWS
+          (ivar == 9)) then                                    ! deposit arrival time
         continue
       else
         write(fid,6)                                       ! create folder of forecasts
@@ -580,14 +581,14 @@
 
       deallocate(iyear,imonth,iday,StartHour)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine OpenFile_KML"
       endif;enddo
 
       return
 
       ! Error traps
-2500  do io=1,2;if(VB(io).le.verbosity_error)then
+2500  do io=1,2;if(VB(io) <= verbosity_error)then
         write(errlog(io),20)
       endif;enddo
       stop 1
@@ -731,7 +732,7 @@
              '      <coordinates>',e12.6,',',e12.6,',0</coordinates>',/, &
              '    </Point>',/, &
              '  </Placemark>')
-20    format(/,4x,'Error: Can''t open kml file for output.  Program stopped.')
+20    format( /,4x,'Error: Can''t open kml file for output.  Program stopped.')
 
       end subroutine OpenFile_KML
 
@@ -805,7 +806,7 @@
         end function HS_xmltime
       END INTERFACE
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Write_2D_KML"
       endif;enddo
 
@@ -821,7 +822,7 @@
 
       StyleNow3 = 'PureWhite'
 
-      if(TS_flag.ne.0)then
+      if(TS_flag /= 0)then
         write(fid,1) xmlArrivalTime, xmlArrivalTime,  &
                  xmlTimeSpanStart, xmlTimeSpanEnd
       else
@@ -831,11 +832,11 @@
 
       do i=1,nxmax
         do j=1,nymax
-          if (OutVar(i,j).lt.color_map(1)) cycle
+          if (OutVar(i,j) < color_map(1)) cycle
           StyleNow3 = Styles(n_clrmp)
           do icmp = 1,n_clrmp-1
-            if (OutVar(i,j).gt.color_map(icmp).and.&
-                OutVar(i,j).le.color_map(icmp+1)) StyleNow3 = Styles(icmp)
+            if (OutVar(i,j) > color_map(icmp).and.&
+                OutVar(i,j) <= color_map(icmp+1)) StyleNow3 = Styles(icmp)
           enddo
           if (IsLatLon) then
             longLL  = lon_cc_pd(i) - de/2.0_ip
@@ -884,19 +885,19 @@
             longCC = real(olam,kind=ip)
             lattCC = real(ophi,kind=ip)
           endif  ! IsLatLon
-          if (longLL.gt.180.0_ip) longLL = longLL-360.0_ip
-          if (longUL.gt.180.0_ip) longUL = longUL-360.0_ip
-          if (longLR.gt.180.0_ip) longLR = longLR-360.0_ip
-          if (longUR.gt.180.0_ip) longUR = longUR-360.0_ip
-          if (longCC.gt.180.0_ip) longCC = longCC-360.0_ip
-          if(height_flag.gt.0)then
+          if (longLL > 180.0_ip) longLL = longLL-360.0_ip
+          if (longUL > 180.0_ip) longUL = longUL-360.0_ip
+          if (longLR > 180.0_ip) longLR = longLR-360.0_ip
+          if (longUR > 180.0_ip) longUR = longUR-360.0_ip
+          if (longCC > 180.0_ip) longCC = longCC-360.0_ip
+          if(height_flag > 0)then
             height = int(MaxHeight(i,j)*1000.0_ip)
-          elseif(height_flag.lt.0)then
+          elseif(height_flag < 0)then
             height = int(MinHeight(i,j)*1000.0_ip)
           else
             height = 0
           endif
-          if (LongUR.lt.LongUL) then
+          if (LongUR < LongUL) then
             CrossAntiMeridian = .true.       ! polygon crosses the antimeridian
             ! establish two polygons.  The first is left of the AM
             longLL1=longLL
@@ -953,7 +954,7 @@
 
       write(fid,3)   ! close folder
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Write_2D_KML"
       endif;enddo
 
@@ -1159,7 +1160,7 @@
         end function HS_xmltime
       END INTERFACE
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Write_PointData_Airports_KML"
       endif;enddo
 
@@ -1176,13 +1177,13 @@
       Airport_TS_plotindex(:) = 0
       do ai=1,nairports
         ! First check if ash has accumulated there by more than 0.01 mm
-        if(Airport_Thickness_TS(ai,nWriteTimes).lt.THICKNESS_THRESH)then
+        if(Airport_Thickness_TS(ai,nWriteTimes) < THICKNESS_THRESH)then
           cycle
-        elseif(Airport_Thickness_TS(ai,nWriteTimes).lt.1.0_ip)then
+        elseif(Airport_Thickness_TS(ai,nWriteTimes) < 1.0_ip)then
           ymaxpl = 1.0_ip
-        elseif(Airport_Thickness_TS(ai,nWriteTimes).lt.5.0_ip)then
+        elseif(Airport_Thickness_TS(ai,nWriteTimes) < 5.0_ip)then
           ymaxpl = 5.0_ip
-        elseif(Airport_Thickness_TS(ai,nWriteTimes).lt.25.0_ip)then
+        elseif(Airport_Thickness_TS(ai,nWriteTimes) < 25.0_ip)then
           ymaxpl = 25.0_ip
         else
           ymaxpl = 100.0_ip
@@ -1226,9 +1227,9 @@
                                       wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
             ! Now delete the script and data files
             open(unit=fid_outdata, iostat=stat, file=filename_outdata, status='old',action='write')
-            if (stat.eq.0) close(fid_outdata, status='delete')
+            if (stat == 0) close(fid_outdata, status='delete')
             open(unit=fid_script, iostat=stat, file=filename_script, status='old',action='write')
-            if (stat.eq.0) close(fid_script, status='delete')
+            if (stat == 0) close(fid_script, status='delete')
           endif
         endif
       !else
@@ -1242,7 +1243,7 @@
       ! Loop through all the airports again so we can write out the airports that are hit.
       do ai=1,nairports
         ! First separate the airports into two categories: deposit cases or cloud cases
-        if ((n_gs_max.gt.1).and.&         ! Check if this is a web-cloud run by testing the number of grain sizes
+        if ((n_gs_max > 1).and.&         ! Check if this is a web-cloud run by testing the number of grain sizes
             Airport_AshArrived(ai)) then  ! Check if ash has actually arrived here
           ! Deposit case
           deposit_morethan = ' '
@@ -1252,20 +1253,20 @@
           xmlTimeStart = HS_xmltime(SimStartHour+Airport_AshArrivalTime(ai)+OutputOffset,&
                                     BaseYear,useLeap)
           !See whether cloud is still overhead, or whether ash is still falling
-          if ((Airport_AshArrived(ai)).and.(Airport_deprate(ai).gt.DEPRATE_THRESH)) then
+          if ((Airport_AshArrived(ai)).and.(Airport_deprate(ai) > DEPRATE_THRESH)) then
             Airport_AshDuration(ai) = time-Airport_AshArrivalTime(ai)
             deposit_morethan = '>'
           else
             deposit_morethan = ' '
           endif
-          if (CloudLoad(Airport_i(ai),Airport_j(ai)).gt.CLOUDLOAD_THRESH) then
+          if (CloudLoad(Airport_i(ai),Airport_j(ai)) > CLOUDLOAD_THRESH) then
             Airport_CloudDuration(ai) = time-Airport_CloudArrivalTime(ai)
             cloud_morethan = '>'
           else
             cloud_morethan = ' '
           endif
-          if (Airport_Longitude(ai).gt.180.0_ip) airlon=airlon-360.0_ip
-          if (Airport_TS_plotindex(ai).gt.0)then
+          if (Airport_Longitude(ai) > 180.0_ip) airlon=airlon-360.0_ip
+          if (Airport_TS_plotindex(ai) > 0)then
             write(filename_png,53) Airport_TS_plotindex(ai),".png"
 
             ! A cumulative deposit plot exists for this point since it has a plot index
@@ -1309,7 +1310,7 @@
           xmlTimeStart = HS_xmltime(CloudTime+OutputOffset,&
                                     BaseYear,useLeap)
           ! See whether cloud is still overhead, or whether ash is still falling
-          if (CloudLoad(Airport_i(ai),Airport_j(ai)).gt.CLOUDLOAD_THRESH) then
+          if (CloudLoad(Airport_i(ai),Airport_j(ai)) > CLOUDLOAD_THRESH) then
             Airport_CloudDuration(ai) = time-Airport_CloudArrivalTime(ai)
             cloud_morethan = '>'
           else
@@ -1317,7 +1318,7 @@
           endif
           xmlTimeEnd   = HS_xmltime(CloudTime+Airport_CloudDuration(ai)+OutputOffset,&
                                     BaseYear,useLeap)
-          if (Airport_Longitude(ai).gt.180.0_ip) airlon=airlon-360.0_ip
+          if (Airport_Longitude(ai) > 180.0_ip) airlon=airlon-360.0_ip
           ! Write out a normal placemark without image
           write(fid_kmlPOI,7) Airport_Name(ai),     &
                       Airport_CloudArrivalTime(ai), &
@@ -1354,20 +1355,20 @@
                       StartHour(ierup)
         linebuffer080 = yyyymmddhh
         linebuffer050 = "Reading date from date_string (write_KML)"
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         write(fid_kmlPOI,9) ierup,iyear(ierup),imonth(ierup),iday(ierup), &
                       StartHour(ierup), &
                       e_PlumeHeight(ierup),e_Duration(ierup),e_Volume(ierup)
 200     format(i4,i2,i2,f5.2)
       enddo
-      if (nWrittenOut.gt.0) then             ! If one or more airports were affected
-        if (lon_volcano.gt.180.0_ip) then
+      if (nWrittenOut > 0) then             ! If one or more airports were affected
+        if (lon_volcano > 180.0_ip) then
           write(fid_kmlPOI,10) lon_volcano-360.0_ip, lat_volcano
         else
           write(fid_kmlPOI,10) lon_volcano, lat_volcano
         endif
       else                                   ! If no airports were affected
-        if (lon_volcano.gt.180.0_ip) then
+        if (lon_volcano > 180.0_ip) then
           write(fid_kmlPOI,11) lon_volcano-360.0_ip, lat_volcano
         else
           write(fid_kmlPOI,11) lon_volcano, lat_volcano
@@ -1376,7 +1377,7 @@
       write(fid_kmlPOI,12)                           ! write final lines of file
       close(fid_kmlPOI)                              ! close file
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),4) nWrittenOut      ! Write number of airports affected to log file & stdout
       endif;enddo
 
@@ -1392,14 +1393,14 @@
         IsThere = .false.
       endif
       if(.not.IsThere)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
            "The zippath provided in the makefile seems to be invalid. Cannot find zip."
         endif;enddo
         !stop 1
       endif
       if(usezip)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"  Zipping up ash_arrivaltimes_airports.kmz"
         endif;enddo
         write(zipcom,'(a77)')&
@@ -1408,20 +1409,20 @@
                                   wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Write_PointData_Airports_KML"
       endif;enddo
 
       return
 
       ! Error traps
-2001  do io=1,2;if(VB(io).le.verbosity_error)then
+2001  do io=1,2;if(VB(io) <= verbosity_error)then
         write(errlog(io),*)'Error opening ash_arrivaltimes_airports.kml.  Program stopped.'
       endif;enddo
       stop 1
 
 
-4     format(/,4x,'Number of airports impacted by ash = ',i4)
+4     format( /,4x,'Number of airports impacted by ash = ',i4)
 5     format('<?xml version="1.0" encoding="UTF-8"?>',/, &
              '<kml xmlns="http://www.opengis.net/kml/2.2">',/, &
              '<Document>',/, &
@@ -1662,17 +1663,17 @@
       integer            :: cstat
       character(len=120) :: iomessage
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Close_KML"
       endif;enddo
 
       fid = KML_fid(ivar)
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),15)KML_filename(ivar)
       endif;enddo
 
-      if(TS_flag.ne.0)then
+      if(TS_flag /= 0)then
         write(fid,11)
       else
         write(fid,12)
@@ -1692,14 +1693,14 @@
         IsThere = .false.
       endif
       if(.not.IsThere)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
            "The zippath provided in the makefile seems to be invalid. Cannot find zip."
         endif;enddo
         !stop 1
       endif
       if(usezip)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"  Zipping up ",KMZ_filename(ivar)
         endif;enddo
         zipcom =  'zip -r ' // KMZ_filename(ivar) // ' '  // KML_filename(ivar)
@@ -1707,15 +1708,15 @@
                                   wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Close_KML"
       endif;enddo
 
       return
 
-15    format(/,5x,'Closing kml file ',a30)
+15    format( /,5x,'Closing kml file ',a30)
 11    format('   </Folder>',/,'</Document>',/,'</kml>')
-12    format(/,'</Document>',/,'</kml>')
+12    format( /,'</Document>',/,'</kml>')
 
       end subroutine Close_KML
 
@@ -1741,12 +1742,17 @@
       use projection,    only : &
            PJ_proj_inv
 
+      real(kind=ip) ,intent(in) :: xleft
+      real(kind=ip) ,intent(in) :: xright
+      real(kind=ip) ,intent(in) :: ybottom
+      real(kind=ip) ,intent(in) :: ytop
+      integer       ,intent(in) :: fid
+
       real(kind=ip) :: xplot(0:40),yplot(0:40),lonplot(0:40),latplot(0:40)
-      real(kind=ip) :: xleft,xright,ybottom,ytop
-      integer       :: ict, fid
+      integer       :: ict
       real(kind=dp)  :: olam,ophi
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine PlotModelBoundary"
       endif;enddo
 
@@ -1787,14 +1793,14 @@
 
       ! Make sure the longitude is between -180 and +180 degrees
       do ict=0,40
-        if (lonplot(ict).gt.180.0_ip)  lonplot(ict) = lonplot(ict)-360.0_ip
-        if (lonplot(ict).lt.-180.0_ip) lonplot(ict) = lonplot(ict)+360.0_ip
+        if (lonplot(ict) > 180.0_ip)  lonplot(ict) = lonplot(ict)-360.0_ip
+        if (lonplot(ict) < -180.0_ip) lonplot(ict) = lonplot(ict)+360.0_ip
       enddo
 
       ! Write out the polygon
       write(fid,5) (lonplot(ict),latplot(ict), ict=0,40)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine PlotModelBoundary"
       endif;enddo
 

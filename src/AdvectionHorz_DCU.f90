@@ -35,6 +35,7 @@
          DelDxonD_cc,DelDyonD_cc
 
       implicit none
+      !implicit none (type, external)
 
         ! Set everything to private by default
       private
@@ -103,11 +104,13 @@
 
       INTERFACE
         subroutine Set_BC(bc_code)
+          implicit none
+          !implicit none (type, external)
           integer,intent(in) :: bc_code  ! 1 for advection, 2 for diffusion
         end subroutine Set_BC
       END INTERFACE
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine advect_x"
       endif;enddo
 
@@ -166,7 +169,7 @@
                                                      vel_cc(rmin-1:rmin-1+ncells+1))* &
                                                       sig_I(rmin-1:rmin-1+ncells+1)
             DelDonD_cc  = 0.0_ip
-            if (ZScaling_ID.eq.2) then
+            if (ZScaling_ID == 2) then
               DelDonD_cc(rmin-1:rmin-1+ncells+1)=DelDxonD_cc(rmin-1:rmin-1+ncells+1,j)
             endif
 
@@ -185,7 +188,7 @@
               ! This cycling is good for production runs, but causes
               ! problems with convergence tests
 #ifndef NOCYCLE
-              if (abs(dq_I(i_I)).le.EPS_THRESH) cycle
+              if (abs(dq_I(i_I)) <= EPS_THRESH) cycle
 #endif
 
 #ifdef LIM_LAXWEN
@@ -195,15 +198,15 @@
               ! Only calculate dqu_I and theta if the limiter is being used
               ! requires it.
               ! Get delta Q at upwind interface relative to interface I
-              if(usig_I(i_I).gt.0.0_ip)then
+              if(usig_I(i_I) > 0.0_ip)then
                 dqu_I = dq_I(i_I-1)  ! upwind is interface I-1
               else
                 dqu_I = dq_I(i_I+1)  ! upwind is interface I+1
               endif
 
               ! Make sure that theta is not singular
-              if(abs(dqu_I).gt.3.0_ip*abs(dq_I(i_I)).or. &
-                 abs(dq_I(i_I)).lt.EPS_THRESH)then
+              if(abs(dqu_I) > 3.0_ip*abs(dq_I(i_I)).or. &
+                 abs(dq_I(i_I)) < EPS_THRESH)then
                 theta = sign(3.0_ip,dqu_I*dq_I(i_I))
               else
                 theta = dqu_I/dq_I(i_I)
@@ -291,20 +294,20 @@
                concen_pd(rmin:rmin-1+ncells,j,k,n,ts0) + &
                update_cc(rmin:rmin-1+ncells)
 
-            if(rmin.eq.1.and..not.IsPeriodic) &
+            if(rmin == 1.and..not.IsPeriodic) &
               ! Flux out the - side of advection row  (W)
               outflow_yz1_pd(j,k,n) = outflow_yz1_pd(j,k,n) + update_cc(0)
-            if(rmax.eq.nxmax.and..not.IsPeriodic) &
+            if(rmax == nxmax.and..not.IsPeriodic) &
               ! Flux out the + side of advection row  (E)
               outflow_yz2_pd(j,k,n) = outflow_yz2_pd(j,k,n) + update_cc(nxmax+1)
-            !if(update_cc(0).le.-EPS_TINY)then
-            !  do io=1,2;if(VB(io).le.verbosity_error)then
+            !if(update_cc(0) <= -EPS_TINY)then
+            !  do io=1,2;if(VB(io) <= verbosity_error)then
             !    write(errlog(io),*)"ERROR: ",&
             !               "Update to outflow_yz1_pd negative at: ",j,k,n,update_cc(0)
             !  endif;enddo
             !endif
-            !if(update_cc(nxmax+1).le.-EPS_TINY)then
-            !  do io=1,2;if(VB(io).le.verbosity_error)then
+            !if(update_cc(nxmax+1) <= -EPS_TINY)then
+            !  do io=1,2;if(VB(io) <= verbosity_error)then
             !    write(errlog(io),*)"ERROR: ",&
             !               "Update to outflow_yz2_pd negative at: ",j,k,n,update_cc(nxmax+1)
             !  endif;enddo
@@ -353,7 +356,7 @@
        ! arrays that live on cell interfaces
        !  Note: interface I for cell i is at (i-1/2); i.e. the left or negative side of i
        !        We only need the interfaces up to the boundary of the domain (not the ghost cells)
-      real(kind=ip),dimension(-1:nymax+2)               :: usig_I   ! vel*(interface area)
+      real(kind=ip),dimension(-1:nymax+2)               :: usig_I     ! vel*(interface area)
       ! This block is only needed for the in-line 1-d advection code as
       ! opposed to the function call
       real(kind=ip),dimension( 0:nymax+2)     :: dq_I
@@ -371,11 +374,13 @@
 
       INTERFACE
         subroutine Set_BC(bc_code)
+          implicit none
+          !implicit none (type, external)
           integer,intent(in) :: bc_code  ! 1 for advection, 2 for diffusion
         end subroutine Set_BC
       END INTERFACE
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine advect_y"
       endif;enddo
 
@@ -434,7 +439,7 @@
                                                      vel_cc(rmin-1:rmin-1+ncells+1))* &
                                                       sig_I(rmin-1:rmin-1+ncells+1)
             DelDonD_cc  = 0.0_ip
-            if (ZScaling_ID.eq.2) then
+            if (ZScaling_ID == 2) then
               DelDonD_cc(rmin-1:rmin-1+ncells+1)=DelDyonD_cc(i,rmin-1:rmin-1+ncells+1)
             endif
 
@@ -453,7 +458,7 @@
               ! This cycling is good for production runs, but causes
               ! problems with convergence tests
 #ifndef NOCYCLE
-              if (abs(dq_I(i_I)).le.EPS_THRESH) cycle
+              if (abs(dq_I(i_I)) <= EPS_THRESH) cycle
 #endif
 
 #ifdef LIM_LAXWEN
@@ -463,14 +468,14 @@
               ! Only calculate dqu_I and theta if the limiter is being used
               ! requires it.
               ! Get delta Q at upwind interface relative to interface I
-              if(usig_I(i_I).gt.0.0_ip)then
+              if(usig_I(i_I) > 0.0_ip)then
                 dqu_I = dq_I(i_I-1)  ! upwind is interface I-1
               else
                 dqu_I = dq_I(i_I+1)  ! upwind is interface I+1
               endif
               ! Make sure that theta is not singular
-              if(abs(dqu_I).gt.3.0_ip*abs(dq_I(i_I)).or. &
-                 abs(dq_I(i_I)).lt.EPS_THRESH)then
+              if(abs(dqu_I) > 3.0_ip*abs(dq_I(i_I)).or. &
+                 abs(dq_I(i_I)) < EPS_THRESH)then
                 theta = sign(3.0_ip,dqu_I*dq_I(i_I))
               else
                 theta = dqu_I/dq_I(i_I)
@@ -559,20 +564,20 @@
                concen_pd(i,rmin:rmin-1+ncells,k,n,ts0) + &
                update_cc(rmin:rmin-1+ncells)
 
-            if(rmin.eq.1) &
+            if(rmin == 1) &
               ! Flux out the - side of advection row  (N)
               outflow_xz1_pd(i,k,n) = outflow_xz1_pd(i,k,n) + update_cc(0)
-            if(rmax.eq.nymax) &
+            if(rmax == nymax) &
               ! Flux out the + side of advection row  (S)
               outflow_xz2_pd(i,k,n) = outflow_xz2_pd(i,k,n) + update_cc(nymax+1)
-            !if(update_cc(0).le.-EPS_TINY)then
-            !  do io=1,2;if(VB(io).le.verbosity_error)then
+            !if(update_cc(0) <= -EPS_TINY)then
+            !  do io=1,2;if(VB(io) <= verbosity_error)then
             !    write(errlog(io),*)"ERROR: ",&
             !               "Update to outflow_xz1_pd negative at: ",i,k,n,update_cc(0)
             !  endif;enddo
             !endif
-            !if(update_cc(nymax+1).le.-EPS_TINY)then
-            !  do io=1,2;if(VB(io).le.verbosity_error)then
+            !if(update_cc(nymax+1) <= -EPS_TINY)then
+            !  do io=1,2;if(VB(io) <= verbosity_error)then
             !    write(errlog(io),*)"ERROR: ",&
             !               "Update to outflow_xz2_pd negative at: ",i,k,n,update_cc(nymax+1)
             !  endif;enddo

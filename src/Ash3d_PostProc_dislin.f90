@@ -29,6 +29,7 @@
       use dislin
 
       implicit none
+      !implicit none (type, external)
 
         ! Set everything to private by default
       private
@@ -117,8 +118,8 @@
       integer :: tmp_int
       integer,dimension(:,:),allocatable :: zrgb
       character(len=40) :: title_plot
-      character(len=30) :: cstr_xlabel = 'Longitude'
-      character(len=30) :: cstr_ylabel = 'Latitude'
+      character(len=30) :: cstr_xlabel
+      character(len=30) :: cstr_ylabel
       character(len=30) :: cstr_zlabel
       character(len=30) :: cstr_volcname
       character(len=30) :: cstr_run_date
@@ -130,7 +131,7 @@
       character(len=45) :: cstr_note
       character(len=20) :: varname
       character(len= 9) :: cio
-      character(len= 4) :: outfile_ext = '.png'
+      character(len= 4),parameter :: outfile_ext = '.png'
       character(len=10) :: units
       integer           :: iostatus
       character(len=120):: iomessage
@@ -151,7 +152,7 @@
       ! Citywriter variables
       integer :: icty
       integer :: ncities
-      integer :: cityname_offset_px = 30
+      integer :: cityname_offset_px
       real(kind=ip),dimension(:),allocatable     :: lon_cities
       real(kind=ip),dimension(:),allocatable     :: lat_cities
       character(len=26),dimension(:),allocatable :: name_cities
@@ -163,15 +164,15 @@
       integer           :: npts        ! number of points in curve ilev,icurve
 
       ! Plotting variables
-      integer :: plotx_px       = 2200
-      integer :: ploty_px       = 1400
-      integer :: plotposx_px    = 500
-      integer :: plotposy_px    = 1650
-      integer :: y_footer_px    = 1900
-      integer :: x_leg1_px      = 400
-      integer :: x_leg2_px      = 1200
-      integer :: x_leg3_px      = 2250
-      integer :: dy_newline_px  = 40
+      integer :: plotx_px
+      integer :: ploty_px
+      integer :: plotposx_px
+      integer :: plotposy_px
+      integer :: y_footer_px
+      integer :: x_leg1_px
+      integer :: x_leg2_px
+      integer :: x_leg3_px
+      integer :: dy_newline_px
 
       ! DISLIN variables
       real(kind=DS) :: xminDS
@@ -181,8 +182,8 @@
       real(kind=DS) :: dx_map, dy_map    ! lon and lat grid line increment
       real(kind=DS) :: xgrid_1, ygrid_1  ! gridlines
 
-      character(len=4) :: cfmt = "PNG "  ! output driver/file-format (PNG); this is a 4-char string
-      character(len=4) :: cfsz = "USAL"  ! US A Landscape (2790 x 2160)
+      character(len=4),parameter :: cfmt = "PNG "  ! output driver/file-format (PNG); this is a 4-char string
+      character(len=4),parameter :: cfsz = "USAL"  ! US A Landscape (2790 x 2160)
 !      character(len=3) :: cmode = "ON " ! Plotting mode; can be off if just calc. contours
       integer          :: nclr           ! color index
       integer          :: nmaxln         ! number of characters in the longest line of text
@@ -208,9 +209,23 @@
         end function HS_xmltime
       END INTERFACE
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_2Dmap_PNG_dislin"
       endif;enddo
+
+      ! Initialization
+      cstr_xlabel = 'Longitude'
+      cstr_ylabel = 'Latitude'
+      cityname_offset_px = 30
+      plotx_px       = 2200
+      ploty_px       = 1400
+      plotposx_px    = 500
+      plotposy_px    = 1650
+      y_footer_px    = 1900
+      x_leg1_px      = 400
+      x_leg2_px      = 1200
+      x_leg3_px      = 2250
+      dy_newline_px  = 40
 
       ! Test for icon file
       inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
@@ -221,13 +236,13 @@
       allocate(name_cities(ncities))
       filename_root        = "outvar"
 
-      if(iprod.eq.5.or.iprod.eq.6)then
+      if(iprod == 5.or.iprod == 6)then
         cio='____final'
       else
-        if (WriteTimes(itime).lt.10.0_ip) then
+        if (WriteTimes(itime) < 10.0_ip) then
           write(cio,1) WriteTimes(itime)
 1         format('00',f4.2,'hrs')
-        elseif (WriteTimes(itime).lt.100.0_ip) then
+        elseif (WriteTimes(itime) < 100.0_ip) then
           write(cio,2) WriteTimes(itime)
 2         format('0',f5.2,'hrs')
         else
@@ -244,7 +259,7 @@
         zrgb(1:nConLev,1:3) = Con_Cust_RGB(1:nConLev,1:3)
       endif
 
-      if(iprod.eq.3)then       ! deposit at specified times (mm)
+      if(iprod == 3)then       ! deposit at specified times (mm)
         varname = "depothick"
         write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f7.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
@@ -257,7 +272,7 @@
           ContourLev(1:nConLev) = Con_DepThick_mm_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.4)then   ! deposit at specified times (inches)
+      elseif(iprod == 4)then   ! deposit at specified times (inches)
         varname = "depothick"
         write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f7.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
@@ -270,7 +285,7 @@
           ContourLev(1:nConLev) = Con_DepThick_in_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_DepThick_in_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.5)then       ! deposit at final time (mm)
+      elseif(iprod == 5)then       ! deposit at final time (mm)
         varname = "depothickFin"
         write(filename_png,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
@@ -283,7 +298,7 @@
           ContourLev(1:nConLev) = Con_DepThick_mm_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.6)then   ! deposit at final time (inches)
+      elseif(iprod == 6)then   ! deposit at final time (inches)
         varname = "depothickFin"
         write(filename_png,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
@@ -296,7 +311,7 @@
           ContourLev(1:nConLev) = Con_DepThick_in_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_DepThick_in_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.7)then   ! ashfall arrival time (hours)
+      elseif(iprod == 7)then   ! ashfall arrival time (hours)
         varname = "depotime"
         write(filename_png,'(a22)')'DepositArrivalTime.png'
         write(title_plot,'(a20)')'Ashfall arrival time'
@@ -309,13 +324,13 @@
           ContourLev(1:nConLev) = Con_DepTime_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_DepTime_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.8)then   ! ashfall arrival at airports/POI (mm)
-        do io=1,2;if(VB(io).le.verbosity_error)then
+      elseif(iprod == 8)then   ! ashfall arrival at airports/POI (mm)
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: No map PNG output option for airport arrival time data."
           write(errlog(io),*)"       Should not be in write_2Dmap_PNG_dislin"
         endif;enddo
         stop 1
-      elseif(iprod.eq.9)then   ! ash-cloud concentration
+      elseif(iprod == 9)then   ! ash-cloud concentration
         varname = "ashcon_max"
         write(filename_png,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
         write(title_plot,'(a26,f7.2,a6)')'Ash-cloud concentration t=',WriteTimes(itime),' hours'
@@ -328,7 +343,7 @@
           ContourLev(1:nConLev) = Con_CloudCon_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_CloudCon_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.10)then   ! ash-cloud height
+      elseif(iprod == 10)then   ! ash-cloud height
         varname = "cloud_height"
         write(filename_png,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
         write(title_plot,'(a19,f7.2,a6)')'Ash-cloud height t=',WriteTimes(itime),' hours'
@@ -341,7 +356,7 @@
           ContourLev(1:nConLev) = Con_CloudTop_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_CloudTop_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.11)then   ! ash-cloud bottom
+      elseif(iprod == 11)then   ! ash-cloud bottom
         varname = "cloud_bottom"
         write(filename_png,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
         write(title_plot,'(a19,f7.2,a6)')'Ash-cloud bottom t=',WriteTimes(itime),' hours'
@@ -354,7 +369,7 @@
           ContourLev(1:nConLev) = Con_CloudBot_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_CloudBot_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.12)then   ! ash-cloud load
+      elseif(iprod == 12)then   ! ash-cloud load
         varname = "cloud_load"
         write(filename_png,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
         write(title_plot,'(a17,f7.2,a6)')'Ash-cloud load t=',WriteTimes(itime),' hours'
@@ -367,7 +382,7 @@
           ContourLev(1:nConLev) = Con_CloudLoad_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_CloudLoad_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.13)then  ! radar reflectivity
+      elseif(iprod == 13)then  ! radar reflectivity
         varname = "radar_reflectivity"
         write(filename_png,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
         write(title_plot,'(a24,f7.2,a6)')'Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
@@ -380,7 +395,7 @@
           ContourLev(1:nConLev) = Con_CloudRef_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_CloudRef_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.14)then   ! ashcloud arrival time (hours)
+      elseif(iprod == 14)then   ! ashcloud arrival time (hours)
         varname = "ash_arrival_time"
         write(filename_png,'(a20)')'CloudArrivalTime.png'
         write(title_plot,'(a22)')'Ash-cloud arrival time'
@@ -393,7 +408,7 @@
           ContourLev(1:nConLev) = Con_CloudTime_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_CloudTime_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.15)then   ! topography
+      elseif(iprod == 15)then   ! topography
         varname = "topography"
         write(filename_png,'(a14)')'Topography.png'
         write(title_plot,'(a10)')'Topography'
@@ -403,17 +418,17 @@
           nConLev = 8
           allocate(zrgb(nConLev,3))
           allocate(ContourLev(nConLev))
-          ContourLev = (/1.0_ip, 2.0_ip, 3.0_ip, 4.0_ip, &
-                  5.0_ip, 6.0_ip, 7.0_ip, 8.0_ip/)
+          ContourLev = [1.0_ip, 2.0_ip, 3.0_ip, 4.0_ip, &
+                        5.0_ip, 6.0_ip, 7.0_ip, 8.0_ip]
         endif
-      elseif(iprod.eq.16)then   ! profile plots
-        do io=1,2;if(VB(io).le.verbosity_error)then
+      elseif(iprod == 16)then   ! profile plots
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: No map PNG output option for vertical profile data."
           write(errlog(io),*)"       Should not be in write_2Dmap_PNG_dislin"
         endif;enddo
         stop 1
       else
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: unexpected variable"
           write(errlog(io),*)"         iprod = ",iprod
           write(errlog(io),*)"       Cannot map this variable."
@@ -441,7 +456,7 @@
       ! reading in the contour lines. Here, we can just contour then exit the subroutine.
       !call nancrv(cmode)
       if(writeContours)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"Running dislin to calculate contours lines"
         endif;enddo
         allocate(ContourDataNcurves(nConLev))
@@ -468,8 +483,8 @@
                       CONTOUR_MAXCURVES,           &  ! max number of curves
                       NCURVS)                         ! actual number of curves
 
-          if(NCURVS.gt.CONTOUR_MAXCURVES)then
-            do io=1,2;if(VB(io).le.verbosity_error)then
+          if(NCURVS > CONTOUR_MAXCURVES)then
+            do io=1,2;if(VB(io) <= verbosity_error)then
               write(errlog(io),*)"ERROR: Maximum number of curves for this level exceeded by conpts"
               write(errlog(io),*)"       Current maximum set to CONTOUR_MAXCURVES = ",CONTOUR_MAXCURVES
               write(errlog(io),*)"       Please increase CONTOUR_MAXCURVES and recompile."
@@ -480,8 +495,8 @@
           ContourDataNcurves(ilev)=NCURVS
           do icurve=1,NCURVS
             ContourDataNpoints(ilev,icurve)=iray(icurve)
-            if(ContourDataNpoints(ilev,icurve).gt.CONTOUR_MAXPOINTS)then
-              do io=1,2;if(VB(io).le.verbosity_error)then
+            if(ContourDataNpoints(ilev,icurve) > CONTOUR_MAXPOINTS)then
+              do io=1,2;if(VB(io) <= verbosity_error)then
                 write(errlog(io),*)"ERROR: Maximum number of points for this curve exceeded by conpts"
                 write(errlog(io),*)"       Current maximum set to CONTOUR_MAXPOINTS = ",CONTOUR_MAXPOINTS
                 write(errlog(io),*)"       Please increase CONTOUR_MAXPOINTS and recompile."
@@ -501,7 +516,7 @@
         ! Once we've loaded contours, we are all done here
         return
       else
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"Running dislin to generate contour plot"
         endif;enddo
       endif
@@ -513,7 +528,7 @@
         xmax = lonUR
         ymin = latLL
         ymax = latUR
-        if(abs(dn-de).lt.1.0e-4_ip)then
+        if(abs(dn-de) < 1.0e-4_ip)then
           IsRegGrid = .true.
         else
           IsRegGrid = .false.
@@ -523,12 +538,12 @@
         xmax = xUR
         ymin = yLL
         ymax = yUR
-        if(abs(dx-dy).lt.1.0e-4_ip)then
+        if(abs(dx-dy) < 1.0e-4_ip)then
           IsRegGrid = .true.
         else
           IsRegGrid = .false.
         endif
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: Currenntly, plotting with dislin only enabled for lon/lat grids."
           write(errlog(io),*)"       Please use GMT to plot projected maps."
           write(errlog(io),*)"       ./ASH3DPLOT=4 ./Ash3d_PostProc ...."
@@ -554,7 +569,7 @@
       write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
       read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
       write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
-      if(neruptions.gt.1)then
+      if(neruptions > 1)then
         write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'
       endif
 
@@ -573,20 +588,20 @@
       xmaxDS = real(xmax- 360.0_ip,kind=DS)
       yminDS = real(ymin,kind=DS)
       ymaxDS = real(ymax,kind=DS)
-      if(xmaxDS-xminDS.gt.40.0_DS)then
+      if(xmaxDS-xminDS > 40.0_DS)then
         dx_map = 10.0_DS
-      elseif(xmaxDS-xminDS.gt.10.0_DS)then
+      elseif(xmaxDS-xminDS > 10.0_DS)then
         dx_map = 5.0_DS
-      elseif(xmaxDS-xminDS.gt.5.0_DS)then
+      elseif(xmaxDS-xminDS > 5.0_DS)then
         dx_map = 2.0_DS
       else
         dx_map = 1.0_DS
       endif
-      if(ymaxDS-yminDS.gt.40.0_DS)then
+      if(ymaxDS-yminDS > 40.0_DS)then
         dy_map = 10.0_DS
-      elseif(ymaxDS-yminDS.gt.10.0_DS)then
+      elseif(ymaxDS-yminDS > 10.0_DS)then
         dy_map = 5.0_DS
-      elseif(ymaxDS-yminDS.gt.5.0_DS)then
+      elseif(ymaxDS-yminDS > 5.0_DS)then
         dy_map = 2.0_DS
       else
         dy_map = 1.0_DS
@@ -611,7 +626,7 @@
         call filbox(x_leg3_px,y_footer_px,130,49)
         call incfil(trim(adjustl(Instit_IconFile)))
       else
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"Institution Logo not found."
           write(outlog(io),*)"If you would like your logo on these maps, copy a"
           write(outlog(io),*)"small (130x50) to ASH3DHOME/share/post_proc/logo.png"
@@ -642,8 +657,8 @@
       call grafmp(xminDS,xmaxDS,xgrid_1,dx_map, &
                   yminDS,ymaxDS,ygrid_1,dy_map)
       call getlev(tmp_int)
-      if(tmp_int.ne.2)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
+      if(tmp_int /= 2)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"grafmp is supposed to return plot level 2, but we have ",tmp_int
           write(errlog(io),*)"Exiting"
         endif;enddo
@@ -709,7 +724,7 @@
       call legtit(cstr_zlabel)       ! Set legend title
       call legbgd(0)                 ! sets background color
       do ilev=1,nConLev
-        if(ContourLev(ilev).lt.1.0_ip)then
+        if(ContourLev(ilev) < 1.0_ip)then
           write(zlevlab,'(f6.2)')real(ContourLev(ilev),kind=4)
         else
           write(zlevlab,'(f6.1)')real(ContourLev(ilev),kind=4)
@@ -722,7 +737,7 @@
       call messag(cstr_volcname,x_leg1_px,y_footer_px+0*dy_newline_px)
       call messag(cstr_run_date,x_leg1_px,y_footer_px+1*dy_newline_px)
       call messag(cstr_windfile,x_leg1_px,y_footer_px+2*dy_newline_px)
-      if(neruptions.gt.1)then
+      if(neruptions > 1)then
         call messag(cstr_note,x_leg1_px,y_footer_px+3*dy_newline_px)
       endif
       call messag(cstr_ErStartT,x_leg2_px,y_footer_px+0*dy_newline_px)
@@ -739,7 +754,7 @@
       if(allocated(name_cities))        deallocate(name_cities)
       if(allocated(zrgb))               deallocate(zrgb)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine write_2Dmap_PNG_dislin"
       endif;enddo
 
@@ -784,9 +799,9 @@
 
       logical           :: HaveIconFile
       character(len=76) :: title_plot
-      character(len=30) :: cstr_xlabel = 'Time (hours after eruption)'
-      character(len=30) :: cstr_ylabel = 'Height (km)'
-      character(len=30) :: cstr_zlabel = 'Ash conc. mg/m3'
+      character(len=30) :: cstr_xlabel
+      character(len=30) :: cstr_ylabel
+      character(len=30) :: cstr_zlabel
       character(len=30) :: cstr_volcname
       character(len=30) :: cstr_run_date
       character(len=30) :: cstr_windfile
@@ -805,20 +820,20 @@
       integer           :: iw,iwf
 
       ! Plotting variables
-      integer :: plotx_px       = 1800
-      integer :: ploty_px       = 1200
-      integer :: plotz_px       = 1200
-      integer :: plotposx_px    = 500
-      integer :: plotposy_px    = 1650
-      integer :: y_footer_px    = 1900
-      integer :: x_leg1_px      = 400
-      integer :: x_leg2_px      = 1200
-      integer :: x_leg3_px      = 2250
-      integer :: dy_newline_px  = 40
+      integer :: plotx_px
+      integer :: ploty_px
+      integer :: plotz_px
+      integer :: plotposx_px
+      integer :: plotposy_px
+      integer :: y_footer_px
+      integer :: x_leg1_px
+      integer :: x_leg2_px
+      integer :: x_leg3_px
+      integer :: dy_newline_px
 
       ! DISLIN variables
-      character(len=4) :: cfmt = "PNG "  ! output driver/file-format (PNG); this is a 4-char string
-      character(len=4) :: cfsz = "USAL"  ! US A Landscape (2790 x 2160)
+      character(len=4),parameter :: cfmt = "PNG "  ! output driver/file-format (PNG); this is a 4-char string
+      character(len=4),parameter :: cfsz = "USAL"  ! US A Landscape (2790 x 2160)
       real(kind=DS) :: tmin    , zmin    , cmin      ! graph minima
       real(kind=DS) :: tmax    , zmax    , cmax      ! graph maxima
       real(kind=DS) :: tlab1   , zlab1   , clab1     ! graph first label
@@ -838,9 +853,24 @@
         end function HS_xmltime
       END INTERFACE
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_2Dprof_PNG_dislin"
       endif;enddo
+
+      ! Initialization
+      cstr_xlabel = 'Time (hours after eruption)'
+      cstr_ylabel = 'Height (km)'
+      cstr_zlabel = 'Ash conc. mg/m3'
+      plotx_px       = 1800
+      ploty_px       = 1200
+      plotz_px       = 1200
+      plotposx_px    = 500
+      plotposy_px    = 1650
+      y_footer_px    = 1900
+      x_leg1_px      = 400
+      x_leg2_px      = 1200
+      x_leg3_px      = 2250
+      dy_newline_px  = 40
 
       ! Test for icon file
       inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
@@ -854,7 +884,7 @@
       write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
       read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
       write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
-      if(neruptions.gt.1)then
+      if(neruptions > 1)then
         write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'
       endif
 
@@ -873,15 +903,15 @@
       tmin=real(0,kind=DS)
       tmax=real(ceiling(time_native(ntmax)),kind=DS)
       tlab1    = 0.0_DS
-      if(tmax.gt.240.0_DS)then
+      if(tmax > 240.0_DS)then
         tlabstep = 48.0_DS
-      elseif(tmax.gt.120.0_DS)then
+      elseif(tmax > 120.0_DS)then
         tlabstep = 24.0_DS
-      elseif(tmax.gt.30.0_DS)then
+      elseif(tmax > 30.0_DS)then
         tlabstep = 10.0_DS
-      elseif(tmax.gt.15.0_DS)then
+      elseif(tmax > 15.0_DS)then
         tlabstep = 5.0_DS
-      elseif(tmax.gt.6.0_DS)then
+      elseif(tmax > 6.0_DS)then
         tlabstep = 2.0_DS
       else
         tlabstep = 1.0_DS
@@ -890,11 +920,11 @@
       zmin=real(0,kind=DS)
       zmax=real(z_cc_pd(nzmax),kind=DS)
       zlab1    = 0.0_DS
-      if(zmax.gt.30.0_DS)then
+      if(zmax > 30.0_DS)then
         zlabstep = 10.0_DS
-      elseif(zmax.gt.15.0_DS)then
+      elseif(zmax > 15.0_DS)then
         zlabstep = 5.0_DS
-      elseif(zmax.gt.6.0_DS)then
+      elseif(zmax > 6.0_DS)then
         zlabstep = 2.0_DS
       else
         zlabstep = 1.0_DS
@@ -904,23 +934,23 @@
       cmin=real(0,kind=DS)
       cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=DS)    ! Get the max value for this profile
       cmin=real(min(cmin,cloudcon_thresh_mgm3),kind=DS)  ! Do not let cmax drop below the threshold
-      if    (cmax.gt.4.0e4_DS)then
+      if    (cmax > 4.0e4_DS)then
           clabstep = 5.0e3_DS
-      elseif(cmax.gt.1.0e4_DS)then
+      elseif(cmax > 1.0e4_DS)then
           clabstep = 2.0e3_DS
-      elseif(cmax.gt.4.0e3_DS)then
+      elseif(cmax > 4.0e3_DS)then
           clabstep = 5.0e2_DS
-      elseif(cmax.gt.1.0e3_DS)then
+      elseif(cmax > 1.0e3_DS)then
           clabstep = 2.0e2_DS
-      elseif(cmax.gt.4.0e2_DS)then
+      elseif(cmax > 4.0e2_DS)then
           clabstep = 5.0e1_DS
-      elseif(cmax.gt.1.0e2_DS)then
+      elseif(cmax > 1.0e2_DS)then
           clabstep = 2.0e1_DS
-      elseif(cmax.gt.4.0e1_DS)then
+      elseif(cmax > 4.0e1_DS)then
           clabstep = 5.0e0_DS
-      elseif(cmax.gt.1.0e1_DS)then
+      elseif(cmax > 1.0e1_DS)then
           clabstep = 2.0e0_DS
-      elseif(cmax.gt.1.0e0_DS)then
+      elseif(cmax > 1.0e0_DS)then
           clabstep = 5.0e-1_DS
       else
           clabstep = 1.0e-1_DS
@@ -979,7 +1009,7 @@
         call filbox(x_leg3_px,y_footer_px,130,49)
         call incfil(trim(adjustl(Instit_IconFile)))
       else
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"Institution Logo not found."
           write(outlog(io),*)"If you would like your logo on these maps, copy a"
           write(outlog(io),*)"small image (130x50) to ASH3DHOME/share/post_proc/logo.png"
@@ -1017,7 +1047,7 @@
       call messag(cstr_volcname,x_leg1_px,y_footer_px+0*dy_newline_px)
       call messag(cstr_run_date,x_leg1_px,y_footer_px+1*dy_newline_px)
       call messag(cstr_windfile,x_leg1_px,y_footer_px+2*dy_newline_px)
-      if(neruptions.gt.1)then
+      if(neruptions > 1)then
         call messag(cstr_note,x_leg1_px,y_footer_px+3*dy_newline_px)
       endif
       call messag(cstr_ErStartT,x_leg2_px,y_footer_px+0*dy_newline_px)
@@ -1033,7 +1063,7 @@
       if(allocated(z))      deallocate(z)
       if(allocated(conc))   deallocate(conc)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine write_2Dprof_PNG_dislin"
       endif;enddo
 
@@ -1078,13 +1108,13 @@
 
       ! dislin stuff
       ! https://www.dislin.de/
-      character(len=4) :: cfmt = "PNG "
+      character(len=4),parameter :: cfmt = "PNG "
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_DepPOI_TS_PNG_dislin"
       endif;enddo
 
-      if(Airport_Thickness_TS(pt_indx,nWriteTimes).lt.0.01_ip)then
+      if(Airport_Thickness_TS(pt_indx,nWriteTimes) < 0.01_ip)then
         return
       else
         plot_index = plot_index + 1
@@ -1093,13 +1123,13 @@
       write(filename_png,55) plot_index,".png"
  55   format('depTS_',i4.4,a4)
 
-      if(Airport_Thickness_TS(plot_index,nWriteTimes).lt.0.01_ip)then
+      if(Airport_Thickness_TS(plot_index,nWriteTimes) < 0.01_ip)then
         ymax = 1.0_DS
-      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.1.0_ip)then
+      elseif(Airport_Thickness_TS(plot_index,nWriteTimes) < 1.0_ip)then
         ymax = 1.0_DS
-      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.5.0_ip)then
+      elseif(Airport_Thickness_TS(plot_index,nWriteTimes) < 5.0_ip)then
         ymax = 5.0_DS
-      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.25.0_ip)then
+      elseif(Airport_Thickness_TS(plot_index,nWriteTimes) < 25.0_ip)then
         ymax = 25.0_DS
       else
         ymax = 100.0_DS
@@ -1164,7 +1194,7 @@
       if(allocated(x))      deallocate(x)
       if(allocated(y))      deallocate(y)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine write_DepPOI_TS_PNG_dislin"
       endif;enddo
 
@@ -1195,7 +1225,7 @@
       real(kind=DS)  :: xver
       integer        :: iplv
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine get_version_dislin"
       endif;enddo
 
@@ -1206,7 +1236,7 @@
       lib_ver_minor = int(10*(xver-lib_ver_major))
       lib_ver_patch = iplv
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine get_version_dislin"
       endif;enddo
 

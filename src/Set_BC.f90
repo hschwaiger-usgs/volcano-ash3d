@@ -25,14 +25,15 @@
          vx_pd,vy_pd,vz_pd,vf_pd,concen_pd
 
       implicit none
+      !implicit none (type, external)
 
       integer,intent(in) :: bc_code  ! 1 for advection, 2 for diffusion
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Set_BC"
       endif;enddo
 
-      if(bc_code.eq.1)then  ! ADVECTION
+      if(bc_code == 1)then  ! ADVECTION
         !------------------------------------------------------------------------
         !   VELOCITIES
         !------------------------------------------------------------------------
@@ -89,7 +90,7 @@
           concen_pd(nxmax+1,:,:,:,ts0) = concen_pd(1      ,:,:,:,ts0)
           concen_pd(nxmax+2,:,:,:,ts0) = concen_pd(2      ,:,:,:,ts0)
         endif
-      elseif(bc_code.eq.2)then  ! DIFFUSION
+      elseif(bc_code == 2)then  ! DIFFUSION
         !------------------------------------------------------------------------
         !   CONCENTRATIONS
         !------------------------------------------------------------------------
@@ -117,7 +118,7 @@
         concen_pd(:,:,nzmax+1,:,ts0) = concen_pd(:,:,nzmax,:,ts0)
         concen_pd(:,:,nzmax+2,:,ts0) = concen_pd(:,:,nzmax,:,ts0)
       else
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR BC code not recognized"
         endif;enddo
         stop 1

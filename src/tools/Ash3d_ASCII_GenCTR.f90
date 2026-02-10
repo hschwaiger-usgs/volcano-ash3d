@@ -106,6 +106,7 @@
          MR_WindFiles,MR_VERB
 
       implicit none
+      !implicit none (type, external)
 
       integer            :: nargs
       integer            :: stat
@@ -181,19 +182,19 @@
       END INTERFACE
 
       ! Reset verbosity so we only are using stdout (no log file)
-      VB = (/3,10/)
+      VB = [3,10]
       MR_VERB = VB(1)
 
       nargs = command_argument_count()
-      if (nargs.eq.0) then
+      if (nargs == 0) then
           ! If no command-line arguments are given, then prompt user
           ! interactively for the input netcdf file
-        if(VB(1).ge.verbosity_silent)then
+        if(VB(1) >= verbosity_silent)then
           write(errlog(1),*)"Stdout is suppressed via VERB=9, but interactive input is expected."
           write(errlog(1),*)"Either recompile with VERB<9 or provide the correct command-line arguments."
           stop 1
         else
-          do io=1,nio;if(VB(io).le.verbosity_production)then
+          do io=1,nio;if(VB(io) <= verbosity_production)then
             write(outlog(io),*)'Ash3d_ASCII_GenCTR is a tool used to modify an Ash3d control file'
             write(outlog(io),*)'using a table of parameter and a line number. This tool is normally'
             write(outlog(io),*)'run with command-line arguments.'
@@ -239,31 +240,31 @@
         endif
         read(input_unit,*) infile
 
-        do io=1,nio;if(VB(io).le.verbosity_production)then
+        do io=1,nio;if(VB(io) <= verbosity_production)then
           write(outlog(io),*)'Enter name of the run table file'
         endif;enddo
         read(input_unit,*) PP_infile
 
-        do io=1,nio;if(VB(io).le.verbosity_production)then
+        do io=1,nio;if(VB(io) <= verbosity_production)then
           write(outlog(io),*)'Enter name of the run number.'
         endif;enddo
         read(input_unit,*) RunID
 
-      elseif (nargs.ne.3) then
-        do io=1,nio;if(VB(io).le.verbosity_error)then
+      elseif (nargs /= 3) then
+        do io=1,nio;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)'ERROR: Too many or too few command-line arguments.'
           write(errlog(io),*)'  Usage: Ash3d_ASCII_GenCTR template.inp table.dat runID'
         endif;enddo
         stop 1
       else
         call get_command_argument(1, linebuffer130, status=stat)
-        if(stat.gt.0)then
-          do io=1,nio;if(VB(io).le.verbosity_error)then
+        if(stat > 0)then
+          do io=1,nio;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)'ERROR: Could not parse argument 1'
           endif;enddo
           stop 1
-        elseif (stat.lt.0)then
-          do io=1,nio;if(VB(io).le.verbosity_error)then
+        elseif (stat < 0)then
+          do io=1,nio;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)'ERROR: Argument 1 has been truncated.'
             write(errlog(io),*)'       File name length is limited to 130 char.'
           endif;enddo
@@ -272,20 +273,20 @@
         infile=trim(adjustl(linebuffer130))
         inquire( file=adjustl(trim(infile)), exist=IsThere )
         if (.not.IsThere)then
-          do io=1,nio;if(VB(io).le.verbosity_error)then
+          do io=1,nio;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)'ERROR: Input file 1 could not be found'
           endif;enddo
           stop 1
         endif
 
         call get_command_argument(2, linebuffer130, status=stat)
-        if(stat.gt.0)then
-          do io=1,nio;if(VB(io).le.verbosity_error)then
+        if(stat > 0)then
+          do io=1,nio;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)'ERROR: Could not parse argument 2'
           endif;enddo
           stop 1
-        elseif (stat.lt.0)then
-          do io=1,nio;if(VB(io).le.verbosity_error)then
+        elseif (stat < 0)then
+          do io=1,nio;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)'ERROR: Argument 2 has been truncated.'
             write(errlog(io),*)'       File name length is limited to 130 char.'
           endif;enddo
@@ -294,15 +295,15 @@
         PP_infile=trim(adjustl(linebuffer130))
         inquire( file=adjustl(trim(PP_infile)), exist=IsThere )
         if (.not.IsThere)then
-          do io=1,nio;if(VB(io).le.verbosity_error)then
+          do io=1,nio;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)'ERROR: Input file 2 could not be found'
           endif;enddo
           stop 1
         endif
 
         call get_command_argument(3, linebuffer080, status=stat)
-        if(stat.gt.0)then
-          do io=1,nio;if(VB(io).le.verbosity_error)then
+        if(stat > 0)then
+          do io=1,nio;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)'ERROR: Could not parse argument 3'
           endif;enddo
           stop 1
@@ -315,8 +316,8 @@
       call Read_Control_File
 
       ! Some error-checking
-      if(neruptions.ne.1)then
-        do io=1,nio;if(VB(io).le.verbosity_error)then
+      if(neruptions /= 1)then
+        do io=1,nio;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)'ERROR: neruptions>1'
             write(errlog(io),*)'       For now, this tool only applies to control files with a single eruptive pulse.'
         endif;enddo
@@ -338,7 +339,7 @@
       infile = "ash3d_input.inp"
       inquire( file=infile, exist=IsThere )
       if(IsThere)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(errlog(io),*)"WARNING: Input file already exists"
         endif;enddo
       endif
@@ -365,13 +366,13 @@
         dx_in  = dx
         dy_in  = dy
       endif
-      if(VarDzType.eq.'dz_cons')then
+      if(VarDzType == 'dz_cons')then
         dz_type = 1
-      elseif(VarDzType.eq.'dz_plin')then
+      elseif(VarDzType == 'dz_plin')then
         dz_type = 2
-      elseif(VarDzType.eq.'dz_clog')then
+      elseif(VarDzType == 'dz_clog')then
         dz_type = 3
-      elseif(VarDzType.eq.'dz_cust')then
+      elseif(VarDzType == 'dz_cust')then
         dz_type = 4
       else
         dz_type = 1
@@ -423,56 +424,56 @@
       ! BLOCK 4: OUTPUT OPTIONS
       WriteDepositFinal_ASCII_c = 'n'
       read(cdf_b4l1,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteDepositFinal_ASCII_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteDepositFinal_ASCII_c = 'y'
       WriteDepositFinal_KML_c = 'n'
       read(cdf_b4l2,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteDepositFinal_KML_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteDepositFinal_KML_c = 'y'
       WriteDepositTS_ASCII_c = 'n'
       read(cdf_b4l3,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteDepositTS_ASCII_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteDepositTS_ASCII_c = 'y'
       WriteDepositTS_KML_c = 'n'
       read(cdf_b4l4,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteDepositTS_KML_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteDepositTS_KML_c = 'y'
       WriteCloudConcentration_ASCII_c= 'n'
       read(cdf_b4l5,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteCloudConcentration_ASCII_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteCloudConcentration_ASCII_c = 'y'
       WriteCloudConcentration_KML_c= 'n'
       read(cdf_b4l6,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteCloudConcentration_KML_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteCloudConcentration_KML_c = 'y'
       WriteCloudHeight_ASCII_c = 'n'
       read(cdf_b4l7,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteCloudHeight_ASCII_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteCloudHeight_ASCII_c = 'y'
       WriteCloudHeight_KML_c = 'n'
       read(cdf_b4l8,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteCloudHeight_KML_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteCloudHeight_KML_c = 'y'
       WriteCloudLoad_ASCII_c = 'n'
       read(cdf_b4l9,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteCloudLoad_ASCII_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteCloudLoad_ASCII_c = 'y'
       WriteCloudLoad_KML_c = 'n'
       read(cdf_b4l10,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteCloudLoad_KML_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteCloudLoad_KML_c = 'y'
       WriteDepositTime_ASCII_c= 'n'
       read(cdf_b4l11,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteDepositTime_ASCII_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteDepositTime_ASCII_c = 'y'
       WriteDepositTime_KML_c= 'n'
       read(cdf_b4l12,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteDepositTime_KML_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteDepositTime_KML_c = 'y'
       WriteCloudTime_ASCII_c = 'n'
       read(cdf_b4l13,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteCloudTime_ASCII_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteCloudTime_ASCII_c = 'y'
       WriteCloudTime_KML_c = 'n'
       read(cdf_b4l14,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteCloudTime_KML_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteCloudTime_KML_c = 'y'
       Write3dFiles_c = 'y'  ! This is obviously true if we are reading the netcdf file
       ifm = 2
       read(cdf_b4l15,*,iostat=iostatus,iomsg=iomessage) answer, ifm
-      if(iostatus.ne.0)then  ! if read fails, then make sure we set these
+      if(iostatus /= 0)then  ! if read fails, then make sure we set these
         Write3dFiles_c = 'y'
         ifm = 1
       endif
       ofm = 3  ! This should be 3 since we are reading a netcdf file
       read(cdf_b4l17,*)nwt
-      if(nwt.gt.0)then
+      if(nwt > 0)then
         interval_flag = .false.
         allocate(wts(nwt))
         read(cdf_b4l18,*)wts(1:nwt)
@@ -507,9 +508,9 @@
                                    wts)                                ! B4L18 WriteTimes(1:nWriteTimes)
 
       ! BLOCK 5: INPUT WIND FILES
-      if(MR_iWind.eq.5)then
+      if(MR_iWind == 5)then
         nwindfiles = 1
-        if(len(adjustl(trim(cdf_b5l1))).eq.0)then
+        if(len(adjustl(trim(cdf_b5l1))) == 0)then
           ! NetCDF file didn't have cdf_b5l1. Need to get windfile directory from MR_windfiles
           iyear = HS_YearOfEvent(SimStartHour,BaseYear,useLeap)
           write(yearstr,'(i4)')iyear
@@ -528,17 +529,17 @@
       ! BLOCK 6: AIRPORT FILE
       WriteAirportFile_ASCII_c = 'n'
       read(cdf_b6l1,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteAirportFile_ASCII_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteAirportFile_ASCII_c = 'y'
       WriteGSD_c = 'n'
       read(cdf_b6l2,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteGSD_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteGSD_c = 'y'
       WriteAirportFile_KML_c = 'n'
       read(cdf_b6l3,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') WriteAirportFile_KML_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') WriteAirportFile_KML_c = 'y'
       !cdf_b6l4
       ProjectAirportLocations_c = 'n'
       read(cdf_b6l5,'(a3)',iostat=iostatus,iomsg=iomessage) answer
-      if(adjustl(trim(answer)).eq.'yes') ProjectAirportLocations_c = 'y'
+      if(adjustl(trim(answer)) == 'yes') ProjectAirportLocations_c = 'y'
 
       call Write_input_block_header(fid_ctrlfile,6)
       call SetWrite_input_block_06(fid_ctrlfile                    ,&  ! output stream ID
@@ -641,6 +642,7 @@
          e_StartTime,e_Duration,e_PlumeHeight,e_Volume
 
       implicit none
+      !implicit none (type, external)
 
       integer,intent(in) :: ir
 
@@ -653,9 +655,9 @@
       character (len=120) :: iomessage
 
       integer,parameter :: MAX_COLVARS = 20
-      integer,dimension(MAX_COLVARS) :: ivar_pos               = -1  ! position of variable in string
-      integer,dimension(MAX_COLVARS) :: ivar_col               = -1  ! column number of variable in string
-      integer,dimension(MAX_COLVARS) :: icol_var               = -1  ! variable ID for a given column
+      integer,dimension(MAX_COLVARS) :: ivar_pos        ! position of variable in string
+      integer,dimension(MAX_COLVARS) :: ivar_col        ! column number of variable in string
+      integer,dimension(MAX_COLVARS) :: icol_var        ! variable ID for a given column
       integer           :: Ncols
       character (len= 12),dimension(MAX_COLVARS) :: ivar_name1
       character (len= 12),dimension(MAX_COLVARS) :: ivar_name2
@@ -720,6 +722,11 @@
         end function HS_DayOfEvent
       END INTERFACE
 
+      ! Initialization
+      ivar_pos(:) = -1  ! position of variable in string
+      ivar_col(:) = -1  ! column number of variable in string
+      icol_var(:) = -1  ! variable ID for a given column
+
       ! List the colome header variable names and synonyms
       ivar_Nnames( 1) = 2; ivar_name1( 1) = "run";          ivar_name2( 1) = "Run"
       ivar_Nnames( 2) = 3; ivar_name1( 2) = "year";         ivar_name2( 2) = "Year"; ivar_name3( 2) = "YYYY"
@@ -743,7 +750,7 @@
       ivar_Nnames(20) = 1; ivar_name1(20) = "mu_agg"
 
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"*******************************************"
         write(outlog(io),*)"Now reading input table:"
       endif;enddo
@@ -753,66 +760,66 @@
       ! Reading the first header line. Should be something link: SUMMARY OF INPUT VALUES ...
       read(fid_misc,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
       linebuffer050 = "Reading table file for Line 1: header line"
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
+      if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
 
       ! Now read line two, which contains the column headers
       read(fid_misc,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
       linebuffer050 = "Reading table file for Line 2: column headers"
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
+      if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
       headerline = linebuffer130
 
       ! Now read line three, which contains the column units
       read(fid_misc,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading table file for Line 3: column units"
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080(1:80),iomessage)
+      if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080(1:80),iomessage)
 
       ! Parse the column header line
       Ncols = 0
       do iv = 1,MAX_COLVARS
         itmp(:) = -1
         itmp(1) = index(linebuffer130,trim(adjustl(ivar_name1(iv))))
-        do io=1,2;if(VB(io).le.verbosity_debug1)then
+        do io=1,2;if(VB(io) <= verbosity_debug1)then
           write(*,*)"Searching for ",trim(adjustl(ivar_name1(iv))), itmp(1)
         endif;enddo
-        if(ivar_Nnames(iv).ge.2) itmp(2) = index(linebuffer130,trim(adjustl(ivar_name2(iv))))
-        if(ivar_Nnames(iv).ge.3) itmp(3) = index(linebuffer130,trim(adjustl(ivar_name3(iv))))
-        if(iv.eq.18)then  ! Need to do an extra check if var=height since 'plume height' will catch it
+        if(ivar_Nnames(iv) >= 2) itmp(2) = index(linebuffer130,trim(adjustl(ivar_name2(iv))))
+        if(ivar_Nnames(iv) >= 3) itmp(3) = index(linebuffer130,trim(adjustl(ivar_name3(iv))))
+        if(iv == 18)then  ! Need to do an extra check if var=height since 'plume height' will catch it
           itmp1 = index(linebuffer130,'plume height')
-          if (itmp(1).gt.0) then  ! 'height' was found, but double-check
-            if(itmp(1)-itmp1.eq.6)then  ! the 'height' we found is a part of 'plume height'; look again
+          if (itmp(1) > 0) then  ! 'height' was found, but double-check
+            if(itmp(1)-itmp1 == 6)then  ! the 'height' we found is a part of 'plume height'; look again
               itmp2 = index(linebuffer130(itmp(1)+1:),'height')
-              if (itmp2.gt.0)ivar_pos(18) = itmp2
+              if (itmp2 > 0)ivar_pos(18) = itmp2
             else
               ivar_pos(18) = itmp(1)
             endif
-          elseif (itmp(2).gt.0) then
+          elseif (itmp(2) > 0) then
             ivar_pos(18) = itmp(2)  ! column found (gridwidth_n)
           endif
-          if (ivar_pos(iv).gt.0) Ncols=Ncols+1
+          if (ivar_pos(iv) > 0) Ncols=Ncols+1
           cycle
         endif
-        if (itmp(1).gt.0) then
+        if (itmp(1) > 0) then
           ivar_pos(iv) = itmp(1)
-        elseif (itmp(2).gt.0) then
+        elseif (itmp(2) > 0) then
           ivar_pos(iv) = itmp(2)
-        elseif (itmp(3).gt.0) then
+        elseif (itmp(3) > 0) then
           ivar_pos(iv) = itmp(3)
         endif
-        if(ivar_pos(iv).gt.0)then
-          do io=1,2;if(VB(io).le.verbosity_debug1)then
+        if(ivar_pos(iv) > 0)then
+          do io=1,2;if(VB(io) <= verbosity_debug1)then
             write(outlog(io),*)"Found column at position: ", ivar_pos(iv), trim(adjustl(ivar_name1(iv)))
           endif;enddo
         else
-          if(iv.eq.1)then  ! Run ID
-            do io=1,2;if(VB(io).le.verbosity_debug1)then
+          if(iv == 1)then  ! Run ID
+            do io=1,2;if(VB(io) <= verbosity_debug1)then
               write(outlog(io),*)"     Column not found with: ",ivar_name1(iv)
               write(outlog(io),*)"     Using line number for run ID"
             endif;enddo
           endif
         endif
-        if (ivar_pos(iv).gt.0) Ncols=Ncols+1
+        if (ivar_pos(iv) > 0) Ncols=Ncols+1
       enddo
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"Found n columns",Ncols
       endif;enddo
 
@@ -827,8 +834,8 @@
       ! Loop through variables and find the one with the closest next position
       do ic=1,Ncols
         do iiv=1,MAX_COLVARS
-          if (ivar_pos(iiv).gt.pos_cur.and.&  ! if this is a var found in table and not yet flagged
-              ivar_pos(iiv)-pos_cur.lt.pos_diff)then
+          if (ivar_pos(iiv) > pos_cur.and.&  ! if this is a var found in table and not yet flagged
+              ivar_pos(iiv)-pos_cur < pos_diff)then
             ivar_col(iiv) = ic
             icol_var(ic)  = iiv
             pos_diff = ivar_pos(iiv)-pos_cur
@@ -839,7 +846,7 @@
         pos_diff = 130
       enddo
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         do iv=1,Ncols
           write(outlog(io),*)iv,icol_var(iv),ivar_name1(icol_var(iv))
         enddo
@@ -853,16 +860,16 @@
       !  3 ) if Location is present, it must be the last column of the file
       ! Check if RunID exists and make sure it is in the first column
       HaveRunID = .false.
-      if(ivar_pos(1).gt.0)then
+      if(ivar_pos(1) > 0)then
         HaveRunID=.true.
-        if(icol_var(1).eq.1)then
+        if(icol_var(1) == 1)then
           ! RunID is found and in the first column
-          do io=1,2;if(VB(io).le.verbosity_debug1)then
+          do io=1,2;if(VB(io) <= verbosity_debug1)then
             write(outlog(io),*)"Requested run number will be identified from column 1 of table."
           endif;enddo
         else
           ! RunID is found but not in the first column
-          do io=1,2;if(VB(io).le.verbosity_error)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)"Run number is not in the first column. This will cause problems in reading"
             write(errlog(io),*)"the column, unfortunately. Please move or remove the 'run #' column."
             stop 1
@@ -870,16 +877,16 @@
         endif
       else
         ! RunID is not found. Use the line number as a proxy for run #
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"Requested run number will be identified from the line number of the table."
         endif;enddo
       endif
       ! Check if start_time is provided
       HaveST = .false.
-      if(ivar_pos(6).gt.0)then
+      if(ivar_pos(6) > 0)then
         if(HaveRunID)then
-          if(ivar_col(6).ne.2)then
-            do io=1,2;if(VB(io).le.verbosity_error)then
+          if(ivar_col(6) /= 2)then
+            do io=1,2;if(VB(io) <= verbosity_error)then
               write(errlog(io),*)"ERROR: start_time is present but not in col 2 after RunID."
             endif;enddo
             stop 1
@@ -888,17 +895,17 @@
           endif
         else
           HaveST = .true.
-          do io=1,2;if(VB(io).le.verbosity_debug1)then
+          do io=1,2;if(VB(io) <= verbosity_debug1)then
             write(outlog(io),*)"start_time is present and in col 1."
           endif;enddo
         endif
       endif
       ! Check if Location is provided
       HaveLoc = .false.
-      if(ivar_pos(7).gt.0)then
+      if(ivar_pos(7) > 0)then
         HaveLoc = .true.
-        if(ivar_col(7).ne.Ncols)then
-          do io=1,2;if(VB(io).le.verbosity_error)then
+        if(ivar_col(7) /= Ncols)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)"ERROR: Location is present but not in last column."
             write(errlog(io),*)"       This will break the current line parsing."
           endif;enddo
@@ -909,37 +916,37 @@
       ! Start reading the
       read(fid_misc,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
       linebuffer050 = "Reading table file for Line 1: header line"
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
+      if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
       iline = 0
       irun  = 0
-      do while(iostatus.eq.0)
+      do while(iostatus == 0)
         iline = iline + 1
-        if(ivar_pos(1).gt.0)then
+        if(ivar_pos(1) > 0)then
           ! If the RunID from the table is what we want, exit do loop
           read(linebuffer130,*)irun
-          if(irun.eq.ir) exit
+          if(irun == ir) exit
         else
           ! If the line number (as a proxy for RunID) is what we want, exit do loop
-          if(iline.eq.ir) exit
+          if(iline == ir) exit
         endif
         read(fid_misc,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
       enddo
-      if(ir.gt.iline.and.ir.gt.irun)then
+      if(ir > iline.and.ir > irun)then
         ! Too large of a RunID was requested
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"Could not find the requested run ID"
         endif;enddo
         stop 1
       endif
       dataline = linebuffer130
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)headerline
         write(outlog(io),*)dataline
       endif;enddo
       if(HaveRunID)then
         if(HaveST)then
-          do io=1,2;if(VB(io).le.verbosity_debug1)then
+          do io=1,2;if(VB(io) <= verbosity_debug1)then
             write(outlog(io),*)"Reading irun start_time + other columns"
           endif;enddo
           ! First read the run # and then the start time in character format. We will
@@ -953,7 +960,7 @@
           endif
         else
           ! No start_time string so we can read everything as reals except a possible site label
-          do io=1,2;if(VB(io).le.verbosity_debug1)then
+          do io=1,2;if(VB(io) <= verbosity_debug1)then
             write(outlog(io),*)"Reading irun + other columns",2,Ncols-1
           endif;enddo
           if(HaveLoc)then
@@ -965,7 +972,7 @@
       else
         irun = iline
         if(HaveST)then
-          do io=1,2;if(VB(io).le.verbosity_debug1)then
+          do io=1,2;if(VB(io) <= verbosity_debug1)then
             write(outlog(io),*)"Reading start_time + other columns"
           endif;enddo
           ! First read the run # and then the start time in character format. We will
@@ -979,7 +986,7 @@
           endif
         else
           ! No start_time string so we can read everything as reals except a possible site label
-          do io=1,2;if(VB(io).le.verbosity_debug1)then
+          do io=1,2;if(VB(io) <= verbosity_debug1)then
             write(outlog(io),*)"Reading other columns",2,Ncols-1
           endif;enddo
           if(HaveLoc)then
@@ -996,12 +1003,12 @@
         ! The strategy here is the test the label position in the data string for a space. If so, start reading
         ! from that point. Otherwise, march backwards up to five positions until a space is found.
         itmp1=ivar_pos(7)
-        if(dataline(itmp1:itmp1).eq.' ')then
+        if(dataline(itmp1:itmp1) == ' ')then
           read(dataline(itmp1:),*)tmp_str2
         else
           do i=1,5
             itmp1 = itmp1-1
-            if(dataline(itmp1:itmp1).eq.' ')exit
+            if(dataline(itmp1:itmp1) == ' ')exit
           enddo
           read(dataline(itmp1:),*)tmp_str2
         endif
@@ -1013,54 +1020,54 @@
       iday  = HS_DayOfEvent(e_StartTime(1)+SimStartHour,BaseYear,useLeap)
       hour  = HS_HourOfDay(e_StartTime(1)+SimStartHour,BaseYear,useLeap)
 
-      if(ivar_pos( 1).gt.0) write(*,*)"irun         : ",ivar_name1( 1),irun
-      if(ivar_pos( 2).gt.0)then
+      if(ivar_pos( 1) > 0) write(*,*)"irun         : ",ivar_name1( 1),irun
+      if(ivar_pos( 2) > 0)then
         iyear = int(values(ivar_col( 2)))
         write(*,*)"year         : ",ivar_name1( 2),values(ivar_col( 2))
       endif
-      if(ivar_pos( 3).gt.0)then
+      if(ivar_pos( 3) > 0)then
         imonth = int(values(ivar_col( 3)))
         write(*,*)"month        : ",ivar_name1( 3),values(ivar_col( 3))
       endif
-      if(ivar_pos( 4).gt.0)then
+      if(ivar_pos( 4) > 0)then
         iday = int(values(ivar_col( 4)))
         write(*,*)"day          : ",ivar_name1( 4),values(ivar_col( 4))
       endif
-      if(ivar_pos( 5).gt.0)then
+      if(ivar_pos( 5) > 0)then
         hour = values(ivar_col( 5))
         write(*,*)"hour         : ",ivar_name1( 5),values(ivar_col( 5))
       endif
-      if(ivar_pos( 6).gt.0)then
+      if(ivar_pos( 6) > 0)then
         write(*,*)"start time   : ",ivar_name1( 6),trim(adjustl(tmp_str1))
         tmp_str1=trim(adjustl(tmp_str1))
         read(tmp_str1,51)iday,monstr,iyear,ihour,imin,isec
  51     format(i2,1x,a3,1x,i4,1x,i2,1x,i2,1x,i2)
-        if(monstr.eq.'Jan')then
+        if(monstr == 'Jan')then
           imonth = 1
-        elseif(monstr.eq.'Feb')then
+        elseif(monstr == 'Feb')then
           imonth = 2
-        elseif(monstr.eq.'Mar')then
+        elseif(monstr == 'Mar')then
           imonth = 3
-        elseif(monstr.eq.'Apr')then
+        elseif(monstr == 'Apr')then
           imonth = 4
-        elseif(monstr.eq.'May')then
+        elseif(monstr == 'May')then
           imonth = 5
-        elseif(monstr.eq.'Jun')then
+        elseif(monstr == 'Jun')then
           imonth = 6
-        elseif(monstr.eq.'Jul')then
+        elseif(monstr == 'Jul')then
           imonth = 7
-        elseif(monstr.eq.'Aug')then
+        elseif(monstr == 'Aug')then
           imonth = 8
-        elseif(monstr.eq.'Sep')then
+        elseif(monstr == 'Sep')then
           imonth = 9
-        elseif(monstr.eq.'Oct')then
+        elseif(monstr == 'Oct')then
           imonth = 10
-        elseif(monstr.eq.'Nov')then
+        elseif(monstr == 'Nov')then
           imonth = 11
-        elseif(monstr.eq.'Dec')then
+        elseif(monstr == 'Dec')then
           imonth = 12
         else
-          do io=1,2;if(VB(io).le.verbosity_error)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)"ERROR: Cannot parse month of start_time"
           endif;enddo
           stop 1
@@ -1068,67 +1075,67 @@
         hour = real(ihour,kind=8) + real(imin,kind=8)/60.0_dp + real(isec,kind=8)/3600.0_dp
       endif
       ! Check if we need to reset the start time by checking if any time value was reset
-      if(ivar_pos( 2).gt.0.or.&
-         ivar_pos( 3).gt.0.or.&
-         ivar_pos( 4).gt.0.or.&
-         ivar_pos( 5).gt.0.or.&
-         ivar_pos( 6).gt.0)then
+      if(ivar_pos( 2) > 0.or.&
+         ivar_pos( 3) > 0.or.&
+         ivar_pos( 4) > 0.or.&
+         ivar_pos( 5) > 0.or.&
+         ivar_pos( 6) > 0)then
         SimStartHour   = HS_hours_since_baseyear(iyear,imonth,iday,hour,BaseYear,useLeap)
         e_StartTime(1) = 0.0_dp
       endif
-      if(ivar_pos( 7).gt.0)then
+      if(ivar_pos( 7) > 0)then
         write(*,*)"Location     : ",ivar_name1( 7),trim(adjustl(tmp_str2))
         VolcanoName = trim(adjustl(tmp_str2))
       endif
-      if(ivar_pos( 8).gt.0)then
+      if(ivar_pos( 8) > 0)then
         lonLL = values(ivar_col( 8))
         write(*,*)"lonLL        : ",ivar_name1( 8),values(ivar_col( 8))
       endif
-      if(ivar_pos( 9).gt.0)then
+      if(ivar_pos( 9) > 0)then
         latLL = values(ivar_col( 9))
         write(*,*)"latLL        : ",ivar_name1( 9),values(ivar_col( 9))
       endif
-      if(ivar_pos(10).gt.0)then
+      if(ivar_pos(10) > 0)then
         de = values(ivar_col(10))
         dn = values(ivar_col(10))
         write(*,*)"dxy          : ",ivar_name1(10),values(ivar_col(10))
       endif
-      if(ivar_pos(11).gt.0)then
+      if(ivar_pos(11) > 0)then
         dz_const = values(ivar_col(11))
         write(*,*)"dz           : ",ivar_name1(11),values(ivar_col(11))
       endif
-      if(ivar_pos(12).gt.0)then
+      if(ivar_pos(12) > 0)then
         lon_volcano = values(ivar_col(12))
         write(*,*)"longitude    : ",ivar_name1(12),values(ivar_col(12))
       endif
-      if(ivar_pos(13).gt.0)then
+      if(ivar_pos(13) > 0)then
         lat_volcano = values(ivar_col(13))
         write(*,*)"latitude     : ",ivar_name1(13),values(ivar_col(13))
       endif
-      if(ivar_pos(14).gt.0)then
+      if(ivar_pos(14) > 0)then
         e_Duration(1) = values(ivar_col(14))
         write(*,*)"duration     : ",ivar_name1(14),values(ivar_col(14))
       endif
-      if(ivar_pos(15).gt.0)then
+      if(ivar_pos(15) > 0)then
         e_PlumeHeight(1) = values(ivar_col(15))
         write(*,*)"plume height : ",ivar_name1(15),values(ivar_col(15))
       endif
-      if(ivar_pos(16).gt.0)then
+      if(ivar_pos(16) > 0)then
         e_Volume(1) = values(ivar_col(16))
         write(*,*)"volume       : ",ivar_name1(16),values(ivar_col(16))
       endif
-      if(ivar_pos(17).gt.0)then
+      if(ivar_pos(17) > 0)then
         gridwidth_e = values(ivar_col(17))
         write(*,*)"width        : ",ivar_name1(17),values(ivar_col(17))
       endif
-      if(ivar_pos(18).gt.0)then
+      if(ivar_pos(18) > 0)then
         gridwidth_n = values(ivar_col(18))
         write(*,*)"height       : ",ivar_name1(18),values(ivar_col(18))
       endif
-      if(ivar_pos(19).gt.0)then
+      if(ivar_pos(19) > 0)then
         write(*,*)"m_fines      : ",ivar_name1(19),values(ivar_col(19))
       endif
-      if(ivar_pos(20).gt.0)then
+      if(ivar_pos(20) > 0)then
         write(*,*)"mu_agg       : ",ivar_name1(20),values(ivar_col(20))
       endif
 
@@ -1136,7 +1143,7 @@
 
       return
 
-9001  do io=1,2;if(VB(io).le.verbosity_error)then
+9001  do io=1,2;if(VB(io) <= verbosity_error)then
         write(errlog(io),*)  'error: cannot open table file: ',PP_infile
         write(errlog(io),*)  'Program stopped'
       endif;enddo

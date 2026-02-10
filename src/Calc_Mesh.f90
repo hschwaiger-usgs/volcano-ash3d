@@ -56,6 +56,7 @@
            MR_Set_SigmaAlt_Scaling
 
       implicit none
+      !implicit none (type, external)
 
       integer :: i,j,k
 
@@ -66,11 +67,11 @@
       real(kind=ip) :: phi_bot,phi_top,phi
       real(kind=sp),allocatable,dimension(:) :: dumx_sp,dumy_sp,dumz_sp
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine calc_mesh_params"
       endif;enddo
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"--------------------------------------------------"
         write(outlog(io),*)"---------- CALC_MESH_PARAMS ----------------------"
         write(outlog(io),*)"--------------------------------------------------"
@@ -78,7 +79,7 @@
 
      ! Set up concentration grid.
      ! The concentration is calculated at cell centers
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),30)
       endif;enddo
 
@@ -174,7 +175,7 @@
 
       endif  ! IsLatLon
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"    Cell-centered computational grid extends from:"
         if (IsLatLon) then
           write(outlog(io),'(a13,2f10.3)')"     in lon: ",lon_cc_pd(1),lon_cc_pd(nxmax)
@@ -211,17 +212,17 @@
 
       deallocate(dumx_sp,dumy_sp,dumz_sp)
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Finished initializing Met Grids"
       endif;enddo
 
       ! Informing MetReader of the start and simulation time
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Now determining which NWP files and steps needed."
       endif;enddo
       if(Load_Windfiles)call MR_Set_Met_Times(SimStartHour, Simtime_in_hours)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine calc_mesh_params"
       endif;enddo
 
@@ -271,16 +272,17 @@
            MR_Set_SigmaAlt_Scaling
 
       implicit none
+      !implicit none (type, external)
 
       real(kind=sp),allocatable,dimension(:) :: dums_sp
       integer       :: i,j
       real(kind=ip) :: j_max
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine calc_s_mesh"
       endif;enddo
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"--------------------------------------------------"
         write(outlog(io),*)"---------- CALC_S_MESH ---------------------------"
         write(outlog(io),*)"--------------------------------------------------"
@@ -288,18 +290,18 @@
 
       ! s_cc is the replacement z-coordinate: either s=z or s=(z-zsurf)/(ztop-zsurf)
       ! Here we set up the s-values with zsurf=0 and might apply topography later
-      if(ZScaling_ID.eq.0)then
+      if(ZScaling_ID == 0)then
         ! No topography modification; s=z in km
         s_cc_pd(:) = z_cc_pd(:)
         s_lb_pd(:) = z_lb_pd(:)
-      elseif(ZScaling_ID.eq.1)then
+      elseif(ZScaling_ID == 1)then
         ! Coordinate system will be shifted by topography (surf -> surf + Ztop in km)
         ! Since we want the s array to start at the surface (not just the s-value of
         ! the z-array), we use the same values as z with the understanding that it is
         ! shifted
         s_cc_pd(:) = z_cc_pd(:)
         s_lb_pd(:) = z_lb_pd(:)
-      elseif(ZScaling_ID.eq.2)then
+      elseif(ZScaling_ID == 2)then
         ! Coordinate system will be scaled by topography (0->Ztop in km)
         ! Same logic as above; surface to top should be 0->Ztop so use Zsurf of 0
         ! for the purpose of indexing (otherwise we just have the s-values of
@@ -308,7 +310,7 @@
         s_lb_pd(:) = z_lb_pd(:)
       endif
 
-      if(ZScaling_ID.eq.0.or.ZScaling_ID.eq.1)then
+      if(ZScaling_ID == 0.or.ZScaling_ID == 1)then
         ds_vec_pd(:) = dz_vec_pd(:)
       else
         ds_vec_pd(:) = (dz_vec_pd(:))*Ztop/(Ztop-Zsurf(ivent,jvent))
@@ -327,12 +329,12 @@
       ! Now modify all the cell face area and volume measures if we are using
       ! the scaled coordinates. Note: these variables are in km2 and km3
       ! since the jacobian for all cases is unitless
-      if(ZScaling_ID.eq.2)then
+      if(ZScaling_ID == 2)then
         ! The Jacobian measures the change in volumen of the cell which is
         ! accommodated by a change in thickness. We have to scale the CFL to
         ! be stable with these squeezed cells
         j_max = maxval(j_cc_pd(:,:))
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"Cells are thinned by up to ",real(j_max,kind=4)
           write(outlog(io),*)"Resetting CFL from ",real(CFL,kind=4)
           write(outlog(io),*)"  to ",real(CFL * j_max,kind=4)
@@ -351,7 +353,7 @@
         enddo
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine calc_s_mesh"
       endif;enddo
 
@@ -391,6 +393,7 @@
            PJ_proj_inv
 
       implicit none
+      !implicit none (type, external)
 
       real(kind=dp),intent(out) :: lonmin
       real(kind=dp),intent(out) :: lonmax
@@ -401,7 +404,7 @@
       real(kind=dp)  :: olam,ophi
       real(kind=dp)  :: xin,yin
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine get_minmax_lonlat"
         write(outlog(io),*)"      Allocating of size: ",nxmax+2,nymax+2
       endif;enddo
@@ -438,17 +441,17 @@
                          A3d_iprojflag, A3d_lam0,A3d_phi0,A3d_phi1,A3d_phi2, &
                          A3d_k0,A3d_Re, &
                          olam,ophi)
-          if(olam.lt.lonmin)lonmin=olam
-          if(olam.gt.lonmax)lonmax=olam
-          if(ophi.lt.latmin)latmin=ophi
-          if(ophi.gt.latmax)latmax=ophi
+          if(olam < lonmin)lonmin=olam
+          if(olam > lonmax)lonmax=olam
+          if(ophi < latmin)latmin=ophi
+          if(ophi > latmax)latmax=ophi
           xy2ll_xlon(i,j) = real(olam,kind=ip)
-          if(xy2ll_xlon(i,j).lt.0.0_ip) xy2ll_xlon(i,j) = xy2ll_xlon(i,j) + 360.0_ip
+          if(xy2ll_xlon(i,j) < 0.0_ip) xy2ll_xlon(i,j) = xy2ll_xlon(i,j) + 360.0_ip
           xy2ll_ylat(i,j) = real(ophi,kind=ip)
         enddo
       enddo
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine get_minmax_lonlat"
       endif;enddo
 
@@ -489,11 +492,12 @@
          CLOUDCON_GRID_THRESH
 
       implicit none
+      !implicit none (type, external)
 
       integer :: i,j,k
       real(kind=ip) :: tmp_flt
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine get_minmax_index"
       endif;enddo
 
@@ -503,7 +507,7 @@
       imax = nxmax
       do i=2,ivent-1
         tmp_flt=maxval(concen_pd(i,1:nymax,1:nzmax,1:nsmax,ts0))
-        if(tmp_flt.lt.CLOUDCON_GRID_THRESH)then
+        if(tmp_flt < CLOUDCON_GRID_THRESH)then
           imin = i
         else
           exit
@@ -511,7 +515,7 @@
       enddo
       do i=nxmax,imin+2,-1
         tmp_flt=maxval(concen_pd(i,1:nymax,1:nzmax,1:nsmax,ts0))
-        if(tmp_flt.lt.CLOUDCON_GRID_THRESH)then
+        if(tmp_flt < CLOUDCON_GRID_THRESH)then
           imax = i
         else
           exit
@@ -520,7 +524,7 @@
       if(IsPeriodic)then
         ! if this is a periodic case and the ash touches a boundary, set the min and max
         ! to the full domain
-        if(imin.eq.1.or.imax.eq.nxmax)then
+        if(imin == 1.or.imax == nxmax)then
           imin = 1
           imax = nxmax
         endif
@@ -530,7 +534,7 @@
       jmax = nymax
       do j=2,jvent-1
         tmp_flt=maxval(concen_pd(1:nxmax,j,1:nzmax,1:nsmax,ts0))
-        if(tmp_flt.lt.CLOUDCON_GRID_THRESH)then
+        if(tmp_flt < CLOUDCON_GRID_THRESH)then
           jmin = j
         else
           exit
@@ -538,7 +542,7 @@
       enddo
       do j=nymax,jmin+2,-1
         tmp_flt=maxval(concen_pd(1:nxmax,j,1:nzmax,1:nsmax,ts0))
-        if(tmp_flt.lt.CLOUDCON_GRID_THRESH)then
+        if(tmp_flt < CLOUDCON_GRID_THRESH)then
           jmax = j
         else
           exit
@@ -549,7 +553,7 @@
       kmax = nzmax
       do k=2,kvent-1
         tmp_flt=maxval(concen_pd(1:nxmax,1:nymax,k,1:nsmax,ts0))
-        if(tmp_flt.lt.CLOUDCON_GRID_THRESH)then
+        if(tmp_flt < CLOUDCON_GRID_THRESH)then
           kmin = k
         else
           exit
@@ -557,51 +561,51 @@
       enddo
       do k=nzmax,kmin+2,-1
         tmp_flt=maxval(concen_pd(1:nxmax,1:nymax,k,1:nsmax,ts0))
-        if(tmp_flt.lt.CLOUDCON_GRID_THRESH)then
+        if(tmp_flt < CLOUDCON_GRID_THRESH)then
           kmax = k
         else
           exit
         endif
       enddo
-      if(kmax.lt.kmin)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
+      if(kmax < kmin)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: kmax<kmin in get_minmax_index"
         endif;enddo
         stop 1
       endif
       ! Advection routines expect at least three cells. Adjust i,j,k as needed
-      if(imax-imin.lt.2)then
+      if(imax-imin < 2)then
         imax = min(imax+1,nxmax)
         imin = imax-2
       endif
-      if(jmax-jmin.lt.2)then
+      if(jmax-jmin < 2)then
         jmax = min(jmax+1,nymax)
         jmin = jmax-2
       endif
-      if(kmax-kmin.lt.2)then
+      if(kmax-kmin < 2)then
         kmax = min(kmax+1,nzmax)
         kmin = kmax-2
       endif
-      if(imin.le.0)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
+      if(imin <= 0)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: imin<1 in get_minmax_index"
         endif;enddo
         stop 1
       endif
-      if(jmin.le.0)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
+      if(jmin <= 0)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: jmin<1 in get_minmax_index"
         endif;enddo
         stop 1
       endif
-      if(kmin.le.0)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
+      if(kmin <= 0)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: kmin<1 in get_minmax_index"
         endif;enddo
         stop 1
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine get_minmax_index"
       endif;enddo
 

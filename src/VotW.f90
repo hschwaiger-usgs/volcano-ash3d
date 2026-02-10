@@ -72,7 +72,7 @@
 
       integer            :: i,Volcano_ID
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine get_ESP"
       endif;enddo
 
@@ -88,37 +88,37 @@
 
         ! Assign ESP's from Mastin et al., JVGR 2009
         volcESP(i) = 0
-        if(volcESP_Code(i).eq."M0")then
+        if(volcESP_Code(i) == "M0")then
           ! M0 -- Mafic Standard (Cerro Negro, Nicaragua 4/13/1992)
           volcESP(i)  = 1
-        elseif(volcESP_Code(i).eq."M1")then
+        elseif(volcESP_Code(i) == "M1")then
           ! M1 -- Mafic Small (Etna, Italy 7/19-24/2001)
           volcESP(i) = 2
-        elseif(volcESP_Code(i).eq."M2")then
+        elseif(volcESP_Code(i) == "M2")then
           ! M2 -- Mafic Medium (Cerro Negro, Nicaragua 4/13/1992)
           volcESP(i) = 3
-        elseif(volcESP_Code(i).eq."M3")then
+        elseif(volcESP_Code(i) == "M3")then
           ! M3 -- Mafic Large (Fuego, Guatemala 10/14/1974)
           volcESP(i) = 4
-        elseif(volcESP_Code(i).eq."S0")then
+        elseif(volcESP_Code(i) == "S0")then
           ! S0 -- Silicic Standard (Spurr, USA 8/18/1992)
           volcESP(i) = 5
-        elseif(volcESP_Code(i).eq."S1")then
+        elseif(volcESP_Code(i) == "S1")then
           ! S1 -- Silicic Small (Ruapehu, New Zealand 6/17/1996)
           volcESP(i) = 6
-        elseif(volcESP_Code(i).eq."S2")then
+        elseif(volcESP_Code(i) == "S2")then
           ! S2 -- Silicic Medium (Spurr, USA 8/18/1992)
           volcESP(i) = 7
-        elseif(volcESP_Code(i).eq."S3")then
+        elseif(volcESP_Code(i) == "S3")then
           ! S3 -- Silicic Large (Mt. St. Helens, USA 5/18/1980)
           volcESP(i) = 8
-        elseif(volcESP_Code(i).eq."S8")then
+        elseif(volcESP_Code(i) == "S8")then
           ! S8 -- Silicic co-ignimbrite cloud (Mt. St. Helens, USA 5/18/1980 pre-9am)
           volcESP(i) = 9
-        elseif(volcESP_Code(i).eq."S9")then
+        elseif(volcESP_Code(i) == "S9")then
           ! S9 -- Silicic brief (Soufriere Hills, Montserrat)
           volcESP(i) = 10
-        elseif(volcESP_Code(i).eq."U0")then
+        elseif(volcESP_Code(i) == "U0")then
           ! U0 -- Submarine (No example)
           volcESP(i) = 11
         endif
@@ -130,13 +130,13 @@
       ! ESP values
       Volcano_ID = 0
       do i = 1,MAXVOLCS
-        if(volc_code.eq.volcID(i))then
+        if(volc_code == volcID(i))then
           Volcano_ID = i
           cycle
         endif
       enddo
-      if (Volcano_ID.gt.0)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
+      if (Volcano_ID > 0)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"Found volcano in database"
           write(outlog(io),*)"  Volcano ID    : ",volcID(Volcano_ID)
           write(outlog(io),*)"  Name          : ",volcName(Volcano_ID)
@@ -152,42 +152,42 @@
         write(VolcanoName,*)trim(volcName(Volcano_ID)),&
                             " (",volcID(Volcano_ID),")"
 
-        if(volcESP(Volcano_ID).eq.1)then
+        if(volcESP(Volcano_ID) == 1)then
           ! M0 -- Mafic Standard (Cerro Negro, Nicaragua 4/13/1992)
           ESP_height       = 7.0_ip
           ESP_duration     = 60.0_ip
           ESP_MassFluxRate = 1.0e5_ip
           ESP_Vol          = 1.0e-2_ip
           ESP_massfracfine = 5.0e-2_ip
-        elseif(volcESP(Volcano_ID).eq.2)then
+        elseif(volcESP(Volcano_ID) == 2)then
           ! M1 -- Mafic Small (Etna, Italy 7/19-24/2001)
           ESP_height       = 2.0_ip
           ESP_duration     = 100.0_ip
           ESP_MassFluxRate = 5.0e3_ip
           ESP_Vol          = 1.0e-3_ip
           ESP_massfracfine = 2.0e-2_ip
-        elseif(volcESP(Volcano_ID).eq.3)then
+        elseif(volcESP(Volcano_ID) == 3)then
           ! M2 -- Mafic Medium (Cerro Negro, Nicaragua 4/13/1992)
           ESP_height       = 7.0_ip
           ESP_duration     = 60.0_ip
           ESP_MassFluxRate = 1.0e5_ip
           ESP_Vol          = 1.0e-2_ip
           ESP_massfracfine = 5.0e-2_ip
-        elseif(volcESP(Volcano_ID).eq.4)then
+        elseif(volcESP(Volcano_ID) == 4)then
           ! M3 -- Mafic Large (Fuego, Guatemala 10/14/1974)
           ESP_height       = 10.0_ip
           ESP_duration     = 5.0_ip
           ESP_MassFluxRate = 1.0e6_ip
           ESP_Vol          = 1.7e-1_ip
           ESP_massfracfine = 1.0e-1_ip
-        elseif(volcESP(Volcano_ID).eq.5)then
+        elseif(volcESP(Volcano_ID) == 5)then
           ! S0 -- Silicic Standard (Spurr, USA 8/18/1992)
           ESP_height       = 11.0_ip
           ESP_duration     = 3.0_ip
           ESP_MassFluxRate = 4.0e6_ip
           ESP_Vol          = 1.5e-2_ip
           ESP_massfracfine = 4.0e-1_ip
-        elseif(volcESP(Volcano_ID).eq.6)then
+        elseif(volcESP(Volcano_ID) == 6)then
           ! S1 -- Silicic Small (Ruapehu, New Zealand 6/17/1996)
           volcESP(i) = 6
           ESP_height       = 5.0_ip
@@ -195,21 +195,21 @@
           ESP_MassFluxRate = 2.0e5_ip
           ESP_Vol          = 3.0e-3_ip
           ESP_massfracfine = 1.0e-1_ip
-        elseif(volcESP(Volcano_ID).eq.7)then
+        elseif(volcESP(Volcano_ID) == 7)then
           ! S2 -- Silicic Medium (Spurr, USA 8/18/1992)
           ESP_height       = 11.0_ip
           ESP_duration     = 3.0_ip
           ESP_MassFluxRate = 4.0e6_ip
           ESP_Vol          = 1.5e-2_ip
           ESP_massfracfine = 4.0e-1_ip
-        elseif(volcESP(Volcano_ID).eq.8)then
+        elseif(volcESP(Volcano_ID) == 8)then
           ! S3 -- Silicic Large (Mt. St. Helens, USA 5/18/1980)
           ESP_height       = 15.0_ip
           ESP_duration     = 8.0_ip
           ESP_MassFluxRate = 1.0e7_ip
           ESP_Vol          = 1.5e-1_ip
           ESP_massfracfine = 5.0e-1_ip
-        elseif(volcESP(Volcano_ID).eq.9)then
+        elseif(volcESP(Volcano_ID) == 9)then
           ! S8 -- Silicic co-ignimbrite cloud (Mt. St. Helens, USA
           ! 5/18/1980 pre-9am)
           ESP_height       = 25.0_ip
@@ -217,31 +217,31 @@
           ESP_MassFluxRate = 1.0e8_ip
           ESP_Vol          = 5.0e-2_ip
           ESP_massfracfine = 5.0e-1_ip
-        elseif(volcESP(Volcano_ID).eq.10)then
+        elseif(volcESP(Volcano_ID) == 10)then
           ! S9 -- Silicic brief (Soufriere Hills, Montserrat)
           ESP_height       = 10.0_ip
           ESP_duration     = 0.01_ip
           ESP_MassFluxRate = 3.0e6_ip
           ESP_Vol          = 3.0e-4_ip
           ESP_massfracfine = 6.0e-1_ip
-        elseif(volcESP(Volcano_ID).eq.11)then
+        elseif(volcESP(Volcano_ID) == 11)then
           ! U0 -- Submarine (No example)
           ESP_height       = 0.0_ip
           ESP_duration     = 0.0_ip
           ESP_MassFluxRate = 0.0_ip
           ESP_Vol          = 0.0_ip
           ESP_massfracfine = 0.0_ip
-          do io=1,2;if(VB(io).le.verbosity_error)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)"Not set up for submarine ESP"
           endif;enddo
           stop 1
         else
-          do io=1,2;if(VB(io).le.verbosity_error)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)"Could not read the eruption style."
           endif;enddo
           stop 1
         endif
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"The following ESPs will be used IF variables are not"
           write(outlog(io),*)"assigned in the input file:"
           write(outlog(io),*)"  Plume Height (km)     : ",ESP_height
@@ -250,13 +250,13 @@
           write(outlog(io),*)"  Volume (km^3)         : ",ESP_Vol
           write(outlog(io),*)"  Mass frac of fines    : ",ESP_massfracfine
         endif;enddo
-      else  ! if (Volcano_ID.gt.0)
-        do io=1,2;if(VB(io).le.verbosity_info)then
+      else  ! if (Volcano_ID > 0)
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"Did not find volcano in database"
         endif;enddo
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine get_ESP"
       endif;enddo
 
@@ -317,7 +317,7 @@
       integer            :: nvolcs
       character          :: testkey
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine VotW_v12"
       endif;enddo
 
@@ -326,11 +326,11 @@
                             DirDelim // "VotW_ESP_v12_csv.txt"
       ! Test for existance of the VotW file
       inquire( file=trim(adjustl(VotWMasterFile)), exist=IsThere )
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"     ",trim(adjustl(VotWMasterFile)),IsThere
       endif;enddo
       if(.not.IsThere)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: Could not find VotW file."
           write(errlog(io),*)"       Please copy file to this location:"
           write(errlog(io),*)VotWMasterFile
@@ -343,16 +343,16 @@
       ! Read the header
       read(fid_votw,'(a195)',iostat=iostatus,iomsg=iomessage)linebuffer195
       linebuffer050 = "Reading line from volcano file, header"
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer195(1:80),iomessage)
+      if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer195(1:80),iomessage)
       nvolcs = 0
       ! Now start reading the data lines
       read(fid_votw,'(a195)',iostat=iostatus,iomsg=iomessage)linebuffer195
       linebuffer050 = "Reading line from volcano file"
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer195(1:80),iomessage)
-      do while (iostatus.eq.0)
+      if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer195(1:80),iomessage)
+      do while (iostatus == 0)
         nvolcs = nvolcs + 1
-        if(nvolcs.gt.MAXVOLCS)then
-          do io=1,2;if(VB(io).le.verbosity_error)then
+        if(nvolcs > MAXVOLCS)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)"ERROR: Maximum number of volcanoes in file exceeded"
             write(errlog(io),*)"       Current maximum set to MAXVOLCS = ",MAXVOLCS
             write(errlog(io),*)"       Please increase MAXVOLCS and recompile."
@@ -371,7 +371,7 @@
                               volcElev_c(nvolcs), &
                               temp3
         linebuffer050 = "Reading from linebuffer from volcano file"
-        if(ioerr.ne.0) call FileIO_Error_Handler(ioerr,linebuffer050,linebuffer195(1:80),iomessage)
+        if(ioerr /= 0) call FileIO_Error_Handler(ioerr,linebuffer050,linebuffer195(1:80),iomessage)
         volcName(nvolcs) = adjustl(volcName(nvolcs))
         volcLoc(nvolcs)  = adjustl(volcLoc(nvolcs))
         volcElev_c(nvolcs) = adjustl(volcElev_c(nvolcs))
@@ -385,26 +385,26 @@
         read(volcElev_c(nvolcs),*,iostat=ioerr,iomsg=iomessage)testkey
         linebuffer050 = "Reading testkey from linefuffer of volc file"
         linebuffer080 = volcElev_c(nvolcs)
-        if(ioerr.ne.0) call FileIO_Error_Handler(ioerr,linebuffer050,linebuffer080,iomessage)
-        if(testkey.eq.'U'.or.testkey.eq.'v')then
+        if(ioerr /= 0) call FileIO_Error_Handler(ioerr,linebuffer050,linebuffer080,iomessage)
+        if(testkey == 'U'.or.testkey == 'v')then
           volcElev(nvolcs) = 0
         else
           read(volcElev_c(nvolcs),*,iostat=ioerr,iomsg=iomessage)volcElev(nvolcs)
           linebuffer050 = "Reading volcano file, elevation"
           linebuffer080 = volcElev_c(nvolcs)
-          if(ioerr.ne.0) call FileIO_Error_Handler(ioerr,linebuffer050,linebuffer080,iomessage)
+          if(ioerr /= 0) call FileIO_Error_Handler(ioerr,linebuffer050,linebuffer080,iomessage)
         endif
-        if(volcNS(nvolcs).eq.'S') volcLat(nvolcs) = -volcLat(nvolcs)
-        if(volcWE(nvolcs).eq.'W') volcLon(nvolcs) = -volcLon(nvolcs) + 360.0_ip
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        if(volcNS(nvolcs) == 'S') volcLat(nvolcs) = -volcLat(nvolcs)
+        if(volcWE(nvolcs) == 'W') volcLon(nvolcs) = -volcLon(nvolcs) + 360.0_ip
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)&
              volcID(nvolcs),volcName(nvolcs),volcLoc(nvolcs),volcLat(nvolcs),volcLon(nvolcs)
         endif;enddo
         read(fid_votw,'(a195)',iostat=iostatus,iomsg=iomessage) linebuffer195
-        if(iostatus.lt.0)then
+        if(iostatus < 0)then
           ! End of file; break out of do loop
           exit
-        elseif(iostatus.gt.0)then
+        elseif(iostatus > 0)then
           ! Error reading line
           linebuffer050 = "Reading from line from volcano file"
           call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer195(1:80),iomessage)
@@ -413,14 +413,14 @@
 
       close(fid_votw)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine VotW_v12"
       endif;enddo
 
       return
 
 !     ERROR TRAPS
-3000  do io=1,2;if(VB(io).le.verbosity_error)then
+3000  do io=1,2;if(VB(io) <= verbosity_error)then
         write(errlog(io),5) "VotW_ESP_v12.esp"
       endif;enddo
       stop 1
@@ -446,7 +446,7 @@
 
       integer :: i
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine VotW_v12"
       endif;enddo
 
@@ -3522,7 +3522,7 @@
       i=i+1; volcLat(i)=-55.920; volcLon(i)=331.920; volcElev(i)=  -27;  volcLoc(i)="Antarctica                   ";
              volcESP_Code(i)="S0"; volcID(i)="1900-14-"; volcName(i)="Protector Shoal                ";
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine VotW_v12"
       endif;enddo
 

@@ -26,6 +26,7 @@
       use io_units
 
       implicit none
+      !implicit none (type, external)
 
         ! Set everything to private by default
       private
@@ -80,7 +81,7 @@
 
       subroutine deallocate_ASCII
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine deallocate_ASCII"
       endif;enddo
 
@@ -88,7 +89,7 @@
       if(allocated(A_XY_int)) deallocate(A_XY_int)
       if(allocated(A_XYZ))    deallocate(A_XYZ)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine deallocate_ASCII"
       endif;enddo
 
@@ -121,20 +122,20 @@
       integer ::  ionumber            ! number of output file
       character(len=14)  :: cio
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine vprofileopener"
       endif;enddo
 
       do i=1,nvprofiles
         ionumber = fid_vprofbase + i-1
-        if (i.lt.10) then
+        if (i < 10) then
           write(cio,1) i
 1         format('vprofile0',i1,'.txt')
-        elseif (i.lt.MAXPROFILES) then
+        elseif (i < MAXPROFILES) then
           write(cio,2) i
 2         format('vprofile',i2,'.txt')
         else
-          do io=1,2;if(VB(io).le.verbosity_error)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)"ERROR: Too many vertical profiles."
             write(errlog(io),*)"nvprofiles must be < ",MAXPROFILES
               write(errlog(io),*)"       Please increase MAXNPROFILES and recompile."
@@ -155,7 +156,7 @@
 4       format(50f16.3)
       enddo
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine vprofileopener"
       endif;enddo
 
@@ -209,13 +210,13 @@
         end function HS_yyyymmddhh_since
       END INTERFACE
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine vprofilewriter"
       endif;enddo
 
       do i=1,nvprofiles
         ! don't write if there's no ash
-        if(maxval(pr_ash(1:nzmax,itime,i)).lt.CLOUDCON_THRESH*KG_2_MG/KM3_2_M3) cycle
+        if(maxval(pr_ash(1:nzmax,itime,i)) < CLOUDCON_THRESH*KG_2_MG/KM3_2_M3) cycle
         ionumber = fid_vprofbase + i-1
         cio = HS_yyyymmddhh_since(SimStartHour+time+OutputOffset,&
                                   BaseYear,useLeap)
@@ -224,7 +225,7 @@
 1       format(a13,',',f10.3,',',50(e15.3,','))
       enddo
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine vprofilewriter"
       endif;enddo
 
@@ -251,7 +252,7 @@
 
       integer  ::  i, ionumber
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine vprofilecloser"
       endif;enddo
 
@@ -260,7 +261,7 @@
         close(ionumber)
       enddo
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine vprofilecloser"
       endif;enddo
 
@@ -319,22 +320,22 @@
       character(len= 50) :: linebuffer050
       character(len= 80) :: linebuffer080
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_2D_ASCII"
       endif;enddo
 
       read(Fill_Value,*,iostat=iostatus,iomsg=iomessage)FValue
       linebuffer080 = Fill_Value
       linebuffer050 = "Reading FValue from ASCII file"
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
 
       if(isFinal_TS)then
         cio='____final'
       else
-        if (WriteTimes(iout3d).lt.10.0_ip) then
+        if (WriteTimes(iout3d) < 10.0_ip) then
           write(cio,1) WriteTimes(iout3d)
 1         format('00',f4.2,'hrs')
-        elseif (WriteTimes(iout3d).lt.100.0_ip) then
+        elseif (WriteTimes(iout3d) < 100.0_ip) then
           write(cio,2) WriteTimes(iout3d)
 2         format('0',f5.2,'hrs')
         else
@@ -342,11 +343,11 @@
 3         format(f6.2,'hrs')
         endif
       endif
-      if(index(filename_root,'outvar').gt.0)then
+      if(index(filename_root,'outvar') > 0)then
         ! If this subroutine is called with a filename root of 'outvar', then just
         ! write to file 'outvar.dat'
         write(filename_out,*)trim(adjustl(filename_root)),'.dat'
-      elseif(index(filename_root,'ArrivalTime').gt.0)then
+      elseif(index(filename_root,'ArrivalTime') > 0)then
           ! For the special cases of DepositArrivalTime.dat and
           ! CloudArrivalTime.dat
         write(filename_out,*)trim(adjustl(filename_root)),'.dat'
@@ -359,7 +360,7 @@
       write(fid_ascii2dout,3000) nx        ! write header values
       write(fid_ascii2dout,3001) ny
       if (IsLatLon) then
-        if (lonLL.gt.180.0_ip)then
+        if (lonLL > 180.0_ip)then
           ! GIS software seem to prefer the domain -180->180
           write(fid_ascii2dout,3002) lonLL -360.0_ip
         else
@@ -403,14 +404,14 @@
 !3006  format(10f15.3)               ! Older ASCII output file from Ash3d used this format
 3006  format(10f18.6)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine write_2D_ASCII"
       endif;enddo
 
       return
 
 !     Error traps
-2500  do io=1,2;if(VB(io).le.verbosity_error)then
+2500  do io=1,2;if(VB(io) <= verbosity_error)then
         write(errlog(io),*) 'Error opening output file ASCII_output_file.txt.  Program stopped'
       endif;enddo
       stop 1
@@ -466,14 +467,14 @@
       character(len= 50) :: linebuffer050
       character(len= 80) :: linebuffer080
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_2D_ASCII_flt"
       endif;enddo
 
       read(Fill_Value,*,iostat=iostatus,iomsg=iomessage)FValue
       linebuffer080 = Fill_Value
       linebuffer050 = "Reading FValue from ASCII file"
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
 
       write(filename_out,*)trim(adjustl(filename))
 
@@ -482,7 +483,7 @@
       write(fid_ascii2dout,3000) nx        ! write header values
       write(fid_ascii2dout,3001) ny
       if (IsLL) then
-        if (x1.gt.180.0_ip)then
+        if (x1 > 180.0_ip)then
           ! GIS software seem to prefer the domain -180->180
           if(IsCC)then
             write(fid_ascii2dout,3012) x1 -360.0_sp
@@ -531,14 +532,14 @@
 3004  format('CELLSIZE ',2f15.3)
 3005  format('NODATA_VALUE ',a6)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine write_2D_ASCII_flt"
       endif;enddo
 
       return
 
 !     Error traps
-2500  do io=1,2;if(VB(io).le.verbosity_error)then
+2500  do io=1,2;if(VB(io) <= verbosity_error)then
         write(errlog(io),*) 'Error opening output file ASCII_output_file.txt.  Program stopped'
       endif;enddo
       stop 1
@@ -607,14 +608,14 @@
       integer             :: ix,iy
       real(kind=sp)       :: xnow,ynow,znow
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_2D_ASCII_flt_regular"
       endif;enddo
 
       read(Fill_Value,*,iostat=iostatus,iomsg=iomessage)FValue
       linebuffer080 = Fill_Value
       linebuffer050 = "Reading FValue from ASCII file"
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
 
       write(filename_out,*)trim(adjustl(filename))
 
@@ -685,7 +686,7 @@
       write(fid_ascii2dout,3000) nx_loc        ! write header values
       write(fid_ascii2dout,3001) ny_loc
       if (IsLL) then
-        if (x1.gt.180.0_ip)then
+        if (x1 > 180.0_ip)then
           ! GIS software seem to prefer the domain -180->180
           if(IsCC)then
             write(fid_ascii2dout,3012) x1 -360.0_sp
@@ -738,14 +739,14 @@
 3004  format('CELLSIZE ',2f15.3)
 3005  format('NODATA_VALUE ',a6)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine write_2D_ASCII_flt_regular"
       endif;enddo
 
       return
 
 !     Error traps
-2500  do io=1,2;if(VB(io).le.verbosity_error)then
+2500  do io=1,2;if(VB(io) <= verbosity_error)then
         write(errlog(io),*) 'Error opening output file ASCII_output_file.txt.  Program stopped'
       endif;enddo
       stop 1
@@ -791,7 +792,7 @@
       real(kind=sp),dimension(nx) :: x_in  ! cell-center coordinate of input grid
       real(kind=sp),dimension(ny) :: y_in
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_2D_ASCII_csv"
       endif;enddo
 
@@ -814,14 +815,14 @@
 
       close(fid_ascii2dout)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine write_2D_ASCII_csv"
       endif;enddo
 
       return
 
 !     Error traps
-2500  do io=1,2;if(VB(io).le.verbosity_error)then
+2500  do io=1,2;if(VB(io) <= verbosity_error)then
         write(errlog(io),*) 'Error opening output file ASCII_output_file.txt.  Program stopped'
       endif;enddo
       stop 1
@@ -854,11 +855,14 @@
       character(len=120):: iomessage
       character(len=20) :: tst_str
       integer           :: substr_pos1
-      logical           :: IsAsh3dASCII = .true.
+      logical           :: IsAsh3dASCII
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine read_2D_ASCII"
       endif;enddo
+
+      ! Initialization
+      IsAsh3dASCII = .true.
 
       open(unit=fid_ascii2din,file=trim(adjustl(filename)), status='old',action='read',err=2500)
 
@@ -872,10 +876,10 @@
 
       read(fid_ascii2din,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       read(linebuffer080(7:),*,iostat=iostatus,iomsg=iomessage)A_nx
-      if(iostatus.ne.0)then
+      if(iostatus /= 0)then
         ! We might have an empty file
         ! Issue warning and return
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*) 'Error reading file ',trim(adjustl(filename))
           write(errlog(io),*) 'Check for zero-length file.'
         endif;enddo
@@ -891,7 +895,7 @@
       read(linebuffer080(10:),*,iostat=iostatus,iomsg=iomessage)A_dx
       ! test if two cell lengths are provided
       read(linebuffer080(10:),*,iostat=iostatus,iomsg=iomessage)A_dx,A_dy
-      if(iostatus.ne.0)then
+      if(iostatus /= 0)then
         ! only one cell size provided; copy dx to dy
         A_dy = A_dx
       endif
@@ -900,7 +904,7 @@
       read(fid_ascii2din,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       tst_str(1:20) = linebuffer080(13:32)
       substr_pos1 = index(tst_str,'.')
-      if(substr_pos1.gt.0)then
+      if(substr_pos1 > 0)then
         ! period found, assume data are floats
         read(linebuffer080(13:),*,iostat=iostatus,iomsg=iomessage)A_Fill
         A_IsInt = .false.
@@ -920,14 +924,14 @@
         do j=A_ny,1,-1
           ! This format ID directs to read 10 floats at a time, matching the Ash3d ASCII output format
           read(fid_ascii2din,3006,iostat=iostatus,iomsg=iomessage) (A_XY(i,j), i=1,A_nx)
-          if(iostatus.ne.0)then
+          if(iostatus /= 0)then
             ! If there is an error, then the ESRI ASCII file might not be an Ash3d-generated file.
             ! Try reading the whole line of A_nx values without the blank-line separator
             IsAsh3dASCII = .false.
             exit
           endif
           read(fid_ascii2din,*,iostat=iostatus,iomsg=iomessage) (A_XY(i,j), i=1,A_nx)
-          if(iostatus.ne.0)then
+          if(iostatus /= 0)then
             IsAsh3dASCII = .false.
             exit
           endif
@@ -956,19 +960,19 @@
 !3006  format(10f15.3)               ! Older ASCII output file from Ash3d used this format
 3006  format(10f18.6)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine read_2D_ASCII"
       endif;enddo
 
       return
 
 !     Error traps
-2500  do io=1,2;if(VB(io).le.verbosity_error)then
+2500  do io=1,2;if(VB(io) <= verbosity_error)then
         write(errlog(io),*) 'Error opening ASCII file. Program stopped'
       endif;enddo
       stop 1
 
-2600  do io=1,2;if(VB(io).le.verbosity_error)then
+2600  do io=1,2;if(VB(io) <= verbosity_error)then
         write(errlog(io),*) 'Error reading from ASCII file.'
       endif;enddo
       stop 1
@@ -1006,7 +1010,7 @@
       integer :: i,j,k
       character(len=32) :: DepOutfileName
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_3D_ASCII"
       endif;enddo
 
@@ -1033,7 +1037,7 @@
       close(fid_ascii3dout)
 
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine write_3D_ASCII"
       endif;enddo
 
@@ -1070,7 +1074,7 @@
       character(len=130) :: linebuffer130
       real(kind=ip) :: value1,value2,value3
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine read_3D_ASCII"
       endif;enddo
 
@@ -1079,12 +1083,12 @@
       ! Read the header lines
       read(fid_ascii3din,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
       linebuffer050 = "Reading line from ASCII file"
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
+      if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
       read(fid_ascii3din,3000,err=2600,iostat=iostatus,iomsg=iomessage) A_nx,A_ny,A_nz
-      if(iostatus.ne.0)then
+      if(iostatus /= 0)then
         ! We might have an empty file
         ! Issue warning and return
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*) 'Error reading file ',trim(adjustl(filename))
           write(errlog(io),*) 'Check for zero-length file.'
         endif;enddo
@@ -1099,18 +1103,18 @@
             read(linebuffer130,'(3(4x,f20.3),g20.8)',iostat=iostatus,iomsg=iomessage) &
                    value1,value2,value3,A_XYZ(i,j,k)
             linebuffer050 = "Reading line from ASCII file"
-            if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
+            if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
 
-            if(i.eq.1.and.j.eq.1.and.k.eq.1)then
+            if(i == 1.and.j == 1.and.k == 1)then
               A_xll = value1
               A_yll = value2
               A_zll = value3
             endif
-            if(i.eq.2) A_dx = value1 - A_xll
+            if(i == 2) A_dx = value1 - A_xll
           enddo
-          if(j.eq.2) A_dy = value2 - A_yll
+          if(j == 2) A_dy = value2 - A_yll
         enddo
-        if(k.eq.2) A_dz = value3 - A_zll
+        if(k == 2) A_dz = value3 - A_zll
       enddo
 
       close(fid_ascii3din)
@@ -1118,19 +1122,19 @@
 !     format statements
 3000  format(9x,i5,5x,i5,5x,i5)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine read_3D_ASCII"
       endif;enddo
 
       return
 
 !     Error traps
-2500  do io=1,2;if(VB(io).le.verbosity_error)then
+2500  do io=1,2;if(VB(io) <= verbosity_error)then
         write(errlog(io),*) 'Error opening ASCII file. Program stopped'
       endif;enddo
       stop 1
 
-2600  do io=1,2;if(VB(io).le.verbosity_error)then
+2600  do io=1,2;if(VB(io) <= verbosity_error)then
         write(errlog(io),*) 'Error reading from ASCII file.'
       endif;enddo
       stop 1
@@ -1204,7 +1208,7 @@
         end function HS_xmltime
       END INTERFACE
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Write_PointData_Airports_ASCII"
       endif;enddo
 
@@ -1242,13 +1246,13 @@
           if (Airport_AshArrived(i).or.Airport_CloudArrived(i)) then
             ! rank ash thickness in NWS rank
             Airport_thickness(i) = bilinear_thickness(i,DepositThickness)  ! interpolate to find thickness
-            if (Airport_thickness(i).le.0.7935_ip) then         ! <1/32" thickness
+            if (Airport_thickness(i) <= 0.7935_ip) then         ! <1/32" thickness
               nwsthickness="trace or less"
-            elseif (Airport_thickness(i).le.6.35_ip) then       ! <=1/4"
+            elseif (Airport_thickness(i) <= 6.35_ip) then       ! <=1/4"
               nwsthickness="minor"
-            elseif (Airport_thickness(i).le.25.4_ip) then       ! <=1"
+            elseif (Airport_thickness(i) <= 25.4_ip) then       ! <=1"
               nwsthickness="substantial"
-            elseif (Airport_thickness(i).le.101.6_ip) then      ! <=4"
+            elseif (Airport_thickness(i) <= 101.6_ip) then      ! <=4"
               nwsthickness="heavy"
             else
               nwsthickness="severe"
@@ -1266,20 +1270,20 @@
 
             ! See whether cloud is still overhead, or whether ash is still
             ! falling
-            if((Airport_AshArrived(i)).and.(Airport_depRate(i).gt.DEPRATE_THRESH)) then
+            if((Airport_AshArrived(i)).and.(Airport_depRate(i) > DEPRATE_THRESH)) then
               Airport_AshDuration(i) = time-Airport_AshArrivalTime(i)
               deposit_morethan = '>'
             else
               deposit_morethan = ' '
             endif
-            if (CloudLoad(Airport_i(i),Airport_j(i)).gt.CLOUDLOAD_THRESH)then
+            if (CloudLoad(Airport_i(i),Airport_j(i)) > CLOUDLOAD_THRESH)then
               Airport_CloudDuration(i) = time-Airport_CloudArrivalTime(i)
               cloud_morethan = '>'
             else
               cloud_morethan = ' '
             endif
 
-            if (Airport_Longitude(i).gt.180.0_ip) then
+            if (Airport_Longitude(i) > 180.0_ip) then
               longitude_now = Airport_Longitude(i)-360.0_ip
             else
               longitude_now = Airport_Longitude(i)
@@ -1300,19 +1304,19 @@
             nWrittenOut = nWrittenOut + 1
           endif
         enddo
-        if (nWrittenOut.eq.0) write(fid_asharrive,3)    ! if no airports are hit, say it in the file.
+        if (nWrittenOut == 0) write(fid_asharrive,3)    ! if no airports are hit, say it in the file.
         write(fid_asharrive,120)                        ! write footnotes & caveats
         close(fid_asharrive)
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Write_PointData_Airports_ASCII"
       endif;enddo
 
       return
 
 !     Error traps
-2000  do io=1,2;if(VB(io).le.verbosity_error)then
+2000  do io=1,2;if(VB(io) <= verbosity_error)then
         write(errlog(io),*)  'Error opening ash_arrivaltimes_airports.txt.  Program stopped.'
       endif;enddo
       stop 1

@@ -60,13 +60,13 @@
 
       subroutine deallocate_Binary
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine deallocate_Binary"
       endif;enddo
 
       if(allocated(B_XY)) deallocate(B_XY)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine deallocate_Binary"
       endif;enddo
 
@@ -113,21 +113,21 @@
       character(len= 50) :: linebuffer050
       character(len= 80) :: linebuffer080
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_2D_Binary"
       endif;enddo
 
       read(Fill_Value,*,iostat=iostatus,iomsg=iomessage)FValue
       linebuffer080 = Fill_Value
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
 
       if(isFinal_TS)then
         cio='____final'
       else
-        if (WriteTimes(iout3d).lt.10.0_ip) then
+        if (WriteTimes(iout3d) < 10.0_ip) then
           write(cio,1) WriteTimes(iout3d)
 1         format('00',f4.2,'hrs')
-        elseif (WriteTimes(iout3d).lt.100.0_ip) then
+        elseif (WriteTimes(iout3d) < 100.0_ip) then
           write(cio,2) WriteTimes(iout3d)
 2         format('0',f5.2,'hrs')
         else
@@ -135,7 +135,7 @@
 3         format(f6.2,'hrs')
         endif
       endif
-      if(index(filename_root,'ArrivalTime').gt.0)then
+      if(index(filename_root,'ArrivalTime') > 0)then
           ! For the special cases of DepositArrivalTime.dat and
           ! CloudArrivalTime.dat
         write(filename_out,*)trim(adjustl(filename_root)),'.raw'
@@ -154,7 +154,7 @@
         enddo
       enddo
 
-      if(op.eq.4)then
+      if(op == 4)then
         open(unit=fid_bin2dout,file=trim(adjustl(filename_out)), &
           status='replace', action='write', &
           access='direct',recl=4*nx*ny)
@@ -166,7 +166,7 @@
       write(fid_bin2dout,rec=1)((OVar(i,j),i=1,nx),j=1,ny)
       close(fid_bin2dout)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine write_2D_Binary"
       endif;enddo
 
@@ -202,11 +202,11 @@
       character(len= 50) :: linebuffer050
       character(len= 80) :: linebuffer080
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine read_2D_Binary"
       endif;enddo
 
-      if(op.eq.4)then
+      if(op == 4)then
         open(unit=fid_bin2dout,file=trim(adjustl(filename)), &
           status='old', action='read', &
           access='direct',recl=4*nx*ny)
@@ -217,13 +217,13 @@
       endif
       read(fid_bin2dout,rec=1,iostat=iostatus,iomsg=iomessage)((OVar(i,j),i=1,nx),j=1,ny)
       linebuffer080 = "Binary read"
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
       close(fid_bin2dout)
 
       if(.not.allocated(B_XY)) allocate(B_XY(1:nx,1:ny))
       B_XY(1:nx,1:ny) = real(OVar(1:nx,1:ny),kind=ip)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine read_2D_Binary"
       endif;enddo
 
@@ -258,14 +258,14 @@
 
       integer :: i,j,k
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_3D_Binary"
       endif;enddo
 
       ! Write out data in raw binary form
 
       ! 3-D total tephra concentration
-      if(op.eq.4)then
+      if(op == 4)then
         open(unit=fid_bin3dout,file='3d_tephra_fall_'//cio//'.raw', &
           status='replace', action='write', &
           access='direct',recl=4*nx*ny*nz)
@@ -277,7 +277,7 @@
       write(fid_bin3dout,rec=1)(((ashcon_tot(i,j,k),i=1,nx),j=1,ny),k=1,nz)
       close(fid_bin3dout)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine write_3D_Binary"
       endif;enddo
 
@@ -314,11 +314,11 @@
       character (len= 50) :: linebuffer050
       character (len= 80) :: linebuffer080
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine read_3D_Binary"
       endif;enddo
 
-      if(op.eq.4)then
+      if(op == 4)then
         open(unit=fid_bin3dout,file=trim(adjustl(filename)), &
           status='old', action='read', &
           access='direct',recl=4*nx*ny*nz)
@@ -331,14 +331,14 @@
            (((OVar3d(i,j,k),i=1,nx),j=1,ny),k=1,nz)
       linebuffer080 = "Binary read"
       linebuffer050 = "Reading file from binary file"
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
 
       close(fid_bin3dout)
 
       if(.not.allocated(B_XYZ)) allocate(B_XYZ(1:nx,1:ny,1:nz))
       B_XYZ(1:nx,1:ny,1:nz) = real(OVar3d(1:nx,1:ny,1:nz),kind=ip)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine read_3D_Binary"
       endif;enddo
 
@@ -369,13 +369,17 @@
       !integer, parameter :: sp = real32  ! selected_real_kind( 6,   37) ! single precision
       !integer, parameter :: dp = real64  ! selected_real_kind(15,  307) ! double precision
 
-      integer(kind=int16) :: BigEnd_2int
-      logical             :: isLit
-      integer(kind=int16) :: r
+      integer(kind=int16)             :: BigEnd_2int
+      logical             ,intent(in) :: isLit
+      integer(kind=int16) ,intent(in) :: r
 
-      integer(kind=int16) :: s  = 0
-      integer(kind=int16) :: t  = 0
-      integer             :: bl = 8  ! bit length of the move
+      integer(kind=int16) :: s
+      integer(kind=int16) :: t
+      integer             :: bl  ! bit length of the move
+
+      s  = 0
+      t  = 0
+      bl = 8
 
       ! Older compilers accepted this equivalence approach, but some newer ones
       ! complained.  The transfer->mvbits->transfer approach seems more accepted,
@@ -428,13 +432,17 @@
 
       function BigEnd_4int(isLit,r)
 
-      integer(kind=int32) :: BigEnd_4int
-      logical             :: isLit
-      integer(kind=int32) :: r
+      integer(kind=int32)             :: BigEnd_4int
+      logical             ,intent(in) :: isLit
+      integer(kind=int32) ,intent(in) :: r
 
-      integer(kind=int32) :: s  = 0
-      integer(kind=int32) :: t  = 0
-      integer             :: bl = 8  ! bit length of the move
+      integer(kind=int32) :: s
+      integer(kind=int32) :: t
+      integer             :: bl  ! bit length of the move
+
+      s  = 0
+      t  = 0
+      bl = 8
 
       ! Older compilers accepted this equivalence approach, but some newer ones
       ! complained.  The transfer->mvbits->transfer approach seems more accepted,
@@ -491,13 +499,17 @@
 
       function LitEnd_2int(isLit,r)
 
-      integer(kind=int16) :: LitEnd_2int
-      logical             :: isLit
-      integer(kind=int16) :: r
+      integer(kind=int16)             :: LitEnd_2int
+      logical             ,intent(in) :: isLit
+      integer(kind=int16) ,intent(in) :: r
 
-      integer(kind=int16) :: s  = 0
-      integer(kind=int16) :: t  = 0
-      integer             :: bl = 8  ! bit length of the move
+      integer(kind=int16) :: s
+      integer(kind=int16) :: t
+      integer             :: bl  ! bit length of the move
+
+      s  = 0
+      t  = 0
+      bl = 8
 
       ! Older compilers accepted this equivalence approach, but some newer ones
       ! complained.  The transfer->mvbits->transfer approach seems more accepted,
@@ -550,13 +562,17 @@
 
       function LitEnd_4int(isLit,r)
 
-      integer(kind=int32) :: LitEnd_4int
-      logical             :: isLit
-      integer(kind=int32) :: r
+      integer(kind=int32)             :: LitEnd_4int
+      logical             ,intent(in) :: isLit
+      integer(kind=int32) ,intent(in) :: r
 
-      integer(kind=int32) :: s  = 0
-      integer(kind=int32) :: t  = 0
-      integer             :: bl = 8  ! bit length of the move
+      integer(kind=int32) :: s
+      integer(kind=int32) :: t
+      integer             :: bl  ! bit length of the move
+
+      s  = 0
+      t  = 0
+      bl = 8
 
       ! Older compilers accepted this equivalence approach, but some newer ones
       ! complained.  The transfer->mvbits->transfer approach seems more accepted,
@@ -612,13 +628,17 @@
 
       function BigEnd_4real(isLit,r)
 
-      real(kind=sp)       :: BigEnd_4real
-      logical             :: isLit
-      real(kind=sp)       :: r
+      real(kind=sp)             :: BigEnd_4real
+      logical       ,intent(in) :: isLit
+      real(kind=sp) ,intent(in) :: r
 
-      integer(kind=int32) :: s  = 0
-      integer(kind=int32) :: t  = 0
-      integer             :: bl = 8  ! bit length of the move
+      integer(kind=int32) :: s
+      integer(kind=int32) :: t
+      integer             :: bl  ! bit length of the move
+
+      s  = 0
+      t  = 0
+      bl = 8
 
       ! Older compilers accepted this equivalence approach, but some newer ones
       ! complained.  The transfer->mvbits->transfer approach seems more accepted,
@@ -642,7 +662,6 @@
 !      else
 !        BigEnd_4real = r
 !      endif
-
 
       if(isLit)then
         ! We need r to be Big-endian, but the system is Little-endian
@@ -677,13 +696,17 @@
 
       function BigEnd_8real(isLit,r)
 
-      real(kind=dp)       :: BigEnd_8real
-      logical             :: isLit
-      real(kind=dp)       :: r
+      real(kind=dp)             :: BigEnd_8real
+      logical       ,intent(in) :: isLit
+      real(kind=dp) ,intent(in) :: r
 
-      integer(kind=int64) :: s  = 0
-      integer(kind=int64) :: t  = 0
-      integer             :: bl = 8  ! bit length of the move
+      integer(kind=int64) :: s
+      integer(kind=int64) :: t
+      integer             :: bl  ! bit length of the move
+
+      s  = 0
+      t  = 0
+      bl = 8
 
       ! Older compilers accepted this equivalence approach, but some newer ones
       ! complained.  The transfer->mvbits->transfer approach seems more accepted,
@@ -711,7 +734,6 @@
 !      else
 !        BigEnd_8real = r
 !      endif
-
 
       if(isLit)then
         ! We need r to be Big-endian, but the system is Little-endian
@@ -750,13 +772,17 @@
 
       function LitEnd_4real(isLit,r)
 
-      real(kind=sp)       :: LitEnd_4real
-      logical             :: isLit
-      real(kind=sp)       :: r
+      real(kind=sp)             :: LitEnd_4real
+      logical       ,intent(in) :: isLit
+      real(kind=sp) ,intent(in) :: r
 
-      integer(kind=int32) :: s  = 0
-      integer(kind=int32) :: t  = 0
-      integer             :: bl = 8  ! bit length of the move
+      integer(kind=int32) :: s
+      integer(kind=int32) :: t
+      integer             :: bl  ! bit length of the move
+
+      s  = 0
+      t  = 0
+      bl = 8
 
       ! Older compilers accepted this equivalence approach, but some newer ones
       ! complained.  The transfer->mvbits->transfer approach seems more accepted,
@@ -812,13 +838,17 @@
 
       function LitEnd_8real(isLit,r)
 
-      real(kind=dp)       :: LitEnd_8real
-      logical             :: isLit
-      real(kind=dp)       :: r
+      real(kind=dp)             :: LitEnd_8real
+      logical       ,intent(in) :: isLit
+      real(kind=dp) ,intent(in) :: r
 
-      integer(kind=int64) :: s  = 0
-      integer(kind=int64) :: t  = 0
-      integer             :: bl = 8  ! bit length of the move
+      integer(kind=int64) :: s
+      integer(kind=int64) :: t
+      integer             :: bl   ! bit length of the move
+
+      s  = 0
+      t  = 0
+      bl = 8
 
       ! Older compilers accepted this equivalence approach, but some newer ones
       ! complained.  The transfer->mvbits->transfer approach seems more accepted,

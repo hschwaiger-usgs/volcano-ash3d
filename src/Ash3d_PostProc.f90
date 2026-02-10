@@ -203,27 +203,37 @@
                                                      !   V V V V
 #ifdef WINDOWS
       ! For Windows systems, dislin is working; others not yet.
-      integer,dimension(Nplot_libs) :: plot_pref_map = (/1,2,3,4,5,6/)  ! plot preference for maps
-      integer,dimension(Nplot_libs) :: plot_pref_shp = (/1,2,3,4,5,6/)  ! plot preference for contours
-      integer,dimension(Nplot_libs) :: plot_pref_vpr = (/1,2,3,4,5,6/)  ! plot preference for vert profs.
-      integer,dimension(Nplot_libs) :: plot_pref_aTS = (/1,2,3,4,5,6/)  ! plot preference for Airport TS
+      integer,dimension(Nplot_libs) :: plot_pref_map = [1,2,3,4,5,6]  ! plot preference for maps
+      integer,dimension(Nplot_libs) :: plot_pref_shp = [1,2,3,4,5,6]  ! plot preference for contours
+      integer,dimension(Nplot_libs) :: plot_pref_vpr = [1,2,3,4,5,6]  ! plot preference for vert profs.
+      integer,dimension(Nplot_libs) :: plot_pref_aTS = [1,2,3,4,5,6]  ! plot preference for Airport TS
 #else
-      integer,dimension(Nplot_libs) :: plot_pref_map = (/2,1,3,4,5,6/)  ! plot preference for maps
-      integer,dimension(Nplot_libs) :: plot_pref_shp = (/3,1,2,4,5,6/)  ! plot preference for contours
-      integer,dimension(Nplot_libs) :: plot_pref_vpr = (/1,2,3,4,5,6/)  ! plot preference for vert profs.
-      integer,dimension(Nplot_libs) :: plot_pref_aTS = (/2,3,1,4,5,6/)  ! plot preference for Airport TS
+      integer,dimension(Nplot_libs) :: plot_pref_map = [2,1,3,4,5,6]  ! plot preference for maps
+      integer,dimension(Nplot_libs) :: plot_pref_shp = [3,1,2,4,5,6]  ! plot preference for contours
+      integer,dimension(Nplot_libs) :: plot_pref_vpr = [1,2,3,4,5,6]  ! plot preference for vert profs.
+      integer,dimension(Nplot_libs) :: plot_pref_aTS = [2,3,1,4,5,6]  ! plot preference for Airport TS
 #endif
 
       INTERFACE
         subroutine help_postproc
+          implicit none
+          !implicit none (type, external)
         end subroutine help_postproc
         subroutine alloc_arrays
+          implicit none
+          !implicit none (type, external)
         end subroutine alloc_arrays
         subroutine calc_mesh_params
+          implicit none
+          !implicit none (type, external)
         end subroutine calc_mesh_params
         subroutine output_results
+          implicit none
+          !implicit none (type, external)
         end subroutine output_results
         subroutine write_ShapeFile_Polyline(iprod,itime)
+          implicit none
+          !implicit none (type, external)
           integer,intent(in) :: iprod
           integer,intent(in) :: itime
         end subroutine write_ShapeFile_Polyline
@@ -244,6 +254,8 @@
           logical        ,intent(in) :: useLeaps
         end function HS_xmltime
         subroutine dealloc_arrays
+          implicit none
+          !implicit none (type, external)
         end subroutine dealloc_arrays
       END INTERFACE
 
@@ -253,11 +265,11 @@
       VB(1)   = verbosity_dark
       VB(2)   = verbosity_dark
       call Set_OS_Env
-      if(VB(1).eq.verbosity_dark)then
+      if(VB(1) == verbosity_dark)then
         VB(1)   = tmp_int
       endif
 
-      if(VB(1).le.verbosity_debug1)then
+      if(VB(1) <= verbosity_debug1)then
         CleanScripts = .false.
       else
         CleanScripts = .true.
@@ -283,8 +295,8 @@
       usegnuplot = .true.
       call execute_command_line('which gnuplot > /dev/null',&
                                 wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-      if(iostatus.ne.0)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
+      if(iostatus /= 0)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"Warning: 'which gnuplot' failed. No gnuplot executable in default path"
           write(outlog(io),*)"          Deactivating gnuplot"
         endif;enddo
@@ -292,17 +304,17 @@
       endif
       if(usegnuplot)then
         ! Finally, do a test run of the gnuplot executable
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"                  Checking if gnuplot executes."
         endif;enddo
         call execute_command_line("echo 'exit' | gnuplot",&
                                   wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-        if(iostatus.eq.0)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        if(iostatus == 0)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"                  Success"
           endif;enddo
         else
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"Error: Something is wrong with the gnuplot executable."
             write(outlog(io),*)"       gnuplot is returing an error code",iostatus
             write(outlog(io),*)"       execute_command_line command status = ",cstat
@@ -315,7 +327,7 @@
 #endif
 #ifdef MACOS
       ! On a MacOS system, not sure how to test yet
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Cannot test for gnuplot on MacOS for now."
         write(outlog(io),*)"Disabling gnuplot."
       endif;enddo
@@ -323,7 +335,7 @@
 #endif
 #ifdef WINDOWS
       ! On a Windows system, not sure how to test yet
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Cannot test for gnuplot on Windows for now."
         write(outlog(io),*)"Disabling gnuplot."
       endif;enddo
@@ -341,8 +353,8 @@
       useGMT = .true.
       call execute_command_line('which gmt > /dev/null',&
                                 wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-      if(iostatus.ne.0)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
+      if(iostatus /= 0)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"Warning: 'which gmt' failed. No gmt executable in default path"
           write(outlog(io),*)"          Deactivating gmt"
         endif;enddo
@@ -350,17 +362,17 @@
       endif
       if(useGMT)then
         ! Finally, do a test run of the gmt executable
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"                  Checking if gmt executes."
         endif;enddo
         call execute_command_line("gmt --version > /dev/null",&
                                   wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-        if(iostatus.eq.0)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        if(iostatus == 0)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"                  Success"
           endif;enddo
         else
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"Error: Something is wrong with the gmt executable."
             write(outlog(io),*)"       gmt is returing an error code",iostatus
             write(outlog(io),*)"       execute_command_line command status = ",cstat
@@ -373,7 +385,7 @@
 #endif
 #ifdef MACOS
         ! On a MacOS system, not sure how to test yet
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"Cannot test for gmt on MacOS for now."
           write(outlog(io),*)"Disabling gmt."
         endif;enddo
@@ -381,7 +393,7 @@
 #endif
 #ifdef WINDOWS
         ! On a Windows system, not sure how to test yet
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"Cannot test for gmt on Windows for now."
           write(outlog(io),*)"Disabling gmt."
         endif;enddo
@@ -401,8 +413,8 @@
       usematlab = .true.
       call execute_command_line('which matlab > /dev/null',&
                                 wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-      if(iostatus.ne.0)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
+      if(iostatus /= 0)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"Warning: 'which matlab' failed. No matlab executable in default path"
           write(outlog(io),*)"          Deactivating matlab"
         endif;enddo
@@ -413,8 +425,8 @@
       useoctave = .true.
       call execute_command_line('which octave > /dev/null',&
                                 wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-      if(iostatus.ne.0)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
+      if(iostatus /= 0)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"Warning: 'which octave' failed. No octave executable in default path"
           write(outlog(io),*)"          Deactivating octave"
         endif;enddo
@@ -424,17 +436,17 @@
         SetOctaveGraphics = .true.  ! This sets octave to default over MatLab (for speed), when neededd
                                     ! Also inserts octave-specific graphics directives
         ! Finally, do a test run of the octave executable
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"                  Checking if octave executes."
         endif;enddo
         call execute_command_line("echo 'exit' | octave",&
                                   wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-        if(iostatus.eq.0)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        if(iostatus == 0)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"                  Success"
           endif;enddo
         else
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"Error: Something is wrong with the octave executable."
             write(outlog(io),*)"       octave is returing an error code",iostatus
             write(outlog(io),*)"       execute_command_line command status = ",cstat
@@ -447,7 +459,7 @@
 #endif
 #ifdef MACOS
       ! On a MacOS system, not sure how to test yet
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Cannot test for matlab/octave on MacOS for now."
         write(outlog(io),*)"Disabling matlab/octave."
       endif;enddo
@@ -456,7 +468,7 @@
 #endif
 #ifdef WINDOWS
       ! On a Windows system, not sure how to test yet
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Cannot test for matlab/octave on Windows for now."
         write(outlog(io),*)"Disabling matlab/octave."
       endif;enddo
@@ -479,8 +491,8 @@
       usepython = .true.
       call execute_command_line('which python > /dev/null',&
                                 wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-      if(iostatus.ne.0)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
+      if(iostatus /= 0)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"Warning: 'which python' failed. No python executable in default path"
           write(outlog(io),*)"          Deactivating python"
         endif;enddo
@@ -488,18 +500,18 @@
       endif
       if(usepython)then
         ! Finally, do a test run of the python executable
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"                  Checking if python executes."
         endif;enddo
         call execute_command_line("echo 'exit' | python",&
                                   wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-        if(iostatus.eq.0)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        if(iostatus == 0)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"                  Success; at least for python base."
             write(outlog(io),*)"                  cartopy is needed for mapping"
           endif;enddo
         else
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"Error: Something is wrong with the python executable."
             write(outlog(io),*)"       python is returing an error code",iostatus
             write(outlog(io),*)"       execute_command_line command status = ",cstat
@@ -512,7 +524,7 @@
 #endif
 #ifdef MACOS
       ! On a MacOS system, not sure how to test yet
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Cannot test for python on MacOS for now."
         write(outlog(io),*)"Disabling python."
       endif;enddo
@@ -520,7 +532,7 @@
 #endif
 #ifdef WINDOWS
       ! On a Windows system, not sure how to test yet
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Cannot test for python on Windows for now."
         write(outlog(io),*)"Disabling python."
       endif;enddo
@@ -533,7 +545,7 @@
         plotlib_avail(6) = .false.
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Dislin        ",plotlib_avail(1)
         write(outlog(io),*)"Plplot        ",plotlib_avail(2)
         write(outlog(io),*)"Gnuplot       ",plotlib_avail(3)
@@ -575,16 +587,16 @@
       ! Test read command-line arguments
       nargs = command_argument_count()
 !100
-      if (nargs.eq.0) then
+      if (nargs == 0) then
           ! If no command-line arguments are given, then prompt user
           ! interactively for the command file name and possible a
           ! restart file
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)'No command-line arguments detected'
           write(outlog(io),*)''
         endif;enddo
 
-        if(VB(1).ge.verbosity_silent)then
+        if(VB(1) >= verbosity_silent)then
           do io=1,2
             write(errlog(io),*)"Stdout is suppressed via verbosity=9,10, but interactive input is expected."
             write(errlog(io),*)"Either recompile with verbosity<9 or provide the correct command-line arguments."
@@ -594,7 +606,7 @@
 #ifndef USENETCDF
         ! If we are here, then we expect to read the netcdf output file.  If netcdf
         ! not linked, give an error and exit
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)'Expecting to prompt for a netcdf file, but the netcdf'
           write(errlog(io),*)'library is not linked.  Please recompile, linking to'
           write(errlog(io),*)'netcdf or run Ash3d_PostProc with a control file and'
@@ -602,24 +614,24 @@
         endif;enddo
         stop 1
 #else
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)'Enter name of netcdf output file:'
         endif;enddo
         read(input_unit,*,iostat=iostatus,iomsg=iomessage) concenfile
         linebuffer080 = "concenfile"
         linebuffer050 = "Reading concenfile from stdin"
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
 #endif
         inquire( file=concenfile, exist=IsThere )
         if(.not.IsThere)then
-          do io=1,2;if(VB(io).le.verbosity_error)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)"ERROR: Cannot find input file"
             write(errlog(io),*)"     ",concenfile
           endif;enddo
           stop 1
         endif
 
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)'Select output variable (not all may be available):'
           write(outlog(io),*)' 1 full concentration array             2 deposit granularity'
           write(outlog(io),*)' 3 deposit thickness (mm time-series)   4 deposit thickness (inches time-series)'
@@ -636,19 +648,19 @@
         read(input_unit,*,iostat=iostatus,iomsg=iomessage)iprod
         linebuffer080 = "iprod"
         linebuffer050 = "Reading iprod from stdin"
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-        if(iprod.eq.0)then
+        if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        if(iprod == 0)then
           ! Get name of user variable
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)'Enter name of 2d variable in netcdf file:'
           endif;enddo
           read(input_unit,*,iostat=iostatus,iomsg=iomessage)Extra2dVarName
           linebuffer080 = "Extra2dVarName"
           linebuffer050 = "Reading Extra2dVarName from stdin"
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+          if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
 
           ! Get static vs TS
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)'Is this variable static or time-series?'
             write(outlog(io),*)' 1 static'
             write(outlog(io),*)' 2 time-series'
@@ -658,19 +670,19 @@
           read(input_unit,*,iostat=iostatus,iomsg=iomessage)tmp_int
           linebuffer080 = "TSorNo"
           linebuffer050 = "Reading TSorNo from stdin"
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-          if(tmp_int.eq.1)then
+          if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+          if(tmp_int == 1)then
             nvar_User2d_static_XY = 1
-          elseif(tmp_int.eq.2)then
+          elseif(tmp_int == 2)then
             nvar_User2d_XY = 1
           else
-            do io=1,2;if(VB(io).le.verbosity_error)then
+            do io=1,2;if(VB(io) <= verbosity_error)then
               write(errlog(io),*)"ERROR: Cannot find input file"
               write(errlog(io),*)"     ",concenfile
             endif;enddo
             stop 1
           endif
-        elseif(iprod.eq.15)then
+        elseif(iprod == 15)then
           nvar_User2d_static_XY = 1
           Extra2dVarName = "Topography"
         endif
@@ -688,7 +700,7 @@
 #endif
         VB(1)   = tmp_int
 
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)'Select output format'
           write(outlog(io),*)' 1 ASCII/ArcGIS           2 KML/KMZ'
           write(outlog(io),*)' 3 image/png              4 binary'
@@ -699,25 +711,25 @@
         read(input_unit,*,iostat=iostatus,iomsg=iomessage)outformat
         linebuffer080 = "outformat"
         linebuffer050 = "Reading outformat from stdin"
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
 
-        if(iprod.eq.5.or.iprod.eq.6)then
+        if(iprod == 5.or.iprod == 6)then
           ! For final deposit variables, set itime to -1
           itime = -1
-        elseif(iprod.eq.1.or.&
-               iprod.eq.2.or.&
-               iprod.eq.3.or.&
-               iprod.eq.4.or.&
-               iprod.eq.9.or.&
-               iprod.eq.10.or.&
-               iprod.eq.11.or.&
-               iprod.eq.12.or.&
-               iprod.eq.13.or.&
-               (iprod.eq.0.and.nvar_User2d_XY.eq.1))then  ! Last line is for custom var(t)
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        elseif(iprod == 1.or.&
+               iprod == 2.or.&
+               iprod == 3.or.&
+               iprod == 4.or.&
+               iprod == 9.or.&
+               iprod == 10.or.&
+               iprod == 11.or.&
+               iprod == 12.or.&
+               iprod == 13.or.&
+               (iprod == 0.and.nvar_User2d_XY == 1))then  ! Last line is for custom var(t)
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)'Select time step:'
             do i=1,nWriteTimes
-              if(WriteTimes(i).lt.1.0e10)then
+              if(WriteTimes(i) < 1.0e10)then
                 write(outlog(io),*)i,real(WriteTimes(i),kind=sp),&
                                    HS_xmltime(SimStartHour+WriteTimes(i),BaseYear,useLeap)
               else
@@ -729,19 +741,19 @@
           read(input_unit,*,iostat=iostatus,iomsg=iomessage)itime
           linebuffer080 = "itime"
           linebuffer050 = "Reading itime from stdin"
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+          if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         else
           ! iprod = 7,8,14,15 are not time-series, but set itime to -1
           itime = -1
         endif
 !110
-      elseif (nargs.eq.1) then
+      elseif (nargs == 1) then
           ! If an argument is given, first test for the '-h' indicating a help
           ! request.
         call get_command_argument(1, arg, length=arglen, status=iostatus)
         testkey  = arg(1:1)
         testkey2 = arg(2:2)
-        if(testkey.eq.'-'.and.testkey2.eq.'h')then
+        if(testkey == '-'.and.testkey2 == 'h')then
           ! This is the branch for user-requested help
           ! command is Ash3d_PostProc -h
           call help_postproc
@@ -751,10 +763,10 @@
           !read(arg,*,iostat=iostatus,iomsg=iomessage)PP_infile
           PP_infile = trim(adjustl(arg))
           linebuffer050 = "Reading control file from command-line arg."
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,arg(1:80),iomessage)
+          if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,arg(1:80),iomessage)
           inquire( file=PP_infile, exist=IsThere )
           if(.not.IsThere)then
-            do io=1,2;if(VB(io).le.verbosity_error)then
+            do io=1,2;if(VB(io) <= verbosity_error)then
               write(errlog(io),*)"ERROR: Cannot find input control file"
             endif;enddo
             stop 1
@@ -762,9 +774,9 @@
 
           call Read_PostProc_Control_File(informat,iiprod,iprod,ndims,outformat,iplotpref,itime)
           ! Reset plotting preference if need be
-          if(iplotpref.gt.0)then
+          if(iplotpref > 0)then
             if(plotlib_avail(iplotpref))then
-              do io=1,2;if(VB(io).le.verbosity_info)then
+              do io=1,2;if(VB(io) <= verbosity_info)then
                 write(outlog(io),*)" Resetting plotting package to ",iplotpref
               endif;enddo
               plot_pref_map(1:Nplot_libs) = iplotpref  ! plot preference for maps
@@ -772,14 +784,14 @@
               plot_pref_vpr(1:Nplot_libs) = iplotpref  ! plot preference for vert profs.
               plot_pref_aTS(1:Nplot_libs) = iplotpref  ! plot preference for Airport TS
             else
-              do io=1,2;if(VB(io).le.verbosity_error)then
+              do io=1,2;if(VB(io) <= verbosity_error)then
                 write(errlog(io),*)"WARNING: Preferred plotting library is not available."
               endif;enddo
             endif
           endif
         endif
 !120
-      elseif (nargs.ge.3) then
+      elseif (nargs >= 3) then
         ! If we are doing command line only, then we need at least the netcdf filename, the output
         ! product code and the format.  Optionally, we can add the timestep.  If there is an
         ! inconsistency with iprod and outformat, an error message is issued before stopping.
@@ -789,25 +801,25 @@
         !read(arg,*,iostat=iostatus,iomsg=iomessage)concenfile
         concenfile = trim(adjustl(arg))
         !linebuffer050 = "Reading concenfile from command-line arg 1"
-        !if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,arg(1:80),iomessage)
+        !if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,arg(1:80),iomessage)
         call get_command_argument(2, arg, length=arglen, status=iostatus)
         read(arg,*,iostat=iostatus,iomsg=iomessage)iprod
         linebuffer050 = "Reading iprod from command-line arg 2"
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,arg(1:80),iomessage)
+        if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,arg(1:80),iomessage)
         call get_command_argument(3, arg, length=arglen, status=iostatus)
         read(arg,*,iostat=iostatus,iomsg=iomessage)outformat
         linebuffer050 = "Reading outformat from command-line arg 3"
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,arg(1:80),iomessage)
-        if (nargs.eq.4) then
+        if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,arg(1:80),iomessage)
+        if (nargs == 4) then
           call get_command_argument(4, arg, length=arglen, status=iostatus)
           read(arg,*,iostat=iostatus,iomsg=iomessage)itime
           linebuffer050 = "Reading itime from command-line arg 4"
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,arg(1:80),iomessage)
+          if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,arg(1:80),iomessage)
         else
           itime = -1
         endif
       else
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)' Cannot parse command line'
         endif;enddo
         stop 1
@@ -817,17 +829,17 @@
       ! we are about to do.
       !  Arg #1
 !130
-      if(informat.eq.3)then
+      if(informat == 3)then
         ! Test if the Ash3d netcdf file exists
         inquire( file=concenfile, exist=IsThere )
         if(.not.IsThere)then
-          do io=1,2;if(VB(io).le.verbosity_error)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)"ERROR: Cannot find input file"
             write(errlog(io),*)"     ",concenfile
           endif;enddo
           stop 1
         else
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"Ash3d Output file: ",concenfile
           endif;enddo
         endif
@@ -836,126 +848,126 @@
         ! Test if it can be found
         inquire( file=datafileIn, exist=IsThere )
         if(.not.IsThere)then
-          do io=1,2;if(VB(io).le.verbosity_error)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)"ERROR: Cannot find input file"
             write(errlog(io),*)"     ",datafileIn
           endif;enddo
           stop 1
         else
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"Ash3d Output file: ",datafileIn
           endif;enddo
         endif
       endif
 
       !  Arg #2
-      if(iprod.lt.0.or.iprod.gt.16)then    ! Activate this line when custom variables are coded
-      !if(iprod.lt.1.or.iprod.gt.16)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
+      if(iprod < 0.or.iprod > 16)then    ! Activate this line when custom variables are coded
+      !if(iprod < 1.or.iprod > 16)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: output product requested is not in range 0-16."
           write(errlog(io),*)"       Run Ash3d_PostProc with no command-line"
           write(errlog(io),*)"       arguments to set usage information"
         endif;enddo
         stop 1
       else
-        if(iprod.eq.1)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        if(iprod == 1)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)'output variable = 1 full concentration array'
             write(outlog(io),*)' Currently, no output formats available for full'
             write(outlog(io),*)' granularity.  Binary output will give total ash'
             write(outlog(io),*)' concentration.'
           endif;enddo
-        elseif(iprod.eq.2)then
-          do io=1,2;if(VB(io).le.verbosity_error)then
+        elseif(iprod == 2)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)'output variable = 2 deposit granularity'
             write(errlog(io),*)' Currently, no output formats available for iprod=2'
             write(errlog(io),*)' '
           endif;enddo
           stop 1
-        elseif(iprod.eq.3)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        elseif(iprod == 3)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)'output variable = 3 deposit thickness; TS or step (mm)'
           endif;enddo
           ivar = 7  ! Note that kml writes out all netcdf time steps followed by the final
           TS_flag = 1      ! 1 = time series
           height_flag = 0  ! All the cells should be pinned to z=0
-        elseif(iprod.eq.4)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        elseif(iprod == 4)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)'output variable = 4 deposit thickness: TS or step (inches)'
           endif;enddo
           ivar = 8  ! Note that kml writes out all netcdf time steps followed by the final
           TS_flag = 1      ! 1 = time series
           height_flag = 0  ! All the cells should be pinned to z=0
-        elseif(iprod.eq.5)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        elseif(iprod == 5)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)'output variable = 5 deposit thickness: final (mm)'
           endif;enddo
           ivar = 7  ! Note that kml writes out all netcdf time steps followed by the final
           TS_flag = 1      ! 1 = time series (really, this final value is not a time series, but the kml writer requires this)
           height_flag = 0  ! All the cells should be pinned to z=0
-        elseif(iprod.eq.6)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        elseif(iprod == 6)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)'output variable = 6 deposit thickness: final (inches)'
           endif;enddo
           ivar = 8  ! Note that kml writes out all netcdf time steps followed by the final
           TS_flag = 1      ! 1 = time series (really, this final value is not a time series, but the kml writer requires this)
           height_flag = 0  ! All the cells should be pinned to z=0
-        elseif(iprod.eq.7)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        elseif(iprod == 7)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)'output variable = 7 ashfall arrival time (hours)'
           endif;enddo
           ivar = 9
           TS_flag = 0      ! 1 = not a time series
           height_flag = 0  ! All the cells should be pinned to z=0
-        elseif(iprod.eq.8)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        elseif(iprod == 8)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)'output variable = 8 ashfall arrival at airports/POI (mm)'
           endif;enddo
           !ivar = NaN There is a special KML writer for this variable
-        elseif(iprod.eq.9)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        elseif(iprod == 9)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)'output variable = 9 ash-cloud concentration (mg/m3)'
           endif;enddo
           ivar = 1
           TS_flag = 1      ! 1 = time series
           height_flag = 1  ! All the cells should be at cloud height
-        elseif(iprod.eq.10)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        elseif(iprod == 10)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)'output variable =10 ash-cloud height (km)'
           endif;enddo
           ivar = 2
           TS_flag = 1      ! 1 = time series
           height_flag = 1  ! All the cells should be at cloud height
-        elseif(iprod.eq.11)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        elseif(iprod == 11)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)'output variable =11 ash-cloud bottom (km)'
           endif;enddo
           ivar = 3
           TS_flag = 1      ! 1 = time series
           height_flag = 1  ! All the cells should be at cloud height
-        elseif(iprod.eq.12)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        elseif(iprod == 12)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)'output variable =12 ash-cloud load (T/km2)'
           endif;enddo
           ivar = 4
           TS_flag = 1      ! 1 = time series
           height_flag = 1  ! All the cells should be at cloud height
-        elseif(iprod.eq.13)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        elseif(iprod == 13)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)'output variable =13 ash-cloud radar reflectivity (dBz)'
           endif;enddo
           ivar = 6
           TS_flag = 1      ! 1 = time series
           height_flag = 1  ! All the cells should be at cloud height
-        elseif(iprod.eq.14)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        elseif(iprod == 14)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)'output variable =14 ash-cloud arrival time (hours)'
           endif;enddo
           ivar = 5
           TS_flag = 0      ! 1 = not a time series
           height_flag = 0  ! All the cells should be pinned to z=0
-        elseif(iprod.eq.15)then
-          do io=1,2;if(VB(io).le.verbosity_error)then
+        elseif(iprod == 15)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)'output variable =15 Topography (m)'
           endif;enddo
           nvar_User2d_static_XY = 1
@@ -963,84 +975,84 @@
           ivar = 10
           TS_flag = 0      ! 1 = not a time series
           height_flag = 0  ! All the cells should be pinned to z=0
-        elseif(iprod.eq.16)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        elseif(iprod == 16)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)'output variable =16 vertical concentration profile'
           endif;enddo
         endif
       endif
       !  Arg #3
-      if(outformat.lt.1.or.outformat.gt.7)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
+      if(outformat < 1.or.outformat > 7)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: output format requested is not in range 1-7."
           write(errlog(io),*)"       Run Ash3d_PostProc with no command-line"
           write(errlog(io),*)"       arguments to set usage information"
         endif;enddo
         stop 1
       else
-        do io=1,2;if(VB(io).le.verbosity_info)then
-          if(outformat.eq.1)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
+          if(outformat == 1)then
             write(outlog(io),*)'output format = 1 ASCII/ArcGIS'
-          elseif(outformat.eq.2)then
+          elseif(outformat == 2)then
             write(outlog(io),*)'output format = 2 KMZ'
-          elseif(outformat.eq.3)then
+          elseif(outformat == 3)then
             write(outlog(io),*)'output format = 3 image/png'
-          elseif(outformat.eq.4)then
+          elseif(outformat == 4)then
             write(outlog(io),*)'output format = 4 binary'
-          elseif(outformat.eq.5)then
+          elseif(outformat == 5)then
             write(outlog(io),*)'output format = 5 shape file'
-          elseif(outformat.eq.6)then
+          elseif(outformat == 6)then
             write(outlog(io),*)'output format = 6 grib2'
-          elseif(outformat.eq.7)then
+          elseif(outformat == 7)then
             write(outlog(io),*)'output format = 7 tecplot'
           endif
         endif;enddo
       endif
       !  Arg #4
-      if(itime.eq.-1)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
+      if(itime == -1)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)'itime = -1 (Final time step)'
           write(outlog(io),*)'  This signifies one of two conditions:'
           write(outlog(io),*)'   1. No time step provided (e.g. variable is not at time-series)'
           write(outlog(io),*)'   2. The final time step should be used'
         endif;enddo
-      elseif(itime.eq.0)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
+      elseif(itime == 0)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: itime = 0.  Invalid time step."
         endif;enddo
         stop 1
       else
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)'itime = ',itime
           write(outlog(io),*)'  We do not yet know the maximum number of steps available.'
         endif;enddo
       endif
-      if(iprod.eq.2)then   ! deposit granularity
-        do io=1,2;if(VB(io).le.verbosity_error)then
+      if(iprod == 2)then   ! deposit granularity
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)'We do not yet have processing depocon implimented.'
         endif;enddo
         stop 1
       endif
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)'Finished reading inputs.'
         write(outlog(io),*)' '
       endif;enddo
 
       ! Reset plotting preference if need be
-      if(iplotpref.gt.0)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
+      if(iplotpref > 0)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"  Plotting library reset"
-          if(iplotpref.eq.1)then
+          if(iplotpref == 1)then
             write(outlog(io),*)"           Using dislin if available."
-          elseif(iplotpref.eq.2)then
+          elseif(iplotpref == 2)then
             write(outlog(io),*)"           Using plplot if available."
-          elseif(iplotpref.eq.3)then
+          elseif(iplotpref == 3)then
             write(outlog(io),*)"           Using gnuplot if available."
-          elseif(iplotpref.eq.4)then
+          elseif(iplotpref == 4)then
             write(outlog(io),*)"           Using GMT if available."
-          elseif(iplotpref.eq.5)then
+          elseif(iplotpref == 5)then
             write(outlog(io),*)"           Using MatLAB if available."
-          elseif(iplotpref.eq.6)then
+          elseif(iplotpref == 6)then
             write(outlog(io),*)"           Using python/cartopy if available."
           endif
         endif;enddo
@@ -1050,7 +1062,7 @@
           plot_pref_vpr(1:Nplot_libs) = iplotpref  ! plot preference for vert profs.
           plot_pref_aTS(1:Nplot_libs) = iplotpref  ! plot preference for Airport TS
         else
-          do io=1,2;if(VB(io).le.verbosity_error)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)"WARNING: Preferred plotting library is not available."
           endif;enddo
         endif
@@ -1060,7 +1072,7 @@
       ! and populate auxilary variable.
       Load_Windfiles = .false.  ! This deactivates reading actual windfiles, which
                                 ! might not be available
-      if(informat.eq.3)then  ! netcdf
+      if(informat == 3)then  ! netcdf
         ! call routine to read the netcdf file, populate
         ! the dimensions so we can see what we are dealing with.
         ! This call reads the 2d output products for the specified time
@@ -1068,7 +1080,7 @@
 #ifndef USENETCDF
         ! If we are here, then we expect to read the netcdf output file.  If netcdf
         ! not linked, give an error and exit
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)'A netcdf file was provided in the control file, but'
           write(errlog(io),*)'the netcdf library is not linked.  Please recompile,'
           write(errlog(io),*)'linking to netcdf or run Ash3d_PostProc with a control'
@@ -1084,12 +1096,12 @@
           ! volcano name, etc.
           call Read_Control_File
         endif
-        if(informat.eq.1)then  ! ASCII
-          if(ndims.eq.2)then
+        if(informat == 1)then  ! ASCII
+          if(ndims == 2)then
             call read_2D_ASCII(datafileIn)
-            if(nxmax.ne.A_nx.or.  &
-               nymax.ne.A_ny)then
-              do io=1,2;if(VB(io).le.verbosity_error)then
+            if(nxmax /= A_nx.or.  &
+               nymax /= A_ny)then
+              do io=1,2;if(VB(io) <= verbosity_error)then
                 write(errlog(io),*)"WARNING: nx,ny in ASCII file are not the same as in control file."
                 write(errlog(io),*)"         Resetting nx,ny to ASCII values."
                 write(errlog(io),*)"    nx = ",nxmax
@@ -1098,9 +1110,9 @@
                 write(errlog(io),*)"  A_ny = ",A_ny
               endif;enddo
             endif
-            if(abs(xLL-A_xll).gt.EPS_SMALL.or.  &
-               abs(yLL-A_yll).gt.EPS_SMALL)then
-              do io=1,2;if(VB(io).le.verbosity_error)then
+            if(abs(xLL-A_xll) > EPS_SMALL.or.  &
+               abs(yLL-A_yll) > EPS_SMALL)then
+              do io=1,2;if(VB(io) <= verbosity_error)then
                 write(errlog(io),*)"WARNING: xLL,yLL in ASCII file are not the same as in control file."
                 write(errlog(io),*)"         Resetting xLL,yLL to ASCII values."
                 write(errlog(io),*)"    xLL = ",xLL
@@ -1109,9 +1121,9 @@
                 write(errlog(io),*)"  A_yLL = ",A_yLL
               endif;enddo
             endif
-            if(abs(dx-A_dx).gt.EPS_SMALL.or.  &
-               abs(dy-A_dy).gt.EPS_SMALL)then
-              do io=1,2;if(VB(io).le.verbosity_error)then
+            if(abs(dx-A_dx) > EPS_SMALL.or.  &
+               abs(dy-A_dy) > EPS_SMALL)then
+              do io=1,2;if(VB(io) <= verbosity_error)then
                 write(errlog(io),*)"WARNING: dx,dy in ASCII file are not the same as in control file."
                 write(errlog(io),*)"         Resetting dx,dy to ASCII values."
                 write(errlog(io),*)"    dx = ",dx
@@ -1120,20 +1132,20 @@
                 write(errlog(io),*)"  A_dy = ",A_dy
               endif;enddo
             endif
-          elseif(ndims.eq.3)then
+          elseif(ndims == 3)then
             call read_3D_ASCII(datafileIn)
           endif
-        elseif(informat.eq.2)then  ! BINARY
-          if(ndims.eq.2)then
+        elseif(informat == 2)then  ! BINARY
+          if(ndims == 2)then
             ! We didn't error-check nxmax and nymax on input, so do it now
-            if(nxmax.le.0.or.nymax.le.0)then
-              do io=1,2;if(VB(io).le.verbosity_error)then
+            if(nxmax <= 0.or.nymax <= 0)then
+              do io=1,2;if(VB(io) <= verbosity_error)then
                 write(errlog(io),*)"ERROR: Either nx or ny is not a positive integer."
                 stop 1
               endif;enddo
             endif
             call read_2D_Binary(nxmax,nymax,datafileIn)
-          elseif(ndims.eq.3)then
+          elseif(ndims == 3)then
             call read_3D_BINARY(nxmax,nymax,nzmax,datafileIn)
           endif
         endif  ! informat = 2 or 3
@@ -1146,21 +1158,21 @@
       endif  ! informat = 1 or not
 
       if(.not.IsLatLon)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(outlog(io),*)'Mapping/shapefiles of projected grids is currently only supported'
           write(outlog(io),*)'using the GMT plotting option.'
         endif;enddo
         if(plotlib_avail(4))then
-          plot_pref_map = (/4,1,2,3,5,6/)
+          plot_pref_map = [4,1,2,3,5,6]
         else
-          do io=1,2;if(VB(io).le.verbosity_error)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(outlog(io),*)'Mapping/shapefiles of projected grids requested, but GMT is not available.'
           endif;enddo
           stop 1
         endif
       endif
 
-      if (itime.eq.-1) then
+      if (itime == -1) then
         iout3d = nWriteTimes
         iTimeNext = nWriteTimes
         isFinal_TS = .true.
@@ -1169,108 +1181,108 @@
         iTimeNext = 0
         isFinal_TS = .false.
       endif
-      if(itime.gt.0)then
+      if(itime > 0)then
         time = WriteTimes(itime)
-      elseif(itime.eq.-1)then
+      elseif(itime == -1)then
         time = WriteTimes(nWriteTimes)
       else
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(outlog(io),*)'itime is an unexpected value: ',itime
         endif;enddo
         stop 1
       endif
       cio = HS_yyyymmddhh_since(SimStartHour+time,BaseYear,useLeap)
 
-      if(    iprod.eq.1 )then  ! full concentration array
+      if(    iprod == 1 )then  ! full concentration array
         Write3dFiles = .true.
-      elseif(iprod.eq.2 )then  ! deposit granularity
-        if(    outformat.eq.1)then
+      elseif(iprod == 2 )then  ! deposit granularity
+        if(    outformat == 1)then
           WriteGSD                      = .true.
-        elseif(outformat.eq.2)then
+        elseif(outformat == 2)then
           WriteGSD                      = .true.
         endif
-      elseif(iprod.eq.3 )then  ! deposit at specified times (mm)
-        if(    outformat.eq.1)then
+      elseif(iprod == 3 )then  ! deposit at specified times (mm)
+        if(    outformat == 1)then
           WriteDepositTS_ASCII          = .true.
-        elseif(outformat.eq.2)then
+        elseif(outformat == 2)then
           WriteDepositTS_KML            = .true.
         endif
-      elseif(iprod.eq.4 )then  ! deposit at final time (mm)
-        if(    outformat.eq.1)then
+      elseif(iprod == 4 )then  ! deposit at final time (mm)
+        if(    outformat == 1)then
           WriteDepositFinal_ASCII       = .true.
-        elseif(outformat.eq.2)then
+        elseif(outformat == 2)then
           WriteDepositFinal_KML         = .true.
         endif
-      elseif(iprod.eq.5 )then  ! deposit at specified times (inches)
-        if(    outformat.eq.1)then
+      elseif(iprod == 5 )then  ! deposit at specified times (inches)
+        if(    outformat == 1)then
           WriteDepositTS_ASCII          = .true.
-        elseif(outformat.eq.2)then
+        elseif(outformat == 2)then
           WriteDepositTS_KML            = .true.
         endif
-      elseif(iprod.eq.6 )then  ! deposit at final time (inches)
-        if(    outformat.eq.1)then
+      elseif(iprod == 6 )then  ! deposit at final time (inches)
+        if(    outformat == 1)then
           WriteDepositFinal_ASCII       = .true.
-        elseif(outformat.eq.2)then
+        elseif(outformat == 2)then
           WriteDepositFinal_KML         = .true.
         endif
-      elseif(iprod.eq.7 )then  ! ashfall arrival time
-        if(    outformat.eq.1)then
+      elseif(iprod == 7 )then  ! ashfall arrival time
+        if(    outformat == 1)then
           WriteDepositTime_ASCII        = .true.
-        elseif(outformat.eq.2)then
+        elseif(outformat == 2)then
           WriteDepositTime_KML          = .true.
         endif
-      elseif(iprod.eq.8 )then  ! ashfall at airports/POI
+      elseif(iprod == 8 )then  ! ashfall at airports/POI
         Write_PR_Data                   = .true.
-        if(    outformat.eq.1)then
+        if(    outformat == 1)then
           WriteAirportFile_ASCII        = .true.
-        elseif(outformat.eq.2)then
+        elseif(outformat == 2)then
           WriteAirportFile_KML          = .true.
         endif
-      elseif(iprod.eq.9 )then  ! ash-cloud concentration
-        if(    outformat.eq.1)then
+      elseif(iprod == 9 )then  ! ash-cloud concentration
+        if(    outformat == 1)then
           WriteCloudConcentration_ASCII = .true.
-        elseif(outformat.eq.2)then
+        elseif(outformat == 2)then
           WriteCloudConcentration_KML   = .true.
         endif
-      elseif(iprod.eq.10)then  ! ash-cloud height
-        if(    outformat.eq.1)then
+      elseif(iprod == 10)then  ! ash-cloud height
+        if(    outformat == 1)then
           WriteCloudHeight_ASCII        = .true.
-        elseif(outformat.eq.2)then
+        elseif(outformat == 2)then
           WriteCloudHeight_KML          = .true.
         endif
-      elseif(iprod.eq.11)then  ! ash-cloud bottom
-        if(    outformat.eq.1)then
+      elseif(iprod == 11)then  ! ash-cloud bottom
+        if(    outformat == 1)then
           WriteCloudHeight_ASCII        = .true.
-        elseif(outformat.eq.2)then
+        elseif(outformat == 2)then
           WriteCloudHeight_KML          = .true.
         endif
-      elseif(iprod.eq.12)then  ! ash-cloud load
-        if(    outformat.eq.1)then
+      elseif(iprod == 12)then  ! ash-cloud load
+        if(    outformat == 1)then
           WriteCloudLoad_ASCII          = .true.
-        elseif(outformat.eq.2)then
+        elseif(outformat == 2)then
           WriteCloudLoad_KML            = .true.
         endif
-      elseif(iprod.eq.13)then  ! ash-cloud radar reflectivity
-        if(    outformat.eq.1)then
+      elseif(iprod == 13)then  ! ash-cloud radar reflectivity
+        if(    outformat == 1)then
           WriteReflectivity_ASCII       = .true.
-        elseif(outformat.eq.2)then
+        elseif(outformat == 2)then
           WriteReflectivity_KML         = .true.
         endif
-      elseif(iprod.eq.14)then  ! ash-cloud arrival time
-        if(    outformat.eq.1)then
+      elseif(iprod == 14)then  ! ash-cloud arrival time
+        if(    outformat == 1)then
           WriteCloudTime_ASCII          = .true.
-        elseif(outformat.eq.2)then
+        elseif(outformat == 2)then
           WriteCloudTime_KML            = .true.
         endif
-      elseif(iprod.eq.15)then  ! topography
+      elseif(iprod == 15)then  ! topography
         nvar_User2d_static_XY = 1
         Extra2dVarName = "Topography"
-      elseif(iprod.eq.16)then  ! vertical profiles of concentration
-        if(    outformat.eq.1.or.outformat.eq.3)then
+      elseif(iprod == 16)then  ! vertical profiles of concentration
+        if(    outformat == 1.or.outformat == 3)then
           ! ASCII or png
           Write_PR_Data                 = .true.
         else
-          do io=1,2;if(VB(io).le.verbosity_error)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)"Vertical ash concentration profiles can only be exported",&
                       " as ASCII files or png images"
           endif;enddo
@@ -1282,20 +1294,20 @@
       allocate(mask(nxmax,nymax))
       mask = .true.
       ! Load the variable OutVar from the ASCII or Binary arrays
-      if(informat.eq.1)then
-        if(ndims.eq.2)then
+      if(informat == 1)then
+        if(ndims == 2)then
           OutVar(1:nxmax,1:nymax) = A_XY(1:nxmax,1:nymax)
-        elseif(ndims.eq.3)then
+        elseif(ndims == 3)then
           allocate(concen_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2,1:nsmax,ts0:ts1)); concen_pd = 0.0_ip
           concen_pd(1:nxmax,1:nymax,1:nzmax,1,ts1) = A_XYZ(1:nxmax,1:nymax,1:nzmax)
           allocate(DepositGranularity(nxmax,nymax,nsmax)); DepositGranularity = 0.0_ip
           call Allocate_Output_Vars
           call Gen_Output_Vars
         endif
-      elseif(informat.eq.2)then
-        if(ndims.eq.2)then
+      elseif(informat == 2)then
+        if(ndims == 2)then
           OutVar(1:nxmax,1:nymax) = B_XY(1:nxmax,1:nymax)
-        elseif(ndims.eq.3)then
+        elseif(ndims == 3)then
           allocate(concen_pd(-1:nxmax+2,-1:nymax+2,-1:nzmax+2,1:nsmax,ts0:ts1)); concen_pd = 0.0_ip
           concen_pd(1:nxmax,1:nymax,1:nzmax,1,ts1) = B_XYZ(1:nxmax,1:nymax,1:nzmax)
           allocate(DepositGranularity(nxmax,nymax,nsmax)); DepositGranularity = 0.0_ip
@@ -1305,11 +1317,11 @@
       endif
 
       ! Now depending on the output product ID, copy OutVar to the named array
-      if(informat.eq.1.or.informat.eq.2)then
-        if(ndims.eq.2)then
+      if(informat == 1.or.informat == 2)then
+        if(ndims == 2)then
           ! If we have read a 2d array, copy it to the proper named array so it can be
           ! processed correctly
-          if(iprod.eq.3.or.iprod.eq.4.or.iprod.eq.5.or.iprod.eq.6)then
+          if(iprod == 3.or.iprod == 4.or.iprod == 5.or.iprod == 6)then
 #ifdef USEPOINTERS
             if(.not.associated(DepositThickness))then
 #else
@@ -1320,7 +1332,7 @@
             DepositThickness(1:nxmax,1:nymax) = OutVar(1:nxmax,1:nymax)
           endif
 
-          if(iprod.eq. 7)then
+          if(iprod ==  7)then
 #ifdef USEPOINTERS
             if(.not.associated(DepArrivalTime))then
 #else
@@ -1330,13 +1342,13 @@
             endif
             DepArrivalTime(1:nxmax,1:nymax)   = OutVar(1:nxmax,1:nymax)
           endif
-          if(iprod.eq. 8)then
-            do io=1,2;if(VB(io).le.verbosity_error)then
+          if(iprod ==  8)then
+            do io=1,2;if(VB(io) <= verbosity_error)then
               write(errlog(io),*)"ERROR: Requested output format is not available variable selected."
             endif;enddo
             stop 1
           endif
-          if(iprod.eq. 9)then
+          if(iprod ==  9)then
 #ifdef USEPOINTERS
             if(.not.associated(MaxConcentration))then
 #else
@@ -1346,7 +1358,7 @@
             endif
             MaxConcentration(1:nxmax,1:nymax) = OutVar(1:nxmax,1:nymax)
           endif
-          if(iprod.eq.10)then
+          if(iprod == 10)then
 #ifdef USEPOINTERS
             if(.not.associated(MaxHeight))then
 #else
@@ -1356,7 +1368,7 @@
             endif
             MaxHeight(1:nxmax,1:nymax)        = OutVar(1:nxmax,1:nymax)
           endif
-          if(iprod.eq.11)then
+          if(iprod == 11)then
 #ifdef USEPOINTERS
             if(.not.associated(MinHeight))then
 #else
@@ -1366,7 +1378,7 @@
             endif
             MinHeight(1:nxmax,1:nymax)        = OutVar(1:nxmax,1:nymax)
           endif
-          if(iprod.eq.12)then
+          if(iprod == 12)then
 #ifdef USEPOINTERS
             if(.not.associated(CloudLoad))then
 #else
@@ -1376,7 +1388,7 @@
             endif
             CloudLoad(1:nxmax,1:nymax)        = OutVar(1:nxmax,1:nymax)
           endif
-          if(iprod.eq.13)then
+          if(iprod == 13)then
 #ifdef USEPOINTERS
             if(.not.associated(dbZCol))then
 #else
@@ -1386,7 +1398,7 @@
             endif
             dbZCol(1:nxmax,1:nymax)           = OutVar(1:nxmax,1:nymax)
           endif
-          if(iprod.eq.14)then
+          if(iprod == 14)then
 #ifdef USEPOINTERS
             if(.not.associated(CloudArrivalTime))then
 #else
@@ -1396,36 +1408,36 @@
             endif
             CloudArrivalTime(1:nxmax,1:nymax) = OutVar(1:nxmax,1:nymax)
           endif
-          if(iprod.eq.15)then
+          if(iprod == 15)then
             if(.not.allocated(Topography)) allocate(Topography(nxmax,nymax))
             Topography(1:nxmax,1:nymax)    = OutVar(1:nxmax,1:nymax)
           endif
-        elseif(ndims.eq.3)then
+        elseif(ndims == 3)then
           ! For 3d input data, we only have the total 3d ash concentration, so we need
           ! to stop if the requested output product cannot be calculated from this.
-          if(iprod.eq.3.or.iprod.eq.4.or.iprod.eq.5.or.iprod.eq.6.or.  &  ! any of the deposit products
-             iprod.eq.7.or.   &  ! ashfall arrival time
-             iprod.eq.8.or.   &  ! ashfall arrival at airports
-             iprod.eq.13.or.  &  ! ash-cloud radar reflectivity
-             iprod.eq.14.or.  &  ! ash-cloud arrival time
-             iprod.eq.16)then    ! profile plots
-            do io=1,2;if(VB(io).le.verbosity_error)then
+          if(iprod == 3.or.iprod == 4.or.iprod == 5.or.iprod == 6.or.  &  ! any of the deposit products
+             iprod == 7.or.   &  ! ashfall arrival time
+             iprod == 8.or.   &  ! ashfall arrival at airports
+             iprod == 13.or.  &  ! ash-cloud radar reflectivity
+             iprod == 14.or.  &  ! ash-cloud arrival time
+             iprod == 16)then    ! profile plots
+            do io=1,2;if(VB(io) <= verbosity_error)then
               write(errlog(io),*)"ERROR: Requested output is not available from input data."
             endif;enddo
             stop 1
           endif
         endif
-      endif  ! informat.eq.1.or.informat.eq.2
+      endif  ! informat == 1.or.informat == 2
 
       ! The main differences in output products will be time-series, vs
       ! time-step output.  Currently, the time-series output will only be for
       ! the KML/KMZ files.
-      if(outformat.eq.2)then
+      if(outformat == 2)then
         ! KML output, separate into static vs time-series options
         !  First the static options
-        if(iprod.eq.7.or.  &  ! Ashfall arrival time
-           iprod.eq.14.or. &  ! Ash-cloud arrival time
-           iprod.eq.15)then   ! Topography
+        if(iprod == 7.or.  &  ! Ashfall arrival time
+           iprod == 14.or. &  ! Ash-cloud arrival time
+           iprod == 15)then   ! Topography
           ! We really should have the final deposit output be in this catagory
           ! Static output
           ! We have already called the netcdf reader so we just need to write
@@ -1433,29 +1445,29 @@
           ! Set up KML output files and prelim variables
           call Set_OutVar_Specs
           call OpenFile_KML(ivar)
-          if(iprod.eq.7)then
+          if(iprod == 7)then
             OutVar = real(DepArrivalTime(1:nxmax,1:nymax),kind=ip)
-          elseif(iprod.eq.14)then
+          elseif(iprod == 14)then
             OutVar = real(CloudArrivalTime(1:nxmax,1:nymax),kind=ip)
-          elseif(iprod.eq.15)then
+          elseif(iprod == 15)then
             OutVar = Topography(1:nxmax,1:nymax)
           endif
           call Write_2D_KML(ivar,OutVar,height_flag,TS_flag)
           call Close_KML(ivar,TS_flag)
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"Zipping KML file."
           endif;enddo
           write(comd,*)"zip ",trim(adjustl(KMZ_filename(ivar))),' ',&
                               trim(adjustl(KML_filename(ivar)))
           call execute_command_line(comd, &
                                     wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-        elseif(iprod.eq.3.or.iprod.eq.5.or. &  ! Deposit thickness mm (kml versions is TS + final)
-               iprod.eq.4.or.iprod.eq.6.or. &  ! Deposit thickness inches (kml versions is TS + final)
-               iprod.eq.9.or.               &  ! ash-cloud concentration
-               iprod.eq.10.or.              &  ! ash-cloud height
-               iprod.eq.11.or.              &  ! ash-cloud bottom
-               iprod.eq.12.or.              &  ! ash-cloud load
-               iprod.eq.13)then                ! radar reflectivity
+        elseif(iprod == 3.or.iprod == 5.or. &  ! Deposit thickness mm (kml versions is TS + final)
+               iprod == 4.or.iprod == 6.or. &  ! Deposit thickness inches (kml versions is TS + final)
+               iprod == 9.or.               &  ! ash-cloud concentration
+               iprod == 10.or.              &  ! ash-cloud height
+               iprod == 11.or.              &  ! ash-cloud bottom
+               iprod == 12.or.              &  ! ash-cloud load
+               iprod == 13)then                ! radar reflectivity
           ! Time-series output
           ! Set up KML output files and prelim variables
 
@@ -1471,7 +1483,7 @@
             call NC_Read_Output_Products(i)
 #endif
             time = WriteTimes(i)
-            do io=1,2;if(VB(io).le.verbosity_info)then
+            do io=1,2;if(VB(io) <= verbosity_info)then
               write(outlog(io),*)"time = ",time
             endif;enddo
             call output_results
@@ -1482,7 +1494,7 @@
           call NC_Read_Output_Products(-1)
 #endif
           call output_results
-        elseif(iprod.eq.8)then  ! ashfall at airports
+        elseif(iprod == 8)then  ! ashfall at airports
           icase = 0
           do ii=1,Nplot_libs
             ! Check each preference in series and see if the library is available
@@ -1511,100 +1523,100 @@
             case(6)
               call write_DepPOI_TS_PNG_python(ia)
             case default
-              do io=1,2;if(VB(io).le.verbosity_error)then
+              do io=1,2;if(VB(io) <= verbosity_error)then
                 write(errlog(io),*)"ERROR: Plots requested but no plotting package is installed"
               endif;enddo
               stop 1
             end select
           enddo
           call Write_PointData_Airports_KML(.false.)
-        elseif(iprod.eq.16)then  ! vertical profile plots
-          do io=1,2;if(VB(io).le.verbosity_error)then
+        elseif(iprod == 16)then  ! vertical profile plots
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)"ERROR: KML versions of vertical profiles not implemented."
           endif;enddo
           stop 1
         else
-          do io=1,2;if(VB(io).le.verbosity_error)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)"ERROR: Requested iprod not implemented for KML."
           endif;enddo
           stop 1
         endif
-      endif  ! outformat.eq.2 (KML)
+      endif  ! outformat == 2 (KML)
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       ! This is the non-KML section
       ! Set some variable parameters for an ASCII output file
       OutFillValue = 0.0_ip
-      if(iprod.eq.3.or.iprod.eq.5)then
+      if(iprod == 3.or.iprod == 5)then
         OutVar = DepositThickness
         Fill_Value_str= '-9999.'
         OutFillValue  = 0.0_ip
         OutFillValue  = -9999.0_ip
         filename_root = 'DepositFile_        '
-      elseif(iprod.eq.4.or.iprod.eq.6)then
+      elseif(iprod == 4.or.iprod == 6)then
         OutVar = DepositThickness*MM_2_IN
         Fill_Value_str= '-9999.'
         OutFillValue  = 0.0_ip
         OutFillValue  = -9999.0_ip
         filename_root = 'DepositFile_        '
-      elseif(iprod.eq.7)then
+      elseif(iprod == 7)then
         OutVar = real(DepArrivalTime,kind=ip)
         !OutVar = DepArrivalTime * merge(1.0_ip,0.0_ip,Mask_Deposit)
         Fill_Value_str= '-9999.'
         OutFillValue  = -9999.0_ip
         filename_root = 'DepositArrivalTime  '
-      elseif(iprod.eq.8)then
+      elseif(iprod == 8)then
          ! ashfall at airports/POI
          ! None of OutVar,Fill_Value,OutFillValue,filename_root need to be set
-      elseif(iprod.eq.9)then
+      elseif(iprod == 9)then
         OutVar = MaxConcentration
         !OutVar = MaxConcentration * merge(1.0_ip,0.0_ip,Mask_Cloud)
         Fill_Value_str= '-9999.'
         OutFillValue  = 0.0_ip
         OutFillValue  = -9999.0_ip
         filename_root = 'CloudConcentration_ '
-      elseif(iprod.eq.10)then
+      elseif(iprod == 10)then
         OutVar = MaxHeight
         !OutVar = MaxHeight * merge(1.0_ip,0.0_ip,Mask_Cloud)
         Fill_Value_str= '-9999.'
         OutFillValue  = 0.0_ip
         OutFillValue  = -9999.0_ip
         filename_root = 'CloudHeight_        '
-      elseif(iprod.eq.11)then
+      elseif(iprod == 11)then
         OutVar = MinHeight
         !OutVar = MinHeight * merge(1.0_ip,0.0_ip,Mask_Cloud)
         Fill_Value_str= '-9999.'
         OutFillValue  = 0.0_ip
         OutFillValue  = -9999.0_ip
         filename_root = 'CloudHeightBot_     '
-      elseif(iprod.eq.12)then
+      elseif(iprod == 12)then
         OutVar = CloudLoad
         !OutVar = CloudLoad * merge(1.0_ip,0.0_ip,Mask_Cloud)
         Fill_Value_str= '-9999.'
         OutFillValue  = 0.0_ip
         OutFillValue  = -9999.0_ip
         filename_root = 'CloudLoad_          '
-      elseif(iprod.eq.13)then
+      elseif(iprod == 13)then
         OutVar = dbZCol
         !OutVar = dbZCol * merge(1.0_ip,0.0_ip,Mask_Cloud)
         Fill_Value_str= '-9999.'
         OutFillValue  = 0.0_ip
         OutFillValue  = -9999.0_ip
         filename_root = 'ClouddbZC_          '
-      elseif(iprod.eq.14)then
+      elseif(iprod == 14)then
         OutVar = real(CloudArrivalTime,kind=ip)
         !OutVar = CloudArrivalTime * merge(1.0_ip,0.0_ip,Mask_Cloud)
         Fill_Value_str= '-9999.'
         OutFillValue  = -1.0_ip
         OutFillValue  = -9999.0_ip
         filename_root = 'CloudArrivalTime    '
-      elseif(iprod.eq.15)then
+      elseif(iprod == 15)then
         OutVar = real(Extra2dVar,kind=ip)
         Fill_Value_str= '-9999.'
         OutFillValue  = -1.0_ip
         OutFillValue  = -9999.0_ip
         filename_root = 'Topography          '
-      elseif(iprod.eq.0)then
+      elseif(iprod == 0)then
         OutVar = real(Extra2dVar,kind=ip)
         Fill_Value_str = '-9999.'
         OutFillValue  = -9999.0_ip
@@ -1612,31 +1624,31 @@
         filename_root = Extra2dVarName
       endif
       ! Now mask out non-cloud values
-      if(iprod.eq.10.or.&  ! CloudHeight
-         iprod.eq.11)then  ! CloudHeightBot
+      if(iprod == 10.or.&  ! CloudHeight
+         iprod == 11)then  ! CloudHeightBot
         mask = Mask_Cloud
-      elseif(iprod.eq.14)then
+      elseif(iprod == 14)then
         ! cloud mask based on cloud load does not work in this case the cloud load mask
         ! is a function of time
         mask(1:nxmax,1:nymax) = .true.
         do i=1,nxmax
           do j=1,nymax
-            if(CloudArrivalTime(i,j).lt.0.0_ip)mask(i,j) = .false.
+            if(CloudArrivalTime(i,j) < 0.0_ip)mask(i,j) = .false.
           enddo
         enddo
       else
         mask(1:nxmax,1:nymax) = .true.
       endif
 
-      if(outformat.eq.1)then  ! ASCII
+      if(outformat == 1)then  ! ASCII
         ! First check for the special cases
-        if(iprod.eq.8)then
+        if(iprod == 8)then
           ! Point data
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"Calling Write_PointData_Airports_ASCII"
           endif;enddo
           call Write_PointData_Airports_ASCII
-        elseif(iprod.eq.16)then
+        elseif(iprod == 16)then
           ! Vertical profile data
           call vprofileopener
           do itime=1,ntmax
@@ -1665,15 +1677,15 @@
                                     "outvar              ")
           endif
         endif
-      elseif(outformat.eq.2)then  ! KML
+      elseif(outformat == 2)then  ! KML
         ! All the KML routines were called above
-      elseif(outformat.eq.3)then  ! image/png
-        if(iprod.eq.8)then
+      elseif(outformat == 3)then  ! image/png
+        if(iprod == 8)then
           ! Point data
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"No PNG output for point data output"
           endif;enddo
-        elseif(iprod.eq.16)then
+        elseif(iprod == 16)then
           ! Vertical profile data
           do i=1,nvprofiles
             icase = 0
@@ -1703,7 +1715,7 @@
             case(6)
               call write_2Dprof_PNG_python(i)
             case default
-              do io=1,2;if(VB(io).le.verbosity_error)then
+              do io=1,2;if(VB(io) <= verbosity_error)then
                 write(errlog(io),*)"ERROR: Plots requested but no plotting package is installed"
               endif;enddo
               stop 1
@@ -1739,39 +1751,39 @@
         case(6)
           call write_2Dmap_PNG_python(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
         case default
-          do io=1,2;if(VB(io).le.verbosity_error)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)"ERROR: Plots requested but no plotting package is installed"
           endif;enddo
           stop 1
         end select
 
         endif
-      elseif(outformat.eq.4)then  ! Binary
-        if(iprod.eq.1)then
+      elseif(outformat == 4)then  ! Binary
+        if(iprod == 1)then
           ! full concentration array but here we only output the total
           call write_3D_Binary(cio,nxmax,nymax,nzmax,ashcon_tot)
-        elseif(iprod.eq.2)then
+        elseif(iprod == 2)then
           ! deposit granularity
-          do io=1,2;if(VB(io).le.verbosity_error)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)'ERROR: No binary output products for deposit granularity'
           endif;enddo
           stop 1
-        elseif(iprod.eq.8)then
+        elseif(iprod == 8)then
           ! ashfall arrival at airports/POI (mm)
-          do io=1,2;if(VB(io).le.verbosity_error)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)'ERROR: No binary output products for POI ashfall arrival'
           endif;enddo
           stop 1
-        elseif(iprod.eq.16)then
+        elseif(iprod == 16)then
           ! profile plots
-          do io=1,2;if(VB(io).le.verbosity_error)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)'ERROR: No binary output products for vertical profile plots'
           endif;enddo
           stop 1
         else
           call write_2D_Binary(nxmax,nymax,OutVar,mask,Fill_Value_str,filename_root)
         endif
-      elseif(outformat.eq.5)then  ! Shapefile
+      elseif(outformat == 5)then  ! Shapefile
         ! For 2d contours exported from dislin, gnuplot, gmt
         ! First call plotting routine, but only get the contours
         writeContours = .true.
@@ -1803,7 +1815,7 @@
         case(6)
           call write_2Dmap_PNG_python(nxmax,nymax,iprod,iout3d,OutVar,OutFillValue,writeContours)
         case default
-          do io=1,2;if(VB(io).le.verbosity_error)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)"ERROR: Plots requested but no plotting package is installed"
           endif;enddo
           stop 1
@@ -1812,13 +1824,13 @@
         call write_ShapeFile_Polyline(iprod,iout3d)
         !  For contours that follow topography, use
         !call write_ShapeFile_PolylineZ  (this is a place-holder, not yet implemented)
-      elseif(outformat.eq.6)then
+      elseif(outformat == 6)then
         !call write_2D_grib2
-      elseif(outformat.eq.7)then
+      elseif(outformat == 7)then
         !call write_2D_netcdf
-      elseif(outformat.eq.8)then
+      elseif(outformat == 8)then
         !call write_2D_tecplot
-      elseif(outformat.eq.9)then
+      elseif(outformat == 9)then
         !call write_2D_vtk
       endif
 

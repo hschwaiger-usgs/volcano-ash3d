@@ -70,31 +70,32 @@
          LitEnd_8real
 
       implicit none
+      !implicit none (type, external)
 
       integer,intent(in) :: iprod
       integer,intent(in) :: itime
 
-      character (len= 8) :: ov_fileroot = "testfile"
+      character (len= 8) :: ov_fileroot
       character (len=12) :: ov_mainfile
       character (len=12) :: ov_indxfile
       character (len=12) :: ov_dbasfile
       character (len=12) :: ov_projfile
       character (len=12) :: ov_zipfile
-      character (len= 4) :: ov_mainext = ".shp"
-      character (len= 4) :: ov_indxext = ".shx"
-      character (len= 4) :: ov_dbasext = ".dbf"
-      character (len= 4) :: ov_projext = ".prj"
-      character (len= 4) :: ov_zipext  = ".zip"
-      integer            :: ov_mainID  = 22
-      integer            :: ov_indxID  = 23
-      integer            :: ov_dbasID  = 24
-      integer            :: ov_projID  = 25
+      character (len= 4) ,parameter :: ov_mainext = ".shp"
+      character (len= 4) ,parameter :: ov_indxext = ".shx"
+      character (len= 4) ,parameter :: ov_dbasext = ".dbf"
+      character (len= 4) ,parameter :: ov_projext = ".prj"
+      character (len= 4) ,parameter :: ov_zipext  = ".zip"
+      integer            ,parameter :: ov_mainID  = 22
+      integer            ,parameter :: ov_indxID  = 23
+      integer            ,parameter :: ov_dbasID  = 24
+      integer            ,parameter :: ov_projID  = 25
 
       character (len=40) :: title_plot
       character (len=40) :: plot_variable
       character (len=15) :: plot_units
 
-      logical           :: debugmode = .false.
+      logical            :: debugmode
 
       integer                                  :: nrec      ! num of records (e.g. contour levels)
       integer(kind=int32),dimension(:),allocatable :: rec2lev   ! mapping of record to contour level index
@@ -123,7 +124,7 @@
       real(kind=dp)   :: mmax
 
       ! Variables needed for the dBASE file
-      integer(kind=int8)  :: DBASE_zero     = 0
+      integer(kind=int8)  :: DBASE_zero
       integer(kind=int8)  :: DBASE_v
       integer(kind=int8)  :: DBASE_yy
       integer(kind=int8)  :: DBASE_mm
@@ -141,10 +142,10 @@
       integer(kind=int8):: DBASE_FieldLen
       integer(kind=int8):: DBASE_FieldDesTerm
       integer           :: fldlen
-      character (len= 1):: DBASE_RecStart = ' '
-      integer(kind=int8):: DBASE_EOF      = 26
+      character (len= 1):: DBASE_RecStart
+      integer(kind=int8):: DBASE_EOF
 
-      integer           :: nattr          = 15
+      integer           :: nattr
       character (len=10):: DBASE_TableRecData01  ! Organizaion
       character (len=42):: DBASE_TableRecData02  ! Volcano
       character (len=20):: DBASE_TableRecData03  ! Run date
@@ -175,6 +176,8 @@
         end function HS_xmltime
         subroutine writeShapFileFieldDesArr(ov_dbasID,fldlen,DBASE_FieldName,&
                                             DBASE_FieldTyp,DBASE_FieldLen)
+          implicit none
+          !implicit none (type, external)
           integer               ,intent(in) :: ov_dbasID
           integer               ,intent(in) :: fldlen
           character (len=fldlen),intent(in) :: DBASE_FieldName
@@ -182,6 +185,15 @@
           integer(kind=1)       ,intent(in) :: DBASE_FieldLen
         end subroutine writeShapFileFieldDesArr
       END INTERFACE
+
+      ! Initialization
+      debugmode      = .false.
+      ov_fileroot    = "testfile"
+      DBASE_zero     = 0
+      DBASE_RecStart = ' '
+      DBASE_EOF      = 26
+      nattr          = 15
+
 
       do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_ShapeFile_Polyline"
@@ -194,72 +206,72 @@
         stop 1
       endif
 
-      if(iprod.eq.3)then        ! deposit at specified times (mm)
+      if(iprod == 3)then        ! deposit at specified times (mm)
         write(title_plot,'(a22,f5.2,a6)')': Deposit Thickness t=',WriteTimes(itime),' hours'
         plot_variable = 'Deposit Thickness'
         ov_fileroot = 'depothik'
         plot_units = 'mm'
-      elseif(iprod.eq.4)then    ! deposit at specified times (inches)
+      elseif(iprod == 4)then    ! deposit at specified times (inches)
         write(title_plot,'(a22,f5.2,a6)')': Deposit Thickness t=',WriteTimes(itime),' hours'
         plot_variable = 'Deposit Thickness'
         ov_fileroot = 'depothik'
         plot_units  = 'in'
-      elseif(iprod.eq.5)then    ! deposit at final time (mm)
+      elseif(iprod == 5)then    ! deposit at final time (mm)
         title_plot = ': Final Deposit Thickness'
         plot_variable = 'Final Deposit Thickness'
         ov_fileroot = 'depothik'
         plot_units = 'mm'
-      elseif(iprod.eq.6)then    ! deposit at final time (inches)
+      elseif(iprod == 6)then    ! deposit at final time (inches)
         title_plot = ': Final Deposit Thickness'
         plot_variable = 'Final Deposit Thickness'
         ov_fileroot = 'depothik'
         plot_units = 'in'
-      elseif(iprod.eq.7)then    ! ashfall arrival time (hours)
+      elseif(iprod == 7)then    ! ashfall arrival time (hours)
         write(title_plot,'(a22)')': Ashfall arrival time'
         plot_variable = 'Ashfall arrival time'
         ov_fileroot = 'DepAvlTm'
         plot_units = 'hours'
-      elseif(iprod.eq.8)then    ! ashfall arrival at airports/POI (mm)
+      elseif(iprod == 8)then    ! ashfall arrival at airports/POI (mm)
         do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: No map shapefile output option for airport arrival time data."
         endif;enddo
         stop 1
-      elseif(iprod.eq.9)then    ! ash-cloud concentration
+      elseif(iprod == 9)then    ! ash-cloud concentration
         write(title_plot,'(a28,f5.2,a6)')': Ash-cloud concentration t=',WriteTimes(itime),' hours'
         plot_variable ='Ash-cloud concentration'
         ov_fileroot = 'AshCdCon'
         plot_units = 'mg/m3'
-      elseif(iprod.eq.10)then   ! ash-cloud height
+      elseif(iprod == 10)then   ! ash-cloud height
         write(title_plot,'(a21,f5.2,a6)')': Ash-cloud height t=',WriteTimes(itime),' hours'
         plot_variable ='Ash-cloud height'
         ov_fileroot = 'AshCdHgt'
         plot_units = 'km'
-      elseif(iprod.eq.11)then   ! ash-cloud bottom
+      elseif(iprod == 11)then   ! ash-cloud bottom
         write(title_plot,'(a21,f5.2,a6)')': Ash-cloud bottom t=',WriteTimes(itime),' hours'
         plot_variable ='Ash-cloud bottom'
         ov_fileroot = 'AshCdBot'
         plot_units = 'km'
-      elseif(iprod.eq.12)then   ! ash-cloud load
+      elseif(iprod == 12)then   ! ash-cloud load
         write(title_plot,'(a19,f5.2,a6)')': Ash-cloud load t=',WriteTimes(itime),' hours'
         plot_variable ='Ash-cloud load'
         ov_fileroot = 'AshCdLod'
         plot_units = 'T/km2'
-      elseif(iprod.eq.13)then   ! radar reflectivity
+      elseif(iprod == 13)then   ! radar reflectivity
         write(title_plot,'(a26,f5.2,a6)')': Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
         plot_variable ='Ash-cloud radar refl.'
         ov_fileroot = 'AshClRad'
         plot_units = 'dBz'
-      elseif(iprod.eq.14)then   ! ashcloud arrival time (hours)
+      elseif(iprod == 14)then   ! ashcloud arrival time (hours)
         write(title_plot,'(a24)')': Ash-cloud arrival time'
         plot_variable ='Ash-cloud arrival time'
         ov_fileroot = 'AshAvlTm'
         plot_units = 'hours'
-      elseif(iprod.eq.15)then   ! topography
+      elseif(iprod == 15)then   ! topography
         write(title_plot,'(a12)')': Topography'
         plot_variable ='Topography'
         ov_fileroot = 'Topogrph'
         plot_units = 'km'
-      elseif(iprod.eq.16)then   ! profile plots
+      elseif(iprod == 16)then   ! profile plots
         do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: No map shapefile output option for vertical profile data."
         endif;enddo
@@ -276,7 +288,7 @@
       allocate(rec2lev(nConLev))
       rec2lev = 0
       do ilev = 1,nConLev
-        if(ContourDataNcurves(ilev).gt.0)then
+        if(ContourDataNcurves(ilev) > 0)then
           nrec=nrec+1
           ! log the mapping of record level to contour index
           rec2lev(nrec) = ilev
@@ -305,16 +317,16 @@
         ! the length of each polyline record
         do ipart = 1,ContourDataNcurves(ilev)
           do ipt = 1,ContourDataNpoints(ilev,ipart)
-            if(ContourDataX(ilev,ipart,ipt).lt.xmin(irec))then
+            if(ContourDataX(ilev,ipart,ipt) < xmin(irec))then
               xmin(irec) = ContourDataX(ilev,ipart,ipt)
             endif
-            if(ContourDataX(ilev,ipart,ipt).gt.xmax(irec))then
+            if(ContourDataX(ilev,ipart,ipt) > xmax(irec))then
               xmax(irec) = ContourDataX(ilev,ipart,ipt)
             endif
-            if(ContourDataY(ilev,ipart,ipt).lt.ymin(irec))then
+            if(ContourDataY(ilev,ipart,ipt) < ymin(irec))then
               ymin(irec) = ContourDataY(ilev,ipart,ipt)
             endif
-            if(ContourDataY(ilev,ipart,ipt).gt.ymax(irec))then
+            if(ContourDataY(ilev,ipart,ipt) > ymax(irec))then
               ymax(irec) = ContourDataY(ilev,ipart,ipt)
             endif
           enddo
@@ -523,7 +535,7 @@
 
         ! The offset of the first record is just 50, but for subsequent offsets, we need
         ! to add the length of the previous record (as well as the record header).
-        if(irec.ne.1)offset = offset + 4 + reclen(irec-1)
+        if(irec /= 1)offset = offset + 4 + reclen(irec-1)
         write(ov_indxID)BigEnd_4int(IsLitEnd,offset)
         write(ov_indxID)BigEnd_4int(IsLitEnd,reclen(irec))
 
@@ -547,7 +559,7 @@
 
       ! Populate each of the TableRecData fields with dummy values so we can get lengths to put
       ! in the header
-      if(neruptions.gt.1)then
+      if(neruptions > 1)then
         do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"Multiple eruptions given in netcdf file."
           write(outlog(io),*)"Only writing first eruption to shapefile attributes."
@@ -555,7 +567,7 @@
       endif
       read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage)  iw,iwf
       linebuffer050 = "Reading iw,iwf from cdf_b3l1"
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,cdf_b3l1,iomessage)
+      if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,cdf_b3l1,iomessage)
 
       write(DBASE_TableRecData01,*)trim(adjustl(cdf_institution))    ! ORG
       write(DBASE_TableRecData02,*)trim(adjustl(VolcanoName))        ! VOLC
@@ -843,6 +855,12 @@
                  'PARAMETER["Scale_Factor",',f12.8,'],',        &
                  'UNIT["Meter",1.0]]')
           close(ov_projID)
+        case default
+          ! If not specified, use non-geographic projection, (x,y) only
+          !  Just create a file with no content
+          open(unit=ov_projID, file=trim(adjustl(ov_projfile)), status='replace')
+          write(ov_projID,*)' '
+          close(ov_projID)
         end select
       endif
 
@@ -919,6 +937,7 @@
       use io_units
 
       implicit none
+      !implicit none (type, external)
 
       integer,intent(in)               :: ov_dbasID
       integer,intent(in)               :: fldlen

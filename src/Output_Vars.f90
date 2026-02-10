@@ -59,6 +59,7 @@
          time_native
 
       implicit none
+      !implicit none (type, external)
 
         ! Set everything to private by default
       private
@@ -376,7 +377,7 @@
       use mesh,          only : &
          nxmax,nymax,nzmax
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Allocate_Output_Vars"
       endif;enddo
 
@@ -406,7 +407,7 @@
       allocate(dbZ(nxmax,nymax,nzmax))                              ! radar reflectivity (dbZ)
       dbZ = 0.0_ip
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exiting Subroutine Allocate_Output_Vars"
       endif;enddo
 
@@ -431,13 +432,13 @@
 
       integer,intent(in) :: nt
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Allocate_NTime"
       endif;enddo
 
       allocate(time_native(nt)); time_native = 0.0_dp
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Allocate_NTime"
       endif;enddo
 
@@ -466,16 +467,16 @@
       integer,intent(in) :: nt
       integer,intent(in) :: nv
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Allocate_Profile"
       endif;enddo
 
-      if(nv.gt.0)then
+      if(nv > 0)then
         allocate(pr_ash(nz,nt,nv))                       ! vertical ash profile
         pr_ash = 0.0_op
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Allocate_Profile"
       endif;enddo
 
@@ -511,12 +512,12 @@
       integer,intent(in) :: nz
       integer,intent(in) :: ns
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Allocate_Output_UserVars"
       endif;enddo
 
         ! User-defined 2-D static variables (in x,y)
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Allocating var_User2d_static_XY: ",nx,ny,nvar_User2d_static_XY
       endif;enddo
       allocate(var_User2d_static_XY_name(nvar_User2d_static_XY));   var_User2d_static_XY_name   = ''
@@ -526,7 +527,7 @@
       allocate(var_User2d_static_XY_FillVal(nvar_User2d_static_XY));var_User2d_static_XY_FillVal= 0.0_op
       allocate(var_User2d_static_XY(nx,ny,nvar_User2d_static_XY));  var_User2d_static_XY        = 0.0_op
         ! User-defined 2-D variables (in x,y)
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Allocating var_User2d_XY: ",nx,ny,nvar_User2d_XY
       endif;enddo
       allocate(var_User2d_XY_name(nvar_User2d_XY));    var_User2d_XY_name   = ''
@@ -536,7 +537,7 @@
       allocate(var_User2d_XY_FillVal(nvar_User2d_XY)); var_User2d_XY_FillVal= 0.0_op
       allocate(var_User2d_XY(nx,ny,nvar_User2d_XY));   var_User2d_XY        = 0.0_op
         ! User-defined 3-D variables (in x,y,gs)
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Allocating var_User3d_XYGs: ",nx,ny,ns,nvar_User3d_XYGs
       endif;enddo
       allocate(var_User3d_XYGs_name(nvar_User3d_XYGs));     var_User3d_XYGs_name   = ''
@@ -546,7 +547,7 @@
       allocate(var_User3d_XYGs_FillVal(nvar_User3d_XYGs));  var_User3d_XYGs_FillVal= 0.0_op
       allocate(var_User3d_XYGs(nx,ny,ns,nvar_User3d_XYGs)); var_User3d_XYGs        = 0.0_op
         ! User-defined 3-D variables (in x,y,z)
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Allocating var_User3d_XYZ: ",nx,ny,nz,nvar_User3d_XYZ
       endif;enddo
       allocate(var_User3d_XYZ_name(nvar_User3d_XYZ));     var_User3d_XYZ_name   = ''
@@ -556,7 +557,7 @@
       allocate(var_User3d_XYZ_FillVal(nvar_User3d_XYZ));  var_User3d_XYZ_FillVal= 0.0_op
       allocate(var_User3d_XYZ(nx,ny,nz,nvar_User3d_XYZ)); var_User3d_XYZ        = 0.0_op
         ! User-defined 4-D variables (in x,y,z,gs)
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Allocating var_User4d_XYZGs: ",nx,ny,ns,nvar_User4d_XYZGs
       endif;enddo
       allocate(var_User4d_XYZGs_name(nvar_User4d_XYZGs));        var_User4d_XYZGs_name   = ''
@@ -567,7 +568,7 @@
       allocate(var_User4d_XYZGs(nx,ny,nz,ns,nvar_User4d_XYZGs)); var_User4d_XYZGs        = 0.0_op
       allocate(var_User_charlines(nvar_User_charlines));         var_User_charlines      = ''
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Allocate_Output_UserVars"
       endif;enddo
 
@@ -589,7 +590,7 @@
 
       subroutine Deallocate_Output_Vars()
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Deallocate_Output_Vars"
       endif;enddo
 
@@ -625,7 +626,7 @@
       if(allocated(Con_Cust_Lev))     deallocate(Con_Cust_Lev)
 #endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Deallocate_Output_Vars"
       endif;enddo
 
@@ -647,7 +648,7 @@
 
       subroutine Deallocate_NTime
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Deallocate_NTime"
       endif;enddo
 
@@ -657,7 +658,7 @@
       if(allocated(time_native))deallocate(time_native)
 #endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Deallocate_NTime"
       endif;enddo
 
@@ -679,7 +680,7 @@
 
       subroutine Deallocate_Profile
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Deallocate_Profile"
       endif;enddo
 
@@ -689,7 +690,7 @@
       if(allocated(pr_ash))deallocate(pr_ash)                       ! vertical ash profile
 #endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Deallocate_Profile"
       endif;enddo
 
@@ -711,7 +712,7 @@
 
       subroutine Deallocate_Output_UserVars()
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Deallocate_Output_UserVars"
       endif;enddo
 
@@ -779,7 +780,7 @@
       if(allocated(var_User4d_XYZGs))             deallocate(var_User4d_XYZGs)
 #endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Deallocate_Output_UserVars"
       endif;enddo
 
@@ -802,80 +803,80 @@
 
       subroutine Set_OutVar_ContourLevel
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Set_OutVar_ContourLevel"
       endif;enddo
 
       ! Set contour levels and colors
       !  Deposit Thickness (mm)
       ! Recall that Con_DepThick_mm_N   = 10
-      Con_DepThick_mm_Lev = (/0.01_ip, 0.03_ip, 0.1_ip, 0.3_ip, 1.0_ip, &
-                             3.0_ip, 10.0_ip, 30.0_ip, 100.0_ip, 300.0_ip /)
-      Con_DepThick_mm_RGB( 1,1:3) = (/ 214,222,105 /)
-      Con_DepThick_mm_RGB( 2,1:3) = (/ 249,167,113 /)
-      Con_DepThick_mm_RGB( 3,1:3) = (/ 128,  0,128 /)
-      Con_DepThick_mm_RGB( 4,1:3) = (/   0,  0,255 /)
-      Con_DepThick_mm_RGB( 5,1:3) = (/   0,128,255 /)
-      Con_DepThick_mm_RGB( 6,1:3) = (/   0,255,128 /)
-      Con_DepThick_mm_RGB( 7,1:3) = (/ 195,195,  0 /)
-      Con_DepThick_mm_RGB( 8,1:3) = (/ 255,128,  0 /)
-      Con_DepThick_mm_RGB( 9,1:3) = (/ 255,  0,  0 /)
-      Con_DepThick_mm_RGB(10,1:3) = (/ 128,  0,  0 /)
+      Con_DepThick_mm_Lev = [0.01_ip, 0.03_ip, 0.1_ip, 0.3_ip, 1.0_ip, &
+                             3.0_ip, 10.0_ip, 30.0_ip, 100.0_ip, 300.0_ip ]
+      Con_DepThick_mm_RGB( 1,1:3) = [ 214,222,105 ]
+      Con_DepThick_mm_RGB( 2,1:3) = [ 249,167,113 ]
+      Con_DepThick_mm_RGB( 3,1:3) = [ 128,  0,128 ]
+      Con_DepThick_mm_RGB( 4,1:3) = [   0,  0,255 ]
+      Con_DepThick_mm_RGB( 5,1:3) = [   0,128,255 ]
+      Con_DepThick_mm_RGB( 6,1:3) = [   0,255,128 ]
+      Con_DepThick_mm_RGB( 7,1:3) = [ 195,195,  0 ]
+      Con_DepThick_mm_RGB( 8,1:3) = [ 255,128,  0 ]
+      Con_DepThick_mm_RGB( 9,1:3) = [ 255,  0,  0 ]
+      Con_DepThick_mm_RGB(10,1:3) = [ 128,  0,  0 ]
 
       !  Deposit Thickness (in)
       ! Recall that Con_DepThick_in_N   = 5
-      Con_DepThick_in_Lev = (/0.004_ip, 0.031_ip, 0.25_ip, 1.0_ip,   4.0_ip /)
-      Con_DepThick_in_RGB( 1,1:3) = (/ 255,  0,  0 /)
-      Con_DepThick_in_RGB( 2,1:3) = (/   0,  0,255 /)
-      Con_DepThick_in_RGB( 3,1:3) = (/   0,183,255 /)
-      Con_DepThick_in_RGB( 4,1:3) = (/ 255,  0,255 /)
-      Con_DepThick_in_RGB( 5,1:3) = (/   0, 51, 51 /)
+      Con_DepThick_in_Lev = [0.004_ip, 0.031_ip, 0.25_ip, 1.0_ip,   4.0_ip ]
+      Con_DepThick_in_RGB( 1,1:3) = [ 255,  0,  0 ]
+      Con_DepThick_in_RGB( 2,1:3) = [   0,  0,255 ]
+      Con_DepThick_in_RGB( 3,1:3) = [   0,183,255 ]
+      Con_DepThick_in_RGB( 4,1:3) = [ 255,  0,255 ]
+      Con_DepThick_in_RGB( 5,1:3) = [   0, 51, 51 ]
 
       !  Deposit (ashfall) arrival time (hours)
       ! Recall that Con_DepTime_N   = 9
-      Con_DepTime_Lev = (/0.0_ip, 3.0_ip, 6.0_ip, 9.0_ip, 12.0_ip, 15.0_ip, &
-                         18.0_ip, 24.0_ip, 36.0_ip  /)
-      Con_DepTime_RGB( 1,1:3) = (/ 255,  0,  0 /)  ! ff0000
-      Con_DepTime_RGB( 2,1:3) = (/ 255,128,255 /)  ! ff8000
-      Con_DepTime_RGB( 3,1:3) = (/ 255,255,  0 /)  ! ffff00
-      Con_DepTime_RGB( 4,1:3) = (/ 128,255,128 /)  ! 80ff80
-      Con_DepTime_RGB( 5,1:3) = (/   0,255,255 /)  ! 00ffff
-      Con_DepTime_RGB( 6,1:3) = (/   0,128,255 /)  ! 0080ff
-      Con_DepTime_RGB( 7,1:3) = (/   0,  0,255 /)  ! 0000ff
-      Con_DepTime_RGB( 8,1:3) = (/   0,  0,128 /)  ! 000080
-      Con_DepTime_RGB( 9,1:3) = (/   0,  0,  0 /)  ! 000000
+      Con_DepTime_Lev = [0.0_ip, 3.0_ip, 6.0_ip, 9.0_ip, 12.0_ip, 15.0_ip, &
+                         18.0_ip, 24.0_ip, 36.0_ip  ]
+      Con_DepTime_RGB( 1,1:3) = [ 255,  0,  0 ]  ! ff0000
+      Con_DepTime_RGB( 2,1:3) = [ 255,128,255 ]  ! ff8000
+      Con_DepTime_RGB( 3,1:3) = [ 255,255,  0 ]  ! ffff00
+      Con_DepTime_RGB( 4,1:3) = [ 128,255,128 ]  ! 80ff80
+      Con_DepTime_RGB( 5,1:3) = [   0,255,255 ]  ! 00ffff
+      Con_DepTime_RGB( 6,1:3) = [   0,128,255 ]  ! 0080ff
+      Con_DepTime_RGB( 7,1:3) = [   0,  0,255 ]  ! 0000ff
+      Con_DepTime_RGB( 8,1:3) = [   0,  0,128 ]  ! 000080
+      Con_DepTime_RGB( 9,1:3) = [   0,  0,  0 ]  ! 000000
 
 
       !  Maximum ash concentration (mg/m3)
       ! Recall that Con_CloudCon_N   = 9
-      Con_CloudCon_Lev = (/0.1_ip, 0.3_ip, 1.0_ip, 3.0_ip, 10.0_ip, 30.0_ip,&
-                         100.0_ip, 300.0_ip, 1000.0_ip /)
+      Con_CloudCon_Lev = [0.1_ip, 0.3_ip, 1.0_ip, 3.0_ip, 10.0_ip, 30.0_ip,&
+                         100.0_ip, 300.0_ip, 1000.0_ip ]
         ! This is what is in the KML file, but it is too light for a white background
-      Con_CloudCon_RGB( 1,1:3) = (/ 204,204,255 /)  ! ffe5e5
-      Con_CloudCon_RGB( 2,1:3) = (/ 178,178,255 /)  ! ffcccc
-      Con_CloudCon_RGB( 3,1:3) = (/ 153,153,255 /)  ! ffb2b2
-      Con_CloudCon_RGB( 4,1:3) = (/ 255,153,255 /)  ! ff99ff
-      Con_CloudCon_RGB( 5,1:3) = (/ 255,126,255 /)  ! ff7fff
-      Con_CloudCon_RGB( 6,1:3) = (/ 255,102,255 /)  ! ff66ff
-      Con_CloudCon_RGB( 7,1:3) = (/ 255, 76,255 /)  ! ff4cff
-      Con_CloudCon_RGB( 8,1:3) = (/ 255, 51,255 /)  ! ff33ff
-      Con_CloudCon_RGB( 9,1:3) = (/ 255, 51,255 /)  ! ff33ff
+      Con_CloudCon_RGB( 1,1:3) = [ 204,204,255 ]  ! ffe5e5
+      Con_CloudCon_RGB( 2,1:3) = [ 178,178,255 ]  ! ffcccc
+      Con_CloudCon_RGB( 3,1:3) = [ 153,153,255 ]  ! ffb2b2
+      Con_CloudCon_RGB( 4,1:3) = [ 255,153,255 ]  ! ff99ff
+      Con_CloudCon_RGB( 5,1:3) = [ 255,126,255 ]  ! ff7fff
+      Con_CloudCon_RGB( 6,1:3) = [ 255,102,255 ]  ! ff66ff
+      Con_CloudCon_RGB( 7,1:3) = [ 255, 76,255 ]  ! ff4cff
+      Con_CloudCon_RGB( 8,1:3) = [ 255, 51,255 ]  ! ff33ff
+      Con_CloudCon_RGB( 9,1:3) = [ 255, 51,255 ]  ! ff33ff
         ! Using the same colors as depotime
       Con_CloudCon_RGB( 1:9,1:3) = Con_DepTime_RGB( 1:9,1:3)
 
       ! Cloud Height Top (km)
       ! Recall that Con_CloudTop_N   = 9
-      Con_CloudTop_Lev = (/ 0.24_ip, 3.0_ip, 6.0_ip, 10.0_ip, 13.0_ip, 16.0_ip,&
-                         20.0_ip, 25.0_ip, 30.0_ip /)
-      Con_CloudTop_RGB( 1,1:3) = (/ 128,  0,128 /)  ! 800080
-      Con_CloudTop_RGB( 2,1:3) = (/ 255,  0,  0 /)  ! ff0000
-      Con_CloudTop_RGB( 3,1:3) = (/ 255,128,255 /)  ! ff8000
-      Con_CloudTop_RGB( 4,1:3) = (/ 255,255,  0 /)  ! ffff00
-      Con_CloudTop_RGB( 5,1:3) = (/ 128,255,128 /)  ! 80ff80
-      Con_CloudTop_RGB( 6,1:3) = (/   0,255,255 /)  ! 00ffff
-      Con_CloudTop_RGB( 7,1:3) = (/   0,128,255 /)  ! 0080ff
-      Con_CloudTop_RGB( 8,1:3) = (/   0,  0,255 /)  ! 0000ff
-      Con_CloudTop_RGB( 9,1:3) = (/   0,  0,128 /)  ! 000080
+      Con_CloudTop_Lev = [ 0.24_ip, 3.0_ip, 6.0_ip, 10.0_ip, 13.0_ip, 16.0_ip,&
+                         20.0_ip, 25.0_ip, 30.0_ip ]
+      Con_CloudTop_RGB( 1,1:3) = [ 128,  0,128 ]  ! 800080
+      Con_CloudTop_RGB( 2,1:3) = [ 255,  0,  0 ]  ! ff0000
+      Con_CloudTop_RGB( 3,1:3) = [ 255,128,255 ]  ! ff8000
+      Con_CloudTop_RGB( 4,1:3) = [ 255,255,  0 ]  ! ffff00
+      Con_CloudTop_RGB( 5,1:3) = [ 128,255,128 ]  ! 80ff80
+      Con_CloudTop_RGB( 6,1:3) = [   0,255,255 ]  ! 00ffff
+      Con_CloudTop_RGB( 7,1:3) = [   0,128,255 ]  ! 0080ff
+      Con_CloudTop_RGB( 8,1:3) = [   0,  0,255 ]  ! 0000ff
+      Con_CloudTop_RGB( 9,1:3) = [   0,  0,128 ]  ! 000080
 
       ! Cloud Height Bot (km)
       ! Recall that Con_CloudBot_N   = 9
@@ -884,14 +885,14 @@
 
       ! Cloud Load (T/km2)
       ! Recall that Con_CloudLoad_N   = 9
-      Con_CloudLoad_Lev = (/ 0.2_ip, 1.0_ip, 2.0_ip, 5.0_ip, 10.0_ip, 30.0_ip,&
-                         100.0_ip, 300.0_ip, 1000.0_ip /)
+      Con_CloudLoad_Lev = [ 0.2_ip, 1.0_ip, 2.0_ip, 5.0_ip, 10.0_ip, 30.0_ip,&
+                         100.0_ip, 300.0_ip, 1000.0_ip ]
       Con_CloudLoad_RGB( 1:9,1:3) = Con_CloudTop_RGB( 1:9,1:3)
 
       ! Cloud Reflectivity (dBz)
       ! Recall that Con_CloudRef_N   = 9
-      Con_CloudRef_Lev = (/-20.0_ip, -10.0_ip, 0.0_ip, 10.0_ip, 20.0_ip, 30.0_ip,&
-                         40.0_ip, 50.0_ip, 60.0_ip /)
+      Con_CloudRef_Lev = [-20.0_ip, -10.0_ip, 0.0_ip, 10.0_ip, 20.0_ip, 30.0_ip,&
+                         40.0_ip, 50.0_ip, 60.0_ip ]
       Con_CloudRef_RGB( 1:9,1:3) = Con_CloudTop_RGB( 1:9,1:3)
 
       ! Cloud Arrival Time (hours)
@@ -899,7 +900,7 @@
       Con_CloudTime_Lev(1:Con_CloudTime_N) = Con_DepTime_Lev(1:Con_CloudTime_N)
       Con_CloudTime_RGB( 1:9,1:3) = Con_CloudTop_RGB( 1:9,1:3)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Set_OutVar_ContourLevel"
       endif;enddo
 
@@ -933,7 +934,7 @@
 
       integer :: i,j
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine AshThicknessCalculator"
       endif;enddo
 
@@ -942,7 +943,7 @@
       DepositThickness(:,:)     = 0.0_ip
       DepositAreaCovered        = 0.0_ip
 
-      if(n_gs_max.gt.0)then
+      if(n_gs_max > 0)then
         do i=1,nxmax
           do j=1,nymax
             DepositThickness(i,j) = sum(DepositGranularity(i,j,1:n_gs_max)) * &  ! in kg/km^3
@@ -950,7 +951,7 @@
                                     KM2_2_M2                                / &  ! from kg/km^2 to kg/m^2
                                     DepositDensity                          * &  ! from kg/m^2 to m
                                     M_2_MM                                       ! from m to mm
-            if (DepositThickness(i,j).gt.DEPO_THRESH)then
+            if (DepositThickness(i,j) > DEPO_THRESH)then
               Mask_Deposit(i,j) = .true.
               DepositAreaCovered = DepositAreaCovered + sigma_nz_pd(i,j,1)
             endif
@@ -960,7 +961,7 @@
 
       Calculated_AshThickness = .true.
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine AshThicknessCalculator"
       endif;enddo
 
@@ -995,11 +996,11 @@
 
       integer :: isize
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine AshTotalCalculator"
       endif;enddo
 
-      if(n_gs_max.gt.0)then
+      if(n_gs_max > 0)then
         ashcon_tot = 0.0_op
         do isize=1,n_gs_max
           ashcon_tot(1:nxmax,1:nymax,1:nzmax) =  &
@@ -1008,7 +1009,7 @@
         enddo
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine AshTotalCalculator"
       endif;enddo
 
@@ -1047,7 +1048,7 @@
       real(kind=ip) :: zcol             !z value of cell
       real(kind=ip) :: tmp
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine dbZCalculator"
       endif;enddo
 
@@ -1057,10 +1058,10 @@
       ! Calculate particle collision rate between two particle sizes
       ! Note: this requires that only two particle sizes be used as input
 
-      if(n_gs_max.gt.0)then
+      if(n_gs_max > 0)then
         do i=imin,imax
           do j=jmin,jmax
-            if (CloudLoad(i,j).lt.CLOUDLOAD_THRESH) cycle
+            if (CloudLoad(i,j) < CLOUDLOAD_THRESH) cycle
             do k=kmin,kmax
               zcol = 0.0_ip
               do isize=1,n_gs_max
@@ -1070,11 +1071,11 @@
                             KM3_2_M3                                  ! particles/m3
                 zcol    = zcol + NumDens*(Tephra_gsdiam(isize)*M_2_MM)**6.0_ip
               enddo
-              if(zcol.lt.EPS_TINY)then
+              if(zcol < EPS_TINY)then
                 dbZ(i,j,k) = dbZCol_FillValue
               else
                 tmp = 10.0_ip*log10(zcol)
-                if(tmp.gt.DBZ_THRESH)then
+                if(tmp > DBZ_THRESH)then
                   dbZ(i,j,k) = tmp
                 else
                   dbZ(i,j,k) = dbZCol_FillValue
@@ -1086,7 +1087,7 @@
         enddo
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine dbZCalculator"
       endif;enddo
 
@@ -1127,7 +1128,7 @@
       real(kind=ip),dimension(nzmax) :: TotalConcentration  ! concentration from all grain sizes as a vertical column
       real(kind=ip)                  :: MaxTotalConcentration
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine ConcentrationCalculator"
       endif;enddo
 
@@ -1142,7 +1143,7 @@
 
       Mask_Cloud(:,:) = .false.
 
-      if(n_gs_max.gt.0)then
+      if(n_gs_max > 0)then
         do i=imin,imax
           do j=jmin,jmax
             !CellArea = sigma_nz_pd(i,j,1)
@@ -1157,7 +1158,7 @@
               TotalConcentration(k) = sum(concen_pd(i,j,k,1:n_gs_max,ts1))
 
                ! Note max height
-              if(TotalConcentration(k).ge.CLOUDCON_THRESH)then
+              if(TotalConcentration(k) >= CLOUDCON_THRESH)then
                 ! this is overwritten if the k+1 is also identified as an ash cloud
                 MaxHeight(i,j)=z_cc_pd(k)+0.5_ip*dz_vec_pd(k)
               endif
@@ -1165,7 +1166,7 @@
 
              ! Now go from the top down and find the bottom
             do k=nzmax,1,-1
-             if(TotalConcentration(k).le.CLOUDCON_THRESH)then
+             if(TotalConcentration(k) <= CLOUDCON_THRESH)then
                 MinHeight(i,j)=z_cc_pd(k)-0.5_ip*dz_vec_pd(k)
               endif
             enddo
@@ -1173,7 +1174,7 @@
             MaxTotalConcentration = maxval(TotalConcentration(:))
 
             ! Generate the cloud mask base on integrated cloud load
-            if(CloudLoad(i,j).ge.CLOUDLOAD_THRESH)then
+            if(CloudLoad(i,j) >= CLOUDLOAD_THRESH)then
               Mask_Cloud(i,j) = .true.
             else
               Mask_Cloud(i,j) = .false.
@@ -1182,8 +1183,8 @@
             ! Finally, modify the output variables based on the mask
             if (Mask_Cloud(i,j))then
               ! This is a cloud, accumulate area and error-check heights
-              if(MinHeight(i,j).lt.0.0_ip.and. &
-                 MaxHeight(i,j).gt.0.0_ip) &
+              if(MinHeight(i,j) < 0.0_ip.and. &
+                 MaxHeight(i,j) > 0.0_ip) &
                    MinHeight(i,j) = 0.0_ip
               ! Double-check that min doesn't exceed max
               MinHeight(i,j)=min(MaxHeight(i,j),MinHeight(i,j))
@@ -1206,7 +1207,7 @@
 
       Calculated_Cloud_Load = .true.
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine ConcentrationCalculator"
       endif;enddo
 
@@ -1242,7 +1243,7 @@
 
       real(kind=ip) :: CellArea
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine CloudAreaCalculator"
       endif;enddo
 
@@ -1254,19 +1255,19 @@
       LoadVal(5)         = 6.0_ip
       CloudLoadArea(1:5) = 0.0_ip
 
-      if(n_gs_max.gt.0)then
+      if(n_gs_max > 0)then
         do i=imin,imax
           do j=jmin,jmax
             CellArea = sigma_nz_pd(i,j,1)
             do k=1,5
-              if (CloudLoad(i,j).gt.LoadVal(k)) &
+              if (CloudLoad(i,j) > LoadVal(k)) &
                 CloudLoadArea(k) = CloudLoadArea(k) + CellArea
             enddo
           enddo
         enddo
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine CloudAreaCalculator"
       endif;enddo
 
@@ -1300,7 +1301,7 @@
 
       integer :: i,j
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Gen_Output_Vars"
       endif;enddo
 
@@ -1324,10 +1325,10 @@
       ! Mark the arrival time of any new deposit
       do i=1,nxmax
         do j=1,nymax
-          if(Mask_Deposit(i,j).and.DepArrivalTime(i,j).lt.0.0_ip)then
+          if(Mask_Deposit(i,j).and.DepArrivalTime(i,j) < 0.0_ip)then
             DepArrivalTime(i,j)=time
           endif
-          if((Mask_Cloud(i,j)).and.(CloudArrivalTime(i,j).lt.0.0_ip))then
+          if((Mask_Cloud(i,j)).and.(CloudArrivalTime(i,j) < 0.0_ip))then
             CloudArrivalTime(i,j)=time
           endif
         enddo
@@ -1335,7 +1336,7 @@
 
       Called_Gen_Output_Vars = .true.
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Gen_Output_Vars"
       endif;enddo
 
@@ -1370,7 +1371,7 @@
       real(kind=ip),intent(out) :: vol  ! Total volume of ash still airborne
       integer :: isize
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Calc_AshVol_Aloft"
       endif;enddo
 
@@ -1384,7 +1385,7 @@
 
       ! Now loop over just the tephra bins (first n_gs_max bins) and
       ! calculate tephra volume
-      if(n_gs_max.gt.0)then
+      if(n_gs_max > 0)then
         do isize=1,n_gs_max
             ! Increment total ash in air
           vol = vol + mass_aloft(isize)               /   &  ! in kg
@@ -1394,7 +1395,7 @@
         enddo
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Calc_AshVol_Aloft"
       endif;enddo
 
@@ -1440,12 +1441,12 @@
       integer :: i,k
       real(kind=ip) :: totalash
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Calc_vprofile"
       endif;enddo
 
-      if(itime.gt.ntmax)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
+      if(itime > ntmax)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: itime is greater than ntmax"
           write(errlog(io),*)"       cannot write to profile"
         endif;enddo
@@ -1458,14 +1459,14 @@
         ! Get the total ash aloft in the coloumn at this point in kg/km3
         totalash = sum(concen_pd(i_vprofile(i),j_vprofile(i),1:nzmax,1:n_gs_max,ts1))
         ! don't write if there's no ash
-        if(totalash.lt.CLOUDCON_THRESH) cycle
+        if(totalash < CLOUDCON_THRESH) cycle
         do k=1,nzmax
           pr_ash(k,itime,i) = sum(concen_pd(i_vprofile(i),j_vprofile(i),k,1:n_gs_max,ts1)) &
                               * KG_2_MG / KM3_2_M3  ! convert from kg/km3 to mg/m3
         enddo
       enddo
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Calc_vprofile"
       endif;enddo
 
@@ -1500,13 +1501,13 @@
       real(kind=ip),intent(out) :: vol  ! Total volume of ash in deposit
       integer :: isize
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Calc_AshVol_Deposit"
       endif;enddo
 
       vol = 0.0_ip
 
-      if(n_gs_max.gt.0)then
+      if(n_gs_max > 0)then
         do isize=1,n_gs_max
           vol = vol + sum(DepositGranularity(1:nxmax,1:nymax,isize) * &  ! in kg/km^3
                            kappa_pd(1:nxmax,1:nymax,0))             / &  ! convert to kg
@@ -1515,7 +1516,7 @@
         enddo
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Calc_AshVol_Deposit"
       endif;enddo
 
@@ -1551,13 +1552,13 @@
 
       integer :: isize
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Calc_AshVol_Outflow"
       endif;enddo
 
       vol = 0.0_ip
 
-      if(n_gs_max.gt.0)then
+      if(n_gs_max > 0)then
         do isize=1,n_gs_max
           vol = vol + (                                &
                         sum(outflow_yz1_pd(        1:nymax,1:nzmax,isize)*   &
@@ -1576,7 +1577,7 @@
         enddo
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Calc_AshVol_Outflow"
       endif;enddo
 
@@ -1622,7 +1623,7 @@
         call AshThicknessCalculator
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine FirstAsh"
       endif;enddo
 
@@ -1639,16 +1640,16 @@
         !For airports where ash has arrived . . .
         !mark fall duration if ash has stopped falling
         if (Airport_AshArrived(i)) then
-          if ((Airport_depRate(i).lt.DEPRATE_THRESH).and.&
-              (Airport_depRateLast(i).ge.DEPRATE_THRESH)) then
+          if ((Airport_depRate(i) < DEPRATE_THRESH).and.&
+              (Airport_depRateLast(i) >= DEPRATE_THRESH)) then
             Airport_AshDuration(i) = time-Airport_AshArrivalTime(i)
           endif
         endif
 
         !mark cloud duration if cloud has passed
         if (Airport_CloudArrived(i)) then
-          if ((Airport_CloudHere(i).le.CLOUDLOAD_THRESH).and.&
-              (Airport_CloudHereLast(i).gt.CLOUDLOAD_THRESH)) then
+          if ((Airport_CloudHere(i) <= CLOUDLOAD_THRESH).and.&
+              (Airport_CloudHereLast(i) > CLOUDLOAD_THRESH)) then
             Airport_CloudDuration(i) = time-Airport_CloudArrivalTime(i)
           endif
         endif
@@ -1656,13 +1657,13 @@
         !For airports where ash has not yet arrived . . .
         !if ash load>CLOUDLOAD_THRESH T/km2 , call it "arrived"
         if (.not.Airport_CloudArrived(i).and.&
-            (Airport_CloudHere(i).gt.CLOUDLOAD_THRESH)) then
+            (Airport_CloudHere(i) > CLOUDLOAD_THRESH)) then
           Airport_CloudArrived(i) = .true.
           Airport_CloudArrivalTime(i) = time
         endif
         !if ash thickness>THICKNESS_THRESH mm, call it "arrived"
         if (.not.Airport_AshArrived(i).and.&
-            (Airport_thickness(i).gt.THICKNESS_THRESH)) then
+            (Airport_thickness(i) > THICKNESS_THRESH)) then
           Airport_AshArrived(i) = .true.
           Airport_AshArrivalTime(i) = time
           ! Some cases with high eruptive volume might have a deposit that
@@ -1675,7 +1676,7 @@
         endif
       enddo
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine FirstAsh"
       endif;enddo
 

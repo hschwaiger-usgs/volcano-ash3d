@@ -50,6 +50,7 @@
          kx,ky,kz,Imp_DT_fac
 
       implicit none
+      !implicit none (type, external)
 
       logical, intent(in), optional :: mesostep
 
@@ -69,7 +70,7 @@
       real(kind=dp),save :: time_diffuse
       logical      ,save :: have_DT_diffus = .false.
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Adjust_DT"
       endif;enddo
 
@@ -120,11 +121,11 @@
                 ! Advect in x
                 minsig = minval(sigma_nx_pd(i:i+1,j,k))
                 tmp1 = real(abs(vx_meso_next_step_sp(i,j,k)),kind=ip)*MPS_2_KMPHR*minsig/kappa_pd(i,j,k)
-                if(tmp1.gt.vxmax_dx)vxmax_dx=tmp1
+                if(tmp1 > vxmax_dx)vxmax_dx=tmp1
                 ! Advect in y
                 minsig = minval(sigma_ny_pd(i,j:j+1,k))
                 tmp2 = real(abs(vy_meso_next_step_sp(i,j,k)),kind=ip)*MPS_2_KMPHR*minsig/kappa_pd(i,j,k)
-                if(tmp2.gt.vymax_dy)vymax_dy=tmp2
+                if(tmp2 > vymax_dy)vymax_dy=tmp2
               endif
               ! Advect in z
               ! Note: for this to work, we really need to set vf_meso_next_step_sp=0 for all
@@ -134,7 +135,7 @@
               tmp3 =   (real(abs(vz_meso_next_step_sp(i,j,k)) + &
                         maxval(abs(vf_meso_next_step_sp(i,j,k,1:nsmax))),kind=ip)) &
                        *MPS_2_KMPHR / dz_vec_pd(k)
-              if(tmp3.gt.vzmax_dz) vzmax_dz = tmp3
+              if(tmp3 > vzmax_dz) vzmax_dz = tmp3
             enddo
           enddo
         enddo
@@ -159,11 +160,11 @@
                 ! Advect in x
                 minsig = minval(sigma_nx_pd(i:i+1,j,k))
                 tmp1 = abs(vx_pd(i,j,k))*minsig/kappa_pd(i,j,k)
-                if(tmp1.gt.vxmax_dx) vxmax_dx=tmp1
+                if(tmp1 > vxmax_dx) vxmax_dx=tmp1
                 ! Advect in y
                 minsig = minval(sigma_ny_pd(i,j:j+1,k))
                 tmp2 = abs(vy_pd(i,j,k))*minsig/kappa_pd(i,j,k)
-                if(tmp2.gt.vymax_dy) vymax_dy=tmp2
+                if(tmp2 > vymax_dy) vymax_dy=tmp2
               endif
               ! Advect in z
               ! Note: for this to work, we really need to set vf_pd=0 for all
@@ -172,7 +173,7 @@
               !       highest fall velocities.  This is done in Set_Vf_Meso.
               tmp3 =(      (abs(vz_pd(i,j,k        ))) +   &
                      maxval(abs(vf_pd(i,j,k,1:nsmax))) ) / dz_vec_pd(k)
-              if(tmp3.gt.vzmax_dz) vzmax_dz = tmp3
+              if(tmp3 > vzmax_dz) vzmax_dz = tmp3
             enddo
           enddo
         enddo
@@ -180,7 +181,7 @@
       ! We might have a special case where we need to continue advection even when no ash
       ! is present (between eruptive pulses, resuspension cases where source hasn't been activated)
       ! Reset vzmaz_dz if this case is special.
-      if(n_gs_aloft.eq.0)vzmax_dz = 0.0_ip
+      if(n_gs_aloft == 0)vzmax_dz = 0.0_ip
       ! When dimensions are split, choose the most restrictive time step
       time_advect = 1.0_ip/max(vxmax_dx,vymax_dy,vzmax_dz)
       ! For a full, multi-dimensional case:
@@ -227,7 +228,7 @@
                 minsig = minval(sigma_nz_pd(i,j,k:k+1))
                 tmp3 = ((kappa_pd(i,j,k)/minsig)**2.0_ip)/kz(i,j,k)
                 tmp4 = tmp1+tmp2+tmp3
-                if(time_diffuse.gt.tmp4)time_diffuse=tmp4
+                if(time_diffuse > tmp4)time_diffuse=tmp4
               enddo
             enddo
           enddo
@@ -251,34 +252,34 @@
           if(.not.useVarDiffH.and.&
              .not.useVarDiffV)then
             if (useCN) then
-              do io=1,2;if(VB(io).le.verbosity_info)then
+              do io=1,2;if(VB(io) <= verbosity_info)then
                 write(outlog(io),'(a24,f8.2)')"Applying time factor of ",Imp_DT_fac
               endif;enddo
             else
-              do io=1,2;if(VB(io).le.verbosity_info)then
+              do io=1,2;if(VB(io) <= verbosity_info)then
                 write(outlog(io),*)"Applying time factor of 0.5"
               endif;enddo
             endif
 
-            do io=1,2;if(VB(io).le.verbosity_info)then
-              if(time_diffuse.gt.time_advect)then
+            do io=1,2;if(VB(io) <= verbosity_info)then
+              if(time_diffuse > time_advect)then
                 ! Diffusion conditions allow a larger time step than advection
                 write(outlog(io),*)"Time step limited by advection"
-                if(vxmax_dx.gt.vymax_dy.and.vxmax_dx.gt.vzmax_dz)then
+                if(vxmax_dx > vymax_dy.and.vxmax_dx > vzmax_dz)then
                   write(outlog(io),*)"   Restriction set by dx/vx"
-                elseif(vymax_dy.gt.vxmax_dx.and.vymax_dy.gt.vzmax_dz)then
+                elseif(vymax_dy > vxmax_dx.and.vymax_dy > vzmax_dz)then
                   write(outlog(io),*)"   Restriction set by dy/vy"
-                elseif(vzmax_dz.gt.vxmax_dx.and.vzmax_dz.gt.vymax_dy)then
+                elseif(vzmax_dz > vxmax_dx.and.vzmax_dz > vymax_dy)then
                   write(outlog(io),*)"   Restriction set by dz/vz"
                 endif
               else
                 ! Advection is the dominant restriction on time steps
                 write(outlog(io),*)"Time step limited by diffusion"
-                if(tmp1.lt.tmp2.and.tmp1.lt.tmp3)then
+                if(tmp1 < tmp2.and.tmp1 < tmp3)then
                   write(outlog(io),*)"   Restriction set by dx2/kx"
-                elseif(tmp2.lt.tmp1.and.tmp2.lt.tmp3)then
+                elseif(tmp2 < tmp1.and.tmp2 < tmp3)then
                   write(outlog(io),*)"   Restriction set by dy2/ky"
-                elseif(tmp3.lt.tmp1.and.tmp3.lt.tmp2)then
+                elseif(tmp3 < tmp1.and.tmp3 < tmp2)then
                   write(outlog(io),*)"   Restriction set by dz2/kz"
                 endif
               endif
@@ -297,8 +298,8 @@
       !-------------------------------------------------------
 
       dt_tmp = min(time_advect,time_diffuse)
-      if(dt_tmp.lt.DT_MIN)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
+      if(dt_tmp < DT_MIN)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"WARNING: Calculated DT is too low"
           write(outlog(io),*)"         Setting DT to dt_min = ",DT_MIN
           write(outlog(io),*)"         CFL condition probably violated."
@@ -310,8 +311,8 @@
           write(outlog(io),*)"   calculated dt = ",min(1.0_ip,CFL)*dt_tmp
         endif;enddo
         dt = DT_MIN
-      elseif(dt_tmp.gt.DT_MAX)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
+      elseif(dt_tmp > DT_MAX)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"WARNING: Calculated DT is too high"
           write(outlog(io),*)"         Setting DT to dt_max = ",DT_MAX
           write(outlog(io),*)"         CFL condition probably violated."
@@ -331,11 +332,11 @@
       fac = int(dt/DT_MIN)
       dt = DT_MIN*fac
 
-      if (((NextWriteTime-time).gt.EPS_SMALL).and.(NextWriteTime-time.lt.dt)) then
+      if (((NextWriteTime-time) > EPS_SMALL).and.(NextWriteTime-time < dt)) then
         dt = NextWritetime-time
       endif
 
-      if(time+dt.gt.Simtime_in_hours)then
+      if(time+dt > Simtime_in_hours)then
         ! Don't let time advance past the requested stop time
         dt = Simtime_in_hours-time
       endif
@@ -345,7 +346,7 @@
         dt_meso_next = dt
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Adjust_DT"
       endif;enddo
 

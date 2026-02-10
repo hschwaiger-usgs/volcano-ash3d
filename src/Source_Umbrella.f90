@@ -18,6 +18,7 @@
       use io_units
 
       implicit none
+      !implicit none (type, external)
 
         ! Set everything to private by default
       private
@@ -106,7 +107,7 @@
       integer :: i,j,k,ii,jj
       real(kind=ip) :: tot_vol
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Allocate_Source_Umbrella"
       endif;enddo
 
@@ -141,22 +142,22 @@
       itop  = 0
       ibase = 0
       do k = 1,nz
-        if(z_vec_init(k)  .ge.e_PlumeHeight(1).and.&
-           z_vec_init(k-1).lt.e_PlumeHeight(1))then
+        if(z_vec_init(k)   >= e_PlumeHeight(1).and.&
+           z_vec_init(k-1) < e_PlumeHeight(1))then
           itop = k
         endif
         ! The Suzuki distribution for umbrella clouds is hardwired to k=12
         ! The 0.75 for the plume bottom just ensures that the significant part
         ! of the Suzuki mass loading profile will be within the ibase to itop nodes
-        if(z_vec_init(k)  .ge.0.75_ip*e_PlumeHeight(1).and. &
-           z_vec_init(k-1).lt.0.75_ip*e_PlumeHeight(1))then
+        if(z_vec_init(k)   >= 0.75_ip*e_PlumeHeight(1).and. &
+           z_vec_init(k-1) < 0.75_ip*e_PlumeHeight(1))then
           ibase = k
         endif
       enddo
       allocate(uvx_pd(-1:nx+2,-1:ny+2,ibase:itop));     uvx_pd = 0.0_ip
       allocate(uvy_pd(-1:nx+2,-1:ny+2,ibase:itop));     uvy_pd = 0.0_ip
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Allocate_Source_Umbrella"
       endif;enddo
 
@@ -178,7 +179,7 @@
 
       subroutine Deallocate_Source_Umbrella
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Deallocate_Source_Umbrella"
       endif;enddo
 
@@ -196,7 +197,7 @@
         if(allocated(ScaleFac_Umbrella))       deallocate(ScaleFac_Umbrella)
 #endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Deallocate_Source_Umbrella"
       endif;enddo
 
@@ -259,7 +260,7 @@
       integer       :: south_node,north_node
       real(kind=ip) :: MassFluxRateMKS_now  ! current mass flux rate, kg/s
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine umbrella_winds"
       endif;enddo
 
@@ -267,7 +268,7 @@
       uvy_pd(-1:nxmax+2,-1:nymax+2,ibase:itop) = 0.0_ip
 
       if(.not.IsLatLon)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*) 'Error: umbrella_winds is not yet set up to handle'
           write(errlog(io),*) 'projected coordinates.'
         endif;enddo
@@ -279,12 +280,12 @@
 
       !If there is only one size class, assume it's an airborne run and
       !multiply the mass flux by 20
-      if ((SourceType.eq.'umbrella_air').and.(n_gs_max.eq.1)) then
+      if ((SourceType == 'umbrella_air').and.(n_gs_max == 1)) then
         MassFluxRateMKS_now = 20.0_ip*MassFluxRateMKS_now
       end if
 
       !set value of C based on latitude
-      if (abs(lat_volcano).lt.23.0_ip) then
+      if (abs(lat_volcano) < 23.0_ip) then
           ! m3 kg^(-3/4) s^(-7/8) for tropical eruptions
         C_Costa = 0.43e3_ip
       else
@@ -296,8 +297,8 @@
       qnow  = C_Costa*sqrt(k_entrainment_umb)*MassFluxRateMKS_now**(3.0_ip/4.0_ip) / &
               N_BV_umb**(5.0_ip/4.0_ip)
 
-      if(time.lt.EPS_SMALL) then
-        do io=1,2;if(VB(io).le.verbosity_info)then
+      if(time < EPS_SMALL) then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)
           write(outlog(io),*) 'in Umbrella_winds'
           write(outlog(io),*) '  massfluxnow (kg/s) = ',real(MassFluxRateMKS_now,kind=sp)
@@ -309,19 +310,19 @@
           !If we're doing an airborne run and using only 1 grain size,
           !multiply the MER by 20 to make sure we're getting the right umbrella
           !growth rate
-          if((SourceType.eq.'umbrella_air').and.(n_gs_max.eq.1))then
+          if((SourceType == 'umbrella_air').and.(n_gs_max == 1))then
             write(outlog(io),*) 'n_gs_max=1, so we are assuming an airborne run'
             write(outlog(io),*) 'massflux has been multiplied by 20'
           endif
         endif;enddo
-        if(VelMod_umb.ne.1.and.VelMod_umb.ne.2)then
-          do io=1,2;if(VB(io).le.verbosity_error)then
+        if(VelMod_umb /= 1.and.VelMod_umb /= 2)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)" ERROR: Umb.Vel.Model unknown.  Should be 1 or 2."
             write(errlog(io),*)" VelMod_umb  = ",VelMod_umb
           endif;enddo
           stop 1
         endif
-      endif  ! time.eq.0.0_ip
+      endif  ! time == 0.0_ip
 
       ! HFS : Add check for the maximal radius for this eruptive pulse and make sure
       !       the source location is far enough from the boundaries.
@@ -347,7 +348,7 @@
       edge_speed   = (2.0_ip/3.0_ip)*(3.0_ip*lambda_umb*N_BV_umb*qnow/(2.0_ip*PI))**(1.0_ip/3.0_ip) * &
                     real(etime_s,kind=ip)**(-1.0_ip/3.0_ip)
 
-      if (cloud_radius.le.max(SourceNodeWidth_km,SourceNodeHeight_km)) then
+      if (cloud_radius <= max(SourceNodeWidth_km,SourceNodeHeight_km)) then
         return
       else
         if (IsLatLon) then
@@ -363,7 +364,7 @@
           do ii=west_node,east_node
             do jj=south_node,north_node
               !skip the source nodes
-              if ((ii.eq.ivent).and.(jj.eq.jvent)) cycle
+              if ((ii == ivent).and.(jj == jvent)) cycle
               !Calculate radial distance to the vent (km)
               avg_lat=(lat_cc_pd(jj)+lat_volcano)/2.
               !These formulas ensure that winds are added if the cell center is
@@ -378,8 +379,8 @@
               !          cos(avg_lat*DEG2RAD)*DEG2KMLON
               radnow = sqrt(ns_km**2.0_ip+ew_km**2.0_ip)  !distance, km
               !make sure we're within the umbrella cloud
-              if (radnow.lt.cloud_radius) then
-                if(VelMod_umb.eq.1)then
+              if (radnow < cloud_radius) then
+                if(VelMod_umb == 1)then
                   ! This is Eq. 3 except the second term here has an extra r/R
                   ! Note that the radial windspeed function is just a non-dimensional radial
                   ! function scaling the of leading edge speed where the edge speed is from the
@@ -391,7 +392,7 @@
                                   (3.0_ip/4.0_ip)*(cloud_radius/radnow)* &  ! Start of scaling term
                                   (1.0_ip                              + &  ! Cons. of Vol term
                                    (1.0_ip/3.0_ip)*(radnow/cloud_radius)**rexp)  ! outward spreading,time flattening
-                elseif(VelMod_umb.eq.2)then
+                elseif(VelMod_umb == 2)then
                   ! This is Eq. 4
                   windspeedhere = edge_speed  *                          &  ! m/s
                                   MPS_2_KMPHR *                          &  ! km/hr
@@ -410,7 +411,7 @@
         endif
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine umbrella_winds"
       endif;enddo
 
@@ -444,16 +445,16 @@
 
       integer :: i,j,k
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine TephraSouceNodes_Umbrella"
       endif;enddo
 
       SourceNodeFlux_Umbrella(1:3,1:3,1:nzmax,1:n_gs_max) = 0.0_ip
       do k=1,nzmax+1
-        if(k.lt.ibase)then
+        if(k < ibase)then
           ! Below the cloud, use the normal Suzuki profile
           SourceNodeFlux_Umbrella(2,2,k,1:n_gs_max)=SourceNodeFlux(k,1:n_gs_max)
-        elseif(k.le.itop)then
+        elseif(k <= itop)then
           ! Above the umbrella base, but below its top, spread the source over the
           ! 3x3 patch
           do i=1,3
@@ -468,7 +469,7 @@
         endif
       enddo
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine TephraSouceNodes_Umbrella"
       endif;enddo
 
@@ -504,13 +505,13 @@
       use Source,        only : &
          SourceNodeFlux
 
-      real(kind=ip) :: SourceVolInc_Umbrella
-      real(kind=dp) :: dt
+      real(kind=ip)             :: SourceVolInc_Umbrella
+      real(kind=dp) ,intent(in) :: dt
 
       real(kind=ip) :: tmp
       integer :: i,j,k,isize
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine SourceVolInc_Umbrella"
       endif;enddo
 
@@ -546,7 +547,7 @@
 
       SourceVolInc_Umbrella = tmp
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine SourceVolInc_Umbrella"
       endif;enddo
 
@@ -571,13 +572,13 @@
 
       function AvgCon_Umbrella(conpatch,klevel)
 
-      real(kind=ip) :: AvgCon_Umbrella
-      real(kind=ip),dimension(3,3) :: conpatch
-      integer :: klevel
+      real(kind=ip)                            :: AvgCon_Umbrella
+      real(kind=ip),dimension(3,3) ,intent(in) :: conpatch
+      integer                      ,intent(in) :: klevel
 
       integer :: i,j
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered function AvgCon_Umbrella"
       endif;enddo
 

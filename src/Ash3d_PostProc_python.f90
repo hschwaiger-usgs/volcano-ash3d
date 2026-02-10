@@ -52,6 +52,7 @@
          Instit_IconFile
 
       implicit none
+      !implicit none (type, external)
 
         ! Set everything to private by default
       private
@@ -392,7 +393,7 @@
       character(len=45) :: cstr_note
       character(len=20) :: varname
       character(len= 9) :: cio
-      character(len= 4) :: outfile_ext = '.png'
+      character(len= 4),parameter :: outfile_ext = '.png'
       character(len=10) :: units
       integer           :: iostatus
       integer           :: cstat
@@ -434,9 +435,9 @@
 
       ! Python/Cartopy variables
       character(len=25) :: plotcom
-      real(kind=ip)     :: zoomfac = 1.0_ip  ! zoom factor for resampling the data with
-                                             ! a cubic spline interpolant. Can smooth rough
-                                             ! contours
+      real(kind=ip)     :: zoomfac   ! zoom factor for resampling the data with
+                                     ! a cubic spline interpolant. Can smooth rough
+                                     ! contours
 
       INTERFACE
         character (len=20) function HS_xmltime(HoursSince,byear,useLeaps)
@@ -449,9 +450,12 @@
         end function HS_xmltime
       END INTERFACE
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_2Dmap_PNG_python"
       endif;enddo
+
+      ! Initialization
+      zoomfac = 1.0_ip
 
       ! Test for icon file
       inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
@@ -466,14 +470,13 @@
       filename_script      = trim(adjustl(filename_root)) // ".py"
       !filename_contourdata = trim(adjustl(filename_root)) // ".con"
 
-
-      if(iprod.eq.5.or.iprod.eq.6)then
+      if(iprod == 5.or.iprod == 6)then
         cio='____final'
       else
-        if (WriteTimes(itime).lt.10.0_ip) then
+        if (WriteTimes(itime) < 10.0_ip) then
           write(cio,1) WriteTimes(itime)
 1         format('00',f4.2,'hrs')
-        elseif (WriteTimes(itime).lt.100.0_ip) then
+        elseif (WriteTimes(itime) < 100.0_ip) then
           write(cio,2) WriteTimes(itime)
 2         format('0',f5.2,'hrs')
         else
@@ -490,7 +493,7 @@
         zrgb(1:nConLev,1:3) = Con_Cust_RGB(1:nConLev,1:3)
       endif
 
-      if(iprod.eq.3)then       ! deposit at specified times (mm)
+      if(iprod == 3)then       ! deposit at specified times (mm)
         varname = "depothick"
         write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f7.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
@@ -504,7 +507,7 @@
           ContourLev(1:nConLev) = Con_DepThick_mm_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.4)then   ! deposit at specified times (inches)
+      elseif(iprod == 4)then   ! deposit at specified times (inches)
         varname = "depothick"
         write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f7.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
@@ -518,7 +521,7 @@
           ContourLev(1:nConLev) = Con_DepThick_in_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_DepThick_in_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.5)then       ! deposit at final time (mm)
+      elseif(iprod == 5)then       ! deposit at final time (mm)
         varname = "depothickFin"
         write(filename_png,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
@@ -532,7 +535,7 @@
           ContourLev(1:nConLev) = Con_DepThick_mm_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.6)then   ! deposit at final time (inches)
+      elseif(iprod == 6)then   ! deposit at final time (inches)
         varname = "depothickFin"
         write(filename_png,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
@@ -546,7 +549,7 @@
           ContourLev(1:nConLev) = Con_DepThick_in_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_DepThick_in_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.7)then   ! ashfall arrival time (hours)
+      elseif(iprod == 7)then   ! ashfall arrival time (hours)
         varname = "depotime"
         write(filename_png,'(a22)')'DepositArrivalTime.png'
         write(title_plot,'(a20)')'Ashfall arrival time'
@@ -560,13 +563,13 @@
           ContourLev(1:nConLev) = Con_DepTime_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_DepTime_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.8)then   ! ashfall arrival at airports/POI (mm)
-        do io=1,2;if(VB(io).le.verbosity_error)then
+      elseif(iprod == 8)then   ! ashfall arrival at airports/POI (mm)
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: No map PNG output option for airport arrival time data."
           write(errlog(io),*)"       Should not be in write_2Dmap_PNG_python"
         endif;enddo
         stop 1
-      elseif(iprod.eq.9)then   ! ash-cloud concentration
+      elseif(iprod == 9)then   ! ash-cloud concentration
         varname = "ashcon_max"
         write(filename_png,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
         write(title_plot,'(a26,f7.2,a6)')'Ash-cloud concentration t=',WriteTimes(itime),' hours'
@@ -580,7 +583,7 @@
           ContourLev(1:nConLev) = Con_CloudCon_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_CloudCon_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.10)then   ! ash-cloud height
+      elseif(iprod == 10)then   ! ash-cloud height
         varname = "cloud_height"
         write(filename_png,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
         write(title_plot,'(a19,f7.2,a6)')'Ash-cloud height t=',WriteTimes(itime),' hours'
@@ -594,7 +597,7 @@
           ContourLev(1:nConLev) = Con_CloudTop_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_CloudTop_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.11)then   ! ash-cloud bottom
+      elseif(iprod == 11)then   ! ash-cloud bottom
         varname = "cloud_bottom"
         write(filename_png,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
         write(title_plot,'(a19,f7.2,a6)')'Ash-cloud bottom t=',WriteTimes(itime),' hours'
@@ -608,7 +611,7 @@
           ContourLev(1:nConLev) = Con_CloudBot_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_CloudBot_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.12)then   ! ash-cloud load
+      elseif(iprod == 12)then   ! ash-cloud load
         varname = "cloud_load"
         write(filename_png,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
         write(title_plot,'(a17,f7.2,a6)')'Ash-cloud load t=',WriteTimes(itime),' hours'
@@ -622,7 +625,7 @@
           ContourLev(1:nConLev) = Con_CloudLoad_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_CloudLoad_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.13)then  ! radar reflectivity
+      elseif(iprod == 13)then  ! radar reflectivity
         varname = "radar_reflectivity"
         write(filename_png,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
         write(title_plot,'(a24,f7.2,a6)')'Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
@@ -636,7 +639,7 @@
           ContourLev(1:nConLev) = Con_CloudRef_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_CloudRef_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.14)then   ! ashcloud arrival time (hours)
+      elseif(iprod == 14)then   ! ashcloud arrival time (hours)
         varname = "ash_arrival_time"
         write(filename_png,'(a20)')'CloudArrivalTime.png'
         write(title_plot,'(a22)')'Ash-cloud arrival time'
@@ -650,7 +653,7 @@
           ContourLev(1:nConLev) = Con_CloudTime_Lev(1:nConLev)
           zrgb(1:nConLev,1:3) = Con_CloudTime_RGB(1:nConLev,1:3)
         endif
-      elseif(iprod.eq.15)then   ! topography
+      elseif(iprod == 15)then   ! topography
         varname = "topography"
         write(filename_png,'(a14)')'Topography.png'
         write(title_plot,'(a10)')'Topography'
@@ -661,17 +664,17 @@
           nConLev = 8
           allocate(zrgb(nConLev,3))
           allocate(ContourLev(nConLev))
-          ContourLev = (/1.0_ip, 2.0_ip, 3.0_ip, 4.0_ip, &
-                  5.0_ip, 6.0_ip, 7.0_ip, 8.0_ip/)
+          ContourLev = [1.0_ip, 2.0_ip, 3.0_ip, 4.0_ip, &
+                        5.0_ip, 6.0_ip, 7.0_ip, 8.0_ip]
         endif
-      elseif(iprod.eq.16)then   ! profile plots
-        do io=1,2;if(VB(io).le.verbosity_error)then
+      elseif(iprod == 16)then   ! profile plots
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: No map PNG output option for vertical profile data."
           write(errlog(io),*)"       Should not be in write_2Dmap_PNG_python"
         endif;enddo
         stop 1
       else
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: unexpected variable"
           write(errlog(io),*)"         iprod = ",iprod
           write(errlog(io),*)"       Cannot map this variable."
@@ -681,7 +684,7 @@
       ! Now have string vars (varname,cstr_zlabel, etc.) and contour info (nConLev,zrgb,ContourLev)
 
       if(writeContours)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"Running cartopy to calculate contours lines"
           write(errlog(io),*)"Not sure yet how to save contour data with cartopy"
           write(errlog(io),*)"If you want shapefiles, recompile without cartopy or"
@@ -690,7 +693,7 @@
         endif;enddo
         stop 1
       else
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"Running cartopy to generate contour plot"
         endif;enddo
       endif
@@ -698,13 +701,13 @@
       ! This is the section where we actually start plotting the map
       ! Evaluate grid
       if(IsLatLon)then
-        if(lonUR-lonLL.ge.360.0_ip)then
+        if(lonUR-lonLL >= 360.0_ip)then
           lonLL = 0.0_ip
           lonUR = 360.0_ip
         endif
         xmin = lonLL
         ! Make sure xmin is in the range -180->180
-        if (xmin.gt.180.0_ip)then
+        if (xmin > 180.0_ip)then
           xmin = lonLL-360.0_ip
           xmax = lonUR-360.0_ip
         else
@@ -712,7 +715,7 @@
         endif
         ymin = latLL
         ymax = latUR
-        if(abs(dn-de).lt.1.0e-4_ip)then
+        if(abs(dn-de) < 1.0e-4_ip)then
           IsRegGrid = .true.
         else
           IsRegGrid = .false.
@@ -722,12 +725,12 @@
         xmax = xUR
         ymin = yLL
         ymax = yUR
-        if(abs(dx-dy).lt.1.0e-4_ip)then
+        if(abs(dx-dy) < 1.0e-4_ip)then
           IsRegGrid = .true.
         else
           IsRegGrid = .false.
         endif
-        !do io=1,2;if(VB(io).le.verbosity_error)then
+        !do io=1,2;if(VB(io) <= verbosity_error)then
         !  write(errlog(io),*)"ERROR: Currenntly, plotting with cartopy only enabled for lon/lat grids."
         !  write(errlog(io),*)"       Please use GMT to plot projected maps."
         !  write(errlog(io),*)"       ./ASH3DPLOT=4 ./Ash3d_PostProc ...."
@@ -757,7 +760,7 @@
                     lon_cities,               &
                     lat_cities,               &
                     name_cities)
-      if(lon_volcano.gt.xmax)lon_volcano=lon_volcano-360.0_ip
+      if(lon_volcano > xmax)lon_volcano=lon_volcano-360.0_ip
 
       ! Build strings with run info for legend
       ! Volcano:     Erup.start:
@@ -768,7 +771,7 @@
       write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
       read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
       write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
-      if(neruptions.gt.1)then
+      if(neruptions > 1)then
         write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'
       endif
 
@@ -779,9 +782,8 @@
       write(cstr_ErDuratn,'(a20,f4.1,a6)')'Erup. Duration:     ',e_Duration(1),' hours'
       write(cstr_ErVolume,'(a20,f8.5,a10)')'Erup. Volume:       ',e_Volume(1),' km3 (DRE)'
 
-
       if(writeContours)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"Running python to calculate contours lines"
         endif;enddo
         write(filename_png,'(a14)')'tmp.png'
@@ -794,7 +796,7 @@
         ContourDataX(:,:,:)     = 0.0_ip
         ContourDataY(:,:,:)     = 0.0_ip
       else
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"Running python to generate contour plot"
         endif;enddo
       endif
@@ -910,9 +912,9 @@
       do ilev=1,nConLev
         write(linebuffer008,'(e8.3)')ContourLev(ilev)
         linebuffer130 = trim(adjustl(linebuffer130)) // linebuffer008
-        if(ilev.lt.nConLev) linebuffer130 = trim(adjustl(linebuffer130)) // ','
+        if(ilev < nConLev) linebuffer130 = trim(adjustl(linebuffer130)) // ','
         linebuffer130_2 = trim(adjustl(linebuffer130_2)) // linebuffer008
-        if(ilev.lt.nConLev) then
+        if(ilev < nConLev) then
           linebuffer130_2 = trim(adjustl(linebuffer130_2)) // "','"
         else
           linebuffer130_2 = trim(adjustl(linebuffer130_2)) // "']"
@@ -921,9 +923,9 @@
       linebuffer130 = trim(adjustl(linebuffer130)) // ']'
       write(fid_script,'(g0)')trim(adjustl(linebuffer130))
       do ilev=1,nConLev
-        if(ilev.eq.1)then
+        if(ilev == 1)then
           write(linebuffer080,101)real(zrgb(ilev,1:3)/255.0,kind=4)
-        elseif(ilev.eq.nConLev)then
+        elseif(ilev == nConLev)then
           write(linebuffer080,103)real(zrgb(ilev,1:3)/255.0,kind=4)
         else
           write(linebuffer080,102)real(zrgb(ilev,1:3)/255.0,kind=4)
@@ -1099,8 +1101,8 @@
       call execute_command_line(plotcom,&
                                 wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
 
-      if(iostatus.ne.0)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
+      if(iostatus /= 0)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"WARNING: python command is returing a non-zero error code:", iostatus
           write(errlog(io),*)"         Maybe your python installation is incomplete"
           write(errlog(io),*)"         Make sure you install the following in your conda environment:"
@@ -1117,7 +1119,7 @@
       ! Clean up
       if (CleanScripts_python) then
         cmd = "rm -f outvar.dat outvar.py cities.xy"
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"Cleaning up temporary files with command:"
           write(outlog(io),*)trim(adjustl(cmd))
         endif;enddo
@@ -1131,7 +1133,7 @@
       if(allocated(name_cities))        deallocate(name_cities)
       if(allocated(zrgb))               deallocate(zrgb)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine write_2Dmap_PNG_python"
       endif;enddo
 
@@ -1182,9 +1184,9 @@
 
       logical           :: HaveIconFile
       character(len=76) :: title_plot
-      character(len=30) :: cstr_xlabel = 'Time (hours after eruption)'
-      character(len=30) :: cstr_ylabel = 'Height (km)'
-      character(len=30) :: cstr_zlabel = 'Ash conc. mg/m3'
+      character(len=30) :: cstr_xlabel
+      character(len=30) :: cstr_ylabel
+      character(len=30) :: cstr_zlabel
       character(len=30) :: cstr_volcname
       character(len=30) :: cstr_run_date
       character(len=30) :: cstr_windfile
@@ -1198,8 +1200,6 @@
       character(len=13) :: filename_script
       character(len=14) :: filename_outdata
       character(len=14) :: filename_png
-      integer           :: fid_script   = 55
-      integer           :: fid_outdata  = 54
       character(len=27) :: coord_str
       character(len=80) :: plotcom
       integer           :: i,k
@@ -1209,6 +1209,8 @@
       integer           :: iw,iwf
       character(len= 80):: linebuffer080
       character(len=200):: cmd
+      integer,parameter :: fid_script   = 55
+      integer,parameter :: fid_outdata  = 54
 
       ! Plotting variables
 
@@ -1233,9 +1235,14 @@
         end function HS_xmltime
       END INTERFACE
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_2Dprof_PNG_python"
       endif;enddo
+
+      ! Initialization
+      cstr_xlabel = 'Time (hours after eruption)'
+      cstr_ylabel = 'Height (km)'
+      cstr_zlabel = 'Ash conc. mg/m3'
 
       ! Test for icon file
       inquire( file=trim(adjustl(Instit_IconFile)), exist=HaveIconFile)
@@ -1249,7 +1256,7 @@
       write(cstr_run_date,'(a10,a20)')'Run Date: ',os_time_log
       read(cdf_b3l1,*,iostat=iostatus,iomsg=iomessage) iw,iwf
       write(cstr_windfile,'(a10,i5)')'Windfile: ',iwf
-      if(neruptions.gt.1)then
+      if(neruptions > 1)then
         write(cstr_note,'(a45)')'WARNING: Multiple eruptions, only first given'
       endif
 
@@ -1270,15 +1277,15 @@
       tmin=real(0,kind=ip)
       tmax=real(ceiling(time_native(ntmax)),kind=ip)
       tlab1    = 0.0_ip
-      if(tmax.gt.240.0_ip)then
+      if(tmax > 240.0_ip)then
         tlabstep = 48.0_ip
-      elseif(tmax.gt.120.0_ip)then
+      elseif(tmax > 120.0_ip)then
         tlabstep = 24.0_ip
-      elseif(tmax.gt.30.0_ip)then
+      elseif(tmax > 30.0_ip)then
         tlabstep = 10.0_ip
-      elseif(tmax.gt.15.0_ip)then
+      elseif(tmax > 15.0_ip)then
         tlabstep = 5.0_ip
-      elseif(tmax.gt.6.0_ip)then
+      elseif(tmax > 6.0_ip)then
         tlabstep = 2.0_ip
       else
         tlabstep = 1.0_ip
@@ -1287,11 +1294,11 @@
       zmin=real(0,kind=ip)
       zmax=real(z_cc_pd(nzmax),kind=ip)
       zlab1    = 0.0_ip
-      if(zmax.gt.30.0_ip)then
+      if(zmax > 30.0_ip)then
         zlabstep = 10.0_ip
-      elseif(zmax.gt.15.0_ip)then
+      elseif(zmax > 15.0_ip)then
         zlabstep = 5.0_ip
-      elseif(zmax.gt.6.0_ip)then
+      elseif(zmax > 6.0_ip)then
         zlabstep = 2.0_ip
       else
         zlabstep = 1.0_ip
@@ -1301,23 +1308,23 @@
       cmin=real(0,kind=ip)
       cmax=real(maxval(pr_ash(:,:,vprof_ID)),kind=ip)    ! Get the max value for this profile
       cmin=real(min(cmin,cloudcon_thresh_mgm3),kind=ip)  ! Do not let cmax drop below the threshold
-      if    (cmax.gt.4.0e4_ip)then
+      if    (cmax > 4.0e4_ip)then
           clabstep = 5.0e3_ip
-      elseif(cmax.gt.1.0e4_ip)then
+      elseif(cmax > 1.0e4_ip)then
           clabstep = 2.0e3_ip
-      elseif(cmax.gt.4.0e3_ip)then
+      elseif(cmax > 4.0e3_ip)then
           clabstep = 5.0e2_ip
-      elseif(cmax.gt.1.0e3_ip)then
+      elseif(cmax > 1.0e3_ip)then
           clabstep = 2.0e2_ip
-      elseif(cmax.gt.4.0e2_ip)then
+      elseif(cmax > 4.0e2_ip)then
           clabstep = 5.0e1_ip
-      elseif(cmax.gt.1.0e2_ip)then
+      elseif(cmax > 1.0e2_ip)then
           clabstep = 2.0e1_ip
-      elseif(cmax.gt.4.0e1_ip)then
+      elseif(cmax > 4.0e1_ip)then
           clabstep = 5.0e0_ip
-      elseif(cmax.gt.1.0e1_ip)then
+      elseif(cmax > 1.0e1_ip)then
           clabstep = 2.0e0_ip
-      elseif(cmax.gt.1.0e0_ip)then
+      elseif(cmax > 1.0e0_ip)then
           clabstep = 5.0e-1_ip
       else
           clabstep = 1.0e-1_ip
@@ -1484,8 +1491,8 @@
       call execute_command_line(plotcom,&
                                 wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
 
-      if(iostatus.ne.0)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
+      if(iostatus /= 0)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"WARNING: python command is returing a non-zero error code:", iostatus
           write(errlog(io),*)"         Maybe your python installation is incomplete"
           write(errlog(io),*)"         Make sure you install the following in your conda environment:"
@@ -1502,7 +1509,7 @@
       ! Clean up
       if (CleanScripts_python) then
         cmd = "rm -f vprof_*.dat vprof_*.py"
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"Cleaning up temporary files with command:"
           write(outlog(io),*)trim(adjustl(cmd))
         endif;enddo
@@ -1510,7 +1517,7 @@
                                   wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine write_2Dprof_PNG_python"
       endif;enddo
 
@@ -1588,8 +1595,6 @@
       character(len=14) :: filename_script
       character(len=14) :: filename_outdata
       character(len=14) :: filename_png
-      integer           :: fid_outdata  = 54
-      integer           :: fid_script   = 55
       integer           :: i
       character(len=25) :: plotcom
       integer,save      :: plot_index = 0
@@ -1597,12 +1602,15 @@
       integer           :: cstat
       character(len=120):: iomessage
       character(len=200):: cmd
+      integer,parameter :: fid_outdata  = 54
+      integer,parameter :: fid_script   = 55
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_DepPOI_TS_PNG_python"
       endif;enddo
 
-      if(Airport_Thickness_TS(pt_indx,nWriteTimes).lt.THICKNESS_THRESH)then
+      if(Airport_Thickness_TS(pt_indx,nWriteTimes) < THICKNESS_THRESH)then
         return
       else
         plot_index = plot_index + 1
@@ -1621,13 +1629,13 @@
       enddo
       close(fid_outdata)
 
-      if(Airport_Thickness_TS(plot_index,nWriteTimes).lt.THICKNESS_THRESH)then
+      if(Airport_Thickness_TS(plot_index,nWriteTimes) < THICKNESS_THRESH)then
         ymaxpl = 1.0_dp
-      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.1.0_dp)then
+      elseif(Airport_Thickness_TS(plot_index,nWriteTimes) < 1.0_dp)then
         ymaxpl = 1.0_dp
-      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.5.0_dp)then
+      elseif(Airport_Thickness_TS(plot_index,nWriteTimes) < 5.0_dp)then
         ymaxpl = 5.0_dp
-      elseif(Airport_Thickness_TS(plot_index,nWriteTimes).lt.25.0_dp)then
+      elseif(Airport_Thickness_TS(plot_index,nWriteTimes) < 25.0_dp)then
         ymaxpl = 25.0_dp
       else
         ymaxpl = 100.0_dp
@@ -1697,8 +1705,8 @@
       call execute_command_line(plotcom,&
                                 wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
 
-      if(iostatus.ne.0)then
-        do io=1,2;if(VB(io).le.verbosity_error)then
+      if(iostatus /= 0)then
+        do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"WARNING: python command is returing a non-zero error code:", iostatus
           write(errlog(io),*)"         Maybe your python installation is incomplete"
           write(errlog(io),*)"         Make sure you install the following in your conda environment:"
@@ -1715,7 +1723,7 @@
       ! Clean up
       if (CleanScripts_python) then
         cmd = "rm -f depTS_*.dat depTS_*.py"
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"Cleaning up temporary files with command:"
           write(outlog(io),*)trim(adjustl(cmd))
         endif;enddo
@@ -1723,7 +1731,7 @@
                                   wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine write_DepPOI_TS_PNG_python"
       endif;enddo
 

@@ -56,10 +56,10 @@
       nio = 1  ! Turn off logging by setting output streams to stdout/stderr only
 
       nargs = command_argument_count()
-      if (nargs.eq.0) then
+      if (nargs == 0) then
           ! If no command-line arguments are given, then prompt user
           ! interactively for the ASCII file name and source coordinate
-        do io=1,2;if(VB(io).le.verbosity_production)then
+        do io=1,2;if(VB(io) <= verbosity_production)then
           write(outlog(io),*)'Ash3d_ASCII_DepThin calculates the deposit thickness as a function'
           write(outlog(io),*)'of distance from the vent. The expected usage is non-interactive via'
           write(outlog(io),*)'command-line arguments.'
@@ -73,29 +73,29 @@
         endif;enddo
         write(output_unit,*)'Enter name of the ESRI ASCII deposit file:'
         read(input_unit,*) file1
-        do io=1,nio;if(VB(io).le.verbosity_production)then
+        do io=1,nio;if(VB(io) <= verbosity_production)then
           write(outlog(io),*)'Enter lon (or x) of vent:'
         endif;enddo
         read(input_unit,*) srcx
-        do io=1,nio;if(VB(io).le.verbosity_production)then
+        do io=1,nio;if(VB(io) <= verbosity_production)then
           write(outlog(io),*)'Enter lat (or y) of vent:'
         endif;enddo
         read(input_unit,*) srcy
-      elseif (nargs.eq.1.or.nargs.gt.3) then
-        do io=1,nio;if(VB(io).le.verbosity_error)then
+      elseif (nargs == 1.or.nargs > 3) then
+        do io=1,nio;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)'ERROR: Too few command-line arguments.'
           write(errlog(io),*)'  Usage: Ash3d_ASCII_DepThin file1 srcx srcy'
         endif;enddo
         stop 1
       else
         call get_command_argument(1, linebuffer080, status=stat)
-        if(stat.gt.0)then
-          do io=1,nio;if(VB(io).le.verbosity_error)then
+        if(stat > 0)then
+          do io=1,nio;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)'ERROR: Could not parse argument 1'
           endif;enddo
           stop 1
-        elseif (stat.lt.0)then
-          do io=1,nio;if(VB(io).le.verbosity_error)then
+        elseif (stat < 0)then
+          do io=1,nio;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)'ERROR: Argument 1 has been truncated.'
             write(errlog(io),*)'       File name length is limited to 80 char.'
           endif;enddo
@@ -104,15 +104,15 @@
         file1=trim(adjustl(linebuffer080))
         inquire( file=adjustl(trim(file1)), exist=IsThere1 )
         if (.not.IsThere1)then
-          do io=1,nio;if(VB(io).le.verbosity_error)then
+          do io=1,nio;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)'ERROR: Input file 1 could not be found'
           endif;enddo
           stop 1
         endif
 
         call get_command_argument(2, linebuffer080, status=stat)
-        if(stat.gt.0)then
-          do io=1,nio;if(VB(io).le.verbosity_error)then
+        if(stat > 0)then
+          do io=1,nio;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)'ERROR: Could not parse argument 2'
           endif;enddo
           stop 1
@@ -120,8 +120,8 @@
         read(linebuffer080,*)srcx
 
         call get_command_argument(3, linebuffer080, status=stat)
-        if(stat.gt.0)then
-          do io=1,nio;if(VB(io).le.verbosity_error)then
+        if(stat > 0)then
+          do io=1,nio;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)'ERROR: Could not parse argument 3'
           endif;enddo
           stop 1
@@ -151,7 +151,7 @@
       ! zero out any NaN so that it doesn't throw off the error
       do i=1,nx_1
         do j=1,ny_1
-          if(abs(A_XY(i,j)-A_Fill).lt.0.01_dp)A_XY(i,j)=0.0_dp
+          if(abs(A_XY(i,j)-A_Fill) < 0.01_dp)A_XY(i,j)=0.0_dp
         enddo
       enddo
       XY_1  = A_XY
@@ -172,7 +172,7 @@
       Rngmax=0.0_dp
       do i=1,nx_1
         do j=1,ny_1
-          if (XY_1(i,j).gt.1.0e-3_dp)then
+          if (XY_1(i,j) > 1.0e-3_dp)then
             lon1 = DEG2RAD * lon_1(i)
             lat1 = DEG2RAD * lat_1(j)
             dlon = srcx - lon1
@@ -181,9 +181,9 @@
             a = sin(0.5_dp*dlat)**2.0_dp + cos(lat1)*cos(srcy)*sin(0.5_dp*dlon)**2.0_dp
             c = 2.0_dp*atan2(sqrt(a),sqrt(1.0_dp-a))
             Rng = Re * c
-            if(Rng.gt.Rngmax)Rngmax=Rng
+            if(Rng > Rngmax)Rngmax=Rng
             ii=ceiling(Rng/dxbin)
-            if(XY_1(i,j).gt.Thickvec(ii))then
+            if(XY_1(i,j) > Thickvec(ii))then
               Thickvec(ii) = XY_1(i,j)
             endif
           endif
@@ -192,7 +192,7 @@
 
       open(fid_outdata,file="Tvd.dat",status='replace')
       do i=1,nx_1+ny_1
-        if(Rngvec(i).gt.Rngmax)exit
+        if(Rngvec(i) > Rngmax)exit
         write(fid_outdata,*)Rngvec(i)-0.5_dp*dxbin,Thickvec(i)
       enddo
       close(fid_outdata)

@@ -88,6 +88,25 @@
       use Diffusion,     only : &
          diffusivity_horz,diffusivity_vert,KV_MIN,KH_MIN,KV_MAX,KH_MAX
 
+      implicit none
+      !implicit none (type, external)
+
+        ! Set everything to private by default
+      private
+
+        ! Publicly available subroutines/functions
+      public input_data_VarDiff,        &
+             Summarize_Params_VarDiff,  &
+             Allocate_VarDiff_Met,      &
+             Prep_output_VarDiff,       &
+             Deallocate_VarDiff_Met,    &
+             Set_VarDiffH_Meso,         &
+             Set_VarDiffV_Meso
+
+        ! Publicly available variables
+      integer, parameter,public :: nvar_User_charlines_VarDiff   = 9  ! number of line of the special block of control file
+      character(len=80),dimension(nvar_User_charlines_VarDiff),public :: var_User_charlines_VarDiff = ''
+
       integer :: Kh_model_ID     = 2  ! 1=constant; [2]=Smagorinsky (1963); 3=Pielke (1974)
 !      integer :: Phi_model_ID    !
       integer :: KvBL_model_ID   = 4  ! default is 4: Ulke
@@ -134,7 +153,7 @@
       integer, parameter :: nvar_User3d_XYGs_VarDiff      = 0
       integer            :: nvar_User3d_XYZ_VarDiff       = 0  ! If using Kh, then =1 khorz; if also Kz, then =3 kvert, Ri
       integer, parameter :: nvar_User4d_XYZGs_VarDiff     = 0
-      integer, parameter,public :: nvar_User_charlines_VarDiff   = 9  ! number of line of the special block of control file
+!      integer, parameter,public :: nvar_User_charlines_VarDiff   = 9  ! number of line of the special block of control file
 
       character(len=30),dimension(:),allocatable :: temp_2d_name_VarDiff
       character(len=30),dimension(:),allocatable :: temp_2d_unit_VarDiff
@@ -147,7 +166,7 @@
       character(len=30),dimension(:),allocatable :: temp_3d_lname_VarDiff
       real(kind=op),    dimension(:),allocatable :: temp_3d_MissVal_VarDiff
       real(kind=op),    dimension(:),allocatable :: temp_3d_FillVal_VarDiff
-      character(len=80),dimension(nvar_User_charlines_VarDiff),public :: var_User_charlines_VarDiff = ''
+!      character(len=80),dimension(nvar_User_charlines_VarDiff),public :: var_User_charlines_VarDiff = ''
 
       ! These are used to keep track of which index in the global list, this
       ! modules output vars corespond to
@@ -247,8 +266,6 @@
       use MetReader,     only : &
          MR_Save_Velocities
 
-      implicit none
-
       character(len=3 )  :: answer
       character(len=80)  :: linebuffer080
       integer            :: strlen
@@ -257,28 +274,28 @@
       integer            :: substr_pos
       real(kind=sp)      :: tmp,tmp2
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine input_data_VarDiff"
       endif;enddo
 
       open(unit=10,file=infile,status='old',err=1900)
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"    Searching for OPTMOD=VARDIFF"
       endif;enddo
       nmods = 0
       read(fid_ctrlfile,'(a80)',iostat=ios)linebuffer080
       call FileIO_CleanLine(.false.,strlen,linebuffer080)
-      do while(ios.eq.0)
+      do while(ios == 0)
         read(fid_ctrlfile,'(a80)',iostat=ios)linebuffer080
         call FileIO_CleanLine(.false.,strlen,linebuffer080)
 
         substr_pos = index(linebuffer080,'OPTMOD')
-        if(substr_pos.eq.1)then
+        if(substr_pos == 1)then
           ! found an optional module
           !  Parse for the keyword
           read(linebuffer080,1104)mod_name
-          if(adjustl(trim(mod_name)).eq.'VARDIFF')then
+          if(adjustl(trim(mod_name)) == 'VARDIFF')then
             exit
           endif
         endif
@@ -289,7 +306,7 @@
 
       useVarDiffH = .false.
       useVarDiffV = .false.
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"    Continue reading input file for VarDiff block"
       endif;enddo
 
@@ -299,7 +316,7 @@
       ! Line 2:
       var_User_charlines_VarDiff(2) = trim(adjustl(linebuffer080))
       read(linebuffer080,'(a3)',err=2011) answer
-      if (answer.eq.'yes') then
+      if (answer == 'yes') then
         use_Output_Vars_VarDiff = .true.
       else
         use_Output_Vars_VarDiff = .false.
@@ -311,56 +328,56 @@
       ! Line 3:
       var_User_charlines_VarDiff(3) = trim(adjustl(linebuffer080))
       read(linebuffer080,'(a3)',err=2011) answer
-      if (answer.eq.'yes') then
+      if (answer == 'yes') then
         useVarDiffH = .true.  ! might be changed back below if we are holding Kh constant
 
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"    Horizontal variable diffusivity:  ON"
         endif;enddo
         ! Try to read the horizontal model ID
         read(linebuffer080(4:),*,iostat=ios)Kh_model_ID,tmp
-        if(ios.eq.0)then
-          if(Kh_model_ID.eq.1)then
+        if(ios == 0)then
+          if(Kh_model_ID == 1)then
             useVarDiffH = .false.
             diffusivity_horz = tmp
             ! Error-checking diffusivity
-            if(diffusivity_horz.lt.0.0_ip)then
-              do io=1,2;if(VB(io).le.verbosity_error)then
+            if(diffusivity_horz < 0.0_ip)then
+              do io=1,2;if(VB(io) <= verbosity_error)then
                 write(errlog(io),*)"ERROR: diffusivity_horz must be >0"
               endif;enddo
               stop 1
             endif
-            do io=1,2;if(VB(io).le.verbosity_info)then
+            do io=1,2;if(VB(io) <= verbosity_info)then
               write(outlog(io),*)"        Kh model ID       = 1: Constant"
               write(outlog(io),*)"        with Kh (in m2/s) = ",real(diffusivity_horz,kind=4)
             endif;enddo
-          elseif(Kh_model_ID.eq.2)then
+          elseif(Kh_model_ID == 2)then
             KH_SmagC = tmp
             ! Try to read the optional max cell area value
             read(linebuffer080(4:),*,iostat=ios2)Kh_model_ID,tmp,tmp2
-            if(ios2.eq.0)then
-              if(tmp2.gt.0.0_sp.and.tmp2.lt.1.0e4_sp)MAX_LES_LengthScale2 = tmp2
+            if(ios2 == 0)then
+              if(tmp2 > 0.0_sp.and.tmp2 < 1.0e4_sp)MAX_LES_LengthScale2 = tmp2
             endif
-            do io=1,2;if(VB(io).le.verbosity_info)then
+            do io=1,2;if(VB(io) <= verbosity_info)then
               write(outlog(io),*)"        Kh model ID  = 2: Smagorinsky (1963)"
               write(outlog(io),*)"              with C = ",KH_SmagC
               write(outlog(io),*)"                Amax = ",MAX_LES_LengthScale2
             endif;enddo
-          elseif(Kh_model_ID.eq.3)then
+          elseif(Kh_model_ID == 3)then
             KH_SmagC = tmp
             ! Try to read the optional max cell area value
             read(linebuffer080(4:),*,iostat=ios2)Kh_model_ID,tmp,tmp2
-            if(ios2.eq.0)then
-              if(tmp2.gt.0.0_sp.and.tmp2.lt.1.0e4_sp)MAX_LES_LengthScale2 = tmp2
+            if(ios2 == 0)then
+              if(tmp2 > 0.0_sp.and.tmp2 < 1.0e4_sp)MAX_LES_LengthScale2 = tmp2
             endif
-            do io=1,2;if(VB(io).le.verbosity_info)then
+            do io=1,2;if(VB(io) <= verbosity_info)then
               write(outlog(io),*)"        Kh model ID  = 3: Pielke (1974)"
               write(outlog(io),*)"              with C = ",KH_SmagC
               write(outlog(io),*)"                Amax = ",MAX_LES_LengthScale2
             endif;enddo
           else
             KH_SmagC = 0.2_sp
-            do io=1,2;if(VB(io).le.verbosity_info)then
+            do io=1,2;if(VB(io) <= verbosity_info)then
               write(outlog(io),*)"        Horizontal diffusivity model ID not recognized."
               write(outlog(io),*)"        Using Kh model ID = 2: Smagorinsky (1963)"
               write(outlog(io),*)"                   with C = ",KH_SmagC
@@ -371,7 +388,7 @@
           KH_SmagC = 0.2_sp
           MAX_LES_LengthScale2 = 100.0_sp
           Kh_model_ID = 2
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"        Error reading Kh model ID and/or parameter."
             write(outlog(io),*)"        Offending line:",linebuffer080
             write(outlog(io),*)"        Horizontal diffusivity model ID not recognized."
@@ -380,9 +397,9 @@
             write(outlog(io),*)"                     Amax = ",MAX_LES_LengthScale2
           endif;enddo
         endif
-      elseif(answer(1:2).eq.'no') then
+      elseif(answer(1:2) == 'no') then
         useVarDiffH = .false.
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"    Horizontal variable diffusivity:  OFF"
         endif;enddo
       else
@@ -395,15 +412,15 @@
       ! Line 4:
       var_User_charlines_VarDiff(4) = trim(adjustl(linebuffer080))
       read(linebuffer080,'(a3)',err=2011) answer
-      if (answer.eq.'yes') then
+      if (answer == 'yes') then
         useVarDiffV    = .true.
         useTemperature = .true.
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"    Vertical variable diffusivity:    ON"
         endif;enddo
-      elseif(answer(1:2).eq.'no') then
+      elseif(answer(1:2) == 'no') then
         useVarDiffV = .false.
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"    Vertical variable diffusivity:    OFF"
         endif;enddo
       else
@@ -416,42 +433,42 @@
         ! Line 5:
         var_User_charlines_VarDiff(5) = trim(adjustl(linebuffer080))
         read(linebuffer080,*,iostat=ios)KvBL_model_ID
-        if(ios.ne.0)then
-          do io=1,2;if(VB(io).le.verbosity_error)then
+        if(ios /= 0)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)"ERROR: ",&
                   'Boundary Layer model ID not provided.'
           endif;enddo
           stop 1
         endif
-        if(KvBL_model_ID.eq.1)then
+        if(KvBL_model_ID == 1)then
           ! Diffusivity is constant in the BL
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"    Using constant vertical diffusivity in the boundary layer."
           endif;enddo
           ! Try to read the diffusivity value
           read(linebuffer080,*,iostat=ios)KvBL_model_ID,diffusivity_BL
-          if(ios.ne.0)then
-            do io=1,2;if(VB(io).le.verbosity_error)then
+          if(ios /= 0)then
+            do io=1,2;if(VB(io) <= verbosity_error)then
               write(errlog(io),*)"ERROR: ",&
                     'Constant diffusivity in BL specified, but diffusivity value not provided.'
             endif;enddo
             stop 1
           else
             ! Error-checking diffusivity
-            if(diffusivity_BL.lt.0.0_ip)then
-              do io=1,2;if(VB(io).le.verbosity_error)then
+            if(diffusivity_BL < 0.0_ip)then
+              do io=1,2;if(VB(io) <= verbosity_error)then
                 write(errlog(io),*)"ERROR: diffusivity_BL must be >0"
               endif;enddo
               stop 1
             endif
           endif
-        elseif(KvBL_model_ID.eq.2)then
+        elseif(KvBL_model_ID == 2)then
           ! Boundary Layer is turned off and vertical diffusivity will just be from the free-air equation
           useBoundaryLayer = .false.
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"    Using free-air expression for vertical diffusivity throughout domain."
           endif;enddo
-        elseif(KvBL_model_ID.eq.3)then
+        elseif(KvBL_model_ID == 3)then
           ! Model from Troen and Mahrt, 1973
           phi_prefac = 1.0_ip
           phi_alpha = -0.33333_ip   ! Exponent in unstable term
@@ -459,22 +476,22 @@
           phi_gamma = -7.0_ip       ! Coefficient in unstable term
           PBL_exp_int = 2
           PBL_exp     = real(PBL_exp_int,kind=ip)
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"    Using boundary layer vertical diffusivity as outlined by Troen and Mahrt (1973)."
           endif;enddo
-        elseif(KvBL_model_ID.eq.4)then
+        elseif(KvBL_model_ID == 4)then
           ! Model from Ulke (2000)
           ! Try for KvBL_MomHeat specifying Momentum vs Heat
           read(linebuffer080,*,iostat=ios2)KvBL_model_ID,KvBL_MomHeat
-          if(ios2.eq.0)then
-            if(KvBL_MomHeat.ne.2)then
+          if(ios2 == 0)then
+            if(KvBL_MomHeat /= 2)then
               ! 2 specifies heat version; if it is anything but, then default to 1
               KvBL_MomHeat = 1
             endif
           else
             KvBL_MomHeat = 1
           endif
-          if(KvBL_MomHeat.eq.1)then
+          if(KvBL_MomHeat == 1)then
             ! Momentum values
             phi_prefac = 1.0_ip
             phi_alpha = -0.25_ip  ! Exponent in unstable term
@@ -491,25 +508,25 @@
             PBL_exp_int = 1
             PBL_exp     = real(PBL_exp_int,kind=ip)
           endif
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"    Using boundary layer vertical diffusivity as outlined by Ulke (2000)."
           endif;enddo
-        elseif(KvBL_model_ID.eq.5)then
+        elseif(KvBL_model_ID == 5)then
           ! Model from Shir / Businger,Ayer outlined in Seinfeld and Pandis Eq 18.125
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"    Using boundary layer vertical diffusivity as outlined by in Seinfeld and Pandis."
           endif;enddo
           ! Try for KvBL_MomHeat specifying Momentum vs Heat
           read(linebuffer080,*,iostat=ios2)KvBL_model_ID,KvBL_MomHeat
-          if(ios2.eq.0)then
-            if(KvBL_MomHeat.ne.2)then
+          if(ios2 == 0)then
+            if(KvBL_MomHeat /= 2)then
               ! 2 specifies heat version; if it is anything but, then default to 1
               KvBL_MomHeat = 1
             endif
           else
             KvBL_MomHeat = 1
           endif
-          if(KvBL_MomHeat.eq.1)then
+          if(KvBL_MomHeat == 1)then
             ! Momentum values
             phi_prefac = 1.0_ip
             phi_alpha = -0.25_ip  ! Exponent in unstable term
@@ -525,15 +542,15 @@
             phi_gamma = -9.0_ip   ! Coefficient in unstable term
             PBL_exp_int = 0
           endif
-        elseif(KvBL_model_ID.eq.0)then
+        elseif(KvBL_model_ID == 0)then
           ! Coefficients of phi model specified in control file
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"    Using boundary layer vertical diffusivity with generalized phi."
           endif;enddo
           ! Try to read all the parameters
           read(linebuffer080,*,iostat=ios)KvBL_model_ID,phi_prefac,phi_alpha,phi_beta,phi_gamma,PBL_exp_int
-          if(ios.ne.0)then
-            do io=1,2;if(VB(io).le.verbosity_error)then
+          if(ios /= 0)then
+            do io=1,2;if(VB(io) <= verbosity_error)then
               write(errlog(io),*)"ERROR: ",&
                     'Custom BL model selected (KvBL_model_ID=0), but expected parameters could not be read.'
               write(errlog(io),*)"Expected format = "
@@ -542,32 +559,32 @@
             stop 1
           endif
           ! Some error-checking on values
-          if(phi_prefac.le.0.0_ip.or.phi_prefac.gt.1.0_ip)then
-            do io=1,2;if(VB(io).le.verbosity_error)then
+          if(phi_prefac <= 0.0_ip.or.phi_prefac > 1.0_ip)then
+            do io=1,2;if(VB(io) <= verbosity_error)then
               write(errlog(io),*)"ERROR: phi_prefac must be in range (0,1]"
             endif;enddo
             stop 1
           endif
-          if(phi_alpha.ge.0.0_ip.or.phi_alpha.lt.-1.0_ip)then
-            do io=1,2;if(VB(io).le.verbosity_error)then
+          if(phi_alpha >= 0.0_ip.or.phi_alpha < -1.0_ip)then
+            do io=1,2;if(VB(io) <= verbosity_error)then
               write(errlog(io),*)"ERROR: phi_alpha must be in range [-1,0)"
             endif;enddo
             stop 1
           endif
-          if(phi_beta.lt.0.0_ip)then
-            do io=1,2;if(VB(io).le.verbosity_error)then
+          if(phi_beta < 0.0_ip)then
+            do io=1,2;if(VB(io) <= verbosity_error)then
               write(errlog(io),*)"ERROR: phi_beta must be >0"
             endif;enddo
             stop 1
           endif
-          if(phi_gamma.gt.0.0_ip)then
-            do io=1,2;if(VB(io).le.verbosity_error)then
+          if(phi_gamma > 0.0_ip)then
+            do io=1,2;if(VB(io) <= verbosity_error)then
               write(errlog(io),*)"ERROR: phi_gamma must be <0"
             endif;enddo
             stop 1
           endif
-          if(PBL_exp_int.lt.0)then
-            do io=1,2;if(VB(io).le.verbosity_error)then
+          if(PBL_exp_int < 0)then
+            do io=1,2;if(VB(io) <= verbosity_error)then
               write(errlog(io),*)"ERROR: PBL_exp_int must be a positive integer"
               write(errlog(io),*)"         or = 0 to signify useing an exponential taper/"
             endif;enddo
@@ -575,15 +592,15 @@
           endif
         else
           KvBL_model_ID = 2
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"    Using boundary layer vertical diffusivity as outlined by Troen and Mahrt (1973)."
           endif;enddo
         endif
-        if(KvBL_model_ID.eq.0.or.&
-           KvBL_model_ID.eq.3.or.&
-           KvBL_model_ID.eq.4.or.&
-           KvBL_model_ID.eq.5)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+        if(KvBL_model_ID == 0.or.&
+           KvBL_model_ID == 3.or.&
+           KvBL_model_ID == 4.or.&
+           KvBL_model_ID == 5)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"    Using Phi with the following paramters:"
             write(outlog(io),*)"      phi_prefac  = ",real(phi_prefac,kind=4)
             write(outlog(io),*)"      phi_alpha   = ",real(phi_alpha,kind=4)
@@ -598,62 +615,62 @@
         ! Line 6:
         var_User_charlines_VarDiff(6) = trim(adjustl(linebuffer080))
         read(linebuffer080,*,iostat=ios)KvFA_model_ID
-        if(KvFA_model_ID.eq.1)then
+        if(KvFA_model_ID == 1)then
           ! Diffusivity is constant in the FA; read the value
           read(linebuffer080,*,iostat=ios)KvFA_model_ID,diffusivity_vert
-          if(ios.eq.0)then
-            do io=1,2;if(VB(io).le.verbosity_info)then
+          if(ios == 0)then
+            do io=1,2;if(VB(io) <= verbosity_info)then
               write(outlog(io),*)"    Using constant vertical diffusivity above the boundary layer."
             endif;enddo
           else
-            do io=1,2;if(VB(io).le.verbosity_error)then
+            do io=1,2;if(VB(io) <= verbosity_error)then
               write(errlog(io),*)"ERROR: Constant diffusivity specified in free-atmosphere, but no"
               write(errlog(io),*)"       diffusivity given."
             endif;enddo
             stop 1
           endif
           ! Error-checking diffusivity
-          if(diffusivity_vert.lt.0.0_ip)then
-            do io=1,2;if(VB(io).le.verbosity_error)then
+          if(diffusivity_vert < 0.0_ip)then
+            do io=1,2;if(VB(io) <= verbosity_error)then
               write(errlog(io),*)"ERROR: diffusivity_FA must be >0"
             endif;enddo
             stop 1
           endif
-        elseif(KvFA_model_ID.eq.2)then
+        elseif(KvFA_model_ID == 2)then
           ! Mixing length model with Fc from Louis (1979)
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"    Using free-air vertical diffusivity with stability function from Louis (1979)."
           endif;enddo
-        elseif(KvFA_model_ID.eq.3)then
+        elseif(KvFA_model_ID == 3)then
           ! Mixing length model with Fc from Stull (1988)
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"    Using free-air vertical diffusivity with stability function from Stull (1988)"
           endif;enddo
-        elseif(KvFA_model_ID.eq.4)then
+        elseif(KvFA_model_ID == 4)then
           ! Mixing length model with Fc from Betts (1996)
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"    Using free-air vertical diffusivity with stability function from Betts et al (1996)"
           endif;enddo
-        elseif(KvFA_model_ID.eq.5)then
+        elseif(KvFA_model_ID == 5)then
           ! Mixing length model with Fc from Hong (1996)
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"    Using free-air vertical diffusivity with stability function from Hong and Pan (1996)"
           endif;enddo
-        elseif(KvFA_model_ID.eq.6)then
+        elseif(KvFA_model_ID == 6)then
           ! Mixing length model with Fc from Collins et al. (2004)
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"    Using free-air vertical diffusivity with stability function from Collins et al (2004)"
           endif;enddo
         else
           KvFA_model_ID = 4
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"    WARNING: free-air model not read correctly. Setting to default."
             write(outlog(io),*)"    Using free-air vertical diffusivity with stability function from Betts et al (1996)"
           endif;enddo
         endif
 
         if(useBoundaryLayer)then
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"      The planetary boundary layer will be identified, if possible, first by"
             write(outlog(io),*)"      trying to read PBLH from the Met files. If that is unavailable, then"
             write(outlog(io),*)"      Ash3d will search for a low-level temperature inversion, inspect Ri(z)"
@@ -684,7 +701,7 @@
         var_User_charlines_VarDiff(9) = trim(adjustl(linebuffer080))
         read(linebuffer080,*,iostat=ioerr) RI_CRIT
 
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"von Karman constant = ",real(vonKarman,kind=4)
           write(outlog(io),*)"      Mixing Length = ",real(LambdaC,kind=4)
           write(outlog(io),*)"        Critical Ri = ",real(RI_CRIT,kind=4)
@@ -710,19 +727,19 @@
 2010  continue
       close(10)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine input_data_VarDiff"
       endif;enddo
 
       return
 
-1900  do io=1,2;if(VB(io).le.verbosity_error)then
+1900  do io=1,2;if(VB(io) <= verbosity_error)then
         write(errlog(io),*)  'error: cannot find input file: ',infile
         write(errlog(io),*)  'Program stopped'
       endif;enddo
       stop 1
 
-2011  do io=1,2;if(VB(io).le.verbosity_error)then
+2011  do io=1,2;if(VB(io) <= verbosity_error)then
         write(errlog(io),*) 'Error reading whether to use variable diffusivity.'
         write(errlog(io),*) 'Answer must be yes or no.'
         write(errlog(io),*) 'You gave:',linebuffer080
@@ -756,36 +773,36 @@
          MR_vx_metP_last,MR_vx_metP_next,MR_vy_metP_last,MR_vy_metP_next,&
          nx_submet,ny_submet,np_fullmet
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Summarize_Params_VarDiff"
       endif;enddo
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"  Double-checking diffusivity specifications."
       endif;enddo
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         ! Horizontal diffusivity
         ! Relevant part of VARDIFF block
         !  yes 1 500.0     # 1=const ; value in m2/s
         !  yes 2 0.2 [Amax]# 2=Smagorinsky ; C , max cell area in km2
         !  yes 3 0.2 [Amax]# 3=Pielke      ; C , max cell area in km2
         write(outlog(io),*)"  Using horizontal diffusivity with the following specifications:"
-        if(Kh_model_ID.eq.1)then
+        if(Kh_model_ID == 1)then
           write(outlog(io),*)"        Kh model ID       = 1: Constant"
           write(outlog(io),*)"        with Kh (in m2/s) = ",real(diffusivity_horz,kind=4)
-        elseif(Kh_model_ID.eq.2)then
+        elseif(Kh_model_ID == 2)then
           write(outlog(io),*)"        Kh model ID  = 2: Smagorinsky (1963)"
           write(outlog(io),*)"              with C = ",KH_SmagC
           write(outlog(io),*)"                Amax = ",MAX_LES_LengthScale2
-        elseif(Kh_model_ID.eq.3)then
+        elseif(Kh_model_ID == 3)then
           write(outlog(io),*)"        Kh model ID  = 3: Pielke (1974)"
           write(outlog(io),*)"              with C = ",KH_SmagC
           write(outlog(io),*)"                Amax = ",MAX_LES_LengthScale2
         endif
       endif;enddo
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         ! Vertical diffusivity
         ! Relevant part of VARDIFF block for free-air
         ! Line 6: Kv Free-air parameters
@@ -797,22 +814,22 @@
         !  6               #          6=F(Ri,z)=Collins 2004
         write(outlog(io),*)"  Using vertical diffusivity with the following specifications:"
         write(outlog(io),*)"    For the free-air region above the boundary layer:"
-        if(KvFA_model_ID.eq.1)then
+        if(KvFA_model_ID == 1)then
           write(outlog(io),*)"        Kv free-air model ID       = 1: Constant"
           write(outlog(io),*)"        with Kv (in m2/s) = ",real(diffusivity_vert,kind=4)
-        elseif(KvFA_model_ID.eq.2)then
+        elseif(KvFA_model_ID == 2)then
           ! Mixing length model with Fc from Louis (1979)
           write(outlog(io),*)"      Using free-air vertical diffusivity with stability function from Louis (1979)."
-        elseif(KvFA_model_ID.eq.3)then
+        elseif(KvFA_model_ID == 3)then
           ! Mixing length model with Fc from Stull (1988)
           write(outlog(io),*)"      Using free-air vertical diffusivity with stability function from Stull (1988)"
-        elseif(KvFA_model_ID.eq.4)then
+        elseif(KvFA_model_ID == 4)then
           ! Mixing length model with Fc from Betts (1996)
           write(outlog(io),*)"      Using free-air vertical diffusivity with stability function from Betts et al (1996)"
-        elseif(KvFA_model_ID.eq.5)then
+        elseif(KvFA_model_ID == 5)then
           ! Mixing length model with Fc from Hong (1996)
           write(outlog(io),*)"      Using free-air vertical diffusivity with stability function from Hong and Pan (1996)"
-        elseif(KvFA_model_ID.eq.6)then
+        elseif(KvFA_model_ID == 6)then
           ! Mixing length model with Fc from Collins et al. (2004)
           write(outlog(io),*)"      Using free-air vertical diffusivity with stability function from Collins et al (2004)"
         endif
@@ -826,56 +843,56 @@
         !  3 [1,2]         #          3=Troen and Mahrt
         !  4 [1,2]         #          4=Ulke
         !  5               #          5=Shir / Businger,Ayer
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"    For the boundary layer region:"
       endif;enddo
       ! First check if the windfile can support a boundary-layer
-      if(max_cell_area_met.gt.BL_MAX_MET_AREA.or.&
-           p_fullmet_sp(2).lt.BL_MAX_Pres)then
+      if(max_cell_area_met > BL_MAX_MET_AREA.or.&
+           p_fullmet_sp(2) < BL_MAX_Pres)then
         ! Wind files cannot support boundary-layer calculations, either because the cell size is too
         ! big, or there is inadaquate vertical resolution
         useBoundaryLayer = .false.
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"      WARNING: Selected windfiles cannot support boundary-layer calculations."
-          if(max_cell_area_met.gt.BL_MAX_MET_AREA)then
+          if(max_cell_area_met > BL_MAX_MET_AREA)then
             write(outlog(io),*)"               Cell-size of met grid is too coarse."
             write(outlog(io),*)"                 Maximum area tolerated (in km2) = ",real(BL_MAX_MET_AREA,kind=sp)
             write(outlog(io),*)"                 Maximum area in domain (in km2) = ",real(max_cell_area_met,kind=sp)
           endif
-          if(p_fullmet_sp(2).lt.BL_MAX_Pres)then
+          if(p_fullmet_sp(2) < BL_MAX_Pres)then
             BL_unresolved = .true.
             write(outlog(io),*)"               Vertical resolution of met grid is too coarse."
             write(outlog(io),*)"                 Expected pressure (in Pa) for slot 2 >= ",real(BL_MAX_Pres,kind=sp)
             write(outlog(io),*)"                 Pressure (in Pa) for first 2 slots = ",real(p_fullmet_sp(1:2),kind=sp)
           endif
         endif;enddo
-        if(KvBL_model_ID.ge.3)then
+        if(KvBL_model_ID >= 3)then
           ! Constant or free-air only are kept as specified, but anything else gets set to free-air
           KvBL_model_ID = 2
         endif
       endif
-      do io=1,2;if(VB(io).le.verbosity_info)then
-        if(KvBL_model_ID.eq.1)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
+        if(KvBL_model_ID == 1)then
           ! Diffusivity is constant in the BL
           write(outlog(io),*)"      Using constant vertical diffusivity in the boundary layer."
           write(outlog(io),*)"          Kv B-L model ID       = 1: Constant"
           write(outlog(io),*)"          with Kv (in m2/s) = ",real(diffusivity_BL,kind=4)
-        elseif(KvBL_model_ID.eq.2)then
+        elseif(KvBL_model_ID == 2)then
           ! Boundary Layer is turned off and vertical diffusivity will just be from the free-air equation
           write(outlog(io),*)"      Using free-air expression for vertical diffusivity throughout domain."
           write(outlog(io),*)"        i.e. boundary-layer calculations are turned off."
-        elseif(KvBL_model_ID.eq.3)then
+        elseif(KvBL_model_ID == 3)then
           ! Model from Troen and Mahrt, 1973
           write(outlog(io),*)"      Using boundary layer vertical diffusivity as outlined by Troen and Mahrt (1973)."
-        elseif(KvBL_model_ID.eq.4)then
+        elseif(KvBL_model_ID == 4)then
           ! Model from Ulke, 2000
           write(outlog(io),*)"      Using boundary layer vertical diffusivity as outlined by Ulke (2000)."
-          if(KvBL_MomHeat.eq.2)write(outlog(io),*)"      using paramters for the heat stability function."
-        elseif(KvBL_model_ID.eq.5)then
+          if(KvBL_MomHeat == 2)write(outlog(io),*)"      using paramters for the heat stability function."
+        elseif(KvBL_model_ID == 5)then
           ! Model from Shir / Businger,Ayer outlined in Seinfeld and Pandis Eq 18.125
           write(outlog(io),*)"      Using boundary layer vertical diffusivity as outlined by in Seinfeld and Pandis."
-          if(KvBL_MomHeat.eq.2)write(outlog(io),*)"      using paramters for the heat stability function."
-        elseif(KvBL_model_ID.eq.0)then
+          if(KvBL_MomHeat == 2)write(outlog(io),*)"      using paramters for the heat stability function."
+        elseif(KvBL_model_ID == 0)then
           ! Coefficients of phi model specified in control file
           write(outlog(io),*)"      Using boundary layer vertical diffusivity with generalized phi."
         endif
@@ -914,7 +931,7 @@
         endif
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Summarize_Params_VarDiff"
       endif;enddo
 
@@ -957,15 +974,13 @@
       use MetReader,     only : &
          nx_submet,ny_submet,np_fullmet
 
-      implicit none
-
       integer :: i
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Allocate_VarDiff_Met"
       endif;enddo
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"--------------------------------------------------"
         write(outlog(io),*)"---------- ALLOCATE_VARDIFF_MET ------------------"
         write(outlog(io),*)"--------------------------------------------------"
@@ -1168,7 +1183,7 @@
       nvar_User4d_XYZGs     = nvar_User4d_XYZGs     + nvar_User4d_XYZGs_VarDiff
       nvar_User_charlines   = nvar_User_charlines   + nvar_User_charlines_VarDiff
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Allocate_VarDiff_Met"
       endif;enddo
 
@@ -1221,11 +1236,9 @@
            MR_Regrid_MetP_to_CompH,&
            MR_Regrid_Met2d_to_Comp2D
 
-      implicit none
-
       integer :: i,ii,indx
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Prep_output_VarDiff"
       endif;enddo
 
@@ -1240,7 +1253,7 @@
         var_User2d_XY_lname(indx)  = temp_2d_lname_VarDiff(i)
         var_User2d_XY_MissVal(indx)= temp_2d_MissVal_VarDiff(i)
         var_User2d_XY_FillVal(indx)= temp_2d_FillVal_VarDiff(i)
-        if(i.eq.1)then
+        if(i == 1)then
            ! Now resample onto computational grid
           MR_dum2d_met = PBLH_meso_last_step_Met_sp/real(KM_2_M,kind=sp)
           call MR_Regrid_Met2d_to_Comp2D
@@ -1252,7 +1265,7 @@
           !call MR_Regrid_Met2d_to_Comp2D
           !var_User2d_XY(1:nxmax,1:nymax,indx) = MR_dum2d_comp(1:nxmax,1:nymax)
 
-        elseif(i.eq.2)then
+        elseif(i == 2)then
            ! Now resample onto computational grid
           MR_dum2d_met = FricVel_meso_last_step_Met_sp
           call MR_Regrid_Met2d_to_Comp2D
@@ -1272,18 +1285,18 @@
         else
           ii = 0
         endif
-        if(i.eq.ii  )then
+        if(i == ii  )then
           ! Horizontal diffusivity is already on the comp grid
           ! This branch is unused if useVarDiffH = .false. since ii=0
           ! Note that the native units are km2/hr, but we need to convert to m2/s
           var_User3d_XYZ(1:nxmax,1:nymax,1:nzmax,indx) = kx(1:nxmax,1:nymax,1:nzmax)/M2PS_2_KM2PHR
         endif
-        if(i.eq.ii+1)then
+        if(i == ii+1)then
           ! Vertical diffusivity is already on the comp grid
           !var_User3d_XYZ(1:nxmax,1:nymax,1:nzmax,indx) = kz(1:nxmax,1:nymax,1:nzmax)*KM_2_M*KM_2_M/HR_2_S
           var_User3d_XYZ(1:nxmax,1:nymax,1:nzmax,indx) = kz(1:nxmax,1:nymax,1:nzmax)/M2PS_2_KM2PHR
         endif
-        if(i.eq.ii+2)then
+        if(i == ii+2)then
            ! Ri just exists on the MetP grid for output
            ! Now resample onto computational grid
           MR_dum3d_metP = Ri_meso_last_step_MetP_sp
@@ -1297,7 +1310,7 @@
         var_User_charlines(indx) = var_User_charlines_VarDiff(i)
       enddo
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Prep_output_VarDiff"
       endif;enddo
 
@@ -1325,9 +1338,7 @@
          L_MonOb_meso_last_step_Met_sp,L_MonOb_meso_next_step_Met_sp,&
          FricVel_meso_last_step_Met_sp,FricVel_meso_next_step_Met_sp
 
-      implicit none
-
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Deallocate_VarDiff_Met"
       endif;enddo
 
@@ -1394,7 +1405,7 @@
       if(allocated(vy_meso_next_step_MetP_sp))     deallocate(vy_meso_next_step_MetP_sp)
 #endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Deallocate_VarDiff_Met"
       endif;enddo
 
@@ -1423,8 +1434,6 @@
       use MetReader,     only : &
          nx_submet,ny_submet,np_fullmet,MR_sigma_nz_submet
 
-      implicit none
-
       integer :: i,j,k
 
       real(kind=sp) :: E11,E12,E21,E22
@@ -1435,18 +1444,18 @@
       real(kind=sp) :: KH_MIN_km2hr  ! min and max for Kh, but converted to km2/hr
       real(kind=sp) :: KH_MAX_km2hr
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Eddy_diff"
       endif;enddo
 
       KH_MIN_km2hr = real(KH_MIN * HR_2_S/KM_2_M/KM_2_M,kind=sp)
       KH_MAX_km2hr = real(KH_MAX * HR_2_S/KM_2_M/KM_2_M,kind=sp)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Eddy_diff"
       endif;enddo
 
-      if(Kh_model_ID.eq.1)then
+      if(Kh_model_ID == 1)then
         Khz_meso_next_step_MetP_sp(:,:,:) = real(diffusivity_vert*M2PS_2_KM2PHR,kind=sp)
       else
         do i=1,nx_submet
@@ -1466,12 +1475,12 @@
         E22 = dv_dy_MetP_sp(i,j,k)
 
         D2_strain  = (E12+E21)**2.0_sp
-        if(Kh_model_ID.eq.2)then
+        if(Kh_model_ID == 2)then
           D2_tension = (E11-E22)**2.0_sp          ! Smagorinsky (1963, 1993)
-        elseif(Kh_model_ID.eq.3)then
+        elseif(Kh_model_ID == 3)then
           D2_tension = 0.5_sp*(E11*E11+E22*E22)   ! Pielke (1974)
         else
-          do io=1,2;if(VB(io).le.verbosity_error)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)  'error: currently only Smagorinsky and Pielke models allowed.'
           endif;enddo
           stop 1
@@ -1494,7 +1503,7 @@
         enddo  ! i
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Eddy_diff"
       endif;enddo
 
@@ -1530,8 +1539,6 @@
       use MetReader,     only : &
         nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,MR_geoH_metP_next
 
-      implicit none
-
       integer, intent(in) :: last_or_next
 
       integer :: i,j,k
@@ -1549,7 +1556,7 @@
       real(kind=ip) :: Lc
       real(kind=ip) :: zeta
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Calc_Vert_Diff"
       endif;enddo
 
@@ -1561,7 +1568,7 @@
           ! We need to set a minimum for z0 since some NWP files set this to 0
           ! Table 6.1 of Panofsky and Dutton giv 1.0e-4 for water.
           z0 = max(SurfRoughLen_Met_sp(i,j),1.0e-3_sp)  ! We need to set a minimum for z0
-          if(last_or_next.eq.0)then
+          if(last_or_next == 0)then
               Ri_col(:) = real(Ri_meso_last_step_MetP_sp(i,j,:),kind=ip)    ! dimensionless
                z_col(:) = real(MR_geoH_metP_last(i,j,:),kind=ip)*KM_2_M     ! m
            dv_dz_col(:) = real(dV_dz_MetP_sp(i,j,:),kind=ip)                ! 1/s
@@ -1582,7 +1589,7 @@
             ! atmospheric boundary layer
             Kv_BL      = 0.0_ip
             Kv_FreeAir = 0.0_ip
-            if(z_col(k).le.0.0_sp)then
+            if(z_col(k) <= 0.0_sp)then
                 ! If point is at a negative gpm, then assign the kz from the
                 ! node above
               Kv_BL = Kv_col(k+1)
@@ -1600,47 +1607,47 @@
                 ! calculate eq 8
                 ! The Ri-term seems to zero out anything above the PBL
                 ! since Ri is too high
-              if(KvFA_model_ID.eq.1)then
+              if(KvFA_model_ID == 1)then
                 Kv_FreeAir = diffusivity_vert
-              elseif(KvFA_model_ID.eq.2)then
+              elseif(KvFA_model_ID == 2)then
                 ! use scaling from Louis 1979
                 Fc = Fc_Louis(Ri_col(k),z_col(k)/z0)
-              elseif(KvFA_model_ID.eq.3)then
+              elseif(KvFA_model_ID == 3)then
                 ! use scaling from Jacobson (given earlier in Stull 1988)
                 Fc = Fc_Jac(Ri_col(k))
-              elseif(KvFA_model_ID.eq.4)then
+              elseif(KvFA_model_ID == 4)then
                 ! use scaling from Betts 1996
                 Fc = Fc_Betts(Ri_col(k))
-              elseif(KvFA_model_ID.eq.5)then
+              elseif(KvFA_model_ID == 5)then
                 ! use scaling from Hong (1996)
                 Fc = Fc_Hong(Ri_col(k))
-              elseif(KvFA_model_ID.eq.6)then
+              elseif(KvFA_model_ID == 6)then
                 ! use scaling from Collins (2004)
                 Fc = Fc_Collins(Ri_col(k))
               endif
               Kv_FreeAir = Lc*Lc*abs(dv_dz_col(k))*Fc
 
               if(useBoundaryLayer)then
-                if(KvBL_model_ID.eq.1.and.z_col(k).lt.PBLz)then
+                if(KvBL_model_ID == 1.and.z_col(k) < PBLz)then
                   ! Kv constant and specified in BL
                   Kv_BL = diffusivity_BL
-                elseif(KvBL_model_ID.eq.2)then
+                elseif(KvBL_model_ID == 2)then
                   ! No BL model; set to zero and Kv will default to Free-Air
                   Kv_BL = 0.0_ip
                 else
                   ! For this case, we need the stability function and the PBL taper
                   PBL_profile_fac = 0.0_ip
-                  if(PBL_exp_int.eq.0.and.z_col(k).lt.3.0_ip*PBLz)then
+                  if(PBL_exp_int == 0.and.z_col(k) < 3.0_ip*PBLz)then
                     ! PBL_exp_int = 0 indicates that we will be using the exponential taper
                     ! either because KvBL_model_ID = 5 (Businger-Arya) or 0 (custom) with exponential
                     ! selected. In either case, extend Kv zone above the PBLz (~3x)
                       PBL_profile_fac = exp(-2.0_ip*z_col(k)/PBLz);
-                  elseif(z_col(k).lt.PBLz)then
+                  elseif(z_col(k) < PBLz)then
                     ! All polynomial tapers are only valid below the PBLz
 
                     ! Within the PBL, use similarity theory
-                    if(KvBL_model_ID.eq.3.or.KvBL_model_ID.eq.4.or.&
-                      (KvBL_model_ID.eq.0.and.PBL_exp_int.gt.0))then
+                    if(KvBL_model_ID == 3.or.KvBL_model_ID == 4.or.&
+                      (KvBL_model_ID == 0.and.PBL_exp_int > 0))then
                       ! These are two polynomial models to taper profile for Kv between 0 and PBL
                       ! 3=> Troen-Mahrt: PBL_exp=2; quadratic taper
                       ! 4=> Ulke:        PBL_exp=1; linear taper
@@ -1649,7 +1656,7 @@
                   endif
 
                   ! Now calculate stability function; get zeta using formula from Panofsky Eq. 6.7.1-2
-                  if(Ri_col(k).lt.0.0_ip)then
+                  if(Ri_col(k) < 0.0_ip)then
                     zeta = Ri_col(k)
                   else
                     zeta = Ri_col(k)/(1.0_ip - 5.0_ip*Ri_col(k))
@@ -1671,7 +1678,7 @@
 
           enddo
 
-          if(last_or_next.eq.0)then
+          if(last_or_next == 0)then
             Kv_meso_last_step_MetP_sp(i,j,:) = real(Kv_col(:),kind=sp)
           else
             Kv_meso_next_step_MetP_sp(i,j,:) = real(Kv_col(:),kind=sp)
@@ -1680,7 +1687,7 @@
         enddo
       enddo
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Calc_Vert_Diff"
       endif;enddo
 
@@ -1720,15 +1727,13 @@
            MR_DelMetP_Dy,&
            MR_Regrid_MetP_to_CompH
 
-      implicit none
-
       logical      ,intent(in) :: Load_MesoSteps
       real(kind=dp),intent(in) :: Interval_Frac
 
-      logical,save  :: first_time = .true.
-      real(kind=sp) :: M_2_KM = 1.0e-3_sp
+      logical,save            :: first_time = .true.
+      real(kind=sp),parameter :: M_2_KM = 1.0e-3_sp
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Set_VarDiffH_Meso"
       endif;enddo
 
@@ -1823,7 +1828,7 @@
       kx(0:nxmax+1,nymax+1,0:nzmax+1) = kx(0:nxmax+1,nymax,0:nzmax+1)
       ky(0:nxmax+1,nymax+1,0:nzmax+1) = ky(0:nxmax+1,nymax,0:nzmax+1)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Set_VarDiffH_Meso"
       endif;enddo
 
@@ -1869,14 +1874,12 @@
          MR_iMetStep_Now,MR_dum3d_MetP,MR_dum3d_compH,&
            MR_Regrid_MetP_to_CompH
 
-      implicit none
-
       logical      ,intent(in) :: Load_MesoSteps
       real(kind=dp),intent(in) :: Interval_Frac
 
       logical,save :: first_time = .true.
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Set_VarDiffV_Meso"
       endif;enddo
 
@@ -1954,7 +1957,7 @@
         ! +y (North)
       kz(0:nxmax+1,nymax+1,0:nzmax+1) = kz(0:nxmax+1,nymax,0:nzmax+1)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Set_VarDiffV_Meso"
       endif;enddo
 
@@ -1989,8 +1992,6 @@
          nx_submet,ny_submet,np_fullmet,p_fullmet_sp,&
          MR_geoH_metP_last,MR_geoH_MetP_next
 
-      implicit none
-
       logical, intent(in), optional :: Load_Prestep
 
       real(kind=ip),parameter :: MIN_DVDZ = 3.0e-2_ip  ! The minimum vertical shear assumed
@@ -2013,7 +2014,7 @@
 
       logical      :: first_time
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Calc_Ri"
       endif;enddo
 
@@ -2042,10 +2043,10 @@
             do k=1,np_fullmet
               ! We need vertical derivatives of theta_v and u
               !  Use one-sided differences
-              if(k.lt.np_fullmet)then
+              if(k < np_fullmet)then
                 k1 = k
                 k2 = k+1
-              elseif(k.eq.np_fullmet)then
+              elseif(k == np_fullmet)then
                 k1 = k-1
                 k2 = k
               endif
@@ -2080,10 +2081,10 @@
             do k=1,np_fullmet
               ! We need vertical derivatives of theta_v and u
               !  Use one-sided differences
-              if(k.lt.np_fullmet)then
+              if(k < np_fullmet)then
                 k1 = k
                 k2 = k+1
-              elseif(k.eq.np_fullmet)then
+              elseif(k == np_fullmet)then
                 k1 = k-1
                 k2 = k
               endif
@@ -2110,7 +2111,7 @@
         enddo  ! i
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Calc_Ri"
       endif;enddo
 
@@ -2141,7 +2142,7 @@
 
       integer :: ivar
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Calc_SurfaceRoughnessLength"
       endif;enddo
 
@@ -2156,7 +2157,7 @@
           SurfRoughLen_Met_sp(1:nx_submet,1:ny_submet)  = 0.1_sp
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Calc_SurfaceRoughnessLength"
       endif;enddo
 
@@ -2194,8 +2195,6 @@
          MR_geoH_metP_last,MR_geoH_metP_next,MR_dum2d_Met,nx_submet,ny_submet,&
            MR_Read_2d_Met_Variable
 
-      implicit none
-
       logical, intent(in), optional :: Load_Prestep
 
       real(kind=ip) :: U_mag
@@ -2208,13 +2207,16 @@
       real(kind=sp),dimension(:,:),allocatable :: SurfVelh_meso_Met_sp
       integer :: i,j,k
       integer :: ivar
-      logical :: FV_override = .false.
+      logical :: FV_override
 
       logical      :: first_time
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Calc_SurfaceFrictionVelocity"
       endif;enddo
+
+      ! Initialization
+      FV_override = .false.
 
       if(present(Load_Prestep))then
         first_time = Load_Prestep
@@ -2229,21 +2231,21 @@
           ! Friction velocity is provided, read it from the met file
           call MR_Read_2d_Met_Variable(ivar,MR_iMetStep_Now)
             FricVel_meso_last_step_Met_sp = MR_dum2d_Met
-          if(maxval(MR_dum2d_Met(:,:)).lt.EPS_SMALL)then
+          if(maxval(MR_dum2d_Met(:,:)) < EPS_SMALL)then
             ! variable was present in file, but filled with nonsense
             FV_override = .true.
           endif
         else
           call MR_Read_2d_Met_Variable(ivar,MR_iMetStep_Now+1)
             FricVel_meso_next_step_Met_sp = MR_dum2d_Met
-          if(maxval(MR_dum2d_Met(:,:)).lt.EPS_SMALL)then
+          if(maxval(MR_dum2d_Met(:,:)) < EPS_SMALL)then
             ! variable was present in file, but filled with nonsense
             FV_override = .true.
           endif
         endif
       endif
       if(first_time)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           if(.not.Met_var_IsAvailable(ivar).or.FV_override)then
             write(outlog(io),*)"     Friction Velocity will be calculated."
           else
@@ -2276,7 +2278,7 @@
           endif
           SurfVelh_meso_Met_sp = 10.0_sp
           if(first_time)then
-            do io=1,2;if(VB(io).le.verbosity_info)then
+            do io=1,2;if(VB(io) <= verbosity_info)then
               write(outlog(io),*)"       Found surface winds in NWP file. Using these for"
               write(outlog(io),*)"       U* calculation."
             endif;enddo
@@ -2284,7 +2286,7 @@
         else
           ! If the 10m winds are not available, then use the lower levels of the 3d winds
           if(first_time)then
-            do io=1,2;if(VB(io).le.verbosity_info)then
+            do io=1,2;if(VB(io) <= verbosity_info)then
               write(outlog(io),*)"       No surface winds found in NWP file. Using lowest-level"
               write(outlog(io),*)"       winds for U* calculation."
             endif;enddo
@@ -2294,7 +2296,7 @@
               z0 = SurfRoughLen_Met_sp(i,j)
               if(first_time)then
                 do k=1,np_fullmet
-                  if(MR_geoH_metP_last(i,j,k)*KM_2_M.gt.1000.0_ip*MR_Topo_met(i,j)+z0)then
+                  if(MR_geoH_metP_last(i,j,k)*KM_2_M > 1000.0_ip*MR_Topo_met(i,j)+z0)then
                     exit
                   endif
                 enddo
@@ -2303,7 +2305,7 @@
                 SurfVelh_meso_Met_sp(i,j) = real((MR_geoH_metP_last(i,j,k)-MR_Topo_met(i,j))*KM_2_M,kind=sp)
               else
                 do k=1,np_fullmet
-                  if(MR_geoH_metP_next(i,j,k)*KM_2_M.gt.1000.0_ip*MR_Topo_met(i,j)+z0)then
+                  if(MR_geoH_metP_next(i,j,k)*KM_2_M > 1000.0_ip*MR_Topo_met(i,j)+z0)then
                     exit
                   endif
                 enddo
@@ -2342,7 +2344,7 @@
 
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Calc_SurfaceFrictionVelocity"
       endif;enddo
 
@@ -2384,8 +2386,6 @@
          MR_Have_LL_mapping,MR_xy2ll_ylat,IsLatLon_MetGrid,y_submet_sp,&
            MR_Read_2d_Met_Variable,MR_Set_LL_mapping
 
-      implicit none
-
       logical, intent(in), optional :: Load_Prestep
 
       integer :: ivar
@@ -2402,13 +2402,16 @@
       real(kind=ip) :: PBLz
       real(kind=ip) :: cn,cs
       real(kind=ip),dimension(:,:,:),allocatable :: PBLtmp
-      logical :: PBL_override = .false.
+      logical       :: PBL_override
 
       logical      :: first_time
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Calc_PBLH"
       endif;enddo
+
+      ! Initialization
+      PBL_override = .false.
 
       if(present(Load_Prestep))then
         first_time = Load_Prestep
@@ -2423,21 +2426,21 @@
         if(first_time)then
           call MR_Read_2d_Met_Variable(ivar,MR_iMetStep_Now)
             PBLH_meso_last_step_Met_sp = MR_dum2d_Met
-          if(maxval(MR_dum2d_Met(:,:)).lt.0.0_sp)then
+          if(maxval(MR_dum2d_Met(:,:)) < 0.0_sp)then
             ! variable was present in file, but filled with nonsense
             PBL_override = .true.
           endif
         else
           call MR_Read_2d_Met_Variable(ivar,MR_iMetStep_Now+1)
             PBLH_meso_next_step_Met_sp = MR_dum2d_Met
-          if(maxval(MR_dum2d_Met(:,:)).lt.0.0_sp)then
+          if(maxval(MR_dum2d_Met(:,:)) < 0.0_sp)then
             ! variable was present in file, but filled with nonsense
             PBL_override = .true.
           endif
         endif
       endif
       if(first_time)then
-        do io=1,2;if(VB(io).le.verbosity_info)then
+        do io=1,2;if(VB(io) <= verbosity_info)then
           if(.not.Met_var_IsAvailable(ivar).or.PBL_override)then
             write(outlog(io),*)"     Planetary Boundary Layer will be calculated."
           else
@@ -2492,12 +2495,12 @@
               do k = 2,np_fullmet
                 lapse = -(vpt_col(k) - vpt_col(k-1)) / &
                          (z_col(k)   - z_col(k-1))
-                if(lapse.le.-0.005_ip)then
+                if(lapse <= -0.005_ip)then
                   kk = k
                   exit
                 endif
               enddo
-              if(kk.gt.0)then
+              if(kk > 0)then
                 PBLz = z_col(kk) - 2.0_ip/lapse
               else
                 PBLz = EPS_SMALL
@@ -2515,7 +2518,7 @@
             lat = max(20.0_ip,abs(lat));
             EckF= 2.0_ip*7.292e-5_ip*sin(lat*DEG2RAD);
             tmp = abs(Ust/EckF/L_MonOb);
-            if(tmp.lt.4.0_ip)then
+            if(tmp < 4.0_ip)then
               cn = 0.2;
               PBLtmp(i,j,2) = cn*Ust/abs(EckF);
             else
@@ -2530,15 +2533,15 @@
               PBLz = EPS_SMALL
             else
               do k = 2,np_fullmet-1
-                if(Ri_col(k).gt.RI_CRIT.and.Ri_col(k-1).le.RI_CRIT &
-                   .and.z_col(k).lt.3000.0_ip)then  ! We need this upper limit of 3km to avoid
+                if(Ri_col(k) > RI_CRIT.and.Ri_col(k-1) <= RI_CRIT &
+                   .and.z_col(k) < 3000.0_ip)then  ! We need this upper limit of 3km to avoid
                                                     ! missing the PBL and flagging the tropopause
 
                   ! This height is above the PBL; interpolate back to
                   ! k-1 to get PBLz
-                  if(abs(Ri_col(k)-Ri_col(k-1)).lt.EPS_SMALL)cycle
+                  if(abs(Ri_col(k)-Ri_col(k-1)) < EPS_SMALL)cycle
                   denom = (Ri_col(k)-Ri_col(k-1))
-                  if(abs(denom).lt.1.0e-3_ip)then
+                  if(abs(denom) < 1.0e-3_ip)then
                     tmp = 1.0_ip
                   else
                     tmp = (RI_CRIT-Ri_col(k-1)) / denom
@@ -2573,7 +2576,7 @@
         deallocate(PBLtmp)
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Calc_PBLH"
       endif;enddo
 
@@ -2609,8 +2612,6 @@
          nx_submet,ny_submet,np_fullmet,MR_geoH_metP_last,MR_geoH_metP_next,&
            MR_Read_2d_Met_Variable
 
-      implicit none
-
       logical, intent(in), optional :: Load_Prestep
 
       integer :: i,j,k_L
@@ -2621,7 +2622,7 @@
 
       logical      :: first_time
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Calc_Monin_Length"
       endif;enddo
 
@@ -2645,21 +2646,21 @@
             z_col(:)  = MR_geoH_metP_last(i,j,:)*KM_2_M
             ! Pick the bottom (non-zero) z
             do k_L=1,np_fullmet
-              if(z_col(k_L).gt.0.0_ip)then
+              if(z_col(k_L) > 0.0_ip)then
                 exit
               endif
             enddo
             ! For the purpuse of calculating L, don't let Ri get too close to 0
             Ri = sign(max(abs(Ri_col(k_L)),1.0e-2_ip),Ri_col(k_L))
-            if(Ri_col(k_L).lt.RI_CRIT)then
+            if(Ri_col(k_L) < RI_CRIT)then
               ! Test for special case of neutrally stable case, L->Inf ; set to 1 km
-              if (abs(Ri_col(k_L)).lt.EPS_SMALL)then
+              if (abs(Ri_col(k_L)) < EPS_SMALL)then
                 L_MonOb = sign(abs(L_MonOb),100.0_ip)
               else
                 ! Unstable (negative L)
                 L_MonOb = z_col(k_L)/Ri
               endif
-            elseif(Ri_col(k_L).gt.RI_CRIT)then
+            elseif(Ri_col(k_L) > RI_CRIT)then
                 ! Stable (positive L)
               L_MonOb = z_col(k_L)/Ri * (1.0_ip - 5.0_ip*Ri)
             endif
@@ -2675,21 +2676,21 @@
             z_col(:)  = MR_geoH_metP_next(i,j,:)*KM_2_M
             ! Pick the bottom (non-zero) z
             do k_L=1,np_fullmet
-              if(z_col(k_L).gt.0.0_ip)then
+              if(z_col(k_L) > 0.0_ip)then
                 exit
               endif
             enddo
             ! For the purpuse of calculating L, don't let Ri get too close to 0
             Ri = sign(max(abs(Ri_col(k_L)),1.0e-2_ip),Ri_col(k_L))
-            if(Ri_col(k_L).lt.RI_CRIT)then
+            if(Ri_col(k_L) < RI_CRIT)then
               ! Test for special case of neutrally stable case, L->Inf ; set to 1 km
-              if (abs(Ri_col(k_L)).lt.EPS_SMALL)then
+              if (abs(Ri_col(k_L)) < EPS_SMALL)then
                 L_MonOb = sign(abs(L_MonOb),100.0_ip)
               else
                 ! Unstable (negative L)
                 L_MonOb = z_col(k_L)/Ri
               endif
-            elseif(Ri_col(k_L).gt.RI_CRIT)then
+            elseif(Ri_col(k_L) > RI_CRIT)then
                 ! Stable (positive L)
               L_MonOb = z_col(k_L)/Ri * (1.0_ip - 5.0_ip*Ri)
             endif
@@ -2700,7 +2701,7 @@
         enddo
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Calc_Monin_Length"
       endif;enddo
 
@@ -2727,15 +2728,13 @@
       ! Stability function for vertical diffusion in the free atmosphere above the PBL
       ! Described in Louis 1979
 
-      implicit none
-
-      real(kind=ip) :: Fc_Louis  ! dimensionless
-      real(kind=ip) :: Ri        ! dimensionless
-      real(kind=ip) :: zonz0     ! dimensionless
+      real(kind=ip)             :: Fc_Louis  ! dimensionless
+      real(kind=ip) ,intent(in) :: Ri        ! dimensionless
+      real(kind=ip) ,intent(in) :: zonz0     ! dimensionless
 
       real(kind=ip) :: a,b,c,bprime
 
-      do io=1,2;if(VB(io).le.verbosity_debug2)then
+      do io=1,2;if(VB(io) <= verbosity_debug2)then
         write(outlog(io),*)"     Entered function Fc_Louis"
       endif;enddo
 
@@ -2744,7 +2743,7 @@
       bprime = 0.5_ip*b
       c = 7.4*a*a*b*sqrt(zonz0)   ! Eq. 20
 
-      if(Ri.le.0.0_ip)then
+      if(Ri <= 0.0_ip)then
           ! Unstable atmosphere
           ! Eq. 14
         Fc_Louis = 1.0_ip - b*Ri/(1.0_ip+c*sqrt(abs(Ri)))
@@ -2777,20 +2776,18 @@
       ! Described in Jacobson (p251 Eq.8.70)
       ! An earlier reference is Stull (1988) Table 6.4 of Chap 6 Turbulence Closure
 
-      implicit none
+      real(kind=ip)             :: Fc_Jac  ! dimensionless
+      real(kind=ip) ,intent(in) :: Ri      ! dimensionless
 
-      real(kind=ip) :: Fc_Jac  ! dimensionless
-      real(kind=ip) :: Ri      ! dimensionless
-
-      do io=1,2;if(VB(io).le.verbosity_debug2)then
+      do io=1,2;if(VB(io) <= verbosity_debug2)then
         write(outlog(io),*)"     Entered function Fc_Jac"
       endif;enddo
 
-      if(Ri.le.0.0_ip)then
+      if(Ri <= 0.0_ip)then
           ! Unstable atmosphere
           ! Tab 6.4 of Stull (unstable, line 2)
         Fc_Jac = sqrt(1.0_ip-18.0_ip*Ri)
-      elseif(Ri.ge.0.0_ip.and.Ri.le.RI_CRIT)then
+      elseif(Ri >= 0.0_ip.and.Ri <= RI_CRIT)then
           ! Weakly unstable atmosphere
           ! Jacobson Eq. 8.70 or Table 6.4 of Stull (unstable, line 1)
         Fc_Jac = (RI_CRIT-Ri)/RI_CRIT
@@ -2821,16 +2818,14 @@
       ! Stability function for vertical diffusion in the free atmosphere above the PBL
       ! Originally from Betts et al, 1996
 
-      implicit none
+      real(kind=ip)             :: Fc_Betts  ! dimensionless
+      real(kind=ip) ,intent(in) :: Ri        ! dimensionless
 
-      real(kind=ip) :: Fc_Betts  ! dimensionless
-      real(kind=ip) :: Ri        ! dimensionless
-
-      do io=1,2;if(VB(io).le.verbosity_debug2)then
+      do io=1,2;if(VB(io) <= verbosity_debug2)then
         write(outlog(io),*)"     Entered function Fc_Betts"
       endif;enddo
 
-      if(Ri.le.0.0_ip)then
+      if(Ri <= 0.0_ip)then
           ! Unstable atmosphere
           ! Eq. A20b
         Fc_Betts = 1.0_ip-8.0_ip*Ri/(1.0_ip+1.746_ip*sqrt(-Ri))
@@ -2862,16 +2857,14 @@
       ! Stability function for vertical diffusion in the free atmosphere above the PBL
       ! Originally from Hong and Pan, 1996
 
-      implicit none
+      real(kind=ip)             :: Fc_Hong  ! dimensionless
+      real(kind=ip) ,intent(in) :: Ri       ! dimensionless
 
-      real(kind=ip) :: Fc_Hong  ! dimensionless
-      real(kind=ip) :: Ri       ! dimensionless
-
-      do io=1,2;if(VB(io).le.verbosity_debug2)then
+      do io=1,2;if(VB(io) <= verbosity_debug2)then
         write(outlog(io),*)"     Entered function Fc_Hong"
       endif;enddo
 
-      if(Ri.le.0.0_ip)then
+      if(Ri <= 0.0_ip)then
           ! Unstable atmosphere
           ! Eq. 5
         Fc_Hong = (1.0_ip-1.6_ip*Ri)**(-0.25_ip)
@@ -2904,16 +2897,14 @@
       ! Originally from Collins et al, NCAR TN-464, 2004
       ! http://www.cesm.ucar.edu/models/atm-cam/docs/description/description.pdf
 
-      implicit none
+      real(kind=ip)             :: Fc_Collins  ! dimensionless
+      real(kind=ip) ,intent(in) :: Ri          ! dimensionless
 
-      real(kind=ip) :: Fc_Collins  ! dimensionless
-      real(kind=ip) :: Ri          ! dimensionless
-
-      do io=1,2;if(VB(io).le.verbosity_debug2)then
+      do io=1,2;if(VB(io) <= verbosity_debug2)then
         write(outlog(io),*)"     Entered function Fc_Collins"
       endif;enddo
 
-      if(Ri.le.0.0_ip)then
+      if(Ri <= 0.0_ip)then
           ! Unstable atmosphere
           ! Eq. 4.464  (Also Tab 6.4 of Stull)
         Fc_Collins = sqrt(1.0_ip-18.0_ip*Ri)
@@ -2952,12 +2943,11 @@
       ! This is the model used by MDLP0 (also used in EMERRAUDE or PERIDOT).
       ! It also actually used a subsequent F form from Louis (1980).
 
-      implicit none
+      real(kind=ip)             :: Fc_PMB  ! dimensionless
+      real(kind=ip) ,intent(in) :: Ri      ! dimensionless
+      real(kind=ip) ,intent(in) :: ml      ! m
+      real(kind=ip) ,intent(in) :: z       ! m
 
-      real(kind=ip) :: Fc_PMB  ! dimensionless
-      real(kind=ip) :: Ri      ! dimensionless
-      real(kind=ip) :: ml      ! m
-      real(kind=ip) :: z       ! m
         ! These are kept written as separate constants for consistancy with the
         ! equation in the paper above
       real(kind=ip),parameter :: b = 5.0_ip
@@ -2965,11 +2955,11 @@
       real(kind=ip),parameter :: d = 5.0_ip
       real(kind=ip),parameter :: f = 5.19615242270663_ip  ! = sqrt(27)
 
-      do io=1,2;if(VB(io).le.verbosity_debug2)then
+      do io=1,2;if(VB(io) <= verbosity_debug2)then
         write(outlog(io),*)"     Entered function Fc_PMB"
       endif;enddo
 
-      if(Ri.le.0.0_ip)then
+      if(Ri <= 0.0_ip)then
           ! Unstable atmosphere
         Fc_PMB = 1.0_ip/(1.0_ip+3.0_ip*b*c*(ml*ml*sqrt(Ri)/(z*z*f)))
       else
@@ -3007,12 +2997,10 @@
       !  Collins used 30m in the CAM3 model
       !  Piedelievere et al (1990) used 150 m in the MEDIA model
 
-      implicit none
+      real(kind=ip)             :: MixLen  ! m
+      real(kind=ip) ,intent(in) :: z       ! m
 
-      real(kind=ip) :: MixLen  ! m
-      real(kind=ip) :: z       ! m
-
-      do io=1,2;if(VB(io).le.verbosity_debug2)then
+      do io=1,2;if(VB(io) <= verbosity_debug2)then
         write(outlog(io),*)"     Entered function MixLen"
       endif;enddo
 
@@ -3042,17 +3030,14 @@
       ! Generalized wind shear similarity function of z/L
       ! Coefficients and exponents are module variables
 
-      implicit none
+      real(kind=ip)             :: Phi_WindShear_Similarity
+      real(kind=ip) ,intent(in) :: z_on_L
 
-      real(kind=ip) :: Phi_WindShear_Similarity
-
-      real(kind=ip) :: z_on_L
-
-      do io=1,2;if(VB(io).le.verbosity_debug2)then
+      do io=1,2;if(VB(io) <= verbosity_debug2)then
         write(outlog(io),*)"     Entered function Phi_WindShear_Similarity"
       endif;enddo
 
-      if(z_on_L.le.0.0_ip)then
+      if(z_on_L <= 0.0_ip)then
           ! Unstable
         Phi_WindShear_Similarity = (1.0_ip + phi_gamma*z_on_L)**phi_alpha
       else
@@ -3083,19 +3068,16 @@
       use global_param,  only : &
          PI
 
-      implicit none
-
-      real(kind=ip) :: Psi_WindShear_Similarity
-
-      real(kind=ip) :: z_on_L
+      real(kind=ip)             :: Psi_WindShear_Similarity
+      real(kind=ip) ,intent(in) :: z_on_L
 
       real(kind=ip) :: x,tmp1,tmp2
 
-      do io=1,2;if(VB(io).le.verbosity_debug2)then
+      do io=1,2;if(VB(io) <= verbosity_debug2)then
         write(outlog(io),*)"     Entered function Psi_WindShear_Similarity"
       endif;enddo
 
-      if(z_on_L.le.0.0_ip)then
+      if(z_on_L <= 0.0_ip)then
           ! Unstable
         x = (1.0_ip-16.0_ip*z_on_L)**0.25_ip
         tmp1 = 0.5_ip*(1.0_ip+x*x);

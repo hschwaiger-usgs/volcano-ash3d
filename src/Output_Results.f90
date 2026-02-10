@@ -75,6 +75,7 @@
 #endif
 
       implicit none
+      !implicit none (type, external)
 
       character(len=13) :: cio
       real(kind=dp)     :: timestart
@@ -102,7 +103,7 @@
         end function HS_xmltime
       END INTERFACE
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine output_results"
       endif;enddo
 
@@ -134,12 +135,12 @@
         endif
 
         if(Write3dFiles)then
-          if(ioutputFormat.eq.3)then
+          if(ioutputFormat == 3)then
 #ifdef USENETCDF
             ! Create the netcdf file and define dimensions/variables
             call NC_create_netcdf_file
 #else
-            do io=1,2;if(VB(io).le.verbosity_error)then
+            do io=1,2;if(VB(io) <= verbosity_error)then
               write(errlog(io),*)"ERROR: Ash3d was not compiled with netcdf libraries, but netcdf"
               write(errlog(io),*)"       output is requested.  Please recompile Ash3d with"
               write(errlog(io),*)"       USENETCDF=T, or select another output format."
@@ -154,7 +155,7 @@
 
         first_time = .false.
 
-        if(NextWriteTime.gt.EPS_SMALL)then
+        if(NextWriteTime > EPS_SMALL)then
           ! If the first output timestep is essentially t=0, then continue in
           !  this subroutine, else return to Ash3d.F90
           return
@@ -165,15 +166,15 @@
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       ! Construct text string for timespan written to KML files
-      if (iTimeNext.gt.0) then
-         if (iTimeNext.eq.1) then
+      if (iTimeNext > 0) then
+         if (iTimeNext == 1) then
              ! If this is the first time, set timestart equal to the eruption time
              timestart = SimStartHour
            else
              ! otherwise, set it equal to the midpoint between now and the last write time
              timestart = SimStartHour + (WriteTimes(iTimeNext-1)+WriteTimes(iTimeNext))/2.0_ip
          end if
-         if (iTimeNext.lt.nWriteTimes) then
+         if (iTimeNext < nWriteTimes) then
              ! Set timeend to the midpoint between now and the next write time
              timeend = SimStartHour + (WriteTimes(iTimeNext)+WriteTimes(iTimeNext+1))/2.0_ip
            else
@@ -186,7 +187,7 @@
 
       ! increment counter for the output step (iTimeNext)
       iout3d = iout3d + 1
-      if (iTimeNext.lt.nWriteTimes) then   ! adjust next write time
+      if (iTimeNext < nWriteTimes) then   ! adjust next write time
          iTimeNext = iTimeNext + 1
          NextWriteTime = WriteTimes(iTimeNext)
         else
@@ -204,7 +205,7 @@
       if (.not.isFinal_TS) then
           ! First ascii files
         if (WriteDepositTS_ASCII)then
-          do io=1,2;if(VB(io).le.verbosity_debug1)then
+          do io=1,2;if(VB(io) <= verbosity_debug1)then
             write(outlog(io),*)"  Writing deposit thickenss ASCII file"
           endif;enddo
           Mask(1:nxmax,1:nymax) = .true.
@@ -214,7 +215,7 @@
                               '-9999.','DepositFile_        ')
         endif
         if (WriteCloudConcentration_ASCII)then
-          do io=1,2;if(VB(io).le.verbosity_debug1)then
+          do io=1,2;if(VB(io) <= verbosity_debug1)then
             write(outlog(io),*)"  Writing max concentration ASCII file"
           endif;enddo
           Mask(1:nxmax,1:nymax) = .true.
@@ -224,7 +225,7 @@
                               '-9999.','CloudConcentration_ ')
         endif
         if (WriteCloudHeight_ASCII)then
-          do io=1,2;if(VB(io).le.verbosity_debug1)then
+          do io=1,2;if(VB(io) <= verbosity_debug1)then
             write(outlog(io),*)"  Writing max cloud height ASCII file"
           endif;enddo
           Mask(1:nxmax,1:nymax) = Mask_Cloud(1:nxmax,1:nymax)
@@ -234,7 +235,7 @@
                               '-9999.','CloudHeight_        ')
         endif
         if (WriteCloudLoad_ASCII)then
-          do io=1,2;if(VB(io).le.verbosity_debug1)then
+          do io=1,2;if(VB(io) <= verbosity_debug1)then
             write(outlog(io),*)"  Writing cloud load ASCII file"
           endif;enddo
           Mask(1:nxmax,1:nymax) = .true.
@@ -259,13 +260,13 @@
       !************************************************************************
       !  WRITE OUT 3D CONCENTRATION FILES
       if (Write3dFiles) then
-        if(ioutputFormat.eq.1)then
+        if(ioutputFormat == 1)then
           allocate(ashcon_tot(nxmax,nymax,nzmax))
           ashcon_tot = 0.0_op
           call AshTotalCalculator
           call write_3D_ASCII(cio,nxmax,nymax,nzmax,ashcon_tot)
           deallocate(ashcon_tot)
-        elseif(ioutputFormat.eq.2)then
+        elseif(ioutputFormat == 2)then
           allocate(ashcon_tot(nxmax,nymax,nzmax))
           ashcon_tot = 0.0_op
           call AshTotalCalculator
@@ -276,7 +277,7 @@
                               DepositThickness(1:nxmax,1:nymax), &
                               Mask(1:nxmax,1:nymax),             &
                               ' 0.000','DepositFile_        ')
-        elseif(ioutputFormat.eq.3)then
+        elseif(ioutputFormat == 3)then
 #ifdef USENETCDF
           call NC_append_to_netcdf
 #endif
@@ -318,7 +319,7 @@
           Mask(1:nxmax,1:nymax) = .true.
           do i=1,nxmax
             do j=1,nymax
-              if(CloudArrivalTime(i,j).lt.0.0_ip)Mask(i,j) = .false.
+              if(CloudArrivalTime(i,j) < 0.0_ip)Mask(i,j) = .false.
             enddo
           enddo
           call write_2D_ASCII(nxmax,nymax,&
@@ -328,9 +329,9 @@
         endif
         ! Write Final deposit file
         if ((WriteDepositFinal_ASCII).and.                       &
-            (((nWriteTimes.gt.0).and.&
-             (abs(time-dt-WriteTimes(nWriteTimes)).gt.1.0e-4_ip)).or. &
-             (nWriteTimes.eq.0))) then
+            (((nWriteTimes > 0).and.&
+             (abs(time-dt-WriteTimes(nWriteTimes)) > 1.0e-4_ip)).or. &
+             (nWriteTimes == 0))) then
           Mask(1:nxmax,1:nymax) = .true.
           call write_2D_ASCII(nxmax,nymax,&
                               DepositThickness(1:nxmax,1:nymax), &
@@ -365,7 +366,7 @@
       ! This is an output step, so toggle on the marker for the output log
       OutputStep_Marker = '*'
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine output_results"
       endif;enddo
 

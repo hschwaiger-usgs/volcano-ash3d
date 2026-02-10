@@ -17,6 +17,7 @@
       use io_units
 
       implicit none
+      !implicit none (type, external)
 
         ! Set everything to private by default
       private
@@ -64,16 +65,18 @@
 #ifdef FAST_SUBGRID
       INTERFACE
         subroutine get_minmax_index
+          implicit none
+          !implicit none (type, external)
         end subroutine get_minmax_index
       END INTERFACE
 
-      do io=1,2;if(VB(io).le.verbosity_debug2)then
+      do io=1,2;if(VB(io) <= verbosity_debug2)then
         write(outlog(io),*)"     Entered Subroutine AdvectHorz"
       endif;enddo
 
       call get_minmax_index
 #else
-      do io=1,2;if(VB(io).le.verbosity_debug2)then
+      do io=1,2;if(VB(io) <= verbosity_debug2)then
         write(outlog(io),*)"     Entered Subroutine AdvectHorz"
       endif;enddo
 
@@ -85,7 +88,7 @@
       kmax = nzmax
 #endif
         ! Use dimension splitting with donor-cell-upwind (DCU)
-      if(mod(itoggle,2).eq.0) then
+      if(mod(itoggle,2) == 0) then
           ! for even time steps, advect in y first
         call advect_y
         call advect_x
@@ -94,7 +97,7 @@
         call advect_y
       endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug2)then
+      do io=1,2;if(VB(io) <= verbosity_debug2)then
         write(outlog(io),*)"     Exited Subroutine AdvectHorz"
       endif;enddo
 

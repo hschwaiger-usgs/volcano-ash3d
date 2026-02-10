@@ -36,12 +36,13 @@
          Allocate_Source_grid
 
       implicit none
+      !implicit none (type, external)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine alloc_arrays"
       endif;enddo
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"--------------------------------------------------"
         write(outlog(io),*)"---------- ALLOC_ARRAYS --------------------------"
         write(outlog(io),*)"--------------------------------------------------"
@@ -56,7 +57,7 @@
       call Allocate_Source_grid
       call Allocate_Diff
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine alloc_arrays"
       endif;enddo
 
@@ -119,12 +120,13 @@
            MR_Reset_Memory
 
       implicit none
+      !implicit none (type, external)
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine dealloc_arrays"
       endif;enddo
 
-      do io=1,2;if(VB(io).le.verbosity_info)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"Cleaning up allocated memory"
       endif;enddo
 
@@ -146,7 +148,7 @@
 
       call MR_Reset_Memory
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine dealloc_arrays"
       endif;enddo
 

@@ -27,6 +27,8 @@
       implicit none
       !implicit none (type, external)
 
+      public
+
         ! These single and double precision parameters should be 4 and 8
       integer, parameter,public :: sp = real32   ! selected_real_kind( 6,   37) ! single precision
       integer, parameter,public :: dp = real64   ! selected_real_kind(15,  307) ! double precision
@@ -50,10 +52,11 @@
       module io_units
 
       ! This module requires Fortran 2003 or later
-      use iso_fortran_env, only : &
+      use, intrinsic :: iso_fortran_env, only : &
          input_unit,output_unit,error_unit
 
       implicit none
+      !implicit none (type, external)
 
         ! Set everything to public by default
       public
@@ -99,8 +102,8 @@
       ! Initialize these with the defaults, but we will reset these in the subroutine
       integer :: nio  = 1                    ! number of output streams (stdout and logfile)
       integer :: io                          ! index over out-streams
-      integer,dimension(2) :: outlog = (/output_unit,fid_logfile/)
-      integer,dimension(2) :: errlog = (/ error_unit,fid_logfile/)
+      integer,dimension(2) :: outlog = [output_unit,fid_logfile]
+      integer,dimension(2) :: errlog = [ error_unit,fid_logfile]
       integer :: errcode = 1
 
       character(9) :: logfile = 'Ash3d.lst'  ! This is the default Ash3d logfile
@@ -109,7 +112,7 @@
       ! This will write everything from verbosity_log to verbosity_error to both stdout and stdlog
       ! Note that this may be reset in Set_OS_Env is ASH3DVERB is set.
       ! You could set the stdout and log to different velocity levels here is desired.
-      integer,dimension(2) :: VB = (/3,3/)  ! Verbosity level for stdout and logfile, respectively
+      integer,dimension(2) :: VB = [3,3]    ! Verbosity level for stdout and logfile, respectively
       character(10)        :: vlevel        ! Text description of verbosity level
 
       ! These verbosity levels are for harmonizing with forestclaw
@@ -157,11 +160,11 @@
 
       integer :: io
 
-      do io=1,nio;if(VB(io).le.verbosity_error)then
-        if(ios.lt.0)then
+      do io=1,nio;if(VB(io) <= verbosity_error)then
+        if(ios < 0)then
           write(errlog(io),*)'ERROR Reading from file:  EOF encountered'
           write(errlog(io),*)'  error code: ',ios
-        elseif(ios.gt.0)then
+        elseif(ios > 0)then
           write(errlog(io),*)'ERROR Reading line from file:  input line format error'
           write(errlog(io),*)'  error code: ',ios
           write(errlog(io),*)'  Offending line: ',linebuffer080
@@ -207,20 +210,20 @@
       asciicode = ichar(testkey)
       ! Check if testkey is '#' (code=23) or
       !                     '*' (code=42)
-      if (asciicode.eq.35.or.asciicode.eq.42) then
+      if (asciicode == 35.or.asciicode == 42) then
         IsComment = .true.
         return
       else
-        if (asciicode.ge.48.and.asciicode.le.57.or.asciicode.eq.45) then
+        if (asciicode >= 48.and.asciicode <= 57.or.asciicode == 45) then
           ! Check if 0-9 or -
           IsNumber = .true.
-        elseif (asciicode.ge.65.and.asciicode.le.90) then
+        elseif (asciicode >= 65.and.asciicode <= 90) then
           ! Check if A-Z
           IsUpperCase = .true.
-        elseif (asciicode.ge.97.and.asciicode.le.122) then
+        elseif (asciicode >= 97.and.asciicode <= 122) then
           ! Check if a-z
          IsLowerCase = .true.
-        elseif (asciicode.eq.9.or.asciicode.eq.32) then
+        elseif (asciicode == 9.or.asciicode == 32) then
           ! only check TAB (code=9) and space (code=32)
           IsWhiteSpace = .true.
         endif
@@ -232,7 +235,7 @@
       else
         ! Character is either a non-printable character or punctuation
         ! Issue error and exit
-        do io=1,nio;if(VB(io).le.verbosity_error)then
+        do io=1,nio;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)'ERROR Reading character from string'
           write(errlog(io),*)'       offending character  = ',testkey
           write(errlog(io),*)'       character ASCII code = ',asciicode
@@ -312,54 +315,54 @@
       ii = 1  ! start of output string
       ch = linebuffer(i:i)
       asciicode = ichar(ch)
-      if(asciicode.eq.35.or.asciicode.eq.42) IsComment = .true.
+      if(asciicode == 35.or.asciicode == 42) IsComment = .true.
       if (IsComment) return  ! if the first character of the line is a comment, exit the subroutine
         ! Now loop through the input string and filter
-      do while (i.le.input_strlen.and..not.IsComment)
+      do while (i <= input_strlen.and..not.IsComment)
         ch = linebuffer(i:i)
         asciicode = ichar(ch)
 
-        if(asciicode.eq.35.or.&  ! '#' ! Check character against comment chars
-           asciicode.eq.42)then  ! '*'
+        if(asciicode == 35.or.&  ! '#' ! Check character against comment chars
+           asciicode == 42)then  ! '*'
           IsComment  = .true.
           strpos_end = i-1       ! If we find a comment character, mark the new end position
         endif
-        if(asciicode.eq.9)then         ! If we find a tab, replace with a space
+        if(asciicode == 9)then         ! If we find a tab, replace with a space
           ch = ' '
           asciicode = 32
-          do io=1,2;if(VB(io).le.verbosity_info)then
+          do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)'   WARNING: line from file contained a tab which was replaced with a space.'
           endif;enddo
         endif
 
         if(useUnicode)then
           ! If using unicode, then only exclude certain values
-          if((                    asciicode.le.31) .or. &  ! 0-31 control chars
-             (asciicode.ge.33.and.asciicode.le.42) .or. &  ! punctuation
-             (asciicode.ge.59.and.asciicode.le.64) .or. &  ! punctuation
-             (        asciicode.eq.91            ) .or. &  ! [
-             (        asciicode.eq.93            ) .or. &  ! ]
-             (        asciicode.eq.94            ) .or. &  ! ^
-             (        asciicode.eq.96            ) .or. &  ! `
-             (asciicode.ge.123.and.asciicode.le.127))then  ! braces and punctuation
+          if((                    asciicode <= 31) .or. &  ! 0-31 control chars
+             (asciicode >= 33.and.asciicode <= 42) .or. &  ! punctuation
+             (asciicode >= 59.and.asciicode <= 64) .or. &  ! punctuation
+             (        asciicode == 91            ) .or. &  ! [
+             (        asciicode == 93            ) .or. &  ! ]
+             (        asciicode == 94            ) .or. &  ! ^
+             (        asciicode == 96            ) .or. &  ! `
+             (asciicode >= 123.and.asciicode <= 127))then  ! braces and punctuation
             IsAcceptable = .false.
           else
             IsAcceptable = .true.
           endif
         else
           ! If using traditional ASCII, then only allow certain characters
-          if((        asciicode.eq.32            ) .or. &  ! ' ' = space
-             (        asciicode.eq.43            ) .or. &  ! '+' = plus
-             (        asciicode.eq.45            ) .or. &  ! '-' = hyphen
-             (        asciicode.eq.46            ) .or. &  ! '.' = full-stop
-             (        asciicode.eq.47            ) .or. &  ! '/' = slash
-             (asciicode.ge.48.and.asciicode.le.57) .or. &  ! 0-9 = digits
-             (        asciicode.eq.58            ) .or. &  ! ':' = colon
-             (        asciicode.eq.61            ) .or. &  ! '=' = equals
-             (asciicode.ge.65.and.asciicode.le.90) .or. &  ! A-Z = Uppercase letters
-             (        asciicode.eq.92            ) .or. &  ! '/' = backslash
-             (        asciicode.eq.95            ) .or. &  ! '_' = underscore
-             (asciicode.ge.97.and.asciicode.le.122))then   ! a-z = lowercase letters
+          if((        asciicode == 32            ) .or. &  ! ' ' = space
+             (        asciicode == 43            ) .or. &  ! '+' = plus
+             (        asciicode == 45            ) .or. &  ! '-' = hyphen
+             (        asciicode == 46            ) .or. &  ! '.' = full-stop
+             (        asciicode == 47            ) .or. &  ! '/' = slash
+             (asciicode >= 48.and.asciicode <= 57) .or. &  ! 0-9 = digits
+             (        asciicode == 58            ) .or. &  ! ':' = colon
+             (        asciicode == 61            ) .or. &  ! '=' = equals
+             (asciicode >= 65.and.asciicode <= 90) .or. &  ! A-Z = Uppercase letters
+             (        asciicode == 92            ) .or. &  ! '/' = backslash
+             (        asciicode == 95            ) .or. &  ! '_' = underscore
+             (asciicode >= 97.and.asciicode <= 122))then   ! a-z = lowercase letters
             IsAcceptable = .true.
           else
             IsAcceptable = .false.
@@ -370,7 +373,7 @@
           tmpstr(ii:ii) = ch
           strlen = ii
         else
-          do io=1,2;if(VB(io).le.verbosity_debug1)then
+          do io=1,2;if(VB(io) <= verbosity_debug1)then
             write(outlog(io),*)"   WARNING: Removing character from line with asciicode= ",asciicode
           endif;enddo
         endif
@@ -406,6 +409,7 @@
       use precis_param
 
       implicit none
+      !implicit none (type, external)
 
         ! Set everything to public by default
       public
@@ -508,18 +512,18 @@
 
       ! Stop conditions
       !  1 = check if amount aloft is too little
-      !        aloft_vol/tot_vol.lt.(1.0_ip-StopValue_FracAshDep)
+      !        aloft_vol/tot_vol < (1.0_ip-StopValue_FracAshDep)
       !  2 = check if time is past sim end
-      !        time.ge.Simtime_in_hours
+      !        time >= Simtime_in_hours
       !  3 = check if there is ash aloft (this might be turned off for certain sources)
-      !        n_gs_aloft.eq.0
+      !        n_gs_aloft == 0
       !  4 = check on mass balance
-      !        MassConsErr.gt.1.0e-3_ip
+      !        MassConsErr > 1.0e-3_ip
       !  5 = check on negative volumes
-      !        (dep_vol.lt.-1.0_ip*EPS_SMALL).or.&
-      !        (aloft_vol.lt.-1.0_ip*EPS_SMALL).or.&
-      !        (outflow_vol.lt.-1.0_ip*EPS_SMALL).or.&
-      !        (SourceCumulativeVol.lt.-1.0_ip*EPS_SMALL)
+      !        (dep_vol < -1.0_ip*EPS_SMALL).or.&
+      !        (aloft_vol < -1.0_ip*EPS_SMALL).or.&
+      !        (outflow_vol < -1.0_ip*EPS_SMALL).or.&
+      !        (SourceCumulativeVol < -1.0_ip*EPS_SMALL)
 
       logical, dimension(5) :: StopConditions  = .false.  ! Various conditions that force the run to stop
       logical, dimension(5) :: CheckConditions = .true.   ! Which conditions to check
@@ -562,6 +566,7 @@
       use io_units
 
       implicit none
+      !implicit none (type, external)
 
         ! Set everything to public by default
       public
@@ -718,7 +723,7 @@
 
       subroutine Deallocate_io_data
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Deallocate_io_data"
       endif;enddo
 
@@ -738,7 +743,7 @@
       if(allocated(Site_vprofile))deallocate(Site_vprofile)
 #endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Deallocate_io_data"
       endif;enddo
 
@@ -765,6 +770,7 @@
       use io_units
 
       implicit none
+      !implicit none (type, external)
 
         ! Set everything to public by default
       public
@@ -818,7 +824,7 @@
       real(kind=ip)      :: de, dn                    ! nodal spacing east & north, degrees
       real(kind=ip)      :: de_km, dn_km              ! nodal spacing, km, at volcano
 #ifdef USEPOINTERS
-      real(kind=ip),dimension(:)    ,pointer :: z_vec_init  => null() 
+      real(kind=ip),dimension(:)    ,pointer :: z_vec_init  => null()
       real(kind=ip),dimension(:,:)  ,pointer :: xy2ll_xlon  => null()  ! The (projected) computational grid
       real(kind=ip),dimension(:,:)  ,pointer :: xy2ll_ylat  => null()  !   back-projected onto lat/lon
       real(kind=ip),dimension(:)    ,pointer :: dz_vec_pd   => null()  ! used for variable dz cases
@@ -870,7 +876,7 @@
         !   Input_Data.f90:Read_Control_File
         !    z_vec_init
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Allocate_mesh"
       endif;enddo
 
@@ -920,7 +926,7 @@
       if(.not.allocated(Zsurf))      allocate(Zsurf(-1:nxmax+2,-1:nymax+2));                   Zsurf       = 0.0_ip
 #endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Allocate_mesh"
       endif;enddo
 
@@ -931,7 +937,7 @@
 
       subroutine Deallocate_mesh
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Deallocate_mesh"
       endif;enddo
 
@@ -977,7 +983,7 @@
       if(allocated(Zsurf))         deallocate(Zsurf)
 #endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Deallocate_mesh"
       endif;enddo
 
@@ -1005,6 +1011,7 @@
       use io_units
 
       implicit none
+      !implicit none (type, external)
 
         ! Set everything to public by default
       public
@@ -1083,7 +1090,7 @@ subroutine Allocate_solution
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax,ts0,ts1
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Allocate_solution"
       endif;enddo
 
@@ -1160,7 +1167,7 @@ subroutine Allocate_solution
       IsAloft = .true.
       DepositGranularity = 0.0_ip
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Allocate_solution"
       endif;enddo
 
@@ -1171,7 +1178,7 @@ subroutine Allocate_solution
 
       subroutine Deallocate_solution
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Deallocate_solution"
       endif;enddo
 
@@ -1221,7 +1228,7 @@ subroutine Allocate_solution
       if(allocated(DepositGranularity)) deallocate(DepositGranularity)
 #endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Deallocate_solution"
       endif;enddo
 
@@ -1245,6 +1252,7 @@ subroutine Allocate_solution
       use precis_param
 
       implicit none
+      !implicit none (type, external)
 
         ! Set everything to public by default
       public
@@ -1314,6 +1322,7 @@ subroutine Allocate_solution
       use io_units
 
       implicit none
+      !implicit none (type, external)
 
         ! Set everything to public by default
       public
@@ -1374,7 +1383,7 @@ subroutine Allocate_solution
       use mesh,          only : &
          nxmax,nymax,nzmax,nsmax
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Allocate_wind_grid"
       endif;enddo
 
@@ -1424,7 +1433,7 @@ subroutine Allocate_solution
       vf_meso_last_step_sp = 0.0_sp
       vf_meso_next_step_sp = 0.0_sp
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Allocate_wind_grid"
       endif;enddo
 
@@ -1435,7 +1444,7 @@ subroutine Allocate_solution
 
       subroutine Deallocate_wind_grid
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine Deallocate_wind_grid"
       endif;enddo
 
@@ -1471,7 +1480,7 @@ subroutine Allocate_solution
       if(allocated(vf_meso_next_step_sp)) deallocate(vf_meso_next_step_sp)
 #endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Exited Subroutine Deallocate_wind_grid"
       endif;enddo
 

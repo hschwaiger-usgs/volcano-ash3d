@@ -31,8 +31,13 @@
 
       use io_units
 
+      implicit none
+      !implicit none (type, external)
+
       INTERFACE
         subroutine help_run
+          implicit none
+          !implicit none (type, external)
         end subroutine help_run
       END INTERFACE
 
@@ -42,7 +47,7 @@
       character(len=1)  :: key
 #endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine help_general"
       endif;enddo
 
@@ -93,7 +98,10 @@
 
       use io_units
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      implicit none
+      !implicit none (type, external)
+
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine help_make"
       endif;enddo
 
@@ -228,13 +236,16 @@
 
       use io_units
 
+      implicit none
+      !implicit none (type, external)
+
 #ifdef WINDOWS
       integer           :: iostatus
       character(len=120):: iomessage
       character(len=1)  :: key
 #endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine help_run"
       endif;enddo
 
@@ -312,8 +323,13 @@
 
       use io_units
 
+      implicit none
+      !implicit none (type, external)
+
       INTERFACE
         subroutine help_inputfile(blockID)
+          implicit none
+          !implicit none (type, external)
           integer,intent(in) :: blockID
         end subroutine help_inputfile
       END INTERFACE
@@ -330,7 +346,7 @@
       character(len=1)  :: key
 #endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine help_input"
       endif;enddo
 
@@ -358,16 +374,16 @@
       read(input_unit,'(a3)',iostat=iostatus,iomsg=iomessage) answer
       linebuffer080 = answer
       linebuffer050 = "Reading from stdin, answer"
-      if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-      do while (adjustl(trim(answer)).eq.'y'.or.adjustl(trim(answer)).eq.'yes')
+      if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+      do while (adjustl(trim(answer)) == 'y'.or.adjustl(trim(answer)) == 'yes')
         write(outlog(io),*)'  Please enter the block ID (1-10) or 0 for all:'
         read(input_unit,*,err=10,iostat=iostatus,iomsg=iomessage)blockID
         linebuffer080 = "blockID"
         linebuffer050 = "Reading from stdin, blockID"
-        if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
-        if(blockID.lt.0.or.blockID.gt.10)then
+        if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+        if(blockID < 0.or.blockID > 10)then
           write(errlog(io),*)'  Invalid range for blockID; should be between 0 and 10.'
-        elseif(blockID.eq.0)then
+        elseif(blockID == 0)then
           do i=1,10
             call help_inputfile(i)
           enddo
@@ -379,7 +395,7 @@
           read(input_unit,'(a3)',iostat=iostatus,iomsg=iomessage) answer
           linebuffer080 = answer
           linebuffer050 = "Reading from stdin, answer"
-          if(iostatus.ne.0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
+          if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         endif
       enddo
 
@@ -428,12 +444,16 @@
          SetWrite_input_block_Topo,     &
          SetWrite_input_block_VarDiff
 
+      implicit none
+      !implicit none (type, external)
+
       integer,intent(in) :: blockID
 
       !logical            :: WriteBlock = .true.
       character(len= 30) :: vname
       character(len=130) :: dz_line
       character(len= 80) :: projline
+
       dz_line = '                                                                               ' // &
                 '                                                 '
 
@@ -441,7 +461,7 @@
       ! called if there is an error reading something in the input file or if
       ! the user requests it.
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine help_inputfile"
       endif;enddo
 
@@ -644,7 +664,12 @@
       write(output_unit,1)'0.25                        # RI_CRIT                                                                  '
       write(output_unit,1)'*******************************************************************************                        '
 
-!        case default
+        case default
+      do io=1,2;if(VB(io) <= verbosity_error)then
+        write(errlog(io),*) &
+          "WARNING: Block Header Number Not Specified"
+      endif;enddo
+
       end select
 
  1    format(a103)
@@ -667,13 +692,16 @@
 
       use io_units
 
+      implicit none
+      !implicit none (type, external)
+
 #ifdef WINDOWS
       integer           :: iostatus
       character(len=120):: iomessage
       character(len=1)  :: key
 #endif
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine help_postproc"
       endif;enddo
 

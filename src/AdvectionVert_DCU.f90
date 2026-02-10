@@ -33,6 +33,7 @@
          dt
 
       implicit none
+      !implicit none (type, external)
 
         ! Set everything to private by default
       private
@@ -133,11 +134,13 @@
 
       INTERFACE
         subroutine Set_BC(bc_code)
+          implicit none
+          !implicit none (type, external)
           integer,intent(in) :: bc_code  ! 1 for advection, 2 for diffusion
         end subroutine Set_BC
       END INTERFACE
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine advect_z"
       endif;enddo
 
@@ -211,7 +214,7 @@
               ! This cycling is good for production runs, but causes
               ! problems with convergence tests
 #ifndef NOCYCLE
-              if (abs(dq_I(i_I)).le.EPS_THRESH) cycle
+              if (abs(dq_I(i_I)) <= EPS_THRESH) cycle
 #endif
 
 #if LIM_LAXWEN
@@ -221,15 +224,15 @@
               ! Only calculate dqu_I and theta if the limiter is being used
               ! requires it.
               ! Get delta Q at upwind interface relative to interface I
-              if(usig_I(i_I).gt.0.0_ip)then
+              if(usig_I(i_I) > 0.0_ip)then
                 dqu_I = dq_I(i_I-1)  ! upwind is interface I-1
               else
                 dqu_I = dq_I(i_I+1)  ! upwind is interface I+1
               endif
 
               ! Make sure that theta is not singular
-              if(abs(dqu_I).gt.3.0_ip*abs(dq_I(i_I)).or. &
-                 abs(dq_I(i_I)).lt.EPS_THRESH)then
+              if(abs(dqu_I) > 3.0_ip*abs(dq_I(i_I)).or. &
+                 abs(dq_I(i_I)) < EPS_THRESH)then
                 theta = sign(3.0_ip,dqu_I*dq_I(i_I))
               else
                 theta = dqu_I/dq_I(i_I)
@@ -308,20 +311,20 @@
                concen_pd(i,j,rmin:rmin-1+ncells,n,ts0) + &
                update_cc(rmin:rmin-1+ncells)
 
-              if(rmin.eq.1) &
+              if(rmin == 1) &
                 ! Flux out the - side of advection row  (copied to deposit)
                 outflow_xy1_pd(i,j,n) = outflow_xy1_pd(i,j,n) + update_cc(0)
-              if(rmax.eq.nzmax) &
+              if(rmax == nzmax) &
                 ! Flux out the + side of advection row  (top of domain)
                 outflow_xy2_pd(i,j,n) = outflow_xy2_pd(i,j,n) + update_cc(nzmax+1)
-            !if(update_cc(0).le.-EPS_TINY)then
-            !  do io=1,2;if(VB(io).le.verbosity_error)then
+            !if(update_cc(0) <= -EPS_TINY)then
+            !  do io=1,2;if(VB(io) <= verbosity_error)then
             !    write(errlog(io),*)"ERROR: ",&
             !               "Update to outflow_xy1_pd negative at: ",i,j,n,update_cc(0)
             !  endif;enddo
             !endif
-            !if(update_cc(nzmax+1).le.-EPS_TINY)then
-            !  do io=1,2;if(VB(io).le.verbosity_error)then
+            !if(update_cc(nzmax+1) <= -EPS_TINY)then
+            !  do io=1,2;if(VB(io) <= verbosity_error)then
             !    write(errlog(io),*)"ERROR! Update to outflow_xy2_pd negative at: ",i,j,n,update_cc(nzmax+1)
             !  endif;enddo
             !endif
@@ -389,11 +392,13 @@
 
       INTERFACE
         subroutine Set_BC(bc_code)
+          implicit none
+          !implicit none (type, external)
           integer,intent(in) :: bc_code  ! 1 for advection, 2 for diffusion
         end subroutine Set_BC
       END INTERFACE
 
-      do io=1,2;if(VB(io).le.verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine advect_sigma"
       endif;enddo
 
@@ -462,7 +467,7 @@
               ! This cycling is good for production runs, but causes
               ! problems with convergence tests
 #ifndef NOCYCLE
-              if (abs(dq_I(i_I)).le.EPS_THRESH) cycle
+              if (abs(dq_I(i_I)) <= EPS_THRESH) cycle
 #endif
 
 #if LIM_LAXWEN
@@ -472,15 +477,15 @@
               ! Only calculate dqu_I and theta if the limiter is being used
               ! requires it.
               ! Get delta Q at upwind interface relative to interface I
-              if(usig_I(i_I).gt.0.0_ip)then
+              if(usig_I(i_I) > 0.0_ip)then
                 dqu_I = dq_I(i_I-1)  ! upwind is interface I-1
               else
                 dqu_I = dq_I(i_I+1)  ! upwind is interface I+1
               endif
 
               ! Make sure that theta is not singular
-              if(abs(dqu_I).gt.3.0_ip*abs(dq_I(i_I)).or. &
-                 abs(dq_I(i_I)).lt.EPS_THRESH)then
+              if(abs(dqu_I) > 3.0_ip*abs(dq_I(i_I)).or. &
+                 abs(dq_I(i_I)) < EPS_THRESH)then
                 theta = sign(3.0_ip,dqu_I*dq_I(i_I))
               else
                 theta = dqu_I/dq_I(i_I)
@@ -559,10 +564,10 @@
                concen_pd(i,j,rmin:rmin-1+ncells,n,ts0) + &
                update_cc(rmin:rmin-1+ncells)
 
-              if(rmin.eq.1) &
+              if(rmin == 1) &
                 ! Flux out the - side of advection row  (copied to deposit)
                 outflow_xy1_pd(i,j,n) = outflow_xy1_pd(i,j,n) + update_cc(0)
-              if(rmax.eq.nzmax) &
+              if(rmax == nzmax) &
                 ! Flux out the + side of advection row  (top of domain)
                 outflow_xy2_pd(i,j,n) = outflow_xy2_pd(i,j,n) + update_cc(ncells+1)
 
