@@ -6361,13 +6361,13 @@
       integer           ,intent(in) :: outunit
       integer           ,intent(in) :: nerup
       integer           ,intent(in) :: src_type
-      real(kind=dp),dimension(nerup),intent(in) :: e_ST
-      real(kind=dp),dimension(nerup),intent(in) :: e_Dur
-      real(kind=ip),dimension(nerup),intent(in) :: e_PmH
-      real(kind=ip),dimension(nerup),intent(in) :: e_Vol
-      real(kind=ip),dimension(nerup),intent(in) :: ep_dz
-      integer      ,dimension(nerup),intent(in) :: ep_nz
-      real(kind=ip),dimension(nerup,50),intent(in) :: ep_Vol
+      real(kind=dp),dimension(:),intent(in) :: e_ST
+      real(kind=dp),dimension(:),intent(in) :: e_Dur
+      real(kind=ip),dimension(:),intent(in) :: e_PmH
+      real(kind=ip),dimension(:),intent(in) :: e_Vol
+      real(kind=ip),dimension(:),intent(in) :: ep_dz
+      integer      ,dimension(:),intent(in) :: ep_nz
+      real(kind=ip),dimension(:,:),intent(in) :: ep_Vol
 
       integer :: i
       integer :: iyear
@@ -6572,7 +6572,7 @@
       integer           ,intent(in) :: ofm
       integer           ,intent(in) :: nwt
       logical           ,intent(in) :: intflg
-      real(kind=dp),dimension(nwt),intent(in) :: wts
+      real(kind=dp),dimension(:),intent(in) :: wts
 
       if(outunit > 0)then
         write(outunit,1)&
@@ -6806,20 +6806,20 @@
          Tephra_gsF,Tephra_gsG,Tephra_gsPhi,Shape_ID,Tephra_Ncols,&
          LN_massfrac,LN_phi_mean,LN_phi_stddev,LN_suppl_frac
 
-      integer                    ,intent(in) :: outunit
-      integer                    ,intent(in) :: ns
-      integer                    ,intent(in) :: fv_idx
-      integer                    ,intent(in) :: shape_idx
-      real(kind=ip)              ,intent(in) :: mf
-      real(kind=ip)              ,intent(in) :: phim
-      real(kind=ip)              ,intent(in) :: phisig
-      real(kind=ip),dimension(ns),intent(in) :: T_diam
-      real(kind=ip),dimension(ns),intent(in) :: T_mf
-      real(kind=ip),dimension(ns),intent(in) :: T_fv
-      real(kind=ip),dimension(ns),intent(in) :: T_rho
-      real(kind=ip),dimension(ns),intent(in) :: T_F
-      real(kind=ip),dimension(ns),intent(in) :: T_G
-      real(kind=ip),dimension(ns),intent(in) :: T_phi
+      integer                   ,intent(in) :: outunit
+      integer                   ,intent(in) :: ns
+      integer                   ,intent(in) :: fv_idx
+      integer                   ,intent(in) :: shape_idx
+      real(kind=ip)             ,intent(in) :: mf
+      real(kind=ip)             ,intent(in) :: phim
+      real(kind=ip)             ,intent(in) :: phisig
+      real(kind=ip),dimension(:),intent(in) :: T_diam
+      real(kind=ip),dimension(:),intent(in) :: T_mf
+      real(kind=ip),dimension(:),intent(in) :: T_fv
+      real(kind=ip),dimension(:),intent(in) :: T_rho
+      real(kind=ip),dimension(:),intent(in) :: T_F
+      real(kind=ip),dimension(:),intent(in) :: T_G
+      real(kind=ip),dimension(:),intent(in) :: T_phi
 
       integer :: isize
 
@@ -6984,11 +6984,11 @@
       use io_data,       only : &
          nvprofiles,Site_vprofile,x_vprofile, y_vprofile
 
-      integer                           ,intent(in) :: outunit
-      integer                           ,intent(in) :: nprof
-      real(kind=ip)    ,dimension(*),intent(in) :: x_prof
-      real(kind=ip)    ,dimension(*),intent(in) :: y_prof
-      character(len=50),dimension(*),intent(in) :: name_prof
+      integer                       ,intent(in) :: outunit
+      integer                       ,intent(in) :: nprof
+      real(kind=ip)    ,dimension(:),intent(in) :: x_prof
+      real(kind=ip)    ,dimension(:),intent(in) :: y_prof
+      character(len=50),dimension(:),intent(in) :: name_prof
 
       integer :: iprof
 
