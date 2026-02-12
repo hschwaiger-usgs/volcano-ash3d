@@ -449,9 +449,10 @@
       real(kind=ip), parameter :: DT_MAX_Default   = 1.0e0_dp   ! Maximum DT in hours
       logical      , parameter :: useVz_rhoG_Default      = .true.
       logical      , parameter :: useMoistureVars_Default = .false.
+      logical                  :: runAsForecast    = .false.    ! Default is that eruption start times are explicit (not offset)
 
-      real(kind=ip) :: GRAV       = GRAV_Default
-      real(kind=ip) :: RAD_EARTH  = RAD_EARTH_Default
+      real(kind=ip)            :: GRAV       = GRAV_Default
+      real(kind=ip)            :: RAD_EARTH  = RAD_EARTH_Default
 
       integer,       parameter :: MAXNUM_OPTMODS   = 10   ! used just to preallocate block array
       character(len=20),dimension(MAXNUM_OPTMODS) :: OPTMOD_names
@@ -475,10 +476,10 @@
       character(len=11)        :: limiter = 'No'
 
       ! Set explicit diffusion by default; this is changed in Set_OS_Env
-      logical :: useCN   = .false.
+      logical                  :: useCN   = .false.
 
-      logical :: useFastDt        ! These are set in Set_OS_Env and control when
-      logical :: FastDt_suppress  ! time step restrictions need to be calculated
+      logical                  :: useFastDt        ! These are set in Set_OS_Env and control when
+      logical                  :: FastDt_suppress  ! time step restrictions need to be calculated
 
         ! These should not be changed unless needed for testing
       logical, parameter       :: useDS            = .true.  ! Dimension splitting v.s. something else
@@ -525,24 +526,24 @@
       !        (outflow_vol < -1.0_ip*EPS_SMALL).or.&
       !        (SourceCumulativeVol < -1.0_ip*EPS_SMALL)
 
-      logical, dimension(5) :: StopConditions  = .false.  ! Various conditions that force the run to stop
-      logical, dimension(5) :: CheckConditions = .true.   ! Which conditions to check
+      logical, dimension(5)    :: StopConditions  = .false.  ! Various conditions that force the run to stop
+      logical, dimension(5)    :: CheckConditions = .true.   ! Which conditions to check
 
       !  These are reset in Set_OS_Env
-      integer   :: OS_TYPE    = 1                 ! 1=Linux, 2=MacOS, 3=Windows
-      logical   :: IsLitEnd   = .true.            ! little-endian-ness; set in Set_OS_Env
-      logical   :: IsLinux    = .true.
-      logical   :: IsMacOS    = .false.
-      logical   :: IsWindows  = .false.
-      character (len=7)    :: OS_Flavor
-      character (len=2)    :: DirPrefix  = 'c:'
-      character (len=1)    :: DirDelim   = '/'
-      character (len=255)  :: os_full_command_line
-      character (len=32)   :: os_user
-      character (len=50)   :: os_host
-      character (len=255)  :: os_cwd
-      integer              :: Comp_Code           ! 1=gfortran,2=ifort,3=aocc,4=nvhpc
-      character (len=8)    :: Comp_Flavor         ! 'gfortran','ifort','flang','nvfortran'
+      integer                  :: OS_TYPE    = 1                 ! 1=Linux, 2=MacOS, 3=Windows
+      logical                  :: IsLitEnd   = .true.            ! little-endian-ness; set in Set_OS_Env
+      logical                  :: IsLinux    = .true.
+      logical                  :: IsMacOS    = .false.
+      logical                  :: IsWindows  = .false.
+      character (len=7)        :: OS_Flavor                      ! string with OS type
+      character (len=2)        :: DirPrefix  = 'c:'
+      character (len=1)        :: DirDelim   = '/'
+      character (len=255)      :: os_full_command_line
+      character (len=32)       :: os_user
+      character (len=50)       :: os_host
+      character (len=255)      :: os_cwd
+      integer                  :: Comp_Code                      ! 1=gfortran,2=ifort,3=aocc,4=nvhpc
+      character (len=8)        :: Comp_Flavor                    ! 'gfortran','ifort','flang','nvfortran'
 
       end module global_param
 

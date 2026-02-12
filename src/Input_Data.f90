@@ -1113,7 +1113,7 @@
          EPS_SMALL,EPS_TINY,nmods,OPTMOD_names,limiter,KM_2_M,  &
          useDS,useTemperature,useCalcFallVel,useLogNormGSbins,  &
          useDiffusion,useVarDiffH,useVarDiffV,useCN,useVz_rhoG, &
-         M_2_MM,M2PS_2_KM2PHR,MAXNUM_OPTMODS
+         M_2_MM,M2PS_2_KM2PHR,MAXNUM_OPTMODS,runAsForecast
 
       use io_data,       only : &
          cdf_b1l1,cdf_b1l2,cdf_b1l3,cdf_b1l4,cdf_b1l5,cdf_b1l6,cdf_b1l7,cdf_vardz,cdf_b1l8,cdf_b1l9,&
@@ -1253,7 +1253,6 @@
       integer           :: substr_pos1
       integer           :: substr_pos2
       logical           :: IsThere
-      logical           :: runAsForecast
       real(kind=dp)     :: FC_Offset
       real(kind=ip)     :: Davg,Aaxis,Baxis,Caxis
       logical           :: IsOpen
@@ -3438,16 +3437,20 @@
                          e_iday(1),e_hour(1),BaseYear,useLeap)
         tmp_dp = tmp_dp - SimStartHour   ! Recast tmp_dp as the difference in calandars
         SimStartHour = SimStartHour + tmp_dp
-        xmlSimStartTime = HS_xmltime(SimStartHour,BaseYear,useLeap)
       endif
 
         ! Now that we have the actual times available from the Met files, we can reset
         ! the Simulation Start times for forecast runs
       if(runAsForecast)then
-        MR_Comp_StartHour = MR_windfile_starthour(1) + MR_windfile_stephour(1,1) + FC_Offset
-        SimStartHour      = MR_Comp_StartHour
-        xmlSimStartTime   = HS_xmltime(SimStartHour,BaseYear,useLeap)
+        if(Load_Windfiles)then
+          MR_Comp_StartHour = MR_windfile_starthour(1) + MR_windfile_stephour(1,1) + FC_Offset
+          SimStartHour      = MR_Comp_StartHour
+        else
+          MR_Comp_StartHour = 0.0_dp
+          SimStartHour      = MR_Comp_StartHour
+        endif
       endif
+      xmlSimStartTime   = HS_xmltime(SimStartHour,BaseYear,useLeap)
 
       !************************************************************************
       ! BLOCK 6: AIRPORT/POI FILE
@@ -6355,6 +6358,9 @@
 
       use io_units
 
+      use global_param,  only : &
+          runAsForecast
+
       use time_data,     only : &
           BaseYear,useLeap
 
@@ -6415,6 +6421,7 @@
          '******************* BLOCK 2 ****************************************************'
         do i=1,nerup
           iyear = HS_YearOfEvent(e_ST(i),BaseYear,useLeap)
+          if(runAsForecast) iyear = 0
           imonth= HS_MonthOfEvent(e_ST(i),BaseYear,useLeap)
           iday  = HS_DayOfEvent(e_ST(i),BaseYear,useLeap)
           hour  = HS_HourOfDay(e_ST(i),BaseYear,useLeap)
