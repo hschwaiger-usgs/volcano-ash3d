@@ -195,7 +195,8 @@
       real(kind=dp) :: minlat_Topo_comp,maxlat_Topo_comp
       real(kind=dp) :: minlon_Topo_Met,maxlon_Topo_Met
       real(kind=dp) :: minlat_Topo_Met,maxlat_Topo_Met
-      logical       :: Topo_UseCompGrid      = .false.
+      logical       :: Topo_UseCompGrid      = .false.   ! We assume the Met Grid will be larger
+                                                         ! than the comp grid (this is checked)
 
       contains
 
@@ -977,6 +978,12 @@
         minlon_Topo_Met  = minlon_Topo_Met  + 360.0_dp
         maxlon_Topo_Met  = maxlon_Topo_Met  + 360.0_dp
       endif
+      if(minlon_Topo_comp<minlon_Topo_Met .or. &
+         maxlon_Topo_comp>maxlon_Topo_Met .or. &
+         minlat_Topo_comp<minlat_Topo_Met .or. &
+         maxlat_Topo_comp>maxlat_Topo_Met )then
+          Topo_UseCompGrid = .true.
+      endif
       topolonmin = min(minlon_Topo_Met,minlon_Topo_comp)
       topolonmax = max(maxlon_Topo_Met,maxlon_Topo_comp)
       topolatmin = min(minlat_Topo_Met,minlat_Topo_comp)
@@ -991,6 +998,7 @@
           start_lon_idx = ilon
         endif
         ! Use extents of computational grid if topo grid does not cover Met grid
+        ! or the ghost cells of the computational grid extend beyond the Met grid.
         if(minlon_Topo_comp >= cleft.and. &
            minlon_Topo_comp < cright.and.&
            start_lon_idx < 0)then
@@ -1802,13 +1810,6 @@
         endif
         cleft = cright
       enddo
-      if(Topo_UseCompGrid)then
-        nlon_topo_subgrid = floor((maxlon_Topo_comp-minlon_Topo_comp)/dlon_topo)+1
-        nlat_topo_subgrid = int((maxlat_Topo_comp-minlat_Topo_comp)/dlat_topo)
-      else
-        nlon_topo_subgrid = floor((maxlon_Topo_Met-minlon_Topo_Met)/dlon_topo)+1
-        nlat_topo_subgrid = int((maxlat_Topo_Met-minlat_Topo_Met)/dlat_topo)
-      endif
 
       if(start_lon_idx < 1.or.start_lon_idx > nlon_topo_fullgrid)then
         ! Couldn't find start x
@@ -1879,6 +1880,14 @@
         endif
         cleft = cright
       enddo
+      if(Topo_UseCompGrid)then
+        nlon_topo_subgrid = ceiling((maxlon_Topo_comp-minlon_Topo_comp)/dlon_topo)+1
+        nlat_topo_subgrid = ceiling((maxlat_Topo_comp-minlat_Topo_comp)/dlat_topo)
+      else
+        nlon_topo_subgrid = ceiling((maxlon_Topo_Met-minlon_Topo_Met)/dlon_topo)+1
+        nlat_topo_subgrid = ceiling((maxlat_Topo_Met-minlat_Topo_Met)/dlat_topo)
+      endif
+
       if(start_lat_idx < 1.or.start_lat_idx > nlat_topo_fullgrid)then
         ! Couldn't find start y
         do io=1,2;if(VB(io) <= verbosity_error)then
@@ -2395,8 +2404,10 @@
           if(olam >  180.0_ip.and.&
              loncc_topo_subgrid(nlon_topo_subgrid) < 180.0_ip)olam=olam-360.0_ip
           if(olam < -180.0_ip)olam=olam+360.0_ip
-          if(abs(olam-loncl_topo_subgrid(1)) < 0.005_ip)olam=loncl_topo_subgrid(1)
-          if(abs(olam-loncl_topo_subgrid(nlon_topo_subgrid+1)) < 0.005_ip)olam=loncl_topo_subgrid(nlon_topo_subgrid+1)
+          if(abs(olam-loncl_topo_subgrid(1)) < 0.005_ip)  &
+                 olam=loncl_topo_subgrid(1)
+          if(abs(olam-loncl_topo_subgrid(nlon_topo_subgrid+1)) < 0.005_ip) &
+                 olam=loncl_topo_subgrid(nlon_topo_subgrid+1)
 
           ! Double-check that olam,ophi maps onto the computation grid
           if(olam < loncl_topo_subgrid(1).or.&
