@@ -408,7 +408,7 @@
       dbZ = 0.0_ip
 
       do io=1,2;if(VB(io) <= verbosity_debug1)then
-        write(outlog(io),*)"     Exiting Subroutine Allocate_Output_Vars"
+        write(outlog(io),*)"     Exited Subroutine Allocate_Output_Vars"
       endif;enddo
 
       return

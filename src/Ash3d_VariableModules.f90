@@ -458,6 +458,7 @@
       character(len=20),dimension(MAXNUM_OPTMODS) :: OPTMOD_names
       integer                  :: nmods
 
+      logical                  :: testutils   = .true.
       logical                  :: usezip      = .false.
       character(len=50)        :: zippath     = ''
       logical                  :: usegnuplot  = .false.

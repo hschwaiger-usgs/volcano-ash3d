@@ -311,6 +311,12 @@
 !      = 4 : GMT
 !      = 5 : matlab/octave
 !      = 6 : python/cartopy
+!    ASH3DNOCHECK : This environment variable can be used to suppress checking and testing
+!                   of external programs (gnuplot, zip, python, GMT, matlab/octave) as
+!                   these tests are time-consuming.
+!      = 0 false, meaning invoke the tests before attempting to use the utility (dafualt)
+!      = 1 true,  meaning proceed issuing system calls to programs that might not exist.
+!
 !  Next, details of the system state are logged, including OS type (Linux, Mac, Windows),
 !  endian flavor of hardware, fortran compiler version and flags, command-line arguments,
 !  and date/time of the run.  Additionally, if PII=ON was set in the makefile when this
@@ -339,7 +345,7 @@
         version,version_major,version_minor,version_patch,&
         CFL,OS_TYPE,OS_Flavor,os_full_command_line,os_cwd,os_host,os_user,&
         Comp_Code,Comp_Flavor,useFastDt,FastDt_suppress, &
-        usezip,zippath,usegnuplot,gnuplotpath,useCN,limiter
+        usezip,zippath,usegnuplot,gnuplotpath,useCN,limiter,testutils
 
       use io_data,       only : &
         Ash3dHome,Instit_IconFile,cdf_source
@@ -364,6 +370,7 @@
       character(len=120) :: iomessage
 
       character(len=130) :: tmp_str
+      integer            :: itmp
         ! variables to hold results of date_and_time
       character(len=8)  :: date
       character(len=10) :: time2
@@ -724,6 +731,48 @@
         endif
       endif
 
+      ! Now, check for environment variables ASH3DNOCHECK
+      do io=1,2;if(VB(io) <= verbosity_info)then
+        write(outlog(io),*)" "
+        write(outlog(io),*)"Checking for run-time environment variable: ASH3DNOCHECK"
+      endif;enddo
+      call get_environment_variable(name="ASH3DNOCHECK",value=tmp_str,status=iostatus)
+      if(iostatus == 0)then
+        ! Environment variable ASH3DNOCHECK found, now reading it
+        read(tmp_str,*,iostat=iostatus,iomsg=iomessage)itmp
+        if(iostatus /= 0)then
+          do io=1,2;if(VB(io) <= verbosity_error)then
+            write(errlog(io),*)"ERROR: ASH3DNOCHECK found, but expecting an integer value"
+            write(errlog(io),*)"       Instead, env. variable set to: ",tmp_str
+            write(errlog(io),*)'System Message: ',trim(adjustl(iomessage))
+          endif;enddo
+          stop 1
+        endif
+        if(itmp == 0)then
+          ! This is the default where we always check for utilities before using
+          testutils = .true.
+        else
+          ! Anything other than 0 turns off testing of utilities
+          testutils = .false.
+        endif
+        do io=1,2;if(VB(io) <= verbosity_info)then
+          write(outlog(io),'(a50,f8.2)')"  System utility testing has been set via environment variable"
+          write(outlog(io),*)"   testutils = ",testutils
+          if(testutils)then
+            write(outlog(io),*)"   Presence/absence of utilities will be tested before use."
+          else
+            write(outlog(io),*)"   No checking for existance or successful execution of utilities."
+            write(outlog(io),*)"   Please make sure you have zip installed and to specify only"
+            write(outlog(io),*)"   plotting packages you have installed."
+          endif
+        endif;enddo
+      else
+        do io=1,2;if(VB(io) <= verbosity_info)then
+          write(outlog(io),'(a40,f8.2)')"  ASH3DNOCHECK not found."
+          write(outlog(io),'(a40,f8.2)')"    testutils = ",testutils
+        endif;enddo
+      endif
+
       ! Operating System details
       MR_OS_TYPE   = OS_TYPE
       MR_DirPrefix = DirPrefix
@@ -838,40 +887,42 @@
           usezip = .true.
           write(outlog(io),*)"        USEZIP: zip will be used to bundle kmz files using path: ",&
                              trim(adjustl(zippath))
-          ! First check if zip is actually in the path
-          write(outlog(io),*)"                  Checking for default path for zip"
-          call execute_command_line('which zip',&
-                                    wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-          if(iostatus /= 0)then
-            write(outlog(io),*)"Error: 'which zip' failed. No zip executable in default path"
-            write(outlog(io),*)"       Deactivating zip"
-            usezip = .false.
-          endif
-          if(usezip)then
-            ! Next check if zippath exists
-            inquire( file=trim(adjustl(zippath)), exist=IsThere)
-            if(.not.IsThere)then
-              write(outlog(io),*)"Error: user-specified path does not exist and is"
-              write(outlog(io),*)"       inconsistent with 'which zip'."
-              write(outlog(io),*)"       Please correct zippath in makefile."
+          if(testutils)then
+            ! First check if zip is actually in the path
+            write(outlog(io),*)"                  Checking for default path for zip"
+            call execute_command_line('which zip',&
+                                      wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
+            if(iostatus /= 0)then
+              write(outlog(io),*)"Error: 'which zip' failed. No zip executable in default path"
               write(outlog(io),*)"       Deactivating zip"
               usezip = .false.
             endif
-          endif
-          if(usezip)then
-            ! Finally, do a test run of the zip executable
-            write(outlog(io),*)"                  Checking if zip executes."
-            call execute_command_line("echo 'exit' | zip --version > /dev/null",&
-                                      wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-            if(iostatus == 0)then
-              write(outlog(io),*)"                  Success"
-            else
-              write(outlog(io),*)"Error: Something is wrong with the zip executable."
-              write(outlog(io),*)"         zip is returing an error code = ",iostatus
-              write(outlog(io),*)"       execute_command_line command status = ",cstat
-              write(outlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
-              write(outlog(io),*)"       Deactivating zip"
-              usezip = .false.
+            if(usezip)then
+              ! Next check if zippath exists
+              inquire( file=trim(adjustl(zippath)), exist=IsThere)
+              if(.not.IsThere)then
+                write(outlog(io),*)"Error: user-specified path does not exist and is"
+                write(outlog(io),*)"       inconsistent with 'which zip'."
+                write(outlog(io),*)"       Please correct zippath in makefile."
+                write(outlog(io),*)"       Deactivating zip"
+                usezip = .false.
+              endif
+            endif
+            if(usezip)then
+              ! Finally, do a test run of the zip executable
+              write(outlog(io),*)"                  Checking if zip executes."
+              call execute_command_line("echo 'exit' | zip --version > /dev/null",&
+                                        wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
+              if(iostatus == 0)then
+                write(outlog(io),*)"                  Success"
+              else
+                write(outlog(io),*)"Error: Something is wrong with the zip executable."
+                write(outlog(io),*)"         zip is returing an error code = ",iostatus
+                write(outlog(io),*)"       execute_command_line command status = ",cstat
+                write(outlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
+                write(outlog(io),*)"       Deactivating zip"
+                usezip = .false.
+              endif
             endif
           endif
         endif
@@ -891,43 +942,45 @@
           write(outlog(io),*)"                gnuplot currently not integrated with Ash3d on Windows."
           write(outlog(io),*)"       Deactivating gnuplot"
           usegnuplot = .false.
-        else
+        elseif(.not.testutils)then
           usegnuplot = .true.
           write(outlog(io),*)"    USEGNUPLOT: gnuplot plotting package is installed"
-          ! First check if gnuplot is actually in the path
-          write(outlog(io),*)"                  Checking for default path for gnuplot"
-          call execute_command_line('which gnuplot',&
-                                    wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-          if(iostatus /= 0)then
-            write(outlog(io),*)"Error: 'which gnuplot' failed. No gnuplot executable in default path"
-            write(outlog(io),*)"       Deactivating gnuplot"
-            usegnuplot = .false.
-          endif
-          if(usegnuplot)then
-            ! Next check if gnuplotpath exists
-            inquire( file=trim(adjustl(gnuplotpath)), exist=IsThere)
-            if(.not.IsThere)then
-              write(outlog(io),*)"Error: user-specified path does not exist and is"
-              write(outlog(io),*)"       inconsistent with 'which gnuplot'."
-              write(outlog(io),*)"       Please correct gnuplotpath in makefile."
+          if(testutils)then
+            ! First check if gnuplot is actually in the path
+            write(outlog(io),*)"                  Checking for default path for gnuplot"
+            call execute_command_line('which gnuplot',&
+                                      wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
+            if(iostatus /= 0)then
+              write(outlog(io),*)"Error: 'which gnuplot' failed. No gnuplot executable in default path"
               write(outlog(io),*)"       Deactivating gnuplot"
               usegnuplot = .false.
             endif
-          endif
-          if(usegnuplot)then
-            ! Finally, do a test run of the gnuplot executable
-            write(outlog(io),*)"                  Checking if gnuplot executes."
-            call execute_command_line("echo 'exit' | gnuplot",&
-                                      wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-            if(iostatus == 0)then
-              write(outlog(io),*)"                  Success"
-            else
-              write(outlog(io),*)"Error: Something is wrong with the gnuplot executable."
-              write(outlog(io),*)"       gnuplot is returing an error code",iostatus
-              write(outlog(io),*)"       execute_command_line command status = ",cstat
-              write(outlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
-              write(outlog(io),*)"       Deactivating gnuplot"
-              usegnuplot = .false.
+            if(usegnuplot)then
+              ! Next check if gnuplotpath exists
+              inquire( file=trim(adjustl(gnuplotpath)), exist=IsThere)
+              if(.not.IsThere)then
+                write(outlog(io),*)"Error: user-specified path does not exist and is"
+                write(outlog(io),*)"       inconsistent with 'which gnuplot'."
+                write(outlog(io),*)"       Please correct gnuplotpath in makefile."
+                write(outlog(io),*)"       Deactivating gnuplot"
+                usegnuplot = .false.
+              endif
+            endif
+            if(usegnuplot)then
+              ! Finally, do a test run of the gnuplot executable
+              write(outlog(io),*)"                  Checking if gnuplot executes."
+              call execute_command_line("echo 'exit' | gnuplot",&
+                                        wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
+              if(iostatus == 0)then
+                write(outlog(io),*)"                  Success"
+              else
+                write(outlog(io),*)"Error: Something is wrong with the gnuplot executable."
+                write(outlog(io),*)"       gnuplot is returing an error code",iostatus
+                write(outlog(io),*)"       execute_command_line command status = ",cstat
+                write(outlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
+                write(outlog(io),*)"       Deactivating gnuplot"
+                usegnuplot = .false.
+              endif
             endif
           endif
         endif

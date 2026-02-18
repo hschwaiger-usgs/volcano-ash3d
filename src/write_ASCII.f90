@@ -809,7 +809,7 @@
 
       do j=1,ny
         do i=1,nx
-          write(fid_ascii2dout,'(f10.4,a3,f10.4,a3,g15.5)')x_in(i),' , ',y_in(j),' , ',OutVar(i,j)
+          write(fid_ascii2dout,'(f10.4,a3,f10.4,a3,e15.5)')x_in(i),' , ',y_in(j),' , ',OutVar(i,j)
         enddo
       enddo
 

@@ -68,7 +68,7 @@
 
       use global_param,  only : &
          MM_2_IN,EPS_SMALL,&
-         usegnuplot,useGMT,usematlab,useoctave,usepython
+         usegnuplot,useGMT,usematlab,useoctave,usepython,testutils
 
       use io_data,       only : &
          iTimeNext,PP_infile,datafileIn,HaveInfile, &
@@ -293,35 +293,37 @@
 #ifdef LINUX
         ! On a linux system, test for gnuplot
       usegnuplot = .true.
-      call execute_command_line('which gnuplot > /dev/null',&
-                                wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-      if(iostatus /= 0)then
-        do io=1,2;if(VB(io) <= verbosity_info)then
-          write(outlog(io),*)"Warning: 'which gnuplot' failed. No gnuplot executable in default path"
-          write(outlog(io),*)"          Deactivating gnuplot"
-        endif;enddo
-        usegnuplot = .false.
-      endif
-      if(usegnuplot)then
-        ! Finally, do a test run of the gnuplot executable
-        do io=1,2;if(VB(io) <= verbosity_info)then
-          write(outlog(io),*)"                  Checking if gnuplot executes."
-        endif;enddo
-        call execute_command_line("echo 'exit' | gnuplot",&
+      if(testutils)then
+        call execute_command_line('which gnuplot > /dev/null',&
                                   wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-        if(iostatus == 0)then
+        if(iostatus /= 0)then
           do io=1,2;if(VB(io) <= verbosity_info)then
-            write(outlog(io),*)"                  Success"
-          endif;enddo
-        else
-          do io=1,2;if(VB(io) <= verbosity_info)then
-            write(outlog(io),*)"Error: Something is wrong with the gnuplot executable."
-            write(outlog(io),*)"       gnuplot is returing an error code",iostatus
-            write(outlog(io),*)"       execute_command_line command status = ",cstat
-            write(outlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
-            write(outlog(io),*)"       Deactivating gnuplot"
+            write(outlog(io),*)"Warning: 'which gnuplot' failed. No gnuplot executable in default path"
+            write(outlog(io),*)"          Deactivating gnuplot"
           endif;enddo
           usegnuplot = .false.
+        endif
+        if(usegnuplot)then
+          ! Finally, do a test run of the gnuplot executable
+          do io=1,2;if(VB(io) <= verbosity_info)then
+            write(outlog(io),*)"                  Checking if gnuplot executes."
+          endif;enddo
+          call execute_command_line("echo 'exit' | gnuplot",&
+                                    wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
+          if(iostatus == 0)then
+            do io=1,2;if(VB(io) <= verbosity_info)then
+              write(outlog(io),*)"                  Success"
+            endif;enddo
+          else
+            do io=1,2;if(VB(io) <= verbosity_info)then
+              write(outlog(io),*)"Error: Something is wrong with the gnuplot executable."
+              write(outlog(io),*)"       gnuplot is returing an error code",iostatus
+              write(outlog(io),*)"       execute_command_line command status = ",cstat
+              write(outlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
+              write(outlog(io),*)"       Deactivating gnuplot"
+            endif;enddo
+            usegnuplot = .false.
+          endif
         endif
       endif
 #endif
@@ -351,35 +353,37 @@
       ! Test for GMT
 #ifdef LINUX
       useGMT = .true.
-      call execute_command_line('which gmt > /dev/null',&
-                                wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-      if(iostatus /= 0)then
-        do io=1,2;if(VB(io) <= verbosity_info)then
-          write(outlog(io),*)"Warning: 'which gmt' failed. No gmt executable in default path"
-          write(outlog(io),*)"          Deactivating gmt"
-        endif;enddo
-        useGMT = .false.
-      endif
-      if(useGMT)then
-        ! Finally, do a test run of the gmt executable
-        do io=1,2;if(VB(io) <= verbosity_info)then
-          write(outlog(io),*)"                  Checking if gmt executes."
-        endif;enddo
-        call execute_command_line("gmt --version > /dev/null",&
+      if(testutils)then
+        call execute_command_line('which gmt > /dev/null',&
                                   wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-        if(iostatus == 0)then
+        if(iostatus /= 0)then
           do io=1,2;if(VB(io) <= verbosity_info)then
-            write(outlog(io),*)"                  Success"
-          endif;enddo
-        else
-          do io=1,2;if(VB(io) <= verbosity_info)then
-            write(outlog(io),*)"Error: Something is wrong with the gmt executable."
-            write(outlog(io),*)"       gmt is returing an error code",iostatus
-            write(outlog(io),*)"       execute_command_line command status = ",cstat
-            write(outlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
-            write(outlog(io),*)"       Deactivating gmt"
+            write(outlog(io),*)"Warning: 'which gmt' failed. No gmt executable in default path"
+            write(outlog(io),*)"          Deactivating gmt"
           endif;enddo
           useGMT = .false.
+        endif
+        if(useGMT)then
+          ! Finally, do a test run of the gmt executable
+          do io=1,2;if(VB(io) <= verbosity_info)then
+            write(outlog(io),*)"                  Checking if gmt executes."
+          endif;enddo
+          call execute_command_line("gmt --version > /dev/null",&
+                                    wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
+          if(iostatus == 0)then
+            do io=1,2;if(VB(io) <= verbosity_info)then
+              write(outlog(io),*)"                  Success"
+            endif;enddo
+          else
+            do io=1,2;if(VB(io) <= verbosity_info)then
+              write(outlog(io),*)"Error: Something is wrong with the gmt executable."
+              write(outlog(io),*)"       gmt is returing an error code",iostatus
+              write(outlog(io),*)"       execute_command_line command status = ",cstat
+              write(outlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
+              write(outlog(io),*)"       Deactivating gmt"
+            endif;enddo
+            useGMT = .false.
+          endif
         endif
       endif
 #endif
@@ -411,49 +415,51 @@
         ! On a linux system, we could just try to execute matlab
         ! but this takes heaps of time to load. Just test if matlab in on path.
       usematlab = .true.
-      call execute_command_line('which matlab > /dev/null',&
-                                wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-      if(iostatus /= 0)then
-        do io=1,2;if(VB(io) <= verbosity_info)then
-          write(outlog(io),*)"Warning: 'which matlab' failed. No matlab executable in default path"
-          write(outlog(io),*)"          Deactivating matlab"
-        endif;enddo
-        usematlab = .false.
-      endif
-      ! We are skipping this test for successful execution since it takes so long to launch matlab
-      ! Now test for octave
-      useoctave = .true.
-      call execute_command_line('which octave > /dev/null',&
-                                wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-      if(iostatus /= 0)then
-        do io=1,2;if(VB(io) <= verbosity_info)then
-          write(outlog(io),*)"Warning: 'which octave' failed. No octave executable in default path"
-          write(outlog(io),*)"          Deactivating octave"
-        endif;enddo
-        useoctave = .false.
-      endif
-      if(useoctave)then
-        SetOctaveGraphics = .true.  ! This sets octave to default over MatLab (for speed), when neededd
-                                    ! Also inserts octave-specific graphics directives
-        ! Finally, do a test run of the octave executable
-        do io=1,2;if(VB(io) <= verbosity_info)then
-          write(outlog(io),*)"                  Checking if octave executes."
-        endif;enddo
-        call execute_command_line("echo 'exit' | octave",&
+      if(testutils)then
+        call execute_command_line('which matlab > /dev/null',&
                                   wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-        if(iostatus == 0)then
+        if(iostatus /= 0)then
           do io=1,2;if(VB(io) <= verbosity_info)then
-            write(outlog(io),*)"                  Success"
+            write(outlog(io),*)"Warning: 'which matlab' failed. No matlab executable in default path"
+            write(outlog(io),*)"          Deactivating matlab"
           endif;enddo
-        else
+          usematlab = .false.
+        endif
+        ! We are skipping this test for successful execution since it takes so long to launch matlab
+        ! Now test for octave
+        useoctave = .true.
+        call execute_command_line('which octave > /dev/null',&
+                                  wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
+        if(iostatus /= 0)then
           do io=1,2;if(VB(io) <= verbosity_info)then
-            write(outlog(io),*)"Error: Something is wrong with the octave executable."
-            write(outlog(io),*)"       octave is returing an error code",iostatus
-            write(outlog(io),*)"       execute_command_line command status = ",cstat
-            write(outlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
-            write(outlog(io),*)"       Deactivating octave"
+            write(outlog(io),*)"Warning: 'which octave' failed. No octave executable in default path"
+            write(outlog(io),*)"          Deactivating octave"
           endif;enddo
           useoctave = .false.
+        endif
+        if(useoctave)then
+          SetOctaveGraphics = .true.  ! This sets octave to default over MatLab (for speed), when neededd
+                                      ! Also inserts octave-specific graphics directives
+          ! Finally, do a test run of the octave executable
+          do io=1,2;if(VB(io) <= verbosity_info)then
+            write(outlog(io),*)"                  Checking if octave executes."
+          endif;enddo
+          call execute_command_line("echo 'exit' | octave",&
+                                    wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
+          if(iostatus == 0)then
+            do io=1,2;if(VB(io) <= verbosity_info)then
+              write(outlog(io),*)"                  Success"
+            endif;enddo
+          else
+            do io=1,2;if(VB(io) <= verbosity_info)then
+              write(outlog(io),*)"Error: Something is wrong with the octave executable."
+              write(outlog(io),*)"       octave is returing an error code",iostatus
+              write(outlog(io),*)"       execute_command_line command status = ",cstat
+              write(outlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
+              write(outlog(io),*)"       Deactivating octave"
+            endif;enddo
+            useoctave = .false.
+          endif
         endif
       endif
 #endif
@@ -489,36 +495,38 @@
       !call execute_command_line("echo 'exit' | python",exitstat=iostatus)
 
       usepython = .true.
-      call execute_command_line('which python > /dev/null',&
-                                wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-      if(iostatus /= 0)then
-        do io=1,2;if(VB(io) <= verbosity_info)then
-          write(outlog(io),*)"Warning: 'which python' failed. No python executable in default path"
-          write(outlog(io),*)"          Deactivating python"
-        endif;enddo
-        usepython = .false.
-      endif
-      if(usepython)then
-        ! Finally, do a test run of the python executable
-        do io=1,2;if(VB(io) <= verbosity_info)then
-          write(outlog(io),*)"                  Checking if python executes."
-        endif;enddo
-        call execute_command_line("echo 'exit' | python",&
+      if(testutils)then
+        call execute_command_line('which python > /dev/null',&
                                   wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-        if(iostatus == 0)then
+        if(iostatus /= 0)then
           do io=1,2;if(VB(io) <= verbosity_info)then
-            write(outlog(io),*)"                  Success; at least for python base."
-            write(outlog(io),*)"                  cartopy is needed for mapping"
-          endif;enddo
-        else
-          do io=1,2;if(VB(io) <= verbosity_info)then
-            write(outlog(io),*)"Error: Something is wrong with the python executable."
-            write(outlog(io),*)"       python is returing an error code",iostatus
-            write(outlog(io),*)"       execute_command_line command status = ",cstat
-            write(outlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
-            write(outlog(io),*)"       Deactivating python"
+            write(outlog(io),*)"Warning: 'which python' failed. No python executable in default path"
+            write(outlog(io),*)"          Deactivating python"
           endif;enddo
           usepython = .false.
+        endif
+        if(usepython)then
+          ! Finally, do a test run of the python executable
+          do io=1,2;if(VB(io) <= verbosity_info)then
+            write(outlog(io),*)"                  Checking if python executes."
+          endif;enddo
+          call execute_command_line("echo 'exit' | python",&
+                                    wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
+          if(iostatus == 0)then
+            do io=1,2;if(VB(io) <= verbosity_info)then
+              write(outlog(io),*)"                  Success; at least for python base."
+              write(outlog(io),*)"                  cartopy is needed for mapping"
+            endif;enddo
+          else
+            do io=1,2;if(VB(io) <= verbosity_info)then
+              write(outlog(io),*)"Error: Something is wrong with the python executable."
+              write(outlog(io),*)"       python is returing an error code",iostatus
+              write(outlog(io),*)"       execute_command_line command status = ",cstat
+              write(outlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
+              write(outlog(io),*)"       Deactivating python"
+            endif;enddo
+            usepython = .false.
+          endif
         endif
       endif
 #endif

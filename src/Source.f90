@@ -535,7 +535,7 @@
 
       enddo  ! neruptions
 
-      do io=1,2;if(VB(io) <= verbosity_debug1)then
+      do io=1,2;if(VB(io) <= verbosity_debug2)then
         write(outlog(io),*)"     Exporting volume of each eruptive pulse"
         write(outlog(io),*)e_Volume(1:neruptions)
         write(outlog(io),*)"-----------------------------------------------"
