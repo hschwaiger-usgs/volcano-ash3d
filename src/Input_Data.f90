@@ -768,8 +768,8 @@
         endif;enddo
       else
         do io=1,2;if(VB(io) <= verbosity_info)then
-          write(outlog(io),'(a40,f8.2)')"  ASH3DNOCHECK not found."
-          write(outlog(io),'(a40,f8.2)')"    testutils = ",testutils
+          write(outlog(io),*)"  ASH3DNOCHECK not found."
+          write(outlog(io),*)"    testutils = ",testutils
         endif;enddo
       endif
 
