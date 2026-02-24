@@ -362,6 +362,13 @@
         s_PlumeHeight(:) = e_PlumeHeight(:) - Zsurf(ivent,jvent)
       elseif(ZScaling_ID == 2)then
         ! Scaled coordinates, choose the surface or z (if z is higher)
+        if(minval(e_PlumeHeight(:)) <= Zsurf(ivent,jvent))then
+          do io=1,2;if(VB(io) <= verbosity_error)then
+            write(errlog(io),*)"ERROR: ",&
+                     "Plume height is below the vent height."
+          endif;enddo
+          stop 1
+        endif
         z_volcano = max(z_volcano,Zsurf(ivent,jvent))
         s_volcano = Ztop*(z_volcano-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
         s_PlumeHeight(:) = Ztop*(e_PlumeHeight(:)-Zsurf(ivent,jvent))/(Ztop-Zsurf(ivent,jvent))
@@ -375,7 +382,8 @@
         write(outlog(io),*) "  sources or fine-fraction only will not be a valid comparison)."
         write(outlog(io),*) "  If topography is activated, efective plume height above topography"
         write(outlog(io),*) "  will also be given."
-        write(outlog(io),*)"Using a vent height (in km) of: ",z_volcano
+        write(outlog(io),*)"Using a vent height (in km) of: ",real(z_volcano,kind=4)
+        write(outlog(io),*)" Note: topograph at vent is (in km): ",real(Zsurf(ivent,jvent),kind=4)
         write(outlog(io),87)
       endif;enddo
       do i=1,neruptions
@@ -517,7 +525,6 @@
                 frac = 0.0_ip
               endif
 
-
                 NormSourceColumn(i,k) = NormSourceColumn(i,k) + &
                   e_prof_Volume(i,kk)*frac
             enddo
@@ -535,13 +542,13 @@
 
       enddo  ! neruptions
 
-      do io=1,2;if(VB(io) <= verbosity_debug2)then
+      do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"     Exporting volume of each eruptive pulse"
         write(outlog(io),*)e_Volume(1:neruptions)
         write(outlog(io),*)"-----------------------------------------------"
         write(outlog(io),*)"     Exporting Normalized eruption column data"
         do k=nzmax,1,-1
-          write(outlog(io),*)k,z_cc_pd(k),NormSourceColumn(1:neruptions,k)
+          write(outlog(io),*)k,z_cc_pd(k),s_cc_pd(k),NormSourceColumn(1:neruptions,k)
         enddo
       endif;enddo
 

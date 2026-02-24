@@ -1622,7 +1622,7 @@
           if(z_volcano > 10.0_ip)then
             ! Height should be in km, but this is too high. Maybe it was entered as meters
             do io=1,2;if(VB(io) <= verbosity_info)then
-              write(outlog(io),*)"WARNING: vent elevation is too hight: ",z_volcano
+              write(outlog(io),*)"WARNING: vent elevation is too high: ",z_volcano
               write(outlog(io),*)"         Converting from m to km."
             endif;enddo
             z_volcano = z_volcano / KM_2_M
@@ -1639,9 +1639,9 @@
         if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
         call FileIO_CleanLine(.false.,strlen,linebuffer080)
         cdf_b1l6 = linebuffer080
-        read(linebuffer080,*,err=9106,iostat=iostatus,iomsg=iomessage) de, dn                 ! cell size in degrees
+        read(linebuffer080,*,err=9106,iostat=iostatus,iomsg=iomessage) de, dn    ! cell size in degrees
 
-        !Make sure longitudes are between 0 and 360 degrees
+        ! Make sure longitudes are between 0 and 360 degrees
         if(lonLL < -360.0_ip) then
           do io=1,2;if(VB(io) <= verbosity_error)then
             write(errlog(io),*)&
@@ -2500,7 +2500,7 @@
       ! Now that we know which calendar we are using (BaseYear, useLeap), now we
       ! can set the HoursSince time for the source terms
       do i=1,neruptions
-        !set start time of simulation
+        ! set start time of simulation
         ! Note: This will be updated for forecast runs once we know the start
         !       time of the windfiles
         if(i == 1) then
@@ -2516,8 +2516,8 @@
         if(.not.IsCustom_SourceType)then
           ! relax the chronological requirement for custom sources
           if(i >= 2)then
-            !(add 0.001 hours to make sure that rounding error does not cause
-            !the program to stop)
+            ! (add 0.001 hours to make sure that rounding error does not cause
+            ! the program to stop)
             if((e_StartTime(i)+0.001_ip) < (e_StartTime(i-1)+e_Duration(i-1))) goto 9202
           endif
         endif
