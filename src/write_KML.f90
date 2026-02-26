@@ -1396,6 +1396,7 @@
         do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
            "The zippath provided in the makefile seems to be invalid. Cannot find zip."
+          write(errlog(io),*)"        zippath = ",zippath
         endif;enddo
         !stop 1
       endif
@@ -1403,8 +1404,10 @@
         do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)"  Zipping up ash_arrivaltimes_airports.kmz"
         endif;enddo
-        write(zipcom,'(a77)')&
-          'zip -r ash_arrivaltimes_airports.kmz ash_arrivaltimes_airports.kml depTS*.png'
+        !write(zipcom,'(a77)')&
+        !  'zip -r ash_arrivaltimes_airports.kmz ash_arrivaltimes_airports.kml depTS*.png'
+        zipcom =  'zip -r ' // 'ash_arrivaltimes_airports.kmz ' // &
+                               'ash_arrivaltimes_airports.kml depTS*.png'
         call execute_command_line(zipcom,&
                                   wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
       endif
@@ -1696,6 +1699,7 @@
         do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"ERROR: ",&
            "The zippath provided in the makefile seems to be invalid. Cannot find zip."
+          write(errlog(io),*)"        zippath = ",zippath
         endif;enddo
         !stop 1
       endif

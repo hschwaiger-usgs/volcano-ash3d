@@ -3413,7 +3413,7 @@
 !  final deposit thickness (depothickFin) and the deposit/ash-cloud arrival
 !  times (depotime,ash_arrival_time). Airport/POI variables written in this final
 !  step are the arrival and duration for both deposit and ash cloud.  If profile
-!  data is tracked, the whole transient variable (time_native) is written in this
+!  data are tracked, the whole transient variable (time_native) is written in this
 !  final step.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

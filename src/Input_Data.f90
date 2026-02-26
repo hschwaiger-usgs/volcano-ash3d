@@ -876,208 +876,290 @@
         write(outlog(io),*)"         No OS specified in makefile (None of LINUX, MACOS, or WINDOWS.)"
         write(outlog(io),*)"         LINUX: System assumed to be linux"
 #endif
+      endif;enddo
 
 #ifdef USEZIP
-        if(IsWindows)then
+      if(IsWindows)then
+        do io=1,2;if(VB(io) <= verbosity_production)then
           write(outlog(io),*)"      USEZIP: zip set to T, but this is a Windows system"
           write(outlog(io),*)"              zip currently not integrated with Ash3d on Windows."
           write(outlog(io),*)"       Deactivating zip"
-          usezip = .false.
-        else
-          usezip = .true.
+        endif;enddo
+        usezip = .false.
+      else
+        usezip = .true.
+        do io=1,2;if(VB(io) <= verbosity_production)then
           write(outlog(io),*)"        USEZIP: zip will be used to bundle kmz files using path: ",&
-                             trim(adjustl(zippath))
-          if(testutils)then
-            ! First check if zip is actually in the path
+                           trim(adjustl(zippath))
+        endif;enddo
+        if(testutils)then
+          ! First check if zip is actually in the path
+          do io=1,2;if(VB(io) <= verbosity_production)then
             write(outlog(io),*)"                  Checking for default path for zip"
-            call execute_command_line('which zip',&
-                                      wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-            if(iostatus /= 0)then
-              write(outlog(io),*)"Error: 'which zip' failed. No zip executable in default path"
-              write(outlog(io),*)"       Deactivating zip"
+          endif;enddo
+          call execute_command_line('which zip',&
+                                    wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
+          if(iostatus /= 0)then
+            do io=1,2;if(VB(io) <= verbosity_error)then
+              write(errlog(io),*)"Error: 'which zip' failed. No zip executable in default path"
+              write(errlog(io),*)"       Deactivating zip"
+            endif;enddo
+            usezip = .false.
+          endif
+          if(usezip)then
+            ! Next check if zippath exists
+            inquire( file=trim(adjustl(zippath)), exist=IsThere)
+            if(.not.IsThere)then
+              do io=1,2;if(VB(io) <= verbosity_error)then
+                write(errlog(io),*)"Error: user-specified path does not exist and is"
+                write(errlog(io),*)"       inconsistent with 'which zip'."
+                write(errlog(io),*)"       Please correct zippath in makefile."
+                write(errlog(io),*)"       Deactivating zip"
+              endif;enddo
               usezip = .false.
             endif
-            if(usezip)then
-              ! Next check if zippath exists
-              inquire( file=trim(adjustl(zippath)), exist=IsThere)
-              if(.not.IsThere)then
-                write(outlog(io),*)"Error: user-specified path does not exist and is"
-                write(outlog(io),*)"       inconsistent with 'which zip'."
-                write(outlog(io),*)"       Please correct zippath in makefile."
-                write(outlog(io),*)"       Deactivating zip"
-                usezip = .false.
-              endif
-            endif
-            if(usezip)then
-              ! Finally, do a test run of the zip executable
+          endif
+          if(usezip)then
+            ! Finally, do a test run of the zip executable
+            do io=1,2;if(VB(io) <= verbosity_production)then
               write(outlog(io),*)"                  Checking if zip executes."
-              call execute_command_line("echo 'exit' | zip --version > /dev/null",&
-                                        wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-              if(iostatus == 0)then
+            endif;enddo
+            call execute_command_line("echo 'exit' | zip --version > /dev/null",&
+                                      wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
+            if(iostatus == 0)then
+              do io=1,2;if(VB(io) <= verbosity_production)then
                 write(outlog(io),*)"                  Success"
-              else
-                write(outlog(io),*)"Error: Something is wrong with the zip executable."
-                write(outlog(io),*)"         zip is returing an error code = ",iostatus
-                write(outlog(io),*)"       execute_command_line command status = ",cstat
-                write(outlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
-                write(outlog(io),*)"       Deactivating zip"
-                usezip = .false.
-              endif
+              endif;enddo
+            else
+              do io=1,2;if(VB(io) <= verbosity_error)then
+                write(errlog(io),*)"Error: Something is wrong with the zip executable."
+                write(errlog(io),*)"         zip is returing an error code = ",iostatus
+                write(errlog(io),*)"       execute_command_line command status = ",cstat
+                write(errlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
+                write(errlog(io),*)"       Deactivating zip"
+              endif;enddo
+              usezip = .false.
             endif
           endif
         endif
+      endif
 #else
-        usezip = .false.  ! this is initialized to .false. in Ash3d_VariableModules.f90, but reiterated here
+      usezip = .false.  ! this is initialized to .false. in Ash3d_VariableModules.f90, but reiterated here
 #endif
 
 #ifdef USEDISLIN
+      do io=1,2;if(VB(io) <= verbosity_production)then
         write(outlog(io),*)"     USEDISLIN: API to Dislin plotting package is enabled"
+      endif;enddo
 #endif
 #ifdef USEPLPLOT
+      do io=1,2;if(VB(io) <= verbosity_production)then
         write(outlog(io),*)"     USEPLPLOT: API to plplot plotting package is enabled"
+      endif;enddo
 #endif
 #ifdef USEGNUPLOT
-        if(IsWindows)then
+      if(IsWindows)then
+        do io=1,2;if(VB(io) <= verbosity_production)then
           write(outlog(io),*)"    USEGNUPLOT: gnuplot set to T, but this is a Windows system"
           write(outlog(io),*)"                gnuplot currently not integrated with Ash3d on Windows."
           write(outlog(io),*)"       Deactivating gnuplot"
-          usegnuplot = .false.
-        elseif(.not.testutils)then
-          usegnuplot = .true.
+        endif;enddo
+        usegnuplot = .false.
+      elseif(.not.testutils)then
+        usegnuplot = .true.
+        do io=1,2;if(VB(io) <= verbosity_production)then
           write(outlog(io),*)"    USEGNUPLOT: gnuplot plotting package is installed"
-          if(testutils)then
-            ! First check if gnuplot is actually in the path
+        endif;enddo
+        if(testutils)then
+          ! First check if gnuplot is actually in the path
+          do io=1,2;if(VB(io) <= verbosity_production)then
             write(outlog(io),*)"                  Checking for default path for gnuplot"
-            call execute_command_line('which gnuplot',&
-                                      wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-            if(iostatus /= 0)then
-              write(outlog(io),*)"Error: 'which gnuplot' failed. No gnuplot executable in default path"
-              write(outlog(io),*)"       Deactivating gnuplot"
+          endif;enddo
+          call execute_command_line('which gnuplot',&
+                                    wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
+          if(iostatus /= 0)then
+            do io=1,2;if(VB(io) <= verbosity_error)then
+              write(errlog(io),*)"Error: 'which gnuplot' failed. No gnuplot executable in default path"
+              write(errlog(io),*)"       Deactivating gnuplot"
+            endif;enddo
+            usegnuplot = .false.
+          endif
+          if(usegnuplot)then
+            ! Next check if gnuplotpath exists
+            inquire( file=trim(adjustl(gnuplotpath)), exist=IsThere)
+            if(.not.IsThere)then
+              do io=1,2;if(VB(io) <= verbosity_error)then
+                write(errlog(io),*)"Error: user-specified path does not exist and is"
+                write(errlog(io),*)"       inconsistent with 'which gnuplot'."
+                write(errlog(io),*)"       Please correct gnuplotpath in makefile."
+                write(errlog(io),*)"       Deactivating gnuplot"
+              endif;enddo
               usegnuplot = .false.
             endif
-            if(usegnuplot)then
-              ! Next check if gnuplotpath exists
-              inquire( file=trim(adjustl(gnuplotpath)), exist=IsThere)
-              if(.not.IsThere)then
-                write(outlog(io),*)"Error: user-specified path does not exist and is"
-                write(outlog(io),*)"       inconsistent with 'which gnuplot'."
-                write(outlog(io),*)"       Please correct gnuplotpath in makefile."
-                write(outlog(io),*)"       Deactivating gnuplot"
-                usegnuplot = .false.
-              endif
-            endif
-            if(usegnuplot)then
-              ! Finally, do a test run of the gnuplot executable
+          endif
+          if(usegnuplot)then
+            ! Finally, do a test run of the gnuplot executable
+            do io=1,2;if(VB(io) <= verbosity_production)then
               write(outlog(io),*)"                  Checking if gnuplot executes."
-              call execute_command_line("echo 'exit' | gnuplot",&
-                                        wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
-              if(iostatus == 0)then
+            endif;enddo
+            call execute_command_line("echo 'exit' | gnuplot",&
+                                      wait=.true., exitstat=iostatus, cmdstat=cstat, cmdmsg=iomessage)
+            if(iostatus == 0)then
+              do io=1,2;if(VB(io) <= verbosity_production)then
                 write(outlog(io),*)"                  Success"
-              else
-                write(outlog(io),*)"Error: Something is wrong with the gnuplot executable."
-                write(outlog(io),*)"       gnuplot is returing an error code",iostatus
-                write(outlog(io),*)"       execute_command_line command status = ",cstat
-                write(outlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
-                write(outlog(io),*)"       Deactivating gnuplot"
-                usegnuplot = .false.
-              endif
+              endif;enddo
+            else
+              do io=1,2;if(VB(io) <= verbosity_error)then
+                write(errlog(io),*)"Error: Something is wrong with the gnuplot executable."
+                write(errlog(io),*)"       gnuplot is returing an error code",iostatus
+                write(errlog(io),*)"       execute_command_line command status = ",cstat
+                write(errlog(io),*)"       execute_command_line error message: ",trim(adjustl(iomessage))
+                write(errlog(io),*)"       Deactivating gnuplot"
+              endif;enddo
+              usegnuplot = .false.
             endif
           endif
         endif
+      endif
 #endif
 #ifdef USEGMT
+      do io=1,2;if(VB(io) <= verbosity_production)then
         write(outlog(io),*)"        USEGMT: API to GMT plotting package is enabled"
+      endif;enddo
 #endif
 
 #ifdef FAST_DT
+      do io=1,2;if(VB(io) <= verbosity_production)then
         write(outlog(io),*)"       FAST_DT: ON"
         write(outlog(io),*)"                dt will only be evaluated on the time steps"
         write(outlog(io),*)"                in the wind files.  If there are processes"
         write(outlog(io),*)"                that affect the wind speeds (e.g. umbrella"
         write(outlog(io),*)"                spreading), this can cause job failure."
+      endif;enddo
 #else
+      do io=1,2;if(VB(io) <= verbosity_production)then
         write(outlog(io),*)"       FAST_DT: OFF"
         write(outlog(io),*)"                dt will be evaluated each time step"
+      endif;enddo
 #endif
 #ifdef FAST_SUBGRID
+      do io=1,2;if(VB(io) <= verbosity_production)then
         write(outlog(io),*)"  FAST_SUBGRID: ON"
         write(outlog(io),*)"                Advection and diffusion routines will only"
         write(outlog(io),*)"                be calculated in the region where the cloud"
         write(outlog(io),*)"                concentration exceeds a threshold"
+      endif;enddo
 #else
+      do io=1,2;if(VB(io) <= verbosity_production)then
         write(outlog(io),*)"  FAST_SUBGRID: OFF"
         write(outlog(io),*)"                Advection and diffusion routines will be"
         write(outlog(io),*)"                applied on all cells, including those with"
         write(outlog(io),*)"                negligible concentrations."
+      endif;enddo
 #endif
 #ifdef EXPLDIFF
+      do io=1,2;if(VB(io) <= verbosity_production)then
         write(outlog(io),*)"      EXPLDIFF: Diffusion will be calculated via the explicit solver."
+      endif;enddo
 #endif
 #ifdef CRANKNIC
-        useCN   = .true.
+      useCN   = .true.
+      do io=1,2;if(VB(io) <= verbosity_production)then
         write(outlog(io),*)"      CRANKNIC: Diffusion will be calculated implicitly (via Crank-Nicolson)"
+      endif;enddo
 #endif
 #ifdef LIM_NONE
-        limiter = 'No'
+      limiter = 'No'
+      do io=1,2;if(VB(io) <= verbosity_production)then
         write(outlog(io),*)"      LIM_NONE: Advection routines use no limiters"
+      endif;enddo
 #endif
 #ifdef LIM_LAXWEN
-        limiter = 'LaxWendroff'
+      limiter = 'LaxWendroff'
+      do io=1,2;if(VB(io) <= verbosity_production)then
         write(outlog(io),*)"    LIM_LAXWEN: Advection routines use a Lax-Wendroff limiter"
+      endif;enddo
 #endif
 #ifdef LIM_BW
-        limiter = 'BeamWarm'
+      limiter = 'BeamWarm'
+      do io=1,2;if(VB(io) <= verbosity_production)then
         write(outlog(io),*)"        LIM_BW: Advection routines use a Beam-Warming limiter"
+      endif;enddo
 #endif
 #ifdef LIM_FROMM
-        limiter = 'Fromm'
+      limiter = 'Fromm'
+      do io=1,2;if(VB(io) <= verbosity_production)then
         write(outlog(io),*)"     LIM_FROMM: Advection routines use a Fromm limiter"
+      endif;enddo
 #endif
 #ifdef LIM_MINMOD
-        limiter = 'Minmod'
+      limiter = 'Minmod'
+      do io=1,2;if(VB(io) <= verbosity_production)then
         write(outlog(io),*)"    LIM_MINMOD: Advection routines use a minmod limiter"
+      endif;enddo
 #endif
 #ifdef LIM_SUPERBEE
-        limiter = 'Superbee'
+      limiter = 'Superbee'
+      do io=1,2;if(VB(io) <= verbosity_production)then
         write(outlog(io),*)"  LIM_SUPERBEE: Advection routines use a superbee limiter"
+      endif;enddo
 #endif
 #ifdef LIM_MC
-        limiter = 'MC'
+      limiter = 'MC'
+      do io=1,2;if(VB(io) <= verbosity_production)then
         write(outlog(io),*)"        LIM_MC: Advection routines use a MC limiter"
+      endif;enddo
 #endif
 #ifdef USENETCDF
+      do io=1,2;if(VB(io) <= verbosity_production)then
         write(outlog(io),*)"     USENETCDF: ON"
         write(outlog(io),*)"                NetCDF functionality is included"
+      endif;enddo
 #else
+      do io=1,2;if(VB(io) <= verbosity_production)then
         write(outlog(io),*)"     USENETCDF: OFF"
         write(outlog(io),*)"                NetCDF functionality is not included"
+      endif;enddo
 #endif
 #ifdef USEGRIB
+      do io=1,2;if(VB(io) <= verbosity_production)then
         write(outlog(io),*)"       USEGRIB: ON"
         write(outlog(io),*)"                Grib functionality is included"
+      endif;enddo
 #else
+      do io=1,2;if(VB(io) <= verbosity_production)then
         write(outlog(io),*)"       USEGRIB: OFF"
         write(outlog(io),*)"                Grib functionality is not included"
+      endif;enddo
 #endif
 #ifdef USEPOINTERS
+      do io=1,2;if(VB(io) <= verbosity_production)then
         write(outlog(io),*)"   USEPOINTERS: ON"
         write(outlog(io),*)"                Arrays are defined as pointers"
         write(outlog(io),*)"                This helps Ash3d subroutines to be called via C++"
+      endif;enddo
 #else
+      do io=1,2;if(VB(io) <= verbosity_production)then
         write(outlog(io),*)"   USEPOINTERS: OFF"
         write(outlog(io),*)"                All arrays are allocatable."
+      endif;enddo
 #endif
 #ifdef USEEXTDATA
+      do io=1,2;if(VB(io) <= verbosity_production)then
         write(outlog(io),*)"    USEEXTDATA: ON"
         write(outlog(io),*)"                Data files for airports and volcanoes are"
         write(outlog(io),*)"                read at run-time"
+      endif;enddo
 #else
+      do io=1,2;if(VB(io) <= verbosity_production)then
         write(outlog(io),*)"    USEEXTDATA: OFF"
         write(outlog(io),*)"                Data arrays for airports and volcanoes are"
         write(outlog(io),*)"                included when compiled."
+      endif;enddo
 #endif
 
-        ! Write out start time in UTC
+      ! Write out start time in UTC
+      do io=1,2;if(VB(io) <= verbosity_production)then
         write(outlog(io),*)
         write(version,'(i0,a1,i0,a1,i0)')version_major,'.',version_minor,'.',version_patch
         write(outlog(io),2) version,RunStartYear,RunStartMonth,RunStartDay,RunStartHr,RunStartMinute

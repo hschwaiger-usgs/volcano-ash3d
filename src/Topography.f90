@@ -4,7 +4,7 @@
 !
 !  This module is used for optionally reading topography files of various formats,
 !  and applying them to the computational Ash3d grid as well as the sub-grid of
-!  the NWP data.  Smoothing of the topographic data is applied instead of
+!  the NWP data.  Smoothing of the topographic data are applied instead of
 !  cell averaging.  This module is invoked if the OPTMOD=TOPO block is present in
 !  the Ash3d control file.  The block as the following format:
 !
@@ -1476,10 +1476,10 @@
           linebuffer050 = trim(adjustl(linebuffer050))
           read(linebuffer050,*,iostat=iostatus,iomsg=iomessage)testkey
           if(testkey == 'M'.or.testkey == 'B')then
-            ! data is in Motorola or Big-Endian format
+            ! data are in Motorola or Big-Endian format
             IsLitEnd_topo = .false.
           elseif(testkey == 'I'.or.testkey == 'L')then
-            ! data is in IBM or Little-Endian format
+            ! data are in IBM or Little-Endian format
             IsLitEnd_topo = .true.
           else
             ! Cannot determine endian
@@ -2057,7 +2057,7 @@
       linebuffer080 = trim(adjustl(file_topo))
       call read_2D_ASCII(linebuffer080)
 
-      ! Full topo data is now stored in A_XY of A_XY_int
+      ! Full topo data are now stored in A_XY of A_XY_int
       !  ASCII data from prior Ash3d runs is stores as floats in A_XY, but
       !  most ASCII topo data (e.g. gebco or from opentopo) is stored as integers
       ! For ASCII data, automatically pad array with two ghost cells

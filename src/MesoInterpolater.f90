@@ -501,7 +501,7 @@
           if(isGridRelative)then
             call MR_Rotate_UV_GR2ER_Met(istep,.true.,.true.)  ! optional argument returns data on compH
           else
-            ! if the projected data is already Earth-relative (NARR), then just read it
+            ! if the projected data are already Earth-relative (NARR), then just read it
             ivar = 3  ! Vy
             call MR_Read_3d_Met_Variable_to_CompH(ivar,istep,.true.)
             MR_dum3d_compH_2 = MR_dum3d_compH

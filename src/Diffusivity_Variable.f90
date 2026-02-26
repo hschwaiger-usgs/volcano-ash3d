@@ -675,7 +675,7 @@
             write(outlog(io),*)"      trying to read PBLH from the Met files. If that is unavailable, then"
             write(outlog(io),*)"      Ash3d will search for a low-level temperature inversion, inspect Ri(z)"
             write(outlog(io),*)"      relative to Ri_crit, and calculate the Eckman layer thickness from the"
-            write(outlog(io),*)"      latitude and friction velocity. If the atmospheric data is too coarse"
+            write(outlog(io),*)"      latitude and friction velocity. If the atmospheric data are too coarse"
             write(outlog(io),*)"      to determine the boundary layer, the free-air mixing-length will be used"
             write(outlog(io),*)"      for vertical diffusivity calculations throughout the domain."
           endif;enddo
@@ -902,7 +902,7 @@
           write(outlog(io),*)"      trying to read PBLH from the Met files. If that is unavailable, then"
           write(outlog(io),*)"      Ash3d will search for a low-level temperature inversion, inspect Ri(z)"
           write(outlog(io),*)"      relative to Ri_crit, and calculate the Eckman layer thickness from the"
-          write(outlog(io),*)"      latitude and friction velocity. If the atmospheric data is too coarse"
+          write(outlog(io),*)"      latitude and friction velocity. If the atmospheric data are too coarse"
           write(outlog(io),*)"      to determine the boundary layer, the free-air mixing-length will be used"
           write(outlog(io),*)"      for vertical diffusivity calculations throughout the domain."
         endif

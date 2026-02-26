@@ -243,7 +243,7 @@
 !      integer :: cityname_offset_px = 30
       real(kind=ip),dimension(:),allocatable     :: lon_cities
       real(kind=ip),dimension(:),allocatable     :: lat_cities
-      character(len=26),dimension(:),allocatable :: name_cities
+      character (len= 26),dimension(:),allocatable :: name_cities
 
       ! Contour variables
       integer           :: substr_pos1  ! for parsing contour text files
@@ -258,13 +258,13 @@
 
       ! GMT variables
       character(len=25) :: plotcom
-      character(len=20),dimension(20) :: penstr
-      character(len=80),dimension(20) :: legpenstr
+      character(len=20),dimension(25) :: penstr
+      character(len=80),dimension(25) :: legpenstr
       character(len=17) :: dumstr17
 !      character(len=48) :: dumstr48
-      character(len=8)  :: flt_str
+      character(len=10) :: flt_str
       character(len=50) :: base_str
-      character(len=50) :: title_str
+      character(len=60) :: title_str
       character(len=4 ) :: detail_str
       character(len=50) :: proj_str
       character(len=50) :: projX_str
@@ -673,7 +673,7 @@
         write(flt_str,'(i3)')zrgb(ilev,3)
         penstr(ilev)= trim(penstr(ilev)) // "/" // trim(adjustl(flt_str))
         legpenstr(ilev)=trim(legpenstr(ilev)) // "/" // trim(adjustl(flt_str))
-        write(flt_str,'(g8.3)')ContourLev(ilev)
+        write(flt_str,'(g10.3)')ContourLev(ilev)
         legpenstr(ilev)=trim(legpenstr(ilev)) // " 0.3i " // trim(adjustl(flt_str))
       enddo
 

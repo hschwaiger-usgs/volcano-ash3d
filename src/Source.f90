@@ -547,8 +547,11 @@
         write(outlog(io),*)e_Volume(1:neruptions)
         write(outlog(io),*)"-----------------------------------------------"
         write(outlog(io),*)"     Exporting Normalized eruption column data"
+        write(outlog(io),*)"        lev     z (or s)       Er-1",&
+                           "           [Er-2 ... neruptions]"
         do k=nzmax,1,-1
-          write(outlog(io),*)k,z_cc_pd(k),s_cc_pd(k),NormSourceColumn(1:neruptions,k)
+          write(outlog(io),*)k,real(z_cc_pd(k),kind=4), &
+                               real(NormSourceColumn(1:neruptions,k),kind=4)
         enddo
       endif;enddo
 

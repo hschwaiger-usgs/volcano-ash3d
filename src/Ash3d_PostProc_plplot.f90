@@ -69,7 +69,7 @@
 !  graphics package.  Annotations and contour levels are indicated via the
 !  product ID (iprod).  If writeContours is set to true, then this subroutine
 !  is only used for generating and storing the contours (for plplot, this
-!  throws an error since contour data is not available) with no png written.
+!  throws an error since contour data are not available) with no png written.
 !  If timestep = -1, then use the last step in file.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

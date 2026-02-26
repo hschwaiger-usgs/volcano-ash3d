@@ -146,7 +146,7 @@
       integer(kind=int8):: DBASE_EOF
 
       integer           :: nattr
-      character (len=10):: DBASE_TableRecData01  ! Organizaion
+      character (len=50):: DBASE_TableRecData01  ! Organizaion
       character (len=42):: DBASE_TableRecData02  ! Volcano
       character (len=20):: DBASE_TableRecData03  ! Run date
       character (len= 5):: DBASE_TableRecData04  ! iwindformat

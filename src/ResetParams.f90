@@ -98,6 +98,7 @@
       integer           :: i
       character(len=50) :: linebuffer050
       character(len=80) :: linebuffer080
+      character(len=80) :: linebuffer080_2
       integer           :: strlen
       character         :: testkey
       integer           :: iostatus
@@ -105,6 +106,7 @@
       character(len=120):: iomessage
       character(len=20) :: mod_name
       integer           :: substr_pos
+      integer           :: substr_pos2
       integer           :: iparam
       character(len=20),dimension(MAXPARAMS) :: pname
       real(kind=ip)    ,dimension(MAXPARAMS) :: pvalue
@@ -114,6 +116,11 @@
       do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine input_data_ResetParams"
       endif;enddo
+
+      ! Initialization
+      pname(:)      = ''
+      pvalue(:)     = 0.0_ip
+      pvalue_str(:) = ''
 
       do io=1,2;if(VB(io) <= verbosity_info)then
         write(outlog(io),*)"    Searching for OPTMOD=RESETPARAMS"
@@ -152,23 +159,27 @@
       linebuffer050 = "Reading testkey from linebuffer, RESETPARAMS"
       !if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
       iparam = 0
+      linebuffer080_2 = linebuffer080 ! back up string prior to cleansing
       call FileIO_CleanLine(.false.,strlen,linebuffer080)
       do while(iostatus == 0.and. &
                testkey /= '#'.and.testkey /= '*')
         iparam = iparam + 1
-        substr_pos = index(linebuffer080,'=')
+        substr_pos  = index(linebuffer080,'=')   ! Get position of = in cleansed string
+        substr_pos2 = index(linebuffer080_2,'=') ! Get position of = in raw string
         pname(iparam)=trim(adjustl(linebuffer080(1:substr_pos-1)))
         ! first try to read this parameter as a real value
         read(linebuffer080(substr_pos+1:80),*,iostat=iostatus,iomsg=iomessage)pvalue(iparam)
         if(iostatus /= 0)then
           ! If reading a floating point value fails, then try to read as
-          ! a string
-          read(linebuffer080(substr_pos+1:substr_pos+50),'(a50)',iostat=ioerr,iomsg=iomessage)pvalue_str(iparam)
+          ! a string, but read from raw string (might need accented characters, web address, etc.)
+          read(linebuffer080_2(substr_pos2+1:substr_pos2+50),'(a50)',iostat=ioerr,iomsg=iomessage)pvalue_str(iparam)
           linebuffer050 = "Reading value from linebuffer, RESETPARAMS"
           !if(ioerr /= 0) call FileIO_Error_Handler(ioerr,linebuffer050,linebuffer080,iomessage)
         endif
+        ! Read next line
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         if(iostatus /= 0) exit
+        linebuffer080_2 = linebuffer080 ! back up string prior to cleansing
         call FileIO_CleanLine(.false.,strlen,linebuffer080)
         read(linebuffer080,*,iostat=iostatus,iomsg=iomessage)testkey
         linebuffer050 = "Reading testkey from linebuffer, RESETPARAMS"

@@ -230,7 +230,7 @@
       integer,parameter                           ,public:: Con_CloudLoad_N     = 9
       integer      ,dimension(Con_CloudLoad_N,3)  ,public:: Con_CloudLoad_RGB
       real(kind=ip),dimension(Con_CloudLoad_N)    ,public:: Con_CloudLoad_Lev
-      integer,parameter                           ,public:: Con_CloudRef_N      = 9
+      integer,parameter                           ,public:: Con_CloudRef_N      = 21
       integer      ,dimension(Con_CloudRef_N,3)   ,public:: Con_CloudRef_RGB
       real(kind=ip),dimension(Con_CloudRef_N)     ,public:: Con_CloudRef_Lev
       integer,parameter                           ,public:: Con_CloudTime_N     = 9
@@ -890,10 +890,32 @@
       Con_CloudLoad_RGB( 1:9,1:3) = Con_CloudTop_RGB( 1:9,1:3)
 
       ! Cloud Reflectivity (dBz)
-      ! Recall that Con_CloudRef_N   = 9
-      Con_CloudRef_Lev = [-20.0_ip, -10.0_ip, 0.0_ip, 10.0_ip, 20.0_ip, 30.0_ip,&
-                         40.0_ip, 50.0_ip, 60.0_ip ]
-      Con_CloudRef_RGB( 1:9,1:3) = Con_CloudTop_RGB( 1:9,1:3)
+      ! Recall that Con_CloudRef_N   = 21
+      Con_CloudRef_Lev = [-25.0_ip, -20.0_ip, -15.0_ip, -10.0_ip, -5.0_ip,  0.0_ip, &
+                            5.0_ip,  10.0_ip,  15.0_ip,  20.0_ip, 25.0_ip, 30.0_ip, & 
+                           35.0_ip,  40.0_ip,  45.0_ip,  50.0_ip, 55.0_ip, 60.0_ip, &
+                           65.0_ip,  70.0_ip,  75.0_ip]
+      Con_CloudRef_RGB( 1,1:3) = [  0,   0,   0] ! 000000 black
+      Con_CloudRef_RGB( 2,1:3) = [ 45,  72,  72] ! 2d4848 cyan
+      Con_CloudRef_RGB( 3,1:3) = [ 97, 134, 134] ! 618686 cyan
+      Con_CloudRef_RGB( 4,1:3) = [146, 199, 199] ! 92c7c7 cyan
+      Con_CloudRef_RGB( 5,1:3) = [172, 235, 235] ! acebeb cyan
+      Con_CloudRef_RGB( 6,1:3) = [185, 253, 253] ! b9fdfd cyan
+      Con_CloudRef_RGB( 7,1:3) = [ 15, 237, 237] ! 0feded cyan
+      Con_CloudRef_RGB( 8,1:3) = [  0, 166, 245] ! 00z6f5 blue
+      Con_CloudRef_RGB( 9,1:3) = [  0,  13, 246] ! 000df6 blue
+      Con_CloudRef_RGB(10,1:3) = [  0, 250,   0] ! 00fa00 green
+      Con_CloudRef_RGB(11,1:3) = [  0, 204,   0] ! 00cc00 green
+      Con_CloudRef_RGB(12,1:3) = [  0, 148,   0] ! 009400 green
+      Con_CloudRef_RGB(13,1:3) = [233, 245,   0] ! e9f500 yellow
+      Con_CloudRef_RGB(14,1:3) = [233, 197,   0] ! e9c500 yellow
+      Con_CloudRef_RGB(15,1:3) = [253, 148,   0] ! fd9400 orange
+      Con_CloudRef_RGB(16,1:3) = [255,  24,   0] ! ff1800 red
+      Con_CloudRef_RGB(17,1:3) = [217,   0,   0] ! d90000 red
+      Con_CloudRef_RGB(18,1:3) = [193,   0,   0] ! c10000 d.red
+      Con_CloudRef_RGB(19,1:3) = [249,   0, 255] ! f900e9 magenta
+      Con_CloudRef_RGB(20,1:3) = [161,  77, 205] ! a14dcd d magenta
+      Con_CloudRef_RGB(21,1:3) = [228, 222, 232] ! e4dee8 pink
 
       ! Cloud Arrival Time (hours)
       ! Recall that Con_CloudTime_N   = 9

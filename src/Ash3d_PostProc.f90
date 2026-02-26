@@ -962,7 +962,7 @@
           height_flag = 1  ! All the cells should be at cloud height
         elseif(iprod == 13)then
           do io=1,2;if(VB(io) <= verbosity_info)then
-            write(outlog(io),*)'output variable =13 ash-cloud radar reflectivity (dBz)'
+            write(outlog(io),*)'output variable =13 ash-cloud radar max reflectivity (dBz)'
           endif;enddo
           ivar = 6
           TS_flag = 1      ! 1 = time series
