@@ -82,6 +82,7 @@
       real(kind=dp)     :: timeend
       logical           :: Mask(nxmax,nymax)
       integer           :: i,j
+      character(len=20) :: filename_root
       logical,save      :: first_time = .true.
 
       INTERFACE
@@ -264,13 +265,16 @@
           allocate(ashcon_tot(nxmax,nymax,nzmax))
           ashcon_tot = 0.0_op
           call AshTotalCalculator
-          call write_3D_ASCII(cio,nxmax,nymax,nzmax,ashcon_tot)
+          !call write_3D_ASCII(cio,nxmax,nymax,nzmax,ashcon_tot)
+          filename_root = "AshCon_" // cio
+          call write_3D_ASCII(nxmax,nymax,nzmax,ashcon_tot,filename_root)
           deallocate(ashcon_tot)
         elseif(ioutputFormat == 2)then
           allocate(ashcon_tot(nxmax,nymax,nzmax))
           ashcon_tot = 0.0_op
           call AshTotalCalculator
-          call write_3D_Binary(cio,nxmax,nymax,nzmax,ashcon_tot)
+          filename_root = "AshCon_" // cio
+          call write_3D_Binary(nxmax,nymax,nzmax,ashcon_tot,filename_root)
           deallocate(ashcon_tot)
           Mask(1:nxmax,1:nymax) = .true.
           call write_2D_Binary(nxmax,nymax,                      &

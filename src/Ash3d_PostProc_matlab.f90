@@ -138,7 +138,9 @@
          Con_CloudRef_N,Con_CloudRef_RGB,Con_CloudRef_Lev, &
          Con_CloudTime_N,Con_CloudTime_RGB,Con_CloudTime_Lev, &
          ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
-!         CloudArrivalTime,Mask_Deposit,Mask_Cloud,&
+         Extra2dVar,Extra2dVarName,Extra2dVar_Min,Extra2dVar_Max, &
+         Extra2dVar_unit,Extra2dVar_lname,&
+         !CloudArrivalTime,Mask_Deposit,Mask_Cloud,&
          CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS,ContourLev,nConLev
 
 !      use io_units,      only : &
@@ -175,7 +177,8 @@
       !real(kind=ip) :: tmp_ip
       integer,dimension(:,:),allocatable :: zrgb
       character(len=40) :: title_plot
-      character(len=15) :: title_legend
+      !character(len=15) :: title_legend
+      character(len=30) :: cstr_zlabel
       character(len=30) :: cstr_volcname
       character(len=30) :: cstr_run_date
       character(len=30) :: cstr_windfile
@@ -185,6 +188,7 @@
       character(len=38) :: cstr_ErVolume
       character(len=45) :: cstr_note
       character(len=20) :: varname
+      character(len= 7) :: tmpstr
       character(len= 9) :: cio
       character(len= 4),parameter :: outfile_ext = '.png'
       character(len=10) :: units
@@ -225,7 +229,8 @@
       character(len=26),dimension(:),allocatable :: name_cities
 
       ! Contour variables
-      !integer           :: ilev,imatlev
+      integer            :: ilev
+      integer            :: imatlev
       !integer           :: lev_i,substr_pos1,substr_pos2,substr_pos3
       !real(kind=4)      :: lev_r4
       !integer           :: icurve,ipt
@@ -295,11 +300,31 @@
         zrgb(1:nConLev,1:3) = Con_Cust_RGB(1:nConLev,1:3)
       endif
 
-      if(iprod == 3)then       ! deposit at specified times (mm)
+      if(iprod == 0)then           ! custom variable
+        varname = Extra2dVarName(1:20)
+        filename_png = trim(adjustl(Extra2dVarName)) // '_' // cio // outfile_ext
+        write(tmpstr,'(f7.2)')WriteTimes(itime)
+        title_plot = trim(adjustl(Extra2dVar_lname)) // " t=" // tmpstr // " hours"
+        units = trim(adjustl(Extra2dVar_unit))
+        cstr_zlabel = trim(adjustl(Extra2dVar_lname)) // " (" // trim(adjustl(units)) // ")"
+        Fill_Value_str = '-9999.'
+        if(.not.Con_Cust)then
+          ! Absent custom contours from a control file, use the 10 levels from deposit (mm), but
+          ! evenly spaced between min and max
+          nConLev = Con_DepThick_mm_N
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev(1:nConLev) = Con_DepThick_mm_Lev(1:nConLev)
+          do ilev=1,nConLev
+            ContourLev(ilev) = Extra2dVar_Min + (ilev-1)/float(nConLev-1) * (Extra2dVar_Max-Extra2dVar_Min)
+          enddo
+          zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
+        endif
+      elseif(iprod == 3)then       ! deposit at specified times (mm)
         varname = "depothick"
         write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f7.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
-        title_legend = 'Dep.Thick.(mm)'
+        cstr_zlabel = 'Dep.Thick.(mm)'
         units = " (mm)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -313,7 +338,7 @@
         varname = "depothick"
         write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f7.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
-        title_legend = 'Dep.Thick.(in)'
+        cstr_zlabel = 'Dep.Thick.(in)'
         units = " (in)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -327,7 +352,7 @@
         varname = "depothickFin"
         write(filename_png,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
-        title_legend = 'Dep.Thick.(mm)'
+        cstr_zlabel = 'Dep.Thick.(mm)'
         units = " (mm)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -341,7 +366,7 @@
         varname = "depothickFin"
         write(filename_png,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
         title_plot = 'Final Deposit Thickness'
-        title_legend = 'Dep.Thick.(in)'
+        cstr_zlabel = 'Dep.Thick.(in)'
         units = " (in)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -355,7 +380,7 @@
         varname = "depotime"
         write(filename_png,'(a22)')'DepositArrivalTime.png'
         write(title_plot,'(a20)')'Ashfall arrival time'
-        title_legend = 'Time (hours)'
+        cstr_zlabel = 'Time (hours)'
         units = " (hours)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -375,7 +400,7 @@
         varname = "ashcon_max"
         write(filename_png,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
         write(title_plot,'(a26,f7.2,a6)')'Ash-cloud concentration t=',WriteTimes(itime),' hours'
-        title_legend = 'Max.Con.(mg/m3)'
+        cstr_zlabel = 'Max.Con.(mg/m3)'
         units = " (mg/m3)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -389,7 +414,7 @@
         varname = "cloud_height"
         write(filename_png,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
         write(title_plot,'(a19,f7.2,a6)')'Ash-cloud height t=',WriteTimes(itime),' hours'
-        title_legend = 'Cld.Height(km)'
+        cstr_zlabel = 'Cld.Height(km)'
         units = " (km)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -403,7 +428,7 @@
         varname = "cloud_bottom"
         write(filename_png,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
         write(title_plot,'(a19,f7.2,a6)')'Ash-cloud bottom t=',WriteTimes(itime),' hours'
-        title_legend = 'Cld.Bot.(km)'
+        cstr_zlabel = 'Cld.Bot.(km)'
         units = " (km)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -417,7 +442,7 @@
         varname = "cloud_load"
         write(filename_png,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
         write(title_plot,'(a17,f7.2,a6)')'Ash-cloud load t=',WriteTimes(itime),' hours'
-        title_legend = 'Cld.Load(T/km2)'
+        cstr_zlabel = 'Cld.Load(T/km2)'
         units = " (T/km2)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -431,7 +456,7 @@
         varname = "radar_reflectivity"
         write(filename_png,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
         write(title_plot,'(a24,f7.2,a6)')'Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
-        title_legend = 'Cld.Refl.(dBz)'
+        cstr_zlabel = 'Cld.Refl.(dBz)'
         units = " (dBz)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -445,7 +470,7 @@
         varname = "ash_arrival_time"
         write(filename_png,'(a20)')'CloudArrivalTime.png'
         write(title_plot,'(a22)')'Ash-cloud arrival time'
-        title_legend = 'Time (hours)'
+        cstr_zlabel = 'Time (hours)'
         units = " (hours)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -459,7 +484,7 @@
         varname = "topography"
         write(filename_png,'(a14)')'Topography.png'
         write(title_plot,'(a10)')'Topography'
-        title_legend = 'Elevation (km)'
+        cstr_zlabel = 'Elevation (km)'
         units = " (hours)"
         Fill_Value_str = '-9999.'
         if(.not.Con_Cust)then
@@ -467,7 +492,7 @@
           allocate(zrgb(nConLev,3))
           allocate(ContourLev(nConLev))
           ContourLev = [1.0_ip, 2.0_ip, 3.0_ip, 4.0_ip, &
-                        5.0_ip, 6.0_ip, 7.0_ip, 8.0_ip ]
+                        5.0_ip, 6.0_ip, 7.0_ip, 8.0_ip]
         endif
       elseif(iprod == 16)then   ! profile plots
         do io=1,2;if(VB(io) <= verbosity_error)then
@@ -483,7 +508,7 @@
         endif;enddo
         stop 1
       endif
-      ! Now have string vars (varname,title_legend, etc.) and contour info (nConLev,zrgb,ContourLev)
+      ! Now have string vars (varname,cstr_zlabel, etc.) and contour info (nConLev,zrgb,ContourLev)
 
       if(writeContours)then
         do io=1,2;if(VB(io) <= verbosity_error)then
@@ -621,7 +646,7 @@
       linebuffer080 = "title('" // adjustl(trim(title_plot)) // "');"
       write(fid_script,'(g0)')trim(adjustl(linebuffer080))
       write(fid_script,'(g0)')"leg = clegendm(C,h,-1);"
-      linebuffer080 = "leg.Title.String = '" // adjustl(trim(title_legend)) // "';"
+      linebuffer080 = "leg.Title.String = '" // adjustl(trim(cstr_zlabel)) // "';"
       write(fid_script,'(g0)')trim(adjustl(linebuffer080))
       ! Annotation box 1
       cmd = trim(adjustl(cstr_volcname)) // '\n' // &

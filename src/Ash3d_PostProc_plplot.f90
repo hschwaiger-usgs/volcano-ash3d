@@ -94,7 +94,9 @@
          Con_CloudLoad_N,Con_CloudLoad_RGB,Con_CloudLoad_Lev, &
          Con_CloudRef_N,Con_CloudRef_RGB,Con_CloudRef_Lev, &
          Con_CloudTime_N,Con_CloudTime_RGB,Con_CloudTime_Lev, &
-         ContourLev,nConLev
+         ContourLev,nConLev, &
+	 Extra2dVar,Extra2dVarName,Extra2dVar_Min,Extra2dVar_Max, &
+         Extra2dVar_unit,Extra2dVar_lname
        ! These are needed if we can figure out how to extract contour data
 !         ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
 !         CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS
@@ -118,6 +120,7 @@
       real(kind=ip),intent(in) :: Fill_Value
       logical      ,intent(in) :: writeContours
 
+      character(len=6)   :: Fill_Value_str
       !integer :: tmp_int
       integer,dimension(:,:),allocatable :: zrgb
       character(len=40) :: title_plot
@@ -133,6 +136,7 @@
       character(len=38) :: cstr_ErVolume
       character(len=45) :: cstr_note
       character(len=20) :: varname
+      character(len= 7) :: tmpstr
       character(len= 9) :: cio
       character(len= 4),parameter :: outfile_ext = '.png'
       character(len=10) :: units
@@ -184,6 +188,7 @@
       real(kind=plflt)  :: tr(6)
       real(kind=plflt)  :: clevel(1)
       integer(kind=int32):: opt
+      integer(kind=int32), parameter :: MAX_COLS = 25
 
       !integer, parameter :: MAX_NLEGEND = 11       ! max number of legend entries
       !integer(kind=int32)    :: opt_array(MAX_NLEGEND)
@@ -283,7 +288,27 @@
         zrgb(1:nConLev,1:3) = Con_Cust_RGB(1:nConLev,1:3)
       endif
 
-      if(iprod == 3)then       ! deposit at specified times (mm)
+      if(iprod == 0)then           ! custom variable
+        varname = Extra2dVarName(1:20)
+        filename_png = trim(adjustl(Extra2dVarName)) // '_' // cio // outfile_ext
+        write(tmpstr,'(f7.2)')WriteTimes(itime)
+        title_plot = trim(adjustl(Extra2dVar_lname)) // " t=" // tmpstr // " hours"
+        units = trim(adjustl(Extra2dVar_unit))
+        cstr_zlabel = trim(adjustl(Extra2dVar_lname)) // " (" // trim(adjustl(units)) // ")"
+        Fill_Value_str = '-9999.'
+        if(.not.Con_Cust)then
+          ! Absent custom contours from a control file, use the 10 levels from deposit (mm), but
+          ! evenly spaced between min and max
+          nConLev = Con_DepThick_mm_N
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev(1:nConLev) = Con_DepThick_mm_Lev(1:nConLev)
+          do ilev=1,nConLev
+            ContourLev(ilev) = Extra2dVar_Min + (ilev-1)/float(nConLev-1) * (Extra2dVar_Max-Extra2dVar_Min)
+          enddo
+          zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
+        endif
+      elseif(iprod == 3)then       ! deposit at specified times (mm)
         varname = "depothick"
         write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f7.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
@@ -578,7 +603,7 @@
         call plspal1('cmap1_blue_yellow.pal',.true.)
       endif
 
-      call plscmap0n(16)           ! sets number of colors in cmap0
+      call plscmap0n(MAX_COLS)           ! sets number of colors in cmap0
 
       ! Initialize plplot
       call plinit()
@@ -648,7 +673,7 @@
       !---------------------------------------------------------
 
       !call plcol0(2)
-      ! Set the color we will use for the legend background (index 15)
+      ! Set the color we will use for the legend background (index MAX_COLS)
       call plscol0a( 15, 255, 255, 255, 1.0_plflt )
       allocate(opt_array(nConLev))
       !color_array
@@ -691,7 +716,7 @@
         x_offset           = 0.05_plflt
         y_offset           = 0.0_plflt
         plot_width         = 0.05_plflt
-        bg_color           = 15
+        bg_color           = 0
         bb_color           = 1
         bb_style           = 1
         nrow               = nConLev

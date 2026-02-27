@@ -237,44 +237,45 @@
 !
 !  Called from: output_results and Ash3d_PostProc.f90
 !  Arguments:
-!    cio        = time string to be inserted into filename; either '________final'
-!                 or yyyymmddhh.h
-!    nx         = x length of output array OutVar
-!    ny         = y length of output array OutVar
-!    nz         = z length of output array OutVar
-!    ashcon_tot = 3d array containing the sum of all tephra concentration bins (1:n_gs_max)
+!    nx         = x length of output array OutVar3D
+!    ny         = y length of output array OutVar3D
+!    nz         = z length of output array OutVar3D
+!    OutVar3D   = 3d array containing output variable
+!    filename   = 20 character filename (minux extension)
 !
 !  This subroutine writes out 3-D arrays in binary format
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine write_3D_Binary(cio,nx,ny,nz,ashcon_tot)
+      subroutine write_3D_Binary(nx,ny,nz,OutVar3D,filename)
 
-      character(len=13) ,intent(in) :: cio
       integer           ,intent(in) :: nx
       integer           ,intent(in) :: ny
       integer           ,intent(in) :: nz
-      real(kind=op)     ,intent(in) :: ashcon_tot(nx,ny,nz)
+      real(kind=op)     ,intent(in) :: OutVar3D(nx,ny,nz)
+      character(len=20) ,intent(in) :: filename
 
       integer :: i,j,k
+      character(len=24) :: OutfileName
 
       do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_3D_Binary"
       endif;enddo
 
-      ! Write out data in raw binary form
+      ! Output data in ASCII format
+      OutfileName =  trim(adjustl(filename)) // '.raw'
 
-      ! 3-D total tephra concentration
+      ! Write out data in raw binary form
       if(op == 4)then
-        open(unit=fid_bin3dout,file='3d_tephra_fall_'//cio//'.raw', &
+        open(unit=fid_bin3dout,file=OutfileName, &
           status='replace', action='write', &
           access='direct',recl=4*nx*ny*nz)
       else
-        open(unit=fid_bin3dout,file='3d_tephra_fall_'//cio//'.raw', &
+        open(unit=fid_bin3dout,file=OutfileName, &
           status='replace', action='write', &
           access='direct',recl=8*nx*ny*nz)
       endif
-      write(fid_bin3dout,rec=1)(((ashcon_tot(i,j,k),i=1,nx),j=1,ny),k=1,nz)
+      write(fid_bin3dout,rec=1)(((OutVar3D(i,j,k),i=1,nx),j=1,ny),k=1,nz)
       close(fid_bin3dout)
 
       do io=1,2;if(VB(io) <= verbosity_debug1)then

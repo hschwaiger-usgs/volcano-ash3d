@@ -5560,7 +5560,7 @@
 
       ! Line 4:
       !  The code for the variable to read and optionally an output code.
-      !  Normally, the variable read wil be what is written out, but you
+      !  Normally, the variable read will be what is written out, but you
       !  could have a binary 3d concentration and want cloud_load or have
       !  an ASCII deposit (in mm) and want a plot of deposit in inches.
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
@@ -5577,9 +5577,9 @@
           ! to be the TS or no flag
           iprod2 = iprod1
           if(ivalue == 1)then
-            nvar_User2d_static_XY = 1
-          else
             nvar_User2d_XY = 1
+          else
+            nvar_User2d_static_XY = 1
           endif
         else
           ! If this is a standard product code, then second int is the outproduct

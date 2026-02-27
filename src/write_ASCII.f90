@@ -985,8 +985,11 @@
 !
 !  Called from: output_results
 !  Arguments:
-!    cio = time string to be inserted into filename; either '________final'
-!          or yyyymmddhh.h
+!    nx         = x length of output array OutVar3D
+!    ny         = y length of output array OutVar3D
+!    nz         = z length of output array OutVar3D
+!    OutVar3D   = 3d array containing output variable
+!    filename   = 20 character filename (minux extension)
 !
 !  Subroutine that writes out 3-D arrays in ESRI ASCII raster format
 !  Format specification is given at the following web sites:
@@ -995,29 +998,34 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine write_3D_ASCII(cio,nx,ny,nz,ashcon_tot)
+      subroutine write_3D_ASCII(nx,ny,nz,OutVar3D,filename)
 
       use mesh,          only : &
          lon_cc_pd,lat_cc_pd,IsLatLon,&
          x_cc_pd,y_cc_pd,z_cc_pd
 
-      character(len=13) ,intent(in) :: cio
       integer           ,intent(in) :: nx
       integer           ,intent(in) :: ny
       integer           ,intent(in) :: nz
-      real(kind=op)     ,intent(in) :: ashcon_tot(nx,ny,nz)
+      real(kind=op)     ,intent(in) :: OutVar3D(nx,ny,nz)
+      character(len=20) ,intent(in) :: filename
 
       integer :: i,j,k
-      character(len=32) :: DepOutfileName
+      character(len= 7) :: VarName
+      character(len=24) :: OutfileName
+      character(len=80) :: linebuffer080
 
       do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_3D_ASCII"
       endif;enddo
 
       ! Output data in ASCII format
-      DepOutfileName='3d_tephra_fall_'//cio//'.dat'
-      open(unit=fid_ascii3dout,file=DepOutfileName,status='replace',action='write')
-      write(fid_ascii3dout,*)'VARIABLES = "X","Y","Z","AshConc"'
+      OutfileName =  trim(adjustl(filename)) // '.dat'
+      VarName     =  filename(1:7)
+
+      open(unit=fid_ascii3dout,file=OutfileName,status='replace',action='write')
+      linebuffer080 = 'VARIABLES = "X","Y","Z","' // VarName  // '"'
+      write(fid_ascii3dout,'(g0)')linebuffer080
       write(fid_ascii3dout,3000) 'ZONE I = ',nx,' J = ',ny,' K = ',nz
 
       do k=1,nz
@@ -1025,10 +1033,10 @@
           do i=1,nx
             if (IsLatLon) then
               write(fid_ascii3dout,'(3(4x,f20.3),g20.8)') &
-                lon_cc_pd(i), lat_cc_pd(j), z_cc_pd(k), ashcon_tot(i,j,k)
+                lon_cc_pd(i), lat_cc_pd(j), z_cc_pd(k), OutVar3D(i,j,k)
             else
               write(fid_ascii3dout,'(3(4x,f20.3),g20.8)') &
-                x_cc_pd(i), y_cc_pd(j), z_cc_pd(k), ashcon_tot(i,j,k)
+                x_cc_pd(i), y_cc_pd(j), z_cc_pd(k), OutVar3D(i,j,k)
             endif
           enddo
         enddo

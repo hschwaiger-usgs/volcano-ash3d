@@ -4293,12 +4293,13 @@
 
       use Output_Vars,   only : &
          DepositThickness,DepArrivalTime,CloudArrivalTime,pr_ash,Mask_Deposit,&
-         MaxConcentration,MaxHeight,CloudLoad,dbZCol,MinHeight,Mask_Cloud,&
+         MaxConcentration,MaxHeight,CloudLoad,dbZ,dbZCol,MinHeight,Mask_Cloud,&
          CLOUDCON_GRID_THRESH,CLOUDCON_THRESH,THICKNESS_THRESH, &
          CLOUDLOAD_THRESH,DBZ_THRESH,DEPO_THRESH,DEPRATE_THRESH,ashcon_tot, &
          CLOUDCON_GRID_THRESH_Default,CLOUDLOAD_THRESH_Default,CLOUDCON_THRESH_Default,&
          DEPO_THRESH_Default,DEPRATE_THRESH_Default,THICKNESS_THRESH_Default,DBZ_THRESH_Default,&
-         useRestartVars,useOutprodVars,useWindVars,Extra2dVar,Extra2dVarName, &
+         useRestartVars,useOutprodVars,useWindVars,Extra2dVar_unit,Extra2dVar_lname,&
+         Extra2dVar,Extra2dVarName,Extra2dVar_FillValue,Extra2dVar_Min,Extra2dVar_Max, &
          useWindVars_Default,useOutprodVars_Default,useRestartVars_Default,&
            dbZCalculator, &
            Allocate_NTime, &
@@ -5456,6 +5457,24 @@
             temp1_2d_var_id = 0
             call NC_check_status(nSTAT,0,"inq_varid User2d_static")
           endif
+          ! Get NaN value for this variable
+          nSTAT = nf90_get_att(ncid,temp1_2d_var_id,"_FillValue",Extra2dVar_FillValue)
+          if(nSTAT /= 0)then
+            temp1_2d_var_id = 0
+            call NC_check_status(nSTAT,0,"get_att Extra2dVar_FillValue")
+          endif
+          ! Get units for this variable
+          nSTAT = nf90_get_att(ncid,temp1_2d_var_id,"units",Extra2dVar_unit)
+          if(nSTAT /= 0)then
+            temp1_2d_var_id = 0
+            call NC_check_status(nSTAT,0,"get_att Extra2dVar_unit")
+          endif
+          ! Get long name for this variable
+          nSTAT = nf90_get_att(ncid,temp1_2d_var_id,"long_name",Extra2dVar_lname)
+          if(nSTAT /= 0)then
+            temp1_2d_var_id = 0
+            call NC_check_status(nSTAT,0,"get_att Extra2dVar_lname")
+          endif
         endif
 
         if(Write_PT_Data)then
@@ -6362,6 +6381,15 @@
              ashcon_tot(1:x_len,1:y_len,1:z_len) + &
              real(ashcon(1:x_len,1:y_len,1:z_len,isize),kind=op)
           enddo
+
+          ! Replace ashcon_tot with the total
+          ashcon_tot = 0.0_op
+          do isize=1,n_gs_max
+            ashcon_tot(1:nxmax,1:nymax,1:nzmax) =  &
+             ashcon_tot(1:nxmax,1:nymax,1:nzmax) + &
+             real(ashcon(1:nxmax,1:nymax,1:nzmax,isize),kind=op)
+          enddo
+
         endif
       endif
 
@@ -6554,6 +6582,19 @@
         if(nSTAT /= 0)call NC_check_status(nSTAT,1,"get_var extra2d")
         Extra2dVar = real(dum2d_out,kind=ip)
       endif
+      if(nvar_User2d_static_XY > 0.or.nvar_User2d_XY > 0)then
+        ! Get min/max values for contouring
+        Extra2dVar_Min =  1.0e15
+        Extra2dVar_Max = -1.0e15
+        do i=1,x_len
+          do j=1,y_len
+            if((abs(Extra2dVar(i,j) - Extra2dVar_FillValue)) > 1.0e-4_op)then
+              if(Extra2dVar(i,j) < Extra2dVar_Min) Extra2dVar_Min = Extra2dVar(i,j)
+              if(Extra2dVar(i,j) > Extra2dVar_Max) Extra2dVar_Max = Extra2dVar(i,j)
+            endif
+          enddo
+        enddo
+      endif
 
       ! Cloud-mask
       if(cloudmask_var_id == 0)then
@@ -6623,7 +6664,6 @@
         enddo
       endif
 
-
       ! Radar_Reflec
       allocate(dum3d_out(x_len,y_len,z_len))
       if(radrefl_var_id == 0)then
@@ -6637,6 +6677,14 @@
                count = [x_len,y_len,z_len])
       if(nSTAT /= 0)call NC_check_status(nSTAT,0,"get_var radar_reflectivity")
 #ifdef USEPOINTERS
+      if(.not.associated(dbZ))then
+#else
+      if(.not.allocated(dbZ))then
+#endif
+        allocate(dbZ(x_len,y_len,z_len))
+        dbZ(:,:,:) = real(dum3d_out,kind=ip)
+      endif
+#ifdef USEPOINTERS
       if(.not.associated(dbZCol))then
 #else
       if(.not.allocated(dbZCol))then
@@ -6644,6 +6692,7 @@
         allocate(dbZCol(x_len,y_len))
         dbZCol(:,:) = 0.0_ip
       endif
+      
       do i=1,x_len
         do j=1,y_len
           dbZCol(i,j) = real(maxval(dum3d_out(i,j,:)),kind=ip)
@@ -6655,11 +6704,11 @@
       call Set_OutVar_ContourLevel
 
       ! Cleaning up
-#ifdef USEPOINTERS
-      if(associated(ashcon_tot))   deallocate(ashcon_tot)
-#else
-      if(allocated(ashcon_tot))   deallocate(ashcon_tot)
-#endif
+!#ifdef USEPOINTERS
+!      if(associated(ashcon_tot))   deallocate(ashcon_tot)
+!#else
+!      if(allocated(ashcon_tot))   deallocate(ashcon_tot)
+!#endif
       if(allocated(ashcon))       deallocate(ashcon)
       if(allocated(dum2d_out))    deallocate(dum2d_out)
       if(allocated(dum2dint_out)) deallocate(dum2dint_out)

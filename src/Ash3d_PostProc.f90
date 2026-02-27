@@ -101,7 +101,7 @@
            Read_PostProc_Control_File
 
       use Output_Vars,   only : &
-         DepositThickness,DepArrivalTime,CloudArrivalTime,ashcon_tot,&
+         DepositThickness,DepArrivalTime,CloudArrivalTime,ashcon_tot,dbZ,&
          MaxConcentration,MaxHeight,CloudLoad,dbZCol,MinHeight,Mask_Cloud, &
          iplotpref,Extra2dVar,Extra2dVarName, &
            Gen_Output_Vars,  &
@@ -155,6 +155,9 @@
 
       implicit none
 
+      logical             :: IsInteractive
+      character(len=3)    :: answer
+      logical             :: IsAffirmative
       integer             :: nargs
       integer             :: iostatus
       integer             :: cstat
@@ -258,6 +261,8 @@
           !implicit none (type, external)
         end subroutine dealloc_arrays
       END INTERFACE
+
+      IsInteractive = .false.  ! This will be reset if needed
 
       open(unit=fid_logfile,file='Ash3d_pp.log',status='replace',action='write')
       !   We want to call this subroutine silently, so reset the verbosity
@@ -585,7 +590,6 @@
       WriteCloudConcentration_ASCII = .false.
       WriteAirportFile_KML          = .false.
       WriteAirportFile_ASCII        = .false.
-      Write3dFiles                  = .false.
 
       ! Completed evaluating status of environment; now checking how to proceed:
       !  No command-line arguments (100) -> interactively prompt user
@@ -599,6 +603,7 @@
           ! If no command-line arguments are given, then prompt user
           ! interactively for the command file name and possible a
           ! restart file
+        IsInteractive = .true.
         do io=1,2;if(VB(io) <= verbosity_info)then
           write(outlog(io),*)'No command-line arguments detected'
           write(outlog(io),*)''
@@ -1555,81 +1560,86 @@
       ! This is the non-KML section
       ! Set some variable parameters for an ASCII output file
       OutFillValue = 0.0_ip
-      if(iprod == 3.or.iprod == 5)then
-        OutVar = DepositThickness
-        Fill_Value_str= '-9999.'
-        OutFillValue  = 0.0_ip
-        OutFillValue  = -9999.0_ip
-        filename_root = 'DepositFile_        '
-      elseif(iprod == 4.or.iprod == 6)then
-        OutVar = DepositThickness*MM_2_IN
-        Fill_Value_str= '-9999.'
-        OutFillValue  = 0.0_ip
-        OutFillValue  = -9999.0_ip
-        filename_root = 'DepositFile_        '
-      elseif(iprod == 7)then
-        OutVar = real(DepArrivalTime,kind=ip)
-        !OutVar = DepArrivalTime * merge(1.0_ip,0.0_ip,Mask_Deposit)
-        Fill_Value_str= '-9999.'
-        OutFillValue  = -9999.0_ip
-        filename_root = 'DepositArrivalTime  '
-      elseif(iprod == 8)then
-         ! ashfall at airports/POI
-         ! None of OutVar,Fill_Value,OutFillValue,filename_root need to be set
-      elseif(iprod == 9)then
-        OutVar = MaxConcentration
-        !OutVar = MaxConcentration * merge(1.0_ip,0.0_ip,Mask_Cloud)
-        Fill_Value_str= '-9999.'
-        OutFillValue  = 0.0_ip
-        OutFillValue  = -9999.0_ip
-        filename_root = 'CloudConcentration_ '
-      elseif(iprod == 10)then
-        OutVar = MaxHeight
-        !OutVar = MaxHeight * merge(1.0_ip,0.0_ip,Mask_Cloud)
-        Fill_Value_str= '-9999.'
-        OutFillValue  = 0.0_ip
-        OutFillValue  = -9999.0_ip
-        filename_root = 'CloudHeight_        '
-      elseif(iprod == 11)then
-        OutVar = MinHeight
-        !OutVar = MinHeight * merge(1.0_ip,0.0_ip,Mask_Cloud)
-        Fill_Value_str= '-9999.'
-        OutFillValue  = 0.0_ip
-        OutFillValue  = -9999.0_ip
-        filename_root = 'CloudHeightBot_     '
-      elseif(iprod == 12)then
-        OutVar = CloudLoad
-        !OutVar = CloudLoad * merge(1.0_ip,0.0_ip,Mask_Cloud)
-        Fill_Value_str= '-9999.'
-        OutFillValue  = 0.0_ip
-        OutFillValue  = -9999.0_ip
-        filename_root = 'CloudLoad_          '
-      elseif(iprod == 13)then
-        OutVar = dbZCol
-        !OutVar = dbZCol * merge(1.0_ip,0.0_ip,Mask_Cloud)
-        Fill_Value_str= '-9999.'
-        OutFillValue  = 0.0_ip
-        OutFillValue  = -9999.0_ip
-        filename_root = 'ClouddbZC_          '
-      elseif(iprod == 14)then
-        OutVar = real(CloudArrivalTime,kind=ip)
-        !OutVar = CloudArrivalTime * merge(1.0_ip,0.0_ip,Mask_Cloud)
-        Fill_Value_str= '-9999.'
-        OutFillValue  = -1.0_ip
-        OutFillValue  = -9999.0_ip
-        filename_root = 'CloudArrivalTime    '
-      elseif(iprod == 15)then
-        OutVar = real(Extra2dVar,kind=ip)
-        Fill_Value_str= '-9999.'
-        OutFillValue  = -1.0_ip
-        OutFillValue  = -9999.0_ip
-        filename_root = 'Topography          '
-      elseif(iprod == 0)then
+      if(iprod == 0)then                    ! Custom variable
         OutVar = real(Extra2dVar,kind=ip)
         Fill_Value_str = '-9999.'
         OutFillValue  = -9999.0_ip
         !filename_root = 'UserVar             '
         filename_root = Extra2dVarName
+      elseif(iprod == 1)then                ! full concentration array
+        OutVar = MaxConcentration
+        Fill_Value_str = '-9999.'
+        OutFillValue  = 0.0_ip
+        !filename_root = 'UserVar             '
+        filename_root = 'AshConc3d_          '
+      elseif(iprod == 2)then                ! deposit granularity
+        OutVar = DepositThickness
+        Fill_Value_str= '-9999.'
+        OutFillValue  = 0.0_ip
+        OutFillValue  = -9999.0_ip
+        filename_root = 'DepositFile_        '
+      elseif(iprod == 3.or.iprod == 5)then  ! deposit thickness (mm)
+        OutVar = DepositThickness
+        Fill_Value_str= '-9999.'
+        OutFillValue  = 0.0_ip
+        OutFillValue  = -9999.0_ip
+        filename_root = 'DepositFile_        '
+      elseif(iprod == 4.or.iprod == 6)then  ! deposit thickness (inches)
+        OutVar = DepositThickness*MM_2_IN
+        Fill_Value_str= '-9999.'
+        OutFillValue  = 0.0_ip
+        OutFillValue  = -9999.0_ip
+        filename_root = 'DepositFile_        '
+      elseif(iprod == 7)then                ! ashfall arrival time
+        OutVar = real(DepArrivalTime,kind=ip)
+        !OutVar = DepArrivalTime * merge(1.0_ip,0.0_ip,Mask_Deposit)
+        Fill_Value_str= '-9999.'
+        OutFillValue  = -9999.0_ip
+        filename_root = 'DepositArrivalTime  '
+      elseif(iprod == 8)then                ! ashfall arrival at airports/POI
+         ! ashfall at airports/POI
+         ! None of OutVar,Fill_Value,OutFillValue,filename_root need to be set
+      elseif(iprod == 9)then                ! ash-cloud concentration
+        OutVar = MaxConcentration
+        !OutVar = MaxConcentration * merge(1.0_ip,0.0_ip,Mask_Cloud)
+        Fill_Value_str= '-9999.'
+        OutFillValue  = -9999.0_ip
+        filename_root = 'CloudConcentration_ '
+      elseif(iprod == 10)then               ! ash-cloud height
+        OutVar = MaxHeight
+        !OutVar = MaxHeight * merge(1.0_ip,0.0_ip,Mask_Cloud)
+        Fill_Value_str= '-9999.'
+        OutFillValue  = -9999.0_ip
+        filename_root = 'CloudHeight_        '
+      elseif(iprod == 11)then               ! ash-cloud bottom
+        OutVar = MinHeight
+        !OutVar = MinHeight * merge(1.0_ip,0.0_ip,Mask_Cloud)
+        Fill_Value_str= '-9999.'
+        OutFillValue  = -9999.0_ip
+        filename_root = 'CloudHeightBot_     '
+      elseif(iprod == 12)then               ! ash-cloud load
+        OutVar = CloudLoad
+        !OutVar = CloudLoad * merge(1.0_ip,0.0_ip,Mask_Cloud)
+        Fill_Value_str= '-9999.'
+        OutFillValue  = -9999.0_ip
+        filename_root = 'CloudLoad_          '
+      elseif(iprod == 13)then               ! ash-cloud radar reflectivity
+        OutVar = dbZCol
+        !OutVar = dbZCol * merge(1.0_ip,0.0_ip,Mask_Cloud)
+        Fill_Value_str= '-9999.'
+        OutFillValue  = -9999.0_ip
+        filename_root = 'ClouddbZC_          '
+      elseif(iprod == 14)then               ! ash-cloud arrival time
+        OutVar = real(CloudArrivalTime,kind=ip)
+        !OutVar = CloudArrivalTime * merge(1.0_ip,0.0_ip,Mask_Cloud)
+        Fill_Value_str= '-9999.'
+        OutFillValue  = -9999.0_ip
+        filename_root = 'CloudArrivalTime    '
+      elseif(iprod == 15)then               ! topography
+        OutVar = real(Extra2dVar,kind=ip)
+        Fill_Value_str= '-9999.'
+        OutFillValue  = -9999.0_ip
+        filename_root = 'Topography          '
       endif
       ! Now mask out non-cloud values
       if(iprod == 10.or.&  ! CloudHeight
@@ -1650,7 +1660,11 @@
 
       if(outformat == 1)then  ! ASCII
         ! First check for the special cases
-        if(iprod == 8)then
+        if(iprod == 1)then
+          ! full concentration array but here we only output the total
+          filename_root = "AshCon_" // cio
+          call write_3D_ASCII(nxmax,nymax,nzmax,ashcon_tot,filename_root)
+        elseif(iprod == 8)then
           ! Point data
           do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"Calling Write_PointData_Airports_ASCII"
@@ -1667,22 +1681,62 @@
         else
           ! All other ESRI/ASCII 2d grids
           call write_2D_ASCII(nxmax,nymax,OutVar,mask,Fill_Value_str,filename_root)
-          if(IsLatLon)then
-            call write_2D_ASCII_csv(nxmax,nymax,                &
-                                    real(lon_cc_pd(1),kind=sp), &
-                                    real(lat_cc_pd(1),kind=sp), &
-                                    real(de,kind=sp),           &
-                                    real(dn,kind=sp),           &
-                                    real(OutVar,kind=sp),       &
-                                    "outvar              ")
-          else
-            call write_2D_ASCII_csv(nxmax,nymax,                &
-                                    real(x_cc_pd(1),kind=sp),   &
-                                    real(y_cc_pd(1),kind=sp),   &
-                                    real(dx,kind=sp),           &
-                                    real(dy,kind=sp),           &
-                                    real(OutVar,kind=sp),       &
-                                    "outvar              ")
+
+          ! If non-interactive, assume user also wants csv output
+          IsAffirmative = .true.
+          if (IsInteractive) then
+            ! If interactive, reset to require explicit affirmation
+            IsAffirmative = .false.
+            do io=1,2;if(VB(io) <= verbosity_info)then
+              write(outlog(io),*)'Would you like to additionally export the 2d data as comma-separated values? y/n'
+            endif;enddo
+            read(input_unit,*,iostat=iostatus,iomsg=iomessage) answer
+            answer = trim(adjustl(answer))
+            testkey  = answer(1:1)
+            if (testkey == 'y' .or. testkey == 'Y') then
+              IsAffirmative = .true.
+            endif
+          endif
+          if(IsAffirmative)then
+            if(IsLatLon)then
+              call write_2D_ASCII_csv(nxmax,nymax,                &
+                                      real(lon_cc_pd(1),kind=sp), &
+                                      real(lat_cc_pd(1),kind=sp), &
+                                      real(de,kind=sp),           &
+                                      real(dn,kind=sp),           &
+                                      real(OutVar,kind=sp),       &
+                                      "outvar              ")
+            else
+              call write_2D_ASCII_csv(nxmax,nymax,                &
+                                      real(x_cc_pd(1),kind=sp),   &
+                                      real(y_cc_pd(1),kind=sp),   &
+                                      real(dx,kind=sp),           &
+                                      real(dy,kind=sp),           &
+                                      real(OutVar,kind=sp),       &
+                                      "outvar              ")
+            endif
+          endif
+
+          if (iprod == 13) then
+            ! For Radar reflectivity, we might also want the 3d array
+            ! If non-interactive, assume user wants this
+            IsAffirmative = .true.
+            if (IsInteractive) then
+              ! If interactive, reset to require explicit affirmation
+              IsAffirmative = .false.
+              do io=1,2;if(VB(io) <= verbosity_info)then
+                write(outlog(io),*)'Would you like to export the 3d radar reflectivity values? y/n'
+              endif;enddo
+              read(input_unit,*,iostat=iostatus,iomsg=iomessage) answer
+              answer = trim(adjustl(answer))
+              testkey  = answer(1:1)
+              if (testkey == 'y' .or. testkey == 'Y') then
+                IsAffirmative = .true.
+              endif
+            endif
+            if(IsAffirmative)then
+              call write_3D_ASCII(nxmax,nymax,nzmax,real(dbZ,kind=op),filename_root)
+            endif
           endif
         endif
       elseif(outformat == 2)then  ! KML
@@ -1769,7 +1823,9 @@
       elseif(outformat == 4)then  ! Binary
         if(iprod == 1)then
           ! full concentration array but here we only output the total
-          call write_3D_Binary(cio,nxmax,nymax,nzmax,ashcon_tot)
+          !call write_3D_Binary(cio,nxmax,nymax,nzmax,ashcon_tot)
+          filename_root = "AshCon_" // cio
+          call write_3D_Binary(nxmax,nymax,nzmax,real(dbZ,kind=op),filename_root)
         elseif(iprod == 2)then
           ! deposit granularity
           do io=1,2;if(VB(io) <= verbosity_error)then
@@ -1790,6 +1846,28 @@
           stop 1
         else
           call write_2D_Binary(nxmax,nymax,OutVar,mask,Fill_Value_str,filename_root)
+
+          if (iprod == 13) then
+            ! For Radar reflectivity, we might also want the 3d array
+            ! If non-interactive, assume user wants this
+            IsAffirmative = .true.
+            if (IsInteractive) then
+              ! If interactive, reset to require explicit affirmation
+              IsAffirmative = .false.
+              do io=1,2;if(VB(io) <= verbosity_info)then
+                write(outlog(io),*)'Would you like to export the 3d radar reflectivity values? y/n'
+              endif;enddo
+              read(input_unit,*,iostat=iostatus,iomsg=iomessage) answer
+              answer = trim(adjustl(answer))
+              testkey  = answer(1:1)
+              if (testkey == 'y' .or. testkey == 'Y') then
+                IsAffirmative = .true.
+              endif
+            endif
+            if(IsAffirmative)then
+              call write_3D_Binary(nxmax,nymax,nzmax,real(dbZ,kind=op),filename_root)
+            endif
+          endif
         endif
       elseif(outformat == 5)then  ! Shapefile
         ! For 2d contours exported from dislin, gnuplot, gmt

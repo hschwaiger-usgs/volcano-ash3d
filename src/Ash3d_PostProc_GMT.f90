@@ -160,6 +160,8 @@
          Con_CloudRef_N,Con_CloudRef_RGB,Con_CloudRef_Lev, &
          Con_CloudTime_N,Con_CloudTime_RGB,Con_CloudTime_Lev, &
          ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
+         Extra2dVar,Extra2dVarName,Extra2dVar_Min,Extra2dVar_Max, &
+         Extra2dVar_unit,Extra2dVar_lname,&
          CloudArrivalTime,Mask_Deposit,Mask_Cloud,&
          CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS,ContourLev,nConLev
 
@@ -208,6 +210,7 @@
       character(len=38) :: cstr_ErVolume
       character(len=45) :: cstr_note
       character(len=20) :: varname
+      character(len= 7) :: tmpstr
       character(len= 9) :: cio
       character(len= 4),parameter :: outfile_ext = '.png'
       character(len=10) :: units
@@ -337,7 +340,27 @@
         zrgb(1:nConLev,1:3) = Con_Cust_RGB(1:nConLev,1:3)
       endif
 
-      if(iprod == 3)then       ! deposit at specified times (mm)
+      if(iprod == 0)then           ! custom variable
+        varname = Extra2dVarName(1:20)
+        filename_png = trim(adjustl(Extra2dVarName)) // '_' // cio // outfile_ext
+        write(tmpstr,'(f7.2)')WriteTimes(itime)
+        title_plot = trim(adjustl(Extra2dVar_lname)) // " t=" // tmpstr // " hours"
+        units = trim(adjustl(Extra2dVar_unit))
+        cstr_zlabel = trim(adjustl(Extra2dVar_lname)) // " (" // trim(adjustl(units)) // ")"
+        Fill_Value_str = '-9999.'
+        if(.not.Con_Cust)then
+          ! Absent custom contours from a control file, use the 10 levels from deposit (mm), but
+          ! evenly spaced between min and max
+          nConLev = Con_DepThick_mm_N
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev(1:nConLev) = Con_DepThick_mm_Lev(1:nConLev)
+          do ilev=1,nConLev
+            ContourLev(ilev) = Extra2dVar_Min + (ilev-1)/float(nConLev-1) * (Extra2dVar_Max-Extra2dVar_Min)
+          enddo
+          zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
+        endif
+      elseif(iprod == 3)then       ! deposit at specified times (mm)
         varname = "depothick"
         write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f7.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'

@@ -347,6 +347,8 @@
          Con_CloudRef_N,Con_CloudRef_RGB,Con_CloudRef_Lev, &
          Con_CloudTime_N,Con_CloudTime_RGB,Con_CloudTime_Lev, &
          ContourDataX,ContourDataY,ContourDataNcurves,ContourDataNpoints,&
+         Extra2dVar,Extra2dVarName,Extra2dVar_Min,Extra2dVar_Max, &
+         Extra2dVar_unit,Extra2dVar_lname,&
          !CloudArrivalTime,Mask_Deposit,Mask_Cloud,&
          CONTOUR_MAXCURVES,CONTOUR_MAXPOINTS,ContourLev,nConLev
 
@@ -392,6 +394,7 @@
       character(len=38) :: cstr_ErVolume
       character(len=45) :: cstr_note
       character(len=20) :: varname
+      character(len= 7) :: tmpstr
       character(len= 9) :: cio
       character(len= 4),parameter :: outfile_ext = '.png'
       character(len=10) :: units
@@ -401,8 +404,10 @@
       integer           :: iw,iwf
       logical           :: HaveIconFile
       character(len=  8):: linebuffer008
+      character(len= 12):: linebuffer012
       character(len= 80):: linebuffer080
       character(len=130):: linebuffer130,linebuffer130_2
+      character(len=500):: linebuffer500,linebuffer500_2
 
       ! Plot dimensions
       real(kind=ip)  :: xmin
@@ -428,7 +433,7 @@
       character(len=26),dimension(:),allocatable :: name_cities
 
       ! Contour variables
-      integer           :: ilev
+      integer            :: ilev
       !integer           :: lev_i,substr_pos1,substr_pos2,substr_pos3
       !real(kind=4)      :: lev_r4
       !integer           :: icurve,ipt
@@ -493,7 +498,27 @@
         zrgb(1:nConLev,1:3) = Con_Cust_RGB(1:nConLev,1:3)
       endif
 
-      if(iprod == 3)then       ! deposit at specified times (mm)
+      if(iprod == 0)then           ! custom variable
+        varname = Extra2dVarName(1:20)
+        filename_png = trim(adjustl(Extra2dVarName)) // '_' // cio // outfile_ext
+        write(tmpstr,'(f7.2)')WriteTimes(itime)
+        title_plot = trim(adjustl(Extra2dVar_lname)) // " t=" // tmpstr // " hours"
+        units = trim(adjustl(Extra2dVar_unit))
+        cstr_zlabel = trim(adjustl(Extra2dVar_lname)) // " (" // trim(adjustl(units)) // ")"
+        Fill_Value_str = '-9999.'
+        if(.not.Con_Cust)then
+          ! Absent custom contours from a control file, use the 10 levels from deposit (mm), but
+          ! evenly spaced between min and max
+          nConLev = Con_DepThick_mm_N
+          allocate(zrgb(nConLev,3))
+          allocate(ContourLev(nConLev))
+          ContourLev(1:nConLev) = Con_DepThick_mm_Lev(1:nConLev)
+          do ilev=1,nConLev
+            ContourLev(ilev) = Extra2dVar_Min + (ilev-1)/float(nConLev-1) * (Extra2dVar_Max-Extra2dVar_Min)
+          enddo
+          zrgb(1:nConLev,1:3) = Con_DepThick_mm_RGB(1:nConLev,1:3)
+        endif
+      elseif(iprod == 3)then       ! deposit at specified times (mm)
         varname = "depothick"
         write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
         write(title_plot,'(a20,f7.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
@@ -907,21 +932,21 @@
       linebuffer080 = 'title_legend="' // trim(adjustl(cstr_zlabel)) // '"'
       write(fid_script,'(g0)')trim(adjustl(linebuffer080))
 
-      linebuffer130  ="clevels=["
-      linebuffer130_2="tlevels=['"
+      linebuffer500  ="clevels=["
+      linebuffer500_2="tlevels=['"
       do ilev=1,nConLev
-        write(linebuffer008,'(e8.3)')ContourLev(ilev)
-        linebuffer130 = trim(adjustl(linebuffer130)) // linebuffer008
-        if(ilev < nConLev) linebuffer130 = trim(adjustl(linebuffer130)) // ','
-        linebuffer130_2 = trim(adjustl(linebuffer130_2)) // linebuffer008
+        write(linebuffer012,'(e12.3)')ContourLev(ilev)
+        linebuffer500 = trim(adjustl(linebuffer500)) // linebuffer012
+        if(ilev < nConLev) linebuffer500 = trim(adjustl(linebuffer500)) // ','
+        linebuffer500_2 = trim(adjustl(linebuffer500_2)) // linebuffer012
         if(ilev < nConLev) then
-          linebuffer130_2 = trim(adjustl(linebuffer130_2)) // "','"
+          linebuffer500_2 = trim(adjustl(linebuffer500_2)) // "','"
         else
-          linebuffer130_2 = trim(adjustl(linebuffer130_2)) // "']"
+          linebuffer500_2 = trim(adjustl(linebuffer500_2)) // "']"
         endif
       enddo
-      linebuffer130 = trim(adjustl(linebuffer130)) // ']'
-      write(fid_script,'(g0)')trim(adjustl(linebuffer130))
+      linebuffer500 = trim(adjustl(linebuffer500)) // ']'
+      write(fid_script,'(g0)')trim(adjustl(linebuffer500))
       do ilev=1,nConLev
         if(ilev == 1)then
           write(linebuffer080,101)real(zrgb(ilev,1:3)/255.0,kind=4)
@@ -935,7 +960,7 @@
  101  format('ccolors=[( ',f5.2,',',f5.2,',',f5.2,'),' )
  102  format('         ( ',f5.2,',',f5.2,',',f5.2,'),' )
  103  format('         ( ',f5.2,',',f5.2,',',f5.2,')]' )
-      write(fid_script,'(g0)')trim(adjustl(linebuffer130_2))
+      write(fid_script,'(g0)')trim(adjustl(linebuffer500_2))
       write(fid_script,'(g0)')" "
       write(fid_script,'(g0)')"#######################################"
 
