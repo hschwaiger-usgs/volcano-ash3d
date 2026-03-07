@@ -59,11 +59,15 @@
                                      ! =  125.0_ip  ! Invokes Cslip once effect is 2%
                                      ! =   50.0_ip  ! Invokes Cslip once effect is 5%
       real(kind=ip),parameter,public :: AIRBORNE_THRESH_Default = 1.0e-3_ip  ! Mass threshold for flagging bin as empty (kg)
+      complex(kind=ip),parameter,public :: m_refrac_Default     = (1.60_ip, -1.1_ip)  ! Index of refraction at 10cm
+                                                                                      ! (Andesite from Pollack et al. 1973)
 
       real(kind=ip),public :: MagmaDensity    = MagmaDensity_Default
       real(kind=ip),public :: DepositDensity  = DepositDensity_Default
       real(kind=ip),public :: LAM_GS_THRESH   = LAM_GS_THRESH_Default
       real(kind=ip),public :: AIRBORNE_THRESH = AIRBORNE_THRESH_Default
+      !complex(kind=ip),public :: m_refrac     = m_refrac_Default
+      complex(kind=ip),public :: m_refrac     = (1.65_ip, -1.2_ip) ! Basalt from Pollack et al. 1973
 
       integer,public :: n_gs_max                      ! # size classes of particles
       integer,public :: n_gs_aloft                    ! max gs bin still aloft

@@ -674,9 +674,9 @@
         if(.not.LoadConcen) &
           StopConditions(4) = (MassConsErr > 1.0e-3_ip)
            ! Error stop condition if any volume measure is negative
-        StopConditions(5) = (dep_vol < -1.0_ip*EPS_SMALL).or.&
-                            (aloft_vol < -1.0_ip*EPS_SMALL).or.&
-                            (outflow_vol < -1.0_ip*EPS_SMALL).or.&
+        StopConditions(5) = (dep_vol             < -1.0_ip*EPS_SMALL).or.&
+                            (aloft_vol           < -1.0_ip*EPS_SMALL).or.&
+                            (outflow_vol         < -1.0_ip*EPS_SMALL).or.&
                             (SourceCumulativeVol < -1.0_ip*EPS_SMALL)
 
         if(CheckConditions(1).and.StopConditions(1))then

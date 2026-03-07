@@ -1071,9 +1071,13 @@
          n_gs_max,Tephra_gsdiam,Tephra_rho_m
 
       integer :: i,j,k,isize
-      real(kind=ip) :: NumDens          !number densities (#/m3) of particles
-      real(kind=ip) :: zcol             !z value of cell
+      real(kind=ip) :: NumDens          ! number densities (#/m3) of particles
+      real(kind=ip) :: zcol             ! Z value of cell
       real(kind=ip) :: tmp
+
+      real(kind=ip),dimension(:),allocatable :: diam6             ! particle diameter in mm
+      real(kind=ip)                          :: vol              ! particle volume in m^3
+      real(kind=ip),dimension(:),allocatable :: mass             ! particle mass in kg
 
       do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine dbZCalculator"
@@ -1082,10 +1086,14 @@
       dbZCol(:,:) = dbZCol_FillValue
       dbZ(:,:,:)  = dbZCol_FillValue
 
-      ! Calculate particle collision rate between two particle sizes
-      ! Note: this requires that only two particle sizes be used as input
-
       if(n_gs_max > 0)then
+        allocate(diam6(n_gs_max))
+        allocate(mass(n_gs_max))
+        do isize=1,n_gs_max
+          diam6(isize) = (Tephra_gsdiam(isize)*M_2_MM)**6.0_ip     ! Particle diameter in mm ^6
+          vol          = (PI/6.0_ip)*Tephra_gsdiam(isize)**3.0_ip  ! volume of particle in m^3
+          mass(isize)  = Tephra_rho_m(isize)*vol                   ! mass of particle in kg
+        enddo
         do i=imin,imax
           do j=jmin,jmax
             if (CloudLoad(i,j) < CLOUDLOAD_THRESH) cycle
@@ -1093,10 +1101,13 @@
               zcol = 0.0_ip
               do isize=1,n_gs_max
                 ! convert concentration (kg/km3) to number density (#/m3)
-                NumDens = concen_pd(i,j,k,isize,ts1) / &
-                            (Tephra_rho_m(isize)*PI*Tephra_gsdiam(isize)**3.0_ip/6.0_ip) / &
-                            KM3_2_M3                                  ! particles/m3
-                zcol    = zcol + NumDens*(Tephra_gsdiam(isize)*M_2_MM)**6.0_ip
+                !diam    = Tephra_gsdiam(isize)*M_2_MM              ! Particle diameter in mm
+                !vol     = (PI/6.0_ip)*Tephra_gsdiam(isize)**3.0_ip  ! volume of particle in m^3
+                !mass    = Tephra_rho_m(isize)*vol                   ! mass of particle in kg
+                NumDens = concen_pd(i,j,k,isize,ts1)            &   ! mass concentration in kg/km^3
+                            / KM3_2_M3                          &   !  convert to kg/m^3
+                            / mass(isize)                           !  convert to #particles/m^3
+                zcol    = zcol + NumDens*(diam6(isize))             ! Reflectivity in mm^6/m^3
               enddo
               if(zcol < EPS_TINY)then
                 dbZ(i,j,k) = dbZCol_FillValue
@@ -1112,6 +1123,8 @@
             dbZCol(i,j) = maxval(dbZ(i,j,1:nzmax))
           enddo
         enddo
+        deallocate(diam6)
+        deallocate(mass)
       endif
 
       do io=1,2;if(VB(io) <= verbosity_debug1)then

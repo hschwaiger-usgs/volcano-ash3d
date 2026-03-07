@@ -37,6 +37,9 @@
 ! conda create --name geo_env
 ! conda activate geo_env
 !
+! If you have SSL errors, you might need to fix them, or run:
+!  conda config --set ssl_verify false
+!
 !##############################################################################
 
       module Ash3d_PostProc_python
