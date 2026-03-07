@@ -24,6 +24,8 @@
 !0.0       line                    # diffusion coefficient (m2/s), Suzuki constant
 !        For a point, we would have:
 !0.0       point                   # diffusion coefficient (m2/s), Suzuki constant
+!        For an exponential, we would have:
+!0.0       expo                    # diffusion coefficient (m2/s), Suzuki constant
 !        For an umbrella or umbrella air, we would have:
 !0.0       umbrella[_air]            # diffusion coefficient (m2/s), Suzuki constant
 !        And for a profile, we would have:
@@ -37,6 +39,9 @@
 !******************* BLOCK 2 ***************************************************
 !2010 04 14   0.00   1.0     18.0  0.16
 !
+! The exponetial profile as the additional value for the skin depth in km. If positive,
+! then the exponential is top-heavy, if negative, the exponetial is inverted (max at bottom).
+!2010 04 14   0.00   1.0     18.0  0.16 3.0
 ! The profile option has the additional two values for the dz and nz
 !
 !# Parameters are (1-4) start time (yyyy mm dd h.hh (UT)); (5) duration (hrs);
@@ -95,6 +100,7 @@
       real(kind=dp), dimension(:)    ,pointer,public :: e_Duration           => null()  ! Time needs to be dp
       real(kind=dp), dimension(:)    ,pointer,public :: e_StartTime          => null()
       real(kind=dp), dimension(:)    ,pointer,public :: e_EndTime            => null()
+      real(kind=dp), dimension(:)    ,pointer,public :: e_delta              => null()  ! skin depth for exponential 
       real(kind=ip), dimension(:)    ,pointer,public :: e_prof_dz            => null()
       integer      , dimension(:)    ,pointer,public :: e_prof_nzpoints      => null()
       real(kind=ip), dimension(:,:)  ,pointer,public :: e_prof_Volume        => null()
@@ -112,6 +118,7 @@
       real(kind=dp), dimension(:)    ,allocatable,public :: e_Duration   ! Time needs to be dp
       real(kind=dp), dimension(:)    ,allocatable,public :: e_StartTime  !
       real(kind=dp), dimension(:)    ,allocatable,public :: e_EndTime    !
+      real(kind=dp), dimension(:)    ,allocatable,public :: e_delta      ! skin depth for exponential 
       real(kind=ip), dimension(:)    ,allocatable,public :: e_prof_dz
       integer      , dimension(:)    ,allocatable,public :: e_prof_nzpoints
       real(kind=ip), dimension(:,:)  ,allocatable,public :: e_prof_Volume
@@ -168,6 +175,10 @@
       allocate(MassFluxRate(neruptions));           MassFluxRate  = 0.0_ip
       allocate(e_EndTime(neruptions));              e_EndTime     = 0.0_ip
       allocate(dt_pulse_frac(neruptions));          dt_pulse_frac = 0.0_dp
+
+      if(SourceType == 'expo')then
+        allocate(e_delta(neruptions));              e_delta       = 0.0_ip
+      endif
 
       if(SourceType == 'profile')then
         allocate(e_prof_dz(neruptions));             e_prof_dz       = 0.0_ip
@@ -256,6 +267,9 @@
       if(associated(e_EndTime))        deallocate(e_EndTime)
       if(associated(dt_pulse_frac))    deallocate(dt_pulse_frac)
 
+      ! SourceType == 'expo'
+      if(associated(e_delta))           deallocate(e_delta)
+
       ! SourceType == 'profile'
       if(associated(e_prof_dz))           deallocate(e_prof_dz)
       if(associated(e_prof_nzpoints))     deallocate(e_prof_nzpoints)
@@ -274,6 +288,9 @@
       if(allocated(MassFluxRate))     deallocate(MassFluxRate)
       if(allocated(e_EndTime))        deallocate(e_EndTime)
       if(allocated(dt_pulse_frac))    deallocate(dt_pulse_frac)
+
+      ! SourceType == 'expo'
+      if(allocated(e_delta))           deallocate(e_delta)
 
       ! SourceType == 'profile'
       if(allocated(e_prof_dz))           deallocate(e_prof_dz)
@@ -332,6 +349,8 @@
       real(kind=ip) :: s_volcano
       real(kind=ip) :: s_cell_bot
       real(kind=ip) :: s_cell_top
+      real(kind=ip) :: s2
+      real(kind=ip) :: skdpth
       real(kind=ip) :: sbot_prof
       real(kind=ip) :: stop_prof
       real(kind=ip) :: sground
@@ -464,6 +483,22 @@
             else
               NormSourceColumn(i,k) = 0.0_ip
             endif
+          elseif (SourceType == 'expo') then
+            if(e_delta(i) < 0.0_ip)then
+              ! This is a bottom-heavy exponential
+              skdpth = abs(e_delta(i))
+              s2 = min(s_cell_top,s_PlumeHeight(i))
+              NormSourceColumn(i,k) = (1.0_ip/skdpth) * &
+                         (exp(-(s_cell_bot/skdpth)) - &
+                          exp(-(s2/skdpth)))
+            else
+              ! This is a top-heavy exponential
+              skdpth = abs(e_delta(i))
+              s2 = min(s_cell_top,s_PlumeHeight(i))
+              NormSourceColumn(i,k) = (1.0_ip/skdpth) * &
+                         (exp(-((s_PlumeHeight(i)-s2        )/skdpth)) - &
+                          exp(-((s_PlumeHeight(i)-s_cell_bot)/skdpth)))
+            endif
           elseif (SourceType == 'profile') then
             ! loop over the points describing the eruption profile. These are always
             ! given from z=0 to the top of the profile (in km).
@@ -527,7 +562,7 @@
 
                 NormSourceColumn(i,k) = NormSourceColumn(i,k) + &
                   e_prof_Volume(i,kk)*frac
-            enddo
+            enddo  ! kk=1,e_prof_nzpoints(i)
           else
             ! Source is none of suzuki,umbrella,umbrella_air,line,point,profile
             ! This is probably a non-tephra source or some custom source entered
@@ -605,6 +640,7 @@
         if(SourceType == 'suzuki'      .or. &
            SourceType == 'point'       .or. &
            SourceType == 'line'        .or. &
+           SourceType == 'expo'        .or. &
            SourceType == 'umbrella'    .or. &
            SourceType == 'umbrella_air')then
           MassFluxRate(i)  = MagmaDensity * &  ! kg/m3
@@ -711,6 +747,7 @@
       if((SourceType == 'point')       .or. &  ! profile is a branch below
          (SourceType == 'line')        .or. &
          (SourceType == 'suzuki')      .or. &
+         (SourceType == 'expo')        .or. &
          (SourceType == 'umbrella')    .or. &
          (SourceType == 'umbrella_air').or. &
          (SourceType == 'profile'))then

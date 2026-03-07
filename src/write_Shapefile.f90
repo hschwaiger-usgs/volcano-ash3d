@@ -194,7 +194,6 @@
       DBASE_EOF      = 26
       nattr          = 15
 
-
       do io=1,2;if(VB(io) <= verbosity_debug1)then
         write(outlog(io),*)"     Entered Subroutine write_ShapeFile_Polyline"
       endif;enddo

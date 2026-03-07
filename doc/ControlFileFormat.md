@@ -89,6 +89,7 @@ positive constant specifying the Suzuki distribution. Alternatively, it can be
  `umbrella_air `: Suzuki (const. = 12) with radial spreading of the plume scaled to 5% of vol.  
  `point`: all mass inserted in cell containing PlmH  
  `linear`: mass uniformly distributed from z-vent to PlmH  
+ `expo`:mass is distributed with an exponential decay  
  `profile`: mass distributed with a user-specified vertical profile  
 Line 9 : number of pulses to be read in BLOCK 2  
 
@@ -114,7 +115,10 @@ Parameters are (1-4) start time (yyyy mm dd h.hh (UT)); (5) duration (hrs);
 If neruptions=1 and the year is 0, then the model run in forecast mode where mm dd h.hh are
 interpreted as the time after the start of the windfile. In this case, duration, plume
 height and erupted volume are replaced with ESP if the values are negative.
-This applies to source types: `suzuki`, `point`, `line`, `umbrella` and `umbrella_air`.
+This applies to source types: `suzuki`, `point`, `line`, `expo`, `umbrella` and `umbrella_air`.
+For exponential sources, an additional value for the skin depth (in km) is read.  A positive
+value for the skin depth indicates a top-heavy profile resembling a plume. A negative value
+indicates a bottom heavy profile.
 For profile sources, an additional two values are read: `dz` and `nz`  
 `2010 04 14   0.00   1.0     18.0  0.16 1.0 18`  
 `0.01 0.02 0.03 0.03 0.04 0.04 0.05 0.06 0.06 0.070 0.08 0.08 0.09 0.09 0.09 0.08 0.06 0.02`  

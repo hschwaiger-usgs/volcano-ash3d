@@ -63,6 +63,7 @@
       real(kind=ip),public :: A_Fill
       integer      ,public :: A_Fill_int
       logical      ,public :: A_IsInt    = .false.
+      character(len=7),public :: A_Vname
 
       contains
       !------------------------------------------------------------------------
@@ -1062,7 +1063,7 @@
 !
 !  Called from: Ash3d_PostProc.F90
 !  Arguments:
-!    filename = root name of file (20 characters)
+!    filename = name of file (80 characters)
 !
 !  Subroutine that reads in 3-D arrays in ESRI ASCII raster format and
 !  populates A_nx,A_ny,A_nz,A_XYZ,A_xll,A_yll,A_zll,A_dx,A_dy,A_dz,A_Fill
@@ -1089,9 +1090,15 @@
       open(unit=fid_ascii3din,file=trim(adjustl(filename)), status='old',action='read',err=2500)
 
       ! Read the header lines
+      ! If this is an Ash3d 3d ASCII file, we will have 2 header lines, such as:
+!VARIABLES = "X","Y","Z","Clouddb"
+!ZONE I =   140 J =   100 K =    65
       read(fid_ascii3din,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
       linebuffer050 = "Reading line from ASCII file"
       if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
+      ! The variable name should be a 7-character string from position 26-32
+      read(linebuffer130,'(26x,a7)')A_Vname
+
       read(fid_ascii3din,3000,err=2600,iostat=iostatus,iomsg=iomessage) A_nx,A_ny,A_nz
       if(iostatus /= 0)then
         ! We might have an empty file

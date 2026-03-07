@@ -1286,7 +1286,7 @@
 
       use Source,        only : &
          neruptions,e_Duration,e_Volume,e_PlumeHeight,e_prof_Volume,e_prof_dz,&
-         e_prof_maxpoints,e_prof_nzpoints,e_StartTime,MAX_ER_PROFPOINTS,&
+         e_delta,e_prof_maxpoints,e_prof_nzpoints,e_StartTime,MAX_ER_PROFPOINTS,&
          ESP_duration,ESP_height,ESP_Vol,&
          lat_volcano,lon_volcano,x_volcano,y_volcano,z_volcano,Suzuki_A,&
          IsCustom_SourceType,SourceType,SourceType_idx,&
@@ -2004,7 +2004,7 @@
 
       ! Block 1 Line 8
       ! Read this line looking for diffusion coefficient and either a Suzuki constant,
-      ! or a plume type ('line', 'point', 'profile', 'umbrella', or 'umbrella_air')
+      ! or a plume type ('line', 'point', 'expo', 'profile', 'umbrella', or 'umbrella_air')
       read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
       linebuffer050 = "Reading control file, Block 1, Line 8."
       if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer080,iomessage)
@@ -2065,10 +2065,15 @@
             SourceType     = 'umbrella_air'
             SourceType_idx = 6
             Suzuki_A = SuzK_umb
+        elseif((SourceType == 'expo').or. &
+                   (SourceType == 'Expo').or. &
+                   (SourceType == 'EXPO')) then
+            SourceType     = 'expo'
+            SourceType_idx = 7
         else
           do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)&
-             "SourceType is not point, line, profile, umbrella or umbrella_air."
+             "SourceType is not point, line, expo, profile, umbrella or umbrella_air."
             write(outlog(io),*)&
              "Assuming this is a custom source type."
             write(outlog(io),*)&
@@ -2250,6 +2255,12 @@
           read(linebuffer130,*,err=9201,iostat=iostatus,iomsg=iomessage) &
                                 e_iyear(i),e_imonth(i),e_iday(i),e_hour(i), &
                                 e_Duration(i), e_PlumeHeight(i), e_Volume(i)
+        elseif(SourceType == 'expo')then
+          ! read start time, duration, plume height, volume of each pulse
+          read(linebuffer130,*,err=9201,iostat=iostatus,iomsg=iomessage) &
+                                e_iyear(i),e_imonth(i),e_iday(i),e_hour(i), &
+                                e_Duration(i), e_PlumeHeight(i), e_Volume(i),&
+                                e_delta(i)
         elseif(SourceType == 'profile')then
           do io=1,2;if(VB(io) <= verbosity_info)then
             write(outlog(io),*)"Start reading eruption profile number ",i
@@ -6060,8 +6071,9 @@
       write(outunit,1)'# If neruptions=1 and the year is 0, then the model run in forecast mode where mm dd h.hh are          '
       write(outunit,1)'# interpreted as the time after the start of the windfile.  In this case, duration, plume              '
       write(outunit,1)'# height and erupted volume are replaced with ESP if the values are negative.                          '
-      write(outunit,1)'# This applies to source types: suzuki, point, line, umbrella and umbrella_air.                        '
-      write(outunit,1)'# For profile sources, an additional two values are read: dz and nz                                    '
+      write(outunit,1)'# This applies to source types: suzuki, point, line, expo, umbrella and umbrella_air.                  '
+      write(outunit,1)'# For exponential sources, an additional value is read: skin_depth                                     '
+      write(outunit,1)'# For profile sources, an additional two values are read: dz and nz, followed by a profile line.       '
       write(outunit,1)'# 2010 04 14   0.00   1.0     18.0  0.16 1.0 18                                                        '
       write(outunit,1)'# 0.01 0.02 0.03 0.03 0.04 0.04 0.05 0.06 0.06 0.070 0.08 0.08 0.09 0.09 0.09 0.08 0.06 0.02           '
         case(3)  ! BLOCK 3: WIND PARAMETERS
@@ -6421,6 +6433,8 @@
         SourceType='umbrella'
       elseif(src_type == 6)then
         SourceType='umbrella_air'
+      elseif(src_type == 7)then
+        SourceType='expo'
       endif
       neruptions = nerup
 
@@ -6478,6 +6492,7 @@
 !    e_Dur      = eruption durations
 !    e_PmH      = eruption plume heights
 !    e_Vol      = eruption volumes
+!    e_del      = decay parameter for exponential profiles
 !    ep_dz      = dz of eruption profile
 !    ep_nz      = nz of eruption profile
 !    ep_Vol     = normalized volume of eruption profile
@@ -6488,7 +6503,8 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine SetWrite_input_block_02(outunit,nerup,src_type,     &
-                                        e_ST,e_Dur,e_PmH,e_Vol,         &
+                                        e_ST,e_Dur,e_PmH,e_Vol,      &
+                                        e_del,                       &
                                         ep_dz,ep_nz,ep_Vol)
 
       use io_units
@@ -6506,6 +6522,7 @@
       real(kind=dp),dimension(:),intent(in) :: e_Dur
       real(kind=ip),dimension(:),intent(in) :: e_PmH
       real(kind=ip),dimension(:),intent(in) :: e_Vol
+      real(kind=ip),dimension(:),intent(in) :: e_del
       real(kind=ip),dimension(:),intent(in) :: ep_dz
       integer      ,dimension(:),intent(in) :: ep_nz
       real(kind=ip),dimension(:,:),intent(in) :: ep_Vol
@@ -6566,7 +6583,9 @@
              src_type == 5.or.&
              src_type == 6)then
             write(outunit,2)iyear,imonth,iday,hour,e_Dur(i),e_PmH(i),e_Vol(i)
-          else
+          elseif(src_type == 7)then
+            write(outunit,5)iyear,imonth,iday,hour,e_Dur(i),e_PmH(i),e_Vol(i),e_del(i)
+          elseif(src_type == 4)then
             ! src_type = 4 (profile)
             write(outunit,3)iyear,imonth,iday,hour,e_Dur(i),e_PmH(i),e_Vol(i),ep_dz(i),ep_nz(i)
             write(outunit,4)real(ep_Vol(i,1:ep_nz(i)),kind=4)
@@ -6580,6 +6599,8 @@
  2    format(3i5,1x,1f8.3,2f15.5,g15.5)
  3    format(3i5,1x,1f8.3,2f15.5,g15.5,1f8.2,i5)
  4    format(*(f7.4))
+ 5    format(3i5,1x,1f8.3,2f15.5,g15.5,1f8.3)
+
 
       end subroutine SetWrite_input_block_02
 

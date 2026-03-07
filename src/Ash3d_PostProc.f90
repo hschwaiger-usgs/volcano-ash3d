@@ -199,11 +199,11 @@
         !  6 = python/cartopy
       integer, parameter  :: Nplot_libs = 6
       logical,dimension(Nplot_libs) :: plotlib_avail
-                                                     !   -- First preference code
-                                                     !   | - Second
-                                                     !   | | - Third
-                                                     !   | | | - Fourth
-                                                     !   V V V V
+                                                     !  -- First preference code
+                                                     !  | - Second
+                                                     !  | | - Third
+                                                     !  | | | - Fourth
+                                                     !  V V V V
 #ifdef WINDOWS
       ! For Windows systems, dislin is working; others not yet.
       integer,dimension(Nplot_libs) :: plot_pref_map = [1,2,3,4,5,6]  ! plot preference for maps
@@ -967,7 +967,8 @@
           height_flag = 1  ! All the cells should be at cloud height
         elseif(iprod == 13)then
           do io=1,2;if(VB(io) <= verbosity_info)then
-            write(outlog(io),*)'output variable =13 ash-cloud radar max reflectivity (dBz)'
+            write(outlog(io),*)'output variable =13 ash-cloud radar reflectivity (dBz)'
+            write(outlog(io),*)'  column maximum for 2d'
           endif;enddo
           ivar = 6
           TS_flag = 1      ! 1 = time series

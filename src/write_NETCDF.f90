@@ -114,6 +114,7 @@
       integer :: er_duration_var_id    = 0  ! eruption duration
       integer :: er_plumeheight_var_id = 0  ! eruption plume height
       integer :: er_volume_var_id      = 0  ! eruption volume
+      integer :: er_expo_del_var_id    = 0  ! eruption exponential decay depth
       integer :: er_prof_nz_var_id     = 0  ! erpution profile nzpoints (func of er_dim_id)
       integer :: er_prof_dz_var_id     = 0  ! erpution profile dz  (func of er_dim_id)
       integer :: er_prof_frac_var_id   = 0  ! erpution profile normalized (func of er_dim_id,ep_dim_id)
@@ -243,7 +244,7 @@
 
       use Source,        only : &
          neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight, &
-         SourceType,SourceType_idx,Suzuki_A,                       &
+         e_delta,SourceType,SourceType_idx,Suzuki_A,               &
          e_prof_maxpoints,e_prof_nzpoints,e_prof_dz,e_prof_Volume
 
       use Source_Umbrella, only : &
@@ -1602,7 +1603,8 @@
              SourceType_idx == 3.or. &  ! line
              SourceType_idx == 4.or. &  ! profile
              SourceType_idx == 5.or. &  ! umbrella
-             SourceType_idx == 6)then   ! umbrella_air
+             SourceType_idx == 6.or. &  ! umbrella_air
+             SourceType_idx == 7)then   ! expo
         nSTAT = nf90_put_att(ncid,er_type_var_id,"specification","none")
         if(nSTAT /= 0)call NC_check_status(nSTAT,1,"put_att er_type specification")
       else
@@ -1744,6 +1746,39 @@
         if(nSTAT /= 0)call NC_check_status(nSTAT,1,"put_att area units")
 
       endif
+
+      if (SourceType_idx == 7) then
+        ! exponential erpution; need to add skin depth
+        do io=1,2;if(VB(io) <= verbosity_info)then
+          write(outlog(io),*)"     er_type: Eruption profile delta"
+        endif;enddo
+        nSTAT = nf90_def_var(ncid,"er_expo_del",&
+                             NF90_INT,&
+                             [er_dim_id],&
+                             er_expo_del_var_id)
+        if(nSTAT /= 0)call NC_check_status(nSTAT,1,"def_var er_expo_del")
+        nSTAT = nf90_put_att(ncid,er_expo_del_var_id,"long_name","Eruption expo decay")
+        if(nSTAT /= 0)call NC_check_status(nSTAT,1,"put_att er_type long_name")
+        nSTAT = nf90_put_att(ncid,er_expo_del_var_id,"units","km")
+        if(nSTAT /= 0)call NC_check_status(nSTAT,1,"put_att er_type units")
+
+        ! erpution expo decay  (func of er_dim_id)
+        do io=1,2;if(VB(io) <= verbosity_info)then
+          write(outlog(io),*)"     area: eruption expo decay"
+        endif;enddo
+        if(op == 8)then
+          nSTAT = nf90_def_var(ncid,"er_expo_del",&
+                               NF90_DOUBLE, &
+                               [er_dim_id],                &
+                               er_expo_del_var_id)
+        else
+          nSTAT = nf90_def_var(ncid,"er_expo_del",&
+                               NF90_FLOAT,  &
+                               [er_dim_id],                &
+                               er_expo_del_var_id)
+        endif
+      endif
+
 
          ! Now define the other (non-time-dependent) variables
          ! wf_name (Name of windfile)
@@ -2988,7 +3023,7 @@
         do io=1,2;if(VB(io) <= verbosity_debug1)then
           write(outlog(io),*)"     Fill Eruption profile dz"
         endif;enddo
-        ! er_volume (Volume of eruption)
+        ! er_prof_dz (profile fraction)
         dum1d_out = real(e_prof_dz,kind=op)
         nSTAT=nf90_put_var(ncid,er_prof_dz_var_id,dum1d_out,[1])
         if(nSTAT /= 0)call NC_check_status(nSTAT,1,"put_var er_prof_dz")
@@ -3007,6 +3042,18 @@
           nSTAT=nf90_put_var(ncid,er_prof_frac_var_id,dum1d_out(1:e_prof_maxpoints),[1,i])
           if(nSTAT /= 0)call NC_check_status(nSTAT,1,"put_var er_prof_frac")
         enddo
+        deallocate(dum1d_out)
+      endif
+
+      if(SourceType_idx == 7)then
+        ! erpution exponential decay
+        do io=1,2;if(VB(io) <= verbosity_debug1)then
+          write(outlog(io),*)"     Fill Eruption exponential decay"
+        endif;enddo
+        ! er_del (exponential decay)
+        dum1d_out = real(e_delta,kind=op)
+        nSTAT=nf90_put_var(ncid,er_expo_del_var_id,dum1d_out,[1])
+        if(nSTAT /= 0)call NC_check_status(nSTAT,1,"put_var er_expo_del")
         deallocate(dum1d_out)
       endif
 
@@ -4282,7 +4329,7 @@
 
       use Source,        only : &
          neruptions,e_Volume,e_Duration,e_StartTime,e_PlumeHeight,Suzuki_A, &
-         SourceType,SourceType_idx,MAX_ER_PROFPOINTS, &
+         e_delta,SourceType,SourceType_idx,MAX_ER_PROFPOINTS, &
          e_prof_maxpoints,e_prof_nzpoints,e_prof_dz,e_prof_Volume, &
          lat_volcano,lon_volcano,x_volcano,y_volcano,z_volcano
 

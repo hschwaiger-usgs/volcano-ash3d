@@ -469,6 +469,7 @@
           if ((SourceType == 'point')  .or. &
               (SourceType == 'line')   .or. &
               (SourceType == 'profile').or. &
+              (SourceType == 'expo')   .or. &
               (SourceType == 'suzuki'))then
 
             ! Calculating the flux into the vent column

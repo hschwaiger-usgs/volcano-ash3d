@@ -69,7 +69,7 @@
 
       use Source,        only : &
          lon_volcano,lat_volcano,x_volcano,y_volcano,z_volcano,Suzuki_A,      &
-         neruptions,SourceType_idx,e_StartTime,e_Duration,         &
+         neruptions,SourceType_idx,e_StartTime,e_Duration,e_delta,         &
          e_PlumeHeight,e_Volume,e_prof_dz,e_prof_nzpoints,e_prof_Volume
 
       use Tephra,        only : &
@@ -402,6 +402,7 @@
                                    e_StartTime+SimStartHour        ,&
                                    e_Duration                      ,&
                                    e_PlumeHeight                   ,&
+                                   e_delta                         ,&
                                    e_Volume                        ,&
                                    e_prof_dz                       ,&
                                    e_prof_nzpoints                 ,&
