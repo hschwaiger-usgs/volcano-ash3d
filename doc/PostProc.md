@@ -160,3 +160,5 @@ Lines 14, 15, and 16 are the `nlev` integer values of the RGB components of the 
 An example of usage of `Ash3d_PostPproc` is provided in
 `examples/Spurr_19920818/Proc/Gen_PostProc_plots.sh`.  
 
+An example of using a control file with a user-specified variable is provided in
+`examples/Shishaldin_FC/Proc/pp.ctr`.
