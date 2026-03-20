@@ -340,9 +340,9 @@
               write(errlog(io),*)"ERROR: DT_MAX must be > 0"
             endif;enddo
             stop 1
-          elseif (pvalue(i) <= DT_MIN)then
+          elseif (pvalue(i) < DT_MIN)then
             do io=1,2;if(VB(io) <= verbosity_error)then
-              write(errlog(io),*)"ERROR: DT_MAX must be > DT_MIN"
+              write(errlog(io),*)"ERROR: DT_MAX must be >= DT_MIN"
             endif;enddo
             stop 1
           elseif (pvalue(i) > 10.0_ip)then
