@@ -13,7 +13,7 @@ if [[ "$rc" -gt 0 ]] ; then
   exit
 fi
 YYYYMMDD=`cat "${WINDROOT}/NWP_testfiles/lastdownload.txt"`
-#ln -s ${WINDROOT}/NWP_testfiles/Forecasts/GRIB/${YYYYMMDD} WindGribFC
+ln -s ${WINDROOT}/NWP_testfiles/Forecasts/GRIB/${YYYYMMDD} WindGribFC
 ln -s ${WINDROOT}/NWP_testfiles/Forecasts/NetCDF/${YYYYMMDD} WindNetcdfFC
 ln -s ${WINDROOT}/NWP_testfiles/Reanalysis/NetCDF/${YYYYMMDD} WindNetcdfRN
 ln -s /data/TOPO/GEBCO/GEBCO_23/GEBCO_2023.nc .

@@ -778,6 +778,7 @@
       public
 
       real(kind=ip), parameter :: ZPADDING_Default     = 1.3_ip
+      real(kind=ip), parameter :: ZTOPMIN_Default      = 5.0_ip
       integer, parameter :: ts0 = 0
       integer, parameter :: ts1 = 1
 
@@ -798,6 +799,7 @@
 
       logical            :: IsPeriodic   = .false.
       real(kind=ip)      :: ZPADDING     = ZPADDING_Default
+      real(kind=ip)      :: ZTOPMIN      = ZTOPMIN_Default
       real(kind=ip)      :: Ztop
       character(len=7)   :: VarDzType
       real(kind=ip)      :: dz_const                  ! z nodal spacing (always km)

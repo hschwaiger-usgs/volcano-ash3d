@@ -329,8 +329,10 @@
       endif
 
       ! Reset dt to be an integer multiple of DT_MIN
-      fac = int(dt/DT_MIN)
-      dt = DT_MIN*fac
+      fac = max(floor(dt/DT_MIN),1)
+      dt = DT_MIN*real(fac,kind=ip)
+      ! Cap max value at DT_MAX
+      dt = min(dt,DT_MAX)
 
       if (((NextWriteTime-time) > EPS_SMALL).and.(NextWriteTime-time < dt)) then
         dt = NextWritetime-time

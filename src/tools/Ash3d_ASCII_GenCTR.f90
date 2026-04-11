@@ -10,9 +10,9 @@
 ! 1     160.0      50.0
 ! 2     160.0      52.0
 !
-! where the columns are labled in line 2 and must be a subset of:
+! where the columns are labeled in line 2 and must be a subset of:
 !   run          Run
-!   year         Year YYYY
+!   year         Year           YYYY
 !   month        MM
 !   day          DD
 !   hour         HH.H
@@ -22,11 +22,11 @@
 !   latLL
 !   dxy
 !   dz
-!   longitude    srcx lon_volcano
-!   latitude     srcy lat_volcano
+!   longitude    srcx           lon_volcano
+!   latitude     srcy           lat_volcano
 !   duration     EDur
 !   plume height EPlmH
-!   volume       DRE  EVol
+!   volume       DRE            EVol
 !   width        gridwidth_e
 !   height       gridwidth_n
 !   m_fines
@@ -202,16 +202,16 @@
             write(outlog(io),*)'where template.inp is a Ash3d control file with 1 source term'
             write(outlog(io),*)'      input_table.txt is a table of substitutions for a particular run'
             write(outlog(io),*)'      runID is the identifying line of the input table.'
-            write(outlog(io),*)'input_table.txt shoule have the following format:'
-            write(outlog(io),*)'Table of run-dependent values used in the Nome mystery ash'
+            write(outlog(io),*)'input_table.txt should have the following format:'
+            write(outlog(io),*)'Table of run-dependent values used in [Project Name]'
             write(outlog(io),*)'run #    longitude  latitude'
             write(outlog(io),*)'            deg.       deg.'
             write(outlog(io),*)' 1     160.0      50.0'
             write(outlog(io),*)' 2     160.0      52.0'
             write(outlog(io),*)' '
-            write(outlog(io),*)' where the columns are labled in line 2 and must be a subset of:'
+            write(outlog(io),*)' where the columns are labeled in line 2 and must be a subset of:'
             write(outlog(io),*)'   run          Run'
-            write(outlog(io),*)'   year         Year YYYY'
+            write(outlog(io),*)'   year         Year        YYYY'
             write(outlog(io),*)'   month        MM'
             write(outlog(io),*)'   day          DD'
             write(outlog(io),*)'   hour         HH.H'
@@ -221,11 +221,11 @@
             write(outlog(io),*)'   latLL'
             write(outlog(io),*)'   dxy'
             write(outlog(io),*)'   dz'
-            write(outlog(io),*)'   longitude    srcx lon_volcano'
-            write(outlog(io),*)'   latitude     srcy lat_volcano'
+            write(outlog(io),*)'   longitude    srcx        lon_volcano'
+            write(outlog(io),*)'   latitude     srcy        lat_volcano'
             write(outlog(io),*)'   duration     EDur'
             write(outlog(io),*)'   plume height EPlmH'
-            write(outlog(io),*)'   volume       DRE  EVol'
+            write(outlog(io),*)'   volume       DRE         EVol'
             write(outlog(io),*)'   width        gridwidth_e'
             write(outlog(io),*)'   height       gridwidth_n'
             write(outlog(io),*)'   m_fines'

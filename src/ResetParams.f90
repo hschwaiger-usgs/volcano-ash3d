@@ -30,6 +30,7 @@
 ! DT_MIN               = 1.0e-5
 ! DT_MAX               = 1.0
 ! ZPADDING             = 1.3
+! ZTOPMIN              = 5.0
 ! DEPO_THRESH          = 1.0e-1
 ! DEPRATE_THRESH       = 1.0e-2
 ! CLOUDCON_THRESH      = 2.0e-1
@@ -70,7 +71,7 @@
          infile,cdf_institution,cdf_run_class,cdf_url
 
       use mesh,          only : &
-         ZPADDING
+         ZPADDING,ZTOPMIN
 
       use Tephra,        only : &
          MagmaDensity,DepositDensity,LAM_GS_THRESH,AIRBORNE_THRESH
@@ -374,6 +375,24 @@
                               "to ",pvalue(i)
           endif;enddo
           ZPADDING = pvalue(i)
+        elseif (pname(i) == 'ZTOPMIN') then
+          ! error-checking
+          if (pvalue(i) <= 1.0_ip)then
+            do io=1,2;if(VB(io) <= verbosity_error)then
+              write(errlog(io),*)"ERROR: ZTOPMIN must be > 1"
+            endif;enddo
+            stop 1
+          elseif (pvalue(i) > 100.0_ip)then
+            do io=1,2;if(VB(io) <= verbosity_info)then
+              write(outlog(io),*)"WARNING: ZTOPMIN seems high."
+              write(outlog(io),*)"         This is the minimum height of the computational domain in km"
+            endif;enddo
+          endif
+          do io=1,2;if(VB(io) <= verbosity_info)then
+            write(outlog(io),*)"  Resetting ZTOPMIN from ",ZTOPMIN,&
+                              "to ",pvalue(i)
+          endif;enddo
+          ZTOPMIN = pvalue(i)
         elseif (pname(i) == 'DEPO_THRESH') then
           ! error-checking
           if (pvalue(i) <= 0.0_ip)then

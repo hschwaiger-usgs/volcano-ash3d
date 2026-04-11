@@ -1273,7 +1273,7 @@
          gridwidth_e,gridwidth_n,gridwidth_x,gridwidth_y,&
          lonLL,latLL,lonUR,latUR,xLL,yLL,xUR,yUR,&
          A3d_iprojflag,A3d_k0,A3d_phi0,A3d_lam0,A3d_lam1,A3d_phi1,A3d_lam2,&
-         A3d_phi2,A3d_Re,IsLatLon,IsPeriodic,ZPADDING,Ztop
+         A3d_phi2,A3d_Re,IsLatLon,IsPeriodic,ZPADDING,ZTOPMIN,Ztop
 
       use solution,      only : &
          StopWhenDeposited,StopValue_FracAshDep,StopValue_FracAshDep_Default,imin,imax,jmin,jmax,kmin,kmax
@@ -1469,7 +1469,7 @@
       open(unit=fid_ctrlfile,file=infile,status='old',action='read',err=9001)
 
       !************************************************************************
-      ! Searching for optional blocks labled by OPTMOD
+      ! Searching for optional blocks labeled by OPTMOD
       !  These are expected to be at the end of the control file, but we need to
       !  know now if we are calling input_data_ResetParams as this can effect the
       !  grid
@@ -2645,6 +2645,7 @@
       ! Now that we know the requested dz profile and the plume heights, we can
       ! set up the z-grid for computation
       Ztop = ZPADDING*maxval(e_PlumeHeight(1:neruptions))
+      Ztop = max(Ztop,ZTOPMIN)
       MR_ztop         = real(Ztop,kind=sp)   ! Set the MetReader copy in case we scale the grid
       nzmax = 3   ! We require at least 3 cells vertically
       do k = 3,nz_init-1

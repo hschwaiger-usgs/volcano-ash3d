@@ -2434,8 +2434,10 @@
           endif
           ! Now find the corresponding topo point
           ! We need to find where olam,ophi maps onto the grid defined by the cell-centers
-          ilon = floor((olam-loncl_topo_subgrid(1))/dlon_topo) + 1
-          ilat = floor((ophi-latcl_topo_subgrid(1))/dlat_topo) + 1
+          ilon = floor((olam-loncl_topo_subgrid(1))/dlon_topo)
+          ilon = min(max(ilon,1),nlon_topo_subgrid)
+          ilat = floor((ophi-latcl_topo_subgrid(1))/dlat_topo)
+          ilat = min(max(ilat,1),nlat_topo_subgrid)
           ! Adjust for the cases where we have the comp point right on top of the topo point
           if(olam < loncl_topo_subgrid(ilon))then
             ilon = ilon-1
