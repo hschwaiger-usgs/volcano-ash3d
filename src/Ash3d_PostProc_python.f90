@@ -30,9 +30,10 @@
 !   conda init
 !
 ! (4) Install the packages your script needs:
+!   conda install -c conda-forge scipy
 !   conda install -c conda-forge geopandas
 !   conda install -c scitools cartopy
-!   conda install -c gdal
+!   conda install -c conda-forge gdal
 !
 ! conda create --name geo_env
 ! conda activate geo_env
@@ -1136,7 +1137,7 @@
           write(errlog(io),*)"         Make sure you install the following in your conda environment:"
           write(errlog(io),*)"           conda install -c conda-forge geopandas"
           write(errlog(io),*)"           conda install -c scitools cartopy"
-          write(errlog(io),*)"           conda install -c gdal"
+          write(errlog(io),*)"           conda install -c conda-forge gdal"
           write(errlog(io),*)"         Then activate your environment:"
           write(errlog(io),*)"           conda create --name geo_env"
           write(errlog(io),*)"           conda activate geo_env"
@@ -1526,7 +1527,7 @@
           write(errlog(io),*)"         Make sure you install the following in your conda environment:"
           write(errlog(io),*)"           conda install -c conda-forge geopandas"
           write(errlog(io),*)"           conda install -c scitools cartopy"
-          write(errlog(io),*)"           conda install -c gdal"
+          write(errlog(io),*)"           conda install -c conda-forge gdal"
           write(errlog(io),*)"         Then activate your environment:"
           write(errlog(io),*)"           conda create --name geo_env"
           write(errlog(io),*)"           conda activate geo_env"
@@ -1740,7 +1741,7 @@
           write(errlog(io),*)"         Make sure you install the following in your conda environment:"
           write(errlog(io),*)"           conda install -c conda-forge geopandas"
           write(errlog(io),*)"           conda install -c scitools cartopy"
-          write(errlog(io),*)"           conda install -c gdal"
+          write(errlog(io),*)"           conda install -c conda-forge gdal"
           write(errlog(io),*)"         Then activate your environment:"
           write(errlog(io),*)"           conda create --name geo_env"
           write(errlog(io),*)"           conda activate geo_env"
