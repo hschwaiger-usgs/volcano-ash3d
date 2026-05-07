@@ -217,6 +217,8 @@
 !     # Use a PlateCarree projection for now
 !     cen_lon=0.5*(sum(extent))
 !     img_extent = extent
+!     # Hard-code map limits here, if needed
+!     #img_extent =  [-165.0, -162.0, 53.0, 56.0]
 !     projection = ccrs.PlateCarree(central_longitude=cen_lon)
 !     # this is the Cartopy bit
 !     map_ax = main_fig.add_subplot(4,1,(1,3),projection=projection)
@@ -262,8 +264,13 @@
 !                                    transform=ccrs.PlateCarree())
 !
 !     # Create proxies for contour colors for legend later on
-!     proxy = [plt.Rectangle((0,0),1,1,fc = pc.get_facecolor()[0])
-!         for pc in filled_contours.collections]
+!     #  (for matplotlib < 3.8)
+!     #proxy = [plt.Rectangle((0,0),1,1,fc = pc.get_facecolor()[0])
+!     #    for pc in filled_contours.collections]
+!     #  (for matplotlib >= 3.8) 
+!     proxy = [plt.Rectangle((0,0),1,1,fc = color)
+!          for color in filled_contours.get_facecolors()]
+!
 !     # Plot source location as red triangle
 !     volc_map = map_ax.scatter(srcx,srcy,
 !                               s=60,
@@ -326,7 +333,8 @@
 !     main_fig.tight_layout()
 !
 !     plt.title(title_plot)
-!     main_fig.savefig(f'Ash3d_Deposit____final.png',dpi=100)
+!     main_fig.savefig('Ash3d_Deposit____final.png',dpi=100)
+!     main_fig.savefig('Ash3d_Deposit____final.pdf',dpi=100,format='pdf',bbox_inches='tight')
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -425,6 +433,7 @@
       character(len=9)  :: filename_script
       character(len=20) :: filename_outdata
       character(len=40) :: filename_png
+      character(len=40) :: filename_pdf
       !character(len=10) :: filename_contourdata
       !character(len=80) :: filename_coastline
 
@@ -505,6 +514,7 @@
       if(iprod == 0)then           ! custom variable
         varname = Extra2dVarName(1:20)
         filename_png = trim(adjustl(Extra2dVarName)) // '_' // cio // outfile_ext
+        filename_pdf = trim(adjustl(Extra2dVarName)) // '_' // cio // '.pdf'
         write(tmpstr,'(f7.2)')WriteTimes(itime)
         title_plot = trim(adjustl(Extra2dVar_lname)) // " t=" // tmpstr // " hours"
         units = trim(adjustl(Extra2dVar_unit))
@@ -525,6 +535,7 @@
       elseif(iprod == 3)then       ! deposit at specified times (mm)
         varname = "depothick"
         write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
+        write(filename_pdf,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,'.pdf'
         write(title_plot,'(a20,f7.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Dep.Thick.(mm)'
         units = " (mm)"
@@ -539,6 +550,7 @@
       elseif(iprod == 4)then   ! deposit at specified times (inches)
         varname = "depothick"
         write(filename_png,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,outfile_ext
+        write(filename_pdf,'(a15,a9,a4)')'Ash3d_Deposit_t',cio,'.pdf'
         write(title_plot,'(a20,f7.2,a6)')'Deposit Thickness t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Dep.Thick.(in)'
         units = " (in)"
@@ -553,6 +565,7 @@
       elseif(iprod == 5)then       ! deposit at final time (mm)
         varname = "depothickFin"
         write(filename_png,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
+        write(filename_pdf,'(a13,a9,a4)')'Ash3d_Deposit',cio,'.pdf'
         title_plot = 'Final Deposit Thickness'
         cstr_zlabel = 'Dep.Thick.(mm)'
         units = " (mm)"
@@ -567,6 +580,7 @@
       elseif(iprod == 6)then   ! deposit at final time (inches)
         varname = "depothickFin"
         write(filename_png,'(a13,a9,a4)')'Ash3d_Deposit',cio,outfile_ext
+        write(filename_pdf,'(a13,a9,a4)')'Ash3d_Deposit',cio,'.pdf'
         title_plot = 'Final Deposit Thickness'
         cstr_zlabel = 'Dep.Thick.(in)'
         units = " (in)"
@@ -581,6 +595,7 @@
       elseif(iprod == 7)then   ! ashfall arrival time (hours)
         varname = "depotime"
         write(filename_png,'(a22)')'DepositArrivalTime.png'
+        write(filename_pdf,'(a22)')'DepositArrivalTime.pdf'
         write(title_plot,'(a20)')'Ashfall arrival time'
         cstr_zlabel = 'Time (hours)'
         units = " (hours)"
@@ -601,6 +616,7 @@
       elseif(iprod == 9)then   ! ash-cloud concentration
         varname = "ashcon_max"
         write(filename_png,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,outfile_ext
+        write(filename_pdf,'(a16,a9,a4)')'Ash3d_CloudCon_t',cio,'.pdf'
         write(title_plot,'(a26,f7.2,a6)')'Ash-cloud concentration t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Max.Con.(mg/m3)'
         units = " (mg/m3)"
@@ -615,6 +631,7 @@
       elseif(iprod == 10)then   ! ash-cloud height
         varname = "cloud_height"
         write(filename_png,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,outfile_ext
+        write(filename_pdf,'(a19,a9,a4)')'Ash3d_CloudHeight_t',cio,'.pdf'
         write(title_plot,'(a19,f7.2,a6)')'Ash-cloud height t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Cld.Height(km)'
         units = " (km)"
@@ -629,6 +646,7 @@
       elseif(iprod == 11)then   ! ash-cloud bottom
         varname = "cloud_bottom"
         write(filename_png,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,outfile_ext
+        write(filename_pdf,'(a16,a9,a4)')'Ash3d_CloudBot_t',cio,'.pdf'
         write(title_plot,'(a19,f7.2,a6)')'Ash-cloud bottom t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Cld.Bot.(km)'
         units = " (km)"
@@ -643,6 +661,7 @@
       elseif(iprod == 12)then   ! ash-cloud load
         varname = "cloud_load"
         write(filename_png,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,outfile_ext
+        write(filename_pdf,'(a17,a9,a4)')'Ash3d_CloudLoad_t',cio,'.pdf'
         write(title_plot,'(a17,f7.2,a6)')'Ash-cloud load t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Cld.Load(T/km2)'
         units = " (T/km2)"
@@ -657,6 +676,7 @@
       elseif(iprod == 13)then  ! radar reflectivity
         varname = "radar_reflectivity"
         write(filename_png,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,outfile_ext
+        write(filename_pdf,'(a20,a9,a4)')'Ash3d_CloudRadRefl_t',cio,'.pdf'
         write(title_plot,'(a24,f7.2,a6)')'Ash-cloud radar refl. t=',WriteTimes(itime),' hours'
         cstr_zlabel = 'Cld.Refl.(dBz)'
         units = " (dBz)"
@@ -671,6 +691,7 @@
       elseif(iprod == 14)then   ! ashcloud arrival time (hours)
         varname = "ash_arrival_time"
         write(filename_png,'(a20)')'CloudArrivalTime.png'
+        write(filename_pdf,'(a20)')'CloudArrivalTime.pdf'
         write(title_plot,'(a22)')'Ash-cloud arrival time'
         cstr_zlabel = 'Time (hours)'
         units = " (hours)"
@@ -685,6 +706,7 @@
       elseif(iprod == 15)then   ! topography
         varname = "topography"
         write(filename_png,'(a14)')'Topography.png'
+        write(filename_pdf,'(a14)')'Topography.pdf'
         write(title_plot,'(a10)')'Topography'
         cstr_zlabel = 'Elevation (km)'
         units = " (hours)"
@@ -872,6 +894,7 @@
       write(fid_script,'(g0)')"import scipy.ndimage"
       write(fid_script,'(g0)')"from osgeo import gdal, osr"
       write(fid_script,'(g0)')"import linecache"
+      write(fid_script,'(g0)')"import sys"  ! This is not really needed unless you are debugging the script
       write(fid_script,'(g0)')" "
       write(fid_script,'(g0)')"def get_extent(gdal_ds, A3D_input_fn):"
       write(fid_script,'(g0)')"    Xsize = gdal_ds.RasterXSize"
@@ -919,6 +942,9 @@
       write(fid_script,'(g0)')"    ax_logo.set_axis_off()"
       write(fid_script,'(g0)')" "
       write(fid_script,'(g0)')"    return None"
+      write(fid_script,'(g0)')" "
+      write(fid_script,'(g0)')"# Turn on gdal exceptions"
+      write(fid_script,'(g0)')"gdal.UseExceptions()"
       write(fid_script,'(g0)')" "
       write(fid_script,'(g0)')"# Institutional logo (Defaults to USGS)"
       linebuffer080 = "logo_file = '" // trim(adjustl(Instit_IconFile)) // "'"
@@ -1012,6 +1038,8 @@
       write(fid_script,'(g0)')"# Use a PlateCarree projection for now"
       write(fid_script,'(g0)')"cen_lon=0.5*(sum(extent))"
       write(fid_script,'(g0)')"img_extent = extent"
+      write(fid_script,'(g0)')"# Hard-code map limits here, if needed"
+      write(fid_script,'(g0)')"#img_extent =  [-165.0, -162.0, 53.0, 56.0]"
       write(fid_script,'(g0)')"projection = ccrs.PlateCarree(central_longitude=cen_lon)  ",&
                         "# this is the Cartopy bit"
       write(fid_script,'(g0)')"map_ax = main_fig.add_subplot(4,1,(1,3),projection=projection) ",&
@@ -1057,8 +1085,12 @@
       write(fid_script,'(g0)')"                               transform=ccrs.PlateCarree())"
       write(fid_script,'(g0)')" "
       write(fid_script,'(g0)')"# Create proxies for contour colors for legend later on"
-      write(fid_script,'(g0)')"proxy = [plt.Rectangle((0,0),1,1,fc = pc.get_facecolor()[0])"
-      write(fid_script,'(g0)')"    for pc in filled_contours.collections]"
+      write(fid_script,'(g0)')"#  (for matplotlib < 3.8)"
+      write(fid_script,'(g0)')"#proxy = [plt.Rectangle((0,0),1,1,fc = pc.get_facecolor()[0])"
+      write(fid_script,'(g0)')"#    for pc in filled_contours.collections]"
+      write(fid_script,'(g0)')"#  (for matplotlib >= 3.8)"
+      write(fid_script,'(g0)')"proxy = [plt.Rectangle((0,0),1,1,fc = color)"
+      write(fid_script,'(g0)')"     for color in filled_contours.get_facecolors()]"
       write(fid_script,'(g0)')"# Plot source location as red triangle"
       write(fid_script,'(g0)')"volc_map = map_ax.scatter(srcx,srcy,"
       write(fid_script,'(g0)')"                          s=60,"
@@ -1121,8 +1153,10 @@
       write(fid_script,'(g0)')"main_fig.tight_layout()"
       write(fid_script,'(g0)')" "
       write(fid_script,'(g0)')"plt.title(title_plot)"
-      linebuffer080 = "main_fig.savefig(f'" // trim(adjustl(filename_png)) // "',dpi=100)"
+      linebuffer080 = "main_fig.savefig('" // trim(adjustl(filename_png)) // "',dpi=100)"
       write(fid_script,'(g0)')trim(adjustl(linebuffer080))
+      linebuffer130 = "#main_fig.savefig('" // trim(adjustl(filename_pdf)) // "',dpi=100,format='pdf',bbox_inches='tight')"
+      write(fid_script,'(g0)')trim(adjustl(linebuffer130))
 
       close(fid_script)
 
