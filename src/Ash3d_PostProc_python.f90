@@ -1153,9 +1153,9 @@
       write(fid_script,'(g0)')"main_fig.tight_layout()"
       write(fid_script,'(g0)')" "
       write(fid_script,'(g0)')"plt.title(title_plot)"
-      linebuffer080 = "main_fig.savefig('" // trim(adjustl(filename_png)) // "',dpi=100)"
+      linebuffer080 = "main_fig.savefig(f'" // trim(adjustl(filename_png)) // "',dpi=100)"
       write(fid_script,'(g0)')trim(adjustl(linebuffer080))
-      linebuffer130 = "#main_fig.savefig('" // trim(adjustl(filename_pdf)) // "',dpi=100,format='pdf',bbox_inches='tight')"
+      linebuffer130 = "#main_fig.savefig(f'" // trim(adjustl(filename_pdf)) // "',dpi=100,format='pdf',bbox_inches='tight')"
       write(fid_script,'(g0)')trim(adjustl(linebuffer130))
 
       close(fid_script)
