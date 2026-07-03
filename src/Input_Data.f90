@@ -344,7 +344,7 @@
         DirPrefix,DirDelim,IsLitEnd,IsLinux,IsWindows,IsMacOS, &
         version,version_major,version_minor,version_patch,&
         CFL,OS_TYPE,OS_Flavor,os_full_command_line,os_cwd,os_host,os_user,&
-        Comp_Code,Comp_Flavor,useFastDt,FastDt_suppress, &
+        Comp_Code,Comp_Flavor,Comp_UseBacktrace,useFastDt,FastDt_suppress, &
         usezip,zippath,usegnuplot,gnuplotpath,useCN,limiter,testutils
 
       use io_data,       only : &
@@ -786,6 +786,34 @@
 
       ! Get some run-specific and system-specific information
       call get_command(os_full_command_line)
+
+      ! Check if our exit-on-error should include backtrace information
+#if defined GFORTRAN
+      if(index(CompOpt,"backtrace").gt.0)then 
+        Comp_UseBacktrace = .true.
+      else
+        Comp_UseBacktrace = .false.
+      endif
+#elif defined IFORT
+      if(index(CompOpt,"traceback").gt.0)then
+        Comp_UseBacktrace = .true.
+      else
+        Comp_UseBacktrace = .false.
+      endif
+#elif defined AOCC
+      if(index(CompOpt,"no-omit-frame-pointer").gt.0)then
+        Comp_UseBacktrace = .true.
+      else
+        Comp_UseBacktrace = .false.
+      endif
+#elif defined NVHPC
+      if(index(CompOpt,"backtrace").gt.0)then
+        Comp_UseBacktrace = .true.
+      else
+        Comp_UseBacktrace = .false.
+      endif
+#endif
+
 
       ! Fill these with N/A in case we don't have the fuctions to fill them
       os_user = 'N/A'
@@ -1248,6 +1276,7 @@
          EPS_SMALL,EPS_TINY,nmods,OPTMOD_names,limiter,KM_2_M,  &
          useDS,useTemperature,useCalcFallVel,useLogNormGSbins,  &
          useDiffusion,useVarDiffH,useVarDiffV,useCN,useVz_rhoG, &
+         lapack_version_major,lapack_version_minor,lapack_version_patch,&
          M_2_MM,M2PS_2_KM2PHR,MAXNUM_OPTMODS,runAsForecast
 
       use io_data,       only : &
@@ -4469,6 +4498,11 @@
         if(useCN) then
           write(outlog(io),*)&
            "Diffusion is calculated implicitly using lapack routines for solving Ax=b."
+#ifdef CRANKNIC
+          call ilaver(lapack_version_major,lapack_version_minor,lapack_version_patch)
+          write(outlog(io),'(a17,i2,a1,i2,a1,i2)')" Lapack version: ",&
+                           lapack_version_major,'.',lapack_version_minor,'.',lapack_version_patch
+#endif
           write(outlog(io),*)&
            "Note, Imp_fac controls the amount of the t+1 step that is used in the stencil."
           write(outlog(io),*)&

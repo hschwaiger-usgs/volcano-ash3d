@@ -38,8 +38,10 @@
         ! Publicly available variables
       integer,public :: tn_len
 
-      integer :: NCversion
-      integer :: NCsubversion
+      integer :: NC_version_major
+      integer :: NC_version_minor
+      integer :: NC_version_patch
+
       integer :: ncid
       integer :: t_dim_id     = 0  ! Time
       integer :: x_dim_id     = 0  ! X
@@ -435,19 +437,20 @@
         write(outlog(io),*)"Creating netcdf file"
       endif;enddo
       linebuffer130 = trim(nf90_inq_libvers())
-      read(linebuffer130,'(i1,a1,i1)',iostat=iostatus,iomsg=iomessage)NCversion,dumchar,NCsubversion
+      ! This should be the major,minor,patch format
+      read(linebuffer130,'(i1,a1,i1)',iostat=iostatus,iomsg=iomessage)NC_version_major,dumchar,NC_version_minor
       if(iostatus /= 0)then
         ! If we couldn't read and verify the library version, assume v3
-        NCversion = 3
+        NC_version_major = 3
       endif
 #ifdef NC3
       ! library version might be forced to v3 by preprocessor flags
-      NCversion = 3
+      NC_version_major = 3
 #endif
       do io=1,2;if(VB(io) <= verbosity_info)then
-        write(outlog(io),*)"Netcdf library version = ",NCversion
+        write(outlog(io),*)"Netcdf library version = ",NC_version_major
       endif;enddo
-      if(NCversion == 4)then
+      if(NC_version_major == 4)then
 #ifndef NC3
         nSTAT = nf90_create(concenfile,nf90_netcdf4,ncid,           &
                             cache_nelems = 1000, &
@@ -1921,7 +1924,7 @@
                                [x_dim_id,y_dim_id,z_dim_id,bn_dim_id,t_dim_id],    &
                                 ashcon_var_id)
         endif
-        if(NCversion == 4)then
+        if(NC_version_major == 4)then
 #ifndef NC3
           chunksizes5 = [nxmax, nymax, nzmax, nsmax, 1]
           nSTAT = nf90_def_var_chunking(ncid, ashcon_var_id, &
@@ -3533,7 +3536,7 @@
         ! native time dimension and associated variables
         nSTAT = nf90_redef(ncid)
         ! tn (time native)
-        if(NCversion == 4)then
+        if(NC_version_major == 4)then
 #ifndef NC3
           nSTAT = nf90_def_dim(ncid,"tn",nf90_unlimited,tn_dim_id)
           if(nSTAT /= 0)call NC_check_status(nSTAT,1,"def_dim tn:")

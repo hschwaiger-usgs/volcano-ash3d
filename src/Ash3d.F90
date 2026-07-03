@@ -45,7 +45,8 @@
          useCalcFallVel,useDiffusion,useHorzAdvect,useVertAdvect,&
          useTemperature,DT_MIN,EPS_TINY,EPS_SMALL,&
          nmods,OPTMOD_names,StopConditions,CheckConditions, &
-         useVarDiffH,useVarDiffV
+         useVarDiffH,useVarDiffV,Comp_UseBacktrace,&
+           Dump_Backtrace
 
       use mesh,          only : &
          ivent,jvent,nxmax,nymax,nzmax,nsmax,ts0,ts1,ZPADDING,dz_vec_pd,&
@@ -736,7 +737,8 @@
         endif;enddo
         stop 1
       endif
-      if(CheckConditions(5).and.StopConditions(5))then
+      !if(CheckConditions(5).and.StopConditions(5))then
+      if(1==1)then
         ! Error stop condition if any volume measure is negative
         do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"One of the volume measures is negative."
@@ -745,6 +747,9 @@
           write(errlog(io),'(a30,f13.5)')"                outflow_vol = ",outflow_vol
           write(errlog(io),'(a30,f13.5)')"        SourceCumulativeVol = ",SourceCumulativeVol
         endif;enddo
+        if (Comp_UseBacktrace) then
+          call Dump_Backtrace
+        endif
         stop 1
       endif
 

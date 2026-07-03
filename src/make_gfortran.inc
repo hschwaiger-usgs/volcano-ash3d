@@ -20,11 +20,14 @@ ifeq ($(RUN), DEBUG)
     #                      -Wtarget-lifetime -Winteger-division -Wreal-q-constant -Wunused
     #                      -Wundefined-do-loop
     #    and     -Wextra = -Wcompare-reals, -Wunused-parameter -Wdo-subscript
-    FFLAGS = -O0 -g3 -Wall -Wextra -Wcharacter-truncation -Wimplicit-interface -Wunderflow -Wuninitialized -Wmaybe-uninitialized -Wno-surprising -fimplicit-none -fwhole-file -fcheck=all -std=f2008 -pedantic -fbacktrace -ffpe-trap=invalid,zero,overflow -ffpe-summary=all -finit-integer=-2147483647 -finit-real=snan -fno-unsafe-math-optimizations -fsignaling-nans -frounding-math
+    #  Also note that some flags are mutually exclusive
+    #   backtrace() requires the GNU extensions invoked via "-lgfortran -lquadmath"
+    #   alternatively, you can force the 2008 fortran standard via "-std=f2008"
+    FFLAGS = -O0 -g3 -Wall -Wextra -Wcharacter-truncation -Wimplicit-interface -Wunderflow -Wuninitialized -Wmaybe-uninitialized -Wno-surprising -fimplicit-none -fwhole-file -fcheck=all -pedantic -lgfortran -lquadmath -fbacktrace -ffpe-trap=invalid,zero,overflow -ffpe-summary=all -finit-integer=-2147483647 -finit-real=snan -fno-unsafe-math-optimizations -fsignaling-nans -frounding-math
 endif
 
 ifeq ($(RUN), DEBUGOMP)
-    FFLAGS = -O0 -g3 -Wall -Wextra -Wcharacter-truncation -Wimplicit-interface -Wunderflow -Wuninitialized -Wmaybe-uninitialized -Wno-surprising -fimplicit-none -fwhole-file -fcheck=all -std=f2008 -pedantic -fbacktrace -ffpe-trap=invalid,zero,overflow -ffpe-summary=all -finit-integer=-2147483647 -finit-real=snan -fno-unsafe-math-optimizations -fsignaling-nans -frounding-math -fopenmp -lgomp
+    FFLAGS = -O0 -g3 -Wall -Wextra -Wcharacter-truncation -Wimplicit-interface -Wunderflow -Wuninitialized -Wmaybe-uninitialized -Wno-surprising -fimplicit-none -fwhole-file -fcheck=all -pedantic -lgfortran -lquadmath -fbacktrace -ffpe-trap=invalid,zero,overflow -ffpe-summary=all -finit-integer=-2147483647 -finit-real=snan -fno-unsafe-math-optimizations -fsignaling-nans -frounding-math -fopenmp -lgomp
 endif
 
 # Profiling flags

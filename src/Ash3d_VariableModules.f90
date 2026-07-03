@@ -201,14 +201,14 @@
       integer :: asciicode
       logical :: IsNumber,IsUpperCase,IsLowerCase,IsWhiteSpace
 
-      IsComment = .false.
-      IsNumber  = .false.
-      IsUpperCase = .false.
-      IsLowerCase = .false.
+      IsComment    = .false.
+      IsNumber     = .false.
+      IsUpperCase  = .false.
+      IsLowerCase  = .false.
       IsWhiteSpace = .false.
 
       asciicode = ichar(testkey)
-      ! Check if testkey is '#' (code=23) or
+      ! Check if testkey is '#' (code=35) or
       !                     '*' (code=42)
       if (asciicode == 35.or.asciicode == 42) then
         IsComment = .true.
@@ -545,6 +545,69 @@
       character (len=255)      :: os_cwd
       integer                  :: Comp_Code                      ! 1=gfortran,2=ifort,3=aocc,4=nvhpc
       character (len=8)        :: Comp_Flavor                    ! 'gfortran','ifort','flang','nvfortran'
+      logical                  :: Comp_UseBacktrace              ! use backtrace, if available
+
+      integer                  :: lapack_version_major
+      integer                  :: lapack_version_minor
+      integer                  :: lapack_version_patch
+
+      contains
+
+!##############################################################################
+!
+!    Dump_Backtrace
+!
+!    This subroutine provides the generic interface to the compiler-specific
+!    backtrace.
+!
+!  Arguments:
+!    ios           : integer error code from the read statement
+!    linebuffer050 : Ash3d message about what program was trying to do
+!    linebuffer080 : the string Ash3d was trying to parse
+!    iomessage     : system message (e.g. End of File)
+!
+!  Assigns:
+!    none
+!
+!##############################################################################
+
+      subroutine Dump_Backtrace()
+
+#ifdef IFORT
+      use ifcore, only : tracebackqq
+#endif
+
+      use io_units
+
+        implicit none
+
+        do io=1,2;if(VB(io) <= verbosity_error)then
+          write(errlog(io),*)" "
+          write(errlog(io),*)" Providing backtrace information for those curious about stop location."
+          write(errlog(io),*)" ----------------------------------------"
+        endif;enddo
+
+#ifdef GFORTRAN
+      call backtrace()
+#endif
+#ifdef IFORT
+      call all tracebackqq()
+#endif
+!#ifdef AOCC
+!
+!#endif
+!#ifdef NVHPC
+!
+!#endif
+
+        do io=1,2;if(VB(io) <= verbosity_error)then
+          write(errlog(io),*)" ----------------------------------------"
+          write(errlog(io),*)" "
+          write(errlog(io),*)" Returning control."
+          write(errlog(io),*)" "
+        endif;enddo
+
+      end subroutine Dump_Backtrace
 
       end module global_param
 

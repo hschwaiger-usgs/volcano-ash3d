@@ -14,10 +14,10 @@ LIBS = $(LAPACKLIB) $(COMPLIBS) $(USGSLIBDIR) $(USGSINC) $(COMPINC) $(USGSLIB) $
 
 # Debugging flags
 ifeq ($(RUN), DEBUG)
-    FFLAGS = -O0 -g3 -Wall -Mstandard -fPIC -v
+    FFLAGS = -O0 -g3 -fno-omit-frame-pointer -Wall -Mstandard -fPIC -v
 endif
 ifeq ($(RUN), DEBUGOMP)
-    FFLAGS = -O0 -g3 -Wall -Mstandard -fPIC -v -fopenmp
+    FFLAGS = -O0 -g3 -fno-omit-frame-pointer -Wall -Mstandard -fPIC -v -fopenmp
 endif
 
 # Profiling flags
