@@ -402,8 +402,8 @@
                                    e_StartTime+SimStartHour        ,&
                                    e_Duration                      ,&
                                    e_PlumeHeight                   ,&
-                                   e_delta                         ,&
                                    e_Volume                        ,&
+                                   e_delta                         ,&
                                    e_prof_dz                       ,&
                                    e_prof_nzpoints                 ,&
                                    e_prof_Volume)
@@ -914,7 +914,7 @@
         endif
       endif
 
-      ! Start reading the
+      ! Start reading the line and parsing the data
       read(fid_misc,'(a130)',iostat=iostatus,iomsg=iomessage)linebuffer130
       linebuffer050 = "Reading table file for Line 1: header line"
       if(iostatus /= 0) call FileIO_Error_Handler(iostatus,linebuffer050,linebuffer130(1:80),iomessage)
@@ -1135,9 +1135,11 @@
       endif
       if(ivar_pos(19) > 0)then
         write(*,*)"m_fines      : ",ivar_name1(19),values(ivar_col(19))
+        write(*,*)"    Note: Ash3d_ASCII_GenCTR currently does not write control files with m_fines."
       endif
       if(ivar_pos(20) > 0)then
         write(*,*)"mu_agg       : ",ivar_name1(20),values(ivar_col(20))
+        write(*,*)"    Note: Ash3d_ASCII_GenCTR currently does not write control files with mu_agg."
       endif
 
       close(fid_misc)

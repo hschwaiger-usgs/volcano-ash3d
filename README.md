@@ -56,8 +56,9 @@ installed, if possible:
             available from `https://www.dislin.de`.
 7. plplot : Another alternate graphics package for creating plots from Ash3d (also works on Windows).
 8. GMT    : This mapping package is also optionally used in post-processing.
+9. cartopy: Python plotting package optionally used in post-processing.
 
-All of these packages (except dislin) are available on Red Hat, Ubuntu, and Mac systems and can be installed
+Most of these packages (except dislin and cartopy) are available on Red Hat, Ubuntu, and Mac systems and can be installed
 using the standard distribution software installer (yum/dnf for RedHat systems or apt for
 Ubunto). For some of these packages and for some distributions, you might need to enable
 extra repositories, such as epel and powertools/CRB (for Red Hat systems).  
@@ -83,7 +84,7 @@ On Mac OSX-based systems (install the [Homebrew package](https://brew.sh/) manag
 `brew install netcdf-fortran`  
 `brew install lapack`  
 `brew install openblas`  
-`brew install eecodes`  
+`brew install eccodes`  
 `brew install gnuplot`  
 `brew install plplot`  
 
@@ -167,6 +168,10 @@ This case also uses an umbrella source, but just for tracking the ash cloud
 (source is `umbrella_air`). Model results of the cloud development and advection
 are compared with cloud outlines from satellite observations presented in
 [Mastin and Van Eaton, 2020](https://doi.org/10.3390/atmos11101038).
+
+6. Shishaldin
+This case mainly provide examples of running models with a variety of
+NWP forecast packages using topography and variable diffusivity.
 
 The validation tests above demonstrate the utility of Ash3d in modeling volcanic
 ash cloud transport and deposition for a variety of eruption scenarios, compared

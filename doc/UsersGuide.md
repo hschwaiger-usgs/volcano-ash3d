@@ -59,6 +59,19 @@ level as well as all with higher levels are printed.
 To run Ash3d with no output to the terminal, but with a logfile, for example:  
 `ASH3DVERB=9 ./Ash3d control.inp`  
 
+#### `ASH3DPLOT`:
+This variable specifies the default plotting package to use with the
+command line tool `Ash3d_PostProc`. There are currently six options available.
+1. = dislin  
+2. = plplot  
+3. = gnuplot  
+4. = GMT  
+5. = matlab/octave  
+6. = python/cartopy  
+To force Ash3d to use a particular plotting package, such as python, set this
+environment variable on the command-line.
+`ASH3DPLOT=6 ./Ash3d control.inp`
+
 #### `ASH3DHOME`: 
 This is the path to the install folder.
 If the executable is compiled such that it needs access to external files in
@@ -77,6 +90,15 @@ This is not an Ash3d-specific environment variable,
 but can be used if the executable was compiled with OpenMP. This specifies
 the number of threads can be specified at run-time.  
 `OMP_NUM_THREADS=4 ./Ash3d_opt control.in`  
+
+#### `ASH3DNOCHECK`:
+When Ash3d executes, it will check for the existance and functionality of several
+expected executables that may be run through system calls, such as `zip` and/or plotting
+packages. This check can take a significant amount of time (seconds) for some programs. This
+check can be suppressed via this environment variable.
+0. = check is invoked  
+1. = check is suppressed  
+
 
 ### Run-directory
 
