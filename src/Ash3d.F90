@@ -737,8 +737,7 @@
         endif;enddo
         stop 1
       endif
-      !if(CheckConditions(5).and.StopConditions(5))then
-      if(1==1)then
+      if(CheckConditions(5).and.StopConditions(5))then
         ! Error stop condition if any volume measure is negative
         do io=1,2;if(VB(io) <= verbosity_error)then
           write(errlog(io),*)"One of the volume measures is negative."

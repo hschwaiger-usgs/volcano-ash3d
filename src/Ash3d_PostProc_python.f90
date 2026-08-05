@@ -1111,8 +1111,8 @@
       write(fid_script,'(g0)')"        city_y.append(float(parts[1]))"
       write(fid_script,'(g0)')"        city_n.append(parts[2])"
       write(fid_script,'(g0)')"except FileNotFoundError:"
-      write(fid_script,'(g0)')'    print("Error: cities.xy not found.")'
-      write(fid_script,'(g0)')"    exit()"
+      write(fid_script,'(g0)')'    print("Warning: cities.xy not found.")'
+      write(fid_script,'(g0)')"    #exit()"
       write(fid_script,'(g0)')" "
       write(fid_script,'(g0)')"city_map = map_ax.scatter(city_x,city_y,"
       write(fid_script,'(g0)')"                          s=40,"
@@ -1155,7 +1155,7 @@
       write(fid_script,'(g0)')"plt.title(title_plot)"
       linebuffer080 = "main_fig.savefig(f'" // trim(adjustl(filename_png)) // "',dpi=100)"
       write(fid_script,'(g0)')trim(adjustl(linebuffer080))
-      linebuffer130 = "#main_fig.savefig(f'" // trim(adjustl(filename_pdf)) // "',dpi=100,format='pdf',bbox_inches='tight')"
+      linebuffer130 = "main_fig.savefig(f'" // trim(adjustl(filename_pdf)) // "',dpi=100,format='pdf',bbox_inches='tight')"
       write(fid_script,'(g0)')trim(adjustl(linebuffer130))
 
       close(fid_script)

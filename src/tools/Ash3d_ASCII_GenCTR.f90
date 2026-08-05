@@ -1074,6 +1074,10 @@
           stop 1
         endif
         hour = real(ihour,kind=8) + real(imin,kind=8)/60.0_dp + real(isec,kind=8)/3600.0_dp
+        write(*,*)"   iyear   : ",iyear
+        write(*,*)"   imonth  : ",imonth
+        write(*,*)"   iday    : ",iday
+        write(*,*)"   hour    : ",hour
       endif
       ! Check if we need to reset the start time by checking if any time value was reset
       if(ivar_pos( 2) > 0.or.&

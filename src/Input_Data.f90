@@ -6609,7 +6609,13 @@
          '******************* BLOCK 2 ****************************************************'
         do i=1,nerup
           iyear = HS_YearOfEvent(e_ST(i),BaseYear,useLeap)
-          if(runAsForecast) iyear = 0
+          if(runAsForecast)then
+            do io=1,2;if(VB(io) <= verbosity_debug1)then
+              write(outlog(io),*)"WARNING: iyear has been calculated as ",iyear
+              write(outlog(io),*)"         but has been reset to 0 since runAsForecast=",runAsForecast
+            endif;enddo
+            iyear = 0
+          endif
           imonth= HS_MonthOfEvent(e_ST(i),BaseYear,useLeap)
           iday  = HS_DayOfEvent(e_ST(i),BaseYear,useLeap)
           hour  = HS_HourOfDay(e_ST(i),BaseYear,useLeap)
