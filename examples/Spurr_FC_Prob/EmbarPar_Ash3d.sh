@@ -21,18 +21,27 @@ echo "totruns=$totruns"
 
 #####################   Set up and run models  ####################################
 for (( icycle=0;icycle<=$cyclemax;icycle++ )); do
-
   # Write table headers for input values
   echo "setting up and running models"
   # Start looping through directories
   for (( idir=1;idir<=$dirmax;idir++ )); do
     irun=`echo "$RunStartNumber - 1 + $icycle * $dirmax + $idir" | bc -l`
     ./srun_Ash3d.sh $irun > logfile.txt 2>&1 &
-    ./srun_ProcessResults.sh $irun
   done
   echo "All done setting up and starting jobs. Waiting . . ."
   wait            #wait until background jobs have completed
+done
 
+# Processing
+for (( icycle=0;icycle<=$cyclemax;icycle++ )); do
+  echo "Processing models"
+  # Start looping through directories
+  for (( idir=1;idir<=$dirmax;idir++ )); do
+    irun=`echo "$RunStartNumber - 1 + $icycle * $dirmax + $idir" | bc -l`
+    ./srun_Ash3d.sh $irun > logfile.txt 2>&1 &
+    ./srun_ProcessResults.sh $irun
+  done
+  wait            #wait until background jobs have completed
 done
 
 
