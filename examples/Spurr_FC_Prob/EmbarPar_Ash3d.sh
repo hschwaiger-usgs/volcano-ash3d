@@ -38,7 +38,6 @@ for (( icycle=0;icycle<=$cyclemax;icycle++ )); do
   # Start looping through directories
   for (( idir=1;idir<=$dirmax;idir++ )); do
     irun=`echo "$RunStartNumber - 1 + $icycle * $dirmax + $idir" | bc -l`
-    ./srun_Ash3d.sh $irun > logfile.txt 2>&1 &
     ./srun_ProcessResults.sh $irun
   done
   wait            #wait until background jobs have completed

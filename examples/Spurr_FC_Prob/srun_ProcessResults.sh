@@ -160,63 +160,12 @@ else
 fi
 
 #Check for existence of subdirectories
-echo "Checking for existence of subdirectories"
-if test -r ${DEPOSITDIR_ESRI}; then
-  echo "    ${DEPOSITDIR_ESRI} exists.  Cleaning it."
-  rm -f ${DEPOSITDIR_ESRI}/Run*
-else
-  echo "    ${DEPOSITDIR_ESRI} does not exist.  Creating it."
-  mkdir ${DEPOSITDIR_ESRI}
-fi
-
-#if test -r ${ARRIVALTIMESDIR}; then
-#  echo "    ${ARRIVALTIMESDIR} exists.  Cleaning it."
-#  rm -f ${ARRIVALTIMESDIR}/Run*
-#else
-#  echo "    ${ARRIVALTIMESDIR} does not exist.  Creating it."
-#  mkdir ${ARRIVALTIMESDIR}
-#fi
-
-if test -r ${INFILEDIR}; then
-  echo "    ${INFILEDIR} exists.  Cleaning it."
-  rm -f ${INFILEDIR}/Run*
-else
-  echo "    ${INFILEDIR} does not exist.  Creating it."
-  mkdir ${INFILEDIR}
-fi
-
-#if test -r ${ZIPFILEDIR}; then
-#  echo "    ${ZIPFILEDIR} exists.  Cleaning it."
-#  rm -f ${ZIPFILEDIR}/Run*
-#else
-#  echo "    ${ZIPFILEDIR} does not exist.  Creating it."
-#  mkdir ${ZIPFILEDIR}
-#fi
-
-if test -r ${MAPDIR}; then
-  echo "    ${MAPDIR} exists.  Cleaning it."
-  rm -f ${MAPDIR}/Run*
-else
-  echo "    ${MAPDIR} does not exist.  Creating it."
-  mkdir ${MAPDIR}
-fi
-
-#if test -r ${OUTPUTDIR}/summary; then
-#  echo "    ${OUTPUTDIR}/summary exists.  Cleaning it."
-#  rm -f ${OUTPUTDIR}/summary/*
-#else
-#  echo "    ${OUTPUTDIR}/summary does not exist.  Creating it."
-#  mkdir ${OUTPUTDIR}/summary
-#fi
-#
-#echo "Checking for existence of summary table directory"
-#if test -r ${SUMMARYTABLEDIR}; then
-#  echo "    ${SUMMARYTABLEDIR} exists.  Cleaning it."
-#  rm -f ${SUMMARYTABLEDIR}/*                                                     #remove all summary tables
-#else
-#  echo "    ${SUMMARYTABLEDIR} does not exist.  Stopping."
-#  exit 1
-#fi
+mkdir -p ${DEPOSITDIR_ESRI}
+#mkdir -p ${ARRIVALTIMESDIR}
+mkdir -p ${INFILEDIR}
+#mkdir -p ${ZIPFILEDIR}
+mkdir -p ${MAPDIR}
+#mkdir -p ${OUTPUTDIR}/summary
 
 #####################   Set up and run models  ####################################
 
