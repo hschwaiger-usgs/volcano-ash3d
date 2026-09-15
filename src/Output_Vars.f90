@@ -830,7 +830,7 @@
 
       !  Deposit Thickness (in)
       ! Recall that Con_DepThick_in_N   = 5
-      Con_DepThick_in_Lev = [0.004_ip, 0.031_ip, 0.25_ip, 1.0_ip,   4.0_ip ]
+      Con_DepThick_in_Lev = [0.0004_ip, 0.031_ip, 0.25_ip, 1.0_ip,   4.0_ip ]
       Con_DepThick_in_RGB( 1,1:3) = [ 255,  0,  0 ]
       Con_DepThick_in_RGB( 2,1:3) = [   0,  0,255 ]
       Con_DepThick_in_RGB( 3,1:3) = [   0,183,255 ]
