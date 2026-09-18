@@ -47,7 +47,7 @@
                        #  = expected max time for an individual run * safety fac (~ 1.2)
 
 #################################################
-### sbatch settings for a Hovenweep job-array
+### sbatch settings for an HPC job-array
 #################################################
 #SBATCH --job-name=Ash3d_Spurr               ## Only a label, but nice to identify in squeue
 #SBATCH --array=1-48%12                      ## List of job numbers to run, followed by % and # of simul.jobs
@@ -106,6 +106,8 @@ NARGS=$#
 #################################################
 
 #  Get the runID for this instance
+#  This will either be the SLURM_ARRAY_TASK_ID if this script was launched via sbatch
+#  or from a comman-line argument otherwise
 irun=0
 if [ $NARGS -gt 0 ]; then
   irun=$1
@@ -128,15 +130,15 @@ runmax=48    # Maximum runID for this script
 ##### Names of directories where runs are performed
 WRKHOME=~/work/USGS/Software/GIT/volcano-ash3d/examples/Spurr_FC_Prob
 RUNDIRS=${WRKHOME}/Workspace                              # directory where runs are performed
-OUTPUTDIR=${WRKHOME}/run_output                         # directory containing output
-FileDate=`date "+%Y%b%d"`                               # date, to be appended to file names
+OUTPUTDIR=${WRKHOME}/run_output                           # directory containing output
+FileDate=`date "+%Y%b%d"`                                 # date, to be appended to file names
 ##### Names of the template Ash3d control file and the input_table.txt listing run modifications
 CTRTEMPLATE=${WRKHOME}/input_files/Ash3d_template.inp
 RUNTABLE=${WRKHOME}/input_files/input_table.txt
 ##### Names of directories that contain programs, utilities, shared data
 USGSROOT=/opt/USGS
 WINDROOT=/data/WindFiles
-TOPOROOT=/data/TOPO/GEBCO/GEBCO_23
+TOPOFILE=/data/TOPO/GEBCO/GEBCO_2023.nc
 ASH3DHOME=${USGSROOT}/Ash3d
 
 #### Output subdirectories.

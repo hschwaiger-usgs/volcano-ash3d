@@ -8,7 +8,7 @@
 # values drawn from a preferred distribution for Monte Carlo analysis. The run table,
 # input_table.txt, can be generated with a script such as gen_table_param_march.sh,
 # which steps through a 2-d parameter-space (time and plume height).
-# This script with create a run directory SIMULATION_DIR/Workspace/Dir[jobID].
+# This script will create a run directory SIMULATION_DIR/Workspace/Dir[jobID].
 # All output will remain in those run directories with the expectation that a
 # second slurm script, srun_ProcessResults.sh, with the same SBATCH settings,
 # will be run to process the output, e.g. rename output files, zip log or ASCII files,
@@ -52,7 +52,7 @@
                        #  = expected max time for an individual run * safety fac (~ 1.2)
 
 #################################################
-### sbatch settings for a Hovenweep job-array
+### sbatch settings for an HPC job-array
 #################################################
 #SBATCH --job-name=Ash3d_Spurr               ## Only a label, but nice to identify in squeue
 #SBATCH --array=1-48%12                      ## List of job numbers to run, followed by % and # of simul.jobs
@@ -102,7 +102,6 @@
 # 6) Lastly, make sure your post-processing script (srun_ProcessResults.sh) has the appropriate slurm settings
 #    and moves files around, zips things, and otherwise processes your data to your liking.
 
-
 rc=0         # Initialize return code to 0
 # Parsing command-line arguments
 NARGS=$#
@@ -112,6 +111,8 @@ NARGS=$#
 #################################################
 
 #  Get the runID for this instance
+#  This will either be the SLURM_ARRAY_TASK_ID if this script was launched via sbatch
+#  or from a comman-line argument otherwise
 irun=0
 if [ $NARGS -gt 0 ]; then
   irun=$1
@@ -141,7 +142,7 @@ LOCATIONFILE=${WRKHOME}/input_files/Sites.txt
 ##### Names of directories that contain programs, utilities, shared data
 USGSROOT=/opt/USGS
 WINDROOT=/data/WindFiles
-TOPOROOT=/data/TOPO/GEBCO/GEBCO_23
+TOPOFILE=/data/TOPO/GEBCO/GEBCO_2023.nc
 ASH3DHOME=${USGSROOT}/Ash3d
 ###############################################################################
 ###############################################################################
@@ -166,9 +167,10 @@ else
 fi
 cd    ${RUNDIRS}/Dir${RunNumber}
 ln -s ${WINDROOT} Wind
+#ln -s ${TOPOFILE} .
 #ln -s ${LOCATIONFILE} .
 
-# make the new input file
+# Make the new Ash3d control file using the run ID and input table
 #echo "${ASH3DHOME}/bin/tools/Ash3d_ASCII_GenCTR ${CTRTEMPLATE}  ${RUNTABLE} ${RunNumber}"
 if [ -n "$SLURM_JOB_ID" ]; then
   srun ${ASH3DHOME}/bin/tools/Ash3d_ASCII_GenCTR ${CTRTEMPLATE}  ${RUNTABLE} ${RunNumber}
@@ -182,7 +184,7 @@ if [[ "$rc" -gt 0 ]] ; then
     exit 1
 fi
 
-#run the model
+# Launch the instance of the model for this run ID
 export ASH3DVERB=7                                      # quash all but essential stdout (only stderr and logfile)
 #${ASH3DHOME}/bin/Ash3d ash3d_input.inp                 # used for testing
 if [ -n "$SLURM_JOB_ID" ]; then
