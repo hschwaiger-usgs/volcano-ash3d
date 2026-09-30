@@ -490,7 +490,7 @@
       write(output_unit,1)'-19.62   63.63                 # vent location         (km, or deg. if latlonflag=1)                   '
       write(output_unit,1)'3.0      3.0                   # DX, DY of grid cells  (km, or deg. if latlonflag=1)                   '
       write(output_unit,1)'1.0                            # DZ of grid cells      (always km)                                     '
-      write(output_unit,1)'0.     4.                      # diffusion coefficient (m2/s), Suzuki constant                         '
+      write(output_unit,1)'0.0      4.0                   # diffusion coefficient (m2/s), Suzuki constant                         '
       write(output_unit,1)'9                              # neruptions, number of eruptions or pulses                             '
       write(output_unit,1)'*******************************************************************************                        '
         case(2)  ! BLOCK 2: ERUPTION PARAMETERS
@@ -506,6 +506,7 @@
       write(output_unit,1)'2010 4 15  3.0  3.0 5.2 2.17E-004                                                                      '
       write(output_unit,1)'2010 4 15  6.0  3.0 5.3 2.33E-004                                                                      '
       write(output_unit,1)'2010 4 15  9.0  3.0 5.7 3.09E-004                                                                      '
+      write(output_unit,1)'*******************************************************************************                        '
         case(3)  ! BLOCK 3: WIND PARAMETERS
           call Write_input_block_header(output_unit,blockID)
           !call SetWrite_input_block_03(WriteBlock)
@@ -515,6 +516,7 @@
       write(output_unit,1)'60                  # Simulation time in hours                                                         '
       write(output_unit,1)'no                  # stop computation when 99% of erupted mass has deposited?                         '
       write(output_unit,1)'16                  # nWindFiles, number of gridded wind files (used if iwind>1)                       '
+      write(output_unit,1)'*******************************************************************************                        '
         case(4)  ! BLOCK 4: OUTPUT OPTIONS
           call Write_input_block_header(output_unit,blockID)
           !call SetWrite_input_block_04(WriteBlock)
@@ -524,7 +526,7 @@
       write(output_unit,1)'no      # Write out ESRI ASCII deposit files at specified times?                                       '
       write(output_unit,1)'no      # Write out        KML deposit files at specified times?                                       '
       write(output_unit,1)'no      # Write out ESRI ASCII files of ash-cloud concentration?                                       '
-      write(output_unit,1)'no      # Write out        KML files of ash-cloud concentration?                                      '
+      write(output_unit,1)'no      # Write out        KML files of ash-cloud concentration?                                       '
       write(output_unit,1)'no      # Write out ESRI ASCII files of ash-cloud height?                                              '
       write(output_unit,1)'no      # Write out        KML files of ash-cloud height?                                              '
       write(output_unit,1)'yes     # Write out ESRI ASCII files of ash-cloud load (T/km2) at specified times?                     '
@@ -537,6 +539,7 @@
       write(output_unit,1)'netcdf  # format of ash concentration files     (ascii, binary, or netcdf)                             '
       write(output_unit,1)'-1      # nWriteTimes                                                                                  '
       write(output_unit,1)'1       # WriteTimes (hours since eruption start)                                                      '
+      write(output_unit,1)'*******************************************************************************                        '
         case(5)  ! BLOCK 5: INPUT WIND FILES
           call Write_input_block_header(output_unit,blockID)
           !call SetWrite_input_block_05(WriteBlock)
@@ -557,6 +560,7 @@
       write(output_unit,1)'Wind_nc/gfs/gfs.2010041400/2010041400.f039.nc                                                          '
       write(output_unit,1)'Wind_nc/gfs/gfs.2010041400/2010041400.f042.nc                                                          '
       write(output_unit,1)'Wind_nc/gfs/gfs.2010041400/2010041400.f045.nc                                                          '
+      write(output_unit,1)'*******************************************************************************                        '
         case(6)  ! BLOCK 6: AIRPORT FILE
           call Write_input_block_header(output_unit,blockID)
           !call SetWrite_input_block_06(WriteBlock)
@@ -566,6 +570,7 @@
       write(output_unit,1)'no                            # Write out ash arrival times to kml file?                               '
       write(output_unit,1)'GlobalAirports.txt            # Name of file containing airport locations                              '
       write(output_unit,1)'yes                           # Defer to Lon/Lat coordinates? ("no" defers to projected)               '
+      write(output_unit,1)'*******************************************************************************                        '
         case(7)  ! BLOCK 7: GRAIN-SIZE BINS, SETTLING VELOCITY
           call Write_input_block_header(output_unit,blockID)
           !call SetWrite_input_block_07(WriteBlock)
@@ -586,6 +591,7 @@
       write(output_unit,1)'0.1895     0.2856  600.    1.00                                                                        '
       write(output_unit,1)'0.1768     0.1428  600.    1.00                                                                        '
       write(output_unit,1)'0.1649     0.0714  600.    1.00                                                                        '
+      write(output_unit,1)'*******************************************************************************                        '
         case(8)  ! BLOCK 8: VERTICAL PROFILES
           call Write_input_block_header(output_unit,blockID)
           !call SetWrite_input_block_08(WriteBlock)
@@ -595,6 +601,7 @@
       write(output_unit,1)'11.3  48.2  Munich            # Munich (Maisach)                                                       '
       write(output_unit,1)'11.0  47.4  Schneefernerhaus  # Schneefernerhaus (Zugspitze)                                           '
       write(output_unit,1)'11.0  47.8  Hohenpeissenberg  # Hohenpeissenberg                                                       '
+      write(output_unit,1)'*******************************************************************************                        '
         case(9)  ! BLOCK 9: (Optional): NETCDF ANNOTATIONS
           call Write_input_block_header(output_unit,blockID)
           !call SetWrite_input_block_09(WriteBlock)
@@ -602,6 +609,7 @@
       write(output_unit,1)'3d_tephra_fall.nc             # Name of output file                                                    '
       write(output_unit,1)'Eyjafjallajokull              # Title of simulation                                                    '
       write(output_unit,1)'no comment                    # Comment                                                                '
+      write(output_unit,1)'*******************************************************************************                        '
         case(10)  ! BLOCK 10 (OPTMOD): Optional module blocks
           call Write_input_block_header(output_unit,blockID)
           !call SetWrite_input_block_ResetParam(WriteBlock)
@@ -641,6 +649,7 @@
       write(output_unit,1)' cdf_institution      = USGS                                                                           '
       write(output_unit,1)' cdf_run_class        = Analysis                                                                       '
       write(output_unit,1)' cdf_url              = https://vsc-ash.wr.usgs.gov/ash3d-gui                                          '
+      write(output_unit,1)'*******************************************************************************                        '
                  !   TOPO
           call Write_input_block_header(output_unit,blockID+1)
           !call SetWrite_input_block_Topo(WriteBlock)
@@ -649,12 +658,13 @@
       write(output_unit,1)'yes 2                         # use topography?; z-mod (0=none,1=shift,2=sigma)                        '
       write(output_unit,1)'1 1.0                         # Topofile format, smoothing radius                                      '
       write(output_unit,1)'GEBCO_2023.nc                 # topofile name                                                          '
-
+      write(output_unit,1)'*******************************************************************************                        '
                  !   VARDIFF
           call Write_input_block_header(output_unit,blockID+2)
           !call SetWrite_input_block_VarDiff(WriteBlock)
       write(output_unit,1)'******************* BLOCK 10+ *************************************************                        '
       write(output_unit,1)'OPTMOD=VARDIFF                                                                                         '
+      write(output_unit,1)'no                          # write VarDiff variables to netcdf file                                   '
       write(output_unit,1)'yes 2 0.2                   # use horizontal variable diffusivity                                      '
       write(output_unit,1)'yes                         # use vertical variable diffusivity                                        '
       write(output_unit,1)'4                           # boundary layer model                                                     '

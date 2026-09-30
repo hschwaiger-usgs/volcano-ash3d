@@ -1798,6 +1798,7 @@
        !check for errors in input
         call LatLonChecker(latLL,lonLL,lat_volcano,lon_volcano,gridwidth_e,gridwidth_n)
       else  ! IsLatLon
+        ! This is the section for projected computational grids
         ! Block 1 Line 3
         read(fid_ctrlfile,'(a80)',iostat=iostatus,iomsg=iomessage)linebuffer080
         linebuffer050 = "Reading control file, Block 1, Line 3."
