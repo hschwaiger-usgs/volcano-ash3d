@@ -2743,7 +2743,7 @@
       subroutine Smooth_Topo
 
       use global_param,  only : &
-         RAD_EARTH,DEG2RAD,DEG2RAD,PI
+         RAD_EARTH,DEG2RAD,DEG2RAD,PI,EPS_SMALL
 
       use mesh,          only : &
          nxmax,nymax,IsLatLon,dx,dy,de,dn,lat_cc_pd,lon_cc_pd,&
@@ -2926,7 +2926,13 @@
                 endif
               enddo  ! loop over jj
             enddo  ! loop over ii
-            topo_smooth_comp(i,j) = real(topo_avg/norm,kind=sp)
+            if(norm<EPS_SMALL)then
+              ! This covers the spurious case where there are no topo points in the
+              ! grid cell (e.g. at the pole)
+              topo_smooth_comp(i,j) = -10.0_sp
+            else
+              topo_smooth_comp(i,j) = real(topo_avg/norm,kind=sp)
+            endif
           enddo
         enddo
       enddo
