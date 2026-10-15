@@ -73,7 +73,7 @@ On RedHat-based systems, these can be installed with:
 On Ubuntu-based systems:  
 `sudo apt install liblapack64-3 liblapack64-dev libblas64-3 libblas64-dev`  
 `sudo apt install libnetcdf-c++4 libnetcdf-dev libnetcdff-dev`  
-`sudo apt libeccodes0 libeccodes-dev`  
+`sudo apt install libeccodes0 libeccodes-dev`  
 `sudo apt install zip`  
 `sudo apt install gnuplot`  
 `sudo apt install plplot`  
