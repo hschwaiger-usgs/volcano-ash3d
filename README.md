@@ -71,7 +71,7 @@ On RedHat-based systems, these can be installed with:
 `sudo dnf install plplot`  
 
 On Ubuntu-based systems:  
-`sudo apt install liblapack64-3 liblapack64-dev libblas64-3 libblas64-dev`  
+`sudo apt install liblapack-dev libblas-dev`  
 `sudo apt install libnetcdf-c++4-dev libnetcdf-dev libnetcdff-dev`  
 `sudo apt install libeccodes0 libeccodes-dev`  
 `sudo apt install zip`  
