@@ -77,6 +77,8 @@ On Ubuntu-based systems:
 `sudo apt install zip`  
 `sudo apt install gnuplot`  
 `sudo apt install plplot`  
+`sudo apt install make`
+`sudo apt install gfortran`
 
 On Mac OSX-based systems (install the [Homebrew package](https://brew.sh/) manager first):  
 `brew install gcc`  
