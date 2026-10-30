@@ -669,8 +669,8 @@
         write(fid_script,'(g0)')"#unset border"
         write(fid_script,'(g0)')"unset label"
         write(fid_script,'(g0)')"set size ratio -1"
-        linebuffer080 = 'plot "' // trim(adjustl(Instit_IconFile)) // '" binary filetype=png with rgbalpha'
-        write(fid_script,'(g0)')trim(adjustl(linebuffer080))
+        linebuffer130 = 'plot "' // trim(adjustl(Instit_IconFile)) // '" binary filetype=png with rgbalpha'
+        write(fid_script,'(g0)')trim(adjustl(linebuffer130))
         write(fid_script,'(g0)')" "
       else
         do io=1,2;if(VB(io).le.verbosity_info)then
@@ -1204,8 +1204,8 @@
         write(fid_script,'(g0)')"#unset border"
         write(fid_script,'(g0)')"unset label"
         write(fid_script,'(g0)')"set size ratio -1"
-        linebuffer080 = 'plot "' // trim(adjustl(Instit_IconFile)) // '" binary filetype=png with rgbalpha'
-        write(fid_script,'(g0)')trim(adjustl(linebuffer080))
+        linebuffer130 = 'plot "' // trim(adjustl(Instit_IconFile)) // '" binary filetype=png with rgbalpha'
+        write(fid_script,'(g0)')trim(adjustl(linebuffer130))
         write(fid_script,'(g0)')" "
       else
         do io=1,2;if(VB(io).le.verbosity_info)then
